@@ -1,0 +1,33 @@
+# ----------------------------------------------------------------------------
+# Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+# This file is a part of the CANN Open Software.
+# Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# ----------------------------------------------------------------------------
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
+set(REQ_URL "https://gitcode.com/cann-src-third-party/eigen/releases/download/3.4.0/eigen-3.4.0.tar.gz")
+include(ExternalProject)
+ExternalProject_Add(external_eigen_math
+  URL               ${REQ_URL}
+  DOWNLOAD_DIR      download/eigen
+  PREFIX            third_party
+  INSTALL_COMMAND   ""
+)
+
+ExternalProject_Get_Property(external_eigen_math SOURCE_DIR)
+
+add_library(EigenMath INTERFACE)
+target_compile_options(EigenMath INTERFACE -w)
+
+set_target_properties(EigenMath PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_DIR}"
+)
+add_dependencies(EigenMath external_eigen_math)
+
+add_library(Eigen3::EigenMath ALIAS EigenMath)

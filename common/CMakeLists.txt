@@ -1,0 +1,33 @@
+# ----------------------------------------------------------------------------
+# Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+# This file is a part of the CANN Open Software.
+# Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# ----------------------------------------------------------------------------
+
+if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
+  npu_op_library(${COMMON_NAME}_obj TILING)
+else()
+  add_library(${COMMON_NAME}_obj OBJECT)
+endif()
+
+file(GLOB CPP_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tiling_base/*.cpp")
+
+target_sources(${COMMON_NAME}_obj PRIVATE ${CPP_SOURCES})
+
+target_include_directories(${COMMON_NAME}_obj
+  PRIVATE
+  ${C_SEC_INCLUDE}
+  ${TILINGAPI_INC_DIRS}
+  ${METADEF_INCLUDE_DIRS}
+  ${OPS_MATH_DIR}/common/include
+)
+
+target_link_libraries(${COMMON_NAME}_obj
+  PRIVATE
+  $<BUILD_INTERFACE:intf_pub_cxx17>
+  tiling_api
+)

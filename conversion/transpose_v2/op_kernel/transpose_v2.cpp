@@ -1,0 +1,68 @@
+/**
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * This file is a part of the CANN Open Software.
+ * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+/*!
+ * \file transpose_v2.cpp
+ * \brief
+ */
+
+#include "transpose021.h"
+#include "transpose0213.h"
+
+using namespace TransposeV2;
+
+extern "C" __global__ __aicore__ void transpose_v2(
+    GM_ADDR x, GM_ADDR perm, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+{
+    GET_TILING_DATA(tiling_data, tiling);
+    AscendC::TPipe pipe;
+// perm=[0,2,1]
+#if ORIG_DTYPE_X == DT_BF16 || ORIG_DTYPE_X == DT_FLOAT16
+    if (TILING_KEY_IS(20)) {
+        Transpose021<half> op(&pipe);
+        op.Process(x, y, &tiling_data);
+    }
+#elif ORIG_DTYPE_X == DT_FLOAT32
+    if (TILING_KEY_IS(40)) {
+        Transpose021<float, true> op(&pipe);
+        op.Process(x, y, &tiling_data);
+    }
+#endif
+// 012 and 0213
+#if ORIG_DTYPE_X == DT_BF16 || ORIG_DTYPE_X == DT_FLOAT16
+    if (TILING_KEY_IS(120)) {
+        Transpose102<half> op(&pipe);
+        op.Init102(x, y, &tiling_data);
+        op.ProcessTransMode(0);
+    } else if (TILING_KEY_IS(121)) {
+        Transpose102<half> op(&pipe);
+        op.Init102(x, y, &tiling_data);
+        op.Process102CopyMode(0);
+    } else if (TILING_KEY_IS(221)) {
+        Transpose0213<half> op(&pipe);
+        op.Init0213(x, y, &tiling_data);
+        op.Process0213CopyMode();
+    }
+#elif ORIG_DTYPE_X == DT_FLOAT32
+    if (TILING_KEY_IS(140)) {
+        Transpose102<float, true> op(&pipe);
+        op.Init102(x, y, &tiling_data);
+        op.ProcessTransMode(0);
+    } else if (TILING_KEY_IS(141)) {
+        Transpose102<float> op(&pipe);
+        op.Init102(x, y, &tiling_data);
+        op.Process102CopyMode(0);
+    } else if (TILING_KEY_IS(241)) {
+        Transpose0213<float> op(&pipe);
+        op.Init0213(x, y, &tiling_data);
+        op.Process0213CopyMode();
+    }
+#endif
+}
