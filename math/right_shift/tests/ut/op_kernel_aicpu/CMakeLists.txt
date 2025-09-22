@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 # This file is a part of the CANN Open Software.
-# Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+# Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -16,21 +16,21 @@ foreach(SUB_DIR ${CURRENT_SOURCE_DIRS})
 endforeach()
 
 
-# ÐèÒª½«TilingÒÀÀµµÄÎÄ¼þÌí¼Óµ½CMakeLists.txtÖÐ
+# ï¿½ï¿½Òªï¿½ï¿½Tilingï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½Óµï¿½CMakeLists.txtï¿½ï¿½
 # set(elewise_common_tiling_files
 #         ${CANN_ROOT}/ops/built-in/op_tiling/runtime/elewise_tiling.cc
 #         )
-# Ëã×Ó×Ô¼ºµÄtilingÎÄ¼þÂ·¾¶
+# ï¿½ï¿½ï¿½ï¿½ï¿½Ô¼ï¿½ï¿½ï¿½tilingï¿½Ä¼ï¿½Â·ï¿½ï¿½
 # set(lin_space_tiling_files
 #     ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/lin_space_tiling.cpp
 #     ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/lin_space_tiling_arch35.cpp
 #     ${elewise_common_tiling_files}
 #     )
-# Ê¹ÓÃAddOpTestCase
-# param1£ºËã×ÓÃû³Æ£¬ÒÔkernel·½Ê½ÃüÃû
-# param2£ºsoc°æ±¾£¬¶à¸öÒÔ·ÖºÅ·Ö¸ô£¬ÀýÈç£º"ascend910_9599;AscendB1"
-# param3£º×Ô¶¨Òå±àÒëÑ¡Ïî£¬Ò»°ãÌîÐ´²âÊÔµÄÒ»ÖÖµäÐÍÊý¾ÝÀàÐÍ×éºÏ£¬²»ÐèÒªÔò´«Èë¿Õ×Ö·û´®£¬ÀýÈç£º"-DDTYPE_X=float"£¬¶à¸öÊ¹ÓÃ¿Õ¸ñ·Ö¸ô£¬ÀýÈç£º"-DDTYPE_X=float -DDTYPE_Y=float"
-# param4£º¸ÃËã×ÓÒÀÀµµÄËùÓÐtilingÔ´ÂëÎÄ¼þ
+# Ê¹ï¿½ï¿½AddOpTestCase
+# param1ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ£ï¿½ï¿½ï¿½kernelï¿½ï¿½Ê½ï¿½ï¿½ï¿½ï¿½
+# param2ï¿½ï¿½socï¿½æ±¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô·ÖºÅ·Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ç£º"ascend910_9599;AscendB1"
+# param3ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½î£¬Ò»ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½Ôµï¿½Ò»ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï£ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ç£º"-DDTYPE_X=float"ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½Ã¿Õ¸ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ç£º"-DDTYPE_X=float -DDTYPE_Y=float"
+# param4ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½tilingÔ´ï¿½ï¿½ï¿½Ä¼ï¿½
 if (UT_TEST_ALL OR FAST_OP_UT)
     # AddOpTestCase(lin_space "ascend910B1;ascend910_9599" "-DDTYPE_X=float" "${lin_space_tiling_files}")
 endif()

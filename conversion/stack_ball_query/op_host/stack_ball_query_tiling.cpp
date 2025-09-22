@@ -1,7 +1,7 @@
 /**
  * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -40,18 +40,17 @@ static int32_t GetCeilInt(int32_t num1, int32_t num2)
     return 0;
 }
 
-class StackBallQueryTiling
-{
+class StackBallQueryTiling {
 public:
-    explicit StackBallQueryTiling(gert::TilingContext* context) : tilingContext(context) {};
+    explicit StackBallQueryTiling(gert::TilingContext* context) : tilingContext(context){};
 
-    void Init();
+    void Init() const;
 
     ge::graphStatus RunKernelTiling();
 
     void CalRunningInfo(gert::TilingContext* context, const uint64_t actCoreNum);
 
-    void TilingDataPrint();
+    void TilingDataPrint() const;
 
 private:
     StackBallQueryTilingData tilingData;
@@ -68,7 +67,7 @@ private:
     int32_t sampleNum;
 };
 
-void StackBallQueryTiling::Init()
+void StackBallQueryTiling::Init() const
 {
     OP_LOGD(tilingContext, "tiling initing.");
     auto dataType = tilingContext->GetInputTensor(INDEX_INPUT_XYZ)->GetDataType();
@@ -83,7 +82,7 @@ void StackBallQueryTiling::Init()
     OP_LOGD(tilingContext, "tiling inited.");
 }
 
-void StackBallQueryTiling::TilingDataPrint()
+void StackBallQueryTiling::TilingDataPrint() const
 {
     OP_LOGD(tilingContext, "TilingDataPrint start.");
     OP_LOGD(tilingContext, "batchSize is %d.", this->batchSize);
@@ -101,9 +100,7 @@ void StackBallQueryTiling::TilingDataPrint()
 void StackBallQueryTiling::CalRunningInfo(gert::TilingContext* context, const uint64_t actCoreNum)
 {
     const gert::RuntimeAttrs* attrs = context->GetAttrs();
-    OP_CHECK_IF(
-        attrs == nullptr, OP_LOGE(context, "[CalRunningInfo] attrs is null."),
-        return);
+    OP_CHECK_IF(attrs == nullptr, OP_LOGE(context, "[CalRunningInfo] attrs is null."), return);
     const int32_t* sampleNumPtr = attrs->GetAttrPointer<int32_t>(SAMPLE_NUM_IDX);
     this->sampleNum = *sampleNumPtr;
 
@@ -112,22 +109,18 @@ void StackBallQueryTiling::CalRunningInfo(gert::TilingContext* context, const ui
 
     auto runtimeCenterXyzShapePtr = context->GetInputShape(INDEX_INPUT_CENTER_XYZ);
     OP_CHECK_IF(
-        runtimeCenterXyzShapePtr == nullptr,
-        OP_LOGE(context, "[CalRunningInfo] runtimeCenterXyzShapePtr is null."),
+        runtimeCenterXyzShapePtr == nullptr, OP_LOGE(context, "[CalRunningInfo] runtimeCenterXyzShapePtr is null."),
         return);
     const gert::Shape& centerXyzShape = runtimeCenterXyzShapePtr->GetStorageShape();
 
     auto runtimeXyzShapePtr = context->GetInputShape(INDEX_INPUT_XYZ);
     OP_CHECK_IF(
-        runtimeXyzShapePtr == nullptr,
-        OP_LOGE(context, "[CalRunningInfo] runtimeXyzShapePtr is null."),
-        return);
+        runtimeXyzShapePtr == nullptr, OP_LOGE(context, "[CalRunningInfo] runtimeXyzShapePtr is null."), return);
     const gert::Shape& xyzShape = runtimeXyzShapePtr->GetStorageShape();
 
     auto runtimeXyzBatchCntShapePtr = context->GetInputShape(INDEX_INPUT_XYZ_BATCH_CNT);
     OP_CHECK_IF(
-        runtimeXyzBatchCntShapePtr == nullptr,
-        OP_LOGE(context, "[CalRunningInfo] runtimeXyzBatchCntShapePtr is null."),
+        runtimeXyzBatchCntShapePtr == nullptr, OP_LOGE(context, "[CalRunningInfo] runtimeXyzBatchCntShapePtr is null."),
         return);
     const gert::Shape& xyzBatchCntShape = runtimeXyzBatchCntShapePtr->GetStorageShape();
 
@@ -145,7 +138,7 @@ void StackBallQueryTiling::CalRunningInfo(gert::TilingContext* context, const ui
     this->centerXyzPerCore = GetCeilInt(this->totalLengthCenterXyz, this->coreNum);
     int32_t alignNum = 8;
     if (GetCeilInt(alignNum, this->sampleNum) > this->centerXyzPerCore) {
-        this->centerXyzPerCore = GetCeilInt(8, this->sampleNum);
+        this->centerXyzPerCore = GetCeilInt(alignNum, this->sampleNum);
     }
 
     this->tailCenterXyzPerCore = this->totalLengthCenterXyz % this->centerXyzPerCore;
@@ -196,7 +189,6 @@ static ge::graphStatus TilingStackBallQuery(gert::TilingContext* context)
     return tilingObject.RunKernelTiling();
 }
 
-IMPL_OP_OPTILING(StackBallQuery)
-    .Tiling(TilingStackBallQuery);
+IMPL_OP_OPTILING(StackBallQuery).Tiling(TilingStackBallQuery);
 
 } // namespace optiling

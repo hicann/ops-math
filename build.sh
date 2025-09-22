@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copyright(c) Huawei Technologies Co., Ltd.2025. All rights reserved.
 # This File is a part of the CANN Open Software.
-# Licensed under CANN Open Software License Agreement Version 1.0 (the "License");
+# Licensed under CANN Open Software License Agreement Version 2.0 (the "License");
 # Please refer to the Licence for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -11,7 +11,7 @@
 set -e
 RELEASE_TARGETS=("ophost" "opapi" "opgraph" "opkernel")
 UT_TARGETS=("ophost_test" "opapi_test" "opgraph_test" "opkernel_test")
-SUPPORT_COMPUTE_UNIT_SHORT=("ascend910b" "ascend910_93" "ascend910_95" "ascend310p" "ascend910")
+SUPPORT_COMPUTE_UNIT_SHORT=("ascend910b" "ascend910_93" "ascend310p" "ascend910")
 
 # 所有支持的短选项
 SUPPORTED_SHORT_OPTS="hj:vO:uf:-:"
@@ -19,8 +19,9 @@ SUPPORTED_SHORT_OPTS="hj:vO:uf:-:"
 # 所有支持的长选项
 SUPPORTED_LONG_OPTS=(
   "help" "ops=" "soc=" "vendor_name=" "debug" "cov" "noexec" "aicpu" "opkernel" "jit"
-  "package" "disable_asan" "valgrind" "make_clean_all" "make_clean"
-  "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "run_example" "genop="
+  "pkg" "disable_asan" "valgrind" "make_clean_all" "make_clean"
+  "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test"
+  "run_example" "genop=" "genop_aicpu="
 )
 
 in_array() {
@@ -35,31 +36,24 @@ in_array() {
   return 1
 }
 
-# 检查参数是否合法
 check_option_validity() {
   local arg="$1"
 
-  # 检查短选项
   if [[ "$arg" =~ ^-[^-] ]]; then
     local opt_chars=${arg:1}
 
-    # 获取需要参数的短选项列表
     local needs_arg_opts=$(echo "$SUPPORTED_SHORT_OPTS" | grep -o "[a-zA-Z]:" | tr -d ':')
 
-    # 逐个检查短选项字符
     local i=0
     while [ $i -lt ${#opt_chars} ]; do
       local char="${opt_chars:$i:1}"
 
-      # 检查是否为支持的短选项
       if [[ ! "$SUPPORTED_SHORT_OPTS" =~ "$char" ]]; then
         echo "[ERROR] Invalid short option: -$char"
         return 1
       fi
 
-      # 如果这个选项需要参数，跳过参数部分
       if [[ "$needs_arg_opts" =~ "$char" ]]; then
-        # 跳过参数部分（可能是数字或其他字符）
         while [ $i -lt ${#opt_chars} ] && [[ "${opt_chars:$i:1}" =~ [0-9a-zA-Z] ]]; do
           i=$((i + 1))
         done
@@ -70,21 +64,19 @@ check_option_validity() {
     return 0
   fi
 
-  # 检查长选项
   if [[ "$arg" =~ ^-- ]]; then
     local long_opt="${arg:2}"
     local opt_name="${long_opt%%=*}"
 
-    # 检查是否在支持的长选项列表中
     for supported_opt in "${SUPPORTED_LONG_OPTS[@]}"; do
-      # 处理带=的长选项
+      # with "=" in long options
       if [[ "$supported_opt" =~ =$ ]]; then
         local base_opt="${supported_opt%=}"
         if [[ "$opt_name" == "$base_opt" ]]; then
           return 0
         fi
       else
-        # 处理不带=的长选项
+        # without "=" in long options
         if [[ "$opt_name" == "$supported_opt" ]]; then
           return 0
         fi
@@ -95,7 +87,6 @@ check_option_validity() {
     return 1
   fi
 
-  # 如果不是选项，可能是其他参数
   return 0
 }
 
@@ -105,6 +96,7 @@ export BASE_PATH=$(
   pwd
 )
 export BUILD_PATH="${BASE_PATH}/build"
+export BUILD_OUT_PATH="${BASE_PATH}/build_out"
 REPOSITORY_NAME="math"
 
 CORE_NUMS=$(cat /proc/cpuinfo | grep "processor" | wc -l)
@@ -116,8 +108,6 @@ export COMPILER_INCLUDE_PATH="${ASCEND_HOME_PATH}/compiler/include"
 export GRAPH_INCLUDE_PATH="${COMPILER_INCLUDE_PATH}/graph"
 export GE_INCLUDE_PATH="${COMPILER_INCLUDE_PATH}/ge"
 export INC_INCLUDE_PATH="${ASCEND_OPP_PATH}/built-in/op_proto/inc"
-export LINUX_INCLUDE_PATH="${ASCEND_HOME_PATH}/${ARCH_INFO}-linux/include"
-export EAGER_LIBRARY_OPP_PATH="${ASCEND_OPP_PATH}/lib64"
 export EAGER_LIBRARY_PATH="${ASCEND_HOME_PATH}/lib64"
 export GRAPH_LIBRARY_STUB_PATH="${ASCEND_HOME_PATH}/compiler/lib64/stub"
 export GRAPH_LIBRARY_PATH="${ASCEND_HOME_PATH}/compiler/lib64"
@@ -131,18 +121,18 @@ usage() {
       package)
         echo "Package Build Options:"
         echo $dotted_line
-        echo "    --package              Build run package with kernel bin"
+        echo "    --pkg                  Build run package with kernel bin"
         echo "    --jit                  Build run package without kernel bin"
         echo "    --soc=soc_version      Compile for specified Ascend SoC (comma-separated for multiple)"
         echo "    --vendor_name=name     Specify custom operator package vendor name"
         echo "    --ops=op1,op2,...      Compile specified operators (comma-separated for multiple)"
-        echo "    -j[n]                  Compile thread nums, default is 8"
-        echo "    -O[n]                  Compile optimization options, support [O0 O1 O2 O3]"
+        echo "    -j[n]                  Compile thread nums, default is 8, eg: -j8"
+        echo "    -O[n]                  Compile optimization options, support [O0 O1 O2 O3], eg:-O3"
         echo "    --debug                Build with debug mode"
         echo $dotted_line
         echo "Examples:"
-        echo "    bash build.sh --package --soc=ascend910b --vendor_name=customize -j16 -O3"
-        echo "    bash build.sh --package --ops=add,sub --debug"
+        echo "    bash build.sh --pkg --soc=ascend910b --vendor_name=customize -j16 -O3"
+        echo "    bash build.sh --pkg --ops=add,sub --debug"
         return
         ;;
       opkernel)
@@ -195,8 +185,8 @@ usage() {
         echo "Ophost Build Options:"
         echo $dotted_line
         echo "    --ophost               Build ophost library"
-        echo "    -j[n]                  Compile thread nums, default is 8"
-        echo "    -O[n]                  Compile optimization options, support [O0 O1 O2 O3]"
+        echo "    -j[n]                  Compile thread nums, default is 8, eg: -j8"
+        echo "    -O[n]                  Compile optimization options, support [O0 O1 O2 O3], eg:-O3"
         echo "    --debug                Build with debug mode"
         echo $dotted_line
         echo "Examples:"
@@ -208,8 +198,8 @@ usage() {
         echo "Opapi Build Options:"
         echo $dotted_line
         echo "    --opapi                Build opapi library"
-        echo "    -j[n]                  Compile thread nums, default is 8"
-        echo "    -O[n]                  Compile optimization options, support [O0 O1 O2 O3]"
+        echo "    -j[n]                  Compile thread nums, default is 8, eg: -j8"
+        echo "    -O[n]                  Compile optimization options, support [O0 O1 O2 O3], eg:-O3"
         echo "    --debug                Build with debug mode"
         echo $dotted_line
         echo "Examples:"
@@ -221,8 +211,8 @@ usage() {
         echo "Opgraph Build Options:"
         echo $dotted_line
         echo "    --opgraph              Build opgraph library"
-        echo "    -j[n]                  Compile thread nums, default is 8"
-        echo "    -O[n]                  Compile optimization options, support [O0 O1 O2 O3]"
+        echo "    -j[n]                  Compile thread nums, default is 8, eg: -j8"
+        echo "    -O[n]                  Compile optimization options, support [O0 O1 O2 O3], eg:-O3"
         echo "    --debug                Build with debug mode"
         echo $dotted_line
         echo "Examples:"
@@ -269,11 +259,13 @@ usage() {
       run_example)
         echo "Run example Options:"
         echo $dotted_line
-        echo "    --run_example op_type  mode[eager:graph]      Compile and execute the test_aclnn_xxx.cpp/test_geir_xxx.cpp"
+        echo "    --run_example op_type  mode[eager:graph] [pkg_mode --vendor_name=name]     Compile and execute the test_aclnn_xxx.cpp/test_geir_xxx.cpp"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --run_example abs eager"
         echo "    bash build.sh --run_example abs graph"
+        echo "    bash build.sh --run_example abs eager cust"
+        echo "    bash build.sh --run_example abs eager cust --vendor_name=custom"
         return
         ;;
       genop)
@@ -283,6 +275,15 @@ usage() {
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --genop=example/add"
+        return
+        ;;
+      genop_aicpu)
+        echo "Gen Op Directory Options:"
+        echo $dotted_line
+        echo "    --genop_aicpu=op_class/op_name      Create the initial directory for op_name undef op_class"
+        echo $dotted_line
+        echo "Examples:"
+        echo "    bash build.sh --genop_aicpu=example/add"
         return
         ;;
     esac
@@ -298,9 +299,9 @@ usage() {
   echo "    Build parameters "
   echo $dotted_line
   echo "    -h Print usage"
-  echo "    -j[n] Compile thread nums, default is 8"
+  echo "    -j[n] Compile thread nums, default is 8, eg: -j8"
   echo "    -v Cmake compile verbose"
-  echo "    -O[n] Compile optimization options, support [O0 O1 O2 O3]"
+  echo "    -O[n] Compile optimization options, support [O0 O1 O2 O3], eg:-O3"
   echo "    -u Compile all ut"
   echo $dotted_line
   echo "    example, Build ophost_test with O3 level compilation optimization and do not execute."
@@ -325,17 +326,17 @@ usage() {
   echo "    --ophost build ophost_math.so"
   echo "    --opkernel build binary kernel"
   echo "    --jit build run package without kernel bin"
-  echo "    --package build run package with kernel bin"
+  echo "    --pkg build run package with kernel bin"
   echo "    --opapi_test build and run opapi unit tests"
   echo "    --ophost_test build and run ophost unit tests"
   echo "    --opgraph_test build and run opgraph unit tests"
   echo "    --opkernel_test build and run opkernel unit tests"
   echo "    --run_example Compile and execute the test_aclnn_xxx.cpp/test_geir_xxx.cpp"
   echo "    --genop Create the initial directory for op"
+  echo "    --genop_aicpu Create the initial directory for AI CPU op"
   echo "to be continued ..."
 }
 
-# 检查--help 前的组合参数是否非法
 check_help_combinations() {
   local args=("$@")
   local has_u=false
@@ -351,15 +352,15 @@ check_help_combinations() {
         has_test_command=true
         has_build_command=true
         ;;
-      --package) has_package=true ;;
+      --pkg) has_package=true ;;
       --opkernel) has_opkernel=true ;;
       --help | -h) ;;
     esac
   done
 
-  # 检查help中的无效命令组合
+  # Check the invalid command combinations in help
   if [[ "$has_package" == "true" && ("$has_test_command" == "true" || "$has_u" == "true") ]]; then
-    echo "[ERROR] --package cannot be used with test(-u, --ophost_test, etc.), --ophost, --opapi, or --opgraph"
+    echo "[ERROR] --pkg cannot be used with test(-u, --ophost_test, etc.), --ophost, --opapi, or --opgraph"
     return 1
   fi
 
@@ -378,16 +379,20 @@ check_param() {
     exit 1
   fi
 
-  # --package不能与-u（UT模式，包含_test的参数）或者--ophost，--opapi，--opgraph同时存在
+  # -pkg不能与-u（UT模式，包含_test的参数）或者--ophost，--opapi，--opgraph同时存在
   if [[ "$ENABLE_PACKAGE" == "TRUE" ]]; then
     if [[ "$ENABLE_TEST" == "TRUE" ]]; then
-      echo "[ERROR] --package cannot be used with test(-u, --ophost_test, etc.)"
+      echo "[ERROR] --pkg cannot be used with test(-u, --ophost_test, etc.)"
       exit 1
     fi
 
     if [[ "$OP_HOST" == "TRUE" || "$OP_API" == "TRUE" || "$OP_GRAPH" == "TRUE" ]]; then
-      echo "[ERROR] --package cannot be used with --ophost, --opapi, --opgraph"
+      echo "[ERROR] --pkg cannot be used with --ophost, --opapi, --opgraph"
       exit 1
+    fi
+
+    if $(echo ${USE_CMD} | grep -wq "jit"); then
+      ENABLE_BINARY=FALSE
     fi
   fi
 
@@ -505,6 +510,7 @@ checkopts() {
   UT_TARGES=()
 
   ENABLE_GENOP=FALSE
+  ENABLE_GENOP_AICPU=FALSE
   GENOP_TYPE=""
   GENOP_NAME=""
 
@@ -532,7 +538,7 @@ checkopts() {
       # 检查 --help 前面的命令
       for prev_arg in "$@"; do
         case "$prev_arg" in
-          --package) SHOW_HELP="package" ;;
+          --pkg) SHOW_HELP="package" ;;
           --opkernel) SHOW_HELP="opkernel" ;;
           -u) SHOW_HELP="test" ;;
           --make_clean_all | --make_clean) SHOW_HELP="clean" ;;
@@ -545,6 +551,7 @@ checkopts() {
           --opgraph_test) SHOW_HELP="opgraph_test" ;;
           --run_example) SHOW_HELP="run_example" ;;
           --genop) SHOW_HELP="genop" ;;
+          --genop_aicpu) SHOW_HELP="genop_aicpu" ;;
         esac
       done
 
@@ -552,6 +559,28 @@ checkopts() {
       exit 0
     fi
   done
+
+  process_genop() {
+    local opt_name=$1
+    local genop_value=$2
+
+    if [[ "$opt_name" == "genop" ]]; then
+      ENABLE_GENOP=TRUE
+    elif [[ "$opt_name" == "genop_aicpu" ]]; then
+      ENABLE_GENOP_AICPU=TRUE
+    else
+      usage "genop"
+      exit 1
+    fi
+
+    if [[ "$genop_value" != *"/"* ]] || [[ "$genop_value" == *"/"*"/"* ]]; then
+      usage "$opt_name"
+      exit 1
+    fi
+
+    GENOP_TYPE=$(echo "$genop_value" | cut -d'/' -f1)
+    GENOP_NAME=$(echo "$genop_value" | cut -d'/' -f2)
+  }
 
   # Process the options
   while getopts $SUPPORTED_SHORT_OPTS opt; do
@@ -578,15 +607,10 @@ checkopts() {
           ENABLE_CUSTOM=TRUE
           ;;
         genop=*)
-          ENABLE_GENOP=TRUE
-          GENOP_NAME=${OPTARG#*=}
-          if [[ "$GENOP_NAME" != *"/"* ]] || [[  "$GENOP_NAME" == *"/"*"/"* ]]; then
-            usage "genop"
-            exit 1
-          fi
-
-          GENOP_TYPE=$(echo $GENOP_NAME | cut -d'/' -f1)
-          GENOP_NAME=$(echo $GENOP_NAME | cut -d'/' -f2)
+          process_genop "genop" "${OPTARG#*=}"
+          ;;
+        genop_aicpu=*)
+          process_genop "genop_aicpu" "${OPTARG#*=}"
           ;;
         soc=*)
           COMPUTE_UNIT=${OPTARG#*=}
@@ -599,7 +623,7 @@ checkopts() {
         cov) ENABLE_CONVERAGE=TRUE ;;
         noexec) ENABLE_UT_EXEC=FALSE ;;
         aicpu) AICPU_ONLY=TRUE ;;
-        package)
+        pkg)
           ENABLE_BINARY=TRUE
           ENABLE_PACKAGE=TRUE
           ;;
@@ -652,6 +676,14 @@ checkopts() {
   if [[ "$1" == "--run_example" ]]; then
     EXAMPLE_NAME="$2"
     EXAMPLE_MODE="$3"
+    if [[ -n "$4" ]]; then
+      PKG_MODE="$4"
+      VENDOR="custom"
+      if [[ -n "$5" ]]; then
+        VENDOR="$5"
+        VENDOR="${VENDOR#*=}"
+      fi
+    fi
   fi
 
   check_param
@@ -671,7 +703,16 @@ custom_cmake_args() {
 
 assemble_cmake_args() {
   if [[ "$ENABLE_ASAN" == "TRUE" ]]; then
-    CMAKE_ARGS="$CMAKE_ARGS -DENABLE_ASAN=TRUE"
+    set +e
+    echo 'int main() {return 0;}' | gcc -x c -fsanitize=address - -o asan_test >/dev/null 2>&1
+    if [ $? -ne 0 ]; then
+      echo "This environment does not have the ASAN library, no need enable ASAN"
+      ENABLE_ASAN=FALSE
+    else
+      $(rm -f asan_test)
+      CMAKE_ARGS="$CMAKE_ARGS -DENABLE_ASAN=TRUE"
+    fi
+    set -e
   fi
   if [[ "$ENABLE_VALGRIND" == "TRUE" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DENABLE_VALGRIND=TRUE"
@@ -730,28 +771,27 @@ assemble_cmake_args() {
   fi
 }
 
-# 清理CMake缓存文件
-clean_cmake_cache() {
+clean_build() {
   if [ -d "${BUILD_PATH}" ]; then
-    # 删除CMake缓存文件和目录
-    rm -f "${BUILD_PATH}/CMakeCache.txt"
-    rm -rf "${BUILD_PATH}/CMakeFiles"
-    rm -f "${BUILD_PATH}/cmake_install.cmake"
-    rm -f "${BUILD_PATH}/Makefile"
+    rm -rf ${BUILD_PATH}/*
+  fi
+}
+
+clean_build_out() {
+  if [ -d "${BUILD_OUT_PATH}" ]; then
+    rm -rf ${BUILD_OUT_PATH}/*
   fi
 }
 
 build_lib() {
   echo $dotted_line
   echo "Start to build libs ${BUILD_LIBS[@]}"
+  clean_build
 
   git submodule init && git submodule update
   if [ ! -d "${BUILD_PATH}" ]; then
     mkdir -p "${BUILD_PATH}"
   fi
-
-  # 清理CMake缓存
-  clean_cmake_cache
 
   cd "${BUILD_PATH}" && cmake ${CMAKE_ARGS} ..
 
@@ -766,33 +806,20 @@ build_lib() {
   echo $dotted_line
   echo "Build libs ${BUILD_LIBS[@]} success"
   echo $dotted_line
-
-  if [[ "$ENABLE_PACKAGE" == "TRUE" ]]; then
-    echo "--------------- build package start ---------------"
-    all_targets=$(cmake --build . --target help)
-    if echo "${all_targets}" | grep -wq "ascendc_impl_gen"; then
-      cmake --build . --target ascendc_impl_gen -- ${VERBOSE} -j $THREAD_NUM
-    fi
-    cmake ${CMAKE_ARGS} .. # get impl python files after ascendc_impl_gen
-    cmake --build . --target package -- ${VERBOSE} -j $THREAD_NUM
-    echo "--------------- build package end ---------------"
-  fi
 }
 
 build_binary() {
   if [[ "$ENABLE_TEST" == "TRUE" ]]; then
     return
   fi
-  
+
   echo $dotted_line
   echo "Start to build binary"
+  clean_build
 
   if [ ! -d "${BUILD_PATH}" ]; then
     mkdir -p "${BUILD_PATH}"
   fi
-
-  # 清理CMake缓存
-  clean_cmake_cache
 
   cd "${BUILD_PATH}" && cmake .. ${CMAKE_ARGS}
 
@@ -838,6 +865,8 @@ build_binary() {
 
 build_package() {
   echo "--------------- build package start ---------------"
+  clean_build_out
+
   if [[ "$ENABLE_BINARY" != "TRUE" && "$ENABLE_CUSTOM" != "TRUE" ]]; then
     # gen impl python files
     local all_targets=$(cmake --build . --target help)
@@ -847,9 +876,6 @@ build_package() {
     fi
   fi
 
-  # 清理CMake缓存
-  clean_cmake_cache
-
   cd "${BUILD_PATH}" && cmake ${CMAKE_ARGS} ..
   cmake --build . --target package -- ${VERBOSE} -j $THREAD_NUM
   echo "--------------- build package end ---------------"
@@ -858,14 +884,12 @@ build_package() {
 build_ut() {
   echo $dotted_line
   echo "Start to build ut"
+  clean_build
 
   git submodule init && git submodule update
   if [ ! -d "${BUILD_PATH}" ]; then
     mkdir -p "${BUILD_PATH}"
   fi
-
-  # 清理CMake缓存
-  clean_cmake_cache
 
   cd "${BUILD_PATH}" && cmake ${CMAKE_ARGS} ..
   cmake --build . --target ${UT_TARGES[@]} -- ${VERBOSE} -j $THREAD_NUM
@@ -877,22 +901,29 @@ build_ut() {
 build_example() {
   echo $dotted_line
   echo "Start to run example,name:${EXAMPLE_NAME} mode:${EXAMPLE_MODE}"
-
+  clean_build
   if [ ! -d "${BUILD_PATH}" ]; then
     mkdir -p "${BUILD_PATH}"
   fi
 
-  # 清理CMake缓存
-  clean_cmake_cache
-
   cd "${BUILD_PATH}"
   if [[ "${EXAMPLE_MODE}" == "eager" ]]; then
     file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_aclnn_${EXAMPLE_NAME}.cpp)
-    g++ ${file} -I ${INCLUDE_PATH} -I ${ACLNN_INCLUDE_PATH} -L ${EAGER_LIBRARY_OPP_PATH} -L ${EAGER_LIBRARY_PATH} -lopapi -lopapi_math -lascendcl -lnnopbase -o test_aclnn_${EXAMPLE_NAME}
+    if [[ "${PKG_MODE}" == "" ]]; then
+      g++ ${file} -I ${INCLUDE_PATH} -I ${ACLNN_INCLUDE_PATH} -L ${EAGER_LIBRARY_PATH} -lopapi_math -lascendcl -lnnopbase -o test_aclnn_${EXAMPLE_NAME}
+    elif [[ "${PKG_MODE}" == "cust" ]]; then
+      echo "pkg_mode:${PKG_MODE} vendor_name:${VENDOR}"
+      export CUST_LIBRARY_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/lib"     # 仅自定义算子需要
+      export CUST_INCLUDE_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/include" # 仅自定义算子需要
+      g++ ${file} -I ${INCLUDE_PATH} -I ${CUST_INCLUDE_PATH} -L ${CUST_LIBRARY_PATH} -L ${EAGER_LIBRARY_PATH} -lcust_opapi -lascendcl -lnnopbase -o test_aclnn_${EXAMPLE_NAME}
+    else
+      echo "Error: pkg_mode(${PKG_MODE}) must be cust."
+      exit 1
+    fi
     ./test_aclnn_${EXAMPLE_NAME}
   elif [[ "${EXAMPLE_MODE}" == "graph" ]]; then
     file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_geir_${EXAMPLE_NAME}.cpp)
-    g++ ${file} -I ${GRAPH_INCLUDE_PATH} -I ${GE_INCLUDE_PATH} -I ${LINUX_INCLUDE_PATH} -I ${INC_INCLUDE_PATH} -L ${GRAPH_LIBRARY_STUB_PATH} -L ${GRAPH_LIBRARY_PATH} -lgraph -lge_runner -lgraph_base -o test_geir_${EXAMPLE_NAME}
+    g++ ${file} -I ${GRAPH_INCLUDE_PATH} -I ${GE_INCLUDE_PATH} -I ${INCLUDE_PATH} -I ${INC_INCLUDE_PATH} -L ${GRAPH_LIBRARY_STUB_PATH} -L ${GRAPH_LIBRARY_PATH} -lgraph -lge_runner -lgraph_base -o test_geir_${EXAMPLE_NAME}
     ./test_geir_${EXAMPLE_NAME}
   else
     usage
@@ -901,12 +932,10 @@ build_example() {
 }
 
 gen_op() {
-
   if [[ -z "$GENOP_NAME" ]] || [[ -z "$GENOP_TYPE" ]]; then
     echo "Error: op_class or op_name is not set."
     usage "genop"
-  fi 
-
+  fi
 
   echo $dotted_line
   echo "Start to create the initial directory for ${GENOP_NAME} under ${GENOP_TYPE}"
@@ -926,8 +955,8 @@ gen_op() {
   rm -rf "${BASE_DIR}/op_host/config"
 
   for file in $(find "${BASE_DIR}" -name "*.h" -o -name "*.cpp"); do
-    head -n 14 "$file" > "${file}.tmp"
-    cat "${file}.tmp" > "$file"
+    head -n 14 "$file" >"${file}.tmp"
+    cat "${file}.tmp" >"$file"
     rm "${file}.tmp"
   done
 
@@ -941,6 +970,52 @@ gen_op() {
   done
 
   echo "Create the initial directory for ${GENOP_NAME} under ${GENOP_TYPE} success"
+}
+
+gen_aicpu_op() {
+  if [[ -z "$GENOP_NAME" ]] || [[ -z "$GENOP_TYPE" ]]; then
+    echo "Error: op_class or op_name is not set."
+    usage "genop"
+  fi
+
+  echo $dotted_line
+  echo "Start to create the AI CPU initial directory for ${GENOP_NAME} under ${GENOP_TYPE}"
+
+  if [ ! -d "${GENOP_TYPE}" ]; then
+    mkdir -p "${GENOP_TYPE}"
+    cp example/CMakeLists.txt "${GENOP_TYPE}/CMakeLists.txt"
+    sed -i '/add_subdirectory(conversion)/a add_subdirectory('"${GENOP_TYPE}"')' CMakeLists.txt
+  fi
+
+  BASE_DIR=${GENOP_TYPE}/${GENOP_NAME}
+  mkdir -p "${BASE_DIR}"
+
+  cp -r example/add_example_aicpu/* "${BASE_DIR}/"
+
+  rm -rf "${BASE_DIR}/examples"
+  rm -rf "${BASE_DIR}/op_host/config"
+
+  for file in $(find "${BASE_DIR}" -name "*.h" -o -name "*.cpp"); do
+    head -n 14 "$file" >"${file}.tmp"
+    cat "${file}.tmp" >"$file"
+    rm "${file}.tmp"
+  done
+
+  for file in $(find "${BASE_DIR}" -type f); do
+    sed -i "s/add_example_aicpu/${GENOP_NAME}/g" "$file"
+  done
+
+  for file in $(find "${BASE_DIR}" -name "add_example_aicpu*"); do
+    new_file=$(echo "$file" | sed "s/add_example_aicpu/${GENOP_NAME}_aicpu/g")
+    mv "$file" "$new_file"
+  done
+
+  for file in $(find "${BASE_DIR}" -name "add_example*"); do
+    new_file=$(echo "$file" | sed "s/add_example/${GENOP_NAME}/g")
+    mv "$file" "$new_file"
+  done
+
+  echo "Create the AI CPU initial directory for ${GENOP_NAME} under ${GENOP_TYPE} success"
 }
 
 main() {
@@ -969,7 +1044,13 @@ main() {
   if [[ "$ENABLE_GENOP" == "TRUE" ]]; then
     gen_op
   fi
+  if [[ "$ENABLE_GENOP_AICPU" == "TRUE" ]]; then
+    gen_aicpu_op
+  fi
 }
 
 set -o pipefail
+if [ $# -eq 0 ]; then
+  usage
+fi
 main "$@" | gawk '{print strftime("[%Y-%m-%d %H:%M:%S]"), $0}'

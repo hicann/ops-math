@@ -1,7 +1,7 @@
 /**
  * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -18,6 +18,10 @@
 #include "kernel_operator.h"
 using namespace AscendC;
 
+constexpr int32_t Align_DIV_COEF = 2;
+constexpr int32_t NUM_BFLOAT = 64;
+constexpr int32_t NUM_NOT_BFLOAT = 128;
+
 template <typename T1, typename T2>
 class KernelMulAddnAlignF16
 {
@@ -33,7 +37,7 @@ public:
 
         dataAlignCompute = 0;
         if constexpr (std::is_same<T1, bfloat16_t>::value) {
-            dataAlignCompute = dataAlign / 2;
+            dataAlignCompute = dataAlign / Align_DIV_COEF;
         } else {
             dataAlignCompute = dataAlign;
         }
@@ -61,11 +65,11 @@ public:
         }
 
         if constexpr (std::is_same<T1, bfloat16_t>::value) {
-            typeNum = 64;
+            typeNum = NUM_BFLOAT;
             shapeNLoop = (shapeNAlign + typeNum - 1) / typeNum;
             shapeNLast = shapeNAlign - (shapeNLoop - 1) * typeNum;
         } else {
-            typeNum = 128;
+            typeNum = NUM_NOT_BFLOAT;
             shapeNLoop = (shapeNAlign + typeNum - 1) / typeNum;
             shapeNLast = shapeNAlign - (shapeNLoop - 1) * typeNum;
         }

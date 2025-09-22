@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 # This file is a part of the CANN Open Software.
-# Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+# Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -79,7 +79,6 @@ else()
             -DCMAKE_C_FLAGS=${gtest_CFLAGS}
             -DCMAKE_INSTALL_PREFIX=${GTEST_INSTALL_PATH}
             -DCMAKE_INSTALL_LIBDIR=lib
-            -DBUILD_TESTING=OFF
             -DBUILD_SHARED_LIBS=OFF
             <SOURCE_DIR>
             BUILD_COMMAND $(MAKE)

@@ -1,7 +1,7 @@
 /**
  * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -47,6 +47,10 @@ constexpr int EIGHT_BLOCKS = 8;
 constexpr int DIFFS_ONE_BLOCK = 4;
 constexpr int C_V_DOUBLE = 2;
 constexpr int WORKSPACE_SIZE_ALIGN = 512;
+constexpr int64_t DOUBLE_BUFFER = 2;
+constexpr int INDEX_K_3 = 3;
+constexpr int64_t THREE_QUE = 3;
+constexpr int BASE_N = 96;
 
 template <typename T, int32_t bufferNum>
 class StftND {
@@ -64,13 +68,13 @@ public:
                 (__gm__ T*)workspace,
                 inTilingData->blockNum * inTilingData->aivBatchLoop * inTilingData->frameCount * inTilingData->nfft);
             outputGm.SetGlobalBuffer(
-                (__gm__ T*)y, inTilingData->matmulM * inTilingData->frameCount * inTilingData->batch * 2);
+                (__gm__ T*)y, inTilingData->matmulM * inTilingData->frameCount * inTilingData->batch * DOUBLE_BUFFER);
             gmReal.SetGlobalBuffer(
                 reinterpret_cast<__gm__ T*>(workspace) + windowSplitWorkspaceSize,
-                inTilingData->batch * inTilingData->matmulM * inTilingData->frameCount * 2);
+                inTilingData->batch * inTilingData->matmulM * inTilingData->frameCount * DOUBLE_BUFFER);
             gmImag.SetGlobalBuffer(
                 reinterpret_cast<__gm__ T*>(workspace) + windowSplitWorkspaceSize,
-                inTilingData->batch * inTilingData->matmulM * inTilingData->frameCount * 2);
+                inTilingData->batch * inTilingData->matmulM * inTilingData->frameCount * DOUBLE_BUFFER);
             pipe.InitBuffer(
                 inQueueInput, bufferNum,
                 (inTilingData->blkFrame * inTilingData->hop + (inTilingData->nfft - inTilingData->hop)) * sizeof(T));
@@ -80,13 +84,13 @@ public:
         if (g_coreType == AIC) {
             auto blockIdx = GetBlockIdx();
             a1Global.SetGlobalBuffer(
-                reinterpret_cast<__gm__ T*>(window), inTilingData->matmulM * inTilingData->nfft * 2);
+                reinterpret_cast<__gm__ T*>(window), inTilingData->matmulM * inTilingData->nfft * DOUBLE_BUFFER);
             bGlobal.SetGlobalBuffer(
                 reinterpret_cast<__gm__ T*>(workspace),
                 inTilingData->blockNum * inTilingData->nfft * inTilingData->frameCount * inTilingData->aivBatchLoop);
             matMulWorkspaceGm.SetGlobalBuffer(
                 reinterpret_cast<__gm__ T*>(workspace) + windowSplitWorkspaceSize,
-                inTilingData->matmulM * inTilingData->frameCount * inTilingData->batch * 2);
+                inTilingData->matmulM * inTilingData->frameCount * inTilingData->batch * DOUBLE_BUFFER);
 
             curCoreM_ = inTilingData->aicTotalLen;
             curCoreN_ = inTilingData->mmTilingData.N;
@@ -94,7 +98,8 @@ public:
             if (blockIdx % inTilingData->aicMatmulMCore >= inTilingData->aicMTailIdx) {
                 curCoreM_ = inTilingData->aicTailLen;
             }
-            baseN_ = 96;
+            // N基本块大小为96，经验调优
+            baseN_ = BASE_N;
             baseMK_ = baseM_ * baseK_;
             baseKN_ = baseK_ * baseN_;
             baseMN_ = baseM_ * baseN_;
@@ -108,7 +113,7 @@ public:
                 midTailN_ = L1N_;
             }
 
-            pipe.InitBuffer(inQueueL1, 3, baseMK_ * sizeof(T) * inK_);
+            pipe.InitBuffer(inQueueL1, depthL1_, baseMK_ * sizeof(T) * inK_);
             pipe.InitBuffer(inQueueA0, depthA0_, baseMK_ * sizeof(T));
             pipe.InitBuffer(inQueueB0, depthB0_, baseKN_ * sizeof(T));
             pipe.InitBuffer(outQueueCO, depthC0_, baseMN_ * sizeof(T));
@@ -153,7 +158,7 @@ public:
                 rowEven = inTilingData->aivTailEvenRow;
                 rowOdd = inTilingData->aivTailOddRow;
             }
-            if (blockIdx % 2 == 0) {
+            if (blockIdx % DOUBLE_BUFFER == 0) {
                 N = rowEven * inTilingData->frameCountAlign;
             } else {
                 N = rowOdd * inTilingData->frameCountAlign;
@@ -163,7 +168,7 @@ public:
             LocalTensor<uint32_t> maskBuf;
 
             uint16_t flag_id_mte3 = 3;
-            AscendC::CrossCoreSetFlag<2, PIPE_MTE3>(flag_id_mte3);
+            AscendC::CrossCoreSetFlag<DOUBLE_BUFFER, PIPE_MTE3>(flag_id_mte3);
 
             for (int32_t i = 1; i < aivBatchLoop; i++) {
                 if (i >= aivTailLoop && blockIdx >= aivBatchTailIdx) {
@@ -198,9 +203,9 @@ public:
                 AscendC::WaitEvent(flag_id_fix);
 
                 int32_t curBatch = (blockIdx / windowLoop) * aicBatchLoop + i;
-                int32_t gmRealOffset = curBatch * matmulM * frameCount * 2;
+                int32_t gmRealOffset = curBatch * matmulM * frameCount * DOUBLE_BUFFER;
                 int32_t gmImagOffset = gmRealOffset + frameCount;
-                int32_t outputOffset = curBatch * matmulM * frameCount * 2;
+                int32_t outputOffset = curBatch * matmulM * frameCount * DOUBLE_BUFFER;
 
                 gmRealOffset = gmRealOffset + offsetBase;
                 gmImagOffset = gmImagOffset + offsetBase;
@@ -210,7 +215,7 @@ public:
                 auto outputGmLocal = outputGm[outputOffset];
                 int32_t len = numPerRepeat;
                 int32_t nBurst = len / frameCountAlign;
-                int32_t offset = nBurst * frameCount * 2;
+                int32_t offset = nBurst * frameCount * DOUBLE_BUFFER;
                 for (int j = 0; j < repeats; j++) {
                     if (j == repeats - 1) {
                         len = N - numPerRepeat * j;
@@ -289,7 +294,7 @@ public:
                 cGM = matMulWorkspaceGm[outputOffset];
                 IterateAllTB();
                 uint16_t flag_id_fix = 1;
-                AscendC::CrossCoreSetFlag<2, PIPE_FIX>(flag_id_fix);
+                AscendC::CrossCoreSetFlag<DOUBLE_BUFFER, PIPE_FIX>(flag_id_fix);
             }
         }
     }
@@ -363,17 +368,17 @@ public:
         int32_t nfft = inTilingData->nfft;
         int32_t blkFrame = inTilingData->blkFrame;
         int32_t curBatch = (blockIdx / windowLoop) * batchLoop + batchLoopIndex;
-        int32_t batchOffset = blockIdx / 2;
+        int32_t batchOffset = blockIdx / DOUBLE_BUFFER;
 
         int32_t loopBlkFrame = windowLength / blkFrame;
         int32_t remainingFrame = windowLength % blkFrame;
-        int32_t halfBlkFrame = loopBlkFrame / 2;
+        int32_t halfBlkFrame = loopBlkFrame / DOUBLE_BUFFER;
         int32_t inputGmOffset = curBatch * (inTilingData->inputSize + nfft);
         int32_t windowSplitOffset =
             batchOffset * batchLoop * nfft * windowLength + batchLoopIndex * nfft * windowLength;
 
         // 判断BlockIdx是否为偶数
-        if (GetBlockIdx() % 2 == 0) {
+        if (GetBlockIdx() % DOUBLE_BUFFER == 0) {
             for (int32_t i = 0; i < halfBlkFrame; i++) {
                 CopyIn(i, blkFrame, inputGmOffset);
                 Compute(i, blkFrame);
@@ -465,7 +470,7 @@ private:
             iterBN = 0;
             a1Local = inQueueL1.DeQue<T>();
             for (int idxBNOut = 0; idxBNOut < midN - 1; ++idxBNOut) {
-                if (unlikely(idxBNOut == midN - 2)) {
+                if (unlikely(idxBNOut == midN - DOUBLE_BUFFER)) {
                     tmpB = inQueueL1.AllocTensor<T>();
                     CopyGMND2LMNZTranspose(tmpB, bGM, iterK, iterBN + baseN_, L1K_, midTailN_, globalK_);
                     inQueueL1.EnQue(tmpB);
@@ -484,7 +489,7 @@ private:
                 int nextK = 0;
                 int nextN = 0;
                 int nextUseL1M = L1M_;
-                if (unlikely(idxAMOut == midM - 2)) {
+                if (unlikely(idxAMOut == midM - DOUBLE_BUFFER)) {
                     nextUseL1M = midTailM_;
                 }
                 tmpA = inQueueL1.AllocTensor<T>();
@@ -551,8 +556,8 @@ private:
         inQueueA0.FreeTensor(a0Local);
         inQueueB0.FreeTensor(b0Local);
 
-        LoadDataA0v5(useL1M, 2, sizeInM, sizeInK, a1Local);
-        LoadDataB0v5(useL1K, 2, sizeInK, sizeInN, b1Local);
+        LoadDataA0v5(useL1M, DOUBLE_BUFFER, sizeInM, sizeInK, a1Local);
+        LoadDataB0v5(useL1K, DOUBLE_BUFFER, sizeInK, sizeInN, b1Local);
         a0Local = inQueueA0.DeQue<T>();
         b0Local = inQueueB0.DeQue<T>();
 
@@ -564,8 +569,8 @@ private:
         inQueueA0.FreeTensor(a0Local);
         inQueueB0.FreeTensor(b0Local);
 
-        LoadDataA0v5(useL1M, 3, sizeInM, sizeInK, a1Local);
-        LoadDataB0v5(useL1K, 3, sizeInK, sizeInN, b1Local);
+        LoadDataA0v5(useL1M, INDEX_K_3, sizeInM, sizeInK, a1Local);
+        LoadDataB0v5(useL1K, INDEX_K_3, sizeInK, sizeInN, b1Local);
         a0Local = inQueueA0.DeQue<T>();
         b0Local = inQueueB0.DeQue<T>();
         Mmad(
@@ -576,9 +581,8 @@ private:
         AscendC::PipeBarrier<PIPE_M>();
         inQueueA0.FreeTensor(a0Local);
         inQueueB0.FreeTensor(b0Local);
-
-        LoadDataA0v5(useL1M, 4, sizeInM, tailSizeInK, a1Local);
-        LoadDataB0v5(useL1K, 4, tailSizeInK, sizeInN, b1Local);
+        LoadDataA0v5(useL1M, DIFFS_ONE_BLOCK, sizeInM, tailSizeInK, a1Local);
+        LoadDataB0v5(useL1K, DIFFS_ONE_BLOCK, tailSizeInK, sizeInN, b1Local);
         a0Local = inQueueA0.DeQue<T>();
         b0Local = inQueueB0.DeQue<T>();
         Mmad(
@@ -624,7 +628,7 @@ private:
 
         uint8_t RepeatCeil = MatmulCeil(sizeInK, cubeRow_) * MatmulCeil(sizeInN, cubeCol_);
         int sizeInNCeil = MatmulCeil(sizeInN, cubeCol_) * cubeCol_;
-        RepeatCeil = RepeatCeil == 1 ? 2 : RepeatCeil;
+        RepeatCeil = RepeatCeil == 1 ? DOUBLE_BUFFER : RepeatCeil;
         LoadData2dParams param = {0, RepeatCeil, 1, 0, 0, false, inc};
         LoadData(b0Local, b1Local[idxInK * baseK_ * sizeInNCeil], param);
         inQueueB0.EnQue(b0Local);
@@ -700,6 +704,7 @@ private:
     int baseMK_;
     int baseKN_;
     int baseMN_;
+    constexpr static int depthL1_ = 3;
     constexpr static int depthA0_ = 2;
     constexpr static int depthB0_ = 2;
     constexpr static int depthC0_ = 2;
@@ -719,11 +724,10 @@ private:
 
     int midTailM_;
     int midTailN_;
-
-    TQue<QuePosition::A1, 3> inQueueL1;
-    TQue<QuePosition::A2, 2> inQueueA0;
-    TQue<QuePosition::B2, 2> inQueueB0;
-    TQue<QuePosition::CO1, 2> outQueueCO;
+    TQue<QuePosition::A1, THREE_QUE> inQueueL1;
+    TQue<QuePosition::A2, DOUBLE_BUFFER> inQueueA0;
+    TQue<QuePosition::B2, DOUBLE_BUFFER> inQueueB0;
+    TQue<QuePosition::CO1, DOUBLE_BUFFER> outQueueCO;
 
     GlobalTensor<T> a1Global;
     GlobalTensor<T> bGlobal;

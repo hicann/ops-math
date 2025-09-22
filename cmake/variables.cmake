@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 # This file is a part of the CANN Open Software.
-# Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+# Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -34,7 +34,7 @@ set(COMPILED_OP_DIRS CACHE STRING "Compiled Ops Dirs" FORCE)
 
 # src path
 get_filename_component(OPS_MATH_CMAKE_DIR           "${OPS_MATH_DIR}/cmake"                               REALPATH)
-get_filename_component(OPS_MATH_COMMON_INC          "${OPS_MATH_DIR}/common/include"                      REALPATH)
+get_filename_component(OPS_MATH_COMMON_INC          "${OPS_MATH_DIR}/common/inc"                          REALPATH)
 get_filename_component(OPS_MATH_COMMON_INC_COMMON   "${OPS_MATH_COMMON_INC}/common"                       REALPATH)
 get_filename_component(OPS_MATH_COMMON_INC_EXTERNAL "${OPS_MATH_COMMON_INC}/external"                     REALPATH)
 get_filename_component(OPS_MATH_COMMON_INC_HEADERS  "${OPS_MATH_COMMON_INC_EXTERNAL}/aclnn_kernels"       REALPATH)
@@ -123,8 +123,8 @@ set(OPAPI_INCLUDE
   ${AICPU_INC_DIRS}
   ${OPBASE_INC_DIRS}
   ${OPS_MATH_DIR}/
-  ${OPS_MATH_DIR}/common/include
-  ${OPS_MATH_DIR}/common/include/external
+  ${OPS_MATH_DIR}/common/inc
+  ${OPS_MATH_DIR}/common/inc/external
   ${TOP_DIR}/output/${PRODUCT}/aclnnop_resource
 )
 
@@ -136,7 +136,7 @@ set(OP_TILING_INCLUDE
   ${NPURUNTIME_INCLUDE_DIRS}
   ${OPBASE_INC_DIRS}
   ${OPS_MATH_DIR}
-  ${OPS_MATH_DIR}/common/include/
+  ${OPS_MATH_DIR}/common/inc/
 )
 
 set(OP_PROTO_INCLUDE
@@ -152,7 +152,7 @@ set(AICPU_INCLUDE
   ${C_SEC_INCLUDE}
   ${NNOPBASE_INCLUDE_DIRS}
   ${HCCL_EXTERNAL_INCLUDE}
-  ${OPS_CV_DIR}/common/include/common
+  ${OPS_MATH_DIR}/common/inc/common
   ${METADEF_INCLUDE_DIRS}
 )
 

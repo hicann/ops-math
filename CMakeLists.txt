@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 # This file is a part of the CANN Open Software.
-# Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+# Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -42,7 +42,7 @@ option(OP_KERNEL_UT "Enable kernel ut" OFF)
 option(UT_TEST_ALL "Enable all ut" OFF)
 set(BUILD_MODE "" CACHE STRING "build mode -O0/O1/O2/O3")
 set(ASCEND_COMPUTE_UNIT "ascend910b" CACHE STRING "soc that need to be compiled")
-set(ASCEND_ALL_COMPUTE_UNIT "ascend310p;ascend910;ascend910b;ascend910_93;ascend910_95" CACHE STRING "all soc list")
+set(ASCEND_ALL_COMPUTE_UNIT "ascend310p;ascend910;ascend910b;ascend910_93" CACHE STRING "all soc list")
 set(ASCEND_OP_NAME "" CACHE STRING "operators that need to be compiled")
 set(VENDOR_NAME "custom" CACHE STRING "vendor name")
 
@@ -74,6 +74,7 @@ include(${PROJECT_SOURCE_DIR}/cmake/ut.cmake)
 add_subdirectory(common)
 add_subdirectory(math)
 add_subdirectory(conversion)
+add_subdirectory(random)
 if(ENABLE_TEST)
   add_subdirectory(tests/ut)
 endif()
@@ -83,8 +84,11 @@ if("${ASCEND_OP_NAME}" STREQUAL "add_example")
 endif()
 
 message(STATUS "Ops for this compilation contains: ${COMPILED_OPS}")
+if(COMPILED_OPS STREQUAL "")
+  message(FATAL_ERROR "Specified ops not found in this depository, please check --ops paramater")
+endif()
 
-if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
+if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG AND NOT ENABLE_TEST)
   include(cmake/gen_ops_info.cmake)
   gen_ops_info_and_python()
 

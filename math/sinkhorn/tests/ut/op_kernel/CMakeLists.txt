@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 # This file is a part of the CANN Open Software.
-# Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+# Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -17,13 +17,13 @@ endforeach()
 
 
 # 需要将Tiling依赖的文件添加到CMakeLists.txt中
-set(elewise_common_tiling_files
-        ${CANN_ROOT}/ops/built-in/op_tiling/runtime/elewise_tiling.cc
-        )
+#set(elewise_common_tiling_files
+#        ${CANN_ROOT}/ops/built-in/op_tiling/runtime/elewise_tiling.cc
+#        )
 # 算子自己的tiling文件路径
 set(sinkhorn_tiling_files
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/sinkhorn_tiling.cpp
-    ${elewise_common_tiling_files}
+#    ${elewise_common_tiling_files}
     )
 # 使用AddOpTestCase
 # param1：算子名称，以kernel方式命名

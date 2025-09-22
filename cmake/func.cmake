@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 # This file is a part of the CANN Open Software.
-# Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+# Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -167,10 +167,18 @@ function(add_op_graph_modules)
     endif()
     target_include_directories(${GRAPH_PLUGIN_NAME}_obj PRIVATE ${OP_PROTO_INCLUDE})
     target_compile_definitions(${GRAPH_PLUGIN_NAME}_obj PRIVATE OPS_UTILS_LOG_SUB_MOD_NAME="OP_GRAPH" LOG_CPP)
-    target_compile_options(
-      ${GRAPH_PLUGIN_NAME}_obj PRIVATE $<$<NOT:$<BOOL:${ENABLE_TEST}>>:-DDISABLE_COMPILE_V1> -Dgoogle=ascend_private
+
+    if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
+      target_compile_options(
+        ${GRAPH_PLUGIN_NAME}_obj PRIVATE -Dgoogle=ascend_private -fvisibility=hidden
+      )
+    else()
+      target_compile_options(
+        ${GRAPH_PLUGIN_NAME}_obj PRIVATE $<$<NOT:$<BOOL:${ENABLE_TEST}>>:-DDISABLE_COMPILE_V1> -Dgoogle=ascend_private
                                        -fvisibility=hidden
       )
+    endif()
+
     target_link_libraries(
       ${GRAPH_PLUGIN_NAME}_obj
       PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx17,intf_pub_cxx17>>
@@ -181,7 +189,7 @@ function(add_op_graph_modules)
   endif()
 endfunction()
 
-# useage: add_modules_sources(DIR OPTYPE ACLNNTYPE) ACLNNTYPE 支持类型aclnn/aclnn_inner/aclnn_exclude OPTYPE 和 ACLNNTYPE
+# useage: add_modules_sources(OPTYPE ACLNNTYPE) ACLNNTYPE 支持类型aclnn/aclnn_inner/aclnn_exclude OPTYPE 和 ACLNNTYPE
 # 需一一对应
 macro(add_modules_sources)
   set(multiValueArgs OPTYPE ACLNNTYPE)
@@ -189,16 +197,12 @@ macro(add_modules_sources)
   cmake_parse_arguments(MODULE "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-  # opapi 默认全部编译
-  file(GLOB OPAPI_SRCS ${SOURCE_DIR}/op_api/*.cpp)
-  if(OPAPI_SRCS)
+  # opapi l0 默认全部编译
+  file(GLOB OPAPI_L0_SRCS ${SOURCE_DIR}/op_api/*.cpp)
+  list(FILTER OPAPI_L0_SRCS EXCLUDE REGEX "aclnn_")
+  if(OPAPI_L0_SRCS)
     add_opapi_modules()
-    target_sources(${OPHOST_NAME}_opapi_obj PRIVATE ${OPAPI_SRCS})
-  endif()
-
-  file(GLOB OPAPI_HEADERS ${SOURCE_DIR}/op_api/aclnn_*.h)
-  if(OPAPI_HEADERS)
-    target_sources(${OPHOST_NAME}_aclnn_exclude_headers INTERFACE ${OPAPI_HEADERS})
+    target_sources(${OPHOST_NAME}_opapi_obj PRIVATE ${OPAPI_L0_SRCS})
   endif()
 
   # 获取算子层级目录名称，判断是否编译该算子
@@ -218,6 +222,17 @@ macro(add_modules_sources)
       ${COMPILED_OP_DIRS} ${PARENT_DIR}
       CACHE STRING "Compiled Ops Dirs" FORCE
     )
+
+  file(GLOB OPAPI_HEADERS ${SOURCE_DIR}/op_api/aclnn_*.h)
+  if(OPAPI_HEADERS)
+    target_sources(${OPHOST_NAME}_aclnn_exclude_headers INTERFACE ${OPAPI_HEADERS})
+  endif()
+
+  file(GLOB OPAPI_L2_SRCS ${SOURCE_DIR}/op_api/aclnn_*.cpp)
+  if(OPAPI_L2_SRCS)
+    add_opapi_modules()
+    target_sources(${OPHOST_NAME}_opapi_obj PRIVATE ${OPAPI_L2_SRCS})
+  endif()
 
   file(GLOB OPINFER_SRCS ${SOURCE_DIR}/*_infershape*.cpp)
   if(OPINFER_SRCS)

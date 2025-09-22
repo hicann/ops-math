@@ -1,7 +1,7 @@
 /**
  * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -40,10 +40,10 @@ public:
     ge::graphStatus RunBigKernelTiling();
 
 private:
-    uint8_t GetDataTypeSize();
-    uint64_t GetTilingKeyVal();
+    uint8_t GetDataTypeSize() const;
+    uint64_t GetTilingKeyVal() const;
 
-    uint32_t GetNeedCoreNum(uint32_t coreNumPlatform);
+    uint32_t GetNeedCoreNum(uint32_t coreNumPlatform) const;
     uint32_t GetUsableUbMemory(uint64_t ubSizePlatForm);
     void AssignDataToEachCore();
     void FillTilingData();
@@ -103,7 +103,7 @@ ge::graphStatus IsFiniteTiling::RunBigKernelTiling()
     return ge::GRAPH_SUCCESS;
 }
 
-uint8_t IsFiniteTiling::GetDataTypeSize()
+uint8_t IsFiniteTiling::GetDataTypeSize() const
 {
     switch (dataType) {
         case ge::DT_FLOAT:
@@ -117,7 +117,7 @@ uint8_t IsFiniteTiling::GetDataTypeSize()
     }
 }
 
-uint64_t IsFiniteTiling::GetTilingKeyVal()
+uint64_t IsFiniteTiling::GetTilingKeyVal() const
 {
     switch (dataType) {
         case ge::DT_FLOAT:
@@ -131,7 +131,7 @@ uint64_t IsFiniteTiling::GetTilingKeyVal()
     }
 }
 
-uint32_t IsFiniteTiling::GetNeedCoreNum(uint32_t coreNumPlatform)
+uint32_t IsFiniteTiling::GetNeedCoreNum(uint32_t coreNumPlatform) const
 {
     uint32_t tempCoreNum = static_cast<uint32_t>(Ops::Base::CeilDiv(totalDataCount, static_cast<uint64_t>(DATA_BLOCK)));
     if (tempCoreNum < coreNumPlatform) {

@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 # This file is a part of the CANN Open Software.
-# Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+# Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -55,10 +55,7 @@ DATA_TYPE_DICT = {
     'uint2': 32
 }
 BFLOAT16_SUPPORT_MAP = {
-    "All": ["ascend910_95", "ascend910b", "ascend910_93", "ascend310b"],
-    "Conv2DBackpropFilter": ["ascend910b", "ascend910_93", "ascend910_95"],
-    "Conv3DBackpropFilter": ["ascend910b", "ascend910_93", "ascend910_95"],
-    "MatMul": ["ascend910b", "ascend910_93", "ascend910_95"]
+    "All": ["ascend910b", "ascend910_93", "ascend310b"]
 }
 OPS_REUSE_BINARY = ["Conv2DBackpropFilter", "Conv3DBackpropFilter"]
 ReuseBinary = [
@@ -66,7 +63,7 @@ ReuseBinary = [
     {"opp": "SplitV", "new_dtype": "int64", "reuse_dtype": "int32",
      "input_args": [2],  # the input argument which need replace
      "output_args": [],  # the output argument which need replace
-     "support_map": ["ascend910_95", "ascend910_93", "ascend910b", "ascend910", "ascend310p"]}
+     "support_map": ["ascend910_93", "ascend910b", "ascend910", "ascend310p"]}
 ]
 
 

@@ -4,7 +4,6 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
@@ -28,10 +27,10 @@
 - **参数说明：**
 
   - selfRef（aclTensor*，计算输入|计算输出）：输入输出tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，数据维度不支持8维以上。
-     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16
+     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16
      * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL
   - value（aclTensor*，计算输入）：Device侧的aclTensor，[数据格式](../../../docs/context/数据格式.md)支持ND，数据维度只能是0D或者size=1的1D。
-     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16
+     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16
      * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL
   - workspaceSize（uint64_t*，出参）：返回需要在Device侧申请的workspace大小。
   - executor（aclOpExecutor**，出参）：返回op执行器，包含了算子计算流程。

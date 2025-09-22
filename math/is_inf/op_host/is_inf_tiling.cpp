@@ -1,7 +1,7 @@
 /**
  * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -46,10 +46,10 @@ private:
     void AssignDataToEachCore();
     void FillTilingData();
 
-    uint8_t GetDataTypeSize();
-    uint64_t GetTilingKeyVal();
+    uint8_t GetDataTypeSize() const;
+    uint64_t GetTilingKeyVal() const;
 
-    uint32_t GetNeedCoreNum(uint32_t coreNumPlatform);
+    uint32_t GetNeedCoreNum(uint32_t coreNumPlatform) const;
     uint32_t GetUsableUbMemory(uint64_t ubSizePlatForm);
 
 private:
@@ -123,7 +123,7 @@ inline T1 IsInfTiling::CeilA2B(T1 a, T2 b) const
     }
 }
 
-uint8_t IsInfTiling::GetDataTypeSize()
+uint8_t IsInfTiling::GetDataTypeSize() const
 {
     switch (dataType) {
         case ge::DT_FLOAT16:
@@ -137,7 +137,7 @@ uint8_t IsInfTiling::GetDataTypeSize()
     }
 }
 
-uint64_t IsInfTiling::GetTilingKeyVal()
+uint64_t IsInfTiling::GetTilingKeyVal() const
 {
     switch (dataType) {
         case ge::DT_FLOAT16:
@@ -151,7 +151,7 @@ uint64_t IsInfTiling::GetTilingKeyVal()
     }
 }
 
-uint32_t IsInfTiling::GetNeedCoreNum(uint32_t coreNumPlatform)
+uint32_t IsInfTiling::GetNeedCoreNum(uint32_t coreNumPlatform) const
 {
     uint32_t tempCoreNum = (uint32_t)CeilA2B(totalDataCount, DATA_BLOCK);
     if (tempCoreNum < coreNumPlatform) {

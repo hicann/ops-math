@@ -1,7 +1,7 @@
 /**
  * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -37,6 +37,12 @@ public:
     Matmul<aType, bType, cType, biasType, MM_CFG> mm;
 
     static constexpr int32_t COMPLEX_COEFFICIENT = 2;
+    static constexpr int64_t DOUBLE_BUFFER = 2;
+    static constexpr int64_t BLOCK_FOR_ONE_REPEAT = 8;
+    static constexpr int64_t REPEAT_NUM_FOR_FP32 = 64;
+    static constexpr int32_t FLOAT_SIZE = 4;
+    static constexpr int32_t NEGATIVE_TWO = -2;
+    static constexpr int32_t POSITIVE_TWO = 2;
 
     __aicore__ inline STFTGeneralizedComplex(){};
 
@@ -66,42 +72,44 @@ public:
         aImagGm.SetGlobalBuffer(
             (__gm__ T*)workspace + splitWindowWorkspaceSizeAlign + matmulWorkspaceSize, matmulWorkspaceSize);
         bRealGm.SetGlobalBuffer(
-            (__gm__ T*)workspace + splitWindowWorkspaceSizeAlign + matmulWorkspaceSize * 2, matmulWorkspaceSize);
+            (__gm__ T*)workspace + splitWindowWorkspaceSizeAlign + matmulWorkspaceSize * DOUBLE_BUFFER,
+            matmulWorkspaceSize);
         bImagGm.SetGlobalBuffer(
             (__gm__ T*)workspace + splitWindowWorkspaceSizeAlign + matmulWorkspaceSize * 3, matmulWorkspaceSize);
-        outputGm.SetGlobalBuffer((__gm__ T*)y, tiling->batch * tiling->matmulM * tiling->matmulN * 2);
+        outputGm.SetGlobalBuffer((__gm__ T*)y, tiling->batch * tiling->matmulM * tiling->matmulN * DOUBLE_BUFFER);
         a1Global.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(window), tiling->matmulM * tiling->nfftAlign);
         a2Global.SetGlobalBuffer(
             reinterpret_cast<__gm__ T*>(window) + tiling->matmulM * tiling->nfftAlign,
             tiling->matmulM * tiling->nfftAlign);
 
-        size_t ubAlignBufferSize = (tiling->nFactorUbFormer * COMPLEX_COEFFICIENT + 64 - 1) / 64 * 64 * sizeof(T);
+        size_t ubAlignBufferSize = (tiling->nFactorUbFormer * COMPLEX_COEFFICIENT + REPEAT_NUM_FOR_FP32 - 1) /
+                                   REPEAT_NUM_FOR_FP32 * REPEAT_NUM_FOR_FP32 * sizeof(T);
 
         pipe->InitBuffer(inCopy, bufferNum, ubAlignBufferSize);
         pipe->InitBuffer(realOutCopy, bufferNum, ubAlignBufferSize);
         pipe->InitBuffer(imagOutCopy, bufferNum, ubAlignBufferSize);
 
         maskCount = tiling->maskUBSize / REPEAT_SIZE * REPEAT_SIZE / sizeof(int32_t); // 256B aligned
-        pipe->InitBuffer(aRealPingUB, maskCount / 2 * sizeof(T));
-        pipe->InitBuffer(aRealPongUB, maskCount / 2 * sizeof(T));
-        pipe->InitBuffer(aImagPingUB, maskCount / 2 * sizeof(T));
-        pipe->InitBuffer(aImagPongUB, maskCount / 2 * sizeof(T));
-        pipe->InitBuffer(bRealPingUB, maskCount / 2 * sizeof(T));
-        pipe->InitBuffer(bRealPongUB, maskCount / 2 * sizeof(T));
-        pipe->InitBuffer(bImagPingUB, maskCount / 2 * sizeof(T));
-        pipe->InitBuffer(bImagPongUB, maskCount / 2 * sizeof(T));
+        pipe->InitBuffer(aRealPingUB, maskCount / DOUBLE_BUFFER * sizeof(T));
+        pipe->InitBuffer(aRealPongUB, maskCount / DOUBLE_BUFFER * sizeof(T));
+        pipe->InitBuffer(aImagPingUB, maskCount / DOUBLE_BUFFER * sizeof(T));
+        pipe->InitBuffer(aImagPongUB, maskCount / DOUBLE_BUFFER * sizeof(T));
+        pipe->InitBuffer(bRealPingUB, maskCount / DOUBLE_BUFFER * sizeof(T));
+        pipe->InitBuffer(bRealPongUB, maskCount / DOUBLE_BUFFER * sizeof(T));
+        pipe->InitBuffer(bImagPingUB, maskCount / DOUBLE_BUFFER * sizeof(T));
+        pipe->InitBuffer(bImagPongUB, maskCount / DOUBLE_BUFFER * sizeof(T));
         pipe->InitBuffer(complexPingUB, maskCount * sizeof(T));
         pipe->InitBuffer(complexPongUB, maskCount * sizeof(T));
         pipe->InitBuffer(maskUB, tiling->maskUBSize);
         pipe->InitBuffer(tempUB, tiling->maskUBSize);
-        aRealPing = aRealPingUB.template Get<T>(maskCount / 2);
-        aRealPong = aRealPongUB.template Get<T>(maskCount / 2);
-        aImagPing = aImagPingUB.template Get<T>(maskCount / 2);
-        aImagPong = aImagPongUB.template Get<T>(maskCount / 2);
-        bRealPing = bRealPingUB.template Get<T>(maskCount / 2);
-        bRealPong = bRealPongUB.template Get<T>(maskCount / 2);
-        bImagPing = bImagPingUB.template Get<T>(maskCount / 2);
-        bImagPong = bImagPongUB.template Get<T>(maskCount / 2);
+        aRealPing = aRealPingUB.template Get<T>(maskCount / DOUBLE_BUFFER);
+        aRealPong = aRealPongUB.template Get<T>(maskCount / DOUBLE_BUFFER);
+        aImagPing = aImagPingUB.template Get<T>(maskCount / DOUBLE_BUFFER);
+        aImagPong = aImagPongUB.template Get<T>(maskCount / DOUBLE_BUFFER);
+        bRealPing = bRealPingUB.template Get<T>(maskCount / DOUBLE_BUFFER);
+        bRealPong = bRealPongUB.template Get<T>(maskCount / DOUBLE_BUFFER);
+        bImagPing = bImagPingUB.template Get<T>(maskCount / DOUBLE_BUFFER);
+        bImagPong = bImagPongUB.template Get<T>(maskCount / DOUBLE_BUFFER);
         complexPing = complexPingUB.template Get<T>(maskCount);
         complexPong = complexPongUB.template Get<T>(maskCount);
     }
@@ -149,7 +157,8 @@ public:
                                   nOffset * tiling->hopLength * COMPLEX_COEFFICIENT;
             int64_t realSplitWindowOffset = ((bOffset + i) * tiling->matmulN + nOffset) * tiling->nfftAlign;
             int64_t imagSplitWindowOffset = realSplitWindowOffset;
-            int64_t outputOffset = (((bOffset + i) * tiling->matmulM + mOffset) * tiling->matmulN + nOffset) * 2;
+            int64_t outputOffset =
+                (((bOffset + i) * tiling->matmulM + mOffset) * tiling->matmulN + nOffset) * DOUBLE_BUFFER;
             int64_t realOffset = (bOffset + i) * tiling->matmulM * tiling->matmulN + mOffset * tiling->matmulN +
                                  nIdx * mFactor * tiling->matmulNCoreFactor;
             int64_t imagOffset = realOffset;
@@ -177,15 +186,17 @@ private:
         // 奇数index清零：0, 0, 4, 0, 8, 0, 12, 0,...
         uint64_t maskBit1[2] = {0xAAAAAAAAAAAAAAAA, 0xAAAAAAAAAAAAAAAA};
         // float32, mask_h should be zero
-        if (sizeof(T) == 4) {
+        if (sizeof(T) == FLOAT_SIZE) {
             maskBit1[1] = 0;
         }
 
         UnaryRepeatParams repeatParams;
         repeatParams.dstBlkStride = 1;
         repeatParams.srcBlkStride = 1;
-        repeatParams.dstRepStride = 8;
-        repeatParams.srcRepStride = 8;
+        // 默认一个repeat跳8个block
+        repeatParams.dstRepStride = BLOCK_FOR_ONE_REPEAT;
+        // 默认一个repeat跳8个block
+        repeatParams.srcRepStride = BLOCK_FOR_ONE_REPEAT;
         Muls(maskTemp, maskTemp, 0, maskBit1, maskCount * sizeof(int32_t) / REPEAT_SIZE, repeatParams);
 
         // 生成等差数列：-2， 0， 2， 4， 6， 8， 10，12，...
@@ -194,7 +205,7 @@ private:
         AscendC::SetFlag<AscendC::HardEvent::V_S>(0);
         AscendC::WaitFlag<AscendC::HardEvent::V_S>(0);
 
-        ArithProgression<int32_t>(temp, (int32_t)-2, (int32_t)2, maskCount);
+        ArithProgression<int32_t>(temp, NEGATIVE_TWO, POSITIVE_TWO, maskCount);
 
         // 加上地址偏移offset = imagbase-realbase：offset-2, offset, offset+2, offset+4, ..., offset+12, ...
         int32_t offset = static_cast<int32_t>(reinterpret_cast<uintptr_t>(aImagPing.GetPhyAddr())) -
@@ -205,11 +216,10 @@ private:
         // 偶数index清零： 0， offset, 0, offset+4, 0, offset+8, 0, offset+12,...
         uint64_t maskBit2[2] = {0x5555555555555555, 0x5555555555555555};
         // float32, mask_h should be zero
-        if (sizeof(T) == 4) {
+        if (sizeof(T) == FLOAT_SIZE) {
             maskBit2[1] = 0;
         }
-        Muls(temp, temp, 0, maskBit2, maskCount / 64, repeatParams);
-
+        Muls(temp, temp, 0, maskBit2, maskCount / REPEAT_NUM_FOR_FP32, repeatParams);
         // 相加: 0, offset, 4, offset+4, 8, offset+8, 12, offset+12,...
         Add(maskTemp, maskTemp, temp, maskCount);
         mask = maskTemp.ReinterpretCast<uint32_t>();
@@ -218,13 +228,13 @@ private:
     __aicore__ inline void GatherForSmallNFactorAlign(
         int64_t realOffset, int64_t imagOffset, int64_t outputOffset, uint32_t mFactor, uint32_t nFactor)
     {
-        int32_t complexCount = mFactor * nFactor * 2;
-        int32_t ubCount = tiling->maskUBSize / sizeof(int32_t) / 2;
+        int32_t complexCount = mFactor * nFactor * DOUBLE_BUFFER;
+        int32_t ubCount = tiling->maskUBSize / sizeof(int32_t) / DOUBLE_BUFFER;
         int32_t gatherCountPerLoop = complexCount > maskCount ? maskCount : complexCount;
 
-        gatherCountPerLoop = gatherCountPerLoop - gatherCountPerLoop % (nFactor * 2);
-        int32_t realCountPerLoop = gatherCountPerLoop / 2;
-        int32_t imagCountPerLoop = gatherCountPerLoop / 2;
+        gatherCountPerLoop = gatherCountPerLoop - gatherCountPerLoop % (nFactor * DOUBLE_BUFFER);
+        int32_t realCountPerLoop = gatherCountPerLoop / DOUBLE_BUFFER;
+        int32_t imagCountPerLoop = gatherCountPerLoop / DOUBLE_BUFFER;
 
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID1);
@@ -264,9 +274,9 @@ private:
             aImagUB = aImagUB + bRealUB;
             PipeBarrier<PIPE_V>();
 
-            Gather(complexUB, aRealUB, mask, 0, 2 * copyLen / sizeof(T));
+            Gather(complexUB, aRealUB, mask, 0, DOUBLE_BUFFER * copyLen / sizeof(T));
             if (tiling->normalized) {
-                Muls(complexUB, complexUB, tiling->rootNfft, 2 * copyLen / sizeof(T));
+                Muls(complexUB, complexUB, tiling->rootNfft, DOUBLE_BUFFER * copyLen / sizeof(T));
             }
 
             AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(event_id);
@@ -278,12 +288,12 @@ private:
             int32_t loops = copyLen / sizeof(T) / nFactor;
 
             DataCopyExtParams copyParams{
-                static_cast<uint16_t>(loops), static_cast<uint32_t>(nFactor * 2 * sizeof(T)), 0,
-                static_cast<uint32_t>(2 * (tiling->matmulN - nFactor) * sizeof(T)), 0};
+                static_cast<uint16_t>(loops), static_cast<uint32_t>(nFactor * DOUBLE_BUFFER * sizeof(T)), 0,
+                static_cast<uint32_t>(DOUBLE_BUFFER * (tiling->matmulN - nFactor) * sizeof(T)), 0};
             DataCopyPad(outputGm[outputOffset], complexUB, copyParams);
 
             AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(event_id);
-            outputOffset += 2 * loops * tiling->matmulN;
+            outputOffset += DOUBLE_BUFFER * loops * tiling->matmulN;
             ping = 1 - ping;
         }
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
@@ -294,11 +304,11 @@ private:
         int64_t realOffset, int64_t imagOffset, int64_t outputOffset, uint32_t mFactor, uint32_t nFactor)
     {
         int32_t nFactorAlign = (nFactor * sizeof(T) + BLOCK_SIZE - 1) / BLOCK_SIZE * BLOCK_SIZE / sizeof(T);
-        int32_t complexCount = mFactor * nFactorAlign * 2;
+        int32_t complexCount = mFactor * nFactorAlign * DOUBLE_BUFFER;
         int32_t gatherCountPerLoop = complexCount > maskCount ? maskCount : complexCount;
-        gatherCountPerLoop = gatherCountPerLoop - gatherCountPerLoop % (nFactorAlign * 2);
-        int32_t realCountPerLoop = gatherCountPerLoop / 2;
-        int32_t imagCountPerLoop = gatherCountPerLoop / 2;
+        gatherCountPerLoop = gatherCountPerLoop - gatherCountPerLoop % (nFactorAlign * DOUBLE_BUFFER);
+        int32_t realCountPerLoop = gatherCountPerLoop / DOUBLE_BUFFER;
+        int32_t imagCountPerLoop = gatherCountPerLoop / DOUBLE_BUFFER;
 
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID1);
@@ -340,7 +350,7 @@ private:
             aImagUB = aImagUB + bRealUB;
             PipeBarrier<PIPE_V>();
 
-            int32_t count = 2 * nFactorAlign * loops;
+            int32_t count = DOUBLE_BUFFER * nFactorAlign * loops;
 
             Gather(complexUB, aRealUB, mask, 0, count);
 
@@ -351,16 +361,17 @@ private:
             AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(event_id);
             AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(event_id);
 
-            uint32_t srcGap = (nFactorAlign - nFactor) * 2 * sizeof(T) > BLOCK_SIZE ? 1 : 0;
+            uint32_t srcGap = (nFactorAlign - nFactor) * DOUBLE_BUFFER * sizeof(T) > BLOCK_SIZE ? 1 : 0;
 
             DataCopyPad(
                 outputGm[outputOffset], complexUB,
-                {static_cast<uint16_t>(loops), static_cast<uint32_t>(nFactor * 2 * sizeof(T)),
-                 static_cast<uint32_t>(srcGap), static_cast<uint32_t>(2 * (tiling->matmulN - nFactor) * sizeof(T)), 0});
+                {static_cast<uint16_t>(loops), static_cast<uint32_t>(nFactor * DOUBLE_BUFFER * sizeof(T)),
+                 static_cast<uint32_t>(srcGap),
+                 static_cast<uint32_t>(DOUBLE_BUFFER * (tiling->matmulN - nFactor) * sizeof(T)), 0});
 
             AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(event_id);
 
-            outputOffset += 2 * loops * tiling->matmulN;
+            outputOffset += DOUBLE_BUFFER * loops * tiling->matmulN;
             ping = 1 - ping;
         }
 
@@ -372,8 +383,8 @@ private:
         int64_t realOffset, int64_t imagOffset, int64_t outputOffset, uint32_t mFactor, uint32_t nFactor)
     {
         int32_t gatherCountPerLoop = tiling->maskUBSize / sizeof(int32_t);
-        int32_t realCountPerLoop = gatherCountPerLoop / 2;
-        int32_t imagCountPerLoop = gatherCountPerLoop / 2;
+        int32_t realCountPerLoop = gatherCountPerLoop / DOUBLE_BUFFER;
+        int32_t imagCountPerLoop = gatherCountPerLoop / DOUBLE_BUFFER;
 
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID1);
@@ -417,10 +428,10 @@ private:
                 aImagUB = aImagUB + bRealUB;
                 PipeBarrier<PIPE_V>();
 
-                Gather(complexUB, aRealUB, mask, 0, 2 * copyLen / sizeof(T));
+                Gather(complexUB, aRealUB, mask, 0, DOUBLE_BUFFER * copyLen / sizeof(T));
 
                 if (tiling->normalized) {
-                    Muls(complexUB, complexUB, tiling->rootNfft, 2 * copyLen / sizeof(T));
+                    Muls(complexUB, complexUB, tiling->rootNfft, DOUBLE_BUFFER * copyLen / sizeof(T));
                 }
 
                 AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(event_id);
@@ -432,8 +443,8 @@ private:
                 int32_t loops = copyLen / sizeof(T) / nFactor;
 
                 DataCopyPad(
-                    outputGm[outputOffset + 2 * (i * copyLen) / sizeof(T) + 2 * m * nFactor], complexUB,
-                    {1, static_cast<uint32_t>(copyLen * 2), 0, 0, 0});
+                    outputGm[outputOffset + DOUBLE_BUFFER * (i * copyLen) / sizeof(T) + DOUBLE_BUFFER * m * nFactor],
+                    complexUB, {1, static_cast<uint32_t>(copyLen * DOUBLE_BUFFER), 0, 0, 0});
 
                 AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(event_id);
                 ping = 1 - ping;
@@ -447,8 +458,8 @@ private:
         int64_t realOffset, int64_t imagOffset, int64_t outputOffset, uint32_t mFactor, uint32_t nFactor)
     {
         int32_t gatherCountPerLoop = tiling->maskUBSize / sizeof(int32_t);
-        int32_t realCountPerLoop = gatherCountPerLoop / 2;
-        int32_t imagCountPerLoop = gatherCountPerLoop / 2;
+        int32_t realCountPerLoop = gatherCountPerLoop / DOUBLE_BUFFER;
+        int32_t imagCountPerLoop = gatherCountPerLoop / DOUBLE_BUFFER;
 
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID1);
@@ -491,10 +502,10 @@ private:
                 aImagUB = aImagUB + bRealUB;
                 PipeBarrier<PIPE_V>();
 
-                Gather(complexUB, aRealUB, mask, 0, 2 * copyLen / sizeof(T));
+                Gather(complexUB, aRealUB, mask, 0, DOUBLE_BUFFER * copyLen / sizeof(T));
 
                 if (tiling->normalized) {
-                    Muls(complexUB, complexUB, tiling->rootNfft, 2 * copyLen / sizeof(T));
+                    Muls(complexUB, complexUB, tiling->rootNfft, DOUBLE_BUFFER * copyLen / sizeof(T));
                 }
 
                 AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(event_id);
@@ -506,8 +517,8 @@ private:
                 int32_t loops = copyLen / sizeof(T) / nFactor;
 
                 DataCopyPad(
-                    outputGm[outputOffset + 2 * (i * copyLen) / sizeof(T) + 2 * m * nFactor], complexUB,
-                    {1, static_cast<uint32_t>(copyLen * 2), 0, 0, 0});
+                    outputGm[outputOffset + DOUBLE_BUFFER * (i * copyLen) / sizeof(T) + DOUBLE_BUFFER * m * nFactor],
+                    complexUB, {1, static_cast<uint32_t>(copyLen * DOUBLE_BUFFER), 0, 0, 0});
 
                 AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(event_id);
                 ping = 1 - ping;
@@ -522,13 +533,13 @@ private:
     {
         int32_t ubCount = tiling->maskUBSize / sizeof(int32_t);
         if (nFactor * sizeof(T) % BLOCK_SIZE == 0) {
-            if (ubCount >= nFactor * 2) {
+            if (ubCount >= nFactor * DOUBLE_BUFFER) {
                 GatherForSmallNFactorAlign(realOffset, imagOffset, outputOffset, mFactor, nFactor);
             } else {
                 GatherForLargeNFactorAlign(realOffset, imagOffset, outputOffset, mFactor, nFactor);
             }
         } else {
-            if (ubCount >= nFactor * 2) {
+            if (ubCount >= nFactor * DOUBLE_BUFFER) {
                 GatherForSmallNFactorNonAlign(realOffset, imagOffset, outputOffset, mFactor, nFactor);
             } else {
                 GatherForLargeNFactorNonAlign(realOffset, imagOffset, outputOffset, mFactor, nFactor);
@@ -644,11 +655,14 @@ private:
         LocalTensor<T> imagOutputLocal = imagOutCopy.template AllocTensor<T>();
 
         uint64_t rsvdCnt = 0;
-        uint16_t repeatTimes = (colNum * 2 + 64 - 1) / 64;
+        uint16_t repeatTimes = (colNum * DOUBLE_BUFFER + REPEAT_NUM_FOR_FP32 - 1) / REPEAT_NUM_FOR_FP32;
 
-        GatherMask(realOutputLocal, inputLocal, 1, false, 0, {1, repeatTimes, 8, 8}, rsvdCnt);
-        GatherMask(imagOutputLocal, inputLocal, 2, false, 0, {1, repeatTimes, 8, 8}, rsvdCnt);
-
+        GatherMask(
+            realOutputLocal, inputLocal, 1, false, 0, {1, repeatTimes, BLOCK_FOR_ONE_REPEAT, BLOCK_FOR_ONE_REPEAT},
+            rsvdCnt);
+        GatherMask(
+            imagOutputLocal, inputLocal, DOUBLE_BUFFER, false, 0,
+            {1, repeatTimes, BLOCK_FOR_ONE_REPEAT, BLOCK_FOR_ONE_REPEAT}, rsvdCnt);
         realOutCopy.EnQue(realOutputLocal);
         imagOutCopy.EnQue(imagOutputLocal);
         inCopy.FreeTensor(inputLocal);

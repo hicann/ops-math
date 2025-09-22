@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 # This file is a part of the CANN Open Software.
-# Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+# Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -44,6 +44,9 @@ if(UT_TEST_ALL OR OP_HOST_UT)
   target_compile_definitions(${OP_HOST_UT_EXE} PRIVATE LOG_CPP)
   target_compile_options(${OP_HOST_UT_EXE} PUBLIC -fPIE -fno-access-control)
   add_dependencies(${OP_HOST_UT_EXE} ${OPHOST_NAME}_ut)
+  target_include_directories(${OP_HOST_UT_EXE} PRIVATE
+      ${ASCEND_DIR}/pkg_inc
+      )
   target_link_libraries(${OP_HOST_UT_EXE} PRIVATE
       $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
       -Wl,--whole-archive

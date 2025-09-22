@@ -1,9 +1,9 @@
 /**
- * Copyright(c) Huawei Technologies Co., Ltd.2025. All rights reserved.
- * This File is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License");
- * Please refer to the Licence for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * This file is a part of the CANN Open Software.
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
@@ -20,13 +20,6 @@
 using namespace AscendC;
 using namespace ge;
 
-enum NORM_VALUES
-{
-    BACKWARD = 1,
-    FORWARD = 2,
-    ORTHO = 3
-};
-
 namespace optiling {
 
 ge::graphStatus Rfft1DBaseTiling::GetPlatformInfo()
@@ -41,7 +34,6 @@ ge::graphStatus Rfft1DBaseTiling::GetPlatformInfo()
     } else {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformPtr);
         coreNum = ascendcPlatform.GetCoreNum();
-
         if (coreNum < 1) {
             return ge::GRAPH_FAILED;
         }
@@ -62,13 +54,12 @@ ge::graphStatus Rfft1DBaseTiling::GetShapeAttrsInfo()
     auto inputXDesc = context_->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, inputXDesc);
     dtype = context_->GetInputDesc(0)->GetDataType();
-
     if (dtype != ge::DataType::DT_FLOAT) {
         OP_LOGE(context_->GetNodeName(), "Rfft1D support float32");
         return ge::GRAPH_FAILED;
     }
 
-    if (normal != BACKWARD && normal != FORWARD && normal != ORTHO) {
+    if (normal != static_cast<int32_t>(NORM_VALUES::BACKWARD) && normal !=  static_cast<int32_t>(NORM_VALUES::FORWARD) && normal !=  static_cast<int32_t>(NORM_VALUES::ORTHO)) {
         OP_LOGE(context_->GetNodeName(), "Incorrect norm parameter value");
         return ge::GRAPH_FAILED;
     }

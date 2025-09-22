@@ -4,7 +4,6 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
@@ -73,14 +72,14 @@
 
   - self(aclTensor*, 计算输入)：待填充的原输入数据，Device侧的aclTensor。shape支持0-8维，value与self的数据类型满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
     - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128。
+    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128。
   - pad(aclIntArray*, 计算输入)：输入中各轴需要填充的维度，host侧的aclIntArray。数组长度必须为偶数且不能超过self维度的两倍。
 
   - value(aclScalar*, 计算输入)：填充部分的填充值，host侧的aclScalar。value与self的数据类型满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)）。
 
   - out(aclTensor*, 计算输出)：填充后的输出结果，Device侧的aclTensor。shape需要满足示例中的推导规则，数据类型需要与self一致，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
     - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128。
+    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128。
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
 
   - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。

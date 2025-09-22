@@ -79,87 +79,99 @@ function(pack_built_in)
       WORLD_READ WORLD_EXECUTE
   )
 
-    set(SCRIPTS_FILES
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/check_version_required.awk
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_func.inc
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_interface.bash
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_interface.csh
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_interface.fish
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/version_compatiable.inc
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/py/merge_binary_info_config.py
-    )
+  set(SCRIPTS_FILES
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/check_version_required.awk
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_func.inc
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_interface.bash
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_interface.csh
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_interface.fish
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/version_compatiable.inc
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/py/merge_binary_info_config.py
+  )
 
-    install(FILES ${SCRIPTS_FILES}
-        DESTINATION ops_math/script
-    )
-    set(COMMON_FILES
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/install_common_parser.sh
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_func_v2.inc
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_installer.inc
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/script_operator.inc
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/version_cfg.inc
-    )
+  install(FILES ${SCRIPTS_FILES}
+      DESTINATION ops_math/script
+  )
+  set(COMMON_FILES
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/install_common_parser.sh
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_func_v2.inc
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_installer.inc
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/script_operator.inc
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/version_cfg.inc
+  )
 
-    set(PACKAGE_FILES
-        ${COMMON_FILES}
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/multi_version.inc
-    )
-    set(LATEST_MANGER_FILES
-        ${COMMON_FILES}
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_func.inc
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/version_compatiable.inc
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/check_version_required.awk
-    )
-    set(CONF_FILES
-        ${CMAKE_SOURCE_DIR}/scripts/package/common/cfg/path.cfg
-    )
-    install(FILES ${CMAKE_SOURCE_DIR}/scripts/package/version.info
-        DESTINATION .
-    )
-    install(FILES ${CONF_FILES}
-        DESTINATION ops_math/conf
-    )
-    install(FILES ${PACKAGE_FILES}
-        DESTINATION ops_math/script
-    )
-    install(FILES ${LATEST_MANGER_FILES}
-        DESTINATION latest_manager
-    )
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/scripts/package/latest_manager/scripts/
-        DESTINATION latest_manager
-    )
-    set(BIN_FILES
-        ${CMAKE_SOURCE_DIR}/scripts/package/ops_math/scripts/prereq_check.bash
-        ${CMAKE_SOURCE_DIR}/scripts/package/ops_math/scripts/prereq_check.csh
-        ${CMAKE_SOURCE_DIR}/scripts/package/ops_math/scripts/prereq_check.fish
-        ${CMAKE_SOURCE_DIR}/scripts/package/ops_math/scripts/setenv.bash
-        ${CMAKE_SOURCE_DIR}/scripts/package/ops_math/scripts/setenv.csh
-        ${CMAKE_SOURCE_DIR}/scripts/package/ops_math/scripts/setenv.fish
-    )
-    install(FILES ${BIN_FILES}
-        DESTINATION ops_math/bin
-    )
+  set(PACKAGE_FILES
+      ${COMMON_FILES}
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/multi_version.inc
+  )
+  set(LATEST_MANGER_FILES
+      ${COMMON_FILES}
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_func.inc
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/version_compatiable.inc
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/check_version_required.awk
+  )
+  set(CONF_FILES
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/cfg/path.cfg
+  )
+  install(FILES ${CMAKE_SOURCE_DIR}/version.info
+      DESTINATION .
+  )
+  install(FILES ${CONF_FILES}
+      DESTINATION ops_math/conf
+  )
+  install(FILES ${PACKAGE_FILES}
+      DESTINATION ops_math/script
+  )
+  install(FILES ${LATEST_MANGER_FILES}
+      DESTINATION latest_manager
+  )
+  install(DIRECTORY ${CMAKE_SOURCE_DIR}/scripts/package/latest_manager/scripts/
+      DESTINATION latest_manager
+  )
+  set(BIN_FILES
+      ${CMAKE_SOURCE_DIR}/scripts/package/ops_math/scripts/prereq_check.bash
+      ${CMAKE_SOURCE_DIR}/scripts/package/ops_math/scripts/prereq_check.csh
+      ${CMAKE_SOURCE_DIR}/scripts/package/ops_math/scripts/prereq_check.fish
+      ${CMAKE_SOURCE_DIR}/scripts/package/ops_math/scripts/setenv.bash
+      ${CMAKE_SOURCE_DIR}/scripts/package/ops_math/scripts/setenv.csh
+      ${CMAKE_SOURCE_DIR}/scripts/package/ops_math/scripts/setenv.fish
+  )
+  install(FILES ${BIN_FILES}
+      DESTINATION ops_math/bin
+  )
 
+  string(FIND "${ASCEND_COMPUTE_UNIT}" ";" SEMICOLON_INDEX)
+  if (SEMICOLON_INDEX GREATER -1)
+      # 截取分号前的字串
+      math(EXPR SUBSTRING_LENGTH "${SEMICOLON_INDEX}")
+      string(SUBSTRING "${ASCEND_COMPUTE_UNIT}" 0 "${SUBSTRING_LENGTH}" compute_unit)
+  else()
+      # 没有分号取全部内容
+      set(compute_unit "${ASCEND_COMPUTE_UNIT}")
+  endif()
 
-    # ============= CPack =============
-    set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
-    set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-    set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}")
+  message(STATUS "current compute_unit is: ${compute_unit}")
 
-    set(CPACK_INSTALL_PREFIX "/")
+  # ============= CPack =============
+  set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
+  set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+  set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}")
 
-    set(CPACK_CMAKE_SOURCE_DIR "${CMAKE_SOURCE_DIR}")
-    set(CPACK_CMAKE_BINARY_DIR "${CMAKE_BINARY_DIR}")
-    set(CPACK_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
-    set(CPACK_CMAKE_CURRENT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-    # set(CPACK_COMPONENTS_ALL runtime documentation)
-    set(CPACK_ARCH "${ARCH}")
-    set(CPACK_SET_DESTDIR ON)
-    set(CPACK_GENERATOR External)
-    set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_SOURCE_DIR}/cmake/makeself_built_in.cmake")
-    set(CPACK_EXTERNAL_ENABLE_STAGING true)
-    set(CPACK_PACKAGE_DIRECTORY "${CMAKE_INSTALL_PREFIX}")
+  set(CPACK_INSTALL_PREFIX "/")
 
-    message(STATUS "CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
-    include(CPack)
+  set(CPACK_CMAKE_SOURCE_DIR "${CMAKE_SOURCE_DIR}")
+  set(CPACK_CMAKE_BINARY_DIR "${CMAKE_BINARY_DIR}")
+  set(CPACK_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
+  set(CPACK_CMAKE_CURRENT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+  # set(CPACK_COMPONENTS_ALL runtime documentation)
+  set(CPACK_SOC "${compute_unit}")
+  set(CPACK_ARCH "${ARCH}")
+  set(CPACK_SET_DESTDIR ON)
+  set(CPACK_GENERATOR External)
+  set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_SOURCE_DIR}/cmake/makeself_built_in.cmake")
+  set(CPACK_EXTERNAL_ENABLE_STAGING true)
+  set(CPACK_PACKAGE_DIRECTORY "${CMAKE_INSTALL_PREFIX}")
+
+  message(STATUS "CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
+  include(CPack)
 endfunction()

@@ -4,7 +4,6 @@
 
 |产品             |  是否支持  |
 |:-------------------------|:----------:|
-|  <term>昇腾910_95 AI处理器</term>   |     ×    |
 |  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     √    |
 |  <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>     |     √    |
 |  <term>Atlas 200I/500 A2 推理产品</term>    |     ×    |
@@ -21,12 +20,9 @@
   逐个元素计算过程见公式：
 
   $$
-   \left\{
-	\begin{array}{ll}
 		q_o=(q_i+q_{bias})/\sqrt{dim\_per\_head} \\
 		k_o=k_i+k_{bias} \\
         v_o=v_i+v_{bias} 
-	\end{array}\right.
   $$
 
   公式中：
@@ -39,56 +35,175 @@
 
 每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnTransformBiasRescaleQkvGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnTransformBiasRescaleQkv”接口执行计算。
 
-- `aclnnStatus aclnnTransformBiasRescaleQkvGetWorkspaceSize(const aclTensor *qkv,
+```Cpp
+aclnnStatus aclnnTransformBiasRescaleQkvGetWorkspaceSize(
+  const aclTensor   *qkv,
     const aclTensor *qkvBias,
-    int64_t numHeads,
+    int64_t          numHeads,
     const aclTensor *qOut,
     const aclTensor *kOut,
     const aclTensor *vOut,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor)`
-- `aclnnStatus aclnnTransformBiasRescaleQkv(void *workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor *executor,
-    aclrtStream stream)`
+    uint64_t        *workspaceSize,
+    aclOpExecutor  **executor)
+```
+
+```Cpp
+aclnnStatus aclnnTransformBiasRescaleQkv(
+  void              *workspace,
+    uint64_t         workspaceSize,
+    aclOpExecutor   *executor,
+    aclrtStream      stream)
+```
 
 ## aclnnTransformBiasRescaleQkvGetWorkspaceSize
 
-- **参数说明**：
+- **参数说明：**
 
-  - qkv（aclTensor\*，计算输入）：输入的张量，公式中的$q_i$、$k_i$、$v_i$。Device侧的aclTensor，数据类型支持BFLOAT16、FLOAT16、FLOAT。支持[非连续的Tensor](common/非连续的Tensor.md)，不支持空Tensor，[数据格式](common/数据格式.md)支持ND。shape为{B,T,3 * num_heads * dim_per_head}三维张量。B为批量大小，T为序列长度，num_heads为注意力头数，dim_per_head为每个注意力头的维度。
-  - qkvBias（aclTensor\*，计算输入）：输入的张量，公式中的$q_{bias}$、$k_{bias}$、$v_{bias}$。Device侧的aclTensor，数据类型支持BFLOAT16、FLOAT16、FLOAT。支持[非连续的Tensor](common/非连续的Tensor.md)，不支持空Tensor，[数据格式](common/数据格式.md)支持ND。shape为{3 * num_heads * dim_per_head}一维张量。
-  - numHeads（int64_t，计算输入）：输入的头数，数据类型支持Int64，取值大于0。
-  - qOut（aclTensor\*，计算输出）：输出张量，公式中的$q_o$。Device侧的aclTensor，数据类型支持BFLOAT16、FLOAT16、FLOAT。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。shape为{B,num_heads,T,dim_per_head}四维张量。
-  - kOut（aclTensor\*，计算输出）：输出张量，公式中的$k_o$。Device侧的aclTensor，数据类型支持BFLOAT16、FLOAT16、FLOAT。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。shape为{B,num_heads,T,dim_per_head}四维张量。
-  - vOut（aclTensor\*，计算输出）：输出张量，公式中的$v_o$。Device侧的aclTensor，数据类型支持BFLOAT16、FLOAT16、FLOAT。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。shape为{B,num_heads,T,dim_per_head}四维张量。
-  - workspaceSize（uint64_t\*，出参）：返回用户需要在Device侧申请的workspace大小。
-  - executor（aclOpExecutor\**，出参）：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1330px"><colgroup>
+  <col style="width: 101px">
+  <col style="width: 115px">
+  <col style="width: 200px">
+  <col style="width: 250px">
+  <col style="width: 177px">
+  <col style="width: 104px">
+  <col style="width: 238px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>y</td>
+      <td>输入</td>
+      <td>表示待进行累加更新的张量，公式中的y。</td>
+      <td><ul><li>不支持空Tensor。</li><li>shape维度2维：[B, H3]。</li><li>第一维需要和x的第一维一致，都用`B`表示。</li></ul></td>
+      <td>FLOAT16</td>
+      <td>ND</td>
+      <td>2</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>qkv</td>
+      <td>输入</td>
+      <td>输入的张量，公式中的q_i、k_i、v_i。</td>
+      <td><ul><li>不支持空Tensor。</li><li>shape为{B,T,3 * num_heads * dim_per_head}三维张量。</li><li>B为批量大小，T为序列长度，num_heads为注意力头数，dim_per_head为每个注意力头的维度。</li></ul></td>
+      <td>BFLOAT16、FLOAT16、FLOAT</td>
+      <td>ND</td>
+      <td>2</td>
+      <td>√</td>
+    </tr>
+     <tr>
+      <td>qkvBias</td>
+      <td>输入</td>
+      <td>输入的张量，公式中的q_{bias}、k_{bias}、v_{bias}。</td>
+      <td><ul><li>不支持空Tensor。</li><li>shape为{3 * num_heads * dim_per_head}一维张量。</li></ul></td>
+      <td>BFLOAT16、FLOAT16、FLOAT</td>
+      <td>ND</td>
+      <td>4</td>
+      <td>√</td>
+    </tr> 
+    <tr>
+      <td>vOut</td>
+      <td>输出</td>
+      <td>输出张量，公式中的v_o。</td>
+      <td><ul><li>shape为{B,num_heads,T,dim_per_head}四维张量。</li></ul></td>
+      <td>BFLOAT16、FLOAT16、FLOAT</td>
+      <td>ND</td>
+      <td>4</td>
+      <td>√</td>
+    </tr>
+    <tr>
+  </tbody>
+  </table>
+  
 
-- **返回值**：
+- **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  第一段接口会完成入参校验，出现以下场景时报错：
+  <table style="undefined;table-layout: fixed;width: 979px"><colgroup>
+  <col style="width: 272px">
+  <col style="width: 103px">
+  <col style="width: 604px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的输入和输出是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="8">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="8">161002</td>
+      <td>qkv和qkvBias的数据类型和数据格式不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>qkv和qkvBias数据类型不一致。</td>
+    </tr>
+      <tr>
+      <td>qkv和qkvBias的shape不满足参数说明的要求。</td>
+    </tr>
+  </tbody></table>
 
-  ```
-  第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）: 传入的输入和输出是空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）: 1. qkv和qkvBias的数据类型和数据格式不在支持的范围之内。
-                                        2. qkv和qkvBias数据类型不一致。
-                                        3. qkv和qkvBias的shape不满足参数说明的要求。
-                                         
-  ```
 ## aclnnTransformBiasRescaleQkv
 
-- **参数说明**：
+- **参数说明：**
 
-  - workspace（void\*，入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize（uint64_t，入参）：在Device侧申请的workspace大小，由第一段接口aclnnTransformBiasRescaleQkvGetWorkspaceSize获取。
-  - executor（aclOpExecutor\*，入参）：op执行器，包含了算子计算流程。
-  - stream（aclrtStream，入参）：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
+  <col style="width: 173px">
+  <col style="width: 112px">
+  <col style="width: 668px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnTransformBiasRescaleQkvGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
-- **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+- **返回值：**
+
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -98,7 +213,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

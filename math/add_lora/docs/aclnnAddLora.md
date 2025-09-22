@@ -4,7 +4,6 @@
 
 |产品             |  是否支持  |
 |:-------------------------|:----------:|
-|  <term>昇腾910_95 AI处理器</term>   |     ×    |
 |  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     ×    |
 |  <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>     |     √    |
 |  <term>Atlas 200I/500 A2 推理产品</term>    |     ×    |
@@ -48,52 +47,199 @@
 
 每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnAddLoraGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnAddLora”接口执行计算。
 
-- `aclnnStatus aclnnAddLoraGetWorkspaceSize(const aclTensor *y, const aclTensor *x, const aclTensor *weightB, const aclTensor *indices, const aclTensor *weightAOptional, int64_t layerIdx, double scale, int64_t yOffset, int64_t ySliceSize, const aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnAddLora(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnAddLoraGetWorkspaceSize(
+  const aclTensor *y,
+  const aclTensor *x,
+  const aclTensor *weightB,
+  const aclTensor *indices,
+  const aclTensor *weightAOptional,
+  int64_t          layerIdx,
+  double           scale,
+  int64_t          yOffset,
+  int64_t          ySliceSize,
+  const aclTensor *out,
+  uint64_t        *workspaceSize,
+  aclOpExecutor  **executor)
+```
+
+```Cpp
+aclnnStatus aclnnAddLora(
+  void            *workspace,
+  uint64_t         workspaceSize,
+  aclOpExecutor   *executor,
+  aclrtStream      stream)
+```
 
 ## aclnnAddLoraGetWorkspaceSize
 
-- **参数说明**：
+- **参数说明：**
 
-  - y（aclTensor\*，计算输入）：表示待进行累加更新的张量，公式中的`y`，Device侧的aclTensor，数据类型支持FLOAT16。shape维度2维：[B, H3]。[数据格式](../../../docs/context/数据格式.md)支持ND。第一维需要和x的第一维一致，都用`B`表示。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，不支持空Tensor。
-  - x（aclTensor\*，计算输入）：表示分组前的输入张量，公式中的`x`，Device侧的aclTensor，数据类型支持FLOAT16。shape维度2维：[B, H1]，且H1是16的整数倍。[数据格式](../../../docs/context/数据格式.md)支持ND。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，不支持空Tensor。
-  - weightB（aclTensor\*，计算输入）：表示进行矩阵乘的第二个权重矩阵，公式中的`weightB`，Device侧的aclTensor，数据类型支持FLOAT16。shape维度4维：[W, L, H2, R]，第三维需要小于y的第二维（H2<H3），且H2是16的整数倍。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，不支持空Tensor。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>：[数据格式](../../../docs/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>：[数据格式](../../../docs/context/数据格式.md)支持ND、NZ。
-  - indices（aclTensor\*，计算输入）：标识输入x的分组索引，公式中的`indices`，Device侧的aclTensor，数据类型支持INT32。shape维度1维：[B]。[数据格式](../../../docs/context/数据格式.md)支持ND。第一维需要和x以及y的第一维保持一致，都用`B`表示。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，不支持空Tensor。
-  - weightAOptional（aclTensor\*，计算输入）：表示进行矩阵乘的第一个权重矩阵，为空时会跳过第一个矩阵乘，公式中的`weightA`，Device侧的aclTensor，数据类型支持FLOAT16。shape维度4维：[W, L, R, H1]，前两维需要和`weightB`的前两维一致，用`W`和`L`表示；第三维需要和`weightB`的第四维保持一致，都用`R`表示；第四维需要和`x`的第二维保持一致，都用`H1`表示，需要是16的整数倍。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，不支持空Tensor。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>：[数据格式](../../../docs/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>：数据格式支持ND、NZ。
-  - layerIdx（int64_t，计算输入）：表示层数索引，公式中的`layerIdx`，Host侧的整型。值需要小于`weightB`的第二个维度`L`。
-  - scale（double，计算输入）：表示缩放系数，公式中的`scale`，Host侧的浮点型。
-  - yOffset（int64_t，计算输入）：表示y更新时的偏移量，公式中的`yOffset`，Host侧的整型。值需要小于`y`的第二个维度`H3`。
-  - ySliceSize（int64_t，计算输入）：表示y更新时的范围，公式中的`ySliceSize`，Host侧的整型。值需要小于`y`的第二个维度`H3`。
-  - out（aclTensor\*，计算输出）：输出张量，公式中的输出`out`，Device侧的aclTensor，数据类型支持FLOAT16。shape维度2维。[数据格式](../../../docs/context/数据格式.md)支持ND，输出的数据类型与输入保持一致，输出shape和输入y的shape维度一致。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)。
-  - workspaceSize（uint64_t\*，出参）：返回用户需要在Device侧申请的workspace大小。
-  - executor（aclOpExecutor\**，出参）：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1330px"><colgroup>
+  <col style="width: 101px">
+  <col style="width: 115px">
+  <col style="width: 200px">
+  <col style="width: 250px">
+  <col style="width: 177px">
+  <col style="width: 104px">
+  <col style="width: 238px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>y</td>
+      <td>输入</td>
+      <td>表示待进行累加更新的张量，公式中的y。</td>
+      <td><ul><li>不支持空Tensor。</li><li>shape维度2维：[B, H3]。</li><li>第一维需要和x的第一维一致，都用`B`表示。</li></ul></td>
+      <td>FLOAT16</td>
+      <td>ND</td>
+      <td>2</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>x</td>
+      <td>输入</td>
+      <td>表示分组前的输入张量，公式中的x。</td>
+      <td><ul><li>不支持空Tensor。</li><li>shape维度2维：[B, H3]。</li></ul></td>
+      <td>FLOAT16</td>
+      <td>ND</td>
+      <td>2</td>
+      <td>√</td>
+    </tr>
+     <tr>
+      <td>weightB</td>
+      <td>输入</td>
+      <td>表示进行矩阵乘的第二个权重矩阵，公式中的weightB。</td>
+      <td><ul><li>不支持空Tensor。</li><li>shape维度4维：[W, L, H2, R]，第三维需要小于y的第二维（H2 < H3），且H2是16的整数倍。</li></ul></td>
+      <td>FLOAT16</td>
+      <td>ND、NZ</td>
+      <td>4</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>indices</td>
+      <td>输入</td>
+      <td>标识输入x的分组索引，公式中的indices。</td>
+      <td><ul><li>不支持空Tensor。</li><li>shape维度1维：[B]。</li><li>第一维需要和x以及y的第一维保持一致，都用`B`表示。</li></ul></td>
+      <td>INT32</td>
+      <td>ND</td>
+      <td>1</td>
+      <td>√</td>
+    </tr> 
+      <tr>
+      <td>weightAOptional</td>
+      <td>输入</td>
+      <td>表示进行矩阵乘的第一个权重矩阵，为空时会跳过第一个矩阵乘，公式中的weightA。</td>
+      <td><ul><li>不支持空Tensor。</li><li>shape维度4维：[W, L, R, H1]。</li><li>前两维需要和`weightB`的前两维一致，用`W`和`L`表示。</li><li>第三维需要和`weightB`的第四维保持一致，都用`R`表示。</li><li>第四维需要和`x`的第二维保持一致，都用`H1`表示，需要是16的整数倍。</li></ul></td>
+      <td>FLOAT16</td>
+      <td>ND、NZ</td>
+      <td>4</td>
+      <td>√</td>
+    </tr> 
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>输出张量，公式中的输出out。</td>
+      <td><ul><li>输出的数据类型与输入保持一致。</li><li>输出shape和输入y的shape维度一致。</li></ul></td>
+      <td>FLOAT16</td>
+      <td>ND</td>
+      <td>2</td>
+      <td>√</td>
+    </tr>
+    <tr>
+  </tbody>
+  </table>
+  
+   - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>：数据格式支持ND。
 
-- **返回值**：
+
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  第一段接口会完成入参校验，出现以下场景时报错：
+  <table style="undefined;table-layout: fixed;width: 979px"><colgroup>
+  <col style="width: 272px">
+  <col style="width: 103px">
+  <col style="width: 604px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的输入参数（x, y, weightB, indices）或输出参数out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="8">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="8">161002</td>
+      <td>输入/输出参数的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>多个输入tensor之间的shape信息不匹配（详见参数说明）。</td>
+    </tr>
+      <tr>
+      <td>输入tensor的shape信息暂不支持（详见参数说明）。</td>
+    </tr>
+  </tbody></table>
 
-  ```
-  第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：传入的输入参数（x, y, weightB, indices）或输出参数out是空指针。
-  返回561002（ACLNN_ERR_PARAM_INVALID）：1. 输入/输出参数的数据类型不在支持的范围之内。
-  									    2. 多个输入tensor之间的shape信息不匹配（详见参数说明）。
-  									    3. 输入tensor的shape信息暂不支持（详见参数说明）。
-  ```
 
 ## aclnnAddLora
 
-- **参数说明**：
+- **参数说明：**
 
-  - workspace（void\*，入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize（uint64_t，入参）：在Device侧申请的workspace大小，由第一段接口aclnnAddLoraGetWorkspaceSize获取。
-  - executor（aclOpExecutor\*，入参）：op执行器，包含了算子计算流程。
-  - stream（aclrtStream，入参）：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
+  <col style="width: 173px">
+  <col style="width: 112px">
+  <col style="width: 668px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnAddLoraGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
-- **返回值**：
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 

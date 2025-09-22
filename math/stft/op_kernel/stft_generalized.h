@@ -1,7 +1,7 @@
 /**
  * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -99,7 +99,7 @@ public:
                     pipe->InitBuffer(outCopy, bufferNum, outputSize);
                 }
             } else {
-                bufferSize *= 2;
+                bufferSize *= DOUBLE_SIZE;
                 pipe->InitBuffer(inCopy, bufferNum, bufferSize);
                 isAligned = false;
             }
@@ -770,6 +770,7 @@ private:
     uint32_t DWORD_SIZE = 4;
     uint32_t GATHER_BUFFER_NUM = 2;
     uint32_t BINARY_ADD_COEF = 2;
+    int32_t DOUBLE_SIZE = 2;
     int32_t maskCount;
     int32_t bufferSize;
     bool isAligned;

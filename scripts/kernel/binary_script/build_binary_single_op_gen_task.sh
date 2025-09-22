@@ -2,7 +2,7 @@
 # ----------------------------------------------------------------------------
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 # This file is a part of the CANN Open Software.
-# Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+# Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -80,8 +80,8 @@ function get_simplified_key_config_file() {
   local simplified_key_config_file=""
   for item in ${OP_CATEGORY_LIST}; do
     local cmd="find ${topdir}/${item} -name ${op_file_name}_simplified_key.ini | grep -w ${soc_version_lower}"
-    simplified_key_config_file=$(${cmd})
-    if [! -z "${simplified_key_config_file}"]; then
+    simplified_key_config_file=$(bash -c "${cmd}")
+    if [ ! -z "${simplified_key_config_file}" ]; then
       echo "${simplified_key_config_file[0]}"
       return 0
     fi
@@ -177,11 +177,15 @@ main() {
 
   # step 4: get simplified_key_mode from binary_simplified_key_mode.ini
   local simplified_key_file=$(get_simplified_key_config_file ${workdir} ${op_type} ${op_file_name_prefix} ${soc_version_lower})
-  dos2unix $simplified_key_file
   local key_mode_default=0
-  if [ -f ${simplified_key_file} ]; then
-    # if no file binary_simplified_key_mode.ini use mode=0
-    key_mode_default=$(awk -F "=" '/\['${op_type}'\]/{flag=1;next}/\[/{flag=0} flag && /default/{print $2}' $simplified_key_file)
+  if [ -z ${simplified_key_file} ];then
+    key_mode_default=""
+  else
+    dos2unix $simplified_key_file
+    if [ -f ${simplified_key_file} ]; then
+      # if no file binary_simplified_key_mode.ini use mode=0
+      key_mode_default=$(awk -F "=" '/\['${op_type}'\]/{flag=1;next}/\[/{flag=0} flag && /default/{print $2}' $simplified_key_file)
+    fi
   fi
   local ascendc_config_file="${workdir}/../binary_config/ascendc_config.json"
   local key_word_in_list="\"name\":\s*\"${op_type}\""
@@ -215,6 +219,10 @@ main() {
 
   # 获取 impl_mode 默认值
   local val=$(echo ${ascendc_op_conf} | awk -F "\"impl_mode\"" '{print $2}' | awk -F "\"" '{print $2}')
+  if [ "${val}" = "" ]; then
+    # 默认高性能模式
+    val="high_performance"
+  fi
 
   # step 6: do opc compile all kernel
   var_array=(${val//,/ })

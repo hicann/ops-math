@@ -1,7 +1,7 @@
 /**
  * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -37,10 +37,10 @@ extern "C" {
  * ```
  *
  * @param [in] self: 待进行abs计算的入参。npu device侧的aclTensor,
- * 数据类型支持BFLOAT16(仅昇腾910B AI处理器、昇腾910_93 AI处理器、昇腾910_95 AI处理器支持)FLOAT、FLOAT16、DOUBLE、
+ * 数据类型支持BFLOAT16(仅昇腾910B AI处理器、昇腾910_93 AI处理器支持)FLOAT、FLOAT16、DOUBLE、
  * INT8、INT16、INT32、INT64、UINT8、BOOL，数据格式支持ND，支持非连续的Tensor。
  * @param [in] out: abs计算的出参。npu device侧的aclTensor,
- * 数据类型支持BFLOAT16(仅昇腾910B AI处理器、昇腾910_93 AI处理器、昇腾910_95 AI处理器支持)FLOAT、FLOAT16、DOUBLE、
+ * 数据类型支持BFLOAT16(仅昇腾910B AI处理器、昇腾910_93 AI处理器支持)FLOAT、FLOAT16、DOUBLE、
  * INT8、INT16、INT32、INT64、UINT8、BOOL，数据格式支持ND，支持非连续的Tensor。
  * @param [out] workspace_size: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包括算子计算流程

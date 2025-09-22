@@ -1,7 +1,7 @@
 /**
  * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -51,7 +51,7 @@ private:
         int64_t qkvBiasOffset, int64_t dataCount, int64_t qkvBiasUbOffest, int64_t headCnt);
     __aicore__ inline void CastInQkv(int64_t dataCount);
     __aicore__ inline void CastInBias(int64_t dataCount);
-    __aicore__ inline void ComputeBias(int64_t dataCount);
+    __aicore__ inline void ComputeBias(int64_t dataCount, int64_t qkvOffset = 0, int64_t biasOffset = 0);
     __aicore__ inline void ComputeRescale(int64_t qkvGmOffset, int64_t dataCount, int64_t qkvUbOffset);
     __aicore__ inline void CastOut(int64_t dataCount);
     __aicore__ inline void CopyOut(int64_t qkvGmOffset, int64_t headCnt, int64_t qkvUbOffset, int64_t dataCount);
@@ -161,7 +161,7 @@ __aicore__ inline void TransformBiasRescaleQkvND<T>::Process()
     int64_t linesOneCoreOnce = 1;
     int64_t headsOneCoreOnce = 1;
 
-    if (fullLineOnUbCnt <= maxEleNumUB && numHeads <= MAX_BLOCK_CNT) {
+    if (NUM_THREE * fullLineOnUbCnt <= maxEleNumUB && numHeads <= MAX_BLOCK_CNT) {
         // 每个核能处理完整行
         linesOneCoreOnce = maxEleNumUB / fullLineOnUbCnt;
         ProcessFullLines(linesOneCoreOnce, fullLineOnUbCnt);
@@ -314,6 +314,16 @@ __aicore__ inline void TransformBiasRescaleQkvND<T>::ProcessFullLines(int64_t li
     SetFlag<HardEvent::MTE3_MTE2>(EVENT_ID0);
     SetFlag<HardEvent::MTE3_MTE2>(EVENT_ID1);
     // 处理eachCoreStartLines ~ eachCoreStartLines + linesNum -1 行
+
+    // 先把qkvBias处理好，避免重复搬运
+    CopyInBias(0, NUM_THREE * calNum, 0, NUM_THREE * numHeads);
+    SetFlag<HardEvent::MTE2_V>(EVENT_ID0);
+    WaitFlag<HardEvent::MTE2_V>(EVENT_ID0);
+
+    CastInBias(fullLineOnUbCnt * NUM_THREE);
+    SetFlag<HardEvent::V_MTE2>(EVENT_ID0);
+    WaitFlag<HardEvent::V_MTE2>(EVENT_ID0);
+
     for (int64_t i = 0; i < linesNum; i += linesOneCoreOnce) {
         eventId = pingPongFlag ? EVENT_ID1 : EVENT_ID0;
         WaitFlag<HardEvent::MTE3_MTE2>(eventId);
@@ -333,21 +343,16 @@ __aicore__ inline void TransformBiasRescaleQkvND<T>::ProcessFullLines(int64_t li
             CopyInQkv(qkvGmOffset, calNum, qkvUbOffest, numHeads);
         }
 
-        int64_t qkvBiasUbOffest = 0;
-        for (int64_t lineNum = startLineNum; lineNum <= endLineNum;
-             lineNum++, qkvBiasUbOffest += fullLineOnUbCnt * sizeOfType) {
-            int64_t qkvBiasGmOffset = (lineNum / (batch * token)) * (dimPerHead * numHeads);
-            CopyInBias(qkvBiasGmOffset, calNum, qkvBiasUbOffest, numHeads);
-        }
-
         SetFlag<HardEvent::MTE2_V>(eventId);
         WaitFlag<HardEvent::MTE2_V>(eventId);
 
         CastInQkv(fullLineOnUbCnt * (endLineNum - startLineNum + 1));
 
-        CastInBias(fullLineOnUbCnt * (endLineNum - startLineNum + 1));
-
-        ComputeBias(fullLineOnUbCnt * (endLineNum - startLineNum + 1));
+        for (int64_t lineNum = startLineNum; lineNum <= endLineNum; lineNum++) {
+            int64_t qkvOffset = (lineNum - startLineNum) * fullLineOnUbCnt;
+            int64_t biasOffset = (lineNum / (batch * token)) * fullLineOnUbCnt;
+            ComputeBias(fullLineOnUbCnt, qkvOffset, biasOffset);
+        }
 
         qkvUbOffest = 0;
         for (int64_t lineNum = startLineNum; lineNum <= endLineNum; lineNum++, qkvUbOffest += fullLineOnUbCnt) {
@@ -456,9 +461,8 @@ __aicore__ inline void TransformBiasRescaleQkvND<T>::CastInBias(int64_t dataCoun
 }
 
 template <typename T>
-__aicore__ inline void TransformBiasRescaleQkvND<T>::ComputeBias(int64_t dataCount)
-{
-    Add(xTensorFp32, xTensorFp32, biasTensorFp32, dataCount);
+__aicore__ inline void TransformBiasRescaleQkvND<T>::ComputeBias(int64_t dataCount, int64_t qkvOffset, int64_t biasOffset) {
+    Add(xTensorFp32[qkvOffset], xTensorFp32[qkvOffset], biasTensorFp32[biasOffset], dataCount);
     PipeBarrier<PIPE_V>();
 }
 

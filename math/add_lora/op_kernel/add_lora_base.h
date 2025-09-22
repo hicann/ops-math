@@ -1,7 +1,7 @@
 /**
  * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -68,6 +68,9 @@ protected:
     static constexpr uint32_t DEFAULT_UB_SPLIT_NUM = 12 * 1024;
     static constexpr uint32_t MIN_SPLIT = 128;
     static constexpr uint32_t SINGLE_L0_SIZE = 16 * 1024;
+    static constexpr uint32_t OFFSET_TWO = 2;
+    static constexpr uint32_t OFFSET_THREE = 3;
+    static constexpr uint32_t OFFSET_FOUR = 4;
     static constexpr uint32_t OFFSET_SIX = 6;
     static constexpr uint32_t AIV_AIC_RATIO = 2;
 
@@ -246,13 +249,15 @@ __aicore__ inline void AddLoraKernelBase::InitVectorBuffer()
     mmResUb[1] = ubBuf_.GetWithOffset<half>(
         DEFAULT_UB_SPLIT_NUM, DEFAULT_UB_SPLIT_NUM * sizeof(half)); // 12 * 1024 * sizeof(half) 表示偏移量
     yUb[0] = ubBuf_.GetWithOffset<half>(
-        DEFAULT_UB_SPLIT_NUM, 2 * DEFAULT_UB_SPLIT_NUM * sizeof(half)); // 24 * 1024 * sizeof(half) 表示偏移量
+        DEFAULT_UB_SPLIT_NUM, OFFSET_TWO * DEFAULT_UB_SPLIT_NUM * sizeof(half)); // 24 * 1024 * sizeof(half) 表示偏移量
     yUb[1] = ubBuf_.GetWithOffset<half>(
-        DEFAULT_UB_SPLIT_NUM, 3 * DEFAULT_UB_SPLIT_NUM * sizeof(half)); // 36 * 1024 * sizeof(half) 表示偏移量
+        DEFAULT_UB_SPLIT_NUM,
+        OFFSET_THREE * DEFAULT_UB_SPLIT_NUM * sizeof(half)); // 36 * 1024 * sizeof(half) 表示偏移量
     yOffsetUb[0] = ubBuf_.GetWithOffset<half>(
-        2 * DEFAULT_UB_SPLIT_NUM, 4 * DEFAULT_UB_SPLIT_NUM * sizeof(half)); // 48 * 1024 * sizeof(half) 表示偏移量
+        OFFSET_TWO * DEFAULT_UB_SPLIT_NUM,
+        OFFSET_FOUR * DEFAULT_UB_SPLIT_NUM * sizeof(half)); // 48 * 1024 * sizeof(half) 表示偏移量
     yOffsetUb[1] = ubBuf_.GetWithOffset<half>(
-        2 * DEFAULT_UB_SPLIT_NUM,
+        OFFSET_TWO * DEFAULT_UB_SPLIT_NUM,
         OFFSET_SIX * DEFAULT_UB_SPLIT_NUM * sizeof(half)); // 72 * 1024 * sizeof(half) 表示偏移量
 }
 

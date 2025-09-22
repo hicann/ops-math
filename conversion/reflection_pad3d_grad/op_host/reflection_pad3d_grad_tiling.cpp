@@ -1,7 +1,7 @@
 /* *
  * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -87,7 +87,7 @@ inline auto Mymax(T a, T b) -> T
 template <typename TilingData, int32_t dataTypeLen>
 class PadV3GradV2Tiling {
 public:
-    explicit PadV3GradV2Tiling(InputParamsInfo &param, const uint32_t inputCoreNum, const uint32_t inputUbSize)
+    explicit PadV3GradV2Tiling(const InputParamsInfo &param, const uint32_t inputCoreNum, const uint32_t inputUbSize)
     {
         this->batch = param.batch;
         this->channel = param.channel;
@@ -213,15 +213,16 @@ void PadV3GradV2Tiling<TilingData, dataTypeLen>::GetTiling(TilingData *tilingDat
 }
 
 template <typename TilingData, int32_t dataTypeLen>
-void GetPadV3GradV2Tiling(TilingData *tilingData, InputParamsInfo &params, uint32_t coreNum, uint32_t ubSize,
+void GetPadV3GradV2Tiling(TilingData *tilingData, const InputParamsInfo &params, uint32_t coreNum, uint32_t ubSize,
     bool isCast)
 {
     class PadV3GradV2Tiling<TilingData, dataTypeLen> tilingObj(params, coreNum, ubSize);
     tilingObj.GetTiling(tilingData, isCast);
 }
 
-static void PrintTilingDate(gert::TilingContext *tilingContext, ReflectionPad3dGradTilingData *tilingData,
-    const size_t usrWorkspace)
+static void PrintTilingDate(const gert::TilingContext *tilingContext,
+                            ReflectionPad3dGradTilingData *tilingData,
+                            size_t usrWorkspace)
 {
     OP_LOGD(tilingContext->GetNodeName(), "Start ReflectionPad3dGradTilingData priting");
     OP_LOGD(tilingContext->GetNodeName(), "------------------------------------------");
@@ -266,8 +267,8 @@ template <typename T> static ge::graphStatus GetInputInfo(gert::TilingContext *t
 
     const gert::StorageShape *paddingShape = tilingContext->GetInputShape(PAD_INPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, paddingShape);
-    OP_CHECK_IF((size_t)(2 * xShape->GetStorageShape().GetDimNum()) !=
-        (size_t)paddingShape->GetStorageShape().GetDim(0),
+    OP_CHECK_IF(static_cast<size_t>(2 * xShape->GetStorageShape().GetDimNum()) !=
+        static_cast<size_t>(paddingShape->GetStorageShape().GetDim(0)),
         OP_LOGE(tilingContext->GetNodeName(), "Please check input or padding shape"), return ge::GRAPH_FAILED);
     const gert::Tensor *paddings_tensor = tilingContext->GetInputTensor(PAD_INPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, paddings_tensor);

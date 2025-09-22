@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <block name="OpsMathInc" copy_type="delivery" src_path="" dst_path="" install_path="" install_own="$username:$usergroup" install_mod="550"
        install_type="all" pkg_feature="opp_binary">
-    <file_info copy_type="source" src_path="common/include/external/"
+    <file_info copy_type="source" src_path="common/inc/external/"
         dst_path="include/"
         install_path="ops_math/$(TARGET_ENV)/include/" install_type="all">
         <file value="aclnn_kernels" install_mod="555" entity="true" install_softlink="$(TARGET_ENV)/include/aclnn_kernels"/>

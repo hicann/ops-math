@@ -4,7 +4,6 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
@@ -38,16 +37,16 @@
 ## aclnnHardtanhGetWorkspaceSize
 - **参数说明**：
   - self(aclTensor*,计算输入): 公式中的x，Device侧的aclTensor，且数据类型和out保持一致，shape和out保持一致，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
+     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
      * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
   - clipValueMin(aclScalar*,计算输入): Host侧的aclScalar，下界，数据类型需要可转化成self的数据类型，且clipValueMin和clipValueMax同时存在时需要保持一致。
-     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
+     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
      * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
   - clipValueMax(aclScalar*,计算输入): Host侧的aclScalar，上界，数据类型需要可转化成self的数据类型，且clipValueMin和clipValueMax同时存在时需要保持一致。
-     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
+     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
      * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
   - out(aclTensor\*，计算输出)：Device侧的aclTensor，且数据类型和self保持一致，shape和self保持一致，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
+     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
      * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
   - workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
@@ -78,13 +77,13 @@
 ## aclnnInplaceHardtanhGetWorkspaceSize
 - **参数说明**：
   - selfRef(aclTensor\*，计算输入): Device侧的aclTensor。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
+     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
      * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
   - clipValueMin(aclScalar*,计算输入): Host侧的aclScalar，下界，数据类型需要可转化成selfRef的数据类型，且clipValueMin和clipValueMax同时存在时需要保持一致。
-     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
+     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
      * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
   - clipValueMax(aclScalar*,计算输入): Host侧的aclScalar，上界，数据类型需要可转化成selfRef的数据类型，且clipValueMin和clipValueMax同时存在时需要保持一致。
-     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
+     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
      * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
   - workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor \*\*, 出参)：返回op执行器，包含了算子计算流程。

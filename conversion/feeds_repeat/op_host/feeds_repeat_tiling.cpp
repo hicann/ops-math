@@ -1,7 +1,7 @@
 /**
  * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -54,7 +54,7 @@ static void FeedsRepeatPrintParam(gert::TilingContext* context, FeedsRepeatTilin
     OP_LOGD(nodeName, ">>>>>>>>>>>>>>> End print FeedsRepeat tiling data <<<<<<<<<<<<<<<<");
 }
 
-static ge::graphStatus SetTilingBatch(gert::TilingContext* context, FeedsRepeatTilingData& tiling)
+static ge::graphStatus SetTilingBatch(const gert::TilingContext* context, FeedsRepeatTilingData& tiling)
 {
     const auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     auto max_core_num = ascendcPlatform.GetCoreNumAiv();
@@ -84,7 +84,7 @@ static ge::graphStatus SetTilingBatch(gert::TilingContext* context, FeedsRepeatT
 }
 
 static ge::graphStatus SetTilingLength(
-    gert::TilingContext* context, FeedsRepeatTilingData& tiling, uint32_t& tiling_key, uint32_t& length_space)
+    const gert::TilingContext* context, FeedsRepeatTilingData& tiling, uint32_t& tiling_key, uint32_t& length_space)
 {
     uint32_t length = context->GetInputShape(0)->GetStorageShape().GetDim(0);
     uint32_t length_aligned = 0;
@@ -112,7 +112,7 @@ static ge::graphStatus SetTilingLength(
 }
 
 static ge::graphStatus SetTilingElemRow(
-    gert::TilingContext* context, FeedsRepeatTilingData& tiling, uint32_t& tiling_key, uint32_t& length_space)
+    const gert::TilingContext* context, FeedsRepeatTilingData& tiling, uint32_t& tiling_key, uint32_t& length_space)
 {
     const gert::Shape feeds_shape = context->GetInputShape(0)->GetStorageShape();
     int64_t elem_row = 1;

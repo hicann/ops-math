@@ -1,14 +1,5 @@
 # 安全声明
 
-## 系统安全加固
-
-用户可在运行系统配置时开启 ASLR（级别2）以提高系统安全性，保护系统随机化开启。
-可参考以下方式进行配置：
-
-```bash
-echo 2 > /proc/sys/kernel/randomize_va_space
-```
-
 ## 运行用户建议
 
 基于安全性角度考虑，不建议使用root等管理员类型账户执行任何命令，遵循权限最小化原则。
@@ -38,6 +29,7 @@ echo 2 > /proc/sys/kernel/randomize_va_space
 |  自研  | 不涉及  | cmake/third_party/makeself-fetch.cmake | https://gitcode.com/cann-src-third-party/makeself/releases/download/release-2.5.0-patch1.0/makeself-release-2.5.0-patch1.tar.gz | 从gitcode下载makeself源码，作用编译依赖 |
 |  自研  | 不涉及  | cmake/third_party/json.cmake | https://gitcode.com/cann-src-third-party/json/releases/download/v3.11.3/include.zip | 从gitcode下载json源码，作用编译依赖 |
 |  自研  | 不涉及  | cmake/third_party/gtest.cmake | https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz | 从gitcode下载googletest源码，作用编译依赖 |
+|  自研  | 不涉及  | cmake/third_party/eigen.cmake | https://gitcode.com/cann-src-third-party/eigen/releases/download/3.4.0/eigen-3.4.0.tar.gz | 从gitcode下载eigen源码，作用编译依赖 |
 ---
 
 ## 附录

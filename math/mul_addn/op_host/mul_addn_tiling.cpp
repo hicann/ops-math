@@ -1,7 +1,7 @@
 /**
  * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -37,6 +37,24 @@ constexpr int64_t IR_IDX = 0;
 constexpr size_t DIM0 = 0;
 constexpr size_t DIM1 = 1;
 constexpr size_t DIM2 = 2;
+
+constexpr int64_t ALIGN_COEF = 1;
+
+constexpr int64_t DATA_ALIGN_BF16 = 16;
+constexpr int64_t DATA_ALIGN_FLOAT16 = 16;
+constexpr int64_t DATA_ALIGN_FLOAT32 = 8;
+
+constexpr int64_t MNUM_BF16_MUL_COEF = 6;
+constexpr int64_t MNUM_FLOAT16_MUL_COEF = 4;
+constexpr int64_t MNUM_FLOAT32_MUL_COEF = 8;
+
+constexpr int64_t MNUM_BF16_ADD_COEF = 20;
+constexpr int64_t MNUM_FLOAT16_ADD_COEF = 18;
+constexpr int64_t MNUM_FLOAT32_ADD_COEF = 36;
+
+constexpr int64_t MNUM_BF16_SUB_COEF = 4;
+constexpr int64_t MNUM_FLOAT16_SUB_COEF = 2;
+constexpr int64_t MNUM_FLOAT32_SUB_COEF = 4;
 
 static ge::graphStatus TilingFunc(gert::TilingContext* context)
 {
@@ -83,17 +101,17 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
     int32_t mNum = 0;
     auto dataType = context->GetInputDesc(INPUT_X1_IDX)->GetDataType();
     if (dataType == ge::DT_BF16) {
-        dataAlign = 16;
-        shapeNAlign = (shapeN + dataAlign - 1) / dataAlign * dataAlign;
-        mNum = (UbSize - 4 * shapeNAlign) / (20 + 6 * shapeNAlign);
+        dataAlign = DATA_ALIGN_BF16;
+        shapeNAlign = (shapeN + dataAlign - ALIGN_COEF) / dataAlign * dataAlign;
+        mNum = (UbSize - MNUM_BF16_SUB_COEF * shapeNAlign) / (MNUM_BF16_ADD_COEF + MNUM_BF16_MUL_COEF * shapeNAlign);
     } else if (dataType == ge::DT_FLOAT16) {
-        dataAlign = 16;
-        shapeNAlign = (shapeN + dataAlign - 1) / dataAlign * dataAlign;
-        mNum = (UbSize - 2 * shapeNAlign) / (18 + 4 * shapeNAlign);
+        dataAlign = DATA_ALIGN_FLOAT16;
+        shapeNAlign = (shapeN + dataAlign - ALIGN_COEF) / dataAlign * dataAlign;
+        mNum = (UbSize - MNUM_FLOAT16_SUB_COEF * shapeNAlign) / (MNUM_FLOAT16_ADD_COEF + MNUM_FLOAT16_MUL_COEF * shapeNAlign);
     } else if (dataType == ge::DT_FLOAT) {
-        dataAlign = 8;
-        shapeNAlign = (shapeN + dataAlign - 1) / dataAlign * dataAlign;
-        mNum = (UbSize - 4 * shapeNAlign) / (36 + 8 * shapeNAlign);
+        dataAlign = DATA_ALIGN_FLOAT32;
+        shapeNAlign = (shapeN + dataAlign - ALIGN_COEF) / dataAlign * dataAlign;
+        mNum = (UbSize - MNUM_FLOAT32_SUB_COEF * shapeNAlign) / (MNUM_FLOAT32_ADD_COEF + MNUM_FLOAT32_MUL_COEF * shapeNAlign);
     }
 
     auto taskNum = shapeB;

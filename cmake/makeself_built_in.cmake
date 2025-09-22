@@ -1,4 +1,4 @@
-
+# ----------------------------------------------------------------------------
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 # This file is a part of the CANN Open Software.
 # Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
@@ -6,7 +6,7 @@
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
-# ============================================================================
+# ----------------------------------------------------------------------------
 # makeself.cmake - 自定义 makeself 打包脚本
 
 # 设置 makeself 路径
@@ -33,7 +33,7 @@ endif()
 # 生成安装配置文件
 set(CSV_OUTPUT ${CPACK_CMAKE_BINARY_DIR}/filelist.csv)
 execute_process(
-    COMMAND python3 ${CPACK_CMAKE_SOURCE_DIR}/scripts/package/package.py --pkg_name ops_math --os_arch linux.${CPACK_ARCH}
+    COMMAND python3 ${CPACK_CMAKE_SOURCE_DIR}/scripts/package/package.py --pkg_name ops_math --chip_name ${CPACK_SOC} --os_arch linux-${CPACK_ARCH}
     WORKING_DIRECTORY ${CPACK_CMAKE_BINARY_DIR}
     OUTPUT_VARIABLE result
     ERROR_VARIABLE error
@@ -94,7 +94,9 @@ if(NOT EXEC_RESULT EQUAL 0)
     message(FATAL_ERROR "makeself packaging failed: ${EXEC_ERROR}")
 endif()
 
-execute_process(COMMAND mv ${STAGING_DIR}/${package_name} ${CPACK_PACKAGE_DIRECTORY}/
+execute_process(
+    COMMAND mkdir -p ${CPACK_PACKAGE_DIRECTORY}
+    COMMAND mv ${STAGING_DIR}/${package_name} ${CPACK_PACKAGE_DIRECTORY}/
     COMMAND echo "Move ${STAGING_DIR}/${package_name} to ${CPACK_PACKAGE_DIRECTORY}/"
     WORKING_DIRECTORY ${STAGING_DIR}
 )

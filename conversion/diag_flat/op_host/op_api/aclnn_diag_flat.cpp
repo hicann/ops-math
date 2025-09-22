@@ -1,7 +1,7 @@
 /**
  * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -50,14 +50,14 @@ static const std::initializer_list<DataType>& GetDtypeSupportList()
     }
 }
 
-static bool CheckNotNull(const aclTensor* self, aclTensor* out)
+static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
 {
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(out, return false);
     return true;
 }
 
-static bool CheckDtypeValid(const aclTensor* self, aclTensor* out)
+static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     auto supportList = GetDtypeSupportList();
     // 检查self的数据类型是否在div算子的支持列表内
@@ -70,7 +70,7 @@ static bool CheckDtypeValid(const aclTensor* self, aclTensor* out)
 }
 
 // 检查shape类型以及元素的个数满足要求
-static bool CheckShape(const aclTensor* self, aclTensor* out)
+static bool CheckShape(const aclTensor* self, const aclTensor* out)
 {
     OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIMS_NUMS, return false);
     OP_CHECK_MAX_DIM(out, MAX_SUPPORT_DIMS_NUMS, return false);

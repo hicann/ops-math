@@ -15,3 +15,4 @@
 | [aclnnIsFinite](../../math/is_finite/docs/aclnnIsFinite.md)  | 判断张量中哪些元素是有限数值，即不是inf、-inf或nan。         |
 | [aclnnIsInf](../../math/is_inf/docs/aclnnIsInf.md)           | 判断张量中哪些元素是无限大值，即是inf、-inf。                |
 | [aclnnLinspace](../../math/lin_space/docs/aclnnLinspace.md)  | 生成一个等间隔数值序列。                                     |
+| [aclnnSinkhorn](../math/sinkhorn/docs/aclnnSinkhorn.md) | 计算Sinkhorn距离，可以用于MoE模型中的专家路由。|
