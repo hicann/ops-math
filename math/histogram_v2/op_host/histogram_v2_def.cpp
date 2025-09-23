@@ -16,10 +16,10 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-class HistogramV2 : public OpDef
-{
+class HistogramV2 : public OpDef {
 private:
-    static constexpr int DEFAULT_BINS = 100;    
+    static constexpr int DEFAULT_BINS = 100;
+
 public:
     explicit HistogramV2(const char* name) : OpDef(name)
     {
@@ -64,7 +64,7 @@ public:
                 {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
                  ge::FORMAT_ND})
             .InitValue(0);
-        this->Attr("bins").AttrType(OPTIONAL).Int(DEFAULT_BINS);  // default value
+        this->Attr("bins").AttrType(OPTIONAL).Int(DEFAULT_BINS); // default value
         OpAICoreConfig aicore_config;
         aicore_config.DynamicCompileStaticFlag(true)
             .DynamicFormatFlag(true)
@@ -73,24 +73,6 @@ public:
         this->AICore().AddConfig("ascend910b", aicore_config);
         this->AICore().AddConfig("ascend910_93", aicore_config);
         this->AICore().AddConfig("ascend310p", aicore_config);
-
-        OpAICoreConfig config_91095;
-        config_91095.DynamicCompileStaticFlag(true)
-            .DynamicFormatFlag(true)
-            .DynamicRankSupportFlag(true)
-            .DynamicShapeSupportFlag(true)
-            .ExtendCfgInfo("opFile.value", "histogram_v2_apt");
-        config_91095.Output("y")
-            .ParamType(REQUIRED)
-            .DataType(
-                {ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32})
-            .Format(
-                {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                 ge::FORMAT_ND})
-            .UnknownShapeFormat(
-                {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                 ge::FORMAT_ND});
-        this->AICore().AddConfig("ascend910_95", config_91095);
     }
 };
 

@@ -15,8 +15,7 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-class IsInf : public OpDef
-{
+class IsInf : public OpDef {
 public:
     explicit IsInf(const char* name) : OpDef(name)
     {
@@ -35,16 +34,6 @@ public:
 
         this->AICore().AddConfig("ascend910b");
         this->AICore().AddConfig("ascend910_93");
-
-        OpAICoreConfig aicoreConfig;
-        aicoreConfig.DynamicCompileStaticFlag(true)
-            .DynamicFormatFlag(false)
-            .DynamicRankSupportFlag(true)
-            .DynamicShapeSupportFlag(true)
-            .NeedCheckSupportFlag(false)
-            .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "is_inf_apt");
-        this->AICore().AddConfig("ascend910_95", aicoreConfig);
 
         OpAICoreConfig config310P;
         config310P.DynamicCompileStaticFlag(true)
