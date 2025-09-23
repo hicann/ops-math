@@ -47,6 +47,9 @@ if(UT_TEST_ALL OR OP_HOST_UT)
   target_include_directories(${OP_HOST_UT_EXE} PRIVATE
       ${ASCEND_DIR}/pkg_inc
       )
+  target_link_directories(${OP_HOST_UT_EXE} PRIVATE
+      ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64
+      )
   target_link_libraries(${OP_HOST_UT_EXE} PRIVATE
       $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
       -Wl,--whole-archive
@@ -58,6 +61,7 @@ if(UT_TEST_ALL OR OP_HOST_UT)
       -Wl,--as-needed
       register
       opp_registry
+      graph
       platform
       gtest
   )

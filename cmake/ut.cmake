@@ -36,7 +36,7 @@ if(UT_TEST_ALL OR OP_HOST_UT)
 
     # add optiling ut cases object: math_op_tiling_ut_cases_obj
     if(NOT TARGET ${OP_TILING_MODULE_NAME}_cases_obj)
-      add_library(${OP_TILING_MODULE_NAME}_cases_obj OBJECT)
+      add_library(${OP_TILING_MODULE_NAME}_cases_obj OBJECT ${UT_PATH}/empty.cpp)
     endif()
     target_include_directories(
       ${OP_TILING_MODULE_NAME}_cases_obj PRIVATE ${UT_COMMON_INC} ${GTEST_INCLUDE} ${ASCEND_DIR}/include
@@ -65,7 +65,7 @@ if(UT_TEST_ALL OR OP_HOST_UT)
 
     # add opinfershape ut cases object: math_op_infershape_ut_cases_obj
     if(NOT TARGET ${OP_INFERSHAPE_MODULE_NAME}_cases_obj)
-      add_library(${OP_INFERSHAPE_MODULE_NAME}_cases_obj OBJECT)
+      add_library(${OP_INFERSHAPE_MODULE_NAME}_cases_obj OBJECT ${UT_PATH}/empty.cpp)
     endif()
     target_include_directories(
       ${OP_INFERSHAPE_MODULE_NAME}_cases_obj PRIVATE ${UT_COMMON_INC} ${GTEST_INCLUDE} ${ASCEND_DIR}/include
