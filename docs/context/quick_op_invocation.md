@@ -17,7 +17,7 @@
    - Gawk
    - googletest（仅执行UT时依赖，建议版本 [release-1.11.0](https://github.com/google/googletest/releases/tag/release-1.11.0)）
 
-   上述依赖包，可以通过执行本代码仓根目录下的install\_deps.sh文件完成安装，具体命令如下：
+   上述依赖包可通过项目根目录下install\_deps.sh安装，命令如下：
    ```bash
    bash install_deps.sh
    ```
@@ -40,13 +40,13 @@
     ```
     - \$\{cann\_version\}：表示CANN包版本号。
     - \$\{arch\}：表示CPU架构，如aarch64、x86_64。
-    - \$\{install\_path\}：表示指定安装路径，默认安装在/usr/local/Ascend目录下。
+    - \$\{install\_path\}：表示指定安装路径，默认安装在`/usr/local/Ascend`目录。
 
 2. **安装社区版CANN legacy包（可选）**
 
     如需本地运行项目算子，需额外安装此包，否则跳过本操作。
 
-    根据产品型号和环境架构，下载对应`${soc_version}-opp_legacy-${cann_version}-linux-${arch}.run`包，下载链接如下：
+    根据产品型号和环境架构，下载对应`cann-${soc_version}-opp_legacy-${cann_version}-linux-${arch}.run`包，下载链接如下：
 
     - Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：[legacy x86_64包](https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/community/cann-910b-opp_legacy-8.3.RC1-linux-x86_64.run)、[legacy aarch64包](https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/community/cann-910b-opp_legacy-8.3.RC1-linux-aarch64.run)。
     - Atlas A3 训练系列产品/Atlas A3 推理系列产品：[legacy x86_64包](https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/community/cann-910_93-opp_legacy-8.3.RC1-linux-x86_64.run)、[legacy aarch64包](https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/community/cann-910_93-opp_legacy-8.3.RC1-linux-aarch64.run)。
@@ -58,7 +58,7 @@
     ./cann-${soc_version}-opp_legacy-${cann_version}-linux-${arch}.run --full --install-path=${install_path}
     ```
     - \$\{soc\_version\}：表示NPU型号。
-    - \$\{install\_path\}：表示指定安装路径，需要与toolkit包安装在相同路径，默认安装在/usr/local/Ascend目录下。
+    - \$\{install\_path\}：表示指定安装路径，需要与toolkit包安装在相同路径，默认安装在`/usr/local/Ascend`目录。
 
 3. **配置环境变量**
 	
@@ -104,7 +104,8 @@
     - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"。
     - --vendor_name（可选）：\$\{vendor\_name\}表示构建的自定义算子包名，默认名为custom。
     - --ops（可选）：\$\{op\_list\}表示待编译算子，不指定时默认编译所有算子（参见[算子列表](./op_list.md)）。格式形如"abs,add_lora,..."，多算子之间用英文逗号","分隔。
-    约束：当前自定义算子包的vendor_name和ops都是可选输入，如果都不选，编译出的是built-in包；若需要编译所有算子的自定义算子包，需要参数vendor_name。
+    
+    说明：若\$\{vendor\_name\}和\$\{op\_list\}都不传入编译的是built-in包；若编译所有算子的自定义算子包，需传入\$\{vendor\_name\}。
 
     若提示如下信息，说明编译成功。
     ```bash
@@ -118,7 +119,7 @@
     ./cann-ops-math-${vendor_name}_linux-${arch}.run
     ```
     
-    自定义算子包安装路径为`${ASCEND_HOME_PATH}/opp/vendors`，\$\{ASCEND\_HOME\_PATH\}表示CANN toolkit包安装路径，一般为\$\{install\_path\}/latest，可通过环境变量配置。
+    自定义算子包安装路径为`${ASCEND_HOME_PATH}/opp/vendors`，\$\{ASCEND\_HOME\_PATH\}已通过环境变量配置，表示CANN toolkit包安装路径，一般为\$\{install\_path\}/latest。注意自定义算子包不支持卸载。
 
 ### ops-math包
 
@@ -146,7 +147,7 @@
     ./cann-${soc_name}-ops-math_${cann_version}_linux-${arch}.run --full --install-path=${install_path}
     ```
 
-    \$\{install\_path\}：表示指定安装路径，需要与toolkit包安装在相同路径，默认安装在/usr/local/Ascend路径下。
+    \$\{install\_path\}：表示指定安装路径，需要与toolkit包安装在相同路径，默认安装在`/usr/local/Ascend`目录。
 
 ## 本地验证 
 
@@ -156,8 +157,6 @@
 
 - **执行算子样例**
   
-    不同算子包使用不同执行命令，执行完成后会打印算子执行结果。
-    
     - 完成ops-math包安装后，执行命令如下：
         ```bash
         bash build.sh --run_example ${op} ${mode}
@@ -165,82 +164,64 @@
         # bash build.sh --run_example abs eager
         ```
         
-        - \$\{op\}：表示待执行算子，算子名小写下划线形式，如abs。       
+        - \$\{op\}：表示待执行算子（参见[算子列表](./op_list.md)），算子名小写下划线形式，如abs。       
         - \$\{mode\}：表示算子执行模式，目前支持eager（aclnn调用）、graph（图模式调用）。
-
-        以Abs算子（算子名参考[算子列表](./op_list.md)中算子目录）为例，执行如下命令：
-        ```bash
-        bash build.sh --run_example abs eager
-        ```
-        执行完成后会打印运行结果。math\abs\examples\test_aclnn_abs.cpp
-        ```
-        mean result[0] is: 1.000000
-        mean result[1] is: 1.000000
-        mean result[2] is: 1.000000
-        mean result[3] is: 2.000000
-        mean result[4] is: 2.000000
-        mean result[5] is: 2.000000
-        mean result[6] is: 3.000000
-        mean result[7] is: 3.000000
-        ```
-
+    
     - 完成自定义算子包安装后，执行命令如下：
         ```bash
         bash build.sh --run_example ${op} ${mode} ${pkg_mode} [--vendor_name=${vendor_name}]
         # 以Abs算子example执行为例
         # bash build.sh --run_example abs eager cust --vendor_name=custom
         ```
-        
+    
         - \$\{op\}：表示待执行算子，算子名小写下划线形式，如abs。
-        - \$\{mode\}：表示执行模式，目前仅支持eager（aclnn调用）、graph（图模式调用）。
+        - \$\{mode\}：表示执行模式，目前支持eager（aclnn调用）、graph（图模式调用）。
         - \$\{pkg_mode\}：表示包模式，目前仅支持cust，即自定义算子包。         
-        - \$\{vendor\_name\}（可选）：与构建的自定义算子包设置一致，默认名为custom。
+        - \$\{vendor\_name\}（可选）：与构建的自定义算子包设置一致，默认名为custom。        
+        
+        说明：\$\{mode\}为graph时，不指定\$\{pkg_mode\}和\$\{vendor\_name\}
 
-        以Abs算子为例，执行如下命令：
-        ```bash
-        bash build.sh --run_example abs eager cust --vendor_name=custom
-        ```
-        执行完成后会打印运行结果。
+    执行算子样例后会打印执行结果，以Abs算子为例，结果如下：
 
-        ```
-        mean result[0] is: 1.000000
-        mean result[1] is: 1.000000
-        mean result[2] is: 1.000000
-        mean result[3] is: 2.000000
-        mean result[4] is: 2.000000
-        mean result[5] is: 2.000000
-        mean result[6] is: 3.000000
-        mean result[7] is: 3.000000
-        ```
+    ```
+    mean result[0] is: 1.000000
+    mean result[1] is: 1.000000
+    mean result[2] is: 1.000000
+    mean result[3] is: 2.000000
+    mean result[4] is: 2.000000
+    mean result[5] is: 2.000000
+    mean result[6] is: 3.000000
+    mean result[7] is: 3.000000
+    ```
 - **执行算子UT**
 
 	> 说明：执行UT用例依赖googletest单元测试框架，详细介绍参见[googletest官网](https://google.github.io/googletest/advanced.html#running-a-subset-of-the-tests)。
 
     ```bash
-    # 安装根目录下test相关requirements.txt依赖
-    pip3 install -r tests/requirements.txt
-    # 方式1: 编译并执行指定算子和对应功能的UT测试用例（选其一）
-    bash build.sh -u --[opapi|ophost|opkernel] --ops=abs
-    # 方式2: 编译并执行所有的UT测试用例
-    # bash build.sh -u
-    # 方式3: 编译所有的UT测试用例但不执行
-    # bash build.sh -u --noexec
-    # 方式4: 编译并执行对应功能的UT测试用例（选其一）
-    # bash build.sh -u --[opapi|ophost|opkernel]
-    # 方式5: 编译对应功能的UT测试用例但不执行（选其一）
-    # bash build.sh -u --noexec --[opapi|ophost|opkernel]
+  # 安装根目录下test相关requirements.txt依赖
+  pip3 install -r tests/requirements.txt
+  # 方式1: 编译并执行指定算子和对应功能的UT测试用例（选其一）
+  bash build.sh -u --[opapi|ophost|opkernel] --ops=abs
+  # 方式2: 编译并执行所有的UT测试用例
+  # bash build.sh -u
+  # 方式3: 编译所有的UT测试用例但不执行
+  # bash build.sh -u --noexec
+  # 方式4: 编译并执行对应功能的UT测试用例（选其一）
+  # bash build.sh -u --[opapi|ophost|opkernel]
+  # 方式5: 编译对应功能的UT测试用例但不执行（选其一）
+  # bash build.sh -u --noexec --[opapi|ophost|opkernel]
     ```
 
     假设验证ophost功能是否正常，执行如下命令：
     ```bash
-    bash build.sh -u --ophost
+  bash build.sh -u --ophost
     ```
 
     执行完成后出现如下内容，表示执行成功。
     ```bash
-    Global Environment TearDown
-    [==========] ${n} tests from ${m} test suites ran. (${x} ms total)
-    [  PASSED  ] ${n} tests.
-    [100%] Built target math_op_host_ut
+  Global Environment TearDown
+  [==========] ${n} tests from ${m} test suites ran. (${x} ms total)
+  [  PASSED  ] ${n} tests.
+  [100%] Built target math_op_host_ut
     ```
     \$\{n\}表示执行了n个用例，\$\{m\}表示m项测试，\$\{x\}表示执行用例消耗的时间，单位为毫秒。

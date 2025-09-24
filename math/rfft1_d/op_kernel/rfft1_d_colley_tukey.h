@@ -332,7 +332,7 @@ private:
             matmulObj3.SetTensorB(matmulTmps[imagOffset + firstSize], false);
             matmulObj3.IterateAll<false>(curYGm[halfCurRadix * trueCurSize], true);
         }
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier<PIPE_ALL>();
 
         if (!isBluestein) {
             matmulObj3.SetOrgShape(halfCurRadix, trueCurSize, curRadix);
@@ -345,12 +345,12 @@ private:
         matmulObj3.SetTensorA(dftTensorReal, false);
         matmulObj3.SetTensorB(matmulTmps[1], false);
         matmulObj3.IterateAll(curYGm);
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier<PIPE_ALL>();
 
         matmulObj3.SetTensorA(dftTensorImag, false);
         matmulObj3.SetTensorB(matmulTmps[imagOffset], false);
         matmulObj3.IterateAll(curYGm, true);
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier<PIPE_ALL>();
     }
 
     __aicore__ inline void IntermediateIterFirstStep(
@@ -490,12 +490,12 @@ private:
             matmulObj2.SetTensorA(dftTensorReal, false);
             matmulObj2.SetTensorB(matmulTmps[1 + i * trueCurSize], false);
             matmulObj2.IterateAll(matmulTmps[1 + i * trueCurSize]);
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
 
             matmulObj2.SetTensorA(dftTensorImag, false);
             matmulObj2.SetTensorB(matmulTmps[1 + firstSize + i * trueCurSize], false);
             matmulObj2.IterateAll(matmulTmps[1 + i * trueCurSize], true);
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
         }
         FreeTmpTensor(COMPLEX * trueCurSizePadded);
     }

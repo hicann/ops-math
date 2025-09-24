@@ -10,20 +10,20 @@
 
 message(STATUS "BUILD_TORCH_OPS ON in isfinite")
 # ISFINITE operation sources
-file(GLOB ISFINITE_NPU_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cce")
+file(GLOB ISFINITE_NPU_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
 # set(ISFINITE_SOURCES ${ISFINITE_CPP_HEADER} ${ISFINITE_CPP_SOURCES} ${ISFINITE_NPU_SOURCES})
 set(ISFINITE_SOURCES ${ISFINITE_NPU_SOURCES})
-# Mark .cce files with special properties
+# Mark .cpp files with special properties
 set_source_files_properties(
     ${ISFINITE_NPU_SOURCES} PROPERTIES
     LANGUAGE CXX
-    COMPILE_FLAGS "--cce-soc-version=Ascend910B1 --cce-soc-core-type=VecCore --cce-auto-sync"
+    COMPILE_FLAGS "--cce-soc-version=Ascend910B1 --cce-soc-core-type=VecCore --cce-auto-sync -xcce"
 )
 
 # Create object library
-add_library(isfinite_objects OBJECT ${ISFINITE_SOURCES})
+add_library(is_finite_objects OBJECT ${ISFINITE_SOURCES})
 
-target_compile_options(isfinite_objects PRIVATE ${COMMON_COMPILE_OPTIONS})
-target_include_directories(isfinite_objects PRIVATE ${COMMON_INCLUDE_DIRS})
+target_compile_options(is_finite_objects PRIVATE ${COMMON_COMPILE_OPTIONS})
+target_include_directories(is_finite_objects PRIVATE ${COMMON_INCLUDE_DIRS})
 return()

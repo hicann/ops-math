@@ -6,10 +6,6 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品 </term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
-| <term>Atlas 200/300/500 推理产品</term>                      |    ×     |
 
 ## 功能说明
 
@@ -33,16 +29,12 @@
 - **参数说明：**
 
   - self(aclTensor*,计算输入)：输入tensor，数据类型需要与clipValueMin、clipValueMax满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)）。shape需要与min、max满足[broadcast关系](common/broadcast关系.md)，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
   - clipValueMin(aclTensor*,计算输入)：输入下限值tensor，数据类型需要与self、clipValueMax满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)）。shape需要与self、max满足[broadcast关系](common/broadcast关系.md)，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
   - clipValueMax(aclTensor*,计算输入)：输入上限值tensor，数据类型需要与self、clipValueMin满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)）。shape需要与self、clipValueMin满足[broadcast关系](common/broadcast关系.md)，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
   - out(aclTensor *，计算输出)：输出tensor，shape和self、clipValueMin、clipValueMax broadcast后的shape保持一致，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64，数据类型需要和self一致，且数据类型需要可以由self、clipValueMin、clipValueMax推导出的数据类型转换而来（参见[互转换关系](common/互转换关系.md)）。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，数据类型需要和self一致，且数据类型需要可以由self、clipValueMin、clipValueMax推导出的数据类型转换而来（参见[互转换关系](common/互转换关系.md)）。
   - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor **，出参)：返回op执行器，包含了算子计算流程。

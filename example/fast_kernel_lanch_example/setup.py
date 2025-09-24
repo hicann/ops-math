@@ -12,10 +12,50 @@
 
 import os
 import sys
+import glob
+import shutil
 import subprocess
 from pathlib import Path
 from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext
+from setuptools import Command
+
+
+class CleanCommand(Command):
+    def initialize_options(self):
+        pass
+    
+    def finalize_options(self):
+        pass
+    
+    def run(self):
+        # 删除构建目录
+        if os.path.exists('build'):
+            shutil.rmtree('build')
+            print("Removed build/")
+        
+        # 删除dist目录
+        if os.path.exists('dist'):
+            shutil.rmtree('dist')
+            print("Removed dist/")
+        
+        # 删除egg-info目录
+        egg_info_dir = f"{self.distribution.get_name().replace('-', '_')}.egg-info"
+        if os.path.exists(egg_info_dir):
+            shutil.rmtree(egg_info_dir)
+            print(f"Removed {egg_info_dir}/")
+        
+        # 删除.pyc文件和__pycache__目录
+        for root, dirs, files in os.walk('.'):
+            for file in files:
+                if file.endswith('.pyc'):
+                    os.remove(os.path.join(root, file))
+                    print(f"Removed {os.path.join(root, file)}")
+            
+            for dir in dirs:
+                if dir == '__pycache__':
+                    shutil.rmtree(os.path.join(root, dir))
+                    print(f"Removed {os.path.join(root, dir)}/")
 
 
 class CMakeExtension(Extension):
@@ -61,7 +101,7 @@ setup(
     version='0.0.1',
     packages=find_packages(),
     ext_modules=[CMakeExtension("ascend_ops._C", sourcedir=".")],
-    cmdclass={'build_ext': CMakeBuild},
+    cmdclass={'build_ext': CMakeBuild, 'clean': CleanCommand},
     zip_safe=False,
     install_requires=["torch"],
     description="Example of PyTorch C++ and Ascend extensions (with CMake)",

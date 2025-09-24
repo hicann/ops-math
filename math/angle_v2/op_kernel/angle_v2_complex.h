@@ -73,7 +73,7 @@ public:
 #if (__CCE_AICORE__ >= 200)
         for (int32_t i = 0; i < this->tileNum; i++) {
             CopyInComplex(i * complexLength, complexLength);
-            pipe_barrier(PIPE_MTE2);
+            PipeBarrier<PIPE_MTE2>();
             Compute(this->mask, repeatTimes, this->tileLength);
             PipeBarrier<PIPE_V>();
             CopyOut(i * this->tileLength, this->tileLength);
@@ -83,7 +83,7 @@ public:
             complexLength = this->lastTileLength * COEFFICENT;
             repeatTimes = (this->lastTileLength + this->mask - 1) / this->mask;
             CopyInComplex(this->blockLength * COEFFICENT - complexLength, complexTailLength);
-            pipe_barrier(PIPE_MTE2);
+            PipeBarrier<PIPE_MTE2>();
             Compute(this->mask, repeatTimes, this->lastTileLength);
             PipeBarrier<PIPE_V>();
             CopyOut(this->blockLength - this->lastTileLength, this->lastTileLength);
@@ -91,9 +91,9 @@ public:
 #else
         for (int32_t i = 0; i < this->tileNum; i++) {
             CopyInComplex(i * complexLength, complexLength);
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
             Compute(this->mask, repeatTimes, this->tileLength);
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
             CopyOut(i * this->tileLength, this->tileLength);
         }
 
@@ -101,9 +101,9 @@ public:
             complexLength = this->lastTileLength * COEFFICENT;
             repeatTimes = (this->lastTileLength + this->mask - 1) / this->mask;
             CopyInComplex(this->blockLength * COEFFICENT - complexLength, complexTailLength);
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
             Compute(this->mask, repeatTimes, this->lastTileLength);
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
             CopyOut(this->blockLength - this->lastTileLength, this->lastTileLength);
         }
 #endif

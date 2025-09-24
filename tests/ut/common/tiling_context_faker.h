@@ -30,12 +30,29 @@ public:
 
     class OpAttr {
     public:
-        OpAttr(const std::string& attrName, Ops::Math::AnyValue& attr) : attrName_(attrName), attr_(attr) {}
+        OpAttr(const std::string& attrName, const Ops::Math::AnyValue& attr) : attrName_(attrName), attr_(attr) {}
     public:
         std::string attrName_;
         Ops::Math::AnyValue attr_;
     };
 public:
+    TilingContextPara(const std::string& opName,
+                      const std::vector<TensorDescription>& inputTensorDesc,
+                      const std::vector<TensorDescription>& outputTensorDesc,
+                      const std::vector<OpAttr>& attrs,
+                      void* compileInfo = nullptr,
+                      uint64_t coreNum = 64,
+                      uint64_t ubSize = 262144,
+                      uint64_t tilingDataSize = 4096) : 
+                      opName_(opName),
+                      inputTensorDesc_(inputTensorDesc),
+                      outputTensorDesc_(outputTensorDesc),
+                      attrs_(attrs),
+                      compileInfo_(compileInfo),
+                      coreNum_(coreNum),
+                      ubSize_(ubSize),
+                      tilingDataSize_(tilingDataSize) {}
+
     TilingContextPara(const std::string& opName,
                       const std::vector<TensorDescription>& inputTensorDesc,
                       const std::vector<TensorDescription>& outputTensorDesc,

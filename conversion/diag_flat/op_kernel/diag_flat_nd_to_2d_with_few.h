@@ -213,8 +213,8 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::Compute()
     ClearOuput();
     LocalTensor<T> ubInput = inputQueue_.DeQue<T>();
     LocalTensor<T> ubOutput = outputQueue_.DeQue<T>();
-    set_flag(PIPE_V, PIPE_S, EVENT_ID0);
-    wait_flag(PIPE_V, PIPE_S, EVENT_ID0);
+    SetFlag<HardEvent::V_S>(EVENT_ID0);
+    WaitFlag<HardEvent::V_S>(EVENT_ID0);
     for (int i = 0; i < ONCE_HANDLE_NUM; i++) {
         ubOutput.SetValue(ONCE_HANDLE_NUM * i + i, ubInput.GetValue(i));
     }
@@ -229,7 +229,7 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::CopyOut(int64_t iter)
     int64_t gmOffset = 0;
     int64_t width = inputNum_ + abs(offset_);
     for (int64_t i = 0; i < ONCE_HANDLE_NUM; i++) {
-        pipe_barrier(PIPE_MTE3);
+        PipeBarrier<PIPE_MTE3>();;
         int64_t rowIdx = iter * ONCE_HANDLE_NUM + i;
         gmOffset = width * rowIdx + (offset_ > 0 ? offset_ : 0) + iter * ONCE_HANDLE_NUM;
         DataCopy(gmOutput_[gmOffset], ubOutput[ONCE_HANDLE_NUM * i], ONCE_HANDLE_NUM);
@@ -264,7 +264,7 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::CopyOutTail(int64_t iter)
             int64_t iterBack = iter - 1 < 0 ? 0 : iter - 1;
             int64_t offset = iter == 0 ? 0 : inputNum_ % ONCE_HANDLE_NUM;
             for (int64_t i = 0; i < ONCE_HANDLE_NUM; i++) {
-                pipe_barrier(PIPE_MTE3);
+                PipeBarrier<PIPE_MTE3>();;
                 int64_t rowIdx = iter * ONCE_HANDLE_NUM + i - rowBack;
                 gmOffset = width * rowIdx + (offset_ > 0 ? offset_ : 0) + iterBack * ONCE_HANDLE_NUM + offset;
                 DataCopy(gmOutput_[gmOffset], ubOutput[ONCE_HANDLE_NUM * i], ONCE_HANDLE_NUM);
@@ -272,7 +272,7 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::CopyOutTail(int64_t iter)
         }
     } else {
         for (int64_t i = 0; i < ONCE_HANDLE_NUM; i++) {
-            pipe_barrier(PIPE_MTE3);
+            PipeBarrier<PIPE_MTE3>();;
             int64_t rowIdx = iter * ONCE_HANDLE_NUM + i;
             gmOffset = width * rowIdx + (offset_ > 0 ? offset_ : 0) + iter * ONCE_HANDLE_NUM;
             DataCopy(gmOutput_[gmOffset], ubOutput[ONCE_HANDLE_NUM * i], ONCE_HANDLE_NUM);
@@ -341,8 +341,8 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::MemSetZero(GlobalTensor<U> gmTe
     uint32_t roundSize = round != 0 ? popSize : 0;
     DuplicateImpl<int16_t>((__ubuf__ int16_t*)popBuffer.GetPhyAddr(), 0, popSize);
     event_t eventIDVToMTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
-    set_flag(PIPE_V, PIPE_MTE3, eventIDVToMTE3);
-    wait_flag(PIPE_V, PIPE_MTE3, eventIDVToMTE3);
+    SetFlag<HardEvent::V_MTE3>(eventIDVToMTE3);
+    WaitFlag<HardEvent::V_MTE3>(eventIDVToMTE3);
     uint32_t comOffset = 0;
     // compute the main block
     for (int index = 0; index < round; ++index) {

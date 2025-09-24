@@ -186,7 +186,7 @@ __aicore__ inline void AddLoraNormalCoreBatchKernel::ComputeWeightB(
         SetFlag<HardEvent::M_FIX>(eventId);
         WaitFlag<HardEvent::M_FIX>(eventId);
         CopyL0C2GM(mProcessOffset, mToProcess, nInner, nIn, nSplit, nIncoreOffset);
-        pipe_barrier(PIPE_FIX);
+        AscendC::PipeBarrier<PIPE_FIX>();
         SetFlag<HardEvent::FIX_MTE2>(eventId);
         WaitFlag<HardEvent::FIX_MTE2>(eventId);
     }
@@ -207,7 +207,7 @@ __aicore__ inline void AddLoraNormalCoreBatchKernel::ComputeWeightA(
         Compute(index, kidx, mToProcess, k, n, pingPongFlag);
     }
     CopyL0C2A1(mToProcess, mProcessOffset, n, pingPongFlag);
-    pipe_barrier(PIPE_FIX);
+    AscendC::PipeBarrier<PIPE_FIX>();
 }
 
 __aicore__ inline void AddLoraNormalCoreBatchKernel::MoveOutMM(

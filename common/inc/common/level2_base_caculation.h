@@ -53,19 +53,6 @@ namespace op
     return tmp;
 }
 
-// static const aclTensor* FillTensorWithFalseValueWithInf(aclTensor* out, bool val, aclOpExecutor* executor)
-// {
-//     FVector<int64_t> tmp = FillTensorGetTmpDim(out);
-//     const aclTensor* dims = executor->ConvertToTensor(tmp.data(), tmp.size(), op::ToOpDataType(ACL_INT64));
-//     aclIntArray* shapeArray = executor->AllocIntArray(tmp.data(), tmp.size());
-//     FVector<bool> valVector = {val};
-//     auto valTensor = executor->ConvertToTensor(valVector.data(), valVector.size(), out->GetDataType());
-//     if (dims == nullptr || shapeArray == nullptr || valTensor == nullptr) {
-//         return nullptr;
-//     }
-//     return l0op::Fill(dims, valTensor, shapeArray, executor);
-// }
-
 [[maybe_unused]] static aclIntArray* GetTensorShapeActivation(const aclTensor* x, aclOpExecutor* executor)
 {
     auto shape = x->GetViewShape();
@@ -79,28 +66,6 @@ namespace op
     return perm;
 }
 
-// static inline bool CheckSocVersionIsSupportBf16Activation(void)
-// {
-//     return GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-//            GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E;
-// }
-
-// static bool CheckDtypeValidActivation(const aclTensor* self, const aclTensor* out,
-//                                       const std::initializer_list<op::DataType>& supportList)
-// {
-//     OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
-//     OP_CHECK_DTYPE_NOT_SUPPORT(out, supportList, return false);
-//     OP_CHECK_DTYPE_NOT_MATCH(out, self->GetDataType(), return false);
-//     bool bf16flag = CheckSocVersionIsSupportBf16Activation();
-//     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-//     if (!bf16flag && self->GetDataType() == op::DataType::DT_BF16) {
-//         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s is unsupported by the current SOC version [%s].",
-//                 op::ToString(self->GetDataType()).GetString(), op::ToString(socVersion).GetString());
-//         return false;
-//     }
-//     return true;
-// }
-
 [[maybe_unused]] static const aclTensor* ReshapeLongTensorActivation(const aclTensor* x, aclOpExecutor* executor, int originalDimSize,
                                                     aclIntArray* valuePerm = nullptr)
 {
@@ -112,23 +77,6 @@ namespace op
     auto reshapeSelf = l0op::Reshape(x, valuePerm, executor);
     return reshapeSelf;
 }
-
-// static const aclTensor* ReshapeSelfValueGetActivation(const aclTensor* self, size_t dimSize,
-//                                                       const aclTensor* selfContiguous, UniqueExecutor& uniqueExecutor)
-// {
-//     auto reshapeSelf = selfContiguous;
-//     auto shapeOri = self->GetViewShape();
-//     if (dimSize > MAX_SUPPORT_DIMS_NUMS) {
-//         int64_t AllDimValue = 1;
-//         for (size_t i = 0; i < dimSize; i++) {
-//             AllDimValue *= shapeOri[i];
-//         }
-//         int64_t AllDim[1] = {AllDimValue};
-//         auto shape1d = (uniqueExecutor)->AllocIntArray(AllDim, 1);
-//         reshapeSelf = ReshapeLongTensorActivation(selfContiguous, uniqueExecutor.get(), dimSize, shape1d);
-//     }
-//     return reshapeSelf;
-// }
 
 [[maybe_unused]] static FVector<int64_t> FillScalarGetShapeValue(aclTensor* out)
 {

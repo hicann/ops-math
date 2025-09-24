@@ -337,7 +337,7 @@ private:
         if (copy_els_pad) {
             DataCopyPad(output[part * partSize + copy_els], tmpResTensor[copy_els], copyPadParams);
         }
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier<PIPE_ALL>();
 
         SetFlag<HardEvent::MTE3_MTE2>(eventIdMte3ToMte2);
     }
@@ -498,10 +498,10 @@ private:
             SplitInput(ctResGm, doubleXGm);
 
             ct.ReInit(doubleXPos, dftAddr, ctXPos + sizeof(DTYPE_X));
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
             this->ct.Process();
 
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
             MulsCoeffs(ctResGm, ctResGm[1]);
 
             SetFlag<HardEvent::MTE3_MTE2>(eventIdMte3ToMte2);
@@ -510,10 +510,10 @@ private:
             SplitInput(ctResGm[1], doubleXGm);
 
             ct.ReInit(doubleXPos, dftAddr + fftMatrOverallSize * sizeof(DTYPE_X), doubleXPos + sizeof(DTYPE_X));
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
             this->ct.Process();
 
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
             MulsCoeffs(doubleXGm, yGm[curBatch * COMPLEX * outLength], 1);
 
             SetFlag<HardEvent::MTE3_MTE2>(eventIdMte3ToMte2);

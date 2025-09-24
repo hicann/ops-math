@@ -167,17 +167,17 @@ __aicore__ inline void PadV3GradReplicateHW<T>::CopyWorkspace2Out(
     LocalTensor<T> dataLocal = yOutQueue.AllocTensor<T>();
     DataCopyExtParams copyParams{1, (uint32_t)(copyCount * sizeof(T)), 0, 0, 0};
     DataCopyPadExtParams<T> padParams{true, 0, (uint8_t)(CeilAlign(copyCount, perBlockCount) - copyCount), (T)0};
-    wait_flag(PIPE_S, PIPE_MTE2, eventId0);
-    wait_flag(PIPE_MTE3, PIPE_MTE2, eventId1);
+    WaitFlag<HardEvent::S_MTE2>(eventId0);
+    WaitFlag<HardEvent::MTE3_MTE2>(eventId1);
     DataCopyPad(dataLocal, mGmWorkspace[offset1], copyParams, padParams);
-    set_flag(PIPE_S, PIPE_MTE2, eventId0);
+    SetFlag<HardEvent::S_MTE2>(eventId0);
     event_t eventID = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
-    set_flag(PIPE_MTE2, PIPE_MTE3, eventID);
-    wait_flag(PIPE_MTE2, PIPE_MTE3, eventID);
-    wait_flag(PIPE_S, PIPE_MTE3, eventId2);
+    SetFlag<HardEvent::MTE2_MTE3>(eventID);
+    WaitFlag<HardEvent::MTE2_MTE3>(eventID);
+    WaitFlag<HardEvent::S_MTE3>(eventId2);
     DataCopyPad(mGmY[offset2], dataLocal, copyParams);
-    set_flag(PIPE_S, PIPE_MTE3, eventId2);
-    set_flag(PIPE_MTE3, PIPE_MTE2, eventId1);
+    SetFlag<HardEvent::S_MTE3>(eventId2);
+    SetFlag<HardEvent::MTE3_MTE2>(eventId1);
     yOutQueue.FreeTensor(dataLocal);
 }
 
@@ -408,8 +408,8 @@ __aicore__ inline void PadV3GradReplicateHW<T>::Process()
             copyCount = outWidth;
             for (size_t i = 0; i < height; i++) {
                 gmXOffset = i * width + loop * batchStride + ncOffset * batchStride;
-                set_flag(PIPE_S, PIPE_MTE2, eventId0);
-                wait_flag(PIPE_S, PIPE_MTE2, eventId0);
+                SetFlag<HardEvent::S_MTE2>(eventId0);
+                WaitFlag<HardEvent::S_MTE2>(eventId0);
                 CopyGm2UBWhole(gmXOffset, calCount);
                 if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
                     ComputeHGradBF16(calCount); // 计算结果存在floatQueue
@@ -419,8 +419,8 @@ __aicore__ inline void PadV3GradReplicateHW<T>::Process()
             }
             // workspace上搬入整行
             workspaceOffset = loop * batchStride + ncOffset * batchStride;
-            set_flag(PIPE_S, PIPE_MTE3, eventId2);
-            wait_flag(PIPE_S, PIPE_MTE3, eventId2);
+            SetFlag<HardEvent::S_MTE3>(eventId2);
+            WaitFlag<HardEvent::S_MTE3>(eventId2);
             // padLeft和padRight的梯度累加到对角线元素上，并将ub整行搬运到workspace上
             if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
                 ComputeDiagonalGradBF16(workspaceOffset, calCount);
@@ -429,16 +429,16 @@ __aicore__ inline void PadV3GradReplicateHW<T>::Process()
             }
             // 计算需要搬出的workspace偏移，需要搬出的起始位置，即左侧边缘行
             workspaceOffsetOut = padLeft + loop * batchStride + ncOffset * batchStride;
-            set_flag(PIPE_S, PIPE_MTE2, eventId0);
+            SetFlag<HardEvent::S_MTE2>(eventId0);
             // 计算搬出到gm上的偏移，输出到边缘首行，即outWidth左侧的起始位置，index0
             gmYOffset = loop * outBatchStride + ncOffset * outBatchStride;
-            set_flag(PIPE_S, PIPE_MTE3, eventId2);
+            SetFlag<HardEvent::S_MTE3>(eventId2);
             // workspace -> ub -> gm
-            set_flag(PIPE_MTE3, PIPE_MTE2, eventId1);
+            SetFlag<HardEvent::MTE3_MTE2>(eventId1);
             CopyWorkspace2Out(workspaceOffsetOut, gmYOffset, copyCount);
-            wait_flag(PIPE_S, PIPE_MTE2, eventId0);
-            wait_flag(PIPE_S, PIPE_MTE3, eventId2);
-            wait_flag(PIPE_MTE3, PIPE_MTE2, eventId1);
+            WaitFlag<HardEvent::S_MTE2>(eventId0);
+            WaitFlag<HardEvent::S_MTE3>(eventId2);
+            WaitFlag<HardEvent::MTE3_MTE2>(eventId1);
         }
         // 子场景2：ub一行放不下，需要分为padLeft、padRight和body三部分进行处理
         if (outHeight == 1 && copyTimesOneLine != 1) {
@@ -446,8 +446,8 @@ __aicore__ inline void PadV3GradReplicateHW<T>::Process()
             for (size_t i = 0; i < height; i++) {
                 gmXOffset1 = i * width + loop * batchStride + ncOffset * batchStride;
                 gmXOffset2 = (width - calCount) + i * width + loop * batchStride + ncOffset * batchStride;
-                set_flag(PIPE_S, PIPE_MTE2, eventId0);
-                wait_flag(PIPE_S, PIPE_MTE2, eventId0);
+                SetFlag<HardEvent::S_MTE2>(eventId0);
+                WaitFlag<HardEvent::S_MTE2>(eventId0);
                 CopyGm2UB(gmXOffset1, gmXOffset2, calCount);
                 if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
                     ComputeHGradBF16(CONST_VALUE_2 * calCount); // 计算结果存在floatQueue
@@ -468,21 +468,21 @@ __aicore__ inline void PadV3GradReplicateHW<T>::Process()
             // 计算需要搬出的workspace偏移
             workspaceOffset2 = padLeft + loop * CONST_VALUE_2 * calCount + ncOffset * CONST_VALUE_2 * calCount;
             workspaceOffset3 = calCount + loop * CONST_VALUE_2 * calCount + ncOffset * CONST_VALUE_2 * calCount;
-            set_flag(PIPE_S, PIPE_MTE2, eventId0);
+            SetFlag<HardEvent::S_MTE2>(eventId0);
             // 计算搬出到gm上的偏移
             gmYOffset1 = loop * outBatchStride + ncOffset * outBatchStride;
             gmYOffset2 = (outWidth - calCount + padRight) + loop * outBatchStride + ncOffset * outBatchStride;
-            set_flag(PIPE_S, PIPE_MTE3, eventId2);
+            SetFlag<HardEvent::S_MTE3>(eventId2);
             // 左侧workspace -> ub -> gm
-            set_flag(PIPE_MTE3, PIPE_MTE2, eventId1);
+            SetFlag<HardEvent::MTE3_MTE2>(eventId1);
             CopyWorkspace2Out(workspaceOffset2, gmYOffset1, calCount - padLeft);
-            wait_flag(PIPE_MTE3, PIPE_MTE2, eventId1);
+            WaitFlag<HardEvent::MTE3_MTE2>(eventId1);
             // 右侧workspace -> ub -> gm
-            set_flag(PIPE_MTE3, PIPE_MTE2, eventId1);
+            SetFlag<HardEvent::MTE3_MTE2>(eventId1);
             CopyWorkspace2Out(workspaceOffset3, gmYOffset2, calCount - padRight);
-            wait_flag(PIPE_S, PIPE_MTE2, eventId0);
-            wait_flag(PIPE_S, PIPE_MTE3, eventId2);
-            wait_flag(PIPE_MTE3, PIPE_MTE2, eventId1);
+            WaitFlag<HardEvent::S_MTE2>(eventId0);
+            WaitFlag<HardEvent::S_MTE3>(eventId2);
+            WaitFlag<HardEvent::MTE3_MTE2>(eventId1);
 
             // 处理中间body，搬入ub累加再搬出到gm
             int64_t dataCountBody = width - CONST_VALUE_2 * calCount;
@@ -495,8 +495,8 @@ __aicore__ inline void PadV3GradReplicateHW<T>::Process()
                 for (size_t i = 0; i < height; i++) {
                     gmXOffset3 =
                         calCount + i * width + time * ubFactorElement + loop * batchStride + ncOffset * batchStride;
-                    set_flag(PIPE_S, PIPE_MTE2, eventId0);
-                    wait_flag(PIPE_S, PIPE_MTE2, eventId0);
+                    SetFlag<HardEvent::S_MTE2>(eventId0);
+                    WaitFlag<HardEvent::S_MTE2>(eventId0);
                     CopyGm2UBWhole(gmXOffset3, copyCount);
                     if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
                         ComputeHGradBF16(copyCount); // 计算结果存在floatQueue
@@ -510,8 +510,8 @@ __aicore__ inline void PadV3GradReplicateHW<T>::Process()
                 // 输出body的起始位置
                 gmYOffset3 =
                     (calCount - padLeft) + time * ubFactorElement + loop * outBatchStride + ncOffset * outBatchStride;
-                set_flag(PIPE_S, PIPE_MTE3, eventId2);
-                wait_flag(PIPE_S, PIPE_MTE3, eventId2);
+                SetFlag<HardEvent::S_MTE3>(eventId2);
+                WaitFlag<HardEvent::S_MTE3>(eventId2);
                 CopyOut2Gm(gmYOffset3, copyCount);
             }
         }

@@ -87,24 +87,24 @@ public:
                     DataCopyPad(valueLocal, inputValueGmInt32[(inputOffset + j * ubFactor) * DILATION], copyParams,
                         padParamsInt32);
                     event_t eventCopyOut = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
-                    set_flag(PIPE_MTE2, PIPE_MTE3, eventCopyOut);
-                    wait_flag(PIPE_MTE2, PIPE_MTE3, eventCopyOut);
+                    SetFlag<HardEvent::MTE2_MTE3>(eventCopyOut);
+                    WaitFlag<HardEvent::MTE2_MTE3>(eventCopyOut);
 
                     DataCopyPad(varOutGmInt32[(varOffset + j * ubFactor) * DILATION], valueLocal, copyParams);
                     event_t eventCopyIn = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_MTE2));
-                    set_flag(PIPE_MTE3, PIPE_MTE2, eventCopyIn);
-                    wait_flag(PIPE_MTE3, PIPE_MTE2, eventCopyIn);
+                    SetFlag<HardEvent::MTE3_MTE2>(eventCopyIn);
+                    WaitFlag<HardEvent::MTE3_MTE2>(eventCopyIn);
                 } else {
                     LocalTensor<T> valueLocal = valueBuf.Get<T>();
                     DataCopyPad(valueLocal, inputValueGm[inputOffset + j * ubFactor], copyParams, padParams);
                     event_t eventCopyOut = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
-                    set_flag(PIPE_MTE2, PIPE_MTE3, eventCopyOut);
-                    wait_flag(PIPE_MTE2, PIPE_MTE3, eventCopyOut);
+                    SetFlag<HardEvent::MTE2_MTE3>(eventCopyOut);
+                    WaitFlag<HardEvent::MTE2_MTE3>(eventCopyOut);
 
                     DataCopyPad(varOutGm[varOffset + j * ubFactor], valueLocal, copyParams);
                     event_t eventCopyIn = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_MTE2));
-                    set_flag(PIPE_MTE3, PIPE_MTE2, eventCopyIn);
-                    wait_flag(PIPE_MTE3, PIPE_MTE2, eventCopyIn);
+                    SetFlag<HardEvent::MTE3_MTE2>(eventCopyIn);
+                    WaitFlag<HardEvent::MTE3_MTE2>(eventCopyIn);
                 }
             }
         }

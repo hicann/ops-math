@@ -5,10 +5,6 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品 </term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
-| <term>Atlas 200/300/500 推理产品</term>                      |    ×     |
 
 ## 功能说明
 
@@ -27,7 +23,6 @@
 - **参数说明**
 
   - selfRef（aclTensor\*, 计算输入/输出）：表示输入/输出张量，Device侧的aclTensor。支持[非连续的Tensor](./common/非连续的Tensor.md)，[数据格式](./common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
   - fillValue（aclScalar\*, 计算输入）：表示填充值，Host侧的aclScalar，数据类型需要是可转换为FLOAT的数据类型。
   - wrap（bool, 计算输入）：表示填充方式，公式中的`wrap`，Host侧的BOOL类型。对于高矩阵（行数row大于列数col），若为True，每经过N行形成一条新的对角线，其中`N = min(col, row)`。

@@ -1,8 +1,6 @@
 # aclnnTan&aclnnInplaceTan
 
 ## 产品支持情况
-- <term>Atlas 推理系列产品</term>。
-- <term>Atlas 训练系列产品</term>。
 - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>。
 - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>。
 
@@ -45,10 +43,8 @@
 - **参数说明**：
 
   * self（aclTensor*, 计算输入）：公式中的输入`self`，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，shape维度不大于8, 且shape需要与out一致，和out的数据类型满足数据类型推导规则。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16。
   * out（aclTensor*, 计算输出）：公式中的`out`，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，且shape需要与self一致，和self的数据类型满足数据类型推导规则。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。
   * workspaceSize（uint64_t*, 出参）：返回需要在Device侧申请的workspace大小。
   * executor（aclOpExecutor**, 出参）：返回op执行器，包含了算子计算流程。
@@ -84,7 +80,6 @@
 - **参数说明**：
 
   - selfRef(aclTensor*, 计算输入|计算输出): 公式中的`self`，Device侧的aclTensor，支持[非连续的Tensor](./common/非连续的Tensor.md)，[数据格式](./common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。
   - workspaceSize（uint64_t\*, 出参）：返回需要在Device侧申请的workspace大小。
   - executor（aclOpExecutor\**, 出参）：返回op执行器，包含了算子计算流程。
@@ -115,7 +110,6 @@
 
 ## 约束说明
 
-  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、INT32、INT64数据类型的输入数据范围为[-65504,65504]时满足精度要求，超过数值范围无法保证，请使用CPU进行计算。
   - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、BFLOAT16、FLOAT16、INT32、INT64数据类型的输入数据范围为[-65504,65504]时满足精度要求，超过数值范围无法保证，请使用CPU进行计算。如果计算量过大可能会导致算子执行超时（aicore error类型报错，errorStr为：timeout or trap error），场景为最后2轴合轴小于16，前面的轴合轴超大。
 
 ## 调用示例

@@ -31,7 +31,7 @@ __aicore__ inline void ReflectionPad3dGrad<T>::SmallProcess()
             CopyInSmall(gmXOffset, height, width, 0);
             ComputeSmall(0, 0, 0, 0, height, width);
             CopyOutSmall(gmYOffset, hPad1 * alignWidth, isAtomicAdd, outHeight, outWidth, alignWidth, 0);
-            pipe_barrier(PIPE_MTE3);
+            PipeBarrier<PIPE_MTE3>();;
         }
     }
 }

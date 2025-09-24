@@ -6,10 +6,6 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品 </term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
-| <term>Atlas 200/300/500 推理产品</term>                      |    ×     |
 
 ## 功能说明
 
@@ -41,7 +37,6 @@
 
 - **参数说明：**
   - input(aclTensor \*, 计算输入)：输入Tensor，Device侧的aclTensor，支持[非连续的Tensor](common/非连续的Tensor.md)，支持的shape和[数据格式](./common/数据格式.md)有：2维（对应的格式为NC），3维（对应的格式为NCL），4维（对应的格式为NCHW），5维（对应的格式为NCDHW），6-8维（对应的格式为ND，其中第2维固定为channel轴）。
-    - <term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16。
   - eps(double, 计算输入)：为数值稳定性添加到分母中的值，double类型的值。
   - mean(aclTensor \*, 计算输出)：输出均值，Device侧的aclTensor，数据类型支持FLOAT，当input的类型为FLOAT16、BFLOAT16时，会转成FLOAT进行处理，[数据格式](common/数据格式.md)支持ND。
   - invstd(aclTensor \*, 计算输出)：输出标准差倒数，Device侧的aclTensor，数据类型支持FLOAT，当input的类型为FLOAT16、BFLOAT16时，会转成FLOAT进行处理，[数据格式](common/数据格式.md)支持ND。

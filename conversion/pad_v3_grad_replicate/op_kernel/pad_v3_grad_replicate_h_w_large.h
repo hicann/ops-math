@@ -727,8 +727,8 @@ __aicore__ inline void PadV3GradReplicateHWLarge<T>::Process()
             // 累加轴搬到workspace上
             CopyOut2Workspace(time, calCount, 1);
         }
-        set_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
-        wait_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
+        SetFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
+        WaitFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
         // workspace上padTop方向搬出到gm
         for (size_t i = 0; i < COPY_ROWS_AND_COLS - padTop; i++) {
             copyCount1 = COPY_ROWS_AND_COLS * ubFactorElement;

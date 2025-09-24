@@ -767,7 +767,7 @@ private:
         CopyInXgm(gmXOffset, height, width, 0);
         ComputeToy(0, 0, 0, 0, height, width);
         CopyOutYgm(gmYOffset, hPad1 * alignWidth, isAtomicAdd, outHeight, outWidth, alignWidth, 0);
-        pipe_barrier(PIPE_MTE3);
+        PipeBarrier<PIPE_MTE3>();;
     }
 
     __aicore__ inline void SmallBasicToWgm(size_t loop, size_t i, const bool isAtomicAdd)
@@ -776,7 +776,7 @@ private:
         CopyInXgm(gmXOffset, height, width, 0);
         ComputeTow(0, 0, 0, 0, height, width);
         CopyOutWgm(0, hPad1 * alignWidth, isAtomicAdd, outHeight, outWidth, alignWidth, 0);
-        pipe_barrier(PIPE_MTE3);
+        PipeBarrier<PIPE_MTE3>();;
     }
 
     __aicore__ inline void CopyInXgm(

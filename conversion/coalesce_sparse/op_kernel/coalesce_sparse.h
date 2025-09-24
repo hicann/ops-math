@@ -183,25 +183,25 @@ __aicore__ inline void KernelCoalesceSparse<uIdxType, idxType, dataType>::Comput
     LocalTensor<uIdxType> uniqueIndicesLocal = uniqueIndicesQueue.DeQue<uIdxType>();
     LocalTensor<idxType> indicesLocal = indicesQueue.DeQue<idxType>();
     for (uint64_t i = 0; i < taskLen; i++) {
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier<PIPE_ALL>();
         int64_t uniqueIndicesId = uniqueIndicesLocal.GetValue(i);
         int64_t gmIndicesOffset = uniqueIndicesId * m;
         int64_t gmValueOffset = uniqueIndicesId * valueSize;
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier<PIPE_ALL>();
         DataCopyParams copyParams_indices{1, (uint16_t)(mByte), 0, 0};
         DataCopyPad(newIndicesGm[gmIndicesOffset], indicesLocal[i * indicesAlign32], copyParams_indices);
         for (int j = 0; j < moveValueTimes; j++) {
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
             uint64_t valueOffset = gmValueOffset + j * moveValueLen;
             uint64_t ubValueOffset = repeatTime * moveOneSize + i * valueSize + j * moveValueLen;
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
             valueMove(valueOffset, ubValueOffset, moveValueLen);
         }
         if (moveValueTail > 0) {
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
             uint64_t valueOffset = gmValueOffset + moveValueTimes * moveValueLen;
             uint64_t ubValueOffset = repeatTime * moveOneSize + i * valueSize + moveValueTimes * moveValueLen;
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
             valueMove(valueOffset, ubValueOffset, moveValueTail);
         }
     }
@@ -218,7 +218,7 @@ __aicore__ inline void KernelCoalesceSparse<uIdxType, idxType, dataType>::valueM
     DataCopyExtParams copyParams_value_{(uint16_t)1, (uint32_t)(valueByte), 0, 0, 0};
     DataCopyPadExtParams<dataType> values_padParams{true, 0, 0, 0};
     DataCopyPad(valueLocal, valueGm[ubValueOffset], copyParams_value_, values_padParams);
-    pipe_barrier(PIPE_ALL);
+    PipeBarrier<PIPE_ALL>();
     DataCopyParams copyParams_value{1, (uint16_t)(valueByte), 0, 0};
     SetAtomicAdd<dataType>();
     DataCopyPad(newValueGm[valueOffset], valueLocal, copyParams_value);

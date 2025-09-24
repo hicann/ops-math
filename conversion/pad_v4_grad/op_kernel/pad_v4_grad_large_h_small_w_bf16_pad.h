@@ -150,7 +150,7 @@ __aicore__ inline void PadV4GradLargeHSmallWBf16<T>::CopyGmAndWorkspace2UB2(
                 (i + this->hPad1) * this->width + batchIdx * this->batchStride + this->ncOffset * this->batchStride;
             DataCopyPad(xLocal[i * SMALL_WIDTH_LIMIT], this->mGmX[xGmOffset1], copyParams, padParams);
         }
-        pipe_barrier(PIPE_MTE2);
+        PipeBarrier<PIPE_MTE2>();;
         for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad1; i++) {
             workspaceOffset1 = i * this->width + this->blockIdx * this->workspacePerCore;
             DataCopyPad(xLocal[i * SMALL_WIDTH_LIMIT], this->mGmWorkspace[workspaceOffset1], copyParams, padParams);
@@ -175,7 +175,7 @@ __aicore__ inline void PadV4GradLargeHSmallWBf16<T>::CopyGmAndWorkspace2UB2(
                              batchIdx * this->batchStride + this->ncOffset * this->batchStride;
                 DataCopyPad(xLocal[i * SMALL_WIDTH_LIMIT], this->mGmX[xGmOffset3], copyParams, padParams);
             }
-            pipe_barrier(PIPE_MTE2);
+            PipeBarrier<PIPE_MTE2>();;
             for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
                 workspaceOffset3 =
                     (i + COPY_ROWS_AND_COLS - this->hPad1) * this->width + this->blockIdx * this->workspacePerCore;
@@ -325,8 +325,8 @@ __aicore__ inline void PadV4GradLargeHSmallWBf16<T>::Process()
         ComputeHGrad(calCount, 1);
         CopyOut2Ws(calCount, 1);
 
-        set_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
-        wait_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
+        SetFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
+        WaitFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
         if (transTimesOneCol == 1) {
             CopyGmAndWs2UB1(loop);
             implTransposeAndCompute(this->ubFactorElement);

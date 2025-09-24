@@ -326,7 +326,7 @@ __aicore__ inline void AddLoraKernelBase::CopyIn(
         copyinA1Params.dstNzMatrixStride = 0;
         DataCopy(queryL1_[pingPongFlag], xIndiceGm_[(mInCoreOffset)*H1 + kIdx_ * kOffset], copyinA1Params); // nd -> nz
     }
-    pipe_barrier(PIPE_MTE2);
+    AscendC::PipeBarrier<PIPE_MTE2>();
     Nd2NzParams nd2nzB1Params;
     nd2nzB1Params.ndNum = 1;
     nd2nzB1Params.nValue = R;
@@ -363,7 +363,7 @@ __aicore__ inline void AddLoraKernelBase::SplitA(
             LoadData(queryL0A_[pingPongFlag][i * dstOffset], queryL1_[pingPongFlag][i * srcOffset], loadDataParams);
         }
     }
-    pipe_barrier(PIPE_MTE1);
+    AscendC::PipeBarrier<PIPE_MTE1>();
     SetFlag<HardEvent::MTE1_MTE2>(eventId);
     WaitFlag<HardEvent::MTE1_MTE2>(eventId);
 }
@@ -379,7 +379,7 @@ __aicore__ inline void AddLoraKernelBase::SplitB(
     loadDataParams.dstGap = 0;
     loadDataParams.ifTranspose = false;
     LoadData(keyL0B_[pingPongFlag], keyL1_[pingPongFlag], loadDataParams);
-    pipe_barrier(PIPE_MTE1);
+    AscendC::PipeBarrier<PIPE_MTE1>();
 }
 
 __aicore__ inline void AddLoraKernelBase::Compute(
@@ -399,7 +399,7 @@ __aicore__ inline void AddLoraKernelBase::Compute(
     SetFlag<HardEvent::MTE1_M>(eventId);
     WaitFlag<HardEvent::MTE1_M>(eventId);
     Mmad(matmull0C_, queryL0A_[pingPongFlag], keyL0B_[pingPongFlag], mmadParams);
-    pipe_barrier(PIPE_M);
+    AscendC::PipeBarrier<PIPE_M>();
 }
 
 __aicore__ inline void AddLoraKernelBase::CopyWbB(
@@ -427,7 +427,7 @@ __aicore__ inline void AddLoraKernelBase::CopyWbB(
             keyL1_[pingPongFlag], wbGm_[weightOffset + (nIncoreOffset + nIdx * nSplit) * R + kidx * kSplit],
             nd2nzB1Params);
     }
-    pipe_barrier(PIPE_MTE2);
+    AscendC::PipeBarrier<PIPE_MTE2>();
     SetFlag<HardEvent::MTE2_MTE1>(eventId);
     WaitFlag<HardEvent::MTE2_MTE1>(eventId);
     AscendC::LoadData2DParams loadDataParams;
@@ -438,7 +438,7 @@ __aicore__ inline void AddLoraKernelBase::CopyWbB(
     LoadData(keyL0B_[pingPongFlag], keyL1_[pingPongFlag], loadDataParams);
     SetFlag<HardEvent::MTE1_M>(eventId);
     WaitFlag<HardEvent::MTE1_M>(eventId);
-    pipe_barrier(PIPE_MTE1);
+    AscendC::PipeBarrier<PIPE_MTE1>();
 }
 
 __aicore__ inline void AddLoraKernelBase::ComputeMM2(
@@ -459,7 +459,7 @@ __aicore__ inline void AddLoraKernelBase::ComputeMM2(
     SetFlag<HardEvent::MTE1_M>(eventId);
     WaitFlag<HardEvent::MTE1_M>(eventId);
     Mmad(matmull0C_, queryL0A_[pingPongFlag], keyL0B_[pingPongFlag], mmad2Params);
-    pipe_barrier(PIPE_M);
+    AscendC::PipeBarrier<PIPE_M>();
     SetFlag<HardEvent::M_MTE2>(eventId);
     WaitFlag<HardEvent::M_MTE2>(eventId);
     SetFlag<HardEvent::M_FIX>(eventId);
@@ -528,7 +528,7 @@ __aicore__ inline void AddLoraKernelBase::CopyInA2(
             DataCopy(queryL1_[pingPongFlag], xIndiceGm_[mInCoreOffset * H1 + nId * nSplit], copyinA1Params); // nd -> nz
         }
     }
-    pipe_barrier(PIPE_MTE2);
+    AscendC::PipeBarrier<PIPE_MTE2>();
     SetFlag<HardEvent::MTE2_MTE1>(eventId);
     WaitFlag<HardEvent::MTE2_MTE1>(eventId);
 }

@@ -6,10 +6,6 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
-| <term>Atlas 推理系列产品 </term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
-| <term>Atlas 200/300/500 推理产品</term>                      |    ×     |
 
 ## 功能说明
 
@@ -39,10 +35,8 @@
 
   - self(aclTensor*, 计算输入)：Device侧的aclTensor。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：INT8、INT32、INT64、FLOAT16、BFLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128。
-    - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 训练系列产品</term>：INT8、INT32、INT64、FLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128。
   - out(aclTensor*, 计算输出)：Device侧的aclTensor。out的数据类型需要是self可转换的数据类型（[参考说明](common/互转换关系.md)）支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：INT8、INT32、INT64、FLOAT16、BFLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128。
-    - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 训练系列产品</term>：INT8、INT32、INT64、FLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128。
   - workspaceSize(uint64_t*, 计算输出)：返回用户需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor**, 计算输出)：返回op执行器，包含了算子计算流程。
 
@@ -77,7 +71,6 @@
 
   - selfRef(aclTensor*, 计算输入|计算输出)：Device侧的aclTensor。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：INT8、INT32、INT64、FLOAT16、BFLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128。
-    - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 训练系列产品</term>：INT8、INT32、INT64、FLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128。
   - workspaceSize(uint64_t*, 计算输出)：返回用户需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor**, 计算输出)：返回op执行器，包含了算子计算流程。
 

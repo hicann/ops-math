@@ -6,10 +6,6 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品 </term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
-| <term>Atlas 200/300/500 推理产品</term>                      |    ×     |
 
 ## 功能说明
 
@@ -39,19 +35,14 @@
 - **参数说明：**
 
   - self（aclTensor\*，计算输入）：公式中的self，Device侧的aclTensor，self与tensor1、tensor2的数据类型满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），且推导后的类型需要在支持的输入类型里，shape支持0-8维，self与tensor1、tensor2的shape满足[broadcast关系](common/broadcast关系.md)。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT32、INT64、INT8、UINT8。
   - tensor1（aclTensor\*，计算输入）：公式中的tensor1，Device侧的aclTensor，tensor1与self、tensor2的数据类型满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），且推导后的类型需要在支持的输入类型里，shape支持0-8维，tensor1与self、tensor2的shape满足[broadcast关系](common/broadcast关系.md)。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT32、INT64、INT8、UINT8。
   - tensor2（aclTensor\*，计算输入）：公式中的tensor2，Device侧的aclTensor，tensor2与self、tensor1的数据类型满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），且推导后的类型需要在支持的输入类型里，shape支持0-8维，tensor2与self、tensor1的shape满足[broadcast关系](common/broadcast关系.md)。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT32、INT64、INT8、UINT8。
   - value（aclScalar\*，计算输入）：公式中的value，Host侧的aclScalar，数据类型需要可转换成self与tensor1、tensor2推导后的数据类型（参见[互转换关系](common/互转换关系.md)）。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT32、INT64、INT8、UINT8。
   - out（aclTensor\*，计算输出）：公式中的out，Device侧的aclTensor，且数据类型是self与tensor1、tensor2推导之后可转换的数据类型（参见[互转换关系](common/互转换关系.md)），shape支持0-8维，shape需要与self、tensor1、tensor2 broadcast之后的shape一致，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT32、INT64、INT8、UINT8。
   - workspaceSize（uint64_t\*，出参）：返回需要在Device侧申请的workspace大小。
   - executor（aclOpExecutor\**，出参）：返回op执行器，包含了算子计算流程。
@@ -90,16 +81,12 @@
 - **参数说明：**
 
   - selfRef（aclTensor\*，计算输入/输出）：公式中的self/out，Device侧的aclTensor，selfRef与tensor1、tensor2的数据类型满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），且推导后的数据类型可以转换为selfRef的数据类型（参见[互转换关系](common/互转换关系.md)），且推导后的类型需要在支持的输入类型里，shape支持0-8维，selfRef与tensor1、tensor2的shape满足[broadcast关系](common/broadcast关系.md)，shape需要与selfRef、tensor1、tensor2 broadcast之后的shape一致。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT32、INT64、INT8、UINT8。
   - tensor1（aclTensor\*，计算输入）：公式中的tensor1，Device侧的aclTensor，tensor1与selfRef、tensor2的数据类型满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），且推导后的类型需要在支持的输入类型里，shape支持0-8维，tensor1与selfRef、tensor2的shape满足[broadcast关系](common/broadcast关系.md)。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT32、INT64、INT8、UINT8。
   - tensor2（aclTensor\*，计算输入）：公式中的tensor2，Device侧的aclTensor，tensor2与selfRef、tensor1的数据类型满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），且推导后的类型需要在支持的输入类型里，shape支持0-8维，tensor2与selfRef、tensor1的shape满足[broadcast关系](common/broadcast关系.md)。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT32、INT64、INT8、UINT8。
   - value（aclScalar\*，计算输入）：公式中的value，Host侧的aclScalar，数据类型需要可转换成selfRef与tensor1、tensor2推导后的数据类型（参见[互转换关系](common/互转换关系.md)）。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT32、INT64、INT8、UINT8。
   - workspaceSize（uint64_t\*，出参）：返回需要在Device侧申请的workspace大小。
   - executor（aclOpExecutor\**，出参）：返回op执行器，包含了算子计算流程。

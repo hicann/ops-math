@@ -194,8 +194,8 @@ __aicore__ inline void DiagFlatNDTo2D<T>::Compute(int64_t iter)
     LocalTensor<int16_t> ubInputCast = ubInput.template ReinterpretCast<int16_t>();
     LocalTensor<int16_t> ubOutputCast = ubOutput.template ReinterpretCast<int16_t>();
     LocalTensor<int16_t> ubAssistCast = ubAssist.template ReinterpretCast<int16_t>();
-    set_flag(PIPE_S, PIPE_V, EVENT_ID0);
-    wait_flag(PIPE_S, PIPE_V, EVENT_ID0);
+    SetFlag<HardEvent::S_V>(EVENT_ID0);
+    WaitFlag<HardEvent::S_V>(EVENT_ID0);
     for (int i = 0; i < loops; i++) {
         And(ubOutputCast[mask * i], ubInputCast[mask * i], ubAssistCast[mask * i], mask, repeatTime, params);
     }
@@ -272,13 +272,13 @@ __aicore__ inline void DiagFlatNDTo2D<T>::ConstructAssistMatrix()
     uint8_t repeatTimes = ONCE_HANDLE_NUM;
     uint16_t dstBlockStride = 1;
     uint8_t dstRepeatStride = ONCE_HANDLE_NUM * sizeof(T) / ONE_BLK_SIZE;
-    set_flag(PIPE_MTE3, PIPE_V, EVENT_ID0);
-    wait_flag(PIPE_MTE3, PIPE_V, EVENT_ID0);
+    SetFlag<HardEvent::MTE3_V>(EVENT_ID0);
+    WaitFlag<HardEvent::MTE3_V>(EVENT_ID0);
     for (int i = 0; i < loops; i++) {
         Duplicate(ubAssist[mask * i], scalarValue, mask, repeatTimes, dstBlockStride, dstRepeatStride);
     }
-    set_flag(PIPE_V, PIPE_S, EVENT_ID0);
-    wait_flag(PIPE_V, PIPE_S, EVENT_ID0);
+    SetFlag<HardEvent::V_S>(EVENT_ID0);
+    WaitFlag<HardEvent::V_S>(EVENT_ID0);
     // set value as -1
     if (sizeof(T) == 1) {
         int8_t value = -1;
@@ -325,8 +325,8 @@ __aicore__ inline void DiagFlatNDTo2D<T>::MemSetZero(GlobalTensor<U> gmTensor, i
     uint32_t roundSize = round != 0 ? popSize : 0;
     DuplicateImpl<int16_t>((__ubuf__ int16_t*)popBuffer.GetPhyAddr(), 0, popSize);
     event_t eventIDVToMTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
-    set_flag(PIPE_V, PIPE_MTE3, eventIDVToMTE3);
-    wait_flag(PIPE_V, PIPE_MTE3, eventIDVToMTE3);
+    SetFlag<HardEvent::V_MTE3>(eventIDVToMTE3);
+    WaitFlag<HardEvent::V_MTE3>(eventIDVToMTE3);
     uint32_t comOffset = 0;
     // compute the main block
     for (int index = 0; index < round; ++index) {

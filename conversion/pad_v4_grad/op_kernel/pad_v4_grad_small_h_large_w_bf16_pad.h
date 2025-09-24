@@ -285,8 +285,8 @@ __aicore__ inline void PadV4GradPadSamllHLargeWBf16<T>::Process()
             ComputeHGrad(calCount);
             CopyOut2Workspace(time, calCount);
         }
-        set_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
-        wait_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
+        SetFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
+        WaitFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
         for (size_t i = 0; i < this->outHeight; i++) {
             copyCount = SMALL_HEIGHT_LIMIT * this->ubFactorElement;
             for (size_t j = 0; j < copyMidDataTimes; j++) {

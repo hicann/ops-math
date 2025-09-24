@@ -85,7 +85,7 @@ __aicore__ inline void AddLoraSingleCoreBatchKernel::CopyInA(
         copyinXGmParams.dstNzMatrixStride = 0;
         DataCopy(queryL1_[pingPongFlag], xGm_[(mInCoreOffset)*H1 + kIdx_ * kOffset], copyinXGmParams); // nd -> nz
     }
-    pipe_barrier(PIPE_MTE2);
+    AscendC::PipeBarrier<PIPE_MTE2>();
     Nd2NzParams copyinB1Params;
     copyinB1Params.ndNum = 1;
     copyinB1Params.nValue = R;
@@ -207,7 +207,7 @@ __aicore__ inline void AddLoraSingleCoreBatchKernel::ComputeWeightBMM(
                 SetFlag<HardEvent::M_FIX>(eventIDM_FIX);
                 WaitFlag<HardEvent::M_FIX>(eventIDM_FIX);
                 CopyL0C2GM(mInCoreOffset, m, nInner, nIn, nSplit, nIncoreOffset);
-                pipe_barrier(PIPE_FIX);
+                AscendC::PipeBarrier<PIPE_FIX>();
                 SetFlag<HardEvent::FIX_MTE2>(eventIDFIX_MTE2);
                 WaitFlag<HardEvent::FIX_MTE2>(eventIDFIX_MTE2);
             }

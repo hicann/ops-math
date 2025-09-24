@@ -6,11 +6,7 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品 </term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
-| <term>Atlas 200/300/500 推理产品</term>                      |    ×     |
-
+| <term>Kirin X90 处理器系列产品</term>                         |    √     |
 ## 功能说明
 
 - 算子功能：判断张量中哪些元素是有限数值，即不是inf、-inf或nan。
@@ -21,12 +17,12 @@
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 1576px"><colgroup>
-  <col style="width: 170px">
-  <col style="width: 170px">
-  <col style="width: 310px">
-  <col style="width: 212px">
+<table style="undefined;table-layout: fixed; width: 820px"><colgroup>
   <col style="width: 100px">
+  <col style="width: 150px">
+  <col style="width: 190px">
+  <col style="width: 260px">
+  <col style="width: 120px">
   </colgroup>
   <thead>
     <tr>
@@ -53,11 +49,9 @@
     </tr>
   </tbody></table>
 
-- Atlas 训练系列产品: 不支持BFLOAT16。
-
 ## 约束说明
 
-无
+- Kirin X90 处理器系列产品: 不支持BFLOAT16。
 
 ## 调用说明
 

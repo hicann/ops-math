@@ -6,10 +6,6 @@
 | :----------------------------------------------------------- |:-------:|
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √    |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √    |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×    |
-| <term>Atlas 推理系列产品 </term>                             |    √    |
-| <term>Atlas 训练系列产品</term>                              |    √    |
-| <term>Atlas 200/300/500 推理产品</term>                      |    ×    |
 
 
 ## 功能说明
@@ -89,15 +85,11 @@
 - **参数说明：**
 
   - self(aclTensor*，计算输入)：表示索引张量，公式中的self，Device侧的aclTensor，shape支持1-7维度。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT32、INT64。
   - numClasses(int，计算输入)：表示类别数，数据类型必须输入INT64。当self为空Tensor时，numClasses的值需大于0；当self不为空Tensor时。numClasses需大于等于0。若numClasses的值为0，则返回空Tensor。如果self存在元素大于numClasses，这些元素会被编码成全0。
   - onValue(aclTensor*，计算输入)：表示索引位置的填充值，公式中的onValue，Device侧的aclTensor，shape支持1-8维度，且计算时只使用其中第一个元素值进行计算。数据类型与out一致，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT32、INT64。
   - offValue(aclTensor*，计算输入)：表示非索引位置的填充值，公式中的offValue，Device侧的aclTensor，shape支持1-8维度，且计算时只使用其中第一个元素值进行计算。数据类型与out一致，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT32、INT64。
   - axis(int64_t，计算输入)：表示编码向量的插入维度，最小值为-1，最大值为self的维度数。若值为-1，编码向量会往self的最后一维插入。
   - out(aclTensor*，计算输出)：表示one-hot张量，公式中的输出out，Device侧的aclTensor，shape支持1-8维度,且与在self的shape在axis轴插入numClasses后的shape一致，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT32、INT64。
   - workspaceSize(uint64_t*，出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor**，出参)：返回op执行器，包含了算子计算流程。
 

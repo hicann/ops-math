@@ -231,8 +231,8 @@ __aicore__ inline void DiagFlatND2To2DB16Less64<T>::MemSetZero(GlobalTensor<U> g
     uint32_t roundSize = round != 0 ? popSize : 0;
     DuplicateImpl<int16_t>((__ubuf__ int16_t*)popBuffer.GetPhyAddr(), 0, popSize);
     event_t eventIDVToMTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
-    set_flag(PIPE_V, PIPE_MTE3, eventIDVToMTE3);
-    wait_flag(PIPE_V, PIPE_MTE3, eventIDVToMTE3);
+    SetFlag<HardEvent::V_MTE3>(eventIDVToMTE3);
+    WaitFlag<HardEvent::V_MTE3>(eventIDVToMTE3);
     uint32_t comOffset = 0;
     // compute the main block
     for (int index = 0; index < round; ++index) {

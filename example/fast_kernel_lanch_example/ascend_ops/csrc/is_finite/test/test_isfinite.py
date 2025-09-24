@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
+# ----------------------------------------------------------------------------
+# Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+# This file is a part of the CANN Open Software.
+# Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# ----------------------------------------------------------------------------
+
+import torch
+import torch_npu
+import ascend_ops
+
+supported_dtypes = {torch.float16, torch.bfloat16, torch.float}
+for data_type in supported_dtypes:
+    print(f"DataType = <{data_type}>")
+    x = torch.randn(40, 10000).to(data_type)
+    print(f"Tensor x = {x}")
+    cpu_result = torch.isfinite(x)
+    print(f"cpu: isfinite(x) = {cpu_result}")
+    x_npu = x.npu()
+    npu_result = torch.ops.ascend_ops.isfinite(x_npu).cpu()
+    print(f"[OK] torch.ops.ascend_ops.isfinite<{data_type}> successfully!")
+    print(f"npu: isfinite(x) = {npu_result}")
+    print(f"compare CPU Result vs NPU Result: {torch.allclose(cpu_result, npu_result)}\n\n")

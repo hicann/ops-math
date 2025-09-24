@@ -387,8 +387,8 @@ __aicore__ inline void PadV3GradReplicateLargeHSmallWBf16<T>::Process()
         ComputeHGrad(calCount, 1);
         CopyOut2Ws(calCount, 1);
 
-        set_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
-        wait_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
+        SetFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
+        WaitFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
         if (transTimesOneCol == 1) {
             CopyGmAndWs2UB1(loop);
             ImplTransposeAndCompute(ubFactorElement);

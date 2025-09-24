@@ -65,7 +65,7 @@ static const aclTensor *GetPaddingTensor(int64_t dim, const aclIntArray *padding
     FVector<int64_t, op::MAX_DIM_NUM> paddingsVector;
     // 2 is the magnification
     for (size_t i = 2 * dim; i > 0; i -= 2) {
-        if (i <= (size_t)padding->Size()) {
+        if (i <= static_cast<size_t>(padding->Size())) {
         // 2 and 1 indicate the element of padding is put into paddingsVector from the back to the front
         paddingsVector.emplace_back((*padding)[i - 2]);
         paddingsVector.emplace_back((*padding)[i - 1]);

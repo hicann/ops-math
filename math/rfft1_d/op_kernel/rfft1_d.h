@@ -156,7 +156,7 @@ private:
         matmulObj.IterateAll(c1, accumulate);
 
         matmulObj.End();
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier<PIPE_ALL>();
     }
 
     __aicore__ void CubeDftMul1(
@@ -167,7 +167,7 @@ private:
         matmulObjNZ.IterateAll(c1, accumulate);
 
         matmulObjNZ.End();
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier<PIPE_ALL>();
     }
 
     // Count DFT directly (the entire input is multiplied on 1 DFT matrix)

@@ -86,6 +86,7 @@ set(COMMON_INCLUDE_DIRS
     ${ASCEND_HOME}/compiler/ascendc/include/highlevel_api
     ${ASCEND_HOME}/compiler/ascendc/impl/aicore/basic_api
     ${CMAKE_CURRENT_SOURCE_DIR}/../..
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/inc
 )
 
 set(COMMON_LINK_DIRS
@@ -115,6 +116,7 @@ set(COMMON_COMPILE_OPTIONS
 
 message(STATUS "Building Torch Ops project...")
 
+file(GLOB OPERATOR_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ascend_ops/csrc/*")
 set(OPERATOR_TARGETS "")
 
 foreach(OP_DIR ${OPERATOR_DIRS})

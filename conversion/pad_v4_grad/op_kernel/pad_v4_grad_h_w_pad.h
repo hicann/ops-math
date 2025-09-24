@@ -229,7 +229,7 @@ __aicore__ inline void PadV4GradPadHW<T>::CopyGmAndWorkspace2UB2(
                     (i + this->hPad1) * this->width + batchIdx * this->batchStride + ncOffset * this->batchStride;
                 DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset1], copyParams, padParams);
             }
-            pipe_barrier(PIPE_MTE2);
+            PipeBarrier<PIPE_MTE2>();;
             for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad1; i++) {
                 workspaceOffset1 = i * this->width + this->blockIdx * this->workspacePerCore;
                 DataCopyPad(
@@ -256,7 +256,7 @@ __aicore__ inline void PadV4GradPadHW<T>::CopyGmAndWorkspace2UB2(
                                  batchIdx * this->batchStride + ncOffset * this->batchStride;
                     DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset3], copyParams, padParams);
                 }
-                pipe_barrier(PIPE_MTE2);
+                PipeBarrier<PIPE_MTE2>();;
                 for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
                     workspaceOffset3 =
                         (i + COPY_ROWS_AND_COLS - this->hPad1) * this->width + this->blockIdx * this->workspacePerCore;
@@ -273,7 +273,7 @@ __aicore__ inline void PadV4GradPadHW<T>::CopyGmAndWorkspace2UB2(
                              ncOffset * this->batchStride;
                 DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset4], copyParams, padParams);
             }
-            pipe_barrier(PIPE_MTE2);
+            PipeBarrier<PIPE_MTE2>();;
             for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad1; i++) {
                 workspaceOffset4 = (i + 1) * this->width - 16 + this->blockIdx * this->workspacePerCore;
                 DataCopyPad(
@@ -300,7 +300,7 @@ __aicore__ inline void PadV4GradPadHW<T>::CopyGmAndWorkspace2UB2(
                                  batchIdx * this->batchStride + ncOffset * this->batchStride;
                     DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset6], copyParams, padParams);
                 }
-                pipe_barrier(PIPE_MTE2);
+                PipeBarrier<PIPE_MTE2>();;
                 for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
                     workspaceOffset6 = (i + COPY_ROWS_AND_COLS + 1 - this->hPad1) * this->width - 16 +
                                        this->blockIdx * this->workspacePerCore;
@@ -550,8 +550,8 @@ __aicore__ inline void PadV4GradPadHW<T>::Process()
             ComputeHGrad(calCount, 1);
             CopyOut2Workspace(time, calCount, 1);
         }
-        set_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
-        wait_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
+        SetFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
+        WaitFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
         for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad1; i++) {
             copyCount1 = COPY_ROWS_AND_COLS * this->ubFactorElement;
             for (size_t j = 0; j < copyMidDataTimes; j++) {

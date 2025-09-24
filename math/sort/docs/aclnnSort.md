@@ -5,10 +5,6 @@
 | :----------------------------------------------------------- |:-------:|
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √    |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √    |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×    |
-| <term>Atlas 推理系列产品 </term>                             |    √    |
-| <term>Atlas 训练系列产品</term>                              |    √    |
-| <term>Atlas 200/300/500 推理产品</term>                      |    ×    |
 
 ## 功能说明
 
@@ -25,13 +21,11 @@
 - **参数说明**:
 
   - self(aclTensor*, 计算输入)：Device侧的aclTensor，shape支持1-8维度，支持[非连续的Tensor](common/非连续的Tensor.md), [数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8。当self的数据类型为BFLOAT16时，参数dim指定的轴不能等于1。
   - stable(bool, 计算输入)：是否稳定排序, True为稳定排序，False为非稳定排序, 数据类型为BOOL。
   - dim(int64_t, 计算输入)：用来作为排序标准的维度, 数据类型为INT。范围为 [-self.dim(), self.dim()-1]，self.dim()为输入tensor的维度。
   - descending(bool, 计算输入)：控制排序顺序，True为降序，False为升序，数据类型为BOOL。
   - valuesOut(aclTensor\*, 计算输出)：Device侧的aclTensor，表示tensor在指定维度上排序的结果，支持[非连续的Tensor](common/非连续的Tensor.md), [数据格式](common/数据格式.md)支持ND。shape需要与self一致。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8。
   - indicesOut(aclTensor\*, 计算输出)：Device侧的aclTensor，数据类型支持INT64。表示排序后每个元素在原tensor中的索引，支持[非连续的Tensor](common/非连续的Tensor.md), [数据格式](common/数据格式.md)支持ND。shape需要与self一致。
   - workspaceSize(uint64_t\*，出参)：返回需要在Device侧申请的workspace大小。
@@ -60,9 +54,6 @@
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
-
-## 约束说明
-<term>Atlas 训练系列产品</term>：当输入是FLOAT32时，会将其转换成FLOAT16进行排序，然后再转换回FLOAT32。
 
 ## 调用示例
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。

@@ -1,8 +1,8 @@
 #!/bin/bash
 # Copyright(c) Huawei Technologies Co., Ltd.2025. All rights reserved.
-# This File is a part of the CANN Open Software.
+# This file is a part of the CANN Open Software.
 # Licensed under CANN Open Software License Agreement Version 2.0 (the "License");
-# Please refer to the Licence for details. You may not use this file except in compliance with the License.
+# Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
@@ -909,23 +909,38 @@ build_example() {
 
   cd "${BUILD_PATH}"
   if [[ "${EXAMPLE_MODE}" == "eager" ]]; then
-    file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_aclnn_${EXAMPLE_NAME}.cpp)
-    if [[ "${PKG_MODE}" == "" ]]; then
-      g++ ${file} -I ${INCLUDE_PATH} -I ${ACLNN_INCLUDE_PATH} -L ${EAGER_LIBRARY_PATH} -lopapi_math -lascendcl -lnnopbase -o test_aclnn_${EXAMPLE_NAME}
-    elif [[ "${PKG_MODE}" == "cust" ]]; then
-      echo "pkg_mode:${PKG_MODE} vendor_name:${VENDOR}"
-      export CUST_LIBRARY_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/lib"     # 仅自定义算子需要
-      export CUST_INCLUDE_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/include" # 仅自定义算子需要
-      g++ ${file} -I ${INCLUDE_PATH} -I ${CUST_INCLUDE_PATH} -L ${CUST_LIBRARY_PATH} -L ${EAGER_LIBRARY_PATH} -lcust_opapi -lascendcl -lnnopbase -o test_aclnn_${EXAMPLE_NAME} -Wl,-rpath=${CUST_LIBRARY_PATH}
-    else
-      echo "Error: pkg_mode(${PKG_MODE}) must be cust."
+    file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_aclnn_*.cpp)
+    if [ -z "$file" ]; then
+      echo "ERROR: ${EXAMPLE_NAME} do not have eager example"
       exit 1
     fi
-    ./test_aclnn_${EXAMPLE_NAME}
+
+    for f in $file; do
+      echo "Start compile and run example file: $f"
+      if [[ "${PKG_MODE}" == "" ]]; then
+        g++ ${f} -I ${INCLUDE_PATH} -I ${ACLNN_INCLUDE_PATH} -L ${EAGER_LIBRARY_PATH} -lopapi_math -lascendcl -lnnopbase -o test_aclnn_${EXAMPLE_NAME}
+      elif [[ "${PKG_MODE}" == "cust" ]]; then
+        echo "pkg_mode:${PKG_MODE} vendor_name:${VENDOR}"
+        export CUST_LIBRARY_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/lib"     # 仅自定义算子需要
+        export CUST_INCLUDE_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/include" # 仅自定义算子需要
+        g++ ${f} -I ${INCLUDE_PATH} -I ${CUST_INCLUDE_PATH} -L ${CUST_LIBRARY_PATH} -L ${EAGER_LIBRARY_PATH} -lcust_opapi -lascendcl -lnnopbase -o test_aclnn_${EXAMPLE_NAME} -Wl,-rpath=${CUST_LIBRARY_PATH}
+      else
+        echo "Error: pkg_mode(${PKG_MODE}) must be cust."
+        exit 1
+      fi
+      ./test_aclnn_${EXAMPLE_NAME}
+    done
   elif [[ "${EXAMPLE_MODE}" == "graph" ]]; then
-    file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_geir_${EXAMPLE_NAME}.cpp)
-    g++ ${file} -I ${GRAPH_INCLUDE_PATH} -I ${GE_INCLUDE_PATH} -I ${INCLUDE_PATH} -I ${INC_INCLUDE_PATH} -L ${GRAPH_LIBRARY_STUB_PATH} -L ${GRAPH_LIBRARY_PATH} -lgraph -lge_runner -lgraph_base -o test_geir_${EXAMPLE_NAME}
-    ./test_geir_${EXAMPLE_NAME}
+    file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_geir_*.cpp)
+    if [ -z "$file" ]; then
+      echo "ERROR: ${EXAMPLE_NAME} do not have graph example"
+      exit 1
+    fi
+    for f in $file; do
+      echo "Start compile and run example file: $f"
+      g++ ${f} -I ${GRAPH_INCLUDE_PATH} -I ${GE_INCLUDE_PATH} -I ${INCLUDE_PATH} -I ${INC_INCLUDE_PATH} -L ${GRAPH_LIBRARY_STUB_PATH} -L ${GRAPH_LIBRARY_PATH} -lgraph -lge_runner -lgraph_base -o test_geir_${EXAMPLE_NAME}
+      ./test_geir_${EXAMPLE_NAME}
+    done
   else
     usage
     exit 1

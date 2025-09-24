@@ -2,9 +2,6 @@
 
 ## 产品支持情况
 
-- <term>Atlas 200I/500 A2 推理产品</term>。
-- <term>Atlas 推理系列产品</term>。
-- <term>Atlas 训练系列产品</term>。
 - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>。
 - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>。
 
@@ -32,10 +29,8 @@
 - **参数说明：**
 
   - self(aclTensor*，计算输入): Device侧的aclTensor，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，shape维度不大于8, 且shape需要与out一致，和out的数据类型满足数据类型推导规则。当输入的数据类型为INT8、INT16、INT32、INT64、UINT8、BOOL时，会转换为float数据类型做计算，计算结果转化成out的数据类型。
-    - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。
   - out(aclTensor *，计算输出): Device侧的aclTensor，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，且shape需要与self一致，和self的数据类型满足数据类型推导规则。
-    - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。
   - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor \**，出参)：返回op执行器，包含了算子计算流程。
@@ -71,7 +66,6 @@
 - **参数说明：**
 
   - selfRef(aclTensor *，计算输出|计算输入): 支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，shape维度不大于8。
-    - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。
   - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor \**，出参)：返回op执行器，包含了算子计算流程。
@@ -103,7 +97,6 @@
 ## 约束说明
 
 - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、BFLOAT16数据类型的输入数据范围为[-10^7, 10^7]时满足精度要求，超过数值范围无法保证，请使用CPU进行计算。
-- <term>Atlas 推理系列产品</term>：FLOAT、FLOAT16数据类型的输入数据范围为[-65504, 65504]时满足精度要求，超过数值范围无法保证，请使用CPU进行计算。
 - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：高精度：支持输入数据在[-13493037704, 13493037704]范围内没有精度误差。高性能：支持输入数据在[-10000000, 10000000]范围内没有精度误差。
 
 ## 调用示例

@@ -2,7 +2,6 @@
 
 ## 产品支持情况
 
-- <term>Atlas 训练系列产品</term>。
 - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>。
 - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>。
 
@@ -30,14 +29,14 @@
 - **参数说明：**
 
   - self（aclTensor*, 计算输入）：公式中的输入`self`，shape支持0到8维，self与meanOut的数据类型满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），self与varOut的数据类型满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT。
+    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT。
   - dim（aclIntArray*，入参）：公式中的`dim`，Host侧的aclIntArray，表示参与计算的维度，取值范围为[-self.dim(), self.dim()-1]，且其中的数据不能相同，支持的数据类型为INT32、INT64。当dim为nullptr或[]时，视为计算所有维度。
   - correction（int64_t，入参）：公式中的输入`correction`，修正值，数据类型为int64_t。
   - keepdim（bool，入参）：reduce轴的维度是否保留。数据类型为bool。
   - meanOut（aclTensor*, 计算输出）：均值的计算结果，self与meanOut的数据类型满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT。
+    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT。
   - varOut（aclTensor*, 计算输出）：公式中的输入`varOut`，方差的计算结果，self与varOut的数据类型满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT。
+    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT。
   - workspaceSize（uint64_t*, 出参）：返回需要在Device侧申请的workspace大小。
   - executor（aclOpExecutor**, 出参）：返回op执行器，包含了算子计算流程。
 

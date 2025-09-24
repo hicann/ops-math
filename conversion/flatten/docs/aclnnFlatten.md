@@ -6,10 +6,6 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品 </term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
-| <term>Atlas 200/300/500 推理产品</term>                      |    ×     |
 
 ## 功能说明
 
@@ -31,13 +27,11 @@
 
   - self(aclTensor*,计算输入)：输入`self`。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
      * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、BFLOAT16、FLOAT、FLOAT16
-     * <term>Atlas 训练系列产品</term>：INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、FLOAT、FLOAT16
 
   - axis(int64_t, 计算输入)：输入`axis`，int64_t类型整数。表示flatten计算的基准轴。取值范围为[-self.dim(),self.dim()-1]。
 
   - out(aclTensor*,计算输出)：输出`out`。shape为2D。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
      * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、BFLOAT16、FLOAT、FLOAT16
-     * <term>Atlas 训练系列产品</term>：INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、FLOAT、FLOAT16
 
   - workspaceSize(uint64_t*,出参)：返回需要在Device侧申请的workspace大小。
 

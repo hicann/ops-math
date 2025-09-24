@@ -19,7 +19,6 @@
 
 #include "experiment_ops.h"
 #include "nn_other.h"
-#include "../op_graph/pows_proto.h"
 
 #define FAILED -1
 #define SUCCESS 0

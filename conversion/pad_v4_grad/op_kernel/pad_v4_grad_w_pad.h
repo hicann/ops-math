@@ -263,8 +263,8 @@ __aicore__ inline void PadV4GradPadW<T>::Process()
                 CopyGm2UB(xInQueue1, gmXOffset1, gmXOffset2, calCount);
                 Bf16ComputeWGrad(xInQueue1, yOutQueue1, calCount, 2 * CAL_COUNT, smallFloatTenosr);
                 Copy2Ws(yOutQueue1, 2 * calCount, workspaceOffset1);
-                set_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
-                wait_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
+                SetFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
+                WaitFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
                 CopyInFromWs(xInQueue1, calCount - this->wPad1, workspaceOffset2);
                 Compute(xInQueue1, yOutQueue1, calCount - this->wPad1);
                 CopyWs2Out(yOutQueue1, calCount - this->wPad1, gmYOffset1);
@@ -301,8 +301,8 @@ __aicore__ inline void PadV4GradPadW<T>::Process()
                 CopyGm2UB(xInQueue2, gmXOffset1, gmXOffset2, largePadcalCount);
                 Bf16ComputeWGrad(xInQueue2, yOutQueue2, largePadcalCount, this->ubFactorElement, largeFloatTenosr);
                 Copy2Ws(yOutQueue2, 2 * largePadcalCount, workspaceOffset1);
-                set_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
-                wait_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
+                SetFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
+                WaitFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
                 CopyInFromWs(xInQueue2, largePadcalCount - this->wPad1, workspaceOffset2);
                 Compute(xInQueue2, yOutQueue2, largePadcalCount - this->wPad1);
                 CopyWs2Out(yOutQueue2, largePadcalCount - this->wPad1, gmYOffset1);
@@ -340,8 +340,8 @@ __aicore__ inline void PadV4GradPadW<T>::Process()
                 CopyGm2UB(xInQueue1, gmXOffset1, gmXOffset2, calCount);
                 ComputeWGrad(xInQueue1, yOutQueue1, calCount);
                 Copy2Ws(yOutQueue1, 2 * calCount, workspaceOffset1);
-                set_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
-                wait_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
+                SetFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
+                WaitFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
                 CopyInFromWs(xInQueue1, calCount - this->wPad1, workspaceOffset2);
                 Compute(xInQueue1, yOutQueue1, calCount - this->wPad1);
                 CopyWs2Out(yOutQueue1, calCount - this->wPad1, gmYOffset1);
@@ -378,8 +378,8 @@ __aicore__ inline void PadV4GradPadW<T>::Process()
                 CopyGm2UB(xInQueue2, gmXOffset1, gmXOffset2, largePadcalCount);
                 ComputeWGrad(xInQueue2, yOutQueue2, largePadcalCount);
                 Copy2Ws(yOutQueue2, 2 * largePadcalCount, workspaceOffset1);
-                set_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
-                wait_flag(PIPE_MTE3, PIPE_MTE2, MTE3ToMTE2Event);
+                SetFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
+                WaitFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
                 CopyInFromWs(xInQueue2, largePadcalCount - this->wPad1, workspaceOffset2);
                 Compute(xInQueue2, yOutQueue2, largePadcalCount - this->wPad1);
                 CopyWs2Out(yOutQueue2, largePadcalCount - this->wPad1, gmYOffset1);

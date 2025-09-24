@@ -17,9 +17,9 @@ AscendOps 是一个轻量级，高性能的算子开发工程模板，它集成�
 🔌 PyTorch集成 (PyTorch Integration): 无缝集成PyTorch张量操作，支持自动微分和GPU/NPU统一接口。
 
 ## 核心交付件 | Core Deliverables
-1. 'csrc/xxx/xxx_torch.cce' 算子Kernel实现
-2. 'csrc/xxx/CMakeLists.txt' 算子cmake配置
-3. 'csrc/npu_ops_def.cpp' 注册算子接口
+1. `csrc/xxx/xxx_torch.cpp` 算子Kernel实现
+2. `csrc/xxx/CMakeLists.txt` 算子cmake配置
+3. `csrc/npu_ops_def.cpp` 注册算子接口
 
 ## 环境要求 | Prerequisites
 *   Python: 3.8+
@@ -57,11 +57,17 @@ AscendOps 是一个轻量级，高性能的算子开发工程模板，它集成�
     ```  
 3. **安装torch与torch_npu包**
    
-   根据实际环境，下载对应torch-cpu包: `torch-${torch_version}+cpu-${python_version}-linux_${arch}.whl` 下载链接为:[官网地址](http://download.pytorch.org/whl/torch)
-
-   根据实际环境，下载对应torch-npu包: `torch_npu-${torch_version}-${python_version}-linux_${arch}.whl`
+   根据实际环境，下载对应torch包并安装: `torch-${torch_version}+cpu-${python_version}-linux_${arch}.whl` 下载链接为:[官网地址](http://download.pytorch.org/whl/torch)
 
    安装命令如下：
+
+    ```sh
+    pip install torch-${torch_version}+cpu-${python_version}-linux_${arch}.whl
+    ```
+
+   根据实际环境，安装对应torch-npu包: `torch_npu-${torch_version}-${python_version}-linux_${arch}.whl`
+
+   可以直接使用pip命令下载安装，命令如下：
 
     ```sh
     pip install torch_npu
@@ -89,6 +95,16 @@ AscendOps 是一个轻量级，高性能的算子开发工程模板，它集成�
     pip install dist/xxx.whl
     ```
 
+    重新安装请使用以下命令覆盖已安装过的版本：
+    ```sh
+    pip install dist/xxx.whl --force-reinstall --no-deps
+    ```
+
+4. (可选)再次构建前建议先执行以下命令清理编译缓存
+   ```sh
+    python setup.py clean
+    ```
+
 ## 开发模式构建 | Developing Mode
 
 此命令实现即时生效的开发环境配置，执行后即可使源码修改生效，省略了构建完整whl包和安装的过程，适用于需要多次修改验证算子的场景：
@@ -98,7 +114,7 @@ pip install --no-build-isolation -e .
 
 ## 使用示例 | Usage Example
 
-安装完成后，您可以像使用普通PyTorch操作一样使用NPU算子，以isfinite算子为例:
+安装完成后，您可以像使用普通PyTorch操作一样使用NPU算子，以isfinite算子为例，您可以在`ascend_ops\csrc\is_finite\test`目录下找到并执行这个脚本:
 
 ```python
 import torch
@@ -108,21 +124,28 @@ import ascend_ops
 supported_dtypes = {torch.float16, torch.bfloat16, torch.float}
 for data_type in supported_dtypes:
     print(f"DataType = <{data_type}>")
-    x = torch.randn(40, 10000, to(data_type))
-      print(f"Tensor x = {x}")
-      cpu_result = torch.isfinite(x)
-      print(f"cpu: isfinite(x) = {cpu_result}")
-      x_npu = x.npu()
-      npu_result = torch.ops.ascend_ops.isfinite(x_npu).cpu()
-      print(f"[OK] torch.ops.ascend_ops.isfinite<{data_type}> successfully!")
-      print(f"npu: isfinite(x) = {npu_result}")
-      print(f"compare CPU Result vs NPU Result: {torch.allclose(cpu_result, npu_result)}\n\n")
+    x = torch.randn(40, 10000).to(data_type)
+    print(f"Tensor x = {x}")
+    cpu_result = torch.isfinite(x)
+    print(f"cpu: isfinite(x) = {cpu_result}")
+    x_npu = x.npu()
+    # 调用自定义接口
+    npu_result = torch.ops.ascend_ops.isfinite(x_npu).cpu()
+    print(f"[OK] torch.ops.ascend_ops.isfinite<{data_type}> successfully!")
+    print(f"npu: isfinite(x) = {npu_result}")
+    print(f"compare CPU Result vs NPU Result: {torch.allclose(cpu_result, npu_result)}\n\n")
 ```
+
+最终看到如下输出，即为执行成功：
+```bash
+compare CPU Result vs NPU Result: True
+```
+
 
 ## 开发新算子 | Developing New Operators
 1. 编写算子调用文件
    
-    在 `ascend_ops/csrc/` 目录下添加新的算子目录 `mykernel`，在 `mykernel` 目录下添加新的算子调用文件 `mykernel_torch.cce`
+    在 `ascend_ops/csrc/` 目录下添加新的算子目录 `mykernel`，在 `mykernel` 目录下添加新的算子调用文件 `mykernel_torch.cpp`
     ```c++
     __global__ [aicore] void mykernel(GM_ADDR input, GM_ADDR output, int64_t num_element) {
         // 您的算子kernel实现
@@ -152,14 +175,14 @@ for data_type in supported_dtypes:
     ```cmake
     message(STATUS "BUILD_TORCH_OPS ON in mykernel")
     # MYKERNEL operation sources
-    file(GLOB MYKERNEL_NPU_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cce")
+    file(GLOB MYKERNEL_NPU_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
     set(MYKERNEL_SOURCES ${MYKERNEL_NPU_SOURCES})
-    # Mark .cce files with special properties
+    # Mark .cpp files with special properties
     set_source_files_properties(
         ${MYKERNEL_NPU_SOURCES} PROPERTIES
         LANGUAGE CXX
-        COMPILE_FLAGS "--cce-soc-version=Ascend910B1 --cce-soc-core-type=VecCore --cce-auto-sync"
+        COMPILE_FLAGS "--cce-soc-version=Ascend910B1 --cce-soc-core-type=VecCore --cce-auto-sync -xcce"
     )
 
     # Create object library

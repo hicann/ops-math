@@ -6,10 +6,6 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品 </term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
-| <term>Atlas 200/300/500 推理产品</term>                      |    ×     |
 
 ## 功能说明
 算子功能：对输入tensor沿着repeats中对每个维度指定的复制次数进行复制。示例：
@@ -72,13 +68,11 @@ repeats中的值必须大于等于0。
 
   * self(aclTensor*,计算输入)：Device侧的aclTensor。支持[非连续Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，维度不大于8。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、DOUBLE、FLOAT16、COMPLEX64、COMPLEX128、UINT8、INT8、INT16、INT32、INT64、UINT16、UINT32、UINT64、BOOL、BFLOAT16
-    - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型支持FLOAT、DOUBLE、FLOAT16、COMPLEX64、COMPLEX128、UINT8、INT8、INT16、INT32、INT64、UINT16、UINT32、UINT64、BOOL
 
   * repeats(aclIntArray*,计算输入)：Host侧的aclIntArray，数据类型支持INT64，表示沿每个维度重复输入tensor的次数, 参数个数不大于8, 当前不支持对超过4个维度同时做repeat的场景, 详细约束请见[约束说明](#约束说明)。
 
   * out(aclTensor \*，计算输出)：Device侧的aclTensor。支持[非连续Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，维度不大于8，且类型需要与self一致。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、DOUBLE、FLOAT16、COMPLEX64、COMPLEX128、UINT8、INT8、INT16、INT32、INT64、UINT16、UINT32、UINT64、BOOL、BFLOAT16
-    - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型支持FLOAT、DOUBLE、FLOAT16、COMPLEX64、COMPLEX128、UINT8、INT8、INT16、INT32、INT64、UINT16、UINT32、UINT64、BOOL
 
   * workspaceSize(uint64_t \*，出参)：返回需要在Device侧申请的workspace大小。
 

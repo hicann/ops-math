@@ -6,10 +6,6 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
-| <term>Atlas 推理系列产品 </term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
-| <term>Atlas 200/300/500 推理产品</term>                      |    ×     |
 
 ## 功能说明
 
@@ -35,17 +31,14 @@ $$
 
   - self(aclTensor*, 计算输入)：Device侧的aclTensor，数据类型需要能转换成out的数据类型，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，数据维度不支持8维以上。
      * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、INT32、DOUBLE、UINT8、INT8、INT16、INT64、COMPLEX64、COMPLEX128、BFLOAT16
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、INT32、DOUBLE、UINT8、INT8、INT16、INT64、COMPLEX64、COMPLEX128
 
   - dim(int64_t, 计算输入)：Host侧的整数，数据类型支持INT64，取值范围在[-self.dim(), self.dim()-1]内。
 
   - dtype(aclDataType, 计算输入)：Host侧的数据类型枚举，表示输出张量所需的数据类型，需与输出张量out的数据类型一致。
      * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、INT32、DOUBLE、UINT8、INT8、INT16、INT64、COMPLEX64、COMPLEX128、BFLOAT16
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、INT32、DOUBLE、UINT8、INT8、INT16、INT64、COMPLEX64、COMPLEX128
 
   - out(aclTensor *, 计算输出)：Device侧的aclTensor，且数据类型需要与传入的dtype一致，shape需要与self一致，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，数据维度不支持8维以上。
      * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、INT32、DOUBLE、UINT8、INT8、INT16、INT64、COMPLEX64、COMPLEX128、BFLOAT16
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、INT32、DOUBLE、UINT8、INT8、INT16、INT64、COMPLEX64、COMPLEX128
 
   - workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
 
