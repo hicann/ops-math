@@ -17,7 +17,7 @@
 #include "log/log.h"
 #include "platform/platform_ascendc.h"
 #include "graph/utils/type_utils.h"
-#include "../op_kernel/v35/is_inf_dag.h"
+#include "../op_kernel/arch35/is_inf_dag.h"
 
 namespace optiling {
 using namespace Ops::Math::OpTiling;

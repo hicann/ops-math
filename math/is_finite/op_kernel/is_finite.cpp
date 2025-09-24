@@ -14,35 +14,20 @@
  */
 
 #include "is_finite.h"
+#include "is_finite_struct.h"
 
 using namespace IsFiniteNs;
 
 // kernel function
-extern "C" __global__ __aicore__ void is_finite(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+template<int D_T_X, int D_T_Y>
+__global__ __aicore__ void is_finite(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     if (workspace == nullptr) {
         return;
     }
 
-    GET_TILING_DATA(tilingData, tiling);
+    REGISTER_TILING_DEFAULT(IsFiniteTilingData);
+    GET_TILING_DATA_WITH_STRUCT(IsFiniteTilingData, tilingData, tiling);
 
-    GM_ADDR userWS = nullptr;
-
-    const int16_t HALF_TYPE_MASK = 0x7c00;      // 0111 1100 0000 0000
-    const int32_t FLOAT_TYPE_MASK = 0x7f800000; // 0111 1111 1000 0000 0000 0000 0000 0000
-    const int16_t BF16_TYPE_MASK = 0x7f80;      // 0111 1111 1000 0000
-
-    if (TILING_KEY_IS(1)) {
-        IsFiniteNs::IsFinite<half, HALF_TYPE_MASK> op;
-        op.Init(x, y, userWS, &tilingData);
-        op.Process();
-    } else if (TILING_KEY_IS(2)) {
-        IsFiniteNs::IsFinite<float, BF16_TYPE_MASK> op;
-        op.Init(x, y, userWS, &tilingData);
-        op.Process();
-    } else if (TILING_KEY_IS(3)) {
-        IsFiniteNs::IsFinite<half, BF16_TYPE_MASK> op;
-        op.Init(x, y, userWS, &tilingData);
-        op.Process();
-    }
+    IsFiniteKernelImpl<D_T_X, D_T_Y>(x, y, &tilingData);
 }

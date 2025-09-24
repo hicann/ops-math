@@ -24,17 +24,18 @@ template <typename T1, typename T2>
 class LinSpaceWithBigShapeAndCast : public LinSpaceBase<T2> {
 public:
     __aicore__ inline LinSpaceWithBigShapeAndCast(){};
-    __aicore__ inline void Init(GM_ADDR start, GM_ADDR stop, GM_ADDR num, GM_ADDR output,
-                                GM_ADDR workspace, const LinSpaceTilingData *tilingData);
+    __aicore__ inline void Init(
+        GM_ADDR start, GM_ADDR stop, GM_ADDR num, GM_ADDR output, GM_ADDR workspace,
+        const LinSpaceTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
     __aicore__ inline void CopyIn();
     __aicore__ inline void CopyInReverse();
-    __aicore__ inline void ComputeAndOut(const int64_t &loopNum, const int64_t &loopTail);
-    __aicore__ inline void ComputeReverseAndOut(const int64_t &loopNum, const int64_t &loopTail);
-    __aicore__ inline void CopyOut(const int64_t offset, const int64_t &outLen);
-    __aicore__ inline void CopyOutReverse(const int64_t offset, const int64_t &outLen);
+    __aicore__ inline void ComputeAndOut(const int64_t& loopNum, const int64_t& loopTail);
+    __aicore__ inline void ComputeReverseAndOut(const int64_t& loopNum, const int64_t& loopTail);
+    __aicore__ inline void CopyOut(const int64_t offset, const int64_t& outLen);
+    __aicore__ inline void CopyOutReverse(const int64_t offset, const int64_t& outLen);
     __aicore__ inline void ProcessPerCore();
     __aicore__ inline void ProcessLastCore();
     __aicore__ inline void ProcessPerCoreReverse();
@@ -66,14 +67,13 @@ private:
 };
 
 template <typename T1, typename T2>
-__aicore__ inline void LinSpaceWithBigShapeAndCast<T1, T2>::Init(GM_ADDR start, GM_ADDR stop, GM_ADDR num,
-                                                                 GM_ADDR output, GM_ADDR workspace,
-                                                                 const LinSpaceTilingData *tilingData)
+__aicore__ inline void LinSpaceWithBigShapeAndCast<T1, T2>::Init(
+    GM_ADDR start, GM_ADDR stop, GM_ADDR num, GM_ADDR output, GM_ADDR workspace, const LinSpaceTilingData* tilingData)
 {
     blockIdx = GetBlockIdx();
-    outputGm.SetGlobalBuffer((__gm__ T1 *)output);
-    gmAssist.SetGlobalBuffer((__gm__ T2 *)this->assistGm, matrixSize);
-    gmAssistReverse.SetGlobalBuffer((__gm__ T2 *)this->assistGmReverse, matrixSize);
+    outputGm.SetGlobalBuffer((__gm__ T1*)output);
+    gmAssist.SetGlobalBuffer((__gm__ T2*)this->assistGm, matrixSize);
+    gmAssistReverse.SetGlobalBuffer((__gm__ T2*)this->assistGmReverse, matrixSize);
     this->ParseTilingData(tilingData, m_tilingData);
 
     pipe.InitBuffer(inQueueMatrix, 1, matrixSize * sizeof(T2));
@@ -92,15 +92,15 @@ __aicore__ inline void LinSpaceWithBigShapeAndCast<T1, T2>::Process()
         return;
     }
 
-    // load matrix
-    #if defined(ASCENDC_OOM) && ASCENDC_OOM == 1
-        OOMCheckAddrRange(gmAssist.GetPhyAddr(), 2 * matrixSize * sizeof(T2));
-    #endif
+// load matrix
+#if defined(ASCENDC_OOM) && ASCENDC_OOM == 1
+    OOMCheckAddrRange(gmAssist.GetPhyAddr(), 2 * matrixSize * sizeof(T2));
+#endif
 
     if (blockIdx < m_tilingData.realCoreNum / POWER_BASE_NUM) {
         blockOffset = m_tilingData.scalar * blockIdx * m_tilingData.numPerCore + m_tilingData.start;
         ProcessPerCore();
-    } else if (blockIdx == m_tilingData.realCoreNum - 1) {  // process last core
+    } else if (blockIdx == m_tilingData.realCoreNum - 1) { // process last core
         blockOffset = m_tilingData.stop;
         ProcessLastCore();
     } else {
@@ -123,7 +123,9 @@ __aicore__ inline void LinSpaceWithBigShapeAndCast<T1, T2>::ProcessLastCore()
 {
     gmOutOffset = m_tilingData.num;
     CopyInReverse();
-    ComputeReverseAndOut(m_tilingData.outerTailLoopNum, this->CeilDiv(m_tilingData.outerTailLoopNumTail, elementPerBlock) * elementPerBlock);
+    ComputeReverseAndOut(
+        m_tilingData.outerTailLoopNum,
+        this->CeilDiv(m_tilingData.outerTailLoopNumTail, elementPerBlock) * elementPerBlock);
 }
 
 template <typename T1, typename T2>
@@ -152,7 +154,7 @@ __aicore__ inline void LinSpaceWithBigShapeAndCast<T1, T2>::CopyInReverse()
 
 template <typename T1, typename T2>
 __aicore__ inline void LinSpaceWithBigShapeAndCast<T1, T2>::ComputeAndOut(
-    const int64_t &loopNum, const int64_t &loopTail)
+    const int64_t& loopNum, const int64_t& loopTail)
 {
     LocalTensor<T2> ubAssist = inQueueMatrix.DeQue<T2>();
     LocalTensor<T1> outLocal = outQueue.AllocTensor<T1>();
@@ -194,7 +196,7 @@ __aicore__ inline void LinSpaceWithBigShapeAndCast<T1, T2>::ComputeAndOut(
 
 template <typename T1, typename T2>
 __aicore__ inline void LinSpaceWithBigShapeAndCast<T1, T2>::ComputeReverseAndOut(
-    const int64_t &loopNum, const int64_t &loopTail)
+    const int64_t& loopNum, const int64_t& loopTail)
 {
     LocalTensor<T2> ubAssist = inQueueMatrix.DeQue<T2>();
     LocalTensor<T1> outLocal = outQueue.AllocTensor<T1>();
@@ -205,10 +207,9 @@ __aicore__ inline void LinSpaceWithBigShapeAndCast<T1, T2>::ComputeReverseAndOut
     inQueueMatrix.FreeTensor(ubAssist);
 
     for (int64_t idx = 1; idx <= maxOutNum / matrixSize / POWER_BASE_NUM; idx *= POWER_BASE_NUM) {
-        Adds(ubNeedCast[maxOutNum - idx * matrixSize * POWER_BASE_NUM],
-            ubNeedCast[maxOutNum - idx * matrixSize],
-            T2(m_tilingData.scalar * matrixSize * idx * reverseScalar),
-            matrixSize * idx);
+        Adds(
+            ubNeedCast[maxOutNum - idx * matrixSize * POWER_BASE_NUM], ubNeedCast[maxOutNum - idx * matrixSize],
+            T2(m_tilingData.scalar * matrixSize * idx * reverseScalar), matrixSize * idx);
     }
 
     if (loopNum == 1 && loopTail > 0) {
@@ -224,10 +225,9 @@ __aicore__ inline void LinSpaceWithBigShapeAndCast<T1, T2>::ComputeReverseAndOut
     for (int64_t idx = 1; idx < loopNum; idx++) {
         LocalTensor<T1> outLocal = outQueue.AllocTensor<T1>();
         if (idx == loopNum - 1) {
-            Adds(ubNeedCast[maxOutNum - loopTail],
-                ubNeedCast[maxOutNum - loopTail],
-                T2(m_tilingData.scalar * maxOutNum * reverseScalar),
-                loopTail);
+            Adds(
+                ubNeedCast[maxOutNum - loopTail], ubNeedCast[maxOutNum - loopTail],
+                T2(m_tilingData.scalar * maxOutNum * reverseScalar), loopTail);
             Cast(outLocal[maxOutNum - loopTail], ubNeedCast[maxOutNum - loopTail], retR, loopTail);
             outQueue.EnQue(outLocal);
             CopyOutReverse(gmOutOffset - idx * maxOutNum - loopTail, loopTail);
@@ -241,7 +241,7 @@ __aicore__ inline void LinSpaceWithBigShapeAndCast<T1, T2>::ComputeReverseAndOut
 }
 
 template <typename T1, typename T2>
-__aicore__ inline void LinSpaceWithBigShapeAndCast<T1, T2>::CopyOut(const int64_t offset, const int64_t &outLen)
+__aicore__ inline void LinSpaceWithBigShapeAndCast<T1, T2>::CopyOut(const int64_t offset, const int64_t& outLen)
 {
     LocalTensor<T1> outLocal = outQueue.DeQue<T1>();
     DataCopy(outputGm[offset], outLocal, outLen);
@@ -249,13 +249,13 @@ __aicore__ inline void LinSpaceWithBigShapeAndCast<T1, T2>::CopyOut(const int64_
 }
 
 template <typename T1, typename T2>
-__aicore__ inline void LinSpaceWithBigShapeAndCast<T1, T2>::CopyOutReverse(const int64_t offset, const int64_t &outLen)
+__aicore__ inline void LinSpaceWithBigShapeAndCast<T1, T2>::CopyOutReverse(const int64_t offset, const int64_t& outLen)
 {
     LocalTensor<T1> outLocal = outQueue.DeQue<T1>();
     DataCopy(outputGm[offset], outLocal[maxOutNum - outLen], outLen);
     outQueue.FreeTensor(outLocal);
 }
 
-}  // namespace LinSpace
+} // namespace LinSpace
 
-#endif  // LINSPACE_WITH_BIG_SHAPE_AND_CAST_H
+#endif // LINSPACE_WITH_BIG_SHAPE_AND_CAST_H

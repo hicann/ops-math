@@ -87,10 +87,6 @@
   - 161001 (ACLNN_ERR_PARAM_NULLPTR)：
   1、传入的srcTensor、dstTensor是空指针。
   - 161002 (ACLNN_ERR_PARAM_INVALID)：
-    1、srcTensor的数据类型非INT8、INT32、FLOAT，数据格式非ND。
-    2、dstTensor的数据类型非INT8、INT32、FLOAT，数据格式非ACL_FORMAT_FRACTAL_NZ(29)、ACL_FORMAT_FRACTAL_NZ_C0_16(50)、ACL_FORMAT_FRACTAL_NZ_C0_32(51)。
-    3、srcTensor、dstTensor传入非连续的Tensor。
-    4、srcTensor的view shape维度不在[2, 6]的范围，dstTensor的storage shape维度不在[4, 8]的范围。
   - Atlas A3 训练系列产品/Atlas A3 推理系列产品、Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：
     1、srcTensor的数据类型非INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32，数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。
     2、dstTensor的数据类型非INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32，数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。

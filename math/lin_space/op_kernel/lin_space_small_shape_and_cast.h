@@ -21,8 +21,7 @@ namespace LinSpace {
 using namespace AscendC;
 
 template <typename T1, typename T2>
-class LinSpaceSmallShapeAndCast : public LinSpaceBase<T2>
-{
+class LinSpaceSmallShapeAndCast : public LinSpaceBase<T2> {
 public:
     __aicore__ inline LinSpaceSmallShapeAndCast(){};
     __aicore__ inline void Init(

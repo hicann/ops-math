@@ -11,10 +11,12 @@
 #include <iostream>
 #include <gtest/gtest.h>
 #include "../../../op_host/is_finite_tiling.h"
+#include "../../../op_kernel/is_finite_struct.h"
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
 
 using namespace std;
+using namespace IsFiniteNs;
 
 class IsFiniteTiling : public testing::Test {
 protected:

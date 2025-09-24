@@ -16,6 +16,7 @@
 #define IS_FINITE_H
 
 #include "kernel_operator.h"
+#include "is_finite_struct.h"
 
 namespace IsFiniteNs {
 using namespace AscendC;
@@ -214,6 +215,33 @@ __aicore__ inline void IsFinite<T, MASK>::Process()
         CopyIn(actualInOffset, dataCount);
         Compute(dataCount);
         CopyOut(actualOutOffset, actualOutCount);
+#endif
+    }
+}
+
+template<int D_T_X, int D_T_Y>
+__aicore__ inline void IsFiniteKernelImpl(__gm__ uint8_t* x, __gm__ uint8_t* y,
+                                          const IsFiniteNs::IsFiniteTilingData* tilingData)
+{
+    GM_ADDR userWS = nullptr;
+
+    constexpr int16_t HALF_TYPE_MASK = 0x7c00;      // 0111 1100 0000 0000
+    constexpr int32_t FLOAT_TYPE_MASK = 0x7f800000; // 0111 1111 1000 0000 0000 0000 0000 0000
+    constexpr int16_t BF16_TYPE_MASK = 0x7f80;      // 0111 1111 1000 0000
+
+    if constexpr (D_T_X == IS_FINITE_TPL_FP16 && D_T_Y == IS_FINITE_TPL_BOOL) {
+        IsFiniteNs::IsFinite<half, HALF_TYPE_MASK> op;
+        op.Init(x, y, userWS, tilingData);
+        op.Process();
+    } else if constexpr (D_T_X == IS_FINITE_TPL_FP32 && D_T_Y == IS_FINITE_TPL_BOOL) {
+        IsFiniteNs::IsFinite<float, BF16_TYPE_MASK> op;
+        op.Init(x, y, userWS, tilingData);
+        op.Process();
+#if !(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
+    } else if constexpr (D_T_X == IS_FINITE_TPL_BF16 && D_T_Y == IS_FINITE_TPL_BOOL) {
+        IsFiniteNs::IsFinite<half, BF16_TYPE_MASK> op;
+        op.Init(x, y, userWS, tilingData);
+        op.Process();
 #endif
     }
 }

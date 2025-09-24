@@ -17,8 +17,7 @@
 
 namespace ops {
 
-class Segsum : public OpDef
-{
+class Segsum : public OpDef {
 public:
     explicit Segsum(const char* name) : OpDef(name)
     {

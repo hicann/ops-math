@@ -15,8 +15,7 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-class HansDecode : public OpDef
-{
+class HansDecode : public OpDef {
 public:
     explicit HansDecode(const char* name) : OpDef(name)
     {

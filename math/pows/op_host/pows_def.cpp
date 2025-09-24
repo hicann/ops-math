@@ -12,12 +12,11 @@
  * \file pows_def.cpp
  * \brief
  */
- 
+
 #include "register/op_def_registry.h"
 
 namespace ops {
-class Pows : public OpDef
-{
+class Pows : public OpDef {
 public:
     explicit Pows(const char* name) : OpDef(name)
     {

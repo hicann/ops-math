@@ -30,8 +30,7 @@ constexpr int32_t STATIC_ARRAY_LENGTH = 5120;
 constexpr int32_t ALIGNED_NUM = 8;
 
 template <typename MTE_T, typename CAST_T, typename COMPUTE_T>
-class HistogramV2Scalar
-{
+class HistogramV2Scalar {
 public:
     __aicore__ inline HistogramV2Scalar()
     {}

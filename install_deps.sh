@@ -73,9 +73,9 @@ detect_os() {
 }
 
 install_python() {
-    # python版本号>=3.7.5
+    # python版本号>=3.7.0
     echo -e "\n==== 检查Python ===="
-    local req_ver="3.7.5"
+    local req_ver="3.7.0"
     local curr_ver=""
 
     if command -v python3 &> /dev/null; then

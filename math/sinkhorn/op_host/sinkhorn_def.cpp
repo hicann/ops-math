@@ -13,10 +13,8 @@
  */
 #include "register/op_def_registry.h"
 
-
 namespace ops {
-class Sinkhorn : public OpDef
-{
+class Sinkhorn : public OpDef {
 public:
     explicit Sinkhorn(const char* name) : OpDef(name)
     {

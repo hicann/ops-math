@@ -15,8 +15,7 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-class StackBallQuery : public OpDef
-{
+class StackBallQuery : public OpDef {
 public:
     explicit StackBallQuery(const char* name) : OpDef(name)
     {

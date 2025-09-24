@@ -23,7 +23,7 @@ function(pack_custom)
   else ()
       message(WARNING "Unknown architecture: ${CMAKE_SYSTEM_PROCESSOR}")
   endif ()
-  set(PACK_CUSTOM_NAME "cann-ops-math-${VENDOR_NAME}-linux.${ARCH}")
+  set(PACK_CUSTOM_NAME "cann-ops-math-${VENDOR_NAME}_linux-${ARCH}")
   set(PATH_NAME "${VENDOR_NAME}_math")
   npu_op_package(${PACK_CUSTOM_NAME}
     TYPE RUN

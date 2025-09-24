@@ -19,7 +19,7 @@ SUPPORTED_SHORT_OPTS="hj:vO:uf:-:"
 # 所有支持的长选项
 SUPPORTED_LONG_OPTS=(
   "help" "ops=" "soc=" "vendor_name=" "debug" "cov" "noexec" "aicpu" "opkernel" "jit"
-  "pkg" "disable_asan" "valgrind" "make_clean_all" "make_clean"
+  "pkg" "disable_asan" "valgrind" "make_clean"
   "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test"
   "run_example" "genop=" "genop_aicpu="
 )
@@ -169,7 +169,6 @@ usage() {
       clean)
         echo "Clean Options:"
         echo $dotted_line
-        echo "    --make_clean_all       Clean all build artifacts and related files"
         echo "    --make_clean           Clean build artifacts"
         echo $dotted_line
         return
@@ -313,13 +312,12 @@ usage() {
   echo "    --cov When building uTest locally, count the coverage."
   echo "    --noexec Only compile ut, do not execute the compiled executable file"
   echo "    --make_clean make clean"
-  echo "    --make_clean_all make clean and delete related file"
   echo "    --disable_asan disable asan"
   echo "    --valgrind run ut with valgrind. This option will disable asan, noexec and run utest by valgrind"
   echo ""
   echo "    --ops Compile specified operator, use snake name, like: --ops=add,add_lora, use ',' to separate different operator"
   echo "    --soc Compile binary with specified Ascend SoC, like: --soc=ascend310p,ascend910b, use ',' to separate different SoC"
-  echo "    --vendor_name Specify the custom operator package vendor name, like: --vendor_name=customize, default to customize-math"
+  echo "    --vendor_name Specify the custom operator package vendor name, like: --vendor_name=customize, default to custom"
   echo "    --aicpu build aicpu task"
   echo "    --opgraph build graph_plugin_math.so"
   echo "    --opapi build opapi_math.so"
@@ -541,7 +539,7 @@ checkopts() {
           --pkg) SHOW_HELP="package" ;;
           --opkernel) SHOW_HELP="opkernel" ;;
           -u) SHOW_HELP="test" ;;
-          --make_clean_all | --make_clean) SHOW_HELP="clean" ;;
+          --make_clean) SHOW_HELP="clean" ;;
           --valgrind) SHOW_HELP="valgrind" ;;
           --ophost) SHOW_HELP="ophost" ;;
           --opapi) SHOW_HELP="opapi" ;;
@@ -636,8 +634,11 @@ checkopts() {
           ENABLE_ASAN=FALSE
           ;;
         run_example) ENABLE_RUN_EXAMPLE=TRUE ;;
-        make_clean_all) exit 0 ;;
-        make_clean) exit 0 ;;
+        make_clean)
+          clean_build
+          clean_build_out
+          exit 0
+          ;;
         *)
           ## 如果不在RELEASE_TARGETS 或者 UT_TARGETS，不做处理
           if ! in_array "$OPTARG" "${RELEASE_TARGETS[@]}" && ! in_array "$OPTARG" "${UT_TARGETS[@]}"; then
@@ -915,7 +916,7 @@ build_example() {
       echo "pkg_mode:${PKG_MODE} vendor_name:${VENDOR}"
       export CUST_LIBRARY_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/lib"     # 仅自定义算子需要
       export CUST_INCLUDE_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/include" # 仅自定义算子需要
-      g++ ${file} -I ${INCLUDE_PATH} -I ${CUST_INCLUDE_PATH} -L ${CUST_LIBRARY_PATH} -L ${EAGER_LIBRARY_PATH} -lcust_opapi -lascendcl -lnnopbase -o test_aclnn_${EXAMPLE_NAME}
+      g++ ${file} -I ${INCLUDE_PATH} -I ${CUST_INCLUDE_PATH} -L ${CUST_LIBRARY_PATH} -L ${EAGER_LIBRARY_PATH} -lcust_opapi -lascendcl -lnnopbase -o test_aclnn_${EXAMPLE_NAME} -Wl,-rpath=${CUST_LIBRARY_PATH}
     else
       echo "Error: pkg_mode(${PKG_MODE}) must be cust."
       exit 1

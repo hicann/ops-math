@@ -17,8 +17,7 @@
 
 namespace ops {
 
-class TransformBiasRescaleQkv : public OpDef
-{
+class TransformBiasRescaleQkv : public OpDef {
 public:
     explicit TransformBiasRescaleQkv(const char* name) : OpDef(name)
     {

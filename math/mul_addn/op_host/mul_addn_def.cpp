@@ -19,8 +19,7 @@
 // shape x1:[B, M, 1], x2:[B, 1, N] ---> y:[B, M, N]
 // dtype fp32
 namespace ops {
-class MulAddn : public OpDef
-{
+class MulAddn : public OpDef {
 public:
     explicit MulAddn(const char* name) : OpDef(name)
     {

@@ -1,12 +1,12 @@
-# ops_math
+# ops-math
 
 ## 🔥Latest News
 
-- [2025/09] ops_math项目首次上线。
+- [2025/09] ops-math项目首次上线。
 
 ## 🚀概述
 
-ops_math是[CANN](https://hiascend.com/software/cann) （Compute Architecture for Neural Networks）算子库中提供数学类计算的基础算子库，包括math类、conversion类等算子，算子库架构图如下：
+ops-math是[CANN](https://hiascend.com/software/cann) （Compute Architecture for Neural Networks）算子库中提供数学类计算的基础算子库，包括math类、conversion类等算子，算子库架构图如下：
 
 <img src="docs/figures/architecture.png" alt="架构图"  width="750px" height="400px">
 
@@ -19,7 +19,7 @@ ops_math是[CANN](https://hiascend.com/software/cann) （Compute Architecture fo
 
 ## 📖学习教程
 
-若您希望深入体验项目功能并定制化修改算子源码，请访问如下文档获取详细教程。
+若您希望深入体验项目功能并修改算子源码，请访问如下文档获取详细教程。
 - [算子调用方式](docs/context/op_invocation.md)：介绍不同的调用算子方式，方便快速应用于不同的AI业务场景。
 
 - [算子调试调优](docs/context/op_debug_prof.md)：介绍常见的算子调试和调优方法，如DumpTensor、msProf等。

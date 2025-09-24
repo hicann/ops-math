@@ -1,7 +1,6 @@
 # AI Core算子开发指南
 
 > 说明：算子开发过程中涉及的基本概念如Tiling、Kernel、Ascend C接口等，详细介绍请参考[《Ascend C算子开发》](https://hiascend.com/document/redirect/CannCommunityOpdevAscendC)。
->
 
 开发指南以`AddExample`算子开发为例，介绍新算子开发流程以及涉及的交付件，流程图如下，完整样例代码请访问项目`example`目录。
 
@@ -27,7 +26,7 @@ graph LR
 
 4. [Kernel实现](#Kernel实现)：实现Device侧算子核函数。
 
-5. [aclnn适配](#aclnn适配)：自定义算子目前支持aclnn接口调用，为成功调用，需完成二进制发布。
+5. [aclnn适配](#aclnn适配)：自定义算子推荐aclnn接口调用，需完成二进制发布。如需入图，请参考[附录](#附录)。
 
 6. [编译部署](#编译部署)：通过工程编译脚本完成自定义算子的编译和安装。 
 
@@ -285,7 +284,7 @@ graph TD
 
   对于复杂算子，Kernel可能需要根据不同Tiling策略选择不同的执行路径。请根据实际需求设置TilingKey，标识不同的分支策略。
 
-对于上述操作，以`AddExample`算子实现为例，示例代码如下：
+先在\$\{op\_name\}\_tiling\_data.h中定义TilingData结构体，存储Tiling策略数据（如块大小），示例如下，`AddExample`算子完整代码请参考`example/add_example/op_kernel`下[add_example_tiling_data.h](../../example/add_example/op_kernel/add_example_tiling_data.h)。
 
 ```CPP
 // 定义TilingData结构体
@@ -294,7 +293,7 @@ struct AddExampleTilingData {
      int64_t  tileNum;        // 每个核内部数据切块数量
 };
 ```
-完整代码请参考`example/add_example/op_kernel`目录下[add_example_tiling_data.h](../../example/add_example/op_kernel/add_example_tiling_data.h)。
+再在\$\{op\_name\}\_tiling.cpp实现关键操作代码，代码如下，`AddExample`算子完整代码请参考`example/add_example/op_host`目录下[add_example_tiling.cpp](../../example/add_example/op_host/add_example_tiling.cpp)。
 
 ```CPP
 // 设置Kernel使用核数
@@ -327,9 +326,7 @@ if (dataType == ge::DT_FLOAT) {
     return ge::GRAPH_FAILED;
 }
 ```
-完整代码请参考`example/add_example/op_host`目录下[add_example_tiling.cpp](../../example/add_example/op_host/add_example_tiling.cpp)。
-
-注意，TilingKey可通过模板化编程实现，示例代码如下：
+注意，TilingKey可通过模板化编程实现，示例代码如下，完整代码请参考`example/add_example/op_kernel`下[add_example_tiling_key.h](../../example/add_example/op_kernel/add_example_tiling_key.h)。
 
 ```C++
 #define ELEMENTWISE_TPL_SCH_MODE_0 0
@@ -348,7 +345,7 @@ ASCENDC_TPL_SEL(
 #endif
 ```
 
-完整代码请参考`example/add_example/op_kernel`目录下[add_example_tiling_key.h](../../example/add_example/op_kernel/add_example_tiling_key.h)。如需实现复杂参数组合完成分支选择（涉及多TilingKey场景），请参考[《Ascend C算子开发》](https://hiascend.com/document/redirect/CannCommunityOpdevAscendC)中"算子实现 > Host侧Tiling实现 >  Tiling模板编程"。
+如需实现复杂参数组合完成分支选择（涉及多TilingKey场景），请参考[《Ascend C算子开发》](https://hiascend.com/document/redirect/CannCommunityOpdevAscendC)中"算子实现 > Host侧Tiling实现 >  Tiling模板编程"。
 
 ## Kernel实现
 
@@ -398,7 +395,7 @@ graph LR
 
 ### 代码实现
 
-根据上述步骤，编写`AddExample`算子的Kernel实现，示例代码如下：
+根据上述步骤编写Kernel入口文件\$\{op\_name\}.cpp ，包含主函数和调度逻辑，示例如下，`AddExample`算子完整代码请参考`example/add_example/op_kernel`下[add_example.cpp](../../example/add_example/op_kernel/add_example.cpp)。
 
 ```CPP
 // 1、核函数定义
@@ -422,7 +419,7 @@ __global__ __aicore__ void add_example(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR 
     ....
 }
 ```
-完整代码请参考`example/add_example/op_kernel`目录下[add_example.cpp](../../example/add_example/op_kernel/add_example.cpp)。
+在\$\{op\_name\}.h中定义Kernel头文件，包含函数声明、结构定义、逻辑实现等，示例如下，`AddExample`算子完整代码请参考`example/add_example/op_kernel`下[add_example.h](../../example/add_example/op_kernel/add_example.h)。
 
 ```C++
 // 2、定义Kernel类
@@ -511,25 +508,22 @@ __aicore__ inline void AddExample<T>::CopyOut(int32_t progress)
     ....
 }
 ```
-完整代码请参考`example/add_example/op_kernel`目录下[add_example.h](../../example/add_example/op_kernel/add_example.h)。
-
 ## aclnn适配
 
-- **增加二进制编译json**
+完成算子开发和编译后，会自动生成aclnn接口（一套基于C 的API），可在应用程序中调用aclnn接口实现调用算子的目的。该方式依赖算子的二进制包，为了生成对应的二进制包，需要增加二进制编译json：
 
-    完成算子开发和编译后，会自动生成aclnn接口（一套基于C 的API），您可以直接在应用程序中调用aclnn接口实现调用算子的目的。注意，该方式依赖算子的二进制包，为了生成对应的二进制包，需要完成如下适配操作：
+以`AddExample`算子为例：
 
-    以`AddExample`算子为例：
+1. 在`example/add_example/op_host`目录新建`config/${soc_version}`文件夹，用于存放配置文件。
 
-    1. 在`example/add_example/op_host`目录新建`config/${soc_version}`文件夹，用于存放配置文件。
-    
-    2. 在`${soc_version}`目录新建json文件，命名为`${op_name}_binary.json`，用于描述算子相关信息，包括算子输入、输出、shape、data type、format等信息，完整定义请参考 [add_example_binary.json](../../example/add_example/op_host/config/ascend910b/add_example_binary.json)。
-    
-    3. 在`scripts/kernel/binary_config`目录[ascendc_config.json](../../scripts/kernel/binary_config/ascendc_config.json)中，注册算子的NPU型号和实现模式，示例如下：
+2. 在`${soc_version}`目录新建json文件，命名为`${op_name}_binary.json`，用于描述算子相关信息，包括算子输入、输出、shape、data type、format等信息，完整定义请参考[add_example_binary.json](../../example/add_example/op_host/config/ascend910b/add_example_binary.json)。
 
-        ```json
-        {"name":"AddExample", "compute_units": ["${soc_version}"], "auto_sync":true, "impl_mode" : "high_performance"},
-        ```
+3. 在`scripts/kernel/binary_config`目录[ascendc_config.json](../../scripts/kernel/binary_config/ascendc_config.json)中，注册算子的NPU型号和实现模式，示例如下：
+
+    ```json
+    {"name":"AddExample", "compute_units": ["${soc_version}"], "auto_sync":true, "impl_mode" : "high_performance"},
+    ```
+
 ## 编译部署
 
 算子开发完成后，需对算子工程进行编译，生成自定义算子安装包\*\.run，详细的编译操作如下：
@@ -546,13 +540,13 @@ __aicore__ inline void AddExample<T>::CopyOut(int32_t progress)
 
     ```bash
     # 编译指定算子，如--ops=add_example
-    bash build.sh --pkg --soc=${soc_version} --vendor_name=${vendor_name} --ops=${op1,op2,...}
+    bash build.sh --pkg --soc=${soc_version} --vendor_name=${vendor_name} --ops=${op_list}
     ```
 
     若提示如下信息，说明编译成功：
 
     ```bash
-    Self-extractable archive "cann-ops-math-${vendor_name}-linux.${arch}.run" successfully created.
+    Self-extractable archive "cann-ops-math-${vendor_name}_linux-${arch}.run" successfully created.
     ```
 
     若未指定`${vendor_name}`默认使用`custom`作为包名。编译成功后，生成的自定义算子\*\.run包存放于build_out目录。
@@ -568,13 +562,13 @@ __aicore__ inline void AddExample<T>::CopyOut(int32_t progress)
     执行以下命令进行安装：
     
     ```bash
-    ./cann-ops-math-${vendor_name}-linux.${arch}.run
+    ./cann-ops-math-${vendor_name}_linux-${arch}.run
     ```
     自定义算子包安装在`${ASCEND_HOME_PATH}/latest/opp/vendor`路径中，`${ASCEND_HOME_PATH}`表示CANN软件安装目录，可提前在环境变量中配置。
     
     自定义算子包的目录结构示例如下：
     ```
-    ├── cann-ops-math-${vendor_name}-linux.${arch}.run           # 包名
+    ├── cann-ops-math-${vendor_name}_linux-${arch}.run           # 包名
     ├── bin
     │   └── set_env.bash                                         # 环境变量source脚本
     ├── op_api
@@ -629,7 +623,7 @@ __aicore__ inline void AddExample<T>::CopyOut(int32_t progress)
 开发好的算子完成编译部署后，可通过aclnn方式验证功能，方法请参考[算子调用方式](./op_invocation.md)。
 
 ## 附录
-如需运行图模式，还需在上文基础上，做如下交付件适配
+自定义算子如需运行图模式，不需要[aclnn适配](#aclnn适配)，做如下交付件适配：
 ```
 ${op_name}                              # 替换为实际算子名的小写下划线形式
 ├── op_host                             # Host侧实现
@@ -650,7 +644,7 @@ ${op_name}                              # 替换为实际算子名的小写下�
 
 **1. 注册InferShape与InferData。**
 
-   实现两个目标函数之前，需要先进行注册，告诉框架算子的shape和data type推导逻辑由哪两个函数来处理。
+   实现两个目标函数之前，需要先进行注册，框架判断算子的shape和data type推导逻辑由哪两个函数来处理。
 
 **2. InferShape推导实现。**
 

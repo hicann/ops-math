@@ -25,10 +25,12 @@ extern "C" __global__ __aicore__ void pows(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM
         return;
     }
 
+#if !(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
     GM_ADDR userWS = GetUserWorkspace(workspace);
     if (userWS == nullptr) {
         return;
     }
+#endif
 
     GET_TILING_DATA(tilingData, tiling);
 
@@ -47,10 +49,12 @@ extern "C" __global__ __aicore__ void pows(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM
         Pows::PowsFp16<half> op;
         op.Init(x1, x2, y, workspace, &tilingData);
         op.Process();
+#if !(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
     } else if (TILING_KEY_IS(201)) {
         Pows::PowsBfp16<bfloat16_t> op;
         op.Init(x1, x2, y, workspace, &tilingData);
         op.Process();
+#endif
     } else if (TILING_KEY_IS(301)) {
         Pows::PowsFp32<float> op;
         op.Init(x1, x2, y, workspace, &tilingData);

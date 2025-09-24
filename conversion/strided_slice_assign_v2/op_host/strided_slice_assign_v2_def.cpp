@@ -16,18 +16,18 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-static const std::vector<ge::DataType> inputDataType = { ge::DT_FLOAT16, ge::DT_FLOAT,  ge::DT_BF16, ge::DT_INT32,
-    ge::DT_INT64,   ge::DT_DOUBLE, ge::DT_INT8 };
+static const std::vector<ge::DataType> inputDataType = {ge::DT_FLOAT16, ge::DT_FLOAT,  ge::DT_BF16, ge::DT_INT32,
+                                                        ge::DT_INT64,   ge::DT_DOUBLE, ge::DT_INT8};
 
-static const std::vector<ge::DataType> idxDataType = { ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64 };
+static const std::vector<ge::DataType> idxDataType = {ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+                                                      ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
 
-static const std::vector<ge::Format> format = { ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND };
+static const std::vector<ge::Format> format = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
 
 class StridedSliceAssignV2 : public OpDef {
 public:
-    explicit StridedSliceAssignV2(const char *name) : OpDef(name)
+    explicit StridedSliceAssignV2(const char* name) : OpDef(name)
     {
         this->Input("var")
             .ParamType(REQUIRED)

@@ -40,9 +40,11 @@ extern "C" __global__ __aicore__ void is_inf(GM_ADDR inputs, GM_ADDR outputs, GM
         IsInf<float, SIGN_MASK, FLOAT_INF_NUM> op;
         op.Init(inputs, outputs, userWS, &tilingData);
         op.Process();
+#if !(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
     } else if (TILING_KEY_IS(3)) {
         IsInf<half, SIGN_MASK, BF16_INF_NUM> op;
         op.Init(inputs, outputs, userWS, &tilingData);
         op.Process();
+#endif
     }
 }

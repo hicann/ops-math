@@ -24,17 +24,18 @@ template <typename T>
 class LinSpaceHalfAndFloat : public LinSpaceBase<T> {
 public:
     __aicore__ inline LinSpaceHalfAndFloat(){};
-    __aicore__ inline void Init(GM_ADDR start, GM_ADDR stop, GM_ADDR num, GM_ADDR output, GM_ADDR workspace,
-                                const LinSpaceTilingData *tilingData);
+    __aicore__ inline void Init(
+        GM_ADDR start, GM_ADDR stop, GM_ADDR num, GM_ADDR output, GM_ADDR workspace,
+        const LinSpaceTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
     __aicore__ inline void CopyIn();
     __aicore__ inline void CopyInReverse();
-    __aicore__ inline void Compute(const int64_t &processNum, const int64_t &loopNum, const int64_t &loopTail);
-    __aicore__ inline void ComputeReverse(const int64_t &processNum, const int64_t &loopNum, const int64_t &loopTail);
-    __aicore__ inline void CopyOut(const int64_t &outLen);
-    __aicore__ inline void CopyOutReverse(const int64_t &outLen);
+    __aicore__ inline void Compute(const int64_t& processNum, const int64_t& loopNum, const int64_t& loopTail);
+    __aicore__ inline void ComputeReverse(const int64_t& processNum, const int64_t& loopNum, const int64_t& loopTail);
+    __aicore__ inline void CopyOut(const int64_t& outLen);
+    __aicore__ inline void CopyOutReverse(const int64_t& outLen);
     __aicore__ inline void ProcessPerCore();
     __aicore__ inline void ProcessPerCoreReverse();
     __aicore__ inline void ProcessLastCore();
@@ -64,13 +65,13 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void LinSpaceHalfAndFloat<T>::Init(GM_ADDR start, GM_ADDR stop, GM_ADDR num, GM_ADDR output,
-                                                     GM_ADDR workspace, const LinSpaceTilingData *tilingData)
+__aicore__ inline void LinSpaceHalfAndFloat<T>::Init(
+    GM_ADDR start, GM_ADDR stop, GM_ADDR num, GM_ADDR output, GM_ADDR workspace, const LinSpaceTilingData* tilingData)
 {
     blockIdx = GetBlockIdx();
-    outputGm.SetGlobalBuffer((__gm__ T *)output);
-    gmAssist.SetGlobalBuffer((__gm__ T *)this->assistGm, matrixSize);
-    gmAssistReverse.SetGlobalBuffer((__gm__ T *)this->assistGmReverse, matrixSize);
+    outputGm.SetGlobalBuffer((__gm__ T*)output);
+    gmAssist.SetGlobalBuffer((__gm__ T*)this->assistGm, matrixSize);
+    gmAssistReverse.SetGlobalBuffer((__gm__ T*)this->assistGmReverse, matrixSize);
     this->ParseTilingData(tilingData, m_tilingData);
 
     pipe.InitBuffer(inQueueMatrix, 1, matrixSize * sizeof(T));
@@ -85,15 +86,15 @@ __aicore__ inline void LinSpaceHalfAndFloat<T>::Process()
     if (m_tilingData.num == 0 || blockIdx >= m_tilingData.realCoreNum) {
         return;
     }
-    // load matrix
-    #if defined(ASCENDC_OOM) && ASCENDC_OOM == 1
-        OOMCheckAddrRange(gmAssist.GetPhyAddr(), 2 * matrixSize * sizeof(T));
-    #endif
+// load matrix
+#if defined(ASCENDC_OOM) && ASCENDC_OOM == 1
+    OOMCheckAddrRange(gmAssist.GetPhyAddr(), 2 * matrixSize * sizeof(T));
+#endif
 
     if (blockIdx < m_tilingData.realCoreNum / POWER_BASE_NUM) {
         blockOffset = m_tilingData.scalar * blockIdx * m_tilingData.numPerCore + m_tilingData.start;
         ProcessPerCore();
-    } else if (blockIdx == m_tilingData.realCoreNum - 1) {  // process last core
+    } else if (blockIdx == m_tilingData.realCoreNum - 1) { // process last core
         blockOffset = m_tilingData.stop;
         ProcessLastCore();
     } else {
@@ -115,10 +116,11 @@ template <typename T>
 __aicore__ inline void LinSpaceHalfAndFloat<T>::ProcessLastCore()
 {
     int64_t tailAlignNum = this->CeilDiv(m_tilingData.tailNum, elementPerBlock) * elementPerBlock;
-    gmOutOffset = m_tilingData.num - tailAlignNum;  // must be bigger than two cores
+    gmOutOffset = m_tilingData.num - tailAlignNum; // must be bigger than two cores
     CopyInReverse();
-    ComputeReverse(tailAlignNum, m_tilingData.innerTailLoopNum,
-                   this->CeilDiv(m_tilingData.innerTailLoopTail, elementPerBlock) * elementPerBlock);
+    ComputeReverse(
+        tailAlignNum, m_tilingData.innerTailLoopNum,
+        this->CeilDiv(m_tilingData.innerTailLoopTail, elementPerBlock) * elementPerBlock);
     CopyOutReverse(tailAlignNum);
 }
 
@@ -148,7 +150,7 @@ __aicore__ inline void LinSpaceHalfAndFloat<T>::CopyInReverse()
 
 template <typename T>
 __aicore__ inline void LinSpaceHalfAndFloat<T>::Compute(
-    const int64_t &processNum, const int64_t &loopNum, const int64_t &loopTail)
+    const int64_t& processNum, const int64_t& loopNum, const int64_t& loopTail)
 {
     LocalTensor<T> ubAssist = inQueueMatrix.DeQue<T>();
     LocalTensor<T> outLocal = outQueue.AllocTensor<T>();
@@ -169,7 +171,7 @@ __aicore__ inline void LinSpaceHalfAndFloat<T>::Compute(
 
 template <typename T>
 __aicore__ inline void LinSpaceHalfAndFloat<T>::ComputeReverse(
-    const int64_t &processNum, const int64_t &loopNum, const int64_t &loopTail)
+    const int64_t& processNum, const int64_t& loopNum, const int64_t& loopTail)
 {
     LocalTensor<T> ubAssist = inQueueMatrix.DeQue<T>();
     LocalTensor<T> outLocal = outQueue.AllocTensor<T>();
@@ -178,24 +180,22 @@ __aicore__ inline void LinSpaceHalfAndFloat<T>::ComputeReverse(
     Adds(outLocal[outNum - matrixSize], outLocal[outNum - matrixSize], blockOffset, matrixSize);
 
     for (int64_t idx = 1; idx <= loopNum; idx *= POWER_BASE_NUM) {
-        Adds(outLocal[outNum - idx * matrixSize * POWER_BASE_NUM],
-            outLocal[outNum - idx * matrixSize],
-            T(m_tilingData.scalar * matrixSize * idx * reverseScalar),
-            matrixSize * idx);
+        Adds(
+            outLocal[outNum - idx * matrixSize * POWER_BASE_NUM], outLocal[outNum - idx * matrixSize],
+            T(m_tilingData.scalar * matrixSize * idx * reverseScalar), matrixSize * idx);
     }
 
     if (loopTail > 0) {
-        Adds(outLocal[outNum - processNum],
-            outLocal[outNum - loopTail],
-            T(m_tilingData.scalar * (processNum - loopTail) * reverseScalar),
-            loopTail);
+        Adds(
+            outLocal[outNum - processNum], outLocal[outNum - loopTail],
+            T(m_tilingData.scalar * (processNum - loopTail) * reverseScalar), loopTail);
     }
     outQueue.EnQue(outLocal);
     inQueueMatrix.FreeTensor(ubAssist);
 }
 
 template <typename T>
-__aicore__ inline void LinSpaceHalfAndFloat<T>::CopyOut(const int64_t &outLen)
+__aicore__ inline void LinSpaceHalfAndFloat<T>::CopyOut(const int64_t& outLen)
 {
 #if __CCE_AICORE__ < 220
     LocalTensor<T> outLocal = outQueue.DeQue<T>();
@@ -203,7 +203,8 @@ __aicore__ inline void LinSpaceHalfAndFloat<T>::CopyOut(const int64_t &outLen)
     outQueue.FreeTensor(outLocal);
 #else
     if (blockIdx == m_tilingData.realCoreNum - 2) {
-        int64_t alignNum = outLen - (this->CeilDiv(m_tilingData.tailNum, elementPerBlock) * elementPerBlock - m_tilingData.tailNum);  
+        int64_t alignNum =
+            outLen - (this->CeilDiv(m_tilingData.tailNum, elementPerBlock) * elementPerBlock - m_tilingData.tailNum);
         LocalTensor<T> outLocal = outQueue.DeQue<T>();
         DataCopyExtParams copyParams{1, static_cast<uint32_t>(alignNum * sizeof(T)), 0, 0, 0};
         DataCopyPad(outputGm[gmOutOffset], outLocal, copyParams);
@@ -217,7 +218,7 @@ __aicore__ inline void LinSpaceHalfAndFloat<T>::CopyOut(const int64_t &outLen)
 }
 
 template <typename T>
-__aicore__ inline void LinSpaceHalfAndFloat<T>::CopyOutReverse(const int64_t &outLen)
+__aicore__ inline void LinSpaceHalfAndFloat<T>::CopyOutReverse(const int64_t& outLen)
 {
 #if __CCE_AICORE__ < 220
     LocalTensor<T> outLocal = outQueue.DeQue<T>();
@@ -225,7 +226,8 @@ __aicore__ inline void LinSpaceHalfAndFloat<T>::CopyOutReverse(const int64_t &ou
     outQueue.FreeTensor(outLocal);
 #else
     if (blockIdx == m_tilingData.realCoreNum - 2) {
-        int64_t alignNum = outLen - (this->CeilDiv(m_tilingData.tailNum, elementPerBlock) * elementPerBlock - m_tilingData.tailNum);
+        int64_t alignNum =
+            outLen - (this->CeilDiv(m_tilingData.tailNum, elementPerBlock) * elementPerBlock - m_tilingData.tailNum);
         LocalTensor<T> outLocal = outQueue.DeQue<T>();
         DataCopyExtParams copyParams{1, static_cast<uint32_t>(alignNum * sizeof(T)), 0, 0, 0};
         DataCopyPad(outputGm[gmOutOffset], outLocal[outNum - outLen], copyParams);
@@ -238,6 +240,6 @@ __aicore__ inline void LinSpaceHalfAndFloat<T>::CopyOutReverse(const int64_t &ou
 #endif
 }
 
-}  // namespace LinSpace
+} // namespace LinSpace
 
-#endif  // LINSPACE_HALF_AND_FLOAT_H
+#endif // LINSPACE_HALF_AND_FLOAT_H

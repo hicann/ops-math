@@ -7,3 +7,38 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+
+/*!
+ * \file npu_ops_def.cpp
+ * \brief
+ */
+
+#include <Python.h>
+#include <ATen/Operators.h>
+#include <torch/all.h>
+#include <torch/library.h>
+#include "acl/acl.h"
+
+#include <vector>
+
+extern "C" {
+    PyObject* PyInit__C(void)
+    {
+        static struct PyModuleDef module_def = {
+            PyModuleDef_HEAD_INIT,
+            "_C",
+            NULL,
+            -1,
+            NULL,
+        };
+        return PyModule_Create(&module_def);
+    }
+}
+
+namespace ascend_ops {
+
+TORCH_LIBRARY(ascend_ops, m) {
+    m.def("isfinite(Tensor x) -> Tensor");
+}
+
+}

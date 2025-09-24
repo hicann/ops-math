@@ -802,17 +802,17 @@ TEST_F(l2_logical_xor_test, aclnnLogicalXor_input_output_nullptr_testcase027) {
   // SAMPLE: only test GetWorkspaceSize
   uint64_t workspaceSize = 0;
   aclnnStatus aclRet = ut_l.TestGetWorkspaceSize(&workspaceSize);
-  EXPECT_EQ(aclRet, ACLNN_ERR_INNER_NULLPTR);
+  EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 
   auto ut_r = OP_API_UT(aclnnLogicalXor, INPUT(tensor_desc, (aclTensor*)nullptr), OUTPUT(tensor_desc));
   // SAMPLE: only test GetWorkspaceSize
   aclRet = ut_r.TestGetWorkspaceSize(&workspaceSize);
-  EXPECT_EQ(aclRet, ACLNN_ERR_INNER_NULLPTR);
+  EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 
   auto ut_o = OP_API_UT(aclnnLogicalXor, INPUT(tensor_desc, tensor_desc), OUTPUT((aclTensor*)nullptr));
   // SAMPLE: only test GetWorkspaceSize
   aclRet = ut_o.TestGetWorkspaceSize(&workspaceSize);
-  EXPECT_EQ(aclRet, ACLNN_ERR_INNER_NULLPTR);
+  EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 }
 
 TEST_F(l2_logical_xor_test, aclnnLogicalXor_input_error_shape_testcase028) {

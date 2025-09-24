@@ -25,16 +25,6 @@ struct IsFiniteCompileInfo {
     bool isRegbase = false;
 };
 
-BEGIN_TILING_DATA_DEF(IsFiniteTilingData)
-TILING_DATA_FIELD_DEF(uint32_t, usableUbSize);
-TILING_DATA_FIELD_DEF(uint32_t, needCoreNum);
-TILING_DATA_FIELD_DEF(uint64_t, totalDataCount);
-TILING_DATA_FIELD_DEF(uint64_t, perCoreDataCount);
-TILING_DATA_FIELD_DEF(uint64_t, tailDataCoreNum);
-TILING_DATA_FIELD_DEF(uint64_t, lastCoreDataCount);
-END_TILING_DATA_DEF;
-
-REGISTER_TILING_DATA_CLASS(IsFinite, IsFiniteTilingData)
 } // namespace optiling
 
 #endif // IS_FINITE_TILING_DEF_H

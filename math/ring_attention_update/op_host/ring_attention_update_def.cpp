@@ -17,69 +17,69 @@
 namespace ops {
 class RingAttentionUpdate : public OpDef {
 public:
-  explicit RingAttentionUpdate(const char* name) : OpDef(name)
-  {
-    this->Input("prev_attn_out")
-        .ParamType(REQUIRED)
-        .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16})
-        .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .AutoContiguous();
-    this->Input("prev_softmax_max")
-        .ParamType(REQUIRED)
-        .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
-        .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .AutoContiguous();
-    this->Input("prev_softmax_sum")
-        .ParamType(REQUIRED)
-        .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
-        .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .AutoContiguous();
-    this->Input("cur_attn_out")
-        .ParamType(REQUIRED)
-        .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16})
-        .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .AutoContiguous();
-    this->Input("cur_softmax_max")
-        .ParamType(REQUIRED)
-        .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
-        .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .AutoContiguous();
-    this->Input("cur_softmax_sum")
-        .ParamType(REQUIRED)
-        .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
-        .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .AutoContiguous();
-    this->Input("actual_seq_qlen")
-        .ParamType(OPTIONAL)
-        .DataType({ge::DT_INT64, ge::DT_INT64, ge::DT_INT64})
-        .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .AutoContiguous();
-    this->Output("attn_out")
-        .ParamType(REQUIRED)
-        .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16})
-        .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
-    this->Output("softmax_max")
-        .ParamType(REQUIRED)
-        .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
-        .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
-    this->Output("softmax_sum")
-        .ParamType(REQUIRED)
-        .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
-        .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-        .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
-    this->Attr("input_layout").AttrType(OPTIONAL).String("SBH");
-    this->AICore().AddConfig("ascend910b");
-    this->AICore().AddConfig("ascend910_93");
-  }
+    explicit RingAttentionUpdate(const char* name) : OpDef(name)
+    {
+        this->Input("prev_attn_out")
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .AutoContiguous();
+        this->Input("prev_softmax_max")
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .AutoContiguous();
+        this->Input("prev_softmax_sum")
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .AutoContiguous();
+        this->Input("cur_attn_out")
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .AutoContiguous();
+        this->Input("cur_softmax_max")
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .AutoContiguous();
+        this->Input("cur_softmax_sum")
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .AutoContiguous();
+        this->Input("actual_seq_qlen")
+            .ParamType(OPTIONAL)
+            .DataType({ge::DT_INT64, ge::DT_INT64, ge::DT_INT64})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .AutoContiguous();
+        this->Output("attn_out")
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
+        this->Output("softmax_max")
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
+        this->Output("softmax_sum")
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
+        this->Attr("input_layout").AttrType(OPTIONAL).String("SBH");
+        this->AICore().AddConfig("ascend910b");
+        this->AICore().AddConfig("ascend910_93");
+    }
 };
 OP_ADD(RingAttentionUpdate);
-}  // namespace ops
+} // namespace ops

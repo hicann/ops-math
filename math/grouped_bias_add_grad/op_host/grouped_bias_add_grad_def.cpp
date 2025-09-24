@@ -15,8 +15,7 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-class GroupedBiasAddGrad : public OpDef
-{
+class GroupedBiasAddGrad : public OpDef {
 public:
     explicit GroupedBiasAddGrad(const char* name) : OpDef(name)
     {

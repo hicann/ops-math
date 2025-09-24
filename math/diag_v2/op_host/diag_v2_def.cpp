@@ -15,8 +15,7 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-class DiagV2 : public OpDef
-{
+class DiagV2 : public OpDef {
 public:
     DiagV2(const char* name) : OpDef(name)
     {

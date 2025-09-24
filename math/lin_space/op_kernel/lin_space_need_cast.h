@@ -24,17 +24,18 @@ template <typename T1, typename T2>
 class LinSpaceNeedCast : public LinSpaceBase<T2> {
 public:
     __aicore__ inline LinSpaceNeedCast(){};
-    __aicore__ inline void Init(GM_ADDR start, GM_ADDR stop, GM_ADDR num, GM_ADDR output, GM_ADDR workspace,
-                                const LinSpaceTilingData *tilingData);
+    __aicore__ inline void Init(
+        GM_ADDR start, GM_ADDR stop, GM_ADDR num, GM_ADDR output, GM_ADDR workspace,
+        const LinSpaceTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
     __aicore__ inline void CopyIn();
     __aicore__ inline void CopyInReverse();
-    __aicore__ inline void Compute(const int64_t &processNum, const int64_t &loopNum, const int64_t &loopTail);
-    __aicore__ inline void ComputeReverse(const int64_t &processNum, const int64_t &loopNum, const int64_t &loopTail);
-    __aicore__ inline void CopyOut(const int64_t &outLen);
-    __aicore__ inline void CopyOutReverse(const int64_t &outLen);
+    __aicore__ inline void Compute(const int64_t& processNum, const int64_t& loopNum, const int64_t& loopTail);
+    __aicore__ inline void ComputeReverse(const int64_t& processNum, const int64_t& loopNum, const int64_t& loopTail);
+    __aicore__ inline void CopyOut(const int64_t& outLen);
+    __aicore__ inline void CopyOutReverse(const int64_t& outLen);
     __aicore__ inline void ProcessPerCore();
     __aicore__ inline void ProcessLastCore();
     __aicore__ inline void ProcessPerCoreReverse();
@@ -66,13 +67,13 @@ private:
 };
 
 template <typename T1, typename T2>
-__aicore__ inline void LinSpaceNeedCast<T1, T2>::Init(GM_ADDR start, GM_ADDR stop, GM_ADDR num, GM_ADDR output,
-                                                      GM_ADDR workspace, const LinSpaceTilingData *tilingData)
+__aicore__ inline void LinSpaceNeedCast<T1, T2>::Init(
+    GM_ADDR start, GM_ADDR stop, GM_ADDR num, GM_ADDR output, GM_ADDR workspace, const LinSpaceTilingData* tilingData)
 {
     blockIdx = GetBlockIdx();
-    outputGm.SetGlobalBuffer((__gm__ T1 *)output);
-    gmAssist.SetGlobalBuffer((__gm__ T2 *)this->assistGm, matrixSize);
-    gmAssistReverse.SetGlobalBuffer((__gm__ T2 *)this->assistGmReverse, matrixSize);
+    outputGm.SetGlobalBuffer((__gm__ T1*)output);
+    gmAssist.SetGlobalBuffer((__gm__ T2*)this->assistGm, matrixSize);
+    gmAssistReverse.SetGlobalBuffer((__gm__ T2*)this->assistGmReverse, matrixSize);
 
     this->ParseTilingData(tilingData, m_tilingData);
 
@@ -93,15 +94,15 @@ __aicore__ inline void LinSpaceNeedCast<T1, T2>::Process()
     if (m_tilingData.num == 0 || blockIdx >= m_tilingData.realCoreNum) {
         return;
     }
-    // load matrix
-    #if defined(ASCENDC_OOM) && ASCENDC_OOM == 1
-        OOMCheckAddrRange(gmAssist.GetPhyAddr(), 2 * matrixSize * sizeof(T2));
-    #endif
+// load matrix
+#if defined(ASCENDC_OOM) && ASCENDC_OOM == 1
+    OOMCheckAddrRange(gmAssist.GetPhyAddr(), 2 * matrixSize * sizeof(T2));
+#endif
 
     if (blockIdx < m_tilingData.realCoreNum / POWER_BASE_NUM) {
         blockOffset = m_tilingData.scalar * blockIdx * m_tilingData.numPerCore + m_tilingData.start;
         ProcessPerCore();
-    } else if (blockIdx == m_tilingData.realCoreNum - 1) {  // process last core
+    } else if (blockIdx == m_tilingData.realCoreNum - 1) { // process last core
         blockOffset = m_tilingData.stop;
         ProcessLastCore();
     } else {
@@ -123,10 +124,11 @@ template <typename T1, typename T2>
 __aicore__ inline void LinSpaceNeedCast<T1, T2>::ProcessLastCore()
 {
     int64_t tailAlignNum = this->CeilDiv(m_tilingData.tailNum, elementPerBlock) * elementPerBlock;
-    gmOutOffset = m_tilingData.num - tailAlignNum;  // must be bigger than two cores
+    gmOutOffset = m_tilingData.num - tailAlignNum; // must be bigger than two cores
     CopyInReverse();
-    ComputeReverse(tailAlignNum, m_tilingData.innerTailLoopNum,
-                   this->CeilDiv(m_tilingData.innerTailLoopTail, elementPerBlock) * elementPerBlock);
+    ComputeReverse(
+        tailAlignNum, m_tilingData.innerTailLoopNum,
+        this->CeilDiv(m_tilingData.innerTailLoopTail, elementPerBlock) * elementPerBlock);
     CopyOutReverse(tailAlignNum);
 }
 
@@ -156,7 +158,7 @@ __aicore__ inline void LinSpaceNeedCast<T1, T2>::CopyInReverse()
 
 template <typename T1, typename T2>
 __aicore__ inline void LinSpaceNeedCast<T1, T2>::Compute(
-    const int64_t &processNum, const int64_t &loopNum, const int64_t &loopTail)
+    const int64_t& processNum, const int64_t& loopNum, const int64_t& loopTail)
 {
     LocalTensor<T2> ubAssist = inQueueMatrix.DeQue<T2>();
     LocalTensor<T1> outLocal = outQueue.AllocTensor<T1>();
@@ -181,7 +183,7 @@ __aicore__ inline void LinSpaceNeedCast<T1, T2>::Compute(
 
 template <typename T1, typename T2>
 __aicore__ inline void LinSpaceNeedCast<T1, T2>::ComputeReverse(
-    const int64_t &processNum, const int64_t &loopNum, const int64_t &loopTail)
+    const int64_t& processNum, const int64_t& loopNum, const int64_t& loopTail)
 {
     LocalTensor<T2> ubAssist = inQueueMatrix.DeQue<T2>();
     LocalTensor<T1> outLocal = outQueue.AllocTensor<T1>();
@@ -191,17 +193,15 @@ __aicore__ inline void LinSpaceNeedCast<T1, T2>::ComputeReverse(
     Adds(ubNeedCast[outNum - matrixSize], ubNeedCast[outNum - matrixSize], blockOffset, matrixSize);
 
     for (int64_t idx = 1; idx <= loopNum; idx *= POWER_BASE_NUM) {
-        Adds(ubNeedCast[outNum - idx * matrixSize * POWER_BASE_NUM],
-            ubNeedCast[outNum - idx * matrixSize],
-            T2(m_tilingData.scalar * matrixSize * idx * reverseScalar),
-            matrixSize * idx);
+        Adds(
+            ubNeedCast[outNum - idx * matrixSize * POWER_BASE_NUM], ubNeedCast[outNum - idx * matrixSize],
+            T2(m_tilingData.scalar * matrixSize * idx * reverseScalar), matrixSize * idx);
     }
 
     if (loopTail > 0) {
-        Adds(ubNeedCast[outNum - processNum],
-            ubNeedCast[outNum - loopTail],
-            T2(m_tilingData.scalar * (processNum - loopTail) * reverseScalar),
-            loopTail);
+        Adds(
+            ubNeedCast[outNum - processNum], ubNeedCast[outNum - loopTail],
+            T2(m_tilingData.scalar * (processNum - loopTail) * reverseScalar), loopTail);
     }
     Cast(outLocal[outNum - processNum], ubNeedCast[outNum - processNum], retR, processNum);
     outQueue.EnQue(outLocal);
@@ -209,7 +209,7 @@ __aicore__ inline void LinSpaceNeedCast<T1, T2>::ComputeReverse(
 }
 
 template <typename T1, typename T2>
-__aicore__ inline void LinSpaceNeedCast<T1, T2>::CopyOut(const int64_t &outLen)
+__aicore__ inline void LinSpaceNeedCast<T1, T2>::CopyOut(const int64_t& outLen)
 {
     LocalTensor<T1> outLocal = outQueue.DeQue<T1>();
     DataCopy(outputGm[gmOutOffset], outLocal, outLen);
@@ -217,13 +217,13 @@ __aicore__ inline void LinSpaceNeedCast<T1, T2>::CopyOut(const int64_t &outLen)
 }
 
 template <typename T1, typename T2>
-__aicore__ inline void LinSpaceNeedCast<T1, T2>::CopyOutReverse(const int64_t &outLen)
+__aicore__ inline void LinSpaceNeedCast<T1, T2>::CopyOutReverse(const int64_t& outLen)
 {
     LocalTensor<T1> outLocal = outQueue.DeQue<T1>();
     DataCopy(outputGm[gmOutOffset], outLocal[outNum - outLen], outLen);
     outQueue.FreeTensor(outLocal);
 }
 
-}  // namespace LinSpace
+} // namespace LinSpace
 
-#endif  // LINSPACE_CAST_H
+#endif // LINSPACE_CAST_H

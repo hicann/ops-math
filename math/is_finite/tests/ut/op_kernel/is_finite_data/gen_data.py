@@ -37,7 +37,7 @@ def gen_data_and_golden(shape_str, d_type="float32"):
     tmp_golden = np.isfinite(tmp_input)
 
     tmp_input.astype(np_type).tofile(f"{d_type}_input_t_is_finite.bin")
-    tmp_golden.astype(np.bool8).tofile(f"{d_type}_golden_t_is_finite.bin")
+    tmp_golden.astype(bool).tofile(f"{d_type}_golden_t_is_finite.bin")
 
 
 if __name__ == "__main__":

@@ -15,8 +15,7 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-class AngleV2 : public OpDef
-{
+class AngleV2 : public OpDef {
 public:
     explicit AngleV2(const char* name) : OpDef(name)
     {

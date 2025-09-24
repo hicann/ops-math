@@ -16,8 +16,7 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-class TransposeV2 : public OpDef
-{
+class TransposeV2 : public OpDef {
 public:
     explicit TransposeV2(const char* name) : OpDef(name)
     {

@@ -15,8 +15,7 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-class DiagFlat : public OpDef
-{
+class DiagFlat : public OpDef {
 public:
     DiagFlat(const char* name) : OpDef(name)
     {

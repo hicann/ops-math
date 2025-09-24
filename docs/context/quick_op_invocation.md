@@ -1,5 +1,5 @@
 # 算子调用
-> 本项目主要阐述如何与社区版CANN开发套件包配合使用，对于商发版（8.3.RC1及之前版本）CANN开发套件包，其使用指导请参见“[商发版本说明](./commercial_release.md)”，此处不进行详细介绍。
+> 说明：本项目阐述如何与社区版CANN开发套件包配合使用，对于商发版（8.3.RC1及之前版本）CANN开发套件包，其使用指导请参见“[商发版本说明](./commercial_release.md)”，此处不详细介绍。
 
 ## 前提条件
 
@@ -15,6 +15,11 @@
    - pigz（可选，安装后可提升打包速度，建议版本 >= 2.4）
    - dos2unix
    - googletest（仅执行UT时依赖，建议版本 [release-1.11.0](https://github.com/google/googletest/releases/tag/release-1.11.0)）
+
+   上述依赖包，可以通过执行本代码仓根目录下的install\_deps.sh文件完成安装，具体命令如下：
+   ```bash
+   bash install_deps.sh
+   ```
 
 2. **安装驱动与固件（可选）**
 
@@ -57,7 +62,7 @@
     - \$\{soc\_version\}：表示NPU型号。
     - \$\{install\_path\}：表示指定安装路径，需要与toolkit包安装在相同路径。
 
-3. **配置环境变量**
+3. **配置环境变量（可选）**
 	
 	根据实际场景，选择合适的命令。
 
@@ -72,7 +77,7 @@
 
     ```bash
     # 下载项目源码，以master分支为例
-    git clone https://gitcode.com/cann/ops-math-dev.git
+    git clone https://gitcode.com/cann/ops-math.git
     # 安装根目录requirements.txt依赖
     pip3 install -r requirements.txt
     ```
@@ -99,12 +104,12 @@
     bash build.sh --pkg [--jit] --soc=${soc_version}
     ```
     - --jit（可选）：推荐设置，表示不编译算子的二进制文件。
-    - --soc：Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"。
+    - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"。
 
     若提示如下信息，说明编译成功。
 
     ```bash
-    Self-extractable archive "cann-${soc_name}-ops-math-${cann_version}-linux.${arch}.run" successfully created.
+    Self-extractable archive "cann-${soc_name}-ops-math_${cann_version}_linux-${arch}.run" successfully created.
     ```
 
    \$\{soc\_name\}表示NPU型号名称，即\$\{soc\_version\}删除“ascend”后剩余的内容。编译成功后，run包存放于build_out目录下。
@@ -112,7 +117,7 @@
 2. **安装ops-math包**
 
     ```bash
-    ./cann-${soc_name}-ops-math-${cann_version}-linux.${arch}.run --full --install-path=${install_path}/ascend-toolkit
+    ./cann-${soc_name}-ops-math_${cann_version}_linux-${arch}.run --full --install-path=${install_path}/ascend-toolkit
     ```
 
     \$\{install\_path\}：表示指定安装路径，需要与toolkit包安装在相同路径。
@@ -126,29 +131,29 @@
     ```bash
     bash build.sh --pkg --soc=${soc_version} [--vendor_name=${vendor_name}] [--ops=${op_list}]
     ```
-    - --soc：Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"。
+    - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"。
     - --vendor_name（可选）：\$\{vendor\_name\}表示构建的自定义算子包名称，不指定时默认名为custom。
-    - --ops（可选）：\$\{op\_list\}表示指定待编译算子，不指定时默认编译所有算子。格式形如"op1,op2,..."，多算子之间用英文逗号","分隔。
+    - --ops（可选）：\$\{op\_list\}表示待编译算子，全量算子参见[算子列表](./op_list.md)，不指定时默认编译所有算子。格式形如"abs,add_lora,..."，多算子之间用英文逗号","分隔。
     
     若提示如下信息，说明编译成功。
     ```bash
-    Self-extractable archive "cann-ops-math-${vendor_name}-linux.${arch}.run" successfully created.
+    Self-extractable archive "cann-ops-math-${vendor_name}_linux-${arch}.run" successfully created.
     ```
     编译成功后，run包存放于项目根目录的build_out目录下。
     
 2. **安装自定义算子包**
    
     ```bash
-    ./cann-ops-math-${vendor_name}-linux.${arch}.run
+    ./cann-ops-math-${vendor_name}_linux-${arch}.run
     ```
     
-    自定义算子包安装路径为`${ASCEND_HOME_PATH}/opp/vendors`，\$\{ASCEND\_HOME\_PATH\}已通过前文环境变量配置。
+    自定义算子包安装路径为`${ASCEND_HOME_PATH}/opp/vendors`，\$\{ASCEND\_HOME\_PATH\}表示CANN toolkit包安装路径，一般为\$\{install\_path\}/ascend-toolkit/latest，可通过环境变量配置。
 
 ## 本地验证 
 
 通过项目根目录build.sh脚本，可快速调用算子和UT用例，验证项目功能是否正常，build参数介绍参见[build参数说明](./build.md)。
 
-目前算子支持API方式（aclnn接口）和图模式调用，**推荐aclnn调用**，项目中可调用的算子参见[算子列表](./op_list.md)，算子对应的aclnn接口参见[aclnn接口列表](./op_api_list.md)。
+目前算子支持API方式（aclnn接口）和图模式调用，**推荐aclnn调用**，项目可调用算子参见[算子列表](./op_list.md)，算子对应的aclnn接口参见[aclnn接口列表](./op_api_list.md)。
 
 - **执行算子样例**
   
@@ -159,24 +164,58 @@
         bash build.sh --run_example ${op} ${mode}
         ```
 
-        - \$\{op\}：表示待执行的算子目录，算子名的小写下划线形式，如add\_example。       
+        - \$\{op\}：表示待执行算子，算子名小写下划线形式，如add\_example。       
         - \$\{mode\}：表示算子执行模式，目前支持eager（aclnn调用）、graph（图模式调用）。
 
-    - 完成ops-math-${vendor_name}包安装后，执行命令如下：
+        以Abs算子（算子名参考[算子列表](./op_list.md)中算子目录）为例，执行如下命令：
+        ```bash
+        bash bulid.sh --run_example abs eager
+        ```
+        执行完成后会打印运行结果。math\abs\examples\test_aclnn_abs.cpp
+        ```
+        mean result[0] is: 1.000000
+        mean result[1] is: 1.000000
+        mean result[2] is: 1.000000
+        mean result[3] is: 2.000000
+        mean result[4] is: 2.000000
+        mean result[5] is: 2.000000
+        mean result[6] is: 3.000000
+        mean result[7] is: 3.000000
+        ```
+
+    - 完成自定义算子包安装后，执行命令如下：
         ```bash
         bash build.sh --run_example ${op} ${mode} ${pkg_mode} [--vendor_name=${vendor_name}]
         ```
     
-        - \$\{op\}：表示待执行的算子目录，算子名的小写下划线形式，如add\_example。
+        - \$\{op\}：表示待执行算子，算子名小写下划线形式，如add\_example。
         - \$\{mode\}：表示执行模式，目前仅支持eager（aclnn调用）、graph（图模式调用）。
         - \$\{pkg_mode\}：表示包模式，目前仅支持cust，即自定义算子包。         
-        - \$\{vendor\_name\}（可选）：表示构建的自定义算子包名称，不指定时默认名为custom。
-  
+        - \$\{vendor\_name\}（可选）：与构建自定义算子包时的设置保持一致，不指定时默认名为custom。
+
+        以Abs算子为例，执行如下命令：
+        ```bash
+        bash bulid.sh --run_example abs eager cust --vendor_name=custom
+        ```
+        执行完成后会打印运行结果。
+
+        ```
+        mean result[0] is: 1.000000
+        mean result[1] is: 1.000000
+        mean result[2] is: 1.000000
+        mean result[3] is: 2.000000
+        mean result[4] is: 2.000000
+        mean result[5] is: 2.000000
+        mean result[6] is: 3.000000
+        mean result[7] is: 3.000000
+        ```
 - **执行算子UT**
 
 	> 说明：执行UT用例依赖googletest单元测试框架，详细介绍参见[googletest官网](https://google.github.io/googletest/advanced.html#running-a-subset-of-the-tests)。
 
     ```bash
+    # 安装根目录下test相关requirements.txt依赖
+    pip3 install -r tests/requirements.txt
     # 方式1: 编译并执行所有的UT测试用例
     bash build.sh -u
     # 方式2: 编译所有的UT测试用例但不执行
@@ -185,8 +224,8 @@
     # bash build.sh -u --[opapi|ophost|opkernel]
     # 方式4: 编译对应功能的UT测试用例但不执行（选其一）
     # bash build.sh -u --noexec --[opapi|ophost|opkernel]
-    # 方式4: 编译并执行对应算子和对应功能的UT测试用例（选其一）
-    # bash build.sh -u --noexec --[opapi|ophost|opkernel] --ops=abs
+    # 方式5: 编译并执行对应算子和对应功能的UT测试用例（选其一）
+    # bash build.sh -u --[opapi|ophost|opkernel] --ops=is_finite
     ```
   
     假设验证ophost功能是否正常，执行如下命令：

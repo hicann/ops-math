@@ -15,8 +15,7 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-class AddLora : public OpDef
-{
+class AddLora : public OpDef {
 public:
     explicit AddLora(const char* name) : OpDef(name)
     {

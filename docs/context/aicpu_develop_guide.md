@@ -9,11 +9,9 @@
 graph LR
 	A([前提条件]) --> W([工程创建])
     W --> C([Kernel实现])
-    C -.->|可选|D([Shape与DataType <br> 推导])
-    D --> E([框架适配])
+    C --> E([aclnn适配])
     E --> F([编译部署])
     F --> G([算子验证])
-    style D stroke-dasharray:5 5
 ```
 
 1. [前提条件](#前提条件)：
@@ -26,17 +24,11 @@ graph LR
 
 3. [Kernel实现](#Kernel实现)：实现Device侧算子核函数。
 
-4. [Shape与DataType推导（可选）](#Shape与DataType推导（可选）)：仅当算子入图场景，才需要完成InferShape和InferDataType实现。
-
-5. [框架适配](#框架适配)：自定义算子目前仅支持aclnn接口或图方式调用，为成功调用，需完成对应框架的适配。
+4. [aclnn适配](#aclnn适配)：自定义算子推荐aclnn接口调用，需完成二进制发布。如需入图，请参考[附录](#附录)。
 
 6. [编译部署](#编译部署)：通过工程编译脚本完成自定义算子的编译和安装。
 
 7. [算子验证](#算子验证)：通过常见算子调用方式，验证自定义算子功能。  
-
-对于上述流程，不同调用场景对应的算子开发步骤不同，开发者按需实现即可。
-- **aclnn调用场景**：除了步骤4，需要实现上述其它步骤。
-- **图模式调用场景**：需要实现上述所有步骤。
 
 ##  前提条件
 **1. 环境部署**
@@ -146,15 +138,10 @@ Create the initial directory for ${op_name} under ${op_class} success
 ${op_name}                              # 替换为实际算子名的小写下划线形式
 ├── op_host                             # Host侧实现
 │   ├── ${op_name}_def.cpp              # 算子信息库，定义算子基本信息，如名称、输入输出、数据类型等
-│   ├── ${op_name}_infershape.cpp       # InferShape实现，实现算子形状推导，在运行时推导输出shape
 │   └── CMakeLists.txt                  # Host侧cmakelist文件
 └── op_kernel_aicpu                     # Device侧Kernel实现
 │   ├── ${op_name}_aicpu.cpp            # Kernel入口文件，包含主函数和调度逻辑
 │   └── ${op_name}_aicpu.h              # Kernel头文件，包含函数声明、结构定义、逻辑实现
-├── op_graph                            # 图融合相关实现
-│   ├── CMakeLists.txt                  # op_graph侧Cmakelist文件
-│   ├── ${op_name}_graph_infer.cpp      # InferDataType文件，实现算子类型推导，在运行时推导输出dataType
-│   └── ${op_name}_proto.h              # 算子原型定义，用于图优化和融合阶段识别算子
 └── CMakeLists.txt                      # 算子Cmakelist入口
 ```
 
@@ -180,7 +167,7 @@ graph LR
 
    注册AI CPU算子的Kernel实现，用于框架获取算子Kernel的Compute函数。
 
-根据上述步骤，编写`AddExample`算子的Kernel实现，示例代码如下：
+根据上述步骤，在\$\{op\_name\}\_aicpu.h中定义Kernel头文件，包含算子类声明、结构定义等，示例如下，`AddExample`算子完整代码请参考`example/add_example_aicpu/op_kernel_aicpu`下[add_example_aicpu.h](../../example/add_example_aicpu/op_kernel_aicpu/add_example_aicpu.h)。
 
 ```CPP
 // 1、算子类声明
@@ -197,7 +184,7 @@ class AddExampleCpuKernel : public CpuKernel {
 };
 }  // namespace aicpu
 ```
-完整代码请参考`example/add_example_aicpu/op_kernel_aicpu`目录下[add_example_aicpu.h](../../example/add_example_aicpu/op_kernel_aicpu/add_example_aicpu.h)。
+编写Kernel入口文件\$\{op\_name\}\_aicpu.cpp ，包含主函数和调度逻辑，示例如下，`AddExample`算子完整代码请参考`example/add_example_aicpu/op_kernel_aicpu`下[add_example_aicpu.cpp](../../example/add_example_aicpu/op_kernel_aicpu/add_example_aicpu.cpp)。
 
 ```C++
 // 2、Compute函数实现
@@ -252,9 +239,106 @@ uint32_t AddExampleCpuKernel::Compute(CpuKernelContext& ctx) {
 REGISTER_CPU_KERNEL(kAddExample, AddExampleCpuKernel);
 }  // namespace aicpu
 ```
-完整代码请参考`example/add_example_aicpu/op_kernel_aicpu`目录下[add_example_aicpu.cpp](../../example/add_example_aicpu/op_kernel_aicpu/add_example_aicpu.cpp)。
+## aclnn适配
 
-## Shape与DataType推导（可选）
+完成算子开发和编译后，会自动生成aclnn接口（一套基于C 的API），可在应用程序中调用aclnn接口实现调用算子的目的。该方式依赖算子的二进制包，为了生成对应的二进制包，需要增加二进制编译json：
+
+以`AddExample`算子为例：
+
+1. 在`example/add_example/op_host`目录新建`config/${soc_version}`文件夹，用于存放配置文件。
+
+2. 在`${soc_version}`目录新建json文件，命名为`${op_name}_binary.json`，用于描述算子相关信息，包括算子输入、输出、shape、data type、format等信息，完整定义请参考[add_example_binary.json](../../example/add_example/op_host/config/ascend910b/add_example_binary.json)。
+
+3. 在`scripts/kernel/binary_config`目录[ascendc_config.json](../../scripts/kernel/binary_config/ascendc_config.json)中，注册算子的NPU型号和实现模式，示例如下：
+
+    ```json
+    {"name":"AddExample", "compute_units": ["${soc_version}"], "auto_sync":true, "impl_mode" : "high_performance"},
+    ```
+
+
+## 编译部署
+
+算子开发完成后，需对算子工程进行编译，生成自定义算子安装包\*\.run，详细的编译操作如下：
+
+1. **准备工作。**
+
+   参考[前提条件](#前提条件)完成基础环境搭建，同时检查算子开发交付件是否完备，是否在对应算子分类目录下。
+
+2. **编译自定义算子包。**
+
+   以`AddExample`算子为例，假设开发交付件在`example`目录，完整代码参见[add_example_aicpu](../../example/add_example_aicpu)目录。
+
+   进入项目根目录，执行如下编译命令（命令介绍参见[build参数说明](./build.md)）：
+
+    ```bash
+   # 编译指定算子，如--ops=add_example
+   bash build.sh --pkg --soc=${soc_version} --vendor_name=${vendor_name} --ops=${op_list}
+    ```
+
+   若提示如下信息，说明编译成功：
+
+    ```bash
+   Self-extractable archive "cann-ops-math-${vendor_name}_linux-${arch}.run" successfully created.
+    ```
+
+   若未指定`${vendor_name}`默认使用`custom`作为包名。编译成功后，生成的自定义算子\*\.run包存放于build_out目录。
+
+   注意，构建过程文件在`build`目录，关键文件如下：
+
+    - `libcust_opapi.so`：包含aclnn接口相关实现。
+    - `libcust_opmaster_rt2.0.so`：包含Tiling相关实现。
+
+3. **安装自定义算子包。**
+
+   执行以下命令进行安装：
+
+    ```bash
+   ./cann-ops-math-${vendor_name}_linux-${arch}.run
+    ```
+   自定义算子包安装在`${ASCEND_HOME_PATH}/latest/opp/vendor`路径中，`${ASCEND_HOME_PATH}`表示CANN软件安装目录，可提前在环境变量中配置。
+
+   自定义算子包的目录结构示例如下：
+    ```
+    ├── cann-ops-math-${vendor_name}_linux-${arch}.run           # 包名
+    ├── op_api
+    │   ├── include
+    │   │   ├── aclnn_add_example.h                              # aclnn头文件
+    │   └── lib
+    │       └── libcust_opapi.so                                 # 算子aclnn接口动态库
+    ├── op_impl
+    │   └── cpu
+    │       └── aicpu_kernel
+    │           ├── impl
+    │           │   └── libcust_aicpu_kernels.so                 # Kernel实现
+    │           └── config
+    │               └── cust_aicpu_kernel.json
+    ├── op_proto
+    │   ├── inc
+    │   │   └── add_example_proto.h
+    │   └── lib
+    │       └── linux
+    │           └── ${arch}
+    │               └── libcust_opsproto_rt2.0.so
+    └── version.info                                             # 包信息
+    ```
+## 算子验证
+
+开发好的算子完成编译部署后，可通过aclnn方式（推荐）或图模式验证功能，方法请参考[算子调用方式](./op_invocation.md)。
+
+## 附录
+
+自定义算子如需运行图模式，不需要[aclnn适配](#aclnn适配)，做如下交付件适配：
+```
+${op_name}                              # 替换为实际算子名的小写下划线形式
+├── op_host                             # Host侧实现
+│   └── ${op_name}_infershape.cpp       # InferShape实现，实现算子形状推导，在运行时推导输出shape
+├── op_graph                            # 图融合相关实现
+│   ├── CMakeLists.txt                  # op_graph侧cmakelist文件
+│   ├── ${op_name}_graph_infer.cpp      # InferDataType文件，实现算子类型推导，在运行时推导输出dataType
+└── └── ${op_name}_proto.h              # 算子原型定义，用于图优化和融合阶段识别算子
+```
+
+### Shape与DataType推导
 
 在深度学习中，当一个算子被加入计算图时，为确保图的正确性和后续的编译、优化、执行流程顺利进行，通常需要为该算子实现两个关键的推导函数：
 - InferShape：用于推导输出张量的形状（shape）。
@@ -264,7 +348,7 @@ REGISTER_CPU_KERNEL(kAddExample, AddExampleCpuKernel);
 
 **1. 注册InferShape与InferData。**
 
-实现两个目标函数之前，需要先进行注册，告诉框架算子的shape和data type推导逻辑由哪两个函数来处理。
+实现两个目标函数之前，需要先进行注册，框架判断算子的shape和data type推导逻辑由哪两个函数来处理。
 
 **2. InferShape推导实现。**
 
@@ -314,97 +398,20 @@ IMPL_OP_INFERSHAPE(AddExample).
     InferDataType(InferDataTypeAddExample);
 ```
 
-完整代码请参考`example/add_example_aicpu/op_host`目录下[add_example_infershape.cpp](../../example/add_example_aicpu/op_host/add_example_infershape.cpp)。
+完整代码请参考`example/add_example_aicpu/op_host`下[add_example_infershape.cpp](../../example/add_example_aicpu/op_host/add_example_infershape.cpp)。
 
-## 框架适配
+### 算子原型配置
 
-目前算子支持两种调用方式：aclnn调用和图模式调用，详细介绍参见[算子调用方式](./op_invocation.md)。
+图模式调用需要将算子原型注册到[Graph Engine](https://www.hiascend.com/cann/graph-engine)（简称GE）中，以便GE能够识别该类型算子的输入、输出及属性信息。注册通过`REG_OP`接口完成，开发者需要定义算子的输入、输出张量类型及数量等基本信息。
 
-- **aclnn适配**
+示例代码如下，展示了如何注册`AddExample`算子：
 
-  完成算子开发和编译后，会自动生成aclnn接口（一套基于C 的API），您可以直接在应用程序中调用aclnn接口实现调用算子的目的。
+  ```CPP
+REG_OP(AddExample)
+    .INPUT(x1, TensorType({DT_FLOAT}))
+    .INPUT(x2, TensorType({DT_FLOAT}))
+    .OUTPUT(y, TensorType({DT_FLOAT}))
+    .OP_END_FACTORY_REG(AddExample)
+  ```
 
-- **图模式适配**
-
-  图模式调用需要将算子原型注册到[Graph Engine](https://www.hiascend.com/cann/graph-engine)（简称GE）中，以便GE能够识别该类型算子的输入、输出及属性信息。注册通过`REG_OP`接口完成，开发者需要定义算子的输入、输出张量类型及数量等基本信息。
-
-  示例代码如下，展示了如何注册`AddExample`算子：
-
-    ```CPP
-  REG_OP(AddExample)
-      .INPUT(x1, TensorType({DT_FLOAT}))
-      .INPUT(x2, TensorType({DT_FLOAT}))
-      .OUTPUT(y, TensorType({DT_FLOAT}))
-      .OP_END_FACTORY_REG(AddExample)
-    ```
-
-  完整代码请参考`example/add_example_aicpu/op_graph`目录下[add_example_proto.h](../../example/add_example_aicpu/op_graph/add_example_proto.h)。
-
-## 编译部署
-
-算子开发完成后，需对算子工程进行编译，生成自定义算子安装包\*\.run，详细的编译操作如下：
-
-1. **准备工作。**
-
-   参考[前提条件](#前提条件)完成基础环境搭建，同时检查算子开发交付件是否完备，是否在对应算子分类目录下。
-
-2. **编译自定义算子包。**
-
-   以`AddExample`算子为例，假设开发交付件在`example`目录，完整代码参见[add_example_aicpu](../../example/add_example_aicpu)目录。
-
-   进入项目根目录，执行如下编译命令（命令介绍参见[build参数说明](./build.md)）：
-
-    ```bash
-   # 编译指定算子，如--ops=add_example
-   bash build.sh --pkg --soc=${soc_version} --vendor_name=${vendor_name} --ops=${op1,op2,...}
-    ```
-
-   若提示如下信息，说明编译成功：
-
-    ```bash
-   Self-extractable archive "cann-ops-math-${vendor_name}-linux.${arch}.run" successfully created.
-    ```
-
-   若未指定`${vendor_name}`默认使用`custom`作为包名。编译成功后，生成的自定义算子\*\.run包存放于build_out目录。
-
-   注意，构建过程文件在`build`目录，关键文件如下：
-
-    - `libcust_opapi.so`：包含aclnn接口相关实现。
-    - `libcust_opmaster_rt2.0.so`：包含Tiling相关实现。
-
-3. **安装自定义算子包。**
-
-   执行以下命令进行安装：
-
-    ```bash
-   ./cann-ops-math-${vendor_name}-linux.${arch}.run
-    ```
-   自定义算子包安装在`${ASCEND_HOME_PATH}/latest/opp/vendor`路径中，`${ASCEND_HOME_PATH}`表示CANN软件安装目录，可提前在环境变量中配置。
-
-   自定义算子包的目录结构示例如下：
-    ```
-    ├── cann-ops-math-${vendor_name}-linux.${arch}.run           # 包名
-    ├── op_api
-    │   ├── include
-    │   │   ├── aclnn_add_example.h                              # aclnn头文件
-    │   └── lib
-    │       └── libcust_opapi.so                                 # 算子aclnn接口动态库
-    ├── op_impl
-    │   └── cpu
-    │       └── aicpu_kernel
-    │           ├── impl
-    │           │   └── libcust_aicpu_kernels.so                 # Kernel实现
-    │           └── config
-    │               └── cust_aicpu_kernel.json
-    ├── op_proto
-    │   ├── inc
-    │   │   └── add_example_proto.h
-    │   └── lib
-    │       └── linux
-    │           └── ${arch}
-    │               └── libcust_opsproto_rt2.0.so
-    └── version.info                                             # 包信息
-    ```
-## 算子验证
-
-开发好的算子完成编译部署后，可通过aclnn方式（推荐）或图模式验证功能，方法请参考[算子调用方式](./op_invocation.md)。
+完整代码请参考`example/add_example_aicpu/op_graph`下[add_example_proto.h](../../example/add_example_aicpu/op_graph/add_example_proto.h)。

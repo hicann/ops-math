@@ -17,7 +17,8 @@
 namespace ops {
 class FeedsRepeat : public OpDef {
 public:
-    explicit FeedsRepeat(const char* name) : OpDef(name) {
+    explicit FeedsRepeat(const char* name) : OpDef(name)
+    {
         this->Input("feeds")
             .ParamType(REQUIRED)
             .DataType({ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_BF16, ge::DT_BF16})

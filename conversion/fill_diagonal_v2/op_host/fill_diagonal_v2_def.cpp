@@ -19,7 +19,8 @@
 namespace ops {
 class FillDiagonalV2 : public OpDef {
 public:
-    explicit FillDiagonalV2(const char* name) : OpDef(name) {
+    explicit FillDiagonalV2(const char* name) : OpDef(name)
+    {
         this->Input("x")
             .ParamType(REQUIRED)
             .DataType(
