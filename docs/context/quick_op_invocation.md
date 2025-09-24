@@ -1,5 +1,5 @@
 # 算子调用
-> 说明：本项目阐述如何与社区版CANN开发套件包配合使用，对于商发版（8.3.RC1及之前版本）CANN开发套件包，其使用指导请参见“[商发版本说明](./commercial_release.md)”，此处不详细介绍。
+> 说明：本项目阐述如何与社区版CANN开发套件包配合使用，对于商发版（8.3.RC1版本）CANN开发套件包，其使用指导请参见“[商发版本说明](./commercial_release.md)”，此处不详细介绍。
 
 ## 前提条件
 
@@ -14,6 +14,7 @@
    - cmake >= 3.16.0
    - pigz（可选，安装后可提升打包速度，建议版本 >= 2.4）
    - dos2unix
+   - Gawk
    - googletest（仅执行UT时依赖，建议版本 [release-1.11.0](https://github.com/google/googletest/releases/tag/release-1.11.0)）
 
    上述依赖包，可以通过执行本代码仓根目录下的install\_deps.sh文件完成安装，具体命令如下：
@@ -29,10 +30,8 @@
 
 1. **安装社区版CANN toolkit包**
 
-    根据实际环境，下载对应`Ascend-cann-toolkit_${cann_version}_linux-${arch}.run`包，下载链接为[x86_64包](https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/2025091701_newest/Ascend-cann-toolkit_8.3.RC1_linux-x86_64_tmp.run)、[aarch64包](https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/2025091701_newest/Ascend-cann-toolkit_8.3.RC1_linux-aarch64_temp.run)。
+    根据实际环境，下载对应`Ascend-cann-toolkit_${cann_version}_linux-${arch}.run`包，下载链接为[toolkit x86_64包](https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/community/Ascend-cann-toolkit_8.3.RC1_linux-x86_64.run)、[toolkit aarch64包](https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/community/Ascend-cann-toolkit_8.3.RC1_linux-aarch64.run)。
     
-    安装命令如下：
-
     ```bash
     # 确保安装包具有可执行权限
     chmod +x Ascend-cann-toolkit_${cann_version}_linux-${arch}.run
@@ -41,36 +40,35 @@
     ```
     - \$\{cann\_version\}：表示CANN包版本号。
     - \$\{arch\}：表示CPU架构，如aarch64、x86_64。
-    - \$\{install\_path\}：表示指定安装路径，一般安装在\$\{install\_path\}/ascend-toolkit目录下。
+    - \$\{install\_path\}：表示指定安装路径，默认安装在/usr/local/Ascend目录下。
 
 2. **安装社区版CANN legacy包（可选）**
 
     如需本地运行项目算子，需额外安装此包，否则跳过本操作。
 
-    根据产品型号和环境架构，下载对应`${soc_version}-opp_legacy-${cann_version}-linux.${arch}.run`包，下载链接如下：
+    根据产品型号和环境架构，下载对应`${soc_version}-opp_legacy-${cann_version}-linux-${arch}.run`包，下载链接如下：
 
-    - Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：[x86_64包](https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/20250917_newest/Ascend910B-opp_legacy-8.3.t12.0.b087-linux.x86_64.run)、[aarch64包](https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/20250917_newest/Ascend910B-opp_legacy-8.3.t12.0.b087-linux.aarch64.run)
-
-    安装命令如下：
+    - Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：[legacy x86_64包](https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/community/cann-910b-opp_legacy-8.3.RC1-linux-x86_64.run)、[legacy aarch64包](https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/community/cann-910b-opp_legacy-8.3.RC1-linux-aarch64.run)。
+    - Atlas A3 训练系列产品/Atlas A3 推理系列产品：[legacy x86_64包](https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/community/cann-910_93-opp_legacy-8.3.RC1-linux-x86_64.run)、[legacy aarch64包](https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/community/cann-910_93-opp_legacy-8.3.RC1-linux-aarch64.run)。
 
     ```bash
     # 确保安装包具有可执行权限
-    chmod +x ${soc_version}-opp_legacy-${cann_version}-linux.${arch}.run
+    chmod +x cann-${soc_version}-opp_legacy-${cann_version}-linux-${arch}.run
     # 安装命令
-    ./${soc_version}-opp_legacy-${cann_version}-linux.${arch}.run --full --install-path=${install_path}/ascend-toolkit
+    ./cann-${soc_version}-opp_legacy-${cann_version}-linux-${arch}.run --full --install-path=${install_path}
     ```
     - \$\{soc\_version\}：表示NPU型号。
-    - \$\{install\_path\}：表示指定安装路径，需要与toolkit包安装在相同路径。
+    - \$\{install\_path\}：表示指定安装路径，需要与toolkit包安装在相同路径，默认安装在/usr/local/Ascend目录下。
 
-3. **配置环境变量（可选）**
+3. **配置环境变量**
 	
 	根据实际场景，选择合适的命令。
 
     ```bash
    # 默认路径安装，以root用户为例（非root用户，将/usr/local替换为${HOME}）
-   source /usr/local/Ascend/ascend-toolkit/set_env.sh
+   source /usr/local/Ascend/set_env.sh
    # 指定路径安装
-   # source ${install-path}/ascend-toolkit/set_env.sh
+   # source ${install_path}/set_env.sh
     ```
 
 4. **下载源码**
@@ -87,12 +85,40 @@
 > 说明：若基于商发版（8.3.RC1及之前版本）CANN包对算子源码修改，请使用“自定义算子包”方式编译和安装。
 >
 
-若基于社区版CANN包对**AI Core算子**源码修改，可使用[ops-math包](#ops-math包)和[自定义算子包](#自定义算子包)方式编译执行；对**AI CPU算子**源码修改，请使用[自定义算子包](#自定义算子包)方式编译执行。
+若基于社区版CANN包对算子源码修改，可使用[自定义算子包](#自定义算子包)和[ops-math包](#ops-math包)方式编译执行。
 
-编译方式说明：
+- 自定义算子包：选择部分算子编译生成的包称为自定义算子包，以**挂载**形式作用于CANN包，不改变原始包内容。注意自定义算子包优先级高于原始CANN包。
+- ops-math包：选择整个项目编译生成的包称为ops-math包，可**完整替换**CANN包对应部分。
 
-- ops-math包：选择整个项目编译生成的包称为ops-math包，可**完整替换**CANN软件包对应部分。
-- 自定义算子包：选择项目部分算子编译生成的包称为自定义算子包，以**挂载**形式作用于CANN软件包，不改变其原始包内容。注意自定义算子包优先级高于原始CANN软件包。
+### 自定义算子包
+
+1. **编译自定义算子包**
+
+    进入项目根目录，执行如下编译命令：
+    
+    ```bash
+    bash build.sh --pkg --soc=${soc_version} [--vendor_name=${vendor_name}] [--ops=${op_list}]
+    # 以Abs算子编译为例
+    # bash build.sh --pkg --soc=ascend910b --ops=abs
+    ```
+    - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"。
+    - --vendor_name（可选）：\$\{vendor\_name\}表示构建的自定义算子包名，默认名为custom。
+    - --ops（可选）：\$\{op\_list\}表示待编译算子，不指定时默认编译所有算子（参见[算子列表](./op_list.md)）。格式形如"abs,add_lora,..."，多算子之间用英文逗号","分隔。
+    约束：当前自定义算子包的vendor_name和ops都是可选输入，如果都不选，编译出的是built-in包；若需要编译所有算子的自定义算子包，需要参数vendor_name。
+
+    若提示如下信息，说明编译成功。
+    ```bash
+    Self-extractable archive "cann-ops-math-${vendor_name}_linux-${arch}.run" successfully created.
+    ```
+    编译成功后，run包存放于项目根目录的build_out目录下。
+    
+2. **安装自定义算子包**
+   
+    ```bash
+    ./cann-ops-math-${vendor_name}_linux-${arch}.run
+    ```
+    
+    自定义算子包安装路径为`${ASCEND_HOME_PATH}/opp/vendors`，\$\{ASCEND\_HOME\_PATH\}表示CANN toolkit包安装路径，一般为\$\{install\_path\}/latest，可通过环境变量配置。
 
 ### ops-math包
 
@@ -117,37 +143,10 @@
 2. **安装ops-math包**
 
     ```bash
-    ./cann-${soc_name}-ops-math_${cann_version}_linux-${arch}.run --full --install-path=${install_path}/ascend-toolkit
+    ./cann-${soc_name}-ops-math_${cann_version}_linux-${arch}.run --full --install-path=${install_path}
     ```
 
-    \$\{install\_path\}：表示指定安装路径，需要与toolkit包安装在相同路径。
-
-### 自定义算子包
-
-1. **编译自定义算子包**
-
-    进入项目根目录，执行如下编译命令：
-    
-    ```bash
-    bash build.sh --pkg --soc=${soc_version} [--vendor_name=${vendor_name}] [--ops=${op_list}]
-    ```
-    - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"。
-    - --vendor_name（可选）：\$\{vendor\_name\}表示构建的自定义算子包名称，不指定时默认名为custom。
-    - --ops（可选）：\$\{op\_list\}表示待编译算子，全量算子参见[算子列表](./op_list.md)，不指定时默认编译所有算子。格式形如"abs,add_lora,..."，多算子之间用英文逗号","分隔。
-    
-    若提示如下信息，说明编译成功。
-    ```bash
-    Self-extractable archive "cann-ops-math-${vendor_name}_linux-${arch}.run" successfully created.
-    ```
-    编译成功后，run包存放于项目根目录的build_out目录下。
-    
-2. **安装自定义算子包**
-   
-    ```bash
-    ./cann-ops-math-${vendor_name}_linux-${arch}.run
-    ```
-    
-    自定义算子包安装路径为`${ASCEND_HOME_PATH}/opp/vendors`，\$\{ASCEND\_HOME\_PATH\}表示CANN toolkit包安装路径，一般为\$\{install\_path\}/ascend-toolkit/latest，可通过环境变量配置。
+    \$\{install\_path\}：表示指定安装路径，需要与toolkit包安装在相同路径，默认安装在/usr/local/Ascend路径下。
 
 ## 本地验证 
 
@@ -162,14 +161,16 @@
     - 完成ops-math包安装后，执行命令如下：
         ```bash
         bash build.sh --run_example ${op} ${mode}
+        # 以Abs算子example执行为例
+        # bash build.sh --run_example abs eager
         ```
-
-        - \$\{op\}：表示待执行算子，算子名小写下划线形式，如add\_example。       
+        
+        - \$\{op\}：表示待执行算子，算子名小写下划线形式，如abs。       
         - \$\{mode\}：表示算子执行模式，目前支持eager（aclnn调用）、graph（图模式调用）。
 
         以Abs算子（算子名参考[算子列表](./op_list.md)中算子目录）为例，执行如下命令：
         ```bash
-        bash bulid.sh --run_example abs eager
+        bash build.sh --run_example abs eager
         ```
         执行完成后会打印运行结果。math\abs\examples\test_aclnn_abs.cpp
         ```
@@ -186,16 +187,18 @@
     - 完成自定义算子包安装后，执行命令如下：
         ```bash
         bash build.sh --run_example ${op} ${mode} ${pkg_mode} [--vendor_name=${vendor_name}]
+        # 以Abs算子example执行为例
+        # bash build.sh --run_example abs eager cust --vendor_name=custom
         ```
-    
-        - \$\{op\}：表示待执行算子，算子名小写下划线形式，如add\_example。
+        
+        - \$\{op\}：表示待执行算子，算子名小写下划线形式，如abs。
         - \$\{mode\}：表示执行模式，目前仅支持eager（aclnn调用）、graph（图模式调用）。
         - \$\{pkg_mode\}：表示包模式，目前仅支持cust，即自定义算子包。         
-        - \$\{vendor\_name\}（可选）：与构建自定义算子包时的设置保持一致，不指定时默认名为custom。
+        - \$\{vendor\_name\}（可选）：与构建的自定义算子包设置一致，默认名为custom。
 
         以Abs算子为例，执行如下命令：
         ```bash
-        bash bulid.sh --run_example abs eager cust --vendor_name=custom
+        bash build.sh --run_example abs eager cust --vendor_name=custom
         ```
         执行完成后会打印运行结果。
 
@@ -216,21 +219,21 @@
     ```bash
     # 安装根目录下test相关requirements.txt依赖
     pip3 install -r tests/requirements.txt
-    # 方式1: 编译并执行所有的UT测试用例
-    bash build.sh -u
-    # 方式2: 编译所有的UT测试用例但不执行
+    # 方式1: 编译并执行指定算子和对应功能的UT测试用例（选其一）
+    bash build.sh -u --[opapi|ophost|opkernel] --ops=abs
+    # 方式2: 编译并执行所有的UT测试用例
+    # bash build.sh -u
+    # 方式3: 编译所有的UT测试用例但不执行
     # bash build.sh -u --noexec
-    # 方式3: 编译并执行对应功能的UT测试用例（选其一）
+    # 方式4: 编译并执行对应功能的UT测试用例（选其一）
     # bash build.sh -u --[opapi|ophost|opkernel]
-    # 方式4: 编译对应功能的UT测试用例但不执行（选其一）
+    # 方式5: 编译对应功能的UT测试用例但不执行（选其一）
     # bash build.sh -u --noexec --[opapi|ophost|opkernel]
-    # 方式5: 编译并执行对应算子和对应功能的UT测试用例（选其一）
-    # bash build.sh -u --[opapi|ophost|opkernel] --ops=is_finite
     ```
-  
+
     假设验证ophost功能是否正常，执行如下命令：
     ```bash
-    bash bulid.sh -u --ophost
+    bash build.sh -u --ophost
     ```
 
     执行完成后出现如下内容，表示执行成功。

@@ -132,6 +132,7 @@ Create the initial directory for ${op_name} under ${op_class} success
 ${op_name}                              # 替换为实际算子名的小写下划线形式
 ├── op_host                             # Host侧实现
 │   ├── ${op_name}_def.cpp              # 算子信息库，定义算子基本信息，如名称、输入输出、数据类型等
+│   ├── ${op_name}_infershape.cpp       # InferShape实现，实现算子形状推导，在运行时推导输出shape
 │   ├── ${op_name}_tiling.cpp           # Tiling实现，将张量划分为多个小块，区分数据类型进行并行计算
 │   └── CMakeLists.txt                  # Host侧cmakelist文件
 └── op_kernel                           # Device侧Kernel实现
@@ -139,8 +140,14 @@ ${op_name}                              # 替换为实际算子名的小写下�
 │   ├── ${op_name}_tiling_data.h        # Tilingdata文件，存储Tiling策略相关的配置数据，如块大小、并行度
 │   ├── ${op_name}.cpp                  # Kernel入口文件，包含主函数和调度逻辑
 │   └── ${op_name}.h                    # Kernel实现文件，定义Kernel头文件，包含函数声明、结构定义、逻辑实现
+├── op_graph                            # 图融合相关实现
+│   ├── CMakeLists.txt                  # op_graph侧cmakelist文件
+│   ├── ${op_name}_graph_infer.cpp      # InferDataType文件，实现算子类型推导，在运行时推导输出dataType
+│   └── ${op_name}_proto.h              # 算子原型定义，用于图优化和融合阶段识别算子
 └── CMakeLists.txt                      # 算子cmakelist入口
 ```
+
+使用上述命令行创建算子工程后，若要手动删除新创建出的算子工程，需要同时删除与算子工程同目录CMakeLists.txt中新添加的add_subdirectory(${op_class})
 
 ## Tiling实现
 
@@ -550,6 +557,7 @@ __aicore__ inline void AddExample<T>::CopyOut(int32_t progress)
     ```
 
     若未指定`${vendor_name}`默认使用`custom`作为包名。编译成功后，生成的自定义算子\*\.run包存放于build_out目录。
+    约束：当前自定义算子包的vendor_name和ops都是可选输入，如果都不选，编译出的是built-in包；若需要编译所有算子的自定义算子包，需要参数vendor_name。
 
     注意，构建过程文件在`build`目录，关键文件如下：
 
@@ -642,7 +650,7 @@ ${op_name}                              # 替换为实际算子名的小写下�
 
 操作步骤如下：
 
-**1. 注册InferShape与InferData。**
+**1. 注册InferShape与InferDataType。**
 
    实现两个目标函数之前，需要先进行注册，框架判断算子的shape和data type推导逻辑由哪两个函数来处理。
 
@@ -688,7 +696,7 @@ static ge::graphStatus InferDataTypeAddExample(gert::InferDataTypeContext* conte
     ....
 }
 
-// 注册InferShape与InferData
+// 注册InferShape与InferDataType
 IMPL_OP_INFERSHAPE(AddExample).
     InferShape(InferShapeAddExample).
     InferDataType(InferDataTypeAddExample);
