@@ -18,7 +18,7 @@ ops-math是[CANN](https://hiascend.com/software/cann) （Compute Architecture fo
 ├── docs                           # 项目文档介绍
 ├── examples                       # 端到端算子开发和调用示例
 ├── math                           # math类算子
-│   ├── abs                        # abs算子所有交付件，如Tiling、Kernel等
+│   ├── is_finite                  # is_finite算子所有交付件，如Tiling、Kernel等
 │   │   ├── CMakeLists.txt         # 算子编译配置文件
 │   │   ├── docs                   # 算子说明文档
 │   │   ├── examples               # 算子使用示例
