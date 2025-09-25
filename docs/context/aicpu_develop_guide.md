@@ -353,8 +353,8 @@ REG_OP(AddExample)
    Self-extractable archive "cann-ops-math-${vendor_name}_linux-${arch}.run" successfully created.
     ```
 
-   若未指定`${vendor_name}`默认使用`custom`作为包名。编译成功后，生成的自定义算子\*\.run包存放于build_out目录。
-   约束：当前自定义算子包的vendor_name和ops都是可选输入，如果都不选，编译出的是built-in包；若需要编译所有算子的自定义算子包，需要参数vendor_name。
+   若未指定\$\{vendor\_name\}默认使用custom作为包名。编译成功后，生成的自定义算子\*\.run包存放于build_out目录。
+   说明：当前自定义算子包\$\{vendor\_name\}和\$\{op\_list\}均为可选，若都不传入编译的是built-in包；若编译所有算子的自定义算子包，需传入\$\{vendor\_name\}。
 
    注意，构建过程文件在`build`目录，关键文件如下：
 
@@ -368,10 +368,9 @@ REG_OP(AddExample)
     ```bash
    ./cann-ops-math-${vendor_name}_linux-${arch}.run
     ```
-   自定义算子包安装在`${ASCEND_HOME_PATH}/latest/opp/vendor`路径中，`${ASCEND_HOME_PATH}`表示CANN软件安装目录，可提前在环境变量中配置。
-   自定义算子包不支持卸载指令。
-
-   自定义算子包的目录结构示例如下：
+   自定义算子包安装在`${ASCEND_HOME_PATH}/latest/opp/vendors`路径中，`${ASCEND_HOME_PATH}`表示CANN软件安装目录，可提前在环境变量中配置。自定义算子包不支持卸载。
+   
+自定义算子包的目录结构示例如下：
     ```
     ├── cann-ops-math-${vendor_name}_linux-${arch}.run           # 包名
     ├── op_api
