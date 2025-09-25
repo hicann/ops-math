@@ -980,7 +980,8 @@ gen_op() {
     sed -i "s/add_example/${GENOP_NAME}/g" "$file"
   done
 
-  for file in $(find "${BASE_DIR}" -name "add_example*"); do
+  cd ${BASE_DIR}
+  for file in $(find ./ -name "add_example*"); do
     new_file=$(echo "$file" | sed "s/add_example/${GENOP_NAME}/g")
     mv "$file" "$new_file"
   done
