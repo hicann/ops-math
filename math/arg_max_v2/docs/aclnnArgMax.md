@@ -5,7 +5,7 @@
 
 ## 接口原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnArgMaxGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnArgMax”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnArgMaxGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnArgMax”接口执行计算。
 
 - `aclnnStatus aclnnArgMaxGetWorkspaceSize(const aclTensor *self, int64_t dim, bool keepdim, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnArgMax(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor， aclrtStream stream)`
@@ -18,16 +18,16 @@
 
 - **参数说明**：
 
-    - self（aclTensor*, 计算输入）：Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、INT32，支持[非连续的Tensor](./common/非连续的Tensor.md)，[数据格式](./common/数据格式.md)支持ND。
+    - self（aclTensor*, 计算输入）：Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、INT32，支持[非连续的Tensor](./../../../docs/context/非连续的Tensor.md)，[数据格式](./../../../docs/context/数据格式.md)支持ND。
     - dim（int64_t , 计算输入）：host侧INT64_T类型，指定了要进行最大值计算的维度。
     - keepdim（bool, 计算输入）：host侧BOOL类型，是否在输出张量中保留输入张量的维度。
-    - out（aclTensor*, 计算输入）：Device侧的aclTensor，数据类型支持INT32、INT64，支持[非连续的Tensor](./common/非连续的Tensor.md)，[数据格式](./common/数据格式.md)支持ND。
+    - out（aclTensor*, 计算输入）：Device侧的aclTensor，数据类型支持INT32、INT64，支持[非连续的Tensor](./../../../docs/context/非连续的Tensor.md)，[数据格式](./../../../docs/context/数据格式.md)支持ND。
     - workspaceSize（uint64_t\*, 出参）：返回需要在Device侧申请的workspace大小。
     - executor（aclOpExecutor\**, 出参）：返回op执行器，包含了算子计算流程。
 
 - **返回值**：
 
-    aclnnStatus：返回状态码，具体参见[aclnn返回码](./common/aclnn返回码.md)。
+    aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/context/aclnn返回码.md)。
 
     ```
     第一段接口完成入参校验，出现以下场景时报错：
@@ -48,7 +48,7 @@
 
 - **返回值**：
 
-    aclnnStatus：返回状态码，具体参见[aclnn返回码](./common/aclnn返回码.md)。
+    aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/context/aclnn返回码.md)。
 
 ## 约束与限制
 
@@ -56,7 +56,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](./common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](./../../../docs/context/编译与运行样例.md)。
 
 ```c++
 #include "acl/acl.h"

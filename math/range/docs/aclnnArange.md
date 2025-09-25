@@ -19,7 +19,7 @@ $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnArangeGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnArange”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnArangeGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnArange”接口执行计算。
 
 - `aclnnStatus aclnnArangeGetWorkspaceSize(const aclScalar *start, const aclScalar *end, const aclScalar *step, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnArange(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, const aclrtStream stream)`
@@ -28,20 +28,20 @@ $$
 
 - **参数说明**：
 
-  - start(aclScalar,计算输入)：Host侧的aclScalar，获取值的范围的起始位置。[数据格式](common/数据格式.md)支持ND。需要满足在step大于0时输入的start小于end，或者step小于0时输入的start大于end。bool类型独立进行运算（具体见约束说明）。
+  - start(aclScalar,计算输入)：Host侧的aclScalar，获取值的范围的起始位置。[数据格式](../../../docs/context/数据格式.md)支持ND。需要满足在step大于0时输入的start小于end，或者step小于0时输入的start大于end。bool类型独立进行运算（具体见约束说明）。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16。
-  - end(aclScalar,计算输入)：Host侧的aclScalar，获取值的范围的结束位置。[数据格式](common/数据格式.md)支持ND。需要满足在step大于0时输入的start小于end，或者step小于0时输入的start大于end。bool类型独立进行运算（具体见约束说明）。
+  - end(aclScalar,计算输入)：Host侧的aclScalar，获取值的范围的结束位置。[数据格式](../../../docs/context/数据格式.md)支持ND。需要满足在step大于0时输入的start小于end，或者step小于0时输入的start大于end。bool类型独立进行运算（具体见约束说明）。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16。
-  - step(aclScalar,计算输入)：Host侧的aclScalar，获取值的步长。[数据格式](common/数据格式.md)支持ND。需要满足step不等于0。bool类型独立进行运算，只支持true。
+  - step(aclScalar,计算输入)：Host侧的aclScalar，获取值的步长。[数据格式](../../../docs/context/数据格式.md)支持ND。需要满足step不等于0。bool类型独立进行运算，只支持true。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16。
-  - out(aclTensor，计算输出)：Device侧的aclTensor，[数据格式](common/数据格式.md)支持ND。
+  - out(aclTensor，计算输出)：Device侧的aclTensor，[数据格式](../../../docs/context/数据格式.md)支持ND。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT32、INT64、BFLOAT16。
   - workspaceSize(uint64_t\*，出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor\*\*，出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -61,14 +61,14 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
 Warning：输入数据类型为float时，受限于数据类型本身的精度误差，对out的输出大小计算请采用float。如果用户采用double计算输出, double结果可能小于float结果，此时Tiling侧会进行校验告警。
 
 ## 调用示例
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>

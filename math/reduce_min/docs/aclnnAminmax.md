@@ -1,66 +1,78 @@
 # aclnnAminmax
 
-## Supported Products
-- Ascend 910B AI Processor
-- Ascend 910_93 AI Processor
+## 产品支持情况
 
-## Prototype
-Each operator has [two-phase API](common/two_phase_api.md) calls. First, aclnnAminmaxGetWorkspaceSize is called to obtain the input parameters and compute the required workspace size based on the process. Then, aclnnAminmax is called to perform computation.
+| 产品                                                         | 是否支持 |
+| :----------------------------------------------------------- | :------: |
+| <term>昇腾910_95 AI处理器</term>                             |    √     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
+| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品 </term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+| <term>Atlas 200/300/500 推理产品</term>                      |    ×     |
+
+
+## 功能说明
+
+算子功能：返回输入张量在指定维度上每行的最小值和最大值。
+
+## 函数原型
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnAminmaxGetWorkspaceSize”接口获取入参并根据流程计算所需workspace大小，再调用“aclnnAminmax”接口执行计算。
 
 * `aclnnStatus aclnnAminmaxGetWorkspaceSize(const aclTensor *self, const aclIntArray *dim, bool keepDim, aclTensor *minOut, aclTensor *maxOut, uint64_t *workspaceSize, aclOpExecutor **executor)`
 * `aclnnStatus aclnnAminmax(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
 
-## Function
-
-Description: Returns the minimum and maximum values of each row of the input tensor in the specified dimension.
-
 ## aclnnAminmaxGetWorkspaceSize
 
-- **Parameters**:
+- **参数说明：**
 
-  * self (aclTensor*, compute input): aclTensor on the device. [Non-contiguous tensors](common/non_contiguous_tensors.md) are supported. The [data format](common/data_format.md) can be ND.
-     * Ascend 910B AI Processor, Ascend 910_93 AI Processor: FLOAT, BFLOAT16, FLOAT16, DOUBLE, INT8, INT16, INT32, INT64, UINT8, BOOL
-  * dim (aclIntArray*, compute input): aclIntArray on the host, which specifies the dimension to be reduced. The supported data types are INT32 and INT64. The value range is [–self.dim(), self.dim() – 1].
-  * keepDim(bool, compute input): bool on the host, which specifies whether to retain the dimension of the reduced axis.
-  * minOut (aclTensor\*, compute output): aclTensor on the device. [Non-contiguous tensors](common/non_contiguous_tensors.md) are supported. The [data format](common/data_format.md) can be ND.
-     * Ascend 910B AI Processor, Ascend 910_93 AI Processor: FLOAT, BFLOAT16, FLOAT16, DOUBLE, INT8, INT16, INT32, INT64, UINT8, BOOL. The data type must be the same as that of self.
-  * maxOut (aclTensor\*, compute output): aclTensor on the device. [Non-contiguous tensors](common/non_contiguous_tensors.md) are supported. The [data format](common/data_format.md) can be ND.
-     * Ascend 910B AI Processor, Ascend 910_93 AI Processor: FLOAT, BFLOAT16, FLOAT16, DOUBLE, INT8, INT16, INT32, INT64, UINT8, BOOL. The data type must be the same as that of self.
-  * workspaceSize (uint64_t\*, output): size of the workspace to be allocated on the device.
-  * executor (aclOpExecutor\*\*, output): operator executor, containing the operator computation process.
+  * self(aclTensor*, 计算输入)：Device侧的aclTensor。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
+     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL
+     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL
+  * dim(aclIntArray*, 计算输入)：Host侧的aclIntArray，指定要缩减的维度，支持的数据类型为INT32、INT64，范围[-self.dim(), self.dim() - 1]。
+  * keepDim(bool, 计算输入)：Host侧的bool，reduce轴的维度是否保留。
+  * minOut(aclTensor\*, 计算输出)：Device侧的aclTensor。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
+     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL, 且数据类型与self一致
+     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL, 且数据类型与self一致
+  * maxOut(aclTensor\*, 计算输出)：Device侧的aclTensor。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
+     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL, 且数据类型与self一致
+     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL, 且数据类型与self一致
+  * workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
+  * executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
 
-- **Returns**:
+- **返回值：**
 
-  aclnnStatus: status code. For details, see [aclnn Return Codes](common/aclnn_return_codes.md).
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
-  The first-phase API implements input parameter verification. The following errors may be thrown:
-  161001 (ACLNN_ERR_PARAM_NULLPTR): 1. The input self, dim, minOut, or maxOut is a null pointer.
-  161002 (ACLNN_ERR_PARAM_INVALID): 1. The data type of self is not supported.
-                                    2. The data type of minOut or maxOut is inconsistent with that of self.
-                                    3. The shape of self, minOut, or maxOut exceeds eight dimensions.
-                                    4. The value of dim is out of range.
-                                    5. The number of dim is 1 and the shape of the dim axis in self is 0.
-                                    6. The number of dim is not 1 and self is an empty tensor.
+  第一段接口完成入参校验，出现以下场景时报错：
+  161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self、dim、minOut或maxOut是空指针。
+  161002 (ACLNN_ERR_PARAM_INVALID): 1. self的数据类型不在支持的范围内时。
+                                    2. minOut或maxOut与self的数据类型不一致。
+                                    3. self、minOut或maxOut的shape超过8维。
+                                    4. dim超出范围。
+                                    5. dim个数等于1且self中该dim轴对应的shape为0。
+                                    6. dim个数不为1且self为空tensor。
   ```
 
 ## aclnnAminmax
-- **Parameters**:
+- **参数说明：**
   
-  * workspace (void\*, input): address of the workspace to be allocated on the device.
-  * workspaceSize (uint64_t, input): size of the workspace allocated on the device, which is obtained by the first-phase API aclnnAddGetWorkspaceSize.
-  * executor (aclOpExecutor\*, input): operator executor, containing the operator computation process.
-  * stream (aclrtStream, input): AscendCL stream for executing the task.
+  * workspace(void\*, 入参)：在Device侧申请的workspace内存地址。
+  * workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnAminmaxGetWorkspaceSize获取。
+  * executor(aclOpExecutor\*, 入参)：op执行器，包含了算子计算流程。
+  * stream(aclrtStream, 入参)：指定执行任务的Stream。
   
-- **Returns**:
+- **返回值：**
 
-  aclnnStatus: status code. For details, see [aclnn Return Codes](common/aclnn_return_codes.md).
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
-## Constraints
-None
+## 约束说明
+无
 
-## Example
-The following examples is for reference only. For details, see [Compilation and Running Sample](common/compilation_running_sample.md).
+## 调用示例
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>
@@ -88,7 +100,7 @@ int64_t GetShapeSize(const std::vector<int64_t>& shape) {
 }
 
 int Init(int32_t deviceId, aclrtStream* stream) {
-  // (Fixed writing) Initialize AscendCL.
+  // 固定写法，资源初始化
   auto ret = aclInit(nullptr);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclInit failed. ERROR: %d\n", ret); return ret);
   ret = aclrtSetDevice(deviceId);
@@ -102,36 +114,36 @@ template <typename T>
 int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
                     aclDataType dataType, aclTensor** tensor) {
   auto size = GetShapeSize(shape) * sizeof(T);
-  // Call aclrtMalloc to allocate memory on the device.
+  // 调用aclrtMalloc申请device侧内存
   auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMalloc failed. ERROR: %d\n", ret); return ret);
 
-  // Call aclrtMemcpy to copy the data on the host to the memory on the device.
+  // 调用aclrtMemcpy将host侧数据拷贝到device侧内存上
   ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
 
-  // Compute the strides of the contiguous tensor.
+  // 计算连续tensor的strides
   std::vector<int64_t> strides(shape.size(), 1);
   for (int64_t i = shape.size() - 2; i >= 0; i--) {
     strides[i] = shape[i + 1] * strides[i + 1];
   }
 
-  // Call aclCreateTensor to create an aclTensor.
+  // 调用aclCreateTensor接口创建aclTensor
   *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
                             shape.data(), shape.size(), *deviceAddr);
   return 0;
 }
 
 int main() {
-  // 1. (Fixed writing) Initialize the device and stream. For details, see the list of external AscendCL APIs.
-  // Set the device ID in use.
+  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
-  // Use CHECK as required.
+  // check根据自己的需要处理
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-  // 2. Construct the input and output based on the API.
+  // 2. 构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> selfShape = {2, 3, 2};
   std::vector<int64_t> outShape = {1, 3, 2};
   void* selfDeviceAddr = nullptr;
@@ -145,38 +157,38 @@ int main() {
   std::vector<float> maxOutHostData = {0, 0, 0, 0, 0, 0};
   std::vector<int64_t> dimData = {0};
   bool keepDim = true;
-  // Create a self aclTensor.
+  // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  // Create a dim aclIntArray.
+  // 创建dim aclIntArray
   aclIntArray *dim = aclCreateIntArray(dimData.data(), dimData.size());
-  // Create an out aclTensor.
+  // 创建out aclTensor
   ret = CreateAclTensor(minOutHostData, outShape, &minOutDeviceAddr, aclDataType::ACL_FLOAT, &minOut);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   ret = CreateAclTensor(maxOutHostData, outShape, &maxOutDeviceAddr, aclDataType::ACL_FLOAT, &maxOut);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. Call the CANN operator library API, which needs to be replaced with the actual API.
+  // 3. 调用CANN算子库API，需要修改为具体的Api名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
-  // Call the first-phase API of aclnnAminmax.
+  // 调用aclnnAminmax第一段接口
   ret = aclnnAminmaxGetWorkspaceSize(self, dim, keepDim, minOut, maxOut, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAminmaxGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
-  // Allocate device memory based on the computed workspaceSize.
+  // 根据第一段接口计算出的workspaceSize申请device内存
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
-  // Call the second-phase API of aclnnAminmax.
+  // 调用aclnnAminmax第二段接口
   ret = aclnnAminmax(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAminmax failed. ERROR: %d\n", ret); return ret);
 
-  // 4. (Fixed writing) Wait until the task execution is complete.
+  // 4. （固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
-  // 5. Obtain the output value and copy the result from the device memory to the host. Modify the configuration based on the API definition.
+  // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
   auto size = GetShapeSize(outShape);
   std::vector<float> minResultData(size, 0);
   ret = aclrtMemcpy(minResultData.data(), minResultData.size() * sizeof(minResultData[0]), minOutDeviceAddr,
@@ -193,13 +205,13 @@ int main() {
     LOG_PRINT("result[%ld] is: %f\n", i, maxResultData[i]);
   }
 
-  // 6. Release aclTensor. Modify the configuration based on the API definition.
+  // 6. 释放aclTensor，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyIntArray(dim);
   aclDestroyTensor(minOut);
   aclDestroyTensor(maxOut);
 
-  // 7. Release device resources. Modify the configuration based on the API definition.
+  // 7. 释放device资源，需要根据具体API的接口定义修改
   aclrtFree(selfDeviceAddr);
   aclrtFree(minOutDeviceAddr);
   aclrtFree(maxOutDeviceAddr);

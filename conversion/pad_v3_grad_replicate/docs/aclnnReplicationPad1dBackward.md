@@ -20,7 +20,7 @@ padding([1, 1])
 
 ## 函数原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnReplicationPad1dBackwardGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReplicationPad1dBackward”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnReplicationPad1dBackwardGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReplicationPad1dBackward”接口执行计算。
 
 - `aclnnStatus aclnnReplicationPad1dBackwardGetWorkspaceSize(const aclTensor *gradOutput, const aclTensor *self, const aclIntArray *padding, aclTensor *gradInput, uint64_t *workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnReplicationPad1dBackward(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -29,15 +29,15 @@ padding([1, 1])
 
 - **参数说明：**
 
-  - gradOutput(aclTensor*, 计算输入): 数据类型支持FLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128,数据类型与self一致, 支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，shape支持2-3维且维度需要与self和gradInput一致，shape需要与replication_pad1d正向传播的output一致。
-  - self(aclTensor*, 计算输入)：数据类型支持FLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128,支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，shape支持2-3维且维度需要与gradOutput和gradInput一致，shape与gradInput一致。
+  - gradOutput(aclTensor*, 计算输入): 数据类型支持FLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128,数据类型与self一致, 支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，shape支持2-3维且维度需要与self和gradInput一致，shape需要与replication_pad1d正向传播的output一致。
+  - self(aclTensor*, 计算输入)：数据类型支持FLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128,支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，shape支持2-3维且维度需要与gradOutput和gradInput一致，shape与gradInput一致。
   - padding(aclIntArray*, 计算输入)：数据类型为INT64，长度为2，数值依次代表左右需要填充的值。padding的两个数值都需小于self最后一维度的数值。
-  - gradInput(aclTensor*, 计算输出)：数据类型支持FLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128,数据类型与self一致，shape与self一致，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - gradInput(aclTensor*, 计算输出)：数据类型支持FLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128,数据类型与self一致，shape与self一致，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现如下场景时报错：
@@ -58,7 +58,7 @@ padding([1, 1])
   - stream(aclrtStream, 入参)：指定执行任务的Stream。
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -66,7 +66,7 @@ padding([1, 1])
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 ```Cpp
 #include "acl/acl.h"

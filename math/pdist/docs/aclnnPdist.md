@@ -21,7 +21,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnPdistGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnPdist”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnPdistGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnPdist”接口执行计算。
 
 - `aclnnStatus aclnnPdistGetWorkspaceSize(const aclTensor* self, float p, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnPdist(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
@@ -30,16 +30,16 @@
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)：公式中的`self`，Device侧的aclTensor，数据类型支持FLOAT16、FLOAT，shape支持2维，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - self(aclTensor*, 计算输入)：公式中的`self`，Device侧的aclTensor，数据类型支持FLOAT16、FLOAT，shape支持2维，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
   - p(float, 计算输入)：表示范数的系数，公式中的`p`，值域为$[0, + \infty]$。
-  - out(aclTensor*, 计算输出)：公式中的`out`，Device侧的aclTensor，数据类型支持FLOAT16、FLOAT，数据类型需要与self保持一致，shape支持1维，若self的shape为[N, M]，则out的shape为[$\frac{1}{2}N(N-1)$]，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - out(aclTensor*, 计算输出)：公式中的`out`，Device侧的aclTensor，数据类型支持FLOAT16、FLOAT，数据类型需要与self保持一致，shape支持1维，若self的shape为[N, M]，则out的shape为[$\frac{1}{2}N(N-1)$]，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
 
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现如下场景时报错：
@@ -64,7 +64,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -72,7 +72,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>

@@ -11,12 +11,12 @@
 
 - **算子功能**：
   - Atlas A3 训练系列产品/Atlas A3 推理系列产品、Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：
-    - 完成ND←→[NZ](./common/数据格式.md)的转换功能。C0是[NZ](./common/数据格式.md)数据格式最后一维的大小。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast<aclDataType>additionalDtype)。
-    - 完成NCDHW←→[NDC1HWC0](./common/数据格式.md)、NCDHW←→[FRACTAL_Z_3D](./common/数据格式.md)的转换功能。其中，C0与微架构强相关，该值等于cube单元的size，例如16。C1是将C维度按照C0切分：C1=C/C0， 若结果不整除，最后一份数据需要padding到C0。计算方法C0 = 32B srcDataType（例如FP16为2byte）
+    - 完成ND←→[NZ](./../../../docs/context/数据格式.md)的转换功能。C0是[NZ](./../../../docs/context/数据格式.md)数据格式最后一维的大小。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast<aclDataType>additionalDtype)。
+    - 完成NCDHW←→[NDC1HWC0](./../../../docs/context/数据格式.md)、NCDHW←→[FRACTAL_Z_3D](./../../../docs/context/数据格式.md)的转换功能。其中，C0与微架构强相关，该值等于cube单元的size，例如16。C1是将C维度按照C0切分：C1=C/C0， 若结果不整除，最后一份数据需要padding到C0。计算方法C0 = 32B srcDataType（例如FP16为2byte）
 - **计算流程**：`aclnnNpuFormatCastCalculateSizeAndFormat`根据输入张量srcTensor、数据类型`additionalDtype`和目标张量的数据格式dstFormat计算出转换后目标张量dstTensor的shape和实际数据格式，用于构造dstTensor，然后调用`aclnnNpuFormatCast`把srcTensor转换为实际数据格式的目标张量dstTensor。
 ## 函数原型
 
-必须先调用`aclnnNpuFormatCastCalculateSizeAndFormat`计算出dstTensor的shape和实际数据格式，再调用[两段式接口](./common/两段式接口.md)。 两段式接口先调用`aclnnNpuFormatCastGetWorkSpaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnNpuFormatCast`接口执行计算。
+必须先调用`aclnnNpuFormatCastCalculateSizeAndFormat`计算出dstTensor的shape和实际数据格式，再调用[两段式接口](./../../../docs/context/两段式接口.md)。 两段式接口先调用`aclnnNpuFormatCastGetWorkSpaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnNpuFormatCast`接口执行计算。
 
 - `aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(const aclTensor* srcTensor, const int dstFormat, const int additionalDtype,  int64_t** dstShape, uint64_t* dstShapeSize, int* actualFormat)`
 
@@ -29,10 +29,10 @@
 - **参数说明**
 
 
-  - srcTensor(aclTensor*, 计算输入)：输入张量，Device侧的aclTensor，输入数据支持连续和[非连续的Tensor](common/非连续的Tensor.md)
-    - Atlas A3 训练系列产品/Atlas A3 推理系列产品、Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：[数据格式](./common/数据格式.md)支持ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。数据类型支持INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32。当数据格式为ND时，支持的shape维度为[2, 6]。
+  - srcTensor(aclTensor*, 计算输入)：输入张量，Device侧的aclTensor，输入数据支持连续和[非连续的Tensor](../../../docs/context/非连续的Tensor.md)
+    - Atlas A3 训练系列产品/Atlas A3 推理系列产品、Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：[数据格式](./../../../docs/context/数据格式.md)支持ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。数据类型支持INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32。当数据格式为ND时，支持的shape维度为[2, 6]。
   - dstFormat(int, 计算输入)：输出张量的数据格式。
-    - Atlas A3 训练系列产品/Atlas A3 推理系列产品、Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：[数据格式](./common/数据格式.md)支持：ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。
+    - Atlas A3 训练系列产品/Atlas A3 推理系列产品、Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：[数据格式](./../../../docs/context/数据格式.md)支持：ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。
 
   - additionalDtype(int, 计算输入)：转换为FRACTAL_NZ数据格式时，推断C0大小所使用的基本数据类型。
     - Atlas A3 训练系列产品/Atlas A3 推理系列产品、Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：该参数仅支持取值srcTensor的数据类型。
@@ -42,12 +42,12 @@
   - dstShapeSize(uint64_t*, 出参)：用于输出dstTensor的shape数组大小的指针。
 
   - actualFormat(int*, 出参)：用于输出dstTensor实际数据格式的指针。
-    - Atlas A3 训练系列产品/Atlas A3 推理系列产品、Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：当前输出[数据格式](./common/数据格式.md)为ACL_FORMAT_ND(2)、ACL_FORMAT_FRACTAL_NZ(29)、ACL_FORMAT_NCDHW(30)、ACL_FORMAT_NDC1HWC0(32)、ACL_FRACTAL_Z_3D(33)。
+    - Atlas A3 训练系列产品/Atlas A3 推理系列产品、Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：当前输出[数据格式](./../../../docs/context/数据格式.md)为ACL_FORMAT_ND(2)、ACL_FORMAT_FRACTAL_NZ(29)、ACL_FORMAT_NCDHW(30)、ACL_FORMAT_NDC1HWC0(32)、ACL_FRACTAL_Z_3D(33)。
 
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/context/aclnn返回码.md)。
 
   ```
   入参校验，出现以下场景时报错：
@@ -68,15 +68,15 @@
 
 - **参数说明**
   - srcTensor(aclTensor*, 计算输入)：输入张量，Device侧的aclTensor，输入的数据只支持连续的Tensor。
-    - Atlas A3 训练系列产品/Atlas A3 推理系列产品、Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：[数据格式](./common/数据格式.md)支持ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。数据类型支持：INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32。
+    - Atlas A3 训练系列产品/Atlas A3 推理系列产品、Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：[数据格式](./../../../docs/context/数据格式.md)支持ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。数据类型支持：INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32。
   - dstTensor(aclTensor*, 计算输入)：转换后的目标张量，Device侧的aclTensor，只支持连续的Tensor。
-    - Atlas A3 训练系列产品/Atlas A3 推理系列产品、Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：[数据格式](./common/数据格式.md)支持ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。数据类型支持INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32。
+    - Atlas A3 训练系列产品/Atlas A3 推理系列产品、Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：[数据格式](./../../../docs/context/数据格式.md)支持ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。数据类型支持INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32。
   - workspaceSize(uint64_t*, 出参)：需要在Device侧申请的workspace的大小。
   - executor(aclOpExecutor**, 出参)：包含算子计算流程的op执行器。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -102,14 +102,14 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 输入和输出支持以下数据类型组合：
 当前不支持的特殊场景:
 - srcTensor的数据类型和additionalDtype相同，且类型为FLOAT16或BFLOAT16时, 若维度表示为[k, n], 则k为1场景暂不支持。
-- 不支持调用当前接口转昇腾亲和[数据格式](./common/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
-- 当srcTensor的shape后两维任意一维度shape等于1场景，也不允许转昇腾亲和[数据格式](./common/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作, 包括transpose。
+- 不支持调用当前接口转昇腾亲和[数据格式](./../../../docs/context/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
+- 当srcTensor的shape后两维任意一维度shape等于1场景，也不允许转昇腾亲和[数据格式](./../../../docs/context/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作, 包括transpose。
 
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品、Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：
 
@@ -141,12 +141,12 @@
 
 
 当前不支持的特殊场景:
-- 不支持调用当前接口转昇腾亲和[数据格式](./common/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
-- 不允许转昇腾亲和[数据格式](./common/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作, 包括transpose。
+- 不支持调用当前接口转昇腾亲和[数据格式](./../../../docs/context/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
+- 不允许转昇腾亲和[数据格式](./../../../docs/context/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作, 包括transpose。
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
   ```Cpp
   #include <iostream>
   #include <vector>
@@ -339,7 +339,7 @@
   ```
 
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品、Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件：
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
   ```c++
   #include <iostream>
   #include <vector>

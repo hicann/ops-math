@@ -18,7 +18,7 @@
   $$
 
 ## 函数原型
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnMinNGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMinN”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnMinNGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMinN”接口执行计算。
 
 * `aclnnStatus aclnnMinNGetWorkspaceSize(const aclTensorList* tensors, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
 * `aclnnStatus aclnnMinN(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -27,11 +27,11 @@
 
 - **参数说明：**
 
-  * tensors(aclTensorList*, 计算输入)：Device侧的aclTensorList，tensors里面的tensor的shape需要互相满足[broadcast关系](common/broadcast关系.md), tensors里面的tensor的dtype需要保持一致。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  * tensors(aclTensorList*, 计算输入)：Device侧的aclTensorList，tensors里面的tensor的shape需要互相满足[broadcast关系](../../../docs/context/broadcast关系.md), tensors里面的tensor的dtype需要保持一致。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
 
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT8、INT32、INT64、BFLOAT16。
 
-  * out(aclTensor*，计算输出)：Device侧的aclTensor，dtype需要和tensors中的tensor的dtype一致, shape需要是输入tensorlist中所有tensor broadcast之后的shape。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  * out(aclTensor*，计算输出)：Device侧的aclTensor，dtype需要和tensors中的tensor的dtype一致, shape需要是输入tensorlist中所有tensor broadcast之后的shape。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
 
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT8、INT32、INT64、BFLOAT16。
 
@@ -41,7 +41,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)
 
 ```
 第一段接口完成入参校验，出现以下场景时报错：
@@ -66,14 +66,14 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)
 
 ## 约束说明
 无
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>

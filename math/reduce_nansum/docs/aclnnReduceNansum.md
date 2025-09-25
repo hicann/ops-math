@@ -13,7 +13,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnReduceNansumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReduceNansum”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnReduceNansumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReduceNansum”接口执行计算。
 
 - `aclnnStatus aclnnReduceNansumGetWorkspaceSize(const aclTensor* self, const aclIntArray* dim, bool keepDim, aclDataType dtype, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
 - `aclnnStatus aclnnReduceNansum(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
@@ -22,7 +22,7 @@
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)：输入tensor，数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16，且数据类型和out的dtype满足可转换关系（参见[互转换关系](common/互转换关系.md)），支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - self(aclTensor*, 计算输入)：输入tensor，数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16，且数据类型和out的dtype满足可转换关系（参见[互转换关系](../../../docs/context/互转换关系.md)），支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
 
   - dim(aclIntArray*, 计算输入)：参与计算的维度，取值范围为[-self.dim(), self.dim()]，dim数组长度为0时，对所有轴做ReduceNansum计算，数据类型支持INT32、INT64。
 
@@ -30,7 +30,7 @@
 
   - dtype(aclDataType, 计算输入)：返回张量的所需数据类型，数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
 
-  - out(aclTensor*, 计算输出)：输出tensor，数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16，且数据类型和self的dtype满足可转换关系（参见[互转换关系](common/互转换关系.md)），支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - out(aclTensor*, 计算输出)：输出tensor，数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16，且数据类型和self的dtype满足可转换关系（参见[互转换关系](../../../docs/context/互转换关系.md)），支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
 
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
 
@@ -39,7 +39,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -67,14 +67,14 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 无
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

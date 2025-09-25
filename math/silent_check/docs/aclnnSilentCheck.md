@@ -17,7 +17,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnSilentCheckGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSilentCheck”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnSilentCheckGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSilentCheck”接口执行计算。
 
 - `aclnnStatus aclnnSilentCheckGetWorkspaceSize(const aclTensor *val, aclTensor *inputGradRef, aclTensor *sfdaRef, aclTensor *stepRef, const int32_t cMinSteps, const float cThreshL1, const float cCoeffL1, const float cThreshL2, const float cCoeffL2, const int32_t npuAsdDetect, aclTensor* result, uint64_t *workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnSilentCheck(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -26,22 +26,22 @@
 
 - **参数说明：**
   
-  - val（aclTensor*, 计算输入）：当前输入值，公式中的`val`，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16，维度要求0维。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-  - inputGradRef（aclTensor*, 计算输入）：模型输入的梯度tensor，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-  - sfdaRef（aclTensor*, 计算输入）：上一次判断数值，公式中的`pre_val,min_val,max_val`，Device侧的aclTensor，数据类型支持FLOAT，shape要求是[3]。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-  - stepRef（aclTensor*, 计算输入）：当前步数step，Device侧的aclTensor，数据类型支持INT64，shape要求是[1]。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - val（aclTensor*, 计算输入）：当前输入值，公式中的`val`，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16，维度要求0维。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
+  - inputGradRef（aclTensor*, 计算输入）：模型输入的梯度tensor，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
+  - sfdaRef（aclTensor*, 计算输入）：上一次判断数值，公式中的`pre_val,min_val,max_val`，Device侧的aclTensor，数据类型支持FLOAT，shape要求是[3]。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
+  - stepRef（aclTensor*, 计算输入）：当前步数step，Device侧的aclTensor，数据类型支持INT64，shape要求是[1]。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
   - cMinSteps（int32_t, 计算输入）：触发跳变判断的最小步数，Host侧整型，数据类型支持INT32。当前建议取值7。
   - cThreshL1（float, 计算输入）：绝对数值触发L1故障阈值，Host侧浮点型，数据类型支持FLOAT。当前建议取值1000000。
   - cCoeffL1（float, 计算输入）：跳变触发L1故障阈值，Host侧浮点型，数据类型支持FLOAT。当前建议取值100000。
   - cThreshL2（float, 计算输入）：绝对数值触发L2告警阈值，Host侧浮点型，数据类型支持FLOAT。当前建议取值10000。cThreshL1 > cThreshL2。
   - cCoeffL2（float, 计算输入）：跳变触发L2告警阈值，Host侧浮点型，数据类型支持FLOAT。当前建议取值5000。cCoeffL1 > cCoeffL2。
   - npuAsdDetect（int32_t, 计算输入）：环境变量，Host侧整型，数据类型支持INT32。可选取值：1，2，3。
-  - result（aclTensor*, 计算输出）：判断是否触发静默检测及触发几级故障，Device侧的aclTensor，数据类型支持INT32，shape要求是[1]。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - result（aclTensor*, 计算输出）：判断是否触发静默检测及触发几级故障，Device侧的aclTensor，数据类型支持INT32，shape要求是[1]。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
   - workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor\**, 出参)：返回op执行器，包含了算子计算流程。
 - **返回值：**
   
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ```
 第一段接口完成入参校验，出现以下场景时报错：
@@ -60,7 +60,7 @@
   - stream（aclrtStream, 入参）：指定执行任务的AscendCL Stream流。
 - **返回值：**
   
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -68,7 +68,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

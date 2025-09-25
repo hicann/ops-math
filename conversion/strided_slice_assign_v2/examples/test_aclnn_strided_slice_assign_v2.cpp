@@ -1,65 +1,13 @@
-# aclnnStridedSliceAssignV2
+/**
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * This file is a part of the CANN Open Software.
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
-## 支持的产品型号
-
-- <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>。
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>。
-
-## 功能说明
-
-算子功能：StridedSliceAssign是一种张量切片赋值操作，它可以将张量inputValue的内容，赋值给目标张量varRef中的指定位置。
-
-## 函数原型
-
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用`aclnnStridedSliceAssignV2GetWorkspaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnStridedSliceAssignV2`接口执行计算。
-
-- `aclnnStatus aclnnStridedSliceAssignV2GetWorkspaceSize(aclTensor *varRef, const aclTensor *inputValue, const aclIntArray *begin, const aclIntArray *end, const aclIntArray *strides, const aclIntArray *axesOptional, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnStridedSliceAssignV2( void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
-
-## aclnnStridedSliceAssignV2GetWorkspaceSize
-
-- **参数说明：**
-
-  * varRef(aclTensor*，计算输入|计算输出)：Device侧的aclTensor，数据类型支持FLOAT16、FLOAT、BFLOAT16、INT32、INT64、DOUBLE、INT8，[数据格式](../../../docs/context/数据格式.md)支持ND。
-  * inputValue(aclTensor*,计算输入)：Device侧的aclTensor，数据类型支持FLOAT16、FLOAT、BFLOAT16、INT32、INT64、DOUBLE、INT8，且数据类型需与varRef保持一致，shape需要与varRef计算得出的切片shape保持一致，综合约束请见[约束说明](#约束说明)。[数据格式](../../../docs/context/数据格式.md)支持ND。
-  * begin(aclIntArray*,计算输入)：切片位置的起始索引，Host侧的aclIntArray。数据类型支持INT64，[数据格式](../../../docs/context/数据格式.md)支持ND。
-  * end(aclIntArray*,计算输入)： 切片位置的终止索引，Host侧的aclIntArray。数据类型支持INT64，[数据格式](../../../docs/context/数据格式.md)支持ND。
-  * strides(aclIntArray*,计算输入)： 切片的步长，Host侧的aclIntArray。数据类型支持INT64。strides必须为正数，varRef最后一维对应的strides取值必须为1。[数据格式](../../../docs/context/数据格式.md)支持ND。
-  * axesOptional(aclIntArray*,计算输入)： 可选参数，切片的轴，Host侧的aclIntArray。数据类型支持INT64，[数据格式](../../../docs/context/数据格式.md)支持ND。
-  * workspaceSize(uint64_t*，出参)：返回需要在Device侧申请的workspace大小。
-  * executor(aclOpExecutor**，出参)：返回op执行器，包含了算子计算流程。
-
-- **返回值：**
-
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
-
-  ```
-  第一段接口完成入参校验，出现以下场景时报错：
-  返回161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self、out或dim是空指针。
-  返回161002 (ACLNN_ERR_PARAM_INVALID)：输入和输出的数据类型不在支持的范围之内。
-  ```
-
-## aclnnStridedSliceAssignV2
-
-- **参数说明：**
-
-  * workspace(void*, 入参)：在Device侧申请的workspace内存地址。
-  * workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnStridedSliceAssignV2GetWorkspaceSize获取。
-  * executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
-  * stream(aclrtStream, 入参)：指定执行任务的AscendCL Stream流。
-
-- **返回值：**
-
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
-
-## 约束说明
-inputValue的shape第i维的计算公式为：$inputValueShape[i] = \lceil\frac{end[i] - begin[i]}{strides[i]} \rceil$，其中$\lceil x\rceil$ 表示对 $x$向上取整。$end$ 和 $begin$ 为经过特殊值调整后的取值，调整方式为：当 $end[i] < 0$ 时，$end[i]=varShape[i] + end[i]$ ，若仍有$end[i] < 0$，则 $end[i] = 0$ ，当 $end[i] > varShape[i]$ 时， $end[i] = varShape[i]$ 。$begin$ 同理。
-
-## 调用示例
-
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
-
-```Cpp
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
@@ -208,4 +156,3 @@ int main() {
   aclFinalize();
   return 0;
 }
-```

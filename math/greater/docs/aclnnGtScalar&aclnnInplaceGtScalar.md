@@ -11,7 +11,7 @@
   - aclnnGtScalar：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceGtScalar：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-- 每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnGtScalarGetWorkspaceSize”或者“aclnnInplaceGtScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnGtScalar”或者“aclnnInplaceGtScalar”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnGtScalarGetWorkspaceSize”或者“aclnnInplaceGtScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnGtScalar”或者“aclnnInplaceGtScalar”接口执行计算。
 
   - `aclnnStatus aclnnGtScalarGetWorkspaceSize(const aclTensor *self, const aclScalar *other, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
   - `aclnnStatus aclnnGtScalar(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -32,15 +32,15 @@ $$
 
 - **参数说明：**
 
-  - self(const aclTensor \*, 计算输入)：Device侧的aclTensor，数据类型支持FLOAT16、FLOAT32、INT32、INT8、UINT8，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-  - other(const aclScalar \*, 计算输入)：Host侧的aclScalar，数据类型支持FLOAT16、FLOAT32、INT32、INT8、UINT8，数据类型需要与self的数据类型满足推导规则（参见[互推导关系](common/互推导关系.md)）。
-  - out(aclTensor \*, 计算输出)：Device侧的aclTensor，数据类型支持FLOAT16、FLOAT32、INT32、INT8、UINT8，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - self(const aclTensor \*, 计算输入)：Device侧的aclTensor，数据类型支持FLOAT16、FLOAT32、INT32、INT8、UINT8，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
+  - other(const aclScalar \*, 计算输入)：Host侧的aclScalar，数据类型支持FLOAT16、FLOAT32、INT32、INT8、UINT8，数据类型需要与self的数据类型满足推导规则（参见[互推导关系](../../../docs/context/互推导关系.md)）。
+  - out(aclTensor \*, 计算输出)：Device侧的aclTensor，数据类型支持FLOAT16、FLOAT32、INT32、INT8、UINT8，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
   - workspaceSize(uint64_t \*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor \*\*, 出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self，other或out是空指针。
@@ -61,20 +61,20 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## aclnnInplaceGtScalarGetWorkspaceSize
 
 - **参数说明：**
 
-  * selfRef(aclTensor \*，计算输入|计算输出)：输入输出tensor，即对应公式中的self与out。Device侧的aclTensor，输入数据类型支持FLOAT16、FLOAT32、INT32、INT8、UINT8，数据类型需要与other的数据类型满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)）,支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-  * other(const aclScalar \*，计算输入)：Host侧的aclScalar，数据类型支持FLOAT16、FLOAT32、INT32、INT8、UINT8，数据类型需要与selfRef的 数据类型满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)）。
+  * selfRef(aclTensor \*，计算输入|计算输出)：输入输出tensor，即对应公式中的self与out。Device侧的aclTensor，输入数据类型支持FLOAT16、FLOAT32、INT32、INT8、UINT8，数据类型需要与other的数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/context/互推导关系.md)）,支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
+  * other(const aclScalar \*，计算输入)：Host侧的aclScalar，数据类型支持FLOAT16、FLOAT32、INT32、INT8、UINT8，数据类型需要与selfRef的 数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/context/互推导关系.md)）。
   * workspaceSize(uint64_t \*, 出参)：返回需要在Device侧申请的workspace大小。
   * executor(aclOpExecutor \*\*, 出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的selfRef或other是空指针。
@@ -94,14 +94,14 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
  ## 约束与限制
 
 无
 
  ## 调用示例
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 **aclnnGtScalar示例代码：**
 

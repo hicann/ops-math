@@ -1,18 +1,29 @@
 # aclnnRoundDecimals&aclnnInplaceRoundDecimals
 
-## Supported Products
+## 产品支持情况
 
-- Ascend 910B AI Processor
-- Ascend 910_93 AI Processor
+| 产品                                                         | 是否支持 |
+| :----------------------------------------------------------- | :------: |
+| <term>昇腾910_95 AI处理器</term>                             |    √     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
+| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品 </term>                             |    ×     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+| <term>Atlas 200/300/500 推理产品</term>                      |    ×     |
 
-## Prototype
+## 功能说明
 
-- **aclnnRoundDecimals** and **aclnnInplaceRoundDecimals** implement the same function in different ways. Select a proper operator based on your requirements.
+算子功能：将输入Tensor的元素四舍五入到指定的位数。
 
-  - **aclnnRoundDecimals**: An output tensor object needs to be created to store the computation result.
-  - **aclnnInplaceRoundDecimals**: No output tensor object needs to be created, and the computation result is stored in the memory of the input tensor.
+## 函数原型
 
-- Each operator has [two-phase API](common/two_phase_api.md) calls. First, **aclnnRoundDecimalsGetWorkspaceSize** or **aclnnInplaceRoundDecimalsGetWorkspaceSize** is called to obtain the workspace size required for computation and the executor that contains the operator computation process. Then, **aclnnRoundDecimals** or **aclnnInplaceRoundDecimals** is called to perform computation.
+- aclnnRoundDecimals和aclnnInplaceRoundDecimals实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
+
+  - aclnnRoundDecimals：需新建一个输出张量对象存储计算结果。
+  - aclnnInplaceRoundDecimals：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
+
+- 每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnRoundDecimalsGetWorkspaceSize”或者“aclnnInplaceRoundDecimalsGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnRoundDecimals”或者“aclnnInplaceRoundDecimals”接口执行计算。
 
   - `aclnnStatus aclnnRoundDecimalsGetWorkspaceSize(const aclTensor* self, int64_t decimals, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
 
@@ -22,109 +33,108 @@
 
   - `aclnnStatus aclnnInplaceRoundDecimals(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
 
-## Function
-
-Description: Rounds the elements of the input tensor to the specified number of decimal places.
-
 ## aclnnRoundDecimalsGetWorkspaceSize
 
-- **Parameters**:
+- **参数说明：**
 
-  * self (aclTensor*, compute input): input tensor, aclTensor on the device. [Non-contiguous tensors](common/non_contiguous_tensors.md) are supported. The [data format](common/data_format.md) supports ND. The number of dimensions cannot exceed 8, and the shape must be the same as that of out.
-    - Ascend 910B AI Processor, Ascend 910_93 AI Processor: The data type can be FLOAT, BFLOAT16, FLOAT16, DOUBLE, INT32, or INT64.
-  * decimals (int64_t, compute input): number of decimal places to round.
+  * self(aclTensor*, 计算输入)：输入Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，维度不大于8，且shape需要与out一致。
+    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64。
+    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT32、INT64。
+  * decimals(int64_t, 计算输入)：指定需要四舍五入的位数。
 
-  * out (aclTensor *, compute output): output tensor, aclTensor on the device. [Non-contiguous tensors](common/non_contiguous_tensors.md) are supported. The [data format](common/data_format.md) supports ND. The number of dimensions cannot exceed 8, and the shape must be the same as that of self.
-    - Ascend 910B AI Processor, Ascend 910_93 AI Processor: The data type can be FLOAT, BFLOAT16, FLOAT16, DOUBLE, INT32, or INT64.
-  * workspaceSize (uint64_t *, output): size of the workspace to be allocated on the device.
+  * out(aclTensor *, 计算输出)：输出Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，维度不大于8，且shape需要与self一致。
+    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64。
+    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT32、INT64。
+  * workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
 
-  * executor (aclOpExecutor \*\*, output): operator executor, containing the operator computation process.
+  * executor(aclOpExecutor \*\*, 出参)：返回op执行器，包含了算子计算流程。
 
 
-- **Returns**:
+- **返回值：**
 
-  aclnnStatus: status code. For details, see [aclnn Return Codes](common/aclnn_return_codes.md).
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ```
-The first-phase API implements input parameter verification. The following errors may be thrown:
-161001 ACLNN_ERR_PARAM_NULLPTR: 1. The input self or out is a null pointer.
-161002 ACLNN_ERR_PARAM_INVALID: 1. The data type of self or out is not supported.
-                         2. The data types of self and out are inconsistent.
-                         3. The shapes of self and out are inconsistent.
-                         4. The dimensions of self or out are greater than 8.
+第一段接口完成入参校验，出现以下场景时报错：
+161001 ACLNN_ERR_PARAM_NULLPTR：1. 传入的self或out是空指针。
+161002 ACLNN_ERR_PARAM_INVALID：1. self或out的数据类型不在支持的范围之内。
+                         2. self和out的数据类型不一致。
+                         3. self和out的shape不一致。
+                         4. self或out的维数大于8。
 ```
 
 ## aclnnRoundDecimals
 
-- **Parameters**:
+- **参数说明：**
 
-  * workspace (void *, input): address of the workspace memory allocated on the device.
+  * workspace(void *, 入参)：在Device侧申请的workspace内存地址。
 
-  * workspaceSize (uint64_t, input): size of the workspace to be allocated on the device, which is obtained by calling aclnnRoundDecimalsGetWorkspaceSize.
+  * workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnRoundDecimalsGetWorkspaceSize获取。
 
-  * executor (aclOpExecutor *, input): operator executor, containing the operator computation process.
+  * executor(aclOpExecutor *, 入参)：op执行器，包含了算子计算流程。
 
-  * stream (aclrtStream, input): AscendCL stream for executing the task.
+  * stream(aclrtStream, 入参)：指定执行任务的Stream。
 
 
-- **Returns**:
+- **返回值：**
 
-  aclnnStatus: status code. For details, see [aclnn Return Codes](common/aclnn_return_codes.md).
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
-## Constraints
+## 约束说明
 
-- When decimals is not 0:
-  If the input data exceeds the range of (–347000, 347000), the precision may be affected.
+- 针对decimals不为0的场景：
+  输入数据超过(-347000, 347000)范围，精度可能会有影响。
 
 ## aclnnInplaceRoundDecimalsGetWorkspaceSize
 
-- **Parameters**:
+- **参数说明：**
 
-  * selfRef (aclTensor*, compute input): input tensor, aclTensor on the device. [Non-contiguous tensors](common/non_contiguous_tensors.md) are supported. The [data format](common/data_format.md) supports ND. The number of dimensions cannot exceed 8.
-    - Ascend 910B AI Processor, Ascend 910_93 AI Processor: The data type can be FLOAT, BFLOAT16, FLOAT16, DOUBLE, INT32, or INT64.
-  * decimals(int64_t, compute input): Specifies the number of digits to be rounded off.
+  * selfRef(aclTensor*, 计算输入)：输入Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，维度不大于8。
+    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64。
+    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT32、INT64。
+  * decimals(int64_t, 计算输入)：指定需要四舍五入的位数。
 
-  * workspaceSize (uint64_t *, output): size of the workspace to be allocated on the device.
+  * workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
 
-  * executor (aclOpExecutor \*\*, output): operator executor, containing the operator computation process.
+  * executor(aclOpExecutor \*\*, 出参)：返回op执行器，包含了算子计算流程。
 
 
-- **Returns**:
+- **返回值：**
 
-  aclnnStatus: status code. For details, see [aclnn Return Codes](common/aclnn_return_codes.md).
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ```
-The first-phase API implements input parameter verification. The following errors may be thrown:
-161001 ACLNN_ERR_PARAM_NULLPTR: 1. The input selfRef is a null pointer.
-161002 ACLNN_ERR_PARAM_INVALID: 1. The data type of selfRef is not supported.
-                         2. The shape of selfRef is greater than 8D.
+第一段接口完成入参校验，出现以下场景时报错：
+161001 ACLNN_ERR_PARAM_NULLPTR：1. 传入的selfRef是空指针。
+161002 ACLNN_ERR_PARAM_INVALID：1. selfRef的数据类型不在支持的范围之内。
+                         2. selfRef的维数大于8。
 ```
 
 ## aclnnInplaceRoundDecimals
 
-- **Parameters**:
+- **参数说明：**
 
-  * workspace (void *, input): address of the workspace memory allocated on the device.
+  * workspace(void *, 入参)：在Device侧申请的workspace内存地址。
 
-  * workspaceSize (uint64_t, input): size of the workspace to be allocated on the device, which is obtained by calling aclnnInplaceRoundDecimalsGetWorkspaceSize.
+  * workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnInplaceRoundDecimalsGetWorkspaceSize获取。
 
-  * executor (aclOpExecutor *, input): operator executor, containing the operator computation process.
+  * executor(aclOpExecutor *, 入参)：op执行器，包含了算子计算流程。
 
-  * stream (aclrtStream, input): AscendCL stream for executing the task.
+  * stream(aclrtStream, 入参)：指定执行任务的Stream。
 
 
-- **Returns**:
+- **返回值：**
 
-  aclnnStatus: status code. For details, see [aclnn Return Codes](common/aclnn_return_codes.md).
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
-## Constraints
+## 约束说明
 
-- When decimals is not 0:
-  If the input data exceeds the range of (–347000, 347000), the precision may be affected.
+- 针对decimals不为0的场景：
+  输入数据超过(-347000, 347000)范围，精度可能会有影响。
 
-## Example
+## 调用示例
 
-The following examples is for reference only. For details, see [Compilation and Running Sample](common/compilation_running_sample.md).
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>
@@ -152,7 +162,7 @@ int64_t GetShapeSize(const std::vector<int64_t>& shape) {
 }
 
 int Init(int32_t deviceId, aclrtStream* stream) {
-  // (Fixed writing) Initialize AscendCL.
+  // 固定写法，资源初始化
   auto ret = aclInit(nullptr);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclInit failed. ERROR: %d\n", ret); return ret);
   ret = aclrtSetDevice(deviceId);
@@ -165,35 +175,35 @@ int Init(int32_t deviceId, aclrtStream* stream) {
 template <typename T>
 int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr, aclDataType dataType, aclTensor** tensor) {
   auto size = GetShapeSize(shape) * sizeof(T);
-  // Call aclrtMalloc to allocate memory on the device.
+  // 调用aclrtMalloc申请device侧内存
   auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMalloc failed. ERROR: %d\n", ret); return ret);
 
-  // Call aclrtMemcpy to copy the data on the host to the memory on the device.
+  // 调用aclrtMemcpy将host侧数据拷贝到device侧内存上
   ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
 
-  // Compute the strides of the contiguous tensor.
+  // 计算连续tensor的strides
   std::vector<int64_t> strides(shape.size(), 1);
   for (int64_t i = shape.size() - 2; i >= 0; i--) {
     strides[i] = shape[i + 1] * strides[i + 1];
   }
 
-  // Call aclCreateTensor to create an aclTensor.
+  // 调用aclCreateTensor接口创建aclTensor
   *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), *deviceAddr);
   return 0;
 }
 
 int main() {
-  // 1. (Fixed writing) Initialize the device and stream. For details, see the list of external AscendCL APIs.
-  // Set the device ID in use.
+  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
-  // Use CHECK as required.
+  // check根据自己的需要处理
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-  // 2. Construct the input and output based on the API.
+  // 2. 构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> selfShape = {4, 2};
   std::vector<int64_t> outShape = {4, 2};
   void* selfDeviceAddr = nullptr;
@@ -204,26 +214,26 @@ int main() {
   std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
   int decimals = 0;
 
-  // Create a self aclTensor.
+  // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  // Create an out aclTensor.
+  // 创建out aclTensor
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. Call the CANN operator library API, which needs to be replaced with the actual API.
+  // 3. 调用CANN算子库API，需要修改为具体的Api名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
-  // Call the first-phase API of aclnnRoundDecimals.
+  // 调用aclnnRoundDecimals第一段接口
   ret = aclnnRoundDecimalsGetWorkspaceSize(self, decimals, out, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnRoundDecimalsGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
-  // Allocate device memory based on the computed workspaceSize.
+  // 根据第一段接口计算出的workspaceSize申请device内存
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
-  // Call the second-phase API of aclnnRoundDecimals.
+  // 调用aclnnRoundDecimals第二段接口
   ret = aclnnRoundDecimals(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnRoundDecimals failed. ERROR: %d\n", ret); return ret);
 
@@ -231,25 +241,25 @@ int main() {
     
   uint64_t inplaceWorkspaceSize = 0;
   aclOpExecutor* inplaceExecutor;
-  // Call the first-phase API of aclnnInplaceRoundDecimals.
+  // 调用aclnnInplaceRoundDecimals第一段接口
   ret = aclnnInplaceRoundDecimalsGetWorkspaceSize(self, decimals, &inplaceWorkspaceSize, &inplaceExecutor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceRoundDecimalsGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
-  // Allocate device memory based on the computed workspaceSize.
+  // 根据第一段接口计算出的workspaceSize申请device内存
   void* inplaceWorkspaceAddr = nullptr;
   if (inplaceWorkspaceSize > 0) {
     ret = aclrtMalloc(&inplaceWorkspaceAddr, inplaceWorkspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
-  // Call the second-phase API of aclnnInplaceRoundDecimals.
+  // 调用aclnnInplaceRoundDecimals第二段接口
   ret = aclnnInplaceRoundDecimals(inplaceWorkspaceAddr, inplaceWorkspaceSize, inplaceExecutor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceRoundDecimals failed. ERROR: %d\n", ret); return ret);
 
     
-  // 4. (Fixed writing) Wait until the task execution is complete.
+  // 4. （固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
-  // 5. Obtain the output value and copy the result from the device memory to the host. Modify the configuration based on the API definition.
+  // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
   auto size = GetShapeSize(outShape);
   std::vector<float> resultData(size, 0);
   ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr,
@@ -259,11 +269,11 @@ int main() {
     LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
   }
 
-  // 6. Release aclTensor. Modify the configuration based on the API definition.
+  // 6. 释放aclTensor，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyTensor(out);
 
-  // 7. Release device resources.
+  // 7. 释放device资源
   aclrtFree(selfDeviceAddr);
   aclrtFree(outDeviceAddr);
   if (workspaceSize > 0) {
@@ -275,3 +285,4 @@ int main() {
   return 0;
 }
 ```
+

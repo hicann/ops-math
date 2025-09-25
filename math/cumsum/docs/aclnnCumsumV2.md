@@ -19,7 +19,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnCumsumV2GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCumsumV2”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnCumsumV2GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCumsumV2”接口执行计算。
 
 - `aclnnStatus aclnnCumsumV2GetWorkspaceSize(const aclTensor *self, int64_t dim, bool exclusive, bool reverse, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnCumsumV2(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -28,7 +28,7 @@
 
 - **参数说明：**
 
-  - self(aclTensor*,计算输入)：Device侧的aclTensor，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，数据维度不支持8维以上。
+  - self(aclTensor*,计算输入)：Device侧的aclTensor，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，数据维度不支持8维以上。
      * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、INT32、DOUBLE、UINT8、INT8、INT16、INT64、COMPLEX64、COMPLEX128、BFLOAT16
 
   - dim(int64_t，入参)：host侧的整数，数据类型支持INT64，取值范围在[-self.dim(), self.dim()-1]内。
@@ -37,7 +37,7 @@
 
   - reverse(bool，入参)：定义是否反向求和。如果设置为true，将执行反向求和。
 
-  - out(aclTensor\*，计算输出)：Device侧的aclTensor，shape及dtype需要与self一致，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，数据维度不支持8维以上。
+  - out(aclTensor\*，计算输出)：Device侧的aclTensor，shape及dtype需要与self一致，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，数据维度不支持8维以上。
      * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、INT32、DOUBLE、UINT8、INT8、INT16、INT64、COMPLEX64、COMPLEX128、BFLOAT16
 
   - workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
@@ -46,7 +46,7 @@
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -69,14 +69,14 @@
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 无
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

@@ -38,7 +38,7 @@ padding([1,1,1,1,1,1])
 
 ## 函数原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnReplicationPad3dGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReplicationPad3d”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnReplicationPad3dGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReplicationPad3d”接口执行计算。
 
 - `aclnnStatus aclnnReplicationPad3dGetWorkspaceSize(const aclTensor* self, const aclIntArray* padding, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
 
@@ -48,11 +48,11 @@ padding([1,1,1,1,1,1])
 
 - **参数说明：**
 
-  - self（aclTensor*，计算输入）：待填充的原输入数据，Device侧的aclTensor。shape支持4-5维，数据类型支持FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、COMPLEX64、COMPLEX128。[数据格式](common/数据格式.md)支持ND，支持[非连续的Tensor](common/非连续的Tensor.md)。
+  - self（aclTensor*，计算输入）：待填充的原输入数据，Device侧的aclTensor。shape支持4-5维，数据类型支持FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、COMPLEX64、COMPLEX128。[数据格式](../../../docs/context/数据格式.md)支持ND，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)。
 
   - padding（aclIntArray*，计算输入）：输入中需要填充的维度，host侧的aclIntArray，长度为6，数值依次代表左右上下前后需要填充的值。
 
-  - out（aclTensor*，计算输出）：填充后的输出结果，Device侧的aclTensor。shape维度、dtype需要与self保持一致，数据类型支持FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、COMPLEX64、COMPLEX128。[数据格式](common/数据格式.md)，支持[非连续的Tensor](common/非连续的Tensor.md)。输出shape中，除被填充的最后三维外，其他维度需要一致。被填充的后三维中，out倒数第三维度的数值等于self倒数第三维度的数值加padding后两个值，out倒数第二维度的数值等于self倒数第二维度的数值加padding中间两个值，out最后一维度的数值等于self最后一维度的数值加padding前两个值。
+  - out（aclTensor*，计算输出）：填充后的输出结果，Device侧的aclTensor。shape维度、dtype需要与self保持一致，数据类型支持FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、COMPLEX64、COMPLEX128。[数据格式](../../../docs/context/数据格式.md)，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)。输出shape中，除被填充的最后三维外，其他维度需要一致。被填充的后三维中，out倒数第三维度的数值等于self倒数第三维度的数值加padding后两个值，out倒数第二维度的数值等于self倒数第二维度的数值加padding中间两个值，out最后一维度的数值等于self最后一维度的数值加padding前两个值。
 
   - workspaceSize（uint64_t*，出参）：返回需要在Device侧申请的workspace大小。
 
@@ -61,7 +61,7 @@ padding([1,1,1,1,1,1])
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -89,7 +89,7 @@ padding([1,1,1,1,1,1])
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -97,7 +97,7 @@ padding([1,1,1,1,1,1])
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 ```Cpp
 #include "acl/acl.h"

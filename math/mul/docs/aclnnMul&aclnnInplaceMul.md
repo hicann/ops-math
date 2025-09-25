@@ -10,7 +10,7 @@
   - aclnnMul：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceMul：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-- 每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnMulGetWorkspaceSize”或者“aclnnInplaceMulGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMul”或者“aclnnInplaceMul”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnMulGetWorkspaceSize”或者“aclnnInplaceMulGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMul”或者“aclnnInplaceMul”接口执行计算。
 
   - `aclnnStatus aclnnMulGetWorkspaceSize(const aclTensor *self, const aclTensor *other, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
 
@@ -35,11 +35,11 @@ $$
 
 - **参数说明：**
 
-  - self(aclTensor*,计算输入)：公式中的输入`self`，数据类型支持FLOAT、FLOAT16、INT32。数据类型与other的数据类型需满足[数据类型推导规则](common/互推导关系.md)，shape需要与other满足[broadcast关系](common/broadcast关系.md)。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - self(aclTensor*,计算输入)：公式中的输入`self`，数据类型支持FLOAT、FLOAT16、INT32。数据类型与other的数据类型需满足[数据类型推导规则](../../../docs/context/互推导关系.md)，shape需要与other满足[broadcast关系](../../../docs/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
 
-  - other(aclTensor*,计算输入)：公式中的输入`other`，数据类型支持FLOAT、FLOAT16、INT32。数据类型与self的数据类型需满足[数据类型推导规则](common/互推导关系.md)，shape需要与self满足[broadcast关系](common/broadcast关系.md)。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - other(aclTensor*,计算输入)：公式中的输入`other`，数据类型支持FLOAT、FLOAT16、INT32。数据类型与self的数据类型需满足[数据类型推导规则](../../../docs/context/互推导关系.md)，shape需要与self满足[broadcast关系](../../../docs/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
 
-  - out(aclTensor*, 计算输出)：公式中的输出`out`，数据类型支持FLOAT、FLOAT16、INT32。数据类型需要是self与other推导之后可转换的数据类型。shape需要与self和other进行broadcast之后的shape相等。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - out(aclTensor*, 计算输出)：公式中的输出`out`，数据类型支持FLOAT、FLOAT16、INT32。数据类型需要是self与other推导之后可转换的数据类型。shape需要与self和other进行broadcast之后的shape相等。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
 
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
 
@@ -48,7 +48,7 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ```
 161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self、other、out是空指针时。
@@ -73,15 +73,15 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## aclnnInplaceMulGetWorkspaceSize
 
 - **参数说明：**
 
-  - selfRef(aclTensor*,计算输入|计算输出)：公式中的输入`self`与输出`out`，数据类型支持FLOAT、FLOAT16、INT32。数据类型需要与other的数据类型满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），且推导后的数据类型需支持转换到selfRef的数据类型。shape需要与other满足[broadcast关系](common/broadcast关系.md)，且broadcast后的shape需与selfRef的shape相等。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - selfRef(aclTensor*,计算输入|计算输出)：公式中的输入`self`与输出`out`，数据类型支持FLOAT、FLOAT16、INT32。数据类型需要与other的数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/context/互推导关系.md)），且推导后的数据类型需支持转换到selfRef的数据类型。shape需要与other满足[broadcast关系](../../../docs/context/broadcast关系.md)，且broadcast后的shape需与selfRef的shape相等。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
 
-  - other(aclTensor*,计算输入)：公式中的输入`other`，数据类型支持FLOAT、FLOAT16、INT32。数据类型需要与selfRef的数据类型满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），shape需要与selfRef满足[broadcast关系](common/broadcast关系.md)。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - other(aclTensor*,计算输入)：公式中的输入`other`，数据类型支持FLOAT、FLOAT16、INT32。数据类型需要与selfRef的数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/context/互推导关系.md)），shape需要与selfRef满足[broadcast关系](../../../docs/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
 
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
 
@@ -90,7 +90,7 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ```
 161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的selfRef、other是空指针。
@@ -115,7 +115,7 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束与限制
 
@@ -123,7 +123,7 @@ $$
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 **aclnnMul示例代码：**
 

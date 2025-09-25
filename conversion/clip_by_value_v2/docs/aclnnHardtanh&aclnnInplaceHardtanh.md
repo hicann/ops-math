@@ -23,7 +23,7 @@
 - aclnnHardtanh和aclnnInplaceHardtanh实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnHardtanh：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceHardtanh：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnHardtanhGetWorkspaceSize”或者“aclnnInplaceHardtanhGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnHardtanh”或者“aclnnInplaceHardtanh”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnHardtanhGetWorkspaceSize”或者“aclnnInplaceHardtanhGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnHardtanh”或者“aclnnInplaceHardtanh”接口执行计算。
 
   - `aclnnStatus aclnnHardtanhGetWorkspaceSize(const aclTensor *self, const aclScalar* clipValueMin, const aclScalar* clipValueMax, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
   - `aclnnStatus aclnnHardtanh(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -32,20 +32,20 @@
 
 ## aclnnHardtanhGetWorkspaceSize
 - **参数说明**：
-  - self(aclTensor*,计算输入): 公式中的x，Device侧的aclTensor，且数据类型和out保持一致，shape和out保持一致，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - self(aclTensor*,计算输入): 公式中的x，Device侧的aclTensor，且数据类型和out保持一致，shape和out保持一致，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
      * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
   - clipValueMin(aclScalar*,计算输入): Host侧的aclScalar，下界，数据类型需要可转化成self的数据类型，且clipValueMin和clipValueMax同时存在时需要保持一致。
      * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
   - clipValueMax(aclScalar*,计算输入): Host侧的aclScalar，上界，数据类型需要可转化成self的数据类型，且clipValueMin和clipValueMax同时存在时需要保持一致。
      * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
-  - out(aclTensor\*，计算输出)：Device侧的aclTensor，且数据类型和self保持一致，shape和self保持一致，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - out(aclTensor\*，计算输出)：Device侧的aclTensor，且数据类型和self保持一致，shape和self保持一致，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
      * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
   - workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ```
 第一段接口完成入参校验，出现以下场景时报错：
@@ -64,11 +64,11 @@
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## aclnnInplaceHardtanhGetWorkspaceSize
 - **参数说明**：
-  - selfRef(aclTensor\*，计算输入): Device侧的aclTensor。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - selfRef(aclTensor\*，计算输入): Device侧的aclTensor。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
      * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
   - clipValueMin(aclScalar*,计算输入): Host侧的aclScalar，下界，数据类型需要可转化成selfRef的数据类型，且clipValueMin和clipValueMax同时存在时需要保持一致。
      * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、BFLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64
@@ -79,7 +79,7 @@
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ```
 第一段接口完成入参校验，出现以下场景时报错：
@@ -96,14 +96,14 @@
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 无
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

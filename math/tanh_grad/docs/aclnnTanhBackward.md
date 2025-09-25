@@ -17,7 +17,7 @@ gradInput = gradOutput \cdot (1 -output^2)
 $$
 
 ## 函数原型
-每个算子分为[两段式接口](./common/两段式接口.md)，必须先调用“aclnnTanhBackwardGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnTanhBackward”接口执行计算。
+每个算子分为[两段式接口](./../../../docs/context/两段式接口.md)，必须先调用“aclnnTanhBackwardGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnTanhBackward”接口执行计算。
 
 - `aclnnStatus aclnnTanhBackwardGetWorkspaceSize(const aclTensor *gradOutput, const aclTensor *output, aclTensor *gradInput, uint64_t *workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnTanhBackward(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
@@ -26,13 +26,13 @@ $$
 
 - **参数说明**
 
-  - gradOutput（aclTensor\*, 计算输入）：公式中的输入`gradOutput`，Device侧的aclTensor，shape需要与output一致或满足[broadcast关系](common/broadcast关系.md)。支持[非连续的Tensor](./common/非连续的Tensor.md)，[数据格式](./common/数据格式.md)支持ND。
+  - gradOutput（aclTensor\*, 计算输入）：公式中的输入`gradOutput`，Device侧的aclTensor，shape需要与output一致或满足[broadcast关系](../../../docs/context/broadcast关系.md)。支持[非连续的Tensor](./../../../docs/context/非连续的Tensor.md)，[数据格式](./../../../docs/context/数据格式.md)支持ND。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。数据类型需要和output参数一致。
 
-  - output（aclTensor\*, 计算输入）：公式中的输入`output`，Device侧的aclTensor，shape需要与gradOutput一致或满足[broadcast关系](common/broadcast关系.md)。支持[非连续的Tensor](./common/非连续的Tensor.md)，[数据格式](./common/数据格式.md)支持ND。
+  - output（aclTensor\*, 计算输入）：公式中的输入`output`，Device侧的aclTensor，shape需要与gradOutput一致或满足[broadcast关系](../../../docs/context/broadcast关系.md)。支持[非连续的Tensor](./../../../docs/context/非连续的Tensor.md)，[数据格式](./../../../docs/context/数据格式.md)支持ND。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。数据类型需要和gradOutput参数一致。
 
-  - gradInput（aclTensor\*, 计算输出）：公式中的`gradInput`，Device侧的aclTensor，shape需要与gradOutput，output一致或是gradOutput与output broadcast之后的shape。支持[非连续的Tensor](./common/非连续的Tensor.md)，[数据格式](./common/数据格式.md)支持ND。
+  - gradInput（aclTensor\*, 计算输出）：公式中的`gradInput`，Device侧的aclTensor，shape需要与gradOutput，output一致或是gradOutput与output broadcast之后的shape。支持[非连续的Tensor](./../../../docs/context/非连续的Tensor.md)，[数据格式](./../../../docs/context/数据格式.md)支持ND。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。数据类型需要和gradOutput参数和output参数一致。
 
   - workspaceSize（uint64_t\*, 出参）：返回需要在Device侧申请的workspace大小。
@@ -40,7 +40,7 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -61,7 +61,7 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -69,7 +69,7 @@ $$
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](./common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](./../../../docs/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>
