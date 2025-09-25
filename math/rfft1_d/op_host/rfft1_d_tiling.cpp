@@ -24,7 +24,7 @@ namespace optiling {
 
 static ge::graphStatus Tiling4Rfft1D(gert::TilingContext* context)
 {
-    return Ops::Math::OpTiling::TilingRegistryNew::GetInstance().DoTilingImpl(context);
+    return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
 static ge::graphStatus TilingPrepare4Rfft1D(gert::TilingParseContext* context)
