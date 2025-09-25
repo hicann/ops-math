@@ -26,6 +26,9 @@ def read_json_file(file_path):
 
 
 def write_json_file(file_path, merged_data):
+    if not merged_data:
+        return
+
     try:
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(merged_data, f, ensure_ascii=False, indent=2)
