@@ -2,7 +2,6 @@
 
 ## Supported Products
 
-- Ascend 910 AI Processor
 - Ascend 910B AI Processor
 - Ascend 910_93 AI Processor
 
@@ -32,12 +31,10 @@ Description: Rounds the elements of the input tensor to the specified number of 
 - **Parameters**:
 
   * self (aclTensor*, compute input): input tensor, aclTensor on the device. [Non-contiguous tensors](common/non_contiguous_tensors.md) are supported. The [data format](common/data_format.md) supports ND. The number of dimensions cannot exceed 8, and the shape must be the same as that of out.
-    - Ascend 910 AI Processor: The data type can be FLOAT, FLOAT16, DOUBLE, INT32, or INT64.
     - Ascend 910B AI Processor, Ascend 910_93 AI Processor: The data type can be FLOAT, BFLOAT16, FLOAT16, DOUBLE, INT32, or INT64.
   * decimals (int64_t, compute input): number of decimal places to round.
 
   * out (aclTensor *, compute output): output tensor, aclTensor on the device. [Non-contiguous tensors](common/non_contiguous_tensors.md) are supported. The [data format](common/data_format.md) supports ND. The number of dimensions cannot exceed 8, and the shape must be the same as that of self.
-    - Ascend 910 AI Processor: The data type can be FLOAT, FLOAT16, DOUBLE, INT32, or INT64.
     - Ascend 910B AI Processor, Ascend 910_93 AI Processor: The data type can be FLOAT, BFLOAT16, FLOAT16, DOUBLE, INT32, or INT64.
   * workspaceSize (uint64_t *, output): size of the workspace to be allocated on the device.
 
@@ -84,7 +81,6 @@ The first-phase API implements input parameter verification. The following error
 - **Parameters**:
 
   * selfRef (aclTensor*, compute input): input tensor, aclTensor on the device. [Non-contiguous tensors](common/non_contiguous_tensors.md) are supported. The [data format](common/data_format.md) supports ND. The number of dimensions cannot exceed 8.
-    - Ascend 910 AI Processor: The data type can be FLOAT, FLOAT16, DOUBLE, INT32, or INT64.
     - Ascend 910B AI Processor, Ascend 910_93 AI Processor: The data type can be FLOAT, BFLOAT16, FLOAT16, DOUBLE, INT32, or INT64.
   * decimals(int64_t, compute input): Specifies the number of digits to be rounded off.
 

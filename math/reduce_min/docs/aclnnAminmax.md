@@ -1,8 +1,6 @@
 # aclnnAminmax
 
 ## Supported Products
-- Ascend 310P AI Processor
-- Ascend 910 AI Processor
 - Ascend 910B AI Processor
 - Ascend 910_93 AI Processor
 
@@ -22,15 +20,12 @@ Description: Returns the minimum and maximum values of each row of the input ten
 
   * self (aclTensor*, compute input): aclTensor on the device. [Non-contiguous tensors](common/non_contiguous_tensors.md) are supported. The [data format](common/data_format.md) can be ND.
      * Ascend 910B AI Processor, Ascend 910_93 AI Processor: FLOAT, BFLOAT16, FLOAT16, DOUBLE, INT8, INT16, INT32, INT64, UINT8, BOOL
-     * Ascend 310P AI Processor, Ascend 910 AI Processor: FLOAT, FLOAT16, DOUBLE, INT8, INT16, INT32, INT64, UINT8, BOOL
   * dim (aclIntArray*, compute input): aclIntArray on the host, which specifies the dimension to be reduced. The supported data types are INT32 and INT64. The value range is [–self.dim(), self.dim() – 1].
   * keepDim(bool, compute input): bool on the host, which specifies whether to retain the dimension of the reduced axis.
   * minOut (aclTensor\*, compute output): aclTensor on the device. [Non-contiguous tensors](common/non_contiguous_tensors.md) are supported. The [data format](common/data_format.md) can be ND.
      * Ascend 910B AI Processor, Ascend 910_93 AI Processor: FLOAT, BFLOAT16, FLOAT16, DOUBLE, INT8, INT16, INT32, INT64, UINT8, BOOL. The data type must be the same as that of self.
-     * Ascend 310P AI Processor, Ascend 910 AI Processor: FLOAT, FLOAT16, DOUBLE, INT8, INT16, INT32, INT64, UINT8, BOOL. The data type must be the same as that of self.
   * maxOut (aclTensor\*, compute output): aclTensor on the device. [Non-contiguous tensors](common/non_contiguous_tensors.md) are supported. The [data format](common/data_format.md) can be ND.
      * Ascend 910B AI Processor, Ascend 910_93 AI Processor: FLOAT, BFLOAT16, FLOAT16, DOUBLE, INT8, INT16, INT32, INT64, UINT8, BOOL. The data type must be the same as that of self.
-     * Ascend 310P AI Processor, Ascend 910 AI Processor: FLOAT, FLOAT16, DOUBLE, INT8, INT16, INT32, INT64, UINT8, BOOL. The data type must be the same as that of self.
   * workspaceSize (uint64_t\*, output): size of the workspace to be allocated on the device.
   * executor (aclOpExecutor\*\*, output): operator executor, containing the operator computation process.
 
