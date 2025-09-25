@@ -272,7 +272,7 @@ __aicore__ inline void HansDecode<IF_BF16>::InitLocalTensor()
     for (int32_t k = 0; k < CONST_16; ++k) {
         bitShlMulScaleUb.SetValue(k, (1 << k) - 1);
     }
-    SetVectorMask(0x0, 0xffffffffffffffff);
+    SetVectorMask<uint64_t, MaskMode::NORMAL>(0xffffffffffffffff, 0x0);
     Duplicate<int16_t>(inputUb, (int16_t)0, CONST_4160);
     PipeBarrier<PIPE_V>();
     Duplicate<int16_t>(backupInputUb, (int16_t)0, CONST_4160);
@@ -289,7 +289,7 @@ __aicore__ inline void HansDecode<IF_BF16>::InitLocalTensor()
     PipeBarrier<PIPE_V>();
     Duplicate<int32_t>(const16Ub, (int32_t)CONST_16, CONST_64);
     PipeBarrier<PIPE_V>();
-    SetVectorMask(0xffffffffffffffff, 0xffffffffffffffff);
+    SetVectorMask<uint64_t, MaskMode::NORMAL>(0xffffffffffffffff, 0xffffffffffffffff);
 }
 
 template <bool IF_BF16>
@@ -716,7 +716,7 @@ __aicore__ inline void HansDecode<IF_BF16>::ProcessFp32BeforeH2D(
         recoverUb[index].template ReinterpretCast<int32_t>(), deviceExpUb[index].template ReinterpretCast<half>(),
         AscendC::RoundMode::CAST_TRUNC, (size * (sizeof(float) - 1)));
     PipeBarrier<PIPE_V>();
-    SetVectorMask((uint64_t)-1, (uint64_t)-1);
+    SetVectorMask<uint64_t, MaskMode::NORMAL>((uint64_t)-1, (uint64_t)-1);
     vreduce(
         (__ubuf__ uint16_t*)deviceExpUb[index].GetPhyAddr(), (__ubuf__ uint16_t*)recoverUb[index].GetPhyAddr(),
         (__ubuf__ uint16_t*)mantissaBitMask.GetPhyAddr(), (size * (sizeof(float) - 1) * 2) / CONST_128, 0, 1, 0, 0,
@@ -821,7 +821,7 @@ __aicore__ inline void HansDecode<IF_BF16>::Host2Device(LocalTensor<uint32_t> ma
 template <bool IF_BF16>
 __aicore__ inline void HansDecode<IF_BF16>::Process()
 {
-    SetVectorMask((uint64_t)-1, (uint64_t)-1);
+    SetVectorMask<uint64_t, MaskMode::NORMAL>((uint64_t)-1, (uint64_t)-1);
     SetMaskNorm();
     SetAtomicNone();
     uint64_t ubOffset_backup = 0;
