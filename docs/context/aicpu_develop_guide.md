@@ -371,7 +371,8 @@ REG_OP(AddExample)
     ```
    自定义算子包安装在`${ASCEND_HOME_PATH}/latest/opp/vendors`路径中，`${ASCEND_HOME_PATH}`表示CANN软件安装目录，可提前在环境变量中配置。自定义算子包不支持卸载。
    
-自定义算子包的目录结构示例如下：
+
+    自定义算子包的目录结构示例如下：
     ```
     ├── cann-ops-math-${vendor_name}_linux-${arch}.run           # 包名
     ├── op_api
