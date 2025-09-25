@@ -252,7 +252,7 @@ class HansEncode {
     for (int32_t i = 0; i < PDF_LENGTH; i++) {
       int32_t index = pdfSort.ReinterpretCast<int32_t>().GetValue(pdfStep * i + 1);
       int32_t metaValue = i == 0 ? (1 << (sizeof(uint16_t) * BYTE_BIT_NUM)) + i
-                                 : (int32_t)((uint64BitNum - (int32_t)(clz((uint64_t)i))) << uint16BitNum) + i;
+                                 : (int32_t)((uint64BitNum - (int32_t)(ScalarCountLeadingZero((uint64_t)i))) << uint16BitNum) + i;
       this->pdfSortIndexLocal.SetValue(index, metaValue);
     }
     this->bufOffset -= (PDF_LENGTH * sizeof(int32_t) + EACH_LOOOP_REPEAT_TIMES * BYTE_BIT_NUM * sizeof(float) +
@@ -348,7 +348,7 @@ class HansEncode {
       vreduce((__ubuf__ uint32_t*)(this->inputHalfLocal.GetPhyAddr()),
               (__ubuf__ uint32_t*)(overflowCheckLocal.GetPhyAddr()),
               (__ubuf__ uint32_t*)(stateBufferBitCmpLocal.GetPhyAddr()), 1, 0, 1, 0, 0, 8, 1);
-      uint64_t compressBufferOffset = get_rsvd_cnt();
+      uint64_t compressBufferOffset = GetRsvdCnt();
       this->bufOffset -= (EACH_LOOOP_REPEAT_TIMES * sizeof(int32_t) + EACH_LOOOP_REPEAT_TIMES * sizeof(int32_t));
       if ((currentCoreOutputAcculmulateSize + EACH_LOOOP_REPEAT_TIMES * sizeof(int32_t) +
            compressBufferOffset * EACH_LOOOP_REPEAT_TIMES * sizeof(uint16_t)) >
@@ -419,7 +419,7 @@ class HansEncode {
             (__ubuf__ uint16_t*)(this->stateBufferLocal.GetPhyAddr()),
             (__ubuf__ uint16_t*)(overflowFlagBrcbReduceLocal.GetPhyAddr()), processDataLength / BLOCK_SIZE, 0, 1, 0, 0,
             8, 1);
-    this->compressBufferOffset = get_rsvd_cnt();
+    this->compressBufferOffset = GetRsvdCnt();
     GatherOutput(overflowFlagBrcbLocal, overflowFlagLocal, processDataLength);
     this->bufOffset -= (BLOCK_SIZE * sizeof(int32_t) + EACH_LOOOP_REPEAT_TIMES * sizeof(int32_t) +
                         EACH_LOOOP_REPEAT_TIMES * BYTE_BIT_NUM * sizeof(int32_t) +

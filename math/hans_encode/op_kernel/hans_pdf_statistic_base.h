@@ -86,13 +86,13 @@ public:
             CopyIn(i * this->tileDataLength, this->tileDataLength * this->dtypeSize);
             ComputePdf(this->tileDataLength);
         }
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier(PIPE_ALL);
         // 3. remain
         if (this->tileRemain > 0) {
             CopyIn(this->tileNum * this->tileDataLength, this->tileRemain * this->dtypeSize);
             ComputePdf(this->tileRemain);
         }
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier(PIPE_ALL);
         // 4. copy out
         CopyOut();
         // 5. free
@@ -109,7 +109,7 @@ protected:
         DataCopyParams copyParams{1, static_cast<uint16_t>(copySize), 0, 0};
         DataCopyPadParams padParams{true, 0, 0, 0};
         DataCopyPad(this->inputLocal, this->inputGm[copyOffset], copyParams, padParams);
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier(PIPE_ALL);
     }
 
     __aicore__ inline void ComputePdf(int32_t computeLength)
@@ -145,7 +145,7 @@ protected:
                     (__ubuf__ intType*)(this->expLocal.GetPhyAddr()),
                     (__ubuf__ intType*)(this->inputLocal.GetPhyAddr()),
                     (__ubuf__ intType*)(compareLocalInt.GetPhyAddr()), repeatTimes, 0, 1, 0, 0, 8, 1);
-                rsvdCnt = get_rsvd_cnt();
+                rsvdCnt = GetRsvdCnt();
                 PipeBarrier<PIPE_V>();
                 SetFlag<HardEvent::V_S>(eventVS);
                 WaitFlag<HardEvent::V_S>(eventVS);
@@ -165,7 +165,7 @@ protected:
         for (int32_t i = 0; i < PDF_LENGTH; i++) {
             this->pdfLocal.SetValue(i, this->outStaticArray[i]);
         }
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier(PIPE_ALL);
         SetAtomicAdd<int32_t>();
         DataCopyPad(this->pdfGm, this->pdfLocal, {1, static_cast<uint16_t>(1024), 0, 0});
         SetAtomicNone();
