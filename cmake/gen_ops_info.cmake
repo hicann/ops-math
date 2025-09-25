@@ -360,6 +360,7 @@ function(gen_ops_info_and_python)
 
   if(ENABLE_BINARY OR ENABLE_CUSTOM)
     foreach(compute_unit ${ASCEND_COMPUTE_UNIT})
+      set(HAS_OP_COMPILE_OF_COMPUTE_UNIT FALSE)
       foreach(OP_DIR ${COMPILED_OP_DIRS})
         get_filename_component(op_name ${OP_DIR} NAME)
         set(op_type)
@@ -378,6 +379,9 @@ function(gen_ops_info_and_python)
         if(EXISTS ${binary_json})
           # binary compile from binary json config
           message(STATUS "[INFO] On [${compute_unit}], [${op_name}] compile binary with self config.")
+        elseif(NOT EXISTS ${CMAKE_BINARY_DIR}/binary/${compute_unit}/${op_name}_binary.json)
+          message(STATUS "[INFO] On [${compute_unit}], [${op_name}] not supported.")
+          continue()
         endif()
         compile_from_config(
               TARGET
@@ -403,14 +407,19 @@ function(gen_ops_info_and_python)
               COMPUTE_UNIT
               ${compute_unit}
         )
+        set(HAS_OP_COMPILE_OF_COMPUTE_UNIT TRUE)
         add_dependencies(ascendc_bin_${compute_unit}_${op_name} merge_ini_${compute_unit} ascendc_impl_gen)
       endforeach()
 
-      # generate binary_info_config.json
-      gen_binary_info_config_json(
-        TARGET gen_bin_info_config_${compute_unit} BIN_DIR ${CMAKE_BINARY_DIR}/binary/${compute_unit} COMPUTE_UNIT
-        ${compute_unit}
-        )
+      if(HAS_OP_COMPILE_OF_COMPUTE_UNIT)
+        # generate binary_info_config.json
+        gen_binary_info_config_json(
+          TARGET gen_bin_info_config_${compute_unit} BIN_DIR ${CMAKE_BINARY_DIR}/binary/${compute_unit} COMPUTE_UNIT
+          ${compute_unit}
+          )
+      else()
+        message(FATAL_ERROR "[ERROR] There is no operator support for ${compute_unit}.")
+      endif()
     endforeach()
   endif()
 endfunction()
