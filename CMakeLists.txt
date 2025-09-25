@@ -80,7 +80,7 @@ if(ENABLE_TEST)
 endif()
 
 if("${ASCEND_OP_NAME}" STREQUAL "add_example")
-  add_subdirectory(example)
+  add_subdirectory(examples)
 endif()
 
 message(STATUS "Ops for this compilation contains: ${COMPILED_OPS}")

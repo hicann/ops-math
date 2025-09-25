@@ -8,7 +8,7 @@
 
 ## 目录说明
 ```
-├── example                       
+├── examples                       
 │   ├── add_example                # AI Core算子名
 │   │   ├── CMakeLists.txt         # 算子编译配置文件，保留原文件即可   
 │   │   ├── examples               # 算子使用示例

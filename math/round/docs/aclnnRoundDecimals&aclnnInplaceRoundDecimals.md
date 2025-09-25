@@ -124,7 +124,7 @@ The first-phase API implements input parameter verification. The following error
 
 ## Example
 
-The following example is for reference only. For details, see [Compilation and Running Sample](common/compilation_running_sample.md).
+The following examples is for reference only. For details, see [Compilation and Running Sample](common/compilation_running_sample.md).
 ```Cpp
 #include <iostream>
 #include <vector>

@@ -256,7 +256,7 @@ usage() {
         return
         ;;
       run_example)
-        echo "Run example Options:"
+        echo "Run examples Options:"
         echo $dotted_line
         echo "    --run_example op_type  mode[eager:graph] [pkg_mode --vendor_name=name]     Compile and execute the test_aclnn_xxx.cpp/test_geir_xxx.cpp"
         echo $dotted_line
@@ -273,7 +273,7 @@ usage() {
         echo "    --genop=op_class/op_name      Create the initial directory for op_name undef op_class"
         echo $dotted_line
         echo "Examples:"
-        echo "    bash build.sh --genop=example/add"
+        echo "    bash build.sh --genop=examples/add"
         return
         ;;
       genop_aicpu)
@@ -282,7 +282,7 @@ usage() {
         echo "    --genop_aicpu=op_class/op_name      Create the initial directory for op_name undef op_class"
         echo $dotted_line
         echo "Examples:"
-        echo "    bash build.sh --genop_aicpu=example/add"
+        echo "    bash build.sh --genop_aicpu=examples/add"
         return
         ;;
     esac
@@ -303,7 +303,7 @@ usage() {
   echo "    -O[n] Compile optimization options, support [O0 O1 O2 O3], eg:-O3"
   echo "    -u Compile all ut"
   echo $dotted_line
-  echo "    example, Build ophost_test with O3 level compilation optimization and do not execute."
+  echo "    examples, Build ophost_test with O3 level compilation optimization and do not execute."
   echo "    ./build.sh --ophost_test --noexec -O3"
   echo $dotted_line
   echo "    The following are all supported arguments:"
@@ -901,7 +901,7 @@ build_ut() {
 
 build_example() {
   echo $dotted_line
-  echo "Start to run example,name:${EXAMPLE_NAME} mode:${EXAMPLE_MODE}"
+  echo "Start to run examples,name:${EXAMPLE_NAME} mode:${EXAMPLE_MODE}"
   clean_build
   if [ ! -d "${BUILD_PATH}" ]; then
     mkdir -p "${BUILD_PATH}"
@@ -911,12 +911,12 @@ build_example() {
   if [[ "${EXAMPLE_MODE}" == "eager" ]]; then
     file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_aclnn_*.cpp)
     if [ -z "$file" ]; then
-      echo "ERROR: ${EXAMPLE_NAME} do not have eager example"
+      echo "ERROR: ${EXAMPLE_NAME} do not have eager examples"
       exit 1
     fi
 
     for f in $file; do
-      echo "Start compile and run example file: $f"
+      echo "Start compile and run examples file: $f"
       if [[ "${PKG_MODE}" == "" ]]; then
         g++ ${f} -I ${INCLUDE_PATH} -I ${ACLNN_INCLUDE_PATH} -L ${EAGER_LIBRARY_PATH} -lopapi_math -lascendcl -lnnopbase -o test_aclnn_${EXAMPLE_NAME}
       elif [[ "${PKG_MODE}" == "cust" ]]; then
@@ -933,11 +933,11 @@ build_example() {
   elif [[ "${EXAMPLE_MODE}" == "graph" ]]; then
     file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_geir_*.cpp)
     if [ -z "$file" ]; then
-      echo "ERROR: ${EXAMPLE_NAME} do not have graph example"
+      echo "ERROR: ${EXAMPLE_NAME} do not have graph examples"
       exit 1
     fi
     for f in $file; do
-      echo "Start compile and run example file: $f"
+      echo "Start compile and run examples file: $f"
       g++ ${f} -I ${GRAPH_INCLUDE_PATH} -I ${GE_INCLUDE_PATH} -I ${INCLUDE_PATH} -I ${INC_INCLUDE_PATH} -L ${GRAPH_LIBRARY_STUB_PATH} -L ${GRAPH_LIBRARY_PATH} -lgraph -lge_runner -lgraph_base -o test_geir_${EXAMPLE_NAME}
       ./test_geir_${EXAMPLE_NAME}
     done
@@ -958,14 +958,14 @@ gen_op() {
 
   if [ ! -d "${GENOP_TYPE}" ]; then
     mkdir -p "${GENOP_TYPE}"
-    cp example/CMakeLists.txt "${GENOP_TYPE}/CMakeLists.txt"
+    cp examples/CMakeLists.txt "${GENOP_TYPE}/CMakeLists.txt"
     sed -i '/add_subdirectory(conversion)/a add_subdirectory('"${GENOP_TYPE}"')' CMakeLists.txt
   fi
 
   BASE_DIR=${GENOP_TYPE}/${GENOP_NAME}
   mkdir -p "${BASE_DIR}"
 
-  cp -r example/add_example/* "${BASE_DIR}/"
+  cp -r examples/add_example/* "${BASE_DIR}/"
 
   rm -rf "${BASE_DIR}/examples"
   rm -rf "${BASE_DIR}/op_host/config"
@@ -1000,14 +1000,14 @@ gen_aicpu_op() {
 
   if [ ! -d "${GENOP_TYPE}" ]; then
     mkdir -p "${GENOP_TYPE}"
-    cp example/CMakeLists.txt "${GENOP_TYPE}/CMakeLists.txt"
+    cp examples/CMakeLists.txt "${GENOP_TYPE}/CMakeLists.txt"
     sed -i '/add_subdirectory(conversion)/a add_subdirectory('"${GENOP_TYPE}"')' CMakeLists.txt
   fi
 
   BASE_DIR=${GENOP_TYPE}/${GENOP_NAME}
   mkdir -p "${BASE_DIR}"
 
-  cp -r example/add_example_aicpu/* "${BASE_DIR}/"
+  cp -r examples/add_example_aicpu/* "${BASE_DIR}/"
 
   rm -rf "${BASE_DIR}/examples"
   rm -rf "${BASE_DIR}/op_host/config"

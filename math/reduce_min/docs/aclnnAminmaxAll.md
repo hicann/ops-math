@@ -56,7 +56,7 @@ Description: Returns the minimum and maximum values of the input tensor in all d
 None
 
 ## Example
-The following example is for reference only. For details, see [Compilation and Running Sample](common/compilation_running_sample.md).
+The following examples is for reference only. For details, see [Compilation and Running Sample](common/compilation_running_sample.md).
 ```Cpp
 #include <iostream>
 #include <vector>

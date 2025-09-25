@@ -16,7 +16,7 @@ ops-math是[CANN](https://hiascend.com/software/cann) （Compute Architecture fo
 ├── cmake                          # 项目工程编译目录
 ├── common                         # 项目公共头文件和公共源码
 ├── docs                           # 项目文档介绍
-├── example                        # 端到端算子开发和调用示例
+├── examples                       # 端到端算子开发和调用示例
 ├── math                           # math类算子
 │   ├── abs                        # abs算子所有交付件，如Tiling、Kernel等
 │   │   ├── CMakeLists.txt         # 算子编译配置文件

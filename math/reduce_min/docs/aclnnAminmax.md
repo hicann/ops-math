@@ -60,7 +60,7 @@ Description: Returns the minimum and maximum values of each row of the input ten
 None
 
 ## Example
-The following example is for reference only. For details, see [Compilation and Running Sample](common/compilation_running_sample.md).
+The following examples is for reference only. For details, see [Compilation and Running Sample](common/compilation_running_sample.md).
 ```Cpp
 #include <iostream>
 #include <vector>

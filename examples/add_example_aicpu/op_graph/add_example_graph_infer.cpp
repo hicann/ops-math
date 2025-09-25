@@ -10,7 +10,7 @@
 
 /*!
  * \file add_example_aicpu_graph_infer.cpp
- * \brief add example graph graph infer
+ * \brief add examples graph graph infer
  */
 
 #include "register/op_impl_registry.h"

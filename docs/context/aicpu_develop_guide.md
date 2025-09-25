@@ -5,7 +5,7 @@
 > - 算子开发过程中涉及的基本概念、AI CPU接口等，详细介绍请参考[《TBE&AI CPU算子开发》](https://hiascend.com/document/redirect/CannCommunityOpdevWizard)。
 > - 若基于社区版CANN包对AI CPU算子源码修改，请使用自定义算子包方式编译执行。
 
-开发指南以`AddExample`算子开发为例，介绍新算子开发流程以及涉及的交付件，流程图如下，完整样例代码请访问项目`example`目录。
+开发指南以`AddExample`算子开发为例，介绍新算子开发流程以及涉及的交付件，流程图如下，完整样例代码请访问项目`examples`目录。
 
 ```mermaid
 graph LR
@@ -123,7 +123,7 @@ graph LR
 本项目`build.sh`，支持快速创建算子目录。进入项目根目录，执行以下命令：
 
 ```bash
-# 创建指定算子目录，如bash build.sh --genop_aicpu=example/add_example
+# 创建指定算子目录，如bash build.sh --genop_aicpu=examples/add_example
 bash build.sh --genop_aicpu=${op_class}/${op_name}
 ```
 - \$\{op_class\}表示算子类型，如math类。
@@ -175,7 +175,7 @@ graph LR
 
    注册AI CPU算子的Kernel实现，用于框架获取算子Kernel的Compute函数。
 
-根据上述步骤，在\$\{op\_name\}\_aicpu.h中定义Kernel头文件，包含算子类声明、结构定义等，示例如下，`AddExample`算子完整代码请参考`example/add_example_aicpu/op_kernel_aicpu`下[add_example_aicpu.h](../../example/add_example_aicpu/op_kernel_aicpu/add_example_aicpu.h)。
+根据上述步骤，在\$\{op\_name\}\_aicpu.h中定义Kernel头文件，包含算子类声明、结构定义等，示例如下，`AddExample`算子完整代码请参考`examples/add_example_aicpu/op_kernel_aicpu`下[add_example_aicpu.h](../../examples/add_example_aicpu/op_kernel_aicpu/add_example_aicpu.h)。
 
 ```CPP
 // 1、算子类声明
@@ -192,7 +192,7 @@ class AddExampleCpuKernel : public CpuKernel {
 };
 }  // namespace aicpu
 ```
-编写Kernel入口文件\$\{op\_name\}\_aicpu.cpp ，包含主函数和调度逻辑，示例如下，`AddExample`算子完整代码请参考`example/add_example_aicpu/op_kernel_aicpu`下[add_example_aicpu.cpp](../../example/add_example_aicpu/op_kernel_aicpu/add_example_aicpu.cpp)。
+编写Kernel入口文件\$\{op\_name\}\_aicpu.cpp ，包含主函数和调度逻辑，示例如下，`AddExample`算子完整代码请参考`examples/add_example_aicpu/op_kernel_aicpu`下[add_example_aicpu.cpp](../../examples/add_example_aicpu/op_kernel_aicpu/add_example_aicpu.cpp)。
 
 ```C++
 // 2、Compute函数实现
@@ -309,7 +309,7 @@ IMPL_OP_INFERSHAPE(AddExample).
     InferDataType(InferDataTypeAddExample);
 ```
 
-完整代码请参考`example/add_example_aicpu/op_host`下[add_example_infershape.cpp](../../example/add_example_aicpu/op_host/add_example_infershape.cpp)。
+完整代码请参考`examples/add_example_aicpu/op_host`下[add_example_infershape.cpp](../../examples/add_example_aicpu/op_host/add_example_infershape.cpp)。
 
 ### 算子原型配置
 
@@ -325,7 +325,7 @@ REG_OP(AddExample)
     .OP_END_FACTORY_REG(AddExample)
   ```
 
-完整代码请参考`example/add_example_aicpu/op_graph`下[add_example_proto.h](../../example/add_example_aicpu/op_graph/add_example_proto.h)。
+完整代码请参考`examples/add_example_aicpu/op_graph`下[add_example_proto.h](../../examples/add_example_aicpu/op_graph/add_example_proto.h)。
 
 
 ## 编译部署
@@ -338,7 +338,7 @@ REG_OP(AddExample)
 
 2. **编译自定义算子包。**
 
-   以`AddExample`算子为例，假设开发交付件在`example`目录，完整代码参见[add_example_aicpu](../../example/add_example_aicpu)目录。
+   以`AddExample`算子为例，假设开发交付件在`examples`目录，完整代码参见[add_example_aicpu](../../examples/add_example_aicpu)目录。
 
    进入项目根目录，执行如下编译命令（命令介绍参见[build参数说明](./build.md)）：
 

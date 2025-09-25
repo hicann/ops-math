@@ -19,7 +19,7 @@ SOC_MAP=([Ascend310P]="Ascend310P3"
 
 OPC_TASK_NAME="opc_cmd.sh"
 OUT_TASK_NAME="out_cmd.sh"
-OP_CATEGORY_LIST="math conversion example"
+OP_CATEGORY_LIST="math conversion examples"
 
 function trans_soc() {
   local _soc_input=$1
