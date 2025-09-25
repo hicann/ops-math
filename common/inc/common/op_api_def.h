@@ -1,0 +1,24 @@
+/**
+ * This program is free software, you can redistribute it and/or modify.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This file is a part of the CANN Open Software.
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+/*!
+ * \file op_api_def.h
+ * \brief
+ */
+
+#ifndef MATH_COMMON_OP_API_DEF_H
+#define MATH_COMMON_OP_API_DEF_H
+
+namespace op {
+const size_t BN_MIN_SUPPORT_DIMS_NUMS = 2;
+constexpr size_t MAX_SUPPORT_DIMS_NUMS = 8;
+constexpr size_t MAX_MASK_LEN64 = 64;
+} // namespace op
+#endif // MATH_COMMON_OP_API_DEF_H

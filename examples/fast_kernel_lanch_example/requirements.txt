@@ -1,0 +1,8 @@
+numpy
+pyyaml
+build
+decorator
+scipy
+attrs
+psutil
+expecttest

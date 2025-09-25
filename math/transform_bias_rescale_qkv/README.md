@@ -1,0 +1,107 @@
+# TransformBiasRescaleQkv
+
+## 产品支持情况
+
+|产品             |  是否支持  |
+|:-------------------------|:----------:|
+|  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     √    |
+|  <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>     |     √    |
+
+## 功能说明
+
+- 算子功能：
+  `TransformBiasRescaleQkv` 算子是一个用于处理多头注意力机制中查询（Query）、键（Key）、值（Value）向量的接口。它用于调整这些向量的偏置（Bias）和缩放（Rescale）因子，以优化注意力计算过程。
+
+- 计算公式：  
+  逐个元素计算过程见公式：
+
+  $$
+   \left\{
+	\begin{array}{ll}
+		q_o=(q_i+q_{bias})/\sqrt{dim\_per\_head} \\
+		k_o=k_i+k_{bias} \\
+        v_o=v_i+v_{bias} 
+	\end{array}\right.
+  $$
+
+  公式中：
+  - dim_per_head为每个注意力头的维度。
+  - $q_o$、$k_o$、$v_o$分别为查询（Query）、键（Key）、值（Value）向量的输出元素。
+  - $q_i$、$k_i$、$v_i$分别为查询（Query）、键（Key）、值（Value）向量的输入元素。
+  - $q_{bias}$、$k_{bias}$、$v_{bias}$分别为查询（Query）、键（Key）、值（Value）向量的输入元素偏移。
+
+## 参数说明
+
+<table style="undefined;table-layout: fixed; width: 937px"><colgroup>
+  <col style="width: 126px">
+  <col style="width: 135px">
+  <col style="width: 293px">
+  <col style="width: 266px">
+  <col style="width: 117px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出/属性</th>
+      <th>描述</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>qkv</td>
+      <td>输入</td>
+      <td>公式中的输入$q_i$、$k_i$、$v_i$。</td>
+      <td>BFLOAT16、FLOAT32、FLOAT16</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>qkvBias</td>
+      <td>输入</td>
+      <td>公式中的输入$q_{bias}$、$k_{bias}$、$v_{bias}$。</td>
+      <td>BFLOAT16、FLOAT32、FLOAT16</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>numHeads</td>
+      <td>属性</td>
+      <td><ul><li>输入的头数。</li><li>取值大于0。</li></ul></td>
+      <td>INT64</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>qOut</td>
+      <td>输出</td>
+      <td>公式中的$q_o$。</td>
+      <td>BFLOAT16、FLOAT32、FLOAT16</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>kOut</td>
+      <td>输出</td>
+      <td>公式中的$k_o$。</td>
+      <td>BFLOAT16、FLOAT32、FLOAT16</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>vOut</td>
+      <td>输出</td>
+      <td>公式中的$v_o$。</td>
+      <td>BFLOAT16、FLOAT32、FLOAT16</td>
+      <td>ND</td>
+    </tr>
+  </tbody></table>
+
+## 约束说明
+
+  - 输入qkv、qkvBias和输出qOut、kOut、vOut的数据类型需要保持一致。
+  - 输入值为nan，输出也为nan，输入是inf，输出也是inf。
+  - 输入是-inf，输出也是-inf。 
+
+## 调用说明
+
+| 调用方式   | 样例代码 | 说明  |
+| ------------ | ------------ | ------------ |
+| aclnn调用  | [test_aclnn_transform_bias_rescale_qkv](./examples/test_aclnn_transform_bias_rescale_qkv.cpp) | 通过[aclnnTransformBiasRescaleQkv](./docs/aclnnTransformBiasRescaleQkv.md)接口方式调用TransformBiasRescaleQkv算子。   |
+
+
