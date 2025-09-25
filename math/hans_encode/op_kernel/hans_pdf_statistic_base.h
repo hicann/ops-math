@@ -141,10 +141,8 @@ protected:
                     compareLocalInt.template ReinterpretCast<uint8_t>(), this->inputLocal, scalarValue, CMPMODE::EQ,
                     computeLength);
                 PipeBarrier<PIPE_V>();
-                vreduce(
-                    (__ubuf__ intType*)(this->expLocal.GetPhyAddr()),
-                    (__ubuf__ intType*)(this->inputLocal.GetPhyAddr()),
-                    (__ubuf__ intType*)(compareLocalInt.GetPhyAddr()), repeatTimes, 0, 1, 0, 0, 8, 1);
+                GatherMask(this->expLocal, this->inputLocal, compareLocalInt, false, 0,
+                           {repeatTimes, 1, 8, 1}, this->rsvdCnt);
                 rsvdCnt = get_rsvd_cnt();
                 PipeBarrier<PIPE_V>();
                 SetFlag<HardEvent::V_S>(eventVS);
