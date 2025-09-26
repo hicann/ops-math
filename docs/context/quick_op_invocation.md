@@ -57,7 +57,7 @@
     # 安装命令
     ./cann-${soc_name}-opp_legacy-${cann_version}-linux-${arch}.run --full --install-path=${install_path}
     ```
-    - \$\{soc\_version\}：表示NPU型号。
+    - \$\{soc\_name\}：表示NPU型号名称，即\$\{soc\_version\}删除“ascend”后剩余的内容。
     - \$\{install\_path\}：表示指定安装路径，需要与toolkit包安装在相同路径，默认安装在`/usr/local/Ascend`目录。
 
 3. **配置环境变量**
