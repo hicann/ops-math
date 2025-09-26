@@ -11,7 +11,7 @@
 
 1. 前提条件。
 
-    参考《[CANN 软件安装指南](https://www.hiascend.com/document/redirect/CannCommercialInstSoftware)》，按要求完成NPU驱动和固件、`Ascend-cann-${package}_${cann_version}_linux-${arch}.run`软件包的获取和安装。
+    参考《[CANN 软件安装指南](https://www.hiascend.com/document/redirect/CannCommercialInstSoftware)》，按要求完成NPU驱动和固件、`Ascend-cann-toolkit_${cann_version}_linux-${arch}.run`软件包的获取和安装。
 
 2. 安装`cann-opbase_${cann_version}_linux-${arch}.run`包。
 
