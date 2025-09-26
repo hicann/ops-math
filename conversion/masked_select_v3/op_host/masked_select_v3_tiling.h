@@ -18,6 +18,9 @@
 
 #include <cstdint>
 #include <vector>
+#include "register/op_impl_registry.h"
+#include "tiling/platform/platform_ascendc.h"
+#include "platform/platform_infos_def.h"
 #include "register/tilingdata_base.h"
 #include "tiling/tiling_api.h"
 
