@@ -43,7 +43,7 @@ $$
   * workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
   * executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
 * **返回值**：
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/context/aclnn返回码.md)。
   ```
   第一段接口完成入参校验，出现以下场景时报错：
   返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的self、other、out是空指针。
@@ -61,7 +61,7 @@ $$
   - executor（aclOpExecutor\*, 入参）：op执行器，包含了算子计算流程。
   - stream（aclrtStream, 入参）：指定执行任务的Stream。
 * **返回值**：
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/context/aclnn返回码.md)。
 
 ## aclnnInplaceNeScalarGetWorkspaceSize
 
@@ -73,7 +73,7 @@ $$
   * workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
   * executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
 * **返回值**：
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/context/aclnn返回码.md)。
   ```
   第一段接口完成入参校验，出现以下场景时报错：
   返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的selfRef、other是空指针时。
@@ -90,7 +90,7 @@ $$
   + executor（aclOpExecutor\*, 入参）：op执行器，包含了算子计算流程。
   + stream（aclrtStream, 入参）：指定执行任务的Stream。
 * **返回值**：
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
