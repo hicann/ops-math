@@ -22,6 +22,8 @@ from setuptools import Command
 
 
 class CleanCommand(Command):
+    user_options = []
+    
     def initialize_options(self):
         pass
     
