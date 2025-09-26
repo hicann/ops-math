@@ -179,6 +179,7 @@ private:
     int64_t recoverTensorUint8Size;
     uint64_t ubOffset{0};
     bool reshuff;
+    uint64_t rsvdCnt;
     int64_t currentCoreCompressUint8Size;
     int64_t currentCoreCompressOffset;
     int64_t compressPtrCurrentCoreStartOffset;
@@ -272,7 +273,7 @@ __aicore__ inline void HansDecode<IF_BF16>::InitLocalTensor()
     for (int32_t k = 0; k < CONST_16; ++k) {
         bitShlMulScaleUb.SetValue(k, (1 << k) - 1);
     }
-    set_vector_mask(0x0, 0xffffffffffffffff);
+    SetVectorMask<uint64_t, MaskMode::NORMAL>(0xffffffffffffffff, 0x0);
     Duplicate<int16_t>(inputUb, (int16_t)0, CONST_4160);
     PipeBarrier<PIPE_V>();
     Duplicate<int16_t>(backupInputUb, (int16_t)0, CONST_4160);
@@ -289,7 +290,7 @@ __aicore__ inline void HansDecode<IF_BF16>::InitLocalTensor()
     PipeBarrier<PIPE_V>();
     Duplicate<int32_t>(const16Ub, (int32_t)CONST_16, CONST_64);
     PipeBarrier<PIPE_V>();
-    set_vector_mask(0xffffffffffffffff, 0xffffffffffffffff);
+    SetVectorMask<uint64_t, MaskMode::NORMAL>(0xffffffffffffffff, 0xffffffffffffffff);
 }
 
 template <bool IF_BF16>
@@ -357,11 +358,11 @@ __aicore__ inline void HansDecode<IF_BF16>::GetNegativeBitNum(DecodeLoopConfig* 
         stateBufferBitNumberUb.template ReinterpretCast<float>(), const16Ub.template ReinterpretCast<float>(),
         AscendC::CMPMODE::LE, EACH_LOOOP_STATE_READ_NUM);
     PipeBarrier<PIPE_V>();
-    vreduce(
-        (__ubuf__ uint32_t*)negativeBitTempSpace.GetPhyAddr(), (__ubuf__ uint32_t*)constOneUb.GetPhyAddr(),
+    vreduce(	
+        (__ubuf__ uint32_t*)negativeBitTempSpace.GetPhyAddr(), (__ubuf__ uint32_t*)constOneUb.GetPhyAddr(),	
         (__ubuf__ uint32_t*)negativeZeroCmpBitMask.GetPhyAddr(), 1, 0, 1, 0, 0, REPEAT_STRIDE, 1);
     PipeBarrier<PIPE_V>();
-    config->negativeZeroSum = get_rsvd_cnt();
+    config->negativeZeroSum = AscendC::AscendCUtils::GetRsvdCnt();
     config->loopDataIndex = config->loopDataIndex - EACH_LOOOP_STATE_READ_NUM;
 }
 
@@ -555,8 +556,8 @@ __aicore__ inline void HansDecode<IF_BF16>::MoveOutFp32(
         PipeBarrier<PIPE_V>();
         Cast(recoverMantissaFp162s32Ub, recoverMantissaFp16Ub, AscendC::RoundMode::CAST_CEIL, PROCESS_3072);
         PipeBarrier<PIPE_V>();
-        vreduce(
-            (__ubuf__ uint16_t*)recoverMantissaFp16GatherUb.GetPhyAddr(),
+        vreduce(	
+            (__ubuf__ uint16_t*)recoverMantissaFp16GatherUb.GetPhyAddr(),	
             (__ubuf__ uint16_t*)recoverMantissaFp162s32Ub.GetPhyAddr(),
             (__ubuf__ uint16_t*)mantissaBitMask.GetPhyAddr(), 3 * mantissaRepeatTimes, 0, 1, 0, 0, REPEAT_STRIDE, 1);
         PipeBarrier<PIPE_V>();
@@ -716,9 +717,9 @@ __aicore__ inline void HansDecode<IF_BF16>::ProcessFp32BeforeH2D(
         recoverUb[index].template ReinterpretCast<int32_t>(), deviceExpUb[index].template ReinterpretCast<half>(),
         AscendC::RoundMode::CAST_TRUNC, (size * (sizeof(float) - 1)));
     PipeBarrier<PIPE_V>();
-    set_vector_mask((uint64_t)-1, (uint64_t)-1);
-    vreduce(
-        (__ubuf__ uint16_t*)deviceExpUb[index].GetPhyAddr(), (__ubuf__ uint16_t*)recoverUb[index].GetPhyAddr(),
+    SetVectorMask<uint64_t, MaskMode::NORMAL>((uint64_t)-1, (uint64_t)-1);
+    vreduce(	
+        (__ubuf__ uint16_t*)deviceExpUb[index].GetPhyAddr(), (__ubuf__ uint16_t*)recoverUb[index].GetPhyAddr(),	
         (__ubuf__ uint16_t*)mantissaBitMask.GetPhyAddr(), (size * (sizeof(float) - 1) * 2) / CONST_128, 0, 1, 0, 0,
         REPEAT_STRIDE, 1);
     PipeBarrier<PIPE_V>();
@@ -821,9 +822,9 @@ __aicore__ inline void HansDecode<IF_BF16>::Host2Device(LocalTensor<uint32_t> ma
 template <bool IF_BF16>
 __aicore__ inline void HansDecode<IF_BF16>::Process()
 {
-    set_vector_mask((uint64_t)-1, (uint64_t)-1);
-    set_mask_norm();
-    set_atomic_none();
+    SetVectorMask<uint64_t, MaskMode::NORMAL>((uint64_t)-1, (uint64_t)-1);
+    SetMaskNorm();
+    SetAtomicNone();
     uint64_t ubOffset_backup = 0;
     this->eventManager.InitEvent();
     if (this->id < this->actualUseCore) {

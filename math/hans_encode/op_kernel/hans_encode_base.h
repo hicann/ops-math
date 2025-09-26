@@ -8,10 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-/*!
- * \file hans_encode_base.h
- * \brief
- */
 #ifndef HANS_ENCODE_BASE_H
 #define HANS_ENCODE_BASE_H
 
@@ -252,7 +248,7 @@ class HansEncode {
     for (int32_t i = 0; i < PDF_LENGTH; i++) {
       int32_t index = pdfSort.ReinterpretCast<int32_t>().GetValue(pdfStep * i + 1);
       int32_t metaValue = i == 0 ? (1 << (sizeof(uint16_t) * BYTE_BIT_NUM)) + i
-                                 : (int32_t)((uint64BitNum - (int32_t)(clz((uint64_t)i))) << uint16BitNum) + i;
+                                 : (int32_t)((uint64BitNum - (int32_t)(ScalarCountLeadingZero((uint64_t)i))) << uint16BitNum) + i;
       this->pdfSortIndexLocal.SetValue(index, metaValue);
     }
     this->bufOffset -= (PDF_LENGTH * sizeof(int32_t) + EACH_LOOOP_REPEAT_TIMES * BYTE_BIT_NUM * sizeof(float) +
@@ -287,8 +283,8 @@ class HansEncode {
     GatherMask(this->inputExpHalfLocal, this->inputHalfLocal, expPattern, false, 0, expParams, this->rsvdCnt);
     PipeBarrier<PIPE_V>();
     if (this->dtypeSize == sizeof(float)) {
-      vreduce((__ubuf__ uint16_t*)(this->inputHalfLocal.GetPhyAddr()),
-              (__ubuf__ uint16_t*)(this->inputHalfLocal.GetPhyAddr()),
+      vreduce((__ubuf__ uint16_t*)(this->inputHalfLocal.GetPhyAddr()),	
+              (__ubuf__ uint16_t*)(this->inputHalfLocal.GetPhyAddr()),	
               (__ubuf__ uint16_t*)(this->fp32MantissaMaskLocal.GetPhyAddr()), expParams.repeatTimes, 0, 1, 0, 0, 8, 1);
     } else {
       GatherMask(this->inputHalfLocal, this->inputHalfLocal, 1, false, 0, expParams, this->rsvdCnt);
@@ -345,10 +341,10 @@ class HansEncode {
       CompareScalar(stateBufferBitCmpLocal.ReinterpretCast<uint8_t>(), overflowCheckLocal.ReinterpretCast<float>(),
                     this->const16Float, AscendC::CMPMODE::GT, EACH_LOOOP_REPEAT_TIMES);
       PipeBarrier<PIPE_V>();
-      vreduce((__ubuf__ uint32_t*)(this->inputHalfLocal.GetPhyAddr()),
-              (__ubuf__ uint32_t*)(overflowCheckLocal.GetPhyAddr()),
+      vreduce((__ubuf__ uint32_t*)(this->inputHalfLocal.GetPhyAddr()),	
+              (__ubuf__ uint32_t*)(overflowCheckLocal.GetPhyAddr()),	
               (__ubuf__ uint32_t*)(stateBufferBitCmpLocal.GetPhyAddr()), 1, 0, 1, 0, 0, 8, 1);
-      uint64_t compressBufferOffset = get_rsvd_cnt();
+      uint64_t compressBufferOffset = AscendC::AscendCUtils::GetRsvdCnt();
       this->bufOffset -= (EACH_LOOOP_REPEAT_TIMES * sizeof(int32_t) + EACH_LOOOP_REPEAT_TIMES * sizeof(int32_t));
       if ((currentCoreOutputAcculmulateSize + EACH_LOOOP_REPEAT_TIMES * sizeof(int32_t) +
            compressBufferOffset * EACH_LOOOP_REPEAT_TIMES * sizeof(uint16_t)) >
@@ -408,18 +404,18 @@ class HansEncode {
     PipeBarrier<PIPE_V>();
     Brcb(overflowFlagBrcbLocal, overflowFlagLocal, BYTE_BIT_NUM, {1, 8});
     PipeBarrier<PIPE_V>();
-    vreduce((__ubuf__ uint32_t*)(overflowFlagBrcbReduceLocal.GetPhyAddr()),
-            (__ubuf__ uint32_t*)(overflowFlagBrcbLocal.GetPhyAddr()),
+    vreduce((__ubuf__ uint32_t*)(overflowFlagBrcbReduceLocal.GetPhyAddr()),	
+            (__ubuf__ uint32_t*)(overflowFlagBrcbLocal.GetPhyAddr()),	
             (__ubuf__ uint32_t*)(this->reduceLowBlockMaskLocal.GetPhyAddr()), 8, 0, 1, 0, 0, 8, 1);
     PipeBarrier<PIPE_V>();
     Muls(overflowFlagBrcbReduceLocal, overflowFlagBrcbReduceLocal, (int32_t)INT32_LOW_16_BIT_MASK,
          EACH_LOOOP_PROCESS_NUM / (sizeof(uint16_t) * BYTE_BIT_NUM));
     PipeBarrier<PIPE_V>();
-    vreduce((__ubuf__ uint16_t*)(this->outputDeviceLocal.GetPhyAddr()),
-            (__ubuf__ uint16_t*)(this->stateBufferLocal.GetPhyAddr()),
+    vreduce((__ubuf__ uint16_t*)(this->outputDeviceLocal.GetPhyAddr()),	
+            (__ubuf__ uint16_t*)(this->stateBufferLocal.GetPhyAddr()),	
             (__ubuf__ uint16_t*)(overflowFlagBrcbReduceLocal.GetPhyAddr()), processDataLength / BLOCK_SIZE, 0, 1, 0, 0,
             8, 1);
-    this->compressBufferOffset = get_rsvd_cnt();
+    this->compressBufferOffset = AscendC::AscendCUtils::GetRsvdCnt();
     GatherOutput(overflowFlagBrcbLocal, overflowFlagLocal, processDataLength);
     this->bufOffset -= (BLOCK_SIZE * sizeof(int32_t) + EACH_LOOOP_REPEAT_TIMES * sizeof(int32_t) +
                         EACH_LOOOP_REPEAT_TIMES * BYTE_BIT_NUM * sizeof(int32_t) +
@@ -612,6 +608,158 @@ class HansEncode {
       WaitFlag<HardEvent::MTE2_V>(MTE2V);
       Cast(inputReaminFp16LocalList[index], inputLocalList[index].template ReinterpretCast<uint8_t>(),
            RoundMode::CAST_NONE, size);
+      PipeBarrier<PIPE_V>();
+      uint8_t expPattern = this->dtypeSize == sizeof(int32_t) ? 6 : 2;
+      GatherMaskParams expParams;
+      expParams.src0BlockStride = 1;
+      expParams.repeatTimes = static_cast<uint8_t>(size / (EACH_REPEAT_BYTES / sizeof(uint16_t)));
+      expParams.src0RepeatStride = REPEAT_STRIDE;
+      expParams.src1RepeatStride = 0;
+      GatherMask(inputReaminExpFp16LocalList[index], inputReaminFp16LocalList[index], expPattern, false, 0, expParams,
+                 this->rsvdCnt);
+      PipeBarrier<PIPE_V>();
+      if (this->dtypeSize == sizeof(int32_t)) {
+        vreduce((__ubuf__ uint16_t*)(inputReaminMantissaFp16LocalList[index].GetPhyAddr()),	
+                (__ubuf__ uint16_t*)(inputReaminFp16LocalList[index].GetPhyAddr()),	
+                (__ubuf__ uint16_t*)(this->fp32MantissaMaskLocal.GetPhyAddr()), expParams.repeatTimes, 0, 1, 0, 0, 8,1);
+      } else {
+        GatherMask(inputReaminMantissaFp16LocalList[index], inputReaminFp16LocalList[index], 1, false, 0, expParams,
+                   this->rsvdCnt);
+      }
+      PipeBarrier<PIPE_V>();
+      Cast(outputHostLocalList[index], inputReaminExpFp16LocalList[index], RoundMode::CAST_TRUNC,
+           size / this->dtypeSize);
+      PipeBarrier<PIPE_V>();
+      Cast(outputMantissaLocalList[index], inputReaminMantissaFp16LocalList[index], RoundMode::CAST_TRUNC,
+           size / this->dtypeSize * (this->dtypeSize - 1));
+      PipeBarrier<PIPE_V>();
+      SetFlag<HardEvent::V_MTE3>(VMTE3);
+      WaitFlag<HardEvent::V_MTE3>(VMTE3);
+      DataCopyPad(this->varGm[ouputHostExpOffsetNum], outputHostLocalList[index],
+                  {1, static_cast<uint16_t>(size / this->dtypeSize), 0, 0});
+      DataCopyPad(this->outputMantissaGm[outputMantissaOffsetNum], outputMantissaLocalList[index],
+                  {1, static_cast<uint16_t>(size - size / this->dtypeSize), 0, 0});
+      SetFlag<HardEvent::MTE3_MTE2>(MTE3MTE2);
+      inputOffsetNum += size / this->dtypeSize;
+      ouputHostExpOffsetNum += size / this->dtypeSize;
+      outputMantissaOffsetNum += size / this->dtypeSize * (this->dtypeSize - 1);
+  }
+
+  __aicore__ inline void HostTailProcess() {
+    SyncAll();
+    if (this->remainInputSize == 0) {
+      return;
+    }
+
+    int32_t processByteEachLoop = 12288;
+    InitBufferInHostTail(processByteEachLoop);
+    AllocTensorInHostTail(processByteEachLoop);
+    Duplicate<uint16_t>(this->fp32MantissaMaskLocal, (uint16_t)30583ULL, MANTISSA_MASK_NUM);
+    PipeBarrier<PIPE_ALL>();
+
+    DataCopyPad(this->encodeHeaderLocal, this->outputDeviceHeaderGm, {1, static_cast<uint16_t>(512), 0, 0},
+                {true, 0, 0, 0});
+    int64_t hostGmOffset = 0;
+    for (int32_t k = 0; k < GetBlockIdx(); ++k) {
+      hostGmOffset = hostGmOffset + this->encodeHeaderLocal.GetValue(HOST_START_IDX + k);
+    }
+
+    int64_t inputOffsetNum = currentCorePrcoessAcculmulateSize;
+    int64_t outputMantissaOffsetNum = currentCoreMantissaAcculmulateSize;
+    int64_t ouputHostExpOffsetNum = hostGmOffset;
+    int64_t dataSizeRemain = this->remainInputSize * this->dtypeSize;
+    SetFlag<HardEvent::MTE3_MTE2>(this->eventManager.eventMTE3MTE2Ping);
+    SetFlag<HardEvent::MTE3_MTE2>(this->eventManager.eventMTE3MTE2Pong);
+    for (int32_t i = 0; dataSizeRemain > 0; i++) {
+      uint32_t size = dataSizeRemain > processByteEachLoop ? processByteEachLoop : dataSizeRemain;
+      ProcessInHostTailDb(i, size, inputOffsetNum, ouputHostExpOffsetNum, outputMantissaOffsetNum);
+      dataSizeRemain -= size;
+    }
+    WaitFlag<HardEvent::MTE3_MTE2>(this->eventManager.eventMTE3MTE2Ping);
+    WaitFlag<HardEvent::MTE3_MTE2>(this->eventManager.eventMTE3MTE2Pong);
+    PipeBarrier<PIPE_ALL>();
+    this->inputQue.template FreeTensor<dataType>(inputLocalList[0]);
+    this->inputQue.template FreeTensor<dataType>(inputLocalList[1]);
+    this->outputHostQue.template FreeTensor<uint8_t>(outputHostLocalList[0]);
+    this->outputHostQue.template FreeTensor<uint8_t>(outputHostLocalList[1]);
+    this->outputMantissaQue.template FreeTensor<uint8_t>(outputMantissaLocalList[0]);
+    this->outputMantissaQue.template FreeTensor<uint8_t>(outputMantissaLocalList[1]);
+  }
+
+ private:
+  // tiling param
+  bool reshuff;
+  int32_t dtypeSize;
+  int32_t processCoreDim;
+  int64_t processLoopPerCore;
+  int64_t processLoopCurrentCore;
+  int32_t tileDataLength;
+  int32_t tileNum;
+  int32_t tileRemain;
+  // calculate param
+  int32_t bufOffset = 0;
+  int64_t outputDeviceSizeCurrentCore;
+  int64_t outputHostSizeCurrentCore;
+  int64_t currentCoreOutputAcculmulateSize = 0;
+  int64_t currentCorePrcoessAcculmulateSize = 0;
+  int64_t currentCoreMantissaAcculmulateSize = 0;
+  int64_t remainInputSize = 0;
+  float const16Float = 2.2420775429197073e-44;
+  uint64_t rsvdCnt;
+  uint64_t compressBufferOffset;
+  int32_t debugOffset = 0;
+
+  GlobalTensor<dataType> inputGm;
+  GlobalTensor<int32_t> pdfGm;
+  GlobalTensor<uint8_t> fixedGm;
+  GlobalTensor<uint8_t> workspaceGm;
+  GlobalTensor<uint8_t> outputMantissaGm;
+  GlobalTensor<uint8_t> varGm;
+  GlobalTensor<int32_t> outputDeviceHeaderGm;
+  // input
+  LocalTensor<dataType> inputLocal;
+  LocalTensor<int32_t> pdfLocal;
+  // output
+  LocalTensor<uint16_t> outputDeviceLocal;
+  LocalTensor<uint8_t> outputHostLocal;
+  LocalTensor<uint8_t> outputMantissaLocal;
+  // calculate
+  LocalTensor<half> inputHalfLocal;
+  LocalTensor<int32_t> pdfSortIndexLocal;
+  LocalTensor<int32_t> ConstOneLocal;
+  LocalTensor<int32_t> ConstZeroLocal;
+  LocalTensor<uint16_t> fp32MantissaMaskLocal;
+  LocalTensor<half> inputExpHalfLocal;
+  LocalTensor<int32_t> inputExpUint32Local;
+  LocalTensor<int32_t> statePdfIndexSortLocal;
+  LocalTensor<int32_t> statePdfMaxUseBitLocal;
+  LocalTensor<int32_t> bitLevelMaskZeroLocal;
+  LocalTensor<int32_t> stateBufferLocal;
+  LocalTensor<int32_t> stateBufferBitNumberLocal;
+  LocalTensor<int32_t> encodeHeaderLocal;
+  LocalTensor<int32_t> bitShlMulScaleLocal;
+  LocalTensor<int32_t> reduceLowBlockMaskLocal;
+
+  TPipe* pipe = nullptr;
+  TQue<TPosition::VECIN, 1> inputQue;
+  TQue<TPosition::VECIN, 1> pdfQue;
+  TBuf<TPosition::VECCALC> calcBuf;
+  TQue<TPosition::VECOUT, 1> outputMantissaQue;
+  TQue<TPosition::VECOUT, 1> outputDeviceQue;
+  TQue<TPosition::VECOUT, 1> outputHostQue;
+  HansCommonNs::EventManager eventManager;
+
+  static constexpr int32_t doubleBufferNum = 2;
+  LocalTensor<dataType> inputLocalList[doubleBufferNum];
+  LocalTensor<uint8_t> outputHostLocalList[doubleBufferNum];
+  LocalTensor<uint8_t> outputMantissaLocalList[doubleBufferNum];
+  LocalTensor<half> inputReaminFp16LocalList[doubleBufferNum];
+  LocalTensor<half> inputReaminExpFp16LocalList[doubleBufferNum];
+  LocalTensor<half> inputReaminMantissaFp16LocalList[doubleBufferNum];
+};
+}  // namespace HansEncodeNS
+#endif  // HANS_ENCODE_BASE_H
+
       PipeBarrier<PIPE_V>();
       uint8_t expPattern = this->dtypeSize == sizeof(int32_t) ? 6 : 2;
       GatherMaskParams expParams;
