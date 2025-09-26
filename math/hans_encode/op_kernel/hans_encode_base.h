@@ -252,7 +252,7 @@ class HansEncode {
     for (int32_t i = 0; i < PDF_LENGTH; i++) {
       int32_t index = pdfSort.ReinterpretCast<int32_t>().GetValue(pdfStep * i + 1);
       int32_t metaValue = i == 0 ? (1 << (sizeof(uint16_t) * BYTE_BIT_NUM)) + i
-                                 : (int32_t)((uint64BitNum - (int32_t)(clz((uint64_t)i))) << uint16BitNum) + i;
+                                 : (int32_t)((uint64BitNum - (int32_t)(ScalarCountLeadingZero((uint64_t)i))) << uint16BitNum) + i;
       this->pdfSortIndexLocal.SetValue(index, metaValue);
     }
     this->bufOffset -= (PDF_LENGTH * sizeof(int32_t) + EACH_LOOOP_REPEAT_TIMES * BYTE_BIT_NUM * sizeof(float) +
@@ -287,9 +287,10 @@ class HansEncode {
     GatherMask(this->inputExpHalfLocal, this->inputHalfLocal, expPattern, false, 0, expParams, this->rsvdCnt);
     PipeBarrier<PIPE_V>();
     if (this->dtypeSize == sizeof(float)) {
-      vreduce((__ubuf__ uint16_t*)(this->inputHalfLocal.GetPhyAddr()),
-              (__ubuf__ uint16_t*)(this->inputHalfLocal.GetPhyAddr()),
-              (__ubuf__ uint16_t*)(this->fp32MantissaMaskLocal.GetPhyAddr()), expParams.repeatTimes, 0, 1, 0, 0, 8, 1);
+      GatherMask(this->inputHalfLocal.template ReinterpretCast<uint16_t>(),
+                 this->inputHalfLocal.template ReinterpretCast<uint16_t>(),
+                 this->fp32MantissaMaskLocal.template ReinterpretCast<uint16_t>(),
+                 false, 0, {static_cast<uint8_t>(expParams.repeatTimes), 1, 8, 1}, this->rsvdCnt);
     } else {
       GatherMask(this->inputHalfLocal, this->inputHalfLocal, 1, false, 0, expParams, this->rsvdCnt);
     }
@@ -345,10 +346,11 @@ class HansEncode {
       CompareScalar(stateBufferBitCmpLocal.ReinterpretCast<uint8_t>(), overflowCheckLocal.ReinterpretCast<float>(),
                     this->const16Float, AscendC::CMPMODE::GT, EACH_LOOOP_REPEAT_TIMES);
       PipeBarrier<PIPE_V>();
-      vreduce((__ubuf__ uint32_t*)(this->inputHalfLocal.GetPhyAddr()),
-              (__ubuf__ uint32_t*)(overflowCheckLocal.GetPhyAddr()),
-              (__ubuf__ uint32_t*)(stateBufferBitCmpLocal.GetPhyAddr()), 1, 0, 1, 0, 0, 8, 1);
-      uint64_t compressBufferOffset = get_rsvd_cnt();
+      GatherMask(this->inputHalfLocal.template ReinterpretCast<uint32_t>(),
+                 overflowCheckLocal.template ReinterpretCast<uint32_t>(),
+                 stateBufferBitCmpLocal.template ReinterpretCast<uint32_t>(),
+                 false, 0, {1, 1, 8, 1}, this->rsvdCnt);
+      uint64_t compressBufferOffset = AscendC::AscendCUtils::GetRsvdCnt();
       this->bufOffset -= (EACH_LOOOP_REPEAT_TIMES * sizeof(int32_t) + EACH_LOOOP_REPEAT_TIMES * sizeof(int32_t));
       if ((currentCoreOutputAcculmulateSize + EACH_LOOOP_REPEAT_TIMES * sizeof(int32_t) +
            compressBufferOffset * EACH_LOOOP_REPEAT_TIMES * sizeof(uint16_t)) >
@@ -408,18 +410,19 @@ class HansEncode {
     PipeBarrier<PIPE_V>();
     Brcb(overflowFlagBrcbLocal, overflowFlagLocal, BYTE_BIT_NUM, {1, 8});
     PipeBarrier<PIPE_V>();
-    vreduce((__ubuf__ uint32_t*)(overflowFlagBrcbReduceLocal.GetPhyAddr()),
-            (__ubuf__ uint32_t*)(overflowFlagBrcbLocal.GetPhyAddr()),
-            (__ubuf__ uint32_t*)(this->reduceLowBlockMaskLocal.GetPhyAddr()), 8, 0, 1, 0, 0, 8, 1);
+    GatherMask(overflowFlagBrcbReduceLocal.template ReinterpretCast<uint32_t>(),
+               overflowFlagBrcbLocal.template ReinterpretCast<uint32_t>(),
+               this->reduceLowBlockMaskLocal.template ReinterpretCast<uint32_t>(),
+               false, 0, {8, 1, 8, 1}, this->rsvdCnt);
     PipeBarrier<PIPE_V>();
     Muls(overflowFlagBrcbReduceLocal, overflowFlagBrcbReduceLocal, (int32_t)INT32_LOW_16_BIT_MASK,
          EACH_LOOOP_PROCESS_NUM / (sizeof(uint16_t) * BYTE_BIT_NUM));
     PipeBarrier<PIPE_V>();
-    vreduce((__ubuf__ uint16_t*)(this->outputDeviceLocal.GetPhyAddr()),
-            (__ubuf__ uint16_t*)(this->stateBufferLocal.GetPhyAddr()),
-            (__ubuf__ uint16_t*)(overflowFlagBrcbReduceLocal.GetPhyAddr()), processDataLength / BLOCK_SIZE, 0, 1, 0, 0,
-            8, 1);
-    this->compressBufferOffset = get_rsvd_cnt();
+    GatherMask(this->outputDeviceLocal.template ReinterpretCast<uint16_t>(),
+               this->stateBufferLocal.template ReinterpretCast<uint16_t>(),
+               overflowFlagBrcbReduceLocal.template ReinterpretCast<uint16_t>(),
+               false, 0, {static_cast<uint8_t>(processDataLength / BLOCK_SIZE), 1, 8, 1}, this->rsvdCnt);
+    this->compressBufferOffset = AscendC::AscendCUtils::GetRsvdCnt();
     GatherOutput(overflowFlagBrcbLocal, overflowFlagLocal, processDataLength);
     this->bufOffset -= (BLOCK_SIZE * sizeof(int32_t) + EACH_LOOOP_REPEAT_TIMES * sizeof(int32_t) +
                         EACH_LOOOP_REPEAT_TIMES * BYTE_BIT_NUM * sizeof(int32_t) +
@@ -623,9 +626,10 @@ class HansEncode {
                  this->rsvdCnt);
       PipeBarrier<PIPE_V>();
       if (this->dtypeSize == sizeof(int32_t)) {
-        vreduce((__ubuf__ uint16_t*)(inputReaminMantissaFp16LocalList[index].GetPhyAddr()),
-                (__ubuf__ uint16_t*)(inputReaminFp16LocalList[index].GetPhyAddr()),
-                (__ubuf__ uint16_t*)(this->fp32MantissaMaskLocal.GetPhyAddr()), expParams.repeatTimes, 0, 1, 0, 0, 8,1);
+        GatherMask(inputReaminMantissaFp16LocalList[index].template ReinterpretCast<uint16_t>(),
+                   inputReaminFp16LocalList[index].template ReinterpretCast<uint16_t>(),
+                   this->fp32MantissaMaskLocal.template ReinterpretCast<uint16_t>(),
+                   false, 0, {static_cast<uint8_t>(expParams.repeatTimes), 1, 8, 1}, this->rsvdCnt);
       } else {
         GatherMask(inputReaminMantissaFp16LocalList[index], inputReaminFp16LocalList[index], 1, false, 0, expParams,
                    this->rsvdCnt);
