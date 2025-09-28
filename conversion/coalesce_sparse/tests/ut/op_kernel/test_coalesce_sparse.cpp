@@ -11,7 +11,7 @@
 #include <array>
 #include <vector>
 #include "gtest/gtest.h"
-#include "test_coalesce_sparse.h"
+#include "../../../op_host/coalesce_sparse_tiling.h"
 
 #ifdef __CCE_KT_TEST__
 #include "tikicpulib.h"

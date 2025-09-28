@@ -9,12 +9,8 @@
  */
 #include <gtest/gtest.h>
 #include <iostream>
-#include "op_proto_test_util.h"
-#include "index.h"
-#include "common/utils/ut_op_common.h"
-#include "util/util.h"
-
-using namespace ge;
+#include "infershape_context_faker.h"
+#include "base/registry/op_impl_space_registry_v2.h"
 
 class CoalesceSparseTest : public testing::Test {
 protected:
@@ -29,36 +25,87 @@ protected:
     }
 };
 
-TEST_F(CoalesceSparseTest, coalesce_sparse_test_success)
+static std::vector<int64_t> ToVectorForCoalesceSparse(const gert::Shape& shape)
 {
-    ge::op::CoalesceSparse op;
-    op.UpdateInputDesc("unique_len", create_desc_with_ori({4}, ge::DT_INT32, ge::FORMAT_ND, {4}, ge::FORMAT_ND));
-    op.UpdateInputDesc("unique_indices", create_desc_with_ori({5}, ge::DT_INT32, ge::FORMAT_ND, {5}, ge::FORMAT_ND));
-    op.UpdateInputDesc("indices", create_desc_with_ori({5, 2}, ge::DT_INT32, ge::FORMAT_ND, {5, 2}, ge::FORMAT_ND));
-    op.UpdateInputDesc("values", create_desc_with_ori({5, 3}, ge::DT_INT32, ge::FORMAT_ND, {5, 3}, ge::FORMAT_ND));
-    std::vector<int64_t> expected_output_shape0 = {4, 2};
-    std::vector<int64_t> expected_output_shape1 = {4, 3};
-    Runtime2TestParam coalesce_sparse{{}};
-    EXPECT_EQ(InferShapeTest(op, coalesce_sparse), ge::GRAPH_SUCCESS);
-    auto output0_desc = op.GetOutputDesc(0);
-    auto output1_desc = op.GetOutputDesc(1);
-    EXPECT_EQ(output0_desc.GetShape().GetDims(), expected_output_shape0);
-    EXPECT_EQ(output1_desc.GetShape().GetDims(), expected_output_shape1);
+    size_t shapeSize = shape.GetDimNum();
+    std::vector<int64_t> shapeVec(shapeSize, 0);
+    for (size_t i = 0; i < shapeSize; i++) {
+        shapeVec[i] = shape.GetDim(i);
+    }
+    return shapeVec;
 }
 
-TEST_F(CoalesceSparseTest, coalesce_sparse_infer_datatype_success)
+static void ExeTestCaseForCoalesceSparse(
+    const std::vector<gert::StorageShape>& inputShapes,
+    const std::vector<ge::DataType>& dtypes,
+    std::vector<gert::StorageShape>& outStorageShapes,
+    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
 {
-    ge::op::CoalesceSparse op;
-    op.UpdateInputDesc("unique_len", create_desc_with_ori({4}, ge::DT_INT32, ge::FORMAT_ND, {4}, ge::FORMAT_ND));
-    op.UpdateInputDesc("unique_indices", create_desc_with_ori({5}, ge::DT_INT32, ge::FORMAT_ND, {5}, ge::FORMAT_ND));
-    op.UpdateInputDesc("indices", create_desc_with_ori({5, 2}, ge::DT_INT32, ge::FORMAT_ND, {5, 2}, ge::FORMAT_ND));
-    op.UpdateInputDesc("values", create_desc_with_ori({5, 3}, ge::DT_INT32, ge::FORMAT_ND, {5, 3}, ge::FORMAT_ND));
-    std::vector<int64_t> expected_output_shape0 = {4, 2};
-    std::vector<int64_t> expected_output_shape1 = {4, 3};
-    Runtime2TestParam coalesce_sparse{{}};
-    EXPECT_EQ(InferDataTypeTest(op, coalesce_sparse), ge::GRAPH_SUCCESS);
-    auto output0_desc = op.GetOutputDesc(0);
-    auto output1_desc = op.GetOutputDesc(1);
-    EXPECT_EQ(output0_desc.GetDataType(), ge::DT_INT32);
-    EXPECT_EQ(output1_desc.GetDataType(), ge::DT_INT32);
+    const auto& input0StorageShape = inputShapes[0];
+    const auto& input1StorageShape = inputShapes[1];
+    const auto& input2StorageShape = inputShapes[2];
+    const auto& input3StorageShape = inputShapes[3];
+    
+    ge::DataType input0Dtype = dtypes[0];
+    ge::DataType input1Dtype = dtypes[1];
+    ge::DataType input2Dtype = dtypes[2];
+    ge::DataType input3Dtype = dtypes[3];
+    ge::DataType output0Dtype = dtypes[4];
+    ge::DataType output1Dtype = dtypes[5];
+
+    std::vector<gert::Tensor *> inputTensors = {
+        (gert::Tensor *)&input0StorageShape,
+        (gert::Tensor *)&input1StorageShape,
+        (gert::Tensor *)&input2StorageShape,
+        (gert::Tensor *)&input3StorageShape
+    };
+    std::vector<gert::StorageShape *> outputShapes = {
+        &outStorageShapes[0],
+        &outStorageShapes[1]
+    };
+    auto contextHolder = gert::InferShapeContextFaker()
+        .SetOpType("CoalesceSparse")
+        .NodeIoNum(2, 1)
+        .NodeInputTd(0, input0Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(1, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(2, input2Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(3, input3Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeOutputTd(0, output0Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeOutputTd(1, output1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .InputTensors(inputTensors)
+        .OutputShapes(outputShapes)
+        .Build();
+
+    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    auto inferShapeFunc = spaceRegistry->GetOpImpl("CoalesceSparse")->infer_shape;
+    ASSERT_NE(inferShapeFunc, nullptr);
+
+    /* do infershape */
+    EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
+}
+
+TEST_F(CoalesceSparseTest, coalesce_sparse_test_success)
+{
+    std::vector<gert::StorageShape> inputShapes = {
+        {{4}, {4}},
+        {{5}, {5}},
+        {{5, 2}, {5, 2}},
+        {{5, 3}, {5, 3}},
+    };
+    std::vector<ge::DataType> dtypes = {
+        ge::DT_INT32,
+        ge::DT_INT32,
+        ge::DT_INT32,
+        ge::DT_FLOAT16,
+        ge::DT_INT32,
+        ge::DT_FLOAT16
+    };
+
+    std::vector<int64_t> expectResult1 = {4, 2};
+    std::vector<int64_t> expectResult2 = {4, 3};
+    std::vector<gert::StorageShape> outStorageShapes = {{}, {}};
+
+    ExeTestCaseForCoalesceSparse(inputShapes, dtypes, outStorageShapes, ge::GRAPH_SUCCESS);
+    EXPECT_EQ(ToVectorForCoalesceSparse(outStorageShapes[0].GetOriginShape()), expectResult1);
+    EXPECT_EQ(ToVectorForCoalesceSparse(outStorageShapes[1].GetOriginShape()), expectResult2);
 }
