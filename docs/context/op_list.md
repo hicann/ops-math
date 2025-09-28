@@ -16,7 +16,7 @@
 | math   | [hans_decode](../../math/hans_decode/README.md)          | AI Core | 对压缩后的张量基于PDF进行解码，同时基于mantissa重组恢复张量。 |
 | math   | [hans_encode](../../math/hans_encode/README.md)       | AI Core  | 对输入张量指数位所在字节实现PDF统计，按PDF分布统计进行无损压缩。  |
 | math   | [histogram_v2](../../math/histogram_v2/README.md)        | AI Core | 计算张量直方图。 |
-| math   | [is_finite](../../math/is_finite/README.md)               | AI Core | 判断张量中哪些元素是无限大值，即为inf、-inf。 |
+| math   | [is_finite](../../math/is_finite/README.md)               | AI Core | 判断输入张量哪些元素是有限数值，即不是inf、-inf或nan。 |
 | math   | [is_inf](../../math/is_inf/README.md)         | AI Core   |  判断张量中哪些元素是无限大值，即为inf、-inf。  |
 | math   | [lin_space](../../math/lin_space/README.md)            | AI Core   |   生成一个等间隔数值序列。创建一个大小为steps的1维向量，其值从start起始到stop结束（包含）线性均匀分布。 |
 | math   | [mul_addn](../../math/mul_addn/README.md)    | AI Core             | 实现N>=2个mul和addn融合计算，减少搬运时间和内存的占用。       |
