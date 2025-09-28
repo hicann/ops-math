@@ -17,23 +17,10 @@
 #include <fstream>
 #include <vector>
 #include <gtest/gtest.h>
-#include "op_log.h"
-#include "register/op_tiling_registry.h"
-#include "test_common.h"
-#include "pad_ops.h"
-#include "array_ops.h"
-#include "common/utils/ut_op_util.h"
-#include "op_tiling/op_tiling_util.h"
-#include "common_unittest.h"
-#include "runtime/diag_util.h"
-#include "conversion/strided_slice_assign_v2/op_host/strided_slice_assign_v2_tiling.h"
-#include "kernel_run_context_facker.h"
-#include "test_cube_util.h"
-#include "selection_ops.h"
-#include "exe_graph/runtime/storage_format.h"
-#include "exe_graph/runtime/storage_shape.h"
+#include "../../../op_host/strided_slice_assign_v2_tiling.h"
+#include "tiling_context_faker.h"
+#include "tiling_case_executor.h"
 
-using namespace ut_util;
 using namespace std;
 using namespace ge;
 
@@ -50,66 +37,44 @@ protected:
     }
 };
 
-TEST_F(StridedSliceAssignV2Tiling, strided_slice_assing_v2_tiling_002)
-{
-    auto opParas = op::StridedSliceAssignV2("StridedSliceAssignV2");
-
-    vector<int64_t> var_shape = { 4, 6, 8 };
-    vector<int64_t> input_shape = { 2, 2, 4 };
-    vector<int64_t> idx_shape = { 3 };
-
-    vector<int64_t> begin_const_value = { 1, 2, 3 };
-    vector<int64_t> end_const_value = { 4, 6, 7 };
-    vector<int64_t> strides_const_value = { 2, 3, 1 };
-    vector<int64_t> axes_const_value = { 0, 1, 2 };
-    using namespace ut_util;
-    TENSOR_INPUT_WITH_SHAPE(opParas, var, var_shape, DT_FLOAT16, FORMAT_ND, {});
-    TENSOR_INPUT_WITH_SHAPE(opParas, input_value, input_shape, DT_FLOAT16, FORMAT_ND, {});
-    TENSOR_INPUT_WITH_SHAPE_AND_CONST_VALUE(opParas, begin, idx_shape, DT_INT64, FORMAT_ND, begin_const_value);
-    TENSOR_INPUT_WITH_SHAPE_AND_CONST_VALUE(opParas, end, idx_shape, DT_INT64, FORMAT_ND, end_const_value);
-    TENSOR_INPUT_WITH_SHAPE_AND_CONST_VALUE(opParas, strides, idx_shape, DT_INT64, FORMAT_ND, strides_const_value);
-    TENSOR_INPUT_WITH_SHAPE_AND_CONST_VALUE(opParas, axes, idx_shape, DT_INT64, FORMAT_ND, axes_const_value);
-    TENSOR_OUTPUT_WITH_SHAPE(opParas, var, var_shape, DT_FLOAT16, FORMAT_ND, {});
-
-    Runtime2TestParam rtparam;
-    rtparam.input_const = { false, false, true, true, true, true };
-    std::unique_ptr<uint8_t[]> tilingdata;
-    optiling::StridedSliceAssignV2CompileInfo compileInfo;
-    auto parse_ret = TilingParseTest("StridedSliceAssignV2", "", &compileInfo);
-    // EXPECT_EQ(parse_ret, ge::GRAPH_SUCCESS);
-
-    auto tiling_ret = TilingTest(opParas, &compileInfo, tilingdata, rtparam);
-    EXPECT_EQ(tiling_ret, ge::GRAPH_SUCCESS);
+TEST_F(StridedSliceAssignV2Tiling, strided_slice_assing_v2_tiling_001) {
+    optiling::StridedSliceAssignV2CompileInfo compileInfo = {48, 196608};
+    std::vector<int64_t> beginValue = {1, 2, 3};
+    std::vector<int64_t> endValue = {4, 6, 7};
+    std::vector<int64_t> stridesValue = {2, 3, 1};
+    std::vector<int64_t> axesValue = {0, 1, 2};
+    gert::TilingContextPara tilingContextPara("StridedSliceAssignV2",
+                                              {{{{4, 6, 8}, {4, 6, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{2, 2, 4}, {2, 2, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, beginValue.data()},
+                                               {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, endValue.data()},
+                                               {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, stridesValue.data()},
+                                               {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, axesValue.data()},},
+                                              {{{{2, 2, 4}, {2, 2, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},},
+                                                &compileInfo);
+    uint64_t expectTilingKey = 1;
+    string expectTilingData = "3 4 6 8 0 0 0 0 0 2 2 4 0 0 0 0 0 1 2 3 0 0 0 0 0 2 3 1 0 0 0 0 0 0 48 8 0 0 0 0 0 0 8 4 0 0 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
-TEST_F(StridedSliceAssignV2Tiling, strided_slice_assing_v2_tiling_003)
-{
-    auto opParas = op::StridedSliceAssignV2("StridedSliceAssignV2");
-
-    vector<int64_t> var_shape = { 4, 6, 8 };
-    vector<int64_t> input_shape = { 0, 2, 4 };
-    vector<int64_t> idx_shape = { 3 };
-
-    vector<int32_t> begin_const_value = { 5, 2, 3 };
-    vector<int32_t> end_const_value = { -100, 6, 7 };
-    vector<int32_t> strides_const_value = { 2, 3, 1 };
-    vector<int32_t> axes_const_value = { 0, 1, 2 };
-    using namespace ut_util;
-    TENSOR_INPUT_WITH_SHAPE(opParas, var, var_shape, DT_FLOAT16, FORMAT_ND, {});
-    TENSOR_INPUT_WITH_SHAPE(opParas, input_value, input_shape, DT_FLOAT16, FORMAT_ND, {});
-    TENSOR_INPUT_WITH_SHAPE_AND_CONST_VALUE(opParas, begin, idx_shape, DT_INT32, FORMAT_ND, begin_const_value);
-    TENSOR_INPUT_WITH_SHAPE_AND_CONST_VALUE(opParas, end, idx_shape, DT_INT32, FORMAT_ND, end_const_value);
-    TENSOR_INPUT_WITH_SHAPE_AND_CONST_VALUE(opParas, strides, idx_shape, DT_INT32, FORMAT_ND, strides_const_value);
-    TENSOR_INPUT_WITH_SHAPE_AND_CONST_VALUE(opParas, axes, idx_shape, DT_INT32, FORMAT_ND, axes_const_value);
-    TENSOR_OUTPUT_WITH_SHAPE(opParas, var, var_shape, DT_FLOAT16, FORMAT_ND, {});
-
-    Runtime2TestParam rtparam;
-    rtparam.input_const = { false, false, true, true, true, true };
-    std::unique_ptr<uint8_t[]> tilingdata;
-    optiling::StridedSliceAssignV2CompileInfo compileInfo;
-    auto parse_ret = TilingParseTest("StridedSliceAssignV2", "", &compileInfo);
-    // EXPECT_EQ(parse_ret, ge::GRAPH_SUCCESS);
-
-    auto tiling_ret = TilingTest(opParas, &compileInfo, tilingdata, rtparam);
-    EXPECT_EQ(tiling_ret, ge::GRAPH_SUCCESS);
+TEST_F(StridedSliceAssignV2Tiling, strided_slice_assing_v2_tiling_002) {
+    optiling::StridedSliceAssignV2CompileInfo compileInfo = {48, 196608};
+    std::vector<int64_t> beginValue = {5, 2, 3};
+    std::vector<int64_t> endValue = {-100, 6, 7};
+    std::vector<int64_t> stridesValue = {2, 3, 1};
+    std::vector<int64_t> axesValue = {0, 1, 2};
+    gert::TilingContextPara tilingContextPara("StridedSliceAssignV2",
+                                              {{{{4, 6, 8}, {4, 6, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{0, 2, 4}, {0, 2, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, beginValue.data()},
+                                               {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, endValue.data()},
+                                               {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, stridesValue.data()},
+                                               {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, axesValue.data()},},
+                                              {{{{0, 2, 4}, {0, 2, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},},
+                                                &compileInfo);
+    uint64_t expectTilingKey = 1;
+    string expectTilingData = "3 4 6 8 0 0 0 0 0 0 2 4 0 0 0 0 0 4 2 3 0 0 0 0 0 2 3 1 0 0 0 0 0 0 48 8 0 0 0 0 0 0 8 4 0 0 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

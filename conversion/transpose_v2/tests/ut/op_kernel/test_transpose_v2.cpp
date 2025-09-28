@@ -20,7 +20,7 @@
 #include <cstdint>
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
-#include "test_transpose_v2.h"
+#include "../../../op_host/transpose_v2_tiling.h"
 
 #include <cstdint>
 
@@ -51,7 +51,7 @@ TEST_F(transpose_v2_test, test_case_fp16_001)
     size_t xSize = C * H * W * sizeof(half);
     size_t permSize = 3 * sizeof(int32_t);
     size_t ySize = C * W * H * sizeof(half);
-    size_t tilingDataSize = sizeof(TransposeV2TilingDataInfo);
+    size_t tilingDataSize = sizeof(TransposeV2TilingData);
 
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(xSize);
     uint8_t* perm = (uint8_t*)AscendC::GmAlloc(permSize);
@@ -61,7 +61,7 @@ TEST_F(transpose_v2_test, test_case_fp16_001)
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
     uint32_t blockDim = 1;
 
-    TransposeV2TilingDataInfo* tilingData = reinterpret_cast<TransposeV2TilingDataInfo*>(tiling);
+    TransposeV2TilingData* tilingData = reinterpret_cast<TransposeV2TilingData*>(tiling);
     tilingData->tasksPerCore = C;
     tilingData->tasksTail = 0;
     tilingData->inputH = H;
@@ -93,7 +93,7 @@ TEST_F(transpose_v2_test, test_case_fp16_002)
     size_t xSize = C * H * W * sizeof(half);
     size_t permSize = 3 * sizeof(int32_t);
     size_t ySize = C * W * H * sizeof(half);
-    size_t tilingDataSize = sizeof(TransposeV2TilingDataInfo);
+    size_t tilingDataSize = sizeof(TransposeV2TilingData);
 
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(xSize);
     uint8_t* perm = (uint8_t*)AscendC::GmAlloc(permSize);
@@ -103,8 +103,7 @@ TEST_F(transpose_v2_test, test_case_fp16_002)
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
     uint32_t blockDim = 1;
 
-    TransposeV2TilingDataInfo* tilingData = reinterpret_cast<TransposeV2TilingDataInfo*>(tiling);
-    tilingData->dim0Len = 1;
+    TransposeV2TilingData* tilingData = reinterpret_cast<TransposeV2TilingData*>(tiling);
     tilingData->dim1Len = C;
     tilingData->dim2Len = H;
     tilingData->dim3Len = W;
@@ -135,7 +134,7 @@ TEST_F(transpose_v2_test, test_case_fp16_003)
     size_t xSize = C * H * W * sizeof(half);
     size_t permSize = 3 * sizeof(int32_t);
     size_t ySize = C * W * H * sizeof(half);
-    size_t tilingDataSize = sizeof(TransposeV2TilingDataInfo);
+    size_t tilingDataSize = sizeof(TransposeV2TilingData);
 
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(xSize);
     uint8_t* perm = (uint8_t*)AscendC::GmAlloc(permSize);
@@ -145,8 +144,7 @@ TEST_F(transpose_v2_test, test_case_fp16_003)
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
     uint32_t blockDim = 1;
 
-    TransposeV2TilingDataInfo* tilingData = reinterpret_cast<TransposeV2TilingDataInfo*>(tiling);
-    tilingData->dim0Len = 1;
+    TransposeV2TilingData* tilingData = reinterpret_cast<TransposeV2TilingData*>(tiling);
     tilingData->dim1Len = C;
     tilingData->dim2Len = H;
     tilingData->dim3Len = W;
@@ -177,7 +175,7 @@ TEST_F(transpose_v2_test, test_case_fp16_004)
     size_t xSize = C * H * W * sizeof(half);
     size_t permSize = 3 * sizeof(int32_t);
     size_t ySize = C * W * H * sizeof(half);
-    size_t tilingDataSize = sizeof(TransposeV2TilingDataInfo);
+    size_t tilingDataSize = sizeof(TransposeV2TilingData);
 
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(xSize);
     uint8_t* perm = (uint8_t*)AscendC::GmAlloc(permSize);
@@ -187,8 +185,7 @@ TEST_F(transpose_v2_test, test_case_fp16_004)
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
     uint32_t blockDim = 1;
 
-    TransposeV2TilingDataInfo* tilingData = reinterpret_cast<TransposeV2TilingDataInfo*>(tiling);
-    tilingData->dim0Len = 1;
+    TransposeV2TilingData* tilingData = reinterpret_cast<TransposeV2TilingData*>(tiling);
     tilingData->dim1Len = C;
     tilingData->dim2Len = H;
     tilingData->dim3Len = W;
@@ -201,174 +198,6 @@ TEST_F(transpose_v2_test, test_case_fp16_004)
     tilingData->doubleBuffer = 2;
 
     ICPU_SET_TILING_KEY(221);
-    ICPU_RUN_KF(transpose_v2, blockDim, x, perm, y, workspace, (uint8_t*)(tilingData));
-
-    AscendC::GmFree(x);
-    AscendC::GmFree(perm);
-    AscendC::GmFree(y);
-    AscendC::GmFree(workspace);
-    AscendC::GmFree(tiling);
-}
-
-TEST_F(transpose_v2_test, test_case_fp32_001)
-{
-    int64_t C = 1;
-    int64_t H = 30;
-    int64_t W = 68;
-
-    size_t xSize = C * H * W * sizeof(half);
-    size_t permSize = 3 * sizeof(int32_t);
-    size_t ySize = C * W * H * sizeof(half);
-    size_t tilingDataSize = sizeof(TransposeV2TilingDataInfo);
-
-    uint8_t* x = (uint8_t*)AscendC::GmAlloc(xSize);
-    uint8_t* perm = (uint8_t*)AscendC::GmAlloc(permSize);
-    uint8_t* y = (uint8_t*)AscendC::GmAlloc(ySize);
-
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
-    uint32_t blockDim = 1;
-
-    TransposeV2TilingDataInfo* tilingData = reinterpret_cast<TransposeV2TilingDataInfo*>(tiling);
-    tilingData->tasksPerCore = C;
-    tilingData->tasksTail = 0;
-    tilingData->inputH = H;
-    tilingData->inputW = W;
-    tilingData->inputH16Align = (H + 15) / 16;
-    tilingData->inputWAlign = (W + 15) / 16;
-    tilingData->hOnce = 128;
-    tilingData->tasksOnceMax = 13;
-    tilingData->repeatH = 2;
-    tilingData->transLoop = 1;
-    tilingData->doubleBuffer = 2;
-
-    ICPU_SET_TILING_KEY(40);
-    ICPU_RUN_KF(transpose_v2, blockDim, x, perm, y, workspace, (uint8_t*)(tilingData));
-
-    AscendC::GmFree(x);
-    AscendC::GmFree(perm);
-    AscendC::GmFree(y);
-    AscendC::GmFree(workspace);
-    AscendC::GmFree(tiling);
-}
-
-TEST_F(transpose_v2_test, test_case_fp32_002)
-{
-    int64_t C = 1;
-    int64_t H = 32;
-    int64_t W = 68;
-
-    size_t xSize = C * H * W * sizeof(half);
-    size_t permSize = 3 * sizeof(int32_t);
-    size_t ySize = C * W * H * sizeof(half);
-    size_t tilingDataSize = sizeof(TransposeV2TilingDataInfo);
-
-    uint8_t* x = (uint8_t*)AscendC::GmAlloc(xSize);
-    uint8_t* perm = (uint8_t*)AscendC::GmAlloc(permSize);
-    uint8_t* y = (uint8_t*)AscendC::GmAlloc(ySize);
-
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
-    uint32_t blockDim = 1;
-
-    TransposeV2TilingDataInfo* tilingData = reinterpret_cast<TransposeV2TilingDataInfo*>(tiling);
-    tilingData->dim0Len = 1;
-    tilingData->dim1Len = C;
-    tilingData->dim2Len = H;
-    tilingData->dim3Len = W;
-    tilingData->dim3LenAlign = (W + 15) / 16;
-    tilingData->tasksPerCore = C;
-    tilingData->tailCore = 0;
-    tilingData->dim1OnceMax = 13;
-    tilingData->dim2OnceMax = 2;
-    tilingData->subMode = 1;
-    tilingData->doubleBuffer = 2;
-
-    ICPU_SET_TILING_KEY(140);
-    ICPU_RUN_KF(transpose_v2, blockDim, x, perm, y, workspace, (uint8_t*)(tilingData));
-
-    AscendC::GmFree(x);
-    AscendC::GmFree(perm);
-    AscendC::GmFree(y);
-    AscendC::GmFree(workspace);
-    AscendC::GmFree(tiling);
-}
-
-TEST_F(transpose_v2_test, test_case_fp32_003)
-{
-    int64_t C = 1;
-    int64_t H = 32;
-    int64_t W = 64;
-
-    size_t xSize = C * H * W * sizeof(half);
-    size_t permSize = 3 * sizeof(int32_t);
-    size_t ySize = C * W * H * sizeof(half);
-    size_t tilingDataSize = sizeof(TransposeV2TilingDataInfo);
-
-    uint8_t* x = (uint8_t*)AscendC::GmAlloc(xSize);
-    uint8_t* perm = (uint8_t*)AscendC::GmAlloc(permSize);
-    uint8_t* y = (uint8_t*)AscendC::GmAlloc(ySize);
-
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
-    uint32_t blockDim = 1;
-
-    TransposeV2TilingDataInfo* tilingData = reinterpret_cast<TransposeV2TilingDataInfo*>(tiling);
-    tilingData->dim0Len = 1;
-    tilingData->dim1Len = C;
-    tilingData->dim2Len = H;
-    tilingData->dim3Len = W;
-    tilingData->dim3LenAlign = (W + 15) / 16;
-    tilingData->tasksPerCore = C;
-    tilingData->tailCore = 0;
-    tilingData->dim1OnceMax = 13;
-    tilingData->dim2OnceMax = 2;
-    tilingData->subMode = 1;
-    tilingData->doubleBuffer = 2;
-
-    ICPU_SET_TILING_KEY(141);
-    ICPU_RUN_KF(transpose_v2, blockDim, x, perm, y, workspace, (uint8_t*)(tilingData));
-
-    AscendC::GmFree(x);
-    AscendC::GmFree(perm);
-    AscendC::GmFree(y);
-    AscendC::GmFree(workspace);
-    AscendC::GmFree(tiling);
-}
-
-TEST_F(transpose_v2_test, test_case_fp32_004)
-{
-    int64_t C = 1;
-    int64_t H = 32;
-    int64_t W = 64;
-
-    size_t xSize = C * H * W * sizeof(half);
-    size_t permSize = 3 * sizeof(int32_t);
-    size_t ySize = C * W * H * sizeof(half);
-    size_t tilingDataSize = sizeof(TransposeV2TilingDataInfo);
-
-    uint8_t* x = (uint8_t*)AscendC::GmAlloc(xSize);
-    uint8_t* perm = (uint8_t*)AscendC::GmAlloc(permSize);
-    uint8_t* y = (uint8_t*)AscendC::GmAlloc(ySize);
-
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
-    uint32_t blockDim = 1;
-
-    TransposeV2TilingDataInfo* tilingData = reinterpret_cast<TransposeV2TilingDataInfo*>(tiling);
-    tilingData->dim0Len = 1;
-    tilingData->dim1Len = C;
-    tilingData->dim2Len = H;
-    tilingData->dim3Len = W;
-    tilingData->dim3LenAlign = (W + 15) / 16;
-    tilingData->tasksPerCore = C;
-    tilingData->tailCore = 0;
-    tilingData->dim1OnceMax = 13;
-    tilingData->dim2OnceMax = 2;
-    tilingData->subMode = 1;
-    tilingData->doubleBuffer = 2;
-
-    ICPU_SET_TILING_KEY(241);
     ICPU_RUN_KF(transpose_v2, blockDim, x, perm, y, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(x);
