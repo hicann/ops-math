@@ -179,6 +179,7 @@ private:
     int64_t recoverTensorUint8Size;
     uint64_t ubOffset{0};
     bool reshuff;
+    uint64_t rsvdCnt;
     int64_t currentCoreCompressUint8Size;
     int64_t currentCoreCompressOffset;
     int64_t compressPtrCurrentCoreStartOffset;
@@ -357,11 +358,12 @@ __aicore__ inline void HansDecode<IF_BF16>::GetNegativeBitNum(DecodeLoopConfig* 
         stateBufferBitNumberUb.template ReinterpretCast<float>(), const16Ub.template ReinterpretCast<float>(),
         AscendC::CMPMODE::LE, EACH_LOOOP_STATE_READ_NUM);
     PipeBarrier<PIPE_V>();
-    vreduce(
-        (__ubuf__ uint32_t*)negativeBitTempSpace.GetPhyAddr(), (__ubuf__ uint32_t*)constOneUb.GetPhyAddr(),
-        (__ubuf__ uint32_t*)negativeZeroCmpBitMask.GetPhyAddr(), 1, 0, 1, 0, 0, REPEAT_STRIDE, 1);
+    GatherMask(negativeBitTempSpace.template ReinterpretCast<uint32_t>(),
+               constOneUb.template ReinterpretCast<uint32_t>(),
+               negativeZeroCmpBitMask.template ReinterpretCast<uint32_t>(),
+               false, 0, {1, 1, static_cast<uint8_t>(REPEAT_STRIDE), 1}, this->rsvdCnt);
     PipeBarrier<PIPE_V>();
-    config->negativeZeroSum = GetRsvdCnt();
+    config->negativeZeroSum = AscendC::AscendCUtils::GetRsvdCnt();
     config->loopDataIndex = config->loopDataIndex - EACH_LOOOP_STATE_READ_NUM;
 }
 
@@ -555,10 +557,11 @@ __aicore__ inline void HansDecode<IF_BF16>::MoveOutFp32(
         PipeBarrier<PIPE_V>();
         Cast(recoverMantissaFp162s32Ub, recoverMantissaFp16Ub, AscendC::RoundMode::CAST_CEIL, PROCESS_3072);
         PipeBarrier<PIPE_V>();
-        vreduce(
-            (__ubuf__ uint16_t*)recoverMantissaFp16GatherUb.GetPhyAddr(),
-            (__ubuf__ uint16_t*)recoverMantissaFp162s32Ub.GetPhyAddr(),
-            (__ubuf__ uint16_t*)mantissaBitMask.GetPhyAddr(), 3 * mantissaRepeatTimes, 0, 1, 0, 0, REPEAT_STRIDE, 1);
+        GatherMask(recoverMantissaFp16GatherUb.template ReinterpretCast<uint16_t>(),
+                   recoverMantissaFp162s32Ub.template ReinterpretCast<uint16_t>(),
+                   mantissaBitMask.template ReinterpretCast<uint16_t>(), false, 0,
+                   {static_cast<uint8_t>(3 * mantissaRepeatTimes), 1, static_cast<uint8_t>(REPEAT_STRIDE), 1},
+                   this->rsvdCnt);
         PipeBarrier<PIPE_V>();
         Cast(
             recoverMantissaFp16GatherUb.template ReinterpretCast<half>(),
@@ -717,10 +720,11 @@ __aicore__ inline void HansDecode<IF_BF16>::ProcessFp32BeforeH2D(
         AscendC::RoundMode::CAST_TRUNC, (size * (sizeof(float) - 1)));
     PipeBarrier<PIPE_V>();
     SetVectorMask<uint64_t, MaskMode::NORMAL>((uint64_t)-1, (uint64_t)-1);
-    vreduce(
-        (__ubuf__ uint16_t*)deviceExpUb[index].GetPhyAddr(), (__ubuf__ uint16_t*)recoverUb[index].GetPhyAddr(),
-        (__ubuf__ uint16_t*)mantissaBitMask.GetPhyAddr(), (size * (sizeof(float) - 1) * 2) / CONST_128, 0, 1, 0, 0,
-        REPEAT_STRIDE, 1);
+    GatherMask(deviceExpUb[index].template ReinterpretCast<uint16_t>(),
+               recoverUb[index].template ReinterpretCast<uint16_t>(),
+               mantissaBitMask.template ReinterpretCast<uint16_t>(), false, 0,
+               {static_cast<uint8_t>((size * (sizeof(float) - 1) * 2) / CONST_128), 1, static_cast<uint8_t>(REPEAT_STRIDE), 1},
+               this->rsvdCnt);
     PipeBarrier<PIPE_V>();
     Cast(
         deviceExpUb[index].template ReinterpretCast<half>(), deviceExpUb[index].template ReinterpretCast<int16_t>(),

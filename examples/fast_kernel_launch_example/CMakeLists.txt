@@ -11,6 +11,11 @@
 option(BUILD_TORCH_OPS "Build torch ops project (PyTorch extension style)" OFF)
 message(STATUS "Build torch ops: ${BUILD_TORCH_OPS}")
 
+if(NOT BUILD_TORCH_OPS)
+    message(STATUS "BUILD_TORCH_OPS is OFF, exiting CMake configuration")
+    return()
+endif()
+
 #================================
 # Torch Ops 项目特定配置
 #================================
