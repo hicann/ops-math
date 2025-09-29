@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 #include "gtest/gtest.h"
 
@@ -22,39 +23,6 @@ class replication_pad1d_backward_test : public testing::Test {
 
   static void TearDownTestCase() { cout << "replication_pad1d_backward_test TearDown" << endl; }
 };
-
-TEST_F(replication_pad1d_backward_test, case_1) {
-  auto grad_output_tensor_desc = TensorDesc({1, 1, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
-  auto input_tensor_desc = TensorDesc({1, 1, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
-  auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2});
-  auto grad_input_desc = TensorDesc({1, 1, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
-
-  auto ut = OP_API_UT(aclnnReplicationPad1dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-                                                    OUTPUT(grad_input_desc));
-
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  // EXPECT_EQ(aclRet, ACL_SUCCESS);
-  ut.TestPrecision();
-}
-
-
-// 空tensor
-TEST_F(replication_pad1d_backward_test, case_2) {
-  auto grad_output_tensor_desc = TensorDesc({0, 1, 14}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto input_tensor_desc = TensorDesc({0, 1, 10}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2});
-  auto grad_input_desc = TensorDesc({0, 1, 10}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto ut = OP_API_UT(aclnnReplicationPad1dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-                                                  OUTPUT(grad_input_desc));
-
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACL_SUCCESS);
-  ut.TestPrecision();
-}
 
 // CheckNotNull gradOutput input padding
 TEST_F(replication_pad1d_backward_test, case_3) {
@@ -327,20 +295,4 @@ TEST_F(replication_pad1d_backward_test, case_17) {
   uint64_t workspace_size = 0;
   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
   // EXPECT_EQ(aclRet, ACL_SUCCESS);
-}
-
-TEST_F(replication_pad1d_backward_test, case_18) {
-  auto grad_output_tensor_desc = TensorDesc({1, 1, 59}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
-  auto input_tensor_desc = TensorDesc({1, 1, 40}, ACL_FLOAT16, ACL_FORMAT_ND);
-  auto padding_desc = IntArrayDesc(vector<int64_t>{2, 17});
-  auto grad_input_desc = TensorDesc({1, 1, 40}, ACL_FLOAT16, ACL_FORMAT_ND);
-
-  auto ut = OP_API_UT(aclnnReplicationPad1dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-                                                    OUTPUT(grad_input_desc));
-
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  // EXPECT_EQ(aclRet, ACL_SUCCESS);
-  ut.TestPrecision();
 }

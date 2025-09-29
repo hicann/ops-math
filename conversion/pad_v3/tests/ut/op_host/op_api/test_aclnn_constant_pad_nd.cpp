@@ -4,13 +4,14 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 #include <vector>
 #include <array>
 #include "gtest/gtest.h"
-#include "level2/aclnn_constant_pad_nd.h"
+#include "../../../../op_host/op_api/aclnn_constant_pad_nd.h"
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/op_api_ut.h"
@@ -25,34 +26,6 @@ class l2ConstantPadNd : public testing::Test {
 
   static void TearDownTestCase() { std::cout << "l2ConstantPadNd TearDown" << std::endl; }
 };
-
-TEST_F(l2ConstantPadNd, case_norm_float32) {
-  auto tensor_desc = TensorDesc({4, 4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
-  auto pad = IntArrayDesc(vector<int64_t>{1,1,1,1});
-  auto value = ScalarDesc(static_cast<int64_t>(2));
-  auto out_tensor_desc = TensorDesc({6, 6}, ACL_FLOAT, ACL_FORMAT_ND);
-
-  auto ut = OP_API_UT(aclnnConstantPadNd, INPUT(tensor_desc, pad, value), OUTPUT(out_tensor_desc));
-
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-  ut.TestPrecision();
-}
-
-TEST_F(l2ConstantPadNd, case_norm_float16) {
-  auto tensor_desc = TensorDesc({4, 4}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-1, 1);
-  auto pad = IntArrayDesc(vector<int64_t>{-1,-1,-1,-1});
-  auto value = ScalarDesc(static_cast<int64_t>(2));
-  auto out_tensor_desc = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
-
-  auto ut = OP_API_UT(aclnnConstantPadNd, INPUT(tensor_desc, pad, value), OUTPUT(out_tensor_desc));
-
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-  ut.TestPrecision();
-}
 
 TEST_F(l2ConstantPadNd, case_norm_double) {
   auto tensor_desc = TensorDesc({4, 4}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-1, 1);

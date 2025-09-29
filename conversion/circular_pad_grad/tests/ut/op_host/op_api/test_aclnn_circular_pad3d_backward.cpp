@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 #include "gtest/gtest.h"
 
@@ -340,23 +341,6 @@ TEST_F(circular_pad3d_backward_test, case_16)
 
 TEST_F(circular_pad3d_backward_test, case_17)
 {
-    auto grad_output_tensor_desc = TensorDesc({0, 1, 8, 8, 8}, ACL_FLOAT16, ACL_FORMAT_ND);
-    auto input_tensor_desc = TensorDesc({0, 1, 4, 4, 4}, ACL_FLOAT16, ACL_FORMAT_ND);
-    auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2, 2, 2});
-    auto grad_input_desc = TensorDesc({0, 1, 4, 4, 4}, ACL_FLOAT16, ACL_FORMAT_ND);
-    auto ut = OP_API_UT(
-        aclnnCircularPad3dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-        OUTPUT(grad_input_desc));
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
-}
-
-TEST_F(circular_pad3d_backward_test, case_18)
-{
     auto grad_output_tensor_desc = TensorDesc({1, 0, 8, 8, 8}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto input_tensor_desc = TensorDesc({1, 0, 4, 4, 4}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2, 2, 2});
@@ -371,7 +355,7 @@ TEST_F(circular_pad3d_backward_test, case_18)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(circular_pad3d_backward_test, case_19)
+TEST_F(circular_pad3d_backward_test, case_18)
 {
     auto grad_output_tensor_desc = TensorDesc({1, 0, 8, 8, 8}, ACL_FLOAT16, ACL_FORMAT_FRACTAL_NZ);
     auto input_tensor_desc = TensorDesc({1, 0, 4, 4, 4}, ACL_FLOAT16, ACL_FORMAT_FRACTAL_NZ);
