@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 #include "tiling_case_executor.h"
@@ -14,27 +15,55 @@
 #include "platform/platform_infos_def.h"
 #include "base/registry/op_impl_space_registry_v2.h"
 
-#define DO_TILING(tilingPara)                                                                                          \
+#define DO_TILING(tilingContextPara)                                                                                   \
     auto contextFaker = gert::TilingContextFaker();                                                                    \
     /* 1. input/output information */                                                                                  \
     size_t inputNum = tilingContextPara.inputTensorDesc_.size();                                                       \
     size_t outputNum = tilingContextPara.outputTensorDesc_.size();                                                     \
-    contextFaker.NodeIoNum(inputNum, outputNum);                                                                       \
+    if (tilingContextPara.inputInstanceNum_.size() != 0 || tilingContextPara.outputInstanceNum_.size() != 0) {         \
+        contextFaker.IrInstanceNum(tilingContextPara.inputInstanceNum_, tilingContextPara.outputInstanceNum_);         \
+    } else {                                                                                                           \
+        contextFaker.NodeIoNum(inputNum, outputNum);                                                                   \
+    }                                                                                                                  \
     std::vector<gert::Tensor *> inputTensors = {};                                                                     \
     std::vector<gert::Tensor *> outputTensors = {};                                                                    \
+    std::vector<std::unique_ptr<gert::Tensor>> inputTensorsKeepAlive = {};                                             \
+    std::vector<std::unique_ptr<gert::Tensor>> outputTensorsKeepAlive = {};                                            \
     for (size_t index = 0; index < inputNum; index++) {                                                                \
         contextFaker.NodeInputTd(index,                                                                                \
                                  tilingContextPara.inputTensorDesc_[index].dtype_,                                     \
                                  tilingContextPara.inputTensorDesc_[index].format_,                                    \
                                  tilingContextPara.inputTensorDesc_[index].format_);                                   \
-        inputTensors.push_back((gert::Tensor *)&tilingContextPara.inputTensorDesc_[index].shape_);                     \
+        std::unique_ptr<gert::Tensor> curTensor = std::make_unique<gert::Tensor>(                                      \
+            tilingContextPara.inputTensorDesc_[index].shape_,                                                          \
+            gert::StorageFormat(tilingContextPara.inputTensorDesc_[index].format_,                                     \
+             tilingContextPara.inputTensorDesc_[index].format_,                                                        \
+             gert::ExpandDimsType()),                                                                                  \
+            gert::TensorPlacement::kOnHost,                                                                            \
+            tilingContextPara.inputTensorDesc_[index].dtype_,                                                          \
+            tilingContextPara.inputTensorDesc_[index].isConst_ ?                                                       \
+            tilingContextPara.inputTensorDesc_[index].constValue_:                                                     \
+            nullptr);                                                                                                  \
+        inputTensors.push_back(curTensor.get());                                                                       \
+        inputTensorsKeepAlive.push_back(std::move(curTensor));                                                         \
     }                                                                                                                  \
     for (size_t index = 0; index < outputNum; index++) {                                                               \
         contextFaker.NodeOutputTd(index,                                                                               \
                                   tilingContextPara.outputTensorDesc_[index].dtype_,                                   \
                                   tilingContextPara.outputTensorDesc_[index].format_,                                  \
                                   tilingContextPara.outputTensorDesc_[index].format_);                                 \
-        outputTensors.push_back((gert::Tensor *)&tilingContextPara.outputTensorDesc_[index].shape_);                   \
+        std::unique_ptr<gert::Tensor> curTensor = std::make_unique<gert::Tensor>(                                      \
+            tilingContextPara.outputTensorDesc_[index].shape_,                                                         \
+            gert::StorageFormat(tilingContextPara.outputTensorDesc_[index].format_,                                    \
+             tilingContextPara.outputTensorDesc_[index].format_,                                                       \
+             gert::ExpandDimsType()),                                                                                  \
+            gert::TensorPlacement::kOnHost,                                                                            \
+            tilingContextPara.outputTensorDesc_[index].dtype_,                                                         \
+            tilingContextPara.outputTensorDesc_[index].isConst_ ?                                                      \
+            tilingContextPara.outputTensorDesc_[index].constValue_:                                                    \
+            nullptr);                                                                                                  \
+        outputTensors.push_back(curTensor.get());                                                                      \
+        outputTensorsKeepAlive.push_back(std::move(curTensor));                                                        \
     }                                                                                                                  \
     contextFaker.InputTensors(inputTensors).OutputTensors(outputTensors);                                              \
     for (auto& attrInfo : tilingContextPara.attrs_) {                                                                  \

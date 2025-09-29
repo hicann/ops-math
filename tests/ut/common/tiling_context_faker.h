@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 #ifndef OPS_MATH_DEV_TESTS_UT_COMMON_TILING_CONTEXT_FAKER_H
@@ -20,12 +21,18 @@ class TilingContextPara {
 public:
     class TensorDescription {
     public:
-        TensorDescription(const gert::StorageShape& shape, ge::DataType dtype, ge::Format format) :
-            shape_(shape), dtype_(dtype), format_(format) {}
+        TensorDescription(const gert::StorageShape& shape, 
+                          ge::DataType dtype, 
+                          ge::Format format, 
+                          bool isConst = false, 
+                          void* constValue = nullptr) :
+            shape_(shape), dtype_(dtype), format_(format), isConst_(isConst), constValue_(constValue) {}
     public:
         gert::StorageShape shape_;
         ge::DataType dtype_ = ge::DT_FLOAT;
         ge::Format format_ = ge::FORMAT_ND;
+        bool isConst_ = false;
+        void* constValue_ = nullptr;
     };
 
     class OpAttr {
@@ -68,8 +75,49 @@ public:
                       ubSize_(ubSize),
                       tilingDataSize_(tilingDataSize) {}
 
+    TilingContextPara(const std::string& opName,
+                      const std::vector<TensorDescription>& inputTensorDesc,
+                      const std::vector<TensorDescription>& outputTensorDesc,
+                      const std::vector<OpAttr>& attrs,
+                      const std::vector<uint32_t>& inputInstanceNum,
+                      const std::vector<uint32_t>& outputInstanceNum,
+                      void* compileInfo = nullptr,
+                      uint64_t coreNum = 64,
+                      uint64_t ubSize = 262144,
+                      uint64_t tilingDataSize = 4096) : 
+                      opName_(opName),
+                      inputTensorDesc_(inputTensorDesc),
+                      outputTensorDesc_(outputTensorDesc),
+                      attrs_(attrs),
+                      inputInstanceNum_(inputInstanceNum),
+                      outputInstanceNum_(outputInstanceNum),
+                      compileInfo_(compileInfo),
+                      coreNum_(coreNum),
+                      ubSize_(ubSize),
+                      tilingDataSize_(tilingDataSize) {}
+
+    TilingContextPara(const std::string& opName,
+                      const std::vector<TensorDescription>& inputTensorDesc,
+                      const std::vector<TensorDescription>& outputTensorDesc,
+                      const std::vector<uint32_t>& inputInstanceNum,
+                      const std::vector<uint32_t>& outputInstanceNum,
+                      void* compileInfo = nullptr,
+                      uint64_t coreNum = 64,
+                      uint64_t ubSize = 262144,
+                      uint64_t tilingDataSize = 4096) : 
+                      opName_(opName),
+                      inputTensorDesc_(inputTensorDesc),
+                      outputTensorDesc_(outputTensorDesc),
+                      inputInstanceNum_(inputInstanceNum),
+                      outputInstanceNum_(outputInstanceNum),
+                      compileInfo_(compileInfo),
+                      coreNum_(coreNum),
+                      ubSize_(ubSize),
+                      tilingDataSize_(tilingDataSize) {}
 public:
     std::string opName_;
+    std::vector<uint32_t> inputInstanceNum_;
+    std::vector<uint32_t> outputInstanceNum_;
     std::vector<TensorDescription> inputTensorDesc_;
     std::vector<TensorDescription> outputTensorDesc_;
     std::vector<OpAttr> attrs_;

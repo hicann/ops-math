@@ -4,14 +4,15 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 #include <gtest/gtest.h>
 #include <iostream>
 #include "infershape_context_faker.h"
-#include "base/registry/op_impl_space_registry_v2.h"
+#include "infershape_case_executor.h"
 
 class IsFiniteInfershape : public testing::Test
 {
@@ -27,59 +28,22 @@ protected:
     }
 };
 
-static std::vector<int64_t> ToVector(const gert::Shape& shape) {
-    size_t shapeSize = shape.GetDimNum();
-    std::vector<int64_t> shapeVec(shapeSize, 0);
-
-    for (size_t i = 0; i < shapeSize; i++) {
-        shapeVec[i] = shape.GetDim(i);
-    }
-    return shapeVec;
-}
-
-static void ExeTestCase(const gert::StorageShape& xStorageShape,
-                        ge::DataType inputDtype,
-                        ge::DataType outputDtype,
-                        gert::StorageShape& yStorageShape,
-                        ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
-{
-    /* make infershape context */
-    std::vector<gert::Tensor *> inputTensors = {(gert::Tensor *)&xStorageShape};
-    std::vector<gert::StorageShape *> outputShapes = {&yStorageShape};
-    auto contextHolder = gert::InferShapeContextFaker()
-        .SetOpType("IsFinite")
-        .NodeIoNum(1, 1)
-        .NodeInputTd(0, inputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .InputTensors(inputTensors)
-        .OutputShapes(outputShapes)
-        .Build();
-
-    /* get infershape func */
-    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
-    auto inferShapeFunc = spaceRegistry->GetOpImpl("IsFinite")->infer_shape;
-    ASSERT_NE(inferShapeFunc, nullptr);
-
-    /* do infershape */
-    EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
-}
-
 TEST_F(IsFiniteInfershape, is_finite_infershape_test1)
 {
-    gert::StorageShape xStorageShape = {{3, 4}, {3, 4}};
-    gert::StorageShape yStorageShape = {};
-    std::vector<int64_t> expectResult = {3, 4};
-    ExeTestCase(xStorageShape, ge::DT_FLOAT, ge::DT_BOOL, yStorageShape, ge::GRAPH_SUCCESS);
-    EXPECT_EQ(ToVector(yStorageShape.GetOriginShape()), expectResult);
+    gert::InfershapeContextPara infershapeContextPara("IsFinite",
+                                                      {{{{3, 4}, {3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},},
+                                                      {{{{}, {}}, ge::DT_BOOL, ge::FORMAT_ND},});
+    std::vector<std::vector<int64_t>> expectOutputShape = {{3, 4},};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 TEST_F(IsFiniteInfershape, is_finite_infershape_test2)
 {
-    gert::StorageShape xStorageShape = {{5, -1}, {5, -1}};
-    gert::StorageShape yStorageShape = {};
-    std::vector<int64_t> expectResult = {5, -1};
-    ExeTestCase(xStorageShape, ge::DT_FLOAT, ge::DT_BOOL, yStorageShape, ge::GRAPH_SUCCESS);
-    EXPECT_EQ(ToVector(yStorageShape.GetOriginShape()), expectResult);
+    gert::InfershapeContextPara infershapeContextPara("IsFinite",
+                                                      {{{{5, -1}, {5, -1}}, ge::DT_FLOAT, ge::FORMAT_ND},},
+                                                      {{{{}, {}}, ge::DT_BOOL, ge::FORMAT_ND},});
+    std::vector<std::vector<int64_t>> expectOutputShape = {{5, -1},};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 //TEST_F(is_finite, is_finite_infershape_test3)
