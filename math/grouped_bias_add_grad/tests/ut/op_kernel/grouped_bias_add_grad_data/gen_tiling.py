@@ -13,7 +13,7 @@
 import numpy as np
 import sys
 
-case0_params = [16, 16, 1, 0, 5, 16, 568, 128, 0, 128, 119, 5, 0] # no group_idx float16
+case0_params = [4, 1, 1, 0, 10, 1, 4, 0, 10, 128, 119, 5, 0] # no group_idx float16
 case1_params = [16, 16, 1, 0, 17, 16, 2000, 128, 0, 128, 119, 17, 0] # no group_idx float32
 case2_params = [6, 6, 1, 0, 1, 3, 0, 256, 100, 128, 119, 0, 0] # group_idx bfloat16
 case3_params = [12, 12, 1, 0, 17, 3, 0, 458, 1968, 128, 119, 0, 0] # group_idx float16
@@ -77,8 +77,15 @@ def main():
     print("grouped_bias_add_grad case: ", case)
     tiling = np.array(params_info.get(case), dtype=np.int64)
 
-    tiling_file = open("tiling.bin", "wb")
-    tiling.tofile(tiling_file)
+    first4 = tiling[:4]
+    middle = tiling[4:-4]
+    last4 = tiling[-4:]
+
+    # 写入文件（前4和后4按uint32_t，中间按int64）
+    with open("tiling.bin", "wb") as tiling_file:
+        first4.astype(np.uint32).tofile(tiling_file)  # 前4个按uint32存储
+        middle.tofile(tiling_file)                    # 中间按int64存储
+        last4.astype(np.uint32).tofile(tiling_file)   # 后4个按uint32存储
 
 
 if __name__ == '__main__':

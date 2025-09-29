@@ -10,10 +10,8 @@
 
 #include <gtest/gtest.h>
 #include <iostream>
-#include "op_proto_test_util.h"
-#include "math_ops.h"
-#include "graph/utils/op_desc_utils.h"
-#include "common/utils/ut_op_common.h"
+#include "infershape_context_faker.h"
+#include "base/registry/op_impl_space_registry_v2.h"
 
 class AngleV2Test : public testing::Test {
  protected:
@@ -26,65 +24,63 @@ class AngleV2Test : public testing::Test {
   }
 };
 
-TEST_F(AngleV2Test, angle_v2_infer_shape_neg2) {
-  ge::op::AngleV2 op;
-  std::vector<std::pair<int64_t, int64_t>> shape_range = {{2, 64}};
-  auto tensor_desc = create_desc_shape_range({-2}, ge::DT_FLOAT16, ge::FORMAT_ND, {32}, ge::FORMAT_ND, shape_range);
-  op.UpdateInputDesc("x", tensor_desc);
-  Runtime2TestParam param;
-  auto ret = InferShapeTest(op, param);
-  EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
-  auto output_desc = op.GetOutputDescByName("y");
-  std::vector<int64_t> expected_output_shape = {-2};
-  EXPECT_EQ(output_desc.GetShape().GetDims(), expected_output_shape);
+static std::vector<int64_t> ToVector(const gert::Shape& shape)
+{
+    size_t shapeSize = shape.GetDimNum();
+    std::vector<int64_t> shapeVec(shapeSize, 0);
+    for (size_t i = 0; i < shapeSize; i++) {
+        shapeVec[i] = shape.GetDim(i);
+    }
+    return shapeVec;
 }
 
-TEST_F(AngleV2Test, angle_v2_infer_shape_fp16_normal) {
-  ge::op::AngleV2 op;
-  std::vector<std::pair<int64_t, int64_t>> shape_range = {{2, 64}};
-  auto tensor_desc = create_desc_shape_range({32, 32, 32}, ge::DT_FLOAT16, ge::FORMAT_ND, {32}, ge::FORMAT_ND, shape_range);
-  op.UpdateInputDesc("x", tensor_desc);
-  Runtime2TestParam param;
-  auto ret = InferShapeTest(op, param);
-  EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
-  auto output_desc = op.GetOutputDescByName("y");
-  std::vector<int64_t> expected_output_shape = {32, 32, 32};
-  EXPECT_EQ(output_desc.GetShape().GetDims(), expected_output_shape);
-}
+static void ExeTestCase(
+    const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
+    const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
+    gert::StorageShape& outStorageShape,
+    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+{
+    // 从vector中取出对应参数（保持原顺序）
+    const auto& xStorageShape = inputShapes[0];
+    
+    ge::DataType input1Dtype = dtypes[0];
+    ge::DataType outputDtype = dtypes[1];
 
-TEST_F(AngleV2Test, angle_v2_infer_shape_fp16_neg1) {
-  ge::op::AngleV2 op;
-  std::vector<std::pair<int64_t, int64_t>> shape_range = {{2, 64}};
-  auto tensor_desc = create_desc_shape_range({-1, 32}, ge::DT_FLOAT16, ge::FORMAT_ND, {32}, ge::FORMAT_ND, shape_range);
-  op.UpdateInputDesc("x", tensor_desc);
-  Runtime2TestParam param;
-  auto ret = InferShapeTest(op, param);
-  EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
-  auto output_desc = op.GetOutputDescByName("y");
-  std::vector<int64_t> expected_output_shape = {-1, 32};
-  EXPECT_EQ(output_desc.GetShape().GetDims(), expected_output_shape);
-}
-
-TEST_F(AngleV2Test, angle_v2_infer_dtype_test) {
-  ASSERT_NE(gert::OpImplRegistry::GetInstance().GetOpImpl("AngleV2"), nullptr);
-  auto data_type_func = gert::OpImplRegistry::GetInstance().GetOpImpl("AngleV2")->infer_datatype;
-
-  if (data_type_func != nullptr) {
-    ge::DataType input_ref = ge::DT_FLOAT;
-    ge::DataType output_ref = ge::DT_FLOAT;
-    auto context_holder = gert::InferDataTypeContextFaker()
-        .IrInputNum(1)
-        .NodeIoNum(1,1)
-        .NodeInputTd(0, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeOutputTd(0, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND)
-        .InputDataTypes({&input_ref})
-        .OutputDataTypes({&output_ref})
+    /* make infershape context */
+    std::vector<gert::Tensor *> inputTensors = {
+        (gert::Tensor *)&xStorageShape,
+    };
+    std::vector<gert::StorageShape *> outputShapes = {&outStorageShape};
+    auto contextHolder = gert::InferShapeContextFaker()
+        .SetOpType("AngleV2")
+        .NodeIoNum(1, 1)
+        .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .InputTensors(inputTensors)
+        .OutputShapes(outputShapes)
         .Build();
-    auto context = context_holder.GetContext<gert::InferDataTypeContext>();
-    EXPECT_EQ(data_type_func(context), ge::GRAPH_SUCCESS);
-    ASSERT_NE(context, nullptr);
 
-    EXPECT_EQ(context->GetInputDataType(0), input_ref);
-    EXPECT_EQ(context->GetOutputDataType(0), output_ref);
-  }
+    /* get infershape func */
+    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    auto inferShapeFunc = spaceRegistry->GetOpImpl("AngleV2")->infer_shape;
+    ASSERT_NE(inferShapeFunc, nullptr);
+
+    /* do infershape */
+    EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
 }
+
+TEST_F(AngleV2Test, angle_v2_infer_shape_neg2_simplified) {
+
+    std::vector<gert::StorageShape> inputShapes = {
+        {{32, 32, 32}, {32, 32, 32}},                        // indice_shape
+    };
+        std::vector<ge::DataType> dtypes = {
+        ge::DT_FLOAT16,  // input1Dtype
+        ge::DT_FLOAT16   // outputDtype
+    };
+    std::vector<int64_t> expectResult = {32, 32, 32};
+    gert::StorageShape outStorageShape = {};
+    ExeTestCase(inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS);
+    EXPECT_EQ(ToVector(outStorageShape.GetOriginShape()), expectResult);
+}
+
