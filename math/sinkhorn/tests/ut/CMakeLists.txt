@@ -9,10 +9,6 @@
 # ----------------------------------------------------------------------------
 
 file(GLOB CURRENT_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
-if(NOT (OP_API_UT OR OP_HOST_UT))
-    list(REMOVE_ITEM CURRENT_DIRS op_host)
-endif()
-list(REMOVE_ITEM CURRENT_DIRS op_host)
 foreach(SUB_DIR ${CURRENT_DIRS})
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${SUB_DIR}/CMakeLists.txt")
         add_subdirectory(${SUB_DIR})

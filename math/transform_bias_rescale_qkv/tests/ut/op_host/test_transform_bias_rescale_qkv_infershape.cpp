@@ -8,12 +8,10 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <gtest/gtest.h> // NOLINT
+#include <gtest/gtest.h>
 #include <iostream>
-#include "op_proto_test_util.h" // NOLINT
-#include "../../../op_graph/transform_bias_rescale_qkv_proto.h"
-#include "graph/utils/op_desc_utils.h"
-#include "common/utils/ut_op_common.h"
+#include "infershape_context_faker.h"
+#include "base/registry/op_impl_space_registry_v2.h"
 
 class TransformBiasRescaleQkv : public testing::Test
 {
@@ -31,9 +29,39 @@ protected:
 
 TEST_F(TransformBiasRescaleQkv, TransformBiasRescaleQkv_infershape_case_0)
 {
-    ge::op::TransformBiasRescaleQkv op;
-    op.UpdateInputDesc("qkv", create_desc({3, 4, 144}, ge::DT_FLOAT16));
-    op.UpdateInputDesc("qkv_bias", create_desc({144}, ge::DT_FLOAT16));
+    gert::StorageShape qkvStorageShape = {{3, 4, 144}, {3, 4, 144}};
+    gert::StorageShape biasStorageShape = {{144}, {144}};
+    gert::StorageShape outputShape = {{}, {}};
+    
+    ge::DataType qkvDtype = ge::DT_FLOAT16;
+    ge::DataType biasDtype = ge::DT_FLOAT16;
+    ge::DataType outputDtype = ge::DT_FLOAT16;
 
-    EXPECT_EQ(InferShapeTest(op), ge::GRAPH_SUCCESS);
+    /* make infershape context */
+    std::vector<gert::Tensor *> inputTensors  = {
+        (gert::Tensor *)&qkvStorageShape,(gert::Tensor *)&biasStorageShape,
+    };
+
+    std::vector<gert::StorageShape *> outputShapes = {&outputShape, &outputShape, &outputShape};
+
+    auto contextHolder = gert::InferShapeContextFaker()
+        .SetOpType("TransformBiasRescaleQkv")
+        .NodeIoNum(2, 3)
+        .NodeInputTd(0, qkvDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(1, biasDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeOutputTd(1, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeOutputTd(2, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .InputTensors(inputTensors)
+        .OutputShapes(outputShapes)
+        .Attr("num_heads", (int64_t)3)
+        .Build();
+
+    /* get infershape func */
+    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    auto inferShapeFunc = spaceRegistry->GetOpImpl("TransformBiasRescaleQkv")->infer_shape;
+    ASSERT_NE(inferShapeFunc, nullptr);
+
+    /* do infershape */
+    EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), ge::GRAPH_SUCCESS);
 }
