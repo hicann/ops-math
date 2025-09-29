@@ -17,6 +17,7 @@
 #define GROUPED_BIAS_ADD_GRAD_TILING_H
 
 #include "grouped_bias_add_grad_tiling_def.h"
+#include "tiling_base/tiling_base.h"
 
 namespace optiling {
 namespace groupedbiasaddgrad {
