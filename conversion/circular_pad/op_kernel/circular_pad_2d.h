@@ -27,7 +27,6 @@ public:
         const CircularPadCommonTilingData& __restrict tiling_data)
     {
         this->Init(tiling_data);
-
         uint32_t blockId = static_cast<uint32_t>(GetBlockIdx());
         uint32_t startIdx = this->perCoreTaskNum_ * blockId;
         if (blockId < this->tailTaskNum_) {

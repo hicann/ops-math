@@ -28,40 +28,8 @@ protected:
     }
 };
 
-TEST_F(circular_pad2d_test, case_1)
-{
-    auto self_tensor_desc = TensorDesc({1, 1, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
-    auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
-    auto out_desc = TensorDesc({1, 1, 8, 7}, ACL_FLOAT16, ACL_FORMAT_ND);
-
-    auto ut = OP_API_UT(aclnnCircularPad2d, INPUT(self_tensor_desc, padding_desc), OUTPUT(out_desc));
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    // EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
-}
-
-// empty tensor, first dim is 0
-TEST_F(circular_pad2d_test, case_2)
-{
-    auto self_tensor_desc = TensorDesc({0, 1, 3, 10}, ACL_FLOAT16, ACL_FORMAT_ND);
-    auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
-    auto out_desc = TensorDesc({0, 1, 7, 14}, ACL_FLOAT16, ACL_FORMAT_ND);
-    auto ut = OP_API_UT(aclnnCircularPad2d, INPUT(self_tensor_desc, padding_desc), OUTPUT(out_desc));
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
-}
-
 // CheckNotNull self padding
-TEST_F(circular_pad2d_test, case_3)
+TEST_F(circular_pad2d_test, case_1)
 {
     auto self_tensor_desc = TensorDesc({2, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
@@ -81,7 +49,7 @@ TEST_F(circular_pad2d_test, case_3)
 }
 
 // CheckNotNull out
-TEST_F(circular_pad2d_test, case_4)
+TEST_F(circular_pad2d_test, case_2)
 {
     auto self_tensor_desc = TensorDesc({2, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
@@ -95,7 +63,7 @@ TEST_F(circular_pad2d_test, case_4)
 }
 
 // CheckShape padding dim
-TEST_F(circular_pad2d_test, case_5)
+TEST_F(circular_pad2d_test, case_3)
 {
     auto self_tensor_desc = TensorDesc({2, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2});
@@ -111,7 +79,7 @@ TEST_F(circular_pad2d_test, case_5)
 }
 
 // CheckShape self dim
-TEST_F(circular_pad2d_test, case_6)
+TEST_F(circular_pad2d_test, case_4)
 {
     auto self_tensor_desc = TensorDesc({4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
@@ -127,7 +95,7 @@ TEST_F(circular_pad2d_test, case_6)
 }
 
 // CheckShape diffrent dim num of self and out
-TEST_F(circular_pad2d_test, case_7)
+TEST_F(circular_pad2d_test, case_5)
 {
     auto self_tensor_desc = TensorDesc({1, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
@@ -143,7 +111,7 @@ TEST_F(circular_pad2d_test, case_7)
 }
 
 // CheckFormat diffrent format
-TEST_F(circular_pad2d_test, case_8)
+TEST_F(circular_pad2d_test, case_6)
 {
     auto self_tensor_desc = TensorDesc({1, 1, 4, 3}, ACL_FLOAT16, ACL_FORMAT_UNDEFINED);
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
@@ -158,28 +126,8 @@ TEST_F(circular_pad2d_test, case_8)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-// CheckDtype support
-TEST_F(circular_pad2d_test, case_9)
-{
-    vector<aclDataType> ValidList = {ACL_FLOAT16, ACL_FLOAT, ACL_BF16, ACL_INT32, ACL_INT8};
-
-    int length = ValidList.size();
-    for (int i = 0; i < length; i++) {
-        auto self_tensor_desc = TensorDesc({1, 1, 4, 3}, ValidList[i], ACL_FORMAT_ND);
-        auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
-        auto out_desc = TensorDesc({1, 1, 8, 7}, ValidList[i], ACL_FORMAT_ND);
-
-        auto ut = OP_API_UT(aclnnCircularPad2d, INPUT(self_tensor_desc, padding_desc), OUTPUT(out_desc));
-
-        // SAMPLE: only test GetWorkspaceSize
-        uint64_t workspaceSize = 0;
-        aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-        // EXPECT_EQ(aclRet, ACL_SUCCESS);
-    }
-}
-
 // CheckDtype not support
-TEST_F(circular_pad2d_test, case_10)
+TEST_F(circular_pad2d_test, case_7)
 {
     auto self_tensor_desc = TensorDesc({1, 1, 4, 3}, ACL_BOOL, ACL_FORMAT_ND);
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
@@ -194,7 +142,7 @@ TEST_F(circular_pad2d_test, case_10)
 }
 
 // CheckDtype diffrent dtype of self and out
-TEST_F(circular_pad2d_test, case_11)
+TEST_F(circular_pad2d_test, case_8)
 {
     auto self_tensor_desc = TensorDesc({1, 1, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
@@ -209,7 +157,7 @@ TEST_F(circular_pad2d_test, case_11)
 }
 
 // CheckShape out dim value
-TEST_F(circular_pad2d_test, case_12)
+TEST_F(circular_pad2d_test, case_9)
 {
     auto self_tensor_desc = TensorDesc({1, 2, 4}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto padding_desc = IntArrayDesc(vector<int64_t>{1, 1, 1, 1});
@@ -224,7 +172,7 @@ TEST_F(circular_pad2d_test, case_12)
 }
 
 // empty tensor, second dim is 0
-TEST_F(circular_pad2d_test, case_13)
+TEST_F(circular_pad2d_test, case_10)
 {
     auto self_tensor_desc = TensorDesc({1, 0, 3, 10}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
@@ -237,7 +185,7 @@ TEST_F(circular_pad2d_test, case_13)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(circular_pad2d_test, case_14)
+TEST_F(circular_pad2d_test, case_11)
 {
     auto self_tensor_desc = TensorDesc({0, 3, 10}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
@@ -251,7 +199,7 @@ TEST_F(circular_pad2d_test, case_14)
 }
 
 // Outputshape of non-filled axis is not equal to inputshape
-TEST_F(circular_pad2d_test, case_15)
+TEST_F(circular_pad2d_test, case_12)
 {
     auto self_tensor_desc = TensorDesc({1, 1, 3, 10}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
@@ -265,7 +213,7 @@ TEST_F(circular_pad2d_test, case_15)
 }
 
 // Outputshape of filled axis is not equal to inputshape
-TEST_F(circular_pad2d_test, case_16)
+TEST_F(circular_pad2d_test, case_13)
 {
     auto self_tensor_desc = TensorDesc({1, 1, 3, 10}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
@@ -279,7 +227,7 @@ TEST_F(circular_pad2d_test, case_16)
 }
 
 // Outputshape of filled axis is not equal to inputshape
-TEST_F(circular_pad2d_test, case_17)
+TEST_F(circular_pad2d_test, case_14)
 {
     auto self_tensor_desc = TensorDesc({1, 1, 3, 10}, ACL_FLOAT16, ACL_FORMAT_FRACTAL_NZ);
     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});

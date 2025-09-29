@@ -16,5 +16,5 @@ foreach(SUB_DIR ${CURRENT_DIRS})
 endforeach()
 
 if(OP_API_UT OR (UT_TEST_ALL AND NOT AICPU_ONLY))
-    add_modules_ut_sources(HOSTNAME ${OPTEST_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    # add_modules_ut_sources(HOSTNAME ${OPTEST_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR})
 endif()

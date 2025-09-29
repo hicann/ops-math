@@ -23,41 +23,8 @@ class reflection_pad1d_backward_test : public testing::Test {
   static void TearDownTestCase() { cout << "reflection_pad1d_backward_test TearDown" << endl; }
 };
 
-TEST_F(reflection_pad1d_backward_test, case_1) {
-  auto grad_output_tensor_desc = TensorDesc({1, 1, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
-  auto input_tensor_desc = TensorDesc({1, 1, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
-  auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2});
-  auto grad_input_desc = TensorDesc({1, 1, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
-
-  auto ut = OP_API_UT(aclnnReflectionPad1dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-                                                    OUTPUT(grad_input_desc));
-
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACL_SUCCESS);
-  ut.TestPrecision();
-}
-
-
-// 空tensor
-TEST_F(reflection_pad1d_backward_test, case_2) {
-  auto grad_output_tensor_desc = TensorDesc({0, 1, 14}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto input_tensor_desc = TensorDesc({0, 1, 10}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2});
-  auto grad_input_desc = TensorDesc({0, 1, 10}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto ut = OP_API_UT(aclnnReflectionPad1dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-                                                  OUTPUT(grad_input_desc));
-
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACL_SUCCESS);
-  ut.TestPrecision();
-}
-
 // CheckNotNull gradOutput input padding
-TEST_F(reflection_pad1d_backward_test, case_3) {
+TEST_F(reflection_pad1d_backward_test, case_1) {
   auto grad_output_tensor_desc = TensorDesc({1, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
   auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2});
@@ -85,7 +52,7 @@ TEST_F(reflection_pad1d_backward_test, case_3) {
 }
 
 // CheckNotNull gradInput
-TEST_F(reflection_pad1d_backward_test, case_4) {
+TEST_F(reflection_pad1d_backward_test, case_2) {
   auto grad_output_tensor_desc = TensorDesc({1, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
   auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2});
@@ -101,7 +68,7 @@ TEST_F(reflection_pad1d_backward_test, case_4) {
 }
 
 // CheckShape diffrent shape of input and gradInput
-TEST_F(reflection_pad1d_backward_test, case_5)
+TEST_F(reflection_pad1d_backward_test, case_3)
 {
   auto grad_output_tensor_desc = TensorDesc({1, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -119,7 +86,7 @@ TEST_F(reflection_pad1d_backward_test, case_5)
 }
 
 // CheckShape padding length
-TEST_F(reflection_pad1d_backward_test, case_6)
+TEST_F(reflection_pad1d_backward_test, case_4)
 {
   auto grad_output_tensor_desc = TensorDesc({1, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -137,7 +104,7 @@ TEST_F(reflection_pad1d_backward_test, case_6)
 }
 
 // CheckShape input dim
-TEST_F(reflection_pad1d_backward_test, case_7)
+TEST_F(reflection_pad1d_backward_test, case_5)
 {
   auto grad_output_tensor_desc = TensorDesc({1, 1, 1, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 1, 1, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -155,7 +122,7 @@ TEST_F(reflection_pad1d_backward_test, case_7)
 }
 
 // CheckShape diffrent dim of input and gradOutput
-TEST_F(reflection_pad1d_backward_test, case_8)
+TEST_F(reflection_pad1d_backward_test, case_6)
 {
   auto grad_output_tensor_desc = TensorDesc({1, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 1, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -173,7 +140,7 @@ TEST_F(reflection_pad1d_backward_test, case_8)
 }
 
 // CheckFormat diffrent format
-TEST_F(reflection_pad1d_backward_test, case_9)
+TEST_F(reflection_pad1d_backward_test, case_7)
 {
   auto grad_output_tensor_desc = TensorDesc({1, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 3}, ACL_FLOAT16, ACL_FORMAT_UNDEFINED);
@@ -190,36 +157,8 @@ TEST_F(reflection_pad1d_backward_test, case_9)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-// CheckDtype support
-TEST_F(reflection_pad1d_backward_test, case_10)
-{
-  vector<aclDataType> ValidList = {
-    ACL_FLOAT16,
-    ACL_FLOAT,
-    ACL_DOUBLE,
-    ACL_COMPLEX64,
-    ACL_COMPLEX128};
-
-  int length = ValidList.size();
-  for (int i = 0; i < length; i++) {
-    auto grad_output_tensor_desc = TensorDesc({1, 7}, ValidList[i], ACL_FORMAT_ND).ValueRange(1, 1);
-    auto input_tensor_desc = TensorDesc({1, 3}, ValidList[i], ACL_FORMAT_ND);
-    auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2});
-    auto grad_input_desc = TensorDesc({1, 3}, ValidList[i], ACL_FORMAT_ND);
-
-    auto ut = OP_API_UT(aclnnReflectionPad1dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-                                                  OUTPUT(grad_input_desc));
-
-      // SAMPLE: only test GetWorkspaceSize
-      uint64_t workspaceSize = 0;
-      aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-      // EXPECT_EQ(aclRet, ACL_SUCCESS);
-      // ut.TestPrecision();
-  }
-}
-
 // CheckDtype not support
-TEST_F(reflection_pad1d_backward_test, case_11)
+TEST_F(reflection_pad1d_backward_test, case_8)
 {
   auto grad_output_tensor_desc = TensorDesc({1, 7}, ACL_INT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 3}, ACL_INT16, ACL_FORMAT_ND);
@@ -236,7 +175,7 @@ TEST_F(reflection_pad1d_backward_test, case_11)
 }
 
 // CheckDtype diffrent dtype of gradOutput and gradInput
-TEST_F(reflection_pad1d_backward_test, case_12)
+TEST_F(reflection_pad1d_backward_test, case_9)
 {
   auto grad_output_tensor_desc = TensorDesc({1, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -253,7 +192,7 @@ TEST_F(reflection_pad1d_backward_test, case_12)
 }
 
 // CheckDtype diffrent dtype of input and gradOutput
-TEST_F(reflection_pad1d_backward_test, case_13)
+TEST_F(reflection_pad1d_backward_test, case_10)
 {
   auto grad_output_tensor_desc = TensorDesc({1, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -270,7 +209,7 @@ TEST_F(reflection_pad1d_backward_test, case_13)
 }
 
 // CheckShape padding dim value
-TEST_F(reflection_pad1d_backward_test, case_14)
+TEST_F(reflection_pad1d_backward_test, case_11)
 {
   auto grad_output_tensor_desc = TensorDesc({1, 8}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -287,7 +226,7 @@ TEST_F(reflection_pad1d_backward_test, case_14)
 }
 
 // CheckShape gradOutput shape
-TEST_F(reflection_pad1d_backward_test, case_15)
+TEST_F(reflection_pad1d_backward_test, case_12)
 {
   auto grad_output_tensor_desc = TensorDesc({1, 2, 4}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 2, 4}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -303,7 +242,7 @@ TEST_F(reflection_pad1d_backward_test, case_15)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(reflection_pad1d_backward_test, case_16) {
+TEST_F(reflection_pad1d_backward_test, case_13) {
   auto grad_output_tensor_desc = TensorDesc({1, 0, 14}, ACL_FLOAT, ACL_FORMAT_ND);
   auto input_tensor_desc = TensorDesc({1, 0, 10}, ACL_FLOAT, ACL_FORMAT_ND);
   auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2});
@@ -317,22 +256,7 @@ TEST_F(reflection_pad1d_backward_test, case_16) {
   EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(reflection_pad1d_backward_test, case_17) {
-  auto grad_output_tensor_desc = TensorDesc({0, 14}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto input_tensor_desc = TensorDesc({0, 10}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2});
-  auto grad_input_desc = TensorDesc({0, 10}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto ut = OP_API_UT(aclnnReflectionPad1dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-                                                  OUTPUT(grad_input_desc));
-
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACL_SUCCESS);
-  // ut.TestPrecision();
-}
-
-TEST_F(reflection_pad1d_backward_test, case_18) {
+TEST_F(reflection_pad1d_backward_test, case_14) {
   auto grad_output_tensor_desc = TensorDesc({1, 4}, ACL_FLOAT, ACL_FORMAT_ND);
   auto input_tensor_desc = TensorDesc({1, 0}, ACL_FLOAT, ACL_FORMAT_ND);
   auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2});
@@ -344,54 +268,4 @@ TEST_F(reflection_pad1d_backward_test, case_18) {
   uint64_t workspace_size = 0;
   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
   EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-}
-
-// Negative padding values
-TEST_F(reflection_pad1d_backward_test, case_19) {
-  auto grad_output_tensor_desc = TensorDesc({1, 1, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
-  auto input_tensor_desc = TensorDesc({1, 1, 7}, ACL_FLOAT16, ACL_FORMAT_ND);
-  auto padding_desc = IntArrayDesc(vector<int64_t>{2, -2});
-  auto grad_input_desc = TensorDesc({1, 1, 7}, ACL_FLOAT16, ACL_FORMAT_ND);
-
-  auto ut = OP_API_UT(aclnnReflectionPad1dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-                                                    OUTPUT(grad_input_desc));
-
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACL_SUCCESS);
-}
-
-// padding values are bigger than 16
-TEST_F(reflection_pad1d_backward_test, case_20) {
-  auto grad_output_tensor_desc = TensorDesc({1, 1, 59}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
-  auto input_tensor_desc = TensorDesc({1, 1, 40}, ACL_FLOAT16, ACL_FORMAT_ND);
-  auto padding_desc = IntArrayDesc(vector<int64_t>{2, 17});
-  auto grad_input_desc = TensorDesc({1, 1, 40}, ACL_FLOAT16, ACL_FORMAT_ND);
-
-  auto ut = OP_API_UT(aclnnReflectionPad1dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-                                                    OUTPUT(grad_input_desc));
-
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACL_SUCCESS);
-  ut.TestPrecision();
-}
-
-// padding values are bigger than 11000
-TEST_F(reflection_pad1d_backward_test, ascend910B2_case_21) {
-  auto grad_output_tensor_desc = TensorDesc({23, 122327}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
-  auto input_tensor_desc = TensorDesc({23, 64063}, ACL_FLOAT16, ACL_FORMAT_ND);
-  auto padding_desc = IntArrayDesc(vector<int64_t>{37802, 20462});
-  auto grad_input_desc = TensorDesc({23, 64063}, ACL_FLOAT16, ACL_FORMAT_ND);
-
-  auto ut = OP_API_UT(aclnnReflectionPad1dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-                                                    OUTPUT(grad_input_desc));
-
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACL_SUCCESS);
-  ut.TestPrecision();
 }

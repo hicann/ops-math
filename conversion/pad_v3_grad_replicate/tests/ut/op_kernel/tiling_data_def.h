@@ -18,51 +18,7 @@
 #define __aicore__
 #else
 #define __aicore__ [aicore]
-#endif
-
-typedef struct {
-    uint32_t batch = 0;
-    uint32_t channel = 0;
-    uint32_t height = 0;
-    uint32_t width = 0;
-    uint32_t alignHeight = 0;
-    uint32_t alignWidth = 0;
-    uint32_t outHeight = 0;
-    uint32_t outWidth = 0;
-    uint32_t alignOutHeight = 0;
-    uint32_t alignOutWidth = 0;
-    uint32_t padTop = 0;
-    uint32_t padBottom = 0;
-    uint32_t padLeft = 0;
-    uint32_t padRight = 0;
-    uint32_t blockNum = 0;
-    uint32_t ubFactorElement = 0;
-    uint32_t ncPerCore = 0;
-    uint32_t tailNC = 0;
-    uint32_t tilingKey = 0;
-    uint32_t wCalCount = 0;
-    uint64_t workspacePerCore = 0;
-
-} PadV3GradReplicateTilingData;
-
-struct InputParamsInfo {
-    uint32_t batch = 0;
-    uint32_t channel = 0;
-    uint32_t height = 0;
-    uint32_t width = 0;
-    uint32_t alignHeight = 0;
-    uint32_t alignWidth = 0;
-    uint32_t outHeight = 0;
-    uint32_t outWidth = 0;
-    uint32_t alignOutHeight = 0;
-    uint32_t alignOutWidth = 0;
-    int32_t padTop = 0;
-    int32_t padBottom = 0;
-    int32_t padLeft = 0;
-    int32_t padRight = 0;
-    uint32_t mode = 0;
-    uint32_t dtype = 1; // 1:float32; 2:float16; 3:bfloat16
-};
+#endif 
 
 inline __aicore__ int32_t AlignDiv32(int32_t n)
 {
