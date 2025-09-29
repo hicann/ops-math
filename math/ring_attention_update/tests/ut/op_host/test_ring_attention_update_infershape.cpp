@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
  
  /*!
@@ -15,10 +16,9 @@
 
 #include <iostream>
 #include <gtest/gtest.h>
-#include "op_proto_test_util.h"
-#include "all_ops.h"
-#include "graph/utils/op_desc_utils.h"
-#include "common/utils/ut_op_common.h"
+#include "infershape_context_faker.h"
+#include "infershape_case_executor.h"
+#include "base/registry/op_impl_space_registry_v2.h"
 
 class RingAttentionUpdate : public testing::Test {
  protected:
@@ -31,142 +31,92 @@ class RingAttentionUpdate : public testing::Test {
   }
 };
 
-TEST_F(RingAttentionUpdate, RingAttentionUpdate_infershape_test_0) {
-  ge::op::RingAttentionUpdate op;
-  auto tensor_desc_prev_attn_out = create_desc_shape_range(
-    {-1, -1, -1}, ge::DT_FLOAT16, ge::FORMAT_ND,
-    {1024, 2, 384}, ge::FORMAT_ND, {{1, -1}, {1, -1}, {1, -1}}
-  );
-  auto tensor_desc_prev_softmax_max = create_desc_shape_range(
-    {-1, -1, -1, -1}, ge::DT_FLOAT, ge::FORMAT_ND,
-    {2, 3, 1024, 8}, ge::FORMAT_ND, {{1, -1}, {1, -1}, {1, -1}, {1, -1}}
-  );
-  auto tensor_desc_prev_softmax_sum = create_desc_shape_range(
-    {-1, -1, -1, -1}, ge::DT_FLOAT, ge::FORMAT_ND,
-    {2, 3, 1024, 8}, ge::FORMAT_ND, {{1, -1}, {1, -1}, {1, -1}, {1, -1}}
-  );
-  auto tensor_desc_cur_attn_out = create_desc_shape_range(
-    {-1, -1, -1}, ge::DT_FLOAT16, ge::FORMAT_ND,
-    {1024, 2, 384}, ge::FORMAT_ND, {{1, -1}, {1, -1}, {1, -1}}
-  );
-  auto tensor_desc_cur_softmax_max = create_desc_shape_range(
-    {-1, -1, -1, -1}, ge::DT_FLOAT, ge::FORMAT_ND,
-    {2, 3, 1024, 8}, ge::FORMAT_ND, {{1, -1}, {1, -1}, {1, -1}, {1, -1}}
-  );
-  auto tensor_desc_cur_softmax_sum = create_desc_shape_range(
-    {-1, -1, -1, -1}, ge::DT_FLOAT, ge::FORMAT_ND,
-    {2, 3, 1024, 8}, ge::FORMAT_ND, {{1, -1}, {1, -1}, {1, -1}, {1, -1}}
-  );
-
-  op.UpdateInputDesc("prev_attn_out", tensor_desc_prev_attn_out);
-  op.UpdateInputDesc("prev_softmax_max", tensor_desc_prev_softmax_max);
-  op.UpdateInputDesc("prev_softmax_sum", tensor_desc_prev_softmax_sum);
-  op.UpdateInputDesc("cur_attn_out", tensor_desc_cur_attn_out);
-  op.UpdateInputDesc("cur_softmax_max", tensor_desc_cur_softmax_max);
-  op.UpdateInputDesc("cur_softmax_sum", tensor_desc_cur_softmax_sum);
-  op.SetAttr("input_layout", "SBH");
-  std::vector<int64_t> expected_attn_out = {-1, -1, -1};
-  std::vector<int64_t> expected_softmax_max = {-1, -1, -1, -1};
-  std::vector<int64_t> expected_softmax_sum = {-1, -1, -1, -1};
-  // runtime 2.0
-  Runtime2TestParam rt_param;
-  EXPECT_EQ(InferShapeTest(op, rt_param), ge::GRAPH_SUCCESS);
-  auto attn_out_desc = op.GetOutputDesc(0);
-  auto softmax_max_desc = op.GetOutputDesc(1);
-  auto softmax_sum_desc = op.GetOutputDesc(2);
-  EXPECT_EQ(attn_out_desc.GetShape().GetDims(), expected_attn_out);
-  EXPECT_EQ(softmax_max_desc.GetShape().GetDims(), expected_softmax_max);
-  EXPECT_EQ(softmax_sum_desc.GetShape().GetDims(), expected_softmax_sum);
+static std::vector<int64_t> ToVector(const gert::Shape& shape)
+{
+    size_t shapeSize = shape.GetDimNum();
+    std::vector<int64_t> shapeVec(shapeSize, 0);
+    for (size_t i = 0; i < shapeSize; i++) {
+        shapeVec[i] = shape.GetDim(i);
+    }
+    return shapeVec;
 }
 
-TEST_F(RingAttentionUpdate, RingAttentionUpdate_infershape_test_1) {
-  ge::op::RingAttentionUpdate op;
-  auto tensor_desc_prev_attn_out = create_desc_shape_range(
-    {1024, 2, 384}, ge::DT_FLOAT16, ge::FORMAT_ND,
-    {1024, 2, 384}, ge::FORMAT_ND, {{1, -1}, {1, -1}, {1, -1}}
-  );
-  auto tensor_desc_prev_softmax_max = create_desc_shape_range(
-    {2, 3, 1024, 8}, ge::DT_FLOAT, ge::FORMAT_ND,
-    {2, 3, 1024, 8}, ge::FORMAT_ND, {{1, -1}, {1, -1}, {1, -1}, {1, -1}}
-  );
-  auto tensor_desc_prev_softmax_sum = create_desc_shape_range(
-    {2, 3, 1024, 8}, ge::DT_FLOAT, ge::FORMAT_ND,
-    {2, 3, 1024, 8}, ge::FORMAT_ND, {{1, -1}, {1, -1}, {1, -1}, {1, -1}}
-  );
-  auto tensor_desc_cur_attn_out = create_desc_shape_range(
-    {1024, 2, 384}, ge::DT_FLOAT16, ge::FORMAT_ND,
-    {1024, 2, 384}, ge::FORMAT_ND, {{1, -1}, {1, -1}, {1, -1}}
-  );
-  auto tensor_desc_cur_softmax_max = create_desc_shape_range(
-    {2, 3, 1024, 8}, ge::DT_FLOAT, ge::FORMAT_ND,
-    {2, 3, 1024, 8}, ge::FORMAT_ND, {{1, -1}, {1, -1}, {1, -1}, {1, -1}}
-  );
-  auto tensor_desc_cur_softmax_sum = create_desc_shape_range(
-    {2, 3, 1024, 8}, ge::DT_FLOAT, ge::FORMAT_ND,
-    {2, 3, 1024, 8}, ge::FORMAT_ND, {{1, -1}, {1, -1}, {1, -1}, {1, -1}}
-  );
-
-  op.UpdateInputDesc("prev_attn_out", tensor_desc_prev_attn_out);
-  op.UpdateInputDesc("prev_softmax_max", tensor_desc_prev_softmax_max);
-  op.UpdateInputDesc("prev_softmax_sum", tensor_desc_prev_softmax_sum);
-  op.UpdateInputDesc("cur_attn_out", tensor_desc_cur_attn_out);
-  op.UpdateInputDesc("cur_softmax_max", tensor_desc_cur_softmax_max);
-  op.UpdateInputDesc("cur_softmax_sum", tensor_desc_cur_softmax_sum);
-  op.SetAttr("input_layout", "SBH");
-  std::vector<int64_t> expected_attn_out = {1024, 2, 384};
-  std::vector<int64_t> expected_softmax_max = {2, 3, 1024, 8};
-  std::vector<int64_t> expected_softmax_sum = {2, 3, 1024, 8};
-  // runtime 2.0
-  Runtime2TestParam rt_param;
-  EXPECT_EQ(InferShapeTest(op, rt_param), ge::GRAPH_SUCCESS);
-  auto attn_out_desc = op.GetOutputDesc(0);
-  auto softmax_max_desc = op.GetOutputDesc(1);
-  auto softmax_sum_desc = op.GetOutputDesc(2);
-  EXPECT_EQ(attn_out_desc.GetShape().GetDims(), expected_attn_out);
-  EXPECT_EQ(softmax_max_desc.GetShape().GetDims(), expected_softmax_max);
-  EXPECT_EQ(softmax_sum_desc.GetShape().GetDims(), expected_softmax_sum);
-}
-
-TEST_F(RingAttentionUpdate, RingAttentionUpdate_inferdtype_test_0) {
-  ASSERT_NE(gert::OpImplRegistry::GetInstance().GetOpImpl("RingAttentionUpdate"), nullptr);
-  auto data_type_func = gert::OpImplRegistry::GetInstance().GetOpImpl("RingAttentionUpdate")->infer_datatype;
-
-  if (data_type_func != nullptr) {
-    ge::DataType prev_attn_out_ref = ge::DT_FLOAT16;
-    ge::DataType prev_softmax_max_ref = ge::DT_FLOAT;
-    ge::DataType prev_softmax_sum_ref = ge::DT_FLOAT;
-    ge::DataType cur_attn_out_ref = ge::DT_FLOAT16;
-    ge::DataType cur_softmax_max_ref = ge::DT_FLOAT;
-    ge::DataType cur_softmax_sum_ref = ge::DT_FLOAT;
-
-    ge::DataType attn_out_ref = ge::DT_FLOAT16;
-    ge::DataType softmax_max_ref = ge::DT_FLOAT;
-    ge::DataType softmax_sum_ref = ge::DT_FLOAT;
-
-    auto context_holder = gert::InferDataTypeContextFaker()
+static void ExeTestCase(
+    const gert::StorageShape& prevAttnOutShape,
+    const gert::StorageShape& prevSoftmaxMaxShape,
+    const gert::StorageShape& prevSoftmaxSumShape,
+    const gert::StorageShape& curAttnOutShape,
+    const gert::StorageShape& curSoftmaxMaxShape,
+    const gert::StorageShape& curSoftmaxSumShape,
+    const ge::DataType& attnOutDtype,
+    const ge::DataType& softmaxDtype,
+    gert::StorageShape& attnOutShape,
+    gert::StorageShape& softmaxMaxShape,
+    gert::StorageShape& softmaxSumShape,
+    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+{
+    /* make infershape context */
+    std::vector<gert::Tensor *> inputTensors = {
+        (gert::Tensor *)&prevAttnOutShape,
+        (gert::Tensor *)&prevSoftmaxMaxShape,
+        (gert::Tensor *)&prevSoftmaxSumShape,
+        (gert::Tensor *)&curAttnOutShape,
+        (gert::Tensor *)&curSoftmaxMaxShape,
+        (gert::Tensor *)&curSoftmaxSumShape
+    };
+    std::vector<gert::StorageShape *> outputShapes = {
+        &attnOutShape,
+        &softmaxMaxShape,
+        &softmaxSumShape,
+    };
+    auto contextHolder = gert::InferShapeContextFaker()
+        .SetOpType("RingAttentionUpdate")
         .NodeIoNum(6, 3)
-        .IrInstanceNum({1, 1, 1, 1, 1, 1})
-        .NodeInputTd(0, ge::DT_FLOAT16, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(1, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(2, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(3, ge::DT_FLOAT16, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(4, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(5, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND)
-        .InputDataTypes({&prev_attn_out_ref, &prev_softmax_max_ref, &prev_softmax_sum_ref, &cur_attn_out_ref, &cur_softmax_max_ref, &cur_softmax_sum_ref})
-        .OutputDataTypes({&attn_out_ref, &softmax_max_ref, &softmax_sum_ref})
+        .NodeInputTd(0, attnOutDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(1, softmaxDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(2, softmaxDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(3, attnOutDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(4, softmaxDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(5, softmaxDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeOutputTd(0, attnOutDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeOutputTd(1, softmaxDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeOutputTd(2, softmaxDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .InputTensors(inputTensors)
+        .OutputShapes(outputShapes)
         .Build();
-    auto context = context_holder.GetContext<gert::InferDataTypeContext>();
-    EXPECT_EQ(data_type_func(context), ge::GRAPH_SUCCESS);
-    ASSERT_NE(context, nullptr);
-    EXPECT_EQ(context->GetInputDataType(0), prev_attn_out_ref);
-    EXPECT_EQ(context->GetInputDataType(1), prev_softmax_max_ref);
-    EXPECT_EQ(context->GetInputDataType(2), prev_softmax_sum_ref);
-    EXPECT_EQ(context->GetInputDataType(3), cur_attn_out_ref);
-    EXPECT_EQ(context->GetInputDataType(4), cur_softmax_max_ref);
-    EXPECT_EQ(context->GetInputDataType(5), cur_softmax_sum_ref);
 
-    EXPECT_EQ(context->GetOutputDataType(0), attn_out_ref);
-    EXPECT_EQ(context->GetOutputDataType(1), softmax_max_ref);
-    EXPECT_EQ(context->GetOutputDataType(2), softmax_sum_ref);
-  }
+    /* get infershape func */
+    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    auto inferShapeFunc = spaceRegistry->GetOpImpl("RingAttentionUpdate")->infer_shape;
+    ASSERT_NE(inferShapeFunc, nullptr);
+
+    /* do infershape */
+    EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
+}
+
+TEST_F(RingAttentionUpdate, RingAttentionUpdate_infershape_test_0) {
+  size_t sequence = 1024;
+  size_t batch = 2;
+  size_t headDim = 384;
+  size_t headNum = 3;
+  size_t lastDim = 8;
+  gert::StorageShape prevAttnOutShape = {{sequence, batch, headDim}, {sequence, batch, headDim}};
+  gert::StorageShape prevSoftmaxMaxShape = {{batch, headNum, sequence, lastDim}, {batch, headNum, sequence, lastDim}};
+  gert::StorageShape prevSoftmaxSumShape = {{batch, headNum, sequence, lastDim}, {batch, headNum, sequence, lastDim}};
+  gert::StorageShape curAttnOutShape = {{sequence, batch, headDim}, {sequence, batch, headDim}};
+  gert::StorageShape curSoftmaxMaxShape = {{batch, headNum, sequence, lastDim}, {batch, headNum, sequence, lastDim}};
+  gert::StorageShape curSoftmaxSumShape = {{batch, headNum, sequence, lastDim}, {batch, headNum, sequence, lastDim}};
+  gert::StorageShape attnOutShape = {};
+  gert::StorageShape softmaxMaxShape = {};
+  gert::StorageShape softmaxSumShape = {};
+  std::vector<int64_t> expectResult0 = {sequence, batch, headDim};
+  std::vector<int64_t> expectResult1 = {batch, headNum, sequence, lastDim};
+  std::vector<int64_t> expectResult2 = {batch, headNum, sequence, lastDim};
+  ExeTestCase(prevAttnOutShape, prevSoftmaxMaxShape, prevSoftmaxSumShape,
+              curAttnOutShape, curSoftmaxMaxShape, curSoftmaxSumShape,
+              ge::DT_FLOAT, ge::DT_FLOAT,
+              attnOutShape, softmaxMaxShape, softmaxSumShape, ge::GRAPH_SUCCESS);
+  EXPECT_EQ(ToVector(attnOutShape.GetOriginShape()), expectResult0);
+  EXPECT_EQ(ToVector(softmaxMaxShape.GetOriginShape()), expectResult1);
+  EXPECT_EQ(ToVector(softmaxSumShape.GetOriginShape()), expectResult2);
 }
