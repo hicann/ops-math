@@ -141,7 +141,7 @@ TEST_F(pad_v3_grad_replicate_test, test_bfloat16_case2)
     tilingData->tilingKey = 3101;
     tilingData->workspacePerCore = 128;
     tilingData->wCalCount = 32;
-  
+
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_SET_TILING_KEY(3101);
     ICPU_RUN_KF(
@@ -270,7 +270,6 @@ TEST_F(pad_v3_grad_replicate_test, test_bfloat16_case4)
     AscendC::GmFree((void*)workspace);
     AscendC::GmFree((void*)tiling);
 }
-
 
 TEST_F(pad_v3_grad_replicate_test, test_float32_case1)
 {

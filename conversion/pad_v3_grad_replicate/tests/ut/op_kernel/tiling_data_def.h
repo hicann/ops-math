@@ -19,7 +19,7 @@
 #define __aicore__
 #else
 #define __aicore__ [aicore]
-#endif 
+#endif
 
 inline __aicore__ int32_t AlignDiv32(int32_t n)
 {
