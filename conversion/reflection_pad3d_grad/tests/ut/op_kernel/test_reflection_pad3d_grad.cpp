@@ -21,7 +21,7 @@
 #include <functional>
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
-#include "test_reflection_pad3d_grad.h"
+#include "../../../op_host/reflection_pad3d_grad_tiling.h"
 
 constexpr uint8_t DIM3_NUM = 3;
 constexpr uint8_t KERNEL_DIM_IDX = 2;
@@ -65,20 +65,20 @@ void CallSimpleKernel(
     int dtype = tiling_key / 100 - 1;
     size_t inputByteSize = VectorReduceMul(inputShape) * KEY_MAP[dtype];
     size_t outputByteSize = VectorReduceMul(outputShape) * KEY_MAP[dtype];
-    size_t tilingDataSize = sizeof(ReflectionPad3dGradTilingDataInfo);
+    size_t tilingDataSize = sizeof(ReflectionPad3dGradTilingData);
     uint8_t* input = (uint8_t*)AscendC::GmAlloc(inputByteSize);
     uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(1024 * 1024 * 16);
     uint8_t* padvalues = (uint8_t*)AscendC::GmAlloc(10 * 4);
 
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(sizeof(ReflectionPad3dGradTilingDataInfo));
+    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(sizeof(ReflectionPad3dGradTilingData));
     memset(workspace, 0, 16 * 1024 * 1024);
     memset(padvalues, 0, 10 * 4);
 
     char* path_ = get_current_dir_name();
     std::string path(path_);
 
-    ReflectionPad3dGradTilingDataInfo* tilingDataFromBin = reinterpret_cast<ReflectionPad3dGradTilingDataInfo*>(tiling);
+    ReflectionPad3dGradTilingData* tilingDataFromBin = reinterpret_cast<ReflectionPad3dGradTilingData*>(tiling);
     tilingDataFromBin->batch = inputShape[0];
     tilingDataFromBin->channel = inputShape[1];
     tilingDataFromBin->depth = inputShape[2];
@@ -138,45 +138,38 @@ TEST_F(reflection_pad3d_grad_test, test_reflect_3)
 {
     std::vector<uint32_t> inputShape = {2, 32, 18, 130, 130};       // NCDHW
     std::vector<uint32_t> padding = {0, 0, 0, 0, 1, 1, 1, 1, 1, 1}; // 10
-    CallSimpleKernel(inputShape, padding, 103);
+    CallSimpleKernel(inputShape, padding, 200);
 }
 
 TEST_F(reflection_pad3d_grad_test, test_reflect_4)
 {
     std::vector<uint32_t> inputShape = {2, 32, 18, 130, 130};       // NCDHW
     std::vector<uint32_t> padding = {0, 0, 0, 0, 1, 1, 1, 1, 1, 1}; // 10
-    CallSimpleKernel(inputShape, padding, 200);
+    CallSimpleKernel(inputShape, padding, 202);
 }
 
 TEST_F(reflection_pad3d_grad_test, test_reflect_5)
 {
     std::vector<uint32_t> inputShape = {2, 32, 18, 130, 130};       // NCDHW
     std::vector<uint32_t> padding = {0, 0, 0, 0, 1, 1, 1, 1, 1, 1}; // 10
-    CallSimpleKernel(inputShape, padding, 202);
+    CallSimpleKernel(inputShape, padding, 203);
 }
 
 TEST_F(reflection_pad3d_grad_test, test_reflect_6)
 {
     std::vector<uint32_t> inputShape = {2, 32, 18, 130, 130};       // NCDHW
     std::vector<uint32_t> padding = {0, 0, 0, 0, 1, 1, 1, 1, 1, 1}; // 10
-    CallSimpleKernel(inputShape, padding, 203);
+    CallSimpleKernel(inputShape, padding, 300);
 }
 
 TEST_F(reflection_pad3d_grad_test, test_reflect_7)
 {
     std::vector<uint32_t> inputShape = {2, 32, 18, 130, 130};       // NCDHW
     std::vector<uint32_t> padding = {0, 0, 0, 0, 1, 1, 1, 1, 1, 1}; // 10
-    CallSimpleKernel(inputShape, padding, 300);
-}
-
-TEST_F(reflection_pad3d_grad_test, test_reflect_8)
-{
-    std::vector<uint32_t> inputShape = {2, 32, 18, 130, 130};       // NCDHW
-    std::vector<uint32_t> padding = {0, 0, 0, 0, 1, 1, 1, 1, 1, 1}; // 10
     CallSimpleKernel(inputShape, padding, 302);
 }
 
-TEST_F(reflection_pad3d_grad_test, test_reflect_9)
+TEST_F(reflection_pad3d_grad_test, test_reflect_8)
 {
     std::vector<uint32_t> inputShape = {2, 32, 18, 130, 130};       // NCDHW
     std::vector<uint32_t> padding = {0, 0, 0, 0, 1, 1, 1, 1, 1, 1}; // 10
