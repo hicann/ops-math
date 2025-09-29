@@ -20,8 +20,8 @@
 #include <cstdint>
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
-#include "test_pows.h"
-#include "../data_utils.h"
+#include "../../../op_host/pows_tiling.h"
+#include "data_utils.h"
 
 #include <cstdint>
 

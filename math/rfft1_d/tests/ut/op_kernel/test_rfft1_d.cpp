@@ -1,10 +1,10 @@
 /**
- * Copyright(c) Huawei Technologies Co., Ltd.2025. All rights reserved.
+ * This program is free software, you can redistribute it and/or modify.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 2.0 (the "License");
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -15,7 +15,7 @@
 #include <cstdint>
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
-#include "rfft1d_tiling.h"
+#include "../../../op_host/rfft1_d_tiling.h"
 #include "data_utils.h"
 
 #include <cstdint>
@@ -66,9 +66,9 @@ TEST_F(rfft1d_test, test_case_DFT)
     tilingDatafromBin->dftRealOverallSize = 64 * 72;
 
     ICPU_SET_TILING_KEY(1);
-
+    AscendC::SetKernelMode(KernelMode::MIX_MODE);
     ICPU_RUN_KF(rfft1_d, blockDim, x, dft, y, workspace, (uint8_t*)(tilingDatafromBin));
-
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
     AscendC::GmFree(x);
     AscendC::GmFree(dft);
     AscendC::GmFree(y);
