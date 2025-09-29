@@ -20,7 +20,7 @@
 #include <cstdint>
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
-#include "test_strided_slice_assign_v2.h"
+#include "../../../op_host/strided_slice_assign_v2_tiling.h"
 
 #include <cstdint>
 
@@ -41,15 +41,13 @@ protected:
     }
 };
 
-TEST_F(strided_slice_assign_v2_test, test_case_10)
+TEST_F(strided_slice_assign_v2_test, test_case_0)
 {
     size_t varByteSize = 4 * 6 * 8 * sizeof(int16_t);
     size_t inputByteSize = 2 * 2 * 4 * sizeof(int16_t);
     size_t idxByteSize = 3 * sizeof(int32_t);
-    //   size_t outputValuesByteSize = 10 * 10 * sizeof(int16_t);
-    //   size_t outputInidcesByteSize = 10 * 10 * sizeof(int32_t);
 
-    size_t tiling_data_size = sizeof(StridedSliceAssignV2TilingDataInfo);
+    size_t tiling_data_size = sizeof(StridedSliceAssignV2TilingData);
 
     uint8_t *var = (uint8_t *)AscendC::GmAlloc(varByteSize);
     uint8_t *input_value = (uint8_t *)AscendC::GmAlloc(inputByteSize);
@@ -61,17 +59,12 @@ TEST_F(strided_slice_assign_v2_test, test_case_10)
     uint8_t *workspace = (uint8_t *)AscendC::GmAlloc(16 * 2);
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint32_t blockDim = 4;
-    // system("cp -r ../../../../../../../ops/built-in/tests/ut/fast_op_test/rms_norm/rms_norm_data ./");
-    // system("chmod -R 755 ./rms_norm_data/");
-    // system("cd ./rms_norm_data/ && rm -rf ./*bin");
-    // system("cd ./rms_norm_data/ && python3 gen_data.py 1 80 2560 float16");
-    // system("cd ./rms_norm_data/ && python3 gen_tiling.py case0");
 
     char *path_ = get_current_dir_name();
     string path(path_);
 
-    StridedSliceAssignV2TilingDataInfo *tilingDatafromBin =
-        reinterpret_cast<StridedSliceAssignV2TilingDataInfo *>(tiling);
+    StridedSliceAssignV2TilingData *tilingDatafromBin =
+        reinterpret_cast<StridedSliceAssignV2TilingData *>(tiling);
 
     tilingDatafromBin->dimNum = 3;
     tilingDatafromBin->varDim[0] = 4;
@@ -93,7 +86,6 @@ TEST_F(strided_slice_assign_v2_test, test_case_10)
     tilingDatafromBin->inputCumShape[1] = 8;
     tilingDatafromBin->inputCumShape[2] = 4;
 
-    // ReadFile(path + "/rms_norm_data/input_x.bin", inputByteSize, x, inputByteSize);
     ICPU_SET_TILING_KEY(1);
     ICPU_RUN_KF(strided_slice_assign_v2, blockDim, var, input_value, begin, end, strides, axes, var, workspace,
         (uint8_t *)(tilingDatafromBin));
