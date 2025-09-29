@@ -19,7 +19,7 @@ import tensorflow as tf
 bf16 = tf.bfloat16.as_numpy_dtype
 np.random.seed(0)
 case_list = [
-    {'dtype': 'fp16', 'grp_dtype': np.int32, 'grad_y_shape': [16, 568, 128], 'group_idx': 'none'},
+    {'dtype': 'fp16', 'grp_dtype': np.int32, 'grad_y_shape': [40, 10], 'group_idx': [0, 3, 7, 10]},
     {'dtype': 'fp32', 'grp_dtype': np.int32, 'grad_y_shape': [16, 2000, 128], 'group_idx': 'none'},
     {'dtype': 'bf16', 'grp_dtype': np.int32, 'grad_y_shape': [100, 256], 'group_idx': [40, 60, 100]},
     {'dtype': 'fp16', 'grp_dtype': np.int32, 'grad_y_shape': [1968, 458], 'group_idx': [737, 1492, 1968]},

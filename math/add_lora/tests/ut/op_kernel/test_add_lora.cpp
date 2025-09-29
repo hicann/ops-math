@@ -15,8 +15,7 @@
 #include <cstdint>
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
-#include "test_add_lora.h"
-#include "../data_utils.h"
+#include "../../../op_host/add_lora_tiling.h"
 
 #include <cstdint>
 
