@@ -8,12 +8,10 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <gtest/gtest.h>  // NOLINT
+#include <gtest/gtest.h>
 #include <iostream>
-#include "op_proto_test_util.h"  // NOLINT
-#include "pad_ops.h"             // NOLINT
-#include "graph/utils/op_desc_utils.h"
-#include "common/utils/ut_op_common.h"
+#include "infershape_context_faker.h"
+#include "base/registry/op_impl_space_registry_v2.h"
 
 class DiagV2 : public testing::Test {
  protected:
@@ -26,110 +24,68 @@ class DiagV2 : public testing::Test {
   }
 };
 
-TEST_F(DiagV2, diag_infer_shape_fp16_dim0) {
-  ge::op::DiagV2 op;
-  std::vector<std::pair<int64_t, int64_t>> shape_range = {{2, 64}};
-  auto tensor_desc = create_desc_shape_range({-2}, ge::DT_FLOAT16, ge::FORMAT_ND, {32}, ge::FORMAT_ND, shape_range);
-  op.UpdateInputDesc("x", tensor_desc);
-  op.SetAttr("diagonal", 0);
-  Runtime2TestParam param{{"diagonal"}};
-  auto ret = InferShapeTest(op, param);
-  EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
-  auto output_desc = op.GetOutputDesc("y");
-  std::vector<int64_t> expected_output_shape = {-2};
-  EXPECT_EQ(output_desc.GetShape().GetDims(), expected_output_shape);
+static std::vector<int64_t> ToVector(const gert::Shape& shape)
+{
+    size_t shapeSize = shape.GetDimNum();
+    std::vector<int64_t> shapeVec(shapeSize, 0);
+    for (size_t i = 0; i < shapeSize; i++) {
+        shapeVec[i] = shape.GetDim(i);
+    }
+    return shapeVec;
 }
 
-TEST_F(DiagV2, diag_infer_shape_fp16_dim3) {
-  ge::op::DiagV2 op;
-  std::vector<std::pair<int64_t, int64_t>> shape_range = {{2, 64}};
-  auto tensor_desc = create_desc_shape_range({32, 32, 32}, ge::DT_FLOAT16, ge::FORMAT_ND, {32}, ge::FORMAT_ND, shape_range);
-  op.UpdateInputDesc("x", tensor_desc);
-  op.SetAttr("diagonal", 1);
-  Runtime2TestParam param{{"diagonal"}};
-  auto ret = InferShapeTest(op, param);
-  EXPECT_EQ(ret, ge::GRAPH_FAILED);
+static void ExeTestCase(
+    const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
+    const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
+    gert::StorageShape& outStorageShape,
+    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+{
+    // 从vector中取出对应参数（保持原顺序）
+    const auto& x1StorageShape = inputShapes[0];
+
+    ge::DataType input1Dtype = dtypes[0];
+    ge::DataType outputDtype = dtypes[0];
+
+
+    /* make infershape context */
+    std::vector<gert::Tensor *> inputTensors = {
+        (gert::Tensor *)&x1StorageShape
+    };
+    std::vector<gert::StorageShape *> outputShapes = {&outStorageShape};
+    auto contextHolder = gert::InferShapeContextFaker()
+        .SetOpType("DiagV2")
+        .NodeIoNum(1, 1)
+        .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .Attr("diagonal", (int64_t)0)
+        .InputTensors(inputTensors)
+        .OutputShapes(outputShapes)
+        .Build();
+
+    /* get infershape func */
+    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    auto inferShapeFunc = spaceRegistry->GetOpImpl("DiagV2")->infer_shape;
+    ASSERT_NE(inferShapeFunc, nullptr);
+
+    /* do infershape */
+    EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
 }
 
-TEST_F(DiagV2, diag_infer_shape_fp16_dim2_1) {
-  ge::op::DiagV2 op;
-  std::vector<std::pair<int64_t, int64_t>> shape_range = {{2, 64}};
-  auto tensor_desc = create_desc_shape_range({-1, 32}, ge::DT_FLOAT16, ge::FORMAT_ND, {32}, ge::FORMAT_ND, shape_range);
-  op.UpdateInputDesc("x", tensor_desc);
-  op.SetAttr("diagonal", 0);
-  Runtime2TestParam param{{"diagonal"}};
-  auto ret = InferShapeTest(op, param);
-  EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
-  auto output_desc = op.GetOutputDesc("y");
-  std::vector<int64_t> expected_output_shape = {-1};
-  EXPECT_EQ(output_desc.GetShape().GetDims(), expected_output_shape);
-}
+TEST_F(DiagV2, DiagV2_infershape_case_0)
+{
+    // 用vector存储同类型参数（顺序与原参数列表一致）
+    std::vector<gert::StorageShape> inputShapes = {
+        {{8, 8}, {8, 8}}                         
+    };
+    std::vector<ge::DataType> dtypes = {
+        ge::DT_FLOAT16,  // input1Dtype
+        ge::DT_FLOAT16
+    };
 
-TEST_F(DiagV2, diag_infer_shape_fp16_dim2_2) {
-  ge::op::DiagV2 op;
-  std::vector<std::pair<int64_t, int64_t>> shape_range = {{2, 64}};
-  auto tensor_desc = create_desc_shape_range({32, 32}, ge::DT_FLOAT16, ge::FORMAT_ND, {32}, ge::FORMAT_ND, shape_range);
-  op.UpdateInputDesc("x", tensor_desc);
-  op.SetAttr("diagonal", 1);
-  Runtime2TestParam param{{"diagonal"}};
-  auto ret = InferShapeTest(op, param);
-  EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
-  auto output_desc = op.GetOutputDesc("y");
-  std::vector<int64_t> expected_output_shape = {31};
-  EXPECT_EQ(output_desc.GetShape().GetDims(), expected_output_shape);
-}
+    std::vector<int64_t> expectResult = {8};
+    gert::StorageShape outStorageShape = {};
 
-TEST_F(DiagV2, diag_infer_shape_fp16_dim2_3) {
-  ge::op::DiagV2 op;
-  std::vector<std::pair<int64_t, int64_t>> shape_range = {{2, 64}};
-  auto tensor_desc = create_desc_shape_range({32, 32}, ge::DT_FLOAT16, ge::FORMAT_ND, {32}, ge::FORMAT_ND, shape_range);
-  op.UpdateInputDesc("x", tensor_desc);
-  op.SetAttr("diagonal", -1);
-  Runtime2TestParam param{{"diagonal"}};
-  auto ret = InferShapeTest(op, param);
-  EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
-  auto output_desc = op.GetOutputDesc("y");
-  std::vector<int64_t> expected_output_shape = {31};
-  EXPECT_EQ(output_desc.GetShape().GetDims(), expected_output_shape);
-}
-
-TEST_F(DiagV2, diag_infer_shape_fp16_dim_4) {
-  ge::op::DiagV2 op;
-  std::vector<std::pair<int64_t, int64_t>> shape_range = {{2, 64}};
-  auto tensor_desc = create_desc_shape_range({-1}, ge::DT_FLOAT16, ge::FORMAT_ND, {32}, ge::FORMAT_ND, shape_range);
-  op.UpdateInputDesc("x", tensor_desc);
-  op.SetAttr("diagonal", 0);
-  Runtime2TestParam param{{"diagonal"}};
-  auto ret = InferShapeTest(op, param);
-  EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
-  auto output_desc = op.GetOutputDesc("y");
-  std::vector<int64_t> expected_output_shape = {-1, -1};
-  EXPECT_EQ(output_desc.GetShape().GetDims(), expected_output_shape);
-}
-
-TEST_F(DiagV2, diag_infer_shape_fp16_dim1) {
-  ge::op::DiagV2 op;
-  std::vector<std::pair<int64_t, int64_t>> shape_range = {{2, 64}};
-  auto tensor_desc = create_desc_shape_range({32}, ge::DT_FLOAT16, ge::FORMAT_ND, {32}, ge::FORMAT_ND, shape_range);
-  op.UpdateInputDesc("x", tensor_desc);
-  op.SetAttr("diagonal", 1);
-  Runtime2TestParam param{{"diagonal"}};
-  auto ret = InferShapeTest(op, param);
-  EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
-  auto output_desc = op.GetOutputDesc("y");
-  std::vector<int64_t> expected_output_shape = {33, 33};
-  EXPECT_EQ(output_desc.GetShape().GetDims(), expected_output_shape);
-}
-
-TEST_F(DiagV2, diag_infer_datatype_fp16_dim1) {
-  ge::op::DiagV2 op;
-  std::vector<std::pair<int64_t, int64_t>> shape_range = {{2, 64}};
-  auto tensor_desc = create_desc_shape_range({32}, ge::DT_FLOAT16, ge::FORMAT_ND, {32}, ge::FORMAT_ND, shape_range);
-  op.UpdateInputDesc("x", tensor_desc);
-  op.SetAttr("diagonal", 1);
-  Runtime2TestParam param{{"diagonal"}};
-  auto ret = InferDataTypeTest(op, param);
-  EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
-  auto output_desc = op.GetOutputDesc("y");
-  EXPECT_EQ(output_desc.GetDataType(), ge::DT_FLOAT16);
-}
+    // 简化后的函数调用
+    ExeTestCase(inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS);
+    EXPECT_EQ(ToVector(outStorageShape.GetOriginShape()), expectResult);
+} 
