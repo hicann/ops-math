@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 #include <array>
@@ -15,7 +16,7 @@
 #include <cstdint>
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
-#include "test_transform_bias_rescale_qkv.h"
+#include "../../../op_host/transform_bias_rescale_qkv_tiling.h"
 #include "data_utils.h"
 
 #include <cstdint>
@@ -44,8 +45,7 @@ TEST_F(transform_bias_rescale_qkv_test, test_transform_bias_rescale_qkv_float_0)
 #define DTYPE_QKV DT_FP32
     system(
         "cp -rf "
-        "../../../../../../../ops/built-in/tests/ut/fast_op_test/transform_bias_rescale_qkv/"
-        "transform_bias_rescale_qkv_data ./ ");
+        "../../../../math/transform_bias_rescale_qkv/tests/ut/op_kernel/transform_bias_rescale_qkv_data ./");
     system("chmod -R 755 ./transform_bias_rescale_qkv_data/");
     system(
         "cd ./transform_bias_rescale_qkv_data/ && python3 gen_data.py '(3, 4, 144)' '(144)' '(3, 3, 4, 16)' 'float32'");
@@ -114,8 +114,7 @@ TEST_F(transform_bias_rescale_qkv_test, test_transform_bias_rescale_qkv_float16_
 #define DTYPE_QKV DT_FP16
     system(
         "cp -rf "
-        "../../../../../../../ops/built-in/tests/ut/fast_op_test/transform_bias_rescale_qkv/"
-        "transform_bias_rescale_qkv_data ./");
+        "../../../../math/transform_bias_rescale_qkv/tests/ut/op_kernel/transform_bias_rescale_qkv_data ./");
     system("chmod -R 755 ./transform_bias_rescale_qkv_data/");
     system(
         "cd ./transform_bias_rescale_qkv_data/ && python3 gen_data.py '(3, 4, 144)' '(144)' '(3, 3, 4, 16)' 'float16'");
@@ -184,8 +183,7 @@ TEST_F(transform_bias_rescale_qkv_test, test_transform_bias_rescale_qkv_bfloat16
 #define DTYPE_QKV DT_BF16
     system(
         "cp -rf "
-        "../../../../../../../ops/built-in/tests/ut/fast_op_test/transform_bias_rescale_qkv/"
-        "transform_bias_rescale_qkv_data ./");
+        "../../../../math/transform_bias_rescale_qkv/tests/ut/op_kernel/transform_bias_rescale_qkv_data ./");
     system("chmod -R 755 ./transform_bias_rescale_qkv_data/");
     system(
         "cd ./transform_bias_rescale_qkv_data/ && python3 gen_data.py '(3, 4, 144)' '(144)' '(3, 3, 4, 16)' "
