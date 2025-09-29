@@ -14,7 +14,11 @@
  */
 #ifndef CIRCULAR_PAD_GRAD_H
 #define CIRCULAR_PAD_GRAD_H
+#ifdef __CCE_KT_TEST__
+#include "../../circular_pad/op_kernel/circular_pad_common.h"
+#else
 #include "../circular_pad/circular_pad_common.h"
+#endif
 using namespace AscendC;
 
 constexpr int32_t DOUBLE = 2;
