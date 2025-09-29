@@ -1,19 +1,17 @@
 /**
- * This program is free software, you can redistribute it and/or modify.
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include <gtest/gtest.h>  // NOLINT
 #include <iostream>
-#include "op_proto_test_util.h"  // NOLINT
-#include "comp_ops.h"
-#include "graph/utils/op_desc_utils.h"
-#include "common/utils/ut_op_common.h"
+#include "infershape_context_faker.h"
+#include "base/registry/op_impl_space_registry_v2.h"
 
 class HansDecode : public testing::Test {
  protected:
@@ -26,39 +24,84 @@ class HansDecode : public testing::Test {
   }
 };
 
-TEST_F(HansDecode, HansDecode_infershape_case_0) {
-  ge::op::HansDecode op;
-  op.UpdateInputDesc("mantissa", create_desc({4096, 1, 512}, ge::DT_FLOAT16));
-  EXPECT_EQ(InferShapeTest(op), ge::GRAPH_SUCCESS);
+static std::vector<int64_t> ToVector(const gert::Shape& shape)
+{
+    size_t shapeSize = shape.GetDimNum();
+    std::vector<int64_t> shapeVec(shapeSize, 0);
+    for (size_t i = 0; i < shapeSize; i++) {
+        shapeVec[i] = shape.GetDim(i);
+    }
+    return shapeVec;
 }
 
-TEST_F(HansDecode, HansDecode_infer_dtype) {
-  ASSERT_NE(gert::OpImplRegistry::GetInstance().GetOpImpl("HansDecode"), nullptr);
-  auto data_type_func = gert::OpImplRegistry::GetInstance().GetOpImpl("HansDecode")->infer_datatype;
+static void ExeTestCase(
+    const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
+    const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
+    gert::StorageShape& outStorageShape,
+    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+{
+    // 从vector中取出对应参数（保持原顺序）
+    const auto& input1StorageShape = inputShapes[0];
+    const auto& input2StorageShape = inputShapes[1];
+    const auto& input3StorageShape = inputShapes[2];
+    const auto& input4StorageShape = inputShapes[3];
+   
+    ge::DataType input1Dtype = dtypes[0];
+    ge::DataType input2Dtype = dtypes[1];
+    ge::DataType input3Dtype = dtypes[2];
+    ge::DataType input4Dtype = dtypes[3];
+    ge::DataType output1Dtype = dtypes[4];
 
-  if (data_type_func != nullptr) {
-    ge::DataType mantissa = ge::DT_FLOAT;
-    ge::DataType fixed = ge::DT_FLOAT;
-    ge::DataType var = ge::DT_FLOAT;
-    ge::DataType pdf = ge::DT_INT32;
-    ge::DataType output = ge::DT_FLOAT;
-    auto context_holder = gert::InferDataTypeContextFaker()
-        .IrInputNum(4)
-        .NodeIoNum(4,1)
-        .NodeInputTd(0, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(1, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(2, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(3, ge::DT_INT32, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeOutputTd(0, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeAttrs({
-            {"reshuff", ge::AnyValue::CreateFrom<bool>(false)}
-        })
-        .InputDataTypes({&mantissa, &fixed, &var, &pdf})
-        .OutputDataTypes({&output})
+    /* make infershape context */
+    std::vector<gert::Tensor *> inputTensors = {
+    	(gert::Tensor *)&input1StorageShape,
+        (gert::Tensor *)&input2StorageShape,
+        (gert::Tensor *)&input3StorageShape,
+        (gert::Tensor *)&input4StorageShape
+    };
+    std::vector<gert::StorageShape *> outputShapes = {&outStorageShape};
+    auto contextHolder = gert::InferShapeContextFaker()
+        .SetOpType("HansDecode")
+        .NodeIoNum(4, 1)
+        .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(1, input2Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(2, input3Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(3, input4Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeOutputTd(0, output1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .InputTensors(inputTensors)
+        .OutputShapes(outputShapes)
         .Build();
-    auto context = context_holder.GetContext<gert::InferDataTypeContext>();
-    EXPECT_EQ(data_type_func(context), ge::GRAPH_SUCCESS);
-    ASSERT_NE(context, nullptr);
-    EXPECT_EQ(context->GetOutputDataType(0), output);
-  }
+
+    /* get infershape func */
+    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    auto inferShapeFunc = spaceRegistry->GetOpImpl("HansDecode")->infer_shape;
+    ASSERT_NE(inferShapeFunc, nullptr);
+
+    /* do infershape */
+    EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
 }
+
+
+TEST_F(HansDecode, HansDecode_infershape_case_0) {
+    // 用vector存储同类型参数（顺序与原参数列表一致）
+    std::vector<gert::StorageShape> inputShapes = {
+        {{4096}, {4096} },
+	    {{16384}, {16384}},
+	    {{16384}, {16384}},
+        {{256}, {256}},
+    };
+    std::vector<ge::DataType> dtypes = {
+        ge::DT_FLOAT, 
+        ge::DT_FLOAT,   
+        ge::DT_FLOAT,
+        ge::DT_INT32, 
+        ge::DT_FLOAT
+    };
+
+    std::vector<int64_t> expectResult = {};
+    gert::StorageShape outStorageShape = {};
+    // 简化后的函数调用
+    ExeTestCase(inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS);
+    EXPECT_EQ(ToVector(outStorageShape.GetOriginShape()), expectResult);
+}
+
