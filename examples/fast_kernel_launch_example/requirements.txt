@@ -6,3 +6,4 @@ scipy
 attrs
 psutil
 expecttest
+wheel
