@@ -1,10 +1,10 @@
 /**
- * This program is free software, you can redistribute it and/or modify.
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -40,7 +40,18 @@ void PrintOutResult(std::vector<int64_t> &shape, void** deviceAddr) {
                          *deviceAddr, size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
   for (int64_t i = 0; i < size; i++) {
-    LOG_PRINT("mean result[%ld] is: %f\n", i, resultData[i]);
+    LOG_PRINT("abs result[%ld] is: %f\n", i, resultData[i]);
+  }
+}
+
+void PrintInResult(std::vector<int64_t> &shape, void** deviceAddr) {
+  auto size = GetShapeSize(shape);
+  std::vector<float> resultData(size, 0);
+  auto ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]),
+                         *deviceAddr, size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
+  for (int64_t i = 0; i < size; i++) {
+    LOG_PRINT("abs input[%ld] is: %f\n", i, resultData[i]);
   }
 }
 
@@ -107,6 +118,10 @@ int main() {
   // 3. 调用CANN算子库API，需要修改为具体的Api名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
+
+  // 打印输入
+  PrintInResult(selfShape, &selfDeviceAddr);
+  LOG_PRINT("-------------------- start run------------------------\n");
 
   // 调用aclnnAbs第一段接口
   ret = aclnnAbsGetWorkspaceSize(self, out, &workspaceSize, &executor);
