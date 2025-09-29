@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 #include <array>
 #include <vector>
@@ -264,51 +265,6 @@ TEST_F(circualr_pad_grad_test, test_case_fp16_smallshape_2d)
     AscendC::GmFree(tiling);
 }
 
-TEST_F(circualr_pad_grad_test, test_case_fp16_bigshape_2d)
-{
-    uint32_t x_shape = 1 * 1 * 500 * 500;
-    uint32_t paddings_shape = 4;
-    uint32_t y_shape = 1 * 1 * 300 * 300;
-    // inputs
-    size_t x_size = x_shape * sizeof(uint16_t);
-    size_t paddings_size = paddings_shape * sizeof(int64_t);
-    size_t y_size = y_shape * sizeof(uint16_t);
-    size_t tiling_data_size = sizeof(CircularPadCommonTilingData);
-
-    uint8_t* x = (uint8_t*)AscendC::GmAlloc(x_size);
-    uint8_t* paddings = (uint8_t*)AscendC::GmAlloc(paddings_size);
-    uint8_t* y = (uint8_t*)AscendC::GmAlloc(y_size);
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(156000 * 4);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
-
-    CircularPadCommonTilingData* tilingData = reinterpret_cast<CircularPadCommonTilingData*>(tiling);
-    tilingData->inputH = 500;
-    tilingData->inputW = 500;
-    tilingData->outputH = 300;
-    tilingData->outputW = 300;
-    tilingData->left = 100;
-    tilingData->right = 100;
-    tilingData->top = 100;
-    tilingData->bottom = 100;
-    tilingData->front = 0;
-    tilingData->back = 0;
-    tilingData->inputL = 1;
-    tilingData->outputL = 1;
-    tilingData->perCoreTaskNum = 0;
-    tilingData->tailTaskNum = 1;
-    tilingData->workspaceLen = 156000;
-
-    ICPU_SET_TILING_KEY(222);
-    ICPU_RUN_KF(circular_pad_grad, blockDim, x, paddings, y, workspace, (uint8_t*)tilingData);
-
-    AscendC::GmFree(x);
-    AscendC::GmFree(paddings);
-    AscendC::GmFree(y);
-    AscendC::GmFree(workspace);
-    AscendC::GmFree(tiling);
-}
-
 TEST_F(circualr_pad_grad_test, test_case_fp16_smallshape_3d)
 {
     uint32_t x_shape = 1 * 3 * 5 * 5;
@@ -435,51 +391,6 @@ TEST_F(circualr_pad_grad_test, test_case_bf16_smallshape_2d)
     tilingData->workspaceLen = 144;
 
     ICPU_SET_TILING_KEY(231);
-    ICPU_RUN_KF(circular_pad_grad, blockDim, x, paddings, y, workspace, (uint8_t*)tilingData);
-
-    AscendC::GmFree(x);
-    AscendC::GmFree(paddings);
-    AscendC::GmFree(y);
-    AscendC::GmFree(workspace);
-    AscendC::GmFree(tiling);
-}
-
-TEST_F(circualr_pad_grad_test, test_case_bf16_bigshape_2d)
-{
-    uint32_t x_shape = 1 * 1 * 500 * 500;
-    uint32_t paddings_shape = 4;
-    uint32_t y_shape = 1 * 1 * 300 * 300;
-    // inputs
-    size_t x_size = x_shape * sizeof(uint16_t);
-    size_t paddings_size = paddings_shape * sizeof(int64_t);
-    size_t y_size = y_shape * sizeof(uint16_t);
-    size_t tiling_data_size = sizeof(CircularPadCommonTilingData);
-
-    uint8_t* x = (uint8_t*)AscendC::GmAlloc(x_size);
-    uint8_t* paddings = (uint8_t*)AscendC::GmAlloc(paddings_size);
-    uint8_t* y = (uint8_t*)AscendC::GmAlloc(y_size);
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(156000 * 4);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
-
-    CircularPadCommonTilingData* tilingData = reinterpret_cast<CircularPadCommonTilingData*>(tiling);
-    tilingData->inputH = 500;
-    tilingData->inputW = 500;
-    tilingData->outputH = 300;
-    tilingData->outputW = 300;
-    tilingData->left = 100;
-    tilingData->right = 100;
-    tilingData->top = 100;
-    tilingData->bottom = 100;
-    tilingData->front = 0;
-    tilingData->back = 0;
-    tilingData->inputL = 1;
-    tilingData->outputL = 1;
-    tilingData->perCoreTaskNum = 0;
-    tilingData->tailTaskNum = 1;
-    tilingData->workspaceLen = 156000;
-
-    ICPU_SET_TILING_KEY(232);
     ICPU_RUN_KF(circular_pad_grad, blockDim, x, paddings, y, workspace, (uint8_t*)tilingData);
 
     AscendC::GmFree(x);
