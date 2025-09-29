@@ -17,10 +17,6 @@ __all__ = ["isfinite", ]
 
 
 def isfinite(x: Tensor) -> Tensor:
-    """Performs isfinite(x, beta) in an efficient fused kernel"""
+    """Performs isfinite(x) in an efficient fused kernel"""
     return torch.ops.ascend_ops.isfinite.default(x)
 
-
-@torch.library.register_fake("ascend_ops::isfinite")
-def _(x):
-    return torch.empty_like(x, dtype=torch.bool)

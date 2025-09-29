@@ -68,7 +68,7 @@ void isfinite_api<double>(aclrtStream stream, const at::Tensor& x, const at::Ten
     throw std::runtime_error("double is not supported on aicore!");
 }
 
-torch::Tensor isfinite_npu(torch::Tensor x)
+torch::Tensor isfinite_npu(const torch::Tensor& x)
 {
     TORCH_CHECK(torch_npu::utils::is_npu(x), "Input tensor must be on NPU device");
     TORCH_CHECK(x.scalar_type() != at::kDouble, "Double type is not supported by isfinite_npu");
@@ -83,11 +83,24 @@ torch::Tensor isfinite_npu(torch::Tensor x)
     return y;
 }
 
+torch::Tensor isfinite_meta(const torch::Tensor& x)
+{
+    TORCH_CHECK(x.defined(), "Input tensor must be defined");
+    return torch::empty(x.sizes(), torch::TensorOptions().dtype(torch::kBool).device(torch::kMeta).memory_format(x.suggest_memory_format()));
+}
+
 // Register Ascend implementations for isfinite
 TORCH_LIBRARY_IMPL(ascend_ops, PrivateUse1, m)
 {
     m.impl("isfinite", isfinite_npu);
 }
+
+// Register Meta Function for isfinite
+TORCH_LIBRARY_IMPL(ascend_ops, Meta, m)
+{
+    m.impl("isfinite", TORCH_FN(isfinite_meta));
+}
+
 
 } // namespace IsFinite
 } // namespace ascend_ops
