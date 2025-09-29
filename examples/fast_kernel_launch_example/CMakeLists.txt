@@ -8,6 +8,8 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
+cmake_minimum_required(VERSION 3.18)
+project(AscendOps)
 option(BUILD_TORCH_OPS "Build torch ops project (PyTorch extension style)" OFF)
 message(STATUS "Build torch ops: ${BUILD_TORCH_OPS}")
 
@@ -48,11 +50,11 @@ set(CMAKE_C_COMPILER   ${BISHENG})
 set(CMAKE_CXX_COMPILER ${BISHENG})
 set(CMAKE_LINKER       ${BISHENG})
 
-# Python 配置
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-message(STATUS "Python3_EXECUTABLE   = ${Python3_EXECUTABLE}")
-message(STATUS "Python3_INCLUDE_DIRS = ${Python3_INCLUDE_DIRS}")
-message(STATUS "Python3_LIBRARIES    = ${Python3_LIBRARIES}")
+# # Python 配置
+# find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+# message(STATUS "Python3_EXECUTABLE   = ${Python3_EXECUTABLE}")
+# message(STATUS "Python3_INCLUDE_DIRS = ${Python3_INCLUDE_DIRS}")
+# message(STATUS "Python3_LIBRARIES    = ${Python3_LIBRARIES}")
 
 # Torch 配置
 execute_process(
