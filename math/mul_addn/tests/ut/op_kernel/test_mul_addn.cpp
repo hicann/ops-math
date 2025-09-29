@@ -14,7 +14,7 @@
 #include <cstdint>
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
-#include "test_mul_addn.h"
+#include "../../../op_host/mul_addn_tiling.h"
 #include "data_utils.h"
 
 #include <cstdint>
@@ -46,7 +46,7 @@ TEST_F(mul_addn_test, test_case_mean_fp32_01)
     // batch_size, num_classes, dtype, reduction, flag
     system("cd ./gen_data/ && python3 gen_data.py 30 1024 float32 mean True");
 
-    size_t x1ByteSize = 30 * 1024 * sizeof(float); // 这个值是怎么确定的
+    size_t x1ByteSize = 30 * 1024 * sizeof(float); 
     size_t x2ByteSize = 30 * 1024 * sizeof(float);
     // output
     size_t yByteSize = 30 * 1024 * sizeof(float);
@@ -56,7 +56,7 @@ TEST_F(mul_addn_test, test_case_mean_fp32_01)
     uint8_t* x2 = (uint8_t*)AscendC::GmAlloc(x2ByteSize);
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(yByteSize);
 
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024); // 这个值的大小
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024); 
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
     uint32_t blockDim = 48;
 
@@ -89,10 +89,7 @@ TEST_F(mul_addn_test, test_case_mean_fp32_01)
     AscendC::GmFree(workspace);
     AscendC::GmFree(tiling);
     free(path_);
-
-    // int res = system("cd ./gen_data/ && python3 mul_addn_data_compare.py 'float16'");
     system("rm -rf gen_data");
-    // ASSERT_EQ(res, 0);
 }
 
 TEST_F(mul_addn_test, test_case_mean_fp16_01)
@@ -106,7 +103,7 @@ TEST_F(mul_addn_test, test_case_mean_fp16_01)
     // batch_size, num_classes, dtype, reduction, flag
     system("cd ./gen_data/ && python3 gen_data.py 30 1024 float16 mean True");
 
-    size_t x1ByteSize = 30 * 1024 * sizeof(float); // 这个值是怎么确定的
+    size_t x1ByteSize = 30 * 1024 * sizeof(float); 
     size_t x2ByteSize = 30 * 1024 * sizeof(float);
     // output
     size_t yByteSize = 30 * 1024 * sizeof(float);
@@ -116,7 +113,7 @@ TEST_F(mul_addn_test, test_case_mean_fp16_01)
     uint8_t* x2 = (uint8_t*)AscendC::GmAlloc(x2ByteSize);
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(yByteSize);
 
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024); // 这个值的大小
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
     uint32_t blockDim = 48;
 
@@ -149,10 +146,7 @@ TEST_F(mul_addn_test, test_case_mean_fp16_01)
     AscendC::GmFree(workspace);
     AscendC::GmFree(tiling);
     free(path_);
-
-    // int res = system("cd ./gen_data/ && python3 mul_addn_data_compare.py 'float16'");
     system("rm -rf gen_data");
-    // ASSERT_EQ(res, 0);
 }
 
 TEST_F(mul_addn_test, test_case_mean_bf16_01)
@@ -166,7 +160,7 @@ TEST_F(mul_addn_test, test_case_mean_bf16_01)
     // batch_size, num_classes, dtype, reduction, flag
     system("cd ./gen_data/ && python3 gen_data.py 30 1024 bf16 mean True");
 
-    size_t x1ByteSize = 30 * 1024 * sizeof(float); // 这个值是怎么确定的
+    size_t x1ByteSize = 30 * 1024 * sizeof(float); 
     size_t x2ByteSize = 30 * 1024 * sizeof(float);
     // output
     size_t yByteSize = 30 * 1024 * sizeof(float);
@@ -176,7 +170,7 @@ TEST_F(mul_addn_test, test_case_mean_bf16_01)
     uint8_t* x2 = (uint8_t*)AscendC::GmAlloc(x2ByteSize);
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(yByteSize);
 
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024); // 这个值的大小
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024); 
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
     uint32_t blockDim = 48;
 
@@ -209,8 +203,5 @@ TEST_F(mul_addn_test, test_case_mean_bf16_01)
     AscendC::GmFree(workspace);
     AscendC::GmFree(tiling);
     free(path_);
-
-    // int res = system("cd ./gen_data/ && python3 mul_addn_data_compare.py 'float16'");
     system("rm -rf gen_data");
-    // ASSERT_EQ(res, 0);
 }

@@ -15,7 +15,7 @@
 #include <cstdint>
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
-#include "test_lin_space.h"
+#include "../../../op_host/lin_space_tiling.h"
 
 #include <cstdint>
 
@@ -42,7 +42,7 @@ TEST_F(lin_space_test, test_case_101) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 1;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -71,6 +71,7 @@ TEST_F(lin_space_test, test_case_101) {
   tilingDatafromBin->outerTailLoopNumTail = 5;
 
   ICPU_SET_TILING_KEY(101);
+  AscendC::SetKernelMode(KernelMode::AIV_MODE);
   ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
@@ -87,7 +88,7 @@ TEST_F(lin_space_test, test_case_102) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 32;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -132,7 +133,7 @@ TEST_F(lin_space_test, test_case_201) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 1;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -177,7 +178,7 @@ TEST_F(lin_space_test, test_case_202) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 32;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -223,7 +224,7 @@ TEST_F(lin_space_test, test_case_301) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 1;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -268,7 +269,7 @@ TEST_F(lin_space_test, test_case_302) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 32;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -313,7 +314,7 @@ TEST_F(lin_space_test, test_case_401) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 1;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -358,7 +359,7 @@ TEST_F(lin_space_test, test_case_402) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 32;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -403,7 +404,7 @@ TEST_F(lin_space_test, test_case_501) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 1;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -448,7 +449,7 @@ TEST_F(lin_space_test, test_case_502) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 32;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -493,7 +494,7 @@ TEST_F(lin_space_test, test_case_601) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 1;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -538,7 +539,7 @@ TEST_F(lin_space_test, test_case_602) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 32;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -583,7 +584,7 @@ TEST_F(lin_space_test, test_case_701) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 1;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -628,7 +629,7 @@ TEST_F(lin_space_test, test_case_702) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 32;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -673,7 +674,7 @@ TEST_F(lin_space_test, test_case_103) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 1;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -718,7 +719,7 @@ TEST_F(lin_space_test, test_case_203) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 1;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -763,7 +764,7 @@ TEST_F(lin_space_test, test_case_303) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 1;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -808,7 +809,7 @@ TEST_F(lin_space_test, test_case_403) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 1;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -853,7 +854,7 @@ TEST_F(lin_space_test, test_case_503) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 1;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -898,7 +899,7 @@ TEST_F(lin_space_test, test_case_603) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 1;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
@@ -943,7 +944,7 @@ TEST_F(lin_space_test, test_case_703) {
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
   uint32_t blockDim = 1;
-  system("cp -r ../../../../../../../ops/math/lin_space/tests/ut/op_kernel/lin_space_data ./");
+  system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
   system("cd ./lin_space_data/ && python3 gen_data.py 1 100 100 float32");
