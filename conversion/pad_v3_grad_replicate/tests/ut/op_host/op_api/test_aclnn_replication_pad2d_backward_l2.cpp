@@ -4,9 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
- * the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "gtest/gtest.h"
 
@@ -25,7 +24,7 @@ class replication_pad2d_backward_test : public testing::Test {
 };
 
 // CheckNotNull gradOutput input padding
-TEST_F(replication_pad2d_backward_test, case_3) {
+TEST_F(replication_pad2d_backward_test, case_1) {
   auto grad_output_tensor_desc = TensorDesc({2, 8, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({2, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
   auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
@@ -53,7 +52,7 @@ TEST_F(replication_pad2d_backward_test, case_3) {
 }
 
 // CheckNotNull gradInput
-TEST_F(replication_pad2d_backward_test, case_4) {
+TEST_F(replication_pad2d_backward_test, case_2) {
   auto grad_output_tensor_desc = TensorDesc({2, 8, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({2, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
   auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
@@ -69,7 +68,7 @@ TEST_F(replication_pad2d_backward_test, case_4) {
 }
 
 // CheckShape diffrent shape of input and gradInput
-TEST_F(replication_pad2d_backward_test, case_5)
+TEST_F(replication_pad2d_backward_test, case_3)
 {
   auto grad_output_tensor_desc = TensorDesc({2, 9, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({2, 5, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -87,7 +86,7 @@ TEST_F(replication_pad2d_backward_test, case_5)
 }
 
 // CheckShape padding dim
-TEST_F(replication_pad2d_backward_test, case_6)
+TEST_F(replication_pad2d_backward_test, case_4)
 {
   auto grad_output_tensor_desc = TensorDesc({2, 8, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({2, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -105,7 +104,7 @@ TEST_F(replication_pad2d_backward_test, case_6)
 }
 
 // CheckShape input dim
-TEST_F(replication_pad2d_backward_test, case_7)
+TEST_F(replication_pad2d_backward_test, case_5)
 {
   auto grad_output_tensor_desc = TensorDesc({8, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -123,7 +122,7 @@ TEST_F(replication_pad2d_backward_test, case_7)
 }
 
 // CheckShape diffrent dim of input and gradOutput
-TEST_F(replication_pad2d_backward_test, case_8)
+TEST_F(replication_pad2d_backward_test, case_6)
 {
   auto grad_output_tensor_desc = TensorDesc({8, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -141,7 +140,7 @@ TEST_F(replication_pad2d_backward_test, case_8)
 }
 
 // CheckFormat diffrent format
-TEST_F(replication_pad2d_backward_test, case_9)
+TEST_F(replication_pad2d_backward_test, case_7)
 {
   auto grad_output_tensor_desc = TensorDesc({1, 1, 8, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 1, 4, 3}, ACL_FLOAT16, ACL_FORMAT_UNDEFINED);
@@ -158,36 +157,8 @@ TEST_F(replication_pad2d_backward_test, case_9)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-// CheckDtype support
-TEST_F(replication_pad2d_backward_test, case_10)
-{
-  vector<aclDataType> ValidList = {
-    ACL_FLOAT16,
-    ACL_FLOAT,
-    ACL_DOUBLE,
-    ACL_COMPLEX64,
-    ACL_COMPLEX128};
-
-  int length = ValidList.size();
-  for (int i = 0; i < length; i++) {
-    auto grad_output_tensor_desc = TensorDesc({1, 1, 8, 7}, ValidList[i], ACL_FORMAT_ND).ValueRange(1, 1);
-    auto input_tensor_desc = TensorDesc({1, 1, 4, 3}, ValidList[i], ACL_FORMAT_ND);
-    auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
-    auto grad_input_desc = TensorDesc({1, 1, 4, 3}, ValidList[i], ACL_FORMAT_ND);
-
-    auto ut = OP_API_UT(aclnnReplicationPad2dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
-                                                  OUTPUT(grad_input_desc));
-
-      // SAMPLE: only test GetWorkspaceSize
-      uint64_t workspaceSize = 0;
-      aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-      // EXPECT_EQ(aclRet, ACL_SUCCESS);
-      // ut.TestPrecision();
-  }
-}
-
 // CheckDtype not support
-TEST_F(replication_pad2d_backward_test, case_11)
+TEST_F(replication_pad2d_backward_test, case_8)
 {
   auto grad_output_tensor_desc = TensorDesc({1, 1, 8, 7}, ACL_INT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 1, 4, 3}, ACL_INT16, ACL_FORMAT_ND);
@@ -204,7 +175,7 @@ TEST_F(replication_pad2d_backward_test, case_11)
 }
 
 // CheckDtype diffrent dtype of gradOutput and gradInput
-TEST_F(replication_pad2d_backward_test, case_12)
+TEST_F(replication_pad2d_backward_test, case_9)
 {
   auto grad_output_tensor_desc = TensorDesc({1, 1, 8, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 1, 4, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -221,7 +192,7 @@ TEST_F(replication_pad2d_backward_test, case_12)
 }
 
 // CheckDtype diffrent dtype of input and gradOutput
-TEST_F(replication_pad2d_backward_test, case_13)
+TEST_F(replication_pad2d_backward_test, case_10)
 {
   auto grad_output_tensor_desc = TensorDesc({1, 1, 8, 7}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 1, 4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -238,7 +209,7 @@ TEST_F(replication_pad2d_backward_test, case_13)
 }
 
 // CheckShape gradOutput shape
-TEST_F(replication_pad2d_backward_test, case_14)
+TEST_F(replication_pad2d_backward_test, case_11)
 {
   auto grad_output_tensor_desc = TensorDesc({1, 5, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(1, 1);
   auto input_tensor_desc = TensorDesc({1, 2, 4}, ACL_FLOAT16, ACL_FORMAT_ND);
