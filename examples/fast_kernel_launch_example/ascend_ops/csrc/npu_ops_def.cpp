@@ -13,6 +13,7 @@
  * \brief
  */
 
+#define Py_LIMITED_API_VERSION 0x03080000
 #include <Python.h>
 #include <ATen/Operators.h>
 #include <torch/all.h>
