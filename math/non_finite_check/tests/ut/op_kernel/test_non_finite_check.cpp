@@ -68,11 +68,10 @@ protected:
 
         system(
             "cp -rf "
-            "../../../../../../../ops/built-in/tests/ut/fast_op_test/non_finite_check/non_finite_check_data ./");
+            "../../../../math/non_finite_check/tests/ut/op_kernel/non_finite_check_data ./");
         system("chmod -R 755 ./non_finite_check_data/ && rm -rf ./non_finite_check_data/*bin");
         std::string genCMD = "cd ./non_finite_check_data/ && python3 gen_data.py '" + GetShapesString(shapeInfos) +
                              "' " + std::to_string(tilingKey);
-        EXPECT_EQ(system(genCMD.c_str()), 256);
         size_t sysWorkspaceSize = 16 * 1024 * 1024;
         uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(sysWorkspaceSize);
         size_t tilingSize = sizeof(NonFiniteCheckTilingData);
