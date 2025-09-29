@@ -16,8 +16,8 @@
 #ifndef OPS_BUILT_IN_OP_TILING_RUNTIME_CIRCULAR_PAD_COMMON_TILING_H
 #define OPS_BUILT_IN_OP_TILING_RUNTIME_CIRCULAR_PAD_COMMON_TILING_H
 #include "register/tilingdata_base.h"
-#include "tiling/tiling_base/tiling_base.h"
-#include "platform/platform_ascendc.h"
+#include "tiling_base/tiling_base.h"
+#include "tiling/platform/platform_ascendc.h"
 
 namespace optiling {
 BEGIN_TILING_DATA_DEF(CircularPadCommonTilingData)
