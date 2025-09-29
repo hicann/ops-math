@@ -164,6 +164,10 @@ ge::graphStatus CoalesceSparseTiling::RunKernelTiling()
     TilingData.set_moveValueLen(moveValueLen);
     TilingData.set_moveValueTail(moveValueTail);
 
+    size_t sysWorkspaceSize = 16*1024*1024;
+    size_t* currentWorkspace = TilingContext->GetWorkspaceSizes(1);
+    currentWorkspace[0] = sysWorkspaceSize;
+
     TilingData.SaveToBuffer(
         TilingContext->GetRawTilingData()->GetData(), TilingContext->GetRawTilingData()->GetCapacity());
     TilingContext->GetRawTilingData()->SetDataSize(TilingData.GetDataSize());

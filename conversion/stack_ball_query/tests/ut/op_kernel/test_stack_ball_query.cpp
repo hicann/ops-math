@@ -14,7 +14,7 @@
 #include <sstream>
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
-#include "test_stack_ball_query.h"
+#include "../../../op_host/stack_ball_query_tiling.h"
 
 using namespace std;
 extern "C" __global__ __aicore__ void stack_ball_query(
@@ -62,9 +62,9 @@ TEST_F(stack_ball_query_test, test_case_fp32)
     uint8_t* outputIdx = (uint8_t*)AscendC::GmAlloc(idx_bytes_size);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(1024);
 
-    size_t tiling_bytes = sizeof(StackBallQueryTilingDataInfo);
+    size_t tiling_bytes = sizeof(StackBallQueryTilingData);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_bytes);
-    auto tilingData = reinterpret_cast<StackBallQueryTilingDataInfo*>(tiling);
+    auto tilingData = reinterpret_cast<StackBallQueryTilingData*>(tiling);
     tilingData->batchSize = 2;
     tilingData->totalLengthCenterXyz = 10;
     tilingData->totalLengthXyz = 20;
