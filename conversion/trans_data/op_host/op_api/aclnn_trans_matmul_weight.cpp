@@ -32,6 +32,13 @@ static const int MAX_DIM_NUM_ND = 6;
 static const int64_t MIN_SIZE_PER_BLOCK_FLOAT16 = 16;
 static const int64_t MIN_SIZE_PER_BLOCK_INT8 = 32;
 
+namespace {
+static const int MIN_INT8_DIM_NUM_ND = 2;
+static const int MAX_INT8_DIM_NUM_ND = 6;
+static const int MIN_FLOAT16_DIM_NUM_ND = 2;
+static const int MAX_FLOAT16_DIM_NUM_ND = 3;  
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -65,19 +72,28 @@ static inline bool NeedToCovertToPravateFormat() {
 
 static inline bool CheckShapeDim(const aclIntArray *tensorShape) {
   uint64_t dimSize = tensorShape->Size();
-  // Only support matmul whoes dimSize is 2
-  if (dimSize != 2) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "It is expected that tensorShape has 2, but got size %lu.", dimSize);
-    return false;
+  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+    // Only support matmul operations with dimSize is 2 or 3
+    if (dimSize < MIN_FLOAT16_DIM_NUM_ND || dimSize > MAX_FLOAT16_DIM_NUM_ND) {
+      OP_LOGE(ACLNN_ERR_PARAM_INVALID, "It is expected that tensorShape has 2-3 dimensions, but got dimensions %lu.", dimSize);
+      return false;
+    }
+  } else {
+    // Only support matmul operation with dimSize is 2
+    if (dimSize != MIN_FLOAT16_DIM_NUM_ND) {
+      OP_LOGE(ACLNN_ERR_PARAM_INVALID, "It is expected that tensorShape has 2 dimensions, but got dimensions %lu.", dimSize);
+      return false;
+    }
   }
   return true;
 }
 
 static inline bool CheckShapeDimV2(const aclIntArray *tensorShape) {
   uint64_t dimSize = tensorShape->Size();
-  // Only support matmul whoes dimSize is between 2 and 6
-  if (dimSize < MIN_DIM_NUM_ND || dimSize > MAX_DIM_NUM_ND) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "It is expected that tensorShape has 2-6, but got size %lu.", dimSize);
+  // Only support matmul operations with dimSize is between 2 and 6
+  if (dimSize < MIN_INT8_DIM_NUM_ND || dimSize > MAX_INT8_DIM_NUM_ND) {
+    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "It is expected that tensorShape has 2-6 dimensions, but got dimensions %lu.", dimSize);
     return false;
   }
   return true;
