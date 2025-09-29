@@ -15,6 +15,7 @@ import sys
 import glob
 import shutil
 import subprocess
+import sysconfig
 from pathlib import Path
 from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext
@@ -78,10 +79,18 @@ class CMakeBuild(build_ext):
 
     def build_cmake(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
+        python_include = sysconfig.get_path('include')
+        python_libs = sysconfig.get_config_var('LIBDIR')
+
         cmake_args = [
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}",
             f"-DPYTHON_EXECUTABLE={sys.executable}",
             f"-DBUILD_TORCH_OPS=ON",
+            f"-DPYTHON_EXTENSION_USE_ABI3=ON",
+            f"-DPYTHON_INCLUDE_DIR={python_include}",
+            f"-DPYTHON_LIBRARIES={python_libs}",
+            f"-DPy_LIMITED_API_VERSION=0x03080000",
+
         ]
 
         build_type = "Debug" if self.debug else "Release"
