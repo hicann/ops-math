@@ -14,8 +14,11 @@
  */
 #ifndef HANS_DECODE_BASE_H
 #define HANS_DECODE_BASE_H
-
+#ifdef __CCE_UT_TEST__
+#include "../../hans_encode/op_kernel/hans_const.h"
+#else
 #include "../hans_encode/hans_const.h"
+#endif
 
 namespace HansDecodeNS {
 using namespace HansCommonNs;

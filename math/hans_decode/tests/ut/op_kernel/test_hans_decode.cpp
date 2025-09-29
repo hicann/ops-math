@@ -15,10 +15,9 @@
 #include <cstdint>
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
-#include "test_hans_decode.h"
-#include "../data_utils.h"
+#include "../../../op_host/hans_decode_tiling.h"
+#include "data_utils.h"
 
-#include <cstdint>
 using namespace std;
 // using namespace AscendC;
 
