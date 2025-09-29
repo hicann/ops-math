@@ -13,12 +13,10 @@
  * \brief
  */
  
-#include <gtest/gtest.h> // NOLINT
+#include <gtest/gtest.h>
 #include <iostream>
-#include "op_proto_test_util.h" // NOLINT
-#include "experiment_ops.h"     // NOLINT
-#include "graph/utils/op_desc_utils.h"
-#include "common/utils/ut_op_common.h"
+#include "infershape_context_faker.h"
+#include "base/registry/op_impl_space_registry_v2.h"
 
 class NonFiniteCheck : public testing::Test
 {
@@ -34,18 +32,66 @@ protected:
     }
 };
 
-TEST_F(NonFiniteCheck, NonFiniteCheck_InferDataType)
+static std::vector<int64_t> ToVector(const gert::Shape& shape)
 {
-    ge::op::NonFiniteCheck op;
-    std::vector<std::pair<int64_t, int64_t>> shape_range = {{2, 2}, {100, 200}, {4, 8}};
-    auto tensor_desc =
-        create_desc_shape_range({2, 100, 4}, ge::DT_FLOAT16, ge::FORMAT_ND, {2, 100, 4}, ge::FORMAT_ND, shape_range);
-    op.create_dynamic_input_tensor_list(3);
-    op.UpdateDynamicInputDesc("tensor_list", 0, tensor_desc);
-    op.UpdateDynamicInputDesc("tensor_list", 1, tensor_desc);
-    op.UpdateDynamicInputDesc("tensor_list", 2, tensor_desc);
-    auto ret = InferDataTypeTest(op);
-    EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
-    auto output_desc = op.GetOutputDesc("found_flag");
-    EXPECT_EQ(output_desc.GetDataType(), ge::DT_FLOAT);
+    size_t shapeSize = shape.GetDimNum();
+    std::vector<int64_t> shapeVec(shapeSize, 0);
+    for (size_t i = 0; i < shapeSize; i++) {
+        shapeVec[i] = shape.GetDim(i);
+    }
+    return shapeVec;
+}
+
+static void ExeTestCase(
+    const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
+    const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
+    gert::StorageShape& outStorageShape,
+    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+{
+    // 从vector中取出对应参数（保持原顺序）
+    const auto& xStorageShape = inputShapes[0];
+    
+    ge::DataType input1Dtype = dtypes[0];
+    ge::DataType outputDtype = dtypes[1];
+
+    /* make infershape context */
+    std::vector<gert::Tensor *> inputTensors = {
+        (gert::Tensor *)&xStorageShape,
+    };
+    std::vector<gert::StorageShape *> outputShapes = {&outStorageShape};
+    auto contextHolder = gert::InferShapeContextFaker()
+        .SetOpType("NonFiniteCheck")
+        .NodeIoNum(1, 1)
+        .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .InputTensors(inputTensors)
+        .OutputShapes(outputShapes)
+        .Build();
+
+    /* get infershape func */
+    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    auto inferShapeFunc = spaceRegistry->GetOpImpl("NonFiniteCheck")->infer_shape;
+    ASSERT_NE(inferShapeFunc, nullptr);
+
+    /* do infershape */
+    EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
+}
+
+TEST_F(NonFiniteCheck, NonFiniteCheck_infershape_case_0)
+{
+    // 用vector存储同类型参数（顺序与原参数列表一致）
+    std::vector<gert::StorageShape> inputShapes = {
+        {{2, 100, 4}, {2, 100, 4}},                  // x_shape
+    };
+    std::vector<ge::DataType> dtypes = {
+        ge::DT_FLOAT16,  // input1Dtype
+        ge::DT_FLOAT   // outputDtype
+    };
+
+    std::vector<int64_t> expectResult = {1};
+    gert::StorageShape outStorageShape = {};
+
+    // 简化后的函数调用
+    ExeTestCase(inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS);
+    EXPECT_EQ(ToVector(outStorageShape.GetOriginShape()), expectResult);
 }
