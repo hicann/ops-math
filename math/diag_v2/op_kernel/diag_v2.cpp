@@ -18,10 +18,17 @@
 #include "diag_v2_b64.h"
 #include "diag_v2_b128.h"
 #include "diag_v2_t4.h"
+#ifdef __CCE_UT_TEST__
+#include "../../../conversion/diag_flat/op_kernel/diag_flat_nd_to_2d.h"
+#include "../../../conversion/diag_flat/op_kernel/diag_flat_nd_to_2d_with_few.h"
+#include "../../../conversion/diag_flat/op_kernel/diag_flat_nd_to_2d_b16_more64.h"
+#include "../../../conversion/diag_flat/op_kernel/diag_flat_nd_to_2d_b16_less.h"
+#else
 #include "../diag_flat/diag_flat_nd_to_2d.h"
 #include "../diag_flat/diag_flat_nd_to_2d_with_few.h"
 #include "../diag_flat/diag_flat_nd_to_2d_b16_more64.h"
 #include "../diag_flat/diag_flat_nd_to_2d_b16_less.h"
+#endif
 
 using namespace DiagV2;
 using namespace DiagFlat;

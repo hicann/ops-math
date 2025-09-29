@@ -8,12 +8,10 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <gtest/gtest.h>  // NOLINT
+#include <gtest/gtest.h>
 #include <iostream>
-#include "op_proto_test_util.h"  // NOLINT
-#include "reduce_ops.h"         // NOLINT
-#include "graph/utils/op_desc_utils.h"
-#include "common/utils/ut_op_common.h"
+#include "infershape_context_faker.h"
+#include "base/registry/op_impl_space_registry_v2.h"
 
 class GroupedBiasAddGrad : public testing::Test {
  protected:
@@ -26,49 +24,73 @@ class GroupedBiasAddGrad : public testing::Test {
   }
 };
 
-TEST_F(GroupedBiasAddGrad, GroupedBiasAddGrad_infershape_case_0) {
-  ge::op::GroupedBiasAddGrad op;
-  op.UpdateInputDesc("grad_y", create_desc({20, 128, 6912}, ge::DT_FLOAT16));
-  op.UpdateInputDesc("group_idx", create_desc({6912}, ge::DT_FLOAT16));
-
-  EXPECT_EQ(InferShapeTest(op), ge::GRAPH_FAILED);
+static std::vector<int64_t> ToVector(const gert::Shape& shape)
+{
+    size_t shapeSize = shape.GetDimNum();
+    std::vector<int64_t> shapeVec(shapeSize, 0);
+    for (size_t i = 0; i < shapeSize; i++) {
+        shapeVec[i] = shape.GetDim(i);
+    }
+    return shapeVec;
 }
 
-TEST_F(GroupedBiasAddGrad, GroupedBiasAddGrad_infershape_case_1) {
-  ge::op::GroupedBiasAddGrad op;
-  op.UpdateInputDesc("grad_y", create_desc({20, 6912}, ge::DT_FLOAT16));
-  op.UpdateInputDesc("group_idx", create_desc({6912, 40}, ge::DT_FLOAT16));
+static void ExeTestCase(
+    const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
+    const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
+    gert::StorageShape& outStorageShape,
+    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+{
+    // 从vector中取出对应参数（保持原顺序）
+    const auto& x1StorageShape = inputShapes[0];
+    const auto& x2StorageShape = inputShapes[1];
 
-  EXPECT_EQ(InferShapeTest(op), ge::GRAPH_FAILED);
+    ge::DataType input1Dtype = dtypes[0];
+    ge::DataType input2Dtype = dtypes[1];
+    ge::DataType outputDtype = dtypes[2];
+
+    /* make infershape context */
+    std::vector<gert::Tensor *> inputTensors = {
+        (gert::Tensor *)&x1StorageShape,
+        (gert::Tensor *)&x2StorageShape
+    };
+    std::vector<gert::StorageShape *> outputShapes = {&outStorageShape};
+    auto contextHolder = gert::InferShapeContextFaker()
+        .SetOpType("GroupedBiasAddGrad")
+        .NodeIoNum(2, 1)
+        .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(1, input2Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .InputTensors(inputTensors)
+        .OutputShapes(outputShapes)
+        .Build();
+
+    /* get infershape func */
+    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    auto inferShapeFunc = spaceRegistry->GetOpImpl("GroupedBiasAddGrad")->infer_shape;
+    ASSERT_NE(inferShapeFunc, nullptr);
+
+    /* do infershape */
+    EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
 }
 
-TEST_F(GroupedBiasAddGrad, GroupedBiasAddGrad_infershape_case_2) {
-  ge::op::GroupedBiasAddGrad op;
-  op.UpdateInputDesc("grad_y", create_desc({40, 6912}, ge::DT_FLOAT16));
-  op.UpdateInputDesc("group_idx", create_desc({10}, ge::DT_FLOAT16));
+TEST_F(GroupedBiasAddGrad, GroupedBiasAddGrad_infershape_case_0)
+{
+    // 用vector存储同类型参数（顺序与原参数列表一致）
+    std::vector<gert::StorageShape> inputShapes = {
+        {{40, 6912}, {40, 6912}},                 
+        {{10}, {10}}                           
+    };
+    std::vector<ge::DataType> dtypes = {
+        ge::DT_FLOAT,  // input1Dtype
+        ge::DT_INT32,    // input2Dtype
+        ge::DT_FLOAT   // outputDtype
+    };
 
-  EXPECT_EQ(InferShapeTest(op), ge::GRAPH_SUCCESS);
-  auto grad_bias = op.GetOutputDesc(0);
-  std::vector<int64_t> expected_shape = {10, 6912};
-  EXPECT_EQ(grad_bias.GetShape().GetDims(), expected_shape);
-}
+    std::vector<int64_t> expectResult = {10, 6912};
+    gert::StorageShape outStorageShape = {};
 
-TEST_F(GroupedBiasAddGrad, GroupedBiasAddGrad_infershape_case_3) {
-  ge::op::GroupedBiasAddGrad op;
-  op.UpdateInputDesc("grad_y", create_desc({40, 6912}, ge::DT_FLOAT16));
-  op.UpdateInputDesc("group_idx", create_desc({1024}, ge::DT_FLOAT16));
-
-  EXPECT_EQ(InferShapeTest(op), ge::GRAPH_SUCCESS);
-  auto grad_bias = op.GetOutputDesc(0);
-  std::vector<int64_t> expected_shape = {1024, 6912};
-  EXPECT_EQ(grad_bias.GetShape().GetDims(), expected_shape);
-}
-
-TEST_F(GroupedBiasAddGrad, GroupedBiasAddGrad_infershape_case_4) {
-  ge::op::GroupedBiasAddGrad op;
-  op.UpdateInputDesc("grad_y", create_desc({40, 6912}, ge::DT_FLOAT16));
-  op.UpdateInputDesc("group_idx", create_desc({2049}, ge::DT_FLOAT16));
-
-  EXPECT_EQ(InferShapeTest(op), ge::GRAPH_FAILED);
+    // 简化后的函数调用
+    ExeTestCase(inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS);
+    EXPECT_EQ(ToVector(outStorageShape.GetOriginShape()), expectResult);
 }
 

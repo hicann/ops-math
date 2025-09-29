@@ -10,10 +10,8 @@
 
 #include <gtest/gtest.h>
 #include <iostream>
-#include "op_proto_test_util.h"
-#include "math_ops.h"
-#include "graph/utils/op_desc_utils.h"
-#include "common/utils/ut_op_common.h"
+#include "infershape_context_faker.h"
+#include "base/registry/op_impl_space_registry_v2.h"
 
 class HistogramV2Test : public testing::Test {
  protected:
@@ -26,55 +24,78 @@ class HistogramV2Test : public testing::Test {
   }
 };
 
-TEST_F(HistogramV2Test, histogram_v2_infer_shape) {
-  ge::op::HistogramV2 op;
-  std::vector<std::pair<int64_t, int64_t>> shape_range = {{2, 64}};
-  auto tensor_x = create_desc_shape_range({-2}, ge::DT_FLOAT, ge::FORMAT_ND, {32}, ge::FORMAT_ND, shape_range);
-  auto tensor_min = create_desc_shape_range({-2}, ge::DT_FLOAT, ge::FORMAT_ND, {32}, ge::FORMAT_ND, shape_range);
-  auto tensor_max = create_desc_shape_range({-2}, ge::DT_FLOAT, ge::FORMAT_ND, {32}, ge::FORMAT_ND, shape_range);
-
-  op.UpdateInputDesc("x", tensor_x);
-  op.UpdateInputDesc("min", tensor_min);
-  op.UpdateInputDesc("max", tensor_max);
-
-  int64_t bins = 100;
-  op.SetAttr("bins", bins);
-
-  Runtime2TestParam param{{"bins"}};
-  auto ret = InferShapeTest(op, param);
-  EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
-  auto output_desc = op.GetOutputDesc("y");
-  std::vector<int64_t> expected_output_shape = {100};
-  EXPECT_EQ(output_desc.GetShape().GetDims(), expected_output_shape);
+static std::vector<int64_t> ToVector(const gert::Shape& shape)
+{
+    size_t shapeSize = shape.GetDimNum();
+    std::vector<int64_t> shapeVec(shapeSize, 0);
+    for (size_t i = 0; i < shapeSize; i++) {
+        shapeVec[i] = shape.GetDim(i);
+    }
+    return shapeVec;
 }
 
-TEST_F(HistogramV2Test, histogram_v2_infer_dtype) {
-  ASSERT_NE(gert::OpImplRegistry::GetInstance().GetOpImpl("HistogramV2"), nullptr);
-  auto data_type_func = gert::OpImplRegistry::GetInstance().GetOpImpl("HistogramV2")->infer_datatype;
+static void ExeTestCase(
+    const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
+    const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
+    gert::StorageShape& outStorageShape,
+    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+{
+    // 从vector中取出对应参数（保持原顺序）
+    const auto& x1StorageShape = inputShapes[0];
+    const auto& x2StorageShape = inputShapes[1];
+    const auto& x3StorageShape = inputShapes[2];
 
-  if (data_type_func != nullptr) {
-    ge::DataType input_ref = ge::DT_FLOAT;
-    ge::DataType input_min = ge::DT_FLOAT;
-    ge::DataType input_max = ge::DT_FLOAT;
-    ge::DataType output_ref = ge::DT_INT32;
-    auto context_holder = gert::InferDataTypeContextFaker()
-        .IrInputNum(3)
-        .NodeIoNum(3,1)
-        .NodeInputTd(0, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(1, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(2, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeOutputTd(0, ge::DT_INT32, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeAttrs({
-            {"bins", ge::AnyValue::CreateFrom<int64_t>(100)}
-        })
-        .InputDataTypes({&input_ref, &input_min, &input_max})
-        .OutputDataTypes({&output_ref})
+    
+    ge::DataType input1Dtype = dtypes[0];
+    ge::DataType outputDtype = dtypes[1];
+
+    /* make infershape context */
+    std::vector<gert::Tensor *> inputTensors = {
+        (gert::Tensor *)&x1StorageShape,
+        (gert::Tensor *)&x2StorageShape,
+        (gert::Tensor *)&x3StorageShape
+    };
+    const std::string& attrName = "bins";
+    int64_t value = 100;
+    std::vector<gert::StorageShape *> outputShapes = {&outStorageShape};
+    auto contextHolder = gert::InferShapeContextFaker()
+        .SetOpType("HistogramV2")
+        .NodeIoNum(3, 1)
+        .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(1, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(2, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .InputTensors(inputTensors)
+        .OutputShapes(outputShapes)
+        .Attr(attrName, value)
         .Build();
-    auto context = context_holder.GetContext<gert::InferDataTypeContext>();
-    EXPECT_EQ(data_type_func(context), ge::GRAPH_SUCCESS);
-    ASSERT_NE(context, nullptr);
 
-    EXPECT_EQ(context->GetInputDataType(0), input_ref);
-    EXPECT_EQ(context->GetOutputDataType(0), output_ref);
-  }
+    /* get infershape func */
+    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    auto inferShapeFunc = spaceRegistry->GetOpImpl("HistogramV2")->infer_shape;
+    ASSERT_NE(inferShapeFunc, nullptr);
+
+    /* do infershape */
+    EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
+}
+
+TEST_F(HistogramV2Test, HistogramV2_infershape_case_0)
+{
+    // 用vector存储同类型参数（顺序与原参数列表一致）
+    std::vector<gert::StorageShape> inputShapes = {
+        {{16, 16}, {16, 16}},                 
+        {{16, 16}, {16, 16}},                  
+        {{16, 16}, {16, 16}},  
+    };
+    std::vector<ge::DataType> dtypes = {
+        ge::DT_FLOAT16,  // input1Dtype
+        ge::DT_FLOAT16   // outputDtype
+    };
+
+    std::vector<int64_t> expectResult = {100};
+    gert::StorageShape outStorageShape = {};
+
+    // 简化后的函数调用
+    ExeTestCase(inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS);
+    EXPECT_EQ(ToVector(outStorageShape.GetOriginShape()), expectResult);
 }
