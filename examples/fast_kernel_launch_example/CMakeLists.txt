@@ -48,11 +48,11 @@ set(CMAKE_C_COMPILER   ${BISHENG})
 set(CMAKE_CXX_COMPILER ${BISHENG})
 set(CMAKE_LINKER       ${BISHENG})
 
-# Python 配置
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-message(STATUS "Python3_EXECUTABLE   = ${Python3_EXECUTABLE}")
-message(STATUS "Python3_INCLUDE_DIRS = ${Python3_INCLUDE_DIRS}")
-message(STATUS "Python3_LIBRARIES    = ${Python3_LIBRARIES}")
+# # Python 配置
+# find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+# message(STATUS "Python3_EXECUTABLE   = ${Python3_EXECUTABLE}")
+# message(STATUS "Python3_INCLUDE_DIRS = ${Python3_INCLUDE_DIRS}")
+# message(STATUS "Python3_LIBRARIES    = ${Python3_LIBRARIES}")
 
 # Torch 配置
 execute_process(
