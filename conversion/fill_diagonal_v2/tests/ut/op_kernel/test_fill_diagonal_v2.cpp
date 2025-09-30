@@ -1,17 +1,16 @@
 /**
- * This program is free software, you can redistribute it and/or modify.
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd.2025. All rights reserved.
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <array>
 #include <vector>
 #include "gtest/gtest.h"
-#include "test_fill_diagonal_v2_tiling.h"
+#include "../../../op_host/fill_diagonal_v2_tiling.h"
 
 #ifdef __CCE_KT_TEST__
 #include "tikicpulib.h"
@@ -47,12 +46,12 @@ TEST_F(fill_diagonal_v2_test, test_case_float)
     size_t self_size = inputLength * sizeof(float);
     size_t value_size = sizeof(float);
     size_t tiling_data_size = sizeof(FillDiagonalV2TilingData);
-    uint8_t* self = (uint8_t*)AscendC::GmAlloc(self_size);
-    uint8_t* fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint8_t* workspace = nullptr;
-    uint32_t blockDim = 1; // cpu模拟使用单核
-    system("cp -r ../../../../../../../ops/built-in/tests/ut/fast_op_test/fill_diagonal_v2/fill_diagonal_v2_data ./");
+    uint8_t *self = (uint8_t*)AscendC::GmAlloc(self_size);
+    uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
+    uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
+    uint8_t *workspace = nullptr;
+    uint32_t blockDim = 1; //cpu模拟使用单核
+    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
     system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 3.14 ture float32");
@@ -89,12 +88,12 @@ TEST_F(fill_diagonal_v2_test, test_case_flaot16)
     size_t value_size = sizeof(short);
     size_t tiling_data_size = sizeof(FillDiagonalV2TilingData);
 
-    uint8_t* self = (uint8_t*)AscendC::GmAlloc(self_size);
-    uint8_t* fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint8_t* workspace = nullptr;
-    uint32_t blockDim = 1; // cpu模拟使用单核
-    system("cp -r ../../../../../../../ops/built-in/tests/ut/fast_op_test/fill_diagonal_v2/fill_diagonal_v2_data ./");
+    uint8_t *self = (uint8_t*)AscendC::GmAlloc(self_size);
+    uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
+    uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
+    uint8_t *workspace = nullptr;
+    uint32_t blockDim = 1; //cpu模拟使用单核
+    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
     system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 3.14 true float16");
@@ -131,12 +130,12 @@ TEST_F(fill_diagonal_v2_test, test_case_int32)
     size_t value_size = sizeof(int32_t);
     size_t tiling_data_size = sizeof(FillDiagonalV2TilingData);
 
-    uint8_t* self = (uint8_t*)AscendC::GmAlloc(self_size);
-    uint8_t* fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint8_t* workspace = nullptr;
-    uint32_t blockDim = 1; // cpu模拟使用单核
-    system("cp -r ../../../../../../../ops/built-in/tests/ut/fast_op_test/fill_diagonal_v2/fill_diagonal_v2_data ./");
+    uint8_t *self = (uint8_t*)AscendC::GmAlloc(self_size);
+    uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
+    uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
+    uint8_t *workspace = nullptr;
+    uint32_t blockDim = 1; //cpu模拟使用单核
+    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
     system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 314 true int32");
@@ -173,12 +172,12 @@ TEST_F(fill_diagonal_v2_test, test_case_int8)
     size_t value_size = sizeof(char);
     size_t tiling_data_size = sizeof(FillDiagonalV2TilingData);
 
-    uint8_t* self = (uint8_t*)AscendC::GmAlloc(self_size);
-    uint8_t* fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint8_t* workspace = nullptr;
-    uint32_t blockDim = 1; // cpu模拟使用单核
-    system("cp -r ../../../../../../../ops/built-in/tests/ut/fast_op_test/fill_diagonal_v2/fill_diagonal_v2_data ./");
+    uint8_t *self = (uint8_t*)AscendC::GmAlloc(self_size);
+    uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
+    uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
+    uint8_t *workspace = nullptr;
+    uint32_t blockDim = 1; //cpu模拟使用单核
+    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
     system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 14 true int8");
@@ -215,12 +214,12 @@ TEST_F(fill_diagonal_v2_test, test_case_int16)
     size_t value_size = sizeof(short);
     size_t tiling_data_size = sizeof(FillDiagonalV2TilingData);
 
-    uint8_t* self = (uint8_t*)AscendC::GmAlloc(self_size);
-    uint8_t* fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint8_t* workspace = nullptr;
-    uint32_t blockDim = 1; // cpu模拟使用单核
-    system("cp -r ../../../../../../../ops/built-in/tests/ut/fast_op_test/fill_diagonal_v2/fill_diagonal_v2_data ./");
+    uint8_t *self = (uint8_t*)AscendC::GmAlloc(self_size);
+    uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
+    uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
+    uint8_t *workspace = nullptr;
+    uint32_t blockDim = 1; //cpu模拟使用单核
+    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
     system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 314 true int16");
@@ -257,12 +256,12 @@ TEST_F(fill_diagonal_v2_test, test_case_bfloat16)
     size_t value_size = sizeof(short);
     size_t tiling_data_size = sizeof(FillDiagonalV2TilingData);
 
-    uint8_t* self = (uint8_t*)AscendC::GmAlloc(self_size);
-    uint8_t* fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint8_t* workspace = nullptr;
-    uint32_t blockDim = 1; // cpu模拟使用单核
-    system("cp -r ../../../../../../../ops/built-in/tests/ut/fast_op_test/fill_diagonal_v2/fill_diagonal_v2_data ./");
+    uint8_t *self = (uint8_t*)AscendC::GmAlloc(self_size);
+    uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
+    uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
+    uint8_t *workspace = nullptr;
+    uint32_t blockDim = 1; //cpu模拟使用单核
+    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
     system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 3.14 true float16");
@@ -299,12 +298,12 @@ TEST_F(fill_diagonal_v2_test, test_case_uint8)
     size_t value_size = sizeof(char);
     size_t tiling_data_size = sizeof(FillDiagonalV2TilingData);
 
-    uint8_t* self = (uint8_t*)AscendC::GmAlloc(self_size);
-    uint8_t* fill_value = (uint8_t*)AscendC::GmAlloc(sizeof(char));
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint8_t* workspace = nullptr;
-    uint32_t blockDim = 1; // cpu模拟使用单核
-    system("cp -r ../../../../../../../ops/built-in/tests/ut/fast_op_test/fill_diagonal_v2/fill_diagonal_v2_data ./");
+    uint8_t *self = (uint8_t*)AscendC::GmAlloc(self_size);
+    uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(sizeof(char));
+    uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
+    uint8_t *workspace = nullptr;
+    uint32_t blockDim = 1; //cpu模拟使用单核
+    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
     system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 3.14 true uint8");
@@ -341,12 +340,12 @@ TEST_F(fill_diagonal_v2_test, test_case_bool)
     size_t value_size = sizeof(char);
     size_t tiling_data_size = sizeof(FillDiagonalV2TilingData);
 
-    uint8_t* self = (uint8_t*)AscendC::GmAlloc(self_size);
-    uint8_t* fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint8_t* workspace = nullptr;
-    uint32_t blockDim = 1; // cpu模拟使用单核
-    system("cp -r ../../../../../../../ops/built-in/tests/ut/fast_op_test/fill_diagonal_v2/fill_diagonal_v2_data ./");
+    uint8_t *self = (uint8_t*)AscendC::GmAlloc(self_size);
+    uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
+    uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
+    uint8_t *workspace = nullptr;
+    uint32_t blockDim = 1; //cpu模拟使用单核
+    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
     system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" true true bool");
@@ -383,12 +382,12 @@ TEST_F(fill_diagonal_v2_test, test_case_int64_dense)
     size_t value_size = sizeof(char);
     size_t tiling_data_size = sizeof(FillDiagonalV2TilingData);
 
-    uint8_t* self = (uint8_t*)AscendC::GmAlloc(self_size);
-    uint8_t* fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint8_t* workspace = nullptr;
-    uint32_t blockDim = 1; // cpu模拟使用单核
-    system("cp -r ../../../../../../../ops/built-in/tests/ut/fast_op_test/fill_diagonal_v2/fill_diagonal_v2_data ./");
+    uint8_t *self = (uint8_t*)AscendC::GmAlloc(self_size);
+    uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
+    uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
+    uint8_t *workspace = nullptr;
+    uint32_t blockDim = 1; //cpu模拟使用单核
+    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
     system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 88888888 true bool");
@@ -425,12 +424,12 @@ TEST_F(fill_diagonal_v2_test, test_case_int64_sparse)
     size_t value_size = sizeof(char);
     size_t tiling_data_size = sizeof(FillDiagonalV2TilingData);
 
-    uint8_t* self = (uint8_t*)AscendC::GmAlloc(self_size);
-    uint8_t* fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint8_t* workspace = nullptr;
-    uint32_t blockDim = 1; // cpu模拟使用单核
-    system("cp -r ../../../../../../../ops/built-in/tests/ut/fast_op_test/fill_diagonal_v2/fill_diagonal_v2_data ./");
+    uint8_t *self = (uint8_t*)AscendC::GmAlloc(self_size);
+    uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
+    uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
+    uint8_t *workspace = nullptr;
+    uint32_t blockDim = 1; //cpu模拟使用单核
+    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
     system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 88888888 true bool");

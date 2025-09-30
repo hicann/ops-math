@@ -8,27 +8,23 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-/*!
- * \file test_fill_diagonal_v2_proto.cpp
- * \brief
- */
 #include <gtest/gtest.h>
 #include <iostream>
 #include "infershape_context_faker.h"
 #include "base/registry/op_impl_space_registry_v2.h"
 
-class FillDiagonalV2Test : public testing::Test {
+class diagFlatInfer : public testing::Test {
  protected:
   static void SetUpTestCase() {
-    std::cout << "fill_diagonal_v2 Proto Test SetUp" << std::endl;
+    std::cout << "diagFlatInfer Proto Test SetUp" << std::endl;
   }
 
   static void TearDownTestCase() {
-    std::cout << "fill_diagonal_v2 Proto Test TearDown" << std::endl;
+    std::cout << "diagFlatInfer Proto Test TearDown" << std::endl;
   }
 };
 
-static std::vector<int64_t> ToVectorForFillDiagonalV2(const gert::Shape& shape)
+static std::vector<int64_t> ToVectorForDiagFlat(const gert::Shape& shape)
 {
     size_t shapeSize = shape.GetDimNum();
     std::vector<int64_t> shapeVec(shapeSize, 0);
@@ -38,16 +34,16 @@ static std::vector<int64_t> ToVectorForFillDiagonalV2(const gert::Shape& shape)
     return shapeVec;
 }
 
-static void ExeTestCaseForFillDiagonalV2(
+static void ExeTestCaseForDiagFlat(
     const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
     const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
     gert::StorageShape& outStorageShape,
     ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS,
-    bool attr = false)
+    int64_t attr = 0)
 {
     // 从vector中取出对应参数（保持原顺序）
     const auto& selfStorageShape = inputShapes[0];
-    const auto& fillValueStorageShape = inputShapes[1];
+    const auto& feedsStorageShape = inputShapes[1];
     
     ge::DataType input1Dtype = dtypes[0];
     ge::DataType input2Dtype = dtypes[1];
@@ -56,48 +52,48 @@ static void ExeTestCaseForFillDiagonalV2(
     /* make infershape context */
     std::vector<gert::Tensor *> inputTensors = {
         (gert::Tensor *)&selfStorageShape,
-        (gert::Tensor *)&fillValueStorageShape
+        (gert::Tensor *)&feedsStorageShape
     };
     std::vector<gert::StorageShape *> outputShapes = {&outStorageShape};
     auto contextHolder = gert::InferShapeContextFaker()
-        .SetOpType("FillDiagonalV2")
+        .SetOpType("DiagFlat")
         .NodeIoNum(2, 1)
         .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
         .NodeInputTd(1, input2Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
         .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
         .InputTensors(inputTensors)
         .OutputShapes(outputShapes)
-        .Attr("wrap", attr)
+        .Attr("output_feeds_size", attr)
         .Build();
 
     /* get infershape func */
     auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
-    auto inferShapeFunc = spaceRegistry->GetOpImpl("FillDiagonalV2")->infer_shape;
+    auto inferShapeFunc = spaceRegistry->GetOpImpl("DiagFlat")->infer_shape;
     ASSERT_NE(inferShapeFunc, nullptr);
 
     /* do infershape */
     EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
 }
 
-TEST_F(FillDiagonalV2Test, fill_diagonal_v2_infer_shape)
+TEST_F(diagFlatInfer, diag_flat_infershape_case_tiling_key_101)
 {
-    size_t size1 = 16;
+    size_t size1 = 8;
 
     // 用vector存储同类型参数（顺序与原参数列表一致）
     std::vector<gert::StorageShape> inputShapes = {
-        {{size1, size1}, {size1, size1}},    // self_shape
-        {{size1, size1}, {size1, size1}}     // fill_value_shape
+        {{size1,}, {size1,}},    // self_shape
+        {{size1,}, {size1,}}                  // feeds_shape
     };
     std::vector<ge::DataType> dtypes = {
         ge::DT_FLOAT16,  // input1Dtype
-        ge::DT_FLOAT,    // input2Dtype
+        ge::DT_FLOAT16,    // input2Dtype
         ge::DT_FLOAT16   // outputDtype
     };
 
     std::vector<int64_t> expectResult = {size1, size1};
     gert::StorageShape outStorageShape = {};
-    bool attr = false;
+    int64_t attr = 0;
     // 简化后的函数调用
-    ExeTestCaseForFillDiagonalV2(inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS, attr);
-    EXPECT_EQ(ToVectorForFillDiagonalV2(outStorageShape.GetOriginShape()), expectResult);
+    ExeTestCaseForDiagFlat(inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS, attr);
+    EXPECT_EQ(ToVectorForDiagFlat(outStorageShape.GetOriginShape()), expectResult);
 }

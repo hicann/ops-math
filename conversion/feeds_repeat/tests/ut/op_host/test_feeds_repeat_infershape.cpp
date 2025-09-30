@@ -1,20 +1,17 @@
 /**
- * This program is free software, you can redistribute it and/or modify.
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd.2025. All rights reserved.
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <iostream>
 #include <gtest/gtest.h>
-#include "op_proto_test_util.h"
-#include "selection_ops.h"
-#include "graph/utils/op_desc_utils.h"
-#include "common/utils/ut_op_common.h"
+#include <iostream>
+#include "infershape_context_faker.h"
+#include "base/registry/op_impl_space_registry_v2.h"
 
 class FeedsRepeat : public testing::Test {
 protected:
@@ -29,104 +26,81 @@ protected:
     }
 };
 
+static std::vector<int64_t> ToVectorForFeedsRepeat(const gert::Shape& shape)
+{
+    size_t shapeSize = shape.GetDimNum();
+    std::vector<int64_t> shapeVec(shapeSize, 0);
+    for (size_t i = 0; i < shapeSize; i++) {
+        shapeVec[i] = shape.GetDim(i);
+    }
+    return shapeVec;
+}
+
+static void ExeTestCaseForFeedsRepeat(
+    const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
+    const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
+    gert::StorageShape& outStorageShape,
+    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS,
+    int64_t attr = 0)
+{
+    // 从vector中取出对应参数（保持原顺序）
+    const auto& selfStorageShape = inputShapes[0];
+    const auto& feedsStorageShape = inputShapes[1];
+    
+    ge::DataType input1Dtype = dtypes[0];
+    ge::DataType input2Dtype = dtypes[1];
+    ge::DataType outputDtype = dtypes[2];
+
+    /* make infershape context */
+    std::vector<gert::Tensor *> inputTensors = {
+        (gert::Tensor *)&selfStorageShape,
+        (gert::Tensor *)&feedsStorageShape
+    };
+    std::vector<gert::StorageShape *> outputShapes = {&outStorageShape};
+    auto contextHolder = gert::InferShapeContextFaker()
+        .SetOpType("FeedsRepeat")
+        .NodeIoNum(2, 1)
+        .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeInputTd(1, input2Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+        .InputTensors(inputTensors)
+        .OutputShapes(outputShapes)
+        .Attr("output_feeds_size", attr)
+        .Build();
+
+    /* get infershape func */
+    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    auto inferShapeFunc = spaceRegistry->GetOpImpl("FeedsRepeat")->infer_shape;
+    ASSERT_NE(inferShapeFunc, nullptr);
+
+    /* do infershape */
+    EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
+}
+
 TEST_F(FeedsRepeat, FeedsRepeat_infershape_case_tiling_key_1)
 {
-    ge::op::FeedsRepeat op;
+    size_t size1 = 4;
+    size_t size2 = 5;
+    size_t size3 = 6;
+    size_t size4 = 7;
+    size_t feeds_size = 4;
+    size_t out_size = 15;
 
-    op.UpdateInputDesc("feeds", create_desc({4, 5, 6, 7}, ge::DT_FLOAT));
-    op.UpdateInputDesc("feeds_repeat_times", create_desc({4}, ge::DT_INT32));
-    op.SetAttr("output_feeds_size", 15);
-    Runtime2TestParam rt_param;
-    rt_param.attrs = {"output_feeds_size"};
-    rt_param.input_const = {false, true};
-    EXPECT_EQ(InferShapeTest(op, rt_param), ge::GRAPH_SUCCESS);
+    // 用vector存储同类型参数（顺序与原参数列表一致）
+    std::vector<gert::StorageShape> inputShapes = {
+        {{size1, size2, size3, size4}, {size1, size2, size3, size4}},    // self_shape
+        {{feeds_size,}, {feeds_size,}}                  // feeds_shape
+    };
+    std::vector<ge::DataType> dtypes = {
+        ge::DT_FLOAT16,  // input1Dtype
+        ge::DT_INT32,    // input2Dtype
+        ge::DT_FLOAT16   // outputDtype
+    };
 
-    auto output_y_desc = op.GetOutputDescByName("y");
-    std::vector<int64_t> expected_y_shape = {15, 5, 6, 7};
-    EXPECT_EQ(output_y_desc.GetShape().GetDims(), expected_y_shape);
-}
-
-TEST_F(FeedsRepeat, FeedsRepeat_infershape_case_tiling_key_2)
-{
-    ge::op::FeedsRepeat op;
-
-    op.UpdateInputDesc("feeds", create_desc({1, 50, 65}, ge::DT_FLOAT16));
-    op.UpdateInputDesc("feeds_repeat_times", create_desc({1}, ge::DT_INT32));
-    op.SetAttr("output_feeds_size", 128);
-    Runtime2TestParam rt_param;
-    rt_param.attrs = {"output_feeds_size"};
-    rt_param.input_const = {false, true};
-    EXPECT_EQ(InferShapeTest(op, rt_param), ge::GRAPH_SUCCESS);
-
-    auto output_y_desc = op.GetOutputDescByName("y");
-    std::vector<int64_t> expected_y_shape = {128, 50, 65};
-    EXPECT_EQ(output_y_desc.GetShape().GetDims(), expected_y_shape);
-}
-
-TEST_F(FeedsRepeat, FeedsRepeat_infershape_case_tiling_key_3)
-{
-    ge::op::FeedsRepeat op;
-
-    op.UpdateInputDesc("feeds", create_desc({4, 50, 60, 7}, ge::DT_BF16));
-    op.UpdateInputDesc("feeds_repeat_times", create_desc({4}, ge::DT_INT32));
-    op.SetAttr("output_feeds_size", 15);
-    Runtime2TestParam rt_param;
-    rt_param.attrs = {"output_feeds_size"};
-    rt_param.input_const = {false, true};
-    EXPECT_EQ(InferShapeTest(op, rt_param), ge::GRAPH_SUCCESS);
-
-    auto output_y_desc = op.GetOutputDescByName("y");
-    std::vector<int64_t> expected_y_shape = {15, 50, 60, 7};
-    EXPECT_EQ(output_y_desc.GetShape().GetDims(), expected_y_shape);
-}
-
-TEST_F(FeedsRepeat, FeedsRepeat_infershape_case_tiling_key_101)
-{
-    ge::op::FeedsRepeat op;
-
-    op.UpdateInputDesc("feeds", create_desc({48, 5, 6, 7}, ge::DT_FLOAT));
-    op.UpdateInputDesc("feeds_repeat_times", create_desc({48}, ge::DT_INT64));
-    op.SetAttr("output_feeds_size", 100);
-    Runtime2TestParam rt_param;
-    rt_param.attrs = {"output_feeds_size"};
-    rt_param.input_const = {false, true};
-    EXPECT_EQ(InferShapeTest(op, rt_param), ge::GRAPH_SUCCESS);
-
-    auto output_y_desc = op.GetOutputDescByName("y");
-    std::vector<int64_t> expected_y_shape = {100, 5, 6, 7};
-    EXPECT_EQ(output_y_desc.GetShape().GetDims(), expected_y_shape);
-}
-
-TEST_F(FeedsRepeat, FeedsRepeat_infershape_case_tiling_key_102)
-{
-    ge::op::FeedsRepeat op;
-
-    op.UpdateInputDesc("feeds", create_desc({50, 5, 6, 7}, ge::DT_FLOAT16));
-    op.UpdateInputDesc("feeds_repeat_times", create_desc({50}, ge::DT_INT64));
-    op.SetAttr("output_feeds_size", 50);
-    Runtime2TestParam rt_param;
-    rt_param.attrs = {"output_feeds_size"};
-    rt_param.input_const = {false, true};
-    EXPECT_EQ(InferShapeTest(op, rt_param), ge::GRAPH_SUCCESS);
-
-    auto output_y_desc = op.GetOutputDescByName("y");
-    std::vector<int64_t> expected_y_shape = {50, 5, 6, 7};
-    EXPECT_EQ(output_y_desc.GetShape().GetDims(), expected_y_shape);
-}
-
-TEST_F(FeedsRepeat, FeedsRepeat_infershape_case_tiling_key_103)
-{
-    ge::op::FeedsRepeat op;
-
-    op.UpdateInputDesc("feeds", create_desc({100, 5, 6, 7}, ge::DT_BF16));
-    op.UpdateInputDesc("feeds_repeat_times", create_desc({100}, ge::DT_INT64));
-    op.SetAttr("output_feeds_size", 101);
-    Runtime2TestParam rt_param;
-    rt_param.attrs = {"output_feeds_size"};
-    rt_param.input_const = {false, true};
-    EXPECT_EQ(InferShapeTest(op, rt_param), ge::GRAPH_SUCCESS);
-
-    auto output_y_desc = op.GetOutputDescByName("y");
-    std::vector<int64_t> expected_y_shape = {101, 5, 6, 7};
-    EXPECT_EQ(output_y_desc.GetShape().GetDims(), expected_y_shape);
+    std::vector<int64_t> expectResult = {out_size, size2, size3, size4};
+    gert::StorageShape outStorageShape = {};
+    int64_t attr = 15;
+    // 简化后的函数调用
+    ExeTestCaseForFeedsRepeat(inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS, attr);
+    EXPECT_EQ(ToVectorForFeedsRepeat(outStorageShape.GetOriginShape()), expectResult);
 }

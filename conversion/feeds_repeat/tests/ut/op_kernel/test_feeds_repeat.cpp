@@ -1,13 +1,13 @@
 /**
- * This program is free software, you can redistribute it and/or modify.
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd.2025. All rights reserved.
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+
 #include <array>
 #include <vector>
 #include <iostream>
@@ -15,7 +15,7 @@
 #include <cstdint>
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
-#include "test_feeds_repeat.h"
+#include "../../../op_host/feeds_repeat_tiling.h"
 #include "data_utils.h"
 
 using namespace std;
@@ -38,7 +38,7 @@ TEST_F(feeds_repeat_test, test_case_fp32_int32)
 {
     system(
         "cp -rf "
-        "../../../../../../../ops/built-in/tests/ut/fast_op_test/feeds_repeat/gen_data "
+        "../../../../conversion/feeds_repeat/tests/ut/op_kernel/feeds_repeat_data "
         "./");
     system("chmod -R 755 ./gen_data/");
     // feeds_repeat_times, output_feeds_size, feeds_dtype, repeat_times_dtype, row_shape
@@ -76,7 +76,7 @@ TEST_F(feeds_repeat_test, test_case_fp16_int32)
 {
     system(
         "cp -rf "
-        "../../../../../../../ops/built-in/tests/ut/fast_op_test/feeds_repeat/gen_data "
+        "../../../../conversion/feeds_repeat/tests/ut/op_kernel/feeds_repeat_data "
         "./");
     system("chmod -R 755 ./gen_data/");
     // feeds_repeat_times, output_feeds_size, feeds_dtype, repeat_times_dtype, row_shape
@@ -114,7 +114,7 @@ TEST_F(feeds_repeat_test, test_case_bf16_int32)
 {
     system(
         "cp -rf "
-        "../../../../../../../ops/built-in/tests/ut/fast_op_test/feeds_repeat/gen_data "
+        "../../../../conversion/feeds_repeat/tests/ut/op_kernel/feeds_repeat_data "
         "./");
     system("chmod -R 755 ./gen_data/");
     // feeds_repeat_times, output_feeds_size, feeds_dtype, repeat_times_dtype, row_shape
@@ -152,7 +152,7 @@ TEST_F(feeds_repeat_test, test_case_fp32_int64)
 {
     system(
         "cp -rf "
-        "../../../../../../../ops/built-in/tests/ut/fast_op_test/feeds_repeat/gen_data "
+        "../../../../conversion/feeds_repeat/tests/ut/op_kernel/feeds_repeat_data "
         "./");
     system("chmod -R 755 ./gen_data/");
     // feeds_repeat_times, output_feeds_size, feeds_dtype, repeat_times_dtype, row_shape
@@ -190,7 +190,7 @@ TEST_F(feeds_repeat_test, test_case_fp16_int64)
 {
     system(
         "cp -rf "
-        "../../../../../../../ops/built-in/tests/ut/fast_op_test/feeds_repeat/gen_data "
+        "../../../../conversion/feeds_repeat/tests/ut/op_kernel/feeds_repeat_data "
         "./");
     system("chmod -R 755 ./gen_data/");
     // feeds_repeat_times, output_feeds_size, feeds_dtype, repeat_times_dtype, row_shape
@@ -228,7 +228,7 @@ TEST_F(feeds_repeat_test, test_case_bf16_int64)
 {
     system(
         "cp -rf "
-        "../../../../../../../ops/built-in/tests/ut/fast_op_test/feeds_repeat/gen_data "
+        "../../../../conversion/feeds_repeat/tests/ut/op_kernel/feeds_repeat_data "
         "./");
     system("chmod -R 755 ./gen_data/");
     // feeds_repeat_times, output_feeds_size, feeds_dtype, repeat_times_dtype, row_shape
