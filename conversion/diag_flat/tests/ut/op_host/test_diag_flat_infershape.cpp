@@ -14,20 +14,18 @@
 #include "infershape_context_faker.h"
 #include "base/registry/op_impl_space_registry_v2.h"
 
-class FeedsRepeat : public testing::Test {
-protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "FeedsRepeat Proto Test SetUp" << std::endl;
-    }
+class diagFlatInfer : public testing::Test {
+ protected:
+  static void SetUpTestCase() {
+    std::cout << "diagFlatInfer Proto Test SetUp" << std::endl;
+  }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "FeedsRepeat Proto Test TearDown" << std::endl;
-    }
+  static void TearDownTestCase() {
+    std::cout << "diagFlatInfer Proto Test TearDown" << std::endl;
+  }
 };
 
-static std::vector<int64_t> ToVectorForFeedsRepeat(const gert::Shape& shape)
+static std::vector<int64_t> ToVectorForDiagFlat(const gert::Shape& shape)
 {
     size_t shapeSize = shape.GetDimNum();
     std::vector<int64_t> shapeVec(shapeSize, 0);
@@ -37,7 +35,7 @@ static std::vector<int64_t> ToVectorForFeedsRepeat(const gert::Shape& shape)
     return shapeVec;
 }
 
-static void ExeTestCaseForFeedsRepeat(
+static void ExeTestCaseForDiagFlat(
     const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
     const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
     gert::StorageShape& outStorageShape,
@@ -59,7 +57,7 @@ static void ExeTestCaseForFeedsRepeat(
     };
     std::vector<gert::StorageShape *> outputShapes = {&outStorageShape};
     auto contextHolder = gert::InferShapeContextFaker()
-        .SetOpType("FeedsRepeat")
+        .SetOpType("DiagFlat")
         .NodeIoNum(2, 1)
         .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
         .NodeInputTd(1, input2Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
@@ -71,37 +69,32 @@ static void ExeTestCaseForFeedsRepeat(
 
     /* get infershape func */
     auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
-    auto inferShapeFunc = spaceRegistry->GetOpImpl("FeedsRepeat")->infer_shape;
+    auto inferShapeFunc = spaceRegistry->GetOpImpl("DiagFlat")->infer_shape;
     ASSERT_NE(inferShapeFunc, nullptr);
 
     /* do infershape */
     EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
 }
 
-TEST_F(FeedsRepeat, FeedsRepeat_infershape_case_tiling_key_1)
+TEST_F(diagFlatInfer, diag_flat_infershape_case_tiling_key_101)
 {
-    size_t size1 = 4;
-    size_t size2 = 5;
-    size_t size3 = 6;
-    size_t size4 = 7;
-    size_t feeds_size = 4;
-    size_t out_size = 15;
+    size_t size1 = 8;
 
     // 用vector存储同类型参数（顺序与原参数列表一致）
     std::vector<gert::StorageShape> inputShapes = {
-        {{size1, size2, size3, size4}, {size1, size2, size3, size4}},    // self_shape
-        {{feeds_size,}, {feeds_size,}}                  // feeds_shape
+        {{size1,}, {size1,}},    // self_shape
+        {{size1,}, {size1,}}                  // feeds_shape
     };
     std::vector<ge::DataType> dtypes = {
         ge::DT_FLOAT16,  // input1Dtype
-        ge::DT_INT32,    // input2Dtype
+        ge::DT_FLOAT16,    // input2Dtype
         ge::DT_FLOAT16   // outputDtype
     };
 
-    std::vector<int64_t> expectResult = {out_size, size2, size3, size4};
+    std::vector<int64_t> expectResult = {size1, size1};
     gert::StorageShape outStorageShape = {};
-    int64_t attr = 15;
+    int64_t attr = 0;
     // 简化后的函数调用
-    ExeTestCaseForFeedsRepeat(inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS, attr);
-    EXPECT_EQ(ToVectorForFeedsRepeat(outStorageShape.GetOriginShape()), expectResult);
+    ExeTestCaseForDiagFlat(inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS, attr);
+    EXPECT_EQ(ToVectorForDiagFlat(outStorageShape.GetOriginShape()), expectResult);
 }
