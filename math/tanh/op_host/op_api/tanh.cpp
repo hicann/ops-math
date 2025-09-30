@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -23,17 +24,15 @@ namespace l0op {
 
 OP_TYPE_REGISTER(Tanh);
 
-const aclTensor *Tanh(const aclTensor *self,
-                      aclOpExecutor *executor) {
-  L0_DFX(Tanh, self);
-  auto tanhOut = executor->AllocTensor(self->GetStorageShape(), self->GetDataType(), self->GetStorageFormat());
-  CHECK_RET(tanhOut != nullptr, nullptr);
-  auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(Tanh,
-                                               OP_INPUT(self),
-                                               OP_OUTPUT(tanhOut));
-  OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
-                                       "Tanh ADD_TO_LAUNCHER_LIST_AICORE failed.");
-  return tanhOut;
+const aclTensor* Tanh(const aclTensor* self, aclOpExecutor* executor)
+{
+    L0_DFX(Tanh, self);
+    auto tanhOut = executor->AllocTensor(self->GetStorageShape(), self->GetDataType(), self->GetStorageFormat());
+    CHECK_RET(tanhOut != nullptr, nullptr);
+    auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(Tanh, OP_INPUT(self), OP_OUTPUT(tanhOut));
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
+        retAicore != ACLNN_SUCCESS, return nullptr, "Tanh ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    return tanhOut;
 }
 
-}
+} // namespace l0op

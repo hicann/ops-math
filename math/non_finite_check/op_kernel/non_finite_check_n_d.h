@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -24,8 +25,7 @@ constexpr int32_t BUFFER_NUM = 2;
 constexpr uint32_t BYTE_BLOCK = 32;
 
 template <typename T>
-class NonFiniteCheckND
-{
+class NonFiniteCheckND {
 public:
     __aicore__ inline NonFiniteCheckND(){};
     __aicore__ inline void Init(
@@ -178,9 +178,7 @@ __aicore__ inline void NonFiniteCheckND<T>::CopyIn(uint16_t index, int64_t dataC
     if (dataCount % perBlockCount) {
         struct DataCopyExtParams copyParams = {1, 0, 0, 0, 0};
         copyParams.blockLen = dataCount * sizeof(T);
-        struct DataCopyPadExtParams<T> padParams = {
-            true, 0, 0, 0
-        };
+        struct DataCopyPadExtParams<T> padParams = {true, 0, 0, 0};
         padParams.rightPadding = CeilAlignA2B(dataCount, perBlockCount) - dataCount;
         DataCopyPad(copyInLT, tensorListGM[index * maxProcCount], copyParams, padParams);
     } else {

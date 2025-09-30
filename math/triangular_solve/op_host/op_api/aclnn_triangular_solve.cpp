@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -35,8 +36,7 @@ extern "C" {
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
 
-inline static bool CheckNotNull(const aclTensor *self, const aclTensor *A,
-                                const aclTensor *xOut, const aclTensor *mOut)
+inline static bool CheckNotNull(const aclTensor* self, const aclTensor* A, const aclTensor* xOut, const aclTensor* mOut)
 {
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(A, return false);
@@ -45,8 +45,8 @@ inline static bool CheckNotNull(const aclTensor *self, const aclTensor *A,
     return true;
 }
 
-inline static bool CheckDtypeValid(const aclTensor *self, const aclTensor *A,
-                                   const aclTensor *xOut, const aclTensor *mOut)
+inline static bool CheckDtypeValid(
+    const aclTensor* self, const aclTensor* A, const aclTensor* xOut, const aclTensor* mOut)
 {
     // 检查self的数据类型是否在triangularSolve算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
@@ -62,8 +62,7 @@ inline static bool CheckDtypeValid(const aclTensor *self, const aclTensor *A,
     return true;
 }
 
-static bool CheckShape(const aclTensor *self, const aclTensor *A,
-                       const aclTensor *xOut, const aclTensor *mOut)
+static bool CheckShape(const aclTensor* self, const aclTensor* A, const aclTensor* xOut, const aclTensor* mOut)
 {
     // self,A 维度至少为2且最多为8
     OP_CHECK_MIN_DIM(self, 2, return false);
@@ -79,18 +78,21 @@ static bool CheckShape(const aclTensor *self, const aclTensor *A,
     size_t aDimNum = aShape.GetDimNum();
     auto aHDim = aShape.GetDim(aDimNum - 2);
     auto aWDim = aShape.GetDim(aDimNum - 1);
-    OP_CHECK(aHDim == aWDim,
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-            "A must be batchs of square matrices, but they are %ld by %ld matrices.",
-            aHDim, aWDim),
+    OP_CHECK(
+        aHDim == aWDim,
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "A must be batchs of square matrices, but they are %ld by %ld matrices.", aHDim,
+            aWDim),
         return false);
     // self, A 最后两维度需要满足A(*,m,m), self(*,m,n)
     auto bShape = self->GetViewShape();
     size_t bDimNum = bShape.GetDimNum();
     auto bHDim = bShape.GetDim(bDimNum - 2);
     auto bWDim = bShape.GetDim(bDimNum - 1);
-    OP_CHECK(bHDim == aHDim,
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+    OP_CHECK(
+        bHDim == aHDim,
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID,
             "Incompatible matrix sizes for triangular_solve: each A matrix is %ld by %ld \
             but each b matrix is %ld by %ld.",
             aHDim, aWDim, bHDim, bWDim),
@@ -99,8 +101,10 @@ static bool CheckShape(const aclTensor *self, const aclTensor *A,
     auto tempShape = bShape;
     tempShape.SetDim(bDimNum - 1, bHDim);
     op::Shape broadcastShape;
-    OP_CHECK(BroadcastInferShape(aShape, tempShape, broadcastShape),
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+    OP_CHECK(
+        BroadcastInferShape(aShape, tempShape, broadcastShape),
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID,
             "Broadcast fail, the size of tensor a must match the size of tensor b at non-singleton diemnsion."),
         return false);
     // xOut shape满足broadcast后的A，self （*, m, n）
@@ -113,8 +117,7 @@ static bool CheckShape(const aclTensor *self, const aclTensor *A,
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor *self, const aclTensor *A,
-                               const aclTensor *xOut, const aclTensor *mOut)
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* A, const aclTensor* xOut, const aclTensor* mOut)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, A, xOut, mOut), ACLNN_ERR_INNER_NULLPTR);
@@ -126,22 +129,22 @@ static aclnnStatus CheckParams(const aclTensor *self, const aclTensor *A,
     return ACLNN_SUCCESS;
 }
 
-static aclTensor* BroadcastTensor(const op::Shape dstShape, const aclTensor *src, aclOpExecutor *executor)
+static aclTensor* BroadcastTensor(const op::Shape dstShape, const aclTensor* src, aclOpExecutor* executor)
 {
     auto dstTensor = executor->AllocTensor(dstShape, src->GetDataType());
     op::FVector<int64_t, op::MAX_DIM_NUM> broadcastDims = op::ToShapeVector(dstShape);
-    auto shape = executor->ConvertToTensor(broadcastDims.data(), broadcastDims.size(),
-        static_cast<op::DataType>(ACL_INT64));
+    auto shape =
+        executor->ConvertToTensor(broadcastDims.data(), broadcastDims.size(), static_cast<op::DataType>(ACL_INT64));
     auto result = l0op::BroadcastTo(src, dstTensor, shape, executor);
     return const_cast<aclTensor*>(result);
 }
 
-static aclnnStatus CalcuUnitriangular(const aclTensor *&aBroadcast, aclOpExecutor *executor)
+static aclnnStatus CalcuUnitriangular(const aclTensor*& aBroadcast, aclOpExecutor* executor)
 {
     // eye仅支持float32数据类型
-    OP_CHECK(aBroadcast->GetDataType() == op::DataType::DT_FLOAT,
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "unitriangular mode only support float."),
-             return ACLNN_ERR_PARAM_INVALID);
+    OP_CHECK(
+        aBroadcast->GetDataType() == op::DataType::DT_FLOAT,
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "unitriangular mode only support float."), return ACLNN_ERR_PARAM_INVALID);
     auto aBroadcastShape = aBroadcast->GetViewShape();
     size_t aBroadcastDimNum = aBroadcastShape.GetDimNum();
     auto WDim = aBroadcastShape.GetDim(aBroadcastDimNum - 1);
@@ -166,15 +169,8 @@ static aclnnStatus CalcuUnitriangular(const aclTensor *&aBroadcast, aclOpExecuto
 }
 
 aclnnStatus aclnnTriangularSolveGetWorkspaceSize(
-    const aclTensor *self,
-    const aclTensor *A,
-    bool upper,
-    bool transpose,
-    bool unitriangular,
-    aclTensor *xOut,
-    aclTensor *mOut,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor)
+    const aclTensor* self, const aclTensor* A, bool upper, bool transpose, bool unitriangular, aclTensor* xOut,
+    aclTensor* mOut, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnTriangularSolve, DFX_IN(self, A, upper, transpose, unitriangular), DFX_OUT(xOut, mOut));
     // 固定写法，创建OpExecutor
@@ -200,8 +196,8 @@ aclnnStatus aclnnTriangularSolveGetWorkspaceSize(
     CHECK_RET(aContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 若输出tensor形状不同，则进行broadcast
-    const aclTensor *selfBroadcast = selfContiguous;
-    const aclTensor *aBroadcast = aContiguous;
+    const aclTensor* selfBroadcast = selfContiguous;
+    const aclTensor* aBroadcast = aContiguous;
     if (selfContiguous->GetViewShape() != xOut->GetViewShape()) {
         selfBroadcast = BroadcastTensor(xOut->GetViewShape(), selfContiguous, uniqueExecutor.get());
         CHECK_RET(selfBroadcast != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -236,8 +232,8 @@ aclnnStatus aclnnTriangularSolveGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnTriangularSolve(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor,
-                                 const aclrtStream stream)
+aclnnStatus aclnnTriangularSolve(
+    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
 {
     // 固定写法，调用框架能力，完成计算
     L2_DFX_PHASE_2(aclnnTriangularSolve);

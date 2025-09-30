@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -22,8 +23,7 @@ namespace IsFiniteNs {
 using namespace AscendC;
 
 template <typename T, auto MASK>
-class IsFinite
-{
+class IsFinite {
 public:
     __aicore__ inline IsFinite(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, const IsFiniteTilingData* tilingData);
@@ -219,9 +219,9 @@ __aicore__ inline void IsFinite<T, MASK>::Process()
     }
 }
 
-template<int D_T_X, int D_T_Y>
-__aicore__ inline void IsFiniteKernelImpl(__gm__ uint8_t* x, __gm__ uint8_t* y,
-                                          const IsFiniteNs::IsFiniteTilingData* tilingData)
+template <int D_T_X, int D_T_Y>
+__aicore__ inline void IsFiniteKernelImpl(
+    __gm__ uint8_t* x, __gm__ uint8_t* y, const IsFiniteNs::IsFiniteTilingData* tilingData)
 {
     GM_ADDR userWS = nullptr;
 

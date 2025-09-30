@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -16,11 +17,13 @@
 // ----------------IsInf--------------
 class is_inf : public testing::Test {
 protected:
-    static void SetUpTestCase() {
+    static void SetUpTestCase()
+    {
         std::cout << "is_inf SetUp" << std::endl;
     }
 
-    static void TearDownTestCase() {
+    static void TearDownTestCase()
+    {
         std::cout << "is_inf TearDown" << std::endl;
     }
 };
@@ -36,30 +39,29 @@ static std::vector<int64_t> ToVector(const gert::Shape& shape)
 }
 
 static void ExeTestCase(
-    const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
-    const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
-    gert::StorageShape& outStorageShape,
-    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+    const std::vector<gert::StorageShape>& inputShapes, // 存储所有输入StorageShape参数
+    const std::vector<ge::DataType>& dtypes,            // 存储所有DataType参数
+    gert::StorageShape& outStorageShape, ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
 {
     // 从vector中取出对应参数（保持原顺序）
     const auto& xStorageShape = inputShapes[0];
-    
+
     ge::DataType input1Dtype = dtypes[0];
     ge::DataType outputDtype = dtypes[1];
 
     /* make infershape context */
-    std::vector<gert::Tensor *> inputTensors = {
-        (gert::Tensor *)&xStorageShape,
+    std::vector<gert::Tensor*> inputTensors = {
+        (gert::Tensor*)&xStorageShape,
     };
-    std::vector<gert::StorageShape *> outputShapes = {&outStorageShape};
+    std::vector<gert::StorageShape*> outputShapes = {&outStorageShape};
     auto contextHolder = gert::InferShapeContextFaker()
-        .SetOpType("IsInf")
-        .NodeIoNum(1, 1)
-        .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .InputTensors(inputTensors)
-        .OutputShapes(outputShapes)
-        .Build();
+                             .SetOpType("IsInf")
+                             .NodeIoNum(1, 1)
+                             .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .InputTensors(inputTensors)
+                             .OutputShapes(outputShapes)
+                             .Build();
 
     /* get infershape func */
     auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
@@ -70,13 +72,13 @@ static void ExeTestCase(
     EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
 }
 
-TEST_F(is_inf, is_inf_infershape_cast_0) 
+TEST_F(is_inf, is_inf_infershape_cast_0)
 {
     std::vector<gert::StorageShape> inputShapes = {
-        {{3, 4}, {3, 4}},                  // x_shape
+        {{3, 4}, {3, 4}}, // x_shape
     };
     std::vector<ge::DataType> dtypes = {
-        ge::DT_FLOAT,  // input1Dtype
+        ge::DT_FLOAT, // input1Dtype
         ge::DT_BOOL   // outputDtype
     };
 

@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -21,21 +22,24 @@
 using namespace std;
 // using namespace AscendC;
 
-extern "C" __global__ __aicore__ void hans_decode(GM_ADDR mantissa, GM_ADDR fixed, GM_ADDR var, GM_ADDR pdf,
-                                                  GM_ADDR recover, GM_ADDR workspace, GM_ADDR tiling);
+extern "C" __global__ __aicore__ void hans_decode(
+    GM_ADDR mantissa, GM_ADDR fixed, GM_ADDR var, GM_ADDR pdf, GM_ADDR recover, GM_ADDR workspace, GM_ADDR tiling);
 
 class hans_decode_test : public testing::Test {
-   protected:
-    static void SetUpTestCase() {
+protected:
+    static void SetUpTestCase()
+    {
         cout << "hans_decode_test SetUp\n" << endl;
     }
-    static void TearDownTestCase() {
+    static void TearDownTestCase()
+    {
         cout << "hans_decode_test TearDown\n" << endl;
     }
 };
 
 // test case 0
-TEST_F(hans_decode_test, test_case_0) {
+TEST_F(hans_decode_test, test_case_0)
+{
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     uint32_t blockDim = 1;
     size_t testNumel = 32768;
@@ -74,17 +78,18 @@ TEST_F(hans_decode_test, test_case_0) {
     ReadFile(path + "/hans_decode_data/fixed.bin", outputFixedByteSize, outputFixed, outputFixedByteSize);
     ReadFile(path + "/hans_decode_data/mantissa.bin", mantissaByteSize, mantissa, mantissaByteSize);
 
-// decode
+    // decode
     uint8_t* tilingDecode = (uint8_t*)AscendC::GmAlloc(tilingDecodeByteSize);
     HansDecodeTilingData* decodeTiling4TestCase = reinterpret_cast<HansDecodeTilingData*>(tilingDecode);
-    decodeTiling4TestCase->fixedByteSize= outputFixedByteSize;
+    decodeTiling4TestCase->fixedByteSize = outputFixedByteSize;
     decodeTiling4TestCase->mantissaByteSize = mantissaByteSize;
-    decodeTiling4TestCase->recoverExpByteSize=testNumel;
-    decodeTiling4TestCase->recoverByteSize=inputByteSize;
-    decodeTiling4TestCase->reshuff=reshuff;
+    decodeTiling4TestCase->recoverExpByteSize = testNumel;
+    decodeTiling4TestCase->recoverByteSize = inputByteSize;
+    decodeTiling4TestCase->reshuff = reshuff;
     ICPU_SET_TILING_KEY(4);
-    ICPU_RUN_KF(hans_decode, blockDim, outputFixed, outputVar, mantissa, pdf, recover, workspace,
-                (uint8_t*)decodeTiling4TestCase);
+    ICPU_RUN_KF(
+        hans_decode, blockDim, outputFixed, outputVar, mantissa, pdf, recover, workspace,
+        (uint8_t*)decodeTiling4TestCase);
     WriteFile("./hans_decode_data/output_recover.bin", recover, inputByteSize);
 
     AscendC::GmFree(input);
@@ -98,9 +103,9 @@ TEST_F(hans_decode_test, test_case_0) {
     free(path_);
 }
 
-
 // test case 1
-TEST_F(hans_decode_test, test_case_1) {
+TEST_F(hans_decode_test, test_case_1)
+{
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     uint32_t blockDim = 1;
     size_t testNumel = 32768;
@@ -141,14 +146,15 @@ TEST_F(hans_decode_test, test_case_1) {
 
     uint8_t* tilingDecode = (uint8_t*)AscendC::GmAlloc(tilingDecodeByteSize);
     HansDecodeTilingData* decodeTiling4TestCase = reinterpret_cast<HansDecodeTilingData*>(tilingDecode);
-    decodeTiling4TestCase->fixedByteSize= outputFixedByteSize;
+    decodeTiling4TestCase->fixedByteSize = outputFixedByteSize;
     decodeTiling4TestCase->mantissaByteSize = mantissaByteSize;
-    decodeTiling4TestCase->recoverExpByteSize=testNumel;
-    decodeTiling4TestCase->recoverByteSize=inputByteSize;
-    decodeTiling4TestCase->reshuff=reshuff;
+    decodeTiling4TestCase->recoverExpByteSize = testNumel;
+    decodeTiling4TestCase->recoverByteSize = inputByteSize;
+    decodeTiling4TestCase->reshuff = reshuff;
     ICPU_SET_TILING_KEY(2);
-    ICPU_RUN_KF(hans_decode, blockDim, outputFixed, outputVar, mantissa, pdf, recover, workspace,
-                (uint8_t*)decodeTiling4TestCase);
+    ICPU_RUN_KF(
+        hans_decode, blockDim, outputFixed, outputVar, mantissa, pdf, recover, workspace,
+        (uint8_t*)decodeTiling4TestCase);
     WriteFile("./hans_decode_data/output_recover.bin", recover, inputByteSize);
 
     AscendC::GmFree(input);

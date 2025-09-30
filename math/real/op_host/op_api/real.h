@@ -14,7 +14,7 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *Real(const aclTensor *self, aclOpExecutor *executor);
-} // l0op
+const aclTensor* Real(const aclTensor* self, aclOpExecutor* executor);
+} // namespace l0op
 
 #endif // OP_API_INC_LEVEL0_REAL_H_

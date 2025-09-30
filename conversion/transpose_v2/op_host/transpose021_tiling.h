@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -45,7 +46,8 @@ public:
     explicit Transpose021Tiling(gert::TilingContext* ctx) : context(ctx) {};
     virtual ~Transpose021Tiling() = default;
 
-    ge::graphStatus GetPlatformInfo() {
+    ge::graphStatus GetPlatformInfo()
+    {
         auto platformInfo = context->GetPlatformInfo();
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
         params.coreNum = ascendcPlatform.GetCoreNumAiv();
@@ -53,12 +55,13 @@ public:
         params.sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
         return ge::GRAPH_SUCCESS;
     }
-    ge::graphStatus DoTiling() {
+    ge::graphStatus DoTiling()
+    {
         const gert::StorageShape* x_shape = context->GetInputShape(0);
         auto dimNum = x_shape->GetStorageShape().GetDimNum();
-        OP_CHECK_IF(dimNum < 2,  // 2 is x's dims min
-            OP_LOGE(context->GetNodeName(), "x's dims shoulu be greater than 2"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(
+            dimNum < 2, // 2 is x's dims min
+            OP_LOGE(context->GetNodeName(), "x's dims shoulu be greater than 2"), return ge::GRAPH_FAILED);
         for (uint64_t i = 0; i < dimNum - 2; i++) { // 2 is x's dims min
             params.inputNC *= x_shape->GetStorageShape().GetDim(i);
         }
@@ -74,7 +77,7 @@ public:
         auto xDataType = context->GetInputDesc(0)->GetDataType();
         if (xDataType == ge::DataType::DT_FLOAT16 || xDataType == ge::DataType::DT_BF16) {
             params.typeSize = sizeof(uint16_t);
-        } else if (xDataType == ge::DataType::DT_FLOAT){
+        } else if (xDataType == ge::DataType::DT_FLOAT) {
             params.typeSize = sizeof(float);
         } else {
             OP_LOGE(context->GetNodeName(), "Unsupport type.");
@@ -90,28 +93,31 @@ public:
             params.inputWAlign = GetAlign(params.inputW, block);
             params.repeatH = params.inputH16Align / TRANS_BLOCK;
         }
-        
+
         if (params.inputH16Align > LIMIT_H || params.inputWAlign > LIMIT_W) {
             OP_LOGE(context->GetNodeName(), "Unsupport shape.");
             return ge::GRAPH_FAILED;
         }
         params.hOnce = params.inputWAlign == params.inputW ? params.inputH16Align : TRANS_BLOCK * block;
         // db on
-        uint64_t hOnceMax = (params.ubSize / BUFFER_NUM / params.inputWAlign / params.typeSize) / params.hOnce * params.hOnce;
+        uint64_t hOnceMax =
+            (params.ubSize / BUFFER_NUM / params.inputWAlign / params.typeSize) / params.hOnce * params.hOnce;
         if (hOnceMax == 0U) {
             // db off
             hOnceMax = params.hOnce;
             params.doubleBuffer = 1U;
         }
-        
+
         params.tasksOnceMax = hOnceMax / params.inputH16Align;
         params.transLoop = GetAlign(params.tasksOnceMax * params.inputH, params.hOnce) / params.hOnce;
         return ge::GRAPH_SUCCESS;
     }
-    void ComputeTilingKey() {
+    void ComputeTilingKey()
+    {
         params.tilingKey = params.typeSize * TYPE_KEY;
     }
-    void SetTiling() {
+    void SetTiling()
+    {
         tilingData.set_tasksPerCore(params.tasksPerCore);
         tilingData.set_tasksTail(params.tasksTail);
         tilingData.set_inputH(params.inputH);
@@ -131,34 +137,38 @@ public:
         tilingData.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
         context->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
     }
-    void PrintTilingData() {
-        OP_LOGD(context->GetNodeName(), "Start TransposeV2TilingData printing"             );
-        OP_LOGD(context->GetNodeName(), "-----------------------------------------------" );
-        OP_LOGD(context->GetNodeName(), "tasksPerCore is:%lu"  , params.tasksPerCore      );
-        OP_LOGD(context->GetNodeName(), "tasksTail is: %lu"    , params.tasksTail         );
-        OP_LOGD(context->GetNodeName(), "inputH is: %lu"       , params.inputH            );
-        OP_LOGD(context->GetNodeName(), "inputW is: %lu"       , params.inputW            );
-        OP_LOGD(context->GetNodeName(), "inputH16Align is: %lu", params.inputH16Align     );
-        OP_LOGD(context->GetNodeName(), "inputWAlign is: %lu"  , params.inputWAlign       );
-        OP_LOGD(context->GetNodeName(), "hOnce is: %lu"        , params.hOnce             );
-        OP_LOGD(context->GetNodeName(), "tasksOnceMax is: %lu" , params.tasksOnceMax      );
-        OP_LOGD(context->GetNodeName(), "transLoop is: %lu"    , params.transLoop         );
-        OP_LOGD(context->GetNodeName(), "repeatH is: %lu"      , params.repeatH           );
-        OP_LOGD(context->GetNodeName(), "doubleBuffer is: %lu" , params.doubleBuffer      );
-        OP_LOGD(context->GetNodeName(), "blockDim is: %u"      , context->GetBlockDim()   );
-        OP_LOGD(context->GetNodeName(), "tilingKey is: %lu"    , context->GetTilingKey()  );
-        OP_LOGD(context->GetNodeName(), "-----------------------------------------------" );
-        OP_LOGD(context->GetNodeName(), "End TransposeV2TilingData printing"               );
+    void PrintTilingData()
+    {
+        OP_LOGD(context->GetNodeName(), "Start TransposeV2TilingData printing");
+        OP_LOGD(context->GetNodeName(), "-----------------------------------------------");
+        OP_LOGD(context->GetNodeName(), "tasksPerCore is:%lu", params.tasksPerCore);
+        OP_LOGD(context->GetNodeName(), "tasksTail is: %lu", params.tasksTail);
+        OP_LOGD(context->GetNodeName(), "inputH is: %lu", params.inputH);
+        OP_LOGD(context->GetNodeName(), "inputW is: %lu", params.inputW);
+        OP_LOGD(context->GetNodeName(), "inputH16Align is: %lu", params.inputH16Align);
+        OP_LOGD(context->GetNodeName(), "inputWAlign is: %lu", params.inputWAlign);
+        OP_LOGD(context->GetNodeName(), "hOnce is: %lu", params.hOnce);
+        OP_LOGD(context->GetNodeName(), "tasksOnceMax is: %lu", params.tasksOnceMax);
+        OP_LOGD(context->GetNodeName(), "transLoop is: %lu", params.transLoop);
+        OP_LOGD(context->GetNodeName(), "repeatH is: %lu", params.repeatH);
+        OP_LOGD(context->GetNodeName(), "doubleBuffer is: %lu", params.doubleBuffer);
+        OP_LOGD(context->GetNodeName(), "blockDim is: %u", context->GetBlockDim());
+        OP_LOGD(context->GetNodeName(), "tilingKey is: %lu", context->GetTilingKey());
+        OP_LOGD(context->GetNodeName(), "-----------------------------------------------");
+        OP_LOGD(context->GetNodeName(), "End TransposeV2TilingData printing");
     }
+
 private:
-    uint64_t GetAlign(uint64_t len, uint64_t size) {
+    uint64_t GetAlign(uint64_t len, uint64_t size)
+    {
         return size == 0U ? 0U : (len + size - 1U) / size * size;
     }
+
 private:
-    gert::TilingContext *context = nullptr;
+    gert::TilingContext* context = nullptr;
     Transpose021Params params;
     TransposeV2TilingData tilingData;
 };
 
-}
+} // namespace optiling
 #endif
