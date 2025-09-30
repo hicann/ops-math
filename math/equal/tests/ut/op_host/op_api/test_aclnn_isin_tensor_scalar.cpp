@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "gtest/gtest.h"
@@ -39,7 +40,8 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_f64)
     bool invert = false;
     auto out_desc = TensorDesc({1, 2, 3, 4}, ACL_BOOL, ACL_FORMAT_NCHW).Precision(0.0001, 0.0001);
 
-    auto ut = OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
+    auto ut = OP_API_UT(
+        aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -56,7 +58,8 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_f16)
     bool invert = false;
     auto out_desc = TensorDesc({1, 2, 3, 4}, ACL_BOOL, ACL_FORMAT_NHWC).Precision(0.0001, 0.0001);
 
-    auto ut = OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
+    auto ut = OP_API_UT(
+        aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -76,7 +79,8 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_int8)
     bool invert = false;
     auto out_desc = TensorDesc({1, 2, 3, 4}, ACL_BOOL, ACL_FORMAT_HWCN).Precision(0.0001, 0.0001);
 
-    auto ut = OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
+    auto ut = OP_API_UT(
+        aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -96,7 +100,8 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_uint8)
     bool invert = false;
     auto out_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_NDHWC).Precision(0.0001, 0.0001);
 
-    auto ut = OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
+    auto ut = OP_API_UT(
+        aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -116,7 +121,8 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_int16)
     bool invert = false;
     auto out_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_NCDHW).Precision(0.0001, 0.0001);
 
-    auto ut = OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
+    auto ut = OP_API_UT(
+        aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -133,7 +139,8 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_f32)
     bool invert = true;
     auto out_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
 
-    auto ut = OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
+    auto ut = OP_API_UT(
+        aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -153,7 +160,8 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_int32)
     bool invert = false;
     auto out_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
 
-    auto ut = OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
+    auto ut = OP_API_UT(
+        aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -173,7 +181,8 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_int64)
     bool invert = true;
     auto out_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
 
-    auto ut = OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
+    auto ut = OP_API_UT(
+        aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -190,7 +199,8 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_empty)
     bool invert = false;
     auto out_desc = TensorDesc({2, 0}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
 
-    auto ut = OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
+    auto ut = OP_API_UT(
+        aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -200,7 +210,6 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_empty)
     // SAMPLE: precision simulate
     ut.TestPrecision();
 }
-
 
 TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_element_unsupport_dtype)
 {
@@ -213,8 +222,8 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_element_unsup
     auto test_element_desc = ScalarDesc(1);
     auto out_desc = TensorDesc({2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
 
-    auto ut =
-        OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
+    auto ut = OP_API_UT(
+        aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
 
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -231,8 +240,8 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_test_element_
     auto test_element_desc = ScalarDesc(false);
     auto out_desc = TensorDesc({2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
 
-    auto ut =
-        OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
+    auto ut = OP_API_UT(
+        aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
 
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -248,8 +257,8 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_element_null)
     auto test_element_desc = ScalarDesc(1.0f);
     auto out_desc = TensorDesc({2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
 
-
-    auto ut = OP_API_UT(aclnnIsInTensorScalar, INPUT(nullptr, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
+    auto ut =
+        OP_API_UT(aclnnIsInTensorScalar, INPUT(nullptr, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
 
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
@@ -264,7 +273,6 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_test_element_
 
     auto element_desc = TensorDesc({2, 3, 4, 5}, ACL_INT64, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
 
     auto ut = OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, nullptr, assume_unique, invert), OUTPUT(out_desc));
 
@@ -282,14 +290,16 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_element_out_n
     auto element_desc = TensorDesc({2, 3, 4, 5}, ACL_INT64, ACL_FORMAT_ND);
     auto test_element_desc = ScalarDesc(1.0f);
 
-    auto ut = OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(nullptr));
+    auto ut = OP_API_UT(
+        aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(nullptr));
 
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 }
 
 // 非连续
-TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_not_contiguous) {
+TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_not_contiguous)
+{
     auto element_desc = TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 2}, 0, {4, 2});
     auto test_element_desc = ScalarDesc(1);
     bool assume_unique = false;
@@ -297,7 +307,8 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_not_contiguou
     bool invert = false;
     auto out_desc = TensorDesc({2, 4}, ACL_BOOL, ACL_FORMAT_ND, {1, 2}, 0, {4, 2}).Precision(0.0001, 0.0001);
 
-    auto ut = OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
+    auto ut = OP_API_UT(
+        aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -308,17 +319,17 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_not_contiguou
     ut.TestPrecision();
 }
 
-
 // largeDim
 TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_9d)
 {
-    auto element_desc = TensorDesc({1,2,2,2,2,2,2,2,2}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(1,1);
+    auto element_desc = TensorDesc({1, 2, 2, 2, 2, 2, 2, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(1, 1);
     auto test_element_desc = ScalarDesc(1.0f);
     bool assume_unique = false;
 
     bool invert = false;
     auto out_desc = TensorDesc(element_desc).Precision(0.0001, 0.0001);
-    auto ut = OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
+    auto ut = OP_API_UT(
+        aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
@@ -337,7 +348,8 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_can_not_promo
     bool invert = true;
     auto out_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
 
-    auto ut = OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
+    auto ut = OP_API_UT(
+        aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -354,7 +366,8 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_shape_invalid
     bool invert = true;
     auto out_desc = TensorDesc({2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
 
-    auto ut = OP_API_UT(aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
+    auto ut = OP_API_UT(
+        aclnnIsInTensorScalar, INPUT(element_desc, test_element_desc, assume_unique, invert), OUTPUT(out_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;

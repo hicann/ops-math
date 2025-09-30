@@ -13,7 +13,7 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *Ger(const aclTensor *self, const aclTensor* vec2, aclOpExecutor *executor);
+const aclTensor* Ger(const aclTensor* self, const aclTensor* vec2, aclOpExecutor* executor);
 } // namespace l0op
 
 #endif // OP_API_INC_LEVEL0_GER_H_

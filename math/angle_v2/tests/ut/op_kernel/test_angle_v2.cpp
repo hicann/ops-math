@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -27,16 +28,19 @@ using namespace std;
 
 extern "C" __global__ __aicore__ void angle_v2(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
 class angle_v2_test : public testing::Test {
-    protected:
-    static void SetUpTestCase() {
+protected:
+    static void SetUpTestCase()
+    {
         cout << "angle_v2_test SetUp\n" << endl;
     }
-    static void TearDownTestCase() {
+    static void TearDownTestCase()
+    {
         cout << "angle_v2_test TearDown\n" << endl;
     }
 };
 
-TEST_F(angle_v2_test, test_case_fp32) {
+TEST_F(angle_v2_test, test_case_fp32)
+{
     uint32_t totalLength = 8;
 
     // inputs
@@ -44,10 +48,10 @@ TEST_F(angle_v2_test, test_case_fp32) {
     size_t y_size = totalLength * sizeof(float);
     size_t tiling_data_size = sizeof(AngleV2TilingData);
 
-    uint8_t *x = (uint8_t*)AscendC::GmAlloc(x_size);
-    uint8_t *y = (uint8_t*)AscendC::GmAlloc(y_size);
-    uint8_t *workspace = (uint8_t *)AscendC::GmAlloc(1024 * 16 * 1024);
-    uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
+    uint8_t* x = (uint8_t*)AscendC::GmAlloc(x_size);
+    uint8_t* y = (uint8_t*)AscendC::GmAlloc(y_size);
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(1024 * 16 * 1024);
+    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
     uint32_t blockDim = 1;
     system("cp -r ../../../../math/angle_v2/tests/ut/op_kernel/angle_v2_data ./");
     system("chmod -R 755 ./angle_v2_data/");
@@ -55,7 +59,7 @@ TEST_F(angle_v2_test, test_case_fp32) {
     system("cd ./angle_v2_data/ && python3 gen_data.py 8 float32");
     system("cd ./angle_v2_data/ && python3 gen_tiling.py 8 float32");
 
-    char * path_ = get_current_dir_name();
+    char* path_ = get_current_dir_name();
     string path(path_);
     ReadFile(path + "/angle_v2_data/input_x.bin", x_size, x, x_size);
     ReadFile(path + "/angle_v2_data/tiling.bin", tiling_data_size, tiling, tiling_data_size);
@@ -72,8 +76,8 @@ TEST_F(angle_v2_test, test_case_fp32) {
     tilingDatafromBin->dataPerRepeat = 64;
 
     auto angle_v2_kernel = [](GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling) {
-            ::angle_v2(x, y, workspace, tiling);
-        };
+        ::angle_v2(x, y, workspace, tiling);
+    };
 
     ICPU_SET_TILING_KEY(2);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);

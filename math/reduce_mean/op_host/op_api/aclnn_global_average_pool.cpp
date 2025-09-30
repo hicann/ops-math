@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "aclnn_global_average_pool.h"
@@ -35,38 +36,32 @@ static const uint64_t GLOBAL_AVERAGE_POOL_MAX_DIMS_NUMS = 8;
 
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT,
-    op::DataType::DT_FLOAT16,
-    op::DataType::DT_DOUBLE
-};
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE};
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT,
-    op::DataType::DT_FLOAT16,
-    op::DataType::DT_DOUBLE,
-    op::DataType::DT_BF16
-};
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE, op::DataType::DT_BF16};
 
-static const std::initializer_list<DataType>& GetDtypeSupportList() {
-  if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-      GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) {
-    return ASCEND910B_DTYPE_SUPPORT_LIST;
-  } else {
-    return ASCEND910_DTYPE_SUPPORT_LIST;
-  }
+static const std::initializer_list<DataType>& GetDtypeSupportList()
+{
+    if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
+        GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) {
+        return ASCEND910B_DTYPE_SUPPORT_LIST;
+    } else {
+        return ASCEND910_DTYPE_SUPPORT_LIST;
+    }
 }
 
-static const std::initializer_list<op::Format> FORMAT_SUPPORT_LIST = { op::Format::FORMAT_ND, op::Format::FORMAT_NCHW,
-                                                                       op::Format::FORMAT_NCDHW };
+static const std::initializer_list<op::Format> FORMAT_SUPPORT_LIST = {
+    op::Format::FORMAT_ND, op::Format::FORMAT_NCHW, op::Format::FORMAT_NCDHW};
 
-static bool CheckNotNull(const aclTensor *self, const aclTensor *out)
+static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
 {
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(out, return false);
     return true;
 }
 
-static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out)
+static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     const auto& supportList = GetDtypeSupportList();
     // 检查self的数据类型是否在支持列表内
@@ -81,7 +76,7 @@ static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out)
     return true;
 }
 
-static bool CheckFormatValid(const aclTensor *self, const aclTensor *out)
+static bool CheckFormatValid(const aclTensor* self, const aclTensor* out)
 {
     op::Format selfFormat = self->GetStorageFormat();
     op::Format outFormat = out->GetStorageFormat();
@@ -93,7 +88,7 @@ static bool CheckFormatValid(const aclTensor *self, const aclTensor *out)
     return findSelfFormat != FORMAT_SUPPORT_LIST.end() && findOutFormat != FORMAT_SUPPORT_LIST.end();
 }
 
-static bool CheckShape(const aclTensor *self, const aclTensor *out)
+static bool CheckShape(const aclTensor* self, const aclTensor* out)
 {
     OP_CHECK_MIN_DIM(self, GLOBAL_AVERAGE_POOL_MIN_DIMS_NUMS, return false);
     OP_CHECK_MAX_DIM(self, GLOBAL_AVERAGE_POOL_MAX_DIMS_NUMS, return false);
@@ -101,7 +96,7 @@ static bool CheckShape(const aclTensor *self, const aclTensor *out)
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor *self, const aclTensor *out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -120,8 +115,8 @@ static aclnnStatus CheckParams(const aclTensor *self, const aclTensor *out)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnGlobalAveragePoolGetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize,
-    aclOpExecutor **executor)
+aclnnStatus aclnnGlobalAveragePoolGetWorkspaceSize(
+    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnGlobalAveragePool, DFX_IN(self), DFX_OUT(out));
 
@@ -143,7 +138,7 @@ aclnnStatus aclnnGlobalAveragePoolGetWorkspaceSize(const aclTensor *self, aclTen
     for (int64_t i = 2; i < dimNum; i++) {
         dimVector.push_back(i);
     }
-    const aclIntArray *dim = aclCreateIntArray(dimVector.data(), dimNum - 2);
+    const aclIntArray* dim = aclCreateIntArray(dimVector.data(), dimNum - 2);
 
     // 调用mean算子kernel
     auto meanOpOut = l0op::ReduceMean(selfContiguous, dim, true, uniqueExecutor.get());
@@ -160,8 +155,8 @@ aclnnStatus aclnnGlobalAveragePoolGetWorkspaceSize(const aclTensor *self, aclTen
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnGlobalAveragePool(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor,
-    const aclrtStream stream)
+aclnnStatus aclnnGlobalAveragePool(
+    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnGlobalAveragePool);
     // 固定写法，调用框架能力，完成计算
