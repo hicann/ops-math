@@ -33,7 +33,7 @@ namespace IsFinite {
 using namespace IsFiniteNs;
 
 template <typename T>
-__global__[aicore] void isfinite_kernel(
+__global__ __aicore__ void isfinite_kernel(
     __gm__ uint8_t* x, __gm__ uint8_t* y, const IsFiniteTilingData tilingData)
 {
     if constexpr (std::is_same_v<T, c10::Half>) {

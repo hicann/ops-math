@@ -147,7 +147,7 @@ compare CPU Result vs NPU Result: True
    
     在 `ascend_ops/csrc/` 目录下添加新的算子目录 `mykernel`，在 `mykernel` 目录下添加新的算子调用文件 `mykernel_torch.cpp`
     ```c++
-    __global__ [aicore] void mykernel(GM_ADDR input, GM_ADDR output, int64_t num_element) {
+    __global__ __aicore__ void mykernel(GM_ADDR input, GM_ADDR output, int64_t num_element) {
         // 您的算子kernel实现
     }
 
