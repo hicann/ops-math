@@ -8,6 +8,8 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
+cmake_minimum_required(VERSION 3.18)
+project(AscendOps)
 option(BUILD_TORCH_OPS "Build torch ops project (PyTorch extension style)" OFF)
 message(STATUS "Build torch ops: ${BUILD_TORCH_OPS}")
 
@@ -76,7 +78,7 @@ set(TORCH_NPU_INCLUDE_PATH "${TORCH_NPU_PATH}/include")
 set(TORCH_NPU_LIB_PATH     "${TORCH_NPU_PATH}/lib")
 
 message(STATUS "TORCH_NPU_PATH         = ${TORCH_NPU_PATH}")
-message(STATUS "TORCH_NPU_INCLUDE_DIR = ${TORCH_NPU_INCLUDE_PATH}")
+message(STATUS "TORCH_NPU_INCLUDE_DIR  = ${TORCH_NPU_INCLUDE_PATH}")
 message(STATUS "TORCH_NPU_LIB_DIR      = ${TORCH_NPU_LIB_PATH}")
 
 # Torch Ops 公共配置
