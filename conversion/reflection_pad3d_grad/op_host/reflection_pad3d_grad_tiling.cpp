@@ -20,7 +20,6 @@
 #include "tiling/platform/platform_ascendc.h"
 #include "util/math_util.h"
 
-
 namespace optiling {
 constexpr size_t MODE_INDEX = 0;
 constexpr bool PADDINGS_CONTIGUOUS_INDEX = 1;
@@ -62,18 +61,17 @@ constexpr uint32_t BF16_FLAT_REFLECTION = 302;
 constexpr uint32_t BF16_BIG_REFLECTION = 303;
 const static uint32_t MAX_LINE = 16;
 
-static std::map<ge::DataType, int32_t> DATATYPE_LEN_MAP = { { ge::DT_FLOAT16, 2 },
-    { ge::DT_BF16, 2 },
-    { ge::DT_FLOAT, 4 } };
-static std::map<ge::DataType, uint32_t> SMALL_TILING_MAP = { { ge::DT_FLOAT, FLOAT_SMALL_REFLECTION },
-    { ge::DT_FLOAT16, FLOAT16_SMALL_REFLECTION },
-    { ge::DT_BF16, BF16_SMALL_REFLECTION } };
-static std::map<ge::DataType, uint32_t> BIG_TILING_MAP = { { ge::DT_FLOAT, FLOAT_BIG_REFLECTION },
-    { ge::DT_FLOAT16, FLOAT16_BIG_REFLECTION },
-    { ge::DT_BF16, BF16_BIG_REFLECTION } };
-static std::map<ge::DataType, uint32_t> FLAT_TILING_MAP = { { ge::DT_FLOAT, FLOAT_FLAT_REFLECTION },
-    { ge::DT_FLOAT16, FLOAT16_FLAT_REFLECTION },
-    { ge::DT_BF16, BF16_FLAT_REFLECTION } };
+static std::map<ge::DataType, int32_t> DATATYPE_LEN_MAP = {{ge::DT_FLOAT16, 2}, {ge::DT_BF16, 2}, {ge::DT_FLOAT, 4}};
+static std::map<ge::DataType, uint32_t> SMALL_TILING_MAP = {
+    {ge::DT_FLOAT, FLOAT_SMALL_REFLECTION},
+    {ge::DT_FLOAT16, FLOAT16_SMALL_REFLECTION},
+    {ge::DT_BF16, BF16_SMALL_REFLECTION}};
+static std::map<ge::DataType, uint32_t> BIG_TILING_MAP = {
+    {ge::DT_FLOAT, FLOAT_BIG_REFLECTION}, {ge::DT_FLOAT16, FLOAT16_BIG_REFLECTION}, {ge::DT_BF16, BF16_BIG_REFLECTION}};
+static std::map<ge::DataType, uint32_t> FLAT_TILING_MAP = {
+    {ge::DT_FLOAT, FLOAT_FLAT_REFLECTION},
+    {ge::DT_FLOAT16, FLOAT16_FLAT_REFLECTION},
+    {ge::DT_BF16, BF16_FLAT_REFLECTION}};
 
 template <typename T>
 inline auto Mymax(T a, T b) -> T
@@ -87,7 +85,7 @@ inline auto Mymax(T a, T b) -> T
 template <typename TilingData, int32_t dataTypeLen>
 class PadV3GradV2Tiling {
 public:
-    explicit PadV3GradV2Tiling(const InputParamsInfo &param, const uint32_t inputCoreNum, const uint32_t inputUbSize)
+    explicit PadV3GradV2Tiling(const InputParamsInfo& param, const uint32_t inputCoreNum, const uint32_t inputUbSize)
     {
         this->batch = param.batch;
         this->channel = param.channel;
@@ -113,12 +111,12 @@ public:
         return;
     }
 
-    void GetTiling(TilingData *tilingData, bool isCast);
+    void GetTiling(TilingData* tilingData, bool isCast);
 
 private:
     void GetUsedCore();
     void SplitUb(bool isCast);
-    void FillTilingData(TilingData *tilingData);
+    void FillTilingData(TilingData* tilingData);
 
 private:
     uint32_t batch = 0;
@@ -179,7 +177,7 @@ void PadV3GradV2Tiling<TilingData, dataTypeLen>::SplitUb(bool isCast)
 }
 
 template <typename TilingData, int32_t dataTypeLen>
-void PadV3GradV2Tiling<TilingData, dataTypeLen>::FillTilingData(TilingData *tilingData)
+void PadV3GradV2Tiling<TilingData, dataTypeLen>::FillTilingData(TilingData* tilingData)
 {
     tilingData->set_batch(batch);
     tilingData->set_channel(channel);
@@ -205,7 +203,7 @@ void PadV3GradV2Tiling<TilingData, dataTypeLen>::FillTilingData(TilingData *tili
 }
 
 template <typename TilingData, int32_t dataTypeLen>
-void PadV3GradV2Tiling<TilingData, dataTypeLen>::GetTiling(TilingData *tilingData, bool isCast)
+void PadV3GradV2Tiling<TilingData, dataTypeLen>::GetTiling(TilingData* tilingData, bool isCast)
 {
     GetUsedCore();
     SplitUb(isCast);
@@ -213,16 +211,15 @@ void PadV3GradV2Tiling<TilingData, dataTypeLen>::GetTiling(TilingData *tilingDat
 }
 
 template <typename TilingData, int32_t dataTypeLen>
-void GetPadV3GradV2Tiling(TilingData *tilingData, const InputParamsInfo &params, uint32_t coreNum, uint32_t ubSize,
-    bool isCast)
+void GetPadV3GradV2Tiling(
+    TilingData* tilingData, const InputParamsInfo& params, uint32_t coreNum, uint32_t ubSize, bool isCast)
 {
     class PadV3GradV2Tiling<TilingData, dataTypeLen> tilingObj(params, coreNum, ubSize);
     tilingObj.GetTiling(tilingData, isCast);
 }
 
-static void PrintTilingDate(const gert::TilingContext *tilingContext,
-                            ReflectionPad3dGradTilingData *tilingData,
-                            size_t usrWorkspace)
+static void PrintTilingDate(
+    const gert::TilingContext* tilingContext, ReflectionPad3dGradTilingData* tilingData, size_t usrWorkspace)
 {
     OP_LOGD(tilingContext->GetNodeName(), "Start ReflectionPad3dGradTilingData priting");
     OP_LOGD(tilingContext->GetNodeName(), "------------------------------------------");
@@ -253,11 +250,13 @@ static void PrintTilingDate(const gert::TilingContext *tilingContext,
     OP_LOGD(tilingContext->GetNodeName(), "End ReflectionPad3dGradTilingData priting");
 }
 
-template <typename T> static ge::graphStatus GetInputInfo(gert::TilingContext *tilingContext, InputParamsInfo &params)
+template <typename T>
+static ge::graphStatus GetInputInfo(gert::TilingContext* tilingContext, InputParamsInfo& params)
 {
-    const gert::StorageShape *xShape = tilingContext->GetInputShape(X_INPUT_INDEX);
+    const gert::StorageShape* xShape = tilingContext->GetInputShape(X_INPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, xShape);
-    OP_CHECK_IF(xShape->GetStorageShape().GetDimNum() != CHECK_DIM_NUM,
+    OP_CHECK_IF(
+        xShape->GetStorageShape().GetDimNum() != CHECK_DIM_NUM,
         OP_LOGE(tilingContext->GetNodeName(), "input dim is not 5, please check input."), return ge::GRAPH_FAILED);
     params.batch = xShape->GetStorageShape().GetDim(DIM_INDEX0);
     params.channel = xShape->GetStorageShape().GetDim(DIM_INDEX1);
@@ -265,30 +264,32 @@ template <typename T> static ge::graphStatus GetInputInfo(gert::TilingContext *t
     params.height = xShape->GetStorageShape().GetDim(DIM_INDEX3);
     params.width = xShape->GetStorageShape().GetDim(DIM_INDEX4);
 
-    const gert::StorageShape *paddingShape = tilingContext->GetInputShape(PAD_INPUT_INDEX);
+    const gert::StorageShape* paddingShape = tilingContext->GetInputShape(PAD_INPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, paddingShape);
-    OP_CHECK_IF(static_cast<size_t>(2 * xShape->GetStorageShape().GetDimNum()) !=
-        static_cast<size_t>(paddingShape->GetStorageShape().GetDim(0)),
+    OP_CHECK_IF(
+        static_cast<size_t>(2 * xShape->GetStorageShape().GetDimNum()) !=
+            static_cast<size_t>(paddingShape->GetStorageShape().GetDim(0)),
         OP_LOGE(tilingContext->GetNodeName(), "Please check input or padding shape"), return ge::GRAPH_FAILED);
-    const gert::Tensor *paddings_tensor = tilingContext->GetInputTensor(PAD_INPUT_INDEX);
+    const gert::Tensor* paddings_tensor = tilingContext->GetInputTensor(PAD_INPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, paddings_tensor);
-    const T *paddingsValue = paddings_tensor->GetData<T>();
+    const T* paddingsValue = paddings_tensor->GetData<T>();
     params.dPad1 = static_cast<int32_t>(paddingsValue[PADDING_NUM_INDEX4]);
     params.dPad2 = static_cast<int32_t>(paddingsValue[PADDING_NUM_INDEX5]);
     params.hPad1 = static_cast<int32_t>(paddingsValue[PADDING_NUM_INDEX6]);
     params.hPad2 = static_cast<int32_t>(paddingsValue[PADDING_NUM_INDEX7]);
     params.wPad1 = static_cast<int32_t>(paddingsValue[PADDING_NUM_INDEX8]);
     params.wPad2 = static_cast<int32_t>(paddingsValue[PADDING_NUM_INDEX9]);
-    const gert::StorageShape *outShape = tilingContext->GetOutputShape(0);
+    const gert::StorageShape* outShape = tilingContext->GetOutputShape(0);
     params.outDepth = outShape->GetStorageShape().GetDim(DIM_INDEX2);
     ;
     params.outHeight = outShape->GetStorageShape().GetDim(DIM_INDEX3);
     ;
     params.outWidth = outShape->GetStorageShape().GetDim(DIM_INDEX4);
     ;
-    OP_CHECK_IF(params.outHeight != (params.height - params.hPad1 - params.hPad2) ||
-        params.outWidth != (params.width - params.wPad1 - params.wPad2) ||
-        params.outDepth != (params.depth - params.dPad1 - params.dPad2),
+    OP_CHECK_IF(
+        params.outHeight != (params.height - params.hPad1 - params.hPad2) ||
+            params.outWidth != (params.width - params.wPad1 - params.wPad2) ||
+            params.outDepth != (params.depth - params.dPad1 - params.dPad2),
         OP_LOGE(tilingContext->GetNodeName(), "Please check input or output shape"), return ge::GRAPH_FAILED);
 
     params.alignHeight = Ops::Base::CeilAlign(params.height, ALIGN_16);
@@ -297,7 +298,7 @@ template <typename T> static ge::graphStatus GetInputInfo(gert::TilingContext *t
     return ge::GRAPH_SUCCESS;
 }
 
-static void FillTilingKey(ReflectionPad3dGradTilingData *tilingData, ge::DataType inputDatatype)
+static void FillTilingKey(ReflectionPad3dGradTilingData* tilingData, ge::DataType inputDatatype)
 {
     int64_t alignHeight = tilingData->get_alignHeight();
     int64_t alignWidth = tilingData->get_alignWidth();
@@ -307,7 +308,8 @@ static void FillTilingKey(ReflectionPad3dGradTilingData *tilingData, ge::DataTyp
         tilingData->set_tilingKey(SMALL_TILING_MAP[inputDatatype]);
     } else if (width <= MAX_LINE + MAX_LINE || height <= MAX_LINE + MAX_LINE) {
         tilingData->set_tilingKey(FLAT_TILING_MAP[inputDatatype]);
-    } else if (MAX_LINE * Mymax(alignHeight, alignWidth) <= tilingData->get_ubFactorElement() &&
+    } else if (
+        MAX_LINE * Mymax(alignHeight, alignWidth) <= tilingData->get_ubFactorElement() &&
         inputDatatype == ge::DT_FLOAT) {
         tilingData->set_tilingKey(FLOAT_MID_REFLECTION);
     } else {
@@ -315,9 +317,9 @@ static void FillTilingKey(ReflectionPad3dGradTilingData *tilingData, ge::DataTyp
     }
 }
 
-static ge::graphStatus Tiling4PadV3GradV2(gert::TilingContext *tilingContext)
+static ge::graphStatus Tiling4PadV3GradV2(gert::TilingContext* tilingContext)
 {
-    auto compileInfo = reinterpret_cast<const Tiling4PadV3GradV2CompileInfo *>(tilingContext->GetCompileInfo());
+    auto compileInfo = reinterpret_cast<const Tiling4PadV3GradV2CompileInfo*>(tilingContext->GetCompileInfo());
     uint64_t ubSizePlatForm = compileInfo->ubSizePlatForm;
     uint32_t ubSize = static_cast<uint32_t>(ubSizePlatForm);
     uint32_t availableUb = ubSize - RESERVED_UB;
@@ -328,46 +330,49 @@ static ge::graphStatus Tiling4PadV3GradV2(gert::TilingContext *tilingContext)
     InputParamsInfo params;
     if (paddingDatatype == ge::DT_INT32) {
         GetInputInfo<int32_t>(tilingContext, params);
-        OP_CHECK_IF(GetInputInfo<int32_t>(tilingContext, params) != ge::GRAPH_SUCCESS,
+        OP_CHECK_IF(
+            GetInputInfo<int32_t>(tilingContext, params) != ge::GRAPH_SUCCESS,
             OP_LOGE(tilingContext->GetNodeName(), "get op inputs failed."), return ge::GRAPH_FAILED);
     } else if (paddingDatatype == ge::DT_INT64) {
         GetInputInfo<int64_t>(tilingContext, params);
-        OP_CHECK_IF(GetInputInfo<int64_t>(tilingContext, params) != ge::GRAPH_SUCCESS,
+        OP_CHECK_IF(
+            GetInputInfo<int64_t>(tilingContext, params) != ge::GRAPH_SUCCESS,
             OP_LOGE(tilingContext->GetNodeName(), "get op inputs failed."), return ge::GRAPH_FAILED);
     }
     ReflectionPad3dGradTilingData tilingData;
     if (inputDatatype == ge::DT_FLOAT) {
-        GetPadV3GradV2Tiling<ReflectionPad3dGradTilingData, FLOAT_BYTES>(&tilingData, params, coreNum, availableUb,
-            false);
+        GetPadV3GradV2Tiling<ReflectionPad3dGradTilingData, FLOAT_BYTES>(
+            &tilingData, params, coreNum, availableUb, false);
     } else if (inputDatatype == ge::DT_FLOAT16) {
-        GetPadV3GradV2Tiling<ReflectionPad3dGradTilingData, FLOAT16_BYTES>(&tilingData, params, coreNum, availableUb,
-            true);
+        GetPadV3GradV2Tiling<ReflectionPad3dGradTilingData, FLOAT16_BYTES>(
+            &tilingData, params, coreNum, availableUb, true);
     } else {
-        GetPadV3GradV2Tiling<ReflectionPad3dGradTilingData, BFLOAT16_BYTES>(&tilingData, params, coreNum, availableUb,
-            true);
+        GetPadV3GradV2Tiling<ReflectionPad3dGradTilingData, BFLOAT16_BYTES>(
+            &tilingData, params, coreNum, availableUb, true);
     }
-    OP_CHECK_IF(tilingData.get_ubFactorElement() <= 0,
+    OP_CHECK_IF(
+        tilingData.get_ubFactorElement() <= 0,
         OP_LOGE(tilingContext->GetNodeName(), "ub space is not enough, please check input."), return ge::GRAPH_FAILED);
     FillTilingKey(&tilingData, inputDatatype);
     tilingContext->SetTilingKey(tilingData.get_tilingKey());
     tilingContext->SetNeedAtomic(true);
     tilingContext->SetBlockDim(tilingData.get_blockNum());
-    size_t *workspaces = tilingContext->GetWorkspaceSizes(1);
+    size_t* workspaces = tilingContext->GetWorkspaceSizes(1);
     size_t usrWorkspace = Mymax(tilingData.get_alignHeight(), tilingData.get_alignWidth()) * WORK_SPACE_PART *
-        tilingData.get_blockNum() * DATATYPE_LEN_MAP[inputDatatype];
+                          tilingData.get_blockNum() * DATATYPE_LEN_MAP[inputDatatype];
     if (inputDatatype != ge::DT_FLOAT) {
         usrWorkspace = tilingData.get_alignHeight() * tilingData.get_alignWidth() * tilingData.get_blockNum() *
-            DATATYPE_LEN_MAP[ge::DT_FLOAT];
+                       DATATYPE_LEN_MAP[ge::DT_FLOAT];
     }
     workspaces[0] = usrWorkspace + sysWorkspaceSize;
-    tilingData.SaveToBuffer(tilingContext->GetRawTilingData()->GetData(),
-        tilingContext->GetRawTilingData()->GetCapacity());
+    tilingData.SaveToBuffer(
+        tilingContext->GetRawTilingData()->GetData(), tilingContext->GetRawTilingData()->GetCapacity());
     tilingContext->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
     PrintTilingDate(tilingContext, &tilingData, usrWorkspace);
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus TilingPrepare4PadV3GradV2(gert::TilingParseContext *context)
+static ge::graphStatus TilingPrepare4PadV3GradV2(gert::TilingParseContext* context)
 {
     auto compileInfo = context->GetCompiledInfo<Tiling4PadV3GradV2CompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
@@ -375,13 +380,15 @@ static ge::graphStatus TilingPrepare4PadV3GradV2(gert::TilingParseContext *conte
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF((compileInfo->coreNum <= 0), OP_LOGE(context->GetNodeName(), "Failed to get core num."),
+    OP_CHECK_IF(
+        (compileInfo->coreNum <= 0), OP_LOGE(context->GetNodeName(), "Failed to get core num."),
         return ge::GRAPH_FAILED);
 
     uint64_t ubSizePlatForm;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSizePlatForm = ubSizePlatForm;
-    OP_CHECK_IF(compileInfo->ubSizePlatForm <= 0, OP_LOGE(context->GetNodeName(), "Failed to get ub size."),
+    OP_CHECK_IF(
+        compileInfo->ubSizePlatForm <= 0, OP_LOGE(context->GetNodeName(), "Failed to get ub size."),
         return ge::GRAPH_FAILED);
     compileInfo->sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
 
@@ -391,5 +398,5 @@ static ge::graphStatus TilingPrepare4PadV3GradV2(gert::TilingParseContext *conte
 IMPL_OP_OPTILING(ReflectionPad3dGrad)
     .Tiling(Tiling4PadV3GradV2)
     .TilingParse<Tiling4PadV3GradV2CompileInfo>(TilingPrepare4PadV3GradV2)
-    .TilingInputsDataDependency({ 1 });
+    .TilingInputsDataDependency({1});
 } // namespace optiling

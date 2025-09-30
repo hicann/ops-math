@@ -5,8 +5,8 @@
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
- * the software repository for the full text of the License.
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 /*!
@@ -31,13 +31,15 @@ extern "C" __global__ __aicore__ void is_finite(GM_ADDR x, GM_ADDR y, GM_ADDR wo
 
 class IsFiniteTest : public testing::Test {
 protected:
-    static void SetUpTestCase() {
+    static void SetUpTestCase()
+    {
         std::cout << "is_finite_test SetUp" << std::endl;
         const string cmd = "cp -rf " + dataPath + " ./";
         system(cmd.c_str());
         system("chmod -R 755 ./is_finite_data/");
     }
-    static void TearDownTestCase() {
+    static void TearDownTestCase()
+    {
         std::cout << "is_finite_test TearDown" << std::endl;
     }
 
@@ -50,16 +52,23 @@ const std::string IsFiniteTest::rootPath = "../../../../";
 const std::string IsFiniteTest::dataPath = rootPath + "math/is_finite/tests/ut/op_kernel/is_finite_data";
 
 template <typename T1, typename T2>
-inline T1 CeilAlign(T1 a, T2 b) {
+inline T1 CeilAlign(T1 a, T2 b)
+{
     return (a + b - 1) / b * b;
 }
 
-TEST_F(IsFiniteTest, test_case_float16_1) {
+TEST_F(IsFiniteTest, test_case_float16_1)
+{
     optiling::IsFiniteCompileInfo compileInfo = {64, 262144, false};
-    gert::TilingContextPara tilingContextPara("IsFinite",
-                                              {{{{128, 64}, {128, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},},
-                                              {{{{128, 64}, {128, 64}}, ge::DT_BOOL, ge::FORMAT_ND},},
-                                              &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "IsFinite",
+        {
+            {{{128, 64}, {128, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        {
+            {{{128, 64}, {128, 64}}, ge::DT_BOOL, ge::FORMAT_ND},
+        },
+        &compileInfo);
     TilingInfo tilingInfo;
     auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_EQ(tilingRet, true);
@@ -67,7 +76,8 @@ TEST_F(IsFiniteTest, test_case_float16_1) {
     system("cd ./is_finite_data/ && python3 gen_data.py '(128, 64)' 'float16'");
     uint32_t dataCount = 128 * 64;
     size_t inputByteSize = dataCount * sizeof(half);
-    std::string fileName = "./is_finite_data/float16_input_t_is_finite.bin";;
+    std::string fileName = "./is_finite_data/float16_input_t_is_finite.bin";
+    ;
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(CeilAlign(inputByteSize, 32));
     ReadFile(fileName, inputByteSize, x, inputByteSize);
     size_t outputByteSize = dataCount * sizeof(bool);
@@ -91,12 +101,18 @@ TEST_F(IsFiniteTest, test_case_float16_1) {
     system("cd ./is_finite_data/ && python3 compare_data.py 'float16'");
 }
 
-TEST_F(IsFiniteTest, test_case_float16_2) {
+TEST_F(IsFiniteTest, test_case_float16_2)
+{
     optiling::IsFiniteCompileInfo compileInfo = {64, 262144, false};
-    gert::TilingContextPara tilingContextPara("IsFinite",
-                                              {{{{256, 33}, {256, 33}}, ge::DT_FLOAT, ge::FORMAT_ND},},
-                                              {{{{256, 33}, {256, 33}}, ge::DT_BOOL, ge::FORMAT_ND},},
-                                              &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "IsFinite",
+        {
+            {{{256, 33}, {256, 33}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{256, 33}, {256, 33}}, ge::DT_BOOL, ge::FORMAT_ND},
+        },
+        &compileInfo);
     TilingInfo tilingInfo;
     auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_EQ(tilingRet, true);
@@ -104,7 +120,8 @@ TEST_F(IsFiniteTest, test_case_float16_2) {
     system("cd ./is_finite_data/ && python3 gen_data.py '(256, 33)' 'float32'");
     uint32_t dataCount = 256 * 33;
     size_t inputByteSize = dataCount * sizeof(float);
-    std::string fileName = "./is_finite_data/float32_input_t_is_finite.bin";;
+    std::string fileName = "./is_finite_data/float32_input_t_is_finite.bin";
+    ;
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(CeilAlign(inputByteSize, 32));
     ReadFile(fileName, inputByteSize, x, inputByteSize);
     size_t outputByteSize = dataCount * sizeof(bool);
@@ -145,7 +162,6 @@ TEST_F(IsFiniteTest, test_case_float16_2) {
 //     ReadFile(fileName, inputByteSize, x, inputByteSize);
 //     IsFiniteTilingData* tilingDatafromBin = reinterpret_cast<IsFiniteTilingData*>(tiling);
 
-
 //     tilingDatafromBin->totalDataCount = dataCount;
 //     tilingDatafromBin->usableUbSize = 32 * 1024;
 //     tilingDatafromBin->needCoreNum = 1;
@@ -157,7 +173,6 @@ TEST_F(IsFiniteTest, test_case_float16_2) {
 //     AscendC::SetKernelMode(KernelMode::AIV_MODE);
 //     ICPU_RUN_KF(is_finite, blockDim, x, y, workspace, tiling);
 
-
 //     fileName = "./is_finite_data/bfloat16_output_t_is_finite.bin";
 //     WriteFile(fileName, y, outputByteSize);
 
@@ -168,4 +183,3 @@ TEST_F(IsFiniteTest, test_case_float16_2) {
 
 //     system("cd ./is_finite_data/ && python3 compare_data.py 'bfloat16'");
 // }
-

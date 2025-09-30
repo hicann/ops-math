@@ -100,7 +100,7 @@ AscendOps 是一个轻量级，高性能的算子开发工程模板，它集成�
     pip install dist/xxx.whl --force-reinstall --no-deps
     ```
 
-4. (可选)再次构建前请先执行以下命令清理编译缓存
+4. (可选)再次构建前建议先执行以下命令清理编译缓存
    ```sh
     python setup.py clean
     ```
@@ -110,11 +110,6 @@ AscendOps 是一个轻量级，高性能的算子开发工程模板，它集成�
 此命令实现即时生效的开发环境配置，执行后即可使源码修改生效，省略了构建完整whl包和安装的过程，适用于需要多次修改验证算子的场景：
   ```sh
   pip install --no-build-isolation -e .
-  ```
-
-再次构建前请先执行以下命令清理编译缓存
-  ```sh
-  python setup.py clean
   ```
 
 ## 使用示例 | Usage Example
@@ -152,7 +147,7 @@ compare CPU Result vs NPU Result: True
    
     在 `ascend_ops/csrc/` 目录下添加新的算子目录 `mykernel`，在 `mykernel` 目录下添加新的算子调用文件 `mykernel_torch.cpp`
     ```c++
-    __global__ [aicore] void mykernel(GM_ADDR input, GM_ADDR output, int64_t num_element) {
+    __global__ __aicore__ void mykernel(GM_ADDR input, GM_ADDR output, int64_t num_element) {
         // 您的算子kernel实现
     }
 

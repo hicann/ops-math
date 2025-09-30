@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <float.h>
@@ -22,10 +23,16 @@
 using namespace std;
 
 class sign_bits_unpack_test : public testing::Test {
- protected:
-  static void SetUpTestCase() { cout << "sign_bits_unpack_test SetUp" << endl; }
+protected:
+    static void SetUpTestCase()
+    {
+        cout << "sign_bits_unpack_test SetUp" << endl;
+    }
 
-  static void TearDownTestCase() { cout << "sign_bits_unpack_test TeastDown" << endl; }
+    static void TearDownTestCase()
+    {
+        cout << "sign_bits_unpack_test TeastDown" << endl;
+    }
 };
 
 // CheckNotNull self
@@ -214,7 +221,8 @@ TEST_F(sign_bits_unpack_test, ascend910B2_case_float_float16)
     int64_t size = 2;
     aclDataType dType = ACL_FLOAT16;
     auto self_tensor_desc = TensorDesc({2}, ACL_UINT8, ACL_FORMAT_ND).Value(vector<uint8_t>{159, 15});
-    auto out_tensor_desc = TensorDesc({2, 8}, ACL_FLOAT16, ACL_FORMAT_ND).Value(vector<int16_t>{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+    auto out_tensor_desc = TensorDesc({2, 8}, ACL_FLOAT16, ACL_FORMAT_ND)
+                               .Value(vector<int16_t>{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
     auto ut = OP_API_UT(aclnnSignBitsUnpack, INPUT(self_tensor_desc, size, dType), OUTPUT(out_tensor_desc));
 
     uint64_t workspaceSize = 0;
@@ -228,7 +236,8 @@ TEST_F(sign_bits_unpack_test, ascend910B2_case_float_float)
     int64_t size = 2;
     aclDataType dType = ACL_FLOAT;
     auto self_tensor_desc = TensorDesc({2}, ACL_UINT8, ACL_FORMAT_ND).Value(vector<uint8_t>{159, 15});
-    auto out_tensor_desc = TensorDesc({2, 8}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+    auto out_tensor_desc = TensorDesc({2, 8}, ACL_FLOAT, ACL_FORMAT_ND)
+                               .Value(vector<float>{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
     auto ut = OP_API_UT(aclnnSignBitsUnpack, INPUT(self_tensor_desc, size, dType), OUTPUT(out_tensor_desc));
 
     uint64_t workspaceSize = 0;

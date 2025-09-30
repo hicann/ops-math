@@ -6,7 +6,8 @@
 # This file is a part of the CANN Open Software.
 # Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
-# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+# BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
@@ -15,6 +16,7 @@ import sys
 import glob
 import shutil
 import subprocess
+import sysconfig
 from pathlib import Path
 from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext
@@ -78,10 +80,18 @@ class CMakeBuild(build_ext):
 
     def build_cmake(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
+        python_include = sysconfig.get_path('include')
+        python_libs = sysconfig.get_config_var('LIBDIR')
+
         cmake_args = [
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}",
             f"-DPYTHON_EXECUTABLE={sys.executable}",
             f"-DBUILD_TORCH_OPS=ON",
+            f"-DPYTHON_EXTENSION_USE_ABI3=ON",
+            f"-DPYTHON_INCLUDE_DIR={python_include}",
+            f"-DPYTHON_LIBRARIES={python_libs}",
+            f"-DPy_LIMITED_API_VERSION=0x03080000",
+
         ]
 
         build_type = "Debug" if self.debug else "Release"
@@ -106,5 +116,6 @@ setup(
     cmdclass={'build_ext': CMakeBuild, 'clean': CleanCommand},
     zip_safe=False,
     install_requires=["torch"],
+    options={"bdist_wheel": {"py_limited_api": "cp38"}},
     description="Example of PyTorch C++ and Ascend extensions (with CMake)",
 )

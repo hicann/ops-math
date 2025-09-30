@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -26,10 +27,12 @@ namespace ge {
  * Compatible with tensorflow IsFinite operator.
  */
 REG_OP(IsFinite)
-    .INPUT(x, TensorType({DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_BOOL, DT_UINT8, DT_INT8, DT_UINT16,
-                          DT_INT16, DT_INT32, DT_UINT32, DT_UINT64, DT_INT64}))
+    .INPUT(
+        x, TensorType(
+               {DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_BOOL, DT_UINT8, DT_INT8, DT_UINT16, DT_INT16, DT_INT32,
+                DT_UINT32, DT_UINT64, DT_INT64}))
     .OUTPUT(y, TensorType({DT_BOOL}))
     .OP_END_FACTORY_REG(IsFinite)
-}
+} // namespace ge
 
 #endif

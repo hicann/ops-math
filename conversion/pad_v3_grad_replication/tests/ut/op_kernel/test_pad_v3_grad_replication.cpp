@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 /*!
@@ -89,7 +90,6 @@ TEST_F(pad_v3_grad_replication_test, test_small_case_0)
     tilingData->leftSize = 62;
     tilingData->totalLeftInputSizeEachCube = 1116;
     tilingData->innerRowLength = 62;
-    tilingData->innerRowCount = 62;
     tilingData->topToBottomSize = 4224;
     tilingData->topResultSize = 304128;
     tilingData->leftToRightSize = 64;
@@ -198,7 +198,6 @@ TEST_F(pad_v3_grad_replication_test, test_small_case_1)
     tilingData->leftSize = 14;
     tilingData->totalLeftInputSizeEachCube = 84;
     tilingData->innerRowLength = 14;
-    tilingData->innerRowCount = 14;
     tilingData->topToBottomSize = 288;
     tilingData->topResultSize = 55296;
     tilingData->leftToRightSize = 16;
@@ -307,7 +306,6 @@ TEST_F(pad_v3_grad_replication_test, test_tiny_case_2)
     tilingData->leftSize = 6;
     tilingData->totalLeftInputSizeEachCube = 60;
     tilingData->innerRowLength = 6;
-    tilingData->innerRowCount = 6;
     tilingData->topToBottomSize = 80;
     tilingData->topResultSize = 3200;
     tilingData->leftToRightSize = 8;
@@ -416,7 +414,6 @@ TEST_F(pad_v3_grad_replication_test, test_blank_pad_case3)
     tilingData->leftSize = 7;
     tilingData->totalLeftInputSizeEachCube = 70;
     tilingData->innerRowLength = 194;
-    tilingData->innerRowCount = 6;
     tilingData->topToBottomSize = 1800;
     tilingData->topResultSize = 64000;
     tilingData->leftToRightSize = 197;

@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -24,32 +25,33 @@ extern "C" {
 static const string REFLECTION_MODE = "REFLECT";
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> ASCEND910_DTYPE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
-    op::DataType::DT_INT16, op::DataType::DT_DOUBLE, op::DataType::DT_INT8, op::DataType::DT_UINT8,
-    op::DataType::DT_BOOL};
+    op::DataType::DT_FLOAT,   op::DataType::DT_INT32, op::DataType::DT_INT64,
+    op::DataType::DT_FLOAT16, op::DataType::DT_INT16, op::DataType::DT_DOUBLE,
+    op::DataType::DT_INT8,    op::DataType::DT_UINT8, op::DataType::DT_BOOL};
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
-    op::DataType::DT_INT16, op::DataType::DT_DOUBLE, op::DataType::DT_INT8, op::DataType::DT_UINT8,
-    op::DataType::DT_BOOL, op::DataType::DT_BF16};
+    op::DataType::DT_FLOAT, op::DataType::DT_INT32,  op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
+    op::DataType::DT_INT16, op::DataType::DT_DOUBLE, op::DataType::DT_INT8,  op::DataType::DT_UINT8,
+    op::DataType::DT_BOOL,  op::DataType::DT_BF16};
 
-inline static bool CheckNotNull(const aclTensor *self, const aclIntArray *padding, const aclTensor *out)
+inline static bool CheckNotNull(const aclTensor* self, const aclIntArray* padding, const aclTensor* out)
 {
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(padding, return false);
     OP_CHECK_NULL(out, return false);
     return true;
 }
-static const std::initializer_list<DataType>& GetDtypeSupportList() {
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
-    return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
-  } else {
-    return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
-  }
+static const std::initializer_list<DataType>& GetDtypeSupportList()
+{
+    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+        return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
+    } else {
+        return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
+    }
 }
 
-inline static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out)
+inline static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     auto supportList = GetDtypeSupportList();
     // 检查self的数据类型是否在支持列表内
@@ -63,18 +65,18 @@ inline static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out)
     return true;
 }
 
-inline static bool CheckFormat(const aclTensor *self, const aclTensor *out)
+inline static bool CheckFormat(const aclTensor* self, const aclTensor* out)
 {
-    OP_CHECK(self->GetViewFormat() == out->GetViewFormat(),
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "Format of input and output should be equal, self [%s], gradInoutput [%s].",
-                op::ToString(self->GetViewFormat()).GetString(),
-                op::ToString(out->GetViewFormat()).GetString()),
+    OP_CHECK(
+        self->GetViewFormat() == out->GetViewFormat(),
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Format of input and output should be equal, self [%s], gradInoutput [%s].",
+            op::ToString(self->GetViewFormat()).GetString(), op::ToString(out->GetViewFormat()).GetString()),
         return false);
     return true;
 }
 
-static bool CheckShape(const aclTensor *self, const aclIntArray *padding, const aclTensor *out)
+static bool CheckShape(const aclTensor* self, const aclIntArray* padding, const aclTensor* out)
 {
     auto selfDimnum = self->GetViewShape().GetDimNum();
     // self只支持4维和5维
@@ -82,39 +84,39 @@ static bool CheckShape(const aclTensor *self, const aclIntArray *padding, const 
     OP_CHECK_MAX_DIM(self, 5, return false);
 
     // self, out维度需要一致
-    OP_CHECK(selfDimnum == out->GetViewShape().GetDimNum(),
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self, out dim should be same."),
-             return false);
+    OP_CHECK(
+        selfDimnum == out->GetViewShape().GetDimNum(),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self, out dim should be same."), return false);
 
     // padding长度为6
-    OP_CHECK(padding->Size() == 6,
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding length should be 6, but got %lu.",
-                     padding->Size()),
-             return false);
+    OP_CHECK(
+        padding->Size() == 6,
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding length should be 6, but got %lu.", padding->Size()), return false);
 
     // check padding value. 0, 1, 2, 3, 4, 5 are indexes
-    OP_CHECK((*padding)[0] < self->GetViewShape().GetDim(selfDimnum - 1) &&
-             (*padding)[1] < self->GetViewShape().GetDim(selfDimnum - 1) &&
-             (*padding)[2] < self->GetViewShape().GetDim(selfDimnum - 2) &&
-             (*padding)[3] < self->GetViewShape().GetDim(selfDimnum - 2) &&
-             (*padding)[4] < self->GetViewShape().GetDim(selfDimnum - 3) &&
-             (*padding)[5] < self->GetViewShape().GetDim(selfDimnum - 3),
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding size should be less than the corresponding self dimention."),
-             return false);
+    OP_CHECK(
+        (*padding)[0] < self->GetViewShape().GetDim(selfDimnum - 1) &&
+            (*padding)[1] < self->GetViewShape().GetDim(selfDimnum - 1) &&
+            (*padding)[2] < self->GetViewShape().GetDim(selfDimnum - 2) &&
+            (*padding)[3] < self->GetViewShape().GetDim(selfDimnum - 2) &&
+            (*padding)[4] < self->GetViewShape().GetDim(selfDimnum - 3) &&
+            (*padding)[5] < self->GetViewShape().GetDim(selfDimnum - 3),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding size should be less than the corresponding self dimention."),
+        return false);
 
     // check the last 3 dim value of out. 0, 1, 2, 3, 4, 5 are indexes
-    OP_CHECK(out->GetViewShape().GetDim(selfDimnum - 2) ==
-             self->GetViewShape().GetDim(selfDimnum - 2) + (*padding)[2] + (*padding)[3] &&
-             out->GetViewShape().GetDim(selfDimnum - 1) ==
-             self->GetViewShape().GetDim(selfDimnum - 1) + (*padding)[0] + (*padding)[1] &&
-             out->GetViewShape().GetDim(selfDimnum - 3) ==
-             self->GetViewShape().GetDim(selfDimnum - 3) + (*padding)[4] + (*padding)[5],
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "wrong out shape."),
-             return false);
+    OP_CHECK(
+        out->GetViewShape().GetDim(selfDimnum - 2) ==
+                self->GetViewShape().GetDim(selfDimnum - 2) + (*padding)[2] + (*padding)[3] &&
+            out->GetViewShape().GetDim(selfDimnum - 1) ==
+                self->GetViewShape().GetDim(selfDimnum - 1) + (*padding)[0] + (*padding)[1] &&
+            out->GetViewShape().GetDim(selfDimnum - 3) ==
+                self->GetViewShape().GetDim(selfDimnum - 3) + (*padding)[4] + (*padding)[5],
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "wrong out shape."), return false);
     return true;
 }
 
-inline static aclnnStatus CheckParams(const aclTensor *self, const aclIntArray *padding, const aclTensor *out)
+inline static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* padding, const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, padding, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -131,9 +133,9 @@ inline static aclnnStatus CheckParams(const aclTensor *self, const aclIntArray *
     return ACLNN_SUCCESS;
 }
 
-
-aclnnStatus aclnnReflectionPad3dGetWorkspaceSize(const aclTensor *self,
-    const aclIntArray *padding, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)
+aclnnStatus aclnnReflectionPad3dGetWorkspaceSize(
+    const aclTensor* self, const aclIntArray* padding, aclTensor* out, uint64_t* workspaceSize,
+    aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnReflectionPad3d, DFX_IN(self, padding), DFX_OUT(out));
     // 固定写法，创建OpExecutor
@@ -149,8 +151,9 @@ aclnnStatus aclnnReflectionPad3dGetWorkspaceSize(const aclTensor *self,
         *workspaceSize = 0;
         // 4 is dim number
         if (self->GetViewShape().GetDimNum() == 4) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                    "Expected 4D or 5D tensor with possibly 0 batch size and other non-zero dimentions for input.");
+            OP_LOGE(
+                ACLNN_ERR_PARAM_INVALID,
+                "Expected 4D or 5D tensor with possibly 0 batch size and other non-zero dimentions for input.");
             return ACLNN_ERR_PARAM_INVALID;
         }
         // 5 is dim number
@@ -159,9 +162,11 @@ aclnnStatus aclnnReflectionPad3dGetWorkspaceSize(const aclTensor *self,
             if (self->GetViewShape().GetDim(1) == 0 || self->GetViewShape().GetDim(2) == 0 ||
                 // 3, 4 are indexes
                 self->GetViewShape().GetDim(3) == 0 || self->GetViewShape().GetDim(4) == 0) {
-                OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                        "Expected 4D or 5D tensor with possibly 0 batch size and other non-zero dimentions for input.");
-                return ACLNN_ERR_PARAM_INVALID;}
+                OP_LOGE(
+                    ACLNN_ERR_PARAM_INVALID,
+                    "Expected 4D or 5D tensor with possibly 0 batch size and other non-zero dimentions for input.");
+                return ACLNN_ERR_PARAM_INVALID;
+            }
         }
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
@@ -177,12 +182,12 @@ aclnnStatus aclnnReflectionPad3dGetWorkspaceSize(const aclTensor *self,
     // 2 is the magnification
     for (size_t i = 2 * dim; i > 0; i -= 2) {
         if (i <= (size_t)padding->Size()) {
-        // 2 and 1 indicate the element of padding is put into paddingsVector from the back to the front
-        paddingsVector.emplace_back((*padding)[i - 2]);
-        paddingsVector.emplace_back((*padding)[i - 1]);
+            // 2 and 1 indicate the element of padding is put into paddingsVector from the back to the front
+            paddingsVector.emplace_back((*padding)[i - 2]);
+            paddingsVector.emplace_back((*padding)[i - 1]);
         } else {
-        paddingsVector.emplace_back(0);
-        paddingsVector.emplace_back(0);
+            paddingsVector.emplace_back(0);
+            paddingsVector.emplace_back(0);
         }
     }
     // 2 is the magnification
@@ -191,7 +196,7 @@ aclnnStatus aclnnReflectionPad3dGetWorkspaceSize(const aclTensor *self,
     // 2 is the column number
     op::Shape newShape = {dim, 2};
     paddingsTensor = l0op::Reshape(paddingsTensor, newShape, uniqueExecutor.get());
-    const aclTensor *pad3dResult = nullptr;
+    const aclTensor* pad3dResult = nullptr;
     pad3dResult = l0op::MirrorPad(selfContiguous, paddingsTensor, REFLECTION_MODE, uniqueExecutor.get());
     CHECK_RET(pad3dResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
     // output shape check
@@ -204,10 +209,9 @@ aclnnStatus aclnnReflectionPad3dGetWorkspaceSize(const aclTensor *self,
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(executor);
     return ACLNN_SUCCESS;
-    }
+}
 
-aclnnStatus aclnnReflectionPad3d(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor,
-    aclrtStream stream)
+aclnnStatus aclnnReflectionPad3d(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnReflectionPad3d);
     // 固定写法，调用框架能力，完成计算

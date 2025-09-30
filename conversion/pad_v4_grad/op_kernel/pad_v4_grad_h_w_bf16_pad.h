@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -232,7 +233,8 @@ __aicore__ inline void PadV4GradPadHWBf16<T>::CopyGmAndWorkspace2UB2(
                     (i + this->hPad1) * this->width + batchIdx * this->batchStride + ncOffset * this->batchStride;
                 DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset1], copyParams, padParams);
             }
-            PipeBarrier<PIPE_MTE2>();;
+            PipeBarrier<PIPE_MTE2>();
+            ;
             for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad1; i++) {
                 workspaceOffset1 = i * this->width + this->blockIdx * this->workspacePerCore;
                 DataCopyPad(
@@ -259,7 +261,8 @@ __aicore__ inline void PadV4GradPadHWBf16<T>::CopyGmAndWorkspace2UB2(
                                  batchIdx * this->batchStride + ncOffset * this->batchStride;
                     DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset3], copyParams, padParams);
                 }
-                PipeBarrier<PIPE_MTE2>();;
+                PipeBarrier<PIPE_MTE2>();
+                ;
                 for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
                     workspaceOffset3 =
                         (i + COPY_ROWS_AND_COLS - this->hPad1) * this->width + this->blockIdx * this->workspacePerCore;
@@ -276,7 +279,8 @@ __aicore__ inline void PadV4GradPadHWBf16<T>::CopyGmAndWorkspace2UB2(
                              ncOffset * this->batchStride;
                 DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset4], copyParams, padParams);
             }
-            PipeBarrier<PIPE_MTE2>();;
+            PipeBarrier<PIPE_MTE2>();
+            ;
             for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad1; i++) {
                 workspaceOffset4 = (i + 1) * this->width - 16 + this->blockIdx * this->workspacePerCore;
                 DataCopyPad(
@@ -303,7 +307,8 @@ __aicore__ inline void PadV4GradPadHWBf16<T>::CopyGmAndWorkspace2UB2(
                                  batchIdx * this->batchStride + ncOffset * this->batchStride;
                     DataCopyPad(xLocal[i * COPY_ROWS_AND_COLS], this->mGmX[xGmOffset6], copyParams, padParams);
                 }
-                PipeBarrier<PIPE_MTE2>();;
+                PipeBarrier<PIPE_MTE2>();
+                ;
                 for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
                     workspaceOffset6 = (i + COPY_ROWS_AND_COLS + 1 - this->hPad1) * this->width - 16 +
                                        this->blockIdx * this->workspacePerCore;

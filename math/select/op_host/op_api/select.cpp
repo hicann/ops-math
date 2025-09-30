@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-
 #include "select.h"
 #include "opdev/op_log.h"
 #include "opdev/op_executor.h"
@@ -78,8 +77,7 @@ static const aclTensor* SelectV2AiCpu(
     return selectOut;
 }
 
-const aclTensor* SelectV2(
-    const aclTensor* condition, const aclTensor* x1, const aclTensor* x2, aclOpExecutor* executor)
+const aclTensor* SelectV2(const aclTensor* condition, const aclTensor* x1, const aclTensor* x2, aclOpExecutor* executor)
 {
     op::Shape broadcastShape;
     if (!CanBroadcast(condition, x1, x2, broadcastShape)) {

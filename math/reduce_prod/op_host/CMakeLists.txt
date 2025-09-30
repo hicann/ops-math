@@ -13,4 +13,4 @@ foreach(SUB_DIR ${CURRENT_DIRS})
     endif()
 endforeach()
 
-add_modules_sources(HOSTNAME ${OPHOST_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR})
+add_modules_sources()
