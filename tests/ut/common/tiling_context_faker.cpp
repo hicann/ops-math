@@ -25,34 +25,34 @@ TilingContextFaker& TilingContextFaker::NodeIoNum(size_t inputNum, size_t output
     return *this;
 }
 
-TilingContextFaker& TilingContextFaker::IrInstanceNum(const std::vector<uint32_t>& inputInstanceNum,
-                                                      const std::vector<uint32_t>& outputInstanceNum)
+TilingContextFaker& TilingContextFaker::IrInstanceNum(
+    const std::vector<uint32_t>& inputInstanceNum, const std::vector<uint32_t>& outputInstanceNum)
 {
     OpTilingContextBuilder::MutableOpInfo().IOInstanceNum(inputInstanceNum, outputInstanceNum);
     return *this;
 }
 
-TilingContextFaker& TilingContextFaker::NodeInputTd(int32_t index, ge::DataType dtype, ge::Format originFormat,
-                                                    ge::Format storageFormat)
+TilingContextFaker& TilingContextFaker::NodeInputTd(
+    int32_t index, ge::DataType dtype, ge::Format originFormat, ge::Format storageFormat)
 {
     OpTilingContextBuilder::MutableOpInfo().SetInputTd(index, dtype, originFormat, storageFormat);
     return *this;
 }
 
-TilingContextFaker& TilingContextFaker::NodeOutputTd(int32_t index, ge::DataType dtype, ge::Format originFormat,
-                                                     ge::Format storageFormat)
+TilingContextFaker& TilingContextFaker::NodeOutputTd(
+    int32_t index, ge::DataType dtype, ge::Format originFormat, ge::Format storageFormat)
 {
     OpTilingContextBuilder::MutableOpInfo().SetOutputTd(index, dtype, originFormat, storageFormat);
     return *this;
 }
 
-TilingContextFaker& TilingContextFaker::InputTensors(const std::vector<Tensor *>& inputTensors)
+TilingContextFaker& TilingContextFaker::InputTensors(const std::vector<Tensor*>& inputTensors)
 {
     OpTilingContextBuilder::InputTensors(inputTensors);
     return *this;
 }
 
-TilingContextFaker& TilingContextFaker::OutputTensors(const std::vector<Tensor *>& outputTensors)
+TilingContextFaker& TilingContextFaker::OutputTensors(const std::vector<Tensor*>& outputTensors)
 {
     OpTilingContextBuilder::OutputTensors(outputTensors);
     return *this;
@@ -78,7 +78,7 @@ TilingContextFaker& TilingContextFaker::DeterministicInfo(int32_t* deterministic
 
 TilingContextFaker& TilingContextFaker::TilingData(const void* tilingData)
 {
-    OpTilingContextBuilder::TilingData(static_cast<const gert::TilingData *>(tilingData));
+    OpTilingContextBuilder::TilingData(static_cast<const gert::TilingData*>(tilingData));
     return *this;
 }
 

@@ -16,4 +16,4 @@ namespace l0op {
 const aclTensor* ReduceLogSum(const aclTensor* data, const aclIntArray* axes, bool keepDims, aclOpExecutor* executor);
 }
 
-#endif  // OP_API_INC_LEVEL0_REDUCE_LOG_SUM_H
+#endif // OP_API_INC_LEVEL0_REDUCE_LOG_SUM_H

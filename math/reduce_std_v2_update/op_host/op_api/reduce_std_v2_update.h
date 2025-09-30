@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 /*!
@@ -18,10 +19,12 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *ReduceStdV2Update(const aclTensor *self, const aclTensor *mean, const aclIntArray *dim,
-                                   bool unbiased, bool keepdim, aclOpExecutor *executor);
-const aclTensor* ReduceStdV2UpdateCorrection(const aclTensor* self, const aclTensor* mean, const aclIntArray* dim,
-                                             int64_t correction, bool keepdim, aclOpExecutor* executor);
-}
+const aclTensor* ReduceStdV2Update(
+    const aclTensor* self, const aclTensor* mean, const aclIntArray* dim, bool unbiased, bool keepdim,
+    aclOpExecutor* executor);
+const aclTensor* ReduceStdV2UpdateCorrection(
+    const aclTensor* self, const aclTensor* mean, const aclIntArray* dim, int64_t correction, bool keepdim,
+    aclOpExecutor* executor);
+} // namespace l0op
 
 #endif

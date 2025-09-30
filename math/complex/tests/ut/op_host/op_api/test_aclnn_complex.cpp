@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 #include <vector>
@@ -19,61 +20,70 @@
 using namespace std;
 
 class complex_test : public testing::Test {
- protected:
-  static void SetUpTestCase() { cout << "complex_test SetUp" << endl; }
+protected:
+    static void SetUpTestCase()
+    {
+        cout << "complex_test SetUp" << endl;
+    }
 
-  static void TearDownTestCase() { cout << "complex_test TearDown" << endl; }
+    static void TearDownTestCase()
+    {
+        cout << "complex_test TearDown" << endl;
+    }
 };
 
+TEST_F(complex_test, ascend910B2_complex_test_complex64)
+{
+    auto tensor_real = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto tensor_imag = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto tensor_out = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnComplex, INPUT(tensor_real, tensor_imag), OUTPUT(tensor_out));
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-TEST_F(complex_test, ascend910B2_complex_test_complex64) {
-  auto tensor_real = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto tensor_imag = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto tensor_out = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND);
-  auto ut = OP_API_UT(aclnnComplex, INPUT(tensor_real, tensor_imag), OUTPUT(tensor_out));
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-  // SAMPLE: precision simulate
-  ut.TestPrecision();
+    // SAMPLE: precision simulate
+    ut.TestPrecision();
 }
 
-TEST_F(complex_test, ascend910B2_complex_test_complex32) {
-   auto tensor_real = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
-   auto tensor_imag = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
-   auto tensor_out = TensorDesc({2, 3}, ACL_COMPLEX32, ACL_FORMAT_ND);
-   auto ut = OP_API_UT(aclnnComplex, INPUT(tensor_real, tensor_imag), OUTPUT(tensor_out));
+TEST_F(complex_test, ascend910B2_complex_test_complex32)
+{
+    auto tensor_real = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
+    auto tensor_imag = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
+    auto tensor_out = TensorDesc({2, 3}, ACL_COMPLEX32, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnComplex, INPUT(tensor_real, tensor_imag), OUTPUT(tensor_out));
 
-   // SAMPLE: only test GetWorkspaceSize
-   uint64_t workspace_size = 0;
-   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-   EXPECT_EQ(aclRet, ACL_SUCCESS);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(complex_test, ascend910B2_complex_test_complex128) {
-  auto tensor_real = TensorDesc({2, 3}, ACL_COMPLEX32, ACL_FORMAT_ND);
-  auto tensor_imag = TensorDesc({2, 3}, ACL_COMPLEX32, ACL_FORMAT_ND);
-  auto tensor_out = TensorDesc({2, 3}, ACL_COMPLEX128, ACL_FORMAT_ND);
-  auto ut = OP_API_UT(aclnnComplex, INPUT(tensor_real, tensor_imag), OUTPUT(tensor_out));
+TEST_F(complex_test, ascend910B2_complex_test_complex128)
+{
+    auto tensor_real = TensorDesc({2, 3}, ACL_COMPLEX32, ACL_FORMAT_ND);
+    auto tensor_imag = TensorDesc({2, 3}, ACL_COMPLEX32, ACL_FORMAT_ND);
+    auto tensor_out = TensorDesc({2, 3}, ACL_COMPLEX128, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnComplex, INPUT(tensor_real, tensor_imag), OUTPUT(tensor_out));
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(complex_test, ascend910B2_complex_test_output_check) {
-  auto tensor_real = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
-  auto tensor_imag = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
-  auto tensor_out = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND);
-  auto ut = OP_API_UT(aclnnComplex, INPUT(tensor_real, tensor_imag), OUTPUT(tensor_out));
+TEST_F(complex_test, ascend910B2_complex_test_output_check)
+{
+    auto tensor_real = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
+    auto tensor_imag = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
+    auto tensor_out = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnComplex, INPUT(tensor_real, tensor_imag), OUTPUT(tensor_out));
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
 // TEST_F(complex_test, case_nullptr)
@@ -96,15 +106,15 @@ TEST_F(complex_test, ascend910B2_case_empty_tensors)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(complex_test, ascend310p_complex_test_complex32_unsupport) {
-   auto tensor_real = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
-   auto tensor_imag = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
-   auto tensor_out = TensorDesc({2, 3}, ACL_COMPLEX32, ACL_FORMAT_ND);
-   auto ut = OP_API_UT(aclnnComplex, INPUT(tensor_real, tensor_imag), OUTPUT(tensor_out));
+TEST_F(complex_test, ascend310p_complex_test_complex32_unsupport)
+{
+    auto tensor_real = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
+    auto tensor_imag = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
+    auto tensor_out = TensorDesc({2, 3}, ACL_COMPLEX32, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnComplex, INPUT(tensor_real, tensor_imag), OUTPUT(tensor_out));
 
-   // SAMPLE: only test GetWorkspaceSize
-   uint64_t workspace_size = 0;
-   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-   EXPECT_EQ(aclRet, ACLNN_ERR_INNER_NULLPTR);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_INNER_NULLPTR);
 }
-

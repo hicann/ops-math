@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 /*!
@@ -29,21 +30,23 @@ using namespace op;
 namespace l0op {
 OP_TYPE_REGISTER(ReduceStdV2);
 
-const std::tuple<const aclTensor *, const aclTensor *> ReduceStdV2(const aclTensor* self, const aclIntArray* dim,
-    int64_t correction, bool keepdim, bool isMeanOut, aclOpExecutor* executor)
+const std::tuple<const aclTensor*, const aclTensor*> ReduceStdV2(
+    const aclTensor* self, const aclIntArray* dim, int64_t correction, bool keepdim, bool isMeanOut,
+    aclOpExecutor* executor)
 {
     L0_DFX(ReduceStdV2, self, dim, correction, keepdim, isMeanOut);
 
-    aclTensor *reduceStdOut = executor->AllocTensor(self->GetDataType(),
-                                                    self->GetStorageFormat(), self->GetOriginalFormat());
+    aclTensor* reduceStdOut =
+        executor->AllocTensor(self->GetDataType(), self->GetStorageFormat(), self->GetOriginalFormat());
     CHECK_RET(reduceStdOut != nullptr, std::tuple(nullptr, nullptr));
 
-    aclTensor *reduceStdMeanOut = executor->AllocTensor(self->GetDataType(),
-                                                        self->GetStorageFormat(), self->GetOriginalFormat());
+    aclTensor* reduceStdMeanOut =
+        executor->AllocTensor(self->GetDataType(), self->GetStorageFormat(), self->GetOriginalFormat());
     CHECK_RET(reduceStdMeanOut != nullptr, std::tuple(nullptr, nullptr));
 
-    INFER_SHAPE(ReduceStdV2, OP_INPUT(self), OP_OUTPUT(reduceStdOut, reduceStdMeanOut),
-                OP_ATTR(dim, correction, keepdim, isMeanOut));
+    INFER_SHAPE(
+        ReduceStdV2, OP_INPUT(self), OP_OUTPUT(reduceStdOut, reduceStdMeanOut),
+        OP_ATTR(dim, correction, keepdim, isMeanOut));
 
     op::Shape outShape = self->GetViewShape();
     auto count = dim->Size();
@@ -58,12 +61,13 @@ const std::tuple<const aclTensor *, const aclTensor *> ReduceStdV2(const aclTens
         reduceStdMeanOut->SetViewShape(outShape);
     }
 
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(ReduceStdV2, OP_INPUT(self), OP_OUTPUT(reduceStdOut, reduceStdMeanOut),
-                                           OP_ATTR(dim, correction, keepdim, isMeanOut));
-    if (ret !=  ACLNN_SUCCESS) {
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(
+        ReduceStdV2, OP_INPUT(self), OP_OUTPUT(reduceStdOut, reduceStdMeanOut),
+        OP_ATTR(dim, correction, keepdim, isMeanOut));
+    if (ret != ACLNN_SUCCESS) {
         OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ReduceStdV2 ADD_TO_LAUNCHER_LIST_AICORE failed.");
         return std::tuple(nullptr, nullptr);
     }
     return std::tuple(reduceStdOut, reduceStdMeanOut);
 }
-}  // namespace l0op
+} // namespace l0op

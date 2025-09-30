@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 /* !
@@ -26,8 +27,9 @@
 
 using namespace std;
 
-extern "C" __global__ __aicore__ void strided_slice_assign_v2(GM_ADDR var, GM_ADDR input_value, GM_ADDR begin,
-    GM_ADDR end, GM_ADDR strides, GM_ADDR axes, GM_ADDR var_out, GM_ADDR workspace, GM_ADDR tiling);
+extern "C" __global__ __aicore__ void strided_slice_assign_v2(
+    GM_ADDR var, GM_ADDR input_value, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR axes, GM_ADDR var_out,
+    GM_ADDR workspace, GM_ADDR tiling);
 
 class strided_slice_assign_v2_test : public testing::Test {
 protected:
@@ -49,22 +51,21 @@ TEST_F(strided_slice_assign_v2_test, test_case_0)
 
     size_t tiling_data_size = sizeof(StridedSliceAssignV2TilingData);
 
-    uint8_t *var = (uint8_t *)AscendC::GmAlloc(varByteSize);
-    uint8_t *input_value = (uint8_t *)AscendC::GmAlloc(inputByteSize);
-    uint8_t *begin = (uint8_t *)AscendC::GmAlloc(idxByteSize);
-    uint8_t *end = (uint8_t *)AscendC::GmAlloc(idxByteSize);
-    uint8_t *strides = (uint8_t *)AscendC::GmAlloc(idxByteSize);
-    uint8_t *axes = (uint8_t *)AscendC::GmAlloc(idxByteSize);
+    uint8_t* var = (uint8_t*)AscendC::GmAlloc(varByteSize);
+    uint8_t* input_value = (uint8_t*)AscendC::GmAlloc(inputByteSize);
+    uint8_t* begin = (uint8_t*)AscendC::GmAlloc(idxByteSize);
+    uint8_t* end = (uint8_t*)AscendC::GmAlloc(idxByteSize);
+    uint8_t* strides = (uint8_t*)AscendC::GmAlloc(idxByteSize);
+    uint8_t* axes = (uint8_t*)AscendC::GmAlloc(idxByteSize);
 
-    uint8_t *workspace = (uint8_t *)AscendC::GmAlloc(16 * 2);
-    uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 2);
+    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
     uint32_t blockDim = 4;
 
-    char *path_ = get_current_dir_name();
+    char* path_ = get_current_dir_name();
     string path(path_);
 
-    StridedSliceAssignV2TilingData *tilingDatafromBin =
-        reinterpret_cast<StridedSliceAssignV2TilingData *>(tiling);
+    StridedSliceAssignV2TilingData* tilingDatafromBin = reinterpret_cast<StridedSliceAssignV2TilingData*>(tiling);
 
     tilingDatafromBin->dimNum = 3;
     tilingDatafromBin->varDim[0] = 4;
@@ -87,8 +88,9 @@ TEST_F(strided_slice_assign_v2_test, test_case_0)
     tilingDatafromBin->inputCumShape[2] = 4;
 
     ICPU_SET_TILING_KEY(1);
-    ICPU_RUN_KF(strided_slice_assign_v2, blockDim, var, input_value, begin, end, strides, axes, var, workspace,
-        (uint8_t *)(tilingDatafromBin));
+    ICPU_RUN_KF(
+        strided_slice_assign_v2, blockDim, var, input_value, begin, end, strides, axes, var, workspace,
+        (uint8_t*)(tilingDatafromBin));
 
     AscendC::GmFree(var);
     AscendC::GmFree(input_value);

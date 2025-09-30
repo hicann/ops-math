@@ -16,8 +16,10 @@ using namespace std;
 
 class OpKernelUtEnvironment : public testing::Environment {
 public:
-    OpKernelUtEnvironment() {}
-    virtual void SetUp() {
+    OpKernelUtEnvironment()
+    {}
+    virtual void SetUp()
+    {
         cout << "Global Environment SetpUp." << endl;
 
         /* load libmath_op_kernel_ut_${socversion}_ut.so for init tiling funcs and infershape funcs */
@@ -38,12 +40,13 @@ public:
         gert::DefaultOpImplSpaceRegistryV2::GetInstance().SetSpaceRegistry(opImplSpaceRegistryV2);
     }
 
-    virtual void TearDown() {
+    virtual void TearDown()
+    {
         cout << "Global Environment TearDown" << endl;
     }
 };
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     testing::InitGoogleTest(&argc, argv);
     testing::AddGlobalTestEnvironment(new OpKernelUtEnvironment());

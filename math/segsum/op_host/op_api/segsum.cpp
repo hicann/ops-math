@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 /*!
@@ -33,14 +34,14 @@ OP_TYPE_REGISTER(Segsum);
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
+const aclTensor* Segsum(const aclTensor* self, aclTensor* output, aclOpExecutor* executor)
+{
+    L0_DFX(Segsum, self);
 
-const aclTensor* Segsum(const aclTensor* self,aclTensor *output, aclOpExecutor* executor) {
-  L0_DFX(Segsum, self);
+    const aclTensor* out = executor->AllocTensor(output->GetViewShape(), self->GetDataType(), self->GetStorageFormat());
+    CHECK_RET(out != nullptr, nullptr);
 
-  const aclTensor* out = executor->AllocTensor(output->GetViewShape(), self->GetDataType(), self->GetStorageFormat());
-  CHECK_RET(out != nullptr, nullptr);
-  
-  ADD_TO_LAUNCHER_LIST_AICORE(Segsum, OP_INPUT(self), OP_OUTPUT(out));
-  return out;
+    ADD_TO_LAUNCHER_LIST_AICORE(Segsum, OP_INPUT(self), OP_OUTPUT(out));
+    return out;
 }
-}  // namespace l0op
+} // namespace l0op
