@@ -9,7 +9,7 @@
  */
 #include "gtest/gtest.h"
 
-#include "aclnn_circular_pad3d_backward.h"
+#include "../../../../op_host/op_api/aclnn_circular_pad3d_backward.h"
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/array_desc.h"
 #include "op_api_ut_common/op_api_ut.h"
