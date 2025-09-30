@@ -43,6 +43,4 @@ struct FeedsRepeatCompileInfo {
 };
 } // namespace optiling
 
-
-
 #endif // OPS_BUILD_IN_OP_TILING_RUNTIME_FEEDS_REPEAT_TILING_H
