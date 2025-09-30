@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -107,18 +108,20 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
     } else if (dataType == ge::DT_FLOAT16) {
         dataAlign = DATA_ALIGN_FLOAT16;
         shapeNAlign = (shapeN + dataAlign - ALIGN_COEF) / dataAlign * dataAlign;
-        mNum = (UbSize - MNUM_FLOAT16_SUB_COEF * shapeNAlign) / (MNUM_FLOAT16_ADD_COEF + MNUM_FLOAT16_MUL_COEF * shapeNAlign);
+        mNum = (UbSize - MNUM_FLOAT16_SUB_COEF * shapeNAlign) /
+               (MNUM_FLOAT16_ADD_COEF + MNUM_FLOAT16_MUL_COEF * shapeNAlign);
     } else if (dataType == ge::DT_FLOAT) {
         dataAlign = DATA_ALIGN_FLOAT32;
         shapeNAlign = (shapeN + dataAlign - ALIGN_COEF) / dataAlign * dataAlign;
-        mNum = (UbSize - MNUM_FLOAT32_SUB_COEF * shapeNAlign) / (MNUM_FLOAT32_ADD_COEF + MNUM_FLOAT32_MUL_COEF * shapeNAlign);
+        mNum = (UbSize - MNUM_FLOAT32_SUB_COEF * shapeNAlign) /
+               (MNUM_FLOAT32_ADD_COEF + MNUM_FLOAT32_MUL_COEF * shapeNAlign);
     }
 
     auto taskNum = shapeB;
     int64_t coreTaskNum;
-    if (coreNum != 0){
+    if (coreNum != 0) {
         coreTaskNum = (taskNum + coreNum - 1) / coreNum;
-    }else{
+    } else {
         return 0;
     }
     auto useCoreNum = (taskNum + coreTaskNum - 1) / coreTaskNum;
@@ -126,9 +129,9 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
 
     mNum = std::min(mNum, REPEAT_LIMITED);
     int64_t mLoopNum;
-    if (mNum != 0){
+    if (mNum != 0) {
         mLoopNum = (shapeM + mNum - 1) / mNum;
-    }else{
+    } else {
         return 0;
     }
     mNum = (shapeM + mLoopNum - 1) / mLoopNum;
@@ -171,8 +174,7 @@ static ge::graphStatus TilingPrepareForMulAddn(gert::TilingParseContext* context
     return ge::GRAPH_SUCCESS;
 }
 
-struct MulAddnCompileInfo {
-};
+struct MulAddnCompileInfo {};
 
 IMPL_OP_OPTILING(MulAddn).Tiling(TilingFunc).TilingParse<MulAddnCompileInfo>(TilingPrepareForMulAddn);
 } // namespace optiling

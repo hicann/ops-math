@@ -24,9 +24,15 @@ using namespace std;
 
 class l2_arange_test : public testing::Test {
 protected:
-    static void SetUpTestCase() { cout << "arange_test SetUp" << endl; }
+    static void SetUpTestCase()
+    {
+        cout << "arange_test SetUp" << endl;
+    }
 
-    static void TearDownTestCase() { cout << "arange_test TearDown" << endl; }
+    static void TearDownTestCase()
+    {
+        cout << "arange_test TearDown" << endl;
+    }
 };
 
 // 输入bool
@@ -419,10 +425,10 @@ TEST_F(l2_arange_test, output_bfloat16)
 
     if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
-      EXPECT_EQ(aclRet, ACL_SUCCESS);
-      ut.TestPrecision();
+        EXPECT_EQ(aclRet, ACL_SUCCESS);
+        ut.TestPrecision();
     } else {
-      EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+        EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
     }
 }
 

@@ -5,8 +5,8 @@
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
- * the software repository for the full text of the License.
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "platform.h"
@@ -14,7 +14,7 @@
 namespace op {
 
 SocVersion g_socVersion = SocVersion::ASCEND910B;
-PlatformInfo *g_platformInfo = new PlatformInfo();
+PlatformInfo* g_platformInfo = new PlatformInfo();
 
 bool PlatformInfo::CheckSupport(SocSpec socSpec, SocSpecAbility ability) const
 {
@@ -33,7 +33,7 @@ bool PlatformInfo::Valid() const
     return valid_;
 }
 
-void PlatformInfo::SetPlatformImpl(PlatformInfoImpl *impl)
+void PlatformInfo::SetPlatformImpl(PlatformInfoImpl* impl)
 {
     impl_ = impl;
     valid_ = true;

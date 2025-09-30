@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -21,8 +22,7 @@
 
 using namespace op;
 
-namespace l0op
-{
+namespace l0op {
 
 OP_TYPE_REGISTER(AxpyV2);
 
@@ -40,8 +40,9 @@ static bool IsAiCoreSupport(const aclTensor* self)
 }
 
 // AICORE算子kernel
-static const aclTensor* AxpyV2AiCore(const aclTensor* self, const aclTensor* other, const aclTensor* alpha,
-                                     const aclTensor* out, aclOpExecutor* executor)
+static const aclTensor* AxpyV2AiCore(
+    const aclTensor* self, const aclTensor* other, const aclTensor* alpha, const aclTensor* out,
+    aclOpExecutor* executor)
 {
     L0_DFX(AxpyV2AiCore, self, other, alpha, out);
     if (!(self->GetDataType() == other->GetDataType() && self->GetDataType() == alpha->GetDataType() &&
@@ -66,11 +67,12 @@ const aclTensor* AxpyV2(const aclTensor* self, const aclTensor* other, const acl
         return nullptr;
     }
     if (!IsAiCoreSupport(self)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self dtype %s should be in dtype support list [%s].",
-                op::ToString(self->GetDataType()).GetString(), op::ToString(AICORE_DTYPE_SUPPORT_LIST).GetString());
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "self dtype %s should be in dtype support list [%s].",
+            op::ToString(self->GetDataType()).GetString(), op::ToString(AICORE_DTYPE_SUPPORT_LIST).GetString());
         return nullptr;
     }
 
     return AxpyV2AiCore(self, other, alpha, out, executor);
 }
-}  // namespace l0op
+} // namespace l0op

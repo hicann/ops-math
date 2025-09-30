@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -37,10 +38,9 @@ static std::vector<int64_t> ToVector(const gert::Shape& shape)
 }
 
 static void ExeTestCase(
-    const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
-    const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
-    gert::StorageShape& outStorageShape,
-    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+    const std::vector<gert::StorageShape>& inputShapes, // 存储所有输入StorageShape参数
+    const std::vector<ge::DataType>& dtypes,            // 存储所有DataType参数
+    gert::StorageShape& outStorageShape, ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
 {
     // 从vector中取出对应参数（保持原顺序）
     const auto& yStorageShape = inputShapes[0];
@@ -48,32 +48,28 @@ static void ExeTestCase(
     const auto& weightAStorageShape = inputShapes[2];
     const auto& weightBStorageShape = inputShapes[3];
     const auto& indiceStorageShape = inputShapes[4];
-    
+
     ge::DataType input1Dtype = dtypes[0];
     ge::DataType input2Dtype = dtypes[1];
     ge::DataType outputDtype = dtypes[2];
 
     /* make infershape context */
-    std::vector<gert::Tensor *> inputTensors = {
-        (gert::Tensor *)&yStorageShape,
-        (gert::Tensor *)&xStorageShape,
-        (gert::Tensor *)&weightBStorageShape,
-        (gert::Tensor *)&indiceStorageShape,
-        (gert::Tensor *)&weightAStorageShape
-    };
-    std::vector<gert::StorageShape *> outputShapes = {&outStorageShape};
+    std::vector<gert::Tensor*> inputTensors = {
+        (gert::Tensor*)&yStorageShape, (gert::Tensor*)&xStorageShape, (gert::Tensor*)&weightBStorageShape,
+        (gert::Tensor*)&indiceStorageShape, (gert::Tensor*)&weightAStorageShape};
+    std::vector<gert::StorageShape*> outputShapes = {&outStorageShape};
     auto contextHolder = gert::InferShapeContextFaker()
-        .SetOpType("AddLora")
-        .NodeIoNum(5, 1)
-        .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(1, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(2, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(3, input2Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(4, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .InputTensors(inputTensors)
-        .OutputShapes(outputShapes)
-        .Build();
+                             .SetOpType("AddLora")
+                             .NodeIoNum(5, 1)
+                             .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeInputTd(1, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeInputTd(2, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeInputTd(3, input2Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeInputTd(4, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .InputTensors(inputTensors)
+                             .OutputShapes(outputShapes)
+                             .Build();
 
     /* get infershape func */
     auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
@@ -95,16 +91,16 @@ TEST_F(AddLora, AddLora_infershape_case_0)
 
     // 用vector存储同类型参数（顺序与原参数列表一致）
     std::vector<gert::StorageShape> inputShapes = {
-        {{Batch, H2}, {Batch, H2}},                  // y_shape
-        {{Batch, H1}, {Batch, H1}},                  // x_shape
-        {{weight, layer, R, H1}, {weight, layer, R, H1}},  // weightA_shape
-        {{weight, layer, H2, R}, {weight, layer, H2, R}},  // weightB_shape
-        {{Batch}, {Batch}}                           // indice_shape
+        {{Batch, H2}, {Batch, H2}},                       // y_shape
+        {{Batch, H1}, {Batch, H1}},                       // x_shape
+        {{weight, layer, R, H1}, {weight, layer, R, H1}}, // weightA_shape
+        {{weight, layer, H2, R}, {weight, layer, H2, R}}, // weightB_shape
+        {{Batch}, {Batch}}                                // indice_shape
     };
     std::vector<ge::DataType> dtypes = {
-        ge::DT_FLOAT16,  // input1Dtype
-        ge::DT_INT32,    // input2Dtype
-        ge::DT_FLOAT16   // outputDtype
+        ge::DT_FLOAT16, // input1Dtype
+        ge::DT_INT32,   // input2Dtype
+        ge::DT_FLOAT16  // outputDtype
     };
 
     std::vector<int64_t> expectResult = {Batch, H2};

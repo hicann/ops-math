@@ -5,8 +5,8 @@
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
- * the software repository for the full text of the License.
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include <gtest/gtest.h>
@@ -16,8 +16,10 @@ using namespace std;
 
 class OpKernelUtEnvironment : public testing::Environment {
 public:
-    OpKernelUtEnvironment() {}
-    virtual void SetUp() {
+    OpKernelUtEnvironment()
+    {}
+    virtual void SetUp()
+    {
         cout << "Global Environment SetpUp." << endl;
 
         /* load libmath_op_kernel_ut_${socversion}_ut.so for init tiling funcs and infershape funcs */
@@ -38,12 +40,13 @@ public:
         gert::DefaultOpImplSpaceRegistryV2::GetInstance().SetSpaceRegistry(opImplSpaceRegistryV2);
     }
 
-    virtual void TearDown() {
+    virtual void TearDown()
+    {
         cout << "Global Environment TearDown" << endl;
     }
 };
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     testing::InitGoogleTest(&argc, argv);
     testing::AddGlobalTestEnvironment(new OpKernelUtEnvironment());

@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -51,7 +52,8 @@ static ge::graphStatus TilingPrepare4IsFiniteTiling(gert::TilingParseContext* co
 
 static ge::graphStatus IsFiniteTilingForGe(gert::TilingContext* tilingContext)
 {
-    OP_CHECK_IF(tilingContext == nullptr, OP_LOGE("IsFiniteTiling", "tiling context is nullptr"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        tilingContext == nullptr, OP_LOGE("IsFiniteTiling", "tiling context is nullptr"), return ge::GRAPH_FAILED);
     OP_LOGD(tilingContext, "Entering IsFiniteTilingForGe");
     auto compileInfo = reinterpret_cast<const IsFiniteCompileInfo*>(tilingContext->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, compileInfo);
@@ -73,14 +75,14 @@ static ge::graphStatus IsFiniteTilingForGe(gert::TilingContext* tilingContext)
     ge::DataType dtype_x = tilingContext->GetInputDesc(0)->GetDataType();
     if (dtype_x == ge::DataType::DT_FLOAT) {
         D_T_X = IS_FINITE_TPL_FP32;
-    } else if(dtype_x == ge::DataType::DT_FLOAT16) {
+    } else if (dtype_x == ge::DataType::DT_FLOAT16) {
         D_T_X = IS_FINITE_TPL_FP16;
-    } else if(dtype_x == ge::DataType::DT_BF16) {
+    } else if (dtype_x == ge::DataType::DT_BF16) {
         D_T_X = IS_FINITE_TPL_BF16;
     }
 
     tilingContext->SetBlockDim(tilingData->needCoreNum);
-    const uint64_t tilingKey = GET_TPL_TILING_KEY(D_T_X, D_T_Y); //模板参数配置
+    const uint64_t tilingKey = GET_TPL_TILING_KEY(D_T_X, D_T_Y); // 模板参数配置
     tilingContext->SetTilingKey(tilingKey);
     size_t* workspaces = tilingContext->GetWorkspaceSizes(1);
     if (workspaces != nullptr) {
