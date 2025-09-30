@@ -28,16 +28,13 @@
 #include "conversion/tensor_move/op_host/op_api/tensor_move.h"
 using namespace op;
 
-static const int MIN_DIM_NUM_ND = 2;
-static const int MAX_DIM_NUM_ND = 6;
-static const int64_t MIN_SIZE_PER_BLOCK_FLOAT16 = 16;
-static const int64_t MIN_SIZE_PER_BLOCK_INT8 = 32;
-
 namespace {
 static const int MIN_INT8_DIM_NUM_ND = 2;
 static const int MAX_INT8_DIM_NUM_ND = 6;
 static const int MIN_FLOAT16_DIM_NUM_ND = 2;
-static const int MAX_FLOAT16_DIM_NUM_ND = 3;
+static const int MAX_FLOAT16_DIM_NUM_ND = 3;  
+static const int64_t MIN_SIZE_PER_BLOCK_FLOAT16 = 16;
+static const int64_t MIN_SIZE_PER_BLOCK_INT8 = 32;
 }
 
 #ifdef __cplusplus
