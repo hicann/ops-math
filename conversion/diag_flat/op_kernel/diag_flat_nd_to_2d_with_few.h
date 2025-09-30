@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -23,8 +24,7 @@ using namespace AscendC;
 namespace DiagFlat {
 
 template <typename T>
-class DiagFlatNDTo2DWithFew
-{
+class DiagFlatNDTo2DWithFew {
 public:
     __aicore__ inline DiagFlatNDTo2DWithFew(){};
     __aicore__ inline void Init(GM_ADDR input, GM_ADDR output, GM_ADDR workspace, const DiagV2TilingData* tilingData);
@@ -229,7 +229,8 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::CopyOut(int64_t iter)
     int64_t gmOffset = 0;
     int64_t width = inputNum_ + abs(offset_);
     for (int64_t i = 0; i < ONCE_HANDLE_NUM; i++) {
-        PipeBarrier<PIPE_MTE3>();;
+        PipeBarrier<PIPE_MTE3>();
+        ;
         int64_t rowIdx = iter * ONCE_HANDLE_NUM + i;
         gmOffset = width * rowIdx + (offset_ > 0 ? offset_ : 0) + iter * ONCE_HANDLE_NUM;
         DataCopy(gmOutput_[gmOffset], ubOutput[ONCE_HANDLE_NUM * i], ONCE_HANDLE_NUM);
@@ -264,7 +265,8 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::CopyOutTail(int64_t iter)
             int64_t iterBack = iter - 1 < 0 ? 0 : iter - 1;
             int64_t offset = iter == 0 ? 0 : inputNum_ % ONCE_HANDLE_NUM;
             for (int64_t i = 0; i < ONCE_HANDLE_NUM; i++) {
-                PipeBarrier<PIPE_MTE3>();;
+                PipeBarrier<PIPE_MTE3>();
+                ;
                 int64_t rowIdx = iter * ONCE_HANDLE_NUM + i - rowBack;
                 gmOffset = width * rowIdx + (offset_ > 0 ? offset_ : 0) + iterBack * ONCE_HANDLE_NUM + offset;
                 DataCopy(gmOutput_[gmOffset], ubOutput[ONCE_HANDLE_NUM * i], ONCE_HANDLE_NUM);
@@ -272,7 +274,8 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::CopyOutTail(int64_t iter)
         }
     } else {
         for (int64_t i = 0; i < ONCE_HANDLE_NUM; i++) {
-            PipeBarrier<PIPE_MTE3>();;
+            PipeBarrier<PIPE_MTE3>();
+            ;
             int64_t rowIdx = iter * ONCE_HANDLE_NUM + i;
             gmOffset = width * rowIdx + (offset_ > 0 ? offset_ : 0) + iter * ONCE_HANDLE_NUM;
             DataCopy(gmOutput_[gmOffset], ubOutput[ONCE_HANDLE_NUM * i], ONCE_HANDLE_NUM);

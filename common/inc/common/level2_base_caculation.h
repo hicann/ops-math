@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -23,9 +24,9 @@
 extern "C" {
 #endif
 
-namespace op
-{
-[[maybe_unused]] static bool CheckBroadcastLogAddExp(const aclTensor* self, const aclTensor* other, const aclTensor* out)
+namespace op {
+[[maybe_unused]] static bool CheckBroadcastLogAddExp(
+    const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
     // 检查self和other是否能broadcast，如可以求broadcast之后的shape
     OP_CHECK_BROADCAST(self, other, return false);
@@ -66,8 +67,8 @@ namespace op
     return perm;
 }
 
-[[maybe_unused]] static const aclTensor* ReshapeLongTensorActivation(const aclTensor* x, aclOpExecutor* executor, int originalDimSize,
-                                                    aclIntArray* valuePerm = nullptr)
+[[maybe_unused]] static const aclTensor* ReshapeLongTensorActivation(
+    const aclTensor* x, aclOpExecutor* executor, int originalDimSize, aclIntArray* valuePerm = nullptr)
 {
     int64_t dimSize = x->GetViewShape().GetDimNum();
     if (static_cast<int64_t>(originalDimSize) == dimSize && dimSize <= static_cast<int64_t>(MAX_SUPPORT_DIMS_NUMS)) {
@@ -115,28 +116,30 @@ namespace op
     return dim >= 0 ? dim : dim + selfdimNum;
 }
 
-[[maybe_unused]] static void ExpectShapeInferWithDimMask(const op::Shape& selfShape, const aclIntArray* dim, bool keepDim, op::Shape& expectShape) {
+[[maybe_unused]] static void ExpectShapeInferWithDimMask(
+    const op::Shape& selfShape, const aclIntArray* dim, bool keepDim, op::Shape& expectShape)
+{
     bitset<MAX_MASK_LEN64> dimMask = bitset<MAX_MASK_LEN64>();
-  
+
     // dim为空时，所有轴都视为mask，与竞品一致
     if (dim->Size() == 0) {
-      dimMask.flip();
+        dimMask.flip();
     }
     for (size_t i = 0; i < dim->Size(); i++) {
-      int64_t index = GetPosDimWithStd(dim->operator[](i), selfShape.GetDimNum());
-      // 前序已校验，此处dim不会重复
-      dimMask.set(index);
+        int64_t index = GetPosDimWithStd(dim->operator[](i), selfShape.GetDimNum());
+        // 前序已校验，此处dim不会重复
+        dimMask.set(index);
     }
-  
+
     for (size_t i = 0; i < selfShape.GetDimNum(); i++) {
-      if (!dimMask[i]) {
-        expectShape.AppendDim(selfShape.GetDim(i));
-      } else if (keepDim) {
-      // dim为空时 所有轴reduce
-        expectShape.AppendDim(1);
-      }
+        if (!dimMask[i]) {
+            expectShape.AppendDim(selfShape.GetDim(i));
+        } else if (keepDim) {
+            // dim为空时 所有轴reduce
+            expectShape.AppendDim(1);
+        }
     }
-  }
+}
 
 [[maybe_unused]] static int64_t CalcShapeProdStdAndVarMean(const aclTensor* self, const aclIntArray* dim)
 {
@@ -200,8 +203,8 @@ namespace op
     return reduceShape;
 }
 
-}  // namespace op
+} // namespace op
 #ifdef __cplusplus
 }
 #endif
-#endif  // LEVEL2_BASE_CALCULATION_H_
+#endif // LEVEL2_BASE_CALCULATION_H_

@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "gtest/gtest.h"
@@ -13,7 +14,6 @@
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/inner/types.h"
-
 
 class l2_maxn_test : public testing::Test {
 protected:
@@ -51,7 +51,8 @@ TEST_F(l2_maxn_test, l2_maxn_test_nullptr_output)
 }
 
 // 空tensors
-TEST_F(l2_maxn_test, l2_maxn_test_empty_tensors) {
+TEST_F(l2_maxn_test, l2_maxn_test_empty_tensors)
+{
     auto tensor1Desc = TensorDesc({0}, ACL_FLOAT, ACL_FORMAT_ND);
     auto tensor2Desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto tensorListDesc = TensorListDesc({tensor1Desc, tensor2Desc});
@@ -63,7 +64,8 @@ TEST_F(l2_maxn_test, l2_maxn_test_empty_tensors) {
 }
 
 // 不能广播
-TEST_F(l2_maxn_test, l2_maxn_test_broadcast_failed1) {
+TEST_F(l2_maxn_test, l2_maxn_test_broadcast_failed1)
+{
     auto tensor1Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto tensor2Desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto tensorListDesc = TensorListDesc({tensor1Desc, tensor2Desc});
@@ -74,7 +76,8 @@ TEST_F(l2_maxn_test, l2_maxn_test_broadcast_failed1) {
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_maxn_test, l2_maxn_test_broadcast_failed2) {
+TEST_F(l2_maxn_test, l2_maxn_test_broadcast_failed2)
+{
     auto tensor1Desc = TensorDesc({2, 1}, ACL_FLOAT, ACL_FORMAT_ND);
     auto tensor2Desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto tensorListDesc = TensorListDesc({tensor1Desc, tensor2Desc});
@@ -86,7 +89,8 @@ TEST_F(l2_maxn_test, l2_maxn_test_broadcast_failed2) {
 }
 
 // 输入维度超过8
-TEST_F(l2_maxn_test, l2_maxn_test_dim_over_8) {
+TEST_F(l2_maxn_test, l2_maxn_test_dim_over_8)
+{
     auto tensor1Desc = TensorDesc({2, 1, 1, 1, 1, 1, 2, 3, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto tensor2Desc = TensorDesc({2, 1, 1, 1, 1, 1, 2, 3, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto tensorListDesc = TensorListDesc({tensor1Desc, tensor2Desc});
@@ -98,14 +102,12 @@ TEST_F(l2_maxn_test, l2_maxn_test_dim_over_8) {
 }
 
 // 正常路径
-TEST_F(l2_maxn_test, l2_maxn_test_dypte_float32) {
-    auto tensor1Desc = TensorDesc({2, 1}, ACL_FLOAT, ACL_FORMAT_ND)
-                           .Value(vector<float>{1, 2});
-    auto tensor2Desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
-                           .Value(vector<float>{3, 4, 5, 6, 7, 8});
+TEST_F(l2_maxn_test, l2_maxn_test_dypte_float32)
+{
+    auto tensor1Desc = TensorDesc({2, 1}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2});
+    auto tensor2Desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{3, 4, 5, 6, 7, 8});
     auto tensorListDesc = TensorListDesc({tensor1Desc, tensor2Desc});
-    auto outTensorDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
-                             .Precision(0.0001, 0.0001);
+    auto outTensorDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto ut = OP_API_UT(aclnnMaxN, INPUT(tensorListDesc), OUTPUT(outTensorDesc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
@@ -113,12 +115,12 @@ TEST_F(l2_maxn_test, l2_maxn_test_dypte_float32) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_maxn_test, l2_maxn_test_dypte_float16) {
+TEST_F(l2_maxn_test, l2_maxn_test_dypte_float16)
+{
     auto tensor1Desc = TensorDesc({2, 1}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto tensor2Desc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto tensorListDesc = TensorListDesc({tensor1Desc, tensor2Desc});
-    auto outTensorDesc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND)
-                             .Precision(0.0001, 0.0001);
+    auto outTensorDesc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto ut = OP_API_UT(aclnnMaxN, INPUT(tensorListDesc), OUTPUT(outTensorDesc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
@@ -126,12 +128,12 @@ TEST_F(l2_maxn_test, l2_maxn_test_dypte_float16) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_maxn_test, ascend910B2_maxn_dypte_bfloat16) {
+TEST_F(l2_maxn_test, ascend910B2_maxn_dypte_bfloat16)
+{
     auto tensor1Desc = TensorDesc({2, 1}, ACL_BF16, ACL_FORMAT_ND);
     auto tensor2Desc = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
     auto tensorListDesc = TensorListDesc({tensor1Desc, tensor2Desc});
-    auto outTensorDesc = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND)
-                             .Precision(0.0001, 0.0001);
+    auto outTensorDesc = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto ut = OP_API_UT(aclnnMaxN, INPUT(tensorListDesc), OUTPUT(outTensorDesc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
@@ -139,12 +141,12 @@ TEST_F(l2_maxn_test, ascend910B2_maxn_dypte_bfloat16) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_maxn_test, l2_maxn_test_dypte_int64) {
+TEST_F(l2_maxn_test, l2_maxn_test_dypte_int64)
+{
     auto tensor1Desc = TensorDesc({2, 1}, ACL_INT64, ACL_FORMAT_ND);
     auto tensor2Desc = TensorDesc({2, 3}, ACL_INT64, ACL_FORMAT_ND);
     auto tensorListDesc = TensorListDesc({tensor1Desc, tensor2Desc});
-    auto outTensorDesc = TensorDesc({2, 3}, ACL_INT64, ACL_FORMAT_ND)
-                             .Precision(0.0001, 0.0001);
+    auto outTensorDesc = TensorDesc({2, 3}, ACL_INT64, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto ut = OP_API_UT(aclnnMaxN, INPUT(tensorListDesc), OUTPUT(outTensorDesc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
@@ -152,12 +154,12 @@ TEST_F(l2_maxn_test, l2_maxn_test_dypte_int64) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_maxn_test, l2_maxn_test_dypte_int32) {
+TEST_F(l2_maxn_test, l2_maxn_test_dypte_int32)
+{
     auto tensor1Desc = TensorDesc({2, 1}, ACL_INT32, ACL_FORMAT_ND);
     auto tensor2Desc = TensorDesc({2, 3}, ACL_INT32, ACL_FORMAT_ND);
     auto tensorListDesc = TensorListDesc({tensor1Desc, tensor2Desc});
-    auto outTensorDesc = TensorDesc({2, 3}, ACL_INT32, ACL_FORMAT_ND)
-                             .Precision(0.0001, 0.0001);
+    auto outTensorDesc = TensorDesc({2, 3}, ACL_INT32, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto ut = OP_API_UT(aclnnMaxN, INPUT(tensorListDesc), OUTPUT(outTensorDesc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
@@ -165,12 +167,12 @@ TEST_F(l2_maxn_test, l2_maxn_test_dypte_int32) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_maxn_test, l2_maxn_test_dypte_int8) {
+TEST_F(l2_maxn_test, l2_maxn_test_dypte_int8)
+{
     auto tensor1Desc = TensorDesc({2, 1}, ACL_INT8, ACL_FORMAT_ND);
     auto tensor2Desc = TensorDesc({2, 3}, ACL_INT8, ACL_FORMAT_ND);
     auto tensorListDesc = TensorListDesc({tensor1Desc, tensor2Desc});
-    auto outTensorDesc = TensorDesc({2, 3}, ACL_INT8, ACL_FORMAT_ND)
-                             .Precision(0.001, 0.001);
+    auto outTensorDesc = TensorDesc({2, 3}, ACL_INT8, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut = OP_API_UT(aclnnMaxN, INPUT(tensorListDesc), OUTPUT(outTensorDesc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
@@ -178,12 +180,11 @@ TEST_F(l2_maxn_test, l2_maxn_test_dypte_int8) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_maxn_test, l2_maxn_test_dypte_tensor_num_1) {
-    auto tensor1Desc = TensorDesc({2, 1}, ACL_FLOAT16, ACL_FORMAT_ND)
-                           .Value(vector<float>{1, 2});
+TEST_F(l2_maxn_test, l2_maxn_test_dypte_tensor_num_1)
+{
+    auto tensor1Desc = TensorDesc({2, 1}, ACL_FLOAT16, ACL_FORMAT_ND).Value(vector<float>{1, 2});
     auto tensorListDesc = TensorListDesc({tensor1Desc});
-    auto outTensorDesc = TensorDesc({2, 1}, ACL_FLOAT16, ACL_FORMAT_ND)
-                             .Precision(0.0001, 0.0001);
+    auto outTensorDesc = TensorDesc({2, 1}, ACL_FLOAT16, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto ut = OP_API_UT(aclnnMaxN, INPUT(tensorListDesc), OUTPUT(outTensorDesc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
@@ -191,12 +192,11 @@ TEST_F(l2_maxn_test, l2_maxn_test_dypte_tensor_num_1) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_maxn_test, l2_maxn_test_dypte_tensor_num_20) {
-    auto tensor1Desc = TensorDesc({2, 1}, ACL_FLOAT16, ACL_FORMAT_ND)
-                           .Value(vector<float>{1, 2});
+TEST_F(l2_maxn_test, l2_maxn_test_dypte_tensor_num_20)
+{
+    auto tensor1Desc = TensorDesc({2, 1}, ACL_FLOAT16, ACL_FORMAT_ND).Value(vector<float>{1, 2});
     auto tensorListDesc = TensorListDesc(20, tensor1Desc);
-    auto outTensorDesc = TensorDesc({2, 1}, ACL_FLOAT16, ACL_FORMAT_ND)
-                             .Precision(0.0001, 0.0001);
+    auto outTensorDesc = TensorDesc({2, 1}, ACL_FLOAT16, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto ut = OP_API_UT(aclnnMaxN, INPUT(tensorListDesc), OUTPUT(outTensorDesc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
@@ -204,12 +204,12 @@ TEST_F(l2_maxn_test, l2_maxn_test_dypte_tensor_num_20) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_maxn_test, l2_maxn_test_empty_tensor_21) {
+TEST_F(l2_maxn_test, l2_maxn_test_empty_tensor_21)
+{
     auto tensor1Desc = TensorDesc({0, 1}, ACL_INT8, ACL_FORMAT_ND);
     auto tensor2Desc = TensorDesc({0, 3}, ACL_INT8, ACL_FORMAT_ND);
     auto tensorListDesc = TensorListDesc({tensor1Desc, tensor2Desc});
-    auto outTensorDesc = TensorDesc({0, 3}, ACL_INT8, ACL_FORMAT_ND)
-                             .Precision(0.001, 0.001);
+    auto outTensorDesc = TensorDesc({0, 3}, ACL_INT8, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut = OP_API_UT(aclnnMaxN, INPUT(tensorListDesc), OUTPUT(outTensorDesc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);

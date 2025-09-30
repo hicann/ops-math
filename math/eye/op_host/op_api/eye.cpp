@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -30,21 +31,25 @@ namespace l0op {
 OP_TYPE_REGISTER(Eye);
 
 // AICORE算子kernel
-inline static const aclTensor *EyeAiCore(aclTensor *out, const int64_t n, const int64_t m, aclOpExecutor *executor) {
-  L0_DFX(EyeAiCore, out, n, m);
-  // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Eye算子加入任务队列
-  auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Eye, OP_OUTPUT(out), OP_ATTR(n, m, static_cast<aclIntArray *>(nullptr), out->GetDataType()));
-  OP_CHECK(ret ==  ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "EyeAiCcore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-    return nullptr);
-  return out;
+inline static const aclTensor* EyeAiCore(aclTensor* out, const int64_t n, const int64_t m, aclOpExecutor* executor)
+{
+    L0_DFX(EyeAiCore, out, n, m);
+    // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Eye算子加入任务队列
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(
+        Eye, OP_OUTPUT(out), OP_ATTR(n, m, static_cast<aclIntArray*>(nullptr), out->GetDataType()));
+    OP_CHECK(
+        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "EyeAiCcore ADD_TO_LAUNCHER_LIST_AICORE failed."),
+        return nullptr);
+    return out;
 }
 
-const aclTensor *Eye(aclTensor *out, const int64_t n, const int64_t m, aclOpExecutor *executor) {
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-    auto eyeOut = executor->AllocTensor(out->GetViewShape(), out->GetDataType());
-    CHECK_RET(eyeOut != nullptr, nullptr);
-    return EyeAiCore(eyeOut, n, m, executor);
-  }
-  return EyeAiCore(out, n, m, executor);
+const aclTensor* Eye(aclTensor* out, const int64_t n, const int64_t m, aclOpExecutor* executor)
+{
+    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+        auto eyeOut = executor->AllocTensor(out->GetViewShape(), out->GetDataType());
+        CHECK_RET(eyeOut != nullptr, nullptr);
+        return EyeAiCore(eyeOut, n, m, executor);
+    }
+    return EyeAiCore(out, n, m, executor);
 }
-}  // namespace l0op
+} // namespace l0op

@@ -23,9 +23,15 @@ using namespace std;
 
 class l2_range_test : public testing::Test {
 protected:
-    static void SetUpTestCase() { std::cout << "l2_range SetUp" << std::endl; }
+    static void SetUpTestCase()
+    {
+        std::cout << "l2_range SetUp" << std::endl;
+    }
 
-    static void TearDownTestCase() { std::cout << "l2_range TearDown" << std::endl; }
+    static void TearDownTestCase()
+    {
+        std::cout << "l2_range TearDown" << std::endl;
+    }
 };
 
 // 输入bool

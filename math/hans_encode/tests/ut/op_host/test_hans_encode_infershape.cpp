@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -14,14 +15,16 @@
 #include "base/registry/op_impl_space_registry_v2.h"
 
 class HansEncode : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "HansEncode SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase()
+    {
+        std::cout << "HansEncode SetUp" << std::endl;
+    }
 
-  static void TearDownTestCase() {
-    std::cout << "HansEncode TearDown" << std::endl;
-  }
+    static void TearDownTestCase()
+    {
+        std::cout << "HansEncode TearDown" << std::endl;
+    }
 };
 
 static std::vector<int64_t> ToVector(const gert::Shape& shape)
@@ -35,15 +38,14 @@ static std::vector<int64_t> ToVector(const gert::Shape& shape)
 }
 
 static void ExeTestCase(
-    const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
-    const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
-    std::vector<gert::StorageShape *>& outStorageShape,
-    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+    const std::vector<gert::StorageShape>& inputShapes, // 存储所有输入StorageShape参数
+    const std::vector<ge::DataType>& dtypes,            // 存储所有DataType参数
+    std::vector<gert::StorageShape*>& outStorageShape, ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
 {
     // 从vector中取出对应参数（保持原顺序）
     const auto& inputStorageShape = inputShapes[0];
     const auto& pdfStorageShape = inputShapes[1];
-    
+
     ge::DataType input1Dtype = dtypes[0];
     ge::DataType input2Dtype = dtypes[1];
     ge::DataType output1Dtype = dtypes[2];
@@ -52,23 +54,23 @@ static void ExeTestCase(
     ge::DataType output4Dtype = dtypes[5];
 
     /* make infershape context */
-    std::vector<gert::Tensor *> inputTensors = {
-        (gert::Tensor *)&inputStorageShape,
-        (gert::Tensor *)&pdfStorageShape,
+    std::vector<gert::Tensor*> inputTensors = {
+        (gert::Tensor*)&inputStorageShape,
+        (gert::Tensor*)&pdfStorageShape,
     };
-    std::vector<gert::StorageShape *> outputShapes = outStorageShape;
+    std::vector<gert::StorageShape*> outputShapes = outStorageShape;
     auto contextHolder = gert::InferShapeContextFaker()
-        .SetOpType("HansEncode")
-        .NodeIoNum(2, 4)
-        .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(1, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeOutputTd(0, output1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeOutputTd(1, output2Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeOutputTd(2, output3Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeOutputTd(3, output4Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .InputTensors(inputTensors)
-        .OutputShapes(outputShapes)
-        .Build();
+                             .SetOpType("HansEncode")
+                             .NodeIoNum(2, 4)
+                             .NodeInputTd(0, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeInputTd(1, input1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeOutputTd(0, output1Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeOutputTd(1, output2Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeOutputTd(2, output3Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeOutputTd(3, output4Dtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .InputTensors(inputTensors)
+                             .OutputShapes(outputShapes)
+                             .Build();
 
     /* get infershape func */
     auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
@@ -83,25 +85,19 @@ TEST_F(HansEncode, HansEncode_infershape_case_0)
 {
     // 用vector存储同类型参数（顺序与原参数列表一致）
     std::vector<gert::StorageShape> inputShapes = {
-        {{4096, 1, 512}, {4096, 1, 512}}, 
-        {{1, 256}, {1, 256}},             
+        {{4096, 1, 512}, {4096, 1, 512}},
+        {{1, 256}, {1, 256}},
     };
-    std::vector<ge::DataType> dtypes = {
-        ge::DT_FLOAT, 
-        ge::DT_INT32,   
-        ge::DT_INT32,
-        ge::DT_FLOAT, 
-        ge::DT_FLOAT, 
-        ge::DT_FLOAT
-    };
+    std::vector<ge::DataType> dtypes = {ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT32,
+                                        ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT};
 
     std::vector<std::vector<int64_t>> expectResult = {};
-    std::vector<gert::StorageShape *> outStorageShape = {};
+    std::vector<gert::StorageShape*> outStorageShape = {};
 
     // 简化后的函数调用
     ExeTestCase(inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS);
     std::vector<std::vector<int64_t>> outShapes(outStorageShape.size());
-    for(int32_t i = 0; i < outStorageShape.size(); ++i) {
+    for (int32_t i = 0; i < outStorageShape.size(); ++i) {
         outShapes[i] = ToVector(outStorageShape[i]->GetOriginShape());
     }
     EXPECT_EQ(outShapes, expectResult);

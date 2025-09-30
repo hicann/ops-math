@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 /*!
@@ -20,7 +21,6 @@
 #include <tiling/platform/platform_ascendc.h>
 #include <platform/platform_infos_def.h>
 
-
 namespace {
 constexpr static float UB_USAGE = 0.85f;
 constexpr static uint32_t BLOCK_SIZE = 256;
@@ -33,8 +33,7 @@ namespace optiling {
 ge::graphStatus TilingPrepareForSinkhorn(gert::TilingParseContext* context);
 ge::graphStatus TilingForSinkhorn(gert::TilingContext* context);
 
-class SinkhornTiling
-{
+class SinkhornTiling {
 public:
     explicit SinkhornTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus Init();

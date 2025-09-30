@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <array>
@@ -22,8 +23,7 @@
 using namespace std;
 
 extern "C" __global__ __aicore__ void mul_addn(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
-class mul_addn_test : public testing::Test
-{
+class mul_addn_test : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
@@ -46,7 +46,7 @@ TEST_F(mul_addn_test, test_case_mean_fp32_01)
     // batch_size, num_classes, dtype, reduction, flag
     system("cd ./gen_data/ && python3 gen_data.py 30 1024 float32 mean True");
 
-    size_t x1ByteSize = 30 * 1024 * sizeof(float); 
+    size_t x1ByteSize = 30 * 1024 * sizeof(float);
     size_t x2ByteSize = 30 * 1024 * sizeof(float);
     // output
     size_t yByteSize = 30 * 1024 * sizeof(float);
@@ -56,7 +56,7 @@ TEST_F(mul_addn_test, test_case_mean_fp32_01)
     uint8_t* x2 = (uint8_t*)AscendC::GmAlloc(x2ByteSize);
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(yByteSize);
 
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024); 
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
     uint32_t blockDim = 48;
 
@@ -103,7 +103,7 @@ TEST_F(mul_addn_test, test_case_mean_fp16_01)
     // batch_size, num_classes, dtype, reduction, flag
     system("cd ./gen_data/ && python3 gen_data.py 30 1024 float16 mean True");
 
-    size_t x1ByteSize = 30 * 1024 * sizeof(float); 
+    size_t x1ByteSize = 30 * 1024 * sizeof(float);
     size_t x2ByteSize = 30 * 1024 * sizeof(float);
     // output
     size_t yByteSize = 30 * 1024 * sizeof(float);
@@ -160,7 +160,7 @@ TEST_F(mul_addn_test, test_case_mean_bf16_01)
     // batch_size, num_classes, dtype, reduction, flag
     system("cd ./gen_data/ && python3 gen_data.py 30 1024 bf16 mean True");
 
-    size_t x1ByteSize = 30 * 1024 * sizeof(float); 
+    size_t x1ByteSize = 30 * 1024 * sizeof(float);
     size_t x2ByteSize = 30 * 1024 * sizeof(float);
     // output
     size_t yByteSize = 30 * 1024 * sizeof(float);
@@ -170,7 +170,7 @@ TEST_F(mul_addn_test, test_case_mean_bf16_01)
     uint8_t* x2 = (uint8_t*)AscendC::GmAlloc(x2ByteSize);
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(yByteSize);
 
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024); 
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
     uint32_t blockDim = 48;
 

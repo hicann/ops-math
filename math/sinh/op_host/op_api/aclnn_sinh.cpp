@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -18,7 +19,6 @@
 #include "opdev/platform.h"
 #include "common/level2_base.h"
 
-
 using namespace op;
 #ifdef __cplusplus
 extern "C" {
@@ -26,24 +26,25 @@ extern "C" {
 
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> ASCEND910_DTYPE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT,      op::DataType::DT_FLOAT16,    op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64,
-    op::DataType::DT_COMPLEX128, op::DataType::DT_UINT8,      op::DataType::DT_INT8,   op::DataType::DT_INT16,
-    op::DataType::DT_INT32,      op::DataType::DT_INT64,      op::DataType::DT_BOOL};
+    op::DataType::DT_FLOAT,      op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64,
+    op::DataType::DT_COMPLEX128, op::DataType::DT_UINT8,   op::DataType::DT_INT8,   op::DataType::DT_INT16,
+    op::DataType::DT_INT32,      op::DataType::DT_INT64,   op::DataType::DT_BOOL};
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT,      op::DataType::DT_FLOAT16,    op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64,
-    op::DataType::DT_COMPLEX128, op::DataType::DT_UINT8,      op::DataType::DT_INT8,   op::DataType::DT_INT16,
-    op::DataType::DT_INT32,      op::DataType::DT_INT64,      op::DataType::DT_BOOL,   op::DataType::DT_BF16};
+    op::DataType::DT_FLOAT,      op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64,
+    op::DataType::DT_COMPLEX128, op::DataType::DT_UINT8,   op::DataType::DT_INT8,   op::DataType::DT_INT16,
+    op::DataType::DT_INT32,      op::DataType::DT_INT64,   op::DataType::DT_BOOL,   op::DataType::DT_BF16};
 
 static const std::initializer_list<op::DataType> ASCEND910_DTYPE_OUT_LIST = {
-    op::DataType::DT_FLOAT,      op::DataType::DT_FLOAT16,    op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64,
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64,
     op::DataType::DT_COMPLEX128};
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_OUT_LIST = {
-    op::DataType::DT_FLOAT,      op::DataType::DT_FLOAT16,    op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64,
-    op::DataType::DT_COMPLEX128, op::DataType::DT_BF16};
+    op::DataType::DT_FLOAT,     op::DataType::DT_FLOAT16,    op::DataType::DT_DOUBLE,
+    op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16};
 
-static bool CheckInplaceDtypeValid(aclTensor *selfRef) {
+static bool CheckInplaceDtypeValid(aclTensor* selfRef)
+{
     auto inplaceSupportList = GetDtypeSupportListV1(ASCEND910B_DTYPE_OUT_LIST, ASCEND910_DTYPE_OUT_LIST);
     // 检查selfRef的数据类型是否在inplace sinh算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(selfRef, inplaceSupportList, return false);
@@ -51,7 +52,7 @@ static bool CheckInplaceDtypeValid(aclTensor *selfRef) {
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor *self, const aclTensor *out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull2Tensor(self, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -69,7 +70,8 @@ static aclnnStatus CheckParams(const aclTensor *self, const aclTensor *out)
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus CheckInplaceParams(aclTensor *selfRef) {
+static aclnnStatus CheckInplaceParams(aclTensor* selfRef)
+{
     OP_CHECK_NULL(selfRef, return ACLNN_ERR_PARAM_NULLPTR);
     // 检查selfRef的数据类型是否在inplace sinh算子的支持列表内
     CHECK_RET(CheckInplaceDtypeValid(selfRef), ACLNN_ERR_PARAM_INVALID);
@@ -77,8 +79,8 @@ static aclnnStatus CheckInplaceParams(aclTensor *selfRef) {
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ExecSinhGetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize,
-    aclOpExecutor **executor)
+static aclnnStatus ExecSinhGetWorkspaceSize(
+    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -126,15 +128,14 @@ static aclnnStatus ExecSinhGetWorkspaceSize(const aclTensor *self, aclTensor *ou
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnSinhGetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize,
-    aclOpExecutor **executor)
+aclnnStatus aclnnSinhGetWorkspaceSize(
+    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnSinh, DFX_IN(self), DFX_OUT(out));
     return ExecSinhGetWorkspaceSize(self, out, workspaceSize, executor);
 }
 
-aclnnStatus aclnnInplaceSinhGetWorkspaceSize(aclTensor *selfRef, uint64_t *workspaceSize,
-    aclOpExecutor **executor)
+aclnnStatus aclnnInplaceSinhGetWorkspaceSize(aclTensor* selfRef, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceSinh, DFX_IN(selfRef), DFX_OUT(selfRef));
     auto ret = CheckInplaceParams(selfRef);
@@ -142,14 +143,14 @@ aclnnStatus aclnnInplaceSinhGetWorkspaceSize(aclTensor *selfRef, uint64_t *works
     return ExecSinhGetWorkspaceSize(selfRef, selfRef, workspaceSize, executor);
 }
 
-aclnnStatus aclnnSinh(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)
+aclnnStatus aclnnSinh(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     // 固定写法，调用框架能力，完成计算
     L2_DFX_PHASE_2(aclnnSinh);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceSinh(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)
+aclnnStatus aclnnInplaceSinh(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     // 固定写法，调用框架能力，完成计算
     L2_DFX_PHASE_2(aclnnInplaceSinh);
