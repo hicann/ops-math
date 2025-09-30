@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 #ifndef LEVEL2_BASE_H_MATH
@@ -29,26 +30,29 @@ namespace op {
     return true;
 }
 
- [[maybe_unused]] static bool CheckNotNull3Tensor(const aclTensor* t0, const aclTensor* t1, const aclTensor* t2) {
-   // 检查输入是否是空指针
-   OP_CHECK_NULL(t0, return false);
-   OP_CHECK_NULL(t1, return false);
-   // 检查输入是否是空指针
-   OP_CHECK_NULL(t2, return false);
+[[maybe_unused]] static bool CheckNotNull3Tensor(const aclTensor* t0, const aclTensor* t1, const aclTensor* t2)
+{
+    // 检查输入是否是空指针
+    OP_CHECK_NULL(t0, return false);
+    OP_CHECK_NULL(t1, return false);
+    // 检查输入是否是空指针
+    OP_CHECK_NULL(t2, return false);
 
-   return true;
- }
+    return true;
+}
 
 // 检查3个输入和1个输出是否是空指针
-[[maybe_unused]] static bool CheckNotNull4Tensor(const aclTensor* t0, const aclTensor* t1, const aclTensor* t2, const aclTensor* t3) {
-  // 检查输入是否是空指针
-  OP_CHECK_NULL(t0, return false);
-  OP_CHECK_NULL(t1, return false);
-  OP_CHECK_NULL(t2, return false);
-  // 检查输入是否是空指针
-  OP_CHECK_NULL(t3, return false);
+[[maybe_unused]] static bool CheckNotNull4Tensor(
+    const aclTensor* t0, const aclTensor* t1, const aclTensor* t2, const aclTensor* t3)
+{
+    // 检查输入是否是空指针
+    OP_CHECK_NULL(t0, return false);
+    OP_CHECK_NULL(t1, return false);
+    OP_CHECK_NULL(t2, return false);
+    // 检查输入是否是空指针
+    OP_CHECK_NULL(t3, return false);
 
-  return true;
+    return true;
 }
 
 /**
@@ -66,15 +70,17 @@ namespace op {
     return true;
 }
 
- [[maybe_unused]] static bool CheckShapeCumMinMax(const aclTensor* self, const aclTensor* valuesOut, const aclTensor* indicesOut) {
-   // 所有输入的维度都不能超过8
-   OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIMS_NUMS, return false);
+[[maybe_unused]] static bool CheckShapeCumMinMax(
+    const aclTensor* self, const aclTensor* valuesOut, const aclTensor* indicesOut)
+{
+    // 所有输入的维度都不能超过8
+    OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIMS_NUMS, return false);
 
-   // self和valuesOut、indicesOut的shape必须一致
-   OP_CHECK_SHAPE_NOT_EQUAL(self, valuesOut, return false);
-   OP_CHECK_SHAPE_NOT_EQUAL(self, indicesOut, return false);
-   return true;
- }
+    // self和valuesOut、indicesOut的shape必须一致
+    OP_CHECK_SHAPE_NOT_EQUAL(self, valuesOut, return false);
+    OP_CHECK_SHAPE_NOT_EQUAL(self, indicesOut, return false);
+    return true;
+}
 
 // 检查1个输入和1个输出的数据类型是否在算子的支持列表内
 [[maybe_unused]] static bool CheckDtypeValid1In1Out(
@@ -118,25 +124,27 @@ namespace op {
     }
 }
 
-[[maybe_unused]] static const std::initializer_list<op::DataType> GetDtypeSupportListV3(const std::initializer_list<op::DataType>& l1, const std::initializer_list<op::DataType>& l2) {
-  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  switch (socVersion) {
-    case SocVersion::ASCEND910_93:
-    case SocVersion::ASCEND910_95:
-    case SocVersion::ASCEND910B: {
-      return l1;
+[[maybe_unused]] static const std::initializer_list<op::DataType> GetDtypeSupportListV3(
+    const std::initializer_list<op::DataType>& l1, const std::initializer_list<op::DataType>& l2)
+{
+    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
+    switch (socVersion) {
+        case SocVersion::ASCEND910_93:
+        case SocVersion::ASCEND910_95:
+        case SocVersion::ASCEND910B: {
+            return l1;
+        }
+        case SocVersion::ASCEND910: {
+            return l2;
+        }
+        default: {
+            // 如果既不是1971也不是1980，先暂且默认当做1971处理
+            return l1;
+        }
     }
-    case SocVersion::ASCEND910: {
-      return l2;
-    }
-    default: {
-      // 如果既不是1971也不是1980，先暂且默认当做1971处理
-      return l1;
-    }
-  }
 }
 
-}  // namespace op
+} // namespace op
 #ifdef __cplusplus
 }
 #endif

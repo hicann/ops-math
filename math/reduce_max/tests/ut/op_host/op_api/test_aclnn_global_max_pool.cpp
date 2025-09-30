@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 #include <array>
 #include <vector>
@@ -20,13 +21,20 @@
 using namespace std;
 
 class l2_global_max_pool_test : public testing::Test {
- protected:
-  static void SetUpTestCase() { cout << "global_max_pool_test SetUp" << endl; }
+protected:
+    static void SetUpTestCase()
+    {
+        cout << "global_max_pool_test SetUp" << endl;
+    }
 
-  static void TearDownTestCase() { cout << "global_max_pool_test TearDown" << endl; }
+    static void TearDownTestCase()
+    {
+        cout << "global_max_pool_test TearDown" << endl;
+    }
 };
 
-TEST_F(l2_global_max_pool_test, case_1) {
+TEST_F(l2_global_max_pool_test, case_1)
+{
     auto input_tensor_desc = TensorDesc({1, 16, 4, 4}, ACL_FLOAT, ACL_FORMAT_NCHW);
     auto out_desc = TensorDesc({1, 16, 1, 1}, ACL_FLOAT, ACL_FORMAT_NCHW).Precision(0.0001, 0.0001);
     auto ut = OP_API_UT(aclnnGlobalMaxPool, INPUT(input_tensor_desc), OUTPUT(out_desc));
@@ -39,7 +47,8 @@ TEST_F(l2_global_max_pool_test, case_1) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_global_max_pool_test, case_2) {
+TEST_F(l2_global_max_pool_test, case_2)
+{
     auto input_tensor_desc = TensorDesc({1, 2, 2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 2, 1, 1}, ACL_FLOAT16, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut = OP_API_UT(aclnnGlobalMaxPool, INPUT(input_tensor_desc), OUTPUT(out_desc));
@@ -52,7 +61,8 @@ TEST_F(l2_global_max_pool_test, case_2) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_global_max_pool_test, case_3) {
+TEST_F(l2_global_max_pool_test, case_3)
+{
     auto input_tensor_desc = TensorDesc({2, 8, 2, 2, 4}, ACL_FLOAT, ACL_FORMAT_NCDHW).ValueRange(-1, 1);
     auto out_desc = TensorDesc({2, 8, 1, 1, 1}, ACL_FLOAT, ACL_FORMAT_NCDHW).Precision(0.0001, 0.0001);
     auto ut = OP_API_UT(aclnnGlobalMaxPool, INPUT(input_tensor_desc), OUTPUT(out_desc));
@@ -64,7 +74,8 @@ TEST_F(l2_global_max_pool_test, case_3) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_global_max_pool_test, case_4) {
+TEST_F(l2_global_max_pool_test, case_4)
+{
     auto input_tensor_desc = TensorDesc({1, 0, 2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 0, 1, 1}, ACL_FLOAT16, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut = OP_API_UT(aclnnGlobalMaxPool, INPUT(input_tensor_desc), OUTPUT(out_desc));
@@ -77,7 +88,8 @@ TEST_F(l2_global_max_pool_test, case_4) {
 }
 
 // CheckNotNull
-TEST_F(l2_global_max_pool_test, case_5) {
+TEST_F(l2_global_max_pool_test, case_5)
+{
     auto tensor_desc = TensorDesc({1, 2, 3, 5}, ACL_FLOAT, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnGlobalMaxPool, INPUT(nullptr), OUTPUT(tensor_desc));
@@ -93,7 +105,8 @@ TEST_F(l2_global_max_pool_test, case_5) {
 }
 
 // CheckFormatValid
-TEST_F(l2_global_max_pool_test, case_6) {
+TEST_F(l2_global_max_pool_test, case_6)
+{
     auto tensor_desc = TensorDesc({1, 2, 3, 5}, ACL_FLOAT, ACL_FORMAT_NHWC);
     auto out_tensor_desc = TensorDesc({1, 2, 1, 1}, ACL_FLOAT, ACL_FORMAT_NHWC);
     auto ut = OP_API_UT(aclnnGlobalMaxPool, INPUT(tensor_desc), OUTPUT(out_tensor_desc));
@@ -104,7 +117,8 @@ TEST_F(l2_global_max_pool_test, case_6) {
 }
 
 // CheckDtypeValid
-TEST_F(l2_global_max_pool_test, case_7) {
+TEST_F(l2_global_max_pool_test, case_7)
+{
     auto tensor_desc = TensorDesc({1, 2, 3, 5}, ACL_UINT32, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({1, 2, 1, 1}, ACL_UINT32, ACL_FORMAT_ND);
     auto ut = OP_API_UT(aclnnGlobalMaxPool, INPUT(tensor_desc), OUTPUT(out_tensor_desc));
@@ -115,7 +129,8 @@ TEST_F(l2_global_max_pool_test, case_7) {
 }
 
 // CheckShape
-TEST_F(l2_global_max_pool_test, case_8) {
+TEST_F(l2_global_max_pool_test, case_8)
+{
     auto tensor_desc = TensorDesc({1, 2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({1, 2, 3}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto ut = OP_API_UT(aclnnGlobalMaxPool, INPUT(tensor_desc), OUTPUT(out_tensor_desc));
@@ -125,9 +140,11 @@ TEST_F(l2_global_max_pool_test, case_8) {
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_global_max_pool_test, case_9) {
+TEST_F(l2_global_max_pool_test, case_9)
+{
     auto tensor_desc = TensorDesc({10, 24, 3, 5, 10, 22, 42, 30, 24}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
-    auto out_tensor_desc = TensorDesc({10, 24, 1, 1, 1, 1, 1, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+    auto out_tensor_desc =
+        TensorDesc({10, 24, 1, 1, 1, 1, 1, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto ut = OP_API_UT(aclnnGlobalMaxPool, INPUT(tensor_desc), OUTPUT(out_tensor_desc));
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -135,7 +152,8 @@ TEST_F(l2_global_max_pool_test, case_9) {
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_global_max_pool_test, case_10) {
+TEST_F(l2_global_max_pool_test, case_10)
+{
     auto tensor_desc = TensorDesc({1, 2, 3, 5, 6}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({1, 2, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto ut = OP_API_UT(aclnnGlobalMaxPool, INPUT(tensor_desc), OUTPUT(out_tensor_desc));
@@ -145,7 +163,8 @@ TEST_F(l2_global_max_pool_test, case_10) {
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_global_max_pool_test, case_11) {
+TEST_F(l2_global_max_pool_test, case_11)
+{
     auto tensor_desc = TensorDesc({1, 2, 3, 5, 6}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({1, 2, 1, 1, 2}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto ut = OP_API_UT(aclnnGlobalMaxPool, INPUT(tensor_desc), OUTPUT(out_tensor_desc));

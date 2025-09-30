@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 /*!
@@ -24,17 +25,22 @@
 using namespace op;
 using namespace std;
 
-
 class l2_is_pos_inf_test : public testing::Test {
 protected:
-    static void SetUpTestCase() { std::cout << "IsPosInf Test Setup" << std::endl; }
-    static void TearDownTestCase() { std::cout << "IsPosInf Test TearDown" << std::endl; }
+    static void SetUpTestCase()
+    {
+        std::cout << "IsPosInf Test Setup" << std::endl;
+    }
+    static void TearDownTestCase()
+    {
+        std::cout << "IsPosInf Test TearDown" << std::endl;
+    }
 };
 
 TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_001_normal_float32)
 {
     auto outDesc = TensorDesc({2, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-    auto selfDesc = TensorDesc({2, 5}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1,1);
+    auto selfDesc = TensorDesc({2, 5}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
 
     auto ut = OP_API_UT(aclnnIsPosInf, INPUT(selfDesc), OUTPUT(outDesc));
 
@@ -51,7 +57,7 @@ TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_001_normal_float32)
 TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_002_normal_float16)
 {
     auto outDesc = TensorDesc({2, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.001, 0.001);
-    auto selfDesc = TensorDesc({2, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-1,1);
+    auto selfDesc = TensorDesc({2, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-1, 1);
 
     auto ut = OP_API_UT(aclnnIsPosInf, INPUT(selfDesc), OUTPUT(outDesc));
 
@@ -81,7 +87,7 @@ TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_003_normal_empty_tens
 // CheckNotNull
 TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_004_exception_null_out)
 {
-    auto selfDesc = TensorDesc({2, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-1,1);
+    auto selfDesc = TensorDesc({2, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto ut = OP_API_UT(aclnnIsPosInf, INPUT(selfDesc), OUTPUT((aclTensor*)nullptr));
 
     // SAMPLE: only test GetWorkspaceSize
@@ -120,7 +126,7 @@ TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_006_exception_float64
 TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_007_normal_dtype_not_the_same)
 {
     auto outDesc = TensorDesc({5, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-    auto selfDesc = TensorDesc({5, 5}, ACL_INT64, ACL_FORMAT_ND).ValueRange(-100,100);
+    auto selfDesc = TensorDesc({5, 5}, ACL_INT64, ACL_FORMAT_ND).ValueRange(-100, 100);
     auto ut = OP_API_UT(aclnnIsPosInf, INPUT(selfDesc), OUTPUT(outDesc));
 
     // SAMPLE: only test GetWorkspaceSize
@@ -137,7 +143,7 @@ TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_007_normal_dtype_not_
 TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_008_normal_dtype_not_the_same)
 {
     auto outDesc = TensorDesc({1, 16, 1, 1}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-    auto selfDesc = TensorDesc({1, 16, 1, 1}, ACL_BOOL, ACL_FORMAT_ND).ValueRange(0,1);
+    auto selfDesc = TensorDesc({1, 16, 1, 1}, ACL_BOOL, ACL_FORMAT_ND).ValueRange(0, 1);
     auto ut = OP_API_UT(aclnnIsPosInf, INPUT(selfDesc), OUTPUT(outDesc));
 
     // SAMPLE: only test GetWorkspaceSize
@@ -226,8 +232,8 @@ TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_014_exception_complex
 // largeDim
 TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_015_normal_large_dims)
 {
-    auto outDesc = TensorDesc({1,2,2,2,2,2,2,2,2}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-    auto selfDesc = TensorDesc({1,2,2,2,2,2,2,2,2}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1,1);
+    auto outDesc = TensorDesc({1, 2, 2, 2, 2, 2, 2, 2, 2}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+    auto selfDesc = TensorDesc({1, 2, 2, 2, 2, 2, 2, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto ut = OP_API_UT(aclnnIsPosInf, INPUT(selfDesc), OUTPUT(outDesc));
 
     // SAMPLE: only test GetWorkspaceSize
@@ -239,7 +245,7 @@ TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_015_normal_large_dims
 // empty
 TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_016_normal_self_empty_tensor)
 {
-    auto outDesc = TensorDesc({0}, ACL_BOOL, ACL_FORMAT_ND).ValueRange(-1,1);
+    auto outDesc = TensorDesc({0}, ACL_BOOL, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto selfDesc = TensorDesc({0}, ACL_FLOAT, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnIsPosInf, INPUT(selfDesc), OUTPUT(outDesc));
@@ -254,7 +260,7 @@ TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_016_normal_self_empty
 TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_017_exception_out_empty_tensor)
 {
     auto outDesc = TensorDesc({0}, ACL_BOOL, ACL_FORMAT_ND);
-    auto selfDesc = TensorDesc({16, 16}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1,1);
+    auto selfDesc = TensorDesc({16, 16}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
 
     auto ut = OP_API_UT(aclnnIsPosInf, INPUT(selfDesc), OUTPUT(outDesc));
 
@@ -267,8 +273,8 @@ TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_017_exception_out_emp
 // dtype can cast to out
 TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_018_can_cast_out)
 {
-    auto selfDesc = TensorDesc({5,5}, ACL_INT64, ACL_FORMAT_ND).ValueRange(-1,1);
-    auto outDesc = TensorDesc({5,5}, ACL_BOOL, ACL_FORMAT_ND);
+    auto selfDesc = TensorDesc({5, 5}, ACL_INT64, ACL_FORMAT_ND).ValueRange(-1, 1);
+    auto outDesc = TensorDesc({5, 5}, ACL_BOOL, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnIsPosInf, INPUT(selfDesc), OUTPUT(outDesc));
 
@@ -281,7 +287,7 @@ TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_018_can_cast_out)
 TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_019_normal_int64_float32)
 {
     auto outDesc = TensorDesc({2, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-    auto selfDesc = TensorDesc({2, 5}, ACL_INT64, ACL_FORMAT_ND).ValueRange(-10000,10000);
+    auto selfDesc = TensorDesc({2, 5}, ACL_INT64, ACL_FORMAT_ND).ValueRange(-10000, 10000);
 
     auto ut = OP_API_UT(aclnnIsPosInf, INPUT(selfDesc), OUTPUT(outDesc));
 
@@ -297,7 +303,7 @@ TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_019_normal_int64_floa
 TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_020_normal_bool_float32)
 {
     auto outDesc = TensorDesc({2, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-    auto selfDesc = TensorDesc({2, 5}, ACL_BOOL, ACL_FORMAT_ND).ValueRange(0,1);
+    auto selfDesc = TensorDesc({2, 5}, ACL_BOOL, ACL_FORMAT_ND).ValueRange(0, 1);
 
     auto ut = OP_API_UT(aclnnIsPosInf, INPUT(selfDesc), OUTPUT(outDesc));
 
@@ -314,7 +320,7 @@ TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_020_normal_bool_float
 TEST_F(l2_is_pos_inf_test, is_pos_inf_testcase_017_exception_out_empty_tensor)
 {
     auto outDesc = TensorDesc({16, 16}, ACL_BOOL, ACL_FORMAT_ND);
-    auto selfDesc = TensorDesc({16, 16}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1,1);
+    auto selfDesc = TensorDesc({16, 16}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
 
     auto ut = OP_API_UT(aclnnIsPosInf, INPUT(selfDesc), OUTPUT(outDesc));
 

@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 #include "aclnn_expand.h"
@@ -33,148 +34,163 @@ static const int64_t MAX_SUPPORT_DIM = 8;
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> ASCEND910_DTYPE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_UINT8, op::DataType::DT_INT8,
-    op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_BOOL};
+    op::DataType::DT_INT32,   op::DataType::DT_INT64, op::DataType::DT_BOOL};
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_UINT8, op::DataType::DT_INT8,
-    op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_BOOL, op::DataType::DT_BF16};
+    op::DataType::DT_INT32,   op::DataType::DT_INT64, op::DataType::DT_BOOL,  op::DataType::DT_BF16};
 
-static bool CheckNotNull(const aclTensor *self, const aclIntArray *size, const aclTensor *out) {
-  OP_CHECK_NULL(self, return false);
-  OP_CHECK_NULL(size, return false);
-  OP_CHECK_NULL(out, return false);
-  return true;
-}
-
-static const std::initializer_list<DataType>& GetDtypeSupportList() {
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
-    return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
-  } else {
-    return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
-  }
-}
-
-static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out) {
-  // 检查self和out的数据类型是否一致
-  OP_CHECK_DTYPE_NOT_SAME(self, out, return false);
-  // 检查self的数据类型是否在expand算子的支持列表内
-  auto supportList = GetDtypeSupportList();
-  OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
-  return true;
-}
-
-static bool CheckShape(const aclTensor *self, const aclIntArray *size, const aclTensor *out) {
-  op::Shape sizeShape;
-  for (int64_t i = 0; i < static_cast<int64_t>(size->Size()); i++) {
-    sizeShape.AppendDim((*size)[i]);
-  }
-  const auto &outShape = out->GetViewShape();
-  const auto &selfShape = self->GetViewShape();
-  if (selfShape == sizeShape && outShape == sizeShape) {
+static bool CheckNotNull(const aclTensor* self, const aclIntArray* size, const aclTensor* out)
+{
+    OP_CHECK_NULL(self, return false);
+    OP_CHECK_NULL(size, return false);
+    OP_CHECK_NULL(out, return false);
     return true;
-  }
-  auto sizeDimNum = sizeShape.GetDimNum();
-  auto selfDimNum = selfShape.GetDimNum();
-  if (sizeDimNum < selfDimNum) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "the number of size %zu must be greater or equal to the number of dimensions \
-            in the self %zu.", sizeDimNum, selfDimNum);
-    return false;
-  }
-  auto offset = sizeDimNum - selfDimNum;
-  op::Shape expectShape;
-  expectShape.SetDimNum(sizeDimNum);
-  for (size_t i = 0; i < selfDimNum; i++) {
-    if (sizeShape.GetDim(offset + i) == -1) {
-      expectShape.SetDim(offset + i, selfShape.GetDim(i));
+}
+
+static const std::initializer_list<DataType>& GetDtypeSupportList()
+{
+    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+        return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
+    } else {
+        return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
     }
-    if ((selfShape.GetDim(i) != sizeShape.GetDim(offset + i)) && (selfShape.GetDim(i) != 1)) {
-      OP_LOGE(ACL_ERROR_INVALID_PARAM, "the self shape [%s] is not match size [%s].",
-              op::ToString(selfShape).GetString(), op::ToString(sizeShape).GetString());
-      return false;
+}
+
+static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
+{
+    // 检查self和out的数据类型是否一致
+    OP_CHECK_DTYPE_NOT_SAME(self, out, return false);
+    // 检查self的数据类型是否在expand算子的支持列表内
+    auto supportList = GetDtypeSupportList();
+    OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
+    return true;
+}
+
+static bool CheckShape(const aclTensor* self, const aclIntArray* size, const aclTensor* out)
+{
+    op::Shape sizeShape;
+    for (int64_t i = 0; i < static_cast<int64_t>(size->Size()); i++) {
+        sizeShape.AppendDim((*size)[i]);
     }
-    expectShape.SetDim(offset + i, sizeShape.GetDim(offset + i));
-  }
-  for (size_t i = 0; i < offset; i++) {
-    expectShape.SetDim(i, sizeShape.GetDim(i));
-  }
-  if (outShape != expectShape) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "expect out shape to be same as expectShape, but got out shape [%s], \
-            expect shape [%s]", op::ToString(outShape).GetString(), op::ToString(expectShape).GetString());
-    return false;
-  }
-  return true;
+    const auto& outShape = out->GetViewShape();
+    const auto& selfShape = self->GetViewShape();
+    if (selfShape == sizeShape && outShape == sizeShape) {
+        return true;
+    }
+    auto sizeDimNum = sizeShape.GetDimNum();
+    auto selfDimNum = selfShape.GetDimNum();
+    if (sizeDimNum < selfDimNum) {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID,
+            "the number of size %zu must be greater or equal to the number of dimensions \
+            in the self %zu.",
+            sizeDimNum, selfDimNum);
+        return false;
+    }
+    auto offset = sizeDimNum - selfDimNum;
+    op::Shape expectShape;
+    expectShape.SetDimNum(sizeDimNum);
+    for (size_t i = 0; i < selfDimNum; i++) {
+        if (sizeShape.GetDim(offset + i) == -1) {
+            expectShape.SetDim(offset + i, selfShape.GetDim(i));
+        }
+        if ((selfShape.GetDim(i) != sizeShape.GetDim(offset + i)) && (selfShape.GetDim(i) != 1)) {
+            OP_LOGE(
+                ACL_ERROR_INVALID_PARAM, "the self shape [%s] is not match size [%s].",
+                op::ToString(selfShape).GetString(), op::ToString(sizeShape).GetString());
+            return false;
+        }
+        expectShape.SetDim(offset + i, sizeShape.GetDim(offset + i));
+    }
+    for (size_t i = 0; i < offset; i++) {
+        expectShape.SetDim(i, sizeShape.GetDim(i));
+    }
+    if (outShape != expectShape) {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID,
+            "expect out shape to be same as expectShape, but got out shape [%s], \
+            expect shape [%s]",
+            op::ToString(outShape).GetString(), op::ToString(expectShape).GetString());
+        return false;
+    }
+    return true;
 }
 
-static bool CheckMaxDimension(const aclTensor *tensor) {
-  OP_CHECK_MAX_DIM(tensor, MAX_SUPPORT_DIM, return false);
-  return true;
+static bool CheckMaxDimension(const aclTensor* tensor)
+{
+    OP_CHECK_MAX_DIM(tensor, MAX_SUPPORT_DIM, return false);
+    return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor *self, const aclIntArray *size, const aclTensor *out) {
-  // 1. 检查参数是否为空指针
-  CHECK_RET(CheckNotNull(self, size, out), ACLNN_ERR_PARAM_NULLPTR);
+static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* size, const aclTensor* out)
+{
+    // 1. 检查参数是否为空指针
+    CHECK_RET(CheckNotNull(self, size, out), ACLNN_ERR_PARAM_NULLPTR);
 
-  // 2. 检查输入、输出的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
-  CHECK_RET(CheckDtypeValid(self, out), ACLNN_ERR_PARAM_INVALID);
+    // 2. 检查输入、输出的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
+    CHECK_RET(CheckDtypeValid(self, out), ACLNN_ERR_PARAM_INVALID);
 
-  // 3. 检查输出的shape和size是否匹配
-  CHECK_RET(CheckShape(self, size, out), ACLNN_ERR_PARAM_INVALID);
+    // 3. 检查输出的shape和size是否匹配
+    CHECK_RET(CheckShape(self, size, out), ACLNN_ERR_PARAM_INVALID);
 
-  // 4. 检查最大维度是否超过8
-  CHECK_RET(CheckMaxDimension(self) && CheckMaxDimension(out), ACLNN_ERR_PARAM_INVALID);
-  return ACLNN_SUCCESS;
-}
-
-aclnnStatus aclnnExpandGetWorkspaceSize(const aclTensor *self, const aclIntArray *size, aclTensor *out,
-                                        uint64_t *workspaceSize, aclOpExecutor **executor) {
-  OP_CHECK_COMM_INPUT(workspaceSize, executor);
-  L2_DFX_PHASE_1(aclnnExpand, DFX_IN(self, size), DFX_OUT(out));
-  // 固定写法，创建OpExecutor
-  auto uniqueExecutor = CREATE_EXECUTOR();
-  CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
- 
-  // 固定写法，参数检查
-  auto ret = CheckParams(self, size, out);
-  CHECK_RET(ret == ACLNN_SUCCESS, ret);
-
-  // 空tensor处理
-  if (self->IsEmpty()) {
-    // 根据实际支持情况补充
-    *workspaceSize = 0;
-    uniqueExecutor.ReleaseTo(executor);
+    // 4. 检查最大维度是否超过8
+    CHECK_RET(CheckMaxDimension(self) && CheckMaxDimension(out), ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
-  }
-
-  auto selfShape = self->GetViewShape();
-  auto selfDimNum = selfShape.GetDimNum();
-  const aclTensor* viewCopyResult;
-  if (selfDimNum == 0 && size->Size() == 0) { // special case: tensor contains the scalar value of 0-dim
-    viewCopyResult = l0op::ViewCopy(self, out, uniqueExecutor.get());
-  } else { // norm case
-    // 固定写法，将输入self转换成连续的tensor
-    auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
-    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 进行计算
-    auto expandOut = l0op::Expand(selfContiguous, size, uniqueExecutor.get());
-    CHECK_RET(expandOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 固定写法，将计算结果拷贝到输出out上，out可能是非连续的tensor
-    viewCopyResult = l0op::ViewCopy(expandOut, out, uniqueExecutor.get());
-  }
-  CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-  // 固定写法，获取计算过程中需要使用的workspace大小
-  *workspaceSize = uniqueExecutor->GetWorkspaceSize();
-  uniqueExecutor.ReleaseTo(executor);  // 需要把 uniqueExecutor持有executor转移给executor
-  return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnExpand(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream) {
-  L2_DFX_PHASE_2(aclnnExpand);
-  // 固定写法，调用框架能力，完成计算
-  return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
+aclnnStatus aclnnExpandGetWorkspaceSize(
+    const aclTensor* self, const aclIntArray* size, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+{
+    OP_CHECK_COMM_INPUT(workspaceSize, executor);
+    L2_DFX_PHASE_1(aclnnExpand, DFX_IN(self, size), DFX_OUT(out));
+    // 固定写法，创建OpExecutor
+    auto uniqueExecutor = CREATE_EXECUTOR();
+    CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
+
+    // 固定写法，参数检查
+    auto ret = CheckParams(self, size, out);
+    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+
+    // 空tensor处理
+    if (self->IsEmpty()) {
+        // 根据实际支持情况补充
+        *workspaceSize = 0;
+        uniqueExecutor.ReleaseTo(executor);
+        return ACLNN_SUCCESS;
+    }
+
+    auto selfShape = self->GetViewShape();
+    auto selfDimNum = selfShape.GetDimNum();
+    const aclTensor* viewCopyResult;
+    if (selfDimNum == 0 && size->Size() == 0) { // special case: tensor contains the scalar value of 0-dim
+        viewCopyResult = l0op::ViewCopy(self, out, uniqueExecutor.get());
+    } else { // norm case
+        // 固定写法，将输入self转换成连续的tensor
+        auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+        // 进行计算
+        auto expandOut = l0op::Expand(selfContiguous, size, uniqueExecutor.get());
+        CHECK_RET(expandOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+        // 固定写法，将计算结果拷贝到输出out上，out可能是非连续的tensor
+        viewCopyResult = l0op::ViewCopy(expandOut, out, uniqueExecutor.get());
+    }
+    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    // 固定写法，获取计算过程中需要使用的workspace大小
+    *workspaceSize = uniqueExecutor->GetWorkspaceSize();
+    uniqueExecutor.ReleaseTo(executor); // 需要把 uniqueExecutor持有executor转移给executor
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus aclnnExpand(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+{
+    L2_DFX_PHASE_2(aclnnExpand);
+    // 固定写法，调用框架能力，完成计算
+    return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
 #ifdef __cplusplus

@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 #include <array>
 #include <vector>
@@ -18,21 +19,26 @@
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/tensor_desc.h"
 
-
 using namespace std;
 
 class l2_floor_divide_test : public testing::Test {
 protected:
-    static void SetUpTestCase() { cout << "div_test SetUp" << endl; }
+    static void SetUpTestCase()
+    {
+        cout << "div_test SetUp" << endl;
+    }
 
-    static void TearDownTestCase() { cout << "div_test TearDown" << endl; }
+    static void TearDownTestCase()
+    {
+        cout << "div_test TearDown" << endl;
+    }
 };
 
 // 测试数据类型支持
 TEST_F(l2_floor_divide_test, case_all_dtype_support)
 {
-    vector<aclDataType> dtype_list{ACL_FLOAT, ACL_FLOAT16, ACL_INT8, ACL_INT16, ACL_INT32,
-                                   ACL_UINT8, ACL_INT64, ACL_DOUBLE};
+    vector<aclDataType> dtype_list{ACL_FLOAT, ACL_FLOAT16, ACL_INT8,  ACL_INT16,
+                                   ACL_INT32, ACL_UINT8,   ACL_INT64, ACL_DOUBLE};
     for (auto dtype : dtype_list) {
         auto self_tensor_desc =
             TensorDesc({2, 3}, dtype, ACL_FORMAT_ND).Value(vector<float>{-10.5, -20, -30, -40, 50, 60});
@@ -201,7 +207,8 @@ TEST_F(l2_floor_divide_test, case_other_scalar_floor_support)
 }
 
 // 测试other为scalar超过8维的tensor
-TEST_F(l2_floor_divide_test, case_scalar_shape_dim_9) {
+TEST_F(l2_floor_divide_test, case_scalar_shape_dim_9)
+{
     auto self_tensor_desc = TensorDesc({1, 2, 3, 4, 5, 6, 7, 8, 9}, ACL_FLOAT, ACL_FORMAT_NCHW);
     auto other_tensor_desc = ScalarDesc(2.0f);
     auto out_tensor_desc = TensorDesc({1, 2, 3, 4, 5, 6, 7, 8, 9}, ACL_FLOAT, ACL_FORMAT_NCHW);
@@ -213,7 +220,8 @@ TEST_F(l2_floor_divide_test, case_scalar_shape_dim_9) {
 }
 
 // 测试超过8维的tensor
-TEST_F(l2_floor_divide_test, case_shape_dim_9) {
+TEST_F(l2_floor_divide_test, case_shape_dim_9)
+{
     auto self_tensor_desc = TensorDesc({1, 2, 3, 4, 5, 6, 7, 8, 9}, ACL_FLOAT, ACL_FORMAT_NCHW);
     auto out_tensor_desc = TensorDesc({1, 2, 3, 4, 5, 6, 7, 8, 9}, ACL_FLOAT, ACL_FORMAT_NCHW);
 

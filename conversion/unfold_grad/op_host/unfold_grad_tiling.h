@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 /* !
@@ -19,7 +20,6 @@
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
 #include "tiling/platform/platform_ascendc.h"
-
 
 namespace optiling {
 BEGIN_TILING_DATA_DEF(UnfoldGradTilingData)
@@ -58,7 +58,7 @@ struct Tiling4UnfoldGradCompileInfo {};
 
 class UnfoldGradTiling {
 public:
-    explicit UnfoldGradTiling(gert::TilingContext *context_) : context(context_){};
+    explicit UnfoldGradTiling(gert::TilingContext* context_) : context(context_) {};
     virtual ~UnfoldGradTiling() = default;
     ge::graphStatus DoTiling();
     ge::graphStatus GetPlatformInfo();
@@ -74,7 +74,7 @@ public:
 
 private:
     UnfoldGradTilingData tiling;
-    gert::TilingContext *context = nullptr;
+    gert::TilingContext* context = nullptr;
 
     template <typename T>
     inline auto Max(T x, T y) const -> T
@@ -102,12 +102,12 @@ private:
 
     int64_t usrWorkspaceSize = 1;
     int64_t dataTypeTilingKey = 0;
-    uint64_t tilingKey_{ 0 };
+    uint64_t tilingKey_{0};
 
-    int64_t batchNum = 1;         // 总任务批次
-    int64_t batchNumPerCore = 1;  // 每个核的任务批次
-    int64_t batchNumTailCore = 1; // 尾核的任务批次
-    int64_t maxBatchNum4Ub = 0; // 一个UB最多可以处理的任务批次 0 表示一个UB放不下， 大于0表示可以放下
+    int64_t batchNum = 1;                      // 总任务批次
+    int64_t batchNumPerCore = 1;               // 每个核的任务批次
+    int64_t batchNumTailCore = 1;              // 尾核的任务批次
+    int64_t maxBatchNum4Ub = 0;                // 一个UB最多可以处理的任务批次 0 表示一个UB放不下， 大于0表示可以放下
     int64_t useCoreNum = 1;                    // 实际使用的核数
     int64_t ubSizeT1 = 0;                      //  用于T1的UB1、UB2大小
     int64_t ubSizeT2 = 0;                      // TransDataTo5HD要求对齐512B
@@ -118,9 +118,9 @@ private:
     int64_t tasksOnceMaxPerCore = 0;           // 每个核一个UB最多处理的数据量
     int64_t inputSizeLength = 0;               // inputSize的维度大小
     int64_t rowAvailableLengthSrc = 0;         // 转置前每行可用的长度
-    int64_t lowestCommonMultiple = 1; // 最小公倍数，非尾轴情况填充冗余值算法第一次转置的行长度
-    int64_t colOnceMaxPerUB = 0;      // 非尾轴情况填充冗余值算法时一个UB可处理的最大行数量
-    int64_t tailColLength = 0;        // 非尾轴情况填充冗余值算法时尾块的行数量
+    int64_t lowestCommonMultiple = 1;          // 最小公倍数，非尾轴情况填充冗余值算法第一次转置的行长度
+    int64_t colOnceMaxPerUB = 0;               // 非尾轴情况填充冗余值算法时一个UB可处理的最大行数量
+    int64_t tailColLength = 0;                 // 非尾轴情况填充冗余值算法时尾块的行数量
 
     int64_t typeSizeT1 = 0;       // 输入输出数据类型大小
     int64_t typeSizeT2 = 4;       // T2数据类型大小，默认为fp32

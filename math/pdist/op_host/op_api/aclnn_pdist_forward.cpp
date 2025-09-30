@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 #include "aclnn_pdist_forward.h"
@@ -24,31 +25,32 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
 
-
 using namespace op;
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16
-};
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
 
-static bool CheckNotNull(const aclTensor *self, const aclScalar *pScalar, const aclTensor *out) {
+static bool CheckNotNull(const aclTensor* self, const aclScalar* pScalar, const aclTensor* out)
+{
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(pScalar, return false);
     OP_CHECK_NULL(out, return false);
     return true;
 }
 
-static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out) {
+static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
+{
     OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
     OP_CHECK_DTYPE_NOT_SUPPORT(out, DTYPE_SUPPORT_LIST, return false);
     OP_CHECK_DTYPE_NOT_MATCH(self, out->GetDataType(), return false);
     return true;
 }
 
-static bool CheckShape(const aclTensor *self, const aclTensor *out) {
+static bool CheckShape(const aclTensor* self, const aclTensor* out)
+{
     OP_CHECK_WRONG_DIMENSION(self, 2, return false);
     OP_CHECK_WRONG_DIMENSION(out, 1, return false);
 
@@ -58,7 +60,8 @@ static bool CheckShape(const aclTensor *self, const aclTensor *out) {
     return true;
 }
 
-static bool CheckPValid(const aclScalar *pScalar) {
+static bool CheckPValid(const aclScalar* pScalar)
+{
     float pVal = pScalar->ToFloat();
     if (pVal < 0) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "pScalar only supports non-negative p values.");
@@ -67,7 +70,8 @@ static bool CheckPValid(const aclScalar *pScalar) {
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor *self, const aclScalar *pScalar, const aclTensor *out) {
+static aclnnStatus CheckParams(const aclTensor* self, const aclScalar* pScalar, const aclTensor* out)
+{
     // 检查参数是否为空指针
     CHECK_COND(CheckNotNull(self, pScalar, out), ACLNN_ERR_INNER_NULLPTR, "CheckNotNull failed!");
 
@@ -83,7 +87,8 @@ static aclnnStatus CheckParams(const aclTensor *self, const aclScalar *pScalar, 
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus FillScalar(int64_t shape, aclTensor *out, float val, aclOpExecutor *executor) {
+static aclnnStatus FillScalar(int64_t shape, aclTensor* out, float val, aclOpExecutor* executor)
+{
     FVector<int64_t> tmp = {shape};
     auto dims = executor->ConvertToTensor(tmp.data(), tmp.size(), DataType::DT_INT64);
     auto shapeArray = executor->AllocIntArray(tmp.data(), tmp.size());
@@ -99,15 +104,17 @@ static aclnnStatus FillScalar(int64_t shape, aclTensor *out, float val, aclOpExe
     return ACLNN_SUCCESS;
 }
 
-static float CalculateValP(const aclScalar *pScalar) {
+static float CalculateValP(const aclScalar* pScalar)
+{
     float pVal = pScalar->ToFloat();
     return static_cast<float>(pVal);
 }
 
-aclnnStatus aclnnPdistForwardGetWorkspaceSize(const aclTensor* self, const aclScalar* pScalar,
-                                              aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor) {
+aclnnStatus aclnnPdistForwardGetWorkspaceSize(
+    const aclTensor* self, const aclScalar* pScalar, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+{
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
-    
+
     L2_DFX_PHASE_1(aclnnPdistForward, DFX_IN(self, pScalar), DFX_OUT(out));
 
     // 创建OpExecutor
@@ -158,15 +165,14 @@ aclnnStatus aclnnPdistForwardGetWorkspaceSize(const aclTensor* self, const aclSc
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnPdistForward(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream) {
+aclnnStatus aclnnPdistForward(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+{
     L2_DFX_PHASE_2(aclnnPdistForward);
 
     // 调用框架能力，完成计算
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-
 #ifdef __cplusplus
 }
 #endif
-

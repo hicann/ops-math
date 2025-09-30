@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 #include <array>
@@ -17,16 +18,22 @@
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/tensor_desc.h"
 
-
 using namespace std;
 
 class l2_bitwise_not_test : public testing::Test {
-    protected:
-    static void SetUpTestCase() { cout << "bitwise_not_test SetUp" << endl; }
-    static void TearDownTestCase() { cout << "bitwise_not_test TearDown" << endl; }
+protected:
+    static void SetUpTestCase()
+    {
+        cout << "bitwise_not_test SetUp" << endl;
+    }
+    static void TearDownTestCase()
+    {
+        cout << "bitwise_not_test TearDown" << endl;
+    }
 };
 
-TEST_F(l2_bitwise_not_test, case_int16) {
+TEST_F(l2_bitwise_not_test, case_int16)
+{
     auto self_tensor_desc = TensorDesc({2, 3, 4, 5}, ACL_INT16, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc(self_tensor_desc);
 
@@ -38,10 +45,11 @@ TEST_F(l2_bitwise_not_test, case_int16) {
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
     // SAMPLE: precision simulate
-    //ut.TestPrecision();
+    // ut.TestPrecision();
 }
 
-TEST_F(l2_bitwise_not_test, case_int32) {
+TEST_F(l2_bitwise_not_test, case_int32)
+{
     auto self_tensor_desc = TensorDesc({2, 3, 4, 5}, ACL_INT32, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc(self_tensor_desc);
 
@@ -56,7 +64,8 @@ TEST_F(l2_bitwise_not_test, case_int32) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_bitwise_not_test, case_int64) {
+TEST_F(l2_bitwise_not_test, case_int64)
+{
     auto self_tensor_desc = TensorDesc({2, 3, 4, 5}, ACL_INT64, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc(self_tensor_desc);
 
@@ -71,7 +80,8 @@ TEST_F(l2_bitwise_not_test, case_int64) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_bitwise_not_test, case_int8) {
+TEST_F(l2_bitwise_not_test, case_int8)
+{
     auto self_tensor_desc = TensorDesc({2, 3, 4, 5}, ACL_INT8, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc(self_tensor_desc);
 
@@ -86,7 +96,8 @@ TEST_F(l2_bitwise_not_test, case_int8) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_bitwise_not_test, case_uint8) {
+TEST_F(l2_bitwise_not_test, case_uint8)
+{
     auto self_tensor_desc = TensorDesc({2, 3, 4, 5}, ACL_UINT8, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc(self_tensor_desc);
 
@@ -101,7 +112,8 @@ TEST_F(l2_bitwise_not_test, case_uint8) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_bitwise_not_test, case_bool) {
+TEST_F(l2_bitwise_not_test, case_bool)
+{
     auto self_tensor_desc = TensorDesc({2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc(self_tensor_desc);
 
@@ -113,10 +125,11 @@ TEST_F(l2_bitwise_not_test, case_bool) {
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
     // SAMPLE: precision simulate
-    //ut.TestPrecision();
+    // ut.TestPrecision();
 }
 
-TEST_F(l2_bitwise_not_test, case_support_format) {
+TEST_F(l2_bitwise_not_test, case_support_format)
+{
     auto self_tensor_desc = TensorDesc({2, 3, 4, 5}, ACL_INT16, ACL_FORMAT_NCHW);
     auto out_tensor_desc = TensorDesc(self_tensor_desc);
 
@@ -183,7 +196,8 @@ TEST_F(l2_bitwise_not_test, case_support_format) {
     ut4.TestPrecision();
 }
 
-TEST_F(l2_bitwise_not_test, case_nullptr) {
+TEST_F(l2_bitwise_not_test, case_nullptr)
+{
     auto tensor_desc = TensorDesc({2, 3, 4, 5}, ACL_INT16, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnBitwiseNot, INPUT((aclTensor*)nullptr), OUTPUT(tensor_desc));
@@ -194,7 +208,8 @@ TEST_F(l2_bitwise_not_test, case_nullptr) {
     EXPECT_EQ(aclRet, ACLNN_ERR_INNER_NULLPTR);
 }
 
-TEST_F(l2_bitwise_not_test, case_empty) {
+TEST_F(l2_bitwise_not_test, case_empty)
+{
     auto self_tensor_desc = TensorDesc({7, 0, 6}, ACL_INT32, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc(self_tensor_desc);
 
@@ -206,7 +221,8 @@ TEST_F(l2_bitwise_not_test, case_empty) {
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(l2_bitwise_not_test, case_errtype) {
+TEST_F(l2_bitwise_not_test, case_errtype)
+{
     auto self_tensor_desc = TensorDesc({7, 9, 11, 3, 4, 6, 9, 2, 2}, ACL_INT32, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({7, 9, 11, 3, 4, 6, 9, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
 
@@ -219,7 +235,8 @@ TEST_F(l2_bitwise_not_test, case_errtype) {
 }
 
 // CheckNotNull
-TEST_F(l2_bitwise_not_test, case_nullptr2) {
+TEST_F(l2_bitwise_not_test, case_nullptr2)
+{
     auto tensor_desc = TensorDesc({10, 5}, ACL_INT32, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnBitwiseNot, INPUT(nullptr), OUTPUT(tensor_desc));
@@ -236,7 +253,8 @@ TEST_F(l2_bitwise_not_test, case_nullptr2) {
 }
 
 // CheckDataVaild
-TEST_F(l2_bitwise_not_test, case_dtype_unvaild) {
+TEST_F(l2_bitwise_not_test, case_dtype_unvaild)
+{
     // uint32
     auto tensor_desc = TensorDesc({10, 5}, ACL_UINT32, ACL_FORMAT_ND);
     auto ut = OP_API_UT(aclnnBitwiseNot, INPUT(tensor_desc), OUTPUT(tensor_desc));
@@ -270,7 +288,8 @@ TEST_F(l2_bitwise_not_test, case_dtype_unvaild) {
 }
 
 // CheckShape
-TEST_F(l2_bitwise_not_test, case_shape) {
+TEST_F(l2_bitwise_not_test, case_shape)
+{
     auto self_tensor_desc = TensorDesc({10, 5, 2, 10}, ACL_INT32, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({10, 5, 5, 10}, ACL_INT32, ACL_FORMAT_ND);
 
@@ -282,7 +301,8 @@ TEST_F(l2_bitwise_not_test, case_shape) {
 }
 
 // CheckFormat
-TEST_F(l2_bitwise_not_test, case_format) {
+TEST_F(l2_bitwise_not_test, case_format)
+{
     auto self_tensor_desc = TensorDesc({10, 5, 2, 10}, ACL_INT32, ACL_FORMAT_NC1HWC0);
     auto out_tensor_desc = TensorDesc({10, 5, 2, 10}, ACL_INT32, ACL_FORMAT_NCHW);
 
@@ -294,7 +314,8 @@ TEST_F(l2_bitwise_not_test, case_format) {
 }
 
 // uncontiguous
-TEST_F(l2_bitwise_not_test, case_uncontiguous) {
+TEST_F(l2_bitwise_not_test, case_uncontiguous)
+{
     auto self_tensor_desc = TensorDesc({5, 4}, ACL_INT32, ACL_FORMAT_ND, {1, 5}, 0, {4, 5});
     auto out_tensor_desc = TensorDesc({5, 4}, ACL_INT32, ACL_FORMAT_ND);
 
@@ -304,5 +325,3 @@ TEST_F(l2_bitwise_not_test, case_uncontiguous) {
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
-
-

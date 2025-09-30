@@ -4,10 +4,11 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
- 
+
 #include <array>
 #include <vector>
 #include "gtest/gtest.h"
@@ -21,13 +22,20 @@
 using namespace std;
 
 class l2_mean_test : public testing::Test {
- protected:
-  static void SetUpTestCase() { cout << "mean_test SetUp" << endl; }
+protected:
+    static void SetUpTestCase()
+    {
+        cout << "mean_test SetUp" << endl;
+    }
 
-  static void TearDownTestCase() { cout << "mean_test TearDown" << endl; }
+    static void TearDownTestCase()
+    {
+        cout << "mean_test TearDown" << endl;
+    }
 };
 
-TEST_F(l2_mean_test, case_1) {
+TEST_F(l2_mean_test, case_1)
+{
     auto input_tensor_desc = TensorDesc({1, 16, 4, 4}, ACL_FLOAT, ACL_FORMAT_NCHW);
     auto dim_desc = IntArrayDesc(vector<int64_t>{1});
     aclDataType dtype_desc = ACL_FLOAT;
@@ -45,7 +53,8 @@ TEST_F(l2_mean_test, case_1) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_mean_test, case_2) {
+TEST_F(l2_mean_test, case_2)
+{
     auto input_tensor_desc = TensorDesc({1, 2, 2, 2}, ACL_FLOAT16, ACL_FORMAT_NHWC);
     auto dim_desc = IntArrayDesc(vector<int64_t>{2});
     bool keepDim = false;
@@ -61,7 +70,8 @@ TEST_F(l2_mean_test, case_2) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_mean_test, case_3) {
+TEST_F(l2_mean_test, case_3)
+{
     auto input_tensor_desc = TensorDesc({2, 8, 2, 2, 4}, ACL_FLOAT, ACL_FORMAT_NDHWC).ValueRange(-1, 1);
     auto dim_desc = IntArrayDesc(vector<int64_t>{1, 2});
     bool keepDim = true;
@@ -78,7 +88,8 @@ TEST_F(l2_mean_test, case_3) {
 }
 
 // 空tensor
-TEST_F(l2_mean_test, case_4) {
+TEST_F(l2_mean_test, case_4)
+{
     auto input_tensor_desc = TensorDesc({41, 0, 1, 10, 3}, ACL_FLOAT, ACL_FORMAT_NDHWC).ValueRange(-2, 2);
     auto dim_desc = IntArrayDesc(vector<int64_t>{2});
     bool keepDim = true;
@@ -93,7 +104,8 @@ TEST_F(l2_mean_test, case_4) {
     // ut.TestPrecision();
 }
 
-TEST_F(l2_mean_test, case_5) {
+TEST_F(l2_mean_test, case_5)
+{
     auto tensor_desc = TensorDesc({10, 8}, ACL_FLOAT, ACL_FORMAT_ND);
     auto dim_desc = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -116,7 +128,8 @@ TEST_F(l2_mean_test, case_5) {
 }
 
 // 所有维度都做reduce
-TEST_F(l2_mean_test, case_6) {
+TEST_F(l2_mean_test, case_6)
+{
     auto tensor_desc = TensorDesc({10, 24, 3, 5}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
     auto dim_desc = IntArrayDesc(vector<int64_t>{0, 1, 2, 3});
     bool keepDim = false;
@@ -131,7 +144,8 @@ TEST_F(l2_mean_test, case_6) {
 }
 
 // 通过空dim对所有维度reduce
-TEST_F(l2_mean_test, case_7) {
+TEST_F(l2_mean_test, case_7)
+{
     auto tensor_desc = TensorDesc({10, 24, 3, 5}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
     auto dim_desc = IntArrayDesc(vector<int64_t>{});
     bool keepDim = false;
@@ -146,7 +160,8 @@ TEST_F(l2_mean_test, case_7) {
 }
 
 // fp16
-TEST_F(l2_mean_test, case_8) {
+TEST_F(l2_mean_test, case_8)
+{
     auto input_tensor_desc = TensorDesc({4, 3, 2, 3, 3}, ACL_FLOAT16, ACL_FORMAT_NCDHW);
     auto dim_desc = IntArrayDesc(vector<int64_t>{2});
     bool keepDim = false;
@@ -161,7 +176,8 @@ TEST_F(l2_mean_test, case_8) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_mean_test, case_9) {
+TEST_F(l2_mean_test, case_9)
+{
     auto input_tensor_desc = TensorDesc({1, 8, 2, 3, 6}, ACL_FLOAT16, ACL_FORMAT_NCDHW);
     auto dim_desc = IntArrayDesc(vector<int64_t>{2});
     bool keepDim = false;
@@ -176,7 +192,8 @@ TEST_F(l2_mean_test, case_9) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_mean_test, ascend910B2_case_self_bf16) {
+TEST_F(l2_mean_test, ascend910B2_case_self_bf16)
+{
     auto input_tensor_desc = TensorDesc({1, 8, 2, 3, 6}, ACL_BF16, ACL_FORMAT_NCDHW);
     auto dim_desc = IntArrayDesc(vector<int64_t>{2});
     bool keepDim = false;
@@ -189,7 +206,8 @@ TEST_F(l2_mean_test, ascend910B2_case_self_bf16) {
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(l2_mean_test, case_self_bf16) {
+TEST_F(l2_mean_test, case_self_bf16)
+{
     auto input_tensor_desc = TensorDesc({1, 8, 2, 3, 6}, ACL_BF16, ACL_FORMAT_NCDHW);
     auto dim_desc = IntArrayDesc(vector<int64_t>{2});
     bool keepDim = false;
@@ -203,7 +221,8 @@ TEST_F(l2_mean_test, case_self_bf16) {
     // ut.TestPrecision();
 }
 
-TEST_F(l2_mean_test, case_10) {
+TEST_F(l2_mean_test, case_10)
+{
     auto input_tensor_desc = TensorDesc({1, 8, 2, 3, 6}, ACL_FLOAT, ACL_FORMAT_NDHWC);
     auto dim_desc = IntArrayDesc(vector<int64_t>{3});
     bool keepDim = false;
@@ -218,7 +237,8 @@ TEST_F(l2_mean_test, case_10) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_mean_test, case_repeat_dim) {
+TEST_F(l2_mean_test, case_repeat_dim)
+{
     auto input_tensor_desc = TensorDesc({8, 2, 3, 6}, ACL_FLOAT, ACL_FORMAT_ND);
     auto dim_desc = IntArrayDesc(vector<int64_t>{1, 1});
     bool keepDim = false;
@@ -232,7 +252,8 @@ TEST_F(l2_mean_test, case_repeat_dim) {
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_mean_test, case_repeat_negative_dim) {
+TEST_F(l2_mean_test, case_repeat_negative_dim)
+{
     auto input_tensor_desc = TensorDesc({8, 2, 3, 6}, ACL_FLOAT, ACL_FORMAT_ND);
     auto dim_desc = IntArrayDesc(vector<int64_t>{1, -3});
     bool keepDim = false;
@@ -246,7 +267,8 @@ TEST_F(l2_mean_test, case_repeat_negative_dim) {
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_mean_test, case_double) {
+TEST_F(l2_mean_test, case_double)
+{
     auto tensor_desc = TensorDesc({10, 5, 2, 10}, ACL_DOUBLE, ACL_FORMAT_ND);
     auto dim_desc = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -261,7 +283,8 @@ TEST_F(l2_mean_test, case_double) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_mean_test, case_scalar) {
+TEST_F(l2_mean_test, case_scalar)
+{
     auto tensor_desc = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND);
     auto dim_desc = IntArrayDesc(vector<int64_t>{0});
     bool keepDim = false;
@@ -276,7 +299,8 @@ TEST_F(l2_mean_test, case_scalar) {
 }
 
 // CheckNotNull
-TEST_F(l2_mean_test, case_11) {
+TEST_F(l2_mean_test, case_11)
+{
     auto tensor_desc = TensorDesc({64, 128}, ACL_FLOAT, ACL_FORMAT_ND);
     auto dim_desc = IntArrayDesc(vector<int64_t>{1, 3, 4});
     bool keepDim = false;
@@ -300,7 +324,8 @@ TEST_F(l2_mean_test, case_11) {
 }
 
 // CheckDtypeValid
-TEST_F(l2_mean_test, case_12) {
+TEST_F(l2_mean_test, case_12)
+{
     auto tensor_desc = TensorDesc({10, 5}, ACL_UINT32, ACL_FORMAT_ND);
     auto dim_desc = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -315,7 +340,8 @@ TEST_F(l2_mean_test, case_12) {
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_mean_test, case_13) {
+TEST_F(l2_mean_test, case_13)
+{
     auto tensor_desc = TensorDesc({10, 5}, ACL_UINT64, ACL_FORMAT_ND);
     auto dim_desc = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -331,7 +357,8 @@ TEST_F(l2_mean_test, case_13) {
 }
 
 // CheckShape
-TEST_F(l2_mean_test, case_14) {
+TEST_F(l2_mean_test, case_14)
+{
     auto tensor_desc = TensorDesc({10, 24, 3, 5}, ACL_FLOAT, ACL_FORMAT_HWCN);
     auto dim_desc = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -345,7 +372,8 @@ TEST_F(l2_mean_test, case_14) {
     // ut.TestPrecision();
 }
 
-TEST_F(l2_mean_test, case_15) {
+TEST_F(l2_mean_test, case_15)
+{
     auto tensor_desc = TensorDesc({10, 24, 3, 5, 10, 22, 42, 30, 24}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
     auto dim_desc = IntArrayDesc(vector<int64_t>{1, 2});
     bool keepDim = false;
@@ -359,7 +387,8 @@ TEST_F(l2_mean_test, case_15) {
 }
 
 // CheckPromoteType
-TEST_F(l2_mean_test, case_17) {
+TEST_F(l2_mean_test, case_17)
+{
     auto tensor_desc = TensorDesc({10, 5, 2, 10, 1}, ACL_FLOAT, ACL_FORMAT_NDHWC);
     auto dim_desc = IntArrayDesc(vector<int64_t>{1, 2});
     bool keepDim = false;
@@ -384,7 +413,8 @@ TEST_F(l2_mean_test, case_17) {
 }
 
 // CheckDimValid
-TEST_F(l2_mean_test, case_18) {
+TEST_F(l2_mean_test, case_18)
+{
     auto tensor_desc = TensorDesc({10, 5, 2, 10, 1}, ACL_FLOAT, ACL_FORMAT_NDHWC);
     auto dim_desc = IntArrayDesc(vector<int64_t>{1, 6});
     bool keepDim = false;
@@ -398,7 +428,8 @@ TEST_F(l2_mean_test, case_18) {
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_mean_test, case_19) {
+TEST_F(l2_mean_test, case_19)
+{
     auto tensor_desc = TensorDesc({10, 5}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
     auto dim_desc = IntArrayDesc(vector<int64_t>{-3});
     bool keepDim = false;
@@ -548,65 +579,69 @@ TEST_F(l2_mean_test, case_19) {
 // }
 
 // dim为空，noopWithEmptyAxes为false
-TEST_F(l2_mean_test, case_27) {
-  auto selfDesc = TensorDesc({2, 2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto dimDesc = IntArrayDesc(vector<int64_t>{});
-  auto outDesc = TensorDesc({1, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND);
-  bool keepDim = true;
-  bool noopWithEmptyAxes = false;
+TEST_F(l2_mean_test, case_27)
+{
+    auto selfDesc = TensorDesc({2, 2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto dimDesc = IntArrayDesc(vector<int64_t>{});
+    auto outDesc = TensorDesc({1, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND);
+    bool keepDim = true;
+    bool noopWithEmptyAxes = false;
 
-  auto ut = OP_API_UT(aclnnMeanV2, INPUT(selfDesc, dimDesc, keepDim, noopWithEmptyAxes), OUTPUT(outDesc));
+    auto ut = OP_API_UT(aclnnMeanV2, INPUT(selfDesc, dimDesc, keepDim, noopWithEmptyAxes), OUTPUT(outDesc));
 
-  uint64_t workspaceSize = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-  ut.TestPrecision();
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+    ut.TestPrecision();
 }
 
 // dim为空tensor，noopWithEmptyAxes为true
-TEST_F(l2_mean_test, case_28) {
-  auto selfDesc = TensorDesc({2, 2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto dimDesc = IntArrayDesc(vector<int64_t>{});
-  auto outDesc = TensorDesc({2, 2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
-  bool keepDim = true;
-  bool noopWithEmptyAxes = true;
+TEST_F(l2_mean_test, case_28)
+{
+    auto selfDesc = TensorDesc({2, 2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto dimDesc = IntArrayDesc(vector<int64_t>{});
+    auto outDesc = TensorDesc({2, 2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    bool keepDim = true;
+    bool noopWithEmptyAxes = true;
 
-  auto ut = OP_API_UT(aclnnMeanV2, INPUT(selfDesc, dimDesc, keepDim, noopWithEmptyAxes), OUTPUT(outDesc));
+    auto ut = OP_API_UT(aclnnMeanV2, INPUT(selfDesc, dimDesc, keepDim, noopWithEmptyAxes), OUTPUT(outDesc));
 
-  uint64_t workspaceSize = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-  ut.TestPrecision();
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+    ut.TestPrecision();
 }
 
 // dim不为空，dtype为float，noopWithEmptyAxes为true
-TEST_F(l2_mean_test, case_29) {
-  auto selfDesc = TensorDesc({2, 2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto dimDesc = IntArrayDesc(vector<int64_t>{0});
-  auto outDesc = TensorDesc({1, 2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
-  bool keepDim = true;
-  bool noopWithEmptyAxes = true;
+TEST_F(l2_mean_test, case_29)
+{
+    auto selfDesc = TensorDesc({2, 2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto dimDesc = IntArrayDesc(vector<int64_t>{0});
+    auto outDesc = TensorDesc({1, 2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    bool keepDim = true;
+    bool noopWithEmptyAxes = true;
 
-  auto ut = OP_API_UT(aclnnMeanV2, INPUT(selfDesc, dimDesc, keepDim, noopWithEmptyAxes), OUTPUT(outDesc));
+    auto ut = OP_API_UT(aclnnMeanV2, INPUT(selfDesc, dimDesc, keepDim, noopWithEmptyAxes), OUTPUT(outDesc));
 
-  uint64_t workspaceSize = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-  ut.TestPrecision();
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+    ut.TestPrecision();
 }
 
 // dim不为空，dtype为float，noopWithEmptyAxes为false
-TEST_F(l2_mean_test, case_30) {
-  auto selfDesc = TensorDesc({2, 2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto dimDesc = IntArrayDesc(vector<int64_t>{0});
-  auto outDesc = TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
-  bool keepDim = false;
-  bool noopWithEmptyAxes = false;
+TEST_F(l2_mean_test, case_30)
+{
+    auto selfDesc = TensorDesc({2, 2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto dimDesc = IntArrayDesc(vector<int64_t>{0});
+    auto outDesc = TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    bool keepDim = false;
+    bool noopWithEmptyAxes = false;
 
-  auto ut = OP_API_UT(aclnnMeanV2, INPUT(selfDesc, dimDesc, keepDim, noopWithEmptyAxes), OUTPUT(outDesc));
+    auto ut = OP_API_UT(aclnnMeanV2, INPUT(selfDesc, dimDesc, keepDim, noopWithEmptyAxes), OUTPUT(outDesc));
 
-  uint64_t workspaceSize = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-  ut.TestPrecision();
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+    ut.TestPrecision();
 }

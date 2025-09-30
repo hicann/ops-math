@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 /*!
@@ -41,41 +42,32 @@ static std::vector<int64_t> ToVector(const gert::Shape& shape)
     return shapeVec;
 }
 
-
-static void ExeTestCase(const gert::StorageShape& xShape,
-                        const gert::StorageShape& windowShape,
-                        gert::StorageShape& outputShape,
-                        ge::DataType inputDtype,
-                        ge::DataType windowDtype,
-                        ge::DataType outputDtype,
-                        int64_t hopLength,
-                        int64_t winLength,
-                        bool normalized,
-                        bool onesided,
-                        bool returnComplex,
-                        int64_t nFft,
-                        ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+static void ExeTestCase(
+    const gert::StorageShape& xShape, const gert::StorageShape& windowShape, gert::StorageShape& outputShape,
+    ge::DataType inputDtype, ge::DataType windowDtype, ge::DataType outputDtype, int64_t hopLength, int64_t winLength,
+    bool normalized, bool onesided, bool returnComplex, int64_t nFft,
+    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
 {
     /* make infershape context */
     std::vector<gert::Tensor*> inputTensors = {
         (gert::Tensor*)&xShape, (gert::Tensor*)&xShape, (gert::Tensor*)&windowShape};
-    std::vector<gert::StorageShape *> outputShapes = {&outputShape};
+    std::vector<gert::StorageShape*> outputShapes = {&outputShape};
     auto contextHolder = gert::InferShapeContextFaker()
-        .SetOpType("STFT")
-        .NodeIoNum(3, 1)
-        .NodeInputTd(0, inputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(1, inputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(2, windowDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .InputTensors(inputTensors)
-        .OutputShapes(outputShapes)
-        .Attr("hop_length", hopLength)
-        .Attr("win_length", winLength)
-        .Attr("normalized", normalized)
-        .Attr("onesided", onesided)
-        .Attr("return_complex", returnComplex)
-        .Attr("n_fft", nFft)
-        .Build();
+                             .SetOpType("STFT")
+                             .NodeIoNum(3, 1)
+                             .NodeInputTd(0, inputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeInputTd(1, inputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeInputTd(2, windowDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .InputTensors(inputTensors)
+                             .OutputShapes(outputShapes)
+                             .Attr("hop_length", hopLength)
+                             .Attr("win_length", winLength)
+                             .Attr("normalized", normalized)
+                             .Attr("onesided", onesided)
+                             .Attr("return_complex", returnComplex)
+                             .Attr("n_fft", nFft)
+                             .Build();
 
     /* get infershape func */
     auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
@@ -86,38 +78,30 @@ static void ExeTestCase(const gert::StorageShape& xShape,
     EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
 }
 
-static void ExeTestCaseNoNFft(const gert::StorageShape& xShape,
-                        const gert::StorageShape& windowShape,
-                        gert::StorageShape& outputShape,
-                        ge::DataType inputDtype,
-                        ge::DataType windowDtype,
-                        ge::DataType outputDtype,
-                        int64_t hopLength,
-                        int64_t winLength,
-                        bool normalized,
-                        bool onesided,
-                        bool returnComplex,
-                        ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+static void ExeTestCaseNoNFft(
+    const gert::StorageShape& xShape, const gert::StorageShape& windowShape, gert::StorageShape& outputShape,
+    ge::DataType inputDtype, ge::DataType windowDtype, ge::DataType outputDtype, int64_t hopLength, int64_t winLength,
+    bool normalized, bool onesided, bool returnComplex, ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
 {
     /* make infershape context */
     std::vector<gert::Tensor*> inputTensors = {
         (gert::Tensor*)&xShape, (gert::Tensor*)&xShape, (gert::Tensor*)&windowShape};
-    std::vector<gert::StorageShape *> outputShapes = {&outputShape};
+    std::vector<gert::StorageShape*> outputShapes = {&outputShape};
     auto contextHolder = gert::InferShapeContextFaker()
-        .SetOpType("STFT")
-        .NodeIoNum(3, 1)
-        .NodeInputTd(0, inputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(1, inputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeInputTd(2, windowDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .InputTensors(inputTensors)
-        .OutputShapes(outputShapes)
-        .Attr("hop_length", hopLength)
-        .Attr("win_length", winLength)
-        .Attr("normalized", normalized)
-        .Attr("onesided", onesided)
-        .Attr("return_complex", returnComplex)
-        .Build();
+                             .SetOpType("STFT")
+                             .NodeIoNum(3, 1)
+                             .NodeInputTd(0, inputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeInputTd(1, inputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeInputTd(2, windowDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .InputTensors(inputTensors)
+                             .OutputShapes(outputShapes)
+                             .Attr("hop_length", hopLength)
+                             .Attr("win_length", winLength)
+                             .Attr("normalized", normalized)
+                             .Attr("onesided", onesided)
+                             .Attr("return_complex", returnComplex)
+                             .Build();
 
     /* get infershape func */
     auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();

@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 #include "scale.h"
@@ -29,30 +30,37 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16};
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
-static inline bool IsAiCoreSupport(const aclTensor* self) {
-  // Scale只需要判断dtype
-  return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
+static inline bool IsAiCoreSupport(const aclTensor* self)
+{
+    // Scale只需要判断dtype
+    return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
 }
 
-const aclTensor* ScaleAicore(const aclTensor* x, const aclTensor* scale, const aclTensor* bias, const int64_t axis,
-                             const int64_t numAxes, const bool scaleFromBlob, aclTensor* out, aclOpExecutor* executor) {
-  L0_DFX(ScaleAicore, x, scale, bias, axis, numAxes, scaleFromBlob, out);
-  auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Scale, OP_INPUT(x, scale, bias), OP_OUTPUT(out), OP_ATTR(axis, numAxes, scaleFromBlob));
-  OP_CHECK(ret ==  ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ScaleAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-    return nullptr);
-  return out;
+const aclTensor* ScaleAicore(
+    const aclTensor* x, const aclTensor* scale, const aclTensor* bias, const int64_t axis, const int64_t numAxes,
+    const bool scaleFromBlob, aclTensor* out, aclOpExecutor* executor)
+{
+    L0_DFX(ScaleAicore, x, scale, bias, axis, numAxes, scaleFromBlob, out);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(
+        Scale, OP_INPUT(x, scale, bias), OP_OUTPUT(out), OP_ATTR(axis, numAxes, scaleFromBlob));
+    OP_CHECK(
+        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ScaleAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
+        return nullptr);
+    return out;
 }
 
-const aclTensor* Scale(const aclTensor* x, const aclTensor* scale, const aclTensor* bias, const int64_t axis,
-                       const int64_t numAxes, const bool scaleFromBlob, aclOpExecutor* executor) {
-  op::Shape outShape = x->GetViewShape();
-  auto out = executor->AllocTensor(outShape, x->GetDataType());
+const aclTensor* Scale(
+    const aclTensor* x, const aclTensor* scale, const aclTensor* bias, const int64_t axis, const int64_t numAxes,
+    const bool scaleFromBlob, aclOpExecutor* executor)
+{
+    op::Shape outShape = x->GetViewShape();
+    auto out = executor->AllocTensor(outShape, x->GetDataType());
 
-  if (!IsAiCoreSupport(x)) {
-    OP_LOGE(ACL_ERROR_INVALID_PARAM, "dtype of input x is not supported");
-    return nullptr;
-  }
+    if (!IsAiCoreSupport(x)) {
+        OP_LOGE(ACL_ERROR_INVALID_PARAM, "dtype of input x is not supported");
+        return nullptr;
+    }
 
-  return ScaleAicore(x, scale, bias, axis, numAxes, scaleFromBlob, out, executor);
+    return ScaleAicore(x, scale, bias, axis, numAxes, scaleFromBlob, out, executor);
 }
-}  // namespace l0op
+} // namespace l0op

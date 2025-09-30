@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 #include <array>
@@ -23,9 +24,15 @@ using namespace std;
 
 class l2_linspace_test : public testing::Test {
 protected:
-    static void SetUpTestCase() { std::cout << "l2_linspace SetUp" << std::endl; }
+    static void SetUpTestCase()
+    {
+        std::cout << "l2_linspace SetUp" << std::endl;
+    }
 
-    static void TearDownTestCase() { std::cout << "l2_linspace TearDown" << std::endl; }
+    static void TearDownTestCase()
+    {
+        std::cout << "l2_linspace TearDown" << std::endl;
+    }
 };
 
 // 输入uint8
@@ -122,7 +129,7 @@ TEST_F(l2_linspace_test, aclnnLinspace_output_int64)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
     // SAMPLE: precision simulate
-    //ut.TestPrecision();
+    // ut.TestPrecision();
 }
 
 // 输入float16
@@ -274,7 +281,7 @@ TEST_F(l2_linspace_test, aclnnLinspace_steps_0)
     ut.TestPrecision();
 }
 
-// 输入out != step 
+// 输入out != step
 TEST_F(l2_linspace_test, aclnnLinspace_steps_out)
 {
     auto start = ScalarDesc(static_cast<float>(3));
@@ -365,7 +372,7 @@ TEST_F(l2_linspace_test, aclnnLinspace_start_greater_than_end)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-// step = -2 
+// step = -2
 TEST_F(l2_linspace_test, aclnnLinspace_steps_less_than_0)
 {
     auto start = ScalarDesc(static_cast<int>(3));

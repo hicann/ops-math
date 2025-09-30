@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 #include "aclnn_sign_bits_pack.h"
@@ -36,29 +37,29 @@ static const int64_t PACK_SIZE = 8;
 static const std::initializer_list<op::DataType> SELF_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
 
-static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_LIST = { 
-    op::DataType::DT_UINT8};
+static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_LIST = {op::DataType::DT_UINT8};
 
-static bool CheckNotNullPtr(const aclTensor *self, aclTensor *out)
+static bool CheckNotNullPtr(const aclTensor* self, aclTensor* out)
 {
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(out, return false);
     return true;
 }
 
-static inline bool CheckSocVersionIsSupport(void) {
-  return GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310P ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93;
+static inline bool CheckSocVersionIsSupport(void)
+{
+    return GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+           GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310P ||
+           GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93;
 }
 
-static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out)
-{   
+static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
+{
     bool isSupport = CheckSocVersionIsSupport();
-    if(!isSupport) {   
+    if (!isSupport) {
         auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-            "SignBitsPack is unsupported by the current SOC version [%s]",
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "SignBitsPack is unsupported by the current SOC version [%s]",
             op::ToString(socVersion).GetString());
         return false;
     }
@@ -70,32 +71,35 @@ static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out)
     return true;
 }
 
-static bool CheckFormat(const aclTensor *self, const aclTensor *out)
+static bool CheckFormat(const aclTensor* self, const aclTensor* out)
 {
     // 检查self的format是否为ND
     if (self->GetStorageFormat() != Format::FORMAT_ND) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self format should be ND. Actual: self is [%s].",
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "self format should be ND. Actual: self is [%s].",
             op::ToString(self->GetStorageFormat()).GetString());
         return false;
     }
 
     // 检查out的format是否为ND
     if (out->GetStorageFormat() != Format::FORMAT_ND) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "out format should be ND. Actual: out is [%s].",
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "out format should be ND. Actual: out is [%s].",
             op::ToString(out->GetStorageFormat()).GetString());
         return false;
     }
 
     // 如果输入格式是私有格式，记录日志，直接报错
     if (op::IsPrivateFormat(self->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Not support format [%s].", op::ToString(self->GetStorageFormat()).GetString());
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Not support format [%s].", op::ToString(self->GetStorageFormat()).GetString());
         return false;
     }
 
     return true;
 }
 
-static bool CheckShape(const aclTensor *self, const aclTensor *out)
+static bool CheckShape(const aclTensor* self, const aclTensor* out)
 {
     size_t selfdimNum = self->GetViewShape().GetDimNum();
     if (selfdimNum != DIM_NUM_1D) {
@@ -111,7 +115,7 @@ static bool CheckShape(const aclTensor *self, const aclTensor *out)
     return true;
 }
 
-static bool CheckValue(const aclTensor *self, int64_t size, const aclTensor *out)
+static bool CheckValue(const aclTensor* self, int64_t size, const aclTensor* out)
 {
     for (size_t i = 0; i < out->GetViewShape().GetDimNum(); i++) {
         if (out->GetViewShape().GetDim(i) < 0) {
@@ -122,20 +126,19 @@ static bool CheckValue(const aclTensor *self, int64_t size, const aclTensor *out
 
     size_t selfdim = self->GetViewShape().GetDim(0);
     auto ysize = (selfdim + 7) / 8;
-    if(size <= 0)
-    {   
+    if (size <= 0) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "size value must bigger zero.");
         return false;
     }
 
-    if(size != 0 && ysize % size != 0){
+    if (size != 0 && ysize % size != 0) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "all must need be divisible by size");
         return false;
     }
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor *self, int64_t size, aclTensor *out)
+static aclnnStatus CheckParams(const aclTensor* self, int64_t size, aclTensor* out)
 {
     // 检查参数是否为空指针
     CHECK_RET(CheckNotNullPtr(self, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -155,7 +158,8 @@ static aclnnStatus CheckParams(const aclTensor *self, int64_t size, aclTensor *o
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnSignBitsPackGetWorkspaceSize(const aclTensor *self, int64_t size, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)
+aclnnStatus aclnnSignBitsPackGetWorkspaceSize(
+    const aclTensor* self, int64_t size, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnSignBitsPack, DFX_IN(self, size), DFX_OUT(out));
 
@@ -177,7 +181,7 @@ aclnnStatus aclnnSignBitsPackGetWorkspaceSize(const aclTensor *self, int64_t siz
     auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    const aclTensor *calcOut = nullptr;
+    const aclTensor* calcOut = nullptr;
     calcOut = l0op::SignBitsPack(selfContiguous, size, uniqueExecutor.get());
     CHECK_RET(calcOut != nullptr, ACLNN_ERR_PARAM_NULLPTR);
 
@@ -192,7 +196,7 @@ aclnnStatus aclnnSignBitsPackGetWorkspaceSize(const aclTensor *self, int64_t siz
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnSignBitsPack(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)
+aclnnStatus aclnnSignBitsPack(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnSignBitsPack);
     // 固定写法，调用框架能力，完成计算
