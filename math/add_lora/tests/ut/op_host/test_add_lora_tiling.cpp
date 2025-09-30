@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 #include <iostream>
@@ -53,10 +54,9 @@ TEST_F(AddLoraTiling, ascend910B1_test_tiling__001)
          gert::TilingContextPara::OpAttr("scale", Ops::Math::AnyValue::CreateFrom<float>(0.01)),
          gert::TilingContextPara::OpAttr("y_offset", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
          gert::TilingContextPara::OpAttr("y_slice_size", Ops::Math::AnyValue::CreateFrom<int64_t>(4096))},
-         &compileInfo);
+        &compileInfo);
     uint64_t expectTilingKey = 100001;
     string expectTilingData = "4294967360 68719476737 68719476752 2 1008981770 4096 0 4096 ";
     std::vector<size_t> expectWorkspaces = {17827040};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
-

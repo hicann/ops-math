@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 #include "aclnn_trunc.h"
@@ -17,7 +18,6 @@
 #include "opdev/platform.h"
 #include "common/level2_base.h"
 
-
 using namespace op;
 #ifdef __cplusplus
 extern "C" {
@@ -25,10 +25,10 @@ extern "C" {
 
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> ASCEND910_DTYPE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT,      op::DataType::DT_FLOAT16};
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT,      op::DataType::DT_FLOAT16,    op::DataType::DT_BF16};
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
 static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16,
@@ -49,7 +49,7 @@ static const std::initializer_list<op::DataType> GetDtypeSupportListSelfTri(
     }
 }
 
-static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out)
+static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     const auto& supportList = GetDtypeSupportListSelfTri(
         ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_95_DTYPE_DTYPE_SUPPORT_LIST);
@@ -62,7 +62,7 @@ static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out)
     return true;
 }
 
-static aclnnStatus CheckParamsTrunc(const aclTensor *self, const aclTensor *out)
+static aclnnStatus CheckParamsTrunc(const aclTensor* self, const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull2Tensor(self, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -77,8 +77,8 @@ static aclnnStatus CheckParamsTrunc(const aclTensor *self, const aclTensor *out)
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ExecTruncGetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize,
-    aclOpExecutor **executor)
+static aclnnStatus ExecTruncGetWorkspaceSize(
+    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -114,34 +114,32 @@ static aclnnStatus ExecTruncGetWorkspaceSize(const aclTensor *self, aclTensor *o
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnTruncGetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize,
-    aclOpExecutor **executor)
+aclnnStatus aclnnTruncGetWorkspaceSize(
+    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
-    
+
     L2_DFX_PHASE_1(aclnnTrunc, DFX_IN(self), DFX_OUT(out));
     return ExecTruncGetWorkspaceSize(self, out, workspaceSize, executor);
 }
 
-aclnnStatus aclnnInplaceTruncGetWorkspaceSize(aclTensor *selfRef, uint64_t *workspaceSize,
-    aclOpExecutor **executor)
+aclnnStatus aclnnInplaceTruncGetWorkspaceSize(aclTensor* selfRef, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
-    
+
     L2_DFX_PHASE_1(aclnnInplaceTrunc, DFX_IN(selfRef), DFX_OUT(selfRef));
     auto out = const_cast<aclTensor*>(selfRef);
     return ExecTruncGetWorkspaceSize(selfRef, out, workspaceSize, executor);
 }
 
-aclnnStatus aclnnTrunc(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)
+aclnnStatus aclnnTrunc(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     // 固定写法，调用框架能力，完成计算
     L2_DFX_PHASE_2(aclnnTrunc);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceTrunc(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor,
-    aclrtStream stream)
+aclnnStatus aclnnInplaceTrunc(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     // 固定写法，调用框架能力，完成计算
     L2_DFX_PHASE_2(aclnnInplaceTrunc);

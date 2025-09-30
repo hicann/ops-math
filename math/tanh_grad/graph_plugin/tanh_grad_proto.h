@@ -48,4 +48,3 @@ REG_OP(TanhGrad)
 } // namespace ge
 
 #endif // OPS_OP_PROTO_INC_TANH_GRAD_H_
-

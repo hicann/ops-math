@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 /*!
@@ -150,7 +151,8 @@ __aicore__ inline void PadV4GradLargeHSmallWBf16<T>::CopyGmAndWorkspace2UB2(
                 (i + this->hPad1) * this->width + batchIdx * this->batchStride + this->ncOffset * this->batchStride;
             DataCopyPad(xLocal[i * SMALL_WIDTH_LIMIT], this->mGmX[xGmOffset1], copyParams, padParams);
         }
-        PipeBarrier<PIPE_MTE2>();;
+        PipeBarrier<PIPE_MTE2>();
+        ;
         for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad1; i++) {
             workspaceOffset1 = i * this->width + this->blockIdx * this->workspacePerCore;
             DataCopyPad(xLocal[i * SMALL_WIDTH_LIMIT], this->mGmWorkspace[workspaceOffset1], copyParams, padParams);
@@ -175,7 +177,8 @@ __aicore__ inline void PadV4GradLargeHSmallWBf16<T>::CopyGmAndWorkspace2UB2(
                              batchIdx * this->batchStride + this->ncOffset * this->batchStride;
                 DataCopyPad(xLocal[i * SMALL_WIDTH_LIMIT], this->mGmX[xGmOffset3], copyParams, padParams);
             }
-            PipeBarrier<PIPE_MTE2>();;
+            PipeBarrier<PIPE_MTE2>();
+            ;
             for (size_t i = 0; i < COPY_ROWS_AND_COLS - this->hPad2; i++) {
                 workspaceOffset3 =
                     (i + COPY_ROWS_AND_COLS - this->hPad1) * this->width + this->blockIdx * this->workspacePerCore;

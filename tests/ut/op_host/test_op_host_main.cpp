@@ -17,8 +17,10 @@ using namespace std;
 
 class OpHostUtEnvironment : public testing::Environment {
 public:
-    OpHostUtEnvironment() {}
-    virtual void SetUp() {
+    OpHostUtEnvironment()
+    {}
+    virtual void SetUp()
+    {
         cout << "Global Environment SetpUp." << endl;
 
         fe::OptionalInfos opti_compilation_infos_ge;
@@ -44,13 +46,15 @@ public:
         gert::DefaultOpImplSpaceRegistryV2::GetInstance().SetSpaceRegistry(opImplSpaceRegistryV2);
     }
 
-    virtual void TearDown() {
+    virtual void TearDown()
+    {
         cout << "Global Environment TearDown" << endl;
     }
 };
 
-int main(int argc, char **argv) {
-  testing::InitGoogleTest(&argc,argv);
-  testing::AddGlobalTestEnvironment(new OpHostUtEnvironment());
-  return RUN_ALL_TESTS();
+int main(int argc, char** argv)
+{
+    testing::InitGoogleTest(&argc, argv);
+    testing::AddGlobalTestEnvironment(new OpHostUtEnvironment());
+    return RUN_ALL_TESTS();
 }

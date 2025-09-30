@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 /*!
@@ -48,7 +49,8 @@ public:
     explicit Transpose102Tiling(gert::TilingContext* ctx) : context(ctx) {};
     virtual ~Transpose102Tiling() = default;
 
-    ge::graphStatus GetPlatformInfo() {
+    ge::graphStatus GetPlatformInfo()
+    {
         auto platformInfo = context->GetPlatformInfo();
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
         params.coreNum = ascendcPlatform.GetCoreNumAiv();
@@ -56,7 +58,8 @@ public:
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, params.ubSize);
         return ge::GRAPH_SUCCESS;
     }
-    ge::graphStatus DoTiling() {
+    ge::graphStatus DoTiling()
+    {
         // 合轴后都是0213
         int32_t transDim0 = 0;
         int32_t transDim1 = 1;
@@ -87,9 +90,9 @@ public:
         SubCore();
         // 分块
         auto xDataType = context->GetInputDesc(0)->GetDataType();
-        if (xDataType == ge::DataType::DT_FLOAT16 || xDataType == ge::DataType::DT_BF16){
+        if (xDataType == ge::DataType::DT_FLOAT16 || xDataType == ge::DataType::DT_BF16) {
             params.typeSize = sizeof(uint16_t);
-        } else if (xDataType == ge::DataType::DT_FLOAT){
+        } else if (xDataType == ge::DataType::DT_FLOAT) {
             params.typeSize = sizeof(float);
         } else {
             OP_LOGE(context->GetNodeName(), "Unsupport type.");
@@ -101,7 +104,8 @@ public:
         return ge::GRAPH_SUCCESS;
     }
 
-    void SubCore() {
+    void SubCore()
+    {
         uint64_t subTasks = params.dim1Len;
         if (params.subMode == 1U) {
             subTasks = params.dim2Len;
@@ -116,7 +120,8 @@ public:
         }
         params.coreNum = params.tasksPerCore == 0U ? params.tailCore : params.coreNum;
     }
-    void SubBlock() {
+    void SubBlock()
+    {
         const gert::StorageShape* permShape = context->GetInputShape(1);
         // 4 is limit of copy mode, 3 is perm limit
         if (params.dim3Len < params.block * 4U && permShape->GetStorageShape().GetDim(0) == 3) {
@@ -124,33 +129,41 @@ public:
             params.dim2OnceMax = params.ubSize / 2U / params.doubleBuffer / params.dim3LenAlign / params.typeSize;
             if (params.subMode == 0U) {
                 // 2 is double
-                params.dim1OnceMax = params.dim2OnceMax / GetAlign(params.dim2Len, TRANS_BLOCK) < (TRANS_BLOCK * 2) ?
-                    TRANS_BLOCK : (params.dim2OnceMax / GetAlign(params.dim2Len, TRANS_BLOCK)) / TRANS_BLOCK * TRANS_BLOCK;
+                params.dim1OnceMax =
+                    params.dim2OnceMax / GetAlign(params.dim2Len, TRANS_BLOCK) < (TRANS_BLOCK * 2) ?
+                        TRANS_BLOCK :
+                        (params.dim2OnceMax / GetAlign(params.dim2Len, TRANS_BLOCK)) / TRANS_BLOCK * TRANS_BLOCK;
                 params.dim2OnceMax = (params.dim2OnceMax / params.dim1OnceMax) / TRANS_BLOCK * TRANS_BLOCK;
             } else if (params.subMode == 1U) {
                 // 2 is double
-                params.dim1OnceMax = params.dim2OnceMax / GetAlign(params.tasksPerCoreLarge, TRANS_BLOCK) < (TRANS_BLOCK * 2) ?
-                    TRANS_BLOCK : (params.dim2OnceMax / GetAlign(params.tasksPerCoreLarge, TRANS_BLOCK)) / TRANS_BLOCK * TRANS_BLOCK;
+                params.dim1OnceMax =
+                    params.dim2OnceMax / GetAlign(params.tasksPerCoreLarge, TRANS_BLOCK) < (TRANS_BLOCK * 2) ?
+                        TRANS_BLOCK :
+                        (params.dim2OnceMax / GetAlign(params.tasksPerCoreLarge, TRANS_BLOCK)) / TRANS_BLOCK *
+                            TRANS_BLOCK;
                 params.dim2OnceMax = (params.dim2OnceMax / params.dim1OnceMax) / TRANS_BLOCK * TRANS_BLOCK;
             }
         } else {
             if (params.subMode == 0U) {
                 // 2 is bufferNum
                 params.dim2OnceMax = params.ubSize / 2U / params.doubleBuffer / params.dim3LenAlign / params.typeSize;
-                params.dim1OnceMax = params.dim2OnceMax / params.dim2Len == 0U ? 1 : params.dim2OnceMax / params.dim2Len;
+                params.dim1OnceMax =
+                    params.dim2OnceMax / params.dim2Len == 0U ? 1 : params.dim2OnceMax / params.dim2Len;
                 params.dim1OnceMax = params.dim3LenAlign == params.dim3Len ? params.dim1OnceMax : 1;
                 params.dim2OnceMax = params.dim2OnceMax / params.dim1OnceMax;
             } else if (params.subMode == 1U) {
                 // 2 is bufferNum
                 params.dim1OnceMax = params.ubSize / 2U / params.doubleBuffer / params.dim3LenAlign / params.typeSize;
-                params.dim2OnceMax = params.dim1OnceMax / params.dim1Len == 0U ? 1 : params.dim1OnceMax / params.dim1Len;
+                params.dim2OnceMax =
+                    params.dim1OnceMax / params.dim1Len == 0U ? 1 : params.dim1OnceMax / params.dim1Len;
                 params.dim2OnceMax = params.dim3LenAlign == params.dim3Len ? params.dim2OnceMax : 1;
                 params.dim1OnceMax = params.dim1OnceMax / params.dim2OnceMax;
             }
         }
     }
 
-    void ComputeTilingKey() {
+    void ComputeTilingKey()
+    {
         const gert::StorageShape* permShape = context->GetInputShape(1);
         // 3 is permSize
         if (permShape->GetStorageShape().GetDim(0) == 3) {
@@ -165,7 +178,8 @@ public:
             params.tilingKey += COPY_KEY;
         }
     }
-    void SetTiling() {
+    void SetTiling()
+    {
         tilingData.set_dim1Len(params.dim1Len);
         tilingData.set_dim2Len(params.dim2Len);
         tilingData.set_dim3Len(params.dim3Len);
@@ -183,31 +197,34 @@ public:
         tilingData.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
         context->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
     }
-    void PrintTilingData() {
-        OP_LOGD(context->GetNodeName(), "Start TransposeCTilingData printing"         );
-        OP_LOGD(context->GetNodeName(), "-----------------------------------------------" );
-        OP_LOGD(context->GetNodeName(), "dim1Len is:%lu "   , params.dim1Len       );
-        OP_LOGD(context->GetNodeName(), "dim2Len is:%lu "        , params.dim2Len            );
-        OP_LOGD(context->GetNodeName(), "dim3Len is:%lu "        , params.dim3Len            );
-        OP_LOGD(context->GetNodeName(), "dim3LenAlign is:%lu "  , params.dim3LenAlign      );
-        OP_LOGD(context->GetNodeName(), "tasksPerCore is:%lu "     , params.tasksPerCore         );
-        OP_LOGD(context->GetNodeName(), "tailCore is:%lu "       , params.tailCore           );
-        OP_LOGD(context->GetNodeName(), "subMode is:%lu "         , params.subMode             );
-        OP_LOGD(context->GetNodeName(), "dim1OnceMax is:%lu "       , params.dim1OnceMax           );
-        OP_LOGD(context->GetNodeName(), "dim2OnceMax is:%lu "  , params.dim2OnceMax      );
-        OP_LOGD(context->GetNodeName(), "doubleBuffer is:%lu "  , params.doubleBuffer      );
-        OP_LOGD(context->GetNodeName(), "blockDim is:%u "      , context->GetBlockDim()   );
-        OP_LOGD(context->GetNodeName(), "tilingKey is:%lu "     , context->GetTilingKey()  );
-        OP_LOGD(context->GetNodeName(), "-----------------------------------------------" );
-        OP_LOGD(context->GetNodeName(), "End TransposeCTilingData printing"           );
+    void PrintTilingData()
+    {
+        OP_LOGD(context->GetNodeName(), "Start TransposeCTilingData printing");
+        OP_LOGD(context->GetNodeName(), "-----------------------------------------------");
+        OP_LOGD(context->GetNodeName(), "dim1Len is:%lu ", params.dim1Len);
+        OP_LOGD(context->GetNodeName(), "dim2Len is:%lu ", params.dim2Len);
+        OP_LOGD(context->GetNodeName(), "dim3Len is:%lu ", params.dim3Len);
+        OP_LOGD(context->GetNodeName(), "dim3LenAlign is:%lu ", params.dim3LenAlign);
+        OP_LOGD(context->GetNodeName(), "tasksPerCore is:%lu ", params.tasksPerCore);
+        OP_LOGD(context->GetNodeName(), "tailCore is:%lu ", params.tailCore);
+        OP_LOGD(context->GetNodeName(), "subMode is:%lu ", params.subMode);
+        OP_LOGD(context->GetNodeName(), "dim1OnceMax is:%lu ", params.dim1OnceMax);
+        OP_LOGD(context->GetNodeName(), "dim2OnceMax is:%lu ", params.dim2OnceMax);
+        OP_LOGD(context->GetNodeName(), "doubleBuffer is:%lu ", params.doubleBuffer);
+        OP_LOGD(context->GetNodeName(), "blockDim is:%u ", context->GetBlockDim());
+        OP_LOGD(context->GetNodeName(), "tilingKey is:%lu ", context->GetTilingKey());
+        OP_LOGD(context->GetNodeName(), "-----------------------------------------------");
+        OP_LOGD(context->GetNodeName(), "End TransposeCTilingData printing");
     }
-    uint64_t GetAlign(uint64_t len, uint64_t size) {
+    uint64_t GetAlign(uint64_t len, uint64_t size)
+    {
         return size == 0U ? 0U : (len + size - 1U) / size * size;
     }
+
 private:
-    gert::TilingContext *context = nullptr;
+    gert::TilingContext* context = nullptr;
     Transpose102Params params;
     TransposeV2TilingData tilingData;
 };
-}
+} // namespace optiling
 #endif

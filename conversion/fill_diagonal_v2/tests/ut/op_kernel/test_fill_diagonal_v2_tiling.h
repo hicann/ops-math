@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 #ifndef _FAST_OP_TEST_FILL_DIAGONAL_V2_TILING_H_
 #define _FAST_OP_TEST_FILL_DIAGONAL_V2_TILING_H_
@@ -27,19 +28,19 @@ struct FillDiagonalV2TilingData {
 #pragma pack()
 
 #define CONVERT_TILING_DATA(tilingStruct, tilingDataPointer, tilingPointer) \
-  __ubuf__ tilingStruct* tilingDataPointer =                                \
-      reinterpret_cast<__ubuf__ tilingStruct*>((__ubuf__ uint8_t*)(tilingPointer));
+    __ubuf__ tilingStruct* tilingDataPointer =                              \
+        reinterpret_cast<__ubuf__ tilingStruct*>((__ubuf__ uint8_t*)(tilingPointer));
 
 #define INIT_TILING_DATA(tilingStruct, tilingDataPointer, tilingPointer) \
-  CONVERT_TILING_DATA(tilingStruct, tilingDataPointer, tilingPointer);
+    CONVERT_TILING_DATA(tilingStruct, tilingDataPointer, tilingPointer);
 
-#define GET_TILING_DATA(tilingData, tilingPointer)                                                          \
-  FillDiagonalV2TilingData tilingData;                                                                      \
-  INIT_TILING_DATA(FillDiagonalV2TilingData, tilingDataPointer, tilingPointer);                             \
-  (tilingData).totalLength = tilingDataPointer->totalLength;                                                \
-  (tilingData).step = tilingDataPointer->step;                                                              \
-  (tilingData).end = tilingDataPointer->end;                                                                \
-  (tilingData).ubSize = tilingDataPointer->ubSize;                                                          \
-  (tilingData).blockLength = tilingDataPointer->blockLength;                                                \
-  (tilingData).lastBlockLength = tilingDataPointer->lastBlockLength;
+#define GET_TILING_DATA(tilingData, tilingPointer)                                \
+    FillDiagonalV2TilingData tilingData;                                          \
+    INIT_TILING_DATA(FillDiagonalV2TilingData, tilingDataPointer, tilingPointer); \
+    (tilingData).totalLength = tilingDataPointer->totalLength;                    \
+    (tilingData).step = tilingDataPointer->step;                                  \
+    (tilingData).end = tilingDataPointer->end;                                    \
+    (tilingData).ubSize = tilingDataPointer->ubSize;                              \
+    (tilingData).blockLength = tilingDataPointer->blockLength;                    \
+    (tilingData).lastBlockLength = tilingDataPointer->lastBlockLength;
 #endif // _FAST_OP_TEST_FILL_DIAGONAL_TILING_H_

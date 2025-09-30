@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 #include <array>
@@ -22,22 +23,25 @@
 using namespace std;
 // using namespace AscendC;
 
-extern "C" __global__ __aicore__ void hans_encode(GM_ADDR input_gm, GM_ADDR pdf_gm, GM_ADDR pdf_ref,
-                                                  GM_ADDR output_mantissa_gm, GM_ADDR fixed_gm, GM_ADDR var_gm,
-                                                  GM_ADDR workspace, GM_ADDR tiling);
+extern "C" __global__ __aicore__ void hans_encode(
+    GM_ADDR input_gm, GM_ADDR pdf_gm, GM_ADDR pdf_ref, GM_ADDR output_mantissa_gm, GM_ADDR fixed_gm, GM_ADDR var_gm,
+    GM_ADDR workspace, GM_ADDR tiling);
 
 class hans_encode_test : public testing::Test {
-   protected:
-    static void SetUpTestCase() {
+protected:
+    static void SetUpTestCase()
+    {
         cout << "hans_encode_test SetUp\n" << endl;
     }
-    static void TearDownTestCase() {
+    static void TearDownTestCase()
+    {
         cout << "hans_encode_test TearDown\n" << endl;
     }
 };
 
 // test case 0
-TEST_F(hans_encode_test, test_case_0) {
+TEST_F(hans_encode_test, test_case_0)
+{
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     uint32_t blockDim = 1;
     size_t testNumel = 32768;
@@ -88,13 +92,14 @@ TEST_F(hans_encode_test, test_case_0) {
     encodeTiling4TestCase->processLoopPerCore = processLoopPerCore;
     encodeTiling4TestCase->processLoopLastCore = processLoopLastCore;
     encodeTiling4TestCase->fixedLengthPerCore = fixedLengthPerCore;
-    encodeTiling4TestCase->fixedLengthLastCore =fixedLengthLastCore;
-    encodeTiling4TestCase->varLength =varLength;
+    encodeTiling4TestCase->fixedLengthLastCore = fixedLengthLastCore;
+    encodeTiling4TestCase->varLength = varLength;
     encodeTiling4TestCase->statistic = statistic;
     encodeTiling4TestCase->reshuff = reshuff;
     ICPU_SET_TILING_KEY(4);
-    ICPU_RUN_KF(hans_encode, blockDim, input, pdf, pdf, mantissa, outputFixed, outputVar, workspace,
-                (uint8_t*)encodeTiling4TestCase);
+    ICPU_RUN_KF(
+        hans_encode, blockDim, input, pdf, pdf, mantissa, outputFixed, outputVar, workspace,
+        (uint8_t*)encodeTiling4TestCase);
     WriteFile("./hans_encode_data/output_pdf.bin", pdf, pdfByteSize);
     WriteFile("./hans_encode_data/mantissa.bin", mantissa, mantissaByteSize);
     WriteFile("./hans_encode_data/fixed.bin", outputFixed, outputFixedByteSize);
@@ -110,9 +115,9 @@ TEST_F(hans_encode_test, test_case_0) {
     free(path_);
 }
 
-
 // test case 1
-TEST_F(hans_encode_test, test_case_1) {
+TEST_F(hans_encode_test, test_case_1)
+{
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     uint32_t blockDim = 1;
     size_t testNumel = 32768;
@@ -163,13 +168,14 @@ TEST_F(hans_encode_test, test_case_1) {
     encodeTiling4TestCase->processLoopPerCore = processLoopPerCore;
     encodeTiling4TestCase->processLoopLastCore = processLoopLastCore;
     encodeTiling4TestCase->fixedLengthPerCore = fixedLengthPerCore;
-    encodeTiling4TestCase->fixedLengthLastCore =fixedLengthLastCore;
-    encodeTiling4TestCase->varLength =varLength;
+    encodeTiling4TestCase->fixedLengthLastCore = fixedLengthLastCore;
+    encodeTiling4TestCase->varLength = varLength;
     encodeTiling4TestCase->statistic = statistic;
     encodeTiling4TestCase->reshuff = reshuff;
     ICPU_SET_TILING_KEY(4);
-    ICPU_RUN_KF(hans_encode, blockDim, input, pdf, pdf, mantissa, outputFixed, outputVar, workspace,
-                (uint8_t*)encodeTiling4TestCase);
+    ICPU_RUN_KF(
+        hans_encode, blockDim, input, pdf, pdf, mantissa, outputFixed, outputVar, workspace,
+        (uint8_t*)encodeTiling4TestCase);
     WriteFile("./hans_encode_data/output_pdf.bin", pdf, pdfByteSize);
     WriteFile("./hans_encode_data/mantissa.bin", mantissa, mantissaByteSize);
     WriteFile("./hans_encode_data/fixed.bin", outputFixed, outputFixedByteSize);
@@ -185,10 +191,9 @@ TEST_F(hans_encode_test, test_case_1) {
     free(path_);
 }
 
-
-
 // test case 2
-TEST_F(hans_encode_test, test_case_2) {
+TEST_F(hans_encode_test, test_case_2)
+{
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     uint32_t blockDim = 1;
     size_t testNumel = 32768;
@@ -239,13 +244,14 @@ TEST_F(hans_encode_test, test_case_2) {
     encodeTiling4TestCase->processLoopPerCore = processLoopPerCore;
     encodeTiling4TestCase->processLoopLastCore = processLoopLastCore;
     encodeTiling4TestCase->fixedLengthPerCore = fixedLengthPerCore;
-    encodeTiling4TestCase->fixedLengthLastCore =fixedLengthLastCore;
-    encodeTiling4TestCase->varLength =varLength;
+    encodeTiling4TestCase->fixedLengthLastCore = fixedLengthLastCore;
+    encodeTiling4TestCase->varLength = varLength;
     encodeTiling4TestCase->statistic = statistic;
     encodeTiling4TestCase->reshuff = reshuff;
     ICPU_SET_TILING_KEY(2);
-    ICPU_RUN_KF(hans_encode, blockDim, input, pdf, pdf, mantissa, outputFixed, outputVar, workspace,
-                (uint8_t*)encodeTiling4TestCase);
+    ICPU_RUN_KF(
+        hans_encode, blockDim, input, pdf, pdf, mantissa, outputFixed, outputVar, workspace,
+        (uint8_t*)encodeTiling4TestCase);
     WriteFile("./hans_encode_data/output_pdf.bin", pdf, pdfByteSize);
     WriteFile("./hans_encode_data/mantissa.bin", mantissa, mantissaByteSize);
     WriteFile("./hans_encode_data/fixed.bin", outputFixed, outputFixedByteSize);
@@ -262,7 +268,8 @@ TEST_F(hans_encode_test, test_case_2) {
 }
 
 // test case 3
-TEST_F(hans_encode_test, test_case_3) {
+TEST_F(hans_encode_test, test_case_3)
+{
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     uint32_t blockDim = 1;
     size_t testNumel = 32768;
@@ -313,13 +320,14 @@ TEST_F(hans_encode_test, test_case_3) {
     encodeTiling4TestCase->processLoopPerCore = processLoopPerCore;
     encodeTiling4TestCase->processLoopLastCore = processLoopLastCore;
     encodeTiling4TestCase->fixedLengthPerCore = fixedLengthPerCore;
-    encodeTiling4TestCase->fixedLengthLastCore =fixedLengthLastCore;
-    encodeTiling4TestCase->varLength =varLength;
+    encodeTiling4TestCase->fixedLengthLastCore = fixedLengthLastCore;
+    encodeTiling4TestCase->varLength = varLength;
     encodeTiling4TestCase->statistic = statistic;
     encodeTiling4TestCase->reshuff = reshuff;
     ICPU_SET_TILING_KEY(2);
-    ICPU_RUN_KF(hans_encode, blockDim, input, pdf, pdf, mantissa, outputFixed, outputVar, workspace,
-                (uint8_t*)encodeTiling4TestCase);
+    ICPU_RUN_KF(
+        hans_encode, blockDim, input, pdf, pdf, mantissa, outputFixed, outputVar, workspace,
+        (uint8_t*)encodeTiling4TestCase);
     WriteFile("./hans_encode_data/output_pdf.bin", pdf, pdfByteSize);
     WriteFile("./hans_encode_data/mantissa.bin", mantissa, mantissaByteSize);
     WriteFile("./hans_encode_data/fixed.bin", outputFixed, outputFixedByteSize);

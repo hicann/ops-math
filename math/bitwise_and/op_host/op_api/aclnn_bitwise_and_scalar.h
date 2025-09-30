@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 
 #ifndef OP_API_INC_BITWISE_AND_SCALAR_H_
@@ -62,9 +63,8 @@ extern "C" {
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnBitwiseAndScalarGetWorkspaceSize(const aclTensor* self, const aclScalar* other,
-                                                            aclTensor* out, uint64_t* workspaceSize,
-                                                            aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnBitwiseAndScalarGetWorkspaceSize(
+    const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief aclnnBitwiseAndScalar的第二段接口，用于执行计算。
@@ -106,8 +106,8 @@ ACLNN_API aclnnStatus aclnnBitwiseAndScalarGetWorkspaceSize(const aclTensor* sel
  * @param [in] stream: acl stream流。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnBitwiseAndScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
-                                            aclrtStream stream);
+ACLNN_API aclnnStatus
+aclnnBitwiseAndScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 /**
  * @brief aclnnInplaceBitwiseAndScalar的第一段接口，根据具体的计算流程，计算workspace大小。
@@ -151,8 +151,8 @@ ACLNN_API aclnnStatus aclnnBitwiseAndScalar(void* workspace, uint64_t workspaceS
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnInplaceBitwiseAndScalarGetWorkspaceSize(const aclTensor* selfRef, const aclScalar* other,
-                                                                   uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnInplaceBitwiseAndScalarGetWorkspaceSize(
+    const aclTensor* selfRef, const aclScalar* other, uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief aclnnInplaceBitwiseAndScalar的第二段接口，用于执行计算。
@@ -194,11 +194,11 @@ ACLNN_API aclnnStatus aclnnInplaceBitwiseAndScalarGetWorkspaceSize(const aclTens
  * @param [in] stream: acl stream流。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnInplaceBitwiseAndScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
-                                                   aclrtStream stream);
+ACLNN_API aclnnStatus
+aclnnInplaceBitwiseAndScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // OP_API_INC_BITWISE_AND_SCALAR_H_
+#endif // OP_API_INC_BITWISE_AND_SCALAR_H_

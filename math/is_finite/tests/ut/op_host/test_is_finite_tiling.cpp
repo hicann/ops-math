@@ -21,83 +21,127 @@ using namespace IsFiniteNs;
 
 class IsFiniteTiling : public testing::Test {
 protected:
-    static void SetUpTestCase() {
+    static void SetUpTestCase()
+    {
         cout << "IsFiniteTiling SetUp" << endl;
     }
 
-    static void TearDownTestCase() {
+    static void TearDownTestCase()
+    {
         cout << "IsFiniteTiling TearDown " << endl;
     }
 };
 
-TEST_F(IsFiniteTiling, ascend910D1_test_tiling_fp16_001) {
+TEST_F(IsFiniteTiling, ascend910D1_test_tiling_fp16_001)
+{
     optiling::IsFiniteCompileInfo compileInfo = {64, 262144, true};
-    gert::TilingContextPara tilingContextPara("IsFinite",
-                                              {{{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},},
-                                              {{{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BOOL, ge::FORMAT_ND},},
-                                              &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "IsFinite",
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BOOL, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 6;
     string expectTilingData = "1 8192 4096 2 5632 1 1 4096 4096 5632 0 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
-TEST_F(IsFiniteTiling, ascend910D1_test_tiling_bf16_002) {
+TEST_F(IsFiniteTiling, ascend910D1_test_tiling_bf16_002)
+{
     optiling::IsFiniteCompileInfo compileInfo = {64, 262144, true};
-    gert::TilingContextPara tilingContextPara("IsFinite",
-                                              {{{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},},
-                                              {{{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BOOL, ge::FORMAT_ND},},
-                                              &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "IsFinite",
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BOOL, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 10;
     string expectTilingData = "1 8192 4096 2 5632 1 1 4096 4096 5632 0 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
-TEST_F(IsFiniteTiling, ascend910D1_test_tiling_fp32_003) {
+TEST_F(IsFiniteTiling, ascend910D1_test_tiling_fp32_003)
+{
     optiling::IsFiniteCompileInfo compileInfo = {64, 262144, true};
-    gert::TilingContextPara tilingContextPara("IsFinite",
-                                              {{{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},},
-                                              {{{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BOOL, ge::FORMAT_ND},},
-                                              &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "IsFinite",
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BOOL, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 14;
     string expectTilingData = "1 8192 4096 2 5632 1 1 4096 4096 5632 0 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
-TEST_F(IsFiniteTiling, ascend910D1_test_tiling_failed_empty_tensor_004) {
+TEST_F(IsFiniteTiling, ascend910D1_test_tiling_failed_empty_tensor_004)
+{
     optiling::IsFiniteCompileInfo compileInfo = {64, 262144, true};
-    gert::TilingContextPara tilingContextPara("IsFinite",
-                                              {{{{1, 0, 2, 64}, {1, 0, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},},
-                                              {{{{1, 0, 2, 64}, {1, 0, 2, 64}}, ge::DT_BOOL, ge::FORMAT_ND},},
-                                              &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "IsFinite",
+        {
+            {{{1, 0, 2, 64}, {1, 0, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 0, 2, 64}, {1, 0, 2, 64}}, ge::DT_BOOL, ge::FORMAT_ND},
+        },
+        &compileInfo);
     ExecuteTestCase(tilingContextPara);
 }
 
-TEST_F(IsFiniteTiling, ascend910D1_test_tiling_failed_unsupported_input_type_005) {
+TEST_F(IsFiniteTiling, ascend910D1_test_tiling_failed_unsupported_input_type_005)
+{
     optiling::IsFiniteCompileInfo compileInfo = {64, 262144, true};
-    gert::TilingContextPara tilingContextPara("IsFinite",
-                                              {{{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_DOUBLE, ge::FORMAT_ND},},
-                                              {{{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BOOL, ge::FORMAT_ND},},
-                                              &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "IsFinite",
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BOOL, ge::FORMAT_ND},
+        },
+        &compileInfo);
     ExecuteTestCase(tilingContextPara);
 }
 
-TEST_F(IsFiniteTiling, ascend910D1_test_tiling_failed_unsupported_output_type_006) {
+TEST_F(IsFiniteTiling, ascend910D1_test_tiling_failed_unsupported_output_type_006)
+{
     optiling::IsFiniteCompileInfo compileInfo = {64, 262144, true};
-    gert::TilingContextPara tilingContextPara("IsFinite",
-                                              {{{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},},
-                                              {{{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},},
-                                              &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "IsFinite",
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        &compileInfo);
     ExecuteTestCase(tilingContextPara);
 }
 
-TEST_F(IsFiniteTiling, ascend910D1_test_tiling_failed_shape_input_output_diff_007) {
+TEST_F(IsFiniteTiling, ascend910D1_test_tiling_failed_shape_input_output_diff_007)
+{
     optiling::IsFiniteCompileInfo compileInfo = {64, 262144, true};
-    gert::TilingContextPara tilingContextPara("IsFinite",
-                                              {{{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},},
-                                              {{{{1, 64, 3, 64}, {1, 64, 3, 64}}, ge::DT_BOOL, ge::FORMAT_ND},},
-                                              &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "IsFinite",
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 64, 3, 64}, {1, 64, 3, 64}}, ge::DT_BOOL, ge::FORMAT_ND},
+        },
+        &compileInfo);
     ExecuteTestCase(tilingContextPara);
 }

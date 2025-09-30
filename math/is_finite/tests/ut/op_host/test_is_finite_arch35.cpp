@@ -30,8 +30,7 @@
 
 using namespace std;
 
-class is_finite_test : public testing::Test
-{
+class is_finite_test : public testing::Test {
 protected:
     static void SetUpTestCase()
     {

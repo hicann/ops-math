@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 #include "aclnn_batch_norm_stats.h"
 #include "aclnn_kernels/cast.h"
@@ -40,26 +41,28 @@ extern "C" {
 
 constexpr float NEGTIVE_SQRT_EXP = -0.5f;
 
-static aclTensor* FillVector(const op::Shape dstShape, const aclTensor* src, float value, aclOpExecutor* executor) {
-  op::FVector<int64_t, op::MAX_DIM_NUM> fillDims = op::ToShapeVector(dstShape);
-  auto shapes = executor->AllocIntArray(fillDims.data(), src->GetViewShape().GetDimNum());
-  const aclTensor* dimTensor = executor->ConvertToTensor(shapes, op::DataType::DT_INT32);
-  const aclScalar* valueScalar = executor->AllocScalar(value);
-  const aclTensor* valueTensor = executor->ConvertToTensor(valueScalar, src->GetDataType());
-  auto fillTensor = l0op::Fill(dimTensor, valueTensor, shapes, executor);
-  if (fillTensor == nullptr) {
-    return nullptr;
-  }
-  fillTensor = l0op::ReFormat(fillTensor, op::Format::FORMAT_ND);
-  return const_cast<aclTensor*>(fillTensor);
+static aclTensor* FillVector(const op::Shape dstShape, const aclTensor* src, float value, aclOpExecutor* executor)
+{
+    op::FVector<int64_t, op::MAX_DIM_NUM> fillDims = op::ToShapeVector(dstShape);
+    auto shapes = executor->AllocIntArray(fillDims.data(), src->GetViewShape().GetDimNum());
+    const aclTensor* dimTensor = executor->ConvertToTensor(shapes, op::DataType::DT_INT32);
+    const aclScalar* valueScalar = executor->AllocScalar(value);
+    const aclTensor* valueTensor = executor->ConvertToTensor(valueScalar, src->GetDataType());
+    auto fillTensor = l0op::Fill(dimTensor, valueTensor, shapes, executor);
+    if (fillTensor == nullptr) {
+        return nullptr;
+    }
+    fillTensor = l0op::ReFormat(fillTensor, op::Format::FORMAT_ND);
+    return const_cast<aclTensor*>(fillTensor);
 }
 
-static aclnnStatus ProcessEmptyTensorWithValue(aclTensor* src, float initValue, aclOpExecutor* executor) {
-  auto srcShape = src->GetViewShape();
-  auto dst = FillVector(srcShape, src, initValue, executor);
-  auto dstCopyResult = l0op::ViewCopy(dst, src, executor);
-  CHECK_RET(dstCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-  return ACLNN_SUCCESS;
+static aclnnStatus ProcessEmptyTensorWithValue(aclTensor* src, float initValue, aclOpExecutor* executor)
+{
+    auto srcShape = src->GetViewShape();
+    auto dst = FillVector(srcShape, src, initValue, executor);
+    auto dstCopyResult = l0op::ViewCopy(dst, src, executor);
+    CHECK_RET(dstCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    return ACLNN_SUCCESS;
 }
 
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {

@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 #include "aclnn_trans_convolution_weight.h"
 
@@ -34,193 +35,198 @@ static uint64_t g_dimNum = 4;
 extern "C" {
 #endif
 
-static uint64_t CalculateConvWeightSize(const aclTensor *weightFz) {
-  CHECK_RET(weightFz->GetViewShape().GetDimNum() == g_dimNum, ACLNN_ERR_PARAM_INVALID);
-  uint64_t shapeSize = 1;
-  for (size_t i = 0; i < weightFz->GetViewShape().GetDimNum(); i++) {
-    shapeSize *= static_cast<int64_t>(weightFz->GetStorageShape().GetDim(i));
-  }
-  return shapeSize;
+static uint64_t CalculateConvWeightSize(const aclTensor* weightFz)
+{
+    CHECK_RET(weightFz->GetViewShape().GetDimNum() == g_dimNum, ACLNN_ERR_PARAM_INVALID);
+    uint64_t shapeSize = 1;
+    for (size_t i = 0; i < weightFz->GetViewShape().GetDimNum(); i++) {
+        shapeSize *= static_cast<int64_t>(weightFz->GetStorageShape().GetDim(i));
+    }
+    return shapeSize;
 }
 
-static aclnnStatus CheckParams(uint64_t tensorDim, bool transposed, int64_t groups) {
-  if (tensorDim != g_dimNum) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "only support 4 dim tensorShape, but got dim %lu.", tensorDim);
-    return ACLNN_ERR_PARAM_INVALID;
-  }
+static aclnnStatus CheckParams(uint64_t tensorDim, bool transposed, int64_t groups)
+{
+    if (tensorDim != g_dimNum) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "only support 4 dim tensorShape, but got dim %lu.", tensorDim);
+        return ACLNN_ERR_PARAM_INVALID;
+    }
 
-  if (transposed == true) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-            "only support nontranspose convolution, now transpose is %d.", transposed);
-    return ACLNN_ERR_PARAM_INVALID;
-  }
+    if (transposed == true) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "only support nontranspose convolution, now transpose is %d.", transposed);
+        return ACLNN_ERR_PARAM_INVALID;
+    }
 
-  if (groups == 0) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-            "only support groups larger than 0, now groups is %lu.", static_cast<uint64_t>(groups));
-    return ACLNN_ERR_PARAM_INVALID;
-  }
+    if (groups == 0) {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "only support groups larger than 0, now groups is %lu.",
+            static_cast<uint64_t>(groups));
+        return ACLNN_ERR_PARAM_INVALID;
+    }
 
-  auto soc = GetCurrentPlatformInfo().GetSocVersion();
-  if (soc != SocVersion::ASCEND310P) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-            "only support ascend310P, now soc is %s.", op::ToString(soc).GetString());
-    return ACLNN_ERR_PARAM_INVALID;
-  }
+    auto soc = GetCurrentPlatformInfo().GetSocVersion();
+    if (soc != SocVersion::ASCEND310P) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "only support ascend310P, now soc is %s.", op::ToString(soc).GetString());
+        return ACLNN_ERR_PARAM_INVALID;
+    }
 
-  return ACLNN_SUCCESS;
+    return ACLNN_SUCCESS;
 }
 
-static aclnnStatus CheckTensor(const aclTensor *weightIn, const aclTensor *weightOut) {
-  if (weightIn->GetDataType() != op::DataType::DT_FLOAT16 && weightIn->GetDataType() != op::DataType::DT_FLOAT) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-            "only support weightIn datatype is float16/float32, now datatype is %s.",
+static aclnnStatus CheckTensor(const aclTensor* weightIn, const aclTensor* weightOut)
+{
+    if (weightIn->GetDataType() != op::DataType::DT_FLOAT16 && weightIn->GetDataType() != op::DataType::DT_FLOAT) {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "only support weightIn datatype is float16/float32, now datatype is %s.",
             op::ToString(weightIn->GetDataType()).GetString());
-    return ACLNN_ERR_PARAM_INVALID;
-  }
+        return ACLNN_ERR_PARAM_INVALID;
+    }
 
-  if (weightOut->GetDataType() != op::DataType::DT_FLOAT16) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-            "only support weightOut datatype is float16, now datatype is %s.",
+    if (weightOut->GetDataType() != op::DataType::DT_FLOAT16) {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "only support weightOut datatype is float16, now datatype is %s.",
             op::ToString(weightOut->GetDataType()).GetString());
-    return ACLNN_ERR_PARAM_INVALID;
-  }
+        return ACLNN_ERR_PARAM_INVALID;
+    }
 
-  if (weightIn->GetViewFormat() != op::Format::FORMAT_NCHW) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-            "only support weightIn format is NCHW, now format is %s.",
+    if (weightIn->GetViewFormat() != op::Format::FORMAT_NCHW) {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "only support weightIn format is NCHW, now format is %s.",
             op::ToString(weightIn->GetViewFormat()).GetString());
-    return ACLNN_ERR_PARAM_INVALID;
-  }
+        return ACLNN_ERR_PARAM_INVALID;
+    }
 
-  if (weightOut->GetViewFormat() != op::Format::FORMAT_NCHW) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-            "only support weightOut format is NCHW, now format is %s.",
+    if (weightOut->GetViewFormat() != op::Format::FORMAT_NCHW) {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "only support weightOut format is NCHW, now format is %s.",
             op::ToString(weightOut->GetViewFormat()).GetString());
-    return ACLNN_ERR_PARAM_INVALID;
-  }
+        return ACLNN_ERR_PARAM_INVALID;
+    }
 
-  if (!op::IsContiguous(weightOut)) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "only support weightOut tensor is contiguous.");
-    return ACLNN_ERR_PARAM_INVALID;
-  }
+    if (!op::IsContiguous(weightOut)) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "only support weightOut tensor is contiguous.");
+        return ACLNN_ERR_PARAM_INVALID;
+    }
 
-  return ACLNN_SUCCESS;
+    return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnCalculateConvolutionWeightSize(const aclIntArray *tensorShape, bool transposed, int64_t groups,
-                                                aclDataType dataType, uint64_t *weightTensorSize) {
-  // 空指针校验
-  OP_CHECK_NULL(tensorShape, return ACLNN_ERR_PARAM_NULLPTR);
-  if (weightTensorSize == nullptr) {
-    OP_LOGE(ACLNN_ERR_PARAM_NULLPTR,
+aclnnStatus aclnnCalculateConvolutionWeightSize(
+    const aclIntArray* tensorShape, bool transposed, int64_t groups, aclDataType dataType, uint64_t* weightTensorSize)
+{
+    // 空指针校验
+    OP_CHECK_NULL(tensorShape, return ACLNN_ERR_PARAM_NULLPTR);
+    if (weightTensorSize == nullptr) {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_NULLPTR,
             "expected a value of type number for argument weightTensorSize but instead found type null.");
-    return ACLNN_ERR_PARAM_NULLPTR;
-  }
+        return ACLNN_ERR_PARAM_NULLPTR;
+    }
 
-  // 入参校验
-  auto ret = CheckParams(tensorShape->Size(), transposed, groups);
-  CHECK_RET(ret == ACLNN_SUCCESS, ACLNN_ERR_PARAM_INVALID);
+    // 入参校验
+    auto ret = CheckParams(tensorShape->Size(), transposed, groups);
+    CHECK_RET(ret == ACLNN_SUCCESS, ACLNN_ERR_PARAM_INVALID);
 
-  if (dataType != ACL_FLOAT16) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-            "only support datatype is float16, now datatype is %d.", dataType);
-    return ACLNN_ERR_PARAM_INVALID;
-  }
+    if (dataType != ACL_FLOAT16) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "only support datatype is float16, now datatype is %d.", dataType);
+        return ACLNN_ERR_PARAM_INVALID;
+    }
 
-  // 固定写法，创建OpExecutor
-  aclOpExecutor *executor;
-  auto uniqueExecutor = CREATE_EXECUTOR();
-  CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
+    // 固定写法，创建OpExecutor
+    aclOpExecutor* executor;
+    auto uniqueExecutor = CREATE_EXECUTOR();
+    CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
-  // 计算weightsize
-  // 创建self aclTensor
-  std::vector<int64_t> weightShape = {};
-  uint64_t oriTensorSize = 1;
-  for (size_t i = 0; i < g_dimNum; i++) {
-    weightShape.push_back((*tensorShape)[i]);
-    oriTensorSize *= (*tensorShape)[i];
-  }
+    // 计算weightsize
+    // 创建self aclTensor
+    std::vector<int64_t> weightShape = {};
+    uint64_t oriTensorSize = 1;
+    for (size_t i = 0; i < g_dimNum; i++) {
+        weightShape.push_back((*tensorShape)[i]);
+        oriTensorSize *= (*tensorShape)[i];
+    }
 
-  void* dataAddr = nullptr;
-  aclTensor* weight = nullptr;
-  weight = aclCreateTensor(weightShape.data(), weightShape.size(), dataType, nullptr, 0, aclFormat::ACL_FORMAT_NCHW,
-    weightShape.data(), weightShape.size(), dataAddr);
-  CHECK_RET(weight != nullptr, ACLNN_ERR_INNER_NULLPTR);
-  // 调用transdata_l0
-  auto weightFz = l0op::TransData(weight, Format::FORMAT_FRACTAL_Z, groups, uniqueExecutor.get());
-  CHECK_RET(weightFz != nullptr, ACLNN_ERR_INNER_NULLPTR);
-  // 计算elements
-  *weightTensorSize = CalculateConvWeightSize(weightFz);
-  uniqueExecutor.ReleaseTo(&executor);
-  return ACLNN_SUCCESS;
+    void* dataAddr = nullptr;
+    aclTensor* weight = nullptr;
+    weight = aclCreateTensor(
+        weightShape.data(), weightShape.size(), dataType, nullptr, 0, aclFormat::ACL_FORMAT_NCHW, weightShape.data(),
+        weightShape.size(), dataAddr);
+    CHECK_RET(weight != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    // 调用transdata_l0
+    auto weightFz = l0op::TransData(weight, Format::FORMAT_FRACTAL_Z, groups, uniqueExecutor.get());
+    CHECK_RET(weightFz != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    // 计算elements
+    *weightTensorSize = CalculateConvWeightSize(weightFz);
+    uniqueExecutor.ReleaseTo(&executor);
+    return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnTransConvolutionWeightGetWorkspaceSize(const aclTensor *weightIn, bool transposed,
-                                                        const int64_t groups, aclTensor *weightOut,
-                                                        uint64_t *workspaceSize, aclOpExecutor **executor) {
-  L2_DFX_PHASE_1(aclnnTransConvolutionWeight, DFX_IN(weightIn, transposed, groups), DFX_OUT(weightOut));
+aclnnStatus aclnnTransConvolutionWeightGetWorkspaceSize(
+    const aclTensor* weightIn, bool transposed, const int64_t groups, aclTensor* weightOut, uint64_t* workspaceSize,
+    aclOpExecutor** executor)
+{
+    L2_DFX_PHASE_1(aclnnTransConvolutionWeight, DFX_IN(weightIn, transposed, groups), DFX_OUT(weightOut));
 
-  // 固定写法，参数检查
-  OP_CHECK_NULL(weightIn, return ACLNN_ERR_PARAM_NULLPTR);
-  OP_CHECK_NULL(weightOut, return ACLNN_ERR_PARAM_NULLPTR);
+    // 固定写法，参数检查
+    OP_CHECK_NULL(weightIn, return ACLNN_ERR_PARAM_NULLPTR);
+    OP_CHECK_NULL(weightOut, return ACLNN_ERR_PARAM_NULLPTR);
 
-  // 入参校验
-  uint64_t tensorDim = static_cast<uint64_t>(weightIn->GetViewShape().GetDimNum());
-  auto ret = CheckParams(tensorDim, transposed, groups);
-  CHECK_RET(ret == ACLNN_SUCCESS, ACLNN_ERR_PARAM_INVALID);
-  ret = CheckTensor(weightIn, weightOut);
-  CHECK_RET(ret == ACLNN_SUCCESS, ACLNN_ERR_PARAM_INVALID);
+    // 入参校验
+    uint64_t tensorDim = static_cast<uint64_t>(weightIn->GetViewShape().GetDimNum());
+    auto ret = CheckParams(tensorDim, transposed, groups);
+    CHECK_RET(ret == ACLNN_SUCCESS, ACLNN_ERR_PARAM_INVALID);
+    ret = CheckTensor(weightIn, weightOut);
+    CHECK_RET(ret == ACLNN_SUCCESS, ACLNN_ERR_PARAM_INVALID);
 
-  // 固定写法，创建OpExecutor
-  auto uniqueExecutor = CREATE_EXECUTOR();
-  CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
-  uniqueExecutor.get()->AbandonCache();
+    // 固定写法，创建OpExecutor
+    auto uniqueExecutor = CREATE_EXECUTOR();
+    CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
+    uniqueExecutor.get()->AbandonCache();
 
-  // 非连续转连续
-  auto weightInContiguous = l0op::Contiguous(weightIn, uniqueExecutor.get());
-  CHECK_RET(weightInContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-  // cast
-  auto weightInCast = l0op::Cast(weightInContiguous, weightOut->GetDataType(), uniqueExecutor.get());
-  CHECK_RET(weightInCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
-  // transdata
-  auto weightFz = l0op::TransData(weightInCast, Format::FORMAT_FRACTAL_Z, groups, uniqueExecutor.get());
-  CHECK_RET(weightFz != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    // 非连续转连续
+    auto weightInContiguous = l0op::Contiguous(weightIn, uniqueExecutor.get());
+    CHECK_RET(weightInContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    // cast
+    auto weightInCast = l0op::Cast(weightInContiguous, weightOut->GetDataType(), uniqueExecutor.get());
+    CHECK_RET(weightInCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    // transdata
+    auto weightFz = l0op::TransData(weightInCast, Format::FORMAT_FRACTAL_Z, groups, uniqueExecutor.get());
+    CHECK_RET(weightFz != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-  aclTensor *weighttemp = const_cast<aclTensor *>(weightFz);
+    aclTensor* weighttemp = const_cast<aclTensor*>(weightFz);
 
-  // set tensor
-  weighttemp->SetStorageFormat(weightFz->GetStorageFormat());
-  weightOut->SetStorageFormat(weightFz->GetStorageFormat());
-  weightOut->SetStorageShape(weighttemp->GetStorageShape());
+    // set tensor
+    weighttemp->SetStorageFormat(weightFz->GetStorageFormat());
+    weightOut->SetStorageFormat(weightFz->GetStorageFormat());
+    weightOut->SetStorageShape(weighttemp->GetStorageShape());
 
-  // set for view copy execute
-  weighttemp->SetViewShape(weightOut->GetStorageShape());
-  weightOut->SetViewShape(weightOut->GetStorageShape());
-  weightOut->SetViewFormat(op::Format::FORMAT_FRACTAL_Z);
+    // set for view copy execute
+    weighttemp->SetViewShape(weightOut->GetStorageShape());
+    weightOut->SetViewShape(weightOut->GetStorageShape());
+    weightOut->SetViewFormat(op::Format::FORMAT_FRACTAL_Z);
 
-  // viewcopy
-  auto viewCopyResult = l0op::ViewCopy(weighttemp, weightOut, uniqueExecutor.get());
-  CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    // viewcopy
+    auto viewCopyResult = l0op::ViewCopy(weighttemp, weightOut, uniqueExecutor.get());
+    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-  // set for convolution execute
-  weightOut->SetViewShape(weightFz->GetOriginalShape());
-  weightOut->SetViewFormat(op::Format::FORMAT_NCHW);
+    // set for convolution execute
+    weightOut->SetViewShape(weightFz->GetOriginalShape());
+    weightOut->SetViewFormat(op::Format::FORMAT_NCHW);
 
-  // 固定写法，获取计算过程中需要使用的workspace大小
-  *workspaceSize = uniqueExecutor->GetWorkspaceSize();
-  uniqueExecutor.ReleaseTo(executor);
-  return ACLNN_SUCCESS;
+    // 固定写法，获取计算过程中需要使用的workspace大小
+    *workspaceSize = uniqueExecutor->GetWorkspaceSize();
+    uniqueExecutor.ReleaseTo(executor);
+    return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnTransConvolutionWeight(void *workspace, uint64_t workspaceSize,
-                             aclOpExecutor *executor, const aclrtStream stream) {
-  // 固定写法，调用框架能力，完成计算
-  L2_DFX_PHASE_2(aclnnTransConvolutionWeight);
-  return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
+aclnnStatus aclnnTransConvolutionWeight(
+    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+{
+    // 固定写法，调用框架能力，完成计算
+    L2_DFX_PHASE_2(aclnnTransConvolutionWeight);
+    return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
 #ifdef __cplusplus
 }
 #endif
-

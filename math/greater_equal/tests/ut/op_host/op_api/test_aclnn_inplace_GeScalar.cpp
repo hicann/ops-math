@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 #include <vector>
 #include <array>
@@ -17,271 +18,285 @@
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/op_api_ut.h"
 
-
 using namespace std;
 
 class inplaceGeScalar_test : public testing::Test {
- protected:
-  static void SetUpTestCase() { cout << "inplaceGeScalar_test SetUp" << endl; }
+protected:
+    static void SetUpTestCase()
+    {
+        cout << "inplaceGeScalar_test SetUp" << endl;
+    }
 
-  static void TearDownTestCase() { cout << "inplaceGeScalar_test TearDown" << endl; }
+    static void TearDownTestCase()
+    {
+        cout << "inplaceGeScalar_test TearDown" << endl;
+    }
 };
 
-TEST_F(inplaceGeScalar_test, case_norm_float32) {
-  auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND)
-                         .ValueRange(-1, 1);
-  auto scalar_desc = ScalarDesc(0.5f);
+TEST_F(inplaceGeScalar_test, case_norm_float32)
+{
+    auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
+    auto scalar_desc = ScalarDesc(0.5f);
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-  // SAMPLE: precision simulate
-  ut.TestPrecision();
+    // SAMPLE: precision simulate
+    ut.TestPrecision();
 }
 
-TEST_F(inplaceGeScalar_test, case_norm_float16) {
-  auto tensor_desc = TensorDesc({1, 16}, ACL_FLOAT16, ACL_FORMAT_NCHW);
-  auto scalar_desc = ScalarDesc(2.0f); // 当前scalar不支持float16
+TEST_F(inplaceGeScalar_test, case_norm_float16)
+{
+    auto tensor_desc = TensorDesc({1, 16}, ACL_FLOAT16, ACL_FORMAT_NCHW);
+    auto scalar_desc = ScalarDesc(2.0f); // 当前scalar不支持float16
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-  // SAMPLE: precision simulate
-  ut.TestPrecision();
+    // SAMPLE: precision simulate
+    ut.TestPrecision();
 }
 
-TEST_F(inplaceGeScalar_test, case_norm_int64) {
-  auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_INT64, ACL_FORMAT_NHWC).ValueRange(-1, 1);
-  auto scalar_desc = ScalarDesc(static_cast<int64_t>(0));
+TEST_F(inplaceGeScalar_test, case_norm_int64)
+{
+    auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_INT64, ACL_FORMAT_NHWC).ValueRange(-1, 1);
+    auto scalar_desc = ScalarDesc(static_cast<int64_t>(0));
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-  // SAMPLE: precision simulate
-  ut.TestPrecision();
+    // SAMPLE: precision simulate
+    ut.TestPrecision();
 }
 
-TEST_F(inplaceGeScalar_test, case_norm_int32) {
-  auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_INT32, ACL_FORMAT_HWCN)
+TEST_F(inplaceGeScalar_test, case_norm_int32)
+{
+    auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_INT32, ACL_FORMAT_HWCN)
                            .Value(vector<int32_t>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
-  auto scalar_desc = ScalarDesc(static_cast<int32_t>(5));
+    auto scalar_desc = ScalarDesc(static_cast<int32_t>(5));
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-  // SAMPLE: precision simulate
-  ut.TestPrecision();
+    // SAMPLE: precision simulate
+    ut.TestPrecision();
 }
 
-TEST_F(inplaceGeScalar_test, case_norm_int8) {
-  auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_INT8, ACL_FORMAT_ND)
+TEST_F(inplaceGeScalar_test, case_norm_int8)
+{
+    auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_INT8, ACL_FORMAT_ND)
                            .Value(vector<int8_t>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
-  int8_t val = 5;
-  auto scalar_desc = ScalarDesc(val);
+    int8_t val = 5;
+    auto scalar_desc = ScalarDesc(val);
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-  // SAMPLE: precision simulate
-  ut.TestPrecision();
+    // SAMPLE: precision simulate
+    ut.TestPrecision();
 }
 
-TEST_F(inplaceGeScalar_test, case_norm_uint8) {
-  auto tensor_desc = TensorDesc({1, 16, 1, 1, 1}, ACL_UINT8, ACL_FORMAT_NDHWC)
-                         .ValueRange(0, 100);
-  uint8_t val = 10;
-  auto scalar_desc = ScalarDesc(val);
+TEST_F(inplaceGeScalar_test, case_norm_uint8)
+{
+    auto tensor_desc = TensorDesc({1, 16, 1, 1, 1}, ACL_UINT8, ACL_FORMAT_NDHWC).ValueRange(0, 100);
+    uint8_t val = 10;
+    auto scalar_desc = ScalarDesc(val);
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-  // SAMPLE: precision simulate
-  ut.TestPrecision();
+    // SAMPLE: precision simulate
+    ut.TestPrecision();
 }
 
-TEST_F(inplaceGeScalar_test, case_norm_int16) {
-  auto tensor_desc = TensorDesc({1, 16, 1, 1, 1}, ACL_INT16, ACL_FORMAT_NCDHW)
-                         .ValueRange(0, 100);
-  int16_t val = 10;
-  auto scalar_desc = ScalarDesc(val);
+TEST_F(inplaceGeScalar_test, case_norm_int16)
+{
+    auto tensor_desc = TensorDesc({1, 16, 1, 1, 1}, ACL_INT16, ACL_FORMAT_NCDHW).ValueRange(0, 100);
+    int16_t val = 10;
+    auto scalar_desc = ScalarDesc(val);
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-  // SAMPLE: precision simulate
-  ut.TestPrecision();
+    // SAMPLE: precision simulate
+    ut.TestPrecision();
 }
 
-TEST_F(inplaceGeScalar_test, case_norm_double) {
-  auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_DOUBLE, ACL_FORMAT_ND)
-                         .ValueRange(0, 100);
-  auto scalar_desc = ScalarDesc(10.0f); // 当前不支持double
+TEST_F(inplaceGeScalar_test, case_norm_double)
+{
+    auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(0, 100);
+    auto scalar_desc = ScalarDesc(10.0f); // 当前不支持double
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-  // SAMPLE: precision simulate
-  ut.TestPrecision();
+    // SAMPLE: precision simulate
+    ut.TestPrecision();
 }
 
-TEST_F(inplaceGeScalar_test, case_nullptr_self) {
-  auto tensor_desc = nullptr;
-  auto scalar_desc = ScalarDesc(0.5f);
+TEST_F(inplaceGeScalar_test, case_nullptr_self)
+{
+    auto tensor_desc = nullptr;
+    auto scalar_desc = ScalarDesc(0.5f);
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 }
 
-TEST_F(inplaceGeScalar_test, case_nullptr_other) {
-  auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND)
-                         .ValueRange(-1, 1);
-  auto scalar_desc = nullptr;
+TEST_F(inplaceGeScalar_test, case_nullptr_other)
+{
+    auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
+    auto scalar_desc = nullptr;
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 }
 
-TEST_F(inplaceGeScalar_test, case_dtype_invalid_self) {
-  auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_COMPLEX64, ACL_FORMAT_ND);
-  auto scalar_desc = ScalarDesc(8.0f);
+TEST_F(inplaceGeScalar_test, case_dtype_invalid_self)
+{
+    auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_COMPLEX64, ACL_FORMAT_ND);
+    auto scalar_desc = ScalarDesc(8.0f);
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(inplaceGeScalar_test, case_promote_invalid) {
-  auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_UINT16, ACL_FORMAT_ND)
-                                .Value(vector<short>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
-  auto scalar_desc = ScalarDesc(8.0f);
+TEST_F(inplaceGeScalar_test, case_promote_invalid)
+{
+    auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_UINT16, ACL_FORMAT_ND)
+                           .Value(vector<short>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
+    auto scalar_desc = ScalarDesc(8.0f);
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(inplaceGeScalar_test, case_format_internal) {
-  auto tensor_desc = TensorDesc({1, 16, 1, 1, 1}, ACL_FLOAT, ACL_FORMAT_NC1HWC0)
-                         .ValueRange(-1, 1);
-  auto scalar_desc = ScalarDesc(8.0f);
+TEST_F(inplaceGeScalar_test, case_format_internal)
+{
+    auto tensor_desc = TensorDesc({1, 16, 1, 1, 1}, ACL_FLOAT, ACL_FORMAT_NC1HWC0).ValueRange(-1, 1);
+    auto scalar_desc = ScalarDesc(8.0f);
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(inplaceGeScalar_test, case_empty_tensor) {
-  auto tensor_desc = TensorDesc({1, 16, 0, 1}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto scalar_desc = ScalarDesc(8.0f);
+TEST_F(inplaceGeScalar_test, case_empty_tensor)
+{
+    auto tensor_desc = TensorDesc({1, 16, 0, 1}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto scalar_desc = ScalarDesc(8.0f);
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-  // SAMPLE: precision simulate
-  ut.TestPrecision();
-
+    // SAMPLE: precision simulate
+    ut.TestPrecision();
 }
 
-TEST_F(inplaceGeScalar_test, case_dim_invalid) {
-  auto tensor_desc = TensorDesc({1, 16, 1, 1, 1, 1, 1, 1, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND);
-  auto scalar_desc = ScalarDesc(8.0f);
+TEST_F(inplaceGeScalar_test, case_dim_invalid)
+{
+    auto tensor_desc = TensorDesc({1, 16, 1, 1, 1, 1, 1, 1, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto scalar_desc = ScalarDesc(8.0f);
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(inplaceGeScalar_test, case_format_abnormal) {
-  auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_FLOAT, ACL_FORMAT_UNDEFINED)
-                         .ValueRange(-1, 1);
-  auto scalar_desc = ScalarDesc(0.5f);
+TEST_F(inplaceGeScalar_test, case_format_abnormal)
+{
+    auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_FLOAT, ACL_FORMAT_UNDEFINED).ValueRange(-1, 1);
+    auto scalar_desc = ScalarDesc(0.5f);
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(inplaceGeScalar_test, case_dtype_abnormal) {
-  auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_DT_UNDEFINED, ACL_FORMAT_NHWC);
-  auto scalar_desc = ScalarDesc(static_cast<int32_t>(5));
+TEST_F(inplaceGeScalar_test, case_dtype_abnormal)
+{
+    auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_DT_UNDEFINED, ACL_FORMAT_NHWC);
+    auto scalar_desc = ScalarDesc(static_cast<int32_t>(5));
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  // SAMPLE: only test GetWorkspaceSize
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(inplaceGeScalar_test, case_strided) {
-  auto tensor_desc = TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 2}, 0, {4, 2});
-  auto scalar_desc = ScalarDesc(0.0f);
+TEST_F(inplaceGeScalar_test, case_strided)
+{
+    auto tensor_desc = TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 2}, 0, {4, 2});
+    auto scalar_desc = ScalarDesc(0.0f);
 
-  auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceGeScalar, INPUT(tensor_desc, scalar_desc), OUTPUT());
 
-  uint64_t workspaceSize = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-  EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-  ut.TestPrecision();
+    ut.TestPrecision();
 }

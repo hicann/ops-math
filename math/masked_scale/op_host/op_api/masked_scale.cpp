@@ -4,8 +4,9 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+ * the software repository for the full text of the License.
  */
 #include "masked_scale.h"
 #include "opdev/op_dfx.h"
@@ -18,14 +19,15 @@ namespace l0op {
 
 OP_TYPE_REGISTER(MaskedScale);
 
-const aclTensor *MaskedScale(const aclTensor* self, const aclTensor* mask, float scale, aclOpExecutor *executor) {
-  L0_DFX(MaskedScale, self, mask);
+const aclTensor* MaskedScale(const aclTensor* self, const aclTensor* mask, float scale, aclOpExecutor* executor)
+{
+    L0_DFX(MaskedScale, self, mask);
 
-  auto out = executor->AllocTensor(self->GetViewShape(), self->GetDataType());
-  auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(MaskedScale, OP_INPUT(self, mask), OP_OUTPUT(out), OP_ATTR(scale));
+    auto out = executor->AllocTensor(self->GetViewShape(), self->GetDataType());
+    auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(MaskedScale, OP_INPUT(self, mask), OP_OUTPUT(out), OP_ATTR(scale));
 
-  OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
-                                       "MaskedScale ADD_TO_LAUNCHER_LIST_AICORE failed.");
-  return out;
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
+        retAicore != ACLNN_SUCCESS, return nullptr, "MaskedScale ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    return out;
 }
 } // namespace l0op
