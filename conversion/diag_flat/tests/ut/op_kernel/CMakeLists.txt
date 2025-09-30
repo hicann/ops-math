@@ -15,8 +15,8 @@ if (UT_TEST_ALL OR OP_KERNEL_UT)
     #         ${CANN_ROOT}/ops/built-in/op_tiling/runtime/elewise_tiling.cc
     #         )
     # 算子自己的tiling文件路径
-    set(feeds_repeat_tiling_files
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/feeds_repeat_tiling.cpp
+    set(diag_flat_tiling_files
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/diag_flat_tiling.cpp
         # ${elewise_common_tiling_files}
         )
     # 使用AddOpTestCase
@@ -24,5 +24,5 @@ if (UT_TEST_ALL OR OP_KERNEL_UT)
     # param2：soc版本，多个以分号分隔，例如："ascend910_9599;AscendB1"
     # param3：自定义编译选项，一般填写测试的一种典型数据类型组合，不需要则传入空字符串，例如："-DDTYPE_X=float"，多个使用空格分隔，例如："-DDTYPE_X=float -DDTYPE_Y=float"
     # param4：该算子依赖的所有tiling源码文件
-    AddOpTestCase(feeds_repeat "ascend910B1" "" "${feeds_repeat_tiling_files}")
+    AddOpTestCase(diag_flat "ascend910B1" "-DDTYPE_X=float" "${diag_flat_tiling_files}")
 endif()
