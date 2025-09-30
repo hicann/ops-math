@@ -5,8 +5,8 @@
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
- * the software repository for the full text of the License.
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #ifndef OPS_MATH_DEV_TESTS_UT_OP_API_STUB_OPDEV_PLATFORM_H
@@ -17,7 +17,8 @@
 
 namespace op {
 
-enum class SocVersion {
+enum class SocVersion
+{
     ASCEND910 = 0,
     ASCEND910B,
     ASCEND910_93,
@@ -31,9 +32,14 @@ enum class SocVersion {
     RESERVED_VERSION = 99999
 };
 
-enum class SocSpec { INST_MMAD = 0, RESERVED_SPEC = 99999 };
+enum class SocSpec
+{
+    INST_MMAD = 0,
+    RESERVED_SPEC = 99999
+};
 
-enum class SocSpecAbility {
+enum class SocSpecAbility
+{
     INST_MMAD_F162F16 = 0,
     INST_MMAD_F162F32,
     INST_MMAD_H322F32,
@@ -60,7 +66,7 @@ class PlatformInfo {
 public:
     PlatformInfo() {};
 
-    PlatformInfo(int32_t deviceId) : deviceId_(deviceId){};
+    PlatformInfo(int32_t deviceId) : deviceId_(deviceId) {};
 
     SocVersion GetSocVersion() const;
 
@@ -80,22 +86,22 @@ public:
 
     bool GetFftsPlusMode() const;
 
-    fe::PlatFormInfos *GetPlatformInfos() const;
+    fe::PlatFormInfos* GetPlatformInfos() const;
 
 private:
-    PlatformInfo &operator=(const PlatformInfo &other) = delete;
+    PlatformInfo& operator=(const PlatformInfo& other) = delete;
 
-    PlatformInfo &operator=(const PlatformInfo &&other) = delete;
+    PlatformInfo& operator=(const PlatformInfo&& other) = delete;
 
-    PlatformInfo(const PlatformInfo &other) = delete;
+    PlatformInfo(const PlatformInfo& other) = delete;
 
-    PlatformInfo(const PlatformInfo &&other) = delete;
+    PlatformInfo(const PlatformInfo&& other) = delete;
 
-    void SetPlatformImpl(PlatformInfoImpl *impl);
+    void SetPlatformImpl(PlatformInfoImpl* impl);
 
     bool valid_ = false;
     int32_t deviceId_{-1};
-    PlatformInfoImpl *impl_ = nullptr;
+    PlatformInfoImpl* impl_ = nullptr;
 
     ~PlatformInfo();
 };

@@ -5,8 +5,8 @@
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
- * the software repository for the full text of the License.
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #ifndef OPS_MATH_DEV_TESTS_UT_COMMON_TILING_CASE_EXECUTOR_H
@@ -24,11 +24,10 @@ struct TilingInfo {
     size_t blockNum = 0;
 };
 
-void ExecuteTestCase(const gert::TilingContextPara& tilingContextPara, 
-                     ge::graphStatus                expectResult = ge::GRAPH_FAILED,
-                     uint64_t                       expectTilingKey = 0, 
-                     const string&                  expectTilingData = "",
-                     const std::vector<size_t>&     expectWorkspaces = {});
+void ExecuteTestCase(
+    const gert::TilingContextPara& tilingContextPara, ge::graphStatus expectResult = ge::GRAPH_FAILED,
+    uint64_t expectTilingKey = 0, const string& expectTilingData = "",
+    const std::vector<size_t>& expectWorkspaces = {});
 
 bool ExecuteTiling(const gert::TilingContextPara& tilingContextPara, TilingInfo& tilingInfo);
 

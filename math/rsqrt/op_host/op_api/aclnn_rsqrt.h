@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #ifndef OP_API_INC_RSQRT_H_
@@ -29,8 +30,8 @@ extern "C" {
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码
  */
-ACLNN_API aclnnStatus aclnnRsqrtGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
-                                                 aclOpExecutor** executor);
+ACLNN_API aclnnStatus
+aclnnRsqrtGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
 /**
  * @brief: aclnnRsqrt的第二段接口，用于执行计算
  *
@@ -54,14 +55,14 @@ ACLNN_API aclnnStatus aclnnRsqrt(void* workspace, uint64_t workspaceSize, aclOpE
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码
  */
-ACLNN_API aclnnStatus aclnnInplaceRsqrtGetWorkspaceSize(aclTensor* selfRef, uint64_t* workspaceSize,
-                                                        aclOpExecutor** executor);
+ACLNN_API aclnnStatus
+aclnnInplaceRsqrtGetWorkspaceSize(aclTensor* selfRef, uint64_t* workspaceSize, aclOpExecutor** executor);
 
-ACLNN_API aclnnStatus aclnnInplaceRsqrt(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
-                                        aclrtStream stream);
+ACLNN_API aclnnStatus
+aclnnInplaceRsqrt(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // OP_API_INC_RSQRT_H_
+#endif // OP_API_INC_RSQRT_H_

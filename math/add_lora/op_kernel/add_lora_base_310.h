@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -22,8 +23,7 @@
 namespace AddLora310 {
 using namespace AscendC;
 
-class AddLoraKernelBase310
-{
+class AddLoraKernelBase310 {
 public:
     __aicore__ inline AddLoraKernelBase310(){};
     __aicore__ inline void Init(
@@ -123,8 +123,7 @@ protected:
     __aicore__ inline uint32_t CeilCubeBlock(uint32_t len);
 };
 
-class AddLoraKernel310 : public AddLoraKernelBase310
-{
+class AddLoraKernel310 : public AddLoraKernelBase310 {
 public:
     __aicore__ inline AddLoraKernel310()
     {}
@@ -141,8 +140,7 @@ protected:
         uint32_t batchToProcess, uint32_t H2ToProcess, uint32_t batchOffset, uint32_t H2Offset, uint32_t pingPongFlag);
 };
 
-class AddLoraSparse310 : public AddLoraKernelBase310
-{
+class AddLoraSparse310 : public AddLoraKernelBase310 {
 public:
     __aicore__ inline AddLoraSparse310()
     {}
@@ -166,8 +164,7 @@ protected:
         uint32_t batchToProcess, uint32_t H2ToProcess, uint32_t batchOffset, uint32_t H2Offset, uint32_t pingPongFlag);
 };
 
-class BgmvKernel310 : public AddLoraKernelBase310
-{
+class BgmvKernel310 : public AddLoraKernelBase310 {
 public:
     __aicore__ inline BgmvKernel310(){};
     __aicore__ inline void Process();

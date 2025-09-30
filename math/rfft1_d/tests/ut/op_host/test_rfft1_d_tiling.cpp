@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -47,11 +48,16 @@ TEST_F(Rfft1DTiling, ascend910B1_test_tiling__001)
         {
             {{{16, 64, 513, 2}, {16, 64, 513, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
-        {gert::TilingContextPara::OpAttr("n", Ops::Math::AnyValue::CreateFrom<int64_t>(1024)),
-         gert::TilingContextPara::OpAttr("norm", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),},
-         &compileInfo);
+        {
+            gert::TilingContextPara::OpAttr("n", Ops::Math::AnyValue::CreateFrom<int64_t>(1024)),
+            gert::TilingContextPara::OpAttr("norm", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 0;
-    string expectTilingData = "4294968320 274877908992 4294967328 274877906945 4398046513152 137438953504 2203318288640 68719477762 66383014526976 1593192348709248 4296451072 4402342535168 4613555085123584 70368744177664 17408 4398046511104 0 4096 ";
+    string expectTilingData =
+        "4294968320 274877908992 4294967328 274877906945 4398046513152 137438953504 2203318288640 68719477762 "
+        "66383014526976 1593192348709248 4296451072 4402342535168 4613555085123584 70368744177664 17408 4398046511104 "
+        "0 4096 ";
     std::vector<size_t> expectWorkspaces = {2164260864};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

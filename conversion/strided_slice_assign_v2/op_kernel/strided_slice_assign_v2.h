@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -24,14 +25,16 @@ constexpr uint32_t UB_SIZE = 195584; // (192 -1) * 1024
 constexpr uint32_t MAX_DIM_NUM = 8;
 constexpr uint64_t DILATION = 2;
 
-template <typename T> class KernelStridedSliceAssignV2 {
+template <typename T>
+class KernelStridedSliceAssignV2 {
 public:
-    __aicore__ inline KernelStridedSliceAssignV2(TPipe *pipe)
+    __aicore__ inline KernelStridedSliceAssignV2(TPipe* pipe)
     {
         Ppipe = pipe;
     }
-    __aicore__ inline void Init(GM_ADDR var, GM_ADDR input_value, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
-        GM_ADDR axes, GM_ADDR var_out, const StridedSliceAssignV2TilingData *tilingData)
+    __aicore__ inline void Init(
+        GM_ADDR var, GM_ADDR input_value, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR axes, GM_ADDR var_out,
+        const StridedSliceAssignV2TilingData* tilingData)
     {
         usedCoreNum = GetBlockNum();
         ASSERT(usedCoreNum != 0 && "block dim can not be zero!");
@@ -46,11 +49,11 @@ public:
         inputCumShape = tilingData->inputCumShape;
 
         if constexpr (sizeof(T) == sizeof(int64_t)) {
-            inputValueGmInt32.SetGlobalBuffer((__gm__ int32_t *)input_value);
-            varOutGmInt32.SetGlobalBuffer((__gm__ int32_t *)var_out);
+            inputValueGmInt32.SetGlobalBuffer((__gm__ int32_t*)input_value);
+            varOutGmInt32.SetGlobalBuffer((__gm__ int32_t*)var_out);
         } else {
-            inputValueGm.SetGlobalBuffer((__gm__ T *)input_value);
-            varOutGm.SetGlobalBuffer((__gm__ T *)var_out);
+            inputValueGm.SetGlobalBuffer((__gm__ T*)input_value);
+            varOutGm.SetGlobalBuffer((__gm__ T*)var_out);
         }
 
         Ppipe->InitBuffer(valueBuf, UB_SIZE);
@@ -84,7 +87,8 @@ public:
                 copyParams.blockLen = copyNum * sizeof(T);
                 if constexpr (sizeof(T) == sizeof(int64_t)) {
                     LocalTensor<int32_t> valueLocal = valueBuf.Get<int32_t>();
-                    DataCopyPad(valueLocal, inputValueGmInt32[(inputOffset + j * ubFactor) * DILATION], copyParams,
+                    DataCopyPad(
+                        valueLocal, inputValueGmInt32[(inputOffset + j * ubFactor) * DILATION], copyParams,
                         padParamsInt32);
                     event_t eventCopyOut = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
                     SetFlag<HardEvent::MTE2_MTE3>(eventCopyOut);
@@ -140,7 +144,7 @@ private:
     }
 
 protected:
-    TPipe *Ppipe = nullptr;
+    TPipe* Ppipe = nullptr;
 
     GlobalTensor<T> inputValueGm;
     GlobalTensor<T> varOutGm;
@@ -151,12 +155,12 @@ protected:
 
     int64_t usedCoreNum;
     int64_t dimNum;
-    const int64_t *varShape;
-    const int64_t *inputShape;
-    const int64_t *beginList;
-    const int64_t *stridesList;
-    const int64_t *varCumShape;
-    const int64_t *inputCumShape;
+    const int64_t* varShape;
+    const int64_t* inputShape;
+    const int64_t* beginList;
+    const int64_t* stridesList;
+    const int64_t* varCumShape;
+    const int64_t* inputCumShape;
 
     int64_t inputIdx[MAX_DIM_NUM];
 

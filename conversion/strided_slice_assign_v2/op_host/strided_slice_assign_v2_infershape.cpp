@@ -4,7 +4,8 @@
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -20,7 +21,7 @@
 using namespace ge;
 
 namespace ops {
-static graphStatus InferDataType4SameAsInput(gert::InferDataTypeContext *context)
+static graphStatus InferDataType4SameAsInput(gert::InferDataTypeContext* context)
 {
     OP_LOGD(context->GetNodeName(), "InferDataType4SameAsInput enter");
     auto input_x_dtype = context->GetInputDataType(0);
@@ -29,7 +30,7 @@ static graphStatus InferDataType4SameAsInput(gert::InferDataTypeContext *context
     return GRAPH_SUCCESS;
 }
 
-static graphStatus InferShape4Elewise(gert::InferShapeContext *context)
+static graphStatus InferShape4Elewise(gert::InferShapeContext* context)
 {
     auto in_shape = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, in_shape);
@@ -48,5 +49,5 @@ static graphStatus InferShape4Elewise(gert::InferShapeContext *context)
 IMPL_OP_INFERSHAPE(StridedSliceAssignV2)
     .InferShape(InferShape4Elewise)
     .InferDataType(InferDataType4SameAsInput)
-    .InputsDataDependency({ 2, 3, 4, 5 });
+    .InputsDataDependency({2, 3, 4, 5});
 } // namespace ops
