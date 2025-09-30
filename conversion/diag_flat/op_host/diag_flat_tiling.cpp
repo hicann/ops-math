@@ -17,7 +17,8 @@
 #include "../../../math/diag_v2/op_host/diag_v2_tiling.h"
 #include "util/math_util.h"
 #include "log/log.h"
-#include "platform/platform_ascendc.h"
+#include "tiling/platform/platform_ascendc.h"
+#include "platform/platform_infos_def.h"
 
 namespace optiling {
 

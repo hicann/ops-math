@@ -36,11 +36,13 @@ TILING_DATA_FIELD_DEF(int64_t, row_left);        // 行数除以核数的余量
 END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(FeedsRepeat, FeedsRepeatTilingData)
-} // namespace optiling
 
 struct FeedsRepeatCompileInfo {
     uint64_t total_core_num = 0;
     uint64_t ub_size_platform = 0;
 };
+} // namespace optiling
+
+
 
 #endif // OPS_BUILD_IN_OP_TILING_RUNTIME_FEEDS_REPEAT_TILING_H
