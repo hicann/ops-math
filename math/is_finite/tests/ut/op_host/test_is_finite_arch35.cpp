@@ -43,7 +43,7 @@ protected:
     }
 };
 
-TEST_F(is_finite_test, ascend910D1_test_case_half_001)
+TEST_F(is_finite_test, ascend9101_test_case_half_001)
 {
     size_t xByteSize = 64 * sizeof(half);
     size_t yByteSize = 64 * sizeof(bool);
@@ -96,7 +96,7 @@ TEST_F(is_finite_test, ascend910D1_test_case_half_001)
     ASSERT_EQ(res, 0);
 }
 
-TEST_F(is_finite_test, ascend910D1_test_case_bfloat_002)
+TEST_F(is_finite_test, ascend9101_test_case_bfloat_002)
 {
     size_t xByteSize = 64 * sizeof(half);
     size_t yByteSize = 64 * sizeof(bool);
@@ -148,7 +148,7 @@ TEST_F(is_finite_test, ascend910D1_test_case_bfloat_002)
     ASSERT_EQ(res, 0);
 }
 
-TEST_F(is_finite_test, ascend910D1_test_case_float_003)
+TEST_F(is_finite_test, ascend9101_test_case_float_003)
 {
     size_t xByteSize = 64 * sizeof(float);
     size_t yByteSize = 64 * sizeof(bool);
