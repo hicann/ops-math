@@ -13,7 +13,7 @@
 
     参考《[CANN 软件安装指南](https://www.hiascend.com/document/redirect/CannCommercialInstSoftware)》，按要求完成NPU驱动和固件、`Ascend-cann-toolkit_${cann_version}_linux-${arch}.run`软件包的获取和安装。
 
-2. 安装`cann-opbase_${cann_version}_linux-${arch}.run`包。
+2. 安装`cann-opbase_${cann_version}_linux-${arch}.run`包，详细步骤参见[opbase开源项目](https://gitcode.com/cann/opbase)。
 
     ```bash
     # 1.opbase项目源码下载，以master分支为例
@@ -36,7 +36,7 @@
 - Gawk
 - googletest（仅执行UT时依赖，建议版本 [release-1.11.0](https://github.com/google/googletest/releases/tag/release-1.11.0)）
 
-上述依赖包可通过项目根目录下install\_deps.sh安装，命令如下：
+上述依赖包可通过项目根目录install\_deps.sh安装，命令如下，若遇到不支持系统，请参考该文件自行适配。
 ```bash
 bash install_deps.sh
 ```
