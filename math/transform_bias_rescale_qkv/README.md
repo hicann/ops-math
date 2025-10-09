@@ -16,19 +16,26 @@
   逐个元素计算过程见公式：
 
   $$
-   \left\{
-	\begin{array}{ll}
-		q_o=(q_i+q_{bias})/\sqrt{dim\_per\_head} \\
-		k_o=k_i+k_{bias} \\
-        v_o=v_i+v_{bias} 
-	\end{array}\right.
+
+ 		q_o=(q_i+q_{bias})/\sqrt{dim\_per\_head}\\
+
+  $$
+  $$
+  
+		k_o=k_i+k_{bias}\\
+
+  $$
+  $$
+  
+    v_o=v_i+v_{bias} 
+
   $$
 
   公式中：
   - dim_per_head为每个注意力头的维度。
-  - $q_o$、$k_o$、$v_o$分别为查询（Query）、键（Key）、值（Value）向量的输出元素。
-  - $q_i$、$k_i$、$v_i$分别为查询（Query）、键（Key）、值（Value）向量的输入元素。
-  - $q_{bias}$、$k_{bias}$、$v_{bias}$分别为查询（Query）、键（Key）、值（Value）向量的输入元素偏移。
+  - q<sub>o</sub>、k<sub>o</sub>、v<sub>o</sub>分别为查询（Query）、键（Key）、值（Value）向量的输出元素。
+  - q<sub>i</sub>、k<sub>i</sub>、v<sub>i</sub>分别为查询（Query）、键（Key）、值（Value）向量的输入元素。
+  - q<sub>bias</sub>、k<sub>bias</sub>、v<sub>bias</sub>分别为查询（Query）、键（Key）、值（Value）向量的输入元素偏移。
 
 ## 参数说明
 
@@ -51,14 +58,14 @@
     <tr>
       <td>qkv</td>
       <td>输入</td>
-      <td>公式中的输入$q_i$、$k_i$、$v_i$。</td>
+      <td>公式中的输入q<sub>i</sub>、k<sub>i</sub>、v<sub>i</sub>。</td>
       <td>BFLOAT16、FLOAT32、FLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>qkvBias</td>
       <td>输入</td>
-      <td>公式中的输入$q_{bias}$、$k_{bias}$、$v_{bias}$。</td>
+      <td>公式中的输入q<sub>bias</sub>、k<sub>bias</sub>、v<sub>bias</sub>。</td>
       <td>BFLOAT16、FLOAT32、FLOAT16</td>
       <td>ND</td>
     </tr>
@@ -72,21 +79,21 @@
     <tr>
       <td>qOut</td>
       <td>输出</td>
-      <td>公式中的$q_o$。</td>
+      <td>公式中的q<sub>o</sub>。</td>
       <td>BFLOAT16、FLOAT32、FLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>kOut</td>
       <td>输出</td>
-      <td>公式中的$k_o$。</td>
+      <td>公式中的k<sub>o</sub>。</td>
       <td>BFLOAT16、FLOAT32、FLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>vOut</td>
       <td>输出</td>
-      <td>公式中的$v_o$。</td>
+      <td>公式中的v<sub>o</sub>。</td>
       <td>BFLOAT16、FLOAT32、FLOAT16</td>
       <td>ND</td>
     </tr>
