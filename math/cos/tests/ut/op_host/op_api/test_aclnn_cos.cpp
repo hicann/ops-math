@@ -44,7 +44,7 @@ TEST_F(l2_cos_test, cos_dtype_all)
                                                ACL_INT64,  ACL_BOOL,      ACL_FLOAT,     ACL_FLOAT16,
                                                ACL_DOUBLE, ACL_COMPLEX64, ACL_COMPLEX128};
     vector<aclDataType> output_vaild_dtype_list{ACL_FLOAT, ACL_FLOAT16, ACL_DOUBLE, ACL_COMPLEX64, ACL_COMPLEX128};
-    vector<aclDataType> ascend910_invaild_dtype_list{ACL_BF16};
+    vector<aclDataType> ascend910_invalid_dtype_list{ACL_BF16};
     for (auto dtype1 : input_vaild_dtype_list) {
         auto self_tensor_desc = TensorDesc({3, 5}, dtype1, ACL_FORMAT_ND).ValueRange(-20, 20);
         for (auto dtype2 : output_vaild_dtype_list) {
@@ -62,7 +62,7 @@ TEST_F(l2_cos_test, cos_dtype_all)
         }
     }
 
-    for (auto dtype : ascend910_invaild_dtype_list) {
+    for (auto dtype : ascend910_invalid_dtype_list) {
         auto self_tensor_desc = TensorDesc({3, 5}, dtype, ACL_FORMAT_ND).ValueRange(-20, 20);
         auto out_tensor_desc = TensorDesc({3, 5}, dtype, ACL_FORMAT_ND).Precision(0.001, 0.001);
 

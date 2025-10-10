@@ -39,7 +39,7 @@ TEST_F(l2_atan_test, ascend910B2_atan_dtype_all)
     vector<aclDataType> input_vaild_dtype_list{ACL_INT8, ACL_INT32, ACL_UINT8,   ACL_INT16,  ACL_INT64,
                                                ACL_BOOL, ACL_FLOAT, ACL_FLOAT16, ACL_DOUBLE, ACL_BF16};
     vector<aclDataType> output_vaild_dtype_list{ACL_FLOAT, ACL_FLOAT16, ACL_DOUBLE};
-    vector<aclDataType> invaild_dtype_list{ACL_COMPLEX64, ACL_COMPLEX128};
+    vector<aclDataType> invalid_dtype_list{ACL_COMPLEX64, ACL_COMPLEX128};
     for (auto dtype1 : input_vaild_dtype_list) {
         auto self_tensor_desc = TensorDesc({3, 5}, dtype1, ACL_FORMAT_ND).ValueRange(-20, 20);
         for (auto dtype2 : output_vaild_dtype_list) {
@@ -52,7 +52,7 @@ TEST_F(l2_atan_test, ascend910B2_atan_dtype_all)
             // ut.TestPrecision();
         }
     }
-    for (auto dtype : invaild_dtype_list) {
+    for (auto dtype : invalid_dtype_list) {
         auto self_tensor_desc = TensorDesc({3, 5}, dtype, ACL_FORMAT_ND).ValueRange(-20, 20);
         auto out_tensor_desc = TensorDesc({3, 5}, dtype, ACL_FORMAT_ND);
 
