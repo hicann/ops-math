@@ -22,7 +22,7 @@ SUPPORTED_LONG_OPTS=(
   "help" "ops=" "soc=" "vendor_name=" "debug" "cov" "noexec" "aicpu" "opkernel" "jit"
   "pkg" "disable_asan" "valgrind" "make_clean"
   "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test"
-  "run_example" "genop=" "genop_aicpu="
+  "run_example" "genop=" "genop_aicpu=" "experimental"
 )
 
 in_array() {
@@ -130,10 +130,12 @@ usage() {
         echo "    -j[n]                  Compile thread nums, default is 8, eg: -j8"
         echo "    -O[n]                  Compile optimization options, support [O0 O1 O2 O3], eg:-O3"
         echo "    --debug                Build with debug mode"
+        echo "    --experimental         Build experimental version"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --pkg --soc=ascend910b --vendor_name=customize -j16 -O3"
         echo "    bash build.sh --pkg --ops=add,sub --debug"
+        echo "    bash build.sh --pkg --experimental --soc=ascend910b"
         return
         ;;
       opkernel)
@@ -315,6 +317,7 @@ usage() {
   echo "    --make_clean make clean"
   echo "    --disable_asan disable asan"
   echo "    --valgrind run ut with valgrind. This option will disable asan, noexec and run utest by valgrind"
+  echo "    --experimental Build experimental version"
   echo ""
   echo "    --ops Compile specified operator, use snake name, like: --ops=add,add_lora, use ',' to separate different operator"
   echo "    --soc Compile binary with specified Ascend SoC, like: --soc=ascend310p,ascend910b, use ',' to separate different SoC"
@@ -494,6 +497,7 @@ checkopts() {
   ENABLE_CUSTOM=FALSE
   ENABLE_PACKAGE=FALSE
   ENABLE_TEST=FALSE
+  ENABLE_EXPERIMENTAL=FALSE
   AICPU_ONLY=FALSE
   OP_API_UT=FALSE
   OP_HOST_UT=FALSE
@@ -635,6 +639,7 @@ checkopts() {
           ENABLE_ASAN=FALSE
           ;;
         run_example) ENABLE_RUN_EXAMPLE=TRUE ;;
+        experimental) ENABLE_EXPERIMENTAL=TRUE ;;
         make_clean)
           clean_build
           clean_build_out
@@ -737,6 +742,9 @@ assemble_cmake_args() {
   fi
   if [[ "$ENABLE_PACKAGE" == "TRUE" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DENABLE_PACKAGE=TRUE"
+  fi
+  if [[ "$ENABLE_EXPERIMENTAL" == "TRUE" ]]; then
+    CMAKE_ARGS="$CMAKE_ARGS -DENABLE_EXPERIMENTAL=TRUE"
   fi
   if [[ "x$BUILD_MODE" != "x" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DBUILD_MODE=${BUILD_MODE}"
