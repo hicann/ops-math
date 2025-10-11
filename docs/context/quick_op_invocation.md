@@ -127,7 +127,7 @@
     ```bash
     bash build.sh --pkg [--jit] --soc=${soc_version}
     ```
-    - --jit（可选）：推荐设置，表示不编译算子的二进制文件。
+    - --jit（可选）：设置后表示不编译算子二进制文件，如需使用aclnn调用算子，该选项无需设置。
     - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"。
 
     若提示如下信息，说明编译成功。
