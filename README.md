@@ -1,6 +1,6 @@
 # ops-math
 
-## 🔥Latest News
+## 🔥Latest News 
 
 - [2025/09] ops-math项目首次上线。
 
