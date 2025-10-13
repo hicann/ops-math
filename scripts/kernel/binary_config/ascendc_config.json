@@ -25,6 +25,7 @@
     {"name":"IsFinite", "compute_units": ["ascend910_93", "ascend910b", "ascend310p"], "auto_sync": true},
     {"name":"IsInf", "compute_units": ["ascend910_93", "ascend910b", "ascend310p"], "auto_sync": true},
     {"name":"LinSpace", "compute_units": ["ascend910_93", "ascend910b", "ascend910", "ascend310p"], "auto_sync" : true},
+    {"name":"LinSpaceD", "compute_units": ["ascend910b"], "auto_sync" : true},
     {"name":"MulAddn", "compute_units": ["ascend910_93","ascend910b"], "auto_sync" : true},
     {"name":"NonFiniteCheck", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : false},
     {"name":"Pows", "compute_units": ["ascend910_93", "ascend910b", "ascend310p","ascend910"], "auto_sync": true},
