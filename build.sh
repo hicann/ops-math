@@ -22,7 +22,7 @@ SUPPORTED_LONG_OPTS=(
   "help" "ops=" "soc=" "vendor_name=" "debug" "cov" "noexec" "aicpu" "opkernel" "jit"
   "pkg" "disable_asan" "valgrind" "make_clean"
   "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test"
-  "run_example" "genop=" "genop_aicpu="
+  "run_example" "genop=" "genop_aicpu=" "experimental"
 )
 
 in_array() {
@@ -130,10 +130,12 @@ usage() {
         echo "    -j[n]                  Compile thread nums, default is 8, eg: -j8"
         echo "    -O[n]                  Compile optimization options, support [O0 O1 O2 O3], eg:-O3"
         echo "    --debug                Build with debug mode"
+        echo "    --experimental         Build experimental version"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --pkg --soc=ascend910b --vendor_name=customize -j16 -O3"
         echo "    bash build.sh --pkg --ops=add,sub --debug"
+        echo "    bash build.sh --pkg --experimental --soc=ascend910b"
         return
         ;;
       opkernel)
@@ -326,6 +328,7 @@ usage() {
   echo "    --opkernel build binary kernel"
   echo "    --jit build run package without kernel bin"
   echo "    --pkg build run package with kernel bin"
+  echo "    --experimental Build experimental version"
   echo "    --opapi_test build and run opapi unit tests"
   echo "    --ophost_test build and run ophost unit tests"
   echo "    --opgraph_test build and run opgraph unit tests"
@@ -494,6 +497,7 @@ checkopts() {
   ENABLE_CUSTOM=FALSE
   ENABLE_PACKAGE=FALSE
   ENABLE_TEST=FALSE
+  ENABLE_EXPERIMENTAL=FALSE
   AICPU_ONLY=FALSE
   OP_API_UT=FALSE
   OP_HOST_UT=FALSE
@@ -635,6 +639,7 @@ checkopts() {
           ENABLE_ASAN=FALSE
           ;;
         run_example) ENABLE_RUN_EXAMPLE=TRUE ;;
+        experimental) ENABLE_EXPERIMENTAL=TRUE ;;
         make_clean)
           clean_build
           clean_build_out
@@ -737,6 +742,9 @@ assemble_cmake_args() {
   fi
   if [[ "$ENABLE_PACKAGE" == "TRUE" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DENABLE_PACKAGE=TRUE"
+  fi
+  if [[ "$ENABLE_EXPERIMENTAL" == "TRUE" ]]; then
+    CMAKE_ARGS="$CMAKE_ARGS -DENABLE_EXPERIMENTAL=TRUE"
   fi
   if [[ "x$BUILD_MODE" != "x" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DBUILD_MODE=${BUILD_MODE}"
