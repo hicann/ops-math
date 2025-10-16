@@ -11,7 +11,7 @@ ops-math是[CANN](https://hiascend.com/software/cann) （Compute Architecture fo
 <img src="docs/figures/architecture.png" alt="架构图"  width="750px" height="400px">
 
 ## 🔍目录结构
-
+关键目录如下，详细目录介绍参见[目录介绍](./docs/context/dir_structure.md#目录介绍)。
 ```
 ├── cmake                          # 项目工程编译目录
 ├── common                         # 项目公共头文件和公共源码
@@ -25,7 +25,7 @@ ops-math是[CANN](https://hiascend.com/software/cann) （Compute Architecture fo
 │   │   ├── examples               # 算子使用示例
 │   │   ├── op_graph               # 算子构图相关目录
 │   │   ├── op_host                # 算子信息库、Tiling、InferShape相关实现目录
-│   │   │   └── op_api             # 算子aclnn接口实现目录
+│   │   │   └── op_api             # 可选，算子aclnn接口实现目录，如未提供则表示此算子的aclnn接口会让工程自动生成
 │   │   ├── op_kernel              # 算子kernel目录
 │   │   └── README.md              # 算子介绍文档
 │   ├── ...
