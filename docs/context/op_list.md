@@ -1,7 +1,7 @@
 # 算子列表
 
 > 说明：
-> - **算子目录**：目录名为算子名小写下划线形式，每个目录承载该算子所有交付件，包括代码实现、examples、文档等，目录介绍参见[目录结构](../../README.md#目录结构)。
+> - **算子目录**：目录名为算子名小写下划线形式，每个目录承载该算子所有交付件，包括代码实现、examples、文档等，目录介绍参见[项目目录](dir_structure.md)。
 > - **算子执行位置**：大部分算子运行在AI Core上，少部分算子运行在AI CPU上。默认情况下，项目中提到的算子一般指AI Core算子。
 > - 关于AI Core和AI CPU详细介绍请参见[《Ascend C算子开发》](https://hiascend.com/document/redirect/CannCommunityOpdevAscendC)中“概念原理和术语 > 硬件架构与数据处理原理”。
 
@@ -43,151 +43,151 @@
 | conversion   | [strided_slice_assign_v2](../../conversion/strided_slice_assign_v2/README.md) | AI Core    | StridedSliceAssign是一种张量切片赋值操作，它可以将张量inputValue的内容，赋值给目标张量varRef中的指定位置。   |
 | conversion   | [transpose_v2](../../conversion/transpose_v2/README.md)       | AI Core     | 实现张量的维度置换（Permutation）操作，按照指定的顺序重新排列输入张量的维度。        |
 | conversion   | [unfold_grad](../../conversion/unfold_grad/README.md)       | AI Core     | 实现Unfold算子的反向功能，计算相应的梯度。       |
-| math   | [abs](../../math/abs/README.md)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [accumulate_nv2](../../math/accumulate_nv2)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [acos](../../math/acos)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [acosh](../../math/acosh)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [add](../../math/add)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [addcdiv](../../math/addcdiv)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [addcmul](../../math/addcmul)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [addr](../../math/addr)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [arg_max_v2](../../math/arg_max_v2)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [arg_max_with_value](../../math/arg_max_with_value)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [arg_min](../../math/arg_min)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [arg_min_with_value](../../math/arg_min_with_value)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [asin](../../math/asin)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [asinh](../../math/asinh)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [atan](../../math/atan)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [atan2](../../math/atan2)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [atanh](../../math/atanh)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [axpy](../../math/axpy)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [axpy_v2](../../math/axpy_v2)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [bincount](../../math/bincount)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [bitwise_and](../../math/bitwise_and)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [bitwise_not](../../math/bitwise_not)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [bitwise_or](../../math/bitwise_or)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [bitwise_xor](../../math/bitwise_xor)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [cast](../../math/cast/README.md)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [ceil](../../math/ceil)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [complex](../../math/complex)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [cos](../../math/cos)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [cosh](../../math/cosh)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [cummax](../../math/cummax)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [cummin](../../math/cummin)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [cumprod](../../math/cumprod)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [cumsum](../../math/cumsum)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [cumsum_cube](../../math/cumsum_cube)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [div](../../math/div)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [dot](../../math/dot)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [equal](../../math/equal)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [erf](../../math/erf)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [erfc](../../math/erfc)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [exp](../../math/exp)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [expand](../../math/expand)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [expm1](../../math/expm1)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [eye](../../math/eye)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [floor](../../math/floor)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [floor_div](../../math/floor_div)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [floor_mod](../../math/floor_mod)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [gcd](../../math/gcd)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [ger](../../math/ger)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [greater](../../math/greater)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [greater_equal](../../math/greater_equal)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [invert](../../math/invert)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [is_close](../../math/is_close)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [is_neg_inf](../../math/is_neg_inf)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [is_pos_inf](../../math/is_pos_inf)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [kl_div_v2](../../math/kl_div_v2)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [lerp](../../math/lerp)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [less](../../math/less)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [less_equal](../../math/less_equal)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [log](../../math/log)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [log1p](../../math/log1p)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [log_add_exp](../../math/log_add_exp)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [logical_and](../../math/logical_and)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [logical_not](../../math/logical_not)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [logical_or](../../math/logical_or)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [masked_scale](../../math/masked_scale)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [maximum](../../math/maximum)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [minimum](../../math/minimum)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [mod](../../math/mod)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [mul](../../math/mul)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [muls](../../math/muls)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [nan_to_num](../../math/nan_to_num)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [neg](../../math/neg)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [not_equal](../../math/not_equal)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [one_hot](../../math/one_hot)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [ones_like](../../math/ones_like)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [pdist](../../math/pdist)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [pow](../../math/pow)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [range](../../math/range)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [real](../../math/real)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [real_div](../../math/real_div)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [reciprocal](../../math/reciprocal)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [reduce_all](../../math/reduce_all)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [reduce_any](../../math/reduce_any)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [reduce_log_sum](../../math/reduce_log_sum)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [reduce_log_sum_exp](../../math/reduce_log_sum_exp)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [reduce_max](../../math/reduce_max)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [reduce_mean](../../math/reduce_mean)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [reduce_min](../../math/reduce_min)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [reduce_nansum](../../math/reduce_nansum)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [reduce_prod](../../math/reduce_prod)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [reduce_std_v2](../../math/reduce_std_v2)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [reduce_std_v2_update](../../math/reduce_std_v2_update)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [reduce_std_with_mean](../../math/reduce_std_with_mean)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [reduce_sum_op](../../math/reduce_sum_op)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [reduce_var](../../math/reduce_var)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [right_shift](../../math/right_shift/README.md)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [round](../../math/round)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [rsqrt](../../math/rsqrt)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [scale](../../math/scale)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [search_sorted](../../math/search_sorted/README.md)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [select](../../math/select)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [sign](../../math/sign)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [sign_bits_pack](../../math/sign_bits_pack)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [sign_bits_unpack](../../math/sign_bits_unpack)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [silent_check](../../math/silent_check)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [sin](../../math/sin)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [sinh](../../math/sinh)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [sort](../../math/sort)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [sqrt](../../math/sqrt)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [square](../../math/square)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [sub](../../math/sub)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [tan](../../math/tan)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [tanh](../../math/tanh)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [tanh_grad](../../math/tanh_grad)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [tensor_equal](../../math/tensor_equal)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [tile](../../math/tile)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [triangular_solve](../../math/triangular_solve)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [trunc](../../math/trunc)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [x_log_y](../../math/x_log_y)    | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| math   | [zero_op](../../math/zero_op)     | AI Core     | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。     |
-| conversion   | [as_strided](../../conversion/as_strided)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [broadcast_to](../../conversion/broadcast_to)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [clip_by_value_v2](../../conversion/clip_by_value_v2)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [concat](../../conversion/concat/README.md)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [contiguous](../../conversion/contiguous)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [fill](../../conversion/fill/README.md)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [flatten](../../conversion/flatten/README.md)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [im2col](../../conversion/im2col/README.md)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [masked_fill](../../conversion/masked_fill/README.md)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [matmul_v2_compress_dequant](../../conversion/matmul_v2_compress_dequant/README.md)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [mirror_pad](../../conversion/mirror_pad)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [npu_format_cast](../../conversion/npu_format_cast)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [pack](../../conversion/pack/README.md)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [pad](../../conversion/pad)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [pad_v3](../../conversion/pad_v3)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [pad_v3_grad](../../conversion/pad_v3_grad/README.md)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [reshape](../../conversion/reshape)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [roll](../../conversion/roll)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [slice](../../conversion/slice)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [split_v](../../conversion/split_v/README.md)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [squeeze](../../conversion/squeeze)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [strided_slice](../../conversion/strided_slice)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [strided_slice_v3](../../conversion/strided_slice_v3)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [tensor_move](../../conversion/tensor_move)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [trans_data](../../conversion/trans_data/README.md)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [transpose](../../conversion/transpose)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [unsqueeze](../../conversion/unsqueeze)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
-| conversion   | [view_copy](../../conversion/view_copy)       | AI Core   | 该算子暂无AscendC代码实现，欢迎各位开发者补充贡献，贡献方式可以参考[贡献指南](../../CONTRIBUTING.md)。                 |
+| math   | [abs](../../math/abs/README.md)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [accumulate_nv2](../../math/accumulate_nv2)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [acos](../../math/acos)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [acosh](../../math/acosh)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [add](../../math/add)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [addcdiv](../../math/addcdiv)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [addcmul](../../math/addcmul)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [addr](../../math/addr)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [arg_max_v2](../../math/arg_max_v2)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [arg_max_with_value](../../math/arg_max_with_value)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [arg_min](../../math/arg_min)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [arg_min_with_value](../../math/arg_min_with_value)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [asin](../../math/asin)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [asinh](../../math/asinh)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [atan](../../math/atan)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [atan2](../../math/atan2)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [atanh](../../math/atanh)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [axpy](../../math/axpy)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [axpy_v2](../../math/axpy_v2)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [bincount](../../math/bincount)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [bitwise_and](../../math/bitwise_and)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [bitwise_not](../../math/bitwise_not)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [bitwise_or](../../math/bitwise_or)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [bitwise_xor](../../math/bitwise_xor)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [cast](../../math/cast/README.md)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [ceil](../../math/ceil)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [complex](../../math/complex)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [cos](../../math/cos)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [cosh](../../math/cosh)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [cummax](../../math/cummax)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [cummin](../../math/cummin)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [cumprod](../../math/cumprod)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [cumsum](../../math/cumsum)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [cumsum_cube](../../math/cumsum_cube)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [div](../../math/div)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [dot](../../math/dot)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [equal](../../math/equal)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [erf](../../math/erf)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [erfc](../../math/erfc)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [exp](../../math/exp)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [expand](../../math/expand)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [expm1](../../math/expm1)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [eye](../../math/eye)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [floor](../../math/floor)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [floor_div](../../math/floor_div)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [floor_mod](../../math/floor_mod)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [gcd](../../math/gcd)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [ger](../../math/ger)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [greater](../../math/greater)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [greater_equal](../../math/greater_equal)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [invert](../../math/invert)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [is_close](../../math/is_close)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [is_neg_inf](../../math/is_neg_inf)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [is_pos_inf](../../math/is_pos_inf)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [kl_div_v2](../../math/kl_div_v2)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [lerp](../../math/lerp)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [less](../../math/less)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [less_equal](../../math/less_equal)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [log](../../math/log)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [log1p](../../math/log1p)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [log_add_exp](../../math/log_add_exp)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [logical_and](../../math/logical_and)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [logical_not](../../math/logical_not)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [logical_or](../../math/logical_or)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [masked_scale](../../math/masked_scale)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [maximum](../../math/maximum)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [minimum](../../math/minimum)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [mod](../../math/mod)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [mul](../../math/mul)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [muls](../../math/muls)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [nan_to_num](../../math/nan_to_num)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [neg](../../math/neg)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [not_equal](../../math/not_equal)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [one_hot](../../math/one_hot)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [ones_like](../../math/ones_like)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [pdist](../../math/pdist)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [pow](../../math/pow)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [range](../../math/range)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [real](../../math/real)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [real_div](../../math/real_div)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [reciprocal](../../math/reciprocal)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [reduce_all](../../math/reduce_all)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [reduce_any](../../math/reduce_any)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [reduce_log_sum](../../math/reduce_log_sum)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [reduce_log_sum_exp](../../math/reduce_log_sum_exp)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [reduce_max](../../math/reduce_max)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [reduce_mean](../../math/reduce_mean)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [reduce_min](../../math/reduce_min)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [reduce_nansum](../../math/reduce_nansum)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [reduce_prod](../../math/reduce_prod)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [reduce_std_v2](../../math/reduce_std_v2)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [reduce_std_v2_update](../../math/reduce_std_v2_update)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [reduce_std_with_mean](../../math/reduce_std_with_mean)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [reduce_sum_op](../../math/reduce_sum_op)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [reduce_var](../../math/reduce_var)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [right_shift](../../math/right_shift/README.md)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [round](../../math/round)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [rsqrt](../../math/rsqrt)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [scale](../../math/scale)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [search_sorted](../../math/search_sorted/README.md)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [select](../../math/select)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [sign](../../math/sign)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [sign_bits_pack](../../math/sign_bits_pack)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [sign_bits_unpack](../../math/sign_bits_unpack)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [silent_check](../../math/silent_check)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [sin](../../math/sin)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [sinh](../../math/sinh)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [sort](../../math/sort)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [sqrt](../../math/sqrt)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [square](../../math/square)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [sub](../../math/sub)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [tan](../../math/tan)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [tanh](../../math/tanh)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [tanh_grad](../../math/tanh_grad)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [tensor_equal](../../math/tensor_equal)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [tile](../../math/tile)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [triangular_solve](../../math/triangular_solve)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [trunc](../../math/trunc)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [x_log_y](../../math/x_log_y)    | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| math   | [zero_op](../../math/zero_op)     | AI Core     | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。    |
+| conversion   | [as_strided](../../conversion/as_strided)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [broadcast_to](../../conversion/broadcast_to)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [clip_by_value_v2](../../conversion/clip_by_value_v2)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [concat](../../conversion/concat/README.md)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [contiguous](../../conversion/contiguous)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [fill](../../conversion/fill/README.md)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [flatten](../../conversion/flatten/README.md)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [im2col](../../conversion/im2col/README.md)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [masked_fill](../../conversion/masked_fill/README.md)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [matmul_v2_compress_dequant](../../conversion/matmul_v2_compress_dequant/README.md)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [mirror_pad](../../conversion/mirror_pad)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [npu_format_cast](../../conversion/npu_format_cast)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [pack](../../conversion/pack/README.md)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [pad](../../conversion/pad)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [pad_v3](../../conversion/pad_v3)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [pad_v3_grad](../../conversion/pad_v3_grad/README.md)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [reshape](../../conversion/reshape)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [roll](../../conversion/roll)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [slice](../../conversion/slice)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [split_v](../../conversion/split_v/README.md)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [squeeze](../../conversion/squeeze)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [strided_slice](../../conversion/strided_slice)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [strided_slice_v3](../../conversion/strided_slice_v3)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [tensor_move](../../conversion/tensor_move)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [trans_data](../../conversion/trans_data/README.md)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [transpose](../../conversion/transpose)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [unsqueeze](../../conversion/unsqueeze)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
+| conversion   | [view_copy](../../conversion/view_copy)       | AI Core   | 该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考[贡献指南](../../CONTRIBUTING.md)。                |
