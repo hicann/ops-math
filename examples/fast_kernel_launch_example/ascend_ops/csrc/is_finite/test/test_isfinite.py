@@ -27,3 +27,71 @@ for data_type in supported_dtypes:
     print(f"[OK] torch.ops.ascend_ops.isfinite<{data_type}> successfully!")
     print(f"npu: isfinite(x) = {npu_result}")
     print(f"compare CPU Result vs NPU Result: {torch.allclose(cpu_result, npu_result)}\n\n")
+
+# test reduce-overhead
+import torchair
+from torchair.configs.compiler_config import CompilerConfig
+config = CompilerConfig()
+config.mode = "reduce-overhead"
+npu_backend = torchair.get_npu_backend(compiler_config=config)
+
+class SimpleNet(torch.nn.Module):
+    def __init__(self):
+        super(SimpleNet, self).__init__()
+
+    def forward(self, x):
+        for _ in range(1000):
+            x = torch.ops.ascend_ops.isfinite(x).to(torch.float)
+        return x
+
+model = SimpleNet().npu()
+compiled_model = torch.compile(model, dynamic=False, fullgraph=False, backend=npu_backend)
+tensor_input = torch.randn(80, 10).to(torch.float).npu()
+tensor_inputs = [torch.randn_like(tensor_input) for _ in range(10)]
+
+def run():
+    import time
+
+    eager_time = []
+    for data in tensor_inputs:
+        torch_npu.npu.synchronize()
+        start_time = time.time()
+        npu_result = model(data)
+        torch_npu.npu.synchronize()
+        end_time = time.time()
+        eager_time.append(end_time - start_time)
+
+    graph_time = []
+    for data in tensor_inputs:
+        torch_npu.npu.synchronize()
+        start_time = time.time()
+        npu_result = compiled_model(data)
+        torch_npu.npu.synchronize()
+        end_time = time.time()
+        graph_time.append(end_time - start_time)
+
+    # summary
+    avg_eager_time = sum(eager_time) / len(eager_time)
+    avg_graph_time = sum(graph_time) / len(graph_time)
+    speedup = avg_eager_time / avg_graph_time
+    print(f"Average Eager Mode Duration: {avg_eager_time:.6f} sec.")
+    print(f"Average ReduceOverhead Mode Duration: {avg_eager_time:.6f} sec.")
+    print(f"Speedup: {speedup:.2f}x")
+
+print("warm up ...")
+run()
+run()
+run()
+
+print("start profiling ...")
+with torch_npu.profiler.profile(
+    activities=[
+        torch_npu.profiler.ProfilerActivity.CPU,
+        torch_npu.profiler.ProfilerActivity.NPU
+    ],
+    on_trace_ready=torch_npu.profiler.tensorboard_trace_handler("./result")
+) as prof:
+    for step in range(3):
+        run()
+        prof.step()
+print("done.")
