@@ -108,6 +108,12 @@ static bool CheckDim(const aclTensor* self, const int64_t dim)
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "dim should within the range of [[%ld], [%ld]].", dimMin, dimMax);
         return false;
     }
+
+    uint64_t realDim = dim >= 0 ? dim : dim + shapeSize;
+    if (shapeSize != 0 && self->GetViewShape().GetDim(realDim) == 0) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Excepted reduction dim %ld to have non-zero size.", dim);
+        return false;
+    }
     return true;
 }
 
