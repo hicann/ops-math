@@ -352,7 +352,7 @@ ASCENDC_TPL_SEL(
 #endif
 ```
 
-如需实现复杂参数组合完成分支选择（涉及多TilingKey场景），请参考[《Ascend C算子开发》](https://hiascend.com/document/redirect/CannCommunityOpdevAscendC)中"算子实现 > Host侧Tiling实现 >  Tiling模板编程"。
+如需实现复杂参数组合完成分支选择（涉及多TilingKey场景），请参考[《Ascend C算子开发》](https://hiascend.com/document/redirect/CannCommunityOpdevAscendC)中"算子实现 > 工程化算子开发 > Host侧Tiling实现 > Tiling模板编程"。
 
 ## Kernel实现
 
