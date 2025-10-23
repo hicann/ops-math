@@ -44,7 +44,7 @@ if(UT_TEST_ALL OR OP_HOST_UT)
       ${OP_TILING_MODULE_NAME}_cases_obj PRIVATE ${UT_COMMON_INC} ${GTEST_INCLUDE} ${ASCEND_DIR}/include
                                                  ${ASCEND_DIR}/include/base/context_builder ${PROJECT_SOURCE_DIR}/common/inc
                                                  ${ASCEND_DIR}/include/op_common ${ASCEND_DIR}/include/tiling
-                                                 ${ASCEND_DIR}/include/op_common/op_host
+                                                 ${ASCEND_DIR}/include/op_common/op_host ${ASCEND_DIR}/include/toolchain
       )
     target_link_libraries(${OP_TILING_MODULE_NAME}_cases_obj PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> gtest)
 
@@ -264,6 +264,7 @@ if(UT_TEST_ALL OR OP_KERNEL_UT)
         PRIVATE ${ASCEND_DIR}/include/op_common/atvoss ${ASCEND_DIR}/include/op_common
                 ${ASCEND_DIR}/include/op_common/op_host ${PROJECT_SOURCE_DIR}/common/inc
                 ${ASCEND_DIR}/include/tiling ${ASCEND_DIR}/include/op_common/op_host
+                ${ASCEND_DIR}/include/toolchain
         )
       target_compile_definitions(${opName}_${socVersion}_tiling_tmp PRIVATE LOG_CPP _GLIBCXX_USE_CXX11_ABI=0)
       target_link_libraries(
