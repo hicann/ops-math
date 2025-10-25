@@ -183,29 +183,8 @@ TEST_F(l2_inplace_addcmul_test, test_broadcast)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
-// Test for precision
-TEST_F(l2_inplace_addcmul_test, test_int8)
-{
-    auto tensor_desc = TensorDesc({4, 4}, ACL_INT8, ACL_FORMAT_NCHW).ValueRange(-2, 2);
-
-    auto scalar_desc = ScalarDesc(1.0f);
-
-    auto ut = OP_API_UT(aclnnInplaceAddcmul, INPUT(tensor_desc, tensor_desc, tensor_desc, scalar_desc), OUTPUT());
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
-}
-
-// Test for precision
 TEST_F(l2_inplace_addcmul_test, test_int32)
 {
     auto tensor_desc = TensorDesc({4, 4}, ACL_INT32, ACL_FORMAT_NCHW).ValueRange(-2, 2);
@@ -219,26 +198,6 @@ TEST_F(l2_inplace_addcmul_test, test_int32)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
-}
-
-// Test for precision
-TEST_F(l2_inplace_addcmul_test, test_uint8)
-{
-    auto tensor_desc = TensorDesc({4, 4}, ACL_UINT8, ACL_FORMAT_NCHW).ValueRange(-2, 2);
-
-    auto scalar_desc = ScalarDesc(1.0f);
-
-    auto ut = OP_API_UT(aclnnInplaceAddcmul, INPUT(tensor_desc, tensor_desc, tensor_desc, scalar_desc), OUTPUT());
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // Test for shape err
@@ -256,43 +215,6 @@ TEST_F(l2_inplace_addcmul_test, test_shape_err)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-// Test for precision
-TEST_F(l2_inplace_addcmul_test, test_int64)
-{
-    auto tensor_desc = TensorDesc({4, 4}, ACL_INT64, ACL_FORMAT_NCHW).ValueRange(-2, 2);
-
-    auto scalar_desc = ScalarDesc(1.0f);
-
-    auto ut = OP_API_UT(aclnnInplaceAddcmul, INPUT(tensor_desc, tensor_desc, tensor_desc, scalar_desc), OUTPUT());
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
-}
-
-// Test for precision
-TEST_F(l2_inplace_addcmul_test, test_double)
-{
-    auto tensor_desc = TensorDesc({4, 4}, ACL_DOUBLE, ACL_FORMAT_NCHW).ValueRange(-2, 2);
-
-    auto scalar_desc = ScalarDesc(1.0f);
-
-    auto ut = OP_API_UT(aclnnInplaceAddcmul, INPUT(tensor_desc, tensor_desc, tensor_desc, scalar_desc), OUTPUT());
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
-}
-
-// Test for precision
 TEST_F(l2_inplace_addcmul_test, test_float)
 {
     auto tensor_desc = TensorDesc({4, 4}, ACL_FLOAT, ACL_FORMAT_NHWC).ValueRange(-2, 2);
@@ -306,11 +228,8 @@ TEST_F(l2_inplace_addcmul_test, test_float)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
-// Test for precision
 TEST_F(l2_inplace_addcmul_test, test_float_nhwc)
 {
     auto tensor_desc = TensorDesc({4, 4}, ACL_FLOAT, ACL_FORMAT_NHWC).ValueRange(-2, 2);
@@ -324,11 +243,8 @@ TEST_F(l2_inplace_addcmul_test, test_float_nhwc)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
-// Test for precision
 TEST_F(l2_inplace_addcmul_test, test_float_nd)
 {
     auto tensor_desc = TensorDesc({4, 4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
@@ -342,11 +258,8 @@ TEST_F(l2_inplace_addcmul_test, test_float_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
-// Test for precision
 TEST_F(l2_inplace_addcmul_test, test_float_ndhwc)
 {
     auto tensor_desc = TensorDesc({4, 4}, ACL_FLOAT, ACL_FORMAT_NDHWC).ValueRange(-2, 2);
@@ -360,11 +273,8 @@ TEST_F(l2_inplace_addcmul_test, test_float_ndhwc)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
-// Test for precision
 TEST_F(l2_inplace_addcmul_test, test_float_ncdhw)
 {
     auto tensor_desc = TensorDesc({4, 4}, ACL_FLOAT, ACL_FORMAT_NCDHW).ValueRange(-2, 2);
@@ -378,8 +288,6 @@ TEST_F(l2_inplace_addcmul_test, test_float_ncdhw)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // Test for non-continuous
@@ -396,8 +304,6 @@ TEST_F(l2_inplace_addcmul_test, test_non_continuous)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // Test for float16

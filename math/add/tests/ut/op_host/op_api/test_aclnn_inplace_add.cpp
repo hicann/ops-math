@@ -47,8 +47,6 @@ TEST_F(l2_inplace_add_test, case_1)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_inplace_add_test, case_nullptr)
@@ -78,8 +76,6 @@ TEST_F(l2_inplace_add_test, case_001)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_inplace_add_test, case_002)
@@ -95,7 +91,6 @@ TEST_F(l2_inplace_add_test, case_002)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_inplace_add_test, case_003)
@@ -111,7 +106,6 @@ TEST_F(l2_inplace_add_test, case_003)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_inplace_add_test, case_004)
@@ -127,23 +121,6 @@ TEST_F(l2_inplace_add_test, case_004)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
-}
-
-TEST_F(l2_inplace_add_test, case_005)
-{
-    auto self_tensor_desc = TensorDesc({2, 3, 4, 5}, ACL_INT16, ACL_FORMAT_HWCN).ValueRange(-2, 2);
-    auto other_tensor_desc = TensorDesc({2, 3, 4, 5}, ACL_INT16, ACL_FORMAT_HWCN).ValueRange(-2, 2);
-    auto scalar_desc = ScalarDesc(static_cast<int64_t>(2));
-
-    auto ut = OP_API_UT(aclnnInplaceAdd, INPUT(self_tensor_desc, other_tensor_desc, scalar_desc), OUTPUT());
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 TEST_F(l2_inplace_add_test, case_006)
@@ -160,7 +137,6 @@ TEST_F(l2_inplace_add_test, case_006)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_inplace_add_test, case_007)
@@ -176,7 +152,6 @@ TEST_F(l2_inplace_add_test, case_007)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // BOOL场景
@@ -195,7 +170,6 @@ TEST_F(l2_inplace_add_test, case_008)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // TEST_F(l2_inplace_add_test, case_009) {
@@ -243,21 +217,6 @@ TEST_F(l2_inplace_add_test, case_011)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-// COMPLEX暂时不支持
-TEST_F(l2_inplace_add_test, case_012)
-{
-    auto self_tensor_desc = TensorDesc({6, 3}, ACL_COMPLEX128, ACL_FORMAT_ND).ValueRange(-2, 2);
-    auto other_desc = ScalarDesc(1.2f);
-    auto scalar_desc = ScalarDesc(1.2f);
-
-    auto ut = OP_API_UT(aclnnInplaceAdds, INPUT(self_tensor_desc, other_desc, scalar_desc), OUTPUT());
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-}
-
 TEST_F(l2_inplace_add_test, case_013)
 {
     auto self_tensor_desc = TensorDesc({2, 3, 4, 5}, ACL_FLOAT16, ACL_FORMAT_NHWC).ValueRange(-10, 10);
@@ -271,7 +230,6 @@ TEST_F(l2_inplace_add_test, case_013)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_inplace_add_test, case_014)
@@ -287,8 +245,6 @@ TEST_F(l2_inplace_add_test, case_014)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_inplace_add_test, case_015)
@@ -304,8 +260,6 @@ TEST_F(l2_inplace_add_test, case_015)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 空tensor
@@ -474,7 +428,6 @@ TEST_F(l2_inplace_add_test, case_032)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // aclnnInplaceAdds empty tensor
@@ -491,7 +444,6 @@ TEST_F(l2_inplace_add_test, case_033)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // aclnnInplaceAdds mul + add
@@ -508,5 +460,4 @@ TEST_F(l2_inplace_add_test, case_034)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }

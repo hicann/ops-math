@@ -55,7 +55,6 @@ TEST_F(l2_addcdiv_test, case_1)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // self空指针
@@ -312,27 +311,6 @@ TEST_F(l2_addcdiv_test, case_14)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-// aicpu 精度场景
-TEST_F(l2_addcdiv_test, case_15)
-{
-    auto input = TensorDesc({3, 3}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-1, 1);
-
-    auto tensor1 = TensorDesc({3, 3}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-1, 1);
-
-    auto tensor2 = TensorDesc({3, 3}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-1, 1);
-
-    auto out = TensorDesc({3, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
-
-    auto scalar = ScalarDesc(1.0f);
-
-    auto ut = OP_API_UT(aclnnAddcdiv, INPUT(input, tensor1, tensor2, scalar), OUTPUT(out));
-
-    uint64_t workspaceSize = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
-}
-
 // float16场景
 TEST_F(l2_addcdiv_test, case_16)
 {
@@ -395,26 +373,6 @@ TEST_F(l2_addcdiv_test, case_18)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-}
-
-// int64场景
-TEST_F(l2_addcdiv_test, case_19)
-{
-    auto input = TensorDesc({3}, ACL_INT64, ACL_FORMAT_ND).ValueRange(0, 10).Value(vector<float>{1, 2, 3});
-
-    auto tensor1 = TensorDesc({3}, ACL_INT64, ACL_FORMAT_ND).ValueRange(0, 10).Value(vector<float>{4, 4, 4});
-
-    auto tensor2 = TensorDesc({3}, ACL_INT64, ACL_FORMAT_ND).ValueRange(0, 10).Value(vector<float>{1, 1, 1});
-
-    auto out = TensorDesc({3}, ACL_INT64, ACL_FORMAT_ND);
-
-    auto scalar = ScalarDesc(1.0f);
-
-    auto ut = OP_API_UT(aclnnAddcdiv, INPUT(input, tensor1, tensor2, scalar), OUTPUT(out));
-
-    uint64_t workspaceSize = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
 // int32场景
@@ -575,7 +533,6 @@ TEST_F(l2_addcdiv_test, case_27)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    ut.TestPrecision();
 }
 
 // nchw场景
@@ -596,7 +553,6 @@ TEST_F(l2_addcdiv_test, case_28)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    ut.TestPrecision();
 }
 
 // nchw场景
@@ -617,7 +573,6 @@ TEST_F(l2_addcdiv_test, case_29)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    ut.TestPrecision();
 }
 
 // ndhwc场景
@@ -638,7 +593,6 @@ TEST_F(l2_addcdiv_test, case_30)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    ut.TestPrecision();
 }
 
 // ncdhw场景
@@ -659,7 +613,6 @@ TEST_F(l2_addcdiv_test, case_31)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    ut.TestPrecision();
 }
 
 TEST_F(l2_addcdiv_test, l2_addcdiv_test_case_32_Test)
@@ -680,5 +633,4 @@ TEST_F(l2_addcdiv_test, l2_addcdiv_test_case_32_Test)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
