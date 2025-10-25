@@ -16,7 +16,6 @@
 
 #include "register/op_impl_registry.h"
 #include "log/log.h"
-#include "histogram_v2_proto.h"
 
 namespace ops {
 

@@ -127,23 +127,6 @@ function(merge_ini_files)
 endfunction()
 
 # ######################################################################################################################
-# merge ops proto headers in aclnn/aclnn_inner/aclnn_exc to a total proto file srcpath: ${ASCEND_AUTOGEN_PATH} generate
-# outpath: ${CMAKE_BINARY_DIR}/tbe/graph
-# ######################################################################################################################
-function(merge_graph_headers)
-  set(oneValueArgs TARGET OUT_DIR)
-  cmake_parse_arguments(MGPROTO "" "${oneValueArgs}" "" ${ARGN})
-  get_target_property(proto_headers ${GRAPH_PLUGIN_NAME}_proto_headers INTERFACE_SOURCES)
-  add_custom_command(
-    OUTPUT ${MGPROTO_OUT_DIR}/ops_proto_math.h
-    COMMAND
-      ${ASCEND_PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/util/merge_proto.py ${proto_headers} --output-file
-      ${MGPROTO_OUT_DIR}/ops_proto_math.h
-    )
-  add_custom_target(${MGPROTO_TARGET} ALL DEPENDS ${MGPROTO_OUT_DIR}/ops_proto_math.h)
-endfunction()
-
-# ######################################################################################################################
 # generate binary compile shell script and binary json srcpath: ${ASCEND_AUTOGEN_PATH} outpath:
 # ${CMAKE_BINARY_DIR}/binary/${compute_unit}
 # ######################################################################################################################
@@ -337,7 +320,7 @@ function(gen_ops_info_and_python)
     ${CMAKE_BINARY_DIR}/tbe INSTALL_DIR ${IMPL_DYNAMIC_INSTALL_DIR}
     )
 
-  merge_graph_headers(TARGET merge_ops_proto ALL OUT_DIR ${ASCEND_GRAPH_CONF_DST})
+
 
   set(ascendc_impl_gen_depends ascendc_kernel_src_copy opbuild_custom_gen_aclnn_all)
   foreach(compute_unit ${ASCEND_ALL_COMPUTE_UNIT})

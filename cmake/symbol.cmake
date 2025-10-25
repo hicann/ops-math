@@ -63,11 +63,41 @@ function(gen_ophost_symbol)
   endif()
 endfunction()
 
+# ######################################################################################################################
+# merge ops proto headers in aclnn/aclnn_inner/aclnn_exc to a total proto file srcpath: ${ASCEND_AUTOGEN_PATH} generate
+# outpath: ${CMAKE_BINARY_DIR}/tbe/graph
+# ######################################################################################################################
+function(merge_graph_headers)
+  set(oneValueArgs TARGET OUT_DIR)
+  cmake_parse_arguments(MGPROTO "" "${oneValueArgs}" "" ${ARGN})
+  get_target_property(proto_headers ${GRAPH_PLUGIN_NAME}_proto_headers INTERFACE_SOURCES)
+  add_custom_command(
+    OUTPUT ${MGPROTO_OUT_DIR}/ops_proto_math.h
+    COMMAND
+      ${ASCEND_PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/util/merge_proto.py ${proto_headers} --output-file
+      ${MGPROTO_OUT_DIR}/ops_proto_math.h
+    )
+  add_custom_command(
+    OUTPUT ${MGPROTO_OUT_DIR}/ops_proto_math.cpp
+    COMMAND ${CMAKE_COMMAND} -E copy
+      ${MGPROTO_OUT_DIR}/ops_proto_math.h
+      ${MGPROTO_OUT_DIR}/ops_proto_math.cpp
+    DEPENDS ${MGPROTO_OUT_DIR}/ops_proto_math.h
+    )
+  add_custom_target(${MGPROTO_TARGET} ALL DEPENDS ${MGPROTO_OUT_DIR}/ops_proto_math.h ${MGPROTO_OUT_DIR}/ops_proto_math.cpp)
+endfunction()
+
 # graph_plugin shared
 function(gen_opgraph_symbol)
   add_library(
     ${OPGRAPH_NAME} SHARED
     $<$<TARGET_EXISTS:${GRAPH_PLUGIN_NAME}_obj>:$<TARGET_OBJECTS:${GRAPH_PLUGIN_NAME}_obj>>
+    )
+  merge_graph_headers(TARGET merge_ops_proto OUT_DIR ${ASCEND_GRAPH_CONF_DST})
+  add_dependencies(${OPGRAPH_NAME} merge_ops_proto)
+
+  target_sources(
+    ${OPGRAPH_NAME} PRIVATE ${ASCEND_GRAPH_CONF_DST}/ops_proto_math.cpp
     )
 
   target_link_libraries(
