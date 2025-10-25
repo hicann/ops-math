@@ -101,10 +101,19 @@ if(UT_TEST_ALL OR OP_API_UT)
       add_library(${OP_API_MODULE_NAME}_cases_obj OBJECT)
     endif()
     target_sources(${OP_API_MODULE_NAME}_cases_obj PRIVATE ${UT_PATH}/op_api/stub/opdev/platform.cpp)
+    file(GLOB ACLNN_SRC_DIRS
+      ${PROJECT_SOURCE_DIR}/math/*/op_host/op_api
+      ${PROJECT_SOURCE_DIR}/conversion/*/op_host/op_api
+      ${PROJECT_SOURCE_DIR}/random/*/op_host/op_api
+      ${PROJECT_SOURCE_DIR}/math/*/op_api
+      ${PROJECT_SOURCE_DIR}/conversion/*/op_api
+      ${PROJECT_SOURCE_DIR}/random/*/op_api
+    )
     target_include_directories(
       ${OP_API_MODULE_NAME}_cases_obj
       PRIVATE ${JSON_INCLUDE_DIR} ${HI_PYTHON_INC_TEMP} ${UT_PATH}/op_api/stub ${OP_API_UT_COMMON_INC}
               ${ASCEND_DIR}/include ${ASCEND_DIR}/include/aclnn ${ASCEND_DIR}/include/aclnnop
+              ${ACLNN_SRC_DIRS}
       )
     target_link_libraries(${OP_API_MODULE_NAME}_cases_obj PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> gtest)
   endfunction()
@@ -200,7 +209,12 @@ if(UT_TEST_ALL
 
     if("${MODULE_UT_NAME}" STREQUAL "${OP_API_MODULE_NAME}")
       get_filename_component(OP_HOST_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
-      get_filename_component(UT_DIR ${OP_HOST_DIR} DIRECTORY)
+      get_filename_component(OP_HOST_NAME ${OP_HOST_DIR} NAME)
+      if("${OP_HOST_NAME}" STREQUAL "op_host")
+        get_filename_component(UT_DIR ${OP_HOST_DIR} DIRECTORY)
+      else()
+        get_filename_component(UT_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
+      endif()
       get_filename_component(TESTS_DIR ${UT_DIR} DIRECTORY)
       get_filename_component(OP_NAME_DIR ${TESTS_DIR} DIRECTORY)
       get_filename_component(OP_NAME ${OP_NAME_DIR} NAME)
