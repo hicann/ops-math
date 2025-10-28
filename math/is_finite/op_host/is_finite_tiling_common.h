@@ -19,53 +19,48 @@
 
 #include "../op_kernel/is_finite_struct.h"
 #include "torch_extension/tiling_utils.h"
-#include "tiling/platform/platform_ascendc.h"
+#include "platform/platform_ascendc.h"
 
 namespace IsFiniteNs {
 
 class IsFiniteTiling {
-public:
+  public:
     constexpr static int64_t MINIMUM_ELEMENT_PER_CORE = 32;
     constexpr static int64_t DATA_BLOCK = 32;
     constexpr static int64_t RESERVERD_UB_SIZE = 1024;
     constexpr static int64_t UB_DIVIDER_FOR_TMP_CASTING = 10;
 
-    template <typename T>
-    static void IsFiniteCommonTiling(T x, IsFiniteTilingData& tilingData)
-    {
-        int64_t elementCount = 1;
+    template<typename T>
+    static void IsFiniteCommonTiling(T x, IsFiniteTilingData& tilingData, uint32_t coreNum, uint64_t ubSize) {
+      int64_t elementCount = 1;
 
-        for (uint16_t i = 0; i < TilingUtils::GetDimNum(x); i++) {
-            elementCount *= TilingUtils::GetDim(x, i);
-        }
-        auto ascendc_platform = platform_ascendc::PlatformAscendCManager::GetInstance();
-        uint32_t coreNum = ascendc_platform->GetCoreNumAiv();
-        uint64_t ubSizePlatForm;
-        ascendc_platform->GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
-        uint32_t blockDim = (elementCount + MINIMUM_ELEMENT_PER_CORE - 1) / MINIMUM_ELEMENT_PER_CORE;
-        if (blockDim > coreNum) {
-            blockDim = coreNum;
-        }
+      for(uint16_t i = 0; i < TilingUtils::GetDimNum(x); i++) {
+        elementCount *= TilingUtils::GetDim(x, i);
+      }
 
-        uint32_t dataBlockSize = DATA_BLOCK * sizeof(T);
-        uint32_t usableUbSize =
-            uint32_t(ubSizePlatForm - RESERVERD_UB_SIZE - sizeof(IsFiniteTilingData)) / UB_DIVIDER_FOR_TMP_CASTING;
-        usableUbSize = usableUbSize / dataBlockSize * dataBlockSize;
+      uint32_t blockDim = (elementCount + MINIMUM_ELEMENT_PER_CORE -1) / MINIMUM_ELEMENT_PER_CORE;
+      if (blockDim > coreNum) {
+        blockDim = coreNum;
+      }
 
-        uint64_t perCoreDataCount = elementCount / blockDim;
-        perCoreDataCount = perCoreDataCount / DATA_BLOCK * DATA_BLOCK;
-        uint64_t tempTailDataCount = elementCount - perCoreDataCount * blockDim;
-        uint64_t tailDataCoreNum = tempTailDataCount / DATA_BLOCK;
-        uint64_t lastCoreDataCount = perCoreDataCount + tempTailDataCount % DATA_BLOCK;
+      uint32_t dataBlockSize = DATA_BLOCK * sizeof(T);
+      uint32_t usableUbSize = uint32_t(ubSize - RESERVERD_UB_SIZE - sizeof(IsFiniteTilingData)) / UB_DIVIDER_FOR_TMP_CASTING;
+      usableUbSize = usableUbSize / dataBlockSize * dataBlockSize;
 
-        tilingData.usableUbSize = usableUbSize;
-        tilingData.needCoreNum = blockDim;
-        tilingData.totalDataCount = elementCount;
-        tilingData.perCoreDataCount = perCoreDataCount;
-        tilingData.tailDataCoreNum = tailDataCoreNum;
-        tilingData.lastCoreDataCount = lastCoreDataCount;
+      uint64_t perCoreDataCount = elementCount / blockDim;
+      perCoreDataCount = perCoreDataCount / DATA_BLOCK * DATA_BLOCK;
+      uint64_t tempTailDataCount = elementCount -perCoreDataCount * blockDim;
+      uint64_t tailDataCoreNum = tempTailDataCount / DATA_BLOCK;
+      uint64_t lastCoreDataCount = perCoreDataCount + tempTailDataCount % DATA_BLOCK;
+
+      tilingData.usableUbSize = usableUbSize;
+      tilingData.needCoreNum = blockDim;
+      tilingData.totalDataCount = elementCount;
+      tilingData.perCoreDataCount = perCoreDataCount;
+      tilingData.tailDataCoreNum = tailDataCoreNum;
+      tilingData.lastCoreDataCount = lastCoreDataCount;
     }
 };
 
-} // namespace IsFiniteNs
+}
 #endif // IS_FINITE_TILING_H

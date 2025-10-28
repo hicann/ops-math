@@ -16,7 +16,7 @@
 #include "is_finite_tiling.h"
 #include "is_finite_tiling_arch35.h"
 #include "log/log.h"
-#include "tiling/platform/platform_ascendc.h"
+#include "platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
 #include "util/math_util.h"
 #include "is_finite_tiling_common.h"
@@ -52,8 +52,7 @@ static ge::graphStatus TilingPrepare4IsFiniteTiling(gert::TilingParseContext* co
 
 static ge::graphStatus IsFiniteTilingForGe(gert::TilingContext* tilingContext)
 {
-    OP_CHECK_IF(
-        tilingContext == nullptr, OP_LOGE("IsFiniteTiling", "tiling context is nullptr"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(tilingContext == nullptr, OP_LOGE("IsFiniteTiling", "tiling context is nullptr"), return ge::GRAPH_FAILED);
     OP_LOGD(tilingContext, "Entering IsFiniteTilingForGe");
     auto compileInfo = reinterpret_cast<const IsFiniteCompileInfo*>(tilingContext->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, compileInfo);
@@ -69,20 +68,21 @@ static ge::graphStatus IsFiniteTilingForGe(gert::TilingContext* tilingContext)
     OP_CHECK_IF(shape == nullptr, OP_LOGE(tilingContext, "InputShape == nullptr"), return ge::GRAPH_FAILED);
 
     IsFiniteNs::IsFiniteTilingData* tilingData = tilingContext->GetTilingData<IsFiniteNs::IsFiniteTilingData>();
-    IsFiniteNs::IsFiniteTiling::IsFiniteCommonTiling<gert::Shape>(shape->GetStorageShape(), *tilingData);
+    IsFiniteNs::IsFiniteTiling::IsFiniteCommonTiling<gert::Shape>(shape->GetStorageShape(), *tilingData, 
+                                                                  compileInfo->totalCoreNum, compileInfo->ubSize);
 
     uint32_t D_T_X = IS_FINITE_TPL_FP32, D_T_Y = IS_FINITE_TPL_BOOL;
     ge::DataType dtype_x = tilingContext->GetInputDesc(0)->GetDataType();
     if (dtype_x == ge::DataType::DT_FLOAT) {
         D_T_X = IS_FINITE_TPL_FP32;
-    } else if (dtype_x == ge::DataType::DT_FLOAT16) {
+    } else if(dtype_x == ge::DataType::DT_FLOAT16) {
         D_T_X = IS_FINITE_TPL_FP16;
-    } else if (dtype_x == ge::DataType::DT_BF16) {
+    } else if(dtype_x == ge::DataType::DT_BF16) {
         D_T_X = IS_FINITE_TPL_BF16;
     }
 
     tilingContext->SetBlockDim(tilingData->needCoreNum);
-    const uint64_t tilingKey = GET_TPL_TILING_KEY(D_T_X, D_T_Y); // 模板参数配置
+    const uint64_t tilingKey = GET_TPL_TILING_KEY(D_T_X, D_T_Y); //模板参数配置
     tilingContext->SetTilingKey(tilingKey);
     size_t* workspaces = tilingContext->GetWorkspaceSizes(1);
     if (workspaces != nullptr) {
