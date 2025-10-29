@@ -156,6 +156,7 @@ TEST_F(histogram_v2_test, test_case_0)
     uint64_t tilingKey = 0;
     auto tilingData = GetTilingData(tilingKey, tiling, blockDim);
     ICPU_SET_TILING_KEY(tilingKey);
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(histogram_v2, blockDim, self, min, max, binsCount, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(self);
