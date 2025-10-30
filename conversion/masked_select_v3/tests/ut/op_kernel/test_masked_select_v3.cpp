@@ -18,7 +18,9 @@
 #include "tikicpulib.h"
 #include "data_utils.h"
 
-#include "masked_select_v3_tiling.h"
+#include "../../../op_host/masked_select_v3_tiling.h"
+#include "tiling_context_faker.h"
+#include "tiling_case_executor.h"
 
 using namespace std;
 
@@ -39,163 +41,34 @@ protected:
 
 TEST_F(MaskedSelectV3Test, masked_select_v3_0_int64)
 {
-    size_t shapeSize = (131072 - 290) * 6;
-    size_t inputXByteSize = shapeSize * sizeof(uint64_t);
-    size_t inputMaskByteSize = shapeSize * sizeof(uint8_t);
-    size_t outputYByteSize = shapeSize * sizeof(uint64_t);
-    size_t shapeOutByteSize = sizeof(int64_t) * 2;
-    size_t tilingDataSize = sizeof(MaskedSelectV3TilingData);
+    optiling::MaskedSelectV3CompileInfo compileInfo = {48, 196608, 16777216, false};
+    
+    gert::TilingContextPara tilingContextPara("MaskedSelectV3",
+                                              {{{{8,}, {8,}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                               {{{8,}, {8,}}, ge::DT_BOOL, ge::FORMAT_ND}},
+                                              {{{{8,}, {8,}}, ge::DT_FLOAT, ge::FORMAT_ND},},
+                                              &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_EQ(tilingRet, true);
+
+    size_t inputXByteSize = 8 * sizeof(float);
+    size_t inputMaskByteSize = 8 * sizeof(bool);
+    size_t outputYByteSize = 8 * sizeof(float);
+    size_t shapeOutByteSize = sizeof(uint64_t) * 2;
 
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(inputXByteSize);
     uint8_t* mask = (uint8_t*)AscendC::GmAlloc(inputMaskByteSize);
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(outputYByteSize);
     uint8_t* shapeOut = (uint8_t*)AscendC::GmAlloc(shapeOutByteSize);
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(inputXByteSize * 3);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(tilingInfo.workspaceSizes[0]);
+    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingInfo.tilingDataSize);
     uint32_t blockDim = 1;
+    std::memcpy(tiling, tilingInfo.tilingData.get(), tilingInfo.tilingDataSize);
 
-    MaskedSelectV3TilingData* tilingData = reinterpret_cast<MaskedSelectV3TilingData*>(tiling);
-
-    tilingData->formerNum = 36;
-    tilingData->formerLength = 16348;
-    tilingData->formertileNum = 6;
-    tilingData->formertileLength = 3000;
-    tilingData->formerlasttileLength = 1348;
-
-    tilingData->tailNum = 12;
-    tilingData->tailLength = 16347;
-    tilingData->tailtileNum = 6;
-    tilingData->tailtileLength = 3000;
-    tilingData->taillasttileLength = 1347;
-
-    ICPU_SET_TILING_KEY(8);
-    ICPU_RUN_KF(masked_select_v3, blockDim, x, mask, y, shapeOut, workspace, (uint8_t*)(tilingData));
-
-    AscendC::GmFree(x);
-    AscendC::GmFree(mask);
-    AscendC::GmFree(y);
-    AscendC::GmFree(shapeOut);
-    AscendC::GmFree(workspace);
-    AscendC::GmFree(tiling);
-}
-
-TEST_F(MaskedSelectV3Test, masked_select_v3_0_int32)
-{
-    size_t shapeSize = (131072 - 290) * 6;
-    size_t inputXByteSize = shapeSize * sizeof(uint32_t);
-    size_t inputMaskByteSize = shapeSize * sizeof(uint8_t);
-    size_t outputYByteSize = shapeSize * sizeof(uint32_t);
-    size_t shapeOutByteSize = sizeof(int64_t) * 2;
-    size_t tilingDataSize = sizeof(MaskedSelectV3TilingData);
-
-    uint8_t* x = (uint8_t*)AscendC::GmAlloc(inputXByteSize);
-    uint8_t* mask = (uint8_t*)AscendC::GmAlloc(inputMaskByteSize);
-    uint8_t* y = (uint8_t*)AscendC::GmAlloc(outputYByteSize);
-    uint8_t* shapeOut = (uint8_t*)AscendC::GmAlloc(shapeOutByteSize);
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(inputXByteSize * 3);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
-    uint32_t blockDim = 1;
-
-    MaskedSelectV3TilingData* tilingData = reinterpret_cast<MaskedSelectV3TilingData*>(tiling);
-
-    tilingData->formerNum = 36;
-    tilingData->formerLength = 16348;
-    tilingData->formertileNum = 6;
-    tilingData->formertileLength = 3000;
-    tilingData->formerlasttileLength = 1348;
-
-    tilingData->tailNum = 12;
-    tilingData->tailLength = 16347;
-    tilingData->tailtileNum = 6;
-    tilingData->tailtileLength = 3000;
-    tilingData->taillasttileLength = 1347;
-
-    ICPU_SET_TILING_KEY(4);
-    ICPU_RUN_KF(masked_select_v3, blockDim, x, mask, y, shapeOut, workspace, (uint8_t*)(tilingData));
-
-    AscendC::GmFree(x);
-    AscendC::GmFree(mask);
-    AscendC::GmFree(y);
-    AscendC::GmFree(shapeOut);
-    AscendC::GmFree(workspace);
-    AscendC::GmFree(tiling);
-}
-
-TEST_F(MaskedSelectV3Test, masked_select_v3_0_int16)
-{
-    size_t shapeSize = (131072 - 290) * 6;
-    size_t inputXByteSize = shapeSize * sizeof(uint16_t);
-    size_t inputMaskByteSize = shapeSize * sizeof(uint8_t);
-    size_t outputYByteSize = shapeSize * sizeof(uint16_t);
-    size_t shapeOutByteSize = sizeof(int64_t) * 2;
-    size_t tilingDataSize = sizeof(MaskedSelectV3TilingData);
-
-    uint8_t* x = (uint8_t*)AscendC::GmAlloc(inputXByteSize);
-    uint8_t* mask = (uint8_t*)AscendC::GmAlloc(inputMaskByteSize);
-    uint8_t* y = (uint8_t*)AscendC::GmAlloc(outputYByteSize);
-    uint8_t* shapeOut = (uint8_t*)AscendC::GmAlloc(shapeOutByteSize);
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(inputXByteSize * 3);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
-    uint32_t blockDim = 1;
-
-    MaskedSelectV3TilingData* tilingData = reinterpret_cast<MaskedSelectV3TilingData*>(tiling);
-
-    tilingData->formerNum = 36;
-    tilingData->formerLength = 16348;
-    tilingData->formertileNum = 6;
-    tilingData->formertileLength = 3000;
-    tilingData->formerlasttileLength = 1348;
-
-    tilingData->tailNum = 12;
-    tilingData->tailLength = 16347;
-    tilingData->tailtileNum = 6;
-    tilingData->tailtileLength = 3000;
-    tilingData->taillasttileLength = 1347;
-
-    ICPU_SET_TILING_KEY(2);
-    ICPU_RUN_KF(masked_select_v3, blockDim, x, mask, y, shapeOut, workspace, (uint8_t*)(tilingData));
-
-    AscendC::GmFree(x);
-    AscendC::GmFree(mask);
-    AscendC::GmFree(y);
-    AscendC::GmFree(shapeOut);
-    AscendC::GmFree(workspace);
-    AscendC::GmFree(tiling);
-}
-
-TEST_F(MaskedSelectV3Test, masked_select_v3_0_int8)
-{
-    size_t shapeSize = (131072 - 290) * 6;
-    size_t inputXByteSize = shapeSize * sizeof(uint8_t);
-    size_t inputMaskByteSize = shapeSize * sizeof(uint8_t);
-    size_t outputYByteSize = shapeSize * sizeof(uint8_t);
-    size_t shapeOutByteSize = sizeof(int64_t) * 2;
-    size_t tilingDataSize = sizeof(MaskedSelectV3TilingData);
-
-    uint8_t* x = (uint8_t*)AscendC::GmAlloc(inputXByteSize);
-    uint8_t* mask = (uint8_t*)AscendC::GmAlloc(inputMaskByteSize);
-    uint8_t* y = (uint8_t*)AscendC::GmAlloc(outputYByteSize);
-    uint8_t* shapeOut = (uint8_t*)AscendC::GmAlloc(shapeOutByteSize);
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(inputXByteSize * 6);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
-    uint32_t blockDim = 1;
-
-    MaskedSelectV3TilingData* tilingData = reinterpret_cast<MaskedSelectV3TilingData*>(tiling);
-
-    tilingData->formerNum = 36;
-    tilingData->formerLength = 16348;
-    tilingData->formertileNum = 6;
-    tilingData->formertileLength = 3000;
-    tilingData->formerlasttileLength = 1348;
-
-    tilingData->tailNum = 12;
-    tilingData->tailLength = 16347;
-    tilingData->tailtileNum = 6;
-    tilingData->tailtileLength = 3000;
-    tilingData->taillasttileLength = 1347;
-
-    ICPU_SET_TILING_KEY(1);
-    ICPU_RUN_KF(masked_select_v3, blockDim, x, mask, y, shapeOut, workspace, (uint8_t*)(tilingData));
+    ICPU_SET_TILING_KEY(tilingInfo.tilingKey);
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
+    ICPU_RUN_KF(masked_select_v3, blockDim, x, mask, y, shapeOut, workspace, tiling);
 
     AscendC::GmFree(x);
     AscendC::GmFree(mask);
