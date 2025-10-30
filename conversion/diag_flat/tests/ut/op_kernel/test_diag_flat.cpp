@@ -21,6 +21,8 @@
 #include "kernel_fp16.h"
 #include "gtest/gtest.h"
 #include "test_diag_flat_tiling.h"
+#include "tiling_context_faker.h"
+#include "tiling_case_executor.h"
 
 #ifdef __CCE_KT_TEST__
 #include <cstdint>
@@ -95,34 +97,42 @@ bool ReadFileForDiagFlat(const std::string& filePath, size_t& fileSize, void* bu
     return true;
 }
 
+struct DiagFlatCompileInfo {
+    uint32_t coreNum = 0;
+    uint64_t ubSizePlatForm = 0;
+    bool isAscend310P = false;
+};
+
 TEST_F(diag_flat_test, test_case_3) {
+    DiagFlatCompileInfo compileInfo = {48, 196608, false};
+    
+    gert::TilingContextPara tilingContextPara("DiagFlat",
+                                              {{{{128,}, {128,}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
+                                              {{{{128, 128}, {128, 128}}, ge::DT_FLOAT16, ge::FORMAT_ND},},
+                                              {gert::TilingContextPara::OpAttr("diagonal", Ops::Math::AnyValue::CreateFrom<int64_t>(0))},
+                                              &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_EQ(tilingRet, true);
+
     // input size align
-    size_t inputBytesSize = 59 * 16;
-    size_t outputBytesSize = 59 * 59 * 16;
+    size_t inputBytesSize = 128 * 2;
+    size_t outputBytesSize = 128 * 128 * 2;
     size_t tiling_data_size = sizeof(DiagV2TilingDataTest);
 
     uint8_t *x = (uint8_t *)AscendC::GmAlloc(inputBytesSize);
     uint8_t *y = (uint8_t *)AscendC::GmAlloc(outputBytesSize);
-    uint8_t *workspace = (uint8_t *)AscendC::GmAlloc(4096 * 16);
-    uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 3;
-    system("cp -r ../../../../conversion/diag_flat/tests/ut/op_kernel/diag_flat_data ./");
-    system("chmod -R 755 ./diag_flat_data/");
-    system("cd ./diag_flat_data/ && rm -rf ./*bin");
-    system("cd ./diag_flat_data/ && python3 gen_data.py case10");
-    system("cd ./diag_flat_data/ && python3 gen_tiling.py caseflat");
+    uint8_t *workspace = (uint8_t *)AscendC::GmAlloc(tilingInfo.workspaceSizes[0]);
+    uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tilingInfo.tilingDataSize);
+    std::memcpy(tiling, tilingInfo.tilingData.get(), tilingInfo.tilingDataSize);
+    uint32_t blockDim = 1;
 
-    char * path_ = get_current_dir_name();
-    string path(path_);
-    ReadFileForDiagFlat(path + "/diag_flat_data/input.bin", inputBytesSize, x, inputBytesSize);
-    ReadFileForDiagFlat(path + "/diag_flat_data/tiling.bin", tiling_data_size, tiling, tiling_data_size);
-
-    ICPU_SET_TILING_KEY(102);
+    ICPU_SET_TILING_KEY(tilingInfo.tilingKey);
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(diag_flat, blockDim, x, y, workspace, tiling);
 
     AscendC::GmFree(x);
     AscendC::GmFree(y);
     AscendC::GmFree(workspace);
     AscendC::GmFree(tiling);
-    free(path_);
 }

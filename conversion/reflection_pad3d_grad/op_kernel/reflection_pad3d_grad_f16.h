@@ -124,7 +124,7 @@ public:
             curLen = preLen;
             curOffset = blockIdx * preLen + tailLen;
         }
-        yGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(y) + curOffset);
+        yGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(y) + curOffset, curLen);
         InitGlobalMemory<T>(yGm, curLen, 0);
         SyncAll();
     }
@@ -134,7 +134,7 @@ public:
         ClearOutput(y);
         xGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x) + ncOffset * curDepth * height * width);
         yGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(y) + ncOffset * curOutDepth * outHeight * outWidth);
-        workspaceGm.SetGlobalBuffer(reinterpret_cast<__gm__ float*>(userWS) + (alignHeight * alignWidth) * blockIdx);
+        workspaceGm.SetGlobalBuffer(reinterpret_cast<__gm__ float*>(userWS) + (alignHeight * alignWidth) * blockIdx, alignHeight * alignWidth);
         InitGlobalMemory<float>(workspaceGm, alignHeight * alignWidth, (float)0.0);
         SyncAll();
         pipe.InitBuffer(inQueueX, BUFFER_NUM, (ubFactorElement * sizeof(T)));
