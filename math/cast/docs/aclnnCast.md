@@ -4,8 +4,13 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品 </term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+| <term>Atlas 200/300/500 推理产品</term>                      |    ×     |
 
 ## 功能说明
 
@@ -13,219 +18,61 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnCastGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCast”接口执行计算。
-```Cpp
-aclnnStatus aclnnCastGetWorkspaceSize(
-  const aclTensor   *self, 
-  const aclDataType  dtype, 
-  aclTensor         *out, 
-  uint64_t          *workspaceSize, 
-  aclOpExecutor    **executor)
-```
-```Cpp
-aclnnStatus aclnnCast(
-  void          *workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor, 
-  aclrtStream    stream)
-```
+每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnCastGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCast”接口执行计算。
+
+- `aclnnStatus aclnnCastGetWorkspaceSize(const aclTensor *self, const aclDataType dtype, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
+- `aclnnStatus aclnnCast(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+
 ## aclnnCastGetWorkspaceSize
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1495px"><colgroup>
-  <col style="width: 146px">
-  <col style="width: 110px">
-  <col style="width: 301px">
-  <col style="width: 219px">
-  <col style="width: 328px">
-  <col style="width: 101px">
-  <col style="width: 143px">
-  <col style="width: 147px">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>参数名</th>
-      <th>输入/输出</th>
-      <th>描述</th>
-      <th>使用说明</th>
-      <th>数据类型</th>
-      <th>数据格式</th>
-      <th>维度(shape)</th>
-      <th>非连续Tensor</th>
-    </tr></thead>
-  <tbody>
-    <tr>
-      <td>self</td>
-      <td>输入</td>
-      <td>待进行cast计算的入参，Device侧的aclTensor。</td>
-      <td>无</td>
-      <td>FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BOOL、COMPLEX32、COMPLEX64、COMPLEX128、BFLOAT16</td>
-      <td>ND</td>
-      <td>0-8</td>
-      <td>√</td>
-    </tr>
-    <tr>
-      <td>dtype</td>
-      <td>属性</td>
-      <td>Host侧的aclDataType，输入tensor要转换的目标dtype。</td>
-      <td>无</td>
-      <td>const aclDataType</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-    </tr>
-    <tr>
-      <td>out</td>
-      <td>输出</td>
-      <td>待进行cast计算的出参，Device侧的aclTensor。</td>
-      <td>shape与self相同。</td>
-      <td>FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BOOL、COMPLEX32、COMPLEX64、COMPLEX128、BFLOAT16</td>
-      <td>ND</td>
-      <td>0-8</td>
-      <td>√</td>
-    </tr>
-    <tr>
-      <td>workspaceSize</td>
-      <td>输出</td>
-      <td>返回需要在Device侧申请的workspace大小。</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-    </tr>
-    <tr>
-      <td>executor</td>
-      <td>输出</td>
-      <td>返回op执行器，包含了算子计算流程。</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-    </tr>
-  </tbody></table>
-  
+  - self(aclTensor*, 计算输入)：Device侧的aclTensor，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，shape支持0-8维。
+    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BOOL、COMPLEX64、COMPLEX128。
+    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BOOL、COMPLEX64、COMPLEX128、BFLOAT16。
+    - <term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BOOL、COMPLEX32、COMPLEX64、COMPLEX128、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT4_E2M1、FLOAT4_E1M2。
+
+  - dtype(const aclDataType, 计算输入)：Host侧的aclDataType，输入tensor要转换的目标dtype。
+
+  - out(aclTensor*, 计算输出)：Device侧的aclTensor，数据类型为dtype，shape与self相同，[数据格式](common/数据格式.md)支持ND，且[数据格式](common/数据格式.md)需要与self一致。
+    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BOOL、COMPLEX64、COMPLEX128。
+    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BOOL、COMPLEX64、COMPLEX128、BFLOAT16。
+    - <term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BOOL、COMPLEX32、COMPLEX64、COMPLEX128、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT4_E2M1、FLOAT4_E1M2。
+
+  - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
+
+  - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
+
 
 - **返回值：**
-  
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
-  第一段接口会完成入参校验，出现以下场景时报错：
-  
-  <table style="undefined;table-layout: fixed;width: 1155px"><colgroup>
-  <col style="width: 319px">
-  <col style="width: 144px">
-  <col style="width: 671px">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>返回码</th>
-      <th>错误码</th>
-      <th>描述</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>ACLNN_ERR_PARAM_NULLPTR</td>
-      <td>161001</td>
-      <td>传入的tensor或out是空指针。</td>
-    </tr>
-    <tr>
-      <td rowspan="8">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="8">161002</td>
-      <td>self的数据类型和数据格式不在支持的范围之内。</td>
-    </tr>
-    <tr>
-      <td>self的数据格式与out的数据格式不同。</td>
-    </tr>
-    <tr>
-      <td>self的shape与out的shape不同。</td>
-    </tr>
-    <tr>
-      <td>参数dtype不在输出支持的数据格式范围之内。</td>
-    </tr>
-  </tbody></table>
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+
+```
+第一段接口完成入参校验，出现以下场景时报错：
+161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self或out是空指针。
+161002 (ACLNN_ERR_PARAM_INVALID): 1. self的数据类型和数据格式不在支持的范围之内。
+                                  2. self的数据格式与out的数据格式不同。
+                                  3. self的shape与out的shape不同。
+                                  4. 参数dtype不在输出支持的数据格式范围之内。
+```
 
 ## aclnnCast
 
 - **参数说明：**
-  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
-  <col style="width: 173px">
-  <col style="width: 112px">
-  <col style="width: 668px">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>参数名</th>
-      <th>输入/输出</th>
-      <th>描述</th>
-    </tr></thead>
-  <tbody>
-    <tr>
-      <td>workspace</td>
-      <td>输入</td>
-      <td>在Device侧申请的workspace内存地址。</td>
-    </tr>
-    <tr>
-      <td>workspaceSize</td>
-      <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnCastGetWorkspaceSize获取。</td>
-    </tr>
-    <tr>
-      <td>executor</td>
-      <td>输入</td>
-      <td>op执行器，包含了算子计算流程。</td>
-    </tr>
-    <tr>
-      <td>stream</td>
-      <td>输入</td>
-      <td>指定执行任务的Stream。</td>
-    </tr>
-  </tbody>
-  </table>
+
+  - workspace(void*, 入参)：在Device侧申请的workspace内存地址。
+
+  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnCastGetWorkspaceSize获取。
+
+  - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
+
+  - stream(aclrtStream, 入参)：指定执行任务的Stream。
 
 
 - **返回值：**
-  
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
-  第一段接口会完成入参校验，出现以下场景时报错：
-  
-  <table style="undefined;table-layout: fixed;width: 1155px"><colgroup>
-  <col style="width: 319px">
-  <col style="width: 144px">
-  <col style="width: 671px">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>返回码</th>
-      <th>错误码</th>
-      <th>描述</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>ACLNN_ERR_PARAM_NULLPTR</td>
-      <td>161001</td>
-      <td>传入的tensor或out是空指针。</td>
-    </tr>
-    <tr>
-      <td rowspan="8">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="8">161002</td>
-      <td>self的数据类型和数据格式不在支持的范围之内。</td>
-    </tr>
-    <tr>
-      <td>self的数据格式与out的数据格式不同。</td>
-    </tr>
-    <tr>
-      <td>self的shape与out的shape不同。</td>
-    </tr>
-    <tr>
-      <td>参数dtype不在输出支持的数据格式范围之内。</td>
-    </tr>
-  </tbody></table>
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -235,14 +82,33 @@ aclnnStatus aclnnCast(
 - 针对输入数据类型为BOOL、COMPLEX32、COMPLEX64、COMPLEX128、FLOAT4_E2M1、FLOAT4_E1M2的场景：
   不支持输入为非连续。
 
-- <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+- <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
   - 针对数据类型从int32转换为int8的场景：
     只能保证输入数据在(-2048, 1920)范围内精度无误差。
 
+- <term>Atlas 推理系列产品</term>：
+  - 针对数据类型从float32转换为int64和float32转换为uint8的场景：
+    只能保证输入数据在(-2147483648, 2147483583)范围内精度无误差。
+
+  - 针对数据类型从int64转换为float32的场景：
+    只能保证输入数据在(-2147483648, 2147483647)范围内精度无误差。
+
+- <term>昇腾910_95 AI处理器</term>：
+  - 针对输入、输出类型，涉及COMPLEX32、FLOAT4_E2M1、FLOAT4_E1M2、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN的，只支持如下表格中的转换路径：
+    | `self`数据类型 | `out`数据类型 |
+    | -------- | -------- |
+    | COMPLEX32 | FLOAT16 |
+    | FLOAT16 | COMPLEX32 |
+    | FLOAT32/FLOAT16/BFLOAT16 | FLOAT4_E2M1/FLOAT4_E1M2 |
+    | FLOAT4_E2M1/FLOAT4_E1M2 | FLOAT32/FLOAT16/BFLOAT16 |
+    | FLOAT32/FLOAT16/BFLOAT16 | HIFLOAT8/FLOAT8_E5M2/FLOAT8_E4M3FN |
+    | HIFLOAT8/FLOAT8_E5M2/FLOAT8_E4M3FN | FLOAT32/FLOAT16/BFLOAT16 |
+    | HIFLOAT8/FLOAT8_E5M2/FLOAT8_E4M3FN | FLOAT4_E2M1/FLOAT4_E1M2 |
+    | FLOAT4_E2M1/FLOAT4_E1M2 | HIFLOAT8/FLOAT8_E5M2/FLOAT8_E4M3FN |
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>
@@ -270,7 +136,7 @@ int64_t GetShapeSize(const std::vector<int64_t>& shape) {
 }
 
 int Init(int32_t deviceId, aclrtStream* stream) {
-  // 固定写法，初始化
+  // 固定写法，资源初始化
   auto ret = aclInit(nullptr);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclInit failed. ERROR: %d\n", ret); return ret);
   ret = aclrtSetDevice(deviceId);
@@ -304,7 +170,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API文档
+  // 1. （固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
