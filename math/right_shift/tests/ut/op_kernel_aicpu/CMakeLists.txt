@@ -16,22 +16,6 @@ foreach(SUB_DIR ${CURRENT_SOURCE_DIRS})
     endif()
 endforeach()
 
-
-# ��Ҫ��Tiling�������ļ����ӵ�CMakeLists.txt��
-# set(elewise_common_tiling_files
-#         ${CANN_ROOT}/ops/built-in/op_tiling/runtime/elewise_tiling.cc
-#         )
-# �����Լ���tiling�ļ�·��
-# set(lin_space_tiling_files
-#     ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/lin_space_tiling.cpp
-#     ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/lin_space_tiling_arch35.cpp
-#     ${elewise_common_tiling_files}
-#     )
-# ʹ��AddOpTestCase
-# param1���������ƣ���kernel��ʽ����
-# param2��soc�汾������Էֺŷָ������磺"ascend910_9599;AscendB1"
-# param3���Զ������ѡ�һ����д���Ե�һ�ֵ�������������ϣ�����Ҫ������ַ��������磺"-DDTYPE_X=float"�����ʹ�ÿո�ָ������磺"-DDTYPE_X=float -DDTYPE_Y=float"
-# param4������������������tilingԴ���ļ�
 if (UT_TEST_ALL OR FAST_OP_UT)
     # AddOpTestCase(lin_space "ascend910B1;ascend910_9599" "-DDTYPE_X=float" "${lin_space_tiling_files}")
 endif()
