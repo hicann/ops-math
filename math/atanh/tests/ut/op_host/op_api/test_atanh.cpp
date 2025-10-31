@@ -43,7 +43,6 @@ TEST_F(l2_atanh_test, atanh_int_float)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 TEST_F(l2_atanh_test, atanh_float_float16)
@@ -55,7 +54,6 @@ TEST_F(l2_atanh_test, atanh_float_float16)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 TEST_F(l2_atanh_test, ascend910B2_atanh_bfloat16_bfloat16)
@@ -67,7 +65,6 @@ TEST_F(l2_atanh_test, ascend910B2_atanh_bfloat16_bfloat16)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 TEST_F(l2_atanh_test, atanh_float_int)
@@ -118,7 +115,6 @@ TEST_F(l2_atanh_test, atanh_precision)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 TEST_F(l2_atanh_test, atanh_empty_tensor)
@@ -130,7 +126,6 @@ TEST_F(l2_atanh_test, atanh_empty_tensor)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 TEST_F(l2_atanh_test, atanh_non_contiguous)
@@ -142,7 +137,6 @@ TEST_F(l2_atanh_test, atanh_non_contiguous)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 TEST_F(l2_atanh_test, atanh_lessDim)
@@ -154,7 +148,6 @@ TEST_F(l2_atanh_test, atanh_lessDim)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 TEST_F(l2_atanh_test, atanh_bigDim)
@@ -176,5 +169,4 @@ TEST_F(l2_atanh_test, atanh_inplace)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }

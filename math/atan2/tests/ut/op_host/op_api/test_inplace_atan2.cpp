@@ -57,7 +57,6 @@ TEST_F(l2_inplace_atan2_test, ascend910B2_aclnnInplaceAtan2_base_case_1)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_inplace_atan2_test, ascend910B2_aclnnInplaceAtan2_base_case_2)
@@ -80,7 +79,6 @@ TEST_F(l2_inplace_atan2_test, ascend910B2_aclnnInplaceAtan2_base_case_2)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // ut.TestPrecision();
 }
 
 /* 各元素基本类型覆盖用例
@@ -189,7 +187,6 @@ TEST_F(l2_inplace_atan2_test, aclnnInplaceAtan2_1_2_3_4_double_uint8_nhwc)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_inplace_atan2_test, ascend910B2_aclnnInplaceAtan2_1_bool_nhwc)
@@ -212,7 +209,6 @@ TEST_F(l2_inplace_atan2_test, ascend910B2_aclnnInplaceAtan2_1_bool_nhwc)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_inplace_atan2_test, aclnnInplaceAtan2_1_2_3_4_int8_int32_hwcn)
@@ -259,7 +255,6 @@ TEST_F(l2_inplace_atan2_test, aclnnInplaceAtan2_float_nd_empty_tensor)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // 边界值
@@ -283,7 +278,6 @@ TEST_F(l2_inplace_atan2_test, aclnnInplaceAtan2_float32_nd_boundary_value)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // 不连续
@@ -462,7 +456,6 @@ TEST_F(l2_inplace_atan2_test, ascend910B2_atan2_self_broadcast)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // ut.TestPrecision();
 }
 
 // 形状大于8

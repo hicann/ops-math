@@ -185,7 +185,6 @@ TEST_F(l2_inplace_add_test, case_008)
 //   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
 //   EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-//   ut.TestPrecision();
 // }
 
 TEST_F(l2_inplace_add_test, case_0010)
@@ -290,8 +289,6 @@ TEST_F(l2_inplace_add_test, case_017)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();  // comment bcz of timeout in model tests (177505 ms)
 }
 
 TEST_F(l2_inplace_add_test, case_019)

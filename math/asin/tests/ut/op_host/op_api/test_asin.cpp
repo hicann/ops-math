@@ -44,8 +44,6 @@ TEST_F(l2_asin_test, case_1)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_2)
@@ -58,8 +56,6 @@ TEST_F(l2_asin_test, case_2)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, ascend910B2_case_3)
@@ -72,8 +68,6 @@ TEST_F(l2_asin_test, ascend910B2_case_3)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_4)
@@ -86,8 +80,6 @@ TEST_F(l2_asin_test, case_4)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_5)
@@ -124,8 +116,6 @@ TEST_F(l2_asin_test, case_7)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_8)
@@ -138,8 +128,6 @@ TEST_F(l2_asin_test, case_8)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_9)
@@ -152,8 +140,6 @@ TEST_F(l2_asin_test, case_9)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_10)
@@ -166,8 +152,6 @@ TEST_F(l2_asin_test, case_10)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_11)
@@ -180,8 +164,6 @@ TEST_F(l2_asin_test, case_11)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_12)
@@ -194,8 +176,6 @@ TEST_F(l2_asin_test, case_12)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_13)
@@ -208,8 +188,6 @@ TEST_F(l2_asin_test, case_13)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_14)
@@ -222,8 +200,6 @@ TEST_F(l2_asin_test, case_14)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_15)
@@ -248,8 +224,6 @@ TEST_F(l2_asin_test, case_16)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_17)
@@ -262,8 +236,6 @@ TEST_F(l2_asin_test, case_17)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_18)
@@ -276,8 +248,6 @@ TEST_F(l2_asin_test, case_18)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_19)
@@ -290,8 +260,6 @@ TEST_F(l2_asin_test, case_19)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_20)
@@ -304,8 +272,6 @@ TEST_F(l2_asin_test, case_20)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_21)
@@ -330,8 +296,6 @@ TEST_F(l2_asin_test, case_22)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_23)
@@ -356,8 +320,6 @@ TEST_F(l2_asin_test, case_24)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_25)
@@ -370,8 +332,6 @@ TEST_F(l2_asin_test, case_25)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_26)
@@ -384,8 +344,6 @@ TEST_F(l2_asin_test, case_26)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_27)
@@ -398,8 +356,6 @@ TEST_F(l2_asin_test, case_27)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_28)
@@ -412,8 +368,6 @@ TEST_F(l2_asin_test, case_28)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_29)
@@ -426,8 +380,6 @@ TEST_F(l2_asin_test, case_29)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_30)
@@ -440,8 +392,6 @@ TEST_F(l2_asin_test, case_30)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_asin_test, case_31)

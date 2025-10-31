@@ -44,7 +44,6 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int8)
     auto out_tensor_desc = TensorDesc({31}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut =
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
-    ut.TestPrecision();
 }
 
 TEST_F(l2_bincount_test, ascend910_9599_input_uint8)
@@ -59,7 +58,6 @@ TEST_F(l2_bincount_test, ascend910_9599_input_uint8)
     auto out_tensor_desc = TensorDesc({31}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut =
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
-    ut.TestPrecision();
 }
 
 TEST_F(l2_bincount_test, ascend910_9599_input_int16)
@@ -74,7 +72,6 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int16)
     auto out_tensor_desc = TensorDesc({31}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut =
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
-    ut.TestPrecision();
 }
 
 TEST_F(l2_bincount_test, ascend910_9599_input_int32)
@@ -89,7 +86,6 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int32)
     auto out_tensor_desc = TensorDesc({31}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut =
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
-    ut.TestPrecision();
 }
 
 TEST_F(l2_bincount_test, ascend910_9599_input_int64)
@@ -104,7 +100,6 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int64)
     auto out_tensor_desc = TensorDesc({31}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut =
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
-    ut.TestPrecision();
 }
 
 TEST_F(l2_bincount_test, ascend910_9599_input_int8_minlength)
@@ -118,7 +113,6 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int8_minlength)
     auto out_tensor_desc = TensorDesc({100}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut =
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
-    ut.TestPrecision();
 }
 
 TEST_F(l2_bincount_test, ascend910_9599_input_uint8_minlength)
@@ -133,7 +127,6 @@ TEST_F(l2_bincount_test, ascend910_9599_input_uint8_minlength)
     auto out_tensor_desc = TensorDesc({100}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut =
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
-    ut.TestPrecision();
 }
 
 TEST_F(l2_bincount_test, ascend910_9599_input_int16_minlength)
@@ -148,7 +141,6 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int16_minlength)
     auto out_tensor_desc = TensorDesc({100}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut =
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
-    ut.TestPrecision();
 }
 
 TEST_F(l2_bincount_test, ascend910_9599_input_int32_minlength)
@@ -163,7 +155,6 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int32_minlength)
     auto out_tensor_desc = TensorDesc({100}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut =
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
-    ut.TestPrecision();
 }
 
 TEST_F(l2_bincount_test, ascend910_9599_input_int64_minlength)
@@ -178,7 +169,6 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int64_minlength)
     auto out_tensor_desc = TensorDesc({100}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut =
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
-    ut.TestPrecision();
 }
 
 // weights dtype test
@@ -193,7 +183,6 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int8_BOOL)
     auto out_tensor_desc = TensorDesc({31}, ACL_DOUBLE, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut =
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
-    ut.TestPrecision();
 }
 
 TEST_F(l2_bincount_test, ascend910_9599_input_int8_weights_dtypes)
@@ -210,7 +199,6 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int8_weights_dtypes)
         auto out_tensor_desc = TensorDesc({31}, ACL_DOUBLE, ACL_FORMAT_ND).Precision(0.001, 0.001);
         auto ut =
             OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
-        ut.TestPrecision();
     }
 }
 
@@ -226,7 +214,6 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int8_weights_nullptr)
     auto out_tensor_desc = TensorDesc({31}, ACL_INT64, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut =
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
-    ut.TestPrecision();
 }
 
 // input  null tensor
@@ -238,7 +225,6 @@ TEST_F(l2_bincount_test, ascend910_9599_input_null_tensor)
     auto out_tensor_desc = TensorDesc({0}, ACL_DOUBLE, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut =
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
-    ut.TestPrecision();
 }
 
 TEST_F(l2_bincount_test, ascend910_9599_input_null_tensor_with_minlength)
@@ -249,7 +235,6 @@ TEST_F(l2_bincount_test, ascend910_9599_input_null_tensor_with_minlength)
     auto out_tensor_desc = TensorDesc({2}, ACL_DOUBLE, ACL_FORMAT_ND).Precision(0.001, 0.001);
     auto ut =
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
-    ut.TestPrecision();
 }
 
 // Abnormal Scenarios

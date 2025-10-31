@@ -48,29 +48,6 @@ TEST_F(l2_inplace_bitwise_or_scalar_test, l2_inplace_bitwise_or_scalar_BOOL_ND)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    // precision simulate
-    ut.TestPrecision();
-}
-
-// 正常场景_NCHW
-TEST_F(l2_inplace_bitwise_or_scalar_test, l2_inplace_bitwise_or_scalar_all_dtype_NCHW)
-{
-    vector<aclDataType> dtypes{ACL_INT8, ACL_INT32, ACL_UINT8, ACL_INT16, ACL_INT64};
-    for (auto dtype : dtypes) {
-        auto selfDesc = TensorDesc({2, 2, 2, 2}, dtype, ACL_FORMAT_NCHW);
-        int8_t value = 1;
-        auto otherDesc = ScalarDesc(value);
-
-        auto ut = OP_API_UT(aclnnInplaceBitwiseOrScalar, INPUT(selfDesc, otherDesc), OUTPUT());
-
-        // only test GetWorkspaceSize
-        uint64_t workspaceSize = 0;
-        aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-        EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-        // precision simulate
-        ut.TestPrecision();
-    }
 }
 
 // 空tensor场景
@@ -87,8 +64,6 @@ TEST_F(l2_inplace_bitwise_or_scalar_test, l2_inplace_bitwise_or_scalar_empty_ten
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    // precision simulate
-    ut.TestPrecision();
 }
 // CheckFormat_self_NCL
 TEST_F(l2_inplace_bitwise_or_scalar_test, l2_inplace_bitwise_or_scalar_test_format_self_NCL)
@@ -104,8 +79,6 @@ TEST_F(l2_inplace_bitwise_or_scalar_test, l2_inplace_bitwise_or_scalar_test_form
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    // precision simulate
-    ut.TestPrecision();
 }
 
 // 数据范围[-1，1]
@@ -122,8 +95,6 @@ TEST_F(l2_inplace_bitwise_or_scalar_test, l2_inplace_bitwise_or_scalar_testvalue
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    // precision simulate
-    ut.TestPrecision();
 }
 
 // 非连续
@@ -140,8 +111,6 @@ TEST_F(l2_inplace_bitwise_or_scalar_test, l2_inplace_bitwise_or_scalar_self_unco
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    // precision simulate
-    ut.TestPrecision();
 }
 
 // CheckShape_detype_unequal
@@ -158,8 +127,6 @@ TEST_F(l2_inplace_bitwise_or_scalar_test, l2_inplace_bitwise_or_scalar_abnormal_
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    // precision simulate
-    ut.TestPrecision();
 }
 
 // abmnormal

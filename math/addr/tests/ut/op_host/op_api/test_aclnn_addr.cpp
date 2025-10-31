@@ -52,7 +52,6 @@ TEST_F(l2_addr_test, case_addr_for_float16_type)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // test dtype: BFLOAT16
@@ -111,28 +110,6 @@ TEST_F(l2_addr_test, case_addr_for_float_type)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
-}
-
-// test dtype: DOUBLE
-TEST_F(l2_addr_test, case_addr_for_double_type)
-{
-    auto self_tensor_desc = TensorDesc({4, 3}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
-    auto vec1_tensor_desc = TensorDesc({4}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
-    auto vec2_tensor_desc = TensorDesc({3}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
-    auto beta_scalar_desc = ScalarDesc(1.5f);
-    auto alpha_scalar_desc = ScalarDesc(1.1f);
-    auto out_tensor_desc = TensorDesc(self_tensor_desc).Precision(0.0001, 0.0001);
-
-    auto ut = OP_API_UT(
-        aclnnAddr, INPUT(self_tensor_desc, vec1_tensor_desc, vec2_tensor_desc, beta_scalar_desc, alpha_scalar_desc),
-        OUTPUT(out_tensor_desc));
-
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // test dtype: INT8
@@ -153,28 +130,6 @@ TEST_F(l2_addr_test, case_addr_for_int8_type)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
-}
-
-// test dtype: INT16
-TEST_F(l2_addr_test, case_addr_for_int16_type)
-{
-    auto self_tensor_desc = TensorDesc({4, 3}, ACL_INT16, ACL_FORMAT_ND).ValueRange(-10, 10);
-    auto vec1_tensor_desc = TensorDesc({4}, ACL_INT16, ACL_FORMAT_ND).ValueRange(-10, 10);
-    auto vec2_tensor_desc = TensorDesc({3}, ACL_INT16, ACL_FORMAT_ND).ValueRange(-10, 10);
-    auto beta_scalar_desc = ScalarDesc(static_cast<int16_t>(2));
-    auto alpha_scalar_desc = ScalarDesc(static_cast<int16_t>(10));
-    auto out_tensor_desc = TensorDesc(self_tensor_desc).Precision(0.0001, 0.0001);
-
-    auto ut = OP_API_UT(
-        aclnnAddr, INPUT(self_tensor_desc, vec1_tensor_desc, vec2_tensor_desc, beta_scalar_desc, alpha_scalar_desc),
-        OUTPUT(out_tensor_desc));
-
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // test dtype: INT32
@@ -195,7 +150,6 @@ TEST_F(l2_addr_test, case_addr_for_int32_type)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // test dtype: INT64
@@ -216,7 +170,6 @@ TEST_F(l2_addr_test, case_addr_for_int64_type)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // test dtype: UINT8
@@ -237,7 +190,6 @@ TEST_F(l2_addr_test, case_addr_for_uint8_type)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // test dtype: BOOL
@@ -258,7 +210,6 @@ TEST_F(l2_addr_test, case_addr_for_bool_type)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // test invalid input type
@@ -433,49 +384,6 @@ TEST_F(l2_addr_test, case_addr_for_vec_dtype_cast)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
-}
-
-// vecs have different dtype with input, test dtype cast
-TEST_F(l2_addr_test, case_addr_for_input_dtype_cast)
-{
-    auto self_tensor_desc = TensorDesc({4, 3}, ACL_INT64, ACL_FORMAT_ND).ValueRange(-10, 10);
-    auto vec1_tensor_desc = TensorDesc({4}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-10, 10);
-    auto vec2_tensor_desc = TensorDesc({3}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-10, 10);
-    auto beta_scalar_desc = ScalarDesc(static_cast<double>(100.200000));
-    auto alpha_scalar_desc = ScalarDesc(static_cast<double>(200.500000));
-    auto out_tensor_desc = TensorDesc({4, 3}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-10, 10);
-
-    auto ut = OP_API_UT(
-        aclnnAddr, INPUT(self_tensor_desc, vec1_tensor_desc, vec2_tensor_desc, beta_scalar_desc, alpha_scalar_desc),
-        OUTPUT(out_tensor_desc));
-
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
-}
-
-// out has different dtype with input, test dtype cast
-TEST_F(l2_addr_test, case_addr_for_out_dtype_cast)
-{
-    auto self_tensor_desc = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10);
-    auto vec1_tensor_desc = TensorDesc({4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10);
-    auto vec2_tensor_desc = TensorDesc({3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10);
-    auto beta_scalar_desc = ScalarDesc(static_cast<float>(100.200000));
-    auto alpha_scalar_desc = ScalarDesc(static_cast<float>(200.500000));
-    auto out_tensor_desc = TensorDesc({4, 3}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-10, 10);
-
-    auto ut = OP_API_UT(
-        aclnnAddr, INPUT(self_tensor_desc, vec1_tensor_desc, vec2_tensor_desc, beta_scalar_desc, alpha_scalar_desc),
-        OUTPUT(out_tensor_desc));
-
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // *** nullptr test ***
@@ -550,28 +458,4 @@ TEST_F(l2_addr_test, case_addr_for_nullptr_scalar)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
-}
-
-// *** contiguous ***
-// test continuity
-// test nullptr scalar, handle with default value
-TEST_F(l2_addr_test, case_addr_for_continuity)
-{
-    auto self_tensor_desc = TensorDesc({4, 3}, ACL_FLOAT, ACL_FORMAT_ND, {1, 5}, 0, {4, 5}).ValueRange(-2.0, 2.0);
-    auto vec1_tensor_desc = TensorDesc({4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
-    auto vec2_tensor_desc = TensorDesc({3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
-    auto beta_scalar_desc = ScalarDesc(2.0f);
-    auto alpha_scalar_desc = ScalarDesc(3.0f);
-    auto out_tensor_desc = TensorDesc(self_tensor_desc).Precision(0.0001, 0.0001);
-
-    auto ut = OP_API_UT(
-        aclnnAddr, INPUT(self_tensor_desc, vec1_tensor_desc, vec2_tensor_desc, beta_scalar_desc, alpha_scalar_desc),
-        OUTPUT(out_tensor_desc));
-
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }

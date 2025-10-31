@@ -139,7 +139,6 @@ TEST_F(l2_add_test, case_004)
   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
   EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-  ut.TestPrecision();
 }*/
 
 TEST_F(l2_add_test, case_006)
@@ -206,7 +205,6 @@ TEST_F(l2_add_test, case_008)
 //   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
 //   EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-//   ut.TestPrecision();
 // }
 
 /*TEST_F(l2_add_test, case_0010) {
@@ -222,7 +220,6 @@ TEST_F(l2_add_test, case_008)
   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
   EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-  ut.TestPrecision();
 }*/
 
 // COMPLEX暂时不支持
@@ -320,8 +317,6 @@ TEST_F(l2_add_test, case_015)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    // ut.TestPrecision(); // comment bcz of timeout in model tests (270107 ms)
 }
 
 // 空tensor
@@ -701,8 +696,6 @@ TEST_F(l2_add_test, Ascend910B2_case_fp32_bf16_mix_dtype)
 //   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
 //   EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-//   // NOTE: actually precision test will be automatically skipped on Ascend910_93.
-//   ut.TestPrecision();
 // }
 
 // Ascend910_93
@@ -733,8 +726,6 @@ TEST_F(l2_add_test, Ascend910_93_case_027)
 //   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
 //   EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-//   // SAMPLE: precision simulate
-//   ut.TestPrecision();
 // }
 
 TEST_F(l2_add_test, Ascend910_9589_case_005)
@@ -766,8 +757,6 @@ TEST_F(l2_add_test, Ascend910_9589_case_005)
 //   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
 //   EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-//   // SAMPLE: precision simulate
-//   ut.TestPrecision();
 // }
 
 TEST_F(l2_add_test, Ascend910_9589_case_007)

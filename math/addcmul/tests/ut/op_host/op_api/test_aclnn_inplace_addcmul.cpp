@@ -340,6 +340,4 @@ TEST_F(l2_inplace_addcmul_test, test_float16)
 //  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
 //  EXPECT_EQ(aclRet, ACL_SUCCESS);
 //
-//  // SAMPLE: precision simulate
-//  ut.TestPrecision();
 //}

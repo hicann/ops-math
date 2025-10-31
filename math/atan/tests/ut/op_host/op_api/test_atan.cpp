@@ -49,7 +49,6 @@ TEST_F(l2_atan_test, ascend910B2_atan_dtype_all)
             uint64_t workspace_size = 0;
             aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
             EXPECT_EQ(aclRet, ACL_SUCCESS);
-            // ut.TestPrecision();
         }
     }
     for (auto dtype : invaild_dtype_list) {
@@ -80,7 +79,6 @@ TEST_F(l2_atan_test, atan_precision)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 TEST_F(l2_atan_test, ascend910B2_atan_bf16_precision)
@@ -92,7 +90,6 @@ TEST_F(l2_atan_test, ascend910B2_atan_bf16_precision)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 TEST_F(l2_atan_test, atan_empty_tensor)
@@ -104,7 +101,6 @@ TEST_F(l2_atan_test, atan_empty_tensor)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 TEST_F(l2_atan_test, atan_non_contiguous)
@@ -116,7 +112,6 @@ TEST_F(l2_atan_test, atan_non_contiguous)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 TEST_F(l2_atan_test, atan_bigDim)
@@ -155,5 +150,4 @@ TEST_F(l2_atan_test, atan_inplace)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }

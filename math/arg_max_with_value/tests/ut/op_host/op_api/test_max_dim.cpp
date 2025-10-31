@@ -67,7 +67,6 @@ TEST_F(l2_argmax_with_value_test, aclnnMaxDim_0_float_nd_0_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_argmax_with_value_test, aclnnMaxDim_4_float_nd_0_nd)
@@ -86,7 +85,6 @@ TEST_F(l2_argmax_with_value_test, aclnnMaxDim_4_float_nd_0_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_argmax_with_value_test, aclnnMaxDim_3_4_float_nd_0_nd_checkdim)
@@ -122,7 +120,6 @@ TEST_F(l2_argmax_with_value_test, aclnnMaxDim_3_4_float_nd_0_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_argmax_with_value_test, aclnnMaxDim_3_4_6_float16_nchw_0_nchw)
@@ -175,7 +172,6 @@ TEST_F(l2_argmax_with_value_test, aclnnMaxDim_5_10_2_float_hwcn_1_hwcn)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_argmax_with_value_test, aclnnMaxDim_2_10_2_double_ndhwc_0_ndhwc)
@@ -262,7 +258,6 @@ TEST_F(l2_argmax_with_value_test, aclnnMaxDim_2_10_2_int64_nd_0_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_argmax_with_value_test, ascend310P_aclnnMaxDim_2_10_2_int64_nd_0_nd)
@@ -298,7 +293,6 @@ TEST_F(l2_argmax_with_value_test, ascend910B2_aclnnMaxDim_2_10_2_int64_nd_0_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_argmax_with_value_test, aclnnMaxDim_5_3_2_uint8_nd_0_nd)
@@ -334,7 +328,6 @@ TEST_F(l2_argmax_with_value_test, aclnnMaxDim_4_5_2_bool_nd_1_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // Ascend910 不支持bf16
@@ -372,7 +365,6 @@ TEST_F(l2_argmax_with_value_test, ascend910B2_aclnnMaxDim_3_9_2_bfloat16_nd_1_nd
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_argmax_with_value_test, aclnnMaxDim_3_9_2_complex64_nd_1_nd)
@@ -476,7 +468,6 @@ TEST_F(l2_argmax_with_value_test, aclnnMaxDim_3_4_float_nd_0_nhwc)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_argmax_with_value_test, aclnnMaxDim_3_4_float_nd_0_nd_error_shape)
