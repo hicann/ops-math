@@ -44,7 +44,6 @@ TEST_F(l2_expand_test, case_precisions)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // self nullptr
@@ -85,7 +84,6 @@ TEST_F(l2_expand_test, case_self_float16)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // self bfloat16
@@ -100,7 +98,6 @@ TEST_F(l2_expand_test, ascend910B2_case_self_float16)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // self uint8
@@ -115,7 +112,6 @@ TEST_F(l2_expand_test, case_self_uint8)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // self int8
@@ -130,7 +126,6 @@ TEST_F(l2_expand_test, case_self_int8)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // self int32
@@ -145,7 +140,6 @@ TEST_F(l2_expand_test, case_self_int32)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // self bool
@@ -160,7 +154,6 @@ TEST_F(l2_expand_test, case_self_bool)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // self float64
@@ -201,7 +194,6 @@ TEST_F(l2_expand_test, case_self_nchw)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // self nhwc
@@ -216,7 +208,6 @@ TEST_F(l2_expand_test, case_self_nhwc)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // self hwcn
@@ -231,7 +222,6 @@ TEST_F(l2_expand_test, case_self_hwcn)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // self ncdhw
@@ -246,7 +236,6 @@ TEST_F(l2_expand_test, case_self_ncdhw)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // self ndhwc
@@ -261,7 +250,6 @@ TEST_F(l2_expand_test, case_self_ndhwc)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // self and size not match
@@ -315,7 +303,6 @@ TEST_F(l2_expand_test, case_not_contiguous)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // empty tensor

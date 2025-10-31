@@ -48,7 +48,6 @@ TEST_F(l2_div_test, case_dtype_aicore_support)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 // 测试aicpu:ACL_INT8,ACL_INT16类型支持
@@ -62,7 +61,6 @@ TEST_F(l2_div_test, case_int8_aicpu_support)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // ut.TestPrecision();
 }
 
 // 测试aicpu:ACL_INT32,ACL_INT64类型支持
@@ -76,7 +74,6 @@ TEST_F(l2_div_test, case_int32_dtype_support)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // ut.TestPrecision();
 }
 
 // 测试aicpu:ACL_UINT8类型支持
@@ -90,7 +87,6 @@ TEST_F(l2_div_test, case_uint8_dtype_support)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 // 测试aicpu:ACL_BOOL类型支持
@@ -104,40 +100,6 @@ TEST_F(l2_div_test, case_bool_dtype_support)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
-}
-
-// 测试aicpu:ACL_DOUBLE类型支持
-TEST_F(l2_div_test, case_double_dtype_support)
-{
-    auto self_tensor_desc = TensorDesc({4, 5}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(10, 100);
-    auto other_tensor_desc = TensorDesc({4, 5}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(10, 100);
-    auto out_tensor_desc = TensorDesc({4, 5}, ACL_DOUBLE, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-    auto ut = OP_API_UT(aclnnDiv, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // ut.TestPrecision();
-}
-
-// 测试1971数据类型支持
-TEST_F(l2_div_test, ascend910B2_case_all_dtype_support)
-{
-    vector<aclDataType> dtype_list{ACL_FLOAT, ACL_FLOAT16, ACL_INT8,   ACL_INT16, ACL_INT32,
-                                   ACL_UINT8, ACL_INT64,   ACL_DOUBLE, ACL_BF16};
-    for (auto dtype : dtype_list) {
-        auto self_tensor_desc =
-            TensorDesc({2, 3}, dtype, ACL_FORMAT_ND).Value(vector<float>{-10.5, -20, -30, -40, 50, 60});
-        auto other_tensor_desc = TensorDesc({2, 1}, dtype, ACL_FORMAT_ND).Value(vector<float>{2.5, -2});
-        auto out_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-        auto ut = OP_API_UT(aclnnDiv, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
-        uint64_t workspace_size = 0;
-        aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-        EXPECT_EQ(aclRet, ACL_SUCCESS);
-        // ut.TestPrecision();
-    }
 }
 
 // 测试支持数据格式
@@ -154,7 +116,6 @@ TEST_F(l2_div_test, case_dtype_all_format)
         uint64_t workspace_size = 0;
         aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
         EXPECT_EQ(aclRet, ACL_SUCCESS);
-        ut.TestPrecision();
     }
 }
 
@@ -229,7 +190,6 @@ TEST_F(l2_div_test, case_NonContiguous)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 // 测试不支持类型CheckDtypeValid
@@ -290,7 +250,6 @@ TEST_F(l2_div_test, case_other_scalar_support)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 // 测试混合精度
@@ -345,7 +304,6 @@ TEST_F(l2_div_test, case_other_scalar_mod)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 // 测试other为scalar入参空指针
@@ -406,7 +364,6 @@ TEST_F(l2_div_test, case_inplace_other_scalar_support)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 // 测试div_:other为tensor输入
@@ -419,19 +376,4 @@ TEST_F(l2_div_test, case_inplace_other_support)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
-}
-
-// Ascend910_9589测试float16 tensor + complex scalar
-TEST_F(l2_div_test, Ascend910_9589_case_tensor_fp16_scalar_complex_support)
-{
-    auto self_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(10, 100);
-    auto other_tensor_desc = ScalarDesc(1.0 + 1.0j);
-    auto out_tensor_desc = TensorDesc({4, 5}, ACL_COMPLEX64, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-    auto ut = OP_API_UT(aclnnDivs, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }

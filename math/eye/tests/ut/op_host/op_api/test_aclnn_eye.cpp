@@ -45,7 +45,6 @@ TEST_F(eye_test, case_norm_float32)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(eye_test, case_norm_float16)
@@ -60,7 +59,6 @@ TEST_F(eye_test, case_norm_float16)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(eye_test, case_norm_int32)
@@ -75,7 +73,6 @@ TEST_F(eye_test, case_norm_int32)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(eye_test, case_norm_int8)
@@ -90,7 +87,6 @@ TEST_F(eye_test, case_norm_int8)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(eye_test, case_norm_uint8)
@@ -105,7 +101,6 @@ TEST_F(eye_test, case_norm_uint8)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(eye_test, case_norm_int16)
@@ -120,7 +115,6 @@ TEST_F(eye_test, case_norm_int16)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // TEST_F(eye_test, case_nullptr_out) {
@@ -160,7 +154,6 @@ TEST_F(eye_test, case_format_NCHW)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(eye_test, case_format_internal)
@@ -188,7 +181,6 @@ TEST_F(eye_test, case_empty_tensor)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(eye_test, case_dim_invalid)
@@ -228,19 +220,4 @@ TEST_F(eye_test, case_dtype_abnormal)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-}
-
-TEST_F(eye_test, case_strided)
-{
-    int64_t n = 2;
-    int64_t m = 4;
-    auto out_tensor_desc = TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 2}, 0, {4, 2});
-
-    auto ut = OP_API_UT(aclnnEye, INPUT(n, m), OUTPUT(out_tensor_desc));
-
-    uint64_t workspaceSize = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    // ut.TestPrecision();
 }

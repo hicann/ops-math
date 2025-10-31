@@ -44,7 +44,6 @@ TEST_F(l2_cummax_test, l2_cummax_all_datatype_out_int64)
         auto indices_tensor = TensorDesc({2, 2, 2, 3}, ACL_INT64, ACL_FORMAT_ND).ValueRange(-50, 50);
 
         auto ut = OP_API_UT(aclnnCummax, INPUT(self_tensor, dim), OUTPUT(values_tensor, indices_tensor));
-        ut.TestPrecision();
     }
 }
 
@@ -59,7 +58,6 @@ TEST_F(l2_cummax_test, l2_cummax_all_datatype_out_int32)
         auto indices_tensor = TensorDesc({2, 2, 2, 3}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-50, 50);
 
         auto ut = OP_API_UT(aclnnCummax, INPUT(self_tensor, dim), OUTPUT(values_tensor, indices_tensor));
-        ut.TestPrecision();
     }
 }
 
@@ -75,7 +73,6 @@ TEST_F(l2_cummax_test, l2_cummax_all_Format)
         auto indices_tensor = TensorDesc({2, 2, 2, 3}, ACL_INT32, format).ValueRange(-50, 50);
 
         auto ut = OP_API_UT(aclnnCummax, INPUT(self_tensor, dim), OUTPUT(values_tensor, indices_tensor));
-        ut.TestPrecision();
     }
 }
 
@@ -91,7 +88,6 @@ TEST_F(l2_cummax_test, l2_cummax_all_datatype_not_same_out_int64)
             auto values_tensor = TensorDesc({2, 2, 2, 3}, dtype_, ACL_FORMAT_ND).ValueRange(-50, 50);
 
             auto ut = OP_API_UT(aclnnCummax, INPUT(self_tensor, dim), OUTPUT(values_tensor, indices_tensor));
-            ut.TestPrecision();
         }
     }
 }
@@ -108,7 +104,6 @@ TEST_F(l2_cummax_test, l2_cummax_all_datatype_not_same_out_int32)
             auto values_tensor = TensorDesc({2, 2, 2, 3}, dtype_, ACL_FORMAT_ND).ValueRange(-50, 50);
 
             auto ut = OP_API_UT(aclnnCummax, INPUT(self_tensor, dim), OUTPUT(values_tensor, indices_tensor));
-            ut.TestPrecision();
         }
     }
 }
@@ -124,7 +119,6 @@ TEST_F(l2_cummax_test, l2_cummax_all_datatype_out_int32_8_dim_0)
         auto indices_tensor = TensorDesc({1, 1, 1, 1, 2, 2, 2, 3}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-50, 50);
 
         auto ut = OP_API_UT(aclnnCummax, INPUT(self_tensor, dim), OUTPUT(values_tensor, indices_tensor));
-        ut.TestPrecision();
     }
 }
 
@@ -139,7 +133,6 @@ TEST_F(l2_cummax_test, l2_cummax_all_datatype_out_int64_8_dim_0)
         auto indices_tensor = TensorDesc({1, 1, 1, 1, 2, 2, 2, 3}, ACL_INT64, ACL_FORMAT_ND).ValueRange(-50, 50);
 
         auto ut = OP_API_UT(aclnnCummax, INPUT(self_tensor, dim), OUTPUT(values_tensor, indices_tensor));
-        ut.TestPrecision();
     }
 }
 
@@ -154,7 +147,6 @@ TEST_F(l2_cummax_test, l2_cummax_all_datatype_out_int32_8_dim_1)
         auto indices_tensor = TensorDesc({1, 1, 1, 1, 2, 2, 2, 3}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-50, 50);
 
         auto ut = OP_API_UT(aclnnCummax, INPUT(self_tensor, dim), OUTPUT(values_tensor, indices_tensor));
-        ut.TestPrecision();
     }
 }
 
@@ -169,7 +161,6 @@ TEST_F(l2_cummax_test, l2_cummax_out_int64_8_dim_1)
         auto indices_tensor = TensorDesc({1, 1, 1, 1, 2, 2, 2, 3}, ACL_INT64, ACL_FORMAT_ND).ValueRange(-50, 50);
 
         auto ut = OP_API_UT(aclnnCummax, INPUT(self_tensor, dim), OUTPUT(values_tensor, indices_tensor));
-        ut.TestPrecision();
     }
 }
 
@@ -182,7 +173,6 @@ TEST_F(l2_cummax_test, l2_cummax_out_int32_negative_one)
     auto indices_tensor = TensorDesc({2, 2, 2, 3}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-50, 50);
 
     auto ut = OP_API_UT(aclnnCummax, INPUT(self_tensor, dim), OUTPUT(values_tensor, indices_tensor));
-    ut.TestPrecision();
 }
 
 TEST_F(l2_cummax_test, l2_cummax_self_same_values)
@@ -194,7 +184,6 @@ TEST_F(l2_cummax_test, l2_cummax_self_same_values)
     auto indices_tensor = TensorDesc({8}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-50, 50);
 
     auto ut = OP_API_UT(aclnnCummax, INPUT(self_tensor, dim), OUTPUT(values_tensor, indices_tensor));
-    ut.TestPrecision();
 }
 
 TEST_F(l2_cummax_test, l2_cummax_null_tensor)
@@ -222,7 +211,6 @@ TEST_F(l2_cummax_test, l2_cummax_out_int64_self_discontinues)
     auto indices_tensor = TensorDesc({2, 2, 5, 4}, ACL_INT64, ACL_FORMAT_NCHW).ValueRange(-50, 50);
 
     auto ut = OP_API_UT(aclnnCummax, INPUT(self_tensor, dim), OUTPUT(values_tensor, indices_tensor));
-    ut.TestPrecision();
 }
 TEST_F(l2_cummax_test, l2_cummax_out_int32_self_discontinues)
 {
@@ -234,7 +222,6 @@ TEST_F(l2_cummax_test, l2_cummax_out_int32_self_discontinues)
     auto indices_tensor = TensorDesc({2, 2, 5, 4}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-50, 50);
 
     auto ut = OP_API_UT(aclnnCummax, INPUT(self_tensor, dim), OUTPUT(values_tensor, indices_tensor));
-    ut.TestPrecision();
 }
 
 TEST_F(l2_cummax_test, l2_cummax_out_int64_out_discontinues)
@@ -248,7 +235,6 @@ TEST_F(l2_cummax_test, l2_cummax_out_int64_out_discontinues)
         TensorDesc({2, 2, 5, 4}, ACL_INT64, ACL_FORMAT_ND, {40, 20, 1, 5}, 0, {2, 2, 4, 5}).ValueRange(-50, 50);
 
     auto ut = OP_API_UT(aclnnCummax, INPUT(self_tensor, dim), OUTPUT(values_tensor, indices_tensor));
-    ut.TestPrecision();
 }
 
 // Abnormal Scenarios

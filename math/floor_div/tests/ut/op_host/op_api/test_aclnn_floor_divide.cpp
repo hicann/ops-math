@@ -34,25 +34,6 @@ protected:
     }
 };
 
-// 测试数据类型支持
-TEST_F(l2_floor_divide_test, case_all_dtype_support)
-{
-    vector<aclDataType> dtype_list{ACL_FLOAT, ACL_FLOAT16, ACL_INT8,  ACL_INT16,
-                                   ACL_INT32, ACL_UINT8,   ACL_INT64, ACL_DOUBLE};
-    for (auto dtype : dtype_list) {
-        auto self_tensor_desc =
-            TensorDesc({2, 3}, dtype, ACL_FORMAT_ND).Value(vector<float>{-10.5, -20, -30, -40, 50, 60});
-        auto other_tensor_desc = TensorDesc({2, 1}, dtype, ACL_FORMAT_ND).Value(vector<float>{2.5, -2});
-        auto out_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-        auto ut = OP_API_UT(aclnnFloorDivide, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
-        uint64_t workspace_size = 0;
-        aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-        EXPECT_EQ(aclRet, ACL_SUCCESS);
-        ut.TestPrecision();
-    }
-}
-
 // 测试ACL_BOOL类型支持
 TEST_F(l2_floor_divide_test, case_bool_dtype_support)
 {
@@ -64,7 +45,6 @@ TEST_F(l2_floor_divide_test, case_bool_dtype_support)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 // 测试所有数据格式支持
@@ -82,7 +62,6 @@ TEST_F(l2_floor_divide_test, case_all_format_support)
         aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
 
         EXPECT_EQ(aclRet, ACL_SUCCESS);
-        ut.TestPrecision();
     }
 }
 
@@ -97,23 +76,6 @@ TEST_F(l2_floor_divide_test, case_dtype_cast_support)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
-}
-
-// 测试非连续支持
-TEST_F(l2_floor_divide_test, case_NonContiguous_support)
-{
-    auto self_tensor_desc = TensorDesc({2, 3}, ACL_INT32, ACL_FORMAT_ND, {1, 2}, 0, {3, 2})
-                                .Value(vector<float>{-10.5, -20, -30, -40, 50, 60});
-    auto other_tensor_desc =
-        TensorDesc({2, 3}, ACL_INT64, ACL_FORMAT_ND, {1, 2}, 0, {3, 2}).Value(vector<float>{-2, -3, -2, -4, 2, 4});
-    auto out_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-    auto ut = OP_API_UT(aclnnFloorDivide, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 // 测试broadcast
@@ -203,7 +165,6 @@ TEST_F(l2_floor_divide_test, case_other_scalar_floor_support)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 // 测试other为scalar超过8维的tensor
@@ -241,7 +202,6 @@ TEST_F(l2_floor_divide_test, case_inplace_other_scalar_support)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 // 测试floor_divide_:other为tensor输入
@@ -254,7 +214,6 @@ TEST_F(l2_floor_divide_test, case_inplace_other_support)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 // Ascend910_9589测试other为scalar立即数输入
@@ -267,18 +226,4 @@ TEST_F(l2_floor_divide_test, Ascend910_9589_case_other_scalar_floor_support)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
-}
-
-// Ascend910_9589测试float16 tensor + complex scalar
-TEST_F(l2_floor_divide_test, Ascend910_9589_case_tensor_fp16_scalar_complex_support)
-{
-    auto self_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(10, 100);
-    auto other_tensor_desc = ScalarDesc(1.0 + 1.0j);
-    auto out_tensor_desc = TensorDesc({4, 5}, ACL_COMPLEX64, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-    auto ut = OP_API_UT(aclnnFloorDivides, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }

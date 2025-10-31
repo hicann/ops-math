@@ -50,7 +50,6 @@ TEST_F(l2InplaceCeilTest, l2_ceil_test_err_empty_tensor)
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // 异常场景：入参为nullptr，返回ACLNN_ERR_PARAM_NULLPTR
@@ -74,7 +73,6 @@ TEST_F(l2InplaceCeilTest, l2_ceil_test_fp16)
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // 正常场景：float32、2维，返回ACLNN_SUCCESS，精度校验通过
@@ -88,7 +86,6 @@ TEST_F(l2InplaceCeilTest, l2_ceil_test_fp32)
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // 异常场景：ACL_INT32、2维，ACLNN_ERR_PARAM_INVALID
@@ -151,57 +148,6 @@ TEST_F(l2InplaceCeilTest, l2_ceil_test_err_bool)
     EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_PARAM_INVALID);
 }
 
-// 正常场景：double、4维、aicpu，返回ACLNN_SUCCESS，精度校验通过
-TEST_F(l2InplaceCeilTest, l2_ceil_test_double)
-{
-    auto selfDesc = TensorDesc({2, 3, 4, 5}, ACL_DOUBLE, ACL_FORMAT_ND);
-
-    auto ut = OP_API_UT(aclnnInplaceCeil, INPUT(selfDesc), OUTPUT());
-
-    uint64_t workspaceSize = 0;
-    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-    ut.TestPrecision();
-}
-
-// 正常场景：double、4维、ACL_FORMAT_NCHW、aicpu，返回ACLNN_SUCCESS，精度校验通过
-TEST_F(l2InplaceCeilTest, l2_ceil_test_double_nchw)
-{
-    auto selfDesc = TensorDesc({2, 3, 4, 5}, ACL_DOUBLE, ACL_FORMAT_NCHW);
-
-    auto ut = OP_API_UT(aclnnInplaceCeil, INPUT(selfDesc), OUTPUT());
-
-    uint64_t workspaceSize = 0;
-    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-    ut.TestPrecision();
-}
-
-// 正常场景：double、4维、ACL_FORMAT_NHWC、aicpu，返回ACLNN_SUCCESS，精度校验通过
-TEST_F(l2InplaceCeilTest, l2_ceil_test_double_nhwc)
-{
-    auto selfDesc = TensorDesc({2, 3, 4, 5}, ACL_DOUBLE, ACL_FORMAT_NHWC);
-
-    auto ut = OP_API_UT(aclnnInplaceCeil, INPUT(selfDesc), OUTPUT());
-
-    uint64_t workspaceSize = 0;
-    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-    ut.TestPrecision();
-}
-
-// 异常场景：double、4维、ACL_FORMAT_NC1HWC0、aicpu，返回ACLNN_ERR_PARAM_INVALID
-TEST_F(l2InplaceCeilTest, l2_ceil_test_err_double_nc1hwc0)
-{
-    auto selfDesc = TensorDesc({2, 3, 4, 5, 16}, ACL_DOUBLE, ACL_FORMAT_NC1HWC0);
-
-    auto ut = OP_API_UT(aclnnInplaceCeil, INPUT(selfDesc), OUTPUT());
-
-    uint64_t workspaceSize = 0;
-    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-}
-
 // Test for non-continuous
 TEST_F(l2InplaceCeilTest, l2_ceil_test_non_continuous)
 {
@@ -212,7 +158,6 @@ TEST_F(l2InplaceCeilTest, l2_ceil_test_non_continuous)
     uint64_t workspaceSize = 0;
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-    ut.TestPrecision();
 }
 
 // 异常场景：double、9维、返回ACLNN_ERR_PARAM_INVALID

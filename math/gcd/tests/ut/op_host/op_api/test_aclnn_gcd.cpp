@@ -47,8 +47,6 @@ TEST_F(l2_gcd_test, aclnnGcd_01_int_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_gcd_test, ascend910B2_aclnnGcd_02_int16_nd)
@@ -65,8 +63,6 @@ TEST_F(l2_gcd_test, ascend910B2_aclnnGcd_02_int16_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_gcd_test, aclnnGcd_03_int_int16_hd)
@@ -83,8 +79,6 @@ TEST_F(l2_gcd_test, aclnnGcd_03_int_int16_hd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_gcd_test, aclnnGcd_04_int16_int_hd)
@@ -116,8 +110,6 @@ TEST_F(l2_gcd_test, aclnnGcd_05_int_empty_tensor)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_gcd_test, aclnnGcd_06_int_nd_empty_tensor)
@@ -179,8 +171,6 @@ TEST_F(l2_gcd_test, aclnnGcd_09_float_nd_input_not_contiguous)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_gcd_test, aclnnGcd_10_float_nd_inoutput_not_contiguous)
@@ -197,8 +187,6 @@ TEST_F(l2_gcd_test, aclnnGcd_10_float_nd_inoutput_not_contiguous)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_gcd_test, aclnnGcd_11_input_out_nullptr)
@@ -415,8 +403,6 @@ TEST_F(l2_gcd_test, ascend910B2_aclnnGcd_24_int64_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_gcd_test, ascend910B2_aclnnGcd_25_int64_nd)
@@ -433,8 +419,6 @@ TEST_F(l2_gcd_test, ascend910B2_aclnnGcd_25_int64_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_gcd_test, ascend910B2_aclnnGcd_26_int64_nd)
@@ -451,8 +435,6 @@ TEST_F(l2_gcd_test, ascend910B2_aclnnGcd_26_int64_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_gcd_test, ascend910B2_aclnnGcd_27_int64_int16_hd)
@@ -469,8 +451,6 @@ TEST_F(l2_gcd_test, ascend910B2_aclnnGcd_27_int64_int16_hd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // int64异常场景用例

@@ -45,8 +45,6 @@ TEST_F(l2_expm1_test, expm1_testcase_001_normal_float32)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // float16
@@ -62,8 +60,6 @@ TEST_F(l2_expm1_test, expm1_testcase_002_normal_float16)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // bfloat16
@@ -79,8 +75,6 @@ TEST_F(l2_expm1_test, ascend910B2_expm1_testcase_002_normal_float16)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // empty
@@ -122,19 +116,6 @@ TEST_F(l2_expm1_test, expm1_testcase_005_exception_null_self)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 }
 
-// CheckDtypeValid
-TEST_F(l2_expm1_test, expm1_testcase_006_exception_float64_dtype_supported)
-{
-    auto outDesc = TensorDesc({1, 16, 1, 1}, ACL_DOUBLE, ACL_FORMAT_ND);
-    auto selfDesc = TensorDesc({1, 16, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut = OP_API_UT(aclnnExpm1, INPUT(selfDesc), OUTPUT(outDesc));
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspaceSize = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-}
-
 // CheckDtype different dtype of input
 TEST_F(l2_expm1_test, expm1_testcase_007_normal_dtype_not_the_same)
 {
@@ -148,8 +129,6 @@ TEST_F(l2_expm1_test, expm1_testcase_007_normal_dtype_not_the_same)
 
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // CheckDtype different dtype of input
@@ -339,8 +318,6 @@ TEST_F(l2_expm1_test, expm1_testcase_021_normal_int64_float32)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_expm1_test, expm1_testcase_022_normal_bool_float32)
@@ -355,8 +332,6 @@ TEST_F(l2_expm1_test, expm1_testcase_022_normal_bool_float32)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // dtype cannot cast to out

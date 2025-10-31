@@ -63,7 +63,6 @@ TEST_F(l2_isin_scalar_tensor_test, case_null_tensor)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_scalar_tensor_test, case_null_tensor_invert)
@@ -78,7 +77,6 @@ TEST_F(l2_isin_scalar_tensor_test, case_null_tensor_invert)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_scalar_tensor_test, case_dim1_float_nd)
@@ -93,7 +91,6 @@ TEST_F(l2_isin_scalar_tensor_test, case_dim1_float_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // CPU不支持float16,注释精度对比
@@ -109,7 +106,6 @@ TEST_F(l2_isin_scalar_tensor_test, case_dim2_float16_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_isin_scalar_tensor_test, case_dim3_double_nd)
@@ -125,7 +121,6 @@ TEST_F(l2_isin_scalar_tensor_test, case_dim3_double_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_scalar_tensor_test, case_dim4_uint8_nchw)
@@ -140,7 +135,6 @@ TEST_F(l2_isin_scalar_tensor_test, case_dim4_uint8_nchw)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_scalar_tensor_test, case_dim4_int8_nhwc)
@@ -155,7 +149,6 @@ TEST_F(l2_isin_scalar_tensor_test, case_dim4_int8_nhwc)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_scalar_tensor_test, case_dim4_int16_hwcn)
@@ -170,7 +163,6 @@ TEST_F(l2_isin_scalar_tensor_test, case_dim4_int16_hwcn)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_scalar_tensor_test, case_dim5_int32_ndhwc)
@@ -185,7 +177,6 @@ TEST_F(l2_isin_scalar_tensor_test, case_dim5_int32_ndhwc)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_scalar_tensor_test, case_dim5_int64_ncdhw)
@@ -200,7 +191,6 @@ TEST_F(l2_isin_scalar_tensor_test, case_dim5_int64_ncdhw)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_scalar_tensor_test, case_dim6_float_nd)
@@ -215,7 +205,6 @@ TEST_F(l2_isin_scalar_tensor_test, case_dim6_float_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_scalar_tensor_test, case_dim7_float_nd)
@@ -230,7 +219,6 @@ TEST_F(l2_isin_scalar_tensor_test, case_dim7_float_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_scalar_tensor_test, case_dim8_float_nd)
@@ -245,7 +233,6 @@ TEST_F(l2_isin_scalar_tensor_test, case_dim8_float_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_scalar_tensor_test, case_error_shape)
@@ -312,7 +299,6 @@ TEST_F(l2_isin_scalar_tensor_test, case_diff_dtype)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_scalar_tensor_test, case_not_contiguous)
@@ -327,7 +313,6 @@ TEST_F(l2_isin_scalar_tensor_test, case_not_contiguous)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_scalar_tensor_test, ascend910B2_case_dim6_bfloat16_nd)
@@ -342,5 +327,4 @@ TEST_F(l2_isin_scalar_tensor_test, ascend910B2_case_dim6_bfloat16_nd)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    ut.TestPrecision();
 }

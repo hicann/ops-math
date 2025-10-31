@@ -46,8 +46,6 @@ TEST_F(l2_polar_test, case_fp32)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_polar_test, case_mismatch_dtype)
@@ -63,8 +61,6 @@ TEST_F(l2_polar_test, case_mismatch_dtype)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
-    // SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_polar_test, case_empty)
@@ -80,8 +76,6 @@ TEST_F(l2_polar_test, case_empty)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 
-    // SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_polar_test, case_empty2)
@@ -97,8 +91,6 @@ TEST_F(l2_polar_test, case_empty2)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 
-    // SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_polar_test, case_unsupport1)
@@ -114,8 +106,6 @@ TEST_F(l2_polar_test, case_unsupport1)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
-    // SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_polar_test, case_max_dim1)
@@ -131,8 +121,6 @@ TEST_F(l2_polar_test, case_max_dim1)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
-    // SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_polar_test, case_max_dim2)
@@ -148,8 +136,6 @@ TEST_F(l2_polar_test, case_max_dim2)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
-    // SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_polar_test, case_broadcast_failed)
@@ -165,8 +151,6 @@ TEST_F(l2_polar_test, case_broadcast_failed)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
-    // SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_polar_test, case_max_dim3)
@@ -182,8 +166,6 @@ TEST_F(l2_polar_test, case_max_dim3)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
-    // SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_polar_test, case_dim_not_match1)
@@ -199,8 +181,6 @@ TEST_F(l2_polar_test, case_dim_not_match1)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
-    // SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_polar_test, case_dim_not_match2)
@@ -216,8 +196,6 @@ TEST_F(l2_polar_test, case_dim_not_match2)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
-    // SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_polar_test, case_dim_not_match3)
@@ -233,8 +211,6 @@ TEST_F(l2_polar_test, case_dim_not_match3)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
-    // SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_polar_test, case_empty_input_1)
@@ -250,8 +226,6 @@ TEST_F(l2_polar_test, case_empty_input_1)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
-    // SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_polar_test, case_empty_input_2)
@@ -267,8 +241,6 @@ TEST_F(l2_polar_test, case_empty_input_2)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
-    // SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_polar_test, case_empty_input_3)
@@ -284,6 +256,4 @@ TEST_F(l2_polar_test, case_empty_input_3)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
-    // SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }

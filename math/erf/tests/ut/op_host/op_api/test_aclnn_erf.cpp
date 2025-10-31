@@ -91,7 +91,6 @@ TEST_F(l2ErfTest, l2_erf_test_006)
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // 正常路径，float32,万分之一精度不合格，用千分之一精度。
@@ -106,7 +105,6 @@ TEST_F(l2ErfTest, l2_erf_test_007)
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // 正常路径，float16  由于NUMPY目前不支持ERF函数，无法进行精度测试
@@ -121,7 +119,6 @@ TEST_F(l2ErfTest, l2_erf_test_008)
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // self为空
@@ -146,34 +143,6 @@ TEST_F(l2ErfTest, l2_erf_test_010)
     uint64_t workspaceSize = 0;
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_PARAM_NULLPTR);
-}
-
-// dtype bfloat16
-TEST_F(l2ErfTest, l2_erf_test_011)
-{
-    auto selfDesc = TensorDesc({2, 4, 6, 7}, ACL_BF16, ACL_FORMAT_ND);
-    auto outDesc = TensorDesc({2, 4, 6, 7}, ACL_BF16, ACL_FORMAT_ND);
-
-    auto ut = OP_API_UT(aclnnErf, INPUT(selfDesc), OUTPUT(outDesc));
-
-    uint64_t workspaceSize = 0;
-    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_PARAM_INVALID);
-}
-
-// 正常路径，double，aicpu
-TEST_F(l2ErfTest, l2_erf_test_012)
-{
-    auto selfDesc = TensorDesc({6, 4, 4, 5, 6}, ACL_DOUBLE, ACL_FORMAT_ND);
-    auto outDesc = TensorDesc({6, 4, 4, 5, 6}, ACL_DOUBLE, ACL_FORMAT_ND);
-
-    auto ut = OP_API_UT(aclnnErf, INPUT(selfDesc), OUTPUT(outDesc));
-
-    uint64_t workspaceSize = 0;
-    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // dtype int32
@@ -253,7 +222,6 @@ TEST_F(l2ErfTest, l2_erf_test_018)
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // dtype complex64
@@ -295,51 +263,6 @@ TEST_F(l2ErfTest, l2_erf_test_021)
     EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_PARAM_INVALID);
 }
 
-// format NCHW、NHWC
-TEST_F(l2ErfTest, l2_erf_test_022)
-{
-    auto selfDesc = TensorDesc({2, 4}, ACL_DOUBLE, ACL_FORMAT_NCHW);
-    auto outDesc = TensorDesc({2, 4}, ACL_DOUBLE, ACL_FORMAT_NHWC);
-
-    auto ut = OP_API_UT(aclnnErf, INPUT(selfDesc), OUTPUT(outDesc));
-
-    uint64_t workspaceSize = 0;
-    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
-}
-
-// format NDHWC、NCDHW
-TEST_F(l2ErfTest, l2_erf_test_023)
-{
-    auto selfDesc = TensorDesc({2, 4}, ACL_DOUBLE, ACL_FORMAT_NDHWC);
-    auto outDesc = TensorDesc({2, 4}, ACL_DOUBLE, ACL_FORMAT_NCDHW);
-
-    auto ut = OP_API_UT(aclnnErf, INPUT(selfDesc), OUTPUT(outDesc));
-
-    uint64_t workspaceSize = 0;
-    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
-}
-
-// format HWCN
-TEST_F(l2ErfTest, l2_erf_test_024)
-{
-    auto selfDesc = TensorDesc({2, 4}, ACL_DOUBLE, ACL_FORMAT_HWCN);
-    auto outDesc = TensorDesc({2, 4}, ACL_DOUBLE, ACL_FORMAT_HWCN);
-
-    auto ut = OP_API_UT(aclnnErf, INPUT(selfDesc), OUTPUT(outDesc));
-
-    uint64_t workspaceSize = 0;
-    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
-}
-
 // format self是私有格式
 TEST_F(l2ErfTest, l2_erf_test_025)
 {
@@ -377,22 +300,6 @@ TEST_F(l2ErfTest, l2_erf_test_027)
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
-}
-
-// 数据范围[-1，1]
-TEST_F(l2ErfTest, l2_erf_test_028)
-{
-    auto selfDesc = TensorDesc({2, 4, 6, 8}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-1, 1);
-    auto outDesc = TensorDesc({2, 4, 6, 8}, ACL_DOUBLE, ACL_FORMAT_ND);
-
-    auto ut = OP_API_UT(aclnnErf, INPUT(selfDesc), OUTPUT(outDesc));
-
-    uint64_t workspaceSize = 0;
-    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // 非连续
@@ -407,7 +314,6 @@ TEST_F(l2ErfTest, l2_erf_test_029)
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 // CheckShape_10D

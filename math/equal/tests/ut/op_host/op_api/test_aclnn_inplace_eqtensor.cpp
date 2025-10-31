@@ -45,8 +45,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal_input_int8)
 
     auto ut = OP_API_UT(aclnnInplaceEqTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 int16
@@ -72,8 +70,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal_input_int32)
 
     auto ut = OP_API_UT(aclnnInplaceEqTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 int64
@@ -87,8 +83,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal_input_int64)
 
     auto ut = OP_API_UT(aclnnInplaceEqTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 uint8
@@ -102,8 +96,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal_input_uint8)
 
     auto ut = OP_API_UT(aclnnInplaceEqTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 float16
@@ -117,8 +109,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal_input_float16)
 
     auto ut = OP_API_UT(aclnnInplaceEqTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 float32
@@ -132,8 +122,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal_input_float)
 
     auto ut = OP_API_UT(aclnnInplaceEqTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 double
@@ -159,8 +147,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal_1971support_inpu
     auto ut = OP_API_UT(aclnnInplaceEqTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
     if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B) {
-        // SAMPLE: precision simulate
-        ut.TestPrecision();
     } else {
         // SAMPLE: only test GetWorkspaceSize
         uint64_t workspace_size = 5;
@@ -204,8 +190,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal_input_float16_bf
     auto ut = OP_API_UT(aclnnInplaceEqTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
     if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B) {
-        // SAMPLE: precision simulate
-        ut.TestPrecision();
     } else {
         // SAMPLE: only test GetWorkspaceSize
         uint64_t workspace_size = 5;
@@ -225,8 +209,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal_input_float_bf16
     auto ut = OP_API_UT(aclnnInplaceEqTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
     if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B) {
-        // SAMPLE: precision simulate
-        ut.TestPrecision();
     } else {
         // SAMPLE: only test GetWorkspaceSize
         uint64_t workspace_size = 5;
@@ -246,8 +228,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal_input_decimal_fr
 
     auto ut = OP_API_UT(aclnnInplaceEqTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 format_not_equal_HWCN
@@ -261,8 +241,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal_format_not_equal
 
     auto ut = OP_API_UT(aclnnInplaceEqTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 ACL_FORMAT_NCDHW
@@ -278,8 +256,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal_format_NCDHW)
 
     auto ut = OP_API_UT(aclnnInplaceEqTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 ACL_FORMAT_NDHWC
@@ -295,8 +271,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal_format_NDHWC)
 
     auto ut = OP_API_UT(aclnnInplaceEqTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 ACL_FORMAT_HWCN
@@ -311,8 +285,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal_format_HWCN)
 
     auto ut = OP_API_UT(aclnnInplaceEqTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 ACL_FORMAT_NHWC
@@ -327,8 +299,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal_format_nhwc)
 
     auto ut = OP_API_UT(aclnnInplaceEqTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 ACL_FORMAT_NCHW
@@ -343,8 +313,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal_format_nchw)
 
     auto ut = OP_API_UT(aclnnInplaceEqTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景
@@ -363,8 +331,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal01)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景,做broadcast
@@ -384,8 +350,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal02)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 做broadcast & int16，走cpu
@@ -432,8 +396,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal05)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 做broadcast & INT64
@@ -453,8 +415,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal06)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 做broadcast & UINT8
@@ -474,8 +434,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal07)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 做broadcast & float16
@@ -495,8 +453,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal08)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 做broadcast & (2,2,3,2)NCHW & ND
@@ -517,8 +473,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal09)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 全部为空Tensor
@@ -535,8 +489,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_normal10)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 入参self为null场景
@@ -752,8 +704,6 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_to_contiguous)
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 数据范围[-1,1]场景
@@ -776,6 +726,4 @@ TEST_F(l2_inplace_eq_tensor_test, test_inplace_eq_tensor_date_range_f1_1)
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }

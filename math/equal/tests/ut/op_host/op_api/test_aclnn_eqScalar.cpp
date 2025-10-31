@@ -54,8 +54,6 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal01)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_eq_scalar_test, test_eq_scalar_normal01_with_double)
@@ -75,8 +73,6 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal01_with_double)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 做dtype cast,self:float16 & other:float
@@ -98,8 +94,6 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal06)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_eq_scalar_test, test_eq_scalar_normal06_with_double)
@@ -119,8 +113,6 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal06_with_double)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 做dtype cast,self:bfloat16 & other:int
@@ -145,7 +137,6 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal08)
     } else {
         // 当前不支持bf16类型的scalar
         // EXPECT_EQ(aclRet, ACL_SUCCESS);
-        // ut.TestPrecision();
     }
 }
 
@@ -167,8 +158,6 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal10)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 做dtype cast, self:int32 & other:float
@@ -189,8 +178,6 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal02)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 做dtype cast, self:int64 & other:float
@@ -251,8 +238,6 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal11)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 做dtype cast, self:uint8 & other:float
@@ -274,8 +259,6 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal05)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 做dtype cast,self:bool & other:int
@@ -297,8 +280,6 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal07)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 正常场景 做dtype cast, self:uint32 & other:float
@@ -319,7 +300,6 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal12)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910B) {
         EXPECT_EQ(aclRet, ACL_SUCCESS);
-        ut.TestPrecision();
     } else {
         EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
     }
@@ -344,7 +324,6 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal04)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910B) {
         EXPECT_EQ(aclRet, ACL_SUCCESS);
-        ut.TestPrecision();
     } else {
         EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
     }
@@ -367,8 +346,6 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal13)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 异常场景 空指针

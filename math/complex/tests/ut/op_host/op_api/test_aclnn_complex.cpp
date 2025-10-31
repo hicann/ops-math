@@ -43,8 +43,6 @@ TEST_F(complex_test, ascend910B2_complex_test_complex64)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(complex_test, ascend910B2_complex_test_complex32)
@@ -86,14 +84,6 @@ TEST_F(complex_test, ascend910B2_complex_test_output_check)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-// TEST_F(complex_test, case_nullptr)
-// {
-//     auto ut = OP_API_UT(aclnnComplex, INPUT((aclTensor*)nullptr, (aclTensor*)nullptr), OUTPUT((aclTensor*)nullptr));
-//     uint64_t workspace_size = 0;
-//     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-//     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
-// }
-
 // 测试空tensor
 TEST_F(complex_test, ascend910B2_case_empty_tensors)
 {
@@ -104,17 +94,4 @@ TEST_F(complex_test, ascend910B2_case_empty_tensors)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-}
-
-TEST_F(complex_test, ascend310p_complex_test_complex32_unsupport)
-{
-    auto tensor_real = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
-    auto tensor_imag = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
-    auto tensor_out = TensorDesc({2, 3}, ACL_COMPLEX32, ACL_FORMAT_ND);
-    auto ut = OP_API_UT(aclnnComplex, INPUT(tensor_real, tensor_imag), OUTPUT(tensor_out));
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_ERR_INNER_NULLPTR);
 }

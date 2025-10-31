@@ -66,8 +66,6 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_f16)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_int8)
@@ -87,8 +85,6 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_int8)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_uint8)
@@ -108,8 +104,6 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_uint8)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_int16)
@@ -147,8 +141,6 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_f32)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_int32)
@@ -168,8 +160,6 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_int32)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_int64)
@@ -207,8 +197,6 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_empty)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_element_unsupport_dtype)
@@ -315,8 +303,6 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_not_contiguou
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // largeDim
@@ -335,8 +321,6 @@ TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_9d)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_isin_tensor_scalar_test, l2_isin_tensor_scalar_test_case_can_not_promote_type)

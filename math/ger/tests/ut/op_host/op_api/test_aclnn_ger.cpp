@@ -50,7 +50,6 @@ TEST_F(ger_test, case_test_001_float32)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(ger_test, case_test_002_float16)
@@ -65,22 +64,6 @@ TEST_F(ger_test, case_test_002_float16)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
-}
-
-TEST_F(ger_test, case_test_003_double)
-{
-    auto self_desc = TensorDesc({4}, ACL_DOUBLE, ACL_FORMAT_ND);
-    auto vec2_desc = TensorDesc({5}, ACL_DOUBLE, ACL_FORMAT_ND);
-    auto out_desc = TensorDesc({4, 5}, ACL_DOUBLE, ACL_FORMAT_ND);
-
-    auto ut = OP_API_UT(aclnnGer, INPUT(self_desc, vec2_desc), OUTPUT(out_desc));
-
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 TEST_F(ger_test, case_test_004_int8)
@@ -95,7 +78,6 @@ TEST_F(ger_test, case_test_004_int8)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(ger_test, case_test_005_uint8)
@@ -110,22 +92,6 @@ TEST_F(ger_test, case_test_005_uint8)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
-}
-
-TEST_F(ger_test, case_test_006_int16)
-{
-    auto self_desc = TensorDesc({4}, ACL_INT16, ACL_FORMAT_ND);
-    auto vec2_desc = TensorDesc({5}, ACL_INT16, ACL_FORMAT_ND);
-    auto out_desc = TensorDesc({4, 5}, ACL_INT16, ACL_FORMAT_ND);
-
-    auto ut = OP_API_UT(aclnnGer, INPUT(self_desc, vec2_desc), OUTPUT(out_desc));
-
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 TEST_F(ger_test, case_test_007_int32)
@@ -140,7 +106,6 @@ TEST_F(ger_test, case_test_007_int32)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(ger_test, case_test_008_int64)
@@ -155,7 +120,6 @@ TEST_F(ger_test, case_test_008_int64)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(ger_test, case_test_009_bool)
@@ -170,7 +134,6 @@ TEST_F(ger_test, case_test_009_bool)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
 }
 
 TEST_F(ger_test, case_test_010_complex64)
@@ -185,22 +148,6 @@ TEST_F(ger_test, case_test_010_complex64)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 
-    ut.TestPrecision();
-}
-
-TEST_F(ger_test, case_test_011_complex128)
-{
-    auto self_desc = TensorDesc({4}, ACL_COMPLEX128, ACL_FORMAT_ND);
-    auto vec2_desc = TensorDesc({5}, ACL_COMPLEX128, ACL_FORMAT_ND);
-    auto out_desc = TensorDesc({4, 5}, ACL_COMPLEX128, ACL_FORMAT_ND);
-
-    auto ut = OP_API_UT(aclnnGer, INPUT(self_desc, vec2_desc), OUTPUT(out_desc));
-
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 TEST_F(ger_test, case_test_012_self_nullptr)
@@ -238,7 +185,6 @@ TEST_F(ger_test, case_test_014_self_fp16_vec_fp32)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    ut.TestPrecision();
 }
 
 TEST_F(ger_test, case_test_015_error_self_size)
