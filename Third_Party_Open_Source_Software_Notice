@@ -313,10 +313,8 @@ Software :samples 0.2.0
 Official Repository: https://github.com/Ascend/samples/
 
 Usage: 
-examples/add_example_aicpu/op_kernel_aicpu/add_example_aicpu.h
+scripts/custom/upgrade.sh
 scripts/kernel/binary_script/parser_ini.py
-scripts/util/insert_op_info.py
-scripts/util/parse_ini_to_json.py
 tests/ut/op_kernel/data_utils.cpp
 
 Copyright Notice(s): 
@@ -536,6 +534,47 @@ math/right_shift/op_graph/right_shift_proto.h
 
 Copyright Notice(s): 
 Copyright (C) 2019-2020. Huawei Technologies Co., Ltd
+
+License: Apache License V2.0
+Please see above
+
+Software:samples 0.6.0
+
+Official Repository: https://github.com/Ascend/samples
+
+Usage: "
+examples/add_example_aicpu/op_kernel_aicpu/add_example_aicpu.cpp
+examples/add_example_aicpu/op_kernel_aicpu/add_example_aicpu.h"
+
+Copyright Notice: 
+Copyright 2019-2020 Huawei Technologies Co., Ltd
+
+License: Apache License V2.0
+Please see above
+
+Software:samples 0.5.0
+
+Official Repository: https://github.com/Ascend/samples
+
+Usage: "
+scripts/custom/install.sh"
+
+Copyright Notice: 
+Copyright 2019-2020 Huawei Technologies Co., Ltd
+
+License: Apache License V2.0
+Please see above
+
+Software:canncamp 29aa8e4
+
+Official Repository: https://gitee.com/ascend/canncamp
+
+Usage: "
+scripts/util/insert_op_info.py
+scripts/util/parse_ini_to_json.py"
+
+Copyright Notice: 
+Copyright 2019-2020 Huawei Technologies Co., Ltd
 
 License: Apache License V2.0
 Please see above
