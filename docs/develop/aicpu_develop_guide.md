@@ -35,7 +35,7 @@ graph LR
 ##  前提条件
 **1. 环境部署**
 
-开发算子前，请参考[环境准备](./quick_op_invocation.md#环境准备)完成环境搭建。
+开发算子前，请参考[环境准备](../invocation/quick_op_invocation.md#环境准备)完成环境搭建。
 
 **2. 算子设计**
 
@@ -151,7 +151,7 @@ ${op_name}                              # 替换为实际算子名的小写下�
 │   └── ${op_name}_aicpu.h              # Kernel头文件，包含函数声明、结构定义、逻辑实现
 └── CMakeLists.txt                      # 算子Cmakelist入口
 ```
-使用上述命令行创建算子工程后，若要手动删除新创建出的算子工程，需要同时删除与算子工程同目录CMakeLists.txt中新添加的add_subdirectory(${op_class})
+使用上述命令行创建算子工程后，若要手动删除新创建出的算子工程，需要同时删除与算子工程同目录CMakeLists.txt中新添加的add_subdirectory(${op_class})。
 
 ## Kernel实现
 
@@ -340,7 +340,7 @@ REG_OP(AddExample)
 
    以`AddExample`算子为例，假设开发交付件在`examples`目录，完整代码参见[add_example_aicpu](../../examples/add_example_aicpu)目录。
 
-   进入项目根目录，执行如下编译命令（命令介绍参见[build参数说明](./build.md)）：
+   进入项目根目录，执行如下编译命令：
 
     ```bash
    # 编译指定算子，如--ops=add_example
@@ -398,4 +398,4 @@ REG_OP(AddExample)
     ```
 ## 算子验证
 
-开发好的算子完成编译部署后，可通过aclnn方式（推荐）或图模式验证功能，方法请参考[算子调用方式](./op_invocation.md)。
+开发好的算子完成编译部署后，可通过aclnn方式（推荐）或图模式验证功能，方法请参考[算子调用方式](../invocation/op_invocation.md)。
