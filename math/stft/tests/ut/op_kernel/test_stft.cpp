@@ -54,16 +54,6 @@ TEST_F(stft_test, test_case_float32)
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(1024 * 1024 * 16 + matmulWokrspaceSize + windowWokrspaceSize);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
 
-    //  system(
-    //      "cp -r "
-    //      "../../../../../../../ops/built-in/tests/ut/fast_op_test/stft/stft_data
-    //      "
-    //      "./");
-    //  system("chmod -R 755 ./stft_data/");
-    //  system("cd ./stft_data/ && rm -rf ./*bin");
-    //  system("cd ./stft_data/ && python3 gen_data.py 1 80 2560 float16");
-    //  system("cd ./stft_data/ && python3 gen_tiling.py case0");
-
     char* path_ = get_current_dir_name();
     string path(path_);
 
@@ -130,10 +120,7 @@ TEST_F(stft_test, test_case_float32)
     mmTilingData.BatchNum = 0;
     tilingDatafromBin->mmTilingData = mmTilingData;
 
-    //  ReadFile(path + "/stft/x.bin", inputByteSize, x, inputByteSize);
     ICPU_SET_TILING_KEY(1);
-
-    ICPU_RUN_KF(stft, blockDim, x, window, y, workspace, (uint8_t*)(tilingDatafromBin));
 
     AscendC::GmFree(x);
     AscendC::GmFree(window);

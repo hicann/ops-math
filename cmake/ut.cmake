@@ -239,6 +239,25 @@ if(UT_TEST_ALL OR OP_KERNEL_UT)
       ""
       CACHE STRING "fastOp Test SocVersions"
     )
+
+  function(get_op_type_from_op_name OP_NAME OP_TYPE)
+    execute_process(
+      COMMAND
+        find ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host -name ${OP_NAME}_def.cpp -exec grep OP_ADD {} \;
+      OUTPUT_VARIABLE op_type
+      )
+    if(NOT op_type)
+      set(op_type "")
+    else()
+      string(REGEX REPLACE "OP_ADD\\(" "" op_type ${op_type})
+      string(REGEX REPLACE "\\).*$" "" op_type ${op_type})
+    endif()
+    set(${OP_TYPE}
+        ${op_type}
+        PARENT_SCOPE
+      )
+  endfunction()
+
   function(AddOpTestCase opName supportedSocVersion otherCompileOptions tilingSrcFiles)
     get_filename_component(UT_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
     get_filename_component(TESTS_DIR ${UT_DIR} DIRECTORY)
@@ -254,15 +273,12 @@ if(UT_TEST_ALL OR OP_KERNEL_UT)
     file(GLOB KernelFile "${PROJECT_SOURCE_DIR}/*/${opName}/op_kernel/${opName}.cpp")
 
     # standardize opType
-    set(opType "")
-    string(REPLACE "_" ";" opTypeTemp "${opName}")
-    foreach(word IN LISTS opTypeTemp)
-      string(SUBSTRING "${word}" 0 1 firstLetter)
-      string(SUBSTRING "${word}" 1 -1 restOfWord)
-      string(TOUPPER "${firstLetter}" firstLetter)
-      string(TOLOWER "${restOfWord}" restOfWord)
-      set(opType "${opType}${firstLetter}${restOfWord}")
-    endforeach()
+    set(opType)
+    get_op_type_from_op_name("${opName}" opType)
+    if(NOT opType)
+      message(STATUS "[INFO] On [${compute_unit}], [${opName}] not need to compile.")
+      continue()
+    endif()
 
     # standardize tiling files
     string(REPLACE "," ";" tilingSrc "${tilingSrcFiles}")
