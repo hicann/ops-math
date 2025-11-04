@@ -7,6 +7,7 @@
 |  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     √    |
 |  <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>     |     √    |
 
+
 ## 功能说明
 
 - 算子功能：计算输入在滑动窗口内的傅里叶变换。
@@ -24,7 +25,13 @@
     $$
 
   
-  其中，$w$为FFT的频点；$m$为滑动窗口的index；$self$为1维或2维tensor，当$self$是1维时，其为一个时序采样序列，当$self$是2维时，其为多个时序采样序列；$hopLength$为滑动窗口大小；$window$为1维tensor，是STFT的窗函数（例如hann_window），其长度为$winLength$；$exp(-j*\frac{2{\pi}wk}{nFft})$为旋转因子。
+  其中：
+  - $w$为FFT的频点。
+  - $m$为滑动窗口的index。
+  - $self$为1维或2维Tensor，当$self$是1维时，其为一个时序采样序列，当$self$是2维时，其为多个时序采样序列。
+  - $hopLength$为滑动窗口大小。
+  - $window$为1维Tensor，是STFT的窗函数（例如hann_window），其长度为$winLength$。
+  - $exp(-j*\frac{2{\pi}wk}{nFft})$为旋转因子。
 
 ## 参数说明
 
@@ -59,9 +66,9 @@
       <td>ND</td>
     </tr>
     <tr>
-      <td>hot_length</td>
+      <td>hop_length</td>
       <td>可选属性</td>
-      <td><ul><li>滑动窗口的间隔（大于0），对应公式中的`hotLength`。</li><li>默认值为0。</li></ul></td>
+      <td><ul><li>滑动窗口的间隔（大于0），对应公式中的`hopLength`。</li><li>默认值为0。</li></ul></td>
       <td>INT</td>
       <td>-</td>
     </tr>
@@ -89,7 +96,7 @@
     <tr>
       <td>return_complex</td>
       <td>可选属性</td>
-      <td><ul><li>确认返回值是complex tensor或者是实、虚部分开的tensor。</li><li>默认值为true。</li></ul></td>
+      <td><ul><li>确认返回值是complex Tensor或者是实、虚部分开的Tensor。</li><li>默认值为true。</li></ul></td>
       <td>BOOL</td>
       <td>-</td>
     </tr>
@@ -103,7 +110,7 @@
     <tr>
       <td>y</td>
       <td>输出</td>
-      <td>`x`在`window`内的傅里叶变换结果，要求是一个2D/3D/4D的Tensor，对应公式中的`X[w,m]`。如果return_complex=True，y是shape为[N, T]或者[B, N, T]的复数tensor；如果returnComplex=False，y是shape为[N, T, 2]或者[B, N, T, 2]的实数tensor。其中，N=nFft(onesided=False)或者(nFft // 2 + 1)(onesided=True)；T是滑动窗口的个数，T = (L - nFft) // hopLength + 1。</td>
+      <td>`x`在`window`内的傅里叶变换结果，要求是一个2D/3D/4D的Tensor，对应公式中的`X[w,m]`。如果return_complex=True，y是shape为[N, T]或者[B, N, T]的复数Tensor；如果return_complex=False，y是shape为[N, T, 2]或者[B, N, T, 2]的实数Tensor。其中，N=nFft(onesided=False)或者(nFft // 2 + 1)(onesided=True)；T是滑动窗口的个数，T = (L - nFft) // hopLength + 1。</td>
       <td>FLOAT32、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
