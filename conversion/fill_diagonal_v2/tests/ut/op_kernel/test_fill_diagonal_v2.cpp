@@ -52,15 +52,6 @@ TEST_F(fill_diagonal_v2_test, test_case_float)
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
     uint32_t blockDim = 1; //cpu模拟使用单核
-    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
-    system("chmod -R 755 ./fill_diagonal_v2_data/");
-    system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
-    system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 3.14 ture float32");
-
-    char* path_ = get_current_dir_name();
-    string path(path_);
-    ReadFile(path + "/fill_diagonal_v2_data/input_self.bin", self_size, self, self_size);
-    ReadFile(path + "/fill_diagonal_v2_data/input_fill_value.bin", value_size, fill_value, value_size);
     FillDiagonalV2TilingData* tilingData = reinterpret_cast<FillDiagonalV2TilingData*>(tiling);
 
     // 设置tilingData
@@ -77,7 +68,6 @@ TEST_F(fill_diagonal_v2_test, test_case_float)
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
     AscendC::GmFree(tiling);
-    free(path_);
 }
 
 TEST_F(fill_diagonal_v2_test, test_case_flaot16)
@@ -94,15 +84,6 @@ TEST_F(fill_diagonal_v2_test, test_case_flaot16)
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
     uint32_t blockDim = 1; //cpu模拟使用单核
-    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
-    system("chmod -R 755 ./fill_diagonal_v2_data/");
-    system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
-    system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 3.14 true float16");
-
-    char* path_ = get_current_dir_name();
-    string path(path_);
-    ReadFile(path + "/fill_diagonal_v2_data/input_self.bin", self_size, self, self_size);
-    ReadFile(path + "/fill_diagonal_v2_data/input_fill_value.bin", value_size, fill_value, value_size);
     FillDiagonalV2TilingData* tilingData = reinterpret_cast<FillDiagonalV2TilingData*>(tiling);
 
     // 设置tilingData
@@ -119,7 +100,6 @@ TEST_F(fill_diagonal_v2_test, test_case_flaot16)
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
     AscendC::GmFree(tiling);
-    free(path_);
 }
 
 TEST_F(fill_diagonal_v2_test, test_case_int32)
@@ -136,15 +116,6 @@ TEST_F(fill_diagonal_v2_test, test_case_int32)
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
     uint32_t blockDim = 1; //cpu模拟使用单核
-    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
-    system("chmod -R 755 ./fill_diagonal_v2_data/");
-    system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
-    system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 314 true int32");
-
-    char* path_ = get_current_dir_name();
-    string path(path_);
-    ReadFile(path + "/fill_diagonal_v2_data/input_self.bin", self_size, self, self_size);
-    ReadFile(path + "/fill_diagonal_v2_data/input_fill_value.bin", value_size, fill_value, value_size);
     FillDiagonalV2TilingData* tilingData = reinterpret_cast<FillDiagonalV2TilingData*>(tiling);
 
     // 设置tilingData
@@ -161,7 +132,6 @@ TEST_F(fill_diagonal_v2_test, test_case_int32)
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
     AscendC::GmFree(tiling);
-    free(path_);
 }
 
 TEST_F(fill_diagonal_v2_test, test_case_int8)
@@ -178,15 +148,6 @@ TEST_F(fill_diagonal_v2_test, test_case_int8)
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
     uint32_t blockDim = 1; //cpu模拟使用单核
-    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
-    system("chmod -R 755 ./fill_diagonal_v2_data/");
-    system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
-    system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 14 true int8");
-
-    char* path_ = get_current_dir_name();
-    string path(path_);
-    ReadFile(path + "/fill_diagonal_v2_data/input_self.bin", self_size, self, self_size);
-    ReadFile(path + "/fill_diagonal_v2_data/input_fill_value.bin", value_size, fill_value, value_size);
     FillDiagonalV2TilingData* tilingData = reinterpret_cast<FillDiagonalV2TilingData*>(tiling);
 
     // 设置tilingData
@@ -203,7 +164,6 @@ TEST_F(fill_diagonal_v2_test, test_case_int8)
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
     AscendC::GmFree(tiling);
-    free(path_);
 }
 
 TEST_F(fill_diagonal_v2_test, test_case_int16)
@@ -220,15 +180,6 @@ TEST_F(fill_diagonal_v2_test, test_case_int16)
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
     uint32_t blockDim = 1; //cpu模拟使用单核
-    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
-    system("chmod -R 755 ./fill_diagonal_v2_data/");
-    system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
-    system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 314 true int16");
-
-    char* path_ = get_current_dir_name();
-    string path(path_);
-    ReadFile(path + "/fill_diagonal_v2_data/input_self.bin", self_size, self, self_size);
-    ReadFile(path + "/fill_diagonal_v2_data/input_fill_value.bin", value_size, fill_value, value_size);
     FillDiagonalV2TilingData* tilingData = reinterpret_cast<FillDiagonalV2TilingData*>(tiling);
 
     // 设置tilingData
@@ -245,7 +196,6 @@ TEST_F(fill_diagonal_v2_test, test_case_int16)
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
     AscendC::GmFree(tiling);
-    free(path_);
 }
 
 TEST_F(fill_diagonal_v2_test, test_case_bfloat16)
@@ -262,15 +212,6 @@ TEST_F(fill_diagonal_v2_test, test_case_bfloat16)
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
     uint32_t blockDim = 1; //cpu模拟使用单核
-    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
-    system("chmod -R 755 ./fill_diagonal_v2_data/");
-    system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
-    system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 3.14 true float16");
-
-    char* path_ = get_current_dir_name();
-    string path(path_);
-    ReadFile(path + "/fill_diagonal_v2_data/input_self.bin", self_size, self, self_size);
-    ReadFile(path + "/fill_diagonal_v2_data/input_fill_value.bin", value_size, fill_value, value_size);
     FillDiagonalV2TilingData* tilingData = reinterpret_cast<FillDiagonalV2TilingData*>(tiling);
 
     // 设置tilingData
@@ -287,7 +228,6 @@ TEST_F(fill_diagonal_v2_test, test_case_bfloat16)
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
     AscendC::GmFree(tiling);
-    free(path_);
 }
 
 TEST_F(fill_diagonal_v2_test, test_case_uint8)
@@ -304,15 +244,6 @@ TEST_F(fill_diagonal_v2_test, test_case_uint8)
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
     uint32_t blockDim = 1; //cpu模拟使用单核
-    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
-    system("chmod -R 755 ./fill_diagonal_v2_data/");
-    system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
-    system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 3.14 true uint8");
-
-    char* path_ = get_current_dir_name();
-    string path(path_);
-    ReadFile(path + "/fill_diagonal_v2_data/input_self.bin", self_size, self, self_size);
-    ReadFile(path + "/fill_diagonal_v2_data/input_fill_value.bin", value_size, fill_value, value_size);
     FillDiagonalV2TilingData* tilingData = reinterpret_cast<FillDiagonalV2TilingData*>(tiling);
 
     // 设置tilingData
@@ -329,7 +260,6 @@ TEST_F(fill_diagonal_v2_test, test_case_uint8)
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
     AscendC::GmFree(tiling);
-    free(path_);
 }
 
 TEST_F(fill_diagonal_v2_test, test_case_bool)
@@ -346,15 +276,6 @@ TEST_F(fill_diagonal_v2_test, test_case_bool)
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
     uint32_t blockDim = 1; //cpu模拟使用单核
-    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
-    system("chmod -R 755 ./fill_diagonal_v2_data/");
-    system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
-    system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" true true bool");
-
-    char* path_ = get_current_dir_name();
-    string path(path_);
-    ReadFile(path + "/fill_diagonal_v2_data/input_self.bin", self_size, self, self_size);
-    ReadFile(path + "/fill_diagonal_v2_data/input_fill_value.bin", value_size, fill_value, value_size);
     FillDiagonalV2TilingData* tilingData = reinterpret_cast<FillDiagonalV2TilingData*>(tiling);
 
     // 设置tilingData
@@ -371,7 +292,6 @@ TEST_F(fill_diagonal_v2_test, test_case_bool)
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
     AscendC::GmFree(tiling);
-    free(path_);
 }
 
 TEST_F(fill_diagonal_v2_test, test_case_int64_dense)
@@ -388,15 +308,6 @@ TEST_F(fill_diagonal_v2_test, test_case_int64_dense)
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
     uint32_t blockDim = 1; //cpu模拟使用单核
-    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
-    system("chmod -R 755 ./fill_diagonal_v2_data/");
-    system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
-    system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 88888888 true bool");
-
-    char* path_ = get_current_dir_name();
-    string path(path_);
-    ReadFile(path + "/fill_diagonal_v2_data/input_self.bin", self_size, self, self_size);
-    ReadFile(path + "/fill_diagonal_v2_data/input_fill_value.bin", value_size, fill_value, value_size);
     FillDiagonalV2TilingData* tilingData = reinterpret_cast<FillDiagonalV2TilingData*>(tiling);
 
     // 设置tilingData
@@ -413,7 +324,6 @@ TEST_F(fill_diagonal_v2_test, test_case_int64_dense)
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
     AscendC::GmFree(tiling);
-    free(path_);
 }
 
 TEST_F(fill_diagonal_v2_test, test_case_int64_sparse)
@@ -430,15 +340,6 @@ TEST_F(fill_diagonal_v2_test, test_case_int64_sparse)
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
     uint32_t blockDim = 1; //cpu模拟使用单核
-    system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
-    system("chmod -R 755 ./fill_diagonal_v2_data/");
-    system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
-    system("cd ./fill_diagonal_v2_data/ && python3 gen_data.py \"[4, 4]\" 88888888 true bool");
-
-    char* path_ = get_current_dir_name();
-    string path(path_);
-    ReadFile(path + "/fill_diagonal_v2_data/input_self.bin", self_size, self, self_size);
-    ReadFile(path + "/fill_diagonal_v2_data/input_fill_value.bin", value_size, fill_value, value_size);
     FillDiagonalV2TilingData* tilingData = reinterpret_cast<FillDiagonalV2TilingData*>(tiling);
 
     // 设置tilingData
@@ -455,5 +356,4 @@ TEST_F(fill_diagonal_v2_test, test_case_int64_sparse)
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
     AscendC::GmFree(tiling);
-    free(path_);
 }
