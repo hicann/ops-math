@@ -40,8 +40,6 @@ protected:
 
 TEST_F(transform_bias_rescale_qkv_test, test_transform_bias_rescale_qkv_float_0)
 {
-#undef DTYPE_QKV
-#define DTYPE_QKV DT_FP32
     system(
         "cp -rf "
         "../../../../math/transform_bias_rescale_qkv/tests/ut/op_kernel/transform_bias_rescale_qkv_data ./");
@@ -80,7 +78,7 @@ TEST_F(transform_bias_rescale_qkv_test, test_transform_bias_rescale_qkv_float_0)
 
     TransformBiasRescaleQkvTilingData* tilingDatafromBin = reinterpret_cast<TransformBiasRescaleQkvTilingData*>(tiling);
     tilingDatafromBin->qkvShapeSize = B * T * 3 * N * D;
-    tilingDatafromBin->needCoreNum = 1;
+    tilingDatafromBin->needCoreNum = 36;
     tilingDatafromBin->batch = B;
     tilingDatafromBin->token = T;
     tilingDatafromBin->dimension = 3 * N * D;
@@ -109,8 +107,6 @@ TEST_F(transform_bias_rescale_qkv_test, test_transform_bias_rescale_qkv_float_0)
 
 TEST_F(transform_bias_rescale_qkv_test, test_transform_bias_rescale_qkv_float16_1)
 {
-#undef DTYPE_QKV
-#define DTYPE_QKV DT_FP16
     system(
         "cp -rf "
         "../../../../math/transform_bias_rescale_qkv/tests/ut/op_kernel/transform_bias_rescale_qkv_data ./");
@@ -149,7 +145,7 @@ TEST_F(transform_bias_rescale_qkv_test, test_transform_bias_rescale_qkv_float16_
 
     TransformBiasRescaleQkvTilingData* tilingDatafromBin = reinterpret_cast<TransformBiasRescaleQkvTilingData*>(tiling);
     tilingDatafromBin->qkvShapeSize = B * T * 3 * N * D;
-    tilingDatafromBin->needCoreNum = 1;
+    tilingDatafromBin->needCoreNum = 36;
     tilingDatafromBin->batch = B;
     tilingDatafromBin->token = T;
     tilingDatafromBin->dimension = 3 * N * D;
@@ -178,8 +174,6 @@ TEST_F(transform_bias_rescale_qkv_test, test_transform_bias_rescale_qkv_float16_
 
 TEST_F(transform_bias_rescale_qkv_test, test_transform_bias_rescale_qkv_bfloat16_2)
 {
-#undef DTYPE_QKV
-#define DTYPE_QKV DT_BF16
     system(
         "cp -rf "
         "../../../../math/transform_bias_rescale_qkv/tests/ut/op_kernel/transform_bias_rescale_qkv_data ./");
@@ -220,7 +214,7 @@ TEST_F(transform_bias_rescale_qkv_test, test_transform_bias_rescale_qkv_bfloat16
 
     TransformBiasRescaleQkvTilingData* tilingDatafromBin = reinterpret_cast<TransformBiasRescaleQkvTilingData*>(tiling);
     tilingDatafromBin->qkvShapeSize = B * T * 3 * N * D;
-    tilingDatafromBin->needCoreNum = 1;
+    tilingDatafromBin->needCoreNum = 36;
     tilingDatafromBin->batch = B;
     tilingDatafromBin->token = T;
     tilingDatafromBin->dimension = 3 * N * D;
