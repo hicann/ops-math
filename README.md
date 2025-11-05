@@ -55,9 +55,7 @@ ops-math是[CANN](https://hiascend.com/software/cann) （Compute Architecture fo
 
 若您希望深入体验项目功能并修改算子源码，请访问如下文档获取详细教程。
 - [算子调用方式](docs/invocation/op_invocation.md)：介绍不同的调用算子方式，方便快速应用于不同的AI业务场景。
-
 - [算子调试调优](docs/debug/op_debug_prof.md)：介绍常见的算子调试和调优方法，如DumpTensor、msProf等。
-
 - [算子基本概念](docs/context/基本概念.md)：介绍算子领域相关术语和概念，如非连续Tensor、量化模式等。
 
 
