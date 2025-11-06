@@ -11,11 +11,11 @@
 
 - 算子功能：根据输入的二维张量，提取由diagonal指定的对角线元素。
   
-  如果diagonal = 0，则选择主对角线；
+  如果diagonal = 0，选择主对角线；
   
-  如果diagonal > 0，则在主对角线的上方；
+  如果diagonal > 0，选择主对角线上方的第diagonal条对角线；
   
-  如果diagonal < 0，则在主对角线的下方。
+  如果diagonal < 0，选择主对角线下方的第-diagonal条对角线。
 
 ## 参数说明
 
@@ -39,13 +39,13 @@
       <td>x</td>
       <td>输入</td>
       <td>输入张量。</td>
-      <td>UINT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、FLOAT、FLOAT16、BFLOAT16、DOUBLE、BOOL、COMPLEX32、COMPLEX128、COMPLEX64</td>
+      <td>INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、FLOAT、FLOAT16、BFLOAT16、DOUBLE、BOOL、COMPLEX32、COMPLEX128、COMPLEX64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>diagonal</td>
       <td>可选属性</td>
-      <td><ul><li>表示选择对角线的位置。</li><li>默认值为0。</li></td>
+      <td><ul><li>表示选择对角线的位置。</li><li>默认值为0，表示主对角线。</li></td>
       <td>Int</td>
       <td>-</td>
     </tr>
@@ -53,14 +53,15 @@
       <td>out</td>
       <td>输出</td>
       <td>输出张量。</td>
-      <td>UINT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、FLOAT、FLOAT16、BFLOAT16、DOUBLE、BOOL、COMPLEX32、COMPLEX128、COMPLEX64</td>
+      <td>INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、FLOAT、FLOAT16、BFLOAT16、DOUBLE、BOOL、COMPLEX32、COMPLEX128、COMPLEX64</td>
       <td>ND</td>
     </tr>
   </tbody></table>
 
 ## 约束说明
 
-无
+- 输入必须为二维张量，输出的数据类型和输入一样。
+- diagonal的取值应符合-(m-1) <= diagonal <= (n-1)，其中(m,n)为输入的shape。
 
 ## 调用说明
 
