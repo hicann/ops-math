@@ -1,9 +1,9 @@
-# AscendOps
+# NpuOpsMathExt
 
-**AscendOps** - 一个轻量级，高性能的算子开发工程模板
+**NpuOpsMathExt** - 一个轻量级，高性能的算子开发工程模板
 
 ## 项目简介 | Introduction
-AscendOps 是一个轻量级，高性能的算子开发工程模板，它集成了PyTorch、PyBind11和昇腾CANN工具链，提供了从算子内核编写，编译到Python封装的完整工具链。
+NpuOpsMathExt 是一个轻量级，高性能的算子开发工程模板，它集成了PyTorch、PyBind11和昇腾CANN工具链，提供了从算子内核编写，编译到Python封装的完整工具链。
 
 ## 核心特性 | Features
 🚀 开箱即用 (Out-of-the-Box): 预置完整的昇腾NPU算子开发环境配置，克隆后即可开始开发。
@@ -17,9 +17,10 @@ AscendOps 是一个轻量级，高性能的算子开发工程模板，它集成�
 🔌 PyTorch集成 (PyTorch Integration): 无缝集成PyTorch张量操作，支持自动微分和GPU/NPU统一接口。
 
 ## 核心交付件 | Core Deliverables
-1. `csrc/xxx/xxx_torch.cpp` 算子Kernel实现
-2. `csrc/xxx/CMakeLists.txt` 算子cmake配置
-3. `csrc/npu_ops_def.cpp` 注册算子接口
+1. `experimental/xxx/算子目录/算子名_torch.cpp` 算子Kernel实现
+2. `experimental/xxx/算子目录/CMakeLists.txt` 算子cmake配置
+3. `experimental/npu_ops_math_ext/npu_ops_math_ext/npu_ops_def.cpp` 注册算子接口
+- 其中xxx为math/conversion/random
 
 ## 环境要求 | Prerequisites
 *   Python: 3.8+
@@ -81,7 +82,7 @@ AscendOps 是一个轻量级，高性能的算子开发工程模板，它集成�
 
 1. 进入目录，安装依赖
     ```sh
-    cd fast_kernel_launch_example
+    cd experimental/npu_ops_math_ext
     pip install -r requirements.txt
     ```
 
@@ -112,40 +113,11 @@ AscendOps 是一个轻量级，高性能的算子开发工程模板，它集成�
   pip install --no-build-isolation -e .
   ```
 
-## 使用示例 | Usage Example
-
-安装完成后，您可以像使用普通PyTorch操作一样使用NPU算子，以isfinite算子为例，您可以在`ascend_ops\csrc\is_finite\test`目录下找到并执行这个脚本:
-
-```python
-import torch
-import torch_npu
-import ascend_ops
-
-supported_dtypes = {torch.float16, torch.bfloat16, torch.float}
-for data_type in supported_dtypes:
-    print(f"DataType = <{data_type}>")
-    x = torch.randn(40, 10000).to(data_type)
-    print(f"Tensor x = {x}")
-    cpu_result = torch.isfinite(x)
-    print(f"cpu: isfinite(x) = {cpu_result}")
-    x_npu = x.npu()
-    # 调用自定义接口
-    npu_result = torch.ops.ascend_ops.isfinite(x_npu).cpu()
-    print(f"[OK] torch.ops.ascend_ops.isfinite<{data_type}> successfully!")
-    print(f"npu: isfinite(x) = {npu_result}")
-    print(f"compare CPU Result vs NPU Result: {torch.allclose(cpu_result, npu_result)}\n\n")
-```
-
-最终看到如下输出，即为执行成功：
-```bash
-compare CPU Result vs NPU Result: True
-```
-
 
 ## 开发新算子 | Developing New Operators
-1. 编写算子调用文件，以添加算子my_ops为例
+1. 编写算子调用文件，以在experimental/math下添加算子my_ops为例
    
-    在 `csrc` 目录下添加新的算子目录 `my_ops`，在 `my_ops` 目录下添加新的算子调用文件 `my_ops_torch.cpp`
+    在 `experimental/math` 目录下添加新的算子目录 `my_ops`，在 `my_ops` 目录下添加新的算子调用文件 `my_ops_torch.cpp`
     ```c++
     __global__ __aicore__ void mykernel(GM_ADDR input, GM_ADDR output, int64_t num_element) {
         // 您的算子kernel实现
@@ -163,7 +135,7 @@ compare CPU Result vs NPU Result: True
     }
 
     // PyTorch提供的宏，用于在特定后端注册算子
-    TORCH_LIBRARY_IMPL(ascend_ops, PrivateUse1, m)
+    TORCH_LIBRARY_IMPL(npu_ops_math_ext, PrivateUse1, m)
     {
         m.impl("my_ops", my_ops_npu);
     }
@@ -197,18 +169,18 @@ compare CPU Result vs NPU Result: True
     endif()
     ```
 
-3. 在 `csrc/npu_ops_def.cpp`中添加TORCH_LIBRARY_IMPL定义
+3. 在 `npu_ops_math_ext/npu_ops_def.cpp`中添加TORCH_LIBRARY_IMPL定义
    
     ```c++
-    TORCH_LIBRARY_IMPL(ascend_ops, PrivateUse1, m) {
+    TORCH_LIBRARY_IMPL(npu_ops_math_ext, PrivateUse1, m) {
         m.impl("my_ops", my_ops_npu);
     }
     ```
 
-4. (可选)在 `ascend_ops/ops.py`中封装自定义接口
+4. (可选)在 `npu_ops_math_ext/ops.py`中封装自定义接口
     ```python
     def my_ops(x: Tensor) -> Tensor:
-        return torch.ops.ascend_ops.my_ops.default(x)
+        return torch.ops.npu_ops_math_ext.my_ops.default(x)
     ```
 
 5. 使用开发模式进行编译
@@ -218,5 +190,5 @@ compare CPU Result vs NPU Result: True
 
 6. 编写测试脚本并测试新算子
     ```python
-    torch.ops.ascend_ops.my_ops(x)
+    torch.ops.npu_ops_math_ext.my_ops(x)
     ```

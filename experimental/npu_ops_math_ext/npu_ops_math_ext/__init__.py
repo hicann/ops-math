@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
 # ----------------------------------------------------------------------------
 # This program is free software, you can redistribute it and/or modify it.
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
@@ -8,25 +10,8 @@
 # BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
-if (BUILD_TORCH_OPS)
-    set(OPERATOR_NAME "isfinite")
-    message(STATUS "BUILD_TORCH_OPS ON in ${OPERATOR_NAME}")
-    
-    set(OPERATOR_TARGET "${OPERATOR_NAME}_objects")
-    set(OPERATOR_CONFIG "${OPERATOR_NAME}:${OPERATOR_TARGET}" PARENT_SCOPE)
 
-    file(GLOB OPERATOR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
-
-    # Mark .cpp files with special properties
-    set_source_files_properties(
-        ${OPERATOR_SOURCES} PROPERTIES
-        LANGUAGE CXX
-        COMPILE_FLAGS "--cce-soc-version=Ascend910B1 --cce-soc-core-type=VecCore --cce-auto-sync -xcce"
-    )
-
-    add_library(${OPERATOR_TARGET} OBJECT ${OPERATOR_SOURCES})
-
-    target_compile_options(${OPERATOR_TARGET} PRIVATE ${COMMON_COMPILE_OPTIONS})
-    target_include_directories(${OPERATOR_TARGET} PRIVATE ${COMMON_INCLUDE_DIRS})
-    return()
-endif()
+from pathlib import Path
+import torch
+from . import _C
+from . import ops

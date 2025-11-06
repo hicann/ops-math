@@ -10,7 +10,7 @@
 # ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.18)
-project(AscendOps)
+project(NpuOpsMathExt)
 option(BUILD_TORCH_OPS "Build torch ops project (PyTorch extension style)" OFF)
 message(STATUS "Build torch ops: ${BUILD_TORCH_OPS}")
 
@@ -125,35 +125,43 @@ set(COMMON_COMPILE_OPTIONS
 
 message(STATUS "Building Torch Ops project...")
 
-file(GLOB OPERATOR_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ascend_ops/csrc/*")
+set(PARENT_DIRS math conversion random)
 set(OPERATOR_TARGETS "")
 
-foreach(OP_DIR ${OPERATOR_DIRS})
-    if(IS_DIRECTORY ${OP_DIR})
-        # 获取目录名
-        get_filename_component(OP_NAME ${OP_DIR} NAME)
+foreach(DIR_NAME ${PARENT_DIRS})
+    set(PARENT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../${DIR_NAME}")
 
-        # 检查目录中是否有 CMakeLists.txt
-        if(EXISTS "${OP_DIR}/CMakeLists.txt")
-            unset(OPERATOR_CONFIG)
-            add_subdirectory(ascend_ops/csrc/${OP_NAME})
-            if(OPERATOR_CONFIG)
-                string(REPLACE ":" ";" CONFIG_LIST ${OPERATOR_CONFIG})
-                list(GET CONFIG_LIST 0 OP_NAME)
-                list(GET CONFIG_LIST 1 OP_TARGET)
-                message(STATUS "Found operator: ${OP_NAME}")
-                list(APPEND OPERATOR_TARGETS $<TARGET_OBJECTS:${OP_TARGET}>)
-            else()
-                message(WARNING "No operator config found in ${SUB_DIR}")
+    if(IS_DIRECTORY ${PARENT_DIR})
+        message(STATUS "Scanning ${DIR_NAME} directory ...")
+        file(GLOB SUB_DIRS "${PARENT_DIR}/*")
+        foreach(SUB_DIR ${SUB_DIRS})
+            if(IS_DIRECTORY ${SUB_DIR} AND EXISTS "${SUB_DIR}/CMakeLists.txt")
+                # 临时变量用于接收子CMake配置
+                unset(OPERATOR_CONFIG)
+
+                get_filename_component(OP_DIR_NAME ${SUB_DIR} NAME)
+                set(BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/npu_ops_math_ext/csrc/${OP_DIR_NAME}")
+                add_subdirectory(${SUB_DIR} ${BINARY_DIR})
+
+                # 使用子CMake提供的配置
+                if(OPERATOR_CONFIG)
+                    string(REPLACE ":" ";" CONFIG_LIST ${OPERATOR_CONFIG})
+                    list(GET CONFIG_LIST 0 OP_NAME)
+                    list(GET CONFIG_LIST 1 OP_TARGET)
+                    message(STATUS "Found operator: ${OP_NAME}")
+                    list(APPEND OPERATOR_TARGETS $<TARGET_OBJECTS:${OP_TARGET}>)
+                else()
+                    message(WARNING "No operator config found in ${SUB_DIR}")
+                endif()
             endif()
-        endif()
+        endforeach()
     endif()
 endforeach()
 
 message(STATUS "Discovered torch operator targets: ${OPERATOR_TARGETS}")
 
 # 主库源文件
-set(MAIN_LIBRARY_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/ascend_ops/csrc/npu_ops_def.cpp")
+set(MAIN_LIBRARY_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/npu_ops_math_ext/npu_ops_def.cpp")
 
 # 创建主库
 add_library(_C SHARED

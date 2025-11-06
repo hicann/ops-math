@@ -54,8 +54,11 @@ template <typename T>
 void isfinite_api(aclrtStream stream, const at::Tensor& x, const at::Tensor& y)
 {
     int64_t num_element = x.numel();
+    auto ascendcPlatform = platform_ascendc::PlatformAscendCManager::GetInstance();
+    uint64_t ubSizePlatFrom;
+    ascendcPlatform->GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatFrom);
     IsFiniteTilingData tilingData;
-    IsFiniteTiling::IsFiniteCommonTiling<at::Tensor>(x, tilingData);
+    IsFiniteTiling::IsFiniteCommonTiling<at::Tensor>(x, tilingData, ascendcPlatform->GetCoreNumAiv(), ubSizePlatFrom);
     uint32_t blockDim = tilingData.needCoreNum;
     auto x_ptr = x.data_ptr<T>();
     auto y_ptr = y.data_ptr<bool>();
