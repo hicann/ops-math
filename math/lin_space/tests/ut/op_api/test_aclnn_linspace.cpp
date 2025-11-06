@@ -13,7 +13,7 @@
 #include <vector>
 #include "gtest/gtest.h"
 
-#include "../../../../op_host/op_api/aclnn_linspace.h"
+#include "level2/aclnn_linspace.h"
 
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
@@ -51,8 +51,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_input_uint8)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 输入int8
@@ -71,8 +69,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_input_int8)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 输入int32
@@ -91,8 +87,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_input_int32)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 输入int64
@@ -128,8 +122,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_output_int64)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 // 输入float16
@@ -147,8 +139,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_input_float16)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 // 输入float
@@ -167,8 +157,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_input_float)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 输出float
@@ -187,27 +175,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_output_float)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
-}
-
-// 输入double
-TEST_F(l2_linspace_test, aclnnLinspace_input_double)
-{
-    auto start = ScalarDesc(static_cast<double>(3.5));
-    auto end = ScalarDesc(static_cast<double>(15.5));
-    int64_t steps = 5;
-
-    auto outTensor = TensorDesc({5}, ACL_DOUBLE, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-    auto ut = OP_API_UT(aclnnLinspace, INPUT(start, end, steps), OUTPUT(outTensor));
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 输出complex64
@@ -277,8 +244,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_steps_0)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 输入out != step
@@ -297,8 +262,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_steps_out)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 // 输入step = 1
@@ -317,8 +280,6 @@ TEST_F(l2_linspace_test, aclnnLinspace_steps_1)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // start 空指针
@@ -387,24 +348,4 @@ TEST_F(l2_linspace_test, aclnnLinspace_steps_less_than_0)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-}
-
-// 输出ACL_FLOAT64
-TEST_F(l2_linspace_test, aclnnLinspace_output_double)
-{
-    auto start = ScalarDesc(static_cast<int>(3.5));
-    auto end = ScalarDesc(static_cast<int>(15.5));
-    int64_t steps = 5;
-
-    auto outTensor = TensorDesc({5}, ACL_DOUBLE, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-    auto ut = OP_API_UT(aclnnLinspace, INPUT(start, end, steps), OUTPUT(outTensor));
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }

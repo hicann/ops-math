@@ -14,7 +14,7 @@
 #include "gtest/gtest.h"
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
-#include "../../../../op_host/op_api/aclnn_grouped_bias_add_grad.h"
+#include "level2/aclnn_grouped_bias_add_grad.h"
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/tensor_desc.h"
