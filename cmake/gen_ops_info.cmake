@@ -161,7 +161,7 @@ function(generate_bin_scripts)
 endfunction()
 
 # ######################################################################################################################
-# get op_type from *_binary.json
+# get op_type from *_def.cpp
 # ######################################################################################################################
 function(get_op_type_from_op_name OP_NAME OP_TYPE)
   execute_process(
@@ -172,11 +172,31 @@ function(get_op_type_from_op_name OP_NAME OP_TYPE)
   if(NOT op_type)
     set(op_type "")
   else()
-    string(REGEX REPLACE "OP_ADD\\(" "" op_type ${op_type})
-    string(REGEX REPLACE "\\).*$" "" op_type ${op_type})
+    string(REGEX REPLACE "[\t ]*OP_ADD\\([\t ]*" "" op_type ${op_type})
+    string(REGEX REPLACE "[\t ]*\\).*$" "" op_type ${op_type})
   endif()
   set(${OP_TYPE}
       ${op_type}
+      PARENT_SCOPE
+    )
+endfunction()
+
+# ######################################################################################################################
+# get op_type from *_def.cpp
+# ######################################################################################################################
+function(check_op_supported OP_NAME COMPUTE_UNIT OP_SUPPORTED_COMPUTE_UNIT)
+  set(cmd "find ${CMAKE_CURRENT_SOURCE_DIR} -name ${OP_NAME}_def.cpp -exec grep '\.AddConfig(\\s*\"${COMPUTE_UNIT}\"' {} \;")
+  execute_process(
+    COMMAND bash -c "${cmd}"
+    OUTPUT_VARIABLE op_supported_compute_unit
+    )
+  if(NOT op_supported_compute_unit)
+    set(op_supported_compute_unit FALSE)
+  else()
+    set(op_supported_compute_unit TRUE)
+  endif()
+  set(${OP_SUPPORTED_COMPUTE_UNIT}
+      ${op_supported_compute_unit}
       PARENT_SCOPE
     )
 endfunction()
@@ -209,7 +229,7 @@ function(compile_from_config)
   file(MAKE_DIRECTORY ${CONFCMP_OUT_DIR}/src)
   file(MAKE_DIRECTORY ${CONFCMP_OUT_DIR}/bin)
   file(MAKE_DIRECTORY ${CONFCMP_OUT_DIR}/gen)
-  message(STATUS "start to compile op: ${CONFCMP_OP_NAME}, op_type: ${CONFCMP_OP_TYPE}")
+  message(STATUS "start to compile op:${CONFCMP_OP_NAME}, op_type:${CONFCMP_OP_TYPE}.")
   # add Environment Variable Configurations of python & ccache
   set(_ASCENDC_ENV_VAR)
   list(APPEND _ASCENDC_ENV_VAR export HI_PYTHON=${ASCEND_PYTHON_EXECUTABLE} &&)
@@ -354,6 +374,15 @@ function(gen_ops_info_and_python)
           continue()
         endif()
 
+        set(check_op_supported_result)
+        check_op_supported("${op_name}" "${compute_unit}" check_op_supported_result)
+        if(NOT check_op_supported_result)
+          message(STATUS "[INFO] On [${compute_unit}], [${op_name}] not supported.")
+          continue()
+        endif()
+
+        set(HAS_OP_COMPILE_OF_COMPUTE_UNIT TRUE)
+
         # generate opc shell scripts for autogen binary config ops
         generate_bin_scripts(
           TARGET gen_bin_scripts OP_NAME ${op_name} OPS_INFO_DIR ${ASCEND_AUTOGEN_PATH} COMPUTE_UNIT ${compute_unit}
@@ -363,9 +392,8 @@ function(gen_ops_info_and_python)
         if(EXISTS ${binary_json})
           # binary compile from binary json config
           message(STATUS "[INFO] On [${compute_unit}], [${op_name}] compile binary with self config.")
-        elseif(NOT EXISTS ${CMAKE_BINARY_DIR}/binary/${compute_unit}/${op_name}_binary.json)
-          message(STATUS "[INFO] On [${compute_unit}], [${op_name}] not supported.")
-          continue()
+        else()
+          message(STATUS "[INFO] On [${compute_unit}], [${op_name}] compile binary with auto gen config.")
         endif()
         compile_from_config(
               TARGET
@@ -391,7 +419,6 @@ function(gen_ops_info_and_python)
               COMPUTE_UNIT
               ${compute_unit}
         )
-        set(HAS_OP_COMPILE_OF_COMPUTE_UNIT TRUE)
         add_dependencies(ascendc_bin_${compute_unit}_${op_name} merge_ini_${compute_unit} ascendc_impl_gen)
       endforeach()
 
