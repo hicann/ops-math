@@ -16,6 +16,13 @@
 │   ├── CMakeLists.txt
 │   ├── inc                                             # 公共头文件目录
 │   └── src                                             # 公共代码目录
+├── experimental                                        # 用户自定义算子存放目录
+│   ├── conversion                                      # 可选，用户开发的conversion类算子目录
+│   │   └── CMakeLists.txt
+│   ├── math                                            # 可选，用户开发的math类算子目录
+│   │   └── CMakeLists.txt
+│   └── random                                          # 可选，用户开发的random类算子目录
+│       └── CMakeLists.txt
 ├── ${op_class}                                         # 算子分类，如conversion、math、 random类算子
 │   ├${op_name}                                         # 算子工程目录，${op_name}表示算子名（小写下划线形式）
 │   │   ├── CMakeLists.txt                              # 算子cmakelist入口
@@ -130,4 +137,3 @@
 ├── requirements.txt                                    # 项目的第三方依赖包
 └── version.info                                        # 项目版本信息
 ```
-

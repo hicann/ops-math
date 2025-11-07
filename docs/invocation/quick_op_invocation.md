@@ -99,10 +99,13 @@
     bash build.sh --pkg --soc=${soc_version} [--vendor_name=${vendor_name}] [--ops=${op_list}]
     # 以Abs算子编译为例
     # bash build.sh --pkg --soc=ascend910b --ops=abs
+    # 编译experimental目录下的用户算子
+    # bash build.sh --pkg --experimental --soc=ascend910b --ops=abs
     ```
     - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"。
     - --vendor_name（可选）：\$\{vendor\_name\}表示构建的自定义算子包名，默认名为custom。
     - --ops（可选）：\$\{op\_list\}表示待编译算子，不指定时默认编译所有算子。格式形如"abs,add_lora,..."，多算子之间用英文逗号","分隔。
+    - --experimental（可选）：表示编译用户保存在experimental目录下的算子。
     
     说明：若\$\{vendor\_name\}和\$\{op\_list\}都不传入编译的是ops-math包；若编译所有算子的自定义算子包，需传入\$\{vendor\_name\}。
 
@@ -127,10 +130,14 @@
     进入项目根目录，执行如下编译命令：
 
     ```bash
+    # 编译除experimental目录外的所有算子
     bash build.sh --pkg [--jit] --soc=${soc_version}
+    # 编译experimental目录下的所有算子
+    # bash build.sh --pkg --experimental [--jit] --soc=${soc_version}
     ```
     - --jit（可选）：设置后表示不编译算子二进制文件，如需使用aclnn调用算子，该选项无需设置。
     - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"。
+    - --experimental（可选）：表示编译用户保存在experimental目录下的算子。
 
     若提示如下信息，说明编译成功。
 

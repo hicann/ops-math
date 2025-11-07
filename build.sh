@@ -136,6 +136,7 @@ usage() {
         echo "    bash build.sh --pkg --soc=ascend910b --vendor_name=customize -j16 -O3"
         echo "    bash build.sh --pkg --ops=add,sub --debug"
         echo "    bash build.sh --pkg --experimental --soc=ascend910b"
+        echo "    bash build.sh --pkg --experimental --soc=ascend910b --ops=abs"
         return
         ;;
       opkernel)
@@ -307,7 +308,7 @@ usage() {
   echo "    -u Compile all ut"
   echo $dotted_line
   echo "    examples, Build ophost_test with O3 level compilation optimization and do not execute."
-  echo "    ./build.sh --ophost_test --noexec -O3"
+  echo "    bash build.sh --ophost_test --noexec -O3"
   echo $dotted_line
   echo "    The following are all supported arguments:"
   echo $dotted_line

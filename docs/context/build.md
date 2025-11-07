@@ -56,3 +56,4 @@ bash build.sh --help
 | --run_example    | 可选     | 编译指定算子及模式的样例并执行编译后的可执行文件。                                                    |
 | --genop          | 可选     | 创建AI Core自定义算子初始目录。                                                          |
 | --genop_aicpu    | 可选     | 创建AI CPU自定义算子初始目录。                                                           |
+| --experimental  | 可选     | 编译experimental目录下的用户算子。                                                           |
