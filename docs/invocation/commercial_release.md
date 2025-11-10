@@ -98,4 +98,4 @@ source /usr/local/Ascend/ascend-toolkit/set_env.sh
     ./cann-ops-${ops_project}-${vendor_name}-linux.${arch}.run
     ```
 
-    自定义算子包安装路径为`${ASCEND_HOME_PATH}/opp/vendors`，\$\{ASCEND\_HOME\_PATH\}已通过环境变量配置，表示CANN toolkit包安装路径，一般为\$\{install\_path\}/ascend-toolkit/latest。注意自定义算子包不支持卸载。
+    自定义算子包安装路径为`${ASCEND_HOME_PATH}/vendors`，\$\{ASCEND\_HOME\_PATH\}已通过环境变量配置，表示CANN toolkit包安装路径，一般为\$\{install\_path\}/ascend-toolkit/latest。注意自定义算子包不支持卸载。

@@ -167,7 +167,7 @@ int main()
    set(INCLUDE_BASE_DIR "${ASCEND_PATH}/include")
    include_directories(
        ${INCLUDE_BASE_DIR}
-       ${ASCEND_PATH}/opp/vendors/${TARGET_SUBDIR}/op_api/include    # 仅自定义算子需要
+       ${ASCEND_PATH}/vendors/${TARGET_SUBDIR}/op_api/include    # 仅自定义算子需要
        # ${INCLUDE_BASE_DIR}/aclnn                                   # 仅内置算子需要
    )
    include_directories(
@@ -178,7 +178,7 @@ int main()
    target_link_libraries(test_aclnn_add_example PRIVATE             # 替换实际算子可执行文件
        ${ASCEND_PATH}/lib64/libascendcl.so
        ${ASCEND_PATH}/lib64/libnnopbase.so
-       ${ASCEND_PATH}/opp/vendors/${TARGET_SUBDIR}/op_api/lib/libcust_opapi.so   # 仅自定义算子需要
+       ${ASCEND_PATH}/vendors/${TARGET_SUBDIR}/op_api/lib/libcust_opapi.so   # 仅自定义算子需要
        # ${ASCEND_PATH}/lib64/libopapi_math.so    # 仅内置算子需要
    )
 

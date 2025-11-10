@@ -126,7 +126,7 @@ bash build.sh --genop=${op_class}/${op_name}
 ```bash
 Create the initial directory for ${op_name} under ${op_class} success
 ```
-创建完成后，目录结构如下所示：
+创建完成后，关键目录结构如下所示：
 
 ```
 ${op_name}                              # 替换为实际算子名的小写下划线形式
@@ -559,7 +559,7 @@ __aicore__ inline void AddExample<T>::CopyOut(int32_t progress)
     ```
 
     若未指定\$\{vendor\_name\}默认使用custom作为包名。编译成功后，生成的自定义算子\*\.run包存放于build\_out目录。
-    
+
     说明：当前自定义算子包\$\{vendor\_name\}和\$\{op\_list\}均为可选，若都不传入编译的是built-in包；若编译所有算子的自定义算子包，需传入\$\{vendor\_name\}。
 
     注意，构建过程文件在`build`目录，关键文件如下：
@@ -575,7 +575,7 @@ __aicore__ inline void AddExample<T>::CopyOut(int32_t progress)
     ```bash
     ./cann-ops-math-${vendor_name}_linux-${arch}.run
     ```
-    自定义算子包安装在`${ASCEND_HOME_PATH}/latest/opp/vendors`路径中，`${ASCEND_HOME_PATH}`表示CANN软件安装目录，可提前在环境变量中配置。自定义算子包不支持卸载。
+    自定义算子包安装在`${ASCEND_HOME_PATH}/vendors`路径中，`${ASCEND_HOME_PATH}`表示CANN软件安装目录，可提前在环境变量中配置。自定义算子包不支持卸载。
     
     自定义算子包的目录结构示例如下：
     ```
@@ -700,13 +700,14 @@ static ge::graphStatus InferDataTypeAddExample(gert::InferDataTypeContext* conte
     ....
 }
 
-// 注册InferShape与InferDataType
-IMPL_OP_INFERSHAPE(AddExample).
-    InferShape(InferShapeAddExample).
-    InferDataType(InferDataTypeAddExample);
+// 注册InferShape
+IMPL_OP_INFERSHAPE(AddExample).InferShape(InferShapeAddExample);
+
+// 注册InferDataType
+IMPL_OP(AddExample).InferDataType(InferDataTypeAddExample);
 ```
 
-完整代码请参考`examples/add_example/op_host`目录下[add_example_infershape.cpp](../../examples/add_example/op_host/add_example_infershape.cpp)。   
+完整代码请参考`examples/add_example/op_host`目录下[add_example_infershape.cpp](../../examples/add_example/op_host/add_example_infershape.cpp)及`examples/add_example/op_graph`目录下[add_example_graph_infer.cpp](../../examples/add_example/op_graph/add_example_graph_infer.cpp)。
 
 ### 算子原型配置
 图模式调用需要将算子原型注册到[Graph Engine](https://www.hiascend.com/cann/graph-engine)（简称GE）中，以便GE能够识别该类型算子的输入、输出及属性信息。注册通过`REG_OP`接口完成，开发者需要定义算子的输入、输出张量类型及数量等基本信息。
