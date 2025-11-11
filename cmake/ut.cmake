@@ -5,8 +5,8 @@
 # Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
-# BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
-# the software repository for the full text of the License.
+# BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
 include_guard(GLOBAL)
@@ -161,10 +161,7 @@ if(UT_TEST_ALL OR OP_KERNEL_UT)
   endfunction()
 endif()
 
-if(UT_TEST_ALL
-   OR OP_HOST_UT
-   OR OP_API_UT
-  )
+if(UT_TEST_ALL OR OP_HOST_UT OR OP_API_UT)
   function(add_modules_ut_sources)
     set(options OPTION_RESERVED)
     set(oneValueArgs UT_NAME MODE DIR)
@@ -172,7 +169,7 @@ if(UT_TEST_ALL
     cmake_parse_arguments(MODULE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     if("${MODULE_UT_NAME}" STREQUAL "${OP_TILING_MODULE_NAME}")
-      get_filename_component(UT_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
+      get_filename_component(UT_DIR ${MODULE_DIR} DIRECTORY)
       get_filename_component(TESTS_DIR ${UT_DIR} DIRECTORY)
       get_filename_component(OP_NAME_DIR ${TESTS_DIR} DIRECTORY)
       get_filename_component(OP_NAME ${OP_NAME_DIR} NAME)
@@ -190,7 +187,7 @@ if(UT_TEST_ALL
     endif()
 
     if("${MODULE_UT_NAME}" STREQUAL "${OP_INFERSHAPE_MODULE_NAME}")
-      get_filename_component(UT_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
+      get_filename_component(UT_DIR ${MODULE_DIR} DIRECTORY)
       get_filename_component(TESTS_DIR ${UT_DIR} DIRECTORY)
       get_filename_component(OP_NAME_DIR ${TESTS_DIR} DIRECTORY)
       get_filename_component(OP_NAME ${OP_NAME_DIR} NAME)
@@ -208,12 +205,12 @@ if(UT_TEST_ALL
     endif()
 
     if("${MODULE_UT_NAME}" STREQUAL "${OP_API_MODULE_NAME}")
-      get_filename_component(OP_HOST_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
+      get_filename_component(OP_HOST_DIR ${MODULE_DIR} DIRECTORY)
       get_filename_component(OP_HOST_NAME ${OP_HOST_DIR} NAME)
       if("${OP_HOST_NAME}" STREQUAL "op_host")
         get_filename_component(UT_DIR ${OP_HOST_DIR} DIRECTORY)
       else()
-        get_filename_component(UT_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
+        get_filename_component(UT_DIR ${MODULE_DIR} DIRECTORY)
       endif()
       get_filename_component(TESTS_DIR ${UT_DIR} DIRECTORY)
       get_filename_component(OP_NAME_DIR ${TESTS_DIR} DIRECTORY)

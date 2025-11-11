@@ -11,6 +11,7 @@
 
 #include "aclnn_circular_pad3d.h"
 #include "conversion/pad_v3/op_host/op_api/padv3.h"
+#include "common/aclnn_check.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/op_dfx.h"
@@ -21,19 +22,10 @@ extern "C" {
 #endif
 
 static const string CIRCULAR_MODE = "circular";
-static const size_t AI_CORE_REPLICATION_PAD_DIM_BOUND = 8;
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> dtypeSupportList = {
     op::DataType::DT_FLOAT, op::DataType::DT_BF16, op::DataType::DT_FLOAT16, op::DataType::DT_INT32,
     op::DataType::DT_INT8};
-
-inline static bool CheckNotNull(const aclTensor* self, const aclIntArray* padding, const aclTensor* out)
-{
-    OP_CHECK_NULL(self, return false);
-    OP_CHECK_NULL(padding, return false);
-    OP_CHECK_NULL(out, return false);
-    return true;
-}
 
 inline static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
@@ -101,16 +93,13 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* padding, const 
 
 inline static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* padding, const aclTensor* out)
 {
-    // 1. 检查参数是否为空指针
-    CHECK_RET(CheckNotNull(self, padding, out), ACLNN_ERR_PARAM_NULLPTR);
-
-    // 2. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
+    // 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
     CHECK_RET(CheckDtypeValid(self, out), ACLNN_ERR_PARAM_INVALID);
 
-    // 3. 检查数据格式是否支持
+    // 检查数据格式是否支持
     CHECK_RET(CheckFormat(self, out), ACLNN_ERR_PARAM_INVALID);
 
-    // 4. 检查shape是否满足约束
+    // 检查shape是否满足约束
     CHECK_RET(CheckShape(self, padding, out), ACLNN_ERR_PARAM_INVALID);
 
     return ACLNN_SUCCESS;
@@ -151,6 +140,8 @@ aclnnStatus aclnnCircularPad3dGetWorkspaceSize(
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
     L2_DFX_PHASE_1(aclnnCircularPad3d, DFX_IN(self, padding), DFX_OUT(out));
+
+    CHECK_NOT_NULL(self, padding, out);
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);

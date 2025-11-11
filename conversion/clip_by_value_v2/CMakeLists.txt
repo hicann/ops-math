@@ -18,3 +18,5 @@ foreach(SUB_DIR ${CURRENT_DIRS})
         add_subdirectory(${SUB_DIR})
     endif()
 endforeach()
+
+add_all_modules_sources(OPTYPE clip_by_value_v2 ACLNNTYPE aclnn_exclude)

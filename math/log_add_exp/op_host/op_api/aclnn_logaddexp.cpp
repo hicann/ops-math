@@ -13,7 +13,6 @@
 #include "logaddexp.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
-#include "common/op_api_def.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -23,7 +22,7 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
-#include "../../../../common/inc/common/level2_base_caculation.h"
+#include "common/level2_base_caculation.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -77,8 +76,19 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const
     return true;
 }
 
-static bool CheckShape(const aclTensor* self, const aclTensor* other)
+static bool CheckBroadcastLogAddExp(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
+    // 检查self和other是否能broadcast，如可以求broadcast之后的shape
+    OP_CHECK_BROADCAST(self, other, return false);
+    op::Shape broadcastShape;
+    BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape);
+
+    // 检查self和other经过broadcast后的shape是否与out的shape一致
+    OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(out, broadcastShape, return false);
+    return true;
+}
+
+static bool CheckShape(const aclTensor* self, const aclTensor* other) {
     OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIMS_NUMS, return false);
     OP_CHECK_MAX_DIM(other, MAX_SUPPORT_DIMS_NUMS, return false);
     return true;

@@ -214,6 +214,13 @@ macro(add_modules_sources)
     # ASCEND_OP_NAME 为空表示全部编译
     return()
   endif()
+  
+  if(OP_NAME IN_LIST COMPILED_OPS)
+    # 已经编译过，忽略
+    message(STATUS "already compiled ${OP_NAME}, skip")
+    return()
+  endif()
+  
   # 记录全局的COMPILED_OPS和COMPILED_OP_DIRS，其中COMPILED_OP_DIRS只记录到算子名，例如math/abs
   set(COMPILED_OPS
       ${COMPILED_OPS} ${OP_NAME}
@@ -290,12 +297,51 @@ macro(add_modules_sources)
   endif()
 endmacro()
 
-# useage: add_all_modules_sources(OPTYPE ACLNNTYPE) ACLNNTYPE 支持类型aclnn/aclnn_inner/aclnn_exclude OPTYPE 和 ACLNNTYPE
-# 需一一对应
-macro(add_all_modules_sources)
-  set(multiValueArgs OPTYPE ACLNNTYPE)
+function(add_dependent_ops dependent_ops)
+  foreach(dep_op ${dependent_ops})
+    # 查询依赖算子所在目录
+    file(GLOB
+      dep_op_path_list
+      "${CMAKE_CURRENT_SOURCE_DIR}/../../math/${dep_op}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../../conversion/${dep_op}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../../random/${dep_op}"
+    )
+    # 检查依赖存在
+    if(NOT dep_op_path_list)
+      message(FATAL_ERROR "dependent operator(${dep_op}) not exists")
+    endif()
+    list(LENGTH ${dep_op_path_list} find_dep_ops_count)
+    if(find_dep_ops_count GREATER 1)
+      message(FATAL_ERROR "dependent operator(${dep_op}) is not unique, the found operators:${dep_op_path_list}")
+    endif()
 
-  cmake_parse_arguments(MODULE "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+    # 不在编译列表则加入，ASCEND_OP_NAME 为空表示全部编译，则不单独编译
+    if(ASCEND_OP_NAME AND (NOT (dep_op IN_LIST ASCEND_OP_NAME)))
+      # 加入依赖并去重
+      set(NEW_OP_NAMES ${ASCEND_OP_NAME} ${dep_op})
+      list(REMOVE_DUPLICATES NEW_OP_NAMES)
+      set(ASCEND_OP_NAME
+          ${NEW_OP_NAMES}
+          CACHE STRING "Ascend op names to compile" FORCE
+        )
+      # 添加目录
+      get_filename_component(dep_op_path "${dep_op_path_list}" ABSOLUTE)
+      get_filename_component(dep_op_parent "${dep_op_path}" DIRECTORY)
+      get_filename_component(parent_path "${dep_op_parent}" NAME)
+      message(STATUS "add dependent operator: ${parent_path}/${dep_op}, path: ${dep_op_path}")
+      add_subdirectory("${dep_op_path}" "${CMAKE_BINARY_DIR}/dependent-ops/${parent_path}/${dep_op}")
+    endif()
+  endforeach()
+endfunction()
+
+# useage: add_moduladd_all_modules_sourceses_sources(OPTYPE ACLNNTYPE DEPENDENCIES)
+# ACLNNTYPE 支持类型aclnn/aclnn_inner/aclnn_exclude
+# OPTYPE 和 ACLNNTYPE 需一一对应
+# DEPENDENCIES 指定依赖的算子名称列表
+macro(add_all_modules_sources)
+  set(multiValueArgs OPTYPE ACLNNTYPE DEPENDENCIES)
+
+  cmake_parse_arguments(MODULE "" "" "${multiValueArgs}" ${ARGN})
   set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
   # opapi l0 默认全部编译
@@ -313,6 +359,12 @@ macro(add_all_modules_sources)
     # ASCEND_OP_NAME 为空表示全部编译
     return()
   endif()
+
+  if(OP_NAME IN_LIST COMPILED_OPS)
+    # 已经编译过，忽略
+    message(STATUS "already compiled ${OP_NAME}, skip")
+    return()
+  endif()
   # 记录全局的COMPILED_OPS和COMPILED_OP_DIRS，其中COMPILED_OP_DIRS只记录到算子名，例如math/abs
   set(COMPILED_OPS
       ${COMPILED_OPS} ${OP_NAME}
@@ -322,6 +374,9 @@ macro(add_all_modules_sources)
       ${COMPILED_OP_DIRS} ${SOURCE_DIR}
       CACHE STRING "Compiled Ops Dirs" FORCE
     )
+
+  # 添加依赖算子
+  add_dependent_ops("${MODULE_DEPENDENCIES}")
 
   file(GLOB OPAPI_HEADERS ${SOURCE_DIR}/op_api/aclnn_*.h)
   if(OPAPI_HEADERS)
@@ -346,10 +401,12 @@ macro(add_all_modules_sources)
     target_sources(${OPHOST_NAME}_tiling_obj PRIVATE ${OPTILING_SRCS})
   endif()
 
-  file(GLOB AICPU_SRCS ${SOURCE_DIR}/op_kernel_aicpu/*_aicpu*.cpp)
-  if(AICPU_SRCS)
-    add_aicpu_kernel_modules()
-    target_sources(${OPHOST_NAME}_aicpu_obj PRIVATE ${AICPU_SRCS})
+  if(NOT BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
+    file(GLOB AICPU_SRCS ${SOURCE_DIR}/op_kernel_aicpu/*_aicpu*.cpp)
+    if(AICPU_SRCS)
+      add_aicpu_kernel_modules()
+      target_sources(${OPHOST_NAME}_aicpu_obj PRIVATE ${AICPU_SRCS})
+    endif()
   endif()
 
   if(MODULE_OPTYPE)
@@ -370,8 +427,6 @@ macro(add_all_modules_sources)
         if(OPDEF_SRCS)
           target_sources(${OPHOST_NAME}_opdef_${AclnnType}_obj INTERFACE ${OPDEF_SRCS})
         endif()
-      elseif(${AclnnType} STREQUAL "no_need_alcnn")
-        message(STATUS "aicpu or host aicpu no need aclnn.")
       else()
         message(FATAL_ERROR "ACLNN TYPE UNSPPORTED, ONLY SUPPORT aclnn/aclnn_inner/aclnn_exclude")
       endif()
@@ -398,6 +453,34 @@ macro(add_all_modules_sources)
   if(OP_GRAPH_PROTO_HEADERS)
     target_sources(${GRAPH_PLUGIN_NAME}_proto_headers INTERFACE ${OP_GRAPH_PROTO_HEADERS})
   endif()
+  add_all_ut_sources()
+endmacro()
+
+# useage: add_all_ut_sources()
+macro(add_all_ut_sources)
+  set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+  file(GLOB TEST_OP_API_SRCS ${SOURCE_DIR}/tests/ut/op_api/*_aclnn*.cpp)
+  if(TEST_OP_API_SRCS AND (UT_TEST_ALL OR OP_API_UT))
+    add_modules_ut_sources(UT_NAME ${OP_API_MODULE_NAME} MODE PRIVATE DIR ${SOURCE_DIR}/tests/ut/op_api)
+  endif()
+
+  file(GLOB TEST_OP_HOST_TILING_SRCS ${SOURCE_DIR}/tests/ut/op_host/*_tiling*.cpp)
+  if(TEST_OP_HOST_TILING_SRCS AND (UT_TEST_ALL OR OP_HOST_UT))
+    add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE DIR ${SOURCE_DIR}/tests/ut/op_host)
+  endif()
+
+  file(GLOB TEST_OP_HOST_SHAPE_SRCS ${SOURCE_DIR}/tests/ut/op_host/*_infershape*.cpp)
+  if(TEST_OP_HOST_SHAPE_SRCS AND (UT_TEST_ALL OR OP_HOST_UT))
+    add_modules_ut_sources(UT_NAME ${OP_INFERSHAPE_MODULE_NAME} MODE PRIVATE DIR ${SOURCE_DIR}/tests/ut/op_host)
+  endif()
+
+  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/ut/op_kernel/CMakeLists.txt")
+    add_subdirectory(${SOURCE_DIR}/tests/ut/op_kernel)
+  endif()
+
+  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/ut/op_kernel_aicpu/CMakeLists.txt")
+    add_subdirectory(${SOURCE_DIR}/tests/ut/op_kernel_aicpu)
+  endif()
 endmacro()
 
 # useage: add_graph_plugin_sources()
@@ -409,8 +492,6 @@ macro(add_graph_plugin_sources)
   get_filename_component(OP_NAME ${PARENT_DIR} NAME)
   if(DEFINED ASCEND_OP_NAME
      AND NOT "${ASCEND_OP_NAME}" STREQUAL ""
-     AND NOT "${ASCEND_OP_NAME}" STREQUAL "all"
-     AND NOT "${ASCEND_OP_NAME}" STREQUAL "ALL"
     )
     if(NOT ${OP_NAME} IN_LIST ASCEND_OP_NAME)
       return()

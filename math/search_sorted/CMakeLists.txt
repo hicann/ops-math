@@ -36,3 +36,5 @@ foreach(SUB_DIR ${CURRENT_DIRS})
     add_subdirectory(${SUB_DIR})
   endif()
 endforeach()
+
+add_all_modules_sources(OPTYPE search_sorted ACLNNTYPE aclnn_exclude)

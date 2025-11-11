@@ -9,12 +9,10 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "reduce_any.h"
-#include "aclnn_kernels/contiguous.h"
 #include "aclnn_any.h"
+#include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/transdata.h"
-#include "conversion/fill/op_host/op_api/fill.h"
 #include "aclnn_kernels/cast.h"
-#include "common/op_api_def.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -24,6 +22,9 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/platform.h"
+#include "conversion/fill/op_host/op_api/fill.h"
+#include "common/op_api_def.h"
+#include "common/aclnn_check.h"
 
 using namespace op;
 
@@ -168,7 +169,7 @@ aclnnStatus aclnnAnyGetWorkspaceSize(
 
     auto anyResult = l0op::ReduceAny(selfCasted, dim, keepdim, uniqueExecutor.get());
     CHECK_RET(anyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_RET(CheckReduceOutShape(anyResult, out), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShapeAndScalarSame(anyResult, out), ACLNN_ERR_PARAM_INVALID);
 
     auto anyResultCasted = l0op::Cast(anyResult, out->GetDataType(), uniqueExecutor.get());
     CHECK_RET(anyResultCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);

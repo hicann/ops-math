@@ -13,11 +13,12 @@
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/transdata.h"
 #include "aclnn_kernels/transpose.h"
-#include "common/op_api_def.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/op_dfx.h"
 #include "opdev/platform.h"
+#include "common/op_api_def.h"
+#include "common/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -230,7 +231,7 @@ aclnnStatus aclnnPermuteGetWorkspaceSize(
     // 构建permute计算图
     auto permuteOut = BuildPermuteGraph(self, dims, out, unique_executor.get());
     CHECK_RET(permuteOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_RET(CheckReduceOutShape(permuteOut, out), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShapeAndScalarSame(permuteOut, out), ACLNN_ERR_PARAM_INVALID);
     if (permuteOut->IsEmpty()) {
         // 当输出为空tensor的场景，空tensor处理
         *workspaceSize = 0;

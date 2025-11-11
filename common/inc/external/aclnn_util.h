@@ -18,4 +18,4 @@
 
 #define ACLNN_API __attribute__((visibility("default")))
 
-#endif // MATH_COMMON_ACLNN_UTIL_H
+#endif  // MATH_COMMON_ACLNN_UTIL_H

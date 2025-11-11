@@ -10,10 +10,9 @@
  */
 
 #include "aclnn_aminmax_all.h"
+#include "reduce_min.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/cast.h"
-#include "reduce_min.h"
-#include "../../../reduce_max/op_host/op_api/reduce_max.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -24,6 +23,8 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "math/reduce_max/op_host/op_api/reduce_max.h"
+#include "common/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -148,12 +149,12 @@ aclnnStatus aclnnAminmaxAllGetWorkspaceSize(
     // 进行reducemin计算
     const aclTensor* min = l0op::ReduceMin(selfCasted, dim, false, uniqueExecutor.get());
     CHECK_RET(min != nullptr, ACLNN_ERR_PARAM_NULLPTR);
-    CHECK_RET(CheckReduceOutShape(min, minOut), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShapeAndScalarSame(min, minOut), ACLNN_ERR_PARAM_INVALID);
 
     // 进行reducemax计算
     const aclTensor* max = l0op::ReduceMax(selfCasted, dim, false, true, uniqueExecutor.get());
     CHECK_RET(max != nullptr, ACLNN_ERR_PARAM_NULLPTR);
-    CHECK_RET(CheckReduceOutShape(max, maxOut), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShapeAndScalarSame(max, maxOut), ACLNN_ERR_PARAM_INVALID);
 
     // 固定写法，将计算结果转换成输出的数据类型
     auto castMinOut = l0op::Cast(min, minOut->GetDataType(), uniqueExecutor.get());

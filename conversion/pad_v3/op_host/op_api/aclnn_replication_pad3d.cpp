@@ -10,13 +10,13 @@
  */
 
 #include "aclnn_replication_pad3d.h"
-#include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
-#include "conversion/squeeze/op_host/op_api/squeeze.h"
+#include "padv3.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/op_dfx.h"
-#include "padv3.h"
-#include "common/op_replication_pad.h"
+#include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
+#include "conversion/squeeze/op_host/op_api/squeeze.h"
+#include "op_replication_pad.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -121,7 +121,7 @@ aclnnStatus aclnnReplicationPad3dGetWorkspaceSize(
 
     // 空tensor处理
     if (self->IsEmpty() || out->IsEmpty()) {
-        *workspaceSize = 0;
+        *workspaceSize = 0UL;
         // 4 is dim num
         if (self->GetViewShape().GetDimNum() == 4) {
             OP_LOGE(

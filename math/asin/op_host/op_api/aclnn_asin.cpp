@@ -13,8 +13,6 @@
 #include "asin.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
-#include "aclnn/aclnn_base.h"
-#include "common/op_api_def.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -24,6 +22,7 @@
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
 #include "common/level2_base.h"
+#include "common/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -74,11 +73,9 @@ static aclnnStatus CheckParams1In1Out(
     const aclTensor* self, const aclTensor* out, const std::initializer_list<op::DataType>& dtypeSupportList,
     const std::initializer_list<op::DataType>& dtypeOutList)
 {
-    // 1. 检查参数是否为空指针
-    CHECK_RET(CheckNotNull2Tensor(self, out), ACLNN_ERR_PARAM_NULLPTR);
-    // 2. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
+    // 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
     CHECK_RET(CheckDtypeValid1In1Out(self, out, dtypeSupportList, dtypeOutList), ACLNN_ERR_PARAM_INVALID);
-    // 3. 检查输入的数据的值是否合理
+    // 检查输入的数据的值是否合理
     CHECK_RET(CheckSameShape1In1Out(self, out), ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
@@ -104,6 +101,7 @@ static aclnnStatus CheckInplaceParams(aclTensor* selfRef)
 static aclnnStatus ExecAsinGetWorkspaceSize(
     const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
+    CHECK_NOT_NULL(self, out);
     // 创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);

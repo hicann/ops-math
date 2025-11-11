@@ -10,14 +10,13 @@
  */
 
 #include <climits>
+#include "aclnn_argmin.h"
 #include "argmin.h"
 #include "aclnn_kernels/cast.h"
-#include "conversion/fill/op_host/op_api/fill.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/reshape.h"
 #include "aclnn_kernels/transdata.h"
-#include "aclnn/aclnn_base.h"
-#include "common/op_api_def.h"
+#include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/shape_utils.h"
 #include "opdev/data_type_utils.h"
@@ -26,9 +25,10 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
-#include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/platform.h"
-#include "aclnn_argmin.h"
+#include "conversion/fill/op_host/op_api/fill.h"
+#include "common/op_api_def.h"
+#include "common/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -287,7 +287,7 @@ aclnnStatus aclnnArgMinGetWorkspaceSize(
         argminOut = l0op::ArgMin(selfContiguous, dim, keepdim, out->GetDataType(), uniqueExecutor.get());
     }
     CHECK_RET(argminOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_RET(CheckReduceOutShape(argminOut, out), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShapeAndScalarSame(argminOut, out), ACLNN_ERR_PARAM_INVALID);
 
     auto castResult = l0op::Cast(argminOut, out->GetDataType(), uniqueExecutor.get());
     CHECK_RET(castResult != nullptr, ACLNN_ERR_INNER_NULLPTR);

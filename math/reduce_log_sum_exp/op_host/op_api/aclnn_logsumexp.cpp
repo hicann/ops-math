@@ -127,8 +127,32 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim)
     return true;
 }
 
-static bool CheckShape(const aclTensor* self, aclTensor* out, const aclIntArray* dim, bool keepDim)
+static void ExpectShapeInferWithDimMask(
+    const op::Shape& selfShape, const aclIntArray* dim, bool keepDim, op::Shape& expectShape)
 {
+    bitset<MAX_MASK_LEN64> dimMask = bitset<MAX_MASK_LEN64>();
+
+    // dim为空时，所有轴都视为mask，与竞品一致
+    if (dim->Size() == 0) {
+        dimMask.flip();
+    }
+    for (size_t i = 0; i < dim->Size(); i++) {
+        int64_t index = GetPosDimWithStd(dim->operator[](i), selfShape.GetDimNum());
+        // 前序已校验，此处dim不会重复
+        dimMask.set(index);
+    }
+
+    for (size_t i = 0; i < selfShape.GetDimNum(); i++) {
+        if (!dimMask[i]) {
+            expectShape.AppendDim(selfShape.GetDim(i));
+        } else if (keepDim) {
+            // dim为空时 所有轴reduce
+            expectShape.AppendDim(1);
+        }
+    }
+}
+
+static bool CheckShape(const aclTensor* self, aclTensor* out, const aclIntArray* dim, bool keepDim) {
     // 是否小于8维
     OP_CHECK_MAX_DIM(self, MAX_DIM_LEN, return false);
     OP_CHECK_MAX_DIM(out, MAX_DIM_LEN, return false);

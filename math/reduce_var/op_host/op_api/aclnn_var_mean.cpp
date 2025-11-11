@@ -12,7 +12,7 @@
 #include "aclnn_var_mean.h"
 #include "reduce_var.h"
 #include "../../../reduce_std_v2_update/op_host/op_api/reduce_std_v2_update.h"
-#include "../../../reduce_mean/op_host/op_api/reduce_mean.h"
+#include "../../../reduce_mean/op_api/reduce_mean.h"
 #include "../../../expand/op_host/op_api/expand.h"
 #include "aclnn_kernels/reshape.h"
 #include "aclnn_kernels/cast.h"

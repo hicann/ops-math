@@ -17,6 +17,7 @@
 #include "opdev/make_op_executor.h"
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "common/aclnn_check.h"
 
 using namespace op;
 
@@ -28,14 +29,12 @@ aclnnStatus aclnnContiguousGetWorkspaceSize(
     const aclTensorList* self, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnContiguous, DFX_IN(self), DFX_OUT());
+    CHECK_NOT_NULL(self, workspaceSize, executor);
 
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
     uniqueExecutor->AbandonCache();
-    CHECK_RET(self != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_RET(workspaceSize != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_RET(executor != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 调用非连续到连续转换
     const uint64_t count = self->Size();

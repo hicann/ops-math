@@ -11,7 +11,7 @@
 
 #include "aclnn_bitwise_xor_scalar.h"
 #include "bitwise_xor.h"
-#include "math/not_equal/op_host/op_api/not_equal.h"
+#include "math/not_equal/op_api/not_equal.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"

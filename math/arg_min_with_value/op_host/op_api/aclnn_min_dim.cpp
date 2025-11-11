@@ -13,7 +13,6 @@
 #include "argmin_with_value.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
-#include "aclnn/aclnn_base.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/shape_utils.h"
@@ -24,6 +23,7 @@
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "common/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -177,8 +177,8 @@ aclnnStatus aclnnMinDimGetWorkspaceSize(
     CHECK_RET(std::get<1>(result) != nullptr, ACLNN_ERR_PARAM_NULLPTR);
     auto argmin_indices = std::get<0>(result);
     auto argmin_out = std::get<1>(result);
-    CHECK_RET(CheckReduceOutShape(argmin_indices, indices), ACLNN_ERR_PARAM_INVALID);
-    CHECK_RET(CheckReduceOutShape(argmin_out, out), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShapeAndScalarSame(argmin_indices, indices), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShapeAndScalarSame(argmin_out, out), ACLNN_ERR_PARAM_INVALID);
 
     auto indices_res = l0op::Cast(argmin_indices, indices->GetDataType(), uniqueExecutor.get());
     CHECK_RET(indices_res != nullptr, ACLNN_ERR_PARAM_NULLPTR);

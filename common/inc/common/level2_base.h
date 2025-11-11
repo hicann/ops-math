@@ -20,7 +20,6 @@ extern "C" {
 #endif
 
 namespace op {
-
 // 检查1个输入和1个输出是否是空指针
 [[maybe_unused]] static bool CheckNotNull2Tensor(const aclTensor* t0, const aclTensor* t1)
 {
@@ -143,7 +142,6 @@ namespace op {
         }
     }
 }
-
 } // namespace op
 #ifdef __cplusplus
 }

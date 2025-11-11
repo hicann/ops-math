@@ -10,14 +10,11 @@
  */
 
 #include <bitset>
-#include "aclnn_kernels/cast.h"
+#include "aclnn_reduce_sum.h"
 #include "reduce_sum_op.h"
+#include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
-#include "math/reduce_any/op_host/op_api/reduce_any.h"
-#include "conversion/fill/op_host/op_api/fill.h"
 #include "aclnn_kernels/common/op_error_check.h"
-#include "common/op_api_def.h"
-#include "aclnn/aclnn_base.h"
 #include "opdev/common_types.h"
 #include "opdev/shape_utils.h"
 #include "opdev/data_type_utils.h"
@@ -27,7 +24,10 @@
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
-#include "aclnn_reduce_sum.h"
+#include "math/reduce_any/op_host/op_api/reduce_any.h"
+#include "conversion/fill/op_host/op_api/fill.h"
+#include "common/op_api_def.h"
+#include "common/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -242,7 +242,7 @@ aclnnStatus aclnnReduceSumGetWorkspaceSize(
         reduceSumOut = l0op::ReduceSumOp(selfContiguousCasted, dims, keepDims, uniqueExecutor.get());
     }
     CHECK_RET(reduceSumOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_RET(CheckReduceOutShape(reduceSumOut, out), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShapeAndScalarSame(reduceSumOut, out), ACLNN_ERR_PARAM_INVALID);
 
     // 将计算结果转换成输出out的数据类型
     reduceSumOut = l0op::Cast(reduceSumOut, out->GetDataType(), uniqueExecutor.get());

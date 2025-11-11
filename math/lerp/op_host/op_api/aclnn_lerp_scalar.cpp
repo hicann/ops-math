@@ -14,11 +14,11 @@
  * \brief
  */
 
+#include "aclnn_lerp_scalar.h"
 #include "lerp.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/reshape.h"
-#include "common/op_api_def.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -29,7 +29,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
-#include "aclnn_lerp_scalar.h"
+#include "common/op_api_def.h"
 
 using namespace op;
 
@@ -81,10 +81,10 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* end, const a
     OP_CHECK_DTYPE_NOT_SUPPORT(self, GetSelfDtypeSupportList(), return false);
 
     // 检查end的数据类型是否在支持列表内
-    OP_CHECK_DTYPE_NOT_SUPPORT(end, GetSelfDtypeSupportList(), return false)
+    OP_CHECK_DTYPE_NOT_SUPPORT(end, GetSelfDtypeSupportList(), return false);
 
     // 检查self, end的数据类型是否匹配
-    OP_CHECK_DTYPE_NOT_MATCH(end, self->GetDataType(), return false)
+    OP_CHECK_DTYPE_NOT_MATCH(end, self->GetDataType(), return false);
 
     // 检查out的数据类型是否在支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(out, GetOutDtypeSupportList(), return false);

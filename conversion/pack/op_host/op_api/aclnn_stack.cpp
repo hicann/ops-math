@@ -12,10 +12,8 @@
 #include "aclnn_stack.h"
 #include "pack.h"
 #include "aclnn_kernels/cast.h"
-#include "conversion/concat/op_host/op_api/concat.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
-#include "aclnn/aclnn_base.h"
 #include "opdev/common_types.h"
 #include "opdev/shape_utils.h"
 #include "opdev/data_type_utils.h"
@@ -24,6 +22,8 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
+#include "conversion/concat/op_host/op_api/concat.h"
+#include "common/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -243,7 +243,7 @@ aclnnStatus aclnnStackGetWorkspaceSize(
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }
-    CHECK_RET(CheckReduceOutShape(castIn, out), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShapeAndScalarSame(castIn, out), ACLNN_ERR_PARAM_INVALID);
 
     auto castOut = l0op::Cast(castIn, out->GetDataType(), uniqueExecutor.get());
     CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);

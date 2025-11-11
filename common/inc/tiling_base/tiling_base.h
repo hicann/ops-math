@@ -69,6 +69,10 @@ public:
     //     3、GRAPH_PARAM_INVALID: 本类不支持，需要继续往下执行其他Tiling类的实现
     ge::graphStatus DoTiling()
     {
+        if (context_ == nullptr) {
+            OP_LOGE(context_, "context_ cannot be null");
+            return ge::GRAPH_FAILED;
+        }
         auto ret = GetShapeAttrsInfo();
         if (ret != ge::GRAPH_SUCCESS) {
             return ret;
@@ -104,6 +108,9 @@ public:
     // 更新 context
     virtual void Reset(gert::TilingContext* context)
     {
+        if (context == nullptr) {
+            OP_LOGD(context, "context is null");
+        }
         context_ = context;
     }
 
@@ -206,6 +213,9 @@ protected:
     [[nodiscard]] std::string GetTilingDataDebugStr() const
     {
         auto rawTilingData = context_->GetRawTilingData();
+        if (rawTilingData == nullptr) {
+            return "nil ";
+        }
         auto rawTilingDataSize = rawTilingData->GetDataSize();
         auto data = reinterpret_cast<const int32_t*>(rawTilingData->GetData());
         size_t len = rawTilingDataSize / sizeof(int32_t);

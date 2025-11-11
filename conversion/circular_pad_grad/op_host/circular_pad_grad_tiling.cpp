@@ -218,7 +218,8 @@ static ge::graphStatus TilingPrepare4CircularPadGrad(gert::TilingParseContext* c
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, compileInfo->ubSize);
     OP_CHECK_IF(
         (compileInfo->ubSize <= 0),
-        OP_LOGE(context->GetNodeName(), "Get ub size failed, ub size: %u", static_cast<uint32_t>(compileInfo->ubSize)),
+        OP_LOGE(
+            context->GetNodeName(), "Get ub size failed, ub size: %u", static_cast<uint32_t>(compileInfo->ubSize)),
         return ge::GRAPH_FAILED);
 
     compileInfo->sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();

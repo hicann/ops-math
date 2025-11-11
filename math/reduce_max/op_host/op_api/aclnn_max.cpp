@@ -23,6 +23,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/shape_utils.h"
 #include "opdev/platform.h"
+#include "common/aclnn_check.h"
 
 using namespace op;
 
@@ -135,7 +136,7 @@ aclnnStatus aclnnMaxGetWorkspaceSize(
     // 调用l0算子Max进行计算
     auto maxResult = l0op::ReduceMax(selfCast, dim, false, true, uniqueExecutor.get());
     CHECK_RET(maxResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_RET(CheckReduceOutShape(maxResult, out), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShapeAndScalarSame(maxResult, out), ACLNN_ERR_PARAM_INVALID);
 
     auto castMaxOut = l0op::Cast(maxResult, out->GetDataType(), uniqueExecutor.get());
     CHECK_RET(castMaxOut != nullptr, ACLNN_ERR_INNER_NULLPTR);

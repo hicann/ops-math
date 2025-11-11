@@ -16,6 +16,7 @@
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/op_dfx.h"
 #include "opdev/platform.h"
+#include "common/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -191,7 +192,7 @@ aclnnStatus aclnnReflectionPad1dGetWorkspaceSize(
     pad1dResult = l0op::MirrorPad(selfContiguous, paddingsTensor, REFLECTION_MODE, uniqueExecutor.get());
     CHECK_RET(pad1dResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
     // output shape check
-    CHECK_RET(CheckReduceOutShape(pad1dResult, out), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShapeAndScalarSame(pad1dResult, out), ACLNN_ERR_PARAM_INVALID);
     // 如果出参out是非连续Tensor，需要把计算完的连续Tensor转非连续
     auto viewCopyResult = l0op::ViewCopy(pad1dResult, out, uniqueExecutor.get());
     CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);

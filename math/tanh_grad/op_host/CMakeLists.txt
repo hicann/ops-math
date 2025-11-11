@@ -8,6 +8,4 @@
 # BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
-message(STATUS "=== Debug: start ops.math.tanh_grad.op_host.CMakeLists.txt ")
-
 add_modules_sources(OPTYPE tanh_grad ACLNNTYPE aclnn_exclude)

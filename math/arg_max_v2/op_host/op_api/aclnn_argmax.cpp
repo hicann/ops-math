@@ -15,8 +15,6 @@
 #include "aclnn_kernels/reshape.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
-#include "common/op_api_def.h"
-#include "aclnn/aclnn_base.h"
 #include "opdev/common_types.h"
 #include "opdev/shape_utils.h"
 #include "opdev/data_type_utils.h"
@@ -25,6 +23,8 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
+#include "common/op_api_def.h"
+#include "common/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -217,7 +217,7 @@ aclnnStatus aclnnArgMaxGetWorkspaceSize(
         argmaxOut = l0op::ArgMaxV2(selfContiguous, realDim, keepdim, uniqueExecutor.get());
     }
     CHECK_RET(argmaxOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_RET(CheckReduceOutShape(argmaxOut, out), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShapeAndScalarSame(argmaxOut, out), ACLNN_ERR_PARAM_INVALID);
 
     auto castResult = l0op::Cast(argmaxOut, out->GetDataType(), uniqueExecutor.get());
     CHECK_RET(castResult != nullptr, ACLNN_ERR_INNER_NULLPTR);

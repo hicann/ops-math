@@ -10,13 +10,10 @@
  */
 
 #include "aclnn_kl_div.h"
+#include "kl_div.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
-#include "../../../../conversion/fill/op_host/op_api/fill.h"
-#include "../../../../conversion/unsqueeze/op_host/op_api/unsqueeze.h"
-#include "kl_div.h"
-#include "../../../real_div/op_host/op_api/realdiv.h"
-#include "../../../../conversion/broadcast_to/op_host/op_api/broadcast_to.h"
+#include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"
@@ -25,8 +22,12 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
-#include "aclnn_kernels/common/op_error_check.h"
+#include "conversion/fill/op_host/op_api/fill.h"
+#include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
+#include "conversion/broadcast_to/op_host/op_api/broadcast_to.h"
+#include "math/real_div/op_host/op_api/realdiv.h"
 #include "opdev/platform.h"
+#include "common/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -239,7 +240,7 @@ aclnnStatus aclnnKlDivGetWorkspaceSize(
     auto klRes =
         l0op::KlDiv(selfBroadcast, targetBroadcast, GetReductionStr(reduction), logTarget, uniqueExecutor.get());
     CHECK_RET(klRes != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_RET(CheckReduceOutShape(klRes, out), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShapeAndScalarSame(klRes, out), ACLNN_ERR_PARAM_INVALID);
 
     auto klResCasted = l0op::Cast(klRes, out->GetDataType(), uniqueExecutor.get());
     CHECK_RET(klResCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);

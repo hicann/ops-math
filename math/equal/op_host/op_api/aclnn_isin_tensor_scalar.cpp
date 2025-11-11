@@ -11,7 +11,7 @@
 #include "aclnn_isin_tensor_scalar.h"
 #include "equal.h"
 
-#include "math/not_equal/op_host/op_api/not_equal.h"
+#include "math/not_equal/op_api/not_equal.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn/aclnn_base.h"

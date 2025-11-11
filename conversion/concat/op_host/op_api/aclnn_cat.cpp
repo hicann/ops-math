@@ -14,11 +14,9 @@
  * \brief
  */
 #include "aclnn_cat.h"
-#include "aclnn_kernels/cast.h"
 #include "concat.h"
+#include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
-#include "aclnn/aclnn_base.h"
-#include "common/op_api_def.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -29,6 +27,8 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "common/op_api_def.h"
+#include "common/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -248,7 +248,7 @@ static aclnnStatus SplitToConcat(const aclTensorList* tensors, int64_t dim, aclT
     if (tensorListA.empty()) {
         return ACLNN_SUCCESS;
     }
-    CHECK_RET(CheckReduceOutShape(tensorListA.front(), out), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShapeAndScalarSame(tensorListA.front(), out), ACLNN_ERR_PARAM_INVALID);
     auto castOut = l0op::Cast(tensorListA.front(), out->GetDataType(), executor);
     CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 

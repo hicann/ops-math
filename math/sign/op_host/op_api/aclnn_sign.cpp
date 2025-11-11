@@ -86,6 +86,31 @@ static bool CheckShape(const aclTensor* self, const aclTensor* result)
     return true;
 }
 
+static aclIntArray* GetTensorShapeActivation(const aclTensor* x, aclOpExecutor* executor)
+{
+    auto shape = x->GetViewShape();
+    int64_t dimSize = x->GetViewShape().GetDimNum();
+
+    std::vector<int64_t> valuePerm(dimSize);
+    for (int i = 0; i < dimSize; i++) {
+        valuePerm[i] = shape[i];
+    }
+    auto perm = executor->AllocIntArray(valuePerm.data(), dimSize);
+    return perm;
+}
+
+static const aclTensor* ReshapeLongTensorActivation(
+    const aclTensor* x, aclOpExecutor* executor, int originalDimSize, aclIntArray* valuePerm = nullptr)
+{
+    int64_t dimSize = x->GetViewShape().GetDimNum();
+    if (static_cast<int64_t>(originalDimSize) == dimSize && dimSize <= static_cast<int64_t>(MAX_SUPPORT_DIMS_NUMS)) {
+        return x;
+    }
+
+    auto reshapeSelf = l0op::Reshape(x, valuePerm, executor);
+    return reshapeSelf;
+}
+
 static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* result)
 {
     // 1. 检查参数是否为空指针

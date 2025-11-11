@@ -10,11 +10,10 @@
  */
 
 #include "aclnn_split_tensor.h"
+#include "split_v.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/slice.h"
-#include "split_v.h"
-#include "aclnn/aclnn_base.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -25,6 +24,8 @@
 #include "opdev/platform.h"
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
+#include "common/aclnn_check.h"
+
 
 using namespace op;
 #ifdef __cplusplus
@@ -146,7 +147,7 @@ static aclnnStatus SplitOnceCalculation(
         return ACLNN_ERR_PARAM_INVALID;
     }
     for (size_t index = 0; index < splitSize->Size(); index++) {
-        CHECK_RET(CheckReduceOutShape((*splitRes)[index], (*out)[index]), ACLNN_ERR_PARAM_INVALID);
+        CHECK_RET(CheckShapeAndScalarSame((*splitRes)[index], (*out)[index]), ACLNN_ERR_PARAM_INVALID);
         auto splitCast = l0op::Cast((*splitRes)[index], (*out)[index]->GetDataType(), executor);
         CHECK_RET(splitCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto splitViewCopy = l0op::ViewCopy(splitCast, (*out)[index], executor);

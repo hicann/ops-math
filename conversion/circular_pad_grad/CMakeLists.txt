@@ -18,3 +18,5 @@ foreach(SUB_DIR ${CURRENT_DIRS})
         add_subdirectory(${SUB_DIR})
     endif()
 endforeach()
+
+add_all_modules_sources(OPTYPE circular_pad_grad ACLNNTYPE aclnn_exclude DEPENDENCIES circular_pad)

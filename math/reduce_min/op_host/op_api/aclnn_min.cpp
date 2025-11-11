@@ -23,6 +23,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/shape_utils.h"
 #include "opdev/platform.h"
+#include "common/aclnn_check.h"
 
 using namespace op;
 
@@ -138,7 +139,7 @@ aclnnStatus aclnnMinGetWorkspaceSize(
     // 调用l0算子Min进行计算
     auto minResult = l0op::ReduceMin(selfCast, dim, false, uniqueExecutor.get());
     CHECK_RET(minResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_RET(CheckReduceOutShape(minResult, out), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShapeAndScalarSame(minResult, out), ACLNN_ERR_PARAM_INVALID);
 
     auto castMinOut = l0op::Cast(minResult, out->GetDataType(), uniqueExecutor.get());
     CHECK_RET(castMinOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
