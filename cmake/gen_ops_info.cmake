@@ -165,18 +165,15 @@ endfunction()
 # ######################################################################################################################
 function(get_op_type_from_op_name OP_NAME OP_TYPE)
   if(ENABLE_EXPERIMENTAL)
-  execute_process(
-    COMMAND
-      find ${CMAKE_CURRENT_SOURCE_DIR} -name ${OP_NAME}_def.cpp -path '*/experimental/*' -exec grep OP_ADD {} \;
-    OUTPUT_VARIABLE op_type
-    )
+    set(cmd "find ${CMAKE_CURRENT_SOURCE_DIR} -name ${OP_NAME}_def.cpp -path '*/experimental/*' -exec grep OP_ADD {} \;")
   else()
-   execute_process(
+    set(cmd "find ${CMAKE_CURRENT_SOURCE_DIR} -name ${OP_NAME}_def.cpp ! -path '*/experimental/*' -exec grep OP_ADD {} \;")
+  endif()
+  execute_process(
       COMMAND
-        find ${CMAKE_CURRENT_SOURCE_DIR} -name ${OP_NAME}_def.cpp ! -path '*/experimental/*' -exec grep OP_ADD {} \;
+        bash -c "${cmd}"
       OUTPUT_VARIABLE op_type
       )
-  endif()
   if(NOT op_type)
     set(op_type "")
   else()
@@ -196,7 +193,7 @@ function(check_op_supported OP_NAME COMPUTE_UNIT OP_SUPPORTED_COMPUTE_UNIT)
   if(ENABLE_EXPERIMENTAL)
     set(cmd "find ${CMAKE_CURRENT_SOURCE_DIR} -name ${OP_NAME}_def.cpp -path '*/experimental/*' -exec grep '\.AddConfig(\\s*\"${COMPUTE_UNIT}\"' {} \;")
   else()
-   set(cmd "find ${CMAKE_CURRENT_SOURCE_DIR} -name ${OP_NAME}_def.cpp ! -path '*/experimental/*' -exec grep '\.AddConfig(\\s*\"${COMPUTE_UNIT}\"' {} \;")
+    set(cmd "find ${CMAKE_CURRENT_SOURCE_DIR} -name ${OP_NAME}_def.cpp ! -path '*/experimental/*' -exec grep '\.AddConfig(\\s*\"${COMPUTE_UNIT}\"' {} \;")
   endif()
   execute_process(
     COMMAND bash -c "${cmd}"
