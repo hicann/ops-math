@@ -106,7 +106,7 @@ aclnnStatus aclnnExpSegsum(
       <td>out</td>
       <td>输出</td>
       <td>完成分段和计算后的输出，对应公式中的`out`。</td>
-      <td><ul><li>支持空Tensor。</li><li>数据类型与输入self的保持一致。</li><li>输出维度必须比输入维度大1。<ul><li>当输入self为3D时，输出前3维的维度大小与self的保持一致，最后1维的维度大小与第3维保持一致。</li><li>当输入self为4D时，输出前4维的维度大小与self的保持一致，最后1维的维度大小与第4维保持一致。</ul></li></li></ul></td>
+      <td><ul><li>支持空Tensor。</li><li>数据类型与输入`self`的数据类型保持一致。</li><li>输出维度必须比输入维度大1。<ul><li>当输入`self`为3D时，输出前3维的维度大小与`self`保持一致，最后1维的维度大小与第3维保持一致。</li><li>当输入`self`为4D时，输出前4维的维度大小与`self`保持一致，最后1维的维度大小与第4维保持一致。</ul></li></li></ul></td>
       <td>FLOAT16、FLOAT32、BFLOAT16</td>
       <td>ND</td>
       <td>4-5</td>

@@ -230,7 +230,7 @@ aclnnStatus aclnnExpSegsum(
       <td>self的格式不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>elf、windowOptional、out的数据类型不在平台的支持范围之内。</td>
+      <td>self、windowOptional、out的数据类型不在平台的支持范围之内。</td>
     </tr>
     <tr>
       <td>nFft、hopLength、winLength输入无效值。</tr>

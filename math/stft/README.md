@@ -110,7 +110,7 @@
     <tr>
       <td>y</td>
       <td>输出</td>
-      <td>`x`在`window`内的傅里叶变换结果，要求是一个2D/3D/4D的Tensor，对应公式中的`X[w,m]`。如果return_complex=True，y是shape为[N, T]或者[B, N, T]的复数Tensor；如果return_complex=False，y是shape为[N, T, 2]或者[B, N, T, 2]的实数Tensor。其中，N=nFft(onesided=False)或者(nFft // 2 + 1)(onesided=True)；T是滑动窗口的个数，T = (L - nFft) // hopLength + 1。</td>
+      <td>`x`在`window`内的傅里叶变换结果，要求是一个2D/3D/4D的Tensor，对应公式中的`X[w,m]`。如果return_complex=True，y是shape为[N, T]或者[B, N, T]的复数Tensor；如果return_complex=False，y是shape为[N, T, 2]或者[B, N, T, 2]的实数Tensor。其中，N=n_fft(onesided=False)或者(n_fft // 2 + 1)(onesided=True)；T是滑动窗口的个数，T = (L - n_fft) // hop_length + 1。</td>
       <td>FLOAT32、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
@@ -121,8 +121,8 @@
 
 <!--待确认是否保留-->
 
-- nFft <= L。
-- winLength <= nFft。
+- n_fft <= L。
+- win_length <= n_fft。
 
 ## 调用说明
 
