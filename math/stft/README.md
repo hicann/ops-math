@@ -68,14 +68,14 @@
     <tr>
       <td>hop_length</td>
       <td>可选属性</td>
-      <td><ul><li>滑动窗口的间隔（大于0），对应公式中的`hopLength`。</li><li>默认值为0。</li></ul></td>
+      <td><ul><li>滑动窗口的间隔（大于0），对应公式中的`hopLength`。</li><li>默认值为n_fft/4。</li></ul></td>
       <td>INT</td>
       <td>-</td>
     </tr>
     <tr>
       <td>win_length</td>
       <td>可选属性</td>
-      <td><ul><li>window的大小（大于0），对应公式中的`winLength`。</li><li>默认值为0。</li></ul></td>
+      <td><ul><li>window的大小（大于0），对应公式中的`winLength`。</li><li>默认值为n_fft。</li></ul></td>
       <td>INT</td>
       <td>-</td>
     </tr>

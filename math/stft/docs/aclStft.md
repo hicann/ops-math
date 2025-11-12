@@ -102,7 +102,7 @@ aclnnStatus aclnnExpSegsum(
       <td>输入</td>
       <td>要求是一个1D的Tensor，对应公式中的`window`。</td>
       <td><ul><li>不支持空Tensor。</li><li>数据类型与`self`保持一致。</li><li>shape为(winLength)，winLength为STFT窗函数的长度。</li></ul></td>
-      <td>FLOAT32</td>
+      <td>FLOAT32、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>1</td>
       <td>×</td>
@@ -225,9 +225,12 @@ aclnnStatus aclnnExpSegsum(
       <td>传入的self、out是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="4">161002</td>
-      <td>self的格式不在支持的范围之内。</td>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
+      <td>self的数据格式不在支持的范围之内。</td>
+    <tr>
+      <td>self、windowOptional的数据类型不一致。</td>
+    </tr>
     </tr>
     <tr>
       <td>self、windowOptional、out的数据类型不在平台的支持范围之内。</td>
