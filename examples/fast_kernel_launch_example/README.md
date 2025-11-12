@@ -53,7 +53,7 @@ AscendOps 是一个轻量级，高性能的算子开发工程模板，它集成�
    # 默认路径安装，以root用户为例（非root用户，将/usr/local替换为${HOME}）
    source /usr/local/Ascend/ascend-toolkit/set_env.sh
    # 指定路径安装
-   # source ${install-path}/ascend-toolkit/set_env.sh
+   # source ${install_path}/ascend-toolkit/set_env.sh
     ```  
 3. **安装torch与torch_npu包**
    

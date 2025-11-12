@@ -9,7 +9,7 @@
 
 ## 功能说明
 
-- 算子功能：生成一个等间隔数值序列。创建一个大小为steps的1维向量，其值从start起始到stop结束（包含）线性均匀分布。
+- 算子功能：生成一个等间隔数值序列。创建一个大小为num的1维向量，其值从start起始到stop结束（包含）线性均匀分布。
 - 计算公式：
 $$
 output = (start, start + \frac{stop - start}{num - 1},...,start + (num - 2) * \frac{stop - start}{num -1}, stop)
@@ -57,7 +57,7 @@ $$
     <tr>
       <td>output</td>
       <td>输出</td>
-      <td>公式中的输入张量output。</td>
+      <td>公式中的输出张量output。</td>
       <td>FLOAT、DOUBLE、INT8、UINT8、INT32、INT16、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>

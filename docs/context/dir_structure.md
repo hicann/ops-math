@@ -109,7 +109,7 @@
 │   │   ├── op_kernel_aicpu                             # 算子Kernel目录
 │   │   └── tests                                       # 算子测试用例目录
 │   ├── CMakeLists.txt
-│   ├── fast_kernel_lanch_example                       # 轻量级，高性能的算子开发工程模板
+│   ├── fast_kernel_launch_example                       # 轻量级，高性能的算子开发工程模板
 │   │   ├── ascend_ops                                  # 示例算子实现目录
 │   │   ├── CMakeLists.txt                              # 算子编译配置文件
 │   │   ├── README.md                                   # 轻量级，高性能的算子开发工程说明资料

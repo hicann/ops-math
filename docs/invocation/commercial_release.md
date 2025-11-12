@@ -35,7 +35,7 @@
 - cmake >= 3.16.0
 - pigz（可选，安装后可提升打包速度，建议版本 >= 2.4）
 - dos2unix
-- Gawk
+- gawk
 - googletest（仅执行UT时依赖，建议版本 [release-1.11.0](https://github.com/google/googletest/releases/tag/release-1.11.0)）
 
 上述依赖包可通过项目根目录install\_deps.sh安装，命令如下，若遇到不支持系统，请参考该文件自行适配。
@@ -95,7 +95,7 @@ source /usr/local/Ascend/ascend-toolkit/set_env.sh
 
 2. **安装自定义算子包。**
     ```bash
-    ./cann-ops-${ops_project}-${vendor_name}-linux.${arch}.run
+    ./cann-ops-${ops_project}-${vendor_name}-linux-${arch}.run
     ```
 
     自定义算子包安装路径为`${ASCEND_HOME_PATH}/vendors`，\$\{ASCEND\_HOME\_PATH\}已通过环境变量配置，表示CANN toolkit包安装路径，一般为\$\{install\_path\}/ascend-toolkit/latest。注意自定义算子包不支持卸载。
