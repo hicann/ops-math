@@ -38,15 +38,8 @@
     </tr>
     <tr>
       <td>pdf</td>
-      <td>输入</td>
-      <td>表示inputTensor的指数位所在字节的概率密度分布，shape要求为(1, 256)。</td>
-      <td>INT32</td>
-      <td>ND</td>
-    </tr>
-    <tr>
-      <td>pdf</td>
       <td>输出</td>
-      <td>表示inputTensor的指数位所在字节的概率密度分布，shape要求为(1, 256)。</td>
+      <td>表示inputTensor的指数位所在字节的概率密度分布，shape要求为(1, 256)。其中每一个元素的值表示其对应的索引，在input中出现的次数。</td>
       <td>INT32</td>
       <td>ND</td>
     </tr>
@@ -60,14 +53,14 @@
     <tr>
       <td>fixed</td>
       <td>输出</td>
-      <td>表示压缩的第一段输出。</td>
+      <td>表示input指数位压缩的定长部分。</td>
       <td>FLOAT16、BFLOAT16、FLOAT32</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>var</td>
       <td>输出</td>
-      <td>表示压缩超过fixedOut后的输出。</td>
+      <td>表示input指数位压缩的变长部分。</td>
       <td>FLOAT16、BFLOAT16、FLOAT32</td>
       <td>ND</td>
     </tr>
