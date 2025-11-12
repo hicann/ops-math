@@ -84,11 +84,11 @@
 ## 约束说明
 
 * 必须满足以下值范围：  
-'<===>'表示格式是双向支持的，无论是输入还是输出。  
-'===>'表示格式不受支持，输入和输出数据类型必须相互对应。  
+'<====>'表示格式是双向支持的，无论是输入还是输出。  
+'====>'表示不支持该格式转换，输入和输出数据类型必须相互对应。  
 [数据格式简介](https://www.hiascend.com/document/detail/zh/canncommercial/82RC1/API/aolapi/context/common/%E6%95%B0%E6%8D%AE%E6%A0%BC%E5%BC%8F.md)  
 
-  | src_format <===> dst_format | dtype                              | C0    | groups |  
+  | src_format <====> dst_format | dtype                              | C0    | groups |  
   | :-------------------------: | :--------------------------------: |:-----:| :----: |  
   | NCHW <====> NC1HWC0         | float32, int32,uint32              | 8,16  | 1      |  
   | NCHW <====> NC1HWC0         | bfloat16, float16                  | 16    | 1      |  

@@ -71,10 +71,10 @@
 
 ## 约束说明
 
-* value的dtype与x不一致时，需保证cast时不会overflow。
-* x和mask需要满足broadcast关系。
+* value的dtype与x不一致时，需保证进行类型转换时不会溢出。
+* x和mask需要满足广播关系。
 * value的数据类型能够转换为x的数据类型。
-* y的shape可以由x、mask、value共同broadcast。
+* y的shape可以由x、mask、value共同广播。
 
 
 ## 调用说明

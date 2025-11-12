@@ -27,7 +27,7 @@
           [ 4.,  5.],
           [ 5.,  6.],
           [ 6.,  7.]])
-  >>> x.unfold(0, 2, 2)
+  >>> grad = x.unfold(0, 2, 2)
   tensor([[ 1.,  2.],
           [ 3.,  4.],
           [ 5.,  6.]])
@@ -51,7 +51,7 @@
 
 gradOut的shape满足约束:
 - gradOut的第dim维等于(inputSizes[dim]-size)/step+1。
-- gradOut的size等于inputSizes的size。
+- gradOut的size等于inputSizes的size+1。
 
 dim大于等于0且dim小于inputSizes的size。size大于0且size小于等于inputSizes的第dim维。step大于0。
 

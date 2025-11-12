@@ -46,7 +46,7 @@
   <tr>
     <td>out</td>
     <td>输出张量</td>
-    <td>输出一维张量，元素个数为mask和self广播后的shapesize，不支持非连续的Tensor。</td>
+    <td>输出一维张量，元素个数为mask和self广播后的维度大小，不支持非连续的Tensor。</td>
     <td>BFLOAT16、FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
     <td>ND</td>
   </tr>
@@ -56,7 +56,7 @@
 ## 约束说明
 
 - self和mask的shape必须能够进行broadcast操作。
-- out的shape必须是一维，且元素个数等于self和mask广播后的shapesize。
+- out的shape必须是一维，且元素个数等于self和mask广播后的维度大小。
 
 ## 调用说明
 

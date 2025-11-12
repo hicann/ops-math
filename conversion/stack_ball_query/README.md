@@ -12,7 +12,7 @@
 返回的点不一定是距离p1最近的点，而是半径范围内的前K个点。
 和Ball Query算子相比，Stack Ball Query将Ball Query算子的输入进行了堆叠，center_xyz和xyz的维度从3变成了2。
 优势：当半径范围内存在大量点时，该算法比KNN算法更快，同时保证了固定的区域尺度，使局部区域特征更通用。
-使用模型：该算子在Point Net++模型中被提出，在该模型及其衍生模型中使用。
+使用模型：该算子在PointNet++模型中被提出，在该模型及其衍生模型中使用。
 Stack Ball Query具体操作如下：
 根据输入的center_xyz, 对同一个batch内的每一个点计算和xyz之间的距离。
 如果距离小于max_radius，保存xyz点的索引值。

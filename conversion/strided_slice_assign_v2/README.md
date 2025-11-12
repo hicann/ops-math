@@ -8,7 +8,7 @@
 
 ## 功能说明
 
-- 算子功能：StridedSliceAssign是一种张量切片赋值操作，它可以将张量inputValue的内容，赋值给目标张量varRef中的指定位置。
+- 算子功能：StridedSliceAssignV2是一种张量切片赋值操作，它可以将张量inputValue的内容，赋值给目标张量varRef中的指定位置。
   inputValue的shape第i维的计算公式为：$inputValueShape[i] = \lceil\frac{end[i] - begin[i]}{strides[i]} \rceil$，其中$\lceil x\rceil$ 表示对 $x$向上取整。$end$ 和 $begin$ 为经过特殊值调整后的取值，调整方式为：当 $end[i] < 0$ 时，$end[i]=varShape[i] + end[i]$ ，若仍有$end[i] < 0$，则 $end[i] = 0$ ，当 $end[i] > varShape[i]$ 时， $end[i] = varShape[i]$ 。$begin$ 同理。
 
 ## 参数说明

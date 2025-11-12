@@ -67,7 +67,7 @@
   <tr>
     <td>deqScale</td>
     <td>输入张量</td>
-    <td>反量化参数，值为float转换后的UINT64数据。</td>
+    <td>反量化参数，数据类型为UINT64。</td>
     <td>UINT64</td>
     <td>ND</td>
   </tr>

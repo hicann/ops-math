@@ -56,7 +56,7 @@
   <tr>
     <td class="tg-0lax">output_feeds_size</td>
     <td class="tg-0lax">属性</td>
-    <td class="tg-0lax">指定输出的第0维的数值，需将输出padding到相同维度。</td>
+    <td class="tg-0lax">输出的第0维的数值等于该数值。</td>
     <td class="tg-0lax">INT</td>
     <td class="tg-0lax"></td>
   </tr>

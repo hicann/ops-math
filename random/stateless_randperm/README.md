@@ -66,7 +66,7 @@
     <tr>
       <td>y</td>
       <td>输出</td>
-      <td>合并后的元素值。</td>
+      <td>随机排列后的元素值。</td>
       <td>INT64、INT32、INT16、UINT8、INT8、FLOAT16、FLOAT、DOUBLE、BF16</td>
       <td>ND</td>
     </tr>

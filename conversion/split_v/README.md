@@ -31,7 +31,7 @@
     <tr>
       <td>x</td>
       <td>输入</td>
-      <td>需要级联的tensor列表。</td>
+      <td>需要切分的tensor列表。</td>
       <td>FLOAT16、FLOAT32、DOUBLE、INT64、INT32、UINT8、UINT16、UINT32、UINT64、INT8、INT16、BOOL、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>

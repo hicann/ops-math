@@ -49,7 +49,7 @@
   <tr>
     <td class="tg-0pky">padding</td>
     <td class="tg-0pky">输入</td>
-    <td class="tg-0lax">长度为6，长度为6时表示3d左右上下前后需要填充的值，padding的前两个值都需要小于self最后一维度的数值，第三和第四个值小于self倒数第二维度的数值，第五和第六两个值小于self倒数第三维度的数值。</td>
+    <td class="tg-0lax">padding长度为6，表示三维张量左右上下前后需要填充的值，padding的前两个值都需要小于self最后一维度的数值，第三和第四个值小于self倒数第二维度的数值，第五和第六两个值小于self倒数第三维度的数值。</td>
     <td class="tg-0lax">INT64</td>
     <td class="tg-0lax"></td>
   </tr>

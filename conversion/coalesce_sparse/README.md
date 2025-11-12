@@ -57,7 +57,7 @@
       <td>ND</td>
     </tr>
     <tr>
-      <td>new_inidces</td>
+      <td>new_indices</td>
       <td>输出</td>
       <td>合并后的索引数组。</td>
       <td>INT32、INT64</td>
@@ -67,14 +67,14 @@
       <td>new_values</td>
       <td>输出</td>
       <td>合并后的元素值。</td>
-      <td>INT32、FLAOT16、FLOAT32</td>
+      <td>INT32、FLOAT16、FLOAT32</td>
       <td>ND</td>
     </tr>
   </tbody></table>
 
 ## 约束说明
 
-重索引后的indices值不能超过int32上限，dtype类型可为int64。
+重索引后的indices值不能超过int32上限。
 
 
 ## 调用说明
