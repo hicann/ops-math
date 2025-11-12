@@ -84,7 +84,7 @@
       <td>ND</td>
     </tr>
     <tr>
-      <td>weightAOptional</td>
+      <td>weightA</td>
       <td>输入</td>
       <td>公式中的输入weightA。</td>
       <td>FLOAT16</td>

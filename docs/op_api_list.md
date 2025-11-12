@@ -32,14 +32,14 @@
 | [aclnnBatchNormStats](../math/reduce_std_with_mean/docs/aclnnBatchNormStats.md)|计算单卡输入数据的均值和标准差的倒数。|
 | [aclnnBincount](../math/bincount/docs/aclnnAtanh&aclnnBincount.md)|计算非负整数数组中每个数的频率。|
 | [aclnnBitwiseNot](../math/bitwise_not/docs/aclnnBitwiseNot.md)|输入为BOOL型tensor时，进行逻辑非运算；输入为INT型时进行按位非运算。|
-| [aclnnBitwiseAndScalar](../math/bitwise_and/docs/aclnnAtanh&aclnnBitwiseAndScalar.md)|计算输入tensor中每个元素和输入标量的按位与结果。|
-| [aclnnBitwiseAndTensor](../math/bitwise_and/docs/aclnnAtanh&aclnnBitwiseAndTensor.md)|输入为BOOL型tensor时，进行逻辑与运算；输入为INT型时，进行位与运算。|
+| [aclnnBitwiseAndScalar](../math/bitwise_and/docs/aclnnBitwiseAndScalar.md)|计算输入tensor中每个元素和输入标量的按位与结果。|
+| [aclnnBitwiseAndTensor](../math/bitwise_and/docs/aclnnBitwiseAndTensor.md)|输入为BOOL型tensor时，进行逻辑与运算；输入为INT型时，进行位与运算。|
 | [aclnnBitwiseOrScalar&aclnnInplaceBitwiseOrScalar](../math/bitwise_or/docs/aclnnBitwiseOrScalar&aclnnInplaceBitwiseOrScalar.md)|计算输入张量self中每个元素和输入标量other的按位或。|
 | [aclnnBitwiseOrTensor&aclnnInplaceBitwiseOrTensor](../math/bitwise_or/docs/aclnnBitwiseOrTensor&aclnnInplaceBitwiseOrTensor.md)|计算张量self中每个元素与other张量中对应位置的元素的按位或。|
 | [aclnnBitwiseXorScalar&aclnnInplaceBitwiseXorScalar](../math/bitwise_xor/docs/aclnnBitwiseXorScalar&aclnnInplaceBitwiseXorScalar.md)|计算输入张量self中每个元素和输入标量other的按位异或，输入self和other必须是整数或布尔类型，对于布尔类型，计算逻辑异或。|
 | [aclnnBitwiseXorTensor&aclnnInplaceBitwiseXorTensor](../math/bitwise_xor/docs/aclnnBitwiseXorTensor&aclnnInplaceBitwiseXorTensor.md)|计算输入张量self中每个元素与输入张量other中对应位置元素的按位异或，输入self和other必须是整数或布尔类型，对于布尔类型，计算逻辑异或。|
 | [aclnnCast](../math/cast/docs/aclnnCast.md)               | 实现张量数据类型转换。                                       |
-| [aclnnCat](../../conversion/concat/docs/aclnnCat.md)|ircular_pad2d的反向传播, 前向计算参考aclnnCircularPad2d。|
+| [aclnnCat](../../conversion/concat/docs/aclnnCat.md)|将tensors中所有tensor按照维度dim进行级联。|
 | [aclnnCeil&aclnnInplaceCeil](../math/ceil/docs/aclnnCeil&aclnnInplaceCeil.md)|返回输入tensor中每个元素向上取整的结果。|
 | [aclnnChannelShuffle](../../conversion/transpose/docs/aclnnChannelShuffle.md)|将(*, C, H, W)张量的channels分成g个组，然后将每个通道组中的通道进行随机重排，最后将所有通道合并输出，同时保持最终输出张量的shape和输入张量保持一致。|
 | [aclnnCircularPad2d](../../conversion/circular_pad/docs/aclnnCircularPad2d.md)|使用输入循环填充输入tensor的最后两维。|
@@ -73,13 +73,13 @@
 | [aclnnEye](../math/eye/docs/aclnnEye.md)|返回一个二维张量，该张量的对角线上元素值为1，其余元素值为0。|完成除法计算，对余数向下取整。|
 | [aclnnFlatten](../../conversion/flatten/docs/aclnnFlatten.md)|将输入Tensor，基于给定的axis，扁平化为一个2D的Tensor。|
 | [aclnnFloor&aclnnInplaceFloor](../math/floor/docs/aclnnFloor&aclnnInplaceFloor.md)|返回输入Tensor中每个元素向下取整，并将结果回填到输入Tensor中。|
-| [aclnnFloorDivide&aclnnInplaceFloorDivide](../math/floor_div/docs/aclnnFloorDivide&aclnnInplaceFloorDivide.md)|
+| [aclnnFloorDivide&aclnnInplaceFloorDivide](../math/floor_div/docs/aclnnFloorDivide&aclnnInplaceFloorDivide.md)|完成除法计算，对余数向下取整。|
 | [aclnnFloorDivides&aclnnInplaceFloorDivides](../math/floor_div/docs/aclnnFloorDivides&aclnnInplaceFloorDivides.md)|完成除法计算，对余数向下取整。|
 | [aclnnFmodScalar&aclnnInplaceFmodScalar](../math/mod/docs/aclnnFmodScalar&aclnnInplaceFmodScalar.md)|返回 self除以other的余数。|
 | [aclnnFmodTensor&aclnnInplaceFmodTensor](../math/mod/docs/aclnnFmodTensor&aclnnInplaceFmodTensor.md)|返回self除以other的余数。|
 | [aclnnFrac&aclnnInplaceFrac](../math/sub/docs/aclnnFrac&aclnnInplaceFrac.md)|计算输入Tensor中每个元素的小数部分后输出。|
 | [aclnnGcd](../math/gcd/docs/aclnnGcd.md)|对给定的self和other计算element-wise维度的最大公约数，其中self和other都需要为整数。|
-| [aclnnGer](../math/ger/docs/aclnnGer.md)|实现self和vec2的内积。|
+| [aclnnGer](../math/ger/docs/aclnnGer.md)|实现self和vec2的外积。|
 | [aclnnGeScalar&aclnnInplaceGeScalar](../math/greater_equal/docs/aclnnGeScalar&aclnnInplaceGeScalar.md)|判断输入Tensor中的每个元素是否大于等于other Scalar的值，返回一个Bool类型的Tensor，对应输入Tensor中每个位置的大于等于判断是否成立。|
 | [aclnnGlobalAveragePool](../math/reduce_mean/docs/aclnnGlobalAveragePool.md)| 传入一个输入张量X，并在同一通道中的值上应用平均池化。|
 | [aclnnGlobalMaxPool](../math/reduce_max/docs/aclnnGlobalMaxPool.md)|输入一个张量，并对同一通道中的值取最大值。|

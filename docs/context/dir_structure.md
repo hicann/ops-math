@@ -24,7 +24,7 @@
 │   └── random                                          # 可选，用户开发的random类算子目录
 │       └── CMakeLists.txt
 ├── ${op_class}                                         # 算子分类，如conversion、math、 random类算子
-│   ├${op_name}                                         # 算子工程目录，${op_name}表示算子名（小写下划线形式）
+│   ├──${op_name}                                         # 算子工程目录，${op_name}表示算子名（小写下划线形式）
 │   │   ├── CMakeLists.txt                              # 算子cmakelist入口
 │   │   ├── README.md                                   # 算子介绍文档
 │   │   ├── docs                                        # 算子文档目录
@@ -71,7 +71,7 @@
 │   │       ├── CMakeLists.txt
 │   │       └── ut                                      # 可选，UT测试用例，根据实际情况开发相应的用例
 │   │           ├── CMakeLists.txt                      # UT用例cmakelist文件
-│   │           ├── graph_plugin                        # grap_plugin测试用例目录
+│   │           ├── graph_plugin                        # graph_plugin测试用例目录
 │   │           │   ├── CMakeLists.txt
 │   │           │   └── fusion_pass                     # 融合规则测试用例目录
 │   │           │       └── CMakeLists.txt

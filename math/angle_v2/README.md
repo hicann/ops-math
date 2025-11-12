@@ -59,4 +59,4 @@ $$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| 图模式调用 | [test_geir_angle_v2](./examples/test_geir_angle.cpp)   | 通过[算子IR](./op_graph/angle_v2_proto.h)构图方式调用AngleV2算子。 |
+| 图模式调用 | [test_geir_angle_v2](./examples/test_geir_angle_v2.cpp)   | 通过[算子IR](./op_graph/angle_v2_proto.h)构图方式调用AngleV2算子。 |

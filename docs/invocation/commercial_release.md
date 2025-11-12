@@ -88,7 +88,7 @@ source /usr/local/Ascend/ascend-toolkit/set_env.sh
     
     若提示如下信息，说明编译成功。
     ```bash
-    Self-extractable archive "cann-ops-math-${vendor_name}_linux-${arch}.run" successfully created.
+    Self-extractable archive "cann-ops-${ops_project}-${vendor_name}-linux.${arch}.run" successfully created.
     ```
     
     编译成功后，run包存放于项目根目录的build_out目录下。
