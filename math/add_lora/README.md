@@ -15,7 +15,7 @@
 
 - 计算公式：
 
-  给定输入张量 `x`，最后一维的长度为 `2d`，函数 `AddLora` 进行以下计算：
+  给定输入张量x，最后一维的长度为2d，函数AddLora进行以下计算：
 
   1. 将x根据indices中的索引进行重排，对应同一组权重的x排列在一起。
   
@@ -25,13 +25,13 @@
      Z1 = x_{i} \cdot weightA[i, layerIdx, :, :]
      $$
   
-  3. 得到的`Z1`继续和weightB做矩阵乘：
+  3. 得到的Z1继续和weightB做矩阵乘：
      
      $$
      Z2 = Z1 \cdot weightB[i, layerIdx, :, :] \times scale
      $$
   
-  4. 最终把`Z2`输出累加到y上：
+  4. 最终把Z2输出累加到y上：
     
      $$
      \text{out} = y[:, yOffset: yOffset+ySliceSize] + Z2
@@ -74,7 +74,7 @@
       <td>输入</td>
       <td>公式中的输入weightB。</td>
       <td>FLOAT16</td>
-      <td>ND、NZ</td>
+      <td>ND</td>
     </tr>
      <tr>
       <td>indices</td>
@@ -86,14 +86,14 @@
     <tr>
       <td>weightAOptional</td>
       <td>输入</td>
-      <td>公式中的输入weightAOptional。</td>
+      <td>公式中的输入weightA。</td>
       <td>FLOAT16</td>
-      <td>ND、NZ</td>
+      <td>ND</td>
     </tr>
     <tr>
       <td>layerIdx</td>
       <td>属性</td>
-      <td><ul><li>表示层数索引。</li><li>值需要小于`weightB`的第二个维度`L`。</li></ul></td>
+      <td><ul><li>表示层数索引。</li><li>值需要小于weightB的第二个维度L。</li></ul></td>
       <td>INT</td>
       <td>-</td>
     </tr>
@@ -107,14 +107,14 @@
     <tr>
       <td>yOffset</td>
       <td>属性</td>
-      <td><ul><li>y更新时的偏移量。</li><li>值需要小于`y`的第二个维度`H3`。</li></ul></td>
+      <td><ul><li>y更新时的偏移量。</li><li>值需要小于y的第二个维度H3。</li></ul></td>
       <td>INT</td>
       <td>-</td>
     </tr>
     <tr>
       <td>ySliceSize</td>
       <td>属性</td>
-      <td><ul><li>y更新时的范围。</li><li>值需要小于`y`的第二个维度`H3`。</li></ul></td>
+      <td><ul><li>y更新时的范围。</li><li>值需要小于y的第二个维度H3。</li></ul></td>
       <td>INT</td>
       <td>-</td>
     </tr>

@@ -4,13 +4,18 @@
 
 |产品             |  是否支持  |
 |:-------------------------|:----------:|
+|  <term>昇腾910_95 AI处理器</term>   |     ×    |
 |  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     √    |
 |  <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>     |     √    |
+|  <term>Atlas 200I/500 A2 推理产品</term>    |     ×    |
+|  <term>Atlas 推理系列产品 </term>    |     ×    |
+|  <term>Atlas 训练系列产品</term>    |     ×    |
+|  <term>Atlas 200/300/500 推理产品</term>       |     ×    |
 
 ## 功能说明
 
 - 算子功能：
-  `TransformBiasRescaleQkv` 算子是一个用于处理多头注意力机制中查询（Query）、键（Key）、值（Value）向量的接口。它用于调整这些向量的偏置（Bias）和缩放（Rescale）因子，以优化注意力计算过程。
+  TransformBiasRescaleQkv算子是一个用于处理多头注意力机制中查询（Query）、键（Key）、值（Value）向量的接口。它用于调整这些向量的偏置（Bias）和缩放（Rescale）因子，以优化注意力计算过程。
 
 - 计算公式：  
   逐个元素计算过程见公式：
@@ -102,13 +107,14 @@
 ## 约束说明
 
   - 输入qkv、qkvBias和输出qOut、kOut、vOut的数据类型需要保持一致。
-  - 输入值为nan，输出也为nan，输入是inf，输出也是inf。
-  - 输入是-inf，输出也是-inf。 
+  - 输入值为NaN，输出也为NaN，输入是Inf，输出也是Inf。
+  - 输入是-Inf，输出也是-Inf。
 
 ## 调用说明
 
 | 调用方式   | 样例代码 | 说明  |
 | ------------ | ------------ | ------------ |
 | aclnn调用  | [test_aclnn_transform_bias_rescale_qkv](./examples/test_aclnn_transform_bias_rescale_qkv.cpp) | 通过[aclnnTransformBiasRescaleQkv](./docs/aclnnTransformBiasRescaleQkv.md)接口方式调用TransformBiasRescaleQkv算子。   |
+| 图模式调用 | -   | 通过[算子IR](./op_graph/transform_bias_rescale_qkv_proto.h)构图方式调用TransformBiasRescaleQkv算子。 |
 
 
