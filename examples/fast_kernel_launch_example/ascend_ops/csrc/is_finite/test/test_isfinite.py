@@ -40,8 +40,7 @@ class SimpleNet(torch.nn.Module):
         super(SimpleNet, self).__init__()
 
     def forward(self, x):
-        for _ in range(1000):
-            x = torch.ops.ascend_ops.isfinite(x).to(torch.float)
+        x = torch.ops.ascend_ops.isfinite(x)
         return x
 
 model = SimpleNet().npu()

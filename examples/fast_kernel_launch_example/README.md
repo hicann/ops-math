@@ -29,33 +29,12 @@ AscendOps 是一个轻量级，高性能的算子开发工程模板，它集成�
 
 ## 环境准备 | Preparation
 
-1. **安装社区版CANN toolkit包**
-
-    根据实际环境，下载对应`Ascend-cann-toolkit_${cann_version}_linux-${arch}.run`包，下载链接为[x86_64包](https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/2025091701_newest/Ascend-cann-toolkit_8.3.RC1_linux-x86_64_tmp.run)、[aarch64包](https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/2025091701_newest/Ascend-cann-toolkit_8.3.RC1_linux-aarch64_temp.run)。
+1. **安装社区版CANN包**
+   
+    请参考[算子调用指南](../../docs/invocation/quick_op_invocation.md)的环境准备章节，安装CANN toolkit包和CANN legacy包，并配置好环境变量。
     
-    安装命令如下：
 
-    ```bash
-    # 确保安装包具有可执行权限
-    chmod +x Ascend-cann-toolkit_${cann_version}_linux-${arch}.run
-    # 安装命令
-    ./Ascend-cann-toolkit_${cann_version}_linux-${arch}.run --full --force --install-path=${install_path}
-    ```
-    - \$\{cann\_version\}：表示CANN包版本号。
-    - \$\{arch\}：表示CPU架构，如aarch64、x86_64。
-    - \$\{install\_path\}：表示指定安装路径，toolkit包将安装在\$\{install\_path\}/ascend-toolkit目录下。
-
-2. **配置环境变量**
-	
-	根据实际场景，选择合适的命令。
-
-    ```bash
-   # 默认路径安装，以root用户为例（非root用户，将/usr/local替换为${HOME}）
-   source /usr/local/Ascend/ascend-toolkit/set_env.sh
-   # 指定路径安装
-   # source ${install_path}/ascend-toolkit/set_env.sh
-    ```  
-3. **安装torch与torch_npu包**
+2. **安装torch与torch_npu包**
    
    根据实际环境，下载对应torch包并安装: `torch-${torch_version}+cpu-${python_version}-linux_${arch}.whl` 下载链接为:[官网地址](http://download.pytorch.org/whl/torch)
 
