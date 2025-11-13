@@ -387,4 +387,3 @@ __aicore__ inline void AddExample<T>::Process()
 ## 附录
 
 自定义算子如需运行图模式，不需要aclnn适配，详细内容请参考[图模式开发指南](./graph_develop_guide.md)。
->>>>>>> 54bc564 (guide modify)
