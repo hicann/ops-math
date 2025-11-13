@@ -22,8 +22,7 @@
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
 #include "data_utils.h"
-#include "tiling_case_executor.h"
-#include "../../../op_host/is_finite_tiling.h"
+#include "../../../op_kernel/is_finite.cpp"
 
 using namespace std;
 
@@ -59,36 +58,33 @@ inline T1 CeilAlign(T1 a, T2 b)
 
 TEST_F(IsFiniteTest, test_case_float16_1)
 {
-    optiling::IsFiniteCompileInfo compileInfo = {64, 262144, false};
-    gert::TilingContextPara tilingContextPara(
-        "IsFinite",
-        {
-            {{{128, 64}, {128, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{128, 64}, {128, 64}}, ge::DT_BOOL, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    TilingInfo tilingInfo;
-    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
-    EXPECT_EQ(tilingRet, true);
-
     system("cd ./is_finite_data/ && python3 gen_data.py '(128, 64)' 'float16'");
+    uint32_t blockDim = 40;
     uint32_t dataCount = 128 * 64;
     size_t inputByteSize = dataCount * sizeof(half);
     std::string fileName = "./is_finite_data/float16_input_t_is_finite.bin";
-    ;
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(CeilAlign(inputByteSize, 32));
     ReadFile(fileName, inputByteSize, x, inputByteSize);
     size_t outputByteSize = dataCount * sizeof(bool);
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(CeilAlign(outputByteSize, 32));
 
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(tilingInfo.workspaceSizes[0]);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingInfo.tilingDataSize);
-    std::memcpy(tiling, tilingInfo.tilingData.get(), tilingInfo.tilingDataSize);
-    ICPU_SET_TILING_KEY(tilingInfo.tilingKey);
+    size_t workspaceSize = 32 * 1024 * 1024;
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(workspaceSize);
+    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(sizeof(IsFiniteTilingData));
+
+    IsFiniteTilingData* tilingData = reinterpret_cast<IsFiniteTilingData*>(tiling);
+
+    tilingData->usableUbSize = 19456;
+    tilingData->needCoreNum = 40;
+    tilingData->totalDataCount = 8192;
+    tilingData->perCoreDataCount = 192;
+    tilingData->tailDataCoreNum = 16;
+    tilingData->lastCoreDataCount = 192;
+
+    ICPU_SET_TILING_KEY(1);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-    ICPU_RUN_KF(is_finite, tilingInfo.blockNum, x, y, workspace, tiling);
+    auto func = is_finite<IS_FINITE_TPL_FP16, IS_FINITE_TPL_BOOL>;
+    ICPU_RUN_KF(func, blockDim, x, y, workspace, (uint8_t*)(tilingData));
 
     fileName = "./is_finite_data/float16_output_t_is_finite.bin";
     WriteFile(fileName, y, outputByteSize);
@@ -101,38 +97,35 @@ TEST_F(IsFiniteTest, test_case_float16_1)
     system("cd ./is_finite_data/ && python3 compare_data.py 'float16'");
 }
 
-TEST_F(IsFiniteTest, test_case_float16_2)
+TEST_F(IsFiniteTest, test_case_float32_1)
 {
-    optiling::IsFiniteCompileInfo compileInfo = {64, 262144, false};
-    gert::TilingContextPara tilingContextPara(
-        "IsFinite",
-        {
-            {{{256, 33}, {256, 33}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{256, 33}, {256, 33}}, ge::DT_BOOL, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    TilingInfo tilingInfo;
-    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
-    EXPECT_EQ(tilingRet, true);
-
-    system("cd ./is_finite_data/ && python3 gen_data.py '(256, 33)' 'float32'");
-    uint32_t dataCount = 256 * 33;
+    system("cd ./is_finite_data/ && python3 gen_data.py '(128, 64)' 'float32'");
+    uint32_t blockDim = 40;
+    uint32_t dataCount = 128 * 64;
     size_t inputByteSize = dataCount * sizeof(float);
     std::string fileName = "./is_finite_data/float32_input_t_is_finite.bin";
-    ;
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(CeilAlign(inputByteSize, 32));
     ReadFile(fileName, inputByteSize, x, inputByteSize);
     size_t outputByteSize = dataCount * sizeof(bool);
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(CeilAlign(outputByteSize, 32));
 
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(tilingInfo.workspaceSizes[0]);
-    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingInfo.tilingDataSize);
-    std::memcpy(tiling, tilingInfo.tilingData.get(), tilingInfo.tilingDataSize);
-    ICPU_SET_TILING_KEY(tilingInfo.tilingKey);
+    size_t workspaceSize = 32 * 1024 * 1024;
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(workspaceSize);
+    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(sizeof(IsFiniteTilingData));
+
+    IsFiniteTilingData* tilingData = reinterpret_cast<IsFiniteTilingData*>(tiling);
+
+    tilingData->usableUbSize = 19456;
+    tilingData->needCoreNum = 40;
+    tilingData->totalDataCount = 8192;
+    tilingData->perCoreDataCount = 192;
+    tilingData->tailDataCoreNum = 16;
+    tilingData->lastCoreDataCount = 192;
+
+    ICPU_SET_TILING_KEY(1);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-    ICPU_RUN_KF(is_finite, tilingInfo.blockNum, x, y, workspace, tiling);
+    auto func = is_finite<IS_FINITE_TPL_FP32, IS_FINITE_TPL_BOOL>;
+    ICPU_RUN_KF(func, blockDim, x, y, workspace, (uint8_t*)(tilingData));
 
     fileName = "./is_finite_data/float32_output_t_is_finite.bin";
     WriteFile(fileName, y, outputByteSize);
@@ -145,41 +138,43 @@ TEST_F(IsFiniteTest, test_case_float16_2)
     system("cd ./is_finite_data/ && python3 compare_data.py 'float32'");
 }
 
-// TEST_F(IsFiniteTest, test_case_bfloat16_3) {
-//     system("cd ./is_finite_data/ && python3 gen_data.py '(128, 64)' 'bfloat16'");
-//     uint32_t dataCount = 128 * 64;
-//     size_t inputByteSize = dataCount * sizeof(half);
-//     size_t outputByteSize = dataCount * sizeof(bool);
-//     size_t tiling_data_size = sizeof(IsFiniteTilingData);
+TEST_F(IsFiniteTest, test_case_bfloat16_1)
+{
+    system("cd ./is_finite_data/ && python3 gen_data.py '(128, 64)' 'bfloat16'");
+    uint32_t blockDim = 40;
+    uint32_t dataCount = 128 * 64;
+    size_t inputByteSize = dataCount * sizeof(half);
+    std::string fileName = "./is_finite_data/bfloat16_input_t_is_finite.bin";
+    uint8_t* x = (uint8_t*)AscendC::GmAlloc(CeilAlign(inputByteSize, 32));
+    ReadFile(fileName, inputByteSize, x, inputByteSize);
+    size_t outputByteSize = dataCount * sizeof(bool);
+    uint8_t* y = (uint8_t*)AscendC::GmAlloc(CeilAlign(outputByteSize, 32));
 
-//     uint8_t* x = (uint8_t*)AscendC::GmAlloc(CeilAlign(inputByteSize, 32));
-//     uint8_t* y = (uint8_t*)AscendC::GmAlloc(CeilAlign(outputByteSize, 32));
-//     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
-//     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-//     uint32_t blockDim = 1;
+    size_t workspaceSize = 32 * 1024 * 1024;
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(workspaceSize);
+    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(sizeof(IsFiniteTilingData));
 
-//     std::string fileName = "./is_finite_data/bfloat16_input_t_is_finite.bin";
-//     ReadFile(fileName, inputByteSize, x, inputByteSize);
-//     IsFiniteTilingData* tilingDatafromBin = reinterpret_cast<IsFiniteTilingData*>(tiling);
+    IsFiniteTilingData* tilingData = reinterpret_cast<IsFiniteTilingData*>(tiling);
 
-//     tilingDatafromBin->totalDataCount = dataCount;
-//     tilingDatafromBin->usableUbSize = 32 * 1024;
-//     tilingDatafromBin->needCoreNum = 1;
-//     tilingDatafromBin->perCoreDataCount = dataCount;
-//     tilingDatafromBin->tailDataCoreNum = 0;
-//     tilingDatafromBin->lastCoreDataCount = dataCount;
+    tilingData->usableUbSize = 19456;
+    tilingData->needCoreNum = 40;
+    tilingData->totalDataCount = 8192;
+    tilingData->perCoreDataCount = 192;
+    tilingData->tailDataCoreNum = 16;
+    tilingData->lastCoreDataCount = 192;
 
-//     ICPU_SET_TILING_KEY(3); // bfloat16
-//     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-//     ICPU_RUN_KF(is_finite, blockDim, x, y, workspace, tiling);
+    ICPU_SET_TILING_KEY(1);
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
+    auto func = is_finite<IS_FINITE_TPL_BF16, IS_FINITE_TPL_BOOL>;
+    ICPU_RUN_KF(func, blockDim, x, y, workspace, (uint8_t*)(tilingData));
 
-//     fileName = "./is_finite_data/bfloat16_output_t_is_finite.bin";
-//     WriteFile(fileName, y, outputByteSize);
+    fileName = "./is_finite_data/bfloat16_output_t_is_finite.bin";
+    WriteFile(fileName, y, outputByteSize);
 
-//     AscendC::GmFree((void*)(x));
-//     AscendC::GmFree((void*)(y));
-//     AscendC::GmFree((void*)workspace);
-//     AscendC::GmFree((void*)tiling);
+    AscendC::GmFree((void*)(x));
+    AscendC::GmFree((void*)(y));
+    AscendC::GmFree((void*)workspace);
+    AscendC::GmFree((void*)tiling);
 
-//     system("cd ./is_finite_data/ && python3 compare_data.py 'bfloat16'");
-// }
+    system("cd ./is_finite_data/ && python3 compare_data.py 'bfloat16'");
+}
