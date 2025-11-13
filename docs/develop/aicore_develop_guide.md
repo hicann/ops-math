@@ -185,59 +185,6 @@ struct ${op_name}TilingData {
     int64_t tileNum;
 };
 ```
-<<<<<<< HEAD
-=======
-再在\$\{op\_name\}\_tiling.cpp实现关键操作代码，代码如下，`AddExample`算子完整代码请参考`examples/add_example/op_host`目录下[add_example_tiling.cpp](../../examples/add_example/op_host/add_example_tiling.cpp)。
-
-```CPP
-// 设置Kernel使用核数
-context->SetBlockDim(BLOCK_DIM);        // BLOCK_DIM表示启用的核数量
-
-// 设置TilingData信息
-AddExampleTilingData* tiling = context->GetTilingData<AddExampleTilingData>();
-OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-OP_CHECK_IF(
-    memset_s(tiling, sizeof(AddExampleTilingData), 0, sizeof(AddExampleTilingData)) != EOK,
-    OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
-tiling->totalLength = totalIdx;
-tiling->tileNum = TILE_NUM;
-
-// 设置WorkspaceSize（可选）
-size_t* currentWorkspace = context->GetWorkspaceSizes(1);
-OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
-currentWorkspace[0] = WS_SYS_SIZE;
-
-// 设置TilingKey（可选）
-// 不同dtype走不同的Tiling key分支
-if (dataType == ge::DT_FLOAT) {
-    tilingKey = GET_TPL_TILING_KEY(ELEMENTWISE_TPL_SCH_MODE_0);
-    context->SetTilingKey(tilingKey);
-} else if (dataType == ge::DT_INT32) {
-    tilingKey = GET_TPL_TILING_KEY(ELEMENTWISE_TPL_SCH_MODE_1);
-    context->SetTilingKey(tilingKey);
-} else {
-    OP_LOGE(context, "get dtype error");
-    return ge::GRAPH_FAILED;
-}
-```
-注意，TilingKey可通过模板化编程实现，示例代码如下，完整代码请参考`examples/add_example/op_kernel`下[add_example_tiling_key.h](../../examples/add_example/op_kernel/add_example_tiling_key.h)。
-
-```C++
-#define ELEMENTWISE_TPL_SCH_MODE_0 0
-#define ELEMENTWISE_TPL_SCH_MODE_1 1
-
-// 1、定义模板参数
-ASCENDC_TPL_ARGS_DECL(AddExample,               // 算子OpType
-    ASCENDC_TPL_UINT_DECL(schMode, 1, ASCENDC_TPL_UI_LIST, ELEMENTWISE_TPL_SCH_MODE_0, ELEMENTWISE_TPL_SCH_MODE_1)                    // schMode支持的值选项
-);
-
-// 定义模板参数组合
-ASCENDC_TPL_SEL(
-    // 组合1：样例只区分数据类型，故这里只有一个选项
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, ELEMENTWISE_TPL_SCH_MODE_0, ELEMENTWISE_TPL_SCH_MODE_1)));
-```
->>>>>>> 679eb34 (readme修改)
 
 如需实现复杂参数组合完成分支选择（涉及多TilingKey场景），请参考[《Ascend C算子开发》](https://hiascend.com/document/redirect/CannCommunityOpdevAscendC)中"算子实现 > 工程化算子开发 > Host侧Tiling实现 > Tiling模板编程"。
 
