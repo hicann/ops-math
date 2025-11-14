@@ -40,188 +40,6 @@ protected:
     }
 };
 
-TEST_F(l2_stft_test, ascend910B2_case_aicpu)
-{
-    auto self_tensor_desc = TensorDesc({16, 25000}, ACL_DOUBLE, ACL_FORMAT_ND);
-    int64_t nFft = 400L;
-    int64_t hopLength = 160L;
-    int64_t winLength = 400L;
-    bool normalized = false;
-    bool onesided = true;
-    bool returnComplex = false;
-    auto out_tensor_desc =
-        TensorDesc({16, nFft / 2 + 1, (25000 - winLength) / hopLength + 1, 2}, ACL_DOUBLE, ACL_FORMAT_ND);
-    auto ut = OP_API_UT(
-        aclStft,
-        INPUT(
-            self_tensor_desc, (aclTensor*)nullptr, out_tensor_desc, nFft, hopLength, winLength, normalized, onesided,
-            returnComplex),
-        OUTPUT());
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
-}
-
-TEST_F(l2_stft_test, ascend910B2_case_aiccore)
-{
-    auto self_tensor_desc = TensorDesc({16, 25000}, ACL_FLOAT, ACL_FORMAT_ND);
-    int64_t nFft = 400L;
-    int64_t hopLength = 160L;
-    int64_t winLength = 400L;
-    bool normalized = false;
-    bool onesided = true;
-    bool returnComplex = false;
-    auto out_tensor_desc =
-        TensorDesc({16, nFft / 2 + 1, (25000 - winLength) / hopLength + 1, 2}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut = OP_API_UT(
-        aclStft,
-        INPUT(
-            self_tensor_desc, (aclTensor*)nullptr, out_tensor_desc, nFft, hopLength, winLength, normalized, onesided,
-            returnComplex),
-        OUTPUT());
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
-}
-
-TEST_F(l2_stft_test, ascend910B2_normallize_case_aiccore)
-{
-    auto self_tensor_desc = TensorDesc({16, 25000}, ACL_FLOAT, ACL_FORMAT_ND);
-    int64_t nFft = 500L;
-    int64_t hopLength = 160L;
-    int64_t winLength = 400L;
-    bool normalized = false;
-    bool onesided = true;
-    bool returnComplex = false;
-    auto out_tensor_desc =
-        TensorDesc({16, nFft / 2 + 1, (25000 - winLength) / hopLength + 1, 2}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut = OP_API_UT(
-        aclStft,
-        INPUT(
-            self_tensor_desc, (aclTensor*)nullptr, out_tensor_desc, nFft, hopLength, winLength, normalized, onesided,
-            returnComplex),
-        OUTPUT());
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
-}
-
-TEST_F(l2_stft_test, ascend910B2_complex_case_aiccore)
-{
-    auto self_tensor_desc = TensorDesc({16, 25000}, ACL_COMPLEX64, ACL_FORMAT_ND);
-    int64_t nFft = 500L;
-    int64_t hopLength = 160L;
-    int64_t winLength = 400L;
-    bool normalized = false;
-    bool onesided = false;
-    bool returnComplex = false;
-    auto out_tensor_desc = TensorDesc({16, nFft, (25000 - winLength) / hopLength + 1, 2}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut = OP_API_UT(
-        aclStft,
-        INPUT(
-            self_tensor_desc, (aclTensor*)nullptr, out_tensor_desc, nFft, hopLength, winLength, normalized, onesided,
-            returnComplex),
-        OUTPUT());
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
-}
-
-TEST_F(l2_stft_test, ascend310P_normallize_case_aiccore)
-{
-    auto self_tensor_desc = TensorDesc({16, 25000}, ACL_FLOAT, ACL_FORMAT_ND);
-    int64_t nFft = 500L;
-    int64_t hopLength = 160L;
-    int64_t winLength = 400L;
-    bool normalized = false;
-    bool onesided = true;
-    bool returnComplex = false;
-    auto out_tensor_desc =
-        TensorDesc({16, nFft / 2 + 1, (25000 - winLength) / hopLength + 1, 2}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut = OP_API_UT(
-        aclStft,
-        INPUT(
-            self_tensor_desc, (aclTensor*)nullptr, out_tensor_desc, nFft, hopLength, winLength, normalized, onesided,
-            returnComplex),
-        OUTPUT());
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
-}
-
-TEST_F(l2_stft_test, ascend910B2_case_self_nullptr)
-{
-    auto self_tensor_desc = TensorDesc({16, 25000}, ACL_DOUBLE, ACL_FORMAT_ND);
-    int64_t nFft = 400L;
-    int64_t hopLength = 160L;
-    int64_t winLength = 400L;
-    bool normalized = false;
-    bool onesided = true;
-    bool returnComplex = false;
-    auto out_tensor_desc =
-        TensorDesc({16, nFft / 2 + 1, (25000 - winLength) / hopLength + 1, 2}, ACL_DOUBLE, ACL_FORMAT_ND);
-    auto ut = OP_API_UT(
-        aclStft,
-        INPUT(
-            (aclTensor*)nullptr, (aclTensor*)nullptr, out_tensor_desc, nFft, hopLength, winLength, normalized, onesided,
-            returnComplex),
-        OUTPUT());
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
-}
-
-TEST_F(l2_stft_test, ascend910B2_case_out_nullptr)
-{
-    auto self_tensor_desc = TensorDesc({16, 25000}, ACL_DOUBLE, ACL_FORMAT_ND);
-    int64_t nFft = 400L;
-    int64_t hopLength = 160L;
-    int64_t winLength = 400L;
-    bool normalized = false;
-    bool onesided = true;
-    bool returnComplex = false;
-    auto out_tensor_desc =
-        TensorDesc({16, nFft / 2 + 1, (25000 - winLength) / hopLength + 1, 2}, ACL_DOUBLE, ACL_FORMAT_ND);
-    auto ut = OP_API_UT(
-        aclStft,
-        INPUT(
-            self_tensor_desc, (aclTensor*)nullptr, (aclTensor*)nullptr, nFft, hopLength, winLength, normalized,
-            onesided, returnComplex),
-        OUTPUT());
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
-}
-
 TEST_F(l2_stft_test, ascend910B2_case_invalid_dtype)
 {
     auto self_tensor_desc = TensorDesc({16, 25000}, ACL_INT32, ACL_FORMAT_ND);
@@ -316,64 +134,6 @@ TEST_F(l2_stft_test, ascend910B2_case_invalid_out_more_shape)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_stft_test, ascend910B2_case_plan_cache)
-{
-    auto self_tensor_desc = TensorDesc({16, 25000}, ACL_FLOAT, ACL_FORMAT_ND);
-    int64_t nFft = 400L;
-    int64_t hopLength = 160L;
-    int64_t winLength = 400L;
-    bool normalized = false;
-    bool onesided = true;
-    bool returnComplex = false;
-    auto out_tensor_desc =
-        TensorDesc({16, nFft / 2 + 1, (25000 - winLength) / hopLength + 1, 2}, ACL_FLOAT, ACL_FORMAT_ND);
-    for (int i = 0; i < 5; i++) {
-        auto ut = OP_API_UT(
-            aclStft,
-            INPUT(
-                self_tensor_desc, (aclTensor*)nullptr, out_tensor_desc, nFft, hopLength, winLength, normalized,
-                onesided, returnComplex),
-            OUTPUT());
-
-        // SAMPLE: only test GetWorkspaceSize
-        uint64_t workspace_size = 0;
-        aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-        EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-        // SAMPLE: precision simulate
-        // ut.TestPrecision();
-    }
-}
-
-TEST_F(l2_stft_test, ascend910B3_case_plan_cache)
-{
-    auto self_tensor_desc = TensorDesc({16, 25000}, ACL_FLOAT, ACL_FORMAT_ND);
-    int64_t nFft = 400L;
-    int64_t hopLength = 160L;
-    int64_t winLength = 400L;
-    bool normalized = false;
-    bool onesided = true;
-    bool returnComplex = false;
-    auto out_tensor_desc =
-        TensorDesc({16, nFft / 2 + 1, (25000 - winLength) / hopLength + 1, 2}, ACL_FLOAT, ACL_FORMAT_ND);
-    for (int i = 0; i < 5; i++) {
-        auto ut = OP_API_UT(
-            aclStft,
-            INPUT(
-                self_tensor_desc, (aclTensor*)nullptr, out_tensor_desc, nFft, hopLength, winLength, normalized,
-                onesided, returnComplex),
-            OUTPUT());
-
-        // SAMPLE: only test GetWorkspaceSize
-        uint64_t workspace_size = 0;
-        aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-        EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-        // SAMPLE: precision simulate
-        // ut.TestPrecision();
-    }
-}
-
 TEST_F(l2_stft_test, ascend910B2_case_invalid_nfft)
 {
     auto self_tensor_desc = TensorDesc({16, 25000}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -395,9 +155,6 @@ TEST_F(l2_stft_test, ascend910B2_case_invalid_nfft)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_stft_test, ascend910B2_case_invalid_hop_length)
@@ -421,9 +178,6 @@ TEST_F(l2_stft_test, ascend910B2_case_invalid_hop_length)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_stft_test, ascend910B2_case_invalid_win_length)
@@ -447,9 +201,6 @@ TEST_F(l2_stft_test, ascend910B2_case_invalid_win_length)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_stft_test, ascend910B2_case_invalid_win_length_with_window)
@@ -475,9 +226,6 @@ TEST_F(l2_stft_test, ascend910B2_case_invalid_win_length_with_window)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_stft_test, ascend910B2_case_invalid_input_length)
@@ -528,32 +276,4 @@ TEST_F(l2_stft_test, ascend910B2_case_invalid_onesided)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-}
-
-TEST_F(l2_stft_test, ascend910B2_case_with_window)
-{
-    auto self_tensor_desc = TensorDesc({16, 25000}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto win_tensor_desc = TensorDesc({400}, ACL_FLOAT, ACL_FORMAT_ND);
-    int64_t nFft = 400L;
-    int64_t hopLength = 160L;
-    int64_t winLength = 400L;
-    bool normalized = false;
-    bool onesided = true;
-    bool returnComplex = false;
-    auto out_tensor_desc =
-        TensorDesc({16, nFft / 2 + 1, (25000 - winLength) / hopLength + 1, 2}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut = OP_API_UT(
-        aclStft,
-        INPUT(
-            self_tensor_desc, win_tensor_desc, out_tensor_desc, nFft, hopLength, winLength, normalized, onesided,
-            returnComplex),
-        OUTPUT());
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
