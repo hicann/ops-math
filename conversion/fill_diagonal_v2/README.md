@@ -42,9 +42,9 @@
   </tr>
   <tr>
     <td>fillValue</td>
-    <td>输入属性</td>
-    <td>表示填充值，数据类型需要是可转换为FLOAT的数据类型。</td>
-    <td>可转换为FLOAT的数据类型</td>
+    <td>输入/输出张量</td>
+    <td>表示输入/输出张量，数据类型需要是可转换为FLOAT的数据类型。</td>
+    <td>BFLOAT16、FLOAT16、FLOAT、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOO</td>
     <td>-</td>
   </tr>
   <tr>
@@ -67,5 +67,4 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| aclnn接口 | [test_aclnn_inplace_fill_diagonal](./examples/test_aclnn_fill_diagonal_v2.cpp) | 通过[aclnnInplaceFillDiagonal](docs/aclnnInplaceFillDiagonal.md)接口方式调用InplaceFillDiagonal算子。 |
-
+| 图模式调用 | [test_geir_fill_diagonal_v2](./examples/test_geir_fill_diagonal_v2.cpp) | 通过[算子IR](op_graph/fill_diagonal_v2_proto.h)接口方式调用FillDiagonalV2算子。 |

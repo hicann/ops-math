@@ -28,4 +28,4 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | :-------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| aclnn接口 | [test_transpose_v2](tests/ut/op_kernel/test_transpose_v2.cpp) | 通过[aclnnPermute](docs/aclnntransposev2.md)接口方式调用transposeV2算子。 |
+| aclnn接口 | [test_aclnn_transpose_v2](examples/test_aclnn_transpose_v2.cpp) | 通过[aclnnPermute](../transpose/docs/aclnnPermute.md)接口方式调用transposeV2算子。(transpose_v2与transpose共用aclnn，需联合出单算子包运行[test_aclnn_transpose_v2](examples/test_aclnn_transpose_v2.cpp)：bash build.sh --pkg --soc=${soc_version} --vendor_name=transpose_v2 --ops=transpose_v2,transpose) |
