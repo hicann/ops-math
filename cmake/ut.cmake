@@ -115,7 +115,7 @@ if(UT_TEST_ALL OR OP_API_UT)
               ${ASCEND_DIR}/include ${ASCEND_DIR}/include/aclnn ${ASCEND_DIR}/include/aclnnop
               ${ACLNN_SRC_DIRS}
       )
-    target_link_libraries(${OP_API_MODULE_NAME}_cases_obj PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> gtest)
+    target_link_libraries(${OP_API_MODULE_NAME}_cases_obj PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> json gtest)
   endfunction()
 endif()
 
