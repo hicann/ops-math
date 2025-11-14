@@ -10,7 +10,7 @@
 ## 功能说明
 
 - 算子功能：
-  TransformBiasRescaleQkv`算子是一个用于处理多头注意力机制中查询（Query）、键（Key）、值（Value）向量的接口。它用于调整这些向量的偏置（Bias）和缩放（Rescale）因子，以优化注意力计算过程。
+  TransformBiasRescaleQkv算子是一个用于处理多头注意力机制中查询（Query）、键（Key）、值（Value）向量的接口。它用于调整这些向量的偏置（Bias）和缩放（Rescale）因子，以优化注意力计算过程。
 
 - 计算公式：  
   逐个元素计算过程见公式：
@@ -170,7 +170,6 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
@@ -196,7 +195,7 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
     <tr>
       <td rowspan="8">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="8">161002</td>
-      <td><li>qkv和qkvBias的数据类型和数据格式不在支持的范围之内。</li><li>qkv和qkvBias的数据类型不一致。</li><li>qkv和qkvBias的shape不满足参数说明的要求。</li></td>
+      <td><ul><li>qkv和qkvBias的数据类型和数据格式不在支持的范围之内。</li><li>qkv和qkvBias的数据类型不一致。</li><li>qkv和qkvBias的shape不满足参数说明的要求。</li></td>
     </tr>
   </tbody></table>
 
