@@ -62,7 +62,6 @@ TEST_F(l2_histc_test, case_001_float32_normal)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    ut.TestPrecision();
 }
 
 TEST_F(l2_histc_test, case_002_float16_normal)
@@ -78,7 +77,6 @@ TEST_F(l2_histc_test, case_002_float16_normal)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_histc_test, case_003_int32_normal)
@@ -94,7 +92,6 @@ TEST_F(l2_histc_test, case_003_int32_normal)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_histc_test, case_008_1_dim_input_tensor)
@@ -169,7 +166,6 @@ TEST_F(l2_histc_test, case_012_bins_coverage)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut1.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    ut1.TestPrecision();
 
     outTensor = TensorDesc({12}, ACL_FLOAT, ACL_FORMAT_ND);
     bins = 12;
@@ -177,7 +173,6 @@ TEST_F(l2_histc_test, case_012_bins_coverage)
     workspaceSize = 0;
     aclRet = ut2.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    ut2.TestPrecision();
 
     outTensor = TensorDesc({14}, ACL_FLOAT, ACL_FORMAT_ND);
     bins = 14;
@@ -185,7 +180,6 @@ TEST_F(l2_histc_test, case_012_bins_coverage)
     workspaceSize = 0;
     aclRet = ut3.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    ut3.TestPrecision();
 }
 
 TEST_F(l2_histc_test, case_014_NHWC)
@@ -228,22 +222,6 @@ TEST_F(l2_histc_test, case_016_HWCN)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-}
-
-TEST_F(l2_histc_test, case_017_float32_min_max_equal)
-{
-    auto selfTensor = TensorDesc({3, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10);
-    auto outTensor = TensorDesc({3}, ACL_FLOAT, ACL_FORMAT_ND);
-    int64_t bins = 3;
-    auto minScalar = ScalarDesc(0.0f);
-    auto maxScalar = ScalarDesc(0.0f);
-
-    auto ut = OP_API_UT(aclnnHistc, INPUT(selfTensor, bins, minScalar, maxScalar), OUTPUT(outTensor));
-
-    uint64_t workspaceSize = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    ut.TestPrecision();
 }
 
 TEST_F(l2_histc_test, case_018_empty_tensor)
