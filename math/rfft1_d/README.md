@@ -87,6 +87,6 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                             |
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
-| aclnn调用 | [test_acl_rfft1_d](./examples/test_acl_rfft1_d.cpp) | 通过[aclRfft1d](./docs/aclRfft1d.md)接口方式调用Rfft1D算子。    |
+| aclnn调用 | [test_acl_rfft1_d](./examples/test_acl_rfft1_d.cpp) | 通过[aclRfft1d](./docs/aclRfft1D.md)接口方式调用Rfft1D算子。    |
 
 
