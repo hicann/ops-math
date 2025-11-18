@@ -12,7 +12,7 @@
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
-#include "aclnnop/level2/aclnn_bitwise_and_scalar.h"
+#include "aclnnop/aclnn_bitwise_and_scalar.h"
 
 #define CHECK_RET(cond, return_expr) \
     do {                             \
