@@ -214,9 +214,9 @@ uint32_t STFTGeneralizedTiling::SplitCoresOnN(uint32_t coresNum)
         return INVALID_CORES_NUM);
 
     std::vector<int> factors = iter->second;
-    uint32_t typeSize = ge::GetSizeByDataType(dtype);
+    int32_t typeSize = ge::GetSizeByDataType(dtype);
     OP_CHECK_IF(
-        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
+        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %d, please check.", typeSize),
         return ge::GRAPH_FAILED);
     nCoreNum = 0;
     for (size_t i = 0; i < factors.size(); i++) {
@@ -416,9 +416,9 @@ bool STFTGeneralizedTiling::SplitCores()
         return true;
     }
 
-    uint32_t typeSize = ge::GetSizeByDataType(dtype);
+    int32_t typeSize = ge::GetSizeByDataType(dtype);
     OP_CHECK_IF(
-        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
+        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %d, please check.", typeSize),
         return ge::GRAPH_FAILED);
     bCoreNum = 1;
     mCoreNum = 1;
@@ -464,9 +464,9 @@ bool STFTGeneralizedTiling::IsCapable()
 
 uint32_t STFTGeneralizedTiling::CalcMaskUBSize(uint32_t memHasUsed) const
 {
-    uint32_t typeSize = ge::GetSizeByDataType(dtype);
+    int32_t typeSize = ge::GetSizeByDataType(dtype);
     OP_CHECK_IF(
-        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
+        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %d, please check.", typeSize),
         return ge::GRAPH_FAILED);
     uint32_t ubLeft = ubSize - memHasUsed;
     uint32_t count = ubLeft / (4 * typeSize + DWORD_SIZE * 2);
@@ -476,9 +476,9 @@ uint32_t STFTGeneralizedTiling::CalcMaskUBSize(uint32_t memHasUsed) const
 
 uint32_t STFTGeneralizedTiling::CalcCopyUBSize() const
 {
-    uint32_t typeSize = ge::GetSizeByDataType(dtype);
+    int32_t typeSize = ge::GetSizeByDataType(dtype);
     OP_CHECK_IF(
-        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
+        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %d, please check.", typeSize),
         return ge::GRAPH_FAILED);
     uint32_t ubLeft = ubSize - GATHER_MASK_UB_SIZE;
     uint32_t count = GATHER_MASK_UB_SIZE / DWORD_SIZE;
@@ -488,9 +488,9 @@ uint32_t STFTGeneralizedTiling::CalcCopyUBSize() const
 
 uint32_t STFTGeneralizedTiling::CalcComplexCopyUBSize() const
 {
-    uint32_t typeSize = ge::GetSizeByDataType(dtype);
+    int32_t typeSize = ge::GetSizeByDataType(dtype);
     OP_CHECK_IF(
-        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
+        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %d, please check.", typeSize),
         return ge::GRAPH_FAILED);
     uint32_t ubLeft = ubSize - GATHER_MASK_COMPLEX_UB_SIZE;
     uint32_t count = GATHER_MASK_COMPLEX_UB_SIZE / DWORD_SIZE;
@@ -500,9 +500,9 @@ uint32_t STFTGeneralizedTiling::CalcComplexCopyUBSize() const
 
 uint32_t STFTGeneralizedTiling::CalcComplexUBLoop() const
 {
-    uint32_t typeSize = ge::GetSizeByDataType(dtype);
+    int32_t typeSize = ge::GetSizeByDataType(dtype);
     OP_CHECK_IF(
-        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
+        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %d, please check.", typeSize),
         return ge::GRAPH_FAILED);
     uint32_t copyUBSize = CalcComplexCopyUBSize() / 2;
     uint32_t ubLoop = 1;
@@ -521,7 +521,7 @@ uint32_t STFTGeneralizedTiling::CalcComplexUBLoop() const
 
 void STFTGeneralizedTiling::SplitWindowTiling()
 {
-    uint32_t typeSize = ge::GetSizeByDataType(dtype);
+    int32_t typeSize = ge::GetSizeByDataType(dtype);
     if (typeSize <= 0) {
         typeSize = 1;
     }
@@ -588,9 +588,9 @@ ge::graphStatus STFTGeneralizedTiling::DoOpTiling()
     tilingData.set_batch(batch);
     tilingData.set_inputSize(inputSize);
     tilingData.set_nfft(nfft);
-    uint32_t typeSize = ge::GetSizeByDataType(dtype);
+    int32_t typeSize = ge::GetSizeByDataType(dtype);
     OP_CHECK_IF(
-        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %u, please check.", typeSize),
+        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %d, please check.", typeSize),
         return ge::GRAPH_FAILED);
     nfftAlign = (nfft * typeSize + PACKAGE_SIZE - 1) / PACKAGE_SIZE * PACKAGE_SIZE / typeSize;
     tilingData.set_nfftAlign(nfftAlign);
@@ -725,7 +725,10 @@ ge::graphStatus STFTGeneralizedTiling::GetWorkspaceSize()
     // 每块workspace地址需要512B对齐
     // 第0块workspace用于存储按照窗口拆分之后的input data
     // 按照nfft block对齐之后的大小
-    uint64_t typeSize = ge::GetSizeByDataType(dtype);
+    int32_t typeSize = ge::GetSizeByDataType(dtype);
+    OP_CHECK_IF(
+        (typeSize <= 0), OP_LOGE(context_->GetNodeName(), "typeSize is invalid %d, please check.", typeSize),
+        return ge::GRAPH_FAILED);
 
     size_t splitWindowWorkspaceSize =
         ((typeSize * batch * matmulN * nfftAlign + WORKSPACE_ALIGN_SIZE - 1) / WORKSPACE_ALIGN_SIZE) *
