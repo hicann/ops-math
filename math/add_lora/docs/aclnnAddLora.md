@@ -95,7 +95,7 @@ aclnnStatus aclnnAddLora(
       <td>y</td>
       <td>输入</td>
       <td>表示待进行累加更新的张量，公式中的y。</td>
-      <td><ul><li>shape维度2维：[B, H3]，H3是16的整数倍，同时H3的范围必须支持1~131072。</li><li>第一维需要和x的第一维一致，都用`B`表示，B的范围支持1~65536。</li><li>不支持空Tensor。</li></ul></td>
+      <td><ul><li>shape维度2维：[B, H3]，H3是16的整数倍，同时H3的范围必须支持1~131072。</li><li>第一维需要和x的第一维一致，都用`B`表示。</li><li>不支持空Tensor。</li></ul></td>
       <td>FLOAT16</td>
       <td>ND</td>
       <td>2</td>
@@ -135,7 +135,7 @@ aclnnStatus aclnnAddLora(
       <td>weightAOptional</td>
       <td>输入</td>
       <td>表示进行矩阵乘的第一个权重矩阵，为空时会跳过第一个矩阵乘，公式中的weightA。</td>
-      <td><ul><li>shape维度4维：[W, L, R, H1]，前两维需要和`weightB`的前两维一致，用`W`和`L`表示，其中W的范围支持1~30；L范围支持1~32；第三维需要和`weightB`的第四维保持一致，都用`R`表示；第四维需要和`x`的第二维保持一致，都用`H1`表示，需要是16的整数倍。</li><li>不支持空Tensor。</li></td>
+      <td><ul><li>shape维度4维：[W, L, R, H1]，前两维需要和`weightB`的前两维一致，用`W`和`L`表示，其中W的范围支持1~32；L范围支持1~32；第三维需要和`weightB`的第四维保持一致，都用`R`表示；第四维需要和`x`的第二维保持一致，都用`H1`表示，需要是16的整数倍。</li><li>不支持空Tensor。</li></td>
       <td>FLOAT16</td>
       <td>ND</td>
       <td></td>
@@ -240,7 +240,7 @@ aclnnStatus aclnnAddLora(
     <tr>
       <td rowspan="8">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="8">161002</td>
-      <td><ul><li>输入/输出参数的数据类型不在支持的范围之内。</li><li>多个输入tensor之间的shape信息不匹配（详见参数说明）。</li><li>输入tensor的shape信息暂不支持（详见参数说明）。</li></td>
+      <td><ul><li>输入/输出参数的数据类型不在支持的范围之内。</li><li>多个输入tensor之间的shape信息不匹配（详见参数说明）。</li><li>输入tensor的shape信息暂不支持（详见参数说明）。</li></ul></td>
     </tr>
   </tbody></table>
 
