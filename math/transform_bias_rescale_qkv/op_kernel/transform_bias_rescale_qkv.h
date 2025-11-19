@@ -17,7 +17,6 @@
 #define TRANSFORM_BIAS_RESCALE_QKV_H
 
 #include <type_traits>
-#include <cmath>
 #include "kernel_operator.h"
 
 namespace TransformBiasRescaleQkv {
