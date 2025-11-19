@@ -71,6 +71,7 @@ function(merge_graph_headers)
   set(oneValueArgs TARGET OUT_DIR)
   cmake_parse_arguments(MGPROTO "" "${oneValueArgs}" "" ${ARGN})
   get_target_property(proto_headers ${GRAPH_PLUGIN_NAME}_proto_headers INTERFACE_SOURCES)
+  set(proto_headers ${proto_headers} ${CMAKE_SOURCE_DIR}/common/inc/op_graph/op_math_proto_extend.h)
   add_custom_command(
     OUTPUT ${MGPROTO_OUT_DIR}/ops_proto_math.h
     COMMAND
