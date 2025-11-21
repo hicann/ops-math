@@ -38,6 +38,7 @@ static std::vector<int64_t> ToVectorForFeedsRepeat(const gert::Shape& shape)
 }
 
 static void ExeTestCaseForFeedsRepeat(
+    std::vector<std::vector<int64_t> > expectResults,
     const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
     const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
     gert::StorageShape& outStorageShape,
@@ -76,6 +77,9 @@ static void ExeTestCaseForFeedsRepeat(
 
     /* do infershape */
     EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
+    for (size_t i = 0; i < expectResults.size(); i++) {
+        EXPECT_EQ(ToVectorForFeedsRepeat(*contextHolder.GetContext()->GetOutputShape(i)), expectResults[i]);
+    }
 }
 
 TEST_F(FeedsRepeat, FeedsRepeat_infershape_case_tiling_key_1)
@@ -102,6 +106,5 @@ TEST_F(FeedsRepeat, FeedsRepeat_infershape_case_tiling_key_1)
     gert::StorageShape outStorageShape = {};
     int64_t attr = 15;
     // 简化后的函数调用
-    ExeTestCaseForFeedsRepeat(inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS, attr);
-    EXPECT_EQ(ToVectorForFeedsRepeat(outStorageShape.GetOriginShape()), expectResult);
+    ExeTestCaseForFeedsRepeat({expectResult}, inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS, attr);
 }

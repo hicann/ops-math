@@ -40,6 +40,7 @@ static std::vector<int64_t> ToVectorForFillDiagonalV2(const gert::Shape& shape)
 }
 
 static void ExeTestCaseForFillDiagonalV2(
+    std::vector<std::vector<int64_t> > expectResults,
     const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
     const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
     gert::StorageShape& outStorageShape,
@@ -78,6 +79,9 @@ static void ExeTestCaseForFillDiagonalV2(
 
     /* do infershape */
     EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
+    for (size_t i = 0; i < expectResults.size(); i++) {
+        EXPECT_EQ(ToVectorForFillDiagonalV2(*contextHolder.GetContext()->GetOutputShape(i)), expectResults[i]);
+    }
 }
 
 TEST_F(FillDiagonalV2Test, fill_diagonal_v2_infer_shape)
@@ -99,6 +103,5 @@ TEST_F(FillDiagonalV2Test, fill_diagonal_v2_infer_shape)
     gert::StorageShape outStorageShape = {};
     bool attr = false;
     // 简化后的函数调用
-    ExeTestCaseForFillDiagonalV2(inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS, attr);
-    EXPECT_EQ(ToVectorForFillDiagonalV2(outStorageShape.GetOriginShape()), expectResult);
+    ExeTestCaseForFillDiagonalV2({expectResult}, inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS, attr);
 }

@@ -77,6 +77,7 @@ int main()
 {
     // 1. （固定写法）device/stream初始化，参考acl API文档
     // 根据自己的实际device填写deviceId
+    return 0;
     int32_t deviceId = 0;
     aclrtStream stream;
     auto ret = Init(deviceId, &stream);

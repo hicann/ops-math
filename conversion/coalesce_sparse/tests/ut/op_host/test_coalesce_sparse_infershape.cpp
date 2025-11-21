@@ -37,6 +37,7 @@ static std::vector<int64_t> ToVectorForCoalesceSparse(const gert::Shape& shape)
 }
 
 static void ExeTestCaseForCoalesceSparse(
+    std::vector<std::vector<int64_t> > expectResults,
     const std::vector<gert::StorageShape>& inputShapes, const std::vector<ge::DataType>& dtypes,
     std::vector<gert::StorageShape>& outStorageShapes, ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
 {
@@ -75,6 +76,9 @@ static void ExeTestCaseForCoalesceSparse(
 
     /* do infershape */
     EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
+    for (size_t i = 0; i < expectResults.size(); i++) {
+        EXPECT_EQ(ToVectorForCoalesceSparse(*contextHolder.GetContext()->GetOutputShape(i)), expectResults[i]);
+    }
 }
 
 TEST_F(CoalesceSparseTest, coalesce_sparse_test_success)
@@ -92,7 +96,5 @@ TEST_F(CoalesceSparseTest, coalesce_sparse_test_success)
     std::vector<int64_t> expectResult2 = {4, 3};
     std::vector<gert::StorageShape> outStorageShapes = {{}, {}};
 
-    ExeTestCaseForCoalesceSparse(inputShapes, dtypes, outStorageShapes, ge::GRAPH_SUCCESS);
-    EXPECT_EQ(ToVectorForCoalesceSparse(outStorageShapes[0].GetOriginShape()), expectResult1);
-    EXPECT_EQ(ToVectorForCoalesceSparse(outStorageShapes[1].GetOriginShape()), expectResult2);
+    ExeTestCaseForCoalesceSparse({expectResult1, expectResult2}, inputShapes, dtypes, outStorageShapes, ge::GRAPH_SUCCESS);
 }

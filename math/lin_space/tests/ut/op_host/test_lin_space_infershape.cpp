@@ -57,6 +57,7 @@ gert::Tensor* ConstructInputConstTensor(
 }
 
 static void ExeTestCase(
+    std::vector<std::vector<int64_t> > expectResults,
     const std::vector<gert::StorageShape>& inputShapes, // 存储所有输入StorageShape参数
     const std::vector<ge::DataType>& dtypes,            // 存储所有DataType参数
     const std::vector<int32_t> inputValues, gert::StorageShape& outStorageShape,
@@ -98,6 +99,9 @@ static void ExeTestCase(
 
     /* do infershape */
     EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
+    for (size_t i = 0; i < expectResults.size(); i++) {
+        EXPECT_EQ(ToVector(*contextHolder.GetContext()->GetOutputShape(i)), expectResults[i]);
+    }
 }
 
 TEST_F(linspace, Linspace_infershape_case_0)
@@ -117,6 +121,5 @@ TEST_F(linspace, Linspace_infershape_case_0)
     gert::StorageShape outStorageShape = {};
 
     // 简化后的函数调用
-    ExeTestCase(inputShapes, dtypes, inputValues, outStorageShape, ge::GRAPH_SUCCESS);
-    EXPECT_EQ(ToVector(outStorageShape.GetOriginShape()), expectResult);
+    ExeTestCase({expectResult}, inputShapes, dtypes, inputValues, outStorageShape, ge::GRAPH_SUCCESS);
 }

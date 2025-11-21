@@ -44,6 +44,7 @@ static std::vector<int64_t> ToVector(const gert::Shape& shape)
 }
 
 static void ExeTestCase(
+    std::vector<std::vector<int64_t> > expectResults,
     const gert::StorageShape& prevAttnOutShape, const gert::StorageShape& prevSoftmaxMaxShape,
     const gert::StorageShape& prevSoftmaxSumShape, const gert::StorageShape& curAttnOutShape,
     const gert::StorageShape& curSoftmaxMaxShape, const gert::StorageShape& curSoftmaxSumShape,
@@ -83,6 +84,9 @@ static void ExeTestCase(
 
     /* do infershape */
     EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
+    for (size_t i = 0; i < expectResults.size(); i++) {
+        EXPECT_EQ(ToVector(*contextHolder.GetContext()->GetOutputShape(i)), expectResults[i]);
+    }
 }
 
 TEST_F(RingAttentionUpdate, RingAttentionUpdate_infershape_test_0)
@@ -104,11 +108,8 @@ TEST_F(RingAttentionUpdate, RingAttentionUpdate_infershape_test_0)
     std::vector<int64_t> expectResult0 = {sequence, batch, headDim};
     std::vector<int64_t> expectResult1 = {batch, headNum, sequence, lastDim};
     std::vector<int64_t> expectResult2 = {batch, headNum, sequence, lastDim};
-    ExeTestCase(
-        prevAttnOutShape, prevSoftmaxMaxShape, prevSoftmaxSumShape, curAttnOutShape, curSoftmaxMaxShape,
-        curSoftmaxSumShape, ge::DT_FLOAT, ge::DT_FLOAT, attnOutShape, softmaxMaxShape, softmaxSumShape,
-        ge::GRAPH_SUCCESS);
-    EXPECT_EQ(ToVector(attnOutShape.GetOriginShape()), expectResult0);
-    EXPECT_EQ(ToVector(softmaxMaxShape.GetOriginShape()), expectResult1);
-    EXPECT_EQ(ToVector(softmaxSumShape.GetOriginShape()), expectResult2);
+    ExeTestCase({expectResult0,expectResult1,expectResult2}, prevAttnOutShape, prevSoftmaxMaxShape, prevSoftmaxSumShape,
+              curAttnOutShape, curSoftmaxMaxShape, curSoftmaxSumShape,
+              ge::DT_FLOAT, ge::DT_FLOAT,
+              attnOutShape, softmaxMaxShape, softmaxSumShape, ge::GRAPH_SUCCESS);
 }

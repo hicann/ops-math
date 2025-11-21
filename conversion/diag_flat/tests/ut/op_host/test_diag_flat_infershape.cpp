@@ -36,6 +36,7 @@ static std::vector<int64_t> ToVectorForDiagFlat(const gert::Shape& shape)
 }
 
 static void ExeTestCaseForDiagFlat(
+    std::vector<std::vector<int64_t> > expectResults,
     const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
     const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
     gert::StorageShape& outStorageShape,
@@ -74,6 +75,9 @@ static void ExeTestCaseForDiagFlat(
 
     /* do infershape */
     EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
+    for (size_t i = 0; i < expectResults.size(); i++) {
+        EXPECT_EQ(ToVectorForDiagFlat(*contextHolder.GetContext()->GetOutputShape(i)), expectResults[i]);
+    }
 }
 
 TEST_F(diagFlatInfer, diag_flat_infershape_case_tiling_key_101)
@@ -95,6 +99,5 @@ TEST_F(diagFlatInfer, diag_flat_infershape_case_tiling_key_101)
     gert::StorageShape outStorageShape = {};
     int64_t attr = 0;
     // 简化后的函数调用
-    ExeTestCaseForDiagFlat(inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS, attr);
-    EXPECT_EQ(ToVectorForDiagFlat(outStorageShape.GetOriginShape()), expectResult);
+    ExeTestCaseForDiagFlat({expectResult}, inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS, attr);
 }

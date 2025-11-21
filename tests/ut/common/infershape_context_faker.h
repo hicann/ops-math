@@ -98,47 +98,47 @@ public:
 
     InferShapeContextFaker& Attr(const std::string& attrName, bool attr)
     {
-        OpInferShapeContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpInferShapeContextBuilder::AppendAttr(attr);
         return *this;
     }
     InferShapeContextFaker& Attr(const std::string& attrName, int64_t attr)
     {
-        OpInferShapeContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpInferShapeContextBuilder::AppendAttr(attr);
         return *this;
     }
     InferShapeContextFaker& Attr(const std::string& attrName, float attr)
     {
-        OpInferShapeContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpInferShapeContextBuilder::AppendAttr(attr);
         return *this;
     }
-    InferShapeContextFaker& Attr(const std::string& attrName, const AscendString& attr)
+    InferShapeContextFaker& Attr(const std::string& attrName, const ge::AscendString& attr)
     {
-        OpInferShapeContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpInferShapeContextBuilder::AppendAttr(attr);
         return *this;
     }
     InferShapeContextFaker& Attr(const std::string& attrName, const std::vector<bool>& attr)
     {
-        OpInferShapeContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpInferShapeContextBuilder::AppendAttr(attr);
         return *this;
     }
     InferShapeContextFaker& Attr(const std::string& attrName, const std::vector<int64_t>& attr)
     {
-        OpInferShapeContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpInferShapeContextBuilder::AppendAttr(attr);
         return *this;
     }
     InferShapeContextFaker& Attr(const std::string& attrName, const std::vector<float>& attr)
     {
-        OpInferShapeContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpInferShapeContextBuilder::AppendAttr(attr);
         return *this;
     }
-    InferShapeContextFaker& Attr(const std::string& attrName, const std::vector<AscendString>& attr)
+    InferShapeContextFaker& Attr(const std::string& attrName, const std::vector<ge::AscendString>& attr)
     {
-        OpInferShapeContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpInferShapeContextBuilder::AppendAttr(attr);
         return *this;
     }
     InferShapeContextFaker& Attr(const std::string& attrName, const std::vector<std::vector<int64_t>>& attr)
     {
-        OpInferShapeContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpInferShapeContextBuilder::AppendAttr(attr);
         return *this;
     }
 

@@ -23,13 +23,8 @@
         contextFaker.NodeIoNum(inputNum, outputNum);                                                                   \
     }                                                                                                                  \
     std::vector<gert::Tensor*> inputTensors = {};                                                                      \
-    std::vector<gert::StorageShape*> outputShapes = {};                                                                \
     std::vector<std::unique_ptr<gert::Tensor>> inputTensorsKeepAlive = {};                                             \
     for (size_t index = 0; index < inputNum; index++) {                                                                \
-        contextFaker.NodeInputTd(                                                                                      \
-            index, infershapeContextPara.inputTensorDesc_[index].dtype_,                                               \
-            infershapeContextPara.inputTensorDesc_[index].format_,                                                     \
-            infershapeContextPara.inputTensorDesc_[index].format_);                                                    \
         std::unique_ptr<gert::Tensor> curTensor = std::make_unique<gert::Tensor>(                                      \
             infershapeContextPara.inputTensorDesc_[index].shape_,                                                      \
             gert::StorageFormat(                                                                                       \
@@ -47,9 +42,8 @@
             index, infershapeContextPara.outputTensorDesc_[index].dtype_,                                              \
             infershapeContextPara.outputTensorDesc_[index].format_,                                                    \
             infershapeContextPara.outputTensorDesc_[index].format_);                                                   \
-        outputShapes.push_back(&infershapeContextPara.outputTensorDesc_[index].shape_);                                \
     }                                                                                                                  \
-    contextFaker.InputTensors(inputTensors).OutputShapes(outputShapes);                                                \
+    contextFaker.InputTensors(inputTensors);                                                                           \
     for (auto& attrInfo : infershapeContextPara.attrs_) {                                                              \
         switch (attrInfo.attr_.type_) {                                                                                \
             case Ops::Math::AnyValue::ValueType::VT_BOOL: {                                                            \
@@ -67,7 +61,7 @@
             case Ops::Math::AnyValue::ValueType::VT_STRING: {                                                          \
                 contextFaker.Attr(                                                                                     \
                     attrInfo.attrName_,                                                                                \
-                    AscendString(reinterpret_cast<std::string*>(attrInfo.attr_.valuePtr_.get())->c_str()));            \
+                    ge::AscendString(reinterpret_cast<std::string*>(attrInfo.attr_.valuePtr_.get())->c_str()));        \
                 break;                                                                                                 \
             }                                                                                                          \
             case Ops::Math::AnyValue::ValueType::VT_LIST_BOOL: {                                                       \
@@ -128,6 +122,6 @@ void ExecuteTestCase(
 
     // check output shape
     for (int i = 0; i < expectOutputShape.size(); i++) {
-        // EXPECT_EQ(ToVector(*contextHolder.GetContext()->GetOutputShape(i)), expectOutputShape[i]);
+        EXPECT_EQ(ToVector(*contextHolder.GetContext()->GetOutputShape(i)), expectOutputShape[i]);
     }
 }

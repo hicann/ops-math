@@ -139,47 +139,47 @@ public:
 
     TilingContextFaker& Attr(const std::string& attrName, bool attr)
     {
-        OpTilingContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpTilingContextBuilder::AppendAttr(attr);
         return *this;
     }
     TilingContextFaker& Attr(const std::string& attrName, int64_t attr)
     {
-        OpTilingContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpTilingContextBuilder::AppendAttr(attr);
         return *this;
     }
     TilingContextFaker& Attr(const std::string& attrName, float attr)
     {
-        OpTilingContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpTilingContextBuilder::AppendAttr(attr);
         return *this;
     }
-    TilingContextFaker& Attr(const std::string& attrName, const AscendString& attr)
+    TilingContextFaker& Attr(const std::string& attrName, const ge::AscendString& attr)
     {
-        OpTilingContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpTilingContextBuilder::AppendAttr(attr);
         return *this;
     }
     TilingContextFaker& Attr(const std::string& attrName, const std::vector<bool>& attr)
     {
-        OpTilingContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpTilingContextBuilder::AppendAttr(attr);
         return *this;
     }
     TilingContextFaker& Attr(const std::string& attrName, const std::vector<int64_t>& attr)
     {
-        OpTilingContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpTilingContextBuilder::AppendAttr(attr);
         return *this;
     }
     TilingContextFaker& Attr(const std::string& attrName, const std::vector<float>& attr)
     {
-        OpTilingContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpTilingContextBuilder::AppendAttr(attr);
         return *this;
     }
-    TilingContextFaker& Attr(const std::string& attrName, const std::vector<AscendString>& attr)
+    TilingContextFaker& Attr(const std::string& attrName, const std::vector<ge::AscendString>& attr)
     {
-        OpTilingContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpTilingContextBuilder::AppendAttr(attr);
         return *this;
     }
     TilingContextFaker& Attr(const std::string& attrName, const std::vector<std::vector<int64_t>>& attr)
     {
-        OpTilingContextBuilder::MutableOpInfo().Attr(attrName.c_str(), attr);
+        OpTilingContextBuilder::AppendAttr(attr);
         return *this;
     }
 

@@ -43,6 +43,7 @@ static std::vector<int64_t> ToVector(const gert::Shape& shape)
 }
 
 static void ExeTestCase(
+    std::vector<std::vector<int64_t> > expectResults,
     const gert::StorageShape& xShape, const gert::StorageShape& windowShape, gert::StorageShape& outputShape,
     ge::DataType inputDtype, ge::DataType windowDtype, ge::DataType outputDtype, int64_t hopLength, int64_t winLength,
     bool normalized, bool onesided, bool returnComplex, int64_t nFft,
@@ -76,6 +77,9 @@ static void ExeTestCase(
 
     /* do infershape */
     EXPECT_EQ(inferShapeFunc(contextHolder.GetContext()), testCaseResult);
+    for (size_t i = 0; i < expectResults.size(); i++) {
+        EXPECT_EQ(ToVector(*contextHolder.GetContext()->GetOutputShape(i)), expectResults[i]);
+    }
 }
 
 static void ExeTestCaseNoNFft(
@@ -127,10 +131,9 @@ TEST_F(STFT, STFT_FP32_IN_1D_NO_WIN_ONESIDED_RETURN_REAL)
     ge::DataType windowDtype = ge::DT_FLOAT;
     ge::DataType outputDtype = ge::DT_FLOAT;
     std::vector<int64_t> expectResult = {2, 3, 2};
-    ExeTestCase(
+    ExeTestCase({expectResult},
         xShape, windowShape, outputShape, inputDtype, windowDtype, outputDtype, hopLength, winLength, normalized,
         onesided, returnComplex, nFft, ge::GRAPH_SUCCESS);
-    EXPECT_EQ(ToVector(outputShape.GetOriginShape()), expectResult);
 }
 
 TEST_F(STFT, STFT_CFP128_IN_1D_NO_WIN_TWOSIDED_RETURN_COMPLEX)
@@ -148,10 +151,9 @@ TEST_F(STFT, STFT_CFP128_IN_1D_NO_WIN_TWOSIDED_RETURN_COMPLEX)
     ge::DataType windowDtype = ge::DT_FLOAT;
     ge::DataType outputDtype = ge::DT_COMPLEX64;
     std::vector<int64_t> expectResult = {3, 3};
-    ExeTestCase(
+    ExeTestCase({expectResult},
         xShape, windowShape, outputShape, inputDtype, windowDtype, outputDtype, hopLength, winLength, normalized,
         onesided, returnComplex, nFft, ge::GRAPH_SUCCESS);
-    EXPECT_EQ(ToVector(outputShape.GetOriginShape()), expectResult);
 }
 
 TEST_F(STFT, STFT_FP64_IN_2D_NO_WIN_ONESIDED_RETURN_REAL)
@@ -169,10 +171,9 @@ TEST_F(STFT, STFT_FP64_IN_2D_NO_WIN_ONESIDED_RETURN_REAL)
     ge::DataType windowDtype = ge::DT_FLOAT;
     ge::DataType outputDtype = ge::DT_FLOAT;
     std::vector<int64_t> expectResult = {1, 2, 3, 2};
-    ExeTestCase(
+    ExeTestCase({expectResult},
         xShape, windowShape, outputShape, inputDtype, windowDtype, outputDtype, hopLength, winLength, normalized,
         onesided, returnComplex, nFft, ge::GRAPH_SUCCESS);
-    EXPECT_EQ(ToVector(outputShape.GetOriginShape()), expectResult);
 }
 
 TEST_F(STFT, STFT_CFP64_IN_2D_NO_WIN_TWOSIDED_RETURN_COMPLEX)
@@ -190,10 +191,9 @@ TEST_F(STFT, STFT_CFP64_IN_2D_NO_WIN_TWOSIDED_RETURN_COMPLEX)
     ge::DataType windowDtype = ge::DT_FLOAT;
     ge::DataType outputDtype = ge::DT_COMPLEX64;
     std::vector<int64_t> expectResult = {1, 3, 3};
-    ExeTestCase(
+    ExeTestCase({expectResult},
         xShape, windowShape, outputShape, inputDtype, windowDtype, outputDtype, hopLength, winLength, normalized,
         onesided, returnComplex, nFft, ge::GRAPH_SUCCESS);
-    EXPECT_EQ(ToVector(outputShape.GetOriginShape()), expectResult);
 }
 
 TEST_F(STFT, STFT_FP64_IN_CFP128_WIN_RETURN_COMPLEX)
@@ -211,10 +211,9 @@ TEST_F(STFT, STFT_FP64_IN_CFP128_WIN_RETURN_COMPLEX)
     ge::DataType windowDtype = ge::DT_FLOAT;
     ge::DataType outputDtype = ge::DT_COMPLEX64;
     std::vector<int64_t> expectResult = {3, 3};
-    ExeTestCase(
+    ExeTestCase({expectResult},
         xShape, windowShape, outputShape, inputDtype, windowDtype, outputDtype, hopLength, winLength, normalized,
         onesided, returnComplex, nFft, ge::GRAPH_SUCCESS);
-    EXPECT_EQ(ToVector(outputShape.GetOriginShape()), expectResult);
 }
 
 TEST_F(STFT, STFT_FP64_IN_CFP128_WIN_RETURN_REAL)
@@ -232,10 +231,9 @@ TEST_F(STFT, STFT_FP64_IN_CFP128_WIN_RETURN_REAL)
     ge::DataType windowDtype = ge::DT_FLOAT;
     ge::DataType outputDtype = ge::DT_FLOAT;
     std::vector<int64_t> expectResult = {3, 3, 2};
-    ExeTestCase(
+    ExeTestCase({expectResult},
         xShape, windowShape, outputShape, inputDtype, windowDtype, outputDtype, hopLength, winLength, normalized,
         onesided, returnComplex, nFft, ge::GRAPH_SUCCESS);
-    EXPECT_EQ(ToVector(outputShape.GetOriginShape()), expectResult);
 }
 
 // exception instance
@@ -271,7 +269,7 @@ TEST_F(STFT, STFT_INPUT_NOT_1D_2D)
     ge::DataType inputDtype = ge::DT_FLOAT;
     ge::DataType windowDtype = ge::DT_FLOAT;
     ge::DataType outputDtype = ge::DT_FLOAT;
-    ExeTestCase(
+    ExeTestCase({},
         xShape, windowShape, outputShape, inputDtype, windowDtype, outputDtype, hopLength, winLength, normalized,
         onesided, returnComplex, nFft, ge::GRAPH_FAILED);
 }
@@ -290,7 +288,7 @@ TEST_F(STFT, STFT_WINDOWS_NOT_1D)
     ge::DataType inputDtype = ge::DT_FLOAT;
     ge::DataType windowDtype = ge::DT_FLOAT;
     ge::DataType outputDtype = ge::DT_FLOAT;
-    ExeTestCase(
+    ExeTestCase({},
         xShape, windowShape, outputShape, inputDtype, windowDtype, outputDtype, hopLength, winLength, normalized,
         onesided, returnComplex, nFft, ge::GRAPH_FAILED);
 }
@@ -309,7 +307,7 @@ TEST_F(STFT, STFT_WINDOWS_LEN_NOT_MATCH)
     ge::DataType inputDtype = ge::DT_FLOAT;
     ge::DataType windowDtype = ge::DT_FLOAT;
     ge::DataType outputDtype = ge::DT_FLOAT;
-    ExeTestCase(
+    ExeTestCase({},
         xShape, windowShape, outputShape, inputDtype, windowDtype, outputDtype, hopLength, winLength, normalized,
         onesided, returnComplex, nFft, ge::GRAPH_FAILED);
 }
