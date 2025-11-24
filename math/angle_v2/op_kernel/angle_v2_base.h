@@ -16,7 +16,6 @@
 #ifndef _ANGLE_V2_BASE_H_
 #define _ANGLE_V2_BASE_H_
 
-#include <cmath>
 #include "kernel_tiling/kernel_tiling.h"
 #include "kernel_operator.h"
 
@@ -26,8 +25,18 @@ using namespace AscendC;
 constexpr int32_t BUFFER_NUM = 2;
 constexpr int32_t COEFFICENT = 2;
 
+const double PI = 3.14159265358979323846;
+
+#ifndef INFINITY
+#define INFINITY (__builtin_inff())
+#endif
+
+#ifndef NAN
+#define NAN (__builtin_nanf(""))
+#endif
+
 struct ConstData {
-    const float const_pi = M_PI;
+    const float const_pi = PI;
     const float const_pi_by_two = const_pi / 2;
     const float const_pi_by_four = const_pi / 4;
     const float const_pi_by_three_quarters = const_pi * 3 / 4;
