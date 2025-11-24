@@ -20,7 +20,7 @@ ${op_name}                              # 替换为实际算子名的小写下�
 
 **1. 注册InferShape与InferDataType。**
 
-   实现两个目标函数之前，需要先进行注册，框架判断算子的shape和data type推导逻辑由哪两个函数来处理。
+   实现两个目标函数之前，需要先进行注册，框架判断算子的shape和dataType推导逻辑由哪两个函数来处理。
 
 **2. InferShape推导实现。**
 
@@ -28,7 +28,7 @@ ${op_name}                              # 替换为实际算子名的小写下�
 
 **3. InferDataType推导实现。**
 
-   InferDataType函数的作用是根据输入的data type推导输出的data type。
+   InferDataType函数的作用是根据输入的dataType推导输出的dataType。
 
 根据上述步骤，编写`AddExample`算子的推导实现，示例代码如下：
 
@@ -79,9 +79,9 @@ IMPL_OP_INFERSHAPE(AddExample).
 
 ```CPP
 REG_OP(AddExample)
-    .INPUT(x1, TensorType({DT_FLOAT}))
-    .INPUT(x2, TensorType({DT_FLOAT}))
-    .OUTPUT(y, TensorType({DT_FLOAT}))
+    .INPUT(x1, TensorType({DT_FLOAT, DT_INT32}))
+    .INPUT(x2, TensorType({DT_FLOAT, DT_INT32}))
+    .OUTPUT(y, TensorType({DT_FLOAT, DT_INT32}))
     .OP_END_FACTORY_REG(AddExample)
 ```
 
