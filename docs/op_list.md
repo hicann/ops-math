@@ -39,7 +39,7 @@
 | conversion   | [pad_v3_grad_replication](../conversion/pad_v3_grad_replication/README.md)      | AI Core   | padv3 3D的反向传播。     |
 | conversion   | [pad_v4_grad](../conversion/pad_v4_grad/README.md)        | AI Core      | pad之后的输入的反向传播。   |
 | conversion   | [reflection_pad3d_grad](../conversion/reflection_pad3d_grad/README.md)     | AI Core    | 计算aclnnReflectionPad3d api的反向传播。             |
-| conversion   | [stack_ball_query](../conversion/stack_ball_query/README.md)       | AI Core   | Stack Ball Query 是KNN的替代方案，用于查找点p1指定半径范围内的所有点(在实现中设置了K的上限)。          |
+| conversion   | [stack_ball_query](../conversion/stack_ball_query/README.md)       | AI Core   | Stack Ball Query 是KNN的替代方案，用于查找点p1指定半径范围内的所有点（在实现中设置了K的上限）。          |
 | conversion   | [strided_slice_assign_v2](../conversion/strided_slice_assign_v2/README.md) | AI Core    | StridedSliceAssign是一种张量切片赋值操作，它可以将张量inputValue的内容，赋值给目标张量varRef中的指定位置。   |
 | conversion   | [transpose_v2](../conversion/transpose_v2/README.md)       | AI Core     | 实现张量的维度置换（Permutation）操作，按照指定的顺序重新排列输入张量的维度。        |
 | conversion   | [unfold_grad](../conversion/unfold_grad/README.md)       | AI Core     | 实现Unfold算子的反向功能，计算相应的梯度。       |

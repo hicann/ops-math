@@ -79,7 +79,7 @@ AscendOps 是一个轻量级，高性能的算子开发工程模板，它集成�
     pip install dist/xxx.whl --force-reinstall --no-deps
     ```
 
-4. (可选)再次构建前建议先执行以下命令清理编译缓存
+4. （可选）再次构建前建议先执行以下命令清理编译缓存
    ```sh
     python setup.py clean
     ```
@@ -184,7 +184,7 @@ compare CPU Result vs NPU Result: True
     }
     ```
 
-4. (可选)在 `ascend_ops/ops.py`中封装自定义接口
+4. （可选）在 `ascend_ops/ops.py`中封装自定义接口
     ```python
     def my_ops(x: Tensor) -> Tensor:
         return torch.ops.ascend_ops.my_ops.default(x)
