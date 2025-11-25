@@ -9,7 +9,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-# 为target link依赖库 useage: add_modules(MODE SUB_LIBS EXTERNAL_LIBS) SUB_LIBS 为内部创建的target, EXTERNAL_LIBS为外部依赖的target
+# 为target link依赖库 usage: add_modules(MODE SUB_LIBS EXTERNAL_LIBS) SUB_LIBS 为内部创建的target, EXTERNAL_LIBS为外部依赖的target
 function(add_modules)
   set(oneValueArgs MODE)
   set(multiValueArgs TARGETS SUB_LIBS EXTERNAL_LIBS)
@@ -190,7 +190,7 @@ function(add_op_graph_modules)
   endif()
 endfunction()
 
-# useage: add_modules_sources(OPTYPE ACLNNTYPE) ACLNNTYPE 支持类型aclnn/aclnn_inner/aclnn_exclude OPTYPE 和 ACLNNTYPE
+# usage: add_modules_sources(OPTYPE ACLNNTYPE) ACLNNTYPE 支持类型aclnn/aclnn_inner/aclnn_exclude OPTYPE 和 ACLNNTYPE
 # 需一一对应
 macro(add_modules_sources)
   set(multiValueArgs OPTYPE ACLNNTYPE)
@@ -338,7 +338,7 @@ function(add_dependent_ops dependent_ops)
   endforeach()
 endfunction()
 
-# useage: add_moduladd_all_modules_sourceses_sources(OPTYPE ACLNNTYPE DEPENDENCIES)
+# usage: add_moduladd_all_modules_sourceses_sources(OPTYPE ACLNNTYPE DEPENDENCIES)
 # ACLNNTYPE 支持类型aclnn/aclnn_inner/aclnn_exclude
 # OPTYPE 和 ACLNNTYPE 需一一对应
 # DEPENDENCIES 指定依赖的算子名称列表
@@ -460,7 +460,7 @@ macro(add_all_modules_sources)
   add_all_ut_sources()
 endmacro()
 
-# useage: add_all_ut_sources()
+# usage: add_all_ut_sources()
 macro(add_all_ut_sources)
   set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
   file(GLOB TEST_OP_API_SRCS ${SOURCE_DIR}/tests/ut/op_api/*_aclnn*.cpp)
@@ -487,7 +487,7 @@ macro(add_all_ut_sources)
   endif()
 endmacro()
 
-# useage: add_graph_plugin_sources()
+# usage: add_graph_plugin_sources()
 macro(add_graph_plugin_sources)
   set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -511,6 +511,63 @@ macro(add_graph_plugin_sources)
   file(GLOB OP_GRAPH_PROTO_HEADERS ${SOURCE_DIR}/*_proto*.h)
   if(OP_GRAPH_PROTO_HEADERS)
     target_sources(${GRAPH_PLUGIN_NAME}_proto_headers INTERFACE ${OP_GRAPH_PROTO_HEADERS})
+  endif()
+endmacro()
+
+# usage: add_torch_extension_sources("--npu-arch=dav-2201 -xasc")
+macro(add_torch_extension_sources USER_COMPILE_FLAGS)
+  if(ENABLE_TORCH_EXTENSION)
+    unset(CMAKE_CXX_FLAGS)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+    if(NOT CMAKE_BUILD_TYPE)
+      set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type (Release/Debug)" FORCE)
+    endif()
+
+    if(DEFINED BISHENG)
+      set(CMAKE_C_COMPILER ${BISHENG})
+      set(CMAKE_CXX_COMPILER ${BISHENG})
+      set(CMAKE_LINKER ${BISHENG})
+    endif()
+
+    message(STATUS "CMAKE_CURRENT_SOURCE_DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
+    get_filename_component(_PARENT_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
+    get_filename_component(_OPERATOR_NAME ${_PARENT_DIR} NAME)
+    set(_TARGET "${_OPERATOR_NAME}_kernel_obj")
+    file(GLOB _CPP_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*_torch.cpp")
+    if(_CPP_SOURCES)
+      message(STATUS "OPERATOR_NAME: ${_OPERATOR_NAME}")
+      message(STATUS "TARGET: ${_TARGET}")
+      message(STATUS "CPP_SOURCES = ${_CPP_SOURCES}")
+      message(STATUS "COMPILE_FLAGS = ${USER_COMPILE_FLAGS}")
+
+      set_source_files_properties(
+        ${_CPP_SOURCES} PROPERTIES
+        LANGUAGE CXX
+        COMPILE_FLAGS "${USER_COMPILE_FLAGS}"
+      )
+      add_library(${_TARGET} OBJECT ${_CPP_SOURCES})
+      if(DEFINED TORCH_EXTENSION_COMPILE_OPTIONS)
+        target_compile_options(${_TARGET} PRIVATE ${TORCH_EXTENSION_COMPILE_OPTIONS})
+      endif()
+      if(DEFINED TORCH_EXTENSION_INCLUDE_DIRS)
+        target_include_directories(${_TARGET} PRIVATE ${TORCH_EXTENSION_INCLUDE_DIRS})
+      endif()
+
+      set(_NEW_OBJECT_EXPRESSION $<TARGET_OBJECTS:${_TARGET}>)
+      set(_TMP_LIST ${TORCH_EXTENSION_OPERATOR_TARGETS})
+      list(APPEND _TMP_LIST ${_NEW_OBJECT_EXPRESSION})
+      set(TORCH_EXTENSION_OPERATOR_TARGETS
+        ${_TMP_LIST}
+        CACHE INTERNAL
+        "List of torch extension operator objects"
+      )
+    else()
+      message(STATUS "No *_torch.cpp sources found in ${CMAKE_CURRENT_SOURCE_DIR}, skipping target creation.")
+    endif()
   endif()
 endmacro()
 

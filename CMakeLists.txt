@@ -36,6 +36,7 @@ option(ENABLE_BINARY "Enable build binary" OFF)
 option(ENABLE_CUSTOM "Enable build custom" OFF)
 option(ENABLE_PACKAGE "Enable build package" OFF)
 option(ENABLE_EXPERIMENTAL "Enable experimental module" OFF)
+option(ENABLE_TORCH_EXTENSION "Enable torch extension module" OFF)
 
 option(OP_HOST_UT "Enable ophost ut" OFF)
 option(OP_API_UT "Enable opapi ut" OFF)
@@ -47,6 +48,7 @@ set(ASCEND_COMPUTE_UNIT "ascend910b" CACHE STRING "soc that need to be compiled"
 set(ASCEND_ALL_COMPUTE_UNIT "ascend310p;ascend910;ascend910b;ascend910_93" CACHE STRING "all soc list")
 set(ASCEND_OP_NAME "" CACHE STRING "operators that need to be compiled")
 set(VENDOR_NAME "custom" CACHE STRING "vendor name")
+set(TORCH_EXTENSION_OPERATOR_TARGETS "" CACHE INTERNAL "List of torch extension operator objects" FORCE)
 
 if("${BUILD_MODE}" STREQUAL "-O0" OR "${BUILD_MODE}" STREQUAL "-O1" OR
    "${BUILD_MODE}" STREQUAL "-O2" OR "${BUILD_MODE}" STREQUAL "-O3"
@@ -72,6 +74,9 @@ include(cmake/third_party/eigen.cmake)
 include(cmake/func.cmake)
 include(cmake/intf_pub_linux.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/ut.cmake)
+if(ENABLE_TORCH_EXTENSION)
+    include(cmake/torch_extension.cmake)
+endif()
 
 add_subdirectory(common)
 if(ENABLE_EXPERIMENTAL)
@@ -107,6 +112,10 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG AND NOT ENABLE_TEST)
   else()
     gen_norm_symbol()
   endif()
+endif()
+
+if(ENABLE_TORCH_EXTENSION)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/scripts/torch_extension)
 endif()
 
 if(ENABLE_PACKAGE)

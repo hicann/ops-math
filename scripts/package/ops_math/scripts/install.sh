@@ -528,7 +528,7 @@ get_opts() {
         ;;
       -*)
         echo "[OpsMath] [ERROR]: ERR_NO:${PARAM_INVALID};ERR_DES:Unsupported parameters [$1],\
- operation execute failed. Please use [--help] to see the useage."
+ operation execute failed. Please use [--help] to see the usage."
         exitlog
         exit 1
         ;;

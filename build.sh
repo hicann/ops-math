@@ -22,7 +22,7 @@ SUPPORTED_LONG_OPTS=(
   "help" "ops=" "soc=" "vendor_name=" "debug" "cov" "noexec" "aicpu" "opkernel" "jit"
   "pkg" "disable_asan" "valgrind" "make_clean"
   "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test"
-  "run_example" "genop=" "genop_aicpu=" "experimental"
+  "run_example" "genop=" "genop_aicpu=" "experimental" "torch_extension"
 )
 
 in_array() {
@@ -289,6 +289,16 @@ usage() {
         echo "    bash build.sh --genop_aicpu=examples/add"
         return
         ;;
+      torch_extension)
+        echo "Build Torch Extension Options:"
+        echo $dotted_line
+        echo "    --torch_extension      Create torch extension wheel package"
+        echo $dotted_line
+        echo "Examples:"
+        echo "    bash build.sh --torch_extension"
+        echo "    bash build.sh --torch_extension --experimental"
+        return
+        ;;
     esac
   fi
 
@@ -337,6 +347,7 @@ usage() {
   echo "    --run_example Compile and execute the test_aclnn_xxx.cpp/test_geir_xxx.cpp"
   echo "    --genop Create the initial directory for op"
   echo "    --genop_aicpu Create the initial directory for AI CPU op"
+  echo "    --torch_extension Create torch extension wheel package"
   echo "to be continued ..."
 }
 
@@ -499,6 +510,7 @@ checkopts() {
   ENABLE_PACKAGE=FALSE
   ENABLE_TEST=FALSE
   ENABLE_EXPERIMENTAL=FALSE
+  ENABLE_TORCH_EXTENSION=FALSE
   AICPU_ONLY=FALSE
   OP_API_UT=FALSE
   OP_HOST_UT=FALSE
@@ -557,6 +569,7 @@ checkopts() {
           --run_example) SHOW_HELP="run_example" ;;
           --genop) SHOW_HELP="genop" ;;
           --genop_aicpu) SHOW_HELP="genop_aicpu" ;;
+          --torch_extension) SHOW_HELP="torch_extension" ;;
         esac
       done
 
@@ -653,6 +666,7 @@ checkopts() {
           ;;
         run_example) ENABLE_RUN_EXAMPLE=TRUE ;;
         experimental) ENABLE_EXPERIMENTAL=TRUE ;;
+        torch_extension) ENABLE_TORCH_EXTENSION=TRUE ;;
         make_clean)
           clean_build
           clean_build_out
@@ -970,6 +984,63 @@ build_ut() {
   fi
 }
 
+build_torch_extension() {
+  echo "--------------- build torch extension start ---------------"
+  # 检查 python 或 python3 是否存在
+  local python_cmd=""
+  if command -v python3 &> /dev/null; then
+      python_cmd="python3"
+  elif command -v python &> /dev/null; then
+      python_cmd="python"
+  fi
+
+  if [ -z "${python_cmd}" ]; then
+    echo "Please install Python to compile torch extension."
+    return 1
+  fi
+
+  local setup_dir="${BASE_PATH}/scripts/torch_extension"
+  if [ ! -d "${setup_dir}" ]; then
+    echo "Error: Setup directory not found at ${setup_dir}"
+    return 1
+  fi
+
+  (
+    cd "${setup_dir}" || { echo "Failed to change directory to ${setup_dir}"; return 1; }
+    echo "Executing compilation: ${python_cmd} ./setup.py bdist_wheel"
+    export ENABLE_EXPERIMENTAL=${ENABLE_EXPERIMENTAL}
+    ${python_cmd} ./setup.py bdist_wheel
+    local compilation_status=$?
+
+    if [ $compilation_status -eq 0 ]; then
+      echo "Compilation successful. Proceeding to copy files."
+      local source_dist_dir="./dist"
+
+      if [ -d "${source_dist_dir}" ]; then
+        mkdir -p "${BUILD_OUT_PATH}"
+        cp -r "${source_dist_dir}" "${BUILD_OUT_PATH}/"
+
+        if [ $? -eq 0 ]; then
+          echo "Success: ${source_dist_dir} copied to ${BUILD_OUT_PATH}"
+          return 0
+        else
+          echo "Error: Failed to copy ${source_dist_dir} to ${BUILD_OUT_PATH}"
+          return 1
+        fi
+      else
+        echo "Error: Compilation succeeded, but 'dist' directory not found."
+        return 1
+      fi
+    else
+      echo "Compilation failed with exit code $compilation_status."
+      return $compilation_status
+    fi
+  )
+
+  return $?
+  echo "--------------- build torch extension end ---------------"
+}
+
 build_example() {
   echo $dotted_line
   echo "Start to run examples,name:${EXAMPLE_NAME} mode:${EXAMPLE_MODE}"
@@ -1120,6 +1191,9 @@ main() {
   fi
   if [[ "$ENABLE_GENOP_AICPU" == "TRUE" ]]; then
     gen_aicpu_op
+  fi
+  if [[ "$ENABLE_TORCH_EXTENSION" == "TRUE" ]]; then
+    build_torch_extension
   fi
 }
 
