@@ -125,7 +125,7 @@ aclnnStatus aclnnAddLora(
       <td>indices</td>
       <td>输入</td>
       <td>标识输入x的分组索引，公式中的输入indices。</td>
-      <td><ul><li>shape维度1维：[B]。</li><li>shape维度1维：[B]。</li><li>第一维需要和x以及y的第一维保持一致，都用`B`表示。</li><li>不支持空Tensor。</li></td>
+      <td><ul><li>shape维度1维：[B]。</li><li>第一维需要和x以及y的第一维保持一致，都用`B`表示。</li><li>不支持空Tensor。</li></td>
       <td>INT32</td>
       <td>ND</td>
       <td>1</td>
@@ -135,7 +135,7 @@ aclnnStatus aclnnAddLora(
       <td>weightAOptional</td>
       <td>输入</td>
       <td>表示进行矩阵乘的第一个权重矩阵，为空时会跳过第一个矩阵乘，公式中的weightA。</td>
-      <td><ul><li>shape维度4维：[W, L, R, H1]，前两维需要和`weightB`的前两维一致，用`W`和`L`表示，其中W的范围支持1~32；L范围支持1~32；第三维需要和`weightB`的第四维保持一致，都用`R`表示；第四维需要和`x`的第二维保持一致，都用`H1`表示，需要是16的整数倍。</li><li>不支持空Tensor。</li></td>
+      <td><ul><li>shape维度4维：[W, L, R, H1]，前两维需要和`weightB`的前两维一致，用`W`和`L`表示，其中W的范围支持1~32；L的范围支持1~32；第三维需要和`weightB`的第四维保持一致，都用`R`表示；第四维需要和`x`的第二维保持一致，都用`H1`表示，需要是16的整数倍。</li><li>不支持空Tensor。</li></td>
       <td>FLOAT16</td>
       <td>ND</td>
       <td></td>
