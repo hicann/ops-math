@@ -50,7 +50,7 @@
   <tr>
     <td class="tg-0pky">padding</td>
     <td class="tg-0pky">输入</td>
-    <td class="tg-0lax">长度为2或4，长度为2时表示1d左右需要填充的值，padding的前两个值都需要小于self最后一维度的数值；长度为4时表示2d左右上下需要填充的值，padding的前两个值都需要小于self最后一维度的数值，后两个值需要小于倒数第二维的数值。</td>
+    <td class="tg-0lax">长度为2或4，长度为2时表示1d左右需要填充的值，padding的前两个值都需要小于self最后一维的数值；长度为4时表示2d左右上下需要填充的值，padding的前两个值都需要小于self最后一维的数值，后两个值需要小于倒数第二维的数值。</td>
     <td class="tg-0lax">INT64</td>
     <td class="tg-0lax"></td>
   </tr>
@@ -67,7 +67,7 @@
 
   输入shape限制：gradOutput、self 和 gradInput 的维度需一致（支持三/四维），且它们的形状需与 replication_pad1d/replication_pad2d 正向传播的输出形状相互一致。
 
-  输入值域限制：padding长度为2时，padding的前两个值都需要小于self最后一维度的数值；长度为4时，padding的前两个值都需要小于self最后一维度的数值，后两个值需要小于倒数第二维的数值。
+  输入值域限制：padding长度为2时，padding的前两个值都需要小于self最后一维的数值；长度为4时，padding的前两个值都需要小于self最后一维的数值，后两个值需要小于倒数第二维的数值。
 
 ## 调用说明
 
