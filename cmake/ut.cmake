@@ -29,7 +29,7 @@ if(UT_TEST_ALL OR OP_HOST_UT)
     target_sources(${OP_TILING_MODULE_NAME}_common_obj PRIVATE ${OP_TILING_UT_COMMON_SRC})
     target_include_directories(
       ${OP_TILING_MODULE_NAME}_common_obj PRIVATE ${JSON_INCLUDE_DIR} ${GTEST_INCLUDE}
-                                                  ${ASCEND_DIR}/include/base/context_builder ${OPBASE_INC_DIRS}
+                                                  ${ASCEND_DIR}/include/base/context_builder ${ASCEND_DIR}/pkg_inc/base ${OPBASE_INC_DIRS}
       )
     target_link_libraries(
       ${OP_TILING_MODULE_NAME}_common_obj PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> json gtest c_sec
@@ -290,7 +290,7 @@ if(UT_TEST_ALL OR OP_KERNEL_UT)
         ${opName}_${socVersion}_tiling_tmp
         PRIVATE ${OPBASE_INC_DIRS} ${PROJECT_SOURCE_DIR}/common/inc
                 ${ASCEND_DIR}/include/tiling
-                ${ASCEND_DIR}/include/toolchain ${ASCEND_DIR}/pkg_inc/base
+                ${ASCEND_DIR}/include/toolchain ${ASCEND_DIR}/pkg_inc/base ${OPBASE_INC_DIRS}
         )
       target_compile_definitions(${opName}_${socVersion}_tiling_tmp PRIVATE LOG_CPP _GLIBCXX_USE_CXX11_ABI=0)
       target_link_libraries(
@@ -345,6 +345,7 @@ if(UT_TEST_ALL OR OP_KERNEL_UT)
         ${opName}_${socVersion}_cases_obj
         PRIVATE ${ASCEND_DIR}/include/base/context_builder ${PROJECT_SOURCE_DIR}/tests/ut/op_kernel
                 ${PROJECT_SOURCE_DIR}/tests/ut/common ${PROJECT_SOURCE_DIR}/common/inc
+                ${ASCEND_DIR}/pkg_inc/base
                 ${ASCEND_DIR}/include/tiling ${OPBASE_INC_DIRS}
         )
       target_link_libraries(
