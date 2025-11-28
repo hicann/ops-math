@@ -19,7 +19,7 @@
 #include "../../../op_host/ring_attention_update_tiling.h"
 #include "../../../op_kernel/ring_attention_update.h"
 #include "../../../op_kernel/ring_attention_update_tnd.h"
-#include "../../../../../math/ring_attention_update/op_kernel/ring_attention_update.cpp"
+// #include "../../../../../math/ring_attention_update/op_kernel/ring_attention_update.cpp"
 #include "data_utils.h"
 
 #include <cstdint>
