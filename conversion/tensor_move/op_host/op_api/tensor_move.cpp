@@ -76,7 +76,7 @@ const aclTensor* TensorMoveAiCpu(const aclTensor* x, const aclTensor* y, aclOpEx
 
 bool IsCopyNpuToNpu(const aclTensor* x)
 {
-    auto dataSize = x->GetViewShape().GetShapeSize() * op::TypeSize(x->GetDataType());
+    auto dataSize = static_cast<uint64_t>(x->GetViewShape().GetShapeSize()) * op::TypeSize(x->GetDataType());
     auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
     if (socVersion == op::SocVersion::ASCEND910B || socVersion == op::SocVersion::ASCEND910_93) {
         return static_cast<int64_t>(dataSize) <= DATA_LIMIT_910B;
