@@ -115,7 +115,7 @@ aclnnStatus aclnnAddLora(
       <td>weightB</td>
       <td>输入</td>
       <td>表示进行矩阵乘的第二个权重矩阵，公式中的weightB。</td>
-      <td><ul><li>shape维度4维：[W, L, H2, R]，第三维需要小于y的第二维（H2 < H3），且H2是16的整数倍，同时H2的范围必须支持1~131072；R的范围必须支持1~128，同时为16的整数倍。</li><li>不支持空Tensor。</li></ul></td>
+      <td><ul><li>shape维度4维：[W, L, H2, R]，第三维需要小于等于y的第二维（H2 ≤ H3），且H2是16的整数倍，同时H2的范围必须支持1~131072；R的范围必须支持1~128，同时为16的整数倍。</li><li>不支持空Tensor。</li></ul></td>
       <td>FLOAT16</td>
       <td>ND</td>
       <td>4</td>
@@ -175,7 +175,7 @@ aclnnStatus aclnnAddLora(
       <td>ySliceSize</td>
       <td>输入</td>
       <td>表示y更新时的范围，公式中的ySliceSize。</td>
-      <td>值需要小于y的第二个维度H3。</td>
+      <td>值需要小于等于y的第二个维度H3。</td>
       <td>INT</td>
       <td>-</td>
       <td>-</td>
@@ -217,32 +217,40 @@ aclnnStatus aclnnAddLora(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
-  第一段接口会完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed;width: 979px"><colgroup>
-  <col style="width: 272px">
-  <col style="width: 103px">
-  <col style="width: 604px">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>返回码</th>
-      <th>错误码</th>
-      <th>描述</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>ACLNN_ERR_PARAM_NULLPTR</td>
-      <td>161001</td>
-      <td>传入的输入参数（x, y, weightB, indices）或输出参数out是空指针。</td>
-    </tr>
-    <tr>
-      <td rowspan="8">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="8">161002</td>
-      <td><ul><li>输入/输出参数的数据类型不在支持的范围之内。</li><li>多个输入tensor之间的shape信息不匹配（详见参数说明）。</li><li>输入tensor的shape信息暂不支持（详见参数说明）。</li></ul></td>
-    </tr>
-  </tbody></table>
+aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+第一段接口会完成入参校验，出现以下场景时报错：
+<table style="undefined;table-layout: fixed; width: 1048px"><colgroup>
+<col style="width: 319px">
+<col style="width: 108px">
+<col style="width: 621px">
+</colgroup>
+<thead>
+  <tr>
+    <th>返回码</th>
+    <th>错误码</th>
+    <th>描述</th>
+  </tr></thead>
+<tbody>
+  <tr>
+    <td>ACLNN_ERR_PARAM_NULLPTR</td>
+    <td>161001</td>
+    <td>传入的输入参数（x, y, weightB, indices）或输出参数out是空指针。</td>
+  </tr>
+  <tr>
+    <td>ACLNN_ERR_PARAM_INVALID</td>
+    <td>161002</td>
+    <td>输入参数（x, y, weightB, indices）或输出参数的数据类型不在支持的范围之内。</td>
+  </tr>
+  <tr>
+    <td rowspan="3">ACLNN_ERR_INNER_TILING_ERROR</td>
+    <td rowspan="3">561002</td>
+    <td>多个输入tensor之间的shape信息不匹配（详见参数说明）。</td>
+  </tr>
+  <tr>
+    <td>输入tensor的shape信息暂不支持（详见参数说明）。</td>
+  </tr>
+</tbody>
+</table>
 
 ## aclnnFatreluMul
 
