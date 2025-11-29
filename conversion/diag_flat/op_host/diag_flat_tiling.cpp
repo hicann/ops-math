@@ -14,7 +14,7 @@
  * \brief
  */
 
-#include "../../../math/diag_v2/op_host/diag_v2_tiling.h"
+#include "../../diag_v2/op_host/diag_v2_tiling.h"
 #include "util/math_util.h"
 #include "log/log.h"
 #include "tiling/platform/platform_ascendc.h"

@@ -13,7 +13,7 @@
 #include <fstream>
 #include <vector>
 #include <gtest/gtest.h>
-#include "../../../../../math/diag_v2/op_host/diag_v2_tiling.h"
+#include "../../../../diag_v2/op_host/diag_v2_tiling.h"
 
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
@@ -52,4 +52,4 @@ TEST_F(diagFlatTiling, test_diag_flat_tiling_fp16_fp16) {
     string expectTilingData = "0 0 0 0 0 0 0 101 0 8 48 1 8 0 163840 16384 0 16778752 ";
     std::vector<size_t> expectWorkspaces = {16778752};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
-}
+} 

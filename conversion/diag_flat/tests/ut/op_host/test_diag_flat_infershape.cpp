@@ -100,4 +100,4 @@ TEST_F(diagFlatInfer, diag_flat_infershape_case_tiling_key_101)
     int64_t attr = 0;
     // 简化后的函数调用
     ExeTestCaseForDiagFlat({expectResult}, inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS, attr);
-}
+} 
