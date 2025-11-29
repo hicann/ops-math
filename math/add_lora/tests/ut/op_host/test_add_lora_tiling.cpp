@@ -29,7 +29,7 @@ protected:
     }
 };
 
-struct AddLoraCompileInfo {
+struct Tiling4AddLoraCompileInfo {
     uint32_t coreNum = 0;
     uint64_t ubSizePlatForm = 0;
     bool isAscend310P = false;
@@ -37,15 +37,15 @@ struct AddLoraCompileInfo {
 
 TEST_F(AddLoraTiling, ascend910B1_test_tiling__001)
 {
-    AddLoraCompileInfo compileInfo = {64, 262144, true};
+    Tiling4AddLoraCompileInfo compileInfo = {64, 262144, false};
     gert::TilingContextPara tilingContextPara(
         "AddLora",
         {
             {{{1, 4096}, {1, 4096}}, ge::DT_FLOAT16, ge::FORMAT_ND},
             {{{1, 16}, {1, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+            {{{2, 1, 4096, 16}, {2, 1, 4096, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
             {{{2, 1, 16, 16}, {2, 1, 16, 16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 1, 4096, 16}, {2, 1, 4096, 16}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
         },
         {
             {{{1, 4096}, {1, 4096}}, ge::DT_FLOAT16, ge::FORMAT_ND},
@@ -54,9 +54,9 @@ TEST_F(AddLoraTiling, ascend910B1_test_tiling__001)
          gert::TilingContextPara::OpAttr("scale", Ops::Math::AnyValue::CreateFrom<float>(0.01)),
          gert::TilingContextPara::OpAttr("y_offset", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
          gert::TilingContextPara::OpAttr("y_slice_size", Ops::Math::AnyValue::CreateFrom<int64_t>(4096))},
-        &compileInfo);
+         &compileInfo);
     uint64_t expectTilingKey = 100001;
-    string expectTilingData = "4294967360 68719476737 68719476752 2 1008981770 4096 0 4096 ";
-    std::vector<size_t> expectWorkspaces = {17827040};
+    string expectTilingData = "4294967360 68719476737 68719480832 2 1008981770 4096 4294967328 4096 ";
+    std::vector<size_t> expectWorkspaces = {17957600};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

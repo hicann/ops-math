@@ -18,21 +18,8 @@
 #include "log/log.h"
 #include "util/math_util.h"
 #include "register/op_impl_registry.h"
+#include "register/op_def_registry.h"
 #include "tiling_base/tiling_templates_registry.h"
-
-namespace {
-constexpr uint64_t WORKSIZE = 16UL * 1024UL * 1024UL;
-constexpr uint64_t SOC_TILINGKEY_OFFSET = 100000UL;
-constexpr uint32_t VECTORDOUBLE = 2;
-constexpr uint32_t CUBESIZE = 16;
-constexpr uint32_t INDEXZERO = 0;
-constexpr uint32_t INDEXONE = 1;
-constexpr uint32_t INDEXTWO = 2;
-constexpr uint32_t INDEXTHREE = 3;
-constexpr uint32_t INDEXFOUR = 4;
-constexpr uint32_t INDEXFIVE = 5;
-struct AddLoraCompileInfo {};
-} // namespace
 
 namespace optiling {
 void AddLoraTiling::Reset()
@@ -42,12 +29,81 @@ void AddLoraTiling::Reset()
 
 ge::graphStatus AddLoraTiling::GetPlatformInfo()
 {
+    auto platformInfo = context_->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(context_, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    auto coreNum = ascendcPlatform.GetCoreNum();
+    OP_CHECK_IF(coreNum <= 0,
+                OP_LOGE(context_->GetNodeName(), "Failed to get core num."),
+                return ge::GRAPH_FAILED);
+    uint64_t ubSizePlatForm;
+    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
+    OP_CHECK_IF(ubSizePlatForm <= 0,
+                OP_LOGE(context_->GetNodeName(), "Failed to get ub size."),
+                return ge::GRAPH_FAILED);
+    coreNum_ = ascendcPlatform.GetCoreNumAic();
+    isAscend310P_ = ascendcPlatform.GetSocVersion() == platform_ascendc::SocVersion::ASCEND310P;
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus AddLoraTiling::GetShapeAttrsInfo()
 {
-    OP_CHECK_IF(context_ == nullptr, OP_LOGE("AddLora", "context is null"), return ge::GRAPH_FAILED);
+    yParaInfo_.desc = context_->GetInputDesc(Y_INPUT_INDEX);
+    yParaInfo_.shape = context_->GetInputShape(Y_INPUT_INDEX);
+    xParaInfo_.desc = context_->GetInputDesc(X_INPUT_INDEX);
+    xParaInfo_.shape = context_->GetInputShape(X_INPUT_INDEX);
+    weightBParaInfo_.desc = context_->GetInputDesc(WEIGHTB_INPUT_INDEX);
+    weightBParaInfo_.shape = context_->GetInputShape(WEIGHTB_INPUT_INDEX);
+
+    indicesParaInfo_.desc = context_->GetInputDesc(INDICES_INPUT_INDEX);
+    indicesParaInfo_.shape = context_->GetInputShape(INDICES_INPUT_INDEX);
+    weightAParaInfo_.desc = context_->GetOptionalInputDesc(WEIGHTA_INPUT_INDEX);
+    weightAParaInfo_.tensor = context_->GetOptionalInputTensor(WEIGHTA_INPUT_INDEX);
+    yOutParaInfo_.desc = context_->GetOutputDesc(OUTPUT_INDEX);
+    yOutParaInfo_.shape = context_->GetOutputShape(OUTPUT_INDEX);
+
+    attrs_ = context_->GetAttrs();
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus AddLoraTiling::CheckInputDataType()
+{
+    const gert::CompileTimeTensorDesc *yDesc = yParaInfo_.desc;
+    OP_CHECK_IF(yDesc == nullptr, OP_LOGE(context_->GetNodeName(), "AddLora desc of tensor y is nullptr."),
+                return ge::GRAPH_FAILED);
+    ge::DataType yDataType = yDesc->GetDataType();
+    OP_CHECK_IF(yDataType != ge::DT_FLOAT16,
+                OP_LOGE(context_->GetNodeName(),
+                "AddLora y dtype current is %d, is invalid, should be float16.", yDataType),
+                return ge::GRAPH_FAILED);
+
+    const gert::CompileTimeTensorDesc *xDesc = xParaInfo_.desc;
+    OP_CHECK_IF(xDesc == nullptr, OP_LOGE(context_->GetNodeName(), "AddLora desc of tensor x is nullptr."),
+                return ge::GRAPH_FAILED);
+    ge::DataType xDataType = xDesc->GetDataType();
+    OP_CHECK_IF(xDataType != ge::DT_FLOAT16,
+                OP_LOGE(context_->GetNodeName(),
+                "AddLora x dtype current is %d, is invalid, should be float16.", xDataType),
+                return ge::GRAPH_FAILED);
+
+    const gert::CompileTimeTensorDesc *weightBDesc = weightBParaInfo_.desc;
+    OP_CHECK_IF(weightBDesc == nullptr, OP_LOGE(context_->GetNodeName(), "AddLora desc of tensor weightB is nullptr."),
+                return ge::GRAPH_FAILED);
+    ge::DataType weightBDataType = weightBDesc->GetDataType();
+    OP_CHECK_IF(weightBDataType != ge::DT_FLOAT16,
+                OP_LOGE(context_->GetNodeName(),
+                "AddLora weightB dtype current is %d, is invalid, should be float16.", weightBDataType),
+                return ge::GRAPH_FAILED);
+
+    const gert::Tensor *weightATensor = weightAParaInfo_.tensor;
+    const gert::CompileTimeTensorDesc *weightADesc = weightAParaInfo_.desc;
+    if (weightATensor != nullptr && weightADesc != nullptr) {
+        ge::DataType weightADataType = weightADesc->GetDataType();
+        OP_CHECK_IF(weightADataType != ge::DT_FLOAT16,
+                    OP_LOGE(context_->GetNodeName(),
+                    "AddLora weightA dtype current is %d, is invalid, should be float16.", weightADataType),
+                    return ge::GRAPH_FAILED);
+    }
     return ge::GRAPH_SUCCESS;
 }
 
@@ -56,76 +112,212 @@ bool AddLoraTiling::IsCapable()
     return true;
 }
 
-bool AddLoraTiling::CheckTilingValidation()
+ge::graphStatus AddLoraTiling::CheckInputTensorShape()
 {
-    OP_CHECK_IF(
-        addLoraFlag && tilingData_.get_R() > MAX_RANK_SIZE,
-        OP_LOGE(context_->GetNodeName(), "AddLora rank size exceeds limit 128."), return false);
+    // Check base input tensors
+    const gert::StorageShape *yShape = yParaInfo_.shape;
+    OP_CHECK_IF(yShape == nullptr, OP_LOGE(context_->GetNodeName(), "AddLora shape of tensor y is nullptr."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(yShape->GetStorageShape().GetDimNum() != 2,
+                OP_LOGE(context_->GetNodeName(),
+                "AddLora tensor y dim number must be 2."),
+                return ge::GRAPH_FAILED);
+    
+    const gert::StorageShape *xShape = xParaInfo_.shape;
+    OP_CHECK_IF(xShape == nullptr, OP_LOGE(context_->GetNodeName(), "AddLora shape of tensor x is nullptr."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(xShape->GetStorageShape().GetDimNum() != 2,
+                OP_LOGE(context_->GetNodeName(),
+                "AddLora tensor x dim number must be 2."),
+                return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        tilingData_.get_wBatch() > MAX_WEIGHT_NUM,
-        OP_LOGE(context_->GetNodeName(), "AddLora weight num exceeds limit 32."), return false);
+    OP_CHECK_IF(yShape->GetStorageShape().GetDim(DIM_INDEX_ZERO) != xShape->GetStorageShape().GetDim(DIM_INDEX_ZERO),
+                OP_LOGE(context_->GetNodeName(), "AddLora tensor y dim 0 must be same with tensor x dim 0."),
+                return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        tilingData_.get_H1() % CUBESIZE != 0, OP_LOGE(context_->GetNodeName(), "AddLora H1 should be align to 16."),
-        return false);
+    batchSize_ = static_cast<uint32_t>(yShape->GetStorageShape().GetDim(DIM_INDEX_ZERO));
+    H3_ = static_cast<uint32_t>(yShape->GetStorageShape().GetDim(DIM_INDEX_ONE));
+    H1_ = static_cast<uint32_t>(xShape->GetStorageShape().GetDim(DIM_INDEX_ONE));
 
-    OP_CHECK_IF(
-        tilingData_.get_H2() % CUBESIZE != 0, OP_LOGE(context_->GetNodeName(), "AddLora H2 should be align to 16."),
-        return false);
+    const gert::StorageShape *weightBShape = weightBParaInfo_.shape;
+    OP_CHECK_IF(weightBShape == nullptr,
+                OP_LOGE(context_->GetNodeName(), "AddLora shape of tensor weightB is nullptr."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(weightBShape->GetStorageShape().GetDimNum() != 4,
+                OP_LOGE(context_->GetNodeName(),
+                "AddLora tensor weightB dim number must be 4."),
+                return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        tilingData_.get_R() % CUBESIZE != 0, OP_LOGE(context_->GetNodeName(), "AddLora R should be align to 16."),
-        return false);
+    wBatch_ = static_cast<uint32_t>(weightBShape->GetStorageShape().GetDim(DIM_INDEX_ZERO));
+    L_ = static_cast<uint32_t>(weightBShape->GetStorageShape().GetDim(DIM_INDEX_ONE));
+    H2_ = static_cast<uint32_t>(weightBShape->GetStorageShape().GetDim(DIM_INDEX_TWO));
+    R_ = static_cast<uint32_t>(weightBShape->GetStorageShape().GetDim(DIM_INDEX_THREE));
 
-    return true;
+    OP_CHECK_IF(H2_ > H3_, OP_LOGE(context_->GetNodeName(),
+                "AddLora tensor weightB dim 3 must less than or equal tensor y dim 1."),
+                return ge::GRAPH_FAILED);
+
+    const gert::StorageShape *indicesShape = indicesParaInfo_.shape;
+    OP_CHECK_IF(indicesShape == nullptr,
+                OP_LOGE(context_->GetNodeName(), "AddLora shape of tensor indices is nullptr."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(indicesShape->GetStorageShape().GetDimNum() != 1,
+                OP_LOGE(context_->GetNodeName(), "AddLora tensor indices dim number must be 1."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(indicesShape->GetStorageShape().GetDim(DIM_INDEX_ZERO) !=
+                yShape->GetStorageShape().GetDim(DIM_INDEX_ZERO),
+                OP_LOGE(context_->GetNodeName(),
+                "AddLora tensor indices dim 1 must same with tensor y and x dim 0."),
+                return ge::GRAPH_FAILED);
+
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus AddLoraTiling::CheckOptionalInputTensorShape()
+{
+    const gert::StorageShape *xShape = xParaInfo_.shape;
+    const gert::StorageShape *weightBShape = weightBParaInfo_.shape;
+    const gert::Tensor *weightATensor = weightAParaInfo_.tensor;
+    if (weightATensor != nullptr && weightBShape != nullptr) {
+        OP_CHECK_IF(weightATensor->GetStorageShape().GetDim(DIM_INDEX_ZERO) !=
+            weightBShape->GetStorageShape().GetDim(DIM_INDEX_ZERO) ||
+            weightATensor->GetStorageShape().GetDim(DIM_INDEX_ONE) !=
+            weightBShape->GetStorageShape().GetDim(DIM_INDEX_ONE),
+            OP_LOGE(context_->GetNodeName(),
+            "AddLora tensor weightA dim 0 or dim 1 must same with tensor weightB."),
+            return ge::GRAPH_FAILED);
+
+        OP_CHECK_IF(weightATensor->GetStorageShape().GetDim(DIM_INDEX_TWO) !=
+            weightBShape->GetStorageShape().GetDim(DIM_INDEX_THREE),
+            OP_LOGE(context_->GetNodeName(),
+            "AddLora tensor weightA dim 2 must same with tensor weightB dim 3, is shape param R."),
+            return ge::GRAPH_FAILED);
+        addLoraFlag_ = 1;
+    }
+
+    if (weightATensor != nullptr) {
+        OP_CHECK_IF(weightATensor->GetStorageShape().GetDim(DIM_INDEX_THREE) !=
+            xShape->GetStorageShape().GetDim(DIM_INDEX_ONE),
+            OP_LOGE(context_->GetNodeName(),
+            "AddLora tensor weightA dim 3 must same with tensor x dim 1."),
+            return ge::GRAPH_FAILED);
+    }
+
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus AddLoraTiling::CheckInputAttrLimit()
+{
+    // check base input attrs
+    OP_CHECK_IF(attrs_ == nullptr, OP_LOGE(context_->GetNodeName(), "AddLora attrs got from GE is nullptr."),
+                return ge::GRAPH_FAILED);
+
+    const int *layerIdxPtr = attrs_->GetAttrPointer<int>(LAYER_IDX_ATTR_INDEX);
+    OP_CHECK_IF(layerIdxPtr == nullptr, OP_LOGE(context_->GetNodeName(), "AddLora attr layerIdx is nullptr."),
+                return ge::GRAPH_FAILED);
+    layerIdx_ = static_cast<uint32_t>(*layerIdxPtr);
+    OP_CHECK_IF(layerIdx_ >= L_,
+                OP_LOGE(context_->GetNodeName(),
+                "AddLora attr layerIdx must less than weightB and weightA dim 1, current is %u.", layerIdx_),
+                return ge::GRAPH_FAILED);
+
+    const float *scalePtr = attrs_->GetAttrPointer<float>(SCALE_ATTR_INDEX);
+    OP_CHECK_IF(scalePtr == nullptr, OP_LOGE(context_->GetNodeName(), "AddLora attr scale is nullptr."),
+                return ge::GRAPH_FAILED);
+    scale_ = *scalePtr;
+
+    const int *yOffsetPtr = attrs_->GetAttrPointer<int>(Y_OFFSET_ATTR_INDEX);
+    OP_CHECK_IF(yOffsetPtr == nullptr, OP_LOGE(context_->GetNodeName(), "AddLora attr yOffset is nullptr."),
+                return ge::GRAPH_FAILED);
+    yOffset_ = static_cast<uint32_t>(*yOffsetPtr);
+    OP_CHECK_IF(yOffset_ > H3_,
+                OP_LOGE(context_->GetNodeName(),
+                "AddLora attr yOffset must less than y dim 1, current is %u.", yOffset_),
+                return ge::GRAPH_FAILED);
+
+    const int *ySliceSizePtr = attrs_->GetAttrPointer<int>(Y_SLICE_SIZE_ATTR_INDEX);
+    OP_CHECK_IF(ySliceSizePtr == nullptr, OP_LOGE(context_->GetNodeName(), "AddLora attr ySliceSize is nullptr."),
+                return ge::GRAPH_FAILED);
+    ySliceSize_ = static_cast<uint32_t>(*ySliceSizePtr);
+    OP_CHECK_IF(ySliceSize_ > H3_,
+                OP_LOGE(context_->GetNodeName(),
+                "AddLora attr ySliceSize must less than y dim 1, current is %u.", ySliceSize_),
+                return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus AddLoraTiling::CheckInputLimits()
+{
+    OP_CHECK_IF(addLoraFlag_ && R_ > MAX_RANK_SIZE,
+                OP_LOGE(context_->GetNodeName(), "AddLora rank size R exceeds limit 128."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(R_ % CUBESIZE != 0,
+                OP_LOGE(context_->GetNodeName(), "AddLora R should be align to 16."),
+                return ge::GRAPH_FAILED);
+
+    OP_CHECK_IF(wBatch_ > MAX_WEIGHT_NUM,
+                OP_LOGE(context_->GetNodeName(), "AddLora weight num wBatch exceeds limit 32."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(L_ > MAX_LAYER_NUM,
+                OP_LOGE(context_->GetNodeName(), "AddLora layer num exceeds limit 32."),
+                return ge::GRAPH_FAILED);
+    
+    OP_CHECK_IF(H1_ > MAX_HIDDEN_SIZE,
+                OP_LOGE(context_->GetNodeName(), "AddLora H1 exceeds limit 131072."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(H1_ % CUBESIZE != 0,
+                OP_LOGE(context_->GetNodeName(), "AddLora H1 should be align to 16."),
+                return ge::GRAPH_FAILED);
+
+    OP_CHECK_IF(H2_ > MAX_HIDDEN_SIZE,
+                OP_LOGE(context_->GetNodeName(), "AddLora H2 exceeds limit 131072."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(H2_ % CUBESIZE != 0,
+                OP_LOGE(context_->GetNodeName(), "AddLora H2 should be align to 16."),
+                return ge::GRAPH_FAILED);
+
+    OP_CHECK_IF(H3_ > MAX_HIDDEN_SIZE,
+                OP_LOGE(context_->GetNodeName(), "AddLora H3 exceeds limit 131072."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(H3_ % CUBESIZE != 0,
+                OP_LOGE(context_->GetNodeName(), "AddLora H3 should be align to 16."),
+                return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus AddLoraTiling::DoOpTiling()
 {
-    OP_CHECK_IF(
-        !SetPlatformInfoForTiling(), OP_LOGE(context_->GetNodeName(), "SetPlatformInfoForTiling fail"),
-        return ge::GRAPH_FAILED);
-    auto wa_Ptr = context_->GetOptionalInputShape(INDEXFOUR);
-    uint32_t wBatch = GetShape(INDEXTWO).GetDim(INDEXZERO);
-    if (wa_Ptr) {
-        if (wa_Ptr->GetStorageShape().GetDim(INDEXZERO) == wBatch) {
-            addLoraFlag = static_cast<uint32_t>(1);
-        }
+    if ((CheckInputDataType() != ge::GRAPH_SUCCESS) ||
+        (CheckInputTensorShape() != ge::GRAPH_SUCCESS) ||
+        (CheckOptionalInputTensorShape() != ge::GRAPH_SUCCESS) ||
+        (CheckInputAttrLimit() != ge::GRAPH_SUCCESS) ||
+        (CheckInputLimits() != ge::GRAPH_SUCCESS)) {
+        return ge::GRAPH_FAILED;
     }
-    uint32_t batch = static_cast<uint32_t>(GetShape(INDEXZERO).GetDim(INDEXZERO));
-    uint32_t H2 = GetShape(INDEXTWO).GetDim(INDEXTWO);
-    uint32_t y_column = GetShape(INDEXZERO).GetDim(INDEXONE);
-    uint32_t H1 = static_cast<uint32_t>(GetShape(INDEXONE).GetDim(INDEXONE));
-    uint32_t layer = GetShape(INDEXTWO).GetDim(INDEXONE);
-    uint32_t R = GetShape(INDEXTWO).GetDim(INDEXTHREE);
+    
     uint32_t maxCore = static_cast<uint32_t>(coreNum_) * VECTORDOUBLE;
     if (isAscend310P_) {
         maxCore = static_cast<uint32_t>(coreNum_);
     }
 
     uint32_t usedCoreNum = static_cast<uint32_t>(coreNum_);
-    uint32_t taskNumPerCore = batch / maxCore;
-    uint32_t H2PerCore = Ops::Base::CeilDiv(H2, CUBESIZE) / maxCore * CUBESIZE;
-    tilingData_.set_layer(layer);
-    tilingData_.set_batch(batch);
-    tilingData_.set_H2(H2);
-    tilingData_.set_H1(H1);
-    tilingData_.set_wBatch(wBatch);
+    uint32_t taskNumPerCore = batchSize_ / maxCore;
+    uint32_t H2PerCore = Ops::Base::CeilDiv(H2_, CUBESIZE) / maxCore * CUBESIZE;
+    tilingData_.set_layer(L_);
+    tilingData_.set_batch(batchSize_);
+    tilingData_.set_H2(H2_);
+    tilingData_.set_H1(H1_);
+    tilingData_.set_wBatch(wBatch_);
     tilingData_.set_usedCoreNum(usedCoreNum);
-    tilingData_.set_R(R);
-    auto layer_idx = *context_->GetAttrs()->GetAttrPointer<int>(INDEXZERO);
-    auto scale = *context_->GetAttrs()->GetAttrPointer<float>(INDEXONE);
-    auto y_offset = *context_->GetAttrs()->GetAttrPointer<int>(INDEXTWO);
-    auto y_slice_size = *context_->GetAttrs()->GetAttrPointer<int>(INDEXTHREE);
-    tilingData_.set_layer_idx(layer_idx);
-    tilingData_.set_scale(scale);
-    tilingData_.set_y_offset(y_offset);
-    tilingData_.set_y_slice_size(y_slice_size);
+    tilingData_.set_R(R_);
+    tilingData_.set_layer_idx(layerIdx_);
+    tilingData_.set_scale(scale_);
+    tilingData_.set_y_offset(yOffset_);
+    tilingData_.set_y_slice_size(ySliceSize_);
     tilingData_.set_taskNumPerCore(taskNumPerCore);
     tilingData_.set_H2PerCore(H2PerCore);
-    tilingData_.set_addLoraFlag(addLoraFlag);
-    tilingData_.set_y_column(y_column);
+    tilingData_.set_addLoraFlag(addLoraFlag_);
+    tilingData_.set_y_column(H3_);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -138,8 +330,7 @@ ge::graphStatus AddLoraTiling::DoLibApiTiling()
 uint64_t AddLoraTiling::GetTilingKey() const
 {
     uint64_t tilingKey = static_cast<uint64_t>(TilingKeyInfo::KEY_DEFAULT_SCENE);
-    uint32_t batch = context_->GetInputShape(0)->GetStorageShape().GetDim(0);
-    if (batch <= static_cast<uint32_t>(coreNum_)) {
+    if (batchSize_ <= static_cast<uint32_t>(coreNum_)) {
         tilingKey = static_cast<uint64_t>(TilingKeyInfo::KEY_SPARSE_SCENE);
     }
 
@@ -147,7 +338,7 @@ uint64_t AddLoraTiling::GetTilingKey() const
     if (isAscend310P_) {
         socVersionFlag = static_cast<uint32_t>(SocVersionKey::KEY_SOC_VERSION_310);
 
-        if (!addLoraFlag) {
+        if (!addLoraFlag_) {
             tilingKey = static_cast<uint64_t>(TilingKeyInfo::KEY_BGMV_SCENE);
         }
     }
@@ -173,14 +364,12 @@ ge::graphStatus AddLoraTiling::GetWorkspaceSize()
 
 ge::graphStatus AddLoraTiling::PostTiling()
 {
-    OP_CHECK_IF(
-        !CheckTilingValidation(), OP_LOGE(context_->GetNodeName(), "check tiling data validation failed."),
-        return ge::GRAPH_FAILED);
     OP_LOGD(context_->GetNodeName(), "final tiling data size: %zu", tilingData_.GetDataSize());
-    OP_CHECK_IF(
-        tilingData_.GetDataSize() % sizeof(uint64_t) != 0,
-        OP_LOGE(context_->GetNodeName(), "tiling data size [%zu] is not aligned to 8", tilingData_.GetDataSize()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(tilingData_.GetDataSize() % sizeof(uint64_t) != 0,
+                OP_LOGE(context_->GetNodeName(), "tiling data size [%zu] is not aligned to 8",
+                tilingData_.GetDataSize()),
+                return ge::GRAPH_FAILED);
+    
     tilingData_.SaveToBuffer(context_->GetRawTilingData()->GetData(), context_->GetRawTilingData()->GetCapacity());
     auto blockDim = tilingData_.get_usedCoreNum();
     context_->SetBlockDim(blockDim);
@@ -189,31 +378,16 @@ ge::graphStatus AddLoraTiling::PostTiling()
     return ge::GRAPH_SUCCESS;
 }
 
-bool AddLoraTiling::SetPlatformInfoForTiling()
-{
-    auto platformInfoPtr = context_->GetPlatformInfo();
-    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
-    coreNum_ = ascendcPlatform.GetCoreNumAic();
-    isAscend310P_ = ascendcPlatform.GetSocVersion() == platform_ascendc::SocVersion::ASCEND310P;
-
-    return true;
-}
-
-REGISTER_TILING_TEMPLATE("AddLora", AddLoraTiling, 0);
-
-const gert::Shape AddLoraTiling::GetShape(const size_t index)
-{
-    return context_->GetInputShape(index)->GetStorageShape();
-}
-
 void AddLoraTiling::PrintTilingData()
 {
     std::stringstream ss;
     ss << " layer: " << tilingData_.get_layer() << " batch: " << tilingData_.get_batch()
        << " H2: " << tilingData_.get_H2() << " H1: " << tilingData_.get_H1() << " wBatch: " << tilingData_.get_wBatch()
        << " usedCoreNum: " << tilingData_.get_usedCoreNum() << " R: " << tilingData_.get_R()
-       << " layer_idx: " << tilingData_.get_layer_idx() << "scale: " << tilingData_.get_scale()
-       << " y_offset: " << tilingData_.get_y_offset() << "y_slice_size:  " << tilingData_.get_y_slice_size();
+       << " layer_idx: " << tilingData_.get_layer_idx() << " scale: " << tilingData_.get_scale()
+       << " y_offset: " << tilingData_.get_y_offset() << " y_slice_size: " << tilingData_.get_y_slice_size()
+       << " taskNumPerCore: " << tilingData_.get_taskNumPerCore() << " H2PerCore: " << tilingData_.get_H2PerCore()
+       << " addLoraFlag: " << tilingData_.get_addLoraFlag() << " y_column: " << tilingData_.get_y_column();
     OP_LOGD(context_->GetNodeName(), "api tiling: %s", ss.str().c_str());
 }
 
@@ -228,5 +402,7 @@ static ge::graphStatus TilingParseForAddLora([[maybe_unused]] gert::TilingParseC
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_OPTILING(AddLora).Tiling(AddLoraTilingFunc).TilingParse<AddLoraCompileInfo>(TilingParseForAddLora);
+REGISTER_TILING_TEMPLATE("AddLora", AddLoraTiling, 0);
+
+IMPL_OP_OPTILING(AddLora).Tiling(AddLoraTilingFunc).TilingParse<Tiling4AddLoraCompileInfo>(TilingParseForAddLora);
 } // namespace optiling
