@@ -41,7 +41,7 @@ else()
 endif()
 
 add_custom_command(TARGET _C POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    COMMAND ${CMAKE_COMMAND} -E copy
     $<TARGET_FILE:_C>
     ${CMAKE_CURRENT_SOURCE_DIR}/npu_math_extension/$<TARGET_FILE_NAME:_C>
     COMMENT "Copying compiled extension $<TARGET_FILE_NAME:_C> to ${CMAKE_CURRENT_SOURCE_DIR}/npu_math_extension/"

@@ -23,7 +23,7 @@ class CleanCommand(Command):
     usage: python3 setup.py clean
     """
     user_options = []
-    
+
     def initialize_options(self):
         pass
 
@@ -31,17 +31,36 @@ class CleanCommand(Command):
         pass
 
     def run(self):
+        # 定义要删除的目录列表
         dirs_to_remove = ['build', 'dist']
-        for directory_path in os.listdir('.'):
-            if directory_path.endswith('.egg-info') and os.path.isdir(directory_path):
-                dirs_to_remove.append(directory_path)
+
+        # 安全查找 .egg-info 目录
+        try:
+            for directory_path in os.listdir('.'):
+                if (directory_path.endswith('.egg-info') and
+                    os.path.isdir(directory_path) and
+                    directory_path not in dirs_to_remove):
+                    dirs_to_remove.append(directory_path)
+        except Exception:
+            print("Warning: Error scanning directory for .egg-info folders")
+
+        # 安全删除 .so 文件
         so_file = os.path.join(PACKAGE_NAME, "_C.abi3.so")
         if os.path.exists(so_file):
-            print(f"Removing generated library: {so_file}")
-            os.remove(so_file)
+            try:
+                print(f"Removing generated library: {so_file}")
+                os.remove(so_file)
+            except Exception:
+                print(f"Warning: Failed to remove {so_file}")
+
+        # 安全删除目录
         for directory_path in dirs_to_remove:
-            print(f"Removing directory: {directory_path}")
-            shutil.rmtree(directory_path)
+            if os.path.exists(directory_path) and os.path.isdir(directory_path):
+                try:
+                    print(f"Removing directory: {directory_path}")
+                    shutil.rmtree(directory_path)
+                except Exception:
+                    print(f"Warning: Failed to remove directory {directory_path}")
 
 
 class BinaryDistribution(Distribution):
@@ -71,10 +90,11 @@ class CMakeBuild(Command):
     def run(self):
         current_working_directory = os.path.abspath(os.path.dirname(__file__))
         project_root = os.path.abspath(os.path.join(current_working_directory, "../../"))
-        build_dir = os.path.join(current_working_directory, "build")
+        build_dir = os.path.join(project_root, "build")
         print(f"-- Project Root: {project_root}")
         print(f"-- Build Dir:    {build_dir}")
         experimental_option = os.getenv("ENABLE_EXPERIMENTAL")
+        parallel_option = os.getenv("THREAD_NUM", 16)
 
         cmake_config_cmd = [
             "cmake",
@@ -83,6 +103,7 @@ class CMakeBuild(Command):
             "-DENABLE_TORCH_EXTENSION=ON",
             f"-DENABLE_EXPERIMENTAL={experimental_option}",
             "-G", "Ninja",
+            "-DCMAKE_VERBOSE_MAKEFILE=ON",
             "-DCMAKE_BUILD_TYPE=Release"
         ]
 
@@ -90,7 +111,8 @@ class CMakeBuild(Command):
             "cmake",
             "--build", build_dir,
             "--config", "Release",
-            "--target", "_C"
+            "--target", "_C",
+            "--", "-v", f"-j{parallel_option}"
         ]
 
         print(f"Running CMake Config: {' '.join(cmake_config_cmd)}")
@@ -107,13 +129,13 @@ class ABI3Wheel(bdist_wheel):
     def run(self):
         self.run_command('cmake_build')
         super().run()
-    
+
     def get_tag(self):
         python, abi, plat = super().get_tag()
         if python.startswith("cp"):
             return "cp38", "abi3", plat
         return python, abi, plat
-    
+
 
 cmdclass = {
     "clean": CleanCommand,

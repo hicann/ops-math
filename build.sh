@@ -11,7 +11,7 @@
 
 set -e
 RELEASE_TARGETS=("ophost" "opapi" "opgraph" "opkernel")
-UT_TARGETS=("ophost_test" "opapi_test" "opgraph_test" "opkernel_test")
+UT_TARGETS=("ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "torch_extension_test")
 SUPPORT_COMPUTE_UNIT_SHORT=("ascend910b" "ascend910_93" "ascend310p" "ascend910")
 
 # 所有支持的短选项
@@ -22,7 +22,7 @@ SUPPORTED_LONG_OPTS=(
   "help" "ops=" "soc=" "vendor_name=" "debug" "cov" "noexec" "aicpu" "opkernel" "jit"
   "pkg" "disable_asan" "valgrind" "make_clean"
   "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test"
-  "run_example" "genop=" "genop_aicpu=" "experimental" "torch_extension"
+  "run_example" "genop=" "genop_aicpu=" "experimental" "torch_extension" "torch_extension_test"
 )
 
 in_array() {
@@ -160,9 +160,11 @@ usage() {
         echo "    --ophost_test          Build and run ophost unit tests"
         echo "    --opapi_test           Build and run opapi unit tests"
         echo "    --opgraph_test         Build and run opgraph unit tests"
+        echo "    --torch_extension_test Build and run torch_extension unit tests"
         echo "    --ophost -u            Same as --ophost_test"
         echo "    --opapi -u             Same as --opapi_test"
         echo "    --opgraph -u           Same as --opgraph_test"
+        echo "    --torch_extension -u   Same as --torch_extension_test"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh -u --noexec --cov"
@@ -259,6 +261,19 @@ usage() {
         echo "    bash build.sh --opgraph_test --noexec --cov"
         return
         ;;
+      torch_extension_test)
+        echo "Torch Extension Test Options:"
+        echo $dotted_line
+        echo "    --torch_extension_test Build and run torch_extension unit tests"
+        echo "    --ops=op1,op2,...      Run tests for specified operators (comma-separated for multiple)"
+        echo $dotted_line
+        echo "Examples:"
+        echo "    bash build.sh --torch_extension_test"
+        echo "    bash build.sh --torch_extension_test --experimental"
+        echo "    bash build.sh --torch_extension_test --ops=add,sub"
+        echo "    bash build.sh --torch_extension_test --experimental --ops=add,sub"
+        return
+        ;;
       run_example)
         echo "Run examples Options:"
         echo $dotted_line
@@ -344,6 +359,7 @@ usage() {
   echo "    --ophost_test build and run ophost unit tests"
   echo "    --opgraph_test build and run opgraph unit tests"
   echo "    --opkernel_test build and run opkernel unit tests"
+  echo "    --torch_extension_test build and run torch_extension unit tests"
   echo "    --run_example Compile and execute the test_aclnn_xxx.cpp/test_geir_xxx.cpp"
   echo "    --genop Create the initial directory for op"
   echo "    --genop_aicpu Create the initial directory for AI CPU op"
@@ -463,10 +479,14 @@ set_ut_mode() {
     OP_KERNEL_UT=TRUE
     UT_TEST_ALL=FALSE
   fi
+  if [[ "$ENABLE_TORCH_EXTENSION" == "TRUE" ]]; then
+    TORCH_EXTENSION_UT=TRUE
+    UT_TEST_ALL=FALSE
+  fi
 
   # 检查测试项，至少有一个
-  if [[ "$UT_TEST_ALL" == "FALSE" && "$OP_HOST_UT" == "FALSE" && "$OP_API_UT" == "FALSE" && "$OP_GRAPH_UT" == "FALSE" && "$OP_KERNEL_UT" == "FALSE" ]]; then
-    echo "[ERROR] At least one test target must be specified (ophost_test, opapi_test, opgraph_test, opkernel_test)"
+  if [[ "$UT_TEST_ALL" == "FALSE" && "$OP_HOST_UT" == "FALSE" && "$OP_API_UT" == "FALSE" && "$OP_GRAPH_UT" == "FALSE" && "$OP_KERNEL_UT" == "FALSE" && "$TORCH_EXTENSION_UT" == "FALSE" ]]; then
+    echo "[ERROR] At least one test target must be specified (ophost_test, opapi_test, opgraph_test, opkernel_test, torch_extension_test)"
     usage
     exit 1
   fi
@@ -516,6 +536,7 @@ checkopts() {
   OP_HOST_UT=FALSE
   OP_GRAPH_UT=FALSE
   OP_KERNEL_UT=FALSE
+  TORCH_EXTENSION_UT=FALSE
   OP_API=FALSE
   OP_HOST=FALSE
   OP_GRAPH=FALSE
@@ -566,6 +587,7 @@ checkopts() {
           --ophost_test) SHOW_HELP="ophost_test" ;;
           --opapi_test) SHOW_HELP="opapi_test" ;;
           --opgraph_test) SHOW_HELP="opgraph_test" ;;
+          --torch_extension_test) SHOW_HELP="torch_extension_test" ;;
           --run_example) SHOW_HELP="run_example" ;;
           --genop) SHOW_HELP="genop" ;;
           --genop_aicpu) SHOW_HELP="genop_aicpu" ;;
@@ -693,6 +715,8 @@ checkopts() {
             OP_GRAPH=TRUE
           elif [[ "$OPTARG" == "opkernel" ]]; then
             OP_KERNEL=TRUE
+          elif [[ "$OPTARG" == "torch_extension" ]]; then
+            ENABLE_TORCH_EXTENSION=TRUE
           else
             usage
             exit 1
@@ -977,11 +1001,100 @@ build_ut() {
     mkdir -p "${BUILD_PATH}"
   fi
 
+  if [[ "$ENABLE_TORCH_EXTENSION" == "TRUE" && "$TORCH_EXTENSION_UT" == "TRUE" ]]; then
+    # build torch extension
+    build_torch_extension
+    if [ $? -ne 0 ]; then
+      echo "[ERROR] Torch extension build failed!" && exit 1
+    fi
+
+    # install torch extension package
+    # 检查 python 或 python3 是否存在
+    local python_cmd=""
+    if command -v python3 &> /dev/null; then
+        python_cmd="python3"
+    elif command -v python &> /dev/null; then
+        python_cmd="python"
+    fi
+    # python_cmd is checked in build_torch_extension
+    local wheel_file=$(ls ${BUILD_OUT_PATH}/dist/*.whl | head -n 1)
+    echo "Installing torch extension package: ${wheel_file}"
+    ${python_cmd} -m pip install --force-reinstall "${wheel_file}" --no-deps
+    if [ $? -ne 0 ]; then
+      echo "[ERROR] Torch extension package installation failed!" && exit 1
+    fi
+    # run unit test
+    run_torch_extension_ut
+    if [ $? -ne 0 ]; then
+      echo "[ERROR] Torch extension ut failed!" && exit 1
+    fi
+  fi
+
+  if [[ ${#UT_TARGES[@]} -eq 0 ]]; then
+    echo "No unit tests to build."
+    return
+  fi
+
   cd "${BUILD_PATH}" && cmake ${CMAKE_ARGS} ..
   cmake --build . --target ${UT_TARGES[@]} -- ${VERBOSE} -j $THREAD_NUM
   if [[ "$ENABLE_CONVERAGE" =~ "TRUE" ]]; then
     cmake --build . --target generate_ops_cpp_cov -- -j $THREAD_NUM
   fi
+}
+
+run_torch_extension_ut() {
+  echo "--------------- run torch extension ut start ---------------"
+  # 检查 python 或 python3 是否存在
+  local python_cmd=""
+  if command -v python3 &> /dev/null; then
+      python_cmd="python3"
+  elif command -v python &> /dev/null; then
+      python_cmd="python"
+  fi
+
+  if [ -z "${python_cmd}" ]; then
+    echo "Please install Python to run torch extension unit tests."
+    return 1
+  fi
+
+  # set test work directory
+  if [ ! -d "${BUILD_PATH}" ]; then
+    mkdir -p "${BUILD_PATH}"
+  fi
+  local test_dir="${BUILD_PATH}/torch_extension_ut"
+  if [ -d "${test_dir}" ]; then
+    rm -rf "${test_dir}"
+  fi
+  mkdir -p "${test_dir}"
+  cd "${test_dir}" || { echo "Failed to change directory to ${test_dir}"; return 1; }
+
+  # generate task.yaml
+  # if COMPILED_OPS is set, only generate task.yaml for specified ops
+  local GENERATE_SCRIPT_ARGS="--base-dir ${BASE_PATH} --output_dir ${test_dir}"
+  if [ -n "${COMPILED_OPS}" ]; then
+    GENERATE_SCRIPT_ARGS="${GENERATE_SCRIPT_ARGS} --ops ${COMPILED_OPS}"
+  fi
+  # if ENABLE_EXPERIMENTAL is set, pass the flag to generate experimental tests
+  if [ "${ENABLE_EXPERIMENTAL}" == "TRUE" ]; then
+    GENERATE_SCRIPT_ARGS="${GENERATE_SCRIPT_ARGS} --experimental"
+  fi
+  echo "Generating task.yaml for torch extension unit tests..."
+  ${python_cmd} "${BASE_PATH}/scripts/torch_extension/generate_ut_task_yaml.py" ${GENERATE_SCRIPT_ARGS}
+
+  if [ $? -ne 0 ]; then
+    echo "[ERROR] Failed to generate task.yaml for torch extension unit tests."
+    return 1
+  fi
+
+  # run ut
+  echo "Running torch extension unit tests..."
+  ${python_cmd} "${BASE_PATH}/scripts/torch_extension/torch_extension_ut_runner.py" "${test_dir}/task.yaml"
+  if [ $? -ne 0 ]; then
+    echo "[ERROR] Torch extension unit tests failed."
+    return 1
+  fi
+
+  echo "--------------- run torch extension ut end ---------------"
 }
 
 build_torch_extension() {
@@ -1108,7 +1221,7 @@ gen_op() {
   elif command -v python &> /dev/null; then
       python_cmd="python"
   fi
-  
+
   if [ -n "${python_cmd}" ]; then
     ${python_cmd} "${BASE_PATH}/scripts/opgen/opgen_standalone.py" -t ${GENOP_TYPE} -n ${GENOP_NAME} -p ${GENOP_BASE}
     return $?
@@ -1180,6 +1293,9 @@ main() {
   if [[ "$ENABLE_PACKAGE" == "TRUE" ]]; then
     build_package
   fi
+  if [[ "$ENABLE_TORCH_EXTENSION" == "TRUE" && "$TORCH_EXTENSION_UT" == "FALSE" ]]; then
+    build_torch_extension
+  fi
   if [[ "$ENABLE_TEST" == "TRUE" ]]; then
     build_ut
   fi
@@ -1191,9 +1307,6 @@ main() {
   fi
   if [[ "$ENABLE_GENOP_AICPU" == "TRUE" ]]; then
     gen_aicpu_op
-  fi
-  if [[ "$ENABLE_TORCH_EXTENSION" == "TRUE" ]]; then
-    build_torch_extension
   fi
 }
 
