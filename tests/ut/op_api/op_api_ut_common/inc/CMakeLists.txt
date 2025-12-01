@@ -8,7 +8,5 @@
 # the software repository for the full text of the License.
 # ============================================================================
 
-cmake_minimum_required(VERSION 3.16)
-
 add_library(op_api_ut_common_inc INTERFACE)
 target_include_directories(op_api_ut_common_inc INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})

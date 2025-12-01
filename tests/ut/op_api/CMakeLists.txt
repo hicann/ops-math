@@ -9,11 +9,8 @@
 # the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.16)
-
 if(UT_TEST_ALL OR OP_API_UT)
   ## set variables
-  set(OP_API_UT_COMMON_INC ${CMAKE_CURRENT_SOURCE_DIR}/op_api_ut_common/inc CACHE STRING "opapi ut common include path" FORCE)
   set(OP_API_UT_EXE ${PKG_NAME}_op_api_ut)
 
   ## load opapi ut common depends: python

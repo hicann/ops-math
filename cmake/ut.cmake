@@ -112,7 +112,7 @@ if(UT_TEST_ALL OR OP_API_UT)
     target_include_directories(
       ${OP_API_MODULE_NAME}_cases_obj
       PRIVATE ${JSON_INCLUDE_DIR} ${HI_PYTHON_INC_TEMP} ${UT_PATH}/op_api/stub ${OP_API_UT_COMMON_INC}
-              ${ASCEND_DIR}/include ${ASCEND_DIR}/include/aclnn ${ASCEND_DIR}/include/aclnnop
+              ${ASCEND_DIR}/include ${ASCEND_DIR}/include/aclnn ${OPS_MATH_DIR}/common/inc/external
               ${ACLNN_SRC_DIRS}
       )
     target_link_libraries(${OP_API_MODULE_NAME}_cases_obj PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> json gtest)

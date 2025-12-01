@@ -505,6 +505,39 @@ set_ut_mode() {
   fi
 }
 
+process_genop() {
+  local opt_name=$1
+  local genop_value=$2
+
+  if [[ "$opt_name" == "genop" ]]; then
+    ENABLE_GENOP=TRUE
+  elif [[ "$opt_name" == "genop_aicpu" ]]; then
+    ENABLE_GENOP_AICPU=TRUE
+  else
+    usage "genop"
+    exit 1
+  fi
+
+  if [[ "$genop_value" != *"/"* ]] || [[ "$genop_value" == *"/" ]]; then
+    usage "$opt_name"
+    exit 1
+  fi
+
+  GENOP_NAME=${genop_value##*/}
+  local remaining=${genop_value%/*}
+
+  if [[ "$remaining" != *"/"* ]]; then
+    GENOP_TYPE=$remaining
+    GENOP_BASE=${BASE_PATH}
+  else
+    GENOP_TYPE=${remaining##*/}
+    GENOP_BASE=${remaining%/*}
+    if [[ ! "$GENOP_BASE" =~ ^/ && ! "$GENOP_BASE" =~ ^[a-zA-Z]: ]]; then
+      GENOP_BASE="${BASE_PATH}/${GENOP_BASE}"
+    fi
+  fi
+}
+
 checkopts() {
   THREAD_NUM=8
   VERBOSE=""
@@ -599,39 +632,6 @@ checkopts() {
       exit 0
     fi
   done
-
-  process_genop() {
-    local opt_name=$1
-    local genop_value=$2
-
-    if [[ "$opt_name" == "genop" ]]; then
-      ENABLE_GENOP=TRUE
-    elif [[ "$opt_name" == "genop_aicpu" ]]; then
-      ENABLE_GENOP_AICPU=TRUE
-    else
-      usage "genop"
-      exit 1
-    fi
-
-    if [[ "$genop_value" != *"/"* ]] || [[ "$genop_value" == *"/" ]]; then
-      usage "$opt_name"
-      exit 1
-    fi
-
-    GENOP_NAME=${genop_value##*/}
-    local remaining=${genop_value%/*}
-
-    if [[ "$remaining" != *"/"* ]]; then
-      GENOP_TYPE=$remaining
-      GENOP_BASE=${BASE_PATH}
-    else
-      GENOP_TYPE=${remaining##*/}
-      GENOP_BASE=${remaining%/*}
-      if [[ ! "$GENOP_BASE" =~ ^/ && ! "$GENOP_BASE" =~ ^[a-zA-Z]: ]]; then
-        GENOP_BASE="${BASE_PATH}/${GENOP_BASE}"
-      fi
-    fi
-  }
 
   # Process the options
   while getopts $SUPPORTED_SHORT_OPTS opt; do
@@ -881,6 +881,19 @@ assemble_cmake_args() {
   fi
 }
 
+cmake_init() {
+  if [[ "$ENABLE_GENOP" == "TRUE" || "$ENABLE_GENOP_AICPU" == "TRUE" ]]; then
+    return
+  fi
+  if [ ! -d "${BUILD_PATH}" ]; then
+    mkdir -p "${BUILD_PATH}"
+  fi
+
+  [ -f "${BUILD_PATH}/CMakeCache.txt" ] && rm -f ${BUILD_PATH}/CMakeCache.txt
+
+  cd "${BUILD_PATH}" && cmake ${CMAKE_ARGS} ..
+}
+
 clean_build() {
   if [ -d "${BUILD_PATH}" ]; then
     rm -rf ${BUILD_PATH}/*
@@ -896,12 +909,6 @@ clean_build_out() {
 build_lib() {
   echo $dotted_line
   echo "Start to build libs ${BUILD_LIBS[@]}"
-  clean_build
-
-  git submodule init && git submodule update
-  if [ ! -d "${BUILD_PATH}" ]; then
-    mkdir -p "${BUILD_PATH}"
-  fi
 
   cd "${BUILD_PATH}" && cmake ${CMAKE_ARGS} ..
 
@@ -925,20 +932,9 @@ build_binary() {
 
   echo $dotted_line
   echo "Start to build binary"
-  clean_build
-
-  if [ ! -d "${BUILD_PATH}" ]; then
-    mkdir -p "${BUILD_PATH}"
-  fi
-
-  cd "${BUILD_PATH}" && cmake .. ${CMAKE_ARGS}
 
   echo "--------------- prepare build start ---------------"
   local all_targets=$(cmake --build . --target help)
-  if echo "${all_targets}" | grep -wq "ascendc_impl_gen"; then
-    cmake --build . --target ascendc_impl_gen -- ${VERBOSE} -j $THREAD_NUM
-    if [ $? -ne 0 ]; then exit 1; fi
-  fi
   if echo "${all_targets}" | grep -wq "gen_bin_scripts"; then
     cmake --build . --target gen_bin_scripts -- ${VERBOSE} -j $THREAD_NUM
     if [ $? -ne 0 ]; then exit 1; fi
@@ -947,14 +943,12 @@ build_binary() {
 
   echo "--------------- binary build start ---------------"
   local cur_path=$(pwd)
-  mkdir -p ${cur_path}/op_impl/ai_core/tbe/op_tiling
+  if [ "$ENABLE_CUSTOM" == "TRUE" ]; then
+    cmake --build . --target ophost_math -- ${VERBOSE} -j $THREAD_NUM
+  fi
   if [ ! -L op_impl/ai_core/tbe/op_tiling/liboptiling.so ]; then
-    if [ -e ${cur_path}/libophost_math.so ]; then
-      ln -s ${cur_path}/libophost_math.so op_impl/ai_core/tbe/op_tiling/liboptiling.so
-    else
-      cmake --build . --target ophost_math -- ${VERBOSE} -j $THREAD_NUM
-      ln -s ${cur_path}/libophost_math.so op_impl/ai_core/tbe/op_tiling/liboptiling.so
-    fi
+    mkdir -p ${cur_path}/op_impl/ai_core/tbe/op_tiling
+    ln -s ${cur_path}/libophost_math.so op_impl/ai_core/tbe/op_tiling/liboptiling.so
   fi
   export ASCEND_CUSTOM_OPP_PATH=${cur_path}
   if echo "${all_targets}" | grep -wq "binary"; then
@@ -986,7 +980,6 @@ build_package() {
     fi
   fi
 
-  cd "${BUILD_PATH}" && cmake ${CMAKE_ARGS} ..
   cmake --build . --target package -- ${VERBOSE} -j $THREAD_NUM
   echo "--------------- build package end ---------------"
 }
@@ -994,12 +987,6 @@ build_package() {
 build_ut() {
   echo $dotted_line
   echo "Start to build ut"
-  clean_build
-
-  git submodule init && git submodule update
-  if [ ! -d "${BUILD_PATH}" ]; then
-    mkdir -p "${BUILD_PATH}"
-  fi
 
   if [[ "$ENABLE_TORCH_EXTENSION" == "TRUE" && "$TORCH_EXTENSION_UT" == "TRUE" ]]; then
     # build torch extension
@@ -1035,8 +1022,10 @@ build_ut() {
     return
   fi
 
-  cd "${BUILD_PATH}" && cmake ${CMAKE_ARGS} ..
-  cmake --build . --target ${UT_TARGES[@]} -- ${VERBOSE} -j $THREAD_NUM
+  for lib in "${UT_TARGES[@]}"; do
+    `find . -name ${lib} -delete`
+    cmake --build . --target ${lib} -- ${VERBOSE} -j $THREAD_NUM
+  done
   if [[ "$ENABLE_CONVERAGE" =~ "TRUE" ]]; then
     cmake --build . --target generate_ops_cpp_cov -- -j $THREAD_NUM
   fi
@@ -1157,12 +1146,7 @@ build_torch_extension() {
 build_example() {
   echo $dotted_line
   echo "Start to run examples,name:${EXAMPLE_NAME} mode:${EXAMPLE_MODE}"
-  clean_build
-  if [ ! -d "${BUILD_PATH}" ]; then
-    mkdir -p "${BUILD_PATH}"
-  fi
 
-  cd "${BUILD_PATH}"
   if [[ "${EXAMPLE_MODE}" == "eager" ]]; then
     file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_aclnn_*.cpp)
     if [ -z "$file" ]; then
@@ -1284,6 +1268,8 @@ main() {
   fi
   assemble_cmake_args
   echo "CMAKE_ARGS: ${CMAKE_ARGS}"
+
+  cmake_init
   if [ "$ENABLE_CREATE_LIB" == "TRUE" ]; then
     build_lib
   fi

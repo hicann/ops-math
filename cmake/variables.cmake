@@ -34,11 +34,11 @@ set(COMPILED_OPS CACHE STRING "Compiled Ops" FORCE)
 set(COMPILED_OP_DIRS CACHE STRING "Compiled Ops Dirs" FORCE)
 
 # src path
-get_filename_component(OPS_MATH_CMAKE_DIR           "${OPS_MATH_DIR}/cmake"                               REALPATH)
-get_filename_component(OPS_MATH_COMMON_INC          "${OPS_MATH_DIR}/common/inc"                          REALPATH)
-get_filename_component(OPS_MATH_COMMON_INC_COMMON   "${OPS_MATH_COMMON_INC}/common"                       REALPATH)
-get_filename_component(OPS_MATH_COMMON_INC_EXTERNAL "${OPS_MATH_COMMON_INC}/external"                     REALPATH)
-get_filename_component(OPS_MATH_COMMON_INC_HEADERS  "${OPS_MATH_COMMON_INC_EXTERNAL}/aclnn_kernels"       REALPATH)
+get_filename_component(OPS_MATH_CMAKE_DIR           "${OPS_MATH_DIR}/cmake"                              REALPATH)
+get_filename_component(OPS_MATH_COMMON_INC          "${OPS_MATH_DIR}/common/inc"                         REALPATH)
+get_filename_component(OPS_MATH_COMMON_INC_COMMON   "${OPS_MATH_COMMON_INC}/common"                      REALPATH)
+get_filename_component(OPS_MATH_COMMON_INC_EXTERNAL "${OPS_MATH_COMMON_INC}/external"                    REALPATH)
+get_filename_component(OPS_MATH_COMMON_INC_HEADERS  "${OPS_MATH_COMMON_INC_EXTERNAL}/aclnn_kernels"      REALPATH)
 get_filename_component(OPS_KERNEL_BINARY_SCRIPT     "${OPS_MATH_DIR}/scripts/kernel/binary_script"       REALPATH)
 get_filename_component(OPS_KERNEL_BINARY_CONFIG     "${OPS_MATH_DIR}/scripts/kernel/binary_config"       REALPATH)
 
@@ -93,13 +93,18 @@ set(ASCEND_CCEC_COMPILER_PATH ${ASCEND_TENSOR_COMPILER_PATH}/ccec_compiler/bin)
 set(OP_BUILD_TOOL ${ASCEND_DIR}/tools/opbuild/op_build)
 
 set(UT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/tests/ut)
+set(OP_API_UT_COMMON_INC ${UT_PATH}/op_api/op_api_ut_common/inc)
+set(UT_COMMON_INC ${UT_PATH}/common)
 
 # output path
 set(ASCEND_AUTOGEN_PATH     ${CMAKE_BINARY_DIR}/autogen)
-set(ASCEND_KERNEL_SRC_DST   ${CMAKE_BINARY_DIR}/tbe/ascendc)
-set(ASCEND_KERNEL_CONF_DST  ${CMAKE_BINARY_DIR}/tbe/config)
-set(ASCEND_GRAPH_CONF_DST   ${CMAKE_BINARY_DIR}/tbe/graph)
+set(ASCEND_TBE_BUILD_PATH   ${CMAKE_BINARY_DIR}/tbe)
+set(ASCEND_KERNEL_SRC_DST   ${ASCEND_TBE_BUILD_PATH}/ascendc)
+set(ASCEND_KERNEL_CONF_DST  ${ASCEND_TBE_BUILD_PATH}/config)
+set(ASCEND_GRAPH_CONF_DST   ${ASCEND_TBE_BUILD_PATH}/graph)
+file(REMOVE_RECURSE ${ASCEND_AUTOGEN_PATH})
 file(MAKE_DIRECTORY ${ASCEND_AUTOGEN_PATH})
+file(REMOVE_RECURSE ${ASCEND_TBE_BUILD_PATH})
 file(MAKE_DIRECTORY ${ASCEND_KERNEL_SRC_DST})
 file(MAKE_DIRECTORY ${ASCEND_KERNEL_CONF_DST})
 file(MAKE_DIRECTORY ${ASCEND_GRAPH_CONF_DST})
@@ -125,6 +130,7 @@ set(OPAPI_INCLUDE
   ${OPBASE_INC_DIRS}
   ${OPS_MATH_DIR}/
   ${OPS_MATH_DIR}/common/inc
+  ${OPS_MATH_DIR}/common/inc/common
   ${OPS_MATH_DIR}/common/inc/external
   ${TOP_DIR}/output/${PRODUCT}/aclnnop_resource
 )

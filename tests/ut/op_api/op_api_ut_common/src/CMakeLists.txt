@@ -8,8 +8,6 @@
 # the software repository for the full text of the License.
 # ============================================================================
 
-cmake_minimum_required(VERSION 3.16)
-
 file(GLOB_RECURSE op_api_ut_common_src CONFIGURE_DEPENDS "*.cpp")
 add_library(op_api_ut_common SHARED ${op_api_ut_common_src})
 

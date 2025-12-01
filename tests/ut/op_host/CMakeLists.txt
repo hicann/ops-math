@@ -9,8 +9,6 @@
 # the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.16)
-
 if(UT_TEST_ALL OR OP_HOST_UT)
   ## set variables
   set(OP_HOST_UT_EXE ${PKG_NAME}_op_host_ut)

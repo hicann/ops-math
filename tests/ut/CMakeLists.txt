@@ -8,11 +8,6 @@
 # the software repository for the full text of the License.
 # ============================================================================
 
-cmake_minimum_required(VERSION 3.16)
-
-## set variables
-set(UT_COMMON_INC ${CMAKE_CURRENT_SOURCE_DIR}/common CACHE STRING "ut common include path" FORCE)
-
 ## load ut common depends
 include(${PROJECT_SOURCE_DIR}/cmake/intf_pub_llt_gccnative.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/third_party/gtest.cmake)

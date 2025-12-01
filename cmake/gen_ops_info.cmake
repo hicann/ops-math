@@ -19,7 +19,6 @@ function(kernel_src_copy)
   add_custom_target(${KNCPY_TARGET})
   foreach(OP_DIR ${KNCPY_IMPL_DIR})
     get_filename_component(OP_NAME ${OP_DIR} NAME)
-    message(STATUS "start copy kernel file: ${OP_NAME} to ${KNCPY_DST_DIR}")
     if(NOT TARGET ${OP_NAME}_src_copy)
       set(SRC_DIR ${OP_DIR}/op_kernel)
       if(NOT EXISTS ${SRC_DIR})
@@ -48,7 +47,6 @@ endfunction()
 function(add_ops_impl_target)
   set(oneValueArgs TARGET OPS_INFO_DIR IMPL_DIR OUT_DIR INSTALL_DIR)
   cmake_parse_arguments(OPIMPL "" "${oneValueArgs}" "OPS_BATCH;OPS_ITERATE" ${ARGN})
-
   add_custom_command(
     OUTPUT ${OPIMPL_OUT_DIR}/.impl_timestamp
     COMMAND
@@ -64,14 +62,12 @@ function(add_ops_impl_target)
     DEPENDS ${CMAKE_SOURCE_DIR}/scripts/util/ascendc_impl_build.py
     )
   add_custom_target(${OPIMPL_TARGET} ALL DEPENDS ${OPIMPL_OUT_DIR}/.impl_timestamp)
-
-  file(GLOB dynamic_impl ${OPIMPL_OUT_DIR}/dynamic/*.py)
   if(ENABLE_PACKAGE)
-    install(
-      FILES ${dynamic_impl}
-      DESTINATION ${OPIMPL_INSTALL_DIR}
-      OPTIONAL
-      )
+    install(CODE "
+    file(GLOB dynamic_impl \"${OPIMPL_OUT_DIR}/dynamic/*.py\")
+    file(INSTALL \${dynamic_impl} DESTINATION \"\${CMAKE_INSTALL_PREFIX}/${OPIMPL_INSTALL_DIR}\")
+    "
+    )
   endif()
 endfunction()
 
@@ -156,6 +152,7 @@ function(generate_bin_scripts)
     )
   if(NOT TARGET ${GENBIN_TARGET})
     add_custom_target(${GENBIN_TARGET})
+    add_dependencies(${GENBIN_TARGET} ascendc_impl_gen)
   endif()
   add_dependencies(${GENBIN_TARGET} generate_bin_scripts_${GENBIN_COMPUTE_UNIT}_${GENBIN_OP_NAME})
 endfunction()
@@ -279,7 +276,7 @@ function(compile_from_config)
     COMMAND
       cp -r ${CONFCMP_IMPL_DIR}/*.* ${CONFCMP_OUT_DIR}/src
     COMMAND
-      cp ${CONFCMP_OP_PYTHON_DIR}/${CONFCMP_OP_NAME}.py ${CONFCMP_OUT_DIR}/src
+      cp ${CONFCMP_OP_PYTHON_DIR}/${CONFCMP_OP_NAME}*.py ${CONFCMP_OUT_DIR}/src
     )
   add_dependencies(binary config_compile_${CONFCMP_COMPUTE_UNIT}_${CONFCMP_OP_NAME} ${CONFCMP_TARGET})
 
@@ -346,10 +343,8 @@ function(gen_ops_info_and_python)
 
   add_ops_impl_target(
     TARGET ascendc_impl_gen OPS_INFO_DIR ${ASCEND_AUTOGEN_PATH} IMPL_DIR ${ASCEND_KERNEL_SRC_DST} OUT_DIR
-    ${CMAKE_BINARY_DIR}/tbe INSTALL_DIR ${IMPL_DYNAMIC_INSTALL_DIR}
+    ${ASCEND_TBE_BUILD_PATH} INSTALL_DIR ${IMPL_DYNAMIC_INSTALL_DIR}
     )
-
-
 
   set(ascendc_impl_gen_depends ascendc_kernel_src_copy opbuild_custom_gen_aclnn_all)
   foreach(compute_unit ${ASCEND_ALL_COMPUTE_UNIT})
@@ -361,7 +356,7 @@ function(gen_ops_info_and_python)
     endif()
     add_ops_info_target(
       TARGET ops_info_gen_${compute_unit} OUTPUT
-      ${CMAKE_BINARY_DIR}/tbe/op_info_cfg/ai_core/${compute_unit}/aic-${compute_unit}-${ops_info_suffix} OPS_INFO_DIR
+      ${ASCEND_TBE_BUILD_PATH}/op_info_cfg/ai_core/${compute_unit}/aic-${compute_unit}-${ops_info_suffix} OPS_INFO_DIR
       ${ASCEND_AUTOGEN_PATH} COMPUTE_UNIT ${compute_unit} INSTALL_DIR ${OPS_INFO_INSTALL_DIR}/${compute_unit}
       )
 
@@ -379,7 +374,6 @@ function(gen_ops_info_and_python)
         set(op_type)
         get_op_type_from_op_name("${op_name}" op_type)
         if(NOT op_type)
-          message(STATUS "[INFO] On [${compute_unit}], [${op_name}] not need to compile.")
           continue()
         endif()
 
@@ -420,7 +414,7 @@ function(gen_ops_info_and_python)
               CONFIG_DIR
               ${OP_DIR}/op_host/config
               OP_PYTHON_DIR
-              ${CMAKE_BINARY_DIR}/tbe/dynamic
+              ${ASCEND_TBE_BUILD_PATH}/dynamic
               OUT_DIR
               ${CMAKE_BINARY_DIR}/binary/${compute_unit}
               INSTALL_DIR

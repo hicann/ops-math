@@ -9,8 +9,6 @@
 # the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.16)
-
 if(UT_TEST_ALL OR OP_KERNEL_UT)
     ## set variables
     set(OP_KERNEL_UT_EXE ${PKG_NAME}_op_kernel_ut)

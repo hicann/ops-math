@@ -8,8 +8,6 @@
 # the software repository for the full text of the License.
 # ============================================================================
 
-cmake_minimum_required(VERSION 3.16)
-
 file(GLOB SUBDIRECTORIES LIST_DIRECTORIES true RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
 foreach(SUBDIR ${SUBDIRECTORIES})
     if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}/CMakeLists.txt)
