@@ -351,13 +351,16 @@ __aicore__ inline void AddExample<T>::Process()
 
 2. **编译自定义算子包。**
 
-    以`AddExample`算子为例，假设开发交付件在`examples`目录，完整代码参见[add_example](../../examples/add_example)目录。
+    以`AddExample`算子为例，假设开发交付件在`examples`目录，完整代码参见[add_example](../../examples/add_example)目录。若编译`experimental`目录下用户自定义算子，编译命令需增加编译参数`--experimental`。
 
-    进入项目根目录，执行如下编译命令：
+    进入项目根目录，执行如下编译命令。build.sh编译参数参考[build参数说明](../context/build.md)。
 
     ```bash
     # 编译指定算子，如--ops=add_example
     bash build.sh --pkg --soc=${soc_version} --vendor_name=${vendor_name} --ops=${op_list}
+
+    # 编译experimental目录下指定算子
+    bash build.sh --pkg --soc=${soc_version} --vendor_name=${vendor_name} --ops=${op_list} --experimental
     ```
 
     若提示如下信息，说明编译成功：
