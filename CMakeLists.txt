@@ -88,12 +88,12 @@ else()
     add_subdirectory(random)
 endif()
 
-if(ENABLE_TEST)
-  add_subdirectory(tests/ut)
-endif()
-
 if("${ASCEND_OP_NAME}" STREQUAL "add_example")
   add_subdirectory(examples)
+endif()
+
+if(ENABLE_TEST)
+  add_subdirectory(tests/ut)
 endif()
 
 message(STATUS "Ops for this compilation contains: ${COMPILED_OPS}")

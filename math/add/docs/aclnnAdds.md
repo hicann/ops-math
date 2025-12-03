@@ -1,6 +1,6 @@
-# aclnnAminmax
+# aclnnAdds
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/reduce_min)
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/add)
 
 ## 产品支持情况
 
@@ -12,44 +12,48 @@
 
 ## 功能说明
 
-返回输入张量在指定维度上每行的最小值和最大值。
+- 接口功能：完成加法计算
+- 计算公式：
+
+  $$
+  out_i = self_i+alpha \times other
+  $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnAminmaxGetWorkspaceSize”接口获取入参并根据流程计算所需workspace大小，再调用“aclnnAminmax”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnAddsGetWorkspaceSize”接口获取入参并根据流程计算所需workspace大小，再调用“aclnnAdds”接口执行计算。
 
 ```Cpp
-aclnnStatus aclnnAminmaxGetWorkspaceSize(
-const aclTensor   *self, 
-const aclIntArray *dim, 
-bool               keepDim, 
-aclTensor         *minOut, 
-aclTensor         *maxOut, 
-uint64_t          *workspaceSize, 
-aclOpExecutor    **executor)
+aclnnStatus aclnnAddsGetWorkspaceSize(
+const aclTensor* self, 
+const aclScalar* other, 
+const aclScalar* alpha, 
+aclTensor*       out, 
+uint64_t*        workspaceSize, 
+aclOpExecutor**  executor)
 ```
-  
+
 ```Cpp
-aclnnStatus aclnnAminmax(
-void          *workspace, 
+aclnnStatus aclnnAdds(
+void*          workspace, 
 uint64_t       workspaceSize, 
-aclOpExecutor *executor, 
+aclOpExecutor* executor, 
 aclrtStream    stream)
 ```
 
-## aclnnAminmaxGetWorkspaceSize
+## aclnnAddsGetWorkspaceSize
 
 - **参数说明：**
-
-    <table style="undefined;table-layout: fixed; width: 1502px"><colgroup>
-    <col style="width: 155px">
-    <col style="width: 121px">
-    <col style="width: 262px">
-    <col style="width: 241px">
-    <col style="width: 323px">
+  
+    <table style="undefined;table-layout: fixed; width: 1510px"><colgroup>
+    <col style="width: 153px">
     <col style="width: 120px">
-    <col style="width: 133px">
-    <col style="width: 147px">
+    <col style="width: 219px">
+    <col style="width: 235px">
+    <col style="width: 386px">
+    <col style="width: 119px">
+    <col style="width: 132px">
+    <col style="width: 146px">
     </colgroup>
     <thead>
       <tr>
@@ -66,51 +70,41 @@ aclrtStream    stream)
       <tr>
         <td>self</td>
         <td>输入</td>
-        <td>输入tensor。</td>
+        <td>公式中的输入self。</td>
         <td>-</td>
-        <td>FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
         <td>ND</td>
-        <td>-</td>
+        <td>不高于8维</td>
         <td>√</td>
       </tr>
       <tr>
-        <td>dim</td>
+        <td>other</td>
         <td>输入</td>
-        <td>指定要缩减的维度。</td>
-        <td>范围[-self.dim(), self.dim() - 1]。</td>
-        <td>INT64</td>
+        <td>公式中的other。</td>
+        <td>-</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
         <td>-</td>
         <td>-</td>
         <td>-</td>
       </tr>
       <tr>
-        <td>keepdim</td>
+        <td>alpha</td>
         <td>输入</td>
-        <td>reduce轴的维度是否保留。</td>
-        <td>-</td>
-        <td>BOOL</td>
+        <td>公式中的alpha。</td>
+        <td>数据类型需要可转换成self与other推导后的数据类型。</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
         <td>-</td>
         <td>-</td>
         <td>-</td>
       </tr>
       <tr>
-        <td>minOut</td>
-        <td>输入</td>
-        <td>输出的最小值tensor。</td>
-        <td>数据类型与self一致。</td>
-        <td>FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
-        <td>ND</td>
-        <td>-</td>
-        <td>√</td>
-      </tr>
-      <tr>
-        <td>maxOut</td>
+        <td>out</td>
         <td>输出</td>
-        <td>输出的最大值tensor。</td>
-        <td>数据类型与self一致。</td>
-        <td>FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>公式中的out。</td>
+        <td>数据类型需要是self与other推导之后可转换的数据类型（参见[互转换关系](../../../docs/context/互转换关系.md)）。</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
         <td>ND</td>
-        <td>-</td>
+        <td>与self一致</td>
         <td>√</td>
       </tr>
       <tr>
@@ -135,17 +129,19 @@ aclrtStream    stream)
       </tr>
     </tbody>
     </table>
-
+  
+    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：self与other数据类型满足[互推导关系](../../../docs/context/互推导关系.md)。  
+ 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-    <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-    <col style="width: 288px">
-    <col style="width: 114px">
-    <col style="width: 747px">
+    <table style="undefined;table-layout: fixed; width: 1110px"><colgroup>
+    <col style="width: 291px">
+    <col style="width: 112px">
+    <col style="width: 707px">
     </colgroup>
     <thead>
       <tr>
@@ -157,39 +153,39 @@ aclrtStream    stream)
       <tr>
         <td>ACLNN_ERR_PARAM_NULLPTR</td>
         <td>161001</td>
-        <td>传入的self、dim、minOut或maxOut是空指针。</td>
+        <td>传入的self、other、out或alpha是空指针。</td>
       </tr>
       <tr>
         <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
         <td rowspan="6">161002</td>
-        <td>self的数据类型不在支持的范围内时。</td>
+        <td>self的数据类型不在支持的范围之内。</td>
       </tr>
       <tr>
-        <td>minOut或maxOut与self的数据类型不一致。</td>
+        <td>self和other无法做数据类型推导。</td>
       </tr>
       <tr>
-        <td>self、minOut或maxOut的shape超过8维。</td>
+        <td>推导出的数据类型无法转换为out的类型。</td>
       </tr>
       <tr>
-        <td>dim超出范围。</td>
+        <td>alpha无法转换为self和other推导后的数据类型。</td>
       </tr>
       <tr>
-        <td>dim个数等于1且self中该dim轴对应的shape为0。</td>
+        <td>self与out的shape不一致。</td>
       </tr>
       <tr>
-        <td>dim个数不为1且self为空tensor。</td>
+        <td>self与out的维度大于8。</td>
       </tr>
     </tbody>
     </table>
 
-## aclnnAminmax
+## aclnnAdds
 
 - **参数说明：**
   
-    <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+    <table style="undefined;table-layout: fixed; width: 1110px"><colgroup>
     <col style="width: 153px">
     <col style="width: 124px">
-    <col style="width: 872px">
+    <col style="width: 833px">
     </colgroup>
     <thead>
       <tr>
@@ -206,7 +202,7 @@ aclrtStream    stream)
       <tr>
         <td>workspaceSize</td>
         <td>输入</td>
-        <td>在Device侧申请的workspace大小，由第一段接口aclnnAminmaxGetWorkspaceSize获取。</td>
+        <td>在Device侧申请的workspace大小，由第一段接口aclnnAddsGetWorkspaceSize获取。</td>
       </tr>
       <tr>
         <td>executor</td>
@@ -227,17 +223,16 @@ aclrtStream    stream)
 
 ## 约束说明
 
-无
+  other参数对于float无精度损失，int32、int64数据类型在other参数大于2^24时可能存在精度损失，推荐使用[aclnnAdd](./aclnnAdd&aclnnInplaceAdd.md)。
 
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
-
 ```Cpp
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
-#include "aclnnop/aclnn_aminmax.h"
+#include "aclnnop/aclnn_add.h"
 
 #define CHECK_RET(cond, return_expr) \
   do {                               \
@@ -277,7 +272,6 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
   // 调用aclrtMalloc申请device侧内存
   auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMalloc failed. ERROR: %d\n", ret); return ret);
-
   // 调用aclrtMemcpy将host侧数据拷贝到device侧内存上
   ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
@@ -300,49 +294,49 @@ int main() {
   int32_t deviceId = 0;
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
-  // check根据自己的需要处理
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
   // 2. 构造输入与输出，需要根据API的接口自定义构造
-  std::vector<int64_t> selfShape = {2, 3, 2};
-  std::vector<int64_t> outShape = {1, 3, 2};
+  std::vector<int64_t> selfShape = {4, 2};
+  std::vector<int64_t> outShape = {4, 2};
   void* selfDeviceAddr = nullptr;
-  void* minOutDeviceAddr = nullptr;
-  void* maxOutDeviceAddr = nullptr;
+  void* outDeviceAddr = nullptr;
   aclTensor* self = nullptr;
-  aclTensor* minOut = nullptr;
-  aclTensor* maxOut = nullptr;
-  std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-  std::vector<float> minOutHostData = {0, 0, 0, 0, 0, 0};
-  std::vector<float> maxOutHostData = {0, 0, 0, 0, 0, 0};
-  std::vector<int64_t> dimData = {0};
-  bool keepDim = true;
+  aclScalar* other = nullptr;
+  aclScalar* alpha = nullptr;
+  aclTensor* out = nullptr;
+  std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+  std::vector<float> outHostData(8, 0);
+  float otherValue = 2.0f;
+  float alphaValue = 1.2f;
   // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  // 创建dim aclIntArray
-  aclIntArray *dim = aclCreateIntArray(dimData.data(), dimData.size());
+  // 创建other aclScalar
+  other = aclCreateScalar(&otherValue, aclDataType::ACL_FLOAT);
+  CHECK_RET(other != nullptr, return ret);
+  // 创建alpha aclScalar
+  alpha = aclCreateScalar(&alphaValue, aclDataType::ACL_FLOAT);
+  CHECK_RET(alpha != nullptr, return ret);
   // 创建out aclTensor
-  ret = CreateAclTensor(minOutHostData, outShape, &minOutDeviceAddr, aclDataType::ACL_FLOAT, &minOut);
-  CHECK_RET(ret == ACL_SUCCESS, return ret);
-  ret = CreateAclTensor(maxOutHostData, outShape, &maxOutDeviceAddr, aclDataType::ACL_FLOAT, &maxOut);
+  ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   // 3. 调用CANN算子库API，需要修改为具体的Api名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
-  // 调用aclnnAminmax第一段接口
-  ret = aclnnAminmaxGetWorkspaceSize(self, dim, keepDim, minOut, maxOut, &workspaceSize, &executor);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAminmaxGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+  // 调用aclnnAdds第一段接口
+  ret = aclnnAddsGetWorkspaceSize(self, other, alpha, out, &workspaceSize, &executor);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAddsGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
   // 根据第一段接口计算出的workspaceSize申请device内存
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
-  // 调用aclnnAminmax第二段接口
-  ret = aclnnAminmax(workspaceAddr, workspaceSize, executor, stream);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAminmax failed. ERROR: %d\n", ret); return ret);
+  // 调用aclnnAdds第二段接口
+  ret = aclnnAdds(workspaceAddr, workspaceSize, executor, stream);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAdds failed. ERROR: %d\n", ret); return ret);
 
   // 4. （固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
@@ -350,37 +344,30 @@ int main() {
 
   // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
   auto size = GetShapeSize(outShape);
-  std::vector<float> minResultData(size, 0);
-  ret = aclrtMemcpy(minResultData.data(), minResultData.size() * sizeof(minResultData[0]), minOutDeviceAddr,
-                    size * sizeof(minResultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
+  std::vector<float> resultData(size, 0);
+  ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr,
+                    size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
   for (int64_t i = 0; i < size; i++) {
-    LOG_PRINT("result[%ld] is: %f\n", i, minResultData[i]);
-  }
-  std::vector<float> maxResultData(size, 0);
-  ret = aclrtMemcpy(maxResultData.data(), maxResultData.size() * sizeof(maxResultData[0]), maxOutDeviceAddr,
-                    size * sizeof(maxResultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
-  for (int64_t i = 0; i < size; i++) {
-    LOG_PRINT("result[%ld] is: %f\n", i, maxResultData[i]);
+    LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
   }
 
-  // 6. 释放aclTensor，需要根据具体API的接口定义修改
+  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
-  aclDestroyIntArray(dim);
-  aclDestroyTensor(minOut);
-  aclDestroyTensor(maxOut);
+  aclDestroyScalar(other);
+  aclDestroyScalar(alpha);
+  aclDestroyTensor(out);
 
-  // 7. 释放device资源，需要根据具体API的接口定义修改
+  // 7. 释放device 资源
   aclrtFree(selfDeviceAddr);
-  aclrtFree(minOutDeviceAddr);
-  aclrtFree(maxOutDeviceAddr);
+  aclrtFree(outDeviceAddr);
   if (workspaceSize > 0) {
     aclrtFree(workspaceAddr);
   }
   aclrtDestroyStream(stream);
   aclrtResetDevice(deviceId);
   aclFinalize();
+
   return 0;
 }
 ```
