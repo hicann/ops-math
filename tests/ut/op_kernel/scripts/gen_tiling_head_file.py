@@ -119,12 +119,10 @@ def load_lib_v2(hight_priority_path:str = None):
 
 def get_default_tiling_struct(opname: str):
     default_tiling_struct = ""
-    old_path = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + "/../ops/built-in/tbe/impl/ascendc")
-    old_path = os.path.join(old_path, opname)
-    new_base_path = (os.path.dirname(os.path.abspath(__file__)) + "/../ops/")
+    new_base_path = (os.path.dirname(os.path.abspath(__file__)) + "/../../../..")
     pattern = f"*/{opname}"
     new_paths = list(Path(new_base_path).glob(pattern))
-    asc_file_path = old_path
+    asc_file_path = new_paths
     if len(new_paths) > 0:
         asc_file_path = str(new_paths[0])
     print(f"asc_file_path:{asc_file_path}")

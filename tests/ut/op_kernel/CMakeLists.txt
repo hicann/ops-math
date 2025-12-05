@@ -52,6 +52,7 @@ if(UT_TEST_ALL OR OP_KERNEL_UT)
                 -Wl,--as-needed
                 gtest
                 tikicpulib::${socVersion}
+                graph
                 opp_registry
                 metadef
                 register
