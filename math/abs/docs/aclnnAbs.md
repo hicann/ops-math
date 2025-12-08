@@ -188,7 +188,7 @@ aclnnStatus aclnnAbs(
 
 ## 约束说明
 
-无
+如果计算量过大可能会导致算子执行超时（aicore error类型报错，errorStr为：timeout or trap error）,场景为最后2轴合轴小于16，前面的轴合轴超大。
 
 ## 调用示例
 

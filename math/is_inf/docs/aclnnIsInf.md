@@ -70,7 +70,7 @@ aclnnStatus aclnnIsInf(
       <td>输入</td>
       <td>待进行abs计算的入参，公式中的input_i。</td>
       <td>无</td>
-      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -80,7 +80,7 @@ aclnnStatus aclnnIsInf(
       <td>输出</td>
       <td>待进行abs计算的出参，公式中的out_i。</td>
       <td>shape与self相同。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+      <td>BOOL</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
