@@ -262,7 +262,7 @@ function(compile_from_config)
     config_compile_${CONFCMP_COMPUTE_UNIT}_${CONFCMP_OP_NAME}
     COMMAND
       ${_ASCENDC_ENV_VAR} bash ${OPS_KERNEL_BINARY_SCRIPT}/build_binary_single_op.sh ${CONFCMP_OP_TYPE} ${CONFCMP_COMPUTE_UNIT}
-      ${CONFCMP_OUT_DIR}/bin
+      ${CONFCMP_OUT_DIR}/bin ${ENABLE_MSSANITIZER} ${ENABLE_DEBUG}
     WORKING_DIRECTORY ${OPS_KERNEL_BINARY_SCRIPT}
     DEPENDS ${ASCEND_KERNEL_CONF_DST}/aic-${CONFCMP_COMPUTE_UNIT}-ops-info.ini ascendc_kernel_src_copy
             bin_conf_${CONFCMP_OP_NAME}_${CONFCMP_COMPUTE_UNIT}_copy

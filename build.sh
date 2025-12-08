@@ -22,7 +22,7 @@ SUPPORTED_LONG_OPTS=(
   "help" "ops=" "soc=" "vendor_name=" "debug" "cov" "noexec" "aicpu" "opkernel" "jit"
   "pkg" "disable_asan" "valgrind" "make_clean"
   "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test"
-  "run_example" "genop=" "genop_aicpu=" "experimental" "torch_extension" "torch_extension_test"
+  "run_example" "genop=" "genop_aicpu=" "experimental" "torch_extension" "torch_extension_test" "mssanitizer"
 )
 
 in_array() {
@@ -133,12 +133,13 @@ usage() {
         echo "    -O[n]                  Compile optimization options, support [O0 O1 O2 O3], eg:-O3"
         echo "    --debug                Build with debug mode"
         echo "    --experimental         Build experimental version"
+        echo "    --mssanitizer          Build with mssanitizer mode, with options: '-g --cce-enable-sanitizer'"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --pkg --soc=ascend910b --vendor_name=customize -j16 -O3"
         echo "    bash build.sh --pkg --ops=add,sub --debug"
         echo "    bash build.sh --pkg --experimental --soc=ascend910b"
-        echo "    bash build.sh --pkg --experimental --soc=ascend910b --ops=abs"
+        echo "    bash build.sh --pkg --experimental --soc=ascend910b --ops=abs --mssanitizer"
         return
         ;;
       opkernel)
@@ -147,9 +148,13 @@ usage() {
         echo "    --opkernel             Build binary kernel"
         echo "    --soc=soc_version      Compile for specified Ascend SoC"
         echo "    --ops=op1,op2,...      Compile specified operators (comma-separated for multiple)"
+        echo "    --debug                Build with debug mode"
+        echo "    --mssanitizer          Build with mssanitizer mode, with options: '-g --cce-enable-sanitizer'"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub"
+        echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub --debug"
+        echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub --mssanitizer"
         return
         ;;
       test)
@@ -366,6 +371,7 @@ usage() {
   echo "    --genop Create the initial directory for op"
   echo "    --genop_aicpu Create the initial directory for AI CPU op"
   echo "    --torch_extension Create torch extension wheel package"
+  echo "    --mssanitizer Build with mssanitizer mode, with options: '-g --cce-enable-sanitizer'"
   echo "to be continued ..."
 }
 
@@ -428,6 +434,11 @@ check_param() {
     fi
   fi
 
+  if [[ "$ENABLE_DEBUG" == "TRUE" && "$ENABLE_MSSANITIZER" == "TRUE" ]]; then
+    echo "[ERROR] --debug cannot be used with --mssanitizer"
+    exit 1
+  fi
+  
   if $(echo ${USE_CMD} | grep -wq "opkernel") && $(echo ${USE_CMD} | grep -wq "jit"); then
     echo "[ERROR] --opkernel cannot be used with --jit"
     exit 1
@@ -556,6 +567,7 @@ checkopts() {
   USE_CMD="$*"
 
   ENABLE_DEBUG=FALSE
+  ENABLE_MSSANITIZER=FALSE
   ENABLE_CONVERAGE=FALSE
   ENABLE_UT_EXEC=TRUE
   ENABLE_ASAN=TRUE
@@ -673,6 +685,8 @@ checkopts() {
           ENABLE_CUSTOM=TRUE
           ;;
         debug) ENABLE_DEBUG=TRUE ;;
+        mssanitizer)
+          ENABLE_MSSANITIZER=TRUE ;;
         cov) ENABLE_CONVERAGE=TRUE ;;
         noexec) ENABLE_UT_EXEC=FALSE ;;
         aicpu) AICPU_ONLY=TRUE ;;
@@ -850,6 +864,9 @@ assemble_cmake_args() {
   fi
   if [[ "x$BUILD_MODE" != "x" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DBUILD_MODE=${BUILD_MODE}"
+  fi
+  if [[ "$ENABLE_MSSANITIZER" == "TRUE" ]]; then
+    CMAKE_ARGS="$CMAKE_ARGS -DENABLE_MSSANITIZER=TRUE"
   fi
   if [[ "$OP_HOST_UT" == "TRUE" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DOP_HOST_UT=TRUE"

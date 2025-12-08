@@ -109,6 +109,8 @@ main() {
   local soc_version_lower=${soc_version,,}
   local output_path=$3
   local task_path=$4
+  local enable_mssanitizer=$5
+  local enable_debug=$6
   local is_need_gen_opc_info=TRUE
   local python_arg=${HI_PYTHON}
   if [ "${python_arg}" = "" ]; then
@@ -262,6 +264,13 @@ main() {
         else
           cmd="opc ${op_python_path} --main_func=${op_func} --input_param=${new_file} --soc_version=${opc_soc_version} --output=${binary_bin_path} --impl_mode=${impl_mode} ${simplified_key_param} --op_mode=dynamic"
         fi
+        if [ "${enable_mssanitizer}" = "TRUE" ]; then
+          cmd="${cmd} --op_debug_config=sanitizer"
+        fi
+        if [ "${enable_debug}" = "TRUE" ]; then
+          cmd="${cmd} --op_debug_config=debug"
+        fi
+        
         echo "[INFO] op:${op_type} do opc cmd is ${cmd}"
         echo ${cmd} >> ${opc_task_cmd_file}
         cmd="${python_arg} gen_output_json.py ${new_file} ${binary_bin_path} ${binary_compile_json_file}"

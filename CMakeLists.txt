@@ -37,6 +37,7 @@ option(ENABLE_CUSTOM "Enable build custom" OFF)
 option(ENABLE_PACKAGE "Enable build package" OFF)
 option(ENABLE_EXPERIMENTAL "Enable experimental module" OFF)
 option(ENABLE_TORCH_EXTENSION "Enable torch extension module" OFF)
+option(ENABLE_MSSANITIZER "Enable mssanitizer mode" OFF)
 
 option(OP_HOST_UT "Enable ophost ut" OFF)
 option(OP_API_UT "Enable opapi ut" OFF)

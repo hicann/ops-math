@@ -22,6 +22,8 @@ main() {
   local op_type=$1
   local soc_version=$2
   local output_path=$3
+  local enable_mssanitizer=$4
+  local enable_debug=$5
   local workdir=$(
     cd $(dirname $0)
     pwd
@@ -31,7 +33,7 @@ main() {
   test -d "$task_path/" || mkdir -p $task_path/
   rm -f $task_path/*
 
-  bash build_binary_single_op_gen_task.sh $op_type $soc_version $output_path $task_path
+  bash build_binary_single_op_gen_task.sh $op_type $soc_version $output_path $task_path $enable_mssanitizer $enable_debug
 
   get_thread_num
   thread_num=$?
