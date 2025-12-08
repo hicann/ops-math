@@ -149,10 +149,10 @@ function(generate_bin_scripts)
     COMMAND
       ${ASCEND_PYTHON_EXECUTABLE} ${OPS_KERNEL_BINARY_SCRIPT}/merge_ops_config_json.py
           ${GENBIN_OUT_DIR}/gen/${GENBIN_OP_NAME}
+    DEPENDS ascendc_impl_gen  # this target depend ascendc_impl_gen to gen asc-xxx-ops-info.ini
     )
   if(NOT TARGET ${GENBIN_TARGET})
     add_custom_target(${GENBIN_TARGET})
-    add_dependencies(${GENBIN_TARGET} ascendc_impl_gen)
   endif()
   add_dependencies(${GENBIN_TARGET} generate_bin_scripts_${GENBIN_COMPUTE_UNIT}_${GENBIN_OP_NAME})
 endfunction()
@@ -422,7 +422,9 @@ function(gen_ops_info_and_python)
               COMPUTE_UNIT
               ${compute_unit}
         )
-        add_dependencies(ascendc_bin_${compute_unit}_${op_name} merge_ini_${compute_unit} ascendc_impl_gen)
+        add_dependencies(ascendc_bin_${compute_unit}_${op_name} merge_ini_${compute_unit} ascendc_impl_gen
+                         gen_bin_scripts # auto gen binary config
+                        )
       endforeach()
 
       if(HAS_OP_COMPILE_OF_COMPUTE_UNIT)
