@@ -7,21 +7,20 @@ body:
     attributes:
       value: |
         Thanks for sending an issue! Please fill in the following template to help quickly solve your problem.
-  - type: textarea
+    type: textarea
     attributes:
-      label: Document Link（文档链接）
-      description: 请给出有问题的文档链接
+      label: 文档描述
+      description: 提供尽可能多的信息描述产生了什么问题
+      value: |
+        一、文档链接 *（必填）
+        # 请给出有问题的文档链接
+
+        
+        二、问题文档片段 *（必填）
+        # 请给出问题文档片段或截图
+
+        
+        💡 存在的问题（选填）
+
     validations:
       required: true
-  - type: textarea
-    attributes:
-      label: Issues Section（问题文档片段）
-      description: 请给出问题文档片段或截图
-    validations:
-      required: true
-  - type: textarea
-    attributes:
-      label: Existing Issues（存在的问题）
-      description: 请描述下存在的问题
-    validations:
-      required: false

@@ -9,38 +9,30 @@ body:
         Thanks for sending an issue! Please fill in the following template to help quickly solve your problem.
   - type: textarea
     attributes:
-      label: Describe the current behavior / 问题描述 (Mandatory / 必填)
+      label: 问题描述
       description: 提供尽可能多的信息描述产生了什么问题
-      placeholder: ""
+      value: |
+        一、问题描述 *（必填）
+
+        二、环境信息 （可选）
+        • 昇腾硬件型号：
+        • CANN版本:
+        • 操作系统：
+        • 其他相关软件版本：
+        
+        三、重现步骤 （可选）
+        # 提供尽可能多的信息描述如何重现该缺陷
+        
+        
+        四、预期结果 （可选）
+        # 描述预期的行为应该是什么样子的
+        
+        
+        五、日志/截图 *（必填）
+        <!-- 可粘贴错误日志或描述截图 -->
+        
+        
+        💡 备注（选填）
+
     validations:
       required: true
-  - type: textarea
-    attributes:
-      label: Environment / 环境信息 (Mandatory / 必填)
-      description: 请提供昇腾硬件型号与软件环境信息
-    validations:
-      required: true
-  - type: textarea
-    attributes:
-      label: Steps to reproduce the issue / 重现步骤 (Mandatory / 必填)
-      description: 提供尽可能多的信息描述如何重现该缺陷
-    validations:
-      required: true
-  - type: textarea
-    attributes:
-      label: Describe the expected behavior / 预期结果 (Mandatory / 必填)
-      description: 描述期望的行为应该是什么样子的
-    validations:
-      required: true
-  - type: textarea
-    attributes:
-      label: Related log / screenshot / 日志 / 截图 (Mandatory / 必填)
-      description: 提供尽可能多的日志/结果信息
-    validations:
-      required: true  
-  - type: textarea
-    attributes:
-      label: Special notes for this issue/备注 (Optional / 选填)
-      description: 补充下其他您认为需要提供的信息
-    validations:
-      required: false
