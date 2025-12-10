@@ -60,7 +60,7 @@ aclnnStatus aclnnCast(
       <td>输入</td>
       <td>待进行cast计算的入参，Device侧的aclTensor。</td>
       <td>无</td>
-      <td>FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BOOL、COMPLEX32、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td>FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BOOL、COMPLEX32、COMPLEX64、COMPLEX128、BFLOAT16、FLOAT4_E2M1、FLOAT4_E1M2</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -111,42 +111,6 @@ aclnnStatus aclnnCast(
 - **返回值：**
   
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
-
-  第一段接口会完成入参校验，出现以下场景时报错：
-  
-  <table style="undefined;table-layout: fixed;width: 1155px"><colgroup>
-  <col style="width: 319px">
-  <col style="width: 144px">
-  <col style="width: 671px">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>返回码</th>
-      <th>错误码</th>
-      <th>描述</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>ACLNN_ERR_PARAM_NULLPTR</td>
-      <td>161001</td>
-      <td>传入的tensor或out是空指针。</td>
-    </tr>
-    <tr>
-      <td rowspan="8">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="8">161002</td>
-      <td>self的数据类型和数据格式不在支持的范围之内。</td>
-    </tr>
-    <tr>
-      <td>self的数据格式与out的数据格式不同。</td>
-    </tr>
-    <tr>
-      <td>self的shape与out的shape不同。</td>
-    </tr>
-    <tr>
-      <td>参数dtype不在输出支持的数据格式范围之内。</td>
-    </tr>
-  </tbody></table>
 
 ## aclnnCast
 
@@ -223,7 +187,7 @@ aclnnStatus aclnnCast(
       <td>self的shape与out的shape不同。</td>
     </tr>
     <tr>
-      <td>参数dtype不在输出支持的数据格式范围之内。</td>
+      <td>参数dtype不在输出支持的数据类型范围之内。</td>
     </tr>
   </tbody></table>
 
