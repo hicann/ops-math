@@ -36,5 +36,6 @@
     {"name":"TransformBiasRescaleQkv", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : false},
     {"name":"Sqrt", "compute_units": ["ascend910b", "ascend310b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"Transposev", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
-    {"name":"SelectV2", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"}
+    {"name":"SelectV2", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
+    {"name":"TanV2", "compute_units": ["ascend910b", "ascend310b"], "auto_sync" : true, "impl_mode" : "high_performance"}
 ]
