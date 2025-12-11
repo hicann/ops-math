@@ -196,7 +196,7 @@ static ge::graphStatus TransposevTilingFunc(gert::TilingContext* context)
     const auto xShape = context->GetInputTensor(0)->GetOriginShape();  
     int64_t dim = static_cast<int64_t>(xShape.GetDimNum());   
     tiling->dims = static_cast<int64_t>(dim);
-    for(int32_t i=0;i<MAX_DIM;i++){                                          
+    for(uint32_t i=0;i<MAX_DIM;i++){                                          
         tiling->shape[i] = static_cast<int64_t>(0);
     }
     for(int32_t i=0;i<dim;i++){                                           
