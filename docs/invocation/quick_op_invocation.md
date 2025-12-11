@@ -117,7 +117,7 @@
 2. **安装自定义算子包**
    
     ```bash
-    ./cann-ops-math-${vendor_name}_linux-${arch}.run
+    ./build_out/cann-ops-math-${vendor_name}_linux-${arch}.run
     ```
     
     自定义算子包安装路径为`${ASCEND_HOME_PATH}/vendors`，\$\{ASCEND\_HOME\_PATH\}已通过环境变量配置，表示CANN toolkit包安装路径，一般为\$\{install\_path\}/latest。注意自定义算子包不支持卸载。
@@ -149,7 +149,7 @@
 2. **安装ops-math包**
 
     ```bash
-    ./cann-${soc_name}-ops-math_${cann_version}_linux-${arch}.run --full --install-path=${install_path}
+    ./build_out/cann-${soc_name}-ops-math_${cann_version}_linux-${arch}.run --full --install-path=${install_path}
     ```
 
     \$\{install\_path\}：表示指定安装路径，需要与toolkit包安装在相同路径，默认安装在`/usr/local/Ascend`目录。
@@ -160,16 +160,6 @@
 
 - **执行算子样例**
   
-    - 完成ops-math包安装后，执行命令如下：
-        ```bash
-        bash build.sh --run_example ${op} ${mode}
-        # 以Abs算子example执行为例
-        # bash build.sh --run_example abs eager
-        ```
-        
-        - \$\{op\}：表示待执行算子，算子名小写下划线形式，如abs。       
-        - \$\{mode\}：表示算子执行模式，目前支持eager（aclnn调用）、graph（图模式调用）。
-    
     - 完成自定义算子包安装后，执行命令如下：
         ```bash
         bash build.sh --run_example ${op} ${mode} ${pkg_mode} [--vendor_name=${vendor_name}]
@@ -184,17 +174,27 @@
         
         说明：\$\{mode\}为graph时，不指定\$\{pkg_mode\}和\$\{vendor\_name\}
 
+    - 完成ops-math包安装后，执行命令如下：
+        ```bash
+        bash build.sh --run_example ${op} ${mode}
+        # 以Abs算子example执行为例
+        # bash build.sh --run_example abs eager
+        ```
+        
+        - \$\{op\}：表示待执行算子，算子名小写下划线形式，如abs。       
+        - \$\{mode\}：表示算子执行模式，目前支持eager（aclnn调用）、graph（图模式调用）。
+    
     执行算子样例后会打印执行结果，以Abs算子为例，结果如下：
 
     ```
-    mean result[0] is: 1.000000
-    mean result[1] is: 1.000000
-    mean result[2] is: 1.000000
-    mean result[3] is: 2.000000
-    mean result[4] is: 2.000000
-    mean result[5] is: 2.000000
-    mean result[6] is: 3.000000
-    mean result[7] is: 3.000000
+    abs result[0] is: 1.000000
+    abs result[1] is: 1.000000
+    abs result[2] is: 1.000000
+    abs result[3] is: 2.000000
+    abs result[4] is: 2.000000
+    abs result[5] is: 2.000000
+    abs result[6] is: 3.000000
+    abs result[7] is: 3.000000
     ```
 - **执行算子UT**
 
