@@ -56,7 +56,7 @@ detect_os() {
                 PKG_MANAGER="yum"
             fi
         else
-            echo "Unsupported Linux version"
+            echo "自动安装脚本不支持该Linux发型版本，请手动安装依赖"
             exit 1
         fi
     elif [[ "$(uname -s)" == "Darwin" ]]; then
@@ -237,19 +237,19 @@ install_cmake() {
                 run_command wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
                 run_command echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ bionic main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
                 run_command sudo apt update
-                run_command sudo apt install -y cmake
+                run_command sudo apt install -y cmake make
             else
                 run_command sudo $PKG_MANAGER update
-                run_command sudo $PKG_MANAGER install -y cmake
+                run_command sudo $PKG_MANAGER install -y cmake make
             fi
             ;;
         rhel)
             if grep -q "release 7" /etc/redhat-release; then
                 run_command sudo $PKG_MANAGER install -y epel-release
-                run_command sudo $PKG_MANAGER install -y cmake3
+                run_command sudo $PKG_MANAGER install -y cmake3 make
                 run_command sudo ln -s /usr/bin/cmake3 /usr/bin/cmake
             else
-                run_command sudo $PKG_MANAGER install -y cmake
+                run_command sudo $PKG_MANAGER install -y cmake make
             fi
             ;;
         macos)
