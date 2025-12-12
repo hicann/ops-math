@@ -21,8 +21,9 @@
 │   │   └── CMakeLists.txt
 │   ├── math                                            # 可选，用户开发的math类算子目录
 │   │   └── CMakeLists.txt
-│   └── random                                          # 可选，用户开发的random类算子目录
-│       └── CMakeLists.txt
+│   ├── random                                          # 可选，用户开发的random类算子目录
+│   │   └── CMakeLists.txt
+│   └── CMakeLists.txt
 ├── ${op_class}                                         # 算子分类，如conversion、math、 random类算子
 │   ├──${op_name}                                         # 算子工程目录，${op_name}表示算子名（小写下划线形式）
 │   │   ├── CMakeLists.txt                              # 算子cmakelist入口

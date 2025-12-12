@@ -30,6 +30,9 @@ add_library(${OPHOST_NAME}_aclnn_exclude_headers INTERFACE)
 add_library(${GRAPH_PLUGIN_NAME}_proto_headers INTERFACE)
 
 # global variables
+# 需要编译的算子
+set(NEED_COMPILE_OPS "${ASCEND_OP_NAME}" CACHE STRING "Need to be compiled Ops" FORCE)
+# 已编译的算子
 set(COMPILED_OPS CACHE STRING "Compiled Ops" FORCE)
 set(COMPILED_OP_DIRS CACHE STRING "Compiled Ops Dirs" FORCE)
 
@@ -196,3 +199,5 @@ set(AICPU_LINK
   -Wl,--as-needed
   $<$<STREQUAL:${PRODUCT_SIDE},device>:malblas_static>
 )
+
+set(OPS_CATEGORY_LIST "math" "conversion" "random")

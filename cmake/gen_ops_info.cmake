@@ -160,15 +160,10 @@ endfunction()
 # ######################################################################################################################
 # get op_type from *_def.cpp
 # ######################################################################################################################
-function(get_op_type_from_op_name OP_NAME OP_TYPE)
-  if(ENABLE_EXPERIMENTAL)
-    set(cmd "find ${CMAKE_CURRENT_SOURCE_DIR} -name ${OP_NAME}_def.cpp -path '*/experimental/*' -exec grep OP_ADD {} \;")
-  else()
-    set(cmd "find ${CMAKE_CURRENT_SOURCE_DIR} -name ${OP_NAME}_def.cpp ! -path '*/experimental/*' -exec grep OP_ADD {} \;")
-  endif()
+function(get_op_type_from_op_name OP_NAME OP_DIR OP_TYPE)
   execute_process(
       COMMAND
-        bash -c "${cmd}"
+      find ${OP_DIR} -name ${OP_NAME}_def.cpp -exec grep OP_ADD {} \;
       OUTPUT_VARIABLE op_type
       )
   if(NOT op_type)
@@ -186,12 +181,8 @@ endfunction()
 # ######################################################################################################################
 # get op_type from *_def.cpp
 # ######################################################################################################################
-function(check_op_supported OP_NAME COMPUTE_UNIT OP_SUPPORTED_COMPUTE_UNIT)
-  if(ENABLE_EXPERIMENTAL)
-    set(cmd "find ${CMAKE_CURRENT_SOURCE_DIR} -name ${OP_NAME}_def.cpp -path '*/experimental/*' -exec grep '\.AddConfig(\\s*\"${COMPUTE_UNIT}\"' {} \;")
-  else()
-    set(cmd "find ${CMAKE_CURRENT_SOURCE_DIR} -name ${OP_NAME}_def.cpp ! -path '*/experimental/*' -exec grep '\.AddConfig(\\s*\"${COMPUTE_UNIT}\"' {} \;")
-  endif()
+function(check_op_supported OP_NAME OP_DIR COMPUTE_UNIT OP_SUPPORTED_COMPUTE_UNIT)
+  set(cmd "find ${OP_DIR} -name ${OP_NAME}_def.cpp -exec grep '\.AddConfig(\\s*\"${COMPUTE_UNIT}\"' {} \;")
   execute_process(
     COMMAND bash -c "${cmd}"
     OUTPUT_VARIABLE op_supported_compute_unit
@@ -371,14 +362,16 @@ function(gen_ops_info_and_python)
       set(HAS_OP_COMPILE_OF_COMPUTE_UNIT FALSE)
       foreach(OP_DIR ${COMPILED_OP_DIRS})
         get_filename_component(op_name ${OP_DIR} NAME)
+
         set(op_type)
-        get_op_type_from_op_name("${op_name}" op_type)
+        get_op_type_from_op_name("${op_name}" "${OP_DIR}" op_type)
         if(NOT op_type)
+          message(STATUS "[INFO] op type undefined, skip binary compile. op name=${op_name}")
           continue()
         endif()
 
         set(check_op_supported_result)
-        check_op_supported("${op_name}" "${compute_unit}" check_op_supported_result)
+        check_op_supported("${op_name}" "${OP_DIR}" "${compute_unit}" check_op_supported_result)
         if(NOT check_op_supported_result)
           message(STATUS "[INFO] On [${compute_unit}], [${op_name}] not supported.")
           continue()

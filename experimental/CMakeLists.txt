@@ -8,6 +8,10 @@
 # BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
+
+
+message(STATUS "Build experimental module")
+
 set(COMMON_L0_SRCS
   ${CMAKE_SOURCE_DIR}/math/cast/op_host/op_api/cast.cpp
   ${CMAKE_SOURCE_DIR}/conversion/contiguous/op_host/op_api/contiguous.cpp
@@ -25,6 +29,8 @@ set(COMMON_L0_SRCS
 add_opapi_modules()
 target_sources(${OPHOST_NAME}_opapi_obj PRIVATE ${COMMON_L0_SRCS})
 
-add_subdirectory(math)
-add_subdirectory(conversion)
-add_subdirectory(random)
+foreach(ops_category ${OPS_CATEGORY_LIST})
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${ops_category}")
+        add_subdirectory("${ops_category}")
+    endif()
+endforeach()

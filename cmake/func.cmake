@@ -209,9 +209,8 @@ macro(add_modules_sources)
   # 获取算子层级目录名称，判断是否编译该算子
   get_filename_component(PARENT_DIR ${SOURCE_DIR} DIRECTORY)
   get_filename_component(OP_NAME ${PARENT_DIR} NAME)
-  list(FIND ASCEND_OP_NAME ${OP_NAME} INDEX)
-  if(NOT "${ASCEND_OP_NAME}" STREQUAL "" AND INDEX EQUAL -1)
-    # ASCEND_OP_NAME 为空表示全部编译
+  if(NEED_COMPILE_OPS AND (NOT OP_NAME IN_LIST NEED_COMPILE_OPS))
+    # NEED_COMPILE_OPS 为空表示全部编译
     return()
   endif()
   
@@ -301,15 +300,40 @@ macro(add_modules_sources)
   endif()
 endmacro()
 
+# 添加待编译算子
+function(add_need_compile_ops op_name)
+  if(NOT NEED_COMPILE_OPS)
+    # 为空则不需要更新
+    return()
+  endif()
+
+  set(NEW_OP_NAMES ${NEED_COMPILE_OPS} ${op_name})
+  list(REMOVE_DUPLICATES NEW_OP_NAMES)
+  set(NEED_COMPILE_OPS
+      ${NEW_OP_NAMES}
+      CACHE STRING "Ascend op names to compile" FORCE
+    )
+endfunction()
+
 function(add_dependent_ops dependent_ops)
   foreach(dep_op ${dependent_ops})
     # 查询依赖算子所在目录
-    file(GLOB
-      dep_op_path_list
-      "${CMAKE_CURRENT_SOURCE_DIR}/../../math/${dep_op}"
-      "${CMAKE_CURRENT_SOURCE_DIR}/../../conversion/${dep_op}"
-      "${CMAKE_CURRENT_SOURCE_DIR}/../../random/${dep_op}"
-    )
+    set(dep_op_path_list "")
+    if(ENABLE_EXPERIMENTAL)
+      foreach(ops_category ${OPS_CATEGORY_LIST})
+        file(GLOB dep_op_path "${PROJECT_SOURCE_DIR}/experimental/${ops_category}/${dep_op}")
+        list(APPEND dep_op_path_list ${dep_op_path})
+      endforeach()
+    endif()
+    set(outside_experimental FALSE)
+    # 如果非 experimental，或 experimental 下没找到，则去常规目录查找
+    if(NOT dep_op_path_list)
+      foreach(ops_category ${OPS_CATEGORY_LIST})
+        file(GLOB dep_op_path "${PROJECT_SOURCE_DIR}/${ops_category}/${dep_op}")
+        list(APPEND dep_op_path_list ${dep_op_path})
+      endforeach()
+      set(outside_experimental ${ENABLE_EXPERIMENTAL})
+    endif()
     # 检查依赖存在
     if(NOT dep_op_path_list)
       message(FATAL_ERROR "dependent operator(${dep_op}) not exists")
@@ -319,15 +343,15 @@ function(add_dependent_ops dependent_ops)
       message(FATAL_ERROR "dependent operator(${dep_op}) is not unique, the found operators:${dep_op_path_list}")
     endif()
 
-    # 不在编译列表则加入，ASCEND_OP_NAME 为空表示全部编译，则不单独编译
-    if(ASCEND_OP_NAME AND (NOT (dep_op IN_LIST ASCEND_OP_NAME)))
+    # NEED_COMPILE_OPS 为空表示全部编译，则不需要特意添加目录；但指定experimental时未扫描常规算子，如果依赖常规算子，需要添加目录
+    # 已在待编译列表，则不需要加入
+    # 已在编译列表，则不需要重复加入
+    if((NEED_COMPILE_OPS OR outside_experimental)
+        AND (NOT (dep_op IN_LIST NEED_COMPILE_OPS))
+        AND (NOT (dep_op IN_LIST COMPILED_OPS))
+    )
       # 加入依赖并去重
-      set(NEW_OP_NAMES ${ASCEND_OP_NAME} ${dep_op})
-      list(REMOVE_DUPLICATES NEW_OP_NAMES)
-      set(ASCEND_OP_NAME
-          ${NEW_OP_NAMES}
-          CACHE STRING "Ascend op names to compile" FORCE
-        )
+      add_need_compile_ops("${dep_op}")
       # 添加目录
       get_filename_component(dep_op_path "${dep_op_path_list}" ABSOLUTE)
       get_filename_component(dep_op_parent "${dep_op_path}" DIRECTORY)
@@ -338,10 +362,10 @@ function(add_dependent_ops dependent_ops)
   endforeach()
 endfunction()
 
-# usage: add_moduladd_all_modules_sourceses_sources(OPTYPE ACLNNTYPE DEPENDENCIES)
+# usage: add_all_modules_sources(OPTYPE ACLNNTYPE DEPENDENCIES)
 # ACLNNTYPE 支持类型aclnn/aclnn_inner/aclnn_exclude
 # OPTYPE 和 ACLNNTYPE 需一一对应
-# DEPENDENCIES 指定依赖的算子名称列表
+# DEPENDENCIES 指定依赖的算子名称列表，如果开启 experimental，则会优先加载 experimental 下的算子
 macro(add_all_modules_sources)
   set(multiValueArgs OPTYPE ACLNNTYPE DEPENDENCIES)
 
@@ -358,9 +382,8 @@ macro(add_all_modules_sources)
 
   # 获取算子层级目录名称，判断是否编译该算子
   get_filename_component(OP_NAME ${SOURCE_DIR} NAME)
-  list(FIND ASCEND_OP_NAME ${OP_NAME} INDEX)
-  if(NOT "${ASCEND_OP_NAME}" STREQUAL "" AND INDEX EQUAL -1)
-    # ASCEND_OP_NAME 为空表示全部编译
+  if(NEED_COMPILE_OPS AND (NOT OP_NAME IN_LIST NEED_COMPILE_OPS))
+    # NEED_COMPILE_OPS 为空表示全部编译
     return()
   endif()
 
@@ -494,12 +517,8 @@ macro(add_graph_plugin_sources)
   # 获取算子层级目录名称，判断是否编译该算子
   get_filename_component(PARENT_DIR ${SOURCE_DIR} DIRECTORY)
   get_filename_component(OP_NAME ${PARENT_DIR} NAME)
-  if(DEFINED ASCEND_OP_NAME
-     AND NOT "${ASCEND_OP_NAME}" STREQUAL ""
-    )
-    if(NOT ${OP_NAME} IN_LIST ASCEND_OP_NAME)
-      return()
-    endif()
+  if(NEED_COMPILE_OPS AND (NOT ${OP_NAME} IN_LIST NEED_COMPILE_OPS))
+    return()
   endif()
 
   file(GLOB OP_GRAPH_SRCS ${SOURCE_DIR}/*_graph_*.cpp)
@@ -610,5 +629,43 @@ function(add_ops_compile_options OP_TYPE)
     message("add ops compile options info: ${EXEC_INFO}")
     message("add ops compile options error: ${EXEC_ERROR}")
     message(FATAL_ERROR "add ops compile options failed!")
+  endif()
+endfunction()
+
+# ######################################################################################################################
+# check whether the compiled operators meet expectations
+# ######################################################################################################################
+function(check_compiled_ops)
+  message(STATUS "Ops for this compilation contains: ${COMPILED_OPS}")
+  if(COMPILED_OPS STREQUAL "")
+    message(FATAL_ERROR "Specified ops not found in this depository, please check --ops paramater")
+  endif()
+
+  # 未指定算子，全部编译
+  if(NOT NEED_COMPILE_OPS)
+    return()
+  endif()
+
+  # 指定了但未参与编译的算子，即为无效算子名，应该报错
+  set(not_compiled_ops)
+  foreach(op_name IN LISTS NEED_COMPILE_OPS)
+    if(NOT op_name IN_LIST COMPILED_OPS)
+      list(APPEND not_compiled_ops ${op_name})
+    endif()
+  endforeach()
+
+  if(NOT not_compiled_ops)
+    return()
+  endif()
+
+  list(JOIN not_compiled_ops "," not_compiled_ops_str)
+  if(ENABLE_EXPERIMENTAL)
+    message(FATAL_ERROR
+      "Specified ops(${not_compiled_ops_str}) not found in experimental, please check --ops paramater"
+    )
+  else()
+    message(FATAL_ERROR
+      "Specified ops(${not_compiled_ops_str}) not found in this depository, please check --ops paramater"
+    )
   endif()
 endfunction()
