@@ -12,16 +12,21 @@
 # ----------------------------------------------------------------------------
 
 import torch
-from torch import Tensor
+import torch_npu
+import ascend_ops
 
-__all__ = ["isfinite", ]
-
-
-def isfinite(x: Tensor) -> Tensor:
-    """Performs isfinite(x) in an efficient fused kernel"""
-    return torch.ops.ascend_ops.isfinite.default(x)
-
-
-def add(x: Tensor, y: Tensor) -> Tensor:
-    """ add kernel """
-    return torch.ops.ascend_ops.add.default(x, y)
+supported_dtypes = {torch.float16, torch.float, torch.int32}
+for data_type in supported_dtypes:
+    print(f"DataType = <{data_type}>")
+    x = torch.randn(40, 10000).to(data_type)
+    y = torch.randn(40, 10000).to(data_type)
+    print(f"Tensor x = {x}")
+    print(f"Tensor x = {y}")
+    cpu_result = x + y
+    print(f"cpu: add(x, y) = {cpu_result}")
+    x_npu = x.npu()
+    y_npu = y.npu()
+    npu_result = torch.ops.ascend_ops.add(x_npu, y_npu).cpu()
+    print(f"[OK] torch.ops.ascend_ops.add<{data_type}> successfully!")
+    print(f"npu: add(x, y) = {npu_result}")
+    print(f"compare CPU Result vs NPU Result: {torch.allclose(cpu_result, npu_result)}\n\n")

@@ -15,5 +15,5 @@ python3 -m pip install dist/*.whl --force-reinstall --no-deps
 
 # Run tests
 echo "Running tests..."
-cd ascend_ops/csrc/is_finite/test
-python3 test_isfinite.py
+python3 ascend_ops/csrc/is_finite/test/test_isfinite.py
+python3 ascend_ops/csrc/add/test/test_add.py

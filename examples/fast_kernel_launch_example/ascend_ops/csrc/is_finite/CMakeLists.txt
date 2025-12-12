@@ -11,7 +11,7 @@
 if (BUILD_TORCH_OPS)
     set(OPERATOR_NAME "isfinite")
     message(STATUS "BUILD_TORCH_OPS ON in ${OPERATOR_NAME}")
-    
+
     set(OPERATOR_TARGET "${OPERATOR_NAME}_objects")
     set(OPERATOR_CONFIG "${OPERATOR_NAME}:${OPERATOR_TARGET}" PARENT_SCOPE)
 
@@ -21,7 +21,7 @@ if (BUILD_TORCH_OPS)
     set_source_files_properties(
         ${OPERATOR_SOURCES} PROPERTIES
         LANGUAGE CXX
-        COMPILE_FLAGS "--cce-soc-version=Ascend910B1 --cce-soc-core-type=VecCore --cce-auto-sync -xcce"
+        COMPILE_FLAGS "--npu-arch=dav-2201 -xasc"
     )
 
     add_library(${OPERATOR_TARGET} OBJECT ${OPERATOR_SOURCES})

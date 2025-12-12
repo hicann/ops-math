@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: UTF-8 -*-
 # ----------------------------------------------------------------------------
 # This program is free software, you can redistribute it and/or modify it.
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
@@ -10,18 +8,25 @@
 # BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
+if (BUILD_TORCH_OPS)
+    set(OPERATOR_NAME "add")
+    message(STATUS "BUILD_TORCH_OPS ON in ${OPERATOR_NAME}")
 
-import torch
-from torch import Tensor
+    set(OPERATOR_TARGET "${OPERATOR_NAME}_objects")
+    set(OPERATOR_CONFIG "${OPERATOR_NAME}:${OPERATOR_TARGET}" PARENT_SCOPE)
 
-__all__ = ["isfinite", ]
+    file(GLOB OPERATOR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
+    # Mark .cpp files with special properties
+    set_source_files_properties(
+        ${OPERATOR_SOURCES} PROPERTIES
+        LANGUAGE CXX
+        COMPILE_FLAGS "--npu-arch=dav-2201 -xasc"
+    )
 
-def isfinite(x: Tensor) -> Tensor:
-    """Performs isfinite(x) in an efficient fused kernel"""
-    return torch.ops.ascend_ops.isfinite.default(x)
+    add_library(${OPERATOR_TARGET} OBJECT ${OPERATOR_SOURCES})
 
-
-def add(x: Tensor, y: Tensor) -> Tensor:
-    """ add kernel """
-    return torch.ops.ascend_ops.add.default(x, y)
+    target_compile_options(${OPERATOR_TARGET} PRIVATE ${COMMON_COMPILE_OPTIONS})
+    target_include_directories(${OPERATOR_TARGET} PRIVATE ${COMMON_INCLUDE_DIRS})
+    return()
+endif()

@@ -38,6 +38,7 @@ namespace ascend_ops {
 TORCH_LIBRARY(ascend_ops, m)
 {
     m.def("isfinite(Tensor x) -> Tensor");
+    m.def("add(Tensor x, Tensor y) -> Tensor");
 }
 
 } // namespace ascend_ops
