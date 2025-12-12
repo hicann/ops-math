@@ -64,7 +64,7 @@ namespace optiling {
         OP_CHECK_IF(ubSize <= 0, OP_LOGE(context, "ubSize is 0"), return ge::GRAPH_FAILED);
         return ge::GRAPH_SUCCESS;
     }
-    ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
+    static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
     {
         OP_CHECK_IF(context == nullptr, OP_LOGE(context, "context is nullptr"), return ge::GRAPH_FAILED);
         size_t usrSize = 0;
@@ -76,7 +76,7 @@ namespace optiling {
         return ge::GRAPH_SUCCESS;
     }
 
-    ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, uint64_t ubSize, PowShapeInfo& info)
+    static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, uint64_t ubSize, PowShapeInfo& info)
     {
         OP_CHECK_IF(
             context == nullptr || context->GetInputShape(0) == nullptr, OP_LOGE(context, "context is nullptr"),
@@ -120,7 +120,7 @@ namespace optiling {
         return ge::GRAPH_SUCCESS;
     }
 
-    ge::graphStatus CalculateCoreBlockNums(int64_t coreNum, PowShapeInfo& info)
+    static ge::graphStatus CalculateCoreBlockNums(int64_t coreNum, PowShapeInfo& info)
     {
         if(0 == BLOCK_SIZE || 0 == coreNum || 0 == info.tileBlockNum || 0 == info.inputBytes)
         {
