@@ -37,5 +37,6 @@
     {"name":"Sqrt", "compute_units": ["ascend910b", "ascend310b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"Transposev", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"SelectV2", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
-    {"name":"TanV2", "compute_units": ["ascend910b", "ascend310b"], "auto_sync" : true, "impl_mode" : "high_performance"}
+    {"name":"TanV2", "compute_units": ["ascend910b", "ascend310b"], "auto_sync" : true, "impl_mode" : "high_performance"},
+    {"name":"AxpyV3", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"}
 ]
