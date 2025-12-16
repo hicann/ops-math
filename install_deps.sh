@@ -365,7 +365,7 @@ install_googletest() {
             # Install libgtest-dev
             run_command sudo $PKG_MANAGER install -y libgtest-dev
             # Check if gtest source directory exists
-            if [ ! -d "$gtest_src_dir"]; then
+            if [ ! -d "$gtest_src_dir" ]; then
                 echo "googletest source directory not found: $gtest_src_dir"
                 echo "Attempting to reinstall libgtest-dev..."
                 run_command sudo $PKG_MANAGER purge -y libgtest-dev
