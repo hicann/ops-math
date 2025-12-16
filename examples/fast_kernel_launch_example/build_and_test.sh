@@ -17,3 +17,4 @@ python3 -m pip install dist/*.whl --force-reinstall --no-deps
 echo "Running tests..."
 python3 ascend_ops/csrc/is_finite/test/test_isfinite.py
 python3 ascend_ops/csrc/add/test/test_add.py
+echo "execute samples success"
