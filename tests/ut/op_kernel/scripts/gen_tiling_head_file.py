@@ -117,10 +117,14 @@ def load_lib_v2(hight_priority_path:str = None):
     return libregister
 
 
-def get_default_tiling_struct(opname: str):
+def get_default_tiling_struct(opname: str, is_experimental):
     default_tiling_struct = ""
-    new_base_path = (os.path.dirname(os.path.abspath(__file__)) + "/../../../..")
+    if not is_experimental:
+        new_base_path = (os.path.dirname(os.path.abspath(__file__)) + "/../../../..")
+    else:
+        new_base_path = (os.path.dirname(os.path.abspath(__file__)) + "/../../../../experimental")
     pattern = f"*/{opname}"
+    print("new_base_path", new_base_path)
     new_paths = list(Path(new_base_path).glob(pattern))
     asc_file_path = new_paths
     if len(new_paths) > 0:
@@ -169,7 +173,10 @@ if __name__ == "__main__":
     op_info_dict["attrs"] = []
     op_info2 = OpInfo(**op_info_dict)
     with tbe.common.context.op_context.OpContext("dynamic"):
-        tiling_struct = get_default_tiling_struct(op_name)
+        is_experimental = False
+        if so_path and "/experimental/" in so_path:
+            is_experimental = True
+        tiling_struct = get_default_tiling_struct(op_name, is_experimental)
         if tiling_struct:
             tiling_info.file_content = tiling_help.gen_dynamic_shape_v2(op_name, tiling_struct)
         else:
