@@ -11,14 +11,16 @@
 # makeself.cmake - 自定义 makeself 打包脚本
 
 # 设置 makeself 路径
-set(MAKESELF_EXE ${CPACK_CMAKE_BINARY_DIR}/makeself/makeself.sh)
-set(MAKESELF_HEADER_EXE ${CPACK_CMAKE_BINARY_DIR}/makeself/makeself-header.sh)
+set(MAKESELF_EXE ${CPACK_MAKESELF_PATH}/makeself.sh)
+set(MAKESELF_HEADER_EXE ${CPACK_MAKESELF_PATH}/makeself-header.sh)
 if(NOT MAKESELF_EXE)
-    message(FATAL_ERROR "makeself not found! Install it with: sudo apt install makeself")
+    message(FATAL_ERROR "makeself not found!")
 endif()
 
 # 创建临时安装目录
 set(STAGING_DIR "${CPACK_CMAKE_BINARY_DIR}/_CPack_Packages/makeself_staging")
+# 先删除再创建
+file(REMOVE_RECURSE "${STAGING_DIR}")
 file(MAKE_DIRECTORY "${STAGING_DIR}")
 
 # 执行安装到临时目录
@@ -54,23 +56,23 @@ endif ()
 set(SCENE_OUT_PUT
     ${CPACK_CMAKE_BINARY_DIR}/scene.info
 )
-set(NN_VERSION_OUT_PUT
+set(MATH_VERSION_OUT_PUT
     ${CPACK_CMAKE_BINARY_DIR}/ops_math_version.h
 )
 
 configure_file(
     ${SCENE_OUT_PUT}
-    ${STAGING_DIR}/ops_math/
+    ${STAGING_DIR}/share/info/ops_math/
     COPYONLY
 )
 configure_file(
     ${CSV_OUTPUT}
-    ${STAGING_DIR}/ops_math/script/
+    ${STAGING_DIR}/share/info/ops_math/script/
     COPYONLY
 )
 configure_file(
-    ${NN_VERSION_OUT_PUT}
-    ${STAGING_DIR}/ops_math/
+    ${MATH_VERSION_OUT_PUT}
+    ${STAGING_DIR}/share/info/ops_math/
     COPYONLY
 )
 # makeself打包
@@ -78,14 +80,18 @@ file(STRINGS ${CPACK_CMAKE_BINARY_DIR}/makeself.txt script_output)
 string(REPLACE " " ";" makeself_param_string "${script_output}")
 string(REGEX MATCH "cann.*\\.run" package_name "${makeself_param_string}")
 
+list(LENGTH makeself_param_string LIST_LENGTH)
+math(EXPR INSERT_INDEX "${LIST_LENGTH} - 2")
+list(INSERT makeself_param_string ${INSERT_INDEX} "${STAGING_DIR}")
+
 message(STATUS "script output: ${script_output}")
 message(STATUS "makeself: ${makeself_param_string}")
 message(STATUS "package: ${package_name}")
 
 execute_process(COMMAND bash ${MAKESELF_EXE}
         --header ${MAKESELF_HEADER_EXE}
-        --help-header ops_math/script/help.info
-        ${makeself_param_string} ops_math/script/install.sh
+        --help-header share/info/ops_math/script/help.info
+        ${makeself_param_string} share/info/ops_math/script/install.sh
         WORKING_DIRECTORY ${STAGING_DIR}
         RESULT_VARIABLE EXEC_RESULT
         ERROR_VARIABLE  EXEC_ERROR
@@ -98,6 +104,6 @@ endif()
 execute_process(
     COMMAND mkdir -p ${CPACK_PACKAGE_DIRECTORY}
     COMMAND mv ${STAGING_DIR}/${package_name} ${CPACK_PACKAGE_DIRECTORY}/
-    COMMAND echo "Move ${STAGING_DIR}/${package_name} to ${CPACK_PACKAGE_DIRECTORY}/"
+    COMMAND echo "build pkg success: ${CPACK_PACKAGE_DIRECTORY}/${package_name}"
     WORKING_DIRECTORY ${STAGING_DIR}
 )

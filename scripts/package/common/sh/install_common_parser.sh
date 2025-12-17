@@ -946,12 +946,7 @@ do_del_cann_uninstall() {
 
 # 删除ascend_install.info文件
 del_ascend_install_info() {
-    local install_path="$1"
-    local package="$2"
-    local package_dirpath
-
-    get_package_dirpath "package_dirpath" "$package"
-    rm -f "$install_path/$package_dirpath/ascend_install.info"
+    rm -f "$curpath/../ascend_install.info"
 }
 
 # 执行拷贝动作
@@ -1214,7 +1209,7 @@ do_remove() {
         ret="$?" && [ $ret -ne 0 ] && return $ret
 
         if [ "$REMOVE_INSTALL_INFO" = "y" ]; then
-            del_ascend_install_info "$install_path" "$package"
+            del_ascend_install_info
         fi
     fi
 
@@ -1947,6 +1942,7 @@ IS_RECREATE_SOFTLINK=""
 WITH_DOCKER_ROOT_PREFIX=""
 FEATURE_EXCLUDE_ALL="n"
 REMOVE_INSTALL_INFO="n"  # 卸载时移除ascend_install.info文件
+USE_SHARE_INFO="n"
 CHIP="all"
 FEATURE="all"
 INCREMENT="n"  # 增量安装
@@ -2164,6 +2160,10 @@ while true; do
         ;;
     --remove-install-info)
         REMOVE_INSTALL_INFO="y"
+        shift
+        ;;
+    --use-share-info)
+        USE_SHARE_INFO="y"
         shift
         ;;
     --increment)

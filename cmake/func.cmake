@@ -86,7 +86,7 @@ endfunction()
 function(add_opapi_modules)
   if(NOT TARGET ${OPHOST_NAME}_opapi_obj)
     if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
-      npu_op_library(${OPHOST_NAME}_opapi_obj ACLNN)
+      add_library(${OPHOST_NAME}_opapi_obj OBJECT)
     else()
       add_library(${OPHOST_NAME}_opapi_obj OBJECT)
     endif()
@@ -109,7 +109,6 @@ function(add_opapi_modules)
 endfunction()
 
 function(add_aicpu_kernel_modules)
-  message(STATUS "add_aicpu_kernel_modules")
   if(NOT TARGET ${OPHOST_NAME}_aicpu_obj)
     add_library(${OPHOST_NAME}_aicpu_obj OBJECT)
     target_include_directories(${OPHOST_NAME}_aicpu_obj PRIVATE ${AICPU_INCLUDE})
@@ -130,8 +129,8 @@ function(add_aicpu_kernel_modules)
   endif()
 endfunction()
 
-function(add_aicpu_cust_kernel_modules target_name)
-  message(STATUS "add_aicpu_cust_kernel_modules for ${target_name}")
+function(add_aicpu_cust_kernel_modules op_name aicpu_sources aicpu_jsons)
+  set(target_name ${op_name}_obj)
   if(NOT TARGET ${target_name})
     add_library(${target_name} OBJECT)
     target_include_directories(${target_name} PRIVATE ${AICPU_INCLUDE})
@@ -153,6 +152,12 @@ function(add_aicpu_cust_kernel_modules target_name)
               -Wl,--no-whole-archive
               Eigen3::EigenMath
       )
+    if (NOT (UT_TEST_ALL OR OP_KERNEL_AICPU_UT))
+      set_property(TARGET ${target_name} PROPERTY 
+        CXX_COMPILER_LAUNCHER ${ASCEND_DIR}/toolkit/toolchain/hcc/bin/aarch64-target-linux-gnu-g++)
+    endif()    
+    target_sources(${target_name} PRIVATE ${aicpu_sources})
+    set_property(GLOBAL APPEND PROPERTY AICPU_JSON_FILES ${aicpu_jsons})
     if (NOT ${target_name} IN_LIST AICPU_CUST_OBJ_TARGETS)
       set(AICPU_CUST_OBJ_TARGETS ${AICPU_CUST_OBJ_TARGETS} ${target_name} CACHE INTERNAL "All aicpu cust obj targets")
     endif()
@@ -219,7 +224,7 @@ macro(add_modules_sources)
     message(STATUS "already compiled ${OP_NAME}, skip")
     return()
   endif()
-  
+
   # 记录全局的COMPILED_OPS和COMPILED_OP_DIRS，其中COMPILED_OP_DIRS只记录到算子名，例如math/abs
   set(COMPILED_OPS
       ${COMPILED_OPS} ${OP_NAME}
@@ -238,8 +243,8 @@ macro(add_modules_sources)
   endif()
 
   file(GLOB OPAPI_L2_SRCS ${SOURCE_DIR}/op_api/aclnn_*.cpp)
-  file(GLOB OPAPI_L2_SRCS_ACL ${SOURCE_DIR}/op_api/acl_*.cpp)
-  list(APPEND OPAPI_L2_SRCS ${OPAPI_L2_SRCS_ACL})
+  file(GLOB OPAPI_HEADERS_ACL ${SOURCE_DIR}/op_api/acl_*.h)
+  list(APPEND OPAPI_HEADERS ${OPAPI_HEADERS_ACL})
   if(OPAPI_L2_SRCS)
     add_opapi_modules()
     target_sources(${OPHOST_NAME}_opapi_obj PRIVATE ${OPAPI_L2_SRCS})
@@ -362,14 +367,57 @@ function(add_dependent_ops dependent_ops)
   endforeach()
 endfunction()
 
-# usage: add_all_modules_sources(OPTYPE ACLNNTYPE DEPENDENCIES)
+# 从两个长度一致的列表中查找相同位置的元素
+function(find_value_by_key key_list value_list search_key result)
+  list(LENGTH key_list key_list_length)
+  list(LENGTH value_list value_list_length)
+  if(NOT ${key_list_length} EQUAL ${value_list_length})
+    message(FATAL_ERROR "key_list length is ${key_list_length}, value_list length is ${value_list_length}, not equal")
+  endif()
+  set(found_value "")
+  if(key_list_length GREATER 0)
+    list(FIND key_list ${search_key} index)
+    if(NOT ${index} EQUAL -1)
+      list(GET value_list ${index} found_value)
+    endif()
+  endif()
+  set(${result} ${found_value} PARENT_SCOPE)
+endfunction()
+
+function(add_tiling_sources tiling_dir disable_in_opp)
+  if(NOT disable_in_opp)
+    set(disable_in_opp FALSE)
+  endif()
+  if(NOT BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG AND disable_in_opp)
+    message(STATUS "don't need add tiling sources")
+    return()
+  endif()
+
+  set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+  if("${tiling_dir}" STREQUAL "")
+    file(GLOB OPTILING_SRCS ${SOURCE_DIR}/op_host/*_tiling*.cpp)
+  else()
+    file(GLOB OPTILING_SRCS ${SOURCE_DIR}/op_host/*_tiling*.cpp ${SOURCE_DIR}/op_host/${tiling_dir}/*_tiling*.cpp)
+  endif()
+
+  if(OPTILING_SRCS)
+    add_tiling_modules()
+    target_sources(${OPHOST_NAME}_tiling_obj PRIVATE ${OPTILING_SRCS})
+  endif()
+endfunction()
+
+# usage: add_all_modules_sources(OPTYPE ACLNNTYPE DEPENDENCIES COMPUTE_UNIT TILING_DIR DISABLE_IN_OPP)
 # ACLNNTYPE 支持类型aclnn/aclnn_inner/aclnn_exclude
 # OPTYPE 和 ACLNNTYPE 需一一对应
 # DEPENDENCIES 指定依赖的算子名称列表，如果开启 experimental，则会优先加载 experimental 下的算子
+# COMPUTE_UNIT 设置支持芯片版本号，必须与TILING_DIR一一对应，示例：ascend910b ascend910_95
+# TILING_DIR 设置所支持芯片类型对应的tiling文件目录，必须与COMPUTE_UNIT一一对应，示例：arch32 arch35
+# DISABLE_IN_OPP 设置是否在opp包中编译tiling文件，布尔类型：TRUE，FALSE
 macro(add_all_modules_sources)
-  set(multiValueArgs OPTYPE ACLNNTYPE DEPENDENCIES)
+  set(oneValueArgs DISABLE_IN_OPP)
+  set(multiValueArgs OPTYPE ACLNNTYPE DEPENDENCIES COMPUTE_UNIT TILING_DIR)
 
-  cmake_parse_arguments(MODULE "" "" "${multiValueArgs}" ${ARGN})
+  cmake_parse_arguments(MODULE "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
   # opapi l0 默认全部编译
@@ -392,6 +440,7 @@ macro(add_all_modules_sources)
     message(STATUS "already compiled ${OP_NAME}, skip")
     return()
   endif()
+
   # 记录全局的COMPILED_OPS和COMPILED_OP_DIRS，其中COMPILED_OP_DIRS只记录到算子名，例如math/abs
   set(COMPILED_OPS
       ${COMPILED_OPS} ${OP_NAME}
@@ -422,17 +471,18 @@ macro(add_all_modules_sources)
     target_sources(${OPHOST_NAME}_infer_obj PRIVATE ${OPINFER_SRCS})
   endif()
 
-  file(GLOB OPTILING_SRCS ${SOURCE_DIR}/op_host/*_tiling*.cpp)
-  if(OPTILING_SRCS)
-    add_tiling_modules()
-    target_sources(${OPHOST_NAME}_tiling_obj PRIVATE ${OPTILING_SRCS})
-  endif()
+  # 添加tiling文件
+  find_value_by_key("${MODULE_COMPUTE_UNIT}" "${MODULE_TILING_DIR}" "${ASCEND_COMPUTE_UNIT}" TILING_SOC_DIR)
+  add_tiling_sources("${TILING_SOC_DIR}" "${MODULE_DISABLE_IN_OPP}")
 
-  if(NOT BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
-    file(GLOB AICPU_SRCS ${SOURCE_DIR}/op_kernel_aicpu/*_aicpu*.cpp)
-    if(AICPU_SRCS)
+  file(GLOB AICPU_SRCS ${SOURCE_DIR}/op_kernel_aicpu/*_aicpu*.cpp)
+  if(AICPU_SRCS)
+    if(NOT BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
       add_aicpu_kernel_modules()
       target_sources(${OPHOST_NAME}_aicpu_obj PRIVATE ${AICPU_SRCS})
+    else()
+      file(GLOB AICPU_JSON_FILE ${SOURCE_DIR}/op_kernel_aicpu/*.json)
+      add_aicpu_cust_kernel_modules(${OP_NAME} ${AICPU_SRCS} ${AICPU_JSON_FILE})
     endif()
   endif()
 
@@ -480,25 +530,31 @@ macro(add_all_modules_sources)
   if(OP_GRAPH_PROTO_HEADERS)
     target_sources(${GRAPH_PLUGIN_NAME}_proto_headers INTERFACE ${OP_GRAPH_PROTO_HEADERS})
   endif()
-  add_all_ut_sources()
+  add_all_ut_sources(UT_TILING_DIR "${TILING_SOC_DIR}" OP_NAME ${OP_NAME})
 endmacro()
 
 # usage: add_all_ut_sources()
 macro(add_all_ut_sources)
+  set(oneValueArgs UT_TILING_DIR OP_NAME)
+  cmake_parse_arguments(MODULE "" "${oneValueArgs}" "" ${ARGN})
   set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
   file(GLOB TEST_OP_API_SRCS ${SOURCE_DIR}/tests/ut/op_api/*_aclnn*.cpp)
   if(TEST_OP_API_SRCS AND (UT_TEST_ALL OR OP_API_UT))
-    add_modules_ut_sources(UT_NAME ${OP_API_MODULE_NAME} MODE PRIVATE DIR ${SOURCE_DIR}/tests/ut/op_api)
+    add_modules_ut_sources(UT_NAME ${OP_API_MODULE_NAME} MODE PRIVATE DIR ${SOURCE_DIR}/tests/ut/op_api TILING_DIR ${MODULE_UT_TILING_DIR})
   endif()
 
-  file(GLOB TEST_OP_HOST_TILING_SRCS ${SOURCE_DIR}/tests/ut/op_host/*_tiling*.cpp)
+  file(GLOB TEST_OP_HOST_TILING_SRCS ${SOURCE_DIR}/tests/ut/op_host/*_tiling*.cpp ${SOURCE_DIR}/tests/ut/op_host/${MODULE_UT_TILING_DIR}/*_tiling*.cpp)
   if(TEST_OP_HOST_TILING_SRCS AND (UT_TEST_ALL OR OP_HOST_UT))
-    add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE DIR ${SOURCE_DIR}/tests/ut/op_host)
+    add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE DIR ${SOURCE_DIR}/tests/ut/op_host TILING_DIR ${MODULE_UT_TILING_DIR})
   endif()
 
   file(GLOB TEST_OP_HOST_SHAPE_SRCS ${SOURCE_DIR}/tests/ut/op_host/*_infershape*.cpp)
   if(TEST_OP_HOST_SHAPE_SRCS AND (UT_TEST_ALL OR OP_HOST_UT))
-    add_modules_ut_sources(UT_NAME ${OP_INFERSHAPE_MODULE_NAME} MODE PRIVATE DIR ${SOURCE_DIR}/tests/ut/op_host)
+    add_modules_ut_sources(UT_NAME ${OP_INFERSHAPE_MODULE_NAME} MODE PRIVATE DIR ${SOURCE_DIR}/tests/ut/op_host TILING_DIR ${MODULE_UT_TILING_DIR})
+  endif()
+
+  if(UT_TEST_ALL OR OP_KERNEL_AICPU_UT)
+    AddAicpuOpTestCase(${MODULE_OP_NAME})
   endif()
 
   if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/ut/op_kernel/CMakeLists.txt")
@@ -530,63 +586,6 @@ macro(add_graph_plugin_sources)
   file(GLOB OP_GRAPH_PROTO_HEADERS ${SOURCE_DIR}/*_proto*.h)
   if(OP_GRAPH_PROTO_HEADERS)
     target_sources(${GRAPH_PLUGIN_NAME}_proto_headers INTERFACE ${OP_GRAPH_PROTO_HEADERS})
-  endif()
-endmacro()
-
-# usage: add_torch_extension_sources("--npu-arch=dav-2201 -xasc")
-macro(add_torch_extension_sources USER_COMPILE_FLAGS)
-  if(ENABLE_TORCH_EXTENSION)
-    unset(CMAKE_CXX_FLAGS)
-    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-    set(CMAKE_CXX_STANDARD 17)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-    if(NOT CMAKE_BUILD_TYPE)
-      set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type (Release/Debug)" FORCE)
-    endif()
-
-    if(DEFINED BISHENG)
-      set(CMAKE_C_COMPILER ${BISHENG})
-      set(CMAKE_CXX_COMPILER ${BISHENG})
-      set(CMAKE_LINKER ${BISHENG})
-    endif()
-
-    message(STATUS "CMAKE_CURRENT_SOURCE_DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
-    get_filename_component(_PARENT_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
-    get_filename_component(_OPERATOR_NAME ${_PARENT_DIR} NAME)
-    set(_TARGET "${_OPERATOR_NAME}_kernel_obj")
-    file(GLOB _CPP_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*_torch.cpp")
-    if(_CPP_SOURCES)
-      message(STATUS "OPERATOR_NAME: ${_OPERATOR_NAME}")
-      message(STATUS "TARGET: ${_TARGET}")
-      message(STATUS "CPP_SOURCES = ${_CPP_SOURCES}")
-      message(STATUS "COMPILE_FLAGS = ${USER_COMPILE_FLAGS}")
-
-      set_source_files_properties(
-        ${_CPP_SOURCES} PROPERTIES
-        LANGUAGE CXX
-        COMPILE_FLAGS "${USER_COMPILE_FLAGS}"
-      )
-      add_library(${_TARGET} OBJECT ${_CPP_SOURCES})
-      if(DEFINED TORCH_EXTENSION_COMPILE_OPTIONS)
-        target_compile_options(${_TARGET} PRIVATE ${TORCH_EXTENSION_COMPILE_OPTIONS})
-      endif()
-      if(DEFINED TORCH_EXTENSION_INCLUDE_DIRS)
-        target_include_directories(${_TARGET} PRIVATE ${TORCH_EXTENSION_INCLUDE_DIRS})
-      endif()
-
-      set(_NEW_OBJECT_EXPRESSION $<TARGET_OBJECTS:${_TARGET}>)
-      set(_TMP_LIST ${TORCH_EXTENSION_OPERATOR_TARGETS})
-      list(APPEND _TMP_LIST ${_NEW_OBJECT_EXPRESSION})
-      set(TORCH_EXTENSION_OPERATOR_TARGETS
-        ${_TMP_LIST}
-        CACHE INTERNAL
-        "List of torch extension operator objects"
-      )
-    else()
-      message(STATUS "No *_torch.cpp sources found in ${CMAKE_CURRENT_SOURCE_DIR}, skipping target creation.")
-    endif()
   endif()
 endmacro()
 

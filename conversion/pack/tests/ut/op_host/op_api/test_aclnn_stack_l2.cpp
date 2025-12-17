@@ -13,7 +13,7 @@
 #include <array>
 #include "gtest/gtest.h"
 
-#include "level2/aclnn_stack.h"
+#include "aclnn_stack.h"
 
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/scalar_desc.h"

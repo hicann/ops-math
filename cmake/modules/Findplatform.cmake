@@ -60,5 +60,8 @@ if(platform_FOUND)
   if(NOT platform_FIND_QUIETLY)
     message(STATUS "Found platform include:${PLATFORM_INC_DIR}")
   endif()
-  set(PLATFORM_INC_DIRS ${PLATFORM_INC_DIR})
+  set(PLATFORM_INC_DIRS
+    ${PLATFORM_INC_DIR}
+    ${PLATFORM_INC_DIR}/tiling
+  )
 endif()

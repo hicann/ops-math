@@ -32,7 +32,7 @@ fi
 log "INFO" "Check python version."
 curpath="$(dirname ${BASH_SOURCE:-$0})"
 install_dir="$(realpath $curpath/..)"
-common_interface=$(realpath $install_dir/script*/common_interface.bash)
+common_interface=$(realpath $install_dir/script*/common_interface.sh)
 if [ -f "$common_interface" ]; then
     . "$common_interface"
     py_version_check

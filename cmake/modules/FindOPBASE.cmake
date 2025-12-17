@@ -64,6 +64,5 @@ if(OPBASE_FOUND)
     ${OPBASE_INC_DIR}
     ${OPBASE_INC_DIR}/op_common
     ${OPBASE_INC_DIR}/op_common/op_host
-    ${OPBASE_INC_DIR}/op_common/atvoss
   )
 endif()

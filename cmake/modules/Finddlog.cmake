@@ -57,12 +57,6 @@ find_path(dlog_MATH_INCLUDE_DIR
   NO_CMAKE_FIND_ROOT_PATH
   PATHS ${DLOG_HEAD_SEARCH_PATHS})
 
-find_library(dlog_SHARED_LIBRARY
-  NAMES libascendalog.so
-  PATH_SUFFIXES lib64
-  NO_CMAKE_SYSTEM_PATH
-  NO_CMAKE_FIND_ROOT_PATH)
-
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(dlog
   FOUND_VAR
@@ -75,16 +69,6 @@ if(dlog_FOUND)
   include(CMakePrintHelpers)
   message(STATUS "Math Variables in dlog module:")
   cmake_print_variables(dlog_MATH_INCLUDE_DIR)
-  cmake_print_variables(dlog_SHARED_LIBRARY)
-
-  if(dlog_SHARED_LIBRARY)
-    add_library(dlog SHARED IMPORTED)
-    set_target_properties(dlog PROPERTIES
-      INTERFACE_COMPILE_DEFINITIONS "LOG_CPP;PROCESS_LOG"
-      INTERFACE_LINK_LIBRARIES "dlog_headers"
-      IMPORTED_LOCATION "${dlog_SHARED_LIBRARY}"
-    )
-  endif()
 
   set(MATH_INTERFACE_INCLUDE "${dlog_MATH_INCLUDE_DIR}")
   string(FIND "${dlog_MATH_INCLUDE_DIR}" "toolchain" IDX)

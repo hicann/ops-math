@@ -13,7 +13,7 @@
 #include <vector>
 #include "gtest/gtest.h"
 
-#include "level2/aclnn_split_tensor.h"
+#include "aclnn_split_tensor.h"
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/tensor_desc.h"

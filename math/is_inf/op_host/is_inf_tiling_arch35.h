@@ -17,7 +17,7 @@
 #define OPS_BUILD_IN_OP_TILING_RUNTIME_IS_INF_REGBASE_OPTILING_H
 
 #include "register/tilingdata_base.h"
-#include "elewise/elewise_tiling.h"
+#include "atvoss/elewise/elewise_tiling.h"
 
 namespace optiling {
 using namespace Ops::Base;

@@ -15,6 +15,9 @@ if(NOT TARGET intf_pub)
     -Wall
     -fPIC
     $<IF:$<VERSION_GREATER:${CMAKE_C_COMPILER_VERSION},4.8.5>,-fstack-protector-strong,-fstack-protector-all>
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address,all
+    -fno-stack-protector -fno-omit-frame-pointer -g>
+    $<$<BOOL:${ENABLE_COVERAGE}>:-fprofile-arcs -ftest-coverage>
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
   )
   target_compile_definitions(intf_pub INTERFACE
@@ -26,11 +29,13 @@ if(NOT TARGET intf_pub)
     -Wl,-z,relro
     -Wl,-z,now
     -Wl,-z,noexecstack
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address>
     $<$<CONFIG:Release>:-Wl,--build-id=none>
   )
   target_link_directories(intf_pub INTERFACE)
   target_link_libraries(intf_pub INTERFACE
     -lpthread
+    $<$<BOOL:${ENABLE_COVERAGE}>:gcov>
   )
 endif()
 
@@ -41,6 +46,9 @@ if(NOT TARGET intf_pub_cxx14)
     -Wall
     -fPIC
     $<IF:$<VERSION_GREATER:${CMAKE_C_COMPILER_VERSION},4.8.5>,-fstack-protector-strong,-fstack-protector-all>
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address,all
+    -fno-stack-protector -fno-omit-frame-pointer -g>
+    $<$<BOOL:${ENABLE_COVERAGE}>:-fprofile-arcs -ftest-coverage>
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
   )
   target_compile_definitions(intf_pub_cxx14 INTERFACE
@@ -52,21 +60,26 @@ if(NOT TARGET intf_pub_cxx14)
     -Wl,-z,relro
     -Wl,-z,now
     -Wl,-z,noexecstack
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address>
     $<$<CONFIG:Release>:-Wl,--build-id=none>
   )
   target_link_directories(intf_pub_cxx14 INTERFACE)
   target_link_libraries(intf_pub_cxx14 INTERFACE
     -lpthread
+    $<$<BOOL:${ENABLE_COVERAGE}>:gcov>
   )
 endif()
 
-# intf_pub_cxx14 for c++17
+# intf_pub_cxx17 for c++17
 if(NOT TARGET intf_pub_cxx17)
   add_library(intf_pub_cxx17 INTERFACE)
   target_compile_options(intf_pub_cxx17 INTERFACE
       -Wall
       -fPIC
       $<IF:$<VERSION_GREATER:${CMAKE_C_COMPILER_VERSION},4.8.5>,-fstack-protector-strong,-fstack-protector-all>
+      $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address,all
+      -fno-stack-protector -fno-omit-frame-pointer -g>
+      $<$<BOOL:${ENABLE_COVERAGE}>:-fprofile-arcs -ftest-coverage>
       $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>
   )
   target_compile_definitions(intf_pub_cxx17 INTERFACE
@@ -78,9 +91,11 @@ if(NOT TARGET intf_pub_cxx17)
       -Wl,-z,relro
       -Wl,-z,now
       -Wl,-z,noexecstack
+      $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address>
       $<$<CONFIG:Release>:-Wl,--build-id=none>)
   target_link_directories(intf_pub_cxx17 INTERFACE)
   target_link_libraries(intf_pub_cxx17 INTERFACE
     -lpthread
+    $<$<BOOL:${ENABLE_COVERAGE}>:gcov>
   )
 endif()

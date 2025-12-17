@@ -9,24 +9,16 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 function(gen_common_symbol)
-  add_library(
-    ${COMMON_NAME} SHARED
-    $<$<TARGET_EXISTS:${COMMON_NAME}_obj>:$<TARGET_OBJECTS:${COMMON_NAME}_obj>>
-    )
-
-  target_link_libraries(
-    ${COMMON_NAME}
-    PRIVATE c_sec -Wl,--no-as-needed register -Wl,--as-needed exe_graph tiling_api
-    )
-
-  install(
-    TARGETS ${COMMON_NAME}
-    LIBRARY DESTINATION ${COMMON_LIB_INSTALL_DIR}
-    )
   install(
     DIRECTORY ${OPS_MATH_COMMON_INC_HEADERS}
     DESTINATION ${COMMON_INC_INSTALL_DIR}
+      )
+  if(ENABLE_STATIC)
+    install(
+      DIRECTORY ${OPS_MATH_COMMON_INC_HEADERS}
+      DESTINATION ${STATIC_COMMON_INC_INSTALL_DIR}
     )
+  endif()
 endfunction()
 
 # ophost shared
@@ -51,6 +43,7 @@ function(gen_ophost_symbol)
             rt2_registry_static
             -Wl,--no-whole-archive
             tiling_api
+            -Wl,-Bsymbolic
     )
 
   target_link_directories(${OPHOST_NAME} PRIVATE ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64)
@@ -112,9 +105,13 @@ function(gen_opgraph_symbol)
             -Wl,--whole-archive
             rt2_registry_static
             -Wl,--no-whole-archive
+            -Wl,-Bsymbolic
     )
 
   target_link_directories(${OPGRAPH_NAME} PRIVATE ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64)
+  set_target_properties(${OPGRAPH_NAME} PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/opp/built-in/op_proto
+  )
 
   install(
     TARGETS ${OPGRAPH_NAME}
@@ -124,6 +121,16 @@ function(gen_opgraph_symbol)
   install(
     FILES ${ASCEND_GRAPH_CONF_DST}/ops_proto_math.h
     DESTINATION ${OPGRAPH_INC_INSTALL_DIR}
+    OPTIONAL
+    )
+  add_es_library_and_whl(
+    ES_LINKABLE_AND_ALL_TARGET es_math
+    OPP_PROTO_TARGET ${OPGRAPH_NAME}
+    OUTPUT_PATH ${CMAKE_BINARY_DIR}/es_packages
+  )
+  install(
+    DIRECTORY ${CMAKE_BINARY_DIR}/es_packages
+    DESTINATION ${VERSION_INFO_INSTALL_DIR}
     OPTIONAL
     )
 endfunction()
@@ -206,7 +213,7 @@ function(gen_cust_proto_symbol)
     )
 endfunction()
 
-function(gen_cust_aicpu_json_symbol)
+function(gen_aicpu_json_symbol enable_built_in)
   get_property(ALL_AICPU_JSON_FILES GLOBAL PROPERTY AICPU_JSON_FILES)
   if(NOT ALL_AICPU_JSON_FILES)
     message(STATUS "No aicpu json files to merge, skipping.")
@@ -214,6 +221,10 @@ function(gen_cust_aicpu_json_symbol)
   endif()
 
   set(MERGED_JSON ${CMAKE_BINARY_DIR}/cust_aicpu_kernel.json)
+  if(enable_built_in)
+    set(MERGED_JSON ${CMAKE_BINARY_DIR}/aicpu_math.json)
+  endif()
+
   add_custom_command(
     OUTPUT ${MERGED_JSON}
     COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/util/merge_aicpu_info_json.sh ${CMAKE_SOURCE_DIR} ${MERGED_JSON} ${ALL_AICPU_JSON_FILES}
@@ -224,26 +235,26 @@ function(gen_cust_aicpu_json_symbol)
   add_custom_target(merge_aicpu_json ALL DEPENDS ${MERGED_JSON})
   install(
     FILES ${MERGED_JSON}
-    DESTINATION ${CUST_AICPU_KERNEL_CONFIG}
+    DESTINATION ${AICPU_JSON_CONFIG}
     OPTIONAL
   )
 endfunction()
 
-function(gen_cust_aicpu_kernel_symbol)
+function(gen_aicpu_kernel_symbol enable_built_in)
   if(NOT AICPU_CUST_OBJ_TARGETS)
     message(STATUS "No aicpu cust obj targets found, skipping.")
     return()
   endif()
 
   set(ARM_CXX_COMPILER ${ASCEND_DIR}/toolkit/toolchain/hcc/bin/aarch64-target-linux-gnu-g++)
-  set(ARM_SO_OUTPUT ${CMAKE_BINARY_DIR}/libcust_aicpu_kernels.so)
+  set(ARM_SO_OUTPUT ${CMAKE_BINARY_DIR}/libmath_aicpu_kernels.so)
 
   set(ALL_OBJECTS "")
   foreach(tgt IN LISTS AICPU_CUST_OBJ_TARGETS)
     list(APPEND ALL_OBJECTS $<TARGET_OBJECTS:${tgt}>)
   endforeach()
 
-  message(STATUS "Linking cust_aicpu_kernels with ARM toolchain: ${ARM_CXX_COMPILER}")
+  message(STATUS "Linking aicpu_kernels with ARM toolchain: ${ARM_CXX_COMPILER}")
   message(STATUS "Objects: ${ALL_OBJECTS}")
   message(STATUS "Output: ${ARM_SO_OUTPUT}")
 
@@ -251,21 +262,22 @@ function(gen_cust_aicpu_kernel_symbol)
     OUTPUT ${ARM_SO_OUTPUT}
     COMMAND ${ARM_CXX_COMPILER} -shared ${ALL_OBJECTS}
       -Wl,--whole-archive
-      ${ASCEND_DIR}/ops_base/lib64/libaicpu_context.a
-      ${ASCEND_DIR}/ops_base/lib64/libbase_ascend_protobuf.a
+      ${ASCEND_DIR}/lib64/libaicpu_context.a
+      ${ASCEND_DIR}/lib64/libbase_ascend_protobuf.a
       -Wl,--no-whole-archive
       -Wl,-Bsymbolic
       -Wl,--exclude-libs=libbase_ascend_protobuf.a
+      -Wl,-z,now
       -s
       -o ${ARM_SO_OUTPUT}
     DEPENDS ${AICPU_CUST_OBJ_TARGETS}
-    COMMENT "Linking cust_aicpu_kernels.so using ARM toolchain"
+    COMMENT "Linking aicpu_kernels.so using ARM toolchain"
   )
-  add_custom_target(cust_aicpu_kernels ALL DEPENDS ${ARM_SO_OUTPUT})
 
+  add_custom_target(aicpu_kernels ALL DEPENDS ${ARM_SO_OUTPUT})
   install(
     FILES ${ARM_SO_OUTPUT}
-    DESTINATION ${CUST_AICPU_KERNEL_IMPL}
+    DESTINATION ${AICPU_KERNEL_IMPL}
     OPTIONAL
   )
 endfunction()
@@ -289,7 +301,7 @@ function(gen_cust_symbol)
 
   gen_cust_proto_symbol()
 
-  gen_cust_aicpu_json_symbol()
+  gen_aicpu_json_symbol(FALSE)
 
-  gen_cust_aicpu_kernel_symbol()
+  gen_aicpu_kernel_symbol(FALSE)
 endfunction()

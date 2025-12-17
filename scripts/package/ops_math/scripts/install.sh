@@ -35,7 +35,7 @@ fi
 CURR_PATH=$(dirname $(readlink -f $0))
 INSTALL_SHELL_FILE="${CURR_PATH}/opp_install.sh"
 RUN_PKG_INFO_FILE="${CURR_PATH}/../scene.info"
-VERSION_INFO_FILE="${CURR_PATH}/../../version.info"
+VERSION_INFO_FILE="${CURR_PATH}/../version.info"
 COMMON_INC_FILE="${CURR_PATH}/common_func.inc"
 VERCHECK_FILE="${CURR_PATH}/ver_check.sh"
 PRE_CHECK_FILE="${CURR_PATH}/../bin/prereq_check.bash"
@@ -59,6 +59,7 @@ TARGET_USERNAME="${CURR_OPERATE_USER}"
 TARGET_USERGROUP="${CURR_OPERATE_GROUP}"
 TARGET_MOULDE_DIR=""  # TARGET_INSTALL_PATH + PKG_VERSION_DIR + OPP_PLATFORM_DIR
 TARGET_VERSION_DIR="" # TARGET_INSTALL_PATH + PKG_VERSION_DIR
+TARGET_SHARED_INFO_DIR=""
 
 # keys of infos in ascend_install.info
 KEY_INSTALLED_UNAME="USERNAME"
@@ -113,7 +114,7 @@ get_installed_info() {
 
 clean_before_reinstall() {
   local installed_path=$(get_installed_info "${KEY_INSTALLED_PATH}")
-  local existed_files=$(find ${TARGET_MOULDE_DIR} -type f -print 2>/dev/null)
+  local existed_files=$(find ${TARGET_SHARED_INFO_DIR}/${OPP_PLATFORM_DIR} -type f -print 2>/dev/null)
   if [ -z "${existed_files}" ]; then
     logandprint "[INFO]: Directory is empty, directly install opp module."
     return 0
@@ -123,7 +124,7 @@ clean_before_reinstall() {
     logandprint "[WARNING]: Directory has file existed or installed opp\
  module, are you sure to keep installing opp module in it? y"
   else
-    if [ ! -f "${TARGET_MOULDE_DIR}/ascend_install.info" ]; then
+    if [ ! -f "${INSTALL_INFO_FILE}" ]; then
       logandprint "[INFO]: Directory has file existed, do you want to continue? [y/n]"
     else
       logandprint "[INFO]: Opp package has been installed on the path $(get_installed_info "${KEY_INSTALLED_PATH}"),\
@@ -161,140 +162,17 @@ clean_before_reinstall() {
   return 0
 }
 
-select_last_dir_component() {
-  path="$1"
-  last_component=$(basename ${path})
-  if [ "${last_component}" = "atc" ]; then
-    last_component="atc"
-    return
-  elif [ "${last_component}" = "fwkacllib" ]; then
-    last_component="fwkacllib"
-    return
-  elif [ "${last_component}" = "compiler" ]; then
-    last_component="compiler"
-    return
-  fi
-}
-
-check_version_file() {
-  pkg_path="$1"
-  component_ret="$2"
-  run_pkg_path_temp=$(dirname "${pkg_path}")
-  run_pkg_path_temp2=${run_pkg_path_temp%/*}
-  run_pkg_path="${run_pkg_path_temp}""/${component_ret}"
-  run_pkg_path_temp2=${run_pkg_path%/*}
-  version_file="${run_pkg_path}""/version.info"
-  version_file_tmp="${run_pkg_path_temp2}""/version.info"
-  if [ -f "${version_file_tmp}" ]; then
-    version_file=${version_file_tmp}
-  fi
-  if [ -f "${version_file}" ]; then
-    echo "${version_file}" 2 >>/dev/null
-  else
-    logandprint "[ERROR]: ERR_NO:${FILE_NOT_EXIST}; The [${component_ret}] version.info in path [${pkg_path}] not exists."
-    exitlog
-    exit 1
-  fi
-  return
-}
-
 check_opp_version_file() {
   if [ -f "${CURR_PATH}/../../version.info" ]; then
     opp_ver_info="${CURR_PATH}/../../version.info"
-  elif [ -f "${DEFAULT_INSTALL_PATH}/${OPP_PLATFORM_DIR}/version.info" ]; then
-    opp_ver_info="${DEFAULT_INSTALL_PATH}/${OPP_PLATFORM_DIR}/version.info"
+  elif [ -f "${DEFAULT_INSTALL_PATH}/${OPP_PLATFORM_DIR}/share/info/version.info" ]; then
+    opp_ver_info="${DEFAULT_INSTALL_PATH}/${OPP_PLATFORM_DIR}/share/info/version.info"
   else
     logandprint "[ERROR]: ERR_NO:${FILE_NOT_EXIST}; The [${OPP_PLATFORM_DIR}] version.info not exists."
     exitlog
     exit 1
   fi
-  return
-}
-
-check_relation() {
-  opp_ver_info_val="$1"
-  req_pkg_name="$2"
-  req_pkg_version="$3"
-  if [ -f "${COMMON_INC_FILE}" ]; then
-    . "${COMMON_INC_FILE}"
-    check_pkg_ver_deps "${opp_ver_info_val}" "${req_pkg_name}" "${req_pkg_version}"
-    ret_situation=$ver_check_status
-  else
-    logandprint "[ERROR]: ERR_NO:${FILE_NOT_EXIST}; The ${COMMON_INC_FILE} not exists."
-    exitlog
-    exit 1
-  fi
-  return
-}
-
-show_relation() {
-  relation_situation="$1"
-  req_pkg_name_val="$2"
-  req_pkg_path="$3"
-  if [ "$relation_situation" = "SUCC" ]; then
-    logandprint "[INFO]: Relationship of opp with ${req_pkg_name_val} in path ${req_pkg_path} checked successfully"
-  else
-    logandprint "[WARNING]: Relationship of opp with ${req_pkg_name_val} in path ${req_pkg_path} checked failed."
-  fi
-  return
-}
-
-find_version_check() {
-  if [ "$(id -u)" != "0" ]; then
-    atc_res=$(find ${HOME} -name "ccec_compiler" | grep Ascend | grep atc)
-    fwk_res=$(find ${HOME} -name "ccec_compiler" | grep Ascend | grep fwk)
-    comp_res=$(find ${HOME} -name "ccec_compiler" | grep Ascend | grep Ascend/compiler)
-    ccec_compiler_path="$atc_res $fwk_res $comp_res"
-  else
-    atc_res=$(find /usr/local -name "ccec_compiler" | grep Ascend | grep atc)
-    fwk_res=$(find /usr/local -name "ccec_compiler" | grep Ascend | grep fwk)
-    comp_res=$(find /usr/local -name "ccec_compiler" | grep Ascend | grep Ascend/compiler)
-    ccec_compiler_path="$atc_res $fwk_res $comp_res"
-  fi
-  check_opp_version_file
-  ret_check_opp_version_file=$opp_ver_info
-  for var in ${ccec_compiler_path}; do
-    run_pkg_path_val=$(dirname "${var}")
-    # find run pkg name
-    select_last_dir_component "${run_pkg_path_val}"
-    ret_pkg_name=$last_component
-    #get check version
-    check_version_file "${run_pkg_path_val}" "${ret_pkg_name}"
-    ret_check_version_file=$version_file
-    #check relation
-    check_relation "${ret_check_opp_version_file}" "${ret_pkg_name}" "${ret_check_version_file}"
-    ret_check_relation_val=$ret_situation
-    #show relation
-    show_relation "${ret_check_relation_val}" "${ret_pkg_name}" "${run_pkg_path_val}"
-  done
-  return
-}
-
-path_version_check() {
-  path_env_list="$1"
-  check_opp_version_file
-  ret_check_opp_version_file_name=$opp_ver_info
-  path_list=$(echo "${path_env_list}" | cut -d"=" -f2)
-  array=$(echo ${path_list} | awk '{split($0,arr,":");for(i in arr) print arr[i]}')
-  for var in ${array}; do
-    path_ccec_compile=$(echo ${var} | grep -w "ccec_compiler")
-    if [ "${path_ccec_compile}" != "" ]; then
-      pkg_path_val=$(dirname $(dirname "${path_ccec_compile}"))
-      # find run pkg name
-      select_last_dir_component "${pkg_path_val}"
-      ret_pkg_name_val=$last_component
-      #get check version
-      check_version_file "${pkg_path_val}" "${ret_pkg_name_val}"
-      ret_check_version_file_val=$version_file
-      #check relation
-      check_relation "${ret_check_opp_version_file_name}" "${ret_pkg_name}" "${ret_check_version_file_val}"
-      ret_check_relation=$ret_situation
-      #show relation
-      show_relation "${ret_check_relation}" "${ret_pkg_name}" "${pkg_path_val}"
-    else
-      echo "the var_case does not contains ccec_compiler" 2 >>/dev/null
-    fi
-  done
+  echo "find opp_ver_info: ${opp_ver_info}"
   return
 }
 
@@ -430,18 +308,19 @@ check_arch() {
 }
 
 get_opts() {
-  local i=0
-  while true; do
-    if [ "$1" = "" ]; then
+  i=0
+  while true
+  do
+    if [ "x$1" = "x" ]; then
       break
     fi
     if [ "$(expr substr "$1" 1 2)" = "--" ]; then
-      ((i++))
+      i=$(expr $i + 1)
     fi
     if [ $i -gt 2 ]; then
       break
     fi
-    shift
+    shift 1
   done
 
   if [ "$*" = "" ]; then
@@ -453,33 +332,20 @@ get_opts() {
   while true; do
     # skip 2 parameters avoid run pkg and directory as input parameter
     case "$1" in
-      --version)
-        if [ -e "${VERSION_INFO_FILE}" ]; then
-          . "${VERSION_INFO_FILE}"
-          echo ${Version}
-          exitlog
-          exit 0
-        else
-          echo "[ERROR]: ERR_NO:${FILE_NOT_EXIST};ERR_DES:${FILE_NOT_EXIST_DES}.\
- The version file (${VERSION_INFO_FILE}) not exists or without execute permission."
-          exitlog
-          exit 1
-        fi
-        ;;
-      --run | --full | --devel)
+      --full)
         IN_INSTALL_TYPE=$(echo ${1} | awk -F"--" '{print $2}')
         IS_INSTALL="y"
-        ((CONFLICT_CMD_NUMS++))
+        CONFLICT_CMD_NUMS=$(expr $CONFLICT_CMD_NUMS + 1)
         shift
         ;;
       --upgrade)
         IS_UPGRADE="y"
-        ((CONFLICT_CMD_NUMS++))
+        CONFLICT_CMD_NUMS=$(expr $CONFLICT_CMD_NUMS + 1)
         shift
         ;;
       --uninstall)
         IS_UNINSTALL="y"
-        ((CONFLICT_CMD_NUMS++))
+        CONFLICT_CMD_NUMS=$(expr $CONFLICT_CMD_NUMS + 1)
         shift
         ;;
       --install-path=*)
@@ -496,34 +362,6 @@ get_opts() {
         ;;
       --install-for-all)
         IS_FOR_ALL="y"
-        shift
-        ;;
-      --check)
-        IS_CHECK="y"
-        ((CONFLICT_CMD_NUMS++))
-        shift
-        ;;
-      --check-path=*)
-        check_path=$1
-        ((CONFLICT_CMD_NUMS++))
-        shift
-        ;;
-      --pre-check)
-        IS_PRE_CHECK="y"
-        shift
-        ;;
-      --jit)
-        IS_JIT="y"
-        shift
-        ;;
-      --setenv)
-        IS_SETENV="y"
-        shift
-        ;;
-      --docker-root=*)
-        IS_DOCKER_INSTALL="y"
-        DOCKER_ROOT=$(echo $1 | cut -d"=" -f2)
-        check_docker_path ${DOCKER_ROOT}
         shift
         ;;
       -*)
@@ -558,6 +396,9 @@ check_opts() {
 
 # init target_dir and log for install
 init_env() {
+  # creat log folder and log file
+  comm_init_log
+
   get_install_package_dir "TARGET_MOULDE_DIR" "${VERSION_INFO_FILE}" "${TARGET_INSTALL_PATH}" "${OPP_PLATFORM_DIR}"
   TARGET_VERSION_DIR=$(dirname ${TARGET_MOULDE_DIR})
   # Splicing docker-root and install-path
@@ -571,19 +412,15 @@ init_env() {
     TARGET_VERSION_DIR=${temp_path_val}${TARGET_VERSION_DIR}
   fi
 
-  UNINSTALL_SHELL_FILE="${TARGET_MOULDE_DIR}/script/opp_uninstall.sh"
-  INSTALL_INFO_FILE="${TARGET_MOULDE_DIR}/${ASCEND_INSTALL_INFO}"
-  is_multi_version_pkg "pkg_is_multi_version" "$VERSION_INFO_FILE"
-  get_version_dir "PKG_VERSION_DIR" "$VERSION_INFO_FILE"
-  get_package_version "RUN_PKG_VERSION" "$VERSION_INFO_FILE"
-
-  # creat log folder and log file
-  comm_init_log
+  TARGET_SHARED_INFO_DIR=${TARGET_VERSION_DIR}/share/info
+  UNINSTALL_SHELL_FILE="${TARGET_SHARED_INFO_DIR}/${OPP_PLATFORM_DIR}/script/opp_uninstall.sh"
+  INSTALL_INFO_FILE="${TARGET_SHARED_INFO_DIR}/${OPP_PLATFORM_DIR}/${ASCEND_INSTALL_INFO}"
 
   logandprint "[INFO]: Execute the opp run package."
   logandprint "[INFO]: OperationLogFile path: ${COMM_LOGFILE}."
   logandprint "[INFO]: Input params: $CMD_LIST"
 
+  get_package_version "RUN_PKG_VERSION" "$VERSION_INFO_FILE"
   local installed_version=$(get_installed_info "${KEY_INSTALLED_VERSION}")
   if [ "${installed_version}" = "" ]; then
     logandprint "[INFO]: Version of installing opp module is ${RUN_PKG_VERSION}."
@@ -596,39 +433,24 @@ init_env() {
 }
 
 check_pre_install() {
-  if [ "${IS_CHECK}" = "y" ] && [ "${check_path}" = "" ]; then
-    path_env_list_val=$(env | grep -w PATH)
-    path_ccec_compile_val=$(echo ${path_env_list} | grep -w "ccec_compiler")
-    if [ "${path_ccec_compile_val}" != "" ]; then
-      path_version_check "${path_env_list_val}"
-    else
-      find_version_check
-    fi
-    exitlog
-    exit 0
-  fi
-
-  if [ "${IS_CHECK}"="y" ] && [ "${check_path}" != "" ]; then
-    VERCHECK_FILE="${CURR_PATH}""/ver_check.sh"
-    if [ ! -f "${VERCHECK_FILE}" ]; then
-      logandprint "[ERROR]: ERR_NO:${FILE_NOT_EXIST};ERR_DES:${FILE_NOT_EXIST_DES}.\
-      The file (${VERCHECK_FILE}) not exists.\
- Please make sure that the opp module installed in (${VERCHECK_FILE}) and then set the correct install path."
-    fi
-    bash "${VERCHECK_FILE}" "${check_path}"
-    exitlog
-    exit 0
-  fi
-
   local installed_user=$(get_installed_info "${KEY_INSTALLED_UNAME}")
   local installed_group=$(get_installed_info "${KEY_INSTALLED_UGROUP}")
   if [ "${installed_user}" != "" ] || [ "${installed_group}" != "" ]; then
     if [ "${installed_user}" != "${TARGET_USERNAME}" ] || [ "${installed_group}" != "${TARGET_USERGROUP}" ]; then
       logandprint "[ERROR]: The user and group are not same with last installation,\
- do not support overwriting installation!"
+do not support overwriting installation!"
       exitlog
       exit 1
     fi
+  fi
+
+  if [ "${IS_UPGRADE}" = "y" ]; then
+    if [ ! -e "${INSTALL_INFO_FILE}" ]; then
+      logandprint "[ERROR]: ERR_NO:${FILE_NOT_EXIST}; The directory:${TARGET_INSTALL_PATH} not install OpsMath, upgrade failed."
+      exitlog
+      exit 1
+    fi
+    IN_INSTALL_TYPE=$(get_installed_info "${KEY_INSTALLED_TYPE}")
   fi
 }
 
@@ -683,11 +505,13 @@ install_package() {
     comm_log_operation "Install" "${IN_INSTALL_TYPE}" "OpsMath" "$?" "${CMD_LIST}"
   fi
   if [ $(id -u) -eq 0 ]; then
-    chown -R "root":"root" "${TARGET_MOULDE_DIR}/script" 2>/dev/null
-    chown "root":"root" "${TARGET_MOULDE_DIR}" 2>/dev/null
+    chown -R "root":"root" "${TARGET_SHARED_INFO_DIR}/${OPP_PLATFORM_DIR}/script" 2>/dev/null
+    chown "root":"root" "${TARGET_SHARED_INFO_DIR}/${OPP_PLATFORM_DIR}" 2>/dev/null
+    chmod -R 555 "${TARGET_SHARED_INFO_DIR}/${OPP_PLATFORM_DIR}/script" 2>/dev/null
+    chmod 444 "${TARGET_SHARED_INFO_DIR}/${OPP_PLATFORM_DIR}/script/filelist.csv" 2>/dev/null
   else
-    chmod -R 550 "${TARGET_MOULDE_DIR}/script" 2>/dev/null
-    chmod 440 "${TARGET_MOULDE_DIR}/script/filelist.csv" 2>/dev/null
+    chmod -R 550 "${TARGET_SHARED_INFO_DIR}/${OPP_PLATFORM_DIR}/script" 2>/dev/null
+    chmod 440 "${TARGET_SHARED_INFO_DIR}/${OPP_PLATFORM_DIR}/script/filelist.csv" 2>/dev/null
   fi
   comm_log_operation "Install" "${IN_INSTALL_TYPE}" "OpsMath" "$?" "${CMD_LIST}"
 }

@@ -34,9 +34,10 @@ BOOL_FLAG_KEY = ["dynamicFormat", "dynamicShapeSupport", "dynamicRankSupport", "
                  "needCheckSupport", "enableVectorCore"]
 BOOL_LIST = ["true", "false"]
 DTYPE_LIST = ["float16", "float", "float32", "int8", "int16", "int32", "uint8", "uint16", "uint32", "bool",
-              "int64", "uint64", "qint8", "qint16", "qint32", "quint8", "quint16", "double", "complex64",
+              "int64", "uint64", "qint8", "qint16", "qint32", "quint8", "quint16", "double", "complex32", "complex64",
               "complex128", "string", "resource", "dual", "dual_sub_int8", "dual_sub_uint8", "string_ref",
-              "int4", "bfloat16", "uint1"]
+              "int4", "bfloat16", "uint1", "hifloat8", "float8_e4m3fn", "float8_e5m2", "float8_e8m0", "float4_e2m1",
+              "float4_e1m2", "int2"]
 FORMAT_LIST = ["NCHW", "NHWC", "ND", "NC1HWC0", "FRACTAL_Z", "NC1C0HWPAD", "NHWC1C0", "FSR_NCHW", "FRACTAL_DECONV",
                "C1HWNC0", "FRACTAL_DECONV_TRANSPOSE", "FRACTAL_DECONV_SP_STRIDE_TRANS", "NC1HWC0_C04",
                "FRACTAL_Z_C04", "CHWN", "FRACTAL_DECONV_SP_STRIDE8_TRANS", "HWCN", "NC1KHKWHWC0", "BN_WEIGHT",

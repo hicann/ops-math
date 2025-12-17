@@ -20,7 +20,7 @@
 using namespace IsFiniteNs;
 
 // kernel function
-template <int D_T_X, int D_T_Y>
+template<int D_T_X, int D_T_Y>
 __global__ __aicore__ void is_finite(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     if (workspace == nullptr) {

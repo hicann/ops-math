@@ -11,16 +11,20 @@
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
-if (IS_DIRECTORY "${CANN_3RD_LIB_PATH}/eigen")
+set(EIGEN_VERSION_PKG eigen-3.4.0.tar.gz)
+if(IS_DIRECTORY "${CANN_3RD_LIB_PATH}/eigen")	
   set(REQ_URL "${CANN_3RD_LIB_PATH}/eigen")
 else()
-  set(REQ_URL "https://gitcode.com/cann-src-third-party/eigen/releases/download/3.4.0/eigen-3.4.0.tar.gz")
+  set(REQ_URL "https://gitcode.com/cann-src-third-party/eigen/releases/download/3.4.0/${EIGEN_VERSION_PKG}")
 endif()
+
+set(EIGEN_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
 
 include(ExternalProject)
 ExternalProject_Add(external_eigen_math
   URL               ${REQ_URL}
-  DOWNLOAD_DIR      download/eigen
+  DOWNLOAD_DIR      ${EIGEN_DOWNLOAD_PATH}
+  DOWNLOAD_NO_EXTRACT 0   #自动解压
   PREFIX            third_party
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""

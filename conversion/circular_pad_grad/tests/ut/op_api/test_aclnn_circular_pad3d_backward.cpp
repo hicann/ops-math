@@ -10,7 +10,7 @@
  */
 #include "gtest/gtest.h"
 
-#include "aclnn_circular_pad3d_backward.h"
+#include "conversion/circular_pad_grad/op_api/aclnn_circular_pad3d_backward.h"
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/array_desc.h"
 #include "op_api_ut_common/op_api_ut.h"
@@ -47,7 +47,6 @@ TEST_F(circular_pad3d_backward_test, case_1)
     // EXPECT_EQ(aclRet, ACL_SUCCESS);
 
     // // SAMPLE: precision simulate
-    //  ut.TestPrecision();
 }
 
 // 空tensor
@@ -229,7 +228,6 @@ TEST_F(circular_pad3d_backward_test, case_10)
         uint64_t workspaceSize = 0;
         aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
         // EXPECT_EQ(aclRet, ACL_SUCCESS);
-        // ut.TestPrecision();
     }
 }
 

@@ -13,7 +13,7 @@
 #include <vector>
 #include "gtest/gtest.h"
 
-#include "level2/aclnn_cat.h"
+#include "aclnn_cat.h"
 
 #include "op_api_ut_common/inner/types.h"
 #include "op_api_ut_common/op_api_ut.h"

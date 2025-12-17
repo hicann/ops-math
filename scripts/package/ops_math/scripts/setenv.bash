@@ -9,25 +9,21 @@
 # BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
-
-param_mult_ver=$1
+# all package set same environment ASCEND_OPP_PATH
 REAL_SHELL_PATH=`realpath ${BASH_SOURCE[0]}`
-CANN_PATH=$(cd $(dirname ${REAL_SHELL_PATH})/../../ && pwd)
-if [ -d "${CANN_PATH}/ops_math" ] && [ -d "${CANN_PATH}/../latest" ]; then
-    INSATLL_PATH=$(cd $(dirname ${REAL_SHELL_PATH})/../../../ && pwd)
-    if [ -L "${INSATLL_PATH}/latest/ops_math" ]; then
-        _ASCEND_OPS_MATH_PATH=`cd ${CANN_PATH}/ops_math && pwd`
-        if [ "$param_mult_ver" = "multi_version" ]; then
-            _ASCEND_OPS_MATH_PATH=`cd ${INSATLL_PATH}/latest/ops_math && pwd`
-        fi
+MULTI_VERSION=$1
+CANN_PATH=$(cd $(dirname ${REAL_SHELL_PATH})/../../../../ && pwd)
+if [ -d "${CANN_PATH}/opp" ]; then
+    INSATLL_PATH=$(cd $(dirname ${REAL_SHELL_PATH})/../../../../../ && pwd)
+    _ASCEND_OPP_PATH="${CANN_PATH}/opp"
+    if [ "$MULTI_VERSION" = "multi_version" ]; then
+        _ASCEND_OPP_PATH="${INSATLL_PATH}/cann/opp"
     fi
-elif [ -d "${CANN_PATH}/ops_math" ]; then
-    _ASCEND_OPS_MATH_PATH=`cd ${CANN_PATH}/ops_math && pwd`
-fi  
+fi
 
-export ASCEND_OPS_MATH_PATH=${_ASCEND_OPS_MATH_PATH}
+export ASCEND_OPP_PATH=${_ASCEND_OPP_PATH}
 
-library_path="${_ASCEND_OPS_MATH_PATH}/lib64"
+library_path="${INSATLL_PATH}/cann/lib64"
 ld_library_path="${LD_LIBRARY_PATH}"
 num=$(echo ":${ld_library_path}:" | grep ":${library_path}:" | wc -l)
 if [ "${num}" -eq 0 ]; then

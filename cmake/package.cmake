@@ -45,6 +45,28 @@ function(pack_custom)
         LIBRARY
         cust_proto
     )
+    add_es_library(
+      ES_LINKABLE_AND_ALL_TARGET es_math
+      OPP_PROTO_TARGET ${PACK_CUSTOM_NAME}_ascendc_cust_op_proto
+      OUTPUT_PATH ${CMAKE_BINARY_DIR}/es_packages
+    )
+    install(
+      DIRECTORY ${CMAKE_BINARY_DIR}/es_packages/include/es_math/
+      DESTINATION ${ES_INC_INSTALL_DIR}
+      OPTIONAL
+    )
+    if(ENABLE_STATIC)
+      install(
+        DIRECTORY ${CMAKE_BINARY_DIR}/es_packages/include/es_math/
+        DESTINATION ${STATIC_ES_INC_INSTALL_DIR}
+        OPTIONAL
+      )
+    endif()
+    install(
+      FILES ${CMAKE_BINARY_DIR}/es_packages/lib64/libes_math.so
+      DESTINATION ${ES_LIB_INSTALL_DIR}
+      OPTIONAL
+    )
   endif()
   if (TARGET cust_opmaster)
     npu_op_package_add(${PACK_CUSTOM_NAME}
@@ -69,7 +91,7 @@ function(pack_built_in)
 
   set(script_prefix ${CMAKE_SOURCE_DIR}/scripts/package/ops_math/scripts)
   install(DIRECTORY ${script_prefix}/
-      DESTINATION ops_math/script
+      DESTINATION share/info/ops_math/script
       FILE_PERMISSIONS
       OWNER_READ OWNER_WRITE OWNER_EXECUTE  # 文件权限
       GROUP_READ GROUP_EXECUTE
@@ -78,20 +100,20 @@ function(pack_built_in)
       OWNER_READ OWNER_WRITE OWNER_EXECUTE  # 目录权限
       GROUP_READ GROUP_EXECUTE
       WORLD_READ WORLD_EXECUTE
+      REGEX "(setenv|prereq_check)\\.(bash|fish|csh)" EXCLUDE
   )
 
   set(SCRIPTS_FILES
       ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/check_version_required.awk
       ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_func.inc
-      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_interface.bash
+      ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_interface.sh
       ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_interface.csh
       ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_interface.fish
       ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/version_compatiable.inc
-      ${CMAKE_SOURCE_DIR}/scripts/package/common/py/merge_binary_info_config.py
   )
 
   install(FILES ${SCRIPTS_FILES}
-      DESTINATION ops_math/script
+      DESTINATION share/info/ops_math/script
   )
   set(COMMON_FILES
       ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/install_common_parser.sh
@@ -115,13 +137,13 @@ function(pack_built_in)
       ${CMAKE_SOURCE_DIR}/scripts/package/common/cfg/path.cfg
   )
   install(FILES ${CMAKE_SOURCE_DIR}/version.info
-      DESTINATION .
+      DESTINATION share/info/ops_math
   )
   install(FILES ${CONF_FILES}
       DESTINATION ops_math/conf
   )
   install(FILES ${PACKAGE_FILES}
-      DESTINATION ops_math/script
+      DESTINATION share/info/ops_math/script
   )
   install(FILES ${LATEST_MANGER_FILES}
       DESTINATION latest_manager
@@ -138,7 +160,7 @@ function(pack_built_in)
       ${CMAKE_SOURCE_DIR}/scripts/package/ops_math/scripts/setenv.fish
   )
   install(FILES ${BIN_FILES}
-      DESTINATION ops_math/bin
+      DESTINATION share/info/ops_math/bin
   )
 
   string(FIND "${ASCEND_COMPUTE_UNIT}" ";" SEMICOLON_INDEX)
@@ -164,7 +186,7 @@ function(pack_built_in)
   set(CPACK_CMAKE_BINARY_DIR "${CMAKE_BINARY_DIR}")
   set(CPACK_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
   set(CPACK_CMAKE_CURRENT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-  # set(CPACK_COMPONENTS_ALL runtime documentation)
+  set(CPACK_MAKESELF_PATH "${MAKESELF_PATH}")
   set(CPACK_SOC "${compute_unit}")
   set(CPACK_ARCH "${ARCH}")
   set(CPACK_SET_DESTDIR ON)

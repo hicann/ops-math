@@ -23,5 +23,6 @@ static ge::graphStatus InferShape4IsFinite(gert::InferShapeContext* context)
     return Ops::Base::InferShape4Elewise(context);
 }
 
+
 IMPL_OP_INFERSHAPE(IsFinite).InferShape(InferShape4IsFinite);
 } // namespace ops

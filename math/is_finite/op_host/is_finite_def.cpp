@@ -34,6 +34,16 @@ public:
         this->AICore().AddConfig("ascend910b");
         this->AICore().AddConfig("ascend910_93");
 
+        OpAICoreConfig config910d;
+        config910d.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .PrecisionReduceFlag(true)
+            .ExtendCfgInfo("opFile.value", "is_finite_apt");
+        this->AICore().AddConfig("ascend910_95", config910d);
+
         OpAICoreConfig config310p;
         config310p.DynamicCompileStaticFlag(true)
             .DynamicFormatFlag(true)

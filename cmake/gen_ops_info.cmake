@@ -149,23 +149,24 @@ function(generate_bin_scripts)
     COMMAND
       ${ASCEND_PYTHON_EXECUTABLE} ${OPS_KERNEL_BINARY_SCRIPT}/merge_ops_config_json.py
           ${GENBIN_OUT_DIR}/gen/${GENBIN_OP_NAME}
-    DEPENDS ascendc_impl_gen  # this target depend ascendc_impl_gen to gen asc-xxx-ops-info.ini
     )
   if(NOT TARGET ${GENBIN_TARGET})
     add_custom_target(${GENBIN_TARGET})
+    add_dependencies(${GENBIN_TARGET} ascendc_impl_gen)
   endif()
   add_dependencies(${GENBIN_TARGET} generate_bin_scripts_${GENBIN_COMPUTE_UNIT}_${GENBIN_OP_NAME})
 endfunction()
+
 
 # ######################################################################################################################
 # get op_type from *_def.cpp
 # ######################################################################################################################
 function(get_op_type_from_op_name OP_NAME OP_DIR OP_TYPE)
   execute_process(
-      COMMAND
+    COMMAND
       find ${OP_DIR} -name ${OP_NAME}_def.cpp -exec grep OP_ADD {} \;
-      OUTPUT_VARIABLE op_type
-      )
+    OUTPUT_VARIABLE op_type
+    )
   if(NOT op_type)
     set(op_type "")
   else()
@@ -253,7 +254,7 @@ function(compile_from_config)
     config_compile_${CONFCMP_COMPUTE_UNIT}_${CONFCMP_OP_NAME}
     COMMAND
       ${_ASCENDC_ENV_VAR} bash ${OPS_KERNEL_BINARY_SCRIPT}/build_binary_single_op.sh ${CONFCMP_OP_TYPE} ${CONFCMP_COMPUTE_UNIT}
-      ${CONFCMP_OUT_DIR}/bin ${ENABLE_MSSANITIZER} ${ENABLE_DEBUG}
+      ${CONFCMP_OUT_DIR}/bin ${ENABLE_MSSANITIZER} ${CMAKE_BUILD_TYPE} ${ENABLE_OOM}
     WORKING_DIRECTORY ${OPS_KERNEL_BINARY_SCRIPT}
     DEPENDS ${ASCEND_KERNEL_CONF_DST}/aic-${CONFCMP_COMPUTE_UNIT}-ops-info.ini ascendc_kernel_src_copy
             bin_conf_${CONFCMP_OP_NAME}_${CONFCMP_COMPUTE_UNIT}_copy
@@ -272,14 +273,31 @@ function(compile_from_config)
   add_dependencies(binary config_compile_${CONFCMP_COMPUTE_UNIT}_${CONFCMP_OP_NAME} ${CONFCMP_TARGET})
 
   if(ENABLE_PACKAGE)
+    if(ENABLE_CUSTOM)
+      set(_KERNEL_BIN_INSTALL_DIR ${BIN_KERNEL_INSTALL_DIR}/${CONFCMP_COMPUTE_UNIT})
+      set(_KERNEL_CONFIG_INSTALL_DIR ${BIN_KERNEL_CONFIG_INSTALL_DIR}/${CONFCMP_COMPUTE_UNIT})
+    else()
+      set(_KERNEL_BIN_INSTALL_DIR ${BIN_KERNEL_INSTALL_DIR}/${CONFCMP_COMPUTE_UNIT}/ops_math)
+      set(_KERNEL_CONFIG_INSTALL_DIR ${BIN_KERNEL_CONFIG_INSTALL_DIR}/${CONFCMP_COMPUTE_UNIT}/ops_math)
+    endif()
     install(
       DIRECTORY ${CONFCMP_OUT_DIR}/bin/${CONFCMP_COMPUTE_UNIT}/${CONFCMP_OP_NAME}
-      DESTINATION ${BIN_KERNEL_INSTALL_DIR}/${CONFCMP_COMPUTE_UNIT}
+      DESTINATION ${_KERNEL_BIN_INSTALL_DIR}
       OPTIONAL
       )
     install(
       FILES ${CONFCMP_OUT_DIR}/bin/config/${CONFCMP_COMPUTE_UNIT}/${CONFCMP_OP_NAME}.json
-      DESTINATION ${BIN_KERNEL_CONFIG_INSTALL_DIR}/${CONFCMP_COMPUTE_UNIT}
+      DESTINATION ${_KERNEL_CONFIG_INSTALL_DIR}
+      OPTIONAL
+      )
+    install(
+      DIRECTORY ${CONFCMP_OUT_DIR}/bin/${CONFCMP_COMPUTE_UNIT}/${CONFCMP_OP_NAME}_apt
+      DESTINATION ${_KERNEL_BIN_INSTALL_DIR}
+      OPTIONAL
+      )
+    install(
+      FILES ${CONFCMP_OUT_DIR}/bin/config/${CONFCMP_COMPUTE_UNIT}/${CONFCMP_OP_NAME}_apt.json
+      DESTINATION ${_KERNEL_CONFIG_INSTALL_DIR}
       OPTIONAL
       )
   endif()
@@ -311,9 +329,14 @@ function(gen_binary_info_config_json)
   add_dependencies(gen_bin_info_config ${GENBIN_INFOCFG_TARGET})
 
   if(ENABLE_PACKAGE)
+    if(ENABLE_CUSTOM)
+      set(_KERNEL_CONFIG_INSTALL_DIR ${BIN_KERNEL_CONFIG_INSTALL_DIR}/${GENBIN_INFOCFG_COMPUTE_UNIT})
+    else()
+      set(_KERNEL_CONFIG_INSTALL_DIR ${BIN_KERNEL_CONFIG_INSTALL_DIR}/${GENBIN_INFOCFG_COMPUTE_UNIT}/ops_math)
+    endif()
     install(
       FILES ${GENBIN_INFOCFG_BIN_DIR}/bin/config/${GENBIN_INFOCFG_COMPUTE_UNIT}/binary_info_config.json
-      DESTINATION ${BIN_KERNEL_CONFIG_INSTALL_DIR}/${GENBIN_INFOCFG_COMPUTE_UNIT}
+      DESTINATION ${_KERNEL_CONFIG_INSTALL_DIR}
       OPTIONAL
       )
   endif()
@@ -415,9 +438,7 @@ function(gen_ops_info_and_python)
               COMPUTE_UNIT
               ${compute_unit}
         )
-        add_dependencies(ascendc_bin_${compute_unit}_${op_name} merge_ini_${compute_unit} ascendc_impl_gen
-                         gen_bin_scripts # auto gen binary config
-                        )
+        add_dependencies(ascendc_bin_${compute_unit}_${op_name} merge_ini_${compute_unit} ascendc_impl_gen)
       endforeach()
 
       if(HAS_OP_COMPILE_OF_COMPUTE_UNIT)
@@ -426,8 +447,6 @@ function(gen_ops_info_and_python)
           TARGET gen_bin_info_config_${compute_unit} BIN_DIR ${CMAKE_BINARY_DIR}/binary/${compute_unit} COMPUTE_UNIT
           ${compute_unit}
           )
-      else()
-        message(FATAL_ERROR "[ERROR] There is no operator support for ${compute_unit}.")
       endif()
     endforeach()
   endif()

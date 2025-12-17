@@ -9,4 +9,6 @@
 # ============================================================================
 
 add_library(op_api_ut_common_inc INTERFACE)
-target_include_directories(op_api_ut_common_inc INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(op_api_ut_common_inc INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}
+    ${ASCEND_DIR}/pkg_inc
+)

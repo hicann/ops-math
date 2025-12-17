@@ -41,7 +41,7 @@ public:
     AnyValue(const AnyValue& anyValue) : type_(anyValue.type_), valuePtr_(anyValue.valuePtr_)
     {}
 
-    template <typename T>
+    template<typename T>
     static inline AnyValue CreateFrom(const T& value);
 
     ValueType type_;

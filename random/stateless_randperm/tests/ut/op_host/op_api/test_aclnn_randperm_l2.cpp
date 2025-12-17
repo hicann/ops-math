@@ -12,7 +12,7 @@
 #include <array>
 #include "gtest/gtest.h"
 
-#include "level2/aclnn_randperm.h"
+#include "aclnn_randperm.h"
 
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"

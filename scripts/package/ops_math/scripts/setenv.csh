@@ -10,20 +10,15 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-set param_mult_ver = $argv[1]
 set REAL_SHELL_PATH = `realpath $0`
-set CANN_PATH = `cd $(dirname $REAL_SHELL_PATH)/../../ && pwd`
-if (-d "$CANN_PATH/ops_math" && -d "$CANN_PATH/../latest") then
-    set INSATLL_PATH = `cd $(dirname $REAL_SHELL_PATH)/../../../ && pwd`
-    if (-L "$INSATLL_PATH/latest/ops_math") then
-        set _ASCEND_OPS_MATH_PATH = `cd $CANN_PATH/ops_math && pwd`
-        if ($param_mult_ver == "multi_version") then
-            set _ASCEND_OPS_MATH_PATH = `cd $INSATLL_PATH/latest/ops_math && pwd`
-        endif
+set MULTI_VERSION = $argv[1]
+set CANN_PATH = `cd $(dirname $REAL_SHELL_PATH)/../../../../ && pwd`
+if (-d "$CANN_PATH/opp") then
+    set INSATLL_PATH = `cd $(dirname $REAL_SHELL_PATH)/../../../../../ && pwd`
+    set _ASCEND_OPP_PATH = "${CANN_PATH}/opp"
+    if ($MULTI_VERSION == "multi_version") then
+        set _ASCEND_OPP_PATH = "${INSATLL_PATH}/latest/opp"
     endif
-elseif (-d "$CANN_PATH/ops_math") then
-    set _ASCEND_OPS_math_PATH = `cd $CANN_PATH/ops_math && pwd`
 endif
 
-setenv ASCEND_OPS_MATH_PATH ${_ASCEND_OPS_MATH_PATH}
-
+setenv ASCEND_OPP_PATH ${_ASCEND_OPP_PATH}

@@ -17,8 +17,7 @@
 
 namespace op {
 
-enum class SocVersion
-{
+enum class SocVersion {
     ASCEND910 = 0,
     ASCEND910B,
     ASCEND910_93,
@@ -32,14 +31,9 @@ enum class SocVersion
     RESERVED_VERSION = 99999
 };
 
-enum class SocSpec
-{
-    INST_MMAD = 0,
-    RESERVED_SPEC = 99999
-};
+enum class SocSpec { INST_MMAD = 0, RESERVED_SPEC = 99999 };
 
-enum class SocSpecAbility
-{
+enum class SocSpecAbility {
     INST_MMAD_F162F16 = 0,
     INST_MMAD_F162F32,
     INST_MMAD_H322F32,
@@ -66,7 +60,7 @@ class PlatformInfo {
 public:
     PlatformInfo() {};
 
-    PlatformInfo(int32_t deviceId) : deviceId_(deviceId) {};
+    PlatformInfo(int32_t deviceId) : deviceId_(deviceId){};
 
     SocVersion GetSocVersion() const;
 
@@ -86,22 +80,22 @@ public:
 
     bool GetFftsPlusMode() const;
 
-    fe::PlatFormInfos* GetPlatformInfos() const;
+    fe::PlatFormInfos *GetPlatformInfos() const;
 
 private:
-    PlatformInfo& operator=(const PlatformInfo& other) = delete;
+    PlatformInfo &operator=(const PlatformInfo &other) = delete;
 
-    PlatformInfo& operator=(const PlatformInfo&& other) = delete;
+    PlatformInfo &operator=(const PlatformInfo &&other) = delete;
 
-    PlatformInfo(const PlatformInfo& other) = delete;
+    PlatformInfo(const PlatformInfo &other) = delete;
 
-    PlatformInfo(const PlatformInfo&& other) = delete;
+    PlatformInfo(const PlatformInfo &&other) = delete;
 
-    void SetPlatformImpl(PlatformInfoImpl* impl);
+    void SetPlatformImpl(PlatformInfoImpl *impl);
 
     bool valid_ = false;
     int32_t deviceId_{-1};
-    PlatformInfoImpl* impl_ = nullptr;
+    PlatformInfoImpl *impl_ = nullptr;
 
     ~PlatformInfo();
 };

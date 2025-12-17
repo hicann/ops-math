@@ -14,7 +14,7 @@
 namespace op {
 
 SocVersion g_socVersion = SocVersion::ASCEND910B;
-PlatformInfo* g_platformInfo = new PlatformInfo();
+PlatformInfo *g_platformInfo = new PlatformInfo();
 
 bool PlatformInfo::CheckSupport(SocSpec socSpec, SocSpecAbility ability) const
 {
@@ -33,7 +33,7 @@ bool PlatformInfo::Valid() const
     return valid_;
 }
 
-void PlatformInfo::SetPlatformImpl(PlatformInfoImpl* impl)
+void PlatformInfo::SetPlatformImpl(PlatformInfoImpl *impl)
 {
     impl_ = impl;
     valid_ = true;

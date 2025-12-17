@@ -10,7 +10,7 @@
 # ----------------------------------------------------------------------------
 
 set(MAKESELF_NAME "makeself")
-set(MAKESELF_PATH "${CMAKE_BINARY_DIR}/${MAKESELF_NAME}")
+set(MAKESELF_PATH ${CANN_3RD_LIB_PATH}/makeself)
 
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
@@ -26,7 +26,7 @@ if (NOT EXISTS "${MAKESELF_PATH}/makeself-header.sh" OR NOT EXISTS "${MAKESELF_P
         ${MAKESELF_NAME}
         URL ${MAKESELF_URL}
         URL_HASH SHA256=bfa730a5763cdb267904a130e02b2e48e464986909c0733ff1c96495f620369a
-        DOWNLOAD_DIR ${CANN_3RD_PKG_PATH}
+        DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
         SOURCE_DIR "${MAKESELF_PATH}"  # 直接解压到此目录
     )
     FetchContent_MakeAvailable(${MAKESELF_NAME})

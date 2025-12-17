@@ -12,7 +12,7 @@
 #include <vector>
 #include "gtest/gtest.h"
 
-#include "level2/aclnn_trans_matmul_weight.h"
+#include "aclnn_trans_matmul_weight.h"
 
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"

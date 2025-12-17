@@ -5,8 +5,8 @@
 # Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
-# BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
-# the software repository for the full text of the License.
+# BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
 if(UT_TEST_ALL OR OP_HOST_UT)
@@ -40,7 +40,7 @@ if(UT_TEST_ALL OR OP_HOST_UT)
   add_executable(${OP_HOST_UT_EXE}
       test_op_host_main.cpp
   )
-  target_compile_definitions(${OP_HOST_UT_EXE} PRIVATE LOG_CPP)
+  target_compile_definitions(${OP_HOST_UT_EXE} PRIVATE)
   target_compile_options(${OP_HOST_UT_EXE} PUBLIC -fPIE -fno-access-control)
   add_dependencies(${OP_HOST_UT_EXE} ${OPHOST_NAME}_ut)
   target_include_directories(${OP_HOST_UT_EXE} PRIVATE
@@ -57,6 +57,7 @@ if(UT_TEST_ALL OR OP_HOST_UT)
       -Wl,--no-whole-archive
       -Wl,--no-as-needed
           metadef
+          unified_dlog
       -Wl,--as-needed
       register
       opp_registry
@@ -94,7 +95,7 @@ if(UT_TEST_ALL OR OP_HOST_UT)
         COMMAND
           ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH}
           LD_PRELOAD=${LIBASAN_PATH}:${LIBSTDC_PATH}
-          ASAN_OPTIONS=detect_leaks=0 ./${OP_HOST_UT_EXE}
+          ASAN_OPTIONS=detect_leaks=0 $<TARGET_FILE:${OP_HOST_UT_EXE}>
         COMMENT "Run ops op_host utest with asan"
         )
     else()
@@ -102,7 +103,7 @@ if(UT_TEST_ALL OR OP_HOST_UT)
         TARGET ${OP_HOST_UT_EXE}
         POST_BUILD
         COMMAND
-          ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH} ./${OP_HOST_UT_EXE}
+          ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH} $<TARGET_FILE:${OP_HOST_UT_EXE}>
         COMMENT "Run ops op_host utest"
         )
     endif()
@@ -114,7 +115,7 @@ if(UT_TEST_ALL OR OP_HOST_UT)
       POST_BUILD
       COMMAND
         ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH} && valgrind --undef-value-errors=no
-        --leak-check=full ./${OP_HOST_UT_EXE}
+        --leak-check=full $<TARGET_FILE:${OP_HOST_UT_EXE}>
       COMMENT "Run ops op_host utest by valgrind"
       )
   endif()

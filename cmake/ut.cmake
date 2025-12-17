@@ -27,9 +27,12 @@ if(UT_TEST_ALL OR OP_HOST_UT)
          ${UT_COMMON_INC}/tiling_case_executor.cpp
       )
     target_sources(${OP_TILING_MODULE_NAME}_common_obj PRIVATE ${OP_TILING_UT_COMMON_SRC})
+    target_compile_definitions(${OP_TILING_MODULE_NAME}_common_obj PRIVATE BUILD_SOC_VERSION=${ASCEND_COMPUTE_UNIT})
+
     target_include_directories(
       ${OP_TILING_MODULE_NAME}_common_obj PRIVATE ${JSON_INCLUDE_DIR} ${GTEST_INCLUDE}
-                                                  ${ASCEND_DIR}/include/base/context_builder ${ASCEND_DIR}/pkg_inc/base ${OPBASE_INC_DIRS}
+                                                  ${ASCEND_DIR}/include/base/context_builder ${ASCEND_DIR}/pkg_inc
+                                                   ${ASCEND_DIR}/pkg_inc/op_common ${ASCEND_DIR}/pkg_inc/op_common/op_host
       )
     target_link_libraries(
       ${OP_TILING_MODULE_NAME}_common_obj PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> json gtest c_sec
@@ -42,9 +45,9 @@ if(UT_TEST_ALL OR OP_HOST_UT)
     target_include_directories(
       ${OP_TILING_MODULE_NAME}_cases_obj PRIVATE ${UT_COMMON_INC} ${GTEST_INCLUDE} ${ASCEND_DIR}/include
                                                  ${ASCEND_DIR}/include/base/context_builder ${PROJECT_SOURCE_DIR}/common/inc
-                                                 ${ASCEND_DIR}/include/tiling
-                                                 ${ASCEND_DIR}/include/toolchain
-                                                 ${ASCEND_DIR}/pkg_inc/base ${OPBASE_INC_DIRS}
+                                                 ${ASCEND_DIR}/pkg_inc/op_common ${ASCEND_DIR}/include/tiling
+                                                 ${ASCEND_DIR}/pkg_inc/op_common/op_host
+                                                 ${ASCEND_DIR}/pkg_inc/base ${ASCEND_DIR}/pkg_inc
       )
     target_link_libraries(${OP_TILING_MODULE_NAME}_cases_obj PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> gtest)
 
@@ -64,6 +67,7 @@ if(UT_TEST_ALL OR OP_HOST_UT)
     target_sources(${OP_INFERSHAPE_MODULE_NAME}_common_obj PRIVATE ${OP_INFERSHAPE_UT_COMMON_SRC})
     target_include_directories(
       ${OP_INFERSHAPE_MODULE_NAME}_common_obj PRIVATE ${GTEST_INCLUDE} ${ASCEND_DIR}/include/base/context_builder
+      ${ASCEND_DIR}/pkg_inc
       )
     target_link_libraries(
       ${OP_INFERSHAPE_MODULE_NAME}_common_obj PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> gtest c_sec
@@ -101,21 +105,71 @@ if(UT_TEST_ALL OR OP_API_UT)
       add_library(${OP_API_MODULE_NAME}_cases_obj OBJECT)
     endif()
     target_sources(${OP_API_MODULE_NAME}_cases_obj PRIVATE ${UT_PATH}/op_api/stub/opdev/platform.cpp)
-    file(GLOB ACLNN_SRC_DIRS
-      ${PROJECT_SOURCE_DIR}/math/*/op_host/op_api
-      ${PROJECT_SOURCE_DIR}/conversion/*/op_host/op_api
-      ${PROJECT_SOURCE_DIR}/random/*/op_host/op_api
-      ${PROJECT_SOURCE_DIR}/math/*/op_api
-      ${PROJECT_SOURCE_DIR}/conversion/*/op_api
-      ${PROJECT_SOURCE_DIR}/random/*/op_api
-    )
     target_include_directories(
       ${OP_API_MODULE_NAME}_cases_obj
       PRIVATE ${JSON_INCLUDE_DIR} ${HI_PYTHON_INC_TEMP} ${UT_PATH}/op_api/stub ${OP_API_UT_COMMON_INC}
               ${ASCEND_DIR}/include ${ASCEND_DIR}/include/aclnn ${OPS_MATH_DIR}/common/inc/external
-              ${ACLNN_SRC_DIRS}
+              ${OPAPI_INCLUDE}
       )
     target_link_libraries(${OP_API_MODULE_NAME}_cases_obj PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> json gtest)
+  endfunction()
+endif()
+
+if(UT_TEST_ALL OR OP_KERNEL_AICPU_UT)
+  set(AICPU_OP_KERNEL_MODULE_NAME ${PKG_NAME}_aicpu_op_kernel_ut CACHE STRING "aicpu_op_kernel ut module name" FORCE)
+  message("******************* AICPU_OP_KERNEL_MODULE_NAME is  ${AICPU_OP_KERNEL_MODULE_NAME}" )
+  function(add_aicpu_opkernel_ut_modules AICPU_OP_KERNEL_MODULE_NAME)
+    ## add opkernel ut common object: math_aicpu_op_kernel_ut_common_obj
+    add_library(${AICPU_OP_KERNEL_MODULE_NAME}_common_obj OBJECT)
+    file(GLOB OP_KERNEL_UT_COMMON_SRC
+        ./stub/*.cpp
+    )
+    file(GLOB OP_KERNEL_AICPU_UT_UTILS_SRC
+        utils/*.cpp
+    )
+    target_sources(${AICPU_OP_KERNEL_MODULE_NAME}_common_obj PRIVATE ${OP_KERNEL_UT_COMMON_SRC})
+    target_include_directories(${AICPU_OP_KERNEL_MODULE_NAME}_common_obj PRIVATE
+        ${GTEST_INCLUDE}
+    )
+    target_compile_definitions(${AICPU_OP_KERNEL_MODULE_NAME}_common_obj PRIVATE _GLIBCXX_USE_CXX11_ABI=1)
+    target_link_libraries(${AICPU_OP_KERNEL_MODULE_NAME}_common_obj PRIVATE
+        $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
+        gtest
+        c_sec
+        Eigen3::EigenMath
+    )
+
+    ## add opkernel ut cases object: math_aicpu_op_kernel_ut_cases_obj
+    if(NOT TARGET ${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj)
+        add_library(${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj OBJECT ${UT_PATH}/empty.cpp)
+    endif()
+    target_link_libraries(${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj PRIVATE gcov -ldl)
+    target_sources(${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj PRIVATE ${OP_KERNEL_AICPU_UT_UTILS_SRC})
+
+    ## add opkernel ut cases shared lib: libmath_aicpu_op_kernel_ut_cases.so
+    add_library(${AICPU_OP_KERNEL_MODULE_NAME}_cases SHARED
+        $<TARGET_OBJECTS:${AICPU_OP_KERNEL_MODULE_NAME}_common_obj>
+        $<TARGET_OBJECTS:${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj>
+    )
+    message(STATUS ">>>> ut.cmake Defined targets: ${AICPU_OP_KERNEL_MODULE_NAME}_cases, ${ASCEND_DIR}")
+
+    # 链接静态库时使用 whole-archive，保证 RegistCpuKernel 被拉入
+    target_link_libraries(${AICPU_OP_KERNEL_MODULE_NAME}_cases PRIVATE
+        $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
+        gtest
+        c_sec
+        -ldl
+        -Wl,--whole-archive
+            ${ASCEND_DIR}/lib64/libaicpu_context_host.a
+            ${ASCEND_DIR}/lib64/libaicpu_nodedef_host.a
+            ${ASCEND_DIR}/lib64/libhost_ascend_protobuf.a
+        -Wl,--no-whole-archive
+        -Wl,-Bsymbolic
+        -Wl,--exclude-libs=libhost_ascend_protobuf.a
+        Eigen3::EigenMath
+        ${AICPU_OP_KERNEL_MODULE_NAME}_common_obj
+        ${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj
+    )
   endfunction()
 endif()
 
@@ -164,7 +218,7 @@ endif()
 if(UT_TEST_ALL OR OP_HOST_UT OR OP_API_UT)
   function(add_modules_ut_sources)
     set(options OPTION_RESERVED)
-    set(oneValueArgs UT_NAME MODE DIR)
+    set(oneValueArgs UT_NAME MODE DIR TILING_DIR)
     set(multiValueArgs MULIT_RESERVED)
     cmake_parse_arguments(MODULE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -182,7 +236,7 @@ if(UT_TEST_ALL OR OP_HOST_UT OR OP_API_UT)
       if(NOT TARGET ${MODULE_UT_NAME}_cases_obj)
         add_library(${MODULE_UT_NAME}_cases_obj OBJECT)
       endif()
-      file(GLOB OPHOST_TILING_CASES_SRC ${MODULE_DIR}/test_*_tiling.cpp)
+      file(GLOB OPHOST_TILING_CASES_SRC ${MODULE_DIR}/test_*_tiling.cpp ${MODULE_DIR}/${MODULE_TILING_DIR}/test_*_tiling*.cpp)
       target_sources(${MODULE_UT_NAME}_cases_obj ${MODULE_MODE} ${OPHOST_TILING_CASES_SRC})
     endif()
 
@@ -236,92 +290,85 @@ if(UT_TEST_ALL OR OP_KERNEL_UT)
       ""
       CACHE STRING "fastOp Test SocVersions"
     )
-
-  function(get_op_type_from_op_name OP_NAME OP_TYPE)
-    execute_process(
-      COMMAND
-        find ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host -name ${OP_NAME}_def.cpp -exec grep OP_ADD {} \;
-      OUTPUT_VARIABLE op_type
-      )
-    if(NOT op_type)
-      set(op_type "")
-    else()
-      string(REGEX REPLACE "OP_ADD\\(" "" op_type ${op_type})
-      string(REGEX REPLACE "\\).*$" "" op_type ${op_type})
+  function(AddOpsTestCase)
+    set(options OPTION_RESERVED)
+    set(oneValueArgs OP_NAME OTHER_COMPILE_OPTIONS)
+    set(multiValueArgs SOC_VERSION TILING_SRC_FILES UT_SRC_FILES)
+    cmake_parse_arguments(MODULE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+    message("my_MODULE_SOC_VERSION=${MODULE_SOC_VERSION}")
+    # check if the case should be executed according to soc
+    if(NOT ${ASCEND_COMPUTE_UNIT} IN_LIST MODULE_SOC_VERSION)
+      return()
     endif()
-    set(${OP_TYPE}
-        ${op_type}
-        PARENT_SCOPE
-      )
-  endfunction()
 
-  function(AddOpTestCase opName supportedSocVersion otherCompileOptions tilingSrcFiles)
-    get_filename_component(UT_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
-    get_filename_component(TESTS_DIR ${UT_DIR} DIRECTORY)
-    get_filename_component(OP_NAME_DIR ${TESTS_DIR} DIRECTORY)
-    get_filename_component(OP_NAME ${OP_NAME_DIR} NAME)
-    list(FIND ASCEND_OP_NAME ${OP_NAME} INDEX)
+    list(FIND ASCEND_OP_NAME ${MODULE_OP_NAME} INDEX)
     # if "--ops" is not NULL, opName not include, jump over. if "--ops" is NULL, include all.
     if(NOT "${ASCEND_OP_NAME}" STREQUAL "" AND INDEX EQUAL -1)
       return()
     endif()
 
     # find kernel file
-    file(GLOB KernelFile "${PROJECT_SOURCE_DIR}/*/${opName}/op_kernel/${opName}.cpp")
+    file(GLOB KernelFile "${PROJECT_SOURCE_DIR}/*/${MODULE_OP_NAME}/op_kernel/${MODULE_OP_NAME}.cpp")
 
     # standardize opType
-    set(opType)
-    get_op_type_from_op_name("${opName}" opType)
-    if(NOT opType)
-      message(STATUS "[INFO] On [${compute_unit}], [${opName}] not need to compile.")
-      continue()
-    endif()
+    set(opType "")
+    string(REPLACE "_" ";" opTypeTemp "${MODULE_OP_NAME}")
+    foreach(word IN LISTS opTypeTemp)
+      string(SUBSTRING "${word}" 0 1 firstLetter)
+      string(SUBSTRING "${word}" 1 -1 restOfWord)
+      string(TOUPPER "${firstLetter}" firstLetter)
+      string(TOLOWER "${restOfWord}" restOfWord)
+      set(opType "${opType}${firstLetter}${restOfWord}")
+    endforeach()
 
     # standardize tiling files
-    string(REPLACE "," ";" tilingSrc "${tilingSrcFiles}")
+    string(REPLACE "," ";" tilingSrc "${MODULE_TILING_SRC_FILES}")
 
-    foreach(oriSocVersion ${supportedSocVersion})
+    foreach(shortSocVersion ${MODULE_SOC_VERSION})
       # standardize socVersion
+      string(TOLOWER ${shortSocVersion} lowerShortSocVersion)
+      find_value_by_key("${SHORT_NAME_LIST}" "${FULL_NAME_LIST}" "${lowerShortSocVersion}" oriSocVersion)
       string(REPLACE "ascend" "Ascend" socVersion "${oriSocVersion}")
 
-      # add tiling tmp so: ${opName}_${socVersion}_tiling_tmp.so
-      add_library(${opName}_${socVersion}_tiling_tmp SHARED ${tilingSrc} $<TARGET_OBJECTS:${COMMON_NAME}_obj>)
+      # add tiling tmp so: ${MODULE_OP_NAME}_${socVersion}_tiling_tmp.so
+      add_library(${MODULE_OP_NAME}_${socVersion}_tiling_tmp SHARED ${tilingSrc} $<TARGET_OBJECTS:${COMMON_NAME}_obj>)
       target_include_directories(
-        ${opName}_${socVersion}_tiling_tmp
-        PRIVATE ${OPBASE_INC_DIRS} ${PROJECT_SOURCE_DIR}/common/inc
-                ${ASCEND_DIR}/include/tiling
-                ${ASCEND_DIR}/include/toolchain ${ASCEND_DIR}/pkg_inc/base ${OPBASE_INC_DIRS}
+        ${MODULE_OP_NAME}_${socVersion}_tiling_tmp
+        PRIVATE ${ASCEND_DIR}/pkg_inc/op_common/atvoss ${ASCEND_DIR}/pkg_inc/op_common
+                ${ASCEND_DIR}/pkg_inc/op_common/op_host ${PROJECT_SOURCE_DIR}/common/inc
+                ${ASCEND_DIR}/include/tiling ${ASCEND_DIR}/pkg_inc/op_common/op_host
+                ${ASCEND_DIR}/pkg_inc/base
         )
-      target_compile_definitions(${opName}_${socVersion}_tiling_tmp PRIVATE LOG_CPP _GLIBCXX_USE_CXX11_ABI=0)
+      target_compile_definitions(${MODULE_OP_NAME}_${socVersion}_tiling_tmp PRIVATE _GLIBCXX_USE_CXX11_ABI=0)
       target_link_libraries(
-        ${opName}_${socVersion}_tiling_tmp
+        ${MODULE_OP_NAME}_${socVersion}_tiling_tmp
         PRIVATE -Wl,--no-as-needed $<$<TARGET_EXISTS:opsbase>:opsbase> -Wl,--as-needed -Wl,--whole-archive tiling_api rt2_registry_static
                 -Wl,--no-whole-archive 
         )
 
       # gen ascendc tiling head files
-      set(tilingFile ${CMAKE_CURRENT_BINARY_DIR}/${opName}_tiling_data.h)
-      if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${opName}_tiling.h")
-        set(compileOptions -include "${CMAKE_CURRENT_SOURCE_DIR}/${opName}_tiling.h")
+      set(tilingFile ${CMAKE_CURRENT_BINARY_DIR}/${MODULE_OP_NAME}_tiling_data.h)
+      if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${MODULE_OP_NAME}_tiling.h")
+        set(compileOptions -include "${CMAKE_CURRENT_SOURCE_DIR}/${MODULE_OP_NAME}_tiling.h")
       else()
         set(compileOptions -include ${tilingFile})
       endif()
       set(CUSTOM_TILING_DATA_KEYS "")
-      string(REGEX MATCH "-DUT_CUSTOM_TILING_DATA_KEYS=([^ ]+)" matchedPart "${otherCompileOptions}")
+      string(REGEX MATCH "-DUT_CUSTOM_TILING_DATA_KEYS=([^ ]+)" matchedPart "${MODULE_OTHER_COMPILE_OPTIONS}")
       if(CMAKE_MATCH_1)
         set(CUSTOM_TILING_DATA_KEYS ${CMAKE_MATCH_1})
-        string(REGEX REPLACE "-DUT_CUSTOM_TILING_DATA_KEYS=[^ ]+" "" modifiedString ${otherCompileOptions})
-        set(otherCompileOptions ${modifiedString})
+        string(REGEX REPLACE "-DUT_CUSTOM_TILING_DATA_KEYS=[^ ]+" "" modifiedString ${MODULE_OTHER_COMPILE_OPTIONS})
+        set(MODULE_OTHER_COMPILE_OPTIONS ${modifiedString})
       endif()
-      string(REPLACE " " ";" options "${otherCompileOptions}")
+      string(REPLACE " " ";" options "${MODULE_OTHER_COMPILE_OPTIONS}")
       foreach(option IN LISTS options)
         set(compileOptions ${compileOptions} ${option})
       endforeach()
       message("compileOptions: ${compileOptions}")
       set(gen_tiling_head_file ${OPS_MATH_DIR}/tests/ut/op_kernel/scripts/gen_tiling_head_file.sh)
-      set(gen_tiling_so_path ${CMAKE_CURRENT_BINARY_DIR}/lib${opName}_${socVersion}_tiling_tmp.so)
-      set(gen_tiling_head_tag ${opName}_${socVersion}_gen_head)
-      set(gen_cmd "bash ${gen_tiling_head_file} ${opType} ${opName} ${gen_tiling_so_path} ${CUSTOM_TILING_DATA_KEYS}")
+      set(gen_tiling_so_path ${CMAKE_CURRENT_BINARY_DIR}/lib${MODULE_OP_NAME}_${socVersion}_tiling_tmp.so)
+      set(gen_tiling_head_tag ${MODULE_OP_NAME}_${socVersion}_gen_head)
+      set(gen_cmd "bash ${gen_tiling_head_file} ${opType} ${MODULE_OP_NAME} ${gen_tiling_so_path} ${CUSTOM_TILING_DATA_KEYS}")
       message("gen tiling head file to ${tilingFile}, command:")
       message("${gen_cmd}")
       add_custom_command(
@@ -329,27 +376,36 @@ if(UT_TEST_ALL OR OP_KERNEL_UT)
         COMMAND rm -f ${tilingFile}
         COMMAND bash -c ${gen_cmd}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        DEPENDS ${opName}_${socVersion}_tiling_tmp
+        DEPENDS ${MODULE_OP_NAME}_${socVersion}_tiling_tmp
         )
       add_custom_target(${gen_tiling_head_tag} ALL DEPENDS ${tilingFile})
 
-      # add object: ${opName}_${socVersion}_cases_obj
-
-      file(GLOB OPKERNEL_CASES_SRC ${CMAKE_CURRENT_SOURCE_DIR}/test_${opName}*.cpp)
-      add_library(${opName}_${socVersion}_cases_obj OBJECT ${KernelFile} ${OPKERNEL_CASES_SRC})
-      add_dependencies(${opName}_${socVersion}_cases_obj ${gen_tiling_head_tag})
+      # add object: ${MODULE_OP_NAME}_${socVersion}_cases_obj
+      if(MODULE_UT_SRC_FILES)
+        set(OPKERNEL_CASES_SRC ${MODULE_UT_SRC_FILES})
+      else()
+        file(GLOB OPKERNEL_CASES_SRC ${CMAKE_CURRENT_SOURCE_DIR}/test_${MODULE_OP_NAME}*.cpp)
+      endif()
+      add_library(${MODULE_OP_NAME}_${socVersion}_cases_obj OBJECT ${KernelFile} ${OPKERNEL_CASES_SRC})
+      add_dependencies(${MODULE_OP_NAME}_${socVersion}_cases_obj ${gen_tiling_head_tag})
       target_compile_options(
-        ${opName}_${socVersion}_cases_obj PRIVATE -g ${compileOptions} -DUT_SOC_VERSION="${socVersion}"
+        ${MODULE_OP_NAME}_${socVersion}_cases_obj PRIVATE -g ${compileOptions} -DUT_SOC_VERSION="${socVersion}"
         )
       target_include_directories(
-        ${opName}_${socVersion}_cases_obj
+        ${MODULE_OP_NAME}_${socVersion}_cases_obj
         PRIVATE ${ASCEND_DIR}/include/base/context_builder ${PROJECT_SOURCE_DIR}/tests/ut/op_kernel
                 ${PROJECT_SOURCE_DIR}/tests/ut/common ${PROJECT_SOURCE_DIR}/common/inc
-                ${ASCEND_DIR}/pkg_inc/base
-                ${ASCEND_DIR}/include/tiling ${OPBASE_INC_DIRS}
+                ${ASCEND_DIR}/pkg_inc/op_common ${ASCEND_DIR}/include/tiling
+                ${ASCEND_DIR}/pkg_inc/op_common/op_host
+                ${ASCEND_DIR}/pkg_inc/base ${ASCEND_DIR}/pkg_inc
+                ${ASCEND_DIR}/tools/tikicpulib/lib/include/
+                ${ASCEND_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/asc/
+                ${ASCEND_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+                ${ASCEND_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/asc/include/
+                ${ASCEND_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/asc/include/basic_api/
         )
       target_link_libraries(
-        ${opName}_${socVersion}_cases_obj PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> tikicpulib::${socVersion}
+        ${MODULE_OP_NAME}_${socVersion}_cases_obj PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> tikicpulib::${socVersion}
                                                   gtest
         )
 
@@ -357,14 +413,14 @@ if(UT_TEST_ALL OR OP_KERNEL_UT)
       if(NOT TARGET ${OP_KERNEL_MODULE_NAME}_${oriSocVersion}_cases_obj)
         add_library(
           ${OP_KERNEL_MODULE_NAME}_${oriSocVersion}_cases_obj OBJECT
-          $<TARGET_OBJECTS:${opName}_${socVersion}_cases_obj>
+          $<TARGET_OBJECTS:${MODULE_OP_NAME}_${socVersion}_cases_obj>
           )
       else()
-        target_sources(${OP_KERNEL_MODULE_NAME}_${oriSocVersion}_cases_obj PRIVATE $<TARGET_OBJECTS:${opName}_${socVersion}_cases_obj>)
+        target_sources(${OP_KERNEL_MODULE_NAME}_${oriSocVersion}_cases_obj PRIVATE $<TARGET_OBJECTS:${MODULE_OP_NAME}_${socVersion}_cases_obj>)
       endif()
       target_link_libraries(
         ${OP_KERNEL_MODULE_NAME}_${oriSocVersion}_cases_obj PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
-                                                                    $<TARGET_OBJECTS:${opName}_${socVersion}_cases_obj>
+                                                                    $<TARGET_OBJECTS:${MODULE_OP_NAME}_${socVersion}_cases_obj>
         )
 
       list(FIND fastOpTestSocVersions "${oriSocVersion}" index)
@@ -375,5 +431,72 @@ if(UT_TEST_ALL OR OP_KERNEL_UT)
           )
       endif()
     endforeach()
+  endfunction()
+
+  function(AddOpTestCase opName shortSocVersion otherCompileOptions tilingSrcFiles)
+    AddOpsTestCase(
+       OP_NAME ${opName}
+       SOC_VERSION ${shortSocVersion}
+       OTHER_COMPILE_OPTIONS "${otherCompileOptions}"
+       TILING_SRC_FILES ${tilingSrcFiles})
+  endfunction()
+endif()
+
+if(UT_TEST_ALL OR OP_KERNEL_AICPU_UT)
+  include(${PROJECT_SOURCE_DIR}/cmake/third_party/gtest.cmake)
+  function(AddAicpuOpTestCase opName)
+    get_filename_component(UT_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
+
+    ## find kernel file
+    file(GLOB KernelFile "${PROJECT_SOURCE_DIR}/*/${opName}/op_kernel_aicpu/${opName}_aicpu.cpp")
+
+    ## add object: ${opName}_cases_obj
+    file(GLOB OPKERNEL_CASES_SRC ${UT_DIR}/tests/ut/op_kernel_aicpu/test_${opName}*.cpp)
+    
+    message(STATUS "aicpu kernel info: ${opName}, ${KernelFile}, ${OPKERNEL_CASES_SRC}")
+
+    add_library(${opName}_cases_obj OBJECT
+            ${KernelFile}
+            ${OPKERNEL_CASES_SRC}
+            )
+    target_compile_options(${opName}_cases_obj PRIVATE 
+            -g
+            )
+    ## add op_kernel_aicpu test header file search path, so that header files can be referenced based on relative path
+    target_include_directories(${opName}_cases_obj PRIVATE
+            ${AICPU_INCLUDE}
+            ${OPBASE_INC_DIRS}
+            ${AICPU_INC_DIRS}
+            ${PROJECT_SOURCE_DIR}/tests/ut/op_kernel_aicpu
+            )
+    target_link_libraries(${opName}_cases_obj PRIVATE
+            $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
+            -ldl
+            gtest
+            c_sec
+            Eigen3::EigenMath
+            $<$<TARGET_EXISTS:opsbase>:opsbase>
+            )
+
+    ## add object: math_op_kernel_ut_cases_obj
+    if(NOT TARGET ${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj)
+      add_library(
+        ${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj OBJECT
+        $<TARGET_OBJECTS:${opName}_cases_obj>
+        )
+    else()
+      target_sources(${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj PRIVATE $<TARGET_OBJECTS:${opName}_cases_obj>)
+    endif()
+
+    target_link_libraries(${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj PRIVATE
+        $<BUILD_INTERFACE:intf_llt_pub_asan>
+            $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
+            -ldl
+            $<TARGET_OBJECTS:${opName}_cases_obj>
+            gtest
+            c_sec
+            Eigen3::EigenMath
+      $<$<TARGET_EXISTS:opsbase>:opsbase>
+            )
   endfunction()
 endif()
