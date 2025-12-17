@@ -232,12 +232,12 @@ REGISTER_CPU_KERNEL(kAddExample, AddExampleCpuKernel);
     ```bash
    ./build_out/cann-ops-math-${vendor_name}_linux-${arch}.run
     ```
-   自定义算子包安装在`${ASCEND_HOME_PATH}/latest/opp/vendors`路径中，`${ASCEND_HOME_PATH}`表示CANN软件安装目录，可提前在环境变量中配置。自定义算子包不支持卸载。
+   自定义算子包安装在`${ASCEND_HOME_PATH}/cann/opp/vendors`路径中，`${ASCEND_HOME_PATH}`表示CANN软件安装目录，可提前在环境变量中配置。自定义算子包不支持卸载。
 
 ## 算子验证
 ```bash
     # 执行前需要导入环境变量
-    export LD_LIBRARY_PATH=${ASCEND_HOME_PATH}/latest/opp/vendors/${vendor_name}/op_api/lib:${LD_LIBRARY_PATH}
+    export LD_LIBRARY_PATH=${ASCEND_HOME_PATH}/cann/opp/vendors/${vendor_name}/op_api/lib:${LD_LIBRARY_PATH}
 ```
 
 1. **图模式调用验证**

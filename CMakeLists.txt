@@ -103,10 +103,6 @@ if(ENABLE_TEST)
   add_subdirectory(tests/ut)
 endif()
 
-if("${ASCEND_OP_NAME}" STREQUAL "add_example")
-  add_subdirectory(examples)
-endif()
-
 check_compiled_ops()
 
 if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG AND NOT ENABLE_TEST)
