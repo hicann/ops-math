@@ -113,6 +113,8 @@ export GE_EXTERNAL_INCLUDE_PATH="${INCLUDE_PATH}/external"
 export INC_INCLUDE_PATH="${ASCEND_OPP_PATH}/built-in/op_proto/inc"
 export EAGER_LIBRARY_PATH="${ASCEND_HOME_PATH}/lib64"
 export GRAPH_LIBRARY_PATH="${ASCEND_HOME_PATH}/lib64"
+export ASCEND_SLOG_PRINT_TO_STDOUT=1
+export ASCEND_GLOBAL_LOG_LEVEL=1
 
 # print usage message
 usage() {
@@ -1136,7 +1138,7 @@ gen_op() {
   elif command -v python &> /dev/null; then
       python_cmd="python"
   fi
-  
+
   if [ -n "${python_cmd}" ]; then
     ${python_cmd} "${BASE_PATH}/scripts/opgen/opgen_standalone.py" -t ${GENOP_TYPE} -n ${GENOP_NAME} -p ${GENOP_BASE}
     return $?
@@ -1175,7 +1177,7 @@ gen_aicpu_op() {
   for file in $(find "${BASE_DIR}" -type f); do
     sed -i "s/add_example_aicpu/${GENOP_NAME}/g" "$file"
   done
-  
+
   cd ${BASE_DIR}
   for file in $(find ./ -name "add_example_aicpu*"); do
     new_file=$(echo "$file" | sed "s/add_example_aicpu/${GENOP_NAME}_aicpu/g")
