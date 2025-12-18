@@ -191,7 +191,7 @@ int main()
     在test\_aclnn\_\$\{op\_name\}.cpp同级目录下创建run.sh文件，以`AddExample`算子为例，示例如下，请根据实际情况自行修改。
     
     ```bash
-    if [ -n "$ASCEND_INSTALL_PATH" ]; then                      #
+    if [ -n "$ASCEND_INSTALL_PATH" ]; then                      # 实际CANN包安装路径
         _ASCEND_INSTALL_PATH=$ASCEND_INSTALL_PATH
     elif [ -n "$ASCEND_HOME_PATH" ]; then
         _ASCEND_INSTALL_PATH=$ASCEND_HOME_PATH
@@ -204,7 +204,7 @@ int main()
     rm -rf build
     mkdir -p build 
     cd build
-    cmake ../ -DCMAKE_CXX_COMPILER=g++ -DCMAKE_SKIP_RPATH=TRUE
+    cmake ../ -DCMAKE_CXX_COMPILER=g++ -DCMAKE_SKIP_RPATH=TRUE  # 执行构建命令
     make
     cd bin
     ./test_aclnn_add_example            # 替换为实际算子可执行文件名
