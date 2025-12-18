@@ -88,6 +88,10 @@
     ./${install_path}/cann/share/info/ops_math/script/uninstall.sh
     ```
 
+4. **一键式工具执行**
+
+    上述操作也可以通过一键式工具脚本执行，具体操作参考[一键式工具命令行说明](../../scripts/opsuite/README.md)
+
 ## 本地验证 
 
 通过项目根目录build.sh脚本，可快速调用算子和UT用例，验证项目功能是否正常，build参数介绍参见[build参数说明](../context/build.md)。
