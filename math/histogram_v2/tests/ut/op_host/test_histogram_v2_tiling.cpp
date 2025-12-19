@@ -31,30 +31,31 @@ protected:
 };
 
 struct HistogramV2CompileInfo {
-    uint32_t coreNum = 0;
-    uint64_t ubSizePlatForm = 0;
-    bool isAscend310P = false;
+    int32_t totalCoreNum = 0;
+    uint64_t ubSizePlatform = 0;
+    int64_t sysWorkspaceSize = 0;
+    platform_ascendc::SocVersion socVersion = platform_ascendc::SocVersion::ASCEND310P;
 };
 
 TEST_F(HistogramV2Tiling, ascend910B1_test_tiling__001)
 {
-    // HistogramV2CompileInfo compileInfo = {64, 262144, true};
-    // gert::TilingContextPara tilingContextPara(
-    //     "HistogramV2",
-    //     {
-    //         {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    //         {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    //         {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    //     },
-    //     {
-    //         {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    //     },
-    //     {
-    //         gert::TilingContextPara::OpAttr("bins", Ops::Math::AnyValue::CreateFrom<int64_t>(100)),
-    //     },
-    //     &compileInfo);
-    // uint64_t expectTilingKey = 4294967295;
-    // string expectTilingData = "4294967360 68719476737 68719476752 2 1008981770 4096 0 4096 ";
-    // std::vector<size_t> expectWorkspaces = {281474942680800};
-    // ExecuteTestCase(tilingContextPara, 4294967295, expectTilingKey, expectTilingData, expectWorkspaces);
+    HistogramV2CompileInfo compileInfo = {64, 262144, 16 * 1024 * 1024};
+    gert::TilingContextPara tilingContextPara(
+        "HistogramV2",
+        {
+            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            gert::TilingContextPara::OpAttr("bins", Ops::Math::AnyValue::CreateFrom<int64_t>(100)),
+        },
+        &compileInfo);
+    uint64_t expectTilingKey = 0;
+    string expectTilingData = "100 16320 1 4 8 4 8 0 16000 4 8 0 16000 4 8 ";
+    std::vector<size_t> expectWorkspaces = {16806912};
+    ExecuteTestCase(tilingContextPara, 0, expectTilingKey, expectTilingData, expectWorkspaces);
 }

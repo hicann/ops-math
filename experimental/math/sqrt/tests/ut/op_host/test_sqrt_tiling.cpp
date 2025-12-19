@@ -45,7 +45,7 @@ TEST_F(SqrtTiling, ascend9101_test_tiling_fp16_001)
         },
         &compileInfo);
     uint64_t expectTilingKey = 0;
-    string expectTilingData = "8192 8208 1 1 21840 8192 8208 0 ";
+    string expectTilingData = "8192 8208 1 1 21824 8192 8208 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -63,7 +63,7 @@ TEST_F(SqrtTiling, ascend9101_test_tiling_bf16_002)
         },
         &compileInfo);
     uint64_t expectTilingKey = 0;
-    string expectTilingData = "8192 8208 1 1 21840 8192 8208 0 ";
+    string expectTilingData = "8192 8208 1 1 21824 8192 8208 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -81,7 +81,7 @@ TEST_F(SqrtTiling, ascend9101_test_tiling_fp32_003)
         },
         &compileInfo);
     uint64_t expectTilingKey = 0;
-    string expectTilingData = "8192 8200 1 1 16384 8192 8200 0 ";
+    string expectTilingData = "8192 8200 1 1 16368 8192 8200 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

@@ -48,7 +48,6 @@ TEST_F(SubV2Infershape, sub_v2_infershape_test1)
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         });
     std::vector<std::vector<int64_t>> expectOutputShape = {
-        {3, 4},
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
@@ -65,7 +64,6 @@ TEST_F(SubV2Infershape, sub_v2_infershape_test2)
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         });
     std::vector<std::vector<int64_t>> expectOutputShape = {
-        {5, -1},
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }

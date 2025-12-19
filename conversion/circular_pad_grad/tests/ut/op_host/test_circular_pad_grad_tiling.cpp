@@ -33,21 +33,21 @@ protected:
 
 TEST_F(CircularPadGradTiling, circular_pad_grad_tiling_test_success)
 {
-    // optiling::Tiling4CircularPadCommonCompileInfo compileInfo = {64, 262144, 16777216};
-    // std::vector<int64_t> constValue = {0, 0, 100, 100, 100, 100};
-    // gert::TilingContextPara tilingContextPara(
-    //     "CircularPadGrad",
-    //     {{{{1, 1, 500, 500}, {1, 1, 500, 500}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-    //      {{{6}, {6}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
-    //     {
-    //         {{{1, 1, 300, 300}, {1, 1, 300, 300}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-    //     },
-    //     &compileInfo);
+    optiling::Tiling4CircularPadCommonCompileInfo compileInfo = {64, 262144, 16777216};
+    std::vector<int64_t> constValue = {0, 0, 100, 100, 100, 100};
+    gert::TilingContextPara tilingContextPara(
+        "CircularPadGrad",
+        {{{{1, 1, 500, 500}, {1, 1, 500, 500}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+         {{{6}, {6}}, ge::DT_INT64, ge::FORMAT_ND, true, constValue.data()}},
+        {
+            {{{1, 1, 300, 300}, {1, 1, 300, 300}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        &compileInfo);
 
-    // uint64_t expectTilingKey = 222;
-    // std::string expectTilingData = "500 500 300 300 100 100 100 100 0 0 1 1 0 1 158400 ";
-    // std::vector<size_t> expectWorkspaces = {4295600895};
-    // ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+    uint64_t expectTilingKey = 222;
+    std::string expectTilingData = "500 500 300 300 100 100 100 100 0 0 1 1 0 1 158400 ";
+    std::vector<size_t> expectWorkspaces = {17410816};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
 TEST_F(CircularPadGradTiling, circular_pad_grad_tiling_test_failed)

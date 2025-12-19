@@ -106,6 +106,8 @@ static ge::graphStatus SubV2TilingFunc(gert::TilingContext* context)
         context->SetTilingKey(GET_TPL_TILING_KEY(ELEMENTWISE_TPL_SCH_MODE_0));
         return ge::GRAPH_SUCCESS;
     }
+    // 未设置tilingkey 
+    context->SetTilingKey(GET_TPL_TILING_KEY(ELEMENTWISE_TPL_SCH_MODE_1));
 
     // 3. workspace
     OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,

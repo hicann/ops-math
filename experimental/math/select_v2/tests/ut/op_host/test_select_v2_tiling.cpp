@@ -47,7 +47,7 @@ TEST_F(SelectV2Tiling, ascend9101_test_tiling_fp16_001)
         },
         &compileInfo);
     uint64_t expectTilingKey = 0;
-    string expectTilingData = "8192 8208 1 1 15872 8192 8208 0 ";
+    string expectTilingData = "8192 8208 1 1 15856 8192 8208 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

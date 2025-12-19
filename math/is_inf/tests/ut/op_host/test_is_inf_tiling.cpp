@@ -15,6 +15,7 @@
 
 #include <iostream>
 
+
 #include <gtest/gtest.h>
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
@@ -22,13 +23,11 @@
 
 class IsInfTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
+    static void SetUpTestCase() {
         std::cout << "IsInfTiling SetUp" << std::endl;
     }
 
-    static void TearDownTestCase()
-    {
+    static void TearDownTestCase() {
         std::cout << "IsInfTiling TearDown" << std::endl;
     }
 };
@@ -39,20 +38,20 @@ struct IsInfCompileInfo {
     bool isAscend310P = false;
 };
 
-TEST_F(IsInfTiling, is_inf_test_tiling_case0)
+TEST_F(IsInfTiling, is_inf_test_tiling_case0) 
 {
-    // IsInfCompileInfo compileInfo = {48, 196608, false};
-    // gert::TilingContextPara tilingContextPara(
-    //     "IsInf",
-    //     {
-    //         {{{3, 6, 5}, {3, 6, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    //     },
-    //     {
-    //         {{{3, 6, 5}, {3, 6, 5}}, ge::DT_BOOL, ge::FORMAT_ND},
-    //     },
-    //     &compileInfo);
-    // uint64_t expectTilingKey = 103;
-    // string expectTilingData = "1 90 96 1 10752 1 1 96 90 10752 0 0 ";
-    // std::vector<size_t> expectWorkspaces = {16777216};
-    // ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+    IsInfCompileInfo compileInfo = {48, 196608, false};
+    gert::TilingContextPara tilingContextPara(
+        "IsInf",
+        {
+            {{{3, 6, 5}, {3, 6, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{3, 6, 5}, {3, 6, 5}}, ge::DT_BOOL, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    uint64_t expectTilingKey = 2;
+    string expectTilingData = "111600430219354 3 111669149698 ";
+    std::vector<size_t> expectWorkspaces = {33554432};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
