@@ -758,7 +758,10 @@ checkopts() {
           ENABLE_UT_EXEC=FALSE
           ;;
         run_example) ENABLE_RUN_EXAMPLE=TRUE ;;
-        experimental) ENABLE_EXPERIMENTAL=TRUE ;;
+        experimental)
+          ENABLE_EXPERIMENTAL=TRUE
+          ENABLE_CUSTOM=TRUE
+          ;;
         make_clean)
           clean_build
           clean_build_out
