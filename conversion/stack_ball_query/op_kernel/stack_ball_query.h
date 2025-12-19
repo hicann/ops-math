@@ -194,7 +194,7 @@ private:
 
     __aicore__ inline void CopyInCenterXyz(int32_t segmentLoopIndex, int lenCenterXyzSegment)
     {
-        int offset = segmentLoopIndex * this->centerXyzEachSegmentLength * 3;
+        int64_t offset = segmentLoopIndex * this->centerXyzEachSegmentLength * 3;
         this->centerXyzLocal = inQueueCenterXyz.AllocTensor<INPUT_T>();
         DataCopyGm2UbAlign32(centerXyzLocal, centerXyzGm[offset], XYZ_NUM * lenCenterXyzSegment, typeXyzBlockSize);
         inQueueCenterXyz.EnQue(centerXyzLocal);
@@ -234,7 +234,7 @@ private:
             }
 
             int sendTail = lenToSend % 8;
-            int gmOffset = this->sampleNum * this->offsetCenterXyzStart + this->resultOffset - lenToSend;
+            int64_t gmOffset = this->sampleNum * this->offsetCenterXyzStart + this->resultOffset - lenToSend;
             if (sendTail == 0) {
                 if (g_coreType == AIC) {
                     return;
