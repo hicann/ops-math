@@ -37,8 +37,7 @@ public:
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
 
-        OpAICoreConfig aicoreConfig;
-        this->AICore().AddConfig("ascend910b", aicoreConfig);
+        this->AICore().AddConfig("ascend910b");
     }
 };
 OP_ADD(AddExample); // 添加算子信息库
