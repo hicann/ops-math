@@ -4,8 +4,13 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>昇腾910_95 AI处理器</term>                             |    ×     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+
+
+
+
 
 ## 功能说明
 
@@ -42,7 +47,7 @@
         <ul>
           <li>表示成本张量，公式中的。<code>cost</code>，Device侧的aclTensor。</li>
           <li>输入为二维矩阵且列数不超过4096。</li>
-          <li>支持<a href="../../docs/context/非连续的Tensor.md">非连续的Tensor</a>。</li>
+          <li>支持<a href="../../docs/zh/context/非连续的Tensor.md">非连续的Tensor</a>。</li>
         </ul>
       </td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
@@ -67,7 +72,7 @@
         <ul>
           <li>表示最优传输张量，公式中的<code>p</code>，Device侧的aclTensor。</li>
           <li>如果传入空指针，则tol取0.0001。</li>
-          <li>shape维度为2，不支持<a href="../../../docs/context/非连续的Tensor.md">非连续的Tensor</a>。</li>
+          <li>shape维度为2，不支持<a href="../../../docs/zh/context/非连续的Tensor.md">非连续的Tensor</a>。</li>
           <li>数据类型和shape与入参<code>cost</code>的数据类型和shape一致。</li>
         </ul>
       </td>
@@ -76,15 +81,17 @@
     </tr>
   </tbody></table>
 
+- Atlas 训练系列产品：不支持BFLOAT16。
+
 ## 约束说明
 
 无
 
 ## 调用说明
 
-| 调用方式 | 调用样例                                                                   | 说明                                                          |
-|--------------|------------------------------------------------------------------------|-------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_sinkhorn](./examples/test_aclnn_sinkhorn.cpp) | 通过[aclnnSinkhorn](./docs/aclnnSinkhorn.md)接口方式调用Sinkhorn算子。 |
+| 调用方式 | 调用样例                                                                   | 说明                                                             |
+|--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
+| aclnn调用 | [test_aclnn_sinkhorn](./examples/test_aclnn_sinkhorn.cpp) | 通过[aclnnSinkhorn](./docs/aclnnSinkhorn.md)接口方式调用Sinkhorn算子。    |
 
 
 

@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include <cmath>
 #include <dlfcn.h>
@@ -49,6 +49,7 @@ const std::set<std::pair<op::Format, op::Format>> kTransdataForwardFormatPairs =
     {op::Format::FORMAT_ND, op::Format::FORMAT_FRACTAL_NZ},
     {op::Format::FORMAT_ND, op::Format::FORMAT_FRACTAL_NZ_C0_16},
     {op::Format::FORMAT_NCL, op::Format::FORMAT_FRACTAL_NZ_C0_16},
+    {op::Format::FORMAT_NCL, op::Format::FORMAT_FRACTAL_NZ_C0_32},
     {op::Format::FORMAT_ND, op::Format::FORMAT_FRACTAL_NZ_C0_32},
     {op::Format::FORMAT_NCL, op::Format::FORMAT_FRACTAL_NZ},
     {op::Format::FORMAT_NCDHW, op::Format::FORMAT_NDC1HWC0},
@@ -56,10 +57,11 @@ const std::set<std::pair<op::Format, op::Format>> kTransdataForwardFormatPairs =
 };
 
 static const std::initializer_list<DataType> ASCEND910_95_WEIGHT_DTYPE_SUPPORT_LIST = {
-    DataType::DT_INT8, DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16, DataType::DT_INT32};
+    DataType::DT_INT8, DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16,
+    DataType::DT_INT32, DataType::DT_FLOAT8_E4M3FN};
 static const std::initializer_list<DataType> WEIGHT_DTYPE_SUPPORT_LIST = {
     DataType::DT_INT8, DataType::DT_UINT8, DataType::DT_FLOAT, DataType::DT_FLOAT16,
-    DataType::DT_BF16, DataType::DT_INT32, DataType::DT_UINT32};
+    DataType::DT_BF16, DataType::DT_INT32, DataType::DT_UINT32, DataType::DT_FLOAT8_E4M3FN};
 
 static bool isNonQuantMatmulDtype(int dtype, op::Format dstFormat = op::Format::FORMAT_ND)
 {
@@ -116,10 +118,10 @@ static aclnnStatus ValidateQuantMatmulParams(
     int32_t additionalDtype, [[maybe_unused]] const gert::Shape& viewShape, size_t viewShapeDim)
 {
     OP_CHECK(
-        additionalDtype == ge::DT_INT8 || additionalDtype == ge::DT_UINT8,
+        additionalDtype == ge::DT_INT8 || additionalDtype == ge::DT_UINT8 || additionalDtype == ge::DT_FLOAT8_E4M3FN,
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID,
-            "Only support additionalDtype is int8/uint8 when additionalDtype equals srcTensors's dtype and "
+            "Only support additionalDtype is int8/uint8/float8_e4m3fn when additionalDtype equals srcTensors's dtype and "
             "additionalDtype "
             "is not float16 or bfloat16, current additionalDtype: [%s].",
             op::ToString(static_cast<op::DataType>(additionalDtype)).GetString()),
@@ -141,10 +143,10 @@ static aclnnStatus ValidateWeightQuantMatmulParams(
 {
     if (srcDtype == ge::DT_INT32) {
         OP_CHECK(
-            additionalDtype == ge::DT_FLOAT16 || additionalDtype == ge::DT_BF16,
+            additionalDtype == ge::DT_FLOAT16 || additionalDtype == ge::DT_BF16 || additionalDtype == ge::DT_INT8,
             OP_LOGE(
                 ACLNN_ERR_PARAM_INVALID,
-                "Only support additionalDtype is float16 or bfloat16 when srcTensors's dtype is int32, current "
+                "Only support additionalDtype is float16/bfloat16/int8 when srcTensors's dtype is int32, current "
                 "additionalDtype: [%s].",
                 op::ToString(static_cast<op::DataType>(additionalDtype)).GetString()),
             return ACLNN_ERR_PARAM_INVALID);
@@ -258,12 +260,13 @@ static bool CheckFormatValid(DataType srcDtype, op::Format srcFormat, op::Format
     } else {
         // WeightQuantBatchMatmul 拦截场景
         OP_CHECK(
-            (srcDtype == ge::DT_INT32 || srcDtype == ge::DT_FLOAT) && srcFormat == op::Format::FORMAT_ND &&
-                (dstFormat == op::Format::FORMAT_FRACTAL_NZ_C0_16 || dstFormat == op::Format::FORMAT_FRACTAL_NZ_C0_32),
+            (srcDtype == ge::DT_INT32 || srcDtype == ge::DT_FLOAT || srcDtype == ge::DT_FLOAT8_E4M3FN) &&
+                srcFormat == op::Format::FORMAT_ND && (dstFormat == op::Format::FORMAT_FRACTAL_NZ_C0_16 ||
+                dstFormat == op::Format::FORMAT_FRACTAL_NZ_C0_32 || dstFormat == op::Format::FORMAT_FRACTAL_NZ),
             OP_LOGE(
                 ACLNN_ERR_PARAM_INVALID,
                 "Only support srcFormat is ND and dstFormat is FRACTAL_NZ_C0_16 or FRACTAL_NZ_C0_32 when srcDtype "
-                "equals int32 or float32,, which are [%s] "
+                "equals int32 or float32, which are [%s] "
                 "and [%s].",
                 op::ToString(srcFormat).GetString(), op::ToString(dstFormat).GetString()),
             return false);
@@ -323,7 +326,7 @@ static aclnnStatus Check95NdToNzGetWorkSpaceSizeInputs(const aclTensor* srcTenso
                 srcviewShapeDim, storageShapeDim),
             return ACLNN_ERR_PARAM_INVALID);
     } else {
-        // WeightQuantBatchMatmul仅支持srcTensor的shape维度为2，转换后的dstTensor的shape的维度为4
+        // WeightQuantBatchMatmul仅支持srcTensor的shape维度为2/3，转换后的dstTensor的shape的维度为4/5
         OP_CHECK(
             (srcviewShapeDim == DIMS_TWO || srcviewShapeDim == DIMS_THREE) &&
                 (storageShapeDim == DIMS_FOUR || storageShapeDim == DIMS_FIVE),
@@ -362,7 +365,8 @@ aclnnStatus CalcNdToNz(
             *actualFormat = op::Format::FORMAT_FRACTAL_NZ_C0_16;
         }
 
-        if (static_cast<op::DataType>(additionalDtype) == DataType::DT_FLOAT8_E4M3FN) {
+        if (static_cast<op::DataType>(additionalDtype) == DataType::DT_FLOAT8_E4M3FN ||
+            static_cast<op::DataType>(additionalDtype) == DataType::DT_INT8) {
             // A8场景，B32/1B=BLOCK_SIZE
             c0 = BLOCK_SIZE;
             *actualFormat = op::Format::FORMAT_FRACTAL_NZ_C0_32;

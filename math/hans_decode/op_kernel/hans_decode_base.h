@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file hans_decode_base.h
@@ -19,6 +19,7 @@
 #else
 #include "../hans_encode/hans_const.h"
 #endif
+
 
 namespace HansDecodeNS {
 using namespace HansCommonNs;
@@ -34,7 +35,8 @@ struct HansDecodeInitConfig {
 };
 
 template <bool IF_BF16>
-class HansDecode {
+class HansDecode
+{
 public:
     __aicore__ inline HansDecode(){};
 
@@ -360,10 +362,10 @@ __aicore__ inline void HansDecode<IF_BF16>::GetNegativeBitNum(DecodeLoopConfig* 
         stateBufferBitNumberUb.template ReinterpretCast<float>(), const16Ub.template ReinterpretCast<float>(),
         AscendC::CMPMODE::LE, EACH_LOOOP_STATE_READ_NUM);
     PipeBarrier<PIPE_V>();
-    GatherMask(
-        negativeBitTempSpace.template ReinterpretCast<uint32_t>(), constOneUb.template ReinterpretCast<uint32_t>(),
-        negativeZeroCmpBitMask.template ReinterpretCast<uint32_t>(), false, 0,
-        {1, 1, static_cast<uint8_t>(REPEAT_STRIDE), 1}, this->rsvdCnt);
+    GatherMask(negativeBitTempSpace.template ReinterpretCast<uint32_t>(),
+               constOneUb.template ReinterpretCast<uint32_t>(),
+               negativeZeroCmpBitMask.template ReinterpretCast<uint32_t>(),
+               false, 0, {1, 1, static_cast<uint8_t>(REPEAT_STRIDE), 1}, this->rsvdCnt);
     PipeBarrier<PIPE_V>();
     config->negativeZeroSum = AscendC::AscendCUtils::GetRsvdCnt();
     config->loopDataIndex = config->loopDataIndex - EACH_LOOOP_STATE_READ_NUM;
@@ -559,11 +561,11 @@ __aicore__ inline void HansDecode<IF_BF16>::MoveOutFp32(
         PipeBarrier<PIPE_V>();
         Cast(recoverMantissaFp162s32Ub, recoverMantissaFp16Ub, AscendC::RoundMode::CAST_CEIL, PROCESS_3072);
         PipeBarrier<PIPE_V>();
-        GatherMask(
-            recoverMantissaFp16GatherUb.template ReinterpretCast<uint16_t>(),
-            recoverMantissaFp162s32Ub.template ReinterpretCast<uint16_t>(),
-            mantissaBitMask.template ReinterpretCast<uint16_t>(), false, 0,
-            {static_cast<uint8_t>(3 * mantissaRepeatTimes), 1, static_cast<uint8_t>(REPEAT_STRIDE), 1}, this->rsvdCnt);
+        GatherMask(recoverMantissaFp16GatherUb.template ReinterpretCast<uint16_t>(),
+                   recoverMantissaFp162s32Ub.template ReinterpretCast<uint16_t>(),
+                   mantissaBitMask.template ReinterpretCast<uint16_t>(), false, 0,
+                   {static_cast<uint8_t>(3 * mantissaRepeatTimes), 1, static_cast<uint8_t>(REPEAT_STRIDE), 1},
+                   this->rsvdCnt);
         PipeBarrier<PIPE_V>();
         Cast(
             recoverMantissaFp16GatherUb.template ReinterpretCast<half>(),
@@ -722,11 +724,11 @@ __aicore__ inline void HansDecode<IF_BF16>::ProcessFp32BeforeH2D(
         AscendC::RoundMode::CAST_TRUNC, (size * (sizeof(float) - 1)));
     PipeBarrier<PIPE_V>();
     SetVectorMask<uint64_t, MaskMode::NORMAL>((uint64_t)-1, (uint64_t)-1);
-    GatherMask(
-        deviceExpUb[index].template ReinterpretCast<uint16_t>(), recoverUb[index].template ReinterpretCast<uint16_t>(),
-        mantissaBitMask.template ReinterpretCast<uint16_t>(), false, 0,
-        {static_cast<uint8_t>((size * (sizeof(float) - 1) * 2) / CONST_128), 1, static_cast<uint8_t>(REPEAT_STRIDE), 1},
-        this->rsvdCnt);
+    GatherMask(deviceExpUb[index].template ReinterpretCast<uint16_t>(),
+               recoverUb[index].template ReinterpretCast<uint16_t>(),
+               mantissaBitMask.template ReinterpretCast<uint16_t>(), false, 0,
+               {static_cast<uint8_t>((size * (sizeof(float) - 1) * 2) / CONST_128), 1, static_cast<uint8_t>(REPEAT_STRIDE), 1},
+               this->rsvdCnt);
     PipeBarrier<PIPE_V>();
     Cast(
         deviceExpUb[index].template ReinterpretCast<half>(), deviceExpUb[index].template ReinterpretCast<int16_t>(),

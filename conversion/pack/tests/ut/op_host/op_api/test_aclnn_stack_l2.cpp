@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include <vector>
 #include <array>
@@ -330,24 +330,6 @@ TEST_F(l2_stack_test, ascend910B2_l2_stack_test_dtype_bfloat16)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-// // 正常路径，输出类型bfloat16
-// TEST_F(l2_stack_test, ascend910B2_l2_stack_test_dtype_bfloat16_out) {
-//   auto tensor_1_desc = TensorDesc({2, 5}, ACL_FLOAT, ACL_FORMAT_ND)
-//                            .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-//   auto tensor_2_desc =
-//       TensorDesc({2, 5}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
-//   auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_BF16, ACL_FORMAT_ND);
-//   auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
-//   int64_t dim = 0;
-
-//   auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
-
-//   uint64_t workspace_size = 0;
-//   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-//   EXPECT_EQ(aclRet, ACL_SUCCESS);
-//   ut.TestPrecision();
-// }
-
 // 用例不支持，float32转int8
 TEST_F(l2_stack_test, l2_stack_test_dtype_cast)
 {
@@ -429,7 +411,6 @@ TEST_F(l2_stack_test, l2_stack_test_tensors_200)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // ut.TestPrecision();  // comment bcz of timeout in model tests (264838 ms)
 }
 
 // 用例不支持，输入tensor维度超过8

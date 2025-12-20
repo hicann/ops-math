@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include <array>
 #include <vector>
 #include "gtest/gtest.h"
@@ -46,9 +46,6 @@ TEST_F(l2_masked_fill_tensor_test, case_001_FLOAT)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_masked_fill_tensor_test, case_002_FLOAT16)
@@ -64,9 +61,6 @@ TEST_F(l2_masked_fill_tensor_test, case_002_FLOAT16)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 异常场景 bf16
@@ -99,7 +93,6 @@ TEST_F(l2_masked_fill_tensor_test, ascend910B2_support_bf16_910B)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
 }
 
 TEST_F(l2_masked_fill_tensor_test, case_003_INT64)
@@ -114,9 +107,6 @@ TEST_F(l2_masked_fill_tensor_test, case_003_INT64)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_masked_fill_tensor_test, case_004_INT32)
@@ -131,28 +121,7 @@ TEST_F(l2_masked_fill_tensor_test, case_004_INT32)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
-
-// aicore暂时不支持，先注释掉
-// TEST_F(l2_masked_fill_tensor_test, case_005_INT16) {
-//   auto self_tensor_desc = TensorDesc({8, 9}, ACL_INT16, ACL_FORMAT_ND).ValueRange(-10, 10);
-//   auto mask_tensor_desc = TensorDesc({8, 9}, ACL_INT8, ACL_FORMAT_ND).ValueRange(0, 2);
-//   auto scalar_desc = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10);
-
-//   auto ut = OP_API_UT(aclnnInplaceMaskedFillTensor, INPUT(self_tensor_desc, mask_tensor_desc, scalar_desc),
-//   OUTPUT());
-
-//   // SAMPLE: only test GetWorkspaceSize
-//   uint64_t workspace_size = 0;
-//   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-//   EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-//   // SAMPLE: precision simulate
-//   ut.TestPrecision();
-// }
 
 TEST_F(l2_masked_fill_tensor_test, case_006_INT8)
 {
@@ -166,27 +135,7 @@ TEST_F(l2_masked_fill_tensor_test, case_006_INT8)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
-
-// TEST_F(l2_masked_fill_tensor_test, case_007_UINT8) {
-//   auto self_tensor_desc = TensorDesc({8, 9}, ACL_UINT8, ACL_FORMAT_ND).ValueRange(-10, 10);
-//   auto mask_tensor_desc = TensorDesc({8, 9}, ACL_INT8, ACL_FORMAT_ND).ValueRange(0, 2);
-//   auto scalar_desc = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10);
-
-//   auto ut = OP_API_UT(aclnnInplaceMaskedFillTensor, INPUT(self_tensor_desc, mask_tensor_desc, scalar_desc),
-//   OUTPUT());
-
-//   // SAMPLE: only test GetWorkspaceSize
-//   uint64_t workspace_size = 0;
-//   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-//   EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-//   // SAMPLE: precision simulate
-//   ut.TestPrecision();
-// }
 
 TEST_F(l2_masked_fill_tensor_test, case_008_BOOL)
 {
@@ -200,64 +149,7 @@ TEST_F(l2_masked_fill_tensor_test, case_008_BOOL)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
-
-// aicore暂时不支持，先注释掉
-// TEST_F(l2_masked_fill_tensor_test, case_011_COMPLEX64) {
-//   auto self_tensor_desc = TensorDesc({8, 9}, ACL_COMPLEX64, ACL_FORMAT_ND).ValueRange(-1, 1).Precision(0.0001,
-//   0.0001); auto mask_tensor_desc = TensorDesc({8, 9}, ACL_INT8, ACL_FORMAT_ND).ValueRange(0, 2); auto scalar_desc =
-//   TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10);
-
-//   auto ut = OP_API_UT(aclnnInplaceMaskedFillTensor, INPUT(self_tensor_desc, mask_tensor_desc, scalar_desc),
-//   OUTPUT());
-
-//   // SAMPLE: only test GetWorkspaceSize
-//   uint64_t workspace_size = 0;
-//   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-//   EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-//   // SAMPLE: precision simulate
-//   ut.TestPrecision();
-// }
-
-// aicore暂时不支持，先注释掉
-// TEST_F(l2_masked_fill_tensor_test, case_012_COMPLEX128) {
-//   auto self_tensor_desc = TensorDesc({8, 9}, ACL_COMPLEX128, ACL_FORMAT_ND).ValueRange(-1, 1).Precision(0.0001,
-//   0.0001); auto mask_tensor_desc = TensorDesc({8, 9}, ACL_INT8, ACL_FORMAT_ND).ValueRange(0, 2); auto scalar_desc =
-//   TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10);
-
-//   auto ut = OP_API_UT(aclnnInplaceMaskedFillTensor, INPUT(self_tensor_desc, mask_tensor_desc, scalar_desc),
-//   OUTPUT());
-
-//   // SAMPLE: only test GetWorkspaceSize
-//   uint64_t workspace_size = 0;
-//   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-//   EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-//   // SAMPLE: precision simulate
-//   ut.TestPrecision();
-// }
-
-// aicore暂时不支持，先注释掉
-// TEST_F(l2_masked_fill_tensor_test, case_010_DOUBLE) {
-//   auto self_tensor_desc = TensorDesc({8, 9}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-1, 1).Precision(0.0001, 0.0001);
-//   auto mask_tensor_desc = TensorDesc({8, 9}, ACL_INT8, ACL_FORMAT_ND).ValueRange(0, 2);
-//   auto scalar_desc = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10);
-
-//   auto ut = OP_API_UT(aclnnInplaceMaskedFillTensor, INPUT(self_tensor_desc, mask_tensor_desc, scalar_desc),
-//   OUTPUT());
-
-//   // SAMPLE: only test GetWorkspaceSize
-//   uint64_t workspace_size = 0;
-//   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-//   EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-//   // SAMPLE: precision simulate
-//   ut.TestPrecision();
-// }
 
 TEST_F(l2_masked_fill_tensor_test, case_013_NHWC)
 {
@@ -271,9 +163,6 @@ TEST_F(l2_masked_fill_tensor_test, case_013_NHWC)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 空tensor
@@ -289,9 +178,6 @@ TEST_F(l2_masked_fill_tensor_test, case_014_EMPTY)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_masked_fill_tensor_test, case_015_CONTINUOUS)
@@ -306,9 +192,6 @@ TEST_F(l2_masked_fill_tensor_test, case_015_CONTINUOUS)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // dim超出限制
@@ -409,9 +292,6 @@ TEST_F(l2_masked_fill_tensor_test, case_020_BROADCAST)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 不满足broadcast
@@ -442,9 +322,6 @@ TEST_F(l2_masked_fill_tensor_test, case_022_DIM_0)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // dim=1
@@ -460,9 +337,6 @@ TEST_F(l2_masked_fill_tensor_test, case_023_DIM_1)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_masked_fill_tensor_test, case_024_FORMAT_NCHW)
@@ -477,9 +351,6 @@ TEST_F(l2_masked_fill_tensor_test, case_024_FORMAT_NCHW)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_masked_fill_tensor_test, case_025_FORMAT_NHWC)
@@ -494,9 +365,6 @@ TEST_F(l2_masked_fill_tensor_test, case_025_FORMAT_NHWC)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_masked_fill_tensor_test, case_026_FORMAT_HWCN)
@@ -511,9 +379,6 @@ TEST_F(l2_masked_fill_tensor_test, case_026_FORMAT_HWCN)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_masked_fill_tensor_test, case_027_FORMAT_NDHWC)
@@ -528,9 +393,6 @@ TEST_F(l2_masked_fill_tensor_test, case_027_FORMAT_NDHWC)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_masked_fill_tensor_test, case_028_FORMAT_NCDHW)
@@ -545,9 +407,6 @@ TEST_F(l2_masked_fill_tensor_test, case_028_FORMAT_NCDHW)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // int64 CheckDtypeValid

@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "div.h"
 #include "opdev/aicpu/aicpu_task.h"
@@ -32,78 +32,68 @@ static const std::initializer_list<op::DataType> ASCEND910B_AICORE_DTYPE_SUPPORT
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT32,
     op::DataType::DT_INT8,  op::DataType::DT_UINT8,   op::DataType::DT_BF16};
 
-static inline const std::initializer_list<op::DataType>& GetAiCoreDtypeSupportListBySocVersion()
-{
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    switch (socVersion) {
-        case SocVersion::ASCEND910B:
-        case SocVersion::ASCEND910_95:
-        case SocVersion::ASCEND910_93: {
-            return ASCEND910B_AICORE_DTYPE_SUPPORT_LIST;
-        }
-        case SocVersion::ASCEND910: {
-            return ASCEND910_AICORE_DTYPE_SUPPORT_LIST;
-        }
-        default: {
-            return ASCEND910_AICORE_DTYPE_SUPPORT_LIST;
-        }
+static inline const std::initializer_list<op::DataType>& GetAiCoreDtypeSupportListBySocVersion() {
+  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
+  switch (socVersion) {
+    case SocVersion::ASCEND910B:
+    case SocVersion::ASCEND910_95:
+    case SocVersion::ASCEND910_93: {
+      return ASCEND910B_AICORE_DTYPE_SUPPORT_LIST;
     }
+    case SocVersion::ASCEND910: {
+      return ASCEND910_AICORE_DTYPE_SUPPORT_LIST;
+    }
+    default: {
+      return ASCEND910_AICORE_DTYPE_SUPPORT_LIST;
+    }
+  }
 }
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
-static bool IsAiCoreSupport(const aclTensor* self)
-{
-    // Div只需要判断dtype
-    return CheckType(self->GetDataType(), GetAiCoreDtypeSupportListBySocVersion());
+static bool IsAiCoreSupport(const aclTensor* self) {
+  // Div只需要判断dtype
+  return CheckType(self->GetDataType(), GetAiCoreDtypeSupportListBySocVersion());
 }
 
 // AICORE算子kernel
-static const aclTensor* DivAiCore(
-    const aclTensor* self, const aclTensor* other, aclTensor* divOut, aclOpExecutor* executor)
-{
-    L0_DFX(DivAiCore, self, other, divOut);
-    // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Div算子加入任务队列
-    // Div是算子的OpType，self、other是算子的输入，divOut是算子的输出
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Div, OP_INPUT(self, other), OP_OUTPUT(divOut));
-    OP_CHECK(
-        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "DivAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
-    return divOut;
+static const aclTensor* DivAiCore(const aclTensor* self, const aclTensor* other, aclTensor* divOut,
+                                  aclOpExecutor* executor) {
+  L0_DFX(DivAiCore, self, other, divOut);
+  // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Div算子加入任务队列
+  // Div是算子的OpType，self、other是算子的输入，divOut是算子的输出
+  auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Div, OP_INPUT(self, other), OP_OUTPUT(divOut));
+  OP_CHECK(ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "DivAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."), return nullptr);
+  return divOut;
 }
 
 // AICPU算子kernel
-static const aclTensor* DivAiCpu(
-    const aclTensor* self, const aclTensor* other, aclTensor* divOut, aclOpExecutor* executor)
-{
-    // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将AiCpu Div算子加入任务队列
-    // Div是算子的OpType，self、other是算子的输入，divOut是算子的输出
-    L0_DFX(DivAiCpu, self, other);
+static const aclTensor* DivAiCpu(const aclTensor* self, const aclTensor* other, aclTensor* divOut,
+                                 aclOpExecutor* executor) {
+  // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将AiCpu Div算子加入任务队列
+  // Div是算子的OpType，self、other是算子的输入，divOut是算子的输出
+  L0_DFX(DivAiCpu, self, other);
 
-    static internal::AicpuTaskSpace space("Div");
-    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Div, OP_ATTR_NAMES(), OP_INPUT(self, other), OP_OUTPUT(divOut));
-    OP_CHECK(
-        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "DivAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
-        return nullptr);
-    return divOut;
+  static internal::AicpuTaskSpace space("Div");
+  auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Div, OP_ATTR_NAMES(), OP_INPUT(self, other), OP_OUTPUT(divOut));
+  OP_CHECK(ret ==  ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "DivAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."), return nullptr);
+  return divOut;
 }
 
-const aclTensor* Div(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor)
-{
-    op::Shape broadcastShape;
-    if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+const aclTensor* Div(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor) {
+  op::Shape broadcastShape;
+  if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
+    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
             op::ToString(other->GetViewShape()).GetString());
-        return nullptr;
-    }
+    return nullptr;
+  }
 
-    auto divOut = executor->AllocTensor(broadcastShape, self->GetDataType());
-    if (IsAiCoreSupport(self)) {
-        return DivAiCore(self, other, divOut, executor);
-    } else {
-        return DivAiCpu(self, other, divOut, executor);
-    }
-    return divOut;
+  auto divOut = executor->AllocTensor(broadcastShape, self->GetDataType());
+  if (IsAiCoreSupport(self)) {
+    return DivAiCore(self, other, divOut, executor);
+  } else {
+    return DivAiCpu(self, other, divOut, executor);
+  }
+  return divOut;
 }
 
-} // namespace l0op
+}  // namespace l0op

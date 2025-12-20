@@ -1,11 +1,18 @@
 # aclnnExpSegsum
 
+[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/segsum)
+
 ## 产品支持情况
 
 |产品             |  是否支持  |
 |:-------------------------|:----------:|
+|  <term>昇腾910_95 AI处理器</term>   |     ×    |
 |  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     √    |
 |  <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>     |     √    |
+
+
+
+
 
 ## 功能说明
 
@@ -16,7 +23,7 @@
   2. 进行广播得到（N1,N2,N3,N4,N4）。
   3. 生成（N4,N4）类型为bool的三角矩阵A，上三角为True，下三角为False，对角线为True。
   4. 用0填充输入self里面与矩阵A中值为True的位置相对应的元素。
-    
+
     $$
     self_i=
     \begin{cases}self_i,\quad A_i==False
@@ -32,22 +39,23 @@
 
   6. 生成（N4,N4）类型为bool的三角矩阵B，上三角为True，下三角为False，对角线为False。
   7. 用-inf填充selfTemp里面与矩阵B中值为True的位置相对应的元素。
-    
+
      $$
      out_i=
      \begin{cases}selfTemp_i,\quad B_i==False
      \\-inf, \quad B_i==True
      \end{cases}
      $$
+
   8. 计算selfTemp里面每个元素的指数。
-    
+
      $$
      out_i=e^{selfTemp_i}
      $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnExpSegsumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnExpSegsum”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnExpSegsumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnExpSegsum”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnExpSegsumGetWorkspaceSize(
@@ -70,14 +78,14 @@ aclnnStatus aclnnExpSegsum(
 - **参数说明**：
 
 
-  <table style="undefined;table-layout: fixed; width: 1503px"><colgroup>
-  <col style="width: 146px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 170px">
   <col style="width: 120px">
   <col style="width: 271px">
-  <col style="width: 392px">
-  <col style="width: 228px">
+  <col style="width: 330px">
+  <col style="width: 223px">
   <col style="width: 101px">
-  <col style="width: 100px">
+  <col style="width: 190px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -136,12 +144,12 @@ aclnnStatus aclnnExpSegsum(
   </table>
 
 - **返回值**：
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
   
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed;width: 1155px"><colgroup>
-  <col style="width: 253px">
+  <table style="undefined;table-layout: fixed;width: 1170px"><colgroup>
+  <col style="width: 268px">
   <col style="width: 140px">
   <col style="width: 762px">
   </colgroup>
@@ -165,7 +173,7 @@ aclnnStatus aclnnExpSegsum(
     </tr>
     <tr>
       <td>self、out的shape不满足参数要求。</td>
-    </tr>    
+    </tr>
   </tbody></table>
 
 ## aclnnExpSegsum
@@ -209,15 +217,19 @@ aclnnStatus aclnnExpSegsum(
 
 - **返回值**：
 
-  **aclnnStatus**：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  **aclnnStatus**：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
-无。
+- 确定性计算：
+  - aclnnExpSegsum默认确定性实现。
+
+- 确定性计算：
+  - aclnnExpSegsum默认确定性实现。
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

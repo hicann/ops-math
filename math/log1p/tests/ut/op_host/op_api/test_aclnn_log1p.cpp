@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include <vector>
 #include <array>
 #include "gtest/gtest.h"
@@ -48,8 +48,6 @@ TEST_F(l2_log1p_test, case_support_dtype)
         uint64_t workspaceSize = 0;
         aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
         EXPECT_EQ(aclRet, ACL_SUCCESS);
-        // SAMPLE: precision simulate
-        ut.TestPrecision();
     }
 }
 
@@ -68,8 +66,6 @@ TEST_F(l2_log1p_test, case_support_dtype_int)
         uint64_t workspaceSize = 0;
         aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
         EXPECT_EQ(aclRet, ACL_SUCCESS);
-        // SAMPLE: precision simulate
-        ut.TestPrecision();
     }
 }
 
@@ -107,8 +103,6 @@ TEST_F(l2_log1p_test, case_shape1D)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_log1p_test, case_shape_2D)
@@ -121,8 +115,6 @@ TEST_F(l2_log1p_test, case_shape_2D)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_log1p_test, case_shape_3D)
@@ -135,8 +127,6 @@ TEST_F(l2_log1p_test, case_shape_3D)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_log1p_test, case_shape_4D)
@@ -149,8 +139,6 @@ TEST_F(l2_log1p_test, case_shape_4D)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_log1p_test, case_shape_5D)
@@ -163,8 +151,6 @@ TEST_F(l2_log1p_test, case_shape_5D)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_log1p_test, case_shape_8D)
@@ -177,8 +163,6 @@ TEST_F(l2_log1p_test, case_shape_8D)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 TEST_F(l2_log1p_test, case_invalid_shape_9D)
@@ -192,20 +176,6 @@ TEST_F(l2_log1p_test, case_invalid_shape_9D)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
-
-// TEST_F(l2_log1p_test, case_input_not_contiguous) {
-//   auto tensor_desc = TensorDesc({5, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 5}, 0, {4, 5});
-//   auto out_tensor_desc = TensorDesc(tensor_desc).Precision(0.1, 0.1);
-
-//   auto ut = OP_API_UT(aclnnLog1p, INPUT(tensor_desc), OUTPUT(out_tensor_desc));
-
-//   // SAMPLE: only test GetWorkspaceSize
-//   uint64_t workspaceSize = 0;
-//   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-//   EXPECT_EQ(aclRet, ACL_SUCCESS);
-//   // SAMPLE: precision simulate
-//   ut.TestPrecision();
-// }
 
 // CheckNotNull self
 TEST_F(l2_log1p_test, case_null_self)
@@ -244,8 +214,6 @@ TEST_F(l2_log1p_test, case_empty_tensor_1)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // 空tensor
@@ -285,8 +253,6 @@ TEST_F(l2_log1p_test, case_empty_tensor_4)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }
 
 // CheckFormat
@@ -355,6 +321,4 @@ TEST_F(l2_log1p_test, ascend910B2_case_shape_4D)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
 }

@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file stft.h
@@ -640,13 +640,15 @@ private:
         if (setAtomicAdd) {
             SetAtomicAdd<T>();
         }
-        FixpipeParams<T> param;
-        param.nz2ndParams = {true, 1, 0, 0, static_cast<uint16_t>(sizeInN)};
-        param.cburstNum = 0;
-        param.dstStride = globalN_;
-        param.srcStride = 0;
-        param.burstLen = sizeInM * REAL_IMAG;
-        Fixpipe(cGM[(aM + inM * baseM_) * globalN_ + bN + inN * baseN_], c0Local, param);
+        auto intriParams = AscendC::FixpipeParamsV220(sizeInN, // nSize
+                                                      sizeInM, // mSize
+                                                      MatmulCeil(sizeInM, cubeCol_) * cubeCol_,   // srcStride
+                                                      globalN_,   // dstStride
+                                                      false);      // enRelu
+
+        intriParams.quantPre = QuantMode_t::NoQuant;
+
+        AscendC::Fixpipe(cGM[(aM + inM * baseM_) * globalN_ + bN + inN * baseN_], c0Local, intriParams);
 
         if (setAtomicAdd) {
             SetAtomicNone();

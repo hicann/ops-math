@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include <array>
 #include <vector>
 #include "gtest/gtest.h"
@@ -18,7 +18,8 @@
 
 using namespace std;
 
-class l2_slice_test : public testing::Test {
+class l2_slice_test : public testing::Test
+{
 protected:
     static void SetUpTestCase()
     {
@@ -401,25 +402,6 @@ TEST_F(l2_slice_test, ascend910B2_case_BF16_910b)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
-
-// TEST_F(l2_slice_test, ascend910_95_case_BF16_910d) {
-//   const vector<int64_t>& self_shape = {6, 4};
-//   auto self_desc = TensorDesc(self_shape, ACL_BF16, ACL_FORMAT_ND).ValueRange(-1, 1);
-//   int64_t dim = 0;
-//   int64_t start = 1;
-//   int64_t end = 4;
-//   int64_t step = 1;
-//   auto out = TensorDesc({3, 4}, ACL_BF16, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-//   auto ut = OP_API_UT(aclnnSlice, INPUT(self_desc, dim, start, end, step), OUTPUT(out));
-//   // SAMPLE: only test GetWorkspaceSize
-//   uint64_t workspaceSize = 0;
-//   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-//   EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-//   // SAMPLE: precision simulate
-//   ut.TestPrecision();
-// }
 
 TEST_F(l2_slice_test, case_BF16_910)
 {

@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include <array>
 #include "acl/acl.h"
 #include <gmock/gmock.h>
@@ -45,7 +45,8 @@ struct NpuFormatCastTestParam {
     aclnnStatus expectRet;
 };
 
-class l2_npu_format_cast_test_910_95 : public testing::TestWithParam<NpuFormatCastTestParam> {
+class l2_npu_format_cast_test_910_95 : public testing::TestWithParam<NpuFormatCastTestParam>
+{
 protected:
     static void SetUpTestCase()
     {
@@ -57,7 +58,8 @@ protected:
     }
 };
 
-class l2_npu_format_cast_test_910_93 : public testing::TestWithParam<NpuFormatCastTestParam> {
+class l2_npu_format_cast_test_910_93 : public testing::TestWithParam<NpuFormatCastTestParam>
+{
 protected:
     static void SetUpTestCase()
     {

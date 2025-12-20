@@ -1,19 +1,26 @@
 # aclnnCast
 
+[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/cast)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
 
+
+
+
+
 ## 功能说明
 
-算子功能：将输入tensor转换为指定的dtype类型。
+将输入tensor转换为指定的dtype类型。
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnCastGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCast”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnCastGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCast”接口执行计算。
 ```Cpp
 aclnnStatus aclnnCastGetWorkspaceSize(
   const aclTensor   *self, 
@@ -59,8 +66,8 @@ aclnnStatus aclnnCast(
       <td>self</td>
       <td>输入</td>
       <td>待进行cast计算的入参，Device侧的aclTensor。</td>
-      <td>无</td>
-      <td>FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BOOL、COMPLEX32、COMPLEX64、COMPLEX128、BFLOAT16、FLOAT4_E2M1、FLOAT4_E1M2</td>
+      <td>-</td>
+      <td>FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BOOL、COMPLEX32、COMPLEX64、COMPLEX128、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT4_E2M1、FLOAT4_E1M2</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -68,8 +75,8 @@ aclnnStatus aclnnCast(
     <tr>
       <td>dtype</td>
       <td>属性</td>
-      <td>Host侧的aclDataType，输入tensor要转换的目标dtype。</td>
-      <td>无</td>
+      <td>输入tensor要转换的目标dtype。</td>
+      <td>-</td>
       <td>const aclDataType</td>
       <td>-</td>
       <td>-</td>
@@ -80,7 +87,7 @@ aclnnStatus aclnnCast(
       <td>输出</td>
       <td>待进行cast计算的出参，Device侧的aclTensor。</td>
       <td>shape与self相同。</td>
-      <td>FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BOOL、COMPLEX32、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td>FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BOOL、COMPLEX32、COMPLEX64、COMPLEX128、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT4_E2M1、FLOAT4_E1M2、INT4（暂不支持非连续Tensor）</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -107,17 +114,63 @@ aclnnStatus aclnnCast(
     </tr>
   </tbody></table>
   
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16、INT4。
+  - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持COMPLEX32、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT4_E2M1、FLOAT4_E1M2、INT4。
 
 - **返回值：**
+
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+
+  第一段接口会完成入参校验，出现以下场景时报错：
   
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  <table style="undefined;table-layout: fixed;width: 1155px"><colgroup>
+  <col style="width: 319px">
+  <col style="width: 144px">
+  <col style="width: 671px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的tensor或out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
+      <td>self的数据类型和数据格式不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self的数据格式与out的数据格式不同。</td>
+    </tr>
+    <tr>
+      <td>self的shape与out的shape不同。</td>
+    </tr>
+    <tr>
+      <td>参数dtype不在输出支持的数据格式范围之内。</td>
+    </tr>
+    <tr>
+      <td>out的数据类型为INT4时，self为非连续Tensor。</td>
+    </tr>
+    <tr>
+      <td>ACLNN_ERR_INNER_TILING_ERROR</td>
+      <td>561002</td>
+      <td>out的数据类型为INT4时，self的shape尾轴为奇数。</td>
+    </tr>
+  </tbody></table>
 
 ## aclnnCast
 
 - **参数说明：**
-  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 598px"><colgroup>
   <col style="width: 173px">
-  <col style="width: 112px">
+  <col style="width: 173px">
   <col style="width: 668px">
   </colgroup>
   <thead>
@@ -152,46 +205,13 @@ aclnnStatus aclnnCast(
 
 
 - **返回值：**
-  
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
-  第一段接口会完成入参校验，出现以下场景时报错：
-  
-  <table style="undefined;table-layout: fixed;width: 1155px"><colgroup>
-  <col style="width: 319px">
-  <col style="width: 144px">
-  <col style="width: 671px">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>返回码</th>
-      <th>错误码</th>
-      <th>描述</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>ACLNN_ERR_PARAM_NULLPTR</td>
-      <td>161001</td>
-      <td>传入的tensor或out是空指针。</td>
-    </tr>
-    <tr>
-      <td rowspan="8">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="8">161002</td>
-      <td>self的数据类型和数据格式不在支持的范围之内。</td>
-    </tr>
-    <tr>
-      <td>self的数据格式与out的数据格式不同。</td>
-    </tr>
-    <tr>
-      <td>self的shape与out的shape不同。</td>
-    </tr>
-    <tr>
-      <td>参数dtype不在输出支持的数据类型范围之内。</td>
-    </tr>
-  </tbody></table>
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
+
+- 确定性计算：
+  - aclnnCast默认确定性实现。
 
 - 针对数据类型从浮点数转换为整型的场景：
   输入数据中存在nan，则将nan转换为0。
@@ -199,14 +219,35 @@ aclnnStatus aclnnCast(
 - 针对输入数据类型为BOOL、COMPLEX32、COMPLEX64、COMPLEX128、FLOAT4_E2M1、FLOAT4_E1M2的场景：
   不支持输入为非连续。
 
-- <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+- <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
   - 针对数据类型从int32转换为int8的场景：
     只能保证输入数据在(-2048, 1920)范围内精度无误差。
 
+- <term>Atlas 推理系列产品</term>：
+  - 针对数据类型从float32转换为int64和float32转换为uint8的场景：
+    只能保证输入数据在(-2147483648, 2147483583)范围内精度无误差。
+
+  - 针对数据类型从int64转换为float32的场景：
+    只能保证输入数据在(-2147483648, 2147483647)范围内精度无误差。
+
+- <term>昇腾910_95 AI处理器</term>：
+  - 针对输出类型为INT4的场景：不支持输入Shape的尾轴为奇数、不支持输入为非连续。
+  - 针对输入、输出类型，涉及COMPLEX32、FLOAT4_E2M1、FLOAT4_E1M2、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、INT4的，只支持如下表格中的转换路径：
+    | `self`数据类型 | `out`数据类型 |
+    | ------------ | ------------ |
+    | COMPLEX32 | FLOAT16 |
+    | FLOAT16 | COMPLEX32 |
+    | FLOAT32/FLOAT16/BFLOAT16 | FLOAT4_E2M1/FLOAT4_E1M2 |
+    | FLOAT4_E2M1/FLOAT4_E1M2 | FLOAT32/FLOAT16/BFLOAT16 |
+    | FLOAT32/FLOAT16/BFLOAT16 | HIFLOAT8/FLOAT8_E5M2/FLOAT8_E4M3FN |
+    | HIFLOAT8/FLOAT8_E5M2/FLOAT8_E4M3FN | FLOAT32/FLOAT16/BFLOAT16 |
+    | HIFLOAT8/FLOAT8_E5M2/FLOAT8_E4M3FN | FLOAT4_E2M1/FLOAT4_E1M2 |
+    | FLOAT4_E2M1/FLOAT4_E1M2 | HIFLOAT8/FLOAT8_E5M2/FLOAT8_E4M3FN |
+    | INT32 | INT4 |
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>

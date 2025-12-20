@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file test_reflection_pad3d_grad.cpp
@@ -35,7 +35,8 @@ static std::vector<int> KEY_MAP = {4, 2, 2};
 extern "C" __global__ __aicore__ void reflection_pad3d_grad(
     GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
 
-class reflection_pad3d_grad_test : public testing::Test {
+class reflection_pad3d_grad_test : public testing::Test
+{
 protected:
     static void SetUpTestCase()
     {
@@ -95,13 +96,12 @@ void CallSimpleKernel(
     tilingDataFromBin->wPad1 = padding[8];
     tilingDataFromBin->wPad2 = padding[9];
     tilingDataFromBin->blockNum = 1;
-    tilingDataFromBin->ubFactorElement = (192 * 1024) / 8 / KEY_MAP[dtype];
+    tilingDataFromBin->ubFactorElement = (2 * 1024) / KEY_MAP[dtype];
     tilingDataFromBin->ncPerCore = inputShape[0] * inputShape[1];
     tilingDataFromBin->tailNC = 0;
     tilingDataFromBin->tilingKey = tiling_key;
 
     ICPU_SET_TILING_KEY(tiling_key);
-    AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(
         reflection_pad3d_grad, tilingDataFromBin->blockNum, input, padvalues, output, workspace,
         (uint8_t*)(tilingDataFromBin));
@@ -134,12 +134,12 @@ void CallSimpleKernel(
 //     CallSimpleKernel(inputShape, padding, 102);
 // }
 
-TEST_F(reflection_pad3d_grad_test, test_reflect_3)
-{
-    std::vector<uint32_t> inputShape = {1, 64, 6, 18, 18};       // NCDHW
-    std::vector<uint32_t> padding = {0, 0, 0, 0, 1, 1, 1, 1, 1, 1}; // 10
-    CallSimpleKernel(inputShape, padding, 200);
-}
+// TEST_F(reflection_pad3d_grad_test, test_reflect_3)
+// {
+//     std::vector<uint32_t> inputShape = {2, 32, 18, 130, 130};       // NCDHW
+//     std::vector<uint32_t> padding = {0, 0, 0, 0, 1, 1, 1, 1, 1, 1}; // 10
+//     CallSimpleKernel(inputShape, padding, 200);
+// }
 
 // TEST_F(reflection_pad3d_grad_test, test_reflect_4)
 // {

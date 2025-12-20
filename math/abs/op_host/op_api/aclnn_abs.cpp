@@ -1,15 +1,17 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
+#include <unordered_map>
 #include "aclnn_abs.h"
 #include "abs.h"
+#include "../../../complex_abs/op_api/complex_abs.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/op_log.h"
@@ -32,14 +34,26 @@ static const std::initializer_list<DataType> ASCEND910_DTYPE_DTYPE_SUPPORT_LIST 
 
 static const std::initializer_list<DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST = {
     DataType::DT_DOUBLE, DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_INT64, DataType::DT_INT32,
+    DataType::DT_INT16,  DataType::DT_INT8,  DataType::DT_UINT8,   DataType::DT_BOOL,  DataType::DT_BF16,
+    DataType::DT_COMPLEX64};
+
+static const std::initializer_list<DataType> ASCEND910_95_DTYPE_DTYPE_SUPPORT_LIST = {
+    DataType::DT_DOUBLE, DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_INT64, DataType::DT_INT32,
     DataType::DT_INT16,  DataType::DT_INT8,  DataType::DT_UINT8,   DataType::DT_BOOL,  DataType::DT_BF16};
+
+static const std::unordered_map<DataType, DataType> COMPLEX_IN_AND_OUT_DTYPE_MAP = {
+    {DataType::DT_COMPLEX32, DataType::DT_FLOAT16}, 
+    {DataType::DT_COMPLEX64, DataType::DT_FLOAT},
+    {DataType::DT_COMPLEX128, DataType::DT_DOUBLE}
+};
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
     if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
         return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
+    } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+        return ASCEND910_95_DTYPE_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
     }
@@ -74,12 +88,20 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
-    // self和out数据类型必须一样
-    OP_CHECK_DTYPE_NOT_MATCH(self, out->GetDataType(), return false);
-
     // 检查self的数据类型是否在支持列表内，out类型随动检查
     auto supportList = GetDtypeSupportList();
     OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
+
+    // 当self不为复数时，self和out数据类型必须一样
+    auto selfDtype = self->GetDataType();
+    if (IsComplexType(selfDtype)) {
+        auto promoteOutDtype = COMPLEX_IN_AND_OUT_DTYPE_MAP.find(selfDtype);
+        if (promoteOutDtype != COMPLEX_IN_AND_OUT_DTYPE_MAP.end()) {
+            OP_CHECK_DTYPE_NOT_MATCH(out, promoteOutDtype->second, return false);
+        }
+    } else {
+        OP_CHECK_DTYPE_NOT_MATCH(self, out->GetDataType(), return false);
+    }
 
     return true;
 }
@@ -122,13 +144,26 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
     // 2. 检查输入的数据类型是否在API支持的数据类型范围内，需要根据api定义校验
     CHECK_RET(CheckDtypeValid(self, out), ACLNN_ERR_PARAM_INVALID);
 
-    // 3. 检查诗句格式是否支持
+    // 3. 检查数据格式是否支持
     CHECK_RET(CheckFormat(self, out), ACLNN_ERR_PARAM_INVALID);
 
     // 4. 检查shape是否满足约束
     CHECK_RET(CheckShape(self, out), ACLNN_ERR_PARAM_INVALID);
 
     return ACLNN_SUCCESS;
+}
+
+static bool IsSupportComplexAbs(const op::DataType selfType) {
+    if (IsComplexType(selfType)) {
+        auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
+        if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) {
+            return CheckType(selfType, ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST);
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
 }
 
 aclnnStatus aclnnAbsGetWorkspaceSize(
@@ -164,7 +199,12 @@ aclnnStatus aclnnAbsGetWorkspaceSize(
     }
 
     // 调用l0算子Abs进行计算
-    auto absResult = l0op::Abs(selfContiguous, uniqueExecutor.get());
+    const aclTensor* absResult = nullptr;
+    if (IsSupportComplexAbs(selfContiguous->GetDataType())) {
+        absResult = l0op::ComplexAbs(selfContiguous, uniqueExecutor.get());
+    } else{
+        absResult = l0op::Abs(selfContiguous, uniqueExecutor.get());
+    }
     CHECK_RET(absResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 如果出参out是非连续Tensor，需要把计算完的连续Tensor转非连续

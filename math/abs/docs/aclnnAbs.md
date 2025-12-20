@@ -1,15 +1,19 @@
 # aclnnAbs
 
+[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/abs)
+
 ## 产品支持情况
 
 | 产品                                                                            | 是否支持 |
 | :------------------------------------------------------------------------------ | :------: |
+| <term>昇腾910_95 AI处理器</term>                                                |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>                        |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
 
+
 ## 功能说明
 
-- 算子功能：为输入张量的每一个元素取绝对值。
+- 接口功能：为输入张量的每一个元素取绝对值。
 
 - 计算公式：
 
@@ -19,7 +23,7 @@ $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnAbsGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnAbs”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnAbsGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnAbs”接口执行计算。
 ```Cpp
 aclnnStatus aclnnAbsGetWorkspaceSize(
   const aclTensor *self, 
@@ -66,8 +70,8 @@ aclnnStatus aclnnAbs(
       <td>self</td>
       <td>输入</td>
       <td>待进行abs计算的入参，公式中的self。</td>
-      <td>无</td>
-      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -105,10 +109,12 @@ aclnnStatus aclnnAbs(
   </tbody>
   </table>
   
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16、COMPLEX64。
+  - <term>昇腾910_95 AI处理器</term>：不支持COMPLEX64。
   
 - **返回值：**
-  
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口会完成入参校验，出现以下场景时报错：
   
@@ -140,6 +146,9 @@ aclnnStatus aclnnAbs(
     </tr>
     <tr>
       <td>self和out的数据形状不一致。</td>
+    </tr>
+    <tr>
+      <td>当self为实数时，self和out的数据类型不一致。当self为COMPLEX64时，out的数据类型不为FLOAT32。</td>
     </tr>
   </tbody></table>
 
@@ -184,15 +193,17 @@ aclnnStatus aclnnAbs(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
-如果计算量过大可能会导致算子执行超时（aicore error类型报错，errorStr为：timeout or trap error）,场景为最后2轴合轴小于16，前面的轴合轴超大。
+- 确定性计算：
+  - aclnnAbs默认确定性实现。
+
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

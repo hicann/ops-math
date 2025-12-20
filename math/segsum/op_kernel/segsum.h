@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file segsum.h
@@ -17,8 +17,11 @@
 #define SEGSUM
 
 #include <type_traits>
-#include <cmath>
 #include "kernel_operator.h"
+
+#ifndef INFINITY
+#define INFINITY (__builtin_inff())
+#endif
 
 namespace Segsum {
 using namespace AscendC;
@@ -26,7 +29,8 @@ constexpr int32_t NO_BUFFER_NUM = 1;
 
 constexpr float INF_FLOAT = -INFINITY;
 template <typename T, int32_t MODE>
-class SegsumND {
+class SegsumND
+{
 public:
     TPipe pipe;
 
@@ -117,10 +121,12 @@ __aicore__ inline void SegsumND<T, MODE>::Process()
     if (blockIdx >= needCoreNum) {
         return;
     }
-    if (MODE == 0) {
-        ComputeBase();
-    } else {
-        ComputeBatches();
+    if ASCEND_IS_AIV {
+        if (MODE == 0) {
+            ComputeBase();
+        } else {
+            ComputeBatches();
+        }
     }
 }
 

@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file pad_v4_grad_tiling.cpp
@@ -194,7 +194,7 @@ void PadV3GradV2Tiling<TilingData, dataTypeLen>::GetTilingKey()
         } else if (wPad1 == 0 && wPad2 == 0 && (hPad1 != 0 || hPad2 != 0) && height > SMALL_H_LIMIT) {
             tilingKey = FLOAT_NO_W_PAD_TILING_KEY; // float, w dim no pad
             divideUbNum = CONST_VALUE_8;
-        } else if (hPad1 == 0 && hPad2 == 0 && (wPad1 != 0 || wPad2 != 0) && width > SMALL_W_LIMIT) {
+        } else if (hPad1 == 0 && hPad2 == 0 && (wPad1 != 0 || wPad2 != 0)) {
             tilingKey = FLOAT_NO_H_PAD_TILING_KEY; // float, reflect, h dim no pad
             divideUbNum = CONST_VALUE_4;
         } else if (height <= SMALL_H_LIMIT && width > FLOAT_MINI_SHAPE_MAX_WIDTH) {
@@ -381,6 +381,7 @@ static void PrintTilingData(
     OP_LOGD(tilingContext->GetNodeName(), "ncPerCore is %u.", tilingData.get_ncPerCore());
     OP_LOGD(tilingContext->GetNodeName(), "tailNC is %u.", tilingData.get_tailNC());
     OP_LOGD(tilingContext->GetNodeName(), "tilingKey is %u.", tilingData.get_tilingKey());
+    OP_LOGD(tilingContext->GetNodeName(), "wPadCopyCount is %u.", tilingData.get_wPadCopyCount());
     OP_LOGD(tilingContext->GetNodeName(), "usrWorkspace is %lu.", usrWorkspace);
     OP_LOGD(tilingContext->GetNodeName(), "End printing");
 }
@@ -402,13 +403,15 @@ static ge::graphStatus GetInputInfo(gert::TilingContext* tilingContext, InputPar
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, xShape);
     OP_CHECK_IF(
         xShape->GetStorageShape().GetDimNum() != CHECK_DIM_NUM,
-        OP_LOGE(tilingContext->GetNodeName(), "input dim is not 4, please check input."), return ge::GRAPH_FAILED);
+        OP_LOGE(tilingContext->GetNodeName(), "input dim is not 4, please check input."),
+        return ge::GRAPH_FAILED);
     const gert::StorageShape* paddingShape = tilingContext->GetInputShape(PAD_INPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, paddingShape);
     OP_CHECK_IF(
         static_cast<int32_t>(xShape->GetStorageShape().GetDimNum() * 2) !=
             static_cast<int32_t>(paddingShape->GetStorageShape().GetDim(0)),
-        OP_LOGE(tilingContext->GetNodeName(), "Please check input or padding shape"), return ge::GRAPH_FAILED);
+        OP_LOGE(tilingContext->GetNodeName(), "Please check input or padding shape"),
+        return ge::GRAPH_FAILED);
     const gert::Tensor* paddings_tensor = tilingContext->GetInputTensor(PAD_INPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, paddings_tensor);
 
@@ -432,7 +435,8 @@ static ge::graphStatus GetInputInfo(gert::TilingContext* tilingContext, InputPar
     OP_CHECK_IF(
         (outHeight != (params.height - params.hPad1 - params.hPad2)) ||
             (outWidth != (params.width - params.wPad1 - params.wPad2)),
-        OP_LOGE(tilingContext->GetNodeName(), "Please check input or output shape"), return ge::GRAPH_FAILED);
+        OP_LOGE(tilingContext->GetNodeName(), "Please check input or output shape"),
+        return ge::GRAPH_FAILED);
 
     params.alignHeight = CeilAlign(params.height, ALIGN_16);
     params.alignWidth = CeilAlign(params.width, ALIGN_16);
@@ -440,11 +444,14 @@ static ge::graphStatus GetInputInfo(gert::TilingContext* tilingContext, InputPar
     params.alignOutWidth = CeilAlign(params.outWidth, ALIGN_16);
 
     const gert::RuntimeAttrs* attrs = tilingContext->GetAttrs();
-    OP_CHECK_IF(attrs == nullptr, OP_LOGE(tilingContext->GetNodeName(), "Get attrs Failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        attrs == nullptr, OP_LOGE(tilingContext->GetNodeName(), "Get attrs Failed."),
+        return ge::GRAPH_FAILED);
     const std::string mode = std::string(attrs->GetAttrPointer<char>(MODE_INDEX));
     OP_CHECK_IF(
         mode != "reflect" && mode != "edge" && mode != "constant",
-        OP_LOGE(tilingContext->GetNodeName(), "%s is not supported", mode.c_str()), return ge::GRAPH_FAILED);
+        OP_LOGE(tilingContext->GetNodeName(), "%s is not supported", mode.c_str()),
+        return ge::GRAPH_FAILED);
 
     params.mode = PADDING_MODE_MAP[mode];
     return ge::GRAPH_SUCCESS;
@@ -462,10 +469,12 @@ static ge::graphStatus Tiling4PadV4Grad(gert::TilingContext* tilingContext)
     OP_LOGI(tilingContext->GetNodeName(), "ubSizePlatForm:%lu, coreNum:%u", ubSizePlatForm, coreNum);
     uint32_t sysWorkspaceSize = compileInfo->sysWorkspaceSize;
     OP_CHECK_IF(
-        coreNum <= 0, OP_LOGE(tilingContext->GetNodeName(), "Failed to get core num."), return ge::GRAPH_FAILED);
+        coreNum <= 0, OP_LOGE(tilingContext->GetNodeName(), "Failed to get core num."),
+        return ge::GRAPH_FAILED);
 
     OP_CHECK_IF(
-        ubSizePlatForm <= 0, OP_LOGE(tilingContext->GetNodeName(), "Failed to get ub size."), return ge::GRAPH_FAILED);
+        ubSizePlatForm <= 0, OP_LOGE(tilingContext->GetNodeName(), "Failed to get ub size."),
+        return ge::GRAPH_FAILED);
 
     ge::DataType inputDatatype = tilingContext->GetInputDesc(0)->GetDataType();
     OP_CHECK_IF(
@@ -478,7 +487,8 @@ static ge::graphStatus Tiling4PadV4Grad(gert::TilingContext* tilingContext)
     ge::DataType paddingDatatype = tilingContext->GetInputDesc(1)->GetDataType();
     OP_CHECK_IF(
         paddingDatatype != ge::DT_INT32 && paddingDatatype != ge::DT_INT64,
-        OP_LOGE(tilingContext->GetNodeName(), "the current padding dtype is not in dtype support list [int32, int64]."),
+        OP_LOGE(
+            tilingContext->GetNodeName(), "the current padding dtype is not in dtype support list [int32, int64]."),
         return ge::GRAPH_FAILED);
     InputParamsInfo params;
     params.dtype = DTYPE_MAP[inputDatatype];
@@ -486,11 +496,13 @@ static ge::graphStatus Tiling4PadV4Grad(gert::TilingContext* tilingContext)
     if (paddingDatatype == ge::DT_INT32) {
         OP_CHECK_IF(
             GetInputInfo<int32_t>(tilingContext, params) != ge::GRAPH_SUCCESS,
-            OP_LOGE(tilingContext->GetNodeName(), "get op inputs failed."), return ge::GRAPH_FAILED);
+            OP_LOGE(tilingContext->GetNodeName(), "get op inputs failed."),
+            return ge::GRAPH_FAILED);
     } else if (paddingDatatype == ge::DT_INT64) {
         OP_CHECK_IF(
             GetInputInfo<int64_t>(tilingContext, params) != ge::GRAPH_SUCCESS,
-            OP_LOGE(tilingContext->GetNodeName(), "get op inputs failed."), return ge::GRAPH_FAILED);
+            OP_LOGE(tilingContext->GetNodeName(), "get op inputs failed."),
+            return ge::GRAPH_FAILED);
     }
 
     PadV4GradTilingData tilingData;
@@ -502,7 +514,8 @@ static ge::graphStatus Tiling4PadV4Grad(gert::TilingContext* tilingContext)
 
     OP_CHECK_IF(
         tilingData.get_ubFactorElement() <= 0,
-        OP_LOGE(tilingContext->GetNodeName(), "ub space is not enough, please check input."), return ge::GRAPH_FAILED);
+        OP_LOGE(tilingContext->GetNodeName(), "ub space is not enough, please check input."),
+        return ge::GRAPH_FAILED);
     // set tilingdata
     uint64_t workspacePerCore = tilingData.get_workspacePerCore();
     uint32_t tilingKey = tilingData.get_tilingKey();
@@ -538,7 +551,8 @@ static ge::graphStatus TilingPrepare4PadV4Grad(gert::TilingParseContext* context
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSizePlatForm = ubSizePlatForm;
     OP_CHECK_IF(
-        ubSizePlatForm <= 0, OP_LOGE(context->GetNodeName(), "Failed to get ub size."), return ge::GRAPH_FAILED);
+        ubSizePlatForm <= 0, OP_LOGE(context->GetNodeName(), "Failed to get ub size."),
+        return ge::GRAPH_FAILED);
     compileInfo->sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
     OP_LOGI(context->GetNodeName(), "TilingPrepare4PadV4Grad end.");
 

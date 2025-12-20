@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "aclnn_reflection_pad1d_backward.h"
 #include "../../../pad_v3_grad/op_host/op_api/padv3grad.h"
@@ -14,6 +14,7 @@
 #include "../../../squeeze/op_host/op_api/squeeze.h"
 #include "../../../unsqueeze/op_host/op_api/unsqueeze.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "aclnn_kernels/cast.h"
 #include "opdev/op_dfx.h"
 
 using namespace op;
@@ -23,7 +24,7 @@ extern "C" {
 
 static const string REFLECTION_MODE = "reflect";
 static const int64_t MAX_PADDING_VALUE = 7;
-static const int64_t AICPU_SHAPE = 11000; // 正常逻辑下当大于13055会挂 所以大shape走aicpu
+static const int64_t AICPU_SHAPE = 3000;
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> dtypeSupportList = {
     op::DataType::DT_FLOAT,  op::DataType::DT_FLOAT16,   op::DataType::DT_BF16,
@@ -58,6 +59,13 @@ inline static bool CheckDtypeValid(const aclTensor* gradOutput, const aclTensor*
 
 inline static bool CheckFormat(const aclTensor* gradOutput, const aclTensor* self, const aclTensor* gradInput)
 {
+    // 如果输入格式是私有格式，记录日志，直接报错
+    if (op::IsPrivateFormat(gradOutput->GetStorageFormat()) || op::IsPrivateFormat(self->GetStorageFormat()) ||
+        op::IsPrivateFormat(gradInput->GetStorageFormat())) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND.");
+        return false;
+    }
+
     OP_CHECK(
         gradOutput->GetViewFormat() == self->GetViewFormat() &&
             gradOutput->GetViewFormat() == gradInput->GetViewFormat(),
@@ -229,6 +237,13 @@ aclnnStatus aclnnReflectionPad1dBackwardGetWorkspaceSize(
     auto paddingsTensor = GetPaddingTensor(dim, padding, uniqueExecutor.get());
     auto padFlag = CheckPaddingValue(padding);
     const aclTensor* pad1dbackwardResult = nullptr;
+    auto originOutDataType = gradOutput->GetDataType();
+    // cast to fp32 from fp16 or bf16
+    if (originOutDataType == op::DataType::DT_FLOAT16 || originOutDataType == op::DataType::DT_BF16) {
+        gradOutput = l0op::Cast(gradOutput, op::DataType::DT_FLOAT, uniqueExecutor.get());
+        OP_LOGD("[PadV4Grad] FP16 or BF16 Cast to FP32: true");
+    }
+
     pad1dbackwardResult =
         l0op::PadV3Grad(gradOutput, paddingsTensor, REFLECTION_MODE, true, padFlag, uniqueExecutor.get());
     CHECK_RET(pad1dbackwardResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -238,6 +253,13 @@ aclnnStatus aclnnReflectionPad1dBackwardGetWorkspaceSize(
         pad1dbackwardResult = l0op::SqueezeNd(pad1dbackwardResult, dimArray, uniqueExecutor.get());
     }
     CHECK_RET(pad1dbackwardResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    // cast to fp16 or bf16 
+    if (originOutDataType == op::DataType::DT_FLOAT16 || originOutDataType == op::DataType::DT_BF16) {
+        pad1dbackwardResult = l0op::Cast(pad1dbackwardResult, originOutDataType, uniqueExecutor.get());
+        OP_LOGD("[PadV4Grad] FP16 or BF16 Cast to FP32: true");
+    }
+
     // 如果出参gradInput是非连续Tensor，需要把计算完的连续Tensor转非连续
     auto viewCopyResult = l0op::ViewCopy(pad1dbackwardResult, gradInput, uniqueExecutor.get());
     CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);

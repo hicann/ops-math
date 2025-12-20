@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "aclnn_linspace.h"
 #include "linspace.h"
@@ -44,40 +44,40 @@ extern "C" {
 
 // 算子支持的所有dtype
 static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT32, op::DataType::DT_INT8,
-    op::DataType::DT_UINT8,
-    // AiCpu支持数据类型
-    op::DataType::DT_DOUBLE};
+      op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16,
+      op::DataType::DT_INT32, op::DataType::DT_INT8,
+      op::DataType::DT_UINT8,
+      // AiCpu支持数据类型
+      op::DataType::DT_DOUBLE};
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16, op::DataType::DT_INT32,
-    op::DataType::DT_INT16, op::DataType::DT_INT8, op::DataType::DT_UINT8,
-    // AiCpu支持数据类型
-    op::DataType::DT_DOUBLE};
+      op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16,
+      op::DataType::DT_INT32, op::DataType::DT_INT16, op::DataType::DT_INT8,
+      op::DataType::DT_UINT8,
+      // AiCpu支持数据类型
+      op::DataType::DT_DOUBLE};
 
-static const inline std::initializer_list<DataType>& GetSupportDtypeList(SocVersion socVersion)
-{
-    static const std::initializer_list<DataType> emptyDtypes = {};
-    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-        socVersion == SocVersion::ASCEND910_95) {
-        return ASCEND910B_DTYPE_SUPPORT_LIST;
-    }
-    if (socVersion == SocVersion::ASCEND910 || socVersion == SocVersion::ASCEND310P) {
-        return ASCEND910_DTYPE_SUPPORT_LIST;
-    }
-    return emptyDtypes;
+static const inline std::initializer_list<DataType>& GetSupportDtypeList(SocVersion socVersion) {
+  static const std::initializer_list<DataType> emptyDtypes = {};
+  if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
+      socVersion == SocVersion::ASCEND910_95) {
+    return ASCEND910B_DTYPE_SUPPORT_LIST;
+  } 
+  if (socVersion == SocVersion::ASCEND910 || socVersion == SocVersion::ASCEND310P) {
+    return ASCEND910_DTYPE_SUPPORT_LIST;
+  }
+  return emptyDtypes;
 }
 
 // 检查输入是否是空指针
-inline static bool CheckNotNull(const aclScalar* start, const aclScalar* end, const aclTensor* out)
-{
-    OP_CHECK_NULL(start, return false);
-    OP_CHECK_NULL(end, return false);
-    OP_CHECK_NULL(out, return false);
-    return true;
+inline static bool CheckNotNull(const aclScalar *start, const aclScalar *end, const aclTensor *out) {
+  OP_CHECK_NULL(start, return false);
+  OP_CHECK_NULL(end, return false);
+  OP_CHECK_NULL(out, return false);
+  return true;
 }
 
-inline static bool CheckDtypeValid(const aclTensor* out)
+inline static bool CheckDtypeValid(const aclTensor *out)
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     const auto& DTYPE_SUPPORT_LIST_CURRENT = GetSupportDtypeList(socVersion);
@@ -90,30 +90,30 @@ inline static bool CheckDtypeValid(const aclTensor* out)
     return true;
 }
 
-inline static bool CheckScalarDtypeValid(const aclScalar* scalar)
-{
+inline static bool CheckScalarDtypeValid(const aclScalar *scalar)
+{   
     if (IsComplexType(scalar->GetDataType())) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "complex for input is not implemented.");
         return false;
     }
-    return true;
+    return true; 
 }
 
 // 判断out数据类型，非COMPLEX则返回原数据类型，否则按情况返回
-inline static DataType OutPromoteType(DataType outDataType)
-{
+inline static DataType OutPromoteType(DataType outDataType) {
     if (outDataType == op::DataType::DT_COMPLEX128) {
         return op::DataType::DT_DOUBLE;
-    } else if (outDataType == op::DataType::DT_COMPLEX64) {
+    }
+    else if (outDataType == op::DataType::DT_COMPLEX64) {
         return op::DataType::DT_FLOAT;
-    } else {
+    }
+    else {
         return outDataType;
     }
 }
 
 // 检查参数是否符合算子的逻辑
-inline static aclnnStatus CheckParamsLogic(const aclTensor* out, int64_t steps)
-{
+inline static aclnnStatus CheckParamsLogic(const aclTensor *out, int64_t steps) {
     // steps不能小于0
     if (steps < 0) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "number of steps must be non-negative.");
@@ -127,16 +127,14 @@ inline static aclnnStatus CheckParamsLogic(const aclTensor* out, int64_t steps)
         outSize *= outShape.GetDim(idx);
     }
     if (outSize != steps) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "size of out must equal to steps, but got size of out %ld, steps: %ld.", outSize,
-            steps);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "size of out must equal to steps, but got size of out %ld, steps: %ld.",
+                outSize, steps);
         return ACLNN_ERR_PARAM_INVALID;
     }
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus FillScalar(const aclTensor* out, const aclScalar* start, aclOpExecutor* executor)
-{
+static aclnnStatus FillScalar(const aclTensor *out, const aclScalar *start, aclOpExecutor *executor) {
     FVector<int64_t> tmp = {1};
     auto dims = executor->ConvertToTensor(tmp.data(), tmp.size(), DataType::DT_INT64);
     auto shapeArray = executor->AllocIntArray(tmp.data(), tmp.size());
@@ -151,15 +149,15 @@ static aclnnStatus FillScalar(const aclTensor* out, const aclScalar* start, aclO
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus CheckParams(const aclScalar* start, const aclScalar* end, int64_t steps, const aclTensor* out)
-{
+static aclnnStatus CheckParams(const aclScalar *start, const aclScalar *end, int64_t steps,
+                               const aclTensor *out) {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(start, end, out), ACLNN_ERR_INNER_NULLPTR);
 
     // 2. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
-    CHECK_RET(CheckScalarDtypeValid(start), ACLNN_ERR_PARAM_INVALID);
-    CHECK_RET(CheckScalarDtypeValid(end), ACLNN_ERR_PARAM_INVALID);
-    CHECK_RET(CheckDtypeValid(out), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckScalarDtypeValid(start), ACLNN_ERR_PARAM_INVALID); 
+    CHECK_RET(CheckScalarDtypeValid(end), ACLNN_ERR_PARAM_INVALID); 
+    CHECK_RET(CheckDtypeValid(out), ACLNN_ERR_PARAM_INVALID); 
 
     // 3. 检查输入的数据的值是否合理
     CHECK_RET(CheckParamsLogic(out, steps) == ACLNN_SUCCESS, ACLNN_ERR_PARAM_INVALID);
@@ -167,10 +165,8 @@ static aclnnStatus CheckParams(const aclScalar* start, const aclScalar* end, int
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLinspaceGetWorkspaceSize(
-    const aclScalar* start, const aclScalar* end, int64_t steps, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
-{
+aclnnStatus aclnnLinspaceGetWorkspaceSize(const aclScalar *start, const aclScalar *end, int64_t steps,
+                                          aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor) {
     L2_DFX_PHASE_1(aclnnLinspace, DFX_IN(start, end, steps), DFX_OUT(out));
     // 创建OpExcutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -183,10 +179,10 @@ aclnnStatus aclnnLinspaceGetWorkspaceSize(
     // 当输入为bool时，需转化类型为float
     float startFloatValue = start->ToFloat();
     float endFloatValue = end->ToFloat();
-    auto startWithBool =
-        (start->GetDataType() == op::DataType::DT_BOOL) ? (uniqueExecutor.get()->AllocScalar(startFloatValue)) : start;
-    auto endWithBool =
-        (end->GetDataType() == op::DataType::DT_BOOL) ? (uniqueExecutor.get()->AllocScalar(endFloatValue)) : end;
+    auto startWithBool = (start->GetDataType() == op::DataType::DT_BOOL) ?
+                        (uniqueExecutor.get()->AllocScalar(startFloatValue)) : start;
+    auto endWithBool = (end->GetDataType() == op::DataType::DT_BOOL) ?
+                      (uniqueExecutor.get()->AllocScalar(endFloatValue)) : end;
 
     // steps等于0时返回空tensor, steps等于1时返回start。
     if (steps == 0) {
@@ -208,7 +204,7 @@ aclnnStatus aclnnLinspaceGetWorkspaceSize(
     // 执行L0算子，进行Linspace计算
     auto linspaceOutRet = l0op::Linspace(startTensor, endTensor, steps, uniqueExecutor.get());
     CHECK_RET(linspaceOutRet != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
+    
     // 将计算结果转换成输出out的数据类型
     auto castOut = l0op::Cast(linspaceOutRet, out->GetDataType(), uniqueExecutor.get());
     CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -224,8 +220,7 @@ aclnnStatus aclnnLinspaceGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLinspace(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
-{
+aclnnStatus aclnnLinspace(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream) {
     L2_DFX_PHASE_2(aclnnLinspace);
     // 调用框架能力，完成计算
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

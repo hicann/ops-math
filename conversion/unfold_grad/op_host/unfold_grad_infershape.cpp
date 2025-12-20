@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /* !
  * \file unfold_grad_infershape.cpp
@@ -27,9 +27,10 @@ constexpr uint32_t OUTPUT_GRADIN_IDX = 0;
 
 namespace ops {
 template <typename T>
-static ge::graphStatus InferShapeCopyData2Array(const gert::Tensor* listTensor, int64_t listSize, int64_t dataList[])
+static ge::graphStatus InferShapeCopyData2Array(const gert::Tensor *listTensor,
+    int64_t listSize, int64_t dataList[])
 {
-    const T* listDataPtr = listTensor->GetData<T>();
+    const T *listDataPtr = listTensor->GetData<T>();
     for (int64_t i = 0; i < listSize; i++) {
         dataList[i] = listDataPtr[i];
     }
@@ -38,8 +39,8 @@ static ge::graphStatus InferShapeCopyData2Array(const gert::Tensor* listTensor, 
 }
 
 template <typename T>
-static ge::graphStatus InferShapeGetConstInputData(
-    gert::InferShapeContext* context, const size_t idxInput, T& dataList, int64_t& dataListLength)
+static ge::graphStatus InferShapeGetConstInputData(gert::InferShapeContext *context, const size_t idxInput, T &dataList,
+    int64_t &dataListLength)
 {
     auto listTensor = context->GetInputTensor(idxInput);
     if (listTensor == nullptr) {
@@ -63,7 +64,7 @@ static ge::graphStatus InferShapeGetConstInputData(
     return ge::GRAPH_FAILED;
 }
 
-static ge::graphStatus InferShapeForUnfoldGrad(gert::InferShapeContext* context)
+static ge::graphStatus InferShapeForUnfoldGrad(gert::InferShapeContext *context)
 {
     int64_t inputSizeArray[MAX_DIM_NUM] = {0};
     int64_t inputSizeLength2 = 0;
@@ -73,7 +74,7 @@ static ge::graphStatus InferShapeForUnfoldGrad(gert::InferShapeContext* context)
         return ge::GRAPH_FAILED;
     }
 
-    gert::Shape* y_shape = context->GetOutputShape(OUTPUT_GRADIN_IDX);
+    gert::Shape *y_shape = context->GetOutputShape(OUTPUT_GRADIN_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context, y_shape);
     y_shape->SetDimNum(inputSizeLength2);
     for (int i = 0; i < inputSizeLength2; i++) {
@@ -83,7 +84,7 @@ static ge::graphStatus InferShapeForUnfoldGrad(gert::InferShapeContext* context)
     return GRAPH_SUCCESS;
 }
 
-static ge::graphStatus InferDataTypeForUnfoldGrad(gert::InferDataTypeContext* context)
+static ge::graphStatus InferDataTypeForUnfoldGrad(gert::InferDataTypeContext *context)
 {
     const auto gardInDTypeInfer = context->GetInputDataType(INPUT_GRADOUT_IDX);
     context->SetOutputDataType(OUTPUT_GRADIN_IDX, gardInDTypeInfer);

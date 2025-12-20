@@ -4,17 +4,22 @@
 
 | 产品 | 是否支持 |
 | ---- | :----:|
+|昇腾910_95 AI处理器|×|
 |Atlas A3 训练系列产品/Atlas A3 推理系列产品|√|
 |Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件|√|
 
+|Atlas 推理系列产品|×|
+
+
+
 ## 功能说明
 
-- 算子功能：为输入张量的每一个元素取角度（单位：弧度）。
+- 算子功能：计算输入张量逐元素的角度（单位：弧度）。
 
 - 计算公式：
 
 $$
-out_i=angle(input_i)
+output_i=angle(input_i)
 $$
 
 ## 参数说明
@@ -38,14 +43,14 @@ $$
     <tr>
       <td>x</td>
       <td>输入</td>
-      <td>待进行angle计算的入参，公式中的input_i。</td>
+      <td>待进行angle计算的入参，公式中的input<sub>i</sub>。</td>
       <td>FLOAT16, FLOAT, COMPLEX64, BOOL, UINT8, INT8, INT16, INT32, INT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
-      <td>待进行angle计算的出参，公式中的out_i。</td>
+      <td>待进行angle计算的出参，公式中的output<sub>i</sub>。</td>
       <td>FLOAT16, FLOAT</td>
       <td>ND</td>
     </tr>

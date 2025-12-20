@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file angle_v2_tiling.cpp
@@ -15,7 +15,7 @@
 
 #include <sstream>
 #include "register/op_impl_registry.h"
-#include "tiling/platform/platform_ascendc.h"
+#include "platform/platform_ascendc.h"
 #include "platform/platform_infos_def.h"
 #include "util/math_util.h"
 #include "log/log.h"
@@ -37,7 +37,8 @@ constexpr uint32_t SIZE_OF_B32 = 4;
 constexpr uint32_t BYTE_BLOCK = 32;
 constexpr uint32_t BYTE_REPEAT = 256;                 // The amount of data that can be processed by a repeat.
 constexpr uint32_t SELECT_MODE_GE_ZERO_TMP_UB = 8000; // select mode 2 need 8000B
-class AngleV2Tiling {
+class AngleV2Tiling
+{
 public:
     explicit AngleV2Tiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus Init();
@@ -163,7 +164,7 @@ uint32_t AngleV2Tiling::GetNeedCoreNum(const uint32_t coreNumPlatform, ge::DataT
     } else {
         dataPerRepeat = BYTE_REPEAT / SIZE_OF_B32;
     }
-    uint32_t tempCoreNum = (totalLength + dataPerRepeat - 1) / dataPerRepeat;
+    uint32_t tempCoreNum = (totalLength - 1) / dataPerRepeat + 1;
     if (tempCoreNum == 0) {
         tempCoreNum = 1;
     }

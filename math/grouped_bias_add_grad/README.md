@@ -4,8 +4,13 @@
 
 | 产品 | 是否支持 |
 | ---- | :----:|
+|昇腾910_95 AI处理器|×|
 |Atlas A3 训练系列产品/Atlas A3 推理系列产品|√|
 |Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件|√|
+
+|Atlas 推理系列产品|×|
+|Atlas 训练系列产品|×|
+
 
 ## 功能说明
 
@@ -70,14 +75,14 @@ $$
     <tr>
       <td>gradY</td>
       <td>输入</td>
-      <td>反向传播梯度，公式中的输入gradY。</td>
+      <td>反向传播梯度，公式中的输入gradY。支持<a href="../../docs/zh/context/非连续的Tensor.md">非连续的Tensor</a>。</td>
       <td>FLOAT16、BFLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>groupIdxOptional</td>
       <td>可选输入</td>
-      <td>每个分组结束位置，公式中输入的groupIdxOptional。</td>
+      <td>每个分组结束位置，公式中输入的groupIdxOptional。最多支持2048个组，支持非连续的Tensor。</td>
       <td>INT32、INT64</td>
       <td>ND</td>
     </tr>
@@ -101,9 +106,10 @@ $$
 
 ## 约束说明
 
-- group_idx最多支持2048个组，支持非连续张量，数据格式支持 ND。
-- 当存在输入group_idx时，需要确保张量的值不超过INT32的最大值并且是非负的。
-- 当存在输入group_idx时，grad_y仅支持 2 维形状，否则仅支持 3 维形状。支持非连续张量。
+- 当存在输入group_idx时，需要满足下列约束：
+  - 需要确保张量的值不超过INT32的最大值并且是非负的。
+  - grad_y仅支持 2 维形状。
+- 当不存在输入group_idx时，grad_y仅支持 3 维形状。
 - 当存在输入group_idx并且group_idx_type为0时，需要确保张量数据按升序排列，最后一个数值等于grad_y的第0维度的大小。
 - 当存在输入group_idx并且group_idx_type为1时，必须确保张量数据的总和必须等于grad_y的第0维度的大小。
 

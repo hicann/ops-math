@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include <array>
 #include <vector>
 #include "gtest/gtest.h"
@@ -41,9 +41,6 @@ TEST_F(l2_trans_matmul_weight_test, ascend910B2_test_normal_dim2_input)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    //   SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_trans_matmul_weight_test, ascend910B2_test_normal_dim3_input)
@@ -56,9 +53,6 @@ TEST_F(l2_trans_matmul_weight_test, ascend910B2_test_normal_dim3_input)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    //   SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_trans_matmul_weight_test, ascend910B2_test_empty)
@@ -71,9 +65,6 @@ TEST_F(l2_trans_matmul_weight_test, ascend910B2_test_empty)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_trans_matmul_weight_test, ascend910B2_dim_larger_than_3)
@@ -86,9 +77,6 @@ TEST_F(l2_trans_matmul_weight_test, ascend910B2_dim_larger_than_3)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_trans_matmul_weight_test, ascend910B2_invalid_format)
@@ -101,9 +89,6 @@ TEST_F(l2_trans_matmul_weight_test, ascend910B2_invalid_format)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_trans_matmul_weight_test, ascend910B2_test_nullptr)
@@ -142,9 +127,6 @@ TEST_F(l2_trans_matmul_weight_test, ascend910_95_dim_larger_than_2)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-
-    // SAMPLE: precision simulate
-    // ut.TestPrecision();
 }
 
 TEST_F(l2_trans_matmul_weight_test, ascend310P_test_normal_input_int8)
@@ -157,9 +139,6 @@ TEST_F(l2_trans_matmul_weight_test, ascend310P_test_normal_input_int8)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    //   SAMPLE: precision simulate
-    //   ut.TestPrecision();
 }
 
 TEST_F(l2_trans_matmul_weight_test, ascend310P_test_nullptr)

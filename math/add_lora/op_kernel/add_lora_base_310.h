@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file add_lora_base_310.h
@@ -22,7 +22,8 @@
 namespace AddLora310 {
 using namespace AscendC;
 
-class AddLoraKernelBase310 {
+class AddLoraKernelBase310
+{
 public:
     __aicore__ inline AddLoraKernelBase310(){};
     __aicore__ inline void Init(
@@ -122,7 +123,8 @@ protected:
     __aicore__ inline uint32_t CeilCubeBlock(uint32_t len);
 };
 
-class AddLoraKernel310 : public AddLoraKernelBase310 {
+class AddLoraKernel310 : public AddLoraKernelBase310
+{
 public:
     __aicore__ inline AddLoraKernel310()
     {}
@@ -139,7 +141,8 @@ protected:
         uint32_t batchToProcess, uint32_t H2ToProcess, uint32_t batchOffset, uint32_t H2Offset, uint32_t pingPongFlag);
 };
 
-class AddLoraSparse310 : public AddLoraKernelBase310 {
+class AddLoraSparse310 : public AddLoraKernelBase310
+{
 public:
     __aicore__ inline AddLoraSparse310()
     {}
@@ -163,7 +166,8 @@ protected:
         uint32_t batchToProcess, uint32_t H2ToProcess, uint32_t batchOffset, uint32_t H2Offset, uint32_t pingPongFlag);
 };
 
-class BgmvKernel310 : public AddLoraKernelBase310 {
+class BgmvKernel310 : public AddLoraKernelBase310
+{
 public:
     __aicore__ inline BgmvKernel310(){};
     __aicore__ inline void Process();

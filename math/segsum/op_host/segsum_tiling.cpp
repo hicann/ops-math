@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file segsum_tiling.cpp
@@ -29,9 +29,10 @@ constexpr uint32_t COMMON_TILING_KEY = 1000;
 constexpr uint32_t SMALL_SIZE_TILING_KEY = 1001;
 constexpr uint32_t TENSOR_NUM = 4;
 
-class SegsumTiling {
+class SegsumTiling
+{
 public:
-    explicit SegsumTiling(gert::TilingContext* context) : tilingContext(context) {};
+    explicit SegsumTiling(gert::TilingContext* context) : tilingContext(context){};
     ge::graphStatus RunBigKernelTiling();
 
 private:
@@ -192,11 +193,13 @@ static ge::graphStatus TilingPrepare4Segsum(gert::TilingParseContext* context)
 
     OP_CHECK_IF(
         compileInfo->coreNum <= 0,
-        OP_LOGE(context->GetNodeName(), "Segsum GetHardwareInfo Failed, vectorCoreNum: %u", compileInfo->coreNum),
+        OP_LOGE(
+            context->GetNodeName(), "Segsum GetHardwareInfo Failed, vectorCoreNum: %u", compileInfo->coreNum),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         compileInfo->ubSize <= 0,
-        OP_LOGE(context->GetNodeName(), "Segsum GetHardwareInfo Failed, ubSize: %lu", compileInfo->ubSize),
+        OP_LOGE(
+            context->GetNodeName(), "Segsum GetHardwareInfo Failed, ubSize: %lu", compileInfo->ubSize),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }

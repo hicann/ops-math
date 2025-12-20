@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file stack_ball_query.h
@@ -27,7 +27,8 @@ constexpr int32_t XYZ_NUM = 3;
 constexpr int32_t XYZ_GM_OFFSET = 2;
 
 template <typename INPUT_T>
-class KernelStackBallQuery {
+class KernelStackBallQuery
+{
 public:
     __aicore__ inline KernelStackBallQuery()
     {}
@@ -93,8 +94,7 @@ public:
         pipe.InitBuffer(calcBufCenterDistanceZ, this->xyzEachSegmentLength * sizeof(INPUT_T));
         pipe.InitBuffer(xyzBatchValue, this->GetAlignValue(this->batchSize, ALIGN_NUM) * sizeof(int32_t));
         pipe.InitBuffer(centerXyzBatchValue, this->GetAlignValue(this->batchSize, ALIGN_NUM) * sizeof(int32_t));
-        PipeBarrier<PIPE_ALL>();
-        ;
+        PipeBarrier<PIPE_ALL>();;
     }
 
     __aicore__ inline void Process()
@@ -117,12 +117,10 @@ public:
             for (int j = 0; j < this->centerXyzEachSegmentLength; j++) {
                 RunPerCluster(i, j);
             }
-            PipeBarrier<PIPE_ALL>();
-            ;
+            PipeBarrier<PIPE_ALL>();;
             inQueueCenterXyz.FreeTensor(this->centerXyzLocal);
         }
-        PipeBarrier<PIPE_ALL>();
-        ;
+        PipeBarrier<PIPE_ALL>();;
 
         if (centerXyzLoopTail != 0) {
             CopyInCenterXyz(centerXyzLoopCount, centerXyzLoopTail);
@@ -132,12 +130,10 @@ public:
             for (int j = 0; j < centerXyzLoopTail; j++) {
                 RunPerCluster(centerXyzLoopCount, j);
             }
-            PipeBarrier<PIPE_ALL>();
-            ;
+            PipeBarrier<PIPE_ALL>();;
             inQueueCenterXyz.FreeTensor(this->centerXyzLocal);
         }
-        PipeBarrier<PIPE_ALL>();
-        ;
+        PipeBarrier<PIPE_ALL>();;
         this->SendResultToGm(true);
     }
 
@@ -223,8 +219,7 @@ private:
 
     __aicore__ inline void SendResultToGm(bool forceSend)
     {
-        PipeBarrier<PIPE_ALL>();
-        ;
+        PipeBarrier<PIPE_ALL>();;
 
         int tailLen = this->resultOffset % this->idxEachSegmentLength;
         if (forceSend or tailLen == 0) {
@@ -248,8 +243,7 @@ private:
                         }
                         DataCopy(idxGm[gmOffset], resultOut, lenToSend - sendTail);
                     }
-                    PipeBarrier<PIPE_ALL>();
-                    ;
+                    PipeBarrier<PIPE_ALL>();;
                     for (int k = 0; k < ALIGN_NUM; k++) {
                         this->resultOutAlign.SetValue(k, this->resultOut.GetValue(lenToSend - ALIGN_NUM + k));
                     }
@@ -262,8 +256,7 @@ private:
                         return;
                     }
                     DataCopy(this->resultOutAlign, idxGm[gmOffset + lenToSend - ALIGN_NUM], ALIGN_NUM);
-                    PipeBarrier<PIPE_ALL>();
-                    ;
+                    PipeBarrier<PIPE_ALL>();;
                     for (int k = 0; k < lenToSend; k++) {
                         this->resultOutAlign.SetValue(ALIGN_NUM - lenToSend + k, this->resultOut.GetValue(k));
                     }
@@ -273,8 +266,7 @@ private:
                     DataCopy(idxGm[gmOffset + lenToSend - ALIGN_NUM], this->resultOutAlign, ALIGN_NUM);
                 }
             }
-            PipeBarrier<PIPE_ALL>();
-            ;
+            PipeBarrier<PIPE_ALL>();;
         }
     }
 
@@ -389,8 +381,7 @@ private:
             int currentNStart = i * this->xyzEachSegmentLength;
 
             CopyInXyz(offsetXyzStart, i, segmentLen);
-            PipeBarrier<PIPE_ALL>();
-            ;
+            PipeBarrier<PIPE_ALL>();;
             this->CalculateDistance();
             ComputeBallQueryFp32(currentNStart, this->xyzEachSegmentLength);
 
@@ -404,8 +395,7 @@ private:
             int currentNStart = xyzSegmentLoop * this->xyzEachSegmentLength;
 
             CopyInXyz(offsetXyzStart, xyzSegmentLoop, segmentLen);
-            PipeBarrier<PIPE_ALL>();
-            ;
+            PipeBarrier<PIPE_ALL>();;
             this->CalculateDistance();
             ComputeBallQueryFp32(currentNStart, xyzSegmentTail);
             inQueueX.FreeTensor(this->xLocal);
@@ -420,8 +410,7 @@ private:
 
         for (int i = resultNum; i < sampleNum; i++) {
             this->SetResultAndTrySend(this->firstResult);
-            PipeBarrier<PIPE_ALL>();
-            ;
+            PipeBarrier<PIPE_ALL>();;
         }
     }
 

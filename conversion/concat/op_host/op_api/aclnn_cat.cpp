@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file aclnn_cat.cpp
@@ -35,22 +35,23 @@ extern "C" {
 #endif
 
 static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT, DataType::DT_INT32, DataType::DT_INT64,  DataType::DT_FLOAT16,   DataType::DT_INT16,
-    DataType::DT_INT8,  DataType::DT_UINT8, DataType::DT_DOUBLE, DataType::DT_COMPLEX64, DataType::DT_BOOL};
+    DataType::DT_FLOAT, DataType::DT_INT32, DataType::DT_INT64, DataType::DT_FLOAT16, DataType::DT_INT16,
+    DataType::DT_INT8, DataType::DT_UINT8, DataType::DT_DOUBLE, DataType::DT_COMPLEX64, DataType::DT_BOOL
+};
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT,     DataType::DT_INT32, DataType::DT_INT64, DataType::DT_FLOAT16,
-    DataType::DT_INT16,     DataType::DT_INT8,  DataType::DT_UINT8, DataType::DT_DOUBLE,
-    DataType::DT_COMPLEX64, DataType::DT_BF16,  DataType::DT_BOOL};
+    DataType::DT_FLOAT, DataType::DT_INT32, DataType::DT_INT64, DataType::DT_FLOAT16, DataType::DT_INT16,
+    DataType::DT_INT8, DataType::DT_UINT8, DataType::DT_DOUBLE, DataType::DT_COMPLEX64, DataType::DT_BF16,
+    DataType::DT_BOOL
+};
 
 static const inline std::initializer_list<DataType>& GetSupportDtypeList(SocVersion socVersion)
 {
     static const std::initializer_list<DataType> emptyDtypes = {};
     if (socVersion == SocVersion::ASCEND310P || socVersion == SocVersion::ASCEND910) {
         return ASCEND910_DTYPE_SUPPORT_LIST;
-    } else if (
-        socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-        socVersion == SocVersion::ASCEND310B || socVersion == SocVersion::ASCEND910_95) {
+    } else if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
+               socVersion == SocVersion::ASCEND310B || socVersion == SocVersion::ASCEND910_95) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
     } else {
         return emptyDtypes;

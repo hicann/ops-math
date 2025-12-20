@@ -1,0 +1,33 @@
+{
+    "ClipByValueV2": {
+        "opInfo": {
+            "subTypeOfInferShape": "1",
+            "opsFlag": "OPS_FLAG_OPEN",
+            "engine": "DNN_VM_AICPU",
+            "flagPartial": "False",
+            "flagAsync": "False",
+            "computeCost": "100",
+            "opKernelLib":"CUSTAICPUKernel",
+            "kernelSo": "libmath_aicpu_kernels.so",
+            "functionName": "RunCpuKernel",
+            "userDefined": "True",
+            "workspaceSize": "100"
+        },
+        "input0": {
+            "type": "DT_COMPLEX128,DT_COMPLEX64,DT_DOUBLE,DT_FLOAT,DT_FLOAT16,DT_INT16,DT_INT32,DT_INT64,DT_INT8,DT_QINT32,DT_QINT8,DT_QUINT8,DT_UINT16,DT_UINT32,DT_UINT64,DT_UINT8,DT_BF16",
+            "name": "x"
+        },
+        "input1": {
+            "type": "DT_COMPLEX128,DT_COMPLEX64,DT_DOUBLE,DT_FLOAT,DT_FLOAT16,DT_INT16,DT_INT32,DT_INT64,DT_INT8,DT_QINT32,DT_QINT8,DT_QUINT8,DT_UINT16,DT_UINT32,DT_UINT64,DT_UINT8,DT_BF16",
+            "name": "clip_value_min"
+        },
+        "input2": {
+            "type": "DT_COMPLEX128,DT_COMPLEX64,DT_DOUBLE,DT_FLOAT,DT_FLOAT16,DT_INT16,DT_INT32,DT_INT64,DT_INT8,DT_QINT32,DT_QINT8,DT_QUINT8,DT_UINT16,DT_UINT32,DT_UINT64,DT_UINT8,DT_BF16",
+            "name": "clip_value_max"
+        },
+        "output": {
+            "type": "DT_COMPLEX128,DT_COMPLEX64,DT_DOUBLE,DT_FLOAT,DT_FLOAT16,DT_INT16,DT_INT32,DT_INT64,DT_INT8,DT_QINT32,DT_QINT8,DT_QUINT8,DT_UINT16,DT_UINT32,DT_UINT64,DT_UINT8,DT_BF16",
+            "name": "y"
+        }
+    }
+}

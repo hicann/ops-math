@@ -1,0 +1,27 @@
+{
+    "ConcatV2":{
+        "opInfo":{
+            "computeCost":"100",
+            "engine":"DNN_VM_AICPU",
+            "flagAsync":"False",
+            "flagPartial":"False",
+            "functionName":"RunCpuKernel",
+            "kernelSo":"libmath_aicpu_kernels.so",
+            "opKernelLib":"CUSTAICPUKernel",
+            "userDefined":"True",
+            "workspaceSize":"100"
+        },
+        "dynamic_input0":{
+            "name":"x",
+            "type":"DT_BOOL,DT_FLOAT,DT_FLOAT16,DT_INT8,DT_INT16,DT_UINT16,DT_UINT8,DT_INT32,DT_INT64,DT_UINT32,DT_UINT64,DT_DOUBLE,DT_COMPLEX128,DT_COMPLEX64,DT_BF16"
+        },
+        "input1":{
+            "name":"concat_dim",
+            "type":"DT_INT32,DT_INT64"
+        },
+		"output0":{
+            "name":"y",
+            "type":"DT_BOOL,DT_FLOAT,DT_FLOAT16,DT_INT8,DT_INT16,DT_UINT16,DT_UINT8,DT_INT32,DT_INT64,DT_UINT32,DT_UINT64,DT_DOUBLE,DT_COMPLEX128,DT_COMPLEX64,DT_BF16"
+        }
+    }
+}

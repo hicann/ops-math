@@ -4,8 +4,13 @@
 
 | 产品 | 是否支持 |
 | ---- | :----:|
+|昇腾910_95 AI处理器|√|
 |Atlas A3 训练系列产品/Atlas A3 推理系列产品|√|
 |Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件|√|
+
+
+
+
 
 ## 功能说明
 
@@ -48,6 +53,8 @@ $out_i=|input_i|$
       <td>ND</td>
     </tr>
   </tbody></table>
+
+- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
 
 ## 约束说明
 

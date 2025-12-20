@@ -4,8 +4,13 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>昇腾910_95 AI处理器</term>                             |    ×     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+
+
+
+
 
 ## 功能说明
 
@@ -42,9 +47,9 @@
   </tr>
   <tr>
     <td>fillValue</td>
-    <td>输入/输出张量</td>
-    <td>表示输入/输出张量，数据类型需要是可转换为FLOAT的数据类型。</td>
-    <td>BFLOAT16、FLOAT16、FLOAT、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOO</td>
+    <td>输入属性</td>
+    <td>表示填充值，数据类型需要是可转换为FLOAT的数据类型。</td>
+    <td>可转换为FLOAT的数据类型</td>
     <td>-</td>
   </tr>
   <tr>
@@ -67,4 +72,5 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| 图模式调用 | [test_geir_fill_diagonal_v2](./examples/test_geir_fill_diagonal_v2.cpp) | 通过[算子IR](op_graph/fill_diagonal_v2_proto.h)接口方式调用FillDiagonalV2算子。 |
+| aclnn接口 | [test_aclnn_inplace_fill_diagonal](./examples/test_aclnn_fill_diagonal_v2.cpp) | 通过[aclnnInplaceFillDiagonal](docs/aclnnInplaceFillDiagonal.md)接口方式调用InplaceFillDiagonal算子。 |
+

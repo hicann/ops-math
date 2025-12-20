@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file non_finite_check_tiling.cpp
@@ -16,7 +16,7 @@
 #include "register/op_impl_registry.h"
 #include "util/math_util.h"
 #include "log/log.h"
-#include "tiling/platform/platform_ascendc.h"
+#include "platform/platform_ascendc.h"
 #include "platform/platform_infos_def.h"
 
 namespace optiling {
@@ -29,10 +29,11 @@ constexpr uint8_t DTYPE_SIZE_FLOAT = 4;
 constexpr uint8_t NUM_TWO = 2;
 constexpr uint32_t COEFFICIENT_1 = 128;
 
-class NonFiniteCheckTiling {
+class NonFiniteCheckTiling
+{
 public:
     explicit NonFiniteCheckTiling(gert::TilingContext* context)
-        : tilingContext(context), nodeName(context->GetNodeName()) {};
+        : tilingContext(context), nodeName(context->GetNodeName()){};
 
     ge::graphStatus Init();
     ge::graphStatus RunBigKernelTiling();
@@ -113,8 +114,7 @@ ge::graphStatus NonFiniteCheckTiling::RunBigKernelTiling()
 {
     OP_LOGD(tilingContext, "Start.");
     OP_CHECK_IF(
-        FillCompileInfo() != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext, "FillCompileInfo error."),
-        return ge::GRAPH_FAILED);
+        FillCompileInfo() != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext, "FillCompileInfo error."), return ge::GRAPH_FAILED);
     OP_LOGD(
         tilingContext, "Platform info, totalCoreNum:%d, ubSizePlatForm:%lu.", compileInfo.totalCoreNum,
         compileInfo.ubSizePlatForm);
@@ -336,14 +336,17 @@ static ge::graphStatus TilingPrepare4NonFiniteCheck(gert::TilingParseContext* co
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->totalCoreNum = ascendcPlatform.GetCoreNumAiv();
     OP_CHECK_IF(
-        (compileInfo->totalCoreNum <= 0), OP_LOGE(context, "TilingPrepare4NonFiniteCheck get aiv core num failed."),
+        (compileInfo->totalCoreNum <= 0),
+        OP_LOGE(
+            context, "TilingPrepare4NonFiniteCheck get aiv core num failed."),
         return ge::GRAPH_FAILED);
 
     uint64_t ubSizePlatForm;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSizePlatForm = static_cast<int64_t>(ubSizePlatForm);
     OP_CHECK_IF(
-        (compileInfo->ubSizePlatForm <= 0), OP_LOGE(context, "TilingPrepare4NonFiniteCheck get ub size failed."),
+        (compileInfo->ubSizePlatForm <= 0),
+        OP_LOGE(context, "TilingPrepare4NonFiniteCheck get ub size failed."),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }

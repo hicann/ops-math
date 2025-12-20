@@ -4,8 +4,13 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+
+
+
+
 
 ## 功能说明
 
@@ -35,14 +40,14 @@
   <tr>
     <td>self</td>
     <td>输入张量</td>
-    <td>输入张量，支持非连续的Tensor。</td>
+    <td>输入张量，支持非连续的Tensor，2D~8D。</td>
     <td>INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、BFLOAT16、FLOAT、FLOAT16</td>
     <td>ND</td>
   </tr>
   <tr>
     <td>axis</td>
     <td>输入属性</td>
-    <td>flatten计算的基准轴，取值范围为[-self.dim(), self.dim()-1]。</td>
+    <td>flatten计算的基准轴，取值范围为[-self.dim(), self.dim()-1]，目前仅支持axis = 1。</td>
     <td>INT64</td>
     <td>-</td>
   </tr>

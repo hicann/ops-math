@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include <array>
 #include <vector>
 #include "gtest/gtest.h"
@@ -20,21 +20,15 @@
 using namespace std;
 
 class l2_amax_test : public testing::Test {
-protected:
-    static void SetUpTestCase()
-    {
-        cout << "amax_test SetUp" << endl;
-    }
+ protected:
+  static void SetUpTestCase() { cout << "amax_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "amax_test TearDown" << endl;
-    }
+  static void TearDownTestCase() { cout << "amax_test TearDown" << endl; }
 };
 
-// test self nullptr
-TEST_F(l2_amax_test, aclnnAmax_001_test_nullptr_self)
-{
+//test self nullptr
+TEST_F(l2_amax_test, aclnnAmax_001_test_nullptr_self) {
+
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
     auto out = TensorDesc({1, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -47,9 +41,8 @@ TEST_F(l2_amax_test, aclnnAmax_001_test_nullptr_self)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 }
 
-// test dim nullptr
-TEST_F(l2_amax_test, aclnnAmax_002_test_nullptr_dim)
-{
+//test dim nullptr
+TEST_F(l2_amax_test, aclnnAmax_002_test_nullptr_dim) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND);
     bool keepDim = false;
     auto out = TensorDesc({2, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -62,9 +55,8 @@ TEST_F(l2_amax_test, aclnnAmax_002_test_nullptr_dim)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 }
 
-// test out nullptr
-TEST_F(l2_amax_test, aclnnAmax_003_test_nullptr_out)
-{
+//test out nullptr
+TEST_F(l2_amax_test, aclnnAmax_003_test_nullptr_out) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -78,8 +70,7 @@ TEST_F(l2_amax_test, aclnnAmax_003_test_nullptr_out)
 }
 
 // self为空Tensor
-TEST_F(l2_amax_test, aclnnAmax_004_test_empty_self)
-{
+TEST_F(l2_amax_test, aclnnAmax_004_test_empty_self) {
     auto input = TensorDesc({2, 16, 4, 0}, ACL_FLOAT, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -96,8 +87,7 @@ TEST_F(l2_amax_test, aclnnAmax_004_test_empty_self)
 }
 
 // 正常路径, flaot16
-TEST_F(l2_amax_test, aclnnAmax_005_test_dtype_float16)
-{
+TEST_F(l2_amax_test, aclnnAmax_005_test_dtype_float16) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -113,8 +103,7 @@ TEST_F(l2_amax_test, aclnnAmax_005_test_dtype_float16)
 }
 
 // 正常路径, flaot32
-TEST_F(l2_amax_test, aclnnAmax_006_test_dtype_float32)
-{
+TEST_F(l2_amax_test, aclnnAmax_006_test_dtype_float32) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -130,8 +119,7 @@ TEST_F(l2_amax_test, aclnnAmax_006_test_dtype_float32)
 }
 
 // Aicpu, flaot64
-TEST_F(l2_amax_test, aclnnAmax_007_test_dtype_float64)
-{
+TEST_F(l2_amax_test, aclnnAmax_007_test_dtype_float64) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -147,8 +135,7 @@ TEST_F(l2_amax_test, aclnnAmax_007_test_dtype_float64)
 }
 
 // 正常路径, uint8
-TEST_F(l2_amax_test, aclnnAmax_008_test_dtype_uint8)
-{
+TEST_F(l2_amax_test, aclnnAmax_008_test_dtype_uint8) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_UINT8, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -164,8 +151,7 @@ TEST_F(l2_amax_test, aclnnAmax_008_test_dtype_uint8)
 }
 
 // 正常路径, int8
-TEST_F(l2_amax_test, aclnnAmax_009_test_dtype_int8)
-{
+TEST_F(l2_amax_test, aclnnAmax_009_test_dtype_int8) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_INT8, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -181,8 +167,7 @@ TEST_F(l2_amax_test, aclnnAmax_009_test_dtype_int8)
 }
 
 // Aicpu, int16
-TEST_F(l2_amax_test, aclnnAmax_010_test_dtype_int16)
-{
+TEST_F(l2_amax_test, aclnnAmax_010_test_dtype_int16) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_INT16, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -198,8 +183,7 @@ TEST_F(l2_amax_test, aclnnAmax_010_test_dtype_int16)
 }
 
 // 正常路径, int32
-TEST_F(l2_amax_test, aclnnAmax_011_test_dtype_int32)
-{
+TEST_F(l2_amax_test, aclnnAmax_011_test_dtype_int32) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_INT32, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -215,8 +199,7 @@ TEST_F(l2_amax_test, aclnnAmax_011_test_dtype_int32)
 }
 
 // Aicpu, int64
-TEST_F(l2_amax_test, aclnnAmax_012_test_dtype_int64)
-{
+TEST_F(l2_amax_test, aclnnAmax_012_test_dtype_int64) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_INT64, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -232,8 +215,7 @@ TEST_F(l2_amax_test, aclnnAmax_012_test_dtype_int64)
 }
 
 // 正常路径, bool
-TEST_F(l2_amax_test, aclnnAmax_013_test_dtype_bool)
-{
+TEST_F(l2_amax_test, aclnnAmax_013_test_dtype_bool) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_BOOL, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -249,8 +231,7 @@ TEST_F(l2_amax_test, aclnnAmax_013_test_dtype_bool)
 }
 
 // 正常路径, flaot32, dim为1, keepdim为true
-TEST_F(l2_amax_test, aclnnAmax_014_test_dtype_float32_dim_1_keepdim_true)
-{
+TEST_F(l2_amax_test, aclnnAmax_014_test_dtype_float32_dim_1_keepdim_true) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = true;
@@ -266,8 +247,7 @@ TEST_F(l2_amax_test, aclnnAmax_014_test_dtype_float32_dim_1_keepdim_true)
 }
 
 // 正常路径, flaot32, dim为-1
-TEST_F(l2_amax_test, aclnnAmax_015_test_dtype_float32_dim_neg1)
-{
+TEST_F(l2_amax_test, aclnnAmax_015_test_dtype_float32_dim_neg1) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto dim = IntArrayDesc(vector<int64_t>{-1});
     bool keepDim = true;
@@ -283,8 +263,7 @@ TEST_F(l2_amax_test, aclnnAmax_015_test_dtype_float32_dim_neg1)
 }
 
 // 正常路径, flaot32, dim为-1, 0
-TEST_F(l2_amax_test, aclnnAmax_016_test_dtype_float32_dim_neg1_0)
-{
+TEST_F(l2_amax_test, aclnnAmax_016_test_dtype_float32_dim_neg1_0) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto dim = IntArrayDesc(vector<int64_t>{-1, 0});
     bool keepDim = true;
@@ -300,8 +279,7 @@ TEST_F(l2_amax_test, aclnnAmax_016_test_dtype_float32_dim_neg1_0)
 }
 
 // 正常路径, flaot32, dim为1,1,2
-TEST_F(l2_amax_test, aclnnAmax_017_test_dtype_float32_dim_1_1_2)
-{
+TEST_F(l2_amax_test, aclnnAmax_017_test_dtype_float32_dim_1_1_2) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{1, 1, 2});
     bool keepDim = true;
@@ -316,8 +294,7 @@ TEST_F(l2_amax_test, aclnnAmax_017_test_dtype_float32_dim_1_1_2)
 }
 
 // 正常路径, flaot32, dim为空
-TEST_F(l2_amax_test, aclnnAmax_018_test_dtype_float32_dim_empty)
-{
+TEST_F(l2_amax_test, aclnnAmax_018_test_dtype_float32_dim_empty) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{});
     bool keepDim = true;
@@ -332,25 +309,25 @@ TEST_F(l2_amax_test, aclnnAmax_018_test_dtype_float32_dim_empty)
     ut.TestPrecision();
 }
 
+
 // 测试超过8维tensor
-TEST_F(l2_amax_test, aclnnAmax_019_test_dim_9)
-{
-    auto input = TensorDesc({1, 2, 3, 4, 5, 6, 7, 8, 9}, ACL_BOOL, ACL_FORMAT_ND);
-    auto dim = IntArrayDesc(vector<int64_t>{1});
-    bool keepDim = true;
-    auto out = TensorDesc({1, 1, 3, 4, 5, 6, 7, 8, 9}, ACL_BOOL, ACL_FORMAT_ND);
+TEST_F(l2_amax_test, aclnnAmax_019_test_dim_9) {
+  auto input = TensorDesc({1, 2, 3, 4, 5, 6, 7, 8, 9}, ACL_BOOL, ACL_FORMAT_ND);
+  auto dim = IntArrayDesc(vector<int64_t>{1});
+  bool keepDim = true;
+  auto out = TensorDesc({1, 1, 3, 4, 5, 6, 7, 8, 9}, ACL_BOOL, ACL_FORMAT_ND);
 
-    auto ut = OP_API_UT(aclnnAmax, INPUT(input, dim, keepDim), OUTPUT(out));
 
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+  auto ut = OP_API_UT(aclnnAmax, INPUT(input, dim, keepDim), OUTPUT(out));
+
+  // SAMPLE: only test GetWorkspaceSize
+  uint64_t workspace_size = 0;
+  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+  EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
 // self与out 类型不一致
-TEST_F(l2_amax_test, aclnnAmax_020_test_self_dtype_float32_out_dtype_int16)
-{
+TEST_F(l2_amax_test, aclnnAmax_020_test_self_dtype_float32_out_dtype_int16) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = true;
@@ -365,8 +342,7 @@ TEST_F(l2_amax_test, aclnnAmax_020_test_self_dtype_float32_out_dtype_int16)
 }
 
 // self不在支持类型内
-TEST_F(l2_amax_test, aclnnAmax_021_test_dtype_complex64)
-{
+TEST_F(l2_amax_test, aclnnAmax_021_test_dtype_complex64) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_COMPLEX64, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = true;
@@ -380,9 +356,9 @@ TEST_F(l2_amax_test, aclnnAmax_021_test_dtype_complex64)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
+
 // reduce的dim size为0
-TEST_F(l2_amax_test, aclnnAmax_022_test_reduce_dim_size_zero)
-{
+TEST_F(l2_amax_test, aclnnAmax_022_test_reduce_dim_size_zero) {
     auto input = TensorDesc({2, 0, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -396,9 +372,9 @@ TEST_F(l2_amax_test, aclnnAmax_022_test_reduce_dim_size_zero)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
+
 // dim越界
-TEST_F(l2_amax_test, aclnnAmax_023_test_dim_out_range)
-{
+TEST_F(l2_amax_test, aclnnAmax_023_test_dim_out_range) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{5});
     bool keepDim = true;
@@ -413,8 +389,7 @@ TEST_F(l2_amax_test, aclnnAmax_023_test_dim_out_range)
 }
 
 // out的shape不符合infer shape推导
-TEST_F(l2_amax_test, aclnnAmax_024_test_out_shape_invalid)
-{
+TEST_F(l2_amax_test, aclnnAmax_024_test_out_shape_invalid) {
     auto input = TensorDesc({2, 3, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -429,8 +404,7 @@ TEST_F(l2_amax_test, aclnnAmax_024_test_out_shape_invalid)
 }
 
 // 0维Tensor
-TEST_F(l2_amax_test, aclnnAmax_025_test_zero_dim_tensor)
-{
+TEST_F(l2_amax_test, aclnnAmax_025_test_zero_dim_tensor) {
     auto input = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND);
     auto dim = IntArrayDesc(vector<int64_t>{0});
     bool keepDim = false;
@@ -446,25 +420,23 @@ TEST_F(l2_amax_test, aclnnAmax_025_test_zero_dim_tensor)
 }
 
 // 测试非连续支持
-TEST_F(l2_amax_test, aclnnAmax_026_test_NonContiguous)
-{
-    auto input = TensorDesc({5, 4}, ACL_BOOL, ACL_FORMAT_ND, {1, 5}, 0, {4, 5});
-    auto out = TensorDesc({1, 4}, ACL_BOOL, ACL_FORMAT_ND, {4, 1}, 0, {4, 1});
+TEST_F(l2_amax_test, aclnnAmax_026_test_NonContiguous) {
+  auto input = TensorDesc({5, 4}, ACL_BOOL, ACL_FORMAT_ND, {1, 5}, 0, {4, 5});
+  auto out = TensorDesc({1, 4}, ACL_BOOL, ACL_FORMAT_ND, {4, 1}, 0, {4, 1});
 
-    auto dim = IntArrayDesc(vector<int64_t>{0});
-    bool keepDim = true;
+  auto dim = IntArrayDesc(vector<int64_t>{0});
+  bool keepDim = true;
 
-    auto ut = OP_API_UT(aclnnAmax, INPUT(input, dim, keepDim), OUTPUT(out));
+  auto ut = OP_API_UT(aclnnAmax, INPUT(input, dim, keepDim), OUTPUT(out));
 
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-    ut.TestPrecision();
+  uint64_t workspace_size = 0;
+  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+  EXPECT_EQ(aclRet, ACL_SUCCESS);
+  ut.TestPrecision();
 }
 
 // 正常路径, flaot32, dim为1, format为nchw
-TEST_F(l2_amax_test, aclnnAmax_027_test_dtype_float32_dim_1_format_nchw)
-{
+TEST_F(l2_amax_test, aclnnAmax_027_test_dtype_float32_dim_1_format_nchw) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_FLOAT, ACL_FORMAT_NCHW);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = true;
@@ -480,8 +452,7 @@ TEST_F(l2_amax_test, aclnnAmax_027_test_dtype_float32_dim_1_format_nchw)
 }
 
 // 正常路径, flaot32, dim为1, format为nhwc
-TEST_F(l2_amax_test, aclnnAmax_028_test_dtype_float32_dim_1_format_nhwc)
-{
+TEST_F(l2_amax_test, aclnnAmax_028_test_dtype_float32_dim_1_format_nhwc) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_FLOAT, ACL_FORMAT_NHWC);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = true;
@@ -497,8 +468,7 @@ TEST_F(l2_amax_test, aclnnAmax_028_test_dtype_float32_dim_1_format_nhwc)
 }
 
 // 正常路径, flaot32, dim为1, format为hwcn
-TEST_F(l2_amax_test, aclnnAmax_029_test_dtype_float32_dim_1_format_hwcn)
-{
+TEST_F(l2_amax_test, aclnnAmax_029_test_dtype_float32_dim_1_format_hwcn) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_FLOAT, ACL_FORMAT_HWCN);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = true;
@@ -514,8 +484,7 @@ TEST_F(l2_amax_test, aclnnAmax_029_test_dtype_float32_dim_1_format_hwcn)
 }
 
 // 正常路径, flaot32, dim为1, format为ndhwc
-TEST_F(l2_amax_test, aclnnAmax_030_test_dtype_float32_dim_1_format_ndhwc)
-{
+TEST_F(l2_amax_test, aclnnAmax_030_test_dtype_float32_dim_1_format_ndhwc) {
     auto input = TensorDesc({2, 16, 4, 4, 5}, ACL_FLOAT, ACL_FORMAT_NDHWC);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = true;
@@ -531,8 +500,7 @@ TEST_F(l2_amax_test, aclnnAmax_030_test_dtype_float32_dim_1_format_ndhwc)
 }
 
 // 正常路径, flaot32, dim为1, format为ncdhw
-TEST_F(l2_amax_test, aclnnAmax_031_test_dtype_float32_dim_1_format_ncdhw)
-{
+TEST_F(l2_amax_test, aclnnAmax_031_test_dtype_float32_dim_1_format_ncdhw) {
     auto input = TensorDesc({2, 16, 4, 4, 5}, ACL_FLOAT, ACL_FORMAT_NCDHW);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = true;
@@ -547,13 +515,13 @@ TEST_F(l2_amax_test, aclnnAmax_031_test_dtype_float32_dim_1_format_ncdhw)
     ut.TestPrecision();
 }
 
-// 特殊值 Nan
-//  TEST_F(l2_amax_test, aclnnAmax_032_test_dtype_float32_special_value_nan) {
-//      auto input = TensorDesc({6, 1}, ACL_FLOAT, ACL_FORMAT_ND)
-//                              .Value(vector<float>{1, 0, NAN, 0, 1, -1});
-//      auto dim = IntArrayDesc(vector<int64_t>{0});
-//      bool keepDim = true;
-//      auto out = TensorDesc({1, 1}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+//特殊值 Nan
+// TEST_F(l2_amax_test, aclnnAmax_032_test_dtype_float32_special_value_nan) {
+//     auto input = TensorDesc({6, 1}, ACL_FLOAT, ACL_FORMAT_ND)
+//                             .Value(vector<float>{1, 0, NAN, 0, 1, -1});
+//     auto dim = IntArrayDesc(vector<int64_t>{0});
+//     bool keepDim = true;
+//     auto out = TensorDesc({1, 1}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
 
 //     auto ut = OP_API_UT(aclnnAmax, INPUT(input, dim, keepDim), OUTPUT(out));
 
@@ -564,13 +532,13 @@ TEST_F(l2_amax_test, aclnnAmax_031_test_dtype_float32_dim_1_format_ncdhw)
 //     ut.TestPrecision();
 // }
 
-// 特殊值 inf、-inf
-//  TEST_F(l2_amax_test, aclnnAmax_032_test_dtype_float32_special_value_inf) {
-//      auto input = TensorDesc({6, 1}, ACL_FLOAT, ACL_FORMAT_ND)
-//                              .Value(vector<float>{INFINITY, -INFINITY, 0, 0, 1, -1});
-//      auto dim = IntArrayDesc(vector<int64_t>{0});
-//      bool keepDim = true;
-//      auto out = TensorDesc({1, 1}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+//特殊值 inf、-inf
+// TEST_F(l2_amax_test, aclnnAmax_032_test_dtype_float32_special_value_inf) {
+//     auto input = TensorDesc({6, 1}, ACL_FLOAT, ACL_FORMAT_ND)
+//                             .Value(vector<float>{INFINITY, -INFINITY, 0, 0, 1, -1});
+//     auto dim = IntArrayDesc(vector<int64_t>{0});
+//     bool keepDim = true;
+//     auto out = TensorDesc({1, 1}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
 
 //     auto ut = OP_API_UT(aclnnAmax, INPUT(input, dim, keepDim), OUTPUT(out));
 
@@ -581,8 +549,7 @@ TEST_F(l2_amax_test, aclnnAmax_031_test_dtype_float32_dim_1_format_ncdhw)
 //     ut.TestPrecision();
 // }
 
-TEST_F(l2_amax_test, aclnnAmax_test_dtype_bf16)
-{
+TEST_F(l2_amax_test, aclnnAmax_test_dtype_bf16) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_BF16, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;
@@ -596,8 +563,7 @@ TEST_F(l2_amax_test, aclnnAmax_test_dtype_bf16)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_amax_test, ascend910B2_aclnnAmax_test_dtype_bf16)
-{
+TEST_F(l2_amax_test, ascend910B2_aclnnAmax_test_dtype_bf16) {
     auto input = TensorDesc({2, 16, 4, 4}, ACL_BF16, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto dim = IntArrayDesc(vector<int64_t>{1});
     bool keepDim = false;

@@ -1,13 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * This file is a part of the CANN Open Software.
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-
 #ifndef TILING_FUNCTION_DEF_H
 #define TILING_FUNCTION_DEF_H
 
@@ -32,8 +31,7 @@ constexpr uint32_t COEFFICIENT_1 = 128;
 
 class NonFiniteCheckTiling {
 public:
-    NonFiniteCheckTiling()
-    {
+    NonFiniteCheckTiling() {
         compileInfo.totalCoreNum = 48;
         compileInfo.ubSizePlatForm = 196608;
     };
@@ -43,8 +41,7 @@ public:
 
 public:
     template <typename T1, typename T2>
-    inline T1 CeilDiv(T1 a, T2 b) const
-    {
+    inline T1 CeilDiv(T1 a, T2 b) const {
         T1 bTemp(b);
         return bTemp == 0 ? a : (a + bTemp - 1) / bTemp;
     };
@@ -77,9 +74,8 @@ private:
     uint32_t needCoreNum = 0;
 };
 
-void NonFiniteCheckTiling::Init(
-    const std::vector<std::vector<uint64_t>>& shapeInfos, const ge::DataType dtypeIn /*= ge::DT_FLOAT*/)
-{
+void NonFiniteCheckTiling::Init(const std::vector<std::vector<uint64_t>>& shapeInfos,
+                                const ge::DataType dtypeIn /*= ge::DT_FLOAT*/) {
     InitTilingDataItems();
     dataType = dtypeIn;
     if (dataType == ge::DT_FLOAT) {
@@ -99,18 +95,19 @@ void NonFiniteCheckTiling::Init(
         totalDataCountAligned += tensorDataCountAlignedList[totalTensorCount];
         totalTensorCount++;
     }
+
+    // printf("dataType:%d, totalTensorCount:%d, totalDataCountAligned:%ld.", static_cast<int32_t>(dataType),
+    //        totalTensorCount, totalDataCountAligned);
 }
 
-uint32_t NonFiniteCheckTiling::RunBigKernelTiling()
-{
+uint32_t NonFiniteCheckTiling::RunBigKernelTiling() {
     CalcNeedCoreNum();
     AssignDataToEachCore();
     DivideUbMemory();
     return needCoreNum;
 }
 
-void NonFiniteCheckTiling::InitTilingDataItems()
-{
+void NonFiniteCheckTiling::InitTilingDataItems() {
     tensorDataCountList = tilingData.tensorDataCountList;
     tensorStartList = tilingData.tensorStartList;
     tensorEndList = tilingData.tensorEndList;
@@ -118,8 +115,7 @@ void NonFiniteCheckTiling::InitTilingDataItems()
     tensorEndOffsetList = tilingData.tensorEndOffsetList;
 }
 
-bool NonFiniteCheckTiling::CalcNeedCoreNum()
-{
+bool NonFiniteCheckTiling::CalcNeedCoreNum() {
     needCoreNum = uint32_t(totalDataCountAligned / elementsPerBlock);
     if (needCoreNum > uint32_t(compileInfo.totalCoreNum)) {
         needCoreNum = compileInfo.totalCoreNum;
@@ -131,12 +127,11 @@ bool NonFiniteCheckTiling::CalcNeedCoreNum()
     }
 }
 
-void NonFiniteCheckTiling::AssignDataToEachCore()
-{
+void NonFiniteCheckTiling::AssignDataToEachCore() {
     int64_t blockCount = totalDataCountAligned / elementsPerBlock;
     // Divisible, representing the amount of data each core needs to process.
     int64_t tempPerCoreCount = blockCount / needCoreNum * elementsPerBlock;
-    int64_t remainderCount = blockCount % needCoreNum; // remainder.
+    int64_t remainderCount = blockCount % needCoreNum;  // remainder.
     uint16_t coreIndex = 0;
     int64_t dataCount = 0;
     int64_t curCmpCount = 0;
@@ -165,7 +160,7 @@ void NonFiniteCheckTiling::AssignDataToEachCore()
         if (cursorPos < tensorDataCountAlignedList[i]) {
             tensorStartList[coreIndex] = i;
             tensorStartOffsetList[coreIndex] = cursorPos;
-            --i; // The next loop continues to allocate the current tensor
+            --i;  // The next loop continues to allocate the current tensor
         } else if (coreIndex != needCoreNum) {
             tensorStartList[coreIndex] = i + 1;
             tensorStartOffsetList[coreIndex] = 0;
@@ -180,8 +175,7 @@ void NonFiniteCheckTiling::AssignDataToEachCore()
     }
 }
 
-bool NonFiniteCheckTiling::DivideUbMemory()
-{
+bool NonFiniteCheckTiling::DivideUbMemory() {
     // A 32-byte alignment is performed on the UB available space.
     uint32_t canUseUbSize = uint32_t(compileInfo.ubSizePlatForm / BYTE_BLOCK * BYTE_BLOCK);
     uint32_t dtypeSizeTemp = dataTypeSize;
@@ -200,8 +194,7 @@ bool NonFiniteCheckTiling::DivideUbMemory()
     }
 }
 
-uint32_t NonFiniteCheckTiling::GetReduceRetValSize(uint32_t srcDataSize, uint32_t dtypeSize) const
-{
+uint32_t NonFiniteCheckTiling::GetReduceRetValSize(uint32_t srcDataSize, uint32_t dtypeSize) const {
     /* Calculate the space size of the intermediate variable workLocal and
         the result variable dstLocal of ReduceMax and ReduceMin. */
     uint8_t perBlockCount = BYTE_BLOCK / dtypeSize;
@@ -210,8 +203,7 @@ uint32_t NonFiniteCheckTiling::GetReduceRetValSize(uint32_t srcDataSize, uint32_
     return iter1AlignEnd * dtypeSize;
 }
 
-uint64_t NonFiniteCheckTiling::GetTilingKeyVal() const
-{
+uint64_t NonFiniteCheckTiling::GetTilingKeyVal() const {
     switch (dataType) {
         case ge::DT_FLOAT:
             return static_cast<uint64_t>(NonFiniteCheckTilingKey::KEY_FLOAT);
@@ -224,8 +216,7 @@ uint64_t NonFiniteCheckTiling::GetTilingKeyVal() const
     }
 }
 
-void NonFiniteCheckTiling::FillTilingData(NonFiniteCheckTilingData* tilingDataPtr)
-{
+void NonFiniteCheckTiling::FillTilingData(NonFiniteCheckTilingData* tilingDataPtr) {
     std::ostringstream tempOSS;
     tempOSS << "maxProcCount: " << maxProcCount << ", tempValUbSize: " << tempValUbSize << "." << std::endl
             << "tensorDataCountList: ";
@@ -250,6 +241,6 @@ void NonFiniteCheckTiling::FillTilingData(NonFiniteCheckTilingData* tilingDataPt
     memcpy(tilingDataPtr, &tilingData, sizeof(NonFiniteCheckTilingData));
 }
 
-} // namespace NonFiniteCheckTest
+}  // namespace NonFiniteCheckTest
 
-#endif // TILING_FUNCTION_DEF_H
+#endif  // TILING_FUNCTION_DEF_H

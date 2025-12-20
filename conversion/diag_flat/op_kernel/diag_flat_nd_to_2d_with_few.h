@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file diag_flat_nd_to_2d_with_few.h
@@ -23,7 +23,8 @@ using namespace AscendC;
 namespace DiagFlat {
 
 template <typename T>
-class DiagFlatNDTo2DWithFew {
+class DiagFlatNDTo2DWithFew
+{
 public:
     __aicore__ inline DiagFlatNDTo2DWithFew(){};
     __aicore__ inline void Init(GM_ADDR input, GM_ADDR output, GM_ADDR workspace, const DiagV2TilingData* tilingData);
@@ -184,9 +185,7 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::Init(
     gmOutputInt32_.SetGlobalBuffer((__gm__ int32_t*)output);
     gmOutputInt16_.SetGlobalBuffer((__gm__ int16_t*)output);
     // init output
-    if (inputNum_ + offset_ != 1) {
-        InitGm(output, workspace);
-    }
+    InitGm(output, workspace);
 
     // init gmInput_ gmOutput_
     gmInput_.SetGlobalBuffer((__gm__ T*)input);
@@ -228,8 +227,7 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::CopyOut(int64_t iter)
     int64_t gmOffset = 0;
     int64_t width = inputNum_ + abs(offset_);
     for (int64_t i = 0; i < ONCE_HANDLE_NUM; i++) {
-        PipeBarrier<PIPE_MTE3>();
-        ;
+        PipeBarrier<PIPE_MTE3>();;
         int64_t rowIdx = iter * ONCE_HANDLE_NUM + i;
         gmOffset = width * rowIdx + (offset_ > 0 ? offset_ : 0) + iter * ONCE_HANDLE_NUM;
         DataCopy(gmOutput_[gmOffset], ubOutput[ONCE_HANDLE_NUM * i], ONCE_HANDLE_NUM);
@@ -257,7 +255,9 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::CopyOutTail(int64_t iter)
                 DataCopyPad(gmOutput_[gmOffset], ubOutput, copyParams);
             } else {
                 LocalTensor<int32_t> ubOutputCast = ubOutput.template ReinterpretCast<int32_t>();
-                DataCopyPad(gmOutputInt32_[gmOffset * 2], ubOutputCast, copyParams);
+                DataCopyPad(
+                    gmOutputInt32_[((offset_ > 0 ? 0 : abs(offset_)) * (inputNum_ + abs(offset_)) + gmOffset) * 2],
+                    ubOutputCast, copyParams);
             }
         } else {
             int64_t rowBack = iter == 0 ? 0 : ONCE_HANDLE_NUM - inputNum_ % ONCE_HANDLE_NUM;
@@ -265,7 +265,6 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::CopyOutTail(int64_t iter)
             int64_t offset = iter == 0 ? 0 : inputNum_ % ONCE_HANDLE_NUM;
             for (int64_t i = 0; i < ONCE_HANDLE_NUM; i++) {
                 PipeBarrier<PIPE_MTE3>();
-                ;
                 int64_t rowIdx = iter * ONCE_HANDLE_NUM + i - rowBack;
                 gmOffset = width * rowIdx + (offset_ > 0 ? offset_ : 0) + iterBack * ONCE_HANDLE_NUM + offset;
                 DataCopy(gmOutput_[gmOffset], ubOutput[ONCE_HANDLE_NUM * i], ONCE_HANDLE_NUM);
@@ -274,7 +273,6 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::CopyOutTail(int64_t iter)
     } else {
         for (int64_t i = 0; i < ONCE_HANDLE_NUM; i++) {
             PipeBarrier<PIPE_MTE3>();
-            ;
             int64_t rowIdx = iter * ONCE_HANDLE_NUM + i;
             gmOffset = width * rowIdx + (offset_ > 0 ? offset_ : 0) + iter * ONCE_HANDLE_NUM;
             DataCopy(gmOutput_[gmOffset], ubOutput[ONCE_HANDLE_NUM * i], ONCE_HANDLE_NUM);

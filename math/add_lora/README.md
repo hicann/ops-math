@@ -4,8 +4,13 @@
 
 |产品             |  是否支持  |
 |:-------------------------|:----------:|
+|  <term>昇腾910_95 AI处理器</term>   |     ×    |
 |  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     ×    |
 |  <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>     |     √    |
+
+|  <term>Atlas 推理系列产品 </term>    |     √    |
+
+
 
 ## 功能说明
 
@@ -74,7 +79,7 @@
       <td>输入</td>
       <td>公式中的输入weightB。</td>
       <td>FLOAT16</td>
-      <td>ND</td>
+      <td>ND、NZ</td>
     </tr>
      <tr>
       <td>indices</td>
@@ -84,11 +89,11 @@
       <td>ND</td>
     </tr>
     <tr>
-      <td>weightA</td>
+      <td>weightAOptional</td>
       <td>输入</td>
       <td>公式中的输入weightA。</td>
       <td>FLOAT16</td>
-      <td>ND</td>
+      <td>ND、NZ</td>
     </tr>
     <tr>
       <td>layerIdx</td>
@@ -126,6 +131,8 @@
       <td>ND</td>
     </tr>
   </tbody></table>
+
+- <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>：weightB和weightAOptional的数据格式支持ND。
 
 ## 约束说明
 

@@ -1,0 +1,23 @@
+{
+    "Round":{
+        "opInfo":{
+            "computeCost":"100",
+            "engine":"DNN_VM_AICPU",
+            "flagAsync":"False",
+            "flagPartial":"False",
+            "functionName":"RunCpuKernel",
+            "kernelSo":"libmath_aicpu_kernels.so",
+            "opKernelLib":"CUSTAICPUKernel",
+            "userDefined":"True",
+            "workspaceSize":"100"
+        },
+        "input0": {
+            "type": "DT_FLOAT16,DT_FLOAT,DT_INT32,DT_INT64,DT_DOUBLE",
+            "name": "x"
+        },
+        "output0": {
+            "type": "DT_FLOAT16,DT_FLOAT,DT_INT32,DT_INT64,DT_DOUBLE",
+            "name": "y"
+        }
+    }
+}

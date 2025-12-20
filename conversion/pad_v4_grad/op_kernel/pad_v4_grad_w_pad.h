@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file pad_v4_grad_w_pad.h
@@ -43,6 +43,10 @@ public:
         TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue, const int64_t copyCount, const int64_t offset);
     __aicore__ inline void CopyWs2Out(
         TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue, const int64_t copyCount, const int64_t offset);
+    __aicore__ inline void CopyAndComputeWGrad(
+        TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue);
+    __aicore__ inline void CopyMiddleToOut(
+        TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue);
 
 private:
     TPipe* pipe;
@@ -54,6 +58,8 @@ private:
     TBuf<TPosition::VECCALC> smallFloatCastResBuf;
     TBuf<TPosition::VECCALC> largeFloatCastResBuf;
     event_t MTE3ToMTE2Event = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_MTE2));
+    event_t MTE2ToSEvent = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_S));
+    event_t SToMTE3Event = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_MTE3));
     LocalTensor<float> smallFloatTenosr;
     LocalTensor<float> largeFloatTenosr;
 };
@@ -225,6 +231,116 @@ __aicore__ inline void PadV4GradPadW<T>::Bf16ComputeWGrad(
 }
 
 template <typename T>
+__aicore__ inline void PadV4GradPadW<T>::CopyAndComputeWGrad(
+    TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue)
+{
+    DataCopyPadExtParams<T> padParams = {false, 0, 0, 0};
+    int64_t wPad1CountAlign= this->CeilAlign(2 * this->wPad1 + 1, this->perBlockCount);
+    bool isWPad1Full = this->wPad1 == (this->outWidth - 1);
+    bool isWPad2Full = this->wPad2 == (this->outWidth - 1);
+    for (size_t loop = 0; loop < this->loopNC; loop++) {
+        int64_t gmXOffset1 = loop * this->batchStride + this->ncOffset * this->batchStride;
+        int64_t gmYOffset1 = loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
+        int64_t gmXOffset2 =
+            (this->width - 2 * this->wPad2 - 1) + loop * this->batchStride + this->ncOffset * this->batchStride;
+
+        int64_t gmYOffset2 = (this->outWidth - this->wPad2 - 1) + loop * this->outBatchStride +
+                        this->ncOffset * this->outBatchStride;
+        // wpad1
+        DataCopyExtParams copyParamswPad1 = {1, (uint32_t)((2 * this->wPad1 + 1) * sizeof(T)), 0, 0, 0};
+        DataCopyExtParams copyParamswPad2 = {1, (uint32_t)((2 * this->wPad2 + 1) * sizeof(T)), 0, 0, 0};
+        LocalTensor<T> xLocal = inQue.AllocTensor<T>();
+        DataCopyPad(xLocal, this->mGmX[gmXOffset1], copyParamswPad1, padParams);
+        DataCopyPad(xLocal[wPad1CountAlign], this->mGmX[gmXOffset2], copyParamswPad2, padParams);
+        inQue.EnQue(xLocal);
+        xLocal = inQue.DeQue<T>();
+        LocalTensor<T> yLocal = outQue.AllocTensor<T>();
+        SetFlag<HardEvent::MTE2_S>(MTE2ToSEvent);
+        WaitFlag<HardEvent::MTE2_S>(MTE2ToSEvent);
+        T val1;
+        T val2;
+        yLocal.SetValue(0, xLocal.GetValue(this->wPad1));
+        for (size_t i = 0; i < this->wPad1; i++) {
+            val1 = xLocal.GetValue(i);
+            val2 = xLocal.GetValue(2 * this->wPad1 - i);
+            yLocal.SetValue(this->wPad1 - i, (T)((float)val1 + (float)val2));
+        }
+        int64_t overLapCont = (int64_t)this->wPad1 + this->wPad2 + 2 - this->outWidth;
+        overLapCont = overLapCont > 0 ? overLapCont : 0;
+        overLapCont = isWPad2Full ? (this->wPad1 + 1) : overLapCont;
+        overLapCont = isWPad1Full ? this->wPad2 : overLapCont;
+        int64_t overLapOffset = this->wPad1 + 1 - overLapCont;
+        overLapOffset = isWPad1Full ? overLapOffset - 1 : overLapOffset;
+        overLapOffset = isWPad2Full ? 0 : overLapOffset;
+        for (size_t i = 0; i < overLapCont; i++) {
+            val1 = yLocal.GetValue(i + overLapOffset);
+            val2 = xLocal.GetValue(wPad1CountAlign + 2 * this->wPad2 - i);
+            yLocal.SetValue(wPad1CountAlign + i, (T)((float)val1 + (float)val2));
+        }
+        for (size_t i = overLapCont; i < this->wPad2; i++) {
+            val1 = xLocal.GetValue(wPad1CountAlign + i);
+            val2 = xLocal.GetValue(wPad1CountAlign + 2 * this->wPad2 - i);
+            yLocal.SetValue(wPad1CountAlign + i, (T)((float)val1 + (float)val2));
+        }
+        if (isWPad1Full) {
+            yLocal.SetValue(wPad1CountAlign + this->wPad2, yLocal.GetValue(this->wPad1));
+        } else {
+            yLocal.SetValue(wPad1CountAlign + this->wPad2, xLocal.GetValue(wPad1CountAlign + this->wPad2));
+        }
+        
+        SetFlag<HardEvent::S_MTE3>(SToMTE3Event);
+        WaitFlag<HardEvent::S_MTE3>(SToMTE3Event);
+        outQue.EnQue(yLocal);
+        inQue.FreeTensor(xLocal);
+        yLocal = outQue.DeQue<T>();
+        DataCopyExtParams copyParamswPad1Out = {1, (uint32_t)((this->wPad1 + 1) * sizeof(T)), 0, 0, 0};
+        DataCopyExtParams copyParamswPad2Out = {1, (uint32_t)((this->wPad2 + 1) * sizeof(T)), 0, 0, 0};
+        DataCopyPad(this->mGmY[gmYOffset1], yLocal, copyParamswPad1Out);
+        PipeBarrier<PIPE_MTE3>();
+        DataCopyPad(this->mGmY[gmYOffset2], yLocal[wPad1CountAlign], copyParamswPad2Out);
+        outQue.FreeTensor(yLocal);
+    }
+}
+
+template <typename T>
+__aicore__ inline void PadV4GradPadW<T>::CopyMiddleToOut(
+    TQue<QuePosition::VECIN, BUFFER_NUM>& inQue, TQue<QuePosition::VECOUT, BUFFER_NUM>& outQue)
+{
+    DataCopyPadExtParams<T> padParams = {false, 0, 0, 0};
+    int64_t middleCont = (int64_t)this->outWidth - this->wPad1 - this->wPad2 - 2;
+    middleCont = middleCont > 0 ? middleCont : 0;
+    if (middleCont > 0) {
+        int64_t copyTimesOneLine = this->CeilDiv(middleCont, this->ubFactorElement);
+        
+        for (size_t loop = 0; loop < this->loopNC; loop++) {
+            int64_t copyCount = this->ubFactorElement;
+            for (size_t time = 0; time < copyTimesOneLine; time++) {
+                if (time == copyTimesOneLine - 1) {
+                    copyCount = middleCont - (copyTimesOneLine - 1) * this->ubFactorElement;
+                }
+                int64_t gmXOffset3 = 2 * this->wPad1 + 1 + time * this->ubFactorElement + loop * this->batchStride +
+                                this->ncOffset * this->batchStride;
+                int64_t gmYOffset3 = this->wPad1 + 1 + time * this->ubFactorElement +
+                                loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
+                DataCopyExtParams copyParams = {1, (uint32_t)(copyCount * sizeof(T)), 0, 0, 0};
+                LocalTensor<T> xLocal = xInQueue2.AllocTensor<T>();
+                DataCopyPad(xLocal, this->mGmX[gmXOffset3], copyParams, padParams);
+                xInQueue2.EnQue(xLocal);
+                xLocal = xInQueue2.DeQue<T>();
+                LocalTensor<T> yLocal = yOutQueue2.AllocTensor<T>();
+                uint32_t copyCountAlign = this->CeilAlign(copyCount, this->perBlockCount);
+                DataCopy(yLocal, xLocal, copyCountAlign);
+                yOutQueue2.EnQue(yLocal);
+                xInQueue2.FreeTensor(xLocal);
+                yLocal = yOutQueue2.DeQue<T>();
+                DataCopyPad(this->mGmY[gmYOffset3], yLocal, copyParams);
+                yOutQueue2.FreeTensor(yLocal);
+            }
+        }
+    }
+}
+
+template <typename T>
 __aicore__ inline void PadV4GradPadW<T>::Process()
 {
     this->batchStride = this->width;
@@ -324,82 +440,8 @@ __aicore__ inline void PadV4GradPadW<T>::Process()
             }
         }
     } else {
-        if (this->wPad1 < W_PAD_LOWER_LIMIT && this->wPad2 < W_PAD_LOWER_LIMIT) {
-            dataCountOneLine = this->width - 2 * calCount;
-            copyTimesOneLine = this->CeilDiv(dataCountOneLine, this->ubFactorElement);
-            for (size_t loop = 0; loop < this->loopNC; loop++) {
-                copyCount = this->ubFactorElement;
-                gmXOffset1 = loop * this->batchStride + this->ncOffset * this->batchStride;
-                gmXOffset2 = (this->width - calCount) + loop * this->batchStride + this->ncOffset * this->batchStride;
-                workspaceOffset1 = this->blockIdx * 2 * calCount;
-                workspaceOffset2 = this->wPad1 + this->blockIdx * 2 * calCount;
-                workspaceOffset3 = calCount + this->blockIdx * 2 * calCount;
-                gmYOffset1 = loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
-                gmYOffset3 = (this->outWidth - calCount + this->wPad2) + loop * this->outBatchStride +
-                             this->ncOffset * this->outBatchStride;
-                CopyGm2UB(xInQueue1, gmXOffset1, gmXOffset2, calCount);
-                ComputeWGrad(xInQueue1, yOutQueue1, calCount);
-                Copy2Ws(yOutQueue1, 2 * calCount, workspaceOffset1);
-                SetFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
-                WaitFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
-                CopyInFromWs(xInQueue1, calCount - this->wPad1, workspaceOffset2);
-                Compute(xInQueue1, yOutQueue1, calCount - this->wPad1);
-                CopyWs2Out(yOutQueue1, calCount - this->wPad1, gmYOffset1);
-                CopyInFromWs(xInQueue1, calCount - this->wPad2, workspaceOffset3);
-                Compute(xInQueue1, yOutQueue1, calCount - this->wPad2);
-                CopyWs2Out(yOutQueue1, calCount - this->wPad2, gmYOffset3);
-                for (size_t time = 0; time < copyTimesOneLine; time++) {
-                    if (time == copyTimesOneLine - 1) {
-                        copyCount = dataCountOneLine - (copyTimesOneLine - 1) * this->ubFactorElement;
-                    }
-                    gmXOffset3 = calCount + time * this->ubFactorElement + loop * this->batchStride +
-                                 this->ncOffset * this->batchStride;
-                    gmYOffset2 = (calCount - this->wPad1) + time * this->ubFactorElement + loop * this->outBatchStride +
-                                 this->ncOffset * this->outBatchStride;
-                    CopyIn(copyCount, gmXOffset3);
-                    Compute(xInQueue2, yOutQueue2, copyCount);
-                    CopyOut(copyCount, gmYOffset2);
-                }
-            }
-        } else {
-            dataCountOneLine = this->width - 2 * largePadcalCount;
-            copyTimesOneLine = this->CeilDiv(dataCountOneLine, this->ubFactorElement);
-            for (size_t loop = 0; loop < this->loopNC; loop++) {
-                copyCount = this->ubFactorElement;
-                gmXOffset1 = loop * this->batchStride + this->ncOffset * this->batchStride;
-                gmXOffset2 =
-                    (this->width - largePadcalCount) + loop * this->batchStride + this->ncOffset * this->batchStride;
-                workspaceOffset1 = this->blockIdx * 2 * largePadcalCount;
-                workspaceOffset2 = this->wPad1 + this->blockIdx * 2 * largePadcalCount;
-                workspaceOffset3 = largePadcalCount + this->blockIdx * 2 * largePadcalCount;
-                gmYOffset1 = loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
-                gmYOffset3 = (this->outWidth - largePadcalCount + this->wPad2) + loop * this->outBatchStride +
-                             this->ncOffset * this->outBatchStride;
-                CopyGm2UB(xInQueue2, gmXOffset1, gmXOffset2, largePadcalCount);
-                ComputeWGrad(xInQueue2, yOutQueue2, largePadcalCount);
-                Copy2Ws(yOutQueue2, 2 * largePadcalCount, workspaceOffset1);
-                SetFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
-                WaitFlag<HardEvent::MTE3_MTE2>(MTE3ToMTE2Event);
-                CopyInFromWs(xInQueue2, largePadcalCount - this->wPad1, workspaceOffset2);
-                Compute(xInQueue2, yOutQueue2, largePadcalCount - this->wPad1);
-                CopyWs2Out(yOutQueue2, largePadcalCount - this->wPad1, gmYOffset1);
-                CopyInFromWs(xInQueue2, largePadcalCount - this->wPad2, workspaceOffset3);
-                Compute(xInQueue2, yOutQueue2, largePadcalCount - this->wPad2);
-                CopyWs2Out(yOutQueue2, largePadcalCount - this->wPad2, gmYOffset3);
-                for (size_t time = 0; time < copyTimesOneLine; time++) {
-                    if (time == copyTimesOneLine - 1) {
-                        copyCount = dataCountOneLine - (copyTimesOneLine - 1) * this->ubFactorElement;
-                    }
-                    gmXOffset3 = largePadcalCount + time * this->ubFactorElement + loop * this->batchStride +
-                                 this->ncOffset * this->batchStride;
-                    gmYOffset2 = (largePadcalCount - this->wPad1) + time * this->ubFactorElement +
-                                 loop * this->outBatchStride + this->ncOffset * this->outBatchStride;
-                    CopyIn(copyCount, gmXOffset3);
-                    Compute(xInQueue2, yOutQueue2, copyCount);
-                    CopyOut(copyCount, gmYOffset2);
-                }
-            }
-        }
+        CopyAndComputeWGrad(xInQueue2, yOutQueue2);
+        CopyMiddleToOut(xInQueue2, yOutQueue2);
     }
 }
 #endif // _PAD_V4_GRAD_W_PAD_H_

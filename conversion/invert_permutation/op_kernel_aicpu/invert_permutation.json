@@ -1,0 +1,25 @@
+{
+    "InvertPermutation":{
+        "opInfo":{
+            "computeCost":"100",
+            "engine":"DNN_VM_AICPU",
+            "flagAsync":"False",
+            "flagPartial":"False",
+            "functionName":"RunCpuKernel",
+            "kernelSo":"libmath_aicpu_kernels.so",
+            "opKernelLib":"CUSTAICPUKernel",
+            "userDefined":"True",
+            "workspaceSize":"100"
+        },
+        "input0": {
+            "name": "x",
+            "type": "DT_INT32,DT_INT64"
+            
+        },
+        "output0": {
+            "name": "y",
+            "type": "DT_INT32,DT_INT64"
+           
+        }
+    }
+}

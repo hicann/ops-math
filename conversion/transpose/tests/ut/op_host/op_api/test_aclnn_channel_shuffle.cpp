@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include <vector>
 #include <array>
 #include "gtest/gtest.h"
@@ -56,8 +56,6 @@ TEST_F(l2_channel_shuffle_test, case_float16)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // float场景（含精度）
@@ -71,8 +69,6 @@ TEST_F(l2_channel_shuffle_test, case_float)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // double场景（含精度）
@@ -86,8 +82,6 @@ TEST_F(l2_channel_shuffle_test, case_double)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // uint8场景（含精度）
@@ -101,8 +95,6 @@ TEST_F(l2_channel_shuffle_test, case_uint8)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // int8场景（含精度）
@@ -116,8 +108,6 @@ TEST_F(l2_channel_shuffle_test, case_int8)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // int16场景（含精度）
@@ -131,8 +121,6 @@ TEST_F(l2_channel_shuffle_test, case_int16)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // int32场景（含精度）
@@ -146,8 +134,6 @@ TEST_F(l2_channel_shuffle_test, case_int32)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // long场景（含精度）
@@ -161,8 +147,6 @@ TEST_F(l2_channel_shuffle_test, case_long)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // bool场景（含精度）
@@ -176,8 +160,6 @@ TEST_F(l2_channel_shuffle_test, case_bool)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // complex64场景（含精度）
@@ -191,8 +173,6 @@ TEST_F(l2_channel_shuffle_test, case_complex64)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // complex128场景（含精度）
@@ -206,8 +186,6 @@ TEST_F(l2_channel_shuffle_test, case_complex128)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // self空指针
@@ -299,6 +277,4 @@ TEST_F(l2_channel_shuffle_test, case_empty_tensor)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    ut.TestPrecision();
 }

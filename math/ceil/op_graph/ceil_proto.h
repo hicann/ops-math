@@ -31,11 +31,12 @@ namespace ge {
 *@par Third-party framework compatibility
 *Compatible with the TensorFlow operator Ceil.
 */
-REG_OP(Ceil)
-    .INPUT(x, TensorType({FloatingDataType, DT_BF16}))
-    .OUTPUT(y, TensorType({FloatingDataType, DT_BF16}))
-    .OP_END_FACTORY_REG(Ceil)
+  REG_OP(Ceil)
+      .INPUT(x, TensorType({FloatingDataType, DT_BF16}))
+      .OUTPUT(y, TensorType({FloatingDataType, DT_BF16}))
+      .OP_END_FACTORY_REG(Ceil)
 
 } // namespace ge
 
 #endif // OPS_OP_PROTO_CEIL_H_
+

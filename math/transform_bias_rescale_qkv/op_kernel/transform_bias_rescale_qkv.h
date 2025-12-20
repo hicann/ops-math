@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file transform_bias_rescale_qkv.h
@@ -30,7 +30,8 @@ constexpr int32_t MAX_BLOCK_CNT = 4095;
 constexpr int32_t DATA_BLOCK = 32;
 
 template <typename T>
-class TransformBiasRescaleQkvND {
+class TransformBiasRescaleQkvND
+{
 public:
     TPipe pipe;
     __aicore__ inline TransformBiasRescaleQkvND(){};
@@ -459,9 +460,7 @@ __aicore__ inline void TransformBiasRescaleQkvND<T>::CastInBias(int64_t dataCoun
 }
 
 template <typename T>
-__aicore__ inline void TransformBiasRescaleQkvND<T>::ComputeBias(
-    int64_t dataCount, int64_t qkvOffset, int64_t biasOffset)
-{
+__aicore__ inline void TransformBiasRescaleQkvND<T>::ComputeBias(int64_t dataCount, int64_t qkvOffset, int64_t biasOffset) {
     Add(xTensorFp32[qkvOffset], xTensorFp32[qkvOffset], biasTensorFp32[biasOffset], dataCount);
     PipeBarrier<PIPE_V>();
 }

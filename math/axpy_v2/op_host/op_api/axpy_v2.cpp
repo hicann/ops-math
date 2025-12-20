@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "axpy_v2.h"
 #include "opdev/aicpu/aicpu_task.h"
@@ -21,7 +21,8 @@
 
 using namespace op;
 
-namespace l0op {
+namespace l0op
+{
 
 OP_TYPE_REGISTER(AxpyV2);
 
@@ -29,19 +30,24 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_INT32, DataType::DT_FLOAT16, DataType::DT_BF16,
     DataType::DT_UINT8, DataType::DT_INT8,  DataType::DT_INT64,   DataType::DT_BOOL,
 };
+static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
+    DataType::DT_FLOAT, DataType::DT_INT32, DataType::DT_FLOAT16, DataType::DT_BF16
+};
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static bool IsAiCoreSupport(const aclTensor* self)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
+    if (socVersion == SocVersion::ASCEND910_95) {
         return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
+    } else if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) {
+        return CheckType(self->GetDataType(), ASCEND910B_DTYPE_SUPPORT_LIST);
     }
     return false;
 }
 
 // AICORE算子kernel
-static const aclTensor* AxpyV2AiCore(
-    const aclTensor* self, const aclTensor* other, const aclTensor* alpha, const aclTensor* out,
-    aclOpExecutor* executor)
+static const aclTensor* AxpyV2AiCore(const aclTensor* self, const aclTensor* other, const aclTensor* alpha,
+                                     const aclTensor* out, aclOpExecutor* executor)
 {
     L0_DFX(AxpyV2AiCore, self, other, alpha, out);
     if (!(self->GetDataType() == other->GetDataType() && self->GetDataType() == alpha->GetDataType() &&
@@ -66,12 +72,11 @@ const aclTensor* AxpyV2(const aclTensor* self, const aclTensor* other, const acl
         return nullptr;
     }
     if (!IsAiCoreSupport(self)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "self dtype %s should be in dtype support list [%s].",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(AICORE_DTYPE_SUPPORT_LIST).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self dtype %s should be in dtype support list [%s].",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(AICORE_DTYPE_SUPPORT_LIST).GetString());
         return nullptr;
     }
 
     return AxpyV2AiCore(self, other, alpha, out, executor);
 }
-} // namespace l0op
+}  // namespace l0op

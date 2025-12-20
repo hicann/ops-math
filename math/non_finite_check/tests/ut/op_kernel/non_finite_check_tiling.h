@@ -1,13 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * This file is a part of the CANN Open Software.
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-
 #ifndef __NON_FINITE_CHECK_TILING_H__
 #define __NON_FINITE_CHECK_TILING_H__
 
@@ -21,12 +20,7 @@ struct NonFiniteCheckCompileInfo {
     uint64_t ubSizePlatForm = 0;
 };
 
-enum class NonFiniteCheckTilingKey : uint64_t
-{
-    KEY_FLOAT16 = 101,
-    KEY_BF16 = 201,
-    KEY_FLOAT = 301
-};
+enum class NonFiniteCheckTilingKey : uint64_t { KEY_FLOAT16 = 101, KEY_BF16 = 201, KEY_FLOAT = 301 };
 
 constexpr uint16_t MAX_TENSOR_COUNT = 256;
 constexpr uint16_t MAX_CORE_COUNT = 64;
@@ -45,8 +39,7 @@ struct NonFiniteCheckTilingData {
 
 #pragma pack()
 
-inline void InitNonFiniteCheckTilingData(uint8_t* tiling, NonFiniteCheckTilingData* const_data)
-{
+inline void InitNonFiniteCheckTilingData(uint8_t* tiling, NonFiniteCheckTilingData* const_data) {
     memcpy(const_data, tiling, sizeof(NonFiniteCheckTilingData));
 }
 
@@ -55,4 +48,4 @@ inline void InitNonFiniteCheckTilingData(uint8_t* tiling, NonFiniteCheckTilingDa
     NonFiniteCheckTilingData tiling_data;        \
     InitNonFiniteCheckTilingData(tiling_arg, &tiling_data)
 
-#endif // __NON_FINITE_CHECK_TILING_H__
+#endif  // __NON_FINITE_CHECK_TILING_H__

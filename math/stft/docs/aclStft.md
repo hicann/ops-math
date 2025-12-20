@@ -4,8 +4,12 @@
 
 |产品             |  是否支持  |
 |:-------------------------|:----------:|
+|  <term>昇腾910_95 AI处理器</term>   |     ×    |
 |  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     √    |
 |  <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>     |     √    |
+
+
+
 
 
 ## 功能说明
@@ -35,7 +39,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclStftGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclStft”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclStftGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclStft”接口执行计算。
 
 ```Cpp
 aclnnStatus aclStftGetWorkspaceSize(
@@ -65,14 +69,14 @@ aclnnStatus aclnnExpSegsum(
 - **参数说明：**
 
 
-  <table style="undefined;table-layout: fixed; width: 1503px"><colgroup>
-  <col style="width: 146px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 170px">
   <col style="width: 120px">
   <col style="width: 271px">
-  <col style="width: 392px">
-  <col style="width: 228px">
+  <col style="width: 330px">
+  <col style="width: 223px">
   <col style="width: 101px">
-  <col style="width: 100px">
+  <col style="width: 190px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -161,7 +165,7 @@ aclnnStatus aclnnExpSegsum(
       <td>onesided</td>
       <td>输入</td>
       <td>表示是否返回全部的结果或者一半结果。</td>
-      <td>-</td>
+      <td>当输入`self`的数据类型为COMPLEX64、COMPLEX128时，只支持配置为False。</td>
       <td>BOOL</td>
       <td>-</td>
       <td>-</td>
@@ -202,12 +206,12 @@ aclnnStatus aclnnExpSegsum(
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
   
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed;width: 1155px"><colgroup>
-  <col style="width: 253px">
+  <table style="undefined;table-layout: fixed;width: 1170px"><colgroup>
+  <col style="width: 268px">
   <col style="width: 140px">
   <col style="width: 762px">
   </colgroup>
@@ -225,12 +229,11 @@ aclnnStatus aclnnExpSegsum(
       <td>传入的self、out是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="5">161002</td>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
       <td>self的数据格式不在支持的范围之内。</td>
     <tr>
       <td>self、windowOptional的数据类型不一致。</td>
-    </tr>
     </tr>
     <tr>
       <td>self、windowOptional、out的数据类型不在平台的支持范围之内。</td>
@@ -239,6 +242,9 @@ aclnnStatus aclnnExpSegsum(
       <td>nFft、hopLength、winLength输入无效值。</tr>
     <tr>
       <td>self、windowOptional、out的维度不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>当输入self的数据类型为COMPLEX64、COMPLEX128时，onesided的值为True。</td>
     </tr>
   </tbody></table>
 
@@ -283,12 +289,11 @@ aclnnStatus aclnnExpSegsum(
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
 - 输入self与PyTorch接口的不同：PyTorch接口的输入self为原始输入；aclStftGetWorkspaceSize的入参self是原始输入经过前端PyTorch补pad后得到的结果。
-- PyTorch接口调用STFT时，self数据类型仅支持FLOAT32、DOUBLE。
 - nFft <= L。
 - winLength <= nFft。
 - 当normalized=True时，
@@ -310,10 +315,13 @@ aclnnStatus aclnnExpSegsum(
   |COMPLEX64|COMPLEX64|False|FLOAT32|
   |COMPLEX128|COMPLEX128|False|DOUBLE|
 
+- 确定性计算：
+  - aclStft默认确定性实现。
+
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

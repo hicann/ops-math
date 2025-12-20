@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file aclnn_fill_diagonal.cpp
@@ -161,6 +161,15 @@ static bool CheckNotOverflow(const aclTensor* selfRef, const aclScalar* fillValu
     return overFlowFlag == 1;
 }
 
+static void CheckFormat(const aclTensor* x)
+{
+    op::Format format = x->GetStorageFormat();
+    if (format == Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("Format of input gets [%s], this format mat lead to precision failure",
+        op::ToString(format).GetString());
+    }
+}
+
 static aclnnStatus CheckParams(const aclTensor* selfRef, const aclScalar* fillValue)
 {
     // 1. 检查参数是否为空指针
@@ -178,6 +187,7 @@ static aclnnStatus CheckParams(const aclTensor* selfRef, const aclScalar* fillVa
     // 5. 检查是否溢出
     CHECK_RET(CheckNotOverflow(selfRef, fillValue), ACLNN_ERR_PARAM_INVALID);
 
+    CheckFormat(selfRef);
     return ACLNN_SUCCESS;
 }
 

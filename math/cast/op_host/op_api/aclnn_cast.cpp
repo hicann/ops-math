@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "aclnn_cast.h"
 #include "aclnn_kernels/cast.h"
@@ -60,7 +60,8 @@ static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST
     op::DataType::DT_UINT32,    op::DataType::DT_UINT64,      op::DataType::DT_BOOL,
     op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128,  op::DataType::DT_BF16,
     op::DataType::DT_HIFLOAT8,  op::DataType::DT_FLOAT8_E5M2, op::DataType::DT_FLOAT8_E4M3FN,
-    op::DataType::DT_COMPLEX32, op::DataType::DT_FLOAT4_E1M2, op::DataType::DT_FLOAT4_E2M1};
+    op::DataType::DT_COMPLEX32, op::DataType::DT_FLOAT4_E1M2, op::DataType::DT_FLOAT4_E2M1,
+    op::DataType::DT_INT4};
 static const std::initializer_list<op::DataType> ASCEND910_95_SELF_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16,   op::DataType::DT_FLOAT,       op::DataType::DT_DOUBLE,
     op::DataType::DT_INT8,      op::DataType::DT_UINT8,       op::DataType::DT_INT16,
@@ -139,6 +140,12 @@ aclnnStatus aclnnCastGetWorkspaceSize(
     // 固定写法，参数检查
     auto ret = CheckParams(self, op::ToOpDataType(dtype), out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
+
+    // 输入为int4时，self必须是连续的tensor
+    if (out->GetDataType() == DataType::DT_INT4 && !IsContiguous(self)) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input tensor must be contiguous if dst_type in INT4");
+        return ACLNN_ERR_PARAM_INVALID;
+    }
 
     // 输入为空tensor时，直接返回dtype类型的空tensor
     if (self->IsEmpty()) {

@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file hans_pdf_statistic_base.h
@@ -30,7 +30,8 @@ struct HansEncodeInitConfig {
 };
 
 template <typename dataType>
-class AnsPdfStatistic {
+class AnsPdfStatistic
+{
 public:
     __aicore__ inline AnsPdfStatistic()
     {}
@@ -140,11 +141,10 @@ protected:
                     compareLocalInt.template ReinterpretCast<uint8_t>(), this->inputLocal, scalarValue, CMPMODE::EQ,
                     computeLength);
                 PipeBarrier<PIPE_V>();
-                GatherMask(
-                    this->expLocal.template ReinterpretCast<intType>(),
-                    this->inputLocal.template ReinterpretCast<intType>(),
-                    compareLocalInt.template ReinterpretCast<intType>(), false, 0,
-                    {static_cast<uint8_t>(repeatTimes), 1, 8, 1}, this->rsvdCnt);
+                GatherMask(this->expLocal.template ReinterpretCast<intType>(),
+                           this->inputLocal.template ReinterpretCast<intType>(),
+                           compareLocalInt.template ReinterpretCast<intType>(),
+                           false, 0, {static_cast<uint8_t>(repeatTimes), 1, 8, 1}, this->rsvdCnt);
                 rsvdCnt = AscendC::AscendCUtils::GetRsvdCnt();
                 PipeBarrier<PIPE_V>();
                 SetFlag<HardEvent::V_S>(eventVS);

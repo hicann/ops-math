@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include <array>
 #include <cstdint>
 #include <iostream>
@@ -195,6 +195,64 @@ TEST_F(pad_v4_grad_test, test_bfloat16_case3)
     tilingData->tailNC = 0;
     tilingData->tilingKey = 3110;
     tilingData->workspacePerCore = 0;
+    tilingData->wPadCopyCount = 0;
+
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
+    ICPU_SET_TILING_KEY(tilingData->tilingKey);
+    ICPU_RUN_KF(pad_v4_grad, tilingData->blockNum, x, padding, dx, workspace, tiling); // use this macro for cpu debug
+    AscendC::GmFree((void*)x);
+    AscendC::GmFree((void*)padding);
+    AscendC::GmFree((void*)dx);
+    AscendC::GmFree((void*)workspace);
+    AscendC::GmFree((void*)tiling);
+}
+
+TEST_F(pad_v4_grad_test, test_bfloat16_case4)
+{
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
+    uint32_t N = 1;
+    uint32_t C = 1;
+    uint32_t H = 150;
+    uint32_t W = 30;
+    uint32_t hPad1 = 3;
+    uint32_t hPad2 = 5;
+    uint32_t wPad1 = 3;
+    uint32_t wPad2 = 1;
+    uint32_t blockDim = 48;
+    uint32_t ubSize = 192 * 1024 - 11 * 1024;
+    size_t sysWorkspaceSize = 16 * 1024 * 1024;
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(sysWorkspaceSize);
+    size_t tilingSize = sizeof(PadV4GradTilingData);
+    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingSize);
+    size_t x_size = N * C * H * W * 2;
+    size_t padding_size = 4 * sizeof(int32_t);
+    size_t dx_size = N * C * H * (W - wPad1 - wPad2) * 2;
+
+    uint8_t* x = (uint8_t*)AscendC::GmAlloc(x_size);
+    uint8_t* padding = (uint8_t*)AscendC::GmAlloc(padding_size);
+    uint8_t* dx = (uint8_t*)AscendC::GmAlloc(dx_size);
+
+    PadV4GradTilingData* tilingData = reinterpret_cast<PadV4GradTilingData*>(tiling);
+    tilingData->batch = 1;
+    tilingData->channel = 1;
+    tilingData->height = 150;
+    tilingData->width = 30;
+    tilingData->alignHeight = 160;
+    tilingData->alignWidth = 32;
+    tilingData->outHeight = 142;
+    tilingData->outWidth = 26;
+    tilingData->alignOutHeight = 144;
+    tilingData->alignOutWidth = 32;
+    tilingData->hPad1 = 3;
+    tilingData->hPad2 = 5;
+    tilingData->wPad1 = 3;
+    tilingData->wPad2 = 1;
+    tilingData->blockNum = 1;
+    tilingData->ubFactorElement = 112;
+    tilingData->ncPerCore = 1;
+    tilingData->tailNC = 0;
+    tilingData->tilingKey = 3010;
+    tilingData->workspacePerCore = 4096;
     tilingData->wPadCopyCount = 0;
 
     AscendC::SetKernelMode(KernelMode::AIV_MODE);

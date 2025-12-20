@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include <bitset>
 
@@ -45,8 +45,7 @@ extern "C" {
 constexpr size_t MAX_MASK_LEN = 64;
 constexpr size_t MAX_DIM_LEN = 8;
 
-static bool CheckNotNull(const aclTensor* self, const aclIntArray* dim, aclTensor* out)
-{
+static bool CheckNotNull(const aclTensor* self, const aclIntArray* dim, aclTensor* out) {
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(dim, return false);
     OP_CHECK_NULL(out, return false);
@@ -57,19 +56,18 @@ static bool CheckNotNull(const aclTensor* self, const aclIntArray* dim, aclTenso
 // 算子支持的所有dtype
 static const std::initializer_list<op::DataType> INPUT_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
-    op::DataType::DT_INT16, op::DataType::DT_INT8,  op::DataType::DT_UINT8, op::DataType::DT_BOOL};
+    op::DataType::DT_INT16, op::DataType::DT_INT8, op::DataType::DT_UINT8, op::DataType::DT_BOOL};
 static const std::initializer_list<op::DataType> INPUT_DTYPE_SUPPORT_LIST_910B = {
-    op::DataType::DT_FLOAT,   op::DataType::DT_INT32, op::DataType::DT_INT64,
-    op::DataType::DT_FLOAT16, op::DataType::DT_INT16, op::DataType::DT_INT8,
-    op::DataType::DT_UINT8,   op::DataType::DT_BOOL,  op::DataType::DT_BF16};
+    op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
+    op::DataType::DT_INT16, op::DataType::DT_INT8, op::DataType::DT_UINT8, op::DataType::DT_BOOL,
+    op::DataType::DT_BF16};
 
 static const std::initializer_list<op::DataType> OUTPUT_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
 static const std::initializer_list<op::DataType> OUTPUT_DTYPE_SUPPORT_LIST_910B = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
-static bool CheckDtypeValid(const aclTensor* self, aclTensor* out)
-{
+static bool CheckDtypeValid(const aclTensor* self, aclTensor* out) {
     // 检查self的数据类型是否支持
     if (op::GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND910B ||
         op::GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND910_93 ||
@@ -83,16 +81,14 @@ static bool CheckDtypeValid(const aclTensor* self, aclTensor* out)
     return true;
 }
 
-static bool CheckPromoteType(const aclTensor* self, aclTensor* out)
-{
+static bool CheckPromoteType(const aclTensor* self, aclTensor* out) {
     // 检查self能否转换为out的dtype
     OP_CHECK_RESULT_DTYPE_CAST_FAILED(self->GetDataType(), out->GetDataType(), return false);
 
     return true;
 }
 
-static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim)
-{
+static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim) {
     auto selfViewShape = self->GetViewShape();
     auto selfDimNum = static_cast<int64_t>(selfViewShape.GetDimNum());
     // self为标量时，dim range [-1, 0]
@@ -102,9 +98,8 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim)
     // 获取dim元素
     for (size_t i = 0; i < dim->Size(); i++) {
         if (dim->operator[](i) >= selfDimNum || dim->operator[](i) < (-selfDimNum)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "provided dim %ld not in the range of input tensor size %ld.",
-                dim->operator[](i), selfDimNum);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "provided dim %ld not in the range of input tensor size %ld.",
+                    dim->operator[](i), selfDimNum);
             return false;
         }
     }
@@ -117,7 +112,8 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim)
             dimValue = dim->operator[](i) + selfDimNum;
         }
         if (dimMask[dimValue] == 1) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim %ld appears multiple times in the list of dims", dim->operator[](i));
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim %ld appears multiple times in the list of dims",
+                    dim->operator[](i));
             return false;
         } else {
             dimMask[dimValue] = 1;
@@ -163,8 +159,7 @@ static bool CheckShape(const aclTensor* self, aclTensor* out, const aclIntArray*
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* dim, aclTensor* out, bool keepDim)
-{
+static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* dim, aclTensor* out, bool keepDim) {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, dim, out), ACLNN_ERR_PARAM_NULLPTR);
 
@@ -197,10 +192,8 @@ static aclnnStatus FillScalar(aclTensor* out, float val, aclOpExecutor* executor
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLogSumExpGetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* dim, bool keepDim, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
-{
+aclnnStatus aclnnLogSumExpGetWorkspaceSize(const aclTensor* self, const aclIntArray* dim, bool keepDim,
+                                           aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor) {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
     L2_DFX_PHASE_1(aclnnLogSumExp, DFX_IN(self, dim, keepDim), DFX_OUT(out));
@@ -255,14 +248,14 @@ aclnnStatus aclnnLogSumExpGetWorkspaceSize(
     CHECK_RET(absSelfMax != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     FVector<float> infVector = {INFINITY};
-    auto infTensor =
-        uniqueExecutor.get()->ConvertToTensor(infVector.data(), infVector.size(), absSelfMax->GetDataType());
+    auto infTensor = uniqueExecutor.get()->ConvertToTensor(infVector.data(), infVector.size(),
+                                                           absSelfMax->GetDataType());
     auto infMask = l0op::Equal(absSelfMax, infTensor, uniqueExecutor.get());
     CHECK_RET(infMask != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     FVector<float> zeroVector = {0};
-    auto zeroTensor =
-        uniqueExecutor.get()->ConvertToTensor(zeroVector.data(), zeroVector.size(), selfMax->GetDataType());
+    auto zeroTensor = uniqueExecutor.get()->ConvertToTensor(zeroVector.data(), zeroVector.size(),
+                                                            selfMax->GetDataType());
     auto infZeroSelfMax = l0op::MaskedFill(selfMax, infMask, zeroTensor, uniqueExecutor.get());
     CHECK_RET(infZeroSelfMax != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
@@ -290,13 +283,12 @@ aclnnStatus aclnnLogSumExpGetWorkspaceSize(
 
     // 获取计算过程中需要使用的workspace大小
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
-    uniqueExecutor.ReleaseTo(executor); // 需要把 uniqueExecutor持有executor转移给executor
+    uniqueExecutor.ReleaseTo(executor);  // 需要把 uniqueExecutor持有executor转移给executor
 
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLogSumExp(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
-{
+aclnnStatus aclnnLogSumExp(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream) {
     L2_DFX_PHASE_2(aclnnLogSumExp);
     // 固定写法，调用框架能力，完成计算
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

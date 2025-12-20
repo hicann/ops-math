@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file diag_flat_nd_to_2d.h
@@ -22,7 +22,8 @@ using namespace AscendC;
 
 namespace DiagFlat {
 template <typename T>
-class DiagFlatNDTo2D {
+class DiagFlatNDTo2D
+{
 public:
     __aicore__ inline DiagFlatNDTo2D(){};
     __aicore__ inline void Init(GM_ADDR input, GM_ADDR output, GM_ADDR workspace, const DiagV2TilingData* tilingData);
@@ -225,10 +226,10 @@ __aicore__ inline void DiagFlatNDTo2D<T>::CopyOut(int64_t iter)
             int64_t rowIdx = iter * ONCE_HANDLE_NUM;
             int64_t gmOffset = width * rowIdx + (offset_ > 0 ? offset_ : 0) + (iter * ONCE_HANDLE_NUM + inputIdx_);
             uint16_t blockCount = ONCE_HANDLE_NUM;
-            uint16_t blockLen = ONCE_HANDLE_NUM * sizeof(T);
-            uint16_t srcStride = 0;
-            uint16_t dstStride = width * sizeof(T) - blockLen;
-            DataCopyParams copyParams{blockCount, blockLen, srcStride, dstStride};
+            uint32_t blockLen = ONCE_HANDLE_NUM * sizeof(T);
+            uint32_t srcStride = 0;
+            uint32_t dstStride = width * sizeof(T) - blockLen;
+            DataCopyExtParams copyParams{blockCount, blockLen, srcStride, dstStride, 0};
             DataCopyPad(gmOutput_[gmOffset], ubOutput, copyParams);
         } else {
             for (int64_t i = 0; i < ONCE_HANDLE_NUM; i++) {

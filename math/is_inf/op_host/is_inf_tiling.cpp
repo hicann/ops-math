@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file is_inf_tiling.cpp
@@ -30,10 +30,12 @@ constexpr uint64_t TILING_KEY_BFLOAT16 = 3;
 constexpr uint64_t WORK_SPACE_SIZE = 32 * 1024 * 1024;
 constexpr uint32_t BYTE_LEN_4 = 4;
 constexpr uint32_t BYTE_LEN_2 = 2;
+constexpr uint32_t MAX_DIM = 8;
 
 constexpr uint8_t UB_DIVIDER_FOR_TEMP_CASTING = 10;
 
-class IsInfTiling {
+class IsInfTiling
+{
 public:
     explicit IsInfTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunBigKernelTiling();
@@ -84,6 +86,9 @@ ge::graphStatus IsInfTiling::RunBigKernelTiling()
     uint16_t dimNumOfShape = 0;
     if (shape != nullptr) {
         dimNumOfShape = shape->GetStorageShape().GetDimNum();
+        if (dimNumOfShape > MAX_DIM){
+            OP_LOGW("IsInfTilingDimCheck","Input shape has %u dimensions, which exceeds the recommended maximum of %u dimensions.",dimNumOfShape,MAX_DIM);
+        }
     }
     for (uint16_t i = 0; i < dimNumOfShape; i++) {
         if (shape != nullptr) {

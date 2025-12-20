@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #ifndef OP_API_INC_LEVEL2_ACLNN_ERF_H_
 #define OP_API_INC_LEVEL2_ACLNN_ERF_H_
@@ -36,7 +36,7 @@ extern "C" {
  * ```
  *
  * 计算图二：如下所示
- * 场景：self的数据类型为BOOL，将self的数据类型CAST为FLOAT32，再使用Erf算子完成计算。
+ * 场景：self的数据类型为（BOOL、INT64），将self的数据类型CAST为FLOAT32，再使用Erf算子完成计算。
  * ```mermaid
  * graph LR
  *     A[(Self)]  --> B([l0op::Contiguous])
@@ -51,7 +51,7 @@ extern "C" {
  * 数据类型支持FLOAT64、FLOAT32、FLOAT16、BFLOAT16、BOOL、INT64，数据格式支持ND， 支持非连续的Tensor。
  * @param [in] out: erf计算的出参。npu device侧的aclTensor，
  * 数据类型支持FLOAT64、FLOAT32、FLOAT16、BFLOAT16，数据格式支持ND， 支持非连续的Tensor。
- * @param [out] workspace_size: 返回用户需要在npu device侧申请的workspace大小。
+ * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
@@ -61,7 +61,7 @@ aclnnErfGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* worksp
 /**
  * @brief aclnnErf的第二段接口，用于执行计算。
  * @param [in] workspace: 在npu device侧申请的workspace内存起址。
- * @param [in] workspace_size: 在npu device侧申请的workspace大小，由第一段接口aclnnErfGetWorkspaceSize获取。
+ * @param [in] workspaceSize: 在npu device侧申请的workspace大小，由第一段接口aclnnErfGetWorkspaceSize获取。
  * @param [in] executor: op执行器，包含了算子计算流程。
  * @param [in] stream: acl stream流。
  * @return aclnnStatus: 返回状态码。
@@ -85,8 +85,8 @@ ACLNN_API aclnnStatus aclnnErf(void* workspace, uint64_t workspaceSize, aclOpExe
  * ```
  *
  * @param [in] selfRef: 待进行erf计算的入参。npu device侧的aclTensor，
- * 数据类型支持FLOAT64、FLOAT32、FLOAT16、BFLOAT16、BOOL，数据格式支持ND， 支持非连续的Tensor。
- * @param [out] workspace_size: 返回用户需要在npu device侧申请的workspace大小。
+ * 数据类型支持FLOAT64、FLOAT32、FLOAT16、BFLOAT16，数据格式支持ND， 支持非连续的Tensor。
+ * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
@@ -96,7 +96,7 @@ aclnnInplaceErfGetWorkspaceSize(aclTensor* selfRef, uint64_t* workspaceSize, acl
 /**
  * @brief aclnnInplaceErf的第二段接口，用于执行计算。
  * @param [in] workspace: 在npu device侧申请的workspace内存起址。
- * @param [in] workspace_size: 在npu device侧申请的workspace大小，由第一段接口aclnnErfGetWorkspaceSize获取。
+ * @param [in] workspaceSize: 在npu device侧申请的workspace大小，由第一段接口aclnnErfGetWorkspaceSize获取。
  * @param [in] executor: op执行器，包含了算子计算流程。
  * @param [in] stream: acl stream流。
  * @return aclnnStatus: 返回状态码。

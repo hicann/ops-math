@@ -4,8 +4,12 @@
 
 |产品             |  是否支持  |
 |:-------------------------|:----------:|
+|  <term>昇腾910_95 AI处理器</term>   |     ×    |
 |  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     √    |
 |  <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>     |     √    |
+
+
+
 
 
 ## 功能说明
@@ -68,14 +72,14 @@
     <tr>
       <td>hop_length</td>
       <td>可选属性</td>
-      <td><ul><li>滑动窗口的间隔（大于0），对应公式中的`hopLength`。</li><li>默认值为n_fft/4。</li></ul></td>
+      <td><ul><li>滑动窗口的间隔（大于等于0），对应公式中的`hopLength`。</li><li>默认值为n_fft/4。</li></ul></td>
       <td>INT</td>
       <td>-</td>
     </tr>
     <tr>
       <td>win_length</td>
       <td>可选属性</td>
-      <td><ul><li>window的大小（大于0），对应公式中的`winLength`。</li><li>默认值为n_fft。</li></ul></td>
+      <td><ul><li>window的大小（大于等于0），对应公式中的`winLength`。</li><li>默认值为n_fft。</li></ul></td>
       <td>INT</td>
       <td>-</td>
     </tr>

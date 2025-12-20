@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file feeds_repeat.h
@@ -86,7 +86,6 @@ protected:
     int64_t elem_loop;
     int64_t left_index;
     const int64_t align_num = 32;
-    const int64_t cast_num = 4;
 
     event_t event_v_to_s;
     event_t event_mte3_to_v;
@@ -152,7 +151,7 @@ __aicore__ inline void FeedsRepeatND<T1, T2>::ClearOutputSpace()
     sumParams_total.inner = length_aligned;
     sumParams_total.n = length;
     Sum(end_sum, feeds_repeat_times_float, sumParams_total);
-    Cast(end_sum_int64, end_sum, RoundMode::CAST_RINT, cast_num);
+    Cast(end_sum_int64, end_sum, RoundMode::CAST_RINT, align_num);
     SetFlag<HardEvent::V_S>(event_v_to_s);
     WaitFlag<HardEvent::V_S>(event_v_to_s);
     end_index += end_sum_int64.GetValue(0);

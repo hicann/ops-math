@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #ifndef OP_API_INC_TRANS_MATMUL_WEIGHT_H_
 #define OP_API_INC_TRANS_MATMUL_WEIGHT_H_
 
@@ -28,8 +28,8 @@ extern "C" {
  * @param [out] weightTensorSize: 根据MatMul内部处理逻辑，计算该输入下Weight需要多少个元素的数据量
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus
-aclnnCalculateMatmulWeightSizeV2(const aclIntArray* tensorShape, aclDataType dataType, uint64_t* weightTensorSize);
+ACLNN_API aclnnStatus aclnnCalculateMatmulWeightSizeV2(const aclIntArray* tensorShape, aclDataType dataType,
+                                                       uint64_t* weightTensorSize);
 
 /**
  * @brief aclnnCalculateMatmulWeightSize用于计算调用aclnnMatMul或aclnnMm传入的weight tensor需要占用的元素大小
@@ -47,15 +47,14 @@ ACLNN_API aclnnStatus aclnnCalculateMatmulWeightSize(const aclIntArray* tensorSh
  *
  * 算子功能：将输入tensor转换为指定的dtype类型。
  *
- * @param [in] mmWeightRef:
- * 输入是一个待处理的matmul的weightTensor，格式是正常的ND输入，数据类型支持float16,int8,bfloat16
+ * @param [in] mmWeightRef: 输入是一个待处理的matmul的weightTensor，格式是正常的ND输入，数据类型支持float16,int8,bfloat16
  * 经过此接口处理后此tensor被刷新为预处理后的matmul weightTensor格式根据亲和性进行ND或者私有格式的转换
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus
-aclnnTransMatmulWeightGetWorkspaceSize(aclTensor* mmWeightRef, uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnTransMatmulWeightGetWorkspaceSize(aclTensor* mmWeightRef, uint64_t* workspaceSize,
+                                                             aclOpExecutor** executor);
 /**
  * @brief aclnnTransMatmulWeight的第二段接口，用于执行计算。
  *
@@ -68,11 +67,11 @@ aclnnTransMatmulWeightGetWorkspaceSize(aclTensor* mmWeightRef, uint64_t* workspa
  * @param [in] stream: acl stream流。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus
-aclnnTransMatmulWeight(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnTransMatmulWeight(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                             aclrtStream stream);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // OP_API_INC_TRANS_MATMUL_WEIGHT_H_
+#endif  // OP_API_INC_TRANS_MATMUL_WEIGHT_H_

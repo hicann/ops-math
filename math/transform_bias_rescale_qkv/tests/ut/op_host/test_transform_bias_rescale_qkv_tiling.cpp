@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include <iostream>
 #include <fstream>
@@ -26,7 +26,8 @@
 using namespace std;
 using namespace ge;
 
-class TransformBiasRescaleQkvTilingData : public testing::Test {
+class TransformBiasRescaleQkvTilingData : public testing::Test
+{
 protected:
     static void SetUpTestCase()
     {
@@ -64,13 +65,12 @@ TEST_F(TransformBiasRescaleQkvTilingData, TransformBiasRescaleQkvTilingData_01)
     auto num_heads = Ops::Math::AnyValue::CreateFrom<int64_t>(3);
 
     gert::TilingContextPara tilingContextPara(
-        "TransformBiasRescaleQkv",
+        "TransformBiasRescaleQkv", 
         {{qkv_shape, ge::DT_FLOAT, ge::FORMAT_ND}, {qkv_bias_shape, ge::DT_FLOAT, ge::FORMAT_ND}},
-        {{q_shape, ge::DT_FLOAT, ge::FORMAT_ND},
-         {k_shape, ge::DT_FLOAT, ge::FORMAT_ND},
-         {v_shape, ge::DT_FLOAT, ge::FORMAT_ND}},
-        {gert::TilingContextPara::OpAttr("num_heads", num_heads)}, &compileInfo);
+        {{q_shape, ge::DT_FLOAT, ge::FORMAT_ND}, {k_shape, ge::DT_FLOAT, ge::FORMAT_ND}, {v_shape, ge::DT_FLOAT, ge::FORMAT_ND}},
+        {gert::TilingContextPara::OpAttr("num_heads", num_heads)},
+        &compileInfo);
 
     std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 1, "108 36 3 4 3 3 1 12288 ", expectWorkspaces);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 1, "108 36 3 4 3 3 1 12288 ",  expectWorkspaces);
 }

@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include "aclnn_masked_select.h"
 #include "masked_select.h"
 #include "aclnn_kernels/cast.h"
@@ -173,6 +173,14 @@ static bool IsAiCoreSupport(const aclTensor* self)
     return false;
 }
 
+static void CheckFormat(const aclTensor* self, const aclTensor* target){
+  ge::Format selfStorageFormat = self->GetStorageFormat();
+  ge::Format targetStorageFormat = target->GetStorageFormat();
+  if (selfStorageFormat != ge::Format::FORMAT_ND || targetStorageFormat != ge::Format::FORMAT_ND){
+    OP_LOGW("aclnnMaskedSelect only support format ND.");
+  }
+}
+
 aclnnStatus aclnnMaskedSelectGetWorkspaceSize(
     const aclTensor* self, const aclTensor* mask, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
@@ -187,6 +195,8 @@ aclnnStatus aclnnMaskedSelectGetWorkspaceSize(
     // 固定写法，参数检查
     auto ret = CheckParams(self, mask, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
+
+    CheckFormat(self, mask);
 
     if (self->IsEmpty() || mask->IsEmpty() || out->IsEmpty()) {
         // 根据实际支持情况补充

@@ -1,0 +1,27 @@
+{
+    "SquaredDifference":{
+        "opInfo":{
+            "computeCost":"100",
+            "engine":"DNN_VM_AICPU",
+            "flagAsync":"False",
+            "flagPartial":"False",
+            "functionName":"RunCpuKernel",
+            "kernelSo":"libmath_aicpu_kernels.so",
+            "opKernelLib":"CUSTAICPUKernel",
+            "userDefined":"True",
+            "workspaceSize":"100"
+        },
+        "input0" : {
+            "name" : "x1",
+            "type" : "DT_DOUBLE,DT_FLOAT,DT_FLOAT_16,DT_INT32,DT_INT64,DT_COMPLEX64,DT_COMPLEX128"
+        },
+        "input1" : {
+            "name" : "x2",
+            "type" : "DT_DOUBLE,DT_FLOAT,DT_FLOAT_16,DT_INT32,DT_INT64,DT_COMPLEX64,DT_COMPLEX128"
+        },
+        "output0" : {
+            "name" : "y",
+            "type" : "DT_DOUBLE,DT_FLOAT,DT_FLOAT_16,DT_INT32,DT_INT64,DT_COMPLEX64,DT_COMPLEX128"
+        }
+    }
+}

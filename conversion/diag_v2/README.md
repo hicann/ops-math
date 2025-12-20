@@ -4,8 +4,13 @@
 
 | 产品 | 是否支持 |
 | ---- | :----:|
+|昇腾910_95 AI处理器|×|
 |Atlas A3 训练系列产品/Atlas A3 推理系列产品|√|
 |Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件|√|
+|Atlas 200I/500 A2推理产品|×|
+|Atlas 推理系列产品|√|
+|Atlas 训练系列产品|√|
+|Atlas 200/300/500 推理产品|×|
 
 ## 功能说明
 
@@ -46,7 +51,7 @@
       <td>diagonal</td>
       <td>可选属性</td>
       <td><ul><li>表示选择对角线的位置。</li><li>默认值为0，表示主对角线。</li></td>
-      <td>Int</td>
+      <td>INT</td>
       <td>-</td>
     </tr>
     <tr>
@@ -57,6 +62,8 @@
       <td>ND</td>
     </tr>
   </tbody></table>
+
+- Atlas 训练、推理系列产品：不支持BFLOAT16。
 
 ## 约束说明
 

@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file histogram_v2_op_tiling.cpp
@@ -35,7 +35,8 @@ constexpr int64_t UB_BINS_LENGTH = 16320L; // 16320 * 4 = 65280 < 65535，结果
 constexpr int64_t UB_SELF_LENGTH_310P = 16000L;
 constexpr int64_t UB_BINS_LENGTH_310P = 16320L;
 
-class HistogramV2Tiling {
+class HistogramV2Tiling
+{
 public:
     explicit HistogramV2Tiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus Init();
@@ -235,7 +236,8 @@ void HistogramV2Tiling::TilingDataPrint() const
     OP_LOGD(tilingContext, "tailTileLeftDataLengthAligned: %ld.", tailTileLeftDataLengthAligned);
 }
 
-class HistogramV2MembaseTiling : public HistogramV2BaseClass {
+class HistogramV2MembaseTiling : public HistogramV2BaseClass
+{
 public:
     explicit HistogramV2MembaseTiling(gert::TilingContext* context) : HistogramV2BaseClass(context) {};
     ~HistogramV2MembaseTiling() override = default;

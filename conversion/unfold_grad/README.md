@@ -3,8 +3,13 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>昇腾910_95 AI处理器</term>                             |    ×     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+
+
+
+
 
 ## 功能说明
 
@@ -45,7 +50,7 @@
 | dim        | 输入           | 公式中的$dim$。表示展开发生的维度。$dim$需要满足dim大于等于0且dim小于inputSizes的size。 | INT64                    | -        |
 | size       | 输入           | 公式中的$size$。表示展开的每个切片的大小。$size$需要满足size大于0且size小于等于inputSizes的第dim维。 | INT64                    | -        |
 | step       | 输入           | 公式中的$step$。表示每个切片之间的步长。$step$需要满足step大于0。 | INT64                    |          |
-| gradIn     | 输出           | 表示Unfold的对应梯度，数据类型必须和gradOutput一致。            | FLOAT、FLOAT16、BFLOAT16 |          |
+| gradIn     | 输出           | 表示Unfold的对应梯度，数据类型必须和gradOut一致。            | FLOAT、FLOAT16、BFLOAT16 |          |
 
 ## 约束说明
 

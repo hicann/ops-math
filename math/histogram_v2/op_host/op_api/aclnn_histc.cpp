@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * This file is a part of the CANN Open Software.
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -36,7 +36,7 @@ extern "C" {
 
 constexpr size_t MAX_DIM = 8;
 
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_A2 = {
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_910B = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT64, op::DataType::DT_INT32,
     op::DataType::DT_INT16, op::DataType::DT_INT8,    op::DataType::DT_UINT8};
 
@@ -67,9 +67,9 @@ static bool SelfDTypeInt(op::DataType selfDType)
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     // 检查self的数据类型是否在Histogram算子的支持列表内
-    OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST_A2, return false);
+    OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST_910B, return false);
 
-    OP_CHECK_DTYPE_NOT_SUPPORT(out, DTYPE_SUPPORT_LIST_A2, return false);
+    OP_CHECK_DTYPE_NOT_SUPPORT(out, DTYPE_SUPPORT_LIST_910B, return false);
 
     return true;
 }

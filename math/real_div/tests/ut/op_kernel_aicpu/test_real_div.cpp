@@ -1,0 +1,180 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include "gtest/gtest.h"
+#ifndef private
+#define private public
+#define protected public
+#endif
+#include "utils/aicpu_test_utils.h"
+#include "cpu_kernel_utils.h"
+#include "node_def_builder.h"
+#undef private
+#undef protected
+#include <math.h>
+#include "Eigen/Core"
+
+using namespace std;
+using namespace aicpu;
+
+class TEST_REALDIV_UT : public testing::Test {};
+
+template <typename T>
+void CalcExpectFunc(const NodeDef &node_def, T expect_out[]) {
+  auto output = node_def.MutableOutputs(0);
+  int64_t output_num = output->NumElements();
+  for (int i = 0; i < output_num; i++) {
+    expect_out[i] = 1;
+  }
+}
+
+#define CREATE_NODEDEF(shapes, data_types, datas)                                 \
+  auto node_def = CpuKernelUtils::CpuKernelUtils::CreateNodeDef();                \
+  NodeDefBuilder(node_def.get(), "RealDiv", "RealDiv")                            \
+      .Input({"x1", data_types[0], shapes[0], datas[0]})                          \
+      .Input({"x2", data_types[1], shapes[1], datas[1]})                          \
+      .Output({"y", data_types[2], shapes[2], datas[2]})
+
+#define ADD_CASE(base_type, aicpu_type)                                           \
+  TEST_F(TEST_REALDIV_UT, TestRealDiv_##aicpu_type) {                             \
+    vector<DataType> data_types = {aicpu_type, aicpu_type, aicpu_type};           \
+    vector<vector<int64_t>> shapes = {{24}, {24}, {24}};                          \
+    base_type input_x1[24];                                                       \
+    SetRandomValue<base_type>(input_x1, 24);                                      \
+    base_type input_x2[24];                                                       \
+    SetRandomValue<base_type>(input_x2, 24, 1);                                   \
+    base_type output[24] = {(base_type)0};                                        \
+    vector<void *> datas = {(void *)input_x1, (void *)input_x2, (void *)output};  \
+    CREATE_NODEDEF(shapes, data_types, datas);                                    \
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);                                 \
+  }
+
+#define REALDIV_CASE_WITH_SHAPE(case_name, base_type, aicpu_type,                  \
+                                shapes, data_num)                                  \
+  TEST_F(TEST_REALDIV_UT, TestRealdiv_##case_name) {                               \
+    vector<DataType> data_types = {aicpu_type, aicpu_type, aicpu_type};            \
+    base_type input1[data_num[0]] = {(base_type)1, (base_type)1};                                \
+    base_type input2[data_num[1]] = {(base_type)1};                                \
+    base_type output[data_num[2]] = {(base_type)0};                                \
+    vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};       \
+    CREATE_NODEDEF(shapes, data_types, datas);                                     \
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);                                  \
+    base_type expect_out[data_num[2]] = {(base_type)0};                            \
+    CalcExpectFunc(*node_def.get(), expect_out);                                   \
+    CompareResult<base_type>(output, expect_out, data_num[2]);                     \
+  }
+
+  #define ADD_ZERO_CASE(base_type, aicpu_type)                                    \
+  TEST_F(TEST_REALDIV_UT, TestRealDiv_ZeroInput_##aicpu_type) {                   \
+    vector<DataType> data_types = {aicpu_type, aicpu_type, aicpu_type};           \
+    vector<vector<int64_t>> shapes = {{24}, {24}, {24}};                          \
+    base_type input_x1[24];                                                       \
+    SetRandomValue<base_type>(input_x1, 24);                                      \
+    base_type input_x2[24];                                                       \
+    SetRandomValue<base_type>(input_x2, 24, 0, 0);                                \
+    base_type output[24] = {(base_type)0};                                        \
+    vector<void *> datas = {(void *)input_x1, (void *)input_x2, (void *)output};  \
+    CREATE_NODEDEF(shapes, data_types, datas);                                    \
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);                      \
+  }
+
+#define ADD_CASE_DIM0(base_type, aicpu_type)                                      \
+  TEST_F(TEST_REALDIV_UT, TestRealDiv_DIM0_##aicpu_type) {                        \
+    vector<DataType> data_types = {aicpu_type, aicpu_type, aicpu_type};           \
+    vector<vector<int64_t>> shapes = {{}, {}, {}};                                \
+    base_type input_x1[1] = {(base_type)24};                                      \
+    base_type input_x2[1] = {(base_type)24};                                      \
+    base_type output[1] = {(base_type)1};                                         \
+    vector<void *> datas = {(void *)input_x1, (void *)input_x2, (void *)output};  \
+    CREATE_NODEDEF(shapes, data_types, datas);                                    \
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);                                 \
+  }
+
+#define ADD_CASE_EMPTY_SHAPE(base_type, aicpu_type)                               \
+  TEST_F(TEST_REALDIV_UT, TestRealDiv_EMPTY_##aicpu_type) {                       \
+    vector<DataType> data_types = {aicpu_type, aicpu_type, aicpu_type};           \
+    vector<vector<int64_t>> shapes = {{0}, {}, {}};                               \
+    base_type input_x1 = 24;                                                      \
+    base_type input_x2 = 24;                                                      \
+    base_type output = {(base_type)1};                                            \
+    vector<void *> datas = {(void *)input_x1, (void *)input_x2, (void *)output};  \
+    CREATE_NODEDEF(shapes, data_types, datas);                                    \
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);                                 \
+  }
+
+#define ADD_CASE_BOOL(base_type, aicpu_type)                                      \
+  TEST_F(TEST_REALDIV_UT, TestRealDiv_##aicpu_type) {                             \
+    vector<DataType> data_types = {aicpu_type, aicpu_type, aicpu_type};           \
+    vector<vector<int64_t>> shapes = {{24}, {24}, {24}};                          \
+    base_type input_x1[24];                                                       \
+    SetRandomValue<base_type>(input_x1, 24);                                      \
+    base_type input_x2[24];                                                       \
+    SetRandomValue<base_type>(input_x2, 24, 1);                                   \
+    base_type output[24] = {(base_type)0};                                        \
+    vector<void *> datas = {(void *)input_x1, (void *)input_x2, (void *)output};  \
+    CREATE_NODEDEF(shapes, data_types, datas);                                    \
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);                      \
+  }
+
+ADD_CASE(Eigen::half, DT_FLOAT16)
+
+ADD_CASE(float, DT_FLOAT)
+
+ADD_CASE(double, DT_DOUBLE)
+
+ADD_CASE(int8_t, DT_INT8)
+
+ADD_CASE(int16_t, DT_INT16)
+
+ADD_CASE(int32_t, DT_INT32)
+
+ADD_CASE(uint32_t, DT_UINT32)
+
+ADD_CASE(int64_t, DT_INT64)
+
+ADD_CASE(uint64_t, DT_UINT64)
+
+ADD_CASE(uint8_t, DT_UINT8)
+
+ADD_CASE(uint16_t, DT_UINT16)
+
+ADD_CASE_DIM0(int64_t, DT_INT64)
+
+ADD_CASE_EMPTY_SHAPE(int32_t, DT_INT32)
+
+ADD_CASE_BOOL(bool, DT_BOOL)
+
+ADD_CASE(std::complex<float>, DT_COMPLEX64)
+
+ADD_CASE(std::complex<double>, DT_COMPLEX128)
+
+vector<vector<int64_t>> shapes_realdiv_dim3 = {{2, 1, 1}, {1, 1, 1}, {2, 1, 1}};
+vector<int64_t> data_num_realdiv_dim3 = {2, 1, 2};
+REALDIV_CASE_WITH_SHAPE(int32_realdiv_vector_dim_3, int32_t, DT_INT32, shapes_realdiv_dim3, data_num_realdiv_dim3)
+
+vector<vector<int64_t>> shapes_realdiv_dim7 = {{2, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 1, 1, 1}, {2, 1, 1, 1, 1, 1, 1}};
+vector<int64_t> data_num_realdiv_dim7 = {2, 1, 2};
+REALDIV_CASE_WITH_SHAPE(int16_realdiv_vector_dim_7, int16_t, DT_INT16, shapes_realdiv_dim7, data_num_realdiv_dim7)
+
+vector<vector<int64_t>> shapes_realdiv_dim8 = {{2, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 1, 1, 1, 1}, {2, 1, 1, 1, 1, 1, 1, 1}};
+vector<int64_t> data_num_realdiv_dim8 = {2, 1, 2};
+REALDIV_CASE_WITH_SHAPE(int16_realdiv_vector_dim_8, int16_t, DT_INT16, shapes_realdiv_dim8, data_num_realdiv_dim8)
+
+ADD_ZERO_CASE(int8_t, DT_INT8)
+
+ADD_ZERO_CASE(int16_t, DT_INT16)
+
+ADD_ZERO_CASE(int32_t, DT_INT32)
+
+ADD_ZERO_CASE(int64_t, DT_INT64)
+
+ADD_ZERO_CASE(uint8_t, DT_UINT8)
+
+ADD_ZERO_CASE(uint16_t, DT_UINT16)
