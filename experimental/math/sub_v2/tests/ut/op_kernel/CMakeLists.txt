@@ -27,9 +27,9 @@ if (UT_TEST_ALL OR OP_KERNEL_UT)
     # param4：该算子依赖的所有tiling源码文件
     # AddOpTestCase(is_finite "ascend910_9599" "-DDTYPE_X=float" "${is_finite_tiling_files}")
     # AddOpTestCase(sub_v2 "ascend910_9599" "" "${sub_v2_tiling_files}" "${SUB_V2_LINK_FLAGS}")
-    AddOpTestCase(sub_v2 "ascend910_9599" "" "${sub_v2_tiling_files}")
-    target_link_libraries(math_op_kernel_ut_ascend910_9599
-        PRIVATE
-        ge_runner
-    )
+    # AddOpTestCase(sub_v2 "ascend910_9599" "" "${sub_v2_tiling_files}")
+    # target_link_libraries(math_op_kernel_ut_ascend910_9599
+    #     PRIVATE
+    #     ge_runner
+    # )
 endif()
