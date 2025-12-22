@@ -56,7 +56,6 @@ ASCEND_INSTALL_INFO="ascend_install.info"
 TARGET_INSTALL_PATH="${DEFAULT_INSTALL_PATH}" #--input-path
 TARGET_USERNAME="${CURR_OPERATE_USER}"
 TARGET_USERGROUP="${CURR_OPERATE_GROUP}"
-TARGET_MOULDE_DIR=""  # TARGET_INSTALL_PATH + PKG_VERSION_DIR + OPP_PLATFORM_DIR
 TARGET_VERSION_DIR="" # TARGET_INSTALL_PATH + PKG_VERSION_DIR
 TARGET_SHARED_INFO_DIR=""
 
@@ -152,7 +151,7 @@ clean_before_reinstall() {
  path or clean the previous version opp install info (${INSTALL_INFO_FILE}) and then reinstall it."
       return 1
     fi
-    bash "${UNINSTALL_SHELL_FILE}" "${TARGET_VERSION_DIR}" "upgrade" "${IS_QUIET}" ${IN_FEATURE} "${IS_DOCKER_INSTALL}" "${DOCKER_ROOT}"
+    bash "${UNINSTALL_SHELL_FILE}" "${TARGET_VERSION_DIR}" "upgrade" "${IS_QUIET}" ${IN_FEATURE} "${IS_DOCKER_INSTALL}" "${DOCKER_ROOT}" "$PKG_VERSION_DIR"
     if [ "$?" != 0 ]; then
       logandprint "[ERROR]: ERR_NO:${INSTALL_FAILED};ERR_DES:Clean the installed directory failed."
       return 1
@@ -398,8 +397,13 @@ init_env() {
   # creat log folder and log file
   comm_init_log
 
-  get_install_package_dir "TARGET_MOULDE_DIR" "${VERSION_INFO_FILE}" "${TARGET_INSTALL_PATH}" "${OPP_PLATFORM_DIR}"
-  TARGET_VERSION_DIR=$(dirname ${TARGET_MOULDE_DIR})
+  if is_version_dirpath "$TARGET_INSTALL_PATH"; then
+    PKG_VERSION_DIR="$(basename "$TARGET_INSTALL_PATH")"
+    TARGET_INSTALL_PATH="$(dirname "$TARGET_INSTALL_PATH")"
+  else
+    PKG_VERSION_DIR="cann"
+  fi
+  TARGET_VERSION_DIR="$TARGET_INSTALL_PATH/$PKG_VERSION_DIR"
   # Splicing docker-root and install-path
   if [ "${IS_DOCKER_INSTALL}" = "y" ]; then
     # delete last "/"
@@ -499,7 +503,7 @@ install_package() {
   fi
 
   bash "${INSTALL_SHELL_FILE}" "${TARGET_INSTALL_PATH}" "${TARGET_USERNAME}" "${TARGET_USERGROUP}" "${IN_FEATURE}" \
-    "${IN_INSTALL_TYPE}" "${IS_FOR_ALL}" "${IS_SETENV}" "${IS_DOCKER_INSTALL}" "${DOCKER_ROOT}"
+    "${IN_INSTALL_TYPE}" "${IS_FOR_ALL}" "${IS_SETENV}" "${IS_DOCKER_INSTALL}" "${DOCKER_ROOT}" "$PKG_VERSION_DIR"
   if [ "$?" != 0 ]; then
     comm_log_operation "Install" "${IN_INSTALL_TYPE}" "OpsMath" "$?" "${CMD_LIST}"
   fi
@@ -531,7 +535,7 @@ uninstall_package() {
     comm_log_operation "Uninstall" "${IN_INSTALL_TYPE}" "OpsMath" "$?" "${CMD_LIST}"
     exit 0
   fi
-  bash "${UNINSTALL_SHELL_FILE}" "${TARGET_INSTALL_PATH}" "uninstall" "${IS_QUIET}" ${IN_FEATURE} "${IS_DOCKER_INSTALL}" "${DOCKER_ROOT}"
+  bash "${UNINSTALL_SHELL_FILE}" "${TARGET_INSTALL_PATH}" "uninstall" "${IS_QUIET}" ${IN_FEATURE} "${IS_DOCKER_INSTALL}" "${DOCKER_ROOT}" "$PKG_VERSION_DIR"
   # remove precheck info in ${TARGET_VERSION_DIR}/bin/prereq_check.bash
   logandprint "[INFO]: Remove precheck info."
 
