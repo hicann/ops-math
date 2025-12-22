@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: UTF-8 -*-
 # ----------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
@@ -10,17 +8,9 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-import torch
-from torch import Tensor
-
-__all__ = ["isfinite", ]
-
-
-def isfinite(x: Tensor) -> Tensor:
-    """Performs isfinite(x) in an efficient fused kernel"""
-    return torch.ops.ascend_ops.isfinite.default(x)
-
-
-def add(x: Tensor, y: Tensor) -> Tensor:
-    """ add kernel """
-    return torch.ops.ascend_ops.add.default(x, y)
+# find torch_npu
+set(TORCH_NPU_INCLUDE_PATH "${TORCH_NPU_PATH}/include")
+set(TORCH_NPU_LIB_PATH "${TORCH_NPU_PATH}/lib")
+message(STATUS "Using Torch NPU path: ${TORCH_NPU_PATH}")
+message(STATUS "Torch NPU include path: ${TORCH_NPU_INCLUDE_PATH}")
+message(STATUS "Torch NPU lib path: ${TORCH_NPU_LIB_PATH}")

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
@@ -10,13 +8,8 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-"""Ascend Ops"""
-__version__ = "1.0.0"
-import torch
-
-try:
-    from . import _C
-except ImportError as e:
-    raise ImportError(
-        "Cannot import _C. Please make sure the `ascend_ops` is properly installed. "
-    ) from e
+# find python
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development REQUIRED)
+message(STATUS "Found Python3: ${Python3_EXECUTABLE} (found version ${Python3_VERSION})")
+message(STATUS "Python3 include dir: ${Python3_INCLUDE_DIRS}")
+message(STATUS "Python3 libraries: ${Python3_LIBRARIES}")

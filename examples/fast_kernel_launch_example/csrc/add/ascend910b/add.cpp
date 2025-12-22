@@ -20,9 +20,16 @@
 #include "torch_npu/csrc/framework/OpCommand.h"
 #include "kernel_operator.h"
 #include "platform/platform_ascendc.h"
+#include <type_traits>
 
 namespace ascend_ops {
 namespace Add {
+
+// Register the operator's schema
+TORCH_LIBRARY_FRAGMENT(EXTENSION_MODULE_NAME, m)
+{
+    m.def("add(Tensor x, Tensor y) -> Tensor");
+}
 
 // Meta function implementation of Add
 torch::Tensor add_meta(const torch::Tensor &x, const torch::Tensor &y)
@@ -33,7 +40,7 @@ torch::Tensor add_meta(const torch::Tensor &x, const torch::Tensor &y)
 }
 
 // Register the Meta implementation
-TORCH_LIBRARY_IMPL(ascend_ops, Meta, m)
+TORCH_LIBRARY_IMPL(EXTENSION_MODULE_NAME, Meta, m)
 {
     m.impl("add", add_meta);
 }
@@ -47,7 +54,7 @@ std::tuple<int64_t, int64_t, int64_t> calc_tiling_params(int64_t totalLength)
     uint64_t ubSize;
     ascendcPlatform->GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     int64_t coreNum = ascendcPlatform->GetCoreNumAiv();
-    TORCH_CHECK(coreNum > 0, "coreNum must be greater than zero.");
+    TORCH_CHECK(coreNum > 0, "coreNum must be positive.");
     int64_t blockDim = std::min(coreNum, (totalLength + MIN_ELEMS_PER_CORE - 1) / MIN_ELEMS_PER_CORE);
     int64_t blockLength = (totalLength + blockDim - 1) / blockDim;
     int64_t tileSize = ubSize / PIPELINE_DEPTH / BUFFER_NUM;
@@ -137,7 +144,6 @@ __global__ __aicore__ void add_kernel(GM_ADDR x, GM_ADDR y, GM_ADDR z, int64_t t
     }
 }
 
-
 torch::Tensor add_npu(const torch::Tensor &x, const torch::Tensor &y)
 {
     auto z = add_meta(x, y);
@@ -171,7 +177,7 @@ torch::Tensor add_npu(const torch::Tensor &x, const torch::Tensor &y)
 }
 
 // Register the NPU implementation
-TORCH_LIBRARY_IMPL(ascend_ops, PrivateUse1, m)
+TORCH_LIBRARY_IMPL(EXTENSION_MODULE_NAME, PrivateUse1, m)
 {
     m.impl("add", add_npu);
 }
