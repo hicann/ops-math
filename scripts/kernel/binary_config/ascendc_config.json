@@ -21,6 +21,7 @@
     {"name":"TransposeV2", "compute_units": ["ascend910_93", "ascend910b"], "auto_sync": true},
     {"name":"FillV2", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"UnfoldGrad", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync": true},
+    {"name":"DivV2", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"AngleV2", "compute_units": ["ascend910", "ascend910b", "ascend910_93"], "auto_sync" : true},
     {"name":"GroupedBiasAddGrad", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
     {"name":"HansEncode", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
@@ -51,6 +52,5 @@
     {"name":"Onehot", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"Erf", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"Sinh", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
-    {"name":"MaximumV2", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
-    {"name":"Erf", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"}
+    {"name":"MaximumV2", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"}
 ]
