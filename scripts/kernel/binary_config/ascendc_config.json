@@ -27,6 +27,7 @@
     {"name":"HansEncode", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
     {"name":"HansDecode", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
     {"name":"HistogramV2", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
+    {"name":"SliceV3", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"}
     {"name":"IsFinite", "compute_units": ["ascend910_93", "ascend910b", "ascend310p"], "auto_sync": true},
     {"name":"IsInf", "compute_units": ["ascend910_93", "ascend910b", "ascend310p"], "auto_sync": true},
     {"name":"LinSpace", "compute_units": ["ascend910_93", "ascend910b", "ascend910", "ascend310p"], "auto_sync" : true},
