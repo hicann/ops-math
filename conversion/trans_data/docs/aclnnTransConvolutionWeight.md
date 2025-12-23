@@ -171,12 +171,12 @@ aclnnStatus aclnnTransConvolutionWeight(
   </tr>
   <tr>
   <td>executor</td>
-  <td>输出</td>
-  <td>返回op执行器，包含了算子计算流程。</td>
+  <td>输入</td>
+  <td>op执行器，包含了算子计算流程，由第一段接口aclnnTransConvolutionWeightGetWorkspaceSize获取。</td>
   </tr>
   <tr>
   <td>stream</td>
-  <td>输出</td>
+  <td>输入</td>
   <td>指定执行任务的Stream。</td>
   </tr>
   </table>
@@ -327,7 +327,7 @@ int aclnnTransConvolutionWeightTest(int32_t deviceId, aclrtStream& stream) {
   std::vector<float> biasHostData(2, 1);
   std::vector<float> outHostData(162, 0);
   uint64_t transWeightSize = 0;
-  
+
   // 创建input aclTensor
   ret = CreateAclTensor(inputHostData, inputShape, &inputDeviceAddr, aclDataType::ACL_FLOAT, &input);
   std::unique_ptr<aclTensor, aclnnStatus (*)(const aclTensor *)> selfTensorPtr(input, aclDestroyTensor);
@@ -352,7 +352,7 @@ int aclnnTransConvolutionWeightTest(int32_t deviceId, aclrtStream& stream) {
   std::unique_ptr<aclTensor, aclnnStatus (*)(const aclTensor *)> outTensorPtr(out, aclDestroyTensor);
   std::unique_ptr<void, aclError (*)(void *)> outDeviceAddrPtr(outDeviceAddr, aclrtFree);
   CHECK_FREE_RET(ret == ACL_SUCCESS, return ret);
-  
+
   // 创建Transweight acltensor
   void* transWeightDeviceAddr = nullptr;
   uint64_t size = transWeightSize * sizeof(float) / 2;
@@ -379,7 +379,7 @@ int aclnnTransConvolutionWeightTest(int32_t deviceId, aclrtStream& stream) {
   std::unique_ptr<aclTensor, aclnnStatus (*)(const aclTensor *)> transWeightTensorPtr(transWeight, aclDestroyTensor);
   std::unique_ptr<void, aclError (*)(void *)> transWeightDeviceAddrAddrPtr(transWeightDeviceAddr, aclrtFree);
 
-  // 3. 调用CANN算子库API，需要修改为具体的API名称
+  // 3. 调用 aclnnTransConvolutionWeight
   int8_t cubeMathType = 2; // USE_FP16
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
@@ -401,26 +401,26 @@ int aclnnTransConvolutionWeightTest(int32_t deviceId, aclrtStream& stream) {
   // 调用aclnnTransConvolutionWeight第二段接口
   ret = aclnnTransConvolutionWeight(workspaceAddr, workspaceSize, executor, stream);
   CHECK_FREE_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnTransConvolutionWeight failed. ERROR: %d\n", ret); return ret);
-    
-  std::vector<int64_t> convStrides = {1, 1, 1, 1};
-  std::vector<int64_t> convPads = {0, 0, 0, 0};
-  std::vector<int64_t> convOutPads = {1, 1, 1, 1};
-  std::vector<int64_t> convDilations = {1, 1, 1, 1};
 
-  aclIntArray *strides = aclCreateIntArray(convStrides.data(), 2);
+  std::vector<int64_t> convStrides = {1, 1};
+  std::vector<int64_t> convPads = {0, 0};
+  std::vector<int64_t> convOutPads = {1, 1};
+  std::vector<int64_t> convDilations = {1, 1};
+
+  aclIntArray *strides = aclCreateIntArray(convStrides.data(), convStrides.size());
   std::unique_ptr<aclIntArray, aclnnStatus (*)(const aclIntArray *)> stridesPtr(strides, aclDestroyIntArray);
   CHECK_FREE_RET(strides != nullptr, return ACL_ERROR_INTERNAL_ERROR);
-  aclIntArray *pads = aclCreateIntArray(convPads.data(), 2);
+  aclIntArray *pads = aclCreateIntArray(convPads.data(), convPads.size());
   std::unique_ptr<aclIntArray, aclnnStatus (*)(const aclIntArray *)> padsPtr(pads, aclDestroyIntArray);
   CHECK_FREE_RET(pads != nullptr, return ACL_ERROR_INTERNAL_ERROR);
-  aclIntArray *outPads = aclCreateIntArray(convOutPads.data(), 2);
+  aclIntArray *outPads = aclCreateIntArray(convOutPads.data(), convOutPads.size());
   std::unique_ptr<aclIntArray, aclnnStatus (*)(const aclIntArray *)> outPadsPtr(outPads, aclDestroyIntArray);
   CHECK_FREE_RET(outPads != nullptr, return ACL_ERROR_INTERNAL_ERROR);
-  aclIntArray *dilations = aclCreateIntArray(convDilations.data(), 2);
+  aclIntArray *dilations = aclCreateIntArray(convDilations.data(), convDilations.size());
   std::unique_ptr<aclIntArray, aclnnStatus (*)(const aclIntArray *)> dilationsPtr(dilations, aclDestroyIntArray);
   CHECK_FREE_RET(dilations != nullptr, return ACL_ERROR_INTERNAL_ERROR);
 
-  // 3. 调用CANN算子库API，需要修改为具体的API
+  // 4. 调用 aclnnConvolution
   workspaceSize = 0;
   // 调用aclnnConvolution第一段接口
   ret = aclnnConvolutionGetWorkspaceSize(input, transWeight, bias, strides, pads, dilations, false, outPads, groups,
