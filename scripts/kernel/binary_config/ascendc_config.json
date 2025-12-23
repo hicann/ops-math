@@ -6,6 +6,7 @@
     {"name":"Minimum", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"CircularPadGrad", "compute_units": ["ascend910b","ascend910_93"], "auto_sync" : true},
     {"name":"CoalesceSparse", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
+    {"name":"DotV2", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"DiagFlat", "compute_units": ["ascend910_93", "ascend910b", "ascend910", "ascend310p"], "auto_sync" : true},
     {"name":"DiagV2", "compute_units": ["ascend910_93", "ascend910b", "ascend910", "ascend310p"], "auto_sync" : true},
     {"name":"FeedsRepeat", "compute_units":["ascend910b","ascend910_93"], "auto_sync" : true},
