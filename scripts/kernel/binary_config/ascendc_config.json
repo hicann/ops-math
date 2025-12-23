@@ -3,6 +3,7 @@
     {"name":"AddLora", "compute_units": ["ascend310p", "ascend910b"], "auto_sync":true},
     {"name":"AddExample", "compute_units": ["ascend910b"], "auto_sync":true, "impl_mode" : "high_performance"},
     {"name":"CircularPad", "compute_units": ["ascend910b","ascend910_93"], "auto_sync" : true},
+    {"name":"Minimum", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"CircularPadGrad", "compute_units": ["ascend910b","ascend910_93"], "auto_sync" : true},
     {"name":"CoalesceSparse", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
     {"name":"DiagFlat", "compute_units": ["ascend910_93", "ascend910b", "ascend910", "ascend310p"], "auto_sync" : true},
@@ -48,5 +49,6 @@
     {"name":"Onehot", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"Erf", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"Sinh", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
-    {"name":"MaximumV2", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"}
+    {"name":"MaximumV2", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
+    {"name":"Erf", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"}
 ]
