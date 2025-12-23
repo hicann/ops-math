@@ -31,13 +31,14 @@ def run(options, script_name):
     option.append(mode)
     option.append("cust")
     option.append("--vendor_name=custom")
+    cmd_with_opt = script_name + options
 
     try:
         logger.info(f"正在执行 %s %s", " ".join(script_name), " ".join(option))
-        result = subprocess.run(script_name + option, capture_output=False, text=True)
+        result = subprocess.run(cmd_with_opt, capture_output=False, text=True)
         if result.returncode != 0:
-            logger.error(f"执行构建脚本{script_name}  {option} 失败，请查看日志\n")
+            logger.error(f"执行%s 失败，请查看日志\n", " ".join(cmd_with_opt))
             return
     except Exception as e:
-        logger.error(f"执行{script_name} {option} 失败： {e}")
+        logger.error(f"执行 %s 失败： {e}", " ".join(cmd_with_opt))
         return

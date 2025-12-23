@@ -1,17 +1,42 @@
-# opsuite
+# 算子工具一站式脚本工具 opsuite
 
-算子工具一站式平台，命令行支持如下：
+## 通过opsuite，可以完成如下用户神算子开发旅程：
+以下旅程以开发算子pows为例，默认在项目根路径下执行：
 
-positional arguments:
-  {debug,build,opprof,deploy_op,run_example}
-                        操作命令
-    debug               作用：对算子工程进行msdebug调试 命令行举例： python opsuite.py debug
-    build               作用：调用算子的编译工程脚本入口build.sh(默认)或者通过--script指定的shell或者python脚本，目的是编译出算子的二进制文件: 指定编译工程脚本入口文件场景举例： python opsuite.py build --script=../build.sh --pkg
-    opprof              作用：采集算子运行的关键性能指标，有上板(onboard)和仿真(simulator)两种运行模式: --type=onboard/simulator （默认为onboard） 命令行举例： python opsuite.py opprof
-                        --type=simulator --output=./output_data ./build/test_aclnn_abs
-    deploy_op           作用：执行算子安装包。 命令行举例： python opsuite.py deploy_op ./custom_*.run
-    run_example         作用：编译并执行算子的调用者example。 命令行举例： python opsuite.py run_example abs eager，其中abs是算子名称，必填项；eager则是控制模式，可选项有eager和graph，不填 默认为eager
+### 构建算子：
+- 普通构建：``` python scripts/opsuite/opsuite.py build ```
+- 调试构建：``` python scripts/opsuite/opsuite.py build --debug ```
+- 支持mssanitizer异常检测的构建：``` python scripts/opsuite/opsuite.py build --mssanitizer ```
+注：以上命令是在项目根路径下完成，如果不是在根路径执行，需要通过"--script="参数指定build.sh的相对路径
 
-options:
-  -h, --help            show this help message and exit
-  --version, -v         显示算子工具一站式平台的版本号
+### 算子执行
+```
+python scripts/opsuite/opsuite.py deploy_op ./build_out/cann-ops-math-custom_*.run
+```
+### 编译并执行example
+```
+python scripts/opsuite/opsuite.py run_example pows eager
+```
+生成可执行文件test_aclnn_pows，其中eager是控制模式，可选项有eager和graph，默认为eager
+
+### 算子调试
+```
+python scripts/opsuite/opsuite.py debug build/test_aclnn_pows
+```
+
+### 算子性能指标采集
+```
+python scripts/opsuite/opsuite.py opprof type=onboard  --output=./output_data ./build/test_aclnn_pows
+```
+算子性能指标采集有上板(onboard)和仿真(simulator)两种运行模式，默认为onboard. output参数指定采集数据输出的路径。
+
+### 算子异常检测
+```
+python scripts/opsuite/opsuite.py sanitizer ./build/test_aclnn_pows
+```
+默认执行内存检测
+
+### opsuite的详细帮助信息可以通过执行如下命令获取：
+```
+python scripts/opsuite/opsuite.py -h
+```
