@@ -11,6 +11,7 @@
     {"name":"DiagV2", "compute_units": ["ascend910_93", "ascend910b", "ascend910", "ascend310p"], "auto_sync" : true},
     {"name":"FeedsRepeat", "compute_units":["ascend910b","ascend910_93"], "auto_sync" : true},
     {"name":"FillDiagonalV2", "compute_units": ["ascend910b", "ascend910_93", "ascend310p"], "auto_sync" : true},
+    {"name":"Log", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"MaskedSelectV3", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : false},
     {"name":"PadV3GradReplicate", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
     {"name":"PadV3GradReplication", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync": false},
