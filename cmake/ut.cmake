@@ -128,6 +128,7 @@ if(UT_TEST_ALL OR OP_KERNEL_AICPU_UT)
     )
     target_sources(${AICPU_OP_KERNEL_MODULE_NAME}_common_obj PRIVATE ${OP_KERNEL_UT_COMMON_SRC})
     target_include_directories(${AICPU_OP_KERNEL_MODULE_NAME}_common_obj PRIVATE
+        ${ASCEND_DIR}/pkg_inc/base
         ${GTEST_INCLUDE}
     )
     target_compile_definitions(${AICPU_OP_KERNEL_MODULE_NAME}_common_obj PRIVATE _GLIBCXX_USE_CXX11_ABI=1)
@@ -142,7 +143,7 @@ if(UT_TEST_ALL OR OP_KERNEL_AICPU_UT)
     if(NOT TARGET ${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj)
         add_library(${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj OBJECT ${UT_PATH}/empty.cpp)
     endif()
-    target_link_libraries(${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj PRIVATE gcov -ldl)
+    target_link_libraries(${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj PRIVATE Eigen3::EigenMath gcov -ldl)
     target_sources(${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj PRIVATE ${OP_KERNEL_AICPU_UT_UTILS_SRC})
 
     ## add opkernel ut cases shared lib: libmath_aicpu_op_kernel_ut_cases.so
@@ -450,7 +451,7 @@ if(UT_TEST_ALL OR OP_KERNEL_AICPU_UT)
     file(GLOB KernelFile "${PROJECT_SOURCE_DIR}/*/${opName}/op_kernel_aicpu/${opName}_aicpu.cpp")
 
     ## add object: ${opName}_cases_obj
-    file(GLOB OPKERNEL_CASES_SRC ${UT_DIR}/tests/ut/op_kernel_aicpu/test_${opName}*.cpp)
+    file(GLOB OPKERNEL_CASES_SRC ${UT_DIR}/${opName}/tests/ut/op_kernel_aicpu/test_${opName}*.cpp)
     
     message(STATUS "aicpu kernel info: ${opName}, ${KernelFile}, ${OPKERNEL_CASES_SRC}")
 
@@ -467,6 +468,7 @@ if(UT_TEST_ALL OR OP_KERNEL_AICPU_UT)
             ${OPBASE_INC_DIRS}
             ${AICPU_INC_DIRS}
             ${PROJECT_SOURCE_DIR}/tests/ut/op_kernel_aicpu
+            ${ASCEND_DIR}/pkg_inc/base
             )
     target_link_libraries(${opName}_cases_obj PRIVATE
             $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
