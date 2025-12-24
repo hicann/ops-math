@@ -122,7 +122,7 @@ __aicore__ inline void SegsumND<T, MODE>::Process()
         return;
     }
     if ASCEND_IS_AIV {
-        if (MODE == 0) {
+        if constexpr (MODE == 0) {
             ComputeBase();
         } else {
             ComputeBatches();
