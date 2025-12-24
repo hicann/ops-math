@@ -1,4 +1,5 @@
 [
+    {"name":"MaskedFill", "compute_units": ["ascend910b", "ascend910", "ascend310b", "ascend310p"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"LinSpaceD", "compute_units": ["ascend910b", "ascend310b", "ascend910", "ascend310p"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"AddLora", "compute_units": ["ascend310p", "ascend910b"], "auto_sync":true},
     {"name":"AddExample", "compute_units": ["ascend910b"], "auto_sync":true, "impl_mode" : "high_performance"},
