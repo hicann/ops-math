@@ -31,7 +31,7 @@ AscendOps 是一个轻量级，高性能的算子开发工程模板，它集成�
 
 1. **安装社区版CANN包**
    
-    请参考[算子调用指南](../../docs/invocation/quick_op_invocation.md)的环境准备章节，安装CANN toolkit包和CANN legacy包，并配置好环境变量。
+    请参考[算子调用指南](../../docs/zh/invocation/quick_op_invocation.md)的环境准备章节，安装CANN toolkit包和CANN legacy包，并配置好环境变量。
     
 
 2. **安装torch与torch_npu包**

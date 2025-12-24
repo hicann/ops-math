@@ -73,13 +73,13 @@ ${op_name}                              # 替换为实际算子名的小写下�
 
 开发算子前需要先确定目标算子的功能和计算逻辑。
 
-以自定义`AddExample`算子说明为例，请参考[AddExample算子说明](../../examples/add_example/README.md)。
+以自定义`AddExample`算子说明为例，请参考[AddExample算子说明](../../../examples/add_example/README.md)。
 
 **交付件2：${op_name}_def.cpp**
 
 算子信息库。
 
-以自定义`AddExample`算子说明为例，请参考[AddExample算子信息库](../../examples/add_example/op_host/add_example_def.cpp)。
+以自定义`AddExample`算子说明为例，请参考[AddExample算子信息库](../../../examples/add_example/op_host/add_example_def.cpp)。
 ## Tiling实现
 
 ### Tiling简介
@@ -96,7 +96,7 @@ Tiling一共需要三个交付件：`${op_name}_tiling.cpp` `${op_name}_tiling_k
 
 Tiling主要切分逻辑。
 
-如需查看详细实现，请参考[add_example_tiling.cpp](../../examples/add_example/op_host/add_example_tiling.cpp)。
+如需查看详细实现，请参考[add_example_tiling.cpp](../../../examples/add_example/op_host/add_example_tiling.cpp)。
 
 ```CPP
 // ${op_name}_tiling.cpp
@@ -169,7 +169,7 @@ IMPL_OP_OPTILING(${op_name}).Tiling(TilingFunc).TilingParse<CompileInfo>(TilingP
 
 TilingKey是一个算子内为了区分不同的实现而将kernel代码进行区分的方法，kernel侧可以通过TilingKey来选择不同的算法逻辑。
 
-如需查看详细实现，请参考[add_example_tiling_key.h](../../examples/add_example/op_kernel/add_example_tiling_key.h)。
+如需查看详细实现，请参考[add_example_tiling_key.h](../../../examples/add_example/op_kernel/add_example_tiling_key.h)。
 
 ```CPP
 // ${op_name}_tiling_key.h
@@ -184,7 +184,7 @@ ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(
 
 切分算法相关的参数，比如总数据量大小、每个核数据切块数量，通过结构体存储。
 
-如需查看详细实现，请参考[add_example_tiling_data.h](../../examples/add_example/op_kernel/add_example_tiling_data.h)。
+如需查看详细实现，请参考[add_example_tiling_data.h](../../../examples/add_example/op_kernel/add_example_tiling_data.h)。
 
 ```CPP
 // ${op_name}_tiling_data.h
@@ -224,7 +224,7 @@ Kernel一共需要两个交付件：`${op_name}.cpp` `${op_name}.h`
 
 Kernel入口文件，包含主函数和调度逻辑。
 
-如需查看详细实现，请参考[add_example.cpp](../../examples/add_example/op_kernel/add_example.cpp)。
+如需查看详细实现，请参考[add_example.cpp](../../../examples/add_example/op_kernel/add_example.cpp)。
 
 ```CPP
 // 1、核函数定义
@@ -252,7 +252,7 @@ __global__ __aicore__ void add_example(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR 
 
 定义Kernel头文件，包含函数声明、结构定义、逻辑实现等。
 
-如需查看详细实现，请参考[add_example.h](../../examples/add_example/op_kernel/add_example.h)。
+如需查看详细实现，请参考[add_example.h](../../../examples/add_example/op_kernel/add_example.h)。
 
 ```C++
 // 2、定义Kernel类
@@ -352,7 +352,7 @@ __aicore__ inline void AddExample<T>::Process()
 
 2. **编译自定义算子包。**
 
-    以`AddExample`算子为例，假设开发交付件在`examples`目录，完整代码参见[add_example](../../examples/add_example)目录。若编译`experimental`目录下用户自定义算子，编译命令需增加编译参数`--experimental`。
+    以`AddExample`算子为例，假设开发交付件在`examples`目录，完整代码参见[add_example](../../../examples/add_example)目录。若编译`experimental`目录下用户自定义算子，编译命令需增加编译参数`--experimental`。
 
     进入项目根目录，执行如下编译命令。build.sh编译参数参考[build参数说明](../context/build.md)。
 
@@ -380,12 +380,12 @@ __aicore__ inline void AddExample<T>::Process()
     ```
      自定义算子包安装在`${ASCEND_HOME_PATH}/opp/vendors`路径中，`${ASCEND_HOME_PATH}`表示CANN软件安装目录，可提前在环境变量中配置。
 
-4. **（可选）删除自定义算子包**
+4. **（可选）卸载自定义算子包。**
 
-    注意自定义算子包不支持卸载，可通过如下操作删除：
-
-    请删除vendors\/\$\{vendor\_name}目录，并删除vendors/config.ini中load_priority对应\$\{vendor\_name\}的配置项。
-    
+    自定义算子包安装后在`${ASCEND_HOME_PATH}/opp/vendors/custom_math/scripts`目录会生成`uninstall.sh`，通过该脚本可卸载自定义算子包，命令如下：
+    ```bash
+    bash ${ASCEND_HOME_PATH}/opp/vendors/custom_math/scripts/uninstall.sh
+    ```
 
 ## 算子验证
 ```bash
@@ -395,7 +395,7 @@ __aicore__ inline void AddExample<T>::Process()
 
 1. **UT验证。**
 
-    算子开发过程中，可通过UT验证（如tiling）方式进行快速验证，如需查看详细实现，请参考[tiling UT](../../examples/add_example/tests/ut/op_host/test_add_example_tiling.cpp)
+    算子开发过程中，可通过UT验证（如tiling）方式进行快速验证，如需查看详细实现，请参考[tiling UT](../../../examples/add_example/tests/ut/op_host/test_add_example_tiling.cpp)
 
 2. **aclnn调用验证。**
 
@@ -560,7 +560,7 @@ IMPL_OP_INFERSHAPE(AddCustom).InferShape(InferShape);   // 在该文件中完成
 将原有${op_name}.cpp中TilingFunc迁移至该文件后，调用接口IMPL_OP_OPTILING完成TilingFunc注册。
 宏定义TilingData结构体改成标准C++结构体后，TilingFunc中对结构体成员变量不再使用tiling.set_xxx的方式进行赋值，而是直接对成员变量赋值。
 若是新增定义模板参数和模板参数组合，TilingFunc中需要同时配置模板参数tilingKey。
-可参考[add_example_tiling.cpp](../../examples/add_example/op_host/add_example_tiling.cpp)。
+可参考[add_example_tiling.cpp](../../../examples/add_example/op_host/add_example_tiling.cpp)。
 
 ```CPP
 // 原有${op_name}.cpp中TilingFunc
@@ -723,4 +723,4 @@ template<int D_T_X, int D_T_Y, int D_T_Z, int TILE_NUM, int IS_SPLIT>
 <p style="font-size:18px;"><b>op_kernel/{op_name}_tiling_key.h</b></p>
 </div>
 
-保留原有op_kernel/tiling_key_{op_name}.h中算子的模板参数定义，若不存在op_kernel/tiling_key_{op_name}.h，请参考[add_example_tiling_key.h](../../examples/add_example/op_kernel/add_example_tiling_key.h)新增定义模板参数和模板参数组合。
+保留原有op_kernel/tiling_key_{op_name}.h中算子的模板参数定义，若不存在op_kernel/tiling_key_{op_name}.h，请参考[add_example_tiling_key.h](../../../examples/add_example/op_kernel/add_example_tiling_key.h)新增定义模板参数和模板参数组合。

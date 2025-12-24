@@ -10,9 +10,9 @@
 
 基于社区版CANN包对算子源码修改时，可采用如下方式进行源码编译：
 
-- [自定义算子包](#自定义算子包)：选择部分算子编译生成的包称为自定义算子包，以**挂载**形式作用于CANN包，不改变原始包内容。生成的自定义算子包优先级高于原始CANN包。该包支持aclnn方式和图模式调用算子。
+- [自定义算子包](#自定义算子包)：选择部分算子编译生成的包称为自定义算子包，以**挂载**形式作用于CANN包，不改变原始包内容。生成的自定义算子包优先级高于原始CANN包。该包支持aclnn和图模式调用AI Core、AI CPU算子。
 
-- [ops-math包](#ops-math包)：选择整个项目编译生成的包称为ops-math包，可**完整替换**CANN包对应部分。该包支持aclnn方式和图模式调用算子。
+- [ops-math包](#ops-math包)：选择整个项目编译生成的包称为ops-math包，可**完整替换**CANN包对应部分。该包支持aclnn和图模式调用AI Core算子。
 
 ### 自定义算子包
 
@@ -24,7 +24,7 @@
     bash build.sh --pkg --soc=${soc_version} [--vendor_name=${vendor_name}] [--ops=${op_list}]
     # 以Abs算子编译为例
     # bash build.sh --pkg --soc=ascend910b --ops=abs
-    # 编译experimental贡献目录下的用户算子
+    # 编译experimental贡献目录下的用户算子（以Abs算子为例，编译时请以实际贡献算子为准）
     # bash build.sh --pkg --experimental --soc=ascend910b --ops=abs
     ```
     - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"。
@@ -48,11 +48,12 @@
     
     自定义算子包安装路径为`${ASCEND_HOME_PATH}/vendors`，\$\{ASCEND\_HOME\_PATH\}已通过环境变量配置，表示CANN toolkit包安装路径，一般为\$\{install\_path\}/cann。
 
-3. **（可选）删除自定义算子包**
+4. **（可选）卸载自定义算子包。**
 
-    注意自定义算子包不支持卸载，可通过如下操作删除：
-
-    请删除vendors\/\$\{vendor\_name}目录，并删除vendors/config.ini中load_priority对应\$\{vendor\_name\}的配置项。
+    自定义算子包安装后在`${ASCEND_HOME_PATH}/opp/vendors/custom_math/scripts`目录会生成`uninstall.sh`，通过该脚本可卸载自定义算子包，命令如下：
+    ```bash
+    bash ${ASCEND_HOME_PATH}/opp/vendors/custom_math/scripts/uninstall.sh
+    ```
 
 ### ops-math包
 
