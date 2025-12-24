@@ -60,15 +60,15 @@ void CalcExpectFunc(const NodeDef &node_def, T expect_out[]) {
                                 shapes, data_num)                                  \
   TEST_F(TEST_REALDIV_UT, TestRealdiv_##case_name) {                               \
     vector<DataType> data_types = {aicpu_type, aicpu_type, aicpu_type};            \
-    base_type input1[data_num[0]] = {(base_type)1, (base_type)1};                                \
-    base_type input2[data_num[1]] = {(base_type)1};                                \
-    base_type output[data_num[2]] = {(base_type)0};                                \
-    vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};       \
+    std::vector<base_type> input1(data_num[0], (base_type)1);                      \
+    std::vector<base_type> input2(data_num[0], (base_type)1);                      \
+    std::vector<base_type> output(data_num[2], (base_type)0);                      \
+    vector<void*> datas = {input1.data(), input2.data(), output.data()};           \
     CREATE_NODEDEF(shapes, data_types, datas);                                     \
     RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);                                  \
-    base_type expect_out[data_num[2]] = {(base_type)0};                            \
-    CalcExpectFunc(*node_def.get(), expect_out);                                   \
-    CompareResult<base_type>(output, expect_out, data_num[2]);                     \
+    std::vector<base_type> expect_out(data_num[2], (base_type)0);                  \
+    CalcExpectFunc(*node_def.get(), expect_out.data());                            \
+    CompareResult<base_type>(output.data(), expect_out.data(), data_num[2]);       \
   }
 
   #define ADD_ZERO_CASE(base_type, aicpu_type)                                    \
