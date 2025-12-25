@@ -287,10 +287,11 @@ class HansEncode {
     GatherMask(this->inputExpHalfLocal, this->inputHalfLocal, expPattern, false, 0, expParams, this->rsvdCnt);
     PipeBarrier<PIPE_V>();
     if (this->dtypeSize == sizeof(float)) {
-      GatherMask(this->inputHalfLocal.template ReinterpretCast<uint16_t>(),
-                 this->inputHalfLocal.template ReinterpretCast<uint16_t>(),
-                 this->fp32MantissaMaskLocal.template ReinterpretCast<uint16_t>(),
-                 false, 0, {static_cast<uint8_t>(expParams.repeatTimes), 1, 8, 1}, this->rsvdCnt);
+      GatherMask(
+          this->inputHalfLocal.template ReinterpretCast<uint16_t>(),
+          this->inputHalfLocal.template ReinterpretCast<uint16_t>(),
+          this->fp32MantissaMaskLocal.template ReinterpretCast<uint16_t>(), true,
+          expParams.repeatTimes * EACH_REPEAT_BYTES / sizeof(uint16_t), {1, 1, 8, 0}, this->rsvdCnt);
     } else {
       GatherMask(this->inputHalfLocal, this->inputHalfLocal, 1, false, 0, expParams, this->rsvdCnt);
     }
@@ -346,10 +347,11 @@ class HansEncode {
       CompareScalar(stateBufferBitCmpLocal.ReinterpretCast<uint8_t>(), overflowCheckLocal.ReinterpretCast<float>(),
                     this->const16Float, AscendC::CMPMODE::GT, EACH_LOOOP_REPEAT_TIMES);
       PipeBarrier<PIPE_V>();
-      GatherMask(this->inputHalfLocal.template ReinterpretCast<uint32_t>(),
-                 overflowCheckLocal.template ReinterpretCast<uint32_t>(),
-                 stateBufferBitCmpLocal.template ReinterpretCast<uint32_t>(),
-                 false, 0, {1, 1, 8, 1}, this->rsvdCnt);
+      GatherMask(
+          this->inputHalfLocal.template ReinterpretCast<uint32_t>(),
+          overflowCheckLocal.template ReinterpretCast<uint32_t>(),
+          stateBufferBitCmpLocal.template ReinterpretCast<uint32_t>(), true, EACH_REPEAT_BYTES / sizeof(uint32_t),
+          {1, 1, 8, 0}, this->rsvdCnt);
       uint64_t compressBufferOffset = AscendC::AscendCUtils::GetRsvdCnt();
       this->bufOffset -= (EACH_LOOOP_REPEAT_TIMES * sizeof(int32_t) + EACH_LOOOP_REPEAT_TIMES * sizeof(int32_t));
       if ((currentCoreOutputAcculmulateSize + EACH_LOOOP_REPEAT_TIMES * sizeof(int32_t) +
@@ -410,18 +412,20 @@ class HansEncode {
     PipeBarrier<PIPE_V>();
     Brcb(overflowFlagBrcbLocal, overflowFlagLocal, BYTE_BIT_NUM, {1, 8});
     PipeBarrier<PIPE_V>();
-    GatherMask(overflowFlagBrcbReduceLocal.template ReinterpretCast<uint32_t>(),
-               overflowFlagBrcbLocal.template ReinterpretCast<uint32_t>(),
-               this->reduceLowBlockMaskLocal.template ReinterpretCast<uint32_t>(),
-               false, 0, {8, 1, 8, 1}, this->rsvdCnt);
+    GatherMask(
+        overflowFlagBrcbReduceLocal.template ReinterpretCast<uint32_t>(),
+        overflowFlagBrcbLocal.template ReinterpretCast<uint32_t>(),
+        this->reduceLowBlockMaskLocal.template ReinterpretCast<uint32_t>(), true, CONST_8 * EACH_REPEAT_BYTES / sizeof(uint32_t),
+        {1, 1, 8, 0}, this->rsvdCnt);
     PipeBarrier<PIPE_V>();
     Muls(overflowFlagBrcbReduceLocal, overflowFlagBrcbReduceLocal, (int32_t)INT32_LOW_16_BIT_MASK,
          EACH_LOOOP_PROCESS_NUM / (sizeof(uint16_t) * BYTE_BIT_NUM));
     PipeBarrier<PIPE_V>();
-    GatherMask(this->outputDeviceLocal.template ReinterpretCast<uint16_t>(),
-               this->stateBufferLocal.template ReinterpretCast<uint16_t>(),
-               overflowFlagBrcbReduceLocal.template ReinterpretCast<uint16_t>(),
-               false, 0, {static_cast<uint8_t>(processDataLength / BLOCK_SIZE), 1, 8, 1}, this->rsvdCnt);
+    GatherMask(
+	    this->outputDeviceLocal.template ReinterpretCast<uint16_t>(),
+        this->stateBufferLocal.template ReinterpretCast<uint16_t>(),
+        overflowFlagBrcbReduceLocal.template ReinterpretCast<uint16_t>(), true,
+        processDataLength / BLOCK_SIZE * EACH_REPEAT_BYTES / sizeof(uint16_t), {1, 1, 8, 0}, this->rsvdCnt);
     this->compressBufferOffset = AscendC::AscendCUtils::GetRsvdCnt();
     GatherOutput(overflowFlagBrcbLocal, overflowFlagLocal, processDataLength);
     this->bufOffset -= (BLOCK_SIZE * sizeof(int32_t) + EACH_LOOOP_REPEAT_TIMES * sizeof(int32_t) +
@@ -626,10 +630,11 @@ class HansEncode {
                  this->rsvdCnt);
       PipeBarrier<PIPE_V>();
       if (this->dtypeSize == sizeof(int32_t)) {
-        GatherMask(inputReaminMantissaFp16LocalList[index].template ReinterpretCast<uint16_t>(),
-                   inputReaminFp16LocalList[index].template ReinterpretCast<uint16_t>(),
-                   this->fp32MantissaMaskLocal.template ReinterpretCast<uint16_t>(),
-                   false, 0, {static_cast<uint8_t>(expParams.repeatTimes), 1, 8, 1}, this->rsvdCnt);
+        GatherMask(
+            inputReaminMantissaFp16LocalList[index].template ReinterpretCast<uint16_t>(),
+            inputReaminFp16LocalList[index].template ReinterpretCast<uint16_t>(),
+            this->fp32MantissaMaskLocal.template ReinterpretCast<uint16_t>(), true, expParams.repeatTimes * EACH_REPEAT_BYTES / sizeof(uint16_t),
+            {1, 1, 8, 0}, this->rsvdCnt);
       } else {
         GatherMask(inputReaminMantissaFp16LocalList[index], inputReaminFp16LocalList[index], 1, false, 0, expParams,
                    this->rsvdCnt);

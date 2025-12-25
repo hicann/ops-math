@@ -141,10 +141,11 @@ protected:
                     compareLocalInt.template ReinterpretCast<uint8_t>(), this->inputLocal, scalarValue, CMPMODE::EQ,
                     computeLength);
                 PipeBarrier<PIPE_V>();
-                GatherMask(this->expLocal.template ReinterpretCast<intType>(),
-                           this->inputLocal.template ReinterpretCast<intType>(),
-                           compareLocalInt.template ReinterpretCast<intType>(),
-                           false, 0, {static_cast<uint8_t>(repeatTimes), 1, 8, 1}, this->rsvdCnt);
+                GatherMask(
+                    this->expLocal.template ReinterpretCast<intType>(),
+                    this->inputLocal.template ReinterpretCast<intType>(),
+                    compareLocalInt.template ReinterpretCast<intType>(), true, repeatTimes * EACH_REPEAT_BYTES / sizeof(intType),
+                    {1, 1, 8, 0}, this->rsvdCnt);
                 rsvdCnt = AscendC::AscendCUtils::GetRsvdCnt();
                 PipeBarrier<PIPE_V>();
                 SetFlag<HardEvent::V_S>(eventVS);
