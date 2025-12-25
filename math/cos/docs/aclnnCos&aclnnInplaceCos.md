@@ -1,18 +1,11 @@
 # aclnnCos&aclnnInplaceCos
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/cos)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -29,7 +22,7 @@ $$
 - aclnnCos和aclnnInplaceCos实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnCos：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceCos：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnCosGetWorkspaceSize”或者“aclnnInplaceCosGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCos”或者“aclnnInplaceCos”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnCosGetWorkspaceSize”或者“aclnnInplaceCosGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCos”或者“aclnnInplaceCos”接口执行计算。
 ```Cpp
 aclnnStatus aclnnCosGetWorkspaceSize(
   const aclTensor *input, 
@@ -130,12 +123,9 @@ aclnnStatus aclnnInplaceCos(
   </tbody>
   </table>
   
-  - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
-
-  
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)
 
   第一段接口完成入参校验，出现以下场景时报错：
   
@@ -211,7 +201,7 @@ aclnnStatus aclnnInplaceCos(
   
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceCosGetWorkspaceSize
 
@@ -272,12 +262,9 @@ aclnnStatus aclnnInplaceCos(
   </tbody>
   </table>
 
-  - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
-
-  
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -350,19 +337,17 @@ aclnnStatus aclnnInplaceCos(
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)
 
 ## 约束说明
 
 - 确定性计算：
   - aclnnCos&aclnnInplaceCos默认确定性实现。
 
-- <term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、BFLOAT16数据类型的输入数据范围为[-10^7,10^7]时满足精度要求，超过数值范围无法保证，请使用CPU进行计算。
-- <term>Atlas 推理系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：FLOAT、FLOAT16数据类型的输入数据范围为[-65504,65504]时满足精度要求，超过数值范围无法保证，请使用CPU进行计算。
-
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、BFLOAT16数据类型的输入数据范围为[-10^7,10^7]时满足精度要求，超过数值范围无法保证，请使用CPU进行计算。
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

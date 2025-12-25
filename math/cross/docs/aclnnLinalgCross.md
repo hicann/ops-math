@@ -4,13 +4,8 @@
 
 | 产品                                                         |  是否支持   |
 | :----------------------------------------------------------- |:-------:|
-| <term>昇腾910_95 AI处理器</term>                             |    √    |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √    |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √    |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √    |
 
 ## 功能说明
 
@@ -24,7 +19,7 @@ $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnLinalgCrossGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLinalgCross”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnLinalgCrossGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLinalgCross”接口执行计算。
 
 - `aclnnStatus aclnnLinalgCrossGetWorkspaceSize(const aclTensor* self, const aclTensor* other, int64_t dim, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
 - `aclnnStatus aclnnLinalgCross(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
@@ -33,19 +28,16 @@ $$
 
 - **参数说明：**
 
-  - self（aclTensor*，计算输入）: 公式中的self，Device侧的aclTensor，数据类型与other和out一致。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，数据维度支持0-8维, 需要与other满足[broadcast关系](../../../docs/context/broadcast关系.md)，且shape在dim指定的轴广播后的值为3。
-    - <term>Atlas 训练系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128。
+  - self（aclTensor*，计算输入）: 公式中的self，Device侧的aclTensor，数据类型与other和out一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度支持0-8维, 需要与other满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，且shape在dim指定的轴广播后的值为3。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128。
 
-  - other（aclTensor*，计算输入）: 公式中的other，Device侧的aclTensor，数据类型与self和out一致。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，数据维度支持0-8维, 需要与self满足[broadcast关系](../../../docs/context/broadcast关系.md)。
-    - <term>Atlas 训练系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128。
+  - other（aclTensor*，计算输入）: 公式中的other，Device侧的aclTensor，数据类型与self和out一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度支持0-8维, 需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128。
 
   - dim（int64_t，计算输入）: 指定self进行linear_cross的轴，数据类型为INT64，若不指定则默认为-1，范围在[-self维度数量，self维度数量-1]
 
-  - out（aclTensor*，计算输出）: 公式中的out，Device侧的aclTensor，数据类型与self和other一致。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，且shape需要与self和other broadcast后的shape一致。
-    - <term>Atlas 训练系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128。
+  - out（aclTensor*，计算输出）: 公式中的out，Device侧的aclTensor，数据类型与self和other一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，且shape需要与self和other broadcast后的shape一致。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128。
 
   - workspaceSize（uint64_t*，出参）：返回需要在Device侧申请的workspace大小。
 
@@ -54,7 +46,7 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -83,7 +75,7 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -93,7 +85,7 @@ $$
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 ```Cpp
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.

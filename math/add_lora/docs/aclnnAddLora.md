@@ -1,18 +1,10 @@
 # aclnnAddLora
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/add_lora)
-
 ## 产品支持情况
 
 |产品             |  是否支持  |
 |:-------------------------|:----------:|
-|  <term>昇腾910_95 AI处理器</term>   |     ×    |
-|  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     ×    |
-|  <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>     |     √    |
-
-|  <term>Atlas 推理系列产品 </term>    |     √    |
-
-
+|  <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |     √    |
 
 ## 功能说明
 
@@ -46,7 +38,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnAddLoraGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnAddLora”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnAddLoraGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnAddLora”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnAddLoraGetWorkspaceSize(
@@ -221,7 +213,7 @@ aclnnStatus aclnnAddLora(
   </tbody>
   </table>
 
-  - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>：weightB和weightAOptional的数据格式支持ND。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：weightB和weightAOptional的数据格式支持ND。
 
 - **返回值：**
 
@@ -259,7 +251,6 @@ aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/co
   </tr>
 </tbody>
 </table>
-
 
 ## aclnnFatreluMul
 
@@ -302,19 +293,16 @@ aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/co
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
 - 确定性计算：
   - aclnnAddLora默认确定性实现。
 
-- 确定性计算：
-  - aclnnAddLora默认确定性实现。
-
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

@@ -1,18 +1,11 @@
 # aclnnClampMinTensor&aclnnInplaceClampMinTensor
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/conversion/clip_by_value_v2)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -30,7 +23,7 @@
 
   - aclnnClampMinTensor：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceClampMinTensor：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnClampMinTensorGetWorkspaceSize”或者“aclnnInplaceClampMinTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnClampMinTensor”或者“aclnnInplaceClampMinTensor”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnClampMinTensorGetWorkspaceSize”或者“aclnnInplaceClampMinTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnClampMinTensor”或者“aclnnInplaceClampMinTensor”接口执行计算。
 
   - `aclnnStatus aclnnClampMinTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* clipValueMin, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
   - `aclnnStatus aclnnClampMinTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
@@ -41,26 +34,21 @@
 
 - **参数说明**：
 
-  - self(aclTensor*,计算输入): 输入tensor，Device侧的aclTensor，shape支持1维-8维，数据类型需要与clipValueMin的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/context/互推导关系.md)），支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
+  - self(aclTensor*,计算输入): 输入tensor，Device侧的aclTensor，shape支持1维-8维，数据类型需要与clipValueMin的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
 
-  - clipValueMin(aclTensor*,计算输入): 输入下限值tensor，数据类型需要与self满足数据类型推导规则（参见[互推导关系](../../../docs/context/互推导关系.md)）。shape需要与self满足[broadcast关系](../../../docs/context/broadcast关系.md)，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL。
+  - clipValueMin(aclTensor*,计算输入): 输入下限值tensor，数据类型需要与self满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。shape需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL。
 
-  - out(aclTensor *，计算输出)：输出tensor，shape需要与self满足[broadcast关系](../../../docs/context/broadcast关系.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64，数据类型和self保持一致，且数据类型需要是self与clipValueMin推导之后可转换的数据类型。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，数据类型和self保持一致，且数据类型需要是self与clipValueMin推导之后可转换的数据类型。
-    - <term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，数据类型需要是self与clipValueMin推导之后可转换的数据类型。
-
+  - out(aclTensor *，计算输出)：输出tensor，shape需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，数据类型和self保持一致，且数据类型需要是self与clipValueMin推导之后可转换的数据类型。
   - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
 
   - executor(aclOpExecutor **，出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -80,19 +68,17 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceClampMinTensorGetWorkspaceSize
 
 - **参数说明：**
 
-  - selfRef(aclTensor*,计算输入|计算输出): 数据类型与clipValueMin的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/context/互推导关系.md)），且推导后的数据类型需要能转换成selfRef自身的数据类型。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
+  - selfRef(aclTensor*,计算输入|计算输出): 数据类型与clipValueMin的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），且推导后的数据类型需要能转换成selfRef自身的数据类型。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
 
-  - clipValueMin(aclTensor*,计算输入): 输入下限值tensor，数据类型需要与selfRef满足数据类型推导规则（参见[互推导关系](../../../docs/context/互推导关系.md)）。shape需要与selfRef满足[broadcast关系](../../../docs/context/broadcast关系.md)，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，维度不超过8维。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
+  - clipValueMin(aclTensor*,计算输入): 输入下限值tensor，数据类型需要与selfRef满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。shape需要与selfRef满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，维度不超过8维。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
 
   - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
 
@@ -100,7 +86,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -122,16 +108,15 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
 - 确定性计算：
   - aclnnClampMinTensor&aclnnInplaceClampMinTensor默认确定性实现。
 
-
 ## 调用示例
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 **aclnnClampMinTensor示例代码：**
 

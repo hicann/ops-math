@@ -3,9 +3,8 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------- |
-| <term>昇腾910_95 AI处理器</term>                             | √        |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     | √        |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> | √        |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> | √        |
 | <term>Kirin X90 处理器系列产品</term>                          | √        |
 
 ## 功能说明
@@ -20,9 +19,7 @@
 | dims   | 输入数组       | 整型数组，代表原来tensor的维度，指定新的轴顺序。取值需在[-self的维度数量，self的维度数量-1]范围内。 | INT64    | -        |
 | out    | 输出           | 维度最大不超过8维，shape由dims和原self的shape共同决定，dtype需要与self一致。 | 同self   | ND       |
 
-- <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、UINT64、INT64、UINT32、INT32、UINT16、INT16、UINT8、INT8、BOOL、COMPLEX64、COMPLEX128。
-- <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、UINT64、INT64、UINT32、INT32、UINT16、INT16、UINT8、INT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16。
-- <term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、UINT64、INT64、UINT32、INT32、UINT16、INT16、UINT8、INT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN。
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、UINT64、INT64、UINT32、INT32、UINT16、INT16、UINT8、INT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16。
 - <term>Kirin X90 处理器系列产品</term>：数据类型支持FLOAT、FLOAT16。
 
 ## 约束说明

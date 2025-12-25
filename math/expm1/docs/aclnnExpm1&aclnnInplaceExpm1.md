@@ -1,18 +1,11 @@
 # aclnnExpm1&aclnnInplaceExpm1
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/expm1)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -30,7 +23,7 @@
   - aclnnExpm1：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceExpm1：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-- 每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnExpm1GetWorkspaceSize”或者“aclnnInplaceExpm1GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnExpm1”或者“aclnnInplaceExpm1”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnExpm1GetWorkspaceSize”或者“aclnnInplaceExpm1GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnExpm1”或者“aclnnInplaceExpm1”接口执行计算。
 
   - `aclnnStatus aclnnExpm1GetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
   - `aclnnStatus aclnnExpm1(void* workspace, uint64_t workspace_size, aclOpExecutor* executor, const aclrtStream stream)`
@@ -41,19 +34,16 @@
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)：公式中输入`self`，shape需要与out一致。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持INT64、BOOL、FLOAT、FLOAT16。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT64、BOOL、FLOAT、FLOAT16、BFLOAT16。
-  - out(aclTensor*, 计算输出)：公式中输入`out`，shape需要与self一致。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、FLOAT64。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、FLOAT64、BFLOAT16。
-    - <term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
+  - self(aclTensor*, 计算输入)：公式中输入`self`，shape需要与out一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT64、BOOL、FLOAT、FLOAT16、BFLOAT16。
+  - out(aclTensor*, 计算输出)：公式中输入`out`，shape需要与self一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、FLOAT64、BFLOAT16。
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -74,21 +64,20 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceExpm1GetWorkspaceSize
 
 - **参数说明：**
 
-  - selfRef(aclTensor*, 计算输入|计算输出)：输入输出tensor，即公式中输入`self`与`out`。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。  
+  - selfRef(aclTensor*, 计算输入|计算输出)：输入输出tensor，即公式中输入`self`与`out`。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。  
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -107,17 +96,16 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
 - 确定性计算：
   - aclnnExpm1&aclnnInplaceExpm1默认确定性实现。
 
-
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 **aclnnExpm1示例代码：**
 

@@ -4,13 +4,8 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-| 
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -56,12 +51,9 @@
     </tr>
   </tbody></table>
 
-- <term>昇腾910_95 AI处理器</term>：支持FLOAT、FLOAT16、BFLOAT16。
-- <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16。
-
 ## 约束说明
 
-- 输入类型为INT8、INT16、INT32、INT64、UINT8、BOOL时，转化为FLOAT32进行运算，输出FLOAT32类型。支持[非连续的Tensor](../../docs/context/非连续的Tensor.md)，[数据格式](../../docs/context/数据格式.md)支持ND，非连续的Tensor维度不大于8，且输入与输出的shape需要一致。
+- 输入类型为INT8、INT16、INT32、INT64、UINT8、BOOL时，转化为FLOAT32进行运算，输出FLOAT32类型。支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../docs/zh/context/数据格式.md)支持ND，非连续的Tensor维度不大于8，且输入与输出的shape需要一致。
 
 ## 调用说明
 

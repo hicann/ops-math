@@ -1,24 +1,18 @@
 # aclnnLogSumExp
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/reduce_log_sum_exp)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
 - 算子功能：返回输入tensor指定维度上的指数之和的对数。
 - 计算公式：
   公式中i为dim指定的维度，j为输入在指定维度上的元素索引。
+
   $$
   logsumexp(x)_i = log\sum_{j} exp(x_{ij} )
   $$
@@ -39,7 +33,7 @@
 ```
 
 ## 函数原型
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnLogSumExpGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLogSumExp”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnLogSumExpGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLogSumExp”接口执行计算。
 
 - `aclnnStatus aclnnLogSumExpGetWorkspaceSize(const aclTensor* self, const aclIntArray* dim, bool keepDim, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
 - `aclnnStatus aclnnLogSumExp(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
@@ -48,26 +42,23 @@
 
 - **参数说明：**
 
-  - self（aclTensor*, 计算输入）：公式中的`self`，Device侧的aclTensor。shape支持0-8维，数据类型需要可转换成out数据类型（参见[互转换关系](./../../../docs/context/互转换关系.md)）。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL。
+  - self（aclTensor*, 计算输入）：公式中的`self`，Device侧的aclTensor。shape支持0-8维，数据类型需要可转换成out数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL。
 
   - dim（aclIntArray*，计算输入）：参与计算的维度，公式中的`i`，Host侧的aclIntArray。取值范围为[-self.dim(), self.dim()-1]，支持的数据类型为INT64。
 
   - keepDim（bool, 计算输入）：决定reduce轴的维度是否保留，HOST侧的BOOL常量。
 
-  - out（aclTensor*, 计算输入）：公式中的$logsumexp(x)$，Device侧的aclTensor。shape支持0-8维。若keepDim为true，除dim指定维度上的size为1以外，其余维度的shape需要与self保持一致；若keepDim为false，reduce轴的维度不保留，其余维度shape需要与self一致。数据类型需要可转换成self数据类型（参见[互转换关系](./../../../docs/context/互转换关系.md)）。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
+  - out（aclTensor*, 计算输入）：公式中的$logsumexp(x)$，Device侧的aclTensor。shape支持0-8维。若keepDim为true，除dim指定维度上的size为1以外，其余维度的shape需要与self保持一致；若keepDim为false，reduce轴的维度不保留，其余维度shape需要与self一致。数据类型需要可转换成self数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
 
   - workspaceSize（uint64_t*, 出参）：返回需要在Device侧申请的workspace大小。
 
   - executor（aclOpExecutor**, 出参）：返回op执行器，包含了算子计算流程。
 
-
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ```
 第一段接口完成入参校验，出现以下场景时报错：
@@ -92,18 +83,16 @@
 
   - stream（aclrtStream, 入参）：指定执行任务的Stream。
 
-
 - **返回值：**
-  - aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)
+  - aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)
   
 ## 约束说明
 
 - 确定性计算：
   - aclnnLogSumExp默认确定性实现。
 
-
 ## 调用示例
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>

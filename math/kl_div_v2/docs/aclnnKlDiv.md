@@ -1,18 +1,11 @@
 # aclnnKlDiv
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/kl_div_v2)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -41,7 +34,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](./../../../docs/context/两段式接口.md)，必须先调用“aclnnKlDivGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnKlDiv”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnKlDivGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnKlDiv”接口执行计算。
 
 * `aclnnStatus aclnnKlDivGetWorkspaceSize(const aclTensor *self, const aclTensor *target, int64_t reduction, bool logTarget, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
 * `aclnnStatus aclnnKlDiv(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -49,29 +42,23 @@
 ## aclnnKlDivGetWorkspaceSize
 
 * **参数说明**：
-  * self (aclTensor*,计算输入)：公式中的`self`。Device侧的aclTensor。且数据类型与target的数据类型需满足数据类型推导规则（参见[互推导关系](./../../../docs/context/互推导关系.md)），shape需要与target满足[broadcast关系](./../../../docs/context/broadcast关系.md)。支持[非连续的Tensor](./../../../docs/context/非连续的Tensor.md)，[数据格式](./../../../docs/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、
-     <term>昇腾910_95 AI处理器</term>：FLOAT、FLOAT16、BFLOAT16
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT、FLOAT16
-  * target (aclTensor*, 计算输入)：公式中的`target`。且数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](./../../../docs/context/互推导关系.md)），shape需要与self满足[broadcast关系](./../../../docs/context/broadcast关系.md)。支持[非连续的Tensor](./../../../docs/context/非连续的Tensor.md)，[数据格式](./../../../docs/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、
-     <term>昇腾910_95 AI处理器</term>：FLOAT、FLOAT16、BFLOAT16
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT、FLOAT16
+  * self (aclTensor*,计算输入)：公式中的`self`。Device侧的aclTensor。且数据类型与target的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），shape需要与target满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、
+  * target (aclTensor*, 计算输入)：公式中的`target`。且数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），shape需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、
   * reduction (int64_t，计算输入): 公式中的`reduction`，指定计算完loss_pointwise之后的操作。
     - 0：none，表示不做reduction操作。
     - 1：mean，表示计算loss_pointwise的均值。
     - 2：sum，表示对loss_pointwise求和。
     - 3：batchmean，表示计算批次的平均损失，与Kullback_Leibler散度的数学定义一致。
   * logTarget(bool，计算输入): 指定传入的target数据是否已经做过log操作。
-  * out (aclTensor*，计算输出)：公式中的`out`。数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](./../../../docs/context/互推导关系.md)）。当`reduction`为 0 时，shape需要与self和target满足[broadcast关系](./../../../docs/context/broadcast关系.md)。当`reduction`不为0时，shape固定为(1,)。[数据格式](../../../docs/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、
-     <term>昇腾910_95 AI处理器</term>：FLOAT、FLOAT16、BFLOAT16
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT、FLOAT16
+  * out (aclTensor*，计算输出)：公式中的`out`。数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。当`reduction`为 0 时，shape需要与self和target满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。当`reduction`不为0时，shape固定为(1,)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、
   * workspaceSize(uint64_t*，出参)：返回需要在Device侧申请的workspace大小。
   * executor(aclOpExecutor**，出参)：返回op执行器，包含了算子计算流程。
 * **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   ````
   第一段接口完成入参校验，出现以下场景时报错：
@@ -92,17 +79,16 @@
   - stream（aclrtStream, 入参）：指定执行任务的Stream。
 - **返回值**：
   
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
 - 确定性计算：
   - aclnnKlDiv默认确定性实现。
 
-
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](./../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

@@ -1,18 +1,11 @@
 # aclnnPolar
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/complex)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    ×     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -26,7 +19,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnPolarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnPolar”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnPolarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnPolar”接口执行计算。
 
 - `aclnnStatus aclnnPolarGetWorkspaceSize(const aclTensor* input, const aclTensor* angle, aclTensor* out,uint64_t* workspaceSize, aclOpExecutor** executor)`
 - `aclnnStatus aclnnPolar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
@@ -35,19 +28,18 @@
 
 - **参数说明：**
 
-  - input(aclTensor*，计算输入)：输入的tensor，公式中的`abs`，数据类型支持FLOAT，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，维度最大不超过8维。
+  - input(aclTensor*，计算输入)：输入的tensor，公式中的`abs`，数据类型支持FLOAT，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，维度最大不超过8维。
 
-  - angle(aclTensor*，计算输入)：输入的tensor，公式中的`angle`，数据类型必须与input相同，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，维度与input保持一致。
+  - angle(aclTensor*，计算输入)：输入的tensor，公式中的`angle`，数据类型必须与input相同，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，维度与input保持一致。
 
-  - out(aclTensor*，计算输出)：输出的tensor，公式中的`out`，数据类型支持COMPLEX64，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，维度与input保持一致。
+  - out(aclTensor*，计算输出)：输出的tensor，公式中的`out`，数据类型支持COMPLEX64，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，维度与input保持一致。
   - workspaceSize(uint64_t*，出参)：返回需要在Device侧申请的workspace大小。
 
   - executor(aclOpExecutor**，出参)：返回op执行器，包含了算子计算流程。
 
-
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ```
 第一段接口完成入参校验，出现以下场景时报错：
@@ -70,20 +62,18 @@
 
   - stream(aclrtStream，入参)：指定执行任务的Stream。
 
-
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
 - 确定性计算：
   - aclnnPolar默认确定性实现。
 
-
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>

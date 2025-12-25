@@ -1,18 +1,11 @@
 # aclnnAdd&aclnnInplaceAdd
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/add)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -29,7 +22,7 @@
   - aclnnAdd：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceAdd：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-- 每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnAddGetWorkspaceSize”或者“aclnnInplaceAddGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnAdd”或者“aclnnInplaceAdd”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnAddGetWorkspaceSize”或者“aclnnInplaceAddGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnAdd”或者“aclnnInplaceAdd”接口执行计算。
 
   ```Cpp
   aclnnStatus aclnnAddGetWorkspaceSize(
@@ -98,8 +91,8 @@
       <td>公式中的输入self。</td>
       <td>
         <ul>
-          <li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
-          <li>shape需要与other满足<a href="../../../docs/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+          <li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
+          <li>shape需要与other满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。</li>
         <ul>
       </td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
@@ -113,8 +106,8 @@
       <td>公式中的输入other。</td>
       <td>
         <ul>
-          <li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
-          <li>shape需要与other满足<a href="../../../docs/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+          <li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
+          <li>shape需要与other满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。</li>
         <ul>
       </td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
@@ -138,7 +131,7 @@
       <td>公式中的out。</td>
       <td>
         <ul>
-          <li>数据类型需要是self与other推导之后可转换的数据类型（参见<a href="../../../docs/context/互转换关系.md" target="_blank">互转换关系</a>）。</li>
+          <li>数据类型需要是self与other推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</li>
           <li>shape需要是self与other broadcast之后的shape。</li>
         </ul>
       </td>
@@ -170,11 +163,9 @@
   </tbody>
   </table>
 
-  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
-
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -221,7 +212,6 @@
   </tbody>
   </table>
 
-
 ## aclnnAdd
 
 - **参数说明：**
@@ -263,7 +253,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceAddGetWorkspaceSize
 
@@ -297,8 +287,8 @@
       <td>输入输出tensor，即公式中的self与out。</td>
       <td>
         <ul>
-          <li>shape需要与other满足<a href="../../../docs/context/broadcast关系.md" target="_blank">broadcast关系</a>，且广播后的shape必须等于selfRef的shape。</li>
-          <li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/context/互推导关系.md" target="_blank">互推导关系</a>），且需要是推导之后可转换的数据类型（参见<a href="../../../docs/context/互转换关系.md" target="_blank">互转换关系</a>）。</li>
+          <li>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>，且广播后的shape必须等于selfRef的shape。</li>
+          <li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），且需要是推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</li>
         </ul>
       </td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
@@ -312,8 +302,8 @@
       <td>公式中的输入other。</td>
       <td>
         <ul>
-          <li>数据类型与selfRef的数据类型需满足数据类型推导规则（参见<a href="../../../docs/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
-          <li>shape需要与selfRef满足<a href="../../../docs/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+          <li>数据类型与selfRef的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
+          <li>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
         </ul>
       </td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
@@ -354,11 +344,9 @@
   </tbody>
   </table>
 
-  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
-
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -444,20 +432,18 @@
   </tbody>
   </table>
 
-
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
 - 确定性计算：
   - aclnnAdd&aclnnInplaceAdd默认确定性实现。
 
-
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

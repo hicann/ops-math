@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -27,9 +27,9 @@
 
 - **参数说明**：
   - input(aclTensor*，计算输入)：输入Tensor，Device侧的aclTensor，当类型为FLOAT16、BFLOAT16时，转化为FLOAT32进行运算，输出FLOAT32类型。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，非连续的Tensor维度不大于8，且shape需要与out一致。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
   - out(aclTensor\*，计算输出)：输出Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，非连续的Tensor维度不大于8，且shape需要与input一致。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。   
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。   
   - workspaceSize(uint64_t\*，出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor \*\*，出参)：返回op执行器，包含了算子计算流程。
 

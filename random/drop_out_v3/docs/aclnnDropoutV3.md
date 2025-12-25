@@ -4,13 +4,8 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    ×     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    ×     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    ×     |
 
 ## 功能说明
 
@@ -24,7 +19,7 @@ $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnDropoutV3GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnDropoutV3”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnDropoutV3GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnDropoutV3”接口执行计算。
 
 - `aclnnStatus aclnnDropoutV3GetWorkspaceSize(const aclTensor* input, const aclTensor* optionalNoiseShape, double p, int64_t seed, int64_t offset, aclTensor* out, aclTensor* maskOut, uint64_t* workspaceSize, aclOpExecutor** executor)`
 - `aclnnStatus aclnnDropoutV3(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -33,7 +28,7 @@ $$
 
 - **参数说明：**
 
-  - input(aclTensor*, 计算输入)：公式中的输入`input`，数据类型支持FLOAT、FLOAT16、BFLOAT16，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md), [数据格式](../../../docs/context/数据格式.md)支持ND。
+  - input(aclTensor*, 计算输入)：公式中的输入`input`，数据类型支持FLOAT、FLOAT16、BFLOAT16，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md), [数据格式](../../../docs/zh/context/数据格式.md)支持ND。
 
   - optionalNoiseShape(aclTensor*, 可选输入)：预留参数，入参请用空指针代替。
 
@@ -43,9 +38,9 @@ $$
 
   - offset(int64_t, 计算输入)：随机数的偏移量，它影响生成的随机数序列的位置。
 
-  - out(aclTensor*, 计算输出)：公式中的`out`，数据类型需要是input可转换的数据类型，数据类型支持FLOAT、FLOAT16、BFLOAT16，shape需要与input一致，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)。[数据格式](../../../docs/context/数据格式.md)支持ND。
+  - out(aclTensor*, 计算输出)：公式中的`out`，数据类型需要是input可转换的数据类型，数据类型支持FLOAT、FLOAT16、BFLOAT16，shape需要与input一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
 
-  - maskOut(aclTensor*, 计算输出)：bit类型并使用UINT8类型存储的mask数据。数据类型支持UINT8，shape需要为(align(input的元素个数,128)/8)。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)。[数据格式](../../../docs/context/数据格式.md)支持ND。当p=0或p=1场景下，不对传入的maskOut做任何处理；其它场景下以给定的p为置零概率生成mask。
+  - maskOut(aclTensor*, 计算输出)：bit类型并使用UINT8类型存储的mask数据。数据类型支持UINT8，shape需要为(align(input的元素个数,128)/8)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。当p=0或p=1场景下，不对传入的maskOut做任何处理；其它场景下以给定的p为置零概率生成mask。
 
   - workspaceSize(uint64_t*, 出参)：返回用户需要在Device侧申请的workspace大小。
 
@@ -54,7 +49,7 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ```
 第一段接口完成入参校验，出现以下场景时报错：
@@ -80,7 +75,7 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -90,7 +85,7 @@ $$
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 ```c++
 #include <iostream>
 #include <vector>

@@ -3,13 +3,8 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| 昇腾910_95 AI处理器                             |    √     |
 | Atlas A3 训练系列产品/Atlas A3 推理系列产品     |    √     |
 | Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件 |    √     |
-| Atlas 200I/500 A2 推理产品                      |    √     |
-| Atlas 推理系列产品                              |    √     |
-| Atlas 训练系列产品                              |    √     |
-| Atlas 200/300/500 推理产品                      |    √     |
 
 ## 功能说明
 
@@ -85,14 +80,12 @@
   </tbody></table>
 
 * 对于带有padding的分支：不支持INT16、INT64、UINT8、UINT16、UINT32、UINT64。
-* Atlas 训练系列产品、Atlas 推理系列产品、Atlas 200I/500 A2 推理产品、Atlas 200/300/500 推理产品：不支持BFLOAT16。
-
 ## 约束说明
 
 * 必须满足以下值范围：  
 '<====>'表示格式是双向支持的，无论是输入还是输出。  
 '====>'表示不支持该格式转换，输入和输出数据类型必须相互对应。  
-[数据格式简介](https://www.hiascend.com/document/detail/canncommercial/82RC1/API/aolapi/context/common/%E6%95%B0%E6%8D%AE%E6%A0%BC%E5%BC%8F.md)  
+[数据格式简介](https://www.hiascend.com/document/detail/zh/canncommercial/82RC1/API/aolapi/context/common/%E6%95%B0%E6%8D%AE%E6%A0%BC%E5%BC%8F.md)  
 
   | src_format <====> dst_format | dtype                              | C0    | groups |  
   | :-------------------------: | :--------------------------------: |:-----:| :----: |  

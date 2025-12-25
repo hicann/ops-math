@@ -3,13 +3,8 @@
 ## 产品支持情况
 | 产品                                                         |  是否支持   |
 | :----------------------------------------------------------- |:-------:|
-| <term>昇腾910_95 AI处理器</term>                             |    ×     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √    |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √    |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×    |
-| <term>Atlas 推理系列产品 </term>                             |    ×    |
-| <term>Atlas 训练系列产品</term>                              |    ×    |
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √    |
 
 
 ## 功能说明 
@@ -25,7 +20,7 @@
 
 ## 函数原型 
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclRfft1DGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclRfft1D”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclRfft1DGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclRfft1D”接口执行计算。
 
 * `aclnnStatus aclRfft1DGetWorkspaceSize(const aclTensor* self, int64_t n, int64_t dim, int64_t norm, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
 * `aclnnStatus aclRfft1D(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -33,18 +28,18 @@
 ## aclRfft1DGetWorkspaceSize 
 
 * 参数说明：
-    * self(aclTensor\*, 计算输入): 即公式中的输入。数据类型支持FLOAT，[数据格式](../../../docs/context/数据格式.md)支持ND。
+    * self(aclTensor\*, 计算输入): 即公式中的输入。数据类型支持FLOAT，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     * n(int64_t, 计算输入): 表示信号长度。数据类型支持INT64。如果给定，则在计算Rfft1D之前，输入将被补零或修剪到此长度。n取值范围为[1, 4096]，2的n次幂最大值为262144。
     * dim(int64_t, 计算输入): 表示维度。数据类型支持INT64。如果给定，则RFFT将应用于指定的维度。支持的值为-1。
     * norm(int64_t, 计算输入): 表示归一化模式。数据类型支持INT64。支持取值：1表示不归一化，2表示按1/n归一化，3表示按1/sqrt(n)归一化。
-    * out (aclTensor\*, 计算输出): 表示公式中的输出。数据类型支持FLOAT。[数据格式](../../../docs/context/数据格式.md)支持ND。
+    * out (aclTensor\*, 计算输出): 表示公式中的输出。数据类型支持FLOAT。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     * workspaceSize (uint64_t, 出参): 返回需要在Device侧申请的workspace大小。
     * executor(aclOpExecutor\*, 出参): 返回op执行器，包含了算子计算流程。
 
 
 * 返回值：
 
-    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
     ```
     第一段接口完成入参校验，出现以下场景时报错：
     返回161001（ACLNN_ERR_PARAM_NULLPTR）: 1. 输入或输出tensor为空。
@@ -61,7 +56,7 @@
     * stream（aclrtStream, 入参）：指定执行任务的Stream。
 * 返回值：
 
-    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明 
 
@@ -70,7 +65,7 @@
 
 ## 调用示例 
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

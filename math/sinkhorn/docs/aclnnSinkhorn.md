@@ -1,11 +1,11 @@
 # aclnnSinkhorn
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/sinkhorn)
-
 ## 支持的产品型号
 
-- <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>。
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>。
+| 产品                                                         | 是否支持 |
+| :----------------------------------------------------------- | :------: |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -56,7 +56,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnSinkhornGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnSinkhorn”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSinkhornGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnSinkhorn”接口执行计算。
 
 - `aclnnStatus aclnnSinkhornGetWorkspaceSize(const aclTensor *cost, const aclScalar *tol, aclTensor *p, uint64_t *workspaceSize, aclOpExecutor** executor)`
 - `aclnnStatus aclnnSinkhorn(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -65,15 +65,15 @@
 
 - **参数说明**：
 
-    - cost（aclTensor*，计算输入）：表示成本张量，公式中的`cost`，Device侧的aclTensor。数据类型支持BFLOAT16、FLOAT16、FLOAT。[数据格式](../../../docs/context/数据格式.md)支持ND，输入为二维矩阵且列数不超过4096。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)。
+    - cost（aclTensor*，计算输入）：表示成本张量，公式中的`cost`，Device侧的aclTensor。数据类型支持BFLOAT16、FLOAT16、FLOAT。[数据格式](../../../docs/zh/context/数据格式.md)支持ND，输入为二维矩阵且列数不超过4096。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
     - tol (aclScalar*, 入参) ：表示计算Sinkhorn的误差，数据类型支持FLOAT。如果传入空指针，则tol取0.0001。
-    - p（aclTensor*，计算输出）：表示最优传输张量，公式中的`p`，Device侧的aclTensor。数据类型支持BFLOAT16、FLOAT16、FLOAT。[数据格式](../../../docs/context/数据格式.md)支持ND。shape维度为2。不支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)。数据类型和shape与入参`cost`的数据类型和shape一致。
+    - p（aclTensor*，计算输出）：表示最优传输张量，公式中的`p`，Device侧的aclTensor。数据类型支持BFLOAT16、FLOAT16、FLOAT。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。shape维度为2。不支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。数据类型和shape与入参`cost`的数据类型和shape一致。
     - workspaceSize（uint64_t\*，出参）：返回用户需要在Device侧申请的workspace大小。
     - executor（aclOpExecutor\**，出参）：返回op执行器，包含了算子计算流程。
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -93,17 +93,16 @@
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
 - 确定性计算：
   - aclnnSinkhorn默认确定性实现。
 
-
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

@@ -1,18 +1,11 @@
 # aclnnMinDim
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/arg_min_with_value)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -20,7 +13,7 @@
 
 ## 函数原型
 
-- 每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnMinDimGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMinDim”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnMinDimGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMinDim”接口执行计算。
 
 - `aclnnStatus aclnnMinDimGetWorkspaceSize(const aclTensor *self, int64_t dim, bool keepdim, aclTensor *out, aclTensor *indices, uint64_t *workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnMinDim(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -29,31 +22,23 @@
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)：待转换的目标张量，Device侧的aclTensor。数据类型与out一致，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。支持[1, 8]维。
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、INT64、BOOL
-     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、INT64、BOOL、BFLOAT16
-     * <term>昇腾910_95 AI处理器</term>：FLOAT、FLOAT16、INT64、BOOL、BFLOAT16、INT32
-
-
+  - self(aclTensor*, 计算输入)：待转换的目标张量，Device侧的aclTensor。数据类型与out一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。支持[1, 8]维。
+     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、INT64、BOOL、BFLOAT16
   - dim(int64_t, 计算输入)：指定的维度，数据类型为INT64，取值范围在[-self.dim(), self.dim())。
 
   - keepdim(bool，计算输入)：reduce轴的维度是否保留，数据类型为BOOL。
 
-  - out(aclTensor*, 计算输出)：Device侧的aclTensor，且数据类型和self一致。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。如果keepdim为false，则输出维度为self维度减1；如果keepdim为true，则输出维度等于self维度。  
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、INT64、BOOL
-     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、INT64、BOOL、BFLOAT16
-     * <term>昇腾910_95 AI处理器</term>：FLOAT、FLOAT16、INT64、BOOL、BFLOAT16、INT32
-
-  - indices(aclTensor*, 计算输出)：Device侧的aclTensor，数据类型支持INT32。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
+  - out(aclTensor*, 计算输出)：Device侧的aclTensor，且数据类型和self一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。如果keepdim为false，则输出维度为self维度减1；如果keepdim为true，则输出维度等于self维度。  
+     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、INT64、BOOL、BFLOAT16
+  - indices(aclTensor*, 计算输出)：Device侧的aclTensor，数据类型支持INT32。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
 
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
 
   - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
 
-
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -74,20 +59,18 @@
 
   - stream(aclrtStream, 入参)：指定执行任务的Stream。
 
-
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
 - 确定性计算：
   - aclnnMinDim默认确定性实现。
 
-
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>

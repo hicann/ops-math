@@ -4,7 +4,7 @@
 
 | 产品                                                                            | 是否支持 |
 | :------------------------------------------------------------------------------ | :------: |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -17,7 +17,7 @@
 | input  | 输入张量 | 输入张量。                                   | FLOAT16、FLOAT32、INT32、INT8、UINT8、BF16、BOOL | ND       |
 | output | 输出张量 | 与输入张量形状相同的新张量，所有元素都为 1。 | 与input一致                          | ND       |
 
-- <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>：数据类型支持FLOAT16、FLOAT32、INT32、INT8、UINT8、BF16、BOOL。
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持FLOAT16、FLOAT32、INT32、INT8、UINT8、BF16、BOOL。
 
 ## 约束说明
 

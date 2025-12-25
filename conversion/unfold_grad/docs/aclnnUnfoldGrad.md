@@ -1,17 +1,10 @@
 # aclnnUnfoldGrad
 ## 产品支持情况
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/conversion/unfold_grad)
-
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |     ×      |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √       |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-| <term>Atlas 推理系列产品 </term>                             |   ×     |
-| <term>Atlas 训练系列产品</term>                              |   ×    |
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -43,17 +36,17 @@ tensor([1, 2, 3, 4, 5, 6, 0])
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnUnfoldGradGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnUnfoldGrad”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnUnfoldGradGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnUnfoldGrad”接口执行计算。
 
-- `aclnnStatus aclnnUnfoldGradGetWorkspaceSize(const aclTensor *gradOut, const aclIntArray *inputSizes, int dim, int size, int step, aclTensor *gradIn, uint64_t *workspaceSize, aclOpExecutor **executor)`
+- `aclnnStatus aclnnUnfoldGradGetWorkspaceSize(const aclTensor *gradOut, const aclIntArray *inputSizes, int64_t dim, int64_t size, int64_t step, const aclTensor *gradIn, uint64_t *workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnUnfoldGrad(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
 
 ## aclnnUnfoldGradGetWorkspaceSize
 
 - **参数说明：**
 
-  - gradOut(aclTensor*, 计算输入)：Device侧的aclTensor，表示梯度更新系数，shape为(..., (sizedim-size)/step+1, size)，要求满足gradOut的第dim维等于$(inputSizes[dim]-size)/step+1$和gradOut的size等于inputSizes的size+1。数据类型支持FLOAT、FLOAT16、BFLOAT16，[数据格式](../../../docs/context/数据格式.md)支持ND。
-  - inputSizes(aclIntArray*, 计算输入): Host侧的aclIntArray，表示输出张量的形状，值为(..., sizedim)，inputSizes的size小于等于8。数据类型支持INT64，[数据格式](../../../docs/context/数据格式.md)支持ND。
+  - gradOut(aclTensor*, 计算输入)：Device侧的aclTensor，表示梯度更新系数，shape为(..., (sizedim-size)/step+1, size)，要求满足gradOut的第dim维等于$(inputSizes[dim]-size)/step+1$和gradOut的size等于inputSizes的size+1。数据类型支持FLOAT、FLOAT16、BFLOAT16，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  - inputSizes(aclIntArray*, 计算输入): Host侧的aclIntArray，表示输出张量的形状，值为(..., sizedim)，inputSizes的size小于等于8。数据类型支持INT64，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
   - dim（int64_t，计算输入）：公式中的$dim$。表示展开发生的维度。$dim$需要满足dim大于等于0且dim小于inputSizes的size。
   - size（int64_t，计算输入）：公式中的$size$。表示展开的每个切片的大小。$size$需要满足size大于0且size小于等于inputSizes的第dim维。
   - step（int64_t，计算输入）：公式中的$step$。表示每个切片之间的步长。$step$需要满足step大于0。
@@ -63,7 +56,7 @@ tensor([1, 2, 3, 4, 5, 6, 0])
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -87,7 +80,7 @@ tensor([1, 2, 3, 4, 5, 6, 0])
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -104,7 +97,7 @@ tensor([1, 2, 3, 4, 5, 6, 0])
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>

@@ -4,13 +4,8 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    ×     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -23,9 +18,12 @@ out(G,H) = \begin{cases} \sum_{i=groupIdxOptional(j-1)}^{groupIdxOptional(j)}  g
 $$
 
 &emsp;&emsp;(2) 有可选输入groupIdxOptional，且groupIdxType为1时：
+
 $$
 groupIdx(i) = \sum_{i=0}^{j} groupIdxOptional(j), j=0...G
 $$
+
+
 $$
 out(G,H) = \begin {cases} \sum_{i=groupIdx(j-1)}^{groupIdx(j)} gradY(i,H), & 1 \leq j \leq G-1 \\ \sum_{i=0}^{groupIdx(j)} gradY(i, H), & j=0 \end {cases}
 $$
@@ -48,7 +46,7 @@ $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnGroupedBiasAddGradV2GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnGroupedBiasAddGradV2”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnGroupedBiasAddGradV2GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnGroupedBiasAddGradV2”接口执行计算。
 
 - `aclnnStatus aclnnGroupedBiasAddGradV2GetWorkspaceSize(const aclTensor *gradY, const aclTensor *groupIdxOptional, int64_t groupIdxType, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnGroupedBiasAddGradV2(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -57,18 +55,18 @@ $$
 
 - **参数说明：**
 
-  * gradY（aclTensor\*，计算输入）: 必选参数，反向传播梯度，公式中的gradY，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16。有可选输入groupIdxOptional时，shape仅支持2维，无可选输入groupIdxOptional时，shape仅支持3维，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
-  * groupIdxOptional（aclTensor\*，计算输入）: 可选参数，每个分组结束位置，公式中的groupIdxOptional，Device侧的aclTensor，数据类型支持INT32，INT64，shape仅支持1维，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
+  * gradY（aclTensor\*，计算输入）: 必选参数，反向传播梯度，公式中的gradY，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16。有可选输入groupIdxOptional时，shape仅支持2维，无可选输入groupIdxOptional时，shape仅支持3维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  * groupIdxOptional（aclTensor\*，计算输入）: 可选参数，每个分组结束位置，公式中的groupIdxOptional，Device侧的aclTensor，数据类型支持INT32，INT64，shape仅支持1维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
   * groupIdxType（int64_t，计算输入）：表示groupIdx的类型。支持的值为：
     * 0：表示groupIdxOptional中的值为每个group的结束索引。
     * 1：表示groupIdxOptional中的值为每个group的大小。
-  * out（aclTensor\*，计算输出）: bias的梯度，公式中的out，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16，数据类型必须与gradY的数据类型一致，shape仅支持2维，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
+  * out（aclTensor\*，计算输出）: bias的梯度，公式中的out，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16，数据类型必须与gradY的数据类型一致，shape仅支持2维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
   * workspaceSize（uint64\_t\*，出参）: 返回需要在Device侧申请的workspace大小。
   * executor（aclOpExecutor\*\*，出参）: 返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
   ```
   第一段接口完成入参校验，出现以下场景时报错：
   161001(ACLNN_ERR_PARAM_NULLPTR)：1. 传入的gradY、out是空指针时。
@@ -88,7 +86,7 @@ $$
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -101,7 +99,7 @@ $$
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

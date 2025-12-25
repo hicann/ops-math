@@ -1,18 +1,11 @@
 # aclnnBincount
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/bincount)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -34,25 +27,25 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnBincountGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnBincount”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnBincountGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnBincount”接口执行计算。
 
 * `aclnnStatus aclnnBincountGetWorkspaceSize(const aclTensor* self, const aclTensor* weights, int64_t minlength,aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-* `aclnnStatus aclnnBincount(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+* `aclnnStatus aclnnBincount(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
 
 ## aclnnBincountGetWorkspaceSize
 
 - **参数说明：**
 
-  * self(aclTensor*,计算输入)：Device侧的aclTensor，数据类型支持INT8、INT16、INT32、INT64、UINT8，且必须是非负整数，[数据格式](../../../docs/context/数据格式.md)支持1维ND，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)。
-  * weights(aclTensor*,计算输入)：Device侧的aclTensor，self每个值的权重，可为空指针。数据类型支持FLOAT、FLOAT16、FLOAT64、INT8、INT16、INT32、INT64、UINT8、BOOL，[数据格式](../../../docs/context/数据格式.md)支持1维ND，且shape必须与self一致，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)。
+  * self(aclTensor*,计算输入)：Device侧的aclTensor，数据类型支持INT8、INT16、INT32、INT64、UINT8，且必须是非负整数，[数据格式](../../../docs/zh/context/数据格式.md)支持1维ND，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
+  * weights(aclTensor*,计算输入)：Device侧的aclTensor，self每个值的权重，可为空指针。数据类型支持FLOAT、FLOAT16、FLOAT64、INT8、INT16、INT32、INT64、UINT8、BOOL，[数据格式](../../../docs/zh/context/数据格式.md)支持1维ND，且shape必须与self一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
   * minlength(int64_t，计算输入)：Host侧的int型，指定输出tensor最小长度。参数保证输出out的最小长度。如果计算出来的self的最大值小于minlength，则out的长度为minlength，否则为self的最大值加1。
-  * out(aclTensor \*，计算输出)：Device侧的aclTensor，数据类型支持INT32、INT64、FLOAT、DOUBLE，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持1维ND。out的长度为self的最大值加1和minlength二者取最大。
+  * out(aclTensor \*，计算输出)：Device侧的aclTensor，数据类型支持INT32、INT64、FLOAT、DOUBLE，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持1维ND。out的长度为self的最大值加1和minlength二者取最大。
   * workspaceSize(uint64_t \*，出参)：返回需要在Device侧申请的workspace大小。
   * executor(aclOpExecutor \**，出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ```
 第一段接口完成入参校验，出现以下场景时报错：
@@ -72,7 +65,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -80,7 +73,7 @@
   - aclnnBincount默认确定性实现。
 
 ## 调用示例
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>

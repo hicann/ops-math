@@ -4,13 +4,8 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 | <term>Kirin X90 处理器系列产品</term>                         |    √     |
 
 
@@ -18,6 +13,7 @@
 
 - 算子功能：对input中的每个元素应用指数为exponent的幂运算。
 - 计算公式：
+
 $$
 out_i = self_i^{exponent_i}
 $$
@@ -63,12 +59,9 @@ $$
     </tr>
   </tbody></table>
 
-- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
 - Kirin X90 处理器系列产品: 不支持BFLOAT16。
 
 ## 约束说明
-
-<term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：该场景下，如果计算结果取值超过了设定的数据类型取值范围，则会以该数据类型的边界值作为结果返回。
 
 ## 调用说明
 

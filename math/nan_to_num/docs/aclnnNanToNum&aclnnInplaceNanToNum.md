@@ -1,18 +1,11 @@
 # aclnnNanToNum&aclnnInplaceNanToNum
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/nan_to_num)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    ×     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -25,7 +18,7 @@
   - aclnnNanToNum：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceNanToNum：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-- 每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnNanToNumGetWorkspaceSize”或者“aclnnInplaceNanToNumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnNanToNum”或者“aclnnInplaceNanToNum”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnNanToNumGetWorkspaceSize”或者“aclnnInplaceNanToNumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnNanToNum”或者“aclnnInplaceNanToNum”接口执行计算。
   - `aclnnStatus aclnnNanToNumGetWorkspaceSize(const aclTensor *self, float nan, float posinf, float neginf, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
   - `aclnnStatus aclnnNanToNum(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
   - `aclnnStatus aclnnInplaceNanToNumGetWorkspaceSize(aclTensor *selfRef, float nan, float posinf, float neginf, uint64_t *workspaceSize, aclOpExecutor **executor)`
@@ -35,8 +28,8 @@
 
 - **参数说明：**
 
-  - self（aclTensor*，计算输入）：输入tensor，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
-  - out（aclTensor *，计算输出）：输出tensor，shape与self相同，[数据格式](../../../docs/context/数据格式.md)支持ND，且[数据格式](../../../docs/context/数据格式.md)需要与self一致。数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
+  - self（aclTensor*，计算输入）：输入tensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
+  - out（aclTensor *，计算输出）：输出tensor，shape与self相同，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，且[数据格式](../../../docs/zh/context/数据格式.md)需要与self一致。数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
   - nan（float，计算输入）：输入参数，替换tensor元素中NaN的值，数据类型支持FLOAT。
   - posinf（float，计算输入）：输入参数，替换tensor元素中正无穷大的值，数据类型支持FLOAT。
   - neginf（float，计算输入）：输入参数，替换tensor元素中负无穷大的值，数据类型支持FLOAT。
@@ -45,7 +38,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -67,13 +60,13 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceNanToNumGetWorkspaceSize
 
 - **参数说明：**
 
-  - selfRef（aclTensor *，计算输入|计算输出）：输入输出tensor，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
+  - selfRef（aclTensor *，计算输入|计算输出）：输入输出tensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
   - nan（float，计算输入）：输入参数，替换tensor元素中NaN的值，数据类型支持FLOAT。
   - posinf（float，计算输入）：输入参数，替换tensor元素中正无穷大的值，数据类型支持FLOAT。
   - neginf（float，计算输入）：输入参数，替换tensor元素中负无穷大的值，数据类型支持FLOAT。
@@ -82,7 +75,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -102,17 +95,16 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
 - 确定性计算：
   - aclnnNanToNum&aclnnInplaceNanToNum默认确定性实现。
 
-
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 **aclnnNanToNum接口调用示例代码：**
 

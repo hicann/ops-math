@@ -4,13 +4,8 @@
 
 | 产品 | 是否支持 |
 | ---- | :----:|
-|昇腾910_95 AI处理器|×|
 |Atlas A3 训练系列产品/Atlas A3 推理系列产品|√|
 |Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件|√|
-
-|Atlas 推理系列产品|×|
-|Atlas 训练系列产品|×|
-
 
 ## 功能说明
 
@@ -31,6 +26,7 @@ out(G,H) =
 $$
 
 &emsp;&emsp;(2) 有可选输入groupIdxOptional，且groupIdxType为1时：
+
 $$
 groupIdx(i) = \sum_{i=0}^{j} groupIdxOptional(j), j=0...G
 $$
@@ -75,7 +71,7 @@ $$
     <tr>
       <td>gradY</td>
       <td>输入</td>
-      <td>反向传播梯度，公式中的输入gradY。支持<a href="../../docs/context/非连续的Tensor.md">非连续的Tensor</a>。</td>
+      <td>反向传播梯度，公式中的输入gradY。支持<a href="../../docs/zh/context/非连续的Tensor.md">非连续的Tensor</a>。</td>
       <td>FLOAT16、BFLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>

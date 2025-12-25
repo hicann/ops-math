@@ -1,18 +1,11 @@
 # aclnnCumprod&aclnnInplaceCumprod
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/cumprod)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    ×     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -33,24 +26,32 @@
 
   - **高维张量情况（以二维张量为例， dim=0 沿行方向）**
     对于二维张量：  
+
     $$
     X=\begin{bmatrix}x_{11}&x_{12}&...&x_{1m}\\x_{21}&x_{22}&...&x_{2m}\\...&...&...&...&\\x_{n1}&x_{n2}&...&x_{nm}&\end{bmatrix}
     $$
+
     计算后的结果张量：
+
     $$
       Y=\begin{bmatrix}y_{11}&y_{12}&...&y_{1m}\\y_{21}&y_{22}&...&y_{2m}\\...&...&...&...&\\y_{n1}&y_{n2}&...&y_{nm}&\end{bmatrix}
     $$
+
     对于第一列(j=1):
+
     $$
     y_{i1}=x_{11}\times x_{21}\times ...\times x_{i1}(对于i=1,2,....n)
     $$
+
     所以对于任意列j，也有类似规律， 即:
+
     $$
     y_{ij}=\prod_{k=1}^{i} x_{kj}
     $$
 
   - **高维张量情况（以二维张量为例， dim=1 沿列方向情况）**
     所以对于任意列j，也有类似规律， 即:
+
     $$
     y_{ij}=\prod_{k=1}^{j} x_{ik}
     $$
@@ -59,7 +60,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnCumprodGetWorkspaceSize”或者“aclnnInplaceCumprodGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCumprod”或者“aclnnInplaceCumprod”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnCumprodGetWorkspaceSize”或者“aclnnInplaceCumprodGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCumprod”或者“aclnnInplaceCumprod”接口执行计算。
 
 - `aclnnStatus aclnnCumprodGetWorkspaceSize(const aclTensor* input, const aclScalar* dim, const aclDataType dtype, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
 
@@ -72,17 +73,17 @@
 ## aclnnCumprodGetWorkspaceSize
 
 * **参数说明：**
-  * input（aclTensor*, 计算输入）：当前输入值，表示需要计算累积乘积的数据，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，支持空Tensor。
-数据类型支持FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64。 [数据格式](../../../docs/context/数据格式.md)支持ND。
+  * input（aclTensor*, 计算输入）：当前输入值，表示需要计算累积乘积的数据，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，支持空Tensor。
+数据类型支持FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64。 [数据格式](../../../docs/zh/context/数据格式.md)支持ND。
   * dim（aclScalar*, 计算输入）：当前输入值，指定计算累积乘积的维度，对于一个二维张量，dim=0表示沿着行方向计算，dim=1表示沿列方向计算，Device侧的aclScalar, 取值范围 [-rank(input), rank(input))。数据类型支持INT32。
   * dtype（aclDataType, 计算输入）：指定计算过程input的数据类型。若为ACL_DT_UNDEFINED，使用传入input的原始类型计算；若指定具体类型（需在input支持数据类型范围内），计算前将input转换为此类型。
-  * out（aclTensor*, 计算输出）：累积乘积的结果，Device侧的aclTensor，[数据格式](../../../docs/context/数据格式.md)支持ND。dtype=ACL_DT_UNDEFINED时，数据类型必须与input相同；dtype指定时，数据类型必须与dtype相同。out的shape必须与input一致。
+  * out（aclTensor*, 计算输出）：累积乘积的结果，Device侧的aclTensor，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。dtype=ACL_DT_UNDEFINED时，数据类型必须与input相同；dtype指定时，数据类型必须与dtype相同。out的shape必须与input一致。
   * workspaceSize（uint64\_t\*，出参）：返回用户需要在Device侧申请的workspace大小。
   * executor（aclOpExecutor\*\*，出参）：返回op执行器，包含了算子计算流程。
 
 * **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
   ```
   第一段接口完成入参校验，出现以下场景时报错：
   返回161001 (ACLNN_ERR_PARAM_NULLPTR)：1.传入的input、dim是空指针。
@@ -101,20 +102,20 @@
   - stream(aclrtStream，入参)：指定执行任务的Stream。
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
   
 
 ## aclnnInplaceCumprodGetWorkspaceSize
 
 * **参数说明：**
-  * input（aclTensor*, 计算输入|计算输出）：表示需要计算累积乘积的数据和结果，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，不支持空Tensor。数据类型支持FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64。 [数据格式](../../../docs/context/数据格式.md)支持ND。
+  * input（aclTensor*, 计算输入|计算输出）：表示需要计算累积乘积的数据和结果，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，不支持空Tensor。数据类型支持FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64。 [数据格式](../../../docs/zh/context/数据格式.md)支持ND。
   * dim（aclScalar*, 计算输入）：指定计算累积乘积的维度，对于一个二维张量，dim=0表示沿着行方向计算，dim=1表示沿列方向计算，Device侧的aclScalar，取值范围 [-rank(x), rank(x)]。数据类型支持INT32。
   * workspaceSize（uint64\_t\*，出参）：返回用户需要在Device侧申请的workspace大小。
   * executor（aclOpExecutor\*，出参）：返回op执行器，包含了算子计算流程。
 
 * **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
   ```
   第一段接口完成入参校验，出现以下场景时报错：
   返回161001 (ACLNN_ERR_PARAM_NULLPTR)：1.传入的input、dim是空指针。
@@ -132,17 +133,16 @@
   - stream(aclrtStream，入参)：指定执行任务的Stream。
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
 - 确定性计算：
   - aclnnCumprod&aclnnInplaceCumprod默认确定性实现。
 
-
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

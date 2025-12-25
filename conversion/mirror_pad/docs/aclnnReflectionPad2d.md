@@ -1,18 +1,11 @@
 # aclnnReflectionPad2d
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/conversion/mirror_pad)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -35,7 +28,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnReflectionPad2dGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReflectionPad2d”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnReflectionPad2dGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReflectionPad2d”接口执行计算。
 
 - `aclnnStatus aclnnReflectionPad2dGetWorkspaceSize(const aclTensor *self, const aclIntArray *padding, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
 
@@ -45,24 +38,19 @@
 
 - **参数说明：**
 
-  - self(aclTensor*,计算输入)：Device侧的aclTensor，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，维度支持三维或四维。
-     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：FLOAT16、FLOAT32、BFLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL
-
+  - self(aclTensor*,计算输入)：Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，维度支持三维或四维。
+     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、FLOAT32、BFLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128
   - padding(aclIntArray*,计算输入)：Device侧的aclIntArray数组，数据类型为INT64，长度为4，数值依次代表左右上下需要填充的值。padding前两个数值需小于self最后一维度的数值，后两个数值需小于self倒数第二维度的数值。
 
-  - out(aclTensor*,计算输出)：Device侧的aclTensor，数据类型、[数据格式](../../../docs/context/数据格式.md)、维度与self一致，out倒数第二维度的数值等于self倒数第二维度的数值加padding后两个值，out最后一维度的数值等于self最后一维度的数值加padding前两个值，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)。
-     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：FLOAT16、FLOAT32、BFLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL
-
+  - out(aclTensor*,计算输出)：Device侧的aclTensor，数据类型、[数据格式](../../../docs/zh/context/数据格式.md)、维度与self一致，out倒数第二维度的数值等于self倒数第二维度的数值加padding后两个值，out最后一维度的数值等于self最后一维度的数值加padding前两个值，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
+     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、FLOAT32、BFLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128
   - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
 
   - executor(aclOpExecutor \**，出参)：返回op执行器，包含了算子计算流程。
 
-
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -87,10 +75,9 @@
 
   - stream(aclrtStream，入参)：指定执行任务的Stream。
 
-
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -101,7 +88,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include "acl/acl.h"

@@ -1,18 +1,11 @@
 # aclnnRandperm
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/random/stateless_randperm)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    ×     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -20,7 +13,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnRandpermGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnRandperm”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnRandpermGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnRandperm”接口执行计算。
 
 - `aclnnStatus aclnnRandpermGetWorkspaceSize(int64_t n, int64_t seed, int64_t offset, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
 - `aclnnStatus aclnnRandperm(void* workspace, uint64_t workspaceSize,  aclOpExecutor* executor, aclrtStream stream)`
@@ -35,9 +28,8 @@
 
   - offset(int64_t, 计算输入)：随机数生成器的偏移量，它影响生成的随机数序列的位置。设置偏移量后，生成的随机数序列会从指定位置开始。数据类型支持INT64。
 
-  - out(aclTensor*, 计算输出)：Device侧的aclTensor，shape为n。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持INT64、INT32、INT16、UINT8、INT8、FLOAT、FLOAT16、DOUBLE。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT64、INT32、INT16、UINT8、INT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16。
+  - out(aclTensor*, 计算输出)：Device侧的aclTensor，shape为n。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT64、INT32、INT16、UINT8、INT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16。
 
   - workspaceSize(uint64_t *, 出参): 返回需要在Device侧申请的workspace大小。
   
@@ -45,7 +37,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ```
 第一段接口完成入参校验，出现以下场景时报错：
@@ -67,21 +59,20 @@
   
   - stream(clrtStream, 入参): 指定执行任务的Stream。
 
-
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
 - 确定性计算：
   - aclnnRandperm默认确定性实现。
 
-当n大于268000000时有运行超时风险，详见[超时时间设置方法](https://www.hiascend.com/document/detail/canncommercial/82RC1/API/appdevgapi/aclcppdevg_03_0132.html)。
+当n大于268000000时有运行超时风险，详见[超时时间设置方法](https://www.hiascend.com/document/detail/zh/canncommercial/82RC1/API/appdevgapi/aclcppdevg_03_0132.html)。
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>

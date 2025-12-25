@@ -1,22 +1,15 @@
 # aclnnExp&aclnnInplaceExp
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/exp)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
-- 算子功能：返回一个新的张量，该张量的每个元素都是输入张量对应元素的指数。
+- 接口功能：返回一个新的张量，该张量的每个元素都是输入张量对应元素的指数。
 - 计算公式：
 
 $$
@@ -28,85 +21,326 @@ $$
 - aclnnExp和aclnnInplaceExp实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnExp：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceExp：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用 “aclnnExpGetWorkspaceSize” 或者 “aclnnInplaceExpGetWorkspaceSize” 接口获取入参并根据计算流程计算所需workspace大小，再调用 “aclnnExp” 或者 “aclnnInplaceExp” 接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用 “aclnnExpGetWorkspaceSize” 或者 “aclnnInplaceExpGetWorkspaceSize” 接口获取入参并根据计算流程计算所需workspace大小，再调用 “aclnnExp” 或者 “aclnnInplaceExp” 接口执行计算。
 
-  - `aclnnStatus aclnnExpGetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-  - `aclnnStatus aclnnExp(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
-  - `aclnnStatus aclnnInplaceExpGetWorkspaceSize(aclTensor *selfRef, uint64_t *workspaceSize, aclOpExecutor **executor)`
-  - `aclnnStatus aclnnInplaceExp(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnExpGetWorkspaceSize(
+  const aclTensor *self, 
+  aclTensor       *out, 
+  uint64_t        *workspaceSize, 
+  aclOpExecutor  **executor)
+```
+
+```Cpp
+aclnnStatus aclnnExp(
+  void          *workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor *executor, 
+  aclrtStream    stream)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceExpGetWorkspaceSize(
+  aclTensor      *selfRef, 
+  uint64_t       *workspaceSize, 
+  aclOpExecutor **executor)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceExp(
+  void          *workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor *executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnExpGetWorkspaceSize
 
 - **参数说明：**
 
-  - self(aclTensor*,计算输入)：Device侧的aclTensor，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，数据维度不支持8维以上。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BOOL、INT64。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BOOL、INT64、BFLOAT16。    
-  - out(aclTensor *，计算输出)：Device侧的aclTensor，数据类型需要是self可转换的数据类型。当self为BOOL或INT64时，out需要是浮点类型。其shape需要与self一致，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，数据维度不支持8维以上。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。  
-  - workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor **, 出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1549px"><colgroup>
+  <col style="width: 168px">
+  <col style="width: 136px">
+  <col style="width: 258px">
+  <col style="width: 271px">
+  <col style="width: 311px">
+  <col style="width: 116px">
+  <col style="width: 142px">
+  <col style="width: 147px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>输入Tensor。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BOOL、INT64、BFLOAT16</td>
+      <td>ND</td>
+      <td>不支持8维以上</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>输出Tensor。</td>
+      <td><ul><li>数据类型需要是self可转换的数据类型。</li><li>当self为BOOL或INT64时，out需要是浮点类型。</li><li>其shape需要与self一致。</li></ul></td>
+      <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td>ND</td>
+      <td>不支持8维以上</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-```
-第一段接口完成入参校验，出现如下场景时报错：
-161001(ACLNN_ERR_PARAM_NULLPTR)：1. 参数self、out是空指针。
-161002(ACLNN_ERR_PARAM_INVALID)：1. 参数self的数据类型不在支持的范围内。
-                                 2. 参数out的数据类型不是self可转换的。
-                                 3. 参数self、out的shape不一致。
-                                 4. 参数self、out的维度大于8。
-```
+  第一段接口完成入参校验，出现如下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 281px">
+  <col style="width: 119px">
+  <col style="width: 750px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>参数self、out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
+      <td>参数self的数据类型不在支持的范围内。</td>
+    </tr>
+    <tr>
+      <td>参数out的数据类型不是self可转换的。</td>
+    </tr>
+    <tr>
+      <td>参数self、out的shape不一致。</td>
+    </tr>
+    <tr>
+      <td>参数self、out的维度大于8。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnExp
 
 - **参数说明：**
 
-  - workspace(void \*, 入参)：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnExpGetWorkspaceSize获取。
-  - executor(aclOpExecutor \*, 入参)：op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 168px">
+  <col style="width: 128px">
+  <col style="width: 854px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnExpGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceExpGetWorkspaceSize
 
 - **参数说明：**
 
-  - selfRef(aclTensor *，计算输入)：Device侧的aclTensor，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，数据维度不支持8维以上。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。   
-  - workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor **, 出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1488px"><colgroup>
+  <col style="width: 168px">
+  <col style="width: 136px">
+  <col style="width: 330px">
+  <col style="width: 138px">
+  <col style="width: 311px">
+  <col style="width: 116px">
+  <col style="width: 142px">
+  <col style="width: 147px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>selfRef</td>
+      <td>输入</td>
+      <td>输入Tensor。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td>ND</td>
+      <td>不支持8维以上</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-```
-第一段接口完成入参校验，出现如下场景时报错：
-161001(ACLNN_ERR_PARAM_NULLPTR)：1. 参数selfRef是空指针。
-161002(ACLNN_ERR_PARAM_INVALID)：1. 参数selfRef的数据类型不在支持的范围内。
-                                 2. 参数selfRef的维度大于8。
-```
+  第一段接口完成入参校验，出现如下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 281px">
+  <col style="width: 119px">
+  <col style="width: 750px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>参数selfRef是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="2">161002</td>
+      <td>参数selfRef的数据类型不在支持的范围内。</td>
+    </tr>
+    <tr>
+      <td>参数selfRef的维度大于8。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnInplaceExp
 
 - **参数说明：**
 
-  - workspace(void \*, 入参)：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnInplaceExpGetWorkspaceSize获取。
-  - executor(aclOpExecutor \*, 入参)：op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 168px">
+  <col style="width: 128px">
+  <col style="width: 854px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceExpGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -115,7 +349,7 @@ $$
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

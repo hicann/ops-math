@@ -1,18 +1,11 @@
 # aclnnReduceLogSum
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/math/reduce_log_sum)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    ×     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -20,7 +13,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnReduceLogSumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReduceLogSum”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnReduceLogSumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReduceLogSum”接口执行计算。
 * `aclnnStatus aclnnReduceLogSumGetWorkspaceSize(const aclTensor* data, const aclIntArray* axes, bool keepDims, bool noopWithEmptyAxes, aclTensor* reduce, uint64_t* workspaceSize, aclOpExecutor** executor)`
 * `aclnnStatus aclnnReduceLogSum(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
 
@@ -28,17 +21,17 @@
 
 - **参数说明**：
 
-  * data（aclTensor*, 计算输入）：表示参与计算的目标张量，Device侧的aclTensor，shape支持0-8维，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，数据类型支持FLOAT16、FLOAT32，[数据格式](../../../docs/context/数据格式.md)支持ND。
+  * data（aclTensor*, 计算输入）：表示参与计算的目标张量，Device侧的aclTensor，shape支持0-8维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，数据类型支持FLOAT16、FLOAT32，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
   * axes（aclIntArray*, 计算输入）：指定计算维度，Host侧的aclIntArray，数据类型支持INT64，取值范围为[-self.dim(), self.dim()-1]。
   * keepDims（bool, 计算输入）：指定是否在输出张量中保留输入张量的维度，Host侧的BOOL值。
   * noopWithEmptyAxes（bool, 计算输入）：指定axes为空时的行为：false即对所有轴进行计算；true即不进行计算，输出张量等于输入张量，Host侧的BOOL值。
-  * reduce（aclTensor*, 计算输出）：表示计算后的结果，Device侧的aclTensor，shape支持0-8维，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，数据类型支持FLOAT16、FLOAT32，需与data一致，[数据格式](../../../docs/context/数据格式.md)支持ND。
+  * reduce（aclTensor*, 计算输出）：表示计算后的结果，Device侧的aclTensor，shape支持0-8维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，数据类型支持FLOAT16、FLOAT32，需与data一致，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
   * workspaceSize（uint64_t*, 出参）：返回需要在Device侧申请的workspace大小。
   * executor（aclOpExecutor**, 出参）：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ```
 第一段接口完成入参校验，出现以下场景时报错：
@@ -59,17 +52,16 @@
 
 - **返回值**：
 
-  **aclnnStatus**：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  **aclnnStatus**：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
 - 确定性计算：
   - aclnnReduceLogSum默认确定性实现。
 
-
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

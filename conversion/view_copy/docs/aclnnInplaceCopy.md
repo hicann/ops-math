@@ -1,24 +1,18 @@
 # aclnnInplaceCopy
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/conversion/view_copy)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
 - 算子功能：将src中的元素复制到selfRef张量中并返回selfRef。
 
 - 计算公式：
+
   $$
   {selfRef}_{i} = {src}_{i}
   $$
@@ -40,7 +34,7 @@
 
 ## 函数原型
 
-算子分为[两段式接口](./../../../docs/context/两段式接口.md)，必须先调用“aclnnInplaceCopyGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnInplaceCopy”接口执行计算。
+算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnInplaceCopyGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnInplaceCopy”接口执行计算。
 
 - `aclnnStatus aclnnInplaceCopyGetWorkspaceSize(aclTensor *selfRef, const aclTensor *src, uint64_t *workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnInplaceCopy(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, const aclrtStream stream)`
@@ -49,23 +43,17 @@
 
 - **参数说明**：
 
-  - selfRef(aclTensor*, 计算输入|计算输出)：公式中的`selfRef`，注意目前只有selfRef为连续时，才支持复数间的拷贝。shape需要与src满足[broadcast关系](./../../../docs/context/broadcast关系.md)。支持[非连续的Tensor](./../../../docs/context/非连续的Tensor.md)，[数据格式](./../../../docs/context/数据格式.md)支持ND。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、COMPLEX64、COMPLEX128、UINT16、UINT32、UINT64、BFLOAT16
-    - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、COMPLEX64、COMPLEX128、UINT16、UINT32、UINT64
-    - <term>昇腾910_95 AI处理器</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、COMPLEX64、COMPLEX128、UINT16、UINT32、UINT64、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN。当src和selfRef的数据类型不一致时，低精度类型支持的浮点类型转换规则参见[约束说明](#约束说明)
-
-  - src(aclTensor*, 计算输入)：公式中的`src`，注意目前只有selfRef为连续时，才支持复数间的拷贝。shape需要与selfRef满足[broadcast关系](./../../../docs/context/broadcast关系.md)。支持[非连续的Tensor](./../../../docs/context/非连续的Tensor.md)，[数据格式](./../../../docs/context/数据格式.md)支持ND。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、COMPLEX64、COMPLEX128、UINT16、UINT32、UINT64、BFLOAT16
-    - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、COMPLEX64、COMPLEX128、UINT16、UINT32、UINT64
-    - <term>昇腾910_95 AI处理器</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、COMPLEX64、COMPLEX128、UINT16、UINT32、UINT64、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN
-
+  - selfRef(aclTensor*, 计算输入|计算输出)：公式中的`selfRef`，注意目前只有selfRef为连续时，才支持复数间的拷贝。shape需要与src满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、COMPLEX64、COMPLEX128、UINT16、UINT32、UINT64、BFLOAT16
+  - src(aclTensor*, 计算输入)：公式中的`src`，注意目前只有selfRef为连续时，才支持复数间的拷贝。shape需要与selfRef满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、COMPLEX64、COMPLEX128、UINT16、UINT32、UINT64、BFLOAT16
   - workspaceSize（uint64_t\*, 出参）：返回需要在Device侧申请的workspace大小。
 
   - executor（aclOpExecutor\**, 出参）：返回op执行器，包含了算子计算流程。
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -87,7 +75,7 @@
 
 - **返回值**：
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -104,7 +92,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](./../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

@@ -4,13 +4,8 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-
-
-
-
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -18,7 +13,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnNormalTensorTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnNormalTensorTensor”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnNormalTensorTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnNormalTensorTensor”接口执行计算。
 
 - `aclnnStatus aclnnNormalTensorTensorGetWorkspaceSize(const aclTensor *mean, const aclTensor *std, int64_t seed, int64_t offset, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnNormalTensorTensor(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -27,15 +22,15 @@
 
 - **参数说明：**
 
-  - mean(aclTensor*,计算输入)：生成随机数分布均值的张量，Device侧的aclTensor，数据类型支持FLOAT16、FLOAT和DOUBLE，且数据类型与std的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/context/互推导关系.md)），shape需要与std满足[broadcast关系](../../../docs/context/broadcast关系.md)，且shape不超过8维，[数据格式](../../../docs/context/数据格式.md)支持ND。
+  - mean(aclTensor*,计算输入)：生成随机数分布均值的张量，Device侧的aclTensor，数据类型支持FLOAT16、FLOAT和DOUBLE，且数据类型与std的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），shape需要与std满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，且shape不超过8维，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
 
-  - std(aclTensor*,计算输入)：生成随机数分布标准差的张量，Device侧的aclTensor，数据类型支持FLOAT16、FLOAT和DOUBLE，且数据类型与mean的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/context/互推导关系.md)），shape需要与mean满足[broadcast关系](../../../docs/context/broadcast关系.md)，且shape不超过8维，[数据格式](../../../docs/context/数据格式.md)支持ND。
+  - std(aclTensor*,计算输入)：生成随机数分布标准差的张量，Device侧的aclTensor，数据类型支持FLOAT16、FLOAT和DOUBLE，且数据类型与mean的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），shape需要与mean满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，且shape不超过8维，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
 
   - seed(int64_t，计算输出)：采样伪随机数生成器的种子值，数据类型支持INT64。
 
   - offset(int64_t，计算输出)：采样伪随机数生成器的偏移量，数据类型支持INT64。
 
-  - out(aclTensor*，计算输出): 输出张量，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16和DOUBLE，且数据类型需要是mean与std推导之后可转换的数据类型，shape需要和mean与std broadcast之后的shape相等, [数据格式](../../../docs/context/数据格式.md)支持ND。
+  - out(aclTensor*，计算输出): 输出张量，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16和DOUBLE，且数据类型需要是mean与std推导之后可转换的数据类型，shape需要和mean与std broadcast之后的shape相等, [数据格式](../../../docs/zh/context/数据格式.md)支持ND。
 
   - workspaceSize(uint64_t*，出参)：返回需要在Device侧申请的workspace大小。
 
@@ -44,7 +39,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -72,7 +67,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -82,7 +77,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>
