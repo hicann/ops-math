@@ -36,7 +36,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnLinalgQrGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLinalgQr”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnLinalgQrGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLinalgQr”接口执行计算。
 
 - `aclnnStatus aclnnLinalgQrGetWorkspaceSize(const aclTensor *self, int64_t mode, aclTensor *Q, aclTensor *R, uint64_t *workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnLinalgQr(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -45,13 +45,13 @@
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)：公式中的$A$，数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape维度至少为2且不大于8, 且shape需要与Q,R满足约束条件。
+  - self(aclTensor*, 计算输入)：公式中的$A$，数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，shape维度至少为2且不大于8, 且shape需要与Q,R满足约束条件。
 
   - mode(int64_t, 计算输入)：计算属性，当mode为0时，使用'reduced'模式，对于输入A(\*, m, n), 输出简化大小的Q(\*, m, k), R(\*, k, n),其中k为m,n的最小值。当mode为1时，使用'complete'模式，对于输入A(\*, m, n),输出完整大小的Q(\*, m, m), R(\*, m, n), 当mode为2时，使用'r'模式，仅计算reduced场景下的R(\*,k,n),其中k为m,n的最小值，返回Q为空tensor。
 
-  - Q(aclTensor *, 计算输出)：公式中的$Q$，数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，且[数据格式](../../../docs/zh/context/数据格式.md)需要与self, R一致。shape为Q(\*, m, m)或Q(\*, m, k)或为空, 其中k为m, n的最小值。
+  - Q(aclTensor *, 计算输出)：公式中的$Q$，数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，且[数据格式](../../../docs/context/数据格式.md)需要与self, R一致。shape为Q(\*, m, m)或Q(\*, m, k)或为空, 其中k为m, n的最小值。
 
-  - R(aclTensor *, 计算输出): 公式中的$R$，数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，且[数据格式](../../../docs/zh/context/数据格式.md)需要与self, Q一致。shape为R(\*, m, n)或R(\*, k, n), 其中k为m, n的最小值。
+  - R(aclTensor *, 计算输出): 公式中的$R$，数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，且[数据格式](../../../docs/context/数据格式.md)需要与self, Q一致。shape为R(\*, m, n)或R(\*, k, n), 其中k为m, n的最小值。
 
   - workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
 
@@ -60,7 +60,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -85,7 +85,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -95,7 +95,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

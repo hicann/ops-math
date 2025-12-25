@@ -6,7 +6,6 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
 
@@ -28,7 +27,7 @@
 - aclnnAddcdiv和aclnnInplaceAddcdiv实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnAddcdiv：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceAddcdiv：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用 “aclnnAddcdivGetWorkspaceSize” 或者 “aclnnInplaceAddcdivGetWorkspaceSize” 接口获取入参并根据计算流程计算所需workspace大小，再调用 “aclnnAddcdiv” 或者 “aclnnInplaceAddcdiv” 接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用 “aclnnAddcdivGetWorkspaceSize” 或者 “aclnnInplaceAddcdivGetWorkspaceSize” 接口获取入参并根据计算流程计算所需workspace大小，再调用 “aclnnAddcdiv” 或者 “aclnnInplaceAddcdiv” 接口执行计算。
 
   ```Cpp
   aclnnStatus aclnnAddcdivGetWorkspaceSize(
@@ -99,8 +98,8 @@
       <td>公式中的self。</td>
       <td>
         <ul>
-          <li>self与tensor1、tensor2的数据类型满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），且推导后的类型需要在支持的输入类型里。</li>
-          <li>self与tensor1、tensor2的shape满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+          <li>self与tensor1、tensor2的数据类型满足数据类型推导规则（参见<a href="../../../docs/context/互推导关系.md" target="_blank">互推导关系</a>），且推导后的类型需要在支持的输入类型里。</li>
+          <li>self与tensor1、tensor2的shape满足<a href="../../../docs/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
         </ul>
       </td>
       <td>BFLOAT16、FLOAT16、FLOAT、DOUBLE、INT64</td>
@@ -114,8 +113,8 @@
       <td>公式中的输入tensor1。</td>
       <td>
         <ul>
-          <li>self与tensor1、tensor2的数据类型满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），且推导后的类型需要在支持的输入类型里。</li>
-          <li>self与tensor1、tensor2的shape满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+          <li>self与tensor1、tensor2的数据类型满足数据类型推导规则（参见<a href="../../../docs/context/互推导关系.md" target="_blank">互推导关系</a>），且推导后的类型需要在支持的输入类型里。</li>
+          <li>self与tensor1、tensor2的shape满足<a href="../../../docs/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
         </ul>
       </td>
       <td>BFLOAT16、FLOAT16、FLOAT、DOUBLE、INT64</td>
@@ -129,8 +128,8 @@
       <td>公式中的输入tensor2。</td>
       <td>
         <ul>
-          <li>self与tensor1、tensor2的数据类型满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），且推导后的类型需要在支持的输入类型里。</li>
-          <li>self与tensor1、tensor2的shape满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+          <li>self与tensor1、tensor2的数据类型满足数据类型推导规则（参见<a href="../../../docs/context/互推导关系.md" target="_blank">互推导关系</a>），且推导后的类型需要在支持的输入类型里。</li>
+          <li>self与tensor1、tensor2的shape满足<a href="../../../docs/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
         </ul>
       </td>
       <td>BFLOAT16、FLOAT16、FLOAT、DOUBLE、INT64</td>
@@ -142,7 +141,7 @@
       <td>value</td>
       <td>输入</td>
       <td>公式中的输入value。</td>
-      <td>数据类型需要可转换成self与tensor1、tensor2推导后的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td>数据类型需要可转换成self与tensor1、tensor2推导后的数据类型（参见<a href="../../../docs/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td>BFLOAT16、FLOAT16、FLOAT、DOUBLE、INT64</td>
       <td>-</td>
       <td>-</td>
@@ -154,7 +153,7 @@
       <td>公式中的输出out。</td>
       <td>
         <ul>
-          <li>数据类型是self与tensor1、tensor2推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</li>
+          <li>数据类型是self与tensor1、tensor2推导之后可转换的数据类型（参见<a href="../../../docs/context/互转换关系.md" target="_blank">互转换关系</a>）。</li>
           <li>out与self、tensor1、tensor2 broadcast之后的tensor的shape一致。</li>
         </ul>
       </td>
@@ -186,12 +185,10 @@
   </tbody>
   </table>
 
-  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
-
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现如下场景时报错：
 
@@ -277,7 +274,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## aclnnInplaceAddcdivGetWorkspaceSize
 
@@ -311,8 +308,8 @@
       <td>公式中的self与out。</td>
       <td>
         <ul>
-          <li>selfRef与tensor1、tensor2的数据类型满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），且推导后的数据类型可以转换为selfRef的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>），且推导后的类型需要在支持的输入类型里。</li>
-          <li>selfRef与tensor1和tensor2 broadcast之后的tensor的shape满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+          <li>selfRef与tensor1、tensor2的数据类型满足数据类型推导规则（参见<a href="../../../docs/context/互推导关系.md" target="_blank">互推导关系</a>），且推导后的数据类型可以转换为selfRef的数据类型（参见<a href="../../../docs/context/互转换关系.md" target="_blank">互转换关系</a>），且推导后的类型需要在支持的输入类型里。</li>
+          <li>selfRef与tensor1和tensor2 broadcast之后的tensor的shape满足<a href="../../../docs/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
         </ul>
       </td>
       <td>BFLOAT16、FLOAT16、FLOAT、DOUBLE、INT64
@@ -327,8 +324,8 @@
       <td>公式中的输入tensor1。</td>
       <td>
         <ul>
-          <li>selfRef与tensor1、tensor2的数据类型满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），且推导后的类型需要在支持的输入类型里。</li>
-          <li>tensor1与tensor2的shape满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+          <li>selfRef与tensor1、tensor2的数据类型满足数据类型推导规则（参见<a href="../../../docs/context/互推导关系.md" target="_blank">互推导关系</a>），且推导后的类型需要在支持的输入类型里。</li>
+          <li>tensor1与tensor2的shape满足<a href="../../../docs/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
         </ul>
       </td>
       <td>BFLOAT16、FLOAT16、FLOAT、DOUBLE、INT64</td>
@@ -342,8 +339,8 @@
       <td>公式中的输入tensor2。</td>
       <td>
         <ul>
-          <li>selfRef与tensor1、tensor2的数据类型满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），且推导后的类型需要在支持的输入类型里。</li>
-          <li>tensor1与tensor2的shape满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+          <li>selfRef与tensor1、tensor2的数据类型满足数据类型推导规则（参见<a href="../../../docs/context/互推导关系.md" target="_blank">互推导关系</a>），且推导后的类型需要在支持的输入类型里。</li>
+          <li>tensor1与tensor2的shape满足<a href="../../../docs/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
         </ul>
       </td>
       <td>BFLOAT16、FLOAT16、FLOAT、DOUBLE、INT64</td>
@@ -355,7 +352,7 @@
       <td>value</td>
       <td>输入</td>
       <td>公式中的输入value。</td>
-      <td>数据类型需要可转换成selfRef与tensor1、tensor2推导后的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td>数据类型需要可转换成selfRef与tensor1、tensor2推导后的数据类型（参见<a href="../../../docs/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td>BFLOAT16、FLOAT16、FLOAT、DOUBLE、INT64</td>
       <td>-</td>
       <td>-</td>
@@ -384,11 +381,9 @@
   </tbody>
   </table>
 
-  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
-
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现如下场景时报错：
 
@@ -473,7 +468,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -482,7 +477,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

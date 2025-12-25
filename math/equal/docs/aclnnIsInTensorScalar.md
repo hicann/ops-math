@@ -18,7 +18,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnIsInTensorScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnIsInTensorScalar”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnIsInTensorScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnIsInTensorScalar”接口执行计算。
 
 + `aclnnStatus aclnnIsInTensorScalarGetWorkspaceSize(const aclTensor *element, const aclScalar *testElement,bool assumeUnique, bool invert, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
 + `aclnnStatus aclnnIsInTensorScalar(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -26,22 +26,22 @@
 ## aclnnIsInTensorScalarGetWorkspaceSize
 - **参数说明：**
 
-  * element(aclTensor*, 计算输入)：shape维度不高于8维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    * <term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、INT32、INT64、INT16、INT8、UINT8、DOUBLE，且与testElement满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
-    * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、INT32、INT64、INT16、INT8、UINT8、DOUBLE，且与testElement满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
-    * <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、DOUBLE，且与testElement满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
-  * testElement(aclScalar*, 计算输入)：与element满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
+  * element(aclTensor*, 计算输入)：shape维度不高于8维。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
+    * <term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、INT32、INT64、INT16、INT8、UINT8、DOUBLE，且与testElement满足[TensorScalar互推导关系](../../../docs/context/TensorScalar互推导关系.md)。
+    * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、INT32、INT64、INT16、INT8、UINT8、DOUBLE，且与testElement满足[互推导关系](../../../docs/context/互推导关系.md)。
+    * <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、DOUBLE，且与testElement满足[互推导关系](../../../docs/context/互推导关系.md)。
+  * testElement(aclScalar*, 计算输入)：与element满足[TensorScalar互推导关系](../../../docs/context/TensorScalar互推导关系.md)。
     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、INT32、INT64、INT16、INT8、UINT8、DOUBLE。
     * <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、DOUBLE。
   * assumeUnique(bool, 计算输入): 若为True，则假定element和testElement中元素唯一，用于加快计算速度。
   * invert(bool, 计算输入): 表示输出结果是否需要反转。
-  * out(aclTensor*, 计算输出)：数据类型支持BOOL，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，shape需要与element的shape相同，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  * out(aclTensor*, 计算输出)：数据类型支持BOOL，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，shape需要与element的shape相同，[数据格式](../../../docs/context/数据格式.md)支持ND。
   * workspaceSize(uint64_t*, 出参)：返回用户需要在Device侧申请的workspace大小。
   * executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -64,7 +64,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -74,7 +74,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

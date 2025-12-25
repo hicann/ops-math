@@ -19,7 +19,7 @@
 
 
 ## 函数原型
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnAffineGridGetWorkspaceSize”接口获取入参并根据流程计算所需workspace大小，再调用“aclnnAffineGrid”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnAffineGridGetWorkspaceSize”接口获取入参并根据流程计算所需workspace大小，再调用“aclnnAffineGrid”接口执行计算。
 
 - `aclnnStatus aclnnAffineGridGetWorkspaceSize(const aclTensor* theta, const aclIntArray* size, bool alignCorners, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
 - `aclnnStatus aclnnAffineGrid(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
@@ -28,12 +28,12 @@
 
 - **参数说明：**
   
-  - theta(aclTensor\*, 计算输入): Device侧的aclTensor，仿射变换参数，控制仿射变换过程中的旋转、缩放以及平移。shape是(N, 2, 3)或(N, 3, 4)。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - theta(aclTensor\*, 计算输入): Device侧的aclTensor，仿射变换参数，控制仿射变换过程中的旋转、缩放以及平移。shape是(N, 2, 3)或(N, 3, 4)。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
     - 昇腾910 AI处理器：数据类型支持FLOAT32、FLOAT16。
     - 昇腾910B AI处理器、昇腾910_93 AI处理器：数据类型支持FLOAT32、FLOAT16、BFLOAT16。
   - size(aclIntArray\*, 计算输入): Host侧的aclIntArray,输出图像的size，大小为4(N, C, H, W)或5(N, C, D, H, W)。
   - alignCorners(bool, 计算输入): 表示是否角像素点对齐。如果为True，则输出网格的角落像素与输入网格的角落像素对齐；如果为False，则输出网格的中心像素与输入网格的中心像素对齐。默认为False。
-  - out(aclTensor\*, 计算输出): 表示仿射后图像在原图像上的坐标，且数据类型与theta一致。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - out(aclTensor\*, 计算输出): 表示仿射后图像在原图像上的坐标，且数据类型与theta一致。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
     - 昇腾910 AI处理器：数据类型支持FLOAT32、FLOAT16。
     - 昇腾910B AI处理器、昇腾910_93 AI处理器：数据类型支持FLOAT32、FLOAT16、BFLOAT16。  
   - workspaceSize(uint64_t\*, 出参): 返回需要在Device侧申请的workspace大小。
@@ -41,7 +41,7 @@
   
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -64,7 +64,7 @@
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -74,7 +74,7 @@
 - size中的N、H、W的取值必须在(0, 100000]的取值范围内。
 
 ## 调用示例
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>

@@ -47,7 +47,7 @@
         <ul>
           <li>表示成本张量，公式中的。<code>cost</code>，Device侧的aclTensor。</li>
           <li>输入为二维矩阵且列数不超过4096。</li>
-          <li>支持<a href="../../docs/zh/context/非连续的Tensor.md">非连续的Tensor</a>。</li>
+          <li>支持<a href="../../docs/context/非连续的Tensor.md">非连续的Tensor</a>。</li>
         </ul>
       </td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
@@ -72,7 +72,7 @@
         <ul>
           <li>表示最优传输张量，公式中的<code>p</code>，Device侧的aclTensor。</li>
           <li>如果传入空指针，则tol取0.0001。</li>
-          <li>shape维度为2，不支持<a href="../../../docs/zh/context/非连续的Tensor.md">非连续的Tensor</a>。</li>
+          <li>shape维度为2，不支持<a href="../../../docs/context/非连续的Tensor.md">非连续的Tensor</a>。</li>
           <li>数据类型和shape与入参<code>cost</code>的数据类型和shape一致。</li>
         </ul>
       </td>

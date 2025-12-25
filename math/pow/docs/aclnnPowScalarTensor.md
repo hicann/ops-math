@@ -36,7 +36,7 @@ $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnPowScalarTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnPowScalarTensor”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnPowScalarTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnPowScalarTensor”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnPowScalarTensorGetWorkspaceSize(
@@ -85,7 +85,7 @@ aclnnStatus aclnnPowScalarTensor(
         <td>self</td>
         <td>输入</td>
         <td>输入aclScalar*</td>
-      <td>数据类型与exponent满足<a href ="../../../docs/zh/context/TensorScalar互推导关系.md">TensorScalar互推导关系</a>。</td>
+      <td>数据类型与exponent满足<a href ="../../../docs/context/TensorScalar互推导关系.md">TensorScalar互推导关系</a>。</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
         <td>-</td>
         <td>-</td>
@@ -95,7 +95,7 @@ aclnnStatus aclnnPowScalarTensor(
         <td>exponent</td>
         <td>输入</td>
         <td>输入aclTensor*</td>
-      <td>数据类型与self满足<a href ="../../../docs/zh/context/TensorScalar互推导关系.md">TensorScalar互推导关系</a>。</td>
+      <td>数据类型与self满足<a href ="../../../docs/context/TensorScalar互推导关系.md">TensorScalar互推导关系</a>。</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
         <td>ND</td>
         <td>不高于8维</td>
@@ -105,7 +105,7 @@ aclnnStatus aclnnPowScalarTensor(
         <td>out</td>
         <td>输出</td>
         <td>输出aclTensor*</td>
-      <td>数据类型需要是self的数据类型与exponent的数据类型推导之后可转换的数据类型（参见<a href ="../../../docs/zh/context/互转换关系.md">互转换关系</a>）。</td>
+      <td>数据类型需要是self的数据类型与exponent的数据类型推导之后可转换的数据类型（参见<a href ="../../../docs/context/互转换关系.md">互转换关系</a>）。</td>
         <td></td>
         <td>ND</td>
         <td>与exponent保持一致</td>
@@ -137,7 +137,7 @@ aclnnStatus aclnnPowScalarTensor(
     
 - **返回值**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -216,7 +216,7 @@ aclnnStatus aclnnPowScalarTensor(
 
 - **返回值**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -227,7 +227,7 @@ aclnnStatus aclnnPowScalarTensor(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

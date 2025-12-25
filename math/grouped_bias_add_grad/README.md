@@ -75,7 +75,7 @@ $$
     <tr>
       <td>gradY</td>
       <td>输入</td>
-      <td>反向传播梯度，公式中的输入gradY。支持<a href="../../docs/zh/context/非连续的Tensor.md">非连续的Tensor</a>。</td>
+      <td>反向传播梯度，公式中的输入gradY。支持<a href="../../docs/context/非连续的Tensor.md">非连续的Tensor</a>。</td>
       <td>FLOAT16、BFLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>

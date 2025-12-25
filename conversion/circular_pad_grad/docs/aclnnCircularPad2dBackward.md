@@ -28,7 +28,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnCircularPad2dBackwardGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCircularPad2dBackward”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnCircularPad2dBackwardGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCircularPad2dBackward”接口执行计算。
 
 - `aclnnStatus aclnnCircularPad2dBackwardGetWorkspaceSize(const aclTensor* gradOutput, const aclTensor* self, const aclIntArray* padding, aclTensor* gradInput, uint64_t* workspaceSize, aclOpExecutor** executor)`
 - `aclnnStatus aclnnCircularPad2dBackward(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
@@ -37,15 +37,15 @@
 
 - **参数说明：**
 
-  - gradOutput（aclTensor*，计算输入）: 反向时输入的梯度数据，Device侧的aclTensor，数据类型支持FLOAT16、BFLOAT16、FLOAT32, 且数据类型与self一致，[数据格式](common/数据格式.md)支持ND，shape支持3-4维且维度需要与self和gradInput一致，shape需要与circular_pad2d正向传播的output一致。
-  - self（aclTensor*，计算输入）：正向时待填充的原输入数据，Device侧的aclTensor，数据类型支持FLOAT16、BFLOAT16、FLOAT32, [数据格式](common/数据格式.md)支持ND，shape支持3-4维且维度需要与gradOutput和gradInput一致，shape与gradInput一致。
-  - padding（aclIntArray*，计算输入）：正向时填充的维度，Device侧的aclIntArray数组，shape为1维，数据类型为INT64，[数据格式](common/数据格式.md)支持ND，长度为4，数值依次代表左右上下需要填充的值。padding前两个数值都需小于self最后一维度的大小，后两个数值需小于self倒数第二维度的大小。
-  - gradInput（aclTensor*，计算输出）：反向时输出的梯度数据，Device侧的aclTensor，数据类型支持FLOAT16、BFLOAT16、FLOAT32, 且数据类型与self一致，[数据格式](common/数据格式.md)支持ND，shape支持3-4维且维度与gradOutput和self一致，shape与self一致。
+  - gradOutput（aclTensor*，计算输入）: 反向时输入的梯度数据，Device侧的aclTensor，数据类型支持FLOAT16、BFLOAT16、FLOAT32, 且数据类型与self一致，[数据格式](../../../docs/context/数据格式.md)支持ND，shape支持3-4维且维度需要与self和gradInput一致，shape需要与circular_pad2d正向传播的output一致。
+  - self（aclTensor*，计算输入）：正向时待填充的原输入数据，Device侧的aclTensor，数据类型支持FLOAT16、BFLOAT16、FLOAT32, [数据格式](../../../docs/context/数据格式.md)支持ND，shape支持3-4维且维度需要与gradOutput和gradInput一致，shape与gradInput一致。
+  - padding（aclIntArray*，计算输入）：正向时填充的维度，Device侧的aclIntArray数组，shape为1维，数据类型为INT64，[数据格式](../../../docs/context/数据格式.md)支持ND，长度为4，数值依次代表左右上下需要填充的值。padding前两个数值都需小于self最后一维度的大小，后两个数值需小于self倒数第二维度的大小。
+  - gradInput（aclTensor*，计算输出）：反向时输出的梯度数据，Device侧的aclTensor，数据类型支持FLOAT16、BFLOAT16、FLOAT32, 且数据类型与self一致，[数据格式](../../../docs/context/数据格式.md)支持ND，shape支持3-4维且维度与gradOutput和self一致，shape与self一致。
   - workspaceSize（uint64_t*，出参）：返回需要在Device侧申请的workspace大小。
   - executor（aclOpExecutor**，出参）：返回op执行器，包含了算子计算流程。
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现如下场景时报错：
@@ -67,7 +67,7 @@
   - stream（aclrtStream，入参）：指定执行任务的Stream。
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -80,7 +80,7 @@ float32：(0， 24544)
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 ```Cpp
 #include "acl/acl.h"

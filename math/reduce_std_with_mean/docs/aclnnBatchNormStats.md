@@ -37,7 +37,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnBatchNormStatsGetWorkspaceSize”接口获取入参并根据流程计算所需workspace大小，再调用“aclnnBatchNormStats”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnBatchNormStatsGetWorkspaceSize”接口获取入参并根据流程计算所需workspace大小，再调用“aclnnBatchNormStats”接口执行计算。
 
 - `aclnnStatus aclnnBatchNormStatsGetWorkspaceSize(const aclTensor* input, double eps, aclTensor* mean, aclTensor* invstd, uint64_t* workspaceSize, aclOpExecutor** executor)`
 - `aclnnStatus aclnnBatchNormStats(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
@@ -45,18 +45,18 @@
 ## aclnnBatchNormStatsGetWorkspaceSize
 
 - **参数说明：**
-  - input(aclTensor \*, 计算输入)：输入Tensor，Device侧的aclTensor，支持[非连续的Tensor](common/非连续的Tensor.md)，支持的shape和[数据格式](./common/数据格式.md)有：2维（对应的格式为NC），3维（对应的格式为NCL），4维（对应的格式为NCHW），5维（对应的格式为NCDHW），6-8维（对应的格式为ND，其中第2维固定为channel轴）。
+  - input(aclTensor \*, 计算输入)：输入Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，支持的shape和[数据格式](./../../../docs/context/数据格式.md)有：2维（对应的格式为NC），3维（对应的格式为NCL），4维（对应的格式为NCHW），5维（对应的格式为NCDHW），6-8维（对应的格式为ND，其中第2维固定为channel轴）。
     - <term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16。
     - <term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
   - eps(double, 计算输入)：为数值稳定性添加到分母中的值，double类型的值。
-  - mean(aclTensor \*, 计算输出)：输出均值，Device侧的aclTensor，数据类型支持FLOAT，当input的类型为FLOAT16、BFLOAT16时，会转成FLOAT进行处理，[数据格式](common/数据格式.md)支持ND。
-  - invstd(aclTensor \*, 计算输出)：输出标准差倒数，Device侧的aclTensor，数据类型支持FLOAT，当input的类型为FLOAT16、BFLOAT16时，会转成FLOAT进行处理，[数据格式](common/数据格式.md)支持ND。
+  - mean(aclTensor \*, 计算输出)：输出均值，Device侧的aclTensor，数据类型支持FLOAT，当input的类型为FLOAT16、BFLOAT16时，会转成FLOAT进行处理，[数据格式](../../../docs/context/数据格式.md)支持ND。
+  - invstd(aclTensor \*, 计算输出)：输出标准差倒数，Device侧的aclTensor，数据类型支持FLOAT，当input的类型为FLOAT16、BFLOAT16时，会转成FLOAT进行处理，[数据格式](../../../docs/context/数据格式.md)支持ND。
   - workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor **, 出参)：返回op执行器，包含了算子计算流程。
   
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ```
 第一段接口完成入参校验，出现以下场景时报错：
@@ -77,7 +77,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -85,7 +85,7 @@
   - aclnnBatchNormStats默认确定性实现。
 
 ## 调用示例
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>

@@ -18,7 +18,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnDropoutGenMaskV2GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnDropoutGenMaskV2”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnDropoutGenMaskV2GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnDropoutGenMaskV2”接口执行计算。
 
 - `aclnnStatus aclnnDropoutGenMaskV2GetWorkspaceSize(const aclIntArray* shape, double prob, int64_t seed, int64_t offset, aclDataType probDataType, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
 - `aclnnStatus aclnnDropoutGenMaskV2(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -27,7 +27,7 @@
 
 - **参数说明：**
 
-  - shape(aclIntArray*, 计算输入)：支持[非连续的Tensor](common/非连续的Tensor.md),  [数据格式](common/数据格式.md)支持ND。
+  - shape(aclIntArray*, 计算输入)：支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md),  [数据格式](../../../docs/context/数据格式.md)支持ND。
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
   - prob(double, 计算输入)：元素置零的概率。
@@ -36,13 +36,13 @@
   - probDataType(aclDataType, 计算输入)：Host侧的数据类型枚举，表示输入张量的数据类型。
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
-  - out(aclTensor*, 计算输出)：bit类型并使用UINT8类型存储的mask数据。数据类型支持UINT8，shape需要为(align(input的元素个数,128)/8)。支持[非连续的Tensor](common/非连续的Tensor.md)。 [数据格式](common/数据格式.md)支持ND。
+  - out(aclTensor*, 计算输出)：bit类型并使用UINT8类型存储的mask数据。数据类型支持UINT8，shape需要为(align(input的元素个数,128)/8)。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)。 [数据格式](../../../docs/context/数据格式.md)支持ND。
   - workspaceSize(uint64_t*, 出参)：返回用户需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
   ```
   161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的shape、out为空指针。
   161002 (ACLNN_ERR_PARAM_INVALID): 1. out的数据类型不在支持的范围之内。
@@ -61,7 +61,7 @@
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -70,7 +70,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 ```c++
 #include <iostream>

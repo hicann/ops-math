@@ -51,7 +51,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -72,7 +72,7 @@
 
 * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品<term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、 <term>Atlas 推理系列产品 </term> ：
   
-  tensorShape为2维的场景示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+  tensorShape为2维的场景示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
   tensorShape为多维（3-6维）的场景示例代码请参考[aclnnQuantMatmulV3](./aclnnQuantMatmulV3.md)。
   伪量化有aclnnWeightQuantBatchMatmulV2和aclnnWeightQuantBatchMatmulV3接口， 这里以aclnnWeightQuantBatchMatmulV2为例
 
@@ -346,7 +346,7 @@
 
 * <term>昇腾910_95 AI处理器</term>: 
 
-  这里以aclnnQuantMatmulWeightNz为例，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+  这里以aclnnQuantMatmulWeightNz为例，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
   ```Cpp
   #include <iostream>
   #include <memory>

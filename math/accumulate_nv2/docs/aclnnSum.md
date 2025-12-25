@@ -20,7 +20,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnSumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSum”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnSumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSum”接口执行计算。
 
 - `aclnnStatus aclnnSumGetWorkspaceSize(const aclTensorList* tensors, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
 - `aclnnStatus aclnnSum(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
@@ -29,9 +29,9 @@
 
 - **参数说明：**
 
-  - tensors（aclTensorList*, 计算输入）：需要计算的输入tensors列表，Device侧的aclTensorList。数据类型支持FLOAT16、FLOAT、INT8、INT32、UINT8，需要与out数据类型相同。tensors中各tensor的shape需要与out满足[broadcast关系](common/broadcast关系.md)，维度不大于8。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - tensors（aclTensorList*, 计算输入）：需要计算的输入tensors列表，Device侧的aclTensorList。数据类型支持FLOAT16、FLOAT、INT8、INT32、UINT8，需要与out数据类型相同。tensors中各tensor的shape需要与out满足[broadcast关系](../../../docs/context/broadcast关系.md)，维度不大于8。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
 
-  - out（aclTensor*, 计算输出）：输出tensor，Device侧的aclTensor。数据类型支持FLOAT、FLOAT16、INT8、INT32、UINT8。需要与tensors数据类型相同。shape需要与tensors中各tensor的shape满足[broadcast关系](common/broadcast关系.md)。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - out（aclTensor*, 计算输出）：输出tensor，Device侧的aclTensor。数据类型支持FLOAT、FLOAT16、INT8、INT32、UINT8。需要与tensors数据类型相同。shape需要与tensors中各tensor的shape满足[broadcast关系](../../../docs/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
 
   - workspaceSize（uint64_t*, 出参）：返回需要在Device侧申请的workspace大小。
 
@@ -40,7 +40,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现如下场景时报错：
@@ -65,7 +65,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -75,7 +75,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>

@@ -62,7 +62,7 @@ $$
     xShape = [a, b, c, d, e, f] axis = 3 rank(scaleShape) = 1 --> scaleShape = [d]
 
 ## 函数原型
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnScaleGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnScale”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnScaleGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnScale”接口执行计算。
 
 * `aclnnStatus aclnnScaleGetWorkspaceSize(const aclTensor *x, const aclTensor *scale, const aclTensor *bias, int64_t axis, int64_t numAxes, bool scaleFromBlob, aclTensor *y, uint64_t *workspaceSize, aclOpExecutor **executor)`
 * `aclnnStatus aclnnScale(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -71,19 +71,19 @@ $$
 
 - **参数说明：**
 
-  - x(aclTensor*, 计算输入): 算子输入的Tensor，Device侧的aclTensor，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - x(aclTensor*, 计算输入): 算子输入的Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
     - <term>Atlas 推理系列产品</term>：数据类型支持FLOAT、FLOAT16。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。    
-  - scale(aclTensor*, 计算输入): 算子输入的Tensor，Device侧的aclTensor，数据类型需要与x的数据类型相同，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND.shape满足broadcast要求，参见[功能说明](#功能说明)。
+  - scale(aclTensor*, 计算输入): 算子输入的Tensor，Device侧的aclTensor，数据类型需要与x的数据类型相同，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND.shape满足broadcast要求，参见[功能说明](#功能说明)。
     - <term>Atlas 推理系列产品</term>：数据类型支持FLOAT、FLOAT16。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
-  - bias(aclTensor*, 计算输入): 算子输入的Tensor，Device侧的aclTensor，不为空时数据类型需要与scale的数据类型相同，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND.shape与scale保持一致。
+  - bias(aclTensor*, 计算输入): 算子输入的Tensor，Device侧的aclTensor，不为空时数据类型需要与scale的数据类型相同，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND.shape与scale保持一致。
     - <term>Atlas 推理系列产品</term>：数据类型支持FLOAT、FLOAT16。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
   - axis(int64_t, 计算输入) host侧INT64类型，指定进行scale的起始轴, 取值范围 [-x_rank, x_rank)（x_rank表示x的shape维度）。
   - numAxes(int64_t, 计算输入) host侧INT64类型，指定进行scale的轴长度, 取值范围 >= -1, numAxes = -1, 表示从axis轴开始scale到最后一轴。
   - scaleFromBlob(bool, 计算输入) host侧BOOL类型，指定要scaleFromBlob类型, True: scale from blob, 使用numAxes + axis进行scale, False: scale from input scale, 从axis开始 scale input scale长度, 忽略numAxes取值。
-  - y(aclTensor*, 计算输出): 输出Tensor，shape维度和x保持一致，Device侧的aclTensor，数据类型需要与x的数据类型相同，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - y(aclTensor*, 计算输出): 输出Tensor，shape维度和x保持一致，Device侧的aclTensor，数据类型需要与x的数据类型相同，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
     - <term>Atlas 推理系列产品</term>：数据类型支持FLOAT、FLOAT16。
     - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。 
   - workspaceSize(uint64_t\*, 出参): 返回需要在Device侧申请的workspace大小。
@@ -91,7 +91,7 @@ $$
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md).
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md).
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -122,7 +122,7 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -133,7 +133,7 @@ $$
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

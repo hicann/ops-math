@@ -30,7 +30,7 @@
   - aclnnEqTensor：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceEqTensor：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnEqTensorGetWorkspaceSize”或者“aclnnInplaceEqTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnEqTensor”或者“aclnnInplaceEqTensor”接口执行计算aclnnEqTensor。
+- 每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnEqTensorGetWorkspaceSize”或者“aclnnInplaceEqTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnEqTensor”或者“aclnnInplaceEqTensor”接口执行计算aclnnEqTensor。
 
   * `aclnnStatus aclnnEqTensorGetWorkspaceSize(const aclTensor *self, const aclTensor *other, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
   * `aclnnStatus aclnnEqTensor(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -41,15 +41,15 @@
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)：Device侧的aclTensor，数据类型需要与other满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），shape需要与other满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，shape维度不高于8维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  - self(aclTensor*, 计算输入)：Device侧的aclTensor，数据类型需要与other满足数据类型推导规则（参见[互推导关系](../../../docs/context/互推导关系.md)），shape需要与other满足[broadcast关系](../../../docs/context/broadcast关系.md)，shape维度不高于8维。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
     * <term>昇腾910_95 AI处理器</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64。
     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、 BFLOAT16、DOUBLE、INT16、COMPLEX64、COMPLEX128。
     * <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、INT64、UINT64、INT32、INT8、UINT8、BOOL、UINT32、DOUBLE、INT16、COMPLEX64、COMPLEX128。
-  - other(aclTensor*, 计算输入)：Device侧的aclTensor，数据类型需要与self满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），shape需要与self的shape满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，shape维度不高于8维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  - other(aclTensor*, 计算输入)：Device侧的aclTensor，数据类型需要与self满足数据类型推导规则（参见[互推导关系](../../../docs/context/互推导关系.md)），shape需要与self的shape满足[broadcast关系](../../../docs/context/broadcast关系.md)，shape维度不高于8维。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
     * <term>昇腾910_95 AI处理器</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64。
     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、 BFLOAT16、DOUBLE、INT16、COMPLEX64、COMPLEX128。
     * <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、INT64、UINT64、INT32、INT8、UINT8、BOOL、UINT32、DOUBLE、INT16、COMPLEX64、COMPLEX128。
-  - out(aclTensor \*, 计算输出)：Device侧的aclTensor，数据类型需要是BOOL可转换的数据类型[互转换关系](../../../docs/zh/context/互转换关系.md), shape与self、other广播之后的shape（参见[broadcast关系](../../../docs/zh/context/broadcast关系.md)）一致，shape维度不高于8维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  - out(aclTensor \*, 计算输出)：Device侧的aclTensor，数据类型需要是BOOL可转换的数据类型[互转换关系](../../../docs/context/互转换关系.md), shape与self、other广播之后的shape（参见[broadcast关系](../../../docs/context/broadcast关系.md)）一致，shape维度不高于8维，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。
     * <term>昇腾910_95 AI处理器</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64、UINT32、UINT16。
     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
     * <term>Atlas 训练系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
@@ -58,7 +58,7 @@
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
   ```
   第一段接口完成入参校验，出现以下场景时报错：
   161001(ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self、other、out是空指针时。
@@ -80,17 +80,17 @@
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## aclnnInplaceEqTensorGetWorkspaceSize
 
 - **参数说明：**
 
-  * selfRef（aclTensor*, 计算输入/输出）：输入输出tensor，即公式中的self与out。数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](./../../../docs/zh/context/互推导关系.md)），shape需要与other满足[broadcast关系](./../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](./../../../docs/zh/context/非连续的Tensor.md)，[数据格式](./../../../docs/zh/context/数据格式.md)支持ND。
+  * selfRef（aclTensor*, 计算输入/输出）：输入输出tensor，即公式中的self与out。数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](./../../../docs/context/互推导关系.md)），shape需要与other满足[broadcast关系](./../../../docs/context/broadcast关系.md)。支持[非连续的Tensor](./../../../docs/context/非连续的Tensor.md)，[数据格式](./../../../docs/context/数据格式.md)支持ND。
     * <term>昇腾910_95 AI处理器</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64。
     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、 BFLOAT16、DOUBLE、INT16、COMPLEX64、COMPLEX128。
     * <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、INT64、UINT64、INT32、INT8、UINT8、BOOL、UINT32、DOUBLE、INT16、COMPLEX64、COMPLEX128。
-  * other（aclTensor*, 计算输入）：公式中的输入`other`，Device侧的aclTensor。数据类型与selfRef的数据类型需满足数据类型推导规则（参见[互推导关系](./../../../docs/zh/context/互推导关系.md)），shape需要与selfRef满足[broadcast关系](./../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](./../../../docs/zh/context/非连续的Tensor.md)，[数据格式](./../../../docs/zh/context/数据格式.md)支持ND。
+  * other（aclTensor*, 计算输入）：公式中的输入`other`，Device侧的aclTensor。数据类型与selfRef的数据类型需满足数据类型推导规则（参见[互推导关系](./../../../docs/context/互推导关系.md)），shape需要与selfRef满足[broadcast关系](./../../../docs/context/broadcast关系.md)。支持[非连续的Tensor](./../../../docs/context/非连续的Tensor.md)，[数据格式](./../../../docs/context/数据格式.md)支持ND。
     * <term>昇腾910_95 AI处理器</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64。
     * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、 BFLOAT16、DOUBLE、INT16、COMPLEX64、COMPLEX128。
     * <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、INT64、UINT64、INT32、INT8、UINT8、BOOL、UINT32、DOUBLE、INT16、COMPLEX64、COMPLEX128。
@@ -99,7 +99,7 @@
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -123,7 +123,7 @@
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -133,7 +133,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 **aclnnEqTensor示例代码：**
 

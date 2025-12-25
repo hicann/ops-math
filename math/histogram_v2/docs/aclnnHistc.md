@@ -21,7 +21,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnHistcGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnHistc”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnHistcGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnHistc”接口执行计算。
 
 - `aclnnStatus aclnnHistcGetWorkspaceSize(const aclTensor* self, int64_t bins, const aclScalar* min, const aclScalar* max, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
 - `aclnnStatus aclnnHistc(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
@@ -30,17 +30,17 @@
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)：待被统计元素在各个bins的数量的张量。Device侧的aclTensor，数据类型支持FLOAT16、FLOAT32、INT32、INT64、INT16、INT8、UINT8。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。shape的维度支持0-8维。
+  - self(aclTensor*, 计算输入)：待被统计元素在各个bins的数量的张量。Device侧的aclTensor，数据类型支持FLOAT16、FLOAT32、INT32、INT64、INT16、INT8、UINT8。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。shape的维度支持0-8维。
   - bins(int64_t, 计算输入)：直方图bins的数量，Host侧的INT64类型，取值范围需大于0。
   - min(aclScalar*, 计算输入)：直方图的统计下限（包括）。Host侧的aclScalar，数据类型需要是可转换成FLOAT的类型，取值范围不能大于max的值。
   - max(aclScalar*, 计算输入)：直方图的统计上限（包括）。Host侧的aclScalar，数据类型需要是可转换成FLOAT的类型，取值范围不能小于min的值。
-  - out(aclTensor*, 计算输出)：直方图统计结果。Device侧的aclTensor，数据类型支持FLOAT16、FLOAT32、INT32、INT64、INT16、INT8、UINT8，且out数据类型需要可转换为self的数据类型，（参考[互转换关系](common/互转换关系.md)）。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，shape只支持1维tensor，且元素个数等于bins。
+  - out(aclTensor*, 计算输出)：直方图统计结果。Device侧的aclTensor，数据类型支持FLOAT16、FLOAT32、INT32、INT64、INT16、INT8、UINT8，且out数据类型需要可转换为self的数据类型，（参考[互转换关系](../../../docs/context/互转换关系.md)）。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，shape只支持1维tensor，且元素个数等于bins。
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -65,7 +65,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -75,7 +75,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>

@@ -28,7 +28,7 @@ $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnMatmulCompressDequantGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMatmulCompressDequant”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnMatmulCompressDequantGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMatmulCompressDequant”接口执行计算。
 
 - `aclnnStatus aclnnMatmulCompressDequantGetWorkspaceSize(const aclTensor* x1, const aclTensor* x2, const aclTensor* compressIndex, const aclTensor* bias, const aclTensor* deqScale, const aclTensor* offsetW, int offsetX, const aclIntArray* compressInfo, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
 - `aclnnStatus aclnnMatmulCompressDequant(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
@@ -37,9 +37,9 @@ $$
 
 - **参数说明：**
 
-  - x1(aclTensor*, 计算输入)：表示矩阵乘的左输入，Device侧的2维ND格式aclTensor，数据类型仅支持INT8。不支持[非连续的Tensor](common/非连续的Tensor.md)。
+  - x1(aclTensor*, 计算输入)：表示矩阵乘的左输入，Device侧的2维ND格式aclTensor，数据类型仅支持INT8。不支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)。
 
-  - x2(aclTensor*, 计算输入)：表示压缩后的矩阵乘的右输入，Device侧的1维ND格式aclTensor，为通过msModelSlim工具中weight_compression模块压缩后的输入，数据类型仅支持INT8。不支持[非连续的Tensor](common/非连续的Tensor.md)，公式中$x2\_unzip$的Reduce维度需要与x1的Reduce维度大小相等。
+  - x2(aclTensor*, 计算输入)：表示压缩后的矩阵乘的右输入，Device侧的1维ND格式aclTensor，为通过msModelSlim工具中weight_compression模块压缩后的输入，数据类型仅支持INT8。不支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，公式中$x2\_unzip$的Reduce维度需要与x1的Reduce维度大小相等。
 
   - compressIndex(aclTensor*, 计算输入)：表示矩阵乘右输入的压缩索引表，Device侧的1维ND格式aclTensor，数据类型支持INT8，通过示例中的msModelSlim工具中获取。
 
@@ -53,7 +53,7 @@ $$
 
   - compressInfo(aclIntArray*, 计算输入)：Host侧整型数据列表，数据类型为INT64。其中包括压缩块信息tilingN、tilingK（通过msModelSlim工具中weight_compression模块压缩后获取，分别表示压缩前shape(n, k)在n方向和k方向上一个基本压缩块的大小），压缩前x2矩阵原始shape（shape为2维，用(n, k)表示），以及压缩块遍历方向的标识。
 
-  - out(aclTensor*, 计算输出)：Device侧的2维aclTensor，数据类型支持FLOAT16。[数据格式](common/数据格式.md)支持ND，不支持[非连续的Tensor](common/非连续的Tensor.md)。
+  - out(aclTensor*, 计算输出)：Device侧的2维aclTensor，数据类型支持FLOAT16。[数据格式](../../../docs/context/数据格式.md)支持ND，不支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)。
 
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
 
@@ -62,7 +62,7 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -87,7 +87,7 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)
 
 ## 约束说明
 
@@ -179,7 +179,7 @@ data = np.fromfile('./deqScale_original.bin', dtype=np.int32).astype(np.int64)
 data.tofile('./deqScale.bin')
 ```
 ### 3. 调用aclnn接口运算
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

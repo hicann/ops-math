@@ -24,7 +24,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnTriangularSolveGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnTriangularSolve”接口执行计算。
+每个算子分为[两段式接口](../../../docs/context/两段式接口.md)，必须先调用“aclnnTriangularSolveGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnTriangularSolve”接口执行计算。
 
 - `aclnnStatus aclnnTriangularSolveGetWorkspaceSize(const aclTensor *self, const aclTensor *A, bool upper, bool transpose, bool unitriangular, aclTensor *xOut, aclTensor *mOut, uint64_t *workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnTriangularSolve(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, const aclrtStream stream)`
@@ -33,9 +33,9 @@
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入): 公式中的$b$，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128, 且数据类型与`A`一致，且数据维度至少为2且不大于8。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。self[-2]=A[-2]。除最后两个维度之外，A和self的其余维度满足[broadcast关系](common/broadcast关系.md)。
+  - self(aclTensor*, 计算输入): 公式中的$b$，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128, 且数据类型与`A`一致，且数据维度至少为2且不大于8。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。self[-2]=A[-2]。除最后两个维度之外，A和self的其余维度满足[broadcast关系](../../../docs/context/broadcast关系.md)。
 
-  - A(aclTensor*, 计算输入): 公式中的$A$，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128, 且数据类型与`self`一致，且数据维度至少为2且不大于8。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。最后两个轴相等。除最后两个维度之外，A和self的其余维度满足[broadcast关系](common/broadcast关系.md)。
+  - A(aclTensor*, 计算输入): 公式中的$A$，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128, 且数据类型与`self`一致，且数据维度至少为2且不大于8。支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。最后两个轴相等。除最后两个维度之外，A和self的其余维度满足[broadcast关系](../../../docs/context/broadcast关系.md)。
 
   - upper(bool, 计算输入)：计算属性，默认为true， `A`为上三角方阵，当upper为false时，`A`为下三角方阵。
 
@@ -43,9 +43,9 @@
 
   - unitriangular(bool, 计算输入)：计算属性，默认为false，当unitriangular为true时，`A`的主对角线元素视为1，而不是从`A`引用，并且unitriangular为true时输入`self`和`A`，输出`xOut`和`mOut`的数据类型只支持FLOAT。
 
-  - xOut(aclTensor *, 计算输出): 公式中的$X$，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128，且数据类型与self一致，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，且shape需要与broadcast后的`A`,`b`满足$AX=b$约束。A和self满足broadcast关系之后的维度，最后一根轴dim=self[-1]。
+  - xOut(aclTensor *, 计算输出): 公式中的$X$，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128，且数据类型与self一致，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND，且shape需要与broadcast后的`A`,`b`满足$AX=b$约束。A和self满足broadcast关系之后的维度，最后一根轴dim=self[-1]。
 
-  - mOut(aclTensor *, 计算输出): broadcast后`A`的上三角（下三角）拷贝，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128，且数据类型与self一致，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。A和self满足broadcast关系之后的维度，最后一根轴dim=A[-1]。
+  - mOut(aclTensor *, 计算输出): broadcast后`A`的上三角（下三角）拷贝，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128，且数据类型与self一致，支持[非连续的Tensor](../../../docs/context/非连续的Tensor.md)，[数据格式](../../../docs/context/数据格式.md)支持ND。A和self满足broadcast关系之后的维度，最后一根轴dim=A[-1]。
 
   - workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
 
@@ -54,7 +54,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -78,7 +78,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -88,7 +88,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>
