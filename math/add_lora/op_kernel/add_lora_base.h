@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file add_lora_base.h
@@ -49,6 +49,8 @@ protected:
     uint32_t addLoraFlag;
     uint32_t y_column;
 
+    static constexpr uint32_t MAX_ND_NZ_STRIDE_SIZE = 65535;
+    static constexpr uint32_t B32_BLOCK_ALIGN_NUM = 16;
     static constexpr uint32_t CUBE_BLOCK = 16;
     static constexpr uint32_t CUBE_BLOCK_SIZE = 16 * 16;
     static constexpr uint32_t DOUBLE_BUFFER_NUM = 2;
@@ -120,6 +122,8 @@ protected:
     // L0C
     TBuf<TPosition::CO1> l0CBuf_;
     LocalTensor<float> matmull0C_;
+    __aicore__ inline void DataCopyL1Nz(uint32_t rowNum, uint32_t colNum, uint32_t colSize,
+        const GlobalTensor<half> &srcGm, const LocalTensor<half> &dstTensor);
     __aicore__ inline void CopyIn(
         uint32_t weightIdx, uint32_t kIdx_, uint32_t mInCore, uint32_t k, uint32_t mInCoreOffset, uint32_t kOffset,
         uint32_t pingPongFlag);
@@ -303,6 +307,21 @@ __aicore__ inline uint32_t AddLoraKernelBase::CeilCubeBlock(uint32_t len)
     return (len + CUBE_BLOCK - 1) / CUBE_BLOCK;
 }
 
+__aicore__ inline void AddLoraKernelBase::DataCopyL1Nz(uint32_t rowNum, uint32_t colNum, uint32_t colSize,
+    const GlobalTensor<half> &srcGm, const LocalTensor<half> &dstTensor)
+{
+    uint32_t blockNum = CeilDiv(colNum, CUBE_BLOCK);
+    for (uint32_t blockIdx = 0; blockIdx < blockNum; blockIdx++) {
+        uint32_t copyLen = CUBE_BLOCK;
+        uint64_t gmOffset = blockIdx * CUBE_BLOCK;
+        AscendC::DataCopyParams dataCopyParams{static_cast<uint16_t>(rowNum),
+            static_cast<uint16_t>(copyLen / B32_BLOCK_ALIGN_NUM),
+            static_cast<uint16_t>((colSize - CUBE_BLOCK) / B32_BLOCK_ALIGN_NUM), 0};
+        uint32_t rowNumAlign = CeilDiv(rowNum, CUBE_BLOCK) * CUBE_BLOCK;
+        AscendC::DataCopy(dstTensor[CUBE_BLOCK * rowNumAlign * blockIdx], srcGm[gmOffset], dataCopyParams);
+    }
+}
+
 __aicore__ inline void AddLoraKernelBase::CopyIn(
     uint32_t weightIdx, uint32_t kIdx_, uint32_t mInCore, uint32_t k, uint32_t mInCoreOffset, uint32_t kOffset,
     uint32_t pingPongFlag)
@@ -312,32 +331,41 @@ __aicore__ inline void AddLoraKernelBase::CopyIn(
     WaitFlag<HardEvent::S_MTE2>(eventId);
     SetFlag<HardEvent::FIX_MTE2>(eventId);
     WaitFlag<HardEvent::FIX_MTE2>(eventId);
+    uint32_t xGmOffset = (mInCoreOffset) * H1 + kIdx_ * kOffset;
     if (mInCore == 1) {
-        DataCopy(queryL1_[pingPongFlag], xIndiceGm_[(mInCoreOffset)*H1 + kIdx_ * kOffset], k);
+        DataCopy(queryL1_[pingPongFlag], xIndiceGm_[xGmOffset], k);
     } else {
-        Nd2NzParams copyinA1Params;
-        copyinA1Params.ndNum = 1;
-        copyinA1Params.nValue = mInCore;
-        copyinA1Params.dValue = k;
-        copyinA1Params.srcNdMatrixStride = 0;
-        copyinA1Params.srcDValue = H1; // 源操作数同一个ND的相邻行起始地址偏移
-        copyinA1Params.dstNzC0Stride = CeilCubeBlock(mInCore) * CUBE_BLOCK;
-        copyinA1Params.dstNzNStride = 1;
-        copyinA1Params.dstNzMatrixStride = 0;
-        DataCopy(queryL1_[pingPongFlag], xIndiceGm_[(mInCoreOffset)*H1 + kIdx_ * kOffset], copyinA1Params); // nd -> nz
+        if (H1 > MAX_ND_NZ_STRIDE_SIZE) {
+            DataCopyL1Nz(mInCore, k, H1, xIndiceGm_[xGmOffset], queryL1_[pingPongFlag]);
+        } else {
+            Nd2NzParams copyinA1Params;
+            copyinA1Params.ndNum = 1;
+            copyinA1Params.nValue = mInCore;
+            copyinA1Params.dValue = k;
+            copyinA1Params.srcNdMatrixStride = 0;
+            copyinA1Params.srcDValue = H1; // 源操作数同一个ND的相邻行起始地址偏移
+            copyinA1Params.dstNzC0Stride = CeilCubeBlock(mInCore) * CUBE_BLOCK;
+            copyinA1Params.dstNzNStride = 1;
+            copyinA1Params.dstNzMatrixStride = 0;
+            DataCopy(queryL1_[pingPongFlag], xIndiceGm_[xGmOffset], copyinA1Params); // nd -> nz
+        }
     }
     AscendC::PipeBarrier<PIPE_MTE2>();
-    Nd2NzParams nd2nzB1Params;
-    nd2nzB1Params.ndNum = 1;
-    nd2nzB1Params.nValue = R;
-    nd2nzB1Params.dValue = k;
-    nd2nzB1Params.srcNdMatrixStride = 0;
-    nd2nzB1Params.srcDValue = H1;
-    nd2nzB1Params.dstNzC0Stride = CeilCubeBlock(R) * CUBE_BLOCK;
-    nd2nzB1Params.dstNzNStride = 1;
-    nd2nzB1Params.dstNzMatrixStride = 0;
-    uint32_t weightOffset = weightIdx * layer * H1 * R + layer_idx * H1 * R;
-    DataCopy(keyL1_[pingPongFlag], waGm_[weightOffset + kIdx_ * kOffset], nd2nzB1Params);
+    uint32_t weightOffset = weightIdx * layer * H1 * R + layer_idx * H1 * R + kIdx_ * kOffset;
+    if (H1 > MAX_ND_NZ_STRIDE_SIZE) {
+        DataCopyL1Nz(R, k, H1, waGm_[weightOffset], keyL1_[pingPongFlag]);
+    } else {
+        Nd2NzParams nd2nzB1Params;
+        nd2nzB1Params.ndNum = 1;
+        nd2nzB1Params.nValue = R;
+        nd2nzB1Params.dValue = k;
+        nd2nzB1Params.srcNdMatrixStride = 0;
+        nd2nzB1Params.srcDValue = H1;
+        nd2nzB1Params.dstNzC0Stride = CeilCubeBlock(R) * CUBE_BLOCK;
+        nd2nzB1Params.dstNzNStride = 1;
+        nd2nzB1Params.dstNzMatrixStride = 0;
+        DataCopy(keyL1_[pingPongFlag], waGm_[weightOffset], nd2nzB1Params);
+    }
     SetFlag<HardEvent::MTE2_MTE1>(eventId);
     WaitFlag<HardEvent::MTE2_MTE1>(eventId);
 }

@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file add_lora_single_core.h
@@ -70,33 +70,42 @@ __aicore__ inline void AddLoraSingleCoreBatchKernel::CopyInA(
     eventId = pingPongFlag ? EVENT_ID0 : EVENT_ID1;
     SetFlag<HardEvent::S_MTE2>(eventId);
     WaitFlag<HardEvent::S_MTE2>(eventId);
-
+    uint32_t xGmOffset = (mInCoreOffset) * H1 + kIdx_ * kOffset;
     if (mInCore == 1) {
-        DataCopy(queryL1_[pingPongFlag], xGm_[(mInCoreOffset)*H1 + kIdx_ * kOffset], k);
+        DataCopy(queryL1_[pingPongFlag], xGm_[xGmOffset], k);
     } else {
-        Nd2NzParams copyinXGmParams;
-        copyinXGmParams.ndNum = 1;
-        copyinXGmParams.nValue = mInCore;
-        copyinXGmParams.dValue = k;
-        copyinXGmParams.srcNdMatrixStride = 0;
-        copyinXGmParams.srcDValue = H1; // 源操作数同一nd矩阵的相邻行起始地址间的偏移
-        copyinXGmParams.dstNzC0Stride = CeilCubeBlock(mInCore) * CUBE_BLOCK;
-        copyinXGmParams.dstNzNStride = 1;
-        copyinXGmParams.dstNzMatrixStride = 0;
-        DataCopy(queryL1_[pingPongFlag], xGm_[(mInCoreOffset)*H1 + kIdx_ * kOffset], copyinXGmParams); // nd -> nz
+        if (H1 > MAX_ND_NZ_STRIDE_SIZE) {
+            DataCopyL1Nz(mInCore, k, H1, xGm_[xGmOffset], queryL1_[pingPongFlag]);
+        } else {
+            Nd2NzParams copyinXGmParams;
+            copyinXGmParams.ndNum = 1;
+            copyinXGmParams.nValue = mInCore;
+            copyinXGmParams.dValue = k;
+            copyinXGmParams.srcNdMatrixStride = 0;
+            copyinXGmParams.srcDValue = H1; // 源操作数同一nd矩阵的相邻行起始地址间的偏移
+            copyinXGmParams.dstNzC0Stride = CeilCubeBlock(mInCore) * CUBE_BLOCK;
+            copyinXGmParams.dstNzNStride = 1;
+            copyinXGmParams.dstNzMatrixStride = 0;
+            DataCopy(queryL1_[pingPongFlag], xGm_[xGmOffset], copyinXGmParams); // nd -> nz
+        }
     }
     AscendC::PipeBarrier<PIPE_MTE2>();
-    Nd2NzParams copyinB1Params;
-    copyinB1Params.ndNum = 1;
-    copyinB1Params.nValue = R;
-    copyinB1Params.dValue = k;
-    copyinB1Params.srcNdMatrixStride = 0;
-    copyinB1Params.srcDValue = H1;
-    copyinB1Params.dstNzC0Stride = CeilCubeBlock(R) * CUBE_BLOCK;
-    copyinB1Params.dstNzNStride = 1;
-    copyinB1Params.dstNzMatrixStride = 0;
-    uint32_t weightOffset = weightIdx * layer * H1 * R + layer_idx * H1 * R;
-    DataCopy(keyL1_[pingPongFlag], waGm_[weightOffset + kIdx_ * kOffset], copyinB1Params);
+    uint32_t weightOffset = weightIdx * layer * H1 * R + layer_idx * H1 * R + kIdx_ * kOffset;
+    if (H1 > MAX_ND_NZ_STRIDE_SIZE) {
+        DataCopyL1Nz(R, k, H1, waGm_[weightOffset], keyL1_[pingPongFlag]);
+    } else {
+        Nd2NzParams copyinB1Params;
+        copyinB1Params.ndNum = 1;
+        copyinB1Params.nValue = R;
+        copyinB1Params.dValue = k;
+        copyinB1Params.srcNdMatrixStride = 0;
+        copyinB1Params.srcDValue = H1;
+        copyinB1Params.dstNzC0Stride = CeilCubeBlock(R) * CUBE_BLOCK;
+        copyinB1Params.dstNzNStride = 1;
+        copyinB1Params.dstNzMatrixStride = 0;
+        DataCopy(keyL1_[pingPongFlag], waGm_[weightOffset], copyinB1Params);
+    }
+
     SetFlag<HardEvent::MTE2_MTE1>(eventId);
     WaitFlag<HardEvent::MTE2_MTE1>(eventId);
 }
