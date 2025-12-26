@@ -53,6 +53,7 @@
     {"name":"TanV2", "compute_units": ["ascend910b", "ascend310b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"StridedSlice", "compute_units": ["ascend910b", "ascend310b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"AxpyV3", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
+    {"name":"EyeV2", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"Log1pV2", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"Arange", "compute_units": ["ascend910b", "ascend310b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"Sign", "compute_units": ["ascend910_93", "ascend910b", "ascend910_95"], "auto_sync": true},
@@ -62,5 +63,5 @@
     {"name":"Erf", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"Sinh", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"MaximumV2", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
-    {"name":"ReflectionPad1dV2", "compute_units": ["ascend910b"], "auto_sync":true, "impl_mode" : "high_performance"}
+    {"name":"ReflectionPad1dV2", "compute_units": ["ascend910b"], "auto_sync":true, "impl_mode" : "high_performance"},
 ]
