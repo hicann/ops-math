@@ -480,8 +480,8 @@ TEST_F(TEST_ADD_UT, DIFFERENT_INPUT_BOOL_TYPE) {
   vector<DataType> data_types = {DT_BOOL, DT_BOOL, DT_INT64};
   vector<vector<int64_t>> shapes = {{2}, {1}, {2}};
 
-  bool input1[2] = {2, 5};
-  bool input2[1] = {3};
+  bool input1[2] = {1, 1};
+  bool input2[1] = {1};
   int32_t output[2] = {0};
   vector<void *> datas = {(void *)input1,
                           (void *)input2,
