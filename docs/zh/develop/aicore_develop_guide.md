@@ -350,7 +350,18 @@ __aicore__ inline void AddExample<T>::Process()
 
     参考[前提条件](#前提条件)完成基础环境搭建，同时检查算子开发交付件是否完备，是否在对应算子分类目录下。
 
-2. **编译自定义算子包。**
+2. **配置环境变量。**
+	
+	根据实际场景，选择合适的命令。
+
+    ```bash
+   # 默认路径安装，以root用户为例（非root用户，将/usr/local替换为${HOME}）
+   source /usr/local/Ascend/cann/set_env.sh
+   # 指定路径安装
+   # source ${install_path}/cann/set_env.sh
+    ```
+
+3. **编译自定义算子包。**
 
     以`AddExample`算子为例，假设开发交付件在`examples`目录，完整代码参见[add_example](../../../examples/add_example)目录。若编译`experimental`目录下用户自定义算子，编译命令需增加编译参数`--experimental`。
 
@@ -370,7 +381,7 @@ __aicore__ inline void AddExample<T>::Process()
     Self-extractable archive "cann-ops-math-${vendor_name}_linux-${arch}.run" successfully created.
     ```
 
-3. **安装自定义算子包。**
+4. **安装自定义算子包。**
 
     执行以下命令进行安装：
     
@@ -380,7 +391,7 @@ __aicore__ inline void AddExample<T>::Process()
     ```
      自定义算子包安装在`${ASCEND_HOME_PATH}/opp/vendors`路径中，`${ASCEND_HOME_PATH}`表示CANN软件安装目录，可提前在环境变量中配置。
 
-4. **（可选）卸载自定义算子包。**
+5. **（可选）卸载自定义算子包。**
 
     自定义算子包安装后在`${ASCEND_HOME_PATH}/opp/vendors/custom_math/scripts`目录会生成`uninstall.sh`，通过该脚本可卸载自定义算子包，命令如下：
     ```bash

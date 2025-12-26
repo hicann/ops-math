@@ -32,7 +32,7 @@
     - --ops（可选）：\$\{op\_list\}表示待编译算子，不指定时默认编译所有算子。格式形如"abs,add_lora,..."，多算子之间用英文逗号","分隔。
     - --experimental（可选）：表示编译用户保存在experimental贡献目录下的算子。
     
-    说明：若\$\{vendor\_name\}和\$\{op\_list\}都不传入编译的是ops-math包；若编译所有算子的自定义算子包，需传入\$\{vendor\_name\}。
+    说明：若\$\{vendor\_name\}和\$\{op\_list\}都不传入编译的是ops-math包；若编译所有算子的自定义算子包，需传入\$\{vendor\_name\}；编译自定义算子包不支持--jit。
 
     若提示如下信息，说明编译成功。
     ```bash
