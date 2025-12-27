@@ -25,37 +25,54 @@ namespace l0op {
 OP_TYPE_REGISTER(RightShift);
 
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_INT8, op::DataType::DT_INT16,
-    op::DataType::DT_INT32, op::DataType::DT_INT64,
-    op::DataType::DT_UINT8, op::DataType::DT_UINT16,
-    op::DataType::DT_UINT32, op::DataType::DT_UINT64};
- 
+   op::DataType::DT_INT8, op::DataType::DT_INT16,
+   op::DataType::DT_INT32, op::DataType::DT_INT64,
+   op::DataType::DT_UINT8, op::DataType::DT_UINT16,
+   op::DataType::DT_UINT32, op::DataType::DT_UINT64};
+
 bool IsSupported(const aclTensor* x, const aclTensor* y) {
-    if (!op::CheckType(x->GetDataType(), DTYPE_SUPPORT_LIST)) {
-        return false;
-    }
-    if (!op::CheckType(y->GetDataType(), DTYPE_SUPPORT_LIST)) {
-        return false;
-    }
-    return true;
+   if (!op::CheckType(x->GetDataType(), DTYPE_SUPPORT_LIST)) {
+       return false;
+   }
+   if (!op::CheckType(y->GetDataType(), DTYPE_SUPPORT_LIST)) {
+       return false;
+   }
+   return true;
 }
 
+const aclTensor* RightShiftAiCore(const aclTensor* x, const aclTensor* y, const aclTensor* z, aclOpExecutor* executor) {
+   L0_DFX(RightShiftAiCore, x, y, z);
+
+   auto ret = ADD_TO_LAUNCHER_LIST_AICORE(RightShift, OP_INPUT(x, y), OP_OUTPUT(z));
+   OP_CHECK(
+       ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "RightShiftAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
+       return nullptr);
+   return z;
+}
+
+const aclTensor* RightShiftAiCpu(const aclTensor* x, const aclTensor* y, const aclTensor* z, aclOpExecutor* executor) {
+   L0_DFX(RightShiftAiCpu, x, y, z);
+
+   static internal::AicpuTaskSpace space("RightShift");
+   auto ret = ADD_TO_LAUNCHER_LIST_AICPU(RightShift, OP_ATTR_NAMES(), OP_INPUT(x, y), OP_OUTPUT(z));
+   OP_CHECK(
+       ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "RightShiftAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
+       return nullptr);
+   return z;
+}
 
 const aclTensor* RightShift(const aclTensor* x, const aclTensor* y, aclOpExecutor* executor) {
-    auto z = executor->AllocTensor(x->GetViewShape(), x->GetDataType());
-    CHECK_RET(z != nullptr, nullptr);
-    if (!IsSupported(x, y)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The input dtype for rightshift is not supported。");
-        return nullptr;
-    }
-
-    L0_DFX(RightShift, x, y, z);
-
-    static internal::AicpuTaskSpace space("RightShift");
-    ADD_TO_LAUNCHER_LIST_AICPU(RightShift, OP_ATTR_NAMES(),
-                               OP_INPUT(x, y),
-                               OP_OUTPUT(z));
-    return z;
+   auto z = executor->AllocTensor(x->GetViewShape(), x->GetDataType());
+   CHECK_RET(z != nullptr, nullptr);
+   if (!IsSupported(x, y)) {
+       OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The input dtype for rightshift is not supported.");
+       return nullptr;
+   }
+   auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
+   if (socVersion != SocVersion::ASCEND910_95) {
+       return RightShiftAiCpu(x, y, z, executor);
+   } else {
+       return RightShiftAiCore(x, y, z, executor);
+   }
 }
- 
 }  // namespace l0op
