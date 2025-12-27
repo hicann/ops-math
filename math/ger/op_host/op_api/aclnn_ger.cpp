@@ -12,7 +12,7 @@
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "ger.h"
-#include "math/mul/op_host/op_api/mul.h"
+#include "math/mul/op_api/mul.h"
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
 #include "math/logical_and/op_api/logical_and.h"
 #include "aclnn_kernels/common/op_error_check.h"

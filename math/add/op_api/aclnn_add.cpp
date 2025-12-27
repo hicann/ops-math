@@ -14,7 +14,7 @@
 #include "math/axpy_v2/op_host/op_api/axpy_v2.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
-#include "math/mul/op_host/op_api/mul.h"
+#include "math/mul/op_api/mul.h"
 #include "math/logical_and/op_api/logical_and.h"
 #include "math/logical_or/op_host/op_api/logical_or.h"
 #include "aclnn_kernels/common/op_error_check.h"

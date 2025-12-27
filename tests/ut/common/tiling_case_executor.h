@@ -36,6 +36,11 @@ void ExecuteTestCase(const gert::TilingContextPara& tilingContextPara,
                      uint64_t                       expectTilingKey,
                      const std::vector<size_t>&     expectWorkspaces);
 
+void ExecuteTestCaseForEle(
+    const gert::TilingContextPara& tilingContextPara, ge::graphStatus expectResult, bool needCheckTilingKey,
+    uint64_t expectTilingKey, bool needCheckTilingData, const string& expectTilingData,
+    const std::vector<size_t>& expectWorkspaces);
+
 bool ExecuteTiling(const gert::TilingContextPara& tilingContextPara, TilingInfo& tilingInfo);
 
 #endif // OPS_MATH_DEV_TESTS_UT_COMMON_TILING_CASE_EXECUTOR_H

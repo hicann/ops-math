@@ -13,7 +13,7 @@
 #include "math/axpy_v2/op_host/op_api/axpy_v2.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
-#include "math/mul/op_host/op_api/mul.h"
+#include "math/mul/op_api/mul.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "common/op_api_def.h"
 #include "opdev/common_types.h"

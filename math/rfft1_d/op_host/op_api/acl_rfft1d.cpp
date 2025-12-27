@@ -31,7 +31,7 @@
 #include "opdev/platform.h"
 #include "opdev/framework_op.h"
 #include "conversion/concat/op_api/concat.h"
-#include "math/mul/op_host/op_api/mul.h"
+#include "math/mul/op_api/mul.h"
 #include "common/aclnn_check.h"
 
 using namespace op;

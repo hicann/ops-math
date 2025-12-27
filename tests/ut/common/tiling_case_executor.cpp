@@ -274,3 +274,79 @@ bool ExecuteTiling(const gert::TilingContextPara& tilingContextPara, TilingInfo&
     
     return true;
 }
+
+/* EleBaseTilingData struct format
+    {
+        int64_t dim0;
+        int32_t coreNum;
+        int32_t ubFormer;
+        int64_t blockFormer;
+        int64_t blockNum;
+        int64_t ubLoopOfFormerBlock;
+        int64_t ubLoopOfTailBlock;
+        int64_t ubTailOfFormerBlock;
+        int64_t ubTailOfTailBlock;
+        int64_t elemNum;
+        uint64_t scheMode;
+    };
+*/
+static string eleToString(void* buf) {
+    string result;
+    const int64_t* dataInt64 = reinterpret_cast<const int64_t*>(buf);
+    result += std::to_string(dataInt64[0]);
+    result += " ";
+
+    const int32_t* dataInt32 = reinterpret_cast<const int32_t*>(buf + 8);
+    result += std::to_string(dataInt32[0]);
+    result += " ";
+    result += std::to_string(dataInt32[1]);
+    result += " ";
+
+    dataInt64 = reinterpret_cast<const int64_t*>(buf + 16);
+    for (size_t i = 0; i < 7; i++) {
+        result += std::to_string(dataInt64[i]);
+        result += " ";
+    }
+
+    const uint64_t* dataUint64 = reinterpret_cast<const uint64_t*>(buf + 72);
+    result += std::to_string(dataUint64[0]);
+    result += " ";
+
+    return result;
+}
+
+void ExecuteTestCaseForEle(
+    const gert::TilingContextPara& tilingContextPara, ge::graphStatus expectResult, bool needCheckTilingKey,
+    uint64_t expectTilingKey, bool needCheckTilingData, const string& expectTilingData,
+    const std::vector<size_t>& expectWorkspaces)
+{
+    DO_TILING(tilingContextPara);
+
+    // check tiling func
+    EXPECT_EQ(tilingRet, expectResult);
+    if (expectResult == ge::GRAPH_FAILED) {
+        return;
+    }
+
+    // check workspace
+    size_t workspaceCount = tilingContext->GetWorkspaceNum();
+    if (workspaceCount > 0) {
+        auto workspaceSizes = tilingContext->GetWorkspaceSizes(workspaceCount);
+        for (size_t i = 0; i < workspaceCount; i++) {
+            ASSERT_EQ(workspaceSizes[i], expectWorkspaces[i]);
+        }
+    }
+
+    // check tiling key
+    if (needCheckTilingKey) {
+        auto tilingKeyResult = tilingContext->GetTilingKey();
+        ASSERT_EQ(tilingKeyResult, expectTilingKey);
+    }
+
+    // check tiling data
+    if (needCheckTilingKey) {
+        auto rawTilingData = tilingContext->GetRawTilingData();
+        auto tilingDataResult = eleToString(rawTilingData->GetData());
+        EXPECT_EQ(tilingDataResult, expectTilingData);
+    }
+}

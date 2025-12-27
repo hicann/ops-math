@@ -13,7 +13,7 @@
 #include "opdev/platform.h"
 #include "math/round/op_host/op_api/round.h"
 #include "aclnn_kernels/cast.h"
-#include "math/muls/op_host/op_api/muls.h"
+#include "math/muls/op_api/muls.h"
 #include "math/sub/op_host/op_api/sub.h"
 #include "conversion/view_copy/op_host/op_api/view_copy.h"
 #include "math/add/op_api/add.h"

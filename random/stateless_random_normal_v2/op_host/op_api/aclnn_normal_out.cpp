@@ -10,7 +10,7 @@
 
 #include "aclnn_normal_out.h"
 #include "math/add/op_api/add.h"
-#include "math/mul/op_host/op_api/mul.h"
+#include "math/mul/op_api/mul.h"
 #include "stateless_random_normal_v2.h"
 #include "aclnn_kernels/cast.h"
 #include "conversion/view_copy/op_host/op_api/view_copy.h"

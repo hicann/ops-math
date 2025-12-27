@@ -14,7 +14,7 @@
 #include "math/floor_div/op_api/floordiv.h"
 #include "math/real_div/op_host/op_api/realdiv.h"
 #include "math/trunc/op_host/op_api/trunc.h"
-#include "math/muls/op_host/op_api/muls.h"
+#include "math/muls/op_api/muls.h"
 #include "common/op_api_def.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
