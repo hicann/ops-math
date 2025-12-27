@@ -762,7 +762,6 @@ TEST_F(l2_tensor_equal_test, test_tensor_equal_to_contiguous_false) {
   uint64_t workspaceSize=0;
   aclnnStatus getWorkspaceResult=ut.TestGetWorkspaceSize(&workspaceSize);
   EXPECT_EQ(getWorkspaceResult,ACLNN_SUCCESS);
-  // ut.TestPrecision();  // comment bcz of timeout in model tests (181469 ms)
 }
 
 TEST_F(l2_tensor_equal_test, test_tensor_equal_to_contiguous_true) {

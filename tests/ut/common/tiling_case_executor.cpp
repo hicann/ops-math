@@ -234,9 +234,20 @@ void ExecuteTestCase(const gert::TilingContextPara& tilingContextPara,
     ASSERT_EQ(tilingKeyResult, expectTilingKey);
 
     // check tiling data
+    if (expectTilingData == EMPTY_EXPECT_TILING_DATA) {
+        return;
+    }
     auto rawTilingData = tilingContext->GetRawTilingData();
     auto tilingDataResult = to_string<int64_t>(rawTilingData->GetData(), rawTilingData->GetDataSize());
     EXPECT_EQ(tilingDataResult, expectTilingData);
+}
+
+void ExecuteTestCase(const gert::TilingContextPara& tilingContextPara,
+                     ge::graphStatus                expectResult,
+                     uint64_t                       expectTilingKey,
+                     const std::vector<size_t>&     expectWorkspaces)
+{
+    ExecuteTestCase(tilingContextPara, expectResult, expectTilingKey, EMPTY_EXPECT_TILING_DATA, expectWorkspaces);
 }
 
 bool ExecuteTiling(const gert::TilingContextPara& tilingContextPara, TilingInfo& tilingInfo)

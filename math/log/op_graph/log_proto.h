@@ -1,10 +1,10 @@
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of 
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -49,9 +49,10 @@ namespace ge {
 * @li Compatible with the Caffe operator Log.
 */
 REG_OP(Log)
-    .INPUT(x, TensorType({DT_UINT8, DT_INT8, DT_INT16, DT_INT32, DT_INT64,
-                          DT_FLOAT, DT_DOUBLE, DT_FLOAT16, DT_BF16,
-                          DT_BOOL, DT_COMPLEX64, DT_COMPLEX128}))
+    .INPUT(
+        x, TensorType(
+               {DT_UINT8, DT_INT8, DT_INT16, DT_INT32, DT_INT64, DT_FLOAT, DT_DOUBLE, DT_FLOAT16, DT_BF16, DT_BOOL,
+                DT_COMPLEX64, DT_COMPLEX128}))
     .OUTPUT(y, TensorType::UnaryDataType())
     .ATTR(base, Float, -1.0)
     .ATTR(scale, Float, 1.0)
@@ -60,4 +61,4 @@ REG_OP(Log)
 
 } // namespace ge
 
-#endif  // OPS_MATH_MATH_LOG_PROTO_H_
+#endif // OPS_MATH_MATH_LOG_PROTO_H_

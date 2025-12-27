@@ -47,8 +47,6 @@ TEST_F(l2_argmax_test, aclnnArgMax_3_4_float_nd_0_nd) {
   uint64_t workspace_size = 0;
   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
   EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-  // ut.TestPrecision();
 }
 
 
@@ -80,8 +78,6 @@ TEST_F(l2_argmax_test, aclnnArgMax_16_40_10_float16_nd_1_nd) {
   uint64_t workspace_size = 0;
   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
   EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-  // ut.TestPrecision();  // comment bcz of timeout in model tests (330454 ms)
 }
 
 TEST_F(l2_argmax_test, aclnnArgMax_512_100_2_float_nd_1_nd) {
@@ -96,8 +92,6 @@ TEST_F(l2_argmax_test, aclnnArgMax_512_100_2_float_nd_1_nd) {
   uint64_t workspace_size = 0;
   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
   EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-  // ut.TestPrecision();
 }
 
 TEST_F(l2_argmax_test, aclnnArgMax_512_100_2_double_nd_0_nd) {
@@ -192,8 +186,6 @@ TEST_F(l2_argmax_test, aclnnArgMax_512_100_2_int64_nd_0_nd) {
   uint64_t workspace_size = 0;
   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
   EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-  // ut.TestPrecision();
 }
 
 TEST_F(l2_argmax_test, aclnnArgMax_512_100_2_uint8_nd_0_nd) {

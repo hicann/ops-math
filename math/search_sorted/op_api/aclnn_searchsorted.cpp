@@ -11,7 +11,7 @@
 #include "aclnn_searchsorted.h"
 #include "searchsorted.h"
 #include "aclnn_kernels/cast.h"
-#include "math/zero_op/op_host/op_api/zero_op.h"
+#include "math/zero_op/op_api/zero_op.h"
 #include "aclnn_kernels/reshape.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn/aclnn_base.h"

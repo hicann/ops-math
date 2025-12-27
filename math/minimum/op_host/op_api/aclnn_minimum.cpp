@@ -10,7 +10,7 @@
 
 #include "aclnn_minimum.h"
 #include "minimum.h"
-#include "../../../logical_and/op_host/op_api/logical_and.h"
+#include "../../../logical_and/op_api/logical_and.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"

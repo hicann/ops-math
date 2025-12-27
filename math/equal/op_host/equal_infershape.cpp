@@ -18,11 +18,11 @@
 
 using namespace ge;
 namespace ops {
-  static ge::graphStatus InferShape4Equal(gert::InferShapeContext* context)
-  {
+static ge::graphStatus InferShape4Equal(gert::InferShapeContext* context)
+{
     OP_LOGI(context, "Begin to do InferShape4Equal Func");
     return Ops::Base::InferShape4Broadcast(context);
-  }
+}
 
-  IMPL_OP_INFERSHAPE(Equal).InferShape(InferShape4Equal);
+IMPL_OP_INFERSHAPE(Equal).InferShape(InferShape4Equal);
 } // namespace ops

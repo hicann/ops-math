@@ -146,8 +146,6 @@ TEST_F(l2_tanh_test, case_8)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // fp16 is not supported on cpu
-    // ut.TestPrecision();
 }
 
 // CheckFormat
@@ -260,7 +258,6 @@ TEST_F(l2_tanh_test, case_16)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-    // ut.TestPrecision();
 }
 
 

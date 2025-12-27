@@ -24,7 +24,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
 #include "math/reduce_any/op_host/op_api/reduce_any.h"
-#include "conversion/fill/op_host/op_api/fill.h"
+#include "conversion/fill/op_api/fill.h"
 #include "common/op_api_def.h"
 #include "common/aclnn_check.h"
 

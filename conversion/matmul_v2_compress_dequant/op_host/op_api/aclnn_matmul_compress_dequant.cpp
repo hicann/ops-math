@@ -15,7 +15,7 @@
 
 #include "aclnn_matmul_compress_dequant.h"
 #include "matmul_compress_dequant.h"
-#include "../../../fill/op_host/op_api/fill.h"
+#include "../../../fill/op_api/fill.h"
 
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"

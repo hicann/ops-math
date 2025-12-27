@@ -9,11 +9,11 @@
  */
 
 #include "aclnn_addr.h"
-#include "../../../add/op_host/op_api/add.h"
+#include "../../../add/op_api/add.h"
 #include "addr.h"
 #include "../../../mul/op_host/op_api/mul.h"
 #include "../../../logical_or/op_host/op_api/logical_or.h"
-#include "../../../logical_and/op_host/op_api/logical_and.h"
+#include "../../../logical_and/op_api/logical_and.h"
 #include "aclnn_kernels/cast.h"
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
 #include "aclnn_kernels/contiguous.h"

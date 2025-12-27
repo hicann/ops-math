@@ -4,6 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
@@ -24,10 +25,13 @@
 
   - tensors(aclTensorList*, 计算输入)：需要级联的tensor列表，Device侧的aclTensor列表，列表长度不超过32，列表内的aclTensor的shape支持1-8维，且数据类型需要列表内部构成满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
      * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、DOUBLE、COMPLEX64
+     * <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、DOUBLE、COMPLEX64
   - dim(int64_t, 计算输入)：需要级联的维度，int类型的值，范围[-tensors.dim(), tensors.dim() - 1]。
 
   - out(aclTensor *, 计算输出)：输出tensor，Device侧的aclTensor，且数据类型需要是tensors内部推导之后可转换的类型，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
      * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、DOUBLE、COMPLEX64
+     * <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、DOUBLE、COMPLEX64
+
   - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
 
   - executor(aclOpExecutor **，出参)：返回op执行器，包含了算子计算流程。
@@ -40,10 +44,10 @@
 第一段接口完成入参校验，出现以下场景时报错：
 161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的tensors或out是空指针。
 161002 (ACLNN_ERR_PARAM_INVALID)：1. tensors列表中tensor的数据类型和数据格式不在支持的范围之内。
-                                  2. tensors列表中无法做数据类型推导。
-                                  3. 推导出的数据类型无法转换为指定输出out的类型。
-                                  4. 非级联维度shape不一致。
-                                  5. dim超过tensor维度范围。
+                                  1. tensors列表中无法做数据类型推导。
+                                  2. 推导出的数据类型无法转换为指定输出out的类型。
+                                  3. 非级联维度shape不一致。
+                                  4. dim超过tensor维度范围。
 ```
 
 ## aclnnCat

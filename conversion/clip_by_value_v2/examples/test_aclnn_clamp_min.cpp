@@ -1,31 +1,32 @@
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of 
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, 
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
 #include "aclnnop/aclnn_clamp.h"
 
 #define CHECK_RET(cond, return_expr) \
-  do {                               \
-    if (!(cond)) {                   \
-      return_expr;                   \
-    }                                \
-  } while (0)
+    do {                             \
+        if (!(cond)) {               \
+            return_expr;             \
+        }                            \
+    } while (0)
 
-#define LOG_PRINT(message, ...)     \
-  do {                              \
-    printf(message, ##__VA_ARGS__); \
-  } while (0)
+#define LOG_PRINT(message, ...)         \
+    do {                                \
+        printf(message, ##__VA_ARGS__); \
+    } while (0)
 
-int64_t GetShapeSize(const std::vector<int64_t>& shape) {
+int64_t GetShapeSize(const std::vector<int64_t>& shape)
+{
     int64_t shape_size = 1;
     for (auto i : shape) {
         shape_size *= i;
@@ -33,7 +34,8 @@ int64_t GetShapeSize(const std::vector<int64_t>& shape) {
     return shape_size;
 }
 
-int Init(int32_t deviceId, aclrtStream* stream) {
+int Init(int32_t deviceId, aclrtStream* stream)
+{
     // 固定写法，资源初始化
     auto ret = aclInit(nullptr);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclInit failed. ERROR: %d\n", ret); return ret);
@@ -45,8 +47,10 @@ int Init(int32_t deviceId, aclrtStream* stream) {
 }
 
 template <typename T>
-int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
-                    aclDataType dataType, aclTensor** tensor) {
+int CreateAclTensor(
+    const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr, aclDataType dataType,
+    aclTensor** tensor)
+{
     auto size = GetShapeSize(shape) * sizeof(T);
     // 调用aclrtMalloc申请device侧内存
     auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -63,13 +67,15 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
     }
 
     // 调用aclCreateTensor接口创建aclTensor
-    *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
-                              shape.data(), shape.size(), *deviceAddr);
+    *tensor = aclCreateTensor(
+        shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
+        *deviceAddr);
     return 0;
 }
 
 int PrepareInputAndOutput(
-    std::vector<int64_t>& shape, void** selfDeviceAddr, aclTensor** self, aclScalar** min, void** outDeviceAddr, aclTensor** out)
+    std::vector<int64_t>& shape, void** selfDeviceAddr, aclTensor** self, aclScalar** min, void** outDeviceAddr,
+    aclTensor** out)
 {
     double min_v = 2;
 
@@ -79,8 +85,8 @@ int PrepareInputAndOutput(
     // 创建self aclTensor
     auto ret = CreateAclTensor(selfHostData, shape, selfDeviceAddr, aclDataType::ACL_DOUBLE, self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-	// 创建min
-	  *min = aclCreateScalar(&min_v, aclDataType::ACL_DOUBLE);
+    // 创建min
+    *min = aclCreateScalar(&min_v, aclDataType::ACL_DOUBLE);
     CHECK_RET(*min != nullptr, return ret);
     // 创建out aclTensor
     ret = CreateAclTensor(outHostData, shape, outDeviceAddr, aclDataType::ACL_DOUBLE, out);
@@ -91,26 +97,27 @@ int PrepareInputAndOutput(
 
 void ReleaseTensorAndScalar(aclTensor* self, aclScalar* min, aclTensor* out)
 {
-  aclDestroyTensor(self);
-  aclDestroyScalar(min);
-  aclDestroyTensor(out);
+    aclDestroyTensor(self);
+    aclDestroyScalar(min);
+    aclDestroyTensor(out);
 }
 
 void ReleaseDevice(
     void* selfDeviceAddr, void* outDeviceAddr, uint64_t workspaceSize, void* workspaceAddr, aclrtStream stream,
     int32_t deviceId)
 {
-  aclrtFree(selfDeviceAddr);
-  aclrtFree(outDeviceAddr);
-  if (workspaceSize > 0) {
-    aclrtFree(workspaceAddr);
-  }
-  aclrtDestroyStream(stream);
-  aclrtResetDevice(deviceId);
-  aclFinalize();
+    aclrtFree(selfDeviceAddr);
+    aclrtFree(outDeviceAddr);
+    if (workspaceSize > 0) {
+        aclrtFree(workspaceAddr);
+    }
+    aclrtDestroyStream(stream);
+    aclrtResetDevice(deviceId);
+    aclFinalize();
 }
 
-int main() {
+int main()
+{
     // 1. 固定写法，device/stream初始化, 参考acl对外接口列表
     // 根据自己的实际device填写deviceId
     int32_t deviceId = 0;
@@ -126,8 +133,8 @@ int main() {
     aclTensor* self = nullptr;
     aclScalar* min = nullptr;
     aclTensor* out = nullptr;
-	
-	  ret = PrepareInputAndOutput(shape, &selfDeviceAddr, &self, &min, &outDeviceAddr, &out);
+
+    ret = PrepareInputAndOutput(shape, &selfDeviceAddr, &self, &min, &outDeviceAddr, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     // 3. 调用CANN算子库API，需要修改为具体的API
@@ -151,19 +158,20 @@ int main() {
     // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
     auto size = GetShapeSize(shape);
     std::vector<double> resultData(size, 0);
-    ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, size * sizeof(double),
-                      ACL_MEMCPY_DEVICE_TO_HOST);
+    ret = aclrtMemcpy(
+        resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, size * sizeof(double),
+        ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
 
     for (int64_t i = 0; i < size; i++) {
         LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
     }
 
-  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改  
-  ReleaseTensorAndScalar(self, min, out);
+    // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
+    ReleaseTensorAndScalar(self, min, out);
 
     // 7. 释放device 资源
-  ReleaseDevice(selfDeviceAddr, outDeviceAddr, workspaceSize, workspaceAddr, stream, deviceId);
+    ReleaseDevice(selfDeviceAddr, outDeviceAddr, workspaceSize, workspaceAddr, stream, deviceId);
 
     return 0;
 }

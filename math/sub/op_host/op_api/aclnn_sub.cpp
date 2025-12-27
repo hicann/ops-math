@@ -9,7 +9,7 @@
  */
 #include "aclnn_sub.h"
 #include "sub.h"
-#include "math/axpy/op_host/op_api/axpy.h"
+#include "math/axpy/op_api/axpy.h"
 #include "math/axpy_v2/op_host/op_api/axpy_v2.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"

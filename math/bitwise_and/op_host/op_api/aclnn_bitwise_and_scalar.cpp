@@ -9,7 +9,7 @@
  */
 
 #include "aclnn_bitwise_and_scalar.h"
-#include "math/logical_and/op_host/op_api/logical_and.h"
+#include "math/logical_and/op_api/logical_and.h"
 #include "bitwiseand.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"

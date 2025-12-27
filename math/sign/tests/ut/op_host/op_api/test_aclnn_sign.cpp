@@ -65,7 +65,6 @@ TEST_F(sign_test, test_sign_format) {
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    // ut.TestPrecision();  // comment bcz of timeout in model tests (277860 ms)
   }
 }
 
@@ -242,6 +241,5 @@ TEST_F(sign_test, test_sign_shape_larger_8) {
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    // ut.TestPrecision(); // comment bcz of timeout in model tests (702051 ms)
   }
 }

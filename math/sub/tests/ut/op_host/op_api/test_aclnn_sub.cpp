@@ -59,8 +59,6 @@ TEST_F(l2_sub_test, normal_dtype_float16_format_nhwc)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // ut.TestPrecision();
 }
 
 // 正常场景_double_nchw
@@ -174,8 +172,6 @@ TEST_F(l2_sub_test, normal_dtype_int64)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // ut.TestPrecision();  // comment bcz of timeout in model tests (316883 ms)
 }
 
 // 正常场景_alpha为1

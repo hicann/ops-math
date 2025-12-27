@@ -1,4 +1,4 @@
-/* Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+/**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
@@ -8,17 +8,18 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "register/op_impl_registry.h"
 #include "infershape_broadcast_util.h"
 #include "log/log.h"
+#include "register/op_impl_registry.h"
 
 using namespace ge;
 namespace ops {
-static ge::graphStatus InferShapeForAdd(gert::InferShapeContext *context) {
-  OP_LOGI("Begin InferShapeForAdd");
-  return Ops::Base::InferShape4Broadcast(context);
+static ge::graphStatus InferShapeForAdd(gert::InferShapeContext* context)
+{
+    OP_LOGI("Begin InferShapeForAdd");
+    return Ops::Base::InferShape4Broadcast(context);
 }
 
 IMPL_OP_INFERSHAPE(Add).InferShape(InferShapeForAdd);
-}
+} // namespace ops
 // namespace ops

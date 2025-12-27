@@ -16,7 +16,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_histc.h"
 #include "histogram.h"
-#include "../../../zero_op/op_host/op_api/zero_op.h"
+#include "../../../zero_op/op_api/zero_op.h"
 #include "../../../reduce_min/op_host/op_api/reduce_min.h"
 #include "../../../reduce_max/op_host/op_api/reduce_max.h"
 #include "aclnn/aclnn_base.h"

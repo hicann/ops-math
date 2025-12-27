@@ -9,7 +9,7 @@
  */
 #include "aclnn_pdist.h"
 #include "pdist.h"
-#include "../../../../conversion/fill/op_host/op_api/fill.h"
+#include "../../../../conversion/fill/op_api/fill.h"
 #include "../../../../conversion/view_copy/op_host/op_api/view_copy.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn/aclnn_base.h"

@@ -14,8 +14,8 @@
 #include "aclnn_kernels/reshape.h"
 #include "sort.h"
 #include "aclnn_kernels/transpose.h"
-#include "math/zero_op/op_host/op_api/zero_op.h"
-#include "conversion/fill/op_host/op_api/fill.h"
+#include "math/zero_op/op_api/zero_op.h"
+#include "conversion/fill/op_api/fill.h"
 
 #include "common/op_api_def.h"
 #include "aclnn_kernels/common/op_error_check.h"

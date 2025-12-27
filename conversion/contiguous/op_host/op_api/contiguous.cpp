@@ -19,7 +19,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/slice.h"
 #include "aclnn_kernels/transpose.h"
-#include "conversion/as_strided/op_host/op_api/as_strided.h"
+#include "conversion/as_strided/op_api/as_strided.h"
 #include "conversion/broadcast_to/op_host/op_api/broadcast_to.h"
 #include "conversion/strided_slice/op_host/op_api/strided_slice.h"
 #include "conversion/tensor_move/op_host/op_api/tensor_move.h"

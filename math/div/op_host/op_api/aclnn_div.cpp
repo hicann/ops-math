@@ -11,7 +11,7 @@
 #include "aclnn_div.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
-#include "math/floor_div/op_host/op_api/floordiv.h"
+#include "math/floor_div/op_api/floordiv.h"
 #include "math/real_div/op_host/op_api/realdiv.h"
 #include "math/trunc/op_host/op_api/trunc.h"
 #include "math/muls/op_host/op_api/muls.h"

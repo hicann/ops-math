@@ -14,7 +14,7 @@
 #include "ger.h"
 #include "math/mul/op_host/op_api/mul.h"
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
-#include "math/logical_and/op_host/op_api//logical_and.h"
+#include "math/logical_and/op_api/logical_and.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"

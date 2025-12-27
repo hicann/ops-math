@@ -4,6 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
@@ -24,8 +25,11 @@
 
   - selfRef(aclTensor \*，计算输入|计算输出)：输入输出tensor，Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
      * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16
+     * <term>Ascend 950PR/Ascend 950DT</term>：FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16
   - value(aclScalar*,计算输入)：指定的标量值，Host侧的aclScalar，数据类型需要与selfRef的数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
      * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16
+     * <term>Ascend 950PR/Ascend 950DT</term>：FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16
+
   - workspaceSize(uint64_t \*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor \*\*, 出参)：返回op执行器，包含了算子计算流程。
 
@@ -37,7 +41,7 @@
   第一段接口完成入参校验，出现以下场景时报错：
   返回161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的selfRef、value其中一个为空指针。
   返回161002（ACLNN_ERR_PARAM_INVALID）：1. selfRef数据类型不在支持的范围之内。
-                                        2. selfRef的shape维度超过8维。
+                                        1. selfRef的shape维度超过8维。
   ```
 
 ## aclnnInplaceFillScalar

@@ -29,7 +29,7 @@
 #include "aclnn_kernels/common/op_error_check.h"
 #include "conversion/pad_v3/op_host/op_api/padv3.h"
 #include "math/mul/op_host/op_api/mul.h"
-#include "math/ones_like/op_host/op_api/ones_like.h"
+#include "math/ones_like/op_api/ones_like.h"
 #include "stft.h"
 #include "acl_stft.h"
 

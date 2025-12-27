@@ -22,7 +22,7 @@
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
-#include "conversion/fill/op_host/op_api/fill.h"
+#include "conversion/fill/op_api/fill.h"
 #include "common/op_api_def.h"
 #include "common/aclnn_check.h"
 

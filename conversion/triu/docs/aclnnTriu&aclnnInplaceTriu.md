@@ -4,6 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |     √      |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √       |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
@@ -44,9 +45,12 @@
 
     - self(aclTensor*, 计算输入)：公式中的$self$，Device侧的aclTensor，shape支持2-8维和空tensor。[数据格式](../../../docs/zh/context/数据格式.md)支持ND、NCHW、NHWC、HWCN、NDHWC、NCDHW。
       - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16。
+      - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16、COMPLEX32、COMPLEX64。
     - diagonal(int64_t, 计算输入)：对角线偏移量，数据类型int64_t。
     - out(aclTensor*, 计算输出)：公式中的$out$，Device侧的aclTensor，shape支持2-8维和0维，数据类型和shape需要与self保持一致。 [数据格式](../../../docs/zh/context/数据格式.md)需要与self保持一致，支持ND、NCHW、NHWC、HWCN、NDHWC、NCDHW。
       - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16。
+      - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16、COMPLEX32、COMPLEX64。
+
     - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
     - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
 
@@ -58,11 +62,11 @@
     第一段接口完成入参校验，出现如下场景时报错：
     返回161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 参数self、out是空指针。
     返回161002 (ACLNN_ERR_PARAM_INVALID)：1. 参数self、out的数据类型不在支持范围内。
-                                        2. 参数self、out的数据格式是私有格式。
-                                        3. self、out的数据类型不一致。
-                                        4. self、out的shape不一致。
-                                        5. self、out的数据格式不一致。
-                                        6. self维度大于8，或小于2。
+                                        1. 参数self、out的数据格式是私有格式。
+                                        2. self、out的数据类型不一致。
+                                        3. self、out的shape不一致。
+                                        4. self、out的数据格式不一致。
+                                        5. self维度大于8，或小于2。
     ```
 
 ## aclnnTriu
@@ -84,6 +88,7 @@
 
     - selfRef(aclTensor*, 计算输入)：Device侧的aclTensor，shape支持2-8维和空tensor。[数据格式](../../../docs/zh/context/数据格式.md)支持ND、NCHW、NHWC、HWCN、NDHWC、NCDHW。
       - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16。
+      - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16、COMPLEX32、COMPLEX64。
     - diagonal(int64_t, 计算输入)：对角线偏移量，数据类型int64_t。
     - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
     - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
@@ -96,8 +101,8 @@
     第一段接口完成入参校验，出现如下场景时报错：
     返回16001(ACLNN_ERR_PARAM_NULLPTR)：1. 参数selfRef是空指针。
     返回16002(ACLNN_ERR_PARAM_INVALID)：1. 参数selfRef数据类型不在支持范围内。
-                                      2. 参数selfRef的数据格式是私有格式。
-                                      3. selfRef维度大于8，或小于2。
+                                      1. 参数selfRef的数据格式是私有格式。
+                                      2. selfRef维度大于8，或小于2。
     ```
 
 ## aclnnInplaceTriu

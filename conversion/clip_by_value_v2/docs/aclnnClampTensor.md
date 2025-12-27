@@ -4,6 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
@@ -30,12 +31,17 @@
 
   - self(aclTensor*,计算输入)：输入tensor，Device侧的aclTensor，shape支持1维-8维，数据类型需要与clipValueMin、clipValueMax满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。shape需要与min、max满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
   - clipValueMin(aclTensor*,计算输入)：输入下限值tensor，数据类型需要与self、clipValueMax满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。shape需要与self、max满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL。
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL。
   - clipValueMax(aclTensor*,计算输入)：输入上限值tensor，数据类型需要与self、clipValueMin满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。shape需要与self、clipValueMin满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL。
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL。
   - out(aclTensor *，计算输出)：输出tensor，shape和self、clipValueMin、clipValueMax broadcast后的shape保持一致，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，数据类型需要和self一致，且数据类型需要可以由self、clipValueMin、clipValueMax推导出的数据类型转换而来（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，数据类型需要可以由self、clipValueMin、clipValueMax推导出的数据类型转换而来（参见[互转换关系](common/互转换关系.md)）。
+
   - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor **，出参)：返回op执行器，包含了算子计算流程。
 
@@ -48,9 +54,9 @@
   返回161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的self、out其中一个为空指针，或者clipValueMin、clipValueMax
                                         全为空指针。
   返回161002（ACLNN_ERR_PARAM_INVALID）：1. self、out的数据类型和数据格式不在支持的范围之内。
-                                        2. self、clipValueMin、clipValueMax的shape不满足broadcast关系
+                                        1. self、clipValueMin、clipValueMax的shape不满足broadcast关系
                                         或broadcast后的shape与输出out的shape不一致。
-                                        3. self、clipValueMin、clipValueMax类型推导失败，或推导类型无法转为
+                                        2. self、clipValueMin、clipValueMax类型推导失败，或推导类型无法转为
                                         out的数据类型
   ```
 

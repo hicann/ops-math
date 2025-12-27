@@ -15,7 +15,7 @@
 #include "common/op_api_def.h"
 #include "aclnn/aclnn_base.h"
 #include "opdev/shape_utils.h"
-#include "conversion/fill/op_host/op_api/fill.h"
+#include "conversion/fill/op_api/fill.h"
 #include "aclnn_kernels/reshape.h"
 #include "level2_base.h"
 

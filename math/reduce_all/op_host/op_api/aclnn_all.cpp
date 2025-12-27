@@ -16,7 +16,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/reshape.h"
-#include "conversion/fill/op_host/op_api/fill.h"
+#include "conversion/fill/op_api/fill.h"
 #include "common/op_api_def.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"

@@ -10,7 +10,7 @@
 
 #include "aclnn_isfinite.h"
 #include "is_finite.h"
-#include "conversion/fill/op_host/op_api/fill.h"
+#include "conversion/fill/op_api/fill.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "opdev/make_op_executor.h"

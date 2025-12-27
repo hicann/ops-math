@@ -23,7 +23,7 @@
 #include "opdev/platform.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/op_errno.h"
-#include "conversion/fill/op_host/op_api/fill.h"
+#include "conversion/fill/op_api/fill.h"
 #include "common/aclnn_check.h"
 
 using namespace op;

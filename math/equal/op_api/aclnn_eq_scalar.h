@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
  
 #ifndef OP_API_INC_LEVEL2_ACLNN_EQ_SCALAR_H_
 #define OP_API_INC_LEVEL2_ACLNN_EQ_SCALAR_H_
@@ -34,12 +34,26 @@ extern "C" {
  *     F((other)) -->D
  *     D -->F1([l0op::ViewCopy])--> J[(out)]
  * ```
- * @param [in] self: npu device侧的aclTensor，
- * 数据类型支持FLOAT16, FLOAT, INT64, UINT64, INT32, INT8, UINT8, BOOL, UINT32, BFLOAT16, DOUBLE, INT16, COMPLEX64,
- * COMPLEX128，数据格式支持ND，支持非连续的Tensor。
- * @param [in] other: host侧的aclScalar，数据类型支持FLOAT16, FLOAT, INT64, UINT64, INT32, INT8, UINT8, BOOL, UINT32,
- * BFLOAT16, DOUBLE, INT16, COMPLEX64, COMPLEX128
- * @param [in] out: npu device侧的aclTensor，数据类型为bool，shape与self的shape一致，数据格式支持ND
+ * @param [in] self: npu device侧的aclTensor，数据格式支持ND，支持非连续的Tensor。
+ * 昇腾910_95 AI处理器: 数据类型支持DOUBLE, FLOAT16, FLOAT, BFLOAT16, INT64, INT32, INT8, UINT8, BOOL, INT16,
+ * COMPLEX64, COMPLEX128, UINT64。
+ * Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件、Atlas A3 训练系列产品/Atlas A3 推理系列产品：
+ * 数据类型支持FLOAT16, FLOAT, INT64, INT32, INT8, UINT8, BOOL, BFLOAT16, DOUBLE, INT16, COMPLEX64, COMPLEX128。
+ * Atlas 训练系列产品: 数据类型支持FLOAT16, FLOAT, INT64, UINT64, INT32, INT8, UINT8, BOOL, UINT32, DOUBLE, INT16,
+ * COMPLEX64, COMPLEX128。
+ * @param [in] other: host侧的aclScalar，
+ * 昇腾910_95 AI处理器：数据类型支持DOUBLE, FLOAT16, FLOAT, BFLOAT16, INT64, INT32, INT8, UINT8, BOOL, INT16,
+ * COMPLEX64, COMPLEX128, UINT64。
+ * Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件、Atlas A3 训练系列产品/Atlas A3 推理系列产品：
+ * 数据类型支持FLOAT16, FLOAT, INT64, INT32, INT8, UINT8, BOOL, BFLOAT16, DOUBLE, INT16, COMPLEX64, COMPLEX128。
+ * Atlas 训练系列产品：数据类型支持FLOAT16, FLOAT, INT64, UINT64, INT32, INT8, UINT8, BOOL, UINT32, DOUBLE, INT16,
+ * COMPLEX64, COMPLEX128。
+ * @param [in] out: npu device侧的aclTensor，数据类型为bool可转换的数据类型，shape与self的shape一致，数据格式支持ND。
+ * 昇腾910_95 AI处理器：数据类型支持DOUBLE，FLOAT16，FLOAT，BFLOAT16，INT64，INT32，INT8，UINT8，BOOL，INT16，COMPLEX64，
+ * COMPLEX128，UINT64，UINT32，UINT16。
+ * Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件、Atlas A3 训练系列产品/Atlas A3 推理系列产品：
+ * 数据类型支持DOUBLE, FLOAT16，FLOAT，BFLOAT16，INT64，INT32，INT8，UINT8，BOOL，INT16，COMPLEX64，COMPLEX128。
+ * Atlas 训练系列产品：数据类型支持DOUBLE，FLOAT16，FLOAT，INT64，INT32，INT8，UINT8，BOOL，INT16，COMPLEX64，COMPLEX128。
  * @param [out] workspace_size: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
@@ -73,11 +87,16 @@ aclnnEqScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, 
 * F((other)) -->D
 * D -->F1([l0op::ViewCopy])--> J[(selfRef)]
 ```
- * @param [in] selfRef: npu device侧的aclTensor，
- * 数据类型支持FLOAT16, FLOAT, INT64, UINT64, INT32, INT8, UINT8, BOOL, UINT32, BFLOAT16, DOUBLE, INT16, COMPLEX64,
- * COMPLEX128，数据格式支持ND，支持非连续的Tensor。
- * @param [in] other: host侧的aclScalar，数据类型支持FLOAT16, FLOAT, INT64, UINT64, INT32, INT8, UINT8, BOOL, UINT32,
- * BFLOAT16, DOUBLE, INT16, COMPLEX64, COMPLEX128
+ * @param [in] selfRef: npu device侧的aclTensor，数据格式支持ND，支持非连续的Tensor。
+ * 昇腾910_95 AI处理器：数据类型支持DOUBLE，FLOAT16，FLOAT，BFLOAT16，INT64，INT32，INT8，UINT8，BOOL，INT16，COMPLEX64，COMPLEX128，UINT64。
+ * Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件、Atlas A3 训练系列产品/Atlas A3 推理系列产品：
+ * 数据类型支持FLOAT16，FLOAT，INT64，INT32，INT8，UINT8，BOOL， BFLOAT16，DOUBLE，INT16，COMPLEX64，COMPLEX128。
+ * Atlas 训练系列产品：数据类型支持FLOAT16，FLOAT，INT64，UINT64，INT32，INT8，UINT8，BOOL，UINT32，DOUBLE，INT16，COMPLEX64，COMPLEX128。
+ * @param [in] other: host侧的aclScalar，
+ * 昇腾910_95 AI处理器：数据类型支持DOUBLE，FLOAT16，FLOAT，BFLOAT16，INT64，INT32，INT8，UINT8，BOOL，INT16，COMPLEX64，COMPLEX128，UINT64。
+ * Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件、Atlas A3 训练系列产品/Atlas A3 推理系列产品：
+ * 数据类型支持FLOAT16，FLOAT，INT64，INT32，INT8，UINT8，BOOL， BFLOAT16，DOUBLE，INT16，COMPLEX64，COMPLEX128。
+ * Atlas 训练系列产品：数据类型支持FLOAT16，FLOAT，INT64，UINT64，INT32，INT8，UINT8，BOOL，UINT32，DOUBLE，INT16，COMPLEX64，COMPLEX128。
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。

@@ -42,7 +42,7 @@ if(UT_TEST_ALL OR OP_HOST_UT)
       add_library(${OP_TILING_MODULE_NAME}_cases_obj OBJECT ${UT_PATH}/empty.cpp)
     endif()
     target_include_directories(
-      ${OP_TILING_MODULE_NAME}_cases_obj PRIVATE ${UT_COMMON_INC} ${GTEST_INCLUDE} ${ASCEND_DIR}/include
+      ${OP_TILING_MODULE_NAME}_cases_obj PRIVATE ${UT_COMMON_INC} ${GTEST_INCLUDE} ${OPS_MATH_DIR} ${ASCEND_DIR}/include
                                                  ${ASCEND_DIR}/include/base/context_builder ${PROJECT_SOURCE_DIR}/common/inc
                                                  ${ASCEND_DIR}/pkg_inc/op_common ${ASCEND_DIR}/include/tiling
                                                  ${ASCEND_DIR}/pkg_inc/op_common/op_host
@@ -77,7 +77,7 @@ if(UT_TEST_ALL OR OP_HOST_UT)
       add_library(${OP_INFERSHAPE_MODULE_NAME}_cases_obj OBJECT ${UT_PATH}/empty.cpp)
     endif()
     target_include_directories(
-      ${OP_INFERSHAPE_MODULE_NAME}_cases_obj PRIVATE ${UT_COMMON_INC} ${GTEST_INCLUDE} ${ASCEND_DIR}/include
+      ${OP_INFERSHAPE_MODULE_NAME}_cases_obj PRIVATE ${UT_COMMON_INC} ${GTEST_INCLUDE} ${OPS_MATH_DIR} ${ASCEND_DIR}/include
                                                      ${ASCEND_DIR}/pkg_inc ${ASCEND_DIR}/include/base/context_builder
       )
     target_link_libraries(

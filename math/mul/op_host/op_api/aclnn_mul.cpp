@@ -10,7 +10,7 @@
 #include "aclnn_mul.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
-#include "math/logical_and/op_host/op_api/logical_and.h"
+#include "math/logical_and/op_api/logical_and.h"
 #include "mul.h"
 #include "math/muls/op_host/op_api/muls.h"
 #include "aclnn/aclnn_base.h"

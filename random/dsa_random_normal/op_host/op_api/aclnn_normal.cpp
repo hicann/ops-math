@@ -9,11 +9,11 @@
  */
 
 #include "aclnn_normal.h"
-#include "math/add/op_host/op_api/add.h"
+#include "math/add/op_api/add.h"
 #include "math/mul/op_host/op_api/mul.h"
 #include "random/stateless_random_normal_v2/op_host/op_api/stateless_random_normal_v2.h"
 #include "dsa_random_normal.h"
-#include "conversion/concat/op_host/op_api/concat.h"
+#include "conversion/concat/op_api/concat.h"
 #include "opdev/platform.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"

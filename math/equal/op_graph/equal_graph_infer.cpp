@@ -15,9 +15,9 @@ using namespace ge;
 namespace ops {
 static ge::graphStatus InferDataType4Equal(gert::InferDataTypeContext* context)
 {
-  OP_LOGI(context, "Enter InferDataType4Equal");
-  context->SetOutputDataType(0, DT_BOOL);
-  return ge::GRAPH_SUCCESS;
+    OP_LOGI(context, "Enter InferDataType4Equal");
+    context->SetOutputDataType(0, DT_BOOL);
+    return ge::GRAPH_SUCCESS;
 }
 
 IMPL_OP(Equal).InferDataType(InferDataType4Equal);

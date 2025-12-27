@@ -1,0 +1,194 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+/*!
+ * \file exp_regbase_optiling.cc
+ * \brief
+ */
+#include "exp_tiling_arch35.h"
+#include <graph/utils/type_utils.h>
+#include "tiling/tiling_api.h"
+#include "tiling_base/tiling_util.h"
+#include "log/log.h"
+#include "register/op_def_registry.h"
+#include "math/exp/op_kernel/arch35/exp_dag.h"
+#include "math/exp/op_kernel/arch35/exp_struct.h"
+
+#include <iostream>
+
+using namespace ExpOp;
+using namespace Ops::Math::OpTiling;
+
+namespace optiling {
+const size_t ASCEND_WORKSPACE = 16777216; // 16 * 1024 * 1024
+
+ge::graphStatus ExpTiling::CalcInputDtype()
+{
+    OP_LOGD(tilingContext->GetNodeName(), "ExpTiling CalcInputDtype enter.");
+    auto inputDesc = tilingContext->GetInputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
+    this->inputDtype = inputDesc->GetDataType();
+    OP_CHECK_IF(
+        this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT,
+        OP_LOGE(tilingContext->GetNodeName(), "input x dtype not support %d", this->inputDtype),
+        return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus ExpTiling::CheckShape()
+{
+    OP_LOGD(tilingContext->GetNodeName(), "ExpTiling CheckShape enter.");
+    auto expInputStorageShape = tilingContext->GetInputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, expInputStorageShape);
+    const gert::Shape& expInputYShape = EnsureNotScalar(expInputStorageShape->GetStorageShape());
+
+    auto expOutputStorageShape = tilingContext->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, expOutputStorageShape);
+    const gert::Shape& expOutputZShape = EnsureNotScalar(expOutputStorageShape->GetStorageShape());
+
+    OP_CHECK_IF(
+        expInputYShape != expOutputZShape, OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),
+        return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus ExpTiling::CalcOutputDtype()
+{
+    OP_LOGD(tilingContext->GetNodeName(), "ExpTiling CalcOutputDtype enter.");
+    auto outputDesc = tilingContext->GetOutputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
+    this->outputDtype = outputDesc->GetDataType();
+    OP_CHECK_IF(
+        this->outputDtype != ge::DT_FLOAT16 && this->outputDtype != ge::DT_BF16 && this->outputDtype != ge::DT_FLOAT,
+        OP_LOGE(tilingContext, "output dtype not support"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        this->outputDtype != this->inputDtype,
+        OP_LOGE(tilingContext->GetNodeName(), "output y dtype not same as input x"), return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus ExpTiling::SetAttr()
+{
+    OP_LOGD(tilingContext->GetNodeName(), "ExpTiling GetAttrs enter.");
+    auto attrs = tilingContext->GetAttrs();
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, attrs);
+    const float* baseValueAttr = attrs->GetAttrPointer<float>(ExpDag::PLACEHOLDER_INDEX_0);
+    const float* scaleValueAttr = attrs->GetAttrPointer<float>(ExpDag::PLACEHOLDER_INDEX_1);
+    const float* shiftValueAttr = attrs->GetAttrPointer<float>(ExpDag::PLACEHOLDER_INDEX_2);
+    float baseValue = baseValueAttr == nullptr ? -1.0f : *baseValueAttr;
+    bool isBaseValue = std::fabs(baseValue - (-1.0f)) <=
+                       std::numeric_limits<float>::epsilon() * std::max(std::fabs(baseValue), std::fabs(-1.0f));
+    OP_CHECK_IF(
+        baseValue <= 1e-6f && !isBaseValue,
+        OP_LOGE(tilingContext->GetNodeName(), "base value must be greater than 0 or -1"), return ge::GRAPH_FAILED);
+    float lnBase = isBaseValue ? 1.0f : log(baseValue);
+    float scale = scaleValueAttr == nullptr ? 1.0f : *scaleValueAttr;
+    float shift = shiftValueAttr == nullptr ? 0.0f : *shiftValueAttr;
+
+    attrScale = scale;
+    attrShift = shift;
+    attrlnBase = lnBase;
+    bool isScale =
+        std::fabs(scale - 1.0f) <= std::numeric_limits<float>::epsilon() * std::max(std::fabs(scale), std::fabs(1.0f));
+    bool isShift =
+        std::fabs(shift - 0.0f) <= std::numeric_limits<float>::epsilon() * std::max(std::fabs(shift), std::fabs(0.0f));
+    if (isScale && isShift && std::abs(lnBase - 1.0f) < std::numeric_limits<float>::epsilon()) {
+        attrWork = static_cast<uint64_t>(TPL_SCALE_IS_ONE_SHIFT_IS_ZERO_LNBASE_IS_ONE);
+    } else {
+        attrWork = static_cast<uint64_t>(TPL_SCALE_NOT_ONE_SHIFT_NOT_ZERO_LNBASE_NOT_ONE);
+    }
+
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus ExpTiling::RunTiling()
+{
+    OP_LOGD(tilingContext->GetNodeName(), "ExpTiling RunTiling enter.");
+    ElewiseBaseTiling elewiseBaseTiling(tilingContext);
+
+    OP_CHECK_IF(
+        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed."),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed."),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(SetAttr() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "set Attr failed."), return ge::GRAPH_FAILED);
+
+    ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
+    if (this->outputDtype == ge::DT_FLOAT16) {
+        if (attrWork == static_cast<uint64_t>(TPL_SCALE_IS_ONE_SHIFT_IS_ZERO_LNBASE_IS_ONE)) {
+            baseTilingResult = elewiseBaseTiling.DoTiling32B<ExpDag::ExpScaleOneShiftZeroLnbaseOne<half>::OpDag>();
+        } else {
+            baseTilingResult =
+                elewiseBaseTiling.DoTiling32B<ExpDag::ExpScaleNotOneShiftNotZeroLnbaseNotOne<half>::OpDag>();
+        }
+    } else if (this->outputDtype == ge::DT_BF16) {
+        if (attrWork == static_cast<uint64_t>(TPL_SCALE_IS_ONE_SHIFT_IS_ZERO_LNBASE_IS_ONE)) {
+            baseTilingResult =
+                elewiseBaseTiling.DoTiling32B<ExpDag::ExpScaleOneShiftZeroLnbaseOne<bfloat16_t>::OpDag>();
+        } else {
+            baseTilingResult =
+                elewiseBaseTiling.DoTiling32B<ExpDag::ExpScaleNotOneShiftNotZeroLnbaseNotOne<bfloat16_t>::OpDag>();
+        }
+    } else if (this->outputDtype == ge::DT_FLOAT) {
+        if (attrWork == static_cast<uint64_t>(TPL_SCALE_IS_ONE_SHIFT_IS_ZERO_LNBASE_IS_ONE)) {
+            baseTilingResult = elewiseBaseTiling.DoTiling32B<ExpDag::ExpScaleOneShiftZeroLnbaseOne<float>::OpDag>();
+        } else {
+            baseTilingResult =
+                elewiseBaseTiling.DoTiling32B<ExpDag::ExpScaleNotOneShiftNotZeroLnbaseNotOne<float>::OpDag>();
+        }
+    } else {
+        OP_LOGE(tilingContext->GetNodeName(), "output dtype not support");
+        return ge::GRAPH_FAILED;
+    }
+    OP_CHECK_IF(
+        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
+        return ge::GRAPH_FAILED);
+
+    elewiseBaseTiling.SetScalar<float>(attrScale);
+    elewiseBaseTiling.SetScalar<float>(attrShift);
+    elewiseBaseTiling.SetScalar<float>(attrlnBase);
+
+    size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    currentWorkspace[0] = ASCEND_WORKSPACE;
+    const uint64_t tilingKey = GET_TPL_TILING_KEY(schMode, attrWork);
+
+    OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);
+    tilingContext->SetTilingKey(tilingKey);
+    tilingContext->SetBlockDim(elewiseBaseTiling.GetBlockDim());
+
+    return ge::GRAPH_SUCCESS;
+}
+
+static ge::graphStatus Tiling4Exp(gert::TilingContext* tilingContextGen)
+{
+    OP_LOGD(tilingContextGen->GetNodeName(), "Tiling4Exp rt2.0 is running.");
+    auto compileInfo = static_cast<const ExpCompileInfo*>(tilingContextGen->GetCompileInfo());
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
+    ExpTiling baseOpTiling(tilingContextGen);
+    return baseOpTiling.RunTiling();
+}
+
+ge::graphStatus TilingPrepareForExp(gert::TilingParseContext* context)
+{
+    auto compileInfoPtr = context->GetCompiledInfo<ExpCompileInfo>();
+    OP_CHECK_NULL_WITH_CONTEXT(context, compileInfoPtr);
+    fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
+    compileInfoPtr->coreNum = ascendcPlatform.GetCoreNumAiv();
+    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, compileInfoPtr->ubSize);
+    return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP_OPTILING(Exp).Tiling(Tiling4Exp).TilingParse<ExpCompileInfo>(TilingPrepareForExp);
+} // namespace optiling
