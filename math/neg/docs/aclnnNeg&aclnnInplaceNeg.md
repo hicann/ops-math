@@ -4,6 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>     |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
@@ -34,9 +35,9 @@
 - **参数说明：**
 
   - self(aclTensor*, 计算输入)：Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：INT8、INT32、INT64、FLOAT16、BFLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品/Ascend 950PR/Ascend 950DT</term>：INT8、INT32、INT64、FLOAT16、BFLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128。
   - out(aclTensor*, 计算输出)：Device侧的aclTensor。out的数据类型需要是self可转换的数据类型（[参考说明](../../../docs/zh/context/互转换关系.md)）支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：INT8、INT32、INT64、FLOAT16、BFLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品/Ascend 950PR/Ascend 950DT</term>：INT8、INT32、INT64、FLOAT16、BFLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128。
   - workspaceSize(uint64_t*, 计算输出)：返回用户需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor**, 计算输出)：返回op执行器，包含了算子计算流程。
 
@@ -70,7 +71,7 @@
 - **参数说明：**
 
   - selfRef(aclTensor*, 计算输入|计算输出)：Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：INT8、INT32、INT64、FLOAT16、BFLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品/Ascend 950PR/Ascend 950DT</term>：INT8、INT32、INT64、FLOAT16、BFLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128。
   - workspaceSize(uint64_t*, 计算输出)：返回用户需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor**, 计算输出)：返回op执行器，包含了算子计算流程。
 

@@ -36,6 +36,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/adjacent_difference/README.md">adjacent_difference</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>比较输入张量相邻元素的差异，若相邻元素相同，返回0，否则返回1。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/angle_v2/README.md">angle_v2</a></td>
     <td>√</td>
     <td>√</td>
@@ -43,6 +53,26 @@
     <td>√</td>
     <td>AI Core</td>
     <td>为输入张量的每一个元素取角度（单位：弧度）。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/bias_add/README.md">bias_add</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>偏置加法。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/diag_part/README.md">diag_part</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>获取输入张量对角线元素。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -677,12 +707,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/cos">cos</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回输入张量元素进行余弦操作后的结果。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -757,12 +787,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/dot">dot</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>计算两个输入一维张量的点积结果。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -837,12 +867,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/eye">eye</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回一个对角线值为1其余位置为0的二维张量。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -907,12 +937,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/greater_equal">greater_equal</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回一个BOOL类型的张量，里面每一个值代表输入张量对应位置值是否大于等于另一个张量值或者scalar值。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1057,52 +1087,52 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/maximum">maximum</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回两个输入张量中的最大值组成的新张量。</td>
   </tr>
   <tr>
     <td>math</td>
     <td><a href="../../math/minimum">minimum</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回两个输入张量中的最小值组成的新张量。</td>
   </tr>
   <tr>
     <td>math</td>
     <td><a href="../../math/mod">mod</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回输入张量相对于一个scalar值的余数。</td>
   </tr>
   <tr>
     <td>math</td>
     <td><a href="../../math/mul">mul</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回两个张量元素之间的乘积结果组成的新张量。</td>
   </tr>
   <tr>
     <td>math</td>
     <td><a href="../../math/muls">muls</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回输入张量元素与指定scalar值乘积组成的新张量。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1117,12 +1147,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/neg">neg</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>计算每个元素的相反数。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1137,12 +1167,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/one_hot">one_hot</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>将离散标签进行二进制编码转换。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1167,22 +1197,22 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/pow">pow</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>根据输入指数和幂张量进行指数计算。</td>
   </tr>
   <tr>
     <td>math</td>
     <td><a href="../../math/range">range</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>从start到end，按照step间隔长度生成等差数列组成的张量。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1307,12 +1337,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/reduce_std_v2">reduce_std_v2</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>计算指定维度的标准差。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1347,12 +1377,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/reduce_var">reduce_var</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回指定维度的方差。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1637,12 +1667,12 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/fill/README.md">fill</a></td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>对输入张量填充指定标量值。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -1757,22 +1787,22 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/slice">slice</a></td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>根据给定的范围和步长，从输入张量中提取子张量。</td>
   </tr>
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/split_v/README.md">split_v</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>将输入tensor指定维度按照指定长度进行切分，最后一块长度可能不足。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -1827,12 +1857,12 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/transpose">transpose</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>完成张量转置。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -1894,5 +1924,64 @@
     <td>AI CPU</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
+  <tr>
+    <td>random</td>
+    <td><a href="../../random/dropout_do_mask">dropout_do_mask</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>根据mask中对应bit位的值，将输入中的元素置零，并按照scale放大或者置零。</td>
+  </tr>
+  <tr>
+    <td>random</td>
+    <td><a href="../../random/dropout_v3">dropout_v3</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>按照概率p随机将输入中的元素置零，并将输出按照1/(1-p)的比例缩放。</td>
+  </tr>
+  <tr>
+    <td>random</td>
+    <td><a href="../../random/stateless_bernoulli">stateless_bernoulli</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>从伯努利分布中提取二进制随机数。</td>
+  </tr>
+  <tr>
+    <td>random</td>
+    <td><a href="../../random/stateless_dropout_gen_mask">stateless_dropout_gen_mask</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>根据随机种子和随机便宜量和保活系数生成随机掩码mask。</td>
+  </tr>
+  <tr>
+    <td>random</td>
+    <td><a href="../../random/stateless_random_norm_v2">stateless_random_norm_v2</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>生成正态分布随机数。</td>
+  </tr>
+  <tr>
+    <td>random</td>
+    <td><a href="../../random/stateless_random_uniform_v2">stateless_random_uniform_v2</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>生成均匀分布随机数。</td>
 </tbody>
 </table>

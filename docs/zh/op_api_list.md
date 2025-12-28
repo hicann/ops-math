@@ -230,3 +230,6 @@
 | [aclRfft1D](../../math/rfft1_d/docs/aclRfft1D.md)               | 对输入张量self进行RFFT（傅里叶变换）计算，输出是一个包含非负频率的复数张量。 | 默认确定性实现|
 | [aclStft](../../math/stft/docs/aclStft.md)                      | 计算输入在滑动窗口内的傅里叶变换。                           | 默认确定性实现|
 | [aclnnRightShift](../../math/right_shift/docs/aclnnRightShift.md)         | 对于输入张量input中每个元素，根据输入张量shiftBits对应位置的参数，按位进行右移。 | 默认确定性实现|
+| [aclnnDropoutV3](../../random/drop_out_v3/docs/aclnnDropoutV3.md)         | 按照概率p随机将输入中的元素置零，并将输出按照1/(1-p)的比例缩放。 | 默认确定性实现|
+| [aclnnDropoutDoMask](../../random/dropout_do_mask/docs/aclnnDropoutDoMask.md)         | 按照概率prob随机将输入中的元素置零，并将输出按照1/(1-prob)的比例放大。 | 默认确定性实现|
+| [aclnnNormalTensorTensor&aclnnNormalTensorFloat&aclnnNormalFloatTensor&aclnnNormalFloatFloat](../../random/stateless_random_norm_v2/docs/aclnnRightShift.md)         | 返回一个随机数，该随机数是从给定的均值(tensor)和标准差(tensor)的独立正态分布中获取。 | 默认确定性实现|
