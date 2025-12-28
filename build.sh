@@ -905,19 +905,24 @@ assemble_cmake_args() {
     CMAKE_ARGS="$CMAKE_ARGS -DENABLE_OOM=TRUE"
   fi
   if [[ -n $COMPUTE_UNIT ]]; then
-    IFS=',' read -ra COMPUTE_UNIT <<<"$COMPUTE_UNIT"
-    COMPUTE_UNIT_SHORT=""
-    for unit in "${COMPUTE_UNIT[@]}"; do
-      for support_unit in "${SUPPORT_COMPUTE_UNIT_SHORT[@]}"; do
-        lowercase_word=$(echo "$unit" | tr '[:upper:]' '[:lower:]')
-        if [[ "$lowercase_word" == *"$support_unit"* ]]; then
-          COMPUTE_UNIT_SHORT="$COMPUTE_UNIT_SHORT$support_unit;"
-          break
-        fi
-      done
+    COMPUTE_UNIT=$(echo "$COMPUTE_UNIT" | tr '[:upper:]' '[:lower:]')
+    if [[ "$COMPUTE_UNIT" == "ascend950" ]]; then
+      COMPUTE_UNIT="ascend910_95"
+    fi
+    found=0
+    for support_unit in "${SUPPORT_COMPUTE_UNIT_SHORT[@]}"; do
+      if [[ "$COMPUTE_UNIT" == "$support_unit" ]]; then
+        COMPUTE_UNIT_SHORT=$support_unit
+        found=1
+        break
+      fi
     done
-    echo "COMPUTE_UNIT: ${COMPUTE_UNIT_SHORT}"
-    CMAKE_ARGS="$CMAKE_ARGS -DASCEND_COMPUTE_UNIT=$COMPUTE_UNIT_SHORT"
+    if [[ $found -eq 0 ]]; then
+      echo "soc only support : ${SUPPORT_COMPUTE_UNIT_SHORT[@]}"
+      exit 1
+    fi
+    echo "COMPUTE_UNIT: ${COMPUTE_UNIT}"
+    CMAKE_ARGS="$CMAKE_ARGS -DASCEND_COMPUTE_UNIT=$COMPUTE_UNIT"
   fi
   CMAKE_ARGS="$CMAKE_ARGS -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}"
 }
