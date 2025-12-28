@@ -11,32 +11,52 @@ if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
 set(EIGEN_VERSION_PKG eigen-3.4.0.tar.gz)
-if(IS_DIRECTORY "${CANN_3RD_LIB_PATH}/eigen")	
-  set(REQ_URL "${CANN_3RD_LIB_PATH}/eigen")
+
+unset(eigen_FOUND CACHE)
+unset(EIGEN_INCLUDE CACHE)
+
+find_path(EIGEN_INCLUDE
+        NAMES Eigen/Eigen
+        NO_CMAKE_SYSTEM_PATH
+        NO_CMAKE_FIND_ROOT_PATH
+        PATHS ${CANN_3RD_LIB_PATH}/eigen)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(eigen
+        FOUND_VAR
+        eigen_FOUND
+        REQUIRED_VARS
+        EIGEN_INCLUDE
+        )
+
+if(eigen_FOUND)
+  message(STATUS "Found eigen in ${CANN_3RD_LIB_PATH}/eigen")
 else()
-  set(REQ_URL "https://gitcode.com/cann-src-third-party/eigen/releases/download/3.4.0/${EIGEN_VERSION_PKG}")
+  if(EXISTS "${CANN_3RD_LIB_PATH}/pkg/${EIGEN_VERSION_PKG}")
+    set(REQ_URL "file://${CANN_3RD_LIB_PATH}/pkg/${EIGEN_VERSION_PKG}")
+  else()
+    set(REQ_URL "https://gitcode.com/cann-src-third-party/eigen/releases/download/3.4.0/${EIGEN_VERSION_PKG}")
+  endif()
+
+  include(ExternalProject)
+  ExternalProject_Add(external_eigen_math
+    URL               ${REQ_URL}
+    DOWNLOAD_DIR      ${CANN_3RD_LIB_PATH}/pkg
+    SOURCE_DIR        ${CANN_3RD_LIB_PATH}/eigen
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND     ""
+    INSTALL_COMMAND   ""
+  )
+
+  ExternalProject_Get_Property(external_eigen_math SOURCE_DIR)
+  set(EIGEN_INCLUDE ${SOURCE_DIR})
 endif()
-
-set(EIGEN_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH}/pkg)
-
-include(ExternalProject)
-ExternalProject_Add(external_eigen_math
-  URL               ${REQ_URL}
-  DOWNLOAD_DIR      ${EIGEN_DOWNLOAD_PATH}
-  DOWNLOAD_NO_EXTRACT 0   #自动解压
-  PREFIX            third_party
-  CONFIGURE_COMMAND ""
-  BUILD_COMMAND     ""
-  INSTALL_COMMAND   ""
-)
-
-ExternalProject_Get_Property(external_eigen_math SOURCE_DIR)
 
 add_library(EigenMath INTERFACE)
 target_compile_options(EigenMath INTERFACE -w)
 
 set_target_properties(EigenMath PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_DIR}"
+  INTERFACE_INCLUDE_DIRECTORIES "${EIGEN_INCLUDE}"
 )
 add_dependencies(EigenMath external_eigen_math)
 
