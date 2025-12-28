@@ -16,8 +16,8 @@
 #ifndef CANN_OPS_BUILT_IN_OP_UTIL_H_
 #define CANN_OPS_BUILT_IN_OP_UTIL_H_
 
-#include "runtime/shape.h"
-#include "runtime/tensor.h"
+#include "exe_graph/runtime/shape.h"
+#include "exe_graph/runtime/tensor.h"
 
 namespace ops {
 

@@ -1,20 +1,19 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #ifndef DROP_OUT_V3_IMPL_H
 #define DROP_OUT_V3_IMPL_H
 
 #include "kernel_operator.h"
-#include "kernel_tiling/kernel_tiling.h"
-#include "../inc/platform.h"
-#include "../inc/kernel_utils.h"
+#include "op_kernel/math_util.h"
+#include "op_kernel/platform_util.h"
 
 namespace DropOutV3 {
 using namespace AscendC;
@@ -226,8 +225,8 @@ __aicore__ inline void DropOutV3Impl<T, U>::Uint32ToFloat(uint32_t dataCount)
     AscendC::Duplicate(caluData, static_cast<float>(1.0), countAlign256);
     __ubuf__ float *ubOut = (__ubuf__ float *)caluData.GetPhyAddr();
 
-    uint32_t vfLen = platform::GetVRegSize() / sizeof(int64_t);
-    uint32_t repeatTimes = ops::CeilDiv(dataCount, vfLen);
+    uint32_t vfLen = Ops::Base::GetVRegSize() / sizeof(int64_t);
+    uint32_t repeatTimes = Ops::Base::CeilDiv(dataCount, vfLen);
 
     uint32_t sReg1 = static_cast<uint32_t>(dataCount) * gainCoeff;
     float sReg3 = static_cast<float>(CURAND_2POW32_INV);
@@ -322,7 +321,7 @@ __aicore__ inline void DropOutV3Impl<T, U>::CopyOut(uint32_t loopIdx, uint32_t d
     LocalTensor<uint8_t> maskOutputUb = philoxQueBuf_.Get<uint8_t>();
     DataCopyExtParams copyParamsMaskOut {
         static_cast<uint16_t>(1),
-        static_cast<uint32_t>(ops::CeilDiv(dataCount, byteBitRatio) * sizeof(uint8_t)),
+        static_cast<uint32_t>(Ops::Base::CeilDiv(dataCount, byteBitRatio) * sizeof(uint8_t)),
         static_cast<uint32_t>(0),
         static_cast<uint32_t>(0),
         static_cast<uint32_t>(0)
@@ -340,7 +339,7 @@ __aicore__ inline void DropOutV3Impl<T, U>::Process(const DropOutV3TilingData *t
         return;
     }
 
-    auto groupCnt = ops::CeilDiv(blockOffset_, RESULT_ELEMENT_CNT);
+    auto groupCnt = Ops::Base::CeilDiv(blockOffset_, RESULT_ELEMENT_CNT);
     Skip(groupCnt);
 
     auto numOfCurLoop = curPerOfCore_;
@@ -352,7 +351,7 @@ __aicore__ inline void DropOutV3Impl<T, U>::Process(const DropOutV3TilingData *t
         Compute(n, numOfCurLoop);
         CopyOut(n, numOfCurLoop);
 
-        groupCnt = ops::CeilDiv(numOfCurLoop, RESULT_ELEMENT_CNT);
+        groupCnt = Ops::Base::CeilDiv(numOfCurLoop, RESULT_ELEMENT_CNT);
         Skip(groupCnt);
     }
 }
