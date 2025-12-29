@@ -1,6 +1,6 @@
 # aclnnChannelShuffle
 
-[📄 查看源码](https://gitcode.com/cann/ops-math-dev/tree/master/conversion/transpose)
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/transpose)
 
 ## 产品支持情况
 
