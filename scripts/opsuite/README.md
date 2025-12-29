@@ -40,3 +40,12 @@ python scripts/opsuite/opsuite.py sanitizer ./build/test_aclnn_pows
 ```
 python scripts/opsuite/opsuite.py -h
 ```
+
+### 运行算子example并获取dump tensor
+```
+python opsuite.py dump pows eager
+```
+修改、编译并执行算子的example,保存kernel侧tensor数据到本地,解析并生成分析结果
+其中pows是算子名称，必填项；eager则是控制模式，可选项有eager和graph，不填 默认为eager
+依赖CANN包的show_kernel_debug_data工具,运行前先执行
+```source {Ascend_install_path}/ascend-toolkit/latest/bin/setenv.bash```
