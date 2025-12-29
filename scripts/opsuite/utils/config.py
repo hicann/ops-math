@@ -20,7 +20,8 @@ COMMAND_SCRIPT_MAP = {
     "run_example": ["bash", "./build.sh"],
     "debug": ["msdebug"],
     "opprof": ["msprof", "op"],
-    "sanitizer": ["mssanitizer"]
+    "sanitizer": ["mssanitizer"],
+    "dump": ["bash", "./build.sh", "--run_example"]
 }
 
 debug_help = f"""
@@ -57,13 +58,19 @@ run_example_help = f"""
 命令行举例： python script/opsuite/opsuite.py run_example abs eager，其中abs是算子名称，必填项；eager则是控制模式，可选项有eager和graph，不填默认为eager
 """
 
+dump_help = f"""
+作用：运行算子并生成dumpbin目录。
+命令行举例： python opsuite.py dump abs --output=./output_path，其中abs是算子名称，必填项；
+"""
+
 COMMAND_HELP_MAP = {
     "build": build_help,
     "deploy_op": deploy_op_help,
     "run_example": run_example_help,
     "debug": debug_help,
     "opprof": oppprof_help,
-    "sanitizer": sanitizer_help
+    "sanitizer": sanitizer_help,
+    "dump": dump_help,
 }
 
 SCRIPT_SUPPORTED_COMMANDS = {"build", "run_example"}
