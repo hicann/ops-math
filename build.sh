@@ -12,6 +12,7 @@ set -e
 RELEASE_TARGETS=("ophost" "opapi" "opgraph" "opkernel" "opkernel_aicpu")
 UT_TARGETS=("ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "opkernel_aicpu_test")
 SUPPORT_COMPUTE_UNIT_SHORT=("ascend910b" "ascend910_93" "ascend910_95" "ascend310p" "ascend910" "ascend310b" "ascend630" "ascend610lite" "ascend031" "ascend035" "kirinx90")
+SUPPORT_COMPUTE_UNIT_SHORT_PRINT=("ascend910b" "ascend910_93" "ascend950" "ascend310p" "ascend910" "ascend310b" "ascend630" "ascend610lite" "ascend031" "ascend035" "kirinx90")
 
 # 所有支持的短选项
 SUPPORTED_SHORT_OPTS="hj:vO:uf:-:"
@@ -932,7 +933,7 @@ assemble_cmake_args() {
       fi
     done
     if [[ $found -eq 0 ]]; then
-      echo "soc only support : ${SUPPORT_COMPUTE_UNIT_SHORT[@]}"
+      echo "soc only support : ${SUPPORT_COMPUTE_UNIT_SHORT_PRINT[@]}"
       exit 1
     fi
     echo "COMPUTE_UNIT: ${COMPUTE_UNIT}"
