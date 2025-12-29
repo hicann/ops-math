@@ -16,7 +16,7 @@
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
 #include "conversion/broadcast_to/op_host/op_api/broadcast_to.h"
 #include "reduce_std_with_mean.h"
-#include "math/reduce_var/op_host/op_api/reduce_var.h"
+#include "math/reduce_var/op_api/reduce_var.h"
 #include "math/add/op_api/add.h"
 #include "math/pow/op_host/op_api/pow.h"
 #include "conversion/fill/op_api/fill.h"

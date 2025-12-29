@@ -11,7 +11,7 @@
 #include <bitset>
 #include "reduce_std_with_mean.h"
 #include "math/reduce_mean/op_host/op_api/reduce_mean.h"
-#include "math/reduce_std_v2/op_host/op_api/reduce_std_v2.h"
+#include "math/reduce_std_v2/op_api/reduce_std_v2.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/transdata.h"

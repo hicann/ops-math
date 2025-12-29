@@ -17,7 +17,7 @@
 #include "math/log/op_api/log.h"
 #include "math/arg_max_v2/op_host/op_api/argmax_v2.h"
 #include "math/topk/op_host/op_api/topk.h"
-#include "math/cumsum/op_host/op_api/cumsum.h"
+#include "math/cumsum/op_api/cumsum.h"
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
 #include "dsa_random_uniform.h"
 #include "random/stateless_random_uniform_v2/op_api/stateless_random_uniform_v2.h"
