@@ -12,10 +12,10 @@
 
 #include "reduce_logsumexp.h"
 #include "../../../add/op_api/add.h"
-#include "../../../sub/op_host/op_api/sub.h"
+#include "../../../sub/op_api/sub.h"
 #include "conversion/squeeze/op_host/op_api/squeeze.h"
 #include "../../../reduce_max/op_host/op_api/reduce_max.h"
-#include "conversion/masked_fill/op_host/op_api/masked_fill.h"
+#include "conversion/masked_fill/op_api/masked_fill.h"
 #include "../../../abs/op_api/abs.h"
 #include "../../../equal/op_api/equal.h"
 #include "aclnn_kernels/cast.h"

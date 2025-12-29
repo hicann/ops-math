@@ -10,7 +10,7 @@
 
 #include "aclnn_bitwise_not.h"
 #include "math/logical_not/op_host/op_api/logical_not.h"
-#include "math/invert/op_host/op_api/invert.h"
+#include "math/invert/op_api/invert.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "common/op_api_def.h"

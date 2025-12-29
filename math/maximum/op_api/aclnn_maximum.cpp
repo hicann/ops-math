@@ -10,7 +10,7 @@
 
 #include "aclnn_maximum.h"
 #include "maximum.h"
-#include "math/logical_or/op_host/op_api/logical_or.h"
+#include "math/logical_or/op_api/logical_or.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"

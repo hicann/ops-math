@@ -26,7 +26,7 @@
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
 #include "opdev/tensor_view_utils.h"
-#include "math/axpy_v2/op_host/op_api/axpy_v2.h"
+#include "math/axpy_v2/op_api/axpy_v2.h"
 
 using namespace op;
 #ifdef __cplusplus

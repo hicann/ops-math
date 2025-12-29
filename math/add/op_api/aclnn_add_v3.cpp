@@ -15,7 +15,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "math/mul/op_api/mul.h"
 #include "math/logical_and/op_api/logical_and.h"
-#include "math/logical_or/op_host/op_api/logical_or.h"
+#include "math/logical_or/op_api/logical_or.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"

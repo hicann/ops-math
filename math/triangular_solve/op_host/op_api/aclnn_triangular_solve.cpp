@@ -22,7 +22,7 @@
 #include "../../../eye/op_api/eye.h"
 #include "../../../mul/op_api/mul.h"
 #include "../../../ones_like/op_api/ones_like.h"
-#include "../../../sub/op_host/op_api/sub.h"
+#include "../../../sub/op_api/sub.h"
 #include "triangular_solve.h"
 #include "opdev/op_dfx.h"
 

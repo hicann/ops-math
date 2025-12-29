@@ -9,7 +9,7 @@
  */
 
 #include "aclnn_bitwise_or_tensor.h"
-#include "math/logical_or/op_host/op_api/logical_or.h"
+#include "math/logical_or/op_api/logical_or.h"
 #include "bitwise_or.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
