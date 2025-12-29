@@ -417,6 +417,9 @@ check_help_combinations() {
 }
 
 check_param() {
+  if [[ "$ENABLE_RUN_EXAMPLE" == "TRUE" ]]; then
+    ENABLE_CUSTOM=FALSE
+  fi
   # --ops不能与--ophost，--opapi，--opgraph同时存在，如果带U则可以
   if [[ -n "$COMPILED_OPS" && "$ENABLE_TEST" == "FALSE" ]] && [[ "$OP_HOST" == "TRUE" || "$OP_API" == "TRUE" || "$OP_GRAPH" == "TRUE" ]]; then
     echo "[ERROR] --ops cannot be used with --ophost, --opapi, or --opgraph"
@@ -599,6 +602,28 @@ process_genop() {
   fi
 }
 
+checkopts_run_example() {
+  ENABLE_RUN_EXAMPLE=TRUE
+  EXAMPLE_NAME="${!OPTIND}"
+  ((OPTIND++))
+  if [[ $OPTIND -le $# ]] && [[ "${!OPTIND}" != --* ]]; then
+    EXAMPLE_MODE="${!OPTIND}"
+    ((OPTIND++))
+  fi
+
+  if [[ $OPTIND -le $# ]] && [[ "${!OPTIND}" != --* ]]; then
+    PKG_MODE="${!OPTIND}"
+    ((OPTIND++))
+    if [[ $OPTIND -le $# ]] && [[ "${!OPTIND}" == --vendor_name* ]]; then
+      VENDOR="${!OPTIND}"
+      VENDOR="${VENDOR#*=}"
+      ((OPTIND++))
+    else 
+      VENDOR="custom"
+    fi
+  fi
+}
+
 checkopts() {
   THREAD_NUM=8
   VERBOSE=""
@@ -758,7 +783,9 @@ checkopts() {
           ENABLE_VALGRIND=TRUE
           ENABLE_UT_EXEC=FALSE
           ;;
-        run_example) ENABLE_RUN_EXAMPLE=TRUE ;;
+        run_example) 
+          checkopts_run_example "$@"
+          ;;
         experimental)
           ENABLE_EXPERIMENTAL=TRUE
           ENABLE_CUSTOM=TRUE
@@ -804,19 +831,6 @@ checkopts() {
         ;;
     esac
   done
-
-  if [[ "$1" == "--run_example" ]]; then
-    EXAMPLE_NAME="$2"
-    EXAMPLE_MODE="$3"
-    if [[ -n "$4" ]]; then
-      PKG_MODE="$4"
-      VENDOR="custom"
-      if [[ -n "$5" ]]; then
-        VENDOR="$5"
-        VENDOR="${VENDOR#*=}"
-      fi
-    fi
-  fi
 
   check_param
   set_create_libs
@@ -1076,7 +1090,11 @@ build_example() {
   echo "Start to run examples,name:${EXAMPLE_NAME} mode:${EXAMPLE_MODE}"
 
   if [[ "${EXAMPLE_MODE}" == "eager" ]]; then
-    file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_aclnn_*.cpp)
+    if [[ "$ENABLE_EXPERIMENTAL" == "TRUE" ]]; then
+      file=$(find ../experimental -path "*/${EXAMPLE_NAME}/examples/*" -name test_aclnn_*.cpp)
+    else 
+      file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_aclnn_*.cpp -not -path "*/experimental/*")
+    fi 
     if [ -z "$file" ]; then
       echo "ERROR: ${EXAMPLE_NAME} do not have eager examples"
       exit 1
@@ -1114,7 +1132,11 @@ build_example() {
       fi
     done
   elif [[ "${EXAMPLE_MODE}" == "graph" ]]; then
-    file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_geir_*.cpp)
+    if [[ "$ENABLE_EXPERIMENTAL" == "TRUE" ]]; then
+      file=$(find ../experimental -path "*/${EXAMPLE_NAME}/examples/*" -name test_geir_*.cpp)
+    else 
+      file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_geir_*.cpp -not -path "*/experimental/*")
+    fi 
     if [ -z "$file" ]; then
       echo "ERROR: ${EXAMPLE_NAME} do not have graph examples"
       exit 1
