@@ -36,10 +36,10 @@
 
 - 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnPowTensorTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnPowTensorTensor”接口执行计算。
 
-  - `aclnnStatus aclnnPowTensorTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* exponent, aclTensor* out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-  - `aclnnStatus aclnnPowTensorTensor(void *workspace, uint64_t workspaceSize,  aclOpExecutor *executor, aclrtStream stream)`
-  - `aclnnStatus aclnnInplacePowTensorTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* exponent, uint64_t *workspaceSize, aclOpExecutor **executor)`
-  - `aclnnStatus aclnnInplacePowTensorTensor(void *workspace, uint64_t workspaceSize,  aclOpExecutor *executor, aclrtStream stream)`
+  - `aclnnStatus aclnnPowTensorTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* exponent, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
+  - `aclnnStatus aclnnPowTensorTensor(void* workspace, uint64_t workspaceSize,  aclOpExecutor* executor, aclrtStream stream)`
+  - `aclnnStatus aclnnInplacePowTensorTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* exponent, uint64_t* workspaceSize, aclOpExecutor** executor)`
+  - `aclnnStatus aclnnInplacePowTensorTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
 
 ## aclnnPowTensorTensorGetWorkspaceSize
 
@@ -106,7 +106,7 @@
   返回161002（ACLNN_ERR_PARAM_INVALID）：1. self和exponent的数据类型不在支持的范围之内。
                                         2. self和exponent的shape大于8维。
                                         3. self和exponent无法满足数据类型推导规则。
-                                        4. self和other的shape无法做broadcast。
+                                        4. self和exponent的shape无法做broadcast。
                                         5. self和exponent进行broadcast后的shape不等于self的shape。
                                         6. self和exponent同时为bool数据类型。
   ```

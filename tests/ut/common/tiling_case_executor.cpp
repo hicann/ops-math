@@ -127,7 +127,14 @@
     tilingContext->GetPlatformInfo()->SetPlatformRes("version", socversions);                                          \
     /* 3. get tiling func */                                                                                           \
     auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();                         \
-    auto tilingFunc = spaceRegistry->GetOpImpl(tilingContextPara.opName_.c_str())->tiling;                             \
+    if (spaceRegistry == nullptr) {                                                                                   \
+        throw std::invalid_argument("not found spaceRegistry");                                           \
+    }                                                                                                                  \
+    auto functionStruct = spaceRegistry->GetOpImpl(tilingContextPara.opName_.c_str());                                 \
+    if (functionStruct == nullptr) {                                                                                   \
+        throw std::invalid_argument("not found "+tilingContextPara.opName_);                                           \
+    }                                                                                                                  \
+    auto tilingFunc =functionStruct->tiling; /* 4. check tiling func */                                                \
     /* 4. check tiling func */                                                                                         \
     auto tilingRet = tilingFunc(tilingContext);
 

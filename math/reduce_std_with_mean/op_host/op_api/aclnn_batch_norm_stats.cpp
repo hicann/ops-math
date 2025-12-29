@@ -18,7 +18,7 @@
 #include "reduce_std_with_mean.h"
 #include "math/reduce_var/op_api/reduce_var.h"
 #include "math/add/op_api/add.h"
-#include "math/pow/op_host/op_api/pow.h"
+#include "math/pow/op_api/pow.h"
 #include "conversion/fill/op_api/fill.h"
 #include "aclnn/aclnn_base.h"
 #include "common/op_api_def.h"
