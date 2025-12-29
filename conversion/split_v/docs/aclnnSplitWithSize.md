@@ -1,62 +1,223 @@
 # aclnnSplitWithSize
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/split_v)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>昇腾910_95 AI处理器</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品 </term>                             |    ×      |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+| <term>Atlas 200/300/500 推理产品</term>                      |    ×     |
 
 ## 功能说明
 
-算子功能：将输入self沿dim轴切分至splitSize中每个元素的大小。
+将输入self沿dim轴切分至splitSize中每个元素的大小。
 
 ## 函数原型
+
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSplitWithSizeGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSplitWithSize”接口执行计算。
 
-- `aclnnStatus aclnnSplitWithSizeGetWorkspaceSize(const aclTensor *self, const aclIntArray *splitSize, int64_t dim, aclTensorList *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnSplitWithSize(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```cpp
+aclnnStatus aclnnSplitWithSizeGetWorkspaceSize(
+  const aclTensor   *self, 
+  const aclIntArray *splitSize, 
+  int64_t            dim, 
+  aclTensorList     *out, 
+  uint64_t          *workspaceSize, 
+  aclOpExecutor    **executor)
+```
+
+```cpp
+aclnnStatus aclnnSplitWithSize(
+  void          *workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor *executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnSplitWithSizeGetWorkspaceSize
 
-- **参数说明：**
+- **参数说明**
+    
+  <table style="undefined;table-layout: fixed; width: 1755px"><colgroup>
+  <col style="width: 138px">
+  <col style="width: 126px">
+  <col style="width: 240px">
+  <col style="width: 414px">
+  <col style="width: 383px">
+  <col style="width: 132px">
+  <col style="width: 169px">
+  <col style="width: 153px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度（shape）</th>
+      <th>非连续张量Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>表示被split的输入tensor。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16。</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>splitSize</td>
+      <td>输入</td>
+      <td>表示需要split的各块大小。</td>
+      <td>所有块的大小总和需要等于self在dim维度上的shape大小。</td>
+      <td>INT64和INT32</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>dim</td>
+      <td>输入</td>
+      <td>表示输入tensor被split的维度。</td>
+      <td>-</td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>表示被split后的输出tensor的列表。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16。</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
-  - self(aclTensor*,计算输入)：表示被split的输入tensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16，当输出个数大于32时，不支持DOUBLE、COMPLEX128、COMPLEX64。
-  - splitSize(aclIntArray*,计算输入)：表示需要split的各块大小，数据类型支持INT64和INT32。所有块的大小总和需要等于self在dim维度上的shape大小。
+    - <term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。当输出个数大于32时，不支持DOUBLE、COMPLEX128、COMPLEX64。
+    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：当输出个数大于32时，数据类型不支持DOUBLE、COMPLEX128、COMPLEX64。
 
-  - dim(int64_t,计算输入)：数据类型支持INT64，表示输入tensor被split的维度。
+- **返回值**
 
-  - out(aclTensorList*，计算输出)：表示被split后的输出tensor的列表，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16，当输出个数大于32时，不支持DOUBLE、COMPLEX128、COMPLEX64。
-  - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
+​  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
-
-- **返回值：**
-
-​   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-
-```
-第一段接口完成入参校验，出现以下场景时报错：
-161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self、splitSize、out是空指针时。
-161002 (ACLNN_ERR_PARAM_INVALID): 1. self和out的数据类型不在支持的范围之内。
-                                  2. self的长度不在支持的范围之内。
-                                  3. out中的tensor长度不在支持的范围之内时。
-                                  4. dim的取值越界不在[-dimNum, dimNum -1],dimNum为self的维度大小。
-                                  5. splitSize中各元素之和不等于被split维度的shape大小时。
-```
+  第一段接口完成入参校验，出现以下场景时报错：
+  <table style="undefined;table-layout: fixed; width: 1299px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 148px">
+  <col style="width: 863px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、splitSize、out是空指针时。</td>
+    </tr>
+    <tr>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
+      <td>self和out的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self的长度不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>out中的tensor长度不在支持的范围之内时。</td>
+    </tr>
+    <tr>
+      <td>dim的取值越界不在[-dimNum, dimNum -1],dimNum为self的维度大小。</td>
+    </tr>
+    <tr>
+      <td>splitSize中各元素之和不等于被split维度的shape大小时。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnSplitWithSize
 
-- **参数说明：**
+- **参数说明**
 
   - workspace(void*, 入参)：在Device侧申请的workspace内存地址。
   - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnSplitWithSizeGetWorkspaceSize获取。
   - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
   - stream(aclrtStream, 入参)：指定执行任务的Stream。
 
-- **返回值：**
+  <table style="undefined;table-layout: fixed; width: 1126px"><colgroup>
+  <col style="width: 141px">
+  <col style="width: 140px">
+  <col style="width: 845px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnSplitWithSizeGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -65,9 +226,11 @@
 - 确定性计算：
   - aclnnSplitWithSize默认确定性实现。
 
+
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```c++
 #include <chrono>
 #include <algorithm>
@@ -228,4 +391,3 @@ int main() {
   return 0;
 }
 ```
-
