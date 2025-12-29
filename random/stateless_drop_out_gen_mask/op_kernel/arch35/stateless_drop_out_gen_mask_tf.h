@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /* !
  * \file stateless_drop_out_gen_mask_tf.h
@@ -166,7 +166,7 @@ __aicore__ inline void StatelessDropOutGenMaskTf<T>::Uint32ToFloat(uint32_t calC
     LocalTensor<float> caluData = calcuDataBuf_.Get<float>();
     __ubuf__ float* ubOut = (__ubuf__ float*)caluData.GetPhyAddr();
 
-    uint32_t vfLen = platform::GetVRegSize() / sizeof(int32_t);
+    uint32_t vfLen = Ops::Base::GetVRegSize() / sizeof(int32_t);
     uint32_t repeatTimes = this->CeilDiv(calCount, vfLen);
 
     __VEC_SCOPE__
@@ -227,7 +227,7 @@ __aicore__ inline void StatelessDropOutGenMaskTf<T>::Uint16ToHalf(uint32_t calCo
     LocalTensor<half> caluData = calcuDataBuf_.Get<half>();
     __ubuf__ half* ubOut = (__ubuf__ half*)caluData.GetPhyAddr();
 
-    uint32_t vfLen = platform::GetVRegSize() / sizeof(int32_t);
+    uint32_t vfLen = Ops::Base::GetVRegSize() / sizeof(int32_t);
     uint32_t repeatTimes = this->CeilDiv(calCount, vfLen);
 
     set_ctrl(sbitset0(get_ctrl(), this->SET_CTRL_VAL));

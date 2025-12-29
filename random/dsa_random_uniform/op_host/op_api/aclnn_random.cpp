@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "aclnn_random.h"
-#include "random/stateless_random_uniform_v2/op_host/op_api/stateless_random_uniform_v2.h"
+#include "random/stateless_random_uniform_v2/op_api/stateless_random_uniform_v2.h"
 #include "dsa_random_uniform.h"
 #include "opdev/platform.h"
 #include "math/round/op_host/op_api/round.h"

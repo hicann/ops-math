@@ -20,7 +20,7 @@
 #include "random/drop_out_do_mask/op_api/dropout_do_mask.h"
 #include "dsa_gen_bit_mask.h"
 #include "conversion/fill/op_api/fill.h"
-#include "random/stateless_drop_out_gen_mask/op_host/op_api/stateless_dropout_gen_mask.h"
+#include "random/stateless_drop_out_gen_mask/op_api/stateless_dropout_gen_mask.h"
 #include "math/zero_op/op_api/zero_op.h"
 #include "math/add/op_api/add.h"
 #include "conversion/concat/op_api/concat.h"
