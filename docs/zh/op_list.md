@@ -36,6 +36,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/add_n/README.md">add_n</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>对输入进行主元素相加求和操作。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/adjacent_difference/README.md">adjacent_difference</a></td>
     <td>√</td>
     <td>√</td>
@@ -143,6 +153,16 @@
     <td>√</td>
     <td>AI Core</td>
     <td>判断张量中哪些元素是无限大值，即为inf、-inf。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/is_nan/README.md">is_nan</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>判断张量中哪些元素是nan。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -413,6 +433,16 @@
     <td>√</td>
     <td>AI CPU</td>
     <td>该算子沿指定维度将多个输入张量进行拼接。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/clip_by_value/README.md">clip_by_value</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>该算子将输入的所有元素限制在[clipValueMin,clipValueMax]范围内。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -966,13 +996,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/is_close">is_close</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/is_close/README.md">is_close</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回一个带有布尔元素的新张量，判断给定的self和other是否彼此接近，如果值接近，则返回True，否则返回False。</td>
   </tr>
   <tr>
     <td>math</td>

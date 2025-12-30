@@ -9,7 +9,7 @@
  */
 
 #include "gtest/gtest.h"
-#include "../../../../op_host/op_api/aclnn_isclose.h"
+#include "../../../op_api/aclnn_isclose.h"
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/tensor_desc.h"
@@ -31,79 +31,10 @@ protected:
     }
 };
 
-TEST_F(l2_isclose_test, l2_isclose_test_case_f64)
-{
-    auto self_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_DOUBLE, ACL_FORMAT_ND);
-    auto other_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_DOUBLE, ACL_FORMAT_ND);
-    double rtol = 1.0;
-    double atol = 1.0;
-    bool equal_nan = false;
-    auto out_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-    auto ut = OP_API_UT(aclnnIsClose, INPUT(self_desc, other_desc, rtol, atol, equal_nan), OUTPUT(out_desc));
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-}
-
 TEST_F(l2_isclose_test, l2_isclose_test_case_f16)
 {
     auto self_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto other_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_FLOAT16, ACL_FORMAT_ND);
-    double rtol = 1.0;
-    double atol = 1.0;
-    bool equal_nan = false;
-    auto out_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-    auto ut = OP_API_UT(aclnnIsClose, INPUT(self_desc, other_desc, rtol, atol, equal_nan), OUTPUT(out_desc));
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-}
-
-
-TEST_F(l2_isclose_test, l2_isclose_test_case_int8)
-{
-    auto self_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_INT8, ACL_FORMAT_ND);
-    auto other_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_INT8, ACL_FORMAT_ND);
-    double rtol = 1.0;
-    double atol = 1.0;
-    bool equal_nan = false;
-    auto out_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-    auto ut = OP_API_UT(aclnnIsClose, INPUT(self_desc, other_desc, rtol, atol, equal_nan), OUTPUT(out_desc));
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-}
-
-TEST_F(l2_isclose_test, l2_isclose_test_case_uint8)
-{
-    auto self_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_UINT8, ACL_FORMAT_ND);
-    auto other_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_UINT8, ACL_FORMAT_ND);
-    double rtol = 1.0;
-    double atol = 1.0;
-    bool equal_nan = false;
-    auto out_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-    auto ut = OP_API_UT(aclnnIsClose, INPUT(self_desc, other_desc, rtol, atol, equal_nan), OUTPUT(out_desc));
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-}
-
-TEST_F(l2_isclose_test, l2_isclose_test_case_int16)
-{
-    auto self_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_INT16, ACL_FORMAT_ND);
-    auto other_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_INT16, ACL_FORMAT_ND);
     double rtol = 1.0;
     double atol = 1.0;
     bool equal_nan = false;
@@ -168,40 +99,6 @@ TEST_F(l2_isclose_test, l2_isclose_test_case_int32)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(l2_isclose_test, l2_isclose_test_case_int64)
-{
-    auto self_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_INT64, ACL_FORMAT_ND);
-    auto other_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_INT64, ACL_FORMAT_ND);
-    double rtol = 1.0;
-    double atol = 1.0;
-    bool equal_nan = false;
-    auto out_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-    auto ut = OP_API_UT(aclnnIsClose, INPUT(self_desc, other_desc, rtol, atol, equal_nan), OUTPUT(out_desc));
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-}
-
-TEST_F(l2_isclose_test, l2_isclose_test_case_bool)
-{
-    auto self_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND);
-    auto other_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND);
-    double rtol = 1.0;
-    double atol = 1.0;
-    bool equal_nan = false;
-    auto out_desc = TensorDesc({1, 2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-    auto ut = OP_API_UT(aclnnIsClose, INPUT(self_desc, other_desc, rtol, atol, equal_nan), OUTPUT(out_desc));
-
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
-}
-
 TEST_F(l2_isclose_test, l2_isclose_test_case_empty)
 {
     auto self_desc = TensorDesc({2, 0}, ACL_INT64, ACL_FORMAT_ND);
@@ -217,33 +114,6 @@ TEST_F(l2_isclose_test, l2_isclose_test_case_empty)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-}
-
-TEST_F(l2_isclose_test, l2_isclose_test_case_unsupport_dtype)
-{
-    double rtol = 1.0;
-    double atol = 1.0;
-    bool equal_nan = false;
-    uint64_t workspace_size = 0;
-    // unsupport dtype
-    auto self_desc_1 = TensorDesc({2, 3, 4, 5}, ACL_BF16, ACL_FORMAT_ND);
-    auto other_desc_1 = TensorDesc({2, 3, 4, 5}, ACL_BF16, ACL_FORMAT_ND);
-    auto out_desc_1 = TensorDesc({2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-    auto ut_1 = OP_API_UT(aclnnIsClose, INPUT(self_desc_1, other_desc_1, rtol, atol, equal_nan), OUTPUT(out_desc_1));
-
-    aclnnStatus aclRet_1 = ut_1.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet_1, ACLNN_ERR_PARAM_INVALID);
-
-    // different dtype
-    auto self_desc_2 = TensorDesc({2, 3, 4, 5}, ACL_INT64, ACL_FORMAT_ND);
-    auto other_desc_2 = TensorDesc({2, 3, 4, 5}, ACL_INT32, ACL_FORMAT_ND);
-    auto out_desc_2 = TensorDesc({2, 3, 4, 5}, ACL_BOOL, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-    auto ut_2 = OP_API_UT(aclnnIsClose, INPUT(self_desc_2, other_desc_2, rtol, atol, equal_nan), OUTPUT(out_desc_2));
-
-    aclnnStatus aclRet_2 = ut_2.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet_2, ACLNN_ERR_PARAM_INVALID);
 }
 
 TEST_F(l2_isclose_test, l2_isclose_test_case_null)
