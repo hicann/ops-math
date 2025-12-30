@@ -9,10 +9,12 @@
 import os
 import sys
 import re
+import logging
 
 NEW_OPS_PATH = [
     "math",
-    "conversion"
+    "conversion",
+    "random"
     # 添加更多算子路径
 ]
 
@@ -31,7 +33,8 @@ def extract_operator_name(file_path):
     if len(path_parts) >= 2:
         domain = path_parts[0]
         operator_name = path_parts[1]
-
+        if operator_name == "common" or not os.path.exists(f'{domain}/{operator_name}'):
+            return default_name
         if domain in NEW_OPS_PATH:
             return operator_name
     return default_name
@@ -39,13 +42,13 @@ def extract_operator_name(file_path):
 
 def get_operator_info_from_ci(changed_file_info_from_ci):
     """
-      get operator change info from ci, ci will write `git diff > /or_filelist.txt`
-      :param changed_file_info_from_ci: git diff result file from ci
-      :return: None or OperatorChangeInf
-      """
+    get operator change info from ci, ci will write `git diff > /or_filelist.txt`
+    :param changed_file_info_from_ci: git diff result file from ci
+    :return: None or OperatorChangeInf
+    """
     or_file_path = os.path.realpath(changed_file_info_from_ci)
     if not os.path.exists(or_file_path):
-        print("[ERROR] change file is not exist, can not get file change info in this pull request.")
+        logging.error("[ERROR] change file is not exist, can not get file change info in this pull request.")
         return None
     with open(or_file_path) as or_f:
         lines = or_f.readlines()
@@ -72,7 +75,7 @@ def get_operator_info_from_ci(changed_file_info_from_ci):
 def get_change_ops_list(changed_file_info_from_ci):
     ops_change_info = get_operator_info_from_ci(changed_file_info_from_ci)
     if not ops_change_info:
-        print("[INFO] not found ops change info, run all c++.")
+        logging.info("[INFO] not found ops change info, run all c++.")
         return None
 
     return ";".join(ops_change_info.changed_operators)

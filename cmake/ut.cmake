@@ -451,9 +451,13 @@ if(UT_TEST_ALL OR OP_KERNEL_AICPU_UT)
     file(GLOB KernelFile "${PROJECT_SOURCE_DIR}/*/${opName}/op_kernel_aicpu/${opName}_aicpu.cpp")
 
     ## add object: ${opName}_cases_obj
+    message(STATUS "aicpu kernel UT_DIR: ${UT_DIR}")
     file(GLOB OPKERNEL_CASES_SRC ${UT_DIR}/${opName}/tests/ut/op_kernel_aicpu/test_${opName}*.cpp)
     
     message(STATUS "aicpu kernel info: ${opName}, ${KernelFile}, ${OPKERNEL_CASES_SRC}")
+    if(NOT KernelFile OR NOT OPKERNEL_CASES_SRC)
+      return()
+    endif()
 
     add_library(${opName}_cases_obj OBJECT
             ${KernelFile}

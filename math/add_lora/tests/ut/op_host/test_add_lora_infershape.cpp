@@ -99,12 +99,13 @@ TEST_F(AddLora, AddLora_infershape_case_0)
 
     // 用vector存储同类型参数（顺序与原参数列表一致）
     std::vector<gert::StorageShape> inputShapes = {
-        {{Batch, H2}, {Batch, H2}},                  // y_shape
-        {{Batch, H1}, {Batch, H1}},                  // x_shape
-        {{weight, layer, R, H1}, {weight, layer, R, H1}},  // weightA_shape
-        {{weight, layer, H2, R}, {weight, layer, H2, R}},  // weightB_shape
-        {{Batch}, {Batch}}                           // indice_shape
+        {{Batch, H2}, {Batch, H2}},                       // y_shape
+        {{Batch, H1}, {Batch, H1}},                       // x_shape
+        {{weight, layer, R, H1}, {weight, layer, R, H1}}, // weightA_shape
+        {{weight, layer, H2, R}, {weight, layer, H2, R}}, // weightB_shape
+        {{Batch}, {Batch}}                                // indice_shape
     };
+    
     std::vector<ge::DataType> dtypes = {
         ge::DT_FLOAT16,  // input1Dtype
         ge::DT_INT32,    // input2Dtype

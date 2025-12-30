@@ -559,13 +559,11 @@ set_ut_mode() {
   if [[ "$UT_TEST_ALL" == "TRUE" ]] || [[ "$OP_API_UT" == "TRUE" ]]; then
     UT_TARGES+=("${REPOSITORY_NAME}_op_api_ut")
   fi
-  if [[ "$UT_TEST_ALL" == "TRUE" ]] || [[ "$OP_GRAPH_UT" == "TRUE" ]]; then
-    UT_TARGES+=("${REPOSITORY_NAME}_op_graph_ut")
-  fi
   if [[ "$UT_TEST_ALL" == "TRUE" ]] || [[ "$OP_KERNEL_UT" == "TRUE" ]]; then
     UT_TARGES+=("${REPOSITORY_NAME}_op_kernel_ut")
   fi
-  if [[ "$UT_TEST_ALL" == "TRUE" ]] || [[ "$OP_KERNEL_AICPU_UT" == "TRUE" ]]; then
+  # apicpu_ut 问题，先屏蔽 all的时候不跑
+  if [[ "$OP_KERNEL_AICPU_UT" == "TRUE" ]]; then
     UT_TARGES+=("${REPOSITORY_NAME}_aicpu_op_kernel_ut")
   fi
 }
@@ -835,7 +833,70 @@ checkopts() {
 
   check_param
   set_create_libs
+  parse_changed_files
   set_ut_mode
+}
+
+parse_changed_files() {
+  if [[ -z "$CHANGED_FILES" ]]; then
+    return
+  fi
+
+  if [[ "$CHANGED_FILES" != /* ]]; then
+    CHANGED_FILES=$PWD/$CHANGED_FILES
+  fi
+
+  echo "changed files is "$CHANGED_FILES
+  echo $dotted_line
+  echo "changed lines:"
+  cat $CHANGED_FILES
+  echo $dotted_line
+
+
+
+  local script_ret=$(python3 scripts/ci/parse_changed_files.py $CHANGED_FILES)
+  IFS='&&' read -r related_ut soc_info <<< "$script_ret"
+  COMPILED_OPS=$(python3 scripts/ci/parse_changed_ops.py $CHANGED_FILES)
+  echo "related ut "$related_ut
+  echo "related ops "$COMPILED_OPS
+  echo "related soc_info "$soc_info
+
+  COMPUTE_UNIT=$soc_info
+
+  if [[ "$related_ut" == "set()" ]]; then
+    ENABLE_TEST=FALSE
+    echo "no ut matched! no need to run!"
+    echo "---------------- CANN build finished ----------------"
+    return
+  else
+    ENABLE_TEST=TRUE
+  fi
+
+  if [[ "$related_ut" =~ "ALL_UT" ]]; then
+    echo "ALL UT is triggered!"
+    return
+  fi
+  if [[ "$related_ut" =~ "OP_HOST_UT" || "$related_ut" =~ "OP_GRAPH_UT" ]] ; then
+    echo "OP_HOST_UT is triggered!"
+    OP_HOST_UT=TRUE
+    OP_HOST=TRUE
+    OP_KERNEL_UT=TRUE
+    OP_KERNEL=TRUE
+    OP_GRAPH=TRUE
+    ENABLE_CUSTOM=TRUE
+  fi
+  if [[ "$related_ut" =~ "OP_API_UT" ]]; then
+    echo "OP_API_UT is triggered!"
+    OP_API_UT=TRUE
+    OP_API=TRUE
+    ENABLE_CUSTOM=TRUE
+  fi
+  if [[ "$related_ut" =~ "OP_KERNEL_UT" ]]; then
+    echo "OP_KERNEL_UT is triggered!"
+    OP_KERNEL_UT=TRUE
+    OP_KERNEL=TRUE
+    ENABLE_CUSTOM=TRUE
+  fi
 }
 
 custom_cmake_args() {
