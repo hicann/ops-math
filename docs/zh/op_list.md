@@ -1047,12 +1047,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/log1p">log1p</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>对输入Tensor完成log1p运算。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1447,12 +1447,22 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/select">select</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>根据条件选取self或other中元素并返回（支持广播）。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/select_v2">select_v2</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>根据条件选取self或other中元素并返回（支持广播）。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1497,12 +1507,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/sin">sin</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>对输入Tensor完成sin运算</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1512,7 +1522,7 @@
     <td>√</td>
     <td>√</td>
     <td>AI CPU</td>
-    <td>该算子对输入的每个元素进行余弦后输出。</td>
+    <td>该算子对输入的每个元素进行正弦后输出。</td>
   </tr>
   <tr>
     <td>math</td>
