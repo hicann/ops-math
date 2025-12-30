@@ -1,10 +1,17 @@
 # aclnnSort
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/sort)
+
 ## 产品支持情况
 | 产品                                                         |  是否支持   |
 | :----------------------------------------------------------- |:-------:|
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √    |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √    |
+| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √    |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×    |
+| <term>Atlas 推理系列产品 </term>                             |    √    |
+| <term>Atlas 训练系列产品</term>                              |    √    |
+| <term>Atlas 200/300/500 推理产品</term>                      |    ×    |
 
 ## 功能说明
 
@@ -143,10 +150,15 @@ aclnnStatus aclnnSort(
   </tbody>
   </table>
 
-  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：
+    - self数据类型不支持BFLOAT16、UINT16、UINT32、UINT64。
+    - valuesOut数据类型不支持BFLOAT16、UINT16、UINT32、UINT64。
+  - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
     - self数据类型不支持UINT16、UINT32、UINT64。
     - 当self的数据类型为BFLOAT16时，参数dim指定的轴不能等于1。
     - valuesOut数据类型不支持UINT16、UINT32、UINT64。
+  - <term>Ascend 950PR/Ascend 950DT</term>：valuesOut数据类型不支持DOUBLE、BOOL。
+
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)
@@ -229,6 +241,7 @@ aclnnStatus aclnnSort(
 - 确定性计算：
   - aclnnSort默认确定性实现。
 
+- <term>Atlas 训练系列产品</term>：当输入是FLOAT32时，会将其转换成FLOAT16进行排序，然后再转换回FLOAT32。
 - self的数据类型不为FLOAT、FLOAT16、BFLOAT16时，tensor size过大可能会导致算子执行超时（aicpu error类型报错，报错 reason=[aicpu timeout]），具体类型最大size（与机器具体剩余内存强相关）限制如下：
     - INT64 类型：150000000
     - UINT8、INT8、INT16、INT32 类型：725000000

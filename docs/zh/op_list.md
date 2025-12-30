@@ -557,40 +557,40 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/arg_max_v2">arg_max_v2</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回张量在指定维度（dim）上的最大值的索引，并保存到out张量中。</td>
   </tr>
   <tr>
     <td>math</td>
     <td><a href="../../math/arg_max_with_value">arg_max_with_value</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回Tensor指定维度的最大值及其索引位置。最大值保存到out中，最大值的索引保存到indices中。如果keepdim为false，则不保留对应的轴；如果为true，则保留指定轴的维度值为1。</td>
   </tr>
   <tr>
     <td>math</td>
     <td><a href="../../math/arg_min">arg_min</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回tensor中指定轴的最小值索引，并保存到out中。如果keepdim为false，则不保留对应的轴；如果为true，则保留指定轴的维度值为1。</td>
   </tr>
   <tr>
     <td>math</td>
     <td><a href="../../math/arg_min_with_value">arg_min_with_value</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
@@ -677,10 +677,10 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/bitwise_and">bitwise_and</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
@@ -697,10 +697,10 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/bitwise_or">bitwise_or</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
@@ -762,7 +762,7 @@
     <td>×</td>
     <td>×</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>计算输入Tensor（A）中每个元素和输入标量（B）的按位与结果。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -782,7 +782,7 @@
     <td>×</td>
     <td>×</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>计算Tensor（A）中每个元素和Tensor（B）中对应位置的元素的按位或。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1107,10 +1107,10 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/logical_not">logical_not</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
@@ -1277,10 +1277,10 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/reciprocal">reciprocal</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
@@ -1447,12 +1447,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/rsqrt">rsqrt</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>求input(Tensor)每个元素的平方根的倒数。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1562,7 +1562,17 @@
     <td>×</td>
     <td>×</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>将输入tensor中的元素根据指定维度进行升序/降序， 并且返回对应的index值。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/rsqrt_grad">rsqrt_grad</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>rsqrt的反向计算。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1627,9 +1637,9 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/tile">tile</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>×</td>
     <td>AI Core</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
@@ -1662,7 +1672,7 @@
     <td>×</td>
     <td>×</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>将输入的张量沿指定轴重复多次，但不进行广播。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1789,18 +1799,18 @@
     <td><a href="../../conversion/pad">pad</a></td>
     <td>×</td>
     <td>×</td>
-    <td>×</td>
+    <td>√</td>
     <td>×</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>对输入Tensor做填充。</td>
   </tr>
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/pad_v3">pad_v3</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
@@ -1942,7 +1952,7 @@
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>对输入Tensor做填充。</td>
   </tr>
   <tr>
     <td>conversion</td>

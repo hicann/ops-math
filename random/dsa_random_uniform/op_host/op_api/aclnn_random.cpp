@@ -11,7 +11,7 @@
 #include "random/stateless_random_uniform_v2/op_api/stateless_random_uniform_v2.h"
 #include "dsa_random_uniform.h"
 #include "opdev/platform.h"
-#include "math/round/op_host/op_api/round.h"
+#include "math/round/op_api/round.h"
 #include "aclnn_kernels/cast.h"
 #include "math/muls/op_api/muls.h"
 #include "math/sub/op_api/sub.h"
