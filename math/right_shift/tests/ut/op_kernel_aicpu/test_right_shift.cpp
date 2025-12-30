@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "gtest/gtest.h"
 #ifndef private
@@ -24,7 +24,30 @@
 using namespace std;
 using namespace aicpu;
 
-class TEST_RIGHTSHIFT_UT : public testing::Test {};
+const std::string ktestcaseFilePath =
+    "../../../../math/right_shift/tests/ut/op_kernel_aicpu/";
+
+static void GenData() {
+  system(("cp -r " + ktestcaseFilePath + "script ./").c_str());
+  system("chmod -R 755 ./script");
+  system("python3 ./script/right_shift_gen_data.py");
+  char* path_ = get_current_dir_name();
+  string path(path_);
+  system(("mkdir -p " + ktestcaseFilePath + "data").c_str());
+  system(("cp -r " + path + "/right_shift/data/* " + ktestcaseFilePath + "data").c_str());
+}
+
+class TEST_RIGHTSHIFT_UT : public testing::Test {
+    protected:
+    static void SetUpTestCase() {
+      cout << "right_shift_test SetUp\n" << endl;
+      cout << "begin to gen test data\n" << endl;
+      GenData();
+    }
+    static void TearDownTestCase() {
+      cout << "right_shift_test TearDown\n" << endl;
+    }
+};
 
 template <typename T>
 void RightCalcExpectWithSameShape(const NodeDef &node_def, T expect_out[]) {
@@ -173,72 +196,72 @@ void RunRightShiftKernel2(vector<DataType> data_types,
 TEST_F(TEST_RIGHTSHIFT_UT, DATA_TYPE_INT8_SUCC) {
   vector<DataType> data_types = {DT_INT8, DT_INT8, DT_INT8};
   vector<vector<int64_t>> shapes = {{6, 12}, {12}, {6, 12}};
-  vector<string> files{"rightshift/data/rightshift_data_input1_1.txt",
-                       "rightshift/data/rightshift_data_input2_1.txt",
-                       "rightshift/data/rightshift_data_output1_1.txt"};
+  vector<string> files{"data/right_shift_data_input1_1.txt",
+                       "data/right_shift_data_input2_1.txt",
+                       "data/right_shift_data_output1_1.txt"};
   RunRightShiftKernel<int8_t, int8_t, int8_t>(files, data_types, shapes);
 }
 
 TEST_F(TEST_RIGHTSHIFT_UT, DATA_TYPE_INT16_SUCC) {
   vector<DataType> data_types = {DT_INT16, DT_INT16, DT_INT16};
   vector<vector<int64_t>> shapes = {{1024, 8}, {1024, 8}, {1024, 8}};
-  vector<string> files{"rightshift/data/rightshift_data_input1_2.txt",
-                       "rightshift/data/rightshift_data_input2_2.txt",
-                       "rightshift/data/rightshift_data_output1_2.txt"};
+  vector<string> files{"data/right_shift_data_input1_2.txt",
+                       "data/right_shift_data_input2_2.txt",
+                       "data/right_shift_data_output1_2.txt"};
   RunRightShiftKernel<int16_t, int16_t, int16_t>(files, data_types, shapes);
 }
 
 TEST_F(TEST_RIGHTSHIFT_UT, DATA_TYPE_INT32_SUCC) {
   vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
   vector<vector<int64_t>> shapes = {{1024}, {4, 1024}, {4, 1024}};
-  vector<string> files{"rightshift/data/rightshift_data_input1_3.txt",
-                       "rightshift/data/rightshift_data_input2_3.txt",
-                       "rightshift/data/rightshift_data_output1_3.txt"};
+  vector<string> files{"data/right_shift_data_input1_3.txt",
+                       "data/right_shift_data_input2_3.txt",
+                       "data/right_shift_data_output1_3.txt"};
   RunRightShiftKernel<int32_t, int32_t, int32_t>(files, data_types, shapes);
 }
 
 TEST_F(TEST_RIGHTSHIFT_UT, DATA_TYPE_INT64_SUC) {
   vector<DataType> data_types = {DT_INT64, DT_INT64, DT_INT64};
   vector<vector<int64_t>> shapes = {{15, 12, 30}, {15, 12, 30}, {15, 12, 30}};
-  vector<string> files{"rightshift/data/rightshift_data_input1_4.txt",
-                       "rightshift/data/rightshift_data_input2_4.txt",
-                       "rightshift/data/rightshift_data_output1_4.txt"};
+  vector<string> files{"data/right_shift_data_input1_4.txt",
+                       "data/right_shift_data_input2_4.txt",
+                       "data/right_shift_data_output1_4.txt"};
   RunRightShiftKernel<int64_t, int64_t, int64_t>(files, data_types, shapes);
 }
 
 TEST_F(TEST_RIGHTSHIFT_UT, DATA_TYPE_UINT8_SUCC) {
   vector<DataType> data_types = {DT_UINT8, DT_UINT8, DT_UINT8};
   vector<vector<int64_t>> shapes = {{6, 12}, {12}, {6, 12}};
-  vector<string> files{"rightshift/data/rightshift_data_input1_5.txt",
-                       "rightshift/data/rightshift_data_input2_5.txt",
-                       "rightshift/data/rightshift_data_output1_5.txt"};
+  vector<string> files{"data/right_shift_data_input1_5.txt",
+                       "data/right_shift_data_input2_5.txt",
+                       "data/right_shift_data_output1_5.txt"};
   RunRightShiftKernel<uint8_t, uint8_t, uint8_t>(files, data_types, shapes);
 }
 
 TEST_F(TEST_RIGHTSHIFT_UT, DATA_TYPE_UINT16_SUCC) {
   vector<DataType> data_types = {DT_UINT16, DT_UINT16, DT_UINT16};
   vector<vector<int64_t>> shapes = {{5, 12}, {5, 12}, {5, 12}};
-  vector<string> files{"rightshift/data/rightshift_data_input1_6.txt",
-                       "rightshift/data/rightshift_data_input2_6.txt",
-                       "rightshift/data/rightshift_data_output1_6.txt"};
+  vector<string> files{"data/right_shift_data_input1_6.txt",
+                       "data/right_shift_data_input2_6.txt",
+                       "data/right_shift_data_output1_6.txt"};
   RunRightShiftKernel<uint16_t, uint16_t, uint16_t>(files, data_types, shapes);
 }
 
 TEST_F(TEST_RIGHTSHIFT_UT, DATA_TYPE_UINT32_SUCC) {
   vector<DataType> data_types = {DT_UINT32, DT_UINT32, DT_UINT32};
   vector<vector<int64_t>> shapes = {{3, 12}, {12}, {3, 12}};
-  vector<string> files{"rightshift/data/rightshift_data_input1_7.txt",
-                       "rightshift/data/rightshift_data_input2_7.txt",
-                       "rightshift/data/rightshift_data_output1_7.txt"};
+  vector<string> files{"data/right_shift_data_input1_7.txt",
+                       "data/right_shift_data_input2_7.txt",
+                       "data/right_shift_data_output1_7.txt"};
   RunRightShiftKernel<uint32_t, uint32_t, uint32_t>(files, data_types, shapes);
 }
 
 TEST_F(TEST_RIGHTSHIFT_UT, DATA_TYPE_UINT64_SUC) {
   vector<DataType> data_types = {DT_UINT64, DT_UINT64, DT_UINT64};
   vector<vector<int64_t>> shapes = {{15, 12, 30}, {15, 12, 30}, {15, 12, 30}};
-  vector<string> files{"rightshift/data/rightshift_data_input1_8.txt",
-                       "rightshift/data/rightshift_data_input2_8.txt",
-                       "rightshift/data/rightshift_data_output1_8.txt"};
+  vector<string> files{"data/right_shift_data_input1_8.txt",
+                       "data/right_shift_data_input2_8.txt",
+                       "data/right_shift_data_output1_8.txt"};
   RunRightShiftKernel<uint64_t, uint64_t, uint64_t>(files, data_types, shapes);
 }
 

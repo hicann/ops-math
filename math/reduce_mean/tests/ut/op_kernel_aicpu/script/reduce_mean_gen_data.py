@@ -53,7 +53,7 @@ def read_file_txt_to_bool(file_name, delim=None):
     bool_data = []
     for item in in_data:
         if item == "False":
-            bool_data.append(Falsetf)
+            bool_data.append(False)
         else:
             bool_data.append(True)
     return np.array(bool_data)
