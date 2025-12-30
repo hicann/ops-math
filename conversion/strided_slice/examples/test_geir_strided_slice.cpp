@@ -7,136 +7,261 @@
 * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 * See LICENSE in the root of the software repository for the full text of the License.
 */
-
+                        
 #include <iostream>
+#include <fstream>
+#include <string.h>
+#include <stdint.h>
 #include <vector>
-#include "acl/acl.h"
-#include "aclnnop/aclnn_slice.h"
+#include <string>
+#include <map>
+#include "assert.h"
 
-#define CHECK_RET(cond, return_expr) \
-do {                               \
-    if (!(cond)) {                   \
-    return_expr;                   \
-    }                                \
-} while (0)
+#include "graph.h"
+#include "types.h"
+#include "tensor.h"
+#include "ge_error_codes.h"
+#include "ge_api_types.h"
+#include "ge_api.h"
+#include "array_ops.h"
+#include "ge_ir_build.h"
 
-#define LOG_PRINT(message, ...)     \
-do {                              \
-    printf(message, ##__VA_ARGS__); \
-} while (0)
+#include "experiment_ops.h"
+#include "nn_other.h"
+#include "../op_graph/strided_slice_proto.h"
 
-int64_t GetShapeSize(const std::vector<int64_t>& shape) {
-int64_t shapeSize = 1;
-for (auto i : shape) {
-    shapeSize *= i;
-}
-return shapeSize;
-}
+#define FAILED -1
+#define SUCCESS 0
 
-int Init(int32_t deviceId, aclrtStream* stream) {
-// 固定写法，资源初始化
-auto ret = aclInit(nullptr);
-CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclInit failed. ERROR: %d\n", ret); return ret);
-ret = aclrtSetDevice(deviceId);
-CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSetDevice failed. ERROR: %d\n", ret); return ret);
-ret = aclrtCreateStream(stream);
-CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtCreateStream failed. ERROR: %d\n", ret); return ret);
-return 0;
-}
+using namespace ge;
+using std::map;
+using std::string;
+using std::vector;
 
-template <typename T>
-int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
-                    aclDataType dataType, aclTensor** tensor) {
-auto size = GetShapeSize(shape) * sizeof(T);
-// 调用aclrtMalloc申请device侧内存
-auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
-CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMalloc failed. ERROR: %d\n", ret); return ret);
-// 调用aclrtMemcpy将host侧数据拷贝到device侧内存上
-ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
-CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
+#define ADD_INPUT(inputIndex, inputName, inputDtype, inputShape)                                                    \
+    do {                                                                                                            \
+        std::string name##inputIndex = "placeholder" + std::to_string(inputIndex);                                  \
+        auto placeholder##inputIndex = op::Data(name##inputIndex.c_str()).set_attr_index(0);                        \
+        TensorDesc placeholder##inputIndex##_desc = TensorDesc(ge::Shape(inputShape), FORMAT_ND, inputDtype);       \
+        placeholder##inputIndex##_desc.SetPlacement(ge::kPlacementHost);                                            \
+        placeholder##inputIndex##_desc.SetFormat(FORMAT_ND);                                                        \
+        Tensor tensor_placeholder##inputIndex;                                                                      \
+        ret = GenOnesDataFloat32(inputShape, tensor_placeholder##inputIndex, placeholder##inputIndex##_desc, 2.3f); \
+        if (ret != SUCCESS) {                                                                                       \
+            printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                          \
+            return FAILED;                                                                                          \
+        }                                                                                                           \
+        placeholder##inputIndex.update_input_desc_x(placeholder##inputIndex##_desc);                                \
+        graph.AddOp(placeholder##inputIndex);                                                                       \
+        input.push_back(tensor_placeholder##inputIndex);                                                            \
+        stridedslice1.set_input_##inputName(placeholder##inputIndex);                                                       \
+        inputs.push_back(placeholder##inputIndex);                                                                  \
+    } while (0)
 
-// 计算连续tensor的strides
-std::vector<int64_t> strides(shape.size(), 1);
-for (int64_t i = shape.size() - 2; i >= 0; i--) {
-    strides[i] = shape[i + 1] * strides[i + 1];
-}
+#define ADD_OUTPUT(outputIndex, outputName, outputDtype, outputShape)                                           \
+    do {                                                                                                        \
+        TensorDesc outputName##outputIndex##_desc = TensorDesc(ge::Shape(outputShape), FORMAT_ND, outputDtype); \
+        stridedslice1.update_output_desc_##outputName(outputName##outputIndex##_desc);                                  \
+    } while (0)
 
-// 调用aclCreateTensor接口创建aclTensor
-*tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
-                            shape.data(), shape.size(), *deviceAddr);
-return 0;
-}
+#define ADD_INPUT_ATTR(attrName, attrValue) stridedslice1.set_attr_##attrName(attrValue)
 
-int main() {
-// 1. （固定写法）device/stream初始化，参考acl API手册
-// 根据自己的实际device填写deviceId
-int32_t deviceId = 0;
-aclrtStream stream;
-auto ret = Init(deviceId, &stream);
-CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
+#define LOG_PRINT(message, ...)         \
+    do {                                \
+        printf(message, ##__VA_ARGS__); \
+    } while (0)
 
-// 2. 构造输入与输出，需要根据API的接口自定义构造
-std::vector<int64_t> selfShape = {4, 2};
-std::vector<int64_t> outShape = {2, 2};
-void* selfDeviceAddr = nullptr;
-void* outDeviceAddr = nullptr;
-aclTensor* self = nullptr;
-aclTensor* out = nullptr;
-std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-std::vector<float> outHostData = {0, 0, 0, 0};
-int64_t dim = 0;
-int64_t start = 1;
-int64_t end = 3;
-int64_t step = 1;
-// 创建self aclTensor
-ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
-CHECK_RET(ret == ACL_SUCCESS, return ret);
-// 创建out aclTensor
-ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
-CHECK_RET(ret == ACL_SUCCESS, return ret);
-
-// 3. 调用CANN算子库API，需要修改为具体的Api名称
-uint64_t workspaceSize = 0;
-aclOpExecutor* executor;
-// 调用aclnnSlice第一段接口
-ret = aclnnSliceGetWorkspaceSize(self, dim, start, end, step, out, &workspaceSize, &executor);
-CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSliceGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
-// 根据第一段接口计算出的workspaceSize申请device内存
-void* workspaceAddr = nullptr;
-if (workspaceSize > 0) {
-    ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
-}
-// 调用aclnnSlice第二段接口
-ret = aclnnSlice(workspaceAddr, workspaceSize, executor, stream);
-CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSlice failed. ERROR: %d\n", ret); return ret);
-
-// 4. （固定写法）同步等待任务执行结束
-ret = aclrtSynchronizeStream(stream);
-CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
-
-// 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
-auto size = GetShapeSize(outShape);
-std::vector<float> resultData(size, 0);
-ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr,
-                    size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
-CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
-for (int64_t i = 0; i < size; i++) {
-    LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
+string GetTime()
+{
+    time_t timep;
+    time(&timep);
+    char tmp[64];
+    strftime(tmp, sizeof(tmp), "%Y-%m-%d %H:%M:%S,000", localtime(&timep));
+    return tmp;
 }
 
-// 6. 释放aclTensor，需要根据具体API的接口定义修改
-aclDestroyTensor(self);
-aclDestroyTensor(out);
-
-// 7. 释放device资源，需要根据具体API的接口定义修改
-aclrtFree(selfDeviceAddr);
-aclrtFree(outDeviceAddr);
-if (workspaceSize > 0) {
-    aclrtFree(workspaceAddr);
+uint32_t GetDataTypeSize(DataType dt)
+{
+    if (dt == ge::DT_FLOAT)
+        return 4;
+    if (dt == ge::DT_FLOAT16)
+        return 2;
+    if (dt == ge::DT_BF16)
+        return 2;
+    return 4;
 }
-aclrtDestroyStream(stream);
-aclrtResetDevice(deviceId);
-aclFinalize();
-return 0;
+
+int32_t GenOnesDataFloat32(vector<int64_t> shapes, Tensor& input_tensor, TensorDesc& input_tensor_desc, float value)
+{
+    input_tensor_desc.SetRealDimCnt(shapes.size());
+    size_t size = 1;
+    for (uint32_t i = 0; i < shapes.size(); i++) {
+        size *= shapes[i];
+    }
+    uint32_t data_len = size * 4;
+    float* pData = new (std::nothrow) float[size];
+
+    for (size_t i = 0; i < size; ++i) {
+        pData[i] = value + (i % 3) * 0.4f; // 让数据更有意义
+    }
+    input_tensor = Tensor(input_tensor_desc, (uint8_t*)pData, data_len);
+    return SUCCESS;
+}
+
+int32_t WriteDataToFile(string bin_file, uint64_t data_size, uint8_t* inputData)
+{
+    FILE* fp = fopen(bin_file.c_str(), "wb");
+    if (fp == nullptr) {
+        return FAILED;
+    }
+    size_t written = fwrite(inputData, 1, data_size, fp);
+    fclose(fp);
+    if (written != data_size) {
+        return FAILED;
+    }
+    return SUCCESS;
+}
+
+int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor> &input, std::vector<Operator> &inputs,
+    std::vector<Operator> &outputs, Graph &graph)
+{
+    Status ret = SUCCESS;
+    // 自定义代码：添加单算子定义到图中
+    auto stridedslice1 = op::StridedSlice("test_geir_strided_slice");
+    // 输入shape
+    std::vector<int64_t> xShape = {1, 1, 1, 1};
+    std::vector<int64_t> beginShape = {0, 0, 0};
+    std::vector<int64_t> endShape = {1, 1, 1};
+    std::vector<int64_t> stridesShape = {1, 1, 1};
+    // 输出shape
+    std::vector<int64_t> yShape = {1, 1, 1, 1};
+
+    ADD_INPUT(1, x, inDtype, xShape);
+    ADD_INPUT(2, begin, inDtype, beginShape);
+    ADD_INPUT(3, end, inDtype, endShape);
+    ADD_INPUT(4, strides, inDtype, stridesShape);
+
+    // 添加必选属性
+    ADD_INPUT_ATTR(begin_mask, 13);
+    ADD_INPUT_ATTR(end_mask, 11);
+    ADD_INPUT_ATTR(ellipsis_mask, 1);
+    ADD_INPUT_ATTR(new_axis_mask, 9);
+    ADD_INPUT_ATTR(shrink_axis_mask, 0);
+    // 添加输出
+    ADD_OUTPUT(1, y, inDtype, yShape);
+
+    outputs.push_back(stridedslice1);
+    // 添加完毕
+    return SUCCESS;
+}
+
+int main(int argc, char *argv[])
+{
+    const char *graph_name = "tc_ge_irrun_test";
+    Graph graph(graph_name);
+    std::vector<ge::Tensor> input;
+
+    printf("%s - INFO - [XIR]: Start to initialize ge using ge global options\n", GetTime().c_str());
+    std::map<AscendString, AscendString> global_options = {{"ge.exec.deviceId", "0"}, {"ge.graphRunMode", "1"}};
+    Status ret = ge::GEInitialize(global_options);
+    if (ret != SUCCESS) {
+        printf("%s - INFO - [XIR]: Initialize ge using ge global options failed\n", GetTime().c_str());
+        return FAILED;
+    }
+    printf("%s - INFO - [XIR]: Initialize ge using ge global options success\n", GetTime().c_str());
+
+    std::vector<Operator> inputs{};
+    std::vector<Operator> outputs{};
+
+    std::cout << argv[1] << std::endl;
+    char *endptr;
+
+    DataType inDtype = DT_INT32;
+
+    std::cout << inDtype << std::endl;
+
+    ret = CreateOppInGraph(inDtype, input, inputs, outputs, graph);
+    if (ret != SUCCESS) {
+        printf("%s - ERROR - [XIR]: Create ir session using build options failed\n", GetTime().c_str());
+        return FAILED;
+    }
+
+    if (!inputs.empty() && !outputs.empty()) {
+        graph.SetInputs(inputs).SetOutputs(outputs);
+    }
+
+    std::map<AscendString, AscendString> build_options = {
+
+    };
+    printf("%s - INFO - [XIR]: Start to create ir session using build options\n", GetTime().c_str());
+    ge::Session *session = new Session(build_options);
+
+    if (session == nullptr) {
+        printf("%s - ERROR - [XIR]: Create ir session using build options failed\n", GetTime().c_str());
+        return FAILED;
+    }
+    printf("%s - INFO - [XIR]: Create ir session using build options success\n", GetTime().c_str());
+    printf("%s - INFO - [XIR]: Start to add compute graph to ir session\n", GetTime().c_str());
+
+    std::map<AscendString, AscendString> graph_options = {
+
+    };
+    uint32_t graph_id = 0;
+    ret = session->AddGraph(graph_id, graph, graph_options);
+
+    printf("%s - INFO - [XIR]: Session add ir compute graph to ir session success\n", GetTime().c_str());
+    printf("%s - INFO - [XIR]: dump graph to txt\n", GetTime().c_str());
+    std::string file_path = "./dump";
+    aclgrphDumpGraph(graph, file_path.c_str(), file_path.length());
+    printf("%s - INFO - [XIR]: Start to run ir compute graph\n", GetTime().c_str());
+    std::vector<ge::Tensor> output;
+    ret = session->RunGraph(graph_id, input, output);
+    if (ret != SUCCESS) {
+        printf("%s - INFO - [XIR]: Run graph failed\n", GetTime().c_str());
+        delete session;
+        GEFinalize();
+        return FAILED;
+    }
+    printf("%s - INFO - [XIR]: Session run ir compute graph success\n", GetTime().c_str());
+
+    int input_num = input.size();
+    for (int i = 0; i < input_num; i++) {
+        std::cout << "input " << i << " dtype :  " << input[i].GetTensorDesc().GetDataType() << std::endl;
+        string input_file = "./tc_ge_irrun_test_0008_npu_input_" + std::to_string(i) + ".bin";
+        uint8_t *input_data_i = input[i].GetData();
+        int64_t input_shape = input[i].GetTensorDesc().GetShape().GetShapeSize();
+        std::cout << "this is " << i << "th input, input shape size =" << input_shape << std::endl;
+        uint32_t data_size = input_shape * GetDataTypeSize(input[i].GetTensorDesc().GetDataType());
+        WriteDataToFile((const char *)input_file.c_str(), data_size, input_data_i);
+    }
+
+    int output_num = output.size();
+    for (int i = 0; i < output_num; i++) {
+        std::cout << "output " << i << " dtype :  " << output[i].GetTensorDesc().GetDataType() << std::endl;
+        string output_file = "./tc_ge_irrun_test_0008_npu_output_" + std::to_string(i) + ".bin";
+        uint8_t *output_data_i = output[i].GetData();
+        int64_t output_shape = output[i].GetTensorDesc().GetShape().GetShapeSize();
+        std::cout << "this is " << i << "th output, output shape size =" << output_shape << std::endl;
+        uint32_t data_size = output_shape * GetDataTypeSize(output[i].GetTensorDesc().GetDataType());
+        WriteDataToFile((const char *)output_file.c_str(), data_size, output_data_i);
+        float *resultData = (float*)output_data_i;
+        for (int64_t j = 0; j < output_shape; j++) {
+            LOG_PRINT("result[%ld] is: %f\n", j, resultData[j]);
+        }
+    }
+
+    ge::AscendString error_msg = ge::GEGetErrorMsgV2();
+    std::string error_str(error_msg.GetString());
+    std::cout << "Error message: " << error_str << std::endl;
+    ge::AscendString warning_msg = ge::GEGetWarningMsgV2();
+    std::string warning_str(warning_msg.GetString());
+    std::cout << "Warning message: " << warning_str << std::endl;
+    printf("%s - INFO - [XIR]: Start to finalize ir graph session\n", GetTime().c_str());
+    ret = ge::GEFinalize();
+    if (ret != SUCCESS) {
+        printf("%s - INFO - [XIR]: Finalize ir graph session failed\n", GetTime().c_str());
+        return FAILED;
+    }
+    printf("%s - INFO - [XIR]: Finalize ir graph session success\n", GetTime().c_str());
+    return SUCCESS;
 }
