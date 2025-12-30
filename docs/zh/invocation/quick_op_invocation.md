@@ -19,7 +19,9 @@
 1. **编译自定义算子包**
 
     进入项目根目录，执行如下编译命令：
-    
+
+    > 说明：编译过程依赖第三方开源软件，联网场景会自动下载，离线编译场景需要自行安装，具体参考[离线编译](../context/build_offline.md)。
+
     ```bash
     bash build.sh --pkg --soc=${soc_version} [--vendor_name=${vendor_name}] [--ops=${op_list}]
     # 以Abs算子编译为例
@@ -32,9 +34,7 @@
     - --ops（可选）：\$\{op\_list\}表示待编译算子，不指定时默认编译所有算子。格式形如"abs,add_lora,..."，多算子之间用英文逗号","分隔。
     - --experimental（可选）：表示编译用户保存在experimental贡献目录下的算子。
     
-    说明：若\$\{vendor\_name\}和\$\{op\_list\}都不传入编译的是ops-math包；若编译所有算子的自定义算子包，需传入\$\{vendor\_name\}；编译自定义算子包不支持--jit。
-
-    若提示如下信息，说明编译成功。
+    若\$\{vendor\_name\}和\$\{op\_list\}都不传入编译的是ops-math包；若编译所有算子的自定义算子包，需传入\$\{vendor\_name\}；编译自定义算子包不支持--jit。当提示如下信息，说明编译成功。
     ```bash
     Self-extractable archive "cann-ops-math-${vendor_name}_linux-${arch}.run" successfully created.
     ```
@@ -60,6 +60,8 @@
 1. **编译ops-math包**
 
     进入项目根目录，执行如下编译命令：
+
+    > 说明：编译过程依赖第三方开源软件，联网场景会自动下载，离线编译场景需要自行安装，具体参考[离线编译](../context/build_offline.md)。
 
     ```bash
     # 编译除experimental目录外的所有算子
