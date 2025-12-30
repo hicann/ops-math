@@ -13,7 +13,7 @@
 #include "complex.h"
 #include "../../../mul/op_api/mul.h"
 #include "../../../sin/op_host/op_api/sin.h"
-#include "../../../cos/op_host/op_api/cos.h"
+#include "../../../cos/op_api/cos.h"
 #include "../../../abs/op_api/abs.h"
 #include "common/op_api_def.h"
 #include "opdev/common_types.h"

@@ -16,7 +16,7 @@
 #include "aclnn_bernoulli.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
-#include "random/stateless_bernoulli/op_host/op_api/stateless_bernoulli.h"
+#include "random/stateless_bernoulli/op_api/stateless_bernoulli.h"
 #include "random/drop_out_do_mask/op_api/dropout_do_mask.h"
 #include "dsa_gen_bit_mask.h"
 #include "math/zero_op/op_api/zero_op.h"

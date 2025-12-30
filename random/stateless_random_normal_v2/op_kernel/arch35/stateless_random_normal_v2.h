@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file stateless_random_normal_v2.h
@@ -17,7 +17,7 @@
 #define STATELESS_RANDOM_NORMAL_V2_H
 
 #include "kernel_operator.h"
-#include "../inc/platform.h"
+#include "op_kernel/platform_util.h"
 
 namespace StatelessRandomNormalV2Simd {
 using namespace AscendC;
@@ -30,7 +30,7 @@ constexpr uint16_t DOUBLE_UNIFORM_RESULT = 2;
 constexpr uint16_t RESULT_ELEMENT_CNT = 4;
 constexpr float DOUBLE_MULTIPLE = 2.0f;
 constexpr float PI = 3.14159265358979323846f;
-constexpr uint32_t INT32_FLOAT32_ONE_REPEAT = platform::GetVRegSize() / sizeof(int32_t);
+constexpr uint32_t INT32_FLOAT32_ONE_REPEAT = Ops::Base::GetVRegSize() / sizeof(int32_t);
 
 template <typename T>
 class StatelessRandomNormalV2 {
@@ -168,7 +168,7 @@ __aicore__ inline void StatelessRandomNormalV2<T>::Uint32ToFloat(
     __ubuf__ int32_t* ubPhilox = (__ubuf__ int32_t*)philoxRes.GetPhyAddr();
     __ubuf__ float* ubOut = (__ubuf__ float*)yOutputTmp.GetPhyAddr();
 
-    uint32_t vfLen = platform::GetVRegSize() / sizeof(int32_t);
+    uint32_t vfLen = Ops::Base::GetVRegSize() / sizeof(int32_t);
     uint32_t repeatTimes = CeilDiv(calCount, vfLen);
 
     __VEC_SCOPE__
