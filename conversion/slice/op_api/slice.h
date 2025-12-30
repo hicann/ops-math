@@ -8,17 +8,18 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef OP_API_INC_LEVEL0_STRIDED_SLICE_H
-#define OP_API_INC_LEVEL0_STRIDED_SLICE_H
+#ifndef COMMON_INC_EXTERNAL_ACLNN_KERNELS_SLICE_H
+#define COMMON_INC_EXTERNAL_ACLNN_KERNELS_SLICE_H
 
 #include "opdev/op_def.h"
 
 namespace l0op {
 
-const aclTensor* StridedSlice(
-    const aclTensor* x, const aclTensor* y, const aclTensor* begin, const aclTensor* end, const aclTensor* stride,
-    aclOpExecutor* executor);
+const aclTensor* Slice(
+    const aclTensor* x, const aclTensor* y, const aclTensor* offset, const aclTensor* size, aclOpExecutor* executor);
 
+const aclTensor* Slice(
+    const aclTensor* x, const aclIntArray* offsets, const aclIntArray* size, aclOpExecutor* executor);
 } // namespace l0op
 
-#endif // OP_API_INC_LEVEL0_STRIDED_SLICE_H
+#endif // COMMON_INC_EXTERNAL_ACLNN_KERNELS_SLICE_H

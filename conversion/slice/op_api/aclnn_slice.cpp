@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "aclnn_slice.h"
-#include "strided_slice_v3.h"
+#include "conversion/strided_slice_v3/op_host/op_api/strided_slice_v3.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn/aclnn_base.h"
