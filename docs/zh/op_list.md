@@ -59,7 +59,7 @@
     <td><a href="../../math/bias_add/README.md">bias_add</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
+    <td>√</td>
     <td>√</td>
     <td>AI Core</td>
     <td>偏置加法。</td>
@@ -139,7 +139,7 @@
     <td><a href="../../math/is_inf/README.md">is_inf</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
+    <td>√</td>
     <td>√</td>
     <td>AI Core</td>
     <td>判断张量中哪些元素是无限大值，即为inf、-inf。</td>
@@ -396,6 +396,16 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/concat_d/README.md">concat_d</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>将tensors中所有tensor按照维度dim进行级联，除了dim对应的维度以外的维度必须一致。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/concat_v2/README.md">concat_v2</a></td>
     <td>√</td>
     <td>√</td>
@@ -409,7 +419,7 @@
     <td><a href="../../conversion/clip_by_value_v2/README.md">clip_by_value_v2</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
+    <td>√</td>
     <td>√</td>
     <td>AI CPU</td>
     <td>该算子将输入的所有元素限制在[clipValueMin,clipValueMax]范围内。</td>
@@ -428,11 +438,11 @@
     <td>math</td>
     <td><a href="../../math/abs/README.md">abs</a></td>
     <td>√</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>为输入张量的每一个元素取绝对值。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -486,33 +496,33 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/addcdiv">addcdiv</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/addcdiv/README.md">addcdiv</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>张量运算函数，用于执行乘除加组合操作，将张量除法（带缩放）+ 张量加法合并为单个操作。</td>
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/addcmul">addcmul</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/addcmul/README.md">addcmul</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>张量运算函数，用于执行乘除加组合操作，将张量乘法（带缩放）+ 张量加法合并为单个操作。</td>
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/addr">addr</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/addr/README.md">addr</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>求一维向量vec1和vec2的外积得到一个二维矩阵，并将外积结果矩阵乘一个系数后和自身乘系数相加后输出。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -626,13 +636,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/bincount">bincount</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/bincount/README.md">bincount</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>计算非负整数数组中每个数的频率。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -826,13 +836,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/exp">exp</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/exp/README.md">exp</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回一个新的张量，该张量的每个元素都是输入张量对应元素的指数。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -876,33 +886,33 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/floor">floor</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/floor/README.md">floor</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回输入Tensor中每个元素向下取整，并将结果回填到输入Tensor中。</td>
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/floor_div">floor_div</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/floor_div/README.md">floor_div</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>完成除法计算，对余数向下取整。</td>
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/floor_mod">floor_mod</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/floor_mod/README.md">floor_mod</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>计算两个输入张量的逐元素模运算。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -966,23 +976,23 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/is_neg_inf">is_neg_inf</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/is_neg_inf/README.md">is_neg_inf</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>判断输入张量的元素是否为负无穷。</td>
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/is_pos_inf">is_pos_inf</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/is_pos_inf/README.md">is_pos_inf</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>判断输入张量的元素是否为正无穷。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -996,13 +1006,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/lerp">lerp</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/lerp/README.md">lerp</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>根据给定的权重，在起始和结束Tensor之间进行线性插值，返回插值后的Tensor。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1016,13 +1026,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/less_equal">less_equal</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/less_equal/README.md">less_equal</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>判断输入self中的元素值是否小于等于other的值，并将self的每个元素的值与other值的比较结果写入out中。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1056,13 +1066,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/logical_and">logical_and</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/logical_and/README.md">logical_and</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>对两个输入张量的对应元素执行「与逻辑」判断，输出布尔型张量（True/False）。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1076,13 +1086,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/logical_or">logical_or</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/logical_or/README.md">logical_or</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>完成给定输入张量元素的逻辑或运算。当两个输入张量为非bool类型时，0被视为False，非0被视为True。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1176,13 +1186,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/ones_like">ones_like</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/ones_like/README.md">ones_like</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回形状和类型相同的张量，所有元素都设置为1。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1446,13 +1456,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/sign">sign</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/sign/README.md">sign</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>对输入的tensor逐元素进行Sign符号函数的运算并输出结果tensor。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1516,23 +1526,23 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/sqrt">sqrt</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/sqrt/README.md">sqrt</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>完成非负数平方根计算，负数情况返回nan。</td>
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/sub">sub</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/sub/README.md">sub</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>完成减法计算，被减数按alpha进行缩放。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1546,13 +1556,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/tanh">tanh</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/tanh/README.md">tanh</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>激活函数。返回与输入tensor shape相同的tensor，对输入tensor进行elementwise的计算。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1616,13 +1626,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/zero_op">zero_op</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/zero_op/README.md">zero_op</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>将张量填充为全零。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -1647,12 +1657,12 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/concat/README.md">concat</a></td>
+    <td>√</td>
+    <td>√</td>
     <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>用于沿指定维度将多个输入 Tensor 进行拼接，输出包含所有输入数据按顺序拼接后的 Tensor。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -1669,7 +1679,7 @@
     <td><a href="../../conversion/fill/README.md">fill</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
+    <td>√</td>
     <td>√</td>
     <td>AI Core</td>
     <td>对输入张量填充指定标量值。</td>
@@ -1697,12 +1707,12 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/masked_fill/README.md">masked_fill</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>将输入Tensor`x`中mask位置为`True`的元素填充指定的值。`mask`必须与`x`的shape相同或可广播。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -1727,12 +1737,12 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/pack/README.md">pack</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>通过沿轴维度打包，将值中的张量列表打包成一个比值中的每个张量高一维度的张量。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -1866,6 +1876,26 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/tril/README.md">tril</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>将输入的self张量的最后二维（按shape从左向右数）沿对角线的右上部分置零。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/triu/README.md">triu</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>完成张量转置。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/unsqueeze">unsqueeze</a></td>
     <td>×</td>
     <td>×</td>
@@ -1908,7 +1938,7 @@
     <td>math</td>
     <td><a href="../../math/sqrt_grad/README.md">sqrt_grad</a></td>
     <td>√</td>
-    <td>×</td>
+    <td>√</td>
     <td>×</td>
     <td>√</td>
     <td>AI CPU</td>
@@ -1916,13 +1946,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/squared_difference">squared_difference</a></td>
+    <td><a href="../../math/squared_difference/README.md">squared_difference</a></td>
     <td>√</td>
-    <td>×</td>
+    <td>√</td>
     <td>×</td>
     <td>√</td>
     <td>AI CPU</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>为第一个输入张量减去第二个输入张量，并计算其平方值。</td>
   </tr>
   <tr>
     <td>random</td>

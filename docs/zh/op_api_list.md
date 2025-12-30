@@ -46,7 +46,7 @@
 | [aclnnBitwiseXorScalar&aclnnInplaceBitwiseXorScalar](../../math/bitwise_xor/docs/aclnnBitwiseXorScalar&aclnnInplaceBitwiseXorScalar.md) | 计算输入张量self中每个元素和输入标量other的按位异或，输入self和other必须是整数或布尔类型，对于布尔类型，计算逻辑异或。 | 默认确定性实现|  
 | [aclnnBitwiseXorTensor&aclnnInplaceBitwiseXorTensor](../../math/bitwise_xor/docs/aclnnBitwiseXorTensor&aclnnInplaceBitwiseXorTensor.md) | 计算输入张量self中每个元素与输入张量other中对应位置元素的按位异或，输入self和other必须是整数或布尔类型，对于布尔类型，计算逻辑异或。 | 默认确定性实现|  
 | [aclnnCast](../../math/cast/docs/aclnnCast.md)                  | 实现张量数据类型转换。                                       | 默认确定性实现|                                        
-| [aclnnCat](../../conversion/concat/docs/aclnnCat.md)            | 将tensors中所有tensor按照维度dim进行级联。    | 默认确定性实现|     
+| [aclnnCat](../../conversion/concat_d/docs/aclnnCat.md)            | 将tensors中所有tensor按照维度dim进行级联。    | 默认确定性实现|     
 | [aclnnCeil&aclnnInplaceCeil](../../math/ceil/docs/aclnnCeil&aclnnInplaceCeil.md) | 返回输入tensor中每个元素向上取整的结果。                     | 默认确定性实现|                      
 | [aclnnChannelShuffle](../../conversion/transpose/docs/aclnnChannelShuffle.md) | 将(*, C, H, W)张量的channels分成g个组，然后将每个通道组中的通道进行随机重排，最后将所有通道合并输出，同时保持最终输出张量的shape和输入张量保持一致。 | 默认确定性实现|  
 | [aclnnCircularPad2d](../../conversion/circular_pad/docs/aclnnCircularPad2d.md) | 使用输入循环填充输入tensor的最后两维。                       | 默认确定性实现|                        
@@ -110,7 +110,7 @@
 | [aclnnInplaceFillTensor](../../conversion/fill/docs/aclnnInplaceFillTensor.md) | 对selfRef张量填充value， value是张量。                       | 默认确定性实现|                        
 | [aclnnInplaceMaskedFillScalar](../../conversion/masked_fill/docs/aclnnInplaceMaskedFillScalar.md) | 用value填充selfRef里面与mask矩阵中值为true的位置相对应的元素。 | 默认确定性实现|  
 | [aclnnInplaceMaskedFillTensor](../../conversion/masked_fill/docs/aclnnInplaceMaskedFillTensor.md) | 用value填充selfRef里面与mask矩阵中值为true的位置相对应的元素。 | 默认确定性实现|  
-| [aclnnInplaceOne](../../math/ones_liek/docs/aclnnInplaceOne.md) | 返回形状和类型相同的张量，所有元素都设置为1。                | 默认确定性实现|                 
+| [aclnnInplaceOne](../../math/ones_like/docs/aclnnInplaceOne.md) | 返回形状和类型相同的张量，所有元素都设置为1。                | 默认确定性实现|                 
 | [aclnnInplaceZero](../../math/zero_op/docs/aclnnInplaceZero.md) | 将selfRef张量填充为全零。                                    | 默认确定性实现|                                     
 | [aclnnIsClose](../../math/is_close/docs/aclnnIsClose.md)        | 返回一个带有布尔元素的新张量，判断给定的self和other是否彼此接近，如果值接近，则返回True，否则返回False。 | 默认确定性实现|  
 | [aclnnIsFinite](../../math/is_finite/docs/aclnnIsFinite.md)     | 判断张量中哪些元素是有限数值，即不是inf、-inf或nan。         | 默认确定性实现|          
@@ -206,6 +206,7 @@
 | [aclnnSplitTensor](../../conversion/split_v/docs/aclnnSplitTensor.md) | 将输入self沿dim轴按照splitSections大小均匀切分。             | 默认确定性实现|
 | [aclnnSplitWithSize](../../conversion/split_v/docs/aclnnSplitWithSize.md) | 将输入self沿dim轴切分至splitSize中每个元素的大小。           | 默认确定性实现|
 | [aclnnSqrt&aclnnInplaceSqrt](../../math/sqrt/docs/aclnnSqrt&aclnnInplaceSqrt.md) | 完成非负数平方根计算，负数情况返回nan。                      | 默认确定性实现|
+| [aclnnSquare](../../math/square/docs/aclnnSquare.md) | 为输入张量的每一个元素计算平方值。                      | 默认确定性实现|
 | [aclnnStack](../../conversion/pack/docs/aclnnStack.md)          | 沿着新维度连接张量序列。                                     | 默认确定性实现||
 | [aclnnStackBallQuery](../../conversion/stack_ball_query/docs/aclnnStackBallQuery.md) | 见算子文档。                                                 | 默认确定性实现|
 | [aclnnStd](../../math/reduce_std_v2/docs/aclnnStd.md)           | 计算指定维度(dim)的标准差，这个dim可以是单个维度，维度列表或者None。 | 默认确定性实现|
@@ -220,6 +221,8 @@
 | [aclnnTransformBiasRescaleQkv](../../math/transform_bias_rescale_qkv/docs/aclnnTransformBiasRescaleQkv.md) | TransformBiasRescaleQkv 算子是一个用于处理多头注意力机制中查询（Query）、键（Key）、值（Value）向量的接口。 | 默认确定性实现|
 | [aclnnTransMatmulWeight](../../conversion/trans_data/docs/aclnnTransMatmulWeight.md) | 需要和aclnnCalculateMatmulWeightSize、aclnnCalculateMatmulWeightSizeV2接口配套使用，用于创建一个对于Matmul算子计算性能亲和的weight Tensor。 | 默认确定性实现|
 | [aclnnTriangularSolve](../../math/triangular_solve/docs/aclnnTriangularSolve.md) | 求解一个具有方形上或下三角形可逆矩阵A和多个右侧b的方程组。   | 默认确定性实现|
+| [aclnnTril&aclnnInplaceTril](../../math/tril/docs/aclnnTril&aclnnInplaceTril.md) | 将输入的self张量的最后二维（按shape从左向右数）沿对角线的右上部分置零。   | 默认确定性实现|
+| [aclnnTriu&aclnnInplaceTriu](../../math/triu/docs/aclnnTriu&aclnnInplaceTriu.md) | 将输入的self张量的最后二维（按shape从左向右数）沿对角线的左下部分置零。   | 默认确定性实现|
 | [aclnnTrunc&aclnnInplaceTrunc](../../math/trunc/docs/aclnnTrunc&aclnnInplaceTrunc.md) | 对输入Tensor完成trunc运算（将数字的小数部分截去，返回整数部分）。 | 默认确定性实现|
 | [aclnnUnfoldGrad](../../conversion/unfold_grad/docs/aclnnUnfoldGrad.md) | 实现Unfold算子的反向功能，计算相应的梯度。                   | 默认确定性实现|
 | [aclnnVar](../../math/reduce_var/docs/aclnnVar.md)              | 返回输入Tensor指定维度的值求得的方差。                       | 默认确定性实现|
