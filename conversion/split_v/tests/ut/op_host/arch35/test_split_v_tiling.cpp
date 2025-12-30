@@ -17,7 +17,7 @@
 #include <gtest/gtest.h>
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
-#include "../../../op_host/arch35/split_v_tiling_arch35.h"
+#include "../../../../op_host/arch35/split_v_tiling_arch35.h"
 
 using namespace std;
 using namespace ge;

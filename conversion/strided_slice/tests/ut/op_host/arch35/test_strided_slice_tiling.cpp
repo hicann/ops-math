@@ -60,7 +60,7 @@ TEST_F(StridedSliceTiling, StridedSlice_test_tiling_001)
          &compileInfo);
     uint64_t expectTilingKey = 103;
     string expectTilingData = "1 0 1 1 4295221248 0 65537 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1"
-                     " 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 ";
+                     " 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 ";
 
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
