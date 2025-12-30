@@ -13,10 +13,10 @@
 #define private public
 #define protected public
 #endif
-#include "aicpu_test_utils.h"
 #include "cpu_kernel_utils.h"
 #include "node_def_builder.h"
-#include "aicpu_read_file.h"
+#include "utils/aicpu_test_utils.h"
+#include "utils/aicpu_read_file.h"
 #undef private
 #undef protected
 #include "Eigen/Core"
@@ -24,7 +24,30 @@
 using namespace std;
 using namespace aicpu;
 
-class TEST_SearchSorted_UTest : public testing::Test {};
+const std::string ktestcaseFilePath =
+    "../../../../math/search_sorted/tests/ut/op_kernel_aicpu/";
+
+static void GenData() {
+  system(("cp -r " + ktestcaseFilePath + "script ./").c_str());
+  system("chmod -R 755 ./script");
+  system("python3 ./script/search_sorted_gen_data.py");
+  char* path_ = get_current_dir_name();
+  string path(path_);
+  system(("mkdir -p " + ktestcaseFilePath + "data").c_str());
+  system(("cp -r " + path + "/search_sorted/data/* " + ktestcaseFilePath + "data").c_str());
+}
+
+class TEST_SearchSorted_UTest : public testing::Test {
+  protected:
+    static void SetUpTestCase() {
+      cout << "search_sorted_test SetUp\n" << endl;
+      cout << "begin to gen test data\n" << endl;
+      GenData();
+    }
+    static void TearDownTestCase() {
+      cout << "search_sorted_test TearDown\n" << endl;
+    }
+};
 
 #define ADD_CASE(aicpu_type, base_type, out_type, out_dtype)                        \
   TEST_F(TEST_SearchSorted_UTest, SearchSorted_Success_##aicpu_type##_##out_type) { \
@@ -255,9 +278,9 @@ TEST_F(TEST_SearchSorted_UTest, FLOAT_INT64_FALSE_SUCC) {
   bool right = false;
   vector<DataType> data_type = {DT_FLOAT, DT_INT64};
   vector<vector<int64_t>> shapes = {{4, 3, 10}, {4, 3, 3}, {4, 3, 3}};
-  vector<string> data_files{"search_sorted/data/search_sorted_float_input1.txt",
-                            "search_sorted/data/search_sorted_float_input2.txt",
-                            "search_sorted/data/search_sorted_float_output.txt"};
+  vector<string> data_files{"data/search_sorted_float_input1.txt",
+                            "data/search_sorted_float_input2.txt",
+                            "data/search_sorted_float_output.txt"};
   RunSearchSortedKernel<float, int64_t>(data_files, data_type, shapes, right);
 }
 
@@ -265,9 +288,9 @@ TEST_F(TEST_SearchSorted_UTest, DOUBLE_INT32_TRUE_SUCC) {
   bool right = false;
   vector<DataType> data_type = {DT_DOUBLE, DT_INT32};
   vector<vector<int64_t>> shapes = {{100}, {200}, {200}};
-  vector<string> data_files{"search_sorted/data/search_sorted_double_input1.txt",
-                            "search_sorted/data/search_sorted_double_input2.txt",
-                            "search_sorted/data/search_sorted_double_output.txt"};
+  vector<string> data_files{"data/search_sorted_double_input1.txt",
+                            "data/search_sorted_double_input2.txt",
+                            "data/search_sorted_double_output.txt"};
   RunSearchSortedKernel<double, int32_t>(data_files, data_type, shapes, right);
 }
 
@@ -276,8 +299,8 @@ TEST_F(TEST_SearchSorted_UTest, INT8_INT32_FALSE_SUCC) {
   vector<DataType> data_type = {DT_INT8, DT_INT32};
   vector<vector<int64_t>> shapes = {{20, 10}, {20, 100}, {20, 100}};
   vector<string> data_files{
-      "search_sorted/data/search_sorted_int8_input1.txt", "search_sorted/data/search_sorted_int8_input2.txt",
-      "search_sorted/data/search_sorted_int8_input3.txt", "search_sorted/data/search_sorted_int8_output.txt"};
+      "data/search_sorted_int8_input1.txt", "data/search_sorted_int8_input2.txt",
+      "data/search_sorted_int8_input3.txt", "data/search_sorted_int8_output.txt"};
   RunSearchSortedWithSorterKernel<int8_t, int32_t>(data_files, data_type, shapes, right);
 }
 
@@ -285,9 +308,9 @@ TEST_F(TEST_SearchSorted_UTest, INT32_INT64_TRUE_SUCC) {
   bool right = true;
   vector<DataType> data_type = {DT_INT32, DT_INT64};
   vector<vector<int64_t>> shapes = {{4, 3, 10}, {4, 3, 3}, {4, 3, 3}};
-  vector<string> data_files{"search_sorted/data/search_sorted_int32_input1.txt",
-                            "search_sorted/data/search_sorted_int32_input2.txt",
-                            "search_sorted/data/search_sorted_int32_output.txt"};
+  vector<string> data_files{"data/search_sorted_int32_input1.txt",
+                            "data/search_sorted_int32_input2.txt",
+                            "data/search_sorted_int32_output.txt"};
   RunSearchSortedKernel<int32_t, int64_t>(data_files, data_type, shapes, right);
 }
 
@@ -296,8 +319,8 @@ TEST_F(TEST_SearchSorted_UTest, INT64_INT64_TRUE_SUCC) {
   vector<DataType> data_type = {DT_INT64, DT_INT64};
   vector<vector<int64_t>> shapes = {{4, 3, 10}, {4, 3, 3}, {4, 3, 3}};
   vector<string> data_files{
-      "search_sorted/data/search_sorted_int64_input1.txt", "search_sorted/data/search_sorted_int64_input2.txt",
-      "search_sorted/data/search_sorted_int64_input3.txt", "search_sorted/data/search_sorted_int64_output.txt"};
+      "data/search_sorted_int64_input1.txt", "data/search_sorted_int64_input2.txt",
+      "data/search_sorted_int64_input3.txt", "data/search_sorted_int64_output.txt"};
   RunSearchSortedWithSorterKernel<int64_t, int64_t>(data_files, data_type, shapes, right);
 }
 

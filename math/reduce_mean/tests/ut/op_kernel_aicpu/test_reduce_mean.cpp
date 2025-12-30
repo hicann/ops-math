@@ -26,7 +26,7 @@ const std::string ktestcaseFilePath =
 static void GenData() {
   system(("cp -r " + ktestcaseFilePath + "script ./").c_str());
   system("chmod -R 755 ./script");
-  system("cd ./script && python3 reduce_mean_gen_data.py");
+  system("python3 ./script/reduce_mean_gen_data.py");
   char * path_ = get_current_dir_name();
   string path(path_);
   system(("mkdir -p " + ktestcaseFilePath + "data").c_str());
