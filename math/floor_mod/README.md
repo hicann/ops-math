@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |    √     |
+| <term>Ascend 950PR/Ascend 950DT</term>                               |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
 
@@ -35,17 +35,17 @@ result = remainder(self, other)
 - **参数说明：**
 
     * self(aclScalar*, 计算输入)：公式中的输入`self`，Host侧的aclScalar。
-        - <term>昇腾910_95 AI处理器</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16。数据类型与other的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](common/TensorScalar互推导关系.md)），并且推导出的数据类型必须能转换为out的数据类型。
+        - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16。数据类型与other的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](common/TensorScalar互推导关系.md)），并且推导出的数据类型必须能转换为out的数据类型。
         - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16。数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），并且推导出的数据类型必须能转换为out的数据类型。
         - <term>Atlas 训练系列产品</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE。数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），并且推导出的数据类型必须能转换为out的数据类型。
 
     * other(aclTensor*, 计算输入)：公式中的输入`other`, Device侧的aclTensor，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，数据维度不支持8维以上。
-        - <term>昇腾910_95 AI处理器</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16。数据类型与self的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](common/TensorScalar互推导关系.md)），并且推导出的数据类型必须能转换为out的数据类型。
+        - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16。数据类型与self的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](common/TensorScalar互推导关系.md)），并且推导出的数据类型必须能转换为out的数据类型。
         - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16。数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），并且推导出的数据类型必须能转换为out的数据类型。
         - <term>Atlas 训练系列产品</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE。数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），并且推导出的数据类型必须能转换为out的数据类型。
 
     * out(aclTensor \*, 计算输出)：公式中的输出`out`，Device侧的aclTensor。shape需要与other一致。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-        - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>昇腾910_95 AI处理器</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16。
+        - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16。
         - <term>Atlas 训练系列产品</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE。
 
     * workspaceSize(uint64_t \*，出参)：返回需要在Device侧申请的workspace大小。
