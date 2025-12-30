@@ -7,26 +7,27 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+
 /*!
- * \file concat_graph_infer.cpp
- * \brief concat operater graph infer resource
+ * \file concat_d_infershape.cpp
+ * \brief
  */
 
+#include "../../concat/op_host/concat_infershape.h"
 #include "register/op_impl_registry.h"
-#include "log/log.h"
 
 using namespace ge;
 namespace ops {
-static ge::graphStatus InferDataTypeForConcat(gert::InferDataTypeContext* context)
+static ge::graphStatus InferShape4ConcatD(gert::InferShapeContext* context)
 {
-    OP_LOGD(context->GetNodeName(), "Begin to do InferDataTypeForConcat");
-    auto inputDesc = context->GetDynamicInputDesc(1, 0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
-    auto inputDataType = inputDesc->GetDataType();
-    context->SetOutputDataType(0, inputDataType);
-    OP_LOGD(context->GetNodeName(), "End to do InferDataTypeForConcat");
-    return ge::GRAPH_SUCCESS;
+    auto attrs = context->GetAttrs();
+    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
+    const int64_t* concat_dim = attrs->GetAttrPointer<int64_t>(INDEX_CONCAT_DIM);
+    OP_CHECK_NULL_WITH_CONTEXT(context, concat_dim);
+    const int64_t* N = attrs->GetAttrPointer<int64_t>(INDEX_N);
+    OP_CHECK_NULL_WITH_CONTEXT(context, N);
+    return ConcatInferShapeCommon(context, 0, *N, *concat_dim);
 }
 
-IMPL_OP(Concat).InferDataType(InferDataTypeForConcat);
-}; // namespace ops
+IMPL_OP_INFERSHAPE(ConcatD).InferShape(InferShape4ConcatD);
+} // namespace ops

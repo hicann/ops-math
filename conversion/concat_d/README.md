@@ -1,4 +1,4 @@
-# Pack
+# ConcatD
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -9,7 +9,7 @@
 
 ## 功能说明
 
-- 算子功能：通过沿轴维度打包，将值中的张量列表打包成一个比值中的每个张量高一维度的张量。给定形状为（A，B，C）的张量的长度为N的列表；如果轴==0，则输出张量将具有形状（N，A，B，C）。
+- 算子功能：将tensors中所有tensor按照维度dim进行级联，除了dim对应的维度以外的维度必须一致。
 
 ## 参数说明
 
@@ -33,42 +33,45 @@
       <td>x</td>
       <td>输入</td>
       <td>需要级联的tensor列表。</td>
-      <td>COMPLEX128、COMPLEX64、DOUBLE、FLOAT32、FLOAT16、BFLOAT16、INT16、INT32、INT64、INT8、UINT8、UINT64</td>
+      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、DOUBLE、COMPLEX64</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>axis</td>
+      <td>concat_dim</td>
       <td>属性</td>
-      <td>指定沿其打包的维度。</td>
+      <td>需要级联的维度。</td>
       <td>INT</td>
       <td>-</td>
     </tr>
     <tr>
       <td>N</td>
       <td>属性</td>
-      <td>指定要打包的tensor个数。</td>
+      <td>指定要级联的tensor个数。</td>
       <td>INT</td>
       <td>-</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
-      <td>输出结果。</td>
-      <td>COMPLEX128、COMPLEX64、DOUBLE、FLOAT32、FLOAT16、BFLOAT16、INT16、INT32、INT64、INT8、UINT8、UINT64</td>
+      <td>输出tensor。</td>
+      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、DOUBLE、COMPLEX64</td>
       <td>ND</td>
     </tr>
   </tbody></table>
 
-* Atlas 训练系列产品、Atlas 推理系列产品：不支持BFLOAT16。
+* Atlas 训练系列产品、Atlas 推理系列产品、Atlas 200I/500 A2 推理产品：不支持BFLOAT16。
 
 ## 约束说明
 
-无。
+* x列表中元素的数据类型和数据格式不在支持的范围之内。
+* x列表中无法做数据类型推导。
+* 推导出的数据类型无法转换为指定输出y的类型。
+* 非级联维度shape不一致。
+* dim超过x维度范围。
 
 
 ## 调用说明
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| aclnn接口 | [test_aclnn_stack](examples/test_aclnn_stack.cpp) | 通过[aclnnStack](docs/aclnnStack.md)接口方式调用Pack算子。 |
-
+| aclnn接口 | [test_aclnn_cat](examples/test_aclnn_cat.cpp) | 通过[aclnnCat](docs/aclnnCat.md)接口方式调用ConcatD算子。 |

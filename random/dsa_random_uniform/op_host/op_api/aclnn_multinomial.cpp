@@ -21,7 +21,7 @@
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
 #include "dsa_random_uniform.h"
 #include "random/stateless_random_uniform_v2/op_api/stateless_random_uniform_v2.h"
-#include "conversion/concat/op_api/concat.h"
+#include "conversion/concat_d/op_api/concat_d.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/reshape.h"
 #include "math/greater_equal/op_api/greater_equal.h"

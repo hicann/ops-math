@@ -30,7 +30,7 @@
 #include "opdev/make_op_executor.h"
 #include "opdev/platform.h"
 #include "opdev/framework_op.h"
-#include "conversion/concat/op_api/concat.h"
+#include "conversion/concat_d/op_api/concat_d.h"
 #include "math/mul/op_api/mul.h"
 #include "common/aclnn_check.h"
 

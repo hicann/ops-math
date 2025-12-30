@@ -1,6 +1,6 @@
-# aclnnStack
+# aclnnCat
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/pack)
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/concat)
 
 ## 产品支持情况
 
@@ -12,15 +12,14 @@
 
 ## 功能说明
 
-- 沿着新维度连接张量序列。
-- 如给定shape为（A, B, C）、长度为N的张量列表，如果轴axis为0，则输出张量shape为(N, A, B, C)。
+将tensors中所有tensor按照维度dim进行级联，除了dim对应的维度以外的维度必须一致。
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnStackGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnStack”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnCatGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCat”接口执行计算。
 
-```CPP
-aclnnStatus aclnnStackGetWorkspaceSize(
+```cpp
+aclnnStatus aclnnCatGetWorkspaceSize(
   const aclTensorList *tensors, 
   int64_t              dim, 
   aclTensor           *out, 
@@ -28,27 +27,27 @@ aclnnStatus aclnnStackGetWorkspaceSize(
   aclOpExecutor      **executor)
 ```
 
-```CPP
-aclnnStatus aclnnStack(
+```cpp
+aclnnStatus aclnnCat(
   void             *workspace, 
   uint64_t          workspaceSize, 
   aclOpExecutor    *executor, 
   const aclrtStream stream)
 ```
 
-## aclnnStackGetWorkspaceSize
+## aclnnCatGetWorkspaceSize
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1755px"><colgroup>
-  <col style="width: 138px">
-  <col style="width: 126px">
-  <col style="width: 240px">
-  <col style="width: 414px">
-  <col style="width: 383px">
-  <col style="width: 132px">
-  <col style="width: 169px">
-  <col style="width: 153px">
+  <table style="undefined;table-layout: fixed; width: 1191px"><colgroup>
+  <col style="width: 147px">
+  <col style="width: 120px">
+  <col style="width: 180px">
+  <col style="width: 106px">
+  <col style="width: 278px">
+  <col style="width: 122px">
+  <col style="width: 122px">
+  <col style="width: 162px">
   </colgroup>
   <thead>
     <tr>
@@ -57,7 +56,7 @@ aclnnStatus aclnnStack(
       <th>描述</th>
       <th>使用说明</th>
       <th>数据类型</th>
-      <th>数据格式</th>
+      <th>格式类型</th>
       <th>维度（shape）</th>
       <th>非连续张量Tensor</th>
     </tr></thead>
@@ -65,19 +64,19 @@ aclnnStatus aclnnStack(
     <tr>
       <td>tensors</td>
       <td>输入</td>
-      <td>需要连接的tensor序列。</td>
+      <td>需要级联的tensor列表，列表长度不超过32</td>
       <td>-</td>
-      <td>FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。</td>
+      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、DOUBLE、COMPLEX64</td>
       <td>ND</td>
-      <td>1-7</td>
+      <td>1-8</td>
       <td>√</td>
     </tr>
     <tr>
       <td>dim</td>
       <td>输入</td>
-      <td>需要连接的维度。</td>
-      <td>取值范围为[-(tensors.dim()+1), tensors.dim()]。</td>
-      <td>INT64</td>
+      <td>需要级联的维度，int类型的值，范围[-tensors.dim(), tensors.dim() - 1]</td>
+      <td>-</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -85,12 +84,12 @@ aclnnStatus aclnnStack(
     <tr>
       <td>out</td>
       <td>输出</td>
-      <td>输出tensor</td>
+      <td>输出tensor，且数据类型需要是tensors内部推导之后可转换的类型。</td>
       <td>-</td>
-      <td>FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。</td>
+      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、DOUBLE、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
-      <td>1-8</td>
-      <td>√</td>
+      <td>-</td>
+      <td>-</td>
     </tr>
     <tr>
       <td>workspaceSize</td>
@@ -113,18 +112,18 @@ aclnnStatus aclnnStack(
       <td>-</td>
     </tr>
   </tbody></table>
-  
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
-- **返回值**
+  - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>: 不支持BFLOAT16数据类型。
+
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  第一段接口完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed; width: 1298px"><colgroup>
-  <col style="width: 288px">
-  <col style="width: 148px">
-  <col style="width: 862px">
+   第一段接口完成入参校验，出现以下场景时报错：
+  <table style="undefined;table-layout: fixed; width: 1123px"><colgroup>
+  <col style="width: 303px">
+  <col style="width: 216px">
+  <col style="width: 604px">
   </colgroup>
   <thead>
     <tr>
@@ -134,20 +133,23 @@ aclnnStatus aclnnStack(
     </tr></thead>
   <tbody>
     <tr>
-      <td>ACLNN_ERR_INNER_NULLPTR</td>
-      <td>561103</td>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
       <td>传入的tensors或out是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="4">161002</td>
-      <td>tensors列表中的tensor或out的数据类型不在支持的范围之内。</td>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
+      <td>tensors列表中tensor的数据类型和数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>tensors列表中的tensor无法做数据类型推导。</td>
+      <td>tensors列表中无法做数据类型推导。</td>
     </tr>
     <tr>
-      <td>推导出的数据类型无法转换为输出out的类型。</td>
+      <td>推导出的数据类型无法转换为指定输出out的类型。</td>
+    </tr>
+    <tr>
+      <td>非级联维度shape不一致。</td>
     </tr>
     <tr>
       <td>dim超过tensor维度范围。</td>
@@ -155,14 +157,14 @@ aclnnStatus aclnnStack(
   </tbody>
   </table>
 
-## aclnnStack
+## aclnnCat
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1040px"><colgroup>
-  <col style="width: 141px">
-  <col style="width: 110px">
-  <col style="width: 789px">
+    <table style="undefined;table-layout: fixed; width: 1117px"><colgroup>
+  <col style="width: 301px">
+  <col style="width: 216px">
+  <col style="width: 600px">
   </colgroup>
   <thead>
     <tr>
@@ -179,7 +181,7 @@ aclnnStatus aclnnStack(
     <tr>
       <td>workspaceSize</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnStackGetWorkspaceSize获取。</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnCatGetWorkspaceSize获取。</td>
     </tr>
     <tr>
       <td>executor</td>
@@ -201,7 +203,7 @@ aclnnStatus aclnnStack(
 ## 约束说明
 
 - 确定性计算：
-  - aclnnStack默认确定性实现。
+  - aclnnCat默认确定性实现。
 
 
 ## 调用示例
@@ -212,7 +214,7 @@ aclnnStatus aclnnStack(
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
-#include "aclnnop/aclnn_stack.h"
+#include "aclnnop/aclnn_cat.h"
 
 #define CHECK_RET(cond, return_expr) \
   do {                               \
@@ -275,10 +277,11 @@ int main() {
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
+
   // 2. 构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> selfShape1 = {2, 3};
-  std::vector<int64_t> selfShape2 = {2, 3};
-  std::vector<int64_t> outShape = {2, 2, 3};
+  std::vector<int64_t> selfShape2 = {1, 3};
+  std::vector<int64_t> outShape = {3, 3};
   void* input1DeviceAddr = nullptr;
   void* input2DeviceAddr = nullptr;
   void* outDeviceAddr = nullptr;
@@ -286,37 +289,39 @@ int main() {
   aclTensor* input2 = nullptr;
   aclTensor* out = nullptr;
   std::vector<float> input1HostData = {1, 2, 3, 4, 5, 6};
-  std::vector<float> input2HostData = {7, 8, 9, 10, 11, 12};
-  std::vector<float> outHostData(12, 0);
+  std::vector<float> input2HostData = {7, 8, 9};
+  std::vector<float> outHostData(9, 0);
+
   // 创建input1 aclTensor
   ret = CreateAclTensor(input1HostData, selfShape1, &input1DeviceAddr, aclDataType::ACL_FLOAT, &input1);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
+
   // 创建input2 aclTensor
   ret = CreateAclTensor(input2HostData, selfShape2, &input2DeviceAddr, aclDataType::ACL_FLOAT, &input2);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  // 创建aclTensorList
-  std::vector<aclTensor*> tmp{input1, input2};
-  aclTensorList* tensorList = aclCreateTensorList(tmp.data(), tmp.size());
+
   // 创建out aclTensor
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的API名称
+  std::vector<aclTensor*> tmp{input1, input2};
+  aclTensorList* tensorList = aclCreateTensorList(tmp.data(), tmp.size());
+  // 3. 调用CANN算子库API，需要修改为具体的Api名称
   int64_t dim = 0;
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
-  // 调用aclnnStack第一段接口
-  ret = aclnnStackGetWorkspaceSize(tensorList, dim, out, &workspaceSize, &executor);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnStackGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+  // 调用aclnnCat第一段接口
+  ret = aclnnCatGetWorkspaceSize(tensorList, dim, out, &workspaceSize, &executor);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnCatGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
   // 根据第一段接口计算出的workspaceSize申请device内存
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
-  // 调用aclnnStack第二段接口
-  ret = aclnnStack(workspaceAddr, workspaceSize, executor, stream);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnStack failed. ERROR: %d\n", ret); return ret);
+  // 调用aclnnCat第二段接口
+  ret = aclnnCat(workspaceAddr, workspaceSize, executor, stream);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnCat failed. ERROR: %d\n", ret); return ret);
 
   // 4. （固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
@@ -329,14 +334,14 @@ int main() {
                     size * sizeof(outData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
   for (int64_t i = 0; i < size; i++) {
-    LOG_PRINT("out result[%ld] is: %f\n", i, outData[i]);
+    LOG_PRINT("result[%ld] is: %f\n", i, outData[i]);
   }
 
   // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensorList(tensorList);
   aclDestroyTensor(out);
 
-  // 7. 释放device资源，需要根据具体API的接口定义修改
+  // 7. 释放Device资源，需要根据具体API的接口定义修改
   aclrtFree(input1DeviceAddr);
   aclrtFree(input2DeviceAddr);
   aclrtFree(outDeviceAddr);
@@ -346,6 +351,7 @@ int main() {
   aclrtDestroyStream(stream);
   aclrtResetDevice(deviceId);
   aclFinalize();
+
   return 0;
 }
 ```

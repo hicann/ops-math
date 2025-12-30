@@ -17,7 +17,7 @@
 #include "math/sub/op_api/sub.h"
 #include "conversion/view_copy/op_host/op_api/view_copy.h"
 #include "math/add/op_api/add.h"
-#include "conversion/concat/op_api/concat.h"
+#include "conversion/concat_d/op_api/concat_d.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn/aclnn_base.h"
 #include "aclnn_kernels/common/op_error_check.h"

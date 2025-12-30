@@ -32,11 +32,5 @@ template <typename T>
 inline static int64_t GetConcatDim(gert::InferShapeContext* context, int64_t dimIdx);
 
 ge::graphStatus InferShapeForConcatAndConcatV2(gert::InferShapeContext* context, int64_t inputIdx, int64_t dimIdx);
-
-ge::graphStatus InferShape4Concat(gert::InferShapeContext* context);
-
-ge::graphStatus InferDataTypeForConcatAndConcatD(gert::InferDataTypeContext* context, int64_t inputIndex);
-
-ge::graphStatus InferDataTypeForConcat(gert::InferDataTypeContext* context);
-} // namespace ops
+}  // namespace ops
 #endif // CONCAT_INFERSHAPE_H_

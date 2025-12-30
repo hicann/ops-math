@@ -9,7 +9,7 @@
  */
 #include "aclnn_batch_norm_stats.h"
 #include "aclnn_kernels/cast.h"
-#include "conversion/concat/op_api/concat.h"
+#include "conversion/concat_d/op_api/concat_d.h"
 #include "aclnn_kernels/transdata.h"
 #include "aclnn_kernels/contiguous.h"
 #include "math/reduce_mean/op_host/op_api/reduce_mean.h"

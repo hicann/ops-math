@@ -13,7 +13,7 @@
 #include "aclnn_kernels/cast.h"
 #include "math/muls/op_api/muls.h"
 #include "math/add/op_api/add.h"
-#include "conversion/concat/op_api/concat.h"
+#include "conversion/concat_d/op_api/concat_d.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "common/op_api_def.h"

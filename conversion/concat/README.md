@@ -1,4 +1,4 @@
-# ConcatD
+# Concat
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -9,16 +9,27 @@
 
 ## 功能说明
 
-- 算子功能：将tensors中所有tensor按照维度dim进行级联，除了dim对应的维度以外的维度必须一致。
+- 算子功能：用于沿指定维度将多个输入 Tensor 进行拼接，输出包含所有输入数据按顺序拼接后的 Tensor。
+- 计算流程：
+  - 输入：
+    - 拼接维度 concat_dim
+    - Tensor 列表  x[0], x[1], …, x[N-1]
+
+  - 流程：
+    1. 校验所有输入 Tensor 数据类型一致；
+    2. 校验除 concat_dim 外所有维度完全相同；
+    3. 沿 concat_dim 维度依次拼接：
+       y = Concat(x[0], x[1], ..., x[N-1], axis = concat_dim)
+  - 输出：拼接后的 Tensor y
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 1005px"><colgroup>
-  <col style="width: 140px">
-  <col style="width: 140px">
-  <col style="width: 180px">
-  <col style="width: 213px">
-  <col style="width: 100px">
+<table class="tg" style="undefined;table-layout: fixed; width: 1576px"><colgroup>
+  <col style="width: 50px">
+  <col style="width: 70px">
+  <col style="width: 120px">
+  <col style="width: 300px">
+  <col style="width: 50px">
   </colgroup>
   <thead>
     <tr>
@@ -30,47 +41,42 @@
     </tr></thead>
   <tbody>
     <tr>
-      <td>x</td>
+      <td>concat_dim</td>
       <td>输入</td>
-      <td>需要级联的tensor列表。</td>
-      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、DOUBLE、COMPLEX64</td>
+      <td>指定拼接维度，即计算流程中的 concat_dim。</td>
+      <td>INT32、INT64</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>concat_dim</td>
-      <td>属性</td>
-      <td>需要级联的维度。</td>
-      <td>INT</td>
-      <td>-</td>
+      <td>x</td>
+      <td>输入</td>
+      <td>动态输入列表，流程图中的输入 x[i]。</td>
+      <td>BFLOAT16、FLOAT16、FLOAT、DOUBLE、INT32、UINT8、INT16、INT8、COMPLEX64、INT64、QINT8、QUINT8、QINT32、UINT16、COMPLEX128、UINT32、UINT64、QINT16、QUINT16、BOOL、STRING</td>
+      <td>ND</td>
     </tr>
     <tr>
       <td>N</td>
-      <td>属性</td>
-      <td>指定要级联的tensor个数。</td>
+      <td>可选属性</td>
+      <td>输入 x 的数量，默认值为 1。</td>
       <td>INT</td>
       <td>-</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
-      <td>输出tensor。</td>
-      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、DOUBLE、COMPLEX64</td>
+      <td>计算流程中的输出 y。</td>
+      <td>BFLOAT16、FLOAT16、FLOAT、DOUBLE、INT32、UINT8、INT16、INT8、COMPLEX64、INT64、QINT8、QUINT8、QINT32、UINT16、COMPLEX128、UINT32、UINT64、QINT16、QUINT16、BOOL、STRING</td>
       <td>ND</td>
     </tr>
   </tbody></table>
 
+- Atlas 训练、推理系列产品：不支持BFLOAT16。
+
 ## 约束说明
 
-* x列表中元素的数据类型和数据格式不在支持的范围之内。
-* x列表中无法做数据类型推导。
-* 推导出的数据类型无法转换为指定输出y的类型。
-* 非级联维度shape不一致。
-* dim超过x维度范围。
-
-
-## 调用说明
-
-| 调用方式  | 样例代码                                                     | 说明                                                         |
-| --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| aclnn接口 | [test_aclnn_cat](examples/test_aclnn_cat.cpp) | 通过[aclnnCat](docs/aclnnCat.md)接口方式调用ConcatD算子。 |
+- 所有输入 Tensor 在除拼接维度外的形状必须一致。
+- 输入列表 "x" 至少包含 2 个 Tensor。
+- 拼接维度 concat_dim 必须在输入 Tensor 的合法维度范围内。
+- x 中所有 Tensor 数据类型必须一致。
+- 属性 N 指定输入数量，仅用于描述，不影响运行时动态输入列表。
 

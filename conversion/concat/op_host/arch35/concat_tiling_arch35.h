@@ -21,16 +21,9 @@
 #include "register/op_impl_registry.h"
 
 namespace optiling {
-ge::graphStatus Tiling4ConcatForAscendC(gert::TilingContext* context);
-ge::graphStatus Tiling4ConcatDForAscendC(gert::TilingContext* context);
 ge::graphStatus Tiling4PackToConcatForAscendC(gert::TilingContext* context);
 ge::graphStatus TilingPrepareForConcat(gert::TilingParseContext* context);
 ge::graphStatus TilingCommon(gert::TilingContext* context, int64_t inputIdx, int64_t dimIdx);
-
-std::vector<gert::Shape> GetInputOriginShapes(gert::TilingContext* context, size_t ir_index);
-std::vector<gert::Shape> GetInputShapes(gert::TilingContext* context, size_t ir_index);
-void UpdateAxisForOtherFormat(
-    const ge::Format& in_format, const ge::Format& ori_format, const int32_t& ori_shape_len, int32_t& axis);
 
 const int64_t TILING_ARRAY_LENGTH = 72;
 const int64_t TILING_LIST_LENGTH = 196;
@@ -161,6 +154,10 @@ struct ConcatTilingParam {
     std::vector<int32_t> tensorColsOffset;
     std::vector<std::vector<int64_t>> tensorList;
     std::vector<std::vector<int64_t>> mergeTensorList;
+    int16_t endIdxArr[TILING_ARRAY_LENGTH]{0};
+    int64_t endOffsetArr[TILING_ARRAY_LENGTH]{0};
+    int64_t preLoadDim1Arr[TILING_PRELOAD_DIM1_LENGTH]{0};
+
     ConcatTilingParam()
         : startTensorIdx(TILING_ARRAY_LENGTH, 0),
           endTensorIdx(TILING_ARRAY_LENGTH, 0),
@@ -197,8 +194,6 @@ struct ConcatDCompileInfo {
     uint64_t ubSize = 0;
     int64_t vectorLen = 256;
 };
-
-bool GetTilingParam(const std::vector<gert::Shape>& input_shapes, int32_t concat_dim, ConcatDTilingData* tilingdata);
 
 } // namespace optiling
 #endif // OP_IMPL_CONCAT_TILING_ARCH35_H_

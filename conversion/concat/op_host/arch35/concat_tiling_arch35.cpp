@@ -69,106 +69,6 @@ constexpr int64_t SIMT_COMPARE_THRESHOLD = 1024;
 constexpr int32_t NUM_2 = 2;
 constexpr int32_t NUM_3 = 3;
 
-vector<gert::Shape> GetInputOriginShapes(gert::TilingContext* context, size_t ir_index)
-{
-    vector<gert::Shape> shapes;
-    for (size_t i = 0;; i++) {
-        auto src_storage_shape = context->GetDynamicInputShape(ir_index, i);
-        if (nullptr == src_storage_shape) {
-            return shapes;
-        }
-        shapes.push_back(src_storage_shape->GetOriginShape());
-    }
-    return shapes;
-}
-
-vector<gert::Shape> GetInputShapes(gert::TilingContext* context, size_t ir_index)
-{
-    vector<gert::Shape> shapes;
-    for (size_t i = 0;; i++) {
-        auto src_storage_shape = context->GetDynamicInputShape(ir_index, i);
-        if (nullptr == src_storage_shape) {
-            return shapes;
-        }
-        shapes.push_back(src_storage_shape->GetStorageShape());
-    }
-    return shapes;
-}
-
-void UpdateAxisForOtherFormat(
-    const ge::Format& in_format, const ge::Format& ori_format, const int32_t& ori_shape_len, int32_t& axis)
-{
-    std::string origin_format = Ops::Base::ToString(ori_format).c_str();
-    if (in_format == ge::FORMAT_NDC1HWC0 || in_format == ge::FORMAT_NC1HWC0) {
-        axis = axis % ori_shape_len;
-        int32_t offset_6hd = in_format == ge::FORMAT_NDC1HWC0 ? 1 : 0;
-        int32_t format_c_axis = 1 + offset_6hd;
-        std::map<char, int32_t> format_axis_map = {
-            {'N', 0}, {'C', format_c_axis}, {'H', NUM_2 + offset_6hd}, {'W', NUM_3 + offset_6hd}, {'D', 1}};
-        char concat_dim_name = origin_format[axis];
-        auto find_str_it = format_axis_map.find(concat_dim_name);
-        if (find_str_it != format_axis_map.end()) {
-            axis = find_str_it->second;
-        }
-    }
-    if (in_format == ge::FORMAT_FRACTAL_NZ) {
-        axis = axis % ori_shape_len;
-        if (axis == ori_shape_len - 1) {
-            axis = ori_shape_len - NUM_2;
-        } else if (axis == ori_shape_len - NUM_2) {
-            axis = ori_shape_len - 1;
-        }
-    }
-    if (in_format == ge::FORMAT_FRACTAL_Z || in_format == ge::FORMAT_FRACTAL_Z_3D) {
-        axis = axis % ori_shape_len;
-        int32_t offset_3d = in_format == ge::FORMAT_FRACTAL_Z_3D ? 1 : 0;
-        int32_t format_c_axis = 0 + offset_3d;
-        int32_t format_n_axis = NUM_3 + offset_3d;
-        std::map<char, int32_t> format_axis_map = {
-            {'N', format_n_axis}, {'C', format_c_axis}, {'H', 1 + offset_3d}, {'W', NUM_2 + offset_3d}, {'D', 0}};
-        char concat_dim_name = origin_format[axis];
-
-        auto find_str_it = format_axis_map.find(concat_dim_name);
-        if (find_str_it != format_axis_map.end()) {
-            axis = find_str_it->second;
-        }
-    }
-}
-
-bool GetTilingParam(const vector<gert::Shape>& input_shapes, int32_t concat_dim, ConcatDTilingData* tilingdata)
-{
-    if (input_shapes.empty()) {
-        OP_LOGE("concat", "The input count should be more than 0");
-        return false;
-    }
-
-    if (concat_dim < 0) {
-        concat_dim += input_shapes[0].GetDimNum();
-    }
-
-    auto input_count = input_shapes.size();
-    tilingdata->max_inner_dims = 0;
-    tilingdata->axis = 1;
-    tilingdata->input_count = input_shapes.size();
-    tilingdata->out_dims = ops::GetPartShapeSize(input_shapes[0], 0, concat_dim);
-    tilingdata->min_inner_dims = ops::GetPartShapeSize(input_shapes[0], concat_dim, input_shapes[0].GetDimNum());
-    int64_t output_index = 0;
-    for (size_t i = 0; i < input_count; i++) {
-        auto inner_dims = ops::GetPartShapeSize(input_shapes[i], concat_dim, input_shapes[0].GetDimNum());
-        tilingdata->max_inner_dims = std::max(tilingdata->max_inner_dims, inner_dims);
-        tilingdata->min_inner_dims = std::min(tilingdata->min_inner_dims, inner_dims);
-
-        tilingdata->input_info[i].inner_dims = inner_dims;
-        tilingdata->input_info[i].output_index = output_index;
-
-        output_index += inner_dims;
-    }
-
-    tilingdata->output_inner_length = output_index;
-
-    return true;
-}
-
 template <typename T>
 inline static ge::graphStatus ConcatSetTilingData(gert::TilingContext* context, T& tilingData)
 {
@@ -725,14 +625,11 @@ inline static ge::graphStatus TilingBlock(gert::TilingContext* context, ConcatTi
 
 inline static void SetTensorListTilingData(ConcatTilingData& tilingData, ConcatTilingParam& param)
 {
-    int16_t endIdxArr[TILING_ARRAY_LENGTH];
-    int64_t tilingList[TILING_ARRAY_LENGTH];
+    std::copy(param.endTensorIdx.begin(), param.endTensorIdx.end(), param.endIdxArr);
+    tilingData.set_endTensorIdx(param.endIdxArr);
 
-    std::copy(param.endTensorIdx.begin(), param.endTensorIdx.end(), endIdxArr);
-    tilingData.set_endTensorIdx(endIdxArr);
-
-    std::copy(param.endTensorOffset.begin(), param.endTensorOffset.end(), tilingList);
-    tilingData.set_endTensorOffset(tilingList);
+    std::copy(param.endTensorOffset.begin(), param.endTensorOffset.end(), param.endOffsetArr);
+    tilingData.set_endTensorOffset(param.endOffsetArr);
 }
 
 template <typename T>
@@ -754,10 +651,10 @@ inline static void SetTilingData(T& tilingData, ConcatTilingParam& param)
     tilingData.set_sameShapeTensorDim1(param.sameShapeTensorDim1);
     tilingData.set_bufferSize(static_cast<int32_t>(param.bufferSize));
     tilingData.set_dtypeSize(static_cast<int16_t>(param.dtypeSize));
-    int64_t tilingList[TILING_PRELOAD_DIM1_LENGTH];
+
     int64_t preLoadSize = std::min(TILING_PRELOAD_DIM1_LENGTH, static_cast<int64_t>(param.tensorListDim1.size()));
-    std::copy(param.tensorListDim1.begin(), param.tensorListDim1.begin() + preLoadSize, tilingList);
-    tilingData.set_preLoadDim1(tilingList);
+    std::copy(param.tensorListDim1.begin(), param.tensorListDim1.begin() + preLoadSize, param.preLoadDim1Arr);
+    tilingData.set_preLoadDim1(param.preLoadDim1Arr);
 }
 
 inline static void CalcTensorList(ConcatTilingParam& param, int64_t everyCoreData, int64_t rowsUsedCoreNum)
@@ -1322,13 +1219,7 @@ ge::graphStatus TilingCommon(gert::TilingContext* context, int64_t inputIdx, int
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus Tiling4ConcatDForAscendC(gert::TilingContext* context)
-{
-    OP_LOGD(context->GetNodeName(), "Tiling4ConcatDForAscendC running begin");
-    return TilingCommon(context, 0, INVLID_CONCAT_DIM_IDX);
-}
-
-ge::graphStatus Tiling4ConcatForAscendC(gert::TilingContext* context)
+static ge::graphStatus Tiling4ConcatForAscendC(gert::TilingContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Tiling4ConcatForAscendC running begin");
     return TilingCommon(context, 1, 0);

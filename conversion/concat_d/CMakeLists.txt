@@ -9,8 +9,9 @@
 # ----------------------------------------------------------------------------
 
 add_all_modules_sources(
-        OPTYPE concat
+        OPTYPE concat_d
         ACLNNTYPE aclnn_exclude
+        DEPENDENCIES concat
         COMPUTE_UNIT ascend910_95
         TILING_DIR arch35
         DISABLE_IN_OPP TRUE

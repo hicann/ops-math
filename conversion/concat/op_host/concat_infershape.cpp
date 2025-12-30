@@ -14,8 +14,7 @@
  */
 #include "concat_infershape.h"
 #include "log/log.h"
-#include <cstdint>
-#include "op_util.h"
+#include "common/op_util.h"
 
 using namespace ge;
 namespace ops {
@@ -114,7 +113,7 @@ ge::graphStatus InferShapeForConcatAndConcatV2(gert::InferShapeContext* context,
     return ConcatInferShapeCommon(context, inputIdx, inputNum, concatDim);
 }
 
-ge::graphStatus InferShape4Concat(gert::InferShapeContext* context)
+static ge::graphStatus InferShape4Concat(gert::InferShapeContext* context)
 {
     return InferShapeForConcatAndConcatV2(context, INPUT_IDX, INDEX_CONCAT_DIM);
 }

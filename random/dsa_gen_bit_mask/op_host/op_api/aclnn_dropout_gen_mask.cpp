@@ -23,7 +23,7 @@
 #include "random/stateless_drop_out_gen_mask/op_api/stateless_dropout_gen_mask.h"
 #include "math/zero_op/op_api/zero_op.h"
 #include "math/add/op_api/add.h"
-#include "conversion/concat/op_api/concat.h"
+#include "conversion/concat_d/op_api/concat_d.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"

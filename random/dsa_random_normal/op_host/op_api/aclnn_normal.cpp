@@ -13,7 +13,7 @@
 #include "math/mul/op_api/mul.h"
 #include "random/stateless_random_normal_v2/op_api/stateless_random_normal_v2.h"
 #include "dsa_random_normal.h"
-#include "conversion/concat/op_api/concat.h"
+#include "conversion/concat_d/op_api/concat_d.h"
 #include "opdev/platform.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
