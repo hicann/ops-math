@@ -802,7 +802,7 @@ static ge::graphStatus Tiling4Slice(gert::TilingContext* context)
     auto compile_info = reinterpret_cast<const SliceCompileParam*>(context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
     const gert::Shape& in_shape = Ops::Base::EnsureNotScalar(context->GetInputShape(0)->GetStorageShape());
-    OP_CHECK_IF(m
+    OP_CHECK_IF(
         compile_info->block_dim == 0,
         OP_LOGE(context->GetNodeName(), "core num = 0 is not support"),
         return ge::GRAPH_FAILED);
@@ -885,6 +885,7 @@ static ge::graphStatus Tiling4Slice(gert::TilingContext* context)
     for (size_t i = 0; i < shape_size_offsets; i++) {
         sliceparam.end_list[i] += sliceparam.begin_list[i];
     }
+    sliceparam.stride_list.SetDimNum(shape_size_size);
     for (size_t i = 0; i < shape_size_size; i++) {
         sliceparam.stride_list[i] = 1;
     }
@@ -918,6 +919,7 @@ static ge::graphStatus TilingPrepare4Slice(gert::TilingParseContext* context)
         (compileInfo->ub_size <= 0), OP_LOGE(context->GetNodeName(), "ub size invalid."),
         return ge::GRAPH_FAILED);
 
+    compileInfo->isAscendc = true;
     compileInfo->cacheLineSize = Ops::Base::GetCacheLineSize(context);
     OP_CHECK_IF(
         (compileInfo->cacheLineSize == static_cast<uint32_t>(0)),
