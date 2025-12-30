@@ -65,4 +65,6 @@
     {"name":"Sinh", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"MaximumV2", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"ReflectionPad1dV2", "compute_units": ["ascend910b"], "auto_sync":true, "impl_mode" : "high_performance"},
+    {"name":"AxpyV3", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
+    {"name":"Im2Col", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"}
 ]
