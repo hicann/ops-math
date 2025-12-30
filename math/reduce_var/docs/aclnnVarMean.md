@@ -4,6 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>     |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √       |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
@@ -31,7 +32,7 @@
 - **参数说明：**
 
   - self（aclTensor*, 计算输入）：公式中的输入`self`，shape支持0到8维，self与meanOut的数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），self与varOut的数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品/Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT。
   - dim（aclIntArray*，入参）：公式中的`dim`，Host侧的aclIntArray，表示参与计算的维度，取值范围为[-self.dim(), self.dim()-1]，且其中的数据不能相同，支持的数据类型为INT64。当dim为nullptr或[]时，视为计算所有维度。
   - correction（int64_t，入参）：公式中的输入`correction`，修正值，数据类型为int64_t。
   - keepdim（bool，入参）：reduce轴的维度是否保留。数据类型为bool。
