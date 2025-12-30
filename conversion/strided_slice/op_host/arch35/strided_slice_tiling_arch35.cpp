@@ -1899,7 +1899,7 @@ ge::graphStatus Tiling4StridedSlice(gert::TilingContext* context)
     // infer shape
     const gert::StorageShape* xStorage = context->GetInputShape(INDEX_X);
     OP_CHECK_NULL_WITH_CONTEXT(context, xStorage);
-    const gert::Shape& shapeInput = Ops::Math::OpTiling::EnsureNotScalar(xStorage->GetStorageShape());
+    const gert::Shape& shapeInput = Ops::Base::EnsureNotScalar(xStorage->GetStorageShape());
     ops::StridedSliceParams inputParams = {
         shapeInput,
         sliceParam.beginList,
