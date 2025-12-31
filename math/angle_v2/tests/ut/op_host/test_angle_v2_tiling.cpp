@@ -45,7 +45,7 @@ TEST_F(AngleV2Tiling, test_angle_v2_complex64) {
         },
         &compileInfo);
     uint64_t expectTilingKey = 1;
-    string expectTilingData = "256 274877906948 34359738432 16492674416896 64 ";
+    string expectTilingData = "256 0 4 64 64 8 256 3840 64 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

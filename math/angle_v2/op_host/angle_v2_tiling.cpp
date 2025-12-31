@@ -31,12 +31,12 @@ constexpr uint64_t INT8_MODE = 6UL;
 constexpr uint64_t INT16_MODE = 7UL;
 constexpr uint64_t INT32_MODE = 8UL;
 constexpr uint64_t INT64_MODE = 9UL;
-constexpr uint32_t SIZE_OF_B8 = 1;
-constexpr uint32_t SIZE_OF_B16 = 2;
-constexpr uint32_t SIZE_OF_B32 = 4;
-constexpr uint32_t BYTE_BLOCK = 32;
-constexpr uint32_t BYTE_REPEAT = 256;                 // The amount of data that can be processed by a repeat.
-constexpr uint32_t SELECT_MODE_GE_ZERO_TMP_UB = 8000; // select mode 2 need 8000B
+constexpr int64_t SIZE_OF_B8 = 1;
+constexpr int64_t SIZE_OF_B16 = 2;
+constexpr int64_t SIZE_OF_B32 = 4;
+constexpr int64_t BYTE_BLOCK = 32;
+constexpr int64_t BYTE_REPEAT = 256;                 // The amount of data that can be processed by a repeat.
+constexpr int64_t SELECT_MODE_GE_ZERO_TMP_UB = 8000; // select mode 2 need 8000B
 class AngleV2Tiling
 {
 public:
@@ -47,37 +47,37 @@ public:
 
 private:
     void SetTilingKeyMode(ge::DataType dType);
-    uint32_t GetNeedCoreNum(const uint32_t coreNumPlatform, ge::DataType dType);
+    int64_t GetNeedCoreNum(const int64_t coreNumPlatform, ge::DataType dType);
     void GetUsedBytesPerDataInKernel(ge::DataType dType);
     void CalTilingAligned(ge::DataType dType);
     void GetAlignNum(ge::DataType dType);
     AngleV2TilingData tilingData;
     gert::TilingContext* tilingContext = nullptr;
-    uint32_t coreNum = 0;
-    uint32_t dataPerRepeat = 0;
-    uint32_t tileLength = 0;         // align to 256B
-    uint32_t totalLength = 1;        // the length of input
-    uint32_t formerNum = 0;          // deal more data core num
-    uint32_t tailNum = 0;            // deal less data core num
-    uint32_t formerLength = 0;       // deal more data length
-    uint32_t tailLength = 0;         // deal less data length
-    uint32_t alignNum = 0;           // data count per block
-    uint32_t totalLengthAligned = 0; // length to align 32B
+    int64_t coreNum = 0;
+    int64_t dataPerRepeat = 0;
+    int64_t tileLength = 0;         // align to 256B
+    int64_t totalLength = 1;        // the length of input
+    int64_t formerNum = 0;          // deal more data core num
+    int64_t tailNum = 0;            // deal less data core num
+    int64_t formerLength = 0;       // deal more data length
+    int64_t tailLength = 0;         // deal less data length
+    int64_t alignNum = 0;           // data count per block
+    int64_t totalLengthAligned = 0; // length to align 32B
     uint64_t ubSizePlatForm = 0UL;
-    uint32_t bytesPerData = 0;
+    int64_t bytesPerData = 0;
     platform_ascendc::SocVersion socVersion = platform_ascendc::SocVersion::ASCEND910B;
 };
 
 void AngleV2Tiling::GetUsedBytesPerDataInKernel(ge::DataType dType)
 {
     // Calculate the bytes of buffer for one element used
-    uint32_t bytesI8 = 1;
-    uint32_t bytesI16 = 2;
-    uint32_t bytesI32 = 4;
-    uint32_t bytesI64 = 8;
-    uint32_t coefficentTwo = 2;
-    uint32_t coefficentThree = 3;
-    uint32_t coefficentTen = 10;
+    int64_t bytesI8 = 1;
+    int64_t bytesI16 = 2;
+    int64_t bytesI32 = 4;
+    int64_t bytesI64 = 8;
+    int64_t coefficentTwo = 2;
+    int64_t coefficentThree = 3;
+    int64_t coefficentTen = 10;
     switch (dType) {
         case ge::DT_COMPLEX64:
             // double buffer for input(complex64) and output(float32)
@@ -157,14 +157,14 @@ void AngleV2Tiling::SetTilingKeyMode(ge::DataType dType)
     }
 }
 
-uint32_t AngleV2Tiling::GetNeedCoreNum(const uint32_t coreNumPlatform, ge::DataType dType)
+int64_t AngleV2Tiling::GetNeedCoreNum(const int64_t coreNumPlatform, ge::DataType dType)
 {
     if (dType == ge::DT_FLOAT16) {
         dataPerRepeat = BYTE_REPEAT / SIZE_OF_B16;
     } else {
         dataPerRepeat = BYTE_REPEAT / SIZE_OF_B32;
     }
-    uint32_t tempCoreNum = (totalLength - 1) / dataPerRepeat + 1;
+    int64_t tempCoreNum = (totalLength - 1) / dataPerRepeat + 1;
     if (tempCoreNum == 0) {
         tempCoreNum = 1;
     }
@@ -204,9 +204,10 @@ void AngleV2Tiling::CalTilingAligned(ge::DataType dType)
     tailLength = (blockNum / coreNum) * alignNum;
 
     if (socVersion == platform_ascendc::SocVersion::ASCEND910) {
-        tileLength = ubSizePlatForm / bytesPerData / dataPerRepeat * dataPerRepeat;
+        tileLength = static_cast<int64_t>(ubSizePlatForm) / bytesPerData / dataPerRepeat * dataPerRepeat;
     } else {
-        tileLength = (ubSizePlatForm - SELECT_MODE_GE_ZERO_TMP_UB) / bytesPerData / dataPerRepeat * dataPerRepeat;
+        tileLength = (static_cast<int64_t>(ubSizePlatForm) - SELECT_MODE_GE_ZERO_TMP_UB) /
+                     bytesPerData / dataPerRepeat * dataPerRepeat;
     }
 }
 
@@ -220,7 +221,7 @@ ge::graphStatus AngleV2Tiling::Init()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputShape0);
     auto xShape = inputShape0->GetStorageShape();
     totalLength = xShape.GetShapeSize();
-    OP_LOGD(tilingContext, "totalLength %u.", totalLength);
+    OP_LOGD(tilingContext, "totalLength %ld.", totalLength);
 
     auto platformInfo = tilingContext->GetPlatformInfo();
     if (platformInfo == nullptr) {
@@ -229,7 +230,7 @@ ge::graphStatus AngleV2Tiling::Init()
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     socVersion = ascendcPlatform.GetSocVersion();
     coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_LOGD(tilingContext, "coreNum %u.", coreNum);
+    OP_LOGD(tilingContext, "coreNum %ld.", coreNum);
     if (coreNum == 0) {
         return ge::GRAPH_FAILED;
     }
@@ -249,7 +250,7 @@ ge::graphStatus AngleV2Tiling::Init()
 
 ge::graphStatus AngleV2Tiling::RunKernelTiling()
 {
-    OP_LOGD(tilingContext, "Tiling start.");
+    OP_LOGD(tilingContext, "SetTiling start.");
     tilingContext->SetBlockDim(coreNum);
     tilingData.set_totalLength(totalLength);
     tilingData.set_formerNum(formerNum);
@@ -265,22 +266,22 @@ ge::graphStatus AngleV2Tiling::RunKernelTiling()
     tilingData.SaveToBuffer(rawTilingData->GetData(), rawTilingData->GetCapacity());
     rawTilingData->SetDataSize(tilingData.GetDataSize());
     TilingDataPrint();
-    OP_LOGD(tilingContext, "Tiling end.");
+    OP_LOGD(tilingContext, "SetTiling end.");
     return ge::GRAPH_SUCCESS;
 }
 
 void AngleV2Tiling::TilingDataPrint() const
 {
-    OP_LOGD(tilingContext, "usedCoreNum: %u.", coreNum);
-    OP_LOGD(tilingContext, "totalLength: %u.", totalLength);
-    OP_LOGD(tilingContext, "formerNum: %u.", formerNum);
-    OP_LOGD(tilingContext, "tailNum: %u.", tailNum);
-    OP_LOGD(tilingContext, "formerLength: %u.", formerLength);
-    OP_LOGD(tilingContext, "tailLength: %u.", tailLength);
-    OP_LOGD(tilingContext, "alignNum: %u.", alignNum);
-    OP_LOGD(tilingContext, "totalLengthAligned: %u.", totalLengthAligned);
-    OP_LOGD(tilingContext, "tileLength: %u.", tileLength);
-    OP_LOGD(tilingContext, "dataPerRepeat: %u.", dataPerRepeat);
+    OP_LOGD(tilingContext, "usedCoreNum: %ld.", coreNum);
+    OP_LOGD(tilingContext, "totalLength: %ld.", totalLength);
+    OP_LOGD(tilingContext, "formerNum: %ld.", formerNum);
+    OP_LOGD(tilingContext, "tailNum: %ld.", tailNum);
+    OP_LOGD(tilingContext, "formerLength: %ld.", formerLength);
+    OP_LOGD(tilingContext, "tailLength: %ld.", tailLength);
+    OP_LOGD(tilingContext, "alignNum: %ld.", alignNum);
+    OP_LOGD(tilingContext, "totalLengthAligned: %ld.", totalLengthAligned);
+    OP_LOGD(tilingContext, "tileLength: %ld.", tileLength);
+    OP_LOGD(tilingContext, "dataPerRepeat: %ld.", dataPerRepeat);
 }
 
 static ge::graphStatus TilingAngleV2(gert::TilingContext* context)

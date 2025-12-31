@@ -19,15 +19,15 @@
 namespace optiling {
 
 BEGIN_TILING_DATA_DEF(AngleV2TilingData)
-TILING_DATA_FIELD_DEF(uint32_t, totalLength);
-TILING_DATA_FIELD_DEF(uint32_t, formerNum);
-TILING_DATA_FIELD_DEF(uint32_t, tailNum);
-TILING_DATA_FIELD_DEF(uint32_t, formerLength);
-TILING_DATA_FIELD_DEF(uint32_t, tailLength);
-TILING_DATA_FIELD_DEF(uint32_t, alignNum);
-TILING_DATA_FIELD_DEF(uint32_t, totalLengthAligned);
-TILING_DATA_FIELD_DEF(uint32_t, tileLength);
-TILING_DATA_FIELD_DEF(uint32_t, dataPerRepeat);
+TILING_DATA_FIELD_DEF(int64_t, totalLength);
+TILING_DATA_FIELD_DEF(int64_t, formerNum);
+TILING_DATA_FIELD_DEF(int64_t, tailNum);
+TILING_DATA_FIELD_DEF(int64_t, formerLength);
+TILING_DATA_FIELD_DEF(int64_t, tailLength);
+TILING_DATA_FIELD_DEF(int64_t, alignNum);
+TILING_DATA_FIELD_DEF(int64_t, totalLengthAligned);
+TILING_DATA_FIELD_DEF(int64_t, tileLength);
+TILING_DATA_FIELD_DEF(int64_t, dataPerRepeat);
 END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(AngleV2, AngleV2TilingData)

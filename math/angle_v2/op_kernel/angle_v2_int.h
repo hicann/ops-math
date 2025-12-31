@@ -59,13 +59,13 @@ public:
 
     __aicore__ inline void InitDataAddress(GM_ADDR x, GM_ADDR y)
     {
-        uint32_t current_offset = this->offset;
+        int64_t currentOffset = this->offset;
         lastTileLengthOut = this->lastTileLength;
         lastTileLengthIn = this->lastTileLength;
 
-        uint32_t alignNumFp32 = 32 / sizeof(yType);
-        uint32_t totalLengthAlignedFP32 = (this->totalLength + alignNumFp32 - 1) / alignNumFp32 * alignNumFp32;
-        uint32_t diffLength = this->totalLengthAligned - totalLengthAlignedFP32;
+        int64_t alignNumFp32 = 32 / sizeof(yType);
+        int64_t totalLengthAlignedFP32 = (this->totalLength + alignNumFp32 - 1) / alignNumFp32 * alignNumFp32;
+        int64_t diffLength = this->totalLengthAligned - totalLengthAlignedFP32;
         if constexpr (std::is_same<xType, int8_t>::value) {
             maskInt8 = this->mask * COEFFICENT;
             repeatTimesInt8 = repeatTimes % COEFFICENT ? repeatTimes / COEFFICENT + 1 : repeatTimes / COEFFICENT;
@@ -76,7 +76,7 @@ public:
                     lastTileLengthOut = this->lastTileLength - diffLength;
                 } else {
                     // address back to avoid data stampede
-                    current_offset = this->offset - diffLength;
+                    currentOffset = this->offset - diffLength;
                 }
             }
         } else if constexpr (std::is_same<xType, int16_t>::value) {
@@ -86,15 +86,15 @@ public:
                     lastTileLengthOut = this->lastTileLength - diffLength;
                 } else {
                     // address back to avoid data stampede
-                    current_offset = this->offset - diffLength;
+                    currentOffset = this->offset - diffLength;
                 }
             }
         } else if constexpr (std::is_same<xType, int64_t>::value) {
             maskInt64 = this->mask / COEFFICENT;
             repeatTimesInt64 = repeatTimes * COEFFICENT;
 
-            uint32_t alignNumInt64 = 32 / sizeof(xType);
-            uint32_t totalLengthAlignedInt64 = (this->totalLength + alignNumInt64 - 1) / alignNumInt64 * alignNumInt64;
+            int64_t alignNumInt64 = 32 / sizeof(xType);
+            int64_t totalLengthAlignedInt64 = (this->totalLength + alignNumInt64 - 1) / alignNumInt64 * alignNumInt64;
             diffLength = this->totalLengthAligned - totalLengthAlignedInt64;
             if (GetBlockIdx() == this->formerNum + this->tailNum - 1) {
                 if (this->offset < diffLength) {
@@ -102,34 +102,34 @@ public:
                     lastTileLengthIn = this->lastTileLength - diffLength;
                 } else {
                     // address back to avoid data stampede
-                    current_offset = this->offset - diffLength;
+                    currentOffset = this->offset - diffLength;
                 }
             }
         }
 
-        xGm.SetGlobalBuffer(reinterpret_cast<__gm__ xType*>(x) + current_offset, this->blockLength);
-        yGm.SetGlobalBuffer(reinterpret_cast<__gm__ yType*>(y) + current_offset, this->blockLength);
+        xGm.SetGlobalBuffer(reinterpret_cast<__gm__ xType*>(x) + currentOffset, this->blockLength);
+        yGm.SetGlobalBuffer(reinterpret_cast<__gm__ yType*>(y) + currentOffset, this->blockLength);
     }
 
     __aicore__ inline void Process()
     {
         BufferGet();
-        uint32_t dataPerBlockIn = 32 / sizeof(xType);
-        uint32_t dataPerBlockOut = 32 / sizeof(yType);
+        int64_t dataPerBlockIn = 32 / sizeof(xType);
+        int64_t dataPerBlockOut = 32 / sizeof(yType);
 
         blockLenIn = this->tileLength / dataPerBlockIn;
         blockLenOut = this->tileLength / dataPerBlockOut;
 
         // loop count need to be doubled, due to double buffer
-        for (int32_t i = 0; i < this->tileNum; i++) {
-            int32_t coreOffset = i * this->tileLength;
+        for (int64_t i = 0; i < this->tileNum; i++) {
+            int64_t coreOffset = i * this->tileLength;
             CopyIn(coreOffset);
             Compute();
             CopyOut(coreOffset);
         }
 
         if (this->lastTileLength > 0) {
-            int32_t coreOffset = this->blockLength - this->lastTileLength;
+            int64_t coreOffset = this->blockLength - this->lastTileLength;
             repeatTimes = (this->lastTileLength + this->mask - 1) / this->mask;
 
             blockLenIn = lastTileLengthIn / dataPerBlockIn;
@@ -170,7 +170,7 @@ private:
             this->dupDstRepeatStride);
     }
 
-    __aicore__ inline void CopyIn(int32_t coreOffset)
+    __aicore__ inline void CopyIn(int64_t coreOffset)
     {
         // alloc tensor from queue memory
         LocalTensor<xType> xLocal = inQueue.AllocTensor<xType>();
@@ -249,7 +249,7 @@ private:
         inQueue.FreeTensor(input);
     }
 
-    __aicore__ inline void CopyOut(int32_t coreOffset)
+    __aicore__ inline void CopyOut(int64_t coreOffset)
     {
         // deque output tensor from VECOUT queue
         LocalTensor<yType> result = outQueue.DeQue<yType>();
@@ -277,8 +277,8 @@ private:
     LocalTensor<uint8_t> mask1;
     uint16_t blockLenIn = 1;
     uint16_t blockLenOut = 1;
-    uint32_t lastTileLengthOut = 64;
-    uint32_t lastTileLengthIn = 64;
+    int64_t lastTileLengthOut = 64;
+    int64_t lastTileLengthIn = 64;
 
     uint64_t maskInt8;
     uint8_t repeatTimesInt8;

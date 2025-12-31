@@ -30,24 +30,24 @@ public:
         this->BaseMemberDataInit(tilingData);
         repeatTimes = (this->tileLength + this->mask - 1) / this->mask;
 
-        uint32_t totalLengthAlignedCp64 = (this->totalLength + alignNumCp64 - 1) / alignNumCp64 * alignNumCp64;
-        uint32_t diffLength = this->totalLengthAligned - totalLengthAlignedCp64;
+        int64_t totalLengthAlignedCp64 = (this->totalLength + alignNumCp64 - 1) / alignNumCp64 * alignNumCp64;
+        int64_t diffLength = this->totalLengthAligned - totalLengthAlignedCp64;
 
-        uint32_t current_offset = this->offset;
-        complexTailLength = this->lastTileLength * COEFFICENT;
+        int64_t currentOffset = this->offset;
+        complexTailLength = static_cast<uint32_t>(this->lastTileLength * COEFFICENT);
         if (GetBlockIdx() == this->formerNum + this->tailNum - 1) {
             if (this->offset < diffLength) {
                 // back the compute elements when the address can not back
-                complexTailLength = this->lastTileLength * COEFFICENT - diffLength * COEFFICENT;
+                complexTailLength = static_cast<uint32_t>(this->lastTileLength * COEFFICENT - diffLength * COEFFICENT);
             } else {
                 // address back to avoid data stampede
-                current_offset = this->offset - diffLength;
+                currentOffset = this->offset - diffLength;
             }
         }
 
         xGm.SetGlobalBuffer(
-            reinterpret_cast<__gm__ yType*>(x) + current_offset * COEFFICENT, this->blockLength * COEFFICENT);
-        yGm.SetGlobalBuffer(reinterpret_cast<__gm__ yType*>(y) + current_offset, this->blockLength);
+            reinterpret_cast<__gm__ yType*>(x) + currentOffset * COEFFICENT, this->blockLength * COEFFICENT);
+        yGm.SetGlobalBuffer(reinterpret_cast<__gm__ yType*>(y) + currentOffset, this->blockLength);
 
         // pipe alloc memory to queue, the unit is Bytes
         pipe->InitBuffer(inQueue, BUFFER_NUM, this->tileLength * sizeof(yType) * COEFFICENT);
@@ -70,7 +70,7 @@ public:
     {
         BufferGet();
         // loop count need to be doubled, due to double buffer
-        uint32_t complexLength = this->tileLength * COEFFICENT;
+        int64_t complexLength = this->tileLength * COEFFICENT;
 #if (__CCE_AICORE__ >= 200)
         for (int32_t i = 0; i < this->tileNum; i++) {
             CopyInComplex(i * complexLength, complexLength);
@@ -150,7 +150,7 @@ private:
 #endif
     }
 
-    __aicore__ inline void CopyInComplex(int32_t coreOffset, uint32_t coreLength)
+    __aicore__ inline void CopyInComplex(int64_t coreOffset, uint32_t coreLength)
     {
         // alloc tensor from queue memory
         LocalTensor<yType> xLocal = inQueue.AllocTensor<yType>();
@@ -403,7 +403,7 @@ private:
         this->DoSelect(result, mask1, result, tempTensor1, mask, repeatTimes);
     }
 
-    __aicore__ inline void CopyOut(int32_t coreOffset, uint32_t coreLength)
+    __aicore__ inline void CopyOut(int64_t coreOffset, uint32_t coreLength)
     {
         // deque output tensor from VECOUT queue
         LocalTensor<yType> result = outQueue.DeQue<yType>();
@@ -568,7 +568,7 @@ private:
     const uint8_t TAYLOR_COUNT_SIX = 6;                // x > tan(pi/8) and x < tan(pi/4)
     const uint8_t GATHER_MASK_MODE_ONE = 1;
     const uint8_t GATHER_MASK_MODE_TWO = 2;
-    const uint32_t alignNumCp64 = 4;
+    const int64_t alignNumCp64 = 4;
 
     GlobalTensor<yType> xGm;
     GlobalTensor<yType> yGm;

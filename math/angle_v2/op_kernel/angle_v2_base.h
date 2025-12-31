@@ -61,7 +61,7 @@ public:
         tailLength = tilingData->tailLength;
         totalLengthAligned = tilingData->totalLengthAligned;
         tileLength = tilingData->tileLength;
-        mask = tilingData->dataPerRepeat;
+        mask = static_cast<uint64_t>(tilingData->dataPerRepeat);
 
         if (GetBlockIdx() < formerNum) {
             blockLength = formerLength;
@@ -103,18 +103,18 @@ public:
     }
 
 protected:
-    uint32_t totalLength;
-    uint32_t alignNum;
-    uint32_t totalLengthAligned;
-    uint32_t formerNum;
-    uint32_t formerLength;
-    uint32_t tailNum;
-    uint32_t tailLength;
-    uint32_t blockLength;
-    uint32_t offset;
-    uint32_t tileNum;
-    uint32_t lastTileLength;
-    uint32_t tileLength = 64;
+    int64_t totalLength;
+    int64_t alignNum;
+    int64_t totalLengthAligned;
+    int64_t formerNum;
+    int64_t formerLength;
+    int64_t tailNum;
+    int64_t tailLength;
+    int64_t blockLength;
+    int64_t offset;
+    int64_t tileNum;
+    int64_t lastTileLength;
+    int64_t tileLength = 64;
     uint64_t mask = 64;
     BinaryRepeatParams repeatParams = {1, 1, 1, 8, 8, 8};
     UnaryRepeatParams CastDownParams = {1, 1, 4, 8};

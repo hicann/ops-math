@@ -50,15 +50,15 @@ public:
     {
         BufferGet();
         // loop count need to be doubled, due to double buffer
-        for (int32_t i = 0; i < this->tileNum; i++) {
-            int32_t coreOffset = i * this->tileLength;
+        for (int64_t i = 0; i < this->tileNum; i++) {
+            int64_t coreOffset = i * this->tileLength;
             CopyIn(coreOffset);
             Compute(this->tileLength);
             CopyOut(coreOffset);
         }
 
         if (this->lastTileLength > 0) {
-            int32_t coreOffset = this->blockLength - this->lastTileLength;
+            int64_t coreOffset = this->blockLength - this->lastTileLength;
             repeatTimes = (this->lastTileLength + this->mask - 1) / this->mask;
             blockLen = this->lastTileLength / dataPerBlock;
             CopyIn(coreOffset);
@@ -86,7 +86,7 @@ private:
             this->dupDstRepeatStride);
     }
 
-    __aicore__ inline void CopyIn(int32_t coreOffset)
+    __aicore__ inline void CopyIn(int64_t coreOffset)
     {
         // alloc tensor from queue memory
         LocalTensor<yType> xLocal = inQueue.AllocTensor<yType>();
@@ -96,7 +96,7 @@ private:
         inQueue.EnQue(xLocal);
     }
 
-    __aicore__ inline void Compute(int32_t calCount)
+    __aicore__ inline void Compute(int64_t calCount)
     {
         // deque input tensors from VECIN queue
         LocalTensor<yType> input = inQueue.DeQue<yType>();
@@ -116,7 +116,7 @@ private:
         inQueue.FreeTensor(input);
     }
 
-    __aicore__ inline void CopyOut(int32_t coreOffset)
+    __aicore__ inline void CopyOut(int64_t coreOffset)
     {
         // deque output tensor from VECOUT queue
         LocalTensor<yType> result = outQueue.DeQue<yType>();

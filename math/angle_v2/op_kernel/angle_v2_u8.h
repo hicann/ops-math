@@ -47,13 +47,13 @@ public:
             this->dupDstRepeatStride);
 
         // loop count need to be doubled, due to double buffer
-        for (int32_t i = 0; i < this->tileNum; i++) {
-            int32_t coreOffset = i * this->tileLength;
+        for (int64_t i = 0; i < this->tileNum; i++) {
+            int64_t coreOffset = i * this->tileLength;
             DataCopy(yGm[coreOffset], zeroTensor, {1, blockLen, 0, 0});
         }
 
         if (this->lastTileLength > 0) {
-            int32_t coreOffset = this->blockLength - this->lastTileLength;
+            int64_t coreOffset = this->blockLength - this->lastTileLength;
             repeatTimes = (this->lastTileLength + this->mask - 1) / this->mask;
             blockLen = this->lastTileLength / dataPerBlock;
             DataCopy(yGm[coreOffset], zeroTensor, {1, blockLen, 0, 0});
