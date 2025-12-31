@@ -33,7 +33,7 @@
       <td>x</td>
       <td>输入</td>
       <td>需要级联的tensor列表。</td>
-      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、DOUBLE、COMPLEX64</td>
+      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、BFLOAT16、DOUBLE、COMPLEX64</td>
       <td>ND</td>
     </tr>
     <tr>
@@ -45,7 +45,7 @@
     </tr>
     <tr>
       <td>N</td>
-      <td>属性</td>
+      <td>可选属性</td>
       <td>指定要级联的tensor个数。</td>
       <td>INT</td>
       <td>-</td>
@@ -54,12 +54,12 @@
       <td>y</td>
       <td>输出</td>
       <td>输出tensor。</td>
-      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、DOUBLE、COMPLEX64</td>
+      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、BFLOAT16、DOUBLE、COMPLEX64</td>
       <td>ND</td>
     </tr>
   </tbody></table>
 
-* Atlas 训练系列产品、Atlas 推理系列产品、Atlas 200I/500 A2 推理产品：不支持BFLOAT16。
+- <term>Atlas A2 训练系列产品、Atlas A2 推理系列产品、Atlas A3 训练系列产品、Atlas A3 推理系列产品</term>：不支持UINT16、UINT32、UINT64。
 
 ## 约束说明
 

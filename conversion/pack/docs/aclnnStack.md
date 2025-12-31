@@ -1,7 +1,5 @@
 # aclnnStack
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/pack)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -67,7 +65,7 @@ aclnnStatus aclnnStack(
       <td>输入</td>
       <td>需要连接的tensor序列。</td>
       <td>-</td>
-      <td>FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。</td>
+      <td>FLOAT16、FLOAT、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。</td>
       <td>ND</td>
       <td>1-7</td>
       <td>√</td>
@@ -87,7 +85,7 @@ aclnnStatus aclnnStack(
       <td>输出</td>
       <td>输出tensor</td>
       <td>-</td>
-      <td>FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。</td>
+      <td>FLOAT16、FLOAT、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。</td>
       <td>ND</td>
       <td>1-8</td>
       <td>√</td>
@@ -113,8 +111,6 @@ aclnnStatus aclnnStack(
       <td>-</td>
     </tr>
   </tbody></table>
-  
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
 - **返回值**
 

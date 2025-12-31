@@ -33,19 +33,19 @@
       <td>x</td>
       <td>输入</td>
       <td>需要级联的tensor列表。</td>
-      <td>COMPLEX128、COMPLEX64、DOUBLE、FLOAT32、FLOAT16、BFLOAT16、INT16、INT32、INT64、INT8、UINT8、UINT64</td>
+      <td>COMPLEX128、COMPLEX64、BOOL、DOUBLE、FLOAT32、FLOAT16、BFLOAT16、INT16、INT32、INT64、INT8、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>axis</td>
-      <td>属性</td>
+      <td>可选属性</td>
       <td>指定沿其打包的维度。</td>
       <td>INT</td>
       <td>-</td>
     </tr>
     <tr>
       <td>N</td>
-      <td>属性</td>
+      <td>可选属性</td>
       <td>指定要打包的tensor个数。</td>
       <td>INT</td>
       <td>-</td>
@@ -54,12 +54,11 @@
       <td>y</td>
       <td>输出</td>
       <td>输出结果。</td>
-      <td>COMPLEX128、COMPLEX64、DOUBLE、FLOAT32、FLOAT16、BFLOAT16、INT16、INT32、INT64、INT8、UINT8、UINT64</td>
+      <td>COMPLEX128、COMPLEX64、BOOL、DOUBLE、FLOAT32、FLOAT16、BFLOAT16、INT16、INT32、INT64、INT8、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
     </tr>
   </tbody></table>
 
-* Atlas 训练系列产品、Atlas 推理系列产品：不支持BFLOAT16。
 
 ## 约束说明
 
