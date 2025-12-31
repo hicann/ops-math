@@ -102,6 +102,14 @@ function(pack_built_in)
       REGEX "(setenv|prereq_check)\\.(bash|fish|csh)" EXCLUDE
   )
 
+  set(aclnnop_source ${CMAKE_SOURCE_DIR}/random/dsa_gen_bit_mask/op_host/op_api/aclnn_dropout_gen_mask.h)
+  install(FILES ${aclnnop_source}
+ 	  DESTINATION ops_math/aclnnop
+  )
+  install(FILES ${aclnnop_source}
+ 	  DESTINATION ops_math/aclnnop/level2
+  )
+
   set(SCRIPTS_FILES
       ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/check_version_required.awk
       ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_func.inc
