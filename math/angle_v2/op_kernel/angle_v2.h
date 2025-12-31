@@ -26,8 +26,9 @@ class AngleV2 : public AngleV2Base<yType>
 public:
     __aicore__ inline AngleV2()
     {}
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const AngleV2TilingData* __restrict tilingData)
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const AngleV2TilingData* __restrict tilingData, TPipe* inputPipe)
     {
+        pipe = inputPipe;
         this->BaseMemberDataInit(tilingData);
         repeatTimes = (this->tileLength + this->mask - 1) / this->mask;
         blockLen = this->tileLength / dataPerBlock;
@@ -36,13 +37,13 @@ public:
         yGm.SetGlobalBuffer(reinterpret_cast<__gm__ yType*>(y) + this->offset, this->blockLength);
 
         // pipe alloc memory to queue, the unit is Bytes
-        pipe.InitBuffer(inQueue, BUFFER_NUM, this->tileLength * sizeof(yType));
-        pipe.InitBuffer(outQueue, BUFFER_NUM, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(inQueue, BUFFER_NUM, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(outQueue, BUFFER_NUM, this->tileLength * sizeof(yType));
 
-        pipe.InitBuffer(maskBuf1, this->tileLength * sizeof(uint8_t));
-        pipe.InitBuffer(zeroBuf, this->tileLength * sizeof(yType));
-        pipe.InitBuffer(piBuf, this->tileLength * sizeof(yType));
-        pipe.InitBuffer(nanBuf, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(maskBuf1, this->tileLength * sizeof(uint8_t));
+        pipe->InitBuffer(zeroBuf, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(piBuf, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(nanBuf, this->tileLength * sizeof(yType));
     }
 
     __aicore__ inline void Process()
@@ -126,7 +127,7 @@ private:
     }
 
 private:
-    TPipe pipe;
+    TPipe* pipe;
     ConstData constData;
     uint8_t repeatTimes;
     GlobalTensor<yType> xGm;

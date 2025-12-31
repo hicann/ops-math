@@ -26,8 +26,9 @@ class AngleV2U8 : public AngleV2Base<yType>
 public:
     __aicore__ inline AngleV2U8()
     {}
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const AngleV2TilingData* __restrict tilingData)
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const AngleV2TilingData* __restrict tilingData, TPipe* inputPipe)
     {
+        pipe = inputPipe;
         this->BaseMemberDataInit(tilingData);
         repeatTimes = (this->tileLength + this->mask - 1) / this->mask;
         blockLen = this->tileLength / dataPerBlock;
@@ -35,7 +36,7 @@ public:
         yGm.SetGlobalBuffer(reinterpret_cast<__gm__ yType*>(y) + this->offset, this->blockLength);
 
         // pipe alloc memory to queue, the unit is Bytes
-        pipe.InitBuffer(outQueue, BUFFER_NUM, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(outQueue, BUFFER_NUM, this->tileLength * sizeof(yType));
     }
 
     __aicore__ inline void Process()
@@ -60,7 +61,7 @@ public:
     }
 
 private:
-    TPipe pipe;
+    TPipe* pipe;
     GlobalTensor<yType> yGm;
     TQue<QuePosition::VECOUT, BUFFER_NUM> outQueue;
     uint8_t repeatTimes;

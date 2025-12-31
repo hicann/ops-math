@@ -26,32 +26,33 @@ class AngleV2Int : public AngleV2Base<yType>
 public:
     __aicore__ inline AngleV2Int()
     {}
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const AngleV2TilingData* __restrict tilingData)
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const AngleV2TilingData* __restrict tilingData, TPipe* inputPipe)
     {
+        pipe = inputPipe;
         this->BaseMemberDataInit(tilingData);
         repeatTimes = (this->tileLength + this->mask - 1) / this->mask;
 
         InitDataAddress(x, y);
 
         // pipe alloc memory to queue, the unit is Bytes
-        pipe.InitBuffer(inQueue, BUFFER_NUM, this->tileLength * sizeof(xType));
-        pipe.InitBuffer(outQueue, BUFFER_NUM, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(inQueue, BUFFER_NUM, this->tileLength * sizeof(xType));
+        pipe->InitBuffer(outQueue, BUFFER_NUM, this->tileLength * sizeof(yType));
 
-        pipe.InitBuffer(maskBuf1, this->tileLength * sizeof(uint8_t));
-        pipe.InitBuffer(zeroBuf, this->tileLength * sizeof(yType));
-        pipe.InitBuffer(piBuf, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(maskBuf1, this->tileLength * sizeof(uint8_t));
+        pipe->InitBuffer(zeroBuf, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(piBuf, this->tileLength * sizeof(yType));
 
         if constexpr (std::is_same<xType, int8_t>::value) {
-            pipe.InitBuffer(halfBuf, this->tileLength * sizeof(half));
+            pipe->InitBuffer(halfBuf, this->tileLength * sizeof(half));
         }
 #if (__CCE_AICORE__ < 200)
         if constexpr (std::is_same<xType, int16_t>::value) {
-            pipe.InitBuffer(bufB16, COEFFICENT * this->tileLength * sizeof(half));
-            pipe.InitBuffer(halfBuf, this->tileLength * sizeof(half));
+            pipe->InitBuffer(bufB16, COEFFICENT * this->tileLength * sizeof(half));
+            pipe->InitBuffer(halfBuf, this->tileLength * sizeof(half));
         } else if constexpr (std::is_same<xType, int64_t>::value) {
-            pipe.InitBuffer(bufB32, COEFFICENT * this->tileLength * sizeof(yType));
-            pipe.InitBuffer(bufB16, COEFFICENT * this->tileLength * sizeof(half));
-            pipe.InitBuffer(halfBuf, this->tileLength * sizeof(half));
+            pipe->InitBuffer(bufB32, COEFFICENT * this->tileLength * sizeof(yType));
+            pipe->InitBuffer(bufB16, COEFFICENT * this->tileLength * sizeof(half));
+            pipe->InitBuffer(halfBuf, this->tileLength * sizeof(half));
         }
 #endif
     }
@@ -259,7 +260,7 @@ private:
     }
 
 private:
-    TPipe pipe;
+    TPipe* pipe;
     ConstData constData;
     uint8_t repeatTimes;
     GlobalTensor<xType> xGm;

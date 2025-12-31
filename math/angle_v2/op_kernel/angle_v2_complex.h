@@ -24,8 +24,9 @@ class AngleV2Complex : public AngleV2Base<yType>
 public:
     __aicore__ inline AngleV2Complex()
     {}
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const AngleV2TilingData* __restrict tilingData)
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const AngleV2TilingData* __restrict tilingData, TPipe* inputPipe)
     {
+        pipe = inputPipe;
         this->BaseMemberDataInit(tilingData);
         repeatTimes = (this->tileLength + this->mask - 1) / this->mask;
 
@@ -49,20 +50,20 @@ public:
         yGm.SetGlobalBuffer(reinterpret_cast<__gm__ yType*>(y) + current_offset, this->blockLength);
 
         // pipe alloc memory to queue, the unit is Bytes
-        pipe.InitBuffer(inQueue, BUFFER_NUM, this->tileLength * sizeof(yType) * COEFFICENT);
-        pipe.InitBuffer(outQueue, BUFFER_NUM, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(inQueue, BUFFER_NUM, this->tileLength * sizeof(yType) * COEFFICENT);
+        pipe->InitBuffer(outQueue, BUFFER_NUM, this->tileLength * sizeof(yType));
 
-        pipe.InitBuffer(maskBuf1, this->tileLength * sizeof(uint8_t));
-        pipe.InitBuffer(maskBuf2, this->tileLength * sizeof(uint8_t));
-        pipe.InitBuffer(realBuf, this->tileLength * sizeof(yType));
-        pipe.InitBuffer(imagBuf, this->tileLength * sizeof(yType));
-        pipe.InitBuffer(zeroBuf, this->tileLength * sizeof(yType));
-        pipe.InitBuffer(oneBuf, this->tileLength * sizeof(yType));
-        pipe.InitBuffer(tempBuf1, this->tileLength * sizeof(yType));
-        pipe.InitBuffer(tempBuf2, this->tileLength * sizeof(yType));
-        pipe.InitBuffer(tempBuf3, this->tileLength * sizeof(yType));
-        pipe.InitBuffer(tempBuf4, this->tileLength * sizeof(yType));
-        pipe.InitBuffer(tempBuf5, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(maskBuf1, this->tileLength * sizeof(uint8_t));
+        pipe->InitBuffer(maskBuf2, this->tileLength * sizeof(uint8_t));
+        pipe->InitBuffer(realBuf, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(imagBuf, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(zeroBuf, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(oneBuf, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(tempBuf1, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(tempBuf2, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(tempBuf3, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(tempBuf4, this->tileLength * sizeof(yType));
+        pipe->InitBuffer(tempBuf5, this->tileLength * sizeof(yType));
     }
 
     __aicore__ inline void Process()
@@ -549,7 +550,7 @@ private:
     }
 
 private:
-    TPipe pipe;
+    TPipe* pipe;
     ConstData constData;
     uint8_t repeatTimes;
     uint32_t complexTailLength = 64;

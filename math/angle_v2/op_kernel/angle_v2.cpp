@@ -31,41 +31,42 @@ using namespace AngleV2N;
 extern "C" __global__ __aicore__ void angle_v2(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     GET_TILING_DATA(tilingData, tiling);
+    TPipe pipe;
     if (TILING_KEY_IS(KEY_DTYPE_COMPLEX64)) {
         AngleV2N::AngleV2Complex<float> op;
-        op.Init(x, y, &tilingData);
+        op.Init(x, y, &tilingData, &pipe);
         op.Process();
     } else if (TILING_KEY_IS(KEY_DTYPE_FP32)) {
         AngleV2N::AngleV2<float> op;
-        op.Init(x, y, &tilingData);
+        op.Init(x, y, &tilingData, &pipe);
         op.Process();
     } else if (TILING_KEY_IS(KEY_DTYPE_FP16)) {
         AngleV2N::AngleV2<half> op;
-        op.Init(x, y, &tilingData);
+        op.Init(x, y, &tilingData, &pipe);
         op.Process();
     } else if (TILING_KEY_IS(KEY_DTYPE_BOOL)) {
         AngleV2N::AngleV2U8<float> op;
-        op.Init(x, y, &tilingData);
+        op.Init(x, y, &tilingData, &pipe);
         op.Process();
     } else if (TILING_KEY_IS(KEY_DTYPE_UINT8)) {
         AngleV2N::AngleV2U8<float> op;
-        op.Init(x, y, &tilingData);
+        op.Init(x, y, &tilingData, &pipe);
         op.Process();
     } else if (TILING_KEY_IS(KEY_DTYPE_INT8)) {
         AngleV2N::AngleV2Int<int8_t, float> op;
-        op.Init(x, y, &tilingData);
+        op.Init(x, y, &tilingData, &pipe);
         op.Process();
     } else if (TILING_KEY_IS(KEY_DTYPE_INT16)) {
         AngleV2N::AngleV2Int<int16_t, float> op;
-        op.Init(x, y, &tilingData);
+        op.Init(x, y, &tilingData, &pipe);
         op.Process();
     } else if (TILING_KEY_IS(KEY_DTYPE_INT32)) {
         AngleV2N::AngleV2Int<int32_t, float> op;
-        op.Init(x, y, &tilingData);
+        op.Init(x, y, &tilingData, &pipe);
         op.Process();
     } else if (TILING_KEY_IS(KEY_DTYPE_INT64)) {
         AngleV2N::AngleV2Int<int64_t, float> op;
-        op.Init(x, y, &tilingData);
+        op.Init(x, y, &tilingData, &pipe);
         op.Process();
     }
 }
