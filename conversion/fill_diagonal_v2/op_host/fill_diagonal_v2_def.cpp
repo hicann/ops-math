@@ -13,7 +13,6 @@
  * \brief Fill Diagonal V2 op
  */
 
-#include <cstdint>
 #include "register/op_def_registry.h"
 
 namespace ops {
@@ -102,6 +101,7 @@ public:
             .DynamicRankSupportFlag(true)
             .DynamicShapeSupportFlag(true);
         this->AICore().AddConfig("ascend310p", config_310p);
+        this->AICore().AddConfig("kirinx90", config_310p);
     }
 };
 

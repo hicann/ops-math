@@ -57,6 +57,7 @@ public:
             .Format({ge::FORMAT_ND, ge::FORMAT_ND});
         this->AICore().AddConfig("ascend310p", config_without_bf16);
         this->AICore().AddConfig("ascend910", config_without_bf16);
+        this->AICore().AddConfig("kirinx90", config_without_bf16);
     }
 };
 

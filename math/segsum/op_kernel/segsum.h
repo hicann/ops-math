@@ -35,7 +35,7 @@ public:
     TPipe pipe;
 
     __aicore__ inline SegsumND(){};
-    __aicore__ inline void Init(GM_ADDR input, GM_ADDR output, GM_ADDR workspace, SegsumTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR input, GM_ADDR output, GM_ADDR workspace, const SegsumTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -63,7 +63,7 @@ private:
         }
     }
 
-    __aicore__ inline void ParseTilingData(SegsumTilingData* tilingData);
+    __aicore__ inline void ParseTilingData(const SegsumTilingData* tilingData);
     __aicore__ inline void ComputeBase();
     __aicore__ inline void ComputeBatches();
     __aicore__ inline void Compute(int64_t batchIdx, int64_t colIdx);
@@ -99,7 +99,7 @@ private:
 
 template <typename T, int32_t MODE>
 __aicore__ inline void SegsumND<T, MODE>::Init(
-    GM_ADDR input, GM_ADDR output, GM_ADDR workspace, SegsumTilingData* tilingData)
+    GM_ADDR input, GM_ADDR output, GM_ADDR workspace, const SegsumTilingData* tilingData)
 {
     blockIdx = GetBlockIdx();
     ParseTilingData(tilingData);
@@ -121,13 +121,17 @@ __aicore__ inline void SegsumND<T, MODE>::Process()
     if (blockIdx >= needCoreNum) {
         return;
     }
+#if !(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
     if ASCEND_IS_AIV {
+#endif
         if constexpr (MODE == 0) {
             ComputeBase();
         } else {
             ComputeBatches();
         }
+#if !(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
     }
+#endif
 }
 
 template <typename T, int32_t MODE>
@@ -301,7 +305,7 @@ __aicore__ inline void SegsumND<T, MODE>::CopyOutBatch(
 }
 
 template <typename T, int32_t MODE>
-__aicore__ inline void SegsumND<T, MODE>::ParseTilingData(SegsumTilingData* tilingData)
+__aicore__ inline void SegsumND<T, MODE>::ParseTilingData(const SegsumTilingData* tilingData)
 {
     slideSize = tilingData->slideSize;
     tailDimSize = tilingData->tailDimSize;

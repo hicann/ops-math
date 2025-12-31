@@ -26,19 +26,7 @@ extern "C" __global__ __aicore__ void segsum(GM_ADDR x, GM_ADDR y, GM_ADDR works
     if (userWS == nullptr) {
         return;
     }
-    if constexpr (std::is_same_v<DTYPE_X, bfloat16_t>) {
-        if (TILING_KEY_IS(1000)) {
-            SegsumND<bfloat16_t, 0> op;
-            op.Init(x, y, userWS, &tilingData);
-            op.Process();
-        } else if (TILING_KEY_IS(1001)) {
-            SegsumND<bfloat16_t, 1> op;
-            op.Init(x, y, userWS, &tilingData);
-            op.Process();
-        } else {
-            return;
-        }
-    } else if constexpr (std::is_same_v<DTYPE_X, half>) {
+    if constexpr (std::is_same_v<DTYPE_X, half>) {
         if (TILING_KEY_IS(1000)) {
             SegsumND<half, 0> op;
             op.Init(x, y, userWS, &tilingData);
@@ -62,5 +50,19 @@ extern "C" __global__ __aicore__ void segsum(GM_ADDR x, GM_ADDR y, GM_ADDR works
         } else {
             return;
         }
+#if !(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
+    } else if constexpr (std::is_same_v<DTYPE_X, bfloat16_t>) {
+        if (TILING_KEY_IS(1000)) {
+            SegsumND<bfloat16_t, 0> op;
+            op.Init(x, y, userWS, &tilingData);
+            op.Process();
+        } else if (TILING_KEY_IS(1001)) {
+            SegsumND<bfloat16_t, 1> op;
+            op.Init(x, y, userWS, &tilingData);
+            op.Process();
+        } else {
+            return;
+        }
+#endif
     }
 }

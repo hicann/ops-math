@@ -44,7 +44,7 @@ private:
     __aicore__ inline void GmSetZero(GM_ADDR output);
     __aicore__ inline static constexpr bool IsDataCopyPadSupport()
     {
-#if __CCE_AICORE__ == 220
+#if __CCE_AICORE__ == 220 || (defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
         return true;
 #else
         return false;

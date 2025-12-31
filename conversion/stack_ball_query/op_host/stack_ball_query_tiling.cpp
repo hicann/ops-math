@@ -189,6 +189,34 @@ static ge::graphStatus TilingStackBallQuery(gert::TilingContext* context)
     return tilingObject.RunKernelTiling();
 }
 
-IMPL_OP_OPTILING(StackBallQuery).Tiling(TilingStackBallQuery);
+static ge::graphStatus TilingPrepare4StackBallQuery(gert::TilingParseContext* context)
+{
+    OP_LOGD(context->GetNodeName(), "TilingPrepare4StackBallQuery enter.");
+    auto compileInfo = context->GetCompiledInfo<StackBallQueryCompileInfo>();
+    OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
+    auto platformInfo = context->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    compileInfo->aicore_num = static_cast<uint32_t>(ascendcPlatform.GetCoreNumAiv());
+    OP_CHECK_IF(
+        (compileInfo->aicore_num <= 0),
+        OP_LOGE(
+            context->GetNodeName(), "Get core num failed, core num: %u", static_cast<uint32_t>(compileInfo->aicore_num)),
+        return ge::GRAPH_FAILED);
+
+    uint64_t ubSizePlatForm;
+    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
+    compileInfo->ub_platform_byte_size = static_cast<int64_t>(ubSizePlatForm);
+    OP_CHECK_IF(
+        (compileInfo->ub_platform_byte_size <= 0),
+        OP_LOGE(context->GetNodeName(), "Get ub size failed, ub size: %u", static_cast<uint32_t>(compileInfo->ub_platform_byte_size)),
+        return ge::GRAPH_FAILED);
+
+    return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP_OPTILING(StackBallQuery)
+    .Tiling(TilingStackBallQuery)
+    .TilingParse<StackBallQueryCompileInfo>(TilingPrepare4StackBallQuery);
 
 } // namespace optiling

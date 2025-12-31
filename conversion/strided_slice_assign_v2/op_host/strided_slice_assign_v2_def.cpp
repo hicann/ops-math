@@ -25,6 +25,15 @@ static const std::vector<ge::DataType> idxDataType = {ge::DT_INT64, ge::DT_INT64
 static const std::vector<ge::Format> format = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
                                                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
 
+static const std::vector<ge::DataType> inputDataTypeKirin = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32,
+                                                        ge::DT_INT64,   ge::DT_DOUBLE, ge::DT_INT8};
+
+static const std::vector<ge::DataType> idxDataTypeKirin = {ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+                                                      ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
+
+static const std::vector<ge::Format> formatKirin = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+
 class StridedSliceAssignV2 : public OpDef {
 public:
     explicit StridedSliceAssignV2(const char* name) : OpDef(name)
@@ -78,7 +87,60 @@ public:
 
         this->AICore().AddConfig("ascend910b");
         this->AICore().AddConfig("ascend910_93");
+
+        OpAICoreConfig config_kirin = GetKirinCoreConfig();
+        this->AICore().AddConfig("kirinx90", config_kirin);
+    }
+
+private:
+    OpAICoreConfig GetKirinCoreConfig() const
+    {
+        OpAICoreConfig config_kirin;
+        config_kirin.DynamicCompileStaticFlag(true).DynamicFormatFlag(true)
+            .DynamicRankSupportFlag(true).DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false).PrecisionReduceFlag(true);
+        config_kirin.Input("var")
+            .ParamType(REQUIRED)
+            .DataType(inputDataTypeKirin)
+            .Format(formatKirin).UnknownShapeFormat(formatKirin)
+            .AutoContiguous();
+        config_kirin.Input("input_value")
+            .ParamType(REQUIRED)
+            .DataType(inputDataTypeKirin)
+            .Format(formatKirin).UnknownShapeFormat(formatKirin)
+            .AutoContiguous();
+        config_kirin.Input("begin")
+            .ParamType(REQUIRED)
+            .ValueDepend(REQUIRED)
+            .DataType(idxDataTypeKirin)
+            .Format(formatKirin).UnknownShapeFormat(formatKirin)
+            .AutoContiguous();
+        config_kirin.Input("end")
+            .ParamType(REQUIRED)
+            .ValueDepend(REQUIRED)
+            .DataType(idxDataTypeKirin)
+            .Format(formatKirin).UnknownShapeFormat(formatKirin)
+            .AutoContiguous();
+        config_kirin.Input("strides")
+            .ParamType(REQUIRED)
+            .ValueDepend(REQUIRED)
+            .DataType(idxDataTypeKirin)
+            .Format(formatKirin).UnknownShapeFormat(formatKirin)
+            .AutoContiguous();
+        config_kirin.Input("axes")
+            .ParamType(OPTIONAL)
+            .ValueDepend(REQUIRED)
+            .DataType(idxDataTypeKirin)
+            .Format(formatKirin).UnknownShapeFormat(formatKirin)
+            .AutoContiguous();
+        config_kirin.Output("var")
+            .ParamType(REQUIRED)
+            .DataType(inputDataTypeKirin)
+            .Format(formatKirin).UnknownShapeFormat(formatKirin)
+            .AutoContiguous();
+        return config_kirin;
     }
 };
+
 OP_ADD(StridedSliceAssignV2);
 } // namespace ops

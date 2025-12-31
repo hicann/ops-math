@@ -37,6 +37,7 @@ extern "C" __global__ __aicore__ void mul_addn(GM_ADDR x1, GM_ADDR x2, GM_ADDR y
         op.GetLocalTensor();
         op.Process();
         op.ReleaseEventID();
+#if !(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
     } else if (TILING_KEY_IS(2)) {
         TPipe pipe;
         KernelMulAddnAlignF16<bfloat16_t, float> op;
@@ -45,5 +46,6 @@ extern "C" __global__ __aicore__ void mul_addn(GM_ADDR x1, GM_ADDR x2, GM_ADDR y
         op.GetLocalTensor();
         op.Process();
         op.ReleaseEventID();
+#endif
     }
 }

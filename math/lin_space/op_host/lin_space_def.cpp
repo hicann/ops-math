@@ -12,7 +12,6 @@
  * \file lin_space.cpp
  * \brief
  */
-#include <cstdint>
 #include "register/op_def_registry.h"
 
 namespace ops {
@@ -57,6 +56,7 @@ public:
                  ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
         this->AICore().AddConfig("ascend910");
         this->AICore().AddConfig("ascend310p");
+        this->AICore().AddConfig("kirinx90");
 
         OpAICoreConfig config;
         config.DynamicCompileStaticFlag(true)

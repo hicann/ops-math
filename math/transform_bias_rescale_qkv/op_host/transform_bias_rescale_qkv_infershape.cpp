@@ -10,61 +10,87 @@
 
 /*!
  * \file transform_bias_rescale_qkv_infershape.cpp
- * \brief
+ * \brief transform_bias_rescale_qkv operater graph infer resource
  */
 
 #include "log/log.h"
 #include "register/op_impl_registry.h"
+#include "util/shape_util.h"
+
+static constexpr int INPUT_NODE_NUM = 2;
+static constexpr int OUTPUT_NODE_NUM = 3;
+static constexpr int INDEX_ATTR_NUM_HEADS = 0;
+static constexpr int INDEX_INPUT_QKV = 0;
+static constexpr int INDEX_INPUT_QKV_BIAS = 1;
+static constexpr int INDEX_OUTPUT_Q = 0;
+static constexpr int INDEX_OUTPUT_K = 1;
+static constexpr int INDEX_OUTPUT_V = 2;
+
+static constexpr int QKV_NUM = 3;
+
+static constexpr int INPUT_QKV_DIM0 = 0;
+static constexpr int INPUT_QKV_DIM1 = 1;
+static constexpr int INPUT_QKV_DIM2 = 2;
+
+static constexpr int OUTPUT_QKV_DIM_NUM = 4;
+static constexpr int OUTPUT_QKV_DIM0 = 0;
+static constexpr int OUTPUT_QKV_DIM1 = 1;
+static constexpr int OUTPUT_QKV_DIM2 = 2;
+static constexpr int OUTPUT_QKV_DIM3 = 3;
 
 using namespace ge;
-
 namespace ops {
 
-static constexpr int64_t IDX_0 = 0;
-static constexpr int64_t IDX_1 = 1;
-static constexpr int64_t IDX_2 = 2;
-
-static ge::graphStatus InferShape4TransformBiasRescaleQkv(gert::InferShapeContext* context)
+static ge::graphStatus InferShape4TransformBiasRescaleQkv(gert::InferShapeContext *context)
 {
-    OP_LOGD(context, "Begin to do InferShape4InferShape4TransformBiasRescaleQkv");
+    if (context == nullptr) {
+        OP_LOGE("InferShape4TransformBiasRescaleQkv", "Context is nullptr, check failed.");
+        return GRAPH_FAILED;
+    }
+    if (context->GetComputeNodeInputNum() != INPUT_NODE_NUM ||
+        context->GetComputeNodeOutputNum() != OUTPUT_NODE_NUM) {
+        return GRAPH_FAILED;
+    }
 
-    // get input shapes
-    auto qkvShape = context->GetInputShape(IDX_0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, qkvShape);
+    auto* attrs = context->GetAttrs();
+    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
+    auto* num_heads_ptr = attrs->GetAttrPointer<int>(INDEX_ATTR_NUM_HEADS);
+    OP_CHECK_NULL_WITH_CONTEXT(context, num_heads_ptr);
+    auto num_heads = *num_heads_ptr;
 
-    auto qkvBiasShape = context->GetInputShape(IDX_1);
-    OP_CHECK_NULL_WITH_CONTEXT(context, qkvBiasShape);
+    const gert::Shape* qkv_shape = context->GetInputShape(INDEX_INPUT_QKV);
+    OP_CHECK_NULL_WITH_CONTEXT(context, qkv_shape);
 
-    // get output shapes
-    auto qShape = context->GetOutputShape(IDX_0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, qShape);
+    gert::Shape* q_shape = context->GetOutputShape(INDEX_OUTPUT_Q);
+    OP_CHECK_NULL_WITH_CONTEXT(context, q_shape);
+    gert::Shape* k_shape = context->GetOutputShape(INDEX_OUTPUT_K);
+    OP_CHECK_NULL_WITH_CONTEXT(context, k_shape);
+    gert::Shape* v_shape = context->GetOutputShape(INDEX_OUTPUT_V);
+    OP_CHECK_NULL_WITH_CONTEXT(context, v_shape);
 
-    auto kShape = context->GetOutputShape(IDX_1);
-    OP_CHECK_NULL_WITH_CONTEXT(context, kShape);
+    q_shape->SetDimNum(OUTPUT_QKV_DIM_NUM);
+    q_shape->SetDim(OUTPUT_QKV_DIM0, qkv_shape->GetDim(INPUT_QKV_DIM0));
+    q_shape->SetDim(OUTPUT_QKV_DIM1, static_cast<int64_t>(num_heads));
+    q_shape->SetDim(OUTPUT_QKV_DIM2, qkv_shape->GetDim(INPUT_QKV_DIM1));
+    q_shape->SetDim(OUTPUT_QKV_DIM3, qkv_shape->GetDim(INPUT_QKV_DIM2) / QKV_NUM / num_heads);
 
-    auto vShape = context->GetOutputShape(IDX_2);
-    OP_CHECK_NULL_WITH_CONTEXT(context, vShape);
+    *k_shape = *q_shape;
+    *v_shape = *q_shape;
 
-    OP_LOGD(context, "End to do InferShape4InferShape4TransformBiasRescaleQkv");
-    return GRAPH_SUCCESS;
+    return ge::GRAPH_SUCCESS;
 }
 
-static graphStatus InferDataType4TransformBiasRescaleQkv(gert::InferDataTypeContext* context)
+static ge::graphStatus InferDataType4TransformBiasRescaleQkv(gert::InferDataTypeContext* context)
 {
-    OP_LOGD(context, "Begin to do InferDataType4TransformBiasRescaleQkv");
-
-    auto input_dtype = context->GetInputDataType(IDX_0);
-
-    context->SetOutputDataType(IDX_0, input_dtype);
-    context->SetOutputDataType(IDX_1, input_dtype);
-    context->SetOutputDataType(IDX_2, input_dtype);
-
-    OP_LOGD(context, "End to do InferDataType4TransformBiasRescaleQkv");
-
-    return GRAPH_SUCCESS;
+    const ge::DataType qkv_data_type = context->GetInputDataType(0);
+    context->SetOutputDataType(INDEX_OUTPUT_Q, qkv_data_type);
+    context->SetOutputDataType(INDEX_OUTPUT_K, qkv_data_type);
+    context->SetOutputDataType(INDEX_OUTPUT_V, qkv_data_type);
+    return ge::GRAPH_SUCCESS;
 }
 
 IMPL_OP_INFERSHAPE(TransformBiasRescaleQkv)
     .InferShape(InferShape4TransformBiasRescaleQkv)
     .InferDataType(InferDataType4TransformBiasRescaleQkv);
+
 } // namespace ops
