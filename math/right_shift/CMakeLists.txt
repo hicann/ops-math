@@ -10,3 +10,4 @@
 # ----------------------------------------------------------------------------
 
 add_all_modules_sources(OPTYPE right_shift ACLNNTYPE aclnn_exclude)
+add_subdirectory(framework)

@@ -12,24 +12,21 @@
  * \file one_hot_proto.h
  * \brief
  */
-#ifndef OPS_OP_PROTO_INC_ONE_HOT_H_
-#define OPS_OP_PROTO_INC_ONE_HOT_H_
 
+#ifndef ONE_HOT_PROTO_H_
+#define ONE_HOT_PROTO_H_
 #include "graph/operator_reg.h"
 #include "graph/types.h"
 
 namespace ge {
-
 /**
 * @brief Returns a one-hot tensor. The locations represented by index in "x" take value "on_value",
 *         while all other locations take value "off_value" .
 
 * @par Inputs:
 * Four inputs, including:
-* @li x: A 1-7D tensor of indices, format supports ND, and data type must be one of the following types: int32, uint8,
-int64.
-* @li depth: A scalar which is the depth of the one hot dimension, format supports ND, and data type must be int32 or
-int64
+* @li x: A 1-7D tensor of indices, format supports ND, and data type must be one of the following types: int32, uint8, int64.
+* @li depth: A scalar which is the depth of the one hot dimension, format supports ND, and data type must be int32 or int64
 *     Its shape can be 1-8D, but only the first element make sense.
 * @li on_value: A scalar. The value to fill in output when indices[j] = i, format supports ND.
 *     Must be one of the following types: float16, float32, int64, int32, int8, uint8.
@@ -54,7 +51,6 @@ REG_OP(OneHot)
     .OUTPUT(y, TensorType::BasicType())
     .ATTR(axis, Int, -1)
     .OP_END_FACTORY_REG(OneHot)
-
 } // namespace ge
 
-#endif // OPS_OP_PROTO_INC_ONE_HOT_H_
+#endif

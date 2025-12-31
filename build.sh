@@ -9,7 +9,7 @@
 # ============================================================================
 
 set -e
-RELEASE_TARGETS=("ophost" "opapi" "opgraph" "opkernel" "opkernel_aicpu")
+RELEASE_TARGETS=("ophost" "opapi" "opgraph" "opkernel" "opkernel_aicpu" "onnxplugin")
 UT_TARGETS=("ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "opkernel_aicpu_test")
 SUPPORT_COMPUTE_UNIT_SHORT=("ascend910b" "ascend910_93" "ascend910_95" "ascend310p" "ascend910" "ascend310b" "ascend630" "ascend610lite" "ascend031" "ascend035" "kirinx90")
 SUPPORT_COMPUTE_UNIT_SHORT_PRINT=("ascend910b" "ascend910_93" "ascend950" "ascend310p" "ascend910" "ascend310b" "ascend630" "ascend610lite" "ascend031" "ascend035" "kirinx90")
@@ -22,7 +22,7 @@ SUPPORTED_LONG_OPTS=(
   "help" "ops=" "soc=" "vendor_name=" "debug" "cov" "noexec" "aicpu" "opkernel" "opkernel_aicpu" "jit"
   "pkg" "asan" "valgrind" "make_clean" "static" "build-type="
   "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "opkernel_aicpu_test"
-  "run_example" "genop=" "genop_aicpu=" "experimental" "cann_3rd_lib_path" "mssanitizer" "oom"
+  "run_example" "genop=" "genop_aicpu=" "experimental" "cann_3rd_lib_path" "mssanitizer" "oom" "onnxplugin"
 )
 
 in_array() {
@@ -258,6 +258,19 @@ usage() {
         echo "    bash build.sh --opgraph --build-type=Debug"
         return
         ;;
+      onnxplugin)
+        echo "ONNXPlugin Build Options:"
+        echo $dotted_line
+        echo "    --onnxplugin           Build onnxplugin library"
+        echo "    -j[n]                  Compile thread nums, default is 8, eg: -j8"
+        echo "    -O[n]                  Compile optimization options, support [O0 O1 O2 O3], eg:-O3"
+        echo "    --debug                Build with debug mode"
+        echo $dotted_line
+        echo "Examples:"
+        echo "    bash build.sh --onnxplugin -j16 -O3"
+        echo "    bash build.sh --onnxplugin --debug"
+        return
+        ;;
       ophost_test)
         echo "Ophost Test Options:"
         echo $dotted_line
@@ -354,6 +367,7 @@ usage() {
   echo "    --vendor_name Specify the custom operator package vendor name, like: --vendor_name=customize, default to custom"
   echo "    --aicpu build aicpu task"
   echo "    --opgraph build graph_plugin_math.so"
+  echo "    --onnxplugin build op_math_onnx_plugin.so"
   echo "    --opapi build opapi_math.so"
   echo "    --ophost build ophost_math.so"
   echo "    --opkernel build binary kernel"
@@ -387,7 +401,7 @@ check_help_combinations() {
   for arg in "${args[@]}"; do
     case "$arg" in
       -u) has_u=true ;;
-      --ophost_test | --opapi_test | --opgraph_test | --ophost | --opapi | --opgraph)
+      --ophost_test | --opapi_test | --opgraph_test | --ophost | --opapi | --opgraph | --onnxplugin)
         has_test_command=true
         has_build_command=true
         ;;
@@ -512,6 +526,10 @@ set_create_libs() {
     fi
     if [[ "$OP_GRAPH" == "TRUE" ]]; then
       BUILD_LIBS+=("opgraph_${REPOSITORY_NAME}")
+      ENABLE_CREATE_LIB=TRUE
+    fi
+    if [[ "$ONNX_PLUGIN" == "TRUE" ]]; then
+      BUILD_LIBS+=("op_${REPOSITORY_NAME}_onnx_plugin")
       ENABLE_CREATE_LIB=TRUE
     fi
     if [[ "$OP_KERNEL" == "TRUE" ]]; then
@@ -660,6 +678,7 @@ checkopts() {
   OP_API=FALSE
   OP_HOST=FALSE
   OP_GRAPH=FALSE
+  ONNX_PLUGIN=FALSE
   OP_KERNEL=FALSE
   OP_KERNEL_AICPU=FALSE
   ENABLE_CREATE_LIB=FALSE
@@ -706,6 +725,7 @@ checkopts() {
           --ophost) SHOW_HELP="ophost" ;;
           --opapi) SHOW_HELP="opapi" ;;
           --opgraph) SHOW_HELP="opgraph" ;;
+          --onnxplugin) SHOW_HELP="onnxplugin" ;;
           --ophost_test) SHOW_HELP="ophost_test" ;;
           --opapi_test) SHOW_HELP="opapi_test" ;;
           --opgraph_test) SHOW_HELP="opgraph_test" ;;
@@ -792,6 +812,7 @@ checkopts() {
         make_clean)
           clean_build
           clean_build_out
+          clean_third_party
           exit 0
           ;;
         *)
@@ -817,6 +838,8 @@ checkopts() {
             OP_KERNEL=TRUE
           elif [[ "$OPTARG" == "opkernel_aicpu" ]]; then
             OP_KERNEL_AICPU=TRUE
+          elif [[ "$OPTARG" == "onnxplugin" ]]; then
+            ONNX_PLUGIN=TRUE
           else
             usage
             exit 1
@@ -1025,6 +1048,14 @@ clean_build() {
 clean_build_out() {
   if [ -d "${BUILD_OUT_PATH}" ]; then
     rm -rf ${BUILD_OUT_PATH}/*
+  fi
+}
+
+clean_third_party() {
+  THIRD_PARTY_PATH=${BASE_PATH}/third_party
+  if [ -d "${THIRD_PARTY_PATH}" ]; then
+    rm -rf ${THIRD_PARTY_PATH}/abseil-cpp
+    rm -rf ${THIRD_PARTY_PATH}/ascend_protobuf
   fi
 }
 

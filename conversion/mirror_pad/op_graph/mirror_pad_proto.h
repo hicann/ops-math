@@ -1,0 +1,59 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+/*!
+ * \file mirror_pad_proto.h
+ * \brief
+ */
+
+#ifndef MIRROR_PAD_PROTO_H_
+#define MIRROR_PAD_PROTO_H_
+#include "graph/operator_reg.h"
+#include "graph/types.h"
+
+namespace ge {
+/**
+*@brief Fills the tensor with the mirror value. \n
+*@par Inputs:
+* @li x: The tensor to be padded. Format support ND,
+* support 1D ~ 5D. Type must be one of the following
+* types: int8, uint8, int16, uint16, int32, int64, float16, float,
+* double, bool, complex64, complex128, bfloat16.
+* @li paddings: A two-column matrix specifying the padding sizes.
+* The number of rows has the same rank as "x", type must be int32 or int64. \n
+
+*@par Attributes:
+*mode: Either "REFLECT" or "SYMMETRIC". In reflect mode the padded regions
+do not include the borders, while in symmetric mode the padded regions
+do include the borders. \n
+
+*@par Outputs:
+*y: The padded tensor. \n
+
+*@attention Constraints:
+*MirrorPad runs on the Ascend AI CPU, which delivers poor performance. \n
+
+*@par Third-party framework compatibility
+*Compatible with the TensorFlow operator MirrorPad.
+*/
+
+REG_OP(MirrorPad)
+    .INPUT(x, TensorType({ DT_INT8, DT_UINT8, DT_INT16, DT_UINT16,
+      DT_INT32, DT_INT64, DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_BOOL,
+      DT_COMPLEX64, DT_COMPLEX128 }))
+    .INPUT(paddings, TensorType({ DT_INT32, DT_INT64 }))
+    .OUTPUT(y, TensorType({ DT_INT8, DT_UINT8, DT_INT16, DT_UINT16,
+      DT_INT32, DT_INT64, DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_BOOL,
+      DT_COMPLEX64, DT_COMPLEX128 }))
+    .REQUIRED_ATTR(mode, String)
+    .OP_END_FACTORY_REG(MirrorPad)
+} // namespace ge
+
+#endif

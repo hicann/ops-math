@@ -14,6 +14,7 @@ set(OPSTATIC_NAME cann_${PKG_NAME}_static)
 set(OPAPI_NAME opapi_${PKG_NAME})
 set(OPGRAPH_NAME opgraph_${PKG_NAME})
 set(GRAPH_PLUGIN_NAME graph_plugin_${PKG_NAME})
+set(ONNX_PLUGIN_NAME op_${PKG_NAME}_onnx_plugin)
 if(NOT CANN_3RD_LIB_PATH)
   set(CANN_3RD_LIB_PATH ${PROJECT_SOURCE_DIR}/third_party)
 endif()
@@ -89,6 +90,7 @@ else()
   set(OPTILING_LIB_INSTALL_DIR        ${OPHOST_LIB_INSTALL_PATH})
   set(OPGRAPH_INC_INSTALL_DIR         ops_math/built-in/op_graph/inc)
   set(OPGRAPH_LIB_INSTALL_DIR         ops_math/built-in/op_graph/lib/linux/${CMAKE_SYSTEM_PROCESSOR})
+  set(ONNX_PLUGIN_LIB_INSTALL_DIR     ops_math/built-in/framework/onnx)
   set(COMMON_INC_INSTALL_DIR          ops_math/include)
   set(COMMON_LIB_INSTALL_DIR          ops_math/lib)
   set(VERSION_INFO_INSTALL_DIR        ops_math)
@@ -185,6 +187,13 @@ set(AICPU_INCLUDE
   ${HCCL_EXTERNAL_INCLUDE}
   ${OPS_MATH_DIR}/common/inc/common
   ${METADEF_INCLUDE_DIRS}
+)
+
+set(ONNX_PLUGIN_COMMON_INCLUDE
+  ${OPS_MATH_DIR}
+  ${OPS_MATH_DIR}/common/inc/framework
+  ${OPS_MATH_DIR}/common/inc/op_graph
+  ${OPS_MATH_DIR}/common/stub/inc/framework
 )
 
 set(AICPU_DEFINITIONS
