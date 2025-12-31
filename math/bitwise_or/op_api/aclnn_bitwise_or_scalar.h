@@ -67,7 +67,7 @@ extern "C" {
  * @param [in] out: npu device侧的aclTensor，数据类型需要是self与other推导之后可转换的数据类型，shape需要与self一致，支持非连续的
  * Tensor，数据格式支持ND，数据维度不支持8维以上。
  * Atlas 训练系列产品，Atlas 推理系列产品：数据类型支持BOOL，INT8，INT16，UINT16，INT32，INT64，UINT8，FLOAT，FLOAT16，DOUBLE。
- * Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件、Atlas A3 训练系列产品/Atlas A3 推理系列产品：
+ * Atlas A2 训练系列产品/Atlas A2 推理系列产品、Atlas A3 训练系列产品/Atlas A3 推理系列产品：
  * 数据类型支持BOOL，INT8，INT16，UINT16，INT32，INT64，UINT8，FLOAT，FLOAT16，DOUBLE，BFLOAT16。
  * 昇腾910_95 AI处理器：数据类型支持BOOL，INT8，INT16，UINT16，INT32，UINT32，INT64，UINT64，UINT8，FLOAT，FLOAT16，DOUBLE，
  * BFLOAT16，COMPLEX64，COMPLEX128。
