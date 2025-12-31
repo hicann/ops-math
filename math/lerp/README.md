@@ -36,7 +36,7 @@
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>start</td>
       <td>输入</td>
       <td>待进行lerp计算的入参，公式中的start_i。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
@@ -57,7 +57,7 @@
       <td>ND</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>y</td>
       <td>输出</td>
       <td>待进行lerp计算的出参，公式中的out_i。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
