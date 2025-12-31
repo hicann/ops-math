@@ -135,7 +135,8 @@
 | [aclnnLogSumExp](../../math/reduce_log_sum_exp/docs/aclnnLogSumExp.md) | 返回输入tensor指定维度上的指数之和的对数。                   | 默认确定性实现|                    
 | [aclnnLtScalar&aclnnInplaceLtScalar](../../math/less/docs/aclnnLtScalar&aclnnInplaceLtScalar.md) | 判断输入self中的每个元素是否小于输入other的值，返回一个Bool类型的Tensor。 | 默认确定性实现|  
 | [aclnnLtTensor&aclnnInplaceLtTensor](../../math/less/docs/aclnnLtTensor&aclnnInplaceLtTensor.md) | 判断输入self中的每个元素是否小于输入other中的元素，返回一个Bool类型的Tensor。 | 默认确定性实现|  
-| [aclnnMaskedSelect](../../conversion/masked_select_v3/docs/aclnnMaskedSelect.md) | 根据一个布尔掩码张量（mask）中的值选择输入张量（self）中的元素作为输出，形成一个新的一维张量。 | 默认确定性实现|  
+| [aclnnMaskedSelect](../../conversion/masked_select_v3/docs/aclnnMaskedSelect.md) | 根据一个布尔掩码张量（mask）中的值选择输入张量（self）中的元素作为输出，形成一个新的一维张量。 | 默认确定性实现| 
+| [aclnnMaskedScale](../../math/masked_scale/docs/aclnnMaskedScale.md) | 完成elementwise计算。                                        | 默认确定性实现| 
 | [aclnnMaxDim](../../math/arg_max_with_value/docs/aclnnMaxDim.md) | 返回Tensor指定维度的最大值及其索引位置。                     | 默认确定性实现|                      
 | [aclnnMax](../../math/reduce_max/docs/aclnnMax.md)              | 返回Tensor所有元素中的最大值。                               | 默认确定性实现|                                
 | [aclnnMaximum](../../math/maximum/docs/aclnnMaximum.md)         | 计算两个张量中每个元素的最大值，并返回一个新的张量。         | 默认确定性实现|          

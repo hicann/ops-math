@@ -556,7 +556,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/arg_max_v2">arg_max_v2</a></td>
+    <td><a href="../../math/arg_max_v2/README.md">arg_max_v2</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -566,7 +566,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/arg_max_with_value">arg_max_with_value</a></td>
+    <td><a href="../../math/arg_max_with_value/README.md">arg_max_with_value</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -576,7 +576,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/arg_min">arg_min</a></td>
+    <td><a href="../../math/arg_min/README.md">arg_min</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -586,13 +586,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/arg_min_with_value">arg_min_with_value</a></td>
+    <td><a href="../../math/arg_min_with_value/README.md">arg_min_with_value</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回self中指定维度的最小值及其索引位置。最小值保存到out中，最小值的索引保存到indices中。如果keepdim为false，则不保留对应的轴；如果为true，则保留指定轴的维度值为1。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -676,13 +676,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/bitwise_and">bitwise_and</a></td>
+    <td><a href="../../math/bitwise_and/README.md">bitwise_and</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>计算输入tensor中每个元素和输入标量的按位与结果。输入的tensor与other必须是整型或者BOOL型变量。当输入为BOOL时，计算逻辑与的结果。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -696,13 +696,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/bitwise_or">bitwise_or</a></td>
+    <td><a href="../../math/bitwise_or/README.md">bitwise_or</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>计算输入张量self中每个元素和输入标量other的按位或。输入self和other必须是整数或布尔类型，对于布尔类型，计算逻辑或。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1106,13 +1106,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/logical_not">logical_not</a></td>
+    <td><a href="../../math/logical_not/README.md">logical_not</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>计算给定输入Tensor的逐元素逻辑非。如果未指定输出类型，输出Tensor是bool类型。如果输入Tensor不是bool类型，则将零视为False，非零视为True。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1123,6 +1123,16 @@
     <td>√</td>
     <td>AI Core</td>
     <td>完成给定输入张量元素的逻辑或运算。当两个输入张量为非bool类型时，0被视为False，非0被视为True。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/masked_scale/README.md">masked_scale</a></td>
+    <td>×</td>
+    <td>×</td>
+    <td>×</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>完成elementwise计算。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1276,13 +1286,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/reciprocal">reciprocal</a></td>
+    <td><a href="../../math/reciprocal/README.md">reciprocal</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回一个具有每个输入元素倒数的新张量。</td>
   </tr>
   <tr>
     <td>math</td>

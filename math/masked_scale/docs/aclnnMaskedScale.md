@@ -27,12 +27,15 @@
 - **参数说明：**
   
   - self(aclTensor*, 计算输入)：公式中的输入`self`，Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、BFLOAT16、FLOAT，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
 
   - mask(aclTensor*, 计算输入)：公式中的`mask`，Device侧的aclTensor，shape需要与self一致。
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持UINT8、INT8、FLOAT16、FLOAT，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
 
   - scale(float, 计算输入)：进行数据缩放，数据类型支持FLOAT。
 
   - y(aclTensor\*, 计算输出)：公式中的`out`，Device侧的aclTensor，数据类型和shape需要与self一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、BFLOAT16、FLOAT，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
 
   - workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
 

@@ -6,11 +6,7 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品 </term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
-| <term>Atlas 200/300/500 推理产品</term>                      |    ×     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
     
 ## 功能说明
 
@@ -29,12 +25,10 @@ input = tensor([1,2,3,4])，经过reciprocal计算后，out = tensor([1.00, 0.50
 
 ## 参数说明
 
-* self(aclTensor*,计算输入): Device侧的aclTensor，支持[非连续的Tensor](common/非连续的Tensor.md)，支持空Tensor传入，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持DOUBLE、COMPLEX64、COMPLEX128、FLOAT32、FLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、COMPLEX64、COMPLEX128、FLOAT32、FLOAT16、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL。
-* out(aclTensor \*，计算输出): Device侧的aclTensor，shape需要与self一致。支持[非连续的Tensor](common/非连续的Tensor.md)，支持空Tensor传入，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持DOUBLE、COMPLEX64、COMPLEX128、FLOAT32、FLOAT16。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、COMPLEX64、COMPLEX128、FLOAT32、FLOAT16、BFLOAT16。
+* self(aclTensor*,计算输入): Device侧的aclTensor，支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，支持空Tensor传入，[数据格式](../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、COMPLEX64、COMPLEX128、FLOAT32、FLOAT16、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL。
+* out(aclTensor \*，计算输出): Device侧的aclTensor，shape需要与self一致。支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，支持空Tensor传入，[数据格式](../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、COMPLEX64、COMPLEX128、FLOAT32、FLOAT16、BFLOAT16。
 
 ## 约束说明
 
