@@ -187,6 +187,23 @@ aclnnStatus aclnnReduceSumGetWorkspaceSize(const aclTensor *self, const aclIntAr
     return ret;
   }
 
+  // 当输入tensor是0维时，直接将输入tensor作为输出返回
+  if (self->GetViewShape().GetDimNum() == 0) {
+    // 固定写法，将输入self转换成连续的tensor
+    auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
+    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    // 将计算结果转换成输出out的数据类型
+    auto selfCasted = l0op::Cast(selfContiguous, out->GetDataType(), uniqueExecutor.get());
+    CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    
+    auto viewCopyResult = l0op::ViewCopy(selfCasted, out, uniqueExecutor.get());
+    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    *workspaceSize = uniqueExecutor->GetWorkspaceSize();
+    uniqueExecutor.ReleaseTo(executor);
+    return ACLNN_SUCCESS;
+  }
+
   // 数据类型转换处理
   op::DataType selfType = self->GetDataType();
   op::DataType dataType = op::ToOpDataType(dtype);
