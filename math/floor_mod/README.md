@@ -32,25 +32,46 @@ result = remainder(self, other)
 # 可以看到，最终结果-3的绝对值小于原来的-4的绝对值。
 ```
 
-- **参数说明：**
+## 参数说明
 
-    * self(aclScalar*, 计算输入)：公式中的输入`self`，Host侧的aclScalar。
-        - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16。数据类型与other的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](common/TensorScalar互推导关系.md)），并且推导出的数据类型必须能转换为out的数据类型。
-        - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16。数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），并且推导出的数据类型必须能转换为out的数据类型。
-        - <term>Atlas 训练系列产品</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE。数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），并且推导出的数据类型必须能转换为out的数据类型。
-
-    * other(aclTensor*, 计算输入)：公式中的输入`other`, Device侧的aclTensor，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND，数据维度不支持8维以上。
-        - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16。数据类型与self的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](common/TensorScalar互推导关系.md)），并且推导出的数据类型必须能转换为out的数据类型。
-        - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16。数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），并且推导出的数据类型必须能转换为out的数据类型。
-        - <term>Atlas 训练系列产品</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE。数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](common/互推导关系.md)），并且推导出的数据类型必须能转换为out的数据类型。
-
-    * out(aclTensor \*, 计算输出)：公式中的输出`out`，Device侧的aclTensor。shape需要与other一致。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-        - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16。
-        - <term>Atlas 训练系列产品</term>：数据类型支持INT32、INT64、FLOAT16、FLOAT、DOUBLE。
-
-    * workspaceSize(uint64_t \*，出参)：返回需要在Device侧申请的workspace大小。
-
-    * executor(aclOpExecutor \*\*，出参)：返回op执行器，包含了算子计算流程。
+<table style="undefined;table-layout: fixed; width: 820px"><colgroup>
+  <col style="width: 100px">
+  <col style="width: 150px">
+  <col style="width: 190px">
+  <col style="width: 260px">
+  <col style="width: 120px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出/属性</th>
+      <th>描述</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>x1</td>
+      <td>输入</td>
+      <td>公式中的输入张量self_i</td>
+      <td>FLOAT16, BFLOAT16, FLOAT, INT32, INT64</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>x2</td>
+      <td>输入</td>
+      <td>公式中的输入张量other_i</td>
+      <td>FLOAT16, BFLOAT16, FLOAT, INT32, INT64</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>y</td>
+      <td>输出</td>
+      <td>公式中的输出张量out_i</td>
+      <td>FLOAT16, BFLOAT16, FLOAT, INT32, INT64</td>
+      <td>ND</td>
+    </tr>
+  </tbody></table>
 
 ## 调用说明
 

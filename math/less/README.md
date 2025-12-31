@@ -35,25 +35,24 @@
       <th>数据类型</th>
       <th>数据格式</th>
     </tr></thead>
-  <tbody>
     <tr>
       <td>x1</td>
       <td>输入</td>
-      <td>公式中的输入张量x1。</td>
-      <td>DOUBLE、FLOAT、FLOAT16、BFLOAT16、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL</td>
+      <td>公式中的输入张量x1_i。</td>
+      <td>DOUBLE、FLOAT、FLOAT16、BFLOAT16、INT32、INT64、UINT64、UINT8、INT8、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>x2</td>
       <td>输入</td>
-      <td>公式中的输入张量x2。</td>
-      <td>DOUBLE、FLOAT、FLOAT16、BFLOAT16、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL</td>
+      <td>公式中的输入张量x2_i。</td>
+      <td>DOUBLE、FLOAT、FLOAT16、BFLOAT16、INT32、INT64、UINT64、UINT8、INT8、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
-      <td>公式中的输出张量y。</td>
+      <td>公式中的输出张量y_i。</td>
       <td>BOOL</td>
       <td>ND</td>
     </tr>
