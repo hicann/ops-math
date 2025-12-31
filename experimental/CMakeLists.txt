@@ -15,14 +15,14 @@ set(COMMON_L0_SRCS
   ${CMAKE_SOURCE_DIR}/math/cast/op_host/op_api/cast.cpp
   ${CMAKE_SOURCE_DIR}/conversion/contiguous/op_host/op_api/contiguous.cpp
   ${CMAKE_SOURCE_DIR}/conversion/reshape/op_host/op_api/reshape.cpp
-  ${CMAKE_SOURCE_DIR}/conversion/slice/op_host/op_api/slice.cpp
-  ${CMAKE_SOURCE_DIR}/conversion/as_strided/op_host/op_api/as_strided.cpp
+  ${CMAKE_SOURCE_DIR}/conversion/slice/op_api/slice.cpp
+  ${CMAKE_SOURCE_DIR}/conversion/as_strided/op_api/as_strided.cpp
   ${CMAKE_SOURCE_DIR}/conversion/view_copy/op_host/op_api/view_copy.cpp
-  ${CMAKE_SOURCE_DIR}/conversion/strided_slice/op_host/op_api/strided_slice.cpp
+  ${CMAKE_SOURCE_DIR}/conversion/strided_slice/op_api/strided_slice.cpp
   ${CMAKE_SOURCE_DIR}/conversion/broadcast_to/op_host/op_api/broadcast_to.cpp
   ${CMAKE_SOURCE_DIR}/conversion/tensor_move/op_host/op_api/tensor_move.cpp
   ${CMAKE_SOURCE_DIR}/conversion/trans_data/op_host/op_api/transdata.cpp
-  ${CMAKE_SOURCE_DIR}/conversion/transpose/op_host/op_api/transpose.cpp
+  ${CMAKE_SOURCE_DIR}/conversion/transpose/op_api/transpose.cpp
   ${CMAKE_SOURCE_DIR}/conversion/pad/op_host/op_api/pad.cpp)
 
 add_opapi_modules()
