@@ -16,8 +16,6 @@
 
 ## 参数说明
 
-### InplaceFillScalar
-
 <table style="undefined;table-layout: fixed; width: 922px"><colgroup>
 <col style="width: 144px">
 <col style="width: 166px">
@@ -35,62 +33,28 @@
   </tr></thead>
 <tbody>
   <tr>
-    <td>selfRef</td>
-    <td>输入/输出张量</td>
-    <td>输入输出张量，支持非连续的Tensor，数据维度不支持8维以上。</td>
-    <td>FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16</td>
+    <td>dims</td>
+    <td>输入</td>
+    <td>一维张量。表示输出张量的形状。</td>
+    <td>INT32、INT64</td>
     <td>ND</td>
   </tr>
   <tr>
     <td>value</td>
-    <td>输入标量</td>
-    <td>指定的标量值，数据类型需要与selfRef的数据类型满足数据类型推导规则。</td>
-    <td>FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16</td>
+    <td>输入</td>
+    <td>零维标量。指定用于填充返回张量的值。数据类型需要与dims的数据类型满足数据类型推导规则</td>
+    <td>INT8、INT32、INT64、FLOAT、FLOAT16、BOOL、BFLOAT16</td>
     <td>-</td>
   </tr>
-</tbody>
-</table>
-
-### InplaceFillTensor
-
-<table style="undefined;table-layout: fixed; width: 922px"><colgroup>
-<col style="width: 144px">
-<col style="width: 166px">
-<col style="width: 202px">
-<col style="width: 308px">
-<col style="width: 102px">
-</colgroup>
-<thead>
   <tr>
-    <th>参数名</th>
-    <th>输入/输出/属性</th>
-    <th>描述</th>
-    <th>数据类型</th>
-    <th>数据格式</th>
-  </tr></thead>
-<tbody>
-  <tr>
-    <td>selfRef</td>
-    <td>输入/输出张量</td>
-    <td>输入输出张量，支持非连续的Tensor，数据维度不支持8维以上。</td>
-    <td>FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16</td>
-    <td>ND</td>
-  </tr>
-  <tr>
-    <td>value</td>
-    <td>输入张量</td>
-    <td>填充值张量，必须是0维或size=1的1维张量。</td>
-    <td>FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16</td>
+    <td>y</td>
+    <td>输出</td>
+    <td>输出张量。</td>
+    <td>INT8、INT32、INT64、FLOAT、FLOAT16、BOOL、BFLOAT16</td>
     <td>ND</td>
   </tr>
 </tbody>
 </table>
-
-## 约束说明
-
-- 输入张量的数据维度不支持8维以上。
-- InplaceFillTensor的value参数必须是0维张量或size=1的1维张量。
-- 数据类型需要满足互推导关系。
 
 ## 调用说明
 

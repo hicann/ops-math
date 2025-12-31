@@ -10,8 +10,12 @@
 
 ## 功能说明
 
-算子功能：完成给定输入张量元素的逻辑或运算。当两个输入张量为非bool类型时，0被视为False，非0被视为True。
+- 算子功能：完成给定输入张量元素的逻辑或运算。当两个输入张量为非bool类型时，0被视为False，非0被视为True。
+- 计算公式：
 
+  $$
+  y = x_1 | x_2
+  $$
 
 ## 参数说明
 
@@ -32,33 +36,27 @@
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>x1</td>
       <td>输入</td>
       <td>待进行logical_or计算的入参。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128</td>
+      <td>BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>other</td>
+      <td>x2</td>
       <td>输入</td>
       <td>待进行logical_or计算的入参。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128</td>
+      <td>BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>y</td>
       <td>输出</td>
       <td>待进行logical_or计算的出参。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128</td>
+      <td>BOOL</td>
       <td>ND</td>
     </tr>
   </tbody></table>
-
-- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
-
-## 约束说明
-
-无
 
 ## 调用说明
 

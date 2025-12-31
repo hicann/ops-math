@@ -1,7 +1,5 @@
 # aclnnLogicalOr&aclnnInplaceLogicalOr
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/logical_or)
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
