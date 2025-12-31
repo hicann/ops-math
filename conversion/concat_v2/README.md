@@ -71,7 +71,6 @@
     </tr>
   </tbody></table>
 
-- Atlas 训练、推理系列产品：不支持BFLOAT16。
 
 ## 约束说明
 

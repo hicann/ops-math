@@ -35,21 +35,21 @@ $out=input1∧input2$
     </tr></thead>
   <tbody>
     <tr>
-      <td>input_1</td>
+      <td>x1</td>
       <td>输入</td>
       <td>待进行logical_and计算的入参，公式中的input_1。</td>
       <td>BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>input_2</td>
+      <td>x2</td>
       <td>输入</td>
       <td>待进行logical_and计算的入参，公式中的input_2。</td>
       <td>BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>y</td>
       <td>输出</td>
       <td>待进行logical_and计算的出参，公式中的out。</td>
       <td>BOOL</td>
@@ -57,7 +57,7 @@ $out=input1∧input2$
     </tr>
   </tbody></table>
 
-- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
+
 
 ## 约束说明
 

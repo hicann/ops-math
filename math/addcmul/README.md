@@ -36,21 +36,21 @@ $out = self + value × input_1 × input_2$
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>input_data</td>
       <td>输入</td>
       <td>待进行addcmul计算的入参，公式中的self。</td>
       <td>FLOAT16、BFLOAT16、FLOAT、INT32</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>input_1</td>
+      <td>x1</td>
       <td>输入</td>
       <td>待进行addcmul计算的入参，公式中的input_1。</td>
       <td>FLOAT16、BFLOAT16、FLOAT、INT32</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>input_2</td>
+      <td>x2</td>
       <td>输入</td>
       <td>待进行addcmul计算的入参，公式中的input_2。</td>
       <td>FLOAT16、BFLOAT16、FLOAT、INT32</td>
@@ -64,7 +64,7 @@ $out = self + value × input_1 × input_2$
       <td>ND</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>y</td>
       <td>输出</td>
       <td>待进行addcmul计算的出参，公式中的out。</td>
       <td>FLOAT16、BFLOAT16、FLOAT、INT32</td>
@@ -72,7 +72,7 @@ $out = self + value × input_1 × input_2$
     </tr>
   </tbody></table>
 
-- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
+
 
 ## 约束说明
 
