@@ -36,29 +36,27 @@
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>x1</td>
       <td>输入</td>
-      <td>计算公式中的输入 self。</td>
+      <td>公式中的输入self。</td>
       <td>FLOAT、BFLOAT16、FLOAT16、INT32、INT8、UINT8、DOUBLE、INT16、INT64、COMPLEX64、COMPLEX128、QUINT8、QINT8、QINT32、STRING、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>other</td>
+      <td>x2</td>
       <td>输入</td>
-      <td>计算公式中的输入 other。</td>
+      <td>公式中的输入other。</td>
       <td>FLOAT、BFLOAT16、FLOAT16、INT32、INT8、UINT8、DOUBLE、INT16、INT64、COMPLEX64、COMPLEX128、QUINT8、QINT8、QINT32、STRING、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>y</td>
       <td>输出</td>
-      <td>计算公式中的输出 out。</td>
+      <td>公式中的out。</td>
       <td>BOOL</td>
       <td>ND</td>
     </tr>
   </tbody></table>
-
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT32、INT8、UINT8、BOOL、DOUBLE、INT64、INT16、UINT16、UINT32、UINT64、BFLOAT16。
 
 ## 约束说明
 

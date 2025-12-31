@@ -6,11 +6,17 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
 - 算子功能：返回形状和类型相同的张量，所有元素都设置为1。
+
+- 计算公式：
+
+  $$
+    {selfRef}_{i} = 1
+  $$
 
 - 示例：
 
@@ -42,22 +48,20 @@
     </tr></thead>
   <tbody>
     <tr>
-      <td>input</td>
+      <td>x</td>
       <td>输入</td>
-      <td>待进行onelike计算的入参。</td>
+      <td>待进行oneslike计算的入参，公式中的selfRef。</td>
       <td>FLOAT、FLOAT16、BFLOAT16、INT8、INT32、UINT8、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>output</td>
+      <td>y</td>
       <td>输出</td>
-      <td>进行onelike计算的出参。</td>
+      <td>进行oneslike计算的出参，将selfRef张量填充为全1。</td>
       <td>FLOAT、FLOAT16、BFLOAT16、INT8、INT32、UINT8、BOOL</td>
       <td>ND</td>
     </tr>
   </tbody></table>
-
-- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
 
 ## 约束说明
 

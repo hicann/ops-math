@@ -40,23 +40,20 @@
     </tr></thead>
   <tbody>
     <tr>
-      <td>input</td>
+      <td>x</td>
       <td>输入</td>
-      <td>待进行判断的入参，公式中的input_i。</td>
+      <td>公式中的输入input_i。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>y</td>
       <td>输出</td>
-      <td>待进行判断的出参，公式中的out_i。</td>
+      <td>公式中的out_i。</td>
       <td>BOOL</td>
       <td>ND</td>
     </tr>
   </tbody></table>
-
-- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
-- Kirin X90 处理器系列产品: 不支持BFLOAT16。
 
 ## 约束说明
 

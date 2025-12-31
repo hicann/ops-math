@@ -6,7 +6,7 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -79,20 +79,18 @@
     <tr>
       <td>x</td>
       <td>输入</td>
-      <td>待进行sign计算的入参。</td>
+      <td>待进行sign计算的入参，公式中的input_i。</td>
       <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
-      <td>进行sign计算的出参。</td>
+      <td>进行sign计算的出参，公式中的resultput_i。</td>
       <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64</td>
       <td>ND</td>
     </tr>
   </tbody></table>
-
-- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
 
 ## 约束说明
 

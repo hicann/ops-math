@@ -6,7 +6,7 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -36,22 +36,41 @@ $$
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>x</td>
       <td>输入</td>
       <td>待进行exp计算的入参，公式中的self_i。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>base</td>
+      <td>可选属性</td>
+      <td><ul><li>用于指定指数运算的底数。</li><li>默认值为-1.0。</ul></td>
+      <td>FLOAT</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>scale</td>
+      <td>可选属性</td>
+      <td><ul><li>用于指定缩放系数。</li><li>默认值为1.0。</ul></td>
+      <td>FLOAT</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>shift</td>
+      <td>可选属性</td>
+      <td><ul><li>用于指定偏移量。</li><li>默认值为0.0。</ul></td>
+      <td>FLOAT</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>y</td>
       <td>输出</td>
       <td>进行exp计算的出参，公式中的out_i。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
   </tbody></table>
-
-- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
 
 ## 约束说明
 
