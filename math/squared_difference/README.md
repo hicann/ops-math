@@ -40,21 +40,21 @@
       <td>x1</td>
       <td>输入1</td>
       <td>公式中的输入张量x1。</td>
-      <td>DT_DOUBLE、 DT_FLOAT16、 DT_FLOAT、 DT_BF16、 DT_INT32、 DT_INT64、 DT_COMPLEX64、 DT_COMPLEX128</td>
+      <td>BFLOAT16、FLOAT16、FLOAT、INT32、INT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>x2</td>
       <td>输入2</td>
       <td>公式中的输入张量x2。</td>
-      <td>DT_DOUBLE、 DT_FLOAT16、 DT_FLOAT、 DT_BF16、 DT_INT32、 DT_INT64、 DT_COMPLEX64、 DT_COMPLEX128</td>
+      <td>BFLOAT16、FLOAT16、FLOAT、INT32、INT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
       <td>公式中的输出张量y。</td>
-      <td>DT_DOUBLE、 DT_FLOAT16、 DT_FLOAT、 DT_BF16、 DT_INT32、 DT_INT64、 DT_COMPLEX64、 DT_COMPLEX128</td>
+      <td>BFLOAT16、FLOAT16、FLOAT、INT32、INT64</td>
       <td>ND</td>
     </tr>
   </tbody></table>

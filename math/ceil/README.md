@@ -15,7 +15,7 @@
 - 计算公式：
 
 $$
-out_i =⌈self_i⌉
+y_i =⌈x_i⌉
 $$
 
 ## 参数说明
@@ -37,23 +37,21 @@ $$
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>x</td>
       <td>输入</td>
-      <td>计算公式中的输入 self。</td>
-      <td>FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
+      <td>计算公式中的输入x。</td>
+      <td>FLOAT16、FLOAT、BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>y</td>
       <td>输出</td>
-      <td>计算公式中的输出 out。</td>
-      <td>FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
+      <td>计算公式中的输出y。</td>
+      <td>FLOAT16、FLOAT、BFLOAT16</td>
       <td>ND</td>
     </tr>
   </tbody></table>
 
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、BFLOAT16。   
-- <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、BFLOAT16。
 
 ## 约束说明
 
