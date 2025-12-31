@@ -17,35 +17,69 @@
   \text{out} = \beta\ \text{self} + \alpha\ (\text{vec1} \otimes\text{vec2})
   $$
 
-- **参数说明：**
-  
-  - self(aclTensor*, 计算输入): 外积扩展矩阵，Device侧的aclTensor，shape维度不能超过2，并且需要与vec1、vec2满足[broadcast关系](common/broadcast关系.md), 支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
+## 参数说明
 
-  - vec1(aclTensor*, 计算输入): 外积入参第一向量，一维向量，Device侧的aclTensor，shape需要与self满足[broadcast关系](common/broadcast关系.md), 支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
+<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+  <col style="width: 100px">
+  <col style="width: 150px">
+  <col style="width: 280px">
+  <col style="width: 330px">
+  <col style="width: 120px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出/属性</th>
+      <th>描述</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>x1</td>
+      <td>输入</td>
+      <td>待进行addr计算的入参，公式中的self。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT8、UINT8、BOOL</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>x2</td>
+      <td>输入</td>
+      <td>待进行addr计算的入参，公式中的vec1。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT8、UINT8、BOOL</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>x3</td>
+      <td>输入</td>
+      <td>待进行addr计算的入参，公式中的vec2。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT8、UINT8、BOOL</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>beta</td>
+      <td>输入</td>
+      <td>待进行addr计算的入参，公式中的β。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT8、UINT8、BOOL</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>alpha</td>
+      <td>输入</td>
+      <td>待进行addr计算的入参，公式中的α。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT8、UINT8、BOOL</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>y</td>
+      <td>输出</td>
+      <td>待进行addr计算的出参，公式中的out。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT8、UINT8、BOOL</td>
+      <td>ND</td>
+    </tr>
+  </tbody></table>
 
-  - vec2(aclTensor*, 计算输入): 外积入参第二向量，一维向量，Device侧的aclTensor，shape需要与self满足[broadcast关系](common/broadcast关系.md), 支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
-
-  - betaOptional(aclScalar*, 计算输入): 外积扩展矩阵比例因子，即公式中的β，host侧的aclScalar，如果betaOptional为bool类型，则self/vec1/vec2的数据类型只能是bool；如果self/vec1/vec2为整型，则betaOptional、alphaOptional不能为浮点型；[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
-
-  - alphaOptional(aclScalar*, 计算输入): 外积比例因子，即公式中的α，host侧的aclScalar，如果alphaOptional为bool类型，则self/vec1/vec2的数据类型只能是bool；如果self/vec1/vec2为整型，则betaOptional、alphaOptional不能为浮点型；[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
-
-  - out(aclTensor\*, 计算输出): 输出结果，Device侧的aclTensor，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
-
-  - workspaceSize(uint64_t\*, 出参): 返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor\*\*, 出参): 返回op执行器，包含了算子计算流程。
+  - Atlas A2 训练系列产品/Atlas A2 推理系列产品、Atlas A3 训练系列产品/Atlas A3 推理系列产品、Ascend 950PR/Ascend 950DT AI处理器：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
 
 ## 约束说明
 

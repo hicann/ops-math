@@ -6,7 +6,7 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Ascend 950PR/Ascend 950DT</term>                             |     √      |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √       |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -28,19 +28,49 @@
     调整diagonal为-1，triu(self, diagonal=-1)结果为：
     $\begin{bmatrix} [0&0&0] \\ [1&0&0] \\ [3&4&0] \end{bmatrix}$。
 
-- **参数说明：**
+## 参数说明
 
-  - self(aclTensor*， 计算输入)：表示待转换的目标张量，公式中的self，Device侧的aclTensor。shape支持2-8维。支持[非连续的Tensor](common/非连续的Tensor.md)，数据类型和shape需要与out保持一致，[数据格式](common/数据格式.md)支持ND，[数据格式](common/数据格式.md)需要与out一致。
-    - <term>Atlas 训练系列产品</term>：数据类型支持DOUBLE、FLOAT、FLOAT16、INT16、INT32、INT64、INT8、UINT16、UINT32、UINT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持DOUBLE、FLOAT、FLOAT16、INT16、INT32、INT64、INT8、UINT16、UINT32、UINT64、UINT8、BOOL、BFLOAT16。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、FLOAT、FLOAT16、INT16、INT32、INT64、INT8、UINT16、UINT32、UINT64、UINT8、BOOL、BFLOAT16、COMPLEX32、COMPLEX64。
-  - diagonal(int64_t， 计算输入)：对角线的位置，数据类型支持int64_t。
-  - out(aclTensor*， 计算输入)：Device侧的aclTensor，shape支持2-8维，数据类型和shape需要与self保持一致，[数据格式](common/数据格式.md)需要与self一致。
-    - <term>Atlas 训练系列产品</term>：数据类型支持DOUBLE、FLOAT、FLOAT16、INT16、INT32、INT64、INT8、UINT16、UINT32、UINT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持DOUBLE、FLOAT、FLOAT16、INT16、INT32、INT64、INT8、UINT16、UINT32、UINT64、UINT8、BOOL、BFLOAT16。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、FLOAT、FLOAT16、INT16、INT32、INT64、INT8、UINT16、UINT32、UINT64、UINT8、BOOL、BFLOAT16、COMPLEX32、COMPLEX64。
-  - workspaceSize(uint64_t*，出参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor**，出参)：返回op执行器，包含了算子计算流程。
+<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+  <col style="width: 100px">
+  <col style="width: 150px">
+  <col style="width: 280px">
+  <col style="width: 330px">
+  <col style="width: 120px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出/属性</th>
+      <th>描述</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>x</td>
+      <td>输入</td>
+      <td>待进行tril计算的入参，公式中的self。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、COMPLEX32、COMPLEX64</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>diagonal</td>
+      <td>输入</td>
+      <td>待进行tril计算的入参，公式中的diagonal。</td>
+      <td>INT64</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>y</td>
+      <td>输出</td>
+      <td>待进行abs计算的出参，公式中的out。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+      <td>ND</td>
+    </tr>
+  </tbody></table>
+
+  - Atlas A2 训练系列产品/Atlas A2 推理系列产品、Atlas A3 训练系列产品/Atlas A3 推理系列产品：数据类型支持DOUBLE、FLOAT、FLOAT16、INT16、INT32、INT64、INT8、UINT16、UINT32、UINT64、UINT8、BOOL、BFLOAT16。
+  - Ascend 950PR/Ascend 950DT AI处理器：数据类型支持DOUBLE、FLOAT、FLOAT16、INT16、INT32、INT64、INT8、UINT16、UINT32、UINT64、UINT8、BOOL、BFLOAT16、COMPLEX32、COMPLEX64。
 
 ## 约束说明
 

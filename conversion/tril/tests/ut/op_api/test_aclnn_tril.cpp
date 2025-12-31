@@ -1,18 +1,18 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include "gtest/gtest.h"
 #include <array>
 #include <vector>
 
 #include "../../../op_api/aclnn_tril.h"
-
+#include "opdev/platform.h"
 #include "op_api_ut_common/inner/types.h"
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
@@ -31,7 +31,58 @@ protected:
     {
         cout << "tril_test TearDown" << endl;
     }
+
+    void TearDown() override
+    {
+        op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    }
 };
+
+// 测试所有支持的类型
+TEST_F(l2_tril_test, ascend910A_case_1_dtype_all_support)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910);
+    vector<aclDataType> dtype_list{ACL_UINT8,   ACL_INT8,   ACL_INT16, ACL_INT32,     ACL_INT64,     ACL_FLOAT,
+                                   ACL_FLOAT16, ACL_DOUBLE, ACL_BOOL,  ACL_COMPLEX64, ACL_COMPLEX128};
+    for (auto dtype : dtype_list) {
+        cout << "+++++++++++++++++++++++ start to test ascend910A dtype: " << String(dtype) << endl;
+        auto input_tensor_desc = TensorDesc({3, 5}, dtype, ACL_FORMAT_ND);
+        auto out_tensor_desc = TensorDesc({3, 5}, dtype, ACL_FORMAT_ND);
+        int64_t diagonal = 0;
+        auto ut = OP_API_UT(aclnnTril, INPUT(input_tensor_desc, diagonal), OUTPUT(out_tensor_desc));
+        uint64_t workspace_size = 0;
+        aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+        if (dtype == ACL_COMPLEX128 || dtype == ACL_COMPLEX64) {
+            EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+        } else {
+            EXPECT_EQ(aclRet, ACL_SUCCESS);
+            // ut.TestPrecision();
+        }
+    }
+}
+
+// 测试所有支持的类型
+TEST_F(l2_tril_test, ascend910B2_case_1_dtype_all_support)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+    vector<aclDataType> dtype_list{ACL_UINT8,   ACL_INT8,   ACL_INT16, ACL_INT32, ACL_INT64,     ACL_FLOAT,
+                                   ACL_FLOAT16, ACL_DOUBLE, ACL_BOOL,  ACL_BF16,  ACL_COMPLEX64, ACL_COMPLEX128};
+    for (auto dtype : dtype_list) {
+        cout << "+++++++++++++++++++++++ start to test ascend910B2 dtype: " << String(dtype) << endl;
+        auto input_tensor_desc = TensorDesc({3, 5}, dtype, ACL_FORMAT_ND);
+        auto out_tensor_desc = TensorDesc({3, 5}, dtype, ACL_FORMAT_ND);
+        int64_t diagonal = 0;
+        auto ut = OP_API_UT(aclnnTril, INPUT(input_tensor_desc, diagonal), OUTPUT(out_tensor_desc));
+        uint64_t workspace_size = 0;
+        aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+        if (dtype == ACL_COMPLEX128 || dtype == ACL_COMPLEX64) {
+            EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+        } else {
+            EXPECT_EQ(aclRet, ACL_SUCCESS);
+            // ut.TestPrecision();
+        }
+    }
+}
 
 TEST_F(l2_tril_test, case_2_different_dtype)
 {
@@ -57,6 +108,7 @@ TEST_F(l2_tril_test, case_3_all_format)
         uint64_t workspace_size = 0;
         aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
         EXPECT_EQ(aclRet, ACL_SUCCESS);
+        // ut.TestPrecision();
     }
 }
 
@@ -113,6 +165,7 @@ TEST_F(l2_tril_test, case_8_all_diagonal)
         uint64_t workspace_size = 0;
         aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
         EXPECT_EQ(aclRet, ACL_SUCCESS);
+        // ut.TestPrecision();
     }
 }
 
@@ -140,6 +193,7 @@ TEST_F(l2_tril_test, case_10_empty)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+    // ut.TestPrecision();
 }
 
 TEST_F(l2_tril_test, case_11_non_contiguous)
@@ -151,6 +205,7 @@ TEST_F(l2_tril_test, case_11_non_contiguous)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+    // ut.TestPrecision();
 }
 
 TEST_F(l2_tril_test, case_12_inplace)
@@ -161,4 +216,5 @@ TEST_F(l2_tril_test, case_12_inplace)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+    // ut.TestPrecision();
 }
