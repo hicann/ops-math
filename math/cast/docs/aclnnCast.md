@@ -107,7 +107,7 @@ aclnnStatus aclnnCast(
     </tr>
   </tbody></table>
   
-  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持COMPLEX32、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT4_E2M1、FLOAT4_E1M2、INT4。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持COMPLEX32、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT4_E2M1、FLOAT4_E1M2、INT4。
 
 - **返回值：**
 
@@ -210,9 +210,11 @@ aclnnStatus aclnnCast(
 - 针对输入数据类型为BOOL、COMPLEX32、COMPLEX64、COMPLEX128、FLOAT4_E2M1、FLOAT4_E1M2的场景：
   不支持输入为非连续。
 
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
   - 针对数据类型从int32转换为int8的场景：
     只能保证输入数据在(-2048, 1920)范围内精度无误差。
+  - 针对数据类型从float64/complex64/complex128转换为uint8的场景：
+    只能保证输入数据为非负数精度无误差。
 
 ## 调用示例
 
