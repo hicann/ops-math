@@ -16,7 +16,7 @@
   out = \frac{1}{max(0, N - \delta N)}\sum_{j=0}^{N-1}(self_{ij}-\bar{x_{i}})^2
   $$
 
-  `unbiased = true`时，需加入无偏估计，$\delta N = 1$；`unbiased = false`时，需加入无偏估计，$\delta N = 0$；
+  `unbiased = true`时，需加入无偏估计，$\delta N = 1$；`unbiased = false`时，不加入无偏估计，$\delta N = 0$；
   当`keepdim = true`时，reduce 后保留该维度，且输出 shape 中该维度值为 1；当 `keepdim = false`时，不保留该维度。
   当dim为nullptr或[]时，视为计算所有维度。
 

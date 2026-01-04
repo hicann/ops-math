@@ -88,7 +88,7 @@
   - self(aclTensor*，计算输入)：表示索引张量，公式中的self，Device侧的aclTensor，shape支持1-8维度。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT32、INT64。
     - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持UINT8、INT32、INT64。
-  - numClasses(int，计算输入)：表示类别数，数据类型必须输入INT64。当self为空Tensor时，numClasses的值需大于0；当self不为空Tensor时。numClasses需大于等于0。若numClasses的值为0，则返回空Tensor。如果self存在元素大于numClasses，这些元素会被编码成全0。
+  - numClasses(int，计算输入)：表示类别数，数据类型必须输入INT64。当self为空Tensor时，numClasses的值需大于0；当self不为空Tensor时。numClasses需大于等于0。若numClasses的值为0，则返回空Tensor。如果self存在元素大于numClasses，这些元素会被编码成全offValue。
   - onValue(aclTensor*，计算输入)：表示索引位置的填充值，公式中的onValue，Device侧的aclTensor，shape支持1-8维度，且计算时只使用其中第一个元素值进行计算。数据类型与out一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT32、INT64。
     - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、INT8、UINT8、INT32、INT64。
