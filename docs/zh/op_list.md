@@ -647,22 +647,22 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/axpy">axpy</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>源操作数中每个元素与标量求积后和目的操作数中的对应元素相加。</td>
   </tr>
   <tr>
     <td>math</td>
     <td><a href="../../math/axpy_v2">axpy_v2</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>源操作数中每个元素与张量求积后和目的操作数中的对应元素相加。</td>
   </tr>
   <tr>
     <td>math</td>
