@@ -884,7 +884,7 @@ parse_changed_files() {
   echo "related ops "$COMPILED_OPS
   echo "related soc_info "$soc_info
 
-  COMPUTE_UNIT=$soc_info
+  # COMPUTE_UNIT=$soc_info
 
   if [[ "$related_ut" == "set()" ]]; then
     ENABLE_TEST=FALSE

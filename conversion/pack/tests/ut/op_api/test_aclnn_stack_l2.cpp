@@ -17,6 +17,7 @@
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/tensor_desc.h"
+#include "opdev/platform.h"
 
 using namespace std;
 
@@ -30,6 +31,11 @@ protected:
     static void TearDownTestCase()
     {
         cout << "l2_stack_test TearDown" << endl;
+    }
+
+    void TearDown() override
+    {
+        op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
     }
 };
 
@@ -475,20 +481,21 @@ TEST_F(l2_stack_test, l2_stack_test_one_empty_tensor)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-// // 正常路径，bfloat16
-// TEST_F(l2_stack_test, ascend310P_l2_stack_test_dtype_bfloat16)
-// {
-//     auto tensor_1_desc =
-//         TensorDesc({2, 5}, ACL_BF16, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-//     auto tensor_2_desc =
-//         TensorDesc({2, 5}, ACL_BF16, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
-//     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_BF16, ACL_FORMAT_ND);
-//     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
-//     int64_t dim = 0;
+// 正常路径，bfloat16
+TEST_F(l2_stack_test, ascend310P_l2_stack_test_dtype_bfloat16)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND310P);
+    auto tensor_1_desc =
+        TensorDesc({2, 5}, ACL_BF16, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc =
+        TensorDesc({2, 5}, ACL_BF16, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_BF16, ACL_FORMAT_ND);
+    auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
+    int64_t dim = 0;
 
-//     auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
 
-//     uint64_t workspace_size = 0;
-//     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-//     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-// }
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
