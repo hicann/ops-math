@@ -296,6 +296,16 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/depth_to_space/README.md">diag_flat</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>该算子通过对输入张量的深度（通道）维度进行重新排列，将其转换为空间维度（高度和宽度）。具体来说，它将输入张量的深度维度按照指定的块大小（block_size）进行划分，并将这些深度块重新排列到空间维度中，从而增加空间维度的大小，同时减少通道维度的深度。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/diag_flat/README.md">diag_flat</a></td>
     <td>√</td>
     <td>√</td>
@@ -333,6 +343,16 @@
     <td>×</td>
     <td>AI Core</td>
     <td>根据mask是否为True，选出input中对应位置的值，input和mask满足广播规则，结果为一维Tensor。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/mem_set_v2/README.md">mem_set_v2</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>给输入tensor赋指定的值。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -463,6 +483,16 @@
     <td>√</td>
     <td>AI CPU</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/unpack/README.md">unpack</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>将张量沿着某一维度拆分为多个子张量。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1887,12 +1917,22 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/strided_slice">strided_slice</a></td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>按照指定的起始、结束位置和步长，从输入张量中提取一个子张量。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/strided_slice_grad">strided_slice_grad</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>将子张量的梯度映射回原始张量的对应位置。</td>
   </tr>
   <tr>
     <td>conversion</td>
