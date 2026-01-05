@@ -14,6 +14,7 @@
  */
 
 #include "../../../../op_host/arch35/range_tiling_arch35.h"
+#include "../../../../op_host/arch35/range_tiling.h"
 #include <iostream>
 #include <gtest/gtest.h>
 #include "tiling_context_faker.h"
@@ -42,20 +43,23 @@ protected:
 //
 // The infershape tests pass correctly, which validates the operator logic.
 
-// TEST_F(RangeTilingTest, test_tiling_int32) {
-//     optiling::RangeCompileInfo compileInfo;
-//     compileInfo.running_core_num = 8;
-//     compileInfo.totalCoreNum = 8;
-//     compileInfo.ubSize = 262144;
-//     gert::TilingContextPara tilingContextPara("Range",
-//                                               {
-//                                                 {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, false, nullptr},
-//                                                 {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, false, nullptr},
-//                                                 {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, false, nullptr},
-//                                               },
-//                                               {
-//                                                 {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-//                                               },
-//                                               &compileInfo);
-//     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS);
-// }
+TEST_F(RangeTilingTest, test_tiling_int32) {
+    optiling::RangeCompileInfo compileInfo;
+    compileInfo.running_core_num = 8;
+    compileInfo.totalCoreNum = 8;
+    compileInfo.ubSize = 262144;
+    gert::TilingContextPara tilingContextPara("Range",
+                                              {
+                                                {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, false, nullptr},
+                                                {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, false, nullptr},
+                                                {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, false, nullptr},
+                                              },
+                                              {
+                                                {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 110018589944848;
+    string expectTilingData = "0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 32 8 1 0 0 0 0 0 32 8 1 0 0 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {32};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
+}

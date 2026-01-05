@@ -49,9 +49,10 @@ TEST_F(ModTilingTest, test_tiling_float32) {
         },
         &compileInfo);
 
-    TilingInfo tilingInfo;
-    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
-    EXPECT_TRUE(success);
+    uint64_t expectTilingKey = 8;
+    string expectTilingData = "8192 137438953600 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
 // Test: mod tiling with float16
@@ -67,9 +68,10 @@ TEST_F(ModTilingTest, test_tiling_float16) {
         },
         &compileInfo);
 
-    TilingInfo tilingInfo;
-    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
-    EXPECT_TRUE(success);
+    uint64_t expectTilingKey = 8;
+    string expectTilingData = "4096 34359738624 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
 // Test: mod tiling with int32
@@ -85,9 +87,10 @@ TEST_F(ModTilingTest, test_tiling_int32) {
         },
         &compileInfo);
 
-    TilingInfo tilingInfo;
-    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
-    EXPECT_TRUE(success);
+    uint64_t expectTilingKey = 8;
+    string expectTilingData = "8192 137438953600 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
 

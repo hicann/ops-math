@@ -69,7 +69,8 @@ TEST_F(OneHotTilingTest, test_tiling_basic)
         },
         &compileInfo);
 
-    TilingInfo tilingInfo;
-    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
-    EXPECT_TRUE(success);
+    uint64_t expectTilingKey = 1000;
+    string expectTilingData = "65536 48 0 0 0 48 1 64 202752 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

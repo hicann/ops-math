@@ -56,7 +56,8 @@ TEST_F(PowTilingTest, test_tiling_float32) {
                                               },
                                               &compileInfo);
 
-    TilingInfo tilingInfo;
-    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
-    EXPECT_FALSE(success);
+    uint64_t expectTilingKey = 300000001000100;
+    string expectTilingData = "1 640 13 512 1 1 0 13 640 8192 0 0 0 0 0 0 0 8192 0 0 0 0 0 0 0 8192 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
