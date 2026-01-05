@@ -15,7 +15,7 @@
 
 #include <iostream>
 #include <gtest/gtest.h>
-#include "../../../op_host/arch35/stateless_random_uniform_v2_tiling_arch35.h"
+#include "../../../../op_host/arch35/stateless_random_uniform_v2_tiling_arch35.h"
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
 
@@ -57,8 +57,8 @@ TEST_F(StatelessRandomUniformV2TilingTest, stateless_random_uniform_v2_test_0)
         gert::TilingContextPara::OpAttr("dtype", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
     },
     &compileInfo);
-    uint64_t expectTilingKey = 1001;
-    string expectTilingData = "32 512 512 16384 1 2 0 8 0 9 0 0 ";
+    uint64_t expectTilingKey = 101;
+    string expectTilingData = "2199023255584 70368744178176 8589934593 34359738368 38654705664 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
