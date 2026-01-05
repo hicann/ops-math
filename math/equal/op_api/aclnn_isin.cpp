@@ -187,6 +187,9 @@ aclnnStatus aclnnIsInScalarTensorGetWorkspaceSize(
         return ret;
     }
 
+    if (testElements->GetStorageFormat() != Format::FORMAT_ND) {
+        OP_LOGW("Format only support ND");
+    }
     // testElement如果非连续，需要转连续
     auto testElementsContiguous = l0op::Contiguous(testElements, uniqueExecutor.get());
     CHECK_RET(testElementsContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);

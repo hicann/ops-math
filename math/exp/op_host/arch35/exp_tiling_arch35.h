@@ -9,7 +9,7 @@
  */
 
 /*!
- * \file exp_regbase_optiling.h
+ * \file exp_tiling_arch35.h
  * \brief
  */
 #ifndef OPS_BUILD_IN_OP_TILING_RUNTIME_EXP_TILING_H
@@ -17,18 +17,10 @@
 
 #include "register/tilingdata_base.h"
 #include "register/op_impl_registry.h"
-#include "platform/platform_ascendc.h"
-#include "platform/platform_info.h"
-#include "op_host/util/fp16.h"
 #include "atvoss/elewise/elewise_tiling.h"
 
 namespace optiling {
 using namespace Ops::Base;
-
-struct ExpCompileInfo {
-    uint64_t coreNum;
-    uint64_t ubSize;
-};
 
 class ExpTiling {
 public:

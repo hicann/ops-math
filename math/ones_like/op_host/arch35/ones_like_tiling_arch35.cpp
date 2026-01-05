@@ -12,21 +12,18 @@
  * \file ones_like_tiling_arch35.cpp
  * \brief
  */
-#include "ones_like_tiling_arch35.h"
 #include <graph/utils/type_utils.h>
-#include "tiling/tiling_api.h"
+#include "ones_like_tiling_arch35.h"
 #include "tiling_base/tiling_util.h"
-#include "register/op_def_registry.h"
+#include "platform/platform_ascendc.h"
+#include "platform/platform_info.h"
+#include "op_host/util/fp16.h"
 #include "log/log.h"
 #include "math/ones_like/op_kernel/arch35/ones_like_dag.h"
 #include "math/ones_like/op_kernel/arch35/ones_like_tiling_key.h"
 
-#include <iostream>
-
-using namespace Ops::Math::OpTiling;
-using namespace OnesLikeNs;
-
 namespace optiling {
+using namespace Ops::Math::OpTiling;
 const int64_t ASCEND_WORKSPACE = 16777216; // 16 * 1024 * 1024
 
 ge::graphStatus OnesLikeTiling::SetTilingData()

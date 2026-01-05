@@ -19,7 +19,6 @@
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
-using namespace AscendC;
 using namespace Ops::Base;
 
 template <typename T>

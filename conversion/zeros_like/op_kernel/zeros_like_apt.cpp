@@ -24,18 +24,28 @@ using namespace ZerosLikeNs;
 using namespace Ops::Base;
 
 template <uint64_t schMode>
-__global__ __aicore__ void zeros_like(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling) {
+__global__ __aicore__ void zeros_like(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+{
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     REGISTER_TILING_DEFAULT(ZerosLikeTilingData);
     GET_TILING_DATA_WITH_STRUCT(ZerosLikeTilingData, tilingData, tiling);
 
     TPipe pipe;
-    if constexpr (std::is_same<DTYPE_X, bool>::value) {
+    if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
         ElementwiseSch<schMode, ZerosLikeOp::ZerosLikeDAG<int8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
         sch.Init(y);
         sch.Process();
+    } else if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
+        ElementwiseSch<schMode, ZerosLikeOp::ZerosLikeDAG<int16_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.Init(y);
+        sch.Process();
+    } else if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
+        ElementwiseSch<schMode, ZerosLikeOp::ZerosLikeDAG<int32_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.Init(y);
+        sch.Process();
     } else {
-        ElementwiseSch<schMode, ZerosLikeOp::ZerosLikeDAG<DTYPE_X>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        // sizeof(DTYPE_X) == sizeof(int64_t)
+        ElementwiseSch<schMode, ZerosLikeOp::ZerosLikeDAG<int64_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
         sch.Init(y);
         sch.Process();
     }

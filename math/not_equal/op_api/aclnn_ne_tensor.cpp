@@ -189,6 +189,9 @@ aclnnStatus aclnnNeTensorCommon(const aclTensor *self, const aclTensor *other, a
   auto ret = CheckParams(self, other, out);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
+  if (self->GetStorageFormat() != Format::FORMAT_ND) {
+    OP_LOGW("Format only support ND");
+  }
   auto promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
 
   // 固定写法，将输入self转换成连续的tensor

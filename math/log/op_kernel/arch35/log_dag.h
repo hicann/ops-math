@@ -20,7 +20,6 @@
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
-using namespace AscendC;
 using namespace Ops::Base;
 
 #ifdef __CCE_AICORE__

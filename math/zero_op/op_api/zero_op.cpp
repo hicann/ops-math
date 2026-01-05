@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "zero_op.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/make_op_executor.h"
@@ -33,6 +33,13 @@ static const std::initializer_list<op::DataType> AICORE910B_DTYPE_SUPPORT_LIST =
     op::DataType::DT_INT8,    op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_UINT8,
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BOOL,  op::DataType::DT_BF16};
 
+static const std::initializer_list<op::DataType> AICORE910_95_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_INT8,          op::DataType::DT_INT32,    op::DataType::DT_INT64,
+    op::DataType::DT_UINT8,         op::DataType::DT_FLOAT16,  op::DataType::DT_FLOAT,
+    op::DataType::DT_BOOL,          op::DataType::DT_BF16,     op::DataType::DT_FLOAT8_E5M2,
+    op::DataType::DT_FLOAT8_E4M3FN, op::DataType::DT_HIFLOAT8, op::DataType::DT_FLOAT4_E1M2,
+    op::DataType::DT_FLOAT4_E2M1};
+
 static constexpr size_t MAX_DIM_LEN = 8;
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
@@ -40,11 +47,12 @@ static bool IsAiCoreSupport(const aclTensor* self)
 {
     // 获取芯片类型,判断是1971还是1980
     if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
         return CheckType(self->GetDataType(), AICORE910B_DTYPE_SUPPORT_LIST);
     }
-
+    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+        return CheckType(self->GetDataType(), AICORE910_95_DTYPE_SUPPORT_LIST);
+    }
     // 1980 & other
     return CheckType(self->GetDataType(), AICORE910_DTYPE_SUPPORT_LIST);
 }

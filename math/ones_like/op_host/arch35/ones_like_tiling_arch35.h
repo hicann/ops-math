@@ -17,9 +17,6 @@
 
 #include "register/tilingdata_base.h"
 #include "register/op_impl_registry.h"
-#include "platform/platform_ascendc.h"
-#include "platform/platform_info.h"
-#include "op_host/util/fp16.h"
 #include "atvoss/elewise/elewise_tiling.h"
 #include "../../op_kernel/ones_like_struct.h"
 

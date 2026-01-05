@@ -21,7 +21,6 @@
 #include "atvoss/util/placeholder.h"
 #include "atvoss/util/elems.h"
 
-using namespace AscendC;
 using namespace Ops::Base;
 
 #ifdef __CCE_AICORE__

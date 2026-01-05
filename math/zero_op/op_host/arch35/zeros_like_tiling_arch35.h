@@ -17,9 +17,6 @@
 
 #include "register/tilingdata_base.h"
 #include "register/op_impl_registry.h"
-#include "platform/platform_ascendc.h"
-#include "platform/platform_info.h"
-#include "op_host/util/fp16.h"
 #include "atvoss/elewise/elewise_tiling.h"
 #include "conversion/zeros_like/op_kernel/zeros_like_struct.h"
 
@@ -27,8 +24,7 @@ namespace optiling {
 using namespace Ops::Base;
 using namespace ZerosLikeNs;
 
-class ZerosLikeTiling
-{
+class ZerosLikeTiling {
 public:
     explicit ZerosLikeTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
@@ -46,5 +42,5 @@ private:
     ge::DataType inputDtype;
     ZerosLikeTilingData* tiling;
 };
-}  // namespace optiling
-#endif  // OPS_BUILD_IN_OP_TILING_RUNTIME_ZEROS_LIKE_TILING_H
+} // namespace optiling
+#endif // OPS_BUILD_IN_OP_TILING_RUNTIME_ZEROS_LIKE_TILING_H

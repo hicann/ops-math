@@ -18,7 +18,6 @@
 #include "arch35/equal_struct.h"
 #include "atvoss/broadcast/broadcast_sch.h"
 
-using namespace AscendC;
 using namespace Ops::Base;
 
 template <uint64_t schMode>

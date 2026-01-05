@@ -17,9 +17,10 @@
 
 #include "register/tilingdata_base.h"
 #include "register/op_impl_registry.h"
+#include "atvoss/elewise/elewise_tiling.h"
 
 namespace optiling {
-
+using namespace Ops::Base;
 class LogTiling {
 public:
     explicit LogTiling(gert::TilingContext* context) : tilingContext(context) {};

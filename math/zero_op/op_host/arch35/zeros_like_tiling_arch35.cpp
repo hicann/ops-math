@@ -12,23 +12,35 @@
  * \file zeros_like_tiling_arch35.cpp
  * \brief
  */
-#include "zeros_like_tiling_arch35.h"
 #include <graph/utils/type_utils.h>
-#include "tiling/tiling_api.h"
+#include "zeros_like_tiling_arch35.h"
 #include "tiling_base/tiling_util.h"
+#include "platform/platform_ascendc.h"
+#include "platform/platform_info.h"
+#include "op_host/util/fp16.h"
 #include "log/log.h"
-#include "register/op_def_registry.h"
 #include "conversion/zeros_like/op_kernel/arch35/zeros_like_dag.h"
 #include "conversion/zeros_like/op_kernel/arch35/zeros_like_tiling_key.h"
 
-#include <iostream>
-
+namespace optiling {
 using namespace Ops::Math::OpTiling;
-using namespace ZerosLikeNs;
+static const size_t ASCEND_WORKSPACE = 0;
 
-namespace optiling
-{
-static const size_t ASCEND_WORKSPACE = 16 * 1024 * 1024;
+static constexpr size_t ZL_DTYPE_SIZE_0_5 = 0; // 字宽为0.5，如fp4
+static constexpr size_t ZL_DTYPE_SIZE_1 = 1;
+static constexpr size_t ZL_DTYPE_SIZE_2 = 2;
+static constexpr size_t ZL_DTYPE_SIZE_4 = 3;
+static constexpr size_t ZL_DTYPE_SIZE_8 = 4;
+
+std::map<ge::DataType, size_t> ZLDtypeNormalize = {
+    {ge::DT_FLOAT4_E1M2, ZL_DTYPE_SIZE_0_5}, {ge::DT_FLOAT4_E2M1, ZL_DTYPE_SIZE_0_5},
+    {ge::DT_BOOL, ZL_DTYPE_SIZE_1},          {ge::DT_INT8, ZL_DTYPE_SIZE_1},
+    {ge::DT_UINT8, ZL_DTYPE_SIZE_1},         {ge::DT_FLOAT8_E5M2, ZL_DTYPE_SIZE_1},
+    {ge::DT_FLOAT8_E4M3FN, ZL_DTYPE_SIZE_1}, {ge::DT_HIFLOAT8, ZL_DTYPE_SIZE_1},
+    {ge::DT_FLOAT16, ZL_DTYPE_SIZE_2},       {ge::DT_BF16, ZL_DTYPE_SIZE_2},
+    {ge::DT_FLOAT, ZL_DTYPE_SIZE_4},         {ge::DT_INT32, ZL_DTYPE_SIZE_4},
+    {ge::DT_INT64, ZL_DTYPE_SIZE_8},
+};
 
 ge::graphStatus ZerosLikeTiling::SetTilingData()
 {
@@ -45,22 +57,6 @@ ge::graphStatus ZerosLikeTiling::SetTilingData()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus ZerosLikeTiling::CalcInputDtype()
-{
-    OP_LOGD(tilingContext->GetNodeName(), "ZerosLikeTiling CalcInputDtype enter.");
-    auto inputDesc = tilingContext->GetInputDesc(0);
-    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
-    this->inputDtype = inputDesc->GetDataType();
-    static const std::vector<ge::DataType> inputDtypes = {ge::DT_FLOAT16, ge::DT_BF16, ge::DT_INT8, ge::DT_FLOAT,
-                                                          ge::DT_BOOL, ge::DT_INT32, ge::DT_INT64, ge::DT_UINT8};
-    auto inputTypeCheck = std::find(inputDtypes.begin(), inputDtypes.end(), this->inputDtype);
-
-    OP_CHECK_IF(inputTypeCheck == inputDtypes.end(),
-               OP_LOGE(tilingContext->GetNodeName(), "input x dtype not support %d", this->inputDtype),
-               return ge::GRAPH_FAILED);
-    return ge::GRAPH_SUCCESS;
-}
-
 ge::graphStatus ZerosLikeTiling::CheckShape()
 {
     OP_LOGD(tilingContext->GetNodeName(), "ZerosLikeTiling CheckShape enter.");
@@ -72,9 +68,9 @@ ge::graphStatus ZerosLikeTiling::CheckShape()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
     const gert::Shape& outputYShape = EnsureNotScalar(outputStorageShape->GetStorageShape());
 
-    OP_CHECK_IF(inputXShape.GetShapeSize() != outputYShape.GetShapeSize(),
-               OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),
-               return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        inputXShape.GetShapeSize() != outputYShape.GetShapeSize(),
+        OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -90,9 +86,9 @@ ge::graphStatus ZerosLikeTiling::CalcOutputDtype()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
 
-    OP_CHECK_IF(this->outputDtype != this->inputDtype,
-               OP_LOGE(tilingContext->GetNodeName(), "output y dtype not same as input x"),
-               return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        this->outputDtype != this->inputDtype,
+        OP_LOGE(tilingContext->GetNodeName(), "output y dtype not same as input x"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -100,35 +96,47 @@ ge::graphStatus ZerosLikeTiling::RunTiling()
 {
     OP_LOGD(tilingContext->GetNodeName(), "ZerosLikeTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext, "get input dtype failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext, "get output dtype failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"),
-               return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     tiling = tilingContext->GetTilingData<ZerosLikeTilingData>();
-    if (this->outputDtype == ge::DT_FLOAT16) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<half>::OpDag>(tiling->baseTiling);
-    } else if (this->outputDtype == ge::DT_BF16) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<bfloat16_t>::OpDag>(tiling->baseTiling);
-    } else if (this->outputDtype == ge::DT_FLOAT) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<float>::OpDag>(tiling->baseTiling);
-    } else if (this->outputDtype == ge::DT_INT8 || this->outputDtype == ge::DT_BOOL) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<int8_t>::OpDag>(tiling->baseTiling);
-    } else if (this->outputDtype == ge::DT_INT32) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<int32_t>::OpDag>(tiling->baseTiling);
-    } else if (this->outputDtype == ge::DT_INT64) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<int64_t>::OpDag>(tiling->baseTiling);
-    } else if (this->outputDtype == ge::DT_UINT8) {
-        baseTilingResult = elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<uint8_t>::OpDag>(tiling->baseTiling);
-    }else {
+
+    auto it = ZLDtypeNormalize.find(this->outputDtype);
+    if (it != ZLDtypeNormalize.end()) {
+        switch (it->second) {
+            case ZL_DTYPE_SIZE_1:
+                baseTilingResult =
+                    elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<int8_t>::OpDag>(tiling->baseTiling);
+                break;
+            case ZL_DTYPE_SIZE_2:
+                baseTilingResult =
+                    elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<int16_t>::OpDag>(tiling->baseTiling);
+                break;
+            case ZL_DTYPE_SIZE_4:
+                baseTilingResult =
+                    elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<int32_t>::OpDag>(tiling->baseTiling);
+                break;
+            case ZL_DTYPE_SIZE_8:
+                baseTilingResult =
+                    elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<int64_t>::OpDag>(tiling->baseTiling);
+                break;
+            default: // ZL_DTYPE_SIZE_0_5
+                baseTilingResult =
+                    elewiseBaseTiling.DoTiling4Bits<ZerosLikeOp::ZerosLikeDAG<int8_t>::OpDag>(tiling->baseTiling);
+                break;
+        }
+    } else {
         OP_LOGE(tilingContext->GetNodeName(), "output dtype not support");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext, "elewiseBaseTiling failed"), return ge::GRAPH_FAILED);
+
+    OP_CHECK_IF(
+        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
+        return ge::GRAPH_FAILED);
 
     return SetTilingData();
 }
@@ -155,4 +163,4 @@ ge::graphStatus TilingPrepareForZerosLike(gert::TilingParseContext* context)
 }
 
 IMPL_OP_OPTILING(ZerosLike).Tiling(Tiling4ZerosLike).TilingParse<ElewiseCompileInfo>(TilingPrepareForZerosLike);
-}  // namespace optiling
+} // namespace optiling

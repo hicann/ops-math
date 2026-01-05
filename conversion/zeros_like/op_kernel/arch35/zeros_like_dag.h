@@ -19,18 +19,17 @@
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
-namespace ZerosLikeOp{
-    using namespace AscendC;
-    using namespace Ops::Base;
+namespace ZerosLikeOp {
+using namespace Ops::Base;
 
-    template <typename T>
-    struct ZerosLikeDAG {
-        using constZero = MAKE_CONST(T, 0);
-        using OpDuplicate = Bind<Vec::Duplicate<T>, constZero>;
-        using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpDuplicate>;
+template <typename T>
+struct ZerosLikeDAG {
+    using constZero = MAKE_CONST(T, 0);
+    using OpDuplicate = Bind<Vec::Duplicate<T>, constZero>;
+    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpDuplicate>;
 
-        using Outputs = Elems<OpCopyOut>;
-        using OpDag = DAGSch<Outputs>;
-    };
-}
-#endif  // CANN_CUSTOM_OPS_ZEROS_LIKE_DAG_H
+    using Outputs = Elems<OpCopyOut>;
+    using OpDag = DAGSch<Outputs>;
+};
+} // namespace ZerosLikeOp
+#endif // CANN_CUSTOM_OPS_ZEROS_LIKE_DAG_H

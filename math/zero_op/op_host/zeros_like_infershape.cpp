@@ -13,8 +13,7 @@
 #include "log/log.h"
 
 using namespace ge;
-namespace ops
-{
+namespace ops {
 
 static graphStatus InferDataType4SameAsInput(gert::InferDataTypeContext* context)
 {
@@ -25,5 +24,5 @@ static graphStatus InferDataType4SameAsInput(gert::InferDataTypeContext* context
     return GRAPH_SUCCESS;
 }
 
-    IMPL_OP_INFERSHAPE(ZerosLike).InferShape(Ops::Base::InferShape4Elewise).InferDataType(InferDataType4SameAsInput);
-}
+IMPL_OP_INFERSHAPE(ZerosLike).InferShape(Ops::Base::InferShape4Elewise).InferDataType(InferDataType4SameAsInput);
+} // namespace ops

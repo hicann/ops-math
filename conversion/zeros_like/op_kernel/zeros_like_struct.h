@@ -26,6 +26,6 @@ struct ZerosLikeTilingData {
     EleBaseTilingData baseTiling;
 };
 
-}
+} // namespace ZerosLikeNs
 
 #endif // __OPS_ZEROS_LIKE_STRUCT_H__

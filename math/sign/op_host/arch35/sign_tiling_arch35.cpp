@@ -13,21 +13,18 @@
  * \brief
  */
 
-#include "sign_tiling_arch35.h"
 #include <graph/utils/type_utils.h>
-#include "tiling/tiling_api.h"
+#include "sign_tiling_arch35.h"
 #include "tiling_base/tiling_util.h"
+#include "platform/platform_ascendc.h"
+#include "platform/platform_info.h"
+#include "op_host/util/fp16.h"
 #include "log/log.h"
-#include "register/op_def_registry.h"
 #include "math/sign/op_kernel/arch35/sign.h"
 #include "common/inc/tiling_base/tiling_util.h"
 
-#include <iostream>
-
-using namespace Ops::Math::OpTiling;
-using namespace SignNs;
-
 namespace optiling {
+using namespace Ops::Math::OpTiling;
 const uint64_t SIGN_KEY_UNDEFINED = 100UL;
 const uint64_t SIGN_KEY_FP16 = 101UL;
 const uint64_t SIGN_KEY_BF16 = 102UL;

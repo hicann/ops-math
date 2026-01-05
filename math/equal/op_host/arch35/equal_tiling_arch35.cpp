@@ -9,8 +9,8 @@
  */
 
 /*!
- * \file    equal_tiling.cpp
- * \brief   equal_tiling source file
+ * \file equal_tiling_arch35.cpp
+ * \brief equal_tiling_arch35
  */
 
 #include "equal_tiling_arch35.h"
@@ -20,11 +20,9 @@
 #include "math/equal/op_kernel/arch35/equal_struct.h"
 #include "tiling_base/tiling_templates_registry.h"
 
-using namespace AscendC;
-using namespace ge;
-using namespace Ops::Math::OpTiling;
-
 namespace optiling {
+using namespace Ops::Math::OpTiling;
+using namespace ge;
 static constexpr uint64_t EQUAL_COMMON_TILING_PRIORITY = 0;
 
 ge::graphStatus EqualTiling::GetShapeAttrsInfo()

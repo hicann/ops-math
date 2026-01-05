@@ -12,25 +12,19 @@
  * \file log_tiling_arch35.cpp
  * \brief
  */
-#include "log_tiling_arch35.h"
 #include <graph/utils/type_utils.h>
-#include "tiling/tiling_api.h"
+#include "log_tiling_arch35.h"
 #include "tiling_base/tiling_util.h"
-#include "register/op_def_registry.h"
+#include "platform/platform_ascendc.h"
 #include "platform/platform_info.h"
-#include "atvoss/elewise/elewise_tiling.h"
 #include "log/log.h"
 #include "math/log/op_kernel/arch35/log_dag.h"
 #include "math/log/op_kernel/arch35/log_struct.h"
-
-#include <iostream>
 #include <cmath>
-#include <limits>
-
-using namespace LogOp;
-using namespace Ops::Math::OpTiling;
 
 namespace optiling {
+using namespace LogOp;
+using namespace Ops::Math::OpTiling;
 const size_t ASCEND_WORKSPACE = 16777216; // 16 * 1024 * 1024
 
 ge::graphStatus LogTiling::CalcInputDtype()
@@ -188,7 +182,7 @@ static ge::graphStatus Tiling4Log(gert::TilingContext* tilingContextGen)
     return baseOpTiling.RunTiling();
 }
 
-ge::graphStatus TilingPrepareForLog(gert::TilingParseContext* context)
+static ge::graphStatus TilingPrepareForLog(gert::TilingParseContext* context)
 {
     auto compileInfoPtr = context->GetCompiledInfo<ElewiseCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfoPtr);

@@ -9,24 +9,20 @@
  */
 
 /*!
- * \file    not_equal_tiling_arch35.cpp
- * \brief   not_equal_tiling_arch35 source file
+ * \file  not_equal_tiling_arch35.cpp
+ * \brief not_equal_tiling_arch35
  */
 
 #include "not_equal_tiling_arch35.h"
 #include <graph/utils/type_utils.h>
 #include "log/log.h"
-#include "atvoss/broadcast/broadcast_tiling.h"
 #include "math/not_equal/op_kernel/arch35/not_equal_dag.h"
 #include "math/not_equal/op_kernel/arch35/not_equal_struct.h"
 #include "tiling_base/tiling_templates_registry.h"
 
-using namespace AscendC;
-using namespace ge;
-using namespace Ops::Base;
-using namespace Ops::Math::OpTiling;
-
 namespace optiling {
+using namespace ge;
+using namespace Ops::Math::OpTiling;
 static constexpr uint64_t NOT_EQUAL_COMMON_TILING_PRIORITY = 0;
 
 ge::graphStatus NotEqualTiling::GetShapeAttrsInfo()

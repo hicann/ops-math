@@ -17,40 +17,34 @@
 
 namespace ops {
 static const std::vector<ge::DataType> dataType = {
-    ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT64, ge::DT_INT8, ge::DT_UINT8, ge::DT_BF16, ge::DT_BOOL
-};
+    ge::DT_FLOAT16,  ge::DT_FLOAT,       ge::DT_INT32,      ge::DT_INT64,       ge::DT_INT8,
+    ge::DT_UINT8,    ge::DT_BF16,        ge::DT_BOOL,       ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN,
+    ge::DT_HIFLOAT8, ge::DT_FLOAT4_E1M2, ge::DT_FLOAT4_E2M1};
 
 static const std::vector<ge::Format> dataFormat = {
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND
-};
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
 
 class ZerosLike : public OpDef {
-    public:
-        explicit ZerosLike(const char* name) : OpDef(name) {
-            this->Input("x")
-                .ParamType(REQUIRED)
-                .DataType(dataType)
-                .Format(dataFormat)
-                .UnknownShapeFormat(dataFormat);
+public:
+    explicit ZerosLike(const char* name) : OpDef(name)
+    {
+        this->Input("x").ParamType(REQUIRED).DataType(dataType).Format(dataFormat).UnknownShapeFormat(dataFormat);
 
-            this->Output("y")
-                .ParamType(REQUIRED)
-                .DataType(dataType)
-                .Format(dataFormat)
-                .UnknownShapeFormat(dataFormat);
+        this->Output("y").ParamType(REQUIRED).DataType(dataType).Format(dataFormat).UnknownShapeFormat(dataFormat);
 
-            OpAICoreConfig aicore_config;
-            aicore_config.DynamicCompileStaticFlag(true)
-                .DynamicFormatFlag(false)
-                .DynamicRankSupportFlag(true)
-                .DynamicShapeSupportFlag(true)
-                .NeedCheckSupportFlag(false)
-                .ExtendCfgInfo("op.pattern", "formatAgnostic")
-                .ExtendCfgInfo("opFile.value", "zeros_like_apt");
+        OpAICoreConfig aicore_config;
+        aicore_config.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .ExtendCfgInfo("op.pattern", "formatAgnostic")
+            .ExtendCfgInfo("opFile.value", "zeros_like_apt");
 
-            this->AICore().AddConfig("ascend910_95", aicore_config);
-        }
+        this->AICore().AddConfig("ascend910_95", aicore_config);
+    }
 };
 
 OP_ADD(ZerosLike);
-}   // namespace ops
+} // namespace ops

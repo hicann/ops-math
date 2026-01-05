@@ -20,7 +20,6 @@
 #include "atvoss/util/placeholder.h"
 
 namespace SignDag {
-using namespace AscendC;
 using namespace Ops::Base;
 constexpr int COMPARE_MODE_GT = 1;
 constexpr int COMPARE_MODE_LT = 0;

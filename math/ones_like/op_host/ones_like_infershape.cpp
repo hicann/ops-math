@@ -14,7 +14,6 @@
  */
 #include "infershape_elewise_util.h"
 #include "register/op_impl_registry.h"
-#include "log/log.h"
 
 using namespace ge;
 namespace ops {

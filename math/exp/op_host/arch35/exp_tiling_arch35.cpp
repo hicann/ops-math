@@ -12,21 +12,19 @@
  * \file exp_regbase_optiling.cc
  * \brief
  */
-#include "exp_tiling_arch35.h"
 #include <graph/utils/type_utils.h>
-#include "tiling/tiling_api.h"
+#include "exp_tiling_arch35.h"
 #include "tiling_base/tiling_util.h"
+#include "platform/platform_ascendc.h"
+#include "platform/platform_info.h"
+#include "op_host/util/fp16.h"
 #include "log/log.h"
-#include "register/op_def_registry.h"
 #include "math/exp/op_kernel/arch35/exp_dag.h"
 #include "math/exp/op_kernel/arch35/exp_struct.h"
 
-#include <iostream>
-
+namespace optiling {
 using namespace ExpOp;
 using namespace Ops::Math::OpTiling;
-
-namespace optiling {
 const size_t ASCEND_WORKSPACE = 16777216; // 16 * 1024 * 1024
 
 ge::graphStatus ExpTiling::CalcInputDtype()
@@ -172,7 +170,7 @@ ge::graphStatus ExpTiling::RunTiling()
 static ge::graphStatus Tiling4Exp(gert::TilingContext* tilingContextGen)
 {
     OP_LOGD(tilingContextGen->GetNodeName(), "Tiling4Exp rt2.0 is running.");
-    auto compileInfo = static_cast<const ExpCompileInfo*>(tilingContextGen->GetCompileInfo());
+    auto compileInfo = static_cast<const ElewiseCompileInfo*>(tilingContextGen->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
     ExpTiling baseOpTiling(tilingContextGen);
     return baseOpTiling.RunTiling();
@@ -180,7 +178,7 @@ static ge::graphStatus Tiling4Exp(gert::TilingContext* tilingContextGen)
 
 ge::graphStatus TilingPrepareForExp(gert::TilingParseContext* context)
 {
-    auto compileInfoPtr = context->GetCompiledInfo<ExpCompileInfo>();
+    auto compileInfoPtr = context->GetCompiledInfo<ElewiseCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfoPtr);
     fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
@@ -190,5 +188,5 @@ ge::graphStatus TilingPrepareForExp(gert::TilingParseContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_OPTILING(Exp).Tiling(Tiling4Exp).TilingParse<ExpCompileInfo>(TilingPrepareForExp);
+IMPL_OP_OPTILING(Exp).Tiling(Tiling4Exp).TilingParse<ElewiseCompileInfo>(TilingPrepareForExp);
 } // namespace optiling

@@ -165,6 +165,10 @@ aclnnStatus aclnnInplaceExpGetWorkspaceSize(aclTensor* selfRef, uint64_t* worksp
     L2_DFX_PHASE_1(aclnnInplaceExp, DFX_IN(selfRef), DFX_OUT(selfRef));
     auto ret = CheckInplaceParamsExp(selfRef);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    // 检查Format
+    if(selfRef->GetStorageFormat() != Format::FORMAT_ND){
+        OP_LOGW("Format only support ND");
+    }
     return GetWorkspaceSizeCommon(selfRef, selfRef, workspaceSize, executor);
 }
 

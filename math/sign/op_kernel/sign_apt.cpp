@@ -19,7 +19,6 @@
 #include "atvoss/elewise/elewise_base_struct.h"
 #include "sign_struct.h"
 
-using namespace AscendC;
 using namespace Ops::Base;
 using namespace SignNs;
 
