@@ -309,7 +309,8 @@ __aicore__ inline void StridedSliceSIMT<T, U>::Init(
         if (tilingData_->begin[i] >= 0) {
             begin_[i] = tilingData_->begin[i];
         } else {
-            begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[i]);
+            int64_t realIdx = UNCONST_BEGIN_VALUE - tilingData_->begin[i];
+            begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[realIdx]);
             int64_t curInShape = (i == tilingData_->inputDims - 1) ? tilingData_->inputShapeProd[i] :
                 (tilingData_->inputShapeProd[i] / tilingData_->inputShapeProd[i + 1]);
             begin_[i] = begin_[i] < 0 ? (begin_[i] + curInShape): begin_[i];

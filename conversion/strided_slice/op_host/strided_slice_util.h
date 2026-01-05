@@ -261,7 +261,6 @@ static bool BuildProcessingData(
     bool is_identity = true;
     bool slice_dim0 = true;
     bool is_simple_slice = true;
-    bool real_valid = params.real_begin_valid;
     for (int i = 0; i < static_cast<int>(params.input_shape.GetDimNum()); ++i) {
         auto& begin_i = params.begin[i];
         auto& end_i = params.end[i];
@@ -283,6 +282,8 @@ static bool BuildProcessingData(
             continue;
         }
 
+        // 2: begin + end
+        const std::array<bool, 2> real_valid = {params.real_begin_valid, params.real_end_valid};
         const std::array<int64_t, 2> valid_range = {{stride_i > 0 ? 0 : -1, stride_i > 0 ? dim_i : dim_i - 1}};
 
         auto canonical = [stride_i, dim_i, masks, valid_range, real_valid](int64_t x, int c) {
@@ -290,7 +291,7 @@ static bool BuildProcessingData(
                 return stride_i > 0 ? valid_range[c] :
                                       valid_range[static_cast<uint64_t>(c + 1) & static_cast<uint64_t>(1)];
             } else {
-                if (!real_valid) {
+                if (!real_valid[c]) {
                     return -3L; // -3 invalid, diff from valid_range
                 }
                 int64_t x_fwd = x < 0 ? dim_i + x : x; // make negative indices positive
@@ -312,7 +313,7 @@ static bool BuildProcessingData(
                 // particular foo[-1] produces sparse_begin = -1, sparse_end = 0.
                 // and canonical puts these to n-1 and 0, which implies a degenerate
                 // interval. Fortunately, it is now safe to re-create end as begin+1.
-                if (real_valid) {
+                if (real_valid[0]) {
                     int64_t x_fwd = begin_i < 0 ? dim_i + begin_i : begin_i;
                     begin_i = x_fwd;
                     end_i = begin_i + 1;
@@ -330,10 +331,10 @@ static bool BuildProcessingData(
             }
 
             // -3 invalid, diff from valid_range
-            if (!real_valid && (begin_i == -3 || end_i == -3)) {
+            if ((!real_valid[0] || !real_valid[1]) && (begin_i == -3 || end_i == -3)) {
                 OP_LOGE(
-                    OP_NAME, "begin_i:%ld end_i:%ld is invalid while unconst begin, shrink_i:%d masks:%lu %lu", begin_i,
-                    end_i, shrink_i, masks[0], masks[1]);
+                    OP_NAME, "begin_i:%ld end_i:%ld is invalid while unconst begin or end, shrink_i:%d masks:%lu %lu",
+                    begin_i, end_i, shrink_i, masks[0], masks[1]);
                 return false;
             }
 
@@ -453,6 +454,12 @@ inline bool InferShape(StridedSliceParams& params, gert::Shape* out_shape)
         return false;
     }
 
+    OP_LOGD(
+        OP_NAME, "DenseSpec: begin_mask:%lu end_mask:%lu begin:%s end:%s strides:%s indices:%s shrink_axis_mask:%lu",
+        dense_spec.begin_mask, dense_spec.end_mask, Ops::Base::ToString(dense_spec.begin).c_str(),
+        Ops::Base::ToString(dense_spec.end).c_str(), Ops::Base::ToString(dense_spec.strides).c_str(),
+        Ops::Base::ToString(dense_spec.final_shape_gather_indices).c_str(), dense_spec.shrink_axis_mask);
+
     // Step 3: Make implicit ranges (non-zero begin_masks and end_masks) explicit
     //         and bounds check!
     ProcessingData processing_data;
@@ -462,6 +469,13 @@ inline bool InferShape(StridedSliceParams& params, gert::Shape* out_shape)
     if (!BuildProcessingData(dense_spec, params, processing_data)) {
         return false;
     }
+
+    OP_LOGD(
+        OP_NAME, "ProcessingData: shape:%s begin:%s end:%s strides:%s.",
+        Ops::Base::ToString(processing_data.processing_shape).c_str(),
+        Ops::Base::ToString(processing_data.processing_begin).c_str(),
+        Ops::Base::ToString(processing_data.processing_end).c_str(),
+        Ops::Base::ToString(processing_data.processing_strides).c_str());
 
     // Step 4: Compute the final shape
     //

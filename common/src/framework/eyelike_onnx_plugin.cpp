@@ -12,6 +12,7 @@
 #include "op_math_proto_extend.h"
 #include "conversion/squeeze/op_graph/squeeze_proto.h"
 #include "math/cast/op_graph/cast_proto.h"
+#include "conversion/split/op_graph/split_proto.h"
 #include "conversion/fill/op_graph/fill_proto.h"
 
 using namespace std;

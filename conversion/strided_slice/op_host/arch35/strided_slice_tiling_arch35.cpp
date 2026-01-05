@@ -21,6 +21,7 @@ constexpr int64_t MAX_GATHER_STRIDE = 16;
 constexpr int64_t MOVE_ALIGN_CACHE_LINE_FACTOR = 4;
 constexpr int64_t NDDMA_CACHE_LINE_FACTOR = 2;
 constexpr int64_t DOUBLE_BUFFER = 2;
+constexpr int64_t UNCONST_BEGIN_VALUE = -10; // unconst场景下，用-10标识需要从kernel获取
 
 static const int INDEX_X = 0;
 static const int INDEX_BEGIN = 1;
@@ -1634,47 +1635,46 @@ static ge::graphStatus ConstructSliceParam(
 }
 
 static ge::graphStatus ProcBeginEndUnconst(
-    const gert::TilingContext* context, SliceParametersRuntime2& sliceParam, int64_t maskEllipsis, int64_t maskNewAxis)
+    const gert::TilingContext* context, SliceParametersRuntime2& sliceParam)
 {
     if (sliceParam.isBeginConst && sliceParam.isEndConst) {
         return ge::GRAPH_SUCCESS;
     }
-
-    OP_CHECK_IF(
-        (sliceParam.isBeginConst || sliceParam.isEndConst), OP_LOGE(OP_NAME, "begin and end only support all nonconst"),
-        return ge::GRAPH_FAILED);
-
-    OP_CHECK_IF(
-        maskEllipsis != 0, OP_LOGE(OP_NAME, "maskEllipsis need be 0 while begin and end nonconst"),
-        return ge::GRAPH_FAILED);
-
-    OP_CHECK_IF(
-        maskNewAxis != 0, OP_LOGE(OP_NAME, "maskNewAxis need be 0 while begin and end nonconst"),
-        return ge::GRAPH_FAILED);
 
     const gert::Tensor* tensorBegin = context->GetInputTensor(INDEX_BEGIN);
     OP_CHECK_NULL_WITH_CONTEXT(context, tensorBegin);
     const gert::Tensor* tensorEnd = context->GetInputTensor(INDEX_END);
     OP_CHECK_NULL_WITH_CONTEXT(context, tensorEnd);
 
-    OP_CHECK_IF(
-        tensorBegin->GetShapeSize() != tensorEnd->GetShapeSize(),
-        OP_LOGE(OP_NAME, "begin and end shape should be equal while nonconst"), return ge::GRAPH_FAILED);
+    int64_t beginLen = -1;
+    beginLen = std::max(tensorBegin->GetShapeSize(), beginLen);
+    beginLen = std::max(tensorEnd->GetShapeSize(), beginLen);
+    beginLen = std::max(static_cast<int64_t>(sliceParam.strideList.GetDimNum()), beginLen);
 
     OP_CHECK_IF(
-        tensorBegin->GetShapeSize() != static_cast<int64_t>(sliceParam.strideList.GetDimNum()),
-        OP_LOGE(OP_NAME, "begin and stride shape should be equal while nonconst"), return ge::GRAPH_FAILED);
+        beginLen == -1, OP_LOGE(OP_NAME, "beginLen invalid while nonconst"),
+        return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        tensorBegin->GetShapeSize() > static_cast<int64_t>(sliceParam.inputShape.GetDimNum()),
-        OP_LOGE(OP_NAME, "begin shapeSize should be less than input while nonconst"), return ge::GRAPH_FAILED);
+    // begin or end被mask掉的话，infershape会依据strides的正负重新给begin/end赋值
+    // 此处只需要考虑strides为正
+    if (!sliceParam.isBeginConst) {
+        sliceParam.beginList.SetDimNum(beginLen);
+        for (int32_t i = 0; i < beginLen; i++) {
+            sliceParam.beginList[i] = 0;
+        }
+    }
 
-    int32_t dimNum = tensorBegin->GetShapeSize();
-    sliceParam.beginList.SetDimNum(dimNum);
-    sliceParam.endList.SetDimNum(dimNum);
-    for (int32_t i = 0; i < dimNum; i++) {
-        sliceParam.beginList[i] = 0;
-        sliceParam.endList[i] = sliceParam.inputShape.GetDim(i);
+    // 参考rt1.0 infershape
+    if (!sliceParam.isEndConst) {
+        sliceParam.endList.SetDimNum(beginLen);
+        int64_t inputDims = sliceParam.inputShape.GetDimNum();
+        int64_t minLen = std::min(beginLen, inputDims);
+        for (int32_t i = 0; i < minLen; i++) {
+            sliceParam.endList[i] = sliceParam.inputShape.GetDim(i);
+        }
+        for (int32_t i = minLen; i < beginLen; i++) {
+            sliceParam.endList[i] = sliceParam.inputShape.GetDim(inputDims - 1);
+        }
     }
 
     return ge::GRAPH_SUCCESS;
@@ -1699,6 +1699,8 @@ static void MakePerformanceParamsNeg(SliceParametersRuntime2& param)
 {
     OP_LOGI("", "before handle negative perf slice params: %s", param.to_string().c_str());
     SliceParametersRuntime2 perfParams;
+    perfParams.isBeginConst = param.isBeginConst;
+    perfParams.isEndConst = param.isEndConst;
     size_t perfSize = 0;
     for (size_t i = 0; i < param.inputShape.GetDimNum(); i++) {
         const auto inputShapeI = param.inputShape[i];
@@ -1741,7 +1743,7 @@ static void MakePerformanceParamsNeg(SliceParametersRuntime2& param)
 
 static void MakePerformanceParams(SliceParametersRuntime2& param, bool isAdjustLastStride)
 {
-    if (param.outputShape.GetDimNum() == 0 || !param.isBeginConst) {
+    if (param.outputShape.GetDimNum() == 0) {
         return;
     }
 
@@ -1754,7 +1756,7 @@ static void MakePerformanceParams(SliceParametersRuntime2& param, bool isAdjustL
     }
 
     // Adjust params while input[-1] can be divided by stride[-1]
-    if (isAdjustLastStride && !hasNegStride) {
+    if (isAdjustLastStride && !hasNegStride && param.isBeginConst && param.isEndConst) {
         size_t th = param.inputShape.GetDimNum();
         const auto inputLastDim = param.inputShape[th - 1U];
         const auto beginLastDim = param.beginList[th - 1U];
@@ -1779,6 +1781,8 @@ static void MakePerformanceParams(SliceParametersRuntime2& param, bool isAdjustL
     }
 
     SliceParametersRuntime2 perfParams;
+    perfParams.isBeginConst = param.isBeginConst;
+    perfParams.isEndConst = param.isEndConst;
     size_t perfSize = 0;
     for (size_t i = 0; i < param.inputShape.GetDimNum(); i++) {
         const auto inputShapeI = param.inputShape[i];
@@ -1787,9 +1791,11 @@ static void MakePerformanceParams(SliceParametersRuntime2& param, bool isAdjustL
         const auto endI = param.endList[i];
         const auto stride_i = endI > beginI ? std::min(param.strideList[i], endI - beginI) : param.strideList[i];
         if (i == 0 || inputShapeI != outputShapeI || stride_i != 1 || perfParams.strideList[perfSize - 1] != 1) {
+            int64_t realBeginValue =
+                (!param.isBeginConst && beginI < 0) ? (UNCONST_BEGIN_VALUE - static_cast<int64_t>(i)) : beginI;
             perfParams.inputShape.AppendDim(inputShapeI);
             perfParams.outputShape.AppendDim(outputShapeI);
-            perfParams.beginList.AppendDim(beginI);
+            perfParams.beginList.AppendDim(realBeginValue);
             perfParams.endList.AppendDim(endI);
             perfParams.strideList.AppendDim(stride_i);
             perfSize++;
@@ -1853,6 +1859,7 @@ ge::graphStatus TilingPrepare4StridedSlice(gert::TilingParseContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     ci->coreNum = ascendcPlatform.GetCoreNumAiv();
+    ci->isAscendc = true;
     OP_CHECK_IF((ci->coreNum <= 0), OP_LOGE(context->GetNodeName(), "Failed to core num."), return ge::GRAPH_FAILED);
     uint64_t ubSize;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
@@ -1892,7 +1899,7 @@ ge::graphStatus Tiling4StridedSlice(gert::TilingContext* context)
     const int64_t* maskShrinkAxis = attrs->GetAttrPointer<int64_t>(IDX_MASK_SHRINK_AXIS);
     OP_CHECK_NULL_WITH_CONTEXT(context, maskShrinkAxis);
 
-    if (ProcBeginEndUnconst(context, sliceParam, *maskEllipsis, *maskNewAxis) != ge::GRAPH_SUCCESS) {
+    if (ProcBeginEndUnconst(context, sliceParam) != ge::GRAPH_SUCCESS) {
         return ge::GRAPH_FAILED;
     }
 

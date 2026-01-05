@@ -104,8 +104,8 @@ struct SliceParametersRuntime2 {
         result += " stride:" + Ops::Base::ToString(strideList);
         result += " tilingMode:" + std::to_string(tilingMode);
         result += " coreNum:" + std::to_string(coreNum);
-        result += " isBeginConst:" + isBeginConst ? "true" : "false";
-        result += " isEndConst:" + isEndConst ? "true" : "false";
+        result += " isBeginConst:" + std::string(isBeginConst ? "true" : "false");
+        result += " isEndConst:" + std::string(isEndConst ? "true" : "false");
         return result;
     }
 };

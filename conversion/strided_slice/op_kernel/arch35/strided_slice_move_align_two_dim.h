@@ -57,7 +57,8 @@ __aicore__ inline void StridedSliceMoveAlignTwoDim<T, U>::Init(GM_ADDR x, GM_ADD
         if (tilingData->begin[i] >= 0) {
             begin_[i] = tilingData->begin[i];
         } else {
-            begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[i]);
+            int64_t realIdx = UNCONST_BEGIN_VALUE - tilingData->begin[i];
+            begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[realIdx]);
             int64_t curInShape =
                 (i == 1) ? tilingData->inputSteps[i] : (tilingData->inputSteps[i] / tilingData->inputSteps[i + 1]);
             begin_[i] = begin_[i] < 0 ? (begin_[i] + curInShape): begin_[i];

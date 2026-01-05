@@ -11,6 +11,7 @@
 #include "onnx_common.h"
 #include "op_math_proto_extend.h"
 #include "conversion/split_v/op_graph/split_v_proto.h"
+#include "conversion/split/op_graph/split_proto.h"
 
 using namespace std;
 using namespace ge;

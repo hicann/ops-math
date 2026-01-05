@@ -54,6 +54,7 @@ constexpr uint16_t DIMS_7 = 7;
 constexpr uint16_t DIMS_8 = 8;
 constexpr int32_t BIT64 = 64;
 constexpr int32_t BIT32 = 32;
+constexpr int64_t UNCONST_BEGIN_VALUE = -10;
 
 constexpr uint16_t DIM0_INDEX = 0;
 constexpr uint16_t DIM1_INDEX = 1;
@@ -173,7 +174,8 @@ __aicore__ inline void StridedSliceBase<T, U>::ParseBaseTilingData(GM_ADDR begin
         if (tilingData->begin[i] >= 0) {
             begin_[i] = tilingData->begin[i];
         } else {
-            begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[i]);
+            int64_t realIdx = UNCONST_BEGIN_VALUE - tilingData->begin[i];
+            begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[realIdx]);
             int64_t curInShape = (i == inputDims_ - 1) ? inputSteps_[i] : (inputSteps_[i] / inputSteps_[i + 1]);
             begin_[i] = begin_[i] < 0 ? (begin_[i] + curInShape): begin_[i];
             if (begin_[i] < 0) {
@@ -224,7 +226,8 @@ __aicore__ inline void StridedSliceBase<T, U>::ParseBaseTilingDataV2(GM_ADDR beg
         if (tilingData->begin[i] >= 0) {
             begin_[i] = tilingData->begin[i];
         } else {
-            begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[i]);
+            int64_t realIdx = UNCONST_BEGIN_VALUE - tilingData->begin[i];
+            begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[realIdx]);
             int64_t curInShape = (i == inputDims_ - 1) ? inputSteps_[i] : (inputSteps_[i] / inputSteps_[i + 1]);
             begin_[i] = begin_[i] < 0 ? (begin_[i] + curInShape): begin_[i];
             if (begin_[i] < 0) {
