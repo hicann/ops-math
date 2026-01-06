@@ -9,7 +9,7 @@
  */
 
 #include "topk.h"
-#include "math/sort_with_index/op_host/op_api/sort_with_index.h"
+#include "math/sort_with_index/op_api/sort_with_index.h"
 #include "aclnn_kernels/cast.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/make_op_executor.h"
