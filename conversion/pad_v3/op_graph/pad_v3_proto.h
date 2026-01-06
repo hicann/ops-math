@@ -12,11 +12,10 @@
  * \file pad_v3_proto.h
  * \brief
  */
+#ifndef OPS_OP_PROTO_INC_PAD_V3_OPS_H_
+#define OPS_OP_PROTO_INC_PAD_V3_OPS_H_
 
-#ifndef PAD_V3_PROTO_H_
-#define PAD_V3_PROTO_H_
 #include "graph/operator_reg.h"
-#include "graph/types.h"
 
 namespace ge {
 /**
@@ -24,21 +23,35 @@ namespace ge {
 
 * @par Inputs:
 * Three inputs, including:
-* @li x: A Tensor. Must be one of the following types: float16, bfloat16(only support on constant mode),
-*     float32, double, int32, uint8, int16, int8, complex64, int64,
-*     qint8, quint8, qint32, qint16, quint16, uint16, complex128, uint32, uint64, bool.
-* @li paddings: A Tensor of type int32 or int64.
-* @li constant_values: A optional Tensor, dtype same as "x"
+* @li x: A Tensor. Must be one of the following types: float16, bfloat16,
+* float32, double, int32, uint8, int16, int8, complex64, int64,
+* qint8, quint8, qint32, qint16, quint16, uint16, complex128, uint32, uint64, bool.
+* @li paddings: A Tensor of type int32 or int64, specify the padding sizes.
+* The size of paddings should be twice of the x shape size.
+* @li constant_values: A optional Tensor, dtype same as "x".
+* Is used only in "constant" mode.
 
 * @par Attributes:
 * @li mode: An optional string, Defaults to "constant", indicates paddings mode,
-*     support "constant", "reflect", "edge"
+* support "constant", "reflect", "edge", "symmetric".
+* In constant mode the padded value is constant_values, default 0 while constant_values is null.
+* In edge mode the padded value is the border value of input x.
+* In reflect mode the padded value do not include the borders,
+* while in symmetric mode the padded value do include the borders.
 * @li paddings_contiguous: An optional bool value, Defaults to true.
-*     If true, paddings is arranged as [[begin0, end0], [begin1, end1], ...]
-*     If false, paddings is arranged as [[begin0, begin1], ..., [end0, end1], ...]
+* If true, paddings is arranged as [[leftpad_0, rightpad_0], [leftpad_1, rightpad_1], ...]
+* If false, paddings is arranged as [[leftpad_0, leftpad_1, ...], [rightpad_0, rightpad_1, ...]]
 
 * @par Outputs:
 * y: A Tensor of the same type as "x".
+* y.shape[i] = x.shape[i] + leftpad_i + rightpad_i, where y.shape[i] >= 0.
+
+* @attention Constraints:
+* "symmetric" mode is supported since arch35.
+* "symmetric" mode: the leftpad_i and rightpad_i should be in [-x.shape[i], x.shape[i]]
+* "reflect" mode: the leftpad_i and rightpad_i should be in [-x.shape[i], x.shape[i])
+* "constant" mode: the leftpad_i and rightpad_i should be greater than or equal to -x.shape[i].
+* "edge" mode: the leftpad_i and rightpad_i should be greater than or equal to -x.shape[i].
 
 * @par Third-party framework compatibility:
 * Compatible with ONNX operator Pad.
@@ -46,11 +59,12 @@ namespace ge {
 REG_OP(PadV3)
     .INPUT(x, TensorType({TensorType::BasicType(), DT_BOOL}))
     .INPUT(paddings, TensorType::IndexNumberType())
-    .OPTIONAL_INPUT(constant_values, TensorType::BasicType())
+    .OPTIONAL_INPUT(constant_values, TensorType({TensorType::BasicType(), DT_BOOL}))
     .OUTPUT(y, TensorType({TensorType::BasicType(), DT_BOOL}))
     .ATTR(mode, String, "constant")
     .ATTR(paddings_contiguous, Bool, true)
     .OP_END_FACTORY_REG(PadV3)
+
 } // namespace ge
 
 #endif
