@@ -59,7 +59,6 @@
 | [aclnnClampMin](../../conversion/clip_by_value_v2/docs/aclnnClampMin.md) | 将输入的所有元素限制在[min, inf]范围内。 | 默认确定性实现|  
 | [aclnnClampMinTensor&aclnnInplaceClampMinTensor](../../conversion/clip_by_value_v2/docs/aclnnClampMinTensor&aclnnInplaceClampMinTensor.md) | 将输入的所有元素限制在[min, inf]范围内。 | 默认确定性实现|  
 | [aclnnClampTensor](../../conversion/clip_by_value_v2/docs/aclnnClampTensor.md) | 将输入的所有元素限制在[min, max]范围内，如果min缺省，则无下限，如果max缺省，则无上限。 | 默认确定性实现|  
-| [aclnnHardtanh&aclnnInplaceHardtanh](../../conversion/clip_by_value_v2/docs/aclnnHardtanh&aclnnInplaceHardtanh.md) | 将输入的所有元素限制在[clipValueMin,clipValueMax]范围内，若元素大于clipValueMax则限制为clipValueMax，若元素小于clipValueMin则限制为clipValueMin，否则等于元素本身。 | 默认确定性实现|  
 | [aclnnComplex](../../math/complex/docs/aclnnComplex.md)         | 输入两个Shape和Dtype一致的Tensor：real和imag。               | 默认确定性实现|                
 | [aclnnConstantPadNd](../../conversion/pad_v3/docs/aclnnConstantPadNd.md) | 对输入的张量self，以pad参数为基准进行数据填充，填充值为value。 | 默认确定性实现|  
 | [aclnnContiguous](../../conversion/contiguous/docs/aclnnContiguous.md) | 见算子文档。                                                 | 默认确定性实现|                                                  
@@ -73,6 +72,8 @@
 | [aclnnDiagFlat](../../conversion/diag_flat/docs/aclnnDiagFlat.md) | 生成对角线张量。如果输入self为一维张量，则返回二维张量，self里元素为对角线值；如果输入self是二维及以上张量，则先进行扁平化（化简为一维张量），再转化为第一种场景处理。 | 默认确定性实现|  
 | [aclnnDiv&aclnnInplaceDiv](../../math/div/docs/aclnnDiv&aclnnInplaceDiv.md) | 完成除法计算。                                               | 默认确定性实现|                                                
 | [aclnnDot](../../math/dot/docs/aclnnDot.md)                     | 计算两个一维张量的点积结果。                                 | 默认确定性实现|                                  
+| [aclnnDropoutDoMask](../../random/dropout_do_mask/docs/aclnnDropoutDoMask.md)         | 按照概率prob随机将输入中的元素置零，并将输出按照1/(1-prob)的比例放大。 | 默认确定性实现|
+| [aclnnDropoutV3](../../random/drop_out_v3/docs/aclnnDropoutV3.md)         | 按照概率p随机将输入中的元素置零，并将输出按照1/(1-p)的比例缩放。 | 默认确定性实现|
 | [aclnnEqScalar&aclnnInplaceEqScalar](../../math/equal/docs/aclnnEqScalar&aclnnInplaceEqScalar.md) | 计算self中的元素的值与other的值是否相等，将self每个元素与other的值的比较结果写入out中。 | 默认确定性实现|  
 | [aclnnEqTensor&aclnnInplaceEqTensor](../../math/equal/docs/aclnnEqTensor&aclnnInplaceEqTensor.md) | 计算两个Tensor中的元素是否相等，返回一个Tensor，self=other的为True(1.)，否则为False(0.)。 | 默认确定性实现|  
 | [aclnnEqual](../../math/equal/docs/aclnnEqual.md)               | 计算两个Tensor是否有相同的大小和元素，返回一个Bool类型。     | 默认确定性实现|      
@@ -102,8 +103,8 @@
 | [aclnnGroupedBiasAddGrad](../../math/grouped_bias_add_grad/docs/aclnnGroupedBiasAddGrad.md) | 分组偏置加法（GroupedBiasAdd）的反向传播。                   | 默认确定性实现|                    
 | [aclnnHansDecode](../../math/hans_decode/docs/aclnnHansDecode.md) | 对压缩后的张量基于PDF进行解码，同时基于mantissa（尾数）重组恢复张量。 | 默认确定性实现|  
 | [aclnnHansEncode](../../math/hans_encode/docs/aclnnHansEncode.md) | 对张量的指数位所在字节实现PDF统计，按PDF分布统计进行无损压缩。 | 默认确定性实现|  
-| [aclnnHistc](../../math/histogram_v2/docs/aclnnHistc.md) | 以min和max作为统计上下限，在min和max之间划出等宽的数量为bins的区间，统计张量self中元素在各个区间的数量。如果min和max相等，则使用张量中所有元素的最小值和最大值作为统计的上下限。小于min和大于max的元素不会被统计。 | 默认确定性实现|  |
-| [aclnnHardtanh&aclnnInplaceHardtanh](../../conversion/clip_by_value_v2/docs/aclnnHardtanh&aclnnInplaceHardtanh.md) | 将输入的所有元素限制在[clipValueMin,clipValueMax]范围内，若元素大于clipValueMax则限制为clipValueMax，若元素小于clipValueMin则限制为clipValueMin，否则等于元素本身。 | 默认确定性实现|  
+| [aclnnHardtanh&aclnnInplaceHardtanh](../../conversion/clip_by_value_v2/docs/aclnnHardtanh&aclnnInplaceHardtanh.md) | 将输入的所有元素限制在[clipValueMin,clipValueMax]范围内，若元素大于clipValueMax则限制为clipValueMax，若元素小于clipValueMin则限制为clipValueMin，否则等于元素本身。 | 默认确定性实现|
+| [aclnnHistc](../../math/histogram_v2/docs/aclnnHistc.md) | 以min和max作为统计上下限，在min和max之间划出等宽的数量为bins的区间，统计张量self中元素在各个区间的数量。如果min和max相等，则使用张量中所有元素的最小值和最大值作为统计的上下限。小于min和大于max的元素不会被统计。 | 默认确定性实现|  
 | [aclnnIm2col](../../conversion/im2col/docs/aclnnIm2col.md)      | 图像到列，滑动局部窗口数据转为列向量，拼接为大张量。从批处理输入张量中提取滑动窗口。 | 默认确定性实现|  
 | [aclnnInplaceCopy](../../conversion/view_copy/docs/aclnnInplaceCopy.md) | 将src中的元素复制到selfRef张量中并返回selfRef。              | 默认确定性实现|               
 | [aclnnInplaceFillDiagonal](../../conversion/fill_diagonal_v2/docs/aclnnInplaceFillDiagonal.md) | 以fillValue填充tensor对角线。                                | 默认确定性实现|                                 
@@ -135,8 +136,8 @@
 | [aclnnLogSumExp](../../math/reduce_log_sum_exp/docs/aclnnLogSumExp.md) | 返回输入tensor指定维度上的指数之和的对数。                   | 默认确定性实现|                    
 | [aclnnLtScalar&aclnnInplaceLtScalar](../../math/less/docs/aclnnLtScalar&aclnnInplaceLtScalar.md) | 判断输入self中的每个元素是否小于输入other的值，返回一个Bool类型的Tensor。 | 默认确定性实现|  
 | [aclnnLtTensor&aclnnInplaceLtTensor](../../math/less/docs/aclnnLtTensor&aclnnInplaceLtTensor.md) | 判断输入self中的每个元素是否小于输入other中的元素，返回一个Bool类型的Tensor。 | 默认确定性实现|  
-| [aclnnMaskedSelect](../../conversion/masked_select_v3/docs/aclnnMaskedSelect.md) | 根据一个布尔掩码张量（mask）中的值选择输入张量（self）中的元素作为输出，形成一个新的一维张量。 | 默认确定性实现| 
 | [aclnnMaskedScale](../../math/masked_scale/docs/aclnnMaskedScale.md) | 完成elementwise计算。                                        | 默认确定性实现| 
+| [aclnnMaskedSelect](../../conversion/masked_select_v3/docs/aclnnMaskedSelect.md) | 根据一个布尔掩码张量（mask）中的值选择输入张量（self）中的元素作为输出，形成一个新的一维张量。 | 默认确定性实现| 
 | [aclnnMaxDim](../../math/arg_max_with_value/docs/aclnnMaxDim.md) | 返回Tensor指定维度的最大值及其索引位置。                     | 默认确定性实现|                      
 | [aclnnMax](../../math/reduce_max/docs/aclnnMax.md)              | 返回Tensor所有元素中的最大值。                               | 默认确定性实现|                                
 | [aclnnMaximum](../../math/maximum/docs/aclnnMaximum.md)         | 计算两个张量中每个元素的最大值，并返回一个新的张量。         | 默认确定性实现|          
@@ -154,6 +155,9 @@
 | [aclnnNeg&aclnnInplaceNeg](../../math/neg/docs/aclnnNeg&aclnnInplaceNeg.md) | 对输入的每个元素完成相反数计算。                             | 默认确定性实现|                              
 | [aclnnNeScalar&aclnnInplaceNeScalar](../../math/not_equal/docs/aclnnNeScalar&aclnnInplaceNeScalar.md) | 计算selfRef中的元素的值与other的值是否不相等。               | 默认确定性实现|                
 | [aclnnNeTensor&aclnnInplaceNeTensor](../../math/not_equal/docs/aclnnNeTensor&aclnnInplaceNeTensor.md) | 计算self（selfRef）中的元素的值与other的值是否不相等。       | 默认确定性实现|        
+| [aclnnNormalFloatTensor](../../random/stateless_random_normal_v2/docs/aclnnNormalFloatTensor.md)         | 返回一个随机数张量，该随机数是从给定的均值(float)和标准差(tensor)的独立正态分布中获取。 | 默认确定性实现|
+| [aclnnNormalTensorFloat](../../random/stateless_random_normal_v2/docs/aclnnNormalTensorFloat.md)         | 返回一个随机数张量，该随机数是从给定的均值(tensor)和标准差(float)的独立正态分布中获取。 | 默认确定性实现|
+| [aclnnNormalTensorTensor](../../random/stateless_random_normal_v2/docs/aclnnNormalTensorTensor.md)         | 返回一个随机数，该随机数是从给定的均值(tensor)和标准差(tensor)的独立正态分布中获取。 | 默认确定性实现|
 | [aclnnNpuFormatCast](../../conversion/npu_format_cast/docs/aclnnNpuFormatCast.md) | 完成ND←→NZ的转换功能。                                       | 默认确定性实现|                                        
 | [aclnnOneHot](../../math/one_hot/docs/aclnnOneHot.md)           | 对长度为n的输入self，经过one_hot的计算后得到一个元素数量为n*k的输出out。           | 默认确定性实现|  
 | [aclnnPdist](../../math/pdist/docs/aclnnPdist.md)               | 计算输入self中每对行向量的p范数距离。                        | 默认确定性实现|
@@ -186,6 +190,7 @@
 | [aclnnReflectionPad1dBackward](../../conversion/pad_v4_grad/docs/aclnnReflectionPad1dBackward.md) | reflection_pad1d的反向传播，前向计算参考aclnnReflectionPad1d。 | 默认确定性实现|
 | [aclnnReflectionPad2dBackward](../../conversion/pad_v4_grad/docs/aclnnReflectionPad2dBackward.md) | reflection_pad2d的反向传播，前向计算参考aclnnReflectionPad2d。 | 默认确定性实现|
 | [aclnnReflectionPad3dBackward](../../conversion/reflection_pad3d_grad/docs/aclnnReflectionPad3dBackward.md) | 计算aclnnReflectionPad3d api的反向传播。                     | 默认确定性实现|
+| [aclnnRightShift](../../math/right_shift/docs/aclnnRightShift.md)         | 对于输入张量input中每个元素，根据输入张量shiftBits对应位置的参数，按位进行右移。 | 默认确定性实现|
 | [aclnnRingAttentionUpdate](../../math/ring_attention_update/docs/aclnnRingAttentionUpdate.md) | RingAttentionUpdate算子功能是将两次FlashAttention的输出根据其不同的softmax的max和sum更新。 | 默认确定性实现|
 | [aclnnRoll](../../conversion/roll/docs/aclnnRoll.md)            | 沿给定尺寸和维度移动Tensor中的数据。                         | 默认确定性实现|
 | [aclnnRound&aclnnInplaceRound](../../math/round/docs/aclnnRound&aclnnInplaceRound.md) | 将输入的值舍入到最接近的整数，若该值与两个整数距离一样则向偶数取整。 | 默认确定性实现|
@@ -234,7 +239,3 @@
 | [aclnnXLogYTensor&aclnnInplaceXLogYTensor](../../math/x_log_y/docs/aclnnXLogYTensor&aclnnInplaceXLogYTensor.md) | 计算self * log(other)的结果。                                | 默认确定性实现|
 | [aclRfft1D](../../math/rfft1_d/docs/aclRfft1D.md)               | 对输入张量self进行RFFT（傅里叶变换）计算，输出是一个包含非负频率的复数张量。 | 默认确定性实现|
 | [aclStft](../../math/stft/docs/aclStft.md)                      | 计算输入在滑动窗口内的傅里叶变换。                           | 默认确定性实现|
-| [aclnnRightShift](../../math/right_shift/docs/aclnnRightShift.md)         | 对于输入张量input中每个元素，根据输入张量shiftBits对应位置的参数，按位进行右移。 | 默认确定性实现|
-| [aclnnDropoutV3](../../random/drop_out_v3/docs/aclnnDropoutV3.md)         | 按照概率p随机将输入中的元素置零，并将输出按照1/(1-p)的比例缩放。 | 默认确定性实现|
-| [aclnnDropoutDoMask](../../random/dropout_do_mask/docs/aclnnDropoutDoMask.md)         | 按照概率prob随机将输入中的元素置零，并将输出按照1/(1-prob)的比例放大。 | 默认确定性实现|
-| [aclnnNormalTensorTensor&aclnnNormalTensorFloat&aclnnNormalFloatTensor&aclnnNormalFloatFloat](../../random/stateless_random_norm_v2/docs/aclnnRightShift.md)         | 返回一个随机数，该随机数是从给定的均值(tensor)和标准差(tensor)的独立正态分布中获取。 | 默认确定性实现|
