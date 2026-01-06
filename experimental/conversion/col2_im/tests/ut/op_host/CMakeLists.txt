@@ -1,48 +1,22 @@
-cmake_minimum_required(VERSION 3.14)
-project(Col2ImTilingTest)
+# ----------------------------------------------------------------------------
+# This program is free software, you can redistribute it and/or modify it.
+# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# This file is a part of the CANN Open Software.
+# Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+# BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+# the software repository for the full text of the License.
+# ----------------------------------------------------------------------------
 
-# 设置 C++ 标准
-set(CMAKE_CXX_STANDARD 14)
+if(UT_TEST_ALL OR OP_HOST_UT)
+    add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    add_modules_ut_sources(UT_NAME ${OP_INFERSHAPE_MODULE_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
 
-# 查找依赖包
-find_package(GTest REQUIRED)
-
-# 假设你的项目结构如下：
-# - include/ (头文件)
-# - src/ (源文件)
-# - test/ (测试文件)
-
-# 包含华为 CANN 头文件
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    /usr/local/Ascend/ascend-toolkit/latest/include
-    /usr/local/Ascend/ascend-toolkit/latest/include/ge
-    /usr/local/Ascend/ascend-toolkit/latest/include/gert
-)
-
-# 链接库目录
-link_directories(
-    /usr/local/Ascend/ascend-toolkit/latest/lib64
-)
-
-# 添加测试可执行文件
-add_executable(col2im_tiling_test
-    test/main.cpp  # 你的测试主文件
-    test/col2im_tiling_test.cpp  # 你提供的测试文件
-    # 其他源文件...
-)
-
-# 链接库
-target_link_libraries(col2im_tiling_test
-    GTest::gtest
-    GTest::gtest_main
-    ascend_pass  # 华为 CANN 库
-    ge           # 图引擎库
-    gert         # Tiling 相关库
-    pthread
-    dl
-)
-
-# 启用测试
-enable_testing()
-add_test(NAME Col2ImTilingTest COMMAND col2im_tiling_test)
+file(GLOB CURRENT_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
+foreach(SUB_DIR ${CURRENT_DIRS})
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${SUB_DIR}/CMakeLists.txt")
+        add_subdirectory(${SUB_DIR})
+    endif()
+endforeach()

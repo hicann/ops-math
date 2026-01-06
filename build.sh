@@ -875,13 +875,16 @@ parse_changed_files() {
   cat $CHANGED_FILES
   echo $dotted_line
 
-
-
-  local script_ret=$(python3 scripts/ci/parse_changed_files.py $CHANGED_FILES)
-  IFS='&&' read -r related_ut soc_info <<< "$script_ret"
-  COMPILED_OPS=$(python3 scripts/ci/parse_changed_ops.py $CHANGED_FILES)
-  echo "related ut "$related_ut
+  COMPILED_OPS=$(python3 scripts/ci/parse_changed_ops.py $CHANGED_FILES "$ENABLE_EXPERIMENTAL")
   echo "related ops "$COMPILED_OPS
+
+  if [[ "$ENABLE_PACKAGE" == "TRUE" ]];then
+    return
+  fi
+
+  local script_ret=$(python3 scripts/ci/parse_changed_files.py $CHANGED_FILES "$ENABLE_EXPERIMENTAL")
+  IFS='&&' read -r related_ut soc_info <<< "$script_ret"
+  echo "related ut "$related_ut
   echo "related soc_info "$soc_info
 
   # COMPUTE_UNIT=$soc_info

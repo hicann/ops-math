@@ -98,7 +98,7 @@ static ge::graphStatus OnesLikeTilingFunc(gert::TilingContext* context)
         return ge::GRAPH_FAILED);
     // 2、获取shape、属性信息
     int64_t totalIdx;
-    ge::DataType dataType;
+    ge::DataType dataType = ge::DT_FLOAT;
 
     OP_CHECK_IF(
         GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,

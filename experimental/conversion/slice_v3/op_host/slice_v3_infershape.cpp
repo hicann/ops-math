@@ -45,7 +45,7 @@ static ge::graphStatus InferShapeSliceV3(gert::InferShapeContext* context)
     
     // 1. 必须是一维张量
     if (sizeShape->GetDimNum() != 1) {
-        OP_LOGE(context, "sizeTensor must be 1-D, got %u-D", sizeShape->GetDimNum());
+        OP_LOGE(context, "sizeTensor must be 1-D, got %zu-D", sizeShape->GetDimNum());
         return GRAPH_FAILED;
     }
     

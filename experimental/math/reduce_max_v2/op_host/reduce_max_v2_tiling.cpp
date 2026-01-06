@@ -123,7 +123,7 @@ namespace optiling {
     static ge::graphStatus CalculateCoreBlockNums(int64_t coreNum, ReduceMaxV2ShapeInfo& info)
     {
         if(0 == coreNum || 0 == info.tileBlockNum) {
-            OP_LOGE(context, "coreNum or tileBlockNum is 0,vaild number");
+            OP_LOGE("ReduceMax", "coreNum or tileBlockNum is 0,vaild number");
             return ge::GRAPH_FAILED;
         }
         uint64_t everyCoreInputBlockNum = info.inputLengthAlign32 / BLOCK_SIZE / coreNum;

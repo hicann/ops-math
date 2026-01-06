@@ -337,7 +337,7 @@ static ge::graphStatus Col2ImCustomTilingFunc(gert::TilingContext* context)
     ComputeOutputFeatureSize(H, W, kernelH, kernelW, stride, padding, dilation, outH, outW);
 
     // 6. 获取数据类型大小
-    uint32_t typeSize;
+    uint32_t typeSize = 1;
     if (GetDataTypeSize(context, typeSize) != ge::GRAPH_SUCCESS) {
         return ge::GRAPH_FAILED;
     }

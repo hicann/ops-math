@@ -502,7 +502,7 @@ static aclnnStatus CheckParamsScalarTensor(const aclScalar* self, const aclTenso
 
 // 提取SetWorkspaceAndRelease逻辑
 static aclnnStatus SetWorkspaceAndRelease(
-    std::unique_ptr<op::OpExecutor>& uniqueExecutor, uint64_t* workspaceSize, aclOpExecutor** executor)
+    UniqueExecutor& uniqueExecutor, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(executor);
@@ -512,7 +512,7 @@ static aclnnStatus SetWorkspaceAndRelease(
 // 提取RunRemainderProcessAndRelease逻辑，消除else分支重复
 static aclnnStatus RunRemainderProcessAndRelease(
     const aclTensor* self, const aclTensor* other, const aclTensor* out,
-    std::unique_ptr<op::OpExecutor>& uniqueExecutor, uint64_t* workspaceSize, aclOpExecutor** executor)
+    UniqueExecutor& uniqueExecutor, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     bool needUnsqueeze = (GetTensorDimNum(out) == 0);
     auto remainderRes =

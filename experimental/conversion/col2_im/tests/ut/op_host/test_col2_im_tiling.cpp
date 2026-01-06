@@ -1,8 +1,4 @@
 /**
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 70701343... cl compile
  * This file is part of the OpenBOAT project at Harbin Institute of Technology (HIT)
  * and is contributed to the CANN Open Software.
  *
@@ -20,24 +16,10 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
-<<<<<<< HEAD
-=======
- * This program is free software, you can redistribute it and/or modify it.
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
->>>>>>> 0fad06aa... ut
-=======
->>>>>>> 70701343... cl compile
  */
 
 #include <iostream>
 #include <gtest/gtest.h>
-#include "col2im_tiling.h"
 #include "../../../op_kernel/col2_im_tiling_data.h"
 #include "../../../op_kernel/col2_im_tiling_key.h"
 #include "tiling_context_faker.h"

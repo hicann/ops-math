@@ -29,11 +29,13 @@
 #include "../op_kernel/strided_slice_tiling_key.h"
 namespace optiling {
 using namespace Ops::Math::OpTiling;
+namespace {
 const uint32_t BLOCK_SIZE = 32;
 const uint32_t BUFFER_NUM = 2;
 const uint32_t WS_SYS_SIZE = 16U * 1024U * 1024U;
 uint32_t type_Size = 0;
 struct StridedSliceCompileInfo {};
+} // namespace
 // 获取平台信息如ubSize, coreNum
 static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& ubSize, int64_t& coreNum)
 {

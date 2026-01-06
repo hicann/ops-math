@@ -36,7 +36,8 @@ static ge::graphStatus TilingParseRound([[maybe_unused]] gert::TilingParseContex
     OP_CHECK_NULL_WITH_CONTEXT(context,context);
     return ge::GRAPH_SUCCESS;
 }
-ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
+
+static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 {
     OP_CHECK_NULL_WITH_CONTEXT(context,context);
     size_t usrSize = 0;

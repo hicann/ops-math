@@ -27,12 +27,12 @@ public:
 
         /* load libophost.so for init tiling funcs and infershape funcs */
         const char* buildPath = std::getenv("BUILD_PATH");
-        if (buildPath == nullptr) {
-            cout << "getenv BUILD_PATH failed." << endl;
-            return;
+        string opHostSoPath;
+        if (buildPath != nullptr) {
+            opHostSoPath = buildPath + string("/tests/ut/op_host/libophost_math_ut.so");
+        } else {
+            opHostSoPath = "./libophost_math_ut.so";
         }
-
-        string opHostSoPath = buildPath + string("/tests/ut/op_host/libophost_math_ut.so");
         gert::OppSoDesc oppSoDesc({ge::AscendString(opHostSoPath.c_str())}, "op_host_so");
         shared_ptr<gert::OpImplSpaceRegistryV2> opImplSpaceRegistryV2 = make_shared<gert::OpImplSpaceRegistryV2>();
         if (opImplSpaceRegistryV2->AddSoToRegistry(oppSoDesc) == ge::GRAPH_FAILED) {

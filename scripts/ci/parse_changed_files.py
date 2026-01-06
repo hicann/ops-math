@@ -23,7 +23,12 @@ NEW_OPS_PATH = [
     "random"
     # 添加更多算子路径
 ]
-
+NEW_EXPERIMENTAL_OPS_PATH = [
+    "experimental/math",
+    "experimental/conversion",
+    "experimental/random"
+    # 添加更多算子路径
+]
 COMM_FILES = [
     "tests",
     "common"
@@ -45,7 +50,7 @@ class FileChangeInfo:
         self.soc_info = set() if soc_info is None else soc_info
 
 
-def get_file_change_info_from_ci(changed_file_info_from_ci):
+def get_file_change_info_from_ci(changed_file_info_from_ci, ops_path):
     """
     get file change info from ci, ci will write `git diff > /or_filelist.txt`
     :param changed_file_info_from_ci: git diff result file from ci
@@ -63,14 +68,14 @@ def get_file_change_info_from_ci(changed_file_info_from_ci):
         op_kernel_changed_files = []
         comm_changed_files = []
         soc_info = set()
-        host_pattern = re.compile(rf"({'|'.join(NEW_OPS_PATH)})/.*/op_host/.*\.(cc|cpp|h)$")
-        api_pattern = re.compile(rf"({'|'.join(NEW_OPS_PATH)})/.*/op_api/.*\.(cc|cpp|h)$")
-        kernel_pattern = re.compile(rf"({'|'.join(NEW_OPS_PATH)})/.*/op_kernel/.*\.(cc|cpp|h)$")
-        graph_pattern = re.compile(rf"({'|'.join(NEW_OPS_PATH)})/.*/op_graph/.*\.(cc|cpp|h)$")
-        host_test_pattern = re.compile(rf"({'|'.join(NEW_OPS_PATH)})/.*/tests/ut/op_host/.*\.(cc|cpp|txt)$")
-        api_test_pattern = re.compile(rf"({'|'.join(NEW_OPS_PATH)})/.*/tests/ut/op_api/.*\.(cc|cpp|txt|py)$")
-        graph_test_pattern = re.compile(rf"({'|'.join(NEW_OPS_PATH)})/.*/tests/ut/op_graph/.*\.(cc|cpp|txt)$")
-        kernel_test_pattern = re.compile(rf"({'|'.join(NEW_OPS_PATH)})/.*/tests/ut/op_kernel/.*\.(cc|cpp|txt)$")
+        host_pattern = re.compile(rf"({'|'.join(ops_path)})/.*/op_host/.*\.(cc|cpp|h)$")
+        api_pattern = re.compile(rf"({'|'.join(ops_path)})/.*/op_api/.*\.(cc|cpp|h)$")
+        kernel_pattern = re.compile(rf"({'|'.join(ops_path)})/.*/op_kernel/.*\.(cc|cpp|h)$")
+        graph_pattern = re.compile(rf"({'|'.join(ops_path)})/.*/op_graph/.*\.(cc|cpp|h)$")
+        host_test_pattern = re.compile(rf"({'|'.join(ops_path)})/.*/tests/ut/op_host/.*\.(cc|cpp|txt)$")
+        api_test_pattern = re.compile(rf"({'|'.join(ops_path)})/.*/tests/ut/op_api/.*\.(cc|cpp|txt|py)$")
+        graph_test_pattern = re.compile(rf"({'|'.join(ops_path)})/.*/tests/ut/op_graph/.*\.(cc|cpp|txt)$")
+        kernel_test_pattern = re.compile(rf"({'|'.join(ops_path)})/.*/tests/ut/op_kernel/.*\.(cc|cpp|txt)$")
         comm_files_pattern = re.compile(rf"^({'|'.join(COMM_FILES)})")
         soc_pattern = re.compile(rf"({'|'.join(re.escape(key) for key in SOC_MAPPING)})")
 
@@ -104,8 +109,12 @@ def get_file_change_info_from_ci(changed_file_info_from_ci):
                           soc_info=soc_info)
 
 
-def get_change_relate_ut_dir_list(changed_file_info_from_ci):
-    file_change_info = get_file_change_info_from_ci(changed_file_info_from_ci)
+def get_change_relate_ut_dir_list(changed_file_info_from_ci, is_experimental):
+    if is_experimental == "TRUE":
+        ops_path=NEW_EXPERIMENTAL_OPS_PATH
+    else:
+        ops_path=NEW_OPS_MATH
+    file_change_info = get_file_change_info_from_ci(changed_file_info_from_ci, ops_path)
     if not file_change_info:
         logging.info("[INFO] not found file change info, run all c++.")
         return None
@@ -133,4 +142,4 @@ def get_change_relate_ut_dir_list(changed_file_info_from_ci):
 
 
 if __name__ == '__main__':
-    print(get_change_relate_ut_dir_list(sys.argv[1]))
+    print(get_change_relate_ut_dir_list(sys.argv[1], sys.argv[2]))

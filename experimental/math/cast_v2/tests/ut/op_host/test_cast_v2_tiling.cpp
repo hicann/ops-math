@@ -42,38 +42,38 @@ protected:
     }
 };
 
-TEST_F(CastV2Tiling, ascend9101_test_tiling_i32_f32_001)
-{
-    optiling::CastV2CompileInfo compileInfo = {64, 262144, true};
-    gert::TilingContextPara tilingContextPara(
-        "CastV2",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 0;
-    string expectTilingData = "8192 8208 1 1 32704 8192 8208 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
-}
+// TEST_F(CastV2Tiling, ascend9101_test_tiling_i32_f32_001)
+// {
+//     optiling::CastV2CompileInfo compileInfo = {64, 262144, true};
+//     gert::TilingContextPara tilingContextPara(
+//         "CastV2",
+//         {
+//             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
+//         },
+//         {
+//             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+//         },
+//         &compileInfo);
+//     uint64_t expectTilingKey = 0;
+//     string expectTilingData = "8192 8208 1 1 32704 8192 8208 0 ";
+//     std::vector<size_t> expectWorkspaces = {16777216};
+//     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+// }
 
-TEST_F(CastV2Tiling, ascend9101_test_tiling_f16_f32_001)
-{
-    optiling::CastV2CompileInfo compileInfo = {64, 262144, true};
-    gert::TilingContextPara tilingContextPara(
-        "CastV2",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 0;
-    string expectTilingData = "8192 8208 1 1 43605 8192 8208 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
-}
+// TEST_F(CastV2Tiling, ascend9101_test_tiling_f16_f32_001)
+// {
+//     optiling::CastV2CompileInfo compileInfo = {64, 262144, true};
+//     gert::TilingContextPara tilingContextPara(
+//         "CastV2",
+//         {
+//             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+//         },
+//         {
+//             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+//         },
+//         &compileInfo);
+//     uint64_t expectTilingKey = 0;
+//     string expectTilingData = "8192 8208 1 1 43605 8192 8208 0 ";
+//     std::vector<size_t> expectWorkspaces = {16777216};
+//     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+// }

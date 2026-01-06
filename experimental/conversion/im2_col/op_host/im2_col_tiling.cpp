@@ -143,7 +143,7 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context,
     
     // Im2Col只支持3D或4D输入
     OP_CHECK_IF(dimNum != 3 && dimNum != 4, 
-                OP_LOGE(context, "Im2ColCustom: only support 3D or 4D input, but got dimNum=%d", dimNum), 
+                OP_LOGE(context, "Im2ColCustom: only support 3D or 4D input, but got dimNum=%zu", dimNum),
                 return ge::GRAPH_FAILED);
 
     // 根据维度数解析shape
@@ -433,5 +433,5 @@ static ge::graphStatus TilingParseForIm2ColCustom([[maybe_unused]] gert::TilingP
 }
 
 // Tiling注册入口
-IMPL_OP_OPTILING(Im2ColCustom).Tiling(Im2ColCustomTilingFunc).TilingParse<Im2ColCustomCompileInfo>(TilingParseForIm2ColCustom);
+IMPL_OP_OPTILING(Im2Col).Tiling(Im2ColCustomTilingFunc).TilingParse<Im2ColCustomCompileInfo>(TilingParseForIm2ColCustom);
 } // namespace optiling

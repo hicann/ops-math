@@ -23,7 +23,9 @@ set(COMMON_L0_SRCS
   ${CMAKE_SOURCE_DIR}/conversion/tensor_move/op_host/op_api/tensor_move.cpp
   ${CMAKE_SOURCE_DIR}/conversion/trans_data/op_host/op_api/transdata.cpp
   ${CMAKE_SOURCE_DIR}/conversion/transpose/op_api/transpose.cpp
-  ${CMAKE_SOURCE_DIR}/conversion/pad/op_host/op_api/pad.cpp)
+  ${CMAKE_SOURCE_DIR}/conversion/pad/op_host/op_api/pad.cpp
+  ${CMAKE_SOURCE_DIR}/conversion/fill/op_api/fill.cpp
+  )
 
 add_opapi_modules()
 target_sources(${OPHOST_NAME}_opapi_obj PRIVATE ${COMMON_L0_SRCS})

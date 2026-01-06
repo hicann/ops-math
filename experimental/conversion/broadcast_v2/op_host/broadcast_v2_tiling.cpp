@@ -38,11 +38,21 @@ using namespace Ops::Math::OpTiling;
 constexpr uint32_t BUFFER_NUM = 2;
 constexpr uint32_t WS_SYS_SIZE = 512U;
 
+namespace {
 struct BroadcastV2CompileInfo {};
+struct PlatformInfo {
+    uint64_t ubSize{0};
+    int64_t coreNum{0};
+    uint32_t blockSize{0};
+};
+}
 
 // 获取平台信息如ubSize, coreNum
-static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& ubSize, int64_t& coreNum, uint32_t& blockSize)
+static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, PlatformInfo& platformInfo)
 {
+    auto& ubSize = platformInfo.ubSize;
+    auto& coreNum = platformInfo.coreNum;
+    auto& blockSize = platformInfo.blockSize;
     // 获取ubsize coreNum
     fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
@@ -59,6 +69,10 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
 // 获取属性，shape信息
 static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& totalIdx, ge::DataType& dataType)
 {
+    auto inputX = context->GetInputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
+    totalIdx = inputX->GetStorageShape().GetShapeSize();
+
     // dtype校验
     const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_FLOAT16};
     auto inputDesc = context->GetInputDesc(0);
@@ -81,8 +95,15 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus CalculateCoreNum(gert::TilingContext* context, BroadcastV2TilingData* tiling, int64_t coreNum, uint32_t blockSize)
+static ge::graphStatus CalculateCoreNum(gert::TilingContext* context,
+                                        BroadcastV2TilingData* tiling,
+                                        const PlatformInfo& pltInfo,
+                                        int64_t totalIdx)
 {
+    auto coreNum = pltInfo.coreNum;
+    auto blockSize = pltInfo.blockSize;
+    auto ubSize = pltInfo.ubSize;
+
     uint32_t typeLength = 0;
     ge::TypeUtils::GetDataTypeLength(context->GetInputDesc(0)->GetDataType(), typeLength);
     if (typeLength == 0) {
@@ -123,13 +144,13 @@ static ge::graphStatus CalculateCoreNum(gert::TilingContext* context, BroadcastV
     AscendC::GetBroadCastMaxMinTmpSize(ascendcPlatform, inputShapeForTmp, outputShapeForTmp, typeLength,
                                        isReuseSource == 1, maxsize, minsize);
     uint32_t tmpSize;
-    if (bufferMode == 0){
-            tmpSize = 0;
-    }else if (bufferMode == 1) {
+    if (bufferMode == 0) {
+        tmpSize = 0;
+    } else if (bufferMode == 1) {
         tmpSize = minsize;
-    }else if (bufferMode == 2) {
+    } else if (bufferMode == 2) {
         tmpSize = maxsize;
-    }else {
+    } else {
         tmpSize = (maxsize + minsize) / 2;
     }
     if (blockSize == 0) {
@@ -214,9 +235,8 @@ static ge::graphStatus CalculateCoreNum(gert::TilingContext* context, BroadcastV
 static ge::graphStatus BroadcastV2TilingFunc(gert::TilingContext* context)
 {
     // 1. platform
-    uint64_t ubSize;
-    int64_t coreNum;
-    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+    PlatformInfo platformInfo;
+    OP_CHECK_IF(GetPlatformInfo(context, platformInfo) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     // 2. shapes & dtype
@@ -245,7 +265,7 @@ static ge::graphStatus BroadcastV2TilingFunc(gert::TilingContext* context)
                 OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     // 4. CoreNum & Tiling Calculation
-    OP_CHECK_IF(CalculateCoreNum(context, tiling, coreNum, blockSize) != ge::GRAPH_SUCCESS,
+    OP_CHECK_IF(CalculateCoreNum(context, tiling, platformInfo, totalIdx) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context, "CalculateCoreNum error"), return ge::GRAPH_FAILED);
     context->GetRawTilingData()->SetDataSize(sizeof(BroadcastV2TilingData));
     

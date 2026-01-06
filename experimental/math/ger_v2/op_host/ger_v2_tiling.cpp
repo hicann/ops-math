@@ -125,8 +125,8 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context,int64_t& m
         OP_LOGE(
             context,
             "Ger: shape check failed. "
-            "x(rank=%zu, m=%lld), y(rank=%zu, n=%lld), "
-            "A(rank=%zu, [%lld,%lld]), Z(rank=%zu, [%lld,%lld]) | "
+            "x(rank=%zu, m=%ld), y(rank=%zu, n=%ld), "
+            "A(rank=%zu, [%ld,%ld]), Z(rank=%zu, [%ld,%ld]) | "
             "expected x(1-D), y(1-D), A/Z(2-D [m,n]).",
             inputShapeX.GetDimNum(), m,
             inputShapeY.GetDimNum(), n,

@@ -131,7 +131,7 @@ static ge::graphStatus InferShapeIm2Col(gert::InferShapeContext *context)
     // 解析输入形状
     auto dimNum = InputShape->GetDimNum();
     if (dimNum < MIN_DIM_NUM) {
-        OP_LOGE(context->GetNodeName(), "Input dimension number %ld is less than minimum required %d", 
+        OP_LOGE(context->GetNodeName(), "Input dimension number %zu is less than minimum required %d",
                 dimNum, MIN_DIM_NUM);
         return ge::GRAPH_FAILED;
     }

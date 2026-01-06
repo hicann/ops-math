@@ -1,4 +1,4 @@
-static/**
+/**
  * This file is part of the OpenBOAT project at Harbin Institute of Technology (HIT)
  * and is contributed to the CANN Open Software.
  *
@@ -29,6 +29,7 @@ static/**
 #include "tiling_base/tiling_templates_registry.h"
 #include "../op_kernel/maximum_v2_tiling_data.h"
 #include "../op_kernel/maximum_v2_tiling_key.h"
+#include "platform/platform_ascendc.h"
 
 namespace optiling {
 
@@ -78,7 +79,7 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
 
 static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 {
-    auto ascendcPlatform = platform_ascendc:: PlatformAscendC(context->GetPlatformInfo());
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     uint32_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
@@ -98,7 +99,7 @@ static ge::graphStatus MaximumV2TilingFunc(gert::TilingContext* context)
 
     // 2. shapes & dtype
     int64_t totalIdx = 0;
-    ge::DataType dataType;
+    ge::DataType dataType = ge::DT_FLOAT;
     OP_CHECK_IF(GetShapeAttrsInfo(context, totalIdx, dataType) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 

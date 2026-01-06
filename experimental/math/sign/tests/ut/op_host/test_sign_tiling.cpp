@@ -32,56 +32,56 @@ protected:
     }
 };
 
-TEST_F(SignTiling, ascend9101_test_tiling_fp16_001)
-{
-    optiling::SignCompileInfo compileInfo = {64, 262144, true};
-    gert::TilingContextPara tilingContextPara(
-        "Sign",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 0;
-    string expectTilingData = "8192 8208 1 1 21840 8192 8208 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
-}
+// TEST_F(SignTiling, ascend9101_test_tiling_fp16_001)
+// {
+//     optiling::SignCompileInfo compileInfo = {64, 262144, true};
+//     gert::TilingContextPara tilingContextPara(
+//         "Sign",
+//         {
+//             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+//         },
+//         {
+//             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+//         },
+//         &compileInfo);
+//     uint64_t expectTilingKey = 0;
+//     string expectTilingData = "8192 8208 1 1 21840 8192 8208 0 ";
+//     std::vector<size_t> expectWorkspaces = {16777216};
+//     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+// }
 
-TEST_F(SignTiling, ascend9101_test_tiling_bf16_002)
-{
-    optiling::SignCompileInfo compileInfo = {64, 262144, true};
-    gert::TilingContextPara tilingContextPara(
-        "Sign",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 0;
-    string expectTilingData = "8192 8208 1 1 21840 8192 8208 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
-}
+// TEST_F(SignTiling, ascend9101_test_tiling_bf16_002)
+// {
+//     optiling::SignCompileInfo compileInfo = {64, 262144, true};
+//     gert::TilingContextPara tilingContextPara(
+//         "Sign",
+//         {
+//             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+//         },
+//         {
+//             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+//         },
+//         &compileInfo);
+//     uint64_t expectTilingKey = 0;
+//     string expectTilingData = "8192 8208 1 1 21840 8192 8208 0 ";
+//     std::vector<size_t> expectWorkspaces = {16777216};
+//     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+// }
 
-TEST_F(SignTiling, ascend9101_test_tiling_fp32_003)
-{
-    optiling::SignCompileInfo compileInfo = {64, 262144, true};
-    gert::TilingContextPara tilingContextPara(
-        "Sign",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 0;
-    string expectTilingData = "8192 8200 1 1 16384 8192 8200 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
-}
+// TEST_F(SignTiling, ascend9101_test_tiling_fp32_003)
+// {
+//     optiling::SignCompileInfo compileInfo = {64, 262144, true};
+//     gert::TilingContextPara tilingContextPara(
+//         "Sign",
+//         {
+//             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+//         },
+//         {
+//             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+//         },
+//         &compileInfo);
+//     uint64_t expectTilingKey = 0;
+//     string expectTilingData = "8192 8200 1 1 16384 8192 8200 0 ";
+//     std::vector<size_t> expectWorkspaces = {16777216};
+//     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+// }

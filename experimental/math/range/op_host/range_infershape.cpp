@@ -34,18 +34,6 @@ const size_t startIdx=0;
 const size_t endIdx=1;
 const size_t stepIdx=2;
 const size_t outputIdx=0;
-static ge::graphStatus GetInputVal(const gert::Tensor* tensor, ge::DataType type, float& val)
-{
-    switch (type) {
-        case ge::DT_FLOAT:
-            OP_CHECK_IF(tensor->GetData<float>()==nullptr, OP_LOGE(*tensor->GetData<float>(), "NULL Input,Please Check!"), return ge::GRAPH_FAILED),
-            val=*tensor->GetData<float>();
-            break;
-        default:
-            return ge::GRAPH_FAILED;
-    }
-    return ge::GRAPH_SUCCESS;
-}
 
 static ge::graphStatus InferShape(gert::InferShapeContext* context)
 {

@@ -85,7 +85,7 @@ static ge::graphStatus InferShapeCol2Im(gert::InferShapeContext *context)
     // 输入: [N, C*kH*kW, L]
     if (InputShape->GetDimNum() != REQUIRED_INPUT_DIMS) {
         OP_LOGE(context->GetNodeName(), 
-                "Failed: input shape must be %dD, but got %uD", 
+                "Failed: input shape must be %dD, but got %zuD",
                 REQUIRED_INPUT_DIMS, InputShape->GetDimNum());
         return ge::GRAPH_FAILED;
     }

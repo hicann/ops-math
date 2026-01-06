@@ -32,6 +32,7 @@
 
 namespace optiling {
 using namespace Ops::Math::OpTiling;
+namespace {
 const uint32_t WS_SYS_SIZE = 16U * 1024U * 1024U;
 const uint32_t minNum = 1;
 
@@ -61,6 +62,7 @@ uint64_t loop_Cnt = VAL_ZRRO, full_Tile_Length = VAL_ZRRO, last_Tile_Length = VA
 int32_t full_Cnt = VAL_ZRRO, last_Cnt = VAL_ZRRO;
 
 struct TriuCompileInfo {};
+}
 
 // 获取平台信息如ubSize, coreNum
 static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& ubSize, int64_t& coreNum)

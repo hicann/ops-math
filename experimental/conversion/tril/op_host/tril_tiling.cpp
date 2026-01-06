@@ -30,6 +30,7 @@
 #include "../op_kernel/tril_tiling_key.h"
 namespace optiling {
 using namespace Ops::Math::OpTiling;
+namespace {
 const uint32_t WS_SYS_SIZE = 16U * 1024U * 1024U;
 const uint32_t minNum = 1;
 const uint32_t keyOne = 1;
@@ -54,6 +55,8 @@ uint32_t total_Length_Aligned = VAL_ZRRO;
 uint64_t loop_Cnt = VAL_ZRRO, full_Tile_Length = VAL_ZRRO, last_Tile_Length = VAL_ZRRO;
 int32_t full_Cnt = VAL_ZRRO, last_Cnt = VAL_ZRRO;
 struct TrilCompileInfo {};
+}
+
 // 获取平台信息如ubSize, coreNum
 static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& ubSize, int64_t& coreNum)
 {

@@ -40,20 +40,24 @@ const uint32_t BLOCK_SIZE = 32;
 const uint32_t BUFFER_NUM = 2;                                                       
 const uint32_t UB_BLOCK_NUM = 100;
 const uint32_t MAX_AVAILABLE_UB_BLOCK_NUM = UB_BLOCK_NUM / BUFFER_NUM * BUFFER_NUM;
-void CheckNull(uint32_t num){
+static ge::graphStatus CheckNull(uint32_t num){
     if(num==0){
         return ge::GRAPH_FAILED;
     }
+    return ge::GRAPH_SUCCESS;
 }
-void TilingParamsCalc(uint32_t length, uint32_t alignNum,
-                      uint32_t &tileNum, uint32_t &tileLength, uint32_t &lastTileLength)
+
+static ge::graphStatus TilingParamsCalc(uint32_t length, uint32_t alignNum, uint32_t& tileNum,
+                                        uint32_t& tileLength, uint32_t& lastTileLength)
 {
     uint32_t maxPerCoreElem = alignNum * MAX_AVAILABLE_UB_BLOCK_NUM;
     CheckNull(maxPerCoreElem);
     tileNum = length / maxPerCoreElem;
     if ((length % maxPerCoreElem == 0U) || (tileNum == 0U)) {
         if (tileNum == 0U) {
-            if(alignNum==0)return ge::GRAPH_FAILED;
+            if(alignNum==0) {
+                return ge::GRAPH_FAILED;
+            }
             tileNum = (length + alignNum - 1) / alignNum;
         }
         if (length < maxPerCoreElem) {
@@ -61,7 +65,9 @@ void TilingParamsCalc(uint32_t length, uint32_t alignNum,
             uint32_t blockCount = (length + alignNum - 1) / alignNum;
             blockCount = (blockCount + BUFFER_NUM - 1) / BUFFER_NUM * BUFFER_NUM;
             tileLength = blockCount * alignNum;
-            if(alignNum==0)return ge::GRAPH_FAILED;
+            if(alignNum==0) {
+                return ge::GRAPH_FAILED;
+            }
             lastTileLength = (tileNum == 1) ? length : (length % alignNum == 0 ? alignNum : length % alignNum);
         } else {
             tileLength = maxPerCoreElem;
@@ -72,13 +78,14 @@ void TilingParamsCalc(uint32_t length, uint32_t alignNum,
         tileLength = maxPerCoreElem;
         lastTileLength = length - (tileNum - 1) * tileLength;
     }
+    return ge::GRAPH_SUCCESS;
 }
 
 static ge::graphStatus GetInputVal(const gert::Tensor* tensor, ge::DataType type, float& val)
 {
     switch (type) {
         case ge::DT_FLOAT:
-            OP_CHECK_IF(tensor->GetData<float>()==nullptr, OP_LOGE(*tensor->GetData<float>(), "NULL Input,Please Check!"), return ge::GRAPH_FAILED),
+            OP_CHECK_IF(tensor->GetData<float>()==nullptr, OP_LOGE("Range", "NULL Input,Please Check!"), return ge::GRAPH_FAILED);
             val=*tensor->GetData<float>();
             break;
         default:
@@ -88,8 +95,9 @@ static ge::graphStatus GetInputVal(const gert::Tensor* tensor, ge::DataType type
 }
 
 static void ComputeTiling(uint32_t totalLengthAligned, uint32_t alignNum, uint32_t coreNum, RangeTilingData* tiling)
-{     CheckNull(alignNum);
-      CheckNull(coreNum);
+{
+    CheckNull(alignNum);
+    CheckNull(coreNum);
     if ((totalLengthAligned / alignNum) % coreNum == 0U) {
         uint32_t blockLength = totalLengthAligned / coreNum;
         uint32_t tileNum, tileLength, lastTileLength;
