@@ -19,7 +19,6 @@
 #include <iostream>
 #include "util/const_util.h"
 #include "register/op_def_registry.h"
-#include "tiling/tiling_api.h"
 #include "as_strided_helper_tiling.h"
 #include "as_strided_tiling_arch35.h"
 #include "util/math_util.h"

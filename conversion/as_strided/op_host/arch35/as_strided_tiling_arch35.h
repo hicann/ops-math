@@ -13,7 +13,6 @@
 
 #include <cstdint>
 #include "register/tilingdata_base.h"
-#include "tiling/tiling_api.h"
 
 namespace optiling {
 
