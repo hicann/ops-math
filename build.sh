@@ -1426,4 +1426,4 @@ set -o pipefail
 if [ $# -eq 0 ]; then
   usage
 fi
-main "$@" | gawk '{print strftime("[%Y-%m-%d %H:%M:%S]"), $0}'
+main "$@" 2>&1 | gawk '{print strftime("[%Y-%m-%d %H:%M:%S]"), $0}'
