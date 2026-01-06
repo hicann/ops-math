@@ -1,18 +1,18 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include <array>
 #include <vector>
 #include "gtest/gtest.h"
 
-#include "aclnn_div.h"
+#include "math/div/op_api/aclnn_div.h"
 
 #include "op_api_ut_common/inner/types.h"
 #include "op_api_ut_common/op_api_ut.h"
@@ -25,9 +25,15 @@ using namespace std;
 
 class l2_div_test : public testing::Test {
 protected:
-    static void SetUpTestCase() { cout << "div_test SetUp" << endl; }
+    static void SetUpTestCase()
+    {
+        cout << "div_test SetUp" << endl;
+    }
 
-    static void TearDownTestCase() { cout << "div_test TearDown" << endl; }
+    static void TearDownTestCase()
+    {
+        cout << "div_test TearDown" << endl;
+    }
 };
 
 // 测试aicore:FLOAT,FLOAT32类型支持
@@ -98,8 +104,8 @@ TEST_F(l2_div_test, case_bool_dtype_support)
 // 测试支持数据格式
 TEST_F(l2_div_test, case_dtype_all_format)
 {
-    vector<aclFormat> format_list{ACL_FORMAT_ND,    ACL_FORMAT_NCHW,  ACL_FORMAT_NHWC,   ACL_FORMAT_HWCN,
-                                  ACL_FORMAT_NDHWC, ACL_FORMAT_NCDHW};
+    vector<aclFormat> format_list{ACL_FORMAT_ND,   ACL_FORMAT_NCHW,  ACL_FORMAT_NHWC,
+                                  ACL_FORMAT_HWCN, ACL_FORMAT_NDHWC, ACL_FORMAT_NCDHW};
     for (auto format : format_list) {
         auto self_tensor_desc = TensorDesc({3, 5}, ACL_FLOAT, format).ValueRange(10, 100);
         auto other_tensor_desc = TensorDesc({3, 5}, ACL_FLOAT, format).ValueRange(10, 100);
@@ -323,26 +329,28 @@ TEST_F(l2_div_test, case_other_scalar_CheckDtypeValid)
 }
 
 // 测试other为scalar超过8维的tensor
-TEST_F(l2_div_test, case_scalar_shape_dim_9) {
-  auto self_tensor_desc = TensorDesc({1, 2, 3, 4, 5, 6, 7, 8, 9}, ACL_FLOAT, ACL_FORMAT_NCHW);
-  auto other_tensor_desc = ScalarDesc(2.0f);
-  auto out_tensor_desc = TensorDesc({1, 2, 3, 4, 5, 6, 7, 8, 9}, ACL_FLOAT, ACL_FORMAT_NCHW);
+TEST_F(l2_div_test, case_scalar_shape_dim_9)
+{
+    auto self_tensor_desc = TensorDesc({1, 2, 3, 4, 5, 6, 7, 8, 9}, ACL_FLOAT, ACL_FORMAT_NCHW);
+    auto other_tensor_desc = ScalarDesc(2.0f);
+    auto out_tensor_desc = TensorDesc({1, 2, 3, 4, 5, 6, 7, 8, 9}, ACL_FLOAT, ACL_FORMAT_NCHW);
 
-  auto ut = OP_API_UT(aclnnDivs, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+    auto ut = OP_API_UT(aclnnDivs, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
 // 测试超过8维的tensor
-TEST_F(l2_div_test, case_shape_dim_9) {
-  auto self_tensor_desc = TensorDesc({1, 2, 3, 4, 5, 6, 7, 8, 9}, ACL_FLOAT, ACL_FORMAT_NCHW);
-  auto out_tensor_desc = TensorDesc({1, 2, 3, 4, 5, 6, 7, 8, 9}, ACL_FLOAT, ACL_FORMAT_NCHW);
+TEST_F(l2_div_test, case_shape_dim_9)
+{
+    auto self_tensor_desc = TensorDesc({1, 2, 3, 4, 5, 6, 7, 8, 9}, ACL_FLOAT, ACL_FORMAT_NCHW);
+    auto out_tensor_desc = TensorDesc({1, 2, 3, 4, 5, 6, 7, 8, 9}, ACL_FLOAT, ACL_FORMAT_NCHW);
 
-  auto ut = OP_API_UT(aclnnDiv, INPUT(self_tensor_desc, self_tensor_desc), OUTPUT(out_tensor_desc));
-  uint64_t workspace_size = 0;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+    auto ut = OP_API_UT(aclnnDiv, INPUT(self_tensor_desc, self_tensor_desc), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
 // 测试div_:other为scalar立即数输入

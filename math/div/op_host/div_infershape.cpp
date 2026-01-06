@@ -8,14 +8,16 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef PTA_NPU_OP_API_INC_LEVEL0_OP_DIV_OP_H_
-#define PTA_NPU_OP_API_INC_LEVEL0_OP_DIV_OP_H_
+/*!
+ * \file div_infershape.cpp
+ * \brief
+ */
+#include "op_host/infershape_broadcast_util.h"
+#include "register/op_impl_registry.h"
 
-#include "opdev/op_executor.h"
+using namespace ge;
+namespace ops {
 
-namespace l0op {
-const aclTensor* Div(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor);
+IMPL_OP_INFERSHAPE(Div).InferShape(Ops::Base::InferShape4Broadcast);
 
-}
-
-#endif // PTA_NPU_OP_API_INC_LEVEL0_OP_ADD_OP_H_
+} // namespace ops

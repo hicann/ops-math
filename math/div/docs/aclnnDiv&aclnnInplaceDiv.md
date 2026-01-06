@@ -4,8 +4,9 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Ascend 950PR/Ascend 950DT</term>                       |    √     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>       |    √     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>       |    √     |
 
 ## 功能说明
 
@@ -137,6 +138,10 @@ aclnnStatus aclnnInplaceDiv(
     </tr>
   </tbody>
   </table>
+
+  - <term>Ascend 950PR/Ascend 950DT</term>：
+    - self与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
+    - out不支持INT32、INT64、INT16、INT8、UINT8、BOOL数据类型。
 
 - **返回值：**
 
@@ -292,6 +297,11 @@ aclnnStatus aclnnInplaceDiv(
     </tr>
   </tbody>
   </table>
+
+  - <term>Ascend 950PR/Ascend 950DT</term>：
+    - selfRef与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
+    - selfRef不支持INT32、INT64、INT16、INT8、UINT8、BOOL。
+
 
 - **返回值：**
 

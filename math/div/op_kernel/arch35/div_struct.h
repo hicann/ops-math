@@ -8,14 +8,17 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef PTA_NPU_OP_API_INC_LEVEL0_OP_DIV_OP_H_
-#define PTA_NPU_OP_API_INC_LEVEL0_OP_DIV_OP_H_
+/*!
+ * \file div_struct.h
+ * \brief div_struct
+ */
+#ifndef DIV_STRUCT_H_
+#define DIV_STRUCT_H_
 
-#include "opdev/op_executor.h"
+#include "atvoss/broadcast/broadcast_base_struct.h"
 
-namespace l0op {
-const aclTensor* Div(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor);
+// 算子自定义的tiling key字段
+ASCENDC_TPL_ARGS_DECL(Div, BRC_TEMP_SCH_MODE_KEY_DECL(schMode));
 
-}
-
-#endif // PTA_NPU_OP_API_INC_LEVEL0_OP_ADD_OP_H_
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(BRC_TEMP_SCH_MODE_KEY_SEL(schMode)));
+#endif // DIV_STRUCT_H_

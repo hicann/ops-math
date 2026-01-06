@@ -1,20 +1,20 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "aclnn_div.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
-#include "math/floor_div/op_api/floordiv.h"
-#include "math/real_div/op_host/op_api/realdiv.h"
+#include "math/floor_div/op_host/op_api/floordiv.h"
+#include "../../../real_div/op_api/realdiv.h"
 #include "math/trunc/op_host/op_api/trunc.h"
-#include "math/muls/op_api/muls.h"
+#include "math/muls/op_host/op_api/muls.h"
 #include "common/op_api_def.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
@@ -32,8 +32,8 @@ using namespace op;
 extern "C" {
 #endif
 
-static op::DataType PromoteIntegerAndBoolInputsToFloat(const op::DataType input) {
-  if (IsIntegralType(input) || (input == op::DataType::DT_BOOL)) {
+static op::DataType PromoteIntegerInputsToFloat(const op::DataType input) {
+  if (IsIntegralType(input)) {
     return op::DataType::DT_FLOAT;
   }
   return input;
@@ -141,9 +141,9 @@ static inline op::DataType InferDivModeDtype(const op::DataType selfDtype, const
                                              const int mode) {
   auto promoteType = op::PromoteType(selfDtype, otherDtype);
   // 下沉PTA入口操作将入参类型转化成FLOAT进行后续处理
-  if (mode == MODE_REAL_DIV) {
+  if (mode == MODE_REAL_DIV && promoteType != op::DataType::DT_INT32 && promoteType != op::DataType::DT_BOOL) {
     // IterateBase 配置特殊处理
-    promoteType = PromoteIntegerAndBoolInputsToFloat(promoteType);
+    promoteType = PromoteIntegerInputsToFloat(promoteType);
   }
   if (mode == MODE_TRUNC_DIV && promoteType == DataType::DT_DOUBLE) {
     promoteType = DataType::DT_FLOAT;
@@ -205,10 +205,9 @@ static inline op::DataType InferDivsModeDtype(const op::DataType selfDtype, cons
                                               const int mode) {
   auto scalarDefaultDtype = GetScalarDefaultDtype(otherDtype);
   auto promoteType = CombineCategoriesWithComplex(selfDtype, scalarDefaultDtype);
-  
-  if (mode == MODE_REAL_DIV) {
+  if (mode == MODE_REAL_DIV && promoteType != op::DataType::DT_INT32 && promoteType != op::DataType::DT_BOOL) {
     // IterateBase 配置特殊处理
-    promoteType = PromoteIntegerAndBoolInputsToFloat(promoteType);
+    promoteType = PromoteIntegerInputsToFloat(promoteType);
   }
 
   if (mode == MODE_TRUNC_DIV && promoteType == DataType::DT_DOUBLE) {
@@ -369,11 +368,9 @@ aclnnStatus aclnnDivGetWorkspaceSize(const aclTensor* self, const aclTensor* oth
                          CompatibleInferDivDtype(self->GetDataType(), other->GetDataType()) :
                          InferDivModeDtype(self->GetDataType(), other->GetDataType(), MODE_REAL_DIV);
 
-  bool isSupportNonContiguous = GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95;
-
   // 处理self输入
   const aclTensor* selfProcessed = nullptr;
-  if (self->GetDataType() == promoteType && isSupportNonContiguous) {
+  if (self->GetDataType() == promoteType && l0op::IsRealDivSupportNonContiguous(self)) {
     selfProcessed = uniqueExecutor.get()->CreateView(
         self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
   } else {
@@ -388,7 +385,7 @@ aclnnStatus aclnnDivGetWorkspaceSize(const aclTensor* self, const aclTensor* oth
 
   // 处理other输入
   const aclTensor* otherProcessed = nullptr;
-  if (other->GetDataType() == promoteType && isSupportNonContiguous) {
+  if (other->GetDataType() == promoteType && l0op::IsRealDivSupportNonContiguous(other)) {
     otherProcessed = uniqueExecutor.get()->CreateView(
         other, other->GetViewShape(), other->GetStorageShape(), other->GetViewStrides(), other->GetViewOffset());
   } else {
@@ -485,7 +482,10 @@ static bool CanUseMuls(const aclTensor* self, const aclScalar* other) {
     return false;
   }
   if (other->GetDataType() != op::DataType::DT_FLOAT16 && other->GetDataType() != op::DataType::DT_BF16 &&
-      other->GetDataType() != op::DataType::DT_FLOAT) {
+      other->GetDataType() != op::DataType::DT_FLOAT && other->GetDataType() != op::DataType::DT_DOUBLE) {
+    return false;
+  }
+  if (!op::IsContiguous(self) && other->GetDataType() == op::DataType::DT_DOUBLE) {
     return false;
   }
 
@@ -538,8 +538,14 @@ aclnnStatus aclnnDivsGetWorkspaceSize(const aclTensor* self, const aclScalar* ot
     promoteType = (IsComplexType(other->GetDataType()))
                   ? op::PromoteType(promoteType, other->GetDataType())
                   : promoteType;
+    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+      promoteType = op::PromoteType(self->GetDataType(), other->GetDataType()) == op::DataType::DT_INT32
+                    ? op::DataType::DT_INT32
+                    : promoteType;
+    }
+
     bool canUseMuls = CanUseMuls(self, other);
-    if (self->GetDataType() == promoteType && isSupportNonContiguous && !canUseMuls) {
+    if (self->GetDataType() == promoteType && l0op::IsRealDivSupportNonContiguous(self) && !canUseMuls) {
       // aclScalar转aclTensor
       auto otherConvert = uniqueExecutor.get()->ConvertToTensor(other, promoteType);
       CHECK_RET(otherConvert != nullptr, ACLNN_ERR_INNER_NULLPTR);
