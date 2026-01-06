@@ -31,16 +31,12 @@ $$
 ## aclnnLerpGetWorkspaceSize
 - **参数说明**：
   - self(aclTensor\*, 计算输入)：公式中的输入`start`，Device侧的aclTensor，self与end、weight、out的数据类型一致，self与end、weight的shape满足[broadcast关系](common/broadcast关系.md)。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT。
   - end(aclTensor\*, 计算输入)：公式中的输入`end`，Device侧的aclTensor，self与end、weight、out的数据类型一致，self与end、weight的shape满足[broadcast关系](common/broadcast关系.md)。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT。
   - weight(aclTensor\*, 计算输入)：公式中的输入`weight`，Device侧的aclTensor，self与end、weight、out的数据类型一致，self与end、weight的shape满足[broadcast关系](common/broadcast关系.md)。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT。
   - out(aclTensor\*, 计算输出)：公式中的`out`，Device侧的aclTensor，self与end、weight、out的数据类型一致，out与self、end和weight broadcast之后的tensor的shape一致。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT。
   - workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
@@ -72,13 +68,10 @@ $$
 ## aclnnInplaceLerpGetWorkspaceSize
 - **参数说明**：
   - selfRef(aclTensor\*, 计算输入/输出)：公式中的输入`start`和输出`out`，Device侧的aclTensor，selfRef与end、weight的数据类型一致，selfRef与end、weight的shape满足[broadcast关系](common/broadcast关系.md)，且broadcast后的shape与`selfRef`一致。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT。
   - end(aclTensor\*, 计算输入)：公式中的输入`end`，Device侧的aclTensor，selfRef与end、weight的数据类型一致，selfRef与end、weight的shape满足[broadcast关系](common/broadcast关系.md)，且broadcast后的shape与`selfRef`一致。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT。
   - weight(aclTensor\*, 计算输入)：公式中的输入`weight`，Device侧的aclTensor，selfRef与end、weight的数据类型一致，selfRef与end、weight的shape满足[broadcast关系](common/broadcast关系.md)。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT。
   - workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
