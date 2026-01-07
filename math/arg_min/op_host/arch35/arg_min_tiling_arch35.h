@@ -16,7 +16,7 @@
 #define AIR_CXX_RUNTIME_V2_OP_IMPL_ARG_MIN_TILING_ARCH35_H
 
 #include "register/tilingdata_base.h"
-#include "../../../arg_common_base/op_host/arg_common_base_tiling_arch35.h"
+#include "../../../arg_common_base/op_host/arch35/arg_common_base_tiling_arch35.h"
 
 namespace optiling {
 REGISTER_TILING_DATA_CLASS(ArgMin, ArgMaxWithValueTilingData)
