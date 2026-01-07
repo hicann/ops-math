@@ -66,7 +66,7 @@ aclnnStatus aclnnTransConvolutionWeight(
   <td>weightIn</td>
   <td>输入</td>
   <td>表示一个待处理的Convolution的weightTensor。</td>
-  <td>-</td>
+  <td>支持空Tensor输入；当weightIn为空Tensor时，weightOut也必须为空Tensor。</td>
   <td>FLOAT16、FLOAT32</td>
   <td>NCHW</td>
   <td>4</td>
@@ -96,7 +96,7 @@ aclnnStatus aclnnTransConvolutionWeight(
   <td>weightOut</td>
   <td>输出</td>
   <td>表示返回输入weight转换为私有格式后的tensor。</td>
-  <td>-</td>
+  <td>支持空Tensor输出；当weightOut为空Tensor时，weightIn也必须为空Tensor。</td>
   <td>FLOAT16</td>
   <td>NCHW</td>
   <td>4</td>
@@ -106,7 +106,7 @@ aclnnStatus aclnnTransConvolutionWeight(
   <td>workspaceSize</td>
   <td>输出</td>
   <td>返回需要在Device侧申请的workspace大小</td>
-  <td>-</td>
+  <td>不能为空指针；空Tensor场景下返回0。</td>
   <td>-</td>
   <td>-</td>
   <td>-</td>
@@ -116,7 +116,7 @@ aclnnStatus aclnnTransConvolutionWeight(
   <td>executor</td>
   <td>输出</td>
   <td>返回op执行器，包含了算子计算流程。</td>
-  <td>-</td>
+  <td>不能为空指针。</td>
   <td>-</td>
   <td>-</td>
   <td>-</td>
@@ -143,7 +143,7 @@ aclnnStatus aclnnTransConvolutionWeight(
   <tr>
   <td align="left">ACLNN_ERR_PARAM_INVALID</td>
   <td align="left">161002</td>
-  <td align="left">输入输出Tensor的数据类型、数据格式以及其他参数不符合预期。比如输入weightIn为非FLOAT16、FLOAT32数据类型或者非NCHW数据格式。</td>
+  <td align="left">输入输出Tensor的数据类型、数据格式以及其他参数不符合预期。比如输入weightIn为非FLOAT16、FLOAT32数据类型或者非NCHW数据格式；或weightIn/weightOut空Tensor状态不一致。</td>
   </tr>
   </table>
 
@@ -192,6 +192,7 @@ aclnnStatus aclnnTransConvolutionWeight(
 - 仅支持正向Conv2D场景。
 - 不支持转置卷积。
 - 不支持cache缓存能力。
+- 支持空Tensor：当weightIn与weightOut均为空Tensor时，不执行实际转换，workspaceSize返回0。
 
 ## 调用示例
 
