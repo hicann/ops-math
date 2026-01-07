@@ -56,7 +56,7 @@ aclnnStatus aclnnCalculateConvolutionWeightSize(
   <td>tensorShape</td>
   <td>输入</td>
   <td>用于表达该次Convolution载入权重矩阵的Shape.</td>
-  <td>仅支持NCHW格式的shape。</td>
+  <td>仅支持NCHW格式的4维shape，且各维度需&gt;=0。支持空Tensor，返回weightTensorSize为0。</td>
   <td>INT64</td>
   <td>-</td>
   <td>-</td>
@@ -130,6 +130,7 @@ aclnnStatus aclnnCalculateConvolutionWeightSize(
 
 - 仅支持正向Conv2D场景。
 - 不支持转置卷积。
+- 支持空Tensor：返回weightTensorSize为0。
 
 ## 调用示例
 
@@ -250,7 +251,7 @@ int main() {
   std::vector<float> biasHostData(2, 1);
   std::vector<float> outHostData(162, 0);
   uint64_t transWeightSize = 0;
-  
+
   // 创建self aclTensor
   ret = CreateAclTensor(inputHostData, inputShape, &inputDeviceAddr, aclDataType::ACL_FLOAT16, &input);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -264,7 +265,7 @@ int main() {
   // 创建out aclTensor
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT16, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  
+
   // 创建Transweight acltensor
   void* transWeightDeviceAddr = nullptr;
   uint64_t size = transWeightSize * sizeof(float) / 2;
@@ -310,7 +311,7 @@ int main() {
   // 调用aclnnTransConvolutionWeight第二段接口
   ret = aclnnTransConvolutionWeight(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnTransConvolutionWeight failed. ERROR: %d\n", ret); return ret);
-    
+
   std::vector<int64_t> convStrides = {1, 1, 1, 1};
   std::vector<int64_t> convPads = {0, 0, 0, 0};
   std::vector<int64_t> convOutPads = {1, 1, 1, 1};
