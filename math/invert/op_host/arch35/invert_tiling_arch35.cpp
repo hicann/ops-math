@@ -32,7 +32,7 @@ ge::graphStatus InvertTiling::SetTilingData()
     size_t* currentWorkspace = context_->GetWorkspaceSizes(1);
     currentWorkspace[0] = INVERT_WORKSPACE_RESERVE_BYTE;
     context_->SetTilingKey(INVERT_TILING_KEY);
-    context_->SetBlockDim(td_.blockNum);
+    context_->SetBlockDim(td_->blockNum);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -58,38 +58,38 @@ ge::graphStatus InvertTiling::RunTiling()
         OP_LOGE(context_->GetNodeName(), "get output dtype failed."), return ge::GRAPH_FAILED);
 
     ge::graphStatus res = ge::GRAPH_FAILED;
-    td_ = *context_->GetTilingData<EleBaseTilingData>();
+    td_ = context_->GetTilingData<EleBaseTilingData>();
     switch (outputDtype) {
         case ge::DataType::DT_INT8: {
-            res = DoTiling<InvertDag<int8_t>::OpDag>(td_);
+            res = DoTiling<InvertDag<int8_t>::OpDag>(*td_);
             break;
         }
         case ge::DataType::DT_INT16: {
-            res = DoTiling<InvertDag<int16_t>::OpDag>(td_);
+            res = DoTiling<InvertDag<int16_t>::OpDag>(*td_);
             break;
         }
         case ge::DataType::DT_INT32: {
-            res = DoTiling<InvertDag<int32_t>::OpDag>(td_);
+            res = DoTiling<InvertDag<int32_t>::OpDag>(*td_);
             break;
         }
         case ge::DataType::DT_INT64: {
-            res = DoTiling<InvertDag<int64_t>::OpDag>(td_);
+            res = DoTiling<InvertDag<int64_t>::OpDag>(*td_);
             break;
         }
         case ge::DataType::DT_UINT8: {
-            res = DoTiling<InvertDag<uint8_t>::OpDag>(td_);
+            res = DoTiling<InvertDag<uint8_t>::OpDag>(*td_);
             break;
         }
         case ge::DataType::DT_UINT16: {
-            res = DoTiling<InvertDag<uint16_t>::OpDag>(td_);
+            res = DoTiling<InvertDag<uint16_t>::OpDag>(*td_);
             break;
         }
         case ge::DataType::DT_UINT32: {
-            res = DoTiling<InvertDag<uint32_t>::OpDag>(td_);
+            res = DoTiling<InvertDag<uint32_t>::OpDag>(*td_);
             break;
         }
         case ge::DataType::DT_UINT64: {
-            res = DoTiling<InvertDag<uint64_t>::OpDag>(td_);
+            res = DoTiling<InvertDag<uint64_t>::OpDag>(*td_);
             break;
         }
         default: {

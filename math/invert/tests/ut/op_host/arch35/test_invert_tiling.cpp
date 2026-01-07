@@ -114,7 +114,5 @@ TEST_F(InvertTilingTest, InvertTiling_005)
             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         &compileInfo);
-    uint64_t expectTilingKey = 2660;
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }

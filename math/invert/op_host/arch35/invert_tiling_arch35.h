@@ -32,7 +32,7 @@ private:
 
 private:
     gert::TilingContext* context_;
-    EleBaseTilingData td_;
+    EleBaseTilingData* td_;
 };
 
 } // namespace optiling

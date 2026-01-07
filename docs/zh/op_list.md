@@ -1017,12 +1017,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/invert">invert</a></td>
+    <td>√</td>
+    <td>√</td>
     <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>为输入张量的每一个元素取反。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1727,12 +1727,12 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/as_strided">as_strided</a></td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>允许用户通过制定新的形状和步长来创建一个与原张量共享相同数据内存的张量视图。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -2113,5 +2113,46 @@
     <td>√</td>
     <td>AI Core</td>
     <td>生成均匀分布随机数。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/assign_add/README.md">assign_add</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>该算子完成在原有tensor上的加法计算。</td>
+  </tr>ias
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/assign_sub/README.md">assign_sub</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>该算子完成在原有tensor上的减法计算。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/square_sum_v1/README.md">square_sum_v1</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>用于计算输入张量在指定轴上的平方和。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/bias_add_grad/README.md">bias_add_grad</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>计算偏置的梯度。</td>
+  </tr>
 </tbody>
 </table>
