@@ -23,10 +23,11 @@
 - **参数说明：**
 
   * element(aclTensor*, 计算输入)：shape维度不高于8维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、INT32、INT64、INT16、INT8、UINT8、DOUBLE，且与testElement满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
-  * testElement(aclScalar*, 计算输入)：与element满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
-    * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、INT32、INT64、INT16、INT8、UINT8、DOUBLE。
     * <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、INT32、INT64、INT16、INT8、UINT8、DOUBLE，且与testElement满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
+    * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、INT32、INT64、INT16、INT8、UINT8、DOUBLE，且与testElement满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
+  * testElement(aclScalar*, 计算输入)：与element满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
+    * <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、INT32、INT64、INT16、INT8、UINT8、DOUBLE，且与testElement满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
+    * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、INT32、INT64、INT16、INT8、UINT8、DOUBLE。
   * assumeUnique(bool, 计算输入): 若为True，则假定element和testElement中元素唯一，用于加快计算速度。
   * invert(bool, 计算输入): 表示输出结果是否需要反转。
   * out(aclTensor*, 计算输出)：数据类型支持BOOL，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，shape需要与element的shape相同，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
@@ -41,11 +42,11 @@
   第一段接口完成入参校验，出现以下场景时报错：
   161001 ACLNN_ERR_PARAM_NULLPTR: 1. 传入的 element、testElement、out是空指针时。
   161002 ACLNN_ERR_PARAM_INVALID: 1. element、testElement的数据类型不在支持的范围之内。
-                                  1. element和testElement无法做数据类型推导。
-                                  2. element和testElement推导后的数据类型不在支持范围内。
-                                  3. out的数据类型不是bool。
-                                  5、element、out的维度大于8维。
-                                  4. out的shape与element的shape不一致。
+                                  2. element和testElement无法做数据类型推导。
+                                  3. element和testElement推导后的数据类型不在支持范围内。
+                                  4. out的数据类型不是bool。
+                                  5. element、out的维度大于8维。
+                                  6. out的shape与element的shape不一致。
   ```
 
 ## aclnnIsInTensorScalar

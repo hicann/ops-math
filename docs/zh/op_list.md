@@ -159,7 +159,7 @@
     <td><a href="../../math/is_nan/README.md">is_nan</a></td>
     <td>√</td>
     <td>√</td>
-    <td>√</td>
+    <td>×</td>
     <td>√</td>
     <td>AI Core</td>
     <td>判断张量中哪些元素是nan。</td>
@@ -1716,7 +1716,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/zero_op/README.md">zero_op</a></td>
+    <td><a href="../../math/zero_op/README.md">zeros_like</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>

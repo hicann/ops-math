@@ -41,7 +41,7 @@
 - **参数说明**：
 
   - selfRef(aclTensor*, 计算输入|计算输出)：公式中的`selfRef`，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、INT16、UINT16、COMPLEX128、COMPLEX64、BFLOAT16。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、INT16、UINT16、COMPLEX128、COMPLEX64、BFLOAT16。
   - workspaceSize（uint64_t\*, 出参）：返回需要在Device侧申请的workspace大小。
   - executor（aclOpExecutor\**, 出参）：返回op执行器，包含了算子计算流程。
 
