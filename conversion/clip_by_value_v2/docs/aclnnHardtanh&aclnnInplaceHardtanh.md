@@ -55,9 +55,10 @@
 ```
 第一段接口完成入参校验，出现以下场景时报错：
 返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的self、out、clipValueMax、clipValueMin其中一个为空指针。
-返回161002（ACLNN_ERR_PARAM_INVALID）：1. self、out的数据类型和数据格式不在支持的范围之内。
-                                     1. self的数据类型与输出out的类型不一致。
-                                     2. self的shape与输出out的shape不一致。
+返回161002（ACLNN_ERR_PARAM_INVALID）：1. self、out的数据类型不在支持的范围之内。
+                                     2. self的数据类型与输出out的类型不一致。
+                                     3. self的shape与输出out的shape不一致。
+                                     4. clipValueMin的数值大于clipValueMax。
 ```
 
 ## aclnnHardtanh
@@ -92,7 +93,8 @@
 ```
 第一段接口完成入参校验，出现以下场景时报错：
 返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的selfRef、clipValueMax、clipValueMin其中一个为空指针。
-返回161002（ACLNN_ERR_PARAM_INVALID）：1. selfRef的数据类型和数据格式不在支持的范围之内。
+返回161002（ACLNN_ERR_PARAM_INVALID）：1. selfRef的数据类型不在支持的范围之内。
+                                      2. clipValueMin的数值大于clipValueMax。
 ```
 
 ## aclnnInplaceHardtanh
