@@ -65,7 +65,7 @@
 
 - **参数说明**：
 
-    - cost（aclTensor*，计算输入）：表示成本张量，公式中的`cost`，Device侧的aclTensor。数据类型支持BFLOAT16、FLOAT16、FLOAT。[数据格式](../../../docs/zh/context/数据格式.md)支持ND，输入为二维矩阵且列数不超过4096。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
+    - cost（aclTensor*，计算输入）：表示成本张量，公式中的`cost`，Device侧的aclTensor。数据类型支持BFLOAT16、FLOAT16、FLOAT。取值需要在[0,1]之间，可以进行归一化处理。 [数据格式](../../../docs/zh/context/数据格式.md)支持ND，输入为二维矩阵且行数不超过10000，列数不超过1024。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
     - tol (aclScalar*, 入参) ：表示计算Sinkhorn的误差，数据类型支持FLOAT。如果传入空指针，则tol取0.0001。
     - p（aclTensor*，计算输出）：表示最优传输张量，公式中的`p`，Device侧的aclTensor。数据类型支持BFLOAT16、FLOAT16、FLOAT。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。shape维度为2。不支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。数据类型和shape与入参`cost`的数据类型和shape一致。
     - workspaceSize（uint64_t\*，出参）：返回用户需要在Device侧申请的workspace大小。
