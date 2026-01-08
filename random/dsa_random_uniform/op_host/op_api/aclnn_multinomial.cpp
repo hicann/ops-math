@@ -13,7 +13,7 @@
 #include "math/abs/op_api/abs.h"
 #include "math/add/op_api/add.h"
 #include "math/sub/op_api/sub.h"
-#include "math/real_div/op_host/op_api/realdiv.h"
+#include "math/real_div/op_api/realdiv.h"
 #include "math/log/op_api/log.h"
 #include "math/arg_max_v2/op_api/argmax_v2.h"
 #include "math/topk/op_host/op_api/topk.h"
