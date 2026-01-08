@@ -49,7 +49,7 @@ docker run --name cann_container --device /dev/davinci0 --device /dev/davinci_ma
 | :--- | :--- | :--- |
 | `--name cann_container` | 为容器指定名称，便于管理。 | 可自定义。 |
 | `--device /dev/davinci0` | 核心：将宿主机的NPU设备卡映射到容器内，可指定映射多张NPU设备卡。 | 必须根据实际情况调整：`davinci0`对应系统中的第0张NPU卡。请先在宿主机执行 `npu-smi info`命令，根据输出显示的设备号（如`NPU 0`, `NPU 1`）来修改此编号。|
-| `-v /usr/local/Ascend/driver/lib64/:/usr/local/Ascend/driver/lib64/` | 关键挂载：将宿主机的NPU驱动库映射到容器内。 | |
+| `-v /usr/local/Ascend/driver/lib64/:/usr/local/Ascend/driver/lib64/` | 关键挂载：将宿主机的NPU驱动库映射到容器内。 | - |
 
 #### 检查环境
 进入容器后，验证环境和驱动是否正常。
