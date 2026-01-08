@@ -1085,6 +1085,26 @@ void TransposeNddmaTiling::PrintTilingData()
         tilingData_.transposeOpTiling.get_ubSize(), tilingData_.transposeOpTiling.get_totalNddmaNum());
 }
 
+ge::graphStatus TransposeNddmaTiling::TilingForReleatedTranspose(gert::TilingContext* context,
+                                                                 TransposeOpTilingData* tilingData,
+                                                                 TransposeCompilerInfo* compilerInfo,
+                                                                 ShapeInfo& opInput)
+{
+    OP_LOGD(context->GetNodeName(), "Start TilingForReleatedTranspose.");
+    TransposeNddmaTiling tilingObject(context);
+    OP_CHECK_NULL_WITH_CONTEXT(context, tilingData);
+    tilingObject.tilingContext_ = context;
+    tilingObject.tilingData_.transposeOpTiling = *tilingData;
+    tilingObject.shapeInfo_ = opInput;
+
+    tilingObject.isReleatedTranspsoe_ = true;
+    if (tilingObject.Init(compilerInfo->coreNum, compilerInfo->ubSize) != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+    OP_LOGD(context->GetNodeName(), "tilingObject.isReleatedTranspsoe_: %d", tilingObject.isReleatedTranspsoe_);
+    return tilingObject.RunTranposelTiling();
+}
+
 static ge::graphStatus TransposeTilingForAscendC(gert::TilingContext* context)
 {
     OP_LOGD(context->GetNodeName(), "begin to do TilingForTranspose");
