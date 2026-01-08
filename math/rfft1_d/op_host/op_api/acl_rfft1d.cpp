@@ -52,6 +52,8 @@ static const uint32_t LAST_FACTOR = 64;
 static const double INIT_VALUE = 0.;
 static const std::string PAD_MODE = "constant";
 static const int64_t PAD_VALUE = 0;
+static const size_t MIN_INPUT_DIM_NUM = 1;
+static const size_t MAX_INPUT_DIM_NUM = 7;
 
 enum NORM_VALUES
 {
@@ -155,8 +157,10 @@ static bool CheckDtypeValid(const aclTensor* self)
     return true;
 }
 
-static bool CheckParamsValid(int64_t n, int64_t dim, int64_t norm, int64_t dims)
+static bool CheckParamsValid(const aclTensor* self, int64_t n, int64_t dim, int64_t norm, int64_t dims)
 {
+    OP_CHECK_MIN_DIM(self, MIN_INPUT_DIM_NUM, return false);
+    OP_CHECK_MAX_DIM(self, MAX_INPUT_DIM_NUM, return false);
     if (!((n > 0 && n <= RFFT_BORDER_VALUE) || n == -1)) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "'n' should be in [1, 262144] or -1");
         return false;
@@ -189,11 +193,10 @@ static bool CheckPlatform()
 }
 
 static aclnnStatus CheckParams(
-    const aclTensor* self, const aclTensor* out, int64_t n, int64_t dim, int64_t norm, int64_t dims)
+    const aclTensor* self, int64_t n, int64_t dim, int64_t norm, int64_t dims)
 {
-    CHECK_RET(CheckNotNull(self, out), ACLNN_ERR_PARAM_NULLPTR);
     CHECK_RET(CheckDtypeValid(self), ACLNN_ERR_PARAM_INVALID);
-    CHECK_RET(CheckParamsValid(n, dim, norm, dims), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckParamsValid(self, n, dim, norm, dims), ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
 
@@ -796,17 +799,23 @@ aclnnStatus aclRfft1DGetWorkspaceSize(
     bool result = CheckPlatform();
     CHECK_RET(result == true, ACLNN_ERR_PARAM_INVALID);
 
+    if (!CheckNotNull(self, out)) {
+        return ACLNN_ERR_PARAM_NULLPTR;
+    }
+
     if (HasEmptyTensor(self)) {
         *workspaceSize = 0;
         uniqueExecutor.ReleaseTo(executor);
         OP_LOGD("self: nullptr, return");
         return ACLNN_SUCCESS;
     }
-
+    if (self->GetStorageFormat() != Format::FORMAT_ND) {
+        OP_LOGW("Format only support ND");
+    }
     op::Shape inputShape = self->GetViewShape();
     int64_t dims = inputShape.GetDimNum();
 
-    auto ret = CheckParams(self, out, n, dim, norm, dims);
+    auto ret = CheckParams(self, n, dim, norm, dims);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
     dim = dim < 0 ? dim + dims : dim;

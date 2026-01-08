@@ -82,16 +82,53 @@ repeats中的值必须大于等于0。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001(ACLNN_ERR_PARAM_NULLPTR)：1.传入的self或out是空指针。
-  返回161002(ACLNN_ERR_PARAM_INVALID)：1.self和out的数据类型和数据格式不在支持的范围内。
-                                       2.self和out的type不匹配。
-                                       3.参数repeats的参数个数小于输入tensor的维度。
-                                       4.参数repeats中含有小于0的值。
-                                       5.self的维度数超过8。
-                                       6.repeats的参数个数超过8。
-  返回561103(ACLNN_ERR_INNER_NULLPTR): 1.kernel执行失败, 中间结果为null。
-                                       2.同时对超过4个维度做repeat。
-  ```
+  <table style="undefined;table-layout: fixed; width: 1207px"><colgroup>
+  <col style="width: 268px">
+  <col style="width: 138px">
+  <col style="width: 801px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self或out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
+      <td>self和out的数据类型和数据格式不在支持的范围内。</td>
+    </tr>
+    <tr>
+      <td>self和out的type不匹配。</td>
+    </tr>
+    <tr>
+      <td>参数repeats的参数个数小于输入tensor的维度。</td>
+    </tr>
+    <tr>
+      <td>参数repeats中含有小于等于0的值。</td>
+    </tr>
+    <tr>
+      <td>self的维度数超过8。</td>
+    </tr>
+    <tr>
+      <td>repeats的参数个数超过8。</td>
+    </tr>
+    <tr>
+      <td rowspan="2">ACLNN_ERR_INNER_NULLPTR</td>
+      <td rowspan="2">561103</td>
+      <td>kernel执行失败, 中间结果为null。</td>
+    </tr>
+    <tr>
+      <td>同时对超过4个维度做repeat。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnRepeat
 

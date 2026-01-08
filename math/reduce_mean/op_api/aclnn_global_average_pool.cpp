@@ -86,11 +86,17 @@ static bool CheckFormatValid(const aclTensor *self, const aclTensor *out)
     op::Format selfFormat = self->GetStorageFormat();
     op::Format outFormat = out->GetStorageFormat();
     if (selfFormat != outFormat) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The format of self and out must be the same.");
         return false;
     }
     auto findSelfFormat = std::find(FORMAT_SUPPORT_LIST.begin(), FORMAT_SUPPORT_LIST.end(), selfFormat);
     auto findOutFormat = std::find(FORMAT_SUPPORT_LIST.begin(), FORMAT_SUPPORT_LIST.end(), outFormat);
-    return findSelfFormat != FORMAT_SUPPORT_LIST.end() && findOutFormat != FORMAT_SUPPORT_LIST.end();
+    if (findSelfFormat != FORMAT_SUPPORT_LIST.end() && findOutFormat != FORMAT_SUPPORT_LIST.end()) {
+        return true;
+    }else {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW and NCDHW.");
+        return false;
+    }
 }
 
 static bool CheckShape(const aclTensor *self, const aclTensor *out)
