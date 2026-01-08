@@ -74,7 +74,7 @@ aclnnStatus aclnnAminmaxDim(
         <td>dim</td>
         <td>输入</td>
         <td>指定要缩减的维度。</td>
-        <td>取值范围为[-self.dim(), self.dim()]。</td>
+        <td>取值范围为[-self.dim(), self.dim()-1]。</td>
         <td>INT64</td>
         <td>-</td>
         <td>-</td>

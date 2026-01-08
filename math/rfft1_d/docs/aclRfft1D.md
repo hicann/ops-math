@@ -28,9 +28,9 @@
 ## aclRfft1DGetWorkspaceSize 
 
 * 参数说明：
-    * self(aclTensor\*, 计算输入): 即公式中的输入。数据类型支持FLOAT，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+    * self(aclTensor\*, 计算输入): 即公式中的输入。数据类型支持FLOAT，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。shape支持1-7维。
     * n(int64_t, 计算输入): 表示信号长度。数据类型支持INT64。如果给定，则在计算Rfft1D之前，输入将被补零或修剪到此长度。n取值范围为[1, 4096]，2的n次幂最大值为262144。
-    * dim(int64_t, 计算输入): 表示维度。数据类型支持INT64。如果给定，则RFFT将应用于指定的维度。支持的值为-1。
+    * dim(int64_t, 计算输入): 表示维度。数据类型支持INT64。如果给定，则RFFT将应用于指定的维度。支持的值为[-self.dim(), self.dim()-1]。
     * norm(int64_t, 计算输入): 表示归一化模式。数据类型支持INT64。支持取值：1表示不归一化，2表示按1/n归一化，3表示按1/sqrt(n)归一化。
     * out (aclTensor\*, 计算输出): 表示公式中的输出。数据类型支持FLOAT。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     * workspaceSize (uint64_t, 出参): 返回需要在Device侧申请的workspace大小。
@@ -43,7 +43,7 @@
     ```
     第一段接口完成入参校验，出现以下场景时报错：
     返回161001（ACLNN_ERR_PARAM_NULLPTR）: 1. 输入或输出tensor为空。
-    返回161002（ACLNN_ERR_PARAM_INVALID）: 1. self的数据类型不在支持的范围内。
+    返回161002（ACLNN_ERR_PARAM_INVALID）: 1. self的数据类型和维度不在支持的范围内。
     返回561103（ACLNN_ERR_INNER_NULLPTR）: 1. 中间结果为null。
     返回561101（ACLNN_ERR_INNER_CREATE_EXECUTOR）: 1. 执行者为null。                              
     ```

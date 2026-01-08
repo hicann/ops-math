@@ -205,7 +205,9 @@ aclnnStatus aclnnRepeatGetWorkspaceSize(
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }
-
+    if (self->GetStorageFormat() != Format::FORMAT_ND) {
+        OP_LOGW("Format only support ND");
+    }
     if (repeats->Size() == 0) {
         auto viewCopyOut = l0op::ViewCopy(self, out, uniqueExecutor.get());
         CHECK_RET(viewCopyOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
