@@ -54,14 +54,14 @@
     <tr>
       <td>x</td>
       <td>输入</td>
-      <td>待计算的输入，对应公式中的`self`。要求是一个1D/2D的Tensor，shape为(L)/(B, L)，其中，L为时序采样序列的长度，B为时序采样序列的个数。</td>
+      <td>待计算的输入，对应公式中的`self`。要求是一个1D/2D的Tensor，shape为[L]/[B, L]，其中，L为时序采样序列的长度，B为时序采样序列的个数。</td>
       <td>FLOAT32、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>window</td>
       <td>可选输入</td>
-      <td>要求是一个1D的Tensor，对应公式中的`window`。shape为(winLength)，winLength为STFT窗函数的长度，且数据类型与`x`保持一致，</td>
+      <td>要求是一个1D的Tensor，对应公式中的`window`。shape为[winLength]，winLength为STFT窗函数的长度，且数据类型与`x`保持一致，</td>
       <td>FLOAT32、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
@@ -69,14 +69,14 @@
       <td>hop_length</td>
       <td>可选属性</td>
       <td><ul><li>滑动窗口的间隔（大于等于0），对应公式中的`hopLength`。</li><li>默认值为n_fft/4。</li></ul></td>
-      <td>INT</td>
+      <td>INT64</td>
       <td>-</td>
     </tr>
     <tr>
       <td>win_length</td>
       <td>可选属性</td>
       <td><ul><li>window的大小（大于等于0），对应公式中的`winLength`。</li><li>默认值为n_fft。</li></ul></td>
-      <td>INT</td>
+      <td>INT64</td>
       <td>-</td>
     </tr>
     <tr>
@@ -104,7 +104,7 @@
       <td>n_fft</td>
       <td>属性</td>
       <td>FFT的点数（大于0），对应公式中的`nFft`。</td>
-      <td>INT</td>
+      <td>INT64</td>
       <td>-</td>
     </tr>
     <tr>
