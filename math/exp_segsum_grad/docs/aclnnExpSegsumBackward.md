@@ -101,7 +101,7 @@ aclnnStatus aclnnExpSegsumBackward(
       <td>输入</td>
       <td>表示进行反向计算的梯度。对应公式中的`gradOutput`。</td>
       <td><ul><li>支持空Tensor。</li><li>shape最后两维的维度大小相同。</li></ul></td>
-      <td>FLOAT32、BFLOAT16、FLOAT16</td>
+      <td>FLOAT32、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>4-5</td>
       <td>√</td>
@@ -224,7 +224,7 @@ aclnnStatus aclnnExpSegsumBackward(
 
 - **返回值：**
 
-  **aclnnStatus**：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 

@@ -9,7 +9,7 @@
 
 ## 功能说明
 
-- 算子功能：计算输入在滑动窗口内的傅里叶变换。
+- 接口功能：计算输入在滑动窗口内的傅里叶变换。
 - 计算公式：
 
   - 当normalized=false时：
@@ -24,7 +24,6 @@
     X[w,m]=\frac{1}{\sqrt{nFft}}(\sum_{k=0}^{winLength-1}window[k]*self[m*hopLength+k]*exp(-j*\frac{2{\pi}wk}{nFft}))
     $$
 
-  
   其中：
   - $w$为FFT的频点。
   - $m$为滑动窗口的index。
@@ -91,7 +90,7 @@ aclnnStatus aclnnExpSegsum(
       <td>self</td>
       <td>输入</td>
       <td>待计算的输入，对应公式中的`self`。</td>
-      <td><ul><li>不支持空Tensor。</li><li>shape为(L)/(B, L)。其中，L为时序采样序列的长度，B为时序采样序列的个数。</li></ul></td>
+      <td><ul><li>不支持空Tensor。</li><li>shape为[L]/[B, L]。其中，L为时序采样序列的长度，B为时序采样序列的个数。</li></ul></td>
       <td>FLOAT32、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>1-2</td>
@@ -101,7 +100,7 @@ aclnnStatus aclnnExpSegsum(
       <td>windowOptional</td>
       <td>输入</td>
       <td>要求是一个1D的Tensor，对应公式中的`window`。</td>
-      <td><ul><li>不支持空Tensor。</li><li>数据类型与`self`保持一致。</li><li>shape为(winLength)，winLength为STFT窗函数的长度。</li></ul></td>
+      <td><ul><li>不支持空Tensor。</li><li>数据类型与`self`保持一致。</li><li>shape为[winLength]，winLength为STFT窗函数的长度。</li></ul></td>
       <td>FLOAT32、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>1</td>
@@ -132,7 +131,7 @@ aclnnStatus aclnnExpSegsum(
       <td>输入</td>
       <td>表示滑动窗口的间隔（大于0），对应公式中的`hopLength`。</td>
       <td>-</td>
-      <td>INT</td>
+      <td>INT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -142,7 +141,7 @@ aclnnStatus aclnnExpSegsum(
       <td>输入</td>
       <td>表示window的大小（大于0），对应公式中的`winLength`。</td>
       <td>-</td>
-      <td>INT</td>
+      <td>INT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -285,12 +284,12 @@ aclnnStatus aclnnExpSegsum(
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
 - 输入self与PyTorch接口的不同：PyTorch接口的输入self为原始输入；aclStftGetWorkspaceSize的入参self是原始输入经过前端PyTorch补pad后得到的结果。
-- 当输入self的shpe为(B, L)时，如下公式的计算结果较大时，当前接口的计算可能会超时。
+- 当输入self的shpe为[B, L]时，如下公式的计算结果较大时，当前接口的计算可能会超时。
   
   $$
   B * ((L - nFft) / hopLength + 1) * nFft

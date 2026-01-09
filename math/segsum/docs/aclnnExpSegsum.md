@@ -9,7 +9,7 @@
 
 ## 功能说明
 
-- 算子功能：进行分段和计算。生成对角线为0的半可分矩阵，且上三角为-inf。
+- 接口功能：进行分段和计算。生成对角线为0的半可分矩阵，且上三角为-inf。
 - 计算公式（以4D输入为例）：
 
   1. 输入self由（N1,N2,N3,N4）升维成（N1,N2,N3,N4,1）。
@@ -136,6 +136,7 @@ aclnnStatus aclnnExpSegsum(
   </table>
 
 - **返回值**：
+  
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
   
   第一段接口完成入参校验，出现以下场景时报错：
@@ -209,12 +210,9 @@ aclnnStatus aclnnExpSegsum(
 
 - **返回值**：
 
-  **aclnnStatus**：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
-
-- 确定性计算：
-  - aclnnExpSegsum默认确定性实现。
 
 - 确定性计算：
   - aclnnExpSegsum默认确定性实现。
