@@ -38,6 +38,14 @@ private:
     __aicore__ inline void valueMove(uint64_t valueOffset, uint64_t ubValueOffset, uint64_t moveValueLen);
     __aicore__ inline uint64_t CeilDiv(uint64_t x, uint64_t y);
 
+    template <AscendC::HardEvent hardEvent>
+    __aicore__ inline void PipeSync()
+    {
+        int32_t eventID = static_cast<int32_t>(GetTPipePtr()->FetchEventID(hardEvent));
+        AscendC::SetFlag<hardEvent>(eventID);
+        AscendC::WaitFlag<hardEvent>(eventID);
+    }
+
 private:
     TPipe pipe;
     TQue<QuePosition::VECIN, BUFFER_NUM> uniqueIndicesQueue;
@@ -183,25 +191,30 @@ __aicore__ inline void KernelCoalesceSparse<uIdxType, idxType, dataType>::Comput
     LocalTensor<uIdxType> uniqueIndicesLocal = uniqueIndicesQueue.DeQue<uIdxType>();
     LocalTensor<idxType> indicesLocal = indicesQueue.DeQue<idxType>();
     for (uint64_t i = 0; i < taskLen; i++) {
-        PipeBarrier<PIPE_ALL>();
+        PipeSync<AscendC::HardEvent::MTE2_S>();
         int64_t uniqueIndicesId = uniqueIndicesLocal.GetValue(i);
         int64_t gmIndicesOffset = uniqueIndicesId * m;
         int64_t gmValueOffset = uniqueIndicesId * valueSize;
-        PipeBarrier<PIPE_ALL>();
+        PipeSync<AscendC::HardEvent::S_MTE3>();
+        PipeSync<AscendC::HardEvent::MTE2_MTE3>();
         DataCopyParams copyParams_indices{1, (uint16_t)(mByte), 0, 0};
         DataCopyPad(newIndicesGm[gmIndicesOffset], indicesLocal[i * indicesAlign32], copyParams_indices);
         for (int j = 0; j < moveValueTimes; j++) {
-            PipeBarrier<PIPE_ALL>();
+            PipeSync<AscendC::HardEvent::MTE3_S>();
+            PipeSync<AscendC::HardEvent::MTE2_S>();
             uint64_t valueOffset = gmValueOffset + j * moveValueLen;
             uint64_t ubValueOffset = repeatTime * moveOneSize + i * valueSize + j * moveValueLen;
-            PipeBarrier<PIPE_ALL>();
+            PipeSync<AscendC::HardEvent::S_MTE2>();
+            PipeSync<AscendC::HardEvent::MTE3_MTE2>();
             valueMove(valueOffset, ubValueOffset, moveValueLen);
         }
         if (moveValueTail > 0) {
-            PipeBarrier<PIPE_ALL>();
+            PipeSync<AscendC::HardEvent::MTE2_S>();
+            PipeSync<AscendC::HardEvent::MTE3_S>();
             uint64_t valueOffset = gmValueOffset + moveValueTimes * moveValueLen;
             uint64_t ubValueOffset = repeatTime * moveOneSize + i * valueSize + moveValueTimes * moveValueLen;
-            PipeBarrier<PIPE_ALL>();
+            PipeSync<AscendC::HardEvent::S_MTE2>();
+            PipeSync<AscendC::HardEvent::MTE3_MTE2>();
             valueMove(valueOffset, ubValueOffset, moveValueTail);
         }
     }
@@ -218,7 +231,9 @@ __aicore__ inline void KernelCoalesceSparse<uIdxType, idxType, dataType>::valueM
     DataCopyExtParams copyParams_value_{(uint16_t)1, (uint32_t)(valueByte), 0, 0, 0};
     DataCopyPadExtParams<dataType> values_padParams{true, 0, 0, 0};
     DataCopyPad(valueLocal, valueGm[ubValueOffset], copyParams_value_, values_padParams);
-    PipeBarrier<PIPE_ALL>();
+    PipeSync<AscendC::HardEvent::MTE2_MTE3>();
+    PipeSync<AscendC::HardEvent::S_MTE3>();
+    PipeSync<AscendC::HardEvent::MTE2_S>();
     DataCopyParams copyParams_value{1, (uint16_t)(valueByte), 0, 0};
     SetAtomicAdd<dataType>();
     DataCopyPad(newValueGm[valueOffset], valueLocal, copyParams_value);
@@ -231,4 +246,5 @@ __aicore__ inline uint64_t KernelCoalesceSparse<uIdxType, idxType, dataType>::Ce
 {
     return y == 0 ? x : (x + y - 1) / y;
 }
+
 #endif // COALESCE_SPARSE
