@@ -37,9 +37,11 @@ protected:
 };
 
 // Test: mod tiling with float32
-TEST_F(ModTilingTest, test_tiling_float32) {
+TEST_F(ModTilingTest, test_tiling_float32)
+{
     BroadcastCompileInfo compileInfo{};
-    gert::TilingContextPara tilingContextPara("Mod",
+    gert::TilingContextPara tilingContextPara(
+        "Mod",
         {
             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
@@ -56,9 +58,11 @@ TEST_F(ModTilingTest, test_tiling_float32) {
 }
 
 // Test: mod tiling with float16
-TEST_F(ModTilingTest, test_tiling_float16) {
+TEST_F(ModTilingTest, test_tiling_float16)
+{
     BroadcastCompileInfo compileInfo{};
-    gert::TilingContextPara tilingContextPara("Mod",
+    gert::TilingContextPara tilingContextPara(
+        "Mod",
         {
             {{{1, 32, 4, 32}, {1, 32, 4, 32}}, ge::DT_FLOAT16, ge::FORMAT_ND},
             {{{1, 32, 4, 32}, {1, 32, 4, 32}}, ge::DT_FLOAT16, ge::FORMAT_ND},
@@ -75,9 +79,11 @@ TEST_F(ModTilingTest, test_tiling_float16) {
 }
 
 // Test: mod tiling with int32
-TEST_F(ModTilingTest, test_tiling_int32) {
+TEST_F(ModTilingTest, test_tiling_int32)
+{
     BroadcastCompileInfo compileInfo{};
-    gert::TilingContextPara tilingContextPara("Mod",
+    gert::TilingContextPara tilingContextPara(
+        "Mod",
         {
             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
@@ -93,11 +99,12 @@ TEST_F(ModTilingTest, test_tiling_int32) {
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
-
 // Test: mod tiling with broadcast
-TEST_F(ModTilingTest, test_tiling_broadcast) {
+TEST_F(ModTilingTest, test_tiling_broadcast)
+{
     BroadcastCompileInfo compileInfo{};
-    gert::TilingContextPara tilingContextPara("Mod",
+    gert::TilingContextPara tilingContextPara(
+        "Mod",
         {
             {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
             {{{1, 1, 1, 1}, {1, 1, 1, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
@@ -113,9 +120,11 @@ TEST_F(ModTilingTest, test_tiling_broadcast) {
 }
 
 // Test: mod tiling with small shape
-TEST_F(ModTilingTest, test_tiling_small_shape) {
+TEST_F(ModTilingTest, test_tiling_small_shape)
+{
     BroadcastCompileInfo compileInfo{};
-    gert::TilingContextPara tilingContextPara("Mod",
+    gert::TilingContextPara tilingContextPara(
+        "Mod",
         {
             {{{2, 3}, {2, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
             {{{2, 3}, {2, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
@@ -131,9 +140,11 @@ TEST_F(ModTilingTest, test_tiling_small_shape) {
 }
 
 // Test: mod tiling with large shape
-TEST_F(ModTilingTest, test_tiling_large_shape) {
+TEST_F(ModTilingTest, test_tiling_large_shape)
+{
     BroadcastCompileInfo compileInfo{};
-    gert::TilingContextPara tilingContextPara("Mod",
+    gert::TilingContextPara tilingContextPara(
+        "Mod",
         {
             {{{16, 128, 16, 128}, {16, 128, 16, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
             {{{16, 128, 16, 128}, {16, 128, 16, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},
@@ -149,9 +160,11 @@ TEST_F(ModTilingTest, test_tiling_large_shape) {
 }
 
 // Test: mod tiling with 1D shape
-TEST_F(ModTilingTest, test_tiling_1d) {
+TEST_F(ModTilingTest, test_tiling_1d)
+{
     BroadcastCompileInfo compileInfo{};
-    gert::TilingContextPara tilingContextPara("Mod",
+    gert::TilingContextPara tilingContextPara(
+        "Mod",
         {
             {{{1000}, {1000}}, ge::DT_FLOAT, ge::FORMAT_ND},
             {{{1000}, {1000}}, ge::DT_FLOAT, ge::FORMAT_ND},
@@ -167,9 +180,11 @@ TEST_F(ModTilingTest, test_tiling_1d) {
 }
 
 // Test: mod tiling with NHWC format
-TEST_F(ModTilingTest, test_tiling_nhwc) {
+TEST_F(ModTilingTest, test_tiling_nhwc)
+{
     BroadcastCompileInfo compileInfo{};
-    gert::TilingContextPara tilingContextPara("Mod",
+    gert::TilingContextPara tilingContextPara(
+        "Mod",
         {
             {{{1, 16, 16, 3}, {1, 16, 16, 3}}, ge::DT_FLOAT, ge::FORMAT_NHWC},
             {{{1, 16, 16, 3}, {1, 16, 16, 3}}, ge::DT_FLOAT, ge::FORMAT_NHWC},

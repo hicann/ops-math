@@ -18,8 +18,7 @@
 #include "infershape_context_faker.h"
 #include "infershape_case_executor.h"
 
-class RangeInfershape : public testing::Test
-{
+class RangeInfershape : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
@@ -33,113 +32,120 @@ protected:
 };
 
 // Test: range infershape with int32, positive step
-TEST_F(RangeInfershape, range_infershape_int32_positive_step) {
-    gert::InfershapeContextPara infershapeContextPara("Range",
-                                                      {
-                                                        {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, {}},
-                                                        {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, {}},
-                                                        {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, {}},
-                                                      },
-                                                      {
-                                                        {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
-                                                      }
-                                                     );
+TEST_F(RangeInfershape, range_infershape_int32_positive_step)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Range",
+        {
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, {}},
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, {}},
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, {}},
+        },
+        {
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+        });
     std::vector<std::vector<int64_t>> expectOutputShape = {{-1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 // Test: range infershape with int32, negative step
-TEST_F(RangeInfershape, range_infershape_int32_negative_step) {
-    gert::InfershapeContextPara infershapeContextPara("Range",
-                                                      {
-                                                        {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, {}},
-                                                        {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, {}},
-                                                        {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, {}},
-                                                      },
-                                                      {
-                                                        {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
-                                                      }
-                                                     );
+TEST_F(RangeInfershape, range_infershape_int32_negative_step)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Range",
+        {
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, {}},
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, {}},
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, {}},
+        },
+        {
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+        });
     std::vector<std::vector<int64_t>> expectOutputShape = {{-1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 // Test: range infershape with float32
-TEST_F(RangeInfershape, range_infershape_float32) {
-    gert::InfershapeContextPara infershapeContextPara("Range",
-                                                      {
-                                                        {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, {}},
-                                                        {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, {}},
-                                                        {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, {}},
-                                                      },
-                                                      {
-                                                        {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-                                                      }
-                                                     );
+TEST_F(RangeInfershape, range_infershape_float32)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Range",
+        {
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, {}},
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, {}},
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, {}},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
     std::vector<std::vector<int64_t>> expectOutputShape = {{-1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 // Test: range infershape with float16
-TEST_F(RangeInfershape, range_infershape_float16) {
-    gert::InfershapeContextPara infershapeContextPara("Range",
-                                                      {
-                                                        {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND, {}},
-                                                        {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND, {}},
-                                                        {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND, {}},
-                                                      },
-                                                      {
-                                                        {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-                                                      }
-                                                     );
+TEST_F(RangeInfershape, range_infershape_float16)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Range",
+        {
+            {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND, {}},
+            {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND, {}},
+            {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND, {}},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        });
     std::vector<std::vector<int64_t>> expectOutputShape = {{-1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 // Test: range infershape with bfloat16
-TEST_F(RangeInfershape, range_infershape_bfloat16) {
-    gert::InfershapeContextPara infershapeContextPara("Range",
-                                                      {
-                                                        {{{1}, {1}}, ge::DT_BF16, ge::FORMAT_ND, {}},
-                                                        {{{1}, {1}}, ge::DT_BF16, ge::FORMAT_ND, {}},
-                                                        {{{1}, {1}}, ge::DT_BF16, ge::FORMAT_ND, {}},
-                                                      },
-                                                      {
-                                                        {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
-                                                      }
-                                                     );
+TEST_F(RangeInfershape, range_infershape_bfloat16)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Range",
+        {
+            {{{1}, {1}}, ge::DT_BF16, ge::FORMAT_ND, {}},
+            {{{1}, {1}}, ge::DT_BF16, ge::FORMAT_ND, {}},
+            {{{1}, {1}}, ge::DT_BF16, ge::FORMAT_ND, {}},
+        },
+        {
+            {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
+        });
     std::vector<std::vector<int64_t>> expectOutputShape = {{-1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 // Test: range infershape with int64
-TEST_F(RangeInfershape, range_infershape_int64) {
-    gert::InfershapeContextPara infershapeContextPara("Range",
-                                                      {
-                                                        {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, {}},
-                                                        {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, {}},
-                                                        {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, {}},
-                                                      },
-                                                      {
-                                                        {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
-                                                      }
-                                                     );
+TEST_F(RangeInfershape, range_infershape_int64)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Range",
+        {
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, {}},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, {}},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, {}},
+        },
+        {
+            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
+        });
     std::vector<std::vector<int64_t>> expectOutputShape = {{-1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 // Test: range infershape with double
-TEST_F(RangeInfershape, range_infershape_double) {
-    gert::InfershapeContextPara infershapeContextPara("Range",
-                                                      {
-                                                        {{{1}, {1}}, ge::DT_DOUBLE, ge::FORMAT_ND, {}},
-                                                        {{{1}, {1}}, ge::DT_DOUBLE, ge::FORMAT_ND, {}},
-                                                        {{{1}, {1}}, ge::DT_DOUBLE, ge::FORMAT_ND, {}},
-                                                      },
-                                                      {
-                                                        {{{}, {}}, ge::DT_DOUBLE, ge::FORMAT_ND},
-                                                      }
-                                                     );
+TEST_F(RangeInfershape, range_infershape_double)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Range",
+        {
+            {{{1}, {1}}, ge::DT_DOUBLE, ge::FORMAT_ND, {}},
+            {{{1}, {1}}, ge::DT_DOUBLE, ge::FORMAT_ND, {}},
+            {{{1}, {1}}, ge::DT_DOUBLE, ge::FORMAT_ND, {}},
+        },
+        {
+            {{{}, {}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+        });
     std::vector<std::vector<int64_t>> expectOutputShape = {{-1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
