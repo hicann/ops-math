@@ -15,10 +15,10 @@
     定义指定计算的维度（Reduce轴）为R轴，非指定维度（Normal轴）为A轴。如下图所示，对shape为(2, 3)的二维矩阵进行运算，对第一维计算数据求平均值，输出结果为[2.5, 3.5, 4.5]；对第二维计算数据求平均值，输出结果为[2, 5]。
 
     图1 ReduceMean按第一个维度计算示例
-    ![alt text](./fig/reduce_mean-by-dim-1.png)
+    ![alt text](./docs/fig/reduce_mean-by-dim-1.png)
 
     图2 ReduceMean最后一个维度计算示例
-    ![alt text](./fig/reduce_mean-by-dim-2.png)
+    ![alt text](./docs/fig/reduce_mean-by-dim-2.png)
 
 
 ## 参数说明
@@ -90,6 +90,6 @@
 
 | 调用方式   | 样例代码           | 说明                                         |
 | ---------------- | --------------------------- | --------------------------------------------------- |
-| aclnn调用 | [test_aclnn_reduce_mean_v2](./examples/test_aclnn_reduce_mean_v2.cpp) | 通过[aclnnReduceMeanV2](./docs/aclnnReduceMeanV2.md)接口方式调用ReduceMean算子。    |
+| aclnn调用 | [test_aclnn_mean_v2](./examples/test_aclnn_mean_v2.cpp) | 通过[aclnnMeanV2](./docs/aclnnMeanV2.md)接口方式调用ReduceMean算子。    |
 | aclnn调用 | [test_aclnn_global_average_pool](./examples/test_aclnn_global_average_pool.cpp) | 通过[aclnnGlobalAveragePool](./docs/aclnnGlobalAveragePool.md)接口方式调用ReduceMean算子。    |
 | 图模式调用 | [test_geir_reduce_mean](./examples/test_geir_reduce_mean.cpp)   | 通过[算子IR](./op_graph/reduce_mean_proto.h)构图方式调用ReduceMean算子。 |
