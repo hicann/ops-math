@@ -19,10 +19,10 @@ using namespace AscendC;
 namespace optiling {
 
 graphStatus Tiling4Split(TilingContext* context) {
-  OP_LOGD(context->GetNodeName(), "begin to do Tiling4Split");
-  auto compile_info = reinterpret_cast<const SplitVCompileInfo*>(context->GetCompileInfo());
+    OP_LOGD(context->GetNodeName(), "begin to do Tiling4Split");
+    auto compile_info = reinterpret_cast<const SplitVCompileInfo*>(context->GetCompileInfo());
+    OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
 
-    OP_LOGD(context->GetNodeName(), "DSL/TIK Tiling4Split is Null! Running AscendC tiling!");
     uint32_t maxCoreNum = compile_info->maxCoreNum;
     uint32_t ubSizePlatform = compile_info->ubSizePlatform;
     OP_CHECK_IF(ubSizePlatform <= 0, OP_LOGE(context->GetNodeName(),
@@ -37,10 +37,10 @@ graphStatus Tiling4Split(TilingContext* context) {
 }
 
 graphStatus TilingPrepare4Split(TilingParseContext* context) {
-  auto compile_info = context->GetCompiledInfo<SplitVCompileInfo>();
-  OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
-
     OP_LOGD(context->GetNodeName(), "AscendC Tiling Starting!");
+    auto compile_info = context->GetCompiledInfo<SplitVCompileInfo>();
+    OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
+
     auto platformInfo = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
@@ -58,5 +58,5 @@ graphStatus TilingPrepare4Split(TilingParseContext* context) {
 }
 
 IMPL_OP_OPTILING(Split).Tiling(Tiling4Split)
-              .TilingParse<SplitVCompileInfo>(TilingPrepare4Split);
+                .TilingParse<SplitVCompileInfo>(TilingPrepare4Split);
 }  // namespace optiling

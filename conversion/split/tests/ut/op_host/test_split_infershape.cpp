@@ -28,7 +28,7 @@ protected:
 };
 
 // Test: Split infershape with same shape
-TEST_F(SplitInfershape, sortwithindex_infershape_same_shape) {
+TEST_F(SplitInfershape, split_infershape_same_shape) {
     int32_t split_dim = 1;
     gert::InfershapeContextPara infershapeContextPara("Split",
         {
@@ -44,5 +44,65 @@ TEST_F(SplitInfershape, sortwithindex_infershape_same_shape) {
         }
         );
     std::vector<std::vector<int64_t>> expectOutputShape = {{11, 8}, {11, 8}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test: Split infershape with invalid shape
+TEST_F(SplitInfershape, split_infershape_invalid_xshape) {
+    int32_t split_dim = 1;
+    gert::InfershapeContextPara infershapeContextPara("Split",
+        {
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, &split_dim},
+            {{{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
+        }
+        );
+    std::vector<std::vector<int64_t>> expectOutputShape = {{-2}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test: Split infershape with invalid shape
+TEST_F(SplitInfershape, split_infershape_invalid_split_dim) {
+    int32_t split_dim = 1;
+    gert::InfershapeContextPara infershapeContextPara("Split",
+        {
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, &split_dim},
+            {{{-1, -1}, {-1, -1}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+        }
+        );
+    std::vector<std::vector<int64_t>> expectOutputShape = {{-1, -1}, {-1, -1}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test: Split infershape with invalid shape
+TEST_F(SplitInfershape, split_infershape_invalid_dtype) {
+    int32_t split_dim = 1;
+    gert::InfershapeContextPara infershapeContextPara("Split",
+        {
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, true, &split_dim},
+            {{{-1, -1}, {-1, -1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+        }
+        );
+    std::vector<std::vector<int64_t>> expectOutputShape = {{-1, -1}, {-1, -1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }

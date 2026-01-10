@@ -113,8 +113,12 @@ export GE_EXTERNAL_INCLUDE_PATH="${INCLUDE_PATH}/external"
 export INC_INCLUDE_PATH="${ASCEND_OPP_PATH}/built-in/op_proto/inc"
 export EAGER_LIBRARY_PATH="${ASCEND_HOME_PATH}/lib64"
 export GRAPH_LIBRARY_PATH="${ASCEND_HOME_PATH}/lib64"
-export ASCEND_SLOG_PRINT_TO_STDOUT=1
-export ASCEND_GLOBAL_LOG_LEVEL=1
+if [[ ! -v ASCEND_SLOG_PRINT_TO_STDOUT ]]; then
+  export ASCEND_SLOG_PRINT_TO_STDOUT=1
+fi
+if [[ ! -v ASCEND_GLOBAL_LOG_LEVEL ]]; then
+  export ASCEND_GLOBAL_LOG_LEVEL=1
+fi
 
 # print usage message
 usage() {
