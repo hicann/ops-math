@@ -8,7 +8,7 @@
 <th style="text-align:center; width:100px">是否支持</th>
 </tr>
 <tr>
-<td><term>昇腾 910_95 AI 处理器</term></td>
+<td><term>Ascend 950PR/Ascend 950DT</term> </td>
 <td style="text-align:center">×</td>
 </tr>
 <tr>
