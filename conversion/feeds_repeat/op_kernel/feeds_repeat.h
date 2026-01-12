@@ -86,6 +86,7 @@ protected:
     int64_t elem_loop;
     int64_t left_index;
     const int64_t align_num = 32;
+    const int64_t cast_num = 4;
 
     event_t event_v_to_s;
     event_t event_mte3_to_v;
@@ -151,7 +152,7 @@ __aicore__ inline void FeedsRepeatND<T1, T2>::ClearOutputSpace()
     sumParams_total.inner = length_aligned;
     sumParams_total.n = length;
     Sum(end_sum, feeds_repeat_times_float, sumParams_total);
-    Cast(end_sum_int64, end_sum, RoundMode::CAST_RINT, align_num);
+    Cast(end_sum_int64, end_sum, RoundMode::CAST_RINT, cast_num);
     SetFlag<HardEvent::V_S>(event_v_to_s);
     WaitFlag<HardEvent::V_S>(event_v_to_s);
     end_index += end_sum_int64.GetValue(0);
