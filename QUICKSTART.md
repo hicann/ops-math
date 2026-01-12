@@ -11,7 +11,7 @@
 1.  **[环境安装](#一环境安装)**：搭建算子开发和运行环境。
 2.  **[编译部署](#二编译部署)**：编译自定义算子包并部署安装，实现快速调用算子。
 3.  **[算子开发](#三算子开发)**：通过修改现有算子Kernel，体验开发、编译、验证的完整闭环。
-4.  **[算子调试能力](#四算子调试能力)**：掌握算子打印和性能采集方法。
+4.  **[算子调试](#四算子调试)**：掌握算子打印和性能采集方法。
 5.  **[算子验证](#五算子验证)**：学习如何修改算子example样例，以验证算子在不同输入下的功能正确性。
 
 完成以上步骤，您将对算子开发的全流程有一个基础的实践认知。
@@ -166,30 +166,35 @@ bash build.sh --run_example add_example eager cust --vendor_name=custom
 预期输出：打印算子`AddExample`的加法计算结果，表明算子已成功部署并正确执行。
 
 ```
-add_example result[0] is: 2.000000
-add_example result[1] is: 2.000000
-add_example result[2] is: 2.000000
-add_example result[3] is: 2.000000
-add_example result[4] is: 2.000000
-add_example result[5] is: 2.000000
-add_example result[6] is: 2.000000
-add_example result[7] is: 2.000000
+add_example first input[0] is: 1.000000, second input[0] is: 1.000000, result[0] is: 2.000000
+add_example first input[1] is: 1.000000, second input[1] is: 1.000000, result[1] is: 2.000000
+add_example first input[2] is: 1.000000, second input[2] is: 1.000000, result[2] is: 2.000000
+add_example first input[3] is: 1.000000, second input[3] is: 1.000000, result[3] is: 2.000000
+add_example first input[4] is: 1.000000, second input[4] is: 1.000000, result[4] is: 2.000000
+add_example first input[5] is: 1.000000, second input[5] is: 1.000000, result[5] is: 2.000000
+add_example first input[6] is: 1.000000, second input[6] is: 1.000000, result[6] is: 2.000000
+add_example first input[7] is: 1.000000, second input[7] is: 1.000000, result[7] is: 2.000000
+...
 ```
 
 ## 三、算子开发
 
 本阶段目的是对已成功运行的AddExample算子尝试**修改核函数代码**。
-
-### 1. 修改Kernel实现
-打开AddExample算子的核心Kernel实现文件`ops-math/examples/add_example/op_kernel/add_example.h`，尝试在Init函数 **"首行位置"** 增加打印，并保存修改。
+### 1. 修改kernel实现
+找到AddExample算子的核心kernel实现文件`ops-math/examples/add_example/op_kernel/add_example.h`，尝试将算子中的Add操作改为Mul操作：
 
 ```cpp
-__aicore__ inline void AddExample<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, const AddExampleTilingData* tilingData)
+__aicore__ inline void AddExample<T>::Compute(int32_t progress)
 {
-    // === 修改点：函数首行位置添加一行调试打印 ===
-    AscendC::PRINTF("This is AddExample Kernel Init.\n");
-
-    // ... 原有代码保持不变 ...
+    AscendC::LocalTensor<T> xLocal = inputQueueX.DeQue<T>();
+    AscendC::LocalTensor<T> yLocal = inputQueueY.DeQue<T>();
+    AscendC::LocalTensor<T> zLocal = outputQueueZ.AllocTensor<T>();
+    // === 在此处将Add替换为Mul ===
+    // AscendC::Add(zLocal, xLocal, yLocal, tileLength_);
+    AscendC::Mul(zLocal, xLocal, yLocal, tileLength_);
+    outputQueueZ.EnQue<T>(zLocal);
+    inputQueueX.FreeTensor(xLocal);
+    inputQueueY.FreeTensor(yLocal);
 }
 ```
 ### 2. 编译与验证
@@ -211,7 +216,18 @@ __aicore__ inline void AddExample<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, cons
     bash build.sh --run_example add_example eager cust --vendor_name=custom
     ```
 
-4. **成功标志**：在运行结果中，除了计算结果，你应能看到打印的"`This is AddExample Kernel Init.`"信息。
+4. **成功标志**：输出结果变成乘法结果。
+    ```
+    add_example first input[0] is: 1.000000, second input[0] is: 1.000000, result[0] is: 1.000000
+    add_example first input[1] is: 1.000000, second input[1] is: 1.000000, result[1] is: 1.000000
+    add_example first input[2] is: 1.000000, second input[2] is: 1.000000, result[2] is: 1.000000
+    add_example first input[3] is: 1.000000, second input[3] is: 1.000000, result[3] is: 1.000000
+    add_example first input[4] is: 1.000000, second input[4] is: 1.000000, result[4] is: 1.000000
+    add_example first input[5] is: 1.000000, second input[5] is: 1.000000, result[5] is: 1.000000
+    add_example first input[6] is: 1.000000, second input[6] is: 1.000000, result[6] is: 1.000000
+    add_example first input[7] is: 1.000000, second input[7] is: 1.000000, result[7] is: 1.000000
+    ...
+    ```
 
 ## 四、算子调试
 本阶段以AddExample为例，在算子中添加打印并采集算子性能数据，以便后续问题分析定位。
@@ -284,7 +300,7 @@ int main() {
     for (int i = 0; i < 4096; ++i) {
         selfXHostData[i] = static_cast<float>(i % 10); // 填充0-9的循环值
     }
-    // === ② 参考selfX，同理修改selfY、selfY的输入 ===
+    // === ② 参考selfX，同理修改selfY、selfZ的输入 ===
     
     // ... 后续执行代码 ...
 }
