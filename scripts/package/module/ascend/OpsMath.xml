@@ -12,7 +12,7 @@
         <file value="libopapi_math.so" install_mod="550"/>
     </file_info>
     <file_info copy_type="delivery" src_path="" dst_path="built-in/op_impl/ai_core/tbe/op_api/include" install_path="$(TARGET_ENV)/include/" install_type="all">
-        <file value="aclnnop" install_mod="550"/>
+        <file value="aclnnop" install_mod="550" install_softlink="opp/include/aclnnop"/>
     </file_info>
     <file_info value="ops_es_packages_lib" copy_type="delivery" src_path="" dst_path="es_packages/lib64" install_path="$(TARGET_ENV)/lib64/">
         <file value="libes_math.so" install_mod="550"/>

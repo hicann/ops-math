@@ -117,7 +117,7 @@ if [[ ! -v ASCEND_SLOG_PRINT_TO_STDOUT ]]; then
   export ASCEND_SLOG_PRINT_TO_STDOUT=1
 fi
 if [[ ! -v ASCEND_GLOBAL_LOG_LEVEL ]]; then
-  export ASCEND_GLOBAL_LOG_LEVEL=1
+  export ASCEND_GLOBAL_LOG_LEVEL=3
 fi
 
 # print usage message
@@ -700,7 +700,7 @@ checkopts() {
   for arg in "$@"; do
     if [[ "$arg" =~ ^- ]]; then # 只检查以-开头的参数
       if ! check_option_validity "$arg"; then
-        echo "Use 'bash build.sh --help' for more information."
+        echo "[ERROR] Invalid param $arg, Use 'bash build.sh --help' for more information."
         exit 1
       fi
     fi
@@ -857,6 +857,13 @@ checkopts() {
         ;;
     esac
   done
+
+  shift $((OPTIND-1))
+  if [[ "x$@" != "x" ]]; then
+    echo "unparsed param: $@"
+    usage
+    exit
+  fi
 
   check_param
   set_create_libs
@@ -1271,6 +1278,7 @@ gen_op() {
 
   if [ -n "${python_cmd}" ]; then
     ${python_cmd} "${BASE_PATH}/scripts/opgen/opgen_standalone.py" -t ${GENOP_TYPE} -n ${GENOP_NAME} -p ${GENOP_BASE}
+    echo "Create the initial directory for ${GENOP_NAME} under ${GENOP_TYPE} success"
     return $?
   fi
 }

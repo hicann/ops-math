@@ -33,9 +33,9 @@
 本项目`build.sh`，支持快速创建算子目录。进入项目根目录，执行以下命令：
 
 ```bash
-# 创建指定算子目录，如bash build.sh --genop=examples/add_example
+# 创建指定算子目录，如bash build.sh --genop=examples/example_ops
 # ${op_class}表示算子类型，如math类。
-# ${op_name}表示算子名的小写下划线形式，如`AddExample`算子对应为add_example，新增算子不允许与已有算子重名。
+# ${op_name}表示算子名的小写下划线形式，如`ExampleOps`算子对应为example_ops，新增算子不允许与已有算子重名。
 bash build.sh --genop=${op_class}/${op_name}
 ```
 
@@ -348,7 +348,7 @@ __aicore__ inline void AddExample<T>::Process()
 
 为实现该调用方式，需提前生成算子对应的二进制包，增加二进制编译json文件，以`AddExample`算子为例：
 
-1. 在`scripts/kernel/binary_config`目录[ascendc_config.json](../../scripts/kernel/binary_config/ascendc_config.json)中，注册算子的NPU型号和实现模式，示例如下，输入实际name和compute_units即可。
+1. 在`scripts/kernel/binary_config`目录[ascendc_config.json](../../../scripts/kernel/binary_config/ascendc_config.json)中，注册算子的NPU型号和实现模式，示例如下，输入实际name和compute_units即可。
 
     ```json
     {"name":"AddExample", "compute_units": ["${soc_version}"], "auto_sync":true, "impl_mode" : "high_performance"},
