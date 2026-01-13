@@ -284,20 +284,30 @@ ge::graphStatus UnfoldGradTiling::Tiling4Block()
     if (dim == inputSizeLength - 1) {
         handleNUMOnceIterationPerCore = gradOutSizeDim * size;
         tasksOnceMaxPerCore = ubSizeT2 / (TRANS_BLOCK * FP32_TYPESIZE) / neededAmountForOneSize * size * TRANS_BLOCK;
+
+        OP_CHECK_IF(
+            tasksOnceMaxPerCore <= 0,
+            OP_LOGE(nodeName, "TasksOnceMaxPerCore %ld must be greater than 0. This is because max(size, step) should be less or equal than %ld.", tasksOnceMaxPerCore, ubSizeT2 / (TRANS_BLOCK * FP32_TYPESIZE)),
+            return ge::GRAPH_FAILED);
     } else {
         iterationNumPerCore = gradOutSizeDim;
         handleNUMOnceIterationPerCore = inputSizeLastDim;
         rowAvailableLengthSrc = (size + width - 1) / width * width;
         lowestCommonMultiple = getLowestCommonMultiple(size, TRANS_BLOCK);
         int64_t rowT2NeededLength = lowestCommonMultiple / size * rowAvailableLengthSrc;
-        colOnceMaxPerUB = ubSizeT2 / FP32_TYPESIZE / rowT2NeededLength / width * width;
+        colOnceMaxPerUB = ubSizeT2 / FP32_TYPESIZE / rowT2NeededLength / TRANS_BLOCK * TRANS_BLOCK;
         tasksOnceMaxPerCore = colOnceMaxPerUB * lowestCommonMultiple / neededAmountForOneSize;
+
+        int32_t maxSize = 73;
+        if(typeSizeT1 == 4) {
+            maxSize = 89;
+        }
+        OP_CHECK_IF(
+            tasksOnceMaxPerCore <= 0,
+            OP_LOGE(nodeName, "TasksOnceMaxPerCore %ld must be greater than 0. This is because size should be less than %d.", tasksOnceMaxPerCore, maxSize),
+            return ge::GRAPH_FAILED);
     }
 
-    OP_CHECK_IF(
-        tasksOnceMaxPerCore <= 0,
-        OP_LOGE(nodeName, "TasksOnceMaxPerCore %ld must be greater than 0.", tasksOnceMaxPerCore),
-        return ge::GRAPH_FAILED);
     loop = handleNUMOnceIterationPerCore / tasksOnceMaxPerCore;
     tail = handleNUMOnceIterationPerCore % tasksOnceMaxPerCore;
     OP_CHECK_IF(
