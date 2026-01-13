@@ -10,7 +10,7 @@
 
 #include "sort.h"
 #include "math/zero_op/op_api/zero_op.h"
-#include "conversion/tensor_move/op_host/op_api/tensor_move.h"
+#include "conversion/tensor_move/op_api/tensor_move.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/cast.h"
 #include "opdev/platform.h"
