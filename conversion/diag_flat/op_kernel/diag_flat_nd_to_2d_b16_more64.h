@@ -26,7 +26,7 @@ template <typename T>
 class DiagFlatND2To2DB16More64
 {
 public:
-    __aicore__ inline DiagFlatND2To2DB16More64() = default;
+    __aicore__ inline DiagFlatND2To2DB16More64(AscendC::TPipe *p) : pipe(p){};
     __aicore__ inline void Init(GM_ADDR input, GM_ADDR output, GM_ADDR workspace, const DiagV2TilingData* tilingData);
     __aicore__ inline void Process();
 
@@ -48,7 +48,7 @@ private:
     };
 
 private:
-    TPipe pipe;
+    TPipe *pipe;
     TQue<QuePosition::VECIN, 1> inputQueue_;
     TQue<QuePosition::VECOUT, 1> outputQueue_;
     TBuf<QuePosition::VECCALC> assistBuf_;
@@ -107,7 +107,7 @@ __aicore__ inline void DiagFlatND2To2DB16More64<T>::Init(
 
     // 核间同步
     syncGlobal_.SetGlobalBuffer((__gm__ int32_t*)workspace, 1024 * sizeof(int32_t));
-    pipe.InitBuffer(workQueue_, 1, totalCoreNum_ * 8 * sizeof(int32_t));
+    pipe->InitBuffer(workQueue_, 1, totalCoreNum_ * 8 * sizeof(int32_t));
 
     // gm输出进行清零
     int32_t coreNum = totalCoreNum_;
@@ -146,8 +146,8 @@ __aicore__ inline void DiagFlatND2To2DB16More64<T>::Init(
         (inputNum_ + abs(offset_)) * (inputNum_ + abs(offset_)) * 2);
 
     // 申请内存空间
-    pipe.InitBuffer(inputQueue_, 1, 128 * sizeof(int64_t));
-    pipe.InitBuffer(outputQueue_, 1, 64 * 128 * sizeof(int64_t));
+    pipe->InitBuffer(inputQueue_, 1, 128 * sizeof(int64_t));
+    pipe->InitBuffer(outputQueue_, 1, 64 * 128 * sizeof(int64_t));
 }
 
 template <typename T>
@@ -257,7 +257,7 @@ __aicore__ inline void DiagFlatND2To2DB16More64<T>::Process()
 template <typename T>
 __aicore__ inline void DiagFlatND2To2DB16More64<T>::CreateAuxMatrix()
 {
-    pipe.InitBuffer(assistBuf_, 64 * 128 * sizeof(int64_t));
+    pipe->InitBuffer(assistBuf_, 64 * 128 * sizeof(int64_t));
     LocalTensor<int16_t> ubAssist = assistBuf_.Get<int16_t>();
 
     constexpr int64_t loops = 64 * 4;

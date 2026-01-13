@@ -26,7 +26,7 @@ template <typename T>
 class DiagFlatNDTo2DWithFew
 {
 public:
-    __aicore__ inline DiagFlatNDTo2DWithFew(){};
+    __aicore__ inline DiagFlatNDTo2DWithFew(AscendC::TPipe *p) : pipe(p){};
     __aicore__ inline void Init(GM_ADDR input, GM_ADDR output, GM_ADDR workspace, const DiagV2TilingData* tilingData);
     __aicore__ inline void Process();
 
@@ -52,7 +52,7 @@ private:
     };
 
 private:
-    TPipe pipe;
+    TPipe *pipe;
     TQue<QuePosition::VECIN, 1> inputQueue_;
     TQue<QuePosition::VECOUT, 1> outputQueue_;
     GlobalTensor<T> gmInput_;
@@ -157,7 +157,7 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::InitGm(GM_ADDR output, GM_ADDR 
     MemSetZero<int32_t>(syncGlobal_, totalCoreNum_ * EACH_CORE_HANDLE_NUM);
 
     // set workspace for sync
-    pipe.InitBuffer(workQueue_, 1, totalCoreNum_ * 8 * sizeof(int32_t));
+    pipe->InitBuffer(workQueue_, 1, totalCoreNum_ * 8 * sizeof(int32_t));
 
     if constexpr (IsDataCopyPadSupport()) {
         GmSetZeroPad(output);
@@ -193,8 +193,8 @@ __aicore__ inline void DiagFlatNDTo2DWithFew<T>::Init(
         (__gm__ T*)output + (offset_ > 0 ? 0 : abs(offset_)) * (inputNum_ + abs(offset_)),
         (inputNum_ + abs(offset_)) * (inputNum_ + abs(offset_)));
 
-    pipe.InitBuffer(inputQueue_, 1, ONCE_HANDLE_NUM * sizeof(T));
-    pipe.InitBuffer(outputQueue_, 1, ONCE_HANDLE_NUM * ONCE_HANDLE_NUM * sizeof(T));
+    pipe->InitBuffer(inputQueue_, 1, ONCE_HANDLE_NUM * sizeof(T));
+    pipe->InitBuffer(outputQueue_, 1, ONCE_HANDLE_NUM * ONCE_HANDLE_NUM * sizeof(T));
 }
 
 template <typename T>
