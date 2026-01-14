@@ -42,6 +42,8 @@ main() {
     exist_op_cache=true
     python3 ${op_cache_dir}/op_make_hash.py make_public_hash
   fi
+  local error_flag_file="${output_path}/build_logs/.compile_error"
+  rm -f "${error_flag_file}"
 
   # step1: do compile kernel with compile_thread_num
   [ -e /tmp/binary_exe_task ] || mkfifo /tmp/binary_exe_task
@@ -53,10 +55,20 @@ main() {
 
   opc_list_num=$(cat ${opc_cmd_file} | wc -l)
   random_opc_nums=$(shuf -i  1-${opc_list_num})
+  local pids=()
   for i in ${random_opc_nums}; do
+    # 如果已有编译失败，跳过剩余任务
+    if [ -f "${error_flag_file}" ]; then
+      echo "[ERROR]build kernel failed, stop all build"
+      break
+    fi
     read -u8
     {
       set +e
+      if [ -f "${error_flag_file}" ]; then
+        echo >&8
+        exit 0
+      fi
       cmd_task=$(sed -n ''${i}'p;' ${opc_cmd_file})
       key=$(echo "${cmd_task}" | grep -oP '\w*\.json_\d*')
       echo "[INFO]exe_task: begin to build kernel with cmd: ${cmd_task}."
@@ -71,19 +83,40 @@ main() {
         timeout 7200 ${cmd_task} >> "${output_path}/build_logs/${key}.log" 2>&1
       fi
 
+      if grep -qi 'error:' "${output_path}/build_logs/${key}.log"; then
+        # 标记编译失败
+        touch "${error_flag_file}"
+        
+        echo "[ERROR]exe_task: ${cmd_task}"
+        echo "[ERROR]exe_task error log: ${output_path}/build_logs/${key}.log"
+        echo "[ERROR]exe_task error detail:"
+        echo "------------------------------------------------------------"
+        cat "${output_path}/build_logs/${key}.log"
+        echo "============================================================"
+        
+        echo >&8
+        exit 1
+      fi
+
       end_time=$(date +%s)
       exe_time=$((end_time - start_time))
       echo "[INFO]exe_task: end to build kernel with cmd: ${cmd_task} --exe_time=${exe_time}"
       echo >&8
     } &
+    pids+=($!)
   done
   wait  # 等待所有的算子编译结束
 
+  if [ -f "${error_flag_file}" ]; then
+    rm -f "${error_flag_file}"
+    exit 1
+  fi
   # step2: gen output one by one
   cat ${out_cmd_file} | while read cmd_task; do
     echo "[INFO]exe_task: begin to gen kernel list with cmd: ${cmd_task}."
     ${cmd_task}
   done
+  rm -f "${error_flag_file}"
 }
 set -o pipefail
 main "$@" | gawk '{print strftime("[%Y-%m-%d %H:%M:%S]"), $0}'

@@ -32,6 +32,8 @@
     - --vendor_name（可选）：\$\{vendor\_name\}表示构建的自定义算子包名，默认名为custom。
     - --ops（可选）：\$\{op\_list\}表示待编译算子，不指定时默认编译所有算子。格式形如"abs,add_lora,..."，多算子之间用英文逗号","分隔。
     - --experimental（可选）：表示编译用户保存在experimental贡献目录下的算子。
+
+    更多build参数介绍参见[build参数说明](../context/build.md)。
     
     若\$\{vendor\_name\}和\$\{op\_list\}都不传入编译的是ops-math包；若编译所有算子的自定义算子包，需传入\$\{vendor\_name\}；编译自定义算子包不支持--jit。当提示如下信息，说明编译成功。
     ```bash
@@ -47,7 +49,7 @@
     
     自定义算子包安装路径为`${ASCEND_HOME_PATH}/opp/vendors`，\$\{ASCEND\_HOME\_PATH\}已通过环境变量配置，表示CANN toolkit包安装路径，一般为\$\{install\_path\}/cann。
 
-4. **（可选）卸载自定义算子包。**
+3. **（可选）卸载自定义算子包。**
 
     自定义算子包安装后在`${ASCEND_HOME_PATH}/opp/vendors/${vendor_name}_math/scripts`目录会生成`uninstall.sh`，通过该脚本可卸载自定义算子包，命令如下：
     ```bash
@@ -71,6 +73,8 @@
     - --jit（可选）：设置后表示不编译算子二进制文件，如需使用aclnn调用算子，该选项无需设置。
     - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas A2 推理系列产品使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"，Ascend 950PR/Ascend 950DT产品使用"ascend950"。
     - --experimental（可选）：表示编译用户保存在experimental目录下的算子。
+
+    更多build参数介绍参见[build参数说明](../context/build.md)。
 
     若提示如下信息，说明编译成功。
 
