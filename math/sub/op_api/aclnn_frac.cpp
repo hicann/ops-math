@@ -13,7 +13,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "sub.h"
 #include "math/zero_op/op_api/zero_op.h"
-#include "math/trunc/op_host/op_api/trunc.h"
+#include "math/trunc/op_api/trunc.h"
 #include "aclnn/aclnn_base.h"
 #include "common/op_api_def.h"
 #include "aclnn_kernels/common/op_error_check.h"
