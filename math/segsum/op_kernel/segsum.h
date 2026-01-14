@@ -232,11 +232,13 @@ __aicore__ inline void SegsumND<T, MODE>::processCurrent(
     int64_t dataIdx, LocalTensor<float> currentRow, LocalTensor<T> xTensor, int64_t batchesEachCopy,
     int64_t blockNumData)
 {
-    for (int64_t i = 0; i < batchesEachCopy; i++) {
-        if constexpr (std::is_same<T, bfloat16_t>::value) {
+    if constexpr (std::is_same<T, bfloat16_t>::value) {
+        for (int64_t i = 0; i < batchesEachCopy; i++) {
             Duplicate(currentRow[i * blockNumData], ToFloat(xTensor.GetValue(dataIdx + i * blockNumData)), dataIdx);
             PipeBarrier<PIPE_V>();
-        } else {
+        }
+    } else {
+        for (int64_t i = 0; i < batchesEachCopy; i++) {
             Duplicate(
                 currentRow[i * blockNumData], static_cast<float>(xTensor.GetValue(dataIdx + i * blockNumData)),
                 dataIdx);
