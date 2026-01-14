@@ -39,10 +39,11 @@ constexpr uint64_t B8_BYTES = 1;
 constexpr uint64_t B16_BYTES = 2;
 constexpr uint64_t B32_BYTES = 4;
 constexpr uint64_t B64_BYTES = 8;
-constexpr uint64_t bufferNum = 2;
+constexpr uint64_t BUFFER_NUM = 2;
 constexpr uint64_t WORK_SPACE_SIZE = 16 * 1024 * 1024;
 constexpr double VEC_CORE_USED_THRES_HOLD = 0.9;
-constexpr int64_t SMALL_SHAPE_BYTES_THRES_HOLD = 8000000;
+constexpr int64_t SMALL_SHAPE_BYTES_THRES_HOLD = 4000000;
+constexpr int64_t MOVEALIGN_LAST_MIN_ELE = 32;//moveAlign模板尾轴准入最小个数
 constexpr int64_t SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE = 128;
 constexpr int64_t INPUT_IDX = 0;
 constexpr int64_t OUTPUT_IDX = 0;
@@ -111,7 +112,8 @@ enum class SplitMode : int64_t
     CUT_TWICE = 10003,        // cut two axis and last transpose
     N_LAST_TRANSPOSE = 10004, // nLast transpose and last axis bigger than cacheLine
     BIG_DIM = 10005,          // dim bigger than 5 and last transpose
-    GATHER_TRANSPOSE = 10006  // transpose with gather
+    GATHER_TRANSPOSE = 10006, // transpose with gather
+    NDDMA_BASE = 90000        // nddma base key and not a real used key
 };
 
 struct SplitInfo {
@@ -166,7 +168,8 @@ private:
     ge::graphStatus CheckShapeInfo();
     ge::graphStatus CheckReducedShapeInfo();
     void FlushBaseNumForBigDim();
-    void CalcSplitInfo();
+    void EntryTilingTemplate();
+    void CalcUBSplitInfo();
     void CalcBlockSplitInfo();
     void CalcBlockSplitInfoForTensorMove();
     void CalcBlockSplitInfoForSmallShape();
@@ -188,6 +191,8 @@ private:
     void FindSplitFactorByRateNLast(int64_t currentSplitIndex, int64_t currentInShapeDim, int64_t remainingTotalElment);
     void FindSplitFactorByMultiplesNLast(
         int64_t currentSplitIndex, int64_t currentInShapeDim, int64_t remainingTotalElment, int64_t coreNumMultiples);
+    void CheckInUbFactorValid(
+    int64_t& currentSplitIndex, int64_t& currentInShapeDim, int64_t& remainingTotalElment, int64_t& coreNumMultiples, int64_t* solvedTotalElment);
     void DoSplitUBBigDim();
     void NDDMADimExpand();
     void GetInUbShapeInfo();

@@ -76,8 +76,10 @@ ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
             OP_LOGD(tilingContext_->GetNodeName(), "Do gather tiling done!"), return ge::GRAPH_SUCCESS);
     }
 
+    //ensure tiling template
+    EntryTilingTemplate();
     // UB split
-    CalcSplitInfo();
+    CalcUBSplitInfo();
     // block split
     CalcBlockSplitInfo();
     // dim expand
@@ -250,6 +252,7 @@ int64_t TransposeNddmaTiling::DoSplitUBInput()
             splitInfo_.inUbElement /= currentShapeDim;
             splitInfo_.inUbActual *= currentShapeDim;
             remainingTotalElment /= currentShapeDim;
+            splitInfo_.inUbFactor = currentShapeDim;
         }
     }
     splitInfo_.outUbElement = splitInfo_.ubElement / splitInfo_.inUbActual;
@@ -386,7 +389,6 @@ void TransposeNddmaTiling::FindSplitFactorByMultiplesNLast(
 void TransposeNddmaTiling::DoSplitUB()
 {
     int64_t remainingTotalElment = DoSplitUBInput();
-    bool isSplitDifferentAxis = false;
     for (int64_t i = 0; i < shapeInfo_.dim; i++) {
         int64_t currentSplitIndex = shapeInfo_.dim - 1 - i;
         if (shapeInfo_.reducedPerm[currentSplitIndex] > splitInfo_.inCutIndex) { // skip axis full cut by input shape
@@ -410,17 +412,18 @@ void TransposeNddmaTiling::DoSplitUB()
                 splitInfo_.outTailFactor = currentShapeDim % splitInfo_.outUbElement;
                 splitInfo_.outUbActual *= splitInfo_.outUbElement;
             }
-            if (currentSplitIndex > FindOutIndex(splitInfo_.inCutIndex)) {
-                isSplitDifferentAxis = true;
-                tilingKey_ = static_cast<int64_t>(SplitMode::CUT_TWICE);
-            }
             break;
         } else {
             splitInfo_.outUbElement /= currentShapeDim;
             splitInfo_.outUbActual *= currentShapeDim;
+            splitInfo_.outCutIndex = currentSplitIndex;
+            splitInfo_.outUbFactor = currentShapeDim;
         }
     }
-    if (!isSplitDifferentAxis) {
+    if (splitInfo_.outCutIndex > FindOutIndex(splitInfo_.inCutIndex)) {
+        tilingKey_ = static_cast<int64_t>(SplitMode::CUT_TWICE);
+    }
+    else {
         tilingKey_ = static_cast<int64_t>(SplitMode::CUT_ONCE);
     }
 }
@@ -502,32 +505,55 @@ void TransposeNddmaTiling::FlushBaseNumForBigDim()
     }
 }
 
-void TransposeNddmaTiling::CalcSplitInfo()
+void TransposeNddmaTiling::EntryTilingTemplate()
 {
-    OP_LOGD(tilingContext_->GetNodeName(), "Entering CalcSplitInfo.");
+    OP_LOGD(tilingContext_->GetNodeName(), "Entering EntryTilingTemplate.");
     SetIsLastAxisTranspose();
     CalcTotalVolumeActual();
     splitInfo_.ubElement = ubSize_ / shapeInfo_.eleLenInBytes;
-    int64_t lastAxisByte = shapeInfo_.reducedInShape[shapeInfo_.dim - 1] * shapeInfo_.eleLenInBytes;
-    if (shapeInfo_.dim == 1) { // just tensor move
-        splitInfo_.ubElement = ubSize_ / bufferNum / shapeInfo_.eleLenInBytes;
+    if (shapeInfo_.dim == 1) {
+        // just tensor move
         tilingKey_ = static_cast<int64_t>(SplitMode::TENSOR_MOVE);
-    } else if (shapeInfo_.totalVolumeActual * shapeInfo_.eleLenInBytes <= SMALL_SHAPE_BYTES_THRES_HOLD) { // small shape
-        tilingKey_ = static_cast<int64_t>(SplitMode::SMALL_SHAPE);
-    } else if (shapeInfo_.isLastAxisTranspose && shapeInfo_.dim <= NDDMA_MAX_DIM_NUM) { // last axis join tanspose
-        splitInfo_.inUbElement = sqrt(splitInfo_.ubElement);
-        DoSplitUB();
-    } else { // last axis not join tanspose or dim > NDDMA_MAX_DIM_NUM
-        if (!shapeInfo_.isLastAxisTranspose && lastAxisByte >= cacheLineSize_) {
-            splitInfo_.ubElement = ubSize_ / bufferNum / shapeInfo_.eleLenInBytes;
+        return;
+    }
+    if (shapeInfo_.totalVolumeActual * shapeInfo_.eleLenInBytes >= SMALL_SHAPE_BYTES_THRES_HOLD) {
+        if (!shapeInfo_.isLastAxisTranspose && shapeInfo_.reducedInShape[shapeInfo_.dim - 1] >= MOVEALIGN_LAST_MIN_ELE) {
+            //MoveAlign场景 （大于等于32个元素）
             tilingKey_ = static_cast<int64_t>(SplitMode::N_LAST_TRANSPOSE);
-        } else if (shapeInfo_.dim <= NDDMA_MAX_DIM_NUM && lastAxisByte < cacheLineSize_) {
+            return;
+        }
+        if (shapeInfo_.dim <= NDDMA_MAX_DIM_NUM) {
+            //nddma场景：尾轴不转置以及尾轴转置
+            tilingKey_ = static_cast<int64_t>(SplitMode::NDDMA_BASE);
+            return;
+        }
+        else {
+            //BigShape场景,维度超过NDDMA_MAX_DIM_NUM且总元素超过threshold
+            tilingKey_ = static_cast<int64_t>(SplitMode::BIG_DIM);
+            return;
+        }
+    }
+    //兜底逻辑 simt
+    tilingKey_ = static_cast<int64_t>(SplitMode::SMALL_SHAPE);
+}
+
+void TransposeNddmaTiling::CalcUBSplitInfo()
+{
+    OP_LOGD(tilingContext_->GetNodeName(), "Entering CalcUBSplitInfo");
+    switch (tilingKey_) {
+        case static_cast<int64_t>(SplitMode::TENSOR_MOVE):
+        case static_cast<int64_t>(SplitMode::N_LAST_TRANSPOSE):
+            splitInfo_.ubElement = ubSize_ / BUFFER_NUM / shapeInfo_.eleLenInBytes;
+            break;
+        case static_cast<int64_t>(SplitMode::NDDMA_BASE):
             splitInfo_.inUbElement = sqrt(splitInfo_.ubElement);
             DoSplitUB();
-        } else {
-            tilingKey_ = static_cast<int64_t>(SplitMode::BIG_DIM);
+            break;
+        case static_cast<int64_t>(SplitMode::BIG_DIM):
             DoSplitUBBigDim();
-        }
+            break;
+        default:
+            break;
     }
 }
 
@@ -614,6 +640,8 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForNLastTranspose()
     OP_LOGD(tilingContext_->GetNodeName(), "Entering CalcBlockSplitInfoForNLastTranspose.");
     splitInfo_.inUbElement = splitInfo_.ubElement;
     int64_t remainingTotalElment = shapeInfo_.totalVolumeActual;
+    int64_t solvedTotalElment[MAX_AXIS_NUM_FOR_TRANSPOSE] = {0};
+    solvedTotalElment[shapeInfo_.dim - 1] = 1;
     int64_t currentSplitIndex;
     int64_t currentInShapeDim;
     for (int64_t i = 0; i < shapeInfo_.dim; i++) {
@@ -622,25 +650,51 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForNLastTranspose()
         remainingTotalElment /= currentInShapeDim;
         int64_t coreNumTmp = remainingTotalElment * Ops::Base::CeilDiv(currentInShapeDim, splitInfo_.inUbElement);
         if (splitInfo_.inUbElement < currentInShapeDim) {
-            if (coreNumTmp < coreNum_) { // use at least VEC_CORE_USED_THRES_HOLD * coreNum
+            if (coreNumTmp < coreNum_) {  // use at least VEC_CORE_USED_THRES_HOLD * coreNum
                 FindSplitFactorByRateNLast(currentSplitIndex, currentInShapeDim, remainingTotalElment);
                 break;
-            } else { // use full coreNum
+            } else {  // use full coreNum
                 int64_t coreNumMultiples = Ops::Base::FloorDiv(coreNumTmp, coreNum_);
-                FindSplitFactorByMultiplesNLast(
-                    currentSplitIndex, currentInShapeDim, remainingTotalElment, coreNumMultiples);
+                FindSplitFactorByMultiplesNLast(currentSplitIndex, currentInShapeDim, remainingTotalElment,
+                                                coreNumMultiples);
+                /* 检查inUbFactor是否合法，不合法则执行退轴逻辑 */
+                CheckInUbFactorValid(currentSplitIndex, currentInShapeDim, remainingTotalElment, coreNumMultiples, solvedTotalElment);
                 break;
             }
-        } else if (coreNumTmp < coreNum_) { // use at least VEC_CORE_USED_THRES_HOLD * coreNum
+        } else if (coreNumTmp < coreNum_) {  // use at least VEC_CORE_USED_THRES_HOLD * coreNum
             FindSplitFactorByRateNLast(currentSplitIndex, currentInShapeDim, remainingTotalElment);
             break;
         } else {
             splitInfo_.inUbElement /= currentInShapeDim;
+            solvedTotalElment[currentSplitIndex] =
+                currentSplitIndex == shapeInfo_.dim - 1 ? currentInShapeDim : (currentInShapeDim * solvedTotalElment[currentSplitIndex + 1]);
         }
     }
     int64_t coreNum = Ops::Base::CeilDiv(shapeInfo_.reducedInShape[splitInfo_.inCutIndex], splitInfo_.inUbFactor) *
                       remainingTotalElment;
     SetRealCoreNumAndBlkFactor(coreNum);
+}
+
+void TransposeNddmaTiling::CheckInUbFactorValid(
+    int64_t& currentSplitIndex, int64_t& currentInShapeDim, int64_t& remainingTotalElment, int64_t& coreNumMultiples, int64_t* solvedTotalElment)
+{
+    if (currentSplitIndex < 0 || currentSplitIndex >= MAX_AXIS_NUM_FOR_TRANSPOSE) {
+        return;
+    }
+    if (splitInfo_.inUbFactor == 0 && currentSplitIndex < shapeInfo_.dim - 1) {
+        while (currentSplitIndex < shapeInfo_.dim - 1) {
+            currentSplitIndex++;
+            currentInShapeDim = shapeInfo_.reducedInShape[currentSplitIndex];
+            splitInfo_.inUbElement = shapeInfo_.reducedInShape[currentSplitIndex];
+            remainingTotalElment = shapeInfo_.totalVolumeActual / solvedTotalElment[currentSplitIndex];
+            coreNumMultiples = remainingTotalElment;
+            FindSplitFactorByMultiplesNLast(currentSplitIndex, currentInShapeDim, remainingTotalElment,
+                                            coreNumMultiples);
+            if (splitInfo_.inUbFactor > 0) {
+                break;
+            }
+        }
+    }
 }
 
 void TransposeNddmaTiling::SetRealCoreNumAndBlkFactor(int64_t coreNum)
