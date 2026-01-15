@@ -137,6 +137,10 @@
 
 - 确定性计算：
   - aclnnOneHot默认确定性实现。
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+  - 当offValue的数据类型为INT64时，其首元素取值仅支持0或1。
+  - 输入self大小为selfSize，输出out大小为outSize，ub大小为ubSize，当axis取值为0，满足下列条件的场景暂不支持：
+    - selfSize * 3 < ubSize - 16K < outSize * 3 / 2
 
 ## 调用示例
 
