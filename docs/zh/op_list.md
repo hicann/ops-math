@@ -2123,7 +2123,7 @@
     <td>√</td>
     <td>AI CPU</td>
     <td>该算子完成在原有tensor上的加法计算。</td>
-  </tr>ias
+  </tr>
   <tr>
     <td>math</td>
     <td><a href="../../math/assign_sub/README.md">assign_sub</a></td>
