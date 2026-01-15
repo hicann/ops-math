@@ -18,6 +18,7 @@
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
 #include "util/math_util.h"
+#include "platform/platform_ascendc.h"
 
 namespace optiling {
 const static size_t INPUT_X = 0;
@@ -242,8 +243,26 @@ ge::graphStatus Tiling4TensorEqual(gert::TilingContext* context)
     return tilingObj.DoTiling();
 }
 
-ge::graphStatus TilingPrepare4TensorEqual([[maybe_unused]] gert::TilingParseContext* context)
+ge::graphStatus TilingPrepare4TensorEqual(gert::TilingParseContext* context)
 {
+    if (context == nullptr) {
+        OP_LOGE("TensorEqual", "The context is nullptr.");
+        return ge::GRAPH_FAILED;
+    }
+
+    OP_LOGD(context->GetNodeName(), "Tiling Prepare For TensorEqual start");
+
+    auto compileInfo = context->GetCompiledInfo<TensorEqualCompileInfo>();
+    OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
+    auto platformInfo = context->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    compileInfo->totalCoreNum = ascendcPlatform.GetCoreNumAiv();
+    uint64_t ubSizePlatForm = 0;
+    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
+    compileInfo->ubSizePlatForm = static_cast<int64_t>(ubSizePlatForm);
+    OP_CHECK_IF((compileInfo->ubSizePlatForm <= 0),
+        OP_LOGE(context->GetNodeName(), "Failed to get ub size"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
