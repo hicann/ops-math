@@ -47,22 +47,23 @@
 | [aclnnBitwiseXorTensor&aclnnInplaceBitwiseXorTensor](../../math/bitwise_xor/docs/aclnnBitwiseXorTensor&aclnnInplaceBitwiseXorTensor.md) | 计算输入张量self中每个元素与输入张量other中对应位置元素的按位异或，输入self和other必须是整数或布尔类型，对于布尔类型，计算逻辑异或。 | 默认确定性实现|  
 | [aclnnCast](../../math/cast/docs/aclnnCast.md)                  | 实现张量数据类型转换。                                       | 默认确定性实现|                                        
 | [aclnnCat](../../conversion/concat_d/docs/aclnnCat.md)            | 将tensors中所有tensor按照维度dim进行级联。    | 默认确定性实现|     
-| [aclnnCeil&aclnnInplaceCeil](../../math/ceil/docs/aclnnCeil&aclnnInplaceCeil.md) | 返回输入tensor中每个元素向上取整的结果。                     | 默认确定性实现|                      
+| [aclnnCeil&aclnnInplaceCeil](../../math/ceil/docs/aclnnCeil&aclnnInplaceCeil.md) | 返回输入tensor中每个元素向上取整的结果。                     | 默认确定性实现|
 | [aclnnChannelShuffle](../../conversion/transpose/docs/aclnnChannelShuffle.md) | 将(*, C, H, W)张量的channels分成g个组，然后将每个通道组中的通道进行随机重排，最后将所有通道合并输出，同时保持最终输出张量的shape和输入张量保持一致。 | 默认确定性实现|  
-| [aclnnCircularPad2d](../../conversion/circular_pad/docs/aclnnCircularPad2d.md) | 使用输入循环填充输入tensor的最后两维。                       | 默认确定性实现|                        
-| [aclnnCircularPad3d](../../conversion/circular_pad/docs/aclnnCircularPad3d.md) | 使用输入循环填充输入tensor的最后三维。                       | 默认确定性实现|                        
+| [aclnnCircularPad2d](../../conversion/circular_pad/docs/aclnnCircularPad2d.md) | 使用输入循环填充输入tensor的最后两维。                       | 默认确定性实现|
+| [aclnnCircularPad3d](../../conversion/circular_pad/docs/aclnnCircularPad3d.md) | 使用输入循环填充输入tensor的最后三维。                       | 默认确定性实现|
 | [aclnnCircularPad2dBackward](../../conversion/circular_pad_grad/docs/aclnnCircularPad2dBackward.md) | circular_pad2d的反向传播, 前向计算参考aclnnCircularPad2d。   | 默认确定性实现|    
-| [aclnnCircularPad3dBackward](../../conversion/circular_pad_grad/docs/aclnnCircularPad3dBackward.md) | aclnnCircularPad3d的反向传播。                               | 默认确定性实现|                                
+| [aclnnCircularPad3dBackward](../../conversion/circular_pad_grad/docs/aclnnCircularPad3dBackward.md) | aclnnCircularPad3d的反向传播。                               | 默认确定性实现|
 | [aclnnClamp](../../conversion/clip_by_value_v2/docs/aclnnClamp.md) | 将输入的所有元素限制在[min,max]范围内，如果min为None，则没有下限，如果max为None，则没有上限。 | 默认确定性实现|  
-| [aclnnClampMax&aclnnInplaceClampMax](../../conversion/clip_by_value_v2/docs/aclnnClampMax&aclnnInplaceClampMax.md) | 将输入的所有元素限制在[-inf,max]范围内。 | 默认确定性实现|  
-| [aclnnClampMaxTensor&aclnnInplaceClampMaxTensor](../../conversion/clip_by_value_v2/docs/aclnnClampMaxTensor&aclnnInplaceClampMaxTensor.md) | 将输入的所有元素限制在[-inf, max]范围内。 | 默认确定性实现|  
-| [aclnnClampMin](../../conversion/clip_by_value_v2/docs/aclnnClampMin.md) | 将输入的所有元素限制在[min, inf]范围内。 | 默认确定性实现|  
-| [aclnnClampMinTensor&aclnnInplaceClampMinTensor](../../conversion/clip_by_value_v2/docs/aclnnClampMinTensor&aclnnInplaceClampMinTensor.md) | 将输入的所有元素限制在[min, inf]范围内。 | 默认确定性实现|  
+| [aclnnClampMax&aclnnInplaceClampMax](../../conversion/clip_by_value_v2/docs/aclnnClampMax&aclnnInplaceClampMax.md) | 将输入的所有元素限制在[-inf,max]范围内。 | 默认确定性实现|
+| [aclnnClampMaxTensor&aclnnInplaceClampMaxTensor](../../conversion/clip_by_value_v2/docs/aclnnClampMaxTensor&aclnnInplaceClampMaxTensor.md) | 将输入的所有元素限制在[-inf, max]范围内。 | 默认确定性实现|
+| [aclnnClampMin](../../conversion/clip_by_value_v2/docs/aclnnClampMin.md) | 将输入的所有元素限制在[min, inf]范围内。 | 默认确定性实现|
+| [aclnnClampMinTensor&aclnnInplaceClampMinTensor](../../conversion/clip_by_value_v2/docs/aclnnClampMinTensor&aclnnInplaceClampMinTensor.md) | 将输入的所有元素限制在[min, inf]范围内。 | 默认确定性实现|
 | [aclnnClampTensor](../../conversion/clip_by_value_v2/docs/aclnnClampTensor.md) | 将输入的所有元素限制在[min, max]范围内，如果min缺省，则无下限，如果max缺省，则无上限。 | 默认确定性实现|  
-| [aclnnComplex](../../math/complex/docs/aclnnComplex.md)         | 输入两个Shape和Dtype一致的Tensor：real和imag。               | 默认确定性实现|                
+| [aclnnComplex](../../math/complex/docs/aclnnComplex.md)         | 输入两个Shape和Dtype一致的Tensor：real和imag。               | 默认确定性实现|
+| [aclnnConfusionTranspose](../../conversion/confusion_transpose_d/docs/aclnnConfusionTranspose.md) | 融合reshape和transpose运算。 | 默认确定性实现|
 | [aclnnConstantPadNd](../../conversion/pad_v3/docs/aclnnConstantPadNd.md) | 对输入的张量self，以pad参数为基准进行数据填充，填充值为value。 | 默认确定性实现|  
-| [aclnnContiguous](../../conversion/contiguous/docs/aclnnContiguous.md) | 见算子文档。                                                 | 默认确定性实现|                                                  
-| [aclnnCos&aclnnInplaceCos](../../math/cos/docs/aclnnCos&aclnnInplaceCos.md) | 对输入矩阵的每个元素进行余弦操作后输出。                     | 默认确定性实现|                      
+| [aclnnContiguous](../../conversion/contiguous/docs/aclnnContiguous.md) | 见算子文档。                                                 | 默认确定性实现|
+| [aclnnCos&aclnnInplaceCos](../../math/cos/docs/aclnnCos&aclnnInplaceCos.md) | 对输入矩阵的每个元素进行余弦操作后输出。                     | 默认确定性实现|
 | [aclnnCosh&aclnnInplaceCosh](../../math/cosh/docs/aclnnCosh&aclnnInplaceCosh.md) | 双曲函数，根据公式返回一个新的tensor。结果的形状与输入tensor相同。 | 默认确定性实现|  
 | [aclnnCummax](../../math/cummax/docs/aclnnCummax.md)            | 计算self中的累积最大值，并返回最大值以及对应的索引。         | 默认确定性实现|          
 | [aclnnCummin](../../math/cummin/docs/aclnnCummin.md)            | 计算self中的累积最小值，并返回最小值以及对应的索引。         | 默认确定性实现|          
@@ -76,7 +77,7 @@
 | [aclnnDropoutV3](../../random/drop_out_v3/docs/aclnnDropoutV3.md)         | 按照概率p随机将输入中的元素置零，并将输出按照1/(1-p)的比例缩放。 | 默认确定性实现|
 | [aclnnEqScalar&aclnnInplaceEqScalar](../../math/equal/docs/aclnnEqScalar&aclnnInplaceEqScalar.md) | 计算self中的元素的值与other的值是否相等，将self每个元素与other的值的比较结果写入out中。 | 默认确定性实现|  
 | [aclnnEqTensor&aclnnInplaceEqTensor](../../math/equal/docs/aclnnEqTensor&aclnnInplaceEqTensor.md) | 计算两个Tensor中的元素是否相等，返回一个Tensor，self=other的为True(1.)，否则为False(0.)。 | 默认确定性实现|  
-| [aclnnEqual](../../math/equal/docs/aclnnEqual.md)               | 计算两个Tensor是否有相同的大小和元素，返回一个Bool类型。     | 默认确定性实现|      
+| [aclnnEqual](../../math/tensor_equal/docs/aclnnEqual.md)               | 计算两个Tensor是否有相同的大小和元素，返回一个Bool类型。     | 默认确定性实现|      
 | [aclnnErf&aclnnInplaceErf](../../math/erf/docs/aclnnErf&aclnnInplaceErf.md) | 返回输入Tensor中每个元素对应的误差函数的值。                 | 默认确定性实现|                  
 | [aclnnErfc&aclnnInplaceErfc](../../math/erfc/docs/aclnnErfc&aclnnInplaceErfc.md) | 返回输入Tensor中每个元素对应的误差互补函数的值。             | 默认确定性实现|              
 | [aclnnExp&aclnnInplaceExp](../../math/exp/docs/aclnnExp&aclnnInplaceExp.md) | 返回一个新的张量，该张量的每个元素都是输入张量对应元素的指数。 | 默认确定性实现|  

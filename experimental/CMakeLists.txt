@@ -20,7 +20,7 @@ set(COMMON_L0_SRCS
   ${CMAKE_SOURCE_DIR}/conversion/view_copy/op_host/op_api/view_copy.cpp
   ${CMAKE_SOURCE_DIR}/conversion/strided_slice/op_api/strided_slice.cpp
   ${CMAKE_SOURCE_DIR}/conversion/broadcast_to/op_host/op_api/broadcast_to.cpp
-  ${CMAKE_SOURCE_DIR}/conversion/tensor_move/op_host/op_api/tensor_move.cpp
+  ${CMAKE_SOURCE_DIR}/conversion/tensor_move/op_api/tensor_move.cpp
   ${CMAKE_SOURCE_DIR}/conversion/trans_data/op_host/op_api/transdata.cpp
   ${CMAKE_SOURCE_DIR}/conversion/transpose/op_api/transpose.cpp
   ${CMAKE_SOURCE_DIR}/conversion/pad/op_host/op_api/pad.cpp

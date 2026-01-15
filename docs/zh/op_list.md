@@ -1667,12 +1667,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/tensor_equal">tensor_equal</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>计算两个Tensor是否有相同的大小和元素，返回一个Bool类型。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1687,12 +1687,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/triangular_solve">triangular_solve</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>对输入Tensor截取整数部分。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1753,6 +1753,16 @@
     <td>√</td>
     <td>AI Core</td>
     <td>用于沿指定维度将多个输入 Tensor 进行拼接，输出包含所有输入数据按顺序拼接后的 Tensor。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/confusion_transpose_d">confusion_transpose_d</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>融合reshape和transpose运算。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -1947,12 +1957,12 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/tensor_move">tensor_move</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>将输入tensor的值搬运到输出tensor中。</td>
   </tr>
   <tr>
     <td>conversion</td>

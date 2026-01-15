@@ -1,4 +1,4 @@
-z/**
+/**
  * This file is part of the OpenBOAT project at Harbin Institute of Technology (HIT)
  * and is contributed to the CANN Open Software.
  *
