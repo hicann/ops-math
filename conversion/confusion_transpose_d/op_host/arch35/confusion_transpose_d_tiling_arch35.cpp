@@ -498,9 +498,9 @@ UINT16, UINT32, UINT64, FLOAT16, FLOAT and BF16 in ND format.",
                 Ops::Base::ToString(paramInfo_.xDtype).c_str()),
             return ge::GRAPH_FAILED);
     } else {
-        OP_LOGW(
+        OP_LOGE(
             tilingContext_->GetNodeName(),
-            "The input x's data format %s is not supported. We only support ND format, NZ format has been deprecated.",
+            "The input x's data format %s is not supported. We only support ND format.",
             Ops::Base::ToString(paramInfo_.xFormat).c_str());
         return ge::GRAPH_FAILED;
     }
