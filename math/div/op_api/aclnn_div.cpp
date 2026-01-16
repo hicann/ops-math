@@ -170,9 +170,10 @@ static aclnnStatus CompatibleInferDivModeDtype(
     const op::DataType selfDtype, const op::DataType otherDtype, const int mode, op::DataType& promoteType)
 {
     promoteType = op::PromoteType(selfDtype, otherDtype);
-    if (mode == MODE_TRUNC_DIV || mode == MODE_FLOOR_DIV) {
-        CHECK_RET(selfDtype != op::DataType::DT_COMPLEX128, ACLNN_ERR_PARAM_INVALID);
-        CHECK_RET(selfDtype != op::DataType::DT_COMPLEX64, ACLNN_ERR_PARAM_INVALID);
+    if ((mode == MODE_TRUNC_DIV || mode == MODE_FLOOR_DIV) &&
+        (promoteType == op::DataType::DT_COMPLEX128 || promoteType == op::DataType::DT_COMPLEX64)) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "promoteType do not support DT_COMPLEX128 or DT_COMPLEX64.");
+        return ACLNN_ERR_PARAM_INVALID;
     }
     // 根据mode分三种场景调用算子计算
     if (mode == MODE_FLOOR_DIV) {
