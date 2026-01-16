@@ -110,9 +110,11 @@
     
     - 完成自定义算子包安装后，执行命令如下：
         ```bash
-        bash build.sh --run_example ${op} ${mode} ${pkg_mode} [--vendor_name=${vendor_name}] [--soc=${soc_version}]
+        bash build.sh --run_example ${op} ${mode} ${pkg_mode} [--vendor_name=${vendor_name}] [--soc=${soc_version}] [--experimental]
         # 以Abs算子example执行为例
         # bash build.sh --run_example abs eager cust --vendor_name=custom
+        # 以Abs算子experimental执行为例
+        # bash build.sh --experimental --run_example abs eager cust --vendor_name=custom
         ```
     
         - \$\{op\}：表示待执行算子，算子名小写下划线形式，如abs。
@@ -120,6 +122,7 @@
         - \$\{pkg_mode\}：表示包模式，目前仅支持cust，即自定义算子包。         
         - \$\{vendor\_name\}（可选）：与构建的自定义算子包设置一致，默认名为custom。        
         - \$\{soc_version\}（可选）：表示NPU型号。
+        - \$\{experimental\}（可选）：表示执行用户保存在experimental贡献目录下的算子。
         
         说明：\$\{mode\}为graph时，不指定\$\{pkg_mode\}和\$\{vendor\_name\}
 
