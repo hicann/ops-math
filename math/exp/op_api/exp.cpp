@@ -66,11 +66,11 @@ static inline const aclTensor* ExpAiCpu(const aclTensor* self, aclTensor* out, a
 {
     L0_DFX(ExpAiCpu, self, out);
 
-    static internal::AicpuTaskSpace space("Exp", ge::DEPEND_IN_SHAPE, true);
-
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将AiCpu Exp算子加入任务队列
     // Exp是算子的OpType，self是算子的输入，out是算子的输出
-    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Exp, OP_ATTR_NAMES(), OP_INPUT(self), OP_OUTPUT(out));
+    static internal::AicpuTaskSpace space("Exp", ge::DEPEND_IN_SHAPE,
+        self->GetDataType() != ge::DataType::DT_COMPLEX64);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Exp, OP_ATTR_NAMES(), OP_INPUT(self), OP_OUTPUT(out)); 
     OP_CHECK(
         ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ExpAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
         return nullptr);
