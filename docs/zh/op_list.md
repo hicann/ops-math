@@ -300,7 +300,7 @@
     <td>√</td>
     <td>√</td>
     <td>×</td>
-    <td>×</td>
+    <td>√</td>
     <td>AI Core</td>
     <td>该算子通过对输入张量的深度（通道）维度进行重新排列，将其转换为空间维度（高度和宽度）。具体来说，它将输入张量的深度维度按照指定的块大小（block_size）进行划分，并将这些深度块重新排列到空间维度中，从而增加空间维度的大小，同时减少通道维度的深度。</td>
   </tr>
@@ -506,7 +506,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/accumulate_nv2">accumulate_nv2</a></td>
+    <td><a href="../../math/accumulate_nv2/README.md">accumulate_nv2</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -526,7 +526,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/acosh">acosh</a></td>
+    <td><a href="../../math/acosh/README.md">acosh</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -626,7 +626,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/asin">asin</a></td>
+    <td><a href="../../math/asin/README.md">asin</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -636,7 +636,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/asinh">asinh</a></td>
+    <td><a href="../../math/asinh/README.md">asinh</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -656,7 +656,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/atan2">atan2</a></td>
+    <td><a href="../../math/atan2/README.md">atan2</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -666,7 +666,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/atanh">atanh</a></td>
+    <td><a href="../../math/atanh/README.md">atanh</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -676,7 +676,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/axpy">axpy</a></td>
+    <td><a href="../../math/axpy/README.md">axpy</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -686,7 +686,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/axpy_v2">axpy_v2</a></td>
+    <td><a href="../../math/axpy_v2/README.md">axpy_v2</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -716,7 +716,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/bitwise_not">bitwise_not</a></td>
+    <td><a href="../../math/bitwise_not/README.md">bitwise_not</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -736,7 +736,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/bitwise_xor">bitwise_xor</a></td>
+    <td><a href="../../math/bitwise_xor/README.md">bitwise_xor</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -766,7 +766,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/complex">complex</a></td>
+    <td><a href="../../math/complex/README.md">complex</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -776,7 +776,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/cos">cos</a></td>
+    <td><a href="../../math/cos/README.md">cos</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -786,7 +786,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/cosh">cosh</a></td>
+    <td><a href="../../math/cosh/README.md">cosh</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -796,7 +796,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/cummax">cummax</a></td>
+    <td><a href="../../math/cummax/README.md">cummax</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -806,7 +806,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/cummin">cummin</a></td>
+    <td><a href="../../math/cummin/README.md">cummin</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -816,7 +816,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/cumprod">cumprod</a></td>
+    <td><a href="../../math/cumprod/README.md">cumprod</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -836,7 +836,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/cumsum_cube">cumsum_cube</a></td>
+    <td><a href="../../math/cumsum_cube/README.md">cumsum_cube</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -846,17 +846,27 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/div">div</a></td>
+    <td><a href="../../math/div/README.md">div</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>张量除法计算。</td>
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/dot">dot</a></td>
+    <td><a href="../../math/div_no_nan/README.md">div_no_nan</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>张量除法计算, 在分母可能为0的情况下，可以帮助避免由于分母为0导致的NaN值问题。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/dot/README.md">dot</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -876,7 +886,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/erf">erf</a></td>
+    <td><a href="../../math/erf/README.md">erf</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -886,7 +896,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/erfc">erfc</a></td>
+    <td><a href="../../math/erfc/README.md">erfc</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -916,7 +926,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/expand">expand</a></td>
+    <td><a href="../../math/expand/README.md">expand</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -926,7 +936,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/expm1">expm1</a></td>
+    <td><a href="../../math/expm1/README.md">expm1</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -936,7 +946,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/eye">eye</a></td>
+    <td><a href="../../math/eye/README.md">eye</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -976,7 +986,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/gcd">gcd</a></td>
+    <td><a href="../../math/gcd/README.md">gcd</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -986,7 +996,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/ger">ger</a></td>
+    <td><a href="../../math/ger/README.md">ger</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1006,7 +1016,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/greater_equal">greater_equal</a></td>
+    <td><a href="../../math/greater_equal/README.md">greater_equal</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1016,7 +1026,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/invert">invert</a></td>
+    <td><a href="../../math/invert/README.md">invert</a></td>
     <td>√</td>
     <td>√</td>
     <td>×</td>
@@ -1056,7 +1066,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/kl_div_v2">kl_div_v2</a></td>
+    <td><a href="../../math/kl_div_v2/README.md">kl_div_v2</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1106,7 +1116,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/log1p">log1p</a></td>
+    <td><a href="../../math/log1p/README.md">log1p</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1116,7 +1126,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/log_add_exp">log_add_exp</a></td>
+    <td><a href="../../math/log_add_exp/README.md">log_add_exp</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1166,7 +1176,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/maximum">maximum</a></td>
+    <td><a href="../../math/maximum/README.md">maximum</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1176,7 +1186,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/minimum">minimum</a></td>
+    <td><a href="../../math/minimum/README.md">minimum</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1186,7 +1196,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/mod">mod</a></td>
+    <td><a href="../../math/mod/README.md">mod</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1196,7 +1206,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/mul">mul</a></td>
+    <td><a href="../../math/mul/README.md">mul</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1206,7 +1216,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/muls">muls</a></td>
+    <td><a href="../../math/muls/README.md">muls</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1216,7 +1226,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/nan_to_num">nan_to_num</a></td>
+    <td><a href="../../math/nan_to_num/README.md">nan_to_num</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1226,7 +1236,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/neg">neg</a></td>
+    <td><a href="../../math/neg/README.md">neg</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1246,7 +1256,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/one_hot">one_hot</a></td>
+    <td><a href="../../math/one_hot/README.md">one_hot</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1266,7 +1276,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/pdist">pdist</a></td>
+    <td><a href="../../math/pdist/README.md">pdist</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1276,7 +1286,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/pow">pow</a></td>
+    <td><a href="../../math/pow/README.md">pow</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1286,7 +1296,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/range">range</a></td>
+    <td><a href="../../math/range/README.md">range</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1296,7 +1306,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/real">real</a></td>
+    <td><a href="../../math/real/README.md">real</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1326,7 +1336,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/reduce_all">reduce_all</a></td>
+    <td><a href="../../math/reduce_all/README.md">reduce_all</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1336,7 +1346,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/reduce_any">reduce_any</a></td>
+    <td><a href="../../math/reduce_any/README.md">reduce_any</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1346,7 +1356,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/reduce_log_sum">reduce_log_sum</a></td>
+    <td><a href="../../math/reduce_log_sum/README.md">reduce_log_sum</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1356,7 +1366,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/reduce_log_sum_exp">reduce_log_sum_exp</a></td>
+    <td><a href="../../math/reduce_log_sum_exp/README.md">reduce_log_sum_exp</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1366,7 +1376,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/reduce_max">reduce_max</a></td>
+    <td><a href="../../math/reduce_max/README.md">reduce_max</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1386,7 +1396,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/reduce_min">reduce_min</a></td>
+    <td><a href="../../math/reduce_min/README.md">reduce_min</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1396,7 +1406,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/reduce_nansum">reduce_nansum</a></td>
+    <td><a href="../../math/reduce_nansum/README.md">reduce_nansum</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1406,7 +1416,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/reduce_prod">reduce_prod</a></td>
+    <td><a href="../../math/reduce_prod/README.md">reduce_prod</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1416,7 +1426,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/reduce_std_v2">reduce_std_v2</a></td>
+    <td><a href="../../math/reduce_std_v2/README.md">reduce_std_v2</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1426,7 +1436,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/reduce_std_v2_update">reduce_std_v2_update</a></td>
+    <td><a href="../../math/reduce_std_v2_update/README.md">reduce_std_v2_update</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1436,7 +1446,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/reduce_std_with_mean">reduce_std_with_mean</a></td>
+    <td><a href="../../math/reduce_std_with_mean/README.md">reduce_std_with_mean</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1446,7 +1456,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/reduce_sum_op">reduce_sum_op</a></td>
+    <td><a href="../../math/reduce_sum_op/README.md">reduce_sum_op</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1456,7 +1466,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/reduce_var">reduce_var</a></td>
+    <td><a href="../../math/reduce_var/README.md">reduce_var</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1486,7 +1496,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/rsqrt">rsqrt</a></td>
+    <td><a href="../../math/rsqrt/README.md">rsqrt</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1496,7 +1506,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/scale">scale</a></td>
+    <td><a href="../../math/scale/README.md">scale</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1516,7 +1526,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/select">select</a></td>
+    <td><a href="../../math/select/README.md">select</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1526,7 +1536,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/select_v2">select_v2</a></td>
+    <td><a href="../../math/select_v2/README.md">select_v2</a></td>
     <td>√</td>
     <td>√</td>
     <td>×</td>
@@ -1546,7 +1556,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/sign_bits_pack">sign_bits_pack</a></td>
+    <td><a href="../../math/sign_bits_pack/README.md">sign_bits_pack</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1556,7 +1566,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/sign_bits_unpack">sign_bits_unpack</a></td>
+    <td><a href="../../math/sign_bits_unpack/README.md">sign_bits_unpack</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1566,7 +1576,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/silent_check">silent_check</a></td>
+    <td><a href="../../math/silent_check/README.md">silent_check</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1576,7 +1586,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/sin">sin</a></td>
+    <td><a href="../../math/sin/README.md">sin</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1596,17 +1606,27 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/sort">sort</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td><a href="../../math/sort/README.md">sort</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
     <td>将输入tensor中的元素根据指定维度进行升序/降序， 并且返回对应的index值。</td>
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/rsqrt_grad">rsqrt_grad</a></td>
+    <td><a href="../../math/sort_with_index/README.md">sort_with_index</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>将输入tensor按照元素值大小进行排序，index值跟随对应元素值进行排序。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/rsqrt_grad/README.md">rsqrt_grad</a></td>
     <td>√</td>
     <td>√</td>
     <td>×</td>
@@ -1636,7 +1656,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/tan">tan</a></td>
+    <td><a href="../../math/tan/README.md">tan</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1656,7 +1676,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/tanh_grad">tanh_grad</a></td>
+    <td><a href="../../math/tanh_grad/README.md">tanh_grad</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1666,7 +1686,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/tensor_equal">tensor_equal</a></td>
+    <td><a href="../../math/tensor_equal/README.md">tensor_equal</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1676,7 +1696,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/tile">tile</a></td>
+    <td><a href="../../math/tile/README.md">tile</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1686,7 +1706,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/triangular_solve">triangular_solve</a></td>
+    <td><a href="../../math/triangular_solve/README.md">triangular_solve</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1696,7 +1716,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/trunc">trunc</a></td>
+    <td><a href="../../math/trunc/README.md">trunc</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1706,7 +1726,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/x_log_y">x_log_y</a></td>
+    <td><a href="../../math/x_log_y/README.md">x_log_y</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1726,7 +1746,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/as_strided">as_strided</a></td>
+    <td><a href="../../conversion/as_strided/README.md">as_strided</a></td>
     <td>√</td>
     <td>√</td>
     <td>×</td>
@@ -1736,7 +1756,17 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/broadcast_to">broadcast_to</a></td>
+    <td><a href="../../conversion/assign/README.md">assign</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>将一个输入tensor的值填充到另一个输入tensor中。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/broadcast_to/README.md">broadcast_to</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1756,7 +1786,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/confusion_transpose_d">confusion_transpose_d</a></td>
+    <td><a href="../../conversion/confusion_transpose_d/README.md">confusion_transpose_d</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1766,7 +1796,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/contiguous">contiguous</a></td>
+    <td><a href="../../conversion/contiguous/README.md">contiguous</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1816,7 +1846,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/mirror_pad">mirror_pad</a></td>
+    <td><a href="../../conversion/mirror_pad/README.md">mirror_pad</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1826,7 +1856,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/npu_format_cast">npu_format_cast</a></td>
+    <td><a href="../../conversion/npu_format_cast/README.md">npu_format_cast</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1846,7 +1876,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/pad">pad</a></td>
+    <td><a href="../../conversion/pad/README.md">pad</a></td>
     <td>×</td>
     <td>×</td>
     <td>√</td>
@@ -1856,7 +1886,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/pad_v3">pad_v3</a></td>
+    <td><a href="../../conversion/pad_v3/README.md">pad_v3</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1876,7 +1906,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/reshape">reshape</a></td>
+    <td><a href="../../conversion/reshape/README.md">reshape</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1886,7 +1916,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/roll">roll</a></td>
+    <td><a href="../../conversion/roll/README.md">roll</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1896,13 +1926,23 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/slice">slice</a></td>
+    <td><a href="../../conversion/slice/README.md">slice</a></td>
     <td>√</td>
     <td>√</td>
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
     <td>根据给定的范围和步长，从输入张量中提取子张量。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/split/README.md">split</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>将张量沿指定维度split_dim平均拆分为num_split份更小的张量。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -1916,7 +1956,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/squeeze">squeeze</a></td>
+    <td><a href="../../conversion/squeeze/README.md">squeeze</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1926,7 +1966,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/strided_slice">strided_slice</a></td>
+    <td><a href="../../conversion/strided_slice/README.md">strided_slice</a></td>
     <td>√</td>
     <td>√</td>
     <td>×</td>
@@ -1936,7 +1976,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/strided_slice_grad">strided_slice_grad</a></td>
+    <td><a href="../../conversion/strided_slice_grad/README.md">strided_slice_grad</a></td>
     <td>√</td>
     <td>√</td>
     <td>×</td>
@@ -1946,7 +1986,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/strided_slice_v3">strided_slice_v3</a></td>
+    <td><a href="../../conversion/strided_slice_v3/README.md">strided_slice_v3</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -1956,7 +1996,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/tensor_move">tensor_move</a></td>
+    <td><a href="../../conversion/tensor_move/README.md">tensor_move</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -1976,7 +2016,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/transpose">transpose</a></td>
+    <td><a href="../../conversion/transpose/README.md">transpose</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -2006,7 +2046,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/unsqueeze">unsqueeze</a></td>
+    <td><a href="../../conversion/unsqueeze/README.md">unsqueeze</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -2016,7 +2056,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/view_copy">view_copy</a></td>
+    <td><a href="../../conversion/view_copy/README.md">view_copy</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>
@@ -2066,7 +2106,7 @@
   </tr>
   <tr>
     <td>random</td>
-    <td><a href="../../random/dropout_do_mask">dropout_do_mask</a></td>
+    <td><a href="../../random/drop_out_do_mask/README.md">drop_out_do_mask</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -2076,7 +2116,7 @@
   </tr>
   <tr>
     <td>random</td>
-    <td><a href="../../random/dropout_v3">dropout_v3</a></td>
+    <td><a href="../../random/drop_out_v3/README.md">drop_out_v3</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -2086,7 +2126,7 @@
   </tr>
   <tr>
     <td>random</td>
-    <td><a href="../../random/stateless_bernoulli">stateless_bernoulli</a></td>
+    <td><a href="../../random/stateless_bernoulli/README.md">stateless_bernoulli</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -2096,7 +2136,7 @@
   </tr>
   <tr>
     <td>random</td>
-    <td><a href="../../random/stateless_dropout_gen_mask">stateless_dropout_gen_mask</a></td>
+    <td><a href="../../random/stateless_drop_out_gen_mask/README.md">stateless_drop_out_gen_mask</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -2106,7 +2146,7 @@
   </tr>
   <tr>
     <td>random</td>
-    <td><a href="../../random/stateless_random_norm_v2">stateless_random_norm_v2</a></td>
+    <td><a href="../../random/stateless_random_norm_v2/README.md">stateless_random_norm_v2</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -2116,7 +2156,7 @@
   </tr>
   <tr>
     <td>random</td>
-    <td><a href="../../random/stateless_random_uniform_v2">stateless_random_uniform_v2</a></td>
+    <td><a href="../../random/stateless_random_uniform_v2/README.md">stateless_random_uniform_v2</a></td>
     <td>√</td>
     <td>√</td>
     <td>×</td>

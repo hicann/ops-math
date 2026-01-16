@@ -185,6 +185,9 @@
 | [aclnnReplicationPad1d](../../conversion/pad_v3/docs/aclnnReplicationPad1d.md) | 使用输入边界填充输入tensor的最后一维。                       | 默认确定性实现|
 | [aclnnReplicationPad2d](../../conversion/pad_v3/docs/aclnnReplicationPad2d.md) | 使用输入边界填充输入tensor的最后两维。                       | 默认确定性实现|
 | [aclnnReplicationPad3d](../../conversion/pad_v3/docs/aclnnReplicationPad3d.md) | 使用输入边界填充输入tensor的最后三维。                       | 默认确定性实现|
+| [aclnnReflectionPad1d](./docs/aclnnReflectionPad1d.md) | 调用REFLECT情况下的mirror_pad算子，填充输入tensor的最后一维。 | 默认确定性实现|
+| [aclnnReflectionPad2d](./docs/aclnnReflectionPad2d.md) | 调用REFLECT情况下的mirror_pad算子，填充输入tensor的最后两维。 | 默认确定性实现|
+| [aclnnReflectionPad3d](./docs/aclnnReflectionPad3d.md) | 调用REFLECT情况下的mirror_pad算子，填充输入tensor的最后三维。 | 默认确定性实现|
 | [aclnnReplicationPad1dBackward](../../conversion/pad_v3_grad_replicate/docs/aclnnReplicationPad1dBackward.md) | replication_pad1d的反向传播。                                | 默认确定性实现|
 | [aclnnReplicationPad2dBackward](../../conversion/pad_v3_grad_replicate/docs/aclnnReplicationPad2dBackward.md) | replication_pad2d的反向传播, 前向计算参考aclnnReplicationPad2d。 | 默认确定性实现|
 | [aclnnReplicationPad3dBackward](../../conversion/pad_v3_grad_replication/docs/aclnnReplicationPad3dBackward.md) | 计算aclnnReplicationPad3d的反向传播。                        | 默认确定性实现|
