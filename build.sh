@@ -889,6 +889,15 @@ parse_changed_files() {
   COMPILED_OPS=$(python3 scripts/ci/parse_changed_ops.py $CHANGED_FILES "$ENABLE_EXPERIMENTAL")
   echo "related ops "$COMPILED_OPS
 
+  if [[ -z $COMPILED_OPS ]]; then
+    if [[ "$ENABLE_EXPERIMENTAL" == "TRUE" ]]; then
+      COMPILED_OPS='log'
+	else
+	  COMPILED_OPS='is_finite'
+	fi
+	echo "No ops changed found, set op $COMPILED_OPS as default."
+  fi
+
   if [[ "$ENABLE_PACKAGE" == "TRUE" ]];then
     return
   fi
