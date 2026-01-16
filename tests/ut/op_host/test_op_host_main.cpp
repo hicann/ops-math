@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <filesystem>
 #include <gtest/gtest.h>
 #include "platform/platform_info.h"
 #include "base/registry/op_impl_space_registry_v2.h"
@@ -16,23 +17,26 @@ using namespace std;
 
 class OpHostUtEnvironment : public testing::Environment {
 public:
-    OpHostUtEnvironment() {}
-    virtual void SetUp() {
+    OpHostUtEnvironment(char** argv) : argv_(argv)
+    {}
+    virtual void SetUp()
+    {
         cout << "Global Environment SetpUp." << endl;
 
-        fe::OptionalInfos opti_compilation_infos_ge;
-        opti_compilation_infos_ge.Init();
-        opti_compilation_infos_ge.SetSocVersion("soc_version");
-        fe::PlatformInfoManager::GeInstance().SetOptionalCompilationInfo(opti_compilation_infos_ge);
+        fe::OptionalInfos optiCompilation;
+        optiCompilation.Init();
+        optiCompilation.SetSocVersion("soc_version");
+        fe::PlatformInfoManager::GeInstance().SetOptionalCompilationInfo(optiCompilation);
 
         /* load libophost.so for init tiling funcs and infershape funcs */
-        const char* buildPath = std::getenv("BUILD_PATH");
-        string opHostSoPath;
-        if (buildPath != nullptr) {
-            opHostSoPath = buildPath + string("/tests/ut/op_host/libophost_math_ut.so");
+        std::filesystem::path currDir = argv_[0];
+        if (currDir.is_relative()) {
+            currDir = std::filesystem::weakly_canonical(std::filesystem::current_path() / currDir);
         } else {
-            opHostSoPath = "./libophost_math_ut.so";
+            currDir = std::filesystem::canonical(currDir);
         }
+
+        string opHostSoPath = currDir.parent_path().string() + string("/libophost_math_ut.so");
         gert::OppSoDesc oppSoDesc({ge::AscendString(opHostSoPath.c_str())}, "op_host_so");
         shared_ptr<gert::OpImplSpaceRegistryV2> opImplSpaceRegistryV2 = make_shared<gert::OpImplSpaceRegistryV2>();
         if (opImplSpaceRegistryV2->AddSoToRegistry(oppSoDesc) == ge::GRAPH_FAILED) {
@@ -43,13 +47,18 @@ public:
         gert::DefaultOpImplSpaceRegistryV2::GetInstance().SetSpaceRegistry(opImplSpaceRegistryV2);
     }
 
-    virtual void TearDown() {
+    virtual void TearDown()
+    {
         cout << "Global Environment TearDown" << endl;
     }
+
+private:
+    char** argv_;
 };
 
-int main(int argc, char **argv) {
-  testing::InitGoogleTest(&argc,argv);
-  testing::AddGlobalTestEnvironment(new OpHostUtEnvironment());
-  return RUN_ALL_TESTS();
+int main(int argc, char** argv)
+{
+    testing::InitGoogleTest(&argc, argv);
+    testing::AddGlobalTestEnvironment(new OpHostUtEnvironment(argv));
+    return RUN_ALL_TESTS();
 }

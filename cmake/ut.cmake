@@ -143,7 +143,9 @@ if(UT_TEST_ALL OR OP_KERNEL_AICPU_UT)
     if(NOT TARGET ${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj)
         add_library(${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj OBJECT ${UT_PATH}/empty.cpp)
     endif()
-    target_link_libraries(${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj PRIVATE Eigen3::EigenMath gcov -ldl)
+    target_link_libraries(${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj PRIVATE
+      Eigen3::EigenMath gcov -ldl
+    )
     target_sources(${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj PRIVATE ${OP_KERNEL_AICPU_UT_UTILS_SRC})
 
     ## add opkernel ut cases shared lib: libmath_aicpu_op_kernel_ut_cases.so
@@ -151,7 +153,6 @@ if(UT_TEST_ALL OR OP_KERNEL_AICPU_UT)
         $<TARGET_OBJECTS:${AICPU_OP_KERNEL_MODULE_NAME}_common_obj>
         $<TARGET_OBJECTS:${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj>
     )
-    message(STATUS ">>>> ut.cmake Defined targets: ${AICPU_OP_KERNEL_MODULE_NAME}_cases, ${ASCEND_DIR}")
 
     # 链接静态库时使用 whole-archive，保证 RegistCpuKernel 被拉入
     target_link_libraries(${AICPU_OP_KERNEL_MODULE_NAME}_cases PRIVATE
@@ -233,10 +234,14 @@ if(UT_TEST_ALL OR OP_HOST_UT OR OP_API_UT)
         return()
       endif()
 
+      file(GLOB OPHOST_TILING_CASES_SRC ${MODULE_DIR}/test_*_tiling.cpp ${MODULE_DIR}/${MODULE_TILING_DIR}/test_*_tiling*.cpp)
+      if(NOT OPHOST_TILING_CASES_SRC)
+        return()
+      endif()
+
       if(NOT TARGET ${MODULE_UT_NAME}_cases_obj)
         add_library(${MODULE_UT_NAME}_cases_obj OBJECT)
       endif()
-      file(GLOB OPHOST_TILING_CASES_SRC ${MODULE_DIR}/test_*_tiling.cpp ${MODULE_DIR}/${MODULE_TILING_DIR}/test_*_tiling*.cpp)
       target_sources(${MODULE_UT_NAME}_cases_obj ${MODULE_MODE} ${OPHOST_TILING_CASES_SRC})
     endif()
 
@@ -251,10 +256,14 @@ if(UT_TEST_ALL OR OP_HOST_UT OR OP_API_UT)
         return()
       endif()
 
+      file(GLOB OPHOST_INFERSHAPE_CASES_SRC ${MODULE_DIR}/test_*_infershape.cpp)
+      if(NOT OPHOST_INFERSHAPE_CASES_SRC)
+        return()
+      endif()
+
       if(NOT TARGET ${MODULE_UT_NAME}_cases_obj)
         add_library(${MODULE_UT_NAME}_cases_obj OBJECT)
       endif()
-      file(GLOB OPHOST_INFERSHAPE_CASES_SRC ${MODULE_DIR}/test_*_infershape.cpp)
       target_sources(${MODULE_UT_NAME}_cases_obj ${MODULE_MODE} ${OPHOST_INFERSHAPE_CASES_SRC})
     endif()
 
@@ -275,10 +284,14 @@ if(UT_TEST_ALL OR OP_HOST_UT OR OP_API_UT)
         return()
       endif()
 
+      file(GLOB OPAPI_CASES_SRC ${MODULE_DIR}/test_aclnn_*.cpp)
+      if(NOT OPAPI_CASES_SRC)
+        return()
+      endif()
+
       if(NOT TARGET ${MODULE_UT_NAME}_cases_obj)
         add_library(${MODULE_UT_NAME}_cases_obj OBJECT)
       endif()
-      file(GLOB OPAPI_CASES_SRC ${MODULE_DIR}/test_aclnn_*.cpp)
       target_sources(${MODULE_UT_NAME}_cases_obj ${MODULE_MODE} ${OPAPI_CASES_SRC})
     endif()
   endfunction()
@@ -343,7 +356,8 @@ if(UT_TEST_ALL OR OP_KERNEL_UT)
       target_link_libraries(
         ${MODULE_OP_NAME}_${socVersion}_tiling_tmp
         PRIVATE -Wl,--no-as-needed $<$<TARGET_EXISTS:opsbase>:opsbase> -Wl,--as-needed -Wl,--whole-archive tiling_api rt2_registry_static
-                -Wl,--no-whole-archive 
+                -Wl,--no-whole-archive
+                $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
         )
 
       # gen ascendc tiling head files
@@ -444,16 +458,14 @@ endif()
 
 if(UT_TEST_ALL OR OP_KERNEL_AICPU_UT)
   include(${PROJECT_SOURCE_DIR}/cmake/third_party/gtest.cmake)
-  function(AddAicpuOpTestCase opName)
+  function(add_aicpu_op_test_case opName)
     get_filename_component(UT_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
 
     ## find kernel file
     file(GLOB KernelFile "${PROJECT_SOURCE_DIR}/*/${opName}/op_kernel_aicpu/${opName}_aicpu.cpp")
 
     ## add object: ${opName}_cases_obj
-    message(STATUS "aicpu kernel UT_DIR: ${UT_DIR}")
     file(GLOB OPKERNEL_CASES_SRC ${UT_DIR}/${opName}/tests/ut/op_kernel_aicpu/test_${opName}*.cpp)
-    
     message(STATUS "aicpu kernel info: ${opName}, ${KernelFile}, ${OPKERNEL_CASES_SRC}")
     if(NOT KernelFile OR NOT OPKERNEL_CASES_SRC)
       return()

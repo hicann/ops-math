@@ -100,7 +100,7 @@ def get_file_change_info_from_ci(changed_file_info_from_ci, ops_path):
             if soc_match:
                 matched_key = soc_match.group(1)
                 soc_info.add(SOC_MAPPING[matched_key])
-            
+
     return FileChangeInfo(op_host_changed_files=op_host_changed_files,
                           op_api_changed_files=op_api_changed_files,
                           op_graph_changed_files=op_graph_changed_files, 

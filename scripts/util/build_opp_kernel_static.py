@@ -207,6 +207,7 @@ class OpResource:
     """算子资源"""
     # tiling 注册函数
     tiling_register: str = field(default=None)
+    extend_register: list = field(default_factory=list)
     # InferShape 注册函数
     infer_shape_register: str = field(default=None)
     # 知识库注册
@@ -239,6 +240,11 @@ class GenOpResourceIni:
     TILING_REG_DECL_FMT = """
 namespace {namespace} {{
     extern gert::OpImplRegisterV2 {func_name};
+}}
+"""
+    EXTEND_REG_DECL_FMT = """
+namespace {namespace} {{
+    extern uint32_t {func_name};
 }}
 """
     TILING_REG_RES_FUNC_FMT = """
@@ -285,8 +291,15 @@ const OP_RUNTIME_KB_RES& {op_type}TuningResource() {{
     return resource;
 }}
 """
+    EXTLEND_REG_RES_FUNC_FMT = """
+void * {op_type}ExtendRegisterResource() {{
+    static std::vector<void *> resource = {{{reference_code}}};
+    return &resource;
+}}
+"""
     OP_RESOURCE_CPP_FMT = """/******************{op_type}算子的所有资源**********************/
 #include "register/op_impl_registry.h"
+#include "base/registry/op_impl_space_registry_v2.h"
 #include <vector>
 #include <tuple>
 #include <map>
@@ -299,9 +312,19 @@ using OP_RUNTIME_KB_RES = std::vector<OP_RES>;
 using OP_RESOURCES  = std::map<ge::AscendString,
     std::tuple<OP_HOST_FUNC_HANDLE, OP_BINARY_RES, OP_RUNTIME_KB_RES>>;
 
+__attribute__((constructor))
+void func_math_static_{op_type}() {{
+    auto opImplSpaceRegistryV2 = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    if(opImplSpaceRegistryV2 == nullptr) {{
+        opImplSpaceRegistryV2 = std::make_shared<gert::OpImplSpaceRegistryV2>();
+        gert::DefaultOpImplSpaceRegistryV2::GetInstance().SetSpaceRegistry(opImplSpaceRegistryV2);
+    }}
+}}
 // 资源声明
 // Tiling
 {tiling_declaration}
+// extend resource
+{extend_declaration}
 // InferShape
 {infer_shape_declaration}
 // Tuning
@@ -313,6 +336,8 @@ using OP_RESOURCES  = std::map<ge::AscendString,
 {kernel_files_declaration}
 // kb 二进制
 {tuning_kb_declaration}
+// extend resource func
+{extend_reg_func}
 
 namespace l0op {{
 // 资源函数
@@ -344,6 +369,20 @@ namespace l0op {{
                 op_type = op_type[len(prefix):]
             if suffix:
                 op_type = op_type[:-len(suffix)]
+            yield op_type, symbol
+
+    @staticmethod
+    def _extract_op_symbol_pair_v2(symbol_file: str, search_key: str, prefix: str):
+        symbol_ret = shell_checkout_key_func(symbol_file, search_key)
+        for symbol in symbol_ret.splitlines():
+            symbol_name = symbol.split("::")[-1]
+            if not (symbol_name.startswith(prefix)):
+                log.warning(f"symbol not satisfied with the format:{prefix}, skip")
+                continue
+            op_type = symbol_name
+            if prefix:
+                op_type = op_type[len(prefix):]
+            op_type = op_type.split("_")[0]
             yield op_type, symbol
 
     @staticmethod
@@ -415,7 +454,7 @@ const OP_BINARY_RES& {op_type}KernelResource() {{
                 op_json_content = json.load(op_json_fd)
             bin_json_file = self._binary_path / op_json_content["binList"][0]["binInfo"]["jsonFilePath"]
             ops_path = os.path.dirname(bin_json_file)
-            ops = bin_json_file.name.split("_")[0]
+            ops = op_json_content["binList"][0]["simplifiedKey"][0].split("/")[0]
             self._op_res[ops].binary_config_files.append(json_path)
             self._op_res[ops].kernel_files.extend(sorted(Path(ops_path).iterdir()))
 
@@ -459,6 +498,10 @@ const OP_BINARY_RES& {op_type}KernelResource() {{
                 ophost_symbol, "op_impl_register_optiling_", "op_impl_register_optiling_", ""
         ):
             self._op_res[op_type].tiling_register = symbol
+        for op_type, symbol in self._extract_op_symbol_pair_v2(
+                ophost_symbol, "op_impl_register_template_", "op_impl_register_template_"
+        ):
+            self._op_res[op_type].extend_register.append(symbol)
         # 知识库
         for op_type, symbol in self._extract_op_symbol_pair(
                 ophost_symbol, "BankKeyRegistryInterf", "g_", "BankKeyRegistryInterf"
@@ -486,6 +529,16 @@ const OP_BINARY_RES& {op_type}KernelResource() {{
         tiling_declaration = self.TILING_REG_DECL_FMT.format_map(symbol_map) if func_name else ""
         tiling_reg_func = self.TILING_REG_RES_FUNC_FMT.format_map(symbol_map) if func_name else ""
 
+        reference_code_list = []
+        extend_declaration = ""
+        for symbol in self._op_res[op_type].extend_register:
+            namespace, func_name, reference_code = self._extract_register_symbol(symbol)
+            if func_name:
+                extend_declaration += self.EXTEND_REG_DECL_FMT.format(namespace=namespace, func_name=func_name)
+                reference_code_list.append(reference_code)
+        reference_code = ", ".join(reference_code_list)
+        extend_reg_func = self.EXTLEND_REG_RES_FUNC_FMT.format(op_type=op_type, reference_code=reference_code)
+
         # InferShape
         namespace, func_name, reference_code = self._extract_register_symbol(self._op_res[op_type].infer_shape_register)
         symbol_map = {
@@ -501,7 +554,9 @@ const OP_BINARY_RES& {op_type}KernelResource() {{
             "tiling_declaration": tiling_declaration,
             "infer_shape_declaration": infer_shape_declaration,
             "tiling_reg_func": tiling_reg_func,
-            "infer_shape_reg_func": infer_shape_reg_func,
+            "infer_shape_reg_func": infer_shape_reg_func,           
+            "extend_reg_func": extend_reg_func,
+            "extend_declaration": extend_declaration
         }
 
     def _gen_tuning_register_resouce_code(self, op_type: str):

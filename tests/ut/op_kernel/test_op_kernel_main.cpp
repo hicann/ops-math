@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <filesystem>
 #include <gtest/gtest.h>
 #include "base/registry/op_impl_space_registry_v2.h"
 
@@ -15,18 +16,22 @@ using namespace std;
 
 class OpKernelUtEnvironment : public testing::Environment {
 public:
-    OpKernelUtEnvironment() {}
-    virtual void SetUp() {
+    OpKernelUtEnvironment(char** argv) : argv_(argv)
+    {}
+    virtual void SetUp()
+    {
         cout << "Global Environment SetpUp." << endl;
 
         /* load libmath_op_kernel_ut_${socversion}_ut.so for init tiling funcs and infershape funcs */
-        const char* buildPath = std::getenv("BUILD_PATH");
-        if (buildPath == nullptr) {
-            cout << "getenv BUILD_PATH failed." << endl;
-            return;
-        }
 
-        string opKernelTilingSoPath = buildPath + string("/tests/ut/op_kernel/libmath_op_kernel_ut_tiling.so");
+        std::filesystem::path currDir = argv_[0];
+        if (currDir.is_relative()) {
+            currDir = std::filesystem::weakly_canonical(std::filesystem::current_path() / currDir);
+        } else {
+            currDir = std::filesystem::canonical(currDir);
+        }
+        string opKernelTilingSoPath = currDir.parent_path().string() + string("/libmath_op_kernel_ut_tiling.so");
+
         gert::OppSoDesc oppSoDesc({ge::AscendString(opKernelTilingSoPath.c_str())}, "math_op_kernel_ut_so");
         shared_ptr<gert::OpImplSpaceRegistryV2> opImplSpaceRegistryV2 = make_shared<gert::OpImplSpaceRegistryV2>();
         if (opImplSpaceRegistryV2->AddSoToRegistry(oppSoDesc) == ge::GRAPH_FAILED) {
@@ -37,14 +42,18 @@ public:
         gert::DefaultOpImplSpaceRegistryV2::GetInstance().SetSpaceRegistry(opImplSpaceRegistryV2);
     }
 
-    virtual void TearDown() {
+    virtual void TearDown()
+    {
         cout << "Global Environment TearDown" << endl;
     }
+
+private:
+    char** argv_;
 };
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     testing::InitGoogleTest(&argc, argv);
-    testing::AddGlobalTestEnvironment(new OpKernelUtEnvironment());
+    testing::AddGlobalTestEnvironment(new OpKernelUtEnvironment(argv));
     return RUN_ALL_TESTS();
 }

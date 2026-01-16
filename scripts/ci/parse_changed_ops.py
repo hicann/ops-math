@@ -69,12 +69,12 @@ def get_operator_info_from_ci(changed_file_info_from_ci, is_experimental):
             if ext in (".md",):
                 continue
             operator_name = extract_operator_name(line, is_experimental)
-
-            if operator_name:
-                changed_operators.add(operator_name)
-                if operator_name not in operator_file_map:
-                    operator_file_map[operator_name] = []
-                operator_file_map[operator_name].append(line)
+            if not operator_name:
+                continue
+            changed_operators.add(operator_name)
+            if operator_name not in operator_file_map:
+                operator_file_map[operator_name] = []
+            operator_file_map[operator_name].append(line)
 
     return OperatorChangeInfo(changed_operators=list(changed_operators), operator_file_map=operator_file_map)
 

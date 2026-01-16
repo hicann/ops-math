@@ -43,6 +43,7 @@ function(gen_ophost_symbol)
             -Wl,--no-whole-archive
             tiling_api
             -Wl,-Bsymbolic
+            runtime
     )
 
   target_link_directories(${OPHOST_NAME} PRIVATE ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64)
@@ -105,6 +106,7 @@ function(gen_opgraph_symbol)
             rt2_registry_static
             -Wl,--no-whole-archive
             -Wl,-Bsymbolic
+            runtime
     )
 
   target_link_directories(${OPGRAPH_NAME} PRIVATE ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64)
@@ -194,6 +196,7 @@ function(gen_cust_proto_symbol)
     return()
   endif()
   npu_op_library(cust_proto GRAPH)
+
   merge_graph_headers(TARGET cust_merge_ops_proto OUT_DIR ${ASCEND_GRAPH_CONF_DST})
   add_dependencies(cust_proto cust_merge_ops_proto)
   target_sources(
@@ -300,12 +303,10 @@ function(gen_onnx_plugin_symbol)
             -Wl,--as-needed
             -Wl,--whole-archive
             rt2_registry_static
-
             -Wl,--no-whole-archive
     )
 
   target_link_directories(${ONNX_PLUGIN_NAME} PRIVATE ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64)
-
 
   install(
     TARGETS ${ONNX_PLUGIN_NAME}

@@ -1,0 +1,157 @@
+# -----------------------------------------------------------------------------------------------------------
+# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# -----------------------------------------------------------------------------------------------------------
+
+# 分组编译，当前支持5个分组，需将每个算子配置到对应的分组里，此配置文件仅仅在CI上编译出包有效
+# 配置方式：math仓当前有三个子目录，分别为math、conversion、random，将对应目录内的算子按照字母表的顺序从前往后配置即可
+operator_group_1:
+  - abs
+  - add
+  - add_n
+  - addcdiv
+  - addcmul
+  - addr
+  - adjacent_difference
+  - arg_max_v2
+  - arg_max_with_value
+  - arg_min
+  - arg_min_with_value
+  - assign
+  - assign_add
+  - assign_sub
+  - axpy
+  - axpy_v2
+  - bias_add
+  - bias_add_grad
+  - bincount
+  - broadcast_to
+  - bitwise_and
+  - bitwise_or
+  - ceil
+  - cos
+  - cast
+  - cumsum
+  - diag_part
+  - tensor_move
+operator_group_2:
+  - div
+  - div_no_nan
+  - dot
+  - equal
+  - exp
+  - exp_segsum_grad
+  - eye
+  - floor
+  - floor_div
+  - floor_mod
+  - greater
+  - greater_equal
+  - grouped_bias_add_grad
+  - histogram_v2
+  - invert
+  - is_close
+  - is_finite
+  - is_inf
+  - is_nan
+  - is_neg_inf
+  - is_pos_inf
+  - lerp
+  - less
+  - less_equal
+  - lin_space
+  - log
+  - log1p
+operator_group_3:
+  - logical_and
+  - logical_not
+  - logical_or
+  - masked_scale
+  - maximum
+  - minimum
+  - mod
+  - mul
+  - muls
+  - neg
+  - non_finite_check
+  - not_equal
+  - one_hot
+  - ones_like
+  - pow
+  - pows
+  - range
+  - real_div
+  - reciprocal
+  - reduce_std_v2
+  - reduce_var
+operator_group_4:
+  - rfft1_d
+  - round
+  - rsqrt
+  - rsqrt_grad
+  - select
+  - select_v2
+  - sign
+  - sin
+  - sinkhorn
+  - sort
+  - sort_with_index
+  - sqrt
+  - sqrt_grad
+  - square
+  - square_sum_v1
+  - squared_difference
+  - sub
+  - tanh
+  - tanh_grad
+  - transform_bias_rescale_qkv
+  - as_strided
+  - tensor_equal
+  - cdist
+  - clip_by_value
+  - fused_mul_add_n
+  - space_to_depth
+operator_group_5:
+  - clip_by_value_v2
+  - concat
+  - concat_d
+  - concat_v2
+  - confusion_transpose_d
+  - depth_to_space
+  - fill
+  - fills
+  - masked_fill
+  - masked_select_v3
+  - matrix_diag
+  - mem_set_v2
+  - mirror_pad
+  - pack
+  - pad_v3
+  - reflection_pad3d_grad
+  - roll
+  - slice
+  - split
+  - split_v
+  - strided_slice
+  - strided_slice_assign_v2
+  - strided_slice_grad
+  - transpose
+  - tril
+  - triu
+  - trunc
+  - unpack
+  - zeros_like
+  - drop_out_do_mask
+  - drop_out_v3
+  - random_standard_normal_v2
+  - random_uniform_v2
+  - stateless_bernoulli
+  - stateless_drop_out_gen_mask
+  - stateless_random_normal_v2
+  - stateless_random_uniform_v2
+  - truncated_normal_v2

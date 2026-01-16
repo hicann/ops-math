@@ -232,7 +232,6 @@ uninstall_es_whl() {
     chmod u+w -R "${whl_install_dir_path}"/es_math 2> /dev/null
     chmod u+w -R "${whl_install_dir_path}"/es_math-*.dist-info 2> /dev/null
     whl_uninstall_package "${python_es_whl_name}" "${whl_install_dir_path}"
-    chmod u-w "${whl_install_dir_path}" 2> /dev/null
 }
 
 logandprint "[INFO]: Begin uninstall the opp module."

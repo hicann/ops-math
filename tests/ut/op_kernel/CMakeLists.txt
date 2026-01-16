@@ -46,6 +46,7 @@ if(UT_TEST_ALL OR OP_KERNEL_UT)
             )
         target_link_libraries(${OP_KERNEL_UT_EXE}_${socVersion} PRIVATE
                 $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
+                -ldl
                 -Wl,--no-as-needed
                     ${OP_KERNEL_MODULE_NAME}_${socVersion}_cases
                 -Wl,--as-needed

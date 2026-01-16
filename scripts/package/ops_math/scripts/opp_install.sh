@@ -332,8 +332,8 @@ install_whl_package() {
     else
         logandprint "[INFO]: ${_package_name} installed successfully!"
     fi
-    chmod -R "${BUILTIN_PERM}" "${_pythonlocalpath}"/es_math 2> /dev/null
-    chmod -R "${BUILTIN_PERM}" "${_pythonlocalpath}"/es_math-*.dist-info 2> /dev/null
+    chmod -R "${CUSTOM_PERM}" "${_pythonlocalpath}"/es_math 2> /dev/null
+    chmod -R "${CUSTOM_PERM}" "${_pythonlocalpath}"/es_math-*.dist-info 2> /dev/null
   else
     logandprint "[ERROR]: ERR_NO:0x0080;ERR_DES:install ${_package_name} failed, can not find the matched package for this platform."
     exit 1
@@ -344,10 +344,10 @@ install_es_whl()
 {
   local es_whl_path="${SOURCEDIR}/es_packages/whl/es_math-1.0.0-py3-none-any.whl"
   local python_es_whl_name="es_math"
+  chmod u+w "${TARGET_VERSION_DIR}/python" 2> /dev/null
   local whl_install_dir_path="${TARGET_VERSION_DIR}/python/site-packages"
   chmod u+w "${whl_install_dir_path}" 2> /dev/null
   install_whl_package "${es_whl_path}" "${python_es_whl_name}" "${whl_install_dir_path}"
-  chmod u-w "${whl_install_dir_path}" 2> /dev/null
 }
 
 add_init_py() {
@@ -370,7 +370,6 @@ add_init_py() {
 
 install_opp() {
   logandprint "[INFO]: Begin install opp module."
-
   comm_create_dir "${TARGET_SHARED_INFO_DIR}/${OPP_PLATFORM_DIR}" "${CREATE_DIR_PERM}" "${TARGET_USERNAME}:${TARGET_USERGROUP}" "${IS_FOR_ALL}"
 
   setenv
@@ -416,12 +415,6 @@ main() {
   chmod "${LOG_PATH_PERM}" "${COMM_LOG_DIR}" 2>/dev/null
   chmod "${LOG_FILE_PERM}" "${COMM_LOGFILE}" 2>/dev/null
   chmod "${LOG_FILE_PERM}" "${COMM_OPERATION_LOGFILE}" 2>/dev/null
-
-  if [ "$(id -u)" = "0" ]; then
-    chmod "${CUSTOM_PERM}" -R "${TARGET_OPP_BUILT_IN}" 2>/dev/null
-  else
-    chmod "${BUILTIN_PERM}" -R "${TARGET_OPP_BUILT_IN}" 2>/dev/null
-  fi
 
   chmod "${ONLYREAD_PERM}" "${TARGET_SHARED_INFO_DIR}/${OPP_PLATFORM_DIR}/scene.info" 2>/dev/null
   chmod "${ONLYREAD_PERM}" "${TARGET_SHARED_INFO_DIR}/${OPP_PLATFORM_DIR}/version.info" 2>/dev/null

@@ -29,7 +29,7 @@
         <block name="OpsMathInc"/>
     </block_info>
     <dir_info value="ops_math" install_path="ops_math" install_type="all">
-        <path value="share" install_mod="550"/>
+        <path value="share" install_mod="750"/>
         <path value="share/info" install_mod="750"/>
         <path value="share/info/ops_math" install_mod="550"/>
         <path value="share/info/ops_math/script" install_mod="550"/>
@@ -58,7 +58,7 @@
         <path value="opp/bin" install_mod="550"/>
         <path value="opp/include" install_mod="550"/>
         <path value="opp/lib64" install_mod="550"/>
-        <path value="python" install_mode="550"/>
-        <path value="python/site-packages" install_mode="550"/>
+        <path value="python" install_mode="750"/>
+        <path value="python/site-packages" install_mode="750"/>
     </dir_info>
 </config>

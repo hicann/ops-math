@@ -60,10 +60,8 @@ find_package_handle_standard_args(gtest
         GMOCK_STATIC_LIBRARY
         GMOCK_MAIN_STATIC_LIBRARY
         )
-message("gtest found:${gtest_FOUND}")
-
 if(gtest_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
-    message("gtest found in ${GTEST_INSTALL_PATH}, and not force rebuild cann third_party")
+    message(STATUS "Found gtest in ${GTEST_INSTALL_PATH}, and not force rebuild cann third_party")
 else()
     set(REQ_URL "https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz")
     set (gtest_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
@@ -73,7 +71,7 @@ else()
     ExternalProject_Add(third_party_gtest
             URL ${REQ_URL}
             TLS_VERIFY OFF
-            DOWNLOAD_DIR ${CANN_3RD_PKG_PATH}
+            DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
             CONFIGURE_COMMAND ${CMAKE_COMMAND}
             -DCMAKE_CXX_FLAGS=${gtest_CXXFLAGS}
             -DCMAKE_C_FLAGS=${gtest_CFLAGS}

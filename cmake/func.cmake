@@ -28,14 +28,16 @@ endfunction()
 # 添加infer object
 function(add_infer_modules)
   if(NOT TARGET ${OPHOST_NAME}_infer_obj)
-    if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
-      npu_op_library(${OPHOST_NAME}_infer_obj GRAPH)
+    add_library(${OPHOST_NAME}_infer_obj OBJECT)
+    if(ENABLE_CUSTOM)
+      string(TOUPPER "${VENDOR_NAME}" UPPER_VENDOR_NAME)
+      set(OP_SUBMOD_NAME "OPS_MATH_${UPPER_VENDOR_NAME}")
     else()
-      add_library(${OPHOST_NAME}_infer_obj OBJECT)
+      set(OP_SUBMOD_NAME "OPS_MATH")
     endif()
     target_include_directories(${OPHOST_NAME}_infer_obj PRIVATE ${OP_PROTO_INCLUDE})
     target_compile_definitions(
-      ${OPHOST_NAME}_infer_obj PRIVATE OPS_UTILS_LOG_SUB_MOD_NAME="OP_PROTO" OP_SUBMOD_NAME="OPS_MATH"
+      ${OPHOST_NAME}_infer_obj PRIVATE OPS_UTILS_LOG_SUB_MOD_NAME="OP_PROTO" OP_SUBMOD_NAME="${OP_SUBMOD_NAME}"
                                        $<$<BOOL:${ENABLE_TEST}>:ASCEND_OPSPROTO_UT> LOG_CPP
       )
     target_compile_options(
@@ -55,14 +57,16 @@ endfunction()
 # 添加tiling object
 function(add_tiling_modules)
   if(NOT TARGET ${OPHOST_NAME}_tiling_obj)
-    if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
-      npu_op_library(${OPHOST_NAME}_tiling_obj TILING)
+    add_library(${OPHOST_NAME}_tiling_obj OBJECT)
+    if(ENABLE_CUSTOM)
+      string(TOUPPER "${VENDOR_NAME}" UPPER_VENDOR_NAME)
+      set(OP_SUBMOD_NAME "OPS_MATH_${UPPER_VENDOR_NAME}")
     else()
-      add_library(${OPHOST_NAME}_tiling_obj OBJECT)
+      set(OP_SUBMOD_NAME "OPS_MATH")
     endif()
     target_include_directories(${OPHOST_NAME}_tiling_obj PRIVATE ${OP_TILING_INCLUDE})
     target_compile_definitions(
-      ${OPHOST_NAME}_tiling_obj PRIVATE OPS_UTILS_LOG_SUB_MOD_NAME="OP_TILING" OP_SUBMOD_NAME="OPS_MATH"
+      ${OPHOST_NAME}_tiling_obj PRIVATE OPS_UTILS_LOG_SUB_MOD_NAME="OP_TILING" OP_SUBMOD_NAME="${OP_SUBMOD_NAME}"
                                         $<$<BOOL:${ENABLE_TEST}>:ASCEND_OPTILING_UT> LOG_CPP
       )
     target_compile_options(
@@ -84,11 +88,7 @@ endfunction()
 # 添加opapi object
 function(add_opapi_modules)
   if(NOT TARGET ${OPHOST_NAME}_opapi_obj)
-    if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
-      add_library(${OPHOST_NAME}_opapi_obj OBJECT)
-    else()
-      add_library(${OPHOST_NAME}_opapi_obj OBJECT)
-    endif()
+    add_library(${OPHOST_NAME}_opapi_obj OBJECT)
     unset(opapi_ut_depends_inc)
     if(ENABLE_TEST)
       set(opapi_ut_depends_inc ${UT_PATH}/op_api/stub)
@@ -123,7 +123,6 @@ function(add_aicpu_kernel_modules)
       ${OPHOST_NAME}_aicpu_obj
       PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx17,intf_pub_cxx17>>
               $<BUILD_INTERFACE:dlog_headers>
-              # fixme ${AICPU_LINK}
       )
   endif()
 endfunction()
@@ -165,11 +164,7 @@ endfunction()
 
 function(add_op_graph_modules)
   if(NOT TARGET ${GRAPH_PLUGIN_NAME}_obj)
-    if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
-      npu_op_library(${GRAPH_PLUGIN_NAME}_obj GRAPH)
-    else()
-      add_library(${GRAPH_PLUGIN_NAME}_obj OBJECT)
-    endif()
+    add_library(${GRAPH_PLUGIN_NAME}_obj OBJECT)
     target_include_directories(${GRAPH_PLUGIN_NAME}_obj PRIVATE ${OP_PROTO_INCLUDE})
     target_compile_definitions(${GRAPH_PLUGIN_NAME}_obj PRIVATE OPS_UTILS_LOG_SUB_MOD_NAME="OP_GRAPH" LOG_CPP)
 
@@ -204,7 +199,7 @@ macro(add_modules_sources)
 
   # opapi l0 默认全部编译
   file(GLOB OPAPI_L0_SRCS ${SOURCE_DIR}/op_api/*.cpp)
-  list(FILTER OPAPI_L0_SRCS EXCLUDE REGEX "aclnn_")
+  list(FILTER OPAPI_L0_SRCS EXCLUDE REGEX ".*/aclnn_[^/]*$")
   if(OPAPI_L0_SRCS)
     add_opapi_modules()
     target_sources(${OPHOST_NAME}_opapi_obj PRIVATE ${OPAPI_L0_SRCS})
@@ -421,7 +416,7 @@ macro(add_all_modules_sources)
 
   # opapi l0 默认全部编译
   file(GLOB OPAPI_L0_SRCS ${SOURCE_DIR}/op_api/*.cpp)
-  list(FILTER OPAPI_L0_SRCS EXCLUDE REGEX "aclnn_")
+  list(FILTER OPAPI_L0_SRCS EXCLUDE REGEX ".*/aclnn_[^/]*$")
   if(OPAPI_L0_SRCS)
     add_opapi_modules()
     target_sources(${OPHOST_NAME}_opapi_obj PRIVATE ${OPAPI_L0_SRCS})
@@ -531,8 +526,8 @@ macro(add_all_modules_sources)
   endif()
   add_all_ut_sources(UT_TILING_DIR "${TILING_SOC_DIR}" OP_NAME ${OP_NAME})
 
-  # 添加plugin文件
-  file(GLOB ONNX_PLUGIN_SRCS ${SOURCE_DIR}/*_onnx_plugin.cpp)
+  #添加plugin文件
+  file(GLOB ONNX_PLUGIN_SRCS ${SOURCE_DIR}/framework/*_onnx_plugin.cpp)
   if (ONNX_PLUGIN_SRCS)
     add_onnx_plugin_modules()
     target_sources(${ONNX_PLUGIN_NAME}_obj PRIVATE ${ONNX_PLUGIN_SRCS})
@@ -544,23 +539,17 @@ macro(add_all_ut_sources)
   set(oneValueArgs UT_TILING_DIR OP_NAME)
   cmake_parse_arguments(MODULE "" "${oneValueArgs}" "" ${ARGN})
   set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-  file(GLOB TEST_OP_API_SRCS ${SOURCE_DIR}/tests/ut/op_api/*_aclnn*.cpp)
-  if(TEST_OP_API_SRCS AND (UT_TEST_ALL OR OP_API_UT))
+  if(UT_TEST_ALL OR OP_API_UT)
     add_modules_ut_sources(UT_NAME ${OP_API_MODULE_NAME} MODE PRIVATE DIR ${SOURCE_DIR}/tests/ut/op_api TILING_DIR ${MODULE_UT_TILING_DIR})
   endif()
 
-  file(GLOB TEST_OP_HOST_TILING_SRCS ${SOURCE_DIR}/tests/ut/op_host/*_tiling*.cpp ${SOURCE_DIR}/tests/ut/op_host/${MODULE_UT_TILING_DIR}/*_tiling*.cpp)
-  if(TEST_OP_HOST_TILING_SRCS AND (UT_TEST_ALL OR OP_HOST_UT))
+  if(UT_TEST_ALL OR OP_HOST_UT)
     add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE DIR ${SOURCE_DIR}/tests/ut/op_host TILING_DIR ${MODULE_UT_TILING_DIR})
-  endif()
-
-  file(GLOB TEST_OP_HOST_SHAPE_SRCS ${SOURCE_DIR}/tests/ut/op_host/*_infershape*.cpp)
-  if(TEST_OP_HOST_SHAPE_SRCS AND (UT_TEST_ALL OR OP_HOST_UT))
     add_modules_ut_sources(UT_NAME ${OP_INFERSHAPE_MODULE_NAME} MODE PRIVATE DIR ${SOURCE_DIR}/tests/ut/op_host TILING_DIR ${MODULE_UT_TILING_DIR})
   endif()
 
   if(UT_TEST_ALL OR OP_KERNEL_AICPU_UT)
-    AddAicpuOpTestCase(${MODULE_OP_NAME})
+    add_aicpu_op_test_case(${MODULE_OP_NAME})
   endif()
 
   if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/ut/op_kernel/CMakeLists.txt")
@@ -754,7 +743,6 @@ function(add_onnx_plugin_modules)
       CXX_STANDARD_REQUIRED ON
       CXX_EXTENSIONS OFF
     )
-    message(STATUS "JSON_INCLUDE_DIR is ${JSON_INCLUDE_DIR}")
     target_include_directories(${ONNX_PLUGIN_NAME}_obj PRIVATE ${OP_PROTO_INCLUDE} ${Protobuf_INCLUDE} ${Protobuf_PATH} ${CMAKE_BINARY_DIR}/proto ${ONNX_PLUGIN_COMMON_INCLUDE} ${JSON_INCLUDE_DIR} ${ABSL_SOURCE_DIR})
     target_compile_definitions(${ONNX_PLUGIN_NAME}_obj PRIVATE OPS_UTILS_LOG_SUB_MOD_NAME="ONNX_PLUGIN" LOG_CPP)
 
@@ -766,7 +754,6 @@ function(add_onnx_plugin_modules)
       target_compile_options(
         ${ONNX_PLUGIN_NAME}_obj PRIVATE $<$<NOT:$<BOOL:${ENABLE_TEST}>>:-DDISABLE_COMPILE_V1> -Dgoogle=ascend_private
                                        -fvisibility=hidden -Wno-shadow -Wno-unused-parameter
-
       )
     endif()
 
@@ -782,11 +769,9 @@ function(add_onnx_plugin_modules)
 endfunction()
 
 macro(add_onnx_plugin_sources)
-
   set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
   file(GLOB ONNX_PLUGIN_SRCS ${SOURCE_DIR}/*_onnx_plugin.cpp)
-
   if (ONNX_PLUGIN_SRCS)
     add_onnx_plugin_modules()
     target_sources(${ONNX_PLUGIN_NAME}_obj PRIVATE ${ONNX_PLUGIN_SRCS})

@@ -10,7 +10,6 @@
 # load ut common depends
 include(${PROJECT_SOURCE_DIR}/cmake/intf_pub_llt_gccnative.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/third_party/gtest.cmake)
-include(${PROJECT_SOURCE_DIR}/cmake/third_party/json.cmake)
 
 file(
   GLOB SUBDIRECTORIES

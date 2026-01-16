@@ -15,12 +15,6 @@ set(OPAPI_NAME opapi_${PKG_NAME})
 set(OPGRAPH_NAME opgraph_${PKG_NAME})
 set(GRAPH_PLUGIN_NAME graph_plugin_${PKG_NAME})
 set(ONNX_PLUGIN_NAME op_${PKG_NAME}_onnx_plugin)
-if(NOT CANN_3RD_LIB_PATH)
-  set(CANN_3RD_LIB_PATH ${PROJECT_SOURCE_DIR}/third_party)
-endif()
-if(NOT CANN_3RD_PKG_PATH)
-  set(CANN_3RD_PKG_PATH ${PROJECT_SOURCE_DIR}/third_party/pkg)
-endif()
 
 # interface, 用于收集aclnn/aclnn_inner/aclnn_exclude的def文件
 add_library(${OPHOST_NAME}_opdef_aclnn_obj INTERFACE)
@@ -104,7 +98,6 @@ if(ENABLE_STATIC)
   set(STATIC_OPHOST_INC_INSTALL_PATH ${CMAKE_BINARY_DIR}/static_library_files/include)
   set(STATIC_COMMON_INC_INSTALL_DIR ${CMAKE_BINARY_DIR}/static_library_files/include)
   set(STATIC_ES_INC_INSTALL_DIR ${CMAKE_BINARY_DIR}/static_library_files/include)
-  file(REMOVE_RECURSE ${STATIC_LIBRARY_FILES_DIR})
   file(MAKE_DIRECTORY ${STATIC_LIBRARY_FILES_DIR})
   file(MAKE_DIRECTORY ${STATIC_BIN_INSTALL_DIR})
   file(MAKE_DIRECTORY ${STATIC_ACLNN_INC_INSTALL_DIR})
@@ -125,9 +118,7 @@ set(ASCEND_TBE_BUILD_PATH   ${CMAKE_BINARY_DIR}/tbe)
 set(ASCEND_KERNEL_SRC_DST   ${ASCEND_TBE_BUILD_PATH}/ascendc)
 set(ASCEND_KERNEL_CONF_DST  ${ASCEND_TBE_BUILD_PATH}/config)
 set(ASCEND_GRAPH_CONF_DST   ${ASCEND_TBE_BUILD_PATH}/graph)
-file(REMOVE_RECURSE ${ASCEND_AUTOGEN_PATH})
 file(MAKE_DIRECTORY ${ASCEND_AUTOGEN_PATH})
-file(REMOVE_RECURSE ${ASCEND_TBE_BUILD_PATH})
 file(MAKE_DIRECTORY ${ASCEND_KERNEL_SRC_DST})
 file(MAKE_DIRECTORY ${ASCEND_KERNEL_CONF_DST})
 file(MAKE_DIRECTORY ${ASCEND_GRAPH_CONF_DST})
@@ -144,6 +135,9 @@ execute_process(
 set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/build_out)
 
 set(OPAPI_INCLUDE
+  ${OPS_MATH_DIR}/common/inc
+  ${OPS_MATH_DIR}/common/inc/op_api
+  ${OPS_MATH_DIR}/common/inc/external
   ${C_SEC_INCLUDE}
   ${PLATFORM_INC_DIRS}
   ${METADEF_INCLUDE_DIRS}
@@ -152,9 +146,6 @@ set(OPAPI_INCLUDE
   ${AICPU_INC_DIRS}
   ${OPBASE_INC_DIRS}
   ${OPS_MATH_DIR}/
-  ${OPS_MATH_DIR}/common/inc
-  ${OPS_MATH_DIR}/common/inc/common
-  ${OPS_MATH_DIR}/common/inc/external
   ${TOP_DIR}/output/${PRODUCT}/aclnnop_resource
 )
 
@@ -167,7 +158,7 @@ set(OP_TILING_INCLUDE
   ${OPBASE_INC_DIRS}
   ${OPS_MATH_DIR}
   ${OPS_MATH_DIR}/common/inc/
-  ${OPS_MATH_DIR}/common/inc/common
+  ${OPS_MATH_DIR}/common/inc/op_api
 )
 
 set(OP_PROTO_INCLUDE
@@ -176,7 +167,9 @@ set(OP_PROTO_INCLUDE
   ${OPBASE_INC_DIRS}
   ${NPURUNTIME_INCLUDE_DIRS}
   ${OPS_MATH_DIR}/common/inc/
+  ${OPS_MATH_DIR}/common/inc/op_api
   ${OPS_MATH_DIR}/common/inc/common
+  ${TOP_DIR}/runtime/pkg_inc
 )
 
 set(AICPU_INCLUDE
@@ -185,7 +178,7 @@ set(AICPU_INCLUDE
   ${C_SEC_INCLUDE}
   ${NNOPBASE_INCLUDE_DIRS}
   ${HCCL_EXTERNAL_INCLUDE}
-  ${OPS_MATH_DIR}/common/inc/common
+  ${OPS_MATH_DIR}/common/inc/op_api
   ${METADEF_INCLUDE_DIRS}
 )
 
@@ -214,23 +207,11 @@ set(AICPU_DEFINITIONS
   -fPIC
 )
 
-set(AICPU_LINK
-  -Wl,--whole-archive
-  # todo ops-base
-  cpu_kernels_context_static
-  -Wl,--no-whole-archive
-  ascend_protobuf_static
-  -Wl,--no-as-needed
-  $<IF:$<STREQUAL:${x86_aarch64_host},x86_or_aarch64_on_host>,alog,slog>
-  c_sec
-  -ldl
-  $<$<STREQUAL:${PRODUCT_SIDE},host>:ascend_hal_stub>
-  $<$<STREQUAL:${PRODUCT_SIDE},device>:ascend_hal>
-  -Wl,--as-needed
-  $<$<STREQUAL:${PRODUCT_SIDE},device>:malblas_static>
+set(OPS_CATEGORY_LIST
+  "math"
+  "conversion"
+  "random"
 )
-
-set(OPS_CATEGORY_LIST "math" "conversion" "random")
 
 # mapping of soc full name and short name
 set(SHORT_NAME_LIST "ascend910_93" "ascend910_95" "ascend910b" "ascend910" "ascend310p")
