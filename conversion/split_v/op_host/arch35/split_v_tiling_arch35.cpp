@@ -16,7 +16,7 @@
 #include "util/const_util.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "util/math_util.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_util.h"
 #include "log/log.h"
 
 using namespace gert;

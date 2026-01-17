@@ -21,7 +21,7 @@
 #include "../../op_kernel/arch35/addr_dag.h"
 #include "platform/platform_ascendc.h"
 #include "register/tilingdata_base.h"
-#include "tiling_base/tiling_base.h"
+#include "op_host/tiling_base.h"
 
 namespace optiling {
 using namespace Ops::Math::OpTiling;

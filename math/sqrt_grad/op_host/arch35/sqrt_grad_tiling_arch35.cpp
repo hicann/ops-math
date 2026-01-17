@@ -17,10 +17,10 @@
 #include "sqrt_grad_tiling_arch35.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "register/op_def_registry.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 #include "math/sqrt_grad/op_kernel/arch35/sqrt_grad_dag.h"
 #include "math/sqrt_grad/op_kernel/arch35/sqrt_grad_struct.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_util.h"
 #include "math/sqrt_grad/op_kernel/arch35/sqrt_grad_tiling_struct.h"
 #include <iostream>
 

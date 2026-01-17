@@ -15,7 +15,7 @@
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 #include "util/shape_util.h"
-#include "common/op_util.h"
+#include "op_api/op_util.h"
 
 using namespace ge;
 

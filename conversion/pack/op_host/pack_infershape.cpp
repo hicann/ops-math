@@ -15,7 +15,7 @@
 
 #include <cinttypes>
 #include <sstream>
-#include "common/op_util.h"
+#include "op_api/op_util.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 

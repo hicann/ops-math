@@ -16,7 +16,7 @@
 #define MATH_HISTOGRAM_V2_H
 #include "register/tilingdata_base.h"
 #include "platform/platform_ascendc.h"
-#include "tiling_base/tiling_base.h"
+#include "op_host/tiling_base.h"
 
 namespace optiling {
 

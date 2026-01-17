@@ -15,7 +15,7 @@
 #include "register/op_def_registry.h"
 #include "log/log.h"
 #include "register/tilingdata_base.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_util.h"
 #include "atvoss/elewise/elewise_tiling.h"
 #include "../../op_kernel/arch35/sqrt_dag.h"
 #include "../../op_kernel/arch35/sqrt_struct.h"

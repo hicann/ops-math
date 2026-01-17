@@ -32,7 +32,7 @@
 #include "opdev/framework_op.h"
 #include "conversion/concat_d/op_api/concat_d.h"
 #include "math/mul/op_api/mul.h"
-#include "common/aclnn_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 

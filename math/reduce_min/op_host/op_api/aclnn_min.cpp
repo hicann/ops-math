@@ -22,7 +22,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/shape_utils.h"
 #include "opdev/platform.h"
-#include "common/aclnn_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 

@@ -13,7 +13,7 @@
  * \brief
  */
 #include "exe_graph/runtime/shape.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 #include "log/log.h"
 #include "platform/platform_info.h"
 #include "stft_tiling_base.h"

@@ -16,7 +16,7 @@
 #ifndef OPS_MATH_ADD_OP_HOST_ADD_TILING_ARCH35_H
 #define OPS_MATH_ADD_OP_HOST_ADD_TILING_ARCH35_H
 
-#include "tiling_base/tiling_base.h"
+#include "op_host/tiling_base.h"
 
 using namespace Ops::Math::OpTiling;
 

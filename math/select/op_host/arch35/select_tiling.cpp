@@ -19,7 +19,7 @@
 #include "math/select/op_kernel/arch35/select_dag.h"
 #include "math/select/op_kernel/arch35/select_struct.h"
 #include "log/log.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 
 using namespace AscendC;
 using namespace ge;

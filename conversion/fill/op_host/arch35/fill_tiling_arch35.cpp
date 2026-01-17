@@ -16,7 +16,7 @@
 #include "fill_tiling_arch35.h"
 #include "tiling/tiling_api.h"
 #include "tiling/platform/platform_ascendc.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_util.h"
 #include "register/op_def_registry.h"
 #include "log/log.h"
 #include "register/tilingdata_base.h"

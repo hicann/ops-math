@@ -17,7 +17,7 @@
 #include "log/log.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "atvoss/elewise/elewise_tiling.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_util.h"
 #include "math/is_neg_inf/op_kernel/arch35/is_neg_inf_dag.h"
 #include "math/is_neg_inf/op_kernel/arch35/is_neg_inf_struct.h"
 #include "is_neg_inf_tiling_arch35.h"

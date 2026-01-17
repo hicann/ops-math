@@ -16,7 +16,7 @@
 #include "log/log.h"
 #include "clip_by_value_tiling.h"
 #include "clip_by_value_ub_broadcast_tiling.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 
 using namespace ge;
 using namespace std;

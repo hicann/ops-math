@@ -26,7 +26,7 @@
 #include "conversion/broadcast_to/op_host/op_api/broadcast_to.h"
 #include "math/real_div/op_api/realdiv.h"
 #include "opdev/platform.h"
-#include "common/aclnn_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus

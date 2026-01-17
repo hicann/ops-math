@@ -14,7 +14,7 @@
  */
 
 #include "reduce_var_tiling.h"
-#include "common/op_util.h"
+#include "op_api/op_util.h"
 #include "log/log.h"
 #include "math/reduce_var/op_kernel/arch35/reduce_var_tiling_key.h"
 

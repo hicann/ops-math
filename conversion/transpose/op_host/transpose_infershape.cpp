@@ -12,7 +12,7 @@
 #include "util/math_util.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
-#include "common/op_util.h"
+#include "op_api/op_util.h"
 
 using namespace ge;
 namespace ops {

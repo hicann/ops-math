@@ -16,7 +16,7 @@
 #define AIR_CXX_RUNTIME_V2_OP_IMPL_STFT_BASE_H_
 
 #include "register/op_def_registry.h"
-#include "tiling_base/tiling_base.h"
+#include "op_host/tiling_base.h"
 #include "tiling/tiling_api.h"
 #include "stft_tiling.h"
 

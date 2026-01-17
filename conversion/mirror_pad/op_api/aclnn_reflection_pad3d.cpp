@@ -12,7 +12,7 @@
 #include "aclnn_reflection_pad_common.h"
 #include "aclnn_kernels/contiguous.h"
 #include "opdev/platform.h"
-#include "common/aclnn_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus

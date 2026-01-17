@@ -17,7 +17,7 @@
 #include "opdev/platform.h"
 #include "opdev/common_types.h"
 #include "aclnn_kernels/common/op_error_check.h"
-#include "common/aclnn_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 

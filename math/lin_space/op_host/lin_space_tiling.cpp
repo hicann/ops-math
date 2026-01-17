@@ -16,8 +16,8 @@
 #include "lin_space_tiling.h"
 #include "register/op_impl_registry.h"
 #include "log/log.h"
-#include "tiling_base/tiling_base.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_base.h"
+#include "op_host/tiling_templates_registry.h"
 
 namespace optiling {
 using namespace Ops::Math::OpTiling;

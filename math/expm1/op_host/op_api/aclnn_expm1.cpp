@@ -20,7 +20,7 @@
 #include "opdev/op_dfx.h"
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
-#include "common/level2_base.h"
+#include "op_api/level2_base.h"
 
 using namespace op;
 #ifdef __cplusplus

@@ -22,7 +22,7 @@
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
 #include "assert.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_util.h"
 
 using namespace Ops::Math::OpTiling;
 using namespace Ops::Base;

@@ -17,7 +17,7 @@
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "clip_by_value_tiling.h"
 #include "clip_by_value_single_dim_tiling.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 #include <string>
 
 using namespace ge;

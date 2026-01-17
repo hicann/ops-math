@@ -20,7 +20,7 @@
 #include "opdev/data_type_utils.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/platform.h"
-#include "common/aclnn_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 

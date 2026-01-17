@@ -18,7 +18,7 @@
 #include "math/addcdiv/op_kernel/arch35/addcdiv_dag.h"
 #include "math/addcdiv/op_kernel/arch35/addcdiv_struct.h"
 #include "addcdiv_tiling_arch35.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 
 using namespace AscendC;
 using namespace ge;

@@ -14,7 +14,7 @@
  */
 #ifndef AIR_CXX_RUNTIME_V2_OP_IMPL_TENSOR_EQUAL_H
 #define AIR_CXX_RUNTIME_V2_OP_IMPL_TENSOR_EQUAL_H
-#include "tiling_base/tiling_base.h"
+#include "op_host/tiling_base.h"
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
 

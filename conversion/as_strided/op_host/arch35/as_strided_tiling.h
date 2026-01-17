@@ -16,7 +16,7 @@
 #ifndef OPS_BUILT_IN_OP_TILING_RUNTIME_AS_STRIDED_H_
 #define OPS_BUILT_IN_OP_TILING_RUNTIME_AS_STRIDED_H_
 
-#include "tiling_base/tiling_base.h"
+#include "op_host/tiling_base.h"
 
 namespace optiling {
 

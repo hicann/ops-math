@@ -14,7 +14,7 @@
  */
 #include <graph/utils/type_utils.h>
 #include "ones_like_tiling_arch35.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_util.h"
 #include "platform/platform_ascendc.h"
 #include "platform/platform_info.h"
 #include "op_host/util/fp16.h"

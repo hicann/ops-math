@@ -23,7 +23,7 @@
 #include "tiling/tiling_api.h"
 #include "util/math_util.h"
 #include "log/log.h"
-#include "common/op_util.h"
+#include "op_api/op_util.h"
 #include "conversion/strided_slice/op_host/strided_slice_util.h"
 
 namespace optiling

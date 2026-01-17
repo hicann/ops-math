@@ -15,7 +15,7 @@
 #include "math/zero_op/op_api/zero_op.h"
 #include "math/trunc/op_api/trunc.h"
 #include "aclnn/aclnn_base.h"
-#include "common/op_api_def.h"
+#include "op_api/op_api_def.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"

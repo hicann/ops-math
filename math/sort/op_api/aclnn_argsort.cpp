@@ -14,7 +14,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "sort.h"
 #include "aclnn_kernels/transpose.h"
-#include "common/op_api_def.h"
+#include "op_api/op_api_def.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "aclnn/aclnn_base.h"
 #include "opdev/common_types.h"

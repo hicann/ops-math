@@ -17,7 +17,7 @@
 #include "tiling/platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_util.h"
 #include "math/ceil/op_kernel/arch35/ceil_dag.h"
 #include "math/ceil/op_kernel/arch35/ceil_struct.h"
 #include "log/log.h"

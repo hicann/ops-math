@@ -14,7 +14,7 @@
  */
 
 #include "register/op_impl_registry.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 #include "log/log.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "math/less_equal/op_kernel/arch35/less_equal_dag.h"

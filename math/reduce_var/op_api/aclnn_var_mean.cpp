@@ -18,7 +18,7 @@
 #include "math/expand/op_host/op_api/expand.h"
 #include "aclnn_kernels/transdata.h"
 #include "aclnn_kernels/common/op_error_check.h"
-#include "common/op_api_def.h"
+#include "op_api/op_api_def.h"
 #include "aclnn/aclnn_base.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -29,7 +29,7 @@
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/op_errno.h"
-#include "common/level2_base_caculation.h"
+#include "op_api/level2_base_caculation.h"
 
 using namespace op;
 

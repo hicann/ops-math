@@ -14,7 +14,7 @@
  */
 #ifndef ADD_LORA_TILING_H
 #define ADD_LORA_TILING_H
-#include "tiling_base/tiling_base.h"
+#include "op_host/tiling_base.h"
 #include "register/tilingdata_base.h"
 #include "platform/platform_ascendc.h"
 

@@ -15,13 +15,13 @@
 
 #include <graph/utils/type_utils.h>
 #include "sign_tiling_arch35.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_util.h"
 #include "platform/platform_ascendc.h"
 #include "platform/platform_info.h"
 #include "op_host/util/fp16.h"
 #include "log/log.h"
 #include "math/sign/op_kernel/arch35/sign.h"
-#include "common/inc/tiling_base/tiling_util.h"
+#include "common/inc/op_host/tiling_util.h"
 
 namespace optiling {
 using namespace Ops::Math::OpTiling;

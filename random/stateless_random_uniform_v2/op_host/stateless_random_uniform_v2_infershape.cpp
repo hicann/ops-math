@@ -16,7 +16,7 @@
 #include "util/shape_util.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
-#include "common/op_util.h"
+#include "op_api/op_util.h"
 #include "util/const_util.h"
 
 namespace {

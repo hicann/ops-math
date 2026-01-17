@@ -21,8 +21,8 @@
 #include "tiling/tiling_api.h"
 #include "util/math_util.h"
 #include "log/log.h"
-#include "tiling_base/tiling_util.h"
-#include "common/op_util.h"
+#include "op_host/tiling_util.h"
+#include "op_api/op_util.h"
 
 namespace optiling {
 

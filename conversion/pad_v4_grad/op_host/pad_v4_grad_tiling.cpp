@@ -15,7 +15,7 @@
 #include "pad_v4_grad_tiling.h"
 #include "log/log.h"
 #include "register/op_def_registry.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 #include "platform/platform_info.h"
 
 namespace optiling {

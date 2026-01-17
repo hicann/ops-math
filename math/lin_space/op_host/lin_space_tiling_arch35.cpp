@@ -14,8 +14,8 @@
  */
 #include "lin_space_tiling_arch35.h"
 #include "log/log.h"
-#include "tiling_base/tiling_base.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_base.h"
+#include "op_host/tiling_templates_registry.h"
 
 namespace optiling {
 constexpr static int64_t CORE_MINEST_NUM = 128;

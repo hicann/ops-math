@@ -16,7 +16,7 @@
 #include "log/log.h"
 #include "conversion/clip_by_value/op_host/arch35/clip_by_value_tiling.h"
 #include "platform/platform_info.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 
 using namespace AscendC;
 using namespace ge;

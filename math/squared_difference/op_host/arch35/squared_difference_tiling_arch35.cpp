@@ -19,7 +19,7 @@
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "../../op_kernel/arch35/squared_difference_dag.h"
 #include "../../op_kernel/arch35/squared_difference_struct.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 #include "register/op_impl_registry.h"
 
 using namespace AscendC;

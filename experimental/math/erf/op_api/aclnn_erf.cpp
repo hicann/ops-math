@@ -16,7 +16,7 @@
 #include "opdev/make_op_executor.h"
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
-#include "common/level2_base.h"
+#include "op_api/level2_base.h"
 
 using namespace op;
 

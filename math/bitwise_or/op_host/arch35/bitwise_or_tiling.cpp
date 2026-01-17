@@ -17,7 +17,7 @@
 #include "log/log.h"
 #include "platform/platform_info.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 #include "math/bitwise_or/op_kernel/arch35/bitwise_or_dag.h"
 #include "math/bitwise_or/op_kernel/arch35/bitwise_or_struct.h"
 

@@ -18,7 +18,7 @@
 #include "math/addcmul/op_kernel/arch35/addcmul_dag.h"
 #include "math/addcmul/op_kernel/arch35/addcmul_struct.h"
 #include "addcmul_tiling_arch35.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 
 using namespace AscendC;
 using namespace ge;

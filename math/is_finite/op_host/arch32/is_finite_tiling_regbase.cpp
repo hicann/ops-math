@@ -14,7 +14,7 @@
  */
 
 #include "is_finite_tiling_regbase.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_util.h"
 #include "log/log.h"
 #include "graph/utils/type_utils.h"
 #include "../../op_kernel/arch35/is_finite_dag.h"

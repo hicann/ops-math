@@ -22,8 +22,8 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
-#include "common/op_api_def.h"
-#include "common/aclnn_check.h"
+#include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 
 
 using namespace op;

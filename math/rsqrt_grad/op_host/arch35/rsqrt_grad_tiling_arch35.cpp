@@ -13,7 +13,7 @@
  * \brief
  */
 #include "rsqrt_grad_tiling_arch35.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_util.h"
 #include "log/log.h"
 #include "graph/utils/type_utils.h"
 #include "register/op_def_registry.h"

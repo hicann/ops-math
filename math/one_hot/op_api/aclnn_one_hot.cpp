@@ -9,7 +9,7 @@
  */
 
 #include "aclnn/aclnn_base.h"
-#include "common/op_api_def.h"
+#include "op_api/op_api_def.h"
 #include "aclnn_one_hot.h"
 #include "aclnn_kernels/contiguous.h"
 #include "one_hot.h"

@@ -17,7 +17,7 @@
 #define AIR_CXX_RUNTIME_V2_OP_IMPL_FUSED_MUL_ADD_N_H_
 
 #include "atvoss/elewise/elewise_tiling.h"
-#include "tiling_base/tiling_base.h"
+#include "op_host/tiling_base.h"
 #include "register/tilingdata_base.h"
 #include "platform/platform_ascendc.h"
 

@@ -13,7 +13,7 @@
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "aclnn_kernels/contiguous.h"
-#include "common/aclnn_check.h"
+#include "op_api/aclnn_check.h"
 #include "../../concat_d/op_api/concat_d.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"

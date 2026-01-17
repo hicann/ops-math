@@ -22,7 +22,7 @@
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "../../op_kernel/arch35/is_close_dag.h"
 #include "../../op_kernel/arch35/is_close_struct.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 
 #define IS_CLOSE_TPL_NOT_EQUAL_NAN 0
 #define IS_CLOSE_TPL_EQUAL_NAN 1

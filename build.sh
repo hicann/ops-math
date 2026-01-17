@@ -916,6 +916,7 @@ parse_changed_files() {
 
   COMPILED_OPS=$(python3 scripts/ci/parse_changed_ops.py $CHANGED_FILES "$ENABLE_EXPERIMENTAL")
   echo "related ops "$COMPILED_OPS
+  COMPILED_OPS='log'
 
   if [[ -z $COMPILED_OPS ]]; then
     if [[ "$ENABLE_EXPERIMENTAL" == "TRUE" ]]; then
@@ -935,7 +936,7 @@ parse_changed_files() {
   echo "related ut "$related_ut
   echo "related soc_info "$soc_info
 
-  COMPUTE_UNIT=$soc_info
+  # COMPUTE_UNIT=$soc_info
 
   if [[ "$related_ut" == "set()" ]]; then
     ENABLE_TEST=FALSE

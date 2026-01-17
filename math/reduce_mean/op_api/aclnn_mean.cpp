@@ -24,7 +24,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/op_errno.h"
 #include "conversion/fill/op_api/fill.h"
-#include "common/aclnn_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 

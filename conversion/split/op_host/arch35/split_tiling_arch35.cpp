@@ -9,7 +9,7 @@
  */
 
 #include "conversion/split_v/op_host/arch35/split_v_tiling_arch35.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_util.h"
 #include "register/op_impl_registry.h"
 
 using namespace gert;

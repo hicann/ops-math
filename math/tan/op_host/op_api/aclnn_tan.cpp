@@ -22,7 +22,7 @@
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
 #include "aclnn_kernels/common/op_error_check.h"
-#include "common/op_api_def.h"
+#include "op_api/op_api_def.h"
 #include "opdev/platform.h"
 
 using namespace op;

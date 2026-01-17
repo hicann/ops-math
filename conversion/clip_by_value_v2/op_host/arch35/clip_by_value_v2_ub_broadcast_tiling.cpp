@@ -13,7 +13,7 @@
  * \brief
  */
 #include <vector>
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 #include "conversion/clip_by_value/op_host/arch35/clip_by_value_tiling.h"
 #include "conversion/clip_by_value/op_host/arch35/clip_by_value_ub_broadcast_tiling.h"
 

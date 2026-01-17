@@ -12,7 +12,7 @@
 #define LEVEL2_BASE_CALCULATION_H_
 
 #include <bitset>
-#include "common/op_api_def.h"
+#include "op_api/op_api_def.h"
 #include "aclnn/aclnn_base.h"
 #include "opdev/shape_utils.h"
 #include "conversion/fill/op_api/fill.h"

@@ -17,7 +17,7 @@
 
 #include <random>
 #include "register/op_def_registry.h"
-#include "tiling_base/tiling_base.h"
+#include "op_host/tiling_base.h"
 #include "register/tilingdata_base.h"
 #include "register/op_impl_registry.h"
 #include "../op_kernel/truncated_normal_v2_tiling_data.h"

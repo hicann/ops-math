@@ -15,7 +15,7 @@
 
 #include "register/op_impl_registry.h"
 #include "tiling/tiling_api.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 #include "log/log.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "math/floor_mod/op_kernel/arch35/floor_mod_dag.h"

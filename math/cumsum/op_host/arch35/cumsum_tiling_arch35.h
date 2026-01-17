@@ -15,7 +15,7 @@
 #ifndef _CUMSUM_TILING_H
 #define _CUMSUM_TILING_H
 #include <cstdint>
-#include "tiling_base/tiling_base.h"
+#include "op_host/tiling_base.h"
 #include "register/tilingdata_base.h"
 #include "tiling/tiling_api.h"
 

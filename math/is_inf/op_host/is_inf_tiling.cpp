@@ -17,7 +17,7 @@
 #include "is_inf_tiling_arch35.h"
 #include "is_inf_tiling_def.h"
 #include "log/log.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_util.h"
 
 namespace optiling {
 using namespace Ops::Math::OpTiling;

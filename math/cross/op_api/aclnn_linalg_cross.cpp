@@ -15,7 +15,7 @@
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/op_dfx.h"
 #include "conversion/broadcast_to/op_host/op_api/broadcast_to.h"
-#include "common/op_api_def.h"
+#include "op_api/op_api_def.h"
 
 using namespace op;
 #ifdef __cplusplus

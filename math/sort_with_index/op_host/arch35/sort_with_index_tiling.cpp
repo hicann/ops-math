@@ -15,7 +15,7 @@
 #include "sort_with_index_tiling.h"
 #include "log/log.h"
 #include "tiling/tiling_api.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_util.h"
 
 namespace optiling {
 constexpr size_t WORK_SPACE_SIZE = 16777216;  // 16 * 1024 * 1024;

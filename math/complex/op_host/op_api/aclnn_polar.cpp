@@ -15,7 +15,7 @@
 #include "../../../sin/op_host/op_api/sin.h"
 #include "../../../cos/op_api/cos.h"
 #include "../../../abs/op_api/abs.h"
-#include "common/op_api_def.h"
+#include "op_api/op_api_def.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"

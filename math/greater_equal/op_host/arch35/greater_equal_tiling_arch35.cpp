@@ -14,7 +14,7 @@
 #include "math/greater_equal/op_kernel/arch35/greater_equal_dag.h"
 #include "math/greater_equal/op_kernel/arch35/greater_equal_struct.h"
 #include "atvoss/util/vec.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 #include "log/log.h"
 #include "platform/platform_ascendc.h"
 

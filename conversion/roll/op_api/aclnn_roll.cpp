@@ -27,7 +27,7 @@
 #include "conversion/squeeze/op_host/op_api/squeeze.h"
 #include "opdev/platform.h"
 
-#include "common/op_api_def.h"
+#include "op_api/op_api_def.h"
 
 using namespace op;
 #ifdef __cplusplus

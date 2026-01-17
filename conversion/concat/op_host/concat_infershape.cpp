@@ -14,7 +14,7 @@
  */
 #include "concat_infershape.h"
 #include "log/log.h"
-#include "common/op_util.h"
+#include "op_api/op_util.h"
 
 using namespace ge;
 namespace ops {

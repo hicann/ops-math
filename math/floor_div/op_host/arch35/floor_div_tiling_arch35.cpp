@@ -13,7 +13,7 @@
  * \brief floor_div_tiling source file
  */
 #include "register/op_impl_registry.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 #include "log/log.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "math/floor_div/op_kernel/arch35/floor_div_dag.h"

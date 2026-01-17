@@ -12,7 +12,7 @@
 #include "cumprod.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "aclnn_kernels/contiguous.h"
-#include "common/op_api_def.h"
+#include "op_api/op_api_def.h"
 #include "aclnn_kernels/cast.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/platform.h"

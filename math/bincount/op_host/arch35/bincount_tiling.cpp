@@ -17,7 +17,7 @@
 #include <cstring>
 #include "register/op_impl_registry.h"
 #include "platform/platform_info.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_util.h"
 #include "log/log.h"
 #include "bincount_tiling.h"
 #include "util/math_util.h"

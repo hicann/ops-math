@@ -23,7 +23,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
 #include "math/reduce_max/op_host/op_api/reduce_max.h"
-#include "common/aclnn_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus

@@ -24,7 +24,7 @@
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "op_host/util/fp16.h"
 #include "util/bfloat16.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 
 using namespace Ops::Math::OpTiling;
 using namespace Ops::Base;

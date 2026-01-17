@@ -11,7 +11,7 @@
 #ifndef LEVEL2_BASE_H_MATH
 #define LEVEL2_BASE_H_MATH
 
-#include "common/op_api_def.h"
+#include "op_api/op_api_def.h"
 #include "aclnn/aclnn_base.h"
 
 #ifdef __cplusplus

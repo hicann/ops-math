@@ -15,7 +15,7 @@
 #ifndef __ROLL_TILING_H__
 #define __ROLL_TILING_H__
 
-#include "tiling_base/tiling_base.h"
+#include "op_host/tiling_base.h"
 #include "conversion/roll/op_kernel/arch35/roll_struct.h"
 #include "platform/platform_ascendc.h"
 

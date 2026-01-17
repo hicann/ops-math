@@ -18,7 +18,7 @@
 #include "log/log.h"
 #include "math/equal/op_kernel/arch35/equal_dag.h"
 #include "math/equal/op_kernel/arch35/equal_struct.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 
 namespace optiling {
 using namespace Ops::Math::OpTiling;

@@ -34,7 +34,7 @@
 #include "opdev/op_errno.h"
 
 #include "aclnn_logsumexp.h"
-#include "common/level2_base_caculation.h"
+#include "op_api/level2_base_caculation.h"
 
 using namespace op;
 

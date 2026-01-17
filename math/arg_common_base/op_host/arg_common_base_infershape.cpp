@@ -13,7 +13,7 @@
  * \brief
  */
 
-#include "common/infershape_reduce_util.h"
+#include "op_api/infershape_reduce_util.h"
 #include "log/log.h"
 #include "infershape_reduce_util.h"
 #include "arg_common_base_infershape.h"

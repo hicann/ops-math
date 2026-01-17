@@ -21,7 +21,7 @@
 #include "../../op_kernel/arch35/sin_dag.h"
 #include "../../op_kernel/arch35/sin_struct.h"
 #include "log/log.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_util.h"
 
 #include <iostream>
 

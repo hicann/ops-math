@@ -14,7 +14,7 @@
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "math/greater/op_kernel/arch35/greater_dag.h"
 #include "math/greater/op_kernel/arch35/greater_struct.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 
 namespace optiling {
 using namespace AscendC;

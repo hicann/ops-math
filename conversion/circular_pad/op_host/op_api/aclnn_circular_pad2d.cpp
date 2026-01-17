@@ -10,7 +10,7 @@
 
 #include "aclnn_circular_pad2d.h"
 #include "conversion/pad_v3/op_api/padv3.h"
-#include "common/aclnn_check.h"
+#include "op_api/aclnn_check.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/op_dfx.h"

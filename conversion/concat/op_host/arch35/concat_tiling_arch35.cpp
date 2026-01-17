@@ -19,7 +19,7 @@
 #include <cctype>
 #include "op_common/op_host/util/shape_util.h"
 #include "op_common/op_host/util/platform_util.h"
-#include "common/op_util.h"
+#include "op_api/op_util.h"
 
 using namespace std;
 using namespace ge;

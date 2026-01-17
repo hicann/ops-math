@@ -21,7 +21,7 @@
 #include "cumsum_tiling_ascendc_arch35.h"
 #include "cumsum_tiling_ascendc_int_arch35.h"
 #include "platform/platform_info.h"
-#include "tiling_base/tiling_base.h"
+#include "op_host/tiling_base.h"
 
 using namespace ge;
 

@@ -25,8 +25,8 @@
 #include "opdev/platform.h"
 #include "math/reduce_any/op_host/op_api/reduce_any.h"
 #include "conversion/fill/op_api/fill.h"
-#include "common/op_api_def.h"
-#include "common/aclnn_check.h"
+#include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus

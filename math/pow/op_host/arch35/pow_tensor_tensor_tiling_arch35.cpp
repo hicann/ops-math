@@ -15,7 +15,7 @@
 
 #include "pow_tiling_arch35.h"
 #include "tiling/math/power_tiling.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 
 namespace optiling
 {

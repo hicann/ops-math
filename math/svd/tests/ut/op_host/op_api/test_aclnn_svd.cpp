@@ -15,7 +15,7 @@
 #include "gtest/gtest.h"
 
 #include "level2/aclnn_svd.h"
-#include "common/op_api_def.h"
+#include "op_api/op_api_def.h"
 
 #include "op_api_ut_common/inner/rts_interface.h"
 #include "op_api_ut_common/op_api_ut.h"

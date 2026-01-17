@@ -16,7 +16,7 @@
 #define STATELESS_BERNOULLI_TILING_ARCH35_H
 #pragma once
 
-#include "tiling_base/tiling_base.h"
+#include "op_host/tiling_base.h"
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
 

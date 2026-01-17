@@ -26,7 +26,7 @@
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/make_op_executor.h"
-#include "common/op_api_def.h"
+#include "op_api/op_api_def.h"
 
 using namespace op;
 #ifdef __cplusplus

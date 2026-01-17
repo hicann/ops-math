@@ -21,9 +21,9 @@
 #include "platform/platform_info.h"
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
-#include "tiling_base/tiling_base.h"
-#include "tiling_base/tiling_templates_registry.h"
-#include "tiling_base/tiling_util.h"
+#include "op_host/tiling_base.h"
+#include "op_host/tiling_templates_registry.h"
+#include "op_host/tiling_util.h"
 
 namespace optiling {
 // B) compileInfo结构体保留，做简单修改，删除其中非ascendc的部分

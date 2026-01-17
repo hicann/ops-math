@@ -17,7 +17,7 @@
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "math/logical_and/op_kernel/arch35/logical_and_dag.h"
 #include "math/logical_and/op_kernel/arch35/logical_and_struct.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 
 using namespace AscendC;
 using namespace ge;

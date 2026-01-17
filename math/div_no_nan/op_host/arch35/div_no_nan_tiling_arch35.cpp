@@ -22,7 +22,7 @@
 #include "math/div_no_nan/op_kernel/arch35/div_no_nan_dag.h"
 #include "math/div_no_nan/op_kernel/arch35/div_no_nan_struct.h"
 #include "register/op_impl_registry.h"
-#include "tiling_base/tiling_templates_registry.h"
+#include "op_host/tiling_templates_registry.h"
 
 using namespace AscendC;
 using namespace ge;
