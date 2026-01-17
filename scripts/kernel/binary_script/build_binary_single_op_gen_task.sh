@@ -18,7 +18,7 @@ source build_env.sh
 
 function get_binary_config_file() {
   if [ $# -ne 4 ]; then
-    echo "eroor invalid param number:$#, must be 4" >&2
+    echo "error invalid param number:$#, must be 4" >&2
     return 1
   fi
   local workdir="$1"
@@ -55,7 +55,7 @@ function get_binary_config_file() {
 
 function get_simplified_key_config_file() {
   if [ $# -ne 4 ]; then
-    echo "eroor invalid param number:$#, must be 4" >&2
+    echo "error invalid param number:$#, must be 4" >&2
     return 1
   fi
   local workdir="$1"

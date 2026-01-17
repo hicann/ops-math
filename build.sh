@@ -132,8 +132,8 @@ usage() {
         echo "    --static               Build static library package (cannot be used with --jit)"
         echo "    --jit                  Build run package without kernel bin"
         echo "    --soc=soc_version      Compile for specified Ascend SoC"
-        echo "    --vendor_name=name     Specify custom operator package vendor name"
-        echo "    --ops=op1,op2,...      Compile specified operators (comma-separated for multiple)"
+        echo "    --vendor_name=name     Specify custom operator package vendor name (cannot be used with --jit)"
+        echo "    --ops=op1,op2,...      Compile specified operators (comma-separated for multiple) (cannot be used with --jit)"
         echo "    -j[n]                  Compile thread nums, default is 8, eg: -j8"
         echo "    -O[n]                  Compile optimization options, support [O0 O1 O2 O3], eg:-O3"
         echo "    --asan                 Enable ASAN (Address Sanitizer) on the host side"
@@ -359,6 +359,9 @@ usage() {
   echo "    -O[n] Compile optimization options, support [O0 O1 O2 O3], eg:-O3"
   echo "    -u Compile all ut"
   echo $dotted_line
+  echo "    examples, Build ophost_test with O3 level compilation optimization and do not execute." 
+  echo "    ./build.sh --ophost_test --noexec -O3" 
+  echo $dotted_line
   echo "    The following are all supported arguments:"
   echo $dotted_line
   echo "    --cov When building uTest locally, count the coverage."
@@ -485,6 +488,11 @@ check_param() {
       echo "[ERROR] --build-type=Debug cannot be used with --mssanitizer, --oom, --dump_cce"
       exit 1
     fi
+  fi
+
+  if [[ "$ENABLE_MSSANITIZER" == "TRUE" && "$ENABLE_OOM" == "TRUE" ]]; then 
+    echo "[ERROR] --mssanitizer cannot be used with --oom" 
+    exit 1 
   fi
 
   if $(echo ${USE_CMD} | grep -wq "static") && $(echo ${USE_CMD} | grep -wq "jit"); then
@@ -727,7 +735,7 @@ checkopts() {
   for arg in "$@"; do
     if [[ "$arg" =~ ^- ]]; then # 只检查以-开头的参数
       if ! check_option_validity "$arg"; then
-        echo "Invalid param $arg, Use 'bash build.sh --help' for more information."
+        echo "[ERROR] Invalid param $arg, Use 'bash build.sh --help' for more information."
         exit 1
       fi
     fi
