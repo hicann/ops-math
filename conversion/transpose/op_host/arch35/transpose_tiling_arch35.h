@@ -103,6 +103,7 @@ BEGIN_TILING_DATA_DEF(TransposeTilingData)
 TILING_DATA_FIELD_DEF_STRUCT(TransposeOpTilingData, transposeOpTiling);
 END_TILING_DATA_DEF;
 REGISTER_TILING_DATA_CLASS(Transpose, TransposeTilingData);
+REGISTER_TILING_DATA_CLASS(SpaceToDepth, TransposeTilingData);
 
 enum class SplitMode : int64_t
 {

@@ -74,6 +74,7 @@ TILING_DATA_FIELD_DEF_ARR(int8_t, UB_MAX_DIM_NUM, ubPerm);
 END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(Transpose_10006, GatherTransposeTilingData);
+REGISTER_TILING_DATA_CLASS(SpaceToDepth_10006, GatherTransposeTilingData);
 
 struct PlatInfo {
     int64_t coreNum = 0;

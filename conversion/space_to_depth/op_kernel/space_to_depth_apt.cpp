@@ -13,13 +13,13 @@
  * \brief
  */
 
-#include "../../transpose/op_kernel/arch35/transpose_big_dim.h"
-#include "../../transpose/op_kernel/arch35/transpose_cut_one_axis.h"
-#include "../../transpose/op_kernel/arch35/transpose_cut_two_axis.h"
-#include "../../transpose/op_kernel/arch35/transpose_n_last.h"
-#include "../../transpose/op_kernel/arch35/transpose_small_shape.h"
-#include "../../transpose/op_kernel/arch35/transpose_tensor_move.h"
-#include "../../transpose/op_kernel/arch35/transpose_with_gather.h"
+#include "../transpose/arch35/transpose_big_dim.h"
+#include "../transpose/arch35/transpose_cut_one_axis.h"
+#include "../transpose/arch35/transpose_cut_two_axis.h"
+#include "../transpose/arch35/transpose_n_last.h"
+#include "../transpose/arch35/transpose_small_shape.h"
+#include "../transpose/arch35/transpose_tensor_move.h"
+#include "../transpose/arch35/transpose_with_gather.h"
 
 #define TENSOR_MOVE 10000
 #define SMALL_SHAPE 10001
@@ -209,7 +209,7 @@ extern "C" __aicore__ inline void TransposeGatherProcess(
     }
 }
 
-extern "C" __global__ __aicore__ void transpose(GM_ADDR x, GM_ADDR perm, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void space_to_depth(GM_ADDR x, GM_ADDR perm, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     TPipe pipe;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
