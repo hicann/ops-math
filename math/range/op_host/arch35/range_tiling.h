@@ -32,6 +32,7 @@ struct RangeCompileInfo {
     // 简化后的compileInfo，只保留ascendc相关的核心信息
     int64_t totalCoreNum; // 物理总核数（保留）
     int64_t ubSize;       // UB大小
+    platform_ascendc::SocVersion socVersion = platform_ascendc::SocVersion::ASCEND910B;
 };
 
 template <typename T>

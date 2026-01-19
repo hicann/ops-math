@@ -17,7 +17,6 @@
   $$
   out_i = x_i^{exponent_i}
   $$
-
 - 算子约束：INT32整型计算在如下范围以外的场景，会出现超时；
 
   | shape  | exponent_value|
@@ -30,35 +29,125 @@
 
 ## 函数原型
 
-- aclnnPowTensorTensor和aclnnInplacePowTensorTensor实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
+每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnPowTensorTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnPowTensorTensor”接口执行计算。
 
-  - aclnnPowTensorTensor：需新建一个输出张量对象存储计算结果。
-  - aclnnInplacePowTensorTensor：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
+```Cpp
+aclnnStatus aclnnPowTensorTensorGetWorkspaceSize(
+  const aclTensor* self, 
+  const aclTensor* exponent, 
+  aclTensor* out, 
+  uint64_t* workspaceSize, 
+  aclOpExecutor** executor)
+```
 
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnPowTensorTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnPowTensorTensor”接口执行计算。
+```Cpp
+aclnnStatus aclnnPowTensorTensor(
+  void* workspace, 
+  uint64_t workspaceSize,  
+  aclOpExecutor* executor, 
+  aclrtStream stream)
+```
 
-  - `aclnnStatus aclnnPowTensorTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* exponent, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-  - `aclnnStatus aclnnPowTensorTensor(void* workspace, uint64_t workspaceSize,  aclOpExecutor* executor, aclrtStream stream)`
-  - `aclnnStatus aclnnInplacePowTensorTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* exponent, uint64_t* workspaceSize, aclOpExecutor** executor)`
-  - `aclnnStatus aclnnInplacePowTensorTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnInplacePowTensorTensorGetWorkspaceSize(
+  const aclTensor* self, 
+  const aclTensor* exponent, 
+  uint64_t* workspaceSize, 
+  aclOpExecutor** executor)
+```
+
+```Cpp
+aclnnStatus aclnnInplacePowTensorTensor(
+  void* workspace, 
+  uint64_t workspaceSize, 
+  aclOpExecutor* executor, 
+  aclrtStream stream)
+```
 
 ## aclnnPowTensorTensorGetWorkspaceSize
 
 - **参数说明**：
 
-  - self(aclTensor*，计算输入)：Device侧的aclTensor。且数据类型需要与exponent满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），shape支持0-8维，self和exponent数据类型不支持同时为BOOL，shape需要与exponent满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT16、BOOL、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16。
-  - exponent(aclTensor*，计算输入)：Device侧的aclTensor。数据类型需要与self满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），self和exponent数据类型不支持同时为BOOL，shape需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT16、BOOL、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16。
-  - out(aclTensor*，计算输出)：Device侧的aclTensor。数据类型需要是self与exponent推导之后可转换的数据类型，shape需要是self与exponent broadcast之后的shape。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT16、BOOL、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16。
-  - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
+  <table style="undefined;table-layout: fixed; width: 1526px"><colgroup>
+  <col style="width: 154px">
+  <col style="width: 125px">
+  <col style="width: 213px">
+  <col style="width: 288px">
+  <col style="width: 333px">
+  <col style="width: 124px">
+  <col style="width: 138px">
+  <col style="width: 151px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>Device侧的aclTensor。</td>
+      <td>self和exponent数据类型不支持同时为BOOL，shape需要与exponent满足broadcast关系。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT16、BOOL、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>exponent</td>
+      <td>输入</td>
+      <td>Device侧的aclTensor。</td>
+      <td>self和exponent数据类型不支持同时为BOOL，shape需要与self满足broadcast关系。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT16、BOOL、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>Device侧的aclTensor。</td>
+      <td>数据类型需要是self与exponent推导之后可转换的数据类型，shape需要是self与exponent broadcast之后的shape。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、BOOL、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16、UINT16、UINT32、UINT64</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
 
-  - executor(aclOpExecutor **，出参)：返回op执行器，包含了算子计算流程。
+  - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -74,65 +163,213 @@
 
 - **参数说明**：
 
-  - workspace(void*，入参)：在Device侧申请的workspace内存地址。
-
-  - workspaceSize(uint64_t，入参)：在Device侧申请的workspace大小，由第一段接口aclnnPowTensorTensorGetWorkspaceSize获取。
-
-  - executor(aclOpExecutor*，入参)：op执行器，包含了算子计算流程。
-
-  - stream(aclrtStream，入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 168px">
+  <col style="width: 128px">
+  <col style="width: 854px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceExp2GetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
 
 ## aclnnInplacePowTensorTensorGetWorkspaceSize
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入|计算输出)：输入输出tensor，即公式中的输入x与输出out。数据类型与exponent的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），且数据类型是self与exponent推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)），shape需要与exponent满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、INT16、BFLOAT16。
-  - exponent(aclTensor*, 计算输入)：公式中的输入`exponent`。数据类型需要与self满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），shape需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、BOOL、INT8、UINT8、COMPLEX64、COMPLEX128、INT16、BFLOAT16。
-  - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
+<table style="undefined;table-layout: fixed; width: 1526px"><colgroup>
+  <col style="width: 154px">
+  <col style="width: 125px">
+  <col style="width: 213px">
+  <col style="width: 288px">
+  <col style="width: 333px">
+  <col style="width: 124px">
+  <col style="width: 138px">
+  <col style="width: 151px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>输入输出tensor，即公式中的输入x与输出out。</td>
+      <td>数据类型是self与exponent推导之后可转换的数据类型，shape需要与exponent满足broadcast关系。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、INT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>exponent</td>
+      <td>输入</td>
+      <td>公式中的输入exponent。</td>
+      <td>数据类型是self与exponent推导之后可转换的数据类型，shape需要与exponent满足broadcast关系。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、INT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
+
+- <term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16数据类型。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
 
-  ```
-  第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的self、exponent空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. self和exponent的数据类型不在支持的范围之内。
-                                        2. self和exponent的shape大于8维。
-                                        3. self和exponent无法满足数据类型推导规则。
-                                        4. self和exponent的shape无法做broadcast。
-                                        5. self和exponent进行broadcast后的shape不等于self的shape。
-                                        6. self和exponent同时为bool数据类型。
-  ```
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、exponent空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
+      <td>self和exponent的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self和exponent的shape大于8维。</td>
+    </tr>
+    <tr>
+      <td>self和exponent无法满足数据类型推导规则。</td>
+    </tr>
+    <tr>
+      <td>self和exponent的shape无法做broadcast。</td>
+    </tr>
+    <tr>
+      <td>self和exponent进行broadcast后的shape不等于self的shape。</td>
+    </tr>
+    <tr>
+      <td>self和exponent同时为bool数据类型。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnInplacePowTensorTensor
 
 - **参数说明：**
 
-  - workspace(void*, 入参)：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnInplacePowTensorTensorGetWorkspaceSize获取。
-  - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+<table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+    <col style="width: 153px">
+    <col style="width: 124px">
+    <col style="width: 872px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>workspace</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace内存地址。</td>
+      </tr>
+      <tr>
+        <td>workspaceSize</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceFmodTensorGetWorkspaceSize获取。</td>
+      </tr>
+      <tr>
+        <td>executor</td>
+        <td>输入</td>
+        <td>op执行器，包含了算子计算流程。</td>
+      </tr>
+      <tr>
+        <td>stream</td>
+        <td>输入</td>
+        <td>指定执行任务的Stream。</td>
+      </tr>
+    </tbody>
+    </table>
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
 
 ## 约束说明
 
 - 确定性计算：
   - aclnnPowTensorTensor&aclnnInplacePowTensorTensor默认确定性实现。
 
+<term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：该场景下，如果计算结果取值超过了设定的数据类型取值范围，则会以该数据类型的边界值作为结果返回。
+
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
 **aclnnPowTensorTensor示例代码：**
 
 ```Cpp
@@ -406,4 +643,3 @@ int main() {
   return 0;
 }
 ```
-

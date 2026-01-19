@@ -91,4 +91,4 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | :-------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| aclnn接口 | [test_aclnn_one_hot](examples/test_aclnn_one_hot.cpp) | 通过[aclnn_one_hot](docs/aclnnOneHot.md)接口方式调用OneHot算子。 |
+| aclnn接口 | [test_aclnn_one_hot](examples/test_aclnn_one_hot.cpp) | 通过[aclnnOneHot](docs/aclnnOneHot.md)接口方式调用OneHot算子。 |

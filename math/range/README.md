@@ -79,5 +79,5 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | :-------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| aclnn接口 | [test_aclnn_range](examples/test_aclnn_range.cpp) | 通过[aclnn_range](docs/aclnnRange.md)接口方式调用Range算子。 |
-| aclnn接口 | [test_aclnn_arange](examples/test_aclnn_arange.cpp) | 通过[aclnn_arange](docs/aclnnArange.md)接口方式调用Range算子。 |
+| aclnn接口 | [test_aclnn_range](examples/test_aclnn_range.cpp) | 通过[aclnnRange](docs/aclnnRange.md)接口方式调用Range算子。 |
+| aclnn接口 | [test_aclnn_arange](examples/test_aclnn_arange.cpp) | 通过[aclnnArange](docs/aclnnArange.md)接口方式调用Range算子。 |

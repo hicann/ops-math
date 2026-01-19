@@ -1,6 +1,5 @@
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- *
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -154,16 +153,10 @@ ge::graphStatus RangeRegBaseTilingClass::DoOpTiling()
         return ret;
     }
 
-    // C) 获取系统信息（coreNum/ubSize等），不再通过CompileInfo，而是直接通过GetPlatformInfo获取
-    auto platformInfo = context_->GetPlatformInfo();
-    OP_CHECK_NULL_WITH_CONTEXT(context_, platformInfo);
-
-    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
-    tilingParam_.totalCoreNum = ascendcPlatform.GetCoreNumAiv();
-
-    uint64_t ubSize;
-    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
-    tilingParam_.hardwareUbSize = static_cast<int64_t>(ubSize);
+    auto compileInfo = reinterpret_cast<const RangeCompileInfo*>(context_->GetCompileInfo());
+    OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfo);
+    tilingParam_.totalCoreNum = compileInfo->totalCoreNum;
+    tilingParam_.hardwareUbSize = compileInfo->ubSize;
 
     uint64_t outSize = 0;
     switch (outDataType_) {

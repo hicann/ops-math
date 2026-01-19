@@ -69,8 +69,7 @@
 
 ## 调用说明
 
-| 调用方式 | 调用样例                                                                   | 说明                                                           |
+| 调用方式 | 样例代码   | 说明      |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_fmod_scalar](./examples/test_aclnn_fmod_scalar.cpp) | 通过aclnnFmodScalar接口方式调用Mod算子（标量版本）。 |
-| aclnn调用 | [test_aclnn_fmod_tensor](./examples/test_aclnn_fmod_tensor.cpp) | 通过aclnnFmodTensor接口方式调用Mod算子（张量版本）。 |
-| 图模式调用 | [算子IR](./op_graph/mod_proto.h)   | 通过算子IR构图方式调用Mod算子。 |
+| aclnn接口 | [test_aclnn_fmod_scalar](examples/test_aclnn_fmod_scalar.cpp) | 通过[aclnnFmodScalar](docs/aclnnFmodScalar&aclnnInplaceFmodScalar.md)接口方式调用Mod算子。 |
+| aclnn接口 | [test_aclnn_fmod_tensor](examples/test_aclnn_fmod_tensor.cpp) | 通过[aclnnFmodTensor](docs/aclnnFmodTensor&aclnnInplaceFmodTensor.md)接口方式调用Mod算子。 |

@@ -1,6 +1,5 @@
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- *
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -14,16 +13,15 @@
  * \brief
  */
 #include "range_tiling.h"
-
 #include <cmath>
 #include <type_traits>
-
 #include "log/log.h"
 #include "platform/platform_info.h"
 #include "range_tiling_arch35.h"
 #include "register/op_impl_registry.h"
 #include "op_host/tiling_templates_registry.h"
 #include "util/math_util.h"
+#include "util/fp16.h"
 
 namespace optiling {
 constexpr size_t INPUT_IDX_START = 0;
@@ -49,8 +47,9 @@ protected:
             auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
             socVersion_ = ascendcPlatform.GetSocVersion();
         } else {
-            OP_LOGE(context_, "get platform failed");
-            return ge::GRAPH_FAILED;
+            auto compileInfoPtr = reinterpret_cast<const RangeCompileInfo*>(context_->GetCompileInfo());
+            OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_, "compile info is null"), return ge::GRAPH_FAILED);
+            socVersion_ = compileInfoPtr->socVersion;
         }
         return ge::GRAPH_SUCCESS;
     }
@@ -123,7 +122,7 @@ ge::graphStatus RangeGetConstValue(gert::TilingContext* context, const gert::Ten
         value = static_cast<T>(*constDataPtr);
         OP_LOGD(context->GetNodeName(), "range get const value:%f", *constDataPtr);
     } else if (tensor->GetDataType() == ge::DT_FLOAT16) {
-        const int16_t* constDataPtr = tensor->GetData<int16_t>();
+        const Ops::Base::fp16_t* constDataPtr = tensor->GetData<Ops::Base::fp16_t>();
         OP_CHECK_NULL_WITH_CONTEXT(context, constDataPtr);
         float f32 = static_cast<float>(*constDataPtr);
         value = static_cast<T>(f32);
@@ -300,7 +299,8 @@ static ge::graphStatus TilingPrepare4Range(gert::TilingParseContext* context)
         OP_LOGE("range", "context is nullptr");
         return ge::GRAPH_FAILED;
     }
-    return ge::GRAPH_SUCCESS;
+    OP_LOGD(context->GetNodeName(), "TilingPrepare4Range regbase enter.");
+    return TilingPrepareRangeForAscendC(context);
 }
 
 ge::graphStatus OpTilingCalculateOutputSize(
