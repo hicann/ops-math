@@ -15,7 +15,7 @@
 #include "opdev/make_op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/op_dfx.h"
-#include "conversion/broadcast_to/op_host/op_api/broadcast_to.h"
+#include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "aclnn_isclose.h"

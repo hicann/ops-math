@@ -14,7 +14,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/op_dfx.h"
-#include "conversion/broadcast_to/op_host/op_api/broadcast_to.h"
+#include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "op_api/op_api_def.h"
 
 using namespace op;

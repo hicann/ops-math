@@ -23,7 +23,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "conversion/fill/op_api/fill.h"
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
-#include "conversion/broadcast_to/op_host/op_api/broadcast_to.h"
+#include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "math/real_div/op_api/realdiv.h"
 #include "opdev/platform.h"
 #include "op_api/aclnn_check.h"

@@ -23,7 +23,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 
-#include "conversion/broadcast_to/op_host/op_api/broadcast_to.h"
+#include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/reshape.h"

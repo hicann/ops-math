@@ -12,7 +12,7 @@
 
 #include "op_api/op_api_def.h"
 
-#include "conversion/broadcast_to/op_host/op_api/broadcast_to.h"
+#include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "floor_mod.h"

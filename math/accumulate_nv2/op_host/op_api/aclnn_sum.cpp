@@ -12,7 +12,7 @@
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/reshape.h"
 #include "aclnn_kernels/contiguous.h"
-#include "conversion/broadcast_to/op_host/op_api/broadcast_to.h"
+#include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "accumulate_nv2.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"

@@ -16,7 +16,7 @@
 #include "aclnn_triangular_solve.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "../../../add/op_api/add.h"
-#include "conversion/broadcast_to/op_host/op_api/broadcast_to.h"
+#include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "../../../eye/op_api/eye.h"
