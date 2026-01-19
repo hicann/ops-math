@@ -12,7 +12,7 @@
 message(STATUS "Build experimental module")
 
 set(COMMON_L0_SRCS
-  ${CMAKE_SOURCE_DIR}/math/cast/op_host/op_api/cast.cpp
+  ${CMAKE_SOURCE_DIR}/math/cast/op_api/cast.cpp
   ${CMAKE_SOURCE_DIR}/conversion/contiguous/op_host/op_api/contiguous.cpp
   ${CMAKE_SOURCE_DIR}/conversion/reshape/op_host/op_api/reshape.cpp
   ${CMAKE_SOURCE_DIR}/conversion/slice/op_api/slice.cpp

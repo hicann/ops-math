@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License")
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "aclnn_cast.h"
 #include "aclnn_kernels/cast.h"
@@ -22,6 +22,7 @@
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -53,7 +54,7 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_DEFAULT = {
     op::DataType::DT_UINT8,     op::DataType::DT_INT16,      op::DataType::DT_INT32,  op::DataType::DT_INT64,
     op::DataType::DT_UINT16,    op::DataType::DT_UINT32,     op::DataType::DT_UINT64, op::DataType::DT_BOOL,
     op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16};
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16,   op::DataType::DT_FLOAT,       op::DataType::DT_DOUBLE,
     op::DataType::DT_INT8,      op::DataType::DT_UINT8,       op::DataType::DT_INT16,
     op::DataType::DT_INT32,     op::DataType::DT_INT64,       op::DataType::DT_UINT16,
@@ -62,7 +63,7 @@ static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST
     op::DataType::DT_HIFLOAT8,  op::DataType::DT_FLOAT8_E5M2, op::DataType::DT_FLOAT8_E4M3FN,
     op::DataType::DT_COMPLEX32, op::DataType::DT_FLOAT4_E1M2, op::DataType::DT_FLOAT4_E2M1,
     op::DataType::DT_INT4};
-static const std::initializer_list<op::DataType> ASCEND910_95_SELF_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> REGBASE_SELF_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16,   op::DataType::DT_FLOAT,       op::DataType::DT_DOUBLE,
     op::DataType::DT_INT8,      op::DataType::DT_UINT8,       op::DataType::DT_INT16,
     op::DataType::DT_INT32,     op::DataType::DT_INT64,       op::DataType::DT_UINT16,
@@ -81,19 +82,15 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
 static bool CheckDtypeValid(const aclTensor* self, const DataType dtype)
 {
     // 检查self的数据类型是否在算子的支持列表内
-    bool isASCEND910B = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B);
-    bool isASCEND910_93 = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93);
-    bool isASCEND910_95 = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95);
-    bool isAscend910BC = isASCEND910B || isASCEND910_93;
-
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
     auto supportList = ASCEND910_DTYPE_SUPPORT_LIST;
     auto selfSupportList = ASCEND910_DTYPE_SUPPORT_LIST;
-    if (isAscend910BC) {
+    if (curArch == NpuArch::DAV_2201) {
         supportList = DTYPE_SUPPORT_LIST_DEFAULT;
         selfSupportList = DTYPE_SUPPORT_LIST_DEFAULT;
-    } else if (isASCEND910_95) {
-        supportList = ASCEND910_95_DTYPE_SUPPORT_LIST;
-        selfSupportList = ASCEND910_95_SELF_DTYPE_SUPPORT_LIST;
+    } else if (IsRegBase(curArch)) {
+        supportList = REGBASE_DTYPE_SUPPORT_LIST;
+        selfSupportList = REGBASE_SELF_DTYPE_SUPPORT_LIST;
     }
     OP_CHECK_DTYPE_NOT_SUPPORT(self, selfSupportList, return false);
     bool isSupport = CheckType(dtype, supportList);

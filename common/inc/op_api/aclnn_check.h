@@ -16,6 +16,8 @@
 #ifndef MATH_COMMON_ACLNN_CHECK_H
 #define MATH_COMMON_ACLNN_CHECK_H
 
+#include <set>
+#include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
 
 #define OP_CONCAT(a, b) a##b
@@ -128,5 +130,12 @@ namespace op {
         op::ToString(t0Shape).GetString(), op::ToString(t1Shape).GetString());
     return false;
 }
+
+static inline bool IsRegBase(NpuArch arch)
+{
+    const static std::set<NpuArch> regbaseArch = {NpuArch::DAV_3510};
+    return regbaseArch.find(arch) != regbaseArch.end();
+}
+
 } // namespace op
 #endif

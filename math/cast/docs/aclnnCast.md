@@ -1,11 +1,18 @@
 # aclnnCast
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/cast)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+| <term>Atlas 200/300/500 推理产品</term>                      |    ×     |
 
 ## 功能说明
 
@@ -107,6 +114,7 @@ aclnnStatus aclnnCast(
     </tr>
   </tbody></table>
   
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16、INT4。
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持COMPLEX32、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT4_E2M1、FLOAT4_E1M2、INT4。
 
 - **返回值：**
@@ -195,6 +203,7 @@ aclnnStatus aclnnCast(
   </tbody>
   </table>
 
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -210,11 +219,33 @@ aclnnStatus aclnnCast(
 - 针对输入数据类型为BOOL、COMPLEX32、COMPLEX64、COMPLEX128、FLOAT4_E2M1、FLOAT4_E1M2的场景：
   不支持输入为非连续。
 
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+- <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
   - 针对数据类型从int32转换为int8的场景：
     只能保证输入数据在(-2048, 1920)范围内精度无误差。
   - 针对数据类型从float64/complex64/complex128转换为uint8的场景：
     只能保证输入数据为非负数精度无误差。
+
+- <term>Atlas 推理系列产品</term>：
+  - 针对数据类型从float32转换为int64和float32转换为uint8的场景：
+    只能保证输入数据在(-2147483648, 2147483583)范围内精度无误差。
+
+  - 针对数据类型从int64转换为float32的场景：
+    只能保证输入数据在(-2147483648, 2147483647)范围内精度无误差。
+
+- <term>Ascend 950PR/Ascend 950DT</term>：
+  - 针对输出类型为INT4的场景：不支持输入Shape的尾轴为奇数、不支持输入为非连续。
+  - 针对输入、输出类型，涉及COMPLEX32、FLOAT4_E2M1、FLOAT4_E1M2、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、INT4的，只支持如下表格中的转换路径：
+    | `self`数据类型 | `out`数据类型 |
+    | ------------ | ------------ |
+    | COMPLEX32 | FLOAT16 |
+    | FLOAT16 | COMPLEX32 |
+    | FLOAT32/FLOAT16/BFLOAT16 | FLOAT4_E2M1/FLOAT4_E1M2 |
+    | FLOAT4_E2M1/FLOAT4_E1M2 | FLOAT32/FLOAT16/BFLOAT16 |
+    | FLOAT32/FLOAT16/BFLOAT16 | HIFLOAT8/FLOAT8_E5M2/FLOAT8_E4M3FN |
+    | HIFLOAT8/FLOAT8_E5M2/FLOAT8_E4M3FN | FLOAT32/FLOAT16/BFLOAT16 |
+    | HIFLOAT8/FLOAT8_E5M2/FLOAT8_E4M3FN | FLOAT4_E2M1/FLOAT4_E1M2 |
+    | FLOAT4_E2M1/FLOAT4_E1M2 | HIFLOAT8/FLOAT8_E5M2/FLOAT8_E4M3FN |
+    | INT32 | INT4 |
 
 ## 调用示例
 

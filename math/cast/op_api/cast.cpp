@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License")
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "aclnn_kernels/cast.h"
 #include "opdev/make_op_executor.h"
@@ -17,6 +17,7 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -105,7 +106,7 @@ static const std::initializer_list<std::pair<op::DataType, op::DataType>> ASCEND
     {op::DataType::DT_UINT8, op::DataType::DT_INT8},    {op::DataType::DT_FLOAT16, op::DataType::DT_INT64},
     {op::DataType::DT_BF16, op::DataType::DT_INT64}};
 
-static const std::initializer_list<std::pair<op::DataType, op::DataType>> ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<std::pair<op::DataType, op::DataType>> REGBASE_AICORE_DTYPE_SUPPORT_LIST = {
     {op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT},
     {op::DataType::DT_FLOAT16, op::DataType::DT_INT32},
     {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16},
@@ -280,12 +281,13 @@ static const std::initializer_list<op::DataType> AICPU_DTYPE_SUPPORT_LIST = {
 static bool IsAiCoreSupport(const aclTensor* self, op::DataType dstDtype)
 {
     // Cast只需要根据soc信息判断对应芯片的dtype支持
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
     bool isAscend310pSupport =
         std::find(
             ASCEND310P_SUPPORT_910_NOT_SUPPORT_LIST.begin(), ASCEND310P_SUPPORT_910_NOT_SUPPORT_LIST.end(),
             std::pair<op::DataType, op::DataType>(self->GetDataType(), dstDtype)) !=
         ASCEND310P_SUPPORT_910_NOT_SUPPORT_LIST.end();
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310P && isAscend310pSupport) {
+    if (curArch == NpuArch::DAV_2002 && isAscend310pSupport) {
         return true;
     }
 
@@ -294,23 +296,22 @@ static bool IsAiCoreSupport(const aclTensor* self, op::DataType dstDtype)
             ASCEND610LITE_AICORE_DTYPE_SUPPORT_LIST.begin(), ASCEND610LITE_AICORE_DTYPE_SUPPORT_LIST.end(),
             std::pair<op::DataType, op::DataType>(self->GetDataType(), dstDtype)) !=
         ASCEND610LITE_AICORE_DTYPE_SUPPORT_LIST.end();
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND610LITE) {
+    if (curArch == NpuArch::DAV_3102) {
         return isAscend610liteSupport;
     }
 
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+    if (curArch == NpuArch::DAV_2201) {
         return std::find(
                    ASCEND910B_AICORE_DTYPE_SUPPORT_LIST.begin(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST.end(),
                    std::pair<op::DataType, op::DataType>(self->GetDataType(), dstDtype)) !=
                ASCEND910B_AICORE_DTYPE_SUPPORT_LIST.end();
     }
 
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    if (IsRegBase(curArch)) {
         return std::find(
-                   ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST.begin(), ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST.end(),
+                   REGBASE_AICORE_DTYPE_SUPPORT_LIST.begin(), REGBASE_AICORE_DTYPE_SUPPORT_LIST.end(),
                    std::pair<op::DataType, op::DataType>(self->GetDataType(), dstDtype)) !=
-               ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST.end();
+               REGBASE_AICORE_DTYPE_SUPPORT_LIST.end();
     }
 
     return std::find(
