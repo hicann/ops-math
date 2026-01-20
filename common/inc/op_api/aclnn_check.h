@@ -137,5 +137,12 @@ static inline bool IsRegBase(NpuArch arch)
     return regbaseArch.find(arch) != regbaseArch.end();
 }
 
+static inline bool IsRegBase()
+{
+    const static std::set<NpuArch> regbaseArch = {NpuArch::DAV_3510};
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    return regbaseArch.find(curArch) != regbaseArch.end();
+}
+
 } // namespace op
 #endif

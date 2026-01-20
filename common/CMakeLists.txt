@@ -26,6 +26,7 @@ target_include_directories(${COMMON_NAME}_obj
   ${PLATFORM_INC_DIRS}
   ${METADEF_INCLUDE_DIRS}
   ${OPS_MATH_DIR}/common/inc
+  ${ASCEND_DIR}/pkg_inc
 )
 
 target_link_libraries(${COMMON_NAME}_obj

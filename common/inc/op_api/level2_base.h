@@ -11,7 +11,9 @@
 #ifndef LEVEL2_BASE_H_MATH
 #define LEVEL2_BASE_H_MATH
 
+#include <stdio.h>
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 #include "aclnn/aclnn_base.h"
 
 #ifdef __cplusplus
@@ -99,8 +101,7 @@ namespace op {
 [[maybe_unused]] static const std::initializer_list<DataType>& GetDtypeSupportListV1(
     const std::initializer_list<op::DataType>& l1, const std::initializer_list<op::DataType>& l2)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201) {
         return l1;
     } else {
         return l2;
@@ -114,8 +115,8 @@ namespace op {
 [[maybe_unused]] static const std::initializer_list<DataType>& GetDtypeSupportListV2(
     const std::initializer_list<op::DataType>& l1, const std::initializer_list<op::DataType>& l2)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-        GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) {
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if(curArch == NpuArch::DAV_2201 || IsRegBase(curArch)) {
         return l1;
     } else {
         return l2;
@@ -125,14 +126,13 @@ namespace op {
 [[maybe_unused]] static const std::initializer_list<op::DataType> GetDtypeSupportListV3(
     const std::initializer_list<op::DataType>& l1, const std::initializer_list<op::DataType>& l2)
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    switch (socVersion) {
-        case SocVersion::ASCEND910_93:
-        case SocVersion::ASCEND910_95:
-        case SocVersion::ASCEND910B: {
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    switch (curArch) {
+        case NpuArch::DAV_2201:
+        case NpuArch::DAV_3510: {
             return l1;
         }
-        case SocVersion::ASCEND910: {
+        case NpuArch::DAV_1001: {
             return l2;
         }
         default: {
