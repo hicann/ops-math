@@ -46,7 +46,8 @@ static const uint32_t MAX_FACTORS_LEN = 3;
 static const uint32_t DFT_BORDER_VALUE = 4096;
 static const uint32_t RFFT_BORDER_VALUE = 262144;
 static const uint32_t DEFAULT_MEMORY_SIZE = 100000;
-static const uint32_t HASH_KEY_CONSTANT = 1000000;
+static const uint32_t HASH_KEY_DEVICE_CONSTANT = 10000000;
+static const uint32_t HASH_KEY_NORM_CONSTANT = 1000000;
 static const uint32_t FIRST_FACTOR = 2;
 static const uint32_t LAST_FACTOR = 64;
 static const double INIT_VALUE = 0.;
@@ -94,15 +95,15 @@ public:
         return deviceCacheNum[deviceId];
     }
 
-    void AddPlanCache(int64_t len, int32_t deviceId, void* planDevice)
+    void AddPlanCache(int64_t len, int32_t deviceId, void* planDevice, int64_t norm)
     {
-        int64_t key = len + HASH_KEY_CONSTANT * deviceId;
+        int64_t key = len + HASH_KEY_DEVICE_CONSTANT * deviceId + HASH_KEY_NORM_CONSTANT * norm;
         planCache[key] = planDevice;
     }
 
-    void* FindPlanCache(int64_t len, int32_t deviceId)
+    void* FindPlanCache(int64_t len, int32_t deviceId, int64_t norm)
     {
-        int64_t key = len + HASH_KEY_CONSTANT * deviceId;
+        int64_t key = len + HASH_KEY_DEVICE_CONSTANT * deviceId + HASH_KEY_NORM_CONSTANT * norm;
         return planCache[key];
     }
 
@@ -398,7 +399,7 @@ static const aclTensor* GenerateDftMatrix(int64_t len, int64_t norm, aclOpExecut
 {
     auto deviceId = GetCurrentPlatformInfo().GetDeviceId();
 
-    void* planDevice = Rfft1DSingleton::GetInstance().FindPlanCache(len, deviceId);
+    void* planDevice = Rfft1DSingleton::GetInstance().FindPlanCache(len, deviceId, norm);
     if (planDevice != nullptr) {
         int64_t tensorLen = Rfft1DSingleton::GetInstance().FindTensorLen(len);
         auto dft = executor->AllocTensor({tensorLen}, op::DataType::DT_FLOAT);
@@ -423,7 +424,7 @@ static const aclTensor* GenerateDftMatrix(int64_t len, int64_t norm, aclOpExecut
         Rfft1DSingleton::GetInstance().AddCacheNum(deviceId);
         deviceTensor = op::CopyToNpuSync(dftMatrix, executor);
         CHECK_RET(deviceTensor != nullptr, nullptr);
-        Rfft1DSingleton::GetInstance().AddPlanCache(len, deviceId, deviceTensor->GetData());
+        Rfft1DSingleton::GetInstance().AddPlanCache(len, deviceId, deviceTensor->GetData(), norm);
     } else {
         deviceTensor = op::CopyToNpu(dftMatrix, executor);
         CHECK_RET(deviceTensor != nullptr, nullptr);
@@ -628,7 +629,7 @@ static const aclTensor* FinalCalculation(
 static const aclTensor* GenerateTerminatorMatrix(int64_t len, int64_t norm, aclOpExecutor* executor)
 {
     auto deviceId = GetCurrentPlatformInfo().GetDeviceId();
-    void* planDevice = Rfft1DSingleton::GetInstance().FindPlanCache(len, deviceId);
+    void* planDevice = Rfft1DSingleton::GetInstance().FindPlanCache(len, deviceId, norm);
     if (planDevice != nullptr) {
         int64_t tensorLen = Rfft1DSingleton::GetInstance().FindTensorLen(len);
         auto dft = executor->AllocTensor({tensorLen}, op::DataType::DT_FLOAT);
@@ -682,7 +683,7 @@ static const aclTensor* GenerateTerminatorMatrix(int64_t len, int64_t norm, aclO
         Rfft1DSingleton::GetInstance().AddCacheNum(deviceId);
         deviceTensor = op::CopyToNpuSync(dftMatrix, executor);
         CHECK_RET(deviceTensor != nullptr, nullptr);
-        Rfft1DSingleton::GetInstance().AddPlanCache(len, deviceId, deviceTensor->GetData());
+        Rfft1DSingleton::GetInstance().AddPlanCache(len, deviceId, deviceTensor->GetData(), norm);
     } else {
         deviceTensor = op::CopyToNpu(dftMatrix, executor);
         CHECK_RET(deviceTensor != nullptr, nullptr);
