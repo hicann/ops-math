@@ -308,6 +308,6 @@ ge::graphStatus STFTTiling::PostTiling()
     return ge::GRAPH_SUCCESS;
 }
 
-REGISTER_TILING_TEMPLATE("STFT", STFTTiling, 10000);
+REGISTER_OPS_TILING_TEMPLATE(STFT, STFTTiling, 10000);
 
 } // namespace optiling

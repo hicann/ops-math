@@ -758,6 +758,6 @@ ge::graphStatus STFTGeneralizedTiling::PostTiling()
     return ge::GRAPH_SUCCESS;
 }
 
-REGISTER_TILING_TEMPLATE("STFT", STFTGeneralizedTiling, 20000);
+REGISTER_OPS_TILING_TEMPLATE(STFT, STFTGeneralizedTiling, 20000);
 
 } // namespace optiling

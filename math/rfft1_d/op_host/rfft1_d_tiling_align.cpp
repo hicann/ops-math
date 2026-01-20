@@ -288,6 +288,6 @@ ge::graphStatus Rfft1DTiling::PostTiling()
     return ge::GRAPH_SUCCESS;
 }
 
-REGISTER_TILING_TEMPLATE("Rfft1D", Rfft1DTiling, 10000);
+REGISTER_OPS_TILING_TEMPLATE(Rfft1D, Rfft1DTiling, 10000);
 
 } // namespace optiling

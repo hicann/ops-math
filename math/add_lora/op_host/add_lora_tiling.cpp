@@ -401,7 +401,7 @@ static ge::graphStatus TilingParseForAddLora([[maybe_unused]] gert::TilingParseC
     return ge::GRAPH_SUCCESS;
 }
 
-REGISTER_TILING_TEMPLATE("AddLora", AddLoraTiling, 0);
+REGISTER_OPS_TILING_TEMPLATE(AddLora, AddLoraTiling, 0);
 
 IMPL_OP_OPTILING(AddLora).Tiling(AddLoraTilingFunc).TilingParse<Tiling4AddLoraCompileInfo>(TilingParseForAddLora);
 } // namespace optiling
