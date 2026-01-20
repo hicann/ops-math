@@ -2,7 +2,7 @@
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------- |
+| :----------------------------------------------------------- | :-------: |
 | <term>Ascend 950PR/Ascend 950DT</term>                             | √        |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     | √        |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> | √        |
@@ -91,5 +91,5 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | :-------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| aclnn接口 | [test_aclnn_channel_shuffle](examples/test_aclnn_channel_shuffle.cpp) | 通过[aclnn_channel_shuffle](docs/aclnnChannelShuffle.md)接口方式调用SpaceToDepth算子。 |
-| aclnn接口 | [test_aclnn_permute](examples/test_aclnn_permute.cpp) | 通过[aclnn_permute](docs/aclnnPermute.md)接口方式调用SpaceToDepth算子。 |
+| aclnn接口 | [test_aclnn_channel_shuffle](../transpose/examples/test_aclnn_channel_shuffle.cpp) | 通过[aclnn_channel_shuffle](../transpose/docs/aclnnChannelShuffle.md)接口方式调用SpaceToDepth算子。 |
+| aclnn接口 | [test_aclnn_permute](../transpose/examples/test_aclnn_permute.cpp) | 通过[aclnn_permute](../transpose/docs/aclnnPermute.md)接口方式调用SpaceToDepth算子。 |

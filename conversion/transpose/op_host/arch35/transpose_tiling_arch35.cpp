@@ -76,7 +76,7 @@ ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
             OP_LOGD(tilingContext_->GetNodeName(), "Do gather tiling done!"), return ge::GRAPH_SUCCESS);
     }
 
-    //ensure tiling template
+    // ensure tiling template
     EntryTilingTemplate();
     // UB split
     CalcUBSplitInfo();
@@ -422,8 +422,7 @@ void TransposeNddmaTiling::DoSplitUB()
     }
     if (splitInfo_.outCutIndex > FindOutIndex(splitInfo_.inCutIndex)) {
         tilingKey_ = static_cast<int64_t>(SplitMode::CUT_TWICE);
-    }
-    else {
+    } else {
         tilingKey_ = static_cast<int64_t>(SplitMode::CUT_ONCE);
     }
 }
@@ -517,23 +516,23 @@ void TransposeNddmaTiling::EntryTilingTemplate()
         return;
     }
     if (shapeInfo_.totalVolumeActual * shapeInfo_.eleLenInBytes >= SMALL_SHAPE_BYTES_THRES_HOLD) {
-        if (!shapeInfo_.isLastAxisTranspose && shapeInfo_.reducedInShape[shapeInfo_.dim - 1] >= MOVEALIGN_LAST_MIN_ELE) {
-            //MoveAlign场景 （大于等于32个元素）
+        if (!shapeInfo_.isLastAxisTranspose &&
+            shapeInfo_.reducedInShape[shapeInfo_.dim - 1] >= MOVEALIGN_LAST_MIN_ELE) {
+            // MoveAlign场景 （大于等于32个元素）
             tilingKey_ = static_cast<int64_t>(SplitMode::N_LAST_TRANSPOSE);
             return;
         }
         if (shapeInfo_.dim <= NDDMA_MAX_DIM_NUM) {
-            //nddma场景：尾轴不转置以及尾轴转置
+            // nddma场景：尾轴不转置以及尾轴转置且dst[-1]>32（待优化）
             tilingKey_ = static_cast<int64_t>(SplitMode::NDDMA_BASE);
             return;
-        }
-        else {
-            //BigShape场景,维度超过NDDMA_MAX_DIM_NUM且总元素超过threshold
+        } else {
+            // BigShape场景,维度超过NDDMA_MAX_DIM_NUM且总元素超过threshold
             tilingKey_ = static_cast<int64_t>(SplitMode::BIG_DIM);
             return;
         }
     }
-    //兜底逻辑 simt
+    // 兜底逻辑 simt
     tilingKey_ = static_cast<int64_t>(SplitMode::SMALL_SHAPE);
 }
 
@@ -640,7 +639,7 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForNLastTranspose()
     OP_LOGD(tilingContext_->GetNodeName(), "Entering CalcBlockSplitInfoForNLastTranspose.");
     splitInfo_.inUbElement = splitInfo_.ubElement;
     int64_t remainingTotalElment = shapeInfo_.totalVolumeActual;
-    int64_t solvedTotalElment[MAX_AXIS_NUM_FOR_TRANSPOSE] = {0};
+    int64_t solvedTotalElment[MAX_AXIS_NUM_FOR_TRANSPOSE];
     solvedTotalElment[shapeInfo_.dim - 1] = 1;
     int64_t currentSplitIndex;
     int64_t currentInShapeDim;
@@ -650,24 +649,26 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForNLastTranspose()
         remainingTotalElment /= currentInShapeDim;
         int64_t coreNumTmp = remainingTotalElment * Ops::Base::CeilDiv(currentInShapeDim, splitInfo_.inUbElement);
         if (splitInfo_.inUbElement < currentInShapeDim) {
-            if (coreNumTmp < coreNum_) {  // use at least VEC_CORE_USED_THRES_HOLD * coreNum
+            if (coreNumTmp < coreNum_) { // use at least VEC_CORE_USED_THRES_HOLD * coreNum
                 FindSplitFactorByRateNLast(currentSplitIndex, currentInShapeDim, remainingTotalElment);
                 break;
-            } else {  // use full coreNum
+            } else { // use full coreNum
                 int64_t coreNumMultiples = Ops::Base::FloorDiv(coreNumTmp, coreNum_);
-                FindSplitFactorByMultiplesNLast(currentSplitIndex, currentInShapeDim, remainingTotalElment,
-                                                coreNumMultiples);
+                FindSplitFactorByMultiplesNLast(
+                    currentSplitIndex, currentInShapeDim, remainingTotalElment, coreNumMultiples);
                 /* 检查inUbFactor是否合法，不合法则执行退轴逻辑 */
-                CheckInUbFactorValid(currentSplitIndex, currentInShapeDim, remainingTotalElment, coreNumMultiples, solvedTotalElment);
+                CheckInUbFactorValid(
+                    currentSplitIndex, currentInShapeDim, remainingTotalElment, coreNumMultiples, solvedTotalElment);
                 break;
             }
-        } else if (coreNumTmp < coreNum_) {  // use at least VEC_CORE_USED_THRES_HOLD * coreNum
+        } else if (coreNumTmp < coreNum_) { // use at least VEC_CORE_USED_THRES_HOLD * coreNum
             FindSplitFactorByRateNLast(currentSplitIndex, currentInShapeDim, remainingTotalElment);
             break;
         } else {
             splitInfo_.inUbElement /= currentInShapeDim;
-            solvedTotalElment[currentSplitIndex] =
-                currentSplitIndex == shapeInfo_.dim - 1 ? currentInShapeDim : (currentInShapeDim * solvedTotalElment[currentSplitIndex + 1]);
+            solvedTotalElment[currentSplitIndex] = currentSplitIndex == shapeInfo_.dim - 1 ?
+                                                       currentInShapeDim :
+                                                       (currentInShapeDim * solvedTotalElment[currentSplitIndex + 1]);
         }
     }
     int64_t coreNum = Ops::Base::CeilDiv(shapeInfo_.reducedInShape[splitInfo_.inCutIndex], splitInfo_.inUbFactor) *
@@ -676,11 +677,9 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForNLastTranspose()
 }
 
 void TransposeNddmaTiling::CheckInUbFactorValid(
-    int64_t& currentSplitIndex, int64_t& currentInShapeDim, int64_t& remainingTotalElment, int64_t& coreNumMultiples, int64_t* solvedTotalElment)
+    int64_t& currentSplitIndex, int64_t& currentInShapeDim, int64_t& remainingTotalElment, int64_t& coreNumMultiples,
+    int64_t* solvedTotalElment)
 {
-    if (currentSplitIndex < 0 || currentSplitIndex >= MAX_AXIS_NUM_FOR_TRANSPOSE) {
-        return;
-    }
     if (splitInfo_.inUbFactor == 0 && currentSplitIndex < shapeInfo_.dim - 1) {
         while (currentSplitIndex < shapeInfo_.dim - 1) {
             currentSplitIndex++;
@@ -688,8 +687,8 @@ void TransposeNddmaTiling::CheckInUbFactorValid(
             splitInfo_.inUbElement = shapeInfo_.reducedInShape[currentSplitIndex];
             remainingTotalElment = shapeInfo_.totalVolumeActual / solvedTotalElment[currentSplitIndex];
             coreNumMultiples = remainingTotalElment;
-            FindSplitFactorByMultiplesNLast(currentSplitIndex, currentInShapeDim, remainingTotalElment,
-                                            coreNumMultiples);
+            FindSplitFactorByMultiplesNLast(
+                currentSplitIndex, currentInShapeDim, remainingTotalElment, coreNumMultiples);
             if (splitInfo_.inUbFactor > 0) {
                 break;
             }
@@ -1139,10 +1138,9 @@ void TransposeNddmaTiling::PrintTilingData()
         tilingData_.transposeOpTiling.get_ubSize(), tilingData_.transposeOpTiling.get_totalNddmaNum());
 }
 
-ge::graphStatus TransposeNddmaTiling::TilingForReleatedTranspose(gert::TilingContext* context,
-                                                                 TransposeOpTilingData* tilingData,
-                                                                 TransposeCompilerInfo* compilerInfo,
-                                                                 ShapeInfo& opInput)
+ge::graphStatus TransposeNddmaTiling::TilingForReleatedTranspose(
+    gert::TilingContext* context, TransposeOpTilingData* tilingData, TransposeCompilerInfo* compilerInfo,
+    ShapeInfo& opInput)
 {
     OP_LOGD(context->GetNodeName(), "Start TilingForReleatedTranspose.");
     TransposeNddmaTiling tilingObject(context);
@@ -1171,7 +1169,7 @@ static ge::graphStatus TransposeTilingForAscendC(gert::TilingContext* context)
     return tilingObject.RunTranposelTiling();
 }
 
-static ge::graphStatus TilingPrepareTransposeForAscendC(gert::TilingParseContext* context)
+ge::graphStatus TilingPrepareTransposeForAscendC(gert::TilingParseContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Start TilingPrepareTransposeForAscendC");
     auto ci = context->GetCompiledInfo<TransposeCompilerInfo>();

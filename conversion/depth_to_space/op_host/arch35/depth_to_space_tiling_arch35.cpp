@@ -17,32 +17,6 @@
 namespace optiling {
 
 namespace DepthToSpace {
-
-static ge::graphStatus TilingPrepareTransposeForAscendC(gert::TilingParseContext* context)
-{
-    OP_LOGD(context->GetNodeName(), "Start TilingPrepareTransposeForAscendC");
-    auto ci = context->GetCompiledInfo<TransposeCompilerInfo>();
-    OP_CHECK_NULL_WITH_CONTEXT(context, ci);
-    auto platformInfo = context->GetPlatformInfo();
-    OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
-    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
-    ci->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (ci->coreNum <= 0),
-        OP_LOGE(context->GetNodeName(), "Transpose Op GetHardwareInfo Failed, coreNum:%ld.", ci->coreNum),
-        return ge::GRAPH_FAILED);
-    uint64_t ubSize;
-    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
-    ci->ubSize = static_cast<int64_t>(ubSize);
-    OP_CHECK_IF(
-        (ci->ubSize <= 0),
-        OP_LOGE(context->GetNodeName(), "Transpose Op GetHardwareInfo Failed, ubSize:%ld.", ci->ubSize),
-        return ge::GRAPH_FAILED);
-
-    OP_LOGD(context->GetNodeName(), "Transpose Op get coreNum:%ld, ubSize:%ld.", ci->coreNum, ci->ubSize);
-    return ge::GRAPH_SUCCESS;
-}
-
 ge::graphStatus DepthToSpaceTiling::ParametersVerifying()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Start DepthToSpaceTiling ParametersVerifying.");

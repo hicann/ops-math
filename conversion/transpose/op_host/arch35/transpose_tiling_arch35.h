@@ -103,7 +103,6 @@ BEGIN_TILING_DATA_DEF(TransposeTilingData)
 TILING_DATA_FIELD_DEF_STRUCT(TransposeOpTilingData, transposeOpTiling);
 END_TILING_DATA_DEF;
 REGISTER_TILING_DATA_CLASS(Transpose, TransposeTilingData);
-REGISTER_TILING_DATA_CLASS(SpaceToDepth, TransposeTilingData);
 
 enum class SplitMode : int64_t
 {
@@ -150,6 +149,7 @@ struct ParamInfo {
 };
 
 ge::graphStatus TransposeTilingForAscendC(gert::TilingContext* context, const int64_t& coreNum, const int64_t& ubSize);
+ge::graphStatus TilingPrepareTransposeForAscendC(gert::TilingParseContext* context);
 
 class TransposeNddmaTiling {
 public:

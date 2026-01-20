@@ -13,13 +13,12 @@
  * \brief
  */
 
-#include "../transpose/arch35/transpose_big_dim.h"
+#include "../transpose/arch35/transpose_tensor_move.h"
 #include "../transpose/arch35/transpose_cut_one_axis.h"
 #include "../transpose/arch35/transpose_cut_two_axis.h"
-#include "../transpose/arch35/transpose_n_last.h"
 #include "../transpose/arch35/transpose_small_shape.h"
-#include "../transpose/arch35/transpose_tensor_move.h"
-#include "../transpose/arch35/transpose_with_gather.h"
+#include "../transpose/arch35/transpose_big_dim.h"
+#include "../transpose/arch35/transpose_n_last.h"
 
 #define TENSOR_MOVE 10000
 #define SMALL_SHAPE 10001
@@ -27,212 +26,37 @@
 #define CUT_TWICE 10003
 #define N_LAST_TRANSPOSE 10004
 #define BIG_DIM 10005
-#define GATHER_TRANSPOSE 10006
 
 using namespace Transpose;
 
-extern "C" __aicore__ inline void TransposeTensorMoveProcess(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData, TPipe* pipe)
-{
-    if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
-        Transpose::TransposeTensorMove<int8_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
-        Transpose::TransposeTensorMove<int16_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
-        Transpose::TransposeTensorMove<int32_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
-        Transpose::TransposeTensorMove<int64_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else {
-        Transpose::TransposeTensorMove<DTYPE_X> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    }
-}
-
-extern "C" __aicore__ inline void TransposeSmallShapeProcess(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData)
-{
-    if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
-        Transpose::TransposeSmallShape<int8_t> op;
-        op.Init(x, y, tilingData);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
-        Transpose::TransposeSmallShape<int16_t> op;
-        op.Init(x, y, tilingData);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
-        Transpose::TransposeSmallShape<int32_t> op;
-        op.Init(x, y, tilingData);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
-        Transpose::TransposeSmallShape<int64_t> op;
-        op.Init(x, y, tilingData);
-        op.Process();
-    } else {
-        Transpose::TransposeSmallShape<DTYPE_X> op;
-        op.Init(x, y, tilingData);
-        op.Process();
-    }
-}
-
-extern "C" __aicore__ inline void TransposeCutOneAxisProcess(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData, TPipe* pipe)
-{
-    if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
-        Transpose::TransposeCutOneAxis<int8_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
-        Transpose::TransposeCutOneAxis<int16_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
-        Transpose::TransposeCutOneAxis<int32_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
-        Transpose::TransposeCutOneAxis<int64_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else {
-        Transpose::TransposeCutOneAxis<DTYPE_X> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    }
-}
-
-extern "C" __aicore__ inline void TransposeCutTwoAxisProcess(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData, TPipe* pipe)
-{
-    if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
-        Transpose::TransposeCutTwoAxis<int8_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
-        Transpose::TransposeCutTwoAxis<int16_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
-        Transpose::TransposeCutTwoAxis<int32_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
-        Transpose::TransposeCutTwoAxis<int64_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else {
-        Transpose::TransposeCutTwoAxis<DTYPE_X> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    }
-}
-
-extern "C" __aicore__ inline void TransposeBigDimProcess(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData, TPipe* pipe)
-{
-    if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
-        Transpose::TransposeBigDim<int8_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
-        Transpose::TransposeBigDim<int16_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
-        Transpose::TransposeBigDim<int32_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
-        Transpose::TransposeBigDim<int64_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else {
-        Transpose::TransposeBigDim<DTYPE_X> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    }
-}
-
-extern "C" __aicore__ inline void TransposeNLastProcess(
-    GM_ADDR x, GM_ADDR y, const TransposeOpTilingData* tilingData, TPipe* pipe)
-{
-    if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
-        Transpose::TransposeNLast<int8_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
-        Transpose::TransposeNLast<int16_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
-        Transpose::TransposeNLast<int32_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
-        Transpose::TransposeNLast<int64_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else {
-        Transpose::TransposeNLast<DTYPE_X> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    }
-}
-
-extern "C" __aicore__ inline void TransposeGatherProcess(
-    GM_ADDR x, GM_ADDR y, const GatherTransposeTilingData* tilingData, TPipe* pipe)
-{
-    if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
-        Transpose::TransposeWithGather<int8_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
-        Transpose::TransposeWithGather<int16_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
-        Transpose::TransposeWithGather<int32_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
-        Transpose::TransposeWithGather<int64_t> op;
-        op.Init(x, y, tilingData, pipe);
-        op.Process();
-    }
-}
-
-extern "C" __global__ __aicore__ void space_to_depth(GM_ADDR x, GM_ADDR perm, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
-{
-    TPipe pipe;
+__global__ __aicore__ void space_to_depth(GM_ADDR x,  GM_ADDR filter, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+{   
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
+    GET_TILING_DATA(tilingData, tiling);
+    TPipe pipe;
     if (TILING_KEY_IS(TENSOR_MOVE)) {
-        GET_TILING_DATA_WITH_STRUCT(TransposeTilingData, tilingData, tiling);
-        TransposeTensorMoveProcess(x, y, &tilingData.transposeOpTiling, &pipe);
+        Transpose::TransposeTensorMove<DTYPE_X> op;
+        op.Init(x, y, &tilingData.transposeOpTiling, &pipe);
+        op.Process();
     } else if (TILING_KEY_IS(SMALL_SHAPE)) {
-        GET_TILING_DATA_WITH_STRUCT(TransposeTilingData, tilingData, tiling);
-        TransposeSmallShapeProcess(x, y, &tilingData.transposeOpTiling);
+        Transpose::TransposeSmallShape<DTYPE_X> op;
+        op.Init(x, y, &tilingData.transposeOpTiling);
+        op.Process();
     } else if (TILING_KEY_IS(CUT_ONCE)) {
-        GET_TILING_DATA_WITH_STRUCT(TransposeTilingData, tilingData, tiling);
-        TransposeCutOneAxisProcess(x, y, &tilingData.transposeOpTiling, &pipe);
+        Transpose::TransposeCutOneAxis<DTYPE_X> op;
+        op.Init(x, y, &tilingData.transposeOpTiling, &pipe);
+        op.Process();
     } else if (TILING_KEY_IS(CUT_TWICE)) {
-        GET_TILING_DATA_WITH_STRUCT(TransposeTilingData, tilingData, tiling);
-        TransposeCutTwoAxisProcess(x, y, &tilingData.transposeOpTiling, &pipe);
-    } else if (TILING_KEY_IS(N_LAST_TRANSPOSE)) {
-        GET_TILING_DATA_WITH_STRUCT(TransposeTilingData, tilingData, tiling);
-        TransposeNLastProcess(x, y, &tilingData.transposeOpTiling, &pipe);
+        Transpose::TransposeCutTwoAxis<DTYPE_X> op;
+        op.Init(x, y, &tilingData.transposeOpTiling, &pipe);
+        op.Process();
     } else if (TILING_KEY_IS(BIG_DIM)) {
-        GET_TILING_DATA_WITH_STRUCT(TransposeTilingData, tilingData, tiling);
-        TransposeBigDimProcess(x, y, &tilingData.transposeOpTiling, &pipe);
-    } else if (TILING_KEY_IS(GATHER_TRANSPOSE)) {
-        GET_TILING_DATA_WITH_STRUCT(GatherTransposeTilingData, tilingData, tiling);
-        TransposeGatherProcess(x, y, &tilingData, &pipe);
+        Transpose::TransposeBigDim<DTYPE_X> op;
+        op.Init(x, y, &tilingData.transposeOpTiling, &pipe);
+        op.Process();
+    } else if (TILING_KEY_IS(N_LAST_TRANSPOSE)) {
+        Transpose::TransposeNLast<DTYPE_X> op;
+        op.Init(x, y, &tilingData.transposeOpTiling, &pipe);
+        op.Process();
     }
 }
