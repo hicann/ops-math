@@ -238,6 +238,7 @@ void ExecuteTestCase(const gert::TilingContextPara& tilingContextPara,
     // check workspace
     size_t workspaceCount = tilingContext->GetWorkspaceNum();
     if (workspaceCount > 0) {
+        ASSERT_EQ(workspaceCount, expectWorkspaces.size());
         auto workspaceSizes = tilingContext->GetWorkspaceSizes(workspaceCount);
         for (size_t i = 0; i < workspaceCount; i++) {
             ASSERT_EQ(workspaceSizes[i], expectWorkspaces[i]);

@@ -1286,9 +1286,9 @@ build_example() {
 
   if [[ "${EXAMPLE_MODE}" == "eager" ]]; then
     if [[ "$ENABLE_EXPERIMENTAL" == "TRUE" ]]; then
-      file=$(find ../experimental -path "*/${EXAMPLE_NAME}/examples/*" -name test_aclnn_*.cpp)
+      file=$(find ../experimental -path "*/${EXAMPLE_NAME}/examples/*" -name test_aclnn_*.cpp -not -path "*/scripts/*")
     else 
-      file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_aclnn_*.cpp -not -path "*/experimental/*")
+      file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_aclnn_*.cpp -not -path "*/experimental/*" -not -path "*/scripts/*")
     fi 
     if [ -z "$file" ]; then
       echo "ERROR: ${EXAMPLE_NAME} do not have eager examples"
