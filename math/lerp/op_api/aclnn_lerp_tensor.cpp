@@ -92,6 +92,9 @@ static bool CheckShape(const aclTensor* self, const aclTensor* end, const aclTen
   }
 
   if (IsContiguous(self) && IsContiguous(end) && IsContiguous(weight) && IsContiguous(y)) {
+    if(self->GetViewShape().GetDimNum() > static_cast<int64_t>(MAX_SUPPORT_DIMS_NUMS))  {
+      OP_LOGW("The dimension of the self tensor is greater than 8");
+    }
     return true;
   }
 
@@ -128,6 +131,10 @@ static aclnnStatus CalculateResult(const aclTensor* self, const aclTensor* end, 
   // self如果非连续，需要转连续
   auto selfContiguous = l0op::Contiguous(self, executor);
   CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+  if (self->GetStorageFormat() != Format::FORMAT_ND) {
+    OP_LOGW("Format only support ND");
+  }
 
   // end如果非连续，需要转连续
   auto endContiguous = l0op::Contiguous(end, executor);

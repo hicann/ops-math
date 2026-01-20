@@ -42,26 +42,89 @@ aclnnStatus aclnnInplaceAdds(
 
 - **参数说明：**
 
-  - selfRef(aclTensor*, 计算输入|计算输出)：公式中的输入`selfRef`，维度不超过8维。支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL，且与other满足[互推导关系](common/互推导关系.md)，且需要是推导之后可转换的数据类型（参见[互转换关系](common/互转换关系.md)）。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16，且与other满足[互推导关系](common/互推导关系.md)，且需要是推导之后可转换的数据类型（参见[互转换关系](common/互转换关系.md)）。
-  - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16，且与other满足[TensorScalar互推导关系](common/TensorScalar互推导关系.md)，且需要是推导之后可转换的数据类型（参见[互转换关系](common/互转换关系.md)）。
+  <table style="undefined;table-layout: fixed; width: 1549px"><colgroup>
+  <col style="width: 160px">
+  <col style="width: 137px">
+  <col style="width: 259px">
+  <col style="width: 229px">
+  <col style="width: 350px">
+  <col style="width: 123px">
+  <col style="width: 143px">
+  <col style="width: 148px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>selfRef</td>
+      <td>输入/输出</td>
+      <td>公式中的输入selfRef。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16</td>
+      <td>ND</td>
+      <td>不超过8维</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>other</td>
+      <td>输入</td>
+      <td>公式中的other。</td>
+      <td>取值范围需大于0。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>alpha</td>
+      <td>输入</td>
+      <td>公式中的alpha。</td>
+      <td>数据类型需要可转换成selfRef与other推导后的数据类型。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
 
-  - other(aclScalar*, 计算输入)：公式中的`other`。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL，且与selfRef满足[互推导关系](common/互推导关系.md)。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16，且与selfRef满足[互推导关系](common/互推导关系.md)。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16，且与selfRef满足[TensorScalar互推导关系](common/TensorScalar互推导关系.md)。
-
-  - alpha(aclScalar*, 计算输入)：公式中的`alpha`，数据类型需要可转换成selfRef与other推导后的数据类型。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16。
-
-  - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
-
-  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+  - <term>Atlas 训练系列产品</term>：
+    - 不支持BFLOAT16数据类型。
     - selfRef与other满足[互推导关系](../../../docs/zh/context/互推导关系.md)，且需要是推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+    - selfRef与other满足[互推导关系](../../../docs/zh/context/互推导关系.md)，且需要是推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。
+  - <term>Ascend 950PR/Ascend 950DT</term>：
+    - selfRef与other满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)，且需要是推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
