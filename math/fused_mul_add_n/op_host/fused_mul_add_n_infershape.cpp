@@ -12,13 +12,12 @@
  * \file fused_mul_add_n_infershape.cpp
  * \brief
  */
-#include "register/op_impl_registry.h" 
+#include "register/op_impl_registry.h"
 #include "infershape_elewise_util.h"
 
 using namespace ge;
 using namespace Ops::Base;
 
-namespace ops
-{
+namespace ops {
 IMPL_OP_INFERSHAPE(FusedMulAddN).InferShape(InferShape4Elewise);
 } // namespace ops

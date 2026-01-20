@@ -15,12 +15,9 @@
 
 #include "register/op_impl_registry.h"
 #include "fused_mul_add_n_tiling_arch35.h"
-#include <graph/utils/type_utils.h>
 #include "op_host/tiling_templates_registry.h"
 #include "log/log.h"
-#include "atvoss/broadcast/broadcast_tiling.h"
 
-using namespace AscendC;
 using namespace ge;
 using namespace Ops::Base;
 
@@ -143,10 +140,8 @@ ge::graphStatus FusedMulAddNTiling::GetShapeAttrsInfo()
             context_->GetNodeName(),
             "dtype only support [DT_FLOAT, DT_FLOAT16, DT_INT32, DT_INT16, "
             "DT_BF16] and should be same, but got x1:%s, x2:%s, x3:%s, y:%s",
-            ge::TypeUtils::DataTypeToSerialString(inputX1Dtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(inputX2Dtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(inputX3Dtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(outputYDtype).c_str()),
+            Ops::Base::ToString(inputX1Dtype).c_str(), Ops::Base::ToString(inputX2Dtype).c_str(),
+            Ops::Base::ToString(inputX3Dtype).c_str(), Ops::Base::ToString(outputYDtype).c_str()),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }

@@ -186,6 +186,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/fused_mul_add_n/README.md">fused_mul_add_n</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>将mul和addn算子进行融合，要求addn的n为2，mul的其中一个输入必须是scalar或者只包含一个数的tensor。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/non_finite_check/README.md">non_finite_check</a></td>
     <td>√</td>
     <td>√</td>

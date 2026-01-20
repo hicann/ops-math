@@ -17,8 +17,7 @@
 
 #include "kernel_operator.h"
 
-namespace FusedMulAddNOp
-{
+namespace FusedMulAddNOp {
 using AscendC::GlobalTensor;
 using AscendC::LocalTensor;
 using AscendC::TBuf;
@@ -30,12 +29,12 @@ using AscendC::MicroAPI::RegTensor;
 
 // input_x1 is T, input_x2 is T, input_x3 is T, output_y is T. T is half or bfloat16_t
 template <typename T>
-class FusedMulAddNHalf
-{
+class FusedMulAddNHalf {
 public:
     __aicore__ inline FusedMulAddNHalf(){};
-    __aicore__ inline void Init(GM_ADDR inputX1, GM_ADDR inputX2, GM_ADDR inputX3, GM_ADDR outputY, GM_ADDR workspace,
-                                const FusedMulAddNTilingData* tilingDataPtr, TPipe* pipePtr)
+    __aicore__ inline void Init(
+        GM_ADDR inputX1, GM_ADDR inputX2, GM_ADDR inputX3, GM_ADDR outputY, GM_ADDR workspace,
+        const FusedMulAddNTilingData* tilingDataPtr, TPipe* pipePtr)
     {
         pipePtr_ = pipePtr;
         tilingDataPtr_ = tilingDataPtr;
@@ -59,10 +58,10 @@ public:
 
     __aicore__ inline void Process()
     {
-        int64_t ubLoopNum = AscendC::GetBlockIdx() == AscendC::GetBlockNum() - 1 ? tilingDataPtr_->ubLoopOfTailBlock
-                                                                                 : tilingDataPtr_->ubLoopOfFormerBlock;
-        int64_t tailExtent = AscendC::GetBlockIdx() == AscendC::GetBlockNum() - 1 ? tilingDataPtr_->ubTailOfTailBlock
-                                                                                  : tilingDataPtr_->ubTailOfFormerBlock;
+        int64_t ubLoopNum = AscendC::GetBlockIdx() == AscendC::GetBlockNum() - 1 ? tilingDataPtr_->ubLoopOfTailBlock :
+                                                                                   tilingDataPtr_->ubLoopOfFormerBlock;
+        int64_t tailExtent = AscendC::GetBlockIdx() == AscendC::GetBlockNum() - 1 ? tilingDataPtr_->ubTailOfTailBlock :
+                                                                                    tilingDataPtr_->ubTailOfFormerBlock;
         for (int64_t ubLoopIdx = 0; ubLoopIdx < ubLoopNum; ubLoopIdx += 1) {
             int64_t i0Extent = ubLoopIdx == ubLoopNum - 1 ? tailExtent : tilingDataPtr_->ubFormer;
             CopyIn0(i0Extent, ubLoopIdx);
@@ -80,10 +79,11 @@ private:
         AscendC::DataCopyPadExtParams<T> dataCopyPadExtParams;
         dataCopyExtParams.blockCount = 1;
         dataCopyExtParams.blockLen = i0Extent * sizeof(T);
-        AscendC::DataCopyPad(bufferIn0_[0],
-                             inputGmInputX1_[tilingDataPtr_->blockFormer * AscendC::GetBlockIdx() +
-                                             ubLoopIdx * tilingDataPtr_->ubFormer],
-                             dataCopyExtParams, dataCopyPadExtParams);
+        AscendC::DataCopyPad(
+            bufferIn0_[0],
+            inputGmInputX1_
+                [tilingDataPtr_->blockFormer * AscendC::GetBlockIdx() + ubLoopIdx * tilingDataPtr_->ubFormer],
+            dataCopyExtParams, dataCopyPadExtParams);
         queIn0_.EnQue<T>(bufferIn0_);
     }
 
@@ -94,10 +94,11 @@ private:
         AscendC::DataCopyPadExtParams<T> dataCopyPadExtParams;
         dataCopyExtParams.blockCount = 1;
         dataCopyExtParams.blockLen = i0Extent * sizeof(T);
-        AscendC::DataCopyPad(bufferIn1_[0],
-                             inputGmInputX2_[tilingDataPtr_->blockFormer * AscendC::GetBlockIdx() +
-                                             ubLoopIdx * tilingDataPtr_->ubFormer],
-                             dataCopyExtParams, dataCopyPadExtParams);
+        AscendC::DataCopyPad(
+            bufferIn1_[0],
+            inputGmInputX2_
+                [tilingDataPtr_->blockFormer * AscendC::GetBlockIdx() + ubLoopIdx * tilingDataPtr_->ubFormer],
+            dataCopyExtParams, dataCopyPadExtParams);
         queIn1_.EnQue<T>(bufferIn1_);
     }
 
@@ -129,8 +130,8 @@ private:
                 AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::LoadDist::DIST_UNPACK_B16>(
                     vreg2, bufferIn1Addr + i * (AscendC::VECTOR_REG_WIDTH / sizeof(float)));
                 AscendC::MicroAPI::Cast<float, T, castTrait0>(vreg3, vreg2, preg0);
-                AscendC::MicroAPI::Muls<float, float, AscendC::MicroAPI::MaskMergeMode::ZEROING>(vreg1, vreg1,
-                                                                                                 inputX3Value_, preg0);
+                AscendC::MicroAPI::Muls<float, float, AscendC::MicroAPI::MaskMergeMode::ZEROING>(
+                    vreg1, vreg1, inputX3Value_, preg0);
                 AscendC::MicroAPI::Add<float, AscendC::MicroAPI::MaskMergeMode::ZEROING>(vreg4, vreg1, vreg3, preg0);
                 AscendC::MicroAPI::Cast<T, float, castTrait1>(vreg5, vreg4, preg0);
                 AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::StoreDist::DIST_PACK_B32>(
@@ -148,9 +149,10 @@ private:
         AscendC::DataCopyExtParams dataCopyExtParams;
         dataCopyExtParams.blockCount = 1;
         dataCopyExtParams.blockLen = i0Extent * sizeof(T);
-        AscendC::DataCopyPad(outputGmOutputY_[tilingDataPtr_->blockFormer * AscendC::GetBlockIdx() +
-                                              ubLoopIdx * tilingDataPtr_->ubFormer],
-                             bufferOut0_[0], dataCopyExtParams);
+        AscendC::DataCopyPad(
+            outputGmOutputY_
+                [tilingDataPtr_->blockFormer * AscendC::GetBlockIdx() + ubLoopIdx * tilingDataPtr_->ubFormer],
+            bufferOut0_[0], dataCopyExtParams);
         queOut0_.FreeTensor(bufferOut0_);
     }
 
@@ -176,5 +178,5 @@ private:
     float inputX3Value_;
 };
 
-}  // namespace FusedMulAddNOp
-#endif  // ASCENDC_FUSED_MUL_ADD_N_HALF_H_
+} // namespace FusedMulAddNOp
+#endif // ASCENDC_FUSED_MUL_ADD_N_HALF_H_

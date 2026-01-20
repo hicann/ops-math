@@ -26,15 +26,15 @@
 
     $self = \begin{bmatrix} [9&6&3] \\ [1&2&3] \\ [3&4&1] \end{bmatrix}$，
 
-    triu(self, diagonal=0)的结果为：
+    tril(self, diagonal=0)的结果为：
 
     $\begin{bmatrix} [9&0&0] \\ [1&2&0] \\ [3&4&1] \end{bmatrix}$；
 
-    调整diagonal的值，triu(self, diagonal=1)结果为：
+    调整diagonal的值，tril(self, diagonal=1)结果为：
 
     $\begin{bmatrix} [9&6&0] \\ [1&2&3] \\ [3&4&1] \end{bmatrix}$；
 
-    调整diagonal为-1，triu(self, diagonal=-1)结果为：
+    调整diagonal为-1，tril(self, diagonal=-1)结果为：
     
     $\begin{bmatrix} [0&0&0] \\ [1&0&0] \\ [3&4&0] \end{bmatrix}$。
 

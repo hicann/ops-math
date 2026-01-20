@@ -28,7 +28,7 @@ namespace ge {
 * @li x1: A ND tensor. Must be one of the following types:int32, int16,
 * bfloat16, float16, float32. x1 is used to compute addn with x2. \n
 * @li x2: A ND tensor of the same dtype and shape as "x1". x2 is used to compute addn with x1. \n
-* @li x3: A ND tensor of the same dtype as "x1". The shape size should be 1. 
+* @li x3: A ND tensor of the same dtype as "x1". The shape size should be 1.
 * x3 is used to compute mul with the result of x1 + x2. \n
 
 * @par Outputs:
@@ -47,4 +47,3 @@ REG_OP(FusedMulAddN)
 } // namespace ge
 
 #endif // OPS_OP_PROTO_INC_FUSED_MUL_ADD_N_H_
-

@@ -27,14 +27,14 @@ using namespace Ops::Base;
 namespace optiling {
 
 BEGIN_TILING_DATA_DEF(FusedMulAddNTilingData)
-    TILING_DATA_FIELD_DEF(int64_t, dim0);
-    TILING_DATA_FIELD_DEF(int64_t, blockFormer);
-    TILING_DATA_FIELD_DEF(int64_t, ubFormer);
-    TILING_DATA_FIELD_DEF(int64_t, ubLoopOfFormerBlock);
-    TILING_DATA_FIELD_DEF(int64_t, ubLoopOfTailBlock);
-    TILING_DATA_FIELD_DEF(int64_t, ubTailOfFormerBlock);
-    TILING_DATA_FIELD_DEF(int64_t, ubTailOfTailBlock);
-    TILING_DATA_FIELD_DEF(int64_t, elemNum);
+TILING_DATA_FIELD_DEF(int64_t, dim0);
+TILING_DATA_FIELD_DEF(int64_t, blockFormer);
+TILING_DATA_FIELD_DEF(int64_t, ubFormer);
+TILING_DATA_FIELD_DEF(int64_t, ubLoopOfFormerBlock);
+TILING_DATA_FIELD_DEF(int64_t, ubLoopOfTailBlock);
+TILING_DATA_FIELD_DEF(int64_t, ubTailOfFormerBlock);
+TILING_DATA_FIELD_DEF(int64_t, ubTailOfTailBlock);
+TILING_DATA_FIELD_DEF(int64_t, elemNum);
 END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(FusedMulAddN, FusedMulAddNTilingData);
@@ -45,10 +45,11 @@ struct FusedMulAddNCompileInfo {
 };
 
 class FusedMulAddNTiling : public TilingBaseClass {
-   public:
-    explicit FusedMulAddNTiling(gert::TilingContext* context) : TilingBaseClass(context) {}
+public:
+    explicit FusedMulAddNTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    {}
 
-   protected:
+protected:
     bool IsCapable() override;
     ge::graphStatus GetPlatformInfo() override;
     ge::graphStatus GetShapeAttrsInfo() override;
@@ -57,11 +58,12 @@ class FusedMulAddNTiling : public TilingBaseClass {
     uint64_t GetTilingKey() const override;
     ge::graphStatus GetWorkspaceSize() override;
     ge::graphStatus PostTiling() override;
-    std::string ToString(FusedMulAddNTilingData &tilingData);
+    std::string ToString(FusedMulAddNTilingData& tilingData);
 
-   private:
+private:
     void SetOpKey();
-    uint64_t GetOpKey(ge::DataType inputX1Dtype, ge::DataType inputX2Dtype, ge::DataType inputX3Dtype, ge::DataType outputYDtype);
+    uint64_t GetOpKey(
+        ge::DataType inputX1Dtype, ge::DataType inputX2Dtype, ge::DataType inputX3Dtype, ge::DataType outputYDtype);
     uint64_t GenerateTilingKey(uint64_t innerKey);
     std::map<uint64_t, ComputeParams> GetComputeMap(uint64_t opKey);
 
@@ -73,6 +75,6 @@ class FusedMulAddNTiling : public TilingBaseClass {
     std::map<std::tuple<ge::DataType, ge::DataType, ge::DataType, ge::DataType>, uint64_t> opKeys;
 };
 
-}  // namespace optiling
+} // namespace optiling
 
-#endif //AIR_CXX_RUNTIME_V2_OP_IMPL_FUSED_MUL_ADD_N_H_
+#endif // AIR_CXX_RUNTIME_V2_OP_IMPL_FUSED_MUL_ADD_N_H_
