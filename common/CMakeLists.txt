@@ -35,9 +35,11 @@ target_link_libraries(${COMMON_NAME}_obj
   tiling_api
 )
 
-file(GLOB CURRENT_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
-foreach(SUB_DIR ${CURRENT_DIRS})
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${SUB_DIR}/framework/CMakeLists.txt")
-        add_subdirectory(${SUB_DIR}/framework)
-    endif()
-endforeach()
+if(NOT ENABLE_EXPERIMENTAL)
+  file(GLOB CURRENT_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
+  foreach(SUB_DIR ${CURRENT_DIRS})
+      if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${SUB_DIR}/framework/CMakeLists.txt")
+          add_subdirectory(${SUB_DIR}/framework)
+      endif()
+  endforeach()
+endif()
