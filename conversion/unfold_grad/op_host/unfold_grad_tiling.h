@@ -51,6 +51,7 @@ TILING_DATA_FIELD_DEF(int64_t, size);
 TILING_DATA_FIELD_DEF(int64_t, step);
 TILING_DATA_FIELD_DEF(int64_t, loop);
 TILING_DATA_FIELD_DEF(int64_t, tail);
+TILING_DATA_FIELD_DEF(int64_t, sizeLevel);
 END_TILING_DATA_DEF;
 REGISTER_TILING_DATA_CLASS(UnfoldGrad, UnfoldGradTilingData)
 
@@ -64,6 +65,7 @@ public:
     ge::graphStatus GetPlatformInfo();
     ge::graphStatus GetInputTensorInfo();
     ge::graphStatus SetAttrParams();
+    ge::graphStatus TilingBlock4SizeLevelBig();
     ge::graphStatus Tiling4Block();
     uint64_t GetTilingKey();
     bool GetDataTypeKey(ge::DataType dataType);
@@ -137,6 +139,7 @@ private:
 
     int64_t loop = 0; // 一个迭代内的循环次数
     int64_t tail = 0; // 尾块大小
+    int64_t sizeLevel = 0; // 0 标记size 在UB Trans可处理数量范围内，1 超出UB Trans限制
 };
 } // namespace optiling
 #endif // OPS_BUILD_IN_OP_TILING_RUNTIME_APPLY_FUSED_EMA_ADAM_H_

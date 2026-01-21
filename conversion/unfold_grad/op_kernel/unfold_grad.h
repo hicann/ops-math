@@ -24,6 +24,8 @@ constexpr int32_t TRANS_BLOCK = 16;
 constexpr int32_t FP32_TYPESIZE = 4;
 constexpr int32_t MAX_REPEATTIME = 255;
 constexpr int32_t DOUBLE = 2;
+constexpr uint32_t SIZE_LEVEL_NORMAL = 0;
+constexpr uint32_t SIZE_LEVEL_BIG = 1;
 
 struct sDataCopyExtParams {
     AscendC::DataCopyExtParams paramsIn = {0, 0, 0, 0, 0};
@@ -75,8 +77,9 @@ public:
         if (ISCAST) {
             pipe->InitBuffer(inQueueSrc, 1, ubSizeT1);
         }
-
-        pipe->InitBuffer(computeInQueueSrc, 1, T2SrcDataSize);
+        if (sizeLevel == SIZE_LEVEL_NORMAL) {
+            pipe->InitBuffer(computeInQueueSrc, 1, T2SrcDataSize);
+        }
         pipe->InitBuffer(computeOutQueueDst, 1, T2DstDataSize);
     }
 
@@ -211,6 +214,7 @@ public:
         step = tilingData->step;
         loop = tilingData->loop;
         tail = tilingData->tail;
+        sizeLevel = tilingData->sizeLevel;   
     }
 
 protected:
@@ -233,6 +237,7 @@ protected:
     int tasksOnce = 0;
     int loop = 0;
     int tail = 0;
+    int sizeLevel = 0;
     int ubSizeT1 = 0;
     int ubSizeT2 = 0;
     int workspaceLen_ = 0;

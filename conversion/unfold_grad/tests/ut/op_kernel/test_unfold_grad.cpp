@@ -62,6 +62,7 @@ TEST_F(unfold_grad_test, test_case_float32_outputshape_8_2_dim_0_size_3_step_2)
     tilingData->step = 2;
     tilingData->loop = 0;
     tilingData->tail = 2;
+    tilingData->sizeLevel = 0;
     tilingData->inputSizeLastDim = 2;
     tilingData->gradOutSizeDim = 3;
     tilingData->typeSizeT1 = 4;
@@ -117,6 +118,7 @@ TEST_F(unfold_grad_test, test_case_float32_outputshape_6_3_dim_1_size_2_step_1)
     tilingData->step = 1;
     tilingData->loop = 0;
     tilingData->tail = 4;
+    tilingData->sizeLevel = 0;
     tilingData->inputSizeLastDim = 3;
     tilingData->gradOutSizeDim = 2;
     tilingData->typeSizeT1 = 4;
@@ -172,6 +174,7 @@ TEST_F(unfold_grad_test, test_case_float16_outputshape_6_3_dim_1_size_2_step_1)
     tilingData->step = 1;
     tilingData->loop = 0;
     tilingData->tail = 4;
+    tilingData->sizeLevel = 0;
     tilingData->inputSizeLastDim = 3;
     tilingData->gradOutSizeDim = 2;
     tilingData->typeSizeT1 = 2;
@@ -227,6 +230,7 @@ TEST_F(unfold_grad_test, test_case_float16_outputshape_8_2_dim_0_size_3_step_2)
     tilingData->step = 2;
     tilingData->loop = 0;
     tilingData->tail = 2;
+    tilingData->sizeLevel = 0;
     tilingData->inputSizeLastDim = 2;
     tilingData->gradOutSizeDim = 3;
     tilingData->typeSizeT1 = 2;
@@ -282,6 +286,7 @@ TEST_F(unfold_grad_test, test_case_float32_outputshape_6_3_dim_1_size_1_step_2)
     tilingData->step = 2;
     tilingData->loop = 0;
     tilingData->tail = 2;
+    tilingData->sizeLevel = 0;
     tilingData->inputSizeLastDim = 3;
     tilingData->gradOutSizeDim = 2;
     tilingData->typeSizeT1 = 4;
@@ -337,6 +342,7 @@ TEST_F(unfold_grad_test, test_case_float32_outputshape_8_2_dim_0_size_2_step_3)
     tilingData->step = 3;
     tilingData->loop = 0;
     tilingData->tail = 2;
+    tilingData->sizeLevel = 0;
     tilingData->inputSizeLastDim = 2;
     tilingData->gradOutSizeDim = 3;
     tilingData->typeSizeT1 = 4;
@@ -392,6 +398,7 @@ TEST_F(unfold_grad_test, test_case_float16_outputshape_6_3_dim_1_size_1_step_2)
     tilingData->step = 2;
     tilingData->loop = 0;
     tilingData->tail = 2;
+    tilingData->sizeLevel = 0;
     tilingData->inputSizeLastDim = 3;
     tilingData->gradOutSizeDim = 2;
     tilingData->typeSizeT1 = 2;
@@ -447,6 +454,7 @@ TEST_F(unfold_grad_test, test_case_float16_outputshape_8_2_dim_0_size_2_step_3)
     tilingData->step = 3;
     tilingData->loop = 0;
     tilingData->tail = 2;
+    tilingData->sizeLevel = 0;
     tilingData->inputSizeLastDim = 2;
     tilingData->gradOutSizeDim = 3;
     tilingData->typeSizeT1 = 2;
@@ -478,4 +486,172 @@ TEST_F(unfold_grad_test, test_case_float16_outputshape_8_2_dim_0_size_2_step_3)
     AscendC::GmFree(output);
     AscendC::GmFree(workspace);
     AscendC::GmFree(tiling);
+}
+
+TEST_F(unfold_grad_test, test_case_float16_outputshape_7_8192_dim_1_size_3958_step_3463) 
+{
+    size_t gradOutSize = 7 * 2 * 3958 * sizeof(half);
+    size_t inputSizeSize = 2 * sizeof(int64_t);
+    size_t outputSize = 7 * 8192 * sizeof(half);
+    size_t tilingSize = sizeof(UnfoldGradTilingData);
+
+    uint8_t* gradOut = (uint8_t*)AscendC::GmAlloc(gradOutSize);
+    uint8_t* inputSize = (uint8_t*)AscendC::GmAlloc(inputSizeSize);
+
+    uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputSize);
+
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(1024 * 1024 * 1024);
+    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingSize);
+    uint32_t blockDim = 1;
+
+    UnfoldGradTilingData* tilingData = reinterpret_cast<UnfoldGradTilingData*>(tiling);
+    tilingData->dim = 1;
+    tilingData->size = 3958;
+    tilingData->step = 3463;
+    tilingData->loop = 0;
+    tilingData->tail = 7916;
+    tilingData->sizeLevel = 1;
+    tilingData->inputSizeLastDim = 8192;
+    tilingData->gradOutSizeDim = 2;
+    tilingData->typeSizeT1 = 2;
+    tilingData->typeSizeT2 = 4;
+    tilingData->width = 8;
+
+    tilingData->batchNum = 7;
+    tilingData->batchNumPerCore = 1;
+    tilingData->batchNumTailCore = 1;
+    tilingData->useCoreNum = blockDim;
+    tilingData->ubSizeT1 = 87296;
+    tilingData->ubSizeT2 = 174592;
+    tilingData->outputNumPerCore = 8192;
+    tilingData->inputNumPerCore = 7916;
+    tilingData->iterationNumPerCore = 0;
+    tilingData->handleNUMOnceIterationPerCore = 7916;
+    tilingData->tasksOnceMaxPerCore = 43538;
+    tilingData->inputSizeLength = 2;
+    tilingData->rowAvailableLengthSrc = 0;
+    tilingData->lowestCommonMultiple = 1;
+    tilingData->colOnceMaxPerUB = 0;
+    tilingData->tailColLength = 31331528;
+
+    ICPU_SET_TILING_KEY(1221);
+    ICPU_RUN_KF(unfold_grad, blockDim, gradOut, inputSize, output, workspace, tiling);
+
+    AscendC::GmFree(gradOut);
+    AscendC::GmFree(inputSize);
+    AscendC::GmFree(output);
+    AscendC::GmFree(workspace);
+    AscendC::GmFree(tiling);
+}
+
+TEST_F(unfold_grad_test, test_case_float32_outputshape_7_8192_dim_1_size_3958_step_3463) {
+    size_t gradOutSize = 7 * 2 * 3958 * sizeof(float);
+    size_t inputSizeSize = 2 * sizeof(int64_t);
+    size_t outputSize = 7 * 8192 * sizeof(float);
+    size_t tilingSize = sizeof(UnfoldGradTilingData);
+
+    uint8_t* gradOut = (uint8_t*)AscendC::GmAlloc(gradOutSize);
+    uint8_t* inputSize = (uint8_t*)AscendC::GmAlloc(inputSizeSize);
+
+    uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputSize);
+
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(1024 * 1024 * 1024);
+    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingSize);
+    uint32_t blockDim = 1;
+
+    UnfoldGradTilingData* tilingData = reinterpret_cast<UnfoldGradTilingData*>(tiling);
+    tilingData->dim = 1;
+    tilingData->size = 3958;
+    tilingData->step = 3463;
+    tilingData->loop = 0;
+    tilingData->tail = 7916;
+    tilingData->sizeLevel = 1;
+    tilingData->inputSizeLastDim = 8192;
+    tilingData->gradOutSizeDim = 2;
+    tilingData->typeSizeT1 = 4;
+    tilingData->typeSizeT2 = 4;
+    tilingData->width = 8;
+
+    tilingData->batchNum = 7;
+    tilingData->batchNumPerCore = 1;
+    tilingData->batchNumTailCore = 1;
+    tilingData->useCoreNum = blockDim;
+    tilingData->ubSizeT1 = 0;
+    tilingData->ubSizeT2 = 261888;
+    tilingData->outputNumPerCore = 8192;
+    tilingData->inputNumPerCore = 7916;
+    tilingData->iterationNumPerCore = 0;
+    tilingData->handleNUMOnceIterationPerCore = 7916;
+    tilingData->tasksOnceMaxPerCore = 63328;
+    tilingData->inputSizeLength = 2;
+    tilingData->rowAvailableLengthSrc = 0;
+    tilingData->lowestCommonMultiple = 1;
+    tilingData->colOnceMaxPerUB = 0;
+    tilingData->tailColLength = 31331528;
+
+    ICPU_SET_TILING_KEY(1211);
+    ICPU_RUN_KF(unfold_grad, blockDim, gradOut, inputSize, output, workspace, tiling);
+
+    AscendC::GmFree(gradOut);
+    AscendC::GmFree(inputSize);
+    AscendC::GmFree(output);
+    AscendC::GmFree(workspace);
+    AscendC::GmFree(tiling);
+
+}
+
+TEST_F(unfold_grad_test, test_case_float16_outputshape_8_32768_dim_1_size_3924_step_25617) {
+    size_t gradOutSize = 8 * 2 * 3924 * sizeof(half);
+    size_t inputSizeSize = 2 * sizeof(int64_t);
+    size_t outputSize = 8 * 32768 * sizeof(half);
+    size_t tilingSize = sizeof(UnfoldGradTilingData);
+
+    uint8_t* gradOut = (uint8_t*)AscendC::GmAlloc(gradOutSize);
+    uint8_t* inputSize = (uint8_t*)AscendC::GmAlloc(inputSizeSize);
+
+    uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputSize);
+
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(1024 * 1024 * 1024);
+    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingSize);
+    uint32_t blockDim = 1;
+
+    UnfoldGradTilingData* tilingData = reinterpret_cast<UnfoldGradTilingData*>(tiling);
+    tilingData->dim = 1;
+    tilingData->size = 3958;
+    tilingData->step = 3463;
+    tilingData->loop = 0;
+    tilingData->tail = 7916;
+    tilingData->sizeLevel = 1;
+    tilingData->inputSizeLastDim = 8192;
+    tilingData->gradOutSizeDim = 2;
+    tilingData->typeSizeT1 = 2;
+    tilingData->typeSizeT2 = 4;
+    tilingData->width = 8;
+
+    tilingData->batchNum = 8;
+    tilingData->batchNumPerCore = 1;
+    tilingData->batchNumTailCore = 1;
+    tilingData->useCoreNum = blockDim;
+    tilingData->ubSizeT1 = 87296;
+    tilingData->ubSizeT2 = 174592;
+    tilingData->outputNumPerCore = 32768;
+    tilingData->inputNumPerCore = 7848;
+    tilingData->iterationNumPerCore = 0;
+    tilingData->handleNUMOnceIterationPerCore = 7848;
+    tilingData->tasksOnceMaxPerCore = 43164;
+    tilingData->inputSizeLength = 2;
+    tilingData->rowAvailableLengthSrc = 0;
+    tilingData->lowestCommonMultiple = 1;
+    tilingData->colOnceMaxPerUB = 0;
+    tilingData->tailColLength = 201042216;
+
+    ICPU_SET_TILING_KEY(1321);
+    ICPU_RUN_KF(unfold_grad, blockDim, gradOut, inputSize, output, workspace, tiling);
+
+    AscendC::GmFree(gradOut);
+    AscendC::GmFree(inputSize);
+    AscendC::GmFree(output);
+    AscendC::GmFree(workspace);
+    AscendC::GmFree(tiling);
+
 }

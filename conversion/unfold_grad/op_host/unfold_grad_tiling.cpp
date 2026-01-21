@@ -24,6 +24,7 @@ constexpr uint32_t INPUT_GRADOUT_IDX = 0;
 constexpr uint32_t INPUT_INPUTSIZE_IDX = 1;
 constexpr uint32_t FP16BF16_TYPESIZE = 2;
 constexpr uint32_t FP32_TYPESIZE = 4;
+constexpr uint32_t BLOCK_SIZE = 32;
 constexpr uint64_t ATTR_0 = 0;
 constexpr uint64_t ATTR_1 = 1;
 constexpr uint64_t ATTR_2 = 2;
@@ -42,6 +43,9 @@ constexpr int32_t TYPE_MODE2 = 2; // 为fp16
 constexpr int32_t TYPE_MODE3 = 3; // 为bf16
 constexpr uint32_t ONE_OPERATION_TQUE_NUM = 2;
 constexpr uint32_t ONE_OPERATION_TQUE_SIZE = 17;
+constexpr uint32_t BIG_SIZE = 1000;
+constexpr uint32_t SIZE_LEVEL_NORMAL = 0; // under the limit of UB Trans
+constexpr uint32_t SIZE_LEVEL_BIG = 1; // beyond the limit of UB Trans
 } // namespace
 
 namespace optiling {
@@ -120,6 +124,7 @@ void UnfoldGradTiling::PrintInfo()
     OP_LOGD(nodeName, "step = %ld.", tiling.get_step());
     OP_LOGD(nodeName, "loop = %ld.", tiling.get_loop());
     OP_LOGD(nodeName, "tail = %ld.", tiling.get_tail());
+    OP_LOGD(nodeName, "sizeLevel = %ld.", tiling.get_sizeLevel());
     OP_LOGD(nodeName, "----------------print UnfoldGradTiling tiling data end.----------------");
 }
 
@@ -153,6 +158,7 @@ void UnfoldGradTiling::SetTilingData()
     tiling.set_step(step);
     tiling.set_loop(loop);
     tiling.set_tail(tail);
+    tiling.set_sizeLevel(sizeLevel);
 }
 
 ge::graphStatus UnfoldGradTiling::GetPlatformInfo()
@@ -258,6 +264,39 @@ ge::graphStatus UnfoldGradTiling::GetInputTensorInfo()
     return ge::GRAPH_SUCCESS;
 }
 
+ge::graphStatus UnfoldGradTiling::TilingBlock4SizeLevelBig()
+{
+    auto nodeName = context->GetNodeName();
+
+    handleNUMOnceIterationPerCore = gradOutSizeDim * size;
+    // 计算size对齐32占用空间
+    int64_t neededSpaceForOnePaddedSize = 0;
+    
+    // 重新划分UB空间
+    if (gardInDType == ge::DT_FLOAT16 || gardInDType == ge::DT_BF16) {
+        ubSizeT2 = ubSize / (TOTAL_SIZE - DOUBLE) * DOUBLE;
+        ubSizeT1 = ubSize / (TOTAL_SIZE - DOUBLE);
+        neededSpaceForOnePaddedSize = (size * typeSizeT1 + BLOCK_SIZE - 1) 
+                                            / BLOCK_SIZE * BLOCK_SIZE
+                                            / typeSizeT1 * FP32_TYPESIZE;
+    } else if (gardInDType == ge::DT_FLOAT) {
+        ubSizeT2 = ubSize;
+        neededSpaceForOnePaddedSize = (size * FP32_TYPESIZE + BLOCK_SIZE - 1) 
+                                            / BLOCK_SIZE * BLOCK_SIZE;
+    } else {
+        return ge::GRAPH_FAILED;
+    }
+    
+    tasksOnceMaxPerCore = ubSizeT2 / neededSpaceForOnePaddedSize * size;
+
+    OP_CHECK_IF(
+        tasksOnceMaxPerCore <= 0,
+        OP_LOGE(nodeName, "TasksOnceMaxPerCore %ld must be greater than 0. This is because size should be less than %ld.", tasksOnceMaxPerCore, ubSizeT2 / FP32_TYPESIZE),
+        return ge::GRAPH_FAILED);
+    
+    return ge::GRAPH_SUCCESS;
+}
+
 ge::graphStatus UnfoldGradTiling::Tiling4Block()
 {
     auto nodeName = context->GetNodeName();
@@ -282,13 +321,19 @@ ge::graphStatus UnfoldGradTiling::Tiling4Block()
     }
 
     if (dim == inputSizeLength - 1) {
-        handleNUMOnceIterationPerCore = gradOutSizeDim * size;
-        tasksOnceMaxPerCore = ubSizeT2 / (TRANS_BLOCK * FP32_TYPESIZE) / neededAmountForOneSize * size * TRANS_BLOCK;
-
-        OP_CHECK_IF(
-            tasksOnceMaxPerCore <= 0,
-            OP_LOGE(nodeName, "TasksOnceMaxPerCore %ld must be greater than 0. This is because max(size, step) should be less or equal than %ld.", tasksOnceMaxPerCore, ubSizeT2 / (TRANS_BLOCK * FP32_TYPESIZE)),
-            return ge::GRAPH_FAILED);
+        // 最后一轴的情况下：对BigSize进行处理
+        // 计算ub使用Trans的上限
+        int64_t colHandleNum = ubSizeT2 / (TRANS_BLOCK * FP32_TYPESIZE) /neededAmountForOneSize * size;
+        // 判断size是否超出
+        sizeLevel = neededAmountForOneSize > colHandleNum ? SIZE_LEVEL_BIG : SIZE_LEVEL_NORMAL;
+        if (sizeLevel == SIZE_LEVEL_BIG){
+            OP_CHECK_IF(
+                TilingBlock4SizeLevelBig() != ge::GRAPH_SUCCESS, OP_LOGE(nodeName, "TilingBlock4SizeLevelBig failed."),
+                return ge::GRAPH_FAILED);
+        }else{
+            handleNUMOnceIterationPerCore = gradOutSizeDim * size;
+            tasksOnceMaxPerCore = ubSizeT2 / (TRANS_BLOCK * FP32_TYPESIZE) / neededAmountForOneSize * size * TRANS_BLOCK; 
+        }
     } else {
         iterationNumPerCore = gradOutSizeDim;
         handleNUMOnceIterationPerCore = inputSizeLastDim;
@@ -358,6 +403,9 @@ void UnfoldGradTiling::SetTilingKey()
         tilingKey_ = NONOVERLAPPING + DATA_TYPE * dataTypeTilingKey;
     }
     if (dim == inputSizeLength - 1) {
+        if (sizeLevel == SIZE_LEVEL_BIG) {
+            tilingKey_ += BIG_SIZE;
+        }
         tilingKey_ += FINALAXE;
     } else {
         tilingKey_ += FINALSECONDAXE;
