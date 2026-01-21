@@ -74,6 +74,11 @@ aclnnStatus aclnnConfusionTransposeGetWorkspaceSize(
         return ACLNN_SUCCESS;
     }
 
+    // 非连续转连续
+    if (x->GetStorageFormat() != Format::FORMAT_FRACTAL_NZ) {
+        x = l0op::Contiguous(x, uniqueExecutor.get());
+    }
+
     const aclTensor* result = l0op::ConfusionTransposeD(x, perm, shape, transpose_first, out, uniqueExecutor.get());
     CHECK_RET(result != nullptr, ACLNN_ERR_INNER_NULLPTR);
     auto outResult = l0op::ViewCopy(result, out, uniqueExecutor.get());
