@@ -80,6 +80,5 @@ $$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_drop_out_do_mask](./examples/test_aclnn_drop_out_do_mask.cpp) | 通过aclnnDropoutDoMask接口方式调用DropOutDoMask算子。 |
-| aclnn调用 | [test_aclnn_drop_out_backward](./examples/test_aclnn_drop_out_backward.cpp) | 通过aclnnDropoutBackward接口方式调用DropOutBackward算子。 |
-| 图模式调用 | [算子IR](./op_graph/drop_out_do_mask_proto.h)   | 通过算子IR构图方式调用DropOutDoMask算子。 |
+| aclnn调用 | [test_aclnn_drop_out_do_mask](./examples/test_aclnn_drop_out_do_mask.cpp) | 通过[aclnnDropoutDoMask](docs/aclnnDropoutDoMask.md)接口方式调用DropOutDoMask算子。 |
+| aclnn调用 | [test_aclnn_drop_out_backward](./examples/test_aclnn_drop_out_backward.cpp) | 通过[aclnnDropoutBackward](docs/aclnnDropoutBackward.md)接口方式调用DropOutBackward算子。 |

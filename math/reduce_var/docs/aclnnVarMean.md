@@ -24,46 +24,213 @@
 ## 函数原型
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnVarMeanGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnVarMean”接口执行计算。
 
-  - `aclnnStatus aclnnVarMeanGetWorkspaceSize(const aclTensor* self, const aclIntArray* dim, int64_t correction, bool keepdim, aclTensor* varOut, aclTensor* meanOut, uint64_t* workspaceSize, aclOpExecutor** executor)`
-  - `aclnnStatus aclnnVarMean(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnVarMeanGetWorkspaceSize(
+  const aclTensor*   self, 
+  const aclIntArray* dim, 
+  int64_t            correction, 
+  bool               keepdim, 
+  aclTensor*         varOut, 
+  aclTensor*         meanOut, 
+  uint64_t*          workspaceSize, 
+  aclOpExecutor**    executor)
+```
+
+```Cpp
+aclnnStatus aclnnVarMean(
+  void*          workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor* executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnVarMeanGetWorkspaceSize
 
 - **参数说明：**
 
-  - self（aclTensor*, 计算输入）：公式中的输入`self`，shape支持0到8维，self与meanOut的数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），self与varOut的数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品/Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT。
-  - dim（aclIntArray*，入参）：公式中的`dim`，Host侧的aclIntArray，表示参与计算的维度，取值范围为[-self.dim(), self.dim()-1]，且其中的数据不能相同，支持的数据类型为INT64。当dim为nullptr或[]时，视为计算所有维度。
-  - correction（int64_t，入参）：公式中的输入`correction`，修正值，数据类型为int64_t。
-  - keepdim（bool，入参）：reduce轴的维度是否保留。数据类型为bool。
-  - meanOut（aclTensor*, 计算输出）：均值的计算结果，self与meanOut的数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT。
-  - varOut（aclTensor*, 计算输出）：公式中的输出`varOut`，方差的计算结果，self与varOut的数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT。
-  - workspaceSize（uint64_t*, 出参）：返回需要在Device侧申请的workspace大小。
-  - executor（aclOpExecutor**, 出参）：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 212px">
+  <col style="width: 359px">
+  <col style="width: 305px">
+  <col style="width: 114px">
+  <col style="width: 135px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>计算公式中的<code>self</code>。</td>
+      <td>shape支持0到8维。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>1-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>dim</td>
+      <td>输入</td>
+      <td>公式中的<code>dim</code>，Host侧的aclIntArray。</td>
+      <td>参与计算的维度，取值范围为[-self.dim(), self.dim()-1]，且其中的数据不能相同；支持的数据类型为INT64；当dim为nullptr或[]时，视为计算所有维度。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>correction</td>
+      <td>输入</td>
+      <td>公式中的输入<code>correction</code>，修正值，数据类型为int64_t。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>keepdim</td>
+      <td>输入</td>
+      <td>reduce轴的维度是否保留，Host侧的bool型数值。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>meanOut</td>
+      <td>输出</td>
+      <td>均值的计算结果。</td>
+      <td>shape支持0到8维。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>varOut</td>
+      <td>输出</td>
+      <td>公式中的输出<code>varOut</code>，方差的计算结果。</td>
+      <td>shape支持0到8维。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
 	aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
-  第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的self、meanOut、varOut是空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. self、meanOut、varOut的数据类型不在支持的范围之内。
-                                        2. self的shape超过8维。
-                                        3. dim的数值不合法（dim中的数据指向同一个维度、dim超出self的维度范围）。
-                                        4. self与meanOut、varOut的shape不满足计算公式中的推导规则。
-  ```
+  第一段接口完成入参校验，出现如下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、meanOut、varOut是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
+      <td>self、meanOut、varOut的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self的shape超过8维。</td>
+    </tr>
+    <tr>
+      <td>dim的数值不合法（dim中的数据指向同一个维度、dim超出self的维度范围）。</td>
+    </tr>
+    <tr>
+      <td>self与meanOut、varOut的shape不满足计算公式中的推导规则。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnVarMean
 
 - **参数说明：**
 
-  - workspace（void*, 入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize（uint64_t, 入参）：在Device侧申请的workspace大小，由第一段接口aclnnVarMeanGetWorkspaceSize获取。
-  - executor（aclOpExecutor*, 入参）：op执行器，包含了算子计算流程。
-  - stream（aclrtStream, 入参）：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 872px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnVarMeanGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 

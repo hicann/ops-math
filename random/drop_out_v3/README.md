@@ -3,7 +3,9 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term> |√|
+| <term>Ascend 950PR/Ascend 950DT</term>                     |    √     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    ×     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |    ×     |
 
 ## 功能说明
 
@@ -11,15 +13,73 @@
 
 ## 参数说明
 
-| 参数名 | 输入/输出/属性 | 描述                                                         | 数据类型 | 数据格式 |
-| :----- | :------------- | :----------------------------------------------------------- | :------- | :------- |
-| input   | 输入张量       | 输入元素。                                 | FLOAT、FLOAT16、BFLOAT16   | ND       |
-| noise_shape   | 输入张量       | 预留参数，入参请用空指针代替。 | INT64、INT32    | ND        |
-| p   | 输入张量       | 元素置零的概率，取值范围为[0, 1] | FLOAT、FLOAT16、BFLOAT16    | ND        |
-| seed   | 输入张量       | 随机数的种子，影响生成的随机数序列 | INT32、INT64    | ND        |
-| offset   | 输入张量       | 随机数的偏移量，它影响生成的随机数序列的位置 | INT64    | ND        |
-| y    | 输出           | 输出数据。 | 同 input   | ND       |
-| mask    | 输出           | bit类型并使用UINT8类型存储的mask数据。 | UINT8   | ND       |
+  <table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+  <col style="width: 100px">
+  <col style="width: 150px">
+  <col style="width: 280px">
+  <col style="width: 330px">
+  <col style="width: 120px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出/属性</th>
+      <th>描述</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>input</td>
+      <td>输入</td>
+      <td>输入元素。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>noise_shape</td>
+      <td>输入</td>
+      <td>预留参数，入参请用空指针代替。</td>
+      <td>INT64、INT32</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>p</td>
+      <td>输入</td>
+      <td>元素置零的概率，取值范围为[0, 1]。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>seed</td>
+      <td>输入</td>
+      <td>随机数的种子，影响生成的随机数序列。</td>
+      <td>INT64、INT32</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>offset</td>
+      <td>输入</td>
+      <td>随机数的偏移量，它影响生成的随机数序列的位置。</td>
+      <td>INT64</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>y</td>
+      <td>输出</td>
+      <td>输出数据。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>mask</td>
+      <td>输出</td>
+      <td>bit类型并使用UINT8类型存储的mask数据。</td>
+      <td>UINT8</td>
+      <td>ND</td>
+    </tr>
+  </tbody>
+  </table>
 
 
 ## 约束说明

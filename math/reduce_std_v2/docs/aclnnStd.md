@@ -23,45 +23,205 @@
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnStdGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnStd”接口执行计算。
 
-+ `aclnnStatus aclnnStdGetWorkspaceSize(const aclTensor* self, const aclIntArray* dim, const int64_t correction, bool keepdim, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-+ `aclnnStatus aclnnStd(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnStdGetWorkspaceSize(
+  const aclTensor   *self, 
+  const aclIntArray *dim, 
+  const int64_t      correction, 
+  bool               keepdim, 
+  aclTensor         *out, 
+  uint64_t          *workspaceSize, 
+  aclOpExecutor    **executor)
+```
+
+```Cpp
+aclnnStatus aclnnStd(
+  void              *workspace, 
+  uint64_t           workspaceSize, 
+  aclOpExecutor     *executor, 
+  const aclrtStream  stream)
+```
 
 ## aclnnStdGetWorkspaceSize
 
 - **参数说明**：
   
-  - self（aclTensor*，计算输入）: 计算公式中的`self`，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品/Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
-  - dim（aclIntArray*，计算输入）: 公式中的`dim`，Host侧的aclIntArray，表示参与计算的维度，取值范围为[-self.dim(), self.dim()-1]，且其中的数据不能相同，支持的数据类型为INT64。当dim为nullptr或[]时，视为计算所有维度。
-  - correction（int64_t，计算输入）: 修正值，Host侧的整型，计算公式中的$\delta N$值。
-  - keepdim（bool，计算输入）: 是否在输出张量中保留输入张量的维度，Host侧的布尔型，计算公式中的`keepdim`值。
-  - out（aclTensor*，计算输出）: Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
-  - workspaceSize(uint64_t\*, 出参): 返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor\**, 出参): 返回op执行器，包含算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 212px">
+  <col style="width: 359px">
+  <col style="width: 305px">
+  <col style="width: 114px">
+  <col style="width: 135px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>计算公式中的<code>self</code>，Device侧的aclTensor。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>dim</td>
+      <td>输入</td>
+      <td>公式中的<code>dim</code>，Host侧的aclIntArray。</td>
+      <td>参与计算的维度，取值范围为[-self.dim(), self.dim()-1]，且其中的数据不能相同; 当dim为nullptr或[]时，视为计算所有维度。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>correction</td>
+      <td>输入</td>
+      <td>修正值，Host侧的整型，计算公式中的delta N值。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>keepdim</td>
+      <td>输入</td>
+      <td>是否在输出张量中保留输入张量的维度，Host侧的布尔型，计算公式中的`keepdim`值。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>Device侧的aclTensor。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
   
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001 ACLNN_ERR_PARAM_NULLPTR：1. 传入的 self、out 是空指针时。
-  返回161002 ACLNN_ERR_PARAM_INVALID：1. self、dim、out数据类型不在支持的范围之内。
-                                      2. dim 数组中的维度超出 self 的维度范围。
-                                      3. dim 数组中元素重复。
-                                      4. out的shape出现如下情况会出错：
-                                         1. keepdim为true时，out.shape != self.shape(指定维度dim设置为1的形状)；
-                                         2. keepdim为false时，out.shape != self.shape(去除指定维度dim后的形状)
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的 self、out 是空指针时。</td>
+    </tr>
+    <tr>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
+      <td>self、dim、out数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>dim 数组中的维度超出 self 的维度范围。</td>
+    </tr>
+    <tr>
+      <td>dim 数组中元素重复。</td>
+    </tr>
+    <tr>
+      <td>out的shape出现如下情况会出错：
+      <ul><li>1. keepdim为true时，out.shape != self.shape(指定维度dim设置为1的形状)</li>
+      <li>2. keepdim为false时，out.shape != self.shape(去除指定维度dim后的形状)</li></ul>
+      </td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnStd
 
 * **参数说明**：
-  * workspace（void\*, 入参）：在Device侧申请的workspace内存地址。
-  * workspaceSize（uint64\_t, 入参）：在Device侧申请的workspace大小，由第一段接口aclnnStdGetWorkspaceSize获取。
-  * executor（aclOpExecutor\*, 入参）：op执行器，包含了算子计算流程。
-  * stream（aclrtStream, 入参）：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 872px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnStdGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+
 
 * **返回值**：
   

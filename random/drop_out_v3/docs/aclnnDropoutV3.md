@@ -8,10 +8,6 @@
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    ×     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    ×     |
 
-
-
-
-
 ## 功能说明
 
 算子功能：训练过程中，按照概率p随机将输入中的元素置零，并将输出按照1/(1-p)的比例缩放。
@@ -26,56 +22,225 @@ $$
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnDropoutV3GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnDropoutV3”接口执行计算。
 
-- `aclnnStatus aclnnDropoutV3GetWorkspaceSize(const aclTensor* input, const aclTensor* optionalNoiseShape, double p, int64_t seed, int64_t offset, aclTensor* out, aclTensor* maskOut, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnDropoutV3(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnDropoutV3GetWorkspaceSize(
+  const aclTensor* input, 
+  const aclTensor* optionalNoiseShape, 
+  double           p, 
+  int64_t          seed, 
+  int64_t          offset, 
+  aclTensor*       out, 
+  aclTensor*       maskOut, 
+  uint64_t*        workspaceSize, 
+  aclOpExecutor**  executor)
+```
+
+```Cpp
+aclnnStatus aclnnDropoutV3(
+  void          *workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor *executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnDropoutV3GetWorkspaceSize
 
 - **参数说明：**
 
-  - input(aclTensor*, 计算输入)：公式中的输入`input`，数据类型支持FLOAT、FLOAT16、BFLOAT16，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md), [数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-
-  - optionalNoiseShape(aclTensor*, 可选输入)：预留参数，入参请用空指针代替。
-
-  - p(double, 计算输入)：元素置零的概率，取值范围为[0, 1]。
-
-  - seed(int64_t, 计算输入)：随机数的种子，影响生成的随机数序列。
-
-  - offset(int64_t, 计算输入)：随机数的偏移量，它影响生成的随机数序列的位置。
-
-  - out(aclTensor*, 计算输出)：公式中的`out`，数据类型需要是input可转换的数据类型，数据类型支持FLOAT、FLOAT16、BFLOAT16，shape需要与input一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-
-  - maskOut(aclTensor*, 计算输出)：bit类型并使用UINT8类型存储的mask数据。数据类型支持UINT8，shape需要为(align(input的元素个数,128)/8)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。当p=0或p=1场景下，不对传入的maskOut做任何处理；其它场景下以给定的p为置零概率生成mask。
-
-  - workspaceSize(uint64_t*, 出参)：返回用户需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 212px">
+  <col style="width: 359px">
+  <col style="width: 305px">
+  <col style="width: 114px">
+  <col style="width: 135px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>input</td>
+      <td>输入</td>
+      <td>公式中的输入<code>input</code>。</td>
+      <td>shape支持0到8维。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>optionalNoiseShape</td>
+      <td>输入</td>
+      <td>预留参数，入参请用空指针代替。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>p</td>
+      <td>输入</td>
+      <td>元素置零的概率。</td>
+      <td>取值范围为[0, 1]</td>
+      <td>double</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>seed</td>
+      <td>输入</td>
+      <td>随机数的种子，影响生成的随机数序列。</td>
+      <td>-</td>
+      <td>int64_t</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>offset</td>
+      <td>输入</td>
+      <td>随机数的偏移量，它影响生成的随机数序列的位置。</td>
+      <td>-</td>
+      <td>int64_t</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>公式中的<code>out</code></td>
+      <td>数据类型需要是input可转换的数据类型，shape需要与input一致。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>maskOut</td>
+      <td>输出</td>
+      <td>bit类型并使用UINT8类型存储的mask数据。</td>
+      <td>元素个数需要为(align(input的元素个数,128)/8)；当p=0或p=1场景下，不对传入的maskOut做任何处理；其它场景下以给定的p为置零概率生成mask。</td>
+      <td>UINT8</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
 
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-```
-第一段接口完成入参校验，出现以下场景时报错：
-161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的input、out、maskOut为空指针。
-161002 (ACLNN_ERR_PARAM_INVALID): 1. input、out、maskOut的数据类型不在支持的范围之内。
-                                  2. p的值不在0和1之间。
-                                  3. input维度超过8维，input和out的shape不一致。
-                                  4. maskOut的shape不满足条件。
-```
+  第一段接口完成入参校验，出现如下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的input、out、maskOut为空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
+      <td>input、out、maskOut的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>p的值不在0和1之间。</td>
+    </tr>
+    <tr>
+      <td>input维度超过8维，input和out的shape不一致。</td>
+    </tr>
+    <tr>
+      <td>maskOut的shape不满足条件。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnDropoutV3
 
 - **参数说明：**
 
-  - workspace(void*, 入参)：在Device侧申请的workspace内存地址。
-
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnDropoutV3GetWorkspaceSize获取。
-
-  - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
-
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 872px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnDropoutV3GetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 
 - **返回值：**
