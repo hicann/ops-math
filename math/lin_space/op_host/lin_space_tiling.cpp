@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file lin_space_tiling.cpp
@@ -18,6 +18,7 @@
 #include "log/log.h"
 #include "op_host/tiling_base.h"
 #include "op_host/tiling_templates_registry.h"
+#include "op_host/tiling_util.h"
 
 namespace optiling {
 using namespace Ops::Math::OpTiling;
@@ -48,11 +49,11 @@ protected:
         auto platformInfo = context_->GetPlatformInfo();
         if (platformInfo != nullptr) {
             auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
-            socVersion_ = ascendcPlatform.GetSocVersion();
+            npuArch_ = ascendcPlatform.GetCurNpuArch();
         } else {
             auto compileInfoPtr = reinterpret_cast<const LinSpaceCompileInfo*>(context_->GetCompileInfo());
             OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_, "compile info is null"), return ge::GRAPH_FAILED);
-            socVersion_ = compileInfoPtr->socVersion;
+            npuArch_ = compileInfoPtr->npuArch;
         }
 
         return ge::GRAPH_SUCCESS;
@@ -70,7 +71,7 @@ protected:
 
     bool IsCapable() override
     {
-        return (socVersion_ != platform_ascendc::SocVersion::ASCEND910_95);
+        return (!Ops::Math::OpTiling::IsRegbaseSocVersion(context_));
     }
 
     ge::graphStatus DoOpTiling() override;
@@ -90,7 +91,7 @@ protected:
         return context_->GetTilingKey();
     }
 
-    platform_ascendc::SocVersion socVersion_;
+    NpuArch npuArch_;
 };
 
 inline static int64_t CeilDiv(int64_t value, int64_t factor)

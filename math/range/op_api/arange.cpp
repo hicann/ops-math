@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 #include "opdev/platform.h"
 #include "opdev/shape_utils.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -40,7 +41,7 @@ static bool IsAiCoreSupport(DataType outType)
     // 获取芯片类型
     if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+        IsRegBase()) {
         return CheckType(outType, ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
     } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310B) {
         return CheckType(outType, ASCEND310B_AICORE_DTYPE_SUPPORT_LIST);
@@ -88,7 +89,7 @@ const aclTensor* Arange(
         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910 ||
         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310P ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+        IsRegBase()) {
         if (outType == DataType::DT_INT64) {
             inputType = DataType::DT_INT64;
         } else {

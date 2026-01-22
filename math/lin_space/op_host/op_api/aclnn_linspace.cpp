@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "aclnn_linspace.h"
 #include "linspace.h"
@@ -22,6 +22,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -57,13 +58,12 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST =
       // AiCpu支持数据类型
       op::DataType::DT_DOUBLE};
 
-static const inline std::initializer_list<DataType>& GetSupportDtypeList(SocVersion socVersion) {
+static const inline std::initializer_list<DataType>& GetSupportDtypeList(NpuArch npuArch) {
   static const std::initializer_list<DataType> emptyDtypes = {};
-  if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-      socVersion == SocVersion::ASCEND910_95) {
+  if (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch)) {
     return ASCEND910B_DTYPE_SUPPORT_LIST;
   } 
-  if (socVersion == SocVersion::ASCEND910 || socVersion == SocVersion::ASCEND310P) {
+  if (npuArch == NpuArch::DAV_1001 || npuArch == NpuArch::DAV_2002) {
     return ASCEND910_DTYPE_SUPPORT_LIST;
   }
   return emptyDtypes;
@@ -80,7 +80,8 @@ inline static bool CheckNotNull(const aclScalar *start, const aclScalar *end, co
 inline static bool CheckDtypeValid(const aclTensor *out)
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    const auto& DTYPE_SUPPORT_LIST_CURRENT = GetSupportDtypeList(socVersion);
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    const auto& DTYPE_SUPPORT_LIST_CURRENT = GetSupportDtypeList(npuArch);
     if (DTYPE_SUPPORT_LIST_CURRENT.size() == 0) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "support for %s is not implemented", op::ToString(socVersion).GetString());
         return false;

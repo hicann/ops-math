@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/op_dfx.h"
 #include "opdev/make_op_executor.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -52,7 +53,7 @@ static inline bool CheckNotNull(
 static inline bool CheckDtypeValid(
     const aclTensor* self, const aclTensor* onValue, const aclTensor* offValue, const aclTensor* out)
 {
-    static bool isSimtVersion = GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95;
+    static bool isSimtVersion = IsRegBase();
     if (isSimtVersion) {
         // 检查self的数据类型是否在支持列表内
         OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST_910_95, return false);
@@ -84,7 +85,7 @@ static inline bool CheckDtypeValid(
 static bool CheckMaxDimension(
     const aclTensor* self, const aclTensor* onValue, const aclTensor* offValue, const aclTensor* out)
 {
-    static bool isSimtVersion = GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95;
+    static bool isSimtVersion = IsRegBase();
     if (isSimtVersion) {
         OP_CHECK_MAX_DIM(self, SIMT_SELF_MAX_DIM_NUM, return false);
     } else {

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -35,29 +35,23 @@ protected:
     }
 };
 
-// Note: Tiling tests are disabled because the range operator's tiling implementation
-// requires reading const tensor values (start, limit, delta) to calculate output size,
-// but the test framework doesn't properly set up these const tensors for tiling tests.
-// Additionally, the range operator has dynamic output shape (-1) which cannot be
-// determined at tiling time.
-//
-// The infershape tests pass correctly, which validates the operator logic.
-
-TEST_F(RangeTilingTest, test_tiling_int32) {
+TEST_F(RangeTilingTest, test_tiling_int32)
+{
     optiling::RangeCompileInfo compileInfo;
     compileInfo.running_core_num = 8;
     compileInfo.totalCoreNum = 8;
     compileInfo.ubSize = 262144;
-    gert::TilingContextPara tilingContextPara("Range",
-                                              {
-                                                {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, false, nullptr},
-                                                {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, false, nullptr},
-                                                {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, false, nullptr},
-                                              },
-                                              {
-                                                {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-                                              },
-                                              &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "Range",
+        {
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, false, nullptr},
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, false, nullptr},
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, false, nullptr},
+        },
+        {
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 110018589944848;
     string expectTilingData = "0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 32 8 1 0 0 0 0 0 32 8 1 0 0 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {32};

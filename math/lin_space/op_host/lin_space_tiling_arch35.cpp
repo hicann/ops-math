@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file lin_space_tiling_arch35.cpp
@@ -16,6 +16,7 @@
 #include "log/log.h"
 #include "op_host/tiling_base.h"
 #include "op_host/tiling_templates_registry.h"
+#include "op_host/tiling_util.h"
 
 namespace optiling {
 constexpr static int64_t CORE_MINEST_NUM = 128;
@@ -64,7 +65,7 @@ protected:
 
     ge::graphStatus DoOpTiling() override;
     ge::DataType outDataType_;
-    platform_ascendc::SocVersion socVersion_;
+    NpuArch npuArch_;
 
 private:
     LinSpaceRegbaseTilingData tilingData_;
@@ -305,7 +306,7 @@ static ge::graphStatus CalcLinSpaceTilingParam(LinSpaceRegbaseTilingParam& tilin
 
 bool LinSpaceRegbaseTilingClass::IsCapable()
 {
-    return (socVersion_ == platform_ascendc::SocVersion::ASCEND910_95);
+    return Ops::Math::OpTiling::IsRegbaseSocVersion(context_);
 }
 
 ge::graphStatus LinSpaceRegbaseTilingClass::GetPlatformInfo()
@@ -313,7 +314,7 @@ ge::graphStatus LinSpaceRegbaseTilingClass::GetPlatformInfo()
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo != nullptr) {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
-        socVersion_ = ascendcPlatform.GetSocVersion();
+        npuArch_ = ascendcPlatform.GetCurNpuArch();
         tilingParam_.totalCoreNum = ascendcPlatform.GetCoreNumAiv();
 
         uint64_t ubSizePlatForm = 0;
@@ -322,7 +323,7 @@ ge::graphStatus LinSpaceRegbaseTilingClass::GetPlatformInfo()
     } else {
         auto compileInfoPtr = reinterpret_cast<const LinSpaceCompileInfo*>(context_->GetCompileInfo());
         OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfoPtr);
-        socVersion_ = compileInfoPtr->socVersion;
+        npuArch_ = compileInfoPtr->npuArch;
         tilingParam_.totalCoreNum = compileInfoPtr->totalCoreNum;
         tilingParam_.totalUbSize = compileInfoPtr->ubSizePlatForm;
     }

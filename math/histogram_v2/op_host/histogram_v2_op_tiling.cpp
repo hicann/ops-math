@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file histogram_v2_op_tiling.cpp
@@ -16,6 +16,7 @@
 #include "log/log.h"
 #include "platform/platform_info.h"
 #include "op_host/tiling_templates_registry.h"
+#include "op_host/tiling_util.h"
 
 namespace optiling {
 constexpr int64_t SIZE_OF_FP32 = 4L;
@@ -76,6 +77,8 @@ private:
     int64_t tailTileDataLength = 0;
     int64_t tailTileLeftDataLength = 0;
     int64_t tailTileLeftDataLengthAligned = 0;
+
+    bool is310Soc = false;
 };
 
 inline void HistogramV2Tiling::SetTilingKeyMode(ge::DataType dType) const
@@ -170,13 +173,14 @@ ge::graphStatus HistogramV2Tiling::Init()
     SetTilingKeyMode(dType);
     tilingContext->SetNeedAtomic(true);
     TilingDataForCore();
-    if (compileInfo->socVersion == platform_ascendc::SocVersion::ASCEND310P) {
+    if (compileInfo->npuArch == NpuArch::DAV_2002) {
+        is310Soc = true;
         ubSelfLength = UB_SELF_LENGTH_310P;
         ubBinsLength = UB_BINS_LENGTH_310P;
     }
     TilingDataInCore(dType);
     // Sync workspace size and kernel result size
-    if (compileInfo->socVersion == platform_ascendc::SocVersion::ASCEND310P) {
+    if (compileInfo->npuArch == NpuArch::DAV_2002) {
         int64_t alignNum = BYTE_BLOCK / SIZE_OF_FP32;
         userWorkspaceSize = coreNum * BYTE_BLOCK + coreNum * (bins + alignNum) * SIZE_OF_FP32;
     }
@@ -189,7 +193,9 @@ ge::graphStatus HistogramV2Tiling::Init()
 ge::graphStatus HistogramV2Tiling::SetKernelTiling()
 {
     tilingContext->SetBlockDim(coreNum);
-
+    if (is310Soc) {
+        tilingContext->SetScheduleMode(1);
+    }
     tilingData.set_bins(bins);
     tilingData.set_ubBinsLength(ubBinsLength);
 
@@ -249,7 +255,7 @@ public:
 protected:
     bool IsCapable() override
     {
-        if (socVersion == platform_ascendc::SocVersion::ASCEND910_95) {
+        if (Ops::Math::OpTiling::IsRegbaseSocVersion(context_)) {
             return false;
         }
         return true;

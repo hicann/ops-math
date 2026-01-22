@@ -1,7 +1,7 @@
 /**
- * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
- * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -29,6 +29,7 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
+#include "op_api/aclnn_check.h"
 using namespace op;
 #ifdef __cplusplus
 extern "C" {
@@ -163,8 +164,8 @@ static bool CheckShape(const aclTensor* self, int64_t bins, const aclTensor* out
 
 static bool NeedComputeMinMax(const aclScalar* min, const aclScalar* max, op::DataType selfDType)
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (!(socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910E)) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch)) {
         return false;
     }
 
