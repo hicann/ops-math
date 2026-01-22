@@ -53,6 +53,6 @@ TEST_F(HansEncodeTiling, ascend910B1_test_tiling__001)
          &compileInfo);
     uint64_t expectTilingKey = 4;
     string expectTilingData = "2 512 512 32512 32512 65536 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {4294967295};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

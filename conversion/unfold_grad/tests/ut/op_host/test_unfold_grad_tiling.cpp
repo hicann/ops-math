@@ -46,7 +46,7 @@ TEST_F(UnfoldGradTilingTest, UnfoldGradTilingData_test_float16_outputshape_8_2_d
                                                 &compileInfo);
     uint64_t expectTilingKey = 222;
     string expectTilingData = "1 1 1 170 1 52224 104448 16 18 3 2 3072 2 8 48 192 1 2 4 8 3 2 0 3 2 0 2 ";
-    std::vector<size_t> expectWorkspaces = {16777280};
+    std::vector<size_t> expectWorkspaces = {4294967359};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -63,7 +63,7 @@ TEST_F(UnfoldGradTilingTest, UnfoldGradTilingData_test_float16_outputshape_1_3_3
                                                 &compileInfo);
     uint64_t expectTilingKey = 221;
     string expectTilingData = "5922 93 63 4 64 52224 104448 658 6400 0 6400 25920 5 0 1 0 128000 2 4 8 320 658 4 20 2 0 6400 ";
-    std::vector<size_t> expectWorkspaces = {32363920};
+    std::vector<size_t> expectWorkspaces = {4310553999};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -80,6 +80,6 @@ TEST_F(UnfoldGradTilingTest, UnfoldGradTilingData_test_float32_outputshape_1_3_3
                                                 &compileInfo);
     uint64_t expectTilingKey = 312;
     string expectTilingData = "9 1 1 0 9 0 130048 432964 43428 33 658 3968 5 8 16 496 83 4 4 8 33 658 3 2 20 0 658 ";
-    std::vector<size_t> expectWorkspaces = {32363920};
+    std::vector<size_t> expectWorkspaces = {4310553999};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

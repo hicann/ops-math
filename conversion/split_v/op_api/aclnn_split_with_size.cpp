@@ -156,9 +156,8 @@ static aclnnStatus SplitOnceCalculation(const aclTensor *self, const aclIntArray
 static aclnnStatus SplitLoopCalculation(const aclTensor *self, const aclIntArray *splitSize, int64_t dim,
                                         aclTensorList *out, aclOpExecutor *executor) {
   const int64_t numSplit = splitSize->Size();
-  bool isSupportSplitV2 = l0op::IsSplitV2AiCoreSupport(self, splitSize, dim);
   const int64_t splitLoopSize = (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) ?
-                                (isSupportSplitV2 ? SPLITV2_LOOP_SIZE : SPLIT_LOOP_SIZE) : SPLIT_LOOP_SIZE_512;
+                                SPLIT_LOOP_SIZE : SPLIT_LOOP_SIZE_512;
   const int64_t loopSize = (numSplit + splitLoopSize - 1) / splitLoopSize;
   const int64_t lastSize = (numSplit % splitLoopSize == 0) ? splitLoopSize : numSplit % splitLoopSize;
   // 1. 根据loopSize和lastSize, 将splitSize构造为新的SplitSize
@@ -257,11 +256,7 @@ aclnnStatus aclnnSplitWithSizeGetWorkspaceSize(const aclTensor *self, const aclI
     // 无需调用SplitV,直接进行Cast和ViewCopy即可
     ret = SplitZeroCalculation(selfContiguous, out, uniqueExecutor.get());
   } else if (l0op::IsSplitV2AiCoreSupport(selfContiguous, splitSize, dim) &&
-             splitSize->Size() > SPLITV2_LOOP_SIZE) {
-    // 在SplitV2算子的AICore场景且输出个数超过64，使用以64为基数的循环切分
-    ret = SplitLoopCalculation(selfContiguous, splitSize, dim, out, uniqueExecutor.get());
-  } else if (l0op::IsSplitV2AiCoreSupport(selfContiguous, splitSize, dim) &&
-             splitSize->Size() > SPLIT_LOOP_SIZE) {
+             splitSize->Size() > SPLIT_LOOP_SIZE && splitSize->Size() <= SPLITV2_LOOP_SIZE) {
     // 在SplitV2算子的AICore场景且输出个数超过32但不超过64，直接切分，不需要slice
     ret = SplitOnceCalculation(selfContiguous, splitSize, dim, out, uniqueExecutor.get());
   } else if (l0op::SplitVAiCoreSupport(selfContiguous) && splitSize->Size() > SPLIT_LOOP_SIZE &&

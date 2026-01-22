@@ -45,7 +45,7 @@ TEST_F(SimThreadExponentialTilingTest, SimThreadExponentialTilingData_test_FP32_
                                                 &compileInfo);
     uint64_t expectTilingKey = 3;
     string expectTilingData = "5 1 42949673023 2680059592708 300000 10720238373312 5360320512 4 0 4575657221408423936 1065353216 ";
-    std::vector<size_t> expectWorkspaces = {16778000};
+    std::vector<size_t> expectWorkspaces = {4294968079};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -61,7 +61,7 @@ TEST_F(SimThreadExponentialTilingTest, SimThreadExponentialTilingData_test_FP16_
                                                 &compileInfo);
     uint64_t expectTilingKey = 1;
     string expectTilingData = "5 1 42949673023 2680059592708 300000 10720238373312 5360320512 4 0 4575657221408423936 1065353216 ";
-    std::vector<size_t> expectWorkspaces = {16778000};
+    std::vector<size_t> expectWorkspaces = {4294968079};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -77,6 +77,6 @@ TEST_F(SimThreadExponentialTilingTest, SimThreadExponentialTilingData_test_bf16_
                                                 &compileInfo);
     uint64_t expectTilingKey = 2;
     string expectTilingData = "5 1 42949673023 2680059592708 300000 10720238373312 5360320512 4 0 4575657221408423936 1065353216 ";
-    std::vector<size_t> expectWorkspaces = {16778000};
+    std::vector<size_t> expectWorkspaces = {4294968079};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

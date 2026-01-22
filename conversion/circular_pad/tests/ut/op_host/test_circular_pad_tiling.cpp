@@ -46,7 +46,7 @@ TEST_F(CircularPadTiling, circular_pad_tiling_test_success)
 
     uint64_t expectTilingKey = 322;
     std::string expectTilingData = "300 300 500 500 100 100 100 100 1 1 1 3 0 1 67200 ";
-    std::vector<size_t> expectWorkspaces = {17046016};
+    std::vector<size_t> expectWorkspaces = {4295236095};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 

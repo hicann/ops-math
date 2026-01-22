@@ -31,6 +31,8 @@ constexpr int32_t TRANS_BLOCK = 16;
 constexpr int32_t ONCE_TRANSDATATO5HD_SIZE = 512;
 constexpr int32_t DOUBLE = 2;
 constexpr int32_t TOTAL_SIZE = 5;
+constexpr int32_t FP16BF16_SIZE_CEIL = 73;
+constexpr int32_t FP32_SIZE_CEIL = 89;
 
 constexpr int32_t DATA_TYPE = 10;
 constexpr int32_t OVERLAPPED = 200;
@@ -298,9 +300,9 @@ ge::graphStatus UnfoldGradTiling::Tiling4Block()
         colOnceMaxPerUB = ubSizeT2 / FP32_TYPESIZE / rowT2NeededLength / TRANS_BLOCK * TRANS_BLOCK;
         tasksOnceMaxPerCore = colOnceMaxPerUB * lowestCommonMultiple / neededAmountForOneSize;
 
-        int32_t maxSize = 73;
-        if(typeSizeT1 == 4) {
-            maxSize = 89;
+        int32_t maxSize = FP16BF16_SIZE_CEIL;
+        if(typeSizeT1 == FP32_TYPESIZE) {
+            maxSize = FP32_SIZE_CEIL;
         }
         OP_CHECK_IF(
             tasksOnceMaxPerCore <= 0,

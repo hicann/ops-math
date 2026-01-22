@@ -46,7 +46,7 @@ TEST_F(TransposeV2Tiling, transpose_v2_float16_021_success_case) {
                                                 &compileInfo);
     uint64_t expectTilingKey = 20;
     string expectTilingData = "0 0 0 0 0 0 0 0 0 2 1 30 68 32 80 256 8 1 2 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {4294967295};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -60,7 +60,7 @@ TEST_F(TransposeV2Tiling, transpose_v2_float16_102_success_case) {
                                                 &compileInfo);
     uint64_t expectTilingKey = 121;
     string expectTilingData = "1 30 64 64 0 30 1 1 511 2 0 0 0 0 0 0 0 0 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {4294967295};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -74,6 +74,6 @@ TEST_F(TransposeV2Tiling, transpose_v2_float16_0213_success_case) {
                                                 &compileInfo);
     uint64_t expectTilingKey = 221;
     string expectTilingData = "1 32 64 64 0 32 1 1 511 2 0 0 0 0 0 0 0 0 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {4294967295};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

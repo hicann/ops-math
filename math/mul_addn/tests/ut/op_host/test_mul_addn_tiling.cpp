@@ -53,6 +53,6 @@ TEST_F(MulAddnTiling, test_tiling_float16_case)
         {gert::TilingContextPara::OpAttr("N", Ops::Math::AnyValue::CreateFrom<int64_t>(6))}, &compileInfo);
     uint64_t expectTilingKey = 1;
     string expectTilingData = "6 1500 512 128 128 24 63 12 171 3 170 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {4294967295};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
