@@ -144,6 +144,7 @@ operator_group_5:
   - tril
   - triu
   - trunc
+  - top_k_v2
   - unpack
   - zeros_like
   - drop_out_do_mask
