@@ -59,7 +59,7 @@ ${op_name}                              # 替换为实际算子名的小写下�
 └── CMakeLists.txt                      # 算子cmakelist入口
 ```
 
- 若`${op_class}`为全新算子分类需额外在`CMakeLists`中添加`add_subdirectory(${op_class})`，否则无法正常编译。
+ 若```${op_class}```为全新算子分类需额外在`CMakeLists`中添加`add_subdirectory(${op_class})`，否则无法正常编译。
  	 
  	 ```
  	 if(ENABLE_EXPERIMENTAL)
@@ -74,7 +74,7 @@ ${op_name}                              # 替换为实际算子名的小写下�
  	 ```
 
 ## 算子定义
-算子定义需要完成两个交付件：`README.md` `${op_name}.json`
+算子定义需要完成两个交付件：`README.md` ```${op_name}.json```
 
 **交付件1：README.md**
 
@@ -101,7 +101,7 @@ graph LR
 ```
 ### 代码实现
 
-Kernel一共需要两个交付件：`${op_name}_aicpu.cpp` `${op_name}_aicpu.h`
+Kernel一共需要两个交付件：```${op_name}_aicpu.cpp``` ```${op_name}_aicpu.h```
 
 **交付件1：${op_name}_aicpu.h**
 
@@ -223,11 +223,11 @@ REGISTER_CPU_KERNEL(kAddExample, AddExampleCpuKernel);
     # 安装run包
     ./build_out/cann-ops-math-${vendor_name}_linux-${arch}.run
     ```
-    自定义算子包安装在`${ASCEND_HOME_PATH}/opp/vendors`路径中，`${ASCEND_HOME_PATH}`表示CANN软件安装目录，可提前在环境变量中配置。
+    自定义算子包安装在```${ASCEND_HOME_PATH}/opp/vendors```路径中，```${ASCEND_HOME_PATH}```表示CANN软件安装目录，可提前在环境变量中配置。
     
 4. **（可选）卸载自定义算子包。**
 
-    自定义算子包安装后在`${ASCEND_HOME_PATH}/opp/vendors/custom_math/scripts`目录会生成`uninstall.sh`，通过该脚本可卸载自定义算子包，命令如下：
+    自定义算子包安装后在```${ASCEND_HOME_PATH}/opp/vendors/custom_math/scripts```目录会生成`uninstall.sh`，通过该脚本可卸载自定义算子包，命令如下：
     
     ```bash
     bash ${ASCEND_HOME_PATH}/opp/vendors/custom_math/scripts/uninstall.sh

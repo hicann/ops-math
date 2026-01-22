@@ -117,7 +117,7 @@
    ```bash
    msprof op simulator --output=$PWD/pipline_auto --kernel-name"AddExample" ./test_aclnn_add_example
    ```
-   采集结果在本项目`$PWD/pipeline_auto/OPPROF_**`目录中。
+   采集结果在本项目```$PWD/pipeline_auto/OPPROF_**```目录中。
    其中流水相关文件路径为`OPPROF**/simulator/visualize_data.bin`，可以借助[MindStudio Insight](https://www.hiascend.com/document/redirect/MindStudioInsight)工具查看。
    
 ### 方式二（针对Ascend 950PR）
