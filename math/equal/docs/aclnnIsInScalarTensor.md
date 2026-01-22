@@ -7,6 +7,9 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |   ×    |
+| <term>Atlas 推理系列产品</term>                             |    ×     |
+| <term>Atlas 训练系列产品</term>                              |    √    |
 
 ## 功能说明
 
@@ -24,8 +27,10 @@
 
   + element(aclScalar*, 计算输入)，数据类型与testElements的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
      * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BFLOAT16
+     * <term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8
   + testElements(aclTensor*, 计算输入)，数据类型与element的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
      * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BFLOAT16
+     * <term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8
   + assumeUnique(bool, 计算输入): 表示testElements中的值是否唯一，如果其值与testElements中元素的唯一性不符，不会对结果产生影响。
   + invert(bool, 计算输入): 表示输出结果是否反转。
   + out(aclTensor*, 计算输出)：数据类型支持BOOL，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。

@@ -7,6 +7,9 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |   ×    |
+| <term>Atlas 推理系列产品</term>                             |    ×     |
+| <term>Atlas 训练系列产品</term>                              |    √    |
 
 ## 功能说明
 
@@ -63,17 +66,92 @@ aclnnStatus aclnnInplaceEqScalar(
 
 - **参数说明：**
 
-  * self（aclTensor*，计算输入）：公式中的`self`，Device侧的aclTensor。shape维度不高于8维，支持[非连续的Tensor](./../../../docs/zh/context/非连续的Tensor.md)，[数据格式](./../../../docs/zh/context/数据格式.md)支持ND。
-    * <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64，且与other满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
-    * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、 BFLOAT16、DOUBLE、INT16、COMPLEX64、COMPLEX128，且与other满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
-  * other（aclScalar*, 计算输入）：公式中的`other`，Host侧的aclScalar。
-    * <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64，且与self满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
-    * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、 BFLOAT16、DOUBLE、INT16、COMPLEX64、COMPLEX128，且与self满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
-  * out（aclTensor*，计算输出）：公式中的out，Device侧的aclTensor。数据类型BOOL可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)），shape与self的shape一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    * <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64、UINT32、UINT16。
-    * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
-  - workspaceSize(uint64_t \*, 出参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor \*\*, 出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1494px"><colgroup>
+  <col style="width: 168px">
+  <col style="width: 136px">
+  <col style="width: 213px">
+  <col style="width: 200px">
+  <col style="width: 373px">
+  <col style="width: 115px">
+  <col style="width: 142px">
+  <col style="width: 147px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>公式中的self。</td>
+      <td>-</td>
+      <td>DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT32、UINT64</td>
+      <td>ND</td>
+      <td>不高于8维</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>other</td>
+      <td>输入</td>
+      <td>公式中的other。</td>
+      <td>-</td>
+      <td>DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT32、UINT64</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>公式中的out。</td>
+      <td>数据类型BOOL可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td>DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64、UINT32、UINT16</td>
+      <td>ND</td>
+      <td>与self的shape一致</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
+  
+  - <term>Ascend 950PR/Ascend 950DT</term>：
+    - self与other满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
+    - self、other不支持UINT32数据类型。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+    - self与other满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
+    - self、other不支持UINT32、UINT64数据类型
+    - out不支持UINT64、UINT32、UINT16数据类型。
+  - <term>Atlas 训练系列产品</term>：
+    - self与other满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
+    - 不支持BFLOAT16数据类型。
+    - out不支持UINT64、UINT32、UINT16、BFLOAT16数据类型。
 
 - **返回值：**
 
@@ -162,14 +240,81 @@ aclnnStatus aclnnInplaceEqScalar(
 
 - **参数说明：**
 
-  * selfRef（aclTensor* 计算输入/输出）：公式中的`selfRef`，Device侧的aclTensor。shape维度不高于8维，支持[非连续的Tensor](./../../../docs/zh/context/非连续的Tensor.md)，[数据格式](./../../../docs/zh/context/数据格式.md)支持ND。
-    * <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64，且与other满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
-    * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、 BFLOAT16、DOUBLE、INT16、COMPLEX64、COMPLEX128，且与other满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
-  * other（aclScalar*, 计算输入）：公式中的`other`，Host侧的aclScalar。
-    * <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64，且与selfRef满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
-    * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、 BFLOAT16、DOUBLE、INT16、COMPLEX64、COMPLEX128，且与selfRef满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
-  - workspaceSize(uint64_t \*，出参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor \*\*，出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1502px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 135px">
+  <col style="width: 267px">
+  <col style="width: 159px">
+  <col style="width: 372px">
+  <col style="width: 115px">
+  <col style="width: 141px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>selfRef</td>
+      <td>输入/输出</td>
+      <td>公式中的selfRef。</td>
+      <td>-</td>
+      <td>DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT32、UINT64</td>
+      <td>ND</td>
+      <td>不高于8维</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>other</td>
+      <td>输入</td>
+      <td>公式中的other。</td>
+      <td>-</td>
+      <td>DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT32、UINT64</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
+
+
+  - <term>Ascend 950PR/Ascend 950DT</term>：
+    - selfRef与other满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
+    - selfRef、other不支持UINT32数据类型。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+    - selfRef与other满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
+    - selfRef、other不支持UINT32、UINT64数据类型。
+  - <term>Atlas 训练系列产品</term>：
+    - selfRef与other满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
+    - 不支持BFLOAT16数据类型。
 
 - **返回值：**
 
