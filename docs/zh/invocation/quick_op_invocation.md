@@ -13,6 +13,10 @@
 
 - [ops-math包](#ops-math包)：选择整个项目编译生成的包称为ops-math包，可**完整替换**CANN包对应部分。该包支持aclnn和图模式调用AI Core算子。
 
+- [ops-math静态库](#ops-math静态库)：指整个项目编译为一个静态库文件，包含libcann-math-static.a和aclnn接口头文件。该包仅支持aclnn调用AI Core算子。
+
+  >说明：若您需要**基于本项目进行二次发布**并且对**软件包大小有要求**时，建议采用静态库编译，该库可以链接您的应用开发程序，仅保留业务所需的算子，从而实现软件最小化部署。
+
 ### 自定义算子包
 
 1. **编译自定义算子包**
@@ -99,6 +103,60 @@
     # 卸载命令
     ./${install_path}/cann/share/info/ops_math/script/uninstall.sh
     ```
+
+### ops-math静态库
+
+> 说明：Ascend 950PR/Ascend 950DT暂不支持使用静态库。
+
+1. **编译ops-math静态库**
+
+   进入项目根目录，执行如下编译命令：
+
+    ```bash
+   bash build.sh --pkg --static --soc=${soc_version}
+    ```
+   \$\{soc\_version\}表示NPU型号。Atlas A2系列产品使用"ascend910b"（默认），Atlas A3系列产品使用"ascend910_93"。
+
+   若提示如下信息，说明编译并压缩成功。
+
+    ```bash
+   [SUCCESS] Build static lib success!
+   Successfully created compressed package: ${repo_path}/build_out/cann-${soc_name}-ops-math-static_${cann_version}_linux-${arch}.tar.gz
+    ```
+
+   \$\{repo\_path\}表示项目根目录，\$\{soc\_name\}表示NPU型号名称，即\$\{soc\_version\}删除“ascend”后剩余的内容。编译成功后，压缩包存放于build_out目录下。
+
+
+2. **解压ops-math静态库**
+
+   进入build_out目录执行解压命令：
+
+    ```bash
+   tar -zxvf ./cann-${soc_name}-ops-math-static_${cann_version}_linux-${arch}.tar.gz -C ${static_lib_path}
+    ```
+
+   \$\{static\_lib\_path\}表示静态库解压路径。解压后目录结构如下：
+    ```
+    ├── cann-${soc_name}-ops-math-static_${cann_version}_linux-${arch}
+    │   ├── lib64
+    │   │   ├── libcann-math-static.a               # 静态库文件
+    │   └── include
+    |       ├── ...                                 # aclnn接口头文件
+    ```
+   
+3. **静态库使用方法**
+   
+    使用示例如下，仅供参考：
+    
+    ```bash
+    g++ ${file} -I ${TEST_PATH}/include -L ${TEST_PATH} -L ${ASCEND_HOME_PATH}/lib64 -Wl,--allow-multiple-definition \
+    -Wl,--start-group -lcann_math_static -lcann_legacy_static -Wl,--end-group -lgraph -lgraph_base \
+   -lpthread -lmmpa -lmetadef -lascendalog -lregister -lopp_registry -lops_base -lascendcl -ltiling_api -lplatform \
+   -ldl -lc_sec -lnnopbase -lruntime -lerror_manager -o ${exec_name}
+   ```
+   \$\{file\}表示aclnn测试代码源文件；\$\{TEST\_PATH\}表示静态库解压路径；\$\{ASCEND\_HOME\_PATH\}已通过环境变量配置，表示CANN toolkit包安装路径，一般为\$\{install\_path\}/cann；\$\{exec\_name\}表示最终可执行文件的名字。
+   
+   其中lcann\_math\_static、lmetadef等表示算子依赖的底层库文件，可在CANN toolkit包获取。
 
 ## 本地验证 
 
