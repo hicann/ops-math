@@ -1,4 +1,5 @@
-/* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -12,13 +13,14 @@
 
 using namespace ge;
 namespace ops {
-  static ge::graphStatus InferDataTypeForCeil(gert::InferDataTypeContext *context) {
+static ge::graphStatus InferDataTypeForCeil(gert::InferDataTypeContext* context)
+{
     OP_LOGI(context, "Enter InferDataTypeForCeil");
     const ge::DataType xDataType = context->GetInputDataType(0);
     context->SetOutputDataType(0, xDataType);
     return ge::GRAPH_SUCCESS;
-  }
-
-  IMPL_OP(Ceil).InferDataType(InferDataTypeForCeil);
 }
+
+IMPL_OP(Ceil).InferDataType(InferDataTypeForCeil);
+} // namespace ops
 // namespace ops

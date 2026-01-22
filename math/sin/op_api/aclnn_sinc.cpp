@@ -12,7 +12,7 @@
 #include "sin.h"
 #include "math/ones_like/op_api/ones_like.h"
 #include "math/equal/op_api/equal.h"
-#include "math/select/op_host/op_api/select.h"
+#include "math/select/op_api/select.h"
 #include "math/mul/op_api/mul.h"
 #include "math/real_div/op_api/realdiv.h"
 #include "math/zero_op/op_api/zero_op.h"

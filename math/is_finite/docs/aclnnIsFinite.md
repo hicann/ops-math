@@ -1,18 +1,23 @@
 # aclnnIsFinite
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/is_finite)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |     √      |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    ×     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
 
 ## 功能说明
 
 - 算子功能：判断输入张量哪些元素是有限数值，即不是inf、-inf或nan。
 - 计算公式：
-
   $$
   out_i=(input_i != \pm inf) \: and \: (input_i!= nan)
   $$
@@ -29,7 +34,8 @@
 - **参数说明：**
 
   - self（aclTensor*，计算输入）：公式中的`input`，Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape的维度不高于8维。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT64、INT32、INT16、INT8、UINT8、BOOL。
+    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT64、INT32、INT16、INT8、UINT8、BOOL。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT64、INT32、INT16、INT8、UINT8、BOOL。
   - out（aclTensor*，计算输出）：公式中的`out`，Device侧的aclTensor。数据类型支持BOOL，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)为ND。shape与`self`一致，且shape的维度不高于8维。
   - workspaceSize（uint64_t*，出参）：返回用户需要在Device侧申请的workspace大小。
   - executor（aclOpExecutor**，出参）：返回op执行器，包含了算子计算流程。
@@ -63,6 +69,7 @@
 
 - 确定性计算：
   - aclnnIsFinite默认确定性实现。
+
 
 ## 调用示例
 

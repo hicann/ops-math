@@ -19,6 +19,7 @@
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -31,7 +32,7 @@ static const std::initializer_list<DataType> ASCEND910D_DTYPE_DTYPE_SUPPORT_LIST
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    if (IsRegBase()) {
         return ASCEND910D_DTYPE_DTYPE_SUPPORT_LIST;
     }
     return ASCEND910D_DTYPE_DTYPE_SUPPORT_LIST;
@@ -59,7 +60,7 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     // 当前level2接口仅支持910D
     OP_CHECK(
-        socVersion == SocVersion::ASCEND910_95,
+        IsRegBase(),
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "not implemented for %s", op::ToString(socVersion).GetString()), return false);
 
     // self和out数据类型必须一样

@@ -9,9 +9,9 @@
  */
 
 /*!
-* \file ceil_infershape.cpp
-* \brief
-*/
+ * \file ceil_infershape.cpp
+ * \brief
+ */
 #include "infershape_elewise_util.h"
 #include "register/op_impl_registry.h"
 #include "log/log.h"
@@ -20,8 +20,8 @@ using namespace ge;
 namespace ops {
 static ge::graphStatus InferShape4Ceil(gert::InferShapeContext* context)
 {
-  OP_LOGI(context, "Begin to do InferShape4Ceil Func");
-  return Ops::Base::InferShape4Elewise(context);
+    OP_LOGI(context, "Begin to do InferShape4Ceil Func");
+    return Ops::Base::InferShape4Elewise(context);
 }
 
 IMPL_OP_INFERSHAPE(Ceil).InferShape(InferShape4Ceil);

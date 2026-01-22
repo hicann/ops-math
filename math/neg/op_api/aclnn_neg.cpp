@@ -22,6 +22,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -50,7 +51,7 @@ static bool CheckDtypeValid(const aclTensor* self)
     bool isAfterV200 =
         (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
          GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95);
+         IsRegBase());
     bool isSupport = isAfterV200 ? CheckType(self->GetDataType(), dtype_support_list_afterV200) :
                                    CheckType(self->GetDataType(), dtype_support_list);
     if (!isSupport) {
@@ -111,6 +112,10 @@ aclnnStatus aclnnNegGetWorkspaceSize(
         *workspaceSize = 0;
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
+    }
+    // 检查Format
+    if(self->GetStorageFormat() != Format::FORMAT_ND){
+        OP_LOGW("Format only support ND");
     }
     // 固定写法，将输入self转换成连续的tensor
     auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());

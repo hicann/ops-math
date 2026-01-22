@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "aclnn_isfinite.h"
 #include "is_finite.h"
@@ -17,6 +17,7 @@
 #include "opdev/op_dfx.h"
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 namespace {
@@ -40,10 +41,9 @@ static inline bool CheckNotNull(const aclTensor* self, const aclTensor* out)
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
-    auto curSocVersion = GetCurrentPlatformInfo().GetSocVersion();
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     bool is910BSocVersion =
-        (curSocVersion == SocVersion::ASCEND910B || curSocVersion == SocVersion::ASCEND910_93 ||
-         curSocVersion == SocVersion::ASCEND910_95);
+        (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch));
     const std::initializer_list<DataType> DTYPE_SUPPORT_LIST =
         is910BSocVersion ? DTYPE_SUPPORT_LIST_910B : DTYPE_SUPPORT_LIST_910;
 

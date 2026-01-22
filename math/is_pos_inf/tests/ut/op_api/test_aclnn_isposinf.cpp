@@ -189,6 +189,9 @@ TEST_F(l2_is_pos_inf_test, ascend910B2_is_pos_inf_testcase_015_normal_large_dims
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+
+    // SAMPLE: precision simulate
+    // ut.TestPrecision();
 }
 
 // empty

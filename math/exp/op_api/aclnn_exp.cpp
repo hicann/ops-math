@@ -23,6 +23,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
 #include "op_api/level2_base.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -49,11 +50,8 @@ static const std::initializer_list<DataType> ASCEND910B_DTYPE_SELFREF_LIST = {
 
 static inline bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
-    // 获取芯片类型,判断是1971还是1980
-    bool is910BSocVersion =
-        (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95);
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    bool is910BSocVersion = (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch));
     const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_CURRENT =
         is910BSocVersion ? DTYPE_SUPPORT_LIST_910B : DTYPE_SUPPORT_LIST_910;
 
@@ -118,7 +116,10 @@ static aclnnStatus GetWorkspaceSizeCommon(
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }
-
+    // 检查Format
+    if(self->GetStorageFormat() != Format::FORMAT_ND){
+        OP_LOGW("Format only support ND");
+    }
     // 固定写法，将输入self转换成连续的Tensor
     auto contiguousSelf = l0op::Contiguous(self, uniqueExecutor.get());
     CHECK_RET(contiguousSelf != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -165,10 +166,7 @@ aclnnStatus aclnnInplaceExpGetWorkspaceSize(aclTensor* selfRef, uint64_t* worksp
     L2_DFX_PHASE_1(aclnnInplaceExp, DFX_IN(selfRef), DFX_OUT(selfRef));
     auto ret = CheckInplaceParamsExp(selfRef);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
-    // 检查Format
-    if(selfRef->GetStorageFormat() != Format::FORMAT_ND){
-        OP_LOGW("Format only support ND");
-    }
+    
     return GetWorkspaceSizeCommon(selfRef, selfRef, workspaceSize, executor);
 }
 

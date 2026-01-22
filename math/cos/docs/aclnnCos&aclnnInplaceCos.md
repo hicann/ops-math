@@ -1,12 +1,18 @@
 # aclnnCos&aclnnInplaceCos
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/cos)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                     |    √     |
+| <term>Ascend 950PR/Ascend 950DT</term>                       |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
 
 ## 功能说明
 
@@ -123,6 +129,9 @@ aclnnStatus aclnnInplaceCos(
     </tr>
   </tbody>
   </table>
+  
+  - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+
   
 - **返回值**：
 
@@ -263,6 +272,9 @@ aclnnStatus aclnnInplaceCos(
   </tbody>
   </table>
 
+  - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+
+  
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)
@@ -345,7 +357,9 @@ aclnnStatus aclnnInplaceCos(
 - 确定性计算：
   - aclnnCos&aclnnInplaceCos默认确定性实现。
 
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品/Ascend 950PR/Ascend 950DT</term>：FLOAT、FLOAT16、BFLOAT16数据类型的输入数据范围为[-10^7,10^7]时满足精度要求，超过数值范围无法保证，请使用CPU进行计算。
+- <term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、BFLOAT16数据类型的输入数据范围为[-10^7,10^7]时满足精度要求，超过数值范围无法保证，请使用CPU进行计算。
+- <term>Atlas 推理系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：FLOAT、FLOAT16数据类型的输入数据范围为[-65504,65504]时满足精度要求，超过数值范围无法保证，请使用CPU进行计算。
+
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。

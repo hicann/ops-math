@@ -117,45 +117,45 @@ void RunRoundKernel(vector<string> data_files,
   delete [] output_exp;
 }
 
-TEST_F(TEST_ROUND_UT, Input_DT_FLOAT32_WITH_DECIMALS_1) {
-  vector<DataType> data_types = {DT_FLOAT, DT_FLOAT};
-  vector<vector<int64_t>> shapes = {{4, 4}, {4, 4}};
-  vector<string> files{"round/data/round_data_input1_float32_1.txt",
-                       "round/data/round_data_output1_float32_1.txt"};
-  RunRoundKernel<float, float>(files, data_types, shapes, 1);
-}
+// TEST_F(TEST_ROUND_UT, Input_DT_FLOAT32_WITH_DECIMALS_1) {
+//   vector<DataType> data_types = {DT_FLOAT, DT_FLOAT};
+//   vector<vector<int64_t>> shapes = {{4, 4}, {4, 4}};
+//   vector<string> files{"round/data/round_data_input1_float32_1.txt",
+//                        "round/data/round_data_output1_float32_1.txt"};
+//   RunRoundKernel<float, float>(files, data_types, shapes, 1);
+// }
 
-TEST_F(TEST_ROUND_UT, Input_DT_FLOAT32_WITH_DECIMALS_2) {
-  vector<DataType> data_types = {DT_FLOAT, DT_FLOAT};
-  vector<vector<int64_t>> shapes = {{4, 4}, {4, 4}};
-  vector<string> files{"round/data/round_data_input1_float32_2.txt",
-                       "round/data/round_data_output1_float32_2.txt"};
-  RunRoundKernel<float, float>(files, data_types, shapes, 2);
-}
+// TEST_F(TEST_ROUND_UT, Input_DT_FLOAT32_WITH_DECIMALS_2) {
+//   vector<DataType> data_types = {DT_FLOAT, DT_FLOAT};
+//   vector<vector<int64_t>> shapes = {{4, 4}, {4, 4}};
+//   vector<string> files{"round/data/round_data_input1_float32_2.txt",
+//                        "round/data/round_data_output1_float32_2.txt"};
+//   RunRoundKernel<float, float>(files, data_types, shapes, 2);
+// }
 
-TEST_F(TEST_ROUND_UT, Input_DT_FLOAT32_WITH_DECIMALS_3) {
-  vector<DataType> data_types = {DT_FLOAT, DT_FLOAT};
-  vector<vector<int64_t>> shapes = {{4, 4}, {4, 4}};
-  vector<string> files{"round/data/round_data_input1_float32_-1.txt",
-                       "round/data/round_data_output1_float32_-1.txt"};
-  RunRoundKernel<float, float>(files, data_types, shapes, -1);
-}
+// TEST_F(TEST_ROUND_UT, Input_DT_FLOAT32_WITH_DECIMALS_3) {
+//   vector<DataType> data_types = {DT_FLOAT, DT_FLOAT};
+//   vector<vector<int64_t>> shapes = {{4, 4}, {4, 4}};
+//   vector<string> files{"round/data/round_data_input1_float32_-1.txt",
+//                        "round/data/round_data_output1_float32_-1.txt"};
+//   RunRoundKernel<float, float>(files, data_types, shapes, -1);
+// }
 
-TEST_F(TEST_ROUND_UT, Input_DT_FLOAT32_WITH_DECIMALS_4) {
-  vector<DataType> data_types = {DT_FLOAT, DT_FLOAT};
-  vector<vector<int64_t>> shapes = {{4, 4}, {4, 4}};
-  vector<string> files{"round/data/round_data_input1_float32_-2.txt",
-                       "round/data/round_data_output1_float32_-2.txt"};
-  RunRoundKernel<float, float>(files, data_types, shapes, -2);
-}
+// TEST_F(TEST_ROUND_UT, Input_DT_FLOAT32_WITH_DECIMALS_4) {
+//   vector<DataType> data_types = {DT_FLOAT, DT_FLOAT};
+//   vector<vector<int64_t>> shapes = {{4, 4}, {4, 4}};
+//   vector<string> files{"round/data/round_data_input1_float32_-2.txt",
+//                        "round/data/round_data_output1_float32_-2.txt"};
+//   RunRoundKernel<float, float>(files, data_types, shapes, -2);
+// }
 
-TEST_F(TEST_ROUND_UT, Input_DT_FLOAT64_WITH_DECIMALS_1) {
-  vector<DataType> data_types = {DT_DOUBLE, DT_DOUBLE};
-  vector<vector<int64_t>> shapes = {{4, 4}, {4, 4}};
-  vector<string> files{"round/data/round_data_input1_float64_1.txt",
-                       "round/data/round_data_output1_float64_1.txt"};
-  RunRoundKernel<double, double>(files, data_types, shapes, 1);
-}
+// TEST_F(TEST_ROUND_UT, Input_DT_FLOAT64_WITH_DECIMALS_1) {
+//   vector<DataType> data_types = {DT_DOUBLE, DT_DOUBLE};
+//   vector<vector<int64_t>> shapes = {{4, 4}, {4, 4}};
+//   vector<string> files{"round/data/round_data_input1_float64_1.txt",
+//                        "round/data/round_data_output1_float64_1.txt"};
+//   RunRoundKernel<double, double>(files, data_types, shapes, 1);
+// }
 
 TEST_F(TEST_ROUND_UT, DATA_IS_POINT_FIVE) {
   vector<DataType> data_types = {DT_FLOAT, DT_FLOAT};

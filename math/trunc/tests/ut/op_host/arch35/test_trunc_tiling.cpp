@@ -48,3 +48,23 @@ TEST_F(TruncTilingTest, test_tiling_int32) {
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
+
+TEST_F(TruncTilingTest, test_tiling_int8) {
+    optiling::TruncCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 262144;
+
+    gert::TilingContextPara tilingContextPara("Trunc",
+        {
+            {{{39, 15, 40, 14}, {39, 15, 40, 14}}, ge::DT_INT8, ge::FORMAT_ND},
+        },
+        {
+            {{{39, 15, 40, 14}, {39, 15, 40, 14}}, ge::DT_INT8, ge::FORMAT_ND},
+        },
+        &compileInfo);
+
+    uint64_t expectTilingKey = 9;
+    string expectTilingData = "327600 562949953421376 5120 64 1 1 5120 5040 131072 1 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}

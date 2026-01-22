@@ -19,6 +19,7 @@
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/make_op_executor.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -38,7 +39,7 @@ static inline bool IsAiCoreSupport(DataType inputDtype)
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-        socVersion == SocVersion::ASCEND910_95) {
+        IsRegBase()) {
         return CheckType(inputDtype, AICORE_DTYPE_SUPPORT_LIST_AFTER_910B);
     }
     return CheckType(inputDtype, AICORE_DTYPE_SUPPORT_LIST);

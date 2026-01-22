@@ -35,6 +35,7 @@ class Tanh : public OpDef {
                 .PrecisionReduceFlag(true)
                 .ExtendCfgInfo("opFile.value", "tanh_apt");
             this->AICore().AddConfig("ascend910_95", aicoreConfig);
+            this->AICore().AddConfig("mc62cm12a", aicoreConfig);
         }
 };
 

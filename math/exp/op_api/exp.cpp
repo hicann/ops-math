@@ -19,6 +19,7 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -34,10 +35,8 @@ static const std::initializer_list<DataType> AICORE910B_DTYPE_SUPPORT_LIST = {
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static inline bool IsAiCoreSupport(const aclTensor* self)
 {
-    // 获取芯片类型,判断是1971还是1980
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch)) {
         return CheckType(self->GetDataType(), AICORE910B_DTYPE_SUPPORT_LIST);
     }
 
@@ -68,9 +67,14 @@ static inline const aclTensor* ExpAiCpu(const aclTensor* self, aclTensor* out, a
 
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将AiCpu Exp算子加入任务队列
     // Exp是算子的OpType，self是算子的输入，out是算子的输出
-    static internal::AicpuTaskSpace space("Exp", ge::DEPEND_IN_SHAPE,
-        self->GetDataType() != ge::DataType::DT_COMPLEX64);
-    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Exp, OP_ATTR_NAMES(), OP_INPUT(self), OP_OUTPUT(out)); 
+    aclnnStatus ret = ACL_ERROR_INVALID_PARAM;
+    if (self->GetDataType() != ge::DataType::DT_COMPLEX64) {
+      static internal::AicpuTaskSpace space("Exp", ge::DEPEND_IN_SHAPE, true);
+      ret = ADD_TO_LAUNCHER_LIST_AICPU(Exp, OP_ATTR_NAMES(), OP_INPUT(self), OP_OUTPUT(out)); 
+    } else {
+      static internal::AicpuTaskSpace space("Exp", ge::DEPEND_IN_SHAPE, false);
+      ret = ADD_TO_LAUNCHER_LIST_AICPU(Exp, OP_ATTR_NAMES(), OP_INPUT(self), OP_OUTPUT(out));
+    }
     OP_CHECK(
         ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ExpAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
         return nullptr);

@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-
 #ifndef AICPU_KERNELS_NORMALIZED_SQRTGRAD_H_
 #define AICPU_KERNELS_NORMALIZED_SQRTGRAD_H_
 
@@ -18,31 +17,29 @@
 namespace aicpu {
 class SqrtGradCpuKernel : public CpuKernel {
 public:
-  SqrtGradCpuKernel() = default;
-  
-  uint32_t Compute(CpuKernelContext &ctx) override;
+    SqrtGradCpuKernel() = default;
+
+    uint32_t Compute(CpuKernelContext& ctx) override;
 
 private:
-  uint32_t SqrtGradParamCheck(CpuKernelContext &ctx);
+    uint32_t SqrtGradParamCheck(CpuKernelContext& ctx);
 
-  template <typename T>
-  void SpecialCompute(int64_t start, int64_t end,
-                       T *input1,  T *input2,  T *output);
-  template <typename T>
-  void SpecialComputeComplex(int64_t start, int64_t end,
-                       T *input1,  T *input2,  T *output);
+    template <typename T>
+    void SpecialCompute(int64_t start, int64_t end, T* input1, T* input2, T* output);
+    template <typename T>
+    void SpecialComputeComplex(int64_t start, int64_t end, T* input1, T* input2, T* output);
 
-  template <typename T>
-  uint32_t NoBcastCompute(CpuKernelContext &ctx);
+    template <typename T>
+    uint32_t NoBcastCompute(CpuKernelContext& ctx);
 
-  template <typename T>
-  uint32_t NoBcastComputeComplex(CpuKernelContext &ctx);
+    template <typename T>
+    uint32_t NoBcastComputeComplex(CpuKernelContext& ctx);
 
-  template <typename T>
-  uint32_t SqrtGradCompute(CpuKernelContext &ctx);
+    template <typename T>
+    uint32_t SqrtGradCompute(CpuKernelContext& ctx);
 
-  template <typename T>
-  uint32_t SqrtGradComputeComplex(CpuKernelContext &ctx);
+    template <typename T>
+    uint32_t SqrtGradComputeComplex(CpuKernelContext& ctx);
 };
-}  // namespace aicpu
+} // namespace aicpu
 #endif

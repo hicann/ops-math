@@ -1,18 +1,19 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "is_finite.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/op_dfx.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -52,12 +53,12 @@ const aclTensor* IsFiniteAiCpu(const aclTensor* self, aclTensor* out, aclOpExecu
 const aclTensor* IsFinite(const aclTensor* self, aclOpExecutor* executor)
 {
     auto out = executor->AllocTensor(self->GetViewShape(), op::DataType::DT_BOOL, op::Format::FORMAT_ND);
-    auto socVer = GetCurrentPlatformInfo().GetSocVersion();
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     bool socSupported =
-        (socVer == SocVersion::ASCEND910B || socVer == SocVersion::ASCEND910_93 || socVer == SocVersion::ASCEND910_95);
+        (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch));
     if (socSupported && CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST)) {
         return IsFiniteAiCore(self, out, executor);
-    } else if ((socVer == SocVersion::ASCEND310P) && CheckType(self->GetDataType(), AICORE_310P_DTYPE_SUPPORT_LIST)) {
+    } else if ((npuArch == NpuArch::DAV_2002) && CheckType(self->GetDataType(), AICORE_310P_DTYPE_SUPPORT_LIST)) {
         return IsFiniteAiCore(self, out, executor);
     } else {
         return IsFiniteAiCpu(self, out, executor);

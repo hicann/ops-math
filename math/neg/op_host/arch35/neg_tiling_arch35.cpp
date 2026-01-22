@@ -125,25 +125,24 @@ ge::graphStatus NegTiling::RunTiling()
     OP_CHECK_IF(
         status != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext, "CheckOutputShape failed"), return ge::GRAPH_FAILED);
 
-    uint64_t scheMode = tiling->baseTiling.scheMode;
     if (this->outputDtype == ge::DT_FLOAT16) {
         status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<half>::OpDag>(tiling->baseTiling);
-        tilingKey = GET_TPL_TILING_KEY(scheMode, NEG_TPL_FP16);
+        tilingKey = GET_TPL_TILING_KEY(tiling->baseTiling.scheMode, NEG_TPL_FP16);
     } else if (this->outputDtype == ge::DT_BF16) {
         status = elewiseBaseTiling.DoTiling<NegDag::NegNeedCast<bfloat16_t>::OpDag>(tiling->baseTiling);
-        tilingKey = GET_TPL_TILING_KEY(scheMode, NEG_TPL_BF16);
+        tilingKey = GET_TPL_TILING_KEY(tiling->baseTiling.scheMode, NEG_TPL_BF16);
     } else if (this->outputDtype == ge::DT_FLOAT) {
         status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<float>::OpDag>(tiling->baseTiling);
-        tilingKey = GET_TPL_TILING_KEY(scheMode, NEG_TPL_FP32);
+        tilingKey = GET_TPL_TILING_KEY(tiling->baseTiling.scheMode, NEG_TPL_FP32);
     } else if (this->outputDtype == ge::DT_INT32) {
         status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<int32_t>::OpDag>(tiling->baseTiling);
-        tilingKey = GET_TPL_TILING_KEY(scheMode, NEG_TPL_INT32);
+        tilingKey = GET_TPL_TILING_KEY(tiling->baseTiling.scheMode, NEG_TPL_INT32);
     } else if (this->outputDtype == ge::DT_INT8) {
         status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<int8_t>::OpDag>(tiling->baseTiling);
-        tilingKey = GET_TPL_TILING_KEY(scheMode, NEG_TPL_INT8);
+        tilingKey = GET_TPL_TILING_KEY(tiling->baseTiling.scheMode, NEG_TPL_INT8);
     } else if (this->outputDtype == ge::DT_INT64) {
         status = elewiseBaseTiling.DoTiling<NegDag::NegNoCast<int64_t>::OpDag>(tiling->baseTiling);
-        tilingKey = GET_TPL_TILING_KEY(scheMode, NEG_TPL_INT64);
+        tilingKey = GET_TPL_TILING_KEY(tiling->baseTiling.scheMode, NEG_TPL_INT64);
     } else {
         OP_LOGE(
             tilingContext->GetNodeName(),

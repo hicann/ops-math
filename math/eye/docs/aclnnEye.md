@@ -1,12 +1,18 @@
 # aclnnEye
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/eye)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>     |    √     |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
 
 ## 功能说明
 算子功能：返回一个二维张量，该张量的对角线上元素值为1，其余元素值为0。
@@ -15,41 +21,182 @@
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnEyeGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnEye”接口执行计算。
 
-- `aclnnStatus aclnnEyeGetWorkspaceSize(int64_t n, int64_t m, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnEye(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```cpp
+aclnnStatus aclnnEyeGetWorkspaceSize(
+    int64_t n,
+    int64_t m,
+    aclTensor* out,
+    uint64_t* workspaceSize,
+    aclOpExecutor** executor)
+```
+```cpp
+aclnnStatus aclnnEye(
+    void* workspace,
+    uint64_t workspaceSize,
+    aclOpExecutor* executor,
+    aclrtStream stream)
+```
 
 ## aclnnEyeGetWorkspaceSize
 
 - **参数说明：**
 
-  - n(int64_t, 计算输入): 表示第一个维度，Host侧的整型。取值范围不小于0。
-  - m(int64_t, 计算输入): 表示第二个维度，Host侧的整型。取值范围不小于0。
-  - out(aclTensor*, 计算输出)：表示输出张量，Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。维度只支持二维，shape需为(n，m)。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品/Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT32、INT32、INT16、INT8、UINT8、INT64、BOOL、BFLOAT16。
-  - workspaceSize(uint64_t*, 出参): 返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor**, 出参): 返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <col style="width: 154px">
+  <col style="width: 125px">
+  <col style="width: 291px">
+  <col style="width: 286px">
+  <col style="width: 284px">
+  <col style="width: 120px">
+  <col style="width: 141px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>n</td>
+      <td>输入</td>
+      <td>输出二维张量的第一维大小。</td>
+      <td>整型，取值范围不小于0。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>m</td>
+      <td>输入</td>
+      <td>输出二维张量的第二维大小。</td>
+      <td>整型，取值范围不小于0。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>对角线为1其余为0的二维tensor。</td>
+      <td>-</td>
+      <td>FLOAT16、FLOAT32、INT32、INT16、INT8、UINT8、INT64、BOOL、BFLOAT16</td>
+      <td>ND</td>
+      <td>2</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
+
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：out是空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. out的数据类型不在支持的范围内。
-                                        2. out的维度不等于2。
-                                        3. n或m的值小于0。
-                                        4. out的shape不为(n，m)。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 272px">
+  <col style="width: 114px">
+  <col style="width: 764px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
+      <td>out的数据类型不在支持的范围内。</td>
+    </tr>
+    <tr>
+      <td>out的维度不等于2。</td>
+    </tr>
+    <tr>
+      <td>n或m的值小于0。</td>
+    </tr>
+    <tr>
+      <td>out的shape不为(n，m)。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnEye
 
 - **参数说明：**
 
-  - workspace(void*, 入参): 在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参): 在Device侧申请的workspace大小，由第一段接口aclnnEyeGetWorkspaceSize获取。
-  - executor(aclOpExecutor*, 入参): op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参): 指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 873px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnDotGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+
 
 - **返回值：**
 
@@ -63,6 +210,8 @@
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
+- <term>Ascend 950PR/Ascend 950DT</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term> aclnnEye示例代码：
 
 ```Cpp
 #include <iostream>

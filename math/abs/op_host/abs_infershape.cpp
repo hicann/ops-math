@@ -13,7 +13,7 @@
  * \file abs_infershape.cpp
  * \brief
  */
-#include "register/op_impl_registry.h"
+#include "register/op_impl_registry.h" 
 #include "infershape_elewise_util.h"
 
 using namespace ge;

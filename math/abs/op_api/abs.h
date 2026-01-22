@@ -15,6 +15,6 @@
 
 namespace l0op {
 const aclTensor* Abs(const aclTensor* self, aclOpExecutor* executor);
-} // namespace l0op
+} // namespace l0op 
 
 #endif // OP_API_INC_LEVEL0_ABS_H_

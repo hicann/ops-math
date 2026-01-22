@@ -34,6 +34,20 @@ TEST_F(l2_sqrt_test, l2_Sqrt_test_001) {
   EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_PARAM_INVALID);
 }
 
+// 正常路径，COMPLEX128
+// TEST_F(l2_sqrt_test, l2_Sqrt_test_002) {
+//   auto selfDesc = TensorDesc({2, 4}, ACL_COMPLEX128, ACL_FORMAT_ND).ValueRange(0, 2);
+//   auto outDesc = TensorDesc({2, 4}, ACL_COMPLEX128, ACL_FORMAT_ND).Precision(0.001, 0.001);
+
+//   auto ut = OP_API_UT(aclnnSqrt, INPUT(selfDesc), OUTPUT(outDesc));
+
+//   uint64_t workspaceSize = 0;
+//   aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+//   EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+
+  // ut.TestPrecision();
+// }
+
 TEST_F(l2_sqrt_test, l2_Sqrt_test_003) {
   auto self_desc = TensorDesc({1, 16, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND)
                         .ValueRange(0, 2)
@@ -46,6 +60,8 @@ TEST_F(l2_sqrt_test, l2_Sqrt_test_003) {
   uint64_t workspace_size = 0;
   aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspace_size);
   EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+  // SAMPLE: precision simulate
+  // ut.TestPrecision();
 }
 
 // 空tensor
@@ -70,7 +86,24 @@ TEST_F(l2_sqrt_test, l2_Sqrt_test_005) {
   uint64_t workspaceSize = 0;
   aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
   EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+
+  // ut.TestPrecision();
 }
+
+
+// 正常路径，COMPLEX64
+// TEST_F(l2_sqrt_test, l2_Sqrt_test_006) {
+//   auto selfDesc = TensorDesc({2, 4}, ACL_COMPLEX64, ACL_FORMAT_ND).ValueRange(0, 2);
+//   auto outDesc = TensorDesc({2, 4}, ACL_COMPLEX64, ACL_FORMAT_ND).Precision(0.001, 0.001);
+
+//   auto ut = OP_API_UT(aclnnSqrt, INPUT(selfDesc), OUTPUT(outDesc));
+
+//   uint64_t workspaceSize = 0;
+//   aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+//   EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+
+  // ut.TestPrecision();
+// }
 
 // 正常路径，float
 TEST_F(l2_sqrt_test, l2_Sqrt_test_007) {
@@ -82,6 +115,8 @@ TEST_F(l2_sqrt_test, l2_Sqrt_test_007) {
   uint64_t workspaceSize = 0;
   aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
   EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+
+  // ut.TestPrecision();
 }
 
 // 正常路径，float
@@ -94,7 +129,51 @@ TEST_F(l2_sqrt_test, l2_Sqrt_test_008) {
   uint64_t workspaceSize = 0;
   aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
   EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+
+  // ut.TestPrecision();
 }
+
+// 正常路径，float64
+// TEST_F(l2_sqrt_test, l2_Sqrt_test_009) {
+//   auto selfDesc = TensorDesc({2, 4}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(0, 2);
+//   auto outDesc = TensorDesc({2, 4}, ACL_DOUBLE, ACL_FORMAT_ND).Precision(0.001, 0.001);
+
+//   auto ut = OP_API_UT(aclnnSqrt, INPUT(selfDesc), OUTPUT(outDesc));
+
+//   uint64_t workspaceSize = 0;
+//   aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+//   EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+
+  // ut.TestPrecision();
+// }
+
+// 正常路径，float64
+// TEST_F(l2_sqrt_test, l2_Sqrt_test_010) {
+//   auto selfDesc = TensorDesc({2, 4}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(0, 2);
+//   auto outDesc = TensorDesc({2, 4}, ACL_DOUBLE, ACL_FORMAT_ND).Precision(0.001, 0.001);
+
+//   auto ut = OP_API_UT(aclnnSqrt, INPUT(selfDesc), OUTPUT(outDesc));
+
+//   uint64_t workspaceSize = 0;
+//   aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+//   EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+
+//   ut.TestPrecision();
+// }
+
+// 正常路径，int64
+// TEST_F(l2_sqrt_test, l2_Sqrt_test_011) {
+//   auto selfDesc = TensorDesc({2, 3}, ACL_INT64, ACL_FORMAT_ND).ValueRange(0, 2);
+//   auto outDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+
+//   auto ut = OP_API_UT(aclnnSqrt, INPUT(selfDesc), OUTPUT(outDesc));
+
+//   uint64_t workspaceSize = 0;
+//   aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+//   EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+
+  // ut.TestPrecision();
+// }
 
 // shape不一致
 TEST_F(l2_sqrt_test, l2_Sqrt_test_012) {

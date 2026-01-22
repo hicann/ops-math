@@ -41,24 +41,24 @@ static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST = {
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* result)
 {
-    SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
     if (!CheckType(self->GetDataType(), DTYPE_SUPPORT_LIST)) {
-        switch (socVersion) {
-            case SocVersion::ASCEND910: {
+        SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
+        auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+        switch (curArch) {
+            case NpuArch::DAV_1001: {
                 OP_LOGE(
                     ACLNN_ERR_PARAM_INVALID, "On Ascend910 self dtype [%s] should be in dtype support list [%s].",
                     op::ToString(self->GetDataType()).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
                 return false;
-                break;
             }
-            case SocVersion::ASCEND910_93:
-            case SocVersion::ASCEND910_95:
-            case SocVersion::ASCEND910B: {
+            case NpuArch::DAV_2201:
+            case NpuArch::DAV_3510: {
                 if (self->GetDataType() != op::DataType::DT_BF16) {
                     OP_LOGE(
                         ACLNN_ERR_PARAM_INVALID,
-                        "On Ascend910B, self dtype [%s] should be in dtype support list [%s] or be BF16.",
-                        op::ToString(self->GetDataType()).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
+                        "On %s, self dtype [%s] should be in dtype support list [%s] or be BF16.",
+                        op::ToString(socVersion).GetString(), op::ToString(self->GetDataType()).GetString(),
+                        op::ToString(DTYPE_SUPPORT_LIST).GetString());
                     return false;
                 }
                 break;

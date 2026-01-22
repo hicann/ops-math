@@ -1,5 +1,6 @@
 # aclnnRoundDecimals&aclnnInplaceRoundDecimals
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/round)
 
 ## 产品支持情况
 
@@ -8,6 +9,10 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    ×     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
 
 ## 功能说明
 
@@ -35,11 +40,13 @@
 - **参数说明：**
 
   * self(aclTensor*, 计算输入)：输入Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，维度不大于8，且shape需要与out一致。
-        - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT32、INT64。
+    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT32、INT64。
   * decimals(int64_t, 计算输入)：指定需要四舍五入的位数。
 
   * out(aclTensor *, 计算输出)：输出Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，维度不大于8，且shape需要与self一致。
-        - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT32、INT64。
+    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT32、INT64。
   * workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
 
   * executor(aclOpExecutor \*\*, 出参)：返回op执行器，包含了算子计算流程。
@@ -88,7 +95,8 @@
 - **参数说明：**
 
   * selfRef(aclTensor*, 计算输入)：输入Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，维度不大于8。
-        - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT32、INT64。
+    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT32、INT64。
   * decimals(int64_t, 计算输入)：指定需要四舍五入的位数。
 
   * workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。

@@ -37,7 +37,7 @@ static const std::initializer_list<DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST
     DataType::DT_INT16,  DataType::DT_INT8,  DataType::DT_UINT8,   DataType::DT_BOOL,  DataType::DT_BF16,
     DataType::DT_COMPLEX64};
 
-static const std::initializer_list<DataType> ASCEND910_95_DTYPE_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<DataType> ARCH_REGBASE_DTYPE_DTYPE_SUPPORT_LIST = {
     DataType::DT_DOUBLE, DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_INT64, DataType::DT_INT32,
     DataType::DT_INT16,  DataType::DT_INT8,  DataType::DT_UINT8,   DataType::DT_BOOL,  DataType::DT_BF16};
 
@@ -49,11 +49,11 @@ static const std::unordered_map<DataType, DataType> COMPLEX_IN_AND_OUT_DTYPE_MAP
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+    auto npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (npuArch == NpuArch::DAV_2201) {
         return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
-    } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-        return ASCEND910_95_DTYPE_DTYPE_SUPPORT_LIST;
+    } else if (IsRegBase(npuArch)) {
+        return ARCH_REGBASE_DTYPE_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
     }
@@ -155,8 +155,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
 
 static bool IsSupportComplexAbs(const op::DataType selfType) {
     if (IsComplexType(selfType)) {
-        auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-        if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) {
+        auto npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
+        if (npuArch == NpuArch::DAV_2201) {
             return CheckType(selfType, ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST);
         } else {
             return false;

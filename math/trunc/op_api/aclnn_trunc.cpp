@@ -16,6 +16,7 @@
 #include "opdev/op_dfx.h"
 #include "opdev/platform.h"
 #include "op_api/level2_base.h"
+#include "op_api/aclnn_check.h"
 
 
 using namespace op;
@@ -30,7 +31,7 @@ static const std::initializer_list<op::DataType> ASCEND910_DTYPE_DTYPE_SUPPORT_L
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT,      op::DataType::DT_FLOAT16,    op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> ARCH3510_DTYPE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16,
     op::DataType::DT_INT8,  op::DataType::DT_UINT8,   op::DataType::DT_INT32};
 
@@ -40,7 +41,7 @@ static const std::initializer_list<op::DataType> GetDtypeSupportListSelfTri(
 {
     if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
         GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) {
-        if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+        if (IsRegBase()) {
             return l3;
         }
         return l1;
@@ -52,7 +53,7 @@ static const std::initializer_list<op::DataType> GetDtypeSupportListSelfTri(
 static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out)
 {
     const auto& supportList = GetDtypeSupportListSelfTri(
-        ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_95_DTYPE_DTYPE_SUPPORT_LIST);
+        ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST, ARCH3510_DTYPE_DTYPE_SUPPORT_LIST);
     // 检查self的数据类型是否在trunc算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
     // 检查other的数据类型是否在trunc算子的支持列表内

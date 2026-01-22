@@ -1,5 +1,7 @@
 # aclnnMaskedScale
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/masked_scale)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -7,6 +9,10 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    ×     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    ×     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    ×     |
+| <term>Atlas 训练系列产品</term>                              |    ×     |
+
 
 ## 功能说明
 
@@ -144,6 +150,7 @@ int main() {
   std::vector<int64_t> selfShape = {4, 2};
   std::vector<int64_t> outShape = {4, 2};
   void* selfDeviceAddr = nullptr;
+  void* maskDeviceAddr = nullptr;
   void* outDeviceAddr = nullptr;
   aclTensor* self = nullptr;
   aclTensor* mask = nullptr;
@@ -155,8 +162,8 @@ int main() {
   // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  // 创建self aclTensor
-  ret = CreateAclTensor(maskHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_UINT8, &mask);
+  // 创建mask aclTensor
+  ret = CreateAclTensor(maskHostData, selfShape, &maskDeviceAddr, aclDataType::ACL_UINT8, &mask);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   // 创建out aclTensor
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
@@ -199,6 +206,7 @@ int main() {
 
   // 7. 释放device 资源
   aclrtFree(selfDeviceAddr);
+  aclrtFree(maskDeviceAddr);
   aclrtFree(outDeviceAddr);
   if (workspaceSize > 0) {
     aclrtFree(workspaceAddr);

@@ -19,6 +19,7 @@
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -27,25 +28,25 @@ extern "C" {
 
 static const std::initializer_list<DataType> NULL_SUPPORT_LIST = {};
 
-static const std::initializer_list<DataType> ASCEND910_95_X_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<DataType> REGBASE_X_DTYPE_SUPPORT_LIST = {
   DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16
 };
 
-static const std::initializer_list<DataType> ASCEND910_95_MASK_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<DataType> REGBASE_MASK_DTYPE_SUPPORT_LIST = {
   DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_UINT8, DataType::DT_INT8
 };
 
 static const std::initializer_list<DataType>& GetXDtypeSupportList() {
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-    return ASCEND910_95_X_DTYPE_SUPPORT_LIST;
+  if (IsRegBase()) {
+    return REGBASE_X_DTYPE_SUPPORT_LIST;
   } else {
     return NULL_SUPPORT_LIST;
   }
 }
 
 static const std::initializer_list<DataType>& GetMaskDtypeSupportList() {
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-    return ASCEND910_95_MASK_DTYPE_SUPPORT_LIST;
+  if (IsRegBase()) {
+    return REGBASE_MASK_DTYPE_SUPPORT_LIST;
   } else {
     return NULL_SUPPORT_LIST;
   }

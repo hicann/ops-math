@@ -7,14 +7,17 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    ×     |
+| <term>Atlas 训练系列产品</term>                              |     ×    |
 
 ## 功能说明
 - 算子功能：对输入张量x的元素，逐元素进行对数计算，并将结果保存到输出张量y中。可支持多种类型输入张量，并支持对输入张量x进行缩放（shift/scale）操作。
 - 计算公式：
 
-$$
-y = log_{base}(shift + scale * x)
-$$
+    $$
+    y = log_{base}(shift + scale * x)
+    $$
 
 
 ## 参数说明

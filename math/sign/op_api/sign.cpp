@@ -19,6 +19,7 @@
 #include "opdev/shape_utils.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 namespace l0op {
@@ -26,15 +27,14 @@ OP_TYPE_REGISTER(Sign);
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT32, op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_910D = {
+static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_ARCH3510 = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT32, op::DataType::DT_BF16,
     op::DataType::DT_INT64};
 
 static bool IsAiCoreSupport(const aclTensor* self)
 {
-    op::SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == op::SocVersion::ASCEND910_95) {
-        return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_910D);
+    if (IsRegBase()) {
+        return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_ARCH3510);
     }
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
 }

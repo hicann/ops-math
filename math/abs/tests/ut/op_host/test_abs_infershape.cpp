@@ -23,12 +23,12 @@ class AbsInfershape : public testing::Test
 protected:
     static void SetUpTestCase()
     {
-        std::cout << "LerpInfershape SetUp" << std::endl;
+        std::cout << "AbsInfershape SetUp" << std::endl;
     }
 
     static void TearDownTestCase()
     {
-        std::cout << "LerpInfershape TearDown" << std::endl;
+        std::cout << "AbsInfershape TearDown" << std::endl;
     }
 };
 

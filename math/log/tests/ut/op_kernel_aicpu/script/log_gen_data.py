@@ -74,6 +74,11 @@ def gen_random_data(nptype, shape, rand_type, low, high):
     np.random.seed(23457)
     input_data = gen_data(shape, nptype, rand_type, low, high)
     write_file_txt("log/data/log_data_input_" + nptype.__name__ + ".txt", input_data)
+
+    ## torch.log不支持Byte（即np.uint8）类型的张量，将数据转化为浮点类型
+    if np.issubdtype(nptype, np.integer):
+        input_data = input_data.astype(np.float32)
+
     x = torch.tensor(input_data)
     output_result = torch.log(x)
     output_data = output_result.numpy()

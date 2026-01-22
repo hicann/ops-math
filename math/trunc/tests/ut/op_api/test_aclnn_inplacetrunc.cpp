@@ -30,7 +30,6 @@ protected:
 TEST_F(l2_inplacetrunc_test, case_shape1D)
 {
     auto tensor_desc = TensorDesc({3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2).Precision(0.01, 0.01);
-
     auto ut = OP_API_UT(aclnnInplaceTrunc, INPUT(tensor_desc), OUTPUT());
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspaceSize = 0;
@@ -41,10 +40,59 @@ TEST_F(l2_inplacetrunc_test, case_shape1D)
 TEST_F(l2_inplacetrunc_test, case_shape_2D)
 {
     auto tensor_desc = TensorDesc({3,3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2).Precision(0.01, 0.01);
-
     auto ut = OP_API_UT(aclnnInplaceTrunc, INPUT(tensor_desc), OUTPUT());
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(l2_inplacetrunc_test, case_shape_3D)
+{
+    auto tensor_desc = TensorDesc({3,3,3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2).Precision(0.01, 0.01);
+    auto ut = OP_API_UT(aclnnInplaceTrunc, INPUT(tensor_desc), OUTPUT());
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(l2_inplacetrunc_test, case_shape_4D)
+{
+    auto tensor_desc = TensorDesc({3,3,3,3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2).Precision(0.01, 0.01);
+    auto ut = OP_API_UT(aclnnInplaceTrunc, INPUT(tensor_desc), OUTPUT());
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(l2_inplacetrunc_test, case_shape_5D)
+{
+    auto tensor_desc = TensorDesc({3,3,3,3,3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2).Precision(0.01, 0.01);
+    auto ut = OP_API_UT(aclnnInplaceTrunc, INPUT(tensor_desc), OUTPUT());
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(l2_inplacetrunc_test, case_shape_8D)
+{
+    auto tensor_desc = TensorDesc({3,3,3,3,3,3,3,3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2).Precision(0.01, 0.01);
+    auto ut = OP_API_UT(aclnnInplaceTrunc, INPUT(tensor_desc), OUTPUT());
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(l2_inplacetrunc_test, case_invalid_shape_9D)
+{
+    auto tensor_desc = TensorDesc({3,3,3,3,3,3,3,3,3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
+    auto ut = OP_API_UT(aclnnInplaceTrunc, INPUT(tensor_desc), OUTPUT());
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }

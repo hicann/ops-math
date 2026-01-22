@@ -17,6 +17,7 @@
 #include "opdev/platform.h"
 #include "opdev/make_op_executor.h"
 #include "op_api/level2_base.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -35,11 +36,8 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
     // self和out数据类型必须一样
     OP_CHECK_DTYPE_NOT_MATCH(out, self->GetDataType(), return false);
 
-    // 获取芯片类型,判断是否为910B
-    bool is910BSocVersion =
-        (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95);
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    bool is910BSocVersion = npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch);
     const std::initializer_list<DataType> DTYPE_SUPPORT_LIST =
         is910BSocVersion ? DTYPE_SUPPORT_LIST_910B : DTYPE_SUPPORT_LIST_910;
     // 检查self的数据类型是否在支持列表内

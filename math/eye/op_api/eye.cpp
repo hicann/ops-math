@@ -22,6 +22,7 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -39,7 +40,8 @@ inline static const aclTensor *EyeAiCore(aclTensor *out, const int64_t n, const 
 }
 
 const aclTensor *Eye(aclTensor *out, const int64_t n, const int64_t m, aclOpExecutor *executor) {
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+  if (IsRegBase(npuArch)) {
     auto eyeOut = executor->AllocTensor(out->GetViewShape(), out->GetDataType());
     CHECK_RET(eyeOut != nullptr, nullptr);
     return EyeAiCore(eyeOut, n, m, executor);

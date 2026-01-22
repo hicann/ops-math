@@ -43,3 +43,4 @@ REG_OP(IsNegInf)
 } // namespace ge
 
 #endif // OPS_OP_PROTO_INC_IS_NEG_INF_H_
+

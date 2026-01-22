@@ -28,7 +28,7 @@ namespace ge {
 *Two inputs, including:
 * @li x1: A tensor. Must be one of the following types:
 *     float16, float, double, bfloat16, int8, int16, int32, int64, qint8, qint16, qint32, qint64,
-*     quint8, uint8, uint16, uint32, uint64, complex32, complex64, complex128, bool. \n
+*     quint8, uin8, uint16, uint32, uint64, complex32, complex64, complex128, bool. \n
 
 * @li x2: A tensor with the same dtype and shape as 'x1'. \n
 
@@ -55,3 +55,4 @@ REG_OP(IsClose)
 } // namespace ge
 
 #endif // OPS_OP_PROTO_INC_IS_CLOSE_H_
+

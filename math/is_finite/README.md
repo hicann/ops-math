@@ -4,16 +4,18 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |     √      |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    ×     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
 | <term>Kirin X90 处理器系列产品</term>                         |    √     |
 
 ## 功能说明
 
 - 算子功能：判断张量中哪些元素是有限数值，即不是inf、-inf或nan。
 - 计算公式：
-
   $$
   y_i=(x_i != \pm inf) \: and \: (x_i!= nan)
   $$
@@ -52,6 +54,7 @@
     </tr>
   </tbody></table>
 
+- Atlas 训练系列产品: 不支持BFLOAT16。
 - Kirin X90 处理器系列产品: 不支持BFLOAT16。
 
 ## 约束说明

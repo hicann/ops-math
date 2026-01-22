@@ -46,4 +46,3 @@ REG_OP(SqrtGrad)
 } // namespace ge
 
 #endif // OPS_OP_PROTO_INC_SQRT_GRAD_H_
-

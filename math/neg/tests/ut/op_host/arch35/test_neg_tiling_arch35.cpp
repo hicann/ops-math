@@ -14,6 +14,7 @@
 #include "tiling_case_executor.h"
 #include "../../../../op_host/arch35/neg_tiling_arch35.h"
 #include "../../../../op_kernel/arch35/neg_tiling_struct.h"
+#include "atvoss/elewise/elewise_tiling.h"
 
 using namespace std;
 using namespace ge;
@@ -29,20 +30,93 @@ class NegTiling : public testing::Test {
   }
 };
 
-TEST_F(NegTiling, neg_test_tiling_001)
+TEST_F(NegTiling, neg_test_tiling_float16_input)
 {
-    struct NegCompileInfo{
-        int64_t coreNum = 64;
-        int64_t ubSize = 253952;
-    };
-
-    NegCompileInfo compileInfo = {64, 253952};
+    Ops::Base::ElewiseCompileInfo compileInfo = {64, 253952};
     gert::TilingContextPara tilingContextPara("Neg",
         {{{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},},
         {{{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},},
          &compileInfo);
-    uint64_t expectTilingKey = 2;
-    string expectTilingData = "64 140737488355329 512 1 1 1 512 64 32768 1 ";
+    uint64_t expectTilingKey = 3;
+    string expectTilingData = "64 1 32768 512 1 1 1 512 64 32768 1 ";
     std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
-}                
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(NegTiling, neg_test_tiling_float_input)
+{
+    Ops::Base::ElewiseCompileInfo compileInfo = {64, 253952};
+    gert::TilingContextPara tilingContextPara("Neg",
+        {{{{8, 8}, {8, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},},
+        {{{{8, 8}, {8, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},},
+         &compileInfo);
+    uint64_t expectTilingKey = 7;
+    string expectTilingData = "64 1 16384 512 1 1 1 512 64 16384 1 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(NegTiling, neg_test_tiling_INT32_input)
+{
+    Ops::Base::ElewiseCompileInfo compileInfo = {64, 253952};
+    gert::TilingContextPara tilingContextPara("Neg",
+        {{{{8, 8}, {8, 8}}, ge::DT_INT32, ge::FORMAT_ND},},
+        {{{{8, 8}, {8, 8}}, ge::DT_INT32, ge::FORMAT_ND},},
+         &compileInfo);
+    uint64_t expectTilingKey = 11;
+    string expectTilingData = "64 1 16384 512 1 1 1 512 64 16384 1 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(NegTiling, neg_test_tiling_int8_input)
+{
+    Ops::Base::ElewiseCompileInfo compileInfo = {64, 253952};
+    gert::TilingContextPara tilingContextPara("Neg",
+        {{{{8, 8}, {8, 8}}, ge::DT_INT8, ge::FORMAT_ND},},
+        {{{{8, 8}, {8, 8}}, ge::DT_INT8, ge::FORMAT_ND},},
+         &compileInfo);
+    uint64_t expectTilingKey = 9;
+    string expectTilingData = "64 1 65536 512 1 1 1 512 64 65536 1 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(NegTiling, neg_test_tiling_int64_input)
+{
+    Ops::Base::ElewiseCompileInfo compileInfo = {64, 253952};
+    gert::TilingContextPara tilingContextPara("Neg",
+        {{{{8, 8}, {8, 8}}, ge::DT_INT64, ge::FORMAT_ND},},
+        {{{{8, 8}, {8, 8}}, ge::DT_INT64, ge::FORMAT_ND},},
+         &compileInfo);
+    uint64_t expectTilingKey = 13;
+    string expectTilingData = "64 1 8192 512 1 1 1 512 64 8192 1 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(NegTiling, neg_test_tiling_invalid_shape)
+{
+    Ops::Base::ElewiseCompileInfo compileInfo = {64, 253952};
+    gert::TilingContextPara tilingContextPara("Neg",
+        {{{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},},
+        {{{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},},
+         &compileInfo);
+    uint64_t expectTilingKey = 3;
+    string expectTilingData = "64 1 32768 512 1 1 1 512 64 32768 1 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_FAILED, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(NegTiling, neg_test_tiling_invalid_dtype)
+{
+    Ops::Base::ElewiseCompileInfo compileInfo = {64, 253952};
+    gert::TilingContextPara tilingContextPara("Neg",
+        {{{{8, 8}, {8, 8}}, ge::DT_COMPLEX32, ge::FORMAT_ND},},
+        {{{{8, 8}, {8, 8}}, ge::DT_COMPLEX32, ge::FORMAT_ND},},
+         &compileInfo);
+    uint64_t expectTilingKey = 3;
+    string expectTilingData = "64 1 32768 512 1 1 1 512 64 32768 1 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_FAILED, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+}

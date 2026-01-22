@@ -4,9 +4,13 @@
 
 | 产品 | 是否支持 |
 | ---- | :----:|
-|Ascend 950PR/Ascend 950DT|√|
-|Atlas A3 训练系列产品/Atlas A3 推理系列产品|√|
-|Atlas A2 训练系列产品/Atlas A2 推理系列产品|√|
+|<term>Ascend 950PR/Ascend 950DT</term>     |    √     |
+|<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>|√|
+|<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>|√|
+|<term>Atlas 200I/500 A2推理产品</term>|×|
+|<term>Atlas 推理系列产品</term>|√|
+|<term>Atlas 训练系列产品</term>|√|
+
 
 ## 功能说明
 
@@ -35,20 +39,22 @@ $out_i=|input_i|$
     </tr></thead>
   <tbody>
     <tr>
-      <td>x</td>
+      <td>self</td>
       <td>输入</td>
       <td>待进行abs计算的入参，公式中的input_i。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT8、INT16、INT32、INT64</td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>y</td>
+      <td>out</td>
       <td>输出</td>
       <td>待进行abs计算的出参，公式中的out_i。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT8、INT16、INT32、INT64</td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
       <td>ND</td>
     </tr>
   </tbody></table>
+
+- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
 
 ## 约束说明
 

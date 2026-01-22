@@ -23,7 +23,6 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "aclnn_logical_not.h"
-
 using namespace op;
 
 static const std::initializer_list<DataType> dtype_support_list = {
@@ -55,6 +54,9 @@ static bool CheckShape(const aclTensor* self, const aclTensor* out) {
 
   // 输入输出连续，不限制维度数
   if (IsContiguous(self) && IsContiguous(out)) {
+    if(self->GetViewShape().GetDimNum() > static_cast<int64_t>(MAX_SUPPORT_DIMS_NUMS))  {
+      OP_LOGW("The dimension of the self tensor is greater than 8");
+    }
     return true;
   }
 
@@ -80,12 +82,15 @@ static aclnnStatus CalculateResult(const aclTensor* self, aclTensor* out, aclOpE
   // 固定写法，参数检查
   auto ret = CheckParams(self, out);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
-
+  
   // 空Tensor处理
   if (self->IsEmpty()) {
     return ACLNN_SUCCESS;
   }
-
+  
+  if(self->GetStorageFormat() != Format::FORMAT_ND){
+    OP_LOGW("Format only support ND");
+  }
   // self如果非连续，需要转连续
   auto selfContiguous = l0op::Contiguous(self, executor);
   CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -115,7 +120,7 @@ aclnnStatus aclnnLogicalNotGetWorkspaceSize(const aclTensor* self, aclTensor* ou
   // 固定写法，创建OpExecutor
   auto uniqueExecutor = CREATE_EXECUTOR();
   CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
-
+  
   auto ret = CalculateResult(self, out, uniqueExecutor.get());
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
 

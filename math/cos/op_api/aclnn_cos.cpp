@@ -22,6 +22,7 @@
 #include "opdev/platform.h"
 #include "opdev/tensor_view_utils.h"
 #include "op_api/level2_base.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -54,10 +55,8 @@ static const std::initializer_list<DataType> NEED_CAST_DTYPE_LIST = {DataType::D
 
 // 检查输入和输出的数据类型是否在算子的支持列表内
 static bool CheckDtypeValid(const aclTensor* input, const aclTensor* out) {
-  // 获取芯片类型，判断芯片是否为Ascend910B
-  bool isAscend910BSocVersion = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-                                GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-                                GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95);
+  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+  bool isAscend910BSocVersion = (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch));
   const std::initializer_list<op::DataType> CURRENT_INPUT_DTYPE_SUPPORT_LIST =
       isAscend910BSocVersion ? ASCEND910B_INPUT_DTYPE_SUPPORT_LIST : ASCEND910_INPUT_DTYPE_SUPPORT_LIST;
   const std::initializer_list<op::DataType> CURRENT_OUTPUT_DTYPE_SUPPORT_LIST =
@@ -107,6 +106,10 @@ static aclnnStatus ExecCosGetWorkspaceSize(const aclTensor* input, aclTensor* ou
   // 参数检查
   auto ret = CheckParamsCos(input, out);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
+  
+  if (input->GetStorageFormat() != Format::FORMAT_ND) {
+      OP_LOGW("Format only support ND");
+  }
 
   if (input->IsEmpty()) {
     // 根据实际支持情况补充

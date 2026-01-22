@@ -1,11 +1,18 @@
 # aclnnIsClose
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/is_close)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
 
 ## 功能说明
 
@@ -31,7 +38,8 @@
 - **参数说明：**
 
   - self（aclTensor*，计算输入）：公式中的`self`Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，dtype与other的dtype必须一致，shape需要与other满足broadcast关系。[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不高于8维。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、DOUBLE、BFLOAT16。
+    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、DOUBLE。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、DOUBLE、BFLOAT16。
   - other（aclTensor*，计算输入）：Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、INT32、BFLOAT16，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，dtype与self的dtype必须一致，shape需要与self满足broadcast关系。[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不高于8维。
   - rtol（double，计算输入）：公式中的`rtol`，相对公差。数据类型支持DOUBLE。
   - atol（double，计算输入）：公式中的`atol`，绝对差值。数据类型支持DOUBLE。
@@ -62,6 +70,7 @@
   - executor（aclOpExecutor*，入参）：op执行器，包含了算子计算流程。
   - stream（aclrtStream，入参）：指定执行任务的Stream。
 
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -70,6 +79,7 @@
 
 - 确定性计算：
   - aclnnIsClose默认确定性实现。
+
 
 ## 调用示例
 

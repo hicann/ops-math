@@ -7,6 +7,10 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                             |     √      |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √       |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |   ×     |
+| <term>Atlas 训练系列产品</term>                              |   √     |
+
 
 ## 功能说明
 
@@ -38,20 +42,22 @@ $$
     </tr></thead>
   <tbody>
     <tr>
-      <td>x</td>
+      <td>self</td>
       <td>输入</td>
       <td>待进行sqrt计算的入参，公式中的self。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>COMPLEX64、COMPLEX128、FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>y</td>
+      <td>out</td>
       <td>输出</td>
       <td>待进行sqrt计算的出参，公式中的out。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
     </tr>
   </tbody></table>
+
+- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
 
 ## 约束说明
 无

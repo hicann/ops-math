@@ -14,16 +14,15 @@
 #include "cpu_kernel.h"
 
 namespace aicpu {
-  class CeilCpuKernel : public CpuKernel {
-  public:
+class CeilCpuKernel : public CpuKernel {
+public:
     ~CeilCpuKernel() override = default;
 
-    uint32_t Compute(CpuKernelContext &ctx) override;
+    uint32_t Compute(CpuKernelContext& ctx) override;
 
-  private:
+private:
     template <typename T>
-    uint32_t ComputeCeil(Tensor *x, Tensor *y, uint64_t data_size,
-                         const CpuKernelContext &ctx) const;
-  };
-}  // namespace aicpu
+    uint32_t ComputeCeil(Tensor* x, Tensor* y, uint64_t data_size, const CpuKernelContext& ctx) const;
+};
+} // namespace aicpu
 #endif // AICPU_KERNELS_CEIL_H

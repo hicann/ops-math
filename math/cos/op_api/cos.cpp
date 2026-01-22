@@ -16,6 +16,7 @@
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
 #include "opdev/shape_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 namespace l0op {
@@ -30,9 +31,8 @@ static const std::initializer_list<DataType> ASCEND910B_AICORE_DTYPE_SUPPORT_LIS
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static inline bool IsAiCoreSupport(DataType inputDtype) {
   // 获取芯片类型
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+  auto npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
+  if (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch)) {
     return CheckType(inputDtype, ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
   }
   return CheckType(inputDtype, ASCEND910_AICORE_DTYPE_SUPPORT_LIST);
