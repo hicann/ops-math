@@ -7,6 +7,10 @@
 |Ascend 950PR/Ascend 950DT|√|
 |Atlas A3 训练系列产品/Atlas A3 推理系列产品|√|
 |Atlas A2 训练系列产品/Atlas A2 推理系列产品|√|
+|Atlas 200I/500 A2推理产品|√|
+|Atlas 推理系列产品|√|
+|Atlas 训练系列产品|√|
+
 
 ## 功能说明
 
@@ -68,5 +72,5 @@ $$
 
 | 调用方式 | 调用样例                                                          | 说明                                                          |
 |--------|---------------------------------------------------------------|-------------------------------------------------------------| 
-| aclnn调用 | [test_aclnn_rightshift](./examples/test_aclnn_right_shift.cpp) | 通过[aclnnRightshift](./docs/aclnnRightshift.md)接口方式调用rightshift算子。|  
+| aclnn调用 | [test_aclnn_rightshift](./examples/test_aclnn_right_shift.cpp) | 通过[aclnnRightshift](./docs/aclnnRightShift.md)接口方式调用rightshift算子。|  
 | 图模式调用 | [test_geir_right_shift](./examples/test_geir_right_shift.cpp) | 通过[算子IR](./op_graph/right_shift_proto.h)构图方式调用RightShift算子。 |

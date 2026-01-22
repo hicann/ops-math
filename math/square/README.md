@@ -7,6 +7,9 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
+| <term>Atlas 推理系列产品</term>                              |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
 
 ## 功能说明
 
@@ -56,5 +59,5 @@
 
 | 调用方式 | 调用样例                                                  | 说明                                                                 |
 |---------|-------------------------------------------------------|--------------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_square](./examples/test_aclnn_square.cpp) | 通过[aclnnSquare](./docs/aclnnSquare&aclnnInplaceSquare.md)接口方式调用Square算子。 |
+| aclnn调用 | [test_aclnn_square](./examples/test_aclnn_square.cpp) | 通过[aclnnSquare](./docs/aclnnSquare.md)接口方式调用Square算子。 |
 | 图模式调用 | [test_geir_square](./examples/test_geir_square.cpp)     | 通过[算子IR](./op_graph/square_proto.h)构图方式调用Square算子。                   |
