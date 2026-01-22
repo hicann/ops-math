@@ -31,10 +31,11 @@ constexpr size_t WORK_SPACE_SIZE = 16 * 1024 * 1024;
 const uint32_t BIN_NUM = 256;                   // 直方图一次处理256B
 const uint32_t SMALL_TILE_DATA_NUM = 1024;      // 测试数据得出一次至少处理1024，sort性能比较好
 const uint32_t SIMT_UB = 32768;                 // 预留了32k给simt使用
-const uint32_t SMALL_SORT_MAX_DATA_SIZE = 1024; // 走merge sort条件
 const uint32_t TILE_DATA_NUM = 4096;            // merge_sort一次ub处理的数据量
 const uint32_t UB_CONST_INT32 = 4096;           // 输出idx为int32时kernel侧需要的固定ub大小
 const uint32_t UB_CONST_INT64 = 7168;           // 输出idx为int64时kernel侧需要的固定ub大小
+const uint32_t SMALL_SORT_MAX_DATA_SIZE_FP32 = 2048; // fp32 走merge sort条件
+const uint32_t SMALL_SORT_MAX_DATA_SIZE_FP16 = 1024; // fp16 或者 bf16 走merge sort条件
 const uint32_t CONST_10 = 10;
 const uint32_t CONST_14 = 14;
 const uint64_t SCH_ID_2 = 2;
@@ -195,16 +196,20 @@ void SetSortTmpSize(ge::DataType dataType, uint32_t tileData, bool isDescend, So
 
 bool IsMergeSort(SortTileInfo &sortTileInfo)
 {
-    bool support =
-        (sortTileInfo.sortAxisNum <= SMALL_SORT_MAX_DATA_SIZE) && (mergeType.count(sortTileInfo.dataType) != 0);
-    return support;
+    // fp16 和 bf16 进入条件和 fp32 进入条件不一样，由于基数排序对 fp16 和 bf16 只需要排序两轮，而对 fp32 需要排序四轮
+    // 当前设置 SMALL_SORT_MAX_DATA_SIZE_FP32 是 SMALL_SORT_MAX_DATA_SIZE_FP16 的两倍
+    bool supportForFp16 = (sortTileInfo.sortAxisNum <= SMALL_SORT_MAX_DATA_SIZE_FP16) &&
+                          (sortTileInfo.dataType == ge::DT_FLOAT16 || sortTileInfo.dataType == ge::DT_BF16);
+    bool supportForFp32 =
+        (sortTileInfo.sortAxisNum <= SMALL_SORT_MAX_DATA_SIZE_FP32) && (sortTileInfo.dataType == ge::DT_FLOAT);
+    return supportForFp16 || supportForFp32;
 }
 
 bool IsMergeSortMultiCore(SortTileInfo &sortTileInfo)
 {
     bool isMuiltiCoreMergeSort =
         ((sortTileInfo.unSortDimNum == 1) && (sortTileInfo.sortAxisNum <= MULTI_CORE_MERGE_SORT_MAX_SIZE) &&
-         (sortTileInfo.sortAxisNum > SMALL_SORT_MAX_DATA_SIZE) && (sortTileInfo.dataType == ge::DT_FLOAT));
+         (sortTileInfo.sortAxisNum > SMALL_SORT_MAX_DATA_SIZE_FP32) && (sortTileInfo.dataType == ge::DT_FLOAT));
     return isMuiltiCoreMergeSort;
 }
 
@@ -519,15 +524,22 @@ void PrintTilindDataSort(gert::TilingContext *context, SortTileInfo &sortTileInf
 
 void GetMergeSort(gert::TilingContext *context, SortTileInfo &sortTileInfo)
 {
+    // 1. 计算对齐后的排序轴元素数量
     uint32_t alignNum = CeilDivMul<uint32_t>(int64_t(sortTileInfo.sortAxisNum), int64_t(sortTileInfo.blockUbSize));
     if (alignNum == 0) {
         OP_LOGE(context->GetNodeName(), "alignNum is 0");
         return;
     }
+
+    // 2. 计算单个核心一次处理的行数
     uint32_t tileData = TILE_DATA_NUM;
     uint32_t oneCoreRowNum = (tileData / CONST_2) / alignNum;
     oneCoreRowNum = (oneCoreRowNum == uint32_t(0) ? uint32_t(1) : oneCoreRowNum);
+
+    // 3. 计算虚拟的未排序维度分块数
     uint32_t virUnsortedDimNum = CeilDiv(sortTileInfo.unSortDimNum, int64_t(oneCoreRowNum));
+
+    // 4. 计算需要的核心数
     uint32_t coreNumNeed = 0;
     uint32_t sortLoopTimes = CeilDiv(int64_t(virUnsortedDimNum), int64_t(sortTileInfo.maxCoreNum));
     if (sortLoopTimes == static_cast<uint32_t>(1)) {
@@ -539,6 +551,8 @@ void GetMergeSort(gert::TilingContext *context, SortTileInfo &sortTileInfo)
     } else {
         coreNumNeed = sortTileInfo.maxCoreNum;
     }
+
+    // 5. 计算tmpUbSize
     uint32_t maxTypeSize =
         (sortTileInfo.dataType == ge::DT_BF16) ? mergeType.find(ge::DT_FLOAT)->second : sortTileInfo.dtypeSize;
     auto platform_info = context->GetPlatformInfo();
@@ -546,6 +560,8 @@ void GetMergeSort(gert::TilingContext *context, SortTileInfo &sortTileInfo)
     uint32_t dataSizeNeed = AscendC::GetConcatTmpSize(plat, alignNum, maxTypeSize);
     dataSizeNeed = std::max(dataSizeNeed, sortTileInfo.blockUbSize);
     sortTileInfo.tmpUbSize = dataSizeNeed;
+
+    // 6. 填充 SortTileInfo 结构体
     sortTileInfo.sortLoopTimes = sortLoopTimes;
     sortTileInfo.lastDimTileNum = static_cast<uint32_t>(1);
     sortTileInfo.unsortedDimParallel = coreNumNeed;

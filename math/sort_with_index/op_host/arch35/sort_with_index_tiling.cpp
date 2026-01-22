@@ -51,6 +51,14 @@ static const std::map<ge::DataType, uint32_t> tilingDataTypeBitMap = {
 static const std::map<ge::DataType, uint32_t> optDataTypeBitMap = {
     {ge::DT_FLOAT, 4}, {ge::DT_FLOAT16, 2}, {ge::DT_BF16, 2}};
 
+size_t CeilAlign(uint64_t a, uint64_t b)
+{
+    if (b == 0) {
+        return static_cast<size_t>(a);
+    }
+    return static_cast<size_t>(((a + b - 1) / b) * b);
+}
+
 void SetSortTmpSizeOfIdx(
     ge::DataType dataType, int64_t lastAxisNum, uint32_t tileData, bool isDescend, bool hasIndex,
     SortWithIndexTilingDataSimt& sortTilingData)
@@ -294,10 +302,16 @@ ge::graphStatus RadixSortTilingOfIdx(gert::TilingContext* context, int32_t maxCo
         excusiveBinsGmSize = BIN_NUM * tilingDataTypeBitMap.find(dataType)->second * sortTileInfo.unsortedDimParallel * sizeof(int32_t);
         globalHistGmSize = BIN_NUM * sortTileInfo.lastDimTileNum * sortTileInfo.unsortedDimParallel * sizeof(int32_t);
     }
-    size_t valueIndexBufferSize = sortAxisNum * tilingDataTypeBitMap.find(y2DType)->second;
-    size_t valueBufferSize = sortAxisNum * tilingDataTypeBitMap.find(dataType)->second;
-    size_t usrSize = globalHistGmSize + excusiveBinsGmSize + sortTileInfo.unsortedDimParallel * (valueIndexBufferSize + valueBufferSize);
-
+    uint64_t inputIndexCopySize = static_cast<uint64_t>(sortAxisNum) *
+                                  static_cast<uint64_t>(tilingDataTypeBitMap.find(y2DType)->second) *
+                                  static_cast<uint64_t>(sortTileInfo.unsortedDimParallel);
+    size_t inputIndexCopyGmSize = CeilAlign(inputIndexCopySize, static_cast<uint64_t>(AGLIN_VALUE));
+    uint64_t sortedValueCopySize = static_cast<uint64_t>(sortAxisNum) *
+                                   static_cast<uint64_t>(tilingDataTypeBitMap.find(dataType)->second) *
+                                   static_cast<uint64_t>(sortTileInfo.unsortedDimParallel);
+    size_t sortedValueCopyGmSize = CeilAlign(sortedValueCopySize, static_cast<uint64_t>(AGLIN_VALUE));
+    size_t usrSize = globalHistGmSize + excusiveBinsGmSize + inputIndexCopyGmSize + sortedValueCopyGmSize;
+    OP_LOGI("RadixSortTilingForAscendC", "Workspace size for radix sort tiling is : %zu", usrSize);
     size_t* userWorkSpaceSize = context->GetWorkspaceSizes(1);
     userWorkSpaceSize[0] = usrSize + WORK_SPACE_SIZE;
     context->SetLocalMemorySize(NEED_UB_SIZE_BYTE);

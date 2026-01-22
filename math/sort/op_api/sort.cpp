@@ -17,6 +17,7 @@
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/op_dfx.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -69,7 +70,7 @@ static bool SocSupportDtype(const aclTensor *self)
 
 static bool IsAiCoreSupport(const aclTensor *self, bool stable, bool descending)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95){
+    if (IsRegBase()){
         return true;
     } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310B && stable && !descending) {
         return false;
@@ -166,7 +167,7 @@ const std::tuple<aclTensor*, aclTensor*> Sort(const aclTensor *self, int64_t dim
         if (dim == 0 || dim == -1) {
             auto valuesOut = executor->AllocTensor(selfShape, self->GetDataType(), selfFormat);
             aclTensor* indicesOut = nullptr;
-            if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+            if (IsRegBase()) {
                 indicesOut = executor->AllocTensor(selfShape, indicesType, selfFormat);
             } else {
                 indicesOut = executor->AllocTensor(selfShape, op::DataType::DT_INT32, selfFormat);
@@ -186,19 +187,19 @@ const std::tuple<aclTensor*, aclTensor*> Sort(const aclTensor *self, int64_t dim
     auto lastDimSize = selfShape[dimSize - 1];
     // The Sort Op not support sort axis is 1 when input type is BF16..
     bool  isNotSupport = (1 == lastDimSize && op::DataType::DT_BF16 == self->GetDataType());
-    if (isNotSupport && GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+    if (isNotSupport && !IsRegBase()) {
       OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The sort axis value is not support 1 when input type is BF16.");
       return std::tuple<aclTensor*, aclTensor*>(nullptr, nullptr);
     }
     auto values = executor->AllocTensor(selfShape, self->GetDataType(), selfFormat);
     aclTensor* indices = nullptr;
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    if (IsRegBase()) {
         indices = executor->AllocTensor(selfShape, indicesType, selfFormat);
     } else {
         indices = executor->AllocTensor(selfShape, op::DataType::DT_INT32, selfFormat);
     }
     if (IsAiCoreSupport(self, stable, descending)) {
-        if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+        if (IsRegBase()) {
             SortAiCoreForDavid(self, stable, dim, descending, values, indices, indicesType, executor);
         } else {
             SortAiCore(self, stable, dim, descending, values, indices, executor);

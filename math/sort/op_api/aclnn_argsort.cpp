@@ -15,6 +15,7 @@
 #include "sort.h"
 #include "aclnn_kernels/transpose.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "aclnn/aclnn_base.h"
 #include "opdev/common_types.h"
@@ -40,7 +41,7 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_
     op::DataType::DT_INT32, op::DataType::DT_INT64,   op::DataType::DT_UINT8, op::DataType::DT_BF16};
 
 static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_LIST = {op::DataType::DT_INT64};
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> ARCH3510_DTYPE_SUPPORT_LIST = {
   op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT,  op::DataType::DT_BF16, op::DataType::DT_UINT8,
   op::DataType::DT_INT8,    op::DataType::DT_INT16,  op::DataType::DT_INT32, op::DataType::DT_INT64,
   op::DataType::DT_UINT16,  op::DataType::DT_UINT32, op::DataType::DT_UINT64};
@@ -49,8 +50,8 @@ static const std::initializer_list<DataType>& GetDtypeSupportList() {
   if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
       GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
     return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
-  } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-    return ASCEND910_95_DTYPE_SUPPORT_LIST;
+  } else if (IsRegBase()) {
+    return ARCH3510_DTYPE_SUPPORT_LIST;
   } else {
     return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
   }
@@ -103,7 +104,7 @@ static bool CheckDimValid(const aclTensor* self, const int64_t dim) {
     OP_LOGE(ACLNN_ERR_PARAM_INVALID, "the dim being sorted can not have more than INT_MAX elements");
     return false;
   }
-  if (!(GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95)) {
+  if (!(IsRegBase())) {
     if (1 == dimValue && op::DataType::DT_BF16 == self->GetDataType()) {
       OP_LOGE(ACLNN_ERR_PARAM_INVALID,
               "The sort axis value is not support 1 when input type is BF16.");

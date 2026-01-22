@@ -196,14 +196,14 @@ __aicore__ inline void RadixSortSimdEntry<T, CONVERT_TYPE, UNSINGED_TYPE, NUM_PA
                                     RADIX_SORT_BIN_NUM * NUM_PASS * unsortedDimParallel_);
     // global hist gm
     uint32_t workSpaceOffset = RADIX_SORT_BIN_NUM * NUM_PASS * unsortedDimParallel_ * sizeof(T_INDEX);
-    globalHistGm_.SetGlobalBuffer((__gm__ uint32_t*)workspace_ + workSpaceOffset / sizeof(T_INDEX),
-                                RADIX_SORT_BIN_NUM * lastDimTileNum_ * unsortedDimParallel_);
+    globalHistGm_.SetGlobalBuffer((__gm__ uint32_t*)workspace_ + workSpaceOffset / sizeof(uint32_t),
+                                  RADIX_SORT_BIN_NUM * lastDimTileNum_ * unsortedDimParallel_);
     // index copy buffer
-    workSpaceOffset += RADIX_SORT_BIN_NUM * lastDimTileNum_ * unsortedDimParallel_ * sizeof(int32_t);
+    workSpaceOffset += RADIX_SORT_BIN_NUM * lastDimTileNum_ * unsortedDimParallel_ * sizeof(uint32_t);
     inputIndexCopyGm_.SetGlobalBuffer((__gm__ T_INDEX_TO*)workspace_ + workSpaceOffset / sizeof(T_INDEX_TO),
-                                    totalDataNum_ * unsortedDimParallel_);
+                                      totalDataNum_ * unsortedDimParallel_);
     // input data copy
-    workSpaceOffset += totalDataNum_ * unsortedDimParallel_ * sizeof(T_INDEX_TO);
+    workSpaceOffset += ROUND_UP_AGLIN(totalDataNum_ * unsortedDimParallel_ * sizeof(T_INDEX_TO));
     sortedValueCopyGm_.SetGlobalBuffer((__gm__ T*)workspace_ + workSpaceOffset / sizeof(T),
                                         totalDataNum_ * unsortedDimParallel_);
     // pip init

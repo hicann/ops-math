@@ -17,11 +17,11 @@
 #include "math/zero_op/op_api/zero_op.h"
 #include "conversion/fill/op_api/fill.h"
 
-#include "op_api/op_api_def.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/op_dfx.h"
 #include "opdev/op_executor.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -40,11 +40,11 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_VALUE = {
     op::DataType::DT_BF16, op::DataType::DT_BOOL};
 // Sort的indices支持的dtype
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_INT = {op::DataType::DT_INT64};
-// 910D Sort的self/value支持的dtype
-static const std::initializer_list<op::DataType> ASCEND910D_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT,  op::DataType::DT_BF16, op::DataType::DT_UINT8,
-    op::DataType::DT_INT8,    op::DataType::DT_INT16,  op::DataType::DT_INT32, op::DataType::DT_INT64,
-    op::DataType::DT_UINT16,  op::DataType::DT_UINT32, op::DataType::DT_UINT64};
+// ARCH3510 Sort的self/value支持的dtype
+static const std::initializer_list<op::DataType> ARCH3510_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT,  op::DataType::DT_BF16,   op::DataType::DT_UINT8,
+    op::DataType::DT_INT8,    op::DataType::DT_INT16,  op::DataType::DT_INT32,  op::DataType::DT_INT64,
+    op::DataType::DT_UINT16,  op::DataType::DT_UINT32, op::DataType::DT_UINT64, op::DataType::DT_BOOL};
 static const int64_t DIM_MAX = 8;
 
 
@@ -61,9 +61,9 @@ static inline bool CheckNotNull(const aclTensor *self, const aclTensor *values, 
 // 检查dType符合预期
 static inline bool CheckDtypeValid(const aclTensor *self, const aclTensor *values, const aclTensor *indices)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-        OP_CHECK_DTYPE_NOT_SUPPORT(self, ASCEND910D_DTYPE_SUPPORT_LIST, return false);
-        OP_CHECK_DTYPE_NOT_SUPPORT(values, ASCEND910D_DTYPE_SUPPORT_LIST, return false);
+    if (IsRegBase()) {
+        OP_CHECK_DTYPE_NOT_SUPPORT(self, ARCH3510_DTYPE_SUPPORT_LIST, return false);
+        OP_CHECK_DTYPE_NOT_SUPPORT(values, ARCH3510_DTYPE_SUPPORT_LIST, return false);
         OP_CHECK_DTYPE_NOT_SUPPORT(indices, DTYPE_SUPPORT_LIST_INT, return false);
         return true;
     } else {
@@ -302,7 +302,7 @@ static std::tuple<const aclTensor*, const aclTensor*> reshapeCastRes(
     auto expectedValue = std::get<0>(expectedCastRes);
     auto valuesCast = l0op::Cast(opValues, expectedValue->GetDataType(), executor);
     CHECK_RET(valuesCast != nullptr, std::tie(nullPtr, nullPtr));
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    if (IsRegBase()) {
         return std::tie(valuesCast, opIndices);
     }
     auto indicesCast = l0op::Cast(opIndices, op::DataType::DT_INT64, executor);
@@ -360,7 +360,10 @@ aclnnStatus aclnnSortGetWorkspaceSize(const aclTensor *self, bool stable, int64_
     // 排序轴为1
     if (selfShape[dimPositive] == 1) {
         OP_LOGI("The size of selfShape[%ld] is 1.", dimPositive);
-        auto viewCopyValues = l0op::ViewCopy(self, valuesOut, uniqueExecutor.get());
+        // self 如果非连续，需要转换
+        auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto viewCopyValues = l0op::ViewCopy(selfContiguous, valuesOut, uniqueExecutor.get());
         CHECK_RET(viewCopyValues != nullptr, ACLNN_ERR_PARAM_NULLPTR);
         auto zeroTensor = GetTensorWithValueZero(indicesOut, uniqueExecutor.get());
         CHECK_RET(zeroTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -383,13 +386,13 @@ aclnnStatus aclnnSortGetWorkspaceSize(const aclTensor *self, bool stable, int64_
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_PARAM_NULLPTR);
 
     // kernel暂不支持bf16输入，转为fp32进行计算
-    if (self->GetDataType() == op::DataType::DT_BF16 && GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+    if (self->GetDataType() == op::DataType::DT_BF16 && !IsRegBase()) {
         selfContiguous = l0op::Cast(selfContiguous, op::DataType::DT_FLOAT, uniqueExecutor.get());
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_PARAM_NULLPTR);
     }
 
     // kernel暂不支持bool输入，转为uint8进行计算
-    if (self->GetDataType() == op::DataType::DT_BOOL && GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+    if (self->GetDataType() == op::DataType::DT_BOOL) {
         selfContiguous = l0op::Cast(selfContiguous, op::DataType::DT_UINT8, uniqueExecutor.get());
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_PARAM_NULLPTR);
     }
