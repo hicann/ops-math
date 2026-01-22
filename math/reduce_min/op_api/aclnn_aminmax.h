@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef OP_API_INC_AMINMAX_ALL_H_
-#define OP_API_INC_AMINMAX_ALL_H_
+#ifndef OP_API_INC_AMINMAX_H_
+#define OP_API_INC_AMINMAX_H_
 #include "aclnn/aclnn_base.h"
 #include "aclnn_util.h"
 
@@ -18,38 +18,40 @@ extern "C" {
 #endif
 
 /**
- * @brief aclnnAminmaxAll的第一段接口，根据具体的计算流程，计算workspace大小。
+ * @brief aclnnAminmax的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_math
  *
  * 算子功能：算子功能：计算输入张量的最小值和最大值。
  *
  * @param [in] self: npu device侧的aclTensor，数据类型支持整型，浮点类型。支持非连续的Tensor，数据格式支持ND。
+ * @param [in] dim: host侧的aclIntArray，指定要缩减的维度。
+ * @param [in] keepDim: host侧的bool，reduce轴的维度是否保留。
  * @param [in] minOut: npu device侧的aclTensor，数据类型支持整型，浮点类型。支持非连续的Tensor，数据格式支持ND。
  * @param [in] maxOut: npu device侧的aclTensor，数据类型支持整型，浮点类型。支持非连续的Tensor，数据格式支持ND。
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-
-ACLNN_API aclnnStatus aclnnAminmaxAllGetWorkspaceSize(const aclTensor* self, aclTensor* minOut, aclTensor* maxOut,
-                                                      uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnAminmaxGetWorkspaceSize(const aclTensor* self, const aclIntArray* dim, bool keepDim,
+                                                   aclTensor* minOut, aclTensor* maxOut, uint64_t* workspaceSize,
+                                                   aclOpExecutor** executor);
 
 /**
- * @brief aclnnAminmaxAll的第二段接口，用于执行计算。
+ * @brief aclnnAminmax的第二段接口，用于执行计算。
  *
  * 算子功能：计算输入张量的最小值和最大值。
  *
  * @param [in] workspace: 在npu device侧申请的workspace内存起址。
- * @param [in] workspace_size: 在npu device侧申请的workspace大小，由第一段接口aclnnAminmaxAllGetWorkspaceSize获取。
+ * @param [in] workspaceSize: 在npu device侧申请的workspace大小，由第一段接口aclnnAminmaxGetWorkspaceSize获取。
  * @param [in] executor: op执行器，包含了算子计算流程。
  * @param [in] stream: acl stream流。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnAminmaxAll(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
-                                      aclrtStream stream);
+ACLNN_API aclnnStatus aclnnAminmax(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                   aclrtStream stream);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // OP_API_INC_AMINMAX_ALL_H_
+#endif  // OP_API_INC_AMINMAX_H_

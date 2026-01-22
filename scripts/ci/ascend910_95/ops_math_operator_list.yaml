@@ -89,6 +89,7 @@ operator_group_3:
   - reciprocal
   - reduce_std_v2
   - reduce_var
+  - reduce_min
 operator_group_4:
   - rfft1_d
   - round
