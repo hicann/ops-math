@@ -46,6 +46,7 @@ constexpr uint32_t TILING_KEY_COMPLEX64 = 2;
 constexpr uint32_t TILING_KEY_FLOAT16 = 3;
 constexpr uint32_t CORE_COEFF = 2;
 constexpr uint32_t INVALID_CORES_NUM = 0x5A5A5A5A;
+constexpr uint8_t SCHEDULE_MODE_ALL_CORE = 1; // 全核启动
 std::map<int, std::vector<int>> g_factorsMap = {
     {50, {50, 25, 10, 5, 2, 1}},
     {48, {48, 24, 12, 8, 6, 4, 2, 1}},
@@ -751,6 +752,7 @@ ge::graphStatus STFTGeneralizedTiling::PostTiling()
     tilingData.set_tilingKey(GetTilingKey());
     context_->SetTilingKey(GetTilingKey());
     context_->SetBlockDim(aicCoreNum);
+    context_->SetScheduleMode(SCHEDULE_MODE_ALL_CORE); // 设置为batch mode模式，所有核同时启动
     size_t* workspaces = context_->GetWorkspaceSizes(1);
     workspaces[0] = workspaceSize_;
     tilingData.SaveToBuffer(context_->GetRawTilingData()->GetData(), context_->GetRawTilingData()->GetCapacity());
