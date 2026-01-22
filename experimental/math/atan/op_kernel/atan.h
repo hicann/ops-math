@@ -31,7 +31,6 @@ using namespace AscendC;
 
 constexpr int32_t BUFFER_NUM = 2;
 constexpr float  CONST_POS_ONE = 1.0f;
-constexpr float  CONST_POS_NEG_ONE = -1.0f;
 constexpr float TAYLOR[] = {
     1.0f, -1.0f/3, 1.0f/5, -1.0f/7, 1.0f/9, -1.0f/11, 1.0f/13
 };
@@ -48,6 +47,7 @@ private:
     __aicore__ inline void CopyIn(int32_t progress);
     __aicore__ inline void CopyOut(int32_t progress);
     __aicore__ inline void Compute(int32_t progress);
+    __aicore__ inline void DoTaylor(LocalTensor<float>& p1, LocalTensor<float>& p2, LocalTensor<float>& p3, LocalTensor<float>& p4);
 
 private:
     TPipe pipe;
@@ -202,7 +202,7 @@ __aicore__ inline void Atan<T>::Compute(int32_t progress)
         Adds(xLocal_f, xLocal_f, CONST_PI_BY_FOUR, this->processDataNum);
         Min(p1, p1, xLocal_f, this->processDataNum);
         Mul(yLocal_f, p1, sign, this->processDataNum);        
-        Cast(yLocal, yLocal_f, RoundMode::CAST_RINT, this->processDataNum);
+        Cast(yLocal, yLocal_f, RoundMode::CAST_NONE, this->processDataNum);
     }
     else if constexpr (std::is_same_v<T, float>){
          // when x's value is too large the first caculator of _do_taylor will be overflow. when epsilon is 0.0001,

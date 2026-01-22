@@ -15,7 +15,8 @@
 
 #include "atan.h"
 
-extern "C" __global__ __aicore__ void atan(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+template <uint32_t schMode>
+__global__ __aicore__ void atan(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(AtanTilingData);
     GET_TILING_DATA_WITH_STRUCT(AtanTilingData, tilingData, tiling);
