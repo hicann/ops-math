@@ -91,6 +91,13 @@ public:
     }
 
 private:
+    template <AscendC::HardEvent hardEvent>
+    __aicore__ inline void PipeSync()
+    {
+        int32_t eventID = static_cast<int32_t>(GetTPipePtr()->FetchEventID(hardEvent));
+        AscendC::SetFlag<hardEvent>(eventID);
+        AscendC::WaitFlag<hardEvent>(eventID);
+    }
     __aicore__ inline void CopyInFinalAxeBigSize(int64_t curSrcStart, int64_t index, int64_t curHandleNum)
     {
         AscendC::LocalTensor<T1> srcLocal =
@@ -150,7 +157,7 @@ private:
         }
         
         uint16_t blockCount = curHandleNum / this->size;
-        AscendC::PipeBarrier<PIPE_ALL>();
+        PipeSync<AscendC::HardEvent::MTE2_MTE3>();
         //与padded后的size无重叠：non-overlap DataCopyPad自动连续搬
         if (this->step >= neededSpaceForOnePaddedSize / FP32_TYPESIZE){ 
             uint32_t srcStride = 0;
@@ -173,7 +180,7 @@ private:
                 AscendC::SetAtomicNone();
             }
         }
-        AscendC::PipeBarrier<PIPE_MTE3>();
+        PipeSync<AscendC::HardEvent::MTE3_S>();
         this->computeOutQueueDst.template FreeTensor(computeDstLocal);
     }
 
