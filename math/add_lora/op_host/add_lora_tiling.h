@@ -44,6 +44,7 @@ constexpr uint32_t MAX_RANK_SIZE = 128;
 constexpr uint32_t MAX_WEIGHT_NUM = 32;
 constexpr uint32_t MAX_LAYER_NUM = 32;
 constexpr uint32_t MAX_HIDDEN_SIZE = 131072;
+constexpr uint32_t BATCH_MODE = 1;
 
 namespace optiling {
 enum class TilingKeyInfo : int {

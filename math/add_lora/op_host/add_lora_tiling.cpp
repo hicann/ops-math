@@ -393,6 +393,7 @@ void AddLoraTiling::PrintTilingData()
 static ge::graphStatus AddLoraTilingFunc(gert::TilingContext* context)
 {
     AddLoraTiling tiling(context);
+    context->SetScheduleMode(BATCH_MODE);
     return tiling.DoTiling();
 }
 
