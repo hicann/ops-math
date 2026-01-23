@@ -130,6 +130,10 @@ static aclnnStatus GetWorkspaceSizeCommon(const aclTensor *self, const aclTensor
     return ACLNN_SUCCESS;
   }
 
+  if (self->GetStorageFormat() != Format::FORMAT_ND) {
+    OP_LOGW("Format only support ND");
+  }
+
   // 将输入self转换成连续的tensor
   auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
   CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);

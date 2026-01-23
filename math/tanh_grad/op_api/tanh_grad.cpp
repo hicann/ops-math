@@ -16,6 +16,7 @@
 #include "opdev/op_def.h"
 #include "opdev/op_dfx.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -32,7 +33,7 @@ static const std::initializer_list<op::DataType> ASCEND910B_AICORE_DTYPE_SUPPORT
 static bool IsAiCoreSupport(const aclTensor *gradOutput) {
   auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
   if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-      socVersion == SocVersion::ASCEND910_95) {
+      IsRegBase()) {
     return CheckType(gradOutput->GetDataType(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
   }
   return CheckType(gradOutput->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
@@ -61,7 +62,7 @@ static const aclTensor *TanhGradAICore(const aclTensor *gradOutput, const aclTen
 const aclTensor *TanhGrad(const aclTensor *gradOutput, const aclTensor *output, aclOpExecutor *executor) {
   op::Shape broadcastShape;
   op::DataType gradInputDtype;
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95 && IsAiCoreSupport(gradOutput) &&
+  if (IsRegBase() && IsAiCoreSupport(gradOutput) &&
       gradOutput->GetDataType() != output->GetDataType()) {
     gradInputDtype = op::DataType::DT_FLOAT;
   } else {

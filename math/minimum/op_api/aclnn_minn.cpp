@@ -15,6 +15,7 @@
 #include "opdev/op_dfx.h"
 #include "opdev/op_executor.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 #include "aclnn_kernels/common/op_error_check.h"
 
 using namespace op;
@@ -31,17 +32,17 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST =
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_INT8,
     op::DataType::DT_INT32,   op::DataType::DT_INT64, op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_INT8, op::DataType::DT_UINT8,
     op::DataType::DT_INT32,   op::DataType::DT_INT64, op::DataType::DT_BF16};
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion >= SocVersion::ASCEND910_95) {
-        return ASCEND910_95_DTYPE_SUPPORT_LIST;
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(curArch)) {
+        return REGBASE_DTYPE_SUPPORT_LIST;
     }
-    if (socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910E) {
+    if (curArch == NpuArch::DAV_2201) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_SUPPORT_LIST;
@@ -68,6 +69,12 @@ static inline bool CheckDtypeValid(const aclTensorList* tensors, const aclTensor
     const auto& DTYPE_SUPPORT_LIST = GetDtypeSupportList();
     for (uint64_t i = 0; i < tensors->Size(); i++) {
         OP_CHECK_DTYPE_NOT_SUPPORT((*tensors)[i], DTYPE_SUPPORT_LIST, return false);
+        // 检查Format
+        if((*tensors)[i]->GetStorageFormat() != Format::FORMAT_ND){
+            OP_LOGW("Format only support ND");
+        }
+        // self和out数据类型必须一样
+        OP_CHECK_DTYPE_NOT_SAME((*tensors)[i], out, return false);
     }
     OP_CHECK_DTYPE_NOT_SUPPORT(out, DTYPE_SUPPORT_LIST, return false);
     return true;
@@ -130,7 +137,6 @@ aclnnStatus aclnnMinNGetWorkspaceSize(
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
-
     // 固定写法，参数检查
     auto ret = CheckParams(tensors, out, workspaceSize);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);

@@ -18,6 +18,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/shape_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -33,28 +34,27 @@ static const std::initializer_list<DataType> ASCEND910B_AICORE_DTYPE_SUPPORT_LIS
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_INT32, DataType::DT_INT8, DataType::DT_UINT8,
     DataType::DT_INT64, DataType::DT_BF16, DataType::DT_COMPLEX64, DataType::DT_BOOL};
 
-static const std::initializer_list<DataType> ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<DataType> REGBASE_AICORE_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT,     DataType::DT_FLOAT16,   DataType::DT_BF16,  DataType::DT_INT32,
     DataType::DT_INT8,      DataType::DT_UINT8,     DataType::DT_INT64, ge::DT_INT16,
-    DataType::DT_COMPLEX32, DataType::DT_COMPLEX64, DataType::DT_BOOL, DataType::DT_DOUBLE};
+    DataType::DT_COMPLEX32, DataType::DT_COMPLEX64, DataType::DT_BOOL};
 
 static const std::initializer_list<DataType> ASCEND610LITE_AICORE_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_INT32, DataType::DT_INT8, DataType::DT_UINT8};
 
 static inline const std::initializer_list<DataType>& GetAiCoreDtypeSupportListBySocVersion() {
-  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  switch (socVersion) {
-    case SocVersion::ASCEND910B:
-    case SocVersion::ASCEND910_93: {
+  auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+  switch (curArch) {
+    case NpuArch::DAV_2201: {
       return ASCEND910B_AICORE_DTYPE_SUPPORT_LIST;
     }
-    case SocVersion::ASCEND910_95: {
-      return ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST;
+    case NpuArch::DAV_3510: {
+      return REGBASE_AICORE_DTYPE_SUPPORT_LIST;
     }
-    case SocVersion::ASCEND910: {
+    case NpuArch::DAV_1001: {
       return ASCEND910_AICORE_DTYPE_SUPPORT_LIST;
     }
-    case SocVersion::ASCEND610LITE: {
+    case NpuArch::DAV_3102: {
       return ASCEND610LITE_AICORE_DTYPE_SUPPORT_LIST;
     }
     default: {
@@ -63,14 +63,22 @@ static inline const std::initializer_list<DataType>& GetAiCoreDtypeSupportListBy
   }
 }
 
+bool IsDoubleSupport(const aclTensor *self, const aclTensor *other) {
+  if (IsRegBase() && self->GetDataType() == DataType::DT_DOUBLE && 
+      other->GetDataType() == DataType::DT_DOUBLE) {
+    return true;
+  }
+  return false;
+}
+
 // 根据芯片类型、dtype判断算子是否支持走AiCore
 inline static bool IsAiCoreSupport(const aclTensor *self) {
   return CheckType(self->GetDataType(), GetAiCoreDtypeSupportListBySocVersion());
 }
 
 bool IsMulSupportNonContiguous(const aclTensor* self, const aclTensor *other) {
-  bool isSupportNonContiguous = GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95;
-  return isSupportNonContiguous && IsAiCoreSupport(self) && IsAiCoreSupport(other);
+  bool isSupportNonContiguous = IsRegBase();
+  return isSupportNonContiguous && ((IsAiCoreSupport(self) && IsAiCoreSupport(other)) || IsDoubleSupport(self, other));
 }
 
 // AICORE算子kernel
@@ -106,7 +114,7 @@ const aclTensor *Mul(const aclTensor *self, const aclTensor *other, aclOpExecuto
 
   auto mulOut = isMixDataType ? executor->AllocTensor(broadcastShape, DataType::DT_FLOAT)
                               : executor->AllocTensor(broadcastShape, self->GetDataType());
-  if (isMixDataType || (IsAiCoreSupport(self) && IsAiCoreSupport(other))) {
+  if (isMixDataType || (IsAiCoreSupport(self) && IsAiCoreSupport(other)) || IsDoubleSupport(self, other)) {
     return MulAiCore(self, other, mulOut, executor);
   }
 

@@ -24,6 +24,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 
 
 using namespace op;
@@ -199,7 +200,7 @@ static inline bool IsFloatEqual(float a, float b)
 }
 
 static DataType InferTensorScalarDtype(const aclTensor* self, const aclScalar* other, const aclTensor* out) {
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+  if (IsRegBase()) {
     auto scalarDefaultDtype = GetScalarDefaultDtype(other->GetDataType());
     auto promoteType = CombineCategoriesWithComplex(self->GetDataType(), scalarDefaultDtype);
     if (promoteType == DataType::DT_FLOAT16 || promoteType == DataType::DT_BF16) {
@@ -231,7 +232,7 @@ static DataType InferTensorScalarDtype(const aclTensor* self, const aclScalar* o
 }
 
 inline static bool CheckMulsPromoteDtype(const aclTensor* self, const aclScalar* other, const aclTensor* out) {
-  if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+  if (!IsRegBase()) {
     return true;
   }
   auto inferDtype = InferTensorScalarDtype(self, other, out);
@@ -265,7 +266,7 @@ inline static bool CheckMulPromoteType(const aclTensor *self, const aclTensor *o
             ToString(self->GetDataType()).GetString(), ToString(other->GetDataType()).GetString());
     return false;
   }
-  if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+  if (!IsRegBase()) {
     // 检查推导后的数据类型能否转换为输出的数据类型
     OP_CHECK_RESULT_DTYPE_CAST_FAILED(promoteType, out->GetDataType(), return false);
   }
@@ -281,7 +282,7 @@ inline static bool CheckInplaceMulPromoteType(const aclTensor *selfRef, const ac
             ToString(selfRef->GetDataType()).GetString(), ToString(other->GetDataType()).GetString());
     return false;
   }
-  if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+  if (!IsRegBase()) {
     // 检查推导后的数据类型能否转换为输出的数据类型
     OP_CHECK_RESULT_DTYPE_CAST_FAILED(promoteType, selfRef->GetDataType(), return false);
   }
@@ -394,12 +395,11 @@ aclnnStatus aclnnMulsGetWorkspaceSize(const aclTensor *self, const aclScalar *ot
   CHECK_RET(selfWithStride != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
   const aclTensor* resTensor = nullptr;
-  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  bool canUseMuls = socVersion == SocVersion::ASCEND910_95 && 
+  bool canUseMuls = IsRegBase() && 
                     (self->GetDataType() == DataType::DT_BF16 ||
                      self->GetDataType() == DataType::DT_FLOAT16) &&
                     GetScalarDefaultDtype(other->GetDataType()) == DataType::DT_FLOAT;
-  canUseMuls = canUseMuls || (socVersion != SocVersion::ASCEND910_95 &&
+  canUseMuls = canUseMuls || (!IsRegBase() &&
                               self->GetDataType() == DataType::DT_BF16 &&
                               other->GetDataType() == DataType::DT_DOUBLE);
   if (canUseMuls) {
@@ -473,7 +473,7 @@ aclnnStatus aclnnMulGetWorkspaceSize(const aclTensor *self, const aclTensor *oth
   // 判断输入是否符合kernel支持的混合输入类型
   bool isMixDataType = IsMulMixDtypeSupport(self, other);
 
-  bool isSupportNonContiguous = GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95;
+  bool isSupportNonContiguous = IsRegBase();
   auto selfWithStride = uniqueExecutor.get()->CreateView(
       self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
   CHECK_RET(selfWithStride != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -565,12 +565,11 @@ aclnnStatus aclnnInplaceMulsGetWorkspaceSize(aclTensor *selfRef, const aclScalar
   CHECK_RET(selfRefContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
   const aclTensor* resTensor = nullptr;
-  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  bool canUseMuls = socVersion == SocVersion::ASCEND910_95 && 
+  bool canUseMuls = IsRegBase() && 
                     (selfRefContiguous->GetDataType() == DataType::DT_BF16 ||
                      selfRefContiguous->GetDataType() == DataType::DT_FLOAT16) &&
                     GetScalarDefaultDtype(other->GetDataType()) == DataType::DT_FLOAT;
-  canUseMuls = canUseMuls || (socVersion != SocVersion::ASCEND910_95 &&
+  canUseMuls = canUseMuls || (!IsRegBase() &&
                               selfRefContiguous->GetDataType() == DataType::DT_BF16 &&
                               other->GetDataType() == DataType::DT_DOUBLE);
   if (canUseMuls) {
@@ -633,7 +632,7 @@ aclnnStatus aclnnInplaceMulGetWorkspaceSize(aclTensor *selfRef, const aclTensor 
   bool isMixDataType = IsMulMixDtypeSupport(selfRefContiguous, otherContiguous);
 
   const aclTensor* resTensor = nullptr;
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95 && isMixDataType) {
+  if (IsRegBase() && isMixDataType) {
     resTensor = l0op::Mul(selfRefContiguous, otherContiguous, uniqueExecutor.get());
   } else {
     // 获取selfRef和other的隐式转换数据类型

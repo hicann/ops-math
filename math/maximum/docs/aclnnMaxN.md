@@ -1,12 +1,18 @@
 # aclnnMaxN
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/maximum)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>     |    √     |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
 
 ## 功能说明
 
@@ -30,13 +36,13 @@ $$
 
   - tensors(aclTensorList*, 计算输入)：Device侧的aclTensorList，tensors里面的tensor的shape需要互相满足[broadcast关系](../../../docs/zh/context/broadcast关系.md), tensors里面的tensor的dtype需要保持一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
 
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT8、INT32、INT64、BFLOAT16。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、INT8、UINT8、INT32、INT64、BFLOAT16。
+    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、INT8、INT32、INT64。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、INT8、INT32、INT64、BFLOAT16。
 
   - out(aclTensor*，计算输出)：Device侧的aclTensor，dtype需要和tensors中的tensor的dtype一致, shape需要是输入tensorlist中所有tensor broadcast之后的shape。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
 
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、INT8、INT32、INT64、BFLOAT16。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、INT8、UINT8、INT32、INT64、BFLOAT16。
+    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、INT8、INT32、INT64。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、INT8、INT32、INT64、BFLOAT16。
 
   - workspaceSize(uint64_t*, 出参)：返回用户需要在Device侧申请的workspace大小。
 
@@ -209,6 +215,7 @@ int main() {
   // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensorList(tensorList);
   aclDestroyTensor(out);
+
 
   // 7. 释放Device资源，需要根据具体API的接口定义修改
   aclrtFree(input1DeviceAddr);

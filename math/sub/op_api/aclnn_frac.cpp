@@ -25,6 +25,7 @@
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
 #include "opdev/tensor_view_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -65,7 +66,7 @@ static bool CheckIsAscend910BSocVersion()
     return (
         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95);
+        IsRegBase());
 }
 
 static bool CheckDtypeValid(const aclTensor* input, const aclTensor* out)

@@ -17,6 +17,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/op_dfx.h"
 #include "opdev/aicpu/aicpu_task.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 namespace l0op {
@@ -30,7 +31,7 @@ static const std::initializer_list<op::DataType> ASCEND610LITE_DTYPE_SUPPORT_LIS
     op::DataType::DT_FLOAT,   op::DataType::DT_INT32, op::DataType::DT_INT64,
     op::DataType::DT_FLOAT16, op::DataType::DT_INT8,  op::DataType::DT_UINT8};
 
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT64, op::DataType::DT_UINT64, op::DataType::DT_INT32,   op::DataType::DT_INT8,
     op::DataType::DT_UINT8, op::DataType::DT_FLOAT,  op::DataType::DT_FLOAT16, op::DataType::DT_BF16,
     op::DataType::DT_BOOL,  op::DataType::DT_DOUBLE};
@@ -38,11 +39,11 @@ static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static bool IsAiCoreSupport(const aclTensor* self)
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910_95) {
-        return CheckType(self->GetDataType(), ASCEND910_95_DTYPE_SUPPORT_LIST);
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
+        return CheckType(self->GetDataType(), REGBASE_DTYPE_SUPPORT_LIST);
     }
-    if (socVersion == SocVersion::ASCEND610LITE) {
+    if (npuArch == NpuArch::DAV_3102) {
         return CheckType(self->GetDataType(), ASCEND610LITE_DTYPE_SUPPORT_LIST);
     }
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);

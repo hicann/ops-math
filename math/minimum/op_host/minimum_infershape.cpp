@@ -12,17 +12,25 @@
  * \file minimum_infershape.cpp
  * \brief
  */
-
-#include "register/op_impl_registry.h"
 #include "infershape_broadcast_util.h"
+#include "register/op_impl_registry.h"
 #include "log/log.h"
 
 using namespace ge;
-
 namespace ops {
-static ge::graphStatus InferShapeForMinimum(gert::InferShapeContext* context)
+static ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context)
 {
-    return Ops::Base::InferShape4Broadcast(context);;
+    auto in_shape1 = context->GetInputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, in_shape1);
+    auto in_shape2 = context->GetInputShape(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, in_shape2);
+    auto out_shape = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, out_shape);
+    OP_CHECK_IF(
+        !Ops::Base::BroadcastShape(in_shape1, in_shape2, out_shape),
+        OP_LOGE(context->GetNodeName(), "cannot broadcast"), return ge::GRAPH_FAILED);
+
+    return ge::GRAPH_SUCCESS;
 }
-IMPL_OP_INFERSHAPE(Minimum).InferShape(InferShapeForMinimum);
+IMPL_OP_INFERSHAPE(Minimum).InferShape(InferShape4Broadcast);
 } // namespace ops

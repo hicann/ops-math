@@ -20,6 +20,7 @@
 #include "opdev/format_utils.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -37,7 +38,7 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST =
     op::DataType::DT_INT32,  op::DataType::DT_INT64, op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT,
     op::DataType::DT_DOUBLE, op::DataType::DT_BOOL,  op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT8,   op::DataType::DT_UINT8, op::DataType::DT_INT16,   op::DataType::DT_UINT16,
     op::DataType::DT_INT32,  op::DataType::DT_INT64, op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT,
     op::DataType::DT_DOUBLE, op::DataType::DT_BOOL,  op::DataType::DT_BF16,    op::DataType::DT_UINT64};
@@ -48,7 +49,7 @@ static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_910_LIST = {
     op::DataType::DT_UINT32,    op::DataType::DT_UINT64,    op::DataType::DT_BOOL,  op::DataType::DT_UINT16,
     op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
 
-static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_910_95_LIST = {
+static const std::initializer_list<op::DataType> REGBASE_OUT_DTYPE_SUPPORT_LIST  = {
     op::DataType::DT_FLOAT,     op::DataType::DT_INT32,      op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
     op::DataType::DT_INT16,     op::DataType::DT_INT8,       op::DataType::DT_UINT8, op::DataType::DT_DOUBLE,
     op::DataType::DT_UINT32,    op::DataType::DT_UINT64,     op::DataType::DT_BOOL,  op::DataType::DT_UINT16,
@@ -132,11 +133,11 @@ static bool HasEmptyTensor(const aclTensor* self)
 
 static inline const std::initializer_list<op::DataType>& GetDtypeSupportList()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion >= SocVersion::ASCEND910_95) {
-        return ASCEND910_95_DTYPE_SUPPORT_LIST;
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
+        return REGBASE_DTYPE_SUPPORT_LIST;
     }
-    if (socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910E) {
+    if (npuArch == NpuArch::DAV_2201) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_SUPPORT_LIST;
@@ -147,7 +148,7 @@ static inline const std::initializer_list<op::DataType>& GetOutputDtypeSupportLi
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     if (socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910E) {
-        return OUT_DTYPE_SUPPORT_910_95_LIST;
+        return REGBASE_OUT_DTYPE_SUPPORT_LIST ;
     }
     return OUT_DTYPE_SUPPORT_910_LIST;
 }
@@ -157,9 +158,10 @@ static bool CheckDtypeValid(const aclTensor* self, const aclScalar* other, const
     auto supportList = GetDtypeSupportList();
     OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
     OP_CHECK_DTYPE_NOT_SUPPORT(other, supportList, return false);
-    auto outSuportList = GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95 ?
-                             GetOutputDtypeSupportList() :
-                             supportList;
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    auto outSuportList = IsRegBase(npuArch) ?
+                         GetOutputDtypeSupportList() :
+                         supportList;
     op::DataType outType = out->GetDataType();
     if ((!CheckType(outType, outSuportList)) && (outType != DataType::DT_BOOL)) {
         OP_LOGE(
@@ -173,7 +175,8 @@ static bool CheckDtypeValid(const aclTensor* self, const aclScalar* other, const
 
 static DataType PromoteTypeScalar(const aclTensor* self, const aclScalar* other)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
         auto scalarDefaultDtype = GetScalarDefaultDtype(other->GetDataType());
         auto promoteType = CombineCategoriesWithComplex(self->GetDataType(), scalarDefaultDtype);
         return promoteType;
@@ -203,7 +206,8 @@ static bool CheckPromoteType(const aclTensor* self, const aclScalar* other, cons
     OP_CHECK_RESULT_DTYPE_CAST_FAILED(self->GetDataType(), promoteType, return false);
     OP_CHECK_RESULT_DTYPE_CAST_FAILED(other->GetDataType(), promoteType, return false);
 
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
         const auto& supportList = GetDtypeSupportList();
         if (!CheckType(promoteType, supportList)) {
             OP_LOGE(
@@ -276,7 +280,8 @@ static aclnnStatus aclnnLeScalarCommon(
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     auto promoteType = PromoteTypeScalar(self, other);
-    if (promoteType == DataType::DT_BOOL && GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (promoteType == DataType::DT_BOOL && !IsRegBase(npuArch)) {
         promoteType = DataType::DT_FLOAT;
     }
     // 将输入self的数据类型转换成隐式数据类型，根据具体算子语义按需调用

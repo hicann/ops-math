@@ -198,3 +198,45 @@ TEST_F(ModTilingTest, test_tiling_nhwc)
     bool success = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_TRUE(success);
 }
+
+// Test: mod tiling with int8
+TEST_F(ModTilingTest, test_tiling_int8)
+{
+    BroadcastCompileInfo compileInfo{};
+    gert::TilingContextPara tilingContextPara(
+        "Mod",
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT8, ge::FORMAT_ND},
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT8, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT8, ge::FORMAT_ND},
+        },
+        &compileInfo);
+
+    uint64_t expectTilingKey = 8;
+    string expectTilingData = "8192 34359738880 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+// Test: mod tiling with uint8
+TEST_F(ModTilingTest, test_tiling_uint8)
+{
+    BroadcastCompileInfo compileInfo{};
+    gert::TilingContextPara tilingContextPara(
+        "Mod",
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_UINT8, ge::FORMAT_ND},
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_UINT8, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_UINT8, ge::FORMAT_ND},
+        },
+        &compileInfo);
+
+    uint64_t expectTilingKey = 8;
+    string expectTilingData = "8192 34359738880 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}

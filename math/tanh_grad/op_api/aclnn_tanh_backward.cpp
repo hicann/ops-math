@@ -26,6 +26,7 @@
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -40,14 +41,13 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST =
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE, op::DataType::DT_BF16};
 
 static inline const std::initializer_list<op::DataType>& GetDtypeSupportListBySocVersion() {
-  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  switch (socVersion) {
-    case SocVersion::ASCEND910B:
-    case SocVersion::ASCEND910_93:
-    case SocVersion::ASCEND910_95: {
+  auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+  switch (curArch) {
+    case NpuArch::DAV_2201:
+    case NpuArch::DAV_3510: {
       return ASCEND910B_DTYPE_SUPPORT_LIST;
     }
-    case SocVersion::ASCEND910: {
+    case NpuArch::DAV_1001: {
       return ASCEND910_DTYPE_SUPPORT_LIST;
     }
     default: {
@@ -136,7 +136,7 @@ aclnnStatus aclnnTanhBackwardGetWorkspaceSize(const aclTensor *gradOutput, const
   CHECK_RET(outputContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
   const aclTensor* tanhBackwardOpOut = nullptr;
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+  if (IsRegBase()) {
     // 调用TanhGrad算子kernel
     auto tanhBackwardOpOutBeforeCast = l0op::TanhGrad(gradOutputContiguous, outputContiguous, uniqueExecutor.get());
     CHECK_RET(tanhBackwardOpOutBeforeCast != nullptr, ACLNN_ERR_INNER_NULLPTR);

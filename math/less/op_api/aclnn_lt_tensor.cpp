@@ -23,6 +23,7 @@
 #include "opdev/platform.h"
 #include "opdev/tensor_view_utils.h"
 #include "aclnn_lt_tensor.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -103,8 +104,8 @@ static inline const std::initializer_list<op::DataType>& GetOutDtypeSupportList(
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
     auto supportList = GetDtypeSupportList();
-    auto outSuportList =
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95 ? GetOutDtypeSupportList() : supportList;
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    auto outSuportList = IsRegBase(npuArch) ? GetOutDtypeSupportList() : supportList;
     // 检查self的数据类型是否在Less算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
 
@@ -128,7 +129,8 @@ static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, cons
     }
 
     // 检查promote后的数据类型是否在Less算子的支持列表内
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
         auto supportList = GetDtypeSupportList();
         if (!CheckType(promoteType, supportList)) {
             OP_LOGE(

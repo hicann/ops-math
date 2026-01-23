@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "gtest/gtest.h"
-#include "../../../op_api/aclnn_tanh_backward.h"
+#include "aclnn_tanh_backward.h"
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/op_api_ut.h"
@@ -46,6 +46,20 @@ TEST_F(l2_tanh_backward_test, normal_dtype_float16_format_nd)
     auto gradOutputDesc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto outputDesc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto outDesc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+
+    auto ut = OP_API_UT(aclnnTanhBackward, INPUT(gradOutputDesc, outputDesc), OUTPUT(outDesc));
+
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 正常场景_double_nd
+TEST_F(l2_tanh_backward_test, normal_dtype_double_format_nd)
+{
+    auto gradOutputDesc = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
+    auto outputDesc = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
 
     auto ut = OP_API_UT(aclnnTanhBackward, INPUT(gradOutputDesc, outputDesc), OUTPUT(outDesc));
 

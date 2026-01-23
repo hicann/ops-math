@@ -35,7 +35,7 @@ protected:
 private:
     ge::graphStatus CheckShape();
 
-    gert::TilingContext *tilingContext = nullptr;
+    gert::TilingContext *tilingContext;
     ge::DataType outputDtype;
 };
 

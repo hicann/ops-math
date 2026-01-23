@@ -15,7 +15,6 @@
  */
 
 #include "logical_or_tiling_arch35.h"
-#include <graph/utils/type_utils.h>
 #include "register/tilingdata_base.h"
 #include "register/op_impl_registry.h"
 #include "math/logical_or/op_kernel/arch35/logical_or_dag.h"

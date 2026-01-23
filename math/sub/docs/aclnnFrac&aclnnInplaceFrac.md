@@ -1,5 +1,7 @@
 # aclnnFrac&aclnnInplaceFrac
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/sub)
+
 ## 产品支持情况
 
 |产品             |  是否支持  |
@@ -7,6 +9,10 @@
 |  <term>Ascend 950PR/Ascend 950DT</term>   |     √    |
 |  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     √    |
 |  <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |     √    |
+|  <term>Atlas 200I/500 A2 推理产品</term>    |     ×    |
+|  <term>Atlas 推理系列产品</term>    |     ×    |
+|  <term>Atlas 训练系列产品</term>    |     √    |
+
 
 ## 功能说明
 
@@ -24,7 +30,7 @@
   - aclnnFrac和aclnnInplaceFrac实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
     - aclnnFrac：需新建一个输出张量对象存储计算结果。
     - aclnnInplaceFrac：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-  - 每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnFracGetWorkspaceSize”或者“aclnnInplaceFracGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnFrac”或者“aclnnInplaceFrac”接口执行计算。
+  - 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnFracGetWorkspaceSize”或者“aclnnInplaceFracGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnFrac”或者“aclnnInplaceFrac”接口执行计算。
 
     - `aclnnStatus aclnnFracGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
     - `aclnnStatus aclnnFrac(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
@@ -34,25 +40,25 @@
 ## aclnnFracGetWorkspaceSize
   - **参数说明**：
     - input(aclTensor*，计算输入):公式中的$input$，Device侧的aclTensor，shape支持0-8维，且input与out的shape需要一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。数据类型与out的数据类型一致。
-      - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、UINT8、INT8、INT16、INT32、INT64、BFLOAT16。
-      - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、UINT8、INT8、INT16、INT32、INT64、BFLOAT16。
+      - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、UINT8、INT8、INT16、INT32、INT64。
+      - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、UINT8、INT8、INT16、INT32、INT64、BFLOAT16。
     - out(aclTensor*，计算输出)：公式中的$out$，Device侧的aclTensor，shape支持0-8维，且input与out的shape需要一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。数据类型与out的数据类型一致。
-      - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、UINT8、INT8、INT16、INT32、INT64、BFLOAT16。
-      - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、UINT8、INT8、INT16、INT32、INT64、BFLOAT16。
+      - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、UINT8、INT8、INT16、INT32、INT64。
+      - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、UINT8、INT8、INT16、INT32、INT64、BFLOAT16。
     - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
     - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
 
   - **返回值**：
 
-    aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
     ```
     第一段接口完成入参校验，出现以下场景时报错：
     返回161001(ACLNN_ERR_PARAM_NULLPTR): 1. 传入的input或out是空指针。
     返回161002(ACLNN_ERR_PARAM_INVALID): 1. input或out的数据类型不在支持的范围之内。
-                                        1. input和out的shape不一致。
-                                        2. input和out的dtype不一致。
-                                        3. input或out的维数大于8。
+                                        2. input和out的shape不一致。
+                                        3. input和out的dtype不一致。
+                                        4. input或out的维数大于8。
     ```
 
 ## aclnnFrac
@@ -64,25 +70,25 @@
 
   - **返回值：**
 
-    aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceFracGetWorkspaceSize
   - **参数说明**：
     - inputRef(aclTensor*，计算输入)：Device侧的aclTensor，shape支持0-8维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-      - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、UINT8、INT8、INT16、INT32、INT64、BFLOAT16。
-      - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、UINT8、INT8、INT16、INT32、INT64、BFLOAT16。
+      - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、UINT8、INT8、INT16、INT32、INT64。
+      - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、UINT8、INT8、INT16、INT32、INT64、BFLOAT16。
     - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
     - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
 
   - **返回值**：
 
-    aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
   返回161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的inputRef是空指针。
   返回161002 (ACLNN_ERR_PARAM_INVALID)：1. inputRef的数据类型不在支持的范围之内。
-                                      1. inputRef的维数大于8。
+                                      2. inputRef的维数大于8。
   ```
 
 ## aclnnInplaceFrac
@@ -94,7 +100,7 @@
 
   - **返回值**：
 
-    aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -102,7 +108,7 @@
   - aclnnFrac&aclnnInplaceFrac默认确定性实现。
 
 ## 调用示例
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>

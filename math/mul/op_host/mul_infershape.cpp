@@ -14,17 +14,35 @@
  */
 
 #include "log/log.h"
-#include "register/op_impl_registry.h"
 #include "infershape_broadcast_util.h"
+#include "register/op_impl_registry.h"
 
 using namespace ge;
-
 namespace ops {
-static ge::graphStatus InferShapeForMul(gert::InferShapeContext* context) {
-  OP_LOGI("Begin InferShapeForMul");
-  return Ops::Base::InferShape4Broadcast(context);
+static std::string ShapeCannotBroadcastMsg(const gert::Shape& shape1, const gert::Shape& shape2) {
+  std::string res = "shape ";
+  res += Ops::Base::ToString(shape1);
+  res += " and ";
+  res += Ops::Base::ToString(shape2);
+  res += " cannot broadcast!";
+  return res;
 }
 
-IMPL_OP_INFERSHAPE(Mul).InferShape(InferShapeForMul);
+static ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context) {
+  auto in_shape1 = context->GetInputShape(0);
+  OP_CHECK_NULL_WITH_CONTEXT(context, in_shape1);
+  auto in_shape2 = context->GetInputShape(1);
+  OP_CHECK_NULL_WITH_CONTEXT(context, in_shape2);
+  auto out_shape = context->GetOutputShape(0);
+  OP_CHECK_NULL_WITH_CONTEXT(context, out_shape);
+
+  OP_CHECK_IF((!Ops::Base::BroadcastShape(in_shape1, in_shape2, out_shape)),
+           OP_LOGE(context->GetNodeName(), "%s", ShapeCannotBroadcastMsg(*in_shape2, *in_shape1).c_str()),
+           return ge::GRAPH_FAILED);
+
+  return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP_INFERSHAPE(Mul).InferShape(InferShape4Broadcast);
 
 }

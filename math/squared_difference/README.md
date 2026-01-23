@@ -63,6 +63,8 @@
     </tr>
   </tbody></table>
 
+- <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16。
+
 ## 调用说明
 
 | 调用方式 | 调用样例                                                                        | 说明                                                             |

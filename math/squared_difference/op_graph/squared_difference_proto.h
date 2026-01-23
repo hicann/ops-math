@@ -37,15 +37,11 @@ namespace ge {
 * Compatible with TensorFlow operator SquaredDifference.
 */
 REG_OP(SquaredDifference)
-    .INPUT(x1, TensorType({DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_INT32,
-                           DT_INT64, DT_COMPLEX64, DT_COMPLEX128}))
-    .INPUT(x2, TensorType({DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_INT32,
-                           DT_INT64, DT_COMPLEX64, DT_COMPLEX128}))
-    .OUTPUT(y, TensorType({DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_INT32,
-                           DT_INT64, DT_COMPLEX64, DT_COMPLEX128}))
+    .INPUT(x1, TensorType({DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_INT32, DT_INT64, DT_COMPLEX64, DT_COMPLEX128}))
+    .INPUT(x2, TensorType({DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_INT32, DT_INT64, DT_COMPLEX64, DT_COMPLEX128}))
+    .OUTPUT(y, TensorType({DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_INT32, DT_INT64, DT_COMPLEX64, DT_COMPLEX128}))
     .OP_END_FACTORY_REG(SquaredDifference)
 
 } // namespace ge
 
 #endif // OPS_OP_PROTO_INC_SQUARED_DIFFERENCE_H_
-

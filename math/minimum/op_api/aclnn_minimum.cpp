@@ -143,7 +143,7 @@ aclnnStatus aclnnMinimumGetWorkspaceSize(
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
-
+    
     // 固定写法，参数检查
     auto ret = CheckParams(self, other, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
@@ -156,6 +156,11 @@ aclnnStatus aclnnMinimumGetWorkspaceSize(
         return ACLNN_SUCCESS;
     }
 
+    // 检查Format
+    if(self->GetStorageFormat() != Format::FORMAT_ND){
+        OP_LOGW("Format only support ND");
+    }
+    
     // Minimum算子需要对self和other两个输入做隐式数据类型转换，根据具体算子语义按需调用
     auto promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
 

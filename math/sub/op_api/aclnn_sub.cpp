@@ -25,6 +25,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -49,10 +50,10 @@ extern "C" {
  */
 
 // 根据API定义，需要列出所能支持的所有dtype
-static const std::initializer_list<op::DataType> ASCEND910_95_AXPY_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> ARCH3510_AXPY_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> ASCEND910_95_AXPY_V2_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> ARCH3510_AXPY_V2_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_INT8};
 
 static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {
@@ -138,14 +139,13 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const ac
 
 static inline const std::initializer_list<op::DataType>& GetDtypeSupportListBySocVersion()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    switch (socVersion) {
-        case SocVersion::ASCEND910B:
-        case SocVersion::ASCEND910_93:
-        case SocVersion::ASCEND910_95: {
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    switch (curArch) {
+        case NpuArch::DAV_2201:
+        case NpuArch::DAV_3510: {
             return ASCEND910B_DTYPE_SUPPORT_LIST;
         }
-        case SocVersion::ASCEND910: {
+        case NpuArch::DAV_1001: {
             return ASCEND910_DTYPE_SUPPORT_LIST;
         }
         default: {
@@ -178,7 +178,7 @@ static inline bool IsFloatEqual(float a, float b)
 
 static inline bool IsEqualToOne(const op::DataType calcType, const aclScalar* alpha)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+    if (!IsRegBase()) {
         return !(alpha->ToFloat() > 1 || alpha->ToFloat() < 1);
     }
     if (IsComplexType(alpha->GetDataType()) || IsComplexType(calcType)) {
@@ -212,7 +212,7 @@ static bool CheckPromoteType(
     } else {
         OP_CHECK_RESULT_DTYPE_CAST_FAILED(DataType(alpha->GetDataType()), promoteType, return false);
     }
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    if (IsRegBase()) {
         OP_CHECK_RESULT_DTYPE_CAST_FAILED(selfDtype, promoteType, return false);
         OP_CHECK_RESULT_DTYPE_CAST_FAILED(otherDtype, promoteType, return false);
         const auto& supportList = GetDtypeSupportListBySocVersion();
@@ -265,16 +265,16 @@ static aclnnStatus CheckParams(
 
 static bool UseAxpy(const DataType promoteType, [[maybe_unused]] const aclScalar* alpha)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-        return CheckType(promoteType, ASCEND910_95_AXPY_DTYPE_SUPPORT_LIST);
+    if (IsRegBase()) {
+        return CheckType(promoteType, ARCH3510_AXPY_DTYPE_SUPPORT_LIST);
     }
     return CheckType(promoteType, AXPY_DTYPE_SUPPORT_LIST);
 }
 
 static bool UseAxpyV2(const DataType promoteType, [[maybe_unused]] const aclScalar* alpha)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-        return CheckType(promoteType, ASCEND910_95_AXPY_V2_DTYPE_SUPPORT_LIST);
+    if (IsRegBase()) {
+        return CheckType(promoteType, ARCH3510_AXPY_V2_DTYPE_SUPPORT_LIST);
     }
     return false;
 }
@@ -300,10 +300,9 @@ aclnnStatus aclnnSubGetWorkspaceSize(
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     // 混合数据类型场景类型推导，且alpha不为1时需进一步做数据类型提升
     auto promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
-    if (socVersion != SocVersion::ASCEND910_95 && (alpha->ToFloat() > 1 || alpha->ToFloat() < 1) &&
+    if (!IsRegBase() && (alpha->ToFloat() > 1 || alpha->ToFloat() < 1) &&
         IsFloatingType(promoteType)) {
         promoteType = promoteType == DataType::DT_DOUBLE ? DataType::DT_DOUBLE : DataType::DT_FLOAT;
     }
@@ -378,8 +377,7 @@ static bool CheckShapeScalar(const aclTensor* self, const aclTensor* out)
 static DataType PromoteTypeScalar(
     const aclTensor* self, const aclScalar* other, const aclScalar* alpha, const aclTensor* out)
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910_95) {
+    if (IsRegBase()) {
         auto otherDefaultDtype = GetScalarDefaultDtype(other->GetDataType());
         auto promoteType = CombineCategoriesWithComplex(self->GetDataType(), otherDefaultDtype);
         if (promoteType == op::DataType::DT_FLOAT16 || promoteType == op::DataType::DT_BF16) {

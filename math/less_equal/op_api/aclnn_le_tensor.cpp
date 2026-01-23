@@ -23,6 +23,7 @@
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -40,7 +41,7 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST =
     op::DataType::DT_INT32,  op::DataType::DT_INT64, op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT,
     op::DataType::DT_DOUBLE, op::DataType::DT_BOOL,  op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT8,   op::DataType::DT_UINT8, op::DataType::DT_INT16,   op::DataType::DT_UINT16,
     op::DataType::DT_INT32,  op::DataType::DT_INT64, op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT,
     op::DataType::DT_DOUBLE, op::DataType::DT_BOOL,  op::DataType::DT_BF16,    op::DataType::DT_UINT64};
@@ -51,7 +52,7 @@ static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_910_LIST = {
     op::DataType::DT_UINT32,    op::DataType::DT_UINT64,    op::DataType::DT_BOOL,  op::DataType::DT_UINT16,
     op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
 
-static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_910_95_LIST = {
+static const std::initializer_list<op::DataType> REGBASE_OUT_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT,     op::DataType::DT_INT32,      op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
     op::DataType::DT_INT16,     op::DataType::DT_INT8,       op::DataType::DT_UINT8, op::DataType::DT_DOUBLE,
     op::DataType::DT_UINT32,    op::DataType::DT_UINT64,     op::DataType::DT_BOOL,  op::DataType::DT_UINT16,
@@ -67,11 +68,11 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const ac
 
 static inline const std::initializer_list<op::DataType>& GetDtypeSupportList()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910_95) {
-        return ASCEND910_95_DTYPE_SUPPORT_LIST;
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
+        return REGBASE_DTYPE_SUPPORT_LIST;
     }
-    if (socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910E) {
+    if (npuArch == NpuArch::DAV_2201) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_SUPPORT_LIST;
@@ -80,9 +81,9 @@ static inline const std::initializer_list<op::DataType>& GetDtypeSupportList()
 
 static inline const std::initializer_list<op::DataType>& GetOutDtypeSupportList()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910E) {
-        return OUT_DTYPE_SUPPORT_910_95_LIST;
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch)) {
+        return REGBASE_OUT_DTYPE_SUPPORT_LIST;
     }
 
     return OUT_DTYPE_SUPPORT_910_LIST;
@@ -99,8 +100,8 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const
 
     // 检查out的数据类型是否在LessEqual算子的支持列表内
     op::DataType outType = out->GetDataType();
-    auto outSuportList =
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95 ? GetOutDtypeSupportList() : supportList;
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    auto outSuportList = IsRegBase(npuArch) ? GetOutDtypeSupportList() : supportList;
     if ((!CheckType(outType, outSuportList)) && (outType != DataType::DT_BOOL)) {
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID, "Out dtype %s should be in dtype support list [%s].",
@@ -120,7 +121,8 @@ static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, cons
             op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
         return false;
     }
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
         // 查看promoteType是否在inputList
         auto inputSupportList = GetDtypeSupportList();
         // 检查self的数据类型是否在LessEqual算子的支持列表内

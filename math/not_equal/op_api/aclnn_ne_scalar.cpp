@@ -20,6 +20,7 @@
 #include "opdev/format_utils.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -91,15 +92,15 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST =
   op::DataType::DT_INT16, op::DataType::DT_INT8, op::DataType::DT_UINT8, op::DataType::DT_BOOL,
   op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16};
 
-// 910_95相对于之前，增加了DT_UINT64
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {
+// 950相对于之前，增加了DT_UINT64
+static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
   op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
   op::DataType::DT_INT16, op::DataType::DT_INT8, op::DataType::DT_UINT8, op::DataType::DT_BOOL,
   op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16,
   op::DataType::DT_UINT64};
 
 // 列出output所支持的dtype
-// 除910B-910_95以外版本
+// 除910B-950以外版本
 static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_910_LIST = {
   op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
   op::DataType::DT_INT16, op::DataType::DT_INT8, op::DataType::DT_UINT8, op::DataType::DT_DOUBLE,
@@ -111,8 +112,8 @@ static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_910B_LIST = {
   op::DataType::DT_INT16, op::DataType::DT_INT8, op::DataType::DT_UINT8, op::DataType::DT_DOUBLE,
   op::DataType::DT_BOOL, op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16};
 
-// 910_95版本支持
-static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_910_95_LIST = {
+// 950版本支持
+static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_REGBASE_LIST = {
   op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
   op::DataType::DT_INT16, op::DataType::DT_INT8, op::DataType::DT_UINT8, op::DataType::DT_DOUBLE,
   op::DataType::DT_UINT32, op::DataType::DT_UINT64, op::DataType::DT_BOOL, op::DataType::DT_UINT16,
@@ -120,8 +121,8 @@ static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_910_95_LIST =
 
 static inline const std::initializer_list<op::DataType>& GetInputDtypeSupportList() {
   auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  if (socVersion == SocVersion::ASCEND910_95) {
-    return ASCEND910_95_DTYPE_SUPPORT_LIST;
+  if (IsRegBase()) {
+    return REGBASE_DTYPE_SUPPORT_LIST;
   }
   if (socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910E) {
     return ASCEND910B_DTYPE_SUPPORT_LIST;
@@ -131,8 +132,8 @@ static inline const std::initializer_list<op::DataType>& GetInputDtypeSupportLis
 
 static inline const std::initializer_list<op::DataType>& GetOutputDtypeSupportList() {
   auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  if (socVersion == SocVersion::ASCEND910_95){
-    return OUT_DTYPE_SUPPORT_910_95_LIST;
+  if (IsRegBase()){
+    return OUT_DTYPE_SUPPORT_REGBASE_LIST;
   }
   if (socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910E) {
     return OUT_DTYPE_SUPPORT_910B_LIST;
@@ -163,7 +164,7 @@ static bool CheckDtypeValid(const aclTensor* self, const aclScalar* other, const
 
   // 检查other的数据类型是否在支持列表内
   OP_CHECK_DTYPE_NOT_SUPPORT(other, inputSupportList, return false);
-  auto outSuportList = GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95? 
+  auto outSuportList = IsRegBase()? 
                        GetOutputDtypeSupportList() : inputSupportList;
 
   // 检查out的数据类型
@@ -173,8 +174,7 @@ static bool CheckDtypeValid(const aclTensor* self, const aclScalar* other, const
 }
 
 static inline op::DataType PromoteTypeScalar(op::DataType selfDtype, op::DataType otherDtype) {
-  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  if (socVersion == SocVersion::ASCEND910_95) {
+  if (IsRegBase()) {
     op::DataType promoteType;
     auto scalarDefaultDtype = GetScalarDefaultDtype(otherDtype);
     promoteType = CombineCategoriesWithComplex(selfDtype, scalarDefaultDtype);
@@ -207,7 +207,7 @@ static bool CheckPromoteType(const aclTensor* self, const aclScalar* other, cons
             op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
     return false;
   }
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+  if (IsRegBase()) {
     auto inputSupportList = GetInputDtypeSupportList();
     // 检查self的数据类型是否在NotEqual算子的支持列表内
     if (!CheckType(promoteType, inputSupportList)) {

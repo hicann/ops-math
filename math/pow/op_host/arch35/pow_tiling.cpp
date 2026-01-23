@@ -15,6 +15,7 @@
 
 #include "pow_tiling_arch35.h"
 #include "op_host/tiling_templates_registry.h"
+#include "op_host/tiling_util.h"
 #include "op_host/util/platform_util.h"
 
 namespace optiling {
@@ -51,10 +52,7 @@ static ge::graphStatus TilingPrepareForPow(gert::TilingParseContext* context)
         OP_LOGE(
             context->GetNodeName(), "Get ub size failed, ub size: %u", static_cast<uint32_t>(compileInfo->ubSize)),
         return ge::GRAPH_FAILED);
-    compileInfo->isRegBase = (ascendcPlatform.GetSocVersion() == platform_ascendc::SocVersion::ASCEND910_95 ||
-                                ascendcPlatform.GetSocVersion() == platform_ascendc::SocVersion::MC62CM12A) ?
-                                    true :
-                                    false;
+    compileInfo->isRegBase = Ops::Math::OpTiling::IsRegbaseSocVersion(context);
     compileInfo->blockSize = Ops::Base::GetUbBlockSize(context);
     compileInfo->vectorLength = Ops::Base::GetVRegSize(context);
     OP_LOGD(context->GetNodeName(), "TilingPrepare4Pow exit.");

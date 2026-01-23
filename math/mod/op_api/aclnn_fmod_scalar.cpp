@@ -13,6 +13,7 @@
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn/aclnn_base.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/shape_utils.h"
@@ -40,11 +41,10 @@ static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-        socVersion == SocVersion::ASCEND910_95) {
+        IsRegBase()) {
         return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
-    } else {
-        return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
     }
+    return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
 }
 
 static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const aclTensor* out)
@@ -130,8 +130,7 @@ static op::DataType GetScalarDefaultDtype(const op::DataType input)
 
 static DataType PromoteTypeScalar(const op::DataType selfDtype, const op::DataType otherDtype)
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910_95) {
+    if (IsRegBase()) {
         auto otherDefaultDtype = GetScalarDefaultDtype(otherDtype);
         auto promoteType = CombineCategoriesWithComplex(selfDtype, otherDefaultDtype);
         return promoteType;

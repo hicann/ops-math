@@ -162,6 +162,32 @@ TEST_F(l2_logical_and_test, aclnnLogicalAnd_1_1_16_129_int8_hwcn_32_32_16_1_int8
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
+TEST_F(l2_logical_and_test, aclnnLogicalAnd_64_31_31_16_uint8_nhwc_64_31_1_1_uint8_nhwc_testcase009)
+{
+    // left input
+    const vector<int64_t>& selfShape = {64, 31, 31, 16};
+    aclDataType selfDtype = ACL_UINT8;
+    aclFormat selfFormat = ACL_FORMAT_NHWC;
+    // right input
+    const vector<int64_t>& otherShape = {64, 31, 1, 1};
+    aclDataType otherDtype = ACL_UINT8;
+    aclFormat otherFormat = ACL_FORMAT_NHWC;
+    // output
+    const vector<int64_t>& outShape = {64, 31, 31, 16};
+    aclDataType outDtype = ACL_UINT8;
+    aclFormat outFormat = ACL_FORMAT_NHWC;
+
+    auto selfTensorDesc = TensorDesc(selfShape, selfDtype, selfFormat);
+    auto otherTensorDesc = TensorDesc(otherShape, otherDtype, otherFormat);
+    auto outTensorDesc = TensorDesc(outShape, outDtype, outFormat).Precision(0.001, 0.001);
+
+    auto ut = OP_API_UT(aclnnLogicalAnd, INPUT(selfTensorDesc, otherTensorDesc), OUTPUT(outTensorDesc));
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
 TEST_F(l2_logical_and_test, aclnnLogicalAnd_23_71_16_5_1_bool_nd_1_1_16_5_23_bool_nd_testcase010)
 {
     // left input
@@ -188,6 +214,32 @@ TEST_F(l2_logical_and_test, aclnnLogicalAnd_23_71_16_5_1_bool_nd_1_1_16_5_23_boo
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
+TEST_F(l2_logical_and_test, aclnnLogicalAnd_64_31_31_16_uint8_nhwc_64_31_1_1_uint8_nhwc_float16_testcase013)
+{
+    // left input
+    const vector<int64_t>& selfShape = {64, 31, 31, 16};
+    aclDataType selfDtype = ACL_UINT8;
+    aclFormat selfFormat = ACL_FORMAT_NHWC;
+    // right input
+    const vector<int64_t>& otherShape = {64, 31, 1, 1};
+    aclDataType otherDtype = ACL_UINT8;
+    aclFormat otherFormat = ACL_FORMAT_NHWC;
+    // output
+    const vector<int64_t>& outShape = {64, 31, 31, 16};
+    aclDataType outDtype = ACL_FLOAT16;
+    aclFormat outFormat = ACL_FORMAT_NHWC;
+
+    auto selfTensorDesc = TensorDesc(selfShape, selfDtype, selfFormat);
+    auto otherTensorDesc = TensorDesc(otherShape, otherDtype, otherFormat);
+    auto outTensorDesc = TensorDesc(outShape, outDtype, outFormat).Precision(0.001, 0.001);
+
+    auto ut = OP_API_UT(aclnnLogicalAnd, INPUT(selfTensorDesc, otherTensorDesc), OUTPUT(outTensorDesc));
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
 TEST_F(l2_logical_and_test, aclnnLogicalAnd_1_1_16_129_int8_hwcn_32_32_16_1_int8_hwcn_int32_testcase014)
 {
     // left input
@@ -206,6 +258,32 @@ TEST_F(l2_logical_and_test, aclnnLogicalAnd_1_1_16_129_int8_hwcn_32_32_16_1_int8
     auto selfTensorDesc = TensorDesc(selfShape, selfDtype, selfFormat);
     auto otherTensorDesc = TensorDesc(otherShape, otherDtype, otherFormat);
     auto outTensorDesc = TensorDesc(outShape, outDtype, outFormat);
+
+    auto ut = OP_API_UT(aclnnLogicalAnd, INPUT(selfTensorDesc, otherTensorDesc), OUTPUT(outTensorDesc));
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspaceSize = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(l2_logical_and_test, aclnnLogicalAnd_1_5_1_16_129_int16_ndhwc_32_5_32_16_1_int32_ndhwc_float32_testcase015)
+{
+    // left input
+    const vector<int64_t>& selfShape = {1, 5, 1, 16, 129};
+    aclDataType selfDtype = ACL_INT16;
+    aclFormat selfFormat = ACL_FORMAT_NDHWC;
+    // right input
+    const vector<int64_t>& otherShape = {32, 5, 32, 16, 1};
+    aclDataType otherDtype = ACL_INT32;
+    aclFormat otherFormat = ACL_FORMAT_NDHWC;
+    // output
+    const vector<int64_t>& outShape = {32, 5, 32, 16, 129};
+    aclDataType outDtype = ACL_FLOAT;
+    aclFormat outFormat = ACL_FORMAT_NDHWC;
+
+    auto selfTensorDesc = TensorDesc(selfShape, selfDtype, selfFormat);
+    auto otherTensorDesc = TensorDesc(otherShape, otherDtype, otherFormat);
+    auto outTensorDesc = TensorDesc(outShape, outDtype, outFormat).Precision(0.0001, 0.0001);
 
     auto ut = OP_API_UT(aclnnLogicalAnd, INPUT(selfTensorDesc, otherTensorDesc), OUTPUT(outTensorDesc));
     // SAMPLE: only test GetWorkspaceSize

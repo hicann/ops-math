@@ -69,6 +69,8 @@ TEST_F(l2_rsub_test, case_self_null_tensor)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+
+    // ut.TestPrecision();
 }
 
 TEST_F(l2_rsub_test, case_other_null_tensor)
@@ -83,6 +85,8 @@ TEST_F(l2_rsub_test, case_other_null_tensor)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+
+    // ut.TestPrecision();
 }
 
 TEST_F(l2_rsub_test, case_dim1_float_nd)
@@ -97,6 +101,8 @@ TEST_F(l2_rsub_test, case_dim1_float_nd)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+
+    // ut.TestPrecision();
 }
 
 TEST_F(l2_rsub_test, case_dim2_float16_nd)
@@ -111,7 +117,23 @@ TEST_F(l2_rsub_test, case_dim2_float16_nd)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+
+    // ut.TestPrecision();
 }
+
+// TEST_F(l2_rsub_test, case_dim3_double_nd)
+// {
+//     auto selfDesc = TensorDesc({2, 2, 2}, ACL_DOUBLE, ACL_FORMAT_ND);
+//     auto otherDesc = TensorDesc({2, 2, 2}, ACL_DOUBLE, ACL_FORMAT_ND);
+//     auto alphaDesc = ScalarDesc(2.4);
+//     auto outDesc = TensorDesc({2, 2, 2}, ACL_DOUBLE, ACL_FORMAT_ND).Precision(0.001, 0.001);
+
+//     auto ut = OP_API_UT(aclnnRsub, INPUT(selfDesc, otherDesc, alphaDesc), OUTPUT(outDesc));
+
+//     uint64_t workspaceSize = 0;
+//     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+//     EXPECT_EQ(aclRet, ACL_SUCCESS);
+// }
 
 TEST_F(l2_rsub_test, case_dim4_uint8_nchw)
 {
@@ -125,6 +147,8 @@ TEST_F(l2_rsub_test, case_dim4_uint8_nchw)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+
+    // ut.TestPrecision();
 }
 
 TEST_F(l2_rsub_test, case_dim4_int8_nhwc)
@@ -139,7 +163,23 @@ TEST_F(l2_rsub_test, case_dim4_int8_nhwc)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+
+    // ut.TestPrecision();
 }
+
+// TEST_F(l2_rsub_test, case_dim4_int16_hwcn)
+// {
+//     auto selfDesc = TensorDesc({2, 3, 4, 5}, ACL_INT16, ACL_FORMAT_HWCN).ValueRange(-10, 10);
+//     auto otherDesc = TensorDesc({2, 3, 4, 5}, ACL_INT16, ACL_FORMAT_HWCN).ValueRange(-10, 10);
+//     auto alphaDesc = ScalarDesc(static_cast<int16_t>(2));
+//     auto outDesc = TensorDesc({2, 3, 4, 5}, ACL_INT16, ACL_FORMAT_HWCN).Precision(0.001, 0.001);
+
+//     auto ut = OP_API_UT(aclnnRsub, INPUT(selfDesc, otherDesc, alphaDesc), OUTPUT(outDesc));
+
+//     uint64_t workspaceSize = 0;
+//     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+//     EXPECT_EQ(aclRet, ACL_SUCCESS);
+// }
 
 TEST_F(l2_rsub_test, case_dim5_int32_ndhwc)
 {
@@ -153,6 +193,8 @@ TEST_F(l2_rsub_test, case_dim5_int32_ndhwc)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+
+    // ut.TestPrecision();
 }
 
 TEST_F(l2_rsub_test, case_dim5_int64_ncdhw)
@@ -167,6 +209,8 @@ TEST_F(l2_rsub_test, case_dim5_int64_ncdhw)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+
+    // ut.TestPrecision();
 }
 
 TEST_F(l2_rsub_test, case_dim6_complex64_nd)
@@ -183,6 +227,20 @@ TEST_F(l2_rsub_test, case_dim6_complex64_nd)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
+// TEST_F(l2_rsub_test, case_dim7_complex128_nd)
+// {
+//     auto selfDesc = TensorDesc({2, 3, 4, 6, 1, 5, 1}, ACL_COMPLEX128, ACL_FORMAT_ND).ValueRange(-5, 5);
+//     auto otherDesc = TensorDesc({2, 3, 4, 6, 1, 5, 1}, ACL_COMPLEX128, ACL_FORMAT_ND).ValueRange(-5, 5);
+//     auto alphaDesc = ScalarDesc(2.1);
+//     auto outDesc = TensorDesc({2, 3, 4, 6, 1, 5, 1}, ACL_COMPLEX128, ACL_FORMAT_ND).Precision(0.001, 0.001);
+
+//     auto ut = OP_API_UT(aclnnRsub, INPUT(selfDesc, otherDesc, alphaDesc), OUTPUT(outDesc));
+
+//     uint64_t workspaceSize = 0;
+//     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+//     EXPECT_EQ(aclRet, ACL_SUCCESS);
+// }
+
 TEST_F(l2_rsub_test, case_dim8_float_nd)
 {
     auto selfDesc = TensorDesc({2, 3, 4, 6, 1, 5, 1, 2}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
@@ -195,6 +253,8 @@ TEST_F(l2_rsub_test, case_dim8_float_nd)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+
+    // ut.TestPrecision();
 }
 
 TEST_F(l2_rsub_test, case_error_self_shape)
@@ -321,7 +381,37 @@ TEST_F(l2_rsub_test, case_alpha_is_1)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+
+    // ut.TestPrecision();
 }
+
+// TEST_F(l2_rsub_test, case_diff_dtype)
+// {
+//     auto selfDesc = TensorDesc({2}, ACL_FLOAT, ACL_FORMAT_ND);
+//     auto otherDesc = TensorDesc({2}, ACL_FLOAT, ACL_FORMAT_ND);
+//     auto alphaDesc = ScalarDesc(1.2f);
+//     auto outDesc = TensorDesc({2}, ACL_DOUBLE, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+
+//     auto ut = OP_API_UT(aclnnRsub, INPUT(selfDesc, otherDesc, alphaDesc), OUTPUT(outDesc));
+
+//     uint64_t workspaceSize = 0;
+//     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+//     EXPECT_EQ(aclRet, ACL_SUCCESS);
+// }
+
+// TEST_F(l2_rsub_test, case_not_contiguous)
+// {
+//     auto selfDesc = TensorDesc({3, 5, 6}, ACL_FLOAT, ACL_FORMAT_ND, {30, 1, 5}, 0, {3, 6, 5});
+//     auto otherDesc = TensorDesc({3, 5, 6}, ACL_FLOAT, ACL_FORMAT_ND, {30, 1, 5}, 0, {3, 6, 5});
+//     auto alphaDesc = ScalarDesc(1.2f);
+//     auto outDesc = TensorDesc({3, 5, 6}, ACL_DOUBLE, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+
+//     auto ut = OP_API_UT(aclnnRsub, INPUT(selfDesc, otherDesc, alphaDesc), OUTPUT(outDesc));
+
+//     uint64_t workspaceSize = 0;
+//     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+//     EXPECT_EQ(aclRet, ACL_SUCCESS);
+// }
 
 TEST_F(l2_rsub_test, Ascend910_9589_case_001)
 {
@@ -336,6 +426,9 @@ TEST_F(l2_rsub_test, Ascend910_9589_case_001)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+
+    // SAMPLE: precision simulate
+    // ut.TestPrecision();
 }
 
 TEST_F(l2_rsub_test, Ascend910_9589_case_002)
@@ -351,6 +444,9 @@ TEST_F(l2_rsub_test, Ascend910_9589_case_002)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+
+    // SAMPLE: precision simulate
+    // ut.TestPrecision();
 }
 
 TEST_F(l2_rsub_test, Ascend910_9589_case_003)
@@ -366,4 +462,7 @@ TEST_F(l2_rsub_test, Ascend910_9589_case_003)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+
+    // SAMPLE: precision simulate
+    // ut.TestPrecision();
 }

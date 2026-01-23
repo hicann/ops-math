@@ -147,11 +147,16 @@ aclnnStatus aclnnMaximumGetWorkspaceSize(
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
-
+    
     // 固定写法，参数检查
     auto ret = CheckParams(self, other, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
+    // 检查Format
+    if(self->GetStorageFormat() != Format::FORMAT_ND){
+        OP_LOGW("Format only support ND");
+    }
+    
     // Maximum算子的空tensor在kernel中支持，对标竞品根据算子实际情况补充
     if (self->IsEmpty() || other->IsEmpty()) {
         // 根据实际支持情况补充

@@ -93,4 +93,22 @@ TEST_F(Mul, mul_infershape_case_0)
 
     // 简化后的函数调用
     ExeTestCase({expectResult}, inputShapes, dtypes, outStorageShape, ge::GRAPH_SUCCESS);
-} 
+}
+
+TEST_F(Mul, mul_infershape_case_1)
+{
+    // 用vector存储同类型参数（顺序与原参数列表一致）
+    std::vector<gert::StorageShape> inputShapes = {
+        {{8, 2}, {8, 2}}, {{8, 8}, {8, 8}}
+    };
+    std::vector<ge::DataType> dtypes = {
+        ge::DT_FLOAT16,  // input1Dtype
+        ge::DT_FLOAT16
+    };
+
+    std::vector<int64_t> expectResult = {8, 2};
+    gert::StorageShape outStorageShape = {};
+
+    // 简化后的函数调用
+    ExeTestCase({expectResult}, inputShapes, dtypes, outStorageShape, ge::GRAPH_FAILED);
+}

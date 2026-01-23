@@ -23,6 +23,7 @@
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
 #include "opdev/tensor_view_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -368,7 +369,8 @@ aclnnStatus aclnnLtScalarGetWorkspaceSize(
     const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnLtScalar, DFX_IN(self, other), DFX_OUT(out));
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
         return aclnnLtScalarGetWorkspaceSizeV35(self, other, out, workspaceSize, executor);
     }
 

@@ -17,6 +17,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/op_dfx.h"
 #include "opdev/aicpu/aicpu_task.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 namespace l0op {
@@ -35,7 +36,7 @@ static bool IsAiCoreSupport(const aclTensor* self)
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-        socVersion == SocVersion::ASCEND910_95) {
+        IsRegBase()) {
         return CheckType(self->GetDataType(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
     }
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);

@@ -22,6 +22,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
 #include "opdev/op_log.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -60,7 +61,7 @@ static inline bool CheckDtypeValid(const aclTensor* self, const aclTensor* out) 
   auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
   bool isASCEND910BorASCEND910_93 = (socVersion == SocVersion::ASCEND910B ||
                                      socVersion == SocVersion::ASCEND910_93 ||
-                                     socVersion == SocVersion::ASCEND910_95);
+                                     IsRegBase());
   if (isASCEND910BorASCEND910_93) {
       OP_CHECK_DTYPE_NOT_SUPPORT(self, ASCEND910B_DTYPE_SUPPORT_LIST, return false);
   } else {
@@ -82,7 +83,7 @@ static inline bool CheckInplaceDtypeValid(const aclTensor* self, const aclTensor
   auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
   bool isASCEND910BorASCEND910_93 = (socVersion == SocVersion::ASCEND910B ||
                                      socVersion == SocVersion::ASCEND910_93 ||
-                                     socVersion == SocVersion::ASCEND910_95);
+                                     IsRegBase());
   if (isASCEND910BorASCEND910_93) {
       OP_CHECK_DTYPE_NOT_SUPPORT(self, INPLACE_ASCEND910B_DTYPE_SUPPORT_LIST, return false);
   } else {

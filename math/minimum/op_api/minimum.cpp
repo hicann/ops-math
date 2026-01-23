@@ -16,6 +16,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -37,7 +38,7 @@ static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST
 static bool IsAiCoreSupport(const aclTensor* self)
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910_95) {
+    if (IsRegBase()) {
         return CheckType(self->GetDataType(), ASCEND910_95_DTYPE_SUPPORT_LIST);
     }
     if (socVersion == SocVersion::ASCEND610LITE) {

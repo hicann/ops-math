@@ -13,8 +13,8 @@
  * \brief
  */
 
-#ifndef _MULS_TILINGDATA_
-#define _MULS_TILINGDATA_
+#ifndef _FILLS_TILINGDATA_
+#define _FILLS_TILINGDATA_
 
 #include "atvoss/elewise/elewise_base_struct.h"
 
@@ -26,4 +26,4 @@ struct MulsTilingData {
 };
 
 
-#endif // _MULS_TILINGDATA_
+#endif // _FILLS_TILINGDATA_

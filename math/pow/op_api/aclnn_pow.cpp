@@ -16,6 +16,7 @@
 #include "math/square/op_api/square.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 #include "aclnn/aclnn_base.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -161,7 +162,7 @@ static inline bool isFloatType(const DataType type) {
 
 static inline op::DataType InferTensorScalarDtype(const aclTensor *self, const aclScalar* exponent,
                                                   const aclTensor *out) {
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+  if (IsRegBase()) {
     auto scalarDefaultDtype = GetScalarDefaultDtype(exponent->GetDataType());
     auto promoteType = CombineCategoriesWithComplex(self->GetDataType(), scalarDefaultDtype);
     if (promoteType == DataType::DT_COMPLEX32) {
@@ -183,7 +184,7 @@ static inline op::DataType InferTensorScalarDtype(const aclTensor *self, const a
 
 static inline op::DataType InferScalarTensorDtype(const aclScalar *self, const aclTensor* exponent,
                                                   const aclTensor *out) {
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+  if (IsRegBase()) {
     auto scalarDefaultDtype = GetScalarDefaultDtype(self->GetDataType());
     auto promoteType = CombineCategoriesWithComplex(exponent->GetDataType(), scalarDefaultDtype);
     if (promoteType == DataType::DT_COMPLEX32) {
@@ -384,9 +385,8 @@ aclnnStatus aclnnPowTensorScalarGetWorkspaceSize(const aclTensor *self,
     uniqueExecutor.ReleaseTo(executor);
     return ACLNN_SUCCESS;
   }
-  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
   auto promoteType = InferTensorScalarDtype(self, exponent, out);
-  if (socVersion == SocVersion::ASCEND910_95) {
+  if (IsRegBase()) {
     // promoteType为整形的情况，exponent需要大于0
     CHECK_RET(CheckPowTensorScalarExponet(promoteType, exponent), ACLNN_ERR_PARAM_INVALID);
 
@@ -403,8 +403,8 @@ aclnnStatus aclnnPowTensorScalarGetWorkspaceSize(const aclTensor *self,
   aclTensor* powOut = nullptr;
   bool canUseSquare = 
       static_cast<float>(exponent->ToFloat()) == SQUARE_EXP &&
-      (socVersion != SocVersion::ASCEND910_95 ||
-       (socVersion == SocVersion::ASCEND910_95 && (selfCast->GetDataType() == op::DataType::DT_FLOAT ||
+      (!IsRegBase() ||
+       (IsRegBase() && (selfCast->GetDataType() == op::DataType::DT_FLOAT ||
                                                    selfCast->GetDataType() == op::DataType::DT_BF16 ||
                                                    selfCast->GetDataType() == op::DataType::DT_FLOAT16 ||
                                                    selfCast->GetDataType() == op::DataType::DT_INT64)));
@@ -489,7 +489,7 @@ aclnnStatus aclnnPowScalarTensorGetWorkspaceSize(const aclScalar *self,
   }
 
   // fill(1) 分支
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95 &&
+  if (IsRegBase() &&
       static_cast<float>(self->ToFloat()) == 1.0 &&
       !IsComplexType(exponent->GetDataType()) && !IsComplexType(out->GetDataType())) {
     FVector<int64_t> shape;
