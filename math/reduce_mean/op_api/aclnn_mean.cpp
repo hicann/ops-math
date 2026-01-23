@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "aclnn_mean.h"
 #include "reduce_mean.h"
@@ -63,6 +63,9 @@ static const std::initializer_list<op::DataType> EMPTY_INPUT_DTYPE_SUPPORT_LIST 
     op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_INT64,     op::DataType::DT_FLOAT16,
     op::DataType::DT_INT16, op::DataType::DT_INT8,  op::DataType::DT_UINT8,     op::DataType::DT_DOUBLE,
     op::DataType::DT_BF16,  op::DataType::DT_BOOL};
+
+static const std::initializer_list<op::DataType> NON_CONTIOUS_SUPPORT_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT};
 
 static inline const std::initializer_list<op::DataType>& GetDtypeSupportList() {
   if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
@@ -203,6 +206,21 @@ static aclnnStatus FillScalar(aclTensor *out, float val, aclOpExecutor *executor
     return ACLNN_SUCCESS;
 }
 
+static bool IsNonContiguousSupport(const aclTensor* self, DataType dtype, const aclIntArray *dim)
+{
+    if (!IsRegBase()) {
+        return false;
+    }
+    if(!CheckType(self->GetDataType(), NON_CONTIOUS_SUPPORT_DTYPE_SUPPORT_LIST) &&
+        self->GetDataType() != dtype) {
+        return false;
+    }
+    if (!op::IsReduceNonContiguousSupport(self, dim)) {
+        return false;
+    }
+    return true;
+}
+
 aclnnStatus aclnnMeanGetWorkspaceSize(const aclTensor *self, const aclIntArray *dim, bool keepDim, aclDataType dtype,
                                       aclTensor *out, uint64_t* workspaceSize, aclOpExecutor **executor) {
     L2_DFX_PHASE_1(aclnnMean, DFX_IN(self, dim, keepDim, dtype), DFX_OUT(out));
@@ -223,27 +241,40 @@ aclnnStatus aclnnMeanGetWorkspaceSize(const aclTensor *self, const aclIntArray *
         return ret;
     }
 
-    // 将输入self转换成连续的tensor
-    auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
-    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    if(IsNonContiguousSupport(self, op::ToOpDataType(dtype), dim)) {
+        OP_LOGD("Enter NonContigous");
+        auto selfContiguous = uniqueExecutor.get()->CreateView(
+            self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
 
-    // 将输入self的数据类型转换成目标数据类型,
-    auto selfCasted = l0op::Cast(selfContiguous, op::ToOpDataType(dtype), uniqueExecutor.get());
-    CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto meanOpOut = l0op::ReduceMean(selfContiguous, dim, keepDim, uniqueExecutor.get());
+        CHECK_RET(meanOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        CHECK_RET(CheckShapeAndScalarSame(meanOpOut, out), ACLNN_ERR_PARAM_INVALID);
+        auto castMeanOut = l0op::Cast(meanOpOut, out->GetDataType(), uniqueExecutor.get());
+        CHECK_RET(castMeanOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto viewCopyResult = l0op::ViewCopy(castMeanOut, out, uniqueExecutor.get());
+        CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    } else {
+        // 将输入self转换成连续的tensor
+        auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    // 调用mean算子kernel
-    auto meanOpOut = l0op::ReduceMean(selfCasted, dim, keepDim, uniqueExecutor.get());
-    CHECK_RET(meanOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_RET(CheckShapeAndScalarSame(meanOpOut, out), ACLNN_ERR_PARAM_INVALID);
+        // 将输入self的数据类型转换成目标数据类型,
+        auto selfCasted = l0op::Cast(selfContiguous, op::ToOpDataType(dtype), uniqueExecutor.get());
+        CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    // 将mean算子的输出转换成目标数据类型，
-    auto castMeanOut = l0op::Cast(meanOpOut, out->GetDataType(), uniqueExecutor.get());
-    CHECK_RET(castMeanOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        // 调用mean算子kernel
+        auto meanOpOut = l0op::ReduceMean(selfCasted, dim, keepDim, uniqueExecutor.get());
+        CHECK_RET(meanOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        CHECK_RET(CheckShapeAndScalarSame(meanOpOut, out), ACLNN_ERR_PARAM_INVALID);
 
-    // 将计算结果拷贝到输出out上，out可能是非连续的tensor
-    auto viewCopyResult = l0op::ViewCopy(castMeanOut, out, uniqueExecutor.get());
-    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        // 将mean算子的输出转换成目标数据类型，
+        auto castMeanOut = l0op::Cast(meanOpOut, out->GetDataType(), uniqueExecutor.get());
+        CHECK_RET(castMeanOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
+        // 将计算结果拷贝到输出out上，out可能是非连续的tensor
+        auto viewCopyResult = l0op::ViewCopy(castMeanOut, out, uniqueExecutor.get());
+        CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    }
     // 获取计算过程中需要使用的workspace大小
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(executor);  // 需要把 uniqueExecutor持有executor转移给executor
@@ -287,23 +318,37 @@ aclnnStatus aclnnMeanV2GetWorkspaceSize(const aclTensor *self, const aclIntArray
         return ACLNN_SUCCESS;
     }
 
-    // 将输入self转换成连续的tensor
-    auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
-    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    if(IsNonContiguousSupport(self, out->GetDataType(), dim)) {
+        OP_LOGD("Enter NonContigous");
+        auto selfContiguous = uniqueExecutor.get()->CreateView(
+                self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
 
-    // 调用mean算子kernel
-    auto meanOpOut = l0op::ReduceMean(selfContiguous, dim, keepDim, noopWithEmptyAxes, uniqueExecutor.get());
-    CHECK_RET(meanOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_RET(CheckShapeAndScalarSame(meanOpOut, out), ACLNN_ERR_PARAM_INVALID);
+        auto meanOpOut = l0op::ReduceMean(selfContiguous, dim, keepDim, noopWithEmptyAxes, uniqueExecutor.get());
+        CHECK_RET(meanOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        CHECK_RET(CheckShapeAndScalarSame(meanOpOut, out), ACLNN_ERR_PARAM_INVALID);
+        auto castMeanOut = l0op::Cast(meanOpOut, out->GetDataType(), uniqueExecutor.get());
+        CHECK_RET(castMeanOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto viewCopyResult = l0op::ViewCopy(castMeanOut, out, uniqueExecutor.get());
+        CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    } else {
+        OP_LOGD("Enter Contigous");
+        // 将输入self转换成连续的tensor
+        auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    // 将mean算子的输出转换成目标数据类型，
-    auto castMeanOut = l0op::Cast(meanOpOut, out->GetDataType(), uniqueExecutor.get());
-    CHECK_RET(castMeanOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        // 调用mean算子kernel
+        auto meanOpOut = l0op::ReduceMean(selfContiguous, dim, keepDim, noopWithEmptyAxes, uniqueExecutor.get());
+        CHECK_RET(meanOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        CHECK_RET(CheckShapeAndScalarSame(meanOpOut, out), ACLNN_ERR_PARAM_INVALID);
 
-    // 将计算结果拷贝到输出out上，out可能是非连续的tensor
-    auto viewCopyResult = l0op::ViewCopy(castMeanOut, out, uniqueExecutor.get());
-    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        // 将mean算子的输出转换成目标数据类型，
+        auto castMeanOut = l0op::Cast(meanOpOut, out->GetDataType(), uniqueExecutor.get());
+        CHECK_RET(castMeanOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
+        // 将计算结果拷贝到输出out上，out可能是非连续的tensor
+        auto viewCopyResult = l0op::ViewCopy(castMeanOut, out, uniqueExecutor.get());
+        CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    }
     // 获取计算过程中需要使用的workspace大小
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(executor);  // 需要把 uniqueExecutor持有executor转移给executor

@@ -19,6 +19,7 @@
 #include <set>
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "opdev/tensor_view_utils.h"
 
 #define OP_CONCAT(a, b) a##b
 
@@ -129,6 +130,55 @@ namespace op {
         ACLNN_ERR_PARAM_INVALID, "The tensor's shape[%s] is not equal with shape[%s].",
         op::ToString(t0Shape).GetString(), op::ToString(t1Shape).GetString());
     return false;
+}
+
+// 判断Tensor是否只是silce和stride_silce场景
+inline bool IsReduceNonContiguousSupport(const aclTensor* x, const aclIntArray* dims)
+{
+    constexpr int MAX_DIM_SUPPORT = 4;
+    constexpr int MIN_DIM_SUPPORT = 1;
+    if (!op::Validate(x)) { // 校验偏移是否越界
+        OP_LOGE(ACL_ERROR_INVALID_PARAM, "INvalid input tensor: %s", x->ToString().GetString());
+        return false;
+    }
+
+    auto viewShape = x->GetViewShape();
+    auto viewStrides = x->GetViewStrides();
+
+    if (viewShape.GetDimNum() > MAX_DIM_SUPPORT || viewShape.GetDimNum() < MIN_DIM_SUPPORT) { // 不支持大于4维和标量
+        OP_LOGD(" NonContiguous only Support 1<=dim<=4, but the current dimnum is %d", viewShape.GetDimNum());
+        return false;
+    }
+    bool allReduceAxisIsDimOne{true};
+    uint64_t size = 0;
+    aclGetIntArraySize(dims, &size);
+    for (size_t i = 0; i < size; i++) {
+        int64_t dim = (*dims)[i];
+        if (dim < 0) {
+            dim = dim + viewShape.GetDimNum();
+        }
+        if (viewShape.GetDim(dim) != 1) {
+            allReduceAxisIsDimOne = false;
+            break;
+        }
+    }
+    if (allReduceAxisIsDimOne) {    // 不支持非连续的纯搬运
+        OP_LOGD("NonContiguous not Support tensorMoving");
+        return false;
+    }
+
+    if(viewStrides[viewShape.GetDimNum() - 1] <= 0){
+        OP_LOGD("NonContiguous not Support strides <= 0");
+        return false;
+    }
+    for (int i = viewShape.GetDimNum() - 1; i > 0; i--) {
+        if ((viewShape[i] - 1) * viewStrides[i] >= viewStrides[i - 1]) {
+            OP_LOGD("as_stride,transpose NonContiguous not Support");
+            return false; // 不支持as_stride,transpose
+        }
+    }
+
+    return true;
 }
 
 static inline bool IsRegBase(NpuArch arch)

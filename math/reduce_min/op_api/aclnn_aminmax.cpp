@@ -22,7 +22,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
-#include "math/reduce_max/op_host/op_api/reduce_max.h"
+#include "math/reduce_max/op_api/reduce_max.h"
 #include "op_api/aclnn_check.h"
 
 using namespace op;
@@ -57,7 +57,7 @@ static inline bool CheckNotNull(const aclTensor *self, const aclIntArray *dim,
 static const std::initializer_list<DataType>& GetDtypeSupportList() {
   if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
       GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-      IsRegBase()) {
+	  IsRegBase()) {
     return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
   } else {
     return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;

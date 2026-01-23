@@ -10,7 +10,7 @@
 #include "aclnn_isin.h"
 #include "aclnn_kernels/contiguous.h"
 #include "equal.h"
-#include "math/reduce_any/op_host/op_api/reduce_any.h"
+#include "math/reduce_any/op_api/reduce_any.h"
 #include "math/logical_not/op_api/logical_not.h"
 #include "aclnn_kernels/cast.h"
 #include "conversion/fill/op_api/fill.h"

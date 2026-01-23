@@ -11,7 +11,7 @@
 #include "aclnn_logical_xor.h"
 #include "not_equal.h"
 #include "aclnn_kernels/cast.h"
-#include "../../reduce_any/op_host/op_api/reduce_any.h"
+#include "../../reduce_any/op_api/reduce_any.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn/aclnn_base.h"
 #include "aclnn_kernels/common/op_error_check.h"

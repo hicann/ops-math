@@ -9,7 +9,7 @@
  */
 #include "aclnn_multinomial.h"
 #include "multinomial_with_replacement.h"
-#include "math/reduce_sum_op/op_host/op_api/reduce_sum_op.h"
+#include "math/reduce_sum/op_api/reduce_sum_op.h"
 #include "math/abs/op_api/abs.h"
 #include "math/add/op_api/add.h"
 #include "math/sub/op_api/sub.h"

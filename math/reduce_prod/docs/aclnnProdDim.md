@@ -1,10 +1,17 @@
 # aclnnProdDim
 ## 产品支持情况
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/reduce_prod)
+
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
 
 ## 功能说明
 
@@ -22,7 +29,8 @@
 - **参数说明：**
 
   - self(aclTensor*, 计算输入)：Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BOOL、COMPLEX64、COMPLEX128、BFLOAT16。输入为空tensor时，输出类型不能是复数类型COMPLEX64和COMPLEX128。
+    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BOOL、COMPLEX64、COMPLEX128。输入为空tensor时，输出类型不能是复数类型COMPLEX64和COMPLEX128。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BOOL、COMPLEX64、COMPLEX128、BFLOAT16。输入为空tensor时，输出类型不能是复数类型COMPLEX64和COMPLEX128。
 
   - dim(int64_t, 计算输入): Host侧的int64_t，指定要缩减的维度。
 
@@ -31,11 +39,13 @@
   - dtype(const aclDataType, 计算输入)：Host侧的aclDataType，输出tensor的数据类型，需要与out的数据类型一致。
 
   - out(aclTensor*, 计算输出)：Device侧的aclTensor，数据类型与dtype一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BOOL、COMPLEX64、COMPLEX128、BFLOAT16。
+    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BOOL、COMPLEX64、COMPLEX128。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BOOL、COMPLEX64、COMPLEX128、BFLOAT16。
 
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
 
   - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
+
 
 - **返回值：**
 
@@ -63,6 +73,7 @@
 
   - stream(aclrtStream, 入参)：指定执行任务的Stream。
 
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -71,6 +82,7 @@
 
 - 确定性计算：
   - aclnnProdDim默认确定性实现。
+
 
 ## 调用示例
 

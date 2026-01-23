@@ -12,7 +12,7 @@
 #include "conversion/concat_d/op_api/concat_d.h"
 #include "aclnn_kernels/transdata.h"
 #include "aclnn_kernels/contiguous.h"
-#include "math/reduce_mean/op_host/op_api/reduce_mean.h"
+#include "math/reduce_mean/op_api/reduce_mean.h"
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
 #include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "reduce_std_with_mean.h"

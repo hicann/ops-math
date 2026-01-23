@@ -84,7 +84,7 @@ const aclTensor *ReduceMin(const aclTensor *self, const aclIntArray *dim, bool k
   bool noopWithEmptyAxes = true;
   auto ret = INFER_SHAPE(ReduceMin, OP_INPUT(self, dimList), OP_OUTPUT(minOut), OP_ATTR(keepDim, noopWithEmptyAxes));
   if (ret != ACLNN_SUCCESS) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "ReduceMin infer shape failed.");
+    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "ReduceMin infer shape faild.");
     return nullptr;
   }
 
