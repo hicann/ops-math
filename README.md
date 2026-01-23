@@ -1,8 +1,11 @@
 # ops-math
 
 ## 🔥Latest News
-
-- [2025/12] 开源算子支持Ascend 950PR/Ascend 950DT，可以通过CANN Simulator仿真工具开发调试；支持了add算子<<<>>>调用示例，方便用户自定义使用；experimental工程支持。
+- [2026/01] 新增[QuickStart](QUICKSTART.md)，指导新手零基础入门算子项目部署（支持Docker环境）、算子开发和贡献流程。
+- [2025/12] 开源算子支持Ascend 950PR/Ascend 950DT，可以通过CANN Simulator仿真工具开发调试；支持了add算子<<<>>>调用示例，方便用户自定义使用；
+在多个类别中新支持算子[concat](conversion/concat/)、[lerp](math/lerp/)、[drop_out_v3](random/drop_out_v3/)等。
+- [2025/11] 完善多个算子README描述，改进算子开发实例文档及example。
+- [2025/10] 新增experimental目录，完善[贡献指南](CONTRIBUTING.md)，支持开发者调试并贡献自定义算子。
 - [2025/09] ops-math项目首次上线。
 
 ## 🚀概述
@@ -70,3 +73,11 @@ ops-math是[CANN](https://hiascend.com/software/cann) （Compute Architecture fo
 - [安全声明](SECURITY.md)
 - [许可证](LICENSE)
 - [所属SIG](https://gitcode.com/cann/community/tree/master/CANN/sigs/ops-basic)
+
+## 🤝联系我们
+
+本项目功能和文档正在持续更新和完善中，欢迎您关注最新版本。
+
+- **问题反馈**：通过GitCode[【Issues】](https://gitcode.com/cann/ops-math/issues)提交问题
+- **社区互动**：通过GitCode[【讨论】](https://gitcode.com/cann/ops-math/discussions)参与交流
+- **技术专栏**：通过GitCode[【Wiki】](https://gitcode.com/cann/ops-math/wiki)获取技术文章
