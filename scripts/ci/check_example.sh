@@ -58,7 +58,7 @@ done
 
 for name in "${ops_name[@]}"
 do
-    ../single/cann-ops-math-${name}_linux*.run
+    ./single/cann-ops-math-${name}_linux*.run
     bash build.sh --run_example $name eager cust --vendor_name=$name
     status=$?
     if [ $status -ne 0 ]; then

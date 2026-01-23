@@ -74,8 +74,8 @@ do
         bash build.sh --pkg --vendor_name=$name --ops=$name --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH} -j16
         status=$?
     elif [[ "${REPOSITORY_NAME}" == "ops-math" ]]; then
-        echo "bash build.sh --pkg --vendor_name=$name --ops=$name"
-        bash build.sh --pkg --vendor_name=$name --ops=$name
+        echo "bash build.sh --pkg --vendor_name=$name --ops=$name  --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH} -j16"
+        bash build.sh --pkg --vendor_name=$name --ops=$name --cann_3rd_lib_path=${ASCEND_3RD_LIB_PATH} -j16
         status=$?       
     fi
     if [[ $status -ne 0 ]]; then
@@ -85,8 +85,12 @@ do
     for dir in "${valid_example_dirs[@]}"
     do
         if [[ "$dir" == "$name" ]]; then
-        mkdir -p ${CODE_PATH}/single
-        cp build_out/cann-ops-math-${name}_linux*.run ${CODE_PATH}/single/
+        mkdir -p ${WORKSPACE}/single
+        cp build_out/cann-ops-math-${name}_linux*.run ${WORKSPACE}/single/
         fi
     done
 done
+
+cd ${WORKSPACE}
+tar -zcf single.tar.gz single/
+ls
