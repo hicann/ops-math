@@ -15,7 +15,6 @@
 #include "utils/aicpu_test_utils.h"
 #include "cpu_kernel_utils.h"
 #include "node_def_builder.h"
-#include "utils/aicpu_read_file.h"
 #undef private
 #undef protected
 #include "Eigen/Core"
@@ -25,289 +24,238 @@ using namespace aicpu;
 
 class TEST_LESS_UT : public testing::Test {};
 
-const std::string ktestcaseFilePath =
-    "../../../../math/less/tests/ut/op_kernel_aicpu/";
-
 template <typename T>
-void CalcExpectWithSameShape(const NodeDef &node_def, bool expect_out[]) {
-  auto input0 = node_def.MutableInputs(0);
-  T *input0_data = (T *)input0->GetData();
-  auto input1 = node_def.MutableInputs(1);
-  T *input1_data = (T *)input1->GetData();
-  int64_t input0_num = input0->NumElements();
-  int64_t input1_num = input1->NumElements();
-  if (input0_num == input1_num) {
-    for (int64_t j = 0; j < input0_num; ++j) {
-      expect_out[j] = input0_data[j] < input1_data[j] ? true : false;
+void CalcExpectWithSameShape(const NodeDef& node_def, bool expect_out[])
+{
+    auto input0 = node_def.MutableInputs(0);
+    T* input0_data = (T*)input0->GetData();
+    auto input1 = node_def.MutableInputs(1);
+    T* input1_data = (T*)input1->GetData();
+    int64_t input0_num = input0->NumElements();
+    int64_t input1_num = input1->NumElements();
+    if (input0_num == input1_num) {
+        for (int64_t j = 0; j < input0_num; ++j) {
+            expect_out[j] = input0_data[j] < input1_data[j] ? true : false;
+        }
     }
-  }
 }
 
 template <typename T>
-void CalcExpectWithDiffShape(const NodeDef &node_def, bool expect_out[]) {
-  auto input0 = node_def.MutableInputs(0);
-  T *input0_data = (T *)input0->GetData();
-  auto input1 = node_def.MutableInputs(1);
-  T *input1_data = (T *)input1->GetData();
-  int64_t input0_num = input0->NumElements();
-  int64_t input1_num = input1->NumElements();
-  if (input0_num > input1_num) {
-    for (int64_t j = 0; j < input0_num; ++j) {
-      int64_t i = j % input1_num;
-      expect_out[j] = input0_data[j] < input1_data[i] ? true : false;
+void CalcExpectWithDiffShape(const NodeDef& node_def, bool expect_out[])
+{
+    auto input0 = node_def.MutableInputs(0);
+    T* input0_data = (T*)input0->GetData();
+    auto input1 = node_def.MutableInputs(1);
+    T* input1_data = (T*)input1->GetData();
+    int64_t input0_num = input0->NumElements();
+    int64_t input1_num = input1->NumElements();
+    if (input0_num > input1_num) {
+        for (int64_t j = 0; j < input0_num; ++j) {
+            int64_t i = j % input1_num;
+            expect_out[j] = input0_data[j] < input1_data[i] ? true : false;
+        }
+    } else {
+        for (int64_t j = 0; j < input1_num; ++j) {
+            int64_t i = j % input0_num;
+            expect_out[j] = input0_data[i] < input1_data[j] ? true : false;
+        }
     }
-  } else {
-    for (int64_t j = 0; j < input1_num; ++j) {
-      int64_t i = j % input0_num;
-      expect_out[j] = input0_data[i] < input1_data[j] ? true : false;
-    }
-  }
 }
 
-#define CREATE_NODEDEF(shapes, data_types, datas)                  \
-  auto node_def = CpuKernelUtils::CpuKernelUtils::CreateNodeDef(); \
-  NodeDefBuilder(node_def.get(), "Less", "Less")                   \
-      .Input({"x1", data_types[0], shapes[0], datas[0]})           \
-      .Input({"x2", data_types[1], shapes[1], datas[1]})           \
-      .Output({"y", data_types[2], shapes[2], datas[2]})
+#define CREATE_NODEDEF(shapes, data_types, datas)                    \
+    auto node_def = CpuKernelUtils::CpuKernelUtils::CreateNodeDef(); \
+    NodeDefBuilder(node_def.get(), "Less", "Less")                   \
+        .Input({"x1", data_types[0], shapes[0], datas[0]})           \
+        .Input({"x2", data_types[1], shapes[1], datas[1]})           \
+        .Output({"y", data_types[2], shapes[2], datas[2]})
 
-// read input and output data from files which generate by your python file
-template<typename T1, typename T2, typename T3>
-void RunLessKernel(vector<string> data_files,
-                   vector<DataType> data_types,
-                   vector<vector<int64_t>> &shapes) {
-  // read data from file for input1
-  string data_path = ktestcaseFilePath + data_files[0];
-  uint64_t input1_size = CalTotalElements(shapes, 0);
-  T1 *input1 = new T1[input1_size];
-  bool status = ReadFile(data_path, input1, input1_size);
-  EXPECT_EQ(status, true);
+template <typename T1, typename T2, typename T3>
+void RunLessKernel(
+    vector<DataType> data_types, vector<vector<int64_t>>& shapes, const T1* input1_data, const T2* input2_data,
+    const T3* output_exp_data)
+{
+    uint64_t input1_size = CalTotalElements(shapes, 0);
+    T1* input1 = new T1[input1_size];
 
-  // read data from file for input2
-  data_path = ktestcaseFilePath + data_files[1];
-  uint64_t input2_size = CalTotalElements(shapes, 1);
-  T2 *input2 = new T2[input2_size];
-  status = ReadFile(data_path, input2, input2_size);
-  EXPECT_EQ(status, true);
+    uint64_t input2_size = CalTotalElements(shapes, 1);
+    T2* input2 = new T2[input2_size];
 
-  uint64_t output_size = CalTotalElements(shapes, 2);
-  T3 *output = new T3[output_size];
-  vector<void *> datas = {(void *)input1,
-                          (void *)input2,
-                          (void *)output};
+    for (uint64_t i = 0; i < input1_size; ++i) {
+        input1[i] = input1_data[i];
+    }
+    for (uint64_t i = 0; i < input2_size; ++i) {
+        input2[i] = input2_data[i];
+    }
 
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    uint64_t output_size = CalTotalElements(shapes, 2);
+    T3* output = new T3[output_size];
+    vector<void*> datas = {(void*)input1, (void*)input2, (void*)output};
 
-  // read data from file for expect ouput
-  data_path = ktestcaseFilePath + data_files[2];
-  T3 *output_exp = new T3[output_size];
-  status = ReadFile(data_path, output_exp, output_size);
-  EXPECT_EQ(status, true);
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
 
-  bool compare = CompareResult(output, output_exp, output_size);
-  EXPECT_EQ(compare, true);
-  delete [] input1;
-  delete [] input2;
-  delete [] output;
-  delete [] output_exp;
+    T3* output_exp = new T3[output_size];
+    for (uint64_t i = 0; i < output_size; ++i) {
+        output_exp[i] = output_exp_data[i];
+    }
+
+    bool compare = CompareResult(output, output_exp, output_size);
+    EXPECT_EQ(compare, true);
+    delete[] input1;
+    delete[] input2;
+    delete[] output;
+    delete[] output_exp;
 }
 
 // only generate input data by SetRandomValue,
 // and calculate output by youself function
-template<typename T1, typename T2, typename T3>
-void RunLessKernel2(vector<DataType> data_types,
-                    vector<vector<int64_t>> &shapes) {
-  // gen data use SetRandomValue for input1
-  uint64_t input1_size = CalTotalElements(shapes, 0);
-  T1 *input1 = new T1[input1_size];
-  SetRandomValue<T1>(input1, input1_size);
+template <typename T1, typename T2, typename T3>
+void RunLessKernel2(vector<DataType> data_types, vector<vector<int64_t>>& shapes)
+{
+    // gen data use SetRandomValue for input1
+    uint64_t input1_size = CalTotalElements(shapes, 0);
+    T1* input1 = new T1[input1_size];
+    SetRandomValue<T1>(input1, input1_size);
 
-  // gen data use SetRandomValue for input2
-  uint64_t input2_size = CalTotalElements(shapes, 1);
-  T2 *input2 = new T2[input2_size];
-  SetRandomValue<T2>(input2, input2_size);
+    // gen data use SetRandomValue for input2
+    uint64_t input2_size = CalTotalElements(shapes, 1);
+    T2* input2 = new T2[input2_size];
+    SetRandomValue<T2>(input2, input2_size);
 
-  uint64_t output_size = CalTotalElements(shapes, 2);
-  T3 *output = new T3[output_size];
-  vector<void *> datas = {(void *)input1,
-                          (void *)input2,
-                          (void *)output};
+    uint64_t output_size = CalTotalElements(shapes, 2);
+    T3* output = new T3[output_size];
+    vector<void*> datas = {(void*)input1, (void*)input2, (void*)output};
 
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
 
-  // calculate output_exp
-  T3 *output_exp = new T3[output_size];
-  if(input1_size == input2_size) {
-    CalcExpectWithSameShape<T1>(*node_def.get(), output_exp);
-  } else {
-    CalcExpectWithDiffShape<T1>(*node_def.get(), output_exp);
-  }
+    // calculate output_exp
+    T3* output_exp = new T3[output_size];
+    if (input1_size == input2_size) {
+        CalcExpectWithSameShape<T1>(*node_def.get(), output_exp);
+    } else {
+        CalcExpectWithDiffShape<T1>(*node_def.get(), output_exp);
+    }
 
-  bool compare = CompareResult(output, output_exp, output_size);
-  EXPECT_EQ(compare, true);
-  delete [] input1;
-  delete [] input2;
-  delete [] output;
-  delete [] output_exp;
+    bool compare = CompareResult(output, output_exp, output_size);
+    EXPECT_EQ(compare, true);
+    delete[] input1;
+    delete[] input2;
+    delete[] output;
+    delete[] output_exp;
 }
 
-TEST_F(TEST_LESS_UT, DATA_TYPE_INT32_SUCC) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{3, 12}, {12}, {3, 12}};
-  vector<string> files{"less/data/less_data_input1_1.txt",
-                       "less/data/less_data_input2_1.txt",
-                       "less/data/less_data_output1_1.txt"};
-  RunLessKernel<int32_t, int32_t, bool>(files, data_types, shapes);
+TEST_F(TEST_LESS_UT, DATA_TYPE_INT32_SUCC)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_BOOL};
+    vector<vector<int64_t>> shapes = {{3, 12}, {12}, {3, 12}};
+
+    const int32_t input1_data[] = {2, 7, 0, 4, 2, 1, 3, 3, 3, 9, 1, 2, 0, 7, 0, 5, 3, 9, 4, 7, 8, 5, 6, 6,
+                                   7, 7, 6, 4, 0, 1, 5, 7, 5, 3, 7, 0, 8, 9, 8, 9, 6, 3, 7, 6, 9, 5, 9, 4,
+                                   4, 2, 7, 2, 1, 9, 6, 8, 8, 9, 6, 2, 7, 9, 1, 2, 6, 3, 1, 2, 5, 6, 4, 8};
+
+    const int32_t input2_data[] = {6, 6, 1, 8, 5, 7, 2, 3, 6, 2, 8, 2};
+
+    const bool output_exp_data[] = {true,  false, true,  true,  true,  true,  false, false, true,  false, true,  false,
+                                    true,  false, true,  true,  true,  false, false, false, false, false, true,  false,
+                                    false, false, false, true,  true,  true,  false, false, true,  false, true,  true,
+                                    false, false, false, false, false, true,  false, false, false, false, false, false,
+                                    true,  true,  false, true,  true,  false, false, false, false, false, true,  false,
+                                    false, false, false, true,  false, true,  true,  true,  true,  false, true,  false};
+
+    RunLessKernel<int32_t, int32_t, bool>(data_types, shapes, input1_data, input2_data, output_exp_data);
 }
 
-TEST_F(TEST_LESS_UT, DATA_TYPE_INT64_SUCC) {
-  vector<DataType> data_types = {DT_INT64, DT_INT64, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{1024, 8}, {1024, 8}, {1024, 8}};
-  vector<string> files{"less/data/less_data_input1_2.txt",
-                       "less/data/less_data_input2_2.txt",
-                       "less/data/less_data_output1_2.txt"};
-  RunLessKernel<int64_t, int64_t, bool>(files, data_types, shapes);
+TEST_F(TEST_LESS_UT, DATA_TYPE_UINT16_DIFF_SUCC)
+{
+    vector<DataType> data_types = {DT_UINT16, DT_UINT16, DT_BOOL};
+    vector<vector<int64_t>> shapes = {{1}, {3}, {3}};
+    RunLessKernel2<uint16_t, uint16_t, bool>(data_types, shapes);
 }
 
-TEST_F(TEST_LESS_UT, DATA_TYPE_FLOAT_SUCC) {
-  vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{1024}, {4, 1024}, {4, 1024}};
-  vector<string> files{"less/data/less_data_input1_3.txt",
-                       "less/data/less_data_input2_3.txt",
-                       "less/data/less_data_output1_3.txt"};
-  RunLessKernel<float, float, bool>(files, data_types, shapes);
+TEST_F(TEST_LESS_UT, DATA_TYPE_UINT16_SUCC)
+{
+    vector<DataType> data_types = {DT_UINT16, DT_UINT16, DT_BOOL};
+    vector<vector<int64_t>> shapes = {{3}, {1}, {3}};
+    RunLessKernel2<uint16_t, uint16_t, bool>(data_types, shapes);
 }
 
-TEST_F(TEST_LESS_UT, DATA_TYPE_DOUBLE_SUCC) {
-  vector<DataType> data_types = {DT_DOUBLE, DT_DOUBLE, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{7, 12, 30}, {7, 12, 30}, {7, 12, 30}};
-  vector<string> files{"less/data/less_data_input1_4.txt",
-                       "less/data/less_data_input2_4.txt",
-                       "less/data/less_data_output1_4.txt"};
-  RunLessKernel<double, double, bool>(files, data_types, shapes);
+TEST_F(TEST_LESS_UT, DATA_TYPE_UINT32_SUCC)
+{
+    vector<DataType> data_types = {DT_UINT32, DT_UINT32, DT_BOOL};
+    vector<vector<int64_t>> shapes = {{2, 3}, {3}, {2, 3}};
+    RunLessKernel2<uint32_t, uint32_t, bool>(data_types, shapes);
 }
 
-TEST_F(TEST_LESS_UT, DATA_TYPE_INT8_SUCC) {
-  vector<DataType> data_types = {DT_INT8, DT_INT8, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{7, 12}, {12}, {7, 12}};
-  vector<string> files{"less/data/less_data_input1_5.txt",
-                       "less/data/less_data_input2_5.txt",
-                       "less/data/less_data_output1_5.txt"};
-  RunLessKernel<int8_t, int8_t, bool>(files, data_types, shapes);
+TEST_F(TEST_LESS_UT, DATA_TYPE_UINT64_SUCC)
+{
+    vector<DataType> data_types = {DT_UINT64, DT_UINT64, DT_BOOL};
+    vector<vector<int64_t>> shapes = {{2, 3}, {3}, {2, 3}};
+    RunLessKernel2<uint64_t, uint64_t, bool>(data_types, shapes);
 }
 
-TEST_F(TEST_LESS_UT, DATA_TYPE_UINT8_SUCC) {
-  vector<DataType> data_types = {DT_UINT8, DT_UINT8, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{7, 12}, {12}, {7, 12}};
-  vector<string> files{"less/data/less_data_input1_6.txt",
-                       "less/data/less_data_input2_6.txt",
-                       "less/data/less_data_output1_6.txt"};
-  RunLessKernel<uint8_t, uint8_t, bool>(files, data_types, shapes);
-}
+TEST_F(TEST_LESS_UT, DATA_TYPE_UINT64_SAME_SHAPE_SUCC)
+{
+    vector<DataType> data_types = {DT_UINT64, DT_UINT64, DT_UINT64};
+    vector<vector<int64_t>> shapes = {{2, 3}, {2, 3}, {2, 3}};
+    uint64_t input1[6] = {100, 3, 9, 4, 6, 8};
+    uint64_t input2[6] = {3, 5, 9, 6, 0, 4};
+    bool output[6] = {false};
+    vector<void*> datas = {(void*)input1, (void*)input2, (void*)output};
 
-TEST_F(TEST_LESS_UT, DATA_TYPE_INT16_SUCC) {
-  vector<DataType> data_types = {DT_INT16, DT_INT16, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{12, 6}, {6}, {12, 6}};
-  vector<string> files{"less/data/less_data_input1_7.txt",
-                       "less/data/less_data_input2_7.txt",
-                       "less/data/less_data_output1_7.txt"};
-  RunLessKernel<int16_t, int16_t, bool>(files, data_types, shapes);
-}
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
 
-TEST_F(TEST_LESS_UT, DATA_TYPE_FLOAT16_SUCC) {
-  vector<DataType> data_types = {DT_FLOAT16, DT_FLOAT16, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{12, 130}, {12, 130}, {12, 130}};
-  vector<string> files{"less/data/less_data_input1_8.txt",
-                       "less/data/less_data_input2_8.txt",
-                       "less/data/less_data_output1_8.txt"};
-  RunLessKernel<Eigen::half, Eigen::half, bool>(files, data_types, shapes);
-}
+    bool output_exp[6] = {false};
+    CalcExpectWithSameShape<uint64_t>(*node_def.get(), output_exp);
 
-TEST_F(TEST_LESS_UT, DATA_TYPE_UINT16_DIFF_SUCC) {
-  vector<DataType> data_types = {DT_UINT16, DT_UINT16, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{1}, {3}, {3}};
-  RunLessKernel2<uint16_t, uint16_t, bool>(data_types, shapes);
-}
-
-TEST_F(TEST_LESS_UT, DATA_TYPE_UINT16_SUCC) {
-  vector<DataType> data_types = {DT_UINT16, DT_UINT16, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{3}, {1}, {3}};
-  RunLessKernel2<uint16_t, uint16_t, bool>(data_types, shapes);
-}
-
-TEST_F(TEST_LESS_UT, DATA_TYPE_UINT32_SUCC) {
-  vector<DataType> data_types = {DT_UINT32, DT_UINT32, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{2, 3}, {3}, {2, 3}};
-  RunLessKernel2<uint32_t, uint32_t, bool>(data_types, shapes);
-}
-
-TEST_F(TEST_LESS_UT, DATA_TYPE_UINT64_SUCC) {
-  vector<DataType> data_types = {DT_UINT64, DT_UINT64, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{2, 3}, {3}, {2, 3}};
-  RunLessKernel2<uint64_t, uint64_t, bool>(data_types, shapes);
-}
-
-TEST_F(TEST_LESS_UT, DATA_TYPE_UINT64_SAME_SHAPE_SUCC) {
-  vector<DataType> data_types = {DT_UINT64, DT_UINT64, DT_UINT64};
-  vector<vector<int64_t>> shapes = {{2, 3}, {2, 3}, {2, 3}};
-  uint64_t input1[6] = {100, 3, 9, 4, 6, 8};
-  uint64_t input2[6] = {3, 5, 9, 6, 0, 4};
-  bool output[6] = {false};
-  vector<void *> datas = {(void *)input1,
-                          (void *)input2,
-                          (void *)output};
-
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-
-  bool output_exp[6] = {false};
-  CalcExpectWithSameShape<uint64_t>(*node_def.get(), output_exp);
-
-  bool compare = CompareResult(output, output_exp, 6);
-  EXPECT_EQ(compare, true);
+    bool compare = CompareResult(output, output_exp, 6);
+    EXPECT_EQ(compare, true);
 }
 
 // exception instance
-TEST_F(TEST_LESS_UT, INPUT_SHAPE_EXCEPTION) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{2, 2, 4}, {2, 2, 3}, {2, 2, 4}};
-  int32_t input1[12] = {(int32_t)1};
-  int32_t input2[16] = {(int32_t)0};
-  bool output[16] = {(bool)0};
-  vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
+TEST_F(TEST_LESS_UT, INPUT_SHAPE_EXCEPTION)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_BOOL};
+    vector<vector<int64_t>> shapes = {{2, 2, 4}, {2, 2, 3}, {2, 2, 4}};
+    int32_t input1[12] = {(int32_t)1};
+    int32_t input2[16] = {(int32_t)0};
+    bool output[16] = {(bool)0};
+    vector<void*> datas = {(void*)input1, (void*)input2, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
 }
 
-TEST_F(TEST_LESS_UT, INPUT_DTYPE_EXCEPTION) {
-  vector<DataType> data_types = {DT_INT32, DT_INT64, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{2, 11}, {2, 11}, {2, 11}};
-  int32_t input1[22] = {(int32_t)1};
-  int64_t input2[22] = {(int64_t)0};
-  bool output[22] = {(bool)0};
-  vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
+TEST_F(TEST_LESS_UT, INPUT_DTYPE_EXCEPTION)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT64, DT_BOOL};
+    vector<vector<int64_t>> shapes = {{2, 11}, {2, 11}, {2, 11}};
+    int32_t input1[22] = {(int32_t)1};
+    int64_t input2[22] = {(int64_t)0};
+    bool output[22] = {(bool)0};
+    vector<void*> datas = {(void*)input1, (void*)input2, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
 }
 
-TEST_F(TEST_LESS_UT, INPUT_NULL_EXCEPTION) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{2, 11}, {2, 11}, {2, 11}};
-  bool output[22] = {(bool)0};
-  vector<void *> datas = {(void *)nullptr, (void *)nullptr, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
+TEST_F(TEST_LESS_UT, INPUT_NULL_EXCEPTION)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_BOOL};
+    vector<vector<int64_t>> shapes = {{2, 11}, {2, 11}, {2, 11}};
+    bool output[22] = {(bool)0};
+    vector<void*> datas = {(void*)nullptr, (void*)nullptr, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
 }
 
-TEST_F(TEST_LESS_UT, INPUT_BOOL_UNSUPPORT) {
-  vector<DataType> data_types = {DT_BOOL, DT_BOOL, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{2, 11}, {2, 11}, {2, 11}};
-  bool input1[22] = {(bool)1};
-  bool input2[22] = {(bool)0};
-  bool output[22] = {(bool)0};
-  vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
+TEST_F(TEST_LESS_UT, INPUT_BOOL_UNSUPPORT)
+{
+    vector<DataType> data_types = {DT_BOOL, DT_BOOL, DT_BOOL};
+    vector<vector<int64_t>> shapes = {{2, 11}, {2, 11}, {2, 11}};
+    bool input1[22] = {(bool)1};
+    bool input2[22] = {(bool)0};
+    bool output[22] = {(bool)0};
+    vector<void*> datas = {(void*)input1, (void*)input2, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
 }

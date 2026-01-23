@@ -14,7 +14,6 @@
 #define protected public
 #endif
 #include "utils/aicpu_test_utils.h"
-#include "utils/aicpu_read_file.h"
 #include "cpu_kernel_utils.h"
 #include "node_def_builder.h"
 #undef private
@@ -24,121 +23,87 @@
 using namespace std;
 using namespace aicpu;
 
-const std::string squaredDifferenceTestcaseFilePath = "../../../../math/squared_difference/tests/ut/op_kernel_aicpu/";
-
 class TEST_SQUAREDDIFFERENCE_UT : public testing::Test {};
 
-#define CREATE_NODEDEF(shapes, data_types, datas)                              \
-  auto node_def = CpuKernelUtils::CpuKernelUtils::CreateNodeDef();             \
-  NodeDefBuilder(node_def.get(), "SquaredDifference", "SquaredDifference")     \
-      .Input({"x1", data_types[0], shapes[0], datas[0]})                       \
-      .Input({"x2", data_types[1], shapes[1], datas[1]})                       \
-      .Output({"y", data_types[2], shapes[2], datas[2]})
+#define CREATE_NODEDEF(shapes, data_types, datas)                            \
+    auto node_def = CpuKernelUtils::CpuKernelUtils::CreateNodeDef();         \
+    NodeDefBuilder(node_def.get(), "SquaredDifference", "SquaredDifference") \
+        .Input({"x1", data_types[0], shapes[0], datas[0]})                   \
+        .Input({"x2", data_types[1], shapes[1], datas[1]})                   \
+        .Output({"y", data_types[2], shapes[2], datas[2]})
 
-TEST_F(TEST_SQUAREDDIFFERENCE_UT, BROADCAST_INPUT_SUCC) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{4, 1024}, {1,1024}, {4, 1024}};
+TEST_F(TEST_SQUAREDDIFFERENCE_UT, BROADCAST_INPUT_X_NUM_ONE_SUCC)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{1}, {1, 3}, {1, 3}};
 
-  // read data from file for input1
-  string data_path =
-      squaredDifferenceTestcaseFilePath + "squared_difference/data/squareddifference_data_input1_7.txt";
-  constexpr uint64_t input1_size = 4 * 1024;
-  int32_t input1[input1_size] = {0};
-  bool status = ReadFile(data_path, input1, input1_size);
-  EXPECT_EQ(status, true);
+    constexpr uint64_t input1_size = 1;
+    int32_t input1[input1_size] = {2};
 
-  // read data from file for input2
-  data_path = squaredDifferenceTestcaseFilePath + "squared_difference/data/squareddifference_data_input2_7.txt";
-  constexpr uint64_t input2_size = 1024;
-  int32_t input2[input2_size] = {0};
-  status = ReadFile(data_path, input2, input2_size);
-  EXPECT_EQ(status, true);
+    constexpr uint64_t input2_size = 3;
+    int32_t input2[input2_size] = {7, 0, 4};
 
-  constexpr uint64_t output_size = 4 * 1024;
-  int32_t output[output_size] = {0};
-  vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};
+    constexpr uint64_t output_size = 3;
+    int32_t output[output_size] = {0};
+    vector<void*> datas = {(void*)input1, (void*)input2, (void*)output};
 
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
 
-  // read data from file for expect ouput
-  data_path = squaredDifferenceTestcaseFilePath + "squared_difference/data/squareddifference_data_output1_7.txt";
-  int32_t output_exp[output_size] = {0};
-  status = ReadFile(data_path, output_exp, output_size);
-  EXPECT_EQ(status, true);
+    int32_t output_exp[output_size] = {25, 4, 4};
 
-  bool compare = CompareResult(output, output_exp, output_size);
-  EXPECT_EQ(compare, true);
+    bool compare = CompareResult(output, output_exp, output_size);
+    EXPECT_EQ(compare, true);
 }
 
-TEST_F(TEST_SQUAREDDIFFERENCE_UT, BROADCAST_INPUT_X_NUM_ONE_SUCC) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{1}, {1,3}, {1,3}};
+TEST_F(TEST_SQUAREDDIFFERENCE_UT, BROADCAST_INPUT_Y_NUM_ONESUCC)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{1, 3}, {1}, {1, 3}};
 
-  // read data from file for input1
-  string data_path =
-      squaredDifferenceTestcaseFilePath + "squared_difference/data/squareddifference_data_input1_8.txt";
-  constexpr uint64_t input1_size = 1;
-  int32_t input1[input1_size] = {0};
-  bool status = ReadFile(data_path, input1, input1_size);
-  EXPECT_EQ(status, true);
+    constexpr uint64_t input1_size = 3;
+    int32_t input1[input1_size] = {2, 7, 0};
 
-  // read data from file for input2
-  data_path = squaredDifferenceTestcaseFilePath + "squared_difference/data/squareddifference_data_input2_8.txt";
-  constexpr uint64_t input2_size = 3;
-  int32_t input2[input2_size] = {0};
-  status = ReadFile(data_path, input2, input2_size);
-  EXPECT_EQ(status, true);
+    constexpr uint64_t input2_size = 1;
+    int32_t input2[input2_size] = {4};
 
-  constexpr uint64_t output_size = 3;
-  int32_t output[output_size] = {0};
-  vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};
+    constexpr uint64_t output_size = 3;
+    int32_t output[output_size] = {0};
+    vector<void*> datas = {(void*)input1, (void*)input2, (void*)output};
 
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
 
-  // read data from file for expect ouput
-  data_path = squaredDifferenceTestcaseFilePath + "squared_difference/data/squareddifference_data_output1_8.txt";
-  int32_t output_exp[output_size] = {0};
-  status = ReadFile(data_path, output_exp, output_size);
-  EXPECT_EQ(status, true);
-
-  bool compare = CompareResult(output, output_exp, output_size);
-  EXPECT_EQ(compare, true);
+    int32_t output_exp[output_size] = {4, 9, 16};
+    bool compare = CompareResult(output, output_exp, output_size);
+    EXPECT_EQ(compare, true);
 }
 
-TEST_F(TEST_SQUAREDDIFFERENCE_UT, BROADCAST_INPUT_Y_NUM_ONESUCC) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{1,3}, {1}, {1,3}};
+TEST_F(TEST_SQUAREDDIFFERENCE_UT, BROADCAST_INPUT_SUCC)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{4, 16}, {1, 16}, {4, 16}};
 
-  // read data from file for input1
-  string data_path =
-      squaredDifferenceTestcaseFilePath + "squared_difference/data/squareddifference_data_input1_9.txt";
-  constexpr uint64_t input1_size = 3;
-  int32_t input1[input1_size] = {0};
-  bool status = ReadFile(data_path, input1, input1_size);
-  EXPECT_EQ(status, true);
+    constexpr uint64_t input1_size = 4 * 16;
+    int32_t input1[input1_size] = {2, 7, 0, 4, 2, 1, 3, 3, 3, 9, 1, 2, 0, 7, 0, 5, 3, 9, 4, 7, 8, 5,
+                                   6, 6, 7, 7, 6, 4, 0, 1, 5, 7, 5, 3, 7, 0, 8, 9, 8, 9, 6, 3, 7, 6,
+                                   9, 5, 9, 4, 4, 2, 7, 2, 1, 9, 6, 8, 8, 9, 6, 2, 7, 9, 1, 2};
 
-  // read data from file for input2
-  data_path = squaredDifferenceTestcaseFilePath + "squared_difference/data/squareddifference_data_input2_9.txt";
-  constexpr uint64_t input2_size = 1;
-  int32_t input2[input2_size] = {0};
-  status = ReadFile(data_path, input2, input2_size);
-  EXPECT_EQ(status, true);
+    constexpr uint64_t input2_size = 16;
+    int32_t input2[input2_size] = {6, 3, 1, 2, 5, 6, 4, 8, 6, 6, 1, 8, 5, 7, 2, 3};
 
-  constexpr uint64_t output_size = 3;
-  int32_t output[output_size] = {0};
-  vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};
+    constexpr uint64_t output_size = 4 * 16;
+    int32_t output[output_size] = {0};
+    vector<void*> datas = {(void*)input1, (void*)input2, (void*)output};
 
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
 
-  // read data from file for expect ouput
-  data_path = squaredDifferenceTestcaseFilePath + "squared_difference/data/squareddifference_data_output1_9.txt";
-  int32_t output_exp[output_size] = {0};
-  status = ReadFile(data_path, output_exp, output_size);
-  EXPECT_EQ(status, true);
+    int32_t output_exp[output_size] = {16, 16, 1,  4,  9,  25, 1,  25, 9, 9, 0,  36, 25, 0,  4,  4,
+                                       9,  36, 9,  25, 9,  1,  4,  4,  1, 1, 25, 16, 25, 36, 9,  16,
+                                       1,  0,  36, 4,  9,  9,  16, 1,  0, 9, 36, 4,  16, 4,  49, 1,
+                                       4,  1,  36, 0,  16, 9,  4,  0,  4, 9, 25, 36, 4,  4,  1,  1};
 
-  bool compare = CompareResult(output, output_exp, output_size);
-  EXPECT_EQ(compare, true);
+    bool compare = CompareResult(output, output_exp, output_size);
+    EXPECT_EQ(compare, true);
 }

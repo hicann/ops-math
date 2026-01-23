@@ -588,9 +588,9 @@ set_ut_mode() {
   if [[ "$UT_TEST_ALL" == "TRUE" ]] || [[ "$OP_KERNEL_UT" == "TRUE" ]]; then
     UT_TARGETS+=("${REPOSITORY_NAME}_op_kernel_ut")
   fi
-  # if [[ "$UT_TEST_ALL" == "TRUE" ]] || [[ "$OP_KERNEL_AICPU_UT" == "TRUE" ]]; then
-  #   UT_TARGETS+=("${REPOSITORY_NAME}_aicpu_op_kernel_ut")
-  # fi
+  if [[ "$UT_TEST_ALL" == "TRUE" ]] || [[ "$OP_KERNEL_AICPU_UT" == "TRUE" ]]; then
+    UT_TARGETS+=("${REPOSITORY_NAME}_aicpu_op_kernel_ut")
+  fi
 }
 
 process_genop() {
