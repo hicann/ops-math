@@ -136,6 +136,11 @@ static bool CheckDtypeValidTensor(const aclTensor* self, const aclTensor* prob, 
     // 检查self的数据类型是否和out的数据类型是否一致
     OP_CHECK_DTYPE_NOT_MATCH(self, out->GetDataType(), return false);
 
+    // 非浮点数输出不保证精度
+    if (!CheckType(self->GetDataType(), ASCEND910B_PROB_DTYPE_SUPPORT_LIST)) {
+        OP_LOGW("Self dtype %s does not guarantee accuracy.", op::ToString(self->GetDataType()).GetString());
+    }
+
     return true;
 }
 

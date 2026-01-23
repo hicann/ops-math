@@ -1,5 +1,4 @@
 /* *
- * This program is free software, you can redistribute it and/or modify it.
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
@@ -323,7 +322,6 @@ static ge::graphStatus Tiling4PadV3GradV2(gert::TilingContext *tilingContext)
     uint32_t ubSize = static_cast<uint32_t>(ubSizePlatForm);
     uint32_t availableUb = ubSize - RESERVED_UB;
     uint32_t coreNum = compileInfo->coreNum;
-    uint32_t sysWorkspaceSize = compileInfo->sysWorkspaceSize;
     ge::DataType inputDatatype = tilingContext->GetInputDesc(0)->GetDataType();
     ge::DataType paddingDatatype = tilingContext->GetInputDesc(1)->GetDataType();
     InputParamsInfo params;
@@ -360,10 +358,11 @@ static ge::graphStatus Tiling4PadV3GradV2(gert::TilingContext *tilingContext)
         usrWorkspace = tilingData.get_alignHeight() * tilingData.get_alignWidth() * tilingData.get_blockNum() *
             DATATYPE_LEN_MAP[ge::DT_FLOAT];
     }
-    workspaces[0] = usrWorkspace + sysWorkspaceSize;
+    workspaces[0] = usrWorkspace + compileInfo->sysWorkspaceSize;
     tilingData.SaveToBuffer(tilingContext->GetRawTilingData()->GetData(),
         tilingContext->GetRawTilingData()->GetCapacity());
     tilingContext->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
+    tilingContext->SetScheduleMode(1); // SyncAll need set
     PrintTilingDate(tilingContext, &tilingData, usrWorkspace);
     return ge::GRAPH_SUCCESS;
 }

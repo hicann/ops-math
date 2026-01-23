@@ -243,7 +243,7 @@ static aclnnStatus CommonPad3dBackward(const aclTensor *gradOutput, const aclTen
     bool padSupport = isPadSupport(padding);
     auto originOutDataType = gradOutput->GetDataType();
     // cast to f32
-    if (padSupport==false &&
+    if (!padSupport && mode == REFLECTION_PAD_MODE &&
         (originOutDataType == op::DataType::DT_FLOAT16 || originOutDataType == op::DataType::DT_BF16)) {
         gradOutput = l0op::Cast(gradOutput, op::DataType::DT_FLOAT, uniqueExecutor.get());
         OP_LOGD("[PadV3GradReflect] F16 Cast to F32: true");
@@ -261,7 +261,7 @@ static aclnnStatus CommonPad3dBackward(const aclTensor *gradOutput, const aclTen
         CHECK_RET(pad3dbackwardResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
     }
     // cast to f16
-    if (padSupport==false &&
+    if (!padSupport && mode == REFLECTION_PAD_MODE &&
         (originOutDataType == op::DataType::DT_FLOAT16 || originOutDataType == op::DataType::DT_BF16)) {
         pad3dbackwardResult = l0op::Cast(pad3dbackwardResult, originOutDataType, uniqueExecutor.get());
         OP_LOGD("[PadV3GradReflect] F32 Cast to F16: true");

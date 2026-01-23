@@ -26,6 +26,7 @@ constexpr int64_t DIM_3 = 3;
 constexpr int64_t DIM_4 = 4;
 constexpr int64_t DIM_5 = 5;
 constexpr int64_t DIM_6 = 6;
+constexpr int64_t MAX_LOG_LEN = 64;
 
 namespace optiling {
 // CircularPadCommonTiling
@@ -185,12 +186,8 @@ void CircularPadCommonTiling::SetTilingData()
     context_->SetBlockDim(useCoreNum);
 }
 
-void CircularPadCommonTiling::DumpTilingInfo()
+int32_t CircularPadCommonTiling::DoDumpTilingInfo()
 {
-    int32_t enable = CheckLogLevel(static_cast<int32_t>(OP), DLOG_DEBUG);
-    if (enable != 1) {
-        return;
-    }
     auto buf = (int64_t*)context_->GetRawTilingData()->GetData();
     auto bufLen = context_->GetRawTilingData()->GetDataSize();
     std::ostringstream oss;
@@ -198,11 +195,17 @@ void CircularPadCommonTiling::DumpTilingInfo()
         << ", content:";
     for (size_t i = 0; i < bufLen / sizeof(int64_t); i++) {
         oss << *(buf + i) << ",";
-        if (oss.str().length() > 640) { // Split according to 640 to avoid truncation
+        if (oss.str().length() > MAX_LOG_LEN) { // Split according to 640 to avoid truncation
             OP_LOGD(context_, "%s", oss.str().c_str());
             oss.str("");
         }
     }
     OP_LOGD(context_, "%s", oss.str().c_str());
+    return 0;
+}
+
+void CircularPadCommonTiling::DumpTilingInfo()
+{
+    OP_LOGD(context_, "%d", DoDumpTilingInfo());
 }
 } // namespace optiling

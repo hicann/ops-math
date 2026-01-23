@@ -47,6 +47,15 @@ static bool PadInfershape(
         dim_value = x_shape->GetDim(i) == UNKNOWN_DIM_VALUE_ ?
                         UNKNOWN_DIM_VALUE_ :
                         x_shape->GetDim(i) + paddings_value[INT_DATA_2 * i] + paddings_value[INT_DATA_2 * i + 1];
+        if (x_shape->GetDim(i) != UNKNOWN_DIM_VALUE_ && dim_value < 0) {
+            OP_LOGE(
+                context->GetNodeName(),
+                "The output shape at index %zu is %ld, but output shape CANNOT contain negative values. x_shape at "
+                "index %zu: %ld, corresponding pad_front: %ld, corresponding pad_end: %ld.",
+                i, dim_value, i, x_shape->GetDim(i), static_cast<int64_t>(paddings_value[INT_DATA_2 * i]),
+                static_cast<int64_t>(paddings_value[INT_DATA_2 * i + 1]));
+            return false;
+        }
         y_shape->SetDim(i, dim_value);
     }
     OP_LOGD(context->GetNodeName(), "output y = %s", Ops::Base::ToString(*y_shape).c_str());

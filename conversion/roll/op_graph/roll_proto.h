@@ -27,8 +27,10 @@ namespace ge {
 *     float16, bfloat16, float32, int32, uint32, int8, uint8, int64. \n
 
 *@par Attributes:
-* @li shifts: A required listInt. The number of places by which the elements of the tensor are shifted. \n
-* @li dims: An optional listInt. Axis along which to roll. \n
+* @li shifts: A required listInt. The number of places by which the elements of the tensor are shifted. 
+*      The length of the array must be equal to dims, but if dims is empty, the array must be one-dimensional. \n
+* @li dims: An optional listInt. Defaults to "None". Axis along which to roll. The value of the range is [0, number of dimensions for input -1] or [-number of dimensions for self, -1].
+
 
 *@par Outputs:
 * y: A Tensor with the same type and shape of x. \n

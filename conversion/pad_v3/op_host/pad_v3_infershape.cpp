@@ -69,7 +69,14 @@ static ge::graphStatus PadV3Infershape(
 
         int64_t dim_value =
             x_shape->GetDim(i) == UNKNOWN_DIM_VALUE_ ? UNKNOWN_DIM_VALUE_ : (x_shape->GetDim(i) + pad_front + pad_end);
-
+        if (x_shape->GetDim(i) != UNKNOWN_DIM_VALUE_ && dim_value < 0) {
+            OP_LOGE(
+                context->GetNodeName(),
+                "The output shape at index %zu is %ld, but output shape CANNOT contain negative values. x_shape at "
+                "index %zu: %ld, corresponding pad_front: %ld, corresponding pad_end: %ld.",
+                i, dim_value, i, x_shape->GetDim(i), static_cast<int64_t>(pad_front), static_cast<int64_t>(pad_end));
+            return ge::GRAPH_FAILED;
+        }
         y_shape->SetDim(i, dim_value);
     }
     OP_LOGD(context->GetNodeName(), "output y = %s", Ops::Base::ToString(*y_shape).c_str());
@@ -118,6 +125,15 @@ static ge::graphStatus PadV3InferShapeWithPaddingsValues(
         int64_t dim_value = x_shape->GetDim(i) == UNKNOWN_DIM_VALUE_ ?
                                 UNKNOWN_DIM_VALUE_ :
                                 (x_shape->GetDim(i) + pad_front_paddings + pad_end_paddings);
+        if (x_shape->GetDim(i) != UNKNOWN_DIM_VALUE_ && dim_value < 0) {
+            OP_LOGE(
+                context->GetNodeName(),
+                "The output shape at index %zu is %ld, but output shape CANNOT contain negative values. x_shape at "
+                "index %zu: %ld, corresponding pad_front: %ld, corresponding pad_end: %ld.",
+                i, dim_value, i, x_shape->GetDim(i), static_cast<int64_t>(pad_front_paddings),
+                static_cast<int64_t>(pad_end_paddings));
+            return ge::GRAPH_FAILED;
+        }
         y_shape->SetDim(i, dim_value);
     }
     OP_LOGD(context->GetNodeName(), "output y = %s", Ops::Base::ToString(*y_shape).c_str());

@@ -132,6 +132,7 @@ ge::graphStatus TilingDiagFlat(gert::TilingContext* context)
         OP_LOGE(context->GetNodeName(), "DiagFlatSetTilingData set tiling data fail."), return ge::GRAPH_FAILED);
     context->SetBlockDim(tilingData.get_totalCoreNum());
     context->SetTilingKey(tilingData.get_tilingKey());
+    context->SetScheduleMode(1); // SyncAll need set
     PrintTilingData(tilingData);
     return ge::GRAPH_SUCCESS;
 }

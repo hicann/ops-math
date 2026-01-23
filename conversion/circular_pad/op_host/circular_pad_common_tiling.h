@@ -64,6 +64,7 @@ public:
     void DivCore();
     void SetTilingKey();
     void SetTilingData();
+    int32_t DoDumpTilingInfo();
 
     virtual ge::graphStatus CheckLeftAndRight() = 0;
     virtual ge::graphStatus CheckTopAndBottom() = 0;

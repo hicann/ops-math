@@ -423,6 +423,7 @@ void PadV3GradReplicationTilingHandler<T>::SetPreferences()
     // 写入tiling
     tilingData.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
     context->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
+    context->SetScheduleMode(1); // SyncAll need set
 }
 
 static ge::graphStatus PadV3GradReplicationTiling(gert::TilingContext* context)
