@@ -17,6 +17,10 @@
 // infershape
 using namespace ge;
 namespace ops {
-
-IMPL_OP_INFERSHAPE(Addcdiv).InferShape(Ops::Base::InferShape4Broadcast);
+static ge::graphStatus InferShape4Addcdiv(gert::InferShapeContext* context)
+{
+    const size_t INPUT_NUM_THREE = 3;
+    return Ops::Base::InferShape4Broadcast(context, INPUT_NUM_THREE);
+}
+IMPL_OP_INFERSHAPE(Addcdiv).InferShape(InferShape4Addcdiv);
 } // namespace ops

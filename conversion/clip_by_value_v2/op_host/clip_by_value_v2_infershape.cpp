@@ -20,6 +20,10 @@
 using namespace ge;
 
 namespace ops {
-IMPL_OP_INFERSHAPE(ClipByValueV2).InferShape(Ops::Base::InferShape4Broadcast);
-
+static ge::graphStatus InferShape4ClipByValueV2(gert::InferShapeContext* context)
+{
+    const size_t INPUT_NUM_THREE = 3;
+    return Ops::Base::InferShape4Broadcast(context, INPUT_NUM_THREE);
+}
+IMPL_OP_INFERSHAPE(ClipByValueV2).InferShape(InferShape4ClipByValueV2);
 } // namespace ops
