@@ -1,87 +1,13 @@
-# aclnnGlobalMaxPool
-
-[📄 查看源码](https://gitcode.com/cann/ops-math/math/reduce_max)
-
-## 产品支持情况
-
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
-
-
-## 功能说明
-
-算子功能：输入一个张量，并对同一通道中的值取最大值
-
-## 函数原型
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnGlobalMaxPoolGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnGlobalMaxPool”接口执行计算。
-
-- `aclnnStatus aclnnGlobalMaxPoolGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnGlobalMaxPool(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
-
-## aclnnGlobalMaxPoolGetWorkspaceSize
-
-- **参数说明：**
-
-  - self(aclTensor*, 计算输入)：Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND、NCHW、NCDHW。
-
-  - out(aclTensor*, 计算输出)：Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND、NCHW、NCDHW。
-
-  - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
-
-
-- **返回码：**
-
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-
-```
-第一段接口完成入参校验，出现以下场景时报错：
-返回161001(ACLNN_ERR_PARAM_NULLPTR)：1. 传入的self和out是空指针。
-返回161002(ACLNN_ERR_PARAM_INVALID)：1. self和out的数据类型不在支持范围内或不一致。
-                                    2. self和out的数据格式不满足以下支持条件：
-                                      1) self和out的数据格式相同；
-                                      2) self和out支持ND、NCHW、NCDHW。
-                                    3. self和out的shape不满足以下支持条件：
-                                      1) self和out最大维度数为8维；
-                                      2) self和out最小维度数为4维；
-                                      3) self和out维度数相同；
-                                      4) out前两维与self相同，其他维度均为1。
-```
-
-## aclnnGlobalMaxPool
-
-- **参数说明：**
-
-  - workspace(void*, 入参)：在Device侧申请的workspace内存地址。
-
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnGlobalMaxPoolGetWorkspaceSize获取。
-
-  - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
-
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
-
-
-- **返回码：**
-
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-
-## 约束说明
-
-- 确定性计算：
-  - aclnnGlobalMaxPool默认确定性实现。
-
-
-## 调用示例
-
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
-```Cpp
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License")
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+ 
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
@@ -230,4 +156,3 @@ int main() {
   aclFinalize();
   return 0;
 }
-```

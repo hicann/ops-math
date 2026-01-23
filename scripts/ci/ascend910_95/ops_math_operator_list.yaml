@@ -87,6 +87,7 @@ operator_group_3:
   - range
   - real_div
   - reciprocal
+  - reduce_max
   - reduce_std_v2
   - reduce_var
   - reduce_min

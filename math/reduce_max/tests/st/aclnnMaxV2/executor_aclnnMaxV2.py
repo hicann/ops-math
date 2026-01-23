@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
@@ -8,12 +10,20 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-file(GLOB CURRENT_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
-foreach(SUB_DIR ${CURRENT_DIRS})
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${SUB_DIR}/CMakeLists.txt")
-        add_subdirectory(${SUB_DIR})
-    endif()
-endforeach()
+import torch
+from atk.configs.dataset_config import InputDataset
+from atk.tasks.api_execute import register
+from atk.tasks.api_execute.base_api import BaseApi
 
-if(OP_API_UT OR (UT_TEST_ALL AND NOT AICPU_ONLY))
-endif()
+
+@register("executor_max_v2")
+class FunctionApi(BaseApi):
+    def __call__(self, input_data: InputDataset, with_output: bool = False):
+        if self.device == "cpu":
+            input_tenseor=input_data.kwargs['self']
+            dims=input_data.kwargs['dims']
+            keepdim=input_data.kwargs['keepdim']
+            noop_with_empty_axes=input_data.kwargs['noopWithEmptyAxes']
+            dims_tuple=tuple(dims)
+            output = torch.amax(input_tenseor, dim=dims_tuple, keepdim=keepdim)
+        return output
