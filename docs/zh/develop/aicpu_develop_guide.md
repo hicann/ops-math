@@ -59,7 +59,7 @@ ${op_name}                              # 替换为实际算子名的小写下�
 └── CMakeLists.txt                      # 算子cmakelist入口
 ```
 
- 若```${op_class}```为全新算子分类需额外在`CMakeLists`中添加`add_subdirectory(${op_class})`，否则无法正常编译。
+ 若```${op_class}```为全新算子分类需额外在`CMakeLists`中添加```add_subdirectory(${op_class})```，否则无法正常编译。
  	 
  	 ```
  	 if(ENABLE_EXPERIMENTAL)
@@ -107,7 +107,7 @@ Kernel一共需要两个交付件：```${op_name}_aicpu.cpp``` ```${op_name}_aic
 
 算子类声明
 
-Kernel实现的第一步，需在头文件`op_kernel_aicpu/${op_name}_aicpu.h`进行算子类的声明，算子类需继承CpuKernel基类。
+Kernel实现的第一步，需在头文件```op_kernel_aicpu/${op_name}_aicpu.h```进行算子类的声明，算子类需继承CpuKernel基类。
 如需查看详细实现，请参考[add_example_aicpu.h](../../../examples/add_example_aicpu/op_kernel_aicpu/add_example_aicpu.h)。
 
 

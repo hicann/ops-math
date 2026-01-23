@@ -31,12 +31,15 @@ AscendOps 是一个轻量级，高性能的算子开发工程模板，它集成�
 
 1. **安装社区版CANN包**
    
-    请参考[算子调用指南](../../docs/zh/invocation/quick_op_invocation.md)的环境准备章节，安装CANN toolkit包和CANN legacy包，并配置好环境变量。
+    请参考[环境部署文档](../../docs/zh/context/quick_install.md)，安装CANN toolkit包和CANN ops包，并配置好环境变量。
     
 
 2. **安装torch与torch_npu包**
    
-   根据实际环境，下载对应torch包并安装: `torch-${torch_version}+cpu-${python_version}-linux_${arch}.whl` 下载链接为:[官网地址](http://download.pytorch.org/whl/torch)
+   根据实际环境，下载对应torch包并安装:  
+   ```torch-${torch_version}+cpu-${python_version}-linux_${arch}.whl``` 
+
+   下载链接为:[官网地址](http://download.pytorch.org/whl/torch)
 
    安装命令如下：
 
@@ -44,7 +47,8 @@ AscendOps 是一个轻量级，高性能的算子开发工程模板，它集成�
     pip install torch-${torch_version}+cpu-${python_version}-linux_${arch}.whl
     ```
 
-   根据实际环境，安装对应torch-npu包: `torch_npu-${torch_version}-${python_version}-linux_${arch}.whl`
+   根据实际环境，安装对应torch-npu包:  
+   ```torch_npu-${torch_version}-${python_version}-linux_${arch}.whl```
 
    可以直接使用pip命令下载安装，命令如下：
 

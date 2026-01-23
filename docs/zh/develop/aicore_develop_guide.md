@@ -64,7 +64,7 @@ ${op_name}                              # 替换为实际算子名的小写下�
 └── CMakeLists.txt                      # 算子cmakelist入口
 ```
 
- 若```${op_class}```为全新算子分类需额外在`CMakeLists.txt`中添加`add_subdirectory(${op_class})`，否则无法正常编译。
+ 若```${op_class}```为全新算子分类需额外在`CMakeLists.txt`中添加```add_subdirectory(${op_class})```，否则无法正常编译。
  	 
  	 ```
  	 if(ENABLE_EXPERIMENTAL)
