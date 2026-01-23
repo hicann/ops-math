@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -9,10 +9,11 @@
  */
 
 /*!
- * \file test_floor_div_tiling.cpp
+ * \file test_real_div_tiling.cpp
  * \brief
  */
 
+#include "atvoss/broadcast/broadcast_tiling.h"
 #include "math/real_div/op_host/arch35/real_div_tiling_arch35.h"
 #include <iostream>
 #include <gtest/gtest.h>
@@ -37,7 +38,7 @@ protected:
 
 TEST_F(RealDivTiling, real_div_test_bf16)
 {
-    optiling::RealDivCompileInfo compileInfo = {64, 245760};
+    Ops::Base::BroadcastCompileInfo compileInfo = {64, 245760};
     gert::TilingContextPara tilingContextPara(
         "RealDiv",
         {
@@ -56,7 +57,7 @@ TEST_F(RealDivTiling, real_div_test_bf16)
 
 TEST_F(RealDivTiling, real_div_test_float16)
 {
-    optiling::RealDivCompileInfo compileInfo = {64, 245760};
+    Ops::Base::BroadcastCompileInfo compileInfo = {64, 245760};
     gert::TilingContextPara tilingContextPara(
         "RealDiv",
         {
@@ -69,6 +70,63 @@ TEST_F(RealDivTiling, real_div_test_float16)
         &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "88704 150323856640 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(RealDivTiling, real_div_test_int32)
+{
+    Ops::Base::BroadcastCompileInfo compileInfo = {64, 245760};
+    gert::TilingContextPara tilingContextPara(
+        "RealDiv",
+        {
+            {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_INT32, ge::FORMAT_ND},
+            {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    uint64_t expectTilingKey = 8;
+    string expectTilingData = "25872 146028888448 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(RealDivTiling, real_div_test_float32)
+{
+    Ops::Base::BroadcastCompileInfo compileInfo = {64, 245760};
+    gert::TilingContextPara tilingContextPara(
+        "RealDiv",
+        {
+            {{{1, 1, 789, 1}, {3, 5, 1, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{1, 1, 789, 1}, {3, 5, 1, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{3, 5, 789, 5}, {3, 5, 789, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    uint64_t expectTilingKey = 0;
+    string expectTilingData = "12884901888 8589934592 1 8 1 1 8 10880 8 15 789 5 0 0 0 0 0 3945 5 1 0 0 0 0 0 0 0 0 0 15 1 5 0 0 0 0 0 15 1 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 5 0 1 0 0 0 0 0 5 0 1 0 0 0 0 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(RealDivTiling, real_div_test_bool)
+{
+    Ops::Base::BroadcastCompileInfo compileInfo = {64, 245760};
+    gert::TilingContextPara tilingContextPara(
+        "RealDiv",
+        {
+            {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_BOOL, ge::FORMAT_ND},
+            {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_BOOL, ge::FORMAT_ND},
+        },
+        {
+            {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    uint64_t expectTilingKey = 8;
+    string expectTilingData = "25872 111669150208 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

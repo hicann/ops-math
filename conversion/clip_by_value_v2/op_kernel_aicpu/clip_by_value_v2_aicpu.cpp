@@ -31,8 +31,7 @@ constexpr int64_t kComplexParallelDataNum = static_cast<int64_t>(32) * static_ca
 namespace aicpu {
 
 template <typename T>
-void CommonCompute(
-    const CpuKernelContext& ctx, int64_t start, int64_t end, T (*y_index_compute_func)(T, T, T))
+void CommonCompute(const CpuKernelContext& ctx, int64_t start, int64_t end, T (*y_index_compute_func)(T, T, T))
 {
     auto input_x = reinterpret_cast<T*>(ctx.Input(0)->GetData());
     auto input_min = reinterpret_cast<T*>(ctx.Input(1)->GetData());

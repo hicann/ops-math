@@ -27,16 +27,16 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_INT32,
     op::DataType::DT_INT8,    op::DataType::DT_UINT8, op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_INT8,
     op::DataType::DT_UINT8,   op::DataType::DT_BF16,  op::DataType::DT_INT64};
 
 static inline const std::initializer_list<op::DataType>& GetAiCoreDtypeSupportListBySocVersion()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    switch (socVersion) {
-        case SocVersion::ASCEND910_95: {
-            return ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST;
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    switch (npuArch) {
+        case NpuArch::DAV_3510: {
+            return REGBASE_DTYPE_SUPPORT_LIST;
         }
         default: {
             return AICORE_DTYPE_SUPPORT_LIST;

@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "realdiv.h"
 #include "opdev/aicpu/aicpu_task.h"
@@ -16,12 +16,16 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
 namespace l0op {
 
 OP_TYPE_REGISTER(RealDiv);
+
+static const int MODE_REAL_DIV = 0;
+static const int MODE_TRUNC_DIV = 1;
 
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT,
     op::DataType::DT_FLOAT16, op::DataType::DT_BF16, op::DataType::DT_BOOL};
@@ -30,19 +34,25 @@ static const std::initializer_list<op::DataType> ASCEND610LITE_DTYPE_SUPPORT_LIS
     op::DataType::DT_FLOAT16, op::DataType::DT_INT8, op::DataType::DT_UINT8, op::DataType::DT_INT32};
 
 static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT,
-    op::DataType::DT_FLOAT16, op::DataType::DT_BF16, op::DataType::DT_BOOL, op::DataType::DT_INT32};
+    op::DataType::DT_FLOAT16, op::DataType::DT_BF16, op::DataType::DT_BOOL, op::DataType::DT_INT32,
+    op::DataType::DT_INT64};
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static bool IsAiCoreSupport(const aclTensor* self) {
   // 根据dtype返回决定是否走aicore：true则走aicore
   auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  if (socVersion == SocVersion::ASCEND910_95) {
+  if (IsRegBase()) {
     return CheckType(self->GetDataType(), ASCEND910_95_DTYPE_SUPPORT_LIST);
   }
   if (socVersion == SocVersion::ASCEND610LITE) {
     return CheckType(self->GetDataType(), ASCEND610LITE_DTYPE_SUPPORT_LIST);
   }
   return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
+}
+
+bool IsRealDivSupportNonContiguous(const aclTensor* self) {
+  bool isSupportNonContiguous = IsRegBase();
+  return isSupportNonContiguous && IsAiCoreSupport(self);
 }
 
 // AICORE算子kernel
@@ -78,6 +88,39 @@ const aclTensor* RealDiv(const aclTensor* self, const aclTensor* other, aclOpExe
     divOut = executor->AllocTensor(broadcastShape, self->GetDataType());
   } else {
     divOut = executor->AllocTensor(broadcastShape, op::DataType::DT_FLOAT);
+  }
+
+  if (IsAiCoreSupport(self)) {
+    return RealDivAiCore(self, other, divOut, executor);
+  } else {
+    return RealDivAiCpu(self, other, divOut, executor);
+  }
+  return divOut;
+}
+
+const aclTensor* RealDiv(const aclTensor* self, const aclTensor* other, const int mode, aclOpExecutor* executor) {
+  op::Shape broadcastShape;
+  if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
+    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+            op::ToString(other->GetViewShape()).GetString());
+    return nullptr;
+  }
+
+  bool isOutDtypeFloat = false;
+  if (mode == MODE_REAL_DIV &&
+      (self->GetDataType() == op::DataType::DT_BOOL || self->GetDataType() == op::DataType::DT_INT32)) {
+    isOutDtypeFloat = true;
+  }
+
+  if (mode == MODE_TRUNC_DIV && self->GetDataType() == op::DataType::DT_BOOL) {
+    isOutDtypeFloat = true;
+  }
+
+  aclTensor* divOut;
+  if (isOutDtypeFloat) {
+    divOut = executor->AllocTensor(broadcastShape, op::DataType::DT_FLOAT);
+  } else {
+    divOut = executor->AllocTensor(broadcastShape, self->GetDataType());
   }
 
   if (IsAiCoreSupport(self)) {

@@ -45,6 +45,7 @@ protected:
         uint64_t workspaceSize = 0;
         aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
         EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
+        // ut.TestPrecision();
     }
 
     void test_run_invalid(
@@ -320,6 +321,7 @@ TEST_F(l2_remainder_tensor_scalar_test, l2_remainder_tensor_scalar_test_12)
     auto ut = OP_API_UT(aclnnRemainderTensorScalar, INPUT(selfT, other_desc), OUTPUT(out));
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
+    // ut.TestPrecision();
 }
 
 ///////////////////////////////////////

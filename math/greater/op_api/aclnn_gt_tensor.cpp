@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include "aclnn_gt_tensor.h"
 #include "greater.h"
 #include "aclnn_kernels/cast.h"
@@ -22,6 +22,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -86,11 +87,8 @@ static const size_t DIM_SUPPORT_MAX = 8;
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const aclTensor* out, DataType& promoteType)
 {
-    // 获取芯片类型,判断是1971还是1980
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    bool is910bSocVersion =
-        (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-         socVersion == SocVersion::ASCEND910_95);
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    bool is910bSocVersion = (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch));
     const std::initializer_list<op::DataType> CURRENT_DTYPE_SUPPORT_LIST =
         is910bSocVersion ? DTYPE_SUPPORT_910B_LIST : DTYPE_SUPPORT_910_LIST;
     const std::initializer_list<op::DataType> CURRENT_OUT_DTYPE_SUPPORT_LIST =
@@ -130,7 +128,7 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const
             op::ToString(promoteType).GetString(), op::ToString(CURRENT_DTYPE_SUPPORT_LIST).GetString());
         return false;
     }
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    if (IsRegBase(npuArch)) {
         // 检查self的数据类型是否合规
         OP_CHECK_RESULT_DTYPE_CAST_FAILED(self->GetDataType(), promoteType, return false);
         // 检查other的数据类型是否合规

@@ -31,7 +31,6 @@ template <typename T>
 struct AddWithoutCastCompute {
     using OpInputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
     using OpInputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
-
     using OpAddRes = Bind<Vec::Add<T>, OpInputX1, OpInputX2>;
 
     using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpAddRes>;

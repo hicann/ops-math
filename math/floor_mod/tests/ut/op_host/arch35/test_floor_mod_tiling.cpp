@@ -33,7 +33,7 @@ protected:
     static void TearDownTestCase()
     {
         std::cout << "FloorModTiling TearDown" << std::endl;
-    }
+    }    
 };
 
 TEST_F(FloorModTiling, floor_mod_test_0)

@@ -22,6 +22,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -67,7 +68,7 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_910B_LIST = {
     op::DataType::DT_BOOL,  op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
 
 // 根据API定义，需要列出所能支持的所有dtype (1982)
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_910_95_LIST = {
+static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_INT32,  op::DataType::DT_INT64,     op::DataType::DT_FLOAT16,
     op::DataType::DT_INT16, op::DataType::DT_INT8,   op::DataType::DT_UINT8,     op::DataType::DT_BF16,
     op::DataType::DT_BOOL,  op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128,
@@ -88,7 +89,7 @@ static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_910B_LIST = {
     op::DataType::DT_BOOL,  op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
 
 // 910_95版本支持
-static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_910_95_LIST = {
+static const std::initializer_list<op::DataType> REGBASE_OUT_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT,     op::DataType::DT_INT32,      op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
     op::DataType::DT_INT16,     op::DataType::DT_INT8,       op::DataType::DT_UINT8, op::DataType::DT_DOUBLE,
     op::DataType::DT_UINT32,    op::DataType::DT_UINT64,     op::DataType::DT_BOOL,  op::DataType::DT_UINT16,
@@ -99,16 +100,15 @@ static const size_t DIM_SUPPORT_MAX = 8;
 
 static const std::initializer_list<op::DataType> GetInputDtypeSupportList()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    switch (socVersion) {
-        case SocVersion::ASCEND910_93:
-        case SocVersion::ASCEND910B: {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    switch (npuArch) {
+        case NpuArch::DAV_2201: {
             return DTYPE_SUPPORT_910B_LIST;
         }
-        case SocVersion::ASCEND910_95: {
-            return DTYPE_SUPPORT_910_95_LIST;
+        case NpuArch::DAV_3510: {
+            return REGBASE_DTYPE_SUPPORT_LIST;
         }
-        case SocVersion::ASCEND910: {
+        case NpuArch::DAV_1001: {
             return DTYPE_SUPPORT_910_LIST;
         }
         default: {
@@ -119,11 +119,11 @@ static const std::initializer_list<op::DataType> GetInputDtypeSupportList()
 
 static inline const std::initializer_list<op::DataType>& GetOutputDtypeSupportList()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (npuArch == NpuArch::DAV_2201) {
         return OUT_DTYPE_SUPPORT_910B_LIST;
-    } else if (socVersion == SocVersion::ASCEND910_95) {
-        return OUT_DTYPE_SUPPORT_910_95_LIST;
+    } else if (IsRegBase(npuArch)) {
+        return REGBASE_OUT_DTYPE_SUPPORT_LIST;
     }
     return OUT_DTYPE_SUPPORT_910_LIST;
 }
@@ -131,7 +131,8 @@ static inline const std::initializer_list<op::DataType>& GetOutputDtypeSupportLi
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
     const std::initializer_list<op::DataType> inputSupportList = GetInputDtypeSupportList();
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
         // 检查self的数据类型是否在支持列表内
         OP_CHECK_DTYPE_NOT_SUPPORT(self, inputSupportList, return false);
 

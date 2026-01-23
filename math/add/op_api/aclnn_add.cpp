@@ -18,6 +18,7 @@
 #include "math/logical_and/op_api/logical_and.h"
 #include "math/logical_or/op_api/logical_or.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"
@@ -56,10 +57,10 @@ static constexpr size_t MAX_DIM_LEN = 8;
 static const std::initializer_list<op::DataType> AXPY_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_FLOAT16};
 
-static const std::initializer_list<op::DataType> ASCEND910_95_AXPY_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> ARCH_REGBASE_AXPY_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> ASCEND910_95_AXPY_V2_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> ARCH_REGBASE_AXPY_V2_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_BF16, op::DataType::DT_FLOAT16, op::DataType::DT_INT32,
     op::DataType::DT_INT64, op::DataType::DT_INT8, op::DataType::DT_UINT8,   op::DataType::DT_BOOL};
 
@@ -84,14 +85,14 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const ac
 
 static inline const std::initializer_list<op::DataType>& GetDtypeSupportListBySocVersion()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    switch (socVersion) {
-        case SocVersion::ASCEND910B:
-        case SocVersion::ASCEND910_93:
-        case SocVersion::ASCEND910_95: {
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    OP_LOGI("AddAclnn", "curArch is %u", static_cast<uint32_t>(curArch));
+    switch (curArch) {
+        case NpuArch::DAV_2201:
+        case NpuArch::DAV_3510: {
             return ASCEND910B_DTYPE_SUPPORT_LIST;
         }
-        case SocVersion::ASCEND910: {
+        case NpuArch::DAV_1001: {
             return ASCEND910_DTYPE_SUPPORT_LIST;
         }
         default: {
@@ -183,7 +184,7 @@ static inline bool IsFloatEqual(float a, float b)
 
 static inline bool IsEqualToOne(const op::DataType calcType, const aclScalar* alpha)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+    if (!IsRegBase()) {
         return !(alpha->ToFloat() > 1 || alpha->ToFloat() < 1);
     }
     if (IsComplexType(alpha->GetDataType()) || IsComplexType(calcType)) {
@@ -222,7 +223,7 @@ static bool CheckPromoteType(
             op::ToString(DataType(alpha->GetDataType())).GetString(), op::ToString(promoteType).GetString());
         return false;
     }
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    if (IsRegBase()) {
         OP_CHECK_RESULT_DTYPE_CAST_FAILED(selfDtype, promoteType, return false);
         OP_CHECK_RESULT_DTYPE_CAST_FAILED(otherDtype, promoteType, return false);
         const auto& supportList = GetDtypeSupportListBySocVersion();
@@ -289,16 +290,16 @@ static aclnnStatus CheckParams(
 
 static bool IsSupportAxpy(const DataType promoteType)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-        return CheckType(promoteType, ASCEND910_95_AXPY_DTYPE_SUPPORT_LIST);
+    if (IsRegBase()) {
+        return CheckType(promoteType, ARCH_REGBASE_AXPY_DTYPE_SUPPORT_LIST);
     }
     return CheckType(promoteType, AXPY_DTYPE_SUPPORT_LIST);
 }
 
 static bool IsSupportAxpyV2(const DataType promoteType)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-        return CheckType(promoteType, ASCEND910_95_AXPY_V2_DTYPE_SUPPORT_LIST);
+    if (IsRegBase()) {
+        return CheckType(promoteType, ARCH_REGBASE_AXPY_V2_DTYPE_SUPPORT_LIST);
     }
     return false;
 }
@@ -332,7 +333,7 @@ aclnnStatus aclnnAddGetWorkspaceSize(
         return ACLNN_SUCCESS;
     }
 
-    bool isSupportNonContiguous = GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95;
+    bool isSupportNonContiguous = IsRegBase();
     auto selfWithStride = uniqueExecutor.get()->CreateView(
         self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
     CHECK_RET(selfWithStride != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -433,6 +434,8 @@ aclnnStatus aclnnAddGetWorkspaceSize(
             CHECK_RET(otherCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
             auto alphaTensor = uniqueExecutor.get()->ConvertToTensor(alpha, promoteType);
+            CHECK_RET(alphaTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
             addOpOut = l0op::AxpyV2(selfCasted, otherCasted, alphaTensor, uniqueExecutor.get());
         } else {
             // 固定写法，将输入self转换成连续的tensor
@@ -452,6 +455,8 @@ aclnnStatus aclnnAddGetWorkspaceSize(
             CHECK_RET(otherCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
             auto alphaTensor = uniqueExecutor.get()->ConvertToTensor(alpha, promoteType);
+            CHECK_RET(alphaTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            
             auto otherRes = l0op::Mul(otherCasted, alphaTensor, uniqueExecutor.get());
             CHECK_RET(otherRes != nullptr, ACLNN_ERR_INNER_NULLPTR);
             addOpOut = l0op::Add(selfCasted, otherRes, uniqueExecutor.get());
@@ -493,8 +498,7 @@ static bool CheckShapeScalar(const aclTensor* self, const aclTensor* out)
 static DataType PromoteTypeScalar(
     const aclTensor* self, const aclScalar* other, const aclScalar* alpha, const aclTensor* out)
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910_95) {
+    if (IsRegBase()) {
         auto otherDefaultDtype = GetScalarDefaultDtype(other->GetDataType());
         auto promoteType = CombineCategoriesWithComplex(self->GetDataType(), otherDefaultDtype);
         if (promoteType == op::DataType::DT_FLOAT16 || promoteType == op::DataType::DT_BF16) {
@@ -571,31 +575,41 @@ aclnnStatus aclnnAddsGetWorkspaceSize(
 
     auto promoteType = PromoteTypeScalar(self, other, alpha, out);
 
-    // 固定写法，将输入self转换成连续的tensor
-    auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
-    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 将输入self的数据类型转换成隐式数据类型，根据具体算子语义按需调用
-    auto selfCasted = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
-    CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
     auto otherTensor = uniqueExecutor.get()->ConvertToTensor(other, promoteType);
+    CHECK_RET(otherTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 进行Add计算
     const aclTensor* addOpOut = nullptr;
+    const aclTensor* selfProcessed = nullptr;
+
+    if (self->GetDataType() == promoteType && l0op::IsAddSupportNonContiguous(self, otherTensor) &&
+        (IsEqualToOne(promoteType, alpha) || (!IsSupportAxpy(promoteType) && !IsSupportAxpyV2(promoteType)))) {
+        selfProcessed = uniqueExecutor.get()->CreateView(
+            self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
+    } else {
+        auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+        // 将输入self的数据类型转换成隐式数据类型，根据具体算子语义按需调用
+        selfProcessed = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
+    }
+    CHECK_RET(selfProcessed != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    // alpha为1时不需要Mul
     if (IsEqualToOne(promoteType, alpha)) {
-        // alpha为1时不需要Mul
-        addOpOut = l0op::Add(selfCasted, otherTensor, uniqueExecutor.get());
+        addOpOut = l0op::Add(selfProcessed, otherTensor, uniqueExecutor.get());
     } else if (IsSupportAxpy(promoteType)) {
-        addOpOut = l0op::Axpy(selfCasted, otherTensor, alpha->ToFloat(), uniqueExecutor.get());
+        addOpOut = l0op::Axpy(selfProcessed, otherTensor, alpha->ToFloat(), uniqueExecutor.get());
     } else if (IsSupportAxpyV2(promoteType)) {
         auto alphaTensor = uniqueExecutor.get()->ConvertToTensor(alpha, promoteType);
-        addOpOut = l0op::AxpyV2(selfCasted, otherTensor, alphaTensor, uniqueExecutor.get());
+        CHECK_RET(alphaTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        addOpOut = l0op::AxpyV2(selfProcessed, otherTensor, alphaTensor, uniqueExecutor.get());
     } else {
         auto alphaTensor = uniqueExecutor.get()->ConvertToTensor(alpha, promoteType);
+        CHECK_RET(alphaTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto otherRes = l0op::Mul(otherTensor, alphaTensor, uniqueExecutor.get());
         CHECK_RET(otherRes != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        addOpOut = l0op::Add(selfCasted, otherRes, uniqueExecutor.get());
+        addOpOut = l0op::Add(selfProcessed, otherRes, uniqueExecutor.get());
     }
     CHECK_RET(addOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 

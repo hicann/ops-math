@@ -29,6 +29,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -45,18 +46,16 @@ static const std::initializer_list<DataType> Ascend910B_out_dtype_support_list =
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_DOUBLE, op::DataType::DT_BF16};
 
 static const std::initializer_list<DataType>& GetSelfDtypeSupportList() {
-  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-      socVersion == SocVersion::ASCEND910_95) {
+  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+  if (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch)) {
     return Ascend910B_input_dtype_support_list;
   }
   return Ascend910_input_dtype_support_list;
 }
 
 static const std::initializer_list<DataType>& GetOutDtypeSupportList() {
-  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-      socVersion == SocVersion::ASCEND910_95) {
+  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+  if (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch)) {
     return Ascend910B_out_dtype_support_list;
   }
   return Ascend910_out_dtype_support_list;
@@ -102,6 +101,9 @@ static bool CheckShape(const aclTensor* self, const aclTensor* end, const aclTen
   }
 
   if (IsContiguous(self) && IsContiguous(end) && IsContiguous(y)) {
+    if(self->GetViewShape().GetDimNum() > static_cast<int64_t>(MAX_SUPPORT_DIMS_NUMS))  {
+      OP_LOGW("The dimension of the self tensor is greater than 8");
+    }
     return true;
   }
 
@@ -124,7 +126,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* end, cons
 }
 
 static inline op::DataType InferScalarTensorDtype(const aclTensor* self) {
-  if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910_95) {
+  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+  if (IsRegBase(npuArch)) {
     return op::DataType::DT_FLOAT;
   }
   return self->GetDataType();
@@ -145,6 +148,10 @@ static aclnnStatus CalculateResult(const aclTensor* self, const aclTensor* end, 
   auto selfContiguous = l0op::Contiguous(self, executor);
   CHECK_COND(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR, "InitializeTensor self failed!");
 
+  if (self->GetStorageFormat() != Format::FORMAT_ND) {
+    OP_LOGW("Format only support ND");
+  }
+  
   // end如果非连续，需要转连续
   auto endContiguous = l0op::Contiguous(end, executor);
   CHECK_COND(endContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR, "InitializeTensor end failed!");

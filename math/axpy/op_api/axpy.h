@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-
+ 
 #ifndef OP_API_INC_LEVEL0_OP_AXPY_OP_H_
 #define OP_API_INC_LEVEL0_OP_AXPY_OP_H_
 

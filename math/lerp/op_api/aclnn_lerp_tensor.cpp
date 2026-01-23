@@ -29,6 +29,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
 #include "aclnn_lerp_tensor.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -39,9 +40,8 @@ static const std::initializer_list<DataType> Ascend910B_dtype_support_list = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16};
 
 static const std::initializer_list<DataType>& GetDtypeSupportList() {
-  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-      socVersion == SocVersion::ASCEND910_95) {
+  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+  if (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch)) {
     return Ascend910B_dtype_support_list;
   }
   return Ascend910_dtype_support_list;
@@ -131,7 +131,7 @@ static aclnnStatus CalculateResult(const aclTensor* self, const aclTensor* end, 
   // self如果非连续，需要转连续
   auto selfContiguous = l0op::Contiguous(self, executor);
   CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
+  
   if (self->GetStorageFormat() != Format::FORMAT_ND) {
     OP_LOGW("Format only support ND");
   }
@@ -163,7 +163,7 @@ aclnnStatus aclnnLerpGetWorkspaceSize(const aclTensor* self, const aclTensor* en
   // 固定写法，创建OpExecutor
   auto uniqueExecutor = CREATE_EXECUTOR();
   CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
-
+  
   auto ret = CalculateResult(self, end, weight, out, uniqueExecutor.get());
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
 

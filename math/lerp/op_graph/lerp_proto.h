@@ -28,15 +28,13 @@ namespace ge {
  * @li start: A ND tensor. Must be one of the following types:
  *     float16, float32, bfloat16. \n
  * The shape of start, end and weight should satisfy the broadcast relationship. \n
- * @li end: A ND tensor. Must be one of the following types:
- *     float16, float32, bfloat16. \n
- * @li weight: A ND tensor. Must be one of the following types:
- *     float16, float32, bfloat16. \n
+ * @li end: A ND tensor. The same dtype as start. \n
+ * @li weight: A ND tensor. The same dtype as start. \n
 
  * @par Outputs:
  * y: A ND tensor with the same dtype of start's. \n
  * The shape of 'y' is same as the shape of the tensor \n
- * whose shape is generated after 'start', 'end', and 'weight' broadcast opratioan.
+ * whose shape is generated after 'start', 'end', and 'weight' broadcast operation.
 
  * @par Third-party framework compatibility
  * Compatible with the PyTorch operator Lerp. \n

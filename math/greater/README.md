@@ -4,9 +4,13 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term> |√|
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
 
 ## 功能说明
 
@@ -41,14 +45,14 @@
       <td>x1</td>
       <td>输入</td>
       <td>公式中的输入张量x1。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64、UINT6、INT8、UINT8、BOOL</td>
+      <td>DOUBLE、FLOAT、FLOAT16、BFLOAT16、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>x2</td>
       <td>输入</td>
       <td>公式中的输入张量x2。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64、UINT6、INT8、UINT8、BOOL</td>
+      <td>DOUBLE、FLOAT、FLOAT16、BFLOAT16、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>

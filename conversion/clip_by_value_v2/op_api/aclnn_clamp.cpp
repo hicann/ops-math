@@ -23,6 +23,7 @@
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 #include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "clip_by_value.h"
 
@@ -114,9 +115,8 @@ static op::DataType GetScalarDefaultDtype(const op::DataType input)
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-        socVersion == SocVersion::ASCEND910_95) {
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch == NpuArch::DAV_2201 || IsRegBase(curArch)) {
         return Ascend910B_dtype_support_list;
     } else {
         return Ascend910_dtype_support_list;
@@ -345,8 +345,8 @@ aclnnStatus aclnnClampCommon(
         return ACLNN_SUCCESS;
     }
     op::DataType promoteType = self->GetDataType();
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910_95) {
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(curArch)) {
         CHECK_RET(ClampPromoteType(clipValueMin, clipValueMax, out, promoteType), ACLNN_ERR_PARAM_INVALID);
     } else {
         promoteType = out->GetDataType();
@@ -368,8 +368,8 @@ aclnnStatus aclnnClampCommon(
     auto ceilResult = l0op::ClipByValueV2(selfCasted, minTensor, maxTensor, uniqueExecutor.get());
     CHECK_RET(ceilResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    // 针对910_95芯片进行处理
-    if (socVersion == SocVersion::ASCEND910_95) {
+    // 针对Arch3510芯片进行处理
+    if (IsRegBase(curArch)) {
         auto ceilCastResult = l0op::Cast(ceilResult, out->GetDataType(), uniqueExecutor.get());
         CHECK_RET(ceilCastResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto viewCopyResult = l0op::ViewCopy(ceilCastResult, out, uniqueExecutor.get());

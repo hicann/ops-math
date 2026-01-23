@@ -16,6 +16,7 @@
 #include "math/trunc/op_api/trunc.h"
 #include "math/muls/op_api/muls.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -115,9 +116,8 @@ static const int MODE_FLOOR_DIV = 2;
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-        socVersion == SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch)) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_SUPPORT_LIST;
@@ -257,7 +257,8 @@ static bool CheckDtypeValidScalar(const aclTensor* self, const aclScalar* other)
 static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, const aclTensor* y, const int mode)
 {
     // 检查self和other能否做数据类型推导
-    auto promoteType = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) ?
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    auto promoteType = (IsRegBase(npuArch)) ?
                            InferDivModeDtype(self->GetDataType(), other->GetDataType(), mode) :
                            op::PromoteType(self->GetDataType(), other->GetDataType());
     if (promoteType == DataType::DT_UNDEFINED) {
@@ -268,7 +269,14 @@ static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, cons
     }
 
     // 检查推导后的数据类型能否转换为输出的数据类型
-    OP_CHECK_RESULT_DTYPE_CAST_FAILED(promoteType, y->GetDataType(), return false);
+    if (mode == MODE_REAL_DIV && (promoteType == op::DataType::DT_INT32 || promoteType == op::DataType::DT_BOOL)) {
+        auto computeDtype = (IsRegBase())
+                            ? op::DataType::DT_FLOAT
+                            : promoteType;
+        OP_CHECK_RESULT_DTYPE_CAST_FAILED(computeDtype, y->GetDataType(), return false);
+    } else {
+        OP_CHECK_RESULT_DTYPE_CAST_FAILED(promoteType, y->GetDataType(), return false);
+    }
     return true;
 }
 
@@ -386,15 +394,14 @@ aclnnStatus aclnnDivGetWorkspaceSize(
     }
 
     // RealDiv算子需要对self和other两个输入做隐式数据类型转换，根据具体算子语义按需调用
-    auto promoteType = (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) ?
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    auto promoteType = (!IsRegBase(npuArch)) ?
                            CompatibleInferDivDtype(self->GetDataType(), other->GetDataType()) :
                            InferDivModeDtype(self->GetDataType(), other->GetDataType(), MODE_REAL_DIV);
 
-    bool isSupportNonContiguous = GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95;
-
     // 处理self输入
     const aclTensor* selfProcessed = nullptr;
-    if (self->GetDataType() == promoteType && isSupportNonContiguous) {
+    if (self->GetDataType() == promoteType && l0op::IsRealDivSupportNonContiguous(self)) {
         selfProcessed = uniqueExecutor.get()->CreateView(
             self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
     } else {
@@ -409,7 +416,7 @@ aclnnStatus aclnnDivGetWorkspaceSize(
 
     // 处理other输入
     const aclTensor* otherProcessed = nullptr;
-    if (other->GetDataType() == promoteType && isSupportNonContiguous) {
+    if (other->GetDataType() == promoteType && l0op::IsRealDivSupportNonContiguous(self)) {
         otherProcessed = uniqueExecutor.get()->CreateView(
             other, other->GetViewShape(), other->GetStorageShape(), other->GetViewStrides(), other->GetViewOffset());
     } else {
@@ -457,7 +464,8 @@ static bool CheckNotNullScalar(const aclTensor* self, const aclScalar* other, co
 
 static bool CheckPromoteTypeScalar(const aclTensor* self, const aclScalar* other, const aclTensor* y, const int mode)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
         // 检查self和other能否做数据类型推导
         auto promoteType = InferDivsModeDtype(self->GetDataType(), other->GetDataType(), mode);
         if (promoteType == DataType::DT_UNDEFINED) {
@@ -467,7 +475,11 @@ static bool CheckPromoteTypeScalar(const aclTensor* self, const aclScalar* other
             return false;
         }
         // 检查推导后的数据类型能否转换为输出的数据类型
-        OP_CHECK_RESULT_DTYPE_CAST_FAILED(promoteType, y->GetDataType(), return false);
+        if (mode == MODE_REAL_DIV && (promoteType == op::DataType::DT_INT32 || promoteType == op::DataType::DT_BOOL)) {
+            OP_CHECK_RESULT_DTYPE_CAST_FAILED(op::DataType::DT_FLOAT, y->GetDataType(), return false);
+        } else {
+            OP_CHECK_RESULT_DTYPE_CAST_FAILED(promoteType, y->GetDataType(), return false);
+        }
         return true;
     }
     // 检查self的数据类型能否转换为输出的数据类型
@@ -505,7 +517,8 @@ static aclnnStatus CheckParamsScalar(const aclTensor* self, const aclScalar* oth
 
 static bool CanUseMuls(const aclTensor* self, const aclScalar* other)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (!IsRegBase(npuArch)) {
         return false;
     }
     if (self->GetDataType() != op::DataType::DT_FLOAT16 && self->GetDataType() != op::DataType::DT_BF16 &&
@@ -513,7 +526,10 @@ static bool CanUseMuls(const aclTensor* self, const aclScalar* other)
         return false;
     }
     if (other->GetDataType() != op::DataType::DT_FLOAT16 && other->GetDataType() != op::DataType::DT_BF16 &&
-        other->GetDataType() != op::DataType::DT_FLOAT) {
+        other->GetDataType() != op::DataType::DT_FLOAT && other->GetDataType() != op::DataType::DT_DOUBLE) {
+        return false;
+    }
+    if (!op::IsContiguous(self) && other->GetDataType() == op::DataType::DT_DOUBLE) {
         return false;
     }
 
@@ -538,7 +554,8 @@ aclnnStatus aclnnDivsGetWorkspaceSize(
         return ACLNN_SUCCESS;
     }
 
-    bool isSupportNonContiguous = GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95;
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    bool isSupportNonContiguous = IsRegBase(npuArch);
 
     // 判断输入是否符合kernel支持的混合输入类型
     bool isMixDataType = isDivsMixDtypeSupport(self, other);
@@ -557,7 +574,7 @@ aclnnStatus aclnnDivsGetWorkspaceSize(
         divOpOut = l0op::RealDiv(selfProcessed, otherConvert, uniqueExecutor.get());
         CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
     } else {
-        auto promoteType = (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) ?
+        auto promoteType = (!IsRegBase(npuArch)) ?
                                CompatibleInferDivsDtype(self->GetDataType(), other->GetDataType()) :
                                InferDivsModeDtype(self->GetDataType(), other->GetDataType(), MODE_REAL_DIV);
         promoteType = (IsFloatingType(self->GetDataType()) || IsComplexType(self->GetDataType())) ?
@@ -565,13 +582,13 @@ aclnnStatus aclnnDivsGetWorkspaceSize(
         promoteType = (self->GetDataType() == op::DataType::DT_BOOL && other->GetDataType() == op::DataType::DT_BOOL) ?
                           self->GetDataType() : promoteType;
         promoteType = (IsComplexType(other->GetDataType())) ? op::PromoteType(promoteType, other->GetDataType()) : promoteType;
-        if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+        if (IsRegBase(npuArch)) {
             promoteType = op::PromoteType(self->GetDataType(), other->GetDataType()) == op::DataType::DT_INT32
                           ? op::DataType::DT_INT32 : promoteType;
         }
 
         bool canUseMuls = CanUseMuls(self, other);
-        if (self->GetDataType() == promoteType && isSupportNonContiguous && !canUseMuls) {
+        if (self->GetDataType() == promoteType && l0op::IsRealDivSupportNonContiguous(self) && !canUseMuls) {
             // aclScalar转aclTensor
             auto otherConvert = uniqueExecutor.get()->ConvertToTensor(other, promoteType);
             CHECK_RET(otherConvert != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -644,7 +661,8 @@ aclnnStatus aclnnDivModGetWorkspaceSize(
     op::DataType promoteType;
     bool needToInt32 = false;
     op::DataType oriType = out->GetDataType();
-    if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (!IsRegBase(npuArch)) {
         auto promoteRet = CompatibleInferDivModeDtype(self->GetDataType(), other->GetDataType(), mode, promoteType);
         CHECK_RET(promoteRet == ACLNN_SUCCESS, promoteRet);
     } else {
@@ -725,7 +743,8 @@ aclnnStatus aclnnDivModsGetWorkspaceSize(
     op::DataType promoteType;
     bool needToInt32 = false;
     op::DataType oriType = out->GetDataType();
-    if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (!IsRegBase(npuArch)) {
         auto promoteRet = CompatibleInferDivsModeDtype(self->GetDataType(), other->GetDataType(), mode, promoteType);
         CHECK_RET(promoteRet == ACLNN_SUCCESS, promoteRet);
     } else {

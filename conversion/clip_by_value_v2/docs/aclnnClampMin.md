@@ -1,5 +1,7 @@
 # aclnnClampMin
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/clip_by_value_v2)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -7,6 +9,10 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
 
 ## 功能说明
 
@@ -30,13 +36,18 @@
 - **参数说明：**
 
   - self(aclTensor*,计算输入): 输入tensor，Device侧的aclTensor，shape支持1维-8维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，且数据类型与clipValueMin的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](common/TensorScalar互推导关系.md)）
+    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，且数据类型与clipValueMin的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）
+
   - clipValueMin(aclScalar*,计算输入): 下界。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，且数据类型与self的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](common/TensorScalar互推导关系.md)）。
+    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BOOL。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL。
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，且数据类型与self的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）。
+
   - out(aclTensor *，计算输出)：输出tensor，shape和self保持一致，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，数据类型和self保持一致。
+    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64，数据类型和self保持一致。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，数据类型和self保持一致。
     - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，数据类型需要是self、clipValueMin推导之后可转换的数据类型。
 
   - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。

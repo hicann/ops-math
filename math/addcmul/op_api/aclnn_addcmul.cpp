@@ -27,6 +27,7 @@
 #include "opdev/platform.h"
 #include "opdev/tensor_view_utils.h"
 #include "math/axpy_v2/op_api/axpy_v2.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -54,7 +55,7 @@ static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-        socVersion == SocVersion::ASCEND910_95) {
+        IsRegBase()) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_SUPPORT_LIST;
@@ -280,7 +281,7 @@ aclnnStatus aclnnAddcmulGetWorkspaceSize(
     CHECK_COND(tensor2_casted != nullptr, ACLNN_ERR_INNER_NULLPTR, "cast tensor2 failed!");
 
     // 如果是混合数据类型（self为bf16或float16,且value为float32），则value dtype保持float32类型
-    bool isToFloat = GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95 &&
+    bool isToFloat = IsRegBase() &&
                      IsMixedDType(self, value) && promoteType != op::DataType::DT_DOUBLE;
     auto valueDtype = isToFloat ? op::DataType::DT_FLOAT : promoteType;
     auto valueTensor = uniqueExecutor.get()->ConvertToTensor(value, valueDtype);

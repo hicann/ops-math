@@ -7,6 +7,9 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    ×     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
 
 
 ## 功能说明
@@ -36,21 +39,21 @@ $out = self + value × (input_1 / input_2)$
     </tr></thead>
   <tbody>
     <tr>
-      <td>input_data</td>
+      <td>self</td>
       <td>输入</td>
       <td>待进行addcidv计算的入参，公式中的self。</td>
       <td>FLOAT16、BFLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>x1</td>
+      <td>input_1</td>
       <td>输入</td>
       <td>待进行addcidv计算的入参，公式中的input_1。</td>
       <td>FLOAT16、BFLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>x2</td>
+      <td>input_2</td>
       <td>输入</td>
       <td>待进行addcidv计算的入参，公式中的input_2。</td>
       <td>FLOAT16、BFLOAT16、FLOAT</td>
@@ -64,7 +67,7 @@ $out = self + value × (input_1 / input_2)$
       <td>ND</td>
     </tr>
     <tr>
-      <td>y</td>
+      <td>out</td>
       <td>输出</td>
       <td>待进行addcdiv计算的出参，公式中的out。</td>
       <td>FLOAT16、BFLOAT16、FLOAT</td>
@@ -72,6 +75,7 @@ $out = self + value × (input_1 / input_2)$
     </tr>
   </tbody></table>
 
+- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
 
 ## 约束说明
 

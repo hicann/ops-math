@@ -9,6 +9,7 @@
  */
 
 #include "add.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/op_log.h"
@@ -37,17 +38,17 @@ static const std::initializer_list<DataType> ASCEND610LITE_AICORE_DTYPE_SUPPORT_
 
 static inline const std::initializer_list<DataType>& GetAiCoreDtypeSupportListBySocVersion()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    switch (socVersion) {
-        case SocVersion::ASCEND910B:
-        case SocVersion::ASCEND910_95:
-        case SocVersion::ASCEND910_93: {
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    OP_LOGI("AddL0", "curArch is %u", static_cast<uint32_t>(curArch));
+    switch (curArch) {
+        case NpuArch::DAV_2201:
+        case NpuArch::DAV_3510: {
             return ASCEND910B_AICORE_DTYPE_SUPPORT_LIST;
         }
-        case SocVersion::ASCEND910: {
+        case NpuArch::DAV_1001: {
             return ASCEND910_AICORE_DTYPE_SUPPORT_LIST;
         }
-        case SocVersion::ASCEND610LITE: {
+        case NpuArch::DAV_3102: {
             return ASCEND610LITE_AICORE_DTYPE_SUPPORT_LIST;
         }
         default: {
@@ -63,7 +64,7 @@ static inline bool IsAiCoreSupport(const aclTensor* self)
 }
 
 bool IsAddSupportNonContiguous(const aclTensor* self, const aclTensor *other) {
-  bool isSupportNonContiguous = GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95;
+  bool isSupportNonContiguous = IsRegBase();
   return isSupportNonContiguous && IsAiCoreSupport(self) && IsAiCoreSupport(other);
 }
 

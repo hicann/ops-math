@@ -79,24 +79,24 @@ ge::graphStatus FloorModTiling::DoOpTiling()
     if (input0Dtype == ge::DT_FLOAT16 || input0Dtype == ge::DT_BF16) {
         BroadcastBaseTiling<FloorModOp::FloorModFloatWithCastOp<half>::OpDag> brcBaseTiling(
             context_, static_cast<uint32_t>(BROADCAST_KERNEL_TYPE::KERNEL_TYPE_NDDMA));
-        ret = brcBaseTiling.DoTiling(extraBuf, maxLiveNodeCnt);
+        ret = brcBaseTiling.DoTiling(extraBuf, maxLiveNodeCnt, true);
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else if (input0Dtype == ge::DT_FLOAT) {
         BroadcastBaseTiling<FloorModOp::FloorModFloatOp<float>::OpDag> brcBaseTiling(
             context_, static_cast<uint32_t>(BROADCAST_KERNEL_TYPE::KERNEL_TYPE_NDDMA));
-        ret = brcBaseTiling.DoTiling(extraBuf, maxLiveNodeCnt);
+        ret = brcBaseTiling.DoTiling(extraBuf, maxLiveNodeCnt, true);
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else if (input0Dtype == ge::DT_INT32) {
         BroadcastBaseTiling<FloorModOp::FloorModInt32Op<int32_t>::OpDag> brcBaseTiling(
             context_, static_cast<uint32_t>(BROADCAST_KERNEL_TYPE::KERNEL_TYPE_NDDMA));
         extraBuf += DCACHE_SIZE;
-        ret = brcBaseTiling.DoTiling(extraBuf, maxLiveNodeCnt);
+        ret = brcBaseTiling.DoTiling(extraBuf, maxLiveNodeCnt, true);
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else if (input0Dtype == ge::DT_INT64) {
         BroadcastBaseTiling<FloorModOp::FloorModInt64Op<int64_t>::OpDag> brcBaseTiling(
             context_, static_cast<uint32_t>(BROADCAST_KERNEL_TYPE::KERNEL_TYPE_NDDMA));
         extraBuf += DCACHE_SIZE;
-        ret = brcBaseTiling.DoTiling(extraBuf, maxLiveNodeCnt);
+        ret = brcBaseTiling.DoTiling(extraBuf, maxLiveNodeCnt, true);
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
         OP_LOGE(

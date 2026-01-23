@@ -18,6 +18,9 @@ namespace l0op {
 const aclTensor *GreaterEqual(const aclTensor *self,
                     const aclTensor *other,
                     aclOpExecutor *executor);
+
+// 判断tensor是否支持非连续
+bool IsGreaterEqualSupportNonContiguous(const aclTensor* self);
 } // l0op
 
 #endif // OP_API_INC_LEVEL0_GREATER_EQUAL_H_

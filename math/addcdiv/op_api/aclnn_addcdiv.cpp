@@ -26,6 +26,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -70,7 +71,7 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* tensor1, con
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     bool is910BSocVersion =
         (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-         socVersion == SocVersion::ASCEND910_95);
+         IsRegBase());
     const std::initializer_list<DataType> DTYPE_SUPPORT_LIST =
         is910BSocVersion ? DTYPE_SUPPORT_LIST_910B : DTYPE_SUPPORT_LIST_910;
 
@@ -215,7 +216,7 @@ aclnnStatus aclnnAddcdivGetWorkspaceSize(
     CHECK_RET(tensor2Casted != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 如果是混合数据类型（self为bf16或float16,且value为float32），则value dtype保持float32类型
-    bool isToFloat = GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95 &&
+    bool isToFloat = IsRegBase() &&
                      IsMixedDType(self, value) && promoteType != op::DataType::DT_DOUBLE;
     auto valueDtype = isToFloat ? op::DataType::DT_FLOAT : promoteType;
     auto valueTensor = uniqueExecutor.get()->ConvertToTensor(value, valueDtype);

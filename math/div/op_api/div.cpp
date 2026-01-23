@@ -34,16 +34,13 @@ static const std::initializer_list<op::DataType> ASCEND910B_AICORE_DTYPE_SUPPORT
 
 static inline const std::initializer_list<op::DataType>& GetAiCoreDtypeSupportListBySocVersion()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    switch (socVersion) {
-        case SocVersion::ASCEND910B:
-        case SocVersion::ASCEND910_95:
-        case SocVersion::ASCEND910_93: {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    switch (npuArch) {
+        case NpuArch::DAV_2201:
+        case NpuArch::DAV_3510: {
             return ASCEND910B_AICORE_DTYPE_SUPPORT_LIST;
         }
-        case SocVersion::ASCEND910: {
-            return ASCEND910_AICORE_DTYPE_SUPPORT_LIST;
-        }
+        case NpuArch::DAV_1001:
         default: {
             return ASCEND910_AICORE_DTYPE_SUPPORT_LIST;
         }

@@ -1,13 +1,13 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
- 
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
 #include "aclnn_gt_scalar.h"
 #include "greater.h"
 #include "aclnn_kernels/cast.h"
@@ -23,6 +23,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -93,11 +94,8 @@ static bool CheckNotNull(const aclTensor* self, const aclScalar* other, const ac
 
 static bool CheckDtypeValid(const aclTensor* self, const aclScalar* other, const aclTensor* out)
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    // 获取芯片类型,判断是1971还是1980
-    bool is910bSocVersion =
-        (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-         socVersion == SocVersion::ASCEND910_95);
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    bool is910bSocVersion = (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch));
     const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST =
         is910bSocVersion ? DTYPE_SUPPORT_910B_LIST : DTYPE_SUPPORT_910_LIST;
     const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_LIST =
@@ -171,7 +169,8 @@ static op::DataType GetScalarDefaultDtype(const op::DataType input)
 static bool CheckPromoteType(const aclTensor* self, const aclScalar* other, const aclTensor* out, DataType& promoteType)
 {
     // 类型提升判断，将提升后的数据类型返回
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
         auto scalarDefaultDtype = GetScalarDefaultDtype(other->GetDataType());
         promoteType = CombineCategoriesWithComplex(self->GetDataType(), scalarDefaultDtype);
         if (promoteType == DataType::DT_BOOL) {
@@ -250,20 +249,27 @@ aclnnStatus aclnnGtScalarCommon(
         return ACLNN_SUCCESS;
     }
 
-    // self如果非连续，需要转连续
-    auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
-    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    const aclTensor* selfProcessed = nullptr;
+    if (self->GetDataType() == promoteType && l0op::IsGreaterSupportNonContiguous(self)) {
+        selfProcessed = uniqueExecutor.get()->CreateView(
+            self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
+    } else {
+        // self如果非连续，需要转连续
+        auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    // 将输入self的数据类型转换成推导后的数据类型
-    auto selfCasted = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
-    CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        // 将输入self的数据类型转换成推导后的数据类型
+        selfProcessed = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
+    }
+
+    CHECK_RET(selfProcessed != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 将other转换为tensor，并且数据类型转换为推导后的数据类型
     auto otherTensor = uniqueExecutor.get()->ConvertToTensor(other, promoteType);
     CHECK_RET(otherTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 调用l0算子GreaterEqual进行计算
-    auto GreaterEqualResult = l0op::Greater(selfCasted, otherTensor, uniqueExecutor.get());
+    auto GreaterEqualResult = l0op::Greater(selfProcessed, otherTensor, uniqueExecutor.get());
     CHECK_RET(GreaterEqualResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 将输入self的数据类型转换成推导后的数据类型

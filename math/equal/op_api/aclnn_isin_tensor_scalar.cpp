@@ -15,6 +15,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn/aclnn_base.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/shape_utils.h"
@@ -100,8 +101,8 @@ static op::DataType CombineCategoriesWithComplex(const op::DataType higher, cons
 }
 static inline DataType PromoteTypeScalar(const aclTensor* element, const aclScalar* testElement)
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
         op::DataType promoteType;
         auto scalarDefaultDtype = GetScalarDefaultDtype(testElement->GetDataType());
         promoteType = CombineCategoriesWithComplex(element->GetDataType(), scalarDefaultDtype);
@@ -126,9 +127,8 @@ static inline bool CheckNotNull(const aclTensor* element, const aclScalar* testE
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-        socVersion == SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch)) {
         return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;

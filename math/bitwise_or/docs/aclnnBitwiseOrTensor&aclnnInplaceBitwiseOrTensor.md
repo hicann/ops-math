@@ -1,5 +1,7 @@
 # aclnnBitwiseOrTensor&aclnnInplaceBitwiseOrTensor
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/bitwise_or)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -7,6 +9,10 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
   
 ## 功能说明
 
@@ -40,7 +46,7 @@
   - other(aclTensor*, 计算输入)：公式中的输入other，Device侧的aclTensor。数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64，且数据类型需要与self构成互相推导关系，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
   - out(aclTensor \*, 计算输出)：公式中的输出out，Device侧的aclTensor。数据类型需要是self与other推导之后可转换的数据类型，shape需要是self与other broadcast之后的shape，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
     - <term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BOOL、INT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX64、COMPLEX128。 
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BOOL、INT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX64、COMPLEX128。
   - workspaceSize(uint64_t \*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor \*\*, 出参)：返回op执行器，包含了算子计算流程。
 
@@ -112,6 +118,7 @@
 
 - 确定性计算：
   - aclnnBitwiseOrTensor&aclnnInplaceBitwiseOrTensor默认确定性实现。
+
 
 ## 调用示例
 

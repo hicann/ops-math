@@ -1,5 +1,7 @@
 # aclnnClampMinTensor&aclnnInplaceClampMinTensor
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/clip_by_value_v2)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -7,6 +9,10 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    ×     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
 
 ## 功能说明
 
@@ -36,16 +42,18 @@
 - **参数说明**：
 
   - self(aclTensor*,计算输入): 输入tensor，Device侧的aclTensor，shape支持1维-8维，数据类型需要与clipValueMin的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
+    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
 
   - clipValueMin(aclTensor*,计算输入): 输入下限值tensor，数据类型需要与self满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。shape需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL。
+    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BOOL。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL。
 
   - out(aclTensor *，计算输出)：输出tensor，shape需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，数据类型和self保持一致，且数据类型需要是self与clipValueMin推导之后可转换的数据类型。
+    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64，数据类型和self保持一致，且数据类型需要是self与clipValueMin推导之后可转换的数据类型。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，数据类型和self保持一致，且数据类型需要是self与clipValueMin推导之后可转换的数据类型。
     - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，数据类型需要是self与clipValueMin推导之后可转换的数据类型。
+
   - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
 
   - executor(aclOpExecutor **，出参)：返回op执行器，包含了算子计算流程。
@@ -58,7 +66,7 @@
   第一段接口完成入参校验，出现以下场景时报错：
   返回161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的self、out其中一个为空指针，min为空指针。
   返回161002（ACLNN_ERR_PARAM_INVALID）：1. self、out的数据类型和数据格式不在支持的范围之内。
-                                        1. self与clipValueMin类型推导失败，或推导类型无法转为out的数据类型。
+                                        2. self与clipValueMin类型推导失败，或推导类型无法转为out的数据类型。
   ```
 
 ## aclnnClampMinTensor
@@ -79,12 +87,12 @@
 - **参数说明：**
 
   - selfRef(aclTensor*,计算输入|计算输出): 数据类型与clipValueMin的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），且推导后的数据类型需要能转换成selfRef自身的数据类型。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
+    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
 
   - clipValueMin(aclTensor*,计算输入): 输入下限值tensor，数据类型需要与selfRef满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。shape需要与selfRef满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，维度不超过8维。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
+    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
 
   - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
 
@@ -98,9 +106,9 @@
   第一段接口完成入参校验，出现以下场景时报错：
   返回161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的selfRef为空指针，min为空指针。
   返回161002（ACLNN_ERR_PARAM_INVALID）：1. selfRef的数据类型和数据格式不在支持的范围之内。
-                                        1. selfRef和min的shape不满足broadcast关系。
-                                        2. selfRef和min类型推导失败，或推导类型无法转为selfRef的数据类型。
-                                        3. selfRef和min的维度大小超过8。
+                                        2. selfRef和min的shape不满足broadcast关系。
+                                        3. selfRef和min类型推导失败，或推导类型无法转为selfRef的数据类型。
+                                        4. selfRef和min的维度大小超过8。
   ```
 
 ## aclnnInplaceClampMinTensor
@@ -120,6 +128,7 @@
 
 - 确定性计算：
   - aclnnClampMinTensor&aclnnInplaceClampMinTensor默认确定性实现。
+
 
 ## 调用示例
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。

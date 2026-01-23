@@ -7,6 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+ 
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
@@ -66,8 +67,14 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
   return 0;
 }
 
-int ExecuteGtScalarOperator(aclrtStream stream) {
-  auto ret = 0;
+int main() {
+  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 根据自己的实际device填写deviceId
+  int32_t deviceId = 0;
+  aclrtStream stream;
+  auto ret = Init(deviceId, &stream);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
+
   // 2. 构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> selfShape = {4, 2};
   std::vector<int64_t> outShape = {4, 2};
@@ -76,14 +83,14 @@ int ExecuteGtScalarOperator(aclrtStream stream) {
   aclTensor* self = nullptr;
   aclScalar* other = nullptr;
   aclTensor* out = nullptr;
-  std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+  std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
   std::vector<char> outHostData(8, 0);
   float otherValue = 3.5f;
   // 创建self aclTensor
-  ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_DOUBLE, &self);
+  ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   // 创建other aclScalar
-  other = aclCreateScalar(&otherValue, aclDataType::ACL_DOUBLE);
+  other = aclCreateScalar(&otherValue, aclDataType::ACL_FLOAT);
   CHECK_RET(other != nullptr, return ret);
   // 创建out aclTensor
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_BOOL, &out);
@@ -130,23 +137,6 @@ int ExecuteGtScalarOperator(aclrtStream stream) {
   if (workspaceSize > 0) {
     aclrtFree(workspaceAddr);
   }
-
-  return 0;
-}
-
-int main() {
-  // device/stream初始化，参考acl API手册
-  // 根据自己的实际device填写deviceId
-  int32_t deviceId = 0;
-  aclrtStream stream;
-  auto ret = Init(deviceId, &stream);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
-
-  // 执行GtScalar操作
-  ret = ExecuteGtScalarOperator(stream);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteGtScalarOperator failed. ERROR: %d\n", ret); return ret);
-
-  // 重置设备和终结ACL
   aclrtDestroyStream(stream);
   aclrtResetDevice(deviceId);
   aclFinalize();

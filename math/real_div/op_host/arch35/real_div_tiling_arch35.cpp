@@ -96,6 +96,10 @@ ge::graphStatus RealDivTiling::DoOpTiling()
         BroadcastBaseTiling<RealDivOp::RealDivWithBool<int8_t>::OpDag> brcBaseTiling(context_);
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0DType == ge::DT_INT64) {
+        BroadcastBaseTiling<RealDivOp::RealDivIntegerWithoutCast<int64_t>::OpDag> brcBaseTiling(context_);
+        ret = brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
         OP_LOGE(context_->GetNodeName(), "input dtype is only support fp16, bf16, fp32, int32, bool, but got %s!",
                 ge::TypeUtils::DataTypeToSerialString(input0DType).c_str());
@@ -147,7 +151,7 @@ ge::graphStatus TilingPrepareForRealDiv([[maybe_unused]] gert::TilingParseContex
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_OPTILING(RealDiv).Tiling(TilingForRealDiv).TilingParse<RealDivCompileInfo>(TilingPrepareForRealDiv);
+IMPL_OP_OPTILING(RealDiv).Tiling(TilingForRealDiv).TilingParse<BroadcastCompileInfo>(TilingPrepareForRealDiv);
 
 REGISTER_OPS_TILING_TEMPLATE(RealDiv, RealDivTiling, REAL_DIV_COMMON_TILING_PRIORITY);
 }  // namespace optiling

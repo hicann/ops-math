@@ -33,13 +33,12 @@ static const std::initializer_list<DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-        socVersion == SocVersion::ASCEND910_95) {
-        return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
-    } else {
-        return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
-    }
+  auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+  if (curArch == NpuArch::DAV_2201 || IsRegBase(curArch)) {
+    return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
+  } else {
+    return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
+  }
 }
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out, const aclScalar* min, const aclScalar* max)
@@ -119,7 +118,7 @@ static aclnnStatus CheckParams(
 
     // 检查format，若是NZ格式，则添加警告
     CheckFormat(self);
-    
+
     return ACLNN_SUCCESS;
 }
 

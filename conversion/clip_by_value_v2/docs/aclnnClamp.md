@@ -1,5 +1,7 @@
 # aclnnClamp
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/clip_by_value_v2)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -7,10 +9,13 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
 
 ## 功能说明
 
-- 算子功能：将输入的所有元素限制在[min,max]范围内，如果min为None，则没有下限，如果max为None，则没有上限。
+- 接口功能：将输入的所有元素限制在[min,max]范围内，如果min为None，则没有下限，如果max为None，则没有上限。
 
 - 计算公式：
 
@@ -22,54 +27,194 @@ $$
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnClampGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnClamp”接口执行计算。
 
-- `aclnnStatus aclnnClampGetWorkspaceSize(const aclTensor *self, const aclScalar* clipValueMin, const aclScalar* clipValueMax, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnClamp(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
+```cpp
+aclnnStatus aclnnClampGetWorkspaceSize(
+  const aclTensor *self, 
+  const aclScalar* clipValueMin, 
+  const aclScalar* clipValueMax, 
+  aclTensor       *out, 
+  uint64_t        *workspaceSize, 
+  aclOpExecutor  **executor)`
+```
+
+```cpp
+aclnnStatus aclnnClamp(
+  void*             workspace, 
+  uint64_t          workspaceSize, 
+  aclOpExecutor*    executor, 
+  const aclrtStream stream)
+```
 
 ## aclnnClampGetWorkspaceSize
 
-- **参数说明：**
+- **参数说明**
 
-  - self(aclTensor*, 计算输入)：输入tensor，Device侧的aclTensor，shape支持1维-8维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，且数据类型与clipValueMin、clipValueMax的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](common/TensorScalar互推导关系.md)）
-  - clipValueMin(aclScalar*, 计算输入)：下界，数据类型需要可转换成self的数据类型。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，且数据类型与self、clipValueMax的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](common/TensorScalar互推导关系.md)）
-  - clipValueMax(aclScalar*, 计算输入)：上界，数据类型需要可转换成self的数据类型。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，且数据类型与self、clipValueMin的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](common/TensorScalar互推导关系.md)）
-  - out(aclTensor *, 计算输出)：输出tensor，shape和self保持一致，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，数据类型和self保持一致。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，数据类型需要是self、clipValueMin、clipValueMax推导之后可转换的数据类型。
+  <table style="undefined;table-layout: fixed; width: 1305px"><colgroup>
+  <col style="width: 142px">
+  <col style="width: 120px">
+  <col style="width: 227px">
+  <col style="width: 147px">
+  <col style="width: 261px">
+  <col style="width: 120px">
+  <col style="width: 146px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度（shape）</th>
+      <th>非连续张量Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>输入tensor</td>
+      <td>-</td>
+      <td>FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
+      <td>ND</td>
+      <td>4-5</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>clipValueMin</td>
+      <td>输入</td>
+      <td>正向时填充的维度。</td>
+      <td>-</td>
+      <td>FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
+      <td></td>
+      <td></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>clipValueMax</td>
+      <td>输入</td>
+      <td>上界，数据类型需要可转换成self的数据类型。</td>
+      <td>-</td>
+      <td>FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>输出tensor，shape和self保持一致</td>
+      <td>-</td>
+      <td>FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
+      <td></td>
+      <td></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
+  
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：
+    - self和out的数据类型不支持BOOL、BFLOAT16。
+    - clipValueMin和clipValueMax的数据类型不支持BFLOAT16。
 
-  - workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>
+    - self和out的数据类型不支持BOOL。
 
-  - executor(aclOpExecutor **, 出参)：返回op执行器，包含了算子计算流程。
+  - <term>Ascend 950PR/Ascend 950DT</term>
+     - self、clipValueMin和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）
+     - out的数据类型需要是self、clipValueMin、clipValueMax推导之后可转换的数据类型。
+     - self、clipValueMin、clipValueMax和out的数据类型不支持BOOL。
 
-- **返回值：**
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的self、out其中一个为空指针，或者max、min全为空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. self、out的数据类型和数据格式不在支持的范围之内。
-                                        
-  ```
 
+  <table style="undefined;table-layout: fixed; width: 1243px"><colgroup>
+  <col style="width: 278px">
+  <col style="width: 132px">
+  <col style="width: 833px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、out其中一个为空指针，或者max、min全为空指针。</td>
+    </tr>
+    <tr>
+      <td>ACLNN_ERR_PARAM_INVALID</td>
+      <td>161002</td>
+      <td>self、out的数据类型和数据格式不在支持的范围之内。</td>
+    </tr>
+  </tbody>
+  </table>
+                                        
 ## aclnnClamp
 
-- **参数说明：**
+- **参数说明**
+  <table style="undefined;table-layout: fixed; width: 1241px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 881px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnClampGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
-  - workspace(void *, 入参)：在Device侧申请的workspace内存地址。
-
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnClampGetWorkspaceSize获取。
-
-  - executor(aclOpExecutor *, 入参)：op执行器，包含了算子计算流程。
-
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
-
-- **返回值：**
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -78,9 +223,11 @@ $$
 - 确定性计算：
   - aclnnClamp默认确定性实现。
 
+
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>
@@ -204,11 +351,27 @@ int main() {
     void* selfDeviceAddr = nullptr;
     void* outDeviceAddr = nullptr;
     aclTensor* self = nullptr;
-	aclScalar* max = nullptr;
-	aclScalar* min = nullptr;
+      aclScalar* max = nullptr;
+      aclScalar* min = nullptr;
     aclTensor* out = nullptr;
 
-	ret = PrepareInputAndOutput(shape, &selfDeviceAddr, &self, &max, &min, &outDeviceAddr, &out);
+    float max_v = 5;
+    float min_v = 2;
+
+    std::vector<float> selfHostData = {0, 1, 0, 3, 0, 5, 0, 7};
+    std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
+
+    // 创建self aclTensor
+    ret = CreateAclTensor(selfHostData, shape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
+    CHECK_RET(ret == ACL_SUCCESS, return ret);
+    // 创建max
+    max = aclCreateScalar(&max_v, aclDataType::ACL_FLOAT);
+    CHECK_RET(max != nullptr, return ret);
+    // 创建min
+    min = aclCreateScalar(&min_v, aclDataType::ACL_FLOAT);
+    CHECK_RET(min != nullptr, return ret);
+    // 创建out aclTensor
+    ret = CreateAclTensor(outHostData, shape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     // 3. 调用CANN算子库API，需要修改为具体的API

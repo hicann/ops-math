@@ -1,12 +1,18 @@
 # aclnnGtScalar&aclnnInplaceGtScalar
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/greater)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>     |    √     |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
 
 ## 功能说明
 
@@ -14,109 +20,378 @@
 
 - 计算公式：
   对于入参self，和比较标量other，gt可以用如下数学公式表示：
-  
+
   $$
   out_{i}= (self_i > other) ? True : False
   $$
 
 ## 函数原型
 
-- aclnnGtScalar和aclnnInplaceGtScalar实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnGtScalarGetWorkspaceSize”或者“aclnnInplaceGtScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnGtScalar”或者“aclnnInplaceGtScalar”接口执行计算。
 
-  - aclnnGtScalar：需新建一个输出张量对象存储计算结果。
-  - aclnnInplaceGtScalar：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
+```Cpp
+aclnnStatus aclnnGtScalarGetWorkspaceSize(
+    const aclTensor *self,
+    const aclScalar *other,
+    aclTensor *out,
+    uint64_t *workspaceSize,
+    aclOpExecutor **executor)
+```
 
-- 每个算子分为[两段式接口](./../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnGtScalarGetWorkspaceSize”或者“aclnnInplaceGtScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnGtScalar”或者“aclnnInplaceGtScalar”接口执行计算。
+```Cpp
+aclnnStatus aclnnGtScalar(
+    void *workspace,
+    uint64_t workspaceSize,
+    aclOpExecutor *executor,
+    aclrtStream stream)
+```
 
-  - `aclnnStatus aclnnGtScalarGetWorkspaceSize(const aclTensor *self, const aclScalar *other, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-  - `aclnnStatus aclnnGtScalar(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
-  - `aclnnStatus aclnnInplaceGtScalarGetWorkspaceSize(aclTensor *selfRef, const aclScalar *other, uint64_t *workspaceSize, aclOpExecutor **executor)`
-  - `aclnnStatus aclnnInplaceGtScalar(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnInplaceGtScalarGetWorkspaceSize(
+    aclTensor *selfRef,
+    const aclScalar *other,
+    uint64_t *workspaceSize,
+    aclOpExecutor **executor)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceGtScalar(
+    void *workspace,
+    uint64_t workspaceSize,
+    aclOpExecutor *executor,
+    aclrtStream stream)
+```
 
 ## aclnnGtScalarGetWorkspaceSize
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)：Device侧的aclTensor，shape维度不高于8维，支持[非连续的Tensor](./../../../docs/zh/context/非连续的Tensor.md)，[数据格式](./../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品/Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL，且与other满足[互推导关系](./../../../docs/zh/context/互推导关系.md)。
-  - other(aclScalar*, 计算输入)：Host侧的aclScalar。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品/Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL，且与self满足[互推导关系](./../../../docs/zh/context/互推导关系.md)。
-  - out(aclTensor \*, 计算输出)：Device侧的aclTensor，数据类型需要是BOOL可转换的数据类型[互转换关系](./../../../docs/zh/context/互转换关系.md)，支持[非连续的Tensor](./../../../docs/zh/context/非连续的Tensor.md)，[数据格式](./../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品/Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128。
-  - workspaceSize(uint64_t \*, 出参)：返回用户需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor \*\*, 出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <col style="width: 154px">
+  <col style="width: 125px">
+  <col style="width: 291px">
+  <col style="width: 286px">
+  <col style="width: 284px">
+  <col style="width: 120px">
+  <col style="width: 141px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>参与Greater大小比较计算的输入张量，公式中的self。</td>
+      <td>支持非连续tensor。</td>
+      <td>DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>other</td>
+      <td>输入</td>
+      <td>参与greater大小比较计算的输入张量，公式中的other。</td>
+      <td>scalar变量，数据类型需要与selfRef的数据类型满足数据类型推导规则。</td>
+      <td>DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>tensor与scalar值比较大小后的输出，公式中的输出out。</td>
+      <td>数据类型需要是BOOL可转换的数据类型。</td>
+      <td>DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
+
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self，other或out是空指针。
-  161002 (ACLNN_ERR_PARAM_INVALID): 1. self和out的数据类型不在支持的范围之内。
-                                    2. self和out的维度大于8。
-                                    3. self和out的数据类型不满足数据类型推导规则。
-                                    4. self和out的shape不同。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 272px">
+  <col style="width: 114px">
+  <col style="width: 764px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self，other或out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
+      <td>self和out的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self和out的维度大于8。</td>
+    </tr>
+    <tr>
+      <td>self和out的数据类型不满足数据类型推导规则。</td>
+    </tr>
+    <tr>
+      <td>self和out的shape不同。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnGtScalar
 
 - **参数说明：**
 
-  - workspace(void \*, 入参)：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnGtScalarGetWorkspaceSize获取。
-  - executor(aclOpExecutor \*, 入参)：op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 873px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnGtScalarGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+
 
 ## aclnnInplaceGtScalarGetWorkspaceSize
 
 - **参数说明：**
 
-  - selfRef(aclTensor*, 计算输入|计算输出)：输入输出tensor，即对应公式中的self与out，Device侧的aclTensor，shape维度不高于8维，支持[非连续的Tensor](./../../../docs/zh/context/非连续的Tensor.md)，[数据格式](./../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品/Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL，且与other满足[互推导关系](./../../../docs/zh/context/互推导关系.md)。
-  - other(aclScalar*, 计算输入)：Host侧的aclScalar，数据类型需要与selfRef的数据类型满足数据类型推导规则（参见[TensorScalar数据类型推导关系](./../../../docs/zh/context/TensorScalar数据类型推导关系.md)）。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品/Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL，且与selfRef满足[互推导关系](./../../../docs/zh/context/互推导关系.md)。
-  * workspaceSize(uint64_t \*, 出参)：返回需要在Device侧申请的workspace大小。
-  * executor(aclOpExecutor \*\*, 出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <col style="width: 154px">
+  <col style="width: 125px">
+  <col style="width: 291px">
+  <col style="width: 286px">
+  <col style="width: 284px">
+  <col style="width: 120px">
+  <col style="width: 141px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>selfRef</td>
+      <td>输入输出</td>
+      <td>参与Greater大小比较计算的输入张量，同时也是Greater比较后的输出，公式中的self和out。</td>
+      <td>支持非连续tensor。</td>
+      <td>DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>other</td>
+      <td>输入</td>
+      <td>参与greater大小比较计算的输入张量，公式中的other。</td>
+      <td>scalar变量，数据类型需要与selfRef的数据类型满足数据类型推导规则。</td>
+      <td>DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
+
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的selfRef或other是空指针。
-  161002 (ACLNN_ERR_PARAM_INVALID): 1. selfRef和other的数据类型不在支持的范围之内。
-                                    2. selfRef和other的数据类型不满足数据类型推导规则。
-                                    3. selfRef的维度大于8。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 272px">
+  <col style="width: 114px">
+  <col style="width: 764px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的selfRef或other是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
+      <td>selfRef和other的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>selfRef和other的数据类型不满足数据类型推导规则。</td>
+    </tr>
+    <tr>
+      <td>selfRef的维度大于8。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnInplaceGtScalar
 
 - **参数说明：**
 
-  * workspace(void \*, 入参)：在Device侧申请的workspace内存地址。
-  * workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnInplaceGtScalarGetWorkspaceSize获取。
-  * executor(aclOpExecutor \*, 入参)：op执行器，包含了算子计算流程。
-  * stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 873px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnGtScalarGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](./../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
  ## 约束说明
 
 - 确定性计算：
   - aclnnGtScalar&aclnnInplaceGtScalar默认确定性实现。
 
- ## 调用示例
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](./../../../docs/zh/context/编译与运行样例.md)。
 
-**aclnnGtScalar示例代码：**
+ ## 调用示例
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
+- <term>Ascend 950PR/Ascend 950DT</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term> aclnnGtScalar示例代码：
 
 ```Cpp
 #include <iostream>
@@ -266,7 +541,7 @@ int main() {
 }
 ```
 
-**aclnnInplaceGtScalar示例代码：**
+- <term>Ascend 950PR/Ascend 950DT</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term> aclnnInplaceGtScalar示例代码：
 
 ```Cpp
 #include <iostream>

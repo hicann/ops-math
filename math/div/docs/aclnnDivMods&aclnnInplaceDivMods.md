@@ -1,12 +1,18 @@
 # aclnnDivMods&aclnnInplaceDivMods
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/div)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                       |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>       |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>       |    √     |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    ×     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
 
 ## 功能说明
 
@@ -33,14 +39,17 @@ $$
 - **参数说明：**
   
   * self(aclTensor*, 计算输入)：表示被除数，公式中的input，Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16，且数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
+     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16，且数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
+     * <term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64，且数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
      * <term>Ascend 950PR/Ascend 950DT</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16，且数据类型与other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)，推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
   * other(aclScalar*, 计算输入)：表示除数，公式中的输入`other`，Device侧的aclScalar。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16，且数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
+     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16，且数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
+     * <term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64，且数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
      * <term>Ascend 950PR/Ascend 950DT</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16，且数据类型与self的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)，推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
   * mode(int, 计算输入)：表示对商的舍入模式的选择，公式中的输入`mode`，Host侧的整型值，数据类型支持int整型，枚举值如下：<br>0-对应None：默认不执行舍入。<br>1-对应trunc：将除法的小数部分舍入为零。<br>2-对应floor：向下舍入除法的结果。     
   * out(aclTensor\*, 计算输出)：表示商，公式中的`out`，Device侧的aclTensor，且数据类型需要是self与other推导之后可转换的数据类型，shape与self相同。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16
+     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16
+     * <term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64
      * <term>Ascend 950PR/Ascend 950DT</term>：mode为0时，支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX128、COMPLEX64。mode为1或2时，支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、COMPLEX128、COMPLEX64。
   * workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
   * executor(aclOpExecutor\**, 出参)：返回op执行器，包含了算子计算流程。
@@ -78,10 +87,12 @@ $$
 - **参数说明：**
   
   * selfRef(aclTensor\*, 计算输入|计算输出)：表示被除数和商，公式中的输入`input`和`out`，Device侧的aclTensor，数据类型需要是selfRef与other推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16，且数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
+     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16，且数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
+     * <term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64，且数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
      * <term>Ascend 950PR/Ascend 950DT</term>：mode为0时，支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。mode为1或2时，支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16。数据类型与other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)，当mode为0时，selfRef与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
   * other(aclScalar*, 计算输入)：公式中的输入`other`，Device侧的aclScalar。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16，且数据类型与selfRef的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
+     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16，且数据类型与selfRef的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
+     * <term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64，且数据类型与selfRef的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
      * <term>Ascend 950PR/Ascend 950DT</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16，且数据类型与selfRef的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)，当mode为0时，selfRef与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
   * mode(int, 计算输入)：表示对商的舍入模式的选择，公式中的输入`mode`，Host侧的整型值，数据类型支持int整型，枚举值如下：<br>0-对应None：默认不执行舍入。<br>1-对应trunc：将除法的小数部分舍入为零。<br>2-对应floor：向下舍入除法的结果。
   * workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
@@ -117,7 +128,7 @@ $$
 
 - 确定性计算：
   - aclnnDivMods&aclnnInplaceDivMods默认确定性实现。
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：当mode为1（trunc模式）或2（floor模式），因FLOAT16/BFLOAT16数据类型精度有限，无法表示所有小数，在舍入取整/向下取整时存在一定误差，可以选择更高精度的数据类型如FLOAT32。
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：当mode为1（trunc模式）或2（floor模式），因FLOAT16/BFLOAT16数据类型精度有限，无法表示所有小数，在舍入取整/向下取整时存在一定误差，可以选择更高精度的数据类型如FLOAT32。
 
 ## 调用示例
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。

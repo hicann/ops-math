@@ -45,6 +45,7 @@ protected:
         uint64_t workspaceSize = 0;
         aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
         EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
+        // ut.TestPrecision();
     }
 
     void test_run_invalid(
@@ -89,6 +90,12 @@ TEST_F(l2_remainder_inplace_tensor_tensor_test, l2_remainder_inplace_tensor_tens
     test_run({2, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND, {-15, -10});
 }
 
+// self + other + out: float64
+// TEST_F(l2_remainder_inplace_tensor_tensor_test, l2_remainder_inplace_tensor_tensor_test_05)
+// {
+//     test_run({2, 3, 3}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_DOUBLE, ACL_FORMAT_ND, {-15, -10});
+// }
+
 // self + other + out: 不支持bool、uint8、int8、int16、bfloat16、complex64、complex128
 TEST_F(l2_remainder_inplace_tensor_tensor_test, l2_remainder_inplace_tensor_tensor_test_06)
 {
@@ -96,11 +103,54 @@ TEST_F(l2_remainder_inplace_tensor_tensor_test, l2_remainder_inplace_tensor_tens
     test_run_invalid({2, 3, 3}, ACL_UINT8, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_UINT8, ACL_FORMAT_ND, {-15, -10});
     test_run_invalid({2, 3, 3}, ACL_INT8, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_INT8, ACL_FORMAT_ND, {-15, -10});
     test_run_invalid({2, 3, 3}, ACL_INT16, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_INT16, ACL_FORMAT_ND, {-15, -10});
+    // test_run_invalid({2, 3, 3}, ACL_BF16, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_BF16, ACL_FORMAT_ND, {-15, -10});
     test_run_invalid(
         {2, 3, 3}, ACL_COMPLEX64, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_COMPLEX64, ACL_FORMAT_ND, {-15, -10});
     test_run_invalid(
         {2, 3, 3}, ACL_COMPLEX128, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_COMPLEX128, ACL_FORMAT_ND, {-15, -10});
 }
+
+// self.dtype != other.dtype 会进行promote type  promoteType必须符合预期
+// inplace 必须最后cast回self.dtype
+// TEST_F(l2_remainder_inplace_tensor_tensor_test, l2_remainder_inplace_tensor_tensor_test_07)
+// {
+//     // STC:
+//     test_run_invalid({2, 3, 3}, ACL_INT32, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_DOUBLE, ACL_FORMAT_ND, {3, 10});
+//     test_run({2, 3, 3}, ACL_FLOAT16, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_INT64, ACL_FORMAT_ND, {3, 10});
+//     test_run({2, 3, 3}, ACL_INT32, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_INT64, ACL_FORMAT_ND, {3, 10});
+//     test_run({2, 3, 3}, ACL_FLOAT16, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_DOUBLE, ACL_FORMAT_ND, {3, 10});
+
+//     // int32 + uint8 -> int32
+//     test_run({2, 3, 3}, ACL_INT32, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_UINT8, ACL_FORMAT_ND, {5, 10});
+//     // int32 + int64 -> int32
+//     test_run({2, 3, 3}, ACL_INT32, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_INT64, ACL_FORMAT_ND, {5, 10});
+//     // int32 + float64 -> int32
+//     test_run_invalid({2, 3, 3}, ACL_INT32, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_DOUBLE, ACL_FORMAT_ND, {5, 10});
+
+//     // int64 + uint8 -> int64
+//     test_run({2, 3, 3}, ACL_INT64, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_UINT8, ACL_FORMAT_ND, {5, 10});
+//     // int64 + float64 -> int64
+//     // RuntimeError: result type Double can't be cast to the desired output type Long
+//     test_run_invalid({2, 3, 3}, ACL_INT64, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_DOUBLE, ACL_FORMAT_ND, {5, 10});
+
+//     // fp16 + uint8 -> fp16
+//     test_run({2, 3, 3}, ACL_FLOAT16, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_UINT8, ACL_FORMAT_ND, {3, 10});
+//     // fp16 + int64 -> fp16
+//     test_run({2, 3, 3}, ACL_FLOAT16, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_INT64, ACL_FORMAT_ND, {3, 10});
+//     // fp16 + fp64 -> fp64
+//     test_run({2, 3, 3}, ACL_FLOAT16, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_DOUBLE, ACL_FORMAT_ND, {3, 10});
+
+//     // fp64 + uin8 -> fp64
+//     test_run({2, 3, 3}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_UINT8, ACL_FORMAT_ND, {3, 10});
+//     // fp64 + int64-> fp64
+//     test_run({2, 3, 3}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_INT64, ACL_FORMAT_ND, {3, 10});
+//     // fp64 + fp32 -> fp64
+//     test_run({2, 3, 3}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND, {3, 10});
+
+//     // promote以后的dtype不符合预期
+//     test_run_invalid({2, 3, 3}, ACL_INT8, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_INT16, ACL_FORMAT_ND, {3, 10});
+//     test_run_invalid({2, 3, 3}, ACL_INT16, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_INT8, ACL_FORMAT_ND, {3, 10});
+// }
 
 ///////////////////////////////////////
 /////          检查空指针          /////
@@ -162,9 +212,78 @@ TEST_F(l2_remainder_inplace_tensor_tensor_test, l2_remainder_inplace_tensor_tens
     auto ut = OP_API_UT(aclnnInplaceRemainderTensorTensor, INPUT(selfT, other), OUTPUT());
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
+    // ut.TestPrecision();
 
     // other not contiguous
     ut = OP_API_UT(aclnnInplaceRemainderTensorTensor, INPUT(self, otherT), OUTPUT());
     getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
+    // ut.TestPrecision();
 }
+
+///////////////////////////////////////
+/////          检查shape          /////
+///////////////////////////////////////
+
+// 存在shape broadcast
+// TEST_F(l2_remainder_inplace_tensor_tensor_test, l2_remainder_inplace_tensor_tensor_test_11)
+// {
+//     // self.shape为broadcast以后的shape
+//     test_run({5, 3, 3, 5}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {3, 3, 5}, ACL_DOUBLE, ACL_FORMAT_ND, {1, 10});
+//     test_run({2, 5, 3, 3, 5}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {5, 3, 3, 5}, ACL_DOUBLE, ACL_FORMAT_ND, {1, 10});
+//     // self.shape不为broadcast以后的shape
+//     test_run_invalid({2, 3, 3}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {2, 2, 3, 3}, ACL_DOUBLE, ACL_FORMAT_ND, {1, 10});
+//     test_run_invalid(
+//         {5, 3, 3, 5}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {2, 5, 3, 3, 5}, ACL_DOUBLE, ACL_FORMAT_ND, {1, 10});
+// }
+
+// ///////////////////////////////////////
+// /////          0维 ~ 8维          /////
+// ///////////////////////////////////////
+
+// TEST_F(l2_remainder_inplace_tensor_tensor_test, l2_remainder_inplace_tensor_tensor_test_12)
+// {
+//     // 0维
+//     // self 0维， other 0维
+//     test_run({}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {}, ACL_DOUBLE, ACL_FORMAT_ND, {6, 10});
+//     // self 0维,  other 1维   RuntimeError: output with shape [] doesn't match the broadcast shape [1]
+//     test_run_invalid({}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {1}, ACL_DOUBLE, ACL_FORMAT_ND, {6, 10});
+//     // self 1维,  other 0维
+//     test_run({1}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {}, ACL_DOUBLE, ACL_FORMAT_ND, {6, 10});
+//     // self 1维,  other 1维
+//     test_run({1}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {1}, ACL_DOUBLE, ACL_FORMAT_ND, {6, 10});
+
+//     // 1维
+//     test_run({3}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {3}, ACL_DOUBLE, ACL_FORMAT_ND, {6, 10});
+//     // 3维
+//     test_run({3, 3, 4}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {3, 3, 4}, ACL_DOUBLE, ACL_FORMAT_ND, {6, 10});
+//     // 4维
+//     test_run({1, 2, 1, 1}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {1, 2, 1, 1}, ACL_DOUBLE, ACL_FORMAT_ND, {6, 10});
+
+//     // 8维
+//     test_run(
+//         {1, 3, 1, 2, 3, 2, 2, 2}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {3, 1, 2, 3, 2, 2, 2}, ACL_DOUBLE,
+//         ACL_FORMAT_ND, {6, 10});
+
+//     // 9维
+//     test_run_invalid(
+//         {1, 3, 1, 2, 3, 2, 2, 2, 2}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, 10}, {3, 1, 2, 3, 2, 2, 2, 2}, ACL_DOUBLE,
+//         ACL_FORMAT_ND, {6, 10});
+// }
+
+// ///////////////////////////////////////
+// /////        tensor正负值         /////
+// ///////////////////////////////////////
+
+// // 支持正负值
+// TEST_F(l2_remainder_inplace_tensor_tensor_test, l2_remainder_inplace_tensor_tensor_test_13)
+// {
+//     // self > 0, other > 0
+//     test_run({3, 3, 5}, ACL_FLOAT, ACL_FORMAT_ND, {3, 10}, {3, 3, 5}, ACL_DOUBLE, ACL_FORMAT_ND, {1, 10});
+//     // self > 0, other < 0
+//     test_run({3, 3, 5}, ACL_FLOAT, ACL_FORMAT_ND, {3, 10}, {3, 3, 5}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, -1});
+//     // self < 0, other > 0
+//     test_run({3, 3, 5}, ACL_FLOAT, ACL_FORMAT_ND, {-10, -1}, {3, 3, 5}, ACL_DOUBLE, ACL_FORMAT_ND, {1, 10});
+//     // self < 0, other < 0
+//     test_run({3, 3, 5}, ACL_FLOAT, ACL_FORMAT_ND, {-10, -1}, {3, 3, 5}, ACL_DOUBLE, ACL_FORMAT_ND, {-10, -1});
+// }

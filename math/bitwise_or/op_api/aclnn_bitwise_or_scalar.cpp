@@ -23,6 +23,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -93,9 +94,8 @@ static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST = {
   DataType::DT_UINT8, DataType::DT_BOOL, DataType::DT_UINT16};
 
 static DataType GetPromoteDType(const aclTensor *self, const aclScalar *other) {
-  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
   auto promoteType = DataType::DT_UNDEFINED;
-  if (socVersion == SocVersion::ASCEND910_95) {
+  if (IsRegBase()) {
     auto otherDefaultDtype = GetScalarDefaultDtype(other->GetDataType());
     promoteType = CombineCategoriesWithComplex(self->GetDataType(), otherDefaultDtype);
     return promoteType;

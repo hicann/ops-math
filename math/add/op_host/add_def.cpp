@@ -70,6 +70,7 @@ public:
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "add_apt");
         this->AICore().AddConfig("ascend910_95", aicoreConfig);
+        this->AICore().AddConfig("mc62cm12a", aicoreConfig);
     }
 };
 

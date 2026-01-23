@@ -7,10 +7,17 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                     |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                     |    x     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                             |    √     |
 
 ## 功能说明
 
-- 算子功能：给每一个元素加一个偏置值。
+- 算子功能：为输入张量的每一个元素加上一个偏差值。
+
+- 计算公式：
+
+$out_i= x_i + bias_i$
 
 ## 参数说明
 
@@ -33,32 +40,27 @@
     <tr>
       <td>x</td>
       <td>输入</td>
-      <td>输入tensor</td>
-      <td>FLOAT16、BFLOAT16、FLOAT、INT32、INT64</td>
-      <td>ND</td>
+      <td>待进行BiasAdd计算的入参，公式中的x_i。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64</td>
+      <td>NCHW、NHWC、NDHWC、NCDHW、ND</td>
     </tr>
     <tr>
       <td>bias</td>
       <td>输入</td>
-      <td>偏置</td>
-      <td>FLOAT16、BFLOAT16、FLOAT、INT32、INT64</td>
+      <td>累加偏差，公式中的bias_i。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>data_format</td>
-      <td>输入属性</td>
-      <td>输入格式</td>
-      <td>String</td>
-      <td>ND</td>
-    </tr>
-    <tr>
-      <td>y</td>
+      <td>out</td>
       <td>输出</td>
-      <td>加偏置后的输出值</td>
-      <td>FLOAT16、BFLOAT16、FLOAT、INT32、INT64</td>
-      <td>ND</td>
+      <td>待进行BiasAdd计算的出参，公式中的out_i。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64</td>
+      <td>NCHW、NHWC、NDHWC、NCDHW、ND</td>
     </tr>
   </tbody></table>
+
+- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
 
 ## 约束说明
 

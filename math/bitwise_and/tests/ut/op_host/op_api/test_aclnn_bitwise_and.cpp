@@ -12,7 +12,7 @@
 #include <vector>
 #include "gtest/gtest.h"
 
-#include "math/bitwise_and/op_api/aclnn_bitwiseand.h"
+#include "aclnn_bitwiseand.h"
 
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/tensor_desc.h"

@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include "greater.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/make_op_executor.h"
@@ -16,6 +16,7 @@
 #include "opdev/op_dfx.h"
 #include "opdev/shape_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -38,7 +39,7 @@ static const std::initializer_list<op::DataType> ASCEND610LITE_DTYPE_SUPPORT_LIS
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_INT32, op::DataType::DT_INT8, op::DataType::DT_UINT8};
 
 // 910_95支持类型
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_INT32,  op::DataType::DT_FLOAT16,
     op::DataType::DT_INT8,  op::DataType::DT_UINT8,  op::DataType::DT_BF16,
     op::DataType::DT_INT64, op::DataType::DT_UINT64, op::DataType::DT_BOOL};
@@ -46,18 +47,23 @@ static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST
 // 根据dtype判断算子是否支持走aicore
 static bool IsAiCoreSupport(const aclTensor* self)
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910_95) {
-        return CheckType(self->GetDataType(), ASCEND910_95_DTYPE_SUPPORT_LIST);
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
+        return CheckType(self->GetDataType(), REGBASE_DTYPE_SUPPORT_LIST);
     }
-    // 获取芯片类型,判断是1971还是1980
-    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) {
+    if (npuArch == NpuArch::DAV_2201) {
         return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_910B_LIST);
     }
-    if (socVersion == SocVersion::ASCEND610LITE) {
+    if (npuArch == NpuArch::DAV_3102) {
         return CheckType(self->GetDataType(), ASCEND610LITE_DTYPE_SUPPORT_LIST);
     }
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_910_LIST);
+}
+
+// 判断tensor是否支持非连续
+bool IsGreaterSupportNonContiguous(const aclTensor* self) {
+  bool isSupportNonContiguous = IsRegBase();
+  return isSupportNonContiguous && IsAiCoreSupport(self);
 }
 
 // AICORE算子kernel

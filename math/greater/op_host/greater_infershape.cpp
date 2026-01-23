@@ -7,7 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include "infershape_broadcast_util.h"
+
+#include "op_host/infershape_broadcast_util.h"
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 

@@ -68,7 +68,15 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
   return 0;
 }
 
-struct GtTensorData {
+int main() {
+  // 1. （固定写法）device/stream初始化, 参考acl API手册
+  // 根据自己的实际device填写deviceId
+  int32_t deviceId = 0;
+  aclrtStream stream;
+  auto ret = Init(deviceId, &stream);
+  // check根据自己的需要处理
+  CHECK_RET(ret == 0, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
+  // 2. 构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> selfShape = {4, 2};
   std::vector<int64_t> otherShape = {4, 2};
   std::vector<int64_t> outShape = {4, 2};
@@ -78,30 +86,27 @@ struct GtTensorData {
   aclTensor* self = nullptr;
   aclTensor* other = nullptr;
   aclTensor* out = nullptr;
-  std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-  std::vector<double> otherHostData = {0, 1, 1, 2, 3, 4, 5, 6};
+  std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+  std::vector<float> otherHostData = {0, 1, 1, 2, 3, 4, 5, 6};
   std::vector<char> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
-};
-
-int PrepareAndExecuteGtTensor(aclrtStream stream, GtTensorData& data, void*& workspaceAddr, uint64_t& workspaceSize) {
-  auto ret = 0;
   // 创建self aclTensor
-  ret = CreateAclTensor(data.selfHostData, data.selfShape, &data.selfDeviceAddr, aclDataType::ACL_DOUBLE, &data.self);
+  ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   // 创建other aclTensor
-  ret = CreateAclTensor(data.otherHostData, data.otherShape, &data.otherDeviceAddr, aclDataType::ACL_DOUBLE, &data.other);
+  ret = CreateAclTensor(otherHostData, otherShape, &otherDeviceAddr, aclDataType::ACL_FLOAT, &other);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   // 创建out aclTensor
-  ret = CreateAclTensor(data.outHostData, data.outShape, &data.outDeviceAddr, aclDataType::ACL_BOOL, &data.out);
+  ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_BOOL, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 调用CANN算子库API
+  // 3. 调用CANN算子库API，需要修改为具体的API
+  uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnGtTensor第一段接口
-  ret = aclnnGtTensorGetWorkspaceSize(data.self, data.other, data.out, &workspaceSize, &executor);
+  ret = aclnnGtTensorGetWorkspaceSize(self, other, out, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnGtTensorGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
   // 根据第一段接口计算出的workspaceSize申请device内存
-  workspaceAddr = nullptr;
+  void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret;);
@@ -109,69 +114,31 @@ int PrepareAndExecuteGtTensor(aclrtStream stream, GtTensorData& data, void*& wor
   // 调用aclnnGtTensor第二段接口
   ret = aclnnGtTensor(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnGtTensor failed. ERROR: %d\n", ret); return ret);
-  
-  return 0;
-}
-
-int HandleGtTensorResult(aclrtStream stream, const GtTensorData& data, void* workspaceAddr, uint64_t workspaceSize) {
-  auto ret = 0;
-  // 同步等待任务执行结束
+  // 4. （固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
-  
-  // 获取输出的值，将device侧内存上的结果拷贝至host侧
-  auto size = GetShapeSize(data.outShape);
+  // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
+  auto size = GetShapeSize(outShape);
   std::vector<char> resultData(size, 0);
-  ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), data.outDeviceAddr, size * sizeof(char),
+  ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, size * sizeof(char),
                     ACL_MEMCPY_DEVICE_TO_HOST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
   for (int64_t i = 0; i < size; i++) {
     LOG_PRINT("result[%ld] is: %d\n", i, resultData[i]);
   }
 
-  // 释放aclTensor和aclScalar
-  aclDestroyTensor(data.self);
-  aclDestroyTensor(data.other);
-  aclDestroyTensor(data.out);
+  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
+  aclDestroyTensor(self);
+  aclDestroyTensor(other);
+  aclDestroyTensor(out);
 
-  // 释放device资源
-  aclrtFree(data.selfDeviceAddr);
-  aclrtFree(data.otherDeviceAddr);
-  aclrtFree(data.outDeviceAddr);
+  // 7. 释放device资源
+  aclrtFree(selfDeviceAddr);
+  aclrtFree(otherDeviceAddr);
+  aclrtFree(outDeviceAddr);
   if (workspaceSize > 0) {
     aclrtFree(workspaceAddr);
   }
-  
-  return 0;
-}
-
-int ExecuteGtTensorOperator(aclrtStream stream) {
-  GtTensorData data;
-  void* workspaceAddr = nullptr;
-  uint64_t workspaceSize = 0;
-
-  auto ret = PrepareAndExecuteGtTensor(stream, data, workspaceAddr, workspaceSize);
-  CHECK_RET(ret == ACL_SUCCESS, return ret);
-
-  ret = HandleGtTensorResult(stream, data, workspaceAddr, workspaceSize);
-  CHECK_RET(ret == ACL_SUCCESS, return ret);
-
-  return 0;
-}
-
-int main() {
-  // device/stream初始化，参考acl API手册
-  // 根据自己的实际device填写deviceId
-  int32_t deviceId = 0;
-  aclrtStream stream;
-  auto ret = Init(deviceId, &stream);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
-
-  // 执行GtScalar操作
-  ret = ExecuteGtTensorOperator(stream);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteGtScalarOperator failed. ERROR: %d\n", ret); return ret);
-
-  // 重置设备和终结ACL
   aclrtDestroyStream(stream);
   aclrtResetDevice(deviceId);
   aclFinalize();

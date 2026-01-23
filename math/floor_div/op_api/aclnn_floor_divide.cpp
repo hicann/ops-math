@@ -13,6 +13,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "floordiv.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -42,9 +43,8 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST =
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-        socVersion == SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch)) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_SUPPORT_LIST;
@@ -135,7 +135,8 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const ac
 
 static inline op::DataType InferFloorDivTensorScalarDtype(const op::DataType selfDtype, const op::DataType otherDtype)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
         auto scalarDefaultDtype = GetScalarDefaultDtype(otherDtype);
         auto promoteType = CombineCategoriesWithComplex(selfDtype, scalarDefaultDtype);
         if ((promoteType == op::DataType::DT_FLOAT16) || (promoteType == op::DataType::DT_BF16) ||
@@ -183,7 +184,8 @@ static bool CheckPromoteType(
             op::ToString(selfDtype).GetString(), op::ToString(otherDtype).GetString());
         return false;
     }
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
         // 增加cast能力检查
         auto supportList = GetDtypeSupportList();
         if (!CheckType(promoteType, supportList)) {

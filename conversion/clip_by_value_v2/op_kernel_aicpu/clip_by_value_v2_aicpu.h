@@ -21,10 +21,9 @@
 namespace aicpu {
 class ClipByValueV2CpuKernel final : public CpuKernel {
 public:
-  ClipByValueV2CpuKernel() = default;
-  ~ClipByValueV2CpuKernel() override = default;
-  uint32_t Compute(CpuKernelContext &ctx) override;
+    ClipByValueV2CpuKernel() = default;
+    ~ClipByValueV2CpuKernel() override = default;
+    uint32_t Compute(CpuKernelContext& ctx) override;
 };
-}  // namespace aicpu
+} // namespace aicpu
 #endif
-

@@ -23,6 +23,7 @@
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -70,18 +71,17 @@ static bool CheckNotNull(const aclTensor *self, const aclTensor *other, const ac
 }
 
 static bool CheckSocExtraType(const DataType dtype) {
-  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
+  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
   if (dtype == op::DataType::DT_BF16 && 
-      (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_95)) {
+      (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch))) {
     return true;
   }
   return false;
 }
 
 static const std::initializer_list<DataType>& GetDtypeSupportList() {
-  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_95 ||
-      socVersion == SocVersion::ASCEND910_93) {
+  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+  if (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch)) {
     return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
   } else {
     return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
@@ -120,7 +120,8 @@ static bool CheckPromoteType(const aclTensor *self, const aclTensor *other,
             ToString(promoteType).GetString());
     return false;
   }
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+  if (IsRegBase(npuArch)) {
     OP_CHECK_RESULT_DTYPE_CAST_FAILED(self->GetDataType(), promoteType, return false);
     OP_CHECK_RESULT_DTYPE_CAST_FAILED(other->GetDataType(), promoteType, return false);
   }
@@ -181,27 +182,41 @@ static aclnnStatus aclnnGeTensorCommon(const aclTensor *self, const aclTensor *o
     return ACLNN_SUCCESS;
   }
 
-  // self如果非连续，需要转连续
-  auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
-  CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  // 处理self输入
+  const aclTensor* selfProcessed = nullptr;
+  if (promoteType == self->GetDataType() && l0op::IsGreaterEqualSupportNonContiguous(self)) {
+      selfProcessed = uniqueExecutor.get()->CreateView(
+          self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
+  } else {
+      // self如果非连续，需要转连续
+      auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
+      CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-  // 将输入self的数据类型转换成推导后的数据类型
-  auto selfCasted = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
-  CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
+      // 将输入self的数据类型转换成推导后的数据类型
+      selfProcessed = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
+  }
+  CHECK_RET(selfProcessed != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  
+  // 处理other输入
+  const aclTensor* otherProcessed = nullptr;
+  if (promoteType == other->GetDataType() && l0op::IsGreaterEqualSupportNonContiguous(other)) {
+      otherProcessed = uniqueExecutor.get()->CreateView(
+          other, other->GetViewShape(), other->GetStorageShape(), other->GetViewStrides(), other->GetViewOffset());
+  } else {
+      // other如果非连续，需要转连续
+      auto otherContiguous = l0op::Contiguous(other, uniqueExecutor.get());
+      CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-  // other如果非连续，需要转连续
-  auto otherContiguous = l0op::Contiguous(other, uniqueExecutor.get());
-  CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-  // 将输入other的数据类型转换成推导后的数据类型
-  auto otherCasted = l0op::Cast(otherContiguous, promoteType, uniqueExecutor.get());
-  CHECK_RET(otherCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
+      // 将输入other的数据类型转换成推导后的数据类型
+      otherProcessed = l0op::Cast(otherContiguous, promoteType, uniqueExecutor.get());
+  }
+  CHECK_RET(otherProcessed != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
   // 调用l0算子GreaterEqual进行计算
-  auto greaterEqualResult = l0op::GreaterEqual(selfCasted, otherCasted, uniqueExecutor.get());
+  auto greaterEqualResult = l0op::GreaterEqual(selfProcessed, otherProcessed, uniqueExecutor.get());
   CHECK_RET(greaterEqualResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-  // 将输入self的数据类型转换成推导后的数据类型
+  // 将输出的数据类型转换成推导后的数据类型
   auto greaterEqualResultCasted = l0op::Cast(greaterEqualResult, out->GetDataType(), uniqueExecutor.get());
   CHECK_RET(greaterEqualResultCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
 

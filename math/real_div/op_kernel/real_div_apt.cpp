@@ -39,7 +39,8 @@ __global__ __aicore__ void real_div(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR w
         using OpDag = RealDivOp::RealDivFloatWithoutCast<DTYPE_X1>::OpDag;
         Ops::Base::BroadcastSch<schMode, OpDag> sch(tiling);
         sch.Process(x1, x2, y);
-    } else if constexpr (std::is_same<DTYPE_X1, int32_t>::value && std::is_same<DTYPE_Y, int32_t>::value) {
+    } else if constexpr ((std::is_same<DTYPE_X1, int32_t>::value && std::is_same<DTYPE_Y, int32_t>::value) ||
+                         std::is_same<DTYPE_X1, int64_t>::value) {
         using OpDag = RealDivOp::RealDivIntegerWithoutCast<DTYPE_X1>::OpDag;
         Ops::Base::BroadcastSch<schMode, OpDag> sch(tiling);
         sch.Process(x1, x2, y);

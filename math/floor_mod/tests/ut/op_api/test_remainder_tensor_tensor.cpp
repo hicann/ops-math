@@ -47,6 +47,7 @@ protected:
         uint64_t workspaceSize = 0;
         aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
         EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
+        // ut.TestPrecision();
     }
 
     void test_run_invalid(
@@ -334,11 +335,13 @@ TEST_F(l2_remainder_tensor_tensor_test, l2_remainder_tensor_tensor_test_11)
     auto ut = OP_API_UT(aclnnRemainderTensorTensor, INPUT(selfT, other), OUTPUT(out));
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
+    // ut.TestPrecision();
 
     // other not contiguous
     ut = OP_API_UT(aclnnRemainderTensorTensor, INPUT(self, otherT), OUTPUT(out));
     getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
+    // ut.TestPrecision();
 }
 
 ///////////////////////////////////////
