@@ -269,14 +269,11 @@ static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, cons
     }
 
     // 检查推导后的数据类型能否转换为输出的数据类型
-    if (mode == MODE_REAL_DIV && (promoteType == op::DataType::DT_INT32 || promoteType == op::DataType::DT_BOOL)) {
-        auto computeDtype = (IsRegBase())
-                            ? op::DataType::DT_FLOAT
-                            : promoteType;
-        OP_CHECK_RESULT_DTYPE_CAST_FAILED(computeDtype, y->GetDataType(), return false);
-    } else {
-        OP_CHECK_RESULT_DTYPE_CAST_FAILED(promoteType, y->GetDataType(), return false);
-    }
+    bool outDtypeToFloat = IsRegBase()
+                           && mode == MODE_REAL_DIV
+                           && (promoteType == op::DataType::DT_INT32 || promoteType == op::DataType::DT_BOOL);
+    auto computeDtype = outDtypeToFloat ? op::DataType::DT_FLOAT : promoteType;
+    OP_CHECK_RESULT_DTYPE_CAST_FAILED(computeDtype, y->GetDataType(), return false);
     return true;
 }
 
@@ -430,7 +427,7 @@ aclnnStatus aclnnDivGetWorkspaceSize(
     CHECK_RET(otherProcessed != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 调用l0算子RealDiv进行计算
-    auto divOpOut = l0op::RealDiv(selfProcessed, otherProcessed, uniqueExecutor.get());
+    auto divOpOut = l0op::RealDiv(selfProcessed, otherProcessed, MODE_REAL_DIV, uniqueExecutor.get());
     CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 固定写法，将计算结果转换成输出out的数据类型
@@ -571,7 +568,7 @@ aclnnStatus aclnnDivsGetWorkspaceSize(
                                                           self->GetViewStrides(), self->GetViewOffset()) :
                                                       l0op::Contiguous(self, uniqueExecutor.get());
         CHECK_RET(selfProcessed != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        divOpOut = l0op::RealDiv(selfProcessed, otherConvert, uniqueExecutor.get());
+        divOpOut = l0op::RealDiv(selfProcessed, otherConvert, MODE_REAL_DIV, uniqueExecutor.get());
         CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
     } else {
         auto promoteType = (!IsRegBase(npuArch)) ?
@@ -594,7 +591,7 @@ aclnnStatus aclnnDivsGetWorkspaceSize(
             CHECK_RET(otherConvert != nullptr, ACLNN_ERR_INNER_NULLPTR);
             auto selfWithStride = uniqueExecutor.get()->CreateView(
                 self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
-            divOpOut = l0op::RealDiv(selfWithStride, otherConvert, uniqueExecutor.get());
+            divOpOut = l0op::RealDiv(selfWithStride, otherConvert, MODE_REAL_DIV, uniqueExecutor.get());
             CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
         } else {
             auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
@@ -609,7 +606,7 @@ aclnnStatus aclnnDivsGetWorkspaceSize(
                 // aclScalar转aclTensor
                 auto otherConvert = uniqueExecutor.get()->ConvertToTensor(other, promoteType);
                 CHECK_RET(otherConvert != nullptr, ACLNN_ERR_INNER_NULLPTR);
-                divOpOut = l0op::RealDiv(selfCasted, otherConvert, uniqueExecutor.get());
+                divOpOut = l0op::RealDiv(selfCasted, otherConvert, MODE_REAL_DIV, uniqueExecutor.get());
             }
             CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
         }
@@ -687,7 +684,7 @@ aclnnStatus aclnnDivModGetWorkspaceSize(
     if (mode == MODE_FLOOR_DIV) {
         divOpOut = l0op::FloorDiv(selfCasted, otherCasted, uniqueExecutor.get());
     } else {
-        divOpOut = l0op::RealDiv(selfCasted, otherCasted, uniqueExecutor.get());
+        divOpOut = l0op::RealDiv(selfCasted, otherCasted, mode, uniqueExecutor.get());
         CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
         if (mode == MODE_TRUNC_DIV && divOpOut->GetDataType() != op::DataType::DT_INT64 &&
             divOpOut->GetDataType() != op::DataType::DT_INT16) {
@@ -769,7 +766,7 @@ aclnnStatus aclnnDivModsGetWorkspaceSize(
     if (mode == MODE_FLOOR_DIV) {
         divOpOut = l0op::FloorDiv(selfCasted, otherCasted, uniqueExecutor.get());
     } else {
-        divOpOut = l0op::RealDiv(selfCasted, otherCasted, uniqueExecutor.get());
+        divOpOut = l0op::RealDiv(selfCasted, otherCasted, mode, uniqueExecutor.get());
         CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
         if (mode == MODE_TRUNC_DIV && divOpOut->GetDataType() != op::DataType::DT_INT64 &&
             divOpOut->GetDataType() != op::DataType::DT_INT16) {
