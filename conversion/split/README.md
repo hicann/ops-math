@@ -1,10 +1,14 @@
 # Split
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                     |     √    |
-
+| 产品                                        | 是否支持 |
+| :------------------------------------------ | :------: |
+| Ascend 950PR/Ascend 950DT                   |    √     |
+| Atlas A3 训练系列产品/Atlas A3 推理系列产品 |    √     |
+| Atlas A2 训练系列产品/Atlas A2 推理系列产品 |    √     |
+| Atlas 200I/500 A2 推理产品                  |    √     |
+| Atlas 推理系列产品                          |    √     |
+| Atlas 训练系列产品                          |    √     |
 
 ## 功能说明
 
@@ -32,7 +36,7 @@
     <td>x</td>
     <td>输入</td>
     <td>需要切分的tensor列表。</td>
-    <td>FLOAT16、FLOAT32、INT64、INT32、UINT8、UINT16、UINT32、UINT64、INT8、INT16、BOOL、BF16</td>
+    <td>FLOAT16、FLOAT32、INT8、INT16、INT64、INT32、UINT8、UINT16、UINT32、UINT64、BOOL</td>
     <td>ND</td>
     </tr>
     <tr>
@@ -53,7 +57,7 @@
     <td>y</td>
     <td>输出</td>
     <td>输出结果。</td>
-    <td>FLOAT16、FLOAT32、INT64、INT32、UINT8、UINT16、UINT32、UINT64、INT8、INT16、BOOL、BF16</td>
+    <td>FLOAT16、FLOAT32、INT8、INT16、INT64、INT32、UINT8、UINT16、UINT32、UINT64、BOOL</td>
     <td>ND</td>
     </tr>
 </tbody></table>
@@ -61,13 +65,10 @@
 
 ## 约束说明
 
-* size_splits中的每个元素都大于或等于1。
-* size_splits的长度等于num_split的值。
-* size_splits中的元素总和为维度split_dim的大小。
-
+无
 
 ## 调用说明
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| 图模式接口 | [test_geir_split](examples/test_geir.cpp) | 通过[算子IR](op_graph/diag_part_proto.h)接口方式调用Split算子。 |
+| 图模式接口 | [test_geir_split](examples/test_geir_split.cpp) | 通过[算子IR](op_graph/split_proto.h)接口方式调用Split算子。 |

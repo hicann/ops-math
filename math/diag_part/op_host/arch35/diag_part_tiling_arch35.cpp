@@ -27,6 +27,11 @@ ge::graphStatus DiagPartTiling::Init()
     ubSize_ = compileInfo->ub_size;
     OP_CHECK_IF(
         (ubSize_ <= 0), OP_LOGE(tilingContext_->GetNodeName(), "Failed to get ub size."), return ge::GRAPH_FAILED);
+    auto res = tilingContext_->SetLocalMemorySize(static_cast<uint32_t>(ubSize_ - DCACHE_SIZE));
+    OP_CHECK_IF(
+        (res != ge::GRAPH_SUCCESS),
+        OP_LOGE(tilingContext_->GetNodeName(), "SetLocalMemorySize ubSize failed."),
+        return ge::GRAPH_FAILED);
     OP_LOGD(tilingContext_->GetNodeName(), "Init DiagPartTiling sucess.");
     return ge::GRAPH_SUCCESS;
 }

@@ -40,34 +40,29 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_GE910B_LIST = {
     op::DataType::DT_INT64, op::DataType::DT_BOOL,
     op::DataType::DT_BF16};
 namespace {
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_GE910_95_LIST = {
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_REGBASE_LIST = {
   op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16,
   op::DataType::DT_INT64, op::DataType::DT_BOOL,
   op::DataType::DT_BF16,  op::DataType::DT_INT32};
-
-
-// 判断芯片类型是否等于910D
-static inline bool CheckSocVersionIs910_95(void) {
-  return GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95;
-}
 }
 
 // 判断芯片类型是否大于等于910B
 static inline bool CheckSocVersionGe910B(void) {
-  return GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-         GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E;
+  auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+  return curArch == NpuArch::DAV_2201 || IsRegBase(curArch);
 }
 
 // 判断芯片类型是否大于等于910
 static inline bool CheckSocVersionGe910(void) {
-  return GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910 &&
-         GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E;
+  auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+  return curArch == NpuArch::DAV_1001 ||
+         curArch == NpuArch::DAV_2201 || IsRegBase(curArch);
 }
 
 static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out) {
   std::initializer_list<DataType> CURRENT_DTYPE_SUPPORT_LIST;
-  if (CheckSocVersionIs910_95()) {
-    CURRENT_DTYPE_SUPPORT_LIST = DTYPE_SUPPORT_GE910_95_LIST;
+  if (IsRegBase()) {
+    CURRENT_DTYPE_SUPPORT_LIST = DTYPE_SUPPORT_REGBASE_LIST;
   } else {
     bool isGe910BSocVersion = CheckSocVersionGe910B();
     CURRENT_DTYPE_SUPPORT_LIST = isGe910BSocVersion ? DTYPE_SUPPORT_GE910B_LIST : DTYPE_SUPPORT_910_LIST;
@@ -157,7 +152,7 @@ aclnnStatus aclnnMaxDimGetWorkspaceSize(const aclTensor *self, int64_t dim, bool
   }
 
   std::tuple<aclTensor*, aclTensor*> result;
-  if (CheckSocVersionIs910_95()) {
+  if (IsRegBase()) {
     result = l0op::ArgMaxWithValue(self_cast, dim, keepdim, indices->GetDataType(), uniqueExecutor.get());
   } else {
     result = l0op::ArgMaxWithValue(self_cast, dim, keepdim, op::DataType::DT_INT32, uniqueExecutor.get());

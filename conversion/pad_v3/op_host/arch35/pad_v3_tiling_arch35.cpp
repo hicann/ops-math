@@ -24,6 +24,7 @@
 using namespace AscendC;
 
 namespace optiling {
+static constexpr uint64_t CONSTANT_SLICE_BRANCH = 10000;
 static constexpr uint64_t CONSTANT_SIMT_BRANCH = 20000;
 static constexpr uint64_t CONSTANT_SIMT_BIG_SIZE_BRANCH = 20001;
 static constexpr uint64_t CONSTANT_CUT_LAST_DIM_BRANCH = 30000;
@@ -96,7 +97,6 @@ void PadACTiling::DoFindSplitAxisReflect(bool isBigLastDim)
     OP_LOGD(context_, "Start PadACTiling CalculateTilingKey DoFindSplitAxis.");
     uint64_t dimSizeInUb = dtypeBytes_;
     uint64_t dimSizeInLast4Axis = dimSizeInUb;
-    uint64_t dimSizeInLast3Axis = dimSizeInUb;
     // 找到切分轴
     for (int64_t i = dimNum_ - 1; i >= 0; i--) {
         if (isBigLastDim && i == static_cast<int64_t>(dimNum_ - 1)) {
@@ -108,22 +108,13 @@ void PadACTiling::DoFindSplitAxisReflect(bool isBigLastDim)
         if (i == dimNum_ - PAD_DIM_INDEX_FOURTH) {
             dimSizeInLast4Axis = dimSizeInUb;
         }
-        if (!isBigLastDim && i == dimNum_ - PAD_DIM_INDEX_THIRD) {
-            dimSizeInLast3Axis = dimSizeInUb;
-        }
         if (dimSizeInUb >= bufferSize_) {
             ubAxis_ = i;
             break;
         }
     }
     // 维度超过4，满载后4个轴
-    if (!isBigLastDim && dimNum_ - ubAxis_ > PAD_DIM_INDEX_THIRD) {
-        ubAxis_ = dimNum_ - PAD_DIM_INDEX_THIRD;
-        ubFactor_ = tilingData_->inShape[dimNum_ - PAD_DIM_INDEX_THIRD];
-        dimSizeInUb = dimSizeInLast3Axis / tilingData_->outShape[dimNum_ - PAD_DIM_INDEX_THIRD] *
-                      tilingData_->inShape[dimNum_ - PAD_DIM_INDEX_THIRD];
-        outTileSize_ = GetSizeOfBlockAlign(dimSizeInUb, blockSize_);
-    } else if (dimNum_ - ubAxis_ > PAD_DIM_INDEX_FOURTH) {
+    if (dimNum_ - ubAxis_ > PAD_DIM_INDEX_FOURTH) {
         ubAxis_ = dimNum_ - PAD_DIM_INDEX_FOURTH;
         ubFactor_ = tilingData_->inShape[dimNum_ - PAD_DIM_INDEX_FOURTH];
         dimSizeInUb = dimSizeInLast4Axis / tilingData_->outShape[dimNum_ - PAD_DIM_INDEX_FOURTH] *
@@ -298,14 +289,6 @@ void PadACTiling::CalculateTilingKeyReflect()
             return;
         }
     } else {
-        if (dimNum_ > PAD_DIM_INDEX_FOURTH ||
-            (dimNum_ == PAD_DIM_INDEX_FOURTH && (tilingData_->leftPad[0] != 0 || rightPad_[0] != 0))) {
-            tilingKey_ = REFLECT_SIMT_BRANCH;
-            if (padMode_ == ModeNum::SYMMETRIC) {
-                tilingKey_ = SYMMETRIC_SIMT_BRANCH;
-            }
-            return;
-        }
         bufferSize_ = GetSizeOfBlockAlign(
             (ubSize_ - vectorSize_ * EXPANSION_FACTOR - blockSize_ * PAD_DIM_INDEX_FOURTH) / UB_DIVIDER - vectorSize_,
             vectorSize_);
@@ -510,6 +493,34 @@ void PadACTiling::DoTilingWithSIMTReflect()
     }
 }
 
+void PadACTiling::DoTilingWithSliceOp()
+{
+    OP_LOGD(context_, "Start PadACTiling DoTilingWithSliceOp.");
+    optiling::SliceParasRuntime2 param;
+    for (size_t i = 0; i < dimNum_; i++) {
+        const auto input_shape_i = tilingData_->inShape[i];
+        const auto output_shape_i = tilingData_->outShape[i];
+        const auto begin_i = -tilingData_->leftPad[i];
+        const auto end_i = output_shape_i + begin_i;
+        const auto stride_i = 1;
+        param.input.AppendDim(input_shape_i);
+        param.output_shape.AppendDim(output_shape_i);
+        param.begin_list.AppendDim(begin_i);
+        param.end_list.AppendDim(end_i);
+        param.stride_list.AppendDim(stride_i);
+    }
+    OP_LOGI(
+        context_, "input_shape_ = %s, output_shape_ = %s, begin_ = %s, end_ = %s, stride_ = %s",
+        Ops::Base::ToString(param.input).c_str(), Ops::Base::ToString(param.output_shape).c_str(),
+        Ops::Base::ToString(param.begin_list).c_str(), Ops::Base::ToString(param.end_list).c_str(),
+        Ops::Base::ToString(param.stride_list).c_str());
+    ge::graphStatus res = SliceTilingForAscendC(context_, coreNum_, ubSize_, cacheLineSize_, param, paramsDtype_);
+    tilingKey_ += context_->GetTilingKey();
+    if (res != ge::GRAPH_SUCCESS) {
+        OP_LOGE(context_, "SliceTilingForAscendc failed.");
+    }
+}
+
 void PadACTiling::DoTilingWithSIMTEdge()
 {
     tilingKey_ = EDGE_SIMT_BRANCH;
@@ -604,6 +615,9 @@ ge::graphStatus PadACTiling::ReflectDimensionCollapse()
         if (padFront < 0 || padBack < 0) {
             isPadAllPositive_ = false;
         }
+        if (padFront > 0 || padBack > 0) {
+            isPadAllNegative_ = false;
+        }
         int64_t leftsubin = padFront - static_cast<int64_t>(tilingData_->inShape[fastDim]);
         int64_t rightsubin = padBack - static_cast<int64_t>(tilingData_->inShape[fastDim]);
         if (padMode_ == ModeNum::REFLECT && (0 < (leftsubin + 1) || 0 < (rightsubin + 1))) {
@@ -658,6 +672,9 @@ ge::graphStatus PadACTiling::EdgeDimensionCollapse()
         if (padFront < 0 || padBack < 0) {
             isPadAllPositive_ = false;
         }
+        if (padFront > 0 || padBack > 0) {
+            isPadAllNegative_ = false;
+        }
 
         if (tilingData_->inShape[fastDim] == 0 && (padFront != 0 || padBack != 0)) {
             OP_LOGE(context_, "If inShape == 0 , padFront and padBack must be 0.");
@@ -705,6 +722,9 @@ ge::graphStatus PadACTiling::DimensionCollapse()
         int64_t padBack = paddings_.padBack.GetDim(fastDim);
         if (padFront < 0 || padBack < 0) {
             isPadAllPositive_ = false;
+        }
+        if (padFront > 0 || padBack > 0) {
+            isPadAllNegative_ = false;
         }
         uint64_t collapsedShape = tilingData_->inShape[fastDim];
         int64_t collapsedPadFront = paddings_.padFront.GetDim(fastDim);
@@ -922,6 +942,12 @@ ge::graphStatus PadACTiling::DoTiling()
             DoTilingWithSIMTEdge();
         } else if (isPadAllPositive_) {
             DoTilingWithEdge();
+        } else if (isPadAllNegative_) {
+            tilingKey_ = CONSTANT_SLICE_BRANCH;
+            DoTilingWithSliceOp();
+            context_->SetTilingKey(tilingKey_);
+            OP_LOGD(context_, "Exit PadACTiling DoTiling.");
+            return ge::GRAPH_SUCCESS;
         } else {
             DoTilingWithSIMTEdge();
         }
@@ -937,6 +963,12 @@ ge::graphStatus PadACTiling::DoTiling()
             DoTilingWithSIMTReflect();
         } else if (isPadAllPositive_) {
             DoTilingWithReflect();
+        } else if (isPadAllNegative_) {
+            tilingKey_ = CONSTANT_SLICE_BRANCH;
+            DoTilingWithSliceOp();
+            context_->SetTilingKey(tilingKey_);
+            OP_LOGD(context_, "Exit PadACTiling DoTiling.");
+            return ge::GRAPH_SUCCESS;
         } else {
             DoTilingWithSIMTReflect();
         }
@@ -953,6 +985,12 @@ ge::graphStatus PadACTiling::DoTiling()
         }
         if (isPadAllPositive_) {
             DoTilingWithConstant();
+        } else if (isPadAllNegative_) {
+            tilingKey_ = CONSTANT_SLICE_BRANCH;
+            DoTilingWithSliceOp();
+            context_->SetTilingKey(tilingKey_);
+            OP_LOGD(context_, "Exit PadACTiling DoTiling.");
+            return ge::GRAPH_SUCCESS;
         } else {
             DoTilingWithSIMT();
         }

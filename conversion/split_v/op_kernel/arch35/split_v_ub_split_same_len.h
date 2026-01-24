@@ -71,6 +71,7 @@ private:
     int64_t nRegSize_ = 0;
     int64_t blockCount_ = 0;
     int64_t blockLen_ = 0;
+    int64_t ubSize_ = 0;
 
     int32_t uVL_ = Ops::Base::GetVRegSize() / sizeof(U);
     DataCopyExtParams copyInParam_{0, 0, 0, 0, 0};
@@ -83,6 +84,7 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::Init(GM_ADDR x, GM_ADDR y,
     blockIdx_ = GetBlockIdx();
     tilingData_ = tilingData;
     gSize_ = tilingData_->gSize;
+    ubSize_ = tilingData_->ubSize;
     nSize_ = tilingData_->nBlockFactorNum;
     mUBFactor_ = tilingData_->mBlockFactor;
     mUBFactorTail_ = tilingData_->mBlockFactorTail;
@@ -93,7 +95,7 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::Init(GM_ADDR x, GM_ADDR y,
     blockFactor_ = tilingData_->blockFactor;
     blockFactorTail_ = tilingData_->blockFactorTail;
 
-    uint32_t initInputSpace = gUBFactor_ * Ops::Base::CeilAlign(mUBFactor_ * nSize_ * dtypeSize_, VL_LEN);
+    uint32_t initInputSpace = (ubSize_ / BUFFER_NUM - VL_LEN) / BUFFER_NUM;
     uint32_t initIdxSpace = Ops::Base::GetVRegSize();
     pipe_.InitBuffer(inQueueX_, BUFFER_NUM, initInputSpace);
     pipe_.InitBuffer(outQueueY_, BUFFER_NUM, initInputSpace);
@@ -167,9 +169,6 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::Process() {
         gnAlignSize = CeilDivision(processGNum * nSize_, BLOCK_ELENUM) * BLOCK_ELENUM;
         mnAlignSize = CeilDivision(processMNum * nSize_, BLOCK_ELENUM) * BLOCK_ELENUM;
         nRegSize_ = nSize_ * tmpLoop_;
-        event_t eventID1 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_V));
-        SetFlag<HardEvent::MTE3_V>(eventID1);
-        WaitFlag<HardEvent::MTE3_V>(eventID1);
 
         ComputeIdx(processGNum, processNum, gnAlignSize, mnAlignSize);
         idxLocal_ = idxQueue_.DeQue<U>();

@@ -357,6 +357,14 @@ ge::graphStatus CumsumAscendcTilingImpl::DoTiling()
             1 :
             std::max(td_.innerTd.realCoreNum, td_.outerTd.coreGroupCount * td_.outerTd.coreGroupCoreNum));
     context_->SetTilingKey(tilingKey_);
+    if (tilingKey_ == TILING_KEY_CORE_SS_ONEWAY ||
+        tilingKey_ == TILING_KEY_CORE_SS_TWOWAY ||
+        tilingKey_ == TILING_KEY_CORE_SS_UB_SS_ONEWAY ||
+        tilingKey_ == TILING_KEY_CORE_SS_UB_SS_TWOWAY) {
+        OP_CHECK_IF(context_->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
+                    OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"),
+                    return ge::GRAPH_FAILED);
+    }
     size_t* workspaces = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, workspaces);
     workspaces[0] = WORKSPACE_SIZE;

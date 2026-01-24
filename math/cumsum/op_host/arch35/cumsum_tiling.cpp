@@ -26,7 +26,6 @@
 using namespace ge;
 
 namespace optiling {
-
 static ge::graphStatus TilingCumsumForAscendc(gert::TilingContext* context)
 {
     auto input = context->GetInputDesc(0);

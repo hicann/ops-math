@@ -1,16 +1,22 @@
 # aclnnReflectionPad3d
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/mirror_pad)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term> |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term> |    √     |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    ×     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
 
 ## 功能说明
 
-算子功能：3D反射填充。
+3D反射填充。
 
 ```
 例：
@@ -42,51 +48,189 @@ padding([1,1,1,1,1,1])
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnReflectionPad3dGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReflectionPad3d”接口执行计算。
 
-- `aclnnStatus aclnnReflectionPad3dGetWorkspaceSize(const aclTensor *self, const aclIntArray *padding, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
+```cpp
+aclnnStatus aclnnReflectionPad3dGetWorkspaceSize(
+  const aclTensor   *self, 
+  const aclIntArray *padding, 
+  aclTensor         *out, 
+  uint64_t          *workspaceSize, 
+  aclOpExecutor    **executor)
+```
 
-- `aclnnStatus aclnnReflectionPad3d(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```cpp
+aclnnStatus aclnnReflectionPad3d(
+  void          *workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor *executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnReflectionPad3dGetWorkspaceSize
 
-- **参数说明：**
+- **参数说明**
 
-  - self(aclTensor*,计算输入)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，维度支持四维或五维，在最后三维做pad。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：BFLOAT16、FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128
-  - padding(aclIntArray*,计算输入)：数据类型为INT64，长度为6，数值依次代表左右上下前后需要填充的值。padding前两个数值需小于self最后一维度的数值，中间两个数值需小于self倒数第二维度的数值，后两个数值需小于self倒数第三维度的数值。
+  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 212px">
+  <col style="width: 359px">
+  <col style="width: 305px">
+  <col style="width: 114px">
+  <col style="width: 135px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>Device侧的aclTensor。</td>
+      <td>维度支持四维或五维，在最后三维做pad。</td>
+      <td>FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>4-5</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>padding</td>
+      <td>输入</td>
+      <td>Device侧的aclIntArray数组。</td>
+      <td>长度为6，数值依次代表左右上下前后需要填充的值。padding前两个数值需小于self最后一维度的数值，中间两个数值需小于self倒数第二维度的数值，后两个数值需小于self倒数第三维度的数值。</td>
+      <td>INT64</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>Device侧的aclTensor。</td>
+      <td>维度与self一致，out倒数第三维度的数值等于self倒数第三维度的数值加padding后两个值，out倒数第二维度的数值等于self倒数第二维度的数值加padding中间两个值，out最后一维度的数值等于self最后一维度的数值加padding前两个值。</td>
+      <td>FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>4-5</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
+  - <term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16、COMPLEX64、COMPLEX128。
 
-  - out(aclTensor*,计算输出)：数据类型、[数据格式](../../../docs/zh/context/数据格式.md)、维度与self一致，out倒数第三维度的数值等于self倒数第三维度的数值加padding后两个值，out倒数第二维度的数值等于self倒数第二维度的数值加padding中间两个值，out最后一维度的数值等于self最后一维度的数值加padding前两个值。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：BFLOAT16、FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128
-  - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor \**，出参)：返回op执行器，包含了算子计算流程。
-
-- **返回值：**
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  161001(ACLNN_ERR_PARAM_NULLPTR)：1. Tensor为空指针。
-  161002(ACLNN_ERR_PARAM_INVALID)：1. self、padding和out的数据类型或数据格式不在支持的范围之内。
-                                   2. self、padding和out的输入shape在支持范围之外。
-                                   3. 五维self为空tensor且存在非batch size维度的大小为0。
-                                   4. 四维self不支持为空tensor。
-                                   5. padding的数值大于等于self对应维度的值。
-                                   6. out后三维度的值不等于self后三维度的值加对应padding。
-                                   7. out的shape与实际输出shape不匹配。
-  ```
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 256px">
+  <col style="width: 131px">
+  <col style="width: 764px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>Tensor为空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="7">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="7">161002</td>
+      <td>self、padding和out的数据类型或数据格式不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self、padding和out的输入shape在支持范围之外。</td>
+    </tr>
+    <tr>
+      <td>五维self为空tensor且存在非batch size维度的大小为0。</td>
+    </tr>
+    <tr>
+      <td>四维self不支持为空tensor。</td>
+    </tr>
+    <tr>
+      <td>padding的数值大于等于self对应维度的值。</td>
+    </tr>
+    <tr>
+      <td>out后三维度的值不等于self后三维度的值加对应padding。</td>
+    </tr>
+    <tr>
+      <td>out的shape与实际输出shape不匹配。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnReflectionPad3d
 
-- **参数说明：**
+- **参数说明**
 
-  - workspace(void *，入参)：在Device侧申请的workspace内存地址。
-
-  - workspaceSize(uint64_t，入参)：在Device侧申请的workspace大小，由第一段接口aclnnReflectionPad3dGetWorkspaceSize获取。
-
-  - executor(aclOpExecutor *，入参)：op执行器，包含了算子计算流程。
-
-  - stream(aclrtStream，入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1143px"><colgroup>
+  <col style="width: 158px">
+  <col style="width: 140px">
+  <col style="width: 845px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnReflectionPad3dGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 

@@ -14,6 +14,7 @@
 #include "opdev/op_def.h"
 #include "opdev/op_dfx.h"
 #include "opdev/aicpu/aicpu_task.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -41,18 +42,18 @@ static const std::initializer_list<op::DataType> REFLECTION_PAD_AICORE_DTYPE_SUP
 static const std::initializer_list<op::DataType> REFLECTION_PAD_ASCEND910B_AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16};
     
-static const std::initializer_list<op::DataType> CONSTANT_PAD_ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> CONSTANT_PAD_REGBASE_AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT8,  op::DataType::DT_UINT8,   op::DataType::DT_INT16, op::DataType::DT_UINT16,
     op::DataType::DT_INT32, op::DataType::DT_UINT32,  op::DataType::DT_INT64, op::DataType::DT_UINT64,
     op::DataType::DT_BF16,  op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT};
 
-static const std::initializer_list<op::DataType> REPLICATION_PAD_ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> REPLICATION_PAD_REGBASE_AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT64, op::DataType::DT_UINT64, op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64, 
     op::DataType::DT_INT32, op::DataType::DT_UINT32, op::DataType::DT_FLOAT,
     op::DataType::DT_INT16, op::DataType::DT_UINT16, op::DataType::DT_FLOAT16, op::DataType::DT_BF16,
     op::DataType::DT_INT8,  op::DataType::DT_UINT8,  op::DataType::DT_BOOL};
 
-static const std::initializer_list<op::DataType> REFLECTION_PAD_ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> REFLECTION_PAD_REGBASE_AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT64, op::DataType::DT_UINT64, op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64, 
     op::DataType::DT_INT32, op::DataType::DT_UINT32, op::DataType::DT_FLOAT,
     op::DataType::DT_INT16, op::DataType::DT_UINT16, op::DataType::DT_FLOAT16, op::DataType::DT_BF16,
@@ -79,8 +80,8 @@ inline static bool IsAiCoreSupport(const aclTensor *self, const std::string& mod
         if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
             GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
             return CheckType(self->GetDataType(), CONSTANT_PAD_ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
-        } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-            return CheckType(self->GetDataType(), CONSTANT_PAD_ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST);
+        } else if (IsRegBase()) {
+            return CheckType(self->GetDataType(), CONSTANT_PAD_REGBASE_AICORE_DTYPE_SUPPORT_LIST);
         }
         return CheckType(self->GetDataType(), CONSTANT_PAD_AICORE_DTYPE_SUPPORT_LIST);
     } else if (mode == REPLICATION_MODE){
@@ -90,8 +91,8 @@ inline static bool IsAiCoreSupport(const aclTensor *self, const std::string& mod
         if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
             GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
             return CheckType(self->GetDataType(), REPLICATION_PAD_ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
-        } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-            return CheckType(self->GetDataType(), REPLICATION_PAD_ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST);
+        } else if (IsRegBase()) {
+            return CheckType(self->GetDataType(), REPLICATION_PAD_REGBASE_AICORE_DTYPE_SUPPORT_LIST);
         }
         return CheckType(self->GetDataType(), REPLICATION_PAD_AICORE_DTYPE_SUPPORT_LIST);
     } else if (mode == REFLECTION_MODE) {
@@ -101,8 +102,8 @@ inline static bool IsAiCoreSupport(const aclTensor *self, const std::string& mod
         if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
             GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
             return CheckType(self->GetDataType(), REFLECTION_PAD_ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
-        } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-            return CheckType(self->GetDataType(), REFLECTION_PAD_ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST);
+        } else if (IsRegBase()) {
+            return CheckType(self->GetDataType(), REFLECTION_PAD_REGBASE_AICORE_DTYPE_SUPPORT_LIST);
         }
         return CheckType(self->GetDataType(), REFLECTION_PAD_AICORE_DTYPE_SUPPORT_LIST);
     }

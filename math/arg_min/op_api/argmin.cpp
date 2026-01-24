@@ -14,6 +14,7 @@
 #include "opdev/op_dfx.h"
 #include "opdev/op_log.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 namespace l0op {
@@ -32,12 +33,11 @@ static const std::initializer_list<op::DataType> AICORE_910B_DTYPE_SUPPORT_LIST 
                                                                                    op::DataType::DT_BF16};
 
 static bool IsAiCoreSupport(const aclTensor *self) {
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310P) {
+  auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+  if (curArch == NpuArch::DAV_2002) {
     return CheckType(self->GetDataType(), AICORE_310P_DTYPE_SUPPORT_LIST);
   }
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+  if (curArch == NpuArch::DAV_2201 || IsRegBase(curArch)) {
     return CheckType(self->GetDataType(), AICORE_910B_DTYPE_SUPPORT_LIST);
   }
   return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
@@ -68,7 +68,8 @@ const aclTensor* ArgMin(const aclTensor* x, const int64_t dim, const bool keepdi
   auto dimTensor = executor->ConvertToTensor(executor->AllocScalar(dim), op::DataType::DT_INT64);
   int64_t dimNum = x->GetViewShape().GetDim(dim);
   aclTensor* out;
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310P) {
+  auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+  if (curArch == NpuArch::DAV_2002) {
     // 310p not support index int64_t
     out = executor->AllocTensor(op::ToOpDataType(ACL_INT32), op::Format::FORMAT_ND, op::Format::FORMAT_ND);
   } else {

@@ -8,15 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-/*!
- * \file split_v_proto.h
- * \brief
- */
-
-#ifndef SPLIT_V_PROTO_H_
-#define SPLIT_V_PROTO_H_
+#ifndef OPS_BUILT_IN_OP_PROTO_INC_SPLIT_V_COMBINATION_OPS_H_
+#define OPS_BUILT_IN_OP_PROTO_INC_SPLIT_V_COMBINATION_OPS_H_
 #include "graph/operator_reg.h"
-#include "graph/types.h"
 
 namespace ge {
 /**
@@ -64,7 +58,6 @@ REG_OP(SplitV)
                                    DT_BF16, DT_BOOL, DT_STRING}))
     .REQUIRED_ATTR(num_split, Int)
     .OP_END_FACTORY_REG(SplitV)
-
-} // namespace ge
+}  // namespace ge
 
 #endif

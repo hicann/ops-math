@@ -9,8 +9,8 @@
  */
 
 /*!
- * \file pad_v3_def.cpp
- * \brief pad_v3_def ophost
+ * \file pad_v3.cpp
+ * \brief PadV3 ophost
  */
 #include "register/op_def_registry.h"
 

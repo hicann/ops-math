@@ -20,12 +20,12 @@
 #include <cstdint>
 #include <vector>
 
-#include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
 #include "register/op_impl_registry.h"
+#include "tiling/tiling_api.h"
 #include "util/math_util.h"
 #include "log/log.h"
 #include "util/platform_util.h"
+#include "op_host/tiling_util.h"
 #include "op_api/op_util.h"
 #include "../strided_slice_util.h"
 

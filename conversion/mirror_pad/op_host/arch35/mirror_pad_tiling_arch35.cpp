@@ -9,7 +9,7 @@
  */
 
 /*!
- * \file mirror_pad_tiling_arch35.cpp
+ * \file mirror_pad.cc
  * \brief
  */
 

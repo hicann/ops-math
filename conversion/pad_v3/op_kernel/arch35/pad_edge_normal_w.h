@@ -9,8 +9,8 @@
  */
 
 /*!
- * \file pad_edge_normal.h
- * \brief pad_edge_normal
+ * \file pad_repl_normal_w.h
+ * \brief pad cut not last dim kernel in replicate mode
  */
 
 #ifndef PAD_REPL_NORMAL_W_H_

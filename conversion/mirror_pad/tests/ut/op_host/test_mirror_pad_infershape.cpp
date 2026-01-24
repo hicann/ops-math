@@ -27,15 +27,15 @@ class MirrorPadInfershapeTest : public testing::Test {
 
 TEST_F(MirrorPadInfershapeTest, mirror_pad_infershape_case_0)
 {
-    gert::StorageShape xShape = {{6,}, {6,}};
-    gert::StorageShape padShape = {{1, 2}, {1, 2}};
-    int pad_value[2] = {2, 2};
+    gert::StorageShape xShape = {{2, 3, 4}, {2, 3, 4}};
+    gert::StorageShape padShape = {{2, 3}, {2, 3}};
+    int pad_value[2] = {3, 4};
 
     gert::InfershapeContextPara infershapeContextPara(
         "MirrorPad",
         {{xShape, ge::DT_INT32, ge::FORMAT_ND}, {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value}},
         {{{{-2},{-2}}, ge::DT_INT32, ge::FORMAT_ND}});
 
-    std::vector<std::vector<int64_t>> expectOutputShape = {{ 10, }};
+    std::vector<std::vector<int64_t>> expectOutputShape = {{ 9, 6, 6 },};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 } 

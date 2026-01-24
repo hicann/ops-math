@@ -9,8 +9,8 @@
  */
 
 /*!
- * \file pad_mirror_huge_width.h
- * \brief pad_mirror_huge_width
+ * \file pad_cut_last.h
+ * \brief pad cut last dim kernel
  */
 
 #ifndef PAD_MIRROR_HUGE_WIDTH_H_
@@ -344,13 +344,17 @@ private:
         copyOutParams.blockLen = mDataLen * sizeof(T);
         DataCopyPad(output_[tempOutAddr], src[inStart], copyOutParams);
 
-        copyOutParams.blockLen = leftUbCopyLen_ * sizeof(T);
-        tempOutAddr = outAddr + outIdxCnt[CONST4].outIdx[1];
-        DataCopyPad(output_[tempOutAddr], src[outLeftStart], copyOutParams);
+        if (leftUbCopyLen_ != 0) {
+            copyOutParams.blockLen = leftUbCopyLen_ * sizeof(T);
+            tempOutAddr = outAddr + outIdxCnt[CONST4].outIdx[1];
+            DataCopyPad(output_[tempOutAddr], src[outLeftStart], copyOutParams);
+        }
 
-        copyOutParams.blockLen = rightUbCopyLen_ * sizeof(T);
-        tempOutAddr = outAddr + outIdxCnt[CONST4].outIdx[CONST2];
-        DataCopyPad(output_[tempOutAddr], src[outRightStart], copyOutParams);
+        if (rightUbCopyLen_ != 0) {
+            copyOutParams.blockLen = rightUbCopyLen_ * sizeof(T);
+            tempOutAddr = outAddr + outIdxCnt[CONST4].outIdx[CONST2];
+            DataCopyPad(output_[tempOutAddr], src[outRightStart], copyOutParams);
+        }
     }
 
     __aicore__ inline void CopyOut(const LocalTensor<T>& src, uint32_t idx, outIdxAndTimes* outIdxCnt)

@@ -58,5 +58,5 @@ graphStatus TilingPrepare4Split(TilingParseContext* context) {
 }
 
 IMPL_OP_OPTILING(Split).Tiling(Tiling4Split)
-                .TilingParse<SplitVCompileInfo>(TilingPrepare4Split);
+              .TilingParse<SplitVCompileInfo>(TilingPrepare4Split);
 }  // namespace optiling

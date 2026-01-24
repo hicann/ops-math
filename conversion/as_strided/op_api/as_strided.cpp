@@ -15,6 +15,7 @@
 #include "opdev/make_op_executor.h"
 #include "opdev/op_dfx.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -36,8 +37,8 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_UINT32,   op::DataType::DT_UINT64,  op::DataType::DT_BOOL,  op::DataType::DT_COMPLEX32,
     op::DataType::DT_COMPLEX64};
 
-// 910_95   float16,float,int8,int16,int32,int64,uint8,uint16,uint32,uint64,bool,bfloat16,complex32,complex64
-static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_910_95 = {
+// regbase   float16,float,int8,int16,int32,int64,uint8,uint16,uint32,uint64,bool,bfloat16,complex32,complex64
+static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_REGBASE = {
     op::DataType::DT_FLOAT,        op::DataType::DT_FLOAT16,   op::DataType::DT_INT8,     op::DataType::DT_INT16,
     op::DataType::DT_INT32,        op::DataType::DT_INT64,     op::DataType::DT_UINT8,    op::DataType::DT_UINT16,
     op::DataType::DT_UINT32,       op::DataType::DT_UINT64,    op::DataType::DT_BOOL,     op::DataType::DT_BF16,
@@ -47,11 +48,11 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_910_9
 static bool IsAiCoreSupport(const aclTensor* self)
 {
     auto dataType = self->GetDataType();
-    auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == op::SocVersion::ASCEND910B || socVersion == op::SocVersion::ASCEND910_93) {
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch == NpuArch::DAV_2201) {
         return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_910B);
-    } else if (socVersion == op::SocVersion::ASCEND910_95) {
-        return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_910_95);
+    } else if (IsRegBase()) {
+        return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_REGBASE);
     }
     return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST);
 }

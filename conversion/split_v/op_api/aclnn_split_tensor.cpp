@@ -54,7 +54,7 @@ inline static bool CheckNotNull(const aclTensor *self, const aclTensorList *out)
 }
 
 inline static bool CheckDtypeValid(const aclTensor *self, const aclTensorList *out) {
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+  if (IsRegBase()) {
     OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST_910_95, return false);
     // 检查每一个输出tensor的数据类型是否在API支持列表内
     for (size_t index = 0; index < out->Size(); index++) {
@@ -149,7 +149,7 @@ static aclnnStatus SplitOnceCalculation(const aclTensor *self, const aclIntArray
 static aclnnStatus SplitLoopCalculation(const aclTensor *self, const aclIntArray *splitSize, int64_t dim,
                                         aclTensorList *out, aclOpExecutor *executor) {
   const int64_t numSplit = splitSize->Size();
-  const int64_t splitLoopSize = (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) ?
+  const int64_t splitLoopSize = (!IsRegBase()) ?
                                 SPLIT_LOOP_SIZE : SPLIT_LOOP_SIZE_512;
   const int64_t loopSize = (numSplit + splitLoopSize - 1) / splitLoopSize;
   const int64_t lastSize = (numSplit % splitLoopSize == 0) ? splitLoopSize : numSplit % splitLoopSize;
@@ -266,7 +266,7 @@ aclnnStatus aclnnSplitTensorGetWorkspaceSize(const aclTensor *self, uint64_t spl
     aclIntArray *splitSize = uniqueExecutor.get()->AllocIntArray(splitVector.data(), splitVector.size());
     // 在SplitV算子的AiCore场景或者输出个数超过32个时,使用循环切分
     if (l0op::SplitVAiCoreSupport(selfContiguous) && splitSize->Size() > SPLIT_LOOP_SIZE &&
-        GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+        !IsRegBase()) {
         ret = SplitLoopCalculation(selfContiguous, splitSize, dim, out, uniqueExecutor.get());
     } else if (splitSize->Size() > SPLIT_LOOP_SIZE_512) {
       ret = SplitLoopCalculation(selfContiguous, splitSize, dim, out, uniqueExecutor.get());

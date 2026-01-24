@@ -12,14 +12,14 @@
  * \file arg_max_v2_proto.h
  * \brief
  */
-
-#ifndef ARG_MAX_V2_PROTO_H_
-#define ARG_MAX_V2_PROTO_H_
+#ifndef OPS_OP_PROTO_INC_ARG_MAX_V2_H_
+#define OPS_OP_PROTO_INC_ARG_MAX_V2_H_
 
 #include "graph/operator_reg.h"
 #include "graph/types.h"
 
 namespace ge {
+
 /**
 *@brief Returns the index with the largest value across axes of a tensor.
 
@@ -48,6 +48,7 @@ REG_OP(ArgMaxV2)
     .ATTR(dtype, Type, DT_INT64)
     .OP_END_FACTORY_REG(ArgMaxV2)
 
-}  // namespace ge
+} // namespace ge
 
-#endif  // ARG_MAX_V2_PROTO_H_
+#endif // OPS_OP_PROTO_INC_ARG_MAX_V2_H_
+

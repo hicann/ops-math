@@ -9,8 +9,8 @@
  */
 
 /*!
- * \file pad_mirror_simt_huge.h
- * \brief pad_mirror_simt_huge
+ * \file pad_reflect_simt_huge.h
+ * \brief pad_reflect_simt_huge
  */
 
 #ifndef PAD_REFLECT_SIMT_HUGE_H

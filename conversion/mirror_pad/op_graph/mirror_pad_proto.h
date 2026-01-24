@@ -23,11 +23,10 @@ namespace ge {
 * @brief Fills the tensor with the mirror value.
 * @par Inputs:
 * @li x: The tensor to be padded. Format support ND,
-* support 1D ~ 5D. Type must be one of the following
-* types: int8, uint8, int16, uint16, int32, int64, float16, float,
-* double, bool, complex64, complex128, bfloat16.
+* Type must be one of the following: int8, uint8, int16, uint16, int32, uint32, int64, uint64,
+* bfloat16, float16, float, double, bool, complex64, complex128.
 * @li paddings: A two-column matrix specifying the padding sizes.
-* Arranged as [[leftpad0, rightpad0], [leftpad1, rightpad1], ...]
+* Arranged as [[leftpad_0, rightpad_0], [leftpad_1, rightpad_1], ...]
 * The number of rows has the same rank as "x", type must be int32 or int64.
 
 * @par Attributes:
@@ -36,24 +35,27 @@ namespace ge {
 * do include the borders.
 
 * @par Outputs:
-* y: The padded tensor.
+* y: The padded tensor with the same type as "x".
+* y.shape[i] = x.shape[i] + leftpad_i + rightpad_i, where y.shape[i] >= 0.
 
 * @attention Constraints:
-* "symmetric" mode: the ith leftpad and rightpad should be less equal than shape[i] of x.
-* "reflect" mode: the ith leftpad and rightpad should be less than shape[i] of x.
+* "symmetric" mode: the leftpad_i and rightpad_i should be in [-x.shape[i], x.shape[i]]
+* "reflect" mode: the leftpad_i and rightpad_i should be in [-x.shape[i], x.shape[i])
 
 * @par Third-party framework compatibility
 * Compatible with the TensorFlow operator MirrorPad.
 */
 
 REG_OP(MirrorPad)
-    .INPUT(x, TensorType({ DT_INT8, DT_UINT8, DT_INT16, DT_UINT16,
-      DT_INT32, DT_INT64, DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_BOOL,
-      DT_COMPLEX64, DT_COMPLEX128 }))
-    .INPUT(paddings, TensorType({ DT_INT32, DT_INT64 }))
-    .OUTPUT(y, TensorType({ DT_INT8, DT_UINT8, DT_INT16, DT_UINT16,
-      DT_INT32, DT_INT64, DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_BOOL,
-      DT_COMPLEX64, DT_COMPLEX128 }))
+    .INPUT(
+        x, TensorType(
+               {DT_INT8, DT_UINT8, DT_INT16, DT_UINT16, DT_INT32, DT_UINT32, DT_INT64, DT_UINT64, DT_BF16, DT_FLOAT16,
+                DT_FLOAT, DT_DOUBLE, DT_BOOL, DT_COMPLEX64, DT_COMPLEX128}))
+    .INPUT(paddings, TensorType({DT_INT32, DT_INT64}))
+    .OUTPUT(
+        y, TensorType(
+               {DT_INT8, DT_UINT8, DT_INT16, DT_UINT16, DT_INT32, DT_UINT32, DT_INT64, DT_UINT64, DT_BF16, DT_FLOAT16,
+                DT_FLOAT, DT_DOUBLE, DT_BOOL, DT_COMPLEX64, DT_COMPLEX128}))
     .REQUIRED_ATTR(mode, String)
     .OP_END_FACTORY_REG(MirrorPad)
 } // namespace ge

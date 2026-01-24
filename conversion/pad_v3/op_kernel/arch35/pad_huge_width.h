@@ -9,8 +9,8 @@
  */
 
 /*!
- * \file pad_huge_width.h
- * \brief pad_huge_width
+ * \file pad_cut_last.h
+ * \brief pad cut last dim kernel
  */
 
 #ifndef PAD_HUGE_WIDTH_H_

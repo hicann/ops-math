@@ -9,7 +9,7 @@
  */
 /*!
  * \file pad_scatter.h
- * \brief pad_scatter
+ * \brief pad scatter kernel
  */
 
 #ifndef ASCENDC_PAD_SCATTER_H_
@@ -39,7 +39,6 @@ template <typename T>
 class PadScatter
 {
 private:
-    constexpr static uint32_t VL_SIZE = Ops::Base::GetVRegSize();
     constexpr static uint32_t VL_CNT = VL_SIZE / sizeof(T);
     constexpr static uint32_t BLOCK_SIZE = Ops::Base::GetUbBlockSize();
     constexpr static uint32_t BLOCK_NUM = BLOCK_SIZE / sizeof(T);

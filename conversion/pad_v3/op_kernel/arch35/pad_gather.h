@@ -9,7 +9,7 @@
  */
 /*!
  * \file pad_gather.h
- * \brief pad gather
+ * \brief pad gather kernel
  */
 
 #ifndef ASCENDC_PAD_GATHER_H_
@@ -38,7 +38,6 @@ struct PadGatherParam {
 template <typename T>
 class PadGather {
 private:
-    constexpr static uint32_t VL_SIZE = Ops::Base::GetVRegSize();
     constexpr static uint32_t VL_CNT = VL_SIZE / sizeof(T);
     constexpr static uint32_t BLOCK_SIZE = Ops::Base::GetUbBlockSize();
     constexpr static uint32_t BLOCK_NUM = BLOCK_SIZE / sizeof(T);

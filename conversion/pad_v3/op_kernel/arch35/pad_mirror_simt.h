@@ -9,8 +9,8 @@
  */
 
 /*!
- * \file pad_mirror_simt.h
- * \brief pad_mirror_simt
+ * \file pad_reflect_simt.h
+ * \brief pad_reflect_simt
  */
 
 #ifndef PAD_REFLECT_SIMT_H
@@ -463,4 +463,4 @@ __aicore__ inline void PadReflectSimt<T, KEY>::Process(GM_ADDR tiling)
 }
 } // namespace PadV3
 
-#endif //  PAD_REFLECT_SIMT_H
+#endif //  PAD_EDGE_SIMT_H

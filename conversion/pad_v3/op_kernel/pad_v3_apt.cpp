@@ -9,13 +9,14 @@
  */
 
 /*!
- * \file pad_v3_apt.cpp
- * \brief pad_v3_apt kernel
+ * \file pad_v3.cpp
+ * \brief pad_v3 kernel
  */
 
 #include "./arch35/pad_constant.h"
 #include "./arch35/pad_edge.h"
 #include "./arch35/pad_mirror.h"
+#include "./arch35/pad_slice.h"
 
 using namespace PadV3;
 
@@ -63,10 +64,21 @@ using namespace PadV3;
 #define SYMMETRIC_SMALL_LAST_DIM_GATHER_BRANCH_DIM3 32032
 #define SYMMETRIC_SMALL_LAST_DIM_GATHER_BRANCH_DIM4 32042
 
+#define PAD_SLICE_KEY_MOVE_ALIGN 10100
+#define PAD_SLICE_KEY_MOVE_ALIGN_LAST_DIM 10101
+#define PAD_SLICE_KEY_NDDMA 10102
+#define PAD_SLICE_KEY_NDDMA_LAST_DIM 10103
+#define PAD_SLICE_KEY_MOVE_ALIGN_TWO_DIM 10150
+#define PAD_SLICE_KEY_SIMT 10200
+#define PAD_SLICE_KEY_MOVE_ALIGN_GATHER 10300
+#define PAD_SLICE_KEY_MOVE_UNALIGN_GATHER 10301
+#define PAD_SLICE_KEY_TWO_DIM_SMALL_SHAPE 10400
+
 extern "C" __global__ __aicore__ void pad_v3(
     GM_ADDR x, GM_ADDR paddings, GM_ADDR constValues, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
+    REGISTER_TILING_DEFAULT(SliceFakeTilingData);
     if (TILING_KEY_IS(CONSTANT_CUT_LAST_DIM_BRANCH)) { // 30000
         PadV3::LaunchKernelPadWithHugeWidth<DTYPE_X>(x, paddings, y, tiling, constValues);
     } else if (TILING_KEY_IS(CONSTANT_BIG_LAST_DIM_BRANCH_DIM2)) { // 30021
@@ -158,5 +170,36 @@ extern "C" __global__ __aicore__ void pad_v3(
     } else if (TILING_KEY_IS(SYMMETRIC_SMALL_LAST_DIM_GATHER_BRANCH_DIM4)) { // 32042
         PadV3::LaunchKernelPadMirrorGather<DTYPE_X, SYMMETRIC_SMALL_LAST_DIM_GATHER_BRANCH_DIM4>(
             x, paddings, y, tiling);
+    } else {
+        TPipe pipe;
+        __gm__ uint8_t* offsets = nullptr;
+        __gm__ uint8_t* size = nullptr;
+        if (TILING_KEY_IS(PAD_SLICE_KEY_MOVE_ALIGN)) {
+            GET_TILING_DATA_WITH_STRUCT(SliceMoveAlignTilingData, tilingData, tiling);
+            PadSliceMoveAlignProcess(x, offsets, size, y, &tilingData, &pipe);
+        } else if (TILING_KEY_IS(PAD_SLICE_KEY_NDDMA)) {
+            GET_TILING_DATA_WITH_STRUCT(SliceNDDMATilingData, tilingData, tiling);
+            PadSliceNDDMAProcess(x, offsets, size, y, &tilingData, &pipe);
+        } else if (TILING_KEY_IS(PAD_SLICE_KEY_MOVE_ALIGN_LAST_DIM)) {
+            GET_TILING_DATA_WITH_STRUCT(SliceMoveAlignLastDimTilingData, tilingData, tiling);
+            PadSliceMoveAlignLastDimProcess(x, offsets, size, y, &tilingData, &pipe);
+        } else if (TILING_KEY_IS(PAD_SLICE_KEY_NDDMA_LAST_DIM)) {
+            GET_TILING_DATA_WITH_STRUCT(SliceNDDMALastDimTilingData, tilingData, tiling);
+            PadSliceNDDMALastDimProcess(x, offsets, size, y, &tilingData, &pipe);
+        } else if (TILING_KEY_IS(PAD_SLICE_KEY_MOVE_ALIGN_TWO_DIM)) {
+            GET_TILING_DATA_WITH_STRUCT(SliceMoveAlignLast2DimTilingData, tilingData, tiling);
+            PadSliceMoveAlignTwoDimProcess(x, offsets, size, y, &tilingData, &pipe);
+        } else if (TILING_KEY_IS(PAD_SLICE_KEY_SIMT)) {
+            // 空tenseor处理
+        } else if (TILING_KEY_IS(PAD_SLICE_KEY_MOVE_ALIGN_GATHER)) {
+            GET_TILING_DATA_WITH_STRUCT(SliceMoveAlignGatherTilingData, tilingData, tiling);
+            PadSliceMoveAlignGatherProcess(x, offsets, size, y, &tilingData, &pipe);
+        } else if (TILING_KEY_IS(PAD_SLICE_KEY_MOVE_UNALIGN_GATHER)) {
+            GET_TILING_DATA_WITH_STRUCT(SliceMoveAlignGatherTilingData, tilingData, tiling);
+            PadSliceMoveAlignDataCopyUnalignProcess(x, offsets, size, y, &tilingData, &pipe);
+        } else if (TILING_KEY_IS(PAD_SLICE_KEY_TWO_DIM_SMALL_SHAPE)) {
+            GET_TILING_DATA_WITH_STRUCT(SliceTwoDimSmallSapeTilingData, tilingData, tiling);
+            PadSliceTwoDimSmallShapeProcess(x, offsets, size, y, &tilingData, &pipe);
+        }
     }
 }

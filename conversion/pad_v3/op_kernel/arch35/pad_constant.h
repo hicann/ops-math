@@ -28,7 +28,6 @@ __aicore__ inline void LaunchKernelPadWithHugeWidth(
     GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling, GM_ADDR constValue = nullptr)
 {
     TPipe pipe;
-    REGISTER_TILING_DEFAULT(PadACTilingData);
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int8_t)) {
         KernelPadWithHugeWidth<uint8_t> op(&pipe, &tilingData);
@@ -54,7 +53,6 @@ __aicore__ inline void LaunchKernelPadWithNormalWidth(
     GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling, GM_ADDR constValue = nullptr)
 {
     TPipe pipe;
-    REGISTER_TILING_DEFAULT(PadACTilingData);
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int8_t)) {
         KernelPadWithNormalWidth<uint8_t, KEY> op(&pipe, &tilingData);
@@ -80,7 +78,6 @@ __aicore__ inline void LaunchKernelPadGather(
     GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling, GM_ADDR constValue = nullptr)
 {
     TPipe pipe;
-    REGISTER_TILING_DEFAULT(PadACTilingData);
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int8_t)) {
         PadGather<uint8_t> op(&pipe);
@@ -106,7 +103,6 @@ __aicore__ inline void LaunchKernelPadScatter(
     GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling, GM_ADDR constValue = nullptr)
 {
     TPipe pipe;
-    REGISTER_TILING_DEFAULT(PadACTilingData);
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int8_t)) {
         PadScatter<uint8_t> op(&pipe);
@@ -132,7 +128,6 @@ __aicore__ inline void LaunchKernelPadSimt(
     GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling, GM_ADDR constValue = nullptr)
 {
     TPipe pipe;
-    REGISTER_TILING_DEFAULT(PadACTilingData);
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int32_t)) {
         PadV3::PadSimt<int32_t> op;
@@ -158,7 +153,6 @@ __aicore__ inline void LaunchKernelPadSimtHuge(
     GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling, GM_ADDR constValue = nullptr)
 {
     TPipe pipe;
-    REGISTER_TILING_DEFAULT(PadACTilingData);
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int32_t)) {
         PadV3::PadSimtHuge<int32_t> op;

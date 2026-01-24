@@ -9,12 +9,16 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                     |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                     |    √     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                             |    √     |
 
 ## 功能说明
 
 - 接口功能：对输入张量self的元素，按照指定维度dim依次进行累加，并将结果保存到输出张量out中。
 
 - 计算公式：$x\_{i}$是输入张量self中，从维度dim视角来看的某个元素（其它维度下标不变，只dim维度下标依次递增），$y\_{i}$是输出张量out中对应位置的元素，则：
+
 
 $$
 y_{i} = x_{1} + x_{2} + x_{3} + ...... + x_{i}
@@ -131,6 +135,9 @@ aclnnStatus aclnnCumsum(
   </tbody>
   </table>
 
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
+
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -215,6 +222,7 @@ aclnnStatus aclnnCumsum(
     </tr>
   </tbody>
   </table>
+
 
 - **返回值：**
 

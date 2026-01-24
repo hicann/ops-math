@@ -1,14 +1,22 @@
 # aclnnRepeat
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/tile)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
 
 ## 功能说明
-算子功能：对输入tensor沿着repeats中对每个维度指定的复制次数进行复制。示例：
+
+接口功能：对输入tensor沿着repeats中对每个维度指定的复制次数进行复制。示例：
 假设输入Tensor为[[a,b],[c,d],[e,f]]，即shape为[3,2]，repeats为(2,4)，则生成的Tensor的shape为[6,8]，值如下所示：
 
 ```
@@ -51,36 +59,117 @@ tensor([[[a,b,a,b],
          [c,d,c,d],
          [e,f,e,f]]])
 ```
-计算时需要满足以下条件：  
-repeats中参数个数不能少于输入Tensor的维度。  
-repeats中的值必须大于等于0。  
+计算时需要满足以下条件：
+repeats中参数个数不能少于输入Tensor的维度。
+repeats中的值必须大于等于0。
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnRepeatGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnRepeat”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context//两段式接口.md)，必须先调用“aclnnRepeatGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnRepeat”接口执行计算。
 
-* `aclnnStatus aclnnRepeatGetWorkspaceSize(const aclTensor *self, const aclIntArray *repeats, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-* `aclnnStatus aclnnRepeat(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```cpp
+aclnnStatus aclnnRepeatGetWorkspaceSize(
+  const aclTensor   *self, 
+  const aclIntArray *repeats, 
+  aclTensor         *out, 
+  uint64_t          *workspaceSize, 
+  aclOpExecutor    **executor)
+```
+
+```cpp
+aclnnStatus aclnnRepeat(
+  void          *workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor *executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnRepeatGetWorkspaceSize
 
-- **参数说明：**
+- **参数说明**
 
-  * self(aclTensor*,计算输入)：Device侧的aclTensor。支持[非连续Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，维度不大于8。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、DOUBLE、FLOAT16、COMPLEX64、COMPLEX128、UINT8、INT8、INT16、INT32、INT64、UINT16、UINT32、UINT64、BOOL、BFLOAT16
-  * repeats(aclIntArray*,计算输入)：Host侧的aclIntArray，数据类型支持INT64，表示沿每个维度重复输入tensor的次数，参数个数不大于8, 当前不支持对超过4个维度同时做repeat的场景，详细约束请见[约束说明](#约束说明)。
+  <table style="undefined;table-layout: fixed; width: 1528px"><colgroup>
+  <col style="width: 132px">
+  <col style="width: 120px">
+  <col style="width: 256px">
+  <col style="width: 253px">
+  <col style="width: 333px">
+  <col style="width: 126px">
+  <col style="width: 160px">
+  <col style="width: 145px"> 
+  </colgroup> 
+  <thead> 
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度（shape）</th>
+      <th>非连续张量Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>-</td>
+      <td>-</td>
+      <td>FLOAT、DOUBLE、FLOAT16、COMPLEX64、COMPLEX128、UINT8、INT8、INT16、INT32、INT64、UINT16、UINT32、UINT64、BOOL、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN</td>
+      <td>ND</td>
+      <td>≤8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>repeats</td>
+      <td>输入</td>
+      <td>-</td>
+      <td>表示沿每个维度重复输入tensor的次数，参数个数不大于8, 当前不支持对超过4个维度同时做repeat的场景，详细约束请见约束说明。</td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>-</td>
+      <td>-</td>
+      <td>与self一致</td>
+      <td>ND</td>
+      <td>≤8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
-  * out(aclTensor \*，计算输出)：Device侧的aclTensor。支持[非连续Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，维度不大于8，且类型需要与self一致。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、DOUBLE、FLOAT16、COMPLEX64、COMPLEX128、UINT8、INT8、INT16、INT32、INT64、UINT16、UINT32、UINT64、BOOL、BFLOAT16
-  * workspaceSize(uint64_t \*，出参)：返回需要在Device侧申请的workspace大小。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型不支持支持HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN
 
-  * executor(aclOpExecutor \*\*，出参)：返回op执行器，包含了算子计算流程。
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型不支持BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN。
 
-- **返回值：**
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-
-  ```
+    
   第一段接口完成入参校验，出现以下场景时报错：
   <table style="undefined;table-layout: fixed; width: 1207px"><colgroup>
   <col style="width: 268px">
@@ -132,17 +221,44 @@ repeats中的值必须大于等于0。
 
 ## aclnnRepeat
 
-- **参数说明：**
+- **参数说明**
 
-  * workspace(void \*，入参)：在Device侧申请的workspace内存地址。
+  <table style="undefined;table-layout: fixed; width: 1143px"><colgroup>
+  <col style="width: 158px">
+  <col style="width: 140px">
+  <col style="width: 845px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnRepeatGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
-  * workspaceSize(uint64_t，入参)：在Device侧申请的workspace大小，由第一段接口aclnnRepeatGetWorkspaceSize获取。
-
-  * executor(aclOpExecutor \*，入参)：op执行器，包含了算子计算流程。
-
-  * stream(aclrtStream，入参)：指定执行任务的Stream。
-
-- **返回值：**
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -309,4 +425,3 @@ int main() {
   return 0;
 }
 ```
-

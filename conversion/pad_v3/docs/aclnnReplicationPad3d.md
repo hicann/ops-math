@@ -1,16 +1,22 @@
 # aclnnReplicationPad3d
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/pad_v3)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term> |    √     |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
 
 ## 功能说明
 
-- 算子功能：使用输入边界填充输入tensor的最后三维。
+- 接口功能：使用输入边界填充输入tensor的最后三维。
 - 示例：
 ```
 输入tensor([[[[[0,1],
@@ -41,50 +47,184 @@ padding([1,1,1,1,1,1])
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnReplicationPad3dGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReplicationPad3d”接口执行计算。
 
-- `aclnnStatus aclnnReplicationPad3dGetWorkspaceSize(const aclTensor* self, const aclIntArray* padding, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
+```cpp
+aclnnStatus aclnnReplicationPad3dGetWorkspaceSize(
+  const aclTensor*   self, 
+  const aclIntArray* padding, 
+  aclTensor*         out, 
+  uint64_t*          workspaceSize, 
+  aclOpExecutor**    executor)
+```
 
-- `aclnnStatus aclnnReplicationPad3d(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```cpp
+aclnnStatus aclnnReplicationPad3d(
+  void*          workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor* executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnReplicationPad3dGetWorkspaceSize
 
-- **参数说明：**
+- **参数说明**
 
-  - self（aclTensor*，计算输入）：待填充的原输入数据，Device侧的aclTensor。shape支持4-5维，数据类型支持BFLOAT16、FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、COMPLEX64、COMPLEX128。[数据格式](../../../docs/zh/context/数据格式.md)支持ND，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
+  <table style="undefined;table-layout: fixed; width: 1580px"><colgroup>
+  <col style="width: 132px">
+  <col style="width: 120px">
+  <col style="width: 255px">
+  <col style="width: 307px">
+  <col style="width: 332px">
+  <col style="width: 126px">
+  <col style="width: 160px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度（shape）</th>
+      <th>非连续张量Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>待填充的原输入数据。</td>
+      <td>-</td>
+      <td>BFLOAT16、FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>4-5</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>padding</td>
+      <td>输入</td>
+      <td>输入中需要填充的维度。</td>
+      <td>长度为6，数值依次代表左右上下前后需要填充的值。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>填充后的输出结果。</td>
+      <td><ul><li>dtype需要与self保持一致。</li><li>输出shape中，除被填充的最后三维外，其他维度需要一致。被填充的后三维中，out倒数第三维度的数值等于self倒数第三维度的数值加padding后两个值，out倒数第二维度的数值等于self倒数第二维度的数值加padding中间两个值，out最后一维度的数值等于self最后一维度的数值加padding前两个值。</li></ul></td>
+      <td>FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>4-5</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
-  - padding（aclIntArray*，计算输入）：输入中需要填充的维度，host侧的aclIntArray，长度为6，数值依次代表左右上下前后需要填充的值。
-
-  - out（aclTensor*，计算输出）：填充后的输出结果，Device侧的aclTensor。shape维度、dtype需要与self保持一致，数据类型支持BFLOAT16、FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、COMPLEX64、COMPLEX128。[数据格式](../../../docs/zh/context/数据格式.md)，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。输出shape中，除被填充的最后三维外，其他维度需要一致。被填充的后三维中，out倒数第三维度的数值等于self倒数第三维度的数值加padding后两个值，out倒数第二维度的数值等于self倒数第二维度的数值加padding中间两个值，out最后一维度的数值等于self最后一维度的数值加padding前两个值。
-
-  - workspaceSize（uint64_t*，出参）：返回需要在Device侧申请的workspace大小。
-
-  - executor（aclOpExecutor**，出参）：返回op执行器，包含了算子计算流程。
-
-- **返回值：**
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001(ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self、padding、out是空指针。
-  返回161002(ACLNN_ERR_PARAM_INVALID): 1. self、out的数据类型或数据格式不在支持的范围之内。
-                                      2. self、out的数据类型不一致。
-                                      3. self、padding和out的输入shape在支持范围之外。
-                                      4. self或out为空tensor，且self最后四个维度的值存在0。
-                                      5. padding的数值大于等于self对应维度的值。
-                                      6. out后三维度的值不等于self后三维度的值加对应padding。
-  ```
-
+  <table style="undefined;table-layout: fixed; width: 1207px"><colgroup>
+  <col style="width: 268px">
+  <col style="width: 138px">
+  <col style="width: 801px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、padding、out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
+      <td>self、out的数据类型或数据格式不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self、out的数据类型不一致。</td>
+    </tr>
+    <tr>
+      <td>self、padding和out的输入shape在支持范围之外。</td>
+    </tr>
+    <tr>
+      <td>self或out为空tensor，且self最后三个维度的值存在0。</td>
+    </tr>
+    <tr>
+      <td>padding的数值大于等于self对应维度的值。</td>
+    </tr>
+    <tr>
+      <td>out后三维度的值不等于self后三维度的值加对应padding。</td>
+    </tr>
+  </tbody>
+  </table>
+  
 ## aclnnReplicationPad3d
 
-- **参数说明：**
+- **参数说明**
 
-  - workspace（void*，入参）：在Device侧申请的workspace内存地址。
-
-  - workspaceSize（uint64_t，入参）：在Device侧申请的workspace大小，由第一段接口aclnnReplicationPad3dGetWorkspaceSize获取。
-
-  - executor（aclOpExecutor*，入参）：op执行器，包含了算子计算流程。
-
-  - stream（aclrtStream，入参）：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1126px"><colgroup>
+  <col style="width: 141px">
+  <col style="width: 140px">
+  <col style="width: 845px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnReplicationPad3dGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 

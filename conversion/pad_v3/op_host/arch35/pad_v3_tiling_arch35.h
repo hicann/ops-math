@@ -18,6 +18,8 @@
 
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
+#include "conversion/slice/op_host/arch35/slice_tiling_arch35.h"
+#include "conversion/strided_slice/op_host/arch35/strided_slice_tiling_arch35.h"
 #include "conversion/pad_v3/op_kernel/arch35/pad_v3_struct.h"
 #include <string>
 
@@ -33,7 +35,7 @@ struct PadV3CompileInfo {
     // how much input data can the UB store, instead of UB's size in Bytes
     int64_t ub_size;
     // how much input data can 4Bytes store in 5HD format, instead of dtype's size.
-    // float16: 2; float32/int32: 1
+    // float16: 2; float32/int32: 1.tring
     int64_t size;
     int64_t dtype_rate;
     bool paddings_contiguous;
@@ -71,6 +73,7 @@ private:
 
     void DoTilingWithConstant();
     void DoTilingWithEdge();
+    void DoTilingWithSliceOp();
     void DoTilingWithReflect();
     void DoTilingWithSIMTEdge();    // edge模板DoTilingWithSIMT
     void DoTilingWithSIMTReflect(); // reflect模板DoTilingWithSIMT
@@ -124,6 +127,7 @@ private:
     uint32_t additionTileSize_{0};
 
     bool isPadAllPositive_{true};
+    bool isPadAllNegative_{true};
     bool paddingContiguous_{true};
     bool isEmptyTensor_{false};
     uint16_t inputRank_{0};

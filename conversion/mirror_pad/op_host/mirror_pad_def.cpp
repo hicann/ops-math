@@ -9,8 +9,8 @@
  */
 
 /* !
- * \file mirror_pad_def.cpp
- * \brief mirror_pad_def op host
+ * \file mirror_pad.cpp
+ * \brief mirror_pad op host
  */
 #include "register/op_def_registry.h"
 

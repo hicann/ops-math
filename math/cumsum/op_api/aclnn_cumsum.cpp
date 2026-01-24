@@ -23,6 +23,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -53,14 +54,13 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST =
     DataType::DT_BF16
 };
 
-static const inline std::initializer_list<DataType>& GetSupportDtypeList(SocVersion socVersion)
+static const inline std::initializer_list<DataType>& GetSupportDtypeList(NpuArch npuArch)
 {
     static const std::initializer_list<DataType> emptyDtypes = {};
-    if (socVersion == SocVersion::ASCEND310P || socVersion == SocVersion::ASCEND910 ||
-            socVersion == SocVersion::ASCEND310B) {
+    if (npuArch == NpuArch::DAV_2002 || npuArch == NpuArch::DAV_1001 ||
+        npuArch == NpuArch::DAV_3002) {
         return ASCEND910_DTYPE_SUPPORT_LIST;
-    } else if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-               socVersion == SocVersion::ASCEND910_95) {
+    } else if (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch)) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
     } else {
         return emptyDtypes;
@@ -68,9 +68,9 @@ static const inline std::initializer_list<DataType>& GetSupportDtypeList(SocVers
 }
 
 static inline bool CheckDtypeValidWithoutDtype(const aclTensor *self, const aclTensor *out) {
-  // 获取芯片类型,判断是1971还是1980
   auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  const auto& DTYPE_SUPPORT_LIST_CURRENT = GetSupportDtypeList(socVersion);
+  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+  const auto& DTYPE_SUPPORT_LIST_CURRENT = GetSupportDtypeList(npuArch);
   if (DTYPE_SUPPORT_LIST_CURRENT.size() == 0) {
     OP_LOGE(ACLNN_ERR_PARAM_INVALID, "support for %s is not implemented", op::ToString(socVersion).GetString());
     return false;
@@ -88,9 +88,9 @@ static inline bool CheckDtypeValidWithoutDtype(const aclTensor *self, const aclT
 
 
 static inline bool CheckDtypeValid(aclDataType dtype, const aclTensor *out) {
-  // 获取芯片类型,判断是1971还是1980
   auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  const auto& DTYPE_SUPPORT_LIST_CURRENT = GetSupportDtypeList(socVersion);
+  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+  const auto& DTYPE_SUPPORT_LIST_CURRENT = GetSupportDtypeList(npuArch);
   if (DTYPE_SUPPORT_LIST_CURRENT.size() == 0) {
     OP_LOGE(ACLNN_ERR_PARAM_INVALID, "support for %s is not implemented", op::ToString(socVersion).GetString());
     return false;

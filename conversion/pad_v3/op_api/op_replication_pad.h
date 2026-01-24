@@ -18,6 +18,7 @@
 
 #include <string>
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 
 
 namespace op {
@@ -28,7 +29,7 @@ static const std::initializer_list<op::DataType> dtypeSupportList = {
     op::DataType::DT_INT16, op::DataType::DT_DOUBLE, op::DataType::DT_INT8, op::DataType::DT_UINT8,
     op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_910_95_LIST = {
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_REGBASE_LIST = {
     op::DataType::DT_INT64, op::DataType::DT_UINT64, op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64, 
     op::DataType::DT_INT32, op::DataType::DT_UINT32, op::DataType::DT_FLOAT, op::DataType::DT_COMPLEX128,
     op::DataType::DT_INT16, op::DataType::DT_UINT16, op::DataType::DT_FLOAT16, op::DataType::DT_BF16,
@@ -56,9 +57,9 @@ inline static bool CheckFormat(const aclTensor *self, const aclTensor *out)
 
 inline static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-        OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_910_95_LIST, return false);
-        OP_CHECK_DTYPE_NOT_SUPPORT(out, DTYPE_SUPPORT_910_95_LIST, return false);
+    if (IsRegBase()) {
+        OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_REGBASE_LIST, return false);
+        OP_CHECK_DTYPE_NOT_SUPPORT(out, DTYPE_SUPPORT_REGBASE_LIST, return false);
         OP_CHECK_DTYPE_NOT_MATCH(out, self->GetDataType(), return false);
     } else {
         // 检查self的数据类型是否在支持列表内

@@ -60,7 +60,7 @@ inline static bool CheckNotNull(const aclTensor *self, const aclIntArray *splitS
 
 inline static bool CheckDtypeValid(const aclTensor *self, const aclTensorList *out) {
   // 检查self的数据类型是否在API支持列表内
-  if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+  if (!IsRegBase()) {
     OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
     // 检查每一个输出tensor的数据类型是否在API支持列表内
     for (size_t index = 0; index < out->Size(); index++) {
@@ -156,7 +156,7 @@ static aclnnStatus SplitOnceCalculation(const aclTensor *self, const aclIntArray
 static aclnnStatus SplitLoopCalculation(const aclTensor *self, const aclIntArray *splitSize, int64_t dim,
                                         aclTensorList *out, aclOpExecutor *executor) {
   const int64_t numSplit = splitSize->Size();
-  const int64_t splitLoopSize = (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) ?
+  const int64_t splitLoopSize = (!IsRegBase()) ?
                                 SPLIT_LOOP_SIZE : SPLIT_LOOP_SIZE_512;
   const int64_t loopSize = (numSplit + splitLoopSize - 1) / splitLoopSize;
   const int64_t lastSize = (numSplit % splitLoopSize == 0) ? splitLoopSize : numSplit % splitLoopSize;

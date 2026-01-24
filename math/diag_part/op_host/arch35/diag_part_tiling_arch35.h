@@ -35,6 +35,7 @@ constexpr uint64_t TWO = 2;
 constexpr int64_t WORK_SPACE_SIZE = static_cast<int64_t>(16 * 1024 * 1024);
 constexpr int64_t TILING_KEY_GATHER = 1000;
 constexpr int64_t TILING_KEY_SIMT = 2000;
+constexpr int64_t DCACHE_SIZE = 32 * 1024;
 
 BEGIN_TILING_DATA_DEF(DiagPartTilingData)
 TILING_DATA_FIELD_DEF(int64_t, sideLength);

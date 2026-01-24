@@ -13,6 +13,7 @@
 #include "opdev/op_dfx.h"
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 #include "aclnn_kernels/common/op_error_check.h"
 
 using namespace op;
@@ -34,14 +35,14 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_610LI
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT32};
 
 static bool IsAiCoreSupport(const aclTensor *self) {
-  auto curVersion = GetCurrentPlatformInfo().GetSocVersion();
-  if (curVersion >= SocVersion::ASCEND910B && curVersion <= SocVersion::ASCEND910_93) {
+  auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+  if (curArch == NpuArch::DAV_2201) {
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_910B);
-  } else if (curVersion == SocVersion::ASCEND910) {
+  } else if (curArch == NpuArch::DAV_1001) {
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_910);
-  } else if (curVersion == SocVersion::ASCEND610LITE) {
+  } else if (curArch == NpuArch::DAV_3102) {
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_610LITE);
-  } else if (curVersion == SocVersion::ASCEND910_95) {
+  } else if (IsRegBase(curArch)) {
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_910B);
   }
   return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_310P);

@@ -12,13 +12,14 @@
  * \file arg_min_proto.h
  * \brief
  */
+#ifndef OPS_OP_PROTO_INC_ARG_MIN_H_
+#define OPS_OP_PROTO_INC_ARG_MIN_H_
 
-#ifndef ARG_MIN_PROTO_H_
-#define ARG_MIN_PROTO_H_
 #include "graph/operator_reg.h"
 #include "graph/types.h"
 
 namespace ge {
+
 /**
 *@brief Returns the index with the smallest value across dimensions of a tensor.
 
@@ -44,6 +45,7 @@ REG_OP(ArgMin)
     .ATTR(dtype, Type, DT_INT64)
     .OP_END_FACTORY_REG(ArgMin)
 
-}  // namespace ge
+} // namespace ge
 
-#endif  // ARG_MIN_PROTO_H_
+#endif // OPS_OP_PROTO_INC_ARG_MIN_H_
+

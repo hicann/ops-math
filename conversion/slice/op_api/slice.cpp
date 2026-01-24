@@ -21,6 +21,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 #include "aclnn_kernels/common/op_error_check.h"
 
 using namespace op;
@@ -185,7 +186,7 @@ static bool IsAiCoreSupport(const aclTensor* self)
     if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
         return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_ASCEND910B);
-    } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    } else if (IsRegBase()) {
         return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_ASCEND910D);
     }
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_ASCEND910);

@@ -9,8 +9,8 @@
  */
 
 /*!
- * \file pad_edge_huge_width.h
- * \brief pad_edge_huge_width
+ * \file pad_cut_last.h
+ * \brief pad cut last dim kernel
  */
 
 #ifndef PAD_EDGE_HUGE_WIDTH_H_
@@ -276,6 +276,7 @@ private:
 
         T padRightValue = prv;
         const uint16_t needPadRight = npr;
+        const uint16_t needPadRightSurplus = (prl != 0);
         const uint32_t padRightLen = prl;
         const uint16_t repeatTimes = rt;
         const uint32_t padWROffset = padParam.padWROffset;
@@ -300,8 +301,10 @@ private:
                     AscendC::MicroAPI::DataCopyUnAlign(outAddr, vReg, uReg, additionLen);
                 }
 
-                outAddr = dstAddr + padWROffset + repeatTimes * additionLen;
-                AscendC::MicroAPI::DataCopyUnAlign(outAddr, vReg, uReg, padRightLen);
+                for (uint16_t k = 0; k < needPadRightSurplus; k++) {
+                    outAddr = dstAddr + padWROffset + repeatTimes * additionLen;
+                    AscendC::MicroAPI::DataCopyUnAlign(outAddr, vReg, uReg, padRightLen);
+                }
                 AscendC::MicroAPI::DataCopyUnAlignPost(outAddr, uReg, 0);
             }
         }

@@ -16,6 +16,7 @@
 #include "opdev/op_log.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/shape_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -78,7 +79,7 @@ bool IsSplitV2AiCoreSupport(const aclTensor *self, const aclIntArray *splitSize,
 }
 
 bool SplitVAiCoreSupport(const aclTensor *self) {
-  if (op::GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND910_95) {
+  if (IsRegBase()) {
     return op::CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_ASCEND910_95);
   } else if (op::GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND910B ||
              op::GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND910_93) {

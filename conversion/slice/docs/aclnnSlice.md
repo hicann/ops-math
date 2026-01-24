@@ -1,11 +1,17 @@
 # aclnnSlice
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/slice)
+
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend950PR/Ascend 950DT</term>                        |     ×     |
-
+| 产品                                           | 是否支持 |
+|:---------------------------------------------| :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>       |     ×     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term> |    √       |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>          |    ×     |
+| <term>Atlas 推理系列产品</term>                   |    ×     |
+| <term>Atlas 训练系列产品</term>                    |   √     |
 
 ## 功能说明
 
@@ -36,66 +42,207 @@ $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnSliceGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSlice”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSliceGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSlice”接口执行计算。
 
-- `aclnnStatus aclnnSliceGetWorkspaceSize(const aclTensor* self, int64_t dim, int64_t start, int64_t end, int64_t step, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnSlice(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnSliceGetWorkspaceSize(
+  const aclTensor *self, 
+  int64_t         dim, 
+  int64_t         start,
+  int64_t         end,
+  int64_t         step,
+  aclTensor       out,
+  uint64_t        *workspaceSize, 
+  aclOpExecutor   **executor)
+```
+
+```Cpp
+aclnnStatus aclnnSlice(
+  void             *workspace, 
+  uint64_t          workspaceSize, 
+  aclOpExecutor    *executor, 
+  const aclrtStream stream)
+```
 
 ## aclnnSliceGetWorkspaceSize
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)：公式中的张量$self$，Device侧的aclTensor。shape支持1到8维，self与out的数据类型一致，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT8、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT8、UINT8、BOOL、BFLOAT16。
+  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 212px">
+  <col style="width: 359px">
+  <col style="width: 305px">
+  <col style="width: 114px">
+  <col style="width: 135px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>公式中的张量$self$，Device侧的aclTensor。</td>
+      <td>self与out的数据类型一致。</td>
+      <td>FLOAT、FLOAT16、INT32、INT64、INT8、UINT8、BOOL</td>
+      <td>ND</td>
+      <td>1-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>dim</td>
+      <td>输入</td>
+      <td>公式中的参数$dim$，指定的维度，Host侧的整型数值</td>
+      <td>取值范围为[-self.dim(), self.dim() - 1]。</td>
+      <td>INT64</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>公式中的张量$self$，Device侧的aclTensor。</td>
+      <td>self与out的数据类型一致。</td>
+      <td>FLOAT、FLOAT16、INT32、INT64、INT8、UINT8、BOOL</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>输出Tensor。</td>
+      <td>非连续的Tensor维度不大于8，且shape需要与input一致。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
 
-  - dim(int64_t, 计算输入)：公式中的参数$dim$，指定的维度，Host侧的整型数值，取值范围为[-self.dim(), self.dim() - 1]。
-
-  - start(int64_t, 计算输入)：公式中的参数$start$，切片位置的起始索引，Host侧的整型数值。
-
-  - end(int64_t, 计算输入)：公式中的参数$end$，切片位置的终止索引，Host侧的整型数值。
-
-  - step(int64_t, 计算输入)：公式中的参数$step$，指定切片的步长，Host侧的整型数值，取值范围为大于0的整数。
-
-  - out(aclTensor*, 计算输出)：公式中的张量$out$，Device侧的aclTensor。shape支持1到8维，shape满足计算公式中的推导规则，self与out的数据类型一致，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT8、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT8、UINT8、BOOL、BFLOAT16。
-
-  - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
-
+ - <term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的self、out是空指针时。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. self和out的数据类型不在支持的范围之内。
-                                        2. self的shape维度为0或大于8。
-                                        3. dim的取值不在[-self.dim(), self.dim() - 1]。
-                                        4. step小于等于0。
-                                        5. self和out的数据类型不一致。
-                                        6. out的shape不满足计算公式中的推导规则。
-  ```
+  
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、out是空指针时。。</td>
+    </tr>
+    <tr>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
+      <td>input或out的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>input和out的shape不一致。</td>
+    </tr>
+    <tr>
+      <td>dim的取值不在[-self.dim(), self.dim() - 1]。</td>
+    </tr>
+    <tr>
+      <td>step小于等于0。</td>
+    </tr>
+    <tr>
+      <td>self和out的数据类型不一致。</td>
+    </tr>
+    <tr>
+      <td>out的shape不满足计算公式中的推导规则。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnSlice
 
 - **参数说明：**
 
-  - workspace(void*, 入参)：在Device侧申请的workspace内存地址。
-
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnSliceGetWorkspaceSize获取。
-
-  - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
-
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 872px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnSliceGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -103,7 +250,7 @@ $$
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 ```Cpp
 #include <iostream>
 #include <vector>

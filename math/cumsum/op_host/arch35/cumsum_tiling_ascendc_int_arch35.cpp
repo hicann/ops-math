@@ -349,6 +349,11 @@ void Cumsum4IntTiling::WriteTilingData()
 {
     context_->SetBlockDim(usedCoreCnt_);
     context_->SetTilingKey(tilingKey_);
+    if (tilingKey_ == CUM_WITH_GROUP) {
+        OP_CHECK_IF(context_->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
+                    OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"),
+                    return);
+    }
     tilingData_.set_tilingKey(tilingKey_);
     tilingData_.set_isExclusive(isExclusive_);
     tilingData_.set_isReverse(isReverse_);

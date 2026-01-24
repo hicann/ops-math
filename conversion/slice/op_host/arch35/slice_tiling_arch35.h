@@ -16,6 +16,7 @@
 #define CANN_OPS_BUILT_IN_OP_TILING_RUNTIME_SLICE_TILING_H_
 
 #include "conversion/strided_slice/op_host/arch35/strided_slice_tiling_arch35.h"
+#include "conversion/slice/op_kernel/arch35/slice_struct.h"
 
 namespace optiling {
 
@@ -41,117 +42,6 @@ struct SliceParasRuntime2 {
     int64_t core_num = 0;
     bool is_begin_const = true;
 };
-
-REGISTER_TILING_DATA_CLASS(StridedSliceTilingDataOp, StridedSliceTilingData)
-
-BEGIN_TILING_DATA_DEF(SliceTilingData)
-TILING_DATA_FIELD_DEF_STRUCT(StridedSliceTilingData, stridedSliceTilingData);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(Slice, SliceTilingData)
-
-BEGIN_TILING_DATA_DEF(SliceMoveAlignParams)
-TILING_DATA_FIELD_DEF(uint16_t, blockCount);
-TILING_DATA_FIELD_DEF(uint32_t, blockLen);
-TILING_DATA_FIELD_DEF(uint32_t, srcStride);
-TILING_DATA_FIELD_DEF(uint32_t, dstStride);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(SliceMoveAlignParamsOp, SliceMoveAlignParams) // 注册中间结构体
-
-BEGIN_TILING_DATA_DEF(SliceBaseTilingData)
-TILING_DATA_FIELD_DEF(int8_t, isBeginConst);
-TILING_DATA_FIELD_DEF(int64_t, blkFactor);
-TILING_DATA_FIELD_DEF(int64_t, blkTailFactor);
-TILING_DATA_FIELD_DEF(int64_t, ubInLoopSteps);
-TILING_DATA_FIELD_DEF(int32_t, ubSize);
-TILING_DATA_FIELD_DEF(int32_t, ubFactor);
-TILING_DATA_FIELD_DEF(int32_t, ubTailFactor);
-TILING_DATA_FIELD_DEF(int32_t, ubTailTailFactor);
-TILING_DATA_FIELD_DEF(int16_t, realCoreNum);
-TILING_DATA_FIELD_DEF(int16_t, inputDims);
-TILING_DATA_FIELD_DEF(int16_t, blkIndex);
-TILING_DATA_FIELD_DEF(int16_t, ubIndex);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_STRIDESLICE, outputShape);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_STRIDESLICE, begin);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_STRIDESLICE, inputSteps);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_STRIDESLICE, rowsOffsetSteps);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(SliceBaseTilingDataOp, SliceBaseTilingData)
-
-BEGIN_TILING_DATA_DEF(SliceMoveAlignTilingData)
-TILING_DATA_FIELD_DEF_STRUCT(SliceBaseTilingData, sliceBaseTilingData);
-TILING_DATA_FIELD_DEF_STRUCT(StridedSliceMoveAlignParams, moveAlignParams);
-TILING_DATA_FIELD_DEF(int64_t, ubOutLoopSteps);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(Slice_100, SliceMoveAlignTilingData)
-
-BEGIN_TILING_DATA_DEF(SliceMoveAlignLastDimTilingData)
-TILING_DATA_FIELD_DEF_STRUCT(SliceBaseTilingData, sliceBaseTilingData);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(Slice_101, SliceMoveAlignLastDimTilingData)
-
-BEGIN_TILING_DATA_DEF(SliceNDDMATilingData)
-TILING_DATA_FIELD_DEF_STRUCT(SliceBaseTilingData, sliceBaseTilingData);
-
-TILING_DATA_FIELD_DEF(int64_t, ubOutLoopSteps);
-TILING_DATA_FIELD_DEF(int64_t, nddmaTotalNum);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_NDDMA_UB_SPLIT_AXIS_NUM, nddmaLoopSize);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_NDDMA_UB_SPLIT_AXIS_NUM, nddmaLoopSrcStride);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_NDDMA_UB_SPLIT_AXIS_NUM, nddmaLoopDstStride);
-
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(Slice_102, SliceNDDMATilingData)
-
-BEGIN_TILING_DATA_DEF(SliceNDDMALastDimTilingData)
-TILING_DATA_FIELD_DEF_STRUCT(SliceBaseTilingData, sliceBaseTilingData);
-
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_NDDMA_UB_SPLIT_AXIS_NUM, nddmaLoopSrcStride);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_NDDMA_UB_SPLIT_AXIS_NUM, nddmaLoopDstStride);
-
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(Slice_103, SliceNDDMALastDimTilingData)
-
-BEGIN_TILING_DATA_DEF(SliceMoveAlignLast2DimTilingData)
-TILING_DATA_FIELD_DEF(int64_t, blkFactor);
-TILING_DATA_FIELD_DEF(int64_t, blkTailFactor);
-TILING_DATA_FIELD_DEF(int64_t, ubInLoopSteps);
-TILING_DATA_FIELD_DEF(int64_t, ubOutLoopSteps);
-TILING_DATA_FIELD_DEF(int32_t, ubSize);
-TILING_DATA_FIELD_DEF(int32_t, ubFactor);
-TILING_DATA_FIELD_DEF(int32_t, ubTailFactor);
-TILING_DATA_FIELD_DEF(int32_t, ubTailTailFactor);
-TILING_DATA_FIELD_DEF(int16_t, realCoreNum);
-TILING_DATA_FIELD_DEF(int8_t, isBeginConst);
-TILING_DATA_FIELD_DEF_STRUCT(SliceMoveAlignParams, moveAlignParams);
-TILING_DATA_FIELD_DEF_ARR(int64_t, NUMBER_TWO, outputShape);
-TILING_DATA_FIELD_DEF_ARR(int64_t, NUMBER_TWO, begin);
-TILING_DATA_FIELD_DEF_ARR(int64_t, NUMBER_TWO, inputSteps);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(Slice_150, SliceMoveAlignLast2DimTilingData)
-
-BEGIN_TILING_DATA_DEF(SliceMoveAlignGatherTilingData);
-TILING_DATA_FIELD_DEF_STRUCT(SliceBaseTilingData, sliceBaseTilingData);
-
-TILING_DATA_FIELD_DEF(int64_t, ubOutLoopSteps);
-TILING_DATA_FIELD_DEF(int32_t, ubSizeInput);
-TILING_DATA_FIELD_DEF(uint32_t, lastOneInputDim);
-TILING_DATA_FIELD_DEF(uint32_t, outBlockLen);
-TILING_DATA_FIELD_DEF_STRUCT(StridedSliceMoveAlignParams, moveAlignParams);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(Slice_300, SliceMoveAlignGatherTilingData)
-REGISTER_TILING_DATA_CLASS(Slice_301, SliceMoveAlignGatherTilingData)
-
-BEGIN_TILING_DATA_DEF(SliceTwoDimSmallSapeTilingData);
-TILING_DATA_FIELD_DEF(int8_t, isBeginConst);
-TILING_DATA_FIELD_DEF(int16_t, realCoreNum);
-TILING_DATA_FIELD_DEF(int16_t, mainCoreNum);
-TILING_DATA_FIELD_DEF(uint32_t, ubSize);
-TILING_DATA_FIELD_DEF(uint32_t, blockLen);
-TILING_DATA_FIELD_DEF(uint32_t, blkFactor);
-TILING_DATA_FIELD_DEF(uint64_t, lastOneInputDim);
-TILING_DATA_FIELD_DEF(uint64_t, lastOneOutputDim);
-TILING_DATA_FIELD_DEF(uint64_t, lastOneDimOffset);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(Slice_400, SliceTwoDimSmallSapeTilingData)
 
 class SliceTiling : public StrideSliceTiling {
 public:
@@ -189,6 +79,8 @@ protected:
     void SliceGatherUbSplitLastTwoDim();
     void SliceGatherUbSplitLastThreeDim();
     void SliceGatherUbSplitLastFourDim();
+    void SetMoveAlignParamsSlice(StridedSliceMoveAlignParams2& params, const MoveAlignV2Info& actInfo);
+    void SetRowsStepsParamsSlice(StridedSliceTilingData2& tilingData);
 
 private:
     SliceTilingData sliceTilingData_;
@@ -204,5 +96,8 @@ private:
     int64_t outLoopSteps_ = 1;
     bool isUnalignCopy_ = false;
 };
+ge::graphStatus SliceTilingForAscendC(
+    gert::TilingContext* context, int64_t coreNum, int64_t ubSize, int64_t cacheLineSize, SliceParasRuntime2& param,
+    const ge::DataType dtype);
 } // namespace optiling
 #endif // CANN_OPS_BUILT_IN_OP_TILING_RUNTIME_SLICE_TILING_H_

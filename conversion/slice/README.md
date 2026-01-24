@@ -2,9 +2,14 @@
 
 ## 产品支持情况
 
-|产品             |  是否支持  |
-|:-------------------------|:----------:|
-|<term>Ascend 950PR/Ascend 950DT</term>   |     √    |
+| 产品                                                         | 是否支持 |
+| :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                     |     √    |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>    |    √      |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>    |    √      |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                               |    √     |
+| <term>Atlas 训练系列产品</term>                               |    √     |
 
 ## 功能说明
 
@@ -13,7 +18,6 @@
 $$
 y = x[offset:offset + size]
 $$
-
 
 ## 参数说明
 
@@ -36,7 +40,7 @@ $$
     <tr>
     <td>x</td>
     <td>输入</td>
-    <td>输入的张量 
+    <td>输入的张量</td>
     <td>INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、FLOAT、FLOAT16、BF16、BOOL、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN</td>
     <td>ND</td>
     </tr>
@@ -69,6 +73,6 @@ $$
 
 ## 调用说明
 
-| 调用方式 | 调用样例                                                                   | 说明                                                             |
+| 调用方式 | 样例代码                                                                   | 说明                                                             |
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
-| aclnn调用 | [test_slice](./examples/test_slice.cpp) | 通过[aclnnSlice](docs/aclnnSlice.md)方式调用Slice算子    |
+| aclnn调用 | [test_aclnn_slice](examples/test_aclnn_slice.cpp) | 通过[aclnnSlice](docs/aclnnSlice.md)方式调用Slice算子    |

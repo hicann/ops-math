@@ -1058,28 +1058,7 @@ ge::graphStatus SplitVTiling::DoSplitTiling(int32_t maxCoreNum, uint32_t ubSize)
     } else {
         tilingKey_ = (numSplit_ == 1 || fusedShape_[1] >= nSwitchSize) ?
                      SPLIT_KEY_PURE_MOVE : SPLIT_KEY_UB_SPLIT;
-        int64_t totalSize = fusedShape_[0] * numSplit_ * 
-                            Ops::Base::CeilAlign(fusedShape_[1], BLOCK_SIZE / xDtypeSize_) * xDtypeSize_;
-        if (numSplit_ > PREF_BRANCH_GSIZE && totalSize <= (INT16_MAX_VALUE * numSplit_ * BASE_2)) {
-            // Pref baranch: UBinner: [M, 1, N] | UBouter: [G]
-            mBlockFactor_ = fusedShape_[0];
-            mBlockCount_ = 1;
-            mBlockFactorTail_ = fusedShape_[0];
-            gUBFactor_ = 1;
-            gUBCount_ = numSplit_;
-            gUBFactorTail_ = 1;
-            nBlockFactor_ = fusedShape_[1];
-            nBlockCount_ = 1;
-            nBlockFactorTail_ = fusedShape_[1];
-
-            realCoreNum_ = numSplit_ < coreNum_ ? numSplit_ : coreNum_;
-            blockDim_ = realCoreNum_;
-            blockFactor_ = numSplit_ / realCoreNum_;
-            blockFactorTail_ = numSplit_ % realCoreNum_;
-        } else {
-            // Normal baranch
-            CalcSameLenTilingInfo();
-        }
+        CalcSameLenTilingInfo();
     }
 
     FillTilingData();

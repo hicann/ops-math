@@ -13,7 +13,6 @@
  * \brief
  */
 #include "strided_slice_tiling_arch35.h"
-#include "atvoss/broadcast/broadcast_tiling.h"
 
 namespace optiling {
 static const std::string OP_NAME = "StridedSlice";
@@ -22,6 +21,7 @@ constexpr int64_t MOVE_ALIGN_CACHE_LINE_FACTOR = 4;
 constexpr int64_t NDDMA_CACHE_LINE_FACTOR = 2;
 constexpr int64_t DOUBLE_BUFFER = 2;
 constexpr int64_t UNCONST_BEGIN_VALUE = -10; // unconst场景下，用-10标识需要从kernel获取
+constexpr int64_t GATHER_MAX_IDX = 65536;
 
 static const int INDEX_X = 0;
 static const int INDEX_BEGIN = 1;
@@ -102,7 +102,7 @@ void StrideSliceTiling::CalInputOutputSize()
         inputProd *= inputShape.GetDim(i);
         inputShapeProd_[i] = inputProd;
     }
-    if (outputShapeProd_[0] > MAX_UINT32_NUM || (dimNum_ > 1 && inputShapeProd_[1] > MAX_UINT32_NUM)) {
+    if (outputShapeProd_[0] > MAX_UINT32_NUM || inputShapeProd_[0] > MAX_UINT32_NUM) {
         isShapeExceedUint32_ = true;
     }
     if (outputShapeProd_[0] <= SIMT_MIN_OUTPUT_SIZE) {
@@ -127,10 +127,11 @@ void StrideSliceTiling::SetAllInUbSplitInfo()
 void StrideSliceTiling::SetTwoDimTilingInfo()
 {
     // 计算分核 整尾块切分  moveAlignv2参数
-    if (lastOneInputDim_ * xDtypeSize_ >= VL_SIZE) {
-        outBlockLen_ = Ops::Base::CeilAlign((uint32_t)(lastOneOutputDim_ * xDtypeSize_), (uint32_t)BLOCK_SIZE);
-    } else {
+    if (lastOneInputDim_ * xDtypeSize_ < VL_SIZE && sliceParam_.isBeginConst == 1 && 
+             sliceParam_.beginList.GetDim(1) == 0) {
         outBlockLen_ = static_cast<uint32_t>(lastOneInputDim_ * xDtypeSize_); // 全量搬入
+    } else {
+        outBlockLen_ = static_cast<uint32_t>(lastOneOutputDim_ * xDtypeSize_);
     }
 
     uint32_t perCoreRowNum = ubSize_ / NUMBER_FOUR / Ops::Base::CeilAlign(outBlockLen_, (uint32_t)BLOCK_SIZE);
@@ -254,11 +255,19 @@ void StrideSliceTiling::CalcUbSplitInfo()
 void StrideSliceTiling::CalcUbSplitInfoNeg()
 {
     int32_t ubInFactor = isNddma_ ? 1 : std::abs(lastOneStride_);
+    ubInFactor = std::max(ubInFactor, 1);
     // 开启db： 2*UbIn + 2*UbOut = 2*UbOut*ubInFactor + 2*UbOut = ubSize_
     int32_t ubOutBase = static_cast<int32_t>(
         (ubSize_ - UB_RESERVE_SIZE) / DOUBLE_BUFFER / (ubInFactor + 1) / cacheLineSize_ * cacheLineSize_);
-    ubElementNum_ = ubOutBase / xDtypeSize_;
+    ubOutBase = std::max(ubOutBase, static_cast<int32_t>(cacheLineSize_));
     ubSizeInput_ = static_cast<int64_t>(ubOutBase * ubInFactor);
+    // B8/B16使用uint16作为gather的索引，这里限制一下，保证不超过uint16的最大值。限制输入大小不超过64KB
+    if (ubSizeInput_ > GATHER_MAX_IDX) {
+        ubOutBase = GATHER_MAX_IDX / ubInFactor / cacheLineSize_ * cacheLineSize_;
+        ubOutBase = std::max(ubOutBase, static_cast<int32_t>(cacheLineSize_));
+        ubSizeInput_ = static_cast<int64_t>(ubOutBase * ubInFactor);
+    }
+    ubElementNum_ = ubOutBase / xDtypeSize_;
     ubSizeOutput_ = ubOutBase;
 
     // moveAlign和nddma、gather/ub2ub，都要求最后一维ub内按block对齐
@@ -1572,7 +1581,7 @@ static bool ConstructSliceList(
 
 static void ConstructSliceShape(const gert::StorageShape* storage, gert::Shape& param)
 {
-    const gert::Shape& shape = Ops::Base::EnsureNotScalar(storage->GetStorageShape());
+    const gert::Shape& shape = Ops::Math::OpTiling::EnsureNotScalar(storage->GetStorageShape());
     int32_t dimNum = static_cast<int32_t>(shape.GetDimNum());
     param.SetDimNum(dimNum);
     for (int32_t i = 0; i < dimNum; i++) {
@@ -1906,7 +1915,7 @@ ge::graphStatus Tiling4StridedSlice(gert::TilingContext* context)
     // infer shape
     const gert::StorageShape* xStorage = context->GetInputShape(INDEX_X);
     OP_CHECK_NULL_WITH_CONTEXT(context, xStorage);
-    const gert::Shape& shapeInput = Ops::Base::EnsureNotScalar(xStorage->GetStorageShape());
+    const gert::Shape& shapeInput = Ops::Math::OpTiling::EnsureNotScalar(xStorage->GetStorageShape());
     ops::StridedSliceParams inputParams = {
         shapeInput,
         sliceParam.beginList,

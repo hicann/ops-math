@@ -9,8 +9,8 @@
  */
 
 /*!
- * \file pad_mirror_normal_w.h
- * \brief pad_mirror_normal_w
+ * \file pad_repl_normal_w.h
+ * \brief pad cut not last dim kernel in replicate mode
  */
 
 #ifndef PAD_MIRR_NORMAL_W_H_
@@ -859,5 +859,4 @@ private:
     }
 };
 } // namespace PadV3
-
 #endif

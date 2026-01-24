@@ -20,6 +20,7 @@
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -33,19 +34,18 @@ static const std::initializer_list<DataType> AICORE910_DTYPE_SUPPORT_LIST = {
 static const std::initializer_list<DataType> AICORE910B_DTYPE_SUPPORT_LIST = {
   DataType::DT_FLOAT, DataType::DT_FLOAT16, op::DataType::DT_BF16, DataType::DT_INT32};
 
-static const std::initializer_list<DataType> AICORE910D_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<DataType> REGBASE_DTYPE_SUPPORT_LIST = {
   DataType::DT_FLOAT, DataType::DT_FLOAT16,op::DataType::DT_BF16, DataType::DT_INT32,
   DataType::DT_UINT8, DataType::DT_INT8, DataType::DT_INT64};
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static inline bool IsAiCoreSupport(const aclTensor *self) {
-  // 获取芯片类型,判断是1971还是1980
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+  if (npuArch == NpuArch::DAV_2201) {
     return CheckType(self->GetDataType(), AICORE910B_DTYPE_SUPPORT_LIST);
   }
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-    return CheckType(self->GetDataType(), AICORE910D_DTYPE_SUPPORT_LIST);
+  if (IsRegBase(npuArch)) {
+    return CheckType(self->GetDataType(), REGBASE_DTYPE_SUPPORT_LIST);
   }
   // 1980
   return CheckType(self->GetDataType(), AICORE910_DTYPE_SUPPORT_LIST);

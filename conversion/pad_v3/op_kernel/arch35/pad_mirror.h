@@ -9,8 +9,8 @@
  */
 
 /* !
- * \file pad_mirror.h
- * \brief pad_mirror
+ * \file pad_reflect.h
+ * \brief pad_reflect
  */
 #ifndef ASCENDC_PAD_MIRROR_H
 #define ASCENDC_PAD_MIRROR_H
@@ -26,7 +26,6 @@ template <typename T, int32_t KEY>
 __aicore__ inline void LaunchKernelPadMirrorSimt(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling)
 {
     TPipe pipe;
-    REGISTER_TILING_DEFAULT(PadACTilingData);
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int32_t)) {
         PadV3::PadReflectSimt<int32_t, KEY> op;
@@ -51,7 +50,6 @@ template <typename T, int32_t KEY>
 __aicore__ inline void LaunchKernelPadMirrorSimtHuge(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling)
 {
     TPipe pipe;
-    REGISTER_TILING_DEFAULT(PadACTilingData);
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int32_t)) {
         PadV3::PadReflectSimtHuge<int32_t, KEY> op;
@@ -76,7 +74,6 @@ template <typename T, int32_t KEY>
 __aicore__ inline void LaunchKernelPadMirrorWithNormalWidth(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling)
 {
     TPipe pipe;
-    REGISTER_TILING_DEFAULT(PadACTilingData);
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int8_t)) {
         KernelPadMirrWithNormalWidth<uint8_t, KEY> op(&pipe, &tilingData);
@@ -101,7 +98,6 @@ template <typename T, int32_t KEY>
 __aicore__ inline void LaunchKernelPadMirrorWithHugeWidth(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling)
 {
     TPipe pipe;
-    REGISTER_TILING_DEFAULT(PadACTilingData);
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int8_t)) {
         KernelPadMirrorWithHugeWidth<uint8_t, KEY> op(&pipe, &tilingData);
@@ -126,7 +122,6 @@ template <typename T, int32_t KEY>
 __aicore__ inline void LaunchKernelPadMirrorGather(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling)
 {
     TPipe pipe;
-    REGISTER_TILING_DEFAULT(PadACTilingData);
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int8_t)) {
         PadMirrorGather<uint8_t, KEY> op(&pipe);

@@ -85,24 +85,19 @@ __aicore__ inline void SliceTwoDimSmallShape<T, U>::Process()
     uint32_t inputSrcStride = tilingData_->lastOneInputDim * sizeof(T);
     uint32_t inputDstStride = Ops::Base::CeilAlign(burstLen, (uint32_t)BLOCK_SIZE_BYTE);
 
-    uint32_t outBurstLen = tilingData_->lastOneOutputDim * sizeof(T);
-    uint32_t outputDstStride = outBurstLen;
-    uint32_t outputSrcStride = inputDstStride;
-
     DataCopyExtParams copyInParam{static_cast<uint16_t>(nburst), static_cast<uint32_t>(burstLen),
                                   inputSrcStride - burstLen, 0, 0};
-
-    DataCopyExtParams copyOutParams{static_cast<uint16_t>(nburst), static_cast<uint32_t>(outBurstLen),
-                                    (inputDstStride - outBurstLen) / BLOCK_SIZE_BYTE, 0, 0};
 
     DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
 
     LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
     DataCopyPad(inputLocal, inputGM_[dataOffset * tilingData_->lastOneInputDim + lastDimBegin_],
                 copyInParam, padParams);
-
     vecQue_.EnQue(inputLocal);
     inputLocal = vecQue_.DeQue<T>();
+    uint32_t outBurstLen = tilingData_->lastOneOutputDim * sizeof(T);
+    DataCopyExtParams copyOutParams{static_cast<uint16_t>(nburst), static_cast<uint32_t>(outBurstLen),
+                                (inputDstStride - outBurstLen) / BLOCK_SIZE_BYTE, 0, 0};
     DataCopyPad(outputGM_[dataOffset * tilingData_->lastOneOutputDim], inputLocal, copyOutParams);
     vecQue_.FreeTensor(inputLocal);
 }

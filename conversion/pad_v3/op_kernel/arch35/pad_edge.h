@@ -23,11 +23,9 @@
 
 namespace PadV3 {
 template <typename T>
-__aicore__ inline void LaunchKernelPadEdgeSimt(
-    GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling)
+__aicore__ inline void LaunchKernelPadEdgeSimt(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling)
 {
     TPipe pipe;
-    REGISTER_TILING_DEFAULT(PadACTilingData);
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int32_t)) {
         PadV3::PadEdgeSimt<int32_t> op;
@@ -49,11 +47,9 @@ __aicore__ inline void LaunchKernelPadEdgeSimt(
 }
 
 template <typename T>
-__aicore__ inline void LaunchKernelPadEdgeSimtHuge(
-    GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling)
+__aicore__ inline void LaunchKernelPadEdgeSimtHuge(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling)
 {
     TPipe pipe;
-    REGISTER_TILING_DEFAULT(PadACTilingData);
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int32_t)) {
         PadV3::PadEdgeSimtHuge<int32_t> op;
@@ -75,11 +71,9 @@ __aicore__ inline void LaunchKernelPadEdgeSimtHuge(
 }
 
 template <typename T>
-__aicore__ inline void LaunchKernelPadEdgeWithHugeWidth(
-    GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling)
+__aicore__ inline void LaunchKernelPadEdgeWithHugeWidth(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling)
 {
     TPipe pipe;
-    REGISTER_TILING_DEFAULT(PadACTilingData);
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int8_t)) {
         KernelPadEdgeWithHugeWidth<uint8_t> op(&pipe, &tilingData);
@@ -101,11 +95,9 @@ __aicore__ inline void LaunchKernelPadEdgeWithHugeWidth(
 }
 
 template <typename T, int32_t KEY>
-__aicore__ inline void LaunchKernelPadEdgeWithNormalWidth(
-    GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling)
+__aicore__ inline void LaunchKernelPadEdgeWithNormalWidth(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling)
 {
     TPipe pipe;
-    REGISTER_TILING_DEFAULT(PadACTilingData);
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int8_t)) {
         KernelPadReplWithNormalWidth<uint8_t, KEY> op(&pipe, &tilingData);
@@ -130,7 +122,6 @@ template <typename T, int32_t KEY>
 __aicore__ inline void LaunchKernelPadEdgeGather(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR tiling)
 {
     TPipe pipe;
-    REGISTER_TILING_DEFAULT(PadACTilingData);
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int8_t)) {
         PadEdgeGather<uint8_t, KEY> op(&pipe);

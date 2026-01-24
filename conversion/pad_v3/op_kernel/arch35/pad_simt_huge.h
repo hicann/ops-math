@@ -9,8 +9,8 @@
  */
 
 /*!
- * \file pad_simt_huge.h
- * \brief pad_simt_huge
+ * \file pad_simt.h
+ * \brief pad_simt
  */
 
 #ifndef PAD_SIMT_HUGE

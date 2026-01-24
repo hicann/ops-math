@@ -35,30 +35,27 @@ static const int64_t FIVE_DIM = 5;
 static const int64_t SIX_DIM = 6;
 static const int64_t SEVEN_DIM = 7;
 
-static const inline std::initializer_list<DataType>& GetSupportDtypeList(SocVersion socVersion) {
+static const inline std::initializer_list<DataType>& GetSupportDtypeList(NpuArch npuArch) {
   static const std::initializer_list<DataType> emptyDtypes = {};
-  static const std::map<SocVersion, std::initializer_list<DataType>> dataTypeSupportedMap = {
-    {SocVersion::ASCEND310P, {
+  static const std::map<NpuArch, std::initializer_list<DataType>> dataTypeSupportedMap = {
+    {NpuArch::DAV_2002, {
       DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_INT8, DataType::DT_INT16,
       DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT8}},
-    {SocVersion::ASCEND910, {
+    {NpuArch::DAV_1001, {
       DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_INT8, DataType::DT_INT16,
       DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT8}},
-    {SocVersion::ASCEND910B, {
+    {NpuArch::DAV_2201, {
       DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_INT8, DataType::DT_INT16,
       DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT8, DataType::DT_BF16}},
-    {SocVersion::ASCEND910_93, {
-      DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_INT8, DataType::DT_INT16,
-      DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT8, DataType::DT_BF16}},
-    {SocVersion::ASCEND910_95, {
+    {NpuArch::DAV_3510, {
       DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_INT8, DataType::DT_INT16,
       DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT8, op::DataType::DT_UINT16, DataType::DT_BF16}},
-    {SocVersion::ASCEND310B, {
+    {NpuArch::DAV_3002, {
       DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_INT8, DataType::DT_INT16,
       DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT8, DataType::DT_BF16}},
   };
 
-  auto found = dataTypeSupportedMap.find(socVersion);
+  auto found = dataTypeSupportedMap.find(npuArch);
   if (found == dataTypeSupportedMap.end()) {
     return emptyDtypes;
   }
@@ -67,8 +64,8 @@ static const inline std::initializer_list<DataType>& GetSupportDtypeList(SocVers
 }
 
 static bool CheckDtypeValid(const aclTensor *self) {
-  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  const auto& dTypeSupportList = GetSupportDtypeList(socVersion);
+  auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+  const auto& dTypeSupportList = GetSupportDtypeList(curArch);
   OP_CHECK_DTYPE_NOT_SUPPORT(self, dTypeSupportList, return false);
   return true;
 }

@@ -21,13 +21,14 @@ extern "C" {
 /**
  * @brief aclnnSplitTensor的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_ops_infer
- * @param [in] self: npu device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT32、INT64、INT16、INT8、
- * UINT8、BOOL、COMPLEX128和COMPLEX64。支持非连续的Tensor，数据格式支持ND。
+ * @param [in] self: npu device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、UINT32、INT64、UINT64、INT16、
+ * UINT16、INT8、UINT8、BOOL、BFLOAT16、COMPLEX128和COMPLEX64。支持非连续的Tensor，数据格式支持ND。
  * @param [in] splitSections: host侧的整型数值, 数据类型为UINT64。表示沿dim轴均匀切分后的块大小,
  * 最后一块可以小于splitSections。
  * @param [in] dim: host侧的整型数值，数据类型为INT64，表示输入tensor被split的维度。
  * @param [in] out: npu device侧的aclTensorList，表示被split后的输出tensor的列表，数据类型支持FLOAT、FLOAT16、DOUBLE、
- * BFLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128和COMPLEX64。支持非连续的Tensor，数据格式支持ND。
+ * INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL、BFLOAT16、COMPLEX128和COMPLEX64。
+ * 支持非连续的Tensor，数据格式支持ND。
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。

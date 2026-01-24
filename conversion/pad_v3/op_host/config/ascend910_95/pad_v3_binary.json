@@ -13,6 +13,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         },
         {
@@ -34,6 +35,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         }
       ],
@@ -47,6 +49,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         }
       ],
@@ -75,6 +78,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         },
         {
@@ -96,6 +100,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         }
       ],
@@ -109,6 +114,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         }
       ],
@@ -137,6 +143,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         },
         {
@@ -158,6 +165,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         }
       ],
@@ -171,6 +179,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         }
       ],
@@ -199,6 +208,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         },
         {
@@ -220,6 +230,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         }
       ],
@@ -233,6 +244,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         }
       ],
@@ -261,6 +273,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         },
         {
@@ -282,6 +295,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         }
       ],
@@ -295,6 +309,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         }
       ],
@@ -323,6 +338,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         },
         {
@@ -344,6 +360,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         }
       ],
@@ -357,6 +374,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         }
       ],
@@ -385,6 +403,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         },
         {
@@ -406,6 +425,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         }
       ],
@@ -419,6 +439,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         }
       ],
@@ -447,6 +468,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         },
         {
@@ -468,6 +490,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         }
       ],
@@ -481,6 +504,7 @@
           "shape": [
             -2
           ],
+          "format_match_mode": "FormatAgnostic",
           "dtype_match_mode": "DtypeByte"
         }
       ],

@@ -403,7 +403,7 @@ public:
     __aicore__ inline GatherCum(const Cum4IntTilingData* tilingData, TPipe* inPipe, uint32_t blockIdx)
         : tilingPtr(tilingData), pipe(inPipe), curBlockIdx(blockIdx)
     {
-        pipe->InitBuffer(idxBuf, regElem * sizeof(T) * 2); // 2 allocate two blocks of size regElem
+        pipe->InitBuffer(idxBuf, regElem * sizeof(T) * 2);
         idxUB = idxBuf.Get<int32_t>();
     };
     __aicore__ inline void CumGatherTDRightA(

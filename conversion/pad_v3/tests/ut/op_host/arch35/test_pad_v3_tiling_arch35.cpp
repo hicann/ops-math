@@ -36,15 +36,17 @@ TEST_F(PadV3TilingTest, pad_v3_tiling_test_001)
     PadV3CompileInfo compileInfo = {0,0,0,0,0,false,"constant",0,0,0,false,"ascend910_95"};
 
     gert::StorageShape xShape = {{2, 3, 4}, {2, 3, 4}};
-    gert::StorageShape padShape = {{2, 3}, {2, 3}};
-    int pad_value[2] = {3, 4};
+    gert::StorageShape padShape = {{2}, {2}};
+    gert::StorageShape constantShape = {{1}, {1}};
+    int64_t pad_value[2] = {3, 4};
+    int64_t constantValue = 62;
 
     gert::TilingContextPara tilingContextPara(
         "PadV3",
         {
             {xShape, ge::DT_INT32, ge::FORMAT_ND}, 
-            {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value},
-            {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value}
+            {padShape, ge::DT_INT32, ge::FORMAT_ND, true, &pad_value},
+            {constantShape, ge::DT_INT32, ge::FORMAT_ND, true, &constantValue}
         },
         {{{{2, 3, 4}, {2, 3, 4}}, ge::DT_INT32, ge::FORMAT_ND}},
         {
@@ -53,7 +55,7 @@ TEST_F(PadV3TilingTest, pad_v3_tiling_test_001)
         },
         &compileInfo);
     uint64_t expectTilingKey = 20000;
-    string expectTilingData = "3 0 0 2 3 4 0 0 0 0 0 9 5 7 0 0 0 0 0 12 4 1 0 0 0 0 0 35 7 1 0 0 0 0 0 3 2 3 0 0 0 0 0 ";
+    string expectTilingData = "1 0 0 24 3 4 0 0 0 0 0 60 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 36 0 0 0 0 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

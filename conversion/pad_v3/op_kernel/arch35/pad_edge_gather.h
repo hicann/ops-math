@@ -10,7 +10,7 @@
 
 /*!
  * \file pad_edge_gather.h
- * \brief pad_edge_gather
+ * \brief pad gather kernel
  */
 
 #ifndef ASCENDC_PAD_EDGE_GATHER_H_
@@ -33,7 +33,6 @@ private:
         std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
     constexpr static uint32_t VL_RANGE_CNT = VL_SIZE / sizeof(RangeType);
     constexpr static uint32_t UB_AXES = (KEY / KEY_BASE) % KEY_BASE; // TilingKey倒数第二维为UB内轴个数
-    constexpr static uint32_t VL_SIZE = Ops::Base::GetVRegSize();
     constexpr static uint32_t VL_CNT = VL_SIZE / sizeof(T);
     constexpr static uint32_t BLOCK_SIZE = Ops::Base::GetUbBlockSize();
     constexpr static uint32_t BLOCK_NUM = BLOCK_SIZE / sizeof(T);

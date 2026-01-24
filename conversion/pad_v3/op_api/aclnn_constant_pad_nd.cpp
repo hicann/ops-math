@@ -23,6 +23,7 @@
 #include "opdev/make_op_executor.h"
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -72,7 +73,7 @@ static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out) {
                            GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93);
   std::initializer_list<op::DataType> CURRENT_DTYPE_SUPPORT_LIST =
     is910bSocVersion ? DTYPE_SUPPORT_910B_LIST : DTYPE_SUPPORT_LIST;
-  if (op::GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND910_95) {
+  if (IsRegBase()) {
       CURRENT_DTYPE_SUPPORT_LIST = DTYPE_SUPPORT_910D_LIST;
     }
   // 检查self与out数据类型是否一致
