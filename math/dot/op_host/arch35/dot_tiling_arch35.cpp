@@ -88,7 +88,7 @@ static ge::graphStatus GenInput(gert::TilingContext* context, ReduceOpInputParam
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus TilingForDot(gert::TilingContext* context)
+[[maybe_unused]] static ge::graphStatus TilingForDot(gert::TilingContext* context)
 {
     auto compileInfo = reinterpret_cast<const DotCompileInfo*>(context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
@@ -110,7 +110,7 @@ static ge::graphStatus TilingForDot(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus TilingPrepareForDot([[maybe_unused]] gert::TilingParseContext* context)
+[[maybe_unused]] static ge::graphStatus TilingPrepareForDot([[maybe_unused]]gert::TilingParseContext* context)
 {
     return ge::GRAPH_SUCCESS;
 }

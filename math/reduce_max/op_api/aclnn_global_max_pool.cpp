@@ -134,7 +134,6 @@ aclnnStatus aclnnGlobalMaxPoolGetWorkspaceSize(const aclTensor *self, aclTensor 
     // 生成dim
     std::vector<int64_t> dimVector = {};
     int64_t dimNum = selfContiguous->GetViewShape().GetDimNum();
-    CHECK_RET(dimNum >= 2, ACLNN_ERR_INNER_NULLPTR);
     for (int64_t i = 2; i < dimNum; i++) {
         dimVector.push_back(i);
     }

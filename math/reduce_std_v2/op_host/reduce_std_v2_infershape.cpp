@@ -12,9 +12,9 @@
  * \file reduce_std_v2_infershape.cpp
  * \brief
  */
+#include "infershape_reduce_util.h"
 #include "register/op_impl_registry.h"
 #include "util/shape_util.h"
-#include "log/log.h"
 
 using namespace ge;
 
@@ -24,56 +24,6 @@ const size_t ATTR_INDEX_AXES = 0;
 const size_t OUTPUT_INDEX_VAR = 0;
 const size_t OUTPUT_INDEX_MEAN = 1;
 const size_t VAR_INDEX_ATTR_KEEPDIM = 2;
-
-template <typename T>
-static ge::graphStatus ReduceDimsWithKeepDims(
-    const gert::Shape *xShape, const T *axesDims, int32_t axesSize, gert::Shape *outputShape)
-{
-    T dimNum = xShape->GetDimNum();
-    const bool isScalar = xShape->GetDimNum() == 0;
-    dimNum = isScalar ? 1 : dimNum;
-    *outputShape = *xShape;
-    for (int32_t i = 0; i < axesSize; i++) {
-        OP_CHECK_IF((!Ops::Base::CheckAxisBounds<T, T>(dimNum, axesDims[i])),
-            OP_LOGE("reduce", "axesDims is invalid"),
-            return ge::GRAPH_FAILED);
-        if (isScalar) {
-            // no need to update output shape, when input is scalar
-            continue;
-        }
-        T dim = axesDims[i] < 0 ? axesDims[i] + dimNum : axesDims[i];
-        outputShape->SetDim(dim, 1);
-    }
-    OP_LOGD("ReduceDimsWithKeepDims", "after reduce output shape is %s.", Ops::Base::ToString(*outputShape).c_str());
-    return ge::GRAPH_SUCCESS;
-}
-
-template <typename T>
-static ge::graphStatus ReduceDimsWithoutKeepDims(
-    const gert::Shape *xShape, const T *axesDims, int32_t axesSize, gert::Shape *outputShape)
-{
-    T dimNum = xShape->GetDimNum();
-    outputShape->SetDimNum(0);
-    for (T j = 0; j < dimNum; j++) {
-        bool reduceFlag = false;
-        for (int32_t i = 0; i < axesSize; i++) {
-            OP_CHECK_IF((!Ops::Base::CheckAxisBounds<T, T>(dimNum, axesDims[i])),
-                OP_LOGE("reduce", "axesDims is invalid"),
-                return ge::GRAPH_FAILED);
-            T dim = axesDims[i] < 0 ? axesDims[i] + dimNum : axesDims[i];
-            if (dim == j) {
-                reduceFlag = true;
-                break;
-            }
-        }
-        if (!reduceFlag) {
-            outputShape->AppendDim(xShape->GetDim(j));
-        }
-    }
-
-    OP_LOGD("ReduceDimsWithoutKeepDims", "after reduce output shape is %s.", Ops::Base::ToString(*outputShape).c_str());
-    return ge::GRAPH_SUCCESS;
-}
 
 static ge::graphStatus InferShape4ReduceVar(gert::InferShapeContext* context) {
     auto inputShape = context->GetInputShape(INPUT_INDEX_X);
@@ -118,9 +68,9 @@ static ge::graphStatus InferShape4ReduceVar(gert::InferShapeContext* context) {
     bool keepDims = (attrKeepDims == nullptr) ? false : (*attrKeepDims);
     ge::graphStatus inferStat;
     if (keepDims) {
-        inferStat = ReduceDimsWithKeepDims<int64_t>(inputShape, &axes[0], static_cast<int32_t>(axes.size()), varShape);
+        inferStat = Ops::Base::ReduceDimsWithKeepDims<int64_t>(inputShape, &axes[0], static_cast<int32_t>(axes.size()), varShape);
     } else {
-        inferStat = ReduceDimsWithoutKeepDims<int64_t>(inputShape, &axes[0], static_cast<int32_t>(axes.size()), varShape);
+        inferStat = Ops::Base::ReduceDimsWithoutKeepDims<int64_t>(inputShape, &axes[0], static_cast<int32_t>(axes.size()), varShape);
     }
 
     if (inferStat == ge::GRAPH_SUCCESS) {

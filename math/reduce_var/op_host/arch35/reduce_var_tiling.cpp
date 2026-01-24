@@ -906,6 +906,11 @@ void ReduceVarTiling::SetTilingData(const uint64_t* shape)
     tilingData_->factorRCntPerCore = factorRCntPerCore;
     tilingData_->factorRTotalCnt = unitR_.outer;
     tilingData_->groupR = Ops::Base::CeilDiv(unitR_.outer, factorRCntPerCore);
+    if (tilingData_->groupR > 1) {
+        OP_CHECK_IF(context_->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
+                    OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"),
+                    return );
+    }
     OP_CHECK_IF(
         (memcpy_s(tilingData_->shape, sizeof(tilingData_->shape), shape, sizeof(tilingData_->shape)) != EOK),
         OP_LOGE(context_->GetNodeName(), "memcpy shape failed"), return);

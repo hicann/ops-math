@@ -10,9 +10,6 @@
 #ifndef OP_API_OP_API_COMMON_INC_LEVEL0_OP_REDUCE_SUM_OP_H_
 #define OP_API_OP_API_COMMON_INC_LEVEL0_OP_REDUCE_SUM_OP_H_
 
-#include "opdev/op_executor.h"
-#include "opdev/make_op_executor.h"
-
 namespace l0op { 
 const aclTensor *ReduceSumOp(const aclTensor *x, const aclIntArray *axes, 
                             bool keep_dims, aclOpExecutor *executor); 

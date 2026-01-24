@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include "aclnn_roll.h"
 #include "roll.h"
 
@@ -26,7 +26,7 @@
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
 #include "conversion/squeeze/op_host/op_api/squeeze.h"
 #include "opdev/platform.h"
-
+#include "op_api/aclnn_check.h"
 #include "op_api/op_api_def.h"
 
 using namespace op;
@@ -44,7 +44,7 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_
     op::DataType::DT_BOOL,  op::DataType::DT_INT64,   op::DataType::DT_BF16};
 
 /* *
- * l1: ASCEND910B、ASCEND910_93 或者 ASCEND910_95 芯片，该算子支持的数据类型列表
+ * l1: ASCEND910B、ASCEND910_93 或者 ASCEND950 芯片，该算子支持的数据类型列表
  * l2: 其他芯片，该算子支持的数据类型列表
  */
 static const std::initializer_list<DataType>& GetDtypeSupportListV1(
@@ -52,7 +52,7 @@ static const std::initializer_list<DataType>& GetDtypeSupportListV1(
 {
     if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+        IsRegBase()) {
         return l1;
     } else {
         return l2;
@@ -276,7 +276,7 @@ aclnnStatus aclnnRollGetWorkspaceSize(
 
     // 因为可能有cast的过程，原来的out大小不一致，所以先存到outBase里
     const aclTensor* outBase = nullptr;
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95 || dimSize == 0) {
+    if (IsRegBase() || dimSize == 0) {
         outBase = l0op::Roll(xContiguous, newshifts, newDims, uniqueExecutor.get());
         CHECK_RET(outBase != nullptr, ACLNN_ERR_INNER_NULLPTR);
     } else {

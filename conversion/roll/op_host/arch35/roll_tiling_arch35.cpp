@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /* !
  * \file roll_tiling_arch35.cpp
@@ -171,6 +171,7 @@ ge::graphStatus RollTilingClass::CheckAttr()
         }
     }
     MergeAxes(shapes_, shifts_, dimNum_); // 合并连续的0轴
+    RemoveShapeOne(shapes_, shifts_, dimNum_); // 移除为1的shape
     strides_[dimNum_ - 1] = 1;
     for (int32_t i = dimNum_ - CONSTANT_TWO; i >= 0; --i) {
         strides_[i] = strides_[i + 1] * shapes_[i + 1];
@@ -229,6 +230,31 @@ void RollTilingClass::MergeAxes(int64_t shape[], int64_t shifts[], int64_t& dimN
         shifts[i] = new_shifts[i];
     }
     // 更新实际维度数
+    dimNum = new_size;
+}
+
+void RollTilingClass::RemoveShapeOne(int64_t shape[], int64_t shifts[], int64_t& dimNum)
+{
+    if(dimNum <= 1) {
+        return;
+    }
+
+    int64_t new_shape[dimNum];
+    int64_t new_shift[dimNum];
+    int64_t new_size = 0;
+
+    for(int32_t i = 0; i < dimNum; ++i) {
+        if(shape[i] > 1) {
+            new_shape[new_size] = shape[i];
+            new_shift[new_size] = shifts[i];
+            new_size++;
+        }
+    }
+
+    for(int32_t i = 0; i < new_size; ++i) {
+        shape[i] = new_shape[i];
+        shifts[i] = new_shift[i];
+    }
     dimNum = new_size;
 }
 

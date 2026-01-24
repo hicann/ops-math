@@ -18,6 +18,7 @@
 #include "aclnn_kernels/transdata.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 #include "aclnn/aclnn_base.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -191,7 +192,7 @@ aclnnStatus aclnnVarGetWorkspaceSize(const aclTensor* self, const aclIntArray* d
     auto selfReformat = l0op::ReFormat(selfContiguous, Format::FORMAT_ND);
     CHECK_RET(selfReformat != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    if (IsRegBase()) {
         return aclnnVarImplUnify(selfReformat, dimArray, unbiased, keepdim, out, workspaceSize,
                                  uniqueExecutor, executor);
     }
@@ -312,7 +313,7 @@ aclnnStatus aclnnVarCorrectionGetWorkspaceSize(const aclTensor* self, const aclI
     auto selfReformat = l0op::ReFormat(selfContiguous, Format::FORMAT_ND);
     CHECK_RET(selfReformat != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    if (IsRegBase()) {
         return aclnnVarCorrectionImplUnify(selfReformat, dimArray, correction, keepdim, out, workspaceSize,
                                            uniqueExecutor, executor);
     }

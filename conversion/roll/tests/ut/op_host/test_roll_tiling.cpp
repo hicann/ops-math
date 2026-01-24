@@ -1,41 +1,42 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file test_roll_tiling.cpp
  * \brief
  */
-// #include <iostream>
-// #include <vector>
-// #include <gtest/gtest.h>
-// #include "conversion/roll/op_kernel/arch35/roll_struct.h"
-// #include "conversion/roll/op_host/arch35/roll_tiling_arch35.h"
-// #include "tiling_context_faker.h"
-// #include "tiling_case_executor.h"
+#include <iostream>
+#include <vector>
+#include <gtest/gtest.h>
+#include "conversion/roll/op_kernel/arch35/roll_struct.h"
+#include "conversion/roll/op_host/arch35/roll_tiling_arch35.h"
+#include "tiling_context_faker.h"
+#include "tiling_case_executor.h"
 
-// using namespace std;
+using namespace std;
 
-// class RollTiling : public testing::Test {
-// protected:
-//     static void SetUpTestCase()
-//     {
-//         std::cout << "RollSubTiling2 SetUp" << std::endl;
-//     }
-//     static void TearDownTestCase()
-//     {
-//         std::cout << "RollSubTiling2 TearDown" << std::endl;
-//     }
-// };
+class RollTiling : public testing::Test {
+protected:
+    static void SetUpTestCase()
+    {
+        std::cout << "RollSubTiling2 SetUp" << std::endl;
+    }
+    static void TearDownTestCase()
+    {
+        std::cout << "RollSubTiling2 TearDown" << std::endl;
+    }
+};
 
 // TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_001)
 // {
+
 //     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND910_95};
 //     gert::TilingContextPara tilingContextPara(
 //         "Roll",

@@ -27,6 +27,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/platform.h"
 #include "op_api/level2_base_caculation.h"
 
@@ -280,7 +281,7 @@ aclnnStatus aclnnStdGetWorkspaceSize(const aclTensor *self, const aclIntArray *d
   auto selfReformat = l0op::ReFormat(selfContiguous, Format::FORMAT_ND);
   CHECK_RET(selfReformat != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+  if (IsRegBase()) {
     return aclnnStdV2ImplUnify(selfReformat, dimArray, correction, keepdim, out, workspaceSize,
                                uniqueExecutor, executor);
   }

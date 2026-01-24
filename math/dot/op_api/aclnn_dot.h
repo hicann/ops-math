@@ -58,11 +58,11 @@ extern "C" {
 /**
  * @brief aclnnDot的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_math
- * @param [in] self: npu device侧的aclTensor，数据类型支持FLOAT、BFLOAT16、FLOAT16，且数据类型需要与tensor一致，
+ * @param [in] self: npu device侧的aclTensor，数据类型支持FLOAT、BFLOAT16、FLOAT16、INT8、INT32、UINT8，且数据类型需要与tensor一致，
  * 支持非连续的Tensor，数据格式支持ND，维度是1维，且shape需要与tensor一致。
- * @param [in] tensor: npu device侧的aclTensor，数据类型支持FLOAT、BFLOAT16、FLOAT16，且数据类型需要与self一致，
+ * @param [in] tensor: npu device侧的aclTensor，数据类型支持FLOAT、BFLOAT16、FLOAT16、INT8、INT32、UINT8，且数据类型需要与self一致，
  * 支持非连续的Tensor，数据格式支持ND，维度是1维，且shape需要与self一致。
- * @param [in] out: npu device侧的aclTensor，数据类型支持FLOAT、BFLOAT16、FLOAT16，且数据类型需要与self、tensor
+ * @param [in] out: npu device侧的aclTensor，数据类型支持FLOAT、BFLOAT16、FLOAT16、INT8、INT32、UINT8，且数据类型需要与self、tensor
  * 一致，数据格式支持ND，维度是0维。
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含了算子计算流程。

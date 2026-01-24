@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file roll_hsplit.h
@@ -229,6 +229,12 @@ __aicore__ inline void RollHSplitSimd<T>::ComputeAllParamForFour(int64_t inputIn
         ComputeAllParam(inputIndex + lenSum[0], 1, hRe, isCount);
     }
     hRe -= countSum[0];
+    if(isCount) {
+        for(int32_t i = 0; i < 2; i++) {
+            countSum[i+2] = 0;
+            lenSum[i+2] = 0;
+        }
+    }
     if (hRe != 0 && tilingData_->shifts[tilingData_->dimNum - 2] != 0) {
         ComputeAllParam(inputIndex + countSum[0] * wShapes, 2, hRe, isCount);
         if (tilingData_->shifts[tilingData_->dimNum - 1] != 0) {

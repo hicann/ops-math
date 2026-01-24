@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file roll_gather_simd.h
@@ -29,6 +29,8 @@ public:
     __aicore__ inline RollGatherSimd(TPipe* pipe, const RollTilingData* tiling) : pipe_(pipe), tilingData_(tiling){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR workspace);
     __aicore__ inline void CopyIn(int64_t index, int32_t len);
+    template <typename IntType, typename IndexType, bool isShiftH>
+    __aicore__ inline void CalculateFullCHWIndex(__ubuf__ IndexType* indexLocalAddr, uint16_t& tmplSize);
     template <typename IntType, typename IndexType>
     __aicore__ inline void CalculateFullHWIndex(__ubuf__ IndexType* indexLocalAddr, uint16_t& tmplSize);
     template <typename IntType, typename IndexType>
@@ -140,7 +142,24 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::Process()
     if constexpr (sizeof(T) == 1) {
         is_b8 = 1;
     }
-    if (hwLen * sizeof(T) * (is_b8 + 1) > GATHER_REG_SIZE || tilingData_->dimNum < 2) {
+    if ((tilingData_->dimNum > 2) &&
+        (tilingData_->shapes[tilingData_->dimNum - 3] * hwLen * sizeof(T) * (is_b8 + 1) <= 256) &&
+        (tilingData_->shifts[tilingData_->dimNum - 3] != 0)) {
+        gatherTmplsplit = tilingData_->dimNum - 3;
+        if constexpr (sizeof(T) <= 2) {
+            if (tilingData_->shifts[tilingData_->dimNum - 2] == 0) {
+                CalculateFullCHWIndex<int16_t, uint16_t, false>((__ubuf__ uint16_t*)gatherTmpl.GetPhyAddr(), tmplSize);
+            } else {
+                CalculateFullCHWIndex<int16_t, uint16_t, true>((__ubuf__ uint16_t*)gatherTmpl.GetPhyAddr(), tmplSize);
+            }
+        } else {
+            if (tilingData_->shifts[tilingData_->dimNum - 2] == 0) {
+                CalculateFullCHWIndex<int32_t, uint32_t, false>((__ubuf__ uint32_t*)gatherTmpl.GetPhyAddr(), tmplSize);
+            } else {
+                CalculateFullCHWIndex<int32_t, uint32_t, true>((__ubuf__ uint32_t*)gatherTmpl.GetPhyAddr(), tmplSize);
+            }
+        }
+    } else if (hwLen * sizeof(T) * (is_b8 + 1) > GATHER_REG_SIZE || tilingData_->dimNum < 2) {
         gatherTmplsplit = tilingData_->dimNum - 1;
         if constexpr (sizeof(T) <= 2) {
             CalculateFullWIndex<int16_t, uint16_t>((__ubuf__ uint16_t*)gatherTmpl.GetPhyAddr(), tmplSize);
@@ -202,6 +221,77 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::Process()
         curCoreBaseIndex_ += curCoreUbParam.UbFactor;
     }
     gatherMethodBuf.FreeTensor<T>(gatherTmpl);
+}
+
+template <typename T, bool isShiftW>
+template <typename IntType, typename IndexType, bool isShiftH>
+__aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullCHWIndex(
+    __ubuf__ IndexType* indexLocalAddr, uint16_t& tmplSize)
+{
+    int32_t shapesW = tilingData_->shapes[tilingData_->dimNum - 1];
+    int32_t shapesH = tilingData_->shapes[tilingData_->dimNum - 2];
+    int32_t shapesC = tilingData_->shapes[tilingData_->dimNum - 3];
+    int32_t shiftsW = tilingData_->shifts[tilingData_->dimNum - 1];
+    int32_t shiftsH = tilingData_->shifts[tilingData_->dimNum - 2];
+    int32_t shiftsC = tilingData_->shifts[tilingData_->dimNum - 3];
+
+    int32_t shapesLen = shapesW * shapesH * shapesC;
+
+    uint16_t loopSize = 0;
+    if constexpr (sizeof(T) == 1) {
+        loopSize = GATHER_REG_SIZE / sizeof(T) / 2 / shapesLen;
+    } else {
+        loopSize = GATHER_REG_SIZE / sizeof(T) / shapesLen;
+    }
+    tmplSize = loopSize * shapesLen;
+    IndexType copyLenth = shapesLen;
+    IntType startScalar = 0;
+    IntType negShiftWScalar = -1 * static_cast<IntType>(shiftsW);
+    IntType wScalar = static_cast<IntType>(shapesW);
+    IntType negShiftHWScalar = -1 * static_cast<IntType>(shapesW) * static_cast<IntType>(shiftsH);
+    IntType hwScalar = static_cast<IntType>(shapesW) * static_cast<IntType>(shapesH);
+    IntType negShiftCHWScalar = -1 * hwScalar * static_cast<IntType>(shiftsC);
+    IntType chwScalar = static_cast<IntType>(shapesLen);
+    uint32_t shiftCHWSizeScalar = static_cast<uint32_t>(hwScalar) * static_cast<uint32_t>(shiftsC);
+    __VEC_SCOPE__
+    {
+        AscendC::MicroAPI::RegTensor<IndexType> indexVReg;
+        AscendC::MicroAPI::RegTensor<IntType> calculateVReg, helpCmpVReg, helpAddVReg, helpDivVReg;
+        AscendC::MicroAPI::MaskReg cmpResultMaskReg, helpAddCHWMaskReg, fullMaskReg;
+        AscendC::MicroAPI::UnalignReg u0;
+
+        fullMaskReg = AscendC::MicroAPI::CreateMask<IndexType, AscendC::MicroAPI::MaskPattern::ALL>();
+        helpAddCHWMaskReg = AscendC::MicroAPI::UpdateMask<IndexType>(shiftCHWSizeScalar);
+        AscendC::MicroAPI::Duplicate(helpDivVReg, wScalar, fullMaskReg);
+        AscendC::MicroAPI::Arange(calculateVReg, startScalar);
+        if constexpr (isShiftW) {
+            AscendC::MicroAPI::Div(helpCmpVReg, calculateVReg, helpDivVReg, fullMaskReg);
+            AscendC::MicroAPI::Muls(helpCmpVReg, helpCmpVReg, wScalar, fullMaskReg);
+            AscendC::MicroAPI::Adds(calculateVReg, calculateVReg, negShiftWScalar, fullMaskReg);
+            AscendC::MicroAPI::Compare<IntType, CMPMODE::LT>(cmpResultMaskReg, calculateVReg, helpCmpVReg, fullMaskReg);
+            AscendC::MicroAPI::Duplicate(helpAddVReg, wScalar, cmpResultMaskReg);
+            AscendC::MicroAPI::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
+        }
+        if constexpr (isShiftH) {
+            AscendC::MicroAPI::Duplicate(helpDivVReg, hwScalar, fullMaskReg);
+            AscendC::MicroAPI::Div(helpCmpVReg, calculateVReg, helpDivVReg, fullMaskReg);
+            AscendC::MicroAPI::Muls(helpCmpVReg, helpCmpVReg, hwScalar, fullMaskReg);
+            AscendC::MicroAPI::Adds(calculateVReg, calculateVReg, negShiftHWScalar, fullMaskReg);
+            AscendC::MicroAPI::Compare<IntType, CMPMODE::LT>(cmpResultMaskReg, calculateVReg, helpCmpVReg, fullMaskReg);
+            AscendC::MicroAPI::Duplicate(helpAddVReg, hwScalar, cmpResultMaskReg);
+            AscendC::MicroAPI::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
+        }
+        AscendC::MicroAPI::Adds(calculateVReg, calculateVReg, negShiftCHWScalar, fullMaskReg);
+        AscendC::MicroAPI::Duplicate(helpAddVReg, shapesLen, helpAddCHWMaskReg);
+        AscendC::MicroAPI::Add(calculateVReg, calculateVReg, helpAddVReg, fullMaskReg);
+        AscendC::MicroAPI::Copy(indexVReg, (MicroAPI::RegTensor<IndexType>&)calculateVReg);
+        AscendC::MicroAPI::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
+        for (uint16_t i = 1; i < loopSize; i++) {
+            AscendC::MicroAPI::Adds(indexVReg, indexVReg, copyLenth, fullMaskReg);
+            AscendC::MicroAPI::DataCopyUnAlign(indexLocalAddr, indexVReg, u0, copyLenth);
+        }
+        AscendC::MicroAPI::DataCopyUnAlignPost(indexLocalAddr, u0, 0);
+    }
 }
 
 template <typename T, bool isShiftW>

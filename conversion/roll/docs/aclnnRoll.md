@@ -1,11 +1,17 @@
 # aclnnRoll
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/roll)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
 
 ## 功能说明
 
@@ -30,53 +36,199 @@ x = tensor([[7, 8],
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnRollGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnRoll”接口执行计算。
 
-- `aclnnStatus aclnnRollGetWorkspaceSize(const aclTensor* x, const aclIntArray* shifts, const aclIntArray* dims, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnRoll(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```cpp
+aclnnStatus aclnnRollGetWorkspaceSize(
+  const aclTensor*   x, 
+  const aclIntArray* shifts, 
+  const aclIntArray* dims, 
+  aclTensor*         out, 
+  uint64_t*          workspaceSize, 
+  aclOpExecutor**    executor)
+```
+
+```cpp
+aclnnStatus aclnnRoll(
+  void*          workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor* executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnRollGetWorkspaceSize
 
-- **参数说明：**
+- **参数说明**
 
-  - x（aclTensor*，计算输入）: 输入的原始数据，Device侧的aclTensor。shape支持0-8维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT32、INT8、UINT8、INT32、INT64、UINT32、BOOL。
-  - shifts（aclIntArray*，计算输入）：指定每个维度上要滚动的步数，host侧的aclIntArray，数组长度与dims保持一致。
+  <table style="undefined;table-layout: fixed; width: 1629px"><colgroup>
+  <col style="width: 133px">
+  <col style="width: 122px">
+  <col style="width: 226px">
+  <col style="width: 387px">
+  <col style="width: 323px">
+  <col style="width: 127px">
+  <col style="width: 163px">
+  <col style="width: 148px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度（shape）</th>
+      <th>非连续张量Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>x</td>
+      <td>输入</td>
+      <td>输入的原始数据。</td>
+      <td>-</td>
+      <td>BFLOAT16、FLOAT16、FLOAT32、INT8、UINT8、INT32、INT64、UINT32、BOOL</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>shifts</td>
+      <td>输入</td>
+      <td>指定每个维度上要滚动的步数。</td>
+      <td>数组长度与dims保持一致。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>dims</td>
+      <td>输入</td>
+      <td>指定要滚动的维度。</td>
+      <td>数组长度与shifts保持一致，取值范围在[-x.dim(), x.dim() - 1]之内，例如：x的维度是4，则取值范围在[-4, 3]。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>滚动处理后的输出数据。</td>
+      <td>-</td>
+      <td>BFLOAT16、FLOAT16、FLOAT32、INT8、UINT8、INT32、INT64、UINT32、BOOL</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
-  - dims（aclIntArray*，计算输入）：指定要滚动的维度，host侧的aclIntArray, 数组长度与shifts保持一致，取值范围在[-x.dim(), x.dim() - 1]之内，例如：x的维度是4，则取值范围在[-4, 3]。
-
-  - out（aclTensor*，计算输出）：滚动处理后的输出数据，device侧的aclTensor。shape支持0-8维，且shape需要与`x`一致。数据类型与`x`一致，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT32、INT8、UINT8、INT32、INT64、UINT32、BOOL。
-  - workspaceSize（uint64_t*，出参）：返回需要在Device侧申请的workspace大小。
-
-  - executor（aclOpExecutor**，出参）：返回op执行器，包含了算子计算流程。
-
-- **返回值：**
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
-  第一段接口完成入参校验，出现以下场景时报错：
-  返回161001(ACLNN_ERR_PARAM_NULLPTR)：1. 传入的x或shifts是空指针。
-  返回161002(ACLNN_ERR_PARAM_INVALID)：1. x的数据类型不在支持的范围内。
-                                      2. x的数据格式不在支持的范围内。
-                                      3. 当dims非空时，shifts和dims的size不保持一致。
-                                      4. 当dims为空时，shifts数组长度不等于1。
-                                      5. dims的数值不在[-x.dim(), x.dim() - 1]之内。
-                                      6. x的维度超过8维。
-                                      7. out和x的shape不一致
-  ```
+  <table style="undefined;table-layout: fixed; width: 1283px"><colgroup>
+  <col style="width: 285px">
+  <col style="width: 146px">
+  <col style="width: 852px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的x或shifts是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="7">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="7">161002</td>
+      <td>x的数据类型不在支持的范围内。</td>
+    </tr>
+    <tr>
+      <td>x的数据格式不在支持的范围内。</td>
+    </tr>
+    <tr>
+      <td>当dims非空时，shifts和dims的size不保持一致。</td>
+    </tr>
+    <tr>
+      <td>当dims为空时，shifts数组长度不等于1。</td>
+    </tr>
+    <tr>
+      <td>dims的数值不在[-x.dim(), x.dim() - 1]之内。</td>
+    </tr>
+    <tr>
+      <td>x的维度超过8维。</td>
+    </tr>
+    <tr>
+      <td>out和x的shape不一致</td>
+    </tr>
+  </tbody>
+  </table>
+
 ## aclnnRoll
 
-- **参数说明：**
+- **参数说明**
 
-  - workspace(void\*, 入参)：在Device侧申请的workspace内存地址。
-
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnRollGetWorkSpaceSize获取。
-
-  - executor(aclOpExecutor\*, 入参)：op执行器，包含了算子计算流程。
-
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
-
-- **返回值：**
+  <table style="undefined;table-layout: fixed; width: 1126px"><colgroup>
+  <col style="width: 141px">
+  <col style="width: 140px">
+  <col style="width: 845px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnRollGetWorkSpaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+  
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -88,6 +240,7 @@ x = tensor([[7, 8],
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

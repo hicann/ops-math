@@ -30,6 +30,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/op_errno.h"
 #include "op_api/level2_base_caculation.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -41,12 +42,12 @@ extern "C" {
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
 
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> ARCH3510_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
 static const std::initializer_list<DataType>& GetDtypeSupportList() {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-        return ASCEND910_95_DTYPE_SUPPORT_LIST;
+    if (IsRegBase()) {
+        return ARCH3510_DTYPE_SUPPORT_LIST;
     } else {
         return DTYPE_SUPPORT_LIST;
     }
@@ -198,7 +199,7 @@ aclnnStatus aclnnVarMeanGetWorkspaceSize(const aclTensor* self, const aclIntArra
     auto selfReformat = l0op::ReFormat(selfContiguous, Format::FORMAT_ND, uniqueExecutor.get());
     CHECK_RET(selfReformat != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    if (IsRegBase()) {
         return aclnnVarMeanImplUnify(selfReformat, dimArray, correction, keepdim, varOut, meanOut,
                                      workspaceSize, uniqueExecutor, executor);
     }
