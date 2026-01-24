@@ -23,6 +23,7 @@
 #include "opdev/data_type_utils.h"
 #include "opdev/make_op_executor.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -64,7 +65,7 @@ static const std::initializer_list<DataType>& GetDtypeSupportList()
 
 static bool IsSupportAddr(op::DataType hightDtype)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    if (IsRegBase()) {
         return CheckType(hightDtype, ASCEND910_95_ADDR_DTYPE_SUPPORT_LIST);
     }
     return false;

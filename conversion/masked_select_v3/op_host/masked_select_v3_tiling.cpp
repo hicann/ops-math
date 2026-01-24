@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file masked_select_v3_tiling.cpp
@@ -14,6 +14,7 @@
  */
 #include <cmath>
 #include "util/math_util.h"
+#include "op_host/tiling_util.h"
 #include "log/log.h"
 #include "masked_select_v3_tiling.h"
 
@@ -22,20 +23,6 @@ constexpr static uint64_t BLOCK_SIZE = 256;
 constexpr static uint32_t DOUBLE_BUFFER = 2;
 constexpr static float UB_USAGE = 0.65f;
 constexpr uint32_t INT64_LENGTH_IN_INT32 = 2; // INT64 相当于 2个int32长
-static bool IsRegbaseSocVersion(platform_ascendc::SocVersion version)
-{
-    const static std::set<platform_ascendc::SocVersion> regbaseSocVersions = {
-        platform_ascendc::SocVersion::ASCEND910_95};
-
-    return regbaseSocVersions.find(version) != regbaseSocVersions.end();
-}
-
-bool IsRegbaseSocVersion(const gert::TilingParseContext* context)
-{
-    auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
-    auto socVersion = ascendcPlatform.GetSocVersion();
-    return IsRegbaseSocVersion(socVersion);
-}
 } // namespace
 
 namespace optiling {
@@ -263,7 +250,7 @@ ge::graphStatus TilingPrepareForMaskedSelectV3(gert::TilingParseContext* context
         return ge::GRAPH_FAILED;
     }
 
-    compileInfo->isRegbase = IsRegbaseSocVersion(context);
+    compileInfo->isRegbase = Ops::Math::OpTiling::IsRegbaseSocVersion(context);
     OP_LOGD(context, "compileInfo->isRegbase is %d.", compileInfo->isRegbase);
 
     OP_LOGD(context, "TilingPrepareForMaskedSelectV3 end.");

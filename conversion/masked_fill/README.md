@@ -6,6 +6,9 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
 
 ## 功能说明
 
@@ -44,7 +47,7 @@
       <td>x</td>
       <td>输入</td>
       <td>公式中的输入x。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT8、INT32、INT64、BOOL</td>
+      <td>FLOAT32、FLOAT16、BFLOAT16、INT8、INT32、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
@@ -58,17 +61,19 @@
       <td>value</td>
       <td>输入</td>
       <td>公式中的输入value。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT8、INT32、INT64、BOOL</td>
+      <td>FLOAT32、FLOAT16、BFLOAT16、INT8、INT32、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
       <td>公式中的输出y。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT8、INT32、INT64、BOOL</td>
+      <td>FLOAT32、FLOAT16、BFLOAT16、INT8、INT32、BOOL</td>
       <td>ND</td>
     </tr>
   </tbody></table>
+
+* Atlas 训练系列产品、Atlas 推理系列产品、Atlas 200I/500 A2 推理产品：不支持BFLOAT16。
 
 ## 约束说明
 
@@ -83,5 +88,4 @@
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | aclnn接口 | [test_aclnn_inplace_masked_fill_scalar](examples/test_aclnn_inplace_masked_fill_scalar.cpp) | 通过[aclnnInplaceMaskedFillScalar](docs/aclnnInplaceMaskedFillScalar.md)接口方式调用MaskedFill算子。 |
-| aclnn接口 | [test_aclnn_inplace_masked_fill_tensor](examples/test_aclnn_inplace_masked_fill_tensor.cpp) | 通过[aclnnInplaceMaskedFillTensor](docs/aclnnInplaceMaskedFillTensor.md)接口方式调用MaskedFill算子。 |
 

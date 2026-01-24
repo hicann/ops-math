@@ -9,6 +9,7 @@
  */
 
 #include "zero_op.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/op_def.h"
@@ -50,7 +51,7 @@ static bool IsAiCoreSupport(const aclTensor* self)
         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
         return CheckType(self->GetDataType(), AICORE910B_DTYPE_SUPPORT_LIST);
     }
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    if (IsRegBase()) {
         return CheckType(self->GetDataType(), AICORE910_95_DTYPE_SUPPORT_LIST);
     }
     // 1980 & other

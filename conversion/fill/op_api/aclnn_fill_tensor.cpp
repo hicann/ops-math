@@ -22,6 +22,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -51,11 +52,8 @@ static inline bool CheckNotNull(const aclTensor* self, const aclTensor* value)
 
 static inline bool CheckDtypeValid(const aclTensor* self)
 {
-    // 获取芯片类型,判断是1971还是1980
-    bool is910bSocVersion =
-        (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95);
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    bool is910bSocVersion = (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch));
     const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_CURRENT =
         is910bSocVersion ? DTYPE_SUPPORT_LIST_910B : DTYPE_SUPPORT_LIST_910;
 

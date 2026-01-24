@@ -21,6 +21,7 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -40,20 +41,20 @@ static const std::initializer_list<DataType> ASCEND910B_AICORE_DTYPE_SUPPORT_LIS
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT32,
     DataType::DT_BF16,  DataType::DT_UINT8,   DataType::DT_INT8,  DataType::DT_BOOL};
 
-static const std::initializer_list<DataType> ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<DataType> REGBASE_AICORE_DTYPE_SUPPORT_LIST = {
     DataType::DT_INT8, DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT8, DataType::DT_FLOAT16,
     DataType::DT_FLOAT, DataType::DT_BF16, DataType::DT_UINT32, DataType::DT_BOOL, DataType::DT_HIFLOAT8,
     DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN};
 
 static bool IsAiCoreSupport(const aclTensor *self) {
-  // Cast只需要根据soc信息判断对应芯片的dtype支持
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+  auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+  // Cast只需要根据npuArch信息判断对应芯片的dtype支持
+  if (curArch == NpuArch::DAV_2201) {
     return CheckType(self->GetDataType(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
-  } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310P) {
+  } else if (curArch == NpuArch::DAV_2002) {
     return CheckType(self->GetDataType(), ASCEND310P_AICORE_DTYPE_SUPPORT_LIST);
-  } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-    return CheckType(self->GetDataType(), ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST);
+  } else if (IsRegBase(curArch)) {
+    return CheckType(self->GetDataType(), REGBASE_AICORE_DTYPE_SUPPORT_LIST);
   } else {
     return CheckType(self->GetDataType(), ASCEND910_AICORE_DTYPE_SUPPORT_LIST);
   }

@@ -17,6 +17,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/op_def.h"
 #include "opdev/op_dfx.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -35,7 +36,7 @@ static const std::initializer_list<op::DataType> ASCEND910D_AICORE_DTYPE_SUPPORT
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static bool IsAiCoreSupport(const aclTensor *self) {
   // 只需要判断dtype
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+  if (IsRegBase()) {
     return CheckType(self->GetDataType(), ASCEND910D_AICORE_DTYPE_SUPPORT_LIST);
   } else {
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);

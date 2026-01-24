@@ -17,6 +17,7 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/aicpu/aicpu_task.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -26,7 +27,7 @@ OP_TYPE_REGISTER(Invert);
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT16, op::DataType::DT_UINT16};
 
-static const std::initializer_list<op::DataType> AICORE910_95_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT8,  op::DataType::DT_INT16,  op::DataType::DT_INT32,  op::DataType::DT_INT64,
     op::DataType::DT_UINT8, op::DataType::DT_UINT16, op::DataType::DT_UINT32, op::DataType::DT_UINT64};
 
@@ -34,8 +35,9 @@ static const std::initializer_list<op::DataType> AICORE910_95_DTYPE_SUPPORT_LIST
 static inline bool IsAiCoreSupport(const aclTensor* self)
 {
     // Invert只需要判断dtype
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-        return CheckType(self->GetDataType(), AICORE910_95_DTYPE_SUPPORT_LIST);
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
+        return CheckType(self->GetDataType(), REGBASE_DTYPE_SUPPORT_LIST);
     }
 
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);

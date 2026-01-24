@@ -193,19 +193,10 @@ ge::graphStatus AddrTiling::GetConstData(uint32_t inputIdx, bool isEmpty, T empt
 template <typename OpDag1, typename OpDag2, typename OpDag3, typename T>
 ge::graphStatus AddrTiling::BroadcastTiling(T beta, T alpha)
 {
-    bool isAlphaZero = (alpha == 0);
     bool isBetaZero = (beta == 0);
     ge::graphStatus ret = ge::GRAPH_SUCCESS;
     vector<gert::Shape> inputShapes;
-    if (isAlphaZero) {
-        inputShapes.push_back(x1Shape_);
-
-        BroadcastBaseTiling<OpDag1> brcBaseTiling(context_);
-        brcBaseTiling.SetScalar(beta);
-        brcBaseTiling.SetOpInputStorageShapes(inputShapes);
-        ret = brcBaseTiling.DoTiling();
-        tilingKey_ = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), TILINGKET_NOT_ZERO, TILINGKET_ZERO);
-    } else if (isBetaZero) {
+    if (isBetaZero) {
         inputShapes.push_back(x2ReShape_);
         inputShapes.push_back(x3Shape_);
 

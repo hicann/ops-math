@@ -29,7 +29,7 @@ class FillsTilingTest : public testing::Test {
   }
 };
 
-TEST_F(FillsTilingTest, fills_test_tiling_fp32_001)
+TEST_F(FillsTilingTest, fills_test_tiling_fp32_input)
 {
     Ops::Base::ElewiseCompileInfo compileInfo = {64, 253952};
     gert::TilingContextPara tilingContextPara(
@@ -49,4 +49,136 @@ TEST_F(FillsTilingTest, fills_test_tiling_fp32_001)
     string expectTilingData = "4096 4 32768 1024 4 1 1 1024 1024 32768 1 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(FillsTilingTest, fills_test_tiling_fp16_input)
+{
+    Ops::Base::ElewiseCompileInfo compileInfo = {64, 253952};
+    gert::TilingContextPara tilingContextPara(
+        "Fills",
+        {
+            {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        {
+            gert::TilingContextPara::OpAttr("value", Ops::Math::AnyValue::CreateFrom<float>(2.0)),
+        },
+        &compileInfo);
+
+    uint64_t expectTilingKey = 3;
+    string expectTilingData = "4096 2 65536 2048 2 1 1 2048 2048 65536 1 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(FillsTilingTest, fills_test_tiling_int32_input)
+{
+    Ops::Base::ElewiseCompileInfo compileInfo = {64, 253952};
+    gert::TilingContextPara tilingContextPara(
+        "Fills",
+        {
+            {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            gert::TilingContextPara::OpAttr("value", Ops::Math::AnyValue::CreateFrom<float>(2.0)),
+        },
+        &compileInfo);
+
+    uint64_t expectTilingKey = 9;
+    string expectTilingData = "4096 4 32768 1024 4 1 1 1024 1024 32768 1 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(FillsTilingTest, fills_test_tiling_int64_input)
+{
+    Ops::Base::ElewiseCompileInfo compileInfo = {64, 253952};
+    gert::TilingContextPara tilingContextPara(
+        "Fills",
+        {
+            {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_INT64, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_INT64, ge::FORMAT_ND},
+        },
+        {
+            gert::TilingContextPara::OpAttr("value", Ops::Math::AnyValue::CreateFrom<float>(2.0)),
+        },
+        &compileInfo);
+
+    uint64_t expectTilingKey = 11;
+    string expectTilingData = "4096 8 16384 512 8 1 1 512 512 16384 1 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(FillsTilingTest, fills_test_tiling_int8_input)
+{
+    Ops::Base::ElewiseCompileInfo compileInfo = {64, 253952};
+    gert::TilingContextPara tilingContextPara(
+        "Fills",
+        {
+            {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_INT8, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_INT8, ge::FORMAT_ND},
+        },
+        {
+            gert::TilingContextPara::OpAttr("value", Ops::Math::AnyValue::CreateFrom<float>(2.0)),
+        },
+        &compileInfo);
+
+    uint64_t expectTilingKey = 13;
+    string expectTilingData = "4096 1 131072 4096 1 1 1 4096 4096 131072 1 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(FillsTilingTest, fills_test_tiling_uint8_input)
+{
+    Ops::Base::ElewiseCompileInfo compileInfo = {64, 253952};
+    gert::TilingContextPara tilingContextPara(
+        "Fills",
+        {
+            {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_UINT8, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_UINT8, ge::FORMAT_ND},
+        },
+        {
+            gert::TilingContextPara::OpAttr("value", Ops::Math::AnyValue::CreateFrom<float>(2.0)),
+        },
+        &compileInfo);
+
+    uint64_t expectTilingKey = 15;
+    string expectTilingData = "4096 1 131072 4096 1 1 1 4096 4096 131072 1 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(FillsTilingTest, fills_test_tiling_invalid_dtype)
+{
+    Ops::Base::ElewiseCompileInfo compileInfo = {64, 253952};
+    gert::TilingContextPara tilingContextPara(
+        "Fills",
+        {
+            {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_COMPLEX32, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_COMPLEX32, ge::FORMAT_ND},
+        },
+        {
+            gert::TilingContextPara::OpAttr("value", Ops::Math::AnyValue::CreateFrom<float>(2.0)),
+        },
+        &compileInfo);
+
+    uint64_t expectTilingKey = 7;
+    string expectTilingData = "4096 4 32768 1024 4 1 1 1024 1024 32768 1 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_FAILED, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
 }

@@ -19,11 +19,11 @@
 #include "platform/platform_ascendc.h"
 #include "log/log.h"
 #include "util/fp16.h"
-#include "util/bfloat16.h"
 #include "atvoss/elewise/elewise_tiling.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "conversion/fills/op_kernel/arch35/fills_dag.h"
 #include "conversion/fills/op_kernel/arch35/fills_tiling_key.h"
+#include "util/bfloat16.h"
 
 namespace optiling {
 const int64_t ASCEND_WORKSPACE = 16777216; // 16 * 1024 * 1024
@@ -181,16 +181,16 @@ ge::graphStatus FillsTiling::SetAttr()
 ge::graphStatus FillsTiling::RunTiling() {
     OP_LOGD(tilingContext->GetNodeName(), "FillsTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-
-    // get tilingdata address in context
-    tiling = tilingContext->GetTilingData<FillsTilingData>();
-    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tiling);
-
     OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
+
+    // get tilingdata address in context
+    tiling = tilingContext->GetTilingData<FillsTilingData>();
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tiling);
+
     OP_CHECK_IF(SetAttr() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "set Attr failed"), return ge::GRAPH_FAILED);
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
@@ -220,8 +220,8 @@ ge::graphStatus FillsTiling::RunTiling() {
 
 static ge::graphStatus Tiling4Fills(gert::TilingContext* tilingContextGen) {
     OP_LOGD(tilingContextGen->GetNodeName(), "Tiling4Fills rt2.0 is running.");
-    OP_CHECK_IF(tilingContextGen == nullptr, OP_LOGE(tilingContextGen, "Tiling context is null"),
-               return ge::GRAPH_FAILED);
+    auto compileInfo = reinterpret_cast<const Ops::Base::ElewiseCompileInfo*>(tilingContextGen->GetCompileInfo());
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
 
     FillsTiling baseOpTiling(tilingContextGen);
     return baseOpTiling.RunTiling();

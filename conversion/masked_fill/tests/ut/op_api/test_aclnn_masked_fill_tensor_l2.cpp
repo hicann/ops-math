@@ -95,6 +95,20 @@ TEST_F(l2_masked_fill_tensor_test, ascend910B2_support_bf16_910B)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
+// TEST_F(l2_masked_fill_tensor_test, case_003_INT64)
+// {
+//     auto self_tensor_desc = TensorDesc({8, 9}, ACL_INT64, ACL_FORMAT_ND).ValueRange(-10, 10);
+//     auto mask_tensor_desc = TensorDesc({8, 9}, ACL_BOOL, ACL_FORMAT_ND).ValueRange(0, 2);
+//     auto scalar_desc = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10);
+
+//     auto ut = OP_API_UT(aclnnInplaceMaskedFillTensor, INPUT(self_tensor_desc, mask_tensor_desc, scalar_desc), OUTPUT());
+
+//     // SAMPLE: only test GetWorkspaceSize
+//     uint64_t workspace_size = 0;
+//     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+//     EXPECT_EQ(aclRet, ACL_SUCCESS);
+// }
+
 TEST_F(l2_masked_fill_tensor_test, case_004_INT32)
 {
     auto self_tensor_desc = TensorDesc({8, 9}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-10, 10);
@@ -394,3 +408,18 @@ TEST_F(l2_masked_fill_tensor_test, case_028_FORMAT_NCDHW)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
+
+// int64 CheckDtypeValid
+// TEST_F(l2_masked_fill_tensor_test, case_029_DTYPE)
+// {
+//     auto self_tensor_desc = TensorDesc({8, 9}, ACL_INT64, ACL_FORMAT_ND).ValueRange(-10, 10);
+//     auto mask_tensor_desc = TensorDesc({8, 9}, ACL_BOOL, ACL_FORMAT_ND);
+//     auto scalar_desc = TensorDesc({}, ACL_INT64, ACL_FORMAT_ND).ValueRange(-10, 10);
+
+//     auto ut = OP_API_UT(aclnnInplaceMaskedFillTensor, INPUT(self_tensor_desc, mask_tensor_desc, scalar_desc), OUTPUT());
+
+//     // SAMPLE: only test GetWorkspaceSize
+//     uint64_t workspace_size = 0;
+//     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+//     EXPECT_EQ(aclRet, ACL_SUCCESS);
+// }

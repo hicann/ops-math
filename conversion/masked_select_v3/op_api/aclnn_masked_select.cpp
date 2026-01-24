@@ -1,18 +1,19 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include "aclnn_masked_select.h"
 #include "masked_select.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "aclnn/aclnn_base.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/shape_utils.h"
@@ -58,7 +59,7 @@ static const std::initializer_list<op::DataType> SELF_DTYPE_SUPPORT_LIST_SUPPORT
     op::DataType::DT_INT16, op::DataType::DT_INT8,  op::DataType::DT_UINT8, op::DataType::DT_DOUBLE,
     op::DataType::DT_BOOL,  op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> SELF_DTYPE_SUPPORT_LIST_SUPPORT_910_95 = {
+static const std::initializer_list<op::DataType> SELF_DTYPE_SUPPORT_LIST_SUPPORT_REGBASE = {
     op::DataType::DT_FLOAT,  op::DataType::DT_INT32,   op::DataType::DT_UINT32, op::DataType::DT_INT64,
     op::DataType::DT_UINT64, op::DataType::DT_FLOAT16, op::DataType::DT_INT16,  op::DataType::DT_UINT16,
     op::DataType::DT_INT8,   op::DataType::DT_UINT8,   op::DataType::DT_DOUBLE, op::DataType::DT_BOOL,
@@ -76,9 +77,9 @@ inline static bool CheckNotNull(const aclTensor* self, const aclTensor* mask, co
     return true;
 }
 
-static const aclTensor* ResetFormatFor910_95(const aclTensor* x, const aclIntArray* shape)
+static const aclTensor* ResetFormatForRegBase(const aclTensor* x, const aclIntArray* shape)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+    if (!IsRegBase()) {
         return x;
     }
     size_t tensorXSize = x->GetViewShape().GetDimNum();
@@ -94,8 +95,8 @@ static const aclTensor* ResetFormatFor910_95(const aclTensor* x, const aclIntArr
 
 static const std::initializer_list<op::DataType> CheckSocVersionIsSupportBf16(void)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-        return SELF_DTYPE_SUPPORT_LIST_SUPPORT_910_95;
+    if (IsRegBase()) {
+        return SELF_DTYPE_SUPPORT_LIST_SUPPORT_REGBASE;
     }
     if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
         GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) {
@@ -163,8 +164,8 @@ inline static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* ma
 // 根据芯片类型、dtype判断算子是否支持走AiCore
 static bool IsAiCoreSupport(const aclTensor* self)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-        return CheckType(self->GetDataType(), SELF_DTYPE_SUPPORT_LIST_SUPPORT_910_95);
+    if (IsRegBase()) {
+        return CheckType(self->GetDataType(), SELF_DTYPE_SUPPORT_LIST_SUPPORT_REGBASE);
     } else if (
         GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
         GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) {
@@ -234,10 +235,10 @@ aclnnStatus aclnnMaskedSelectGetWorkspaceSize(
                 auto broadcastShapeArray =
                     uniqueExecutor.get()->AllocIntArray(broadcastDims.data(), broadcastDims.size());
                 CHECK_RET(broadcastShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
-                auto selfCastedAfterFormat = ResetFormatFor910_95(selfCasted, broadcastShapeArray);
+                auto selfCastedAfterFormat = ResetFormatForRegBase(selfCasted, broadcastShapeArray);
                 selfBroadcast = l0op::BroadcastTo(selfCastedAfterFormat, broadcastShapeArray, uniqueExecutor.get());
                 CHECK_RET(selfBroadcast != nullptr, ACLNN_ERR_INNER_NULLPTR);
-                auto maskCastedAfterFormat = ResetFormatFor910_95(maskCasted, broadcastShapeArray);
+                auto maskCastedAfterFormat = ResetFormatForRegBase(maskCasted, broadcastShapeArray);
                 maskBroadcast = l0op::BroadcastTo(maskCastedAfterFormat, broadcastShapeArray, uniqueExecutor.get());
                 CHECK_RET(maskBroadcast != nullptr, ACLNN_ERR_INNER_NULLPTR);
             }
