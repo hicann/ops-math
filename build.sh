@@ -359,8 +359,8 @@ usage() {
   echo "    -O[n] Compile optimization options, support [O0 O1 O2 O3], eg:-O3"
   echo "    -u Compile all ut"
   echo $dotted_line
-  echo "    examples, Build ophost_test with O3 level compilation optimization and do not execute." 
-  echo "    ./build.sh --ophost_test --noexec -O3" 
+  echo "    examples, Build ophost_test with O3 level compilation optimization and do not execute."
+  echo "    ./build.sh --ophost_test --noexec -O3"
   echo $dotted_line
   echo "    The following are all supported arguments:"
   echo $dotted_line
@@ -490,9 +490,9 @@ check_param() {
     fi
   fi
 
-  if [[ "$ENABLE_MSSANITIZER" == "TRUE" && "$ENABLE_OOM" == "TRUE" ]]; then 
-    echo "[ERROR] --mssanitizer cannot be used with --oom" 
-    exit 1 
+  if [[ "$ENABLE_MSSANITIZER" == "TRUE" && "$ENABLE_OOM" == "TRUE" ]]; then
+    echo "[ERROR] --mssanitizer cannot be used with --oom"
+    exit 1
   fi
 
   if $(echo ${USE_CMD} | grep -wq "static") && $(echo ${USE_CMD} | grep -wq "jit"); then
@@ -642,41 +642,41 @@ checkopts_run_example() {
       VENDOR="${!OPTIND}"
       VENDOR="${VENDOR#*=}"
       ((OPTIND++))
-    else 
+    else
       VENDOR="custom"
     fi
   fi
 }
 
 check_group_compile_config() {
-    local base_path=${BASE_PATH}
-    local yaml_file="$base_path/scripts/ci/ascend910_95/ops_math_operator_list.yaml"
-    local pattern='AddConfig("ascend910_95'
+  local base_path=${BASE_PATH}
+  local yaml_file="$base_path/scripts/ci/ascend910_95/ops_math_operator_list.yaml"
+  local pattern='AddConfig("ascend910_95'
 
-    local group base_dir op_dir op_name
-    local missing=0
-    echo "[INFO] check ascend910_95 group compile config"
-    for group in math conversion random; do
-        base_dir="$base_path/$group"
-        [ -d "$base_dir" ] || continue
-        for op_dir in "$base_dir"/*; do
-            [ -d "$op_dir" ] || continue
-            op_name=$(basename "$op_dir")
-            if grep -q "$pattern" "$op_dir"/op_host/*def.cpp 2>/dev/null; then
-                if ! grep -qw "$op_name" "$yaml_file"; then
-                    echo "[ERROR] $yaml_file does not configed op: $op_name"
-                    missing=1
-                fi
-            fi
-        done
+  local group base_dir op_dir op_name
+  local missing=0
+  echo "[INFO] check ascend910_95 group compile config"
+  for group in math conversion random; do
+    base_dir="$base_path/$group"
+    [ -d "$base_dir" ] || continue
+    for op_dir in "$base_dir"/*; do
+      [ -d "$op_dir" ] || continue
+      op_name=$(basename "$op_dir")
+      if grep -q "$pattern" "$op_dir"/op_host/*def.cpp 2>/dev/null; then
+        if ! grep -qw "$op_name" "$yaml_file"; then
+          echo "[ERROR] $yaml_file does not configed op: $op_name"
+          missing=1
+        fi
+      fi
     done
+  done
 
-    if [ "$missing" -ne 0 ]; then
-        echo "[FAIL] ascend910_95 group compiled config failed"
-        exit 1
-    fi
-    echo "[PASS] check ascend910_95 group compile config success"
-    return 0
+  if [ "$missing" -ne 0 ]; then
+    echo "[FAIL] ascend910_95 group compiled config failed"
+    exit 1
+  fi
+  echo "[PASS] check ascend910_95 group compile config success"
+  return 0
 }
 
 checkopts() {
@@ -842,7 +842,7 @@ checkopts() {
           ENABLE_VALGRIND=TRUE
           ENABLE_UT_EXEC=FALSE
           ;;
-        run_example) 
+        run_example)
           checkopts_run_example "$@"
           ;;
         experimental)
@@ -893,7 +893,7 @@ checkopts() {
         ;;
     esac
   done
-  shift $((OPTIND-1))
+  shift $((OPTIND - 1))
   if [[ "x$@" != "x" ]]; then
     echo "unparsed param: $@"
     usage
@@ -934,12 +934,12 @@ parse_changed_files() {
     echo "No ops changed found, set op $COMPILED_OPS as default."
   fi
 
-  if [[ "$ENABLE_PACKAGE" == "TRUE" ]];then
+  if [[ "$ENABLE_PACKAGE" == "TRUE" ]]; then
     return
   fi
 
   local script_ret=$(python3 scripts/ci/parse_changed_files.py $CHANGED_FILES "$ENABLE_EXPERIMENTAL")
-  IFS='&&' read -r related_ut soc_info <<< "$script_ret"
+  IFS='&&' read -r related_ut soc_info <<<"$script_ret"
   echo "related ut "$related_ut
   echo "related soc_info "$soc_info
 
@@ -958,7 +958,7 @@ parse_changed_files() {
     echo "ALL UT is triggered!"
     return
   fi
-  if [[ ("$related_ut" =~ "OP_HOST_UT" || "$related_ut" =~ "OP_GRAPH_UT") && "$OP_HOST" == "TRUE" ]] ; then
+  if [[ ("$related_ut" =~ "OP_HOST_UT" || "$related_ut" =~ "OP_GRAPH_UT") && "$OP_HOST" == "TRUE" ]]; then
     echo "OP_HOST_UT is triggered!"
     OP_HOST_UT=TRUE
     OP_KERNEL_UT=TRUE
@@ -1287,9 +1287,9 @@ build_example() {
   if [[ "${EXAMPLE_MODE}" == "eager" ]]; then
     if [[ "$ENABLE_EXPERIMENTAL" == "TRUE" ]]; then
       file=$(find ../experimental -path "*/${EXAMPLE_NAME}/examples/*" -name test_aclnn_*.cpp -not -path "*/scripts/*")
-    else 
+    else
       file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_aclnn_*.cpp -not -path "*/experimental/*" -not -path "*/scripts/*")
-    fi 
+    fi
     if [ -z "$file" ]; then
       echo "ERROR: ${EXAMPLE_NAME} do not have eager examples"
       exit 1
@@ -1329,9 +1329,9 @@ build_example() {
   elif [[ "${EXAMPLE_MODE}" == "graph" ]]; then
     if [[ "$ENABLE_EXPERIMENTAL" == "TRUE" ]]; then
       file=$(find ../experimental -path "*/${EXAMPLE_NAME}/examples/*" -name test_geir_*.cpp)
-    else 
+    else
       file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_geir_*.cpp -not -path "*/experimental/*")
-    fi 
+    fi
     if [ -z "$file" ]; then
       echo "ERROR: ${EXAMPLE_NAME} do not have graph examples"
       exit 1
