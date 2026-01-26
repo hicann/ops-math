@@ -183,11 +183,6 @@ ge::graphStatus RandomStandardNormalV2Tiling::GetAttrInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, attrs);
     const auto attrDtype = attrs->GetAttrPointer<int64_t>(ATTR_TYPE_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, attrDtype);
-    ge::DataType yDtype = static_cast<ge::DataType>(*attrDtype);
-    OP_CHECK_IF(yDtype != outDtype_,
-        OP_LOGE(opName_, "attrDtype is %s, is not equal to out shape dtype %s.",
-        Ops::Base::ToString(yDtype).c_str(), Ops::Base::ToString(outDtype_).c_str()), return ge::GRAPH_FAILED);
-    
     const auto* seedAttr = attrs->GetAttrPointer<int64_t>(ATTR_SEED_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, seedAttr);
     const auto* seed2Attr = attrs->GetAttrPointer<int64_t>(ATTR_SEED2_IDX);
