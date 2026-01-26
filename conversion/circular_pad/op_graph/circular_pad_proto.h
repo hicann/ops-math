@@ -18,7 +18,25 @@
 #include "graph/operator_reg.h"
 #include "graph/operator.h"
 namespace ge {
-
+/**
+* @brief Pads the input tensor using circular padding of the input boundary.
+* Tensor values at the beginning of the dimension are used to pad the end,
+* and values at the end are used to pad the beginning.
+* If negative padding is applied then the ends of the tensor get removed.
+*
+* @par Inputs:
+* @li x: A tensor, input tensor.
+* @li paddings: A tensor, the size of the padding.
+*
+* @par Outputs:
+* y: A tensor, output tensor.
+*
+* @par Third-party framework compatibility
+* Compatible with the PyTorch operator CircularPad2d and CircularPad3d.
+*
+* @platform: KirinX90, Kirin9030
+*
+*/
 REG_OP(CircularPad)
     .INPUT(x, TensorType({DT_INT8, DT_FLOAT16, DT_BF16, DT_FLOAT, DT_INT32}))
     .INPUT(paddings, TensorType({DT_INT64}))
