@@ -13,16 +13,15 @@
 operator_group_1:
   - abs
   - add
-  - add_n
   - addcdiv
   - addcmul
+  - add_n
   - addr
   - adjacent_difference
   - arg_max_v2
   - arg_max_with_value
   - arg_min
   - arg_min_with_value
-  - assign
   - assign_add
   - assign_sub
   - axpy
@@ -30,16 +29,16 @@ operator_group_1:
   - bias_add
   - bias_add_grad
   - bincount
-  - broadcast_to
   - bitwise_and
   - bitwise_or
+  - cast
+  - cdist
   - ceil
   - cos
-  - cast
   - cumsum
+  - diag_flat
+  - diag_v2
   - diag_part
-  - tensor_move
-operator_group_2:
   - div
   - div_no_nan
   - dot
@@ -50,6 +49,7 @@ operator_group_2:
   - floor
   - floor_div
   - floor_mod
+  - fused_mul_add_n
   - greater
   - greater_equal
   - grouped_bias_add_grad
@@ -61,13 +61,13 @@ operator_group_2:
   - is_nan
   - is_neg_inf
   - is_pos_inf
+operator_group_2:
   - lerp
   - less
   - less_equal
   - lin_space
-  - log
   - log1p
-operator_group_3:
+  - log
   - logical_and
   - logical_not
   - logical_or
@@ -87,17 +87,18 @@ operator_group_3:
   - range
   - real_div
   - reciprocal
-  - reduce_max
-  - reduce_std_v2
-  - reduce_var
-  - reduce_min
   - reduce_all
   - reduce_any
   - reduce_log_sum_exp
+operator_group_3:
+  - reduce_max
   - reduce_mean
+  - reduce_min
   - reduce_prod
-  - reduce_sum
+  - reduce_std_v2
 operator_group_4:
+  - reduce_sum
+  - reduce_var
   - rfft1_d
   - round
   - rsqrt
@@ -112,21 +113,20 @@ operator_group_4:
   - sqrt
   - sqrt_grad
   - square
-  - square_sum_v1
   - squared_difference
+  - square_sum_v1
   - sub
   - tanh
   - tanh_grad
-  - transform_bias_rescale_qkv
-  - as_strided
   - tensor_equal
-  - cdist
-  - clip_by_value
-  - fused_mul_add_n
-  - space_to_depth
-  - diag_flat
-  - diag_v2
+  - top_k_v2
 operator_group_5:
+  - transform_bias_rescale_qkv
+  - trunc
+  - assign
+  - as_strided
+  - broadcast_to
+  - clip_by_value
   - clip_by_value_v2
   - concat
   - concat_d
@@ -145,16 +145,16 @@ operator_group_5:
   - reflection_pad3d_grad
   - roll
   - slice
+  - space_to_depth
   - split
   - split_v
   - strided_slice
   - strided_slice_assign_v2
   - strided_slice_grad
+  - tensor_move
   - transpose
   - tril
   - triu
-  - trunc
-  - top_k_v2
   - unpack
   - zeros_like
   - drop_out_do_mask
