@@ -220,7 +220,7 @@
     <td>√</td>
     <td>√</td>
     <td>×</td>
-    <td>×</td>
+    <td>×</td>sum
     <td>AI Core</td>
     <td>对输入张量self进行RFFT（傅里叶变换）计算，输出是一个包含非负频率的复数张量。</td>
   </tr>
@@ -239,7 +239,7 @@
     <td><a href="../../math/segsum/README.md">segsum</a></td>
     <td>√</td>
     <td>√</td>
-    <td>×</td>
+    <td>√</td>
     <td>×</td>
     <td>AI Core</td>
     <td>进行分段和计算。生成对角线为0的半可分矩阵，且上三角为-inf。</td>
