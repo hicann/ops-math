@@ -19,14 +19,14 @@ extern "C" {
 #endif
 
 /**
- * @brief aclnnGt的第一段接口，根据具体的计算流程，计算workspace大小。
+ * @brief aclnnGtScalar的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_math
  * 算子功能：判断输入Tensor中的每个元素是否大于other
  * Scalar的值，返回一个Bool类型的Tensor，对应输入Tensor中每个位置的大于判断是否成立 计算公式： $$ out_{i}= (self_i >
  * other) ? True : False $$
  *
  * @param [in] self: 待进行gt计算的入参,npu device侧的aclTensor，
- * 数据类型支持FLOAT16、FLOAT32、INT32、INT64、INT8、UINT8、DOUBLE、UINT16、UINT32、UINT64、BOOL、BFLOAT16，数据格式支持ND，支持非连续的Tensor。
+ * 数据类型支持FLOAT16、FLOAT32、INT32、INT64、INT16、INT8、UINT8、DOUBLE、UINT16、UINT32、UINT64、BOOL、BFLOAT16，数据格式支持ND，支持非连续的Tensor。
  * @param [in] other: 待进行gt计算的入参,aclScalar。
  * @param [in] out: npu device侧的aclTensor，输出一个数据类型为BOOL类型的Tensor，数据格式支持ND。
  * @param [out] workspace_size: 返回用户需要在npu device侧申请的workspace大小。
@@ -54,7 +54,7 @@ aclnnGtScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, 
  * 计算公式： $$ selfRef_{i} = (selfRef_{i} > other_{i}) ? True : False $$
  *
  * @param [in] selfRef: 待进行gt本地计算的入参,npu device侧的aclTensor，
- * 数据类型支持FLOAT16、FLOAT32、INT32、INT64、INT8、UINT8、DOUBLE、UINT16、UINT32、UINT64、BOOL、BFLOAT16，数据格式支持ND，支持非连续的Tensor。
+ * 数据类型支持FLOAT16、FLOAT32、INT32、INT64、INT16、INT8、UINT8、DOUBLE、UINT16、UINT32、UINT64、BOOL、BFLOAT16，数据格式支持ND，支持非连续的Tensor。
  * @param [in] other: 待进行gt计算的入参,aclScalar。
  * @param [out] workspace_size: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。

@@ -5,12 +5,12 @@
 ## 产品支持情况
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+| <term>Ascend 950PR/Ascend 950DT</term>                       |    √     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>       |    √     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>       |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                       |    ×     |
+| <term>Atlas 推理系列产品</term>                               |    √     |
+| <term>Atlas 训练系列产品</term>                               |    √     |
 
 
 ## 功能说明
@@ -26,51 +26,177 @@ $$
 ## 函数原型
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnTanhBackwardGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnTanhBackward”接口执行计算。
 
-- `aclnnStatus aclnnTanhBackwardGetWorkspaceSize(const aclTensor *gradOutput, const aclTensor *output, aclTensor *gradInput, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnTanhBackward(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnTanhBackwardGetWorkspaceSize(
+  const aclTensor *gradOutput, 
+  const aclTensor *output, 
+  aclTensor       *gradInput, 
+  uint64_t        *workspaceSize, 
+  aclOpExecutor  **executor)
+```
+
+```Cpp
+aclnnStatus aclnnTanhBackward(
+  void*             workspace, 
+  uint64_t          workspaceSize, 
+  aclOpExecutor*    executor, 
+  const aclrtStream stream)
+```
 
 ## aclnnTanhBackwardGetWorkspaceSize
 
 - **参数说明**
 
-  - gradOutput（aclTensor\*, 计算输入）：公式中的输入`gradOutput`，Device侧的aclTensor，shape需要与output一致或满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。数据类型需要和output参数一致。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE。数据类型需要和output参数一致。
-
-  - output（aclTensor\*, 计算输入）：公式中的输入`output`，Device侧的aclTensor，shape需要与gradOutput一致或满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。数据类型需要和gradOutput参数一致。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE。数据类型需要和gradOutput参数一致。
-
-  - gradInput（aclTensor\*, 计算输出）：公式中的`gradInput`，Device侧的aclTensor，shape需要与gradOutput，output一致或是gradOutput与output broadcast之后的shape。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。数据类型需要和gradOutput参数和output参数一致。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE。数据类型需要和gradOutput参数和output参数一致。
-
-  - workspaceSize（uint64_t\*, 出参）：返回需要在Device侧申请的workspace大小。
-  - executor（aclOpExecutor\**, 出参）：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 212px">
+  <col style="width: 359px">
+  <col style="width: 305px">
+  <col style="width: 114px">
+  <col style="width: 135px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>gradOutput</td>
+      <td>输入</td>
+      <td>公式中的输入<code>gradOutput</code>，Device侧的aclTensor。</td>
+      <td><ul><li>与output、gradInput的数据格式一致。</li><li>与output、gradInput的shape一致或满足<a href="../../../docs/zh/context/broadcast关系.md">broadcast关系</a>。</li><li>与output、gradInput的数据类型一致。</li></ul></td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>output</td>
+      <td>输入</td>
+      <td>公式中的输入<code>output</code>，Device侧的aclTensor。</td>
+      <td><ul><li>与gradOutput、gradInput的数据格式一致。</li><li>与gradOutput、gradInput的shape一致或满足<a href="../../../docs/zh/context/broadcast关系.md">broadcast关系</a>。</li><li>与gradOutput、gradInput的数据类型一致。</li></ul></td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>gradInput</td>
+      <td>输出</td>
+      <td>公式中的<code>gradInput</code>，Device侧的aclTensor。</td>
+      <td><ul><li>与gradOutput、output的数据格式一致。</li><li>与gradOutput、output的shape一致或是gradOutput与output broadcast之后的shape。</li><li>与gradOutput、output的数据类型一致。</li></ul></td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
+  - term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  第一段接口完成入参校验，出现如下场景时报错：
 
-  ```
-  第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的 gradOutput、output 和gradInput是空指针时。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. gradOutput、output和gradInput的数据类型和维度不在支持的范围之内。
-                                         2. gradOutput、output和gradInput数据类型不同。
-                                         3. gradOutput、output和gradInput的shape不同。
-  ```
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的 gradOutput、output 和gradInput是空指针时。</td>
+    </tr>
+    <tr>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
+      <td>gradOutput、output和gradInput的数据类型和维度不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>gradOutput、output和gradInput数据类型不同。</td>
+    </tr>
+    <tr>
+      <td>gradOutput、output和gradInput的shape不同。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnTanhBackward
 
 - **参数说明**
 
-  - workspace（void\*, 入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize（uint64_t, 入参）：在Device侧申请的workspace大小，由第一段接口aclnnTanhBackwardGetWorkspaceSize获取。
-  - executor（aclOpExecutor\*, 入参）：op执行器，包含了算子计算流程。
-  - stream（aclrtStream, 入参）：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1143px"><colgroup>
+  <col style="width: 158px">
+  <col style="width: 140px">
+  <col style="width: 845px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnTanhBackwardGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 

@@ -27,13 +27,15 @@ namespace ge {
 *Two inputs, including:
 * @li y: A Tensor. Must be one of the following types: float16, float32, bfloat16,
 *     double, complex64, complex128.
-* @li dy: A Tensor of the same type as "y" . \n
+* @li dy: A Tensor. Must be one of the following types: float16, float32, bfloat16,
+*     double, complex64, complex128. \n
 
 *@par Attributes:
 * @li complex_conj: An optional attribute indicates whether to use conjugate operations for complex dtype.
 
 *@par Outputs:
-*z: A Tensor. Has the same type as "y".
+*z: A Tensor. Must be one of the following types: float16, float32, bfloat16,
+*     double, complex64, complex128.
 *@par Third-party framework compatibility
 *Compatible with the TensorFlow operator TanhGrad.
 */
