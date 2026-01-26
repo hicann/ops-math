@@ -65,7 +65,7 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, PlatformInf
 }
 
 // 获取属性，shape信息
-ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& totalIdx, ge::DataType& dataType)
+static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& totalIdx, ge::DataType& dataType)
 {
     // 获取输入shape信息
     auto inputX = context->GetInputShape(0);

@@ -61,26 +61,7 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
     return ge::GRAPH_SUCCESS;
 }
 
-// 获取属性，shape信息
-ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& totalIdx, ge::DataType& dataType)
-{
-    // 获取输入shape信息
-    auto inputX = context->GetInputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
-    totalIdx = inputX->GetStorageShape().GetShapeSize();
-    // dtype校验
-    const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT16, ge::DT_FLOAT16};
-    auto inputDesc = context->GetInputDesc(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
-    dataType = inputDesc->GetDataType();
-    if (supportedDtype.count(dataType) == 0) {
-        OP_LOGE(context, "invalid dtype");
-        return ge::GRAPH_FAILED;
-    }
-    return ge::GRAPH_SUCCESS;
-}
-
-ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
+static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 {
     auto ascendcPlatform = platform_ascendc:: PlatformAscendC(context->GetPlatformInfo());
     uint32_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
