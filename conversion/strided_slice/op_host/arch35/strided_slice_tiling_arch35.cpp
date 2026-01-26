@@ -1706,6 +1706,9 @@ static void ReconstructSliceParamByInferShape(
 
 static void MakePerformanceParamsNeg(SliceParametersRuntime2& param)
 {
+    if (!param.isBeginConst || !param.isEndConst) {
+        return;
+    }
     OP_LOGI("", "before handle negative perf slice params: %s", param.to_string().c_str());
     SliceParametersRuntime2 perfParams;
     perfParams.isBeginConst = param.isBeginConst;
@@ -1799,7 +1802,8 @@ static void MakePerformanceParams(SliceParametersRuntime2& param, bool isAdjustL
         const auto beginI = param.beginList[i];
         const auto endI = param.endList[i];
         const auto stride_i = endI > beginI ? std::min(param.strideList[i], endI - beginI) : param.strideList[i];
-        if (i == 0 || inputShapeI != outputShapeI || stride_i != 1 || perfParams.strideList[perfSize - 1] != 1) {
+        if (i == 0 || inputShapeI != outputShapeI || stride_i != 1 || perfParams.strideList[perfSize - 1] != 1 ||
+            (!param.isBeginConst && (beginI < 0 || (i > 0 && param.beginList[i - 1] < 0)))) {
             int64_t realBeginValue =
                 (!param.isBeginConst && beginI < 0) ? (UNCONST_BEGIN_VALUE - static_cast<int64_t>(i)) : beginI;
             perfParams.inputShape.AppendDim(inputShapeI);

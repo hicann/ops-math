@@ -24,7 +24,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           },
           {
             "name": "end",
@@ -34,7 +35,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           },
           {
             "name": "strides",
@@ -44,7 +46,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           }
         ],
         "outputs": [
@@ -112,7 +115,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           },
           {
             "name": "end",
@@ -122,7 +126,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           },
           {
             "name": "strides",
@@ -132,7 +137,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           }
         ],
         "outputs": [
@@ -200,7 +206,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           },
           {
             "name": "end",
@@ -210,7 +217,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           },
           {
             "name": "strides",
@@ -220,7 +228,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           }
         ],
         "outputs": [
@@ -288,7 +297,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           },
           {
             "name": "end",
@@ -298,7 +308,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           },
           {
             "name": "strides",
@@ -308,7 +319,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           }
         ],
         "outputs": [
@@ -376,7 +388,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           },
           {
             "name": "end",
@@ -386,7 +399,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           },
           {
             "name": "strides",
@@ -396,7 +410,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           }
         ],
         "outputs": [
@@ -464,7 +479,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           },
           {
             "name": "end",
@@ -474,7 +490,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           },
           {
             "name": "strides",
@@ -484,7 +501,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           }
         ],
         "outputs": [
@@ -552,7 +570,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           },
           {
             "name": "end",
@@ -562,7 +581,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           },
           {
             "name": "strides",
@@ -572,7 +592,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           }
         ],
         "outputs": [
@@ -640,7 +661,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           },
           {
             "name": "end",
@@ -650,7 +672,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           },
           {
             "name": "strides",
@@ -660,7 +683,8 @@
             "paramType": "required",
             "shape": [
               -2
-            ]
+            ],
+            "format_match_mode": "FormatAgnostic"
           }
         ],
         "outputs": [
