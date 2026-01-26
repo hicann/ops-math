@@ -611,12 +611,17 @@ __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::CopyInNoSpl
 {
     int64_t curDim1Offset = 0;
     int64_t tensorStride = (rows * tilingData_.sameShapeTensorDim1 + numPerBlock_ - 1) / numPerBlock_ * numPerBlock_;
-    SetCopyInparam(1, rows * tilingData_.sameShapeTensorDim1, 0, 0);
     LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
     for (int64_t tensorIdx = startIdx; tensorIdx < endIdx; tensorIdx++) {
-        srcGlobal_.SetGlobalBuffer(GetTensorAddr(tensorIdx, blockOffset_ * tilingData_.sameShapeTensorDim1));
-        DataCopyPad(
-            srcLocal[curDim1Offset], srcGlobal_[srcRowsOffset * tilingData_.sameShapeTensorDim1], copyInParam_,
+        int64_t dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, tensorIdx, tilingData_.sameShapeTensorDim1);
+        if (tilingData_.isNonContiguous) {
+            SetCopyInparam(rows, tilingData_.sameShapeTensorDim1, dim0stride - tilingData_.sameShapeTensorDim1, 0);
+        } else {
+            SetCopyInparam(1, rows * tilingData_.sameShapeTensorDim1, 0, 0);
+        }
+        srcGlobal_.SetGlobalBuffer(GetTensorAddr(tensorIdx, blockOffset_ * dim0stride));
+        DataCopyPad<T, PaddingMode::Compact>(
+            srcLocal[curDim1Offset], srcGlobal_[srcRowsOffset * dim0stride], copyInParam_,
             padParam_);
         curDim1Offset += tensorStride;
     }

@@ -58,6 +58,7 @@ public:
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "triu_apt");
         this->AICore().AddConfig("ascend910_95", aicoreConfig);
+        this->AICore().AddConfig("mc62cm12a", aicoreConfig);
     }
 };
 OP_ADD(Triu);

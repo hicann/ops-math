@@ -1,11 +1,17 @@
 # aclnnInplaceNormal
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/random/dsa_random_normal)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    ×     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
 
 ## 功能说明
 
@@ -23,7 +29,9 @@
 - **参数描述：**
 
   - selfRef（aclTensor\*, 计算输入/输出）：Device侧的aclTensor，shape支持0-8维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT32、FLOAT16、BFLOAT16、DOUBLE。
+    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT32、FLOAT16, BFLOAT16、DOUBLE。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT32、FLOAT16、BFLOAT16、DOUBLE。
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT32、INT32、INT64、BFLOAT16、FLOAT16、INT16、INT8、UINT8、BOOL、DOUBLE。
   - mean（float, 计算输入）：Host侧的浮点类型，表示随机均值。
   - std（float, 计算输入）：Host侧的浮点类型，表示随机数的标准差。
   - seed（int64_t, 计算输入）：Host侧的整型，设置随机数生成器的种子值。

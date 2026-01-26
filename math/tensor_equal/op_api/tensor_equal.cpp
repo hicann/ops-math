@@ -21,6 +21,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -33,7 +34,7 @@ static const std::initializer_list<op::DataType> AICORE910_DTYPE_SUPPORT_LIST = 
     op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_FLOAT16, op::DataType::DT_INT8,
     op::DataType::DT_UINT8, op::DataType::DT_BOOL,  op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> AICORE_910_95_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> ARCH3510_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16,  op::DataType::DT_BOOL,
     op::DataType::DT_INT8,  op::DataType::DT_UINT8,   op::DataType::DT_INT16, op::DataType::DT_UINT16,
     op::DataType::DT_INT32, op::DataType::DT_UINT32,  op::DataType::DT_INT64, op::DataType::DT_UINT64};
@@ -41,9 +42,8 @@ static const std::initializer_list<op::DataType> AICORE_910_95_DTYPE_SUPPORT_LIS
 // 根据dtype判断算子是否支持走aicore
 static bool IsAiCoreSupport(const aclTensor* self)
 {
-  auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
-  if (socVersion == op::SocVersion::ASCEND910_95) {
-    return CheckType(self->GetDataType(), AICORE_910_95_DTYPE_SUPPORT_LIST);
+  if (IsRegBase()) {
+    return CheckType(self->GetDataType(), ARCH3510_DTYPE_SUPPORT_LIST);
   } else {
     return CheckType(self->GetDataType(), AICORE910_DTYPE_SUPPORT_LIST);
   }

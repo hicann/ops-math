@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 #include <iostream>
 #include <vector>
-#include "../../../op_host/arch35/drop_out_do_mask_tiling.h"
+#include "../../../../op_host/arch35/drop_out_do_mask_tiling.h"
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
 

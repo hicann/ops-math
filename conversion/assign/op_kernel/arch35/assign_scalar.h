@@ -112,6 +112,6 @@ template <typename T> __aicore__ inline void AssignScalarKernel<T>::Process()
 
     dataQueue_.FreeTensor(yLocal);
 }
-} // namespace TensorMove
+} // namespace AssignScalar
 
 #endif // ASSIGN_SCALAR_H_

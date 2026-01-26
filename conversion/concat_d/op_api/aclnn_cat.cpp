@@ -34,6 +34,13 @@ using namespace op;
 extern "C" {
 #endif
 
+constexpr uint32_t MAX_UINT32_NUM = 4294967295;
+constexpr uint32_t STRIDE_SIZE = 32;
+constexpr uint32_t MAX_TENSOR_NUM = 32;
+constexpr uint32_t SMALL_BAG = 128;
+constexpr uint32_t SINGLE_CORE_PROCESS_SIZE = 8192;
+constexpr int32_t DIM_TWO = 2;
+
 static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_INT32, DataType::DT_INT64,  DataType::DT_FLOAT16,   DataType::DT_INT16,
     DataType::DT_INT8,  DataType::DT_UINT8, DataType::DT_DOUBLE, DataType::DT_COMPLEX64, DataType::DT_BOOL};
@@ -43,22 +50,23 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST =
     DataType::DT_INT16,     DataType::DT_INT8,  DataType::DT_UINT8, DataType::DT_DOUBLE,
     DataType::DT_COMPLEX64, DataType::DT_BF16,  DataType::DT_BOOL};
 
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {
+// todo:应该就剩concatd的算子信息库还没搞完
+static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT,  DataType::DT_INT32,     DataType::DT_INT64,  DataType::DT_FLOAT16, DataType::DT_INT16,
     DataType::DT_INT8,   DataType::DT_UINT8,     DataType::DT_UINT16, DataType::DT_UINT32,  DataType::DT_UINT64,
-    DataType::DT_DOUBLE, DataType::DT_COMPLEX64, DataType::DT_BF16,   DataType::DT_BOOL};
+    DataType::DT_DOUBLE, DataType::DT_COMPLEX64, DataType::DT_BF16,   DataType::DT_BOOL,    DataType::DT_FLOAT8_E4M3FN,
+    DataType::DT_FLOAT8_E5M2,                    DataType::DT_HIFLOAT8,                     DataType::DT_FLOAT8_E8M0};
 
-static const inline std::initializer_list<DataType>& GetSupportDtypeList(SocVersion socVersion)
+static const inline std::initializer_list<DataType>& GetSupportDtypeList(NpuArch npuArch)
 {
     static const std::initializer_list<DataType> emptyDtypes = {};
-    if (socVersion == SocVersion::ASCEND310P || socVersion == SocVersion::ASCEND910) {
+    if (npuArch == NpuArch::DAV_2002 || npuArch == NpuArch::DAV_1001) {
         return ASCEND910_DTYPE_SUPPORT_LIST;
     } else if (
-        socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-        socVersion == SocVersion::ASCEND310B) {
+        npuArch == NpuArch::DAV_2201 || npuArch == NpuArch::DAV_3002) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
-    } else if (socVersion == SocVersion::ASCEND910_95) {
-        return ASCEND910_95_DTYPE_SUPPORT_LIST;
+    } else if (IsRegBase(npuArch)) {
+        return REGBASE_DTYPE_SUPPORT_LIST;
     } else {
         return emptyDtypes;
     }
@@ -66,8 +74,8 @@ static const inline std::initializer_list<DataType>& GetSupportDtypeList(SocVers
 
 static bool CheckDtypeValid(const aclTensorList* tensors, const aclTensor* y)
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    const auto& dTypeSupportList = GetSupportDtypeList(socVersion);
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    const auto& dTypeSupportList = GetSupportDtypeList(npuArch);
     for (uint64_t i = 0; i < tensors->Size(); i++) {
         if (!CheckType((*tensors)[i]->GetDataType(), dTypeSupportList)) {
             OP_LOGE(
@@ -194,6 +202,112 @@ static aclnnStatus ProcessOneTensor(const aclTensor* in, aclTensor* out, aclOpEx
     return ACLNN_SUCCESS;
 }
 
+static bool CheckSocAndNonConBasic(op::FVector<const aclTensor*> tensors, int64_t realDim)
+{
+    auto npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (!IsRegBase(npuArch)) {
+        return false;
+    }
+    if (realDim == 0) {
+        return false;
+    }
+    if (tensors.size() <= 1 || tensors.size() > MAX_TENSOR_NUM) {
+        return false;
+    }
+    return true;
+}
+
+static bool IsNonConCases(op::FVector<const aclTensor*> tensors, int64_t realDim, int64_t dimNum)
+{
+    // 每个tensor都要校验，不满足尾轴大包；尾轴小包但stride大包；尾轴小包总体数据小包的场景，不支持非连续
+    op::DataType shape0Dtype = tensors[0]->GetDataType();
+    auto shape0DtypeSize = ge::GetSizeByDataType(shape0Dtype);
+    auto coreNum = GetCurrentPlatformInfo().GetVectorCoreNum();
+    int64_t strideDim = realDim - 1;
+    for (uint64_t i = 0; i < tensors.size(); i++) {
+        op::Shape shapeI = tensors[i]->GetViewShape();
+        auto shapeIStride = tensors[i]->GetViewStrides();
+        uint64_t lastAllData = 1;
+        for (int64_t j = dimNum - 1; j >= 0 ; j--) {
+            if (strideDim == j) {
+                break;
+            }
+            lastAllData *= shapeI[j];
+        }
+        if (!(lastAllData * shape0DtypeSize >= SMALL_BAG)
+            && !(shapeIStride[strideDim] * shape0DtypeSize > SMALL_BAG)
+            && !(shapeI.GetShapeSize() * shape0DtypeSize < coreNum * SINGLE_CORE_PROCESS_SIZE)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool IsNonContiguousSupport(op::FVector<const aclTensor*> tensors, int64_t realDim)
+{
+    if (!CheckSocAndNonConBasic(tensors, realDim)) {
+        return false;
+    }
+    op::Shape shape0 = tensors[0]->GetViewShape();
+    auto dimNum = static_cast<int64_t>(shape0.GetDimNum());
+    op::DataType shape0Dtype = tensors[0]->GetDataType();
+    int64_t strideDim = realDim - 1;
+    bool existNonCon = false;
+    for (uint64_t i = 0; i < tensors.size(); i++) {
+        op::Shape shapeI = tensors[i]->GetViewShape();
+        auto shapeIStride = tensors[i]->GetViewStrides();
+        op::DataType shapeIDtype = tensors[i]->GetDataType();
+        if (shapeIDtype != shape0Dtype) {
+            return false;
+        }
+        if (static_cast<uint32_t>(shapeIStride[strideDim]) >= MAX_UINT32_NUM) {
+            return false;
+        }
+        // 先校验是否存在tensor不连续，仅stridedim不连续要记录；其他轴必须连续（即其他轴的stride[i]=shape[i+1]*stride[i+1]）；
+        if (shapeIStride[dimNum - 1] != 1) {
+            return false;
+        }
+        for (int64_t j = dimNum - DIM_TWO; j >= 0 ; j--) {
+            if (strideDim == j) {
+                if (shapeIStride[j] != shapeIStride[j + 1] * shapeI[j + 1]) {
+                    existNonCon = true;
+                }
+            } else {
+                if (shapeIStride[j] != shapeIStride[j + 1] * shapeI[j + 1]) {
+                    return false;
+                }
+            }
+        }
+    }
+    if (!existNonCon) {
+        return false;
+    }
+    if (!IsNonConCases(tensors, realDim, dimNum)) {
+        return false;
+    }
+    return true;
+}
+
+static aclnnStatus ProcessNonContiguous(op::FVector<const aclTensor*> tensorList, int64_t dim, aclTensor* out, aclOpExecutor* executor)
+{
+    op::FVector<const aclTensor*> tensorListOnce;
+    for (uint64_t i = 0; i < tensorList.size(); i++) {
+        tensorListOnce.emplace_back(executor->CreateView(tensorList[i],
+                                                         tensorList[i]->GetViewShape(),
+                                                         tensorList[i]->GetStorageShape(),
+                                                         tensorList[i]->GetViewStrides(),
+                                                         tensorList[i]->GetViewOffset()));
+    }
+    auto tensorAllocList = executor->AllocTensorList(tensorListOnce.data(), tensorListOnce.size());
+    auto concatTensor = l0op::ConcatD(tensorAllocList, dim, executor);
+    CHECK_RET(CheckShapeAndScalarSame(concatTensor, out), ACLNN_ERR_PARAM_INVALID);
+    auto castOut = l0op::Cast(concatTensor, out->GetDataType(), executor);
+    CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto viewCopyResult = l0op::ViewCopy(castOut, out, executor);
+    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    return ACLNN_SUCCESS;
+}
+
 static aclnnStatus SplitToConcat(const aclTensorList* tensors, int64_t dim, aclTensor* out, aclOpExecutor* executor)
 {
     op::FVector<const aclTensor*> tensorListA;
@@ -208,12 +322,16 @@ static aclnnStatus SplitToConcat(const aclTensorList* tensors, int64_t dim, aclT
         }
     }
 
+    if (IsNonContiguousSupport(tensorListA, dim)) {
+        return ProcessNonContiguous(tensorListA, dim, out, executor);
+    }
+
     if (tensorListA.size() == 1) {
         return ProcessOneTensor(tensorListA[0], out, executor);
     }
 
-    auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
-    size_t catMaxInputs = (socVersion == op::SocVersion::ASCEND910_95) ? 512 : 32;
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    size_t catMaxInputs = (IsRegBase(npuArch)) ? 512 : 32;
     bool firstLoop = true;
     while (tensorListA.size() > 1) {
         op::FVector<const aclTensor*> tensorListOnce;

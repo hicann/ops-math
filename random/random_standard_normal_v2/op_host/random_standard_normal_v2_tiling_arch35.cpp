@@ -1,12 +1,11 @@
 /**
- * This program is free software, you can redistribute it and/or modify it.
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
- * the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 /*!
@@ -21,6 +20,7 @@
 #include "random_standard_normal_v2_tiling.h"
 #include "random_standard_normal_v2_tiling_arch35.h"
 #include "../op_kernel/arch35/random_standard_normal_v2_struct.h"
+#include  "../../common/random_tiling_base.h"
 
 namespace optiling {
 
@@ -38,18 +38,6 @@ static constexpr uint32_t DEFAULT_WORKSPACE_SIZE = 16 * 1024 * 1024;
 static constexpr uint32_t DCACHE_SIZE = 128U * 1024U;
 
 static const std::set<ge::DataType> RANDOM_STANDARD_NORMAL_V2_SUPPORT_DTYPE = {ge::DT_FLOAT,  ge::DT_FLOAT16, ge::DT_BF16};
-
-static std::mt19937_64 *InitRandomStandardNormalV2RngWithRandomSeed() 
-{
-    std::random_device device("/dev/urandom");
-    return new std::mt19937_64(device());
-}
-
-uint64_t RandomStandardNormalV2Tiling::New64() const
-{
-    static std::mt19937_64 *const rng = InitRandomStandardNormalV2RngWithRandomSeed();
-    return (*rng)();
-}
 
 template <typename T>
 ge::graphStatus RandomStandardNormalV2Tiling::GetIntValue(const gert::Tensor *constTensor, gert::Shape &constShape)

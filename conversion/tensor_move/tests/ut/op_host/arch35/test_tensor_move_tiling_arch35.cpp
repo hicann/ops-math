@@ -45,3 +45,21 @@ TEST_F(TensorMoveTilingTest, tensormove_tiling1)
     std::vector<size_t> expectWorkspaces = {32};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
+
+TEST_F(TensorMoveTilingTest, tensormove_invalid_dtype)
+{
+    optiling::TensorMoveCompileInfo compileInfo = {64, 253952};
+    gert::TilingContextPara tilingContextPara(
+        "TensorMove",
+        {
+            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_COMPLEX128, ge::FORMAT_ND},
+        },
+        {
+            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    uint64_t expectTilingKey = 4;
+    string expectTilingData = "64 1 1 1 512 256 4 ";
+    std::vector<size_t> expectWorkspaces = {32};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
+}

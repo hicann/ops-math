@@ -14,6 +14,7 @@
  */
 
 #include "stateless_bernoulli.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/op_def.h"
@@ -41,7 +42,7 @@ static const std::initializer_list<DataType> AICORE_PROB_DTYPE_SUPPORT_LIST = {
 // 根据芯片型号，dtype 判断AICore 是否支持
 static inline bool IsAiCoreSupport(DataType yDtype, DataType pDtype)
 {
-  if (GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND910_95) {
+  if (IsRegBase()) {
     return CheckType(yDtype, AICORE_DTYPE_SUPPORT_LIST) && CheckType(pDtype, AICORE_PROB_DTYPE_SUPPORT_LIST);
   }
   return false;
@@ -81,7 +82,13 @@ const aclTensor *StatelessBernoulli(const aclTensor *input, const aclTensor *pro
                                     aclOpExecutor *executor) {
   auto inputShape = op::ToShapeVector(input->GetViewShape());
   auto sizeArr = executor->AllocIntArray(inputShape.data(), inputShape.size());
-  auto shapeTensor = executor->ConvertToTensor(sizeArr, DataType::DT_INT32);
+  const aclTensor *shapeTensor = nullptr;
+  if (sizeArr->Size() > 0 && (*sizeArr)[0] > INT32_MAX) {
+    shapeTensor = executor->ConvertToTensor(sizeArr, DataType::DT_INT64);
+  } else {
+    shapeTensor = executor->ConvertToTensor(sizeArr, DataType::DT_INT32);
+  }
+  
   auto seedTensor = executor->ConvertToTensor(executor->AllocScalar(seed), op::DataType::DT_INT64);
   auto offsetTensor = executor->ConvertToTensor(executor->AllocScalar(offset), op::DataType::DT_INT64);
 

@@ -269,12 +269,10 @@ __aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::CopyInNo
     LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
     for (int64_t i = 0; i < tilingData_.tensorNum; i++) {
         int64_t dim1 = GetTensorDim1(i);
-        srcGlobal_.SetGlobalBuffer(GetTensorAddr(i, blockOffset_ * dim1));
-        copyInParam_.blockCount = rows;
-        copyInParam_.blockLen = dim1 * sizeof(T);
-        copyInParam_.srcStride = 0;
-        copyInParam_.dstStride = (cols - dim1) / numPerBlock_;
-        DataCopyPad(srcLocal[curDim1Offset], srcGlobal_[srcRowsOffset * dim1], copyInParam_, padParam_);
+        int64_t dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, i, dim1);
+        srcGlobal_.SetGlobalBuffer(GetTensorAddr(i, blockOffset_ * dim0stride));
+        SetCopyInparam(rows, dim1, dim0stride - dim1, (cols - dim1) / numPerBlock_);
+        DataCopyPad(srcLocal[curDim1Offset], srcGlobal_[srcRowsOffset * dim0stride], copyInParam_, padParam_);
         curDim1Offset += dim1;
     }
     inQueue_.EnQue(srcLocal);
@@ -288,31 +286,34 @@ __aicore__ inline void OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::CopyInSp
     LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
 
     int64_t dim1 = GetTensorDim1(splitInfo.startIdx);
+    int64_t dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, splitInfo.startIdx, dim1);
     int64_t copyColsNum = 0;
     if (splitInfo.startIdx == splitInfo.endIdx) {
         copyColsNum = splitInfo.endOffset - splitInfo.startOffset;
     } else {
         copyColsNum = dim1 - splitInfo.startOffset;
     }
-    srcGlobal_.SetGlobalBuffer(GetTensorAddr(splitInfo.startIdx, blockOffset_ * dim1 + splitInfo.startOffset));
-    SetCopyInparam(rows, copyColsNum, dim1 - copyColsNum, (cols - copyColsNum) / numPerBlock_);
-    DataCopyPad(srcLocal[curDim1Offset], srcGlobal_[srcRowsOffset * dim1], copyInParam_, padParam_);
+    srcGlobal_.SetGlobalBuffer(GetTensorAddr(splitInfo.startIdx, blockOffset_ * dim0stride + splitInfo.startOffset));
+    SetCopyInparam(rows, copyColsNum, dim0stride - copyColsNum, (cols - copyColsNum) / numPerBlock_);
+    DataCopyPad(srcLocal[curDim1Offset], srcGlobal_[srcRowsOffset * dim0stride], copyInParam_, padParam_);
     curDim1Offset += copyColsNum;
 
     for (int64_t i = splitInfo.startIdx + 1; i < splitInfo.endIdx; i++) {
         dim1 = GetTensorDim1(i);
-        srcGlobal_.SetGlobalBuffer(GetTensorAddr(i, blockOffset_ * dim1));
-        SetCopyInparam(rows, dim1, 0, (cols - dim1) / numPerBlock_);
-        DataCopyPad(srcLocal[curDim1Offset], srcGlobal_[srcRowsOffset * dim1], copyInParam_, padParam_);
+        dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, i, dim1);
+        srcGlobal_.SetGlobalBuffer(GetTensorAddr(i, blockOffset_ * dim0stride));
+        SetCopyInparam(rows, dim1, dim0stride - dim1, (cols - dim1) / numPerBlock_);
+        DataCopyPad(srcLocal[curDim1Offset], srcGlobal_[srcRowsOffset * dim0stride], copyInParam_, padParam_);
         curDim1Offset += dim1;
     }
 
     if (splitInfo.startIdx != splitInfo.endIdx) {
         dim1 = GetTensorDim1(splitInfo.endIdx);
+        dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, splitInfo.endIdx, dim1);
         copyColsNum = splitInfo.endOffset;
-        srcGlobal_.SetGlobalBuffer(GetTensorAddr(splitInfo.endIdx, blockOffset_ * dim1));
-        SetCopyInparam(rows, copyColsNum, dim1 - copyColsNum, (cols - copyColsNum) / numPerBlock_);
-        DataCopyPad(srcLocal[curDim1Offset], srcGlobal_[srcRowsOffset * dim1], copyInParam_, padParam_);
+        srcGlobal_.SetGlobalBuffer(GetTensorAddr(splitInfo.endIdx, blockOffset_ * dim0stride));
+        SetCopyInparam(rows, copyColsNum, dim0stride - copyColsNum, (cols - copyColsNum) / numPerBlock_);
+        DataCopyPad(srcLocal[curDim1Offset], srcGlobal_[srcRowsOffset * dim0stride], copyInParam_, padParam_);
     }
     inQueue_.EnQue(srcLocal);
 }
@@ -349,9 +350,7 @@ __aicore__ inline int64_t OneAxisConcatAllAlign<T, SAMESHAPE, TILINGDATA>::GetTe
         if (idx < PRELOAD_DIM1_SIZE) {
             return tilingData_.preLoadDim1[idx];
         }
-        inputList_.GetDesc(desc_, idx);
-        int64_t concatDimSize_ = desc_.GetShape(tilingData_.dim);
-        return concatDimSize_ * tilingData_.sameShapeTensorDim1;
+        return GetNonConDimSize<TILINGDATA, T>(tilingData_, idx, inputList_, desc_) * tilingData_.sameShapeTensorDim1;
     }
 }
 } // namespace Concat

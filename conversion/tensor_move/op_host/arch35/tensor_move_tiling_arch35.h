@@ -46,10 +46,8 @@ struct TensorMoveTilingParam {
 };
 
 struct TensorMoveCompileInfo {
-    int64_t core_num;
+    int64_t coreNum;
     int64_t ubSize;
-    int64_t data_len_one_block;
-    bool is_ascendc;
 };
 
 }  // namespace optiling

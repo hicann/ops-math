@@ -183,7 +183,7 @@ static ge::graphStatus Tiling4TensorMove(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     TensorMoveTilingParam tilingParam;
-    tilingParam.totalCoreNum = compileInfo->core_num;
+    tilingParam.totalCoreNum = compileInfo->coreNum;
     tilingParam.ubSize = compileInfo->ubSize;
 
     OP_CHECK_IF(DoTiling(context, tilingParam) != ge::GRAPH_SUCCESS, OP_LOGE(context->GetNodeName(), "Dotiling failed."),
@@ -214,8 +214,8 @@ ge::graphStatus TilingPrepareTensorMoveForAscendC(gert::TilingParseContext* cont
     auto platformInfo = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
-    compileInfo->core_num = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF((compileInfo->core_num <= 0), OP_LOGE(context->GetNodeName(), "Failed to core num."), return ge::GRAPH_FAILED);
+    compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
+    OP_CHECK_IF((compileInfo->coreNum <= 0), OP_LOGE(context->GetNodeName(), "Failed to core num."), return ge::GRAPH_FAILED);
     uint64_t ubSize;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ubSize = static_cast<int64_t>(ubSize);

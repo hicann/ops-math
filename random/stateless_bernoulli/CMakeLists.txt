@@ -15,5 +15,5 @@ set(SUPPORT_COMPUTE_UNIT "ascend910_95")
 set(SUPPORT_TILING_DIR "arch35")
 
 #编译
-add_all_modules_sources(OPTYPE stateless_bernoulli ACLNNTYPE aclnn_exclude COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT} TILING_DIR ${SUPPORT_TILING_DIR} DISABLE_IN_OPP TRUE DEPENDENCIES dsa_gen_bit_mask)
+add_all_modules_sources(OPTYPE stateless_bernoulli ACLNNTYPE aclnn_exclude COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT} TILING_DIR ${SUPPORT_TILING_DIR} DISABLE_IN_OPP TRUE)
 

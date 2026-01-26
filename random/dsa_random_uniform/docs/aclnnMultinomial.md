@@ -1,11 +1,17 @@
 # aclnnMultinomial
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/random/dsa_random_uniform)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
 
 ## 功能说明
 
@@ -23,7 +29,8 @@
 - **参数说明：**
 
   - self(aclTensor*, 计算输入)：Device侧的aclTensor。shape为(N, C)或(C)，self的取值范围需要大于等于0且self与out的维度一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT、DOUBLE。
+    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT、DOUBLE。
 
   - numsamples(int64_t, 计算输入)：Host侧的整型，从每个多项分布中抽取的样本数。numsamples为正数，当replacement为false时，numsamples不大于C。
 

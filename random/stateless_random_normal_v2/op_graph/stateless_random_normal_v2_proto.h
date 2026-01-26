@@ -38,7 +38,7 @@ namespace ge {
 * Must be one of the following types: float16, bfloat16, float32, double. \n
 
 * @attention Constraints:
-* The following constraints apply only to the Ascend 910_95 AI processor. \n
+* The following constraints apply only to the Ascend 950 AI processor. \n
 * The input of counter must contain two values. If the input of counter contains
 * only one value, the high-order counter value is set to 0. \n
 

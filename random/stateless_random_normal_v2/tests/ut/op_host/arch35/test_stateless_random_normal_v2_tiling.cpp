@@ -34,14 +34,13 @@ class StatelessRandomNormalV2Tiling : public testing::Test {
 TEST_F(StatelessRandomNormalV2Tiling, stateless_random_normal_v2_test_tiling_1)
 {
     optiling::StatelessRandomNormalV2CompileInfo compileInfo = {40, 196608};
-    vector<int64_t> shapeValue = {2};
     vector<uint64_t> keyValue = {1.0};
     vector<int64_t> counterValue = {8, 9};
     vector<int64_t> algsetValue = {1};
     gert::TilingContextPara tilingContextPara(
         "StatelessRandomNormalV2",
         {
-            {{{32, 512}, {32, 512}}, ge::DT_INT64, ge::FORMAT_ND, true, shapeValue.data()},
+            {{{32, 512}, {32, 512}}, ge::DT_INT64, ge::FORMAT_ND,},
             {{{1,}, {1,}}, ge::DT_UINT64, ge::FORMAT_ND, true, keyValue.data()},
             {{{2,}, {2,}}, ge::DT_UINT64, ge::FORMAT_ND, true, counterValue.data()},
             {{{1,}, {1,}}, ge::DT_INT32, ge::FORMAT_ND, true, algsetValue.data()},
@@ -57,4 +56,31 @@ TEST_F(StatelessRandomNormalV2Tiling, stateless_random_normal_v2_test_tiling_1)
     string expectTilingData = "1099511627840 54563264528640 4294967297 34359738368 38654705664 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(StatelessRandomNormalV2Tiling, stateless_random_normal_v2_test_tiling_2)
+{
+    optiling::StatelessRandomNormalV2CompileInfo compileInfo = {40, 196608};
+    vector<int64_t> keyValue = {1.0};
+    vector<int64_t> counterValue = {8, 9};
+    vector<int64_t> algsetValue = {1};
+    gert::TilingContextPara tilingContextPara(
+        "StatelessRandomNormalV2",
+        {
+            {{{32, 512}, {32, 512}}, ge::DT_INT64, ge::FORMAT_ND,},
+            {{{1,}, {1,}}, ge::DT_INT64, ge::FORMAT_ND, true, keyValue.data()},
+            {{{2,}, {2,}}, ge::DT_UINT64, ge::FORMAT_ND, true, counterValue.data()},
+            {{{1,}, {1,}}, ge::DT_INT32, ge::FORMAT_ND, true, algsetValue.data()},
+        },
+        {
+            {{{32, 512}, {32, 512}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {"dtype", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+        },
+        &compileInfo);
+    uint64_t expectTilingKey = 101;
+    string expectTilingData = "1099511627840 54563264528640 4294967297 34359738368 38654705664 0 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
 }

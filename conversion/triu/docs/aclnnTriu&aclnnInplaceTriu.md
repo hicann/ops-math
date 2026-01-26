@@ -6,13 +6,13 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾910_95 AI处理器</term>                             |     √      |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |     √      |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √       |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |     ×     |
-| <term>Atlas 推理系列产品 </term>                             |   √     |
+| <term>Atlas 推理系列产品</term>                             |   √     |
 | <term>Atlas 训练系列产品</term>                              |   √     |
-| <term>Atlas 200/300/500 推理产品</term>                      |    ×     |
+
 
 ## 功能说明
 
@@ -27,24 +27,18 @@
 - 示例：
 
   $self = \begin{bmatrix} [9&6&3] \\ [1&2&3] \\ [3&4&1] \end{bmatrix}$，
-
   triu(self, diagonal=0)的结果为：
-
   $\begin{bmatrix} [9&6&3] \\ [0&2&3] \\ [0&0&1] \end{bmatrix}$；
-
   调整diagonal的值，triu(self, diagonal=1)结果为：
-
   $\begin{bmatrix} [0&6&3] \\ [0&0&3] \\ [0&0&0] \end{bmatrix}$；
-
   调整diagonal为-1，triu(self, diagonal=-1)结果为：
-
   $\begin{bmatrix} [9&6&3] \\ [1&2&3] \\ [0&4&1] \end{bmatrix}$。
 
 ## 函数原型
   - aclnnTriu和aclnnInplaceTriu实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
     - aclnnTriu：需新建一个输出张量对象存储计算结果。
     - aclnnInplaceTriu：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-  - 每个算子分为[两段式接口](common/两段式接口.md)，必须先调用 “aclnnTriuGetWorkspaceSize” 或者 “aclnnInplaceTriuGetWorkspaceSize” 接口获取入参并根据计算流程计算所需workspace大小，再调用 “aclnnTriu” 或者 “aclnnInplaceTriu” 接口执行计算。
+  - 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用 “aclnnTriuGetWorkspaceSize” 或者 “aclnnInplaceTriuGetWorkspaceSize” 接口获取入参并根据计算流程计算所需workspace大小，再调用 “aclnnTriu” 或者 “aclnnInplaceTriu” 接口执行计算。
 ```cpp
 aclnnStatus aclnnTriuGetWorkspaceSize(
   const aclTensor* self, 
@@ -77,16 +71,16 @@ aclnnStatus aclnnInplaceTriu(
 
 ## aclnnTriuGetWorkspaceSize
 
-- **参数说明**
-  <table style="undefined;table-layout: fixed; width: 1553px"><colgroup>
-  <col style="width: 167px">
-  <col style="width: 123px">
-  <col style="width: 300px">
-  <col style="width: 149px">
-  <col style="width: 324px">
-  <col style="width: 207px">
-  <col style="width: 138px">
-  <col style="width: 145px">
+  - **参数说明：**
+  <table style="undefined;table-layout: fixed; width: 1587px"><colgroup>
+  <col style="width: 159px">
+  <col style="width: 127px">
+  <col style="width: 230px">
+  <col style="width: 400px">
+  <col style="width: 249px">
+  <col style="width: 117px">
+  <col style="width: 117px">
+  <col style="width: 153px">
   </colgroup>
   <thead>
     <tr>
@@ -103,11 +97,11 @@ aclnnStatus aclnnInplaceTriu(
     <tr>
       <td>self</td>
       <td>输入</td>
-      <td>表示待转换的目标张量，公式中的self。</td>
-      <td>-</td>
+      <td>公式中的$self$，Device侧的aclTensor。</td>
+      <td>shape支持2-8维和空tensor</td>
       <td>UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16、COMPLEX32、COMPLEX64</td>
       <td>ND、NCHW、NHWC、HWCN、NDHWC、NCDHW</td>
-      <td>2-8维和空tensor。</td>
+      <td>2-8维和0维</td>
       <td>-</td>
     </tr>
     <tr>
@@ -123,11 +117,11 @@ aclnnStatus aclnnInplaceTriu(
     <tr>
       <td>out</td>
       <td>输出</td>
-      <td>表示转换后的结果张量，公式中的out。</td>
-      <td>数据类型和shape需要与self保持一致。</td>
+      <td>公式中的$out$，Device侧的aclTensor，shape支持2-8维和0维，数据类型和shape需要与self保持一致。</td>
+      <td>-</td>
       <td>UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16、COMPLEX32、COMPLEX64</td>
       <td>ND、NCHW、NHWC、HWCN、NDHWC、NCDHW</td>
-      <td>2-8维和空tensor。</td>
+      <td>2-8维和0维</td>
       <td>-</td>
     </tr>
     <tr>
@@ -152,16 +146,26 @@ aclnnStatus aclnnInplaceTriu(
     </tr>
   </tbody></table>
 
-- **返回值**
+    - self(aclTensor*, 计算输入)：公式中的$self$，Device侧的aclTensor，shape支持2-8维和空tensor。[数据格式](../../../docs/zh/context/数据格式.md)支持ND、NCHW、NHWC、HWCN、NDHWC、NCDHW。
+      - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL。
+      - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16。
+      - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16、COMPLEX32、COMPLEX64。
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+    - out(aclTensor*, 计算输出)：公式中的$out$，Device侧的aclTensor，shape支持2-8维和0维，数据类型和shape需要与self保持一致。 [数据格式](../../../docs/zh/context/数据格式.md)需要与self保持一致，支持ND、NCHW、NHWC、HWCN、NDHWC、NCDHW。
+      - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL。
+      - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16。
+      - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16、COMPLEX32、COMPLEX64。
+ 
 
-  第一段接口完成入参校验，出现以下场景时报错：
+  - **返回值：**
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+
+第一段接口完成入参校验，出现以下场景时报错：
+  <table style="undefined;table-layout: fixed; width: 887px"><colgroup>
   <col style="width: 300px">
   <col style="width: 200px">
-  <col style="width: 650px">
+  <col style="width: 700px">
   </colgroup>
   <thead>
     <tr>
@@ -200,12 +204,16 @@ aclnnStatus aclnnInplaceTriu(
 
 ## aclnnTriu
 
-- **参数说明**
+  - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
-  <col style="width: 300px">
-  <col style="width: 200px">
-  <col style="width: 650px">
+    - workspace(void*, 入参)：在Device侧申请的workspace内存地址。
+    - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnTriuGetWorkspaceSize获取。
+    - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
+    - stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
+  <col style="width: 230px">
+  <col style="width: 150px">
+  <col style="width: 750px">
   </colgroup>
   <thead>
     <tr>
@@ -237,23 +245,23 @@ aclnnStatus aclnnInplaceTriu(
   </tbody>
   </table>
 
-- **返回值**
+  - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceTriuGetWorkspaceSize
 
-- **参数说明**
+  - **参数说明：**
   
-  <table style="undefined;table-layout: fixed; width: 1553px"><colgroup>
-  <col style="width: 167px">
-  <col style="width: 123px">
-  <col style="width: 300px">
-  <col style="width: 149px">
-  <col style="width: 324px">
-  <col style="width: 207px">
-  <col style="width: 138px">
-  <col style="width: 145px">
+  <table style="undefined;table-layout: fixed; width: 1587px"><colgroup>
+  <col style="width: 159px">
+  <col style="width: 127px">
+  <col style="width: 230px">
+  <col style="width: 400px">
+  <col style="width: 249px">
+  <col style="width: 117px">
+  <col style="width: 117px">
+  <col style="width: 153px">
   </colgroup>
   <thead>
     <tr>
@@ -270,11 +278,11 @@ aclnnStatus aclnnInplaceTriu(
     <tr>
       <td>selfRef</td>
       <td>输入</td>
-      <td>表示输入以及输出tensor。</td>
+      <td>Device侧的aclTensor，shape支持2-8维和空tensor。</td>
       <td>-</td>
       <td>UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16</td>
       <td>ND、NCHW、NHWC、HWCN、NDHWC、NCDHW</td>
-      <td>2-8或空tensor。</td>
+      <td>2-8或0</td>
       <td>-</td>
     </tr>
     <tr>
@@ -309,15 +317,20 @@ aclnnStatus aclnnInplaceTriu(
     </tr>
   </tbody></table>
 
-- **返回值**
+      - selfRef(aclTensor*, 计算输入)：Device侧的aclTensor，shape支持2-8维和空tensor。[数据格式](../../../docs/zh/context/数据格式.md)支持ND、NCHW、NHWC、HWCN、NDHWC、NCDHW。
+      - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL。
+      - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16。
+      - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16、COMPLEX32、COMPLEX64。   
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  - **返回值：**
 
-  第一段接口完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+
+第一段接口完成入参校验，出现以下场景时报错：
+  <table style="undefined;table-layout: fixed; width: 887px"><colgroup>
   <col style="width: 300px">
   <col style="width: 200px">
-  <col style="width: 650px">
+  <col style="width: 700px">
   </colgroup>
   <thead>
     <tr>
@@ -347,12 +360,12 @@ aclnnStatus aclnnInplaceTriu(
 
 ## aclnnInplaceTriu
 
-- **参数说明**
+  - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
-  <col style="width: 300px">
-  <col style="width: 200px">
-  <col style="width: 650px">
+  <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
+  <col style="width: 230px">
+  <col style="width: 150px">
+  <col style="width: 750px">
   </colgroup>
   <thead>
     <tr>
@@ -384,9 +397,9 @@ aclnnStatus aclnnInplaceTriu(
   </tbody>
   </table>
 
-- **返回值**
+  - **返回值：**
 
-    aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -395,7 +408,7 @@ aclnnStatus aclnnInplaceTriu(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

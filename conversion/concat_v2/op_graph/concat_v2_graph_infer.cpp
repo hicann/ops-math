@@ -19,15 +19,15 @@
 using namespace ge;
 namespace ops {
 
-static ge::graphStatus InferDataTypeForConcatV2(gert::InferDataTypeContext *context)
+static ge::graphStatus InferDataTypeForConcatV2(gert::InferDataTypeContext* context)
 {
-  OP_LOGI(context, "Enter InferDataTypeForConcatV2");
-  auto firstInputDesc = context->GetDynamicInputDesc(0, 0);
-  OP_CHECK_NULL_WITH_CONTEXT(context, firstInputDesc);
-  auto dtype = firstInputDesc->GetDataType();
+    OP_LOGI(context, "Enter InferDataTypeForConcatV2");
+    auto firstInputDesc = context->GetDynamicInputDesc(0, 0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, firstInputDesc);
+    auto dtype = firstInputDesc->GetDataType();
 
-  context->SetOutputDataType(0, dtype);
-  return ge::GRAPH_SUCCESS;
+    context->SetOutputDataType(0, dtype);
+    return ge::GRAPH_SUCCESS;
 }
 
 IMPL_OP(ConcatV2).InferDataType(InferDataTypeForConcatV2);

@@ -22,8 +22,9 @@ namespace ge {
 * @li Dynamic input "x" is A ND Tensor.
 * Must be one of the following types: bfloat16, float16, float32, double, int32,
 *     uint8, int16, int8, complex64, int64, qint8, quint8, qint32, uint16,
-*     complex128, uint32, uint64, qint16, quint16, bool, string.
-* @li concat_dim: A 0D Tensor (scalar) with dtype int32, or int64. Specifies the dimension along which to concatenate . \n
+*     complex128, uint32, uint64, qint16, quint16, bool, string, HIFLOAT8, FLOAT8_E5M2, FLOAT8_E4M3FN, FLOAT8_E8M0.
+* @li concat_dim: A 0D Tensor (scalar) with dtype int32, or int64. Specifies the dimension along which to concatenate .
+\n
 
 * @par Attributes:
 * N: An optional int includes all types of int.
@@ -39,12 +40,11 @@ namespace ge {
 * Compatible with the TensorFlow operator ConcatV2.
 */
 REG_OP(ConcatV2)
-    .DYNAMIC_INPUT(x, TensorType({BasicType(), DT_BOOL, DT_STRING}))
+    .DYNAMIC_INPUT(x, TensorType({BasicType(), DT_BOOL, DT_STRING, DT_FLOAT8_E4M3FN, DT_FLOAT8_E5M2, DT_HIFLOAT8, DT_FLOAT8_E8M0}))
     .INPUT(concat_dim, TensorType::IndexNumberType())
-    .OUTPUT(y, TensorType({BasicType(), DT_BOOL, DT_STRING}))
+    .OUTPUT(y, TensorType({BasicType(), DT_BOOL, DT_STRING, DT_FLOAT8_E4M3FN, DT_FLOAT8_E5M2, DT_HIFLOAT8, DT_FLOAT8_E8M0}))
     .ATTR(N, Int, 1)
     .OP_END_FACTORY_REG(ConcatV2)
 } // namespace ge
 
 #endif // OPS_OP_PROTO_CONCAT_V2_H_
-

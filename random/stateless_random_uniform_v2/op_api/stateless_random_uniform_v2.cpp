@@ -14,6 +14,7 @@
  */
 
 #include "stateless_random_uniform_v2.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"
@@ -30,12 +31,12 @@ namespace l0op {
 OP_TYPE_REGISTER(StatelessRandomUniformV2);
 static const int64_t OFFSET_LIST_SIZE = 2;
 static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16};
+    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16, DataType::DT_INT64};
 
 // 根据芯片型号，dtype 判断AICore 是否支持
 static inline bool IsAiCoreSupport(DataType dType)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND910_95) {
+    if (IsRegBase()) {
         return CheckType(dType, AICORE_DTYPE_SUPPORT_LIST);
     }
     return false;

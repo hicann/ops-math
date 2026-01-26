@@ -28,7 +28,7 @@ namespace ge {
 * Must be one of the BasicType:
   complex128, complex64, double, float32, float16, int16, int32, int64, int8,
   qint16, qint32, qint8, quint16, quint8, uint16, uint32, uint64, uint8,
-  bfloat16, complex32, bool. \n
+  bfloat16, complex32, bool, HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0.. \n
 
 
 * @par Attributes:
@@ -47,8 +47,8 @@ namespace ge {
 */
 REG_OP(Concat)
     .INPUT(concat_dim, TensorType::IndexNumberType())
-    .DYNAMIC_INPUT(x, TensorType({BasicType(), DT_BOOL}))
-    .OUTPUT(y, TensorType({BasicType(), DT_BOOL}))
+    .DYNAMIC_INPUT(x, TensorType({BasicType(), DT_BOOL, DT_FLOAT8_E4M3FN, DT_FLOAT8_E5M2, DT_HIFLOAT8, DT_FLOAT8_E8M0}))
+    .OUTPUT(y, TensorType({BasicType(), DT_BOOL, DT_FLOAT8_E4M3FN, DT_FLOAT8_E5M2, DT_HIFLOAT8, DT_FLOAT8_E8M0}))
     .ATTR(N, Int, 1)
     .OP_END_FACTORY_REG(Concat)
 

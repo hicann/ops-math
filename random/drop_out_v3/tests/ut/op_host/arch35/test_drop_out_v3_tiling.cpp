@@ -9,16 +9,16 @@
  */
 
 /*!
- * \file test_drop_out_v3_tiling.cpp
+ * \file test_sim_thread_exponential_tiling.cpp
  * \brief
  */
 
 #include <gtest/gtest.h>
 #include <iostream>
 #include <vector>
+#include "../../../../op_host/arch35/drop_out_v3_tiling_arch35.h"
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
-#include "../../../op_host/arch35/drop_out_v3_tiling_arch35.h"
 
 class DropOutV3TilingTest : public testing::Test {
 protected:

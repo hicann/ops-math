@@ -7,6 +7,10 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                             |     √      |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √       |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |     ×     |
+| <term>Atlas 推理系列产品</term>                             |   √     |
+| <term>Atlas 训练系列产品</term>                              |   √     |
+
 
 ## 功能说明
 
@@ -47,30 +51,31 @@
     </tr></thead>
   <tbody>
     <tr>
-      <td>x</td>
+      <td>self</td>
       <td>输入</td>
-      <td>待进行triu计算的入参，公式中的self。</td>
+      <td>待进行tril计算的入参，公式中的self。</td>
       <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、COMPLEX32、COMPLEX64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>diagonal</td>
       <td>输入</td>
-      <td>待进行triu计算的入参，公式中的diagonal。</td>
+      <td>待进行tril计算的入参，公式中的diagonal。</td>
       <td>INT64</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>y</td>
+      <td>out</td>
       <td>输出</td>
-      <td>待进行abs计算的出参，公式中的out。</td>
+      <td>待进行abs计算的出参，公式中的out_i。</td>
       <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
       <td>ND</td>
     </tr>
   </tbody></table>
 
-- Atlas A2 训练系列产品/Atlas A2 推理系列产品、Atlas A3 训练系列产品/Atlas A3 推理系列产品：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16。
-- Ascend 950PR/Ascend 950DT AI处理器：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16、COMPLEX32、COMPLEX64。
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16。
+  - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16、COMPLEX32、COMPLEX64。
 
 ## 约束说明
 

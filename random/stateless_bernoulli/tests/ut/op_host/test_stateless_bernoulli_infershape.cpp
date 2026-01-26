@@ -34,16 +34,31 @@ class StatelessBernoulliInfershape : public testing::Test {
 TEST_F(StatelessBernoulliInfershape, stateless_bernoulli_infershape_test1)
 {
     vector<int64_t> shapeValue = {1};
-    vector<float> probValue = {1.0};
-    vector<int64_t> seedValue = {2};
-    vector<int64_t> offsetValue = {8};
     gert::InfershapeContextPara infershapeContextPara(
         "StatelessBernoulli",
         {
             {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, shapeValue.data()},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, true, probValue.data()},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, seedValue.data()},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, offsetValue.data()},
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND,},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND,},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND,},
+        },
+        {
+            {{{}, {}}, ge::DT_UINT8, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{1}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(StatelessBernoulliInfershape, stateless_bernoulli_infershape_test2)
+{
+    vector<int32_t> shapeValue = {1};
+    gert::InfershapeContextPara infershapeContextPara(
+        "StatelessBernoulli",
+        {
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, shapeValue.data()},
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND,},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND,},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND,},
         },
         {
             {{{}, {}}, ge::DT_UINT8, ge::FORMAT_ND},

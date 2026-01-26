@@ -64,4 +64,4 @@ ACLNN_API aclnnStatus aclnnEqual(void* workspace, uint64_t workspaceSize, aclOpE
 }
 #endif
 
-#endif // OP_API_INC_TENSOREQUAL_H_
+#endif  // OP_API_INC_TENSOREQUAL_H_

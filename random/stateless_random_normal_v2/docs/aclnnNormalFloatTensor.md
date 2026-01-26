@@ -1,12 +1,18 @@
 # aclnnNormalFloatTensor
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/random/stateless_random_normal_v2)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
 | <term>Ascend 950PR/Ascend 950DT</term>                     |     √    |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>    |    ×     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>    |    ×     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                               |    ×     |
+| <term>Atlas 训练系列产品</term>                               |    ×     |
+
 
 ## 功能说明
 
@@ -16,52 +22,199 @@
 
 - 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnNormalFloatTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnNormalFloatTensor”接口执行计算。
 
-- `aclnnStatus aclnnNormalFloatTensorGetWorkspaceSize(float mean, const aclTensor *std, int64_t seed, int64_t offset, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnNormalFloatTensor(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnNormalFloatTensorGetWorkspaceSize(
+  float mean,
+  const aclTensor *std,
+  int64_t seed,
+  int64_t offset,
+  aclTensor *out,
+  uint64_t        *workspaceSize,
+  aclOpExecutor  **executor)
+```
+
+```Cpp
+aclnnStatus aclnnNormalFloatTensor(
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor *executor,
+  aclrtStream    stream)
+```
 
 ## aclnnNormalFloatTensorGetWorkspaceSize
 
 - **参数说明：**
 
-  - mean(float, 计算输入)：生成随机数分布的均值，数据类型支持FLOAT。
-
-  - std(aclTensor*, 计算输入)：生成随机数分布标准差的张量，Device侧的aclTensor，数据类型支持FLOAT16、FLOAT和DOUBLE，std不能为空tensor，shape不超过8维。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-
-  - seed(int64_t*, 计算输入)：采样伪随机数生成器的种子值，数据类型支持INT64。
-
-  - offset(int64_t*, 计算输入)：采样伪随机数生成器的偏移量，数据类型支持INT64。
-
-  - out(aclTensor*, 计算输出 )：输出张量，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16和DOUBLE，shape需要和std的shape相等，shape不超过8维。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-
-  - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
-
+<table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <col style="width: 170px">
+  <col style="width: 120px">
+  <col style="width: 300px">
+  <col style="width: 330px">
+  <col style="width: 212px">
+  <col style="width: 100px">
+  <col style="width: 190px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>mean</td>
+      <td>输入</td>
+      <td>生成随机数分布的均值。</td>
+      <td>-</td>
+      <td>FLOAT</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>std</td>
+      <td>输入</td>
+      <td>生成随机数分布标准差的张量，Device侧的aclTensor。</td>
+      <td>-</td>
+      <td>FLOAT16、FLOAT、DOUBLE</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>-</td>
+    </tr>
+      <tr>
+      <td>seed</td>
+      <td>输入</td>
+      <td>采样伪随机数生成器的种子值。</td>
+      <td>-</td>
+      <td>INT64</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>offset</td>
+      <td>输入</td>
+      <td>采样伪随机数生成器的偏移量。</td>
+      <td>-</td>
+      <td>INT64</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>输出张量，Device侧的aclTensor。</td>
+      <td>-</td>
+      <td>FLOAT16、FLOAT、DOUBLE</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)
 
-```
-第一段接口完成入参校验，出现以下场景时报错：
-返回161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的std或者out为空指针。
-返回161002 (ACLNN_ERR_PARAM_INVALID)：1. 传入的std或者out的数据类型不在支持的范围之内。
-                                       2. 传入的std是空tensor或者std的shape和out的shape不相等。
-                                       3. 传入的std或者out的shape超过8维。
-```
+  第一段接口完成入参校验，出现以下场景时报错：
+  
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的std或者out为空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
+      <td>传入的std或者out的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>传入的std是空tensor或者std的shape和out的shape不相等。</td>
+    </tr>
+    <tr>
+      <td>传入的std或者out的shape超过8维。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnNormalFloatTensor
 
 - **参数说明：**
 
-  - workspace(void*, 入参)：在Device侧申请的workspace内存地址。
-
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnNormalFloatTensorGetWorkspaceSize获取。
-
-  - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
-
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
-
+<table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 872px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnNormalFloatTensorGetWorkspaceSize获取</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
@@ -71,7 +224,6 @@
 
 - 确定性计算：
   - aclnnNormalFloatTensor默认确定性实现。
-
 
 ## 调用示例
 

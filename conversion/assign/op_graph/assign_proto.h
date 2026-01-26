@@ -17,7 +17,7 @@
 namespace ge {
 
 /**
-*@brief Updates "ref" by assigning "value" to it. Does not support broadcasting operations.
+*@brief Updates "ref" by assigning "value" to it. Donot support broadcasting operations.
 
 *@par Inputs:
 * @li ref: A ND Tensor. Support 1D ~ 8D. Must be one of the following types: bfloat16, float16, float32,

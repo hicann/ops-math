@@ -78,12 +78,9 @@ static graphStatus RandomOpCommonInferShapeByDependIndex(
         }
     }
     ge::DataType shape_dtype = x_shape_tensor->GetDataType();
-    if (shape_dtype != DT_INT32 && shape_dtype != DT_INT64) {
-        std::string error_msg = ConcatString(
-            "Shape type must in ", "[int32, int64]", ". But get ", Ops::Base::ToString(shape_dtype).c_str());
-        OP_LOGI(context->GetNodeName(), "%s", error_msg.c_str());
-        return GRAPH_FAILED;
-    }
+    OP_CHECK_IF(
+        (shape_dtype != DT_INT32 && shape_dtype != DT_INT64), OP_LOGI(context->GetNodeName(), "Shape type must in [int32, int64]. But get %s", Ops::Base::ToString(shape_dtype).c_str()),
+        return GRAPH_FAILED);
     *output_shape = const_shape;
     OP_LOGI(context->GetNodeName(), "Infer shape by depend index end.");
     return GRAPH_SUCCESS;
@@ -93,27 +90,20 @@ static graphStatus StatelessTruncatedNormalV2InferShapeCheck(const gert::InferSh
 {
     const gert::Shape* key_shape = context->GetInputShape(kInputIndex1);
     OP_CHECK_NULL_WITH_CONTEXT(context, key_shape);
-    if (key_shape->GetDimNum() != kVectorDimNum || key_shape->GetDim(0U) != 1LL) {
-        std::string error_msg =
-            ConcatString("Input key shape must be 1D with 1 elements, but is[", key_shape->GetDimNum(), "].");
-        OP_LOGI(context->GetNodeName(), "%s", error_msg.c_str());
-        return GRAPH_FAILED;
-    }
+    OP_CHECK_IF(
+        (key_shape->GetDimNum() != kVectorDimNum || key_shape->GetDim(0U) != 1LL), OP_LOGI(context->GetNodeName(), "Input key shape must be 1D with 1 elements, but is[%u].", key_shape->GetDimNum()),
+        return GRAPH_FAILED);
     const gert::Shape* counter_shape = context->GetInputShape(kInputIndex2);
     OP_CHECK_NULL_WITH_CONTEXT(context, counter_shape);
-    if (counter_shape->GetDimNum() != kVectorDimNum || counter_shape->GetDim(0U) != kCounterValue) {
-        std::string error_msg =
-            ConcatString("Input counter shape must be 1D with 2 elements, but is [", counter_shape->GetDimNum(), "D].");
-        OP_LOGI(context->GetNodeName(), "%s", error_msg.c_str());
-        return GRAPH_FAILED;
-    }
+    OP_CHECK_IF(
+        (counter_shape->GetDimNum() != kVectorDimNum || counter_shape->GetDim(0U) != kCounterValue), OP_LOGI(context->GetNodeName(), "Input counter shape must be 1D with 2 elements, but is[%uD].", counter_shape->GetDimNum()),
+        return GRAPH_FAILED);
     const gert::Shape* alg_shape = context->GetInputShape(kInputIndex3);
     OP_CHECK_NULL_WITH_CONTEXT(context, alg_shape);
-    if (!alg_shape->IsScalar()) {
-        std::string error_msg = ConcatString("Input alg must be scalar, but is [", alg_shape->GetDimNum(), "D].");
-        OP_LOGI(context->GetNodeName(), "%s", error_msg.c_str());
-        return GRAPH_FAILED;
-    }
+
+    OP_CHECK_IF(
+        (!alg_shape->IsScalar()), OP_LOGI(context->GetNodeName(), "Input alg must be scalar, but is[%uD].", alg_shape->GetDimNum()),
+        return GRAPH_FAILED);
     return GRAPH_SUCCESS;
 }
 

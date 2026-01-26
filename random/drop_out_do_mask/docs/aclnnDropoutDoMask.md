@@ -1,12 +1,18 @@
 # aclnnDropoutDoMask
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/random/drop_out_do_mask)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
 | <term>Ascend 950PR/Ascend 950DT</term>                     |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                     |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                             |    √     |
+
 ## 功能说明
 
 算子功能：训练过程中，按照概率prob随机将输入中的元素置零，并将输出按照1/(1-prob)的比例放大。若mask对应比特位为1，则输入中相应的元素放大。若mask中比特位为0，则gradOutput相应的元素置零。特别地，若prob为0，则不改变gradOutput的元素；若prob为1，则将所有元素置为0。
@@ -128,6 +134,7 @@ aclnnStatus aclnnDropoutDoMask(
     </tr>
   </tbody>
   </table>
+  - <term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
 - **返回值：**
 

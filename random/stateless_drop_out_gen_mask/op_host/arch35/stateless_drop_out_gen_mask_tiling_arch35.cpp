@@ -265,7 +265,7 @@ ge::graphStatus StatelessDropOutGenMaskTiling::GetInputInfo()
         inputSize_ *= inputShape_.GetDim(idx);
     }
     OP_CHECK_IF(shapeRank > MAX_DIM_NUM_BOUND,
-        OP_LOGE(opName, "the rank of shape should between [0-8], please check."),
+        OP_LOGE(opName, "the rank of shape should bewteen [0-8], please check."),
         return ge::GRAPH_FAILED);
 
     // check prob
@@ -298,7 +298,7 @@ ge::graphStatus StatelessDropOutGenMaskTiling::GetOutputInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
     auto outputDtype = outputDesc->GetDataType();
     OP_CHECK_IF(outputDtype != ge::DataType::DT_UINT8,
-        OP_LOGE(opName, "input shape dtype should be uint8, but got %d.", outputDtype),
+        OP_LOGE(opName, "input shape dtype should be uint8, bug got %d.", outputDtype),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }

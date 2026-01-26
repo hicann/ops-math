@@ -17,9 +17,10 @@
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "dropout_v3.h"
-#include "conversion/fill/op_api/fill.h"
+#include "conversion/fill//op_api/fill.h"
 #include "math/zero_op/op_api/zero_op.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"
@@ -44,7 +45,7 @@ static const int8_t MAX_MASK_NUM = -1;
 static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
 
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> ARCH3510_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
 static const std::initializer_list<op::DataType> MASK_DTYPE_SUPPORT_LIST = {op::DataType::DT_UINT8};
@@ -68,14 +69,13 @@ static inline bool CheckIsNullptr(const aclTensor* optionalNoiseShape)
 
 static inline const std::initializer_list<op::DataType>& GetDtypeSupportListBySocVersion()
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    switch (socVersion) {
-        case SocVersion::ASCEND910_95:
-        case SocVersion::ASCEND910B:
-        case SocVersion::ASCEND910_93: {
-            return ASCEND910_95_DTYPE_SUPPORT_LIST;
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    switch (curArch) {
+        case NpuArch::DAV_3510:
+        case NpuArch::DAV_2201: {
+            return ARCH3510_DTYPE_SUPPORT_LIST;
         }
-        case SocVersion::ASCEND910: {
+        case NpuArch::DAV_1001: {
             return ASCEND910_DTYPE_SUPPORT_LIST;
         }
         default: {
@@ -91,7 +91,7 @@ static bool CheckDtypeValid(const aclTensor* input, const aclTensor* out, const 
     const std::initializer_list<op::DataType> dtypeSupportList = GetDtypeSupportListBySocVersion();
     OP_CHECK_DTYPE_NOT_SUPPORT(input, dtypeSupportList, return false);
     // 检查input的数据类型是否在支持列表内
-    OP_CHECK_DTYPE_NOT_SUPPORT(input, ASCEND910_95_DTYPE_SUPPORT_LIST, return false);
+    OP_CHECK_DTYPE_NOT_SUPPORT(input, ARCH3510_DTYPE_SUPPORT_LIST, return false);
 
     // 检查mask的数据类型是否在支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(maskOut, MASK_DTYPE_SUPPORT_LIST, return false);

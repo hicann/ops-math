@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include "aclnn_multinomial.h"
 #include "multinomial_with_replacement.h"
 #include "math/reduce_sum/op_api/reduce_sum_op.h"
@@ -20,8 +20,8 @@
 #include "math/cumsum/op_api/cumsum.h"
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
 #include "dsa_random_uniform.h"
-#include "random/stateless_random_uniform_v2/op_api/stateless_random_uniform_v2.h"
-#include "conversion/concat_d/op_api/concat_d.h"
+#include "random/stateless_random_uniform_v2/op_host/op_api/stateless_random_uniform_v2.h"
+#include "../../../../conversion/concat_d/op_api/concat_d.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/reshape.h"
 #include "math/greater_equal/op_api/greater_equal.h"
@@ -29,6 +29,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn/aclnn_base.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/common_types.h"
 #include "opdev/shape_utils.h"
 #include "opdev/data_type_utils.h"
@@ -153,7 +154,7 @@ const aclTensor *GetRandomUniformReplaceMent(const aclTensor *selfContiguous, in
   const int64_t randAShape[] = {numsamples};
   auto randAShapeArray = executor->AllocIntArray(randAShape, 1);
   const aclTensor* randomUniform = nullptr;
-  if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+  if (!IsRegBase()) {
     auto low = executor->AllocScalar(0.0f);
     auto high = executor->AllocScalar(1.0f);
     randomUniform = l0op::DSARandomUniform(randAShapeArray, *randomParams, *(randomParams + 1), low, high, executor);
@@ -249,7 +250,7 @@ const aclTensor *GetRandomUniformNoReplaceMent(const aclTensor *selfContiguous, 
 {
   // exponentialOne = torch.exponential_(1)
   const aclTensor* randomUniform = nullptr;
-  if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_95) {
+  if (!IsRegBase()) {
     auto inputShape = op::ToShapeVector(selfContiguous->GetViewShape());
     auto inputShapeArray = executor->AllocIntArray(inputShape.data(), inputShape.size());
     CHECK_RET(inputShapeArray != nullptr, nullptr);

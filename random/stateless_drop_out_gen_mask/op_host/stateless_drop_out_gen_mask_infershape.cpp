@@ -71,7 +71,6 @@ static graphStatus DropOutGenMaskInferShapeFunc(gert::InferShapeContext *context
   }
 }
 
-
 IMPL_OP_INFERSHAPE(StatelessDropOutGenMask)
     .InputsDataDependency({kInputIndex0})
     .InferShape(DropOutGenMaskInferShapeFunc);

@@ -22,6 +22,7 @@ using namespace ge;
 using namespace Ops::Base;
 
 namespace optiling {
+
 constexpr int64_t INDEX_INPUT_X = 0;
 constexpr int64_t UB_FACTOR_MIN_BETY = 2048;
 constexpr int64_t N_BUFFER = 2;
@@ -207,11 +208,6 @@ static ge::graphStatus AssignTilingForAscendC(gert::TilingContext* context)
 
 static ge::graphStatus Tiling4Assign(gert::TilingContext* context)
 {
-    auto ref_shape = context->GetInputShape(0);
-    auto value_shape = context->GetInputShape(1);
-    OP_CHECK_NULL_WITH_CONTEXT(context, ref_shape);
-    OP_CHECK_NULL_WITH_CONTEXT(context, value_shape);
-
     return AssignTilingForAscendC(context);
 }
 
@@ -224,7 +220,7 @@ static ge::graphStatus TilingPrepare4Assign(gert::TilingParseContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF((compileInfo->coreNum <= 0), OP_LOGE(context->GetNodeName(), "Failed to core num."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->coreNum <= 0), OP_LOGE(context->GetNodeName(), "Failed to get core num."), return ge::GRAPH_FAILED);
     uint64_t ubSize;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ubSize = static_cast<int64_t>(ubSize);

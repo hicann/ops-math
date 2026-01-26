@@ -177,5 +177,28 @@ __aicore__ inline void ScatterConcat(
         }
     }
 }
+
+template <typename TILINGDATA>
+__aicore__ inline int64_t GetTensorDim0Stride(const TILINGDATA& tilingData_, int64_t idx, int64_t dim1)
+{
+    int64_t dim0stride = dim1;
+    if (tilingData_.isNonContiguous) {
+        dim0stride = static_cast<int64_t>(tilingData_.strideList[idx]);
+    }
+    return dim0stride;
+}
+
+template <typename TILINGDATA, typename T>
+__aicore__ inline int64_t GetNonConDimSize(const TILINGDATA& tilingData_, int64_t idx, ListTensorDesc inputList_, TensorDesc<T> desc_)
+{
+    int64_t concatDimSize_ = 0;
+    if (tilingData_.isNonContiguous) {
+        concatDimSize_ = static_cast<int64_t>(tilingData_.concatDimList[idx]);
+    } else {
+        inputList_.GetDesc(desc_, idx);
+        concatDimSize_ = desc_.GetShape(tilingData_.dim);
+    }
+    return concatDimSize_;
+}
 } // namespace Concat
 #endif

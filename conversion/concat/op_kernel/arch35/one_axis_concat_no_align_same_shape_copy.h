@@ -325,9 +325,15 @@ __aicore__ inline void OneAxisConcatNoAlignCopy<T, TILINGDATA>::CopyInNoSplitDim
     SetCopyInparam(1, rows * tilingData_.sameShapeTensorDim1, 0, 0);
     LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
     for (int64_t i = startIdx; i < endIdx; i++) {
-        srcGlobal_.SetGlobalBuffer(GetTensorAddr(i, blockOffset_ * tilingData_.sameShapeTensorDim1));
-        DataCopyPad(
-            srcLocal[curDim1Offset], srcGlobal_[srcRowsOffset * tilingData_.sameShapeTensorDim1], copyInParam_,
+        int64_t dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, i, tilingData_.sameShapeTensorDim1);
+        if (tilingData_.isNonContiguous) {
+            SetCopyInparam(rows, tilingData_.sameShapeTensorDim1, dim0stride - tilingData_.sameShapeTensorDim1, 0);
+        } else {
+            SetCopyInparam(1, rows * tilingData_.sameShapeTensorDim1, 0, 0);
+        }
+        srcGlobal_.SetGlobalBuffer(GetTensorAddr(i, blockOffset_ * dim0stride));
+        DataCopyPad<T, PaddingMode::Compact>(
+            srcLocal[curDim1Offset], srcGlobal_[srcRowsOffset * dim0stride], copyInParam_,
             padParam_);
         curDim1Offset += tensorStride;
     }
@@ -343,6 +349,7 @@ __aicore__ inline int64_t OneAxisConcatNoAlignCopy<T, TILINGDATA>::CopyInSplitDi
     int64_t limitCols = limit / rows;
     int64_t copyCols = 0;
     int64_t colOffset = 0;
+    int64_t dim0stride = 0;
     LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
 
     splitInfo.startIdx = splitInfo.endIdx;
@@ -354,7 +361,8 @@ __aicore__ inline int64_t OneAxisConcatNoAlignCopy<T, TILINGDATA>::CopyInSplitDi
     }
     if (splitInfo.startIdx == endIdx) {
         copyCols = splitInfo.startOffset + limitCols > endOffset ? endOffset - splitInfo.startOffset : limitCols;
-        SetCopyInparam(rows, copyCols, tilingData_.sameShapeTensorDim1 - copyCols, copyCols);
+        dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, splitInfo.startIdx, tilingData_.sameShapeTensorDim1);
+        SetCopyInparam(rows, copyCols, dim0stride - copyCols, copyCols);
         splitInfo.endOffset = splitInfo.startOffset + copyCols;
         splitInfo.endIdx = splitInfo.startIdx;
         CopyInSingleTensor(srcLocal, splitInfo.startIdx, srcOffset + splitInfo.startOffset, copyInParam_);
@@ -363,7 +371,8 @@ __aicore__ inline int64_t OneAxisConcatNoAlignCopy<T, TILINGDATA>::CopyInSplitDi
     }
     if ((tilingData_.sameShapeTensorDim1 - splitInfo.startOffset) >= limitCols) {
         copyCols = limitCols;
-        SetCopyInparam(rows, copyCols, tilingData_.sameShapeTensorDim1 - copyCols, copyCols);
+        dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, splitInfo.startIdx, tilingData_.sameShapeTensorDim1);
+        SetCopyInparam(rows, copyCols, dim0stride - copyCols, copyCols);
         splitInfo.endOffset = splitInfo.startOffset + copyCols;
         splitInfo.endIdx = splitInfo.startIdx;
         CopyInSingleTensor(srcLocal, splitInfo.startIdx, srcOffset + splitInfo.startOffset, copyInParam_);
@@ -371,7 +380,8 @@ __aicore__ inline int64_t OneAxisConcatNoAlignCopy<T, TILINGDATA>::CopyInSplitDi
         return copyCols;
     }
     copyCols = tilingData_.sameShapeTensorDim1 - splitInfo.startOffset;
-    SetCopyInparam(rows, copyCols, tilingData_.sameShapeTensorDim1 - copyCols, copyCols);
+    dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, splitInfo.startIdx, tilingData_.sameShapeTensorDim1);
+    SetCopyInparam(rows, copyCols, dim0stride - copyCols, copyCols);
     CopyInSingleTensor(srcLocal, splitInfo.startIdx, srcOffset + splitInfo.startOffset, copyInParam_);
     colOffset += copyCols;
     curOffset += (copyCols * rows + numPerBlock_ - 1) / numPerBlock_ * numPerBlock_;
@@ -382,13 +392,15 @@ __aicore__ inline int64_t OneAxisConcatNoAlignCopy<T, TILINGDATA>::CopyInSplitDi
             copyCols = min((limit - curOffset) / rows, tilingData_.sameShapeTensorDim1);
             splitInfo.endIdx = i;
             splitInfo.endOffset = copyCols;
-            SetCopyInparam(rows, copyCols, tilingData_.sameShapeTensorDim1 - copyCols, copyCols);
+            dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, i, tilingData_.sameShapeTensorDim1);
+            SetCopyInparam(rows, copyCols, dim0stride - copyCols, copyCols);
             CopyInSingleTensor(srcLocal[curOffset], i, srcOffset, copyInParam_);
             colOffset += copyCols;
             inQueue_.EnQue(srcLocal);
             return colOffset;
         }
-        SetCopyInparam(rows, tilingData_.sameShapeTensorDim1, 0, tilingData_.sameShapeTensorDim1);
+        dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, i, tilingData_.sameShapeTensorDim1);
+        SetCopyInparam(rows, tilingData_.sameShapeTensorDim1, dim0stride - tilingData_.sameShapeTensorDim1, tilingData_.sameShapeTensorDim1);
         CopyInSingleTensor(srcLocal[curOffset], i, srcOffset, copyInParam_);
         colOffset += tilingData_.sameShapeTensorDim1;
         curOffset += tensorStride;
@@ -401,7 +413,8 @@ __aicore__ inline int64_t OneAxisConcatNoAlignCopy<T, TILINGDATA>::CopyInSplitDi
     }
     splitInfo.endIdx = endIdx;
     splitInfo.endOffset = copyCols;
-    SetCopyInparam(rows, copyCols, tilingData_.sameShapeTensorDim1 - copyCols, copyCols);
+    dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, splitInfo.endIdx, tilingData_.sameShapeTensorDim1);
+    SetCopyInparam(rows, copyCols, dim0stride - copyCols, copyCols);
     CopyInSingleTensor(srcLocal[curOffset], endIdx, srcOffset, copyInParam_);
     colOffset += copyCols;
     inQueue_.EnQue(srcLocal);
@@ -412,7 +425,8 @@ template <typename T, typename TILINGDATA>
 __aicore__ inline void OneAxisConcatNoAlignCopy<T, TILINGDATA>::CopyInSingleTensor(
     const LocalTensor<T>& dstLocal, int64_t tensorIdx, int64_t srcOffset, const DataCopyExtParams& params)
 {
-    srcGlobal_.SetGlobalBuffer(GetTensorAddr(tensorIdx, blockOffset_ * tilingData_.sameShapeTensorDim1));
+    int64_t dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, tensorIdx, tilingData_.sameShapeTensorDim1);
+    srcGlobal_.SetGlobalBuffer(GetTensorAddr(tensorIdx, blockOffset_ * dim0stride));
     DataCopyPadExtParams<T> padParams = {false, 0, 0, 0};
     DataCopyPad<T, PaddingMode::Compact>(dstLocal, srcGlobal_[srcOffset], params, padParams);
 }

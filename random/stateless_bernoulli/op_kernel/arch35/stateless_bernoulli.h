@@ -34,9 +34,9 @@ private:
     __aicore__ inline void SelectValidMaskScalar(uint32_t calCount);
     __aicore__ inline void SelectValidMaskTensor(uint32_t calCount);
     __aicore__ inline void GenPhiloxRandom(uint32_t calCount);
-    __aicore__ inline uint32_t RoundUp(uint32_t a, uint32_t b);
-    __aicore__ inline uint32_t AlignUp256(uint32_t param);
-    __aicore__ inline uint8_t PadAlignByte32(uint32_t param);
+    __aicore__ inline uint64_t RoundUp(uint64_t a, uint64_t b);
+    __aicore__ inline uint64_t AlignUp256(uint64_t param);
+    __aicore__ inline uint8_t PadAlignByte32(uint64_t param);
     __aicore__ inline void Skip(uint64_t count);
     __aicore__ inline void CopyIn(uint32_t loopIdx, uint32_t calCount);
     __aicore__ inline void Compute(uint32_t loopIdx, uint32_t calCount, const StatelessBernoulliTilingData *__restrict tilingData);
@@ -67,17 +67,17 @@ private:
     AscendC::TBuf<AscendC::TPosition::VECCALC> calcuDataBuf_;
 
     float prob_ = 0.0f;
-    uint32_t currBlockTilingSize_ = 0;
-    uint32_t currUbTilingSize_ = 0;
-    uint32_t currLoopCount_ = 0;
-    uint32_t blockOffset_ = 0;
+    uint64_t currBlockTilingSize_ = 0;
+    uint64_t currUbTilingSize_ = 0;
+    uint64_t currLoopCount_ = 0;
+    uint64_t blockOffset_ = 0;
 
-    uint32_t countIndex0_ = 0;
-    uint32_t countIndex1_ = 1;
-    uint32_t countIndex2_ = 2;
-    uint32_t countIndex3_ = 3;
+    uint64_t countIndex0_ = 0;
+    uint64_t countIndex1_ = 1;
+    uint64_t countIndex2_ = 2;
+    uint64_t countIndex3_ = 3;
 
-    uint32_t ubTilingSize_ = 0;
+    uint64_t ubTilingSize_ = 0;
     uint32_t key_[ALG_KEY_SIZE] = {0};
     uint32_t counter_[ALG_COUNTER_SIZE] = {0};
 
@@ -104,28 +104,28 @@ __aicore__ inline void StatelessBernoulliKernel<T, U>::ParseTilingData(
     const StatelessBernoulliTilingData *__restrict tilingData)
 {
     ubTilingSize_ = tilingData->ubTilingSize;
-    for (uint32_t i = 0; i < ALG_KEY_SIZE; i++) {
+    for (uint64_t i = 0; i < ALG_KEY_SIZE; i++) {
         key_[i] = tilingData->key[i];
     }
-    for (uint32_t i = 0; i < ALG_COUNTER_SIZE; i++) {
+    for (uint64_t i = 0; i < ALG_COUNTER_SIZE; i++) {
         counter_[i] = tilingData->counter[i];
     }
 }
 
 template <typename T, typename U>
-__aicore__ inline uint32_t StatelessBernoulliKernel<T, U>::RoundUp(uint32_t a, uint32_t b)
+__aicore__ inline uint64_t StatelessBernoulliKernel<T, U>::RoundUp(uint64_t a, uint64_t b)
 {
     return (a + b - 1) / b;
 };
 
 template <typename T, typename U>
-__aicore__ inline uint32_t StatelessBernoulliKernel<T, U>::AlignUp256(uint32_t param)
+__aicore__ inline uint64_t StatelessBernoulliKernel<T, U>::AlignUp256(uint64_t param)
 {
     return (param + roundUpByte256 - 1) / roundUpByte256 * roundUpByte256;
 };
 
 template <typename T, typename U>
-__aicore__ inline uint8_t StatelessBernoulliKernel<T, U>::PadAlignByte32(uint32_t param)
+__aicore__ inline uint8_t StatelessBernoulliKernel<T, U>::PadAlignByte32(uint64_t param)
 {
     return roundUpNum - param % roundUpNum;
 };

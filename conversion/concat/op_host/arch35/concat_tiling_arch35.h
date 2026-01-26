@@ -19,11 +19,13 @@
 #include <vector>
 #include "register/tilingdata_base.h"
 #include "register/op_impl_registry.h"
+#include "op_host/tiling_util.h"
 
 namespace optiling {
 ge::graphStatus Tiling4PackToConcatForAscendC(gert::TilingContext* context);
 ge::graphStatus TilingPrepareForConcat(gert::TilingParseContext* context);
 ge::graphStatus TilingCommon(gert::TilingContext* context, int64_t inputIdx, int64_t dimIdx);
+gert::Shape GetShapeByAll(const gert::TilingContext* context, bool isNonContiguous, int inputIdx, int index);
 
 const int64_t TILING_ARRAY_LENGTH = 72;
 const int64_t TILING_LIST_LENGTH = 196;
@@ -32,12 +34,14 @@ const int64_t TILING_PRELOAD_DIM1_LENGTH = 2;
 // simt模板可以存储最大的Tensor偏移数目
 const int32_t TILING_COLS_OFFSET_LENGTH = 128;
 constexpr size_t MAX_CONCAT_NUM = 64;
+constexpr int64_t NON_CON_TENSOR_SIZE = 32;
 
 BEGIN_TILING_DATA_DEF(ConcatTilingData)
 TILING_DATA_FIELD_DEF(int16_t, ubSplitDim1); // ub是否切分concat部分
 TILING_DATA_FIELD_DEF(int16_t, dim);         // 要连接的dim
 TILING_DATA_FIELD_DEF(int16_t, tensorNum);   // 输入的tensor数量
 TILING_DATA_FIELD_DEF(int16_t, dtypeSize);
+TILING_DATA_FIELD_DEF(int16_t, isNonContiguous); 
 TILING_DATA_FIELD_DEF(int32_t, ubFactorDim0); // dim0轴切分数据量
 TILING_DATA_FIELD_DEF(int32_t, ubFactorDim1); // dim1轴切分数据量
 TILING_DATA_FIELD_DEF(int32_t, tailUbFactorDim0);
@@ -53,6 +57,8 @@ TILING_DATA_FIELD_DEF(int64_t, sameShapeTensorDim1);
 TILING_DATA_FIELD_DEF_ARR(int16_t, TILING_ARRAY_LENGTH, endTensorIdx);
 TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LENGTH, endTensorOffset);
 TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_PRELOAD_DIM1_LENGTH, preLoadDim1);
+TILING_DATA_FIELD_DEF_ARR(uint32_t, NON_CON_TENSOR_SIZE, strideList);
+TILING_DATA_FIELD_DEF_ARR(uint32_t, NON_CON_TENSOR_SIZE, concatDimList);
 END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(Concat, ConcatTilingData)
@@ -62,6 +68,7 @@ TILING_DATA_FIELD_DEF(int16_t, ubSplitDim1); // ub是否切分concat部分
 TILING_DATA_FIELD_DEF(int16_t, dim);         // 要连接的dim
 TILING_DATA_FIELD_DEF(int16_t, tensorNum);   // 输入的tensor数量
 TILING_DATA_FIELD_DEF(int16_t, dtypeSize);
+TILING_DATA_FIELD_DEF(int16_t, isNonContiguous); 
 TILING_DATA_FIELD_DEF(int32_t, ubFactorDim0); // dim0轴切分数据量
 TILING_DATA_FIELD_DEF(int32_t, ubFactorDim1); // dim1轴切分数据量
 TILING_DATA_FIELD_DEF(int32_t, tailUbFactorDim0);
@@ -75,6 +82,8 @@ TILING_DATA_FIELD_DEF(int64_t, uoDim1);
 TILING_DATA_FIELD_DEF(int64_t, catDim1); // 输出1轴大小
 TILING_DATA_FIELD_DEF(int64_t, sameShapeTensorDim1);
 TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_PRELOAD_DIM1_LENGTH, preLoadDim1);
+TILING_DATA_FIELD_DEF_ARR(uint32_t, NON_CON_TENSOR_SIZE, strideList);
+TILING_DATA_FIELD_DEF_ARR(uint32_t, NON_CON_TENSOR_SIZE, concatDimList);
 END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(Concat_12111, ConcatTilingDataNoArray)
@@ -141,6 +150,8 @@ struct ConcatTilingParam {
     int64_t gatherThreshold{128};
     int32_t tensorNumPerCore{0};
     bool isEmpty{false};
+    bool isNonContiguous{false};
+    int64_t strideDim{ 0 };
     std::vector<int16_t> startTensorIdx;
     std::vector<int16_t> endTensorIdx;
     std::vector<int64_t> startTensorOffset;
@@ -154,6 +165,8 @@ struct ConcatTilingParam {
     std::vector<int32_t> tensorColsOffset;
     std::vector<std::vector<int64_t>> tensorList;
     std::vector<std::vector<int64_t>> mergeTensorList;
+    std::vector<uint32_t> strideList{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+    std::vector<uint32_t> concatDimList{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
     int16_t endIdxArr[TILING_ARRAY_LENGTH]{0};
     int64_t endOffsetArr[TILING_ARRAY_LENGTH]{0};
     int64_t preLoadDim1Arr[TILING_PRELOAD_DIM1_LENGTH]{0};

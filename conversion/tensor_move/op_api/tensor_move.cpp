@@ -14,6 +14,7 @@
 #include "opdev/make_op_executor.h"
 #include "opdev/op_dfx.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 namespace l0op {
 
@@ -22,9 +23,8 @@ OP_TYPE_REGISTER(TensorMove);
 static const int64_t DATA_LIMIT_910 = 200000 * 4;
 static const int64_t DATA_LIMIT_910B = 100000 * 4;
 
-// 910_95
 // float,float16,int32,uint32,int8,int16,uint16,uint8,bool,int64,uint64,bfloat16,double,hifloat8,float8_e5m2,float8_e4m3fn,complex32,complex64
-static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_910_95 = {
+static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_REGBASE = {
     op::DataType::DT_FLOAT,     op::DataType::DT_FLOAT16,  op::DataType::DT_INT32,       op::DataType::DT_UINT32,
     op::DataType::DT_INT8,      op::DataType::DT_INT16,    op::DataType::DT_UINT16,      op::DataType::DT_UINT8,
     op::DataType::DT_BOOL,      op::DataType::DT_INT64,    op::DataType::DT_UINT64,      op::DataType::DT_BF16,
@@ -47,15 +47,14 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
 static bool IsAiCoreSupport(const aclTensor* self)
 {
     auto dataType = self->GetDataType();
-    auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == op::SocVersion::ASCEND910B || socVersion == op::SocVersion::ASCEND910_93) {
+    auto curArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch == NpuArch::DAV_2201) {
         return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_910B);
     }
-    if (socVersion == op::SocVersion::ASCEND910_95) {
-        return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_910_95);
-    } else {
-        return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST);
+    if (op::IsRegBase(curArch)) {
+        return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_REGBASE);
     }
+    return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST);
 }
 
 const aclTensor* TensorMoveAiCore(const aclTensor* x, const aclTensor* y, aclOpExecutor* executor)

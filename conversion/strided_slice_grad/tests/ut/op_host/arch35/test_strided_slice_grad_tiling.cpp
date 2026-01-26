@@ -38,16 +38,15 @@ TEST_F(StridedSliceGradTiling, StridedSliceGrad_test_tiling_001)
     vector<int32_t> begin = {0, 0};
     vector<int32_t> end = {1, 46};
     vector<int32_t> strides = {1, 1};
-    vector<int32_t> dy = {-1, -1};
 
     gert::TilingContextPara tilingContextPara(
         "StridedSliceGrad",
         {
-            {{{1, 128}, {1, 128}}, ge::DT_INT32, ge::FORMAT_ND, true, shape.data()},
-            {{{0, 0}, {0, 0}}, ge::DT_INT32, ge::FORMAT_ND, true, begin.data()},
-            {{{1, 46}, {1, 46}}, ge::DT_INT32, ge::FORMAT_ND, true, end.data()},
-            {{{1, 1}, {1, 1}}, ge::DT_INT32, ge::FORMAT_ND, true, strides.data()},
-            {{{-1, -1}, {-1, -1}}, ge::DT_INT32, ge::FORMAT_ND, true, dy.data()},
+            {{{2}, {2}}, ge::DT_INT32, ge::FORMAT_ND, true, shape.data()},
+            {{{2}, {2}}, ge::DT_INT32, ge::FORMAT_ND, true, begin.data()},
+            {{{2}, {2}}, ge::DT_INT32, ge::FORMAT_ND, true, end.data()},
+            {{{2}, {2}}, ge::DT_INT32, ge::FORMAT_ND, true, strides.data()},
+            {{{1, 128}, {1, 128}}, ge::DT_INT32, ge::FORMAT_ND},
         },
         {
             {{{1, 128}, {1, 128}}, ge::DT_INT32, ge::FORMAT_ND},
@@ -60,10 +59,9 @@ TEST_F(StridedSliceGradTiling, StridedSliceGrad_test_tiling_001)
             gert::TilingContextPara::OpAttr("shrink_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(2)),
         },
         &compileInfo);
-    uint64_t expectTilingKey = 104;
-    string expectTilingData =
-        "1 0 0 94343321858568 140433105847881 0 0 0 1 94343321858568 64 106496 94343321868256 4 104 94343286440168 0 0 "
-        "0 0 0 0 0 0 1 1 1 1 1 1 1 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 ";
+    uint64_t expectTilingKey = 124;
+    string expectTilingData = "1 128 0 128 1 1 0 0 0 1 1 ";
     std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, false, 0, true, expectTilingData, expectWorkspaces);
+    ExecuteTestCaseForEle(
+        tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
 }

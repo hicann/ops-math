@@ -187,7 +187,7 @@ ge::graphStatus TensorEqualTiling::PostTiling()
         (res != ge::GRAPH_SUCCESS),
         OP_LOGE(opName_, "SetBlockDim failed."),
         return ge::GRAPH_FAILED);
-
+    context_->SetScheduleMode(1); // SyncAll need set
     context_->SetTilingKey(tilingKey_);
     tilingData_.SaveToBuffer(context_->GetRawTilingData()->GetData(),
                              context_->GetRawTilingData()->GetCapacity());

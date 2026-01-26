@@ -34,20 +34,35 @@ class StatelessRandomNormalV2Infershape : public testing::Test {
 TEST_F(StatelessRandomNormalV2Infershape, stateless_random_normal_v2_infershape_test1)
 {
     vector<int64_t> shapeValue = {1};
-    vector<float> keyValue = {1.0};
-    vector<int64_t> counterValue = {2};
-    vector<int64_t> algsetValue = {8};
     gert::InfershapeContextPara infershapeContextPara(
         "StatelessRandomNormalV2",
         {
             {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, shapeValue.data()},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, true, keyValue.data()},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, counterValue.data()},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, algsetValue.data()},
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND,},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND,},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND,},
         },
         {
             {{{}, {}}, ge::DT_UINT8, ge::FORMAT_ND},
         });
     std::vector<std::vector<int64_t>> expectOutputShape = {{1}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(StatelessRandomNormalV2Infershape, stateless_random_normal_v2_infershape_test2)
+{
+    vector<int32_t> shapeValue = {10};
+    gert::InfershapeContextPara infershapeContextPara(
+        "StatelessRandomNormalV2",
+        {
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, shapeValue.data()},
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND,},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND,},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND,},
+        },
+        {
+            {{{}, {}}, ge::DT_UINT8, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{10}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }

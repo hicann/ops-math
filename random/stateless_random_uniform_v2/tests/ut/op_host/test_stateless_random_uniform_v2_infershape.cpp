@@ -33,15 +33,33 @@ class stateless_random_uniform_v2 : public testing::Test {
 
 TEST_F(stateless_random_uniform_v2, stateless_random_uniform_v2_infershape_test1)
 {
-    vector<uint64_t> keyValue = {2};
-    vector<uint64_t> counterValue = {8, 9};
-    vector<int32_t> algValue = {1};
+    vector<int64_t> inputValue = {2};
     gert::InfershapeContextPara infershapeContextPara("StatelessRandomUniformV2",
                                                       {
-                                                        {{{32,512},{32,512}}, ge::DT_INT64, ge::FORMAT_ND},
-                                                        {{{1},{1}}, ge::DT_UINT64, ge::FORMAT_ND, true, keyValue.data()},
-                                                        {{{2},{2}}, ge::DT_UINT64, ge::FORMAT_ND, true, counterValue.data()},
-                                                        {{{},{}}, ge::DT_INT32, ge::FORMAT_ND, true, algValue.data()},
+                                                        {{{1},{1}}, ge::DT_INT64, ge::FORMAT_ND, true, inputValue.data()},
+                                                        {{{1},{1}}, ge::DT_UINT64, ge::FORMAT_ND,},
+                                                        {{{2},{2}}, ge::DT_UINT64, ge::FORMAT_ND,},
+                                                        {{{},{}}, ge::DT_INT32, ge::FORMAT_ND,},
+                                                      },
+                                                      {
+                                                        {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                      {"dtype", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{2}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(stateless_random_uniform_v2, stateless_random_uniform_v2_infershape_test2)
+{
+    vector<int64_t> inputValue = {};
+    gert::InfershapeContextPara infershapeContextPara("StatelessRandomUniformV2",
+                                                      {
+                                                        {{{1},{1}}, ge::DT_INT64, ge::FORMAT_ND, true, inputValue.data()},
+                                                        {{{1},{1}}, ge::DT_UINT64, ge::FORMAT_ND,},
+                                                        {{{2},{2}}, ge::DT_UINT64, ge::FORMAT_ND,},
+                                                        {{{},{}}, ge::DT_INT32, ge::FORMAT_ND,},
                                                       },
                                                       {
                                                         {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},

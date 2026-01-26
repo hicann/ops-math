@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file stateless_bernoulli.cpp
@@ -16,14 +16,15 @@
 #include "aclnn_bernoulli.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
-#include "random/stateless_bernoulli/op_api/stateless_bernoulli.h"
-#include "random/drop_out_do_mask/op_api/dropout_do_mask.h"
+#include "random/stateless_bernoulli/op_host/op_api/stateless_bernoulli.h"
+#include "random/drop_out_do_mask/op_host/op_api/dropout_do_mask.h"
 #include "dsa_gen_bit_mask.h"
 #include "math/zero_op/op_api/zero_op.h"
 #include "math/ones_like/op_api/ones_like.h"
 #include "conversion/fill/op_api/fill.h"
 #include "aclnn/aclnn_base.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"
@@ -59,13 +60,13 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST =
 static const std::initializer_list<op::DataType> ASCEND910B_PROB_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE, op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> ARCH3510_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT,  op::DataType::DT_INT32,  op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
     op::DataType::DT_INT16,  op::DataType::DT_INT8,   op::DataType::DT_UINT8, op::DataType::DT_UINT16,
     op::DataType::DT_UINT32, op::DataType::DT_DOUBLE, op::DataType::DT_BOOL,  op::DataType::DT_UINT64,
     op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> ASCEND910_95_PROB_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> ARCH3510_PROB_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE, op::DataType::DT_BF16};
 
 static const std::initializer_list<DataType> EMPTY_LIST = {};
@@ -93,8 +94,8 @@ static const std::initializer_list<DataType>& GetOutDtypeSupportList()
         return ASCEND910_DTYPE_SUPPORT_LIST;
     } else if (socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910_93) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
-    } else if (socVersion == SocVersion::ASCEND910_95) {
-        return ASCEND910_95_DTYPE_SUPPORT_LIST;
+    } else if (IsRegBase()) {
+        return ARCH3510_DTYPE_SUPPORT_LIST;
     } else {
         OP_LOGW("Unknown SocVersion.");
         return EMPTY_LIST;
@@ -108,8 +109,8 @@ static const std::initializer_list<DataType>& GetProbDtypeSupportList()
         return ASCEND910_PROB_DTYPE_SUPPORT_LIST;
     } else if (socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910_93) {
         return ASCEND910B_PROB_DTYPE_SUPPORT_LIST;
-    } else if (socVersion == SocVersion::ASCEND910_95) {
-        return ASCEND910_95_PROB_DTYPE_SUPPORT_LIST;
+    } else if (IsRegBase()) {
+        return ARCH3510_PROB_DTYPE_SUPPORT_LIST;
     } else {
         OP_LOGW("Unknown SocVersion.");
         return EMPTY_LIST;
@@ -368,9 +369,9 @@ aclnnStatus aclnnBernoulliGetWorkspaceSize(
     auto inputContiguous = l0op::Contiguous(self, uniqueExecutor.get());
     CHECK_RET(inputContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    auto socversion = GetCurrentPlatformInfo().GetSocVersion();
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
     const aclTensor* opOut = nullptr;
-    if (socversion == SocVersion::ASCEND910B || socversion == SocVersion::ASCEND910_93) {
+    if (curArch == NpuArch::DAV_2201) {
         // 调用DSAGenBitMask算子kernel
         const aclTensor* doMaskOut = nullptr;
         if (IsDoubleEqual(prob->ToDouble(), 0)) {
@@ -384,8 +385,8 @@ aclnnStatus aclnnBernoulliGetWorkspaceSize(
         }
         CHECK_RET(doMaskOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
         opOut = l0op::Cast(doMaskOut, out->GetDataType(), uniqueExecutor.get());
-    } else if (socversion == SocVersion::ASCEND910_95) {
-        // 调用StatelessBernoulli算子kernel，910_95统一转成float
+    } else if (curArch == NpuArch::DAV_3510) {
+        // 调用StatelessBernoulli算子kernel，ARCH3510统一转成float
         auto probScalar = uniqueExecutor->AllocScalar(static_cast<float>(prob->ToDouble()));
         CHECK_RET(probScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto probTensor = uniqueExecutor.get()->ConvertToTensor(probScalar, probScalar->GetDataType());

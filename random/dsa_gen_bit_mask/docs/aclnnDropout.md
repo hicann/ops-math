@@ -1,11 +1,17 @@
 # aclnnDropout
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/random/dsa_gen_bit_mask)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    ×     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
 
 ## 功能说明
 
@@ -27,7 +33,8 @@ $$
 - **参数说明：**
 
   - input(aclTensor*, 计算输入)：表示待处理的张量，公式中的`input`，Device侧的aclTensor，不支持空tensor场景。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT32。
+    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT32。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT32。
 
   - p(double, 计算输入)：Host侧DOUBLE类型，元素置零的概率，公式中的`p`。数据类型支持DOUBLE。数值的值域为[0, 1]。
 
@@ -38,7 +45,8 @@ $$
   - offset(int64_t, 计算输入)：Host侧INT64类型，随机数的偏移量，它影响生成的随机数序列的位置。数据类型支持INT64。
 
   - out(aclTensor*, 计算输出)：输出的tensor，公式中的`out`，Device侧的aclTensor，数据类型需要是input可转换的数据类型，shape需要与input一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT32。
+    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT32。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT32。
   - maskOut(aclTensor*, 计算输出)：bit类型并使用UINT8类型存储的mask数据。Device侧的aclTensor，数据类型支持UINT8，shape需要为(align(input的元素个数,128)/8)，表示比特数需要与128对齐，其中，align表示将input的元素个数向上对齐为128的倍数，如align(1111, 128)的结果为1152。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。当p=0、p=1或train=false场景下，不对传入的maskOut做任何处理；其它场景下以给定的p为置零概率生成mask。
 
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。

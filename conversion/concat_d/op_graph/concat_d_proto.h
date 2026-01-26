@@ -24,7 +24,8 @@ namespace ge {
 * One input:
 * x: Dynamic input. A ND Tensor.
 *    Must be one of the following types: bfloat16, float16, float32, int32,
-*    int8, int16, int64, uint8, uint16, uint32, uint64, bool, double, complex64. \n
+*    int8, int16, int64, uint8, uint16, uint32, uint64, bool, double, complex64,
+     HIFLOAT8, FLOAT8_E5M2, FLOAT8_E4M3FN, FLOAT8_E8M0. \n
 
 * @par Attributes:
 * @li concat_dim: A required int8, int16, int32, or int64.
@@ -46,14 +47,12 @@ namespace ge {
 * Warning: THIS FUNCTION IS DEPRECATED. Please use Concat instead.
 */
 REG_OP(ConcatD)
-    .DYNAMIC_INPUT(
-        x, TensorType(
-               {DT_BF16, DT_FLOAT, DT_FLOAT16, DT_INT8, DT_INT16, DT_BOOL, DT_INT32, DT_INT64, DT_UINT8, DT_UINT16,
-                DT_UINT32, DT_UINT64, DT_DOUBLE, DT_COMPLEX64}))
-    .OUTPUT(
-        y, TensorType(
-               {DT_BF16, DT_FLOAT, DT_FLOAT16, DT_INT8, DT_INT16, DT_BOOL, DT_INT32, DT_INT64, DT_UINT8, DT_UINT16,
-                DT_UINT32, DT_UINT64, DT_DOUBLE, DT_COMPLEX64}))
+    .DYNAMIC_INPUT(x, TensorType({DT_BF16, DT_FLOAT, DT_FLOAT16, DT_INT8, DT_INT16, DT_BOOL, DT_INT32, DT_INT64,
+                                  DT_UINT8, DT_UINT16, DT_UINT32, DT_UINT64, DT_DOUBLE, DT_COMPLEX64, DT_FLOAT8_E4M3FN,
+                                  DT_FLOAT8_E5M2, DT_HIFLOAT8, DT_FLOAT8_E8M0}))
+    .OUTPUT(y, TensorType({DT_BF16, DT_FLOAT, DT_FLOAT16, DT_INT8, DT_INT16, DT_BOOL, DT_INT32, DT_INT64,
+                           DT_UINT8, DT_UINT16, DT_UINT32, DT_UINT64, DT_DOUBLE, DT_COMPLEX64, DT_FLOAT8_E4M3FN,
+                           DT_FLOAT8_E5M2, DT_HIFLOAT8, DT_FLOAT8_E8M0}))
     .REQUIRED_ATTR(concat_dim, Int)
     .ATTR(N, Int, 1)
     .OP_END_FACTORY_REG(ConcatD)

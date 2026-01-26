@@ -13,112 +13,117 @@
 using namespace std;
 
 namespace {
-  const char *const ConcatV2 = "ConcatV2";
+const char* const ConcatV2 = "ConcatV2";
 }
 
 namespace aicpu {
-uint32_t ConcatV2CpuKernel::CheckConcatV2Params(const CpuKernelContext &ctx) {
-  AttrValue *n_ptr = ctx.GetAttr("N");
-  KERNEL_CHECK_NULLPTR(n_ptr, KERNEL_STATUS_PARAM_INVALID, "Get attr N failed.");
-  n_ = n_ptr->GetInt();
-  // "x" is a list of at least 1 "tensor" objects of the same type
-  KERNEL_CHECK_FALSE((n_ >= 1), KERNEL_STATUS_PARAM_INVALID, "Attr N must >= 1, but got attr N[%ld]", n_);
+uint32_t ConcatV2CpuKernel::CheckConcatV2Params(const CpuKernelContext& ctx)
+{
+    AttrValue* n_ptr = ctx.GetAttr("N");
+    KERNEL_CHECK_NULLPTR(n_ptr, KERNEL_STATUS_PARAM_INVALID, "Get attr N failed.");
+    n_ = n_ptr->GetInt();
+    // "x" is a list of at least 1 "tensor" objects of the same type
+    KERNEL_CHECK_FALSE((n_ >= 1), KERNEL_STATUS_PARAM_INVALID, "Attr N must >= 1, but got attr N[%ld]", n_);
 
-  uint32_t input_num = ctx.GetInputsSize();
+    uint32_t input_num = ctx.GetInputsSize();
 
-  // input_num is n_(concat tensor num) + 1(concat_dim)
-  KERNEL_CHECK_FALSE((static_cast<int64_t>(input_num) - 1 == n_),
-                     KERNEL_STATUS_PARAM_INVALID,
-                     "Input num must equal attr N[%ld + 1],"
-                     "but got input num[%u]",
-                     n_, input_num);
-  return KERNEL_STATUS_OK;
+    // input_num is n_(concat tensor num) + 1(concat_dim)
+    KERNEL_CHECK_FALSE(
+        (static_cast<int64_t>(input_num) - 1 == n_), KERNEL_STATUS_PARAM_INVALID,
+        "Input num must equal attr N[%ld + 1],"
+        "but got input num[%u]",
+        n_, input_num);
+    return KERNEL_STATUS_OK;
 }
 
-uint32_t ConcatV2CpuKernel::InitConcatV2Params(const CpuKernelContext &ctx) {
-  auto concat_dim_ptr = ctx.Input(static_cast<uint32_t>(n_));
-  KERNEL_CHECK_NULLPTR(concat_dim_ptr, KERNEL_STATUS_PARAM_INVALID, "Get input concat_dim failed.");
-  auto concat_dim_shape_ptr = concat_dim_ptr->GetTensorShape();
-  KERNEL_CHECK_NULLPTR(concat_dim_shape_ptr, KERNEL_STATUS_PARAM_INVALID, "Get input concat_dim shape failed.");
-  int32_t concat_dim_dims = concat_dim_shape_ptr->GetDims();
-  KERNEL_CHECK_FALSE((concat_dim_dims == 0) || ((concat_dim_dims == 1) && (concat_dim_shape_ptr->NumElements() == 1)),
-                     KERNEL_STATUS_PARAM_INVALID, "Input concat_dim should be a scalar integer, but got rank[%d].",
-                     concat_dim_dims);
-  int64_t concat_dim = 0;
-  auto concat_dim_data_type = concat_dim_ptr->GetDataType();
-  KERNEL_CHECK_FALSE((concat_dim_data_type == DT_INT32 || concat_dim_data_type == DT_INT64),
-                     KERNEL_STATUS_PARAM_INVALID,
-                     "Input concat_dim data type must DT_INT32 or DT_INT64, but got data type[%d].",
-                     concat_dim_data_type);
-  auto concat_dim_data_ptr = concat_dim_ptr->GetData();
-  KERNEL_CHECK_NULLPTR(concat_dim_data_ptr, KERNEL_STATUS_PARAM_INVALID, "Get input concat_dim data failed.");
+uint32_t ConcatV2CpuKernel::InitConcatV2Params(const CpuKernelContext& ctx)
+{
+    auto concat_dim_ptr = ctx.Input(static_cast<uint32_t>(n_));
+    KERNEL_CHECK_NULLPTR(concat_dim_ptr, KERNEL_STATUS_PARAM_INVALID, "Get input concat_dim failed.");
+    auto concat_dim_shape_ptr = concat_dim_ptr->GetTensorShape();
+    KERNEL_CHECK_NULLPTR(concat_dim_shape_ptr, KERNEL_STATUS_PARAM_INVALID, "Get input concat_dim shape failed.");
+    int32_t concat_dim_dims = concat_dim_shape_ptr->GetDims();
+    KERNEL_CHECK_FALSE(
+        (concat_dim_dims == 0) || ((concat_dim_dims == 1) && (concat_dim_shape_ptr->NumElements() == 1)),
+        KERNEL_STATUS_PARAM_INVALID, "Input concat_dim should be a scalar integer, but got rank[%d].", concat_dim_dims);
+    int64_t concat_dim = 0;
+    auto concat_dim_data_type = concat_dim_ptr->GetDataType();
+    KERNEL_CHECK_FALSE(
+        (concat_dim_data_type == DT_INT32 || concat_dim_data_type == DT_INT64), KERNEL_STATUS_PARAM_INVALID,
+        "Input concat_dim data type must DT_INT32 or DT_INT64, but got data type[%d].", concat_dim_data_type);
+    auto concat_dim_data_ptr = concat_dim_ptr->GetData();
+    KERNEL_CHECK_NULLPTR(concat_dim_data_ptr, KERNEL_STATUS_PARAM_INVALID, "Get input concat_dim data failed.");
 
-  if (concat_dim_data_type == DT_INT32) {
-    int32_t temp_val = 0;
-    KERNEL_CHECK_FALSE(memcpy_s(&temp_val, sizeof(int32_t), concat_dim_data_ptr, sizeof(int32_t)) == EOK,
-                       KERNEL_STATUS_PARAM_INVALID, "memcpy concat_dim failed.");
-    concat_dim = static_cast<int64_t>(temp_val);
-  } else if (concat_dim_data_type == DT_INT64) {
-    KERNEL_CHECK_FALSE(memcpy_s(&concat_dim, sizeof(int64_t), concat_dim_data_ptr, sizeof(int64_t)) == EOK,
-                       KERNEL_STATUS_PARAM_INVALID, "memcpy concat_dim failed.");
-  } else {
-    KERNEL_LOG_ERROR("Unsupported concat_dim data type: %d", concat_dim_data_type);
-    return KERNEL_STATUS_PARAM_INVALID;
-  }
-  auto input0_ptr = ctx.Input(0);
-  KERNEL_CHECK_NULLPTR(input0_ptr, KERNEL_STATUS_PARAM_INVALID, "Get input x0 failed.");
-  auto input0_shape_ptr = input0_ptr->GetTensorShape();
-  KERNEL_CHECK_NULLPTR(input0_shape_ptr, KERNEL_STATUS_PARAM_INVALID, "Get input x0 shape failed.");
-  input_dims_ = input0_shape_ptr->GetDims();
-  data_type_ = input0_ptr->GetDataType();
-  KERNEL_LOG_INFO("data type[%d]", data_type_);
-  axis_ = concat_dim < 0 ? concat_dim + input_dims_ : concat_dim;
-  KERNEL_CHECK_FALSE((axis_ >= 0 && axis_ < input_dims_), KERNEL_STATUS_PARAM_INVALID,
-                     "Input concat_dim need in the range[%d, %d), but got %ld.", -input_dims_, input_dims_,
-                     concat_dim);
-  inputs_flat_dim0_ = 1;
-  for (int32_t d = 0; d < axis_; ++d) inputs_flat_dim0_ *= input0_shape_ptr->GetDimSize(d);
-  return KERNEL_STATUS_OK;
+    if (concat_dim_data_type == DT_INT32) {
+        int32_t temp_val = 0;
+        KERNEL_CHECK_FALSE(
+            memcpy_s(&temp_val, sizeof(int32_t), concat_dim_data_ptr, sizeof(int32_t)) == EOK,
+            KERNEL_STATUS_PARAM_INVALID, "memcpy concat_dim failed.");
+        concat_dim = static_cast<int64_t>(temp_val);
+    } else if (concat_dim_data_type == DT_INT64) {
+        KERNEL_CHECK_FALSE(
+            memcpy_s(&concat_dim, sizeof(int64_t), concat_dim_data_ptr, sizeof(int64_t)) == EOK,
+            KERNEL_STATUS_PARAM_INVALID, "memcpy concat_dim failed.");
+    } else {
+        KERNEL_LOG_ERROR("Unsupported concat_dim data type: %d", concat_dim_data_type);
+        return KERNEL_STATUS_PARAM_INVALID;
+    }
+    auto input0_ptr = ctx.Input(0);
+    KERNEL_CHECK_NULLPTR(input0_ptr, KERNEL_STATUS_PARAM_INVALID, "Get input x0 failed.");
+    auto input0_shape_ptr = input0_ptr->GetTensorShape();
+    KERNEL_CHECK_NULLPTR(input0_shape_ptr, KERNEL_STATUS_PARAM_INVALID, "Get input x0 shape failed.");
+    input_dims_ = input0_shape_ptr->GetDims();
+    data_type_ = input0_ptr->GetDataType();
+    KERNEL_LOG_INFO("data type[%d]", data_type_);
+    axis_ = concat_dim < 0 ? concat_dim + input_dims_ : concat_dim;
+    KERNEL_CHECK_FALSE(
+        (axis_ >= 0 && axis_ < input_dims_), KERNEL_STATUS_PARAM_INVALID,
+        "Input concat_dim need in the range[%d, %d), but got %ld.", -input_dims_, input_dims_, concat_dim);
+    inputs_flat_dim0_ = 1;
+    for (int32_t d = 0; d < axis_; ++d)
+        inputs_flat_dim0_ *= input0_shape_ptr->GetDimSize(d);
+    return KERNEL_STATUS_OK;
 }
 
-uint32_t ConcatV2CpuKernel::CheckAndInitParams(const CpuKernelContext &ctx) {
-  KERNEL_HANDLE_ERROR(this->CheckConcatV2Params(ctx), "CheckConcatV2Params failed.");
-  KERNEL_HANDLE_ERROR(this->InitConcatV2Params(ctx), "InitConcatV2Params failed.");
-  return KERNEL_STATUS_OK;
+uint32_t ConcatV2CpuKernel::CheckAndInitParams(const CpuKernelContext& ctx)
+{
+    KERNEL_HANDLE_ERROR(this->CheckConcatV2Params(ctx), "CheckConcatV2Params failed.");
+    KERNEL_HANDLE_ERROR(this->InitConcatV2Params(ctx), "InitConcatV2Params failed.");
+    return KERNEL_STATUS_OK;
 }
 
-uint32_t ConcatV2CpuKernel::Compute(CpuKernelContext &ctx) {
-  KERNEL_LOG_INFO("ConcatV2CpuKernel start.");
-  KERNEL_CHECK_FALSE((CheckAndInitParams(ctx) == KERNEL_STATUS_OK),
-                     KERNEL_STATUS_PARAM_INVALID, "CheckAndInitParams failed.");
-  using ComputeFunc =
-      uint32_t (ConcatV2CpuKernel::*)(CpuKernelContext &);
-  static const std::unordered_map<DataType, ComputeFunc> calls_map = {
-      {DT_FLOAT16,   &ConcatV2CpuKernel::DoCompute<Eigen::half>},
-      {DT_FLOAT,     &ConcatV2CpuKernel::DoCompute<float>},
-      {DT_INT8,      &ConcatV2CpuKernel::DoCompute<int8_t>},
-      {DT_INT16,     &ConcatV2CpuKernel::DoCompute<int16_t>},
-      {DT_INT32,     &ConcatV2CpuKernel::DoCompute<int32_t>},
-      {DT_INT64,     &ConcatV2CpuKernel::DoCompute<int64_t>},
-      {DT_UINT8,     &ConcatV2CpuKernel::DoCompute<uint8_t>},
-      {DT_UINT16,    &ConcatV2CpuKernel::DoCompute<uint16_t>},
-      {DT_UINT32,    &ConcatV2CpuKernel::DoCompute<uint32_t>},
-      {DT_UINT64,    &ConcatV2CpuKernel::DoCompute<uint64_t>},
-      {DT_BOOL,      &ConcatV2CpuKernel::DoCompute<bool>},
-      {DT_DOUBLE,    &ConcatV2CpuKernel::DoCompute<double>},
-      {DT_COMPLEX64, &ConcatV2CpuKernel::DoCompute<std::complex<float>>},
-      {DT_COMPLEX128,&ConcatV2CpuKernel::DoCompute<std::complex<double>>},
-      {DT_BFLOAT16,  &ConcatV2CpuKernel::DoCompute<Eigen::bfloat16>},
-  };
+uint32_t ConcatV2CpuKernel::Compute(CpuKernelContext& ctx)
+{
+    KERNEL_LOG_INFO("ConcatV2CpuKernel start.");
+    KERNEL_CHECK_FALSE(
+        (CheckAndInitParams(ctx) == KERNEL_STATUS_OK), KERNEL_STATUS_PARAM_INVALID, "CheckAndInitParams failed.");
+    using ComputeFunc = uint32_t (ConcatV2CpuKernel::*)(CpuKernelContext&);
+    static const std::unordered_map<DataType, ComputeFunc> calls_map = {
+        {DT_FLOAT16, &ConcatV2CpuKernel::DoCompute<Eigen::half>},
+        {DT_FLOAT, &ConcatV2CpuKernel::DoCompute<float>},
+        {DT_INT8, &ConcatV2CpuKernel::DoCompute<int8_t>},
+        {DT_INT16, &ConcatV2CpuKernel::DoCompute<int16_t>},
+        {DT_INT32, &ConcatV2CpuKernel::DoCompute<int32_t>},
+        {DT_INT64, &ConcatV2CpuKernel::DoCompute<int64_t>},
+        {DT_UINT8, &ConcatV2CpuKernel::DoCompute<uint8_t>},
+        {DT_UINT16, &ConcatV2CpuKernel::DoCompute<uint16_t>},
+        {DT_UINT32, &ConcatV2CpuKernel::DoCompute<uint32_t>},
+        {DT_UINT64, &ConcatV2CpuKernel::DoCompute<uint64_t>},
+        {DT_BOOL, &ConcatV2CpuKernel::DoCompute<bool>},
+        {DT_DOUBLE, &ConcatV2CpuKernel::DoCompute<double>},
+        {DT_COMPLEX64, &ConcatV2CpuKernel::DoCompute<std::complex<float>>},
+        {DT_COMPLEX128, &ConcatV2CpuKernel::DoCompute<std::complex<double>>},
+        {DT_BFLOAT16, &ConcatV2CpuKernel::DoCompute<Eigen::bfloat16>},
+    };
 
-  auto iter = calls_map.find(data_type_);
-  if (iter == calls_map.end()) {
-    KERNEL_LOG_ERROR("Unsupported datatype[%d]", data_type_);
-    return KERNEL_STATUS_PARAM_INVALID;
-  }
-  ComputeFunc fn = iter->second;
-  return (this->*fn)(ctx);
+    auto iter = calls_map.find(data_type_);
+    if (iter == calls_map.end()) {
+        KERNEL_LOG_ERROR("Unsupported datatype[%d]", data_type_);
+        return KERNEL_STATUS_PARAM_INVALID;
+    }
+    ComputeFunc fn = iter->second;
+    return (this->*fn)(ctx);
 }
 
 REGISTER_CPU_KERNEL(ConcatV2, ConcatV2CpuKernel);
-}  // namespace aicpu
+} // namespace aicpu

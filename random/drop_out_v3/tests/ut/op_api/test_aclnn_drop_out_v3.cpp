@@ -11,7 +11,7 @@
 #include <vector>
 #include "gtest/gtest.h"
 
-#include "random/drop_out_v3/op_api/aclnn_dropout_v3.h"
+#include "random/drop_out_v3/op_host/op_api/aclnn_dropout_v3.h"
 
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"

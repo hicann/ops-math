@@ -48,4 +48,4 @@ REG_OP(StatelessDropOutGenMask)
     .OUTPUT(y, TensorType({ DT_UINT8 }))
     .OP_END_FACTORY_REG(StatelessDropOutGenMask)
 }   // namespace ge
-#endif  
+#endif  // OPS_BUILT_IN_OP_PROTO_INC_RANDOM_OPS_H_

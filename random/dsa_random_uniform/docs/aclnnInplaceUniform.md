@@ -1,11 +1,17 @@
 # aclnnInplaceUniform
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/random/dsa_random_uniform)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
 
 ## 功能说明
 
@@ -23,7 +29,9 @@
 - **参数说明**：
   
   - selfRef(aclTensor*, 计算输入|计算输出)：输入输出tensor，Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT32、INT32、INT64、INT16、INT8、UINT8、DOUBLE。
+    - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型支持FLOAT16、FLOAT32、INT32、INT64、INT16、INT8、UINT8、DOUBLE。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT32、INT32、INT64、INT16、INT8、UINT8、DOUBLE。
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT32、INT32、INT64、BFLOAT16、FLOAT16、INT16、INT8、UINT8、DOUBLE。
   - from（double, 计算输入）：Host侧DOUBLE类型，进行离散均匀分布取值的左边界。from的值需要在selfRef的数据类型取值范围内，from的取值需要小于to。数据类型支持DOUBLE。
   - to（double, 计算输入）：Host侧DOUBLE类型，进行离散均匀分布取值的右边界。to的值需要在selfRef的数据类型取值范围内。数据类型支持DOUBLE。
   - seed（uint64_t, 计算输入）：Host侧UINT64_T类型，随机数生成器的种子,它影响生成的随机数序列。数据类型支持UINT64。

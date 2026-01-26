@@ -19,6 +19,7 @@
 #include "opdev/op_log.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 namespace l0op {
@@ -51,8 +52,8 @@ aclTensor* ConcatD(const aclTensorList* inputs, int64_t dim, op::DataType outDty
 aclTensor* ConcatD(const aclTensorList* inputs, int64_t dim, aclOpExecutor* executor)
 {
     L0_DFX(ConcatD, inputs, dim);
-    auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
-    size_t catMaxInputSize = (socVersion == op::SocVersion::ASCEND910_95) ? 512 : 32;
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    size_t catMaxInputSize = (IsRegBase(npuArch)) ? 512 : 32;
     if (inputs->Size() == 0 || inputs->Size() > catMaxInputSize) {
         OP_LOGE(
             ACLNN_ERR_INNER, "Inputs tensor list's size should be (0, %zu]) but current size is %zu.", catMaxInputSize,

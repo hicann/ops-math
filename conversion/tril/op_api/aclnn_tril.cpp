@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file aclnn_tril.cpp
@@ -17,6 +17,7 @@
 #include "aclnn_kernels/reshape.h"
 #include "aclnn_tril.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -41,7 +42,7 @@ static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_910B = {
     op::DataType::DT_BOOL,  op::DataType::DT_BF16,    op::DataType::DT_UINT16, op::DataType::DT_UINT32,
     op::DataType::DT_UINT64};
 
-static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_910_95 = {
+static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_REGBASE = {
     op::DataType::DT_UINT8,  op::DataType::DT_INT8,      op::DataType::DT_INT16,    op::DataType::DT_INT32,
     op::DataType::DT_INT64,  op::DataType::DT_FLOAT16,   op::DataType::DT_FLOAT,    op::DataType::DT_DOUBLE,
     op::DataType::DT_BOOL,   op::DataType::DT_BF16,      op::DataType::DT_UINT16,   op::DataType::DT_UINT32,
@@ -52,8 +53,8 @@ static inline const std::initializer_list<DataType>& GetDtypeSupportList()
     if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
         return DTYPE_SUPPORT_LIST_910B;
-    } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-        return DTYPE_SUPPORT_LIST_910_95;
+    } else if (IsRegBase()) {
+        return DTYPE_SUPPORT_LIST_REGBASE;
     }
     return DTYPE_SUPPORT_LIST_910;
 }

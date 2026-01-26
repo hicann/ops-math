@@ -14,6 +14,7 @@
  */
 
 #include "stateless_dropout_gen_mask.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"
@@ -36,7 +37,7 @@ static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST = {DataTy
 // 根据芯片型号，dtype 判断AICore 是否支持
 static inline bool IsAiCoreSupport(DataType dType)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND910_95) {
+    if (IsRegBase()) {
         return CheckType(dType, AICORE_DTYPE_SUPPORT_LIST);
     }
     return false;

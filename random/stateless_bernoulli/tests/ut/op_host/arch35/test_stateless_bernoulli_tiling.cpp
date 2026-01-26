@@ -35,14 +35,13 @@ TEST_F(StatelessBernoulliTiling, stateless_bernoulli_test_0)
 {
     optiling::StatelessBernoulliCompileInfoArch35 compileInfo = {64, 253952};
     vector<int64_t> shapeValue = {1};
-    vector<float> probValue = {1.0};
     vector<int64_t> seedValue = {2};
     vector<int64_t> offsetValue = {8};
     gert::TilingContextPara tilingContextPara(
         "StatelessBernoulli",
         {
             {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, shapeValue.data()},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, true, probValue.data()},
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND,},
             {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, seedValue.data()},
             {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, offsetValue.data()},
         },
