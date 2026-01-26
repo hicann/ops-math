@@ -57,15 +57,19 @@ do
     if [[ "$file_path" == *.md ]]; then
         continue
     fi
-    for dir in "${builtin_dirs[@]}"
-    do
-        if [[ "$file_path" == *"/$dir/"*"/arch35/"* ]]; then
-            if [[ ! " ${builtin_ops_name[@]} " =~ " $dir " ]]; then
-                builtin_ops_name+=("$dir")
+    
+    if [[ ! "$file_path" == "experimental/"* ]]; then
+        for dir in "${builtin_dirs[@]}"
+        do
+            if [[ "$file_path" == *"/$dir/"*"/arch35/"* ]]; then
+                if [[ ! " ${builtin_ops_name[@]} " =~ " $dir " ]]; then
+                    builtin_ops_name+=("$dir")
+                fi
+                break
             fi
-            break
-        fi
-    done
+        done
+    fi
+
     for dir in "${experimental_dirs[@]}"
     do
         if [[ "$file_path" == "experimental/"*"/$dir/"*"/arch35/"* ]]; then
