@@ -35,6 +35,7 @@ constexpr int32_t TAILNUM = 2;
 constexpr uint32_t COMMON_TILING_KEY = 0;
 constexpr uint32_t SMALL_SIZE_TILING_KEY = 1;
 constexpr uint32_t TENSOR_NUM = 6;
+constexpr uint8_t SCHEDULE_MODE = 1; // batchmode模式，核间同步算子需要设置该模式
 
 class ExpSegsumGradTiling {
 public:
@@ -176,6 +177,9 @@ void ExpSegsumGradTiling::FillTilingData()
 
     tilingContext->SetBlockDim(needCoreNum);
     tilingContext->SetTilingKey(tilingKey);
+    if (tilingKey == COMMON_TILING_KEY) {
+        tilingContext->SetScheduleMode(SCHEDULE_MODE);
+    }
 
     tilingData.SaveToBuffer(
         tilingContext->GetRawTilingData()->GetData(), tilingContext->GetRawTilingData()->GetCapacity());
