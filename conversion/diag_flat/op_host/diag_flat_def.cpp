@@ -40,6 +40,7 @@ public:
         this->Attr("diagonal").AttrType(OPTIONAL).Int(0);
         this->AICore().AddConfig("ascend910b");
         this->AICore().AddConfig("ascend910_93");
+        this->AICore().AddConfig("ascend910_95");
 
         OpAICoreConfig config_310p_910;
         config_310p_910.Input("x")

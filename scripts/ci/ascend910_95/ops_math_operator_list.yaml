@@ -124,6 +124,8 @@ operator_group_4:
   - clip_by_value
   - fused_mul_add_n
   - space_to_depth
+  - diag_flat
+  - diag_v2
 operator_group_5:
   - clip_by_value_v2
   - concat
