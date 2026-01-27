@@ -14,7 +14,6 @@
  */
 
 #include "stateless_random_uniform_v2.h"
-#include "op_api/aclnn_check.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"
@@ -30,32 +29,6 @@ namespace l0op {
 
 OP_TYPE_REGISTER(StatelessRandomUniformV2);
 static const int64_t OFFSET_LIST_SIZE = 2;
-static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16, DataType::DT_INT64};
-
-// 根据芯片型号，dtype 判断AICore 是否支持
-static inline bool IsAiCoreSupport(DataType dType)
-{
-    if (IsRegBase()) {
-        return CheckType(dType, AICORE_DTYPE_SUPPORT_LIST);
-    }
-    return false;
-}
-
-// AICPU算子kernel
-static const aclTensor* StatelessRandomUniformV2AiCpu(
-    const aclTensor* inputSize, const aclTensor* seed, const aclTensor* offset, const aclTensor* alg, aclTensor* out,
-    aclOpExecutor* executor)
-{
-    L0_DFX(StatelessRandomUniformV2AiCpu, inputSize, seed, offset, alg);
-
-    static internal::AicpuTaskSpace space("StatelessRandomUniformV2", ge::DEPEND_CONST_VALUE, true);
-    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(
-        StatelessRandomUniformV2, OP_ATTR_NAMES({"dtype", "Tshape"}), OP_INPUT(inputSize, seed, offset, alg),
-        OP_OUTPUT(out), OP_ATTR(out->GetDataType(), inputSize->GetDataType()));
-    CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
-    return out;
-}
 
 // AICore算子kernel
 static const aclTensor* StatelessRandomUniformV2AiCore(
@@ -88,10 +61,6 @@ const aclTensor* StatelessRandomUniformV2(
     } else {
         out = executor->AllocTensor(self->GetViewShape(), op::DataType::DT_FLOAT, self->GetViewFormat());
     }
-    if (IsAiCoreSupport(self->GetDataType())) {
-        return StatelessRandomUniformV2AiCore(inputSize, seedTensor, offsetTensor, algTensor, out, executor);
-    } else {
-        return StatelessRandomUniformV2AiCpu(inputSize, seedTensor, offsetTensor, algTensor, out, executor);
-    }
+    return StatelessRandomUniformV2AiCore(inputSize, seedTensor, offsetTensor, algTensor, out, executor);
 }
 } // namespace l0op
