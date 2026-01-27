@@ -97,6 +97,9 @@ main() {
     echo "[ERROR]bash $0 {op_type} {soc_version} {output_path} {enable_mssanitizer} {enable_debug} {enable_oom} {enable_dump_cce}"
     exit 1
   fi
+  if [ $# -eq 8 ]; then
+    local bisheng_flags=$8
+  fi
   local workdir=$(
     cd $(dirname $0)
     pwd
@@ -267,22 +270,29 @@ main() {
           cmd="asc_opc ${op_python_path} --main_func=${op_func} --input_param=${new_file} --soc_version=${opc_soc_version} --output=${binary_bin_path} --impl_mode=${impl_mode} ${simplified_key_param} --op_mode=dynamic"
         fi
 
-        op_debug_configs=()
-        if [ "${enable_mssanitizer}" = "TRUE" ]; then
-          op_debug_configs+=("sanitizer")
+        echo "bisheng_flags is: ${bisheng_flags}"
+        if [[ -n "$bisheng_flags" ]]; then
+          cmd="${cmd} --op_debug_config=${bisheng_flags}"
+        else
+          op_debug_configs=()
+          if [ "${enable_mssanitizer}" = "TRUE" ]; then
+            op_debug_configs+=("sanitizer")
+          fi
+          if [ "${enable_oom}" = "TRUE" ]; then
+            op_debug_configs+=("oom")
+          fi
+          if [ "${enable_dump_cce}" = "TRUE" ]; then
+            op_debug_configs+=("dump_cce")
+          fi
+          if [ ${#op_debug_configs[@]} -gt 0 ]; then
+              OLD_IFS="${IFS}"
+              IFS=','
+              cmd="${cmd} --op_debug_config=${op_debug_configs[*]}"
+              IFS="$OLD_IFS" 
+          fi
         fi
-        if [ "${enable_oom}" = "TRUE" ]; then
-          op_debug_configs+=("oom")
-        fi
-        if [ "${enable_dump_cce}" = "TRUE" ]; then
-          op_debug_configs+=("dump_cce")
-          cmd="${cmd} --debug_dir=${output_path}/kernel_metas"
-        fi
-        if [ ${#op_debug_configs[@]} -gt 0 ]; then
-            OLD_IFS="${IFS}"
-            IFS=','
-            cmd="${cmd} --op_debug_config=${op_debug_configs[*]}"
-            IFS="$OLD_IFS" 
+        if [[ "$cmd" == *"dump_cce"* ]]; then
+          cmd="${cmd} --debug_dir=${output_path}/kernel_metas" 
         fi
 
         echo "[INFO] op:${op_type} do opc cmd is ${cmd}"

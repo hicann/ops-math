@@ -21,7 +21,8 @@ SUPPORTED_LONG_OPTS=(
   "help" "ops=" "soc=" "vendor_name=" "debug" "cov" "noexec" "aicpu" "opkernel" "opkernel_aicpu" "jit"
   "pkg" "asan" "valgrind" "make_clean" "static" "build-type="
   "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "opkernel_aicpu_test"
-  "run_example" "genop=" "genop_aicpu=" "experimental" "cann_3rd_lib_path" "mssanitizer" "oom" "onnxplugin" "dump_cce"
+  "run_example" "genop=" "genop_aicpu=" "experimental" "cann_3rd_lib_path" "mssanitizer" "oom" "onnxplugin"
+  "dump_cce" "bisheng_flags="
 )
 
 in_array() {
@@ -144,6 +145,8 @@ usage() {
         echo "    --mssanitizer          Build with mssanitizer mode on the kernel side, with options: '-g --cce-enable-sanitizer'"
         echo "    --oom                  Build with oom mode on the kernel side, with options: '-g --cce-enable-oom'"
         echo "    --dump_cce             Dump kernel precompiled files"
+        echo "    --bisheng_flags=flag1,flag2"
+        echo "                           Specify bisheng compiler flags (comma-separated for multiple)"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --pkg --soc=ascend910b --vendor_name=customize -j16 -O3"
@@ -153,6 +156,7 @@ usage() {
         echo "    bash build.sh --pkg --experimental --soc=ascend910b --ops=abs --mssanitizer"
         echo "    bash build.sh --pkg --experimental --soc=ascend910b --ops=abs --oom"
         echo "    bash build.sh --pkg --experimental --soc=ascend910b --ops=abs --dump_cce"
+        echo "    bash build.sh --pkg --experimental --soc=ascend910b --ops=abs --bisheng_flags=ccec_g,oom"
         return
         ;;
       opkernel)
@@ -165,6 +169,8 @@ usage() {
         echo "    --mssanitizer          Build with mssanitizer mode on the kernel side, with options: '-g --cce-enable-sanitizer'"
         echo "    --oom                  Build with oom mode on the kernel side, with options: '-g --cce-enable-oom'"
         echo "    --dump_cce             Dump kernel precompiled files"
+        echo "    --bisheng_flags=flag1,flag2"
+        echo "                           Specify bisheng compiler config (comma-separated for multiple)"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub"
@@ -172,6 +178,7 @@ usage() {
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub --mssanitizer"
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub --oom"
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub --dump_cce"
+        echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub --bisheng_flags=ccec_g,oom"
         return
         ;;
       opkernel_aicpu)
@@ -183,12 +190,16 @@ usage() {
         echo "    --build-type=<Type>    Specify build-type (Type options: Release/Debug), Default:Release"
         echo "    --mssanitizer          Build with mssanitizer mode on the kernel side, with options: '-g --cce-enable-sanitizer'"
         echo "    --oom                  Build with oom mode on the kernel side, with options: '-g --cce-enable-oom'"
+        echo "    --bisheng_flags=flag1,flag2"
+        echo "                           Specify bisheng compiler flags (comma-separated for multiple)"
+
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --opkernel_aicpu --soc=ascend910b --ops=add,sub"
         echo "    bash build.sh --opkernel_aicpu --soc=ascend910b --ops=add,sub --build-type=Debug"
         echo "    bash build.sh --opkernel_aicpu --soc=ascend910b --ops=add,sub --mssanitizer"
         echo "    bash build.sh --opkernel_aicpu --soc=ascend910b --ops=add,sub --oom"
+        echo "    bash build.sh --opkernel_aicpu --soc=ascend910b --ops=add,sub --bisheng_flags=ccec_g,oom"
         return
         ;;
       test)
@@ -394,6 +405,7 @@ usage() {
   echo "    --mssanitizer Build with mssanitizer mode on the kernel side, with options: '-g --cce-enable-sanitizer'"
   echo "    --oom Build with oom mode on the kernel side, with options: '-g --cce-enable-oom'"
   echo "    --dump_cce Dump kernel precompiled files"
+  echo "    --bisheng_flags Specify bisheng compiler config, like: --bisheng_flags=ccec_g,oom, use ',' to separate different compiler flags"
   echo "to be continued ..."
 }
 
@@ -486,6 +498,13 @@ check_param() {
   if [[ "${BUILD_TYPE}" == "Debug" ]]; then
     if [[ "$ENABLE_MSSANITIZER" == "TRUE" || "$ENABLE_OOM" == "TRUE" || "$ENABLE_DUMP_CCE" == "TRUE" ]]; then
       echo "[ERROR] --build-type=Debug cannot be used with --mssanitizer, --oom, --dump_cce"
+      exit 1
+    fi
+  fi
+
+  if [ -n "$BISHENG_FLAGS" ]; then
+    if [[ "$ENABLE_MSSANITIZER" == "TRUE" || "$ENABLE_OOM" == "TRUE" || "$ENABLE_DUMP_CCE" == "TRUE" ]]; then
+      echo "[ERROR] --bisheng_flags= cannot be used with --mssanitizer, --oom, --dump_cce"
       exit 1
     fi
   fi
@@ -694,6 +713,7 @@ checkopts() {
   EXAMPLE_MODE=""
   BUILD_TYPE="Release"
   USE_CMD="$*"
+  BISHENG_FLAGS=""
 
   ENABLE_MSSANITIZER=FALSE
   ENABLE_OOM=FALSE
@@ -822,6 +842,9 @@ checkopts() {
         mssanitizer) ENABLE_MSSANITIZER=TRUE ;;
         oom) ENABLE_OOM=TRUE ;;
         dump_cce) ENABLE_DUMP_CCE=TRUE ;;
+        bisheng_flags=*)
+          BISHENG_FLAGS=${OPTARG#*=}
+          ;;
         cann_3rd_lib_path=*)
           CANN_3RD_LIB_PATH="$(realpath ${OPTARG#*=})"
           ;;
@@ -1028,6 +1051,9 @@ assemble_cmake_args() {
   fi
   if [[ "x$BUILD_MODE" != "x" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DBUILD_MODE=${BUILD_MODE}"
+  fi
+  if [[ "x$BISHENG_FLAGS" != "x" ]]; then
+    CMAKE_ARGS="$CMAKE_ARGS -DBISHENG_FLAGS=${BISHENG_FLAGS}"
   fi
   if [[ "$OP_HOST_UT" == "TRUE" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DOP_HOST_UT=TRUE"
