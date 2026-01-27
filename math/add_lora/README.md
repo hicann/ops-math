@@ -4,7 +4,12 @@
 
 |产品             |  是否支持  |
 |:-------------------------|:----------:|
+|  <term>Ascend 950PR/Ascend 950DT</term>   |     ×    |
+|  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     ×    |
 |  <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |     √    |
+|  <term>Atlas 200I/500 A2 推理产品</term>    |     ×    |
+|  <term>Atlas 推理系列产品</term>    |     √    |
+|  <term>Atlas 训练系列产品</term>    |     ×    |
 
 ## 功能说明
 
@@ -19,19 +24,19 @@
   1. 将x根据indices中的索引进行重排，对应同一组权重的x排列在一起。
   
   2. 循环每个Lora分组，分别拿相应的x和weightA做矩阵乘：
-     
+
      $$
      Z1 = x_{i} \cdot weightA[i, layerIdx, :, :]
      $$
   
   3. 得到的Z1继续和weightB做矩阵乘：
-     
+
      $$
      Z2 = Z1 \cdot weightB[i, layerIdx, :, :] \times scale
      $$
   
   4. 最终把Z2输出累加到y上：
-    
+
      $$
      \text{out} = y[:, yOffset: yOffset+ySliceSize] + Z2
      $$
@@ -138,4 +143,3 @@
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
 | aclnn调用 | [test_aclnn_add_lora](./examples/test_aclnn_add_lora.cpp) | 通过[aclnnAddLora](./docs/aclnnAddLora.md)接口方式调用AddLora算子。    |
 | 图模式调用 | [test_geir_add_lora](./examples/test_geir_add_lora.cpp)   | 通过[算子IR](./op_graph/add_lora_proto.h)构图方式调用AddLora算子。 |
-

@@ -1,15 +1,21 @@
 # aclnnTransformBiasRescaleQkv
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/transform_bias_rescale_qkv)
+
 ## 产品支持情况
 
 |产品             |  是否支持  |
 |:-------------------------|:----------:|
+|  <term>Ascend 950PR/Ascend 950DT</term>   |     √    |
 |  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     √    |
 |  <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |     √    |
+|  <term>Atlas 200I/500 A2 推理产品</term>    |     ×    |
+|  <term>Atlas 推理系列产品</term>    |     ×    |
+|  <term>Atlas 训练系列产品</term>    |     ×    |
 
 ## 功能说明
 
-- 算子功能：
+- 接口功能：
   TransformBiasRescaleQkv算子是一个用于处理多头注意力机制中查询（Query）、键（Key）、值（Value）向量的接口。它用于调整这些向量的偏置（Bias）和缩放（Rescale）因子，以优化注意力计算过程。
 
 - 计算公式：  
@@ -17,19 +23,17 @@
 
   $$
 
- 		q_o=(q_i+q_{bias})/\sqrt{dim\_per\_head}\\
+  q_o=(q_i+q_{bias})/\sqrt{dim\_per\_head}\\
 
   $$
-
-  $$
-  
-		k_o=k_i+k_{bias}\\
-
-  $$
-
   $$
   
-    v_o=v_i+v_{bias} 
+  k_o=k_i+k_{bias}\\
+
+  $$
+  $$
+  
+    v_o=v_i+v_{bias}
 
   $$
 
@@ -175,7 +179,9 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+
   第一段接口会完成入参校验，出现以下场景时报错：
+
   <table style="undefined;table-layout: fixed;width: 979px"><colgroup>
   <col style="width: 272px">
   <col style="width: 103px">
@@ -440,6 +446,7 @@ PrintOutResult(outShape, &outQDeviceAddr);
 
 LOG_PRINT("k output=====");
 PrintOutResult(outShape, &outKDeviceAddr);
+
 
 LOG_PRINT("v output=====");
 PrintOutResult(outShape, &outVDeviceAddr);

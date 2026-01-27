@@ -1,14 +1,21 @@
 # aclnnAddLora
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/add_lora)
+
 ## 产品支持情况
 
 |产品             |  是否支持  |
 |:-------------------------|:----------:|
+|  <term>Ascend 950PR/Ascend 950DT</term>   |     ×    |
+|  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     ×    |
 |  <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |     √    |
+|  <term>Atlas 200I/500 A2 推理产品</term>    |     ×    |
+|  <term>Atlas 推理系列产品</term>    |     √    |
+|  <term>Atlas 训练系列产品</term>    |     ×    |
 
 ## 功能说明
 
-- 算子功能：
+- 接口功能：
 
   将输入x根据输入索引indices，分别和对应的weightA，weightB相乘，然后将结果累加到输入y上并输出。
 
@@ -19,19 +26,19 @@
   1. 将x根据indices中的索引进行重排，对应同一组权重的x排列在一起。
   
   2. 循环每个Lora分组，分别拿相应的x和weightA做矩阵乘：
-     
+
      $$
      Z1 = x_{i} \cdot weightA[i, layerIdx, :, :]
      $$
   
   3. 得到的`Z1`继续和weightB做矩阵乘：
-     
+
      $$
      Z2 = Z1 \cdot weightB[i, layerIdx, :, :] \times scale
      $$
   
   4. 最终把`Z2`输出累加到y上：
-    
+
      $$
      \text{out} = y[:, yOffset: yOffset+ySliceSize] + Z2
      $$
@@ -63,16 +70,16 @@ aclnnStatus aclnnAddLora(
     aclOpExecutor *executor,
     aclrtStream    stream)
 ```
-     
-## aclnnFatreluMulGetWorkspaceSize
+
+## aclnnAddLoraGetWorkspaceSize
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1400px"><colgroup>
-  <col style="width: 201px">
+  <table style="undefined;table-layout: fixed; width: 1420px"><colgroup>
+  <col style="width: 171px">
   <col style="width: 115px">
   <col style="width: 220px">
-  <col style="width: 200px">
+  <col style="width: 250px">
   <col style="width: 177px">
   <col style="width: 104px">
   <col style="width: 238px">
@@ -218,7 +225,9 @@ aclnnStatus aclnnAddLora(
 - **返回值：**
 
 aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+
 第一段接口会完成入参校验，出现以下场景时报错：
+
 <table style="undefined;table-layout: fixed; width: 1048px"><colgroup>
 <col style="width: 319px">
 <col style="width: 108px">
@@ -252,7 +261,7 @@ aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/co
 </tbody>
 </table>
 
-## aclnnFatreluMul
+## aclnnAddLora
 
 - **参数说明：**
 
