@@ -51,6 +51,7 @@ constexpr uint64_t WORK_SPACE_SIZE = 16777216; // 16 * 1024 * 1024
 constexpr int64_t NUMBER_TWO = 2;
 constexpr int64_t NUMBER_THREE = 3;
 constexpr int64_t NUMBER_FOUR = 4;
+constexpr int64_t NUMBER_SIX = 6;
 constexpr int64_t STRIDED_SLICE_KEY_MOVE_ALIGN = 100;
 constexpr int64_t STRIDED_SLICE_KEY_MOVE_ALIGN_LAST_DIM = 101;
 constexpr int64_t STRIDED_SLICE_KEY_NDDMA = 102;

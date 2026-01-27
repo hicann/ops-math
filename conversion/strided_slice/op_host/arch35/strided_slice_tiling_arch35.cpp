@@ -153,8 +153,19 @@ void StrideSliceTiling::SetTwoDimTilingInfo()
 void StrideSliceTiling::CalcBlockSplitInfo()
 {
     const auto& outputShape = sliceParam_.outputShape;
-    // 每个核最少处理1KB的数据，小shape场景下减少开核个数
-    int64_t rightDiv = std::min(coreNum_, Ops::Base::CeilDiv(totalOutputSize_, LAST_DIM_MIN_DATA_SIZE));
+    int64_t minCoreProcessSize = 0;
+    if (dimNum_ > NUMBER_SIX && maxSplitDim_ == MAX_NDDMA_UB_SPLIT_AXIS_NUM) {
+        int64_t lastFourDimProd = 1L;
+        for (int32_t i = 0; i < NUMBER_FOUR; i++) {
+            lastFourDimProd *= outputShape.GetDim(dimNum_ - 1 - i);
+        }
+        // 每个核最少处理4个轴的数据
+        minCoreProcessSize = std::min(lastFourDimProd * xDtypeSize_, LAST_DIM_MIN_DATA_SIZE);
+    } else {
+        // 每个核最少处理1KB的数据，小shape场景下减少开核个数
+        minCoreProcessSize = LAST_DIM_MIN_DATA_SIZE;
+    }
+    int64_t rightDiv = std::min(coreNum_, Ops::Base::CeilDiv(totalOutputSize_, minCoreProcessSize));
     if (dimNum_ == NUMBER_TWO && ((lastOneOutputDim_ - 1) * std::abs(lastOneStride_) + 1) * xDtypeSize_ <=
                                      LAST_DIM_MIN_DATA_SIZE * NUMBER_FOUR) {
         rightDiv = std::min(rightDiv, outputShape.GetDim(0));
