@@ -475,7 +475,7 @@
     {"name":"ReduceAll", "compute_units": ["ascend910_95"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend910_95": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"ReduceProd", "compute_units": ["ascend910_95"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend910_95": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"Transpose", "compute_units": ["ascend910_95"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend910_95": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
-    {"name":"SpaceToDepth", "compute_units": ["ascend910_95"], "auto_sync" : false, "impl_mode" : ""},
+    {"name":"SpaceToDepth", "compute_units": ["ascend910_95"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend910_95": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"DepthToSpace", "compute_units": ["ascend910_95"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend910_95": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"Index", "compute_units": ["ascend910_95"], "auto_sync" : false, "impl_mode" : ""},
     {"name":"IndexPutV2", "compute_units": ["ascend910_95"], "auto_sync" : false, "impl_mode" : ""},
