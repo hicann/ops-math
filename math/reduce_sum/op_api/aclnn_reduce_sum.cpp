@@ -172,7 +172,7 @@ static bool IsNonContiguousSupport(const aclTensor* self, const DataType promote
     if (!IsRegBase()) {
         return false;
     }
-    if(!CheckType(self->GetDataType(), NON_CONTIOUS_SUPPORT_DTYPE_SUPPORT_LIST) &&
+    if(!CheckType(self->GetDataType(), NON_CONTIOUS_SUPPORT_DTYPE_SUPPORT_LIST) ||
         self->GetDataType() != promoteType) {
         return false;
     }

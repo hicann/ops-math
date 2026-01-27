@@ -15,7 +15,9 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-static const std::vector<ge::DataType> dataType = {ge::DT_BOOL, ge::DT_BOOL, ge::DT_FLOAT, ge::DT_FLOAT};
+static const std::vector<ge::DataType> inDataType = {ge::DT_BOOL, ge::DT_BOOL, ge::DT_FLOAT, ge::DT_FLOAT};
+
+static const std::vector<ge::DataType> outDataType = {ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL};
 
 static const std::vector<ge::Format> format = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
 
@@ -26,7 +28,7 @@ class ReduceAny : public OpDef {
     explicit ReduceAny(const char* name) : OpDef(name) {
         this->Input("x")
             .ParamType(REQUIRED)
-            .DataType(dataType)
+            .DataType(inDataType)
             .UnknownShapeFormat(format);
 
         this->Input("axes")
@@ -37,7 +39,7 @@ class ReduceAny : public OpDef {
     
         this->Output("y")
             .ParamType(REQUIRED)
-            .DataType(dataType)
+            .DataType(outDataType)
             .UnknownShapeFormat(format);
 
         this->Attr("keep_dims").AttrType(OPTIONAL).Bool(false);
