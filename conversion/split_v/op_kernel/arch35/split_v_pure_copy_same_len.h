@@ -63,10 +63,10 @@ private:
 
     // Record global loopTime
     int64_t curIdx_ = 0;
-    int32_t mIdx_ = 0;
-    int32_t gIdx_ = 0;
-    int32_t nIdx_ = 0;
-    int32_t gmOffset_ = 0;
+    int64_t mIdx_ = 0;
+    int64_t gIdx_ = 0;
+    int64_t nIdx_ = 0;
+    int64_t gmOffset_ = 0;
 
     DataCopyExtParams copyInParam_{0, 0, 0, 0, 0};
     DataCopyPadExtParams<T> padParam_{false, 0, 0, 0};

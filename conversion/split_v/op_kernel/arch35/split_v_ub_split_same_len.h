@@ -64,9 +64,9 @@ private:
 
     // Record global loopTime
     int64_t curIdx_ = 0;
-    int32_t mIdx_ = 0;
-    int32_t gIdx_ = 0;
-    int32_t gmOffset_ = 0;
+    int64_t mIdx_ = 0;
+    int64_t gIdx_ = 0;
+    int64_t gmOffset_ = 0;
     int64_t tmpLoop_ = 0;
     int64_t nRegSize_ = 0;
     int64_t blockCount_ = 0;

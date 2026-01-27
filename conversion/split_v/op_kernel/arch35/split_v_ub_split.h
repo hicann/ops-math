@@ -43,7 +43,7 @@ private:
     __aicore__ inline int64_t SplitPrefix(int64_t index);
     __aicore__ inline int64_t CurSplitSize(int64_t index);
     __aicore__ inline void ComputeEndLine(int32_t &curNFactor, int64_t nOffset, int64_t nowBlockEnd);
-    __aicore__ inline void DataCopyIn(int32_t mOffset,int64_t nOffset, int32_t curNFactor,
+    __aicore__ inline void DataCopyIn(int64_t mOffset,int64_t nOffset, int32_t curNFactor,
         int32_t mUbFactorNow, LocalTensor<T> &xUb);
     __aicore__ inline void UbProcess(int32_t mTimes, int32_t mUbFactor, int64_t nBlockFactorNow,
        int64_t mBlockFactorNow, int32_t nUbFactor, int64_t nowBlockEnd);
@@ -53,7 +53,7 @@ private:
     __aicore__ inline void OnceCopyOut(int32_t curNFactorBeginSplit, int64_t mOffset, int64_t nOffset,
         int64_t perSize, int32_t curNFactor, int32_t mUbFactorNow, LocalTensor<T> &xUb);
     __aicore__ inline void DataCopyOutGm(int32_t blockCount, int64_t blockLen, int64_t stride, int64_t ubOffset);
-    __aicore__ inline void AllCopyOut(int32_t mOffset,int64_t nOffset, int32_t &curNFactor,
+    __aicore__ inline void AllCopyOut(int64_t mOffset,int64_t nOffset, int32_t &curNFactor,
         int32_t mUbFactorNow, int64_t nowBlockEnd, LocalTensor<T> &xUb);
 
 private:
@@ -409,7 +409,7 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::OnceCopyOut(int32_t curNFactorBeg
 }
 
 template <typename T, typename U, typename Y>
-__aicore__ inline void SplitVUbSplit<T, U, Y>::DataCopyIn(int32_t mOffset,int64_t nOffset, int32_t curNFactor,
+__aicore__ inline void SplitVUbSplit<T, U, Y>::DataCopyIn(int64_t mOffset, int64_t nOffset, int32_t curNFactor,
     int32_t mUbFactorNow, LocalTensor<T> &xUb)
 {
     DataCopyExtParams copyParams;
@@ -423,7 +423,7 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::DataCopyIn(int32_t mOffset,int64_
 }
 
 template <typename T, typename U, typename Y>
-__aicore__ inline void SplitVUbSplit<T, U, Y>::AllCopyOut(int32_t mOffset,int64_t nOffset, int32_t &curNFactor,
+__aicore__ inline void SplitVUbSplit<T, U, Y>::AllCopyOut(int64_t mOffset, int64_t nOffset, int32_t &curNFactor,
     int32_t mUbFactorNow, int64_t nowBlockEnd, LocalTensor<T> &xUb)
 {
     splitEndLine_ = (nOffset + nBlockOffset_ + curNFactor) > nowBlockEnd ?
