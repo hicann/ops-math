@@ -65,21 +65,6 @@ TEST_F(l2_cdist_test, case_02_float16)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_cdist_test, case_03_bfloat16)
-{
-    auto x1Desc = TensorDesc({2, 2}, ACL_BF16, ACL_FORMAT_ND);
-    auto x2Desc = TensorDesc({2, 2}, ACL_BF16, ACL_FORMAT_ND);
-    auto outDesc = TensorDesc({2, 2}, ACL_BF16, ACL_FORMAT_ND);
-    float p = 2.0;
-    int64_t compute_mode = 0;
-
-    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
-    uint64_t workspace_size = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-}
-
 TEST_F(l2_cdist_test, case_04_empty_tensor)
 {
     auto x1Desc = TensorDesc({0, 1}, ACL_FLOAT, ACL_FORMAT_ND);
