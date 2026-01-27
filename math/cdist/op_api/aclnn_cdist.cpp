@@ -13,6 +13,7 @@
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "aclnn_kernels/reshape.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"
@@ -35,13 +36,25 @@ extern "C" {
 constexpr size_t MAX_DIM_LEN = 8;
 constexpr size_t MIN_DIM_LEN = 2;
 
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT,
-    op::DataType::DT_FLOAT16,
-    op::DataType::DT_BF16
-};
+static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
+static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
 
-static bool CheckNotNull(const aclTensor* x1, const aclTensor* x2, const aclTensor* out) {
+static const inline std::initializer_list<DataType>& GetSupportDtypeList(SocVersion socVersion)
+{
+    static const std::initializer_list<DataType> emptyDtypes = {};
+    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) {
+        return ASCEND910B_DTYPE_SUPPORT_LIST;
+    } else if (socVersion == SocVersion::ASCEND910_95) {
+        return ASCEND910_95_DTYPE_SUPPORT_LIST;
+    } else {
+        return emptyDtypes;
+    }
+}
+
+static bool CheckNotNull(const aclTensor* x1, const aclTensor* x2, const aclTensor* out)
+{
     // 检查输入输出是否为空指针
     OP_CHECK_NULL(x1, return false);
     OP_CHECK_NULL(x2, return false);
@@ -49,18 +62,21 @@ static bool CheckNotNull(const aclTensor* x1, const aclTensor* x2, const aclTens
     return true;
 }
 
-static bool CheckDtypeValid(const aclTensor* x1, const aclTensor* x2, const aclTensor* out) {
+static bool CheckDtypeValid(const aclTensor* x1, const aclTensor* x2, const aclTensor* out, SocVersion socVersion)
+{
+    static const std::initializer_list<DataType> dtypeSupportList = GetSupportDtypeList(socVersion);
     // 检查输入输出的数据类型是否在支持列表内
-    OP_CHECK_DTYPE_NOT_SUPPORT(x1, DTYPE_SUPPORT_LIST, return false);
-    OP_CHECK_DTYPE_NOT_SUPPORT(x2, DTYPE_SUPPORT_LIST, return false);
-    OP_CHECK_DTYPE_NOT_SUPPORT(out, DTYPE_SUPPORT_LIST, return false);
+    OP_CHECK_DTYPE_NOT_SUPPORT(x1, dtypeSupportList, return false);
+    OP_CHECK_DTYPE_NOT_SUPPORT(x2, dtypeSupportList, return false);
+    OP_CHECK_DTYPE_NOT_SUPPORT(out, dtypeSupportList, return false);
     // 检查out和输入的数据类型是否一致
     OP_CHECK_DTYPE_NOT_SAME(x1, out, return false);
     OP_CHECK_DTYPE_NOT_SAME(x2, out, return false);
     return true;
 }
 
-static bool CheckShape(const aclTensor* x1, const aclTensor* x2, const aclTensor* out) {
+static bool CheckShape(const aclTensor* x1, const aclTensor* x2, const aclTensor* out)
+{
     // 输入输出的维度最多支持8维
     OP_CHECK_MAX_DIM(x1, MAX_DIM_LEN, return false);
     OP_CHECK_MAX_DIM(x2, MAX_DIM_LEN, return false);
@@ -81,28 +97,54 @@ static bool CheckShape(const aclTensor* x1, const aclTensor* x2, const aclTensor
     return true;
 }
 
-static bool CheckParamsLogic(float p) {
+static bool CheckParamsLogic(float& p, const int64_t compute_mode, SocVersion socVersion)
+{
     // p范数为非负数
     if(p < 0 || std::isnan(p)) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "cdist only supports non-negative p values.");
         return false;
     }
+    // 强校验compute_mode
+    if (std::fabs(p - 2.0) < 1e-6 && compute_mode != 0){
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "compute_mode %lld is not supported, only support 0 when pValue equals 2.0",
+                compute_mode);
+        return false;
+    }
+    // A2A3特殊处理p值
+    if ((socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) && std::isinf(p)){
+        p = -1.0;
+    }
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor* x1, const aclTensor* x2, float p, aclTensor* out) {
+// 检查数据格式
+static void CheckFormat(const aclTensor* x1, const aclTensor* x2)
+{
+    ge::Format x1StorageFormat = x1->GetStorageFormat();
+    ge::Format x2StorageFormat = x2->GetStorageFormat();
+    if (x1StorageFormat != ge::Format::FORMAT_ND || x2StorageFormat != ge::Format::FORMAT_ND) {
+        OP_LOGW("aclnnCdist only support ND format.");
+    }
+}
+
+static aclnnStatus CheckParams(
+    const aclTensor* x1, const aclTensor* x2, float& p, const int64_t compute_mode, aclTensor* out,
+    SocVersion socVersion)
+{
     // 1. 检查参数是否为空指针
     CHECK_COND(CheckNotNull(x1, x2, out), ACLNN_ERR_PARAM_NULLPTR, "CheckNotNull failed!");
 
     // 2. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
-    CHECK_COND(CheckDtypeValid(x1, x2, out), ACLNN_ERR_PARAM_INVALID, "CheckDtypeValid failed!");
+    CHECK_COND(CheckDtypeValid(x1, x2, out, socVersion), ACLNN_ERR_PARAM_INVALID, "CheckDtypeValid failed!");
 
     // 3. 检查输入输出的shape，双输入shape能否做broadcast
     CHECK_COND(CheckShape(x1, x2, out), ACLNN_ERR_PARAM_INVALID, "CheckShape failed!");
 
     // 4. 检查输入数据的值是否合理
-    CHECK_COND(CheckParamsLogic(p), ACLNN_ERR_PARAM_INVALID, "CheckParamsLogic failed!");
+    CHECK_COND(CheckParamsLogic(p, compute_mode, socVersion), ACLNN_ERR_PARAM_INVALID, "CheckParamsLogic failed!");
 
+    // 5. 检查数据格式
+    CheckFormat(x1, x2);
     return ACLNN_SUCCESS;
 }
 
@@ -118,23 +160,26 @@ static bool CheckBatchDimNum(const aclTensor* x) {
 }
 
 // 定义aclnnCdist的第一段接口
-aclnnStatus aclnnCdistGetWorkspaceSize(const aclTensor* x1, const aclTensor* x2, 
-                                       float p, int64_t compute_mode, aclTensor* out, 
-                                       uint64_t* workspaceSize, aclOpExecutor** executor) {
+aclnnStatus aclnnCdistGetWorkspaceSize(
+    const aclTensor* x1, const aclTensor* x2, float p, int64_t compute_mode, aclTensor* out, uint64_t* workspaceSize,
+    aclOpExecutor** executor)
+{
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
     L2_DFX_PHASE_1(aclnnCdist, DFX_IN(x1, x2, p, compute_mode), DFX_OUT(out));
+
+    SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
 
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
     // 固定写法，参数检查
-    auto ret = CheckParams(x1, x2, p, out);
+    auto ret = CheckParams(x1, x2, p, compute_mode, out, socVersion);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
     const aclTensor* CdistOutRet = nullptr;
-    
+
     auto x1DimNum = x1->GetViewShape().GetDimNum();
     auto x2DimNum = x2->GetViewShape().GetDimNum();
 
@@ -158,12 +203,16 @@ aclnnStatus aclnnCdistGetWorkspaceSize(const aclTensor* x1, const aclTensor* x2,
     int64_t x2Rank = x2Contiguous->GetViewShape().GetDimNum();
     int64_t minRank = std::min(x1Rank, x2Rank);
     int64_t maxRank = std::max(x1Rank, x2Rank);
-    
+
     // 前面的维度进行广播
-    for(int64_t i = 0; i < static_cast<int64_t>(maxRank - MIN_DIM_LEN); i++) {
+    for (int64_t i = 0; i < static_cast<int64_t>(maxRank - MIN_DIM_LEN); i++) {
         // 较小维度的tensor前面补1
-        int64_t dim1 = (x1Rank < maxRank) ? ((i < maxRank -minRank) ? 1 : x1Contiguous->GetViewShape().GetDim(i - maxRank + minRank)) : x1Contiguous->GetViewShape().GetDim(i);
-        int64_t dim2 = (x2Rank < maxRank) ? ((i < maxRank -minRank) ? 1 : x2Contiguous->GetViewShape().GetDim(i - maxRank + minRank)) : x2Contiguous->GetViewShape().GetDim(i);  
+        int64_t dim1 = (x1Rank < maxRank) ?
+                           ((i < maxRank - minRank) ? 1 : x1Contiguous->GetViewShape().GetDim(i - maxRank + minRank)) :
+                           x1Contiguous->GetViewShape().GetDim(i);
+        int64_t dim2 = (x2Rank < maxRank) ?
+                           ((i < maxRank - minRank) ? 1 : x2Contiguous->GetViewShape().GetDim(i - maxRank + minRank)) :
+                           x2Contiguous->GetViewShape().GetDim(i);
         // 判断是否符合广播规则
         if(dim1 != dim2) {
             if(dim1 != 1 && dim2 != 1) {
@@ -176,7 +225,7 @@ aclnnStatus aclnnCdistGetWorkspaceSize(const aclTensor* x1, const aclTensor* x2,
         x1BroadcastShape.AppendDim(broadcastDim);
         x2BroadcastShape.AppendDim(broadcastDim);
     }
-    for(int64_t i = 1; i >= 0; i--) {
+    for (int64_t i = 1; i >= 0; i--) {
         x1BroadcastShape.AppendDim(x1Contiguous->GetViewShape().GetDim(x1DimNum - i - 1));
         x2BroadcastShape.AppendDim(x2Contiguous->GetViewShape().GetDim(x2DimNum - i - 1));
     }
@@ -209,6 +258,35 @@ aclnnStatus aclnnCdistGetWorkspaceSize(const aclTensor* x1, const aclTensor* x2,
         auto x2Broadcast = l0op::BroadcastTo(x2Contiguous, x2BroadcastShapeArray, uniqueExecutor.get());
         CHECK_RET(x2Broadcast != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
+        if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) {
+            // 获取算子输入所需的shape，将其输入进行broadcast
+            gert::Shape x1Shape = x1Broadcast->GetViewShape();
+            gert::Shape x2Shape = x2Broadcast->GetViewShape();
+            size_t dimNum = x1Shape.GetDimNum();
+            int64_t tensorR = x2Shape.GetDim(dimNum - 2);
+            int64_t tensorM = x1Shape.GetDim(dimNum - 1);
+
+            gert::Shape x1UnsqueezedShape = x1Shape;
+            gert::Shape x2UnsqueezedShape = x2Shape;
+            x1UnsqueezedShape.AppendDim(tensorM);
+            x2UnsqueezedShape.AppendDim(tensorM);
+            x1UnsqueezedShape.SetDim(dimNum - 1, 1);
+            x2UnsqueezedShape.SetDim(dimNum - 2, 1);
+            x2UnsqueezedShape.SetDim(dimNum - 1, tensorR);
+            auto x1Reshape = l0op::Reshape(x1Broadcast, x1UnsqueezedShape, uniqueExecutor.get());
+            auto x2Reshape = l0op::Reshape(x2Broadcast, x2UnsqueezedShape, uniqueExecutor.get());
+
+            gert::Shape finalInputShape = x1UnsqueezedShape;
+            finalInputShape.SetDim(dimNum - 1, x2UnsqueezedShape[dimNum - 1]);
+
+            FVector<int64_t, MAX_DIM_NUM> broadcastDims = ToShapeVector(finalInputShape);
+            aclIntArray* inputBroadcastShapeArray =
+                uniqueExecutor.get()->AllocIntArray(broadcastDims.data(), broadcastDims.size());
+            CHECK_RET(inputBroadcastShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            x1Broadcast = l0op::BroadcastTo(x1Reshape, inputBroadcastShapeArray, uniqueExecutor.get());
+            x2Broadcast = l0op::BroadcastTo(x2Reshape, inputBroadcastShapeArray, uniqueExecutor.get());
+        }
+
         // 进行计算
         CdistOutRet = l0op::Cdist(x1Broadcast, x2Broadcast, p, compute_mode, uniqueExecutor.get());
     }
@@ -225,7 +303,8 @@ aclnnStatus aclnnCdistGetWorkspaceSize(const aclTensor* x1, const aclTensor* x2,
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnCdist(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream) {
+aclnnStatus aclnnCdist(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+{
     L2_DFX_PHASE_2(aclnnCdist);
     // 固定写法，调用框架能力，完成计算
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

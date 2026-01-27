@@ -7,8 +7,8 @@
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    ×     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    ×     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
@@ -105,7 +105,7 @@ aclnnStatus aclnnCdist(
       <td>compute_mode</td>
       <td>输入</td>
       <td>表示计算模式，预留参数，暂无作用。</td>
-      <td>预留参数，建议给0，表示当前无作用，暂不支持改参数</td>
+      <td><ul><li>预留参数，当前无作用，当p为2.0时，此参数只支持0。</li></td>
       <td>int64_t</td>
       <td>-</td>
       <td>-</td>
@@ -181,7 +181,7 @@ aclnnStatus aclnnCdist(
 ## 约束说明
 - **功能维度**
   * 数据类型支持
-    * <term>Ascend 950PR/Ascend 950DT</term>：x1、x2、y支持FLOAT32、FLOAT16、BFLOAT16。
+    * <term>Ascend 950PR/Ascend 950DT</term>：x1、x2、y支持FLOAT32、FLOAT16、BFLOAT16。<term>昇腾910B AI处理器</term>、<term>昇腾910_93 AI处理器</term>：x1、x2、y支持FLOAT32、FLOAT16。
     * p 支持：float。
     * compute_mode 支持：int64_t。
   * 数据格式支持：ND。
