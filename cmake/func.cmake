@@ -768,6 +768,17 @@ function(add_onnx_plugin_modules)
   endif()
 endfunction()
 
+
+function(get_op_type_from_binary_json BINARY_JSON OP_TYPE)
+  execute_process(COMMAND grep -w op_type ${BINARY_JSON} OUTPUT_VARIABLE op_type)
+  string(REGEX REPLACE "\"op_type\"" "" op_type ${op_type})
+  string(REGEX MATCH "\".+\"" op_type ${op_type})
+  string(REGEX REPLACE "\"" "" op_type ${op_type})
+
+  set(${OP_TYPE} ${op_type} PARENT_SCOPE)
+endfunction()
+
+
 macro(add_onnx_plugin_sources)
   set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
