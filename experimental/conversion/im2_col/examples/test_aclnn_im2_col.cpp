@@ -17,14 +17,7 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  */
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 
-
->>>>>>> 9d1418ab... cl compile
-=======
->>>>>>> 670cc9f8... ci
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
