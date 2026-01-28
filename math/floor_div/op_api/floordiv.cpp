@@ -92,4 +92,28 @@ const aclTensor* FloorDiv(const aclTensor* self, const aclTensor* other, aclOpEx
     }
 }
 
+const aclTensor* FloorDiv(const aclTensor* self, const aclTensor* other, bool isScalar, aclOpExecutor* executor)
+{
+    op::Shape broadcastShape;
+    if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+            op::ToString(other->GetViewShape()).GetString());
+        return nullptr;
+    }
+    
+    aclTensor* out;
+    if (isScalar || self->GetDataType() == other->GetDataType()) {
+        out = executor->AllocTensor(broadcastShape, self->GetDataType());
+    } else {
+        out = executor->AllocTensor(broadcastShape, op::DataType::DT_FLOAT);
+    }
+
+    if (IsAiCoreSupport(self)) {
+        return FloorDivAiCore(self, other, out, executor);
+    } else {
+        return FloorDivAiCpu(self, other, out, executor);
+    }
+}
+
 } // namespace l0op

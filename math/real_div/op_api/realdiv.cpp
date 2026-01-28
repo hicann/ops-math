@@ -131,4 +131,32 @@ const aclTensor* RealDiv(const aclTensor* self, const aclTensor* other, const in
   return divOut;
 }
 
+static const aclTensor* RealDivKernel(const aclTensor* self, const aclTensor* other, aclTensor* divOut,
+                                      aclOpExecutor* executor) {
+  if (IsAiCoreSupport(self)) {
+    return RealDivAiCore(self, other, divOut, executor);
+  } else {
+    return RealDivAiCpu(self, other, divOut, executor);
+  }
+}
+
+const aclTensor* RealDiv(const aclTensor* self, const aclTensor* other, bool isScalar, aclOpExecutor* executor) {
+  op::Shape broadcastShape;
+  if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
+    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+            op::ToString(other->GetViewShape()).GetString());
+    return nullptr;
+  }
+
+  aclTensor* divOut;
+  if ((isScalar && self->GetDataType() != op::DataType::DT_BOOL) || 
+    ((!isScalar) && self->GetDataType() == other->GetDataType() && self->GetDataType() != op::DataType::DT_BOOL)) {
+    divOut = executor->AllocTensor(broadcastShape, self->GetDataType());
+  } else {
+    divOut = executor->AllocTensor(broadcastShape, op::DataType::DT_FLOAT);
+  }
+
+  return RealDivKernel(self, other, divOut, executor);
+}
+
 }  // namespace l0op

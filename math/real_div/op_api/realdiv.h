@@ -16,6 +16,7 @@
 namespace l0op {
     const aclTensor *RealDiv(const aclTensor *self, const aclTensor *other, aclOpExecutor *executor);
     const aclTensor *RealDiv(const aclTensor *self, const aclTensor *other, const int mode, aclOpExecutor *executor);
+    const aclTensor *RealDiv(const aclTensor *self, const aclTensor *other, bool isScalar, aclOpExecutor *executor);
     bool IsRealDivSupportNonContiguous(const aclTensor* self);
 }
 
