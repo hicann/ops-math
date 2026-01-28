@@ -122,4 +122,41 @@ const aclTensor* Add(const aclTensor* self, const aclTensor* other, aclOpExecuto
     return AddAiCpu(self, other, addOut, executor);
 }
 
+const aclTensor* AddInplace(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor)
+{
+    Shape broadcastShape;
+    if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+            op::ToString(other->GetViewShape()).GetString());
+        return nullptr;
+    }
+
+    // 校验输出tensor的shape和other tensor一致
+    if (broadcastShape != other->GetViewShape()) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self and other broadcastShape [%s] not equal to other shape [%s], do no support inplace from the 'other' tensor!", 
+            op::ToString(broadcastShape).GetString(), op::ToString(other->GetViewShape()).GetString());
+        return nullptr;
+    }
+
+    // 校验输出tensor的dtype和other tensor一致
+    bool isMixDataType = (self->GetDataType() == DataType::DT_FLOAT16 && other->GetDataType() == DataType::DT_FLOAT) ||
+                         (self->GetDataType() == DataType::DT_FLOAT && other->GetDataType() == DataType::DT_FLOAT16) ||
+                         (self->GetDataType() == DataType::DT_BF16 && other->GetDataType() == DataType::DT_FLOAT) ||
+                         (self->GetDataType() == DataType::DT_FLOAT && other->GetDataType() == DataType::DT_BF16);
+    if (isMixDataType && (other->GetDataType() == DataType::DT_FLOAT16 || other->GetDataType() == DataType::DT_BF16)) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "out dtype DataType::DT_FLOAT not equal to other dtype [%s], do no support inplace from the 'other' tensor!", 
+            op::ToString(other->GetDataType()).GetString());
+        return nullptr;
+    }
+
+    auto addOut = const_cast<aclTensor *>(other);
+
+    if (isMixDataType || (IsAiCoreSupport(self) && IsAiCoreSupport(other))) {
+        return AddAiCore(self, other, addOut, executor);
+    }
+
+    return AddAiCpu(self, other, addOut, executor);
+}
+
 } // namespace l0op

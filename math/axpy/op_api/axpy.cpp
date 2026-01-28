@@ -73,4 +73,28 @@ const aclTensor *Axpy(const aclTensor *self, const aclTensor *other, float alpha
     return AxpyAiCpu(self, other, alpha, axpyOut, executor);
   }
 }
+
+const aclTensor *AxpyInplace(const aclTensor *self, const aclTensor *other, float alpha, aclOpExecutor *executor) {
+  op::Shape broadcastShape;
+  if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
+    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+            op::ToString(other->GetViewShape()).GetString());
+    return nullptr;
+  }
+  
+  // 校验输出tensor的shape和other tensor一致
+  if (broadcastShape != other->GetViewShape()) {
+    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self and other broadcastShape [%s] not equal to other shape [%s], do no support inplace from the 'other' tensor!", 
+      op::ToString(broadcastShape).GetString(), op::ToString(other->GetViewShape()).GetString());
+      return nullptr;
+  }
+
+  auto axpyOut = const_cast<aclTensor *>(other);
+
+  if (IsAiCoreSupport(self)) {
+    return AxpyAiCore(self, other, alpha, axpyOut, executor);
+  } else {
+    return AxpyAiCpu(self, other, alpha, axpyOut, executor);
+  }
+}
 }  // namespace l0op

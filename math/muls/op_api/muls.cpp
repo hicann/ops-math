@@ -40,4 +40,19 @@ const aclTensor *Muls(const aclTensor *self,
   return mulsOut;
 }
 
+const aclTensor *MulsInplace(const aclTensor *self,
+                      float alpha,
+                      aclOpExecutor *executor) {
+  L0_DFX(MulsInplace, self, alpha);
+
+  auto mulsOut = self;
+
+  auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(Muls,
+                                               OP_INPUT(self),
+                                               OP_OUTPUT(mulsOut),
+                                               OP_ATTR(alpha));
+  OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
+                                       "Muls ADD_TO_LAUNCHER_LIST_AICORE failed.");
+  return mulsOut;
+}
 }
