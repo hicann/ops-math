@@ -25,12 +25,13 @@ const static size_t INPUT_X = 0;
 const static size_t INPUT_Y = 1;
 const static size_t OUTPUT_Z = 0;
 
-const static int64_t DIFF_SHAPE_CORE = 1;
+const static int64_t SINGLE_CORE = 1;
 const static int64_t MIN_CORE_PROCESS = 2048;
 const static int64_t DOUBLE_BUFFER = 2;
 const static int64_t DOUBLE_INPUT = 2;
 const static int64_t RESERVED_UB_SIZE = 512;
 const static int64_t WORKSPACE_SAVE_SIZE = 32;
+const static int64_t EMPTY_SHAPE_TILINGKEY = 101;
 const static int64_t DIFFER_SHAPE_TILINGKEY = 111;
 const static int64_t NORMAL_SHAPE_TILINGKEY = 121;
 
@@ -109,8 +110,12 @@ ge::graphStatus TensorEqualTiling::GetShapeAttrsInfo()
     inputDtypeSize_ = inputXDTypeSize;
     inputShapeSize_ = inputXShape.GetShapeSize();
     vRegSize_ = Ops::Base::GetVRegSize(context_);
-
-    tilingKey_ = inputXShape != inputYShape ? DIFFER_SHAPE_TILINGKEY : NORMAL_SHAPE_TILINGKEY;
+    
+    tilingKey_ = NORMAL_SHAPE_TILINGKEY;
+    if (inputXShape.GetShapeSize() == 0 || inputYShape.GetShapeSize() == 0) {
+        tilingKey_ = EMPTY_SHAPE_TILINGKEY;
+    }
+    tilingKey_ = inputXShape != inputYShape ? DIFFER_SHAPE_TILINGKEY : tilingKey_;
 
     return ge::GRAPH_SUCCESS;
 }
@@ -131,7 +136,9 @@ ge::graphStatus TensorEqualTiling::DoOpTiling()
     int64_t perCoreProcess = std::max(perCoreProcessTemp, MIN_CORE_PROCESS);
     perCoreProcess = Ops::Base::CeilAlign(perCoreProcess, vRegFactor);
     usedCoreNum_ = Ops::Base::CeilDiv(inputShapeSize_, perCoreProcess);
-    usedCoreNum_ = tilingKey_ == DIFFER_SHAPE_TILINGKEY ? DIFF_SHAPE_CORE : usedCoreNum_;
+    if (tilingKey_ == DIFFER_SHAPE_TILINGKEY || tilingKey_ == EMPTY_SHAPE_TILINGKEY) {
+        usedCoreNum_ = SINGLE_CORE;
+    }
     int64_t perCoreUbFactor = Ops::Base::CeilDiv(inputShapeSize_, usedCoreNum_);
     perCoreProcess = Ops::Base::CeilAlign(perCoreUbFactor, vRegFactor);
     int64_t tailCoreUbFactor = inputShapeSize_ - (usedCoreNum_ - 1) * perCoreUbFactor;

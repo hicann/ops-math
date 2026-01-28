@@ -23,6 +23,7 @@ namespace TensorEqual {
 using namespace AscendC;
 
 constexpr int64_t DOUBLE_BUFFER = 2;
+constexpr int64_t EMPTY_SHAPE_TILINGKEY = 101;
 constexpr int64_t DIFF_SHAPE_TILINGKEY = 111;
 constexpr int64_t OUTPUT_SIZE = 256;
 constexpr uint8_t NORMAL_OUTPUT = 1;
@@ -111,29 +112,23 @@ __aicore__ inline void TensorEqualKernel<T>::Compute(int64_t dataLen)
 {
     LocalTensor<InputType> xLocal = inputXQueue_.DeQue<InputType>();
     LocalTensor<InputType> yLocal = inputYQueue_.DeQue<InputType>();
-
     __ubuf__ InputType *inputXAddr = (__ubuf__ InputType *)xLocal.GetPhyAddr();
     __ubuf__ InputType *inputYAddr = (__ubuf__ InputType *)yLocal.GetPhyAddr();
     uint16_t strideVReg = Ops::Base::GetVRegSize();
     uint32_t dataLenVf = dataLen * sizeof(T);
     uint16_t repeatTimes = (dataLenVf + strideVReg - 1) / strideVReg;
-
     LocalTensor<uint32_t> resultLocal = resultBuf_.Get<uint32_t>();
     __ubuf__ uint32_t *resultAddr = (__ubuf__ uint32_t *)resultLocal.GetPhyAddr();
 
     __VEC_SCOPE__
     {
-        AscendC::MicroAPI::RegTensor<InputType> xReg;
-        AscendC::MicroAPI::RegTensor<InputType> yReg;
-        AscendC::MicroAPI::RegTensor<uint32_t> zReg;
-        AscendC::MicroAPI::RegTensor<uint32_t> tmpReg;
+        AscendC::MicroAPI::RegTensor<InputType> xReg, yReg;
+        AscendC::MicroAPI::RegTensor<uint16_t> tmpU16Reg, tmpU16RegAdd;
+        AscendC::MicroAPI::RegTensor<uint32_t> tmpU32Reg;
         AscendC::MicroAPI::AddrReg offSetReg;
-        AscendC::MicroAPI::MaskReg maskReg;
-        AscendC::MicroAPI::MaskReg cmpMaskReg;
+        AscendC::MicroAPI::MaskReg bakMaskRegHigh, bakMaskRegLow, maskReg, cmpMaskReg;
         AscendC::MicroAPI::MaskReg allMaskReg = AscendC::MicroAPI::CreateMask<uint8_t, AscendC::MicroAPI::MaskPattern::ALL>();
         AscendC::MicroAPI::MaskReg bakMaskReg = AscendC::MicroAPI::CreateMask<uint8_t, AscendC::MicroAPI::MaskPattern::ALLF>();
-        AscendC::MicroAPI::MaskReg maskReg1;
-        AscendC::MicroAPI::MaskReg maskReg2;
         for (uint16_t i = 0; i < repeatTimes; i++) {
             offSetReg = AscendC::MicroAPI::CreateAddrReg<uint8_t>(i, strideVReg);
             AscendC::MicroAPI::DataCopy(xReg, inputXAddr, offSetReg);
@@ -142,11 +137,25 @@ __aicore__ inline void TensorEqualKernel<T>::Compute(int64_t dataLen)
             AscendC::MicroAPI::Compare<InputType, CMPMODE::NE>(cmpMaskReg, xReg, yReg, maskReg);
             AscendC::MicroAPI::MaskOr(bakMaskReg, bakMaskReg, cmpMaskReg, allMaskReg);
         }
-        AscendC::MicroAPI::Duplicate(tmpReg, 1);
-        AscendC::MicroAPI::MaskUnPack(maskReg1, bakMaskReg);
-        AscendC::MicroAPI::MaskUnPack(maskReg2, maskReg1);
-        AscendC::MicroAPI::ReduceMax(zReg, tmpReg, maskReg2);
-        AscendC::MicroAPI::DataCopy(resultAddr, zReg, allMaskReg);
+        if constexpr (std::is_same<InputType, uint8_t>::value) {
+            AscendC::MicroAPI::Duplicate(tmpU16Reg, 1);
+            AscendC::MicroAPI::MaskUnPack<AscendC::MicroAPI::HighLowPart::HIGHEST>(bakMaskRegHigh, bakMaskReg);
+            AscendC::MicroAPI::MaskUnPack<AscendC::MicroAPI::HighLowPart::LOWEST>(bakMaskRegLow, bakMaskReg);
+            AscendC::MicroAPI::ReduceMax(tmpU16RegAdd, tmpU16Reg, bakMaskRegHigh);
+            AscendC::MicroAPI::ReduceMax(tmpU16Reg, tmpU16Reg, bakMaskRegLow);
+            AscendC::MicroAPI::Add(tmpU16Reg, tmpU16Reg, tmpU16RegAdd, allMaskReg);
+            AscendC::MicroAPI::UnPack<uint32_t, uint16_t, AscendC::MicroAPI::HighLowPart::LOWEST>(tmpU32Reg, tmpU16Reg);
+            AscendC::MicroAPI::DataCopy(resultAddr, tmpU32Reg, allMaskReg);
+        } else if constexpr (std::is_same<InputType, half>::value) {
+            AscendC::MicroAPI::Duplicate(tmpU16Reg, 1);
+            AscendC::MicroAPI::ReduceMax(tmpU16Reg, tmpU16Reg, bakMaskReg);
+            AscendC::MicroAPI::UnPack<uint32_t, uint16_t, AscendC::MicroAPI::HighLowPart::LOWEST>(tmpU32Reg, tmpU16Reg);
+            AscendC::MicroAPI::DataCopy(resultAddr, tmpU32Reg, allMaskReg);
+        } else {
+            AscendC::MicroAPI::Duplicate(tmpU32Reg, 1);
+            AscendC::MicroAPI::ReduceMax(tmpU32Reg, tmpU32Reg, bakMaskReg);
+            AscendC::MicroAPI::DataCopy(resultAddr, tmpU32Reg, allMaskReg);
+        }
     }
     inputXQueue_.FreeTensor(xLocal);
     inputYQueue_.FreeTensor(yLocal);
@@ -155,7 +164,7 @@ __aicore__ inline void TensorEqualKernel<T>::Compute(int64_t dataLen)
 template <typename T>
 __aicore__ inline void TensorEqualKernel<T>::Process()
 {
-    if (blockIdx_ >= tilingData_.usedCoreNum || tilingData_.tilingKey == DIFF_SHAPE_TILINGKEY) {
+    if (blockIdx_ >= tilingData_.usedCoreNum || tilingData_.tilingKey == DIFF_SHAPE_TILINGKEY || tilingData_.tilingKey == EMPTY_SHAPE_TILINGKEY) {
         return;
     }
     LocalTensor<uint32_t> saveLocal = saveBuf_.Get<uint32_t>();

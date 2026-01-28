@@ -17,6 +17,7 @@
 
 #define TILING_KEY_NORMAL 121
 #define TILING_KEY_DIFF_SHAPE 111
+#define TILING_KEY_EMPTY_SHAPE 101
 
 using namespace TensorEqual;
 
@@ -38,6 +39,10 @@ extern "C" __global__ __aicore__ void tensor_equal(GM_ADDR input_x, GM_ADDR inpu
         op.Init(input_x, input_y, output_z, userWS);
         op.Process();
     } else if (TILING_KEY_IS(TILING_KEY_DIFF_SHAPE)) {
+        TensorEqual::TensorEqualKernel<DTYPE_INPUT_X> op(tilingData, pipe);
+        op.Init(input_x, input_y, output_z, userWS);
+        op.Process();
+    } else if (TILING_KEY_IS(TILING_KEY_EMPTY_SHAPE)) {
         TensorEqual::TensorEqualKernel<DTYPE_INPUT_X> op(tilingData, pipe);
         op.Init(input_x, input_y, output_z, userWS);
         op.Process();
