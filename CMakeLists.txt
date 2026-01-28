@@ -58,7 +58,7 @@ set(CANN_3RD_LIB_PATH ${PROJECT_SOURCE_DIR}/third_party CACHE STRING "cann third
 # 指定编译的算子
 set(ASCEND_OP_NAME "" CACHE STRING "operators that designated for compilation")
 set(VENDOR_NAME "custom" CACHE STRING "vendor name")
-set(ASCEND_ALL_COMPUTE_UNIT "ascend031;ascend035;ascend630;ascend610lite;ascend310b;ascend310p;ascend910;ascend910b;ascend910_93;ascend910_95;kirinx90")
+set(ASCEND_ALL_COMPUTE_UNIT "ascend031;ascend035;ascend630;ascend610lite;ascend310b;ascend310p;ascend910;ascend910b;ascend910_93;ascend910_95;kirinx90;mc62cm12a")
 
 if("${BUILD_MODE}" STREQUAL "-O0" OR "${BUILD_MODE}" STREQUAL "-O1" OR
    "${BUILD_MODE}" STREQUAL "-O2" OR "${BUILD_MODE}" STREQUAL "-O3"
