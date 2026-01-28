@@ -13,7 +13,7 @@
 
 - [ops-math包](#ops-math包)：选择整个项目编译生成的包称为ops-math包，可**完整替换**CANN包对应部分。该包支持aclnn和图模式调用AI Core算子。
 
-- [ops-math静态库](#ops-math静态库)：指整个项目编译为一个静态库文件，包含libcann-math-static.a和aclnn接口头文件。该包仅支持aclnn调用AI Core算子。
+- [ops-math静态库](#ops-math静态库)：指整个项目编译为一个静态库文件，包含libcann_math_static.a和aclnn接口头文件。该包仅支持aclnn调用AI Core算子。
 
   >说明：若您需要**基于本项目进行二次发布**并且对**软件包大小有要求**时，建议采用静态库编译，该库可以链接您的应用开发程序，仅保留业务所需的算子，从而实现软件最小化部署。
 
@@ -106,57 +106,43 @@
 
 ### ops-math静态库
 
-> 说明：Ascend 950PR/Ascend 950DT暂不支持使用静态库。
+> 说明：静态库仅支持Atlas A2、Atlas A3系列产品。experimental算子暂不支持使用静态库。
 
 1. **编译ops-math静态库**
 
-   进入项目根目录，执行如下编译命令：
+    进入项目根目录，执行如下编译命令：
 
     ```bash
-   bash build.sh --pkg --static --soc=${soc_version}
+    bash build.sh --pkg --static --soc=${soc_version}
     ```
-   \$\{soc\_version\}表示NPU型号。Atlas A2系列产品使用"ascend910b"（默认），Atlas A3系列产品使用"ascend910_93"。
+    \$\{soc\_version\}表示NPU型号。Atlas A2系列产品使用"ascend910b"（默认），Atlas A3系列产品使用"ascend910_93"。
 
-   若提示如下信息，说明编译并压缩成功。
+    若提示如下信息，说明编译并压缩成功。
 
     ```bash
-   [SUCCESS] Build static lib success!
-   Successfully created compressed package: ${repo_path}/build_out/cann-${soc_name}-ops-math-static_${cann_version}_linux-${arch}.tar.gz
+    [SUCCESS] Build static lib success!
+    Successfully created compressed package: ${repo_path}/build_out/cann-${soc_name}-ops-math-static_${cann_version}_linux-${arch}.tar.gz
     ```
 
-   \$\{repo\_path\}表示项目根目录，\$\{soc\_name\}表示NPU型号名称，即\$\{soc\_version\}删除“ascend”后剩余的内容。编译成功后，压缩包存放于build_out目录下。
+    \$\{repo\_path\}表示项目根目录，\$\{soc\_name\}表示NPU型号名称，即\$\{soc\_version\}删除“ascend”后剩余的内容。编译成功后，压缩包存放于build_out目录下。
 
 
 2. **解压ops-math静态库**
 
-   进入build_out目录执行解压命令：
+    进入build_out目录执行解压命令：
 
     ```bash
-   tar -zxvf ./cann-${soc_name}-ops-math-static_${cann_version}_linux-${arch}.tar.gz -C ${static_lib_path}
+    tar -zxvf ./cann-${soc_name}-ops-math-static_${cann_version}_linux-${arch}.tar.gz -C ${static_lib_path}
     ```
 
-   \$\{static\_lib\_path\}表示静态库解压路径。解压后目录结构如下：
+    \$\{static\_lib\_path\}表示静态库解压路径。解压后目录结构如下：
     ```
     ├── cann-${soc_name}-ops-math-static_${cann_version}_linux-${arch}
     │   ├── lib64
-    │   │   ├── libcann-math-static.a               # 静态库文件
+    │   │   ├── libcann_math_static.a               # 静态库文件
     │   └── include
     |       ├── ...                                 # aclnn接口头文件
     ```
-   
-3. **静态库使用方法**
-   
-    使用示例如下，仅供参考：
-    
-    ```bash
-    g++ ${file} -I ${TEST_PATH}/include -L ${TEST_PATH} -L ${ASCEND_HOME_PATH}/lib64 -Wl,--allow-multiple-definition \
-    -Wl,--start-group -lcann_math_static -lcann_legacy_static -Wl,--end-group -lgraph -lgraph_base \
-   -lpthread -lmmpa -lmetadef -lascendalog -lregister -lopp_registry -lops_base -lascendcl -ltiling_api -lplatform \
-   -ldl -lc_sec -lnnopbase -lruntime -lerror_manager -o ${exec_name}
-   ```
-   \$\{file\}表示aclnn测试代码源文件；\$\{TEST\_PATH\}表示静态库解压路径；\$\{ASCEND\_HOME\_PATH\}已通过环境变量配置，表示CANN toolkit包安装路径，一般为\$\{install\_path\}/cann；\$\{exec\_name\}表示最终可执行文件的名字。
-   
-   其中lcann\_math\_static、lmetadef等表示算子依赖的底层库文件，可在CANN toolkit包获取。
 
 ## 本地验证 
 
@@ -166,7 +152,7 @@
 
     > **说明**：Ascend 950PR产品使用仿真执行算子样例，请见[仿真指导](../debug/op_debug_prof.md#方式二针对ascend-950pr)。
     
-    - 完成自定义算子包安装后，执行命令如下：
+    - 基于**自定义算子包**执行算子样例，包安装后，执行如下命令：
         ```bash
         bash build.sh --run_example ${op} ${mode} ${pkg_mode} [--vendor_name=${vendor_name}] [--soc=${soc_version}] [--experimental]
         # 以Abs算子example执行为例
@@ -184,7 +170,7 @@
         
         说明：\$\{mode\}为graph时，不指定\$\{pkg_mode\}和\$\{vendor\_name\}
 
-    - 完成ops-math包安装后，执行命令如下：
+    - 基于**ops-math包**执行算子样例，安装后，执行如下命令：
         ```bash
         bash build.sh --run_example ${op} ${mode} [--soc=${soc_version}]
         # 以Abs算子example执行为例
@@ -194,6 +180,64 @@
         - \$\{op\}：表示待执行算子，算子名小写下划线形式，如abs。       
         - \$\{mode\}：表示算子执行模式，目前支持eager（aclnn调用）、graph（图模式调用）。
         - \$\{soc_version\}（可选）：表示NPU型号。
+    
+    - 基于**ops-math静态库**执行算子样例：
+        1. **前提条件**
+
+            ops-math静态库依赖于ops-legacy静态库，将上述静态库准备好，解压并将所有lib64、include目录移动至统一目录\$\{static\_lib\_path\}下。
+
+            > 说明：ops-legacy静态库```cann-${soc_name}-ops-legacy-static_${cann_version}_linux-${arch}.tar.gz```可通过单击[下载链接](https://mirror-centralrepo.devcloud.cn-north-4.huaweicloud.com/artifactory/cann-run-release/software/9.0.0/)获取，ops-math静态库暂未提供软件包，请通过本地编译生成。
+
+        2. **创建run.sh**
+
+            在待执行算子```examples\test_aclnn_${op_name}.cpp```同级目录下创建run.sh文件。
+
+            以Abs算子执行test_aclnn_abs.cpp为例，示例如下:
+
+            ```bash
+            # 静态库文件路径
+            static_lib_path=""
+
+            # 环境变量生效
+            if [ -n "$ASCEND_INSTALL_PATH" ]; then
+                _ASCEND_INSTALL_PATH=$ASCEND_INSTALL_PATH
+            elif [ -n "$ASCEND_HOME_PATH" ]; then
+                _ASCEND_INSTALL_PATH=$ASCEND_HOME_PATH
+            else
+                _ASCEND_INSTALL_PATH="/usr/local/Ascend/cann"
+            fi
+
+            source ${_ASCEND_INSTALL_PATH}/bin/setenv.bash
+
+            # 编译可执行文件
+            g++ test_aclnn_abs.cpp \
+            -I ${static_lib_path}/include \
+            -L ${static_lib_path}/lib64 \
+            -I ${_ASCEND_INSTALL_PATH}/include \
+            -I ${_ASCEND_INSTALL_PATH}/include/aclnnop \
+            -L ${_ASCEND_INSTALL_PATH}/lib64 \
+            -Wl,--allow-multiple-definition \
+            -Wl,--start-group -lcann_math_static -lcann_legacy_static -Wl,--end-group -lgraph -lgraph_base \
+            -lpthread -lmmpa -lmetadef -lascendalog -lregister -lopp_registry -lops_base -lascendcl -ltiling_api -lplatform \
+            -ldl -lc_sec -lnnopbase -lruntime -lerror_manager -lunified_dlog \
+            -o test_aclnn_abs   # 替换为实际算子可执行文件名
+
+            # 执行程序
+            ./test_aclnn_abs
+            ```
+
+            \$\{static\_lib\_path\}表示静态库统一放置路径；  
+            \$\{ASCEND\_INSTALL\_PATH\}已通过环境变量配置，表示CANN toolkit包安装路径；  
+            最终可执行文件名请替换为**实际算子可执行文件名**。  
+            
+            其中lcann\_math\_static、lcann\_legacy\_static表示算子依赖的静态库文件，从静态库统一放置路径\$\{static\_lib\_path\}中获取；  
+            lgraph、lmetadef等表示算子依赖的底层库文件，可在CANN toolkit包获取。 
+
+        3. **执行run.sh**
+
+            ```bash
+            bash run.sh
+            ```
 
     执行算子样例后会打印执行结果，以Abs算子为例，结果如下：
 
@@ -212,32 +256,32 @@
 	> 说明：执行UT用例依赖googletest单元测试框架，详细介绍参见[googletest官网](https://google.github.io/googletest/advanced.html#running-a-subset-of-the-tests)。
 
     ```bash
-  # 安装根目录下test相关requirements.txt依赖
-  pip3 install -r tests/requirements.txt
-  # 方式1: 编译并执行指定算子和对应功能的UT测试用例（选其一）
-  bash build.sh -u --[opapi|ophost|opkernel] --ops=abs
-  # 方式2: 编译并执行所有的UT测试用例
-  # bash build.sh -u
-  # 方式3: 编译所有的UT测试用例但不执行
-  # bash build.sh -u --noexec
-  # 方式4: 编译并执行对应功能的UT测试用例（选其一）
-  # bash build.sh -u --[opapi|ophost|opkernel]
-  # 方式5: 编译对应功能的UT测试用例但不执行（选其一）
-  # bash build.sh -u --noexec --[opapi|ophost|opkernel]
-  # 方式6: 执行UT测试用例时可指定soc编译
-  # bash build.sh -u --[opapi|ophost|opkernel] [--soc=${soc_version}]
+    # 安装根目录下test相关requirements.txt依赖
+    pip3 install -r tests/requirements.txt
+    # 方式1: 编译并执行指定算子和对应功能的UT测试用例（选其一）
+    bash build.sh -u --[opapi|ophost|opkernel] --ops=abs
+    # 方式2: 编译并执行所有的UT测试用例
+    # bash build.sh -u
+    # 方式3: 编译所有的UT测试用例但不执行
+    # bash build.sh -u --noexec
+    # 方式4: 编译并执行对应功能的UT测试用例（选其一）
+    # bash build.sh -u --[opapi|ophost|opkernel]
+    # 方式5: 编译对应功能的UT测试用例但不执行（选其一）
+    # bash build.sh -u --noexec --[opapi|ophost|opkernel]
+    # 方式6: 执行UT测试用例时可指定soc编译
+    # bash build.sh -u --[opapi|ophost|opkernel] [--soc=${soc_version}]
     ```
 
     假设验证ophost功能是否正常，执行如下命令：
     ```bash
-  bash build.sh -u --ophost
+    bash build.sh -u --ophost
     ```
 
     执行完成后出现如下内容，表示执行成功。
     ```bash
-  Global Environment TearDown
-  [==========] ${n} tests from ${m} test suites ran. (${x} ms total)
-  [  PASSED  ] ${n} tests.
-  [100%] Built target math_op_host_ut
+    Global Environment TearDown
+    [==========] ${n} tests from ${m} test suites ran. (${x} ms total)
+    [  PASSED  ] ${n} tests.
+    [100%] Built target math_op_host_ut
     ```
     \$\{n\}表示执行了n个用例，\$\{m\}表示m项测试，\$\{x\}表示执行用例消耗的时间，单位为毫秒。

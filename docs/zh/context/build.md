@@ -37,11 +37,12 @@ bash build.sh --help
 | --ops            | 可选     | 指定待编译的算子，如：add,add_lora，多个算子用英文逗号“,”分隔，不可与--ophost、--opapi、--opgraph同时使用。 |
 | --soc            | 可选     | 指定NPU型号，每次编译只支持1个NPU型号。                                           |
 | --jit            | 可选     | 配置后，表示不编译算子的二进制文件。                                                           |
+| --static         | 可选     | 配置后，表示生成静态库文件，包含libcann_math_static.a和aclnn接口头文件，搭配--pkg参数，生成静态库压缩包。|
 | --vendor_name    | 可选     | 指定自定义算子包的名称，默认值为custom。                                                      |
 | --debug          | 可选     | 启用调试模式。                                                                      |
 | --cov            | 可选     | 预留参数，开发者暂不需要关注。                                                              |
 | --noexec         | 可选     | 仅编译单元测试二进制文件，不自动执行编译后的UT可执行文件。                                               |
-| --opkernel       | 可选     | 编译二进制内核(kernel日志存放在build/binary/${soc}/bin/build_log下)。                                                                     |
+| --opkernel       | 可选     | 编译二进制内核(kernel日志存放在build/binary/${soc}/bin/build_log下)。                       |
 | --pkg            | 可选     | 生成安装包，不可与-u（UT模式）或--ophost、--opapi、--opgraph同时使用。                            |
 | --disable_asan   | 可选     | 禁用ASAN（AddressSanitizer）内存检测功能。                                              |
 | --valgrind       | 可选     | 预留参数，开发者暂不需要关注。                                                              |
