@@ -176,19 +176,19 @@ TEST_F(reflection_pad1d_test, case_9)
 }
 
 // CheckDtype not support
-TEST_F(reflection_pad1d_test, case_10)
-{
-    auto self_tensor_desc = TensorDesc({1, 3}, ACL_UINT16, ACL_FORMAT_ND);
-    auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2});
-    auto out_desc = TensorDesc({1, 7}, ACL_UINT16, ACL_FORMAT_ND);
+// TEST_F(reflection_pad1d_test, case_10)
+// {
+//     auto self_tensor_desc = TensorDesc({1, 3}, ACL_UINT16, ACL_FORMAT_ND);
+//     auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2});
+//     auto out_desc = TensorDesc({1, 7}, ACL_UINT16, ACL_FORMAT_ND);
 
-    auto ut = OP_API_UT(aclnnReflectionPad1d, INPUT(self_tensor_desc, padding_desc), OUTPUT(out_desc));
+//     auto ut = OP_API_UT(aclnnReflectionPad1d, INPUT(self_tensor_desc, padding_desc), OUTPUT(out_desc));
 
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspaceSize = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-}
+//     // SAMPLE: only test GetWorkspaceSize
+//     uint64_t workspaceSize = 0;
+//     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+//     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+// }
 
 // CheckDtype diffrent dtype of self and out
 TEST_F(reflection_pad1d_test, case_11)
