@@ -127,7 +127,8 @@
 | [aclnnLerps&aclnnInplaceLerps](../../math/lerp/docs/aclnnLerps&aclnnInplaceLerps.md) | 根据给定的权重，在起始和结束Tensor之间进行线性插值，返回插值后的Tensor。 | 默认确定性实现|  
 | [aclnnLeScalar&aclnnInplaceLeScalar](../../math/less_equal/docs/aclnnLeScalar&aclnnInplaceLeScalar.md) | 判断输入self中的元素值是否小于等于other的值，并将self的每个元素的值与other值的比较结果写入out中。 | 默认确定性实现|  
 | [aclnnLeTensor&aclnnInplaceLeTensor](../../math/less_equal/docs/aclnnLeTensor&aclnnInplaceLeTensor.md) | 计算self中的元素值是否小于等于other的值，将self每个元素与other值的比较结果写入out中。 | 默认确定性实现|  
-| [aclnnLinspace](../../math/lin_space/docs/aclnnLinspace.md)     | 生成一个等间隔数值序列。                                     | 默认确定性实现|                                      
+| [aclnnLinspace](../../math/lin_space/docs/aclnnLinspace.md)     | 生成一个等间隔数值序列。                                     | 默认确定性实现|     
+ | [aclnnLogSpace](../../math/logspace/docs/aclnnLogSpace.md) | 创建一个大小为$\text{steps}$的一维张量，其值在$\text{base}^\text{start}$到$\text{base}^\text{end}$上对数尺度上均匀间隔，包含端点，以$\text{base}$为底。                                      | 默认确定性实现|                                         |                              
 | [aclnnLog&aclnnInplaceLog](../../math/log/docs/aclnnLog&aclnnInplaceLog.md) | 完成自然对数的计算                                           | 默认确定性实现|                                            
 | [aclnnLog2&aclnnInplaceLog2](../../math/log/docs/aclnnLog2&aclnnInplaceLog2.md) | 完成以2为底的对数计算                                        | 默认确定性实现|                                         
 | [aclnnLog10&aclnnInplaceLog10](../../math/log/docs/aclnnLog10&aclnnInplaceLog10.md) | 完成输入以10为底的对数计算                                   | 默认确定性实现|                                    
