@@ -332,6 +332,10 @@ static aclnnStatus SplitToConcat(const aclTensorList* tensors, int64_t dim, aclT
 
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     size_t catMaxInputs = (IsRegBase(npuArch)) ? 512 : 32;
+    auto tensorListV2 = executor->AllocTensorList(tensorListA.data(), tensorListA.size());
+    if (l0op::IsSupportConcatDV2(tensorListV2, dim)) {
+        catMaxInputs = 512;
+    }
     bool firstLoop = true;
     while (tensorListA.size() > 1) {
         op::FVector<const aclTensor*> tensorListOnce;

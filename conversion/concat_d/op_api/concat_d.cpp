@@ -25,6 +25,39 @@ using namespace op;
 namespace l0op {
 
 OP_TYPE_REGISTER(ConcatD);
+OP_TYPE_REGISTER(ConcatDV2);
+
+std::map<op::DataType, int64_t> type_size = {
+    {DataType::DT_FLOAT, 4},      {DataType::DT_INT32, 4},  {DataType::DT_INT64, 8},  {DataType::DT_FLOAT16, 2},
+    {DataType::DT_INT16, 2},      {DataType::DT_INT8, 1},   {DataType::DT_UINT8, 1},  {DataType::DT_DOUBLE, 8},
+    {DataType::DT_COMPLEX64, 8},  {DataType::DT_BF16 ,2},   {DataType::DT_BOOL, 1}};
+
+bool IsSupportConcatDV2(const aclTensorList* inputs, int64_t dim)
+{
+    CHECK_RET(inputs != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
+    if (socVersion != op::SocVersion::ASCEND910_93 && socVersion != op::SocVersion::ASCEND910B) {
+        return false;
+    }
+    if (dim != 0){
+        return false;
+    }
+    if (inputs->Size() > 512 || inputs->Size() < 33) {
+        return false;
+    }
+
+    auto promoteType = (*inputs)[0]->GetDataType();
+    for (uint64_t i = 0; i < inputs->Size(); i++) {
+        op::Shape shape = (*inputs)[i]->GetViewShape();
+        int64_t dim_num = shape.GetDimNum();
+        int64_t tail_dim = shape.GetDim(dim_num - 1); // 获取尾轴维度
+        if (tail_dim * type_size[promoteType] % 32 != 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 static op::Shape ConcatDInferShape(const aclTensorList* inputs, int64_t dim)
 {
@@ -54,6 +87,11 @@ aclTensor* ConcatD(const aclTensorList* inputs, int64_t dim, aclOpExecutor* exec
     L0_DFX(ConcatD, inputs, dim);
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     size_t catMaxInputSize = (IsRegBase(npuArch)) ? 512 : 32;
+
+    if (IsSupportConcatDV2(inputs, dim)) {
+        catMaxInputSize = 512;
+    }
+
     if (inputs->Size() == 0 || inputs->Size() > catMaxInputSize) {
         OP_LOGE(
             ACLNN_ERR_INNER, "Inputs tensor list's size should be (0, %zu]) but current size is %zu.", catMaxInputSize,
@@ -62,10 +100,15 @@ aclTensor* ConcatD(const aclTensorList* inputs, int64_t dim, aclOpExecutor* exec
     }
     op::Shape concatShape = ConcatDInferShape(inputs, dim);
     auto out = executor->AllocTensor(concatShape, (*inputs)[0]->GetDataType(), (*inputs)[0]->GetViewFormat());
-
-    auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(ConcatD, OP_INPUT(inputs), OP_OUTPUT(out), OP_ATTR(dim));
-    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
-        retAicore != ACLNN_SUCCESS, return nullptr, "ConcatD ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    if (IsSupportConcatDV2(inputs, dim)) {
+        auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(ConcatDV2, OP_INPUT(inputs), OP_OUTPUT(out), OP_ATTR(dim));
+        OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
+            retAicore != ACLNN_SUCCESS, return nullptr, "ConcatDV2 ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    } else {
+        auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(ConcatD, OP_INPUT(inputs), OP_OUTPUT(out), OP_ATTR(dim));
+        OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
+            retAicore != ACLNN_SUCCESS, return nullptr, "ConcatD ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    }
     return out;
 }
 

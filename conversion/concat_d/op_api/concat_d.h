@@ -17,6 +17,7 @@ namespace l0op {
 aclTensor* ConcatD(const aclTensorList* inputs, int64_t dim, op::DataType outDtype, aclOpExecutor* executor);
 
 aclTensor* ConcatD(const aclTensorList* inputs, int64_t dim, aclOpExecutor* executor);
+bool IsSupportConcatDV2(const aclTensorList* inputs, int64_t dim);
 } // namespace l0op
 
 #endif // PTA_NPU_OP_API_INC_LEVEL0_OP_CONCAT_H_
