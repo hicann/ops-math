@@ -18,15 +18,15 @@ using namespace op;
 namespace l0op {
 OP_TYPE_REGISTER(Bincount);
 
-// AICORE 910_95支持类型
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT};
+// AICORE 950支持类型
+static const std::initializer_list<op::DataType> ASCEND950_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT};
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static bool IsAiCoreSupport(const aclTensor* weights)
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910_95) {
-        return CheckType(weights->GetDataType(), ASCEND910_95_DTYPE_SUPPORT_LIST);
+    if (socVersion == SocVersion::ASCEND950) {
+        return CheckType(weights->GetDataType(), ASCEND950_DTYPE_SUPPORT_LIST);
     }
 
     return false;

@@ -74,7 +74,7 @@ namespace ops {
                 .NeedCheckSupportFlag(false)
                 .ExtendCfgInfo("opFile.value", "slice_apt");
 
-            this->AICore().AddConfig("ascend910_95", aicore_config);
+            this->AICore().AddConfig("ascend950", aicore_config);
             this->AICore().AddConfig("mc62cm12a", aicore_config);
         }
     };

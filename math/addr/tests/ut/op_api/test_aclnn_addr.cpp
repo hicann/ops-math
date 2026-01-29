@@ -69,7 +69,7 @@ TEST_F(l2_addr_test, ascend910B2_addr_dtype_bfloat16) {
 }
 
 // test dtype: BFLOAT16 91095
-TEST_F(l2_addr_test, ascend910_95_addr_dtype_bfloat16) {
+TEST_F(l2_addr_test, ascend950_addr_dtype_bfloat16) {
   auto self_tensor_desc = TensorDesc({4, 3}, ACL_BF16, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
   auto vec1_tensor_desc = TensorDesc({4}, ACL_BF16, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
   auto vec2_tensor_desc = TensorDesc({3}, ACL_BF16, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);

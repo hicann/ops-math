@@ -44,14 +44,14 @@ static const std::initializer_list<DataType> OUTPUT_DTYPE_SUPPORT_LIST = {
 static const std::initializer_list<DataType> ASCEND910_DTYPE_SELFREF_LIST = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE};
 
-static const std::initializer_list<DataType> ASCEND910_95_DTYPE_SELFREF_LIST = {
+static const std::initializer_list<DataType> ASCEND950_DTYPE_SELFREF_LIST = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16};
 
 static bool CheckInplaceDtypeValid(aclTensor* selfRef)
 {
     auto inplaceSupportList = GetDtypeSupportListV2(OUTPUT_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_SELFREF_LIST);
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-        inplaceSupportList = ASCEND910_95_DTYPE_SELFREF_LIST;
+    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+        inplaceSupportList = ASCEND950_DTYPE_SELFREF_LIST;
     }
     // 检查selfRef的数据类型是否在inplace atan算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(selfRef, inplaceSupportList, return false);

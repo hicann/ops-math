@@ -56,7 +56,7 @@ extern "C" {
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {op::DataType::DT_INT16, op::DataType::DT_INT32,
                                                                        op::DataType::DT_INT64, op::DataType::DT_INT8,
                                                                        op::DataType::DT_UINT8, op::DataType::DT_BOOL};
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_910_95 = {
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_950 = {
   op::DataType::DT_INT8, op::DataType::DT_INT16, op::DataType::DT_INT32, op::DataType::DT_INT64, 
   op::DataType::DT_UINT8, op::DataType::DT_UINT16, op::DataType::DT_UINT32, op::DataType::DT_UINT64, 
   op::DataType::DT_BOOL};
@@ -71,8 +71,8 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* out) {
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* y) {
   // 检查self的数据类型是否在bitwise_not算子的支持列表内
   auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  if (socVersion == SocVersion::ASCEND910_95) {
-    OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST_910_95, return false);
+  if (socVersion == SocVersion::ASCEND950) {
+    OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST_950, return false);
   } else {
     OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
   }

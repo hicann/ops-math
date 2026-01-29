@@ -654,7 +654,7 @@ TEST_F(l2_add_test, Ascend910_93_case_027)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_add_test, Ascend910_9589_case_005)
+TEST_F(l2_add_test, Ascend950PR_89_case_005)
 {
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto other_tensor_desc = TensorDesc({2, 3}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-1, 1);
@@ -670,7 +670,7 @@ TEST_F(l2_add_test, Ascend910_9589_case_005)
 
 }
 
-TEST_F(l2_add_test, Ascend910_9589_case_007)
+TEST_F(l2_add_test, Ascend950PR_89_case_007)
 {
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto other_desc = ScalarDesc(static_cast<int32_t>(2.0f));

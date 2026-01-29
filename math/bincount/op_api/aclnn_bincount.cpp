@@ -136,14 +136,14 @@ static const aclTensor* dealWeightsTensor(const aclTensor* self, const aclTensor
     return weightsTensor;
 }
 
-static const aclTensor* dealWeightsTensor_910_95(
+static const aclTensor* dealWeightsTensor_950(
     const aclTensor* self, const aclTensor* weights, aclOpExecutor* executor)
 {
     OP_LOGD("dealWeightsTensor begin");
     const aclTensor* weightsTensor;
     // 如果weights为空指针，则构造一个全为1的tensor
     if (!weights) {
-        if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+        if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
             op::Shape weightShape = {0};
             weightsTensor = executor->AllocTensor(weightShape, op::DataType::DT_FLOAT);
             CHECK_RET(weightsTensor != nullptr, nullptr);
@@ -224,8 +224,8 @@ aclnnStatus aclnnBincountGetWorkspaceSize(
         return ACLNN_ERR_PARAM_INVALID;
     }
 
-    auto weightsTensor = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) ?
-                             dealWeightsTensor_910_95(self, weights, uniqueExecutor.get()) :
+    auto weightsTensor = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) ?
+                             dealWeightsTensor_950(self, weights, uniqueExecutor.get()) :
                              dealWeightsTensor(self, weights, uniqueExecutor.get());
 
     auto BincountOut = l0op::Bincount(selfCast, weightsTensor, size, uniqueExecutor.get());

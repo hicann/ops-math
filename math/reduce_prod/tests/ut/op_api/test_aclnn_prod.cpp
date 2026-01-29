@@ -214,7 +214,7 @@ TEST_F(l2_prod_test, case_not_contiguous) {
   // ut.TestPrecision();
 }
 
-TEST_F(l2_prod_test, ascend910_9589_case_dim6_Uint8_Bool_ND) {
+TEST_F(l2_prod_test, ascend950PR_89_case_dim6_Uint8_Bool_ND) {
   auto tensor_desc = TensorDesc({2, 2, 2, 2, 2, 2}, ACL_UINT8, ACL_FORMAT_ND);
   auto out = TensorDesc({}, ACL_BOOL, ACL_FORMAT_ND); 
 
@@ -227,7 +227,7 @@ TEST_F(l2_prod_test, ascend910_9589_case_dim6_Uint8_Bool_ND) {
   // ut.TestPrecision();
 }
 
-TEST_F(l2_prod_test, ascend910_9589_case_dim6_Int32_Bool_ND) {
+TEST_F(l2_prod_test, ascend950PR_89_case_dim6_Int32_Bool_ND) {
   auto tensor_desc = TensorDesc({2, 2, 2, 2, 2, 2}, ACL_INT32, ACL_FORMAT_ND);
   auto out = TensorDesc({}, ACL_BOOL, ACL_FORMAT_ND); 
 
@@ -240,7 +240,7 @@ TEST_F(l2_prod_test, ascend910_9589_case_dim6_Int32_Bool_ND) {
   // ut.TestPrecision();
 }
 
-TEST_F(l2_prod_test, ascend910_9589_case_dim6_float16_fp32_ND) {
+TEST_F(l2_prod_test, ascend950PR_89_case_dim6_float16_fp32_ND) {
   auto tensor_desc = TensorDesc({2, 2, 2, 2, 2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
   auto out = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND); 
 
@@ -253,7 +253,7 @@ TEST_F(l2_prod_test, ascend910_9589_case_dim6_float16_fp32_ND) {
   // ut.TestPrecision();
 }
 
-TEST_F(l2_prod_test, ascend910_9589_case_dim6_float32_fp32_ND) {
+TEST_F(l2_prod_test, ascend950PR_89_case_dim6_float32_fp32_ND) {
   auto tensor_desc = TensorDesc({2, 2, 2, 2, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
   auto out = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND); 
 

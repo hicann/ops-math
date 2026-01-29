@@ -11,8 +11,7 @@
 set -e
 RELEASE_TARGETS=("ophost" "opapi" "opgraph" "opkernel" "opkernel_aicpu" "onnxplugin")
 UT_TARGETS=("ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "opkernel_aicpu_test")
-SUPPORT_COMPUTE_UNIT_SHORT=("ascend910b" "ascend910_93" "ascend910_95" "ascend310p" "ascend910" "ascend310b" "ascend630" "ascend610lite" "ascend031" "ascend035" "kirinx90" "mc62cm12a")
-SUPPORT_COMPUTE_UNIT_SHORT_PRINT=("ascend910b" "ascend910_93" "ascend950" "ascend310p" "ascend910" "ascend310b" "ascend630" "ascend610lite" "ascend031" "ascend035" "kirinx90" "mc62cm12a")
+SUPPORT_COMPUTE_UNIT_SHORT=("ascend910b" "ascend910_93" "ascend950" "ascend310p" "ascend910" "ascend310b" "ascend630" "ascend610lite" "ascend031" "ascend035" "kirinx90" "mc62cm12a")
 # 所有支持的短选项
 SUPPORTED_SHORT_OPTS="hj:vO:uf:-:"
 
@@ -669,12 +668,12 @@ checkopts_run_example() {
 
 check_group_compile_config() {
   local base_path=${BASE_PATH}
-  local yaml_file="$base_path/scripts/ci/ascend910_95/ops_math_operator_list.yaml"
-  local pattern='AddConfig("ascend910_95'
+  local yaml_file="$base_path/scripts/ci/ascend950/ops_math_operator_list.yaml"
+  local pattern='AddConfig("ascend950'
 
   local group base_dir op_dir op_name
   local missing=0
-  echo "[INFO] check ascend910_95 group compile config"
+  echo "[INFO] check ascend950 group compile config"
   for group in math conversion random; do
     base_dir="$base_path/$group"
     [ -d "$base_dir" ] || continue
@@ -691,10 +690,10 @@ check_group_compile_config() {
   done
 
   if [ "$missing" -ne 0 ]; then
-    echo "[FAIL] ascend910_95 group compiled config failed"
+    echo "[FAIL] ascend950 group compiled config failed"
     exit 1
   fi
-  echo "[PASS] check ascend910_95 group compile config success"
+  echo "[PASS] check ascend950 group compile config success"
   return 0
 }
 
@@ -1090,9 +1089,6 @@ assemble_cmake_args() {
   fi
   if [[ -n $COMPUTE_UNIT ]]; then
     COMPUTE_UNIT=$(echo "$COMPUTE_UNIT" | tr '[:upper:]' '[:lower:]')
-    if [[ "$COMPUTE_UNIT" == "ascend950" ]]; then
-      COMPUTE_UNIT="ascend910_95"
-    fi
     found=0
     for support_unit in "${SUPPORT_COMPUTE_UNIT_SHORT[@]}"; do
       if [[ "$COMPUTE_UNIT" == "$support_unit" ]]; then
@@ -1102,7 +1098,7 @@ assemble_cmake_args() {
       fi
     done
     if [[ $found -eq 0 ]]; then
-      echo "soc only support : ${SUPPORT_COMPUTE_UNIT_SHORT_PRINT[@]}"
+      echo "soc only support : ${SUPPORT_COMPUTE_UNIT_SHORT[@]}"
       exit 1
     fi
     echo "COMPUTE_UNIT: ${COMPUTE_UNIT}"

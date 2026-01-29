@@ -460,7 +460,7 @@ TEST_F(l2_lt_scalar_test, aclnnLtScalar_input_all_bool2)
 }
 
 // aclnnLtScalar_013:lt.Scalar_out支持输入和输出类型不一致
-TEST_F(l2_lt_scalar_test, Ascend910_9589_aclnnLtScalar_013_float16_float16_bool_NHWC)
+TEST_F(l2_lt_scalar_test, Ascend950PR_89_aclnnLtScalar_013_float16_float16_bool_NHWC)
 {
     auto tensor_self = TensorDesc({2, 3, 4, 5}, ACL_FLOAT16, ACL_FORMAT_NHWC).ValueRange(-10, 10);
     auto scalar_other = ScalarDesc(static_cast<int64_t>(2));

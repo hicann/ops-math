@@ -26,7 +26,7 @@ extern "C" {
  * npu device侧的aclTensor，数据类型支持INT8、UINT8、INT16、UINT16、INT32、UINT32、
  * INT64、UINT64、BF16、FLOAT16、FLOAT、DOUBLE、BOOL、COMPLEX632、COMPLEX64。
  * 支持[非连续的Tensor](#)，数据格式支持NCHW。
- * 其中，Ascend910_95之前芯片仅支持数据类型BF16、FLOAT16、FLOAT。
+ * 其中，Ascend950之前芯片仅支持数据类型BF16、FLOAT16、FLOAT。
  * @param [in] kernelSize: npu device侧的aclIntArray，数组长度必须为2。
  * @param [in] dilation: npu device侧的aclIntArray，数组长度必须为2。
  * @param [in] padding: npu device侧的aclIntArray，数组长度必须为2。
@@ -35,7 +35,7 @@ extern "C" {
  * npu device侧的aclTensor，数据类型支持INT8、UINT8、INT16、UINT16、INT32、UINT32、
  * INT64、UINT64、BF16、FLOAT16、FLOAT、DOUBLE、BOOL、COMPLEX632、COMPLEX64。
  * 支持[非连续的Tensor](#)，数据格式支持NCHW。
- * 其中，Ascend910_95之前芯片仅支持数据类型BF16、FLOAT16、FLOAT。
+ * 其中，Ascend950之前芯片仅支持数据类型BF16、FLOAT16、FLOAT。
  * 
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含了算子计算流程。

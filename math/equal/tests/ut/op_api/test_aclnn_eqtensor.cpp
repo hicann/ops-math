@@ -1462,7 +1462,7 @@ aclnnStatus getWorkspaceResult =ut.TestGetWorkspaceSize(&workspaceSize);
 EXPECT_EQ(getWorkspaceResult,ACLNN_SUCCESS);
 }
 
-TEST_F(l2_eq_tensor_test, Ascend910_9589_test_eq_tensor_normal_out_int32) {
+TEST_F(l2_eq_tensor_test, Ascend950PR_89_test_eq_tensor_normal_out_int32) {
   auto tensor_self = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
                          .ValueRange(-10, 10)
                          .Value(vector<float>{3.1, 4, 9, 6, 7, 11});

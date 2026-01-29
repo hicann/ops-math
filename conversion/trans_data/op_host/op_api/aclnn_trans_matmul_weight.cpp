@@ -58,7 +58,7 @@ static inline const std::initializer_list<DataType> &GetDtypeSupportList() {
     return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
   } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310P) {
     return ASCEND310P_DTYPE_DTYPE_SUPPORT_LIST;
-  } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+  } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
     return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
   } else {
     return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
@@ -117,7 +117,7 @@ static aclnnStatus CheckSocValid()
         case SocVersion::ASCEND310P:
         case SocVersion::ASCEND910B:
         case SocVersion::ASCEND910_93:
-        case SocVersion::ASCEND910_95:
+        case SocVersion::ASCEND950:
             break;
         default: {
             OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "support for %s is not implemented", op::ToString(socVersion).GetString());

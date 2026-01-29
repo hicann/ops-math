@@ -20,7 +20,7 @@ using namespace op;
 namespace l0op {
 OP_TYPE_REGISTER(ReduceProd);
 
-static const std::initializer_list<op::DataType> AICORE_910_95_DTYPE_SUPPORT_LIST  = {
+static const std::initializer_list<op::DataType> AICORE_950_DTYPE_SUPPORT_LIST  = {
   op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT8, op::DataType::DT_UINT8,
   op::DataType::DT_INT64, op::DataType::DT_BF16, op::DataType::DT_BOOL, op::DataType::DT_INT32};
 
@@ -36,7 +36,7 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST  = {
 static bool IsAiCoreSupport(const aclTensor *self) {
   // ReduceProd算子只需要判断数据类型
   if (IsRegBase()) {
-    return CheckType(self->GetDataType(), AICORE_910_95_DTYPE_SUPPORT_LIST);
+    return CheckType(self->GetDataType(), AICORE_950_DTYPE_SUPPORT_LIST);
   } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
              GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
     return CheckType(self->GetDataType(), AICORE_910B_DTYPE_SUPPORT_LIST);

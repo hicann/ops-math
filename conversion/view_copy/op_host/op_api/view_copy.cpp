@@ -31,9 +31,9 @@ static const int64_t BLOCK_SIZE = 32;
 namespace l0op {
 
 OP_TYPE_REGISTER(ViewCopy);
-// 910_95
+// 950
 // bfloat16,uint8,int8,bool,float32,int32,uint32,int16,float16,uint16,int64,uint64,hifloat8,float8_e5m2,float8_e4m3fn
-static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_910_95 = {
+static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_950 = {
     op::DataType::DT_FLOAT16,  op::DataType::DT_FLOAT,       op::DataType::DT_INT8,         op::DataType::DT_INT16,
     op::DataType::DT_INT32,    op::DataType::DT_INT64,       op::DataType::DT_UINT8,        op::DataType::DT_UINT16,
     op::DataType::DT_UINT32,   op::DataType::DT_UINT64,      op::DataType::DT_BOOL,         op::DataType::DT_BF16,
@@ -97,8 +97,8 @@ static bool IsAiCoreSupport(const op::DataType dataType)
     if (socVersion == op::SocVersion::ASCEND910B || socVersion == op::SocVersion::ASCEND910_93) {
         return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_910B);
     }
-    if (socVersion == op::SocVersion::ASCEND910_95) {
-        return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_910_95);
+    if (socVersion == op::SocVersion::ASCEND950) {
+        return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_950);
     }
     return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST);
 }
@@ -232,7 +232,7 @@ const aclTensor* ViewCopy(
         executor->ConvertToTensor(op::ToShapeVector(dstSize).data(), dstSize.GetDimNum(), op::ToOpDataType(ACL_INT64));
     auto dstStrideTensor = executor->ConvertToTensor(dstStride.data(), dstStride.size(), op::ToOpDataType(ACL_INT64));
     auto dstOffsetTensor = executor->ConvertToTensor(&dstOffset, 1, op::ToOpDataType(ACL_INT64));
-    if (op::GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND910_95) {
+    if (op::GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND950) {
         if (IsAiCoreSupport(x->GetDataType())) {
             return ViewCopyAiCore(y, dstSizeTensor, dstStrideTensor, dstOffsetTensor, x, srcSizeTensor, srcStrideTensor,
                 srcOffsetTensor, executor);

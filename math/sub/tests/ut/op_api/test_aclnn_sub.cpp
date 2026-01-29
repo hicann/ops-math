@@ -410,7 +410,7 @@ TEST_F(l2_sub_test, abnormal_shape_dim_greater_than_threshold)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_sub_test, Ascend910_9589_case_001)
+TEST_F(l2_sub_test, Ascend950PR_89_case_001)
 {
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto other_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-1, 1);
@@ -428,7 +428,7 @@ TEST_F(l2_sub_test, Ascend910_9589_case_001)
     // ut.TestPrecision();
 }
 
-TEST_F(l2_sub_test, Ascend910_9589_case_axpy)
+TEST_F(l2_sub_test, Ascend950PR_89_case_axpy)
 {
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto other_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-1, 1);
@@ -446,7 +446,7 @@ TEST_F(l2_sub_test, Ascend910_9589_case_axpy)
     // ut.TestPrecision();
 }
 
-TEST_F(l2_sub_test, Ascend910_9589_case_002)
+TEST_F(l2_sub_test, Ascend950PR_89_case_002)
 {
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto other_tensor_desc = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND).ValueRange(-1, 1);
@@ -464,7 +464,7 @@ TEST_F(l2_sub_test, Ascend910_9589_case_002)
     // ut.TestPrecision();
 }
 
-TEST_F(l2_sub_test, Ascend910_9589_case_axpy_v2)
+TEST_F(l2_sub_test, Ascend950PR_89_case_axpy_v2)
 {
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto other_tensor_desc = TensorDesc({2, 3}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-1, 1);
@@ -482,7 +482,7 @@ TEST_F(l2_sub_test, Ascend910_9589_case_axpy_v2)
     // ut.TestPrecision();
 }
 
-TEST_F(l2_sub_test, Ascend910_9589_case_003)
+TEST_F(l2_sub_test, Ascend950PR_89_case_003)
 {
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto other_desc = ScalarDesc(1.0f);
@@ -500,7 +500,7 @@ TEST_F(l2_sub_test, Ascend910_9589_case_003)
     // ut.TestPrecision();
 }
 
-TEST_F(l2_sub_test, Ascend910_9589_case_004)
+TEST_F(l2_sub_test, Ascend950PR_89_case_004)
 {
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto other_desc = ScalarDesc(2.0f);
@@ -518,7 +518,7 @@ TEST_F(l2_sub_test, Ascend910_9589_case_004)
     // ut.TestPrecision();
 }
 
-TEST_F(l2_sub_test, Ascend910_9589_case_005)
+TEST_F(l2_sub_test, Ascend950PR_89_case_005)
 {
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto other_desc = ScalarDesc(static_cast<int32_t>(2.0f));

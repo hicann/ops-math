@@ -23,7 +23,7 @@ namespace l0op {
 constexpr size_t MIN_DIM_LEN = 2;
 static const std::initializer_list<DataType> ASCEND910B_AICORE_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16};
-static const std::initializer_list<DataType> ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<DataType> ASCEND950_AICORE_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16};
 
 OP_TYPE_REGISTER(Cdist);
@@ -82,7 +82,7 @@ const aclTensor* Cdist(const aclTensor *x1, const aclTensor *x2, float p, int64_
     Shape outShape;
     if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) {
         outShape = InferShapeForA2A3(x1);
-    } else if (socVersion == SocVersion::ASCEND910_95) {
+    } else if (socVersion == SocVersion::ASCEND950) {
         outShape = InferShapeForA5(x1, x2);
     }
     auto out = executor->AllocTensor(outShape, x1->GetDataType(), op::Format::FORMAT_ND);
@@ -93,9 +93,9 @@ const aclTensor* Cdist(const aclTensor *x1, const aclTensor *x2, float p, int64_
             CheckType(x2->GetDataType(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST)) {
             return CdistAiCore(x1, x2, p, out, executor);
         }
-    } else if (socVersion == SocVersion::ASCEND910_95) {
-        if (CheckType(x1->GetDataType(), ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST) &&
-            CheckType(x2->GetDataType(), ASCEND910_95_AICORE_DTYPE_SUPPORT_LIST)) {
+    } else if (socVersion == SocVersion::ASCEND950) {
+        if (CheckType(x1->GetDataType(), ASCEND950_AICORE_DTYPE_SUPPORT_LIST) &&
+            CheckType(x2->GetDataType(), ASCEND950_AICORE_DTYPE_SUPPORT_LIST)) {
             INFER_SHAPE(Cdist, OP_INPUT(x1, x2), OP_OUTPUT(out), OP_ATTR(p, compute_mode));
             return CdistAiCore(x1, x2, p, compute_mode, out, executor);
         }

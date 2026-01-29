@@ -38,7 +38,7 @@ static inline int64_t ComputeByteSizeAlign(const vector<int64_t>& shape) {
   return (num + 128 - 1) / 128 * 128 / 8;
 }
 
-TEST_F(l2_dropout_v3_test, Ascend910_9589_case_001) {
+TEST_F(l2_dropout_v3_test, Ascend950PR_89_case_001) {
   const vector<int64_t> shape = {10, 16, 9, 8, 5, 5};
   auto input_desc = TensorDesc(shape, ACL_FLOAT16, ACL_FORMAT_ND);
   double p = 0;
@@ -56,7 +56,7 @@ TEST_F(l2_dropout_v3_test, Ascend910_9589_case_001) {
   EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(l2_dropout_v3_test, Ascend910_9589_case_002) {
+TEST_F(l2_dropout_v3_test, Ascend950PR_89_case_002) {
   const vector<int64_t> shape = {2, 0, 3};
   auto input_desc = TensorDesc(shape, ACL_FLOAT, ACL_FORMAT_NCL);
   double p = 1;
@@ -75,7 +75,7 @@ TEST_F(l2_dropout_v3_test, Ascend910_9589_case_002) {
 }
 
 // input nullptr
-TEST_F(l2_dropout_v3_test, Ascend910_9589_case_003) {
+TEST_F(l2_dropout_v3_test, Ascend950PR_89_case_003) {
   const vector<int64_t> shape = {2, 16, 1, 3};
   auto input_desc = TensorDesc(shape, ACL_FLOAT, ACL_FORMAT_ND);
   double p = 1;
@@ -94,7 +94,7 @@ TEST_F(l2_dropout_v3_test, Ascend910_9589_case_003) {
 }
 
 // out nullptr
-TEST_F(l2_dropout_v3_test, Ascend910_9589_case_004) {
+TEST_F(l2_dropout_v3_test, Ascend950PR_89_case_004) {
   const vector<int64_t> shape = {2, 16, 1, 3};
   auto input_desc = TensorDesc(shape, ACL_FLOAT, ACL_FORMAT_ND);
   double p = 1;
@@ -113,7 +113,7 @@ TEST_F(l2_dropout_v3_test, Ascend910_9589_case_004) {
 }
 
 // mask nullptr
-TEST_F(l2_dropout_v3_test, Ascend910_9589_case_005) {
+TEST_F(l2_dropout_v3_test, Ascend950PR_89_case_005) {
   const vector<int64_t> shape = {2, 16, 1, 3};
   auto input_desc = TensorDesc(shape, ACL_FLOAT, ACL_FORMAT_ND);
   double p = 1;
@@ -132,7 +132,7 @@ TEST_F(l2_dropout_v3_test, Ascend910_9589_case_005) {
 }
 
 // check dtype can cast
-TEST_F(l2_dropout_v3_test, Ascend910_9589_case_006) {
+TEST_F(l2_dropout_v3_test, Ascend950PR_89_case_006) {
   const vector<int64_t> shape = {2, 16, 1, 3};
   auto input_desc = TensorDesc(shape, ACL_FLOAT16, ACL_FORMAT_ND);
   double p = 1;
@@ -151,7 +151,7 @@ TEST_F(l2_dropout_v3_test, Ascend910_9589_case_006) {
 }
 
 // check dtype valid
-TEST_F(l2_dropout_v3_test, Ascend910_9589_case_007) {
+TEST_F(l2_dropout_v3_test, Ascend950PR_89_case_007) {
   const vector<int64_t> shape = {2, 16, 1, 3};
   auto input_desc = TensorDesc(shape, ACL_INT32, ACL_FORMAT_ND);
   double p = 1;
@@ -170,7 +170,7 @@ TEST_F(l2_dropout_v3_test, Ascend910_9589_case_007) {
 }
 
 // check dtype valid
-TEST_F(l2_dropout_v3_test, Ascend910_9589_case_008) {
+TEST_F(l2_dropout_v3_test, Ascend950PR_89_case_008) {
   const vector<int64_t> shape = {2, 16, 1, 3};
   auto input_desc = TensorDesc(shape, ACL_FLOAT, ACL_FORMAT_ND);
   double p = 1;
@@ -189,7 +189,7 @@ TEST_F(l2_dropout_v3_test, Ascend910_9589_case_008) {
 }
 
 // check p
-TEST_F(l2_dropout_v3_test, Ascend910_9589_case_009) {
+TEST_F(l2_dropout_v3_test, Ascend950PR_89_case_009) {
   const vector<int64_t> shape = {2, 1, 3};
   auto input_desc = TensorDesc(shape, ACL_FLOAT, ACL_FORMAT_NCL);
   double p = 1.5;
@@ -208,7 +208,7 @@ TEST_F(l2_dropout_v3_test, Ascend910_9589_case_009) {
 }
 
 // check shape
-TEST_F(l2_dropout_v3_test, Ascend910_9589_case_010) {
+TEST_F(l2_dropout_v3_test, Ascend950PR_89_case_010) {
   const vector<int64_t> shape = {2, 1, 3};
   auto input_desc = TensorDesc(shape, ACL_FLOAT, ACL_FORMAT_NCL);
   double p = 0.5;
@@ -227,7 +227,7 @@ TEST_F(l2_dropout_v3_test, Ascend910_9589_case_010) {
 }
 
 // check shape
-TEST_F(l2_dropout_v3_test, Ascend910_9589_case_011) {
+TEST_F(l2_dropout_v3_test, Ascend950PR_89_case_011) {
   const vector<int64_t> shape = {2, 1, 3};
   auto input_desc = TensorDesc(shape, ACL_FLOAT, ACL_FORMAT_NCL);
   double p = 0.5;
@@ -246,7 +246,7 @@ TEST_F(l2_dropout_v3_test, Ascend910_9589_case_011) {
 }
 
 // check shape
-TEST_F(l2_dropout_v3_test, Ascend910_9589_case_012) {
+TEST_F(l2_dropout_v3_test, Ascend950PR_89_case_012) {
   const vector<int64_t> shape = {2, 9, 3, 4, 5, 6, 7, 8};
   auto input_desc = TensorDesc(shape, ACL_FLOAT, ACL_FORMAT_NCL);
   double p = 0.3;
@@ -265,7 +265,7 @@ TEST_F(l2_dropout_v3_test, Ascend910_9589_case_012) {
 }
 
 // check shape
-TEST_F(l2_dropout_v3_test, Ascend910_9589_case_013) {
+TEST_F(l2_dropout_v3_test, Ascend950PR_89_case_013) {
   const vector<int64_t> shape = {2, 9, 3, 4, 5, 6, 7, 8, 10};
   auto input_desc = TensorDesc(shape, ACL_FLOAT, ACL_FORMAT_NCL);
   double p = 0.3;
@@ -283,7 +283,7 @@ TEST_F(l2_dropout_v3_test, Ascend910_9589_case_013) {
   EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_dropout_v3_test, Ascend910_9589_case_014) {
+TEST_F(l2_dropout_v3_test, Ascend950PR_89_case_014) {
   const vector<int64_t> shape = {10, 16, 9, 8, 5, 5};
   auto input_desc = TensorDesc(shape, ACL_FLOAT16, ACL_FORMAT_ND);
   double p = 1;
@@ -301,7 +301,7 @@ TEST_F(l2_dropout_v3_test, Ascend910_9589_case_014) {
   EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(l2_dropout_v3_test, Ascend910_9589_case_015) {
+TEST_F(l2_dropout_v3_test, Ascend950PR_89_case_015) {
   const vector<int64_t> shape = {10, 16, 9, 8, 5, 5};
   auto input_desc = TensorDesc(shape, ACL_BF16, ACL_FORMAT_ND);
   double p = 1;

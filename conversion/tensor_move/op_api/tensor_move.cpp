@@ -51,6 +51,7 @@ static bool IsAiCoreSupport(const aclTensor* self)
     if (curArch == NpuArch::DAV_2201) {
         return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_910B);
     }
+
     if (op::IsRegBase(curArch)) {
         return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_REGBASE);
     }

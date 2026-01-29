@@ -117,20 +117,20 @@ execute_run_file() {
 
 if [ ${#builtin_ops_name[@]} -gt 0 ]; then
     builtin_ops_str=$(IFS=,; echo "${builtin_ops_name[*]}")
-    build_cmd="bash build.sh --pkg --ops=$builtin_ops_str --soc=ascend910_95 -j16 --cann_3rd_lib_path=/home/jenkins/opensource"
+    build_cmd="bash build.sh --pkg --ops=$builtin_ops_str --soc=ascend950 -j16 --cann_3rd_lib_path=/home/jenkins/opensource"
     run_build_command "$build_cmd"
     execute_run_file "custom"
 fi
 
 if [ ${#experimental_ops_name[@]} -gt 0 ]; then
     experimental_ops_str=$(IFS=,; echo "${experimental_ops_name[*]}")
-    build_cmd="bash build.sh --pkg --experimental --ops=$experimental_ops_str --soc=ascend910_95 -j16 --cann_3rd_lib_path=/home/jenkins/opensource"
+    build_cmd="bash build.sh --pkg --experimental --ops=$experimental_ops_str --soc=ascend950 -j16 --cann_3rd_lib_path=/home/jenkins/opensource"
     run_build_command "$build_cmd"
     execute_run_file "custom"
 fi
 
 if [ ${build_all} -eq 1 ]; then
-    build_cmd="bash build.sh --pkg --jit --soc=ascend910_95 -j16 --cann_3rd_lib_path=/home/jenkins/opensource"
+    build_cmd="bash build.sh --pkg --jit --soc=ascend950 -j16 --cann_3rd_lib_path=/home/jenkins/opensource"
     run_build_command "$build_cmd"
     execute_run_file "builtin"
 fi

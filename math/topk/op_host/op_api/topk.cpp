@@ -72,7 +72,7 @@ static bool IsAiCoreSupport(const aclTensor* self, int64_t k)
             OP_LOGW("l0op::TopK use CURRENT_DTYPE_SUPPORT_LIST for socVerison[%d]", static_cast<int32_t>(version));
             return CheckType(self->GetDataType(), CURRENT_DTYPE_SUPPORT_LIST);
         }
-        case SocVersion::ASCEND910_95: {
+        case SocVersion::ASCEND950: {
             OP_LOGW("l0op::TopK use FUTURE_DTYPE_SUPPORT_LIST for socVerison[%d]", static_cast<int32_t>(version));
             return CheckType(self->GetDataType(), FUTURE_DTYPE_SUPPORT_LIST);
         }
@@ -106,7 +106,7 @@ static bool IsAscendCSupport(const aclTensor* self, int64_t k)
 static bool IsSortWithIndex(int64_t k, bool sorted)
 {
     SocVersion version = GetCurrentPlatformInfo().GetSocVersion();
-    return (version == SocVersion::ASCEND910_95) && (k > TWO_THOUSAND) && (sorted == true);
+    return (version == SocVersion::ASCEND950) && (k > TWO_THOUSAND) && (sorted == true);
 }
 
 // AICORE算子kernel
@@ -130,7 +130,7 @@ std::tuple<aclTensor*, aclTensor*> TopkV2AiCoreForDavid(
     return std::tuple<aclTensor*, aclTensor*>(values, indices);
 }
 
-// 910_95 TopK + SortWithIndex
+// 950 TopK + SortWithIndex
 std::tuple<aclTensor*, aclTensor*> TopKAndSort(
     const aclTensor* self, const aclTensor* k, int64_t dim, bool largest, bool sorted, aclTensor* values,
     aclTensor* indices, aclOpExecutor* executor)
@@ -183,7 +183,7 @@ std::tuple<aclTensor*, aclTensor*> Topk(
     const aclTensor* kTensor = executor->ConvertToTensor(kScalar, op::ToOpDataType(ACL_INT32));
     auto valuesOut = executor->AllocTensor(outShape, self->GetDataType(), self->GetStorageFormat());
     aclTensor* indicesOut = nullptr;
-    if ((GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) && !IsSortWithIndex(k, sorted)) {
+    if ((GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) && !IsSortWithIndex(k, sorted)) {
         indicesOut = executor->AllocTensor(outShape, indicesDType, self->GetStorageFormat());
     } else {
         indicesOut = executor->AllocTensor(outShape, op::DataType::DT_INT32, self->GetStorageFormat());
@@ -195,7 +195,7 @@ std::tuple<aclTensor*, aclTensor*> Topk(
         } else if (IsSortWithIndex(k, sorted)) {
             return TopKAndSort(self, kTensor, dim, largest, sorted, valuesOut, indicesOut, executor);
         } else {
-            if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+            if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
                 return TopkV2AiCoreForDavid(
                     self, kTensor, dim, largest, sorted, valuesOut, indicesOut, indicesDType, executor);
             } else {

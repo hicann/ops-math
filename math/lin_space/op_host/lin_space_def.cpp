@@ -153,7 +153,7 @@ public:
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "lin_space_apt");
-        this->AICore().AddConfig("ascend910_95", regBaseConfig);
+        this->AICore().AddConfig("ascend950", regBaseConfig);
     }
 };
 

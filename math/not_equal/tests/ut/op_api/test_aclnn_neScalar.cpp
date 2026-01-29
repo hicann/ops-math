@@ -406,7 +406,7 @@ TEST_F(l2_ne_scalar_test, test_ne_scalar_float_double)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(l2_ne_scalar_test, Ascend910_9589_case_non_contiguous)
+TEST_F(l2_ne_scalar_test, Ascend950PR_89_case_non_contiguous)
 {
     auto self_tensor_desc = TensorDesc({5, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 5}, 0, {4, 5}).ValueRange(0, 10);
 
@@ -422,7 +422,7 @@ TEST_F(l2_ne_scalar_test, Ascend910_9589_case_non_contiguous)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(l2_ne_scalar_test, Ascend910_9589_case_norm_float32_with_double)
+TEST_F(l2_ne_scalar_test, Ascend950PR_89_case_norm_float32_with_double)
 {
     auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
     auto out_tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);
@@ -435,7 +435,7 @@ TEST_F(l2_ne_scalar_test, Ascend910_9589_case_norm_float32_with_double)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_ne_scalar_test, Ascend910_9589_case_norm_float16_with_double)
+TEST_F(l2_ne_scalar_test, Ascend950PR_89_case_norm_float16_with_double)
 {
     auto tensor_desc = TensorDesc({4, 16}, ACL_FLOAT16, ACL_FORMAT_NCHW);
     auto out_tensor_desc = TensorDesc({4, 16}, ACL_FLOAT16, ACL_FORMAT_NCHW);

@@ -34,7 +34,7 @@ protected:
 };
 
 // test nullptr
-TEST_F(l2_square_test, ascend910_95_case_nullptr)
+TEST_F(l2_square_test, ascend950_case_nullptr)
 {
     auto self = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -50,7 +50,7 @@ TEST_F(l2_square_test, ascend910_95_case_nullptr)
 }
 
 // 非法dype：不支持的dtype
-TEST_F(l2_square_test, ascend910_95_case_dtype_invalid_0)
+TEST_F(l2_square_test, ascend950_case_dtype_invalid_0)
 {
     auto self = TensorDesc({2, 2}, ACL_INT8, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_INT8, ACL_FORMAT_ND);
@@ -63,7 +63,7 @@ TEST_F(l2_square_test, ascend910_95_case_dtype_invalid_0)
 }
 
 // 非法dtype：dtype不一致
-TEST_F(l2_square_test, ascend910_95_case_dtype_invalid_1)
+TEST_F(l2_square_test, ascend950_case_dtype_invalid_1)
 {
     auto self = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -76,7 +76,7 @@ TEST_F(l2_square_test, ascend910_95_case_dtype_invalid_1)
 }
 
 // 非法format：format超8维
-TEST_F(l2_square_test, ascend910_95_case_format_invalid_0)
+TEST_F(l2_square_test, ascend950_case_format_invalid_0)
 {
     auto self = TensorDesc({1, 2, 1, 2, 1, 2, 1, 2, 1}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out = TensorDesc({1, 2, 1, 2, 1, 2, 1, 2, 1}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -89,7 +89,7 @@ TEST_F(l2_square_test, ascend910_95_case_format_invalid_0)
 }
 
 // 非法format：format不一致
-TEST_F(l2_square_test, ascend910_95_case_format_invalid_1)
+TEST_F(l2_square_test, ascend950_case_format_invalid_1)
 {
     auto self = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_NCHW);
@@ -102,7 +102,7 @@ TEST_F(l2_square_test, ascend910_95_case_format_invalid_1)
 }
 
 // 非法shape：shape不一致
-TEST_F(l2_square_test, ascend910_95_case_shape_invalid)
+TEST_F(l2_square_test, ascend950_case_shape_invalid)
 {
     auto self = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);

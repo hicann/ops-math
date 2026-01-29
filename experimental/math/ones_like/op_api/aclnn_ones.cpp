@@ -52,7 +52,7 @@ static bool CheckDtypeValid(const aclTensor* self)
     bool isAscend910BSocVersion =
         (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
          GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95);
+         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950);
     const std::initializer_list<op::DataType> CURRENT_DTYPE_SUPPORT_LIST =
         isAscend910BSocVersion ? ASCEND910B_DTYPE_SUPPORT_LIST : ASCEND910_DTYPE_SUPPORT_LIST;
 

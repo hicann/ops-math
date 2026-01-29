@@ -376,7 +376,7 @@ TEST_F(l2_remainder_scalar_tensor_test, l2_remainder_scalar_tensor_test_15)
         ACL_FLOAT, ACL_FORMAT_ND);
 }
 
-TEST_F(l2_remainder_scalar_tensor_test, Ascend910_9599_l2_remainder_scalar_tensor_test_01)
+TEST_F(l2_remainder_scalar_tensor_test, Ascend950PR_99_l2_remainder_scalar_tensor_test_01)
 {
     int32_t value = 3;
     auto self_desc = ScalarDesc(value);

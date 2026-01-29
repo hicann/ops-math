@@ -35,7 +35,7 @@ COMM_FILES = [
     # 添加更多算子路径
 ]
 SOC_MAPPING = {
-    "arch35": "ascend910_95"
+    "arch35": "ascend950"
 }
 
 

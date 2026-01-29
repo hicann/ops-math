@@ -377,7 +377,7 @@ TEST_F(l2_div_test, case_inplace_other_support)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(l2_div_test, Ascend910_9589_case_inplace_other_scalar_support)
+TEST_F(l2_div_test, Ascend950PR_89_case_inplace_other_scalar_support)
 {
     auto self_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(10, 100);
     auto other_tensor_desc = ScalarDesc(2.0f);

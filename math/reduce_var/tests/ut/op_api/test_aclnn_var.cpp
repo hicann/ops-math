@@ -490,7 +490,7 @@ TEST_F(l2_var_test, var_dim_negative_correction_0) {
 }
 
 // 正常场景_float16_dim为1_4_keepdim为true
-TEST_F(l2_var_test, ascend910_95_var_dtype_float16_dim_1_4) {
+TEST_F(l2_var_test, ascend950_var_dtype_float16_dim_1_4) {
   auto selfDesc = TensorDesc({1, 2, 6, 2, 4}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-2, 2);
   auto dimDesc = IntArrayDesc(vector<int64_t>{1, 4});
   bool unbiased = true;
@@ -504,7 +504,7 @@ TEST_F(l2_var_test, ascend910_95_var_dtype_float16_dim_1_4) {
 }
 
 // 正常场景_float16_dim为1_4_keepdim为true
-TEST_F(l2_var_test, ascend910_95_var_dtype_float16_dim_1_4_correction) {
+TEST_F(l2_var_test, ascend950_var_dtype_float16_dim_1_4_correction) {
   auto selfDesc = TensorDesc({1, 2, 6, 2, 4}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-2, 2);
   auto dimDesc = IntArrayDesc(vector<int64_t>{1, 4});
   bool unbiased = true;

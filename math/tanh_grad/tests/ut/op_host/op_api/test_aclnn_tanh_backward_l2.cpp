@@ -418,7 +418,7 @@ TEST_F(l2_tanh_backward_test, abnormal_shape_dim_greater_than_threshold)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_tanh_backward_test, Ascend910_9589_normal_dtype_float32_format_ndhwc)
+TEST_F(l2_tanh_backward_test, Ascend950PR_89_normal_dtype_float32_format_ndhwc)
 {
     auto gradOutputDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_NDHWC).ValueRange(-2, 2);
     auto outputDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_NDHWC).ValueRange(-2, 2);

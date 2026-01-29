@@ -33,7 +33,7 @@ protected:
 
 TEST_F(PadV3TilingTest, pad_v3_tiling_test_001)
 {
-    PadV3CompileInfo compileInfo = {0,0,0,0,0,false,"constant",0,0,0,false,"ascend910_95"};
+    PadV3CompileInfo compileInfo = {0,0,0,0,0,false,"constant",0,0,0,false,"ascend950"};
 
     gert::StorageShape xShape = {{2, 3, 4}, {2, 3, 4}};
     gert::StorageShape padShape = {{2}, {2}};

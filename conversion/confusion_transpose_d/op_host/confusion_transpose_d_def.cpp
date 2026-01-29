@@ -53,7 +53,7 @@ public:
             .NeedCheckSupportFlag(false)
             .ExtendCfgInfo("opFile.value", "confusion_transpose_d_apt");
 
-        this->AICore().AddConfig("ascend910_95", aicore_config);
+        this->AICore().AddConfig("ascend950", aicore_config);
     }
 };
 

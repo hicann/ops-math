@@ -38,7 +38,7 @@ static bool IsAiCoreSupport(const aclTensor* self)
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-        socVersion == SocVersion::ASCEND910_95) {
+        socVersion == SocVersion::ASCEND950) {
         return CheckType(self->GetDataType(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
     }
     return CheckType(self->GetDataType(), ASCEND910_AICORE_DTYPE_SUPPORT_LIST);

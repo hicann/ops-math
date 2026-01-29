@@ -548,8 +548,8 @@ TEST_F(l2_std_test, l2_std_self_scalar_tensor_keepdim) {
   EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-// 910_95
-TEST_F(l2_std_test, ascend910_95_normal_dtype_float16_format_hwcn_dim_2_keepdim_true) {
+// 950
+TEST_F(l2_std_test, ascend950_normal_dtype_float16_format_hwcn_dim_2_keepdim_true) {
   auto selfDesc = TensorDesc({1, 2, 6, 4}, ACL_FLOAT16, ACL_FORMAT_HWCN).ValueRange(-2, 2);
   auto dimDesc = IntArrayDesc(vector<int64_t>{2});
   int64_t correction = 1;

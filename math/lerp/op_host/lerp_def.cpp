@@ -47,7 +47,7 @@ class Lerp : public OpDef {
                 .NeedCheckSupportFlag(false)
                 .PrecisionReduceFlag(true)
                 .ExtendCfgInfo("opFile.value", "lerp_apt");
-            this->AICore().AddConfig("ascend910_95", aicoreConfig);
+            this->AICore().AddConfig("ascend950", aicoreConfig);
         }
 };
 

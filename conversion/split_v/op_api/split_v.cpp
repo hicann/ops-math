@@ -39,7 +39,7 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_ASCEN
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT64, op::DataType::DT_INT8,
     op::DataType::DT_UINT8, op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_ASCEND910_95 = {
+static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_ASCEND950 = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT8, op::DataType::DT_INT16,
     op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_UINT8, op::DataType::DT_UINT16,
     op::DataType::DT_UINT32, op::DataType::DT_UINT64, op::DataType::DT_BOOL, op::DataType::DT_BF16
@@ -80,7 +80,7 @@ bool IsSplitV2AiCoreSupport(const aclTensor *self, const aclIntArray *splitSize,
 
 bool SplitVAiCoreSupport(const aclTensor *self) {
   if (IsRegBase()) {
-    return op::CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_ASCEND910_95);
+    return op::CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_ASCEND950);
   } else if (op::GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND910B ||
              op::GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND910_93) {
     return op::CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_ASCEND910B);

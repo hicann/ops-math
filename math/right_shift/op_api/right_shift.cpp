@@ -69,7 +69,7 @@ const aclTensor* RightShift(const aclTensor* x, const aclTensor* y, aclOpExecuto
        return nullptr;
    }
    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-   if (socVersion != SocVersion::ASCEND910_95) {
+   if (socVersion != SocVersion::ASCEND950) {
        return RightShiftAiCpu(x, y, z, executor);
    } else {
        return RightShiftAiCore(x, y, z, executor);

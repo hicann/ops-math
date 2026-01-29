@@ -83,7 +83,7 @@ public:
                         {"Ascend910_9382", {{"ai_core_cnt", 24}, {"vec_core_cnt", 48}}},
                         {"Ascend310B1", {{"ai_core_cnt", 1}, {"vec_core_cnt", 1}}},
                         {"Ascend610Lite", {{"ai_core_cnt", 4}, {"vec_core_cnt", 4}}},
-                        {"Ascend910_9589", {{"ai_core_cnt", 32}, {"vec_core_cnt", 64}}},
+                        {"Ascend950PR_9589", {{"ai_core_cnt", 32}, {"vec_core_cnt", 64}}},
                     };
 
                     if (info_type == 3) {       // core num

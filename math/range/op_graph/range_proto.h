@@ -41,7 +41,7 @@ namespace ge {
 *    The types of start/limit/delta and output should be the same when the dtypes are:float16, bfloat16, int64. \n
 *    The auto inferred type of output is the same as input when the types of start/limit/delta are the same,
 *    otherwise the auto inferred type of output is float32. \n
-*    The double type of y is not supported in Ascend910_95 AI Processor. \n
+*    The double type of y is not supported in Ascend950 AI Processor. \n
 *
 * @par Attributes:
 * is_closed: An optional attribute of type bool, inducating upper limit is closed or not.

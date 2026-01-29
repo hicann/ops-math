@@ -45,16 +45,16 @@ struct NpuFormatCastTestParam {
     aclnnStatus expectRet;
 };
 
-class l2_npu_format_cast_test_910_95 : public testing::TestWithParam<NpuFormatCastTestParam>
+class l2_npu_format_cast_test_950 : public testing::TestWithParam<NpuFormatCastTestParam>
 {
 protected:
     static void SetUpTestCase()
     {
-        cout << "l2_npu_format_cast_test_910_95 SetUp" << endl;
+        cout << "l2_npu_format_cast_test_950 SetUp" << endl;
     }
     static void TearDownTestCase()
     {
-        cout << "l2_npu_format_cast_test_910_95 S" << endl;
+        cout << "l2_npu_format_cast_test_950 S" << endl;
     }
 };
 
@@ -136,7 +136,7 @@ static void TestOneParamCase(const NpuFormatCastTestParam& param)
     }
 }
 
-TEST_P(l2_npu_format_cast_test_910_95, ascend910_95_generalTest)
+TEST_P(l2_npu_format_cast_test_950, ascend950_generalTest)
 {
     NpuFormatCastTestParam param = GetParam();
     TestOneParamCase(param);
@@ -148,9 +148,9 @@ TEST_P(l2_npu_format_cast_test_910_93, ascend910_93_generalTest)
     TestOneParamCase(param);
 }
 
-static NpuFormatCastTestParam casesParamsAscend910_95[] = {
+static NpuFormatCastTestParam casesParamsAscend950[] = {
     // casename srcTensor srcDtype srcFormat dstFormat additionalDtype expectOut
-    {"ascend910_95_test_NpuformatCast_NZ_Align",
+    {"ascend950_test_NpuformatCast_NZ_Align",
      {64, 128},
      {64, 128},
      ACL_INT8,
@@ -158,7 +158,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_INT8,
      ACLNN_SUCCESS},
-    {"ascend910_95_test_NpuformatCast_NCL_Align",
+    {"ascend950_test_NpuformatCast_NCL_Align",
      {64, 128},
      {64, 128},
      ACL_INT8,
@@ -166,7 +166,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_INT8,
      ACLNN_SUCCESS}, // NCL
-    {"ascend910_95_test_NpuformatCast_NZ_Align_fp16",
+    {"ascend950_test_NpuformatCast_NZ_Align_fp16",
      {64, 128},
      {64, 128},
      ACL_FLOAT16,
@@ -174,7 +174,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_FLOAT16,
      ACLNN_SUCCESS}, // 非量化FP16
-    {"ascend910_95_test_NpuformatCast_NZ_Align_bf16",
+    {"ascend950_test_NpuformatCast_NZ_Align_bf16",
      {64, 128},
      {64, 128},
      ACL_BF16,
@@ -182,7 +182,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_BF16,
      ACLNN_SUCCESS}, // 非量化BF16
-    {"ascend910_95_test_NpuformatCast_NZC016_Align_0",
+    {"ascend950_test_NpuformatCast_NZC016_Align_0",
      {64, 128},
      {64, 128},
      ACL_INT32,
@@ -190,7 +190,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_FLOAT16,
      ACLNN_SUCCESS},
-    {"ascend910_95_test_NpuformatCast_NZC016_Align_1",
+    {"ascend950_test_NpuformatCast_NZC016_Align_1",
      {64, 128},
      {64, 128},
      ACL_INT32,
@@ -198,7 +198,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_BF16,
      ACLNN_SUCCESS},
-    {"ascend910_95_test_NpuformatCast_NZC016_NoAlign",
+    {"ascend950_test_NpuformatCast_NZC016_NoAlign",
      {12, 31},
      {12, 31},
      ACL_INT32,
@@ -206,7 +206,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_FLOAT16,
      ACLNN_SUCCESS},
-    {"ascend910_95_test_NpuformatCast_NZC016_NoAlign",
+    {"ascend950_test_NpuformatCast_NZC016_NoAlign",
      {12, 31},
      {12, 31},
      ACL_INT32,
@@ -214,7 +214,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_BF16,
      ACLNN_SUCCESS},
-    {"ascend910_95_test_NpuformatCast_NZ_NoAlign",
+    {"ascend950_test_NpuformatCast_NZ_NoAlign",
      {35, 42},
      {35, 42},
      ACL_INT8,
@@ -222,7 +222,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_INT8,
      ACLNN_SUCCESS},
-    {"ascend910_95_test_NpuformatCast_NCL2NZ",
+    {"ascend950_test_NpuformatCast_NCL2NZ",
      {4, 64, 64},
      {4, 64, 64},
      ACL_FLOAT,
@@ -230,7 +230,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_FLOAT16,
      ACLNN_SUCCESS},
-    {"ascend910_95_test_NpuformatCast_NCL2NZ_NoAlign",
+    {"ascend950_test_NpuformatCast_NCL2NZ_NoAlign",
      {4, 15, 64},
      {4, 15, 64},
      ACL_FLOAT,
@@ -239,7 +239,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_BF16,
      ACLNN_SUCCESS},
     // 异常用例
-    {"ascend910_95_test_NpuformatCast_InvalidAdditionalDtype",
+    {"ascend950_test_NpuformatCast_InvalidAdditionalDtype",
      {64, 128},
      {64, 128},
      ACL_INT32,
@@ -247,7 +247,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_INT8,
      ACLNN_ERR_PARAM_INVALID},
-    {"ascend910_95_test_NpuformatCast_InvalidsrcFormat",
+    {"ascend950_test_NpuformatCast_InvalidsrcFormat",
      {16, 32},
      {16, 32},
      ACL_INT8,
@@ -255,7 +255,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_INT8,
      ACLNN_ERR_RUNTIME_ERROR},
-    {"ascend910_95_test_NpuformatCast_InvalidsrcTensor",
+    {"ascend950_test_NpuformatCast_InvalidsrcTensor",
      {32},
      {32},
      ACL_INT8,
@@ -263,7 +263,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_INT8,
      ACLNN_ERR_PARAM_INVALID},
-    {"ascend910_95_test_NpuformatCast_InvalidsrcDtype",
+    {"ascend950_test_NpuformatCast_InvalidsrcDtype",
      {32, 64},
      {32, 64},
      ACL_FLOAT,
@@ -271,7 +271,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_INT8,
      ACLNN_ERR_PARAM_INVALID},
-    {"ascend910_95_test_NpuformatCast_InvalidsrcDtype_uint8",
+    {"ascend950_test_NpuformatCast_InvalidsrcDtype_uint8",
      {32, 64},
      {32, 64},
      ACL_UINT8,
@@ -279,7 +279,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_INT8,
      ACLNN_ERR_PARAM_INVALID},
-    {"ascend910_95_test_NpuformatCast_InvalidsrcDtype_fp32",
+    {"ascend950_test_NpuformatCast_InvalidsrcDtype_fp32",
      {16, 64},
      {16, 64},
      ACL_FLOAT,
@@ -287,7 +287,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_FLOAT,
      ACLNN_ERR_PARAM_INVALID}, // 拦截非量化 fp32
-    {"ascend910_95_test_NpuformatCast_InvalidsrcDtype_k_equal_1",
+    {"ascend950_test_NpuformatCast_InvalidsrcDtype_k_equal_1",
      {1, 64},
      {1, 64},
      ACL_FLOAT16,
@@ -295,7 +295,7 @@ static NpuFormatCastTestParam casesParamsAscend910_95[] = {
      ACL_FORMAT_FRACTAL_NZ,
      ACL_FLOAT16,
      ACLNN_ERR_PARAM_INVALID}, // 拦截非量化 k=1
-    {"ascend910_95_test_NpuformatCast_InvalidsrcDtype",
+    {"ascend950_test_NpuformatCast_InvalidsrcDtype",
      {16, 64},
      {16, 64},
      ACL_INT32,
@@ -449,7 +449,7 @@ static NpuFormatCastTestParam casesParamsAscend910_93[] = {
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    Ascend910_95_NpuFormatCast, l2_npu_format_cast_test_910_95, testing::ValuesIn(casesParamsAscend910_95));
+    Ascend950_NpuFormatCast, l2_npu_format_cast_test_950, testing::ValuesIn(casesParamsAscend950));
 
 INSTANTIATE_TEST_SUITE_P(
     Ascend910_93_NpuFormatCast, l2_npu_format_cast_test_910_93, testing::ValuesIn(casesParamsAscend910_93));
@@ -473,9 +473,9 @@ static void TestMultiThread(const NpuFormatCastTestParam* params, size_t testcas
     }
 }
 
-TEST_F(l2_npu_format_cast_test_910_95, ascend910_95_multi_thread)
+TEST_F(l2_npu_format_cast_test_950, ascend950_multi_thread)
 {
-    TestMultiThread(casesParamsAscend910_95, sizeof(casesParamsAscend910_95) / sizeof(NpuFormatCastTestParam), 3);
+    TestMultiThread(casesParamsAscend950, sizeof(casesParamsAscend950) / sizeof(NpuFormatCastTestParam), 3);
 }
 
 TEST_F(l2_npu_format_cast_test_910_93, ascend910_93_multi_thread)

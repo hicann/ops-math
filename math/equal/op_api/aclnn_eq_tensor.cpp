@@ -75,7 +75,7 @@ static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_UINT64};
 
 // 列出output所支持的dtype
-// 除910B-910_95以外版本,
+// 除910B-950以外版本,
 static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_910_LIST = {
     op::DataType::DT_FLOAT,     op::DataType::DT_INT32, op::DataType::DT_INT64,  op::DataType::DT_FLOAT16,
     op::DataType::DT_INT16,     op::DataType::DT_INT8,  op::DataType::DT_UINT8,  op::DataType::DT_UINT64,
@@ -88,7 +88,7 @@ static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_910B_LIST = {
     op::DataType::DT_INT16, op::DataType::DT_INT8,   op::DataType::DT_UINT8,     op::DataType::DT_BF16,
     op::DataType::DT_BOOL,  op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
 
-// 910_95版本支持
+// 950版本支持
 static const std::initializer_list<op::DataType> REGBASE_OUT_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT,     op::DataType::DT_INT32,      op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
     op::DataType::DT_INT16,     op::DataType::DT_INT8,       op::DataType::DT_UINT8, op::DataType::DT_DOUBLE,

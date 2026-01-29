@@ -235,7 +235,7 @@ static inline bool CheckPrimaryFormatValid(op::Format srcPrimaryFormat, op::Form
 static inline bool CheckTransDataSupport(op::Format srcPrimaryFormat, op::Format dstPrimaryFormat)
 {
     int8_t isSupport = 0;
-    if (op::GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND910_95) {
+    if (op::GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND950) {
         if ((srcPrimaryFormat == op::Format::FORMAT_ND || srcPrimaryFormat == op::Format::FORMAT_NCL) &&
             (dstPrimaryFormat == op::Format::FORMAT_FRACTAL_NZ ||
              dstPrimaryFormat == op::Format::FORMAT_FRACTAL_NZ_C0_16 ||

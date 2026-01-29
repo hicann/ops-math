@@ -187,7 +187,7 @@ TEST_F(l2_batch_norm_stats_test, batch_norm_stats_invalid_dim) {
   EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_batch_norm_stats_test, ascend910_95_batch_norm_stats_dtype_float16) {
+TEST_F(l2_batch_norm_stats_test, ascend950_batch_norm_stats_dtype_float16) {
   auto tensor_desc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6});
   auto mean = TensorDesc({3}, ACL_FLOAT, ACL_FORMAT_ND);
   auto invstd = TensorDesc({3}, ACL_FLOAT, ACL_FORMAT_ND);

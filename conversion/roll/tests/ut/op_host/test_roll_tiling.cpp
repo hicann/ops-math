@@ -37,7 +37,7 @@ protected:
 // TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_001)
 // {
 
-//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND910_95};
+//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND950};
 //     gert::TilingContextPara tilingContextPara(
 //         "Roll",
 //         {
@@ -58,7 +58,7 @@ protected:
 // }
 // TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_002)
 // {
-//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND910_95};
+//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND950};
 //     gert::TilingContextPara tilingContextPara(
 //         "Roll",
 //         {
@@ -79,7 +79,7 @@ protected:
 // }
 // TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_003)
 // {
-//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND910_95};
+//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND950};
 //     gert::TilingContextPara tilingContextPara(
 //         "Roll",
 //         {
@@ -100,7 +100,7 @@ protected:
 // }
 // TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_004)
 // {
-//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND910_95};
+//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND950};
 //     gert::TilingContextPara tilingContextPara(
 //         "Roll",
 //         {
@@ -121,7 +121,7 @@ protected:
 // }
 // TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_005)
 // {
-//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND910_95};
+//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND950};
 //     gert::TilingContextPara tilingContextPara(
 //         "Roll",
 //         {
@@ -142,7 +142,7 @@ protected:
 // }
 // TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_006)
 // {
-//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND910_95};
+//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND950};
 //     gert::TilingContextPara tilingContextPara(
 //         "Roll",
 //         {
@@ -163,7 +163,7 @@ protected:
 // }
 // TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_007)
 // {
-//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND910_95};
+//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND950};
 //     gert::TilingContextPara tilingContextPara(
 //         "Roll",
 //         {
@@ -184,7 +184,7 @@ protected:
 // }
 // TEST_F(RollTiling, ascend910D1_test_tiling_int32_falied_001)
 // {
-//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND910_95};
+//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND950};
 //     gert::TilingContextPara tilingContextPara(
 //         "Roll",
 //         {
@@ -201,7 +201,7 @@ protected:
 // }
 // TEST_F(RollTiling, ascend910D1_test_tiling_int32_falied_002)
 // {
-//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND910_95};
+//     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND950};
 //     gert::TilingContextPara tilingContextPara(
 //         "Roll",
 //         {

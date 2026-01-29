@@ -116,7 +116,7 @@ TEST_F(l2_im2col_test, case_INT8)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_im2col_test, ascend910_95_case_INT8)
+TEST_F(l2_im2col_test, ascend950_case_INT8)
 {
     auto tensor_desc = TensorDesc({1, 2, 2, 3}, ACL_INT8, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 8, 4}, ACL_INT8, ACL_FORMAT_ND);
@@ -129,7 +129,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_INT8)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910_95);
+    SetPlatformSocVersion(SocVersion::ASCEND950);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -138,7 +138,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_INT8)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_im2col_test, ascend910_95_case_UINT8)
+TEST_F(l2_im2col_test, ascend950_case_UINT8)
 {
     auto tensor_desc = TensorDesc({1, 2, 2, 3}, ACL_UINT8, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 8, 4}, ACL_UINT8, ACL_FORMAT_ND);
@@ -151,7 +151,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_UINT8)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910_95);
+    SetPlatformSocVersion(SocVersion::ASCEND950);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -160,7 +160,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_UINT8)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_im2col_test, ascend910_95_case_INT16)
+TEST_F(l2_im2col_test, ascend950_case_INT16)
 {
     auto tensor_desc = TensorDesc({1, 2, 2, 3}, ACL_INT16, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 8, 4}, ACL_INT16, ACL_FORMAT_ND);
@@ -173,7 +173,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_INT16)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910_95);
+    SetPlatformSocVersion(SocVersion::ASCEND950);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -182,7 +182,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_INT16)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_im2col_test, ascend910_95_case_UINT16)
+TEST_F(l2_im2col_test, ascend950_case_UINT16)
 {
     auto tensor_desc = TensorDesc({1, 2, 2, 3}, ACL_UINT16, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 8, 4}, ACL_UINT16, ACL_FORMAT_ND);
@@ -195,7 +195,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_UINT16)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910_95);
+    SetPlatformSocVersion(SocVersion::ASCEND950);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -204,7 +204,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_UINT16)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_im2col_test, ascend910_95_case_INT32)
+TEST_F(l2_im2col_test, ascend950_case_INT32)
 {
     auto tensor_desc = TensorDesc({1, 2, 2, 3}, ACL_INT32, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 8, 4}, ACL_INT32, ACL_FORMAT_ND);
@@ -217,7 +217,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_INT32)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910_95);
+    SetPlatformSocVersion(SocVersion::ASCEND950);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -226,7 +226,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_INT32)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_im2col_test, ascend910_95_case_UINT32)
+TEST_F(l2_im2col_test, ascend950_case_UINT32)
 {
     auto tensor_desc = TensorDesc({1, 2, 2, 3}, ACL_UINT32, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 8, 4}, ACL_UINT32, ACL_FORMAT_ND);
@@ -239,7 +239,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_UINT32)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910_95);
+    SetPlatformSocVersion(SocVersion::ASCEND950);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -248,7 +248,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_UINT32)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_im2col_test, ascend910_95_case_INT64)
+TEST_F(l2_im2col_test, ascend950_case_INT64)
 {
     auto tensor_desc = TensorDesc({1, 2, 2, 3}, ACL_INT64, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 8, 4}, ACL_INT64, ACL_FORMAT_ND);
@@ -261,7 +261,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_INT64)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910_95);
+    SetPlatformSocVersion(SocVersion::ASCEND950);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -270,7 +270,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_INT64)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_im2col_test, ascend910_95_case_UINT64)
+TEST_F(l2_im2col_test, ascend950_case_UINT64)
 {
     auto tensor_desc = TensorDesc({1, 2, 2, 3}, ACL_UINT64, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 8, 4}, ACL_UINT64, ACL_FORMAT_ND);
@@ -283,7 +283,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_UINT64)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910_95);
+    SetPlatformSocVersion(SocVersion::ASCEND950);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -292,7 +292,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_UINT64)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_im2col_test, ascend910_95_case_BF16)
+TEST_F(l2_im2col_test, ascend950_case_BF16)
 {
     auto tensor_desc = TensorDesc({1, 2, 2, 3}, ACL_BF16, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 8, 4}, ACL_BF16, ACL_FORMAT_ND);
@@ -305,7 +305,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_BF16)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910_95);
+    SetPlatformSocVersion(SocVersion::ASCEND950);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -314,7 +314,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_BF16)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_im2col_test, ascend910_95_case_FLOAT)
+TEST_F(l2_im2col_test, ascend950_case_FLOAT)
 {
     auto tensor_desc = TensorDesc({1, 2, 2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 8, 4}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -327,7 +327,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_FLOAT)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910_95);
+    SetPlatformSocVersion(SocVersion::ASCEND950);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -336,7 +336,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_FLOAT)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_im2col_test, ascend910_95_case_FLOAT16)
+TEST_F(l2_im2col_test, ascend950_case_FLOAT16)
 {
     auto tensor_desc = TensorDesc({1, 2, 2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 8, 4}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -349,7 +349,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_FLOAT16)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910_95);
+    SetPlatformSocVersion(SocVersion::ASCEND950);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -358,7 +358,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_FLOAT16)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_im2col_test, ascend910_95_case_DOUBLE)
+TEST_F(l2_im2col_test, ascend950_case_DOUBLE)
 {
     auto tensor_desc = TensorDesc({1, 2, 2, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 8, 4}, ACL_DOUBLE, ACL_FORMAT_ND);
@@ -371,7 +371,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_DOUBLE)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910_95);
+    SetPlatformSocVersion(SocVersion::ASCEND950);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -380,7 +380,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_DOUBLE)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_im2col_test, ascend910_95_case_BOOL)
+TEST_F(l2_im2col_test, ascend950_case_BOOL)
 {
     auto tensor_desc = TensorDesc({1, 2, 2, 3}, ACL_BOOL, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 8, 4}, ACL_BOOL, ACL_FORMAT_ND);
@@ -393,7 +393,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_BOOL)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910_95);
+    SetPlatformSocVersion(SocVersion::ASCEND950);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -402,7 +402,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_BOOL)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_im2col_test, ascend910_95_case_COMPLEX32)
+TEST_F(l2_im2col_test, ascend950_case_COMPLEX32)
 {
     auto tensor_desc = TensorDesc({1, 2, 2, 3}, ACL_COMPLEX32, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 8, 4}, ACL_COMPLEX32, ACL_FORMAT_ND);
@@ -415,7 +415,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_COMPLEX32)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910_95);
+    SetPlatformSocVersion(SocVersion::ASCEND950);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -424,7 +424,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_COMPLEX32)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_im2col_test, ascend910_95_case_COMPLEX64)
+TEST_F(l2_im2col_test, ascend950_case_COMPLEX64)
 {
     auto tensor_desc = TensorDesc({1, 2, 2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 8, 4}, ACL_COMPLEX64, ACL_FORMAT_ND);
@@ -437,7 +437,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_COMPLEX64)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910_95);
+    SetPlatformSocVersion(SocVersion::ASCEND950);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -446,7 +446,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_COMPLEX64)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_im2col_test, ascend910_95_case_COMPLEX128)
+TEST_F(l2_im2col_test, ascend950_case_COMPLEX128)
 {
     auto tensor_desc = TensorDesc({1, 2, 2, 3}, ACL_COMPLEX128, ACL_FORMAT_ND);
     auto out_desc = TensorDesc({1, 8, 4}, ACL_COMPLEX128, ACL_FORMAT_ND);
@@ -459,7 +459,7 @@ TEST_F(l2_im2col_test, ascend910_95_case_COMPLEX128)
     auto padding_desc = IntArrayDesc(padding);
     auto stride_desc = IntArrayDesc(stride);
 
-    SetPlatformSocVersion(SocVersion::ASCEND910_95);
+    SetPlatformSocVersion(SocVersion::ASCEND950);
     auto ut = OP_API_UT(
         aclnnIm2col, INPUT(tensor_desc, kernel_desc, dilation_desc, padding_desc, stride_desc), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize

@@ -41,7 +41,7 @@ static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST = {
     DataType::DT_INT64, DataType::DT_INT32, DataType::DT_INT16, DataType::DT_INT8,
     DataType::DT_UINT8, DataType::DT_BOOL, DataType::DT_COMPLEX128, DataType::DT_COMPLEX64};
 
-static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_910_95 = {
+static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_950 = {
     DataType::DT_DOUBLE, DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16,
     DataType::DT_INT64, DataType::DT_UINT64, DataType::DT_INT32, DataType::DT_UINT32, 
     DataType::DT_INT16, DataType::DT_UINT16, DataType::DT_INT8, DataType::DT_UINT8,
@@ -55,10 +55,10 @@ inline static bool CheckNotNull(const aclTensor *self, const aclTensorList *out)
 
 inline static bool CheckDtypeValid(const aclTensor *self, const aclTensorList *out) {
   if (IsRegBase()) {
-    OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST_910_95, return false);
+    OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST_950, return false);
     // 检查每一个输出tensor的数据类型是否在API支持列表内
     for (size_t index = 0; index < out->Size(); index++) {
-      OP_CHECK_DTYPE_NOT_SUPPORT((*out)[index], DTYPE_SUPPORT_LIST_910_95, return false);
+      OP_CHECK_DTYPE_NOT_SUPPORT((*out)[index], DTYPE_SUPPORT_LIST_950, return false);
     }
     return true;
   }

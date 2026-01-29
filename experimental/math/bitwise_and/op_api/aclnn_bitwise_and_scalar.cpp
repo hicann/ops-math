@@ -111,7 +111,7 @@ static bool CheckDtypeValid(const aclTensor *self, const aclScalar *other) {
 
 static DataType PromoteTypeScalar(const aclTensor* self, const aclScalar* other) {
   auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  if (socVersion == SocVersion::ASCEND910_95) {
+  if (socVersion == SocVersion::ASCEND950) {
     auto otherDefaultDtype = GetScalarDefaultDtype(other->GetDataType());
     auto promoteType = CombineCategoriesWithComplex(self->GetDataType(), otherDefaultDtype);
     return promoteType;

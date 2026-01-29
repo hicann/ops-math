@@ -107,7 +107,7 @@ TEST_F(l2_clamp_max_test, aclnnClampMax_self_shape_out_of_8)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_clamp_max_test, ascend910_9589_aclnnClampMax_input_diff)
+TEST_F(l2_clamp_max_test, ascend950pr_9589_aclnnClampMax_input_diff)
 {
     auto tensor_desc = TensorDesc({10}, ACL_FLOAT, ACL_FORMAT_ND);
     auto maxScalar = ScalarDesc(static_cast<float>(2));

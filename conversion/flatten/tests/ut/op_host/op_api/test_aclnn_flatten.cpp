@@ -248,7 +248,7 @@ TEST_F(l2_flatten_test, flatten_testcase_019_exception_float32_self_dim1)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_flatten_test, Ascend910_9589_flatten_testcase_1_normal_float32_self_dim1)
+TEST_F(l2_flatten_test, Ascend910PR_9589_flatten_testcase_1_normal_float32_self_dim1)
 {
     auto outDesc = TensorDesc({1, 1}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto selfDesc = TensorDesc({1}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-1, 1);

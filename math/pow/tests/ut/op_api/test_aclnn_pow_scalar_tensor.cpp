@@ -356,7 +356,7 @@ TEST_F(l2_pow_scalar_tensor_test, aclnnPowScalarTensor_1_complex_hwcn_1_int8_hwc
 }
  */
 
-TEST_F(l2_pow_scalar_tensor_test, Ascend910_9589_aclnnPowScalarTensor_fill_1) {
+TEST_F(l2_pow_scalar_tensor_test, Ascend950PR_89_aclnnPowScalarTensor_fill_1) {
   // input
   const vector<int64_t>& expShape = {5};
   aclDataType expDtype = ACL_INT32;
@@ -377,7 +377,7 @@ TEST_F(l2_pow_scalar_tensor_test, Ascend910_9589_aclnnPowScalarTensor_fill_1) {
   EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(l2_pow_scalar_tensor_test, Ascend910_9589_aclnnPowScalarTensor_scalar_float16) {
+TEST_F(l2_pow_scalar_tensor_test, Ascend950PR_89_aclnnPowScalarTensor_scalar_float16) {
   // input
   const vector<int64_t>& expShape = {5, 3};
   aclDataType expDtype = ACL_FLOAT16;
@@ -398,7 +398,7 @@ TEST_F(l2_pow_scalar_tensor_test, Ascend910_9589_aclnnPowScalarTensor_scalar_flo
   EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 /* 
-TEST_F(l2_pow_scalar_tensor_test, Ascend910_9589_aclnnPowScalarTensor_exp_complex64) {
+TEST_F(l2_pow_scalar_tensor_test, Ascend950PR_89_aclnnPowScalarTensor_exp_complex64) {
   // input
   const vector<int64_t>& expShape = {5, 3};
   aclDataType expDtype = ACL_COMPLEX64;
@@ -419,7 +419,7 @@ TEST_F(l2_pow_scalar_tensor_test, Ascend910_9589_aclnnPowScalarTensor_exp_comple
   EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(l2_pow_scalar_tensor_test, Ascend910_9589_aclnnPowScalarTensor_scalar_float_exp_int32) {
+TEST_F(l2_pow_scalar_tensor_test, Ascend950PR_89_aclnnPowScalarTensor_scalar_float_exp_int32) {
   // input
   const vector<int64_t>& expShape = {5, 3};
   aclDataType expDtype = ACL_INT32;

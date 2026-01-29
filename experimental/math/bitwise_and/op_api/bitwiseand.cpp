@@ -32,11 +32,11 @@ static const std::initializer_list<op::DataType> ASCEND910B_AICORE_DTYPE_SUPPORT
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static bool IsAiCoreSupport(const aclTensor *self) {
-  // 910B、910_93、910_95
+  // 910B、910_93、950
   auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
   if (socVersion == SocVersion::ASCEND910B ||
       socVersion == SocVersion::ASCEND910_93 ||
-      socVersion == SocVersion::ASCEND910_95) {
+      socVersion == SocVersion::ASCEND950) {
     return CheckType(self->GetDataType(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
   }
   // 910及其他

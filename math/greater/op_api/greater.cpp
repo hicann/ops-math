@@ -38,7 +38,7 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_910B_LIST 
 static const std::initializer_list<op::DataType> ASCEND610LITE_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_INT32, op::DataType::DT_INT8, op::DataType::DT_UINT8};
 
-// 910_95支持类型
+// 950支持类型
 static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_INT32,  op::DataType::DT_FLOAT16,
     op::DataType::DT_INT8,  op::DataType::DT_UINT8,  op::DataType::DT_BF16,

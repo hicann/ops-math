@@ -36,7 +36,7 @@ namespace ge {
 * noop_with_empty_axes: An optional bool. Defaults to "true" .
 * - If true, when axes = [], not reduce.
 * - If false, when axes = [], reduce all.
-* This attribute is valid only for Ascend910_95 AI Processors and later products.
+* This attribute is valid only for Ascend950 AI Processors and later products.
 
 * @par Outputs:
 * y: A multi-dimensional Tensor, specifying the maximum value of the

@@ -472,7 +472,7 @@ TEST_F(l2_var_mean_test, var_mean_correction_large_1) {
 }
 
 // 正常场景_correction为0
-TEST_F(l2_var_mean_test, ascend910_95_var_mean_correction_0) {
+TEST_F(l2_var_mean_test, ascend950_var_mean_correction_0) {
   auto selfDesc = TensorDesc({1, 2, 6, 4}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2, 2);
   auto dimDesc = IntArrayDesc(vector<int64_t>{1, 2});
   int64_t correction = 0;

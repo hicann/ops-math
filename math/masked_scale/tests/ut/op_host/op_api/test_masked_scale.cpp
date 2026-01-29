@@ -30,7 +30,7 @@ class l2_masked_scale_test : public testing::Test {
 };
 
 // test nullptr
-TEST_F(l2_masked_scale_test, ascend910_95_case_nullptr) {
+TEST_F(l2_masked_scale_test, ascend950_case_nullptr) {
     auto self = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto mask = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -51,7 +51,7 @@ TEST_F(l2_masked_scale_test, ascend910_95_case_nullptr) {
 }
 
 // test xdtype:float16, maskdtype:int8
-TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_fp16_int8_01) {
+TEST_F(l2_masked_scale_test, ascend950_case_dtype_fp16_int8_01) {
     auto self = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto mask = TensorDesc({2, 2}, ACL_INT8, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -65,7 +65,7 @@ TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_fp16_int8_01) {
 }
 
 // test xdtype:bfloat16, maskdtype:int8
-TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_bf16_int8_01) {
+TEST_F(l2_masked_scale_test, ascend950_case_dtype_bf16_int8_01) {
     auto self = TensorDesc({2, 2}, ACL_BF16, ACL_FORMAT_ND);
     auto mask = TensorDesc({2, 2}, ACL_INT8, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_BF16, ACL_FORMAT_ND);
@@ -79,7 +79,7 @@ TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_bf16_int8_01) {
 }
 
 // test xdtype:float32, maskdtype:int8
-TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_fp32_int8_01) {
+TEST_F(l2_masked_scale_test, ascend950_case_dtype_fp32_int8_01) {
     auto self = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto mask = TensorDesc({2, 2}, ACL_INT8, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -93,7 +93,7 @@ TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_fp32_int8_01) {
 }
 
 // test xdtype:float16, maskdtype:uint8
-TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_fp16_uint8_01) {
+TEST_F(l2_masked_scale_test, ascend950_case_dtype_fp16_uint8_01) {
     auto self = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto mask = TensorDesc({2, 2}, ACL_UINT8, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -107,7 +107,7 @@ TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_fp16_uint8_01) {
 }
 
 // test xdtype:bfloat16, maskdtype:uint8
-TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_bf16_uint8_01) {
+TEST_F(l2_masked_scale_test, ascend950_case_dtype_bf16_uint8_01) {
     auto self = TensorDesc({2, 2}, ACL_BF16, ACL_FORMAT_ND);
     auto mask = TensorDesc({2, 2}, ACL_UINT8, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_BF16, ACL_FORMAT_ND);
@@ -121,7 +121,7 @@ TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_bf16_uint8_01) {
 }
 
 // test xdtype:float32, maskdtype:uint8
-TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_fp32_uint8_01) {
+TEST_F(l2_masked_scale_test, ascend950_case_dtype_fp32_uint8_01) {
     auto self = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto mask = TensorDesc({2, 2}, ACL_UINT8, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -135,7 +135,7 @@ TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_fp32_uint8_01) {
 }
 
 // test xdtype:float16, maskdtype:float16
-TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_fp16_fp16_01) {
+TEST_F(l2_masked_scale_test, ascend950_case_dtype_fp16_fp16_01) {
     auto self = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto mask = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -149,7 +149,7 @@ TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_fp16_fp16_01) {
 }
 
 // test xdtype:bfloat16, maskdtype:float16
-TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_bf16_fp16_01) {
+TEST_F(l2_masked_scale_test, ascend950_case_dtype_bf16_fp16_01) {
     auto self = TensorDesc({2, 2}, ACL_BF16, ACL_FORMAT_ND);
     auto mask = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_BF16, ACL_FORMAT_ND);
@@ -163,7 +163,7 @@ TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_bf16_fp16_01) {
 }
 
 // test xdtype:float32, maskdtype:float16
-TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_fp32_fp16_01) {
+TEST_F(l2_masked_scale_test, ascend950_case_dtype_fp32_fp16_01) {
     auto self = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto mask = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -177,7 +177,7 @@ TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_fp32_fp16_01) {
 }
 
 // test xdtype:float16, maskdtype:float32
-TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_fp16_fp32_01) {
+TEST_F(l2_masked_scale_test, ascend950_case_dtype_fp16_fp32_01) {
     auto self = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto mask = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
@@ -191,7 +191,7 @@ TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_fp16_fp32_01) {
 }
 
 // test xdtype:bfloat16, maskdtype:float32
-TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_bf16_fp32_01) {
+TEST_F(l2_masked_scale_test, ascend950_case_dtype_bf16_fp32_01) {
     auto self = TensorDesc({2, 2}, ACL_BF16, ACL_FORMAT_ND);
     auto mask = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_BF16, ACL_FORMAT_ND);
@@ -205,7 +205,7 @@ TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_bf16_fp32_01) {
 }
 
 // test xdtype:float32, maskdtype:float32
-TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_fp32_fp32_01) {
+TEST_F(l2_masked_scale_test, ascend950_case_dtype_fp32_fp32_01) {
     auto self = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto mask = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
@@ -219,7 +219,7 @@ TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_fp32_fp32_01) {
 }
 
 // 非法dype：不支持的dtype
-TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_invalid_0) {
+TEST_F(l2_masked_scale_test, ascend950_case_dtype_invalid_0) {
     auto self = TensorDesc({2, 2}, ACL_INT8, ACL_FORMAT_ND);
     auto mask = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2}, ACL_INT8, ACL_FORMAT_ND);
@@ -233,7 +233,7 @@ TEST_F(l2_masked_scale_test, ascend910_95_case_dtype_invalid_0) {
 }
 
 // 非法shape：shape不一致
-TEST_F(l2_masked_scale_test, ascend910_95_case_shape_invalid_1) {
+TEST_F(l2_masked_scale_test, ascend950_case_shape_invalid_1) {
     auto self = TensorDesc({2, 2}, ACL_INT8, ACL_FORMAT_ND);
     auto mask = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 3}, ACL_INT8, ACL_FORMAT_ND);
@@ -247,7 +247,7 @@ TEST_F(l2_masked_scale_test, ascend910_95_case_shape_invalid_1) {
 }
 
 // 非法shape：shape的dim超过8维
-TEST_F(l2_masked_scale_test, ascend910_95_case_shape_invalid_2) {
+TEST_F(l2_masked_scale_test, ascend950_case_shape_invalid_2) {
     auto self = TensorDesc({2, 2, 2, 1, 1, 1, 2, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto mask = TensorDesc({2, 2, 2, 1, 1, 1, 2, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 2, 2, 1, 1, 1, 2, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND);

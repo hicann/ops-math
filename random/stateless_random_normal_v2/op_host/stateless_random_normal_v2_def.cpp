@@ -54,7 +54,7 @@ public:
                 {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
 
         this->Attr("dtype").AttrType(OPTIONAL).Int(0);
-        this->AICore().AddConfig("ascend910_95");
+        this->AICore().AddConfig("ascend950");
     }
 };
 

@@ -36,7 +36,7 @@ extern "C" {
 constexpr size_t MAX_DIM_LEN = 8;
 constexpr size_t MIN_DIM_LEN = 2;
 
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> ASCEND950_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
@@ -46,8 +46,8 @@ static const inline std::initializer_list<DataType>& GetSupportDtypeList(SocVers
     static const std::initializer_list<DataType> emptyDtypes = {};
     if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
-    } else if (socVersion == SocVersion::ASCEND910_95) {
-        return ASCEND910_95_DTYPE_SUPPORT_LIST;
+    } else if (socVersion == SocVersion::ASCEND950) {
+        return ASCEND950_DTYPE_SUPPORT_LIST;
     } else {
         return emptyDtypes;
     }

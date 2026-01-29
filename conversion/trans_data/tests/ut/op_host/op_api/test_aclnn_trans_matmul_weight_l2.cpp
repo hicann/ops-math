@@ -117,7 +117,7 @@ TEST_F(l2_trans_matmul_weight_test, ascend910B2_test_invalid)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_trans_matmul_weight_test, ascend910_95_dim_larger_than_2)
+TEST_F(l2_trans_matmul_weight_test, ascend950_dim_larger_than_2)
 {
     // 使用**Desc描述host api输入输出
     auto x1_desc = TensorDesc({16, 16, 32}, ACL_FLOAT16, ACL_FORMAT_ND);

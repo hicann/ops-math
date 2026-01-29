@@ -39,7 +39,7 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT16,   op::DataType::DT_UINT16, op::DataType::DT_COMPLEX128, op::DataType::DT_COMPLEX64,
     op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_910_95_LIST = {
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_950_LIST = {
     op::DataType::DT_INT8,     op::DataType::DT_INT32,       op::DataType::DT_INT64,
     op::DataType::DT_UINT8,    op::DataType::DT_FLOAT16,     op::DataType::DT_FLOAT,
     op::DataType::DT_BOOL,     op::DataType::DT_DOUBLE,      op::DataType::DT_INT16,
@@ -56,7 +56,7 @@ static bool CheckNotNull(const aclTensor* self)
 static bool CheckDtypeValid(const aclTensor* self)
 {
     if (IsRegBase()) {
-        OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_910_95_LIST, return false);
+        OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_950_LIST, return false);
     } else {
         OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
     }

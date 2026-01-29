@@ -29,7 +29,7 @@ class RandomUniformV2Tiling : public testing::Test {
   }
 };
 
-TEST_F(RandomUniformV2Tiling, random_uniform_v2_tiling_910_95_float_001)
+TEST_F(RandomUniformV2Tiling, random_uniform_v2_tiling_950_float_001)
 {
     optiling::RandomUniformV2CompileInfo compileInfo = {64, 196608};
     gert::StorageShape shape_shape = {{2}, {2}};

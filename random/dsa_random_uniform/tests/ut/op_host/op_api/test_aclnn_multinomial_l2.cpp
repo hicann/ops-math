@@ -308,7 +308,7 @@ TEST_F(l2_multinomial_test, ascend910B2_aclnnMultinomial_6000_bf16_false_2000_nd
   EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(l2_multinomial_test, ascend910_9589_aclnnMultinomial_6000_float_false_2000_nd) {
+TEST_F(l2_multinomial_test, ascend950PR_89_aclnnMultinomial_6000_float_false_2000_nd) {
   const vector<int64_t>& self_shape = {6000};
   aclDataType self_dtype = ACL_FLOAT;
   aclFormat self_format = ACL_FORMAT_ND;

@@ -34,7 +34,7 @@ static const std::initializer_list<op::DataType> AICORE910B_DTYPE_SUPPORT_LIST =
     op::DataType::DT_INT8,    op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_UINT8,
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BOOL,  op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> AICORE910_95_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> AICORE950_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT8,          op::DataType::DT_INT32,    op::DataType::DT_INT64,
     op::DataType::DT_UINT8,         op::DataType::DT_FLOAT16,  op::DataType::DT_FLOAT,
     op::DataType::DT_BOOL,          op::DataType::DT_BF16,     op::DataType::DT_FLOAT8_E5M2,
@@ -52,7 +52,7 @@ static bool IsAiCoreSupport(const aclTensor* self)
         return CheckType(self->GetDataType(), AICORE910B_DTYPE_SUPPORT_LIST);
     }
     if (IsRegBase()) {
-        return CheckType(self->GetDataType(), AICORE910_95_DTYPE_SUPPORT_LIST);
+        return CheckType(self->GetDataType(), AICORE950_DTYPE_SUPPORT_LIST);
     }
     // 1980 & other
     return CheckType(self->GetDataType(), AICORE910_DTYPE_SUPPORT_LIST);

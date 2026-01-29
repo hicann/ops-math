@@ -220,7 +220,7 @@ TEST_F(l2_triu_test, case_15_inplace_dtype_not_support)
     EXPECT_EQ(aclRet, ge::GRAPH_SUCCESS);
 }
 
-TEST_F(l2_triu_test, Ascend910_95_input_dim_gt_8)
+TEST_F(l2_triu_test, Ascend950_input_dim_gt_8)
 {
     auto inputDesc = TensorDesc({1, 2, 3, 1, 2, 3, 1, 2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto outDesc = TensorDesc({1, 2, 3, 1, 2, 3, 1, 2, 3}, ACL_FLOAT, ACL_FORMAT_ND);

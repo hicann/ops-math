@@ -32,7 +32,7 @@ protected:
     }
 };
 
-TEST_F(l2_bincount_test, ascend910_9599_input_int8)
+TEST_F(l2_bincount_test, ascend950PR_99_input_int8)
 {
     auto self_tensor_desc =
         TensorDesc({39}, ACL_INT8, ACL_FORMAT_ND).Value(vector<int>{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13,
@@ -45,7 +45,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int8)
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
 }
 
-TEST_F(l2_bincount_test, ascend910_9599_input_uint8)
+TEST_F(l2_bincount_test, ascend950PR_99_input_uint8)
 {
     auto self_tensor_desc =
         TensorDesc({39}, ACL_UINT8, ACL_FORMAT_ND).Value(vector<int>{1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
@@ -59,7 +59,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_uint8)
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
 }
 
-TEST_F(l2_bincount_test, ascend910_9599_input_int16)
+TEST_F(l2_bincount_test, ascend950PR_99_input_int16)
 {
     auto self_tensor_desc =
         TensorDesc({39}, ACL_INT16, ACL_FORMAT_ND).Value(vector<int>{1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
@@ -73,7 +73,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int16)
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
 }
 
-TEST_F(l2_bincount_test, ascend910_9599_input_int32)
+TEST_F(l2_bincount_test, ascend950PR_99_input_int32)
 {
     auto self_tensor_desc =
         TensorDesc({39}, ACL_INT32, ACL_FORMAT_ND).Value(vector<int>{1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
@@ -87,7 +87,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int32)
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
 }
 
-TEST_F(l2_bincount_test, ascend910_9599_input_int64)
+TEST_F(l2_bincount_test, ascend950PR_99_input_int64)
 {
     auto self_tensor_desc =
         TensorDesc({39}, ACL_INT64, ACL_FORMAT_ND).Value(vector<int>{1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
@@ -101,7 +101,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int64)
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
 }
 
-TEST_F(l2_bincount_test, ascend910_9599_input_int8_minlength)
+TEST_F(l2_bincount_test, ascend950PR_99_input_int8_minlength)
 {
     auto self_tensor_desc =
         TensorDesc({39}, ACL_INT8, ACL_FORMAT_ND).Value(vector<int>{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13,
@@ -114,7 +114,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int8_minlength)
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
 }
 
-TEST_F(l2_bincount_test, ascend910_9599_input_uint8_minlength)
+TEST_F(l2_bincount_test, ascend950PR_99_input_uint8_minlength)
 {
     auto self_tensor_desc =
         TensorDesc({39}, ACL_UINT8, ACL_FORMAT_ND).Value(vector<int>{1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
@@ -128,7 +128,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_uint8_minlength)
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
 }
 
-TEST_F(l2_bincount_test, ascend910_9599_input_int16_minlength)
+TEST_F(l2_bincount_test, ascend950PR_99_input_int16_minlength)
 {
     auto self_tensor_desc =
         TensorDesc({39}, ACL_INT16, ACL_FORMAT_ND).Value(vector<int>{1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
@@ -142,7 +142,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int16_minlength)
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
 }
 
-TEST_F(l2_bincount_test, ascend910_9599_input_int32_minlength)
+TEST_F(l2_bincount_test, ascend950PR_99_input_int32_minlength)
 {
     auto self_tensor_desc =
         TensorDesc({39}, ACL_INT32, ACL_FORMAT_ND).Value(vector<int>{1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
@@ -156,7 +156,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int32_minlength)
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
 }
 
-TEST_F(l2_bincount_test, ascend910_9599_input_int64_minlength)
+TEST_F(l2_bincount_test, ascend950PR_99_input_int64_minlength)
 {
     auto self_tensor_desc =
         TensorDesc({39}, ACL_INT64, ACL_FORMAT_ND).Value(vector<int>{1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
@@ -171,7 +171,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int64_minlength)
 }
 
 // weights dtype test
-TEST_F(l2_bincount_test, ascend910_9599_input_int8_BOOL)
+TEST_F(l2_bincount_test, ascend950PR_99_input_int8_BOOL)
 {
     auto self_tensor_desc =
         TensorDesc({39}, ACL_INT8, ACL_FORMAT_ND).Value(vector<int>{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13,
@@ -184,7 +184,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int8_BOOL)
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
 }
 
-TEST_F(l2_bincount_test, ascend910_9599_input_int8_weights_dtypes)
+TEST_F(l2_bincount_test, ascend950PR_99_input_int8_weights_dtypes)
 {
     vector<aclDataType> dtypes{ACL_INT8, ACL_UINT8, ACL_INT16, ACL_INT32, ACL_INT64, ACL_FLOAT16, ACL_DOUBLE};
     for (auto dtype : dtypes) {
@@ -202,7 +202,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int8_weights_dtypes)
 }
 
 // weights nullptr
-TEST_F(l2_bincount_test, ascend910_9599_input_int8_weights_nullptr)
+TEST_F(l2_bincount_test, ascend950PR_99_input_int8_weights_nullptr)
 {
     auto self_tensor_desc =
         TensorDesc({39}, ACL_INT8, ACL_FORMAT_ND).Value(vector<int>{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13,
@@ -216,7 +216,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_int8_weights_nullptr)
 }
 
 // input  null tensor
-TEST_F(l2_bincount_test, ascend910_9599_input_null_tensor)
+TEST_F(l2_bincount_test, ascend950PR_99_input_null_tensor)
 {
     auto self_tensor_desc = TensorDesc({0}, ACL_INT8, ACL_FORMAT_ND);
     auto weights_tensor_desc = TensorDesc({0}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-1, 1);
@@ -226,7 +226,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_null_tensor)
         OP_API_UT(aclnnBincount, INPUT(self_tensor_desc, weights_tensor_desc, minlength), OUTPUT(out_tensor_desc));
 }
 
-TEST_F(l2_bincount_test, ascend910_9599_input_null_tensor_with_minlength)
+TEST_F(l2_bincount_test, ascend950PR_99_input_null_tensor_with_minlength)
 {
     auto self_tensor_desc = TensorDesc({0}, ACL_INT8, ACL_FORMAT_ND);
     auto weights_tensor_desc = TensorDesc({0}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(-1, 1);
@@ -237,7 +237,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_null_tensor_with_minlength)
 }
 
 // Abnormal Scenarios
-TEST_F(l2_bincount_test, ascend910_9599_input_weights_shape_not_same)
+TEST_F(l2_bincount_test, ascend950PR_99_input_weights_shape_not_same)
 {
     auto self_tensor_desc = TensorDesc({16}, ACL_INT8, ACL_FORMAT_ND)
                                 .Value(vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
@@ -252,7 +252,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_weights_shape_not_same)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_bincount_test, ascend910_9599_input_weights_not_1_dims)
+TEST_F(l2_bincount_test, ascend950PR_99_input_weights_not_1_dims)
 {
     auto self_tensor_desc = TensorDesc({16, 1}, ACL_INT8, ACL_FORMAT_ND)
                                 .Value(vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
@@ -267,7 +267,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_weights_not_1_dims)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_bincount_test, ascend910_9599_input_dtype_not_support)
+TEST_F(l2_bincount_test, ascend950PR_99_input_dtype_not_support)
 {
     auto self_tensor_desc = TensorDesc({16}, ACL_DOUBLE, ACL_FORMAT_ND)
                                 .Value(vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
@@ -282,7 +282,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_dtype_not_support)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_bincount_test, ascend910_9599_weights_dtype_not_support)
+TEST_F(l2_bincount_test, ascend950PR_99_weights_dtype_not_support)
 {
     auto self_tensor_desc = TensorDesc({16}, ACL_DOUBLE, ACL_FORMAT_ND)
                                 .Value(vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
@@ -297,7 +297,7 @@ TEST_F(l2_bincount_test, ascend910_9599_weights_dtype_not_support)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_bincount_test, ascend910_9599_input_nullptr)
+TEST_F(l2_bincount_test, ascend950PR_99_input_nullptr)
 {
     aclTensor* self_tensor_desc = nullptr;
     auto weights_tensor_desc = TensorDesc({16}, ACL_COMPLEX64, ACL_FORMAT_ND).ValueRange(-1, 1);
@@ -311,7 +311,7 @@ TEST_F(l2_bincount_test, ascend910_9599_input_nullptr)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 }
 
-TEST_F(l2_bincount_test, ascend910_9599_output_nullptr)
+TEST_F(l2_bincount_test, ascend950PR_99_output_nullptr)
 {
     auto self_tensor_desc = TensorDesc({16}, ACL_DOUBLE, ACL_FORMAT_ND)
                                 .Value(vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});

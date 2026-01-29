@@ -73,7 +73,7 @@ TEST_F(l2_neg_test, case_support_float16) {
     ut.TestPrecision();
 }
 
-TEST_F(l2_neg_test, ascend910_9589_case_support_int64) {
+TEST_F(l2_neg_test, ascend950PR_89_case_support_int64) {
     auto self_tensor_desc = TensorDesc({3, 4, 5, 6}, ACL_INT64, ACL_FORMAT_NHWC).ValueRange(-5, 0);
     auto out_tensor_desc = TensorDesc(self_tensor_desc).Precision(0.0001, 0.0001);
 

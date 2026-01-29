@@ -29,7 +29,7 @@ static const std::initializer_list<op::DataType> AICORE910_DTYPE_SUPPORT_LIST = 
     op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
     op::DataType::DT_INT8,  op::DataType::DT_UINT8, op::DataType::DT_BOOL,  op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> ASCEND950_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
     op::DataType::DT_INT8,  op::DataType::DT_UINT8, op::DataType::DT_BOOL, op::DataType::DT_BF16,
     op::DataType::DT_UINT64};
@@ -42,7 +42,7 @@ static const std::initializer_list<op::DataType> AICPU_TF_DTYPE_SUPPORT_LIST = {
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static bool IsAiCoreSupport(const aclTensor *self) {
   if (IsRegBase()) {
-    return CheckType(self->GetDataType(), ASCEND910_95_DTYPE_SUPPORT_LIST);
+    return CheckType(self->GetDataType(), ASCEND950_DTYPE_SUPPORT_LIST);
   }
   return CheckType(self->GetDataType(), AICORE910_DTYPE_SUPPORT_LIST);
 }

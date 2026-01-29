@@ -51,7 +51,7 @@ TEST_F(l2_isfinite_test, case_01_float)
 
 TEST_F(l2_isfinite_test, case_02_float16)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910_95);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
 
     auto selfDesc =
         TensorDesc({1, 1, 2, 2}, ACL_FLOAT16, ACL_FORMAT_NCHW).Value(vector<double>{-1, 2.718, 3.14, 49999});

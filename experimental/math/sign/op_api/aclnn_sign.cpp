@@ -50,7 +50,7 @@ static bool CheckDtypeValid(const aclTensor *self, const aclTensor *result) {
         break;
       }
       case SocVersion::ASCEND910_93:
-      case SocVersion::ASCEND910_95:
+      case SocVersion::ASCEND950:
       case SocVersion::ASCEND910B: {
         if (self->GetDataType() != op::DataType::DT_BF16) {
           OP_LOGE(ACLNN_ERR_PARAM_INVALID,

@@ -56,8 +56,8 @@ static bool CheckDtypeValid(const aclTensor *self, const aclTensor *stdOut, cons
   OP_CHECK_DTYPE_NOT_SUPPORT(stdOut, supportList, return false);
   OP_CHECK_DTYPE_NOT_SUPPORT(meanOut, supportList, return false);
 
-  // Ascend910_95支持输入、输出数据类型不一致
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+  // Ascend950支持输入、输出数据类型不一致
+  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
     return true;
   }
 
@@ -310,7 +310,7 @@ aclnnStatus aclnnStdMeanCorrectionGetWorkspaceSize(const aclTensor *self, const 
   auto selfReformat = l0op::ReFormat(selfContiguous, Format::FORMAT_ND);
   CHECK_RET(selfReformat != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
       return aclnnStdMeanCorrectionImplUnify(selfReformat, dimArray, correction, keepdim, stdOut, meanOut,
                                              workspaceSize, uniqueExecutor, executor);
   }

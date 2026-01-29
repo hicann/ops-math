@@ -34,7 +34,7 @@ public:
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
         this->AICore().AddConfig("ascend910_93");
         this->AICore().AddConfig("ascend910b");
-	this->AICore().AddConfig("ascend910_95");
+	this->AICore().AddConfig("ascend950");
 
         OpAICoreConfig config_without_bf16;
         config_without_bf16.DynamicCompileStaticFlag(true)

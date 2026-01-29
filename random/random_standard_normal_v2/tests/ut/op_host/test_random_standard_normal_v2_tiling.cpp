@@ -29,7 +29,7 @@ class RandomStandardNormalV2Tiling : public testing::Test {
   }
 };
 
-TEST_F(RandomStandardNormalV2Tiling, random_standard_normal_v2_tiling_910_95_float_001)
+TEST_F(RandomStandardNormalV2Tiling, random_standard_normal_v2_tiling_950_float_001)
 {
     optiling::RandomStandardNormalV2CompileInfo compileInfo = {64, 196608};
     gert::StorageShape shape_shape = {{2}, {2}};
@@ -56,7 +56,7 @@ TEST_F(RandomStandardNormalV2Tiling, random_standard_normal_v2_tiling_910_95_flo
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
-TEST_F(RandomStandardNormalV2Tiling, random_standard_normal_v2_tiling_910_95_float_002)
+TEST_F(RandomStandardNormalV2Tiling, random_standard_normal_v2_tiling_950_float_002)
 {
     optiling::RandomStandardNormalV2CompileInfo compileInfo = {64, 196608};
     gert::StorageShape shape_shape = {{2}, {2}};

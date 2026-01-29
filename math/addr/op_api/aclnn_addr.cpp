@@ -49,7 +49,7 @@ static const std::initializer_list<DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
     DataType::DT_DOUBLE, DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_INT64, DataType::DT_INT32,
     DataType::DT_INT16,  DataType::DT_INT8,  DataType::DT_UINT8,   DataType::DT_BOOL,  DataType::DT_BF16};
 
-static const std::initializer_list<DataType> ASCEND910_95_ADDR_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<DataType> ASCEND950_ADDR_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16,
     DataType::DT_INT8,  DataType::DT_UINT8,   DataType::DT_BOOL};
 
@@ -66,7 +66,7 @@ static const std::initializer_list<DataType>& GetDtypeSupportList()
 static bool IsSupportAddr(op::DataType hightDtype)
 {
     if (IsRegBase()) {
-        return CheckType(hightDtype, ASCEND910_95_ADDR_DTYPE_SUPPORT_LIST);
+        return CheckType(hightDtype, ASCEND950_ADDR_DTYPE_SUPPORT_LIST);
     }
     return false;
 }

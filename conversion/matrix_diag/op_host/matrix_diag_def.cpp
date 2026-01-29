@@ -50,7 +50,7 @@ namespace ops {
                 .NeedCheckSupportFlag(false)
                 .ExtendCfgInfo("opFile.value", "matrix_diag_apt");
 
-            this->AICore().AddConfig("ascend910_95", aicore_config);
+            this->AICore().AddConfig("ascend950", aicore_config);
         }
     };
 

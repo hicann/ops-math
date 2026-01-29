@@ -270,7 +270,7 @@ TEST_F(l2_abs_test, case_abs_for_continuity) {
   EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(l2_abs_test, ascend910_95_case_aicore_abs_for_float_type) {
+TEST_F(l2_abs_test, ascend950_case_aicore_abs_for_float_type) {
   auto self_tensor_desc = TensorDesc({3, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-2.0, 2.0);
   auto out_tensor_desc = TensorDesc(self_tensor_desc).Precision(0.0001, 0.0001);
 

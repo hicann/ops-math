@@ -150,7 +150,7 @@ TEST_F(l2_clamp_tensor_test, case_min_9dim)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_clamp_tensor_test, ascend910_9589_case_min_9dim)
+TEST_F(l2_clamp_tensor_test, ascend910pr_9589_case_min_9dim)
 {
     auto tensor_desc = TensorDesc({4, 5, 6, 7, 8, 9, 10}, ACL_INT64, ACL_FORMAT_NCDHW);
     auto min_tensor_desc = TensorDesc({2, 3, 4, 5, 6, 7, 8, 9, 10}, ACL_INT64, ACL_FORMAT_NCDHW);

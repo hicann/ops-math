@@ -65,13 +65,13 @@ static aclnnStatus ProcessEmptyTensorWithValue(aclTensor* src, float initValue, 
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
 
-static const std::initializer_list<op::DataType> ASCEND910_95_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> ASCEND950_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
-        return ASCEND910_95_DTYPE_SUPPORT_LIST;
+    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+        return ASCEND950_DTYPE_SUPPORT_LIST;
     } else {
         return DTYPE_SUPPORT_LIST;
     }
@@ -221,7 +221,7 @@ aclnnStatus aclnnBatchNormStatsGetWorkspaceSize(
     aclIntArray* axes = uniqueExecutor.get()->AllocIntArray(dimIndexNoC.data(), dimIndexNoC.size());
     CHECK_RET(axes != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95) {
+    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
         return aclnnBatchNormStatsImplUnify(
             reformat, axes, eps, meanOut, invstdOut, workspaceSize, uniqueExecutor, executor);
     }

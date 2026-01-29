@@ -30,7 +30,7 @@ OP_TYPE_REGISTER(OneHot);
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT32, op::DataType::DT_INT64};
 
-static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_910_95 = {
+static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_950 = {
     op::DataType::DT_UINT8, op::DataType::DT_INT32, op::DataType::DT_INT64};
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
@@ -38,7 +38,7 @@ static bool IsAiCoreSupport(const aclTensor* self)
 {
     static bool isSimtVersion = IsRegBase();
     if (isSimtVersion) {
-        return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_910_95);
+        return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_950);
     }
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
 }

@@ -59,7 +59,7 @@ TEST_F(PadTest, Pad) {
   EXPECT_EQ(op::ToShapeVector(reshapedTensor->GetViewShape()), expectShapeReshapedTensor);
 }
 
-TEST_F(PadTest, ascend910_95_Pad) {
+TEST_F(PadTest, ascend950_Pad) {
   auto self = CreateContiguousAclTensor({4, 5, 6, 7}, ACL_FLOAT16);
   op::ShapeVector paddingsVec({0, 0, 0, 0, 0, 0, 0, 9});
   auto paddings = l0Executor->AllocIntArray(paddingsVec.data(), paddingsVec.size());

@@ -487,7 +487,7 @@ TEST_F(l2_remainder_tensor_tensor_test, ascend910B2_l2_remainder_tensor_tensor_t
         {}, ACL_FLOAT, ACL_FORMAT_ND, {-10, 10}, {}, ACL_DOUBLE, ACL_FORMAT_ND, {6, 10}, {}, ACL_DOUBLE, ACL_FORMAT_ND);
 }
 
-TEST_F(l2_remainder_tensor_tensor_test, Ascend910_9599_l2_remainder_tensor_tensor_test_03)
+TEST_F(l2_remainder_tensor_tensor_test, Ascend950PR_99_l2_remainder_tensor_tensor_test_03)
 {
     test_run(
         {2, 3, 3}, ACL_FLOAT16, ACL_FORMAT_ND, {-10, 10}, {2, 3, 3}, ACL_FLOAT16, ACL_FORMAT_ND, {-15, -10}, {2, 3, 3},

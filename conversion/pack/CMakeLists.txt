@@ -12,7 +12,7 @@ add_all_modules_sources(
         OPTYPE pack
         ACLNNTYPE aclnn_exclude
         DEPENDENCIES concat concat_d
-        COMPUTE_UNIT ascend910_95
+        COMPUTE_UNIT ascend950
         TILING_DIR arch35
         DISABLE_IN_OPP TRUE
 )

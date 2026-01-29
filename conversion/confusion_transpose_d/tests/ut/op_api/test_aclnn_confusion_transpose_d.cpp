@@ -34,7 +34,7 @@ protected:
 };
 
 // 测试所有支持的类型, transpose_first=true
-TEST_F(l2_confusion_transpose_test, ascend910_95_float16_transpose_first)
+TEST_F(l2_confusion_transpose_test, ascend950_float16_transpose_first)
 {
     vector<int64_t> x_shape = {16, 64};
     vector<int64_t> perm_data = {1, 0};
@@ -57,12 +57,12 @@ TEST_F(l2_confusion_transpose_test, ascend910_95_float16_transpose_first)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size); // check op graph
     auto curSoc = GetCurrentPlatformInfo().GetSocVersion();
     std::cout << "test>> current soc version is " << curSoc << ", aclRet is " << aclRet << std::endl;
-    if (curSoc == SocVersion::ASCEND910_95) {
+    if (curSoc == SocVersion::ASCEND950) {
         EXPECT_EQ(aclRet, ACL_SUCCESS);
     }
 }
 
-TEST_F(l2_confusion_transpose_test, ascend910_95_empty_input)
+TEST_F(l2_confusion_transpose_test, ascend950_empty_input)
 {
     vector<int64_t> x_shape = {16, 0};
     vector<int64_t> perm_data = {1, 0};
@@ -84,7 +84,7 @@ TEST_F(l2_confusion_transpose_test, ascend910_95_empty_input)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size); // check op graph
     auto curSoc = GetCurrentPlatformInfo().GetSocVersion();
-    if (curSoc == SocVersion::ASCEND910_95) {
+    if (curSoc == SocVersion::ASCEND950) {
         EXPECT_EQ(aclRet, ACL_SUCCESS);
     }
 }

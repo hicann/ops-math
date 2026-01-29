@@ -192,7 +192,7 @@ TEST_F(l2_masked_select_test, aclnnMaskedSelect_8_8_float_nd_and_8_8_bool_nd_sim
 }
 
 TEST_F(
-    l2_masked_select_test, ascend910_95_aclnnMaskedSelect_8_8_float_nd_and_6_8_8_bool_nd_simple_random_case_broadcast)
+    l2_masked_select_test, ascend950_aclnnMaskedSelect_8_8_float_nd_and_6_8_8_bool_nd_simple_random_case_broadcast)
 {
     // left input
     const vector<int64_t>& selfShape = {6, 8, 8, 8, 8};

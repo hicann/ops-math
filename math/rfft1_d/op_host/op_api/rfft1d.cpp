@@ -31,7 +31,7 @@ bool IsRfft1DAiCoreSupported(const aclTensor* self, int64_t n)
     bool res = false;
 
     if ((GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_95 ||
+         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950 ||
          GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) &&
         (n <= UPPER_BORDER) && self->GetDataType() == op::DataType::DT_FLOAT) {
         res = true;

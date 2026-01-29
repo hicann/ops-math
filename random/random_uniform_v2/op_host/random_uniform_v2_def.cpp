@@ -52,7 +52,7 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true);
-        this->AICore().AddConfig("ascend910_95", aicoreconfig);
+        this->AICore().AddConfig("ascend950", aicoreconfig);
     }
 };
 OP_ADD(RandomUniformV2);

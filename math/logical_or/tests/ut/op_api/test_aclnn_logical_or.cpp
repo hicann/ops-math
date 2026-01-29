@@ -124,7 +124,7 @@ TEST_F(l2_logical_or_test, ascend910B2_support_bf16_910B)
 
 TEST_F(l2_logical_or_test, aclnnLogicalOr_1_5_1_16_129_int32_ndhwc_32_5_32_16_1_int32_ndhwc_testcase005)
 {
-    op::SetPlatformSocVersion(op::SocVersion::ASCEND910_95);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
     // left input
     const vector<int64_t>& selfShape = {1, 5, 1, 16, 129};
     aclDataType selfDtype = ACL_INT32;

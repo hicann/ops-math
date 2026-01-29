@@ -31,11 +31,11 @@ static const size_t SIMT_SELF_MAX_DIM_NUM = 7;
 
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {op::DataType::DT_INT32, op::DataType::DT_INT64};
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_910_95 = {
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_950 = {
     op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_UINT8};
 static const std::initializer_list<op::DataType> VALUE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_INT64};
-static const std::initializer_list<op::DataType> VALUE_DTYPE_SUPPORT_LIST_910_95 = {
+static const std::initializer_list<op::DataType> VALUE_DTYPE_SUPPORT_LIST_950 = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_INT32,
     op::DataType::DT_INT64,   op::DataType::DT_INT8,  op::DataType::DT_UINT8};
 
@@ -56,13 +56,13 @@ static inline bool CheckDtypeValid(
     static bool isSimtVersion = IsRegBase();
     if (isSimtVersion) {
         // 检查self的数据类型是否在支持列表内
-        OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST_910_95, return false);
+        OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST_950, return false);
         // 检查out的数据类型是否在支持列表内
-        OP_CHECK_DTYPE_NOT_SUPPORT(out, VALUE_DTYPE_SUPPORT_LIST_910_95, return false);
+        OP_CHECK_DTYPE_NOT_SUPPORT(out, VALUE_DTYPE_SUPPORT_LIST_950, return false);
         // 检查onValue的数据类型是否在支持列表内
-        OP_CHECK_DTYPE_NOT_SUPPORT(onValue, VALUE_DTYPE_SUPPORT_LIST_910_95, return false);
+        OP_CHECK_DTYPE_NOT_SUPPORT(onValue, VALUE_DTYPE_SUPPORT_LIST_950, return false);
         // 检查offValue的数据类型是否在支持列表内
-        OP_CHECK_DTYPE_NOT_SUPPORT(offValue, VALUE_DTYPE_SUPPORT_LIST_910_95, return false);
+        OP_CHECK_DTYPE_NOT_SUPPORT(offValue, VALUE_DTYPE_SUPPORT_LIST_950, return false);
     } else {
         // 检查self的数据类型是否在支持列表内
         OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);

@@ -395,8 +395,8 @@ TEST_F(l2_pow_tensor_scalar_test, aclnnPowTensorScalar_1_float_hwcn_1_complex64_
   EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-// Ascend910_9589测试float16 tensor + complex scalar
-TEST_F(l2_pow_tensor_scalar_test, Ascend910_9589_aclnnPowTensorScalar_base_fp16_scalar_complex) {
+// Ascend950PR_9589测试float16 tensor + complex scalar
+TEST_F(l2_pow_tensor_scalar_test, Ascend950PR_89_aclnnPowTensorScalar_base_fp16_scalar_complex) {
   // input
   const vector<int64_t>& selfShape = {4, 5};
   aclDataType selfDtype = ACL_FLOAT16;

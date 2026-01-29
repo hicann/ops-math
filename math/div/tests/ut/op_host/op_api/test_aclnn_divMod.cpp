@@ -253,9 +253,9 @@ TEST_F(l2_div_mod_test, case_mode_invalid)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-// Ascend910_9589
+// Ascend950PR_9589
 // 测试场景mode为0时数据类型支持
-TEST_F(l2_div_mod_test, Ascend910_9589_case_real_div_dtype_modeNone)
+TEST_F(l2_div_mod_test, Ascend950PR_89_case_real_div_dtype_modeNone)
 {
     vector<aclDataType> dtype_list{ACL_FLOAT16};
     for (auto dtype : dtype_list) {
@@ -271,7 +271,7 @@ TEST_F(l2_div_mod_test, Ascend910_9589_case_real_div_dtype_modeNone)
     }
 }
 
-TEST_F(l2_div_mod_test, Ascend910_9589_case_divmods_trunc_div)
+TEST_F(l2_div_mod_test, Ascend950PR_89_case_divmods_trunc_div)
 {
     vector<aclDataType> dtype_list{ACL_INT8};
     for (auto dtype : dtype_list) {
@@ -287,7 +287,7 @@ TEST_F(l2_div_mod_test, Ascend910_9589_case_divmods_trunc_div)
     }
 }
 
-TEST_F(l2_div_mod_test, Ascend910_9589_case_divmods_floor_div)
+TEST_F(l2_div_mod_test, Ascend950PR_89_case_divmods_floor_div)
 {
     vector<aclDataType> dtype_list{ACL_INT16};
     for (auto dtype : dtype_list) {
@@ -303,7 +303,7 @@ TEST_F(l2_div_mod_test, Ascend910_9589_case_divmods_floor_div)
     }
 }
 
-TEST_F(l2_div_mod_test, Ascend910_9589_case_divmod_trunc_div)
+TEST_F(l2_div_mod_test, Ascend950PR_89_case_divmod_trunc_div)
 {
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_INT8, ACL_FORMAT_ND).ValueRange(1, 2);
     auto other_tensor_desc = TensorDesc({2, 3}, ACL_INT8, ACL_FORMAT_ND).ValueRange(1, 2);

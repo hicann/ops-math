@@ -53,7 +53,7 @@ namespace ops {
                 .NeedCheckSupportFlag(false)
                 .PrecisionReduceFlag(true)
                 .ExtendCfgInfo("opFile.value", "tensor_equal_apt");
-            this->AICore().AddConfig("ascend910_95", aicoreConfig);
+            this->AICore().AddConfig("ascend950", aicoreConfig);
         }
     };
     OP_ADD(TensorEqual);

@@ -56,7 +56,7 @@ public:
     void SetZeroStrideTilingData(gert::TilingContext* context, AsStridedTilingParam& tilingParam);
     void SetSimtTilingData(gert::TilingContext* context, AsStridedTilingParam& tilingParam);
     void SetWithGatherTilingData(gert::TilingContext* context, AsStridedUbGatherParam& ubGatherParam);
-    platform_ascendc::SocVersion socVersion_ = platform_ascendc::SocVersion::ASCEND910_95;
+    platform_ascendc::SocVersion socVersion_ = platform_ascendc::SocVersion::ASCEND950;
 
 private:
     // 各模板tilingData

@@ -215,8 +215,8 @@ TEST_F(l2_floor_divide_test, case_inplace_other_support)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-// Ascend910_9589测试other为scalar立即数输入
-TEST_F(l2_floor_divide_test, Ascend910_9589_case_other_scalar_floor_support)
+// Ascend950PR_9589测试other为scalar立即数输入
+TEST_F(l2_floor_divide_test, Ascend950PR_89_case_other_scalar_floor_support)
 {
     auto self_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(10, 100);
     auto other_tensor_desc = ScalarDesc(2);
