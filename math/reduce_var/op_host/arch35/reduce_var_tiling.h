@@ -29,7 +29,7 @@ struct ReduceVarCompileInfo {
     Ops::Base::ReduceOpCompileInfo opInfo;
 };
 
-BEGIN_TILING_DATA_DEF(ReduceOpTilingDataV2)
+BEGIN_TILING_DATA_DEF(ReduceVarTilingDataStru)
 TILING_DATA_FIELD_DEF(uint64_t, factorACntPerCore);
 TILING_DATA_FIELD_DEF(uint64_t, factorATotalCnt);
 TILING_DATA_FIELD_DEF(uint64_t, ubFactorA);
@@ -48,10 +48,10 @@ TILING_DATA_FIELD_DEF_ARR(uint64_t, Ops::Base::ReduceOpTmpl::MAX_DIM, stride);
 TILING_DATA_FIELD_DEF_ARR(uint64_t, Ops::Base::ReduceOpTmpl::MAX_DIM, dstStride);
 END_TILING_DATA_DEF;
 
-REGISTER_TILING_DATA_CLASS(ReduceOpTilingDataV2Op, ReduceOpTilingDataV2)
+REGISTER_TILING_DATA_CLASS(ReduceVarTilingDataStruOp, ReduceVarTilingDataStru);
 
 BEGIN_TILING_DATA_DEF(ReduceVarTilingData)
-TILING_DATA_FIELD_DEF_STRUCT(ReduceOpTilingDataV2, reduceOpTiling);
+TILING_DATA_FIELD_DEF_STRUCT(ReduceVarTilingDataStru, reduceOpTiling);
 TILING_DATA_FIELD_DEF(int64_t, correction);
 TILING_DATA_FIELD_DEF(int64_t, correctionInvalid);
 TILING_DATA_FIELD_DEF(int64_t, isMeanOut);
@@ -84,7 +84,7 @@ private:
     ge::graphStatus PrepareCompileInfo();
     ge::graphStatus ReduceVarGetInputParams(Ops::Base::ReduceOpInputParam &inputParam);
     void ReduceVarCalcInput(const Ops::Base::ReduceOpInputParam &inputParam);
-    void ConvertReduceOpTilingData(ReduceOpTilingDataV2* dst, const Ops::Base::ReduceOpTilingData* src);
+    void ConvertReduceOpTilingData(ReduceVarTilingDataStru* dst, const Ops::Base::ReduceOpTilingData* src);
     void SetReduceCntEachGroupR();
     void SetReduceVarTilingData();
     void SetUseNddma();

@@ -62,7 +62,7 @@ private:
     LocalTensor<PromoteDataType> tGroupVarTensor_;   // welford group cache var buf
 
     const ReduceVarTilingData* tiling_ = nullptr;
-    const ReduceOpTilingDataV2* tilingOp_ = nullptr;
+    const ReduceVarTilingDataStru* tilingOp_ = nullptr;
 
 private:
     uint64_t lastRAxisLen_ = 0;

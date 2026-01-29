@@ -246,7 +246,7 @@ void ReduceVarTiling::ComputeInnerUbRCnt(const uint64_t* shape)
     }
 }
 
-void ReduceVarTiling::ConvertReduceOpTilingData(ReduceOpTilingDataV2* dst, const Ops::Base::ReduceOpTilingData* src)
+void ReduceVarTiling::ConvertReduceOpTilingData(ReduceVarTilingDataStru* dst, const Ops::Base::ReduceOpTilingData* src)
 {
     dst->set_factorACntPerCore(src->factorACntPerCore);
     dst->set_factorATotalCnt(src->factorATotalCnt);
