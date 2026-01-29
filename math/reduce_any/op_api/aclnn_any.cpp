@@ -38,7 +38,7 @@ static const std::initializer_list<DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST
     op::DataType::DT_DOUBLE, op::DataType::DT_BF16};
 
 static const std::initializer_list<DataType> NON_CONTIOUS_SUPPORT_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_BOOL};
+    op::DataType::DT_FLOAT};
 
 static const std::initializer_list<DataType> out_dtype_support_list = {op::DataType::DT_UINT8, op::DataType::DT_BOOL};
 
