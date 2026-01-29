@@ -16,7 +16,6 @@
 #include "opdev/shape_utils.h"
 namespace l0op {
 
-OP_TYPE_REGISTER(MemSet);
 OP_TYPE_REGISTER(MemSetV2);
 
 } // namespace l0op

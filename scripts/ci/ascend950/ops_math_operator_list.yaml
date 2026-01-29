@@ -139,6 +139,7 @@ operator_group_5:
   - masked_select_v3
   - matrix_diag
   - im2col
+  - mem_set
   - mem_set_v2
   - mirror_pad
   - pack
