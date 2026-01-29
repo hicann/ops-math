@@ -101,19 +101,31 @@ ge::graphStatus CdistTiling::MergeBatchAxis() {
 }
 
 void CdistTiling::DoSimtTiling()
-{   
+{
     OP_LOGD(tilingContext_->GetNodeName(), "Start DoSimtTiling.");
     int64_t totalElements = B_ * P_ * R_;
-    if (totalElements < coreNum_) {
-        tilingData_.realCoreNum = totalElements;
-        tilingData_.blockFactor = 1;
-        tilingData_.blockTailFactor = 0;
+    int64_t minPerCoreElement = SIMT_MIN_BYTE / dtypeSize_;
+    if (totalElements <= minPerCoreElement) {
+        tilingData_.realCoreNum = 1;
+        tilingData_.blockFactor = totalElements;
+        tilingData_.blockTailFactor = totalElements;
         return;
-    } 
+    }
     else {
-        tilingData_.realCoreNum = coreNum_;
-        tilingData_.blockFactor = totalElements / coreNum_;
-        tilingData_.blockTailFactor = totalElements % coreNum_;
+        int64_t minRequiredCores = Ops::Base::CeilDiv(totalElements, minPerCoreElement);
+        int64_t usedCoreNum = std::min(coreNum_, minRequiredCores);
+        if (usedCoreNum == 0) {
+            return;
+        }
+        int64_t perCoreElement = totalElements / usedCoreNum;
+        int64_t tailCoreElement = totalElements - perCoreElement * (usedCoreNum - 1);
+        if (perCoreElement < minPerCoreElement) {
+            perCoreElement = minPerCoreElement;
+            tailCoreElement = totalElements - perCoreElement * (usedCoreNum - 1);
+        }
+        tilingData_.realCoreNum = usedCoreNum;
+        tilingData_.blockFactor = perCoreElement;
+        tilingData_.blockTailFactor = tailCoreElement;
     }
 }
 

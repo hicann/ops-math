@@ -73,7 +73,7 @@ __aicore__ inline void CdistSimt<T>::Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y)
     perCoreEmelents_ = tilingData_->blockFactor;
 
     if(blockIdx_ == blockCount_ - 1) {
-        curCoreEmelents_ = tilingData_->blockTailFactor + tilingData_->blockFactor;
+        curCoreEmelents_ = tilingData_->blockTailFactor;
     } else {
         curCoreEmelents_ = tilingData_->blockFactor;
     }

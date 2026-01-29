@@ -26,6 +26,7 @@ constexpr int64_t BUFFER_NUM = 2;
 constexpr int64_t BLOCK_BYTES = 32;
 constexpr int64_t B4 = 4;
 constexpr int64_t CAST_BUFFER_RATIO = 2;
+constexpr int64_t SIMT_MIN_BYTE = 128;
 
 struct CdistCompileInfo {
   int64_t coreNum;
