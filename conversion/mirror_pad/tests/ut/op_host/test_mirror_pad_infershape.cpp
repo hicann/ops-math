@@ -15,27 +15,60 @@
 #include "base/registry/op_impl_space_registry_v2.h"
 
 class MirrorPadInfershapeTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "MirrorPadInfershapeTest SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase()
+    {
+        std::cout << "MirrorPadInfershapeTest SetUp" << std::endl;
+    }
 
-  static void TearDownTestCase() {
-    std::cout << "MirrorPadInfershapeTest TearDown" << std::endl;
-  }
+    static void TearDownTestCase()
+    {
+        std::cout << "MirrorPadInfershapeTest TearDown" << std::endl;
+    }
 };
 
 TEST_F(MirrorPadInfershapeTest, mirror_pad_infershape_case_0)
 {
-    gert::StorageShape xShape = {{2, 3, 4}, {2, 3, 4}};
-    gert::StorageShape padShape = {{2, 3}, {2, 3}};
-    int pad_value[2] = {3, 4};
+    gert::StorageShape xShape = {{6,}, {6,}};
+	// padShape和pad_value的形状要相同
+    gert::StorageShape padShape = {{1, 2}, {1, 2}};
+    int pad_value[2] = {2, 2};
 
     gert::InfershapeContextPara infershapeContextPara(
         "MirrorPad",
         {{xShape, ge::DT_INT32, ge::FORMAT_ND}, {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value}},
         {{{{-2},{-2}}, ge::DT_INT32, ge::FORMAT_ND}});
 
-    std::vector<std::vector<int64_t>> expectOutputShape = {{ 9, 6, 6 },};
+    std::vector<std::vector<int64_t>> expectOutputShape = {{ 10, }};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(MirrorPadInfershapeTest, mirror_pad_infershape_case_1)
+{
+    gert::StorageShape xShape = {{2, 3}, {2, 3}};
+    gert::StorageShape padShape = {{2, 2}, {2, 2}};
+    int pad_value[2][2] = {{1, 2}, {3, 4}};
+
+    gert::InfershapeContextPara infershapeContextPara(
+        "MirrorPad",
+        {{xShape, ge::DT_INT32, ge::FORMAT_ND}, {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value}},
+        {{{{-2},{-2}}, ge::DT_INT32, ge::FORMAT_ND}});
+
+    std::vector<std::vector<int64_t>> expectOutputShape = {{ 5, 10 },};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(MirrorPadInfershapeTest, mirror_pad_infershape_case_2)
+{
+    gert::StorageShape xShape = {{8, 16, 32}, {8, 16, 32}};
+    gert::StorageShape padShape = {{3, 2}, {3, 2}};
+    int pad_value[3][2] = {{1, 2}, {3, 4}, {5, 6}};
+
+    gert::InfershapeContextPara infershapeContextPara(
+        "MirrorPad",
+        {{xShape, ge::DT_INT32, ge::FORMAT_ND}, {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value}},
+        {{{{-2},{-2}}, ge::DT_INT32, ge::FORMAT_ND}});
+
+    std::vector<std::vector<int64_t>> expectOutputShape = {{ 11, 23, 43 },};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 } 
