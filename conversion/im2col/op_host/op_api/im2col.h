@@ -13,8 +13,9 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *Im2col(const aclTensor *self, const aclIntArray *kernelSize, const aclIntArray *dilation,
-    const aclIntArray *padding, const aclIntArray *stride, aclOpExecutor *executor);
+const aclTensor* Im2col(
+    const aclTensor* self, const aclIntArray* kernelSize, const aclIntArray* dilation, const aclIntArray* padding,
+    const aclIntArray* stride, aclOpExecutor* executor);
 }
 
 #endif

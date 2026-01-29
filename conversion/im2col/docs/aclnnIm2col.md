@@ -10,7 +10,7 @@
 
 - 算子功能：图像到列，滑动局部窗口数据转为列向量，拼接为大张量。从批处理输入张量中提取滑动窗口。考虑一个形状为（N, C, H, W）或 (C, H, W) 的批处理input张量，其中N是批处理维度， C是通道维度， 而 H, W 表示图像大小，此操作将input的空间维度内的每个滑动kernel_size大小的块展平为（N, C $\times \prod$（kernel_szie）, L）的3-D 或 （C $\times \prod$（kernel_szie）, L）的2-D 的 output张量的列（即最后一维），而L是这些块的总数。
 - 计算公式：
-$L = \prod_{d} \lfloor \frac{spatial_size[d] + 2 \times padding[d] - dilation[d] \times （kernel_size[d] -1） -1}{stride[d]} + 1$ \rfloor, 其中spatial_size由上述input张量的H,W构成。
+$L = \prod_{d} \lfloor \frac{spatial_size[d] + 2 \times padding[d] - dilation[d] \times （kernel_size[d] -1） -1}{stride[d]} + 1 \rfloor$, 其中spatial_size由上述input张量的H,W构成。
 
 ## 函数原型
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnIm2colGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnIm2col”接口执行计算。

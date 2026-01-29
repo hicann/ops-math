@@ -378,6 +378,7 @@
     {"name":"GeGluV2", "compute_units": ["ascend910_95", "ascend910_93", "ascend910b", "ascend310p"], "auto_sync": true, "compile_options": {"ascend910_95":["--cce-simd-vf-fusion=true"]}},
     {"name":"IsFinite", "compute_units": ["ascend910_95", "ascend910_93", "ascend910b", "ascend310p", "kirinx90"], "auto_sync": true, "compile_options": {"ascend910_95": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name": "MatrixDiag", "compute_units": ["ascend910_95"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend910_95": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
+    {"name": "Im2col", "compute_units": ["ascend910_95"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend910_95": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"IsInf", "compute_units": ["ascend910_95", "ascend910_93", "ascend910b", "ascend310p", "kirinx90"], "auto_sync": true, "compile_options": {"ascend910_95": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"IsPosInf", "compute_units": ["ascend910_95"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend910_95": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"IsNegInf", "compute_units": ["ascend910_95"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend910_95": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
