@@ -16,6 +16,7 @@
 #define AIR_CXX_RUNTIME_V2_OP_IMPL_LINSPACE_H_
 
 #include "register/tilingdata_base.h"
+#include "op_host/tiling_base.h"
 #include "platform/platform_ascendc.h"
 #include "op_host/util/fp16.h"
 #include "util/math_util.h"
