@@ -27,7 +27,7 @@
 
 | 调用方式  | 样例代码                                                               | 说明                                           |
 | :-------- | :--------------------------------------------------------------------- | :--------------------------------------------- |
-| aclnn接口 | [test_ones_like](ops-math/ones_like/examples/test_aclnn_ones_like.cpp) | 通过[aclnnInplaceOne]接口方式调用ones_like算子。 |
+| aclnn接口 | [test_ones_like](examples/test_aclnn_ones_like.cpp) | 通过[aclnnInplaceOne]接口方式调用ones_like算子。 |
 
 ## 贡献说明
 

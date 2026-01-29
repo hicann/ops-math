@@ -26,46 +26,194 @@
 ## 函数原型
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnMaskedScaleGetWorkspaceSize”接口获取入参并根据流程计算所需workspace大小，再调用“aclnnMaskedScale”接口执行计算。
 
-* `aclnnStatus aclnnMaskedScaleGetWorkspaceSize(const aclTensor* self, const aclTensor* mask, float scale, aclTensor* y, uint64_t* workspaceSize, aclOpExecutor** executor)`
-* `aclnnStatus aclnnMaskedScale(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+  ```Cpp
+  aclnnStatus  aclnnMaskedScaleGetWorkspaceSize(
+    const aclTensor* self, 
+    const aclTensor* mask, 
+    float scale, 
+    aclTensor* y, 
+    uint64_t*        workspaceSize, 
+    aclOpExecutor**  executor)
+  ```
+
+  ```Cpp
+  aclnnStatus aclnnMaskedScale(
+    void*          workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor* executor, 
+    aclrtStream    stream)
+  ```
 
 ## aclnnMaskedScaleGetWorkspaceSize
 - **参数说明：**
-  
-  - self(aclTensor*, 计算输入)：公式中的输入`self`，Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、BFLOAT16、FLOAT，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
 
-  - mask(aclTensor*, 计算输入)：公式中的`mask`，Device侧的aclTensor，shape需要与self一致。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持UINT8、INT8、FLOAT16、FLOAT，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-
-  - scale(float, 计算输入)：进行数据缩放，数据类型支持FLOAT。
-
-  - y(aclTensor\*, 计算输出)：公式中的`out`，Device侧的aclTensor，数据类型和shape需要与self一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、BFLOAT16、FLOAT，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-
-  - workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1496px"><colgroup>
+  <col style="width: 149px">
+  <col style="width: 120px">
+  <col style="width: 205px">
+  <col style="width: 305px">
+  <col style="width: 317px">
+  <col style="width: 121px">
+  <col style="width: 134px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>公式中的输入self。</td>
+      <td>-</td>
+      <td>FLOAT16、BFLOAT16、FLOAT</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>mask</td>
+      <td>输入</td>
+      <td>公式中的输入mask。</td>
+      <td>
+        <ul>
+          <li>shape需要与self一致。</li>
+        <ul>
+      </td>
+      <td>UINT8、INT8、FLOAT16、FLOAT</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>scale</td>
+      <td>输入</td>
+      <td>公式中的scale。</td>
+      <td>-</td>
+      <td>FLOAT</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>y</td>
+      <td>输出</td>
+      <td>公式中的out。</td>
+      <td>
+        <ul>
+          <li>数据类型和shape需要与self一致。</li>
+        </ul>
+      </td>
+      <td>FLOAT16、BFLOAT16、FLOAT</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
   
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self、mask或y是空指针。
-  161002 (ACLNN_ERR_PARAM_INVALID): 1. 输入和输出的数据类型不在支持的范围之内。
-                                    2. 输出y和输入self数据类型不一致。
-                                    3. self、mask和y的shape不一致。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1157px"><colgroup>
+  <col style="width: 258px">
+  <col style="width: 124px">
+  <col style="width: 775px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、mask或y是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
+      <td>输入和输出的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>输出y和输入self数据类型不一致。</td>
+    </tr>
+    <tr>
+      <td>self、mask和y的shape不一致。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnMaskedScale
 - **参数说明：**
   
-  * workspace(void\*, 入参)：在Device侧申请的workspace内存地址。
-  * workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnMaskedScaleGetWorkspaceSize获取。
-  * executor(aclOpExecutor\*, 入参)：op执行器，包含了算子计算流程。
-  * stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1045px"><colgroup>
+  <col style="width: 148px">
+  <col style="width: 125px">
+  <col style="width: 772px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnMaskedScaleGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
   
 - **返回值：**
 

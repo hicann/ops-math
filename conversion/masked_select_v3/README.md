@@ -66,4 +66,4 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| aclnn接口 | [test_aclnn_masked_select](./examples/test_aclnn_masked_select_v3.cpp) | 通过[aclnnMaskedSelect](docs/aclnnMaskedSelect.md)接口方式调用MaskedSelect算子。 |
+| aclnn接口 | [test_aclnn_masked_select](./examples/test_aclnn_masked_select.cpp) | 通过[aclnnMaskedSelect](docs/aclnnMaskedSelect.md)接口方式调用MaskedSelect算子。 |

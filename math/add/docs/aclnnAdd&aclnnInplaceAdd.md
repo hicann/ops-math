@@ -112,7 +112,7 @@
       <td>公式中的输入other。</td>
       <td>
         <ul>
-          <li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
+          <li>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
           <li>shape需要与other满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。</li>
         <ul>
       </td>
