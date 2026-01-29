@@ -565,6 +565,10 @@ aclnnStatus aclnnAddsGetWorkspaceSize(
     auto ret = CheckParamsScalar(self, other, alpha, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
+    if (self->GetStorageFormat() != Format::FORMAT_ND) {
+        OP_LOGW("Format only support ND, but got %s.", ToString(self->GetStorageFormat()).GetString());
+    }
+
     // add算子的空tensor在kernel中支持，对标竞品根据算子实际情况补充
     if (self->IsEmpty()) {
         // 根据实际支持情况补充

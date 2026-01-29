@@ -148,7 +148,7 @@ static aclnnStatus CalculateResult(const aclTensor* self, const aclTensor* end, 
   auto selfContiguous = l0op::Contiguous(self, executor);
   CHECK_COND(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR, "InitializeTensor self failed!");
 
-  if (self->GetStorageFormat() != Format::FORMAT_ND) {
+  if (self->GetStorageFormat() != Format::FORMAT_ND || end->GetStorageFormat() != Format::FORMAT_ND) {
     OP_LOGW("Format only support ND");
   }
   

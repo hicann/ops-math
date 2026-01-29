@@ -77,7 +77,7 @@ static bool CheckPromoteType(const aclTensor *self, const aclTensor *out) {
 static void CheckFormat(const aclTensor* self){
   ge::Format selfStorageFormat = self->GetStorageFormat();
   if (selfStorageFormat != ge::Format::FORMAT_ND){
-    OP_LOGW("aclnnLog only support format ND.");
+    OP_LOGW("Format only support ND.");
   }
 }
 
