@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <numeric>
 #include "kernel_operator.h"
+#include "as_strided_struct.h"
 
 namespace AsStrided {
 using namespace AscendC;

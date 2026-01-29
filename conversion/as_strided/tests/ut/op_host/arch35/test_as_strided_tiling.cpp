@@ -14,7 +14,7 @@
  */
 #include <iostream>
 #include <gtest/gtest.h>
-#include "../../../../op_host/arch35/as_strided_tiling.h"
+#include "../../../../op_host/arch35/as_strided_tiling_arch35.h"
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
 
@@ -49,7 +49,7 @@ TEST_F(AsStridedTiling, as_strided_tiling_test_case1)
             },
         },
         &compileInfo);
-    uint64_t expectTilingKey = 1;
+    uint64_t expectTilingKey = 400;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -70,7 +70,7 @@ TEST_F(AsStridedTiling, as_strided_tiling_test_case2)
             },
         },
         &compileInfo);
-    uint64_t expectTilingKey = 2;
+    uint64_t expectTilingKey = 400;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -91,7 +91,7 @@ TEST_F(AsStridedTiling, as_strided_tiling_test_case3)
             },
         },
         &compileInfo);
-    uint64_t expectTilingKey = 2;
+    uint64_t expectTilingKey = 400;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -112,7 +112,7 @@ TEST_F(AsStridedTiling, as_strided_tiling_test_case4)
             },
         },
         &compileInfo);
-    uint64_t expectTilingKey = 2;
+    uint64_t expectTilingKey = 400;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -133,7 +133,7 @@ TEST_F(AsStridedTiling, as_strided_tiling_test_case5)
             },
         },
         &compileInfo);
-    uint64_t expectTilingKey = 2;
+    uint64_t expectTilingKey = 400;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -154,7 +154,7 @@ TEST_F(AsStridedTiling, as_strided_tiling_test_case6)
             },
         },
         &compileInfo);
-    uint64_t expectTilingKey = 2;
+    uint64_t expectTilingKey = 400;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -175,7 +175,7 @@ TEST_F(AsStridedTiling, as_strided_tiling_test_case7)
             },
         },
         &compileInfo);
-    uint64_t expectTilingKey = 2;
+    uint64_t expectTilingKey = 400;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -196,7 +196,7 @@ TEST_F(AsStridedTiling, as_strided_tiling_test_case8)
             },
         },
         &compileInfo);
-    uint64_t expectTilingKey = 2;
+    uint64_t expectTilingKey = 400;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -217,7 +217,7 @@ TEST_F(AsStridedTiling, as_strided_tiling_test_case9)
             },
         },
         &compileInfo);
-    uint64_t expectTilingKey = 4;
+    uint64_t expectTilingKey = 400;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }

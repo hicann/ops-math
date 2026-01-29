@@ -159,6 +159,10 @@ public:
     DualCutAxisSeeker(int64_t* shape, int64_t* strides, int dimNums_, int dtSize_)
     {
         this->dtSize = dtSize_;
+        if(dtSize_ <= 0) {
+            OP_LOGE("DualCutAxisSeeker", "the dtSize_ is less than or equal zero");
+            dtSize_ = 1;
+        }
         this->alignedFactor = BLOCK_BYTES / dtSize_;
         this->dimNums = dimNums_;
         for (int i = 0; i < dimNums_; i++) {
@@ -330,6 +334,10 @@ int DualCutAxisSeeker::ComputeOutputShape(AxisInf& axis)
 
 bool DualCutAxisSeeker::FindDualCutAxis(int ubSize, int bufferNum)
 {
+    if(bufferNum == 0) {
+        OP_LOGE("FindDualCutAxis", "the bufferNum is equal zero");
+        bufferNum = 2;
+    }
     int ubNum = ubSize / this->dtSize / bufferNum;
     int ubBound = 0;
     unsigned int ubAxisSet = 0;
@@ -342,7 +350,10 @@ bool DualCutAxisSeeker::FindDualCutAxis(int ubSize, int bufferNum)
     for (int findLoops = SHAPE_ARRAY_LEN; findLoops >= 0; findLoops--) {
         int64_t remainUB = this->ComputeRemainUB(ubNum, ubAxisSet);
         ubBound = std::floor(std::sqrt(remainUB));
-
+        if (ubBound <= 0) {
+            OP_LOGI("DualCutAxisSeeker::FindDualCutAxis", "ubBound is invalid.");
+            break;
+        }
         this->outputCutter->FindCutAxis(ubBound);
         this->inputCutter->FindCutAxis(ubBound);
 
@@ -401,7 +412,7 @@ bool DualCutAxisSeeker::CutAxis(unsigned int ubAxisSet, int64_t remainNums)
     // move big stride axit into gm if more than 5 axis in ub
     if (this->ubAxis.size() + innerAxis.size() > SHAPE_NDDMA_LEN) {
         std::sort(this->ubAxis.begin(), this->ubAxis.end(), [](const AxisInf a, const AxisInf b) {
-            return a.stride < b.stride;
+            return a.stride == b.stride ? a.dim > b.dim : a.stride < b.stride;
         });
         int totalSize = this->ubAxis.size() + innerAxis.size();
         for (int i = 0; i < totalSize - SHAPE_NDDMA_LEN; i++) {

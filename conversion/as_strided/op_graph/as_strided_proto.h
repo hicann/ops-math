@@ -26,10 +26,14 @@ namespace ge {
 *@li x: The input tensor. Must be the type of hifloat8, float8_e5m2,
 *float8_e4m3fn, bool and BasicType. Support format "ND".
 *@li size: The shape of output tensor. Must be the type of
-*IndexNumberType(IndexNumberType includes: int32, int64). Support format "ND".
+*IndexNumberType(IndexNumberType includes: int32, int64). 
+*All elements in the size must be non-negative integers. 
+*Support format "ND".
 *@li stride: The stride of output tensor. Must be the type of IndexNumberType.
-* Support format "ND".
+*All elements in the stride must be non-negative integers. 
+*Support format "ND".
 *@li storage_offset: The offset in the underlying storage of the output tensor.
+*Must be a non-negative interger.
 *Must be the type of IndexNumberType. Support format "ND".
 
 *@par Outputs:

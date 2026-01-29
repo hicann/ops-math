@@ -25,7 +25,7 @@
 namespace AsStrided {
 using namespace AscendC;
 
-#define IS_CASE_NORMAL ((TILING_KEY == 200))
+#define IS_CASE_NORMAL ((TILING_KEY == 200 || TILING_KEY == 201))
 #define BLOCK_ELEMENT_NUM ((32 / sizeof(T)))
 
 template <typename T, int TILING_KEY>
@@ -155,8 +155,8 @@ public:
         int currentCutAxisOuter01, currentCutAxisOuter02;
 
         int axisId = -1;
-        int inputAddr = 0;
-        int outAddr = 0;
+        int64_t inputAddr = 0;
+        int64_t outAddr = 0;
 
         LoopModeParams loopMode_;
         DataCopyExtParams copyOutParamV2_;
@@ -165,7 +165,7 @@ public:
             tmpId = loopId + loop;
             inputAddr = 0;
             outAddr = 0;
-            int baseIdx = 0;
+            int64_t baseIdx = 0;
             for (; baseIdx < outerAxisNum_ - cutAxisNum_; baseIdx++) {
                 axisId = tmpId % gmShape_[baseIdx];
                 tmpId /= gmShape_[baseIdx];

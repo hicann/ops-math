@@ -17,19 +17,23 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <set>
 #include "util/const_util.h"
 #include "register/op_def_registry.h"
-#include "as_strided_helper_tiling.h"
+#include "as_strided_dualcut_tiling_arch35.h"
 #include "as_strided_tiling_arch35.h"
+#include "as_strided_merge_axis_tiling_arch35.h"
 #include "util/math_util.h"
+#include "op_host/tiling_util.h"
+#include "log/log.h"
+#include "util/platform_util.h"
 
 using namespace std;
 using namespace ge;
 
 namespace optiling {
-constexpr size_t IN_SIZE = 1;
-constexpr size_t IN_STRIDE = 2;
-constexpr size_t IN_OFFSET = 3;
+constexpr size_t CONST_TWO = 2;
+constexpr size_t CONST_FOUR = 4;
 constexpr size_t UB_BUFFER_B8 = 126976;
 constexpr size_t UB_BUFFER_B16 = 63488;
 constexpr size_t UB_BUFFER_B32 = 31744;
@@ -47,9 +51,20 @@ constexpr size_t MOVEALIGN_KEY = 100;
 constexpr int64_t MOVEALIGN_FLAG = 128;
 constexpr int64_t MOVEALIGN_STRIDE_CON = 32;
 constexpr size_t DUAL_CUT_KEY = 200;
+constexpr size_t ALL_STRIDES_ZERO_KEY = 300;
+constexpr size_t SIMT_KEY = 400;
+constexpr size_t WITH_GATHER_KEY = 500;
+constexpr size_t EMPTY_TENSOR_KEY = 1000;
 constexpr int32_t BUFFER_NUM = 2;
-constexpr int32_t DUAL_CUT_CONDITION = 64;
+constexpr int32_t DUAL_CUT_CONDITION1 = 64;
+constexpr int32_t DUAL_CUT_CONDITION2 = 128;
+constexpr int32_t DUAL_CUT_CONDITION3 = 32 * 1024;
 constexpr int32_t VALID_DIM = 8;
+constexpr int64_t SMALL_SHAPE_BYTES_THRESHOLD = 1024 * 1024;
+constexpr int64_t LAST_STRIDE_THRESHOLD = 64;
+constexpr uint16_t MAX_UINT16 = 65535;
+constexpr uint16_t GATHER_AXES_LIMIT = 3;
+constexpr uint16_t GATHER_UB_SIZE_LOWER_LIMIT = 2048;
 
 std::map<ge::DataType, uint32_t> tilingTypeKeyMap = {
     {ge::DT_INT64, INPUT_DTYPE_B64},      {ge::DT_UINT64, INPUT_DTYPE_B64},       {ge::DT_COMPLEX64, INPUT_DTYPE_B64},
@@ -60,43 +75,164 @@ std::map<ge::DataType, uint32_t> tilingTypeKeyMap = {
     {ge::DT_FLOAT8_E5M2, INPUT_DTYPE_B8}, {ge::DT_FLOAT8_E4M3FN, INPUT_DTYPE_B8},
 };
 
-inline static ge::graphStatus AsStridedSetTilingData(gert::TilingContext* context, AsStridedTilingData& tilingData)
+ge::graphStatus AsStridedTilingClass::AsStridedSetTilingData(gert::TilingContext* context, AsStridedTilingData& tilingData)
 {
-    if (tilingData.GetDataSize() > context->GetRawTilingData()->GetCapacity()) {
-        return ge::GRAPH_FAILED;
+    tilingData_ = context->GetTilingData<AsStridedTilingData>();
+    tilingData_->axisOutTotalFactor = tilingData.axisOutTotalFactor;
+    tilingData_->outerAxisFactor = tilingData.outerAxisFactor;
+    tilingData_->innerAxisFactor = tilingData.innerAxisFactor;
+    tilingData_->tilingAxisIdx = tilingData.tilingAxisIdx;
+    tilingData_->outerAxisNum = tilingData.outerAxisNum;
+    tilingData_->ubSize = tilingData.ubSize;
+    tilingData_->innerAxisNum = tilingData.innerAxisNum;
+    tilingData_->storageOffset = tilingData.storageOffset;
+    tilingData_->blockNum = tilingData.blockNum;
+    tilingData_->loopsTailCore = tilingData.loopsTailCore;
+    tilingData_->innerAxisFactorTail = tilingData.innerAxisFactorTail;
+    tilingData_->ubFactor = tilingData.ubFactor;
+    tilingData_->ubFactorTail = tilingData.ubFactorTail;
+    tilingData_->loopsPerCore = tilingData.loopsPerCore;
+    tilingData_->en32BAligned = tilingData.en32BAligned;
+
+    for(int64_t i = 0; i < TILING_ARRAY_LEN; i++) {
+        tilingData_->outStrideArr[i] = tilingData.outStrideArr[i];
+        tilingData_->innerAxis[i] = tilingData.innerAxis[i];
+        tilingData_->outLoopArr[i] = tilingData.outLoopArr[i];
+        tilingData_->gmInStride[i] = tilingData.gmInStride[i];
+        tilingData_->gmShape[i] = tilingData.gmShape[i];
+        tilingData_->gmOutStride[i] = tilingData.gmOutStride[i];
     }
-    tilingData.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
-    context->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
+
+    for(int64_t j = 0; j < TILING_NDDMA_LEN; j++) {
+        tilingData_->nddmaLoop[j] = tilingData.nddmaLoop[j];
+        tilingData_->nddmaDstStride[j] = tilingData.nddmaDstStride[j];
+        tilingData_->nddmaTailLoop[j] = tilingData.nddmaTailLoop[j];
+        tilingData_->nddmaSrcStride[j] = tilingData.nddmaSrcStride[j];
+    }
+
     return ge::GRAPH_SUCCESS;
 }
 
-static void SetTilingData(AsStridedTilingData& tiling, AsStridedTilingParam& tilingParam)
+template<typename T, typename U>
+void copyArrForTiling(T& tiling, const U& tilingParam, int64_t arrLen, int64_t nddmaLen)
 {
-    tiling.set_axisOutTotalFactor(tilingParam.axisOutTotalFactor);
-    tiling.set_outerAxisFactor(tilingParam.outerAxisFactor);
-    tiling.set_innerAxisFactor(tilingParam.innerAxisFactor);
-    tiling.set_tilingAxisIdx(tilingParam.tilingAxisIdx);
-    tiling.set_outerAxisNum(tilingParam.outerAxisNum);
-    tiling.set_outStrideArr(tilingParam.outStrideArr);
-    tiling.set_nddmaSrcStride(tilingParam.nddmaSrcStride);
-    tiling.set_ubSize(tilingParam.ubSize);
-    tiling.set_innerAxisNum(tilingParam.innerAxisNum);
-    tiling.set_storageOffset(tilingParam.storageOffset);
-    tiling.set_blockNum(tilingParam.blockNum);
-    tiling.set_innerAxisFactorTail(tilingParam.innerAxisFactorTail);
-    tiling.set_ubFactorTail(tilingParam.ubFactorTail);
-    tiling.set_loopsPerCore(tilingParam.loopsPerCore);
-    tiling.set_nddmaLoop(tilingParam.nddmaLoop);
-    tiling.set_nddmaDstStride(tilingParam.nddmaDstStride);
-    tiling.set_innerAxis(tilingParam.innerAxis);
-    tiling.set_outLoopArr(tilingParam.outLoopArr);
-    tiling.set_nddmaTailLoop(tilingParam.nddmaTailLoop);
-    tiling.set_en32BAligned(tilingParam.en32BAligned);
-    tiling.set_gmInStride(tilingParam.gmInStride);
-    tiling.set_gmShape(tilingParam.gmShape);
+    for(int64_t i = 0; i < arrLen; i++) {
+        tiling.outStrideArr[i] = tilingParam.outStrideArr[i];
+        tiling.innerAxis[i] = tilingParam.innerAxis[i];
+        tiling.outLoopArr[i] = tilingParam.outLoopArr[i];
+        tiling.gmInStride[i] = tilingParam.gmInStride[i];
+        tiling.gmShape[i] = tilingParam.gmShape[i];
+    }
+
+    for(int64_t j = 0; j < nddmaLen; j++) {
+        tiling.nddmaLoop[j] = tilingParam.nddmaLoop[j];
+        tiling.nddmaDstStride[j] = tilingParam.nddmaDstStride[j];
+        tiling.nddmaTailLoop[j] = tilingParam.nddmaTailLoop[j];
+        tiling.nddmaSrcStride[j] = tilingParam.nddmaSrcStride[j];
+    }
 }
 
-static void NoTilingMergeAxis(AsStridedTilingData& tiling, AsStridedTilingParam& tilingParam, gert::Shape outSize)
+ge::graphStatus AsStridedTilingClass::SetTilingData(gert::TilingContext* context, AsStridedTilingData& tiling,
+                                     AsStridedTilingParam& tilingParam)
+{
+    if (tilingParam.tilingKey != ALL_STRIDES_ZERO_KEY && tilingParam.tilingKey != SIMT_KEY &&
+        tilingParam.tilingKey != WITH_GATHER_KEY) {
+        tiling.axisOutTotalFactor = tilingParam.axisOutTotalFactor;
+        tiling.outerAxisFactor = tilingParam.outerAxisFactor;
+        tiling.innerAxisFactor = tilingParam.innerAxisFactor;
+        tiling.tilingAxisIdx = tilingParam.tilingAxisIdx;
+        tiling.outerAxisNum = tilingParam.outerAxisNum;
+        tiling.ubSize = tilingParam.ubSize;
+        tiling.innerAxisNum = tilingParam.innerAxisNum;
+        tiling.storageOffset = tilingParam.storageOffset;
+        tiling.blockNum = tilingParam.blockNum;
+        tiling.innerAxisFactorTail = tilingParam.innerAxisFactorTail;
+        tiling.ubFactorTail = tilingParam.ubFactorTail;
+        tiling.loopsPerCore = tilingParam.loopsPerCore;
+        tiling.en32BAligned = tilingParam.en32BAligned;
+        copyArrForTiling<AsStridedTilingData, AsStridedTilingParam>(tiling, tilingParam, TILING_ARRAY_LEN, TILING_NDDMA_LEN);
+        this->AsStridedSetTilingData(context, tiling);
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+void AsStridedTilingClass::SetZeroStrideTilingData(gert::TilingContext* context, AsStridedTilingParam& tilingParam)
+{
+    zeroStrideTilingData_ = context->GetTilingData<AsStridedZeroStrideTilingData>();
+    zeroStrideTilingData_->blockNum = tilingParam.blockNum;
+    zeroStrideTilingData_->ubSizePlatForm = tilingParam.ubSizePlatForm;
+    zeroStrideTilingData_->storageOffset = tilingParam.storageOffset;
+    zeroStrideTilingData_->mainBlockFactor = tilingParam.mainBlockFactor;
+    zeroStrideTilingData_->tailBlockFactor = tilingParam.tailBlockFactor;
+
+    OP_LOGI("As_Strided", "[SetZeroStrideTilingData]blockNum:%u, ubSizePlatForm:%lu, storageOffset:%ld, \
+        mainBlockFactor:%ld, tailBlockFactor:%ld.",
+        tilingParam.blockNum, tilingParam.ubSizePlatForm, tilingParam.storageOffset,
+        tilingParam.mainBlockFactor, tilingParam.tailBlockFactor);
+}
+
+void AsStridedTilingClass::SetSimtTilingData(gert::TilingContext* context, AsStridedTilingParam& tilingParam)
+{
+    simtTilingData_ = context->GetTilingData<AsStridedSimtTilingData>();
+    simtTilingData_->outDimNum = tilingParam.outDimNum;
+    simtTilingData_->blockNum = tilingParam.blockNum;
+    simtTilingData_->storageOffset = tilingParam.storageOffset;
+    simtTilingData_->mainBlockFactor = tilingParam.mainBlockFactor;
+    simtTilingData_->tailBlockFactor = tilingParam.tailBlockFactor;
+
+    for(int64_t i = 0; i < TILING_ARRAY_LEN; i++) {
+        simtTilingData_->sizeArr[i] = tilingParam.sizeArr[i];
+        simtTilingData_->strideArr[i] = tilingParam.strideArr[i];
+        simtTilingData_->outSizeStride[i] = tilingParam.outSizeStride[i];
+    }
+
+    OP_LOGI("As_Strided", "[SetSimtTilingData]outDimNum:%u, blockNum:%u, storageOffset:%ld, \
+        mainBlockFactor:%ld, tailBlockFactor:%ld.",
+        tilingParam.outDimNum, tilingParam.blockNum, tilingParam.storageOffset,
+        tilingParam.mainBlockFactor, tilingParam.tailBlockFactor);
+}
+
+static void SetWithGatherUbParam(UbParam& tilingDataUbParam, UbParam& ubParam)
+{
+    tilingDataUbParam.innerAxisFactor = ubParam.innerAxisFactor;
+    tilingDataUbParam.innerAxisFactorTail = ubParam.innerAxisFactorTail;
+    tilingDataUbParam.outerAxisFactor = ubParam.outerAxisFactor;
+    tilingDataUbParam.ubFactor = ubParam.ubFactor;
+    tilingDataUbParam.ubFactorTail = ubParam.ubFactorTail;
+    tilingDataUbParam.loopsPerCore = ubParam.loopsPerCore;
+}
+
+void AsStridedTilingClass::SetWithGatherTilingData(gert::TilingContext* context, AsStridedUbGatherParam& ubGatherParam)
+{
+    gatherTilingData_ = context->GetTilingData<AsStridedWithGatherTilingData>();
+    gatherTilingData_->storageOffset = ubGatherParam.storageOffset;
+    gatherTilingData_->ubSizePlatForm = ubGatherParam.ubSizePlatForm;
+    gatherTilingData_->tilingAxisIdx = ubGatherParam.tilingAxisIdx;
+    gatherTilingData_->preSize = ubGatherParam.preSize;
+    gatherTilingData_->blockNum = ubGatherParam.blockNum;
+    gatherTilingData_->mainBlockCnt = ubGatherParam.mainBlockCnt;
+    gatherTilingData_->outDimNum = ubGatherParam.outDimNum;
+    gatherTilingData_->inUbSize = ubGatherParam.inUbSize;
+    gatherTilingData_->blockAxisIdx = ubGatherParam.blockAxisIdx;
+    gatherTilingData_->coreCurAxisFactor = ubGatherParam.coreCurAxisFactor;
+    gatherTilingData_->coreInnerAxisFactor = ubGatherParam.coreInnerAxisFactor;
+    gatherTilingData_->coreInnerAxisTailFactor = ubGatherParam.coreInnerAxisTailFactor;
+    gatherTilingData_->coreOuterAxisFactor = ubGatherParam.coreOuterAxisFactor;
+    SetWithGatherUbParam(gatherTilingData_->mainBlockUbParam, ubGatherParam.mainBlockUbParam);
+    SetWithGatherUbParam(gatherTilingData_->tailBlockUbParam, ubGatherParam.tailBlockUbParam);
+    for(int64_t i = 0; i < TILING_ARRAY_LEN; i++) {
+        gatherTilingData_->sizeArr[i] = ubGatherParam.sizeArr[i];
+        gatherTilingData_->strideArr[i] = ubGatherParam.strideArr[i];
+        gatherTilingData_->idxStrideArr[i] = ubGatherParam.idxStrideArr[i];
+    }
+
+    OP_LOGI("As_Strided", "[SetWithGatherTilingData]outDimNum:%u, blockNum:%u, mainBlockCnt:%u, storageOffset:%ld, \
+        ubSizePlatForm:%lu, inUbSize:%u.",
+        ubGatherParam.outDimNum, ubGatherParam.blockNum, ubGatherParam.mainBlockCnt, ubGatherParam.storageOffset,
+        ubGatherParam.ubSizePlatForm, ubGatherParam.inUbSize);
+}
+
+void AsStridedTilingClass::NoTilingMergeAxis(AsStridedTilingData& tiling, AsStridedTilingParam& tilingParam, gert::Shape outSize)
 {
     OP_LOGD("As_Strided", "NoTilingMergeAxis");
     tilingParam.ubUseFactor = 1;
@@ -117,10 +253,10 @@ static void NoTilingMergeAxis(AsStridedTilingData& tiling, AsStridedTilingParam&
         tilingParam.ubUseFactor *= outSize[i + tilingParam.outerAxisNum];
     }
 
-    tiling.set_ubFactor(tilingParam.ubUseFactor);
+    tiling.ubFactor = tilingParam.ubUseFactor;
 }
 
-static void MergeAxisAfterTiling(
+void AsStridedTilingClass::MergeAxisAfterTiling(
     [[maybe_unused]] const AsStridedTilingData& tiling, AsStridedTilingParam& tilingParam, gert::Shape outSize)
 {
     OP_LOGD("As_Strided", "Start fusing");
@@ -166,7 +302,7 @@ static void MergeAxisAfterTiling(
     }
 }
 
-static void MergeAxis4MoveAlign(
+void MergeAxis4MoveAlign(
     AsStridedTilingParam& tilingParam, gert::Shape outSize, gert::Shape outStride, AsStridedTilingData& tiling)
 {
     OP_LOGD("As_Strided", "MergeAxis4MoveAlign");
@@ -192,7 +328,7 @@ static void MergeAxis4MoveAlign(
     for (uint32_t i = 1; i < TILING_NDDMA_LEN; i++) {
         tilingParam.ubUseFactor *= outSize[i + tilingParam.outerAxisNum - 1];
     }
-    tiling.set_ubFactor(tilingParam.ubUseFactor);
+    tiling.ubFactor = tilingParam.ubUseFactor;
     if ((tilingParam.nddmaDstStride[MOVEALIGN_DIM2] * tilingParam.sizeofDtype) % UB_ALIGN_SIZE != 0) {
         tilingParam.nddmaDstStride[MOVEALIGN_DIM2] =
             Ops::Base::CeilDiv(tilingParam.nddmaDstStride[MOVEALIGN_DIM2] * tilingParam.sizeofDtype, UB_ALIGN_SIZE) *
@@ -207,7 +343,7 @@ static void MergeAxis4MoveAlign(
     }
 }
 
-inline static bool HasDuplicate(gert::Shape outStride)
+inline bool HasDuplicate(gert::Shape outStride)
 {
     // MoveAlign Condition 3
     int32_t numStride[TILING_ARRAY_LEN] = {0};
@@ -269,6 +405,362 @@ inline static bool IsMoveAlign(gert::Shape outSize, gert::Shape outStride, AsStr
     return false;
 }
 
+inline static bool IsAllStridesZero(gert::Shape outStride)
+{
+    for (uint32_t i = 0; i < outStride.GetDimNum(); i++) {
+        if (outStride[i] != 0) {
+            return false;
+        }
+    }
+    OP_LOGD("As_Strided", "All Strides Are Zero.");
+    return true;
+}
+
+inline static bool IsSmallShape(gert::Shape outSize, uint32_t sizeofDtype)
+{
+    uint64_t totalOutElement = 1;
+    for (uint32_t i = 0; i < outSize.GetDimNum(); i++) {
+        totalOutElement *= outSize[i];
+    }
+    if (totalOutElement * sizeofDtype <= SMALL_SHAPE_BYTES_THRESHOLD) {
+        return true;
+        OP_LOGD("As_Strided", "Need SIMT.");
+    }
+    return false;
+}
+
+inline static bool CheckBndryForUint16GatherIdx(gert::Shape outSize, gert::Shape outStride,
+    const AsStridedTilingParam& tilingParam, const AsStridedUbGatherParam& ubGatherParam)
+{
+    uint32_t dimNum = ubGatherParam.outDimNum - ubGatherParam.tilingAxisIdx;
+    if (tilingParam.sizeofDtype > CONST_TWO) {
+        return true;
+    }
+
+    if (dimNum == 1) {
+        return outStride[ubGatherParam.outDimNum - 1] * (ubGatherParam.mainBlockUbParam.ubFactor - 1) <= MAX_UINT16;
+    } else if (dimNum == CONST_TWO) {
+        return outSize[ubGatherParam.outDimNum - 1] <= MAX_UINT16;
+    } else if (dimNum > CONST_TWO) {
+        uint32_t lastDim = outSize[ubGatherParam.outDimNum - 1];
+        uint32_t prevDim = outSize[ubGatherParam.outDimNum - 2];
+        return (lastDim <= MAX_UINT16 &&
+                prevDim <= MAX_UINT16 &&
+                lastDim * prevDim <= MAX_UINT16);
+    }
+
+    return true;
+}
+
+inline static bool CalLastThreeAxesRange(gert::Shape outSize, const AsStridedTilingParam& tilingParam)
+{
+    uint64_t elementCnt = 1;
+    for (int32_t i = outSize.GetDimNum() - 1; i >= 0; i--) {
+        if (outSize.GetDimNum() - i > GATHER_AXES_LIMIT) {
+            break;
+        }
+        elementCnt *= outSize[i];
+        if (elementCnt * tilingParam.sizeofDtype > GATHER_UB_SIZE_LOWER_LIMIT) {
+            return true;
+        }
+    }
+    return false;
+}
+
+inline static bool IsUbGather(gert::Shape outSize, const AsStridedTilingParam& tilingParam)
+{
+    if ((static_cast<uint64_t>(tilingParam.inputSize) * static_cast<uint64_t>(tilingParam.sizeofDtype) < tilingParam.ubSizePlatForm / CONST_FOUR) &&
+        CalLastThreeAxesRange(outSize, tilingParam)) {
+        OP_LOGD("As_Strided", "Need UbGather.");
+        return true;
+    }
+    return false;
+}
+
+inline static uint32_t CalcblockNum(const gert::TilingContext* context, uint64_t totalOutElement,
+                                    const AsStridedTilingParam& tilingParam)
+{
+    uint32_t cacheLineSize = Ops::Base::GetCacheLineSize(context);
+    OP_LOGD("As_Strided", "[CalcblockNum]cacheLineSize:%u.", cacheLineSize);
+    return std::min(tilingParam.numCore,
+                    static_cast<uint32_t>(Ops::Base::CeilDiv(totalOutElement * tilingParam.sizeofDtype,
+                    static_cast<uint64_t>(cacheLineSize))));
+}
+
+inline static void SetAllStridesZeroTilingParam(const gert::TilingContext* context, gert::Shape outSize,
+                                                AsStridedTilingParam& tilingParam)
+{
+    uint64_t totalOutElement = outSize.GetShapeSize();
+    tilingParam.blockNum = CalcblockNum(context, totalOutElement, tilingParam);
+    tilingParam.mainBlockFactor = static_cast<int64_t>(Ops::Base::CeilDiv(totalOutElement,
+                                                                    static_cast<uint64_t>(tilingParam.blockNum)));
+    tilingParam.blockNum = static_cast<uint32_t>(Ops::Base::CeilDiv(totalOutElement,
+                                                                    static_cast<uint64_t>(tilingParam.mainBlockFactor)));
+    tilingParam.tailBlockFactor = totalOutElement - (tilingParam.blockNum - 1) * tilingParam.mainBlockFactor;
+}
+
+inline static void SetSimtTilingParam(const gert::TilingContext* context, gert::Shape outSize, gert::Shape outStride,
+                                      AsStridedTilingParam& tilingParam)
+{
+    uint64_t totalOutElement = outSize.GetShapeSize();
+    tilingParam.blockNum = CalcblockNum(context, totalOutElement, tilingParam);
+
+    tilingParam.outDimNum = outSize.GetDimNum();
+    tilingParam.mainBlockFactor = static_cast<int64_t>(Ops::Base::CeilDiv(totalOutElement,
+                                                                    static_cast<uint64_t>(tilingParam.blockNum)));
+    tilingParam.blockNum = static_cast<uint32_t>(Ops::Base::CeilDiv(totalOutElement,
+                                static_cast<uint64_t>(tilingParam.mainBlockFactor)));
+    tilingParam.tailBlockFactor = totalOutElement - (tilingParam.blockNum - 1) * tilingParam.mainBlockFactor;
+    for (uint32_t i = 0; i < tilingParam.outDimNum; i++) {
+        tilingParam.sizeArr[i] = outSize[i];
+        tilingParam.strideArr[i] = outStride[i];
+    }
+    for (int32_t i = tilingParam.outDimNum - 2; i >= 0; i--) {
+        tilingParam.outSizeStride[i] = tilingParam.outSizeStride[i + 1] * outSize[i + 1];
+    }
+}
+
+inline static void CalcTilingCore(gert::Shape outSize, AsStridedUbGatherParam& ubGatherParam)
+{
+    uint32_t preSize = 1;
+    if (ubGatherParam.blockNum == 1) {
+        ubGatherParam.blockAxisIdx = 0;
+        ubGatherParam.coreInnerAxisFactor = outSize[0];
+        ubGatherParam.coreInnerAxisTailFactor = outSize[0];
+    } else {
+        for (uint32_t i = 0; i < outSize.GetDimNum(); i++) {
+            ubGatherParam.coreCurAxisFactor = outSize[i] * preSize;
+            ubGatherParam.blockAxisIdx = i;
+            if (ubGatherParam.coreCurAxisFactor >= ubGatherParam.blockNum) {
+                break;
+            } else {
+                preSize *= outSize[i];
+            }
+        }
+        ubGatherParam.coreInnerAxisFactor = Ops::Base::CeilDiv(ubGatherParam.coreCurAxisFactor, ubGatherParam.blockNum);
+        ubGatherParam.blockNum = Ops::Base::CeilDiv(ubGatherParam.coreCurAxisFactor, ubGatherParam.coreInnerAxisFactor);
+        ubGatherParam.coreInnerAxisTailFactor = ubGatherParam.coreCurAxisFactor -
+                                                (ubGatherParam.blockNum - 1) * ubGatherParam.coreInnerAxisFactor;
+        ubGatherParam.coreOuterAxisFactor = static_cast<uint32_t>(Ops::Base::CeilDiv(outSize[ubGatherParam.blockAxisIdx],
+                                                         static_cast<int64_t>(ubGatherParam.coreInnerAxisFactor)));
+    }
+
+    OP_LOGD("As_Strided", "[CalcTilingCore]blockAxisIdx:%u, blockNum:%u.",
+        ubGatherParam.blockAxisIdx, ubGatherParam.blockNum);
+    OP_LOGD("As_Strided", "[CalcTilingCore]coreInnerAxisFactor:%u, coreInnerAxisTailFactor:%u, coreOuterAxisFactor:%u",
+        ubGatherParam.coreInnerAxisFactor, ubGatherParam.coreInnerAxisTailFactor, ubGatherParam.coreOuterAxisFactor);
+}
+
+inline static void CalcMaxUbFactor(AsStridedTilingParam& tilingParam, AsStridedUbGatherParam& ubGatherParam,
+                                   uint32_t& maxUbFactor, gert::Shape outSize, gert::Shape outStride)
+{
+    uint32_t requiredStorageSize = 0;
+    for (size_t i = 0; i < outSize.GetDimNum(); i++) {
+        requiredStorageSize += (outSize[i] - 1) * outStride[i];
+    }
+    ubGatherParam.inUbSize = tilingParam.storageOffset + requiredStorageSize + 1;
+    uint32_t outUbAlign = ((tilingParam.ubSizePlatForm - ubGatherParam.inUbSize * tilingParam.sizeofDtype) /
+                           UB_ALIGN_SIZE) * UB_ALIGN_SIZE;
+    if (tilingParam.sizeofDtype == INPUT_DTYPE_B8) {
+        // b8对应的索引类型是uint16
+        maxUbFactor = outUbAlign / (sizeof(uint16_t) + tilingParam.sizeofDtype * BUFFER_NUM);
+    } else if (tilingParam.sizeofDtype == INPUT_DTYPE_B16 or tilingParam.sizeofDtype == INPUT_DTYPE_B32) {
+        maxUbFactor = outUbAlign / (tilingParam.sizeofDtype + tilingParam.sizeofDtype * BUFFER_NUM);
+    } else {
+        // b64对应的索引类型是uint32
+        maxUbFactor = outUbAlign / (sizeof(uint32_t) + tilingParam.sizeofDtype * BUFFER_NUM);
+    }
+}
+
+inline static void SetubParamWhenOutAxesLimit(gert::Shape outSize, uint32_t coreInnerAxisFactor,
+                                              AsStridedUbGatherParam& ubGatherParam, UbParam& ubParam)
+{
+    // 切分思路：ub全载后三根轴，三根轴外到核切分内轴为ub循环次数
+    OP_CHECK_IF(
+        (ubGatherParam.tilingAxisIdx >= TILING_ARRAY_LEN),
+        OP_LOGE("as_trided", "the axis idx is more than range"), return);
+    OP_CHECK_IF(
+        (outSize.GetDimNum() == 0),
+        OP_LOGE("as_trided", "the outSize is empty"), return);
+    ubParam.innerAxisFactor = outSize[ubGatherParam.tilingAxisIdx];
+    ubParam.outerAxisFactor = 1;
+    ubParam.innerAxisFactorTail = ubParam.innerAxisFactor;
+    ubParam.ubFactor = ubGatherParam.preSize;
+    ubParam.ubFactorTail = ubGatherParam.preSize;
+    ubParam.loopsPerCore = coreInnerAxisFactor;
+    for (int32_t j = static_cast<int32_t>(ubGatherParam.tilingAxisIdx) - 1; j > static_cast<int32_t>(ubGatherParam.blockAxisIdx); j--) {
+        ubParam.loopsPerCore *= outSize[j];
+    }
+}
+
+inline static void SetubParamWhenAxesSame(uint32_t coreInnerAxisFactor, uint32_t maxUbFactor,
+                                          AsStridedUbGatherParam& ubGatherParam, UbParam& ubParam)
+{
+    // 切在同一根轴，要保证ub不能切到核外
+    ubParam.innerAxisFactor = maxUbFactor / ubGatherParam.preSize;
+    ubParam.innerAxisFactor = std::min(coreInnerAxisFactor, ubParam.innerAxisFactor);
+    ubParam.outerAxisFactor = Ops::Base::CeilDiv(coreInnerAxisFactor, ubParam.innerAxisFactor);
+    ubParam.innerAxisFactorTail = coreInnerAxisFactor -
+                                  ubParam.innerAxisFactor * (ubParam.outerAxisFactor - 1);
+    ubParam.ubFactor = ubGatherParam.preSize * ubParam.innerAxisFactor;
+    ubParam.ubFactorTail = ubGatherParam.preSize * ubParam.innerAxisFactorTail;
+    ubParam.loopsPerCore = ubParam.outerAxisFactor;
+}
+
+inline static void CalctilingCoreWithInAxis(gert::Shape outSize, uint32_t maxUbFactor,
+                                            AsStridedUbGatherParam& ubGatherParam)
+{
+    if (ubGatherParam.tilingAxisIdx == 0) {
+        SetubParamWhenAxesSame(ubGatherParam.coreInnerAxisFactor, maxUbFactor, ubGatherParam,
+                               ubGatherParam.mainBlockUbParam);
+        SetubParamWhenAxesSame(ubGatherParam.coreInnerAxisTailFactor, maxUbFactor, ubGatherParam,
+                               ubGatherParam.tailBlockUbParam);
+    } else {
+        uint32_t outerCoreNum = 1;
+        for (uint32_t i = 0; i < ubGatherParam.blockAxisIdx; i++) {
+            outerCoreNum *= outSize[i];
+        }
+        uint32_t innerCoreNum = ubGatherParam.blockNumMin / outerCoreNum;
+        ubGatherParam.coreInnerAxisFactor = static_cast<uint32_t>(Ops::Base::CeilDiv(outSize[ubGatherParam.blockAxisIdx],
+                                                                               static_cast<int64_t>(innerCoreNum)));
+        innerCoreNum = static_cast<uint32_t>(Ops::Base::CeilDiv(outSize[ubGatherParam.blockAxisIdx],
+                                                          static_cast<int64_t>(ubGatherParam.coreInnerAxisFactor)));
+
+        UbParam& ubParam = ubGatherParam.mainBlockUbParam;
+        ubParam.innerAxisFactor = maxUbFactor / ubGatherParam.preSize;
+        ubParam.innerAxisFactor = std::min(ubGatherParam.coreInnerAxisFactor, ubParam.innerAxisFactor);
+        ubParam.outerAxisFactor = Ops::Base::CeilDiv(ubGatherParam.coreInnerAxisFactor, ubParam.innerAxisFactor);
+
+        ubGatherParam.coreInnerAxisFactor =
+            ubParam.innerAxisFactor * ubParam.outerAxisFactor > outSize[ubGatherParam.blockAxisIdx] ?
+                ubGatherParam.coreInnerAxisFactor :
+                ubParam.innerAxisFactor * ubParam.outerAxisFactor;  // 按主核均分UB修正
+        SetubParamWhenAxesSame(ubGatherParam.coreInnerAxisFactor, maxUbFactor, ubGatherParam,
+                               ubGatherParam.mainBlockUbParam);
+        innerCoreNum = std::min(innerCoreNum,
+                                static_cast<uint32_t>(Ops::Base::CeilDiv(outSize[ubGatherParam.blockAxisIdx],
+                                                      static_cast<int64_t>(ubGatherParam.coreInnerAxisFactor))));
+        ubGatherParam.coreOuterAxisFactor = innerCoreNum;
+        ubGatherParam.blockNum = innerCoreNum * outerCoreNum;   // 再次修正核数
+        ubGatherParam.mainBlockCnt = (innerCoreNum - 1) * outerCoreNum;
+        ubGatherParam.coreInnerAxisTailFactor = outSize[ubGatherParam.blockAxisIdx] -
+                                                (innerCoreNum - 1) * ubGatherParam.coreInnerAxisFactor;
+        if (ubGatherParam.coreInnerAxisTailFactor > ubGatherParam.coreInnerAxisFactor) {
+            OP_LOGE("As_Strided",
+                "[CalctilingCoreWithInAxis]coreInnerAxisTailFactor is larger than coreInnerAxisFactor, unexpected!!");
+        }
+        SetubParamWhenAxesSame(ubGatherParam.coreInnerAxisTailFactor, maxUbFactor, ubGatherParam,
+                               ubGatherParam.tailBlockUbParam);
+    }
+}
+
+inline static void SetubParamWhenAxesDiff(gert::Shape outSize, uint32_t coreInnerAxisFactor, uint32_t maxUbFactor,
+                                          AsStridedUbGatherParam& ubGatherParam, UbParam& ubParam)
+{
+    ubParam.innerAxisFactor = maxUbFactor / ubGatherParam.preSize;
+    ubParam.outerAxisFactor = static_cast<uint32_t>(Ops::Base::CeilDiv(outSize[ubGatherParam.tilingAxisIdx],
+                                                                 static_cast<int64_t>(ubParam.innerAxisFactor)));
+    ubParam.innerAxisFactorTail = outSize[ubGatherParam.tilingAxisIdx] -
+                                  ubParam.innerAxisFactor * (ubParam.outerAxisFactor - 1);
+    ubParam.ubFactor = ubGatherParam.preSize * ubParam.innerAxisFactor;
+    ubParam.ubFactorTail = ubGatherParam.preSize * ubParam.innerAxisFactorTail;
+    // 核内部轴到ub外部轴的累乘
+    ubParam.loopsPerCore = coreInnerAxisFactor * ubParam.outerAxisFactor;
+    for (int32_t j = static_cast<int32_t>(ubGatherParam.tilingAxisIdx) - 1; j > static_cast<int32_t>(ubGatherParam.blockAxisIdx); j--) {
+        ubParam.loopsPerCore *= outSize[j];
+    }
+}
+
+inline static void PrintUbGatherParam(AsStridedUbGatherParam& ubGatherParam)
+{
+    OP_LOGI("As_Strided", "[CalcTilingUb]tilingAxisIdx:%u, blockAxisIdx:%u, preSize:%u.",
+        ubGatherParam.tilingAxisIdx, ubGatherParam.blockAxisIdx, ubGatherParam.preSize);
+    OP_LOGI("As_Strided", "[CalcTilingUb]mainBlockUbParam, innerAxisFactor:%u, innerAxisFactorTail:%u, \
+        outerAxisFactor:%u, ubFactor:%u, ubFactorTail:%u, loopsPerCore:%u.",
+        ubGatherParam.mainBlockUbParam.innerAxisFactor, ubGatherParam.mainBlockUbParam.innerAxisFactorTail,
+        ubGatherParam.mainBlockUbParam.outerAxisFactor, ubGatherParam.mainBlockUbParam.ubFactor,
+        ubGatherParam.mainBlockUbParam.ubFactorTail, ubGatherParam.mainBlockUbParam.loopsPerCore);
+    OP_LOGI("As_Strided", "[CalcTilingUb]tailBlockUbParam, innerAxisFactor:%u, innerAxisFactorTail:%u, \
+        outerAxisFactor:%u, ubFactor:%u, ubFactorTail:%u, loopsPerCore:%u.",
+        ubGatherParam.tailBlockUbParam.innerAxisFactor, ubGatherParam.tailBlockUbParam.innerAxisFactorTail,
+        ubGatherParam.tailBlockUbParam.outerAxisFactor, ubGatherParam.tailBlockUbParam.ubFactor,
+        ubGatherParam.tailBlockUbParam.ubFactorTail, ubGatherParam.tailBlockUbParam.loopsPerCore);
+}
+
+inline static void CalcTilingUb(gert::Shape outSize, gert::Shape outStride, AsStridedTilingParam& tilingParam,
+                                AsStridedUbGatherParam& ubGatherParam)
+{
+    uint32_t maxUbFactor = 0;
+    CalcMaxUbFactor(tilingParam, ubGatherParam, maxUbFactor, outSize, outStride);
+    OP_LOGD("As_Strided", "[CalcTilingUb]maxUbFactor:%u.", maxUbFactor);
+
+    ubGatherParam.preSize = 1;
+    uint32_t curAxisFactor = 0;
+    for (int32_t i = outSize.GetDimNum() - 1; i >= static_cast<int32_t>(ubGatherParam.blockAxisIdx); i--) {
+        // UB内最多三根轴
+        if (outSize.GetDimNum() - i > GATHER_AXES_LIMIT) {
+            SetubParamWhenOutAxesLimit(outSize, ubGatherParam.coreInnerAxisFactor, ubGatherParam,
+                                       ubGatherParam.mainBlockUbParam);
+            SetubParamWhenOutAxesLimit(outSize, ubGatherParam.coreInnerAxisTailFactor, ubGatherParam,
+                                       ubGatherParam.tailBlockUbParam);
+            ubGatherParam.tilingFlag = 1;
+            break;
+        }
+        ubGatherParam.tilingAxisIdx = i;
+        curAxisFactor = outSize[i] * ubGatherParam.preSize;
+        if (curAxisFactor >= maxUbFactor || i == static_cast<int32_t>(ubGatherParam.blockAxisIdx)) {
+            break;
+        }
+        ubGatherParam.preSize *= outSize[i];
+    }
+
+    if (ubGatherParam.tilingFlag == 0) {
+        if (ubGatherParam.tilingAxisIdx == ubGatherParam.blockAxisIdx) {
+            // 切ub与切核在同一根轴，ub存在跨轴处理风险，需重新分核
+            CalctilingCoreWithInAxis(outSize, maxUbFactor, ubGatherParam);
+        } else {
+            SetubParamWhenAxesDiff(outSize, ubGatherParam.coreInnerAxisFactor, maxUbFactor, ubGatherParam,
+                                   ubGatherParam.mainBlockUbParam);
+            SetubParamWhenAxesDiff(outSize, ubGatherParam.coreInnerAxisTailFactor, maxUbFactor, ubGatherParam,
+                                   ubGatherParam.tailBlockUbParam);
+        }
+        ubGatherParam.tilingFlag = 1;
+    }
+
+    PrintUbGatherParam(ubGatherParam);
+}
+
+inline static void ComputeUbGatherParam(const gert::TilingContext* context, gert::Shape outSize, gert::Shape outStride,
+                                        AsStridedTilingParam& tilingParam, AsStridedUbGatherParam& ubGatherParam)
+{
+    uint64_t totalOutElement = outSize.GetShapeSize();
+    ubGatherParam.blockNum = CalcblockNum(context, totalOutElement, tilingParam);
+    ubGatherParam.blockNumMin = ubGatherParam.blockNum;
+    ubGatherParam.outDimNum = outSize.GetDimNum();
+
+    CalcTilingCore(outSize, ubGatherParam);
+    CalcTilingUb(outSize, outStride, tilingParam, ubGatherParam);
+}
+
+inline static void SetUbGatherTilingParam(gert::Shape outSize, gert::Shape outStride,
+    const AsStridedTilingParam& tilingParam, AsStridedUbGatherParam& ubGatherParam)
+{
+    ubGatherParam.storageOffset = tilingParam.storageOffset;
+    ubGatherParam.ubSizePlatForm = tilingParam.ubSizePlatForm;
+    for (uint32_t i = 0; i < ubGatherParam.outDimNum; i++) {
+        ubGatherParam.sizeArr[i] = outSize[i];
+        ubGatherParam.strideArr[i] = outStride[i];
+    }
+
+    // 当coreInnerAxisTailFactor大于coreInnerAxisFactor时，此结果非预期
+    ubGatherParam.idxStrideArr[ubGatherParam.tilingAxisIdx] =
+        static_cast<uint32_t>(Ops::Base::CeilDiv(outSize[ubGatherParam.tilingAxisIdx],
+        static_cast<int64_t>(ubGatherParam.mainBlockUbParam.innerAxisFactor)));  
+    for (int32_t i = ubGatherParam.tilingAxisIdx - 1; i >= 0; i--) {
+        ubGatherParam.idxStrideArr[i] = ubGatherParam.idxStrideArr[i + 1] * outSize[i];
+    }
+}
+
 inline static void MoveAlignForAsStrided(
     AsStridedTilingParam& tilingParam, gert::Shape outSize, gert::Shape outStride, AsStridedTilingData& tiling)
 {
@@ -303,9 +795,10 @@ inline static void MoveAlignForAsStrided(
 
 inline static bool CheckDualCut(gert::Shape& outStride, const AsStridedTilingParam& tilingParam)
 {
-    // 条件1：最小的OutStrided 小于64Byte
-    // 条件2：单切分內沒有包含所有小于等于64Byte的轴
-    // 条件3：单切分內的轴包含了所有小于等于64Byte的轴，最小的轴沒有完全放进UB，且该维度小于等于128Byte
+    // 条件1：UB切分轴的Strided最小且小于等于64Byte
+    // 条件2：UB切分轴左侧包含stride小于等于64B的轴
+    // 以上条件为或的关系
+
     int dimNums = outStride.GetDimNum();
     uint32_t minimumStrideAxisIdx = -1;
     int64_t minimumStridedByte = 0xFFFFFFFF;
@@ -317,20 +810,17 @@ inline static bool CheckDualCut(gert::Shape& outStride, const AsStridedTilingPar
             minimumStrideAxisIdx = i;
         }
     }
-    OP_CHECK_IF(
-        (tilingParam.sizeofDtype * minimumStridedByte >= DUAL_CUT_CONDITION),
-        OP_LOGW("CheckDualCut", "Case#1: minimumStride >= 64 Byte, no need to do dual cut!"), return false);
 
-    for (uint32_t i = 0; i < tilingParam.tilingAxisIdx; i++) {
-        OP_CHECK_IF(
-            (byteStrides[i] <= DUAL_CUT_CONDITION),
-            OP_LOGW("CheckDualCut", "Case#2: Sole cut outer axis have axis stride smaller than 64 Byte, do dual cut"),
-            return true);
-    }
     OP_CHECK_IF(
-        ((minimumStrideAxisIdx == tilingParam.tilingAxisIdx) && (minimumStridedByte <= 128)),
-        OP_LOGW("CheckDualCut", "Case#3: Minimum Stride Axis cutted by Sole cut and smaller than 128B, do dual cut"),
+        ((minimumStrideAxisIdx == tilingParam.tilingAxisIdx) && (minimumStridedByte <= DUAL_CUT_CONDITION2)),
+        OP_LOGW("CheckDualCut", "Case#1: Minimum Stride Axis cutted by Sole cut and smaller than 128B, do dual cut"),
         return true);
+    
+    for (uint32_t i = 0; i < tilingParam.tilingAxisIdx; i++) {
+        OP_CHECK_IF((byteStrides[i] <= DUAL_CUT_CONDITION1),
+        OP_LOGW("CheckDualCut", "Case#2: Sole cut outer axis have axis stride smaller than 64 Byte, do dual cut"),
+        return true);
+    }
 
     return false;
 }
@@ -368,12 +858,87 @@ inline static void SetTilingDataForDualCutting(AsStridedTilingParam& tilingParam
     tilingParam.nddmaTailLoop[3] = seeker.cutAxisTail02;
 }
 
-ge::graphStatus NDDMAForAsStrided(
-    gert::TilingContext* context, AsStridedTilingParam& tilingParam, gert::Shape outSize, gert::Shape outStride,
+void ProcessB64Data(gert::Shape& outSize, gert::Shape& outStride, AsStridedTilingParam& tilingParam) 
+{
+    auto outShapeSize = outSize.GetDimNum();
+    auto outStrideSize = outStride.GetDimNum();
+
+    // 情况一：不需要进行处理：
+    OP_CHECK_IF(
+        (outShapeSize < TILING_NDDMA_LEN),
+        OP_LOGD("as_trided", "the outShape size is less 5, do not process"), return);
+    
+    OP_CHECK_IF(
+        (outShapeSize >= TILING_ARRAY_LEN - 2),
+        OP_LOGD("as_trided", "the outShape size is more than or equal 8, do not process"), return);
+
+    // 情况二：最后一维stride不为1，并且shape大于等于5维，补充一维size=1, stride=1，然后与情况三（最后一维stride为1）一致
+    if(outStrideSize > 0 && outStride[outStrideSize - 1] != 1) {
+        OP_LOGD("as_trided", "#case2: the last outStride is not 1, first add one dim and process");
+        outSize.SetDimNum(outShapeSize + 1);
+        outSize.SetDim(outShapeSize, 1);
+        outStride.SetDimNum(outStrideSize + 1);
+        outStride.SetDim(outStrideSize, 1);
+    }
+
+    // 情况二和情况三
+    OP_LOGD("as_trided", "#case2 or case3: the last outStride is 1 now, to process");
+    tilingParam.sizeofDtype = INPUT_DTYPE_B32;
+    tilingParam.tilingKey = INPUT_DTYPE_B32;
+    tilingParam.ubSize = (tilingParam.ubSizePlatForm / BUFFER_NUM) / tilingParam.sizeofDtype;
+    outShapeSize = outSize.GetDimNum();
+    outStrideSize = outStride.GetDimNum();
+    for(size_t i = 0; i < outStrideSize - 1; i++) {
+        outStride[i] *= 2;
+    }
+    outSize[outShapeSize - 1] *= 2;
+    tilingParam.storageOffset *= 2;
+
+    return;
+}
+
+static bool IsStrideAffect(const AsStridedTilingParam& tilingParam, gert::Shape outStride, const DualCutAxisSeeker& seeker) 
+{
+    // 条件一，双切分后的stride小于64B的多于单切分
+    // 条件二，单切分轴的右侧大的stride更靠近尾轴，假设尾轴之前存在stride小于尾轴，排序的影响
+
+    int32_t singleStrideMore64 = 0;
+    int32_t dualStrideMore64 = 0;
+    bool singleConditionTailMore64 = false;
+    bool singleConditionNotTailLess64 = false;
+
+    OP_CHECK_IF(
+        (outStride.GetDimNum() == 0),
+        OP_LOGE("as_trided", "the outStride is empty"), return false);
+
+    if((outStride[outStride.GetDimNum() - 1] * tilingParam.sizeofDtype) > DUAL_CUT_CONDITION1) {
+        singleConditionTailMore64 = true;
+    }
+
+    for(size_t i = tilingParam.tilingAxisIdx; i < outStride.GetDimNum(); i++) {
+        if((outStride[i] * tilingParam.sizeofDtype) > DUAL_CUT_CONDITION1) {
+            singleStrideMore64++;
+        } else if(i != outStride.GetDimNum() - 1) {
+            singleConditionNotTailLess64 =  true;
+        }
+    }
+
+    for(size_t i = 0; i < seeker.ubAxis.size(); i++) {
+        if((seeker.ubInStride[SHAPE_NDDMA_LEN - seeker.ubAxis.size() + i] * tilingParam.sizeofDtype) > DUAL_CUT_CONDITION1) {
+            dualStrideMore64++;
+        }
+    }
+    
+    OP_LOGD(
+        "As_Strided", "dualStrideMore64: %d, singleStrideMore64 : %d, singleConditionTailMore64 : %d, singleConditionNotTailLess64 : %d", 
+            dualStrideMore64, singleStrideMore64, singleConditionTailMore64, singleConditionNotTailLess64);
+    
+    return ( (dualStrideMore64 < singleStrideMore64) || (singleConditionTailMore64 && singleConditionNotTailLess64) );
+}
+
+ge::graphStatus AsStridedTilingClass::SingleCutOfNDDMAForAsStrided(AsStridedTilingParam& tilingParam, gert::Shape outSize, gert::Shape outStride,
     AsStridedTilingData& tiling)
 {
-    OP_LOGD(context, "Enter SingleTilingForAsStrided");
-
     auto outShapeSize = outSize.GetDimNum();
     auto outStrideSize = outStride.GetDimNum();
     if (outStrideSize > TILING_NDDMA_LEN) {
@@ -385,6 +950,7 @@ ge::graphStatus NDDMAForAsStrided(
             tilingParam.nddmaSrcStride[i + TILING_NDDMA_LEN - outStrideSize] = outStride[i];
         }
     }
+
     // to find tiling axis
     for (int32_t i = outShapeSize - 1; i >= 0; i--) {
         tilingParam.curAxisFactor = outSize[i] * tilingParam.preSize;
@@ -408,7 +974,7 @@ ge::graphStatus NDDMAForAsStrided(
                 tilingParam.tilingFlag = 1;
                 break;
             }
-            // 0.9: Priority schemes with average UB usage >90%
+            // 0.9: Priority schemes with average UB usage > 90%
             for (uint32_t j = tilingParam.ubSize; j >= (tilingParam.ubSize * 0.9); j--) {
                 if ((tilingParam.curAxisFactor % j) == 0) {
                     tilingParam.outerAxisFactor = tilingParam.curAxisFactor / j;
@@ -417,7 +983,7 @@ ge::graphStatus NDDMAForAsStrided(
                         tilingParam.innerAxisFactor = outSize[i] / tilingParam.outerAxisFactor;
                         tilingParam.tilingFlag = 1;
                         tilingParam.ubFactor = j;
-                        tiling.set_ubFactor(tilingParam.ubFactor);
+                        tiling.ubFactor = tilingParam.ubFactor;
                         break;
                     }
                 }
@@ -435,7 +1001,7 @@ ge::graphStatus NDDMAForAsStrided(
                 tilingParam.ubFactor = tilingParam.preSize * tilingParam.innerAxisFactor;
                 tilingParam.ubFactorTail = tilingParam.preSize * tilingParam.innerAxisFactorTail;
                 tilingParam.tilingFlag = 1;
-                tiling.set_ubFactor(tilingParam.ubFactor);
+                tiling.ubFactor = tilingParam.ubFactor;
             }
             tilingParam.axisOutTotalFactor = tilingParam.outerAxisFactor;
             for (uint32_t j = 0; j < tilingParam.tilingAxisIdx; j++) {
@@ -483,10 +1049,32 @@ ge::graphStatus NDDMAForAsStrided(
             tilingParam.innerAxisNum = outShapeSize;
             tilingParam.blockNum = 1;
             MergeAxisAfterTiling(tiling, tilingParam, outSize);
-            tiling.set_ubFactor(tilingParam.curAxisFactor);
+            tiling.ubFactor = tilingParam.curAxisFactor;
         }
     }
 
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus AsStridedTilingClass::NDDMAForAsStrided(
+    gert::TilingContext* context, AsStridedTilingParam& tilingParam, gert::Shape outSize, gert::Shape outStride,
+    AsStridedTilingData& tiling)
+{
+    OP_LOGD(context, "Enter SingleTilingForAsStrided");
+
+    AsStridedTilingParam tempTilingParam = tilingParam; //先保存
+
+    // stride all zero
+    if (IsAllStridesZero(outStride)) {
+        SetAllStridesZeroTilingParam(context, outSize, tilingParam);
+        SetZeroStrideTilingData(context, tilingParam);
+        tilingParam.tilingKey = ALL_STRIDES_ZERO_KEY;
+        return ge::GRAPH_SUCCESS; 
+    }
+
+    SingleCutOfNDDMAForAsStrided(tilingParam, outSize,  outStride, tiling);
+
+    // move_align
     tilingParam.movealignFlag = IsMoveAlign(outSize, outStride, tilingParam);
     OP_LOGD("As_Strided", "MovealignFlag: %u", tilingParam.movealignFlag);
     if (tilingParam.movealignFlag) {
@@ -495,14 +1083,54 @@ ge::graphStatus NDDMAForAsStrided(
         return ge::GRAPH_SUCCESS;
     }
 
+    // UB gather
+    if (IsUbGather(outSize, tilingParam)) {
+        AsStridedUbGatherParam ubGatherParam;
+        ComputeUbGatherParam(context, outSize, outStride, tilingParam, ubGatherParam);
+        if (CheckBndryForUint16GatherIdx(outSize, outStride, tilingParam, ubGatherParam)) {
+            SetUbGatherTilingParam(outSize, outStride, tilingParam, ubGatherParam);
+            SetWithGatherTilingData(context, ubGatherParam);
+            tilingParam.blockNum = ubGatherParam.blockNum;
+            tilingParam.tilingKey = WITH_GATHER_KEY;
+            return ge::GRAPH_SUCCESS;
+        } else {
+            OP_LOGD("As_Strided", "Exit ubGather template, because atgher index exceeds uint16 boundary.");
+        }
+    }
+
+    // simt
+    if (IsSmallShape(outSize, tilingParam.sizeofDtype)) {
+        SetSimtTilingParam(context, outSize, outStride, tilingParam);
+        SetSimtTilingData(context, tilingParam);
+        tilingParam.tilingKey = SIMT_KEY;
+        return ge::GRAPH_SUCCESS; 
+    }
+
+    // 走NDDMA时对b64数据进行处理
+    if(tilingParam.sizeofDtype == INPUT_DTYPE_B64) {
+        if(outSize.GetDimNum() < TILING_NDDMA_LEN) {
+            return ge::GRAPH_SUCCESS;
+        }
+        tilingParam = tempTilingParam;
+        ProcessB64Data(outSize, outStride, tilingParam);
+        // 重新进行单切分
+        SingleCutOfNDDMAForAsStrided(tilingParam, outSize,  outStride, tiling);
+        return ge::GRAPH_SUCCESS;
+    }
+
+    auto outShapeSize = outSize.GetDimNum();
+    auto outStrideSize = outStride.GetDimNum();
+
+    // DualCut
     tilingParam.dualCutFlag = CheckDualCut(outStride, tilingParam);
     bool dualFlag = (tilingParam.dualCutFlag) && (tilingParam.numCore > 0) && (tilingParam.tilingFlag != 0);
-    OP_LOGI(
+    OP_LOGD(
         "As_Strided", "dualFlag: %d, dualCutFlag = %d, numCore = %u, tilingFlag = %u", dualFlag,
         tilingParam.dualCutFlag, tilingParam.numCore, tilingParam.tilingFlag);
+    
     if (dualFlag) {
         int64_t shape[outShapeSize];
-        int64_t strides[outShapeSize];
+        int64_t strides[outStrideSize];
         for (uint32_t i = 0; i < outShapeSize; i++) {
             shape[i] = outSize.GetDim(i);
             strides[i] = outStride.GetDim(i);
@@ -510,93 +1138,109 @@ ge::graphStatus NDDMAForAsStrided(
 
         DualCutAxisSeeker seeker(shape, strides, outShapeSize, tilingParam.sizeofDtype);
         bool cutSuccess = seeker.FindDualCutAxis(tilingParam.ubSizePlatForm, BUFFER_NUM);
+        OP_LOGD(
+        "As_Strided", "DualCutSuccess: %d", cutSuccess);
         if (cutSuccess) {
             seeker.GenTilingData();
             seeker.ComputeBlockTiling(tilingParam.numCore);
             seeker.PrintDebug();
+
+            int64_t dualTileSize = tilingParam.sizeofDtype; // 双切分tileSize
+            for (int64_t i = 0; i < TILING_NDDMA_LEN; i++) {
+                dualTileSize *= static_cast<int64_t>(seeker.ubShape[i]);
+            }
+
+            int64_t singleTileSize = tilingParam.sizeofDtype;  // 单切分tileSize
+            for (int64_t i = 0; i < TILING_NDDMA_LEN; i++) {
+                singleTileSize *= static_cast<int64_t>(tilingParam.nddmaLoop[i]);
+            }
+
+            bool singleTailMoreDualTail = static_cast<int32_t>(tilingParam.nddmaLoop[TILING_NDDMA_LEN - 1]) > seeker.ubShape[TILING_NDDMA_LEN - 1];   // 单切分尾轴大于双切分尾轴，否则只可能相等
+            bool isStrideAffect = IsStrideAffect(tilingParam, outStride, seeker); // stride对单双切分是否有影响
+            bool dualTileSizeSatifyCondition = dualTileSize >= singleTileSize || dualTileSize >= DUAL_CUT_CONDITION3; // 双切分是否满足基本的搬运tileSize，更好的利用搬运带宽
+
+            if(!dualTileSizeSatifyCondition) {
+                OP_LOGD(
+                    "As_Strided", "dualTileSizeSatifyCondition: %d, dualTileSize = %ld, singleTileSize = %ld", dualTileSizeSatifyCondition, dualTileSize, singleTileSize);
+                return ge::GRAPH_SUCCESS;
+            }
+            
+            if(!isStrideAffect && !singleTailMoreDualTail) { // stride对搬运无影响并且单切分的尾轴不大于双切分，考虑连续搬出，走单切分方式
+                OP_LOGD(
+                    "As_Strided", "isStrideAffect: %d, singleTailMoreDualTail = %d", isStrideAffect, singleTailMoreDualTail);
+                return ge::GRAPH_SUCCESS;
+            }
+
             tilingParam.tilingKey = DUAL_CUT_KEY;
             SetTilingDataForDualCutting(tilingParam, seeker);
-
-            tiling.set_gmOutStride(tilingParam.gmOutStride);
-
+            for(int64_t idx = 0; idx < TILING_ARRAY_LEN; idx++) {
+                tiling.gmOutStride[idx] = tilingParam.gmOutStride[idx];
+            }
             return ge::GRAPH_SUCCESS;
         }
     }
     return ge::GRAPH_SUCCESS;
 }
 
-bool CheckInputInfo(gert::Shape outSize, gert::Shape outStride, const gert::Shape& xShape, int64_t storageOffset)
+bool CheckInputInfo(gert::TilingContext *context, gert::Shape outSize, gert::Shape outStride, const gert::Shape& xShape,
+                    AsStridedTilingParam& tilingParam)
 {
     uint32_t requiredStorageSize = 0;
     uint32_t originalTensorStorageSize = 1;
     for (size_t i = 0; i < outSize.GetDimNum(); i++) {
+        OP_CHECK_IF(outSize[i] < 0,
+                    OP_LOGE(context->GetNodeName(),
+                    "The output size must > 0"), return false);
+        
+        OP_CHECK_IF(outStride[i] < 0,
+                    OP_LOGE(context->GetNodeName(),
+                    "The outStride must > 0"), return false);
+        
         requiredStorageSize += (outSize[i] - 1) * outStride[i];
     }
     for (uint32_t i = 0; i < xShape.GetDimNum(); i++) {
+        OP_CHECK_IF(xShape[i] < 0,
+                    OP_LOGE(context->GetNodeName(),
+                    "The input size must > 0"), return false);
         originalTensorStorageSize *= xShape.GetDim(i);
     }
-    if ((storageOffset + requiredStorageSize) >= originalTensorStorageSize) {
-        return false;
-    }
+
+    OP_CHECK_IF((tilingParam.storageOffset + requiredStorageSize) >= originalTensorStorageSize,
+                    OP_LOGE(context->GetNodeName(),
+                    "The output element is out of input range!"), return false);
+    
+    tilingParam.inputSize = originalTensorStorageSize;
     return true;
 }
 
-ge::graphStatus TilingForAsStridedOfAsc(gert::TilingContext* context, uint32_t maxCoreNum, uint32_t ubSizePlatform)
+ge::graphStatus AsStridedTilingClass::TilingForAsStridedOfAsc(gert::TilingContext *context, uint32_t maxCoreNum, uint32_t ubSizePlatform,
+                                        AsStridedRunInfo& run_info, int64_t storageOffset)
 {
     OP_LOGD("TilingForAsStridedOfAsc", "Enter TilingForAsStridedOfAsc");
 
-    gert::Shape outSize;
-    gert::Shape outStride;
     AsStridedTilingParam tilingParam;
     AsStridedTilingData tilingData;
 
     tilingParam.numCore = maxCoreNum;
     tilingParam.ubSizePlatForm = ubSizePlatform;
+    tilingParam.storageOffset = storageOffset;
     auto xTensorShape = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xTensorShape);
     const gert::Shape& xShape = xTensorShape->GetStorageShape();
-
-    OP_CHECK_IF(
-        !Ops::Base::GetConstIntToShape(context, IN_SIZE, outSize),
-        OP_LOGE(context->GetNodeName(), "Get const of size failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        !Ops::Base::GetConstIntToShape(context, IN_STRIDE, outStride),
-        OP_LOGE(context->GetNodeName(), "Get const of stride failed"), return ge::GRAPH_FAILED);
-    if (Ops::Base::GetConstInt(context, IN_OFFSET, tilingParam.storageOffset)) {
-        OP_LOGD(context->GetNodeName(), "The storageOffset is const");
-        OP_CHECK_IF(
-            tilingParam.storageOffset < 0,
-            OP_LOGE(context->GetNodeName(), "The storageOffset cannot be negative value! "), return ge::GRAPH_FAILED);
-    } else {
-        OP_LOGD(context->GetNodeName(), "The storageOffset is not const, will use default value 0");
-        tilingParam.storageOffset = 0;
-    }
-    OP_CHECK_IF(
-        outSize.GetDimNum() == 0, OP_LOGE(context->GetNodeName(), "The output size dim is 0!"),
-        return ge::GRAPH_FAILED);
-
-    OP_CHECK_IF(
-        outSize.GetDimNum() > VALID_DIM,
-        OP_LOGE(context->GetNodeName(), "The output size dim is larger than 8, the max dim is 8!"),
-        return ge::GRAPH_FAILED);
-
-    OP_CHECK_IF(
-        outSize.GetDimNum() != outStride.GetDimNum(),
-        OP_LOGE(
-            context->GetNodeName(), "The dimension count of size and stride should be same! But %zu Vs %zu",
-            outSize.GetDimNum(), outStride.GetDimNum()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(run_info.out_size.GetDimNum() > VALID_DIM, OP_LOGE(context->GetNodeName(), 
+                                    "The output size dim is larger than 8, the max dim is 8!"), return ge::GRAPH_FAILED);
 
     // To check input data can cover output
-    OP_CHECK_IF(
-        !CheckInputInfo(outSize, outStride, xShape, tilingParam.storageOffset),
-        OP_LOGE(context->GetNodeName(), "The output element is out of input range!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!CheckInputInfo(context, run_info.out_size, run_info.out_stride, xShape, tilingParam),
+                    OP_LOGE(context->GetNodeName(),
+                    "The input info check failed!"), return ge::GRAPH_FAILED);
 
-    for (uint32_t i = 0; i < outSize.GetDimNum(); i++) {
-        OP_CHECK_IF(
-            outSize.GetDim(i) == 0, OP_LOGE(context->GetNodeName(), "The output size has 0!"), return ge::GRAPH_FAILED);
+    if (run_info.out_size.GetShapeSize() == 0) {
+        context->SetBlockDim(1);
+        context->SetTilingKey(EMPTY_TENSOR_KEY);
+        OP_LOGI("As_Strided", "Output is an empty tensor, return.");
+        return ge::GRAPH_SUCCESS;
     }
-
     auto xTensorType = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xTensorType);
     auto dataType = xTensorType->GetDataType();
@@ -608,14 +1252,13 @@ ge::graphStatus TilingForAsStridedOfAsc(gert::TilingContext* context, uint32_t m
     tilingParam.tilingKey = tilingTypeKeyMap[dataType];
 
     ge::graphStatus resOfTiling = ge::GRAPH_FAILED;
-    resOfTiling = NDDMAForAsStrided(context, tilingParam, outSize, outStride, tilingData);
+    resOfTiling = NDDMAForAsStrided(context, tilingParam, run_info.out_size, run_info.out_stride, tilingData);
     OP_CHECK_IF(
         resOfTiling != ge::GRAPH_SUCCESS, OP_LOGE(context->GetNodeName(), "Tiling fail."), return ge::GRAPH_FAILED);
 
-    SetTilingData(tilingData, tilingParam);
-    OP_CHECK_IF(
-        AsStridedSetTilingData(context, tilingData) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "AsStridedSetTilingData set tiling data fail."), return ge::GRAPH_FAILED);
+    resOfTiling = SetTilingData(context, tilingData, tilingParam);
+    OP_CHECK_IF(resOfTiling != ge::GRAPH_SUCCESS,
+        OP_LOGE(context->GetNodeName(), "SetTilingData fail."), return ge::GRAPH_FAILED);
 
     size_t usrSize = 0;
     size_t sysWorkspaceSize = 16 * 1024 * 1024;
@@ -623,8 +1266,77 @@ ge::graphStatus TilingForAsStridedOfAsc(gert::TilingContext* context, uint32_t m
     currentWorkspace[0] = usrSize + sysWorkspaceSize;
     context->SetBlockDim(tilingParam.blockNum);
     context->SetTilingKey(tilingParam.tilingKey);
-
+    OP_LOGI("As_Strided", "TilingForAsStridedOfAsc success, blockNum:%u, tilingKey:%u.",
+            tilingParam.blockNum, tilingParam.tilingKey);
     return ge::GRAPH_SUCCESS;
 }
+
+static ge::graphStatus TilingForAsStridedArch35(gert::TilingContext* context)
+{
+    OP_LOGI(context->GetNodeName(), "[math] AsStrided tiling running begin");
+    const AsStridedCompileInfo* compile_info = reinterpret_cast<const AsStridedCompileInfo*>(context->GetCompileInfo());
+    OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
+
+    auto runtime_x_shape_ptr = context->GetInputShape(IN_X);
+    OP_CHECK_NULL_WITH_CONTEXT(context, runtime_x_shape_ptr);
+    auto x_shape = Ops::Math::OpTiling::EnsureNotScalar(runtime_x_shape_ptr->GetStorageShape());
+
+    // get const value of storage_offset
+    int64_t storage_offset = 0;
+    if (Ops::Base::GetConstInt(context, IN_OFFSET, storage_offset)) {
+      OP_LOGI(context->GetNodeName(), "the storage_offset is const, get value is %ld", storage_offset);
+      OP_CHECK_IF(
+          storage_offset < 0,
+          OP_LOGE(context->GetNodeName(),
+                                          "the storage_offset cannot be negative value! but is %ld", storage_offset),
+          return ge::GRAPH_FAILED);
+    } else {
+      OP_LOGI(context->GetNodeName(), "the storage_offset is not const, will use default value 0");
+      storage_offset = 0;
+    }
+
+    AsStridedRunInfo run_info;
+    OP_CHECK_IF(!GetSizeAndStride(context, run_info),
+                    OP_LOGE(context->GetNodeName(), "get const of Size/Stride failed"),
+                    return ge::GRAPH_FAILED);
+    
+    OP_LOGI("AsStridedOutSizeInfoMath", "the out size is:[%s].", Ops::Base::ToString(run_info.out_size).c_str());
+    OP_LOGI("AsStridedOutStridedInfoMath", "the out strided is:[%s].", Ops::Base::ToString(run_info.out_stride).c_str());
+    OP_LOGI("AsStridedStorageOffset", "the storage offset is:[%ld].", storage_offset);
+
+    // do merge
+    MergeAxis(run_info);
+    OP_LOGI(context->GetNodeName(), "the input shape is:[%s].", Ops::Base::ToString(x_shape).c_str());
+    OP_LOGI(context->GetNodeName(), "the adjusted output shape is:[%s].", Ops::Base::ToString(run_info.out_size).c_str());
+    OP_LOGI(context->GetNodeName(), "the adjusted output stride is:[%s].", Ops::Base::ToString(run_info.out_stride).c_str());
+
+    uint32_t maxCoreNum = compile_info->maxCoreNum;
+    uint32_t ubSizePlatform = compile_info->ubSizePlatform;
+    AsStridedTilingClass tiling;
+    return tiling.TilingForAsStridedOfAsc(context, maxCoreNum, ubSizePlatform, run_info, storage_offset);
+}
+
+static ge::graphStatus TilingPrepareForAsStridedArch35(gert::TilingParseContext* context)
+{
+    auto compile_info = context->GetCompiledInfo<AsStridedCompileInfo>();
+    OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
+    OP_LOGD(context->GetNodeName(), "AscendC tiling is starting!");
+    auto platformInfo = context->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    compile_info->maxCoreNum = ascendcPlatform.GetCoreNumAiv();
+    OP_CHECK_IF(
+        (compile_info->maxCoreNum <= 0), OP_LOGE(context->GetNodeName(), "The core num is invalid."),
+        return ge::GRAPH_FAILED);
+    uint64_t ubSize;
+    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
+    compile_info->ubSizePlatform = static_cast<uint32_t>(ubSize);
+    OP_CHECK_IF(
+        (compile_info->ubSizePlatform <= 0), OP_LOGE(context->GetNodeName(), "The ubSize is invalid."),
+        return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP_OPTILING(AsStrided).Tiling(TilingForAsStridedArch35).TilingParse<AsStridedCompileInfo>(TilingPrepareForAsStridedArch35);
 
 } // namespace optiling
