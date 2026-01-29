@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License")
+ * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -25,12 +25,14 @@ extern "C" {
  * 算子功能：将输入tensor转换为指定的dtype类型。
  *
  * @param [in] self: npu
- * device侧的aclTensor，数据类型支持FLOAT16、FLOAT、FlOAT64、INT8、UINT8、INT16、INT32、INT64、BOOL。
+ * device侧的aclTensor，数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、
+ * BOOL、COMPLEX32、COMPLEX64、COMPLEX128、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT4_E2M1、FLOAT4_E1M2。
  * 支持非连续的Tensor，数据格式支持ND。
  * @param [in] dtype: 	host侧的aclDataType，输入tensor要转换的目标dtype。
  * @param [in] out: npu
- * device侧的aclTensor，数据类型支持FLOAT16、FLOAT、FlOAT64、INT8、UINT8、INT16、INT32、INT64、BOOL、
- * COMPLEX64、COMPLEX128。数据类型为dtype，shape与self相同，数据格式支持ND，且数据格式需要与self一致。
+ * device侧的aclTensor，数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、
+ * BOOL、COMPLEX32、COMPLEX64、COMPLEX128、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT4_E2M1、FLOAT4_E1M2、INT4。
+ * 输出tensor的数据类型由输入参数dtype指定，其shape与self相同，数据格式支持ND，且数据格式需要与self一致。
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
