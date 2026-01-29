@@ -44,15 +44,9 @@ static const std::initializer_list<DataType> OUTPUT_DTYPE_SUPPORT_LIST = {
 static const std::initializer_list<DataType> ASCEND910_DTYPE_SELFREF_LIST = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE};
 
-static const std::initializer_list<DataType> ASCEND950_DTYPE_SELFREF_LIST = {
-    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16};
-
-static bool CheckInplaceDtypeValid(aclTensor* selfRef)
+static bool CheckInplaceDtypeValid(const aclTensor* selfRef)
 {
     auto inplaceSupportList = GetDtypeSupportListV2(OUTPUT_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_SELFREF_LIST);
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
-        inplaceSupportList = ASCEND950_DTYPE_SELFREF_LIST;
-    }
     // 检查selfRef的数据类型是否在inplace atan算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(selfRef, inplaceSupportList, return false);
 
@@ -62,7 +56,7 @@ static bool CheckInplaceDtypeValid(aclTensor* selfRef)
 static aclnnStatus CheckParamsAtan(const aclTensor* input, const aclTensor* out)
 {
     // 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
-    auto supportList = GetDtypeSupportListV1(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST);
+    auto supportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST);
     CHECK_RET(CheckDtypeValid1In1Out(input, out, supportList, OUTPUT_DTYPE_SUPPORT_LIST), ACLNN_ERR_PARAM_INVALID);
     // 检查输入的数据的值是否合理
     CHECK_RET(CheckSameShape1In1Out(input, out), ACLNN_ERR_PARAM_INVALID);

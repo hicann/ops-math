@@ -25,7 +25,7 @@ extern "C" {
  * out_{i}=tan^{-1}(input_{i})
  * 参数描述：
  * @param [in]   input
- * 输入Tensor，数据类型支持FLOAT，BFLOAT16, FLOAT16，DOUBLE。支持非连续Tensor，数据格式支持ND。
+ * 输入Tensor，数据类型支持INT8，INT16，INT32，INT64，UINT8，BOOL，FLOAT，FLOAT16，DOUBLE，BFLOAT16。支持非连续Tensor，数据格式支持ND。
  * @param [in]   out
  * 输出Tensor，数据类型支持FLOAT，BFLOAT16, FLOAT16，DOUBLE。支持非连续Tensor，数据格式支持ND。
  * @param [out]  workspaceSize   返回用户需要在npu device侧申请的workspace大小。

@@ -26,10 +26,11 @@ namespace ge
 *
 *@par Inputs:
 * x: An ND or 5HD tensor. support 1D ~ 8D. Must be one of the following types:
-* bfloat16, float16, float32, float64, complex64, complex128.
+* int8, int16, int32, int64, uint8, bool, float32, float16, float64, bfloat16.
 *
 *@par Outputs:
-* y: A tensor. Has the same dtype as "x".
+* y: A tensor. Must be one of the following types:
+* float32, float16, float64, bfloat16.
 * The output of atan will lie within the invertible range of tan, i.e (-pi/2, pi/2).
 *
 *@par Third-party framework compatibility
