@@ -114,7 +114,10 @@
 | [aclnnInplaceFillTensor](../../conversion/fill/docs/aclnnInplaceFillTensor.md) | 对selfRef张量填充value， value是张量。                       | 默认确定性实现|                        
 | [aclnnInplaceMaskedFillScalar](../../conversion/masked_fill/docs/aclnnInplaceMaskedFillScalar.md) | 用value填充selfRef里面与mask矩阵中值为true的位置相对应的元素。 | 默认确定性实现|  
 | [aclnnInplaceMaskedFillTensor](../../conversion/masked_fill/docs/aclnnInplaceMaskedFillTensor.md) | 用value填充selfRef里面与mask矩阵中值为true的位置相对应的元素。 | 默认确定性实现|  
-| [aclnnInplaceOne](../../math/ones_like/docs/aclnnInplaceOne.md) | 返回形状和类型相同的张量，所有元素都设置为1。                | 默认确定性实现|                 
+| [aclnnInplaceNormalTensor](../../random/dsa_random_normal/docs/aclnnInplaceNormalTensor.md) | 使用mean和std的参数正态分布的元素进行填充张量。                | 默认确定性实现| 
+| [aclnnInplaceOne](../../math/ones_like/docs/aclnnInplaceOne.md) | 返回形状和类型相同的张量，所有元素都设置为1。                | 默认确定性实现|  
+| [aclnnInplaceRandomTensor](../../random/dsa_random_uniform/docs/aclnnInplaceRandomTensor.md) | 从[from, to-1]的离散均匀分布中采样的数填充selfRef张量。                | 默认确定性实现|     
+| [aclnnInplaceUniformTensor](../../random/dsa_random_uniform/docs/aclnnInplaceUniformTensor.md) | 生成[from, to)区间内离散均匀分布的随机数，并将其填充到selfRef张量中。                | 默认确定性实现|                 
 | [aclnnInplaceZero](../../math/zero_op/docs/aclnnInplaceZero.md) | 将selfRef张量填充为全零。                                    | 默认确定性实现|                                     
 | [aclnnIsClose](../../math/is_close/docs/aclnnIsClose.md)        | 返回一个带有布尔元素的新张量，判断给定的self和other是否彼此接近，如果值接近，则返回True，否则返回False。 | 默认确定性实现|  
 | [aclnnIsFinite](../../math/is_finite/docs/aclnnIsFinite.md)     | 判断张量中哪些元素是有限数值，即不是inf、-inf或nan。         | 默认确定性实现|          
