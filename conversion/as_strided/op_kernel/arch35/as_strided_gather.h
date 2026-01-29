@@ -34,7 +34,7 @@ class KernelAsStridedGather
 public:
     __aicore__ inline KernelAsStridedGather(){};
     __aicore__ inline void Init(GM_ADDR input, GM_ADDR outShape, GM_ADDR outStride, 
-                                GM_ADDR output, AsStridedWithGatherTilingData* tilingDataPtr);
+                                GM_ADDR output, const AsStridedWithGatherTilingData* tilingDataPtr);
     template <typename K>
     __aicore__ inline void CopyArray(const K *src, K *dst, int64_t size);
     __aicore__ inline uint16_t CeilDiv(uint32_t a, uint16_t b);
@@ -105,7 +105,7 @@ private:
 
 template <typename T>
 __aicore__ inline void KernelAsStridedGather<T>::Init(GM_ADDR input, GM_ADDR outShape, 
-    GM_ADDR outStride, GM_ADDR output, AsStridedWithGatherTilingData* tilingDataPtr)
+    GM_ADDR outStride, GM_ADDR output, const AsStridedWithGatherTilingData* tilingDataPtr)
 {
     blockIdx_ = GetBlockIdx();
     tdPtr_ = tilingDataPtr;

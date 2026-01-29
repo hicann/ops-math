@@ -1337,6 +1337,9 @@ static ge::graphStatus TilingPrepareForAsStridedArch35(gert::TilingParseContext*
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_OPTILING(AsStrided).Tiling(TilingForAsStridedArch35).TilingParse<AsStridedCompileInfo>(TilingPrepareForAsStridedArch35);
+IMPL_OP_OPTILING(AsStrided)
+    .Tiling(TilingForAsStridedArch35)
+    .TilingParse<AsStridedCompileInfo>(TilingPrepareForAsStridedArch35)
+    .TilingInputsDataDependency({IN_SIZE, IN_STRIDE, IN_OFFSET});
 
 } // namespace optiling
