@@ -98,7 +98,7 @@ static aclnnStatus GetWorkspaceSizeCommon(
 
     const aclTensor* floorResult = nullptr;
     if (IsIntegralType(self->GetDataType())) {
-        floorResult = self;
+        floorResult = selfContiguous;
     } else {
         // 调用l0算子Floor进行计算
         floorResult = l0op::Floor(selfContiguous, uniqueExecutor.get());
