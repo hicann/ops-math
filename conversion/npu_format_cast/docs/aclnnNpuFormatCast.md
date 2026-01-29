@@ -4,13 +4,20 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    ×     |
+| <term>Atlas 训练系列产品</term>                              |    ×     |
+
 
 ## 功能说明
 
 - **算子功能**：
-  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+  - <term>Ascend 950PR/Ascend 950DT</term>：
+    - 完成ND[数据格式](../../../docs/zh/context/数据格式.md)到指定C0大小的FRACTAL_NZ[数据格式](../../../docs/zh/context/数据格式.md)的转换功能，C0是FRACTAL_NZ[数据格式](../../../docs/zh/context/数据格式.md)最后一维的大小，C0由`additionalDtype`确定。
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
     - 完成ND←→[NZ](../../../docs/zh/context/数据格式.md)的转换功能。C0是[NZ](../../../docs/zh/context/数据格式.md)数据格式最后一维的大小。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast<aclDataType>additionalDtype)。
     - 完成NCDHW←→[NDC1HWC0](../../../docs/zh/context/数据格式.md)、NCDHW←→[FRACTAL_Z_3D](../../../docs/zh/context/数据格式.md)的转换功能。其中，C0与微架构强相关，该值等于cube单元的size，例如16。C1是将C维度按照C0切分：C1=C/C0， 若结果不整除，最后一份数据需要padding到C0。计算方法C0 = 32B srcDataType（例如FP16为2byte）
 - **计算流程**：`aclnnNpuFormatCastCalculateSizeAndFormat`根据输入张量srcTensor、数据类型`additionalDtype`和目标张量的数据格式dstFormat计算出转换后目标张量dstTensor的shape和实际数据格式，用于构造dstTensor，然后调用`aclnnNpuFormatCast`把srcTensor转换为实际数据格式的目标张量dstTensor。
@@ -29,46 +36,58 @@
 - **参数说明**
 
   - srcTensor(aclTensor*, 计算输入)：输入张量，Device侧的aclTensor，输入数据支持连续和[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：[数据格式](../../../docs/zh/context/数据格式.md)支持ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。数据类型支持INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32。当数据格式为ND时，支持的shape维度为[2, 6]。
+    - <term>Ascend 950PR/Ascend 950DT</term>：[数据格式](../../../docs/zh/context/数据格式.md)支持ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、NCL，数据类型支持INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16、FLOAT8_E4M3FN。支持的shape维度为[2, 6]。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：[数据格式](../../../docs/zh/context/数据格式.md)支持ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。数据类型支持INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32。当数据格式为ND时，支持的shape维度为[2, 6]。
   - dstFormat(int, 计算输入)：输出张量的数据格式。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：[数据格式](../../../docs/zh/context/数据格式.md)支持：ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。
+    - <term>Ascend 950PR/Ascend 950DT</term>：[数据格式](../../../docs/zh/context/数据格式.md)支持：ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、ACL_FORMAT_FRACTAL_NZ(29)。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：[数据格式](../../../docs/zh/context/数据格式.md)支持：ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。
 
   - additionalDtype(int, 计算输入)：转换为FRACTAL_NZ数据格式时，推断C0大小所使用的基本数据类型。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：该参数仅支持取值srcTensor的数据类型。
+    - <term>Ascend 950PR/Ascend 950DT</term>：支持的数据类型为ACL_FLOAT16(1)、ACL_BF16(27)、INT8(2)、ACL_FLOAT8_E4M3FN(36)。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：该参数仅支持取值srcTensor的数据类型。
 
   - dstShape(int64_t**, 出参)：用于输出dstTensor的shape数组的指针。该指针指向的内存由本接口申请，调用者释放。
 
   - dstShapeSize(uint64_t*, 出参)：用于输出dstTensor的shape数组大小的指针。
 
   - actualFormat(int*, 出参)：用于输出dstTensor实际数据格式的指针。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：当前输出[数据格式](../../../docs/zh/context/数据格式.md)为ACL_FORMAT_ND(2)、ACL_FORMAT_FRACTAL_NZ(29)、ACL_FORMAT_NCDHW(30)、ACL_FORMAT_NDC1HWC0(32)、ACL_FRACTAL_Z_3D(33)。
+    - <term>Ascend 950PR/Ascend 950DT</term>：当前输出为ACL_FORMAT_ND(2)、ACL_FORMAT_FRACTAL_NZ(29)、ACL_FORMAT_NCDHW(30)、ACL_FORMAT_NDC1HWC0(32)、ACL_FRACTAL_Z_3D(33)、ACL_FORMAT_FRACTAL_NZ_C0_16(50)、ACL_FORMAT_FRACTAL_NZ_C0_32(51)。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：当前输出[数据格式](../../../docs/zh/context/数据格式.md)为ACL_FORMAT_ND(2)、ACL_FORMAT_FRACTAL_NZ(29)、ACL_FORMAT_NCDHW(30)、ACL_FORMAT_NDC1HWC0(32)、ACL_FRACTAL_Z_3D(33)。
+
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
+
   入参校验，出现以下场景时报错：
   - 161001 (ACLNN_ERR_PARAM_NULLPTR)：
-  1、传入的srcTensor是空指针。
+    - 1、传入的srcTensor是空指针。
   - 161002 (ACLNN_ERR_PARAM_INVALID)：
-  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
-    1、srcTensor的数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D，数据类型非INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32。
-    2、dstFormat的数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D，数据类型非INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32。
-    3、additionalDtype的数据类型非srcTensor的数据类型。
-    4、srcTensor的view shape维度不在[2, 6]的范围。(ND→NZ时)
+    - <term>Ascend 950PR/Ascend 950DT</term>：
+      - 1、srcTensor的数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、NCL，数据类型非INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16、FLOAT8_E4M3FN。
+      - 2、dstFormat的数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、ACL_FORMAT_FRACTAL_NZ(29)。
+      - 3、additionalDtype的数据类型非ACL_FLOAT16(1)、ACL_BF16(27)、INT8(2)、ACL_FLOAT8_E4M3FN(36)。
+      - 4、srcTensor的view shape维度不在[2, 6]的范围。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
+      - 1、srcTensor的数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D，数据类型非INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32。
+      - 2、dstFormat的数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D，数据类型非INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32。
+      - 3、additionalDtype的数据类型非srcTensor的数据类型。
+      - 4、srcTensor的view shape维度不在[2, 6]的范围。(ND→NZ时)
   - 361001(ACLNN_ERR_RUNTIME_ERROR):
-  1、产品型号不支持。
-  2、转换格式不支持。
-  ```
+    - 1、产品型号不支持。
+    - 2、转换格式不支持。
+
 
 ## aclnnNpuFormatCastGetWorkspaceSize
 
 - **参数说明**
   - srcTensor(aclTensor*, 计算输入)：输入张量，Device侧的aclTensor，输入的数据只支持连续的Tensor。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：[数据格式](../../../docs/zh/context/数据格式.md)支持ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。数据类型支持：INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32。
+    - <term>Ascend 950PR/Ascend 950DT</term>：[数据格式](../../../docs/zh/context/数据格式.md)支持ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、NCL。数据类型支持：INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16、FLOAT8_E4M3FN。支持的shape维度为[2, 6]。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：[数据格式](../../../docs/zh/context/数据格式.md)支持ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。数据类型支持：INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32。
   - dstTensor(aclTensor*, 计算输入)：转换后的目标张量，Device侧的aclTensor，只支持连续的Tensor。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：[数据格式](../../../docs/zh/context/数据格式.md)支持ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。数据类型支持INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32。
+    - <term>Ascend 950PR/Ascend 950DT</term>：[数据格式](../../../docs/zh/context/数据格式.md)支持ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、ACL_FORMAT_FRACTAL_NZ(29)、ACL_FORMAT_FRACTAL_NZ_C0_16(50)、ACL_FORMAT_FRACTAL_NZ_C0_32(51)。数据类型支持INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16、FLOAT8_E4M3FN，支持的shape维度为[4, 8]，实际为srcTensor的shape维度加2。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：[数据格式](../../../docs/zh/context/数据格式.md)支持ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。数据类型支持INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32。
   - workspaceSize(uint64_t*, 出参)：需要在Device侧申请的workspace的大小。
   - executor(aclOpExecutor**, 出参)：包含算子计算流程的op执行器。
 
@@ -76,18 +95,21 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
   - 161001 (ACLNN_ERR_PARAM_NULLPTR)：
-  1、传入的srcTensor、dstTensor是空指针。
+    - 1、传入的srcTensor、dstTensor是空指针。
   - 161002 (ACLNN_ERR_PARAM_INVALID)：
-  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
-    1、srcTensor的数据类型非INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32，数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。
-    2、dstTensor的数据类型非INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32，数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。
-    3、srcTensor、dstTensor传入非连续的Tensor。
+    - <term>Ascend 950PR/Ascend 950DT</term>：
+      - 1、srcTensor的数据类型非INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16、FLOAT8_E4M3FN，数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、NCL。
+      - 2、dstTensor的数据类型非INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16、FLOAT8_E4M3FN，数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、ACL_FORMAT_FRACTAL_NZ(29)、ACL_FORMAT_FRACTAL_NZ_C0_16(50)、ACL_FORMAT_FRACTAL_NZ_C0_32(51)。
+      - 3、srcTensor、dstTensor传入非连续的Tensor。
+      - 4、srcTensor的view shape维度不在[2, 6]的范围，dstTensor的storage shape维度不在[4, 8]的范围。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
+      - 1、srcTensor的数据类型非INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32，数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。
+      - 2、dstTensor的数据类型非INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32，数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。
+      - 3、srcTensor、dstTensor传入非连续的Tensor。
   - 361001(ACLNN_ERR_RUNTIME_ERROR):
-  1、产品型号不支持。
-  ```
+    - 1、产品型号不支持。
 
 ## aclnnNpuFormatCast
 
@@ -107,44 +129,84 @@
 - 确定性计算：
   - aclnnNpuFormatCast默认确定性实现。
 输入和输出支持以下数据类型组合：
-当前不支持的特殊场景:
-- srcTensor的数据类型和additionalDtype相同，且类型为FLOAT16或BFLOAT16时，若维度表示为[k, n], 则k为1场景暂不支持。
-- 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
-- 当srcTensor的shape后两维任意一维度shape等于1场景，也不允许转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作, 包括transpose。
+  - <term>Ascend 950PR/Ascend 950DT</term>：
 
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+    - aclnnNpuFormatCastCalculateSizeAndFormat接口参数：
 
-  aclnnNpuFormatCastCalculateSizeAndFormat接口参数：
-  | srcTensor | dstFormat                 | additionalDtype              | actualFormat                    |
-  | --------- | ------------------------- | ---------------------------- | ------------------------------- |
-  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32      | ACL_FORMAT_FRACTAL_NZ(29) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32                 | ACL_FORMAT_FRACTAL_NZ(29)       |
-  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_ND(2) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FORMAT_ND(2) |
-  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_NCDHW(30) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FORMAT_NCDHW(30) |
-  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_NDC1HWC0(32) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FORMAT_NDC1HWC0(32) |
-  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FRACTAL_Z_3D(33) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FRACTAL_Z_3D(33) |
+    | srcTensor | dstFormat                 | additionalDtype              | actualFormat                    |
+    | --------- | ------------------------- | ---------------------------- | ------------------------------- |
+    | INT8      | ACL_FORMAT_FRACTAL_NZ(29) | ACL_INT8(2)                  | ACL_FORMAT_FRACTAL_NZ(29)       |
+    | INT32     | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT16(1)、ACL_BF16(27) | ACL_FORMAT_FRACTAL_NZ_C0_16(50) |
+    | FLOAT     | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT16(1)、ACL_BF16(27) | ACL_FORMAT_FRACTAL_NZ_C0_16(50) |
+    | FLOAT     | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT8_E4M3FN(36) | ACL_FORMAT_FRACTAL_NZ_C0_32(51) |
+    | FLOAT16      | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT16(1) | ACL_FORMAT_FRACTAL_NZ(29) |
+    | BFLOAT16     | ACL_FORMAT_FRACTAL_NZ(29) | ACL_BF16(27)   | ACL_FORMAT_FRACTAL_NZ(29) |
+    | FLOAT8_E4M3FN     | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT8_E4M3FN(36)   | ACL_FORMAT_FRACTAL_NZ(29) |
 
-  aclnnNpuFormatCastGetWorkspaceSize接口：
-  | srcTensor | dstTensor数据类型 | dstTensor数据格式               |
-  | --------- | ----------------- | ------------------------------- |
-  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32              | ACL_FORMAT_FRACTAL_NZ(29)       |
-  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32          | ACL_FORMAT_ND(2)       |
-  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32          | ACL_FORMAT_NCDHW(30)       |
-  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32          | ACL_FORMAT_NDC1HWC0(32)       |
-  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32          | ACL_FRACTAL_Z_3D(33)       |
+    - aclnnNpuFormatCastGetWorkspaceSize接口：
 
-  C0计算方法：$C0=\frac{32B}{size\ of\ srcTensor的基础类型}$
+    | srcTensor | dstTensor数据类型 | dstTensor[数据格式](../../../docs/zh/context/数据格式.md)               |
+    | --------- | ----------------- | ------------------------------- |
+    | INT8      | INT8              | ACL_FORMAT_FRACTAL_NZ(29)       |
+    | INT32     | INT32             | ACL_FORMAT_FRACTAL_NZ_C0_16(50) |
+    | FLOAT     | FLOAT             | ACL_FORMAT_FRACTAL_NZ_C0_16(50)/ACL_FORMAT_FRACTAL_NZ_C0_32(51) |
+    | FLOAT16   | FLOAT16           | ACL_FORMAT_FRACTAL_NZ(29)       |
+    | BFLOAT16  | BFLOAT16          | ACL_FORMAT_FRACTAL_NZ(29)       |
+    | FLOAT8_E4M3FN  | FLOAT8_E4M3FN          | ACL_FORMAT_FRACTAL_NZ(29)       |
+
+    - C0计算方法：$C0=\frac{32B}{size\ of\ additionalDtype}$
+
+    | additionalDtype | C0 |
+    | --------------- | -- |
+    | ACL_INT8(2)     | 32 |
+    | ACL_FLOAT16(1)  | 16 |
+    | ACL_BF16(27)    | 16 |
+    | ACL_FLOAT8_E4M3FN(36)    | 32 |
+
+    - 当前不支持的特殊场景:
+      - srcTensor的数据类型和additionalDtype相同，且类型为FLOAT16或BFLOAT16时，若维度表示为[k, n], 则k为1场景暂不支持。
+      - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
+      - 当srcTensor的shape后两维任意一维度shape等于1场景，也不允许转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作, 包括transpose。
+
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
+
+    - aclnnNpuFormatCastCalculateSizeAndFormat接口参数：
+
+    | srcTensor | dstFormat                 | additionalDtype              | actualFormat                    |
+    | --------- | ------------------------- | ---------------------------- | ------------------------------- |
+    | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32      | ACL_FORMAT_FRACTAL_NZ(29) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32                 | ACL_FORMAT_FRACTAL_NZ(29)       |
+    | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_ND(2) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FORMAT_ND(2) |
+    | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_NCDHW(30) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FORMAT_NCDHW(30) |
+    | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_NDC1HWC0(32) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FORMAT_NDC1HWC0(32) |
+    | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FRACTAL_Z_3D(33) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FRACTAL_Z_3D(33) |
+
+
+    - aclnnNpuFormatCastGetWorkspaceSize接口：
+
+    | srcTensor | dstTensor数据类型 | dstTensor数据格式               |
+    | --------- | ----------------- | ------------------------------- |
+    | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32              | ACL_FORMAT_FRACTAL_NZ(29)       |
+    | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32          | ACL_FORMAT_ND(2)       |
+    | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32          | ACL_FORMAT_NCDHW(30)       |
+    | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32          | ACL_FORMAT_NDC1HWC0(32)       |
+    | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32          | ACL_FRACTAL_Z_3D(33)       |
+
+    - C0计算方法：$C0=\frac{32B}{size\ of\ srcTensor的基础类型}$
+
     | srcTensor的基础类型 | C0 |
     | --------------- | -- |
     | ACL_FLOAT(0)、ACL_INT32(3)、ACL_UINT32(8)     | 8 |
     | ACL_FLOAT16(1)、ACL_BF16(27)  | 16 |
     | ACL_INT8(2)、ACL_UINT8(4)    | 32 |
 
-当前不支持的特殊场景:
-- 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
-- 不允许转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作, 包括transpose。
+
+    - 当前不支持的特殊场景:
+      - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
+      - 不允许转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作, 包括transpose。
 
 ## 调用示例
 
+- <term>Ascend 950PR/Ascend 950DT</term>：
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
   ```Cpp
   #include <iostream>
@@ -337,7 +399,7 @@
   }
   ```
 
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
   ```c++
   #include <iostream>
