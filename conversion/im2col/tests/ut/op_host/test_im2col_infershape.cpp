@@ -446,7 +446,76 @@ TEST_F(Im2colInfershapeTest, im2col_infer_shape_ParamCheck_effect_shape_gt_paddi
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
 }
 
-TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_calcpad)
+TEST_F(Im2colInfershapeTest, im2col_infer_shape_getInput_succ_with_attrSize1)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Im2col",
+        {
+            {{{10, 20, 30, 40}, {10, 20, 30, 40}}, ge::DT_FLOAT, ge::FORMAT_NCHW},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_NCHW},
+        },
+        {
+            {"ksizes", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({2, 2})},
+            {"strides", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({3})},
+            {"dilations", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({4})},
+            {"padding_mode", Ops::Math::AnyValue::CreateFrom<std::string>("CALCULATED")},
+            {"pads", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({5})},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {10, 80, 12, 16},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(Im2colInfershapeTest, im2col_infer_shape_getInput_succ_with_attrSize2)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Im2col",
+        {
+            {{{10, 20, 30, 40}, {10, 20, 30, 40}}, ge::DT_FLOAT, ge::FORMAT_NCHW},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_NCHW},
+        },
+        {
+            {"ksizes", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({2, 3})},
+            {"strides", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({4, 5})},
+            {"dilations", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({6, 7})},
+            {"padding_mode", Ops::Math::AnyValue::CreateFrom<std::string>("CALCULATED")},
+            {"pads", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({8, 9})},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {10, 120, 10, 9},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(Im2colInfershapeTest, im2col_infer_shape_getInput_succ_with_attrSize4)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Im2col",
+        {
+            {{{1, 1, 1, 1}, {1, 1, 1, 1}}, ge::DT_FLOAT, ge::FORMAT_NCHW},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_NCHW},
+        },
+        {
+            {"ksizes", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1, 1})},
+            {"strides", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1})},
+            {"dilations", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1})},
+            {"padding_mode", Ops::Math::AnyValue::CreateFrom<std::string>("CALCULATED")},
+            {"pads", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1, 2, 3, 4})},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {1, 1, 4, 8},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_calcpad)
 {
     gert::InfershapeContextPara infershapeContextPara(
         "Im2col",
@@ -469,7 +538,7 @@ TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_calcpad)
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_samepad_stride1)
+TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_samepad_stride1)
 {
     gert::InfershapeContextPara infershapeContextPara(
         "Im2col",
@@ -492,7 +561,7 @@ TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_samepad_stride1)
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_samepad_stride_not1)
+TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_samepad_stride_not1)
 {
     gert::InfershapeContextPara infershapeContextPara(
         "Im2col",
@@ -515,7 +584,7 @@ TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_samepad_stride_not1)
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_validpad)
+TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_validpad)
 {
     gert::InfershapeContextPara infershapeContextPara(
         "Im2col",
@@ -538,7 +607,7 @@ TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_validpad)
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_calcpad_unknow_n)
+TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_calcpad_unknow_n)
 {
     gert::InfershapeContextPara infershapeContextPara(
         "Im2col",
@@ -561,7 +630,7 @@ TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_calcpad_unknow_n)
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_calcpad_unknow_c)
+TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_calcpad_unknow_c)
 {
     gert::InfershapeContextPara infershapeContextPara(
         "Im2col",
@@ -584,7 +653,7 @@ TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_calcpad_unknow_c)
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_calcpad_unknow_h)
+TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_calcpad_unknow_h)
 {
     gert::InfershapeContextPara infershapeContextPara(
         "Im2col",
@@ -607,7 +676,7 @@ TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_calcpad_unknow_h)
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_validpad_unkown_h)
+TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_validpad_unkown_h)
 {
     gert::InfershapeContextPara infershapeContextPara(
         "Im2col",
@@ -630,7 +699,7 @@ TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_validpad_unkown_h)
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_fp16_samepad_unknow_w)
+TEST_F(Im2colInfershapeTest, im2col_infer_shape_succ_samepad_unknow_w)
 {
     gert::InfershapeContextPara infershapeContextPara(
         "Im2col",

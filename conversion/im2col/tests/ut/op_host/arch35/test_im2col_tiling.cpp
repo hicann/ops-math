@@ -445,7 +445,159 @@ TEST_F(Im2colTilingTest, ImIm2colTilingTest_ParamCheck_effect_shape_gt_padding_s
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
-TEST_F(Im2colTilingTest, Im2colTilingTest_ParamCheck_Succ_with_SAME_mode)
+TEST_F(Im2colTilingTest, Im2colTilingTest_GetInputShape_Succ_NCHW)
+{
+    gert::TilingContextPara tilingContextPara(
+        "Im2col",
+        {
+            {{{10, 20, 30, 40}, {10, 20, 30, 40}}, ge::DT_FLOAT, ge::FORMAT_NCHW},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_NHWC},
+        },
+        {
+            {"ksizes", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1, 1})},
+            {"strides", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1})},
+            {"dilations", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1})},
+            {"padding_mode", Ops::Math::AnyValue::CreateFrom<std::string>("CALCULATED")},
+            {"pads", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0})},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    ASSERT_TRUE(tilingRet);
+    Im2ColInputInfo* input = reinterpret_cast<Im2ColInputInfo*>(tilingInfo.tilingData.get());
+    EXPECT_EQ(input->N, 10);
+    EXPECT_EQ(input->C, 20);
+    EXPECT_EQ(input->H, 30);
+    EXPECT_EQ(input->W, 40);
+}
+
+TEST_F(Im2colTilingTest, Im2colTilingTest_GetInputShape_Succ_NHWC)
+{
+    gert::TilingContextPara tilingContextPara(
+        "Im2col",
+        {
+            {{{10, 20, 30, 40}, {10, 20, 30, 40}}, ge::DT_FLOAT, ge::FORMAT_NHWC},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_NHWC},
+        },
+        {
+            {"ksizes", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1, 1})},
+            {"strides", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1})},
+            {"dilations", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1})},
+            {"padding_mode", Ops::Math::AnyValue::CreateFrom<std::string>("CALCULATED")},
+            {"pads", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0})},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    ASSERT_TRUE(tilingRet);
+    Im2ColInputInfo* input = reinterpret_cast<Im2ColInputInfo*>(tilingInfo.tilingData.get());
+    EXPECT_EQ(input->N, 10);
+    EXPECT_EQ(input->H, 20);
+    EXPECT_EQ(input->W, 30);
+    EXPECT_EQ(input->C, 40);
+}
+
+TEST_F(Im2colTilingTest, Im2colTilingTest_GetInput_Succ_with_attrSize1)
+{
+    gert::TilingContextPara tilingContextPara(
+        "Im2col",
+        {
+            {{{100, 200, 300, 400}, {100, 200, 300, 400}}, ge::DT_FLOAT, ge::FORMAT_NCHW},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_NHWC},
+        },
+        {
+            {"ksizes", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({3, 3})},
+            {"strides", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({4})},
+            {"dilations", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({5})},
+            {"padding_mode", Ops::Math::AnyValue::CreateFrom<std::string>("CALCULATED")},
+            {"pads", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({6})},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    ASSERT_TRUE(tilingRet);
+    Im2ColInputInfo* input = reinterpret_cast<Im2ColInputInfo*>(tilingInfo.tilingData.get());
+    EXPECT_EQ(input->hKernelSize, 3);
+    EXPECT_EQ(input->wKernelSize, 3);
+    EXPECT_EQ(input->hStride, 4);
+    EXPECT_EQ(input->wStride, 4);
+    EXPECT_EQ(input->hDilation, 5);
+    EXPECT_EQ(input->wDilation, 5);
+    EXPECT_EQ(input->hPaddingBefore, 6);
+    EXPECT_EQ(input->hPaddingAfter, 6);
+    EXPECT_EQ(input->wPaddingBefore, 6);
+    EXPECT_EQ(input->wPaddingAfter, 6);
+}
+
+TEST_F(Im2colTilingTest, Im2colTilingTest_GetInput_Succ_with_attrSize2)
+{
+    gert::TilingContextPara tilingContextPara(
+        "Im2col",
+        {
+            {{{100, 200, 300, 400}, {100, 200, 300, 400}}, ge::DT_FLOAT, ge::FORMAT_NHWC},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_NHWC},
+        },
+        {
+            {"ksizes", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({2, 3})},
+            {"strides", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({4, 5})},
+            {"dilations", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({6, 7})},
+            {"padding_mode", Ops::Math::AnyValue::CreateFrom<std::string>("CALCULATED")},
+            {"pads", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1, 2})},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    ASSERT_TRUE(tilingRet);
+    Im2ColInputInfo* input = reinterpret_cast<Im2ColInputInfo*>(tilingInfo.tilingData.get());
+    EXPECT_EQ(input->hKernelSize, 2);
+    EXPECT_EQ(input->wKernelSize, 3);
+    EXPECT_EQ(input->hStride, 4);
+    EXPECT_EQ(input->wStride, 5);
+    EXPECT_EQ(input->hDilation, 6);
+    EXPECT_EQ(input->wDilation, 7);
+    EXPECT_EQ(input->hPaddingBefore, 1);
+    EXPECT_EQ(input->hPaddingAfter, 1);
+    EXPECT_EQ(input->wPaddingBefore, 2);
+    EXPECT_EQ(input->wPaddingAfter, 2);
+}
+
+TEST_F(Im2colTilingTest, Im2colTilingTest_GetInput_Succ_with_attrSize4)
+{
+    gert::TilingContextPara tilingContextPara(
+        "Im2col",
+        {
+            {{{100, 200, 300, 400}, {100, 200, 300, 400}}, ge::DT_FLOAT, ge::FORMAT_NHWC},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_NHWC},
+        },
+        {
+            {"ksizes", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1, 1})},
+            {"strides", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1})},
+            {"dilations", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1})},
+            {"padding_mode", Ops::Math::AnyValue::CreateFrom<std::string>("CALCULATED")},
+            {"pads", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1, 2, 3, 4})},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    ASSERT_TRUE(tilingRet);
+    Im2ColInputInfo* input = reinterpret_cast<Im2ColInputInfo*>(tilingInfo.tilingData.get());
+    EXPECT_EQ(input->hPaddingBefore, 1);
+    EXPECT_EQ(input->hPaddingAfter, 2);
+    EXPECT_EQ(input->wPaddingBefore, 3);
+    EXPECT_EQ(input->wPaddingAfter, 4);
+}
+
+TEST_F(Im2colTilingTest, Im2colTilingTest_GetInput_Succ_with_SAME_mode)
 {
     gert::TilingContextPara tilingContextPara(
         "Im2col",
@@ -473,7 +625,7 @@ TEST_F(Im2colTilingTest, Im2colTilingTest_ParamCheck_Succ_with_SAME_mode)
     EXPECT_EQ(input->wPaddingAfter, 11);
 }
 
-TEST_F(Im2colTilingTest, Im2colTilingTest_ParamCheck_Succ_with_VALID_mode)
+TEST_F(Im2colTilingTest, Im2colTilingTest_GetInput_Succ_with_VALID_mode)
 {
     gert::TilingContextPara tilingContextPara(
         "Im2col",

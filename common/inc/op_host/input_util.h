@@ -44,6 +44,7 @@ static inline bool CheckUnpackFixedDimListIntAttr(
     T* context, const char* attrName, const gert::TypedContinuousVector<int64_t>*& vec,
     std::function<bool(int64_t)> elementValidator)
 {
+    static_assert(unpackLen > 0, "unpackLen should be positive");
     OP_CHECK_IF(vec == nullptr, OP_LOGE(context, "attr %s is nullptr!", attrName), return false);
     size_t packSize = vec->GetSize();
     OP_CHECK_IF(
@@ -74,6 +75,7 @@ static inline bool CheckUnpackAdaptDimListIntAttr(
     T* context, const char* attrName, const gert::TypedContinuousVector<int64_t>*& vec,
     std::function<bool(int64_t)> elementValidator)
 {
+    static_assert(unpackLen > 0, "unpackLen should be positive");
     OP_CHECK_IF(vec == nullptr, OP_LOGE(context, "attr %s is nullptr!", attrName), return false);
     size_t packSize = vec->GetSize();
     if (unlikely(packSize == 0 || packSize > unpackLen || unpackLen % packSize != 0)) {
@@ -97,22 +99,25 @@ static inline bool CheckUnpackAdaptDimListIntAttr(
 }
 
 /**
- * @brief   不安全解包函数，仅解包，不做参数检查，调用者已做检查，解包 ListInt 类型属性为指定长度
- * @tparam  unpackLen           解包长度
+ * @brief   不安全解包函数。解包 ListInt 类型属性值，并将输入的元素自动扩展到输出参数长度，依次赋值到输出参数中。
+ *          仅解包，不做参数检查，由调用者做检查。需满足约束： \n
+ *          - 属性size 不为 0 \n
+ *          - 属性size 必须为解包长度的约数
  * @param   [in] checkedVec     属性vector
+ * @param   [in] Is...          索引序列，从0开始，长度等于args个数
+ * @param   [out] args          解包结果
  * @return  解包结果，元素个数为 unpackLen
  */
-template <size_t unpackLen>
-static inline std::array<int64_t, unpackLen> UnsafeUnpackListIntAttr(
-    const gert::TypedContinuousVector<int64_t>*& checkedVec)
+template <size_t... Is, typename... Args>
+static inline void UnsafeUnpackListIntAttr(
+    const gert::TypedContinuousVector<int64_t>*& checkedVec, std::index_sequence<Is...>, Args&... args)
 {
-    static_assert(unpackLen > 0, "unpackLen should be positive");
-    std::array<int64_t, unpackLen> value{};
-    size_t partLen = unpackLen / checkedVec->GetSize();
-    for (size_t i = 0; i < unpackLen; ++i) {
-        value[i] = checkedVec->GetData()[i / partLen];
-    }
-    return value;
+    static_assert(sizeof...(Args) == sizeof...(Is), "Number of arguments must match length of sequence");
+    // 将输出参数分为size段，每段赋值为 vec 中的对应元素
+    // 已校验 size 不为 0，无除0问题
+    size_t partLen = sizeof...(Is) / checkedVec->GetSize();
+    // 已校验 size 必须为 unpackLen 的约数，partLen 不为0，且 Is / partLen 最大为 size - 1，不会越界
+    ((args = checkedVec->GetData()[Is / partLen]), ...);
 }
 } // namespace
 
@@ -136,7 +141,11 @@ static inline std::tuple<ge::graphStatus, std::array<int64_t, unpackLen>> Unpack
     if (!CheckUnpackFixedDimListIntAttr<unpackLen>(context, attrName, vec, elementValidator)) {
         return {ge::GRAPH_FAILED, {}};
     }
-    return {ge::GRAPH_SUCCESS, UnsafeUnpackListIntAttr<unpackLen>(vec)};
+    std::array<int64_t, unpackLen> value{};
+    for (size_t i = 0; i < vec->GetSize(); ++i) {
+        value[i] = vec->GetData()[i];
+    }
+    return {ge::GRAPH_SUCCESS, value};
 }
 
 /**
@@ -159,7 +168,14 @@ static inline std::tuple<ge::graphStatus, std::array<int64_t, unpackLen>> Unpack
     if (!CheckUnpackAdaptDimListIntAttr<unpackLen>(context, attrName, vec, elementValidator)) {
         return {ge::GRAPH_FAILED, {}};
     }
-    return {ge::GRAPH_SUCCESS, UnsafeUnpackListIntAttr<unpackLen>(vec)};
+    std::array<int64_t, unpackLen> value{};
+    // 已校验 size 不为 0，无除0问题
+    size_t partLen = unpackLen / vec->GetSize();
+    for (size_t i = 0; i < unpackLen; ++i) {
+        // 已校验 size 必须为 unpackLen 的约数，partLen 不为0，且 i / partLen 最大为 size - 1，不会越界
+        value[i] = vec->GetData()[i / partLen];
+    }
+    return {ge::GRAPH_SUCCESS, value};
 }
 
 /**
@@ -180,13 +196,11 @@ static inline ge::graphStatus UnpackFixedDimListIntAttr(
 {
     static_assert(unpackLen > 0, "unpackLen should be positive");
     static_assert(sizeof...(Args) == unpackLen, "Number of arguments must match template paremeter unpackLen");
+    static_assert((std::is_same_v<Args, int64_t> && ...), "All arguments must be of type int64_t");
     if (!CheckUnpackFixedDimListIntAttr<unpackLen>(context, attrName, vec, elementValidator)) {
         return ge::GRAPH_FAILED;
     }
-    // 已校验 size 不为 0，无除0问题
-    size_t partLen = unpackLen / vec->GetSize();
-    size_t i = 0;
-    ((args = vec->GetData()[i++ / partLen]), ...);
+    UnsafeUnpackListIntAttr(vec, std::make_index_sequence<unpackLen>{}, args...);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -208,12 +222,11 @@ static inline ge::graphStatus UnpackAdaptDimListIntAttr(
 {
     static_assert(unpackLen > 0, "unpackLen should be positive");
     static_assert(sizeof...(Args) == unpackLen, "Number of arguments must match template paremeter unpackLen");
+    static_assert((std::is_same_v<Args, int64_t> && ...), "All arguments must be of type int64_t");
     if (!CheckUnpackAdaptDimListIntAttr<unpackLen>(context, attrName, vec, elementValidator)) {
         return ge::GRAPH_FAILED;
     }
-    size_t partLen = unpackLen / vec->GetSize();
-    size_t i = 0;
-    ((args = vec->GetData()[i++ / partLen]), ...);
+    UnsafeUnpackListIntAttr(vec, std::make_index_sequence<unpackLen>{}, args...);
     return ge::GRAPH_SUCCESS;
 }
 
