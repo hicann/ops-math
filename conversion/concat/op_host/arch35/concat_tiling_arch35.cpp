@@ -352,7 +352,7 @@ inline static bool IsEnablePureCopyTemplate(
             }
             int16_t startIdx = param.startTensorIdx[i];
             CalcLargeTensorNum(
-                param, param.tensorListDim1[startIdx] - param.startTensorOffset[startIdx], rowsUsedCoreNum,
+                param, param.tensorListDim1[startIdx] - param.startTensorOffset[i], rowsUsedCoreNum,
                 largeInputNum, totalInputNum);
             for (int16_t k = param.startTensorIdx[i] + 1; k < param.endTensorIdx[i]; k++) {
                 CalcLargeTensorNum(param, param.tensorListDim1[k], rowsUsedCoreNum, largeInputNum, totalInputNum);
