@@ -18,13 +18,11 @@ include(FindPackageHandleStandardArgs)
 
 set(NNOPBASE_ACLNN_HEAD_SEARCH_PATHS
   ${ASCEND_DIR}/${SYSTEM_PREFIX}/include
-  ${TOP_DIR}/ace/npuruntime/inc/external
   ${TOP_DIR}/ops-base/include/nnopbase/            # compile with ci
 )
 
 set(NNOPBASE_OPDEV_HEAD_SEARCH_PATHS
   ${ASCEND_DIR}/${SYSTEM_PREFIX}/include/aclnn
-  ${TOP_DIR}/ace/npuruntime/inc/nnopbase
   ${TOP_DIR}/ops-base/include/nnopbase/            # compile with ci
 )
 
