@@ -481,7 +481,11 @@ static ge::graphStatus TilingUbForSplitDim1(
                 context->GetNodeName(), "everyBlockNumber must be greater than 0, everyBlockNumber: %ld",
                 param.everyBlockNumber),
             return ge::GRAPH_FAILED);
-        realFactorDim1 = realFactorDim1 / param.everyBlockNumber * param.everyBlockNumber;
+        int64_t alignFactorDim1 = param.everyBlockNumber;
+        if (param.inputShapeSame == 1 && param.sameShapeTensorDim1 * param.dtypeSize <= param.gatherThreshold) {
+            alignFactorDim1 = param.sameShapeTensorDim1;
+        }
+        realFactorDim1 = realFactorDim1 / alignFactorDim1 * alignFactorDim1;
     } else {
         maxAvaliableUb -= storageAlignUsed;
     }
