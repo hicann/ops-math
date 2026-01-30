@@ -21,7 +21,7 @@ SUPPORTED_LONG_OPTS=(
   "pkg" "asan" "valgrind" "make_clean" "static" "build-type="
   "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "opkernel_aicpu_test"
   "run_example" "genop=" "genop_aicpu=" "experimental" "cann_3rd_lib_path" "mssanitizer" "oom" "onnxplugin"
-  "dump_cce" "bisheng_flags="
+  "dump_cce" "bisheng_flags=" "tiling_key="
 )
 
 in_array() {
@@ -146,6 +146,8 @@ usage() {
         echo "    --dump_cce             Dump kernel precompiled files"
         echo "    --bisheng_flags=flag1,flag2"
         echo "                           Specify bisheng compiler flags (comma-separated for multiple)"
+        echo "    --tiling_key=tilingkey1,tilingkey2"
+        echo "                           Specify tiling key (comma-separated for multiple)"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --pkg --soc=ascend910b --vendor_name=customize -j16 -O3"
@@ -156,6 +158,7 @@ usage() {
         echo "    bash build.sh --pkg --experimental --soc=ascend910b --ops=abs --oom"
         echo "    bash build.sh --pkg --experimental --soc=ascend910b --ops=abs --dump_cce"
         echo "    bash build.sh --pkg --experimental --soc=ascend910b --ops=abs --bisheng_flags=ccec_g,oom"
+        echo "    bash build.sh --pkg --experimental --soc=ascend950 --ops=abs --tiling_key=101,102"
         return
         ;;
       opkernel)
@@ -170,6 +173,8 @@ usage() {
         echo "    --dump_cce             Dump kernel precompiled files"
         echo "    --bisheng_flags=flag1,flag2"
         echo "                           Specify bisheng compiler config (comma-separated for multiple)"
+        echo "    --tiling_key=tilingkey1,tilingkey2"
+        echo "                           Specify tiling key (comma-separated for multiple)"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub"
@@ -178,6 +183,7 @@ usage() {
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub --oom"
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub --dump_cce"
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub --bisheng_flags=ccec_g,oom"
+        echo "    bash build.sh --opkernel --soc=ascend950 --ops=abs --tiling_key=101,102"
         return
         ;;
       opkernel_aicpu)
@@ -405,6 +411,7 @@ usage() {
   echo "    --oom Build with oom mode on the kernel side, with options: '-g --cce-enable-oom'"
   echo "    --dump_cce Dump kernel precompiled files"
   echo "    --bisheng_flags Specify bisheng compiler config, like: --bisheng_flags=ccec_g,oom, use ',' to separate different compiler flags"
+  echo "    --tiling_key Specify tiling key, like: --tiling_key=0,1, use ',' to separate different tiling key"
   echo "to be continued ..."
 }
 
@@ -504,6 +511,13 @@ check_param() {
   if [ -n "$BISHENG_FLAGS" ]; then
     if [[ "$ENABLE_MSSANITIZER" == "TRUE" || "$ENABLE_OOM" == "TRUE" || "$ENABLE_DUMP_CCE" == "TRUE" ]]; then
       echo "[ERROR] --bisheng_flags= cannot be used with --mssanitizer, --oom, --dump_cce"
+      exit 1
+    fi
+  fi
+
+  if [ -n "$TILING_KEY" ]; then
+    if [[ -z "${COMPILED_OPS}" || "$COMPILED_OPS" == *","* ]]; then
+      echo "[ERROR] --tiling_key must be used with --ops= and can only specify a single operator"
       exit 1
     fi
   fi
@@ -713,6 +727,7 @@ checkopts() {
   BUILD_TYPE="Release"
   USE_CMD="$*"
   BISHENG_FLAGS=""
+  TILING_KEY=""
 
   ENABLE_MSSANITIZER=FALSE
   ENABLE_OOM=FALSE
@@ -843,6 +858,9 @@ checkopts() {
         dump_cce) ENABLE_DUMP_CCE=TRUE ;;
         bisheng_flags=*)
           BISHENG_FLAGS=${OPTARG#*=}
+          ;;
+        tiling_key=*)
+          TILING_KEY=${OPTARG#*=}
           ;;
         cann_3rd_lib_path=*)
           CANN_3RD_LIB_PATH="$(realpath ${OPTARG#*=})"
@@ -1053,6 +1071,9 @@ assemble_cmake_args() {
   fi
   if [[ "x$BISHENG_FLAGS" != "x" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DBISHENG_FLAGS=${BISHENG_FLAGS}"
+  fi
+  if [[ "x$TILING_KEY" != "x" ]]; then
+    CMAKE_ARGS="$CMAKE_ARGS -DTILING_KEY=${TILING_KEY}"
   fi
   if [[ "$OP_HOST_UT" == "TRUE" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DOP_HOST_UT=TRUE"
