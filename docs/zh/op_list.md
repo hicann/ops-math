@@ -2136,6 +2136,16 @@
   </tr>
   <tr>
     <td>random</td>
+    <td><a href="../../random/uniform_int_v2/README.md">uniform_int_v2</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>生成均匀分布的随机整数数列。</td>
+  </tr>
+  <tr>
+    <td>random</td>
     <td><a href="../../random/stateless_bernoulli/README.md">stateless_bernoulli</a></td>
     <td>√</td>
     <td>√</td>

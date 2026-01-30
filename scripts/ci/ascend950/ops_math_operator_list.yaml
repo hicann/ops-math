@@ -163,6 +163,7 @@ operator_group_5:
   - drop_out_v3
   - random_standard_normal_v2
   - random_uniform_v2
+  - random_uniform_int_v2
   - stateless_bernoulli
   - stateless_drop_out_gen_mask
   - stateless_random_normal_v2
