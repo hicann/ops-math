@@ -367,6 +367,9 @@ __aicore__ inline void PadSimt<T>::Process(GM_ADDR tiling)
     }
 
     uint32_t outputSize = mTD->outShape[0] * mTD->outStride[0];
+    if (outputSize == 0) {
+        return;
+    }
 
     uint32_t s[8];
     uint32_t m[8];

@@ -24,7 +24,8 @@
           "paramType": "required",
           "shape": [
             -2
-          ]
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "constant_values",
@@ -89,7 +90,8 @@
           "paramType": "required",
           "shape": [
             -2
-          ]
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "constant_values",
@@ -154,7 +156,8 @@
           "paramType": "required",
           "shape": [
             -2
-          ]
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "constant_values",
@@ -219,7 +222,8 @@
           "paramType": "required",
           "shape": [
             -2
-          ]
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "constant_values",
@@ -284,7 +288,8 @@
           "paramType": "required",
           "shape": [
             -2
-          ]
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "constant_values",
@@ -349,7 +354,8 @@
           "paramType": "required",
           "shape": [
             -2
-          ]
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "constant_values",
@@ -414,7 +420,8 @@
           "paramType": "required",
           "shape": [
             -2
-          ]
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "constant_values",
@@ -479,7 +486,8 @@
           "paramType": "required",
           "shape": [
             -2
-          ]
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "constant_values",

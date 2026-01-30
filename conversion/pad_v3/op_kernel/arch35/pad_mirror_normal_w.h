@@ -752,14 +752,14 @@ private:
         int64_t res = -1;
         uint16_t modeOffset = MODE <= 1 ? 0 : 1;
         if (isUp) {
-            uint32_t first = tilingData_->leftPad[curAxis] - modeOffset;
-            uint32_t last = 1 - modeOffset;
+            uint64_t first = tilingData_->leftPad[curAxis] - modeOffset;
+            uint64_t last = 1 - modeOffset;
             if (inIndex_[curAxis] <= first && inIndex_[curAxis] >= last) {
                 res = first - inIndex_[curAxis];
             }
         } else {
-            uint32_t first = tilingData_->inShape[curAxis] + modeOffset - 2;
-            uint32_t last = tilingData_->leftPad[curAxis] + tilingData_->inShape[curAxis] * 2 + modeOffset -
+            uint64_t first = tilingData_->inShape[curAxis] + modeOffset - 2;
+            uint64_t last = tilingData_->leftPad[curAxis] + tilingData_->inShape[curAxis] * 2 + modeOffset -
                             tilingData_->outShape[curAxis] - 1;
             if (inIndex_[curAxis] <= first && inIndex_[curAxis] >= last) {
                 res = tilingData_->leftPad[curAxis] + tilingData_->inShape[curAxis] + first - inIndex_[curAxis];

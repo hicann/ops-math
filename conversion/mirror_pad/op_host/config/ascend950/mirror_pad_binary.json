@@ -24,7 +24,8 @@
           "paramType": "required",
           "shape": [
             -2
-          ]
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -72,7 +73,8 @@
           "paramType": "required",
           "shape": [
             -2
-          ]
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -120,7 +122,8 @@
           "paramType": "required",
           "shape": [
             -2
-          ]
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -168,7 +171,8 @@
           "paramType": "required",
           "shape": [
             -2
-          ]
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -216,7 +220,8 @@
           "paramType": "required",
           "shape": [
             -2
-          ]
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -264,7 +269,8 @@
           "paramType": "required",
           "shape": [
             -2
-          ]
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -312,7 +318,8 @@
           "paramType": "required",
           "shape": [
             -2
-          ]
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -360,7 +367,8 @@
           "paramType": "required",
           "shape": [
             -2
-          ]
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [

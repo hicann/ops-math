@@ -33,11 +33,12 @@ namespace ge {
 
 * @par Attributes:
 * @li mode: An optional string, Defaults to "constant", indicates paddings mode,
-* support "constant", "reflect", "edge", "symmetric".
+* support "constant", "reflect", "edge", "symmetric", "circular".
 * In constant mode the padded value is constant_values, default 0 while constant_values is null.
 * In edge mode the padded value is the border value of input x.
 * In reflect mode the padded value do not include the borders,
 * while in symmetric mode the padded value do include the borders.
+* In circular mode, pads x using circular of the input boundary.
 * @li paddings_contiguous: An optional bool value, Defaults to true.
 * If true, paddings is arranged as [[leftpad_0, rightpad_0], [leftpad_1, rightpad_1], ...]
 * If false, paddings is arranged as [[leftpad_0, leftpad_1, ...], [rightpad_0, rightpad_1, ...]]
@@ -47,11 +48,12 @@ namespace ge {
 * y.shape[i] = x.shape[i] + leftpad_i + rightpad_i, where y.shape[i] >= 0.
 
 * @attention Constraints:
-* "symmetric" mode is supported since arch35.
+* "symmetric" and "circular" mode is supported since arch35.
 * "symmetric" mode: the leftpad_i and rightpad_i should be in [-x.shape[i], x.shape[i]]
 * "reflect" mode: the leftpad_i and rightpad_i should be in [-x.shape[i], x.shape[i])
 * "constant" mode: the leftpad_i and rightpad_i should be greater than or equal to -x.shape[i].
 * "edge" mode: the leftpad_i and rightpad_i should be greater than or equal to -x.shape[i].
+* "circular" mode: the leftpad_i and rightpad_i should be in [-x.shape[i], x.shape[i]]
 
 * @par Third-party framework compatibility:
 * Compatible with ONNX operator Pad.

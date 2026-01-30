@@ -79,8 +79,8 @@ public:
         ubAxis_ = tdPtr_->ubAxis;
         ubFactor_ = tdPtr_->ubFactor;
 
-        if (dimNum_ == CONST3 && tdPtr_->outStride[dimNum_ - CONST3] <= VL_CNT / CONST2) {
-            // 一次VL需要处理后面3根轴，当前只支持3D的
+        // 一次VL需要处理后面3根轴，当前支持切-3轴、-4轴
+        if (dimNum_ >= CONST3 && tdPtr_->outStride[dimNum_ - CONST3] <= VL_CNT / CONST2) {
             lastThirdDimInVL_ = true;
             vlSplitIn_ = Std::min(
                 uint64_t(VL_CNT / tdPtr_->outStride[dimNum_ - CONST3]), uint64_t(tdPtr_->outShape[dimNum_ - CONST3]));
@@ -548,20 +548,6 @@ private:
         }
 
         outQueBw_.FreeTensor(outLocalBw);
-    }
-
-    __aicore__ inline void CopyOut(const uint64_t* outIndex, uint32_t ubAxisOutCopyNum)
-    {
-        uint64_t outAddr = 0;
-        for (uint32_t i = 0; i < dimNum_; i++) {
-            outAddr += outIndex[i] * tdPtr_->outStride[i];
-        }
-        uint32_t copyOutNum = ubAxisOutCopyNum * tdPtr_->outStride[ubAxis_];
-        LocalTensor<T> outLocalFw = outQueFw_.DeQue<T>();
-        DataCopyExtParams copyOutParams = {1u, static_cast<uint32_t>(copyOutNum * sizeof(T)), 0, 0, 0};
-        DataCopyPad(outputGm_[outAddr], outLocalFw, copyOutParams);
-
-        outQueFw_.FreeTensor(outLocalFw);
     }
 
     __aicore__ inline void GenGatherIndexThreeDim(LocalTensor<RangeType>& idxTensor)
@@ -1118,8 +1104,22 @@ private:
         uint32_t vlInNum = tdPtr_->inShape[dimNum_ - CONST2];
         uint32_t vlRightPadNum =
             tdPtr_->outShape[dimNum_ - CONST2] - tdPtr_->leftPad[dimNum_ - CONST2] - tdPtr_->inShape[dimNum_ - CONST2];
-        uint32_t rightPadInVlOffset = vlInNum == 0 ? 0 : (vlInNum - vlRightPadNum - 1) * strideInVl;
-        uint32_t rightPadInVlO1Offset = (vlO1InNum - vlO1RightPadNum - 1) * strideInVlO1;
+
+        if (lastThirdDimInVL_) {
+            strideInVl = tdPtr_->inStride[dimNum_ - CONST3];
+            strideInVlO1 = tdPtr_->inStride[dimNum_ - CONST4];
+            strideOutVl = tdPtr_->outStride[dimNum_ - CONST3];
+            strideOutVlO1 = tdPtr_->outStride[dimNum_ - CONST4];
+
+            vlLeftPadNum = tdPtr_->leftPad[dimNum_ - CONST3];
+            vlInNum = tdPtr_->inShape[dimNum_ - CONST3];
+            vlRightPadNum = tdPtr_->outShape[dimNum_ - CONST3] - tdPtr_->leftPad[dimNum_ - CONST3] -
+                            tdPtr_->inShape[dimNum_ - CONST3];
+
+            vlO1LeftPadNum = 0;
+            vlO1InNum = 1;
+            vlO1RightPadNum = 0;
+        }
 
         RangeType idxOffset = strideInVl * vlSplitLoopIn;
         uint32_t maskValue = strideOutVl * vlSplitLoopIn;
@@ -1154,12 +1154,31 @@ private:
 
         uint32_t modeHOffset = 0; // 适配fw index包含边界，实际使用时在reflect下需要做处理
         uint32_t modeCOffset = 0;
+        uint32_t rightPadInVlOffset = (vlInNum - vlRightPadNum - 1) * strideInVl;
+        uint32_t rightPadInVlO1Offset = (vlO1InNum - vlO1RightPadNum - 1) * strideInVlO1;
         if constexpr (IS_REFLECT) {
             modeHOffset = strideInVl;
             modeCOffset = strideInVlO1;
         } else {
-            rightPadInVlOffset = vlInNum == 0 ? 0 : (vlInNum - vlRightPadNum) * strideInVl;
+            rightPadInVlOffset = (vlInNum - vlRightPadNum) * strideInVl;
             rightPadInVlO1Offset = (vlO1InNum - vlO1RightPadNum) * strideInVlO1;
+        }
+
+        uint32_t modeCOffset2 = 0;
+        if (lastThirdDimInVL_) {
+            // 此场景，modeHOffset为0，modeCOffset不参与计算，modeCOffset2为C轴左Pad偏移边界1
+            modeHOffset = 0;
+            if constexpr (IS_REFLECT) {
+                modeCOffset2 = strideInVl;
+            }
+            lastLeftPadExcessIdx = lastLeftPadNum == 0 ?
+                                       0 :
+                                       (maskValue - lastLeftPadMaskValue) * tdPtr_->inStride[dimNum_ - CONST3] /
+                                           tdPtr_->outStride[dimNum_ - CONST3];
+            lastRightPadExcessIdx = lastrightPadNum == 0 ?
+                                        0 :
+                                        (maskValue - lastrightPadMaskValue) * tdPtr_->inStride[dimNum_ - CONST3] /
+                                            tdPtr_->outStride[dimNum_ - CONST3];
         }
 
         __VEC_SCOPE__
@@ -1180,25 +1199,25 @@ private:
                 } else {
                     fixedIdx = (ubAxisInCopyLoops - 1 - nIdx);
                 }
-                // C轴左pad, VL切3维时退化为1
+                // C轴左pad, VL切3维时退化为0
                 uint32_t curInOffset = nIdx * strideInN + modeCOffset;
                 uint32_t curOutOffset = fixedIdx * strideOutN;
                 for (uint16_t i = 0; i < vlO1LeftPadNum; i++) {
-                    // H轴左pad, VL切3维时退化为C轴左pad
+                    // H轴左pad
                     uint32_t idxPadOffset = curInOffset + i * strideInVlO1;
                     __local_mem__ T* curPadOutAddr = outAddr + curOutOffset + (vlO1LeftPadNum - 1 - i) * strideOutVlO1;
                     VlPaddingCopyProc(
                         leftGatherLoops, leftPadLoops, lastLeftPadLoops, maskValue, lastLeftPadMaskValue, inAddr,
                         curPadOutAddr, regIdxPadFixed, idxPadOffset, idxOffset, lastLeftPadExcessIdx);
 
-                    // H轴输入个数, VL切3维时退化为C轴输入个数
+                    // H轴输入个数
                     __local_mem__ T* curOutAddr =
                         outAddr + curOutOffset + (vlO1LeftPadNum - 1 - i) * strideOutVlO1 + vlLeftPadNum * strideOutVl;
                     VlInCopyProc(
                         copyInPadLoops, lastCopyInPadLoops, idxOffset, maskValue, lastCopyInMaskValue, inAddr,
                         curOutAddr, regIdx, idxPadOffset);
 
-                    // H轴右pad, VL切3维时退化为C轴右pad
+                    // H轴右pad
                     idxPadOffset = curInOffset + i * strideInVlO1 + rightPadInVlOffset;
                     curPadOutAddr = outAddr + curOutOffset + (vlO1LeftPadNum - 1 - i) * strideOutVlO1 +
                                     vlLeftPadNum * strideOutVl + vlInNum * strideOutVl;
@@ -1206,25 +1225,26 @@ private:
                         rightGatherLoops, rightPadLoops, lastrightPadLoops, maskValue, lastrightPadMaskValue, inAddr,
                         curPadOutAddr, regIdxPad, idxPadOffset, idxOffset, lastRightPadExcessIdx);
                 }
-                // C轴上的输入个数，VL切3维时退化为0
+                // C轴上的输入个数，VL切3维时退化为1
                 curInOffset = nIdx * strideInN;
                 curOutOffset = fixedIdx * strideOutN + vlO1LeftPadNum * strideOutVlO1;
                 for (uint16_t i = 0; i < vlO1InNum; i++) {
-                    // H轴左pad
-                    uint32_t idxPadOffset = curInOffset + i * strideInVlO1;
+                    // H轴左pad, VL切3维时退化为C轴左pad
+                    uint32_t idxPadOffset = curInOffset + i * strideInVlO1 + modeCOffset2;
                     __local_mem__ T* curPadOutAddr = outAddr + curOutOffset + i * strideOutVlO1;
                     VlPaddingCopyProc(
                         leftGatherLoops, leftPadLoops, lastLeftPadLoops, maskValue, lastLeftPadMaskValue, inAddr,
                         curPadOutAddr, regIdxPadFixed, idxPadOffset, idxOffset, lastLeftPadExcessIdx);
 
-                    // H轴输入有效个数
+                    // H轴输入有效个数, VL切3维时退化为C轴输入个数
                     __local_mem__ T* curOutAddr =
                         outAddr + curOutOffset + i * strideOutVlO1 + vlLeftPadNum * strideOutVl;
+                    idxPadOffset = curInOffset + i * strideInVlO1;
                     VlInCopyProc(
                         copyInPadLoops, lastCopyInPadLoops, idxOffset, maskValue, lastCopyInMaskValue, inAddr,
                         curOutAddr, regIdx, idxPadOffset);
 
-                    // H轴右pad
+                    // H轴右pad, VL切3维时退化为C轴右pad
                     idxPadOffset = curInOffset + i * strideInVlO1 + rightPadInVlOffset;
                     curPadOutAddr =
                         outAddr + curOutOffset + i * strideOutVlO1 + vlLeftPadNum * strideOutVl + vlInNum * strideOutVl;

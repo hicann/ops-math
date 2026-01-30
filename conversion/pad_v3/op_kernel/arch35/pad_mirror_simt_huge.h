@@ -25,6 +25,7 @@ constexpr int32_t REFLECT_HUGE_THREAD_DIM = 512;
 constexpr int32_t REFLECT_HUGE_THREAD_DIM = 2048;
 constexpr int32_t REFLECT_HUGE_HALF_THREAD_DIM = 1024;
 constexpr int32_t REFLECT_HUGE_QUATER_THREAD_DIM = 512;
+constexpr int32_t REFLECT_HUGE_AN_EIGHTH_THREAD_DIM = 256;
 #endif
 
 namespace PadV3 {
@@ -347,7 +348,7 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_HUGE_QUATER_THREAD_DIM) __aicore__ void SimtCom
 }
 
 template <typename T, int32_t DIM, bool IS_REFLECT>
-__simt_vf__ LAUNCH_BOUND(REFLECT_HUGE_QUATER_THREAD_DIM) __aicore__ void SimtComputeReflectHugeDimEight(
+__simt_vf__ LAUNCH_BOUND(REFLECT_HUGE_AN_EIGHTH_THREAD_DIM) __aicore__ void SimtComputeReflectHugeDimEight(
     __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, uint64_t outputSize, uint32_t blockIdx,
     uint32_t blockNum, uint64_t m0, uint64_t m1, uint64_t m2, uint64_t m3, uint64_t m4, uint64_t m5, uint64_t m6,
     uint64_t s0, uint64_t s1, uint64_t s2, uint64_t s3, uint64_t s4, uint64_t s5, uint64_t s6)
@@ -462,7 +463,7 @@ __aicore__ inline void PadReflectSimtHuge<T, KEY>::Process(GM_ADDR tiling)
             m[3], m[4], m[5], s[0], s[1], s[2], s[3], s[4], s[5]);
     } else if (mDimNum == 8) {
         Simt::VF_CALL<SimtComputeReflectHugeDimEight<T, 8, IS_REFLECT>>(
-            Simt::Dim3(REFLECT_HUGE_QUATER_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
+            Simt::Dim3(REFLECT_HUGE_AN_EIGHTH_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
             (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), tiling, outputSize, mBlockIdx_, blockNum, m[0], m[1], m[2],
             m[3], m[4], m[5], m[6], s[0], s[1], s[2], s[3], s[4], s[5], s[6]);
     }

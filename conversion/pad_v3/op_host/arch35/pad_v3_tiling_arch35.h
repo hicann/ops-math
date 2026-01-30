@@ -50,6 +50,14 @@ struct PadV3CompileInfo {
     std::string soc_version;
 };
 
+struct PadV3UbTileInfo {
+    uint8_t ubSplitAxis = 0;
+    uint32_t ubSplitFactor = 0;
+    int64_t ubTotalCnt = 0;
+    int64_t ubPerCoreCnt = 0;
+    uint32_t usedCoreNum = 0;
+};
+
 class PadACTiling {
 public:
     explicit PadACTiling(gert::TilingContext* context) : context_(context)
@@ -62,21 +70,25 @@ private:
     ge::graphStatus Init();              // 获取coreNum,ubSize,vecSize,cacheLineSize,blockSize
     ge::graphStatus GetShapeAttrsInfo(); // 获取校验入参和shape信息
 
-    ge::graphStatus DimensionCollapse();              // 合轴
-    ge::graphStatus EdgeDimensionCollapse();          // edge合轴
-    ge::graphStatus ReflectDimensionCollapse();       // reflect合轴
-    void CheckReplication();                          // 检查replication
+    ge::graphStatus CheckModeInputParam(int64_t inShapeV, int64_t padFront, int64_t padBack);
+    ge::graphStatus DimensionCollapse();              // constant合轴
+    ge::graphStatus DimensionCollapseMode();          // 其他模式合轴
     void EmptyTensorCollapse();                       // 空tensor时合为一根轴
-    void EmptyTensorCollapseEdge();                   // edge空tensor时操作
-    void EmptyTensorCollapseReflect();                // reflect空tensor时操作
+    void EmptyTensorCollapseMode();                   // 其他模式空tensor时操作
     ge::graphStatus ComputeAfterPaddingsAndStrides(); // 计算合轴后的paddings和strides
 
+    ge::graphStatus DoTilingModeEdge();
+    ge::graphStatus DoTilingModeMirror();
+    ge::graphStatus DoTilingModeCircular();
+    ge::graphStatus DoTilingModeConstant();
     void DoTilingWithConstant();
     void DoTilingWithEdge();
-    void DoTilingWithSliceOp();
+    ge::graphStatus DoTilingWithSliceOp();
     void DoTilingWithReflect();
+    void DoTilingWithCircular();
     void DoTilingWithSIMTEdge();    // edge模板DoTilingWithSIMT
     void DoTilingWithSIMTReflect(); // reflect模板DoTilingWithSIMT
+    void DoTilingWithSIMTCircular();
     void DoTilingWithSIMT();
     void FillsAndPrintTilingData();
 
@@ -84,16 +96,21 @@ private:
     ge::graphStatus GetPaddings();
     template <typename T>
     void GetPaddingsToShape(const gert::Tensor* paddingsTensor);
+    void CalculateTilingKeyCircular();
     void CalculateTilingKeyReflect(); // reflect模板CalculateTilingKey
     void CalculateTilingKeyEdge();    // edge模板CalculateTilingKey
     void CalculateTilingKey();
     uint64_t GetSizeOfBlockAlign(uint64_t inputSize, uint64_t alignBlockSize);
     void DoFindSplitAxis(bool isBigLastDim);
-    void DoFindSplitAxisReflect(bool isBigLastDim);
+    void DoFindSplitAxisByInput(bool isBigLastDim);
     void CalculateGatherOrScatter();
-    void CalculateGatherOrScatterEdge();    // edge模板CalculateGatherOrScatter
-    void CalculateGatherOrScatterReflect(); // reflect模板CalculateGatherOrScatter
     void CaculateTilingParams();
+    void CircularOnlyLastTiling(uint64_t lastShapeSizeAlign);
+    bool CheckTilingInfoSatisfied(PadV3UbTileInfo& tilingInfo);
+    void GetOptimizeTiling(const PadV3UbTileInfo& oldTilingInfo, PadV3UbTileInfo& newTilingInfo);
+    void TilingInfoTune();
+    bool IsCutLastDim();
+    void TilingInfoTuneForNormal(uint64_t lastShapeSizeAlign);
 
 public:
     bool isPadV3_{false};
@@ -114,7 +131,8 @@ private:
         CONSTANT = 0,
         EDGE = 1,
         REFLECT = 2,
-        SYMMETRIC = 3
+        SYMMETRIC = 3,
+        CIRCULAR = 4
     };
     ModeNum padMode_{ModeNum::CONSTANT}; // 0为constant，1为edge,2为reflect,3为symmetric
 
@@ -128,6 +146,7 @@ private:
 
     bool isPadAllPositive_{true};
     bool isPadAllNegative_{true};
+    bool isUseSlice_{false};
     bool paddingContiguous_{true};
     bool isEmptyTensor_{false};
     uint16_t inputRank_{0};

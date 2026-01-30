@@ -93,6 +93,7 @@ static ge::graphStatus PadV3InferShapeWithPaddingsValues(
     const size_t paddings_num = padding_attr->GetSize();
     OP_CHECK_NULL_WITH_CONTEXT(context, (context->GetAttrs()));
     const bool* paddings_contiguous = context->GetAttrs()->GetAttrPointer<bool>(INDEX_PADDINGS_CONTIGUOUS);
+    OP_CHECK_NULL_WITH_CONTEXT(context, paddings_contiguous);
 
     OP_LOGD(context->GetNodeName(), "Begin to do PadV3InferShapeWithPaddingsValues");
     OP_LOGD(context->GetNodeName(), "input x = %s", Ops::Base::ToString(*x_shape).c_str());

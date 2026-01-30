@@ -17,6 +17,7 @@
 #include "./arch35/pad_edge.h"
 #include "./arch35/pad_mirror.h"
 #include "./arch35/pad_slice.h"
+#include "./arch35/pad_circular.h"
 
 using namespace PadV3;
 
@@ -74,10 +75,20 @@ using namespace PadV3;
 #define PAD_SLICE_KEY_MOVE_UNALIGN_GATHER 10301
 #define PAD_SLICE_KEY_TWO_DIM_SMALL_SHAPE 10400
 
+#define CIRCULAR_SIMT_BRANCH 24000
+#define CIRCULAR_SIMT_BIG_SIZE_BRANCH 24001
+#define CIRCULAR_CUT_LAST_DIM_BRANCH 34010
+#define CIRCULAR_BIG_LAST_DIM_BRANCH_DIM2 34021
+#define CIRCULAR_BIG_LAST_DIM_BRANCH_DIM3 34031
+#define CIRCULAR_BIG_LAST_DIM_BRANCH_DIM4 34041
+#define CIRCULAR_SMALL_LAST_DIM_GATHER_BRANCH_DIM2 34022
+#define CIRCULAR_SMALL_LAST_DIM_GATHER_BRANCH_DIM3 34032
+#define CIRCULAR_SMALL_LAST_DIM_GATHER_BRANCH_DIM4 34042
+
 extern "C" __global__ __aicore__ void pad_v3(
     GM_ADDR x, GM_ADDR paddings, GM_ADDR constValues, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
-    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     REGISTER_TILING_DEFAULT(SliceFakeTilingData);
     if (TILING_KEY_IS(CONSTANT_CUT_LAST_DIM_BRANCH)) { // 30000
         PadV3::LaunchKernelPadWithHugeWidth<DTYPE_X>(x, paddings, y, tiling, constValues);
@@ -144,6 +155,32 @@ extern "C" __global__ __aicore__ void pad_v3(
         PadV3::LaunchKernelPadMirrorGather<DTYPE_X, REFLECT_SMALL_LAST_DIM_GATHER_BRANCH_DIM3>(x, paddings, y, tiling);
     } else if (TILING_KEY_IS(REFLECT_SMALL_LAST_DIM_GATHER_BRANCH_DIM4)) { // 31042
         PadV3::LaunchKernelPadMirrorGather<DTYPE_X, REFLECT_SMALL_LAST_DIM_GATHER_BRANCH_DIM4>(x, paddings, y, tiling);
+    }
+
+    else if (TILING_KEY_IS(CIRCULAR_SIMT_BRANCH)) { // 24000
+        PadV3::LaunchKernelPadCircularSimt<DTYPE_X>(x, paddings, y, tiling);
+    } else if (TILING_KEY_IS(CIRCULAR_SIMT_BIG_SIZE_BRANCH)) { // 24001
+        PadV3::LaunchKernelPadCircularSimtHuge<DTYPE_X>(x, paddings, y, tiling);
+    } else if (TILING_KEY_IS(CIRCULAR_CUT_LAST_DIM_BRANCH)) { // 34010
+        PadV3::LaunchKernelPadCircularWithHugeWidth<DTYPE_X>(x, paddings, y, tiling);
+    } else if (TILING_KEY_IS(CIRCULAR_BIG_LAST_DIM_BRANCH_DIM2)) { // 34021
+        PadV3::LaunchKernelPadCircularWithNormalWidth<DTYPE_X, CIRCULAR_BIG_LAST_DIM_BRANCH_DIM2>(
+            x, paddings, y, tiling);
+    } else if (TILING_KEY_IS(CIRCULAR_BIG_LAST_DIM_BRANCH_DIM3)) { // 34031
+        PadV3::LaunchKernelPadCircularWithNormalWidth<DTYPE_X, CIRCULAR_BIG_LAST_DIM_BRANCH_DIM3>(
+            x, paddings, y, tiling);
+    } else if (TILING_KEY_IS(CIRCULAR_BIG_LAST_DIM_BRANCH_DIM4)) { // 34041
+        PadV3::LaunchKernelPadCircularWithNormalWidth<DTYPE_X, CIRCULAR_BIG_LAST_DIM_BRANCH_DIM4>(
+            x, paddings, y, tiling);
+    } else if (TILING_KEY_IS(CIRCULAR_SMALL_LAST_DIM_GATHER_BRANCH_DIM2)) { // 34022
+        PadV3::LaunchKernelPadCircularGather<DTYPE_X, CIRCULAR_SMALL_LAST_DIM_GATHER_BRANCH_DIM2>(
+            x, paddings, y, tiling);
+    } else if (TILING_KEY_IS(CIRCULAR_SMALL_LAST_DIM_GATHER_BRANCH_DIM3)) { // 34032
+        PadV3::LaunchKernelPadCircularGather<DTYPE_X, CIRCULAR_SMALL_LAST_DIM_GATHER_BRANCH_DIM3>(
+            x, paddings, y, tiling);
+    } else if (TILING_KEY_IS(CIRCULAR_SMALL_LAST_DIM_GATHER_BRANCH_DIM4)) { // 34042
+        PadV3::LaunchKernelPadCircularGather<DTYPE_X, CIRCULAR_SMALL_LAST_DIM_GATHER_BRANCH_DIM4>(
+            x, paddings, y, tiling);
     }
 
     else if (TILING_KEY_IS(SYMMETRIC_SIMT_BRANCH)) { // 22000
