@@ -628,5 +628,6 @@
     {"name":"Addr", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name": "Roll", "compute_units": ["ascend950"], "auto_sync": false},
     {"name":"concatDV2", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : false, "impl_mode" : ""},
-    {"name": "DropOutDoMask", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}}
+    {"name": "DropOutDoMask", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
+    {"name": "StatelessRandomChoiceWithMask", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode" : ""}
 ]
