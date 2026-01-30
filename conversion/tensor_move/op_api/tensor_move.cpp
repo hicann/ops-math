@@ -77,7 +77,8 @@ bool IsCopyNpuToNpu(const aclTensor* x)
 {
     auto dataSize = static_cast<uint64_t>(x->GetViewShape().GetShapeSize()) * op::TypeSize(x->GetDataType());
     auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == op::SocVersion::ASCEND910B || socVersion == op::SocVersion::ASCEND910_93) {
+    if (socVersion == op::SocVersion::ASCEND910B || socVersion == op::SocVersion::ASCEND910_93
+        || socVersion == op::SocVersion::ASCEND950) {
         return static_cast<int64_t>(dataSize) <= DATA_LIMIT_910B;
     }
     if (socVersion == op::SocVersion::ASCEND910) {
