@@ -59,16 +59,32 @@ const std::set<std::pair<op::Format, op::Format>> kTransdataForwardFormatPairs =
 static const std::initializer_list<DataType> ASCEND950_WEIGHT_DTYPE_SUPPORT_LIST = {
     DataType::DT_INT8, DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16,
     DataType::DT_INT32, DataType::DT_FLOAT8_E4M3FN};
+
 static const std::initializer_list<DataType> WEIGHT_DTYPE_SUPPORT_LIST = {
     DataType::DT_INT8, DataType::DT_UINT8, DataType::DT_FLOAT, DataType::DT_FLOAT16,
     DataType::DT_BF16, DataType::DT_INT32, DataType::DT_UINT32, DataType::DT_FLOAT8_E4M3FN};
 
-static bool isNonQuantMatmulDtype(int dtype, op::Format dstFormat = op::Format::FORMAT_ND)
+static const std::initializer_list<op::Format> INPUT_FORMAT_TO_NZ_SUPPORT_LIST = {
+    op::Format::FORMAT_ND, op::Format::FORMAT_NCL, op::Format::FORMAT_NCHW, op::Format::FORMAT_NCDHW};
+
+static bool IsNonQuantMatmulDtype(int dtype, op::Format dstFormat = op::Format::FORMAT_ND)
 {
     // weight类型为FLOAT且dstFormat为FORMAT_FRACTAL_NZ_C0_16或FORMAT_FRACTAL_NZ_C0_32时，伪量化fp4场景
     return (dtype == ge::DT_FLOAT && dstFormat != op::Format::FORMAT_FRACTAL_NZ_C0_16 &&
             dstFormat != op::Format::FORMAT_FRACTAL_NZ_C0_32) ||
            dtype == ge::DT_FLOAT16 || dtype == ge::DT_BF16;
+}
+
+static bool IsQuantMatmulDtype(const DataType srcDtype, const DataType dstDtype)
+{
+    return srcDtype == dstDtype &&
+           (srcDtype == ge::DT_INT8 || srcDtype == ge::DT_UINT8 || srcDtype == ge::DT_FLOAT8_E4M3FN);
+}
+
+static bool CheckInputFormatSupportedToNz(const op::Format inputFormat)
+{
+    return std::find(INPUT_FORMAT_TO_NZ_SUPPORT_LIST.begin(), INPUT_FORMAT_TO_NZ_SUPPORT_LIST.end(), inputFormat) !=
+           INPUT_FORMAT_TO_NZ_SUPPORT_LIST.end();
 }
 
 inline int64_t Ceil(int64_t x, int64_t y)
@@ -190,7 +206,8 @@ static aclnnStatus CheckCalculateSizeAndFormatInputs(
     OP_CHECK(
         socVersion == SocVersion::ASCEND950 || socVersion == SocVersion::ASCEND910_93 ||
             socVersion == SocVersion::ASCEND910B,
-        OP_LOGW("Only support Ascend950/ASCEND910_93/ASCEND910B"), return ACLNN_ERR_RUNTIME_ERROR);
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Only support Ascend950/ASCEND910_93/ASCEND910B"),
+        return ACLNN_ERR_RUNTIME_ERROR);
     OP_CHECK(
         srcTensor != nullptr, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "srcTensor is nullptr."),
         return ACLNN_ERR_INNER_NULLPTR);
@@ -217,7 +234,7 @@ static aclnnStatus Check95NdToNzCalculateSizeAndFormatInputs(
             return ret;
         }
     } else {
-        if (isNonQuantMatmulDtype(additionalDtype) && dstFormat == op::Format::FORMAT_FRACTAL_NZ) {
+        if (IsNonQuantMatmulDtype(additionalDtype) && dstFormat == op::Format::FORMAT_FRACTAL_NZ) {
             aclnnStatus ret = ValidateNonQuantMatmulParams(additionalDtype, viewShape, viewShapeDim, dstFormat);
             if (ret != ACLNN_SUCCESS) {
                 return ret;
@@ -233,20 +250,21 @@ static aclnnStatus Check95NdToNzCalculateSizeAndFormatInputs(
     return ACLNN_SUCCESS;
 }
 
-static bool CheckFormatValid(DataType srcDtype, op::Format srcFormat, op::Format dstFormat)
+static bool CheckFormatValid(DataType srcDtype, DataType dstDtype, op::Format srcFormat, op::Format dstFormat)
 {
-    if (srcDtype == ge::DT_INT8 || srcDtype == ge::DT_UINT8) {
+    if (IsQuantMatmulDtype(srcDtype, dstDtype)) {
         // QuantBatchMatmul 拦截场景
         OP_CHECK(
-            (srcFormat == op::Format::FORMAT_ND || srcFormat == op::Format::FORMAT_NCL) &&
-                dstFormat == op::Format::FORMAT_FRACTAL_NZ,
+            CheckInputFormatSupportedToNz(srcFormat) && dstFormat == op::Format::FORMAT_FRACTAL_NZ,
             OP_LOGE(
                 ACLNN_ERR_PARAM_INVALID,
-                "Only support srcFormat is ND/NCL and dstFormat is FRACTAL_NZ when srtDtype equals int8, which are "
+                "Only support srcFormat is ND/NCL/NCHW/NCDHW and dstFormat is FRACTAL_NZ when srtDtype equals "
+                "int8/uint8/float8_e4m3fn, "
+                "which are "
                 "[%s] and [%s].",
                 op::ToString(srcFormat).GetString(), op::ToString(dstFormat).GetString()),
             return false);
-    } else if (isNonQuantMatmulDtype(srcDtype, dstFormat)) {
+    } else if (IsNonQuantMatmulDtype(srcDtype, dstFormat)) {
         // 非量化Matmul 拦截场景
         OP_CHECK(
             (srcFormat == op::Format::FORMAT_ND || srcFormat == op::Format::FORMAT_NCL) &&
@@ -261,8 +279,9 @@ static bool CheckFormatValid(DataType srcDtype, op::Format srcFormat, op::Format
         // WeightQuantBatchMatmul 拦截场景
         OP_CHECK(
             (srcDtype == ge::DT_INT32 || srcDtype == ge::DT_FLOAT || srcDtype == ge::DT_FLOAT8_E4M3FN) &&
-                srcFormat == op::Format::FORMAT_ND && (dstFormat == op::Format::FORMAT_FRACTAL_NZ_C0_16 ||
-                dstFormat == op::Format::FORMAT_FRACTAL_NZ_C0_32 || dstFormat == op::Format::FORMAT_FRACTAL_NZ),
+                srcFormat == op::Format::FORMAT_ND &&
+                (dstFormat == op::Format::FORMAT_FRACTAL_NZ_C0_16 || dstFormat == op::Format::FORMAT_FRACTAL_NZ_C0_32 ||
+                 dstFormat == op::Format::FORMAT_FRACTAL_NZ),
             OP_LOGE(
                 ACLNN_ERR_PARAM_INVALID,
                 "Only support srcFormat is ND and dstFormat is FRACTAL_NZ_C0_16 or FRACTAL_NZ_C0_32 when srcDtype "
@@ -280,7 +299,8 @@ static aclnnStatus CheckGetWorkSpaceSizeInputs(const aclTensor* srcTensor, aclTe
     OP_CHECK(
         socVersion == SocVersion::ASCEND950 || socVersion == SocVersion::ASCEND910_93 ||
             socVersion == SocVersion::ASCEND910B,
-        OP_LOGW("Only support Ascend950/ASCEND910_93/ASCEND910B"), return ACLNN_ERR_RUNTIME_ERROR);
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Only support Ascend950/ASCEND910_93/ASCEND910B"),
+        return ACLNN_ERR_RUNTIME_ERROR);
     CHECK_RET(srcTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
     CHECK_RET(dstTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
     OP_CHECK(
@@ -306,14 +326,15 @@ static aclnnStatus Check95NdToNzGetWorkSpaceSizeInputs(const aclTensor* srcTenso
     auto srcViewShape = srcTensor->GetViewShape();
     auto srcviewShapeDim = srcViewShape.GetDimNum();
     DataType srcDtype = srcTensor->GetDataType();
+    DataType dstDtype = dstTensor->GetDataType();
     op::Format dstFormat = dstTensor->GetStorageFormat();
     auto storageShape = dstTensor->GetStorageShape();
     auto storageShapeDim = storageShape.GetDimNum();
-    if (!CheckFormatValid(srcDtype, srcFormat, dstFormat)) {
+    if (!CheckFormatValid(srcDtype, dstDtype, srcFormat, dstFormat)) {
         return ACLNN_ERR_PARAM_INVALID;
     }
 
-    if (srcDtype == ge::DT_INT8 || srcDtype == ge::DT_UINT8 || isNonQuantMatmulDtype(srcDtype, dstFormat)) {
+    if (IsQuantMatmulDtype(srcDtype, dstDtype) || IsNonQuantMatmulDtype(srcDtype, dstFormat)) {
         // QuantBatchMatmul &&
         // 非量化matmul仅支持srcTensor的viewshape维度为2到6，转换后的dstTensor的storageshape维度为4到8
         OP_CHECK(
@@ -341,7 +362,7 @@ static aclnnStatus Check95NdToNzGetWorkSpaceSizeInputs(const aclTensor* srcTenso
     return ACLNN_SUCCESS;
 }
 
-bool isSupportedTransdataForwardPair(op::Format src, op::Format dst)
+bool IsSupportedTransdataForwardPair(op::Format src, op::Format dst)
 {
     return kTransdataForwardFormatPairs.count({src, dst});
 }
@@ -507,22 +528,28 @@ aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
     int* actualFormat)
 {
     auto ret = CheckCalculateSizeAndFormatInputs(srcTensor, dstFormat, additionalDtype);
-    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("Failed to check inputs"), return ACLNN_ERR_PARAM_INVALID);
+    OP_CHECK(
+        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to check inputs"),
+        return ACLNN_ERR_PARAM_INVALID);
     op::Format srcFormat = srcTensor->GetStorageFormat();
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     OP_CHECK(
         (additionalDtype == -1 && (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93)) ||
             (additionalDtype != -1 && socVersion == SocVersion::ASCEND950),
-        OP_LOGW("The current socVersion does not support additionalDtype."), return ACLNN_ERR_PARAM_INVALID);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The current socVersion does not support additionalDtype."),
+        return ACLNN_ERR_PARAM_INVALID);
     if (additionalDtype == -1) {
         additionalDtype = static_cast<int>(srcTensor->GetDataType());
     }
     if (dstFormat == op::Format::FORMAT_FRACTAL_NZ &&
-        (srcFormat == op::Format::FORMAT_ND || srcFormat == op::Format::FORMAT_NCL)) {
+        ((srcFormat == op::Format::FORMAT_ND || srcFormat == op::Format::FORMAT_NCL) ||
+         (additionalDtype == static_cast<int>(srcTensor->GetDataType()) && CheckInputFormatSupportedToNz(srcFormat)))) {
         // ASCEND950校验特殊场景
         if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
             auto retNdToNz = Check95NdToNzCalculateSizeAndFormatInputs(srcTensor, dstFormat, additionalDtype);
-            OP_CHECK(retNdToNz == ACLNN_SUCCESS, OP_LOGW("Failed to check inputs"), return ACLNN_ERR_PARAM_INVALID);
+            OP_CHECK(
+                retNdToNz == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to check inputs"),
+                return ACLNN_ERR_PARAM_INVALID);
         }
         return CalcNdToNz(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
     } else if (srcFormat == op::Format::FORMAT_FRACTAL_NZ && dstFormat == op::Format::FORMAT_ND) {
@@ -536,7 +563,7 @@ aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
     } else if (srcFormat == op::Format::FORMAT_FRACTAL_Z_3D && dstFormat == op::Format::FORMAT_NCDHW) {
         return CalcToNCDHW(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
     }
-    OP_LOGW("aclnnNpuFormatCastCalculateSizeAndFormat unsupported format transformation");
+    OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "aclnnNpuFormatCastCalculateSizeAndFormat unsupported format transformation");
     return ACLNN_ERR_RUNTIME_ERROR;
 }
 
@@ -549,7 +576,8 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
     // ASCEND950校验特殊场景
     if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950 &&
         dstFormat == op::Format::FORMAT_FRACTAL_NZ &&
-        (srcFormat == op::Format::FORMAT_ND || srcFormat == op::Format::FORMAT_NCL)) {
+        ((srcFormat == op::Format::FORMAT_ND || srcFormat == op::Format::FORMAT_NCL) ||
+         (srcTensor->GetDataType() == dstTensor->GetDataType() && CheckInputFormatSupportedToNz(srcFormat)))) {
         ret = Check95NdToNzGetWorkSpaceSizeInputs(srcTensor, dstTensor);
     }
     OP_CHECK(
@@ -563,12 +591,21 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
 
     auto formatTensor = const_cast<aclTensor*>(srcTensor);
     // 适配srcFormat为NCL的场景
-    if (srcFormat == op::Format::FORMAT_NCL) {
+    if (IsQuantMatmulDtype(srcTensor->GetDataType(), dstTensor->GetDataType()) || srcFormat == op::Format::FORMAT_NCL) {
         formatTensor->SetViewFormat(op::Format::FORMAT_ND);
         formatTensor->SetOriginalFormat(op::Format::FORMAT_ND);
         formatTensor->SetStorageFormat(op::Format::FORMAT_ND);
     }
-    if (isSupportedTransdataForwardPair(srcFormat, dstFormat)) {
+    if (IsQuantMatmulDtype(srcTensor->GetDataType(), dstTensor->GetDataType())) {
+        formatTensor->SetOriginalShape(srcTensor->GetViewShape());
+        formatTensor->SetStorageShape(srcTensor->GetViewShape());
+
+        dstTensor->SetViewFormat(op::Format::FORMAT_ND);
+        dstTensor->SetViewShape(srcTensor->GetViewShape());
+        dstTensor->SetOriginalFormat(op::Format::FORMAT_ND);
+        dstTensor->SetOriginalShape(srcTensor->GetOriginalShape());
+    } else if (IsSupportedTransdataForwardPair(srcFormat, dstFormat)) {
+        // 适配srcFormat为NCL的场景
         // 公有转私有Format
         formatTensor->SetOriginalShape(srcTensor->GetViewShape());
         formatTensor->SetStorageShape(srcTensor->GetViewShape());
