@@ -58,7 +58,7 @@
     <tr>
       <td>x</td>
       <td>输入</td>
-      <td>待计算的输入，对应公式中的`self`。要求是一个1D/2D的Tensor，shape为[L]/[B, L]，其中，L为时序采样序列的长度，B为时序采样序列的个数。</td>
+      <td>待计算的输入，对应公式中的`self`。要求是一个1D/2D的Tensor，shape为[L]/[B, L]，其中，L为时序采样序列的长度，B为时序采样序列的个数。不支持输入Inf、-Inf或NaN。</td>
       <td>FLOAT32、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>

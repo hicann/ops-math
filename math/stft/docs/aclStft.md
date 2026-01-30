@@ -96,7 +96,7 @@ aclnnStatus aclnnExpSegsum(
       <td>self</td>
       <td>输入</td>
       <td>待计算的输入，对应公式中的`self`。</td>
-      <td><ul><li>不支持空Tensor。</li><li>shape为[L]/[B, L]。其中，L为时序采样序列的长度，B为时序采样序列的个数。</li></ul></td>
+      <td><ul><li>不支持空Tensor。</li><li>shape为[L]/[B, L]。其中，L为时序采样序列的长度，B为时序采样序列的个数。</li><li>不支持输入Inf、-Inf或NaN。</li></ul></td>
       <td>FLOAT32、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>1-2</td>
