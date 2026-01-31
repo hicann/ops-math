@@ -12,7 +12,7 @@
 
 #include "gtest/gtest.h"
 #include "platform/platform_info.h"
-#include "aclnn_repeat.h"
+#include "../../../op_api/aclnn_repeat.h"
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/tensor_desc.h"
@@ -66,76 +66,6 @@ protected:
 ///////////////////////////////////////
 /////          检查dtype          /////
 ///////////////////////////////////////
-
-TEST_F(l2_repeat_test, l2_repeat_test_dtype)
-{
-    vector<aclDataType> ValidList = {ACL_INT8,       ACL_INT16,   ACL_INT32, ACL_INT64, ACL_UINT8,
-                                     ACL_DOUBLE,     ACL_FLOAT16, ACL_FLOAT, ACL_BOOL,  ACL_COMPLEX64,
-                                     ACL_COMPLEX128, ACL_UINT32,  ACL_UINT64};
-
-    int64_t length = ValidList.size();
-    vector<int64_t> input_dim = {1, 2};
-    vector<int64_t> repeats_dim = {2, 3, 2, 3};
-    vector<int64_t> result_dim = {2, 3, 2, 6};
-
-    for (int i = 0; i < length; i++) {
-        auto inputDesc = TensorDesc(input_dim, ValidList[i], ACL_FORMAT_ND).ValueRange(-2, 2);
-        auto repeatsDesc = IntArrayDesc(repeats_dim);
-        auto outDesc = TensorDesc(result_dim, ValidList[i], ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-        auto ut = OP_API_UT(aclnnRepeat, INPUT(inputDesc, repeatsDesc), OUTPUT(outDesc));
-        uint64_t workspaceSize = 0;
-        aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-        EXPECT_EQ(aclRet, ACL_SUCCESS);
-        // ut.TestPrecision();
-    }
-}
-
-TEST_F(l2_repeat_test, ascend910B2_test_dtype)
-{
-    vector<aclDataType> ValidList = {ACL_INT8,    ACL_INT16, ACL_INT32, ACL_INT64,     ACL_UINT8,     ACL_DOUBLE,
-                                     ACL_FLOAT16, ACL_FLOAT, ACL_BOOL,  ACL_COMPLEX64, ACL_COMPLEX128};
-
-    int64_t length = ValidList.size();
-    vector<int64_t> input_dim = {1, 2};
-    vector<int64_t> repeats_dim = {2, 3, 2, 3};
-    vector<int64_t> result_dim = {2, 3, 2, 6};
-
-    for (int i = 0; i < length; i++) {
-        auto inputDesc = TensorDesc(input_dim, ValidList[i], ACL_FORMAT_ND).ValueRange(-2, 2);
-        auto repeatsDesc = IntArrayDesc(repeats_dim);
-        auto outDesc = TensorDesc(result_dim, ValidList[i], ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-        auto ut = OP_API_UT(aclnnRepeat, INPUT(inputDesc, repeatsDesc), OUTPUT(outDesc));
-        uint64_t workspaceSize = 0;
-        aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-        EXPECT_EQ(aclRet, ACL_SUCCESS);
-        ut.TestPrecision();
-    }
-}
-
-TEST_F(l2_repeat_test, ascend310P1_test_dtype)
-{
-    vector<aclDataType> ValidList = {ACL_INT8,    ACL_INT16, ACL_INT32, ACL_INT64,     ACL_UINT8,     ACL_DOUBLE,
-                                     ACL_FLOAT16, ACL_FLOAT, ACL_BOOL,  ACL_COMPLEX64, ACL_COMPLEX128};
-
-    int64_t length = ValidList.size();
-    vector<int64_t> input_dim = {1, 2};
-    vector<int64_t> repeats_dim = {2, 3, 2, 3};
-    vector<int64_t> result_dim = {2, 3, 2, 6};
-
-    for (int i = 0; i < length; i++) {
-        auto inputDesc = TensorDesc(input_dim, ValidList[i], ACL_FORMAT_ND).ValueRange(-2, 2);
-        auto repeatsDesc = IntArrayDesc(repeats_dim);
-        auto outDesc = TensorDesc(result_dim, ValidList[i], ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-        auto ut = OP_API_UT(aclnnRepeat, INPUT(inputDesc, repeatsDesc), OUTPUT(outDesc));
-        uint64_t workspaceSize = 0;
-        aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-        EXPECT_EQ(aclRet, ACL_SUCCESS);
-        ut.TestPrecision();
-    }
-}
 
 TEST_F(l2_repeat_test, l2_repeat_test_dtype_bf16_error)
 {

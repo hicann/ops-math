@@ -56,6 +56,8 @@ operator_group_1:
   - grouped_bias_add_grad
   - histogram_v2
   - invert
+  - pad
+  - tile
   - is_close
   - is_finite
   - is_inf
