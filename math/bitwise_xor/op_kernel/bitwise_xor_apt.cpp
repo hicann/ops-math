@@ -8,13 +8,22 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef OP_API_INC_LEVEL0_BITWISE_XOR_H_
-#define OP_API_INC_LEVEL0_BITWISE_XOR_H_
+/*!
+ * \file bitwise_xor_apt.cpp
+ * \brief bitwise xor kernel
+ */
 
-#include "opdev/op_executor.h"
+#include "kernel_operator.h"
+#include "arch35/bitwise_xor_dag.h"
+#include "arch35/bitwise_xor_struct.h"
+#include "atvoss/broadcast/broadcast_sch.h"
 
-namespace l0op {
-const aclTensor *BitwiseXor(const aclTensor *self, const aclTensor* other, aclOpExecutor *executor);
+using namespace AscendC;
+
+template <uint64_t schMode>
+__global__ __aicore__ void bitwise_xor(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+{
+    using OpDag = BitwiseXorOp::BitwiseXorCompute<DTYPE_X1>::OpDag;
+    Ops::Base::BroadcastSch<schMode, OpDag> sch(tiling);
+    sch.Process(x1, x2, y);
 }
-
-#endif // OP_API_INC_LEVEL0_BITWISE_XOR_H_

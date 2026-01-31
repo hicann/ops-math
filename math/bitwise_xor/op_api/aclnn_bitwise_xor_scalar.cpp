@@ -22,6 +22,8 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
+#include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -29,6 +31,16 @@ extern "C" {
 #endif
 
 static constexpr size_t MAX_DIM_LEN = 8;
+
+static op::DataType CombineCategories(const op::DataType higher, const op::DataType lower) {
+  if (higher == op::DataType::DT_BOOL) {
+    return op::PromoteType(higher, lower);
+  }
+  if (higher != op::DataType::DT_UNDEFINED) {
+    return higher;
+  }
+  return lower;
+}
 
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST = {
@@ -52,15 +64,13 @@ static inline bool CheckNotNull(const aclTensor *self, const aclScalar *other, c
   return true;
 }
 
-static inline bool CheckDtypeValid(const aclTensor *self, const aclScalar *other, const aclTensor *out,
-                                   DataType &promoteType) {
-  // 检查self的数据类型是否在支持列表内
-  OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
+static DataType GetPromoteDType(const aclTensor *self, const aclScalar *other) {
+  auto promoteType = DataType::DT_UNDEFINED;
+  if (IsRegBase()) {
+    promoteType = CombineCategories(self->GetDataType(), other->GetDataType());
+    return promoteType;
+  }
 
-  // 检查other的数据类型是否在支持列表内
-  OP_CHECK_DTYPE_NOT_SUPPORT(other, DTYPE_SUPPORT_LIST, return false);
-
-  // 检查self和other能否做数据类型推导
   if (other->GetDataType() == DataType::DT_INT64) {
     int64_t v = other->ToInt64();
     if (v >= INT32_MIN && v <= INT32_MAX) {
@@ -71,7 +81,19 @@ static inline bool CheckDtypeValid(const aclTensor *self, const aclScalar *other
   } else {
     promoteType = PromoteType(self->GetDataType(), other->GetDataType());
   }
+  return promoteType;
+}
 
+static inline bool CheckDtypeValid(const aclTensor *self, const aclScalar *other, const aclTensor *out,
+                                   DataType &promoteType) {
+  // 检查self的数据类型是否在支持列表内
+  OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
+
+  // 检查other的数据类型是否在支持列表内
+  OP_CHECK_DTYPE_NOT_SUPPORT(other, DTYPE_SUPPORT_LIST, return false);
+
+  // 检查self和other能否做数据类型推导
+  promoteType = GetPromoteDType(self, other);
   if (promoteType == DataType::DT_UNDEFINED) {
     OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self dtype %s and other dtype %s can not promote dtype.",
             ToString(self->GetDataType()).GetString(), ToString(other->GetDataType()).GetString());

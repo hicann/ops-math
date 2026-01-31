@@ -1,11 +1,18 @@
 # aclnnBitwiseXorScalar&aclnnInplaceBitwiseXorScalar
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/bitwise_xor)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                              |    √     |
+
 
 ## 功能说明
 
@@ -35,10 +42,16 @@
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)：Device侧的aclTensor，数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8，且数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
-  - other(aclScalar*, 计算输入)：Host侧的aclScalar，数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8，且数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
-  - out(aclTensor \*, 计算输出)：Device侧的aclTensor，数据类型需要是self与other推导之后可转换的数据类型，shape需要与self一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16。
+  - self(aclTensor*, 计算输入)：公式中的输入self，Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
+    - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8，且数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），推导后的数据类型需在支持的数据类型范围内。
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8，且数据类型与other的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)），推导后的数据类型需在支持的数据类型范围内。
+  - other(aclScalar*, 计算输入)：公式中的输入other，Host侧的aclScalar。
+    - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8，且数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），推导后的数据类型需在支持的数据类型范围内。
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8，且数据类型与self的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)），推导后的数据类型需在支持的数据类型范围内。
+  - out(aclTensor \*, 计算输出)：公式中的输出out，Device侧的aclTensor。数据类型需要是self与other推导之后可转换的数据类型，shape需要与self一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
+    - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16。
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16。
   - workspaceSize(uint64_t \*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor \*\*, 出参)：返回op执行器，包含了算子计算流程。
 
@@ -49,10 +62,10 @@
   第一段接口完成入参校验，出现以下场景时报错：
   161001(ACLNN_ERR_PARAM_NULLPTR): 1. 参数self、other、out是空指针。
   161002(ACLNN_ERR_PARAM_INVALID): 1. 参数self、other的数据类型不在支持范围内。
-                                   2. 参数self和other不满足数据类型推导规则。
-                                   3. 参数self和other推导出的数据类型不能转换为out的数据类型。
-                                   4. 参数self和out的shape不一致。
-                                   5. 参数self、out的维度大于8。
+                                   1. 参数self和other不满足数据类型推导规则。
+                                   2. 参数self和other推导出的数据类型不能转换为out的数据类型。
+                                   3. 参数self和out的shape不一致。
+                                   4. 参数self、out的维度大于8。
   ```
 
 ## aclnnBitwiseXorScalar
@@ -72,8 +85,12 @@
 
 - **参数说明：**
 
-  - selfRef(aclTensor \*，计算输入和计算输出)：输入输出张量，即公式中的self与out。Device侧的aclTensor，数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8，且数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），且推导后的数据类型需要能转换成selfRef自身的数据类型，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
-  - other(aclScalar*,计算输入)：输入标量，Host侧的aclScalar，数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8，且数据类型与selfRef的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
+  - selfRef(aclTensor \*，计算输入|计算输出)：输入输出tensor，即公式中的输入self和输出out。Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
+    - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8，且数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），且需要是推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8，且数据类型与other的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)），且需要是推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。
+  - other(aclScalar*,计算输入)：公式中的输入other，host侧的aclScalar。
+    - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8，且数据类型与selfRef的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8，且数据类型与selfRef的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）。
   - workspaceSize(uint64_t \*，出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor \*\*，出参)：返回op执行器，包含了算子计算流程。
 
@@ -85,9 +102,9 @@
   第一段接口完成入参校验，出现以下场景时报错：
   161001(ACLNN_ERR_PARAM_NULLPTR): 1. 参数selfRef、other是空指针。
   161002(ACLNN_ERR_PARAM_INVALID): 1. 参数selfRef、other的数据类型不在支持范围内。
-                                   2. 参数selfRef和other不满足数据类型推导规则。
-                                   3. 参数selfRef和other推导出的数据类型不能转换为selfRef的数据类型。
-                                   4. 参数selfRef的维度大于8。
+                                   1. 参数selfRef和other不满足数据类型推导规则。
+                                   2. 参数selfRef和other推导出的数据类型不能转换为selfRef的数据类型。
+                                   3. 参数selfRef的维度大于8。
   ```
 
 ## aclnnInplaceBitwiseXorScalar

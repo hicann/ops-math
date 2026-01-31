@@ -8,13 +8,21 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef OP_API_INC_LEVEL0_BITWISE_XOR_H_
-#define OP_API_INC_LEVEL0_BITWISE_XOR_H_
+/*!
+ * \file bitwise_xor_struct.h
+ * \brief bitwise xor struct
+ */
 
-#include "opdev/op_executor.h"
+#ifndef BITWISE_XOR_STRUCT_H
+#define BITWISE_XOR_STRUCT_H
 
-namespace l0op {
-const aclTensor *BitwiseXor(const aclTensor *self, const aclTensor* other, aclOpExecutor *executor);
-}
+#include "atvoss/broadcast/broadcast_base_struct.h"
 
-#endif // OP_API_INC_LEVEL0_BITWISE_XOR_H_
+// 算子自定义的tiling key字段
+ASCENDC_TPL_ARGS_DECL(BitwiseXor, BRC_TEMP_SCH_MODE_KEY_DECL(schMode));
+
+ASCENDC_TPL_SEL(
+    ASCENDC_TPL_ARGS_SEL(BRC_TEMP_SCH_MODE_KEY_SEL(schMode))
+);
+
+#endif // BITWISE_XOR_STRUCT_H

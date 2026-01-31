@@ -8,13 +8,21 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef OP_API_INC_LEVEL0_BITWISE_XOR_H_
-#define OP_API_INC_LEVEL0_BITWISE_XOR_H_
+/*!
+ * \file bitwise_xor_infershape.cpp
+ * \brief
+ */
+#include "infershape_broadcast_util.h"
+#include "register/op_impl_registry.h"
 
-#include "opdev/op_executor.h"
+using namespace ge;
+namespace ops {
+constexpr size_t INPUT_NUM_TWO = 2;
 
-namespace l0op {
-const aclTensor *BitwiseXor(const aclTensor *self, const aclTensor* other, aclOpExecutor *executor);
+static ge::graphStatus InferShape4BitwiseXor(gert::InferShapeContext *context)
+{
+    return Ops::Base::InferShape4Broadcast(context, INPUT_NUM_TWO);
 }
 
-#endif // OP_API_INC_LEVEL0_BITWISE_XOR_H_
+IMPL_OP_INFERSHAPE(BitwiseXor).InferShape(InferShape4BitwiseXor);
+}
