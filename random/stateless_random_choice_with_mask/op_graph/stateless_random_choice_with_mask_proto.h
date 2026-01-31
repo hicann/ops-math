@@ -24,17 +24,14 @@ namespace ge {
 
 * @par Inputs:
 include:
-* @li x: 1-D. The shape of the input tensor. A tensor of type bool.
-* @li count: A tensor of type int32.
-* must be greater than or equal to 0.
-* @li seed: If seed is set to be -1, and offset is set to be 0, the random number
-* generator is seeded by a random seed. Otherwise, it is seeded by the given seed.
-* A tensor of type int64.
-* @li offset: To avoid seed collision. A tensor of type int64.
+* @li x: A ND Tensor of type bool. Support 1D~5D. If x is true, this index will be selected.
+* @li count: A ND Tensor of type int32. Support 1D. Must be greater than or equal to 0.
+* @li seed: A ND Tensor of type int64. Support 1D, should be const data.
+* @li offset: A ND Tensor of type int64. Support 1D, should be const data.
 
 * @par Outputs:
-* y: A tensor. The tensor of type support int32.
-* mask: A tensor. The tensor of type support bool.
+* @li y: A ND Tensor of int32.
+* @li mask: A ND Tensor of bool. If x is true, y is a valid index, otherwise it is 0.
 */
 
 REG_OP(StatelessRandomChoiceWithMask)

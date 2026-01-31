@@ -2146,6 +2146,16 @@
   </tr>
   <tr>
     <td>random</td>
+    <td><a href="../../random/stateless_random_choice_with_mask/README.md">stateless_random_choice_with_mask</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>x</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>根据输入x中值为true，选择出对应索引列表，其次根据seed, offset调用philox_random生成索引列表长度个随机数，利用随机数对索引列表做洗牌算法，得到随机交换后得索引列表，返回count个。</td>
+  </tr>
+  <tr>
+    <td>random</td>
     <td><a href="../../random/stateless_bernoulli/README.md">stateless_bernoulli</a></td>
     <td>√</td>
     <td>√</td>
