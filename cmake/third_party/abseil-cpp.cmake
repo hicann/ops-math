@@ -10,6 +10,7 @@
 
 include(ExternalProject)
 set(ABSEIL_VERSION_PKG abseil-cpp-20230802.1.tar.gz)
+set(ABSEIL_CACHE_DIR ${CANN_3RD_LIB_PATH}/lib_cache/abseil-cpp-20230802)
 
 unset(abseil-cpp_FOUND CACHE)
 unset(ABSL_SOURCE_DIR CACHE)
@@ -18,7 +19,7 @@ find_path(ABSL_SOURCE_DIR
         NAMES absl/log/absl_log.h
         NO_CMAKE_SYSTEM_PATH
         NO_CMAKE_FIND_ROOT_PATH
-        PATHS ${PROJECT_SOURCE_DIR}/third_party/abseil-cpp)
+        PATHS ${ABSEIL_CACHE_DIR})
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(abseil-cpp
