@@ -19,7 +19,7 @@
 #include "platform/platform_ascendc.h"
 #include "op_common/op_host/util/platform_util.h"
 #include "random_uniform_int_v2_tiling_arch35.h"
-#include  "../../../common/random_tiling_base.h"
+#include  "random/random_common/op_host/arch35/random_tiling_base.h"
 #include "op_host/tiling_templates_registry.h"
 #include "register/op_def_registry.h"
 
