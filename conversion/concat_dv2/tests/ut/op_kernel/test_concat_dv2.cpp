@@ -52,7 +52,7 @@ TEST_F(concat_dv2_test, test_case_fp32_smallshape_2d)
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(y_size);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(72 * 4);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     ConcatDV2TilingDataUT* tilingData = reinterpret_cast<ConcatDV2TilingDataUT*>(tiling);
     tilingData->elePerLoop = 32;
@@ -65,7 +65,7 @@ TEST_F(concat_dv2_test, test_case_fp32_smallshape_2d)
     tilingData->endTensorOffset[0] = 0;
 
     ICPU_SET_TILING_KEY(0);
-    ICPU_RUN_KF(concat_dv2, blockDim, x1, y, workspace, (uint8_t*)tilingData);
+    ICPU_RUN_KF(concat_dv2, numBlocks, x1, y, workspace, (uint8_t*)tilingData);
 
     AscendC::GmFree(x1);
     AscendC::GmFree(y);

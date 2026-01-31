@@ -49,7 +49,7 @@ protected:
 TEST_F(as_strided_test, test_case_0)
 {
     uint64_t tilingKey = 2;
-    uint32_t blockDim = 9;
+    uint32_t numBlocks = 9;
     int64_t typeSize = 2;
 
     size_t x_FileSize = 1652720 * typeSize;
@@ -80,7 +80,7 @@ TEST_F(as_strided_test, test_case_0)
     ReadFile(path + "/as_strided_data/tiling.bin", tiling_FileSize, tiling, tiling_FileSize);
 
     ICPU_SET_TILING_KEY(tilingKey);
-    ICPU_RUN_KF(as_strided, blockDim, x, size, stride, y, workspace, tiling);
+    ICPU_RUN_KF(as_strided, numBlocks, x, size, stride, y, workspace, tiling);
 
     AscendC::GmFree((void *)x);
     AscendC::GmFree((void *)size);

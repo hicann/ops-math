@@ -103,7 +103,7 @@ ge::graphStatus MemSetTilingClass::PostTiling()
         case 128: PostDo<128>();break;
         case 196: PostDo<196>();break;
     }
-    context_->SetBlockDim(aicoreParams_.blockDim);
+    context_->SetBlockDim(aicoreParams_.numBlocks);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -116,7 +116,7 @@ ge::graphStatus MemSetTilingClass::DoOpTiling()
 {
     for (uint16_t i = 0; i < inputCount_; i++) {
         uint32_t dataSize = ge::GetSizeByDataType(static_cast<ge::DataType>(listType_[i]));
-        OP_CHECK_IF(dataSize == 0, OP_LOGE(context_, "Failed to blockDim."), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(dataSize == 0, OP_LOGE(context_, "Failed to numBlocks."), return ge::GRAPH_FAILED);
         uint64_t sizeByte = sizes_[i];
         if (sizeByte == 0ULL) {
             OP_LOGW(context_, "Input[%d] has zero size, skip tiling logic", i);
@@ -128,7 +128,7 @@ ge::graphStatus MemSetTilingClass::DoOpTiling()
         uint32_t tail = sizeByte % BLOCK_SIZE;
         uint16_t tailOrNot = tail > 0 ? 1 : 0;
         uint64_t blockNum = sizeByte / BLOCK_SIZE + tailOrNot;
-        perCoreSizes_[i] = (blockNum + aicoreParams_.blockDim - 1) / aicoreParams_.blockDim;
+        perCoreSizes_[i] = (blockNum + aicoreParams_.numBlocks - 1) / aicoreParams_.numBlocks;
         useCore_[i] = (blockNum + perCoreSizes_[i] - 1) / perCoreSizes_[i];
         lastCoreSizes_[i] = blockNum - (useCore_[i] - 1) * perCoreSizes_[i];
         perCoreSizes_[i] = BLOCK_SIZE * perCoreSizes_[i] / dataSize;
@@ -143,7 +143,7 @@ ge::graphStatus MemSetTilingClass::GetPlatformInfo()
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo != nullptr) {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
-        aicoreParams_.blockDim = ascendcPlatform.GetCoreNumAiv();
+        aicoreParams_.numBlocks = ascendcPlatform.GetCoreNumAiv();
         uint64_t ubSizePlatForm;
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
         aicoreParams_.ubSize = ubSizePlatForm;
@@ -152,10 +152,10 @@ ge::graphStatus MemSetTilingClass::GetPlatformInfo()
         OP_CHECK_IF(
             compileInfoPtr == nullptr, OP_LOGE(context_->GetNodeName(), "compile info is null"),
             return ge::GRAPH_FAILED);
-        aicoreParams_.blockDim = compileInfoPtr->coreNum;
+        aicoreParams_.numBlocks = compileInfoPtr->coreNum;
         aicoreParams_.ubSize = compileInfoPtr->ubSize;
     }
-    OP_CHECK_IF(aicoreParams_.blockDim == 0LL, OP_LOGE(context_, "blockDim is zero"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(aicoreParams_.numBlocks == 0LL, OP_LOGE(context_, "numBlocks is zero"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(aicoreParams_.ubSize == 0LL, OP_LOGE(context_, "ubSize is zero"), return ge::GRAPH_FAILED);
     cacheLineSize_ = Ops::Base::GetCacheLineSize(context_);
     halfUbSize_ = aicoreParams_.ubSize / 2;
