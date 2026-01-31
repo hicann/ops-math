@@ -67,8 +67,8 @@ private:
     __aicore__ inline void ComputeBase();
     __aicore__ inline void ComputeBatches();
     __aicore__ inline void Compute(int64_t batchIdx, int64_t colIdx);
-    __aicore__ inline void CopyInBatch(int32_t offset, int64_t batchesEachCopy, uint32_t calSize);
-    __aicore__ inline void CopyOutBatch(int32_t offset, int64_t batchesEachCopy, int32_t calNum, uint32_t calSize);
+    __aicore__ inline void CopyInBatch(int64_t offset, int64_t batchesEachCopy, uint32_t calSize);
+    __aicore__ inline void CopyOutBatch(int64_t offset, int64_t batchesEachCopy, int64_t calNum, uint32_t calSize);
     __aicore__ inline void processY(
         int64_t outProcessedNum, int64_t calCount, LocalTensor<float> currentRow, int64_t batchesEachCopy,
         int64_t blockNumData);
@@ -158,7 +158,7 @@ __aicore__ inline void SegsumND<T, MODE>::Compute(int64_t batchIdx, int64_t colI
         calCount = Min(slideSize, tailDimSize - colIdx);
         int64_t blockNumData = CeilA2B(calCount, blockSize) * blockSize;
 
-        int32_t inOffset = batchIdx * tailDimSize + rowIdx;
+        int64_t inOffset = batchIdx * tailDimSize + rowIdx;
         CopyInBatch(inOffset, 1, calCount * sizeof(T));
         LocalTensor<T> xTensor = inQueue.DeQue<T>();
         for (int64_t dataIdx = rowIdx; dataIdx < rowIdx + loopCount; dataIdx++) {
@@ -258,7 +258,7 @@ __aicore__ inline void SegsumND<T, MODE>::ComputeBatches()
     int64_t totalBlockNumData = blockNumData * batchNum;
     for (int64_t batchIdx = batchStart; batchIdx < batchEnd; batchIdx += batchNum) {
         int64_t batchesEachCopy = Min(batchEnd - batchIdx, batchNum);
-        int32_t inOffset = batchIdx * tailDimSize;
+        int64_t inOffset = batchIdx * tailDimSize;
         CopyInBatch(inOffset, batchesEachCopy, calSize);
         LocalTensor<T> xTensor = inQueue.DeQue<T>();
 
@@ -286,7 +286,7 @@ __aicore__ inline void SegsumND<T, MODE>::ComputeBatches()
 }
 
 template <typename T, int32_t MODE>
-__aicore__ inline void SegsumND<T, MODE>::CopyInBatch(int32_t offset, int64_t batchesEachCopy, uint32_t calSize)
+__aicore__ inline void SegsumND<T, MODE>::CopyInBatch(int64_t offset, int64_t batchesEachCopy, uint32_t calSize)
 {
     LocalTensor<T> xTensor = inQueue.AllocTensor<T>();
     DataCopyExtParams copyParams{static_cast<uint16_t>(batchesEachCopy), calSize, 0, 0, 0};
@@ -296,7 +296,7 @@ __aicore__ inline void SegsumND<T, MODE>::CopyInBatch(int32_t offset, int64_t ba
 }
 template <typename T, int32_t MODE>
 __aicore__ inline void SegsumND<T, MODE>::CopyOutBatch(
-    int32_t offset, int64_t batchesEachCopy, int32_t calNum, uint32_t calSize)
+    int64_t offset, int64_t batchesEachCopy, int64_t calNum, uint32_t calSize)
 {
     LocalTensor<T> yTensor = outQueue.DeQue<T>();
     DataCopyExtParams copyParams{
