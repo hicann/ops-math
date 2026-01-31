@@ -12,8 +12,7 @@
 #include <gtest/gtest.h>
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
-#include "../../../op_host/random_uniform_v2_tiling.h"
-#include "../../../op_host/random_uniform_v2_tiling_arch35.h"
+#include "../../../../op_host/arch35/random_uniform_v2_tiling_arch35.h"
 
 using namespace std;
 using namespace ge;
@@ -31,7 +30,7 @@ class RandomUniformV2Tiling : public testing::Test {
 
 TEST_F(RandomUniformV2Tiling, random_uniform_v2_tiling_950_float_001)
 {
-    optiling::RandomUniformV2CompileInfo compileInfo = {64, 196608};
+    optiling::RandomOperatorCompileInfo compileInfo = {64, 196608};
     gert::StorageShape shape_shape = {{2}, {2}};
     gert::StorageShape offset_shape = {{1}, {1}};
     gert::StorageShape out_shape = {{32, 512}, {32, 512}};
@@ -43,15 +42,24 @@ TEST_F(RandomUniformV2Tiling, random_uniform_v2_tiling_950_float_001)
     vector<int64_t> offset_value = {0};
 
     gert::TilingContextPara tilingContextPara(
-        "RandomUniformV2", {{shape_shape, ge::DT_INT32, ge::FORMAT_ND, true, shape_value.data()}, {offset_shape, ge::DT_INT64, ge::FORMAT_ND, true, offset_value.data()}},
-        {{out_shape, ge::DT_FLOAT, ge::FORMAT_ND}, {offset_shape, ge::DT_INT64, ge::FORMAT_ND}},
-        {gert::TilingContextPara::OpAttr("dtype", dtype),
-         gert::TilingContextPara::OpAttr("seed", seed),
-         gert::TilingContextPara::OpAttr("seed2", seed2)},
+        "RandomUniformV2",
+        {
+          {shape_shape, ge::DT_INT32, ge::FORMAT_ND, true, shape_value.data()},
+          {offset_shape, ge::DT_INT64, ge::FORMAT_ND, true, offset_value.data()}
+        },
+        {
+          {out_shape, ge::DT_FLOAT, ge::FORMAT_ND},
+          {offset_shape, ge::DT_INT64, ge::FORMAT_ND}
+        },
+        {
+          gert::TilingContextPara::OpAttr("dtype", dtype),
+          gert::TilingContextPara::OpAttr("seed", seed),
+          gert::TilingContextPara::OpAttr("seed2", seed2)
+        },
         &compileInfo);
-    uint64_t expectTilingKey = 1;
+    uint64_t expectTilingKey = 100;
     string expectTilingData =
-        "64 256 256 16384 10 5 16384 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+        "64 256 256 21824 10 0 5 16384 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

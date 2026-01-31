@@ -14,40 +14,22 @@
 
 #include "log/log.h"
 #include "register/op_impl_registry.h"
+#include "random/random_common/op_graph/random_graph_infer_base.h"
 
 using namespace ge;
 namespace ops {
-static graphStatus RandomStandardNormalV2InferDataTypeByAttr(
-    gert::InferDataTypeContext* context, const size_t dtype_index, const std::set<DataType>& support_dtype)
-{
-    if (context == nullptr) {
-        return ge::GRAPH_FAILED;
-    }
+static constexpr size_t RANDOM_STANDARD_NORMAL_V2_OFFSET = 1;
+static constexpr size_t RANDOM_STANDARD_NORMAL_V2_OUT_ATTR_IDX = 0;
 
-    OP_LOGD(context, "RandomStandardNormalV2InferDataTypeByAttr begin.");
-    auto* attrs = context->GetAttrs();
-    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
-    const int64_t* attrDtype = attrs->GetAttrPointer<int64_t>(dtype_index);
-    OP_CHECK_NULL_WITH_CONTEXT(context, attrDtype);
-    ge::DataType yDtype = static_cast<ge::DataType>(*attrDtype);
-    OP_CHECK_IF(support_dtype.count(yDtype) == 0,
-        OP_LOGE(context, "out shape dtype should be float, float16, bfloat16 but got %s.",
-        Ops::Base::ToString(yDtype).c_str()), return ge::GRAPH_FAILED);
-    
-    context->SetOutputDataType(0, yDtype);
-    OP_LOGD(
-        context, "RandomStandardNormalV2InferDataTypeByAttr end. Data type is %s.",
-        Ops::Base::ToString(yDtype).c_str());
-    return ge::GRAPH_SUCCESS;
+static ge::graphStatus InferDataTypeRandomStandardNormalV2(gert::InferDataTypeContext* context)
+{
+    int32_t mode = ops::GraphCommon::MODE_ATTR;
+    int32_t dtypeIndex = RANDOM_STANDARD_NORMAL_V2_OUT_ATTR_IDX;
+    const std::vector<ops::GraphCommon::OutputSpec>& extraOutputMap = {{"offset", RANDOM_STANDARD_NORMAL_V2_OFFSET, ge::DT_INT16}};
+    const std::set<ge::DataType>& supportDtype = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
+    bool isCheck = true;
+    return ops::GraphCommon::CommonInferType(context, mode, dtypeIndex, extraOutputMap, supportDtype, isCheck);
 }
 
-static graphStatus RandomStandardNormalV2InferDataType(gert::InferDataTypeContext* context)
-{
-    context->SetOutputDataType(1, ge::DT_INT64);
-
-    std::set<ge::DataType> support_dtype = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16};
-    return RandomStandardNormalV2InferDataTypeByAttr(context, 0, support_dtype);
-}
-
-IMPL_OP(RandomStandardNormalV2).InferDataType(RandomStandardNormalV2InferDataType);
-}; // namespace ops
+IMPL_OP(RandomStandardNormalV2).InferDataType(InferDataTypeRandomStandardNormalV2);
+} // namespace ops

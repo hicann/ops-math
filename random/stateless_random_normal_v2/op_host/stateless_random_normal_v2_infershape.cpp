@@ -15,39 +15,27 @@
 #include "util/shape_util.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
+#include "random/random_common/op_host/random_infershape_base.h"
 
 using namespace ge;
 namespace ops {
-template <typename T>
-static graphStatus InferShapeImpl(const T* shape_data, gert::Shape& output_shape, size_t shape_size)
+static constexpr size_t STATELESS_RANDOM_NORMAL_SHAPE = 0;
+static constexpr size_t STATELESS_RANDOM_NORMAL_KEY = 1;
+static constexpr size_t STATELESS_RANDOM_NORMAL_COUNTER = 2;
+static constexpr size_t STATELESS_RANDOM_NORMAL_ALG = 3;
+static constexpr size_t STATELESS_RANDOM_NORMAL_Y = 0;
+
+static graphStatus InferShapeStatelessRandomNormalV2(gert::InferShapeContext* context)
 {
-    output_shape.SetDimNum(shape_size);
-    for (size_t i = 0U; i < shape_size; i++) {
-        output_shape.SetDim(i, shape_data[i]);
-    }
-    return ge::GRAPH_SUCCESS;
+    const std::unordered_map<std::string, size_t>& inputMap = {
+        {"shape", STATELESS_RANDOM_NORMAL_SHAPE},
+        {"key", STATELESS_RANDOM_NORMAL_KEY},
+        {"counter", STATELESS_RANDOM_NORMAL_COUNTER},
+        {"alg", STATELESS_RANDOM_NORMAL_ALG}};
+    const std::unordered_map<std::string, size_t>& outputMap = {{"y", STATELESS_RANDOM_NORMAL_Y}};
+    int32_t mode = ops::randomCommon::MODE_DEPENDENCY;
+    return ops::randomCommon::CommonInferShape(context, inputMap, outputMap, mode);
 }
+IMPL_OP_INFERSHAPE(StatelessRandomNormalV2).InputsDataDependency({0}).InferShape(InferShapeStatelessRandomNormalV2);
 
-static graphStatus StatelessRandomNormalV2InferShapeFunc(gert::InferShapeContext* context)
-{
-    auto shape_tensor = context->GetInputTensor(0);
-    auto output_shape = context->GetOutputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, shape_tensor);
-    OP_CHECK_NULL_WITH_CONTEXT(context, output_shape);
-
-    auto x_shape_size = shape_tensor->GetShapeSize();
-    if (x_shape_size < 0) {
-        return ge::GRAPH_FAILED;
-    }
-
-    if (shape_tensor->GetDataType() == ge::DT_INT32) {
-        auto shape_data = shape_tensor->GetData<int32_t>();
-        return InferShapeImpl<int32_t>(shape_data, *output_shape, static_cast<size_t>(x_shape_size));
-    } else {
-        auto shape_data = shape_tensor->GetData<int64_t>();
-        return InferShapeImpl<int64_t>(shape_data, *output_shape, static_cast<size_t>(x_shape_size));
-    }
-}
-
-IMPL_OP_INFERSHAPE(StatelessRandomNormalV2).InputsDataDependency({0}).InferShape(StatelessRandomNormalV2InferShapeFunc);
 } // namespace ops

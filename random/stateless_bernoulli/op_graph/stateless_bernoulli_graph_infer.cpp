@@ -16,24 +16,18 @@
 #include "register/op_impl_registry.h"
 #include "op_host/util/math_util.h"
 #include "op_host/util/const_util.h"
+#include "random/random_common/op_graph/random_graph_infer_base.h"
 
 using namespace ge;
-
 namespace ops {
-const int32_t INDEX_OUTPUT_Y = 0;
-const int32_t INDEX_ATTR = 0;
+static constexpr size_t STATELESS_BERNOULLI_OUT_ATTR_IDX = 0;
 
-static ge::graphStatus InferDataType4StatelessBernoulli(gert::InferDataTypeContext* context)
+static ge::graphStatus InferDataTypeStatelessBernoulli(gert::InferDataTypeContext* context)
 {
-    OP_LOGD(context->GetNodeName(), " InferDataType4StatelessBernoulli runtime2.0 is begin.");
-    auto attrPtr = context->GetAttrs();
-    OP_CHECK_NULL_WITH_CONTEXT(context, attrPtr);
-    auto dTypePtr = attrPtr->GetAttrPointer<int32_t>(INDEX_ATTR);
-    OP_CHECK_NULL_WITH_CONTEXT(context, dTypePtr);
-    ge::DataType outDtype = static_cast<ge::DataType>(*dTypePtr);
-    context->SetOutputDataType(INDEX_OUTPUT_Y, outDtype);
-    return ge::GRAPH_SUCCESS;
+    int32_t mode = ops::GraphCommon::MODE_ATTR;
+    int32_t dtypeIndex = STATELESS_BERNOULLI_OUT_ATTR_IDX;
+    return ops::GraphCommon::CommonInferType(context, mode, dtypeIndex);
 }
 
-IMPL_OP(StatelessBernoulli).InferDataType(InferDataType4StatelessBernoulli);
+IMPL_OP(StatelessBernoulli).InferDataType(InferDataTypeStatelessBernoulli);
 } // namespace ops

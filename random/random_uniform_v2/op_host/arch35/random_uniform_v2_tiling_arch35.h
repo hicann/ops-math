@@ -9,37 +9,32 @@
  */
 
 /*!
- * \file random_tiling_base.h
+ * \file random_uniform_v2_tiling_arch35.h
  * \brief
  */
-#ifndef RANDOM_TILING_BASE_H
-#define RANDOM_TILING_BASE_H
+#ifndef RANDOM_UNIFORM_V2_TILING_ARCH35_H
+#define RANDOM_UNIFORM_V2_TILING_ARCH35_H
 
-#include <random>
-#include <chrono>
-#include <thread>
-#include <cstdint>
+#include "register/tilingdata_base.h"
+#include "op_host/tiling_base.h"
+#include "register/op_impl_registry.h"
+#include "tiling/platform/platform_ascendc.h"
+#include "log/log.h"
+#include "util/math_util.h"
+#include  "../../../random_common/op_host/arch35/random_tiling_arch35.h"
 
 namespace optiling {
+class RandomUniformV2Tiling : public RandomTilingArch35
+{
+public:
+    explicit RandomUniformV2Tiling(gert::TilingContext* context);
+    ~RandomUniformV2Tiling() override = default;
 
-static inline std::mt19937_64& GetGlobalRng() {
-    static std::mt19937_64 rng([]() -> uint64_t {
-        auto now =std::chrono::high_resolution_clock::now();
-        uint64_t seed = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            now.time_since_epoch()
-        ).count();
+protected:
 
-        seed ^= std::hash<std::thread::id>()(std::this_thread::get_id());
-        return seed;
-    }());
-
-    return rng;
-}
-
-
-inline uint64_t New64() {
-    return GetGlobalRng()();
-}
+private:
+    static OpTilingConfig BuildOpConfig();
+};
 
 } // namespace optiling
-#endif // RANDOM_TILING_BASE_H
+#endif // RANDOM_UNIFORM_V2_TILING_ARCH35_H

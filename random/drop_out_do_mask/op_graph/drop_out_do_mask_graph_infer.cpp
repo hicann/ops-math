@@ -15,17 +15,14 @@
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 #include "util/math_util.h"
+#include "random/random_common/op_graph/random_graph_infer_base.h"
 
 using namespace ge;
 namespace ops {
-
 static ge::graphStatus InferDataType4DropOutDoMask(gert::InferDataTypeContext* context)
 {
-    OP_LOGD(context->GetNodeName(), "Begin to do InferDataType4DropOutDoMask");
-    // 实现推导逻辑
-    DataType inputDataType = context->GetInputDataType(0);
-    context->SetOutputDataType(0, inputDataType);
-    return ge::GRAPH_SUCCESS;
+    int32_t mode = ops::GraphCommon::MODE_INPUT_EQUAL_OUTPUT;
+    return ops::GraphCommon::CommonInferType(context, mode);
 }
 
 IMPL_OP(DropOutDoMask).InferDataType(InferDataType4DropOutDoMask);

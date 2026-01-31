@@ -13,150 +13,71 @@
  * \brief
  */
 #include "register/op_def_registry.h"
+#include "../../random_common/op_host/random_dtype_fmt_gen.h"
 
 namespace ops {
 class StatelessDropOutGenMask : public OpDef {
-  public:
-    explicit StatelessDropOutGenMask(const char* name) : OpDef(name) {
-      this->Input("shape")
-          .ParamType(REQUIRED)
-          .DataType({ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                     ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                     ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                     ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                     ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                     ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,})
-          .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-          .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-          .ValueDepend(OPTIONAL);
-  
-      this->Input("prob")
-          .ParamType(REQUIRED)
-          .DataType({ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT16, 
-                     ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, 
-                     ge::DT_BF16, ge::DT_BF16, ge::DT_BF16, ge::DT_BF16,
-                     ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT16, 
-                     ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, 
-                     ge::DT_BF16, ge::DT_BF16, ge::DT_BF16, ge::DT_BF16})
-          .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-          .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-          .ValueDepend(OPTIONAL);
+public:
+	const std::vector<ge::DataType> shapeDataType = {ge::DT_INT32, ge::DT_INT64};
+	const std::vector<ge::DataType> probDataType = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16};
+	const std::vector<ge::DataType> seedDataType = {ge::DT_INT32, ge::DT_INT64};
+	const std::vector<ge::DataType> seed1DataType = {ge::DT_INT32, ge::DT_INT64};
+	const std::vector<ge::DataType> offsetDataType = {ge::DT_INT64};
+	const std::vector<ge::DataType> yDataType = {ge::DT_UINT8};
+	const std::vector<ge::Format> baseFormat = {ge::FORMAT_ND};
 
-      this->Input("seed")
-          .ParamType(REQUIRED)
-          .DataType({ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
-                     ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
-                     ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
-                     ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
-                     ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
-                     ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64})
-          .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-          .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-          .ValueDepend(OPTIONAL);
+	explicit StatelessDropOutGenMask(const char* name) : OpDef(name)
+	{
+		randomdef::RandomDtypeFmtGen gen({
+			{"shapeDataType", shapeDataType}, {"probDataType", probDataType}, {"seedDataType", seedDataType},
+			{"seed1DataType", seed1DataType}, {"offsetDataType", offsetDataType}, {"yDataType", yDataType},
+			{"baseFormat", baseFormat}});
+		const auto baseFormatSeq = gen.GetSequence<ge::Format>("baseFormat");
 
-      this->Input("seed1")
-          .ParamType(REQUIRED)
-          .DataType({ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-                     ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-                     ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-                     ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-                     ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-                     ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64})
-          .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-          .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-          .ValueDepend(OPTIONAL);
+		this->Input("shape")
+			.ParamType(REQUIRED)
+			.DataType(gen.GetSequence("shapeDataType"))
+			.Format(baseFormatSeq)
+			.UnknownShapeFormat(baseFormatSeq)
+			.ValueDepend(OPTIONAL);
+		this->Input("prob")
+			.ParamType(REQUIRED)
+			.DataType(gen.GetSequence("probDataType"))
+			.Format(baseFormatSeq)
+			.UnknownShapeFormat(baseFormatSeq)
+			.ValueDepend(OPTIONAL);
+		this->Input("seed")
+			.ParamType(REQUIRED)
+			.DataType(gen.GetSequence("seedDataType"))
+			.Format(baseFormatSeq)
+			.UnknownShapeFormat(baseFormatSeq)
+			.ValueDepend(OPTIONAL);
+		this->Input("seed1")
+			.ParamType(REQUIRED)
+			.DataType(gen.GetSequence("seed1DataType"))
+			.Format(baseFormatSeq)
+			.UnknownShapeFormat(baseFormatSeq)
+			.ValueDepend(OPTIONAL);
+		this->Input("offset")
+			.ParamType(OPTIONAL)
+			.DataType(gen.GetSequence("offsetDataType"))
+			.Format(baseFormatSeq)
+			.UnknownShapeFormat(baseFormatSeq)
+			.ValueDepend(OPTIONAL);
+		this->Output("y")
+			.ParamType(REQUIRED)
+			.DataType(gen.GetSequence("yDataType"))
+			.Format(baseFormatSeq)
+			.UnknownShapeFormat(baseFormatSeq);
 
-      this->Input("offset")
-          .ParamType(OPTIONAL)
-          .DataType({ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                     ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                     ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                     ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                     ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                     ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64})
-          .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-          .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-          .ValueDepend(OPTIONAL);
-
-      this->Output("y")
-            .ParamType(REQUIRED)
-            .DataType({ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8,
-                       ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8,
-                       ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8,
-                       ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8,
-                       ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8,
-                       ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8})
-          .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
-          .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
-                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
-
-      OpAICoreConfig aicoreConfig;
-      aicoreConfig.DynamicCompileStaticFlag(true)
-                  .DynamicFormatFlag(false)
-                  .DynamicRankSupportFlag(true)
-                  .DynamicShapeSupportFlag(true)
-                  .NeedCheckSupportFlag(false)
-                  .PrecisionReduceFlag(true);
-      this->AICore().AddConfig("ascend950");
+		OpAICoreConfig aicoreConfig;
+		aicoreConfig.DynamicCompileStaticFlag(true)
+			.DynamicFormatFlag(false)
+			.DynamicRankSupportFlag(true)
+			.DynamicShapeSupportFlag(true)
+			.NeedCheckSupportFlag(false)
+			.PrecisionReduceFlag(true);
+		this->AICore().AddConfig("ascend950");
     }
 };
 

@@ -14,44 +14,23 @@
  */
 #include "log/log.h"
 #include "register/op_impl_registry.h"
+#include "random/random_common/op_host/random_infershape_base.h"
 
 using namespace ge;
 namespace ops {
-template <typename T>
-ge::graphStatus RandomStandardNormalV2InferShapeImpl(const T *shape_dims, gert::Shape &outputShape,
-                                            size_t shape_size) {
-    outputShape.SetDimNum(shape_size);
-    for (size_t i = 0U; i < shape_size; i++) {
-        outputShape.SetDim(i, shape_dims[i]);
-    }
-    return ge::GRAPH_SUCCESS;
+static constexpr size_t RANDOM_STANDARD_NORMAL_V2_X = 0;
+static constexpr size_t RANDOM_STANDARD_NORMAL_V2_OFFSET = 1;
+static constexpr size_t RANDOM_STANDARD_NORMAL_V2_Y = 0;
+
+static graphStatus InferShapeRandomStandardNormalV2(gert::InferShapeContext* context)
+{
+    const std::unordered_map<std::string, size_t>& inputMap = {
+        {"shape", RANDOM_STANDARD_NORMAL_V2_X}, {"offset", RANDOM_STANDARD_NORMAL_V2_OFFSET}};
+    const std::unordered_map<std::string, size_t>& outputMap = {
+        {"y", RANDOM_STANDARD_NORMAL_V2_Y}, {"offset", RANDOM_STANDARD_NORMAL_V2_OFFSET}};
+    int32_t mode = ops::randomCommon::MODE_DEPENDENCY;
+    return ops::randomCommon::CommonInferShape(context, inputMap, outputMap, mode);
 }
+IMPL_OP_INFERSHAPE(RandomStandardNormalV2).InputsDataDependency({0}).InferShape(InferShapeRandomStandardNormalV2);
 
-static ge::graphStatus InferShapeForRandomStandardNormalV2(gert::InferShapeContext *context) {
-    auto x_shape_tensor = context->GetInputTensor(0);
-    auto outputShape = context->GetOutputShape(0);
-    auto const_shape = context->GetOutputShape(1);
-    OP_CHECK_NULL_WITH_CONTEXT(context, x_shape_tensor);
-    OP_CHECK_NULL_WITH_CONTEXT(context, outputShape);
-    OP_CHECK_NULL_WITH_CONTEXT(context, const_shape);
-
-    const_shape->SetDimNum(1);
-    const_shape->SetDim(0, 1);
-
-    auto x_shape_size = x_shape_tensor->GetShapeSize();
-    if (x_shape_size < 0) {
-        return ge::GRAPH_FAILED;
-    }
-    if (x_shape_tensor->GetDataType() == ge::DT_INT32) {
-        auto xShapeData = x_shape_tensor->GetData<int32_t>();
-        return RandomStandardNormalV2InferShapeImpl<int32_t>(xShapeData, *outputShape, static_cast<size_t>(x_shape_size));
-    } else {
-        auto xShapeData = x_shape_tensor->GetData<int64_t>();
-        return RandomStandardNormalV2InferShapeImpl<int64_t>(xShapeData, *outputShape, static_cast<size_t>(x_shape_size));
-    }
-
-    return ge::GRAPH_SUCCESS;
-}
-
-IMPL_OP_INFERSHAPE(RandomStandardNormalV2).InputsDataDependency({0}).InferShape(InferShapeForRandomStandardNormalV2);
 } // namespace ops

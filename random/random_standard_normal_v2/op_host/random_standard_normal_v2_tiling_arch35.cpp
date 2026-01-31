@@ -20,7 +20,7 @@
 #include "random_standard_normal_v2_tiling.h"
 #include "random_standard_normal_v2_tiling_arch35.h"
 #include "../op_kernel/arch35/random_standard_normal_v2_struct.h"
-#include  "../../common/random_tiling_base.h"
+#include  "../../random_common/op_host/arch35/random_tiling_base.h"
 
 namespace optiling {
 

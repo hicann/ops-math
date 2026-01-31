@@ -15,21 +15,21 @@
 #include "util/shape_util.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
+#include "random/random_common/op_graph/random_graph_infer_base.h"
 
 using namespace ge;
 namespace ops {
+static constexpr size_t STATELESS_DROP_OUT_GEN_OUT_ATTR_IDX = 0;
 
-static graphStatus DropOutGenMaskInferDataType(gert::InferDataTypeContext* context) {
-  if (context == nullptr) {
-    return GRAPH_FAILED;
-  }
-  OP_LOGD(context->GetNodeName(), "Begin to do infer data type.");
-  context->SetOutputDataType(0, ge::DT_UINT8);
-  OP_LOGD(context->GetNodeName(), "End to do infer data type.");
-  return GRAPH_SUCCESS;
+static ge::graphStatus InferDataTypeStatelessDropOutGenMask(gert::InferDataTypeContext* context)
+{
+    int32_t mode = ops::GraphCommon::MODE_INPUT_EQUAL_OUTPUT;
+    int32_t dtypeIndex = STATELESS_DROP_OUT_GEN_OUT_ATTR_IDX;
+    const std::vector<ops::GraphCommon::OutputSpec>& extraOutputMap = {};
+    const std::set<ge::DataType>& supportDtype = {ge::DT_UINT8};
+    bool isCheck = true;
+    return ops::GraphCommon::CommonInferType(context, mode, dtypeIndex, extraOutputMap, supportDtype, isCheck);
 }
 
-
-IMPL_OP(StatelessDropOutGenMask).InferDataType(DropOutGenMaskInferDataType);
-
-}  // namespace ops
+IMPL_OP(StatelessDropOutGenMask).InferDataType(InferDataTypeStatelessDropOutGenMask);
+} // namespace ops

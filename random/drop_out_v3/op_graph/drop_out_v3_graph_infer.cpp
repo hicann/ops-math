@@ -14,20 +14,19 @@
  */
 #include <cmath>
 #include "register/op_impl_registry.h"
+#include "random/random_common/op_graph/random_graph_infer_base.h"
 
 using namespace ge;
 namespace ops {
-static constexpr size_t DropOutV3_IN_X_IDX = 0;
-static constexpr size_t DropOutV3_OUT_Y_IDX = 0;
-static constexpr size_t DropOutV3_OUT_MASK_IDX = 1;
+static constexpr size_t DropOutV3_MASK_IDX = 1;
 
-ge::graphStatus InferDataTypeForDropOutV3(gert::InferDataTypeContext* context)
+static ge::graphStatus InferDataTypeDropOutV3(gert::InferDataTypeContext* context)
 {
-    auto xType = context->GetInputDataType(DropOutV3_IN_X_IDX);
-    context->SetOutputDataType(DropOutV3_OUT_Y_IDX, xType);
-    context->SetOutputDataType(DropOutV3_OUT_MASK_IDX, ge::DT_UINT8);
-    return ge::GRAPH_SUCCESS;
+    int32_t mode = ops::GraphCommon::MODE_INPUT_EQUAL_OUTPUT;
+    int32_t dtypeIndex = 0;
+    const std::vector<ops::GraphCommon::OutputSpec>& extraOutputMap = {{"mask", DropOutV3_MASK_IDX, ge::DT_INT8}};
+    return ops::GraphCommon::CommonInferType(context, mode, dtypeIndex, extraOutputMap);
 }
 
-IMPL_OP(DropOutV3).InferDataType(InferDataTypeForDropOutV3);
+IMPL_OP(DropOutV3).InferDataType(InferDataTypeDropOutV3);
 } // namespace ops

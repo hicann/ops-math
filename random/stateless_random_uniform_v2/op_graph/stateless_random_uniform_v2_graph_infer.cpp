@@ -17,65 +17,21 @@
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 #include "op_api/op_util.h"
-
-namespace {
-constexpr size_t kOutputIndex0 = 0U;
-constexpr size_t kFirstAttrIdx = 0U;
-constexpr size_t kThirdAttrIdx = 2U;
-constexpr int64_t kDimValue1 = 1LL;
-constexpr int64_t kDimValue2 = 2LL;
-constexpr int64_t kDimValue3 = 3LL;
-constexpr int64_t kDimValue4 = 4LL;
-constexpr int64_t kSeedValue = 2LL;
-constexpr int64_t kCounterValue = 2LL;
-} // namespace
+#include "random/random_common/op_graph/random_graph_infer_base.h"
 
 using namespace ge;
-
 namespace ops {
+static constexpr size_t STATELESS_RANDOM_UNIFORM_OUT_ATTR_IDX = 0;
 
-static graphStatus RandomOpCommonInferDataTypeByAttr(
-    gert::InferDataTypeContext* context, const DataType defalut_dtype, const size_t dtype_index,
-    const std::set<DataType>& support_dtype, const bool is_required = false)
+static ge::graphStatus InferDataTypeStatelessRandomUniformV2(gert::InferDataTypeContext* context)
 {
-    if (context == nullptr) {
-        return GRAPH_FAILED;
-    }
-
-    OP_LOGI(
-        context->GetNodeName(), "RandomOpCommonInferDataTypeByAttr begin. Data type is %s, is_required is %d.",
-        Ops::Base::ToString(defalut_dtype).c_str(), is_required);
-    auto* attrs = context->GetAttrs();
-    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
-    DataType y_dtype = defalut_dtype;
-    const int32_t* dst_type_pointer = attrs->GetAttrPointer<int32_t>(dtype_index);
-    if (dst_type_pointer != nullptr) {
-        y_dtype = static_cast<DataType>(*dst_type_pointer);
-        std::string error_msg = ConcatString("Attr dtype not support ", Ops::Base::ToString(y_dtype).c_str());
-        OP_CHECK_IF(
-            support_dtype.count(y_dtype) == 0, OP_LOGI(context->GetNodeName(), "%s", error_msg.c_str()),
-            return GRAPH_FAILED);
-    } else {
-        if (is_required) {
-            std::string error_msg = std::string("Get attr dtype failed, but the attr is required.");
-            OP_LOGI(context->GetNodeName(), "%s", error_msg.c_str());
-            return GRAPH_FAILED;
-        }
-    }
-
-    context->SetOutputDataType(kOutputIndex0, y_dtype);
-    OP_LOGI(
-        context->GetNodeName(), "RandomOpCommonInferDataTypeByAttr end. Data type is %s.",
-        Ops::Base::ToString(y_dtype).c_str());
-    return GRAPH_SUCCESS;
+    int32_t mode = ops::GraphCommon::MODE_ATTR;
+    int32_t dtypeIndex = STATELESS_RANDOM_UNIFORM_OUT_ATTR_IDX;
+    const std::vector<ops::GraphCommon::OutputSpec>& extraOutputMap = {};
+    const std::set<ge::DataType>& supportDtype = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16, ge::DT_DOUBLE};
+    bool isCheck = true;
+    return ops::GraphCommon::CommonInferType(context, mode, dtypeIndex, extraOutputMap, supportDtype, isCheck);
 }
 
-static graphStatus StatelessTruncatedNormalV2InferDataType(gert::InferDataTypeContext* context)
-{
-    std::set<DataType> support_dtype = {DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_BF16};
-    return RandomOpCommonInferDataTypeByAttr(context, DT_FLOAT, kFirstAttrIdx, support_dtype, false);
-}
-
-IMPL_OP(StatelessRandomUniformV2).InferDataType(StatelessTruncatedNormalV2InferDataType);
-
+IMPL_OP(StatelessRandomUniformV2).InferDataType(InferDataTypeStatelessRandomUniformV2);
 } // namespace ops

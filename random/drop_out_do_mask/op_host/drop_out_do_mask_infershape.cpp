@@ -15,10 +15,22 @@
 #include "register/op_impl_registry.h"
 #include "infershape_elewise_util.h"
 #include "log/log.h"
-
+#include "random/random_common/op_host/random_infershape_base.h"
 using namespace ge;
 namespace ops {
+static constexpr size_t DropOutV3_DO_MASK_X = 0;
+static constexpr size_t DropOutV3_DO_MASK_MASK = 1;
+static constexpr size_t DropOutV3_DO_MASK_KEEP_PROB = 2;
+static constexpr size_t DropOutV3_DO_MASK_Y = 0;
 
-IMPL_OP_INFERSHAPE(DropOutDoMask).InferShape(Ops::Base::InferShape4Elewise);
+static graphStatus InferShapeDropOutDoMask(gert::InferShapeContext* context)
+{
+    const std::unordered_map<std::string, size_t>& inputMap = {
+        {"x", DropOutV3_DO_MASK_X}, {"mask", DropOutV3_DO_MASK_MASK}, {"keep_prob", DropOutV3_DO_MASK_KEEP_PROB}};
+    const std::unordered_map<std::string, size_t>& outputMap = {{"y", DropOutV3_DO_MASK_Y}};
+    int32_t mode = ops::randomCommon::MODE_NO_DEPENDENCY;
+    return ops::randomCommon::CommonInferShape(context, inputMap, outputMap, mode);
+}
+IMPL_OP_INFERSHAPE(DropOutDoMask).InferShape(InferShapeDropOutDoMask);
 
 } // namespace ops

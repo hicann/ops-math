@@ -19,7 +19,7 @@
 #include "op_host/tiling_templates_registry.h"
 #include "platform/platform_info.h"
 #include "util/math_util.h"
-#include  "../../common/random_tiling_base.h"
+#include  "../../random_common/op_host/arch35/random_tiling_base.h"
 
 namespace optiling {
 static constexpr uint16_t INPUT_IDX_SHAPE = 0;

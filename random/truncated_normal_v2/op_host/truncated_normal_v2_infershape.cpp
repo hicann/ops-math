@@ -16,56 +16,25 @@
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 #include "util/shape_util.h"
+#include "random/random_common/op_host/random_infershape_base.h"
 
 using namespace ge;
 namespace ops {
-// -------------------TruncatedNormalV2 Ops START---------------------
-const int32_t INDEX_INPUT_SHAPE = 0;
-const int32_t INDEX_OUTPUT_Y = 0;
-const int32_t INDEX_OUTPUT_OFFSET = 1;
+static constexpr size_t TRUNCATED_NORMAL_SHAPE = 0;
+static constexpr size_t TRUNCATED_NORMAL_OFFSET = 1;
+static constexpr size_t TRUNCATED_NORMAL_Y = 0;
 
-template <typename T>
-ge::graphStatus GetValueToShape(const gert::Tensor* const_tensor, gert::Shape* const_shape)
+static graphStatus InferShapeTruncatedNormalV2(gert::InferShapeContext* context)
 {
-    const T* constValue = const_tensor->GetData<T>();
-    const size_t constNum = const_tensor->GetShapeSize();
-    if (static_cast<int32_t>(constNum) < 0) {
-        return ge::GRAPH_FAILED;
-    }
-    const_shape->SetDimNum(constNum);
-    for (size_t i = 0; i < constNum; ++i) {
-        const_shape->SetDim(i, constValue[i]);
-    }
-    return ge::GRAPH_SUCCESS;
+    const std::unordered_map<std::string, size_t>& inputMap = {
+        {"shape", TRUNCATED_NORMAL_SHAPE},
+        {"offset", TRUNCATED_NORMAL_OFFSET}};
+    const std::unordered_map<std::string, size_t>& outputMap = {
+        {"y", TRUNCATED_NORMAL_Y},
+        {"offset", TRUNCATED_NORMAL_OFFSET}};
+    int32_t mode = ops::randomCommon::MODE_DEPENDENCY;
+    return ops::randomCommon::CommonInferShape(context, inputMap, outputMap, mode);
 }
+IMPL_OP_INFERSHAPE(TruncatedNormalV2).InputsDataDependency({0}).InferShape(InferShapeTruncatedNormalV2);
 
-static ge::graphStatus InferShapeForTruncatedNormalV2(gert::InferShapeContext* context)
-{
-    OP_LOGD(context->GetNodeName(), " TruncatedNormalV2 runtime2.0 is begin");
-    const gert::Tensor* shape_tensor = context->GetInputTensor(INDEX_INPUT_SHAPE);
-    OP_CHECK_NULL_WITH_CONTEXT(context, shape_tensor);
-    ge::DataType shape_dtype = shape_tensor->GetDataType();
-    gert::Shape* y_shape = context->GetOutputShape(INDEX_OUTPUT_Y);
-    OP_CHECK_NULL_WITH_CONTEXT(context, y_shape);
-
-    gert::Shape* offset_shape = context->GetOutputShape(INDEX_OUTPUT_OFFSET);
-    OP_CHECK_NULL_WITH_CONTEXT(context, offset_shape);
-    offset_shape->SetDimNum(1);
-    offset_shape->SetDim(0, 1);
-
-    switch (shape_dtype) {
-        case ge::DT_INT32: {
-            return GetValueToShape<int32_t>(shape_tensor, y_shape);
-        }
-        case ge::DT_INT64: {
-            return GetValueToShape<int64_t>(shape_tensor, y_shape);
-        }
-        default:
-            return ge::GRAPH_FAILED;
-    }
-    return ge::GRAPH_SUCCESS;
-}
-
-IMPL_OP_INFERSHAPE(TruncatedNormalV2).InputsDataDependency({0}).InferShape(InferShapeForTruncatedNormalV2);
-// -------------------TruncatedNormalV2 Ops END---------------------
 } // namespace ops

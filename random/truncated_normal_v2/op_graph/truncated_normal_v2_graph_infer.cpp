@@ -15,41 +15,22 @@
 
 #include "log/log.h"
 #include "register/op_impl_registry.h"
+#include "random/random_common/op_graph/random_graph_infer_base.h"
 
 using namespace ge;
 namespace ops {
-static constexpr size_t TruncatedNormalV2_IN_X_IDX = 0;
-static constexpr size_t TruncatedNormalV2_OUT_Y_IDX = 0;
-static constexpr size_t TruncatedNormalV2_DTYPE_IDX = 2;
-static constexpr int64_t DEFAULT_VALUE = 0;
+static constexpr size_t OUT_ATTR_IDX = 2;
+static constexpr size_t TRUNCATED_NORMAL_OFFSET = 1;
 
-static graphStatus TruncatedNormalV2InferDataTypeByAttr(gert::InferDataTypeContext* context, const size_t dtype_index,
-                                                     const std::set<DataType> &support_dtype) {
-    if (context == nullptr) {
-        return ge::GRAPH_FAILED;
-    }
-
-    auto* attrs = context->GetAttrs();
-    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
-    const int64_t* attrDtype = attrs->GetAttrPointer<int64_t>(dtype_index);
-    int64_t dtype = attrDtype == nullptr ? DEFAULT_VALUE : *attrDtype;
-    ge::DataType yDtype = static_cast<ge::DataType>(dtype);
-    OP_CHECK_IF(support_dtype.count(yDtype) == 0,
-        OP_LOGE(context, "out shape dtype should be float, float16, bfloat16 but got %s.",
-        Ops::Base::ToString(yDtype).c_str()), return ge::GRAPH_FAILED);
-    
-    context->SetOutputDataType(0, yDtype);
-    OP_LOGD(context, "TruncatedNormalV2InferDataTypeByAttr end. Data type is %s.", Ops::Base::ToString(yDtype).c_str());
-    return ge::GRAPH_SUCCESS;
-}
-
-static graphStatus InferDataType4TruncatedNormalV2(gert::InferDataTypeContext* context)
+static ge::graphStatus InferDataType(gert::InferDataTypeContext* context)
 {
-    context->SetOutputDataType(1, ge::DT_INT64);
-
-    std::set<ge::DataType> support_dtype = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16};
-    return TruncatedNormalV2InferDataTypeByAttr(context, TruncatedNormalV2_DTYPE_IDX, support_dtype);
+    int32_t mode = ops::GraphCommon::MODE_ATTR;
+    int32_t dtypeIndex = OUT_ATTR_IDX;
+    const std::vector<ops::GraphCommon::OutputSpec>& extraOutputMap = {{"offset", TRUNCATED_NORMAL_OFFSET, ge::DT_INT64}};
+    const std::set<ge::DataType>& supportDtype = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
+    bool isCheck = true;
+    return ops::GraphCommon::CommonInferType(context, mode, dtypeIndex, extraOutputMap, supportDtype, isCheck);
 }
 
-IMPL_OP(TruncatedNormalV2).InferDataType(InferDataType4TruncatedNormalV2);
-}; // namespace ops
+IMPL_OP(TruncatedNormalV2).InferDataType(InferDataType);
+} // namespace ops

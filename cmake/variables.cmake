@@ -166,6 +166,7 @@ set(OP_PROTO_INCLUDE
   ${METADEF_INCLUDE_DIRS}
   ${OPBASE_INC_DIRS}
   ${NPURUNTIME_INCLUDE_DIRS}
+  ${OPS_MATH_DIR}
   ${OPS_MATH_DIR}/common/inc/
   ${OPS_MATH_DIR}/common/inc/op_api
   ${OPS_MATH_DIR}/common/inc/common

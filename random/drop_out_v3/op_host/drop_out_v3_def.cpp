@@ -13,80 +13,63 @@
  * \brief
  */
 #include "register/op_def_registry.h"
+#include "../../random_common/op_host/random_dtype_fmt_gen.h"
 
 namespace ops {
 class DropOutV3 : public OpDef {
 public:
-    const std::vector<ge::DataType> inOutType = {
-        ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16,
-        ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16,
-        ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
-
-    const std::vector<ge::DataType> probType = {
-        ge::DT_FLOAT,   ge::DT_FLOAT,   ge::DT_FLOAT,   ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT16,
-        ge::DT_BF16,    ge::DT_BF16,    ge::DT_BF16,    ge::DT_FLOAT,   ge::DT_FLOAT,   ge::DT_FLOAT,
-        ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_BF16,    ge::DT_BF16,    ge::DT_BF16};
-
-    const std::vector<ge::DataType> seedType = {ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                                                ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT32,
-                                                ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                                                ge::DT_INT32, ge::DT_INT32, ge::DT_INT32};
-
-    const std::vector<ge::DataType> offsetType = {ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                                                  ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                                                  ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                                                  ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
-
-    const std::vector<ge::DataType> maskType = {ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8,
-                                                ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8,
-                                                ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8,
-                                                ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8};
-
-    const std::vector<ge::Format> baseFormat = {
-        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+    const std::vector<ge::DataType> inOutType = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
+    const std::vector<ge::DataType> probType = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
+    const std::vector<ge::DataType> seedType = {ge::DT_INT64, ge::DT_INT32};
+    const std::vector<ge::DataType> offsetType = {ge::DT_INT64};
+    const std::vector<ge::DataType> maskType = {ge::DT_UINT8};
+    const std::vector<ge::Format> baseFormat = {ge::FORMAT_ND};
 
     explicit DropOutV3(const char* name) : OpDef(name)
     {
+        randomdef::RandomDtypeFmtGen gen({
+            {"seedType", seedType}, {"probType", probType},  {"inOutType", inOutType}, 
+            {"offsetType", offsetType}, {"maskType", maskType}, {"baseFormat", baseFormat}});
+        const auto baseFormatSeq = gen.GetSequence<ge::Format>("baseFormat");
+        
         this->Input("x")
             .ParamType(REQUIRED)
-            .DataType({inOutType})
-            .Format({baseFormat})
-            .UnknownShapeFormat({baseFormat});
+            .DataType({gen.GetSequence("inOutType")})
+            .Format({baseFormatSeq})
+            .UnknownShapeFormat({baseFormatSeq});
         this->Input("noise_shape")
             .ParamType(OPTIONAL)
-            .DataType({offsetType})
-            .Format({baseFormat})
-            .UnknownShapeFormat({baseFormat});
+            .DataType({gen.GetSequence("offsetType")})
+            .Format({baseFormatSeq})
+            .UnknownShapeFormat({baseFormatSeq});
         this->Input("p")
             .ParamType(REQUIRED)
             .ValueDepend(OPTIONAL)
-            .DataType({probType})
-            .Format({baseFormat})
-            .UnknownShapeFormat({baseFormat});
+            .DataType({gen.GetSequence("probType")})
+            .Format({baseFormatSeq})
+            .UnknownShapeFormat({baseFormatSeq});
         this->Input("seed")
             .ParamType(REQUIRED)
             .ValueDepend(OPTIONAL)
-            .DataType({seedType})
-            .Format({baseFormat})
-            .UnknownShapeFormat({baseFormat});
+            .DataType({gen.GetSequence("seedType")})
+            .Format({baseFormatSeq})
+            .UnknownShapeFormat({baseFormatSeq});
         this->Input("offset")
             .ParamType(REQUIRED)
             .ValueDepend(OPTIONAL)
-            .DataType({offsetType})
-            .Format({baseFormat})
-            .UnknownShapeFormat({baseFormat});
+            .DataType({gen.GetSequence("offsetType")})
+            .Format({baseFormatSeq})
+            .UnknownShapeFormat({baseFormatSeq});
         this->Output("y")
             .ParamType(REQUIRED)
-            .DataType({inOutType})
-            .Format({baseFormat})
-            .UnknownShapeFormat({baseFormat});
+            .DataType({gen.GetSequence("inOutType")})
+            .Format({baseFormatSeq})
+            .UnknownShapeFormat({baseFormatSeq});
         this->Output("mask")
             .ParamType(REQUIRED)
-            .DataType({maskType})
-            .Format({baseFormat})
-            .UnknownShapeFormat({baseFormat});
+            .DataType({gen.GetSequence("maskType")})
+            .Format({baseFormatSeq})
+            .UnknownShapeFormat({baseFormatSeq});
 
         OpAICoreConfig aicoreConfig;
         aicoreConfig.DynamicCompileStaticFlag(true)

@@ -12,16 +12,16 @@
  * \file random_uniform_v2.cpp
  * \brief
  */
-#include "arch35/random_uniform_v2_struct.h"
+
 #include "arch35/random_uniform_v2.h"
 using namespace AscendC;
 using namespace RandomUniformV2;
 
-#define RANDOM_STANDARD_NORMAL_V2_DEFAULT_TILING_KEY 1
+#define RANDOM_STANDARD_NORMAL_V2_DEFAULT_TILING_KEY 100
 
 extern "C" __global__ __aicore__ void random_uniform_v2(GM_ADDR shape, GM_ADDR inOffset, GM_ADDR y, GM_ADDR outOffset, GM_ADDR workspace, GM_ADDR tiling)
 {
-    REGISTER_TILING_DEFAULT(RandomUniformV2TilingData4RegBase);
+    REGISTER_TILING_DEFAULT(RandomUnifiedTilingDataStruct);
     GET_TILING_DATA(tilingData, tiling);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
 
