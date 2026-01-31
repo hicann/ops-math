@@ -52,7 +52,7 @@ static bool CompareData(int ret)
 TEST_F(drop_out_v3_test, test_case_b32_1)
 {
     uint64_t tilingKey = 1001;
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
     int64_t typeSize = 4;
     std::vector<int64_t> x_shape = {10, 15, 20};
     std::vector<int64_t> noise_shape = {3};
@@ -87,7 +87,7 @@ TEST_F(drop_out_v3_test, test_case_b32_1)
 
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_SET_TILING_KEY(tilingKey);
-    ICPU_RUN_KF(drop_out_v3, blockDim, param1, param2, param3, param4, param5, param6, param7, workspace, tiling);
+    ICPU_RUN_KF(drop_out_v3, numBlocks, param1, param2, param3, param4, param5, param6, param7, workspace, tiling);
 
     AscendC::GmFree((void *)param1);
     AscendC::GmFree((void *)param2);

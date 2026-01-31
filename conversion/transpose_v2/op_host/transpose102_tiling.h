@@ -196,7 +196,7 @@ public:
         OP_LOGD(context->GetNodeName(), "dim1OnceMax is:%lu "       , params.dim1OnceMax           );
         OP_LOGD(context->GetNodeName(), "dim2OnceMax is:%lu "  , params.dim2OnceMax      );
         OP_LOGD(context->GetNodeName(), "doubleBuffer is:%lu "  , params.doubleBuffer      );
-        OP_LOGD(context->GetNodeName(), "blockDim is:%u "      , context->GetBlockDim()   );
+        OP_LOGD(context->GetNodeName(), "numBlocks is:%u "      , context->GetBlockDim()   );
         OP_LOGD(context->GetNodeName(), "tilingKey is:%lu "     , context->GetTilingKey()  );
         OP_LOGD(context->GetNodeName(), "-----------------------------------------------" );
         OP_LOGD(context->GetNodeName(), "End TransposeCTilingData printing"           );

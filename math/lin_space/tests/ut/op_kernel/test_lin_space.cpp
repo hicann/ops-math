@@ -41,7 +41,7 @@ TEST_F(lin_space_test, test_case_101) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 1;
+  uint32_t numBlocks = 1;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -72,7 +72,7 @@ TEST_F(lin_space_test, test_case_101) {
 
   ICPU_SET_TILING_KEY(101);
   AscendC::SetKernelMode(KernelMode::AIV_MODE);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -87,7 +87,7 @@ TEST_F(lin_space_test, test_case_102) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 32;
+  uint32_t numBlocks = 32;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -117,7 +117,7 @@ TEST_F(lin_space_test, test_case_102) {
   tilingDatafromBin->outerTailLoopNumTail = 3616;
 
   ICPU_SET_TILING_KEY(102);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -132,7 +132,7 @@ TEST_F(lin_space_test, test_case_201) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 1;
+  uint32_t numBlocks = 1;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -162,7 +162,7 @@ TEST_F(lin_space_test, test_case_201) {
   tilingDatafromBin->outerTailLoopNumTail = 5;
 
   ICPU_SET_TILING_KEY(201);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -177,7 +177,7 @@ TEST_F(lin_space_test, test_case_202) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 32;
+  uint32_t numBlocks = 32;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -207,7 +207,7 @@ TEST_F(lin_space_test, test_case_202) {
   tilingDatafromBin->outerTailLoopNumTail = 3616;
 
   ICPU_SET_TILING_KEY(202);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -223,7 +223,7 @@ TEST_F(lin_space_test, test_case_301) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 1;
+  uint32_t numBlocks = 1;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -253,7 +253,7 @@ TEST_F(lin_space_test, test_case_301) {
   tilingDatafromBin->outerTailLoopNumTail = 5;
 
   ICPU_SET_TILING_KEY(201);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -268,7 +268,7 @@ TEST_F(lin_space_test, test_case_302) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 32;
+  uint32_t numBlocks = 32;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -298,7 +298,7 @@ TEST_F(lin_space_test, test_case_302) {
   tilingDatafromBin->outerTailLoopNumTail = 3616;
 
   ICPU_SET_TILING_KEY(102);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -313,7 +313,7 @@ TEST_F(lin_space_test, test_case_402) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 32;
+  uint32_t numBlocks = 32;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -343,7 +343,7 @@ TEST_F(lin_space_test, test_case_402) {
   tilingDatafromBin->outerTailLoopNumTail = 3616;
 
   ICPU_SET_TILING_KEY(402);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -358,7 +358,7 @@ TEST_F(lin_space_test, test_case_502) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 32;
+  uint32_t numBlocks = 32;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -388,7 +388,7 @@ TEST_F(lin_space_test, test_case_502) {
   tilingDatafromBin->outerTailLoopNumTail = 3616;
 
   ICPU_SET_TILING_KEY(502);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -403,7 +403,7 @@ TEST_F(lin_space_test, test_case_601) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 1;
+  uint32_t numBlocks = 1;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -433,7 +433,7 @@ TEST_F(lin_space_test, test_case_601) {
   tilingDatafromBin->outerTailLoopNumTail = 5;
 
   ICPU_SET_TILING_KEY(601);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -448,7 +448,7 @@ TEST_F(lin_space_test, test_case_602) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 32;
+  uint32_t numBlocks = 32;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -478,7 +478,7 @@ TEST_F(lin_space_test, test_case_602) {
   tilingDatafromBin->outerTailLoopNumTail = 3616;
 
   ICPU_SET_TILING_KEY(602);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -493,7 +493,7 @@ TEST_F(lin_space_test, test_case_701) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 1;
+  uint32_t numBlocks = 1;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -523,7 +523,7 @@ TEST_F(lin_space_test, test_case_701) {
   tilingDatafromBin->outerTailLoopNumTail = 5;
 
   ICPU_SET_TILING_KEY(701);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -538,7 +538,7 @@ TEST_F(lin_space_test, test_case_103) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 1;
+  uint32_t numBlocks = 1;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -568,7 +568,7 @@ TEST_F(lin_space_test, test_case_103) {
   tilingDatafromBin->outerTailLoopNumTail = 1;
 
   ICPU_SET_TILING_KEY(103);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -583,7 +583,7 @@ TEST_F(lin_space_test, test_case_203) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 1;
+  uint32_t numBlocks = 1;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -613,7 +613,7 @@ TEST_F(lin_space_test, test_case_203) {
   tilingDatafromBin->outerTailLoopNumTail = 1;
 
   ICPU_SET_TILING_KEY(203);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -628,7 +628,7 @@ TEST_F(lin_space_test, test_case_303) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 1;
+  uint32_t numBlocks = 1;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -658,7 +658,7 @@ TEST_F(lin_space_test, test_case_303) {
   tilingDatafromBin->outerTailLoopNumTail = 1;
 
   ICPU_SET_TILING_KEY(303);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -673,7 +673,7 @@ TEST_F(lin_space_test, test_case_403) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 1;
+  uint32_t numBlocks = 1;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -703,7 +703,7 @@ TEST_F(lin_space_test, test_case_403) {
   tilingDatafromBin->outerTailLoopNumTail = 1;
 
   ICPU_SET_TILING_KEY(403);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -718,7 +718,7 @@ TEST_F(lin_space_test, test_case_503) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 1;
+  uint32_t numBlocks = 1;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -748,7 +748,7 @@ TEST_F(lin_space_test, test_case_503) {
   tilingDatafromBin->outerTailLoopNumTail = 1;
 
   ICPU_SET_TILING_KEY(503);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -763,7 +763,7 @@ TEST_F(lin_space_test, test_case_603) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 1;
+  uint32_t numBlocks = 1;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -793,7 +793,7 @@ TEST_F(lin_space_test, test_case_603) {
   tilingDatafromBin->outerTailLoopNumTail = 1;
 
   ICPU_SET_TILING_KEY(603);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);
@@ -808,7 +808,7 @@ TEST_F(lin_space_test, test_case_703) {
   uint8_t* output = (uint8_t*)AscendC::GmAlloc(outputByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(4096 * 16);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-  uint32_t blockDim = 1;
+  uint32_t numBlocks = 1;
   system("cp -r ../../../../math/lin_space/tests/ut/op_kernel/lin_space_data ./");
   system("chmod -R 755 ./lin_space_data/");
   system("cd ./lin_space_data/ && rm -rf ./*bin");
@@ -838,7 +838,7 @@ TEST_F(lin_space_test, test_case_703) {
   tilingDatafromBin->outerTailLoopNumTail = 1;
 
   ICPU_SET_TILING_KEY(703);
-  ICPU_RUN_KF(lin_space, blockDim, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
+  ICPU_RUN_KF(lin_space, numBlocks, nullptr, nullptr, nullptr, output, workspace, (uint8_t *)(tilingDatafromBin));
 
   AscendC::GmFree(output);
   AscendC::GmFree(workspace);

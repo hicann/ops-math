@@ -46,7 +46,7 @@ TEST_F(grouped_bias_add_grad_test, test_case_fp16_group_idx) {
   size_t tilingSize = sizeof(GroupedBiasAddGradTilingData);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingSize);
 
-  uint32_t blockDim = 12;
+  uint32_t numBlocks = 12;
 
   size_t gradYByteSize = 1968 * 458 * sizeof(half);
   size_t groupIdxByteSize = 3 * sizeof(int32_t);
@@ -65,7 +65,7 @@ TEST_F(grouped_bias_add_grad_test, test_case_fp16_group_idx) {
   ReadFile(curPath + "/grouped_bias_add_grad_data/tiling.bin", tilingSize, tiling, tilingSize);
 
   ICPU_SET_TILING_KEY(1000010);
-  ICPU_RUN_KF(grouped_bias_add_grad, blockDim, grad_y, group_idx, out, workSpace, tiling);
+  ICPU_RUN_KF(grouped_bias_add_grad, numBlocks, grad_y, group_idx, out, workSpace, tiling);
 
   WriteFile(curPath + "/grouped_bias_add_grad_data/output.bin", out, outByteSize);
   AscendC::GmFree((void*)grad_y);

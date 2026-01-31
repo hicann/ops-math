@@ -58,7 +58,7 @@ TEST_F(strided_slice_assign_v2_test, test_case_0)
 
     uint8_t *workspace = (uint8_t *)AscendC::GmAlloc(16 * 2);
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 4;
+    uint32_t numBlocks = 4;
 
     char *path_ = get_current_dir_name();
     string path(path_);
@@ -87,7 +87,7 @@ TEST_F(strided_slice_assign_v2_test, test_case_0)
     tilingDatafromBin->inputCumShape[2] = 4;
 
     ICPU_SET_TILING_KEY(1);
-    ICPU_RUN_KF(strided_slice_assign_v2, blockDim, var, input_value, begin, end, strides, axes, var, workspace,
+    ICPU_RUN_KF(strided_slice_assign_v2, numBlocks, var, input_value, begin, end, strides, axes, var, workspace,
         (uint8_t *)(tilingDatafromBin));
 
     AscendC::GmFree(var);

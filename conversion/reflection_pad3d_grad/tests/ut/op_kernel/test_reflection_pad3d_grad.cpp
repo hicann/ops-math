@@ -57,7 +57,7 @@ void CallSimpleKernel(
     const std::vector<uint32_t>& inputShape, const std::vector<uint32_t>& padding, uint32_t tiling_key = 0)
 {
     AscendC::SetKernelMode(KernelMode::AIC_MODE);
-    const uint32_t blockDim = 1;
+    const uint32_t numBlocks = 1;
     std::vector<uint32_t> outputShape(inputShape);
     outputShape[2] -= (padding[4] + padding[5]);
     outputShape[3] -= (padding[6] + padding[7]);

@@ -50,7 +50,7 @@ TEST_F(exp_segsum_grad_test, test_case_float_1)
     size_t outputByteSize = 2 * 4 * sizeof(float);
     size_t tiling_data_size = sizeof(ExpSegsumGradTilingData);
     size_t workspaceSize = 32 * 1024 * 1024;
-    uint32_t blockDim = 2;
+    uint32_t numBlocks = 2;
 
     uint8_t* x1 = (uint8_t*)AscendC::GmAlloc(inputByteSize);
     uint8_t* x2 = (uint8_t*)AscendC::GmAlloc(inputByteSize);
@@ -80,7 +80,7 @@ TEST_F(exp_segsum_grad_test, test_case_float_1)
 
     ICPU_SET_TILING_KEY(1);
 
-    ICPU_RUN_KF(exp_segsum_grad, blockDim, x1, x2, y, workspace, (uint8_t*)(tilingDatafromBin));
+    ICPU_RUN_KF(exp_segsum_grad, numBlocks, x1, x2, y, workspace, (uint8_t*)(tilingDatafromBin));
     // fileName1 = "./exp_segsum_grad_data/float32_output_exp_segsum_grad.bin";
     // WriteFile(fileName1, y, outputByteSize);
 

@@ -56,7 +56,7 @@ private:
     uint64_t tailTileLength = 0;
     uint64_t tailLastTileLength = 0;
 
-    uint64_t blockDim = 0;
+    uint64_t numBlocks = 0;
 
     // 求单个元素大小
     uint64_t sizeOfDataType = 1;
@@ -126,20 +126,20 @@ ge::graphStatus MaskedSelectV3Tiling::Init()
     uint64_t ubNum = (totalLengthAlignedWithBlock + ubLength - 1) / ubLength;
 
     // 运行核数
-    blockDim = (ubNum > aivNum) ? aivNum : ubNum;
-    tilingContext->SetBlockDim(blockDim);
+    numBlocks = (ubNum > aivNum) ? aivNum : ubNum;
+    tilingContext->SetBlockDim(numBlocks);
 
     tilingKey = sizeOfDataType;
     tilingContext->SetTilingKey(tilingKey);
 
     // 切分流程
-    formerNum = totalLength % blockDim;
+    formerNum = totalLength % numBlocks;
     if (formerNum == 0u) {
-        formerNum = blockDim;
+        formerNum = numBlocks;
     }
-    tailNum = blockDim - formerNum;
+    tailNum = numBlocks - formerNum;
 
-    formerLength = (totalLength + blockDim - 1) / blockDim;
+    formerLength = (totalLength + numBlocks - 1) / numBlocks;
     formerTileNum = (formerLength + ubLength - 1) / ubLength;
     formerTileLength = ubLength;
     formerLastTileLength = formerLength % ubLength;
@@ -182,7 +182,7 @@ ge::graphStatus MaskedSelectV3Tiling::RunKernelTiling()
     uint32_t sysWorkspaceSize = compileInfo->workSpaceSize;
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(
         1); // 通过框架获取workspace的指针，GetWorkspaces入参所需workspace的块数。当前限制使用一块。
-    size_t usrSize = totalLengthAlignedWithBlock * sizeOfDataType + blockDim * 64u;
+    size_t usrSize = totalLengthAlignedWithBlock * sizeOfDataType + numBlocks * 64u;
     OP_LOGD(tilingContext->GetNodeName(), "usrWorkspaceSize: %lu.", usrSize);
     currentWorkspace[0] =
         usrSize + sysWorkspaceSize; // 设置总的workspace的数值大小，总的workspace空间框架来申请并管理。

@@ -138,7 +138,7 @@ TEST_F(IsFiniteTest, test_case_float16_2) {
 //     uint8_t* y = (uint8_t*)AscendC::GmAlloc(CeilAlign(outputByteSize, 32));
 //     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
 //     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-//     uint32_t blockDim = 1;
+//     uint32_t numBlocks = 1;
 
 //     std::string fileName = "./is_finite_data/bfloat16_input_t_is_finite.bin";
 //     ReadFile(fileName, inputByteSize, x, inputByteSize);
@@ -154,7 +154,7 @@ TEST_F(IsFiniteTest, test_case_float16_2) {
 
 //     ICPU_SET_TILING_KEY(3); // bfloat16
 //     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-//     ICPU_RUN_KF(is_finite, blockDim, x, y, workspace, tiling);
+//     ICPU_RUN_KF(is_finite, numBlocks, x, y, workspace, tiling);
 
 
 //     fileName = "./is_finite_data/bfloat16_output_t_is_finite.bin";

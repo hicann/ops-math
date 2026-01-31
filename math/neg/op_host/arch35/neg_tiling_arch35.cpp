@@ -62,7 +62,7 @@ protected:
 
 private:
     ge::DataType outputDtype;
-    uint32_t blockDim = 0;
+    uint32_t numBlocks = 0;
     int64_t outputSize = 0;
     gert::TilingContext* tilingContext;
     int64_t tilingKey = 0;

@@ -209,7 +209,7 @@ private:
     TQue<QuePosition::VECOUT, 1> d0OutQueue, d0OutQueue2, d0OutQueue3; // d0临时输出空间，大小分别为tileRow
     TQue<QuePosition::VECOUT, 1> d1OutQueue, d1OutQueue2, d1OutQueue3; // d1临时输出空间，大小分别为totalCol
 
-    uint32_t blockDim;
+    uint32_t numBlocks;
     uint32_t blockIdx;
 
     uint32_t blockRow; // 当前Block的行数

@@ -145,7 +145,7 @@ public:
         OP_LOGD(context->GetNodeName(), "transLoop is: %lu"    , params.transLoop         );
         OP_LOGD(context->GetNodeName(), "repeatH is: %lu"      , params.repeatH           );
         OP_LOGD(context->GetNodeName(), "doubleBuffer is: %lu" , params.doubleBuffer      );
-        OP_LOGD(context->GetNodeName(), "blockDim is: %u"      , context->GetBlockDim()   );
+        OP_LOGD(context->GetNodeName(), "numBlocks is: %u"      , context->GetBlockDim()   );
         OP_LOGD(context->GetNodeName(), "tilingKey is: %lu"    , context->GetTilingKey()  );
         OP_LOGD(context->GetNodeName(), "-----------------------------------------------" );
         OP_LOGD(context->GetNodeName(), "End TransposeV2TilingData printing"               );

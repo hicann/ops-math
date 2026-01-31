@@ -64,7 +64,7 @@ TEST_F(coalesce_sparse_test, test_case_int32_fp32)
 
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(1024 * 16 * 1024);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
     CoalesceSparseTilingData* tilingDatafromBin = reinterpret_cast<CoalesceSparseTilingData*>(tiling);
     tilingDatafromBin->usedCoreNum = 1;
     tilingDatafromBin->m = 2;
@@ -82,7 +82,7 @@ TEST_F(coalesce_sparse_test, test_case_int32_fp32)
 
     ICPU_SET_TILING_KEY(9);
     ICPU_RUN_KF(
-        coalesce_sparse, blockDim, unique_len, unique_indices, index, value, new_index, new_value, workspace,
+        coalesce_sparse, numBlocks, unique_len, unique_indices, index, value, new_index, new_value, workspace,
         (uint8_t*)(tilingDatafromBin));
 
     AscendC::GmFree(unique_len);

@@ -61,11 +61,11 @@ public:
                                 uint32_t taillasttileLength)
     {   
         ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
-        this->blockDim = GetBlockNum();
-        __gm__ T* globalWorkTensor = (__gm__ T*)((__gm__ uint64_t*)workspace + this->blockDim * (HEAD_BLOCK_SIZE / sizeof(uint64_t)));
+        this->numBlocks = GetBlockNum();
+        __gm__ T* globalWorkTensor = (__gm__ T*)((__gm__ uint64_t*)workspace + this->numBlocks * (HEAD_BLOCK_SIZE / sizeof(uint64_t)));
 
         blockIdx = GetBlockIdx();
-        if (blockIdx + 1 > this->blockDim) {
+        if (blockIdx + 1 > this->numBlocks) {
             return;
         }
         this->formerNum = formerNum;
@@ -103,7 +103,7 @@ public:
                     this->tailLength * (blockIdx - this->formerNum), this->tailLength);
         }
         shapeoutGlobal.SetGlobalBuffer((__gm__ uint64_t*)shapeout, SHAPEOUT_SIZE);
-        offsetGlobal.SetGlobalBuffer((__gm__ uint64_t*)workspace, blockDim * 8); // 8 = HEAD_BLOCK_SIZE / sizeof(uint64_t)
+        offsetGlobal.SetGlobalBuffer((__gm__ uint64_t*)workspace, numBlocks * 8); // 8 = HEAD_BLOCK_SIZE / sizeof(uint64_t)
 
         pipe.InitBuffer(inQueueXPing, 1, this->tileLength * sizeof(T));
         pipe.InitBuffer(inQueueXPong, 1, this->tileLength * sizeof(T));
@@ -119,12 +119,12 @@ public:
     {
         pipe.Reset();
         pipe.InitBuffer(shapeoutDimBuffer, 1, Ops::Base::GetUbBlockSize()); // 32，单位字节。不考虑对齐的应该为 SHAPEOUT_SIZE * sizeof(uint64_t)
-        pipe.InitBuffer(offsetOtherBuffer, 1, this->blockDim * HEAD_BLOCK_SIZE);
+        pipe.InitBuffer(offsetOtherBuffer, 1, this->numBlocks * HEAD_BLOCK_SIZE);
         pipe.InitBuffer(moveQue, BUFFER_NUM, this->tileLength * sizeof(T));
 
         uint64_t ind = 0;
         LocalTensor<uint64_t> offsetUbIn = offsetOtherBuffer.AllocTensor<uint64_t>();
-        DataCopyExtParams copyParams1{1, static_cast<uint32_t>(this->blockDim * HEAD_BLOCK_SIZE), 0, 0, 0};
+        DataCopyExtParams copyParams1{1, static_cast<uint32_t>(this->numBlocks * HEAD_BLOCK_SIZE), 0, 0, 0};
         DataCopyPadExtParams<uint64_t> padParams1{false, 0, 0, 0};
         DataCopyPad<uint64_t>(offsetUbIn, offsetGlobal, copyParams1, padParams1);
         offsetOtherBuffer.EnQue(offsetUbIn);
@@ -150,7 +150,7 @@ public:
             CopyInMove(loopCount, tailLoopLength);
             CopyOutMove(loopCount, tailLoopLength);
         }
-        if (this->blockIdx == this->blockDim - 1) {
+        if (this->blockIdx == this->numBlocks - 1) {
             LocalTensor<uint64_t> shapeoutDimUb = shapeoutDimBuffer.AllocTensor<uint64_t>();
             shapeoutDimUb.SetValue(0, SHAPEOUT_DIMNUM_WITH_UINT64FLAG);
             shapeoutDimUb.SetValue(1, ind + this->outOffset);
@@ -163,7 +163,7 @@ public:
 
     __aicore__ inline void Process(GM_ADDR y, GM_ADDR shapeout)
     {
-        if (blockIdx + 1 > this->blockDim) {
+        if (blockIdx + 1 > this->numBlocks) {
             return;
         }
         int32_t loopCount = this->tileNum;
@@ -383,7 +383,7 @@ private:
     GlobalTensor<uint64_t> offsetGlobal;
 
     // 输入
-    uint32_t blockDim;
+    uint32_t numBlocks;
     uint32_t formerNum;
     uint32_t formerLength;
     uint32_t formertileNum;

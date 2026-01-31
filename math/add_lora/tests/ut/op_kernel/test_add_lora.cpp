@@ -56,7 +56,7 @@ TEST_F(add_lora_test, test_add_lora_0)
     uint8_t *yOut = (uint8_t *)AscendC::GmAlloc(yInputSize);
 
     uint64_t tilingKey = 100001;
-    uint32_t blockDim = 20;
+    uint32_t numBlocks = 20;
     size_t workspaceFileSize = 16781184;
 
     uint8_t *workspace = (uint8_t *)AscendC::GmAlloc(workspaceFileSize);
@@ -64,7 +64,7 @@ TEST_F(add_lora_test, test_add_lora_0)
 
     AddLoraTilingData* tilingDatafromBin = reinterpret_cast<AddLoraTilingData*>(tiling);
 
-    tilingDatafromBin->usedCoreNum = blockDim;
+    tilingDatafromBin->usedCoreNum = numBlocks;
     tilingDatafromBin->layer = 1;
     tilingDatafromBin->batch = Batch;
     tilingDatafromBin->H1 = H1;
@@ -76,12 +76,12 @@ TEST_F(add_lora_test, test_add_lora_0)
     tilingDatafromBin->scale = 2.0;
     tilingDatafromBin->y_slice_size= H2;
     tilingDatafromBin->addLoraFlag = 1;
-    tilingDatafromBin->taskNumPerCore = Batch/ (blockDim *2);
+    tilingDatafromBin->taskNumPerCore = Batch/ (numBlocks *2);
     char * path_ = get_current_dir_name();
     string path(path_);
 
     ICPU_SET_TILING_KEY(tilingKey);
-    ICPU_RUN_KF(add_lora, blockDim, y, x, weightB, indice, weightA,
+    ICPU_RUN_KF(add_lora, numBlocks, y, x, weightB, indice, weightA,
                 yOut, workspace, (uint8_t*)(tilingDatafromBin));
 
     AscendC::GmFree((void *)y);
@@ -119,7 +119,7 @@ TEST_F(add_lora_test, test_add_lora_1)
     uint8_t *yOut = (uint8_t *)AscendC::GmAlloc(yInputSize);
 
     uint64_t tilingKey = 100000;
-    uint32_t blockDim = 20;
+    uint32_t numBlocks = 20;
     size_t workspaceFileSize = 16781184;
 
     uint8_t *workspace = (uint8_t *)AscendC::GmAlloc(workspaceFileSize);
@@ -127,7 +127,7 @@ TEST_F(add_lora_test, test_add_lora_1)
 
     AddLoraTilingData* tilingDatafromBin = reinterpret_cast<AddLoraTilingData*>(tiling);
 
-    tilingDatafromBin->usedCoreNum = blockDim;
+    tilingDatafromBin->usedCoreNum = numBlocks;
     tilingDatafromBin->layer = 1;
     tilingDatafromBin->batch = Batch;
     tilingDatafromBin->H1 = H1;
@@ -139,12 +139,12 @@ TEST_F(add_lora_test, test_add_lora_1)
     tilingDatafromBin->scale = 2.0;
     tilingDatafromBin->y_slice_size= H2;
     tilingDatafromBin->addLoraFlag = 1;
-    tilingDatafromBin->taskNumPerCore = Batch/ (blockDim *2);
+    tilingDatafromBin->taskNumPerCore = Batch/ (numBlocks *2);
     char * path_ = get_current_dir_name();
     string path(path_);
 
     ICPU_SET_TILING_KEY(tilingKey);
-    ICPU_RUN_KF(add_lora, blockDim, y, x, weightB, indice, weightA,
+    ICPU_RUN_KF(add_lora, numBlocks, y, x, weightB, indice, weightA,
                 yOut, workspace, (uint8_t*)(tilingDatafromBin));
 
     AscendC::GmFree((void *)y);
@@ -182,7 +182,7 @@ TEST_F(add_lora_test, test_add_lora_2)
     uint8_t *yOut = (uint8_t *)AscendC::GmAlloc(yInputSize);
 
     uint64_t tilingKey = 100000;
-    uint32_t blockDim = 20;
+    uint32_t numBlocks = 20;
     size_t workspaceFileSize = 16781184;
 
     uint8_t *workspace = (uint8_t *)AscendC::GmAlloc(workspaceFileSize);
@@ -190,7 +190,7 @@ TEST_F(add_lora_test, test_add_lora_2)
 
     AddLoraTilingData* tilingDatafromBin = reinterpret_cast<AddLoraTilingData*>(tiling);
 
-    tilingDatafromBin->usedCoreNum = blockDim;
+    tilingDatafromBin->usedCoreNum = numBlocks;
     tilingDatafromBin->layer = 1;
     tilingDatafromBin->batch = Batch;
     tilingDatafromBin->H1 = H1;
@@ -202,12 +202,12 @@ TEST_F(add_lora_test, test_add_lora_2)
     tilingDatafromBin->scale = 2.0;
     tilingDatafromBin->y_slice_size= H2;
     tilingDatafromBin->addLoraFlag = 0;
-    tilingDatafromBin->taskNumPerCore = Batch/ (blockDim *2);
+    tilingDatafromBin->taskNumPerCore = Batch/ (numBlocks *2);
     char * path_ = get_current_dir_name();
     string path(path_);
 
     ICPU_SET_TILING_KEY(tilingKey);
-    ICPU_RUN_KF(add_lora, blockDim, y, x, weightB, indice, weightA,
+    ICPU_RUN_KF(add_lora, numBlocks, y, x, weightB, indice, weightA,
                 yOut, workspace, (uint8_t*)(tilingDatafromBin));
 
     AscendC::GmFree((void *)y);
@@ -245,7 +245,7 @@ TEST_F(add_lora_test, test_add_lora_3)
     uint8_t *yOut = (uint8_t *)AscendC::GmAlloc(yInputSize);
 
     uint64_t tilingKey = 100001;
-    uint32_t blockDim = 20;
+    uint32_t numBlocks = 20;
     size_t workspaceFileSize = 16781184;
 
     uint8_t *workspace = (uint8_t *)AscendC::GmAlloc(workspaceFileSize);
@@ -253,7 +253,7 @@ TEST_F(add_lora_test, test_add_lora_3)
 
     AddLoraTilingData* tilingDatafromBin = reinterpret_cast<AddLoraTilingData*>(tiling);
 
-    tilingDatafromBin->usedCoreNum = blockDim;
+    tilingDatafromBin->usedCoreNum = numBlocks;
     tilingDatafromBin->layer = 1;
     tilingDatafromBin->batch = Batch;
     tilingDatafromBin->H1 = H1;
@@ -265,12 +265,12 @@ TEST_F(add_lora_test, test_add_lora_3)
     tilingDatafromBin->scale = 2.0;
     tilingDatafromBin->y_slice_size= H2;
     tilingDatafromBin->addLoraFlag = 0;
-    tilingDatafromBin->taskNumPerCore = Batch/ (blockDim *2);
+    tilingDatafromBin->taskNumPerCore = Batch/ (numBlocks *2);
     char * path_ = get_current_dir_name();
     string path(path_);
 
     ICPU_SET_TILING_KEY(tilingKey);
-    ICPU_RUN_KF(add_lora, blockDim, y, x, weightB, indice, weightA,
+    ICPU_RUN_KF(add_lora, numBlocks, y, x, weightB, indice, weightA,
                 yOut, workspace, (uint8_t*)(tilingDatafromBin));
 
     AscendC::GmFree((void *)y);

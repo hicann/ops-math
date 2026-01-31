@@ -45,7 +45,7 @@ TEST_F(pad_v3_grad_replicate_test, test_bfloat16_case1)
     uint32_t padBottom = 0;
     uint32_t padLeft = 1;
     uint32_t padRight = 1;
-    uint32_t blockDim = 8;
+    uint32_t numBlocks = 8;
     uint32_t ubSize = 192 * 1024 - 32 * 1024;
     size_t sysWorkspaceSize = 16 * 1024 * 1024;
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(sysWorkspaceSize);
@@ -104,7 +104,7 @@ TEST_F(pad_v3_grad_replicate_test, test_bfloat16_case2)
     uint32_t padBottom = 0;
     uint32_t padLeft = 1;
     uint32_t padRight = 1;
-    uint32_t blockDim = 48;
+    uint32_t numBlocks = 48;
     uint32_t ubSize = 192 * 1024 - 32 * 1024;
     size_t sysWorkspaceSize = 16 * 1024 * 1024;
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(sysWorkspaceSize);
@@ -163,7 +163,7 @@ TEST_F(pad_v3_grad_replicate_test, test_bfloat16_case3)
     uint32_t padBottom = 1;
     uint32_t padLeft = 0;
     uint32_t padRight = 0;
-    uint32_t blockDim = 48;
+    uint32_t numBlocks = 48;
     uint32_t ubSize = 192 * 1024 - 32 * 1024;
     size_t sysWorkspaceSize = 16 * 1024 * 1024;
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(sysWorkspaceSize);
@@ -222,7 +222,7 @@ TEST_F(pad_v3_grad_replicate_test, test_bfloat16_case4)
     uint32_t padBottom = 1;
     uint32_t padLeft = 1;
     uint32_t padRight = 1;
-    uint32_t blockDim = 48;
+    uint32_t numBlocks = 48;
     uint32_t ubSize = 192 * 1024 - 32 * 1024;
     size_t sysWorkspaceSize = 16 * 1024 * 1024;
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(sysWorkspaceSize);
@@ -282,7 +282,7 @@ TEST_F(pad_v3_grad_replicate_test, test_float32_case1)
     uint32_t padBottom = 1;
     uint32_t padLeft = 1;
     uint32_t padRight = 1;
-    uint32_t blockDim = 48;
+    uint32_t numBlocks = 48;
     uint32_t ubSize = 192 * 1024 - 32 * 1024;
     size_t sysWorkspaceSize = 16 * 1024 * 1024;
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(sysWorkspaceSize);
@@ -341,7 +341,7 @@ TEST_F(pad_v3_grad_replicate_test, test_float32_case2)
     uint32_t padBottom = 1;
     uint32_t padLeft = 1;
     uint32_t padRight = 1;
-    uint32_t blockDim = 48;
+    uint32_t numBlocks = 48;
     uint32_t ubSize = 192 * 1024 - 32 * 1024;
     size_t sysWorkspaceSize = 16 * 1024 * 1024;
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(sysWorkspaceSize);
@@ -400,7 +400,7 @@ TEST_F(pad_v3_grad_replicate_test, test_float16_case1)
     uint32_t padBottom = 1;
     uint32_t padLeft = 1;
     uint32_t padRight = 1;
-    uint32_t blockDim = 48;
+    uint32_t numBlocks = 48;
     uint32_t ubSize = 192 * 1024 - 32 * 1024;
     size_t sysWorkspaceSize = 16 * 1024 * 1024;
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(sysWorkspaceSize);
@@ -459,7 +459,7 @@ TEST_F(pad_v3_grad_replicate_test, test_float16_case2)
     uint32_t padBottom = 1;
     uint32_t padLeft = 1;
     uint32_t padRight = 1;
-    uint32_t blockDim = 48;
+    uint32_t numBlocks = 48;
     uint32_t ubSize = 192 * 1024 - 32 * 1024;
     size_t sysWorkspaceSize = 16 * 1024 * 1024;
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(sysWorkspaceSize);

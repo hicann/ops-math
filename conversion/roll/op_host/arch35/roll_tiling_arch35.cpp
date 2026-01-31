@@ -60,7 +60,7 @@ ge::graphStatus RollTilingClass::GetPlatformInfo()
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo != nullptr) {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
-        aicoreParams_.blockDim = ascendcPlatform.GetCoreNumAiv();
+        aicoreParams_.numBlocks = ascendcPlatform.GetCoreNumAiv();
         uint64_t ubSizePlatForm;
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
         aicoreParams_.ubSize = ubSizePlatForm;
@@ -69,7 +69,7 @@ ge::graphStatus RollTilingClass::GetPlatformInfo()
         OP_CHECK_IF(
             compileInfoPtr == nullptr, OP_LOGE(context_->GetNodeName(), "compile info is null"),
             return ge::GRAPH_FAILED);
-        aicoreParams_.blockDim = compileInfoPtr->core_num;
+        aicoreParams_.numBlocks = compileInfoPtr->core_num;
         aicoreParams_.ubSize = compileInfoPtr->ub_size;
     }
     cacheLineSize_ = Ops::Base::GetCacheLineSize(context_);
@@ -262,7 +262,7 @@ void RollTilingClass::SplitCore()
 {
     int64_t cacheLineLen = cacheLineSize_ / dtypeSize_; // 切核最小长度
     // 找切核的轴
-    int64_t useBlockDim_ = aicoreParams_.blockDim; // 设备可用的核数
+    int64_t useBlockDim_ = aicoreParams_.numBlocks; // 设备可用的核数
     OP_LOGD(context_, "useBlockDim_ is: %ld", useBlockDim_);
     int64_t currentProd = 1;
     blockSplitAxis_ = 0;    // 默认在0轴
@@ -436,7 +436,7 @@ void RollTilingClass::SplitCoreforSimd()
     maxElements_ = aicoreParams_.ubSize / BUFFER_NUM / dtypeSize_;
     maxElements_ = maxElements_ / ALIGN_COUNT * ALIGN_COUNT;
     OP_LOGD(context_, "basicElements is: %ld", basicElements_);
-    perCoreElements_ = (totalEmelents_ + aicoreParams_.blockDim - 1) / aicoreParams_.blockDim;
+    perCoreElements_ = (totalEmelents_ + aicoreParams_.numBlocks - 1) / aicoreParams_.numBlocks;
     needCoreNum_ = (totalEmelents_ + perCoreElements_ - 1) / perCoreElements_;
     lastCoreElements_ = totalEmelents_ - (needCoreNum_ - 1) * perCoreElements_;
 }

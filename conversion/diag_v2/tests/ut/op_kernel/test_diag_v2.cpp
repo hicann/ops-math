@@ -51,7 +51,7 @@ TEST_F(diag_v2_test, test_case_0) {
     uint8_t *y = (uint8_t *)AscendC::GmAlloc(outputByteSize);
     uint8_t *workspace = (uint8_t *)AscendC::GmAlloc(4096 * 16);
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 3;
+    uint32_t numBlocks = 3;
     system("cp -r ../../../../math/diag_v2/tests/ut/op_kernel/diag_v2_data ./");
     system("chmod -R 755 ./diag_v2_data/");
     system("cd ./diag_v2_data/ && rm -rf ./*bin");
@@ -65,7 +65,7 @@ TEST_F(diag_v2_test, test_case_0) {
 
     ICPU_SET_TILING_KEY(2101);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-    ICPU_RUN_KF(diag_v2, blockDim, x, y, workspace, tiling);
+    ICPU_RUN_KF(diag_v2, numBlocks, x, y, workspace, tiling);
 
     AscendC::GmFree(x);
     AscendC::GmFree(y);

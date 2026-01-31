@@ -51,7 +51,7 @@ TEST_F(is_finite_test, ascend910D1_test_case_half_001)
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(yByteSize);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     char* path_ = get_current_dir_name();
     string path(path_);
@@ -80,7 +80,7 @@ TEST_F(is_finite_test, ascend910D1_test_case_half_001)
     auto is_finite_kernel = [](GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling) {
         ::is_finite<0, 1>(x, y, workspace, tiling);
     };
-    ICPU_RUN_KF(is_finite_kernel, blockDim, x, y, workspace, tiling);
+    ICPU_RUN_KF(is_finite_kernel, numBlocks, x, y, workspace, tiling);
 
     WriteFile(path + "/is_finite_data/float16_output_t_is_finite.bin", y, yByteSize);
 
@@ -104,7 +104,7 @@ TEST_F(is_finite_test, ascend910D1_test_case_bfloat_002)
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(yByteSize);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     char* path_ = get_current_dir_name();
     string path(path_);
@@ -133,7 +133,7 @@ TEST_F(is_finite_test, ascend910D1_test_case_bfloat_002)
     auto is_finite_kernel = [](GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling) {
         ::is_finite<0, 2>(x, y, workspace, tiling);
     };
-    ICPU_RUN_KF(is_finite_kernel, blockDim, x, y, workspace, tiling);
+    ICPU_RUN_KF(is_finite_kernel, numBlocks, x, y, workspace, tiling);
     WriteFile(path + "/is_finite_data/bfloat16_output_t_is_finite.bin", y, yByteSize);
 
     AscendC::GmFree(x);
@@ -156,7 +156,7 @@ TEST_F(is_finite_test, ascend910D1_test_case_float_003)
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(yByteSize);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     char* path_ = get_current_dir_name();
     string path(path_);
@@ -185,7 +185,7 @@ TEST_F(is_finite_test, ascend910D1_test_case_float_003)
     auto is_finite_kernel = [](GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling) {
         ::is_finite<0, 3>(x, y, workspace, tiling);
     };
-    ICPU_RUN_KF(is_finite_kernel, blockDim, x, y, workspace, tiling);
+    ICPU_RUN_KF(is_finite_kernel, numBlocks, x, y, workspace, tiling);
 
     WriteFile(path + "/is_finite_data/float32_output_t_is_finite.bin", y, yByteSize);
 

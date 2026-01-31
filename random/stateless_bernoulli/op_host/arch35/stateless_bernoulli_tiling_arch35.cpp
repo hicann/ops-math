@@ -150,7 +150,7 @@ ge::graphStatus StatelessBernoulliTiling::GetPlatformInfo()
             "coreNum and ubSize should not be samller than 0, but got coreNum [%lu] and ubSize [%lu], please check.",
             coreNum_, ubSize_),
         return ge::GRAPH_FAILED);
-    aicoreParams_.blockDim = coreNum_;
+    aicoreParams_.numBlocks = coreNum_;
     aicoreParams_.ubSize = static_cast<int64_t>(ubSize_);
 
     return ge::GRAPH_SUCCESS;

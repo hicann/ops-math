@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "../../../reflection_pad3d_grad/op_host/op_api/aclnn_reflection_pad3d_backward.h"
+#include "../../../reflection_pad3d_grad/op_api/aclnn_reflection_pad3d_backward.h"
 #include "aclnn_replication_pad3d_backward.h"
 #include "../../../pad_v3_grad/op_host/op_api/padv3grad.h"
 #include "aclnn_kernels/contiguous.h"
@@ -284,7 +284,7 @@ aclnnStatus aclnnReflectionPad3dBackwardGetWorkspaceSize(const aclTensor *gradOu
 
     L2_DFX_PHASE_1(aclnnReflectionPad3dBackward, DFX_IN(gradOutput, self, padding), DFX_OUT(gradInput));
     return CommonPad3dBackward(gradOutput, self, padding, REFLECTION_PAD_MODE, gradInput, workspaceSize, executor);
-    }
+}
 
 aclnnStatus aclnnReflectionPad3dBackward(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor,
     const aclrtStream stream)

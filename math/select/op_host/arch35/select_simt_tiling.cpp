@@ -193,7 +193,7 @@ ge::graphStatus SelectSimtTiling::GetPlatformInfo()
         OP_LOGD(context_->GetNodeName(), "Get ubSize form ascendcPlatform is: %ld", ubSize_);
         OP_LOGD(context_->GetNodeName(), "Get aivNum form ascendcPlatform is: %ld", aivNum_);
     }
-    aicoreParams_.blockDim = aivNum_;
+    aicoreParams_.numBlocks = aivNum_;
     return ge::GRAPH_SUCCESS;
 }
  

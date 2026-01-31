@@ -19,7 +19,7 @@ namespace AscendC {
     __aicore__ inline void KernelSinkhorn<T, IT>::Init(GM_ADDR cost, GM_ADDR p, GM_ADDR workspace, const SinkhornTilingData *tilingData)
     {
         // 全局信息
-        this->blockDim = GetBlockNum();
+        this->numBlocks = GetBlockNum();
         this->blockIdx = GetBlockIdx();
 
         OP_LOGD_0_1("tol[in]:  " FLOAT_FMT, tol);
@@ -86,7 +86,7 @@ namespace AscendC {
 
         // blockDim个
         d1BlockInWS.SetGlobalBuffer((__gm__ T*)newBegin + blockIdx * totalCol, totalCol);
-        newBegin += blockDim * totalCol * sizeof(T);
+        newBegin += numBlocks * totalCol * sizeof(T);
 
         d1GlobalInWS.SetGlobalBuffer((__gm__ T*)newBegin, totalCol);
         newBegin += totalCol * sizeof(T);

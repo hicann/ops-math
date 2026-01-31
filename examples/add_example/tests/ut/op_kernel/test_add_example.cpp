@@ -55,7 +55,7 @@ TEST_F(AddExampleTest, test_case_0)
     size_t yByteSize = 32 * 4 * 4 * 4 * sizeof(float);
     size_t zByteSize = 32 * 4 * 4 * 4 * sizeof(float);
     size_t tiling_data_size = sizeof(AddExampleTilingData);
-    uint32_t blockDim = 8;
+    uint32_t numBlocks = 8;
 
     system("cd ./add_example_data/ && python3 gen_data.py '(32, 4, 4, 4)' 'float32'");
     std::string fileName = "./add_example_data/float32_input_add_example.bin";
@@ -78,7 +78,7 @@ TEST_F(AddExampleTest, test_case_0)
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
 
     ICPU_RUN_KF(add_example<0>,
-        blockDim,
+        numBlocks,
         x,
         y,
         z,

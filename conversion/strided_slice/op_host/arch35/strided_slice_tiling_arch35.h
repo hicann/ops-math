@@ -72,14 +72,14 @@ constexpr int64_t SIMT_MIN_OUTPUT_SIZE = 1024;
 constexpr int64_t TWO_DIM_MIN_OUTPUT_SIZE = 4096; // 4 * 1024
 
 struct StridedSliceCompileInfo {
-    int32_t blockDim{-1};
+    int32_t numBlocks{-1};
     int32_t ubSize{0};
     int32_t coreNum{0};
     uint32_t cacheLineSize{0};
     bool isAscendc{false};
     std::string to_string() const
     {
-        std::string str = "blockDim: " + std::to_string(blockDim);
+        std::string str = "numBlocks: " + std::to_string(numBlocks);
         str += " ubSize: " + std::to_string(ubSize);
         return str;
     }

@@ -40,7 +40,7 @@
 //   uint8_t* y = (uint8_t*)AscendC::GmAlloc(xByteSize);
 //   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
 //   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-//   uint32_t blockDim = 1;
+//   uint32_t numBlocks = 1;
 
 //   char* path_ = get_current_dir_name();
 //   string path(path_);
@@ -66,7 +66,7 @@
 //   system("cd ./is_inf_data/ && rm -rf ./*bin && python3 gen_data.py '[64]' 'float16'");
 //   ReadFile(path + "/is_inf_data/float16_input.bin", xByteSize, x, xByteSize);
 
-//   ICPU_RUN_KF(is_inf, blockDim, x, y, workspace, tiling);
+//   ICPU_RUN_KF(is_inf, numBlocks, x, y, workspace, tiling);
 
 //   WriteFile(path + "/is_inf_data/float16_output_rel.bin", y, xByteSize);
 
@@ -88,7 +88,7 @@
 //   uint8_t* y = (uint8_t*)AscendC::GmAlloc(xByteSize);
 //   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
 //   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-//   uint32_t blockDim = 1;
+//   uint32_t numBlocks = 1;
 
 //   char* path_ = get_current_dir_name();
 //   string path(path_);
@@ -114,7 +114,7 @@
 //   system("cd ./is_inf_data/ && rm -rf ./*bin && python3 gen_data.py '[64]' 'bfloat16'");
 //   ReadFile(path + "/is_inf_data/bfloat16_input.bin", xByteSize, x, xByteSize);
 
-//   ICPU_RUN_KF(is_inf, blockDim, x, y, workspace, tiling);
+//   ICPU_RUN_KF(is_inf, numBlocks, x, y, workspace, tiling);
 
 //   WriteFile(path + "/is_inf_data/bfloat16_output_rel.bin", y, xByteSize);
 
@@ -136,7 +136,7 @@
 //   uint8_t* y = (uint8_t*)AscendC::GmAlloc(xByteSize);
 //   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
 //   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-//   uint32_t blockDim = 1;
+//   uint32_t numBlocks = 1;
 
 //   char* path_ = get_current_dir_name();
 //   string path(path_);
@@ -162,7 +162,7 @@
 //   system("cd ./is_inf_data/ && rm -rf ./*bin && python3 gen_data.py '[64]' 'float32'");
 //   ReadFile(path + "/is_inf_data/float32_input.bin", xByteSize, x, xByteSize);
 
-//   ICPU_RUN_KF(is_inf, blockDim, x, y, workspace, tiling);
+//   ICPU_RUN_KF(is_inf, numBlocks, x, y, workspace, tiling);
 
 //   WriteFile(path + "/is_inf_data/float32_output_rel.bin", y, xByteSize);
 

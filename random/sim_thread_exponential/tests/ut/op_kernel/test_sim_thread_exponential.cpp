@@ -49,7 +49,7 @@ TEST_F(sim_thread_exponential_test, test_case_float_outputshape_8_2)
 
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(1024 * 1024 * 1024);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingSize);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     SimThreadExponentialTilingData* tilingData = reinterpret_cast<SimThreadExponentialTilingData*>(tiling);
     tilingData->key0 = 5;
@@ -72,7 +72,7 @@ TEST_F(sim_thread_exponential_test, test_case_float_outputshape_8_2)
     tilingData->lambda = 1.0;
 
     ICPU_SET_TILING_KEY(3);
-    ICPU_RUN_KF(sim_thread_exponential, blockDim, self, self, workspace, tiling);
+    ICPU_RUN_KF(sim_thread_exponential, numBlocks, self, self, workspace, tiling);
 
     AscendC::GmFree(self);
     AscendC::GmFree(workspace);

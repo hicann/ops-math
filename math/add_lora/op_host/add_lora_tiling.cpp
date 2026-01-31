@@ -370,8 +370,8 @@ ge::graphStatus AddLoraTiling::PostTiling()
                 return ge::GRAPH_FAILED);
     
     tilingData_.SaveToBuffer(context_->GetRawTilingData()->GetData(), context_->GetRawTilingData()->GetCapacity());
-    auto blockDim = tilingData_.get_usedCoreNum();
-    context_->SetBlockDim(blockDim);
+    auto numBlocks = tilingData_.get_usedCoreNum();
+    context_->SetBlockDim(numBlocks);
     context_->SetTilingKey(GetTilingKey());
     context_->GetRawTilingData()->SetDataSize(tilingData_.GetDataSize());
     return ge::GRAPH_SUCCESS;

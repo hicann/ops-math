@@ -36,7 +36,7 @@ class histogram_v2_test : public testing::Test {
     }
 };
 
-HistogramV2TilingData* GetTilingData(uint64_t tilingKey, uint8_t *tiling, uint32_t blockDim) {
+HistogramV2TilingData* GetTilingData(uint64_t tilingKey, uint8_t *tiling, uint32_t numBlocks) {
     int64_t totalLength = 128;
     int64_t bins = 1;
     HistogramV2TilingData* tilingData = reinterpret_cast<HistogramV2TilingData*>(tiling);
@@ -74,7 +74,7 @@ HistogramV2TilingData* GetTilingData(uint64_t tilingKey, uint8_t *tiling, uint32
     int64_t tailNum;
 
     //数据分核
-    int64_t coreNum = blockDim;
+    int64_t coreNum = numBlocks;
     int64_t alignNum = BYTE_BLOCK / SIZE_OF_FP32;
     formerNum = 1;
     tailNum = coreNum - formerNum;
@@ -136,7 +136,7 @@ TEST_F(histogram_v2_test, test_case_0) {
     uint8_t *binsCount = (uint8_t*)AscendC::GmAlloc(binsCount_size);
     uint8_t *workspace = (uint8_t *)AscendC::GmAlloc(1024 * 16 * 1024);
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1; //cpu模拟使用单核
+    uint32_t numBlocks = 1; //cpu模拟使用单核
     system("cp -r ../../../../math/histogram_v2/tests/ut/op_kernel/histogram_v2_data ./");
     system("chmod -R 755 ./histogram_v2_data/");
     system("cd ./histogram_v2_data/ && rm -rf ./*bin");
@@ -148,9 +148,9 @@ TEST_F(histogram_v2_test, test_case_0) {
     ReadFile(path + "/histogram_v2_data/min.bin", min_size, min, min_size);
     ReadFile(path + "/histogram_v2_data/max.bin", max_size, max, max_size);
     uint64_t tilingKey = 0;
-    auto tilingData = GetTilingData(tilingKey, tiling, blockDim);
+    auto tilingData = GetTilingData(tilingKey, tiling, numBlocks);
     ICPU_SET_TILING_KEY(tilingKey);
-    ICPU_RUN_KF(histogram_v2, blockDim, self, min, max, binsCount, workspace, (uint8_t*)(tilingData));
+    ICPU_RUN_KF(histogram_v2, numBlocks, self, min, max, binsCount, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(self);
     AscendC::GmFree(min);

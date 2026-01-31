@@ -883,26 +883,26 @@ void ReduceVarTiling::SetTilingData(const uint64_t* shape)
     uint64_t cacheStep = cBlock_.cacheLineStep;
     int32_t axis = cBlock_.axis;
     uint64_t perCoreNum = Ops::Base::CeilDiv(unitA_.outer * unitR_.outer, compileInfo_.vectorCoreNum);
-    uint64_t blockDim = Ops::Base::CeilDiv(unitA_.outer * unitR_.outer, perCoreNum);
+    uint64_t numBlocks = Ops::Base::CeilDiv(unitA_.outer * unitR_.outer, perCoreNum);
     uint64_t factorA = unitA_.idx == axis ? unitA_.step * cacheStep : unitA_.step;
     uint64_t factorR = unitR_.idx == axis ? unitR_.step * cacheStep : unitR_.step;
 
-    if (unitA_.outer < blockDim) {
-        auto tmpBlockDim = Ops::Base::CeilAlign(blockDim, unitA_.outer);
+    if (unitA_.outer < numBlocks) {
+        auto tmpBlockDim = Ops::Base::CeilAlign(numBlocks, unitA_.outer);
         if (tmpBlockDim <= compileInfo_.vectorCoreNum) {
-            blockDim = tmpBlockDim;
+            numBlocks = tmpBlockDim;
         } else {
-            blockDim = Ops::Base::FloorAlign(blockDim, unitA_.outer);
+            numBlocks = Ops::Base::FloorAlign(numBlocks, unitA_.outer);
         }
     }
 
     tilingData_->ubFactorA = factorA;
-    uint64_t factorACntPerCore = Ops::Base::CeilDiv(unitA_.outer, blockDim);
+    uint64_t factorACntPerCore = Ops::Base::CeilDiv(unitA_.outer, numBlocks);
     tilingData_->factorACntPerCore = factorACntPerCore;
     tilingData_->factorATotalCnt = unitA_.outer;
 
     tilingData_->ubFactorR = factorR;
-    uint64_t factorRCntPerCore = Ops::Base::CeilDiv(unitR_.outer, Ops::Base::CeilDiv(blockDim, unitA_.outer));
+    uint64_t factorRCntPerCore = Ops::Base::CeilDiv(unitR_.outer, Ops::Base::CeilDiv(numBlocks, unitA_.outer));
     tilingData_->factorRCntPerCore = factorRCntPerCore;
     tilingData_->factorRTotalCnt = unitR_.outer;
     tilingData_->groupR = Ops::Base::CeilDiv(unitR_.outer, factorRCntPerCore);
@@ -1081,7 +1081,7 @@ void ReduceVarTiling::PrintTilingData()
     OP_LOGI(context_->GetNodeName(),
         "TilingData: factorACntPerCore:%lu, factorATotalCnt:%lu, ubFactorA:%lu, factorRCntPerCore:%lu, "
         "factorRTotalCnt:%lu, ubFactorR:%lu, groupR:%lu, outSize:%lu, basicBlock:%lu, resultBlock:%lu, "
-        "meanVar:%lf, blockDim:%u",
+        "meanVar:%lf, numBlocks:%u",
         tilingData_->factorACntPerCore, tilingData_->factorATotalCnt, tilingData_->ubFactorA,
         tilingData_->factorRCntPerCore, tilingData_->factorRTotalCnt, tilingData_->ubFactorR, tilingData_->groupR,
         tilingData_->outSize, tilingData_->basicBlock, tilingData_->resultBlock, tilingData_->meanVar,

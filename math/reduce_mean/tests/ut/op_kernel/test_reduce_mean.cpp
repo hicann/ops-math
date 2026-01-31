@@ -90,7 +90,7 @@ void InvokeReduceMeanKernel(const TilingTestHelp::TilingInfo& tilingInfo, GM_ADD
 
 TEST_F(reduce_mean_test, test_case_0)
 {
-    uint32_t blockDim = 4;
+    uint32_t numBlocks = 4;
     uint32_t dim0 = 4;
     uint32_t dim1 = 64;
     std::vector<int64_t> input{4, 64};
@@ -133,7 +133,7 @@ TEST_F(reduce_mean_test, test_case_0)
 
 //TEST_F(reduce_mean_test, test_case_1)
 //{
-//    uint32_t blockDim = 4;
+//    uint32_t numBlocks = 4;
 //    uint32_t dim0 = 4;
 //    uint32_t dim1 = 64;
 //    std::vector<int64_t> input{4, 64};

@@ -38,11 +38,11 @@ protected:
 
 TEST_F(rfft1d_test, test_case_DFT)
 {
-    uint32_t blockDim = 24;
+    uint32_t numBlocks = 24;
     uint32_t fftLength = 64;
-    size_t inputByteSize = blockDim * fftLength * sizeof(float);
+    size_t inputByteSize = numBlocks * fftLength * sizeof(float);
     size_t dftByteSize = (64 * 72 * 2) * sizeof(float);
-    size_t outputByteSize = blockDim * ((fftLength / 2) + 1) * 2 * sizeof(float);
+    size_t outputByteSize = numBlocks * ((fftLength / 2) + 1) * 2 * sizeof(float);
     size_t tilingDataSize = sizeof(Rfft1DTilingData);
 
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(inputByteSize);
@@ -67,7 +67,7 @@ TEST_F(rfft1d_test, test_case_DFT)
 
     ICPU_SET_TILING_KEY(1);
     AscendC::SetKernelMode(KernelMode::MIX_MODE);
-    ICPU_RUN_KF(rfft1_d, blockDim, x, dft, y, workspace, (uint8_t*)(tilingDatafromBin));
+    ICPU_RUN_KF(rfft1_d, numBlocks, x, dft, y, workspace, (uint8_t*)(tilingDatafromBin));
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     AscendC::GmFree(x);
     AscendC::GmFree(dft);

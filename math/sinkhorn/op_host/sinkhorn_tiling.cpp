@@ -54,7 +54,7 @@ private:
 
     // context传递
     uint64_t tilingKey = 1;
-    uint64_t blockDim = 0;
+    uint64_t numBlocks = 0;
 
     // tiling data传递
     uint64_t formerNum = 0;    // former 数量
@@ -146,7 +146,7 @@ ge::graphStatus SinkhornTiling::Init()
     uint32_t ubNum = (totalRow + tileRow - 1) / tileRow;
 
     // 运行核数
-    blockDim = (ubNum > aivNum) ? aivNum : ubNum;
+    numBlocks = (ubNum > aivNum) ? aivNum : ubNum;
 
     tilingKey = dataType;
 
@@ -160,13 +160,13 @@ ge::graphStatus SinkhornTiling::Init()
 inline ge::graphStatus SinkhornTiling::InitTiling()
 {
     // 切分流程
-    formerNum = totalRow % blockDim;
+    formerNum = totalRow % numBlocks;
     if (formerNum == 0) {
-        formerNum = blockDim;
+        formerNum = numBlocks;
     }
-    tailNum = blockDim - formerNum;
+    tailNum = numBlocks - formerNum;
 
-    formerRow = (totalRow + blockDim - 1) / blockDim;
+    formerRow = (totalRow + numBlocks - 1) / numBlocks;
     formerLength = formerRow * totalCol;
     formerTileNum = (formerRow + tileRow - 1) / tileRow;
     formerLastTileRow = formerRow % tileRow;
@@ -196,7 +196,7 @@ inline ge::graphStatus SinkhornTiling::InitWS()
     userWorkspaceSize += totalRow * sizeof(float);
 
     // d1 block
-    userWorkspaceSize += blockDim * totalCol * sizeof(float);
+    userWorkspaceSize += numBlocks * totalCol * sizeof(float);
 
     // d1/d1 new global
     userWorkspaceSize += (totalCol + totalCol) * sizeof(float);
@@ -209,7 +209,7 @@ ge::graphStatus SinkhornTiling::RunKernelTiling()
 
     // context传递
     tilingContext->SetTilingKey(tilingKey);
-    tilingContext->SetBlockDim(blockDim);
+    tilingContext->SetBlockDim(numBlocks);
 
     // tiling data传递
     tiling.set_formerNum(formerNum);
@@ -256,7 +256,7 @@ ge::graphStatus SinkhornTiling::RunKernelTiling()
 void SinkhornTiling::TilingDataPrint()
 {
     OP_LOGD(tilingContext, "            tilingKey: %lu", tilingContext->GetTilingKey());
-    OP_LOGD(tilingContext, "             blockDim: %u", tilingContext->GetBlockDim());
+    OP_LOGD(tilingContext, "             numBlocks: %u", tilingContext->GetBlockDim());
 
     OP_LOGD(tilingContext, "            formerNum: %lu", tiling.get_formerNum());
     OP_LOGD(tilingContext, "            formerRow: %lu", tiling.get_formerRow());

@@ -134,16 +134,16 @@ private:
 
 void STFTGeneralizedTiling::GetPlanSplitStrategy()
 {
-    int32_t blockDim = aivCoreNum;
+    int32_t numBlocks = aivCoreNum;
     int32_t oneRowSize = nfftAlign * 4;
     int32_t halfUbSize = (ubSize - oneRowSize) / 2;
-    int32_t mFactor = CeilDiv(2 * matmulM, blockDim);
-    int32_t prevCnt = blockDim * (mFactor - 1);
+    int32_t mFactor = CeilDiv(2 * matmulM, numBlocks);
+    int32_t prevCnt = numBlocks * (mFactor - 1);
     int32_t remainCnt = 2 * matmulM - prevCnt;
     int32_t totalLine = mFactor;
     int32_t tailBlockIdx = remainCnt;
     int32_t tailLine = mFactor;
-    if (remainCnt < blockDim) {
+    if (remainCnt < numBlocks) {
         tailLine = mFactor - 1;
     }
     int32_t ubMaxLine = halfUbSize / oneRowSize;

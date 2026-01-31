@@ -53,7 +53,7 @@ TEST_F(SinkhornTest, sinkhorn_float_48_2) {
   uint8_t* p = (uint8_t*)AscendC::GmAlloc(outputPByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(2*16*1024*1024); // 280 workspace
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
-  uint32_t blockDim = 1;
+  uint32_t numBlocks = 1;
 
   float *fp = (float *)cost;
   for(int i = 0; i < shapeSize; i++) {
@@ -89,7 +89,7 @@ TEST_F(SinkhornTest, sinkhorn_float_48_2) {
 
   ICPU_SET_TILING_KEY(0); // float16 tilingKey = 0
   AscendC::SetKernelMode(KernelMode::AIV_MODE);
-  ICPU_RUN_KF(sinkhorn, blockDim, cost, p, workspace, (uint8_t*)(tilingData));
+  ICPU_RUN_KF(sinkhorn, numBlocks, cost, p, workspace, (uint8_t*)(tilingData));
 
   checkTotalP((float *)p, shapeSize);
 
@@ -109,7 +109,7 @@ TEST_F(SinkhornTest, sinkhorn_float_8_2) {
   uint8_t* p = (uint8_t*)AscendC::GmAlloc(outputPByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(2*16*1024*1024); // 280 workspace
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
-  uint32_t blockDim = 1;
+  uint32_t numBlocks = 1;
 
   float *fp = (float *)cost;
   float testCost[] = {45.0f, 48.0f, 65.0f, 68.0f, 68.0f, 10.0f, 84.0f, 22.0f, 37.0f, 71.0f, 13.0f, 59.0f, 66.0f, 40.0f, 47.0f, 82.0f};
@@ -146,7 +146,7 @@ TEST_F(SinkhornTest, sinkhorn_float_8_2) {
   tilingData->tol = 0.0001;               // 误差
 
   ICPU_SET_TILING_KEY(0); // float16 tilingKey = 0
-  ICPU_RUN_KF(sinkhorn, blockDim, cost, p, workspace, (uint8_t*)(tilingData));
+  ICPU_RUN_KF(sinkhorn, numBlocks, cost, p, workspace, (uint8_t*)(tilingData));
   checkTotalP((float *)p, shapeSize);
 
   AscendC::GmFree(cost);
@@ -165,7 +165,7 @@ TEST_F(SinkhornTest, sinkhorn_float16_48_2) {
   uint8_t* p = (uint8_t*)AscendC::GmAlloc(outputPByteSize);
   uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(2*16*1024*1024);
   uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
-  uint32_t blockDim = 1;
+  uint32_t numBlocks = 1;
 
   half *fp = (half *)cost;
   for(int i = 0; i < shapeSize; i++) {
@@ -200,7 +200,7 @@ TEST_F(SinkhornTest, sinkhorn_float16_48_2) {
   tilingData->tol = 0.0001;               // 误差
 
   ICPU_SET_TILING_KEY(1); // float16 tilingKey = 1
-  ICPU_RUN_KF(sinkhorn, blockDim, cost, p, workspace, (uint8_t*)(tilingData));
+  ICPU_RUN_KF(sinkhorn, numBlocks, cost, p, workspace, (uint8_t*)(tilingData));
   // checkTotalP((half *)p, shapeSize);
 
   AscendC::GmFree(cost);

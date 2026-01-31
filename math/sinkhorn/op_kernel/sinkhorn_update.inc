@@ -259,7 +259,7 @@ namespace AscendC {
                 LocalTensor<T> d1OutLocal = d1OutQueue.AllocTensor<T>();
                 Duplicate(d1OutLocal, static_cast<T>(0.0f), totalCol);
                 d1OutQueue.EnQue(d1OutLocal);
-                for (int i = 0; i < blockDim; i++) {
+                for (int i = 0; i < numBlocks; i++) {
                     SumD1(i);
                 }
             }

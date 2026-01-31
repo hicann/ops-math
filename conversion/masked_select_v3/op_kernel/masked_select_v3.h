@@ -65,8 +65,8 @@ public:
                                 uint32_t taillasttileLength)
     {   
         ASSERT(GetBlockNum() != 0 && "block dim can not be zero!");
-        this->blockDim = GetBlockNum();
-        __gm__ T* globalWorkTensor = (__gm__ T*)((__gm__ uint64_t*)workspace + this->blockDim * (HEAD_BLOCK_SIZE / sizeof(uint64_t)));
+        this->numBlocks = GetBlockNum();
+        __gm__ T* globalWorkTensor = (__gm__ T*)((__gm__ uint64_t*)workspace + this->numBlocks * (HEAD_BLOCK_SIZE / sizeof(uint64_t)));
 
         blockIdx = GetBlockIdx();
         this->formerNum = formerNum;
@@ -107,7 +107,7 @@ public:
                 this->tailLength);
         }
         shapeoutGlobal.SetGlobalBuffer((__gm__ uint64_t*)shapeout, SHAPEOUT_SIZE);
-        offsetGlobal.SetGlobalBuffer((__gm__ uint64_t*)workspace, blockDim);
+        offsetGlobal.SetGlobalBuffer((__gm__ uint64_t*)workspace, numBlocks);
 
         pipe.InitBuffer(inQueueX, BUFFER_NUM, this->tileLength * sizeof(T));
         pipe.InitBuffer(inQueueMask, BUFFER_NUM, this->tileLength * sizeof(uint8_t));
@@ -162,7 +162,7 @@ public:
             CopyInMove(loopCount, tailLoopLength);
             CopyOutMove(loopCount, tailLoopLength);
         }
-        if (this->blockIdx == this->blockDim -1) {
+        if (this->blockIdx == this->numBlocks -1) {
             shapeoutGlobal.SetValue(0, 1);
             shapeoutGlobal.SetValue(1, ind + this->outOffset);
         }
@@ -363,7 +363,7 @@ private:
     GlobalTensor<uint64_t> offsetGlobal;
 
     // 输入
-    uint32_t blockDim;
+    uint32_t numBlocks;
     uint32_t formerNum;
     uint32_t formerLength;
     uint32_t formertileNum;

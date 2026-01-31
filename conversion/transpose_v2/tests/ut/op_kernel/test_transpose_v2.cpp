@@ -59,7 +59,7 @@ TEST_F(transpose_v2_test, test_case_fp16_001)
 
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     TransposeV2TilingData* tilingData = reinterpret_cast<TransposeV2TilingData*>(tiling);
     tilingData->tasksPerCore = C;
@@ -75,7 +75,7 @@ TEST_F(transpose_v2_test, test_case_fp16_001)
     tilingData->doubleBuffer = 2;
 
     ICPU_SET_TILING_KEY(20);
-    ICPU_RUN_KF(transpose_v2, blockDim, x, perm, y, workspace, (uint8_t*)(tilingData));
+    ICPU_RUN_KF(transpose_v2, numBlocks, x, perm, y, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(x);
     AscendC::GmFree(perm);
@@ -101,7 +101,7 @@ TEST_F(transpose_v2_test, test_case_fp16_002)
 
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     TransposeV2TilingData* tilingData = reinterpret_cast<TransposeV2TilingData*>(tiling);
     tilingData->dim1Len = C;
@@ -116,7 +116,7 @@ TEST_F(transpose_v2_test, test_case_fp16_002)
     tilingData->doubleBuffer = 2;
 
     ICPU_SET_TILING_KEY(120);
-    ICPU_RUN_KF(transpose_v2, blockDim, x, perm, y, workspace, (uint8_t*)(tilingData));
+    ICPU_RUN_KF(transpose_v2, numBlocks, x, perm, y, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(x);
     AscendC::GmFree(perm);
@@ -142,7 +142,7 @@ TEST_F(transpose_v2_test, test_case_fp16_003)
 
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     TransposeV2TilingData* tilingData = reinterpret_cast<TransposeV2TilingData*>(tiling);
     tilingData->dim1Len = C;
@@ -157,7 +157,7 @@ TEST_F(transpose_v2_test, test_case_fp16_003)
     tilingData->doubleBuffer = 2;
 
     ICPU_SET_TILING_KEY(121);
-    ICPU_RUN_KF(transpose_v2, blockDim, x, perm, y, workspace, (uint8_t*)(tilingData));
+    ICPU_RUN_KF(transpose_v2, numBlocks, x, perm, y, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(x);
     AscendC::GmFree(perm);
@@ -183,7 +183,7 @@ TEST_F(transpose_v2_test, test_case_fp16_004)
 
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(16 * 1024 * 1024);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingDataSize);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     TransposeV2TilingData* tilingData = reinterpret_cast<TransposeV2TilingData*>(tiling);
     tilingData->dim1Len = C;
@@ -198,7 +198,7 @@ TEST_F(transpose_v2_test, test_case_fp16_004)
     tilingData->doubleBuffer = 2;
 
     ICPU_SET_TILING_KEY(221);
-    ICPU_RUN_KF(transpose_v2, blockDim, x, perm, y, workspace, (uint8_t*)(tilingData));
+    ICPU_RUN_KF(transpose_v2, numBlocks, x, perm, y, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(x);
     AscendC::GmFree(perm);

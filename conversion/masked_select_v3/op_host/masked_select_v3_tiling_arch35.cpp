@@ -75,7 +75,7 @@ private:
     uint64_t tailTileNum = 0;
     uint64_t tailTileLength = 0;
     uint64_t tailLastTileLength = 0;
-    uint64_t blockDim = 0;
+    uint64_t numBlocks = 0;
 
     // 求单个元素大小
     uint64_t sizeOfDataType = 1;
@@ -115,20 +115,20 @@ ge::graphStatus MaskedSelectV3IsRegbaseSocVersionTiling::Init()
     // block数量
     uint64_t ubNum = (totalLengthAlignedWithBlock + ubLength - 1UL) / ubLength;
     // 运行核数
-    blockDim = (ubNum > aivNum) ? aivNum : ubNum;
-    tilingContext->SetBlockDim(blockDim);
+    numBlocks = (ubNum > aivNum) ? aivNum : ubNum;
+    tilingContext->SetBlockDim(numBlocks);
     tilingKey = sizeOfDataType;
     tilingContext->SetTilingKey(tilingKey);
     OP_CHECK_IF(tilingContext->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
                 OP_LOGE(tilingContext->GetNodeName(), "Failed to set ScheduleMode!"),
                 return ge::GRAPH_FAILED);
     // 切分流程
-    formerNum = totalLength % blockDim;
+    formerNum = totalLength % numBlocks;
     if (formerNum == 0UL) {
-        formerNum = blockDim;
+        formerNum = numBlocks;
     }
-    tailNum = blockDim - formerNum;
-    formerLength = (totalLength + blockDim - 1UL) / blockDim;
+    tailNum = numBlocks - formerNum;
+    formerLength = (totalLength + numBlocks - 1UL) / numBlocks;
     formerTileNum = (formerLength + ubLength - 1UL) / ubLength;
     formerTileLength = ubLength;
     formerLastTileLength = formerLength % ubLength;
@@ -178,7 +178,7 @@ ge::graphStatus MaskedSelectV3IsRegbaseSocVersionTiling::RunKernelTiling()
     uint32_t sysWorkspaceSize = compileInfo->workSpaceSize;
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(
         1); // 通过框架获取workspace的指针，GetWorkspaces入参所需workspace的块数。当前限制使用一块。
-    size_t usrSize = totalLengthAlignedWithBlock * sizeOfDataType + blockDim * 64UL;
+    size_t usrSize = totalLengthAlignedWithBlock * sizeOfDataType + numBlocks * 64UL;
     OP_LOGD(tilingContext->GetNodeName(), "usrWorkspaceSize: %lu.", usrSize);
     currentWorkspace[0] =
         usrSize + sysWorkspaceSize; // 设置总的workspace的数值大小，总的workspace空间框架来申请并管理。

@@ -54,7 +54,7 @@ static void InitEnv()
 TEST_F(reduce_min_test, test_case_0)
 {
     uint64_t tilingKey = 2571;
-    uint32_t blockDim = 16;
+    uint32_t numBlocks = 16;
     uint32_t dim0 = 64;
     uint32_t dim1 = 16;
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
@@ -100,7 +100,7 @@ TEST_F(reduce_min_test, test_case_0)
     auto reduce_min_1 = [](GM_ADDR x, GM_ADDR axes, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling) {
         reduce_min<11, 10, 0>(x, axes, y, workspace, tiling);
     };
-    ICPU_RUN_KF(reduce_min_1, blockDim, x, axes, y, workspace, tiling);
+    ICPU_RUN_KF(reduce_min_1, numBlocks, x, axes, y, workspace, tiling);
     WriteFile(path + "/reduce_min_data/y.bin", y, ySize);
 
     AscendC::GmFree((void*)x);

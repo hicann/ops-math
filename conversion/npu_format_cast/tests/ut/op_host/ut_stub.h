@@ -29,13 +29,13 @@ public:
     virtual rtError_t rtGetDevice(int32_t* device);
     virtual rtError_t rtGetDevicePhyIdByIndex(uint32_t device_id, uint32_t* phy_id);
     virtual rtError_t rtAicpuKernelLaunchExWithArgs(
-        const uint32_t kernelType, const char* const opName, const uint32_t blockDim, const rtAicpuArgsEx_t* argsInfo,
+        const uint32_t kernelType, const char* const opName, const uint32_t numBlocks, const rtAicpuArgsEx_t* argsInfo,
         rtSmDesc_t* const smDesc, const rtStream_t stm, const uint32_t flags);
     virtual rtError_t rtsBinaryLoadFromFile(
         const char* const binPath, const rtLoadBinaryConfig_t* const optionalCfg, rtBinHandle* binHandle);
     virtual rtError_t rtsFuncGetByName(const rtBinHandle binHandle, const char* kernelName, rtFuncHandle* funcHandle);
     virtual rtError_t rtsLaunchCpuKernel(
-        const rtFuncHandle funcHandle, const uint32_t blockDim, rtStream_t st, const rtKernelLaunchCfg_t* cfg,
+        const rtFuncHandle funcHandle, const uint32_t numBlocks, rtStream_t st, const rtKernelLaunchCfg_t* cfg,
         rtCpuKernelArgs_t* argsInfo);
     // PlatformInfoManager
     virtual string GetSoFilePath();
@@ -110,7 +110,7 @@ public:
         EXPECT_CALL(*this, rtAicpuKernelLaunchExWithArgs)
             .WillRepeatedly([this](
                                 [[maybe_unused]] const uint32_t kernelType, [[maybe_unused]] const char* const opName,
-                                [[maybe_unused]] const uint32_t blockDim,
+                                [[maybe_unused]] const uint32_t numBlocks,
                                 [[maybe_unused]] const rtAicpuArgsEx_t* argsInfo,
                                 [[maybe_unused]] rtSmDesc_t* const smDesc, [[maybe_unused]] const rtStream_t stm,
                                 [[maybe_unused]] const uint32_t flags) {
@@ -135,7 +135,7 @@ public:
             });
         EXPECT_CALL(*this, rtsLaunchCpuKernel)
             .WillRepeatedly([this](
-                                const rtFuncHandle funcHandle, const uint32_t blockDim, rtStream_t st,
+                                const rtFuncHandle funcHandle, const uint32_t numBlocks, rtStream_t st,
                                 const rtKernelLaunchCfg_t* cfg, rtCpuKernelArgs_t* argsInfo) { return RT_ERROR_NONE; });
         delegated_ = true;
     }
@@ -157,7 +157,7 @@ public:
         rtError_t, rtsFuncGetByName, (const rtBinHandle binHandle, const char* kernelName, rtFuncHandle* funcHandle));
     MOCK_METHOD(
         rtError_t, rtsLaunchCpuKernel,
-        (const rtFuncHandle funcHandle, const uint32_t blockDim, rtStream_t st, const rtKernelLaunchCfg_t* cfg,
+        (const rtFuncHandle funcHandle, const uint32_t numBlocks, rtStream_t st, const rtKernelLaunchCfg_t* cfg,
          rtCpuKernelArgs_t* argsInfo));
     // PlatformInfoManager
     MOCK_METHOD(string, GetSoFilePath, ());

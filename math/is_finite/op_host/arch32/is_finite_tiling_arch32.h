@@ -38,23 +38,23 @@ class IsFiniteTiling {
         elementCount *= TilingUtils::GetDim(x, i);
       }
 
-      uint32_t blockDim = (elementCount + MINIMUM_ELEMENT_PER_CORE -1) / MINIMUM_ELEMENT_PER_CORE;
-      if (blockDim > coreNum) {
-        blockDim = coreNum;
+      uint32_t numBlocks = (elementCount + MINIMUM_ELEMENT_PER_CORE -1) / MINIMUM_ELEMENT_PER_CORE;
+      if (numBlocks > coreNum) {
+        numBlocks = coreNum;
       }
 
       uint32_t dataBlockSize = DATA_BLOCK * sizeof(T);
       uint32_t usableUbSize = uint32_t(ubSize - RESERVERD_UB_SIZE - sizeof(IsFiniteTilingData)) / UB_DIVIDER_FOR_TMP_CASTING;
       usableUbSize = usableUbSize / dataBlockSize * dataBlockSize;
 
-      uint64_t perCoreDataCount = elementCount / blockDim;
+      uint64_t perCoreDataCount = elementCount / numBlocks;
       perCoreDataCount = perCoreDataCount / DATA_BLOCK * DATA_BLOCK;
-      uint64_t tempTailDataCount = elementCount -perCoreDataCount * blockDim;
+      uint64_t tempTailDataCount = elementCount -perCoreDataCount * numBlocks;
       uint64_t tailDataCoreNum = tempTailDataCount / DATA_BLOCK;
       uint64_t lastCoreDataCount = perCoreDataCount + tempTailDataCount % DATA_BLOCK;
 
       tilingData.usableUbSize = usableUbSize;
-      tilingData.needCoreNum = blockDim;
+      tilingData.needCoreNum = numBlocks;
       tilingData.totalDataCount = elementCount;
       tilingData.perCoreDataCount = perCoreDataCount;
       tilingData.tailDataCoreNum = tailDataCoreNum;

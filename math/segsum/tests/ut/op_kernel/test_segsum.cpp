@@ -43,7 +43,7 @@ TEST_F(segsum_test, test_case_float_0)
     size_t outputByteSize = 2 * 4 * 4 * sizeof(float);
     size_t tiling_data_size = sizeof(SegsumTilingData);
     size_t workspaceSize = 32 * 1024 * 1024;
-    uint32_t blockDim = 2;
+    uint32_t numBlocks = 2;
 
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(inputByteSize);
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(outputByteSize);
@@ -64,7 +64,7 @@ TEST_F(segsum_test, test_case_float_0)
     tilingDatafromBin->batchEnd[1] = 2;
 
     ICPU_SET_TILING_KEY(1000);
-    ICPU_RUN_KF(segsum, blockDim, x, y, workspace, (uint8_t*)(tilingDatafromBin));
+    ICPU_RUN_KF(segsum, numBlocks, x, y, workspace, (uint8_t*)(tilingDatafromBin));
 
     AscendC::GmFree((void*)(x));
     AscendC::GmFree((void*)(y));
@@ -78,7 +78,7 @@ TEST_F(segsum_test, test_case_float_1)
     size_t outputByteSize = 2 * 2 * 3 * 3 * sizeof(float);
     size_t tiling_data_size = sizeof(SegsumTilingData);
     size_t workspaceSize = 32 * 1024 * 1024;
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(inputByteSize);
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(outputByteSize);
@@ -97,7 +97,7 @@ TEST_F(segsum_test, test_case_float_1)
     tilingDatafromBin->batchEnd[1] = 4;
 
     ICPU_SET_TILING_KEY(1001);
-    ICPU_RUN_KF(segsum, blockDim, x, y, workspace, (uint8_t*)(tilingDatafromBin));
+    ICPU_RUN_KF(segsum, numBlocks, x, y, workspace, (uint8_t*)(tilingDatafromBin));
 
     AscendC::GmFree((void*)(x));
     AscendC::GmFree((void*)(y));
@@ -111,7 +111,7 @@ TEST_F(segsum_test, test_case_float16_0)
     size_t outputByteSize = 8 * 8 * sizeof(half);
     size_t tiling_data_size = sizeof(SegsumTilingData);
     size_t workspaceSize = 32 * 1024 * 1024;
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     uint8_t* x = (uint8_t*)AscendC::GmAlloc(inputByteSize);
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(outputByteSize);
@@ -130,7 +130,7 @@ TEST_F(segsum_test, test_case_float16_0)
     tilingDatafromBin->batchEnd[1] = 1;
 
     ICPU_SET_TILING_KEY(1000);
-    ICPU_RUN_KF(segsum, blockDim, x, y, workspace, (uint8_t*)(tilingDatafromBin));
+    ICPU_RUN_KF(segsum, numBlocks, x, y, workspace, (uint8_t*)(tilingDatafromBin));
 
     AscendC::GmFree((void*)(x));
     AscendC::GmFree((void*)(y));

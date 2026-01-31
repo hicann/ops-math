@@ -55,7 +55,7 @@ TEST_F(circualr_pad_grad_test, test_case_fp32_smallshape_2d)
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(y_size);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(144 * 4);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     CircularPadCommonTilingData* tilingData = reinterpret_cast<CircularPadCommonTilingData*>(tiling);
     tilingData->inputH = 5;
@@ -75,7 +75,7 @@ TEST_F(circualr_pad_grad_test, test_case_fp32_smallshape_2d)
     tilingData->workspaceLen = 144;
 
     ICPU_SET_TILING_KEY(211);
-    ICPU_RUN_KF(circular_pad_grad, blockDim, x, paddings, y, workspace, (uint8_t*)tilingData);
+    ICPU_RUN_KF(circular_pad_grad, numBlocks, x, paddings, y, workspace, (uint8_t*)tilingData);
 
     AscendC::GmFree(x);
     AscendC::GmFree(paddings);
@@ -100,7 +100,7 @@ TEST_F(circualr_pad_grad_test, test_case_fp32_bigshape_2d)
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(y_size);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(156000 * 4);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     CircularPadCommonTilingData* tilingData = reinterpret_cast<CircularPadCommonTilingData*>(tiling);
     tilingData->inputH = 500;
@@ -120,7 +120,7 @@ TEST_F(circualr_pad_grad_test, test_case_fp32_bigshape_2d)
     tilingData->workspaceLen = 156000;
 
     ICPU_SET_TILING_KEY(212);
-    ICPU_RUN_KF(circular_pad_grad, blockDim, x, paddings, y, workspace, (uint8_t*)tilingData);
+    ICPU_RUN_KF(circular_pad_grad, numBlocks, x, paddings, y, workspace, (uint8_t*)tilingData);
 
     AscendC::GmFree(x);
     AscendC::GmFree(paddings);
@@ -145,7 +145,7 @@ TEST_F(circualr_pad_grad_test, test_case_fp32_smallshape_3d)
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(y_size);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(144 * 4 * 3);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     CircularPadCommonTilingData* tilingData = reinterpret_cast<CircularPadCommonTilingData*>(tiling);
     tilingData->inputH = 5;
@@ -165,7 +165,7 @@ TEST_F(circualr_pad_grad_test, test_case_fp32_smallshape_3d)
     tilingData->workspaceLen = 144 * 3;
 
     ICPU_SET_TILING_KEY(311);
-    ICPU_RUN_KF(circular_pad_grad, blockDim, x, paddings, y, workspace, (uint8_t*)tilingData);
+    ICPU_RUN_KF(circular_pad_grad, numBlocks, x, paddings, y, workspace, (uint8_t*)tilingData);
 
     AscendC::GmFree(x);
     AscendC::GmFree(paddings);
@@ -190,7 +190,7 @@ TEST_F(circualr_pad_grad_test, test_case_fp32_bigshape_3d)
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(y_size);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(156000 * 4 * 3);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     CircularPadCommonTilingData* tilingData = reinterpret_cast<CircularPadCommonTilingData*>(tiling);
     tilingData->inputH = 500;
@@ -210,7 +210,7 @@ TEST_F(circualr_pad_grad_test, test_case_fp32_bigshape_3d)
     tilingData->workspaceLen = 156000 * 3;
 
     ICPU_SET_TILING_KEY(312);
-    ICPU_RUN_KF(circular_pad_grad, blockDim, x, paddings, y, workspace, (uint8_t*)tilingData);
+    ICPU_RUN_KF(circular_pad_grad, numBlocks, x, paddings, y, workspace, (uint8_t*)tilingData);
 
     AscendC::GmFree(x);
     AscendC::GmFree(paddings);
@@ -235,7 +235,7 @@ TEST_F(circualr_pad_grad_test, test_case_fp16_smallshape_2d)
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(y_size);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(144 * 4);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     CircularPadCommonTilingData* tilingData = reinterpret_cast<CircularPadCommonTilingData*>(tiling);
     tilingData->inputH = 5;
@@ -255,7 +255,7 @@ TEST_F(circualr_pad_grad_test, test_case_fp16_smallshape_2d)
     tilingData->workspaceLen = 144;
 
     ICPU_SET_TILING_KEY(221);
-    ICPU_RUN_KF(circular_pad_grad, blockDim, x, paddings, y, workspace, (uint8_t*)tilingData);
+    ICPU_RUN_KF(circular_pad_grad, numBlocks, x, paddings, y, workspace, (uint8_t*)tilingData);
 
     AscendC::GmFree(x);
     AscendC::GmFree(paddings);
@@ -280,7 +280,7 @@ TEST_F(circualr_pad_grad_test, test_case_fp16_smallshape_3d)
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(y_size);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(144 * 4 * 3);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     CircularPadCommonTilingData* tilingData = reinterpret_cast<CircularPadCommonTilingData*>(tiling);
     tilingData->inputH = 5;
@@ -300,7 +300,7 @@ TEST_F(circualr_pad_grad_test, test_case_fp16_smallshape_3d)
     tilingData->workspaceLen = 144 * 3;
 
     ICPU_SET_TILING_KEY(321);
-    ICPU_RUN_KF(circular_pad_grad, blockDim, x, paddings, y, workspace, (uint8_t*)tilingData);
+    ICPU_RUN_KF(circular_pad_grad, numBlocks, x, paddings, y, workspace, (uint8_t*)tilingData);
 
     AscendC::GmFree(x);
     AscendC::GmFree(paddings);
@@ -325,7 +325,7 @@ TEST_F(circualr_pad_grad_test, test_case_fp16_bigshape_3d)
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(y_size);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(156000 * 4 * 3);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     CircularPadCommonTilingData* tilingData = reinterpret_cast<CircularPadCommonTilingData*>(tiling);
     tilingData->inputH = 500;
@@ -345,7 +345,7 @@ TEST_F(circualr_pad_grad_test, test_case_fp16_bigshape_3d)
     tilingData->workspaceLen = 156000 * 3;
 
     ICPU_SET_TILING_KEY(322);
-    ICPU_RUN_KF(circular_pad_grad, blockDim, x, paddings, y, workspace, (uint8_t*)tilingData);
+    ICPU_RUN_KF(circular_pad_grad, numBlocks, x, paddings, y, workspace, (uint8_t*)tilingData);
 
     AscendC::GmFree(x);
     AscendC::GmFree(paddings);
@@ -370,7 +370,7 @@ TEST_F(circualr_pad_grad_test, test_case_bf16_smallshape_2d)
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(y_size);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(144 * 4);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     CircularPadCommonTilingData* tilingData = reinterpret_cast<CircularPadCommonTilingData*>(tiling);
     tilingData->inputH = 5;
@@ -390,7 +390,7 @@ TEST_F(circualr_pad_grad_test, test_case_bf16_smallshape_2d)
     tilingData->workspaceLen = 144;
 
     ICPU_SET_TILING_KEY(231);
-    ICPU_RUN_KF(circular_pad_grad, blockDim, x, paddings, y, workspace, (uint8_t*)tilingData);
+    ICPU_RUN_KF(circular_pad_grad, numBlocks, x, paddings, y, workspace, (uint8_t*)tilingData);
 
     AscendC::GmFree(x);
     AscendC::GmFree(paddings);
@@ -415,7 +415,7 @@ TEST_F(circualr_pad_grad_test, test_case_bf16_smallshape_3d)
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(y_size);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(144 * 4 * 3);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     CircularPadCommonTilingData* tilingData = reinterpret_cast<CircularPadCommonTilingData*>(tiling);
     tilingData->inputH = 5;
@@ -435,7 +435,7 @@ TEST_F(circualr_pad_grad_test, test_case_bf16_smallshape_3d)
     tilingData->workspaceLen = 144 * 3;
 
     ICPU_SET_TILING_KEY(331);
-    ICPU_RUN_KF(circular_pad_grad, blockDim, x, paddings, y, workspace, (uint8_t*)tilingData);
+    ICPU_RUN_KF(circular_pad_grad, numBlocks, x, paddings, y, workspace, (uint8_t*)tilingData);
 
     AscendC::GmFree(x);
     AscendC::GmFree(paddings);
@@ -460,7 +460,7 @@ TEST_F(circualr_pad_grad_test, test_case_bfp16_bigshape_3d)
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(y_size);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(156000 * 4 * 3);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
 
     CircularPadCommonTilingData* tilingData = reinterpret_cast<CircularPadCommonTilingData*>(tiling);
     tilingData->inputH = 500;
@@ -480,7 +480,7 @@ TEST_F(circualr_pad_grad_test, test_case_bfp16_bigshape_3d)
     tilingData->workspaceLen = 156000;
 
     ICPU_SET_TILING_KEY(332);
-    ICPU_RUN_KF(circular_pad_grad, blockDim, x, paddings, y, workspace, (uint8_t*)tilingData);
+    ICPU_RUN_KF(circular_pad_grad, numBlocks, x, paddings, y, workspace, (uint8_t*)tilingData);
 
     AscendC::GmFree(x);
     AscendC::GmFree(paddings);

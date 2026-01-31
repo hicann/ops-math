@@ -56,7 +56,7 @@ static void InitEnv(int32_t dimA, int32_t dimR, int32_t axes)
 TEST_F(reduce_log_sum_exp_test, test_case_0)
 {
     uint64_t tilingKey = 2571;
-    uint32_t blockDim = 4;
+    uint32_t numBlocks = 4;
     uint32_t dimA = 4;
     uint32_t dimR = 64;
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
@@ -101,7 +101,7 @@ TEST_F(reduce_log_sum_exp_test, test_case_0)
     auto reduce_log_sum_exp_func = [](GM_ADDR x, GM_ADDR axes, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling) {
         reduce_log_sum_exp<11, 10, 0>(x, axes, y, workspace, tiling);
     };
-    ICPU_RUN_KF(reduce_log_sum_exp_func, blockDim, x, axes, y, workspace, tiling);
+    ICPU_RUN_KF(reduce_log_sum_exp_func, numBlocks, x, axes, y, workspace, tiling);
     WriteFile(path + "/reduce_log_sum_exp_data/y.bin", y, ySize);
 
     AscendC::GmFree((void*)x);

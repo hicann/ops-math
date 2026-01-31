@@ -48,7 +48,7 @@ TEST_F(angle_v2_test, test_case_fp32) {
     uint8_t *y = (uint8_t*)AscendC::GmAlloc(y_size);
     uint8_t *workspace = (uint8_t *)AscendC::GmAlloc(1024 * 16 * 1024);
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
-    uint32_t blockDim = 1;
+    uint32_t numBlocks = 1;
     system("cp -r ../../../../math/angle_v2/tests/ut/op_kernel/angle_v2_data ./");
     system("chmod -R 755 ./angle_v2_data/");
     system("cd ./angle_v2_data/ && rm -rf ./*bin");
@@ -77,7 +77,7 @@ TEST_F(angle_v2_test, test_case_fp32) {
 
     ICPU_SET_TILING_KEY(2);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
-    ICPU_RUN_KF(angle_v2_kernel, blockDim, x, y, workspace, tiling);
+    ICPU_RUN_KF(angle_v2_kernel, numBlocks, x, y, workspace, tiling);
 
     AscendC::GmFree(x);
     AscendC::GmFree(y);

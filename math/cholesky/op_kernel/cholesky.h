@@ -45,7 +45,7 @@ private:
     uint32_t matrixNumCount = 0;
     uint32_t maxDataCount = 0;
     int32_t blockIdx = 0;
-    int32_t blockDim = 0;
+    int32_t numBlocks = 0;
 
     TQue<QuePosition::VECIN, BUFFER_NUM> matAQueue;
     TQue<QuePosition::VECIN, BUFFER_NUM> matLeftQueue;
@@ -60,7 +60,7 @@ private:
 template <typename T>
 __aicore__ inline void Cholesky<T>::InitTril(GM_ADDR self, GM_ADDR out, GM_ADDR workspace, const CholeskyTilingData* tilingData, TPipe* pipe) {
     blockIdx = GetBlockIdx();
-    blockDim = GetBlockNum();
+    numBlocks = GetBlockNum();
     GetTilingData(tilingData);
     
     matAGM.SetGlobalBuffer((__gm__ T*)self, matSizeN * matSizeN);
@@ -81,7 +81,7 @@ __aicore__ inline void Cholesky<T>::InitTril(GM_ADDR self, GM_ADDR out, GM_ADDR 
 template <typename T>
 __aicore__ inline void Cholesky<T>::InitTriu(GM_ADDR self, GM_ADDR out, GM_ADDR workspace, const CholeskyTilingData* tilingData, TPipe* pipe) {
     blockIdx = GetBlockIdx();
-    blockDim = GetBlockNum();
+    numBlocks = GetBlockNum();
     GetTilingData(tilingData);
     
     matAGM.SetGlobalBuffer((__gm__ T*)self, matSizeN * matSizeN);
@@ -101,10 +101,10 @@ __aicore__ inline void Cholesky<T>::InitTriu(GM_ADDR self, GM_ADDR out, GM_ADDR 
 
 template <typename T>
 __aicore__ inline void Cholesky<T>::ProcessTril() {
-    if (blockIdx < blockDim) {
-        auto loopTimes = matrixNumCount / blockDim;
+    if (blockIdx < numBlocks) {
+        auto loopTimes = matrixNumCount / numBlocks;
         for (uint32_t loopIndex = 0; loopIndex <= loopTimes; loopIndex++) {
-            uint32_t offsetPrefix = blockIdx + blockDim * loopIndex;
+            uint32_t offsetPrefix = blockIdx + numBlocks * loopIndex;
             if (offsetPrefix < matrixNumCount) {
                 uint32_t offset = offsetPrefix * matSizeN * matSizeN;
                 FirstColumn(offsetPrefix, offset);
@@ -139,10 +139,10 @@ __aicore__ inline void Cholesky<T>::ProcessTril() {
 
 template <typename T>
 __aicore__ inline void Cholesky<T>::ProcessTriu() {
-    if (blockIdx < blockDim) {
-        auto loopTimes = matrixNumCount / blockDim;
+    if (blockIdx < numBlocks) {
+        auto loopTimes = matrixNumCount / numBlocks;
         for (uint32_t loopIndex = 0; loopIndex <= loopTimes; loopIndex++) {
-            uint32_t offsetPrefix = blockIdx + blockDim * loopIndex;
+            uint32_t offsetPrefix = blockIdx + numBlocks * loopIndex;
             if (offsetPrefix < matrixNumCount) {
                 uint32_t offset = offsetPrefix * matSizeN * matSizeN;
                 FirstRow(offsetPrefix, offset);

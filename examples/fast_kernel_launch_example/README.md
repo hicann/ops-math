@@ -136,7 +136,7 @@ compare CPU Result vs NPU Result: True
 
     void my_ops_api(aclrtStream stream, const at::Tensor& x, const at::Tensor& y) {
         // 您的算子入口实现，在该方法中使用<<<>>>的方式调用算子kernel
-        mykernel<<<blockDim, nullptr, stream>>>(x, y, num_element);
+        mykernel<<<numBlocks, nullptr, stream>>>(x, y, num_element);
     }
 
     torch::Tensor my_ops_npu(torch::Tensor x, torch::Tensor y) {

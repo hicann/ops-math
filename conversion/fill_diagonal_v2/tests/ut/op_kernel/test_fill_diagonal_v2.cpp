@@ -46,7 +46,7 @@ TEST_F(fill_diagonal_v2_test, test_case_float) {
     uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
-    uint32_t blockDim = 1; //cpu模拟使用单核
+    uint32_t numBlocks = 1; //cpu模拟使用单核
     system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
@@ -67,7 +67,7 @@ TEST_F(fill_diagonal_v2_test, test_case_float) {
     tilingData->lastBlockLength = 16;
     
     ICPU_SET_TILING_KEY(4);
-    ICPU_RUN_KF(fill_diagonal_v2, blockDim, self, fill_value, self, workspace, (uint8_t*)(tilingData));
+    ICPU_RUN_KF(fill_diagonal_v2, numBlocks, self, fill_value, self, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
@@ -87,7 +87,7 @@ TEST_F(fill_diagonal_v2_test, test_case_flaot16) {
     uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
-    uint32_t blockDim = 1; //cpu模拟使用单核
+    uint32_t numBlocks = 1; //cpu模拟使用单核
     system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
@@ -108,7 +108,7 @@ TEST_F(fill_diagonal_v2_test, test_case_flaot16) {
     tilingData->lastBlockLength = 16;
     
     ICPU_SET_TILING_KEY(1);
-    ICPU_RUN_KF(fill_diagonal_v2, blockDim, self, fill_value, self, workspace, (uint8_t*)(tilingData));
+    ICPU_RUN_KF(fill_diagonal_v2, numBlocks, self, fill_value, self, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
@@ -128,7 +128,7 @@ TEST_F(fill_diagonal_v2_test, test_case_int32) {
     uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
-    uint32_t blockDim = 1; //cpu模拟使用单核
+    uint32_t numBlocks = 1; //cpu模拟使用单核
     system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
@@ -149,7 +149,7 @@ TEST_F(fill_diagonal_v2_test, test_case_int32) {
     tilingData->lastBlockLength = 16;
     
     ICPU_SET_TILING_KEY(0);
-    ICPU_RUN_KF(fill_diagonal_v2, blockDim, self, fill_value, self, workspace, (uint8_t*)(tilingData));
+    ICPU_RUN_KF(fill_diagonal_v2, numBlocks, self, fill_value, self, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
@@ -169,7 +169,7 @@ TEST_F(fill_diagonal_v2_test, test_case_int8) {
     uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
-    uint32_t blockDim = 1; //cpu模拟使用单核
+    uint32_t numBlocks = 1; //cpu模拟使用单核
     system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
@@ -190,7 +190,7 @@ TEST_F(fill_diagonal_v2_test, test_case_int8) {
     tilingData->lastBlockLength = 16;
     
     ICPU_SET_TILING_KEY(1);
-    ICPU_RUN_KF(fill_diagonal_v2, blockDim, self, fill_value, self, workspace, (uint8_t*)(tilingData));
+    ICPU_RUN_KF(fill_diagonal_v2, numBlocks, self, fill_value, self, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
@@ -210,7 +210,7 @@ TEST_F(fill_diagonal_v2_test, test_case_int16) {
     uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
-    uint32_t blockDim = 1; //cpu模拟使用单核
+    uint32_t numBlocks = 1; //cpu模拟使用单核
     system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
@@ -231,7 +231,7 @@ TEST_F(fill_diagonal_v2_test, test_case_int16) {
     tilingData->lastBlockLength = 16;
     
     ICPU_SET_TILING_KEY(0);
-    ICPU_RUN_KF(fill_diagonal_v2, blockDim, self, fill_value, self, workspace, (uint8_t*)(tilingData));
+    ICPU_RUN_KF(fill_diagonal_v2, numBlocks, self, fill_value, self, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
@@ -251,7 +251,7 @@ TEST_F(fill_diagonal_v2_test, test_case_bfloat16) {
     uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
-    uint32_t blockDim = 1; //cpu模拟使用单核
+    uint32_t numBlocks = 1; //cpu模拟使用单核
     system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
@@ -272,7 +272,7 @@ TEST_F(fill_diagonal_v2_test, test_case_bfloat16) {
     tilingData->lastBlockLength = 16;
     
     ICPU_SET_TILING_KEY(1);
-    ICPU_RUN_KF(fill_diagonal_v2, blockDim, self, fill_value, self, workspace, (uint8_t*)(tilingData));
+    ICPU_RUN_KF(fill_diagonal_v2, numBlocks, self, fill_value, self, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
@@ -292,7 +292,7 @@ TEST_F(fill_diagonal_v2_test, test_case_uint8) {
     uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(sizeof(char));
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
-    uint32_t blockDim = 1; //cpu模拟使用单核
+    uint32_t numBlocks = 1; //cpu模拟使用单核
     system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
@@ -313,7 +313,7 @@ TEST_F(fill_diagonal_v2_test, test_case_uint8) {
     tilingData->lastBlockLength = 16;
     
     ICPU_SET_TILING_KEY(1);
-    ICPU_RUN_KF(fill_diagonal_v2, blockDim, self, fill_value, self, workspace, (uint8_t*)(tilingData));
+    ICPU_RUN_KF(fill_diagonal_v2, numBlocks, self, fill_value, self, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
@@ -333,7 +333,7 @@ TEST_F(fill_diagonal_v2_test, test_case_bool) {
     uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
-    uint32_t blockDim = 1; //cpu模拟使用单核
+    uint32_t numBlocks = 1; //cpu模拟使用单核
     system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
@@ -354,7 +354,7 @@ TEST_F(fill_diagonal_v2_test, test_case_bool) {
     tilingData->lastBlockLength = 16;
     
     ICPU_SET_TILING_KEY(0);
-    ICPU_RUN_KF(fill_diagonal_v2, blockDim, self, fill_value, self, workspace, (uint8_t*)(tilingData));
+    ICPU_RUN_KF(fill_diagonal_v2, numBlocks, self, fill_value, self, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
@@ -374,7 +374,7 @@ TEST_F(fill_diagonal_v2_test, test_case_int64_dense) {
     uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
-    uint32_t blockDim = 1; //cpu模拟使用单核
+    uint32_t numBlocks = 1; //cpu模拟使用单核
     system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
@@ -395,7 +395,7 @@ TEST_F(fill_diagonal_v2_test, test_case_int64_dense) {
     tilingData->lastBlockLength = 16;
     
     ICPU_SET_TILING_KEY(1);
-    ICPU_RUN_KF(fill_diagonal_v2, blockDim, self, fill_value, self, workspace, (uint8_t*)(tilingData));
+    ICPU_RUN_KF(fill_diagonal_v2, numBlocks, self, fill_value, self, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
@@ -415,7 +415,7 @@ TEST_F(fill_diagonal_v2_test, test_case_int64_sparse) {
     uint8_t *fill_value = (uint8_t*)AscendC::GmAlloc(value_size);
     uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tiling_data_size);
     uint8_t *workspace = nullptr;
-    uint32_t blockDim = 1; //cpu模拟使用单核
+    uint32_t numBlocks = 1; //cpu模拟使用单核
     system("cp -r ../../../../conversion/fill_diagonal_v2/tests/ut/op_kernel/fill_diagonal_v2_data ./");
     system("chmod -R 755 ./fill_diagonal_v2_data/");
     system("cd ./fill_diagonal_v2_data/ && rm -rf ./*bin");
@@ -436,7 +436,7 @@ TEST_F(fill_diagonal_v2_test, test_case_int64_sparse) {
     tilingData->lastBlockLength = 16;
     
     ICPU_SET_TILING_KEY(0);
-    ICPU_RUN_KF(fill_diagonal_v2, blockDim, self, fill_value, self, workspace, (uint8_t*)(tilingData));
+    ICPU_RUN_KF(fill_diagonal_v2, numBlocks, self, fill_value, self, workspace, (uint8_t*)(tilingData));
 
     AscendC::GmFree(self);
     AscendC::GmFree(fill_value);
