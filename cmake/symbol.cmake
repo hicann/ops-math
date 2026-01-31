@@ -288,6 +288,10 @@ function(gen_aicpu_kernel_symbol enable_built_in)
 endfunction()
 
 function(gen_onnx_plugin_symbol)
+  if (NOT TARGET ${ONNX_PLUGIN_NAME}_obj)
+    return()
+  endif()
+
   add_library(
     ${ONNX_PLUGIN_NAME} SHARED
     $<$<TARGET_EXISTS:${ONNX_PLUGIN_NAME}_obj>:$<TARGET_OBJECTS:${ONNX_PLUGIN_NAME}_obj>>
