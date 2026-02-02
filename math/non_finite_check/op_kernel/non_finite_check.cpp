@@ -26,7 +26,7 @@ extern "C" __global__ __aicore__ void non_finite_check(
         NonFiniteCheckND<half> op;
         op.Init(tensor_list, found_flag, &tilingData);
         op.Process();
-#if !(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
+#if !(defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113))
     } else if (TILING_KEY_IS(201)) {
         NonFiniteCheckND<bfloat16_t> op;
         op.Init(tensor_list, found_flag, &tilingData);

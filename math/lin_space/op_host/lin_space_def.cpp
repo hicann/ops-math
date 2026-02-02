@@ -57,6 +57,7 @@ public:
         this->AICore().AddConfig("ascend910");
         this->AICore().AddConfig("ascend310p");
         this->AICore().AddConfig("kirinx90");
+        this->AICore().AddConfig("kirin9030");
 
         OpAICoreConfig config;
         config.DynamicCompileStaticFlag(true)

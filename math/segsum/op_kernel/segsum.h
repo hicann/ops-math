@@ -121,7 +121,7 @@ __aicore__ inline void SegsumND<T, MODE>::Process()
     if (blockIdx >= needCoreNum) {
         return;
     }
-#if !(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
+#if !(defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113))
     if ASCEND_IS_AIV {
 #endif
         if constexpr (MODE == 0) {
@@ -129,7 +129,7 @@ __aicore__ inline void SegsumND<T, MODE>::Process()
         } else {
             ComputeBatches();
         }
-#if !(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
+#if !(defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113))
     }
 #endif
 }

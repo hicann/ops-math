@@ -86,7 +86,7 @@ __aicore__ inline void PowsBase<T>::BaseInit(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, 
 template <typename T>
 __aicore__ inline void PowsBase<T>::CopyInXBase(const int64_t& index, const int64_t& dataLength, LocalTensor<T>& ubX1)
 {
-#if __CCE_AICORE__ == 220 || (defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
+#if __CCE_AICORE__ == 220 || (defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113))
     CopyInXDataCopyPad(index, dataLength, ubX1);
 #else
     CopyInXDataCopy(index, dataLength, ubX1);
@@ -176,7 +176,7 @@ __aicore__ inline void PowsBase<T>::CopyOutBase(
     SetFlag<HardEvent::V_MTE3>(eventIdVToMte3);
     WaitFlag<HardEvent::V_MTE3>(eventIdVToMte3);
 
-#if __CCE_AICORE__ == 220 || (defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
+#if __CCE_AICORE__ == 220 || (defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113))
     CopyOutDataCopyPad(index, dataLength, outLocal);
 #else
     CopyOutDataCopy(index, dataLength, outLocal);

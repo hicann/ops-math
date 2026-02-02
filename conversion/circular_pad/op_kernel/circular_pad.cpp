@@ -38,7 +38,7 @@ extern "C" __global__ __aicore__ void circular_pad(
         CircularPad2D<half> op(&pipe);
         op.Init2D(x, paddings, y, usrWorkspace, tiling_data);
         op.ProcessBigShape();
-#if !(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
+#if !(defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113))
     } else if (TILING_KEY_IS(231)) {
         CircularPad2D<bfloat16_t> op(&pipe);
         op.Init2D(x, paddings, y, usrWorkspace, tiling_data);
@@ -82,7 +82,7 @@ extern "C" __global__ __aicore__ void circular_pad(
         CircularPad3D<half> op(&pipe);
         op.Init3D(x, paddings, y, usrWorkspace, tiling_data);
         op.ProcessBigShape();
-#if !(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
+#if !(defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113))
     } else if (TILING_KEY_IS(331)) {
         CircularPad3D<bfloat16_t> op(&pipe);
         op.Init3D(x, paddings, y, usrWorkspace, tiling_data);

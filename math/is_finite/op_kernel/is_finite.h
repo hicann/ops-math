@@ -237,7 +237,7 @@ __aicore__ inline void IsFiniteKernelImpl(__gm__ uint8_t* x, __gm__ uint8_t* y,
         IsFiniteNs::IsFinite<float, BF16_TYPE_MASK> op;
         op.Init(x, y, userWS, tilingData);
         op.Process();
-#if !(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
+#if !(defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113))
     } else if constexpr (D_T_X == IS_FINITE_TPL_BF16 && D_T_Y == IS_FINITE_TPL_BOOL) {
         IsFiniteNs::IsFinite<half, BF16_TYPE_MASK> op;
         op.Init(x, y, userWS, tilingData);

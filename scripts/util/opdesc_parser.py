@@ -43,6 +43,7 @@ SOC_TO_SHORT_SOC_MAP = {
     "ascend310b1": "ascend310b",
     "bs9sx1aa": "bs9sx1a",
     "kirinx90": "kirinx90",
+    "kirin9030": "kirin9030",
     "mc62cm12aa": "mc62cm12a"
 }
 CONFLICT_KEYWORDS = {

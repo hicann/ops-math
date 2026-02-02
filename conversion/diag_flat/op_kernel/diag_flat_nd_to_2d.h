@@ -40,7 +40,7 @@ private:
     __aicore__ inline void CopyOut(int64_t iter);
     __aicore__ inline static constexpr bool IsDataCopyPadSupport()
     {
-#if __CCE_AICORE__ == 220 || __CCE_AICORE__ == 310 || (defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003)
+#if __CCE_AICORE__ == 220 || __CCE_AICORE__ == 310 || (defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113))
         return true;
 #else
         return false;

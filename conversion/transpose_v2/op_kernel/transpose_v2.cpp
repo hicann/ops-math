@@ -24,7 +24,7 @@ extern "C" __global__ __aicore__ void transpose_v2(
     GET_TILING_DATA(tiling_data, tiling);
     AscendC::TPipe pipe;
 // perm=[0,2,1]
-#if ORIG_DTYPE_X == DT_FLOAT16 || (!(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003) && ORIG_DTYPE_X == DT_BF16)
+#if ORIG_DTYPE_X == DT_FLOAT16 || (!(defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)) && ORIG_DTYPE_X == DT_BF16)
     if (TILING_KEY_IS(20)) {
         Transpose021<half> op(&pipe);
         op.Process(x, y, &tiling_data);
@@ -36,7 +36,7 @@ extern "C" __global__ __aicore__ void transpose_v2(
     }
 #endif
 // 012 and 0213
-#if ORIG_DTYPE_X == DT_FLOAT16 || (!(defined(__NPU_ARCH__) && __NPU_ARCH__ == 3003) && ORIG_DTYPE_X == DT_BF16)
+#if ORIG_DTYPE_X == DT_FLOAT16 || (!(defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)) && ORIG_DTYPE_X == DT_BF16)
     if (TILING_KEY_IS(120)) {
         Transpose102<half> op(&pipe);
         op.Init102(x, y, &tiling_data);
