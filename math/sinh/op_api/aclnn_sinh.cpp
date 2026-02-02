@@ -44,7 +44,7 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_OUT_LIST = {
     op::DataType::DT_COMPLEX128, op::DataType::DT_BF16};
 
 static bool CheckInplaceDtypeValid(aclTensor *selfRef) {
-    auto inplaceSupportList = GetDtypeSupportListV1(ASCEND910B_DTYPE_OUT_LIST, ASCEND910_DTYPE_OUT_LIST);
+    auto inplaceSupportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_OUT_LIST, ASCEND910_DTYPE_OUT_LIST);
     // 检查selfRef的数据类型是否在inplace sinh算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(selfRef, inplaceSupportList, return false);
 
@@ -58,8 +58,8 @@ static aclnnStatus CheckParams(const aclTensor *self, const aclTensor *out)
 
     // 2. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
     // 检查self的数据类型是否在sinh算子的支持列表内
-    auto supportList = GetDtypeSupportListV1(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST);
-    auto outSupportList = GetDtypeSupportListV1(ASCEND910B_DTYPE_OUT_LIST, ASCEND910_DTYPE_OUT_LIST);
+    auto supportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST);
+    auto outSupportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_OUT_LIST, ASCEND910_DTYPE_OUT_LIST);
     CHECK_RET(CheckDtypeValid1In1Out(self, out, supportList, outSupportList), ACLNN_ERR_PARAM_INVALID);
 
     // 3. ND 算子不检查格式
@@ -100,7 +100,7 @@ static aclnnStatus ExecSinhGetWorkspaceSize(const aclTensor *self, aclTensor *ou
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 将self转为可支持的类型，或者out类型
-    auto outSupportList = GetDtypeSupportListV1(ASCEND910B_DTYPE_OUT_LIST, ASCEND910_DTYPE_OUT_LIST);
+    auto outSupportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_OUT_LIST, ASCEND910_DTYPE_OUT_LIST);
     auto castDtype = selfContiguous->GetDataType();
     if (!CheckType(castDtype, outSupportList)) {
         castDtype = out->GetDataType();

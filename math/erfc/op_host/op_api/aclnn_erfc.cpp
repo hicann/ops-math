@@ -39,7 +39,7 @@ static const std::initializer_list<DataType> ASCEND910B_DTYPE_SELFREF_LIST = {
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     // 检查self的数据类型是否在支持列表内
-    auto supportList = GetDtypeSupportListV1(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST);
+    auto supportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST);
     OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
 
     // 当self的dtype为bool或int64时，输出dtype（float）不能cast为out的dtype

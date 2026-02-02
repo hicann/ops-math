@@ -65,7 +65,7 @@ static aclnnStatus CheckParamsAsinh(const aclTensor* input, const aclTensor* out
 {
     // 检查输入和输出的数据类型是否满足约束，需要根据api定义校验
     auto supportList =
-        GetDtypeSupportListV1(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST_ASIN, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST_ASIN);
+        GetDtypeSupportListV2(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST_ASIN, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST_ASIN);
     CHECK_RET(CheckDtypeValid1In1Out(input, out, supportList, OUTPUT_DTYPE_SUPPORT_LIST_ASIN), ACLNN_ERR_PARAM_INVALID);
     // 检查输入和输出的shape是否满足约束
     CHECK_RET(CheckSameShape1In1Out(input, out), ACLNN_ERR_PARAM_INVALID);

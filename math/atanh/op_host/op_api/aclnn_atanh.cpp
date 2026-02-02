@@ -56,7 +56,7 @@ static bool CheckDtypeValid(const aclTensor* input, const aclTensor* out)
 {
     // 检查输入的数据类型是否在算子的支持列表内
     auto supportList =
-        GetDtypeSupportListV1(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST_ATANH, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST_ATANH);
+        GetDtypeSupportListV2(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST_ATANH, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST_ATANH);
     OP_CHECK_DTYPE_NOT_SUPPORT(input, supportList, return false);
 
     // 检查输出的数据类型是否在算子的支持列表内

@@ -36,6 +36,7 @@ static const std::initializer_list<DataType>& GetDtypeSupportList() {
   SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
   switch (socVersion) {
     case SocVersion::ASCEND910_93:
+    case SocVersion::ASCEND950:
     case SocVersion::ASCEND910B: {
       return X_DTYPE_SUPPORT_LIST_ASCEND910B;
     }

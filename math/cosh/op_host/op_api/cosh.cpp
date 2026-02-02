@@ -30,7 +30,8 @@ static const std::initializer_list<op::DataType> AICORE_910B_DTYPE_SUPPORT_LIST 
 
 static bool IsAiCoreSupport(const aclTensor *self) {
   if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
+      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
     return CheckType(self->GetDataType(), AICORE_910B_DTYPE_SUPPORT_LIST);
   }
   return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_SELF);

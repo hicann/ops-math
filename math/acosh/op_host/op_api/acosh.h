@@ -13,7 +13,7 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *Acosh(const aclTensor *self, aclOpExecutor *executor);
+const aclTensor *Acosh(const aclTensor *input, aclOpExecutor *executor);
 }
 
 #endif // OP_API_INC_LEVEL0_OP_ACOSH_OP_H_
