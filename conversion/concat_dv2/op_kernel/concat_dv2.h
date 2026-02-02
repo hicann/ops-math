@@ -71,9 +71,8 @@ public:
                     inputSize = inputSize - startTensorOffset_;
                     startOffset = startTensorOffset_;
                 } 
-                if (j == endTensorIdx_) {
-                    inputSize = endTensorOffset_;
-                }
+                inputSize = (j == endTensorIdx_) ?  endTensorOffset_ : inputSize;
+                inputSize = (startTensorIdx_ == endTensorIdx_)? (endTensorOffset_ - startTensorOffset_) : inputSize;
                 if (inputSize == 0) {
                     continue;
                 }
