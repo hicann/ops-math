@@ -206,8 +206,7 @@ static aclnnStatus CheckCalculateSizeAndFormatInputs(
     OP_CHECK(
         socVersion == SocVersion::ASCEND950 || socVersion == SocVersion::ASCEND910_93 ||
             socVersion == SocVersion::ASCEND910B,
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Only support Ascend950/ASCEND910_93/ASCEND910B"),
-        return ACLNN_ERR_RUNTIME_ERROR);
+        OP_LOGW("Only support Ascend950/ASCEND910_93/ASCEND910B"), return ACLNN_ERR_RUNTIME_ERROR);
     OP_CHECK(
         srcTensor != nullptr, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "srcTensor is nullptr."),
         return ACLNN_ERR_INNER_NULLPTR);
@@ -299,8 +298,7 @@ static aclnnStatus CheckGetWorkSpaceSizeInputs(const aclTensor* srcTensor, aclTe
     OP_CHECK(
         socVersion == SocVersion::ASCEND950 || socVersion == SocVersion::ASCEND910_93 ||
             socVersion == SocVersion::ASCEND910B,
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Only support Ascend950/ASCEND910_93/ASCEND910B"),
-        return ACLNN_ERR_RUNTIME_ERROR);
+        OP_LOGW("Only support Ascend950/ASCEND910_93/ASCEND910B"), return ACLNN_ERR_RUNTIME_ERROR);
     CHECK_RET(srcTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
     CHECK_RET(dstTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
     OP_CHECK(
@@ -528,16 +526,13 @@ aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
     int* actualFormat)
 {
     auto ret = CheckCalculateSizeAndFormatInputs(srcTensor, dstFormat, additionalDtype);
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to check inputs"),
-        return ACLNN_ERR_PARAM_INVALID);
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("Failed to check inputs"), return ACLNN_ERR_PARAM_INVALID);
     op::Format srcFormat = srcTensor->GetStorageFormat();
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     OP_CHECK(
         (additionalDtype == -1 && (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93)) ||
             (additionalDtype != -1 && socVersion == SocVersion::ASCEND950),
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The current socVersion does not support additionalDtype."),
-        return ACLNN_ERR_PARAM_INVALID);
+        OP_LOGW("The current socVersion does not support additionalDtype."), return ACLNN_ERR_PARAM_INVALID);
     if (additionalDtype == -1) {
         additionalDtype = static_cast<int>(srcTensor->GetDataType());
     }
@@ -547,9 +542,7 @@ aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
         // ASCEND950校验特殊场景
         if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
             auto retNdToNz = Check95NdToNzCalculateSizeAndFormatInputs(srcTensor, dstFormat, additionalDtype);
-            OP_CHECK(
-                retNdToNz == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to check inputs"),
-                return ACLNN_ERR_PARAM_INVALID);
+            OP_CHECK(retNdToNz == ACLNN_SUCCESS, OP_LOGW("Failed to check inputs"), return ACLNN_ERR_PARAM_INVALID);
         }
         return CalcNdToNz(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
     } else if (srcFormat == op::Format::FORMAT_FRACTAL_NZ && dstFormat == op::Format::FORMAT_ND) {
@@ -563,7 +556,7 @@ aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
     } else if (srcFormat == op::Format::FORMAT_FRACTAL_Z_3D && dstFormat == op::Format::FORMAT_NCDHW) {
         return CalcToNCDHW(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
     }
-    OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "aclnnNpuFormatCastCalculateSizeAndFormat unsupported format transformation");
+    OP_LOGW("aclnnNpuFormatCastCalculateSizeAndFormat unsupported format transformation");
     return ACLNN_ERR_RUNTIME_ERROR;
 }
 
