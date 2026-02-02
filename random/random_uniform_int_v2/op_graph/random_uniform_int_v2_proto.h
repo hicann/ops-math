@@ -13,7 +13,7 @@
 
 namespace ge {
 /**
-*@brief Outputs random values from a uniform distribution. \n
+*@brief Outputs random integers from a uniform distribution with a given offset. \n
 
 *@par Inputs:
 *Inputs include:

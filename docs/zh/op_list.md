@@ -2136,10 +2136,30 @@
   </tr>
   <tr>
     <td>random</td>
-    <td><a href="../../random/uniform_int_v2/README.md">uniform_int_v2</a></td>
+    <td><a href="../../random/random_standard_normal_v2/README.md">random_standard_normal_v2</a></td>
     <td>√</td>
     <td>√</td>
+    <td>×</td>
     <td>√</td>
+    <td>AI Core</td>
+    <td>生成标准正态分布的随机数列。</td>
+  </tr>
+  <tr>
+    <td>random</td>
+    <td><a href="../../random/random_uniform_v2/README.md">random_uniform_v2</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>生成均匀分布的随机浮点数数列。</td>
+  </tr>
+  <tr>
+    <td>random</td>
+    <td><a href="../../random/random_uniform_int_v2/README.md">random_uniform_int_v2</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
     <td>√</td>
     <td>AI Core</td>
     <td>生成均匀分布的随机整数数列。</td>
