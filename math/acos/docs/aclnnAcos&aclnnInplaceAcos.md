@@ -32,7 +32,7 @@
 
 - **参数说明：**
 
-  - input (aclTensor*, 计算输入)：Device侧的aclTensor。当类型为INT8、INT16、INT32、INT64、UINT8、BOOL时，转化为FLOAT32进行运算，输出FLOAT32类型。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，非连续的Tensor维度不大于8，且shape需要与out一致。
+  - input (aclTensor*, 计算输入)：Device侧的aclTensor。当类型为INT8、INT16、INT32、INT64、UINT8、BOOL时，转化为FLOAT进行运算，输出FLOAT类型。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，非连续的Tensor维度不大于8，且shape需要与out一致。
      * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、BFLOAT16、FLOAT16、DOUBLE
   - out (aclTensor\*, 计算输出)：Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，非连续的Tensor维度不大于8，且shape需要与input一致。
      * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、DOUBLE
