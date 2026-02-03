@@ -36,8 +36,7 @@ protected:
 
 TEST_F(SortWithIndexTilingTest, test_tiling_int32) {
     optiling::SortWithIndexCompileInfo compileInfo;
-    compileInfo.coreNum = 64;
-    compileInfo.ubSize = 262144;
+    compileInfo.core_num = 64;
 
     gert::TilingContextPara tilingContextPara("SortWithIndex",
         {
@@ -56,8 +55,8 @@ TEST_F(SortWithIndexTilingTest, test_tiling_int32) {
         },
         &compileInfo);
 
-    uint64_t expectTilingKey = 2;
-    string expectTilingData = "8192 70368744177672 1065353216 1065353216 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    uint64_t expectTilingKey = 1003;
+    string expectTilingData = "4294967297 8589934594 4294967297 2 4294967296 4294967298 2 ";
+    std::vector<size_t> expectWorkspaces = {16787520};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

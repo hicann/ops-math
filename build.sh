@@ -1046,6 +1046,7 @@ assemble_cmake_args() {
   fi
   if [[ "$ENABLE_TEST" == "TRUE" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DENABLE_TEST=TRUE"
+    custom_cmake_args
   fi
   if [[ "$ENABLE_UT_EXEC" == "TRUE" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DENABLE_UT_EXEC=TRUE"
