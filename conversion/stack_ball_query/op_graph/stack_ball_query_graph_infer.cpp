@@ -13,52 +13,10 @@
  * \brief stack_ball_query operater graph infer resource
  */
 
-#include "log/log.h"
 #include "register/op_impl_registry.h"
-#include "util/shape_util.h"
-
-static constexpr int INPUT_NODE_NUM = 4;
-static constexpr int OUTPUT_NODE_NUM = 1;
-static constexpr int INDEX_ATTR_SAMPLE_NUM = 1;
-static constexpr int INDEX_INPUT_CENTER_XYZ_BATCH_CNT = 3;
-static constexpr int INDEX_OUTPUT_IDX = 0;
-
-static constexpr int IDX_DIM_NUM = 2;
-static constexpr int IDX_DIM0 = 0;
-static constexpr int IDX_DIM1 = 1;
 
 using namespace ge;
 namespace ops {
-
-static ge::graphStatus InferShape4StackBallQuery(gert::InferShapeContext *context)
-{
-    if (context == nullptr) {
-        OP_LOGE("InferShape4StackBallQuery", "Context is nullptr, check failed.");
-        return GRAPH_FAILED;
-    }
-    if (context->GetComputeNodeInputNum() != INPUT_NODE_NUM ||
-        context->GetComputeNodeOutputNum() != OUTPUT_NODE_NUM) {
-        return GRAPH_FAILED;
-    }
-
-    auto* attrs = context->GetAttrs();
-    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
-    auto* sampl_num_ptr = attrs->GetAttrPointer<int>(INDEX_ATTR_SAMPLE_NUM);
-    OP_CHECK_NULL_WITH_CONTEXT(context, sampl_num_ptr);
-    auto sampl_num = *sampl_num_ptr;
-
-    const gert::Shape* center_xyz_batch_cnt_shape = context->GetInputShape(INDEX_INPUT_CENTER_XYZ_BATCH_CNT);
-    OP_CHECK_NULL_WITH_CONTEXT(context, center_xyz_batch_cnt_shape);
-
-    gert::Shape* idx_shape = context->GetOutputShape(INDEX_OUTPUT_IDX);
-    OP_CHECK_NULL_WITH_CONTEXT(context, idx_shape);
-
-    idx_shape->SetDimNum(IDX_DIM_NUM);
-    idx_shape->SetDim(IDX_DIM0, center_xyz_batch_cnt_shape->GetShapeSize());
-    idx_shape->SetDim(IDX_DIM1, static_cast<int64_t>(sampl_num));
-
-    return ge::GRAPH_SUCCESS;
-}
 
 static ge::graphStatus InferDataType4StackBallQuery(gert::InferDataTypeContext* context)
 {
@@ -66,8 +24,6 @@ static ge::graphStatus InferDataType4StackBallQuery(gert::InferDataTypeContext* 
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(StackBallQuery)
-    .InferShape(InferShape4StackBallQuery)
-    .InferDataType(InferDataType4StackBallQuery);
+IMPL_OP(StackBallQuery).InferDataType(InferDataType4StackBallQuery);
 
 } // namespace ops

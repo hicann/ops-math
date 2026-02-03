@@ -1,7 +1,7 @@
 /**
- * Copyright (c) Huawei Technologies Co., Ltd.2025. All rights reserved.
- * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -11,7 +11,7 @@
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
-#include "aclnnop/aclnn_coalesce_sparse.h"
+#include "aclnnop/aclnn_permute.h"
 
 #define CHECK_RET(cond, return_expr) \
     do {                             \
@@ -82,101 +82,69 @@ int main()
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
     // 2. 构造输入与输出，需要根据API的接口自定义构造
-    std::vector<int64_t> uniqueLenShape = {1};
-    std::vector<int64_t> uniqueIndicesShape = {2,2};
-    std::vector<int64_t> indexShape = {2,4};
-    std::vector<int64_t> valueShape = {4};
-    std::vector<int64_t> newIndexShape = {4};
-    std::vector<int64_t> newValueShape = {2};
-    void* uniqueLenDeviceAddr = nullptr;
-    void* uniqueIndicesDeviceAddr = nullptr;
-    void* indexDeviceAddr = nullptr;
-    void* valueDeviceAddr = nullptr;
-    void* newIndexDeviceAddr = nullptr;
-    void* newValueDeviceAddr = nullptr;
-    aclTensor* uniqueLen = nullptr;
-    aclTensor* uniqueIndices = nullptr;
-    aclTensor* index = nullptr;
-    aclTensor* value = nullptr;
-    aclTensor* newIndex = nullptr;
-    aclTensor* newValue = nullptr;
-    std::vector<int32_t> uniqueLenData = {2};
-    std::vector<int32_t> uniqueIndicesData = {0, 1, 0, 2};
-    std::vector<int32_t> indexData = {0, 0, 1, 1, 0, 0, 2, 2};
-    std::vector<float> valueData = {1, 2, 3, 4};
-    std::vector<int32_t> newIndexData = {0, 0, 0, 0};
-    std::vector<float> newValueData = {0, 0};
-
-    // 创建in aclTensor
-    ret = CreateAclTensor(uniqueLenData, uniqueLenShape, &uniqueLenDeviceAddr, aclDataType::ACL_INT32, &uniqueLen);
+    std::vector<int64_t> selfShape = {3, 3, 2};
+    std::vector<int64_t> dimsData = {0, 2, 1};
+    std::vector<int64_t> outShape = {3, 2, 3};
+    void* selfDeviceAddr = nullptr;
+    void* outDeviceAddr = nullptr;
+    aclTensor* self = nullptr;
+    aclTensor* out = nullptr;
+    std::vector<float> selfHostData = {1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9};
+    std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    // 创建self aclTensor
+    ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-    // 创建in aclTensor
-    ret = CreateAclTensor(uniqueIndicesData, uniqueIndicesShape, &uniqueIndicesDeviceAddr, aclDataType::ACL_INT32, &uniqueIndices);
-    CHECK_RET(ret == ACL_SUCCESS, return ret);
-    // 创建in aclTensor
-    ret = CreateAclTensor(indexData, indexShape, &indexDeviceAddr, aclDataType::ACL_INT32, &index);
-    CHECK_RET(ret == ACL_SUCCESS, return ret);
-    // 创建in aclTensor
-    ret = CreateAclTensor(valueData, valueShape, &valueDeviceAddr, aclDataType::ACL_FLOAT, &value);
-    CHECK_RET(ret == ACL_SUCCESS, return ret);
+    // 创建dims aclIntArray
+    aclIntArray* dims = aclCreateIntArray(dimsData.data(), dimsData.size());
     // 创建out aclTensor
-    ret = CreateAclTensor(newIndexData, newIndexShape, &newIndexDeviceAddr, aclDataType::ACL_INT32, &newIndex);
-    CHECK_RET(ret == ACL_SUCCESS, return ret);
-    // 创建out aclTensor
-    ret = CreateAclTensor(newValueData, newValueShape, &newValueDeviceAddr, aclDataType::ACL_FLOAT, &newValue);
+    ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     // 3. 调用CANN算子库API，需要修改为具体的Api名称
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
-    // 调用aclnnCoalesceSparse第一段接口
-    ret = aclnnCoalesceSparseGetWorkspaceSize(uniqueLen, uniqueIndices, index, value, newIndex, newValue, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnCoalesceSparseGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+    // 调用aclnnPermute第一段接口
+    ret = aclnnPermuteGetWorkspaceSize(self, dims, out, &workspaceSize, &executor);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPermuteGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > static_cast<uint64_t>(0)) {
         ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
         CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
     }
-    // 调用aclnnCoalesceSparse第二段接口
-    ret = aclnnCoalesceSparse(workspaceAddr, workspaceSize, executor, stream);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnCoalesceSparse failed. ERROR: %d\n", ret); return ret);
+    // 调用aclnnPermute第二段接口
+    ret = aclnnPermute(workspaceAddr, workspaceSize, executor, stream);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnPermute failed. ERROR: %d\n", ret); return ret);
 
     // 4. （固定写法）同步等待任务执行结束
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
     // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
-    auto size = GetShapeSize(newValueShape);
+    auto size = GetShapeSize(outShape);
     std::vector<float> resultData(size, 0);
     ret = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), newValueDeviceAddr, size * sizeof(resultData[0]),
+        resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, size * sizeof(resultData[0]),
         ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
     for (int64_t i = 0; i < size; i++) {
         LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
     }
 
-    // 6. 释放aclTensor，需要根据具体API的接口定义修改
-    aclDestroyTensor(uniqueLen);
-    aclDestroyTensor(uniqueIndices);
-    aclDestroyTensor(index);
-    aclDestroyTensor(value);
-    aclDestroyTensor(newIndex);
-    aclDestroyTensor(newValue);
+    // 6. 释放aclTensor和aclIntArray，需要根据具体API的接口定义修改
+    aclDestroyTensor(self);
+    aclDestroyIntArray(dims);
+    aclDestroyTensor(out);
 
-    // 7. 释放device资源
-    aclrtFree(uniqueLenDeviceAddr);
-    aclrtFree(uniqueIndicesDeviceAddr);
-    aclrtFree(indexDeviceAddr);
-    aclrtFree(valueDeviceAddr);
-    aclrtFree(newIndexDeviceAddr);
-    aclrtFree(newValueDeviceAddr);
+    // 7. 释放device 资源
+    aclrtFree(selfDeviceAddr);
+    aclrtFree(outDeviceAddr);
     if (workspaceSize > static_cast<uint64_t>(0)) {
         aclrtFree(workspaceAddr);
     }
     aclrtDestroyStream(stream);
     aclrtResetDevice(deviceId);
     aclFinalize();
+
     return 0;
 }

@@ -10,4 +10,4 @@
 # ----------------------------------------------------------------------------
 
 
-add_modules_sources(OPTYPE coalesce_sparse ACLNNTYPE aclnn)
+add_modules_sources(OPTYPE coalesce_sparse ACLNNTYPE aclnn_exclude)
