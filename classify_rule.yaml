@@ -13,10 +13,701 @@ ops_math:
   team: "ops_math" ##组件名称
   src:
     release:
-      - common
-      - conversion
-      - math
+      - random
     unrelease:
+      - "*/*/tests"
+      - "*/*/examples"
+      - "*/*/*/op_api"
+      - "*/*/op_api"
+      - "*/*/op_kernel/arch35"
+      - "**/*_def.cpp"
+      - "**/*_apt.cpp"
+      - "**/*tiling*data*.h"
+      - "**/*tiling*key*.h"
+      - "*/*/op_host/**/*.h"
+      - "*/*/op_api/**/*.h"
+      - "*/*/op_graph/**/*.h"
+      - "random/drop_out_v3"
+      - "random/stateless_random_uniform_v2"
+      - "random/random_standard_normal_v2"
   llt:
     ut_check: true
     st_check: false
+
+math@ops-math:
+  src:
+    release:
+      style:
+        - ops/ops-math/math/
+      opensource_style: null
+      kernel_style: null
+    unrelease:
+      test_code:
+        - ops/ops-math/math/abs/examples/
+        - ops/ops-math/math/acos/tests/
+        - ops/ops-math/math/acos/examples/
+        - ops/ops-math/math/acosh/tests/
+        - ops/ops-math/math/add/tests/
+        - ops/ops-math/math/add/examples/
+        - ops/ops-math/math/addcdiv/tests/
+        - ops/ops-math/math/addcmul/tests/
+        - ops/ops-math/math/addr/tests/
+        - ops/ops-math/math/addr/examples/
+        - ops/ops-math/math/add_lora/tests/
+        - ops/ops-math/math/add_lora/examples/
+        - ops/ops-math/math/angle_v2/tests/
+        - ops/ops-math/math/angle_v2/examples/
+        - ops/ops-math/math/arg_max_v2/tests/
+        - ops/ops-math/math/arg_max_v2/examples/
+        - ops/ops-math/math/arg_max_with_value/tests/
+        - ops/ops-math/math/arg_min/tests/
+        - ops/ops-math/math/arg_min/examples/
+        - ops/ops-math/math/arg_min_with_value/tests/
+        - ops/ops-math/math/asin/tests/
+        - ops/ops-math/math/asinh/tests/
+        - ops/ops-math/math/atan/tests/
+        - ops/ops-math/math/atan/examples/
+        - ops/ops-math/math/atan2/tests/
+        - ops/ops-math/math/atanh/tests/
+        - ops/ops-math/math/bias_add/tests/
+        - ops/ops-math/math/bias_add/examples/
+        - ops/ops-math/math/bincount/tests/
+        - ops/ops-math/math/bitwise_and/tests/
+        - ops/ops-math/math/bitwise_and/examples/
+        - ops/ops-math/math/bitwise_not/tests/
+        - ops/ops-math/math/bitwise_not/examples/
+        - ops/ops-math/math/bitwise_or/tests/
+        - ops/ops-math/math/bitwise_or/examples/
+        - ops/ops-math/math/bitwise_xor/tests/
+        - ops/ops-math/math/bitwise_xor/examples/
+        - ops/ops-math/math/cast/examples/
+        - ops/ops-math/math/ceil/tests/
+        - ops/ops-math/math/ceil/examples/
+        - ops/ops-math/math/cholesky/tests/
+        - ops/ops-math/math/cholesky/examples/
+        - ops/ops-math/math/complex/tests/
+        - ops/ops-math/math/cos/tests/
+        - ops/ops-math/math/cosh/tests/
+        - ops/ops-math/math/cross/tests/
+        - ops/ops-math/math/cross/examples/
+        - ops/ops-math/math/cummax/tests/
+        - ops/ops-math/math/cummax/examples/
+        - ops/ops-math/math/cummin/tests/
+        - ops/ops-math/math/cummin/examples/
+        - ops/ops-math/math/cumprod/tests/
+        - ops/ops-math/math/cumprod/examples/
+        - ops/ops-math/math/cumsum/tests/
+        - ops/ops-math/math/cumsum/examples/
+        - ops/ops-math/math/cumsum_cube/tests/
+        - ops/ops-math/math/diag_part/examples/
+        - ops/ops-math/math/digamma/tests/
+        - ops/ops-math/math/digamma/examples/
+        - ops/ops-math/math/div/tests/
+        - ops/ops-math/math/div/examples/
+        - ops/ops-math/math/dot/tests/
+        - ops/ops-math/math/dot/examples/
+        - ops/ops-math/math/equal/tests/
+        - ops/ops-math/math/equal/examples/
+        - ops/ops-math/math/erf/tests/
+        - ops/ops-math/math/erf/examples/
+        - ops/ops-math/math/erfc/tests/
+        - ops/ops-math/math/erfc/examples/
+        - ops/ops-math/math/exp/tests/
+        - ops/ops-math/math/exp/examples/
+        - ops/ops-math/math/expand/tests/
+        - ops/ops-math/math/expm1/tests/
+        - ops/ops-math/math/expm1/examples/
+        - ops/ops-math/math/exp_segsum_grad/tests/
+        - ops/ops-math/math/exp_segsum_grad/examples/
+        - ops/ops-math/math/eye/tests/
+        - ops/ops-math/math/eye/examples/
+        - ops/ops-math/math/floor/tests/
+        - ops/ops-math/math/floor_div/tests/
+        - ops/ops-math/math/floor_mod/tests/
+        - ops/ops-math/math/floor_mod/examples/
+        - ops/ops-math/math/gcd/tests/
+        - ops/ops-math/math/gcd/examples/
+        - ops/ops-math/math/ger/tests/
+        - ops/ops-math/math/ger/examples/
+        - ops/ops-math/math/greater/tests/
+        - ops/ops-math/math/greater/examples/
+        - ops/ops-math/math/greater_equal/tests/
+        - ops/ops-math/math/greater_equal/examples/
+        - ops/ops-math/math/grouped_bias_add_grad/tests/
+        - ops/ops-math/math/grouped_bias_add_grad/examples/
+        - ops/ops-math/math/hans_decode/tests/
+        - ops/ops-math/math/hans_decode/examples/
+        - ops/ops-math/math/hans_encode/tests/
+        - ops/ops-math/math/hans_encode/examples/
+        - ops/ops-math/math/histogram_v2/tests/
+        - ops/ops-math/math/histogram_v2/examples/
+        - ops/ops-math/math/invert/tests/
+        - ops/ops-math/math/inv_grad/tests/
+        - ops/ops-math/math/inv_grad/examples/
+        - ops/ops-math/math/is_close/tests/
+        - ops/ops-math/math/is_close/examples/
+        - ops/ops-math/math/is_finite/tests/
+        - ops/ops-math/math/is_finite/examples/
+        - ops/ops-math/math/is_inf/tests/
+        - ops/ops-math/math/is_inf/examples/
+        - ops/ops-math/math/is_neg_inf/tests/
+        - ops/ops-math/math/is_neg_inf/examples/
+        - ops/ops-math/math/is_pos_inf/tests/
+        - ops/ops-math/math/is_pos_inf/examples/
+        - ops/ops-math/math/kl_div_v2/tests/
+        - ops/ops-math/math/lerp/tests/
+        - ops/ops-math/math/lerp/examples/
+        - ops/ops-math/math/less/tests/
+        - ops/ops-math/math/less/examples/
+        - ops/ops-math/math/less_equal/tests/
+        - ops/ops-math/math/lgamma/tests/
+        - ops/ops-math/math/lgamma/examples/
+        - ops/ops-math/math/linalg_qr/tests/
+        - ops/ops-math/math/linalg_qr/examples/
+        - ops/ops-math/math/lin_space/tests/
+        - ops/ops-math/math/lin_space/examples/
+        - ops/ops-math/math/log/tests/
+        - ops/ops-math/math/log/examples/
+        - ops/ops-math/math/log1p/tests/
+        - ops/ops-math/math/log1p/examples/
+        - ops/ops-math/math/logdet/tests/
+        - ops/ops-math/math/logdet/examples/
+        - ops/ops-math/math/logical_and/tests/
+        - ops/ops-math/math/logical_not/tests/
+        - ops/ops-math/math/logical_or/tests/
+        - ops/ops-math/math/log_add_exp/tests/
+        - ops/ops-math/math/masked_scale/tests/
+        - ops/ops-math/math/maximum/tests/
+        - ops/ops-math/math/minimum/tests/
+        - ops/ops-math/math/mod/tests/
+        - ops/ops-math/math/mod/examples/
+        - ops/ops-math/math/mul/tests/
+        - ops/ops-math/math/mul_addn/tests/
+        - ops/ops-math/math/mul_addn/examples/
+        - ops/ops-math/math/nan_to_num/tests/
+        - ops/ops-math/math/nan_to_num/examples/
+        - ops/ops-math/math/neg/tests/
+        - ops/ops-math/math/non_finite_check/tests/
+        - ops/ops-math/math/non_finite_check/examples/
+        - ops/ops-math/math/not_equal/tests/
+        - ops/ops-math/math/not_equal/examples/
+        - ops/ops-math/math/ones_like/tests/
+        - ops/ops-math/math/one_hot/tests/
+        - ops/ops-math/math/pdist/tests/
+        - ops/ops-math/math/pow/tests/
+        - ops/ops-math/math/pow/examples/
+        - ops/ops-math/math/pows/tests/
+        - ops/ops-math/math/pows/examples/
+        - ops/ops-math/math/precision_compare/tests/
+        - ops/ops-math/math/q_r/tests/
+        - ops/ops-math/math/q_r/examples/
+        - ops/ops-math/math/range/tests/
+        - ops/ops-math/math/range/examples/
+        - ops/ops-math/math/real/tests/
+        - ops/ops-math/math/real/examples/
+        - ops/ops-math/math/real_div/tests/
+        - ops/ops-math/math/real_div/examples/
+        - ops/ops-math/math/reciprocal/tests/
+        - ops/ops-math/math/reciprocal/examples/
+        - ops/ops-math/math/reduce_all/tests/
+        - ops/ops-math/math/reduce_any/tests/
+        - ops/ops-math/math/reduce_any/examples/
+        - ops/ops-math/math/reduce_log_sum/tests/
+        - ops/ops-math/math/reduce_log_sum/examples/
+        - ops/ops-math/math/reduce_log_sum_exp/examples/
+        - ops/ops-math/math/reduce_max/tests/
+        - ops/ops-math/math/reduce_mean/tests/
+        - ops/ops-math/math/reduce_mean/examples/
+        - ops/ops-math/math/reduce_min/tests/
+        - ops/ops-math/math/reduce_nansum/tests/
+        - ops/ops-math/math/reduce_prod/tests/
+        - ops/ops-math/math/reduce_prod/examples/
+        - ops/ops-math/math/reduce_std_v2/tests/
+        - ops/ops-math/math/reduce_std_v2/examples/
+        - ops/ops-math/math/reduce_std_with_mean/tests/
+        - ops/ops-math/math/reduce_sum_op/tests/
+        - ops/ops-math/math/reduce_sum_op/examples/
+        - ops/ops-math/math/reduce_var/tests/
+        - ops/ops-math/math/reduce_var/examples/
+        - ops/ops-math/math/rfft1_d/tests/
+        - ops/ops-math/math/right_shift/tests/
+        - ops/ops-math/math/right_shift/examples/
+        - ops/ops-math/math/round/tests/
+        - ops/ops-math/math/round/examples/
+        - ops/ops-math/math/rsqrt/tests/
+        - ops/ops-math/math/scale/tests/
+        - ops/ops-math/math/search_sorted/tests/
+        - ops/ops-math/math/search_sorted/examples/
+        - ops/ops-math/math/segsum/tests/
+        - ops/ops-math/math/segsum/examples/
+        - ops/ops-math/math/select/tests/
+        - ops/ops-math/math/select/examples/
+        - ops/ops-math/math/sign/tests/
+        - ops/ops-math/math/sign_bits_pack/tests/
+        - ops/ops-math/math/sign_bits_unpack/tests/
+        - ops/ops-math/math/sin/tests/
+        - ops/ops-math/math/sin/examples/
+        - ops/ops-math/math/sinh/tests/
+        - ops/ops-math/math/sinh/examples/
+        - ops/ops-math/math/sinkhorn/tests/
+        - ops/ops-math/math/sinkhorn/examples/
+        - ops/ops-math/math/slogdet/tests/
+        - ops/ops-math/math/slogdet/examples/
+        - ops/ops-math/math/sort/tests/
+        - ops/ops-math/math/sort_with_index/tests/
+        - ops/ops-math/math/sqrt/tests/
+        - ops/ops-math/math/sqrt_grad/tests/
+        - ops/ops-math/math/sqrt_grad/examples/
+        - ops/ops-math/math/square/tests/
+        - ops/ops-math/math/square/examples/
+        - ops/ops-math/math/squared_difference/tests/
+        - ops/ops-math/math/squared_difference/examples/
+        - ops/ops-math/math/stft/tests/
+        - ops/ops-math/math/stft/examples/
+        - ops/ops-math/math/sub/tests/
+        - ops/ops-math/math/sub/examples/
+        - ops/ops-math/math/svd/tests/
+        - ops/ops-math/math/svd/examples/
+        - ops/ops-math/math/tan/tests/
+        - ops/ops-math/math/tanh/tests/
+        - ops/ops-math/math/tanh/examples/
+        - ops/ops-math/math/tanh_grad/tests/
+        - ops/ops-math/math/tensor_equal/tests/
+        - ops/ops-math/math/tile/tests/
+        - ops/ops-math/math/tile/examples/
+        - ops/ops-math/math/topk/tests/
+        - ops/ops-math/math/trace/tests/
+        - ops/ops-math/math/trace/examples/
+        - ops/ops-math/math/transform_bias_rescale_qkv/tests/
+        - ops/ops-math/math/transform_bias_rescale_qkv/examples/
+        - ops/ops-math/math/triangular_solve/examples/
+        - ops/ops-math/math/trunc/tests/
+        - ops/ops-math/math/trunc/examples/
+        - ops/ops-math/math/zero_op/tests/
+        - ops/ops-math/math/zero_op/examples/
+      non_delivery: null
+      open_source: null
+
+HPTG2@ops-math:
+  src:
+    release:
+      style:
+        - ops/ops-math/common/
+        - ops/ops-math/scripts/
+        - ops/ops-math/cmake/
+      opensource_style: null
+      kernel_style: null
+    unrelease:
+      test_code:
+        - ops/ops-math/example/
+        - ops/ops-math/example/add_example_aicpu/examples
+        - ops/ops-math/example/add_example_aicpu/tests
+        - ops/ops-math/example/add_example/examples
+        - ops/ops-math/example/add_example/tests
+        - ops/ops-math/tests/
+        - ops/ops-math/build.sh
+      non_delivery: null
+      open_source: null
+
+HPTG5@ops-math:
+  src:
+    release:
+      style:
+        - ops/ops-math/histogram_v2/op_host
+      opensource_style: null
+      kernel_style: null
+    unrelease:
+      test_code: null
+      non_delivery: null
+      open_source: null
+
+HPTG3@ops-math:
+  src:
+    release:
+      style:
+        - ops/ops-math/math/adjacent_difference/CMakeLists.txt
+        - ops/ops-math/math/adjacent_difference/op_api/adjacent_difference.cpp
+        - ops/ops-math/math/adjacent_difference/op_api/adjacent_difference.h
+        - ops/ops-math/math/adjacent_difference/op_graph/adjacent_difference_graph_infer.cpp
+        - ops/ops-math/math/adjacent_difference/op_graph/adjacent_difference_proto.h
+        - ops/ops-math/math/adjacent_difference/op_graph/fusion_pass/.gitkeep
+        - ops/ops-math/math/adjacent_difference/op_host/arch35/
+        - ops/ops-math/math/adjacent_difference/op_host/config/ascend950/
+        - ops/ops-math/math/adjacent_difference/op_host/op_api/adjacent_difference.h
+        - ops/ops-math/math/adjacent_difference/op_host/adjacent_difference_def.cpp
+        - ops/ops-math/math/adjacent_difference/op_host/adjacent_difference_infershape.cpp
+        - ops/ops-math/math/adjacent_difference/op_kernel/arch35/
+        - ops/ops-math/math/adjacent_difference/op_kernel/adjacent_difference_apt.cpp
+        - ops/ops-math/math/adjacent_difference/README.md
+        - ops/ops-math/math/bincount/op_host/arch35/
+        - ops/ops-math/math/bincount/op_host/config/ascend950/
+        - ops/ops-math/math/bincount/op_kernel/arch35/
+        - ops/ops-math/math/bincount/op_kernel/bincount.cpp
+      opensource_style: null
+      kernel_style: null
+    unrelease:
+      test_code:
+        - ops/ops-math/math/bincount/tests/ut/op_host/arch35/test_bincount_tiling_arch35.cpp
+      non_delivery: null
+      open_source: null
+
+VC1@ops-math:
+  src:
+    release:
+      style:
+        - ops/ops-math/math/add_n/
+        - ops/ops-math/math/assign_add/
+        - ops/ops-math/math/assign_sub/
+        - ops/ops-math/math/cast/
+        - ops/ops-math/math/ceil/
+        - ops/ops-math/math/cos/
+        - ops/ops-math/math/exp/
+        - ops/ops-math/math/floor/
+        - ops/ops-math/math/is_close/
+        - ops/ops-math/math/is_finite/docs/
+        - ops/ops-math/math/is_finite/examples/op_api/
+        - ops/ops-math/math/is_finite/op_graph/
+        - ops/ops-math/math/is_finite/op_host/arch35/
+        - ops/ops-math/math/is_finite/op_host/config/ascend950/
+        - ops/ops-math/math/is_finite/op_host/is_finite_def.cpp
+        - ops/ops-math/math/is_finite/op_host/is_finite_infershape.cpp
+        - ops/ops-math/math/is_finite/op_kernel/arch35/
+        - ops/ops-math/math/is_finite/op_kernel/is_finite_apt.cpp
+        - ops/ops-math/math/is_inf/docs/
+        - ops/ops-math/math/is_inf/framework/
+        - ops/ops-math/math/is_inf/op_graph/
+        - ops/ops-math/math/is_inf/op_host/config/ascend950/
+        - ops/ops-math/math/is_inf/op_host/is_inf_def.cpp
+        - ops/ops-math/math/is_inf/op_host/is_inf_infershape.cpp
+        - ops/ops-math/math/is_inf/op_host/is_inf_tiling_arch35.cpp
+        - ops/ops-math/math/is_inf/op_host/is_inf_tiling_arch35.h
+        - ops/ops-math/math/is_inf/op_kernel/arch35/
+        - ops/ops-math/math/is_inf/op_kernel/is_inf_apt.cpp
+        - ops/ops-math/math/is_inf/
+        - ops/ops-math/math/is_inf/
+        - ops/ops-math/math/is_inf/
+        - ops/ops-math/math/is_nan/
+        - ops/ops-math/math/is_neg_inf/
+        - ops/ops-math/math/is_pos_inf/
+        - ops/ops-math/math/log/
+        - ops/ops-math/math/log1p/
+        - ops/ops-math/math/logical_not/
+        - ops/ops-math/math/masked_scale/
+        - ops/ops-math/math/reciprocal/
+        - ops/ops-math/math/round/
+        - ops/ops-math/math/rsqrt/
+        - ops/ops-math/math/rsqrt_grad/
+        - ops/ops-math/math/sign/
+        - ops/ops-math/math/sin/
+        - ops/ops-math/math/sqrt/
+        - ops/ops-math/math/sqrt_grad/
+        - ops/ops-math/math/square/
+        - ops/ops-math/math/tanh/
+        - ops/ops-math/math/trunc/
+      opensource_style: null
+      kernel_style: null
+    unrelease:
+      test_code:
+        - ops/ops-math/math/add_n/examples/
+        - ops/ops-math/math/add_n/tests/
+        - ops/ops-math/math/assign_add/examples/
+        - ops/ops-math/math/assign_add/tests/
+        - ops/ops-math/math/assign_sub/examples/
+        - ops/ops-math/math/assign_sub/tests/
+        - ops/ops-math/math/cast/examples/
+        - ops/ops-math/math/cast/tests/
+        - ops/ops-math/math/ceil/examples/
+        - ops/ops-math/math/ceil/tests/
+        - ops/ops-math/math/cos/examples/
+        - ops/ops-math/math/cos/tests/
+        - ops/ops-math/math/exp/examples/
+        - ops/ops-math/math/exp/tests/
+        - ops/ops-math/math/floor/examples/
+        - ops/ops-math/math/floor/tests/
+        - ops/ops-math/math/is_close/examples/
+        - ops/ops-math/math/is_close/tests/
+        - ops/ops-math/math/is_finite/examples/
+        - ops/ops-math/math/is_finite/tests/
+        - ops/ops-math/math/is_inf/examples/
+        - ops/ops-math/math/is_inf/tests/
+        - ops/ops-math/math/is_nan/examples/
+        - ops/ops-math/math/is_nan/tests/
+        - ops/ops-math/math/is_neg_inf/examples/
+        - ops/ops-math/math/is_neg_inf/tests/
+        - ops/ops-math/math/is_pos_inf/examples/
+        - ops/ops-math/math/is_pos_inf/tests/
+        - ops/ops-math/math/log/examples/
+        - ops/ops-math/math/log/tests/
+        - ops/ops-math/math/log1p/examples/
+        - ops/ops-math/math/log1p/tests/
+        - ops/ops-math/math/logical_not/examples/
+        - ops/ops-math/math/logical_not/tests/
+        - ops/ops-math/math/masked_scale/examples/
+        - ops/ops-math/math/masked_scale/tests/
+        - ops/ops-math/math/reciprocal/examples/
+        - ops/ops-math/math/reciprocal/tests/
+        - ops/ops-math/math/round/examples/
+        - ops/ops-math/math/round/tests/
+        - ops/ops-math/math/rsqrt/examples/
+        - ops/ops-math/math/rsqrt/tests/
+        - ops/ops-math/math/rsqrt_grad/examples/
+        - ops/ops-math/math/rsqrt_grad/tests/
+        - ops/ops-math/math/sign/examples/
+        - ops/ops-math/math/sign/tests/
+        - ops/ops-math/math/sin/examples/
+        - ops/ops-math/math/sin/tests/
+        - ops/ops-math/math/sqrt/examples/
+        - ops/ops-math/math/sqrt/tests/
+        - ops/ops-math/math/sqrt_grad/examples/
+        - ops/ops-math/math/sqrt_grad/tests/
+        - ops/ops-math/math/square/examples/
+        - ops/ops-math/math/square/tests/
+        - ops/ops-math/math/tanh/examples/
+        - ops/ops-math/math/tanh/tests/
+        - ops/ops-math/math/trunc/examples/
+        - ops/ops-math/math/trunc/tests/
+      non_delivery: null
+      open_source: null
+
+VC2@ops-math:
+  src:
+    release:
+      style:
+        - ops/ops-math/math/reduce_mean/op_host/
+        - ops/ops-math/math/bias_add_grad/
+        - ops/ops-math/math/cumsum/
+        - ops/ops-math/math/diag_part/
+        - ops/ops-math/math/dot/
+        - ops/ops-math/math/reduce_std_v2/
+        - ops/ops-math/math/reduce_var/
+        - ops/ops-math/math/reduce_std_v2_update/
+        - ops/ops-math/math/reduce_std_with_mean/
+        - ops/ops-math/conversion/slice/
+        - ops/ops-math/conversion/split/
+        - ops/ops-math/conversion/split_v/
+        - ops/ops-math/math/square_sum_v1/
+        - ops/ops-math/conversion/strided_slice/
+        - ops/ops-math/conversion/unpack/
+        - ops/ops-math/conversion/matrix_diag/
+        - ops/ops-math/math/cdist/
+        - ops/ops-math/math/addr/
+        - ops/ops-math/math/arg_common_base/
+        - ops/ops-math/math/arg_max_v2/
+        - ops/ops-math/math/arg_max_with_value/
+        - ops/ops-math/math/arg_min/
+        - ops/ops-math/math/arg_min_with_value/
+        - ops/ops-math/math/invert/
+        - ops/ops-math/conversion/masked_select_v3/
+        - ops/ops-math/math/reduce_log_sum_exp/
+        - ops/ops-math/conversion/roll/
+        - ops/ops-math/conversion/transpose/
+        - ops/ops-math/conversion/mirror_pad/
+        - ops/ops-math/conversion/pad/
+        - ops/ops-math/conversion/pad_v3/
+        - ops/ops-math/conversion/fill/
+        - ops/ops-math/conversion/fills/
+        - ops/ops-math/conversion/masked_fill/
+        - ops/ops-math/math/ones_like/
+        - ops/ops-math/math/zero_op/
+        - ops/ops-math/conversion/zeros_like/
+        - ops/ops-math/conversion/as_strided/
+      opensource_style: null
+      kernel_style: null
+    unrelease:
+      test_code:
+        - ops/ops-math/math/bias_add_grad/examples/
+        - ops/ops-math/math/bias_add_grad/tests/
+        - ops/ops-math/math/cumsum/examples/
+        - ops/ops-math/math/cumsum/tests/
+        - ops/ops-math/math/diag_part/examples/
+        - ops/ops-math/math/diag_part/ut/
+        - ops/ops-math/math/dot/examples/
+        - ops/ops-math/math/dot/tests/
+        - ops/ops-math/math/reduce_std_v2/examples/
+        - ops/ops-math/math/reduce_std_v2/tests/
+        - ops/ops-math/math/reduce_var/examples/
+        - ops/ops-math/math/reduce_var/tests/
+        - ops/ops-math/math/reduce_std_with_mean/tests/
+        - ops/ops-math/conversion/split_v/examples/
+        - ops/ops-math/conversion/split_v/tests/
+        - ops/ops-math/math/square_sum_v1/examples/
+        - ops/ops-math/math/square_sum_v1/tests/
+        - ops/ops-math/conversion/strided_slice/examples/
+        - ops/ops-math/conversion/strided_slice/tests/
+        - ops/ops-math/conversion/matrix_diag/tests/
+        - ops/ops-math/math/cdist/examples/
+        - ops/ops-math/math/cdist/tests/
+        - ops/ops-math/math/addr/examples/
+        - ops/ops-math/math/addr/tests/
+        - ops/ops-math/math/arg_max_v2/examples/
+        - ops/ops-math/math/arg_max_v2/tests/
+        - ops/ops-math/math/arg_max_with_value/examples/
+        - ops/ops-math/math/arg_max_with_value/tests/
+        - ops/ops-math/math/arg_min/examples/
+        - ops/ops-math/math/arg_min/tests/
+        - ops/ops-math/math/arg_min_with_value/examples/
+        - ops/ops-math/math/arg_min_with_value/tests/
+        - ops/ops-math/math/invert/tests/
+        - ops/ops-math/conversion/masked_select_v3/examples/
+        - ops/ops-math/conversion/masked_select_v3/tests/
+        - ops/ops-math/math/reduce_log_sum_exp/examples/
+        - ops/ops-math/conversion/roll/examples/
+        - ops/ops-math/conversion/roll/tests/
+        - ops/ops-math/conversion/transpose/examples/
+        - ops/ops-math/conversion/transpose/tests/
+        - ops/ops-math/conversion/mirror_pad/examples/
+        - ops/ops-math/conversion/mirror_pad/tests/
+        - ops/ops-math/conversion/pad/examples/
+        - ops/ops-math/conversion/pad/tests/
+        - ops/ops-math/conversion/pad_v3/examples/
+        - ops/ops-math/conversion/pad_v3/tests/
+        - ops/ops-math/conversion/fills/examples/
+        - ops/ops-math/conversion/fills/tests/
+        - ops/ops-math/conversion/fill/examples/
+        - ops/ops-math/conversion/fill/tests/
+        - ops/ops-math/conversion/masked_fill/examples/
+        - ops/ops-math/conversion/masked_fill/tests/
+        - ops/ops-math/math/ones_like/tests/
+        - ops/ops-math/math/ones_like/examples/
+        - ops/ops-math/math/zero_op/tests/
+        - ops/ops-math/math/zero_op/examples/
+        - ops/ops-math/conversion/zeros_like/examples/
+        - ops/ops-math/conversion/zeros_like/tests/
+        - ops/ops-math/conversion/as_strided/tests/
+      non_delivery: null
+      open_source: null
+
+VC3@ops-math:
+  src:
+    release:
+      style:
+        - ops/ops-math/math/abs/
+      opensource_style: null
+      kernel_style: null
+    unrelease:
+      test_code:
+        - ops/ops-math/math/abs/examples/
+        - ops/ops-math/math/abs/tests/
+      non_delivery: null
+      open_source: null
+
+VC6@ops-math:
+  src:
+    release:
+      style:
+        # stateless_bernoulli
+        - ops/ops-math/random/stateless_bernoulli/op_host/
+        - ops/ops-math/random/stateless_bernoulli/op_kernel/
+        # drop_out_v3
+        - ops/ops-math/random/drop_out_v3/op_host/
+        - ops/ops-math/random/drop_out_v3/op_kernel/
+        # drop_out_do_mask
+        - ops/ops-math/random/drop_out_do_mask/op_host/
+        - ops/ops-math/random/drop_out_do_mask/op_kernel/
+        # stateless_drop_out_gen_mask
+        - ops/ops-math/random/stateless_drop_out_gen_mask/op_host/
+        - ops/ops-math/random/stateless_drop_out_gen_mask/op_kernel/
+        # stateless_random_normal_v2
+        - ops/ops-math/random/stateless_random_normal_v2/op_host/
+        - ops/ops-math/random/stateless_random_normal_v2/op_kernel/
+        # stateless_random_uniform_v2u
+        - ops/ops-math/random/stateless_random_uniform_v2/op_host/
+        - ops/ops-math/random/stateless_random_uniform_v2/op_kernel/
+        # strided_slice_grad
+        - ops/ops-math/conversion/strided_slice_grad/op_host/
+        - ops/ops-math/conversion/strided_slice_grad/op_kernel/
+        # tril
+        - ops/ops-math/conversion/tril/op_host/
+        - ops/ops-math/conversion/tril/op_kernel/
+        # triu
+        - ops/ops-math/conversion/triu/op_host/
+        - ops/ops-math/conversion/triu/op_kernel/
+        # pack
+        - ops/ops-math/conversion/pack/op_host/
+        - ops/ops-math/conversion/pack/op_kernel/
+        # concat_d
+        - ops/ops-math/conversion/concat_d/op_host/
+        - ops/ops-math/conversion/concat_d/op_kernel/
+        # concat_v2
+        - ops/ops-math/conversion/concat_v2/op_host/
+        - ops/ops-math/conversion/concat_v2/op_kernel/
+        # concat
+        - ops/ops-math/conversion/concat/op_host/
+        - ops/ops-math/conversion/concat/op_kernel/
+      opensource_style: null
+      kernel_style: null
+    unrelease:
+      test_code:
+        # stateless_bernoulli
+        - ops/ops-math/random/stateless_bernoulli/examples/
+        - ops/ops-math/random/stateless_bernoulli/tests/
+        # drop_out_v3
+        - ops/ops-math/random/drop_out_v3/examples/
+        - ops/ops-math/random/drop_out_v3/tests/
+        # drop_out_do_mask
+        - ops/ops-math/random/drop_out_do_mask/examples/
+        - ops/ops-math/random/drop_out_do_mask/tests/
+        # stateless_drop_out_gen_mask
+        - ops/ops-math/random/stateless_drop_out_gen_mask/tests/
+        # stateless_random_normal_v2
+        - ops/ops-math/random/stateless_random_normal_v2/examples/
+        - ops/ops-math/random/stateless_random_normal_v2/tests/
+        # stateless_random_uniform_v2u
+        - ops/ops-math/random/stateless_random_uniform_v2/tests/
+        # tril
+        - ops/ops-math/conversion/tril/examples/
+        - ops/ops-math/conversion/tril/tests/
+        # triu
+        - ops/ops-math/conversion/triu/examples/
+        - ops/ops-math/conversion/triu/tests/
+        # pack
+        - ops/ops-math/conversion/pack/examples/
+        - ops/ops-math/conversion/pack/tests/
+        # concat
+        - ops/ops-math/conversion/concat/tests/
+        # concat_d
+        - ops/ops-math/conversion/concat_d/examples/
+        - ops/ops-math/conversion/concat_d/tests/
+        # concat_v2
+        - ops/ops-math/conversion/concat_v2/examples/
+        - ops/ops-math/conversion/concat_v2/tests/
+      non_delivery: null
+      open_source: null
+
+VC7@ops-math:
+  src:
+    release:
+      style: null
+      opensource_style: null
+      kernel_style: null
+    unrelease:
+      test_code: null
+      non_delivery: null
+      open_source: null
+
+VC8@ops-math:
+  src:
+    release:
+      style:
+        - ops/ops-math/conversion/view_copy/op_host/
+      opensource_style: null
+      kernel_style: null
+    unrelease:
+      test_code:
+        - ops/ops-math/conversion/view_copy/examples/
+      non_delivery: null
+      open_source: null
+
+VC5@ops-math:
+  src:
+    release:
+      style:
+        - ops/ops-math/math/neg/
+      opensource_style: null
+      kernel_style: null
+    unrelease:
+      test_code:
+        - ops/ops-math/math/neg/examples
+        - ops/ops-math/math/neg/tests
+      non_delivery: null
+      open_source: null
