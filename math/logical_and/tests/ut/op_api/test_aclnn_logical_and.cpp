@@ -11,6 +11,7 @@
 #include <vector>
 #include "gtest/gtest.h"
 
+#include "opdev/platform.h"
 #include "../../../op_api/aclnn_logical_and.h"
 
 #include "op_api_ut_common/op_api_ut.h"
@@ -86,6 +87,7 @@ TEST_F(l2_logical_and_test, aclnnLogicalAnd_11_32_1_12_double_nchw_11_1_1_12_dou
 
 TEST_F(l2_logical_and_test, aclnnLogicalAnd_1_5_1_16_129_int32_ndhwc_32_5_32_16_1_int32_ndhwc_testcase005)
 {
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
     // left input
     const vector<int64_t>& selfShape = {1, 5, 1, 16, 129};
     aclDataType selfDtype = ACL_INT32;
@@ -164,6 +166,7 @@ TEST_F(l2_logical_and_test, aclnnLogicalAnd_1_1_16_129_int8_hwcn_32_32_16_1_int8
 
 TEST_F(l2_logical_and_test, aclnnLogicalAnd_64_31_31_16_uint8_nhwc_64_31_1_1_uint8_nhwc_testcase009)
 {
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
     // left input
     const vector<int64_t>& selfShape = {64, 31, 31, 16};
     aclDataType selfDtype = ACL_UINT8;
@@ -216,6 +219,7 @@ TEST_F(l2_logical_and_test, aclnnLogicalAnd_23_71_16_5_1_bool_nd_1_1_16_5_23_boo
 
 TEST_F(l2_logical_and_test, aclnnLogicalAnd_64_31_31_16_uint8_nhwc_64_31_1_1_uint8_nhwc_float16_testcase013)
 {
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
     // left input
     const vector<int64_t>& selfShape = {64, 31, 31, 16};
     aclDataType selfDtype = ACL_UINT8;

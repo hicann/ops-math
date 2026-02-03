@@ -1086,6 +1086,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/left_shift/README.md">left_shift</a></td>
+    <td>×</td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>AI CPU</td>
+    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/lerp/README.md">lerp</a></td>
     <td>√</td>
     <td>√</td>

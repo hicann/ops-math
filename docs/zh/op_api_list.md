@@ -126,6 +126,8 @@
 | [aclnnIsNegInf](../../math/is_neg_inf/docs/aclnnIsNegInf.md)    | 判断输入张量的元素是否为负无穷。                             | 默认确定性实现|                              
 | [aclnnIsPosInf](../../math/is_pos_inf/docs/aclnnIsPosInf.md)    | 判断输入张量的元素是否为正无穷。                             | 默认确定性实现|                              
 | [aclnnKlDiv](../../math/kl_div_v2/docs/aclnnKlDiv.md)           | 计算KL散度。                                                 | 默认确定性实现|                                                  
+| [aclnnLeftShift](../../math/left_shift/docs/aclnnLeftShift.md)           | 对于输入张量self中每个元素，根据输入张量shiftBits对应位置的参数，按位进行左移。           | 默认确定性实现|                                                  |
+| [aclnnLeftShifts](../../math/left_shift/docs/aclnnLeftShifts.md)           | 对于输入张量self中每个元素，根据输入标量shiftBits，按位进行左移。   | 默认确定性实现|      
 | [aclnnLerp&aclnnInplaceLerp](../../math/lerp/docs/aclnnLerp&aclnnInplaceLerp.md) | 根据给定的权重，在起始和结束Tensor之间进行线性插值，返回插值后的Tensor。 | 默认确定性实现|  
 | [aclnnLerps&aclnnInplaceLerps](../../math/lerp/docs/aclnnLerps&aclnnInplaceLerps.md) | 根据给定的权重，在起始和结束Tensor之间进行线性插值，返回插值后的Tensor。 | 默认确定性实现|  
 | [aclnnLeScalar&aclnnInplaceLeScalar](../../math/less_equal/docs/aclnnLeScalar&aclnnInplaceLeScalar.md) | 判断输入self中的元素值是否小于等于other的值，并将self的每个元素的值与other值的比较结果写入out中。 | 默认确定性实现|  
