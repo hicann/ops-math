@@ -36,6 +36,7 @@ constexpr int64_t DIM1 = 1;
 constexpr int64_t DIM2 = 2;
 constexpr int64_t HALF = 2;
 constexpr int64_t BLOCK_SIZE = 32;
+constexpr int64_t DIM1_ALIGN_THRESHOLD = 128;
 constexpr int64_t BUFFER_NUM = 2;
 constexpr int64_t MIN_RESERVED_SIZE = 2048;        // 2k
 constexpr size_t SYSTEM_WORKSPACE_SIZE = 16777216; // 16M
@@ -57,7 +58,9 @@ constexpr int64_t DIGIT_THREE = 3;
 constexpr int64_t GATHER_MODE = 3;
 constexpr int64_t EVERY_CORE_THRESHOLD = 2048; // 2k
 constexpr int64_t LEAST_BLOCK_BYTES = 512;
-constexpr int64_t PURECOPYCOLTHRESHOLD = 256; // 纯搬运模板的最小last轴
+constexpr int64_t PURE_COPY_COL_THRESHOLD_BASE = 256;
+constexpr int64_t PURE_COPY_COL_THRESHOLD_ALIGN = 1024;
+constexpr int64_t PURE_COPY_COL_THRESHOLD_NOALIGN = 2048;
 constexpr int64_t BLOCK_THRESHOLD = 49152;    // 48k
 constexpr double LARGE_TENSOR_RATIO_THRESHOLD = 0.9;
 constexpr int64_t PURE_COPY_NO_SPLIT_DIM1_TILINGKEY = 20001;
@@ -207,6 +210,17 @@ inline static bool CheckCatDimAlign(vector<vector<int64_t>>& mergeTensorList, in
     return true;
 }
 
+inline static bool CheckDim1Align(vector<vector<int64_t>>& mergeTensorList, int64_t dtypeSize)
+{
+    // 用合轴之后的1轴去判断是否128对齐
+    for (int64_t i = 0; i < static_cast<int64_t>(mergeTensorList.size()); i++) {
+        if (mergeTensorList[i][DIM1] * dtypeSize % DIM1_ALIGN_THRESHOLD != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 inline static bool CheckInputShapeSame(vector<vector<int64_t>>& tensorList)
 {
     for (int64_t i = 0; i < static_cast<int64_t>(tensorList.size()) - 1; i++) {
@@ -232,6 +246,7 @@ inline static ge::graphStatus CalcBaseTilingParam(const gert::TilingContext* con
     GenerateOutputShape(param);
     param.orgDtypeSize = param.dtypeSize;
     param.isAllTensorAlign = CheckCatDimAlign(param.mergeTensorList, param.dtypeSize) ? 1 : 0;
+    param.isDim1AllAlign = CheckDim1Align(param.mergeTensorList, param.dtypeSize) ? 1 : 0;
     param.inputShapeSame = CheckInputShapeSame(param.mergeTensorList) ? 1 : 0;
     GetTensorSameDim1(param);
     OP_CHECK_IF(
@@ -331,9 +346,16 @@ inline static void CalcLargeTensorNum(
 inline static bool IsEnablePureCopyTemplate(
     const ConcatTilingParam& param, int64_t rowsUsedCoreNum, int64_t colsUsedCoreNum)
 {
-    // last轴必须大于threshold
+    int64_t threshold = 0;
+    if (param.isDim1AllAlign == 1 && param.inputShapeSame == 1) {
+        threshold = PURE_COPY_COL_THRESHOLD_BASE;
+    } else if (param.isDim1AllAlign == 1 || param.inputShapeSame == 1) {
+        threshold = PURE_COPY_COL_THRESHOLD_ALIGN;
+    } else {
+        threshold = PURE_COPY_COL_THRESHOLD_NOALIGN;
+    }
     for (const auto& tensorSize : param.tensorListDim1) {
-        if (tensorSize * param.dtypeSize < PURECOPYCOLTHRESHOLD) {
+        if (tensorSize * param.dtypeSize < threshold) {
             return false;
         }
     }

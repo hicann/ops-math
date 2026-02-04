@@ -137,6 +137,7 @@ struct ConcatTilingParam {
     int64_t catDim0{0};
     int64_t catDim1{0};
     int64_t isAllTensorAlign{0};
+    int64_t isDim1AllAlign{0};
     int64_t tilingKey{0};
     int64_t dtypeSize{0};
     int64_t orgDtypeSize{0};
