@@ -1847,12 +1847,12 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/im2col/README.md">im2col</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>图像到列，滑动局部窗口数据转为列向量，拼接为大张量。</td>
   </tr>
   <tr>
     <td>conversion</td>

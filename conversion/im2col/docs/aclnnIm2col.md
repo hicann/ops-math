@@ -1,59 +1,236 @@
 # aclnnIm2col
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/im2col)
+
 ## 产品支持情况
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
+| <term>Atlas 推理系列产品</term>                             |    ×     |
+| <term>Atlas 训练系列产品</term>                              |    ×     |
 
 ## 功能说明
 
-- 算子功能：图像到列，滑动局部窗口数据转为列向量，拼接为大张量。从批处理输入张量中提取滑动窗口。考虑一个形状为（N, C, H, W）或 (C, H, W) 的批处理input张量，其中N是批处理维度， C是通道维度， 而 H, W 表示图像大小，此操作将input的空间维度内的每个滑动kernel_size大小的块展平为（N, C $\times \prod$（kernel_szie）, L）的3-D 或 （C $\times \prod$（kernel_szie）, L）的2-D 的 output张量的列（即最后一维），而L是这些块的总数。
+- 算子功能：图像到列，滑动局部窗口数据转为列向量，拼接为大张量。从批处理输入张量中提取滑动窗口。考虑一个形状为（N, C, H, W）或 (C, H, W) 的批处理input张量，其中N是批处理维度， C是通道维度， 而 H, W 表示图像大小，此操作将input的空间维度内的每个滑动kernel_size大小的块展平为（N, C $\times \prod$（kernel_size）, L）的3-D 或 （C $\times \prod$（kernel_szie）, L）的2-D 的 output张量的列（即最后一维），而L是这些块的总数。
 - 计算公式：
-$L = \prod_{d} \lfloor \frac{spatial_size[d] + 2 \times padding[d] - dilation[d] \times （kernel_size[d] -1） -1}{stride[d]} + 1 \rfloor$, 其中spatial_size由上述input张量的H,W构成。
+$L = \prod_{d} \lfloor \frac{spatial\_size[d] + 2 \times padding[d] - dilation[d] \times （kernel\_size[d] -1） -1}{stride[d]} + 1 \rfloor$, 其中spatial_size由上述input张量的H,W构成。
 
 ## 函数原型
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnIm2colGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnIm2col”接口执行计算。
-
-- `aclnnStatus aclnnIm2colGetWorkspaceSize(const aclTensor *self, const aclIntArray *kernelSize, const aclIntArray *dilation, const aclIntArray *padding, const aclIntArray *stride, const aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnIm2col(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnIm2colGetWorkspaceSize(
+  const aclTensor   *self,
+  const aclIntArray *kernelSize,
+  const aclIntArray *dilation,
+  const aclIntArray *padding,
+  const aclIntArray *stride,
+  const aclTensor   *out,
+  uint64_t          *workspaceSize,
+  aclOpExecutor     **executor)
+```
+```Cpp
+aclnnStatus aclnnIm2col(
+  void          *workspace,
+  uint64_t       workspaceSize, 
+  aclOpExecutor *executor,
+  aclrtStream    stream)
+```
 
 ## aclnnIm2colGetWorkspaceSize
 
 - **参数说明**：
+  <table style="undefined;table-layout: fixed; width: 1494px"><colgroup>
+  <col style="width: 146px">
+  <col style="width: 110px">
+  <col style="width: 301px">
+  <col style="width: 219px">
+  <col style="width: 328px">
+  <col style="width: 101px">
+  <col style="width: 143px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self (aclTensor*)</td>
+      <td>输入</td>
+      <td>待进行im2col计算的入参，对应公式中的self。</td>
+      <td>支持空Tensor。</td>
+      <td>INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BFLOAT16、FLOAT16、FLOAT、DOUBLE、BOOL、COMPLEX32、COMPLEX64</td>
+      <td>ND</td>
+      <td>3-4</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>kernelSize (aclIntArray*)</td>
+      <td>输入</td>
+      <td>卷积核的大小，对应公式中的kernelSize。</td>
+      <td>kernelSize[0]表示'H'方向，kernelSize[1]表示'W'方向。</td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>2</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>dilation (aclIntArray*)</td>
+      <td>输入</td>
+      <td>膨胀参数，对应公式中的dilation。</td>
+      <td>dilation[0]表示'H'方向，dilation[1]表示'W'方向。</td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>2</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>padding (aclIntArray*)</td>
+      <td>输入</td>
+      <td>卷积的填充大小，对应公式中的padding。</td>
+      <td>padding[0]表示'H'方向，padding[1]表示'W'方向。</td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>2</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>stride (aclIntArray*)</td>
+      <td>输入</td>
+      <td>卷积的步长，对应公式中的stride。</td>
+      <td>stride[0]表示'H'方向，stride[1]表示'W'方向。</td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>2</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out (aclTensor*)</td>
+      <td>输出</td>
+      <td>待进行im2col计算的出参，对应公式中的out。</td>
+      <td>shape根据上述参数推导。</td>
+      <td>INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、BFLOAT16、FLOAT16、FLOAT、DOUBLE、BOOL、COMPLEX32、COMPLEX64</td>
+      <td>ND</td>
+      <td>2维（输入3维）或者3维（输入4维）</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
 
-  - self（aclTensor*, 计算输入）：Device侧的aclTensor，shape是3维或者4维，数据类型支持FLOAT、FLOAT16、BFLOAT16。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - kernelSize（aclIntArray*, 计算输入）：npu host侧的aclIntArray，卷积核的大小，size为2，数据类型为int64。
-  - dilation（aclIntArray*, 计算输入）：npu host侧的aclIntArray，膨胀参数，size为2，数据类型为int64。
-  - padding（aclIntArray*, 计算输入）：npu host侧的aclIntArray，卷积的填充大小，size为2，数据类型为int64, padding[0]表示'H'方向padding大小，padding[1]表示'W'方向padding大小。
-  - stride（aclIntArray*, 计算输入）：npu host侧的aclIntArray，卷积的步长，size为2，数据类型为int64。
-  - out（aclTensor*, 计算输出）：Device侧的aclTensor，shape是2维（输入3维）或者3维（输入4维），数据类型支持FLOAT、FLOAT16、BFLOAT16。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，shape根据上述参数推导[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - workspaceSize（uint64_t*, 出参）：返回需要在Device侧申请的workspace大小。
-  - executor（aclOpExecutor**, 出参）：返回op执行器，包含了算子计算流程。
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：仅支持FLOAT、FLOAT16、BFLOAT16。
 
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  161001 （ACLNN_ERR_PARAM_NULLPTR）: 1. 传入的self、kernelSize、dilation、padding、stride或out是空指针。
-  161002 （ACLNN_ERR_PARAM_INVALID）: 1. self的数据类型不在支持的范围之内。
-                                     2. self的维度不是3维且不是4维。
-                                     3. inputSize、kernelSize、dilation、padding或stride的size不为2。
-                                     4. kernelSize、dilation或stride存在值等于或小于0的元素。
-                                     5. padding存在小于0的元素。
-                                     6. out的数据维度与参数infershape的维度不相同。
-  ```
+
+  <table style="undefined;table-layout: fixed;width: 1155px"><colgroup>
+  <col style="width: 319px">
+  <col style="width: 144px">
+  <col style="width: 671px">
+  </colgroup>
+  <thead>
+  <tr>
+    <th>返回值</th>
+    <th>错误码</th>
+    <th>描述</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、kernelSize、dilation、padding、stride或out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
+      <td>self的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self的维度不是3维且不是4维。</td>
+    </tr>
+    <tr>
+      <td>kernelSize、dilation、padding或stride的size不为2。</td>
+    </tr>
+    <tr>
+      <td>kernelSize、dilation或stride存在值等于或小于0的元素。</td>
+    </tr>
+    <tr>
+      <td>padding存在小于0的元素。</td>
+    </tr>
+    <tr>
+      <td>out的数据维度与参数infershape的维度不相同</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnIm2col
 
 - **参数说明**：
-
-  - workspace（void*, 入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize（uint64_t, 入参）：在Device侧申请的workspace大小，由第一段接口aclnnIm2colGetWorkspaceSize获取。
-  - executor（aclOpExecutor*, 入参）：op执行器，包含了算子计算流程。
-  - stream（aclrtStream, 入参）：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
+  <col style="width: 173px">
+  <col style="width: 112px">
+  <col style="width: 668px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnIm2colGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值**：
 
