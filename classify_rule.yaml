@@ -34,6 +34,18 @@ ops_math:
     ut_check: true
     st_check: false
 
+math@ops-math:
+  src:
+    release:
+      huawei_style:
+        - ops/ops-math/math/
+      opensource_style: null
+      kernel_style: null
+    unrelease:
+      test_code: null
+      non_delivery: null
+      open_source: null
+
 HPTG2@ops-math:
   src:
     release:
@@ -129,9 +141,6 @@ VC1@ops-math:
         - ops/ops-math/math/is_inf/op_host/is_inf_tiling_arch35.h
         - ops/ops-math/math/is_inf/op_kernel/arch35/
         - ops/ops-math/math/is_inf/op_kernel/is_inf_apt.cpp
-        - ops/ops-math/math/is_inf/
-        - ops/ops-math/math/is_inf/
-        - ops/ops-math/math/is_inf/
         - ops/ops-math/math/is_nan/
         - ops/ops-math/math/is_neg_inf/
         - ops/ops-math/math/is_pos_inf/
