@@ -42,13 +42,17 @@ main() {
   echo "[INFO]exe_task: begin to build kernel with cmd: ${cmd_task}."
   start_time=$(date +%s)
   log_file="${output_path}/build_logs/${key}.log"
-  echo ${cmd_task} > "${log_file}"
+
+  start_timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+  echo "[$start_timestamp] Build started: ${cmd_task}" > "$log_file"
   timeout 7200 ${cmd_task} >> "${log_file}" 2>&1
   compile_rc=$?
   set -e  
 
   end_time=$(date +%s)
   exe_time=$((end_time - start_time))
+  end_timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+  echo "[$end_timestamp] exe_time: $exe_time s" >> "$log_file"
   if [ ${compile_rc} -ne 0 ]; then
     cat ${log_file}
     if [ ${compile_rc} -eq 124 ]; then
