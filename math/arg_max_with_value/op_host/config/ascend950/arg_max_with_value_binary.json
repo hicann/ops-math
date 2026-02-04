@@ -45,6 +45,16 @@
           "name": "dimension",
           "dtype": "int",
           "value": 0
+        },
+        {
+          "name": "keep_dims",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indice_dtype",
+          "dtype": "int",
+          "value": 3
         }
       ]
     },
@@ -92,6 +102,16 @@
           "name": "dimension",
           "dtype": "int",
           "value": 0
+        },
+        {
+          "name": "keep_dims",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indice_dtype",
+          "dtype": "int",
+          "value": 3
         }
       ]
     },
@@ -139,6 +159,16 @@
           "name": "dimension",
           "dtype": "int",
           "value": 0
+        },
+        {
+          "name": "keep_dims",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indice_dtype",
+          "dtype": "int",
+          "value": 3
         }
       ]
     },
@@ -186,6 +216,16 @@
           "name": "dimension",
           "dtype": "int",
           "value": 0
+        },
+        {
+          "name": "keep_dims",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indice_dtype",
+          "dtype": "int",
+          "value": 3
         }
       ]
     },
@@ -233,6 +273,16 @@
           "name": "dimension",
           "dtype": "int",
           "value": 0
+        },
+        {
+          "name": "keep_dims",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indice_dtype",
+          "dtype": "int",
+          "value": 3
         }
       ]
     },
@@ -280,6 +330,16 @@
           "name": "dimension",
           "dtype": "int",
           "value": 0
+        },
+        {
+          "name": "keep_dims",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indice_dtype",
+          "dtype": "int",
+          "value": 3
         }
       ]
     },
@@ -327,6 +387,16 @@
           "name": "dimension",
           "dtype": "int",
           "value": 0
+        },
+        {
+          "name": "keep_dims",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indice_dtype",
+          "dtype": "int",
+          "value": 3
         }
       ]
     },
@@ -374,6 +444,16 @@
           "name": "dimension",
           "dtype": "int",
           "value": 0
+        },
+        {
+          "name": "keep_dims",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indice_dtype",
+          "dtype": "int",
+          "value": 3
         }
       ]
     },
@@ -421,6 +501,16 @@
           "name": "dimension",
           "dtype": "int",
           "value": 0
+        },
+        {
+          "name": "keep_dims",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indice_dtype",
+          "dtype": "int",
+          "value": 3
         }
       ]
     },
@@ -468,6 +558,16 @@
           "name": "dimension",
           "dtype": "int",
           "value": 0
+        },
+        {
+          "name": "keep_dims",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indice_dtype",
+          "dtype": "int",
+          "value": 3
         }
       ]
     }

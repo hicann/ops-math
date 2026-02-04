@@ -43,6 +43,8 @@ public:
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
                                  ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
         this->Attr("dimension").AttrType(REQUIRED).Int();
+        this->Attr("keep_dims").AttrType(OPTIONAL).Bool(false);
+        this->Attr("indice_dtype").AttrType(OPTIONAL).Int(3);
         
         OpAICoreConfig aicore_config;                
         aicore_config.DynamicCompileStaticFlag(true)

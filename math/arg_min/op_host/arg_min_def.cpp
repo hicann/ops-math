@@ -53,6 +53,7 @@ public:
        .DataType(argMinYDataType)
        .Format(argMinormat)
        .UnknownShapeFormat(argMinormat);
+    this->Attr("dtype").AttrType(OPTIONAL).Int(3);
 
    OpAICoreConfig aicore_config;
    aicore_config.DynamicCompileStaticFlag(true)

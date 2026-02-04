@@ -32,7 +32,8 @@ namespace ge {
 *@li dimension: An integer of type int32, specifying the axis information of
 * the index with the maximum value. Required and no default value.
 *@li keep_dims: A bool, specifying whether to keep dimensions for the output
-* tensor. Optional and defaults to "false". \n
+* tensor. Optional and defaults to "false". 
+*@li indice_dtype: A Type, The output type, either "int32" or "int64". Defaults to "int32". \n
 
 *@par Outputs:
 * @li indice: A multi-dimensional tensor of type int32 or int64, specifying the index.
@@ -58,6 +59,7 @@ REG_OP(ArgMaxWithValue)
     .OUTPUT(values, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT64, DT_INT32}))
     .REQUIRED_ATTR(dimension, Int)
     .ATTR(keep_dims, Bool, false)
+    .ATTR(indice_dtype, Type, DT_INT32)
     .OP_END_FACTORY_REG(ArgMaxWithValue)
 
 } // namespace ge

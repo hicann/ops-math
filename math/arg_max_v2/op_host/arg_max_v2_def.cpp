@@ -53,6 +53,7 @@ public:
        .DataType(argMaxYDataType)
        .Format(argMaxFormat)
        .UnknownShapeFormat(argMaxFormat);
+    this->Attr("dtype").AttrType(OPTIONAL).Int(3);
 
    OpAICoreConfig aicore_config;
    aicore_config.DynamicCompileStaticFlag(true)
