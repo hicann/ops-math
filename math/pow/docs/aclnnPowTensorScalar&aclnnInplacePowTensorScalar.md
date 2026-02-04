@@ -98,7 +98,7 @@ aclnnStatus aclnnInplacePowTensorScalar(
       <td>self</td>
       <td>输入</td>
       <td>公式中的输入self，Device侧的aclTensor。</td>
-      <td>需要满足在step大于0时输入的start小于end，或者step小于0时输入的start大于end。</td>
+      <td>数据类型需要是与exponent的数据类型推导之后可转换的数据类型。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、BOOL、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
