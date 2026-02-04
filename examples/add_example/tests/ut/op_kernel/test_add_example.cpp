@@ -55,7 +55,7 @@ TEST_F(AddExampleTest, test_case_0)
     size_t yByteSize = 32 * 4 * 4 * 4 * sizeof(float);
     size_t zByteSize = 32 * 4 * 4 * 4 * sizeof(float);
     size_t tiling_data_size = sizeof(AddExampleTilingData);
-    uint32_t numBlocks = 8;
+    uint32_t numBlocks = 64;
 
     system("cd ./add_example_data/ && python3 gen_data.py '(32, 4, 4, 4)' 'float32'");
     std::string fileName = "./add_example_data/float32_input_add_example.bin";
@@ -64,15 +64,16 @@ TEST_F(AddExampleTest, test_case_0)
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(yByteSize);
     ReadFile(fileName, xByteSize, y, xByteSize);
     uint8_t* z = (uint8_t*)AscendC::GmAlloc(zByteSize);
-    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(1024 * 1024 * 16);
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(32);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tiling_data_size);
 
     char* path_ = get_current_dir_name();
     string path(path_);
 
     AddExampleTilingData* tilingDatafromBin = reinterpret_cast<AddExampleTilingData*>(tiling);
-    tilingDatafromBin->totalLength = 32 * 4 * 4 * 4;
-    tilingDatafromBin->tileNum = 8;
+    tilingDatafromBin->totalNum = 32 * 4 * 4 * 4;
+    tilingDatafromBin->blockFactor = 32;
+    tilingDatafromBin->ubFactor = 32;
 
     ICPU_SET_TILING_KEY(0);
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
