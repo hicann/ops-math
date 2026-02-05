@@ -115,7 +115,7 @@ aclnnStatus aclnnReplicationPad3d(
       <td>输出</td>
       <td>填充后的输出结果。</td>
       <td><ul><li>dtype需要与self保持一致。</li><li>输出shape中，除被填充的最后三维外，其他维度需要一致。被填充的后三维中，out倒数第三维度的数值等于self倒数第三维度的数值加padding后两个值，out倒数第二维度的数值等于self倒数第二维度的数值加padding中间两个值，out最后一维度的数值等于self最后一维度的数值加padding前两个值。</li></ul></td>
-      <td>FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、COMPLEX64、COMPLEX128</td>
+      <td>与self一致</td>
       <td>ND</td>
       <td>4-5</td>
       <td>√</td>

@@ -105,7 +105,7 @@ aclnnStatus aclnnReplicationPad2d(
       <td>输出</td>
       <td>填充后的输出结果。</td>
       <td>输出shape中，除被填充的最后一维外，需要与self一致，out最后一维度的数值等于self最后一维度的数值加padding前两个值。</td>
-      <td>FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、COMPLEX64、COMPLEX128</td>
+      <td>与self一致</td>
       <td>ND</td>
       <td>3-4</td>
       <td>√</td>
