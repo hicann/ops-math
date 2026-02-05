@@ -40,6 +40,8 @@ private:
     __aicore__ inline void CopyOut(int64_t peerloopElementsOut, int64_t loopIdx);
     __aicore__ inline void SetInputInfo(const Im2ColInputInfo& input);
     __aicore__ inline void GatherWithPadding(LocalTensor<T>& input, LocalTensor<T>& output, int32_t ubFactorNC);
+    __aicore__ inline void GatherNoPaddingVFCrossNc(LocalTensor<T>& input, LocalTensor<T>& output, int32_t ubFactorNC);
+    __aicore__ inline void GatherNoPaddingVFWithinNc(LocalTensor<T>& input, LocalTensor<T>& output, int32_t ubFactorNC);
     __aicore__ inline void GatherNoPadding(LocalTensor<T>& input, LocalTensor<T>& output, int32_t ubFactorNC);
 
 private:
@@ -163,7 +165,12 @@ __aicore__ inline void Im2ColGatherCutNc<T, isPadding>::CopyIn(int32_t ubFactorN
     DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
     DataCopyExtParams copyInParams{
         static_cast<uint16_t>(ubFactorNC), static_cast<uint32_t>(inputHwSize_ * sizeof(T)), 0, 0, 0};
-    DataCopyPad(input, inputGM_[inputOffset_ + loopIdx * inUbFactor_], copyInParams, padParams);
+    if (vlSize_ / outputHwSize_ > 1) {
+        DataCopyPad<T, PaddingMode::Compact>(input, inputGM_[inputOffset_ + loopIdx * inUbFactor_], copyInParams,
+                                             padParams);
+    } else {
+        DataCopyPad(input, inputGM_[inputOffset_ + loopIdx * inUbFactor_], copyInParams, padParams);
+    }
     inputQueue_.EnQue(input);
 }
 
@@ -313,7 +320,133 @@ __aicore__ inline void Im2ColGatherCutNc<T, isPadding>::GatherWithPadding(
 }
 
 template <typename T, bool isPadding>
-__aicore__ inline void Im2ColGatherCutNc<T, isPadding>::GatherNoPadding(
+__aicore__ inline void Im2ColGatherCutNc<T, isPadding>::GatherNoPaddingVFCrossNc(
+    LocalTensor<T>& input, LocalTensor<T>& output, int32_t ubFactorNC)
+{
+    uint32_t vfFactorNC = vlSize_ / outputHwSize_;
+    uint16_t loopNum = static_cast<uint16_t>(ubFactorNC / vfFactorNC);
+    uint32_t loopSize = vfFactorNC * outputHwSize_;
+    uint32_t maskSize = loopSize;
+    uint32_t gatherMaskSize = loopSize;
+    uint32_t tailSize = static_cast<uint32_t>((ubFactorNC - vfFactorNC * loopNum) * outputHwSize_);
+    uint16_t loopTailNum = tailSize != 0 ? 1 : 0;
+    uint32_t tailGatherMaskSize = tailSize;
+    uint32_t outputHwSize = outputHwSize_;
+    uint32_t wStride = wStride_;
+    uint32_t wDilation = wDilation_;
+    uint32_t hStride = hStride_;
+    uint32_t hDilation = hDilation_;
+    uint32_t convW = convW_;
+    uint32_t convH = convH_;
+    uint32_t wKernelSize = wKernelSize_;
+    uint32_t W = W_;
+    uint32_t inputHW = H_ * W_;
+    uint32_t inputInc = inputHW * vfFactorNC;
+
+    __ubuf__ T* inputAddr = (__ubuf__ T*)input.GetPhyAddr();
+    __ubuf__ T* outputAddr = (__ubuf__ T*)output.GetPhyAddr();
+    __ubuf__ T* outputAddrTmp = outputAddr;
+    __VEC_SCOPE__
+    {
+        MicroAPI::RegTensor<RangeType_> tmpIdxReg;
+        MicroAPI::RegTensor<IdxType_> idxReg;
+        MicroAPI::RegTensor<IdxType_> convWReg;
+        MicroAPI::RegTensor<IdxType_> convHReg;
+        MicroAPI::RegTensor<IdxType_> kWReg;
+        MicroAPI::RegTensor<IdxType_> outputHwReg;
+        MicroAPI::RegTensor<IdxType_> iConvWReg;
+        MicroAPI::RegTensor<IdxType_> iConvHReg;
+        MicroAPI::RegTensor<IdxType_> iKWReg; // iWReg复用
+        MicroAPI::RegTensor<IdxType_> iKHReg; // iHReg复用
+        MicroAPI::RegTensor<IdxType_> divReg;
+        MicroAPI::RegTensor<IdxType_> mulReg;
+        MicroAPI::RegTensor<IdxType_> mulReg1;
+        MicroAPI::RegTensor<IdxType_> coeffReg;
+        MicroAPI::RegTensor<T> dstReg;
+        MicroAPI::RegTensor<T> dstRegT;
+        MicroAPI::UnalignReg uReg;
+        MicroAPI::MaskReg mask = MicroAPI::UpdateMask<IdxType_>(maskSize);
+        MicroAPI::MaskReg gatherMask = MicroAPI::UpdateMask<CastType_>(gatherMaskSize);
+        MicroAPI::MaskReg tailGatherMask = MicroAPI::UpdateMask<CastType_>(tailGatherMaskSize);
+
+        MicroAPI::Duplicate(convWReg, IdxType_(convW));
+        MicroAPI::Duplicate(convHReg, IdxType_(convH));
+        MicroAPI::Duplicate(kWReg, IdxType_(wKernelSize));
+        MicroAPI::Duplicate(outputHwReg, IdxType_(outputHwSize));
+
+        MicroAPI::Arange(tmpIdxReg, 0);
+        idxReg = (MicroAPI::RegTensor<IdxType_>&)tmpIdxReg;
+
+        // idx % outputHwSize
+        MicroAPI::Div(coeffReg, idxReg, outputHwReg, mask); // idx / outputHwSize
+        MicroAPI::Mul(mulReg, coeffReg, outputHwReg, mask);
+        MicroAPI::Sub(idxReg, idxReg, mulReg, mask);
+
+        // iConvW = idx % convW
+        MicroAPI::Div(iConvHReg, idxReg, convWReg, mask); // idx / convW
+        MicroAPI::Mul(mulReg, iConvHReg, convWReg, mask);
+        MicroAPI::Sub(iConvWReg, idxReg, mulReg, mask);
+
+        // iConvH = (idx / convW) % convH
+        MicroAPI::Div(divReg, iConvHReg, convHReg, mask);
+        MicroAPI::Mul(mulReg, divReg, convHReg, mask);
+        MicroAPI::Sub(iConvHReg, iConvHReg, mulReg, mask);
+
+        // iKW = idx / (convW*convH) % kW
+        MicroAPI::Mul(mulReg, convWReg, convHReg, mask);
+        MicroAPI::Div(divReg, idxReg, mulReg, mask);
+        MicroAPI::Div(iKHReg, divReg, kWReg, mask); // iKH = idx / (convW*convH) / kW
+        MicroAPI::Mul(mulReg, iKHReg, kWReg, mask);
+        MicroAPI::Sub(iKWReg, divReg, mulReg, mask);
+
+        // iW = iConvW * Sw + iKW * Dw
+        MicroAPI::Muls(mulReg, iConvWReg, IdxType_(wStride), mask);
+        MicroAPI::Muls(mulReg1, iKWReg, IdxType_(wDilation), mask);
+        MicroAPI::Add(iKWReg, mulReg, mulReg1, mask);
+
+        // iH = iConvH * Sh + iKH * Dh
+        MicroAPI::Muls(mulReg, iConvHReg, IdxType_(hStride), mask);
+        MicroAPI::Muls(mulReg1, iKHReg, IdxType_(hDilation), mask);
+        MicroAPI::Add(iKHReg, mulReg, mulReg1, mask);
+
+        // inputIdx = iH * W + iW
+        MicroAPI::Muls(mulReg, iKHReg, IdxType_(W), mask);
+        MicroAPI::Add(idxReg, mulReg, iKWReg, mask);
+
+        // inputIdx + 000...0111..1222..2333..3...n * inputHW
+        MicroAPI::Muls(coeffReg, coeffReg, IdxType_(inputHW), mask);
+        MicroAPI::Add(idxReg, idxReg, coeffReg, mask);
+
+        for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
+            // vfFactorNC * outputHwSize_的索引拼接+gather
+            MicroAPI::Gather((MicroAPI::RegTensor<CastType_>&)dstReg, inputAddr, idxReg, gatherMask);
+            outputAddrTmp = outputAddr + loopIdx * loopSize;
+            if constexpr (sizeof(T) == 1) {
+                MicroAPI::Pack(dstRegT, (MicroAPI::RegTensor<CastType_> &)dstReg);
+                MicroAPI::StoreUnAlign(outputAddrTmp, dstRegT, uReg, loopSize);
+            } else {
+                MicroAPI::StoreUnAlign(outputAddrTmp, dstReg, uReg, loopSize);
+            }
+            MicroAPI::Adds(idxReg, idxReg, IdxType_(inputInc), mask);
+        }
+        MicroAPI::StoreUnAlignPost(outputAddrTmp, uReg, 0);
+        // tail处理
+        for (uint16_t loopIdx = 0; loopIdx < loopTailNum; loopIdx++) {
+            MicroAPI::Gather((MicroAPI::RegTensor<CastType_>&)dstReg, inputAddr, idxReg, tailGatherMask);
+            outputAddrTmp = outputAddr + loopNum * loopSize;
+            if constexpr (sizeof(T) == 1) {
+                MicroAPI::Pack(dstRegT, (MicroAPI::RegTensor<CastType_> &)dstReg);
+                MicroAPI::StoreUnAlign(outputAddrTmp, dstRegT, uReg, tailSize);
+            } else {
+                MicroAPI::StoreUnAlign(outputAddrTmp, dstReg, uReg, tailSize);
+            }
+        }
+        MicroAPI::StoreUnAlignPost(outputAddrTmp, uReg, 0);
+    }
+}
+
+template <typename T, bool isPadding>
+__aicore__ inline void Im2ColGatherCutNc<T, isPadding>::GatherNoPaddingVFWithinNc(
     LocalTensor<T>& input, LocalTensor<T>& output, int32_t ubFactorNC)
 {
     uint16_t loopNum = static_cast<uint16_t>(outputHwSize_ / vlSize_);
@@ -321,7 +454,6 @@ __aicore__ inline void Im2ColGatherCutNc<T, isPadding>::GatherNoPadding(
     uint16_t loopTailNum = tailSize != 0 ? 1 : 0;
     uint32_t tailMaskSize = tailSize;
     uint32_t tailGatherMaskSize = tailSize;
-    uint32_t maskSize = static_cast<uint32_t>(outputHwSize_);
     uint32_t postUpdateStride = static_cast<uint32_t>(outputHwSize_);
     uint32_t inputHwAlignSize = inputHwAlignSize_;
     uint32_t outputHwSize = outputHwSize_;
@@ -361,7 +493,6 @@ __aicore__ inline void Im2ColGatherCutNc<T, isPadding>::GatherNoPadding(
         MicroAPI::RegTensor<IdxType_> divReg;
         MicroAPI::RegTensor<IdxType_> mulReg;
         MicroAPI::RegTensor<IdxType_> mulReg1;
-        MicroAPI::RegTensor<IdxType_> subReg;
         MicroAPI::RegTensor<T> dstReg;
         MicroAPI::RegTensor<T> dstRegT;
         MicroAPI::UnalignReg uReg;
@@ -387,7 +518,7 @@ __aicore__ inline void Im2ColGatherCutNc<T, isPadding>::GatherNoPadding(
         MicroAPI::Mul(mulReg, divReg, convHReg, mask);
         MicroAPI::Sub(iConvHBaseReg, iConvHBaseReg, mulReg, mask);
 
-        // // iKW = idx / (convW*convH) % kW
+        // iKW = idx / (convW*convH) % kW
         MicroAPI::Mul(mulReg, convWReg, convHReg, mask);
         MicroAPI::Div(divReg, idxReg, mulReg, mask);
         MicroAPI::Div(iKHBaseReg, divReg, kWReg, mask); // iKH = idx / (convW*convH) / kW
@@ -492,6 +623,19 @@ __aicore__ inline void Im2ColGatherCutNc<T, isPadding>::GatherNoPadding(
             }
             MicroAPI::StoreUnAlignPost(outputAddrTmp, uReg, 0);
         }
+    }
+}
+
+template <typename T, bool isPadding>
+__aicore__ inline void Im2ColGatherCutNc<T, isPadding>::GatherNoPadding(
+    LocalTensor<T>& input, LocalTensor<T>& output, int32_t ubFactorNC)
+{
+    if (vlSize_ / outputHwSize_ > 1) {
+        // VF跨NC
+        GatherNoPaddingVFCrossNc(input, output, ubFactorNC);
+    } else {
+        // VF不跨NC
+        GatherNoPaddingVFWithinNc(input, output, ubFactorNC);
     }
 }
 
