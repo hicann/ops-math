@@ -93,6 +93,10 @@ static bool getBroadcastShape(const aclTensor* x1, const aclTensor* x2, op::Shap
     auto lastDim = x1Shape.GetDimNum() - 1;
     x1Shape.AppendDim(x1Shape[lastDim]);
     x1Shape.SetDim(lastDim, 1);
+    if (lastDim >= x2Shape.GetDimNum()) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The dimensions of input x1 and x2 must be equal.");
+        return false;
+    }
     x2Shape.AppendDim(x2Shape[lastDim]);
     x2Shape.SetDim(lastDim, x2Shape[lastDim - 1]);
     x2Shape.SetDim(lastDim - 1, 1);
