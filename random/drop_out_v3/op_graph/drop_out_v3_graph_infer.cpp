@@ -9,7 +9,7 @@
  */
 
 /*!
- * \file drop_out_v3_infershape.cpp
+ * \file drop_out_v3_graph_infer.cpp
  * \brief
  */
 #include <cmath>
@@ -24,7 +24,7 @@ static ge::graphStatus InferDataTypeDropOutV3(gert::InferDataTypeContext* contex
 {
     int32_t mode = ops::GraphCommon::MODE_INPUT_EQUAL_OUTPUT;
     int32_t dtypeIndex = 0;
-    const std::vector<ops::GraphCommon::OutputSpec>& extraOutputMap = {{"mask", DropOutV3_MASK_IDX, ge::DT_INT8}};
+    const std::vector<ops::GraphCommon::OutputSpec>& extraOutputMap = {{"mask", DropOutV3_MASK_IDX, ge::DT_UINT8}};
     return ops::GraphCommon::CommonInferType(context, mode, dtypeIndex, extraOutputMap);
 }
 

@@ -25,7 +25,7 @@ static ge::graphStatus InferDataTypeRandomStandardNormalV2(gert::InferDataTypeCo
 {
     int32_t mode = ops::GraphCommon::MODE_ATTR;
     int32_t dtypeIndex = RANDOM_STANDARD_NORMAL_V2_OUT_ATTR_IDX;
-    const std::vector<ops::GraphCommon::OutputSpec>& extraOutputMap = {{"offset", RANDOM_STANDARD_NORMAL_V2_OFFSET, ge::DT_INT16}};
+    const std::vector<ops::GraphCommon::OutputSpec>& extraOutputMap = {{"offset", RANDOM_STANDARD_NORMAL_V2_OFFSET, ge::DT_INT64}};
     const std::set<ge::DataType>& supportDtype = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
     bool isCheck = true;
     return ops::GraphCommon::CommonInferType(context, mode, dtypeIndex, extraOutputMap, supportDtype, isCheck);

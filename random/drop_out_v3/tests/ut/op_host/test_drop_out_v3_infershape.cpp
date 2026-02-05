@@ -51,3 +51,24 @@ TEST_F(DropOutV3InferShapeTest, drop_out_v3_test_case_1)
     std::vector<std::vector<int64_t>> expectOutputShape = {{1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
+
+TEST_F(DropOutV3InferShapeTest, drop_out_v3_test_case_2)
+{
+    gert::StorageShape noiseShape = {{1}, {1}};
+    gert::StorageShape pShape = {{1}, {1}};
+    gert::StorageShape seedShape = {{1}, {1}};
+    gert::StorageShape offsetShape = {{2}, {2}};
+    gert::StorageShape yShape = {{}, {}};
+    gert::StorageShape maskShape = {{}, {}};
+    gert::InfershapeContextPara infershapeContextPara(
+        "DropOutV3",
+        {{{{-1}, {-1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+         {{{-2}, {-2}}, ge::DT_INT64, ge::FORMAT_ND},
+         {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+         {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},
+         {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND}},
+        {{{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND}, {{{}, {}}, ge::DT_INT8, ge::FORMAT_ND}});
+
+    std::vector<std::vector<int64_t>> expectOutputShape = {{-1}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}

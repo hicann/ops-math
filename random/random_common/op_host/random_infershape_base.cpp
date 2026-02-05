@@ -19,6 +19,7 @@ namespace randomCommon {
 template <typename T>
 ge::graphStatus HandleShapeTensor(gert::Shape& outShape, size_t xShapeSize, const T* xShapeData)
 {
+    std::cerr << "[DEBUG] HandleShapeTensor with type: " << typeid(T).name() << ", dims " << xShapeSize << std::endl;
     outShape.SetDimNum(xShapeSize);
     for (size_t i = 0U; i < xShapeSize; i++) {
         outShape.SetDim(i, xShapeData[i]);
@@ -26,14 +27,33 @@ ge::graphStatus HandleShapeTensor(gert::Shape& outShape, size_t xShapeSize, cons
     return ge::GRAPH_SUCCESS;
 }
 
-bool InferShapeForUnknow(const gert::Shape& inShape, gert::Shape& outShape)
+bool InferShapeForUnknow(
+    gert::InferShapeContext* context, const gert::Shape& inShape, gert::Shape& outShape, int64_t& maskIndex,
+    int64_t& offsetIndex)
 {
     if (Ops::Base::IsUnknownRank(inShape)) {
         Ops::Base::SetUnknownRank(outShape);
+        if (maskIndex >= 0) {
+            gert::Shape* maskOutputShape = context->GetOutputShape(maskIndex);
+            Ops::Base::SetUnknownRank(*maskOutputShape);
+        }
+        if (offsetIndex >= 0) {
+            gert::Shape* offsetOutputShape = context->GetOutputShape(offsetIndex);
+            Ops::Base::SetUnknownRank(*offsetOutputShape);
+        }
         return true;
     }
     if (Ops::Base::IsUnknownShape(inShape)) {
         Ops::Base::SetUnknownShape(inShape.GetDimNum(), outShape);
+        if (maskIndex >= 0) {
+            gert::Shape* maskOutputShape = context->GetOutputShape(maskIndex);
+            Ops::Base::SetUnknownShape(1, *maskOutputShape);
+        }
+        if (offsetIndex >= 0) {
+            gert::Shape* offsetOutputShape = context->GetOutputShape(offsetIndex);
+            Ops::Base::SetUnknownShape(1, *offsetOutputShape);
+            ;
+        }
         return true;
     }
     return false;
@@ -45,6 +65,7 @@ bool DependencyMode(const gert::Tensor* inTensor, gert::Shape& outShape, size_t 
     if (shapeDtype == ge::DT_INT32) {
         auto xShapeData = inTensor->GetData<int32_t>();
         if (xShapeData == nullptr) {
+            std::cerr << "[WARN] Empty DT_INT32 shape tensor, set 0-dim output" << std::endl;
             outShape.SetDimNum(0);
             return true;
         }
@@ -54,6 +75,7 @@ bool DependencyMode(const gert::Tensor* inTensor, gert::Shape& outShape, size_t 
     } else if (shapeDtype == ge::DT_INT64) {
         auto xShapeData = inTensor->GetData<int64_t>();
         if (xShapeData == nullptr) {
+            std::cerr << "[WARN] Empty DT_INT64 shape tensor, set 0-dim output" << std::endl;
             outShape.SetDimNum(0);
             return true;
         }
@@ -61,6 +83,7 @@ bool DependencyMode(const gert::Tensor* inTensor, gert::Shape& outShape, size_t 
             return true;
         }
     }
+    std::cerr << "[ERROR] Unsupported dtype: " << static_cast<int>(shapeDtype) << std::endl;
     return false;
 }
 
@@ -68,6 +91,7 @@ bool InputAndOutputCheck(
     gert::InferShapeContext* context, const std::unordered_map<std::string, size_t>& inputMap,
     const std::unordered_map<std::string, size_t>& outputMap, int64_t& maskIndex, int64_t& offsetIndex)
 {
+    OP_LOGD(context->GetNodeName(), "InputAndOutputCheck start");
     for (const auto& item : inputMap) {
         size_t inputIndex = item.second;
         auto input = context->GetInputTensor(inputIndex);
@@ -86,6 +110,8 @@ bool InputAndOutputCheck(
             offsetIndex = outputIndex;
         }
     }
+    OP_LOGD(
+        context->GetNodeName(), "InputAndOutputCheck end, maskIndex = %ld, offsetIndex = %ld", maskIndex, offsetIndex);
     return true;
 }
 
@@ -106,31 +132,26 @@ ge::graphStatus CommonInferShape(
     auto* outShape = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, outShape);
     int64_t xShapeSize = inShape->GetShapeSize();
-    if (xShapeSize < 0) {
-        return ge::GRAPH_FAILED;
+    if (InferShapeForUnknow(context, *inShape, *outShape, maskIndex, offsetIndex)) {
+        OP_LOGI(context->GetNodeName(), "Success unknown shape");
+        return ge::GRAPH_SUCCESS;
     }
     if (maskIndex >= 0) {
         static constexpr int64_t MASK_ALIGN_SIZE = 128;
         static constexpr int64_t MASK_BIT_TO_UINT8 = 8;
         gert::Shape* maskOutputShape = context->GetOutputShape(maskIndex);
-        if (!InferShapeForUnknow(*inShape, *maskOutputShape)) {
-            int64_t maskSize = (xShapeSize + MASK_ALIGN_SIZE - 1) / MASK_ALIGN_SIZE * MASK_ALIGN_SIZE / MASK_BIT_TO_UINT8;
-            maskOutputShape->SetDimNum(1);
-            maskOutputShape->SetDim(0, maskSize);
-        }
+        int64_t maskSize = (xShapeSize + MASK_ALIGN_SIZE - 1) / MASK_ALIGN_SIZE * MASK_ALIGN_SIZE / MASK_BIT_TO_UINT8;
+        maskOutputShape->SetDimNum(1);
+        maskOutputShape->SetDim(0, maskSize);
     }
     if (offsetIndex >= 0) {
         gert::Shape* offsetOutputShape = context->GetOutputShape(offsetIndex);
-        if (!InferShapeForUnknow(*inShape, *offsetOutputShape)) {
-            offsetOutputShape->SetDimNum(1);
-            offsetOutputShape->SetDim(0, 1);
-        }
-    }
-    if (InferShapeForUnknow(*inShape, *outShape)) {
-        return ge::GRAPH_SUCCESS;
+        offsetOutputShape->SetDimNum(1);
+        offsetOutputShape->SetDim(0, 1);
     }
     if (mode == MODE_NO_DEPENDENCY) {
         *outShape = *inShape;
+        OP_LOGI(context->GetNodeName(), "Success no dependency Mode");
         return ge::GRAPH_SUCCESS;
     }
     if (mode == MODE_DEPENDENCY) {
@@ -140,6 +161,7 @@ ge::graphStatus CommonInferShape(
             return ge::GRAPH_SUCCESS;
         }
     }
+    OP_LOGE(context->GetNodeName(), "Failed to infer shape! mode = %d, xShapeSize=%ld", mode, xShapeSize);
     return ge::GRAPH_FAILED;
 }
 } // namespace randomCommon

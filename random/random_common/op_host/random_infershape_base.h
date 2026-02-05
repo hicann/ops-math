@@ -40,7 +40,9 @@ ge::graphStatus CommonInferShape(
 template <typename T>
 ge::graphStatus HandleShapeTensor(gert::Shape& outputShape, size_t shapeSize, const T* shapeData);
 
-bool InferShapeForUnknow(const gert::Shape& inShape, gert::Shape& outShape);
+bool InferShapeForUnknow(
+    gert::InferShapeContext* context, const gert::Shape& inShape, gert::Shape& outShape, int64_t& maskIndex,
+    int64_t& offsetIndex);
 
 bool DependencyMode(const gert::Tensor* inTensor, gert::Shape& outShape, size_t xShapeSize);
 

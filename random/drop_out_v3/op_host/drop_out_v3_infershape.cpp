@@ -26,7 +26,6 @@ static constexpr size_t DropOutV3_OFFSET = 4;
 static constexpr size_t DropOutV3_Y = 0;
 static constexpr size_t DropOutV3_MASK = 1;
 static constexpr size_t DropOutV3_NOISE = 1;
-static constexpr size_t DropOutV3_IN_NOISE_IDX = 1;
 static constexpr size_t MAX_DIM_NUM = 8;
 
 static graphStatus InferShapeDropOutV3(gert::InferShapeContext* context)
@@ -35,7 +34,7 @@ static graphStatus InferShapeDropOutV3(gert::InferShapeContext* context)
         {"x", DropOutV3_X}, {"p", DropOutV3_P}, {"seed", DropOutV3_SEED}, {"offset", DropOutV3_OFFSET}};
     const std::unordered_map<std::string, size_t>& outputMap = {{"y", DropOutV3_Y}, {"mask", DropOutV3_MASK}};
     int32_t mode = ops::randomCommon::MODE_NO_DEPENDENCY;
-    const gert::Shape* noiseInputShape = context->GetOptionalInputShape(DropOutV3_IN_NOISE_IDX);
+    const gert::Shape* noiseInputShape = context->GetOptionalInputShape(DropOutV3_NOISE);
     if (noiseInputShape != nullptr) {
         if (noiseInputShape->GetDimNum() > MAX_DIM_NUM) {
             return ge::GRAPH_FAILED;
