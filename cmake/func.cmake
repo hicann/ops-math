@@ -524,7 +524,6 @@ macro(add_all_modules_sources)
   if(OP_GRAPH_PROTO_HEADERS)
     target_sources(${GRAPH_PLUGIN_NAME}_proto_headers INTERFACE ${OP_GRAPH_PROTO_HEADERS})
   endif()
-  add_all_ut_sources(UT_TILING_DIR "${TILING_SOC_DIR}" OP_NAME ${OP_NAME})
 
   #添加plugin文件
   file(GLOB ONNX_PLUGIN_SRCS ${SOURCE_DIR}/framework/*_onnx_plugin.cpp)
@@ -532,6 +531,9 @@ macro(add_all_modules_sources)
     add_onnx_plugin_modules()
     target_sources(${ONNX_PLUGIN_NAME}_obj PRIVATE ${ONNX_PLUGIN_SRCS})
   endif()
+
+  # 添加所有的UT
+  add_all_ut_sources(UT_TILING_DIR "${TILING_SOC_DIR}" OP_NAME ${OP_NAME})
 endmacro()
 
 # usage: add_all_ut_sources()

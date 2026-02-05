@@ -90,18 +90,19 @@ operator_group_2:
   - range
   - real_div
   - reciprocal
-  - reduce_all
-  - reduce_any
-  - reduce_log_sum_exp
 operator_group_3:
   - reduce_max
   - reduce_mean
   - reduce_min
   - reduce_prod
   - reduce_std_v2
-operator_group_4:
   - reduce_sum
   - reduce_var
+  - square_sum_v1
+  - reduce_all
+  - reduce_any
+  - reduce_log_sum_exp
+operator_group_4:
   - rfft1_d
   - round
   - rsqrt
@@ -117,7 +118,6 @@ operator_group_4:
   - sqrt_grad
   - square
   - squared_difference
-  - square_sum_v1
   - sub
   - tanh
   - tanh_grad

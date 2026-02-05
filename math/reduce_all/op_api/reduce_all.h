@@ -14,7 +14,7 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *ReduceAll(const aclTensor *self, const aclIntArray *dim, bool keepdim, aclOpExecutor *executor);
-}  // namespace l0op
+const aclTensor* ReduceAll(const aclTensor* self, const aclIntArray* dim, bool keepdim, aclOpExecutor* executor);
+} // namespace l0op
 
-#endif  // OP_API_INC_LEVEL0_REDUCE_All_H_
+#endif // OP_API_INC_LEVEL0_REDUCE_All_H_

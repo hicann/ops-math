@@ -32,9 +32,9 @@ extern "C" {
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnMaxV2GetWorkspaceSize(const aclTensor* self, const aclIntArray* dims, bool keepDims,
-                                                 bool noopWithEmptyDims, aclTensor* out, uint64_t* workspaceSize,
-                                                 aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnMaxV2GetWorkspaceSize(
+    const aclTensor* self, const aclIntArray* dims, bool keepDims, bool noopWithEmptyDims, aclTensor* out,
+    uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief aclnnMaxV2的第二段接口，用于执行计算。
@@ -53,4 +53,4 @@ ACLNN_API aclnnStatus aclnnMaxV2(void* workspace, uint64_t workspaceSize, aclOpE
 }
 #endif
 
-#endif  // OP_API_INC_MAX_V2_H_
+#endif // OP_API_INC_MAX_V2_H_

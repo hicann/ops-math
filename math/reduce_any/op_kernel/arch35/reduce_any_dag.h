@@ -24,7 +24,6 @@
 #include "op_kernel/math_util.h"
 
 namespace ReduceAny {
-using namespace AscendC;
 using namespace Ops::Base;
 using OutDtype = uint8_t;
 

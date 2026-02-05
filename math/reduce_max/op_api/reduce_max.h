@@ -13,8 +13,8 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *ReduceMax(const aclTensor *self, const aclIntArray *dim,
-                           bool keepDim, bool noopWithEmptyDims, aclOpExecutor *executor);
+const aclTensor* ReduceMax(
+    const aclTensor* self, const aclIntArray* dim, bool keepDim, bool noopWithEmptyDims, aclOpExecutor* executor);
 }
 
 #endif // OP_API_INC_LEVEL0_OP_REDUCE_MAX_OP_H_

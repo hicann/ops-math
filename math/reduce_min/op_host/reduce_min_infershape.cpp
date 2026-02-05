@@ -13,20 +13,14 @@
  * \brief
  */
 #include "infershape_reduce_util.h"
-#include "runtime/infer_shape_context.h"
 #include "register/op_impl_registry.h"
-#include "log/log.h"
 
-using namespace ge;
 namespace ops {
-
 static ge::graphStatus InferShape4ReduceMin(gert::InferShapeContext* context)
 {
-    OP_LOGI("Begin InferShape4ReduceMin.");
+    OP_LOGD("Begin InferShape4ReduceMin.");
     return Ops::Base::InferShape4Reduce(context);
 }
 
-IMPL_OP_INFERSHAPE(ReduceMin)
-    .InferShape(InferShape4ReduceMin)
-    .InputsDataDependency({1});
-}  // namespace ops
+IMPL_OP_INFERSHAPE(ReduceMin).InferShape(InferShape4ReduceMin).InputsDataDependency({1});
+} // namespace ops

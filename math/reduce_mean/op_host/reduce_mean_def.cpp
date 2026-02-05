@@ -25,23 +25,14 @@ static const std::vector<ge::DataType> axesDataType = {ge::DT_INT32, ge::DT_INT3
                                                        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
 
 class ReduceMean : public OpDef {
-   public:
-    explicit ReduceMean(const char* name) : OpDef(name) {
-        this->Input("x")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .UnknownShapeFormat(format);
+public:
+    explicit ReduceMean(const char* name) : OpDef(name)
+    {
+        this->Input("x").ParamType(REQUIRED).DataType(dataType).UnknownShapeFormat(format);
 
-        this->Input("axes")
-            .ParamType(REQUIRED)
-            .ValueDepend(OPTIONAL)
-            .DataType(axesDataType)
-            .UnknownShapeFormat(format);
-    
-        this->Output("y")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .UnknownShapeFormat(format);
+        this->Input("axes").ParamType(REQUIRED).ValueDepend(OPTIONAL).DataType(axesDataType).UnknownShapeFormat(format);
+
+        this->Output("y").ParamType(REQUIRED).DataType(dataType).UnknownShapeFormat(format);
 
         this->Attr("keep_dims").AttrType(OPTIONAL).Bool(false);
         this->Attr("noop_with_empty_axes").AttrType(OPTIONAL).Bool(true);
@@ -57,4 +48,4 @@ class ReduceMean : public OpDef {
 };
 
 OP_ADD(ReduceMean);
-}  // namespace ops
+} // namespace ops

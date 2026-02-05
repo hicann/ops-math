@@ -14,12 +14,8 @@
  */
 
 #include "infershape_reduce_util.h"
-#include "runtime/infer_shape_context.h"
 #include "register/op_impl_registry.h"
-#include "log/log.h"
 
-
-using namespace ge;
 namespace ops {
 
 static ge::graphStatus InferShape4ReduceMean(gert::InferShapeContext* context)

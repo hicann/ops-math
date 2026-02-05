@@ -13,11 +13,11 @@
  * \brief tiling for reduce any
  */
 
-#include "reduce_any_tiling_arch35.h"
 #include <vector>
 #include "math/reduce_any/op_kernel/arch35/reduce_any_dag.h"
 #include "math/reduce_any/op_kernel/arch35/reduce_any_tiling_key.h"
-
+#include "atvoss/reduce/reduce_tiling.h"
+#include "atvoss/reduce/reduce_tiling_data.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 
@@ -36,28 +36,25 @@ static ge::graphStatus DoTiling(gert::TilingContext* context, ReduceOpInputParam
     }
     OP_CHECK_IF(
         (status == ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(), "ReduceOp Tiling failed, dtype shoude be in (bool,)"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context->GetNodeName(), "ReduceOp Tiling failed, dtype shoude be in (bool,)"), return ge::GRAPH_FAILED);
     return status;
 }
 
 static ge::graphStatus Tiling4ReduceAny(gert::TilingContext* context)
 {
     auto compileInfo = static_cast<const ReduceOpCompileInfo*>(context->GetCompileInfo());
-    OP_CHECK_IF(compileInfo == nullptr, OP_LOGE(context->GetNodeName(), "CompileInfo is nullptr"),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        compileInfo == nullptr, OP_LOGE(context->GetNodeName(), "CompileInfo is nullptr"), return ge::GRAPH_FAILED);
 
     ReduceOpInputParam opInput;
     OP_CHECK_IF(
         (ReduceOpTmpl::GetInputParam(context, opInput, 0, 1, 0) == ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(), "ReduceOp get x input param failed"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context->GetNodeName(), "ReduceOp get x input param failed"), return ge::GRAPH_FAILED);
 
     ReduceTilingKey key;
     OP_CHECK_IF(
         (DoTiling(context, opInput, key) == ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(), "Tiling For ReduceAny Failed"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context->GetNodeName(), "Tiling For ReduceAny Failed"), return ge::GRAPH_FAILED);
     const uint64_t tilingKey = GET_TPL_TILING_KEY(key.patternID, key.loopARCount, key.loopInnerARCount);
     OP_LOGI(
         context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, Tiling Key is:%lu", key.patternID,
@@ -68,7 +65,7 @@ static ge::graphStatus Tiling4ReduceAny(gert::TilingContext* context)
 
 static ge::graphStatus TilingPrepare4ReduceAny(gert::TilingParseContext* context)
 {
-    (void) context;
+    (void)context;
     return ge::GRAPH_SUCCESS;
 }
 

@@ -37,8 +37,7 @@ static const std::initializer_list<DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST
     op::DataType::DT_INT16,  op::DataType::DT_INT32,   op::DataType::DT_INT64, op::DataType::DT_BOOL,
     op::DataType::DT_DOUBLE, op::DataType::DT_BF16};
 
-static const std::initializer_list<DataType> NON_CONTIOUS_SUPPORT_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT};
+static const std::initializer_list<DataType> NON_CONTIOUS_SUPPORT_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT};
 
 static const std::initializer_list<DataType> out_dtype_support_list = {op::DataType::DT_UINT8, op::DataType::DT_BOOL};
 
@@ -65,8 +64,7 @@ static const aclIntArray* getAllDims(const aclTensor* self, aclOpExecutor* execu
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
     if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-        IsRegBase()) {
+        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase()) {
         return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
@@ -142,7 +140,7 @@ static bool IsNonContiguousSupport(const aclTensor* self, const aclIntArray* dim
     if (!IsRegBase()) {
         return false;
     }
-    if(!CheckType(self->GetDataType(), NON_CONTIOUS_SUPPORT_DTYPE_SUPPORT_LIST)) {
+    if (!CheckType(self->GetDataType(), NON_CONTIOUS_SUPPORT_DTYPE_SUPPORT_LIST)) {
         return false;
     }
     if (!op::IsReduceNonContiguousSupport(self, dim)) {

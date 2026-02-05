@@ -13,16 +13,15 @@
  * \brief tiling for reduce all
  */
 
-#include "reduce_all_tiling_arch35.h"
 #include <vector>
 #include "math/reduce_all/op_kernel/arch35/reduce_all_dag.h"
 #include "math/reduce_all/op_kernel/arch35/reduce_all_tiling_key.h"
-
+#include "atvoss/reduce/reduce_tiling.h"
+#include "atvoss/reduce/reduce_tiling_data.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 
-namespace optiling
-{
+namespace optiling {
 using namespace Ops::Base;
 static ge::graphStatus DoTiling(gert::TilingContext* context, ReduceOpInputParam& opInput, ReduceTilingKey& key)
 {
@@ -30,38 +29,38 @@ static ge::graphStatus DoTiling(gert::TilingContext* context, ReduceOpInputParam
     status = Tiling4ReduceOp<ReduceAll::ReduceAllDag<int8_t, half>::OpDag>(context, opInput, key);
     OP_CHECK_IF(
         (status == ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(), "ReduceOp Tiling failed, dtype shoude be in (bool,)"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context->GetNodeName(), "ReduceOp Tiling failed, dtype shoude be in (bool,)"), return ge::GRAPH_FAILED);
     return status;
 }
 
 static ge::graphStatus Tiling4ReduceAll(gert::TilingContext* context)
 {
     auto compileInfo = static_cast<const ReduceOpCompileInfo*>(context->GetCompileInfo());
-    OP_CHECK_IF(compileInfo == nullptr, OP_LOGE(context->GetNodeName(), "CompileInfo is nullptr"),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        compileInfo == nullptr, OP_LOGE(context->GetNodeName(), "CompileInfo is nullptr"), return ge::GRAPH_FAILED);
 
     ReduceOpInputParam opInput;
-    OP_CHECK_IF((ReduceOpTmpl::GetInputParam(context, opInput, 0, 1, 0) == ge::GRAPH_FAILED),
-                    OP_LOGE(context->GetNodeName(), "ReduceOp get x input param failed"),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        (ReduceOpTmpl::GetInputParam(context, opInput, 0, 1, 0) == ge::GRAPH_FAILED),
+        OP_LOGE(context->GetNodeName(), "ReduceOp get x input param failed"), return ge::GRAPH_FAILED);
 
     ReduceTilingKey key;
-    OP_CHECK_IF((DoTiling(context, opInput, key) == ge::GRAPH_FAILED),
-                    OP_LOGE(context->GetNodeName(), "Tiling For ReduceAll Failed"),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        (DoTiling(context, opInput, key) == ge::GRAPH_FAILED),
+        OP_LOGE(context->GetNodeName(), "Tiling For ReduceAll Failed"), return ge::GRAPH_FAILED);
     const uint64_t tilingKey = GET_TPL_TILING_KEY(key.patternID, key.loopARCount, key.loopInnerARCount);
-    OP_LOGI(context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, Tiling Key is:%lu",
-            key.patternID, key.loopARCount, key.loopInnerARCount, tilingKey);
+    OP_LOGI(
+        context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, Tiling Key is:%lu", key.patternID,
+        key.loopARCount, key.loopInnerARCount, tilingKey);
     context->SetTilingKey(tilingKey);
     return ge::GRAPH_SUCCESS;
 }
 
 static ge::graphStatus TilingPrepare4ReduceAll(gert::TilingParseContext* context)
 {
-    (void) context;
+    (void)context;
     return ge::GRAPH_SUCCESS;
 }
 
 IMPL_OP_OPTILING(ReduceAll).Tiling(Tiling4ReduceAll).TilingParse<ReduceOpCompileInfo>(TilingPrepare4ReduceAll);
-}  // namespace optiling
+} // namespace optiling

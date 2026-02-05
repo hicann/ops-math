@@ -14,8 +14,8 @@
 #include "opdev/make_op_executor.h"
 
 namespace l0op {
-const aclTensor *ReduceProd(const aclTensor *self, const aclTensor *dimList,
-                            const bool keepDim, aclOpExecutor *executor);
+const aclTensor* ReduceProd(
+    const aclTensor* self, const aclTensor* dimList, const bool keepDim, aclOpExecutor* executor);
 }
 
 #endif // OP_API_INC_LEVEL0_REDUCE_PROD_H_

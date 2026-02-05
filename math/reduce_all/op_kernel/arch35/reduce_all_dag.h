@@ -25,7 +25,6 @@
 namespace ReduceAll
 {
 using namespace Ops::Base;
-using namespace AscendC;
 template <typename T, typename PromteT>
 struct ReduceAllDag {
     using OpCopyIn0 = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;

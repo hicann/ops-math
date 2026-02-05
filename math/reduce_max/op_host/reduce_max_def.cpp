@@ -15,45 +15,36 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-static const std::vector<ge::DataType> dataType = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_UINT8, ge::DT_INT32,
-                                                   ge::DT_INT64, ge::DT_BF16, ge::DT_INT8,
-                                                   ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_UINT8, ge::DT_INT32,
-                                                   ge::DT_INT64, ge::DT_BF16, ge::DT_INT8};
- 
-static const std::vector<ge::Format> format = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+static const std::vector<ge::DataType> dataType = {
+    ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_UINT8, ge::DT_INT32, ge::DT_INT64, ge::DT_BF16, ge::DT_INT8,
+    ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_UINT8, ge::DT_INT32, ge::DT_INT64, ge::DT_BF16, ge::DT_INT8};
+
+static const std::vector<ge::Format> format = {
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
 
 static const std::vector<ge::DataType> axesDataType = {
     ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
     ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
- 
+
 class ReduceMax : public OpDef {
-   public:
-    explicit ReduceMax(const char* name) : OpDef(name) {
-        this->Input("x")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .Format(format)
-            .UnknownShapeFormat(format);
- 
+public:
+    explicit ReduceMax(const char* name) : OpDef(name)
+    {
+        this->Input("x").ParamType(REQUIRED).DataType(dataType).Format(format).UnknownShapeFormat(format);
+
         this->Input("axes")
             .ParamType(REQUIRED)
             .ValueDepend(OPTIONAL)
             .DataType(axesDataType)
             .Format(format)
             .UnknownShapeFormat(format);
-    
-        this->Output("y")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .Format(format)
-            .UnknownShapeFormat(format);
- 
+
+        this->Output("y").ParamType(REQUIRED).DataType(dataType).Format(format).UnknownShapeFormat(format);
+
         this->Attr("keep_dims").AttrType(OPTIONAL).Bool(false);
         this->Attr("noop_with_empty_axes").AttrType(OPTIONAL).Bool(true);
- 
+
         OpAICoreConfig aicoreConfig;
         aicoreConfig.DynamicCompileStaticFlag(true)
             .DynamicRankSupportFlag(true)
@@ -63,6 +54,6 @@ class ReduceMax : public OpDef {
         this->AICore().AddConfig("mc62cm12a", aicoreConfig);
     }
 };
- 
+
 OP_ADD(ReduceMax);
-}  // namespace ops
+} // namespace ops

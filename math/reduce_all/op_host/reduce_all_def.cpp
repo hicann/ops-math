@@ -13,38 +13,31 @@
  * \brief aicore info for reduceAll op
  */
 #include "register/op_def_registry.h"
- 
+
 namespace ops {
 static const std::vector<ge::DataType> dataType = {ge::DT_BOOL, ge::DT_BOOL};
- 
+
 static const std::vector<ge::Format> format = {ge::FORMAT_ND, ge::FORMAT_ND};
- 
+
 static const std::vector<ge::DataType> axesDataType = {ge::DT_INT32, ge::DT_INT64};
- 
+
 class ReduceAll : public OpDef {
-   public:
-    explicit ReduceAll(const char* name) : OpDef(name) {
-        this->Input("x")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .Format(format)
-            .UnknownShapeFormat(format);
- 
+public:
+    explicit ReduceAll(const char* name) : OpDef(name)
+    {
+        this->Input("x").ParamType(REQUIRED).DataType(dataType).Format(format).UnknownShapeFormat(format);
+
         this->Input("axes")
             .ParamType(REQUIRED)
             .ValueDepend(OPTIONAL)
             .DataType(axesDataType)
             .Format(format)
             .UnknownShapeFormat(format);
-    
-        this->Output("y")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .Format(format)
-            .UnknownShapeFormat(format);
- 
+
+        this->Output("y").ParamType(REQUIRED).DataType(dataType).Format(format).UnknownShapeFormat(format);
+
         this->Attr("keep_dims").AttrType(OPTIONAL).Bool(false);
- 
+
         OpAICoreConfig aicoreConfig;
         aicoreConfig.DynamicCompileStaticFlag(true)
             .DynamicRankSupportFlag(true)
@@ -53,6 +46,6 @@ class ReduceAll : public OpDef {
         this->AICore().AddConfig("ascend950", aicoreConfig);
     }
 };
- 
+
 OP_ADD(ReduceAll);
-}  // namespace ops
+} // namespace ops

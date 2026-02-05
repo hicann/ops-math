@@ -14,15 +14,13 @@
  */
 #include "infershape_reduce_util.h"
 #include "register/op_impl_registry.h"
-#include "log/log.h"
-#include "util/math_util.h"
 
 using namespace ge;
 namespace ops {
 
 static ge::graphStatus InferShape4ReduceMax(gert::InferShapeContext* context)
 {
-    OP_LOGI("Begin InferShape4ReduceMax.");
+    OP_LOGD("Begin InferShape4ReduceMax.");
     return Ops::Base::InferShape4Reduce(context);
 }
 

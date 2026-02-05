@@ -14,16 +14,13 @@
  */
 
 #include <vector>
-#include "tiling/tiling_api.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
-#include "register/tilingdata_base.h"
 #include "atvoss/reduce/reduce_tiling.h"
 #include "atvoss/reduce/reduce_tiling_data.h"
 #include "op_host/tiling_util.h"
 #include "math/reduce_max/op_kernel/arch35/reduce_max_dag.h"
 #include "math/reduce_max/op_kernel/arch35/reduce_max_tiling_key.h"
-#include "reduce_max_tiling_arch35.h"
 
 using namespace Ops::Base;
 

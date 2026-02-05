@@ -23,28 +23,19 @@ static const std::vector<ge::Format> format = {ge::FORMAT_ND, ge::FORMAT_ND, ge:
                                                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
                                                ge::FORMAT_ND, ge::FORMAT_ND};
 
-static const std::vector<ge::DataType> axesDataType = {
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64,
-    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
+static const std::vector<ge::DataType> axesDataType = {ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+                                                       ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+                                                       ge::DT_INT64, ge::DT_INT64};
 
 class ReduceSum : public OpDef {
-   public:
-    explicit ReduceSum(const char* name) : OpDef(name) {
-        this->Input("x")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .UnknownShapeFormat(format);
+public:
+    explicit ReduceSum(const char* name) : OpDef(name)
+    {
+        this->Input("x").ParamType(REQUIRED).DataType(dataType).UnknownShapeFormat(format);
 
-        this->Input("axes")
-            .ParamType(REQUIRED)
-            .ValueDepend(OPTIONAL)
-            .DataType(axesDataType)
-            .UnknownShapeFormat(format);
-    
-        this->Output("y")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .UnknownShapeFormat(format);
+        this->Input("axes").ParamType(REQUIRED).ValueDepend(OPTIONAL).DataType(axesDataType).UnknownShapeFormat(format);
+
+        this->Output("y").ParamType(REQUIRED).DataType(dataType).UnknownShapeFormat(format);
 
         this->Attr("keep_dims").AttrType(OPTIONAL).Bool(false);
         this->Attr("noop_with_empty_axes").AttrType(OPTIONAL).Bool(true);
@@ -60,4 +51,4 @@ class ReduceSum : public OpDef {
 };
 
 OP_ADD(ReduceSum);
-}  // namespace ops
+} // namespace ops

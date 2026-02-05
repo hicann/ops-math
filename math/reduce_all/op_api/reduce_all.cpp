@@ -19,21 +19,22 @@
 namespace l0op {
 OP_TYPE_REGISTER(ReduceAll);
 
-const aclTensor *ReduceAll(const aclTensor *self, const aclIntArray *dim, bool keepdim, aclOpExecutor *executor) {
-  L0_DFX(ReduceAll, self, dim, keepdim);
-  // 固定写法，创建OpExecutor
-  auto dims = executor->ConvertToTensor(dim, op::DataType::DT_INT64);
-  auto out = executor->AllocTensor(self->GetViewShape(), op::DataType::DT_BOOL);
-  if (self->GetViewShape().GetDimNum() != 0 || !keepdim) {
-    auto ret = INFER_SHAPE(ReduceAll, OP_INPUT(self, dims), OP_OUTPUT(out), OP_ATTR(keepdim));
-    if (ret != ACLNN_SUCCESS) {
-      return nullptr;
+const aclTensor* ReduceAll(const aclTensor* self, const aclIntArray* dim, bool keepdim, aclOpExecutor* executor)
+{
+    L0_DFX(ReduceAll, self, dim, keepdim);
+    // 固定写法，创建OpExecutor
+    auto dims = executor->ConvertToTensor(dim, op::DataType::DT_INT64);
+    auto out = executor->AllocTensor(self->GetViewShape(), op::DataType::DT_BOOL);
+    if (self->GetViewShape().GetDimNum() != 0 || !keepdim) {
+        auto ret = INFER_SHAPE(ReduceAll, OP_INPUT(self, dims), OP_OUTPUT(out), OP_ATTR(keepdim));
+        if (ret != ACLNN_SUCCESS) {
+            return nullptr;
+        }
     }
-  }
-  auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(ReduceAll, op::AI_CORE, 
-                                               OP_INPUT(self, dims), OP_ATTR(keepdim), OP_OUTPUT(out));
-  OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
-                                       "ReduceAll ADD_TO_LAUNCHER_LIST_AICORE failed.");
-  return out;
+    auto retAicore =
+        ADD_TO_LAUNCHER_LIST_AICORE(ReduceAll, op::AI_CORE, OP_INPUT(self, dims), OP_ATTR(keepdim), OP_OUTPUT(out));
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
+        retAicore != ACLNN_SUCCESS, return nullptr, "ReduceAll ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    return out;
 }
-}  // namespace l0op
+} // namespace l0op

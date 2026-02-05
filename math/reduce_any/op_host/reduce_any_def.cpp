@@ -24,23 +24,14 @@ static const std::vector<ge::Format> format = {ge::FORMAT_ND, ge::FORMAT_ND, ge:
 static const std::vector<ge::DataType> axesDataType = {ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64};
 
 class ReduceAny : public OpDef {
-   public:
-    explicit ReduceAny(const char* name) : OpDef(name) {
-        this->Input("x")
-            .ParamType(REQUIRED)
-            .DataType(inDataType)
-            .UnknownShapeFormat(format);
+public:
+    explicit ReduceAny(const char* name) : OpDef(name)
+    {
+        this->Input("x").ParamType(REQUIRED).DataType(inDataType).UnknownShapeFormat(format);
 
-        this->Input("axes")
-            .ParamType(REQUIRED)
-            .ValueDepend(OPTIONAL)
-            .DataType(axesDataType)
-            .UnknownShapeFormat(format);
-    
-        this->Output("y")
-            .ParamType(REQUIRED)
-            .DataType(outDataType)
-            .UnknownShapeFormat(format);
+        this->Input("axes").ParamType(REQUIRED).ValueDepend(OPTIONAL).DataType(axesDataType).UnknownShapeFormat(format);
+
+        this->Output("y").ParamType(REQUIRED).DataType(outDataType).UnknownShapeFormat(format);
 
         this->Attr("keep_dims").AttrType(OPTIONAL).Bool(false);
 
@@ -54,4 +45,4 @@ class ReduceAny : public OpDef {
 };
 
 OP_ADD(ReduceAny);
-}  // namespace ops
+} // namespace ops
