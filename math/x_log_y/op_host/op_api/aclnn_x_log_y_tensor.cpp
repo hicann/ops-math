@@ -23,6 +23,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -52,7 +53,7 @@ static bool CheckNotNull(const aclTensor *self, const aclTensor *other, const ac
 static const std::initializer_list<DataType>& GetDtypeSupportList() {
   if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
       GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+      IsRegBase()) {
     return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
   } else {
     return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;

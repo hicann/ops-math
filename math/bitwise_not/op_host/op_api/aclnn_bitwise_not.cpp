@@ -13,6 +13,7 @@
 #include "math/invert/op_api/invert.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
+#include "op_api/aclnn_check.h"
 #include "op_api/op_api_def.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -70,8 +71,7 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* out) {
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* y) {
   // 检查self的数据类型是否在bitwise_not算子的支持列表内
-  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  if (socVersion == SocVersion::ASCEND950) {
+  if (IsRegBase()) {
     OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST_950, return false);
   } else {
     OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);

@@ -23,6 +23,7 @@
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -143,7 +144,7 @@ static const aclTensor* dealWeightsTensor_950(
     const aclTensor* weightsTensor;
     // 如果weights为空指针，则构造一个全为1的tensor
     if (!weights) {
-        if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+        if (IsRegBase()) {
             op::Shape weightShape = {0};
             weightsTensor = executor->AllocTensor(weightShape, op::DataType::DT_FLOAT);
             CHECK_RET(weightsTensor != nullptr, nullptr);
@@ -224,7 +225,7 @@ aclnnStatus aclnnBincountGetWorkspaceSize(
         return ACLNN_ERR_PARAM_INVALID;
     }
 
-    auto weightsTensor = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) ?
+    auto weightsTensor = (IsRegBase()) ?
                              dealWeightsTensor_950(self, weights, uniqueExecutor.get()) :
                              dealWeightsTensor(self, weights, uniqueExecutor.get());
 

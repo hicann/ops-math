@@ -10,6 +10,7 @@
 #include "aclnn_remainder.h"
 
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 
 #include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "aclnn_kernels/cast.h"
@@ -43,22 +44,16 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_COMPLEX = {
 
 static const std::initializer_list<DataType>& GetDtypeSupportList(SocVersion socVersion)
 {
-    switch (socVersion) {
-        case SocVersion::ASCEND910B:
-        case SocVersion::ASCEND910_93:
-        case SocVersion::ASCEND950: {
-            return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
-        }
-        case SocVersion::ASCEND910: {
-            return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
-        }
-        case SocVersion::ASCEND310P: {
-            return ASCEND310P_DTYPE_DTYPE_SUPPORT_LIST;
-        }
-        default: {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "support for %s is not implemented", op::ToString(socVersion).GetString());
-            return emptyDtypes;
-        }
+    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
+    IsRegBase()) {
+        return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
+    } else if (socVersion == SocVersion::ASCEND910) {
+        return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
+    } else if (socVersion == SocVersion::ASCEND310P) {
+        return ASCEND310P_DTYPE_DTYPE_SUPPORT_LIST;
+    } else {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "support for %s is not implemented", op::ToString(socVersion).GetString());
+        return emptyDtypes;
     }
 }
 
@@ -131,8 +126,7 @@ static inline DataType PromoteTypeScalarV35(const op::DataType tensorDtype, cons
 // tensor + scalar混合场景下，推导出应该cast的dtype (并不是promoteType)
 static inline DataType PromoteTypeScalar(const op::DataType selfDtype, const op::DataType otherDtype)
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND950) {
+    if (IsRegBase()) {
         return PromoteTypeScalarV35(selfDtype, otherDtype);
     }
 
@@ -243,7 +237,7 @@ static bool CheckPromoteTypeScalarTensor(
         return false;
     }
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    auto castDtype = socVersion == SocVersion::ASCEND950 ? PromoteTypeScalarV35(otherDtype, selfDtype) : otherDtype;
+    auto castDtype = IsRegBase() ? PromoteTypeScalarV35(otherDtype, selfDtype) : otherDtype;
     // 检查other能cast成 outDtype
     OP_CHECK_RESULT_DTYPE_CAST_FAILED(castDtype, outDtype, return false);
 
@@ -292,7 +286,7 @@ static inline bool CheckShapeIsSpecial(const op::Shape shape)
 static bool CheckBroadcastShape(const aclTensor* self, const aclTensor* other, const aclTensor* out, bool isInplace)
 {
     op::Shape broadcastShape;
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+    if (IsRegBase()) {
         OP_CHECK_BROADCAST_AND_INFER_SHAPE(self, other, broadcastShape, return false);
         OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(out, broadcastShape, return false);
         return true;
@@ -537,8 +531,7 @@ aclnnStatus ExecRemainderTensorTensorGetWorkspaceSize(
     }
 
     auto promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND950 && promoteType != op::DataType::DT_DOUBLE) {
+    if (IsRegBase() && promoteType != op::DataType::DT_DOUBLE) {
         auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto selfCasted = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
@@ -590,8 +583,7 @@ aclnnStatus ExecRemainderTensorScalarGetWorkspaceSize(
         return ACLNN_SUCCESS;
     }
     auto castDtype = PromoteTypeScalar(self->GetDataType(), other->GetDataType());
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND950 && castDtype != op::DataType::DT_DOUBLE) {
+    if (IsRegBase() && castDtype != op::DataType::DT_DOUBLE) {
         auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto selfCasted = l0op::Cast(selfContiguous, castDtype, uniqueExecutor.get());
@@ -657,8 +649,7 @@ aclnnStatus aclnnRemainderScalarTensorGetWorkspaceSize(
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND950 &&
+    if (IsRegBase() &&
         PromoteTypeScalarV35(other->GetDataType(), self->GetDataType()) != op::DataType::DT_DOUBLE) {
         auto castDtype = PromoteTypeScalarV35(other->GetDataType(), self->GetDataType());
         auto otherContiguous = l0op::Contiguous(other, uniqueExecutor.get());

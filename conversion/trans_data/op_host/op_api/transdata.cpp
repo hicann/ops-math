@@ -9,7 +9,7 @@
  */
 
 #include "aclnn_kernels/transdata.h"
-
+#include "op_api/aclnn_check.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/op_dfx.h"
@@ -235,7 +235,7 @@ static inline bool CheckPrimaryFormatValid(op::Format srcPrimaryFormat, op::Form
 static inline bool CheckTransDataSupport(op::Format srcPrimaryFormat, op::Format dstPrimaryFormat)
 {
     int8_t isSupport = 0;
-    if (op::GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND950) {
+    if (op::IsRegBase()) {
         if ((srcPrimaryFormat == op::Format::FORMAT_ND || srcPrimaryFormat == op::Format::FORMAT_NCL) &&
             (dstPrimaryFormat == op::Format::FORMAT_FRACTAL_NZ ||
              dstPrimaryFormat == op::Format::FORMAT_FRACTAL_NZ_C0_16 ||

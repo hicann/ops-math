@@ -9,6 +9,7 @@
  */
 
 #include "expm1.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/op_dfx.h"
 #include "opdev/shape_utils.h"
 #include "opdev/make_op_executor.h"
@@ -26,7 +27,7 @@ static const std::initializer_list<op::DataType> ASCEND910B_AICORE_DTYPE_SUPPORT
 static bool IsAiCoreSupport(const aclTensor *self) {
   if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
       GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+      IsRegBase()) {
     return CheckType(self->GetDataType(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
   }
   return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);

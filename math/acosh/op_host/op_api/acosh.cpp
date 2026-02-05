@@ -17,6 +17,7 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 namespace l0op {
@@ -31,7 +32,7 @@ static const std::initializer_list<DataType> AICORE_910B_DTYPE_SUPPORT_LIST = {D
 static inline bool IsAiCoreSupport(DataType inputDtype) {
   if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
       GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+      IsRegBase()) {
     return CheckType(inputDtype, AICORE_910B_DTYPE_SUPPORT_LIST);
   }
   return CheckType(inputDtype, AICORE_DTYPE_SUPPORT_LIST);

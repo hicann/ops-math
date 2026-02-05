@@ -31,6 +31,7 @@
 #include "aclnn_kernels/transpose.h"
 
 #include "aclnn_npu_format_cast.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -204,7 +205,7 @@ static aclnnStatus CheckCalculateSizeAndFormatInputs(
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     OP_CHECK(
-        socVersion == SocVersion::ASCEND950 || socVersion == SocVersion::ASCEND910_93 ||
+        IsRegBase() || socVersion == SocVersion::ASCEND910_93 ||
             socVersion == SocVersion::ASCEND910B,
         OP_LOGW("Only support Ascend950/ASCEND910_93/ASCEND910B"), return ACLNN_ERR_RUNTIME_ERROR);
     OP_CHECK(
@@ -296,7 +297,7 @@ static aclnnStatus CheckGetWorkSpaceSizeInputs(const aclTensor* srcTensor, aclTe
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     OP_CHECK(
-        socVersion == SocVersion::ASCEND950 || socVersion == SocVersion::ASCEND910_93 ||
+        IsRegBase() || socVersion == SocVersion::ASCEND910_93 ||
             socVersion == SocVersion::ASCEND910B,
         OP_LOGW("Only support Ascend950/ASCEND910_93/ASCEND910B"), return ACLNN_ERR_RUNTIME_ERROR);
     CHECK_RET(srcTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -373,7 +374,7 @@ aclnnStatus CalcNdToNz(
     int64_t c0 = 16; // 默认NZ分型的c0为16
 
     // 根据A矩阵和B矩阵数据类型计算实际转换成NZ格式后的C0大小
-    if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND950 ||
+    if (!IsRegBase() ||
         static_cast<op::DataType>(additionalDtype) == srcDtype) {
         // 当前要求C0 * ge::GetSizeByDataType(dtype) = 32B
         c0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
@@ -531,7 +532,7 @@ aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     OP_CHECK(
         (additionalDtype == -1 && (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93)) ||
-            (additionalDtype != -1 && socVersion == SocVersion::ASCEND950),
+        (additionalDtype != -1 && IsRegBase()),
         OP_LOGW("The current socVersion does not support additionalDtype."), return ACLNN_ERR_PARAM_INVALID);
     if (additionalDtype == -1) {
         additionalDtype = static_cast<int>(srcTensor->GetDataType());
@@ -540,7 +541,7 @@ aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
         ((srcFormat == op::Format::FORMAT_ND || srcFormat == op::Format::FORMAT_NCL) ||
          (additionalDtype == static_cast<int>(srcTensor->GetDataType()) && CheckInputFormatSupportedToNz(srcFormat)))) {
         // ASCEND950校验特殊场景
-        if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+        if (IsRegBase()) {
             auto retNdToNz = Check95NdToNzCalculateSizeAndFormatInputs(srcTensor, dstFormat, additionalDtype);
             OP_CHECK(retNdToNz == ACLNN_SUCCESS, OP_LOGW("Failed to check inputs"), return ACLNN_ERR_PARAM_INVALID);
         }
@@ -567,7 +568,7 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
     op::Format srcFormat = srcTensor->GetStorageFormat();
     op::Format dstFormat = dstTensor->GetStorageFormat();
     // ASCEND950校验特殊场景
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950 &&
+    if (IsRegBase() &&
         dstFormat == op::Format::FORMAT_FRACTAL_NZ &&
         ((srcFormat == op::Format::FORMAT_ND || srcFormat == op::Format::FORMAT_NCL) ||
          (srcTensor->GetDataType() == dstTensor->GetDataType() && CheckInputFormatSupportedToNz(srcFormat)))) {

@@ -11,6 +11,7 @@
 #include "topk.h"
 #include "math/sort_with_index/op_api/sort_with_index.h"
 #include "aclnn_kernels/cast.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/op_def.h"
@@ -61,25 +62,17 @@ static bool IsAiCoreSupport(const aclTensor* self, int64_t k)
             return false;
         }
     }
-
-    switch (version) {
-        case SocVersion::ASCEND310P: {
-            OP_LOGW("l0op::TopK use ANCIENT_DTYPE_SUPPORT_LIST for socVerison[%d]", static_cast<int32_t>(version));
-            return CheckType(self->GetDataType(), ANCIENT_DTYPE_SUPPORT_LIST);
-        }
-        case SocVersion::ASCEND910B:
-        case SocVersion::ASCEND910_93: {
-            OP_LOGW("l0op::TopK use CURRENT_DTYPE_SUPPORT_LIST for socVerison[%d]", static_cast<int32_t>(version));
-            return CheckType(self->GetDataType(), CURRENT_DTYPE_SUPPORT_LIST);
-        }
-        case SocVersion::ASCEND950: {
-            OP_LOGW("l0op::TopK use FUTURE_DTYPE_SUPPORT_LIST for socVerison[%d]", static_cast<int32_t>(version));
-            return CheckType(self->GetDataType(), FUTURE_DTYPE_SUPPORT_LIST);
-        }
-        default: {
-            // 非以上平台，使用旧有逻辑处理。
-            break;
-        }
+    if (version == SocVersion::ASCEND310P) {
+        OP_LOGW("l0op::TopK use ANCIENT_DTYPE_SUPPORT_LIST for socVerison[%d]", static_cast<int32_t>(version));
+        return CheckType(self->GetDataType(), ANCIENT_DTYPE_SUPPORT_LIST);
+    } else if (version == SocVersion::ASCEND910B || version == SocVersion::ASCEND910_93) {
+        OP_LOGW("l0op::TopK use CURRENT_DTYPE_SUPPORT_LIST for socVerison[%d]", static_cast<int32_t>(version));
+        return CheckType(self->GetDataType(), CURRENT_DTYPE_SUPPORT_LIST);
+    } else if (IsRegBase()) {
+        OP_LOGW("l0op::TopK use FUTURE_DTYPE_SUPPORT_LIST for socVerison[%d]", static_cast<int32_t>(version));
+        return CheckType(self->GetDataType(), FUTURE_DTYPE_SUPPORT_LIST);
+    } else {
+        // 非以上平台，使用旧有逻辑处理。
     }
 
     if ((version >= SocVersion::ASCEND910B && version <= SocVersion::ASCEND910E) ||
@@ -105,8 +98,7 @@ static bool IsAscendCSupport(const aclTensor* self, int64_t k)
 // 根据芯片类型、k 和 sotrd 判断是否需要额外增加 SortWithIndex
 static bool IsSortWithIndex(int64_t k, bool sorted)
 {
-    SocVersion version = GetCurrentPlatformInfo().GetSocVersion();
-    return (version == SocVersion::ASCEND950) && (k > TWO_THOUSAND) && (sorted == true);
+    return (IsRegBase()) && (k > TWO_THOUSAND) && (sorted == true);
 }
 
 // AICORE算子kernel
@@ -183,7 +175,7 @@ std::tuple<aclTensor*, aclTensor*> Topk(
     const aclTensor* kTensor = executor->ConvertToTensor(kScalar, op::ToOpDataType(ACL_INT32));
     auto valuesOut = executor->AllocTensor(outShape, self->GetDataType(), self->GetStorageFormat());
     aclTensor* indicesOut = nullptr;
-    if ((GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) && !IsSortWithIndex(k, sorted)) {
+    if ((IsRegBase()) && !IsSortWithIndex(k, sorted)) {
         indicesOut = executor->AllocTensor(outShape, indicesDType, self->GetStorageFormat());
     } else {
         indicesOut = executor->AllocTensor(outShape, op::DataType::DT_INT32, self->GetStorageFormat());
@@ -195,7 +187,7 @@ std::tuple<aclTensor*, aclTensor*> Topk(
         } else if (IsSortWithIndex(k, sorted)) {
             return TopKAndSort(self, kTensor, dim, largest, sorted, valuesOut, indicesOut, executor);
         } else {
-            if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+            if (IsRegBase()) {
                 return TopkV2AiCoreForDavid(
                     self, kTensor, dim, largest, sorted, valuesOut, indicesOut, indicesDType, executor);
             } else {

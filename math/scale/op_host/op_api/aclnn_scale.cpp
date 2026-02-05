@@ -12,6 +12,7 @@
 #include "scale.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/op_log.h"
 #include "opdev/op_dfx.h"
 #include "opdev/common_types.h"
@@ -34,18 +35,13 @@ static const std::initializer_list<DataType> EMPTY_LIST = {};
 
 static const std::initializer_list<DataType>& GetDtypeSupportList() {
   SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  switch (socVersion) {
-    case SocVersion::ASCEND910_93:
-    case SocVersion::ASCEND950:
-    case SocVersion::ASCEND910B: {
+  if (socVersion == SocVersion::ASCEND910_93 || socVersion == SocVersion::ASCEND910B || IsRegBase()) {
       return X_DTYPE_SUPPORT_LIST_ASCEND910B;
-    }
-    case SocVersion::ASCEND310P:
+  } else if (socVersion == SocVersion::ASCEND310P) {
       return X_DTYPE_SUPPORT_LIST_ASCEND310P;
-    default: {
+  } else {
       OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "support for %s is not implemented", op::ToString(socVersion).GetString());
       return EMPTY_LIST;
-    }
   }
 }
 

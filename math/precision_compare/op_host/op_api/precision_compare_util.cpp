@@ -9,6 +9,7 @@
  */
 #include "precision_compare_util.h"
 
+#include "op_api/aclnn_check.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/shape_utils.h"
 #include "opdev/format_utils.h"
@@ -54,7 +55,7 @@ static bool CheckShape(const aclTensor *golden, const aclTensor *realdata, const
 
 aclnnStatus PrecisionCompareCheckParams(const aclTensor *golden, const aclTensor *realdata, const aclTensor *out) {
   auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-  if (socVersion != SocVersion::ASCEND910B && socVersion != SocVersion::ASCEND910_93 && socVersion != SocVersion::ASCEND950) {
+  if (socVersion != SocVersion::ASCEND910B && socVersion != SocVersion::ASCEND910_93 && !IsRegBase()) {
     OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The function is unsupported by the current SOC version [%s] ",
             op::ToString(socVersion).GetString());
     return ACLNN_ERR_PARAM_INVALID;

@@ -16,6 +16,7 @@
 #include "opdev/make_op_executor.h"
 #include "opdev/platform.h"
 #include "op_api/level2_base.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -32,7 +33,7 @@ static inline bool CheckDtypeValid(const aclTensor* self, const aclTensor* out) 
   // ascend910不支持inf和nan
   if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910B &&
       GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_93 &&
-      GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND950) {
+      !IsRegBase()) {
     OP_LOGE(ACLNN_ERR_PARAM_INVALID, "NanToNum is not supported on this device.");
     return false;
   }

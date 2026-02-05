@@ -42,26 +42,17 @@ static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST = {
 static bool CheckDtypeValid(const aclTensor *self, const aclTensor *result) {
   SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
   if (!CheckType(self->GetDataType(), DTYPE_SUPPORT_LIST)) {
-    switch (socVersion) {
-      case SocVersion::ASCEND910: {
+    if (socVersion == SocVersion::ASCEND910) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "On Ascend910 self dtype [%s] should be in dtype support list [%s].",
                 op::ToString(self->GetDataType()).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
         return false;
-        break;
-      }
-      case SocVersion::ASCEND910_93:
-      case SocVersion::ASCEND950:
-      case SocVersion::ASCEND910B: {
+    } else if (socVersion == SocVersion::ASCEND910_93 || socVersion == SocVersion::ASCEND910B || IsRegBase()) {
         if (self->GetDataType() != op::DataType::DT_BF16) {
           OP_LOGE(ACLNN_ERR_PARAM_INVALID,
                   "On Ascend910B, self dtype [%s] should be in dtype support list [%s] or be BF16.",
                   op::ToString(self->GetDataType()).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
           return false;
         }
-        break;
-      }
-      default: {
-      }
     }
   } else {
     if (self->GetDataType() != result->GetDataType()) {

@@ -29,6 +29,7 @@
 #include "opdev/platform.h"
 #include "opdev/op_log.h"
 #include "op_api/level2_base_caculation.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 using std::bitset;
@@ -57,7 +58,7 @@ static bool CheckDtypeValid(const aclTensor *self, const aclTensor *stdOut, cons
   OP_CHECK_DTYPE_NOT_SUPPORT(meanOut, supportList, return false);
 
   // Ascend950支持输入、输出数据类型不一致
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+  if (IsRegBase()) {
     return true;
   }
 
@@ -310,7 +311,7 @@ aclnnStatus aclnnStdMeanCorrectionGetWorkspaceSize(const aclTensor *self, const 
   auto selfReformat = l0op::ReFormat(selfContiguous, Format::FORMAT_ND);
   CHECK_RET(selfReformat != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+  if (IsRegBase()) {
       return aclnnStdMeanCorrectionImplUnify(selfReformat, dimArray, correction, keepdim, stdOut, meanOut,
                                              workspaceSize, uniqueExecutor, executor);
   }

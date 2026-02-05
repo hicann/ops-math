@@ -11,6 +11,7 @@
 
 #include "util/math_util.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 #include "op_api/op_api_def.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -58,7 +59,7 @@ static inline const std::initializer_list<DataType> &GetDtypeSupportList() {
     return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
   } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310P) {
     return ASCEND310P_DTYPE_DTYPE_SUPPORT_LIST;
-  } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+  } else if (IsRegBase()) {
     return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
   } else {
     return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
@@ -113,18 +114,13 @@ static inline bool CheckNonZeroShape(const aclIntArray *tensorShape) {
 static aclnnStatus CheckSocValid()
 {
     SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    switch (socVersion) {
-        case SocVersion::ASCEND310P:
-        case SocVersion::ASCEND910B:
-        case SocVersion::ASCEND910_93:
-        case SocVersion::ASCEND950:
-            break;
-        default: {
-            OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "support for %s is not implemented", op::ToString(socVersion).GetString());
-            return ACLNN_ERR_RUNTIME_ERROR;
-        }
+    if (socVersion == SocVersion::ASCEND310P || socVersion == SocVersion::ASCEND910B ||
+        socVersion == SocVersion::ASCEND910_93 || IsRegBase()) {
+        return ACLNN_SUCCESS;
+    } else {
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "support for %s is not implemented", op::ToString(socVersion).GetString());
+        return ACLNN_ERR_RUNTIME_ERROR;
     }
-    return ACLNN_SUCCESS;
 }
 
 static uint64_t CalculateMatmulWeightSize(const aclIntArray *tensorShape, aclDataType dataType) {

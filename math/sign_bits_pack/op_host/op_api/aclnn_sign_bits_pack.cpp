@@ -19,6 +19,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/framework_op.h"
+#include "op_api/aclnn_check.h"
 #include "op_api/op_api_def.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/make_op_executor.h"
