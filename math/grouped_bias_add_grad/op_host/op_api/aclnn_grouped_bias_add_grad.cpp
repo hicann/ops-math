@@ -126,6 +126,16 @@ static bool checkAttrValid(int64_t groupIdxType)
     return true;
 }
 
+static void CheckFormatNZ(const aclTensor* x)
+{
+    if (x == nullptr) { return; }
+    op::Format format = x->GetStorageFormat();
+    if (format == Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("Format of input gets [%s], this format may lead to precision failure",
+        op::ToString(format).GetString());
+    }
+}
+
 static aclnnStatus CheckParams(
     const aclTensor* gradY, const aclTensor* groupIdxOptional, int64_t groupIdxType, const aclTensor* out)
 {
@@ -139,6 +149,11 @@ static aclnnStatus CheckParams(
     CHECK_RET(CheckShapeValid(gradY, groupIdxOptional, out), ACLNN_ERR_PARAM_INVALID);
 
     CHECK_RET(checkAttrValid(groupIdxType), ACLNN_ERR_PARAM_INVALID);
+
+    // 4. 检查输入是否为NZ，若为NZ则提示告警
+    CheckFormatNZ(gradY);
+    CheckFormatNZ(groupIdxOptional);
+    CheckFormatNZ(out);
     return ACLNN_SUCCESS;
 }
 
