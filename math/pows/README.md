@@ -62,7 +62,6 @@ $$
     </tr>
   </tbody></table>
 
-- Kirin X90 处理器系列产品: 不支持BFLOAT16。
 
 ## 约束说明
 
