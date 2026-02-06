@@ -38,15 +38,15 @@ extern "C" __aicore__ inline void PadSliceMoveAlignProcess(
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
         // complex64/uint64/int64
-        Slice::SliceMoveAlign<int64_t, int64_t> op;
+        Slice::SliceMoveAlign<int64_t, int32_t> op;
         op.Init(x, offsets, size, nullptr, y, tilingData, pipe);
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
-        Slice::SliceMoveAlign<int8_t, int8_t> op;
+        Slice::SliceMoveAlign<int8_t, int32_t> op;
         op.Init(x, offsets, size, nullptr, y, tilingData, pipe);
         op.Process();
     } else {
-        Slice::SliceMoveAlign<DTYPE_X, DTYPE_X> op;
+        Slice::SliceMoveAlign<DTYPE_X, int32_t> op;
         op.Init(x, offsets, size, nullptr, y, tilingData, pipe);
         op.Process();
     }
@@ -63,15 +63,15 @@ extern "C" __aicore__ inline void PadSliceMoveAlignLastDimProcess(
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
         // complex64/uint64/int64
-        Slice::SliceMoveAlignLastDim<int64_t, int64_t> op;
+        Slice::SliceMoveAlignLastDim<int64_t, int32_t> op;
         op.Init(x, offsets, size, nullptr, y, tilingData, pipe);
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
-        Slice::SliceMoveAlignLastDim<int8_t, int8_t> op;
+        Slice::SliceMoveAlignLastDim<int8_t, int32_t> op;
         op.Init(x, offsets, size, nullptr, y, tilingData, pipe);
         op.Process();
     } else {
-        Slice::SliceMoveAlignLastDim<DTYPE_X, DTYPE_X> op;
+        Slice::SliceMoveAlignLastDim<DTYPE_X, int32_t> op;
         op.Init(x, offsets, size, nullptr, y, tilingData, pipe);
         op.Process();
     }
@@ -86,15 +86,15 @@ extern "C" __aicore__ inline void PadSliceMoveAlignTwoDimProcess(
         op.Init(x, offsets, size, nullptr, y, tilingData, pipe);
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
-        Slice::SliceMoveAlignTwoDim<int64_t, int64_t> op;
+        Slice::SliceMoveAlignTwoDim<int64_t, int32_t> op;
         op.Init(x, offsets, size, nullptr, y, tilingData, pipe);
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
-        Slice::SliceMoveAlignTwoDim<int8_t, int8_t> op;
+        Slice::SliceMoveAlignTwoDim<int8_t, int32_t> op;
         op.Init(x, offsets, size, nullptr, y, tilingData, pipe);
         op.Process();
     } else {
-        Slice::SliceMoveAlignTwoDim<DTYPE_X, DTYPE_X> op;
+        Slice::SliceMoveAlignTwoDim<DTYPE_X, int32_t> op;
         op.Init(x, offsets, size, nullptr, y, tilingData, pipe);
         op.Process();
     }
@@ -110,15 +110,15 @@ extern "C" __aicore__ inline void PadSliceNDDMAProcess(
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
         // complex64/uint64/int64
-        Slice::SliceNDDMA<int64_t, int64_t> op;
+        Slice::SliceNDDMA<int64_t, int32_t> op;
         op.Init(x, offsets, size, nullptr, y, tilingData, pipe);
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
-        Slice::SliceNDDMA<int8_t, int8_t> op;
+        Slice::SliceNDDMA<int8_t, int32_t> op;
         op.Init(x, offsets, size, nullptr, y, tilingData, pipe);
         op.Process();
     } else {
-        Slice::SliceNDDMA<DTYPE_X, DTYPE_X> op;
+        Slice::SliceNDDMA<DTYPE_X, int32_t> op;
         op.Init(x, offsets, size, nullptr, y, tilingData, pipe);
         op.Process();
     }
@@ -135,15 +135,15 @@ extern "C" __aicore__ inline void PadSliceNDDMALastDimProcess(
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
         // complex64/uint64/int64
-        Slice::SliceNDDMALastDim<int64_t, int64_t> op;
+        Slice::SliceNDDMALastDim<int64_t, int32_t> op;
         op.Init(x, offsets, size, nullptr, y, tilingData, pipe);
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
-        Slice::SliceNDDMALastDim<int8_t, int8_t> op;
+        Slice::SliceNDDMALastDim<int8_t, int32_t> op;
         op.Init(x, offsets, size, nullptr, y, tilingData, pipe);
         op.Process();
     } else {
-        Slice::SliceNDDMALastDim<DTYPE_X, DTYPE_X> op;
+        Slice::SliceNDDMALastDim<DTYPE_X, int32_t> op;
         op.Init(x, offsets, size, nullptr, y, tilingData, pipe);
         op.Process();
     }
@@ -160,15 +160,15 @@ extern "C" __aicore__ inline void PadSliceMoveAlignGatherProcess(
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
         // complex64/uint64/int64
-        Slice::SliceMoveAlignGather<int64_t, int64_t> op;
+        Slice::SliceMoveAlignGather<int64_t, int32_t> op;
         op.Init(x, offsets, y, tilingData, pipe);
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
-        Slice::SliceMoveAlignGather<int8_t, int8_t> op;
+        Slice::SliceMoveAlignGather<int8_t, int32_t> op;
         op.Init(x, offsets, y, tilingData, pipe);
         op.Process();
     } else {
-        Slice::SliceMoveAlignGather<DTYPE_X, DTYPE_X> op;
+        Slice::SliceMoveAlignGather<DTYPE_X, int32_t> op;
         op.Init(x, offsets, y, tilingData, pipe);
         op.Process();
     }
@@ -185,15 +185,15 @@ extern "C" __aicore__ inline void PadSliceMoveAlignDataCopyUnalignProcess(
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
         // complex64/uint64/int64
-        Slice::SliceMoveAlignDataCopyUnalign<int64_t, int64_t> op;
+        Slice::SliceMoveAlignDataCopyUnalign<int64_t, int32_t> op;
         op.Init(x, offsets, y, tilingData, pipe);
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
-        Slice::SliceMoveAlignDataCopyUnalign<int8_t, int8_t> op;
+        Slice::SliceMoveAlignDataCopyUnalign<int8_t, int32_t> op;
         op.Init(x, offsets, y, tilingData, pipe);
         op.Process();
     } else {
-        Slice::SliceMoveAlignDataCopyUnalign<DTYPE_X, DTYPE_X> op;
+        Slice::SliceMoveAlignDataCopyUnalign<DTYPE_X, int32_t> op;
         op.Init(x, offsets, y, tilingData, pipe);
         op.Process();
     }
@@ -209,15 +209,15 @@ extern "C" __aicore__ inline void PadSliceTwoDimSmallShapeProcess(
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
         // complex64/uint64/int64
-        Slice::SliceTwoDimSmallShape<int64_t, int64_t> op;
+        Slice::SliceTwoDimSmallShape<int64_t, int32_t> op;
         op.Init(x, offsets, y, tilingData, pipe);
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
-        Slice::SliceTwoDimSmallShape<int8_t, int8_t> op;
+        Slice::SliceTwoDimSmallShape<int8_t, int32_t> op;
         op.Init(x, offsets, y, tilingData, pipe);
         op.Process();
     } else {
-        Slice::SliceTwoDimSmallShape<DTYPE_X, DTYPE_X> op;
+        Slice::SliceTwoDimSmallShape<DTYPE_X, int32_t> op;
         op.Init(x, offsets, y, tilingData, pipe);
         op.Process();
     }
