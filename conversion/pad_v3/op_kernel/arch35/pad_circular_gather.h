@@ -54,7 +54,8 @@ private:
     int32_t dimNum_{0};
     int32_t ubAxis_{0};
     int32_t ubFactor_{0};
-    uint16_t vlSplitIn_{0}; // VL切分轴的factor
+    uint16_t vlSplitIn_{0};        // VL切分轴的factor
+    bool lastThirdDimInVL_{false}; // 一次VL是否处理后面三根轴
 
     struct OutIndicesSet {
         uint64_t outIdx[CONST3];
@@ -75,8 +76,15 @@ public:
         ubAxis_ = tdPtr_->ubAxis;
         ubFactor_ = tdPtr_->ubFactor;
 
-        vlSplitIn_ = Std::min(
-            uint64_t(VL_CNT / tdPtr_->outStride[dimNum_ - CONST2]), uint64_t(tdPtr_->outShape[dimNum_ - CONST2]));
+        // 一次VL需要处理后面3根轴，当前支持切-3轴、-4轴
+        if (UB_AXES >= CONST3 && tdPtr_->outStride[dimNum_ - CONST3] <= VL_CNT / CONST2) {
+            lastThirdDimInVL_ = true;
+            vlSplitIn_ = Std::min(
+                uint64_t(VL_CNT / tdPtr_->outStride[dimNum_ - CONST3]), uint64_t(tdPtr_->outShape[dimNum_ - CONST3]));
+        } else {
+            vlSplitIn_ = Std::min(
+                uint64_t(VL_CNT / tdPtr_->outStride[dimNum_ - CONST2]), uint64_t(tdPtr_->outShape[dimNum_ - CONST2]));
+        }
         if constexpr (sizeof(T) == 1) {
             vlSplitIn_ /= sizeof(int16_t);
             if (vlSplitIn_ == 0) {
@@ -104,7 +112,11 @@ public:
         endIdx = endIdx < tdPtr_->ubTotalCount ? endIdx : tdPtr_->ubTotalCount;
 
         LocalTensor<RangeType> idxTensor = idxBuf_.Get<RangeType>();
-        GenGatherIndex(idxTensor);
+        if (lastThirdDimInVL_) {
+            GenGatherIndexThreeDim(idxTensor);
+        } else {
+            GenGatherIndex(idxTensor);
+        }
 
         uint64_t ubTailFactor = tdPtr_->inShape[ubAxis_] % ubFactor_;
         ubTailFactor = (ubTailFactor == 0) ? ubFactor_ : ubTailFactor;
@@ -148,11 +160,9 @@ private:
         }
 
         LocalTensor<T> inLocal = inQue_.AllocTensor<T>();
-
         DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
         DataCopyExtParams copyInParams = {1u, static_cast<uint32_t>(copyInNum * sizeof(T)), 0, 0, 0};
         DataCopyPad(inLocal, inputGm_[inAddr], copyInParams, padParams);
-
         inQue_.EnQue(inLocal);
     }
 
@@ -172,13 +182,13 @@ private:
         } else if constexpr (UB_AXES == CONST4) {
             GatherProcessUb4DFw(idxTensor, inLocal, outLocalFw, ubAxisInCopyNum);
         }
+        inQue_.FreeTensor(inLocal);
 
         outQueFw_.EnQue(outLocalFw);
         LocalTensor<T> outLocal = outQueFw_.DeQue<T>();
         CopyOut(ubAxisInCopyNum, inIndex, totalOutIdx, outLocal);
         CopyOutPad(ubAxisInCopyNum, inIndex, totalOutIdx, outLocal);
         outQueFw_.FreeTensor(outLocal);
-        inQue_.FreeTensor(inLocal);
     }
 
     __aicore__ inline bool IsInLeftPad(int64_t inIdx, int32_t inAxis)
@@ -397,18 +407,14 @@ private:
         int32_t lastLeftPadNum = tdPtr_->leftPad[dimNum_ - 1];
         uint32_t lastOutDimSize = tdPtr_->outShape[dimNum_ - 1];
         uint16_t lastDimsLeft = vlSplitIn_;
-        RangeType lastDimIdx = lastInDimSize - 1;
         __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
 
         __VEC_SCOPE__
         {
             MicroAPI::MaskReg maskIdx = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
-            MicroAPI::RegTensor<RangeType> lineRange;
-            MicroAPI::RegTensor<RangeType> lineRangeNew;
-            MicroAPI::MaskReg leftMask;
-            MicroAPI::RegTensor<RangeType> leftPadIdxReg;
-            MicroAPI::MaskReg rightMask;
-            MicroAPI::RegTensor<RangeType> rightPadIdxReg;
+            MicroAPI::RegTensor<RangeType> lineRange, lineRangeNew;
+            MicroAPI::MaskReg leftMask, rightMask;
+            MicroAPI::RegTensor<RangeType> leftPadIdxReg, rightPadIdxReg;
             MicroAPI::UnalignReg uRegIn;
 
             // 先拼好-1轴的索引
@@ -433,6 +439,76 @@ private:
                 MicroAPI::DataCopyUnAlign(idxAddrTmp2, lineRangeNew, uRegIn, lastOutDimSize);
             }
             MicroAPI::DataCopyUnAlignPost(idxAddrTmp2, uRegIn, 0);
+        }
+    }
+
+    __aicore__ inline void GenGatherIndexThreeDim(LocalTensor<RangeType>& idxTensor)
+    {
+        // 2*VL长度的索引，纯PAD索引占前VL，正常值索引占后VL
+        uint32_t lastInDimSize = tdPtr_->inShape[dimNum_ - 1];
+        uint16_t lastSecInDimSize = tdPtr_->inShape[dimNum_ - CONST2];
+        int32_t outStride1 = tdPtr_->outStride[dimNum_ - CONST3];
+        int32_t outStride2 = tdPtr_->outStride[dimNum_ - CONST2];
+        int32_t inStride1 = tdPtr_->inStride[dimNum_ - CONST3];
+        uint16_t lastTwoDimLoops = vlSplitIn_;
+        // 切在-3轴上，-2轴上的数据都是从gather中获取到的，包含pad
+        int32_t lastLeftPadNum = tdPtr_->leftPad[dimNum_ - 1];
+        uint16_t last2LeftPadNum = tdPtr_->leftPad[dimNum_ - CONST2];
+        uint16_t last2RightPadNum = tdPtr_->outShape[dimNum_ - CONST2] - lastSecInDimSize - last2LeftPadNum;
+        __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
+
+        __VEC_SCOPE__
+        {
+            MicroAPI::MaskReg maskIdx = MicroAPI::CreateMask<RangeType, MicroAPI::MaskPattern::ALL>();
+            MicroAPI::RegTensor<RangeType> lineRange, lineRangeNew, lineRangeBk;
+            MicroAPI::MaskReg leftMask, rightMask;
+            MicroAPI::RegTensor<RangeType> leftPadIdxReg, rightPadIdxReg;
+            MicroAPI::UnalignReg uReg;
+
+            // 先拼好-1轴的索引
+            MicroAPI::Arange(lineRange, 0);
+            // 先拷出去，防止索引尾部脏数据
+            MicroAPI::DataCopy(idxAddr, lineRange, maskIdx);
+
+            MicroAPI::Adds(lineRange, lineRange, ((RangeType)-1) * lastLeftPadNum, maskIdx);
+            MicroAPI::CompareScalar<RangeType, CMPMODE::LT>(leftMask, lineRange, 0, maskIdx);
+            MicroAPI::Arange(leftPadIdxReg, lastInDimSize - lastLeftPadNum);
+            MicroAPI::Copy<RangeType, MicroAPI::MaskMergeMode::MERGING>(lineRange, leftPadIdxReg, leftMask);
+
+            MicroAPI::Arange(rightPadIdxReg, ((RangeType)-1) * (lastLeftPadNum + lastInDimSize));
+            MicroAPI::CompareScalar<RangeType, CMPMODE::GE>(rightMask, rightPadIdxReg, 0, maskIdx);
+            MicroAPI::Copy<RangeType, MicroAPI::MaskMergeMode::MERGING>(lineRange, rightPadIdxReg, rightMask);
+
+            // -3轴有效输入的索引
+            for (uint16_t i = 0; i < lastTwoDimLoops; i++) {
+                MicroAPI::Adds(lineRangeBk, lineRange, (RangeType)(i * inStride1), maskIdx);
+                // -2轴leftpad行数, 索引取H轴下部
+                __local_mem__ RangeType* idxAddrTmp = idxAddr + i * outStride1;
+                for (uint16_t j = 0; j < last2LeftPadNum; j++) {
+                    MicroAPI::Adds(
+                        lineRangeNew, lineRangeBk,
+                        (RangeType)((lastSecInDimSize - last2LeftPadNum + j) * lastInDimSize), maskIdx);
+                    MicroAPI::DataCopyUnAlign(idxAddrTmp, lineRangeNew, uReg, outStride2);
+                }
+                MicroAPI::DataCopyUnAlignPost(idxAddrTmp, uReg, 0);
+
+                // -2 轴inputshape, 索引递增
+                __local_mem__ RangeType* idxAddrTmp1 = idxAddr + i * outStride1 + last2LeftPadNum * outStride2;
+                for (uint16_t j = 0; j < lastSecInDimSize; j++) {
+                    MicroAPI::Adds(lineRangeNew, lineRangeBk, (RangeType)(j * lastInDimSize), maskIdx);
+                    MicroAPI::DataCopyUnAlign(idxAddrTmp1, lineRangeNew, uReg, outStride2);
+                }
+                MicroAPI::DataCopyUnAlignPost(idxAddrTmp1, uReg, 0);
+
+                // -2轴rightpad行数, 索引取H轴上部
+                __local_mem__ RangeType* idxAddrTmp2 =
+                    idxAddr + i * outStride1 + last2LeftPadNum * outStride2 + lastSecInDimSize * outStride2;
+                for (uint16_t j = 0; j < last2RightPadNum; j++) {
+                    MicroAPI::Adds(lineRangeNew, lineRangeBk, (RangeType)(j * lastInDimSize), maskIdx);
+                    MicroAPI::DataCopyUnAlign(idxAddrTmp2, lineRangeNew, uReg, outStride2);
+                }
+                MicroAPI::DataCopyUnAlignPost(idxAddrTmp2, uReg, 0);
+            }
         }
     }
 
@@ -532,6 +608,18 @@ private:
             tdPtr_->outShape[dimNum_ - CONST2] - tdPtr_->leftPad[dimNum_ - CONST2] - tdPtr_->inShape[dimNum_ - CONST2];
         uint32_t leftPadInVlOffset = vlInNum == 0 ? 0 : (vlInNum - vlLeftPadNum) * strideInVl;
 
+        if (lastThirdDimInVL_) {
+            strideInVl = tdPtr_->inStride[dimNum_ - CONST3];
+            strideInVlO1 = 1;
+            strideOutVl = tdPtr_->outStride[dimNum_ - CONST3];
+            strideOutVlO1 = 1;
+            ubAxisInCopyLoops = 1;
+            vlLeftPadNum = 0;
+            vlInNum = ubAxisInCopyNum;
+            vlRightPadNum = 0;
+            leftPadInVlOffset = (vlInNum - vlLeftPadNum) * strideInVl;
+        }
+
         RangeType idxOffset = strideInVl * vlSplitLoopIn;
         uint32_t maskValue = strideOutVl * vlSplitLoopIn;
 
@@ -566,7 +654,6 @@ private:
 
                 idxPadOffset = uiIdx * strideInVlO1;
                 curInOutAddr = outAddr + uiIdx * strideOutVlO1 + vlLeftPadNum * strideOutVl;
-
                 VlInCopyProc(
                     copyInPadLoops, lastCopyInPadLoops, idxOffset, maskValue, lastCopyInMaskValue, inAddr, curInOutAddr,
                     regIdx, idxPadOffset);
@@ -609,6 +696,25 @@ private:
             tdPtr_->outShape[dimNum_ - CONST2] - tdPtr_->leftPad[dimNum_ - CONST2] - tdPtr_->inShape[dimNum_ - CONST2];
         uint32_t leftPadInVlOffset = (vlInNum - vlLeftPadNum) * strideInVl;
         uint32_t leftPadInVlO1Offset = (vlO1InNum - vlO1LeftPadNum) * strideInVlO1;
+
+        if (lastThirdDimInVL_) {
+            strideInVl = tdPtr_->inStride[dimNum_ - CONST3];
+            strideInVlO1 = tdPtr_->inStride[dimNum_ - CONST4];
+            strideOutVl = tdPtr_->outStride[dimNum_ - CONST3];
+            strideOutVlO1 = tdPtr_->outStride[dimNum_ - CONST4];
+
+            vlLeftPadNum = tdPtr_->leftPad[dimNum_ - CONST3];
+            vlInNum = tdPtr_->inShape[dimNum_ - CONST3];
+            vlRightPadNum = tdPtr_->outShape[dimNum_ - CONST3] - tdPtr_->leftPad[dimNum_ - CONST3] -
+                            tdPtr_->inShape[dimNum_ - CONST3];
+
+            vlO1LeftPadNum = 0;
+            vlO1InNum = 1;
+            vlO1RightPadNum = 0;
+
+            leftPadInVlOffset = (vlInNum - vlLeftPadNum) * strideInVl;
+            leftPadInVlO1Offset = 0;
+        }
 
         RangeType idxOffset = strideInVl * vlSplitLoopIn;
         uint32_t maskValue = strideOutVl * vlSplitLoopIn;

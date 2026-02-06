@@ -223,28 +223,28 @@ void PadACTiling::CalculateTilingKeyReflect()
         tilingKey_ = padMode_ == ModeNum::SYMMETRIC ? SYMMETRIC_SIMT_BRANCH : REFLECT_SIMT_BRANCH;
         return;
     }
+    uint64_t lastShapeSizeAlign = GetSizeOfBlockAlign(tilingData_->outShape[dimNum_ - 1] * dtypeBytes_, vectorSize_);
     bufferSize_ = GetSizeOfBlockAlign(ubSize_ / UB_DIVIDER - vectorSize_, vectorSize_);
     additionTileSize_ = vectorSize_ * EXPANSION_FACTOR;
     if (bufferSize_ > UB_MAX_DATA_SIZE_PER_BUFFER) {
         bufferSize_ = UB_MAX_DATA_SIZE_PER_BUFFER;
     }
-    if (GetSizeOfBlockAlign(tilingData_->outShape[dimNum_ - 1] * dtypeBytes_, vectorSize_) > bufferSize_) {
+    if (lastShapeSizeAlign > bufferSize_) {
         ubAxis_ = dimNum_ - 1;
         ubFactor_ = bufferSize_ / dtypeBytes_;
         tilingKey_ = padMode_ == ModeNum::SYMMETRIC ? SYMMETRIC_CUT_LAST_DIM_BRANCH : REFLECT_CUT_LAST_DIM_BRANCH;
         outTileSize_ = bufferSize_;
-        return;
+        return TilingInfoTune();
     }
     // 不切w，但是倒数第二根轴只能切1，此时也走切W分支
     // 不切w,但是只有一根轴 & w > 128B，也走切w分支
-    if (GetSizeOfBlockAlign(tilingData_->outShape[dimNum_ - 1] * dtypeBytes_, vectorSize_) * EXPANSION_FACTOR >
-            bufferSize_ ||
+    if (lastShapeSizeAlign * EXPANSION_FACTOR > bufferSize_ ||
         (tilingData_->outShape[dimNum_ - 1] * dtypeBytes_ > vectorSize_ / HALF_FACTOR && dimNum_ == 1)) {
         ubAxis_ = dimNum_ - 1;
         ubFactor_ = tilingData_->outShape[dimNum_ - 1];
         tilingKey_ = padMode_ == ModeNum::SYMMETRIC ? SYMMETRIC_CUT_LAST_DIM_BRANCH : REFLECT_CUT_LAST_DIM_BRANCH;
         outTileSize_ = bufferSize_;
-        return;
+        return TilingInfoTune();
     }
     if (tilingData_->outShape[dimNum_ - 1] * dtypeBytes_ > vectorSize_ / HALF_FACTOR) {
         additionTileSize_ = GetSizeOfBlockAlign(tilingData_->outShape[dimNum_ - 1] * dtypeBytes_, blockSize_);
@@ -256,14 +256,16 @@ void PadACTiling::CalculateTilingKeyReflect()
         DoFindSplitAxisByInput(true);
         tilingKey_ = padMode_ == ModeNum::SYMMETRIC ? SYMMETRIC_BIG_LAST_DIM_BRANCH : REFLECT_BIG_LAST_DIM_BRANCH;
 
-        if (GetSizeOfBlockAlign(tilingData_->outShape[dimNum_ - 1] * dtypeBytes_, vectorSize_) * EXPANSION_FACTOR >
-            outTileSize_) {
+        if (lastShapeSizeAlign * EXPANSION_FACTOR > outTileSize_) {
             bufferSize_ = GetSizeOfBlockAlign(ubSize_ / UB_DIVIDER - vectorSize_, vectorSize_);
             ubAxis_ = dimNum_ - 1;
             ubFactor_ = tilingData_->outShape[dimNum_ - 1];
             tilingKey_ = padMode_ == ModeNum::SYMMETRIC ? SYMMETRIC_CUT_LAST_DIM_BRANCH : REFLECT_CUT_LAST_DIM_BRANCH;
             outTileSize_ = bufferSize_;
-            return;
+            return TilingInfoTune();
+        } else {
+            TilingInfoTuneForNormal(lastShapeSizeAlign, padMode_ == ModeNum::SYMMETRIC ?
+             SYMMETRIC_CUT_LAST_DIM_BRANCH : REFLECT_CUT_LAST_DIM_BRANCH);
         }
     } else {
         bufferSize_ = GetSizeOfBlockAlign(
@@ -273,6 +275,8 @@ void PadACTiling::CalculateTilingKeyReflect()
         tilingKey_ = padMode_ == ModeNum::SYMMETRIC ? SYMMETRIC_SMALL_LAST_DIM_GATHER_BRANCH :
                                                       REFLECT_SMALL_LAST_DIM_GATHER_BRANCH;
         additionTileSize_ = vectorSize_;
+        TilingInfoTuneForNormal(lastShapeSizeAlign, padMode_ == ModeNum::SYMMETRIC ?
+             SYMMETRIC_CUT_LAST_DIM_BRANCH : REFLECT_CUT_LAST_DIM_BRANCH);
     }
 }
 
@@ -289,10 +293,12 @@ void PadACTiling::CircularOnlyLastTiling(uint64_t lastShapeSizeAlign)
 
 bool PadACTiling::CheckTilingInfoSatisfied(PadV3UbTileInfo& tilingInfo)
 {
+    bool cutOutput = (padMode_ == ModeNum::CONSTANT || padMode_ == ModeNum::EDGE);
     tilingInfo.ubTotalCnt = Ops::Base::CeilDiv(
-        tilingData_->inShape[tilingInfo.ubSplitAxis], static_cast<uint64_t>(tilingInfo.ubSplitFactor));
+        cutOutput ? tilingData_->outShape[tilingInfo.ubSplitAxis] : tilingData_->inShape[tilingInfo.ubSplitAxis],
+         static_cast<uint64_t>(tilingInfo.ubSplitFactor));
     for (uint64_t i = 0; i < tilingInfo.ubSplitAxis; i++) {
-        tilingInfo.ubTotalCnt *= tilingData_->inShape[i];
+        tilingInfo.ubTotalCnt *= cutOutput ? tilingData_->outShape[i] : tilingData_->inShape[i];
     }
 
     tilingInfo.ubPerCoreCnt = 1;
@@ -315,9 +321,10 @@ bool PadACTiling::CheckTilingInfoSatisfied(PadV3UbTileInfo& tilingInfo)
 
 void PadACTiling::GetOptimizeTiling(const PadV3UbTileInfo& oldTilingInfo, PadV3UbTileInfo& newTilingInfo)
 {
+    bool cutOutput = (padMode_ == ModeNum::CONSTANT || padMode_ == ModeNum::EDGE);
     int64_t outCount = 1;
     for (uint8_t i = 0; i < oldTilingInfo.ubSplitAxis; i++) {
-        outCount *= tilingData_->inShape[i];
+        outCount *= cutOutput ? tilingData_->outShape[i] : tilingData_->inShape[i];
     }
 
     // ubPerCoreCnt 不发生变化为前提时，最多循环coreNum+dimNum_次就可以找到最优解, 这里仅做防死循环保护
@@ -326,11 +333,11 @@ void PadACTiling::GetOptimizeTiling(const PadV3UbTileInfo& oldTilingInfo, PadV3U
     bool finded = false;
     for (uint8_t iDim = oldTilingInfo.ubSplitAxis; iDim < dimNum_; iDim++) {
         if (iDim != oldTilingInfo.ubSplitAxis) {
-            outCount *= tilingData_->inShape[iDim - 1];
+            outCount *= cutOutput ? tilingData_->outShape[iDim - 1] : tilingData_->inShape[iDim - 1];
         }
 
         int64_t iDimFactor =
-            (iDim == oldTilingInfo.ubSplitAxis) ? oldTilingInfo.ubSplitFactor : tilingData_->inShape[iDim];
+            (iDim == oldTilingInfo.ubSplitAxis) ? oldTilingInfo.ubSplitFactor : (cutOutput ? tilingData_->outShape[iDim] : tilingData_->inShape[iDim]);
         for (int64_t factor = iDimFactor; factor > 0;) {
             loops++;
             if (loops > maxLoop) {
@@ -340,14 +347,14 @@ void PadACTiling::GetOptimizeTiling(const PadV3UbTileInfo& oldTilingInfo, PadV3U
             }
 
             // iDimOuter 每次循环会增加1,最多增加 coreNum_ 后，tmpPerCount会增加1
-            int64_t iDimOuter = Ops::Base::CeilDiv(tilingData_->inShape[iDim], static_cast<uint64_t>(factor));
+            int64_t iDimOuter = Ops::Base::CeilDiv(cutOutput ? tilingData_->outShape[iDim] : tilingData_->inShape[iDim], static_cast<uint64_t>(factor));
             int64_t tmpTotalCount = iDimOuter * outCount;
             int64_t tmpPerCount =
                 tmpTotalCount > coreNum_ ? Ops::Base::CeilDiv(tmpTotalCount, static_cast<int64_t>(coreNum_)) : 1;
             int64_t tmpCoreNum =
                 tmpTotalCount > coreNum_ ? Ops::Base::CeilDiv(tmpTotalCount, tmpPerCount) : tmpTotalCount;
             int64_t tmpFactor =
-                Ops::Base::CeilDiv(tilingData_->inShape[iDim], static_cast<uint64_t>(iDimOuter)); // 切分更均匀
+                Ops::Base::CeilDiv(cutOutput ? tilingData_->outShape[iDim] : tilingData_->inShape[iDim], static_cast<uint64_t>(iDimOuter)); // 切分更均匀
 
             if (oldTilingInfo.ubPerCoreCnt != tmpPerCount) {
                 OP_LOGD(
@@ -378,10 +385,9 @@ void PadACTiling::GetOptimizeTiling(const PadV3UbTileInfo& oldTilingInfo, PadV3U
                 finded = true;
                 break;
             }
-
             factor = tmpFactor - 1;
         }
-
+        
         OP_LOGD(
             context_, "iDim:%u ubSplitAxis:%u ubSplitFactor:%u loops:%u finded:%d", iDim, newTilingInfo.ubSplitAxis,
             newTilingInfo.ubSplitFactor, loops, finded);
@@ -389,6 +395,15 @@ void PadACTiling::GetOptimizeTiling(const PadV3UbTileInfo& oldTilingInfo, PadV3U
         if (finded) {
             break;
         }
+    }
+    //如果切分轴变化，不是尾轴，且该轴满载，那还是切前一个轴且factor=1
+    if (newTilingInfo.ubSplitAxis != dimNum_ - 1 && newTilingInfo.ubSplitAxis > oldTilingInfo.ubSplitAxis &&
+    newTilingInfo.ubSplitFactor >= (cutOutput ? tilingData_->outShape[newTilingInfo.ubSplitAxis] : tilingData_->inShape[newTilingInfo.ubSplitAxis])){
+        newTilingInfo.ubSplitAxis = newTilingInfo.ubSplitAxis - 1;
+        newTilingInfo.ubSplitFactor = 1;
+        OP_LOGD(
+            context_, "Back to last axis, ubSplitAxis:%u ubSplitFactor:%u", newTilingInfo.ubSplitAxis,
+            newTilingInfo.ubSplitFactor);
     }
 }
 
@@ -455,12 +470,12 @@ bool PadACTiling::IsCutLastDim()
     return false;
 }
 
-void PadACTiling::TilingInfoTuneForNormal(uint64_t lastShapeSizeAlign)
+void PadACTiling::TilingInfoTuneForNormal(uint64_t lastShapeSizeAlign, uint64_t tilingBranch)
 {
     TilingInfoTune();
     if (ubAxis_ == dimNum_ - 1) {
-        tilingKey_ = CIRCULAR_CUT_LAST_DIM_BRANCH;
-        additionTileSize_ = vectorSize_;
+        tilingKey_ = tilingBranch;
+        additionTileSize_ = (padMode_ == ModeNum::SYMMETRIC || padMode_ == ModeNum::REFLECT) ? EXPANSION_FACTOR * vectorSize_ : vectorSize_ ;
         bufferSize_ = lastShapeSizeAlign;
         outTileSize_ = bufferSize_;
     }
@@ -499,13 +514,8 @@ void PadACTiling::CalculateTilingKeyCircular()
             return TilingInfoTune();
         }
 
-        TilingInfoTuneForNormal(lastShapeSizeAlign);
+        TilingInfoTuneForNormal(lastShapeSizeAlign, CIRCULAR_CUT_LAST_DIM_BRANCH);
     } else {
-        if (dimNum_ > PAD_DIM_INDEX_FOURTH ||
-            (dimNum_ == PAD_DIM_INDEX_FOURTH && (tilingData_->leftPad[0] != 0 || rightPad_[0] != 0))) {
-            tilingKey_ = CIRCULAR_SIMT_BRANCH;
-            return;
-        }
         // (inputUb + outputUb + 2*blockSize) * 2 + VL
         additionTileSize_ = vectorSize_;
         bufferSize_ = GetSizeOfBlockAlign(
@@ -514,7 +524,7 @@ void PadACTiling::CalculateTilingKeyCircular()
         bufferSize_ = std::max(bufferSize_, vectorSize_);
         DoFindSplitAxisByInput(false);
         tilingKey_ = CIRCULAR_SMALL_LAST_DIM_GATHER_BRANCH;
-        TilingInfoTuneForNormal(lastShapeSizeAlign);
+        TilingInfoTuneForNormal(lastShapeSizeAlign, CIRCULAR_CUT_LAST_DIM_BRANCH);
     }
 }
 
@@ -527,28 +537,28 @@ void PadACTiling::CalculateTilingKeyEdge()
         tilingKey_ = EDGE_SIMT_BRANCH;
         return;
     }
+    uint64_t lastShapeSizeAlign = GetSizeOfBlockAlign(tilingData_->outShape[dimNum_ - 1] * dtypeBytes_, vectorSize_);
     bufferSize_ = GetSizeOfBlockAlign(ubSize_ / PAIR - vectorSize_, vectorSize_);
     additionTileSize_ = vectorSize_;
     if (bufferSize_ > UB_MAX_DATA_SIZE_PER_BUFFER) {
         bufferSize_ = UB_MAX_DATA_SIZE_PER_BUFFER;
     }
-    if (GetSizeOfBlockAlign(tilingData_->outShape[dimNum_ - 1] * dtypeBytes_, vectorSize_) > bufferSize_) {
+    if (lastShapeSizeAlign > bufferSize_) {
         ubAxis_ = dimNum_ - 1;
         ubFactor_ = bufferSize_ / dtypeBytes_;
         tilingKey_ = EDGE_CUT_LAST_DIM_BRANCH;
         outTileSize_ = bufferSize_;
-        return;
+        return TilingInfoTune();
     }
     // 不切w，但是倒数第二根轴只能切1，此时也走切W分支
     // 不切w,但是只有一根轴 & w > 128B，也走切w分支
-    if (GetSizeOfBlockAlign(tilingData_->outShape[dimNum_ - 1] * dtypeBytes_, vectorSize_) * EXPANSION_FACTOR >
-            bufferSize_ ||
+    if (lastShapeSizeAlign * EXPANSION_FACTOR > bufferSize_ ||
         (tilingData_->outShape[dimNum_ - 1] * dtypeBytes_ > vectorSize_ / HALF_FACTOR && dimNum_ == 1)) {
         ubAxis_ = dimNum_ - 1;
         ubFactor_ = tilingData_->outShape[dimNum_ - 1];
         tilingKey_ = EDGE_CUT_LAST_DIM_BRANCH;
         outTileSize_ = bufferSize_;
-        return;
+        return TilingInfoTune();
     }
     if (tilingData_->outShape[dimNum_ - 1] * dtypeBytes_ > vectorSize_ / HALF_FACTOR) {
         DoFindSplitAxis(true);
@@ -562,8 +572,11 @@ void PadACTiling::CalculateTilingKeyEdge()
             ubAxis_ = dimNum_ - 1;
             ubFactor_ = tilingData_->outShape[dimNum_ - 1] / dtypeBytes_;
             tilingKey_ = EDGE_CUT_LAST_DIM_BRANCH;
-            outTileSize_ = GetSizeOfBlockAlign(tilingData_->outShape[dimNum_ - 1] * dtypeBytes_, vectorSize_);
+            outTileSize_ = lastShapeSizeAlign;
             additionTileSize_ = vectorSize_;
+            TilingInfoTune();
+        } else {
+            TilingInfoTuneForNormal(lastShapeSizeAlign, EDGE_CUT_LAST_DIM_BRANCH);
         }
     } else {
         bufferSize_ = GetSizeOfBlockAlign((ubSize_ - vectorSize_ * PAIR) / PAIR / PAIR, vectorSize_);
@@ -573,6 +586,7 @@ void PadACTiling::CalculateTilingKeyEdge()
         }
         tilingKey_ = EDGE_SMALL_LAST_DIM_GATHER_BRANCH;
         additionTileSize_ = outTileSize_ + vectorSize_;
+        TilingInfoTuneForNormal(lastShapeSizeAlign, EDGE_CUT_LAST_DIM_BRANCH);
     }
 }
 
@@ -583,28 +597,29 @@ void PadACTiling::CalculateTilingKey()
         tilingKey_ = CONSTANT_SIMT_BRANCH;
         return;
     }
+    uint64_t lastShapeSizeAlign = GetSizeOfBlockAlign(tilingData_->outShape[dimNum_ - 1] * dtypeBytes_, vectorSize_);
     bufferSize_ = GetSizeOfBlockAlign(ubSize_ / PAIR - vectorSize_, vectorSize_);
     additionTileSize_ = vectorSize_;
     if (bufferSize_ > UB_MAX_DATA_SIZE_PER_BUFFER) {
         bufferSize_ = UB_MAX_DATA_SIZE_PER_BUFFER;
     }
-    if (GetSizeOfBlockAlign(tilingData_->outShape[dimNum_ - 1] * dtypeBytes_, vectorSize_) > bufferSize_) {
+    if (lastShapeSizeAlign > bufferSize_) {
         ubAxis_ = dimNum_ - 1;
         ubFactor_ = bufferSize_ / dtypeBytes_;
         tilingKey_ = CONSTANT_CUT_LAST_DIM_BRANCH;
         outTileSize_ = bufferSize_;
-        return;
+        return TilingInfoTune();
     }
     // 不切w，但是倒数第二根轴只能切1，此时也走切W分支
     // 不切w,但是只有一根轴 & w > 128B，也走切w分支
-    if (GetSizeOfBlockAlign(tilingData_->outShape[dimNum_ - 1] * dtypeBytes_, vectorSize_) * EXPANSION_FACTOR >
+    if (lastShapeSizeAlign * EXPANSION_FACTOR >
             bufferSize_ ||
         (tilingData_->outShape[dimNum_ - 1] * dtypeBytes_ > vectorSize_ / HALF_FACTOR && dimNum_ == 1)) {
         ubAxis_ = dimNum_ - 1;
         ubFactor_ = tilingData_->outShape[dimNum_ - 1];
         tilingKey_ = CONSTANT_CUT_LAST_DIM_BRANCH;
         outTileSize_ = bufferSize_;
-        return;
+        return TilingInfoTune();
     }
     if (tilingData_->outShape[dimNum_ - 1] * dtypeBytes_ > vectorSize_ / HALF_FACTOR) {
         DoFindSplitAxis(true);
@@ -620,6 +635,9 @@ void PadACTiling::CalculateTilingKey()
             tilingKey_ = CONSTANT_CUT_LAST_DIM_BRANCH;
             outTileSize_ = GetSizeOfBlockAlign(tilingData_->outShape[dimNum_ - 1] * dtypeBytes_, vectorSize_);
             additionTileSize_ = vectorSize_;
+            TilingInfoTune();
+        } else {
+            TilingInfoTuneForNormal(lastShapeSizeAlign, CONSTANT_CUT_LAST_DIM_BRANCH);
         }
     } else {
         bufferSize_ = GetSizeOfBlockAlign((ubSize_ - vectorSize_ * PAIR) / PAIR / PAIR, vectorSize_);
@@ -630,6 +648,7 @@ void PadACTiling::CalculateTilingKey()
         // 按vl切分判断是否走scatter
         CalculateGatherOrScatter();
         additionTileSize_ = outTileSize_ + vectorSize_;
+        TilingInfoTuneForNormal(lastShapeSizeAlign, CONSTANT_CUT_LAST_DIM_BRANCH);
     }
 }
 void PadACTiling::DoTilingWithReflect()
@@ -641,18 +660,6 @@ void PadACTiling::DoTilingWithReflect()
         return;
     }
     tilingKey_ = tilingKey_ + (dimNum_ - ubAxis_) * DIM_OFFSET_SCALE;
-    uint64_t factorCount = Ops::Base::CeilDiv(tilingData_->inShape[ubAxis_], static_cast<uint64_t>(ubFactor_));
-    ubTotalCount_ = factorCount;
-    for (uint64_t i = 0; i < ubAxis_; i++) {
-        ubTotalCount_ *= tilingData_->inShape[i];
-    }
-    if (ubTotalCount_ > coreNum_) {
-        ubPerCount_ = Ops::Base::CeilDiv(ubTotalCount_, coreNum_);
-        coreNum_ = Ops::Base::CeilDiv(ubTotalCount_, ubPerCount_);
-    } else {
-        ubPerCount_ = 1;
-        coreNum_ = ubTotalCount_;
-    }
 }
 
 void PadACTiling::DoTilingWithCircular()
@@ -681,17 +688,6 @@ void PadACTiling::DoTilingWithEdge()
 void PadACTiling::CaculateTilingParams()
 {
     tilingKey_ = tilingKey_ + (dimNum_ - ubAxis_) * DIM_OFFSET_SCALE;
-    uint64_t factorCount = Ops::Base::CeilDiv(tilingData_->outShape[ubAxis_], static_cast<uint64_t>(ubFactor_));
-    ubTotalCount_ = factorCount;
-    for (uint64_t i = 0; i < ubAxis_; i++) {
-        ubTotalCount_ *= tilingData_->outShape[i];
-    }
-    if (ubTotalCount_ > coreNum_) {
-        ubPerCount_ = Ops::Base::CeilDiv(ubTotalCount_, coreNum_);
-    } else {
-        ubPerCount_ = 1;
-        coreNum_ = ubTotalCount_;
-    }
 }
 
 void PadACTiling::DoTilingWithConstant()

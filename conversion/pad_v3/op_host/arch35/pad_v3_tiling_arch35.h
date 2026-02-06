@@ -110,7 +110,7 @@ private:
     void GetOptimizeTiling(const PadV3UbTileInfo& oldTilingInfo, PadV3UbTileInfo& newTilingInfo);
     void TilingInfoTune();
     bool IsCutLastDim();
-    void TilingInfoTuneForNormal(uint64_t lastShapeSizeAlign);
+    void TilingInfoTuneForNormal(uint64_t lastShapeSizeAlign, uint64_t tilingBranch);
 
 public:
     bool isPadV3_{false};

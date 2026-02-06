@@ -85,7 +85,7 @@ aclnnStatus aclnnReplicationPad2d(
       <td>输入</td>
       <td>待填充的原输入数据。</td>
       <td>-</td>
-      <td>BFLOAT16、FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、COMPLEX64、COMPLEX128</td>
+      <td>BOOL、INT8、UINT8、INT16、UINT16、FLOAT16、BFLOAT16、INT32、UINT32、FLOAT32、INT64、UINT64、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>3-4</td>
       <td>√</td>
@@ -95,7 +95,7 @@ aclnnStatus aclnnReplicationPad2d(
       <td>输入</td>
       <td>-</td>
       <td><ul><li>数据类型长度为4。数值依次代表左右上下需要填充的值。</li><li>padding前两维度的数值都需小于self最后一维度的数值，后两维度的数值需小于self倒数第二维度的数值。</li></ul></td>
-      <td>NT64</td>
+      <td>INT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -132,6 +132,7 @@ aclnnStatus aclnnReplicationPad2d(
     </tr>
   </tbody></table>
 
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持 BOOL、UINT16、UINT32、UINT64。
 - **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
