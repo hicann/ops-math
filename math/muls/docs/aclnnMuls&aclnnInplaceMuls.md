@@ -49,7 +49,7 @@
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16，且与self满足[互推导关系](../../../docs/zh/context/互推导关系.md)。
     - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16，且与self满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
 
-  - out(aclTensor \*, 计算输出)：公式中的输出`out`，Device侧的aclTensor。shape与输入self的shape相等。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据类型需要是self与other推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。
+  - out(aclTensor \*, 计算输出)：公式中的输出`out`，Device侧的aclTensor。shape与输入self的shape相等。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16。
 
@@ -65,9 +65,8 @@
   161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的self、other、out是空指针时。
   161002 (ACLNN_ERR_PARAM_INVALID)：1. self和out的数据类型不在支持的范围内时。
                                     2. self和other无法做数据类型推导。
-                                    3. 推导出的数据类型无法转换为out的类型。
-                                    4. self与out的shape不一致。
-                                    5. self和out的维度大于8。
+                                    3. self与out的shape不一致。
+                                    4. self和out的维度大于8。
   ```
 
 ## aclnnMuls
