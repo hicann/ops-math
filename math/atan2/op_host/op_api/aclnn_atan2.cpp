@@ -14,6 +14,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn/aclnn_base.h"
 #include "op_api/op_api_def.h"
+#include "op_api/aclnn_check.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -45,10 +46,15 @@ static const std::initializer_list<DataType> ASCEND910_OPERATOR_SUPPORT_LIST = {
 static const std::initializer_list<DataType> ASCEND910B_OPERATOR_SUPPORT_LIST = {
   DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_BF16};
 
+static const std::initializer_list<DataType> ARCH3510_DTYPE_SUPPORT_LIST = {
+  DataType::DT_FLOAT, DataType::DT_FLOAT16,  DataType::DT_BF16};
+
 static inline const std::initializer_list<DataType>& GetDtypeSupportList(bool isInput) {
-  if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-      GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) {
+  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
     return isInput ? ASCEND910B_INPUT_DTYPE_SUPPORT_LIST : ASCEND910B_OPERATOR_SUPPORT_LIST;
+  } else if (IsRegBase()) {
+    return ARCH3510_DTYPE_SUPPORT_LIST;
   } else {
     return isInput ? ASCEND910_INPUT_DTYPE_SUPPORT_LIST : ASCEND910_OPERATOR_SUPPORT_LIST;
   }
