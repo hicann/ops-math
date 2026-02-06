@@ -48,4 +48,24 @@ const aclTensor* Trunc(const aclTensor* self, aclOpExecutor* executor)
     return out;
 }
 
+//Trunc内存地址复用
+const aclTensor* InplaceTrunc(const aclTensor* self, aclOpExecutor* executor)
+{
+    L0_DFX(InplaceTrunc, self);
+
+    op::Shape outShape;
+    if (!TruncInferShape(self->GetViewShape(), outShape)) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "infer shape %s and %s failed.",
+            op::ToString(self->GetStorageShape()).GetString(),
+            op::ToString(outShape).GetString());
+    return nullptr;
+    }
+
+    auto out = const_cast<aclTensor*>(self);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Trunc, OP_INPUT(self), OP_OUTPUT(out));
+    OP_CHECK(ret ==  ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "TruncAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
+        return nullptr);
+    return out;
+}
+
 }  // namespace l0op

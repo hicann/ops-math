@@ -19,6 +19,7 @@
 
 namespace l0op {
     const aclTensor *Trunc(const aclTensor *self, aclOpExecutor *executor);
+    const aclTensor *InplaceTrunc(const aclTensor *self, aclOpExecutor *executor);
 }
 
 #endif  // PTA_NPU_OP_API_INC_LEVEL0_OP_TRUNC_OP_H_

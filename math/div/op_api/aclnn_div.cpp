@@ -728,7 +728,7 @@ aclnnStatus aclnnDivModGetWorkspaceSize(
             CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
             if (mode == MODE_TRUNC_DIV && divOpOut->GetDataType() != op::DataType::DT_INT64 &&
                 divOpOut->GetDataType() != op::DataType::DT_INT16) {
-                divOpOut = l0op::Trunc(divOpOut, uniqueExecutor.get());
+                divOpOut = l0op::InplaceTrunc(divOpOut, uniqueExecutor.get());
             }
         }
         CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -828,7 +828,7 @@ aclnnStatus aclnnDivModsGetWorkspaceSize(
             CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
             if (mode == MODE_TRUNC_DIV && divOpOut->GetDataType() != op::DataType::DT_INT64 &&
                 divOpOut->GetDataType() != op::DataType::DT_INT16) {
-                divOpOut = l0op::Trunc(divOpOut, uniqueExecutor.get());
+                divOpOut = l0op::InplaceTrunc(divOpOut, uniqueExecutor.get());
             }
         }
         CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
