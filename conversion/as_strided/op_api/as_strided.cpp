@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "conversion/view_copy/op_host/op_api/view_copy.h"
+#include "conversion/view_copy/op_api/view_copy.h"
 #include "opdev/op_def.h"
 #include "opdev/shape_utils.h"
 #include "opdev/op_executor.h"

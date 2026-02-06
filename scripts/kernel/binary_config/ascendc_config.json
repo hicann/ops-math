@@ -401,7 +401,7 @@
     {"name":"Conv3DTransposeV2", "compute_units": ["ascend910b", "ascend910_93", "ascend950"], "auto_sync" : false},
     {"name":"Conv2DTransposeV2", "compute_units": ["ascend910b", "ascend910_93", "ascend950"], "auto_sync" : false},
     {"name":"FlatQuant", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : false},
-    {"name":"ViewCopy", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : ""},
+    {"name":"ViewCopy", "compute_units": ["ascend910_95"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend910_95": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"SwinTransformerLnQKV", "compute_units": ["ascend910b"], "auto_sync" : false},
     {"name":"MaxPoolV3", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : ""},
     {"name":"MaxPool3D", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : ""},

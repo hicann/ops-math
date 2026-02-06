@@ -10,7 +10,7 @@
 
 #include "aclnn_right_shift.h"
 #include "right_shift.h"
-#include "conversion/view_copy/op_host/op_api/view_copy.h"
+#include "conversion/view_copy/op_api/view_copy.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn/aclnn_base.h"

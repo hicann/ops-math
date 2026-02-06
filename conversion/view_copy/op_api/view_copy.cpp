@@ -1,22 +1,23 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 /*!
  * \file view_copy.cpp
  * \brief
  */
-#include "op_api/aclnn_check.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/op_dfx.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
+
 static const int64_t DIM_ZERO = 0;
 static const int64_t DIM_ONE = 1;
 static const int64_t DIM_TWO = 2;
@@ -32,9 +33,8 @@ static const int64_t BLOCK_SIZE = 32;
 namespace l0op {
 
 OP_TYPE_REGISTER(ViewCopy);
-// 950
 // bfloat16,uint8,int8,bool,float32,int32,uint32,int16,float16,uint16,int64,uint64,hifloat8,float8_e5m2,float8_e4m3fn
-static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_950 = {
+static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_REGBASE = {
     op::DataType::DT_FLOAT16,  op::DataType::DT_FLOAT,       op::DataType::DT_INT8,         op::DataType::DT_INT16,
     op::DataType::DT_INT32,    op::DataType::DT_INT64,       op::DataType::DT_UINT8,        op::DataType::DT_UINT16,
     op::DataType::DT_UINT32,   op::DataType::DT_UINT64,      op::DataType::DT_BOOL,         op::DataType::DT_BF16,
@@ -94,12 +94,12 @@ static int64_t GetByteSize(const op::DataType dtype)
 
 static bool IsAiCoreSupport(const op::DataType dataType)
 {
-    auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == op::SocVersion::ASCEND910B || socVersion == op::SocVersion::ASCEND910_93) {
+    auto curArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch == NpuArch::DAV_2201) {
         return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_910B);
     }
-    if (op::IsRegBase()) {
-        return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_950);
+    if (op::IsRegBase(curArch)) {
+        return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_REGBASE);
     }
     return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST);
 }

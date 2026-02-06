@@ -172,4 +172,5 @@ operator_group_5:
   - stateless_random_normal_v2
   - stateless_random_uniform_v2
   - truncated_normal_v2
+  - view_copy
   - stateless_random_choice_with_mask

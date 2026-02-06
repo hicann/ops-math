@@ -13,7 +13,7 @@
 #include "math/mul/op_api/mul.h"
 #include "stateless_random_normal_v2.h"
 #include "aclnn_kernels/cast.h"
-#include "conversion/view_copy/op_host/op_api/view_copy.h"
+#include "conversion/view_copy/op_api/view_copy.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn/aclnn_base.h"
 #include "opdev/shape_utils.h"

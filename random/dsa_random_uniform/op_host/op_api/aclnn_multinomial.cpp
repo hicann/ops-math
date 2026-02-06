@@ -25,7 +25,7 @@
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/reshape.h"
 #include "math/greater_equal/op_api/greater_equal.h"
-#include "conversion/view_copy/op_host/op_api/view_copy.h"
+#include "conversion/view_copy/op_api/view_copy.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn/aclnn_base.h"
 #include "aclnn_kernels/common/op_error_check.h"
