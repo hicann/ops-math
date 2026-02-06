@@ -183,8 +183,6 @@ VC1@ops-math:
         - ops/ops-math/math/is_close/tests/
         - ops/ops-math/math/is_finite/examples/
         - ops/ops-math/math/is_finite/tests/
-        - ops/ops-math/math/is_inf/examples/
-        - ops/ops-math/math/is_inf/tests/
         - ops/ops-math/math/is_nan/examples/
         - ops/ops-math/math/is_nan/tests/
         - ops/ops-math/math/is_neg_inf/examples/
