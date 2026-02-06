@@ -1326,69 +1326,134 @@ build_ut() {
 
 build_example() {
   echo $dotted_line
-  echo "Start to run examples,name:${EXAMPLE_NAME} mode:${EXAMPLE_MODE}"
+  echo "Start to run examples, name:${EXAMPLE_NAME} mode:${EXAMPLE_MODE}"
+
+  # Determine file search pattern based on mode and experimental flag
+  local file_pattern=""
+  local search_path=""
+  local executable_name=""
 
   if [[ "${EXAMPLE_MODE}" == "eager" ]]; then
+    executable_name="test_aclnn_${EXAMPLE_NAME}"
     if [[ "$ENABLE_EXPERIMENTAL" == "TRUE" ]]; then
-      file=$(find ../experimental -path "*/${EXAMPLE_NAME}/examples/*" -name test_aclnn_*.cpp -not -path "*/scripts/*")
+      search_path="../experimental"
     else
-      file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_aclnn_*.cpp -not -path "*/experimental/*" -not -path "*/scripts/*")
+      search_path="../"
     fi
-    if [ -z "$file" ]; then
-      echo "ERROR: ${EXAMPLE_NAME} do not have eager examples"
-      exit 1
-    fi
-
-    for f in $file; do
-      echo "Start compile and run examples file: $f"
-      if [[ "${PKG_MODE}" == "" ]]; then
-        g++ ${f} -I ${INCLUDE_PATH} -I ${ACLNN_INCLUDE_PATH} -L ${EAGER_LIBRARY_PATH} -lopapi_math -lascendcl -lnnopbase -o test_aclnn_${EXAMPLE_NAME}
-      elif [[ "${PKG_MODE}" == "cust" ]]; then
-        echo "pkg_mode:${PKG_MODE} vendor_name:${VENDOR}"
-        export CUST_LIBRARY_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/lib"     # 仅自定义算子需要
-        export CUST_INCLUDE_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/include" # 仅自定义算子需要
-        CUST_ACLNNOP_INCLUDE_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/include/aclnnop"
-        local include_dir_mode=$(stat -c %a $CUST_INCLUDE_PATH)
-        if [ ! -L ${CUST_ACLNNOP_INCLUDE_PATH} ]; then
-          chmod u+w $(dirname ${CUST_ACLNNOP_INCLUDE_PATH})
-          ln -s ${CUST_INCLUDE_PATH} ${CUST_ACLNNOP_INCLUDE_PATH}
-        fi
-        g++ ${f} -I ${INCLUDE_PATH} -I ${INCLUDE_PATH}/aclnnop -I ${CUST_INCLUDE_PATH} -L ${CUST_LIBRARY_PATH} -L ${EAGER_LIBRARY_PATH} -lcust_opapi -lascendcl -lnnopbase -o test_aclnn_${EXAMPLE_NAME} -Wl,-rpath=${CUST_LIBRARY_PATH}
-        if [ -L ${CUST_ACLNNOP_INCLUDE_PATH} ]; then
-          rm ${CUST_ACLNNOP_INCLUDE_PATH}
-          chmod ${include_dir_mode} $CUST_INCLUDE_PATH
-        fi
-      else
-        echo "Error: pkg_mode(${PKG_MODE}) must be cust."
-        exit 1
-      fi
-      ./test_aclnn_${EXAMPLE_NAME}
-      if [ $? -eq 0 ]; then
-        echo "run test_aclnn_${EXAMPLE_NAME}, execute samples success"
-      else
-        echo "run test_aclnn_${EXAMPLE_NAME}, execute samples failed"
-        exit 1
-      fi
-    done
+    file_pattern="test_aclnn_*.cpp"
   elif [[ "${EXAMPLE_MODE}" == "graph" ]]; then
+    executable_name="test_geir_${EXAMPLE_NAME}"
     if [[ "$ENABLE_EXPERIMENTAL" == "TRUE" ]]; then
-      file=$(find ../experimental -path "*/${EXAMPLE_NAME}/examples/*" -name test_geir_*.cpp)
+      search_path="../experimental"
     else
-      file=$(find ../ -path "*/${EXAMPLE_NAME}/examples/*" -name test_geir_*.cpp -not -path "*/experimental/*")
+      search_path="../"
     fi
-    if [ -z "$file" ]; then
-      echo "ERROR: ${EXAMPLE_NAME} do not have graph examples"
-      exit 1
-    fi
-    for f in $file; do
-      echo "Start compile and run examples file: $f"
-      g++ ${f} -I ${GE_EXTERNAL_INCLUDE_PATH} -I ${GRAPH_INCLUDE_PATH} -I ${GE_INCLUDE_PATH} -I ${INCLUDE_PATH} -I ${INC_INCLUDE_PATH} -L ${GRAPH_LIBRARY_PATH} -lgraph -lge_runner -lgraph_base -lge_compiler -o test_geir_${EXAMPLE_NAME}
-      ./test_geir_${EXAMPLE_NAME}
-    done
+    file_pattern="test_geir_*.cpp"
   else
     usage
     exit 1
   fi
+
+  # Find example files
+  local find_cmd="find ${search_path} -path \"*/${EXAMPLE_NAME}/examples/*\" -name \"${file_pattern}\""
+  if [[ "$ENABLE_EXPERIMENTAL" != "TRUE" ]]; then
+    find_cmd="${find_cmd} -not -path \"*/experimental/*\""
+  fi
+
+  local files=$(eval $find_cmd)
+
+  if [ -z "$files" ]; then
+    echo "ERROR: ${EXAMPLE_NAME} does not have ${EXAMPLE_MODE} examples"
+    exit 1
+  fi
+
+  # Process each found file
+  for f in $files; do
+    echo "Start compile and run examples file: $f"
+
+    # Compile based on mode
+    if [[ "${EXAMPLE_MODE}" == "eager" ]]; then
+      compile_eager_example "$f" "$executable_name"
+    elif [[ "${EXAMPLE_MODE}" == "graph" ]]; then
+      compile_graph_example "$f" "$executable_name"
+    fi
+
+    # Run the executable
+    ./${executable_name}
+    local exit_code=$?
+
+    if [ $exit_code -eq 0 ]; then
+      echo "run ${executable_name}, execute samples success"
+    else
+      echo "run ${executable_name}, execute samples failed"
+      exit 1
+    fi
+  done
+}
+
+# Helper function to compile eager examples
+compile_eager_example() {
+  local source_file=$1
+  local executable_name=$2
+
+  if [[ "${PKG_MODE}" == "" ]]; then
+    g++ ${source_file} \
+      -I ${INCLUDE_PATH} \
+      -I ${ACLNN_INCLUDE_PATH} \
+      -L ${EAGER_LIBRARY_PATH} \
+      -lopapi_math -lascendcl -lnnopbase \
+      -o ${executable_name}
+
+  elif [[ "${PKG_MODE}" == "cust" ]]; then
+    echo "pkg_mode:${PKG_MODE} vendor_name:${VENDOR}"
+
+    export CUST_LIBRARY_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/lib"
+    export CUST_INCLUDE_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/include"
+    local CUST_ACLNNOP_INCLUDE_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/include/aclnnop"
+
+    # Backup and set up symlink
+    local include_dir_mode=$(stat -c %a $CUST_INCLUDE_PATH 2>/dev/null)
+    if [ ! -L ${CUST_ACLNNOP_INCLUDE_PATH} ]; then
+      chmod u+w $(dirname ${CUST_ACLNNOP_INCLUDE_PATH}) 2>/dev/null
+      ln -s ${CUST_INCLUDE_PATH} ${CUST_ACLNNOP_INCLUDE_PATH} 2>/dev/null
+    fi
+
+    # Compile with custom paths
+    g++ ${source_file} \
+      -I ${INCLUDE_PATH} \
+      -I ${INCLUDE_PATH}/aclnnop \
+      -I ${CUST_INCLUDE_PATH} \
+      -L ${CUST_LIBRARY_PATH} \
+      -L ${EAGER_LIBRARY_PATH} \
+      -lcust_opapi -lascendcl -lnnopbase \
+      -o ${executable_name} \
+      -Wl,-rpath=${CUST_LIBRARY_PATH}
+
+    # Clean up symlink
+    if [ -L ${CUST_ACLNNOP_INCLUDE_PATH} ]; then
+      rm ${CUST_ACLNNOP_INCLUDE_PATH} 2>/dev/null
+      chmod ${include_dir_mode} $CUST_INCLUDE_PATH 2>/dev/null
+    fi
+  else
+    echo "Error: pkg_mode(${PKG_MODE}) must be cust or empty."
+    exit 1
+  fi
+}
+
+# Helper function to compile graph examples
+compile_graph_example() {
+  local source_file=$1
+  local executable_name=$2
+
+  g++ ${source_file} \
+    -I ${GE_EXTERNAL_INCLUDE_PATH} \
+    -I ${GRAPH_INCLUDE_PATH} \
+    -I ${GE_INCLUDE_PATH} \
+    -I ${INCLUDE_PATH} \
+    -I ${INC_INCLUDE_PATH} \
+    -L ${GRAPH_LIBRARY_PATH} \
+    -lgraph -lge_runner -lgraph_base -lge_compiler \
+    -o ${executable_name}
 }
 
 gen_op() {
