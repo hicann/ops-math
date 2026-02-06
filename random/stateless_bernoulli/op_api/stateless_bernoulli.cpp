@@ -82,8 +82,14 @@ const aclTensor *StatelessBernoulli(const aclTensor *input, const aclTensor *pro
                                     aclOpExecutor *executor) {
   auto inputShape = op::ToShapeVector(input->GetViewShape());
   auto sizeArr = executor->AllocIntArray(inputShape.data(), inputShape.size());
+  OP_CHECK(sizeArr != nullptr, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "StatelessBernoulli inputShape is null."), return nullptr);
   const aclTensor *shapeTensor = nullptr;
-  if (sizeArr->Size() > 0 && (*sizeArr)[0] > INT32_MAX) {
+
+  int64_t size = 1;
+  for (size_t index = 0; index < sizeArr->Size(); index++) {
+      size *= (*sizeArr)[index];
+  }
+  if (size > INT32_MAX) {
     shapeTensor = executor->ConvertToTensor(sizeArr, DataType::DT_INT64);
   } else {
     shapeTensor = executor->ConvertToTensor(sizeArr, DataType::DT_INT32);
