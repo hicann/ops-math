@@ -28,7 +28,7 @@ weights at each index.
 
 *@par Inputs:
 *The input size must be a non-negative int32 scalar Tensor. Inputs include:
-*@li array:int32 Tensor.
+*@li array:1D Tensor for each value in the range [0, 2147483647).
 *@li size:non-negative int32 scalar Tensor.
 *@li weights: is an int32, int64, float32, or double Tensor with the same
 shape as arr, or a length-0 Tensor, in which case it acts as all weights
