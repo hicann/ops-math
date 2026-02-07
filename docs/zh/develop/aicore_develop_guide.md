@@ -385,16 +385,17 @@ __aicore__ inline void AddExample<T>::Process()
     进入项目根目录，执行如下编译命令。build.sh编译参数参考[build参数说明](../context/build.md)。
 
     ```bash
-    # 编译指定算子，如bash build.sh --pkg --ops=add_example
-    bash build.sh --pkg --soc=${soc_version} --vendor_name=${vendor_name} --ops=${op_list}
+    # 编译指定算子，如bash build.sh --pkg --ops=add_example -j16
+    bash build.sh --pkg --soc=${soc_version} --vendor_name=${vendor_name} --ops=${op_list} [-j${n}]
 
     # 编译experimental目录下指定算子
-    bash build.sh --pkg --soc=${soc_version} --vendor_name=${vendor_name} --ops=${op_list} [--experimental]
+    bash build.sh --pkg --soc=${soc_version} --vendor_name=${vendor_name} --ops=${op_list} [--experimental] [-j${n}]
     ```
    - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2系列产品使用"ascend910b"（默认），Atlas A3系列产品使用"ascend910_93"，Ascend 950PR/Ascend 950DT产品使用"ascend950"。
    - --vendor_name（可选）：\$\{vendor\_name\}表示构建的自定义算子包名，默认名为custom。
    - --ops（可选）：\$\{op\_list\}表示待编译算子，不指定时默认编译所有算子。格式形如"--ops=add_example"。
    - --experimental（可选）：若编译的算子为贡献算子，需配置--experimental。
+   - -j（可选）：指定编译线程数，加快编译速度。
 
     若提示如下信息，说明编译成功：
 

@@ -14,9 +14,9 @@ build.sh是本项目的构建脚本，默认在项目根目录下，作用是将
    ```
 2. **构建命令格式**
 
-   以编译算子包命令为例，样式如下，其中`--vendor_name`与`--ops`在该场景为可选项。
+   以编译算子包命令为例，样式如下，其中`--vendor_name`、`--ops`与`-j`在该场景为可选项，合适的编译线程数可加快编译速度。
    ```bash
-   bash build.sh --pkg --soc=${soc_version} [--vendor_name=${vendor_name}] [--ops=${op_list}]
+   bash build.sh --pkg --soc=${soc_version} [--vendor_name=${vendor_name}] [--ops=${op_list}] [-j${n}]
    ```
    全量参数含义参见下方参数说明，请按实际情况选择合适的参数。
 

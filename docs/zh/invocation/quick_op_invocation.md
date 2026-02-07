@@ -26,11 +26,11 @@
     > 说明：编译过程依赖第三方开源软件，联网场景会自动下载，离线编译场景需要自行安装，具体参考[离线编译](../context/build_offline.md)。
 
     ```bash
-    bash build.sh --pkg --soc=${soc_version} [--vendor_name=${vendor_name}] [--ops=${op_list}]
+    bash build.sh --pkg --soc=${soc_version} [--vendor_name=${vendor_name}] [--ops=${op_list}] [-j${n}]
     # 以Abs算子编译为例
-    # bash build.sh --pkg --soc=ascend910b --ops=abs
+    # bash build.sh --pkg --soc=ascend910b --ops=abs -j16
     # 编译experimental贡献目录下的用户算子（以Abs算子为例，编译时请以实际贡献算子为准）
-    # bash build.sh --pkg --experimental --soc=ascend910b --ops=abs
+    # bash build.sh --pkg --experimental --soc=ascend910b --ops=abs -j16
     ```
     - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas A2 推理系列产品使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"，Ascend 950PR/Ascend 950DT产品使用"ascend950"。
     - --vendor_name（可选）：\$\{vendor\_name\}表示构建的自定义算子包名，默认名为custom。
@@ -70,13 +70,14 @@
 
     ```bash
     # 编译除experimental目录外的所有算子
-    bash build.sh --pkg [--jit] --soc=${soc_version}
+    bash build.sh --pkg [--jit] --soc=${soc_version} [-j${n}]
     # 编译experimental目录下的所有算子
-    # bash build.sh --pkg --experimental [--jit] --soc=${soc_version}
+    # bash build.sh --pkg --experimental [--jit] --soc=${soc_version} [-j${n}]
     ```
     - --jit（可选）：设置后表示不编译算子二进制文件，如需使用aclnn调用算子，该选项无需设置。
     - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas A2 推理系列产品使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"，Ascend 950PR/Ascend 950DT产品使用"ascend950"。
     - --experimental（可选）：表示编译用户保存在experimental目录下的算子。
+    - -j（可选）：指定编译线程数，加快编译速度。
 
     更多build参数介绍参见[build参数说明](../context/build.md)。
 
@@ -113,7 +114,7 @@
     进入项目根目录，执行如下编译命令：
 
     ```bash
-    bash build.sh --pkg --static --soc=${soc_version}
+    bash build.sh --pkg --static --soc=${soc_version} [-j${n}]
     ```
     \$\{soc\_version\}表示NPU型号。Atlas A2系列产品使用"ascend910b"（默认），Atlas A3系列产品使用"ascend910_93"。
 
