@@ -52,7 +52,7 @@ TEST_F(TopKV2Tiling, test_tiling_small_merge_sort) {
         },
         &compileInfo);
     uint64_t expectTilingKey = 13003;
-    string expectTilingData = "4294967297 42949672961 4294967306 274877906976 0 4294967297 0 0 1 32 8 1 8 1 ";
+    string expectTilingData = "4294967297 42949672961 4294967306 274877906976 4398046511104 4294967297 0 0 1 32 8 1 8 1 ";
     std::vector<size_t> expectWorkspaces = {16787584};
     ExecuteTestCase(
         tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);

@@ -500,15 +500,11 @@ void TileModeSmallSize(
     uint32_t tailBatchNumTotal = unsortedDimNum % batchNumSingleLoop;
     uint32_t tailBatchNumSingleCore = 0;
     uint32_t tailBatchNum = 0;
-    uint32_t coreNumNeed = sortLoopTimes >= 1 ? maxCoreNum : 0;
+    OP_CHECK_IF(maxCoreNum == 0, OP_LOGE("TopkV2", "maxCoreNum is 0"), return);
+    uint32_t coreNumNeed = maxCoreNum;
     if (tailBatchNumTotal != 0) {
-        OP_CHECK_IF(maxCoreNum == 0, OP_LOGE("TopkV2", "maxCoreNum is 0"), return);
         tailBatchNumSingleCore = tailBatchNumTotal / maxCoreNum;
         tailBatchNum = tailBatchNumTotal % maxCoreNum;
-        if (sortLoopTimes == 0 && tailBatchNumSingleCore == 0) { // 说明未用满核
-            coreNumNeed = tailBatchNum;
-        }
-        coreNumNeed = maxCoreNum;
         sortLoopTimes += 1;
     }
     topkTilingData.set_sortLoopTimes(sortLoopTimes);
