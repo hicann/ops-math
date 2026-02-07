@@ -17,7 +17,7 @@
 #include "op_host/util/shape_util.h"
 #include "op_api/op_util.h"
 #include "util/math_util.h"
-#include "op_common/op_host/infershape_reduce_util.h"
+#include "op_api/infershape_reduce_util.h"
 
 using namespace ge;
 using namespace Ops::Base;

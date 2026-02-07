@@ -13,7 +13,7 @@
  * \brief
  */
 #include "register/op_impl_registry.h"
-#include "op_common/op_host/infershape_reduce_util.h"
+#include "op_api/infershape_reduce_util.h"
 
 namespace ops {
 static ge::graphStatus InferShape4ReduceAll(gert::InferShapeContext* context)

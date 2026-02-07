@@ -12,7 +12,7 @@
  * \file reduce_max_infershape.cpp
  * \brief
  */
-#include "infershape_reduce_util.h"
+#include "op_api/infershape_reduce_util.h"
 #include "register/op_impl_registry.h"
 
 using namespace ge;
