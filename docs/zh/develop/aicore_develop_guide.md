@@ -106,6 +106,10 @@ ${op_name}                              # 替换为实际算子名的小写下�
 ### 代码实现
 
 Tiling一共需要三个交付件：```${op_name}_tiling.cpp``` ```${op_name}_tiling_key.h``` ```${op_name}_tiling_data.h```
+> 说明：
+> 1. `${op_name}_tiling.cpp`放在`${op_name}/op_host`目录下；
+> 2. `${op_name}_tiling_key.h`和`${op_name}_tiling_data.h`放在`${op_name}/op_kernel`目录下；
+> 3. 如果`${op_name}_tiling.cpp`中需要引用`${op_name}_tiling_data.h`，请使用相对路径的方式，例如：`#incldue "../op_kernel/${op_name}_tiling_data.h"`。
 
 **交付件1：${op_name}_tiling.cpp**
 
@@ -234,6 +238,9 @@ graph LR
 ### 代码实现
 
 Kernel一共需要两个交付件：```${op_name}.cpp``` ```${op_name}.h```
+> 说明：
+> 1. `${op_name}.cpp`为kernel的入口函数只能放在`${op_name}/op_kernel`目录下；
+> 2. `${op_name}.h`文件可以按照不同SoC或模板放在对应目录下，例如：`${op_name}/op_kernel/arch32`、`${op_name}/op_kernel/arch35`或`${op_name}/op_kernel/impl`等目录下；
 
 **交付件1：${op_name}.cpp**
 
