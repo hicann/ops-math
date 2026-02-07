@@ -76,7 +76,7 @@
     {"name":"AngleV2", "compute_units": ["ascend910", "ascend910b", "ascend910_93", "kirinx90", "kirin9030"], "auto_sync" : true},
     {"name":"LpLoss", "compute_units": ["ascend950"], "auto_sync" : false,"impl_mode" : ""},
     {"name":"FakeQuantAffineCachemask", "compute_units": ["ascend910", "ascend910b", "ascend910_93"], "auto_sync" : true},
-    {"name":"HistogramV2", "compute_units": ["ascend910b", "ascend910_93", "ascend950"], "auto_sync": true, "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
+    {"name":"HistogramV2", "compute_units": ["ascend910b", "ascend910_93", "ascend950"], "auto_sync": true, "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false", "--cce-prec-div=true"]}},
     {"name":"Range", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"OneHot", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"HansEncode", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
