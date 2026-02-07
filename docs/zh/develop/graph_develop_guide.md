@@ -71,6 +71,11 @@ IMPL_OP(AddExample).InferDataType(InferDataTypeAddExample);
 ```
 
 ## 算子原型配置
+
+算子原型配置需要完成一个交付件```${op_name}_proto.h```
+
+**交付件1：${op_name}_proto.h**
+
 图模式调用需要将算子原型注册到[Graph Engine](https://www.hiascend.com/cann/graph-engine)（简称GE）中，以便GE能够识别该类算子的输入、输出及属性信息。注册通过`REG_OP`接口完成，开发者需定义算子输入、输出张量类型及数量等基本信息。
 
 常用张量/属性数据类型示例如下：
