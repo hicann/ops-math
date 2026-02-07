@@ -591,12 +591,15 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
 
     auto formatTensor = const_cast<aclTensor*>(srcTensor);
     // 适配srcFormat为NCL的场景
-    if (IsQuantMatmulDtype(srcTensor->GetDataType(), dstTensor->GetDataType()) || srcFormat == op::Format::FORMAT_NCL) {
+    if ((IsQuantMatmulDtype(srcTensor->GetDataType(), dstTensor->GetDataType()) &&
+         dstFormat == op::Format::FORMAT_FRACTAL_NZ) ||
+        srcFormat == op::Format::FORMAT_NCL) {
         formatTensor->SetViewFormat(op::Format::FORMAT_ND);
         formatTensor->SetOriginalFormat(op::Format::FORMAT_ND);
         formatTensor->SetStorageFormat(op::Format::FORMAT_ND);
     }
-    if (IsQuantMatmulDtype(srcTensor->GetDataType(), dstTensor->GetDataType())) {
+    if (IsQuantMatmulDtype(srcTensor->GetDataType(), dstTensor->GetDataType()) &&
+        dstFormat == op::Format::FORMAT_FRACTAL_NZ) {
         formatTensor->SetOriginalShape(srcTensor->GetViewShape());
         formatTensor->SetStorageShape(srcTensor->GetViewShape());
 
