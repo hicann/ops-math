@@ -165,7 +165,7 @@ static bool CheckShape(const aclTensor* self, int64_t bins, const aclTensor* out
 static bool NeedComputeMinMax(const aclScalar* min, const aclScalar* max, op::DataType selfDType)
 {
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
-    if (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch)) {
+    if (!(npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch))) {
         return false;
     }
 
