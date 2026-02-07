@@ -9,4 +9,4 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-add_all_modules_sources(OPTYPE diag_v2 ACLNNTYPE aclnn DEPENDENCIES diag_flat)
+add_all_modules_sources(OPTYPE diag_v2 ACLNNTYPE aclnn_exclude DEPENDENCIES diag_flat)

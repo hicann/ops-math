@@ -9,4 +9,4 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-add_modules_sources(OPTYPE non_finite_check ACLNNTYPE aclnn)
+add_modules_sources(OPTYPE non_finite_check ACLNNTYPE aclnn_exclude)
