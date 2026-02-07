@@ -773,3 +773,5 @@ template<int D_T_X, int D_T_Y, int D_T_Z, int TILE_NUM, int IS_SPLIT>
 </div>
 
 保留原有op_kernel/tiling_key_{op_name}.h中算子的模板参数定义，若不存在op_kernel/tiling_key_{op_name}.h，请参考[add_example_tiling_key.h](../../../examples/add_example/op_kernel/add_example_tiling_key.h)新增定义模板参数和模板参数组合。
+
+> **重要提示：** 更多AscendC算子交付件编程规范和约束请参考[ascendc_op_dev_rules.md](./ascendc_op_dev_rules.md)中的说明。

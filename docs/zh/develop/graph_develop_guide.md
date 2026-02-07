@@ -118,3 +118,5 @@ REG_OP(AddExample)
 ```
 
 完整代码请参考`examples/add_example/op_graph`目录下[add_example_proto.h](../../../examples/add_example/op_graph/add_example_proto.h)。
+
+> **重要提示：** 更多AscendC算子交付件编程规范和约束请参考[ascendc_op_dev_rules.md](./ascendc_op_dev_rules.md)中的说明。
