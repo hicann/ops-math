@@ -1355,7 +1355,7 @@ build_example() {
   fi
 
   # Find example files
-  local find_cmd="find ${search_path} -path \"*/${EXAMPLE_NAME}/examples/*\" -name \"${file_pattern}\""
+  local find_cmd="find ${search_path} -path \"*/${EXAMPLE_NAME}/examples/*\" -name \"${file_pattern}\" -not -path \"*/scripts/*\""
   if [[ "$ENABLE_EXPERIMENTAL" != "TRUE" ]]; then
     find_cmd="${find_cmd} -not -path \"*/experimental/*\""
   fi

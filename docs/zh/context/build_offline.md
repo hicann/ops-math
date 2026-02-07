@@ -14,6 +14,18 @@
 
 下载[makeself](https://gitcode.com/cann-src-third-party/makeself/releases/download/release-2.5.0-patch1.0/makeself-release-2.5.0-patch1.tar.gz)，并解压到```${cann_3rd_lib_path}/makeself```，若无该目录请自行创建。
 
+- 依赖eigen
+
+下载[eigen](https://gitcode.com/cann-src-third-party/eigen/releases/download/3.4.0/eigen-3.4.0.tar.gz)，并解压到```${cann_3rd_lib_path}/```目录下，再将解压后的`eigen-3.4.0`目录重命名为`eigen`。
+
+- 依赖protobuf
+
+下载[protobuf](https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz)，并将`protobuf-25.1.tar.gz`存放到```${cann_3rd_lib_path}/protobuf```目录下，无需自行解压。若无该目录请自行创建。
+
+- 依赖abseil-cpp
+
+下载[abseil-cpp](https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20230802.1/abseil-cpp-20230802.1.tar.gz)，并将`abseil-cpp-20230802.1.tar.gz`存放到```${cann_3rd_lib_path}/abseil-cpp```目录下，无需自行解压。若无该目录请自行创建。
+
 ## 离线编译（自定义算子包）
 自定义算子包编译时，需增加--cann_3rd_lib_path配置选项并指定路径，命令如下：
 
