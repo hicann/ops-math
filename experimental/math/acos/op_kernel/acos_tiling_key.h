@@ -46,7 +46,7 @@ ASCENDC_TPL_UINT_DECL中的比特位一经定义后续不可更改(会影响其�
 */
 ASCENDC_TPL_ARGS_DECL(
     Acos, // 唯一标识,建议与OpType保持一致
-    ASCENDC_TPL_DATATYPE_DECL(D_T_X, C_DT_FLOAT, ASCENDC_TPL_INPUT(0)), );
+    ASCENDC_TPL_DATATYPE_DECL(D_T_X, C_DT_FLOAT, C_DT_FLOAT16, C_DT_BF16, ASCENDC_TPL_INPUT(0)), );
 /**
 ASCENDC_TPL_SEL(...):算子的模板参数整体组合,可设置多个模板参数组合
     ASCENDC_TPL_ARGS_DSEL(...):算子的模板参数组合,可设置多个参数组合
@@ -60,5 +60,7 @@ UINT类型的模板参数定义,args0表示参数名,args1是参数的表示类�
         ASCENDC_TPL_BOOL_SEL(args0, ...):
 bool类型的模板参数定义,args0表示参数名,后续若干个参数为对应的ASCENDC_TPL_BOOL_DECL定义的参数范围子集
 */
-ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT), ), );
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT), ), 
+                ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT16), ),
+                ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_BF16), ),);
 #endif

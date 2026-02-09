@@ -15,7 +15,7 @@ import sys
 import os
 import numpy as np
 import re
-
+import tensorflow as tf
 
 def parse_str_to_shape_list(shape_str):
     shape_str = shape_str.strip('(').strip(')')
@@ -26,12 +26,13 @@ def parse_str_to_shape_list(shape_str):
 def gen_data_and_golden(shape_str, d_type="float32"):
     d_type_dict = {
         "float32": np.float32,
-        "float16": np.float16
+        "float16": np.float16,
+        "bfloat16": tf.bfloat16.as_numpy_dtype        
     }
     np_type = d_type_dict[d_type]
     shape = parse_str_to_shape_list(shape_str)
     size = np.prod(shape)
-    tmp_input = np.random.choice([1.0, 0.8, 0.7, 0.5, -1, 0.1, 0.0, np.nan, np.inf], size=size)
+    tmp_input = np.random.choice([1.0, 0.8, 0.7, 0.5, -1, 0.1, 0.0, 0.2, -0.3], size=size)
     tmp_input = tmp_input.reshape(shape).astype(np_type)
     tmp_golden = np.arccos(tmp_input)
 

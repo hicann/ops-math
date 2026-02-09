@@ -25,10 +25,12 @@ namespace optiling {
 using namespace Ops::Math::OpTiling;
 
 constexpr int32_t BUFFER_NUM = 2;
-static const int64_t MULTI_CORE_SHAPE_SIZE_LIMIT = 2048;             // 2k x 8字节 * OP_COEXISTING_NUM小于192k
-static const uint32_t OP_COEXISTING_NUM = 8;                         // 算子计算过程中需要用到的Tensor内存数量
-constexpr uint32_t g_dataSize[] = {4, 2, 1, 4, 1, 2, 2, 8, 4, 1, 4}; // 数据类型占用字节数，数组下标参考ge::DataType
-
+static const int64_t MULTI_CORE_SHAPE_SIZE_LIMIT = 2048; // 2k x 8字节 * OP_COEXISTING_NUM小于192k
+static const uint32_t OP_CALC_TENSOR_NUM = 6;            // 算子计算过程中需要用到6个float临时计算Tensor数量
+static const uint32_t OP_INOUT_TENSOR_NUM = 4;           // 算子计算过程中需要用到4个T类型Tensor数量
+static std::map<ge::DataType, uint> dataSizeMap = {
+    {ge::DataType::DT_FLOAT, 4}, {ge::DataType::DT_FLOAT16, 2}, {ge::DataType::DT_BF16, 2}};
+static const uint32_t BYTE_ALIGN = 256; // kernel侧计算的时候必须用256字节对齐
 const uint32_t WS_SYS_SIZE = 16U * 1024U * 1024U;
 
 struct AcosCompileInfo {};
@@ -59,13 +61,21 @@ static void CalcTilingData(
     const uint64_t totalLength, const ge::DataType dtype_x, const uint64_t coreNum, uint64_t ubSize,
     AcosTilingData& tiling)
 {
-    if (dtype_x > ge::DataType::DT_DOUBLE) {
+    auto it = dataSizeMap.find(dtype_x);
+    if (it == dataSizeMap.end()) {
         return;
     }
+    auto dataSize = it->second;
+    if (dataSize == 0) {
+        return;
+    }
+    auto elementAlgin = BYTE_ALIGN / dataSize;
     if (coreNum == 0) {
         return;
     }
-    uint64_t tileBufferLen = ubSize / (g_dataSize[dtype_x] * OP_COEXISTING_NUM);
+    uint64_t tileBufferLen = ubSize / (dataSize * OP_INOUT_TENSOR_NUM + sizeof(float) * OP_CALC_TENSOR_NUM);
+    // tileBufferLen必须保证占用字节数是256整数倍
+    tileBufferLen = (tileBufferLen + elementAlgin - 1) / elementAlgin * elementAlgin;
     if (totalLength <= MULTI_CORE_SHAPE_SIZE_LIMIT) {
         tiling.formerCoreNum = 1;
         tiling.tailCoreNum = 0;
