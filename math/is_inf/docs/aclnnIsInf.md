@@ -73,7 +73,7 @@ aclnnStatus aclnnIsInf(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>x</td>
       <td>输入</td>
       <td>待进行判断是否是inf的入参，公式中的input_i。</td>
       <td>-</td>
@@ -86,7 +86,7 @@ aclnnStatus aclnnIsInf(
       <td>out</td>
       <td>输出</td>
       <td>待进行判断是否是inf的出参，公式中的out_i。</td>
-      <td>shape与self相同。</td>
+      <td>shape与x相同。</td>
       <td>BOOL</td>
       <td>ND</td>
       <td>0-8</td>
@@ -143,15 +143,15 @@ aclnnStatus aclnnIsInf(
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>参数self、out是空指针</td>
+      <td>参数x、out是空指针</td>
     </tr>
     <tr>
       <td rowspan="8">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="2">161002</td>
-      <td>参数self、out的数据类型不在支持范围内。</td>
+      <td>参数x、out的数据类型不在支持范围内。</td>
     </tr>
     <tr>
-      <td>self、out的shape不一致。</td>
+      <td>x、out的shape不一致。</td>
     </tr>
   </tbody>
   </table>
@@ -287,7 +287,7 @@ int main() {
                                      8000, -9.009, 1024, -11.23345, 12, 1356, -14.99, -15.34023};
   std::vector<char> outHostData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-  // 创建self aclTensor
+  // 创建x aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &x);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   // 创建out aclTensor

@@ -41,8 +41,8 @@
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、DOUBLE。
     - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、DOUBLE、BFLOAT16。
   - other（aclTensor*，计算输入）：Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、INT32、BFLOAT16，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，dtype与self的dtype必须一致，shape需要与self满足broadcast关系。[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不高于8维。
-  - rtol（double，计算输入）：公式中的`rtol`，相对公差。数据类型支持DOUBLE。
-  - atol（double，计算输入）：公式中的`atol`，绝对差值。数据类型支持DOUBLE。
+  - rtol（double，计算输入）：公式中的`rtol`，相对公差。数据类型支持DOUBLE。支持取值为非负数。
+  - atol（double，计算输入）：公式中的`atol`，绝对差值。数据类型支持DOUBLE。支持取值为非负数。
   - equal_nan（bool，计算输入）：公式中的`equal_nan`，NaN值比较选项。如果为True，则两个NaN将被视为相等；如果为False，则两个NaN将被视为不相等。数据类型支持BOOL。
   - out（aclTensor*，计算输出）：公式中的`out`，计算结果，表示两个输入中的元素是否close。Device侧的aclTensor，数据类型支持BOOL，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，shape需要是self的shape，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。shape与`self`一致，且数据维度不高于8维。
   - workspaceSize（uint64_t *，计算输出）：返回用户需要在Device侧申请的workspace大小。
