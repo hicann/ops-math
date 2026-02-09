@@ -64,6 +64,8 @@
 - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
   - 针对数据类型从int32转换为int8的场景：
     只能保证输入数据在(-2048, 1920)范围内精度无误差。
+  - 针对数据类型从float64/complex64/complex128转换为uint8的场景：
+    只能保证输入数据为非负数精度无误差。
 
 - <term>Atlas 推理系列产品</term>：
   - 针对数据类型从float32转换为int64和float32转换为uint8的场景：

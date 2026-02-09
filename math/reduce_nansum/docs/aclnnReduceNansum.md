@@ -28,7 +28,7 @@
 
   - self(aclTensor*, 计算输入)：输入tensor，数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16，且数据类型和out的dtype满足可转换关系（参见[互转换关系](../../../docs/zh/context/互转换关系.md)），支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
 
-  - dim(aclIntArray*, 计算输入)：参与计算的维度，取值范围为[-self.dim(), self.dim()]，dim数组长度为0时，对所有轴做ReduceNansum计算，数据类型支持INT64。
+  - dim(aclIntArray*, 计算输入)：参与计算的维度，取值范围为[-self.dim(), self.dim())，dim数组长度为0时，对所有轴做ReduceNansum计算，数据类型支持INT64。
 
   - keepDim(bool, 计算输入)：是否在输出张量中保留要缩减的维度。
 
