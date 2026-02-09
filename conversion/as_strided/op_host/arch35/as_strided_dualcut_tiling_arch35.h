@@ -9,12 +9,12 @@
  */
 
 /*!
- * \file as_strided_helper_tiling.h
- * \brief as_strided_helper_tiling
+ * \file as_strided_dualcut_tiling_arch35.h
+ * \brief as_strided_dualcut_tiling_arch35
  */
 
-#ifndef OPS_BUILT_IN_OP_TILING_RUNTIME_AS_STRIDED_HELPER_TILING_H_
-#define OPS_BUILT_IN_OP_TILING_RUNTIME_AS_STRIDED_HELPER_TILING_H_
+#ifndef OPS_BUILT_IN_OP_TILING_RUNTIME_AS_STRIDED_DUALCUT_TILING_ARCH35_H_
+#define OPS_BUILT_IN_OP_TILING_RUNTIME_AS_STRIDED_DUALCUT_TILING_ARCH35_H_
 #include <cstdint>
 #include <vector>
 #include "log/log.h"

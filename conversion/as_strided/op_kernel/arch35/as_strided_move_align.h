@@ -32,7 +32,8 @@ constexpr int64_t ALIGN_BYTE = 32;
 
 template <typename T>
 class KernelAsStridedMoveAlign {
-    public:
+public:
+
     __aicore__ inline KernelAsStridedMoveAlign()  {}
 
     template<typename U>
@@ -178,6 +179,7 @@ class KernelAsStridedMoveAlign {
             inQueue_.EnQue(srcLocal);
         } 
     }
+
     __aicore__ inline void CopyOut(int64_t dstOffset, uint32_t totalIdx)
     {   
         if (innerAxisFactorTail_ != 0 && (totalIdx + 1) % outerAxisFactor_ == 0) {
@@ -195,30 +197,32 @@ class KernelAsStridedMoveAlign {
     {
         int64_t srcOffset = 0;
         int64_t dstOffset = 0;
-        int32_t useIdxLoop = 0;
+        int64_t useIdxLoop = 0;
 
-        for (uint32_t loop = 0; loop < loopsPerCore_; loop++) {
-            int32_t currentIdx = loop * GetBlockNum() + GetBlockIdx();
+        for (int64_t loop = 0; loop < loopsPerCore_; loop++) {
+            int64_t currentIdx = loop * GetBlockNum() + GetBlockIdx();
             if (currentIdx >= axisOutTotalFactor_) {
                 break;
             }
-            uint32_t totalIdx = static_cast<uint32_t>(currentIdx);
+            int64_t totalIdx = static_cast<uint32_t>(currentIdx);
             srcOffset = 0;
             useIdxLoop = TILING_ARRAY_LEN - 1 - outerAxisNum_;
-            for (int32_t useIdx = TILING_ARRAY_LEN - 1; useIdx > useIdxLoop; useIdx--) {
+            for (int64_t useIdx = TILING_ARRAY_LEN - 1; useIdx > useIdxLoop; useIdx--) {
                 srcOffset += (
                         (static_cast<int64_t>(totalIdx) / Product(outLoopArr_, useIdx + 1)) 
                         % static_cast<int64_t>(outLoopArr_[useIdx])
                     ) * static_cast<int64_t>(outStrideArr_[useIdx]);
             }
-            CopyIn(srcOffset, totalIdx);
             dstOffset = 
                 (static_cast<int64_t>(totalIdx) / static_cast<int64_t>(outerAxisFactor_)) * static_cast<int64_t>(tileOffset_) + 
                 (static_cast<int64_t>(totalIdx) % static_cast<int64_t>(outerAxisFactor_)) * static_cast<int64_t>(ubFactor_);
+            
+            CopyIn(srcOffset, totalIdx);
             CopyOut(dstOffset, totalIdx);
-            int32_t eventIdMTE32MTE2 = static_cast<int32_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_MTE2));
-            SetFlag<HardEvent::MTE3_MTE2>(eventIdMTE32MTE2);
-            WaitFlag<HardEvent::MTE3_MTE2>(eventIdMTE32MTE2);
+
+            int32_t eventIdMTE32S = static_cast<int32_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_S));
+            SetFlag<HardEvent::MTE3_S>(eventIdMTE32S);
+            WaitFlag<HardEvent::MTE3_S>(eventIdMTE32S);
         }
     }
 
@@ -227,8 +231,7 @@ private:
     TPipe pipe_;
 
     GlobalTensor<T> inputGm_, outputGm_;
-
-    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, BUFFER_NUM> inQueue_;
+    TQueBind<TPosition::VECIN, TPosition::VECOUT, 1> inQueue_;
 
     DataCopyExtParams copyParams_;
     DataCopyExtParams copyParamsTail_;

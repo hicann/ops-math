@@ -50,10 +50,10 @@ private:
     uint32_t dimNum_ = 0;
     uint32_t blockIdx_ = 0;
 
-    int64_t storageOffset_ = 0; //偏移
+    int64_t storageOffset_ = 0;
     int64_t curCoreBaseIndex_ = 0;
-    int64_t curCoreEmelents_ = 0;
-    int64_t perCoreEmelents_ = 0;
+    int64_t curCoreElements_ = 0;
+    int64_t perCoreElements_ = 0;
 };
 
 template <typename T>
@@ -66,13 +66,13 @@ __aicore__ inline void AsStridedSimt<T>::Init(GM_ADDR input, GM_ADDR output, con
     outputGm_.SetGlobalBuffer((__gm__ T*)output);
 
     blockIdx_ = GetBlockIdx();
-    perCoreEmelents_ = tilingData_->mainBlockFactor;
+    perCoreElements_ = tilingData_->mainBlockFactor;
     if(blockIdx_ == GetBlockNum() - 1) {
-        curCoreEmelents_ = tilingData_->tailBlockFactor;
+        curCoreElements_ = tilingData_->tailBlockFactor;
     } else {
-        curCoreEmelents_ = perCoreEmelents_;
+        curCoreElements_ = perCoreElements_;
     }
-    curCoreBaseIndex_ = perCoreEmelents_ * blockIdx_;
+    curCoreBaseIndex_ = perCoreElements_ * blockIdx_;
 }
 template <typename T, uint16_t Dim>
 __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void SimtStridedDim1(
@@ -323,40 +323,40 @@ __aicore__ inline void AsStridedSimt<T>::Process(GM_ADDR tiling)
     
     if (dimNum_ == DIMS_1) {
         Simt::VF_CALL<SimtStridedDim1<T, DIMS_1>>(
-            Simt::Dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, curCoreBaseIndex_, curCoreEmelents_, tilingData_->strideArr[0]); 
+            Simt::Dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, curCoreBaseIndex_, curCoreElements_, tilingData_->strideArr[0]); 
     } else if (dimNum_ == DIMS_2) {
         Simt::VF_CALL<SimtStridedDim2<T, DIMS_2>>(
-            Simt::Dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, curCoreBaseIndex_, curCoreEmelents_, tilingData_->strideArr[0],
+            Simt::Dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, curCoreBaseIndex_, curCoreElements_, tilingData_->strideArr[0],
             tilingData_->strideArr[1], tilingData_->outSizeStride[0], magic[0], shift[0]); 
     } else if (dimNum_ == DIMS_3) {
         Simt::VF_CALL<SimtStridedDim3<T, DIMS_3>>(
-            Simt::Dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, curCoreBaseIndex_, curCoreEmelents_, tilingData_->strideArr[0],
+            Simt::Dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, curCoreBaseIndex_, curCoreElements_, tilingData_->strideArr[0],
             tilingData_->strideArr[1], tilingData_->strideArr[2], tilingData_->outSizeStride[0], tilingData_->outSizeStride[1],
             magic[0], shift[0], magic[1], shift[1]); 
     } else if (dimNum_ == DIMS_4) {
         Simt::VF_CALL<SimtStridedDim4<T, DIMS_4>>(
-            Simt::Dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, curCoreBaseIndex_, curCoreEmelents_, tilingData_->strideArr[0],
+            Simt::Dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, curCoreBaseIndex_, curCoreElements_, tilingData_->strideArr[0],
             tilingData_->strideArr[1], tilingData_->strideArr[2], tilingData_->strideArr[3], tilingData_->outSizeStride[0],
             tilingData_->outSizeStride[1], tilingData_->outSizeStride[2], magic[0], shift[0], magic[1], shift[1], magic[2], shift[2]); 
     } else if (dimNum_ == DIMS_5) {
         Simt::VF_CALL<SimtStridedDim5<T, DIMS_5>>(
-            Simt::Dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, tiling, curCoreBaseIndex_, curCoreEmelents_, tilingData_->strideArr[0],
+            Simt::Dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, tiling, curCoreBaseIndex_, curCoreElements_, tilingData_->strideArr[0],
             tilingData_->strideArr[1], tilingData_->strideArr[2], tilingData_->strideArr[3], tilingData_->strideArr[4],
             magic[0], shift[0], magic[1], shift[1], magic[2], shift[2], magic[3], shift[3]); 
     } else if (dimNum_ == DIMS_6) {
         Simt::VF_CALL<SimtStridedDim6<T, DIMS_6>>(
-            Simt::Dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, tiling, curCoreBaseIndex_, curCoreEmelents_, tilingData_->strideArr[0],
+            Simt::Dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, tiling, curCoreBaseIndex_, curCoreElements_, tilingData_->strideArr[0],
             tilingData_->strideArr[1], tilingData_->strideArr[2], tilingData_->strideArr[3], tilingData_->strideArr[4],
             tilingData_->strideArr[5], magic[0], shift[0], magic[1], shift[1], magic[2], shift[2], magic[3], shift[3], magic[4], shift[4]); 
     } else if (dimNum_ == DIMS_7) {
         Simt::VF_CALL<SimtStridedDim7<T, DIMS_7>>(
-            Simt::Dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, tiling, curCoreBaseIndex_, curCoreEmelents_, tilingData_->strideArr[0],
+            Simt::Dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, tiling, curCoreBaseIndex_, curCoreElements_, tilingData_->strideArr[0],
             tilingData_->strideArr[1], tilingData_->strideArr[2], tilingData_->strideArr[3], tilingData_->strideArr[4],
             tilingData_->strideArr[5], tilingData_->strideArr[6], magic[0], shift[0], magic[1], shift[1], magic[2], shift[2],
             magic[3], shift[3], magic[4], shift[4], magic[5], shift[5]); 
     } else if (dimNum_ == DIMS_8) {
         Simt::VF_CALL<SimtStridedDim8<T, DIMS_8>>(
-            Simt::Dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, tiling, curCoreBaseIndex_, curCoreEmelents_, tilingData_->strideArr[0],
+            Simt::Dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, tiling, curCoreBaseIndex_, curCoreElements_, tilingData_->strideArr[0],
             tilingData_->strideArr[1], tilingData_->strideArr[2], tilingData_->strideArr[3], tilingData_->strideArr[4], 
             tilingData_->strideArr[5], tilingData_->strideArr[6], tilingData_->strideArr[7], magic[0], shift[0], magic[1], shift[1],
             magic[2], shift[2], magic[3], shift[3], magic[4], shift[4], magic[5], shift[5], magic[6], shift[6]);   

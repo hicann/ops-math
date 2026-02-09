@@ -151,10 +151,6 @@ __aicore__ inline void KernelAsStridedGather<T>::Init(GM_ADDR input, GM_ADDR out
 template <typename T>
 __aicore__ inline void KernelAsStridedGather<T>::ComputeCoreOffset()
 {
-    if (blockIdx_ > (blockNum_ - 1)) {
-        return;
-    }
-
     loopsUb_ = blockFactor_;
     if (blockAxisIdx_ == tilingAxisIdx_) {  //切同轴
         if (tilingAxisIdx_ != 0) { // 不切在首轴
@@ -187,10 +183,6 @@ __aicore__ inline void KernelAsStridedGather<T>::ComputeCoreOffset()
 template <typename T>
 __aicore__ inline void KernelAsStridedGather<T>::Process()
 {
-    if (blockIdx_ > (blockNum_ - 1)) {
-        return;
-    }
-    
     ComputeCoreOffset();
     AsCopyGM2Ub();
     AsComputeIdx();
@@ -388,7 +380,7 @@ __aicore__ inline void KernelAsStridedGather<T>::AsComputeIdx()
         GenDim1Index();
     } else if(dim == 2) {
         GenDim2Index();
-    } else if(dim > 2) {
+    } else {
         GenDim3Index();
     }
 }

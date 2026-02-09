@@ -35,11 +35,15 @@ __aicore__ inline T FloorDiv(T x, T y) {
 }
 
 namespace AsStrided {
+
 using namespace AscendC;
+
 constexpr int64_t BUF_NUM = 2;
 constexpr int64_t ALIGN_NUM = 32;
+
 template<typename T>
 class StridedIsZero {
+
 public:
     __aicore__ inline StridedIsZero() {};
     __aicore__ inline void Init(GM_ADDR input, GM_ADDR output, 
@@ -52,11 +56,12 @@ public:
 private:
     const AsStridedZeroStrideTilingData* tilingData_;
     TPipe pipe_;
-    TQueBind<TPosition::VECIN, TPosition::VECOUT, 1> xInQue_;
-    TQueBind<TPosition::VECIN, TPosition::VECOUT, 1> tempInQue_;
+
+    TQue<TPosition::VECOUT, 1> xInQue_;
+    TQue<TPosition::VECIN, 1> tempInQue_;
     GlobalTensor<T> xGm_;
     GlobalTensor<T> yGm_;
-    GlobalTensor<T> offsetGm_;
+
     int64_t curCoreBaseIndex_ = 0;
     int64_t curCoreElements_ = 0;
     int64_t blockIdx_ = 0;
@@ -64,7 +69,10 @@ private:
     int64_t curCoreLoops_ = 0;
     int64_t curCorePerLoopElements_ = 0;
     int64_t curCoreLastLoopElements_ = 0;
-    T inX_ = 0;
+    int64_t dupNum_ = 0;
+
+    LocalTensor<T> tempInTensor_;
+    LocalTensor<T> xTensor_;
 };
 
 template <typename T>
@@ -73,13 +81,14 @@ __aicore__ inline void StridedIsZero<T>::Init(GM_ADDR input, GM_ADDR output,
 {
     blockIdx_ = GetBlockIdx();
     tilingData_ = tiling;
+
     int64_t halfUb_ = (tilingData_->ubSizePlatForm - sizeof(T)) / 2;
     halfUb_ = FloorDiv(halfUb_, ALIGN_NUM) * ALIGN_NUM;
     int64_t blkFactor_ = tilingData_->mainBlockFactor;
     int64_t blkTailFactor_ = tilingData_->tailBlockFactor;
     int64_t usedCoreCnt_ = tilingData_->blockNum;
     curCoreElements_ = blkFactor_;
-    if(blockIdx_ == usedCoreCnt_ - 1) {
+    if (blockIdx_ == usedCoreCnt_ - 1) {
         curCoreElements_ = blkTailFactor_;
     }
     curCoreBaseIndex_ = blockIdx_ * blkFactor_;
@@ -93,6 +102,13 @@ __aicore__ inline void StridedIsZero<T>::Init(GM_ADDR input, GM_ADDR output,
     curCoreLoops_ = CeilDiv(curCoreElements_, halfUbMaxElements_);
     curCorePerLoopElements_ = halfUbMaxElements_;
     curCoreLastLoopElements_ = curCoreElements_ - (curCoreLoops_ - 1) * curCorePerLoopElements_;
+    dupNum_ = curCorePerLoopElements_;
+    if (curCorePerLoopElements_ > curCoreElements_) {
+        dupNum_ = curCoreElements_;
+    }
+
+    tempInTensor_ = tempInQue_.AllocTensor<T>();
+    xTensor_ = xInQue_.AllocTensor<T>();
 }
 
 template <typename T>
@@ -100,50 +116,68 @@ __aicore__ inline void StridedIsZero<T>::CopyIn()
 {
     DataCopyPadExtParams dataCopyPadParams{false, 0, 0, static_cast<T>(0)};
     DataCopyExtParams dataCopyInParams{1, static_cast<uint32_t>(1 * sizeof(T)), 0, 0, 0};
-    LocalTensor<T> tempTensor = tempInQue_.AllocTensor<T>();
-    DataCopyPad(tempTensor, xGm_[tilingData_->storageOffset], dataCopyInParams, dataCopyPadParams);
-    tempInQue_.EnQue<T>(tempTensor);
+    DataCopyPad(tempInTensor_, xGm_[tilingData_->storageOffset], dataCopyInParams, dataCopyPadParams);
+    tempInQue_.EnQue<T>(tempInTensor_);
 }
 
 template <typename T>
 __aicore__ inline void StridedIsZero<T>::Compute()
 {
-    LocalTensor<T> tempInTensor = tempInQue_.DeQue<T>();
-    LocalTensor<T> xTensor = xInQue_.AllocTensor<T>();
-    AscendC::Duplicate<T>(xTensor, tempInTensor[0], curCorePerLoopElements_);
-    xInQue_.EnQue<T>(xTensor);
-    tempInQue_.FreeTensor<T>(tempInTensor);
+    __local_mem__ T* tempInTensorUbAddr = (__local_mem__ T*)tempInTensor_.GetPhyAddr();
+    __local_mem__ T* xTensorUbAddr = (__local_mem__ T*)xTensor_.GetPhyAddr();
+
+    uint16_t vfLen = Ops::Base::GetVRegSize() / sizeof(T);
+    uint32_t dupNum = static_cast<uint32_t>(dupNum_);
+    uint16_t loopsCnt = static_cast<uint16_t>((dupNum + static_cast<uint32_t>(vfLen) - 1) / static_cast<uint32_t>(vfLen));
+    
+    __VEC_SCOPE__
+    {
+        MicroAPI::RegTensor<T> tempXTensor;
+        MicroAPI::RegTensor<T> tempInRegTensor;
+
+        MicroAPI::MaskReg dupMask = MicroAPI::CreateMask<T, MicroAPI::MaskPattern::ALL>();
+        MicroAPI::MaskReg lenMask;
+
+        MicroAPI::DataCopy(tempInRegTensor, tempInTensorUbAddr);
+        MicroAPI::Duplicate<T, MicroAPI::HighLowPart::LOWEST, MicroAPI::MaskMergeMode::ZEROING>(tempXTensor, tempInRegTensor, dupMask);
+
+        for (uint16_t loop = 0; loop < loopsCnt; loop++) {
+            lenMask = MicroAPI::UpdateMask<T>(dupNum);
+            MicroAPI::DataCopy(xTensorUbAddr + loop * vfLen, tempXTensor, lenMask);
+        }
+    }
 }
 
 template <typename T>
 __aicore__ inline void StridedIsZero<T>::CopyOut()
 {
-    LocalTensor<T> xDequeTensor = xInQue_.DeQue<T>();
     DataCopyExtParams dataCopyOutMainParams{1, static_cast<uint32_t>(curCorePerLoopElements_ * sizeof(T)), 0, 0, 0};
     DataCopyExtParams dataCopyOutLastParams{1, static_cast<uint32_t>(curCoreLastLoopElements_ * sizeof(T)), 0, 0, 0};
-    for(int64_t loop = 0; loop < curCoreLoops_; loop++) {
-        if(loop == curCoreLoops_ - 1) {
-            DataCopyPad(yGm_[curCoreBaseIndex_ + loop * curCorePerLoopElements_], xDequeTensor, dataCopyOutLastParams);
+    for (int64_t loop = 0; loop < curCoreLoops_; loop++) {
+        if (loop == curCoreLoops_ - 1) {
+            DataCopyPad(yGm_[curCoreBaseIndex_ + loop * curCorePerLoopElements_], xTensor_, dataCopyOutLastParams);
         } else {
-            DataCopyPad(yGm_[curCoreBaseIndex_ + loop * curCorePerLoopElements_], xDequeTensor, dataCopyOutMainParams);
+            DataCopyPad(yGm_[curCoreBaseIndex_ + loop * curCorePerLoopElements_], xTensor_, dataCopyOutMainParams);
         }
     }
-    xInQue_.FreeTensor<T>(xDequeTensor);
 }
 
 template <typename T>
 __aicore__ inline void StridedIsZero<T>::Process()
 {
     CopyIn();
-    int32_t eventIdMTE22V = static_cast<int32_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
-    SetFlag<HardEvent::MTE2_V>(eventIdMTE22V);
-    WaitFlag<HardEvent::MTE2_V>(eventIdMTE22V);
+    tempInTensor_ = tempInQue_.DeQue<T>();
+
     Compute();
-    int32_t eventIdV2MTE3 = static_cast<int32_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
-    SetFlag<HardEvent::V_MTE3>(eventIdV2MTE3);
-    WaitFlag<HardEvent::V_MTE3>(eventIdV2MTE3);
+    xInQue_.EnQue<T>(xTensor_);
+    xTensor_ = xInQue_.DeQue<T>();
+
     CopyOut();
+
+    tempInQue_.FreeTensor<T>(tempInTensor_);
+    xInQue_.FreeTensor<T>(xTensor_);
 }
 
 } // namespace AsStrided
+
 #endif

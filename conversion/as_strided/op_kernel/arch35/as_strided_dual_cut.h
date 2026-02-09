@@ -140,28 +140,28 @@ public:
     __aicore__ inline void SubProcessCutTwo()
     {
         // Block_dim = 64, final block deal with 5
-        int coreLoops = (GetBlockIdx() == GetBlockNum() - 1) ? loopsTailCore_ : loopsPerCore_;
-        int loopId = GetBlockIdx() * loopsPerCore_;
+        int64_t coreLoops = (GetBlockIdx() == GetBlockNum() - 1) ? loopsTailCore_ : loopsPerCore_;
+        int64_t loopId = GetBlockIdx() * loopsPerCore_;
 
-        int cutAxisLoopIdx01 = TILING_NDDMA_LEN - 1 - this->cutAxisIdx01_;
-        int cutAxisLoopIdx02 = TILING_NDDMA_LEN - 1 - this->cutAxisIdx02_;
-        int cutAxisMain01 = this->dmaParam_.loopInfo.loopSize[cutAxisLoopIdx01]; // 1,
-        int cutAxisMain02 = this->dmaParam_.loopInfo.loopSize[cutAxisLoopIdx02]; // 2,
+        int64_t cutAxisLoopIdx01 = TILING_NDDMA_LEN - 1 - this->cutAxisIdx01_;
+        int64_t cutAxisLoopIdx02 = TILING_NDDMA_LEN - 1 - this->cutAxisIdx02_;
+        int64_t cutAxisMain01 = this->dmaParam_.loopInfo.loopSize[cutAxisLoopIdx01]; // 1,
+        int64_t cutAxisMain02 = this->dmaParam_.loopInfo.loopSize[cutAxisLoopIdx02]; // 2,
 
         // tmp
-        int tmpId = 0;
-        uint32_t cutAxisOuter01 = this->gmShape_[outerAxisNum_ - cutAxisNum_];     // ao
-        uint32_t cutAxisOuter02 = this->gmShape_[outerAxisNum_ - cutAxisNum_ + 1]; // bo
-        int currentCutAxisOuter01, currentCutAxisOuter02;
+        int64_t tmpId = 0;
+        int64_t cutAxisOuter01 = this->gmShape_[outerAxisNum_ - cutAxisNum_];     // ao
+        int64_t cutAxisOuter02 = this->gmShape_[outerAxisNum_ - cutAxisNum_ + 1]; // bo
+        int64_t currentCutAxisOuter01, currentCutAxisOuter02;
 
-        int axisId = -1;
+        int64_t axisId = -1;
         int64_t inputAddr = 0;
         int64_t outAddr = 0;
 
         LoopModeParams loopMode_;
         DataCopyExtParams copyOutParamV2_;
 
-        for (uint32_t loop = 0; loop < coreLoops; loop++) {
+        for (int64_t loop = 0; loop < coreLoops; loop++) {
             tmpId = loopId + loop;
             inputAddr = 0;
             outAddr = 0;
@@ -209,29 +209,29 @@ public:
 
     __aicore__ inline void SubProcessCutOne()
     {
-        int coreLoops = (GetBlockIdx() == GetBlockNum() - 1) ? loopsTailCore_ : loopsPerCore_;
-        int loopId = GetBlockIdx() * loopsPerCore_;
+        int64_t coreLoops = (GetBlockIdx() == GetBlockNum() - 1) ? loopsTailCore_ : loopsPerCore_;
+        int64_t loopId = GetBlockIdx() * loopsPerCore_;
 
-        int cutAxisLoopIdx01 = TILING_NDDMA_LEN - 1 - this->cutAxisIdx01_;
-        int cutAxisMain01 = this->dmaParam_.loopInfo.loopSize[cutAxisLoopIdx01]; // 1,
+        int64_t cutAxisLoopIdx01 = TILING_NDDMA_LEN - 1 - this->cutAxisIdx01_;
+        int64_t cutAxisMain01 = this->dmaParam_.loopInfo.loopSize[cutAxisLoopIdx01]; // 1,
 
         // tmp
-        int tmpId = 0;
-        uint32_t cutAxisOuter01 = this->gmShape_[outerAxisNum_ - cutAxisNum_]; // ao
-        int currentCutAxisOuter01;
+        int64_t tmpId = 0;
+        int64_t cutAxisOuter01 = this->gmShape_[outerAxisNum_ - cutAxisNum_]; // ao
+        int64_t currentCutAxisOuter01;
 
-        int axisId = -1;
-        int inputAddr = 0;
-        int outAddr = 0;
+        int64_t axisId = -1;
+        int64_t inputAddr = 0;
+        int64_t outAddr = 0;
 
         LoopModeParams loopMode_;
         DataCopyExtParams copyOutParamV2_;
 
-        for (uint32_t loop = 0; loop < coreLoops; loop++) {
+        for (int64_t loop = 0; loop < coreLoops; loop++) {
             tmpId = loopId + loop;
             inputAddr = 0;
             outAddr = 0;
-            int baseIdx = 0;
+            int64_t baseIdx = 0;
             for (; baseIdx < outerAxisNum_ - cutAxisNum_; baseIdx++) {
                 axisId = tmpId % gmShape_[baseIdx];
                 tmpId /= gmShape_[baseIdx];

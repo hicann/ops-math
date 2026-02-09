@@ -189,17 +189,17 @@ public:
     {
         int64_t srcOffset = 0;
         int64_t dstOffset = 0;
-        int32_t useIdxLoop = 0;
+        int64_t useIdxLoop = 0;
 
-        for (uint32_t loop = 0; loop < loopsPerCore_; loop++) {
-            int32_t currentIdx = loop * GetBlockNum() + GetBlockIdx();
+        for (int64_t loop = 0; loop < loopsPerCore_; loop++) {
+            int64_t currentIdx = loop * GetBlockNum() + GetBlockIdx();
             if (currentIdx >= axisOutTotalFactor_) {
                 break;
             }
-            uint32_t totalIdx = currentIdx;
+            int64_t totalIdx = currentIdx;
             srcOffset = 0;
             useIdxLoop = TILING_ARRAY_LEN - 1 - outerAxisNum_;
-            for (int32_t useIdx = TILING_ARRAY_LEN - 1; useIdx > useIdxLoop; useIdx--) {
+            for (int64_t useIdx = TILING_ARRAY_LEN - 1; useIdx > useIdxLoop; useIdx--) {
                 srcOffset += ((static_cast<int64_t>(totalIdx) / Product(outLoopArr_, useIdx + 1)) %
                               static_cast<int64_t>(outLoopArr_[useIdx])) *
                              static_cast<int64_t>(outStrideArr_[useIdx]);
