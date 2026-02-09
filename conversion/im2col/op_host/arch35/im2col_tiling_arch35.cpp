@@ -54,6 +54,8 @@ private:
     uint64_t cacheLineSize_{0};
     int32_t ubBlockElements_{0};
     int32_t cacheLineElements_{0};
+    uint32_t vRegSize_{0};
+    int32_t gatherVRegElements_{0};
 
     // tiling key param
     ge::Format inputFormat_;
@@ -364,8 +366,8 @@ std::tuple<int32_t, int32_t> Im2ColTiling::NCHWCalcBufSize(int32_t validBufSize)
     int64_t tmpInBufSize = 1024;
     // 根据最小输入大小，折算出最大输出大小
     int64_t tmpOutBufSize = validBufSize - tmpInBufSize;
-    // 使用最大输出大小，换算为 (?, cacheLine) 的矩阵，去切输出
-    int64_t rectW = cacheLineElements_;
+    // 使用最大输出大小，换算为 (?, vectorLength) 的矩阵，去切输出
+    int64_t rectW = gatherVRegElements_;
     int64_t rectH = tmpOutBufSize / dSize_ / rectW;
     // 如果折算后的矩阵，H和W方向都小于一个分组的大小，此时应该是最大的比例关系，用这个矩阵的宽高，换算出一行输入的长度
     // 如果折算后的矩阵，W/H方向超过一个分组的大小，截断到分组的大小即可
@@ -379,9 +381,9 @@ std::tuple<int32_t, int32_t> Im2ColTiling::NCHWCalcBufSize(int32_t validBufSize)
     int64_t inputW2 = inputW - inputW1;
     int64_t alignBurstLen = AlignBlock(inputW1) + AlignBlock(inputW2);
     // 一行有几个分组
-    int64_t groupCnt = groupW >= cacheLineElements_ ?
+    int64_t groupCnt = groupW >= gatherVRegElements_ ?
                            1 :
-                           std::min(convKernelNumInHeight_, static_cast<int64_t>(cacheLineElements_) / groupW);
+                           std::min(convKernelNumInHeight_, static_cast<int64_t>(gatherVRegElements_) / groupW);
     // 计算输出大小
     tmpOutBufSize = AlignBlock(rectW * groupCnt) * rectH * dSize_;
     tmpInBufSize = alignBurstLen * dSize_ * groupCnt;
@@ -390,8 +392,8 @@ std::tuple<int32_t, int32_t> Im2ColTiling::NCHWCalcBufSize(int32_t validBufSize)
     OP_LOGD(context_, "The ratio of the output buffer size to total size is %f", ratio);
     // 分配 buffsize
     tmpOutBufSize = validBufSize * ratio;
-    // 向下对齐VLEN
-    tmpOutBufSize = Ops::Base::FloorAlign(tmpOutBufSize, static_cast<int64_t>(Ops::Base::GetVRegSize(context_)));
+    // 向下对齐 vector length
+    tmpOutBufSize = Ops::Base::FloorAlign(tmpOutBufSize, static_cast<int64_t>(vRegSize_));
     tmpInBufSize = validBufSize - tmpOutBufSize;
     // 估算元素个数，限制 buff 大小
     int32_t maxInOutBufSize = MAX_UB_GATHER_ELEMENT_NUM * dSize_;
@@ -477,8 +479,8 @@ bool Im2ColTiling::NCHWTryUnFullLoad(int32_t validBufSize)
     auto tilingData = context_->GetTilingData<Im2ColNCHWTilingData>();
     tilingData->inputBufferSize = inputBufSize;
     tilingData->outputBufferSize = outputBufSize;
-    // 用 (?, cacheline) 的矩阵，去切输出
-    tilingData->ubFactorW = static_cast<int32_t>(std::min(static_cast<int64_t>(cacheLineElements_), convKernelNum_));
+    // 用 (?, vectorLength) 的矩阵，去切输出
+    tilingData->ubFactorW = static_cast<int32_t>(std::min(static_cast<int64_t>(gatherVRegElements_), convKernelNum_));
     // 对齐 group，防止产生跨行搬运
     int64_t rectCntW;
     if (tilingData->ubFactorW > groupW) {
@@ -666,6 +668,8 @@ ge::graphStatus Im2ColTiling::Tiling4Format()
 {
     cacheLineElements_ = cacheLineSize_ / dSize_;
     ubBlockElements_ = ubBlockSize_ / dSize_;
+    // gather vector register元素数量
+    gatherVRegElements_ = static_cast<int64_t>(vRegSize_) / std::max(dSize_, 2);
 
     int64_t shapeSize = input_.N * input_.C * input_.H * input_.W;
     if (shapeSize <= MAX_SHAPE_SIZE_FOR_SIMT) {
@@ -697,6 +701,8 @@ ge::graphStatus Im2ColTiling::GetSocInfo()
     OP_CHECK_IF((cacheLineSize_ == 0U), OP_LOGE(context_, "Failed to get cache line size."), return ge::GRAPH_FAILED);
     ubBlockSize_ = Ops::Base::GetUbBlockSize(context_);
     OP_CHECK_IF((ubBlockSize_ == 0U), OP_LOGE(context_, "Failed to get ub block size."), return ge::GRAPH_FAILED);
+    vRegSize_ = Ops::Base::GetVRegSize(context_);
+    OP_CHECK_IF((vRegSize_ == 0U), OP_LOGE(context_, "Failed to get vector register size."), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 

@@ -215,6 +215,42 @@ TEST_F(Im2colTilingNCHWTest, Im2colTilingNCHWTest_nopad_bigw_cuthw)
     CheckUnFullLoadBuf(data, ge::DT_FLOAT16);
 }
 
+TEST_F(Im2colTilingNCHWTest, Im2colTilingNCHWTest_nopad_bigw_int8_cuthw)
+{
+    gert::TilingContextPara tilingContextPara(
+        "Im2col",
+        {
+            {{{1, 48, 258, 1102}, {1, 48, 258, 1102}}, ge::DT_INT8, ge::FORMAT_NCHW},
+        },
+        {
+            {{{1, 768, 128, 550}, {1, 768, 128, 550}}, ge::DT_INT8, ge::FORMAT_NCHW},
+        },
+        {
+            {"ksizes", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({4, 4})},
+            {"strides", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({2, 2})},
+            {"dilations", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1, 1})},
+            {"padding_mode", Ops::Math::AnyValue::CreateFrom<std::string>("CALCULATED")},
+            {"pads", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0})},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    ASSERT_TRUE(tilingRet);
+    EXPECT_EQ(tilingInfo.tilingKey, 0b0'0'0'00000001'00000000);
+    ASSERT_EQ(tilingInfo.tilingDataSize, sizeof(Im2ColNCHWTilingData));
+    Im2ColNCHWTilingData* data = reinterpret_cast<Im2ColNCHWTilingData*>(tilingInfo.tilingData.get());
+    EXPECT_EQ(data->ubFactorH, 16);
+    EXPECT_EQ(data->ubFactorW, 128);
+    EXPECT_EQ(data->ubFactorNC, 1);
+    EXPECT_EQ(data->w4ubFactorW, 258);
+    EXPECT_EQ(data->convKernelNumInWidth, 550);
+    EXPECT_EQ(data->convKernelNumInHeight, 128);
+    EXPECT_EQ(data->totalRectAngles, 30720);
+    EXPECT_EQ(data->rectAnglesPerCore, 480);
+    EXPECT_EQ(tilingInfo.blockNum, 64);
+    CheckUnFullLoadBuf(data, ge::DT_INT8);
+}
+
 TEST_F(Im2colTilingNCHWTest, Im2colTilingNCHWTest_nopad_W1_bigH_cuthw)
 {
     gert::TilingContextPara tilingContextPara(

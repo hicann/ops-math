@@ -508,6 +508,7 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::CalcIdxAndGather(
         uint16_t loop = hBlockCount;
         uint16_t loop1 = hFactor;
         uint32_t maskSize = wUbFactor;
+        uint32_t maskB8 = wUbFactor;
         int64_t hwAlign = hBlockCount * blockLenAlign;
         int64_t dilation = inputInfo_->wDilation;
         int64_t stride = blockLenAlign - dilation * loop1;
@@ -530,9 +531,11 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::CalcIdxAndGather(
             AscendC::MicroAPI::UnalignReg uDst;
             AscendC::MicroAPI::MaskReg mask;
             AscendC::MicroAPI::MaskReg maskOut;
+            AscendC::MicroAPI::MaskReg maskT;
 
             mask = AscendC::MicroAPI::UpdateMask<U>(maskSize);
             maskOut = AscendC::MicroAPI::UpdateMask<U>(ubFactor);
+            maskT = AscendC::MicroAPI::UpdateMask<T>(maskB8);
             Y startIdx = (Y)0;
             AscendC::MicroAPI::Arange(indexReg, startIdx);
             AscendC::MicroAPI::Duplicate(tmp, (U)wFactor, mask);
@@ -550,7 +553,7 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::CalcIdxAndGather(
                         // Convert B16 to B8
                         AscendC::MicroAPI::Pack(dstRegT, dstReg);
                         AscendC::MicroAPI::StoreAlign<T, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                            dstPtrT, dstRegT, offset, maskOut);
+                            dstPtrT, dstRegT, offset, maskT);
                     } else {
                         AscendC::MicroAPI::StoreAlign<U, MicroAPI::PostLiteral::POST_MODE_UPDATE>(
                             dstPtrU, dstReg, offset, maskOut);

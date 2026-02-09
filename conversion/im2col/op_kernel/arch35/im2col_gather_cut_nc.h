@@ -166,8 +166,8 @@ __aicore__ inline void Im2ColGatherCutNc<T, isPadding>::CopyIn(int32_t ubFactorN
     DataCopyExtParams copyInParams{
         static_cast<uint16_t>(ubFactorNC), static_cast<uint32_t>(inputHwSize_ * sizeof(T)), 0, 0, 0};
     if (vlSize_ / outputHwSize_ > 1) {
-        DataCopyPad<T, PaddingMode::Compact>(input, inputGM_[inputOffset_ + loopIdx * inUbFactor_], copyInParams,
-                                             padParams);
+        DataCopyPad<T, PaddingMode::Compact>(
+            input, inputGM_[inputOffset_ + loopIdx * inUbFactor_], copyInParams, padParams);
     } else {
         DataCopyPad(input, inputGM_[inputOffset_ + loopIdx * inUbFactor_], copyInParams, padParams);
     }
@@ -419,23 +419,24 @@ __aicore__ inline void Im2ColGatherCutNc<T, isPadding>::GatherNoPaddingVFCrossNc
 
         for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
             // vfFactorNC * outputHwSize_的索引拼接+gather
-            MicroAPI::Gather((MicroAPI::RegTensor<CastType_>&)dstReg, inputAddr, idxReg, gatherMask);
+            MicroAPI::Gather(
+                (MicroAPI::RegTensor<CastType_>&)dstReg, inputAddr + loopIdx * inputInc, idxReg, gatherMask);
             outputAddrTmp = outputAddr + loopIdx * loopSize;
             if constexpr (sizeof(T) == 1) {
-                MicroAPI::Pack(dstRegT, (MicroAPI::RegTensor<CastType_> &)dstReg);
+                MicroAPI::Pack(dstRegT, (MicroAPI::RegTensor<CastType_>&)dstReg);
                 MicroAPI::StoreUnAlign(outputAddrTmp, dstRegT, uReg, loopSize);
             } else {
                 MicroAPI::StoreUnAlign(outputAddrTmp, dstReg, uReg, loopSize);
             }
-            MicroAPI::Adds(idxReg, idxReg, IdxType_(inputInc), mask);
         }
         MicroAPI::StoreUnAlignPost(outputAddrTmp, uReg, 0);
         // tail处理
         for (uint16_t loopIdx = 0; loopIdx < loopTailNum; loopIdx++) {
-            MicroAPI::Gather((MicroAPI::RegTensor<CastType_>&)dstReg, inputAddr, idxReg, tailGatherMask);
+            MicroAPI::Gather(
+                (MicroAPI::RegTensor<CastType_>&)dstReg, inputAddr + loopNum * inputInc, idxReg, tailGatherMask);
             outputAddrTmp = outputAddr + loopNum * loopSize;
             if constexpr (sizeof(T) == 1) {
-                MicroAPI::Pack(dstRegT, (MicroAPI::RegTensor<CastType_> &)dstReg);
+                MicroAPI::Pack(dstRegT, (MicroAPI::RegTensor<CastType_>&)dstReg);
                 MicroAPI::StoreUnAlign(outputAddrTmp, dstRegT, uReg, tailSize);
             } else {
                 MicroAPI::StoreUnAlign(outputAddrTmp, dstReg, uReg, tailSize);
