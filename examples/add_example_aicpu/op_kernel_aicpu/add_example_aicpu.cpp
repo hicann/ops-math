@@ -19,10 +19,10 @@
 
 #include <cmath>
 #include <string>
-#include "cust_cpu_utils.h"
+#include "log.h"
 
 namespace {
-const char* const kAddExample = "AddExample";
+const char* const kAddExample = "AddExampleAicpu";
 const uint32_t kFirstInputIndex = 0;
 const uint32_t kSecondInputIndex = 1;
 const uint32_t kFirstOutputIndex = 0;

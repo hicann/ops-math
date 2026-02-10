@@ -10,7 +10,7 @@
 
 
 /*!
- * \file add_example_infer.cpp
+ * \file add_example_infershape.cpp
  * \brief
  */
 #include "register/op_impl_registry.h"
@@ -22,27 +22,27 @@ namespace ops {
 
 static ge::graphStatus InferShapeAddExample(gert::InferShapeContext* context)
 {
-    OP_LOGD(context->GetNodeName(), "Begin to do InferShapeAddExample");
+    OP_LOGD(context->GetNodeName(), "Begin to do InferShapeAddExample for aicpu");
 
-    // get input shapes
+    // get input shapes for aicpu example
     const gert::Shape* xShape = context->GetInputShape(IDX_0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
 
-    // get output shapes
+    // get output shapes for aicpu example
     gert::Shape* yShape = context->GetOutputShape(IDX_0);
     OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
 
-    // 填充输出shape大小
-    auto xShapeSize = xShape->GetDimNum();
-    yShape->SetDimNum(xShapeSize);
-    for (size_t i = 0; i < xShapeSize; i++) {
+    // 填充输出shape大小(aicpu example)
+    auto xAicpuShapeSize = xShape->GetDimNum();
+    yShape->SetDimNum(xAicpuShapeSize);
+    for (size_t i = 0; i < xAicpuShapeSize; i++) {
         int64_t dim = xShape->GetDim(i);
         yShape->SetDim(i, dim);
     }
 
-    OP_LOGD(context->GetNodeName(), "End to do InferShapeAddExample");
+    OP_LOGD(context->GetNodeName(), "End to do InferShapeAddExample for aicpu example");
     return GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(AddExample).InferShape(InferShapeAddExample);
+IMPL_OP_INFERSHAPE(AddExampleAicpu).InferShape(InferShapeAddExample);
 } // namespace ops
