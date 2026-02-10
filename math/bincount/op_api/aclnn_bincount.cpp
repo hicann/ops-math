@@ -228,6 +228,7 @@ aclnnStatus aclnnBincountGetWorkspaceSize(
     auto weightsTensor = (IsRegBase()) ?
                              dealWeightsTensor_950(self, weights, uniqueExecutor.get()) :
                              dealWeightsTensor(self, weights, uniqueExecutor.get());
+    CHECK_RET(weightsTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     auto BincountOut = l0op::Bincount(selfCast, weightsTensor, size, uniqueExecutor.get());
     CHECK_RET(BincountOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
