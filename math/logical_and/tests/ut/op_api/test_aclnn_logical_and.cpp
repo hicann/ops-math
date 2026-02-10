@@ -82,7 +82,7 @@ TEST_F(l2_logical_and_test, aclnnLogicalAnd_11_32_1_12_double_nchw_11_1_1_12_dou
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(aclRet, ACLNN_ERR_INNER_NULLPTR);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
 TEST_F(l2_logical_and_test, aclnnLogicalAnd_1_5_1_16_129_int32_ndhwc_32_5_32_16_1_int32_ndhwc_testcase005)

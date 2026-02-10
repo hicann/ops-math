@@ -46,5 +46,5 @@ TEST_F(l2_randperm_test, case_float_ND_001)
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_ERR_INNER_NULLPTR);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
 }

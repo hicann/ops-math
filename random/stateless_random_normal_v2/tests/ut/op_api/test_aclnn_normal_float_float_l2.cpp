@@ -41,5 +41,5 @@ TEST_F(l2_normal_float_float_test, case_float_ND_001)
     auto ut = OP_API_UT(aclnnNormalFloatFloat, INPUT(mean, std, seed, offset), OUTPUT(outDesc));
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_ERR_INNER_NULLPTR);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
 }

@@ -91,7 +91,7 @@ function(add_opapi_modules)
     add_library(${OPHOST_NAME}_opapi_obj OBJECT)
     unset(opapi_ut_depends_inc)
     if(ENABLE_TEST)
-      set(opapi_ut_depends_inc ${UT_PATH}/op_api/stub)
+      set(opapi_ut_depends_inc ${UT_PATH}/op_api/stub ${UT_PATH}/op_api/stub/dev/aicpu)
     endif()
     target_include_directories(${OPHOST_NAME}_opapi_obj PRIVATE
             ${opapi_ut_depends_inc}

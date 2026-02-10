@@ -130,7 +130,7 @@ TEST_F(l2_tensor_equal_test, test_tensor_equal_normal_double) {
   // SAMPLE: precision simulate
   uint64_t workspaceSize = 0;
   aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-  EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_INNER_NULLPTR);
+  EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
 }
 
 // out数据类型不是bool的场景
