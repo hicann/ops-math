@@ -41,7 +41,7 @@ TEST_F(l2_cdist_test, case_01_float)
     auto x2Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto outDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     float p = 2.0;
-    int64_t compute_mode = 0;
+    int64_t compute_mode = 2;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
     
@@ -56,7 +56,7 @@ TEST_F(l2_cdist_test, case_02_float16)
     auto x2Desc = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto outDesc = TensorDesc({2, 2}, ACL_FLOAT16, ACL_FORMAT_ND);
     float p = 2.0;
-    int64_t compute_mode = 0;
+    int64_t compute_mode = 2;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
     
@@ -71,7 +71,7 @@ TEST_F(l2_cdist_test, case_04_empty_tensor)
     auto x2Desc = TensorDesc({0, 1}, ACL_FLOAT, ACL_FORMAT_ND);
     auto outDesc = TensorDesc({0, 0}, ACL_FLOAT, ACL_FORMAT_ND);
     float p = 2.0;
-    int64_t compute_mode = 0;
+    int64_t compute_mode = 2;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
     

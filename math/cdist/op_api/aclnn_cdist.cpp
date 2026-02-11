@@ -105,8 +105,8 @@ static bool CheckParamsLogic(float& p, const int64_t compute_mode, SocVersion so
         return false;
     }
     // 强校验compute_mode
-    if (std::fabs(p - 2.0) < 1e-6 && compute_mode != 0){
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "compute_mode %lld is not supported, only support 0 when pValue equals 2.0",
+    if (std::fabs(p - 2.0) < 1e-6 && compute_mode != 2){
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "compute_mode %lld is not supported, only support 2 when pValue equals 2.0",
                 compute_mode);
         return false;
     }
