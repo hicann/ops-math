@@ -30,8 +30,7 @@ template <typename INPUT_T>
 class KernelStackBallQuery
 {
 public:
-    __aicore__ inline KernelStackBallQuery()
-    {}
+    __aicore__ inline KernelStackBallQuery(AscendC::TPipe* p) : pipe(p) {};
 
     __aicore__ inline void Init(
         GM_ADDR xyz, GM_ADDR center_xyz, GM_ADDR xyz_batch_cnt, GM_ADDR center_xyz_batch_cnt, GM_ADDR idx,
@@ -61,39 +60,39 @@ public:
         centerXyzBatchCntGm.SetGlobalBuffer((__gm__ int32_t*)center_xyz_batch_cnt, this->batchSize);
         xyzBatchCntGm.SetGlobalBuffer((__gm__ int32_t*)xyz_batch_cnt, this->batchSize);
 
-        pipe.InitBuffer(inQueueCenterXyz, BUFFER_NUM, XYZ_NUM * this->centerXyzEachSegmentLength * sizeof(INPUT_T));
-        pipe.InitBuffer(inQueueX, BUFFER_NUM, this->xyzEachSegmentLength * sizeof(INPUT_T));
-        pipe.InitBuffer(inQueueY, BUFFER_NUM, this->xyzEachSegmentLength * sizeof(INPUT_T));
-        pipe.InitBuffer(inQueueZ, BUFFER_NUM, this->xyzEachSegmentLength * sizeof(INPUT_T));
+        pipe->InitBuffer(inQueueCenterXyz, BUFFER_NUM, XYZ_NUM * this->centerXyzEachSegmentLength * sizeof(INPUT_T));
+        pipe->InitBuffer(inQueueX, BUFFER_NUM, this->xyzEachSegmentLength * sizeof(INPUT_T));
+        pipe->InitBuffer(inQueueY, BUFFER_NUM, this->xyzEachSegmentLength * sizeof(INPUT_T));
+        pipe->InitBuffer(inQueueZ, BUFFER_NUM, this->xyzEachSegmentLength * sizeof(INPUT_T));
 
-        pipe.InitBuffer(resultBuf, this->idxEachSegmentLength * sizeof(int32_t));
+        pipe->InitBuffer(resultBuf, this->idxEachSegmentLength * sizeof(int32_t));
         this->resultOut = resultBuf.Get<int32_t>();
-        pipe.InitBuffer(resultAlignBuf, ALIGN_32);
+        pipe->InitBuffer(resultAlignBuf, ALIGN_32);
         this->resultOutAlign = resultAlignBuf.Get<int32_t>();
-        pipe.InitBuffer(calcBufCenterX, this->xyzEachSegmentLength * sizeof(INPUT_T));
-        pipe.InitBuffer(calcBufCenterY, this->xyzEachSegmentLength * sizeof(INPUT_T));
-        pipe.InitBuffer(calcBufCenterZ, this->xyzEachSegmentLength * sizeof(INPUT_T));
+        pipe->InitBuffer(calcBufCenterX, this->xyzEachSegmentLength * sizeof(INPUT_T));
+        pipe->InitBuffer(calcBufCenterY, this->xyzEachSegmentLength * sizeof(INPUT_T));
+        pipe->InitBuffer(calcBufCenterZ, this->xyzEachSegmentLength * sizeof(INPUT_T));
 
-        pipe.InitBuffer(ubDstLt, ALIGN_16 * sizeof(uint16_t));
+        pipe->InitBuffer(ubDstLt, ALIGN_16 * sizeof(uint16_t));
         this->ubDstLtLocal = ubDstLt.Get<uint16_t>();
-        pipe.InitBuffer(ubMaxRadius, this->xyzEachSegmentLength * sizeof(INPUT_T));
+        pipe->InitBuffer(ubMaxRadius, this->xyzEachSegmentLength * sizeof(INPUT_T));
         this->ubMaxRadiusLocal = ubMaxRadius.Get<INPUT_T>();
         Duplicate<INPUT_T>(ubMaxRadiusLocal, this->maxRadius, this->xyzEachSegmentLength);
-        pipe.InitBuffer(ubResultLt, this->selMaxElements * sizeof(float));
+        pipe->InitBuffer(ubResultLt, this->selMaxElements * sizeof(float));
         this->ubResultLtLocal = ubResultLt.Get<float>();
 
-        pipe.InitBuffer(ubOneFloat32, this->selMaxElements * sizeof(float));
+        pipe->InitBuffer(ubOneFloat32, this->selMaxElements * sizeof(float));
         this->ubOneFloat32Local = ubOneFloat32.Get<float>();
         Duplicate<float>(ubOneFloat32Local, 1.0, this->selMaxElements);
-        pipe.InitBuffer(ubZeroFloat32, this->selMaxElements * sizeof(float));
+        pipe->InitBuffer(ubZeroFloat32, this->selMaxElements * sizeof(float));
         this->ubZeroFloat32Local = ubZeroFloat32.Get<float>();
         Duplicate<float>(ubZeroFloat32Local, 0.0, this->selMaxElements);
-        pipe.InitBuffer(calcBufDistanceResult, this->xyzEachSegmentLength * sizeof(INPUT_T));
-        pipe.InitBuffer(calcBufCenterDistanceX, this->xyzEachSegmentLength * sizeof(INPUT_T));
-        pipe.InitBuffer(calcBufCenterDistanceY, this->xyzEachSegmentLength * sizeof(INPUT_T));
-        pipe.InitBuffer(calcBufCenterDistanceZ, this->xyzEachSegmentLength * sizeof(INPUT_T));
-        pipe.InitBuffer(xyzBatchValue, this->GetAlignValue(this->batchSize, ALIGN_NUM) * sizeof(int32_t));
-        pipe.InitBuffer(centerXyzBatchValue, this->GetAlignValue(this->batchSize, ALIGN_NUM) * sizeof(int32_t));
+        pipe->InitBuffer(calcBufDistanceResult, this->xyzEachSegmentLength * sizeof(INPUT_T));
+        pipe->InitBuffer(calcBufCenterDistanceX, this->xyzEachSegmentLength * sizeof(INPUT_T));
+        pipe->InitBuffer(calcBufCenterDistanceY, this->xyzEachSegmentLength * sizeof(INPUT_T));
+        pipe->InitBuffer(calcBufCenterDistanceZ, this->xyzEachSegmentLength * sizeof(INPUT_T));
+        pipe->InitBuffer(xyzBatchValue, this->GetAlignValue(this->batchSize, ALIGN_NUM) * sizeof(int32_t));
+        pipe->InitBuffer(centerXyzBatchValue, this->GetAlignValue(this->batchSize, ALIGN_NUM) * sizeof(int32_t));
         PipeBarrier<PIPE_ALL>();;
     }
 
@@ -435,7 +434,7 @@ private:
         GetXyzSliceAndCalDis(currentBIndex);
     }
 
-    TPipe pipe;
+    TPipe* pipe{nullptr};
     TQue<QuePosition::VECIN, BUFFER_NUM> inQueueCenterXyz;
     TQue<QuePosition::VECIN, BUFFER_NUM> inQueueX;
     TQue<QuePosition::VECIN, BUFFER_NUM> inQueueY;

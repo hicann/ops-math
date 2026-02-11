@@ -19,12 +19,14 @@ extern "C" __global__ __aicore__ void stack_ball_query(
     GM_ADDR workspace, GM_ADDR tiling)
 {
     GET_TILING_DATA(tilingData, tiling);
+    AscendC::TPipe pipe;
+
     if (TILING_KEY_IS(1)) {
-        KernelStackBallQuery<float> op;
+        KernelStackBallQuery<float> op(&pipe);
         op.Init(xyz, center_xyz, xyz_batch_cnt, center_xyz_batch_cnt, idx, tilingData);
         op.Process();
     } else if (TILING_KEY_IS(2)) {
-        KernelStackBallQuery<half> op;
+        KernelStackBallQuery<half> op(&pipe);
         op.Init(xyz, center_xyz, xyz_batch_cnt, center_xyz_batch_cnt, idx, tilingData);
         op.Process();
     }
