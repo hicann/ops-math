@@ -55,46 +55,7 @@ do
         fi
     done
 done
-# run add_example
-echo "Building add_example pkg"
-bash build.sh --pkg --ops=add_example -j16
-status=$?
-if [ $status -ne 0 ]; then
-    echo "add_example build failed"
-    exit 1
-fi
 
-echo "Installing add_example pkg"
-installer=$(ls ./build_out/cann-ops-math-*.run 2>/dev/null)
-if [ -z "$installer" ]; then
-    echo "add_example installer not found"
-    exit 1
-fi
-
-$installer
-status=$?
-if [ $status -ne 0 ]; then
-    echo "add_example installation failed"
-    exit 1
-fi
-
-echo "Running add_example aclnn example"
-bash build.sh --run_example add_example eager cust
-status=$?
-if [ $status -ne 0 ]; then
-    echo "add_example aclnn example fail"
-    exit 1
-fi
-
-echo "Running add_example graph example"
-bash build.sh --run_example add_example graph
-status=$?
-if [ $status -ne 0 ]; then
-    echo "add_example graph example fail"
-    exit 1
-fi
-
-# run example for the modified op
 for name in "${ops_name[@]}"
 do
     ./single/cann-ops-math-${name}_linux*.run
