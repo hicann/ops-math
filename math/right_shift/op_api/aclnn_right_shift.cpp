@@ -63,11 +63,6 @@ static bool CheckShape(const aclTensor *input, const aclTensor *shiftBits, const
   OP_CHECK(
       shiftBitsDim <= MAX_INPUT_DIM,
       OP_LOGE(ACLNN_ERR_PARAM_INVALID, "ShiftBits dim num should be less than or equal to 8."), return false);
-  const auto inputShape = input->GetViewShape();
-  const auto outShape = out->GetViewShape();
-  OP_CHECK(
-    inputShape == outShape,
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input shape should be the same as out."), return false);
   op::Shape broadcastShape;
   OP_CHECK_BROADCAST_AND_INFER_SHAPE(input, shiftBits, broadcastShape, return false);
   if (broadcastShape != out->GetViewShape()) {

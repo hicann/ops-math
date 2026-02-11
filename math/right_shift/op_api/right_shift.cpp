@@ -63,7 +63,14 @@ const aclTensor* RightShiftAiCpu(const aclTensor* x, const aclTensor* y, const a
 }
 
 const aclTensor* RightShift(const aclTensor* x, const aclTensor* y, aclOpExecutor* executor) {
-   auto z = executor->AllocTensor(x->GetViewShape(), x->GetDataType());
+   Shape broadcastShape;
+   if (!BroadcastInferShape(x->GetViewShape(), y->GetViewShape(), broadcastShape)) {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.",
+            op::ToString(x->GetViewShape()).GetString(), op::ToString(y->GetViewShape()).GetString());
+        return nullptr;
+   }
+   auto z = executor->AllocTensor(broadcastShape, x->GetDataType());
    CHECK_RET(z != nullptr, nullptr);
    if (!IsSupported(x, y)) {
        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The input dtype for rightshift is not supported.");
