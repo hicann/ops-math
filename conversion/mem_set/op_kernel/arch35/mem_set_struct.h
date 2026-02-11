@@ -24,9 +24,9 @@ struct MemSetTilingData {
     int inputCount;
 };
 namespace MemSetTpl {
-ASCENDC_TPL_ARGS_DECL(MemSet, ASCENDC_TPL_UINT_DECL(inputCount, 8, ASCENDC_TPL_UI_RANGE, 1, 1, 192));
-ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(inputCount, ASCENDC_TPL_UI_RANGE, 1, 1, 192)));
-//支持tensor范围为1-16， 32 64 128 192
+ASCENDC_TPL_ARGS_DECL(MemSet, ASCENDC_TPL_UINT_DECL(inputCount, 8, ASCENDC_TPL_UI_RANGE, 1, 1, 256));
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(inputCount, ASCENDC_TPL_UI_RANGE, 1, 1, 256)));
+//支持tensor范围为1-256
 } // namespace MemSetTpl
 
 #endif

@@ -74,7 +74,8 @@ void MemSetTilingClass::PostDo()
 
 ge::graphStatus MemSetTilingClass::PostTiling()
 {
-    const std::vector<int> validNums = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 32, 64, 128, 192};
+    // 不同大小的tilingdata模板
+    const std::vector<int> validNums = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 32, 64, 128, 192, 256};
     if (inputCount_ > validNums.back()) {
         OP_LOGE(context_, "TensorNum is %d unsupported", inputCount_);
         return ge::GRAPH_FAILED;
@@ -102,6 +103,7 @@ ge::graphStatus MemSetTilingClass::PostTiling()
         case 64: PostDo<64>();break;
         case 128: PostDo<128>();break;
         case 196: PostDo<196>();break;
+        case 256: PostDo<256>();break;
     }
     context_->SetBlockDim(aicoreParams_.numBlocks);
     return ge::GRAPH_SUCCESS;
@@ -132,7 +134,7 @@ ge::graphStatus MemSetTilingClass::DoOpTiling()
         useCore_[i] = (blockNum + perCoreSizes_[i] - 1) / perCoreSizes_[i];
         lastCoreSizes_[i] = blockNum - (useCore_[i] - 1) * perCoreSizes_[i];
         perCoreSizes_[i] = BLOCK_SIZE * perCoreSizes_[i] / dataSize;
-        lastCoreSizes_[i] = ((lastCoreSizes_[i] - 1) * BLOCK_SIZE + tail) / dataSize;
+        lastCoreSizes_[i] = ((lastCoreSizes_[i] - tailOrNot) * BLOCK_SIZE + tail) / dataSize;
         sizes_[i] = sizes_[i] / dataSize;
     }
     return ge::GRAPH_SUCCESS;
