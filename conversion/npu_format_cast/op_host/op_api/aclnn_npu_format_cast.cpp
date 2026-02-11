@@ -227,11 +227,12 @@ static aclnnStatus Check95NdToNzCalculateSizeAndFormatInputs(
     auto viewShape = srcTensor->GetViewShape();
     auto viewShapeDim = viewShape.GetDimNum();
     for (size_t i = 0; i < viewShapeDim; i++) {
-        if (viewShape.GetDim(i) == 0) {
+        OP_CHECK(
+            viewShape.GetDim(i) != 0,
             OP_LOGE(
                 ACLNN_ERR_PARAM_INVALID,
-                "Invalid inputs! SrcTensor must not be empty tensor! But current Tensor's Dim[%zu] is 0!", i);
-        }
+                "Invalid inputs! SrcTensor must not be empty tensor! But current Tensor's Dim[%zu] is 0!", i),
+            return ACLNN_ERR_PARAM_INVALID);
     }
     // check input shape
     if (additionalDtype != static_cast<int>(srcDtype)) {
