@@ -9,4 +9,4 @@
 # the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-add_modules_sources(OPTYPE squeezev2 ACLNNTYPE no_need_alcnn)
+add_modules_sources(OPTYPE squeezev2 ACLNNTYPE aclnn_exclude)
