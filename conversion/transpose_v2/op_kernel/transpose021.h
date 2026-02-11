@@ -25,7 +25,8 @@ class Transpose021
 public:
     __aicore__ inline Transpose021(AscendC::TPipe* p) : pipe(p)
     {}
-    __aicore__ inline void Process(__gm__ uint8_t* src, __gm__ uint8_t* dst, const TransposeV2TilingData* tiling_data)
+    __aicore__ inline void Process(__gm__ uint8_t* src, __gm__ uint8_t* dst,
+                                   const TransposeV2TilingData* __restrict__ tiling_data)
     {
         tasksPerCore = tiling_data->tasksPerCore;
         tasksTail = tiling_data->tasksTail;

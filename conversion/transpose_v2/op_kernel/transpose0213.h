@@ -26,7 +26,8 @@ public:
     __aicore__ inline Transpose0213(AscendC::TPipe* p) : Transpose102<T, false>(p)
     {}
 
-    __aicore__ inline void Init0213(__gm__ uint8_t* src, __gm__ uint8_t* dst, const TransposeV2TilingData* tiling_data)
+    __aicore__ inline void Init0213(__gm__ uint8_t* src, __gm__ uint8_t* dst,
+                                    const TransposeV2TilingData* __restrict__ tiling_data)
     {
         this->InitCommon(tiling_data);
         this->srcGlobal.SetGlobalBuffer(

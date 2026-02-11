@@ -27,7 +27,8 @@ class DiagFlatND2To2DB16More64
 {
 public:
     __aicore__ inline DiagFlatND2To2DB16More64(AscendC::TPipe *p) : pipe(p){};
-    __aicore__ inline void Init(GM_ADDR input, GM_ADDR output, GM_ADDR workspace, const DiagV2TilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR input, GM_ADDR output, GM_ADDR workspace,
+                                const DiagV2TilingData* __restrict__ tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -37,7 +38,7 @@ private:
     __aicore__ inline void CreateAuxMatrix();
     template <typename U>
     __aicore__ inline void MemSetZero(GlobalTensor<U> gmTensor, int64_t size);
-    __aicore__ inline void ParseTilingData(const DiagV2TilingData* tilingData);
+    __aicore__ inline void ParseTilingData(const DiagV2TilingData* __restrict__ tilingData);
     __aicore__ inline static constexpr bool IsDataCopyPadSupport()
     {
 #if __CCE_AICORE__ == 220 || __CCE_AICORE__ == 310 || (defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113))
@@ -72,7 +73,7 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void DiagFlatND2To2DB16More64<T>::ParseTilingData(const DiagV2TilingData* tilingData)
+__aicore__ inline void DiagFlatND2To2DB16More64<T>::ParseTilingData(const DiagV2TilingData* __restrict__ tilingData)
 {
     inputNum_ = tilingData->inputNum;
     usedCoreNum_ = tilingData->usedCoreNum;
@@ -95,7 +96,7 @@ __aicore__ inline void DiagFlatND2To2DB16More64<T>::ParseTilingData(const DiagV2
 
 template <typename T>
 __aicore__ inline void DiagFlatND2To2DB16More64<T>::Init(
-    GM_ADDR input, GM_ADDR output, GM_ADDR workspace, const DiagV2TilingData* tilingData)
+    GM_ADDR input, GM_ADDR output, GM_ADDR workspace, const DiagV2TilingData* __restrict__ tilingData)
 {
     // 解析tiling数据
     ParseTilingData(tilingData);

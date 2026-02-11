@@ -26,7 +26,8 @@ public:
     __aicore__ inline Transpose102(AscendC::TPipe* p) : pipe(p)
     {}
 
-    __aicore__ inline void Init102(__gm__ uint8_t* src, __gm__ uint8_t* dst, const TransposeV2TilingData* tiling_data)
+    __aicore__ inline void Init102(__gm__ uint8_t* src, __gm__ uint8_t* dst,
+                                   const TransposeV2TilingData* __restrict__ tiling_data)
     {
         InitCommon(tiling_data);
         if (subMode == 0) {
@@ -98,7 +99,7 @@ public:
     }
 
 protected:
-    __aicore__ inline void InitCommon(const TransposeV2TilingData* tiling_data)
+    __aicore__ inline void InitCommon(const TransposeV2TilingData* __restrict__ tiling_data)
     {
         dim1Len = tiling_data->dim1Len;
         dim2Len = tiling_data->dim2Len;

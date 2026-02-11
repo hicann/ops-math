@@ -26,11 +26,12 @@ class DiagFlatNDTo2D
 {
 public:
     __aicore__ inline DiagFlatNDTo2D(AscendC::TPipe *p) : pipe(p){};
-    __aicore__ inline void Init(GM_ADDR input, GM_ADDR output, GM_ADDR workspace, const DiagV2TilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR input, GM_ADDR output, GM_ADDR workspace,
+                                const DiagV2TilingData* __restrict__ tilingData);
     __aicore__ inline void Process();
 
 private:
-    __aicore__ inline void ParseTilingData(const DiagV2TilingData* tilingData);
+    __aicore__ inline void ParseTilingData(const DiagV2TilingData* __restrict__ tilingData);
     __aicore__ inline void ConstructAssistMatrix();
     __aicore__ inline void InitGm(GM_ADDR output, GM_ADDR workspace);
     template <typename U>
@@ -72,7 +73,7 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void DiagFlatNDTo2D<T>::ParseTilingData(const DiagV2TilingData* tilingData)
+__aicore__ inline void DiagFlatNDTo2D<T>::ParseTilingData(const DiagV2TilingData* __restrict__ tilingData)
 {
     inputNum_ = tilingData->inputNum;
     usedCoreNum_ = tilingData->usedCoreNum;
@@ -143,7 +144,7 @@ __aicore__ inline void DiagFlatNDTo2D<T>::InitGm(GM_ADDR output, GM_ADDR workspa
 
 template <typename T>
 __aicore__ inline void DiagFlatNDTo2D<T>::Init(
-    GM_ADDR input, GM_ADDR output, GM_ADDR workspace, const DiagV2TilingData* tilingData)
+    GM_ADDR input, GM_ADDR output, GM_ADDR workspace, const DiagV2TilingData* __restrict__ tilingData)
 {
     // init tiling data
     ParseTilingData(tilingData);
