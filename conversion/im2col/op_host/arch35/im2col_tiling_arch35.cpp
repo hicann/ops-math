@@ -680,7 +680,7 @@ ge::graphStatus Im2ColTiling::Tiling4Format()
         return Tiling4NCHW();
     }
     if (inputFormat_ == ge::FORMAT_NHWC) {
-        return Tiling4SIMT();
+        return Tiling4NHWC();
     }
     OP_LOGE(context_, "unsupport format %d", inputFormat_);
     return ge::GRAPH_FAILED;

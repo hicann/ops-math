@@ -20,6 +20,7 @@
 #include "arch35/im2col_simt_NHWC.h"
 #include "arch35/im2col_gather_cut_hw.h"
 #include "arch35/im2col_gather_cut_nc.h"
+#include "arch35/im2col_norm_NHWC.h"
 
 using namespace AscendC;
 using namespace Im2col;
@@ -122,6 +123,9 @@ __aicore__ inline void Im2colNHWC(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_AD
     TPipe pipe;
 
     GET_TILING_DATA_WITH_STRUCT(Im2ColNHWCTilingData, tilingData, tiling);
+    KernelIm2ColNormNhwc<DTYPE_X, isPadding, ubAxis> op;
+    op.Init(x, y, &tilingData, &pipe);
+    op.Process();
 }
 
 template <uint8_t format, uint8_t ubAxis, bool isPadding, bool isSIMT, bool IsBigShape>
