@@ -95,4 +95,3 @@
 | 调用方式   | 样例代码           | 说明                                         |
 | ---------------- | --------------------------- | --------------------------------------------------- |
 | aclnn接口  | [test_aclnn_segsum](examples/test_aclnn_segsum.cpp) | 通过[aclnnExpSegsum](docs/aclnnExpSegsum.md)接口方式调用Segsum算子。 |
-<!--| 图模式 | [test_geir_segsum](examples/test_geir_segsum.cpp)  | 通过[算子IR](op_graph/rms_norm_grad_proto.h)构图方式调用Segsum算子。         |-->

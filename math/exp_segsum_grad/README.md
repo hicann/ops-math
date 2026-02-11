@@ -105,4 +105,3 @@
 | 调用方式   | 样例代码           | 说明                                         |
 | ---------------- | --------------------------- | --------------------------------------------------- |
 | aclnn接口  | [test_aclnn_exp_segsum_backward](examples/test_aclnn_exp_segsum_backward.cpp) | 通过[aclnnExpSegsumBackward](docs/aclnnExpSegsumBackward.md)接口方式调用ExpSegsumGrad算子。 |
-<!--| 图模式 | [test_geir_exp_segsum_backward](examples/test_geir_exp_segsum_backward.cpp)  | 通过[算子IR](op_graph/rms_norm_grad_proto.h)构图方式调用ExpSegsumGrad算子。         |-->
