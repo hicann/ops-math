@@ -31,6 +31,17 @@ static constexpr uint16_t DOUBLE_UNIFORM_RESULT = 2;
 static constexpr uint32_t INT32_FLOAT32_ONE_REPEAT = Ops::Base::GetVRegSize() / sizeof(int32_t);
 static constexpr float DOUBLE_MULTIPLE = 2.0f;
 
+static constexpr int IDX_2 = 2;
+static constexpr int IDX_3 = 3;
+static constexpr int32_t CONTINUOUS_USE = 0;
+static constexpr int32_t DIS_CONTINUOUS_USE = 1;
+static constexpr uint32_t PHILOX_W32_A = 0x9E3779B9;
+static constexpr uint32_t PHILOX_W32_B = 0xBB67AE85;
+static constexpr uint32_t PHILOX_M4X32_A = 0xD2511F53;
+static constexpr uint32_t PHILOX_M4X32_B = 0xCD9E8D57;
+static constexpr float RAND_2POW32_INV = 2.3283064e-10f;
+static constexpr float RAND_2POW32_INV_HALF = RAND_2POW32_INV / 2.0f;
+
 template <typename T>
 __aicore__ inline void CopyOut(
     LocalTensor<T> yLocal, GlobalTensor<T> yGm, uint32_t burstNum, uint32_t busrtLength, int64_t gmOffset)
@@ -293,6 +304,189 @@ __aicore__ inline void BoxMullerMulSIMD(
     }
 }
 
+template <uint16_t COPY_SIZE>
+__aicore__ inline void CopyArray(uint32_t* dst, const uint32_t* src)
+{
+    #pragma unroll
+    for (uint16_t i =0; i < COPY_SIZE; i++) {
+        dst[i] = src[i];
+    }
+}
+
+ __aicore__ inline void SkipOne(uint32_t* counter)
+{
+    if(++counter[0]) return;
+    if(++counter[1]) return;
+    if(++counter[IDX_2]) return;
+    ++counter[IDX_3];
+}
+
+ __aicore__ inline void SkipLo(uint32_t* counter, uint64_t n)
+{
+    const uint32_t nlo = static_cast<uint32_t>(n);
+    uint32_t nhi = static_cast<uint32_t>(n >> RIGHT_SHIFT);
+
+    counter[0] += nlo;
+    if (counter[0] < nlo) {
+        nhi++;
+    }
+    counter[1] += nhi;
+    if (nhi <= counter[1]) 
+        return;
+    if (++counter[IDX_2]) return;
+    ++counter[IDX_3];
+}
+
+ __aicore__ inline void SkipHi(uint32_t* counter, uint64_t n)
+{
+    const uint32_t countLo = static_cast<uint32_t>(n);
+        uint32_t countHi = static_cast<uint32_t>(n >> RIGHT_SHIFT);
+
+    counter[IDX_2] += countLo;
+    if (counter[IDX_2] < countLo) {
+        countHi++;
+    }
+    counter[IDX_3] += countHi;
+}
+
+ __aicore__ inline void FlashCounter(uint64_t globalThreadIdx, uint64_t offset, uint32_t* counter)
+ {
+    SkipHi(counter, globalThreadIdx);
+    SkipLo(counter, offset);
+ }
+
+ __aicore__ inline void PhiloxAlgParsInit(uint32_t* key, uint32_t* counter, int64_t seed, int64_t offset)
+ {
+    key[0] = static_cast<uint32_t>(seed);
+    key[1] = static_cast<uint32_t>(seed >> RIGHT_SHIFT);
+
+    SkipLo(counter, offset);
+ }
+
+__aicore__ inline void MultiplyHighLow(uint32_t a, uint32_t b, uint32_t* resultLow, uint32_t* resultHigh)
+{
+    const uint64_t product = static_cast<uint64_t>(a) * b;
+    *resultLow = static_cast<uint32_t>(product);
+    *resultHigh = static_cast<uint32_t>(product >> RIGHT_SHIFT);
+}
+
+__aicore__ inline void Philox4x32Round(uint32_t* counter, const uint32_t* key)
+{
+    uint32_t lo0;
+    uint32_t hi0;
+    MultiplyHighLow(PHILOX_M4X32_A, counter[0], &lo0, &hi0);
+
+    uint32_t lo1;
+    uint32_t hi1;
+    MultiplyHighLow(PHILOX_M4X32_B, counter[IDX_2], &lo1, &hi1);
+
+    uint32_t result[ALG_COUNTER_SIZE];
+    result[0] = hi1 ^ counter[1] ^ key[0];
+    result[1] = lo1;
+    result[IDX_2] = hi0 ^ counter[IDX_3] ^ key[1];
+    result[IDX_3] = lo0;
+
+    CopyArray<ALG_COUNTER_SIZE>(counter, result);
+}
+
+__aicore__ inline void KeyInc(uint32_t* key)
+{
+    key[0] += PHILOX_W32_A;
+    key[1] += PHILOX_W32_B;
+}
+
+// 算法内部在迭代时使用临时变量，不会修改传入的key 和 counter
+__aicore__ inline void PhiloxRandomSimt(const uint32_t* key, const uint32_t* counter, uint32_t* results)
+{
+    uint32_t keyTmp[ALG_KEY_SIZE];
+    uint32_t counterTmp[ALG_COUNTER_SIZE];
+    CopyArray<ALG_KEY_SIZE>(keyTmp, key);
+    CopyArray<ALG_COUNTER_SIZE>(counterTmp, counter);
+
+    Philox4x32Round(counterTmp, keyTmp);  // 1
+    KeyInc(keyTmp);
+    Philox4x32Round(counterTmp, keyTmp);  // 2
+    KeyInc(keyTmp);
+    Philox4x32Round(counterTmp, keyTmp);  // 3
+    KeyInc(keyTmp);
+    Philox4x32Round(counterTmp, keyTmp);  // 4
+    KeyInc(keyTmp);
+    Philox4x32Round(counterTmp, keyTmp);  // 5
+    KeyInc(keyTmp);
+    Philox4x32Round(counterTmp, keyTmp);  // 6
+    KeyInc(keyTmp);
+    Philox4x32Round(counterTmp, keyTmp);  // 7
+    KeyInc(keyTmp);
+    Philox4x32Round(counterTmp, keyTmp);  // 8
+    KeyInc(keyTmp);
+    Philox4x32Round(counterTmp, keyTmp);  // 9
+    KeyInc(keyTmp);
+    Philox4x32Round(counterTmp, keyTmp);  // 10
+    CopyArray<ALG_COUNTER_SIZE>(results, counterTmp);
+}
+
+// 算法内部在迭代时使用临时变量，不会修改传入的key 和 counter
+__aicore__ inline void PhiloxRandomSimt(const uint32_t* key, const uint32_t* counter, float* results)
+{
+    uint32_t resultU32[ALG_COUNTER_SIZE];
+    PhiloxRandomSimt(key, counter, resultU32);
+    #pragma unroll
+    for (uint16_t i =0; i < ALG_COUNTER_SIZE; i++) {
+        results[i] = resultU32[i] * RAND_2POW32_INV + RAND_2POW32_INV_HALF;
+    }
+}
+
+// 除数 (gridDimx * blockDim) 使用uint64快除接口， 提升性能
+template <int32_t STEP, int32_t ARANGE_MODE>
+__aicore__ inline void ThreadMappingAndSkip(uint64_t idx, uint32_t* counter, uint64_t magic, uint64_t shift , uint64_t totalThreads)
+{   
+    uint64_t idxTmp = idx / STEP; 
+    uint64_t globalThreadIdx = 0;
+    uint64_t repeat = Simt::UintDiv(idxTmp, magic, shift);;
+    // 排列方式 0000 1111 ...0000 1111
+    if constexpr(ARANGE_MODE == CONTINUOUS_USE) {
+        globalThreadIdx = idxTmp - repeat * totalThreads;
+    } else {
+        // 排列方式 0123 4567 ... 0123 4567 ...
+        auto repeatTmp = Simt::UintDiv(idx, magic, shift);
+        globalThreadIdx = idx - repeatTmp * totalThreads;
+    }
+
+    FlashCounter(globalThreadIdx, repeat, counter);
+}
+
+/*
+使用说明
+        uint32_t key[ALG_KEY_SIZE] = {0, 0};
+        uint32_t counter[ALG_COUNTER_SIZE] = {0, 0, 0, 0};
+        PhiloxAlgParsInit(key, counter, seed, offset);
+        int32_t step = 4;
+
+        uint64_t totalThreads = gridDimx(动态计算) * blockDim（固定值）;
+        uint64_t magic, shift;
+        GetUintDivMagicAndShift(magic, shift, totalThreads);
+        // 方式1：
+        for (int64_t i = (Simt::GetBlockIdx() * Simt::GetThreadNum() + Simt::GetThreadIdx()) * step; i < outputLength;
+            i += Simt::GetBlockNum() * Simt::GetThreadNum() * step)
+         {
+            uint32_t results[ALG_COUNTER_SIZE];   // 或者 float类型
+            ThreadMappingAndSkip<step, CONTINUOUS_USE>(i, counter, magic, shift, totalThreads);
+            PhiloxRandomSimt(key, counter, results);
+            // 使用results 对连续的4个索引做操作
+         }
+
+        // 方式2：
+        for (int64_t i = (Simt::GetBlockIdx() * Simt::GetThreadNum() + Simt::GetThreadIdx()); i < outputLength;
+            i += Simt::GetBlockNum() * Simt::GetThreadNum() * step)
+         {
+            uint32_t results[ALG_COUNTER_SIZE];   // 或者 float类型
+            ThreadMappingAndSkip<step, DIS_CONTINUOUS_USE>(i, counter, magic, shift, totalThreads);
+            PhiloxRandomSimt(key, counter, results);
+            // 使用results 对非连续的4个索引做操作，stride为totalThreads
+         }
+*/ 
+
+
 class RandomKernelBaseOp {
 public:
     __aicore__ inline RandomKernelBaseOp(const RandomUnifiedTilingDataStruct* __restrict tilingData)
@@ -303,11 +497,6 @@ public:
     __aicore__ inline void GenRandomSIMD(LocalTensor<uint32_t> randomLocal, const uint64_t count);
 
     const RandomUnifiedTilingDataStruct* tiling_;
-
-    // static constexpr uint16_t ALG_KEY_SIZE = 2;
-    // static constexpr uint16_t ALG_COUNTER_SIZE = 4;
-    // static constexpr uint32_t INT32_ONE_REPEAT = Ops::Base::GetVRegSize() / sizeof(int32_t);
-    // static constexpr uint32_t RIGHT_SHIFT = 32;
 
     uint32_t key_[ALG_KEY_SIZE] = {0};
     uint32_t counter_[ALG_COUNTER_SIZE] = {0};
