@@ -165,9 +165,15 @@ ge::graphStatus ArgCommonBaseTiling::GetDimension(bool withValue)
         OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, dimension);
         dimension_ = *dimension;
     } else {
-        OP_CHECK_IF(!(Ops::Base::GetConstInt(tilingContext_, INPUT_IDX_DIMENSION, dimension_)),
-                    OP_LOGE(tilingContext_->GetNodeName(), "get const data axis failed"),
-                    return ge::GRAPH_FAILED);
+        if (xDimNum_ == 1) {
+            dimension_ = 0;
+            OP_LOGI(tilingContext_->GetNodeName(), "the input shape len is %ld", xDimNum_);
+        } else {
+            OP_CHECK_IF(!(Ops::Base::GetConstInt(tilingContext_, INPUT_IDX_DIMENSION, dimension_)),
+                        OP_LOGE(tilingContext_->GetNodeName(), "get const data axis failed"),
+                        return ge::GRAPH_FAILED);
+        }
+        OP_LOGI(tilingContext_->GetNodeName(), "The dimension is %ld", dimension_);
     }
     if (dimension_ >= xDimNum_ || dimension_ + xDimNum_ < 0) {
         OP_LOGE(tilingContext_->GetNodeName(), "The dimension is invalid, dimension = %ld", dimension_);
