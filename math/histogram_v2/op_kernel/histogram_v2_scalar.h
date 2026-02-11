@@ -249,7 +249,7 @@ public:
     __aicore__ inline void CopyIn(int32_t tileOffset)
     {
         auto xLocal = this->xQue.template AllocTensor<MTE_T>();
-        int32_t start = tileOffset * this->tileDataLength * (sizeof(CAST_T) / sizeof(MTE_T));
+        int64_t start = tileOffset * this->tileDataLength * (sizeof(CAST_T) / sizeof(MTE_T));
         int32_t copy_bytes = this->tileDataLength * sizeof(CAST_T);
         if (tileOffset == this->tileNum) {
             copy_bytes = this->tileLeftDataLength * sizeof(CAST_T);
@@ -306,7 +306,7 @@ public:
     __aicore__ inline void CopyOutPart(int32_t tile, int32_t parts, int32_t length)
     {
         auto yLocal = this->yQue.template DeQue<int32_t>();
-        int32_t gmStart = parts * this->ubBinsLength;
+        int64_t gmStart = parts * this->ubBinsLength;
 #if defined(__CCE_AICORE__) && __CCE_AICORE__ < 220
         if (length % ALIGNED_NUM != 0) {
             length += ALIGNED_NUM - (length % ALIGNED_NUM);
