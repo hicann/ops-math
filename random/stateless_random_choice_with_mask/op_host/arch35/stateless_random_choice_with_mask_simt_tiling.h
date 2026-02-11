@@ -39,6 +39,7 @@ constexpr int64_t DCACHE_SIZE = 32768;
 constexpr int64_t ALIGNMENT_32 = 32;
 constexpr int64_t ALIGNMENT_256 = 256;
 constexpr int64_t TWO = 2;
+constexpr int64_t ROWS_NUM = 32;
 const int32_t INPUT_SEED_IDX = 2;
 const int32_t INPUT_OFFSET_IDX = 3;
 

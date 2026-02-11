@@ -128,8 +128,10 @@ ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::SetTilingData()
 ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::DoOpTiling()
 {
     ComputeCoreNum();
-    m_ = Ops::Base::CeilAlign(static_cast<int64_t>(std::sqrt(blockNum_ * THREAD_NUM + 1)), ALIGNMENT_32);
-    n_ = Ops::Base::CeilDiv(blockNum_ * THREAD_NUM + 1, m_);
+    m_ = ROWS_NUM;
+    int64_t total = blockNum_ * THREAD_NUM + 1;
+    int64_t cols = (total + ALIGNMENT_32 - 1) / ALIGNMENT_32;
+    n_ = Ops::Base::CeilAlign(cols, ALIGNMENT_32);
     noZeroCalcCount_ = blockNum_ * THREAD_NUM;
     noZeroWorkspaceSize_ = m_ * n_;
     randomWorkspaceSize_ = Ops::Base::CeilAlign(inputSize_, ALIGNMENT_256);
