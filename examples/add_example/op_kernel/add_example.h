@@ -56,7 +56,7 @@ private:
 template <typename T>
 __aicore__ inline void AddExample<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, const AddExampleTilingData* tilingData)
 {
-    int64_t remainderLength = tilingData->totalNum - tilingData->blockFactor * (AscendC::GetBlockIdx() - 1);
+    int64_t remainderLength = tilingData->totalNum - tilingData->blockFactor * AscendC::GetBlockIdx();
     blockLength_ = (remainderLength > tilingData->blockFactor) ? tilingData->blockFactor : remainderLength;
     ubLength_ = tilingData->ubFactor;
 

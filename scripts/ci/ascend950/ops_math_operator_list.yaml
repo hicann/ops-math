@@ -90,11 +90,11 @@ operator_group_2:
   - range
   - real_div
   - reciprocal
-operator_group_3:
   - reduce_max
   - reduce_mean
   - reduce_min
   - reduce_prod
+operator_group_3:
   - reduce_std_v2
   - reduce_sum
   - reduce_var
