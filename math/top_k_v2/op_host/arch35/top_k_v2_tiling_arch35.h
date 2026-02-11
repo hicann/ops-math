@@ -45,10 +45,6 @@ BEGIN_TILING_DATA_DEF(TopKV2TilingDataSimd)
     TILING_DATA_FIELD_DEF(int64_t, lastDimTileNumTimes);
 END_TILING_DATA_DEF;
 REGISTER_TILING_DATA_CLASS(TopKV2, TopKV2TilingDataSimd)
-ge::graphStatus TopKV2TilingSimd(gert::TilingContext* context, int32_t maxCoreNum);
-ge::graphStatus Tiling4TopKTik(gert::TilingContext* context);
-ge::graphStatus Tiling4TopKDsl(gert::TilingContext* context);
-ge::graphStatus TilingPrepareForTopKV2(gert::TilingParseContext* context);
 struct TopKV2CompileInfo {
   int32_t coreNum;
 };

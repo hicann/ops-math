@@ -901,11 +901,6 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus TopKV2TilingSimd(gert::TilingContext* context, int32_t maxCoreNum)
-{
-    return TopKV2Tiling(context, maxCoreNum);
-}
-
 ge::graphStatus TilingPrepareForTopKV2(gert::TilingParseContext* context)
 {
     OP_LOGI(context->GetNodeName(), "AscendC Tiling starting GRAPH_SUCCESS");
@@ -926,7 +921,7 @@ ge::graphStatus Tiling4TopKV2(gert::TilingContext* context)
     auto compile_info = reinterpret_cast<const TopKV2CompileInfo*>(context->GetCompileInfo());
     OP_LOGI(context->GetNodeName(), "AscendC topk simd tiling");
     OP_CHECK_IF(
-        TopKV2TilingSimd(context, compile_info->coreNum) != ge::GRAPH_SUCCESS,
+        TopKV2Tiling(context, compile_info->coreNum) != ge::GRAPH_SUCCESS,
         OP_LOGE(context->GetNodeName(), "Topk simd tiling function failed"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
