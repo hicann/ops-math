@@ -42,7 +42,7 @@ namespace ge {
 * Warning:THIS FUNCTION IS EXPERIMENTAL. Please do not use.
 *
 *@attention Constraints:
-* The operator depends on the stable sorting algorithm.
+* The shapes of input x and index must be the same.
 */
 REG_OP(SortWithIndex)
     .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16, DT_INT8, DT_INT16, DT_INT32, DT_INT64,
