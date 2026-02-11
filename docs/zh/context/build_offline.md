@@ -16,7 +16,7 @@
 
 - 依赖eigen
 
-下载[eigen](https://gitcode.com/cann-src-third-party/eigen/releases/download/3.4.0/eigen-3.4.0.tar.gz)，并解压到```${cann_3rd_lib_path}/```目录下，再将解压后的`eigen-3.4.0`目录重命名为`eigen`。
+下载[eigen](https://gitcode.com/cann-src-third-party/eigen/releases/download/5.0.0/eigen-5.0.0.tar.gz)，并解压到```${cann_3rd_lib_path}/```目录下，再将解压后的`eigen-5.0.0`目录重命名为`eigen`。
 
 - 依赖protobuf
 

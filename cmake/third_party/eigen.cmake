@@ -10,7 +10,7 @@
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
-set(EIGEN_VERSION_PKG eigen-3.4.0.tar.gz)
+set(EIGEN_VERSION_PKG eigen-5.0.0.tar.gz)
 
 unset(eigen_FOUND CACHE)
 unset(EIGEN_INCLUDE CACHE)
@@ -19,7 +19,9 @@ find_path(EIGEN_INCLUDE
         NAMES Eigen/Eigen
         NO_CMAKE_SYSTEM_PATH
         NO_CMAKE_FIND_ROOT_PATH
-        PATHS ${CANN_3RD_LIB_PATH}/eigen)
+        PATHS
+          ${CANN_3RD_LIB_PATH}/eigen-5.0.0
+          ${CANN_3RD_LIB_PATH}/eigen)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(eigen
@@ -30,12 +32,12 @@ find_package_handle_standard_args(eigen
         )
 
 if(eigen_FOUND)
-  message(STATUS "Found eigen in ${CANN_3RD_LIB_PATH}/eigen")
+  message(STATUS "Found eigen in ${EIGEN_INCLUDE}")
 else()
   if(EXISTS "${CANN_3RD_LIB_PATH}/pkg/${EIGEN_VERSION_PKG}")
-    set(REQ_URL "file://${CANN_3RD_LIB_PATH}/pkg/${EIGEN_VERSION_PKG}")
+    set(REQ_URL "${CANN_3RD_LIB_PATH}/pkg/${EIGEN_VERSION_PKG}")
   else()
-    set(REQ_URL "https://gitcode.com/cann-src-third-party/eigen/releases/download/3.4.0/${EIGEN_VERSION_PKG}")
+    set(REQ_URL "https://gitcode.com/cann-src-third-party/eigen/releases/download/5.0.0/${EIGEN_VERSION_PKG}")
   endif()
 
   include(ExternalProject)
