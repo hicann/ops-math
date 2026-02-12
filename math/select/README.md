@@ -26,7 +26,7 @@ $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSWhereGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSWhere”接口执行计算。
+每个算子分为[两段式接口](../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSWhereGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSWhere”接口执行计算。
 
 - `aclnnStatus aclnnSWhereGetWorkspaceSize(const aclTensor *condition, const aclTensor *self, const aclTensor *other, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
 - `aclnnStatus aclnnSWhere(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -34,24 +34,24 @@ $$
 ## aclnnSWhereGetWorkspaceSize
 
 * **参数说明**:
-  - condition（aclTensor*, 计算输入）：公式中的输入`condition`，Device侧的aclTensor，数据类型支持UINT8、BOOL，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，shape需要与self和other满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
+  - condition（aclTensor*, 计算输入）：公式中的输入`condition`，Device侧的aclTensor，数据类型支持UINT8、BOOL，支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，shape需要与self和other满足[broadcast关系](../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
 
-  - self（aclTensor*, 计算输入）：公式中的输入`self`，数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），Device侧的aclTensor，shape需要与other和condition满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
+  - self（aclTensor*, 计算输入）：公式中的输入`self`，数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../docs/zh/context/互推导关系.md)），Device侧的aclTensor，shape需要与other和condition满足[broadcast关系](../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128、 BFLOAT16。
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128。
 
-  - other（aclTensor*, 计算输入）：公式中的输入`other`，数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），Device侧的aclTensor，shape需要与self和condition满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
+  - other（aclTensor*, 计算输入）：公式中的输入`other`，数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../docs/zh/context/互推导关系.md)），Device侧的aclTensor，shape需要与self和condition满足[broadcast关系](../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128、 BFLOAT16。
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128。
 
-  - out（aclTensor \*, 计算输出）：公式中的输出`out`，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，Device侧的aclTensor，shape需要是self与other 和condition broadcast之后的shape。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
+  - out（aclTensor \*, 计算输出）：公式中的输出`out`，支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，Device侧的aclTensor，shape需要是self与other 和condition broadcast之后的shape。支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128、 BFLOAT16。
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128。
 
   - workspaceSize（uint64_t \*, 出参）：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor\*\*, 出参): 返回op执行器，包含了算子计算流程。
 * **返回值**：
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../docs/zh/context/aclnn返回码.md)。
 
 ```
 第一段接口完成入参校验，出现以下场景时报错：
@@ -71,7 +71,7 @@ $$
   - stream（aclrtStream, 入参）：指定执行任务的Stream。
 
 * **返回值**：
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 

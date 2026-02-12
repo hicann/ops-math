@@ -40,5 +40,5 @@
     
 | 调用方式   | 样例代码           | 说明                                                                         |
 | ---------------- | --------------------------- |----------------------------------------------------------------------------|
-| aclnn接口  | [test_aclnn_bitwise_and_scalar.cpp](examples/test_aclnn_bitwise_and_scalard.cpp) | 通过[aclnnBitwiseAndScalar](docs/aclnnBitwiseAndScalar.md)接口方式调用BitwiseAndScalar算子。 |
+| aclnn接口  | [test_aclnn_bitwise_and_scalar.cpp](examples/test_aclnn_bitwise_and_scalar.cpp) | 通过[aclnnBitwiseAndScalar](docs/aclnnBitwiseAndScalar.md)接口方式调用BitwiseAndScalar算子。 |
 | aclnn接口  | [test_aclnn_bitwise_and_tensor.cpp](examples/test_aclnn_bitwise_and_tensor.cpp) | 通过[aclnnBitwiseAndTensor](docs/aclnnBitwiseAndTensor.md)接口方式调用BitwiseAndTensor算子。 |

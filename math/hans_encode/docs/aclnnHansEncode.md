@@ -13,7 +13,7 @@
 
 ## 接口原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnHansEncodeGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnHansEncode”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnHansEncodeGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnHansEncode”接口执行计算。
 
 - `aclnnStatus aclnnHansEncodeGetWorkspaceSize(const aclTensor *inputTensor, aclTensor *pdfRef, bool statistic, bool reshuff, const aclTensor *mantissaOut, const aclTensor *fixedOut, const aclTensor *varOut, uint64_t *workspaceSize, aclOpExecutor **executor);`
 - `aclnnStatus aclnnHansEncode(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
@@ -26,19 +26,19 @@
 
 - **参数说明：**
 
-  - inputTensor(aclTensor*, 计算输入): 表示输入的待压缩张量，Device侧的aclTensor，数据类型支持FLOAT16、BFLOAT16、FLOAT32，数据元素大小仅支持64的倍数且大于等于32768，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
-  - pdfRef(aclTensor*, 计算输入/计算输出)：表示inputTensor的指数位所在字节的概率密度分布，Device侧的aclTensor，数据类型支持INT32，shape要求为(1, 256)，支持[非连续的Tensor](common/非连续的Tensor.md)，[数据格式](common/数据格式.md)支持ND。
+  - inputTensor(aclTensor*, 计算输入): 表示输入的待压缩张量，Device侧的aclTensor，数据类型支持FLOAT16、BFLOAT16、FLOAT32，数据元素大小仅支持64的倍数且大于等于32768，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  - pdfRef(aclTensor*, 计算输入/计算输出)：表示inputTensor的指数位所在字节的概率密度分布，Device侧的aclTensor，数据类型支持INT32，shape要求为(1, 256)，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
   - statistic(bool, 计算输入): 表示是否进行pdf统计。
   - reshuff(bool, 计算输入): 表示是否对各核编码后的结果进行内存重整。
-  - mantissaOut(aclTensor*, 计算输出)：表示输出的尾数部分，Device侧的aclTensor。数据类型支持FLOAT16、BFLOAT16、FLOAT32，需与inputTensor保持一致，支持[非连续的Tensor](common/非连续的Tensor.md)。[数据格式](common/数据格式.md)支持ND。
-  - fixedOut(aclTensor*, 计算输出)：表示压缩的第一段输出，Device侧的aclTensor。数据类型支持FLOAT16、BFLOAT16、FLOAT32，需与inputTensor保持一致，支持[非连续的Tensor](common/非连续的Tensor.md)。[数据格式](common/数据格式.md)支持ND。
-  - varOut(aclTensor*, 计算输出)：表示压缩超过fixedOut后的输出，Device侧的aclTensor。数据类型支持FLOAT16、BFLOAT16、FLOAT32，需与inputTensor保持一致，支持[非连续的Tensor](common/非连续的Tensor.md)。[数据格式](common/数据格式.md)支持ND。
+  - mantissaOut(aclTensor*, 计算输出)：表示输出的尾数部分，Device侧的aclTensor。数据类型支持FLOAT16、BFLOAT16、FLOAT32，需与inputTensor保持一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  - fixedOut(aclTensor*, 计算输出)：表示压缩的第一段输出，Device侧的aclTensor。数据类型支持FLOAT16、BFLOAT16、FLOAT32，需与inputTensor保持一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  - varOut(aclTensor*, 计算输出)：表示压缩超过fixedOut后的输出，Device侧的aclTensor。数据类型支持FLOAT16、BFLOAT16、FLOAT32，需与inputTensor保持一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
   - workspaceSize(uint64_t*, 出参): 返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor**, 出参): 返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   ```
   第一段接口完成入参校验，出现以下场景时报错：
@@ -61,7 +61,7 @@
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束与限制
 
@@ -69,7 +69,7 @@
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```c++
 #include <iostream>

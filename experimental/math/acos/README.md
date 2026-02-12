@@ -53,11 +53,11 @@
 
 ## 约束说明
 
-- 输入类型为INT8、INT16、INT32、INT64、UINT8、BOOL时，转化为FLOAT32进行运算，输出FLOAT32类型。支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../docs/zh/context/数据格式.md)支持ND，非连续的Tensor维度不大于8，且输入与输出的shape需要一致。
+- 输入类型为INT8、INT16、INT32、INT64、UINT8、BOOL时，转化为FLOAT32进行运算，输出FLOAT32类型。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，非连续的Tensor维度不大于8，且输入与输出的shape需要一致。
 
 ## 调用说明
 
 | 调用方式 | 调用样例                                             | 说明                                                                                         |
 |---------|----------------------------------------------------|----------------------------------------------------------------------------------------------|
 | aclnn调用 | [test_aclnn_acos](./examples/test_aclnn_acos.cpp) | 通过[aclnnAcos](./docs/aclnnAcos&aclnnInplaceAcos.md)接口方式调用Acos算子。  |
-| 图模式调用 | [test_geir_acos](./examples/test_geir_acos.cpp)   | 通过[算子IR](./op_graph/acos_proto.h)构图方式调用Acos算子。                                      |
+| 图模式调用 | [test_geir_acos](../../../math/acos/examples/test_geir_acos.cpp)   | 通过[算子IR](./op_graph/acos_proto.h)构图方式调用Acos算子。                                      |

@@ -64,5 +64,4 @@ $$
 
 | 调用方式   | 调用样例                                                                                     | 说明                                                                         |
 | ---------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| aclnn调用  | [test_aclnn_trunc](./examples/test_aclnn_trunc.cpp)                                         | 通过[aclnnTrunc](./docs/aclnnTrunc.md)或[aclnnInplaceTrunc](./docs/aclnnInplaceTrunc.md)接口方式调用Trunc算子。 |
-| 图模式调用 | [test_geir_trunc](./examples/test_geir_trunc.cpp)                                           | 通过[算子IR](./op_graph/trunc_proto.h)构图方式调用Trunc算子。                |
+| aclnn调用  | [test_aclnn_trunc](./examples/test_aclnn_trunc.cpp)                                         | 通过[aclnnTrunc](./docs/aclnnTrunc&aclnnInplaceTrunc.md)或[aclnnInplaceTrunc](./docs/aclnnTrunc&aclnnInplaceTrunc.md)接口方式调用Trunc算子。 |

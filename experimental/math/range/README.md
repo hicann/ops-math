@@ -24,4 +24,4 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | :-------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| aclnn接口 | [test_range](ops-math/element-wise/cosh/examples/test_aclnn_cosh.cpp) | 通过[aclnnRange]接口方式调用range算子。 |
+| aclnn接口 | [test_range](../cosh/examples/test_aclnn_cosh.cpp) | 通过[aclnnRange]接口方式调用range算子。 |

@@ -58,7 +58,7 @@ $$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_erf](./examples/test_aclnn_erf.cpp) | 通过[aclnnErf](./docs/aclnnErf.md)接口方式调用Erf算子。 |
+| aclnn调用 | [test_aclnn_erf](./examples/test_aclnn_erf.cpp) | 通过[aclnnErf](./docs/aclnnErf&aclnnInplaceErf.md)接口方式调用Erf算子。 |
 
 ## 贡献说明
 

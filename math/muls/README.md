@@ -68,4 +68,4 @@ $$y = x \times value$$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_muls](./examples/test_aclnn_muls.cpp) | 通过[aclnnMuls](./docs/aclnnMuls.md)接口方式调用Muls算子。 |
+| aclnn调用 | [test_aclnn_muls](./examples/test_aclnn_muls.cpp) | 通过[aclnnMuls](./docs/aclnnMuls&aclnnInplaceMuls.md)接口方式调用Muls算子。 |

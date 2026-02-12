@@ -29,4 +29,4 @@ $$
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | :-------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| aclnn接口 | [test_eye](ops-math/experimental/math/eye/examples/test_aclnn_eye.cpp) | 通过[aclnnEye]接口方式调用eye算子。 |
+| aclnn接口 | [test_eye](../../../math/eye/examples/test_aclnn_eye.cpp) | 通过[aclnnEye]接口方式调用eye算子。 |

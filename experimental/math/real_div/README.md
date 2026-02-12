@@ -101,7 +101,7 @@ $$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_real_div.cpp](./examples/test_aclnn_real_div.cpp) | 通过[test_aclnn_real_div](./docs/test_aclnn_real_div.md)接口方式调用RealDiv算子。 |
+| aclnn调用 | [test_aclnn_real_div.cpp](./examples/test_aclnn_real_div.cpp) | 通过[test_aclnn_real_div](./docs/aclnnRealDiv.md)接口方式调用RealDiv算子。 |
 
 ## 贡献说明
 

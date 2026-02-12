@@ -70,4 +70,4 @@ $$
 
 | 调用方式 | 调用样例                                                      | 说明                                                      |
 |--------------|-----------------------------------------------------------|---------------------------------------------------------|
-| 图模式调用 | [test_geir_sqrt_grad](./examples/test_geir_sqrt_grad.cpp) | 通过[算子IR](./op_graph/sqrt_grad_proto.h)构图方式调用SqrtGrad算子。 |
+| 图模式调用 | [test_geir_sqrt_grad](./examples/test_geir_sqrt_grad.cpp) | 通过[算子IR](../sqrt_grad/op_graph/sqrt_grad_proto.h)构图方式调用SqrtGrad算子。 |

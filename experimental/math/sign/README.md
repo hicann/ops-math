@@ -68,7 +68,7 @@
   </table>
 
 ## 算子使用
-使用该算子前，请参考[社区版CANN开发套件包安装文档](../../../docs/invocation/quick_op_invocation.md)完成开发运行环境的部署。
+使用该算子前，请参考[社区版CANN开发套件包安装文档](../../../docs/zh/invocation/quick_op_invocation.md)完成开发运行环境的部署。
 
 ### 编译部署
   - 进入到仓库目录

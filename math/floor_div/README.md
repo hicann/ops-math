@@ -51,8 +51,8 @@
       <td>公式中的输入self。</td>
       <td>
         <ul>
-          <li>数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。</li>
-          <li>shape需要与other满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。</li>
+          <li>数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../docs/zh/context/互推导关系.md)）。</li>
+          <li>shape需要与other满足[broadcast关系](../../docs/zh/context/broadcast关系.md)。</li>
         <ul>
       </td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
@@ -66,8 +66,8 @@
       <td>公式中的输入other。</td>
       <td>
         <ul>
-          <li>数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。</li>
-          <li>shape需要与other满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。</li>
+          <li>数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../docs/zh/context/互推导关系.md)）。</li>
+          <li>shape需要与other满足[broadcast关系](../../docs/zh/context/broadcast关系.md)。</li>
         <ul>
       </td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
@@ -91,7 +91,7 @@
       <td>公式中的out。</td>
       <td>
         <ul>
-          <li>数据类型需要是self与other推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。</li>
+          <li>数据类型需要是self与other推导之后可转换的数据类型（参见[互转换关系](../../docs/zh/context/互转换关系.md)）。</li>
           <li>shape需要是self与other broadcast之后的shape。</li>
         </ul>
       </td>

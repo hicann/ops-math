@@ -68,4 +68,4 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_axpy](./examples/test_aclnn_axpy.cpp) | 通过[aclnnAxpy](./docs/aclnnAxpy.md)接口方式调用Axpy算子。 |    
+| aclnn调用 | [test_aclnn_axpy](./examples/test_aclnn_axpy_v3.cpp) |  |    

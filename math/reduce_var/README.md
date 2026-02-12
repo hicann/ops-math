@@ -88,4 +88,4 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_reduce_var.cpp](./examples/test_aclnn_reduce_var.cpp) | 通过[aclnnVar](./docs/aclnnStd.md)接口方式调用ReduceVar算子。 |
+| aclnn调用 | [test_aclnn_reduce_var.cpp](./examples/test_aclnn_reduce_var.cpp) | 通过[aclnnVar](../reduce_std_v2/docs/aclnnStd.md)接口方式调用ReduceVar算子。 |

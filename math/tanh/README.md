@@ -63,4 +63,4 @@ $$
 
 | 调用方式 | 调用样例                                            | 说明                                                           |
 |--------------|-------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_tanh](./examples/test_aclnn_tanh.cpp) | 通过[aclnnAbs](./docs/aclnnTanh&aclnnInplaceSub.md)接口方式调用Abs算子。 |
+| aclnn调用 | [test_aclnn_tanh](./examples/test_aclnn_tanh.cpp) | 通过[test_aclnn_tanh](./docs/aclnnTanh&aclnnInplaceTanh.md)接口方式调用Abs算子。 |

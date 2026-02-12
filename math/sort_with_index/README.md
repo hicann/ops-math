@@ -73,4 +73,4 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| 图模式调用 | [test_geir_sort_with_index](./examples/test_geir_sort_with_index.cpp) | 通过[算子IR](./op_graph/less_proto.h)构图方式调用SortWithIndex算子。 |
+| 图模式调用 | [test_geir_sort_with_index](./examples/test_geir_sort_with_index.cpp) | 通过[算子IR](../less/op_graph/less_proto.h)构图方式调用SortWithIndex算子。 |

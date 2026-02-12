@@ -29,4 +29,4 @@ $$
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | :-------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| aclnn接口 | [test_trace](ops-math/experimental/math/trace/examples/test_aclnn_trace.cpp) | 通过[aclnnTrace]接口方式调用trace算子。 |
+| aclnn接口 | [test_trace](../../../math/trace/examples/test_aclnn_trace.cpp) | 通过[aclnnTrace]接口方式调用trace算子。 |

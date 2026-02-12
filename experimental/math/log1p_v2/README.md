@@ -66,4 +66,4 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_log1p](./examples/test_aclnn_log1p.cpp) | 通过[aclnnLog1p](./docs/aclnnLog1p.md)接口方式调用Log1p算子。 |    
+| aclnn调用 | [test_aclnn_log1p](../../../math/log1p/examples/test_aclnn_log1p.cpp) | 通过[aclnnLog1p](../../../math/log1p/docs/aclnnLog1p&aclnnInplaceLog1p.md)接口方式调用Log1p算子。 |    

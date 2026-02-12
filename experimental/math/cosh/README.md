@@ -24,4 +24,4 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | :-------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| aclnn接口 | [test_cosh](ops-math/element-wise/cosh/examples/test_aclnn_cosh.cpp) | 通过[aclnnCosh]接口方式调用cosh算子。 |
+| aclnn接口 | [test_cosh](examples/test_aclnn_cosh.cpp) | 通过[aclnnCosh]接口方式调用cosh算子。 |

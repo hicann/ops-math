@@ -81,4 +81,4 @@ $$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_tanh_backward](./examples/test_aclnn_tanh_grad.cpp) | 通过[aclnnTanhBackward](./docs/aclnnTanhBackward.md)接口方式调用Abs算子。 |
+| aclnn调用 | [test_aclnn_tanh_backward](./examples/test_aclnn_tanh_backward.cpp) | 通过[aclnnTanhBackward](./docs/aclnnTanhBackward.md)接口方式调用Abs算子。 |

@@ -48,7 +48,7 @@
   - self(aclTensor*, 计算输入): 公式中的`self`，Device侧的aclTensor，且shape需要与out一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape维度不大于8，和out的数据类型满足数据类型推导规则。
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT16、FLOAT、DOUBLE、COMPLEX64、COMPLEX128。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT16、BFLOAT16、FLOAT、DOUBLE、COMPLEX64、COMPLEX128。
-  - out(aclTensor *, 计算输出): 公式中的`out`，Device侧的aclTensor，且shape需要与self一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](c../../../docs/zh/context/数据格式.md)支持ND，和self的数据类型满足数据类型推导规则。
+  - out(aclTensor *, 计算输出): 公式中的`out`，Device侧的aclTensor，且shape需要与self一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，和self的数据类型满足数据类型推导规则。
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、COMPLEX64、COMPLEX128。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。
   - workspaceSize（uint64_t\*, 出参）：返回需要在Device侧申请的workspace大小。

@@ -19,7 +19,7 @@ $$
 
 - aclnnErf和aclnnInplaceErf实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnErf：需新建一个输出张量对象存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用 “aclnnErfGetWorkspaceSize”或“aclnnInplaceErfGetWorkspaceSize” 接口获取入参并根据计算流程计算所需workspace大小，再调用 “aclnnErf” 或“aclnnInplaceErf”接口执行计算。两段接口必须配套使用，不可混用。
+- 每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用 “aclnnErfGetWorkspaceSize”或“aclnnInplaceErfGetWorkspaceSize” 接口获取入参并根据计算流程计算所需workspace大小，再调用 “aclnnErf” 或“aclnnInplaceErf”接口执行计算。两段接口必须配套使用，不可混用。
   * `aclnnStatus aclnnErfGetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
   * `aclnnStatus aclnnErf(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
   * `aclnnStatus aclnnInplaceErfGetWorkspaceSize(aclTensor *selfRef, uint64_t *workspaceSize, aclOpExecutor **executor)`
@@ -29,16 +29,16 @@ $$
 
 - **参数说明：**
 
-  * self(aclTensor*,计算输入)：Device侧的aclTensor，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape维度不超过8维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
+  * self(aclTensor*,计算输入)：Device侧的aclTensor，[数据格式](../../../../docs/zh/context/数据格式.md)支持ND，shape维度不超过8维，支持[非连续的Tensor](../../../../docs/zh/context/非连续的Tensor.md)。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持FLOAT32、FLOAT16、BFLOAT16。   
-  * out(aclTensor *，计算输出)：Device侧的aclTensor，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape必须和self一样，维度不超过8维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
+  * out(aclTensor *，计算输出)：Device侧的aclTensor，[数据格式](../../../../docs/zh/context/数据格式.md)支持ND，shape必须和self一样，维度不超过8维，支持[非连续的Tensor](../../../../docs/zh/context/非连续的Tensor.md)。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持FLOAT32、FLOAT16、BFLOAT16。
   * workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
   * executor(aclOpExecutor **, 出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
   ```
   第一段接口完成入参校验，出现如下场景时报错：
   161001(ACLNN_ERR_PARAM_NULLPTR)：1. 传入的self或out是空指针。
@@ -59,20 +59,20 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceErfGetWorkspaceSize
 
 - **参数说明：**
 
-  * selfRef(aclTensor *，计算输入)：输入输出Tensor，Device侧的aclTensor，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
+  * selfRef(aclTensor *，计算输入)：输入输出Tensor，Device侧的aclTensor，[数据格式](../../../../docs/zh/context/数据格式.md)支持ND，支持[非连续的Tensor](../../../../docs/zh/context/非连续的Tensor.md)。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持FLOAT32、FLOAT16、BFLOAT16。
   * workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
   * executor(aclOpExecutor **, 出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
   ```
   第一段接口完成入参校验，出现如下场景时报错：
   161001(ACLNN_ERR_PARAM_NULLPTR)：1. 传入的selfRef是空指针。
@@ -91,14 +91,14 @@ $$
 
 - **返回值：**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 无
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

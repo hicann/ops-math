@@ -63,4 +63,4 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                             |
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_neg](./examples/test_aclnn_neg.cpp) | 通过[aclnnNeg](./docs/aclnnNeg.md)接口方式调用Neg算子。    |
+| aclnn调用 | [test_aclnn_neg](./examples/test_aclnn_neg.cpp) | 通过[aclnnNeg](./docs/aclnnNeg&aclnnInplaceNeg.md)接口方式调用Neg算子。    |

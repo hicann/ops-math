@@ -69,5 +69,5 @@
 
 | 调用方式 | 调用样例                                                   | 说明                                               |
 |--------------|--------------------------------------------------------|--------------------------------------------------|
-| aclnn调用 | [test_aclnn_equal.cpp](examples/test_aclnn_equal.cpp) | 通过[aclnnEqual](docs/aclnnEqual.md)接口方式调用Equal算子。 |
+| aclnn调用 | [test_aclnn_equal.cpp](../tensor_equal/examples/test_aclnn_equal.cpp) | 通过[aclnnEqual](../tensor_equal/docs/aclnnEqual.md)接口方式调用Equal算子。 |
 | 图模式调用 | [test_geir_equal.cpp](examples/test_geir_equal.cpp) | 通过[算子IR](op_graph/equal_proto.h)构图方式调用Equal算子。   |
