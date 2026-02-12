@@ -4,40 +4,40 @@
 
 本章提供了离线编译安装指导，在此之前请确保已按[环境部署](quick_install.md)完成基础环境搭建。
 ## 获取依赖
-离线编译时，需手动安装如下依赖，否则无法正常编译和执行算子，其中```${cann_3rd_lib_path}```表示第三方软件存放的目录。
+离线编译前，需准备如下依赖。
 
 - 依赖json
 
-下载[json](https://gitcode.com/cann-src-third-party/json/releases/download/v3.11.3/include.zip)，并解压到```${cann_3rd_lib_path}/json/include```，若无该目录请自行创建。
+下载[json](https://gitcode.com/cann-src-third-party/json/releases/download/v3.11.3/include.zip)
 
 - 依赖makeself
 
-下载[makeself](https://gitcode.com/cann-src-third-party/makeself/releases/download/release-2.5.0-patch1.0/makeself-release-2.5.0-patch1.tar.gz)，并解压到```${cann_3rd_lib_path}/makeself```，若无该目录请自行创建。
+下载[makeself](https://gitcode.com/cann-src-third-party/makeself/releases/download/release-2.5.0-patch1.0/makeself-release-2.5.0-patch1.tar.gz)
 
 - 依赖eigen
 
-下载[eigen](https://gitcode.com/cann-src-third-party/eigen/releases/download/5.0.0/eigen-5.0.0.tar.gz)，并解压到```${cann_3rd_lib_path}/```目录下，再将解压后的`eigen-5.0.0`目录重命名为`eigen`。
+下载[eigen](https://gitcode.com/cann-src-third-party/eigen/releases/download/5.0.0/eigen-5.0.0.tar.gz)
 
 - 依赖protobuf
 
-下载[protobuf](https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz)，并将`protobuf-25.1.tar.gz`存放到```${cann_3rd_lib_path}/protobuf```目录下，无需自行解压。若无该目录请自行创建。
+下载[protobuf](https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz)
 
 - 依赖abseil-cpp
 
-下载[abseil-cpp](https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20230802.1/abseil-cpp-20230802.1.tar.gz)，并将`abseil-cpp-20230802.1.tar.gz`存放到```${cann_3rd_lib_path}/abseil-cpp```目录下，无需自行解压。若无该目录请自行创建。
+下载[abseil-cpp](https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20230802.1/abseil-cpp-20230802.1.tar.gz)
 
-## 离线编译（自定义算子包）
-自定义算子包编译时，需增加--cann_3rd_lib_path配置选项并指定路径，命令如下：
 
-```bash
-bash build.sh --pkg --soc=${soc_version} [--vendor_name=${vendor_name}] [--ops=${op_list}] --cann_3rd_lib_path=${cann_3rd_lib_path}
-# 以AddExample算子编译为例，假设第三方软件存放的目录为/path/cann_3rd_lib_path
-# bash build.sh --pkg --soc=ascend910b --ops=add_example --cann_3rd_lib_path=/path/cann_3rd_lib_path
-```
+在代码仓目录下新建`third_party`目录，并将上述所有依赖包放置到`third_party/`下
 
-## 离线编译（ops-math包）
-整包编译时，需增加--cann_3rd_lib_path配置选项并指定路径，命令如下：
+## 离线编译
+编程过程中会自动使用`third_party/`下的依赖：
 
 ```bash
-bash build.sh --pkg [--jit] --soc=${soc_version} --cann_3rd_lib_path=${cann_3rd_lib_path}
+# 自定义算子包编译
+bash build.sh --pkg --soc=${soc_version} [--vendor_name=${vendor_name}] [--ops=${op_list}]
+
+# ops-math整包编译
+bash build.sh --pkg [--jit] --soc=${soc_version}
 ```
+
+> 编译指令详细信息可查看[算子调用-编译执行](../invocation/quick_op_invocation.md#编译执行)

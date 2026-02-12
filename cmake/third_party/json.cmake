@@ -40,15 +40,21 @@ if(json_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
  else()
     if(EXISTS "${CANN_3RD_LIB_PATH}/pkg/include.zip")
         set(REQ_URL "file://${CANN_3RD_LIB_PATH}/pkg/include.zip")
+        message(STATUS "[ThirdPartyLib][json] found in ${REQ_URL}.")
+    elseif(EXISTS "${CANN_3RD_LIB_PATH}/include.zip")
+        set(REQ_URL "file://${CANN_3RD_LIB_PATH}/include.zip")
+        set(JSON_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH})
+        message(STATUS "[ThirdPartyLib][json] found in ${REQ_URL}.")
     else()
         set(REQ_URL "https://gitcode.com/cann-src-third-party/json/releases/download/v3.11.3/include.zip")
+        message(STATUS "[ThirdPartyLib][json] ${REQ_URL} not found, need download.")
     endif()
 
     include(ExternalProject)
     ExternalProject_Add(third_party_json
             URL ${REQ_URL}
             TLS_VERIFY OFF
-            DOWNLOAD_DIR ${JSON_DOWNLOAD_PATH}
+            DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}/pkg
             DOWNLOAD_NO_EXTRACT TRUE
             SOURCE_DIR ${JSON_INSTALL_PATH}
             CONFIGURE_COMMAND ""
