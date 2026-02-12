@@ -441,12 +441,188 @@ __aicore__ inline void AddExample<T>::Process()
     export LD_LIBRARY_PATH=${ASCEND_HOME_PATH}/opp/vendors/${vendor_name}_math/op_api/lib:${LD_LIBRARY_PATH}
 ```
 
-1. **UT验证。**
+### UT验证
 
-    算子开发过程中，可通过UT验证（如tiling）方式进行快速验证，如需查看详细实现，请参考[tiling UT](../../../examples/add_example/tests/ut/op_host/test_add_example_tiling.cpp)
-    执行UT验证的命令，请参考[算子调用](../invocation/quick_op_invocation.md)
+    算子开发过程中，可通过UT验证方式进行快速验证。
+    
+    执行UT验证的命令，请参考[算子调用](../invocation/quick_op_invocation.md)。
 
-2. **aclnn调用验证。**
+
+
+#### InfershapeUT
+
+```test_{op_name}_infershape.cpp```交付件，仅当算子存在图模式交付件时需要。
+
+    InfershapeUT测试主要是验证输出的shape是否与预期shape一致。
+
+**1.头文件**
+
+``` cpp
+#include <iostream>
+#include <gtest/gtest.h>
+#include "infershape_context_faker.h"  // 上下文构造接口
+#include "infershape_case_executor.h"  // 用例执行接口
+```
+
+**2.测试类**
+
+定义自己的测试类，用于组织测试，继承自testing:Test————Google Test提供的“测试基类”。  
+包含SetUpTestCase()方法和TearDownTestCase()方法，分别在测试类运行前/后执行一次，用于初始化/清理。
+``` cpp
+class MirrorPadInfershapeTest : public testing::Test {
+protected:
+    static void SetUpTestCase()
+    {
+        std::cout << "MirrorPadInfershapeTest SetUp" << std::endl;
+    }
+
+    static void TearDownTestCase()
+    {
+        std::cout << "MirrorPadInfershapeTest TearDown" << std::endl;
+    }
+};
+```
+建议的测试类命名为：算子名+测试类别+Test，如MirrorPad+Infershape+Test，表示算子MirrorPad的Infershape的UT测试。
+
+**3.测试用例**
+
+测试用例的shape和format要求初次上手可参考xxx_def.cpp算子信息库。
+
+``` cpp
+// TEST_F(A, B)中，A为刚才自己定义的测试类，B为该测试用例名称。
+TEST_F(MirrorPadInfershapeTest, mirror_pad_infershape_case_1)
+{
+    // 1.设定输入
+    // gert::StorageShape 数据类型的格式为 {origin_shape，storage_shape} 其中origin_shape为数据shape的数学描述，storage_shape为shape实际运行时的shape格式
+    gert::StorageShape xShape = {{5, 6}, {5, 6}};  // 输入x
+    gert::StorageShape padShape = {{2, 2}, {2, 2}};  // 输入paddings
+    int pad_value[2][2] = {{1, 2}, {3, 4}};  // 为paddings设定的value
+
+    // 2.构造上下文
+    gert::InfershapeContextPara infershapeContextPara(
+        "MirrorPad", // 算子名称
+        {   //输入设置
+            // shape, dtype, format
+            {xShape, ge::DT_INT32, ge::FORMAT_ND}, 
+            // 当输入ValueDepend时，需额外补充两个参数，true表示该输入为ValueDepend，pad_value为设定的值
+            {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value}
+        },
+        {   //输出设置
+            // 这里在填shape的位置填入了{{-2},{-2}}，表示维度数未知，每个维度的值也未知。也可以填入{{},{}}。
+            {{{-2},{-2}}, ge::DT_INT32, ge::FORMAT_ND}  
+        }
+    );
+
+    // 3.设定预期结果
+    // 结果一般自己计算
+    // 如mirror_pad输入x原始shape为{5, 6}，pad_value的第一维{1, 2}对x第一维的前后进行扩充，扩充后结果第一维为 1+5+2=8；pad_value的第二维{3, 4}对x的第二维的前后进行扩充，扩充后结果第二维为 3+6+4=13
+    // 因此最终输出shape为{ 8, 13 }
+    std::vector<std::vector<int64_t>> expectOutputShape = {{ 8, 13 },};
+    // 设定预期的状态
+    ge::graphStatus expectResult = ge::GRAPH_SUCCESS;
+
+    // 4.执行测试用例，传入 (上下文，预期状态，预期结果)
+    ExecuteTestCase(infershapeContextPara, expectResult, expectOutputShape);
+}
+``` 
+
+#### TilingUT
+
+```test_{op_name}_tiling.cpp```交付件，仅当算子存在图模式交付件时需要。
+
+    tiling测试主要是验证输出的tiliingKey，tilingData等是否和预期的tilingKey，tilingData等一致。
+
+**1.头文件**
+
+    ``` cpp
+    #include <iostream>
+    #include <gtest/gtest.h>
+    #include "tiling_context_faker.h"  // 上下文构造接口
+    #include "tiling_case_executor.h"  // 用例执行接口
+    // #include "../../../../op_host/xxx_tiling_arch35.h"  // TilingUT中使用的CompileInfo如果在tiling头文件中已经声明，则需要引用。
+    ```
+
+**2.测试类**
+    
+    测试类定义规范一致。
+
+**3.测试用例**
+
+``` cpp
+// 1.设定输入
+gert::StorageShape xShape = {{5, 6}, {5, 6}};
+gert::StorageShape padShape = {{2, 2}, {2, 2}};
+int pad_value[2][2] = {{1, 2}, {3, 4}};
+// 若CompileInfo没有从tiling头文件中引入，则需要声明。
+struct MirrorPadCompileInfo{};
+MirrorPadCompileInfo compileInfo = {};
+
+// 2.构造上下文
+gert::TilingContextPara tilingContextPara(
+    "MirrorPad",
+    {
+        {xShape, ge::DT_INT32, ge::FORMAT_ND}, 
+        {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value}
+    },
+    {
+        {{{-2},{-2}}, ge::DT_INT32, ge::FORMAT_ND}
+    },
+    // TilingUT构造上下文时需要传入属性
+    {
+        gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("REFLECT"))
+    },
+    // 传入compileInfo
+    &compileInfo);
+
+// 3.设定预期结果
+// Tiling的预期结果较为复杂，可以先设置为空，然后通过执行的结果反过来设定预期结果。也可以通过推理设置。
+uint64_t expectTilingKey = 21000;
+string expectTilingData = "2 0 0 5 6 0 0 0 0 0 0 8 13 0 0 0 0 0 0 6 1 0 0 0 0 0 0 13 1 0 0 0 0 0 0 1 3 0 0 0 0 0 0 ";
+std::vector<size_t> expectWorkspaces = {16777216};
+
+// 4.执行测试用例，传入 (上下文，预期状态，预期结果...)
+ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+```
+
+#### aclnnUT
+
+```test_{api_name}.cpp```交付件，仅当算子存在op_api交付件时需要。
+
+    aclnnUT的作用是验证接口功能是否正常。
+
+**1.头文件**
+``` cpp
+#include "gtest/gtest.h"
+
+#include "../../../op_api/aclnn_xxx.h"  // 对应的aclnn头文件
+#include "op_api_ut_common/tensor_desc.h"  // 构造输入Tensor的接口
+#include "op_api_ut_common/array_desc.h"  // 构造常量输入的值的接口
+#include "op_api_ut_common/op_api_ut.h"  // op_api_ut对象接口
+```
+**2.测试类**
+
+    测试类定义规范一致。
+
+**3.测试用例**
+    
+``` cpp
+TEST_F(reflection_pad2d_test, case_16)
+{
+    auto self_tensor_desc = TensorDesc({0, 1, 3, 10}, ACL_FLOAT16, ACL_FORMAT_ND);  // 构造输入
+    auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});  // 构造常量输入
+
+    auto out_desc = TensorDesc({0, 1, 7, 14}, ACL_FLOAT16, ACL_FORMAT_ND);  // 构造输出
+
+    auto ut = OP_API_UT(aclnnReflectionPad2d, INPUT(self_tensor_desc, padding_desc), OUTPUT(out_desc));  // 构造对象
+
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);  // 调用第一段接口
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+```
+
+### aclnn调用验证
 
     开发好的算子完成编译部署后，可通过aclnn方式验证功能，方法请参考[算子调用方式](../invocation/op_invocation.md)。
 
