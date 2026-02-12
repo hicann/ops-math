@@ -43,6 +43,7 @@ operator_group_1:
   - div
   - div_no_nan
   - dot
+  - dynamic_partition
   - equal
   - exp
   - exp_segsum_grad
@@ -56,6 +57,7 @@ operator_group_1:
   - grouped_bias_add_grad
   - histogram_v2
   - invert
+  - kl_div_v2
   - pad
   - tile
   - is_close
