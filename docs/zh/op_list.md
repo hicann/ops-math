@@ -1077,12 +1077,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/kl_div_v2/README.md">kl_div_v2</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>计算KL散度。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1823,6 +1823,16 @@
     <td>×</td>
     <td>AI Core</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/dynamic_partition/README.md">dynamic_partition</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>用于根据分区索引将输入数据动态分割成多个张量。</td>
   </tr>
   <tr>
     <td>conversion</td>
