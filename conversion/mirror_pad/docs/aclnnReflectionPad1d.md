@@ -76,7 +76,7 @@ aclnnStatus aclnnReflectionPad1d(
       <td>输入</td>
       <td>Device侧的aclTensor。</td>
       <td>维度支持二维或三维，在最后一维做pad。</td>
-      <td>BOOL、INT8、UINT8、INT16、UINT16、FLOAT16、BFLOAT16、INT32、UINT32、FLOAT32、INT64、UINT64、DOUBLE、COMPLEX64、COMPLEX128</td>
+      <td>BOOL、INT8、UINT8、INT16、UINT16、FLOAT16、BFLOAT16、INT32、UINT32、FLOAT32、INT64、UINT64、DOUBLE、COMPLEX64、COMPLEX128、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0</td>
       <td>ND</td>
       <td>2-3</td>
       <td>√</td>
@@ -96,7 +96,7 @@ aclnnStatus aclnnReflectionPad1d(
       <td>输出</td>
       <td>Device侧的aclTensor。</td>
       <td>维度与self一致，out最后一维度的数值等于self最后一维度的数值加padding前两个值。</td>
-      <td>BOOL、INT8、UINT8、INT16、UINT16、FLOAT16、BFLOAT16、INT32、UINT32、FLOAT32、INT64、UINT64、DOUBLE、COMPLEX64、COMPLEX128</td>
+      <td>BOOL、INT8、UINT8、INT16、UINT16、FLOAT16、BFLOAT16、INT32、UINT32、FLOAT32、INT64、UINT64、DOUBLE、COMPLEX64、COMPLEX128、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0</td>
       <td>ND</td>
       <td>2-3</td>
       <td>√</td>
@@ -124,8 +124,8 @@ aclnnStatus aclnnReflectionPad1d(
   </tbody>
   </table>
   
-  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型不支持 UINT16、UINT32、UINT64。
-  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持 BFLOAT16、UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128。
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型不支持 UINT16、UINT32、UINT64、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0。
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持 BFLOAT16、UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0。
 - **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。

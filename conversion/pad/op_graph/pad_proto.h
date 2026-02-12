@@ -25,7 +25,8 @@ namespace ge {
 * Two inputs, including:
 * @li x: A Tensor. Must be one of the following types: bfloat16, float16,
 *     float32, double, int32, uint8, int16, int8, complex64, int64, qint8,
-*     quint8, qint32, qint16, quint16, uint16, complex128, uint32, uint64, bool. Supported format list ["ND"].
+*     quint8, qint32, qint16, quint16, uint16, complex128, uint32, uint64, bool,
+*     hifloat8, float8_e5m2, float8_e4m3fn, float8_e8m0. Supported format list ["ND"].
 * @li paddings: A Tensor of type int32 or int64. Supported format list ["ND"]. \n
 
 * @par Outputs:
@@ -38,9 +39,9 @@ namespace ge {
 * Compatible with TensorFlow operator Pad.
 */
 REG_OP(Pad)
-    .INPUT(x, TensorType({TensorType::BasicType(), DT_BOOL}))
+    .INPUT(x, TensorType({TensorType::BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0}))
     .INPUT(paddings, TensorType::IndexNumberType())
-    .OUTPUT(y, TensorType({TensorType::BasicType(), DT_BOOL}))
+    .OUTPUT(y, TensorType({TensorType::BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0}))
     .OP_END_FACTORY_REG(Pad)
 
 } // namespace ge

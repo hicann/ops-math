@@ -114,7 +114,7 @@
       <td>输入</td>
       <td>待填充的原输入数据</td>
       <td>-</td>
-      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128 、BFLOAT16。</td>
+      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128 、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0。</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -171,8 +171,10 @@
     </tr>
   </tbody></table>
 
-    - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型不支持BFLOAT16。
+    - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型不支持BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型不支持 HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0。
     - value与self的数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
+    - self的数据类型为HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0时，仅支持value的bit值全为0。
 
 - **返回值**
 
@@ -198,8 +200,8 @@
         <td>传入的self、pad、value或out是空指针。</td>
       </tr>
       <tr>
-        <td rowspan="8">ACLNN_ERR_PARAM_INVALID</td>
-        <td rowspan="8">161002</td>
+        <td rowspan="10">ACLNN_ERR_PARAM_INVALID</td>
+        <td rowspan="10">161002</td>
         <td>self、value或out的数据类型不在支持的范围之内。</td>
       </tr>
       <tr>
@@ -223,6 +225,12 @@
       <tr>
         <td>当self的数据格式不为ND，out的数据格式与self的数据格式不一致。</td>
       </tr>
+      <tr>
+ 	      <td>当self的数据类型为fp8时，pad中元素不能为负数。</td>
+ 	    </tr>
+      <tr>
+ 	      <td>当self的数据类型为HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0时，value不为0。</td>
+ 	    </tr>
     </tbody>
     </table>
 

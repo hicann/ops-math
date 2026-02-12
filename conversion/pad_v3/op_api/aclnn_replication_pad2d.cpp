@@ -22,7 +22,7 @@ using namespace op;
 extern "C" {
 #endif
 
-static bool CheckShape(const aclTensor *self, const aclIntArray *padding, const aclTensor *out)
+static bool CheckShape(const aclTensor* self, const aclIntArray* padding, const aclTensor* out)
 {
     auto selfDimnum = self->GetViewShape().GetDimNum();
     // self只支持3维和4维
@@ -30,22 +30,21 @@ static bool CheckShape(const aclTensor *self, const aclIntArray *padding, const 
     OP_CHECK_MAX_DIM(self, 4, return false);
 
     // self, out维度需要一致
-    OP_CHECK(selfDimnum == out->GetViewShape().GetDimNum(),
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self, out dim should be same."),
-             return false);
+    OP_CHECK(
+        selfDimnum == out->GetViewShape().GetDimNum(),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self, out dim should be same."), return false);
 
     // padding长度为4
-    OP_CHECK(padding->Size() == 4,
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding length should be 4, but got %lu.",
-                     padding->Size()),
-             return false);
+    OP_CHECK(
+        padding->Size() == 4,
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding length should be 4, but got %lu.", padding->Size()), return false);
 
     op::Shape expectShape;
     expectShape.SetDimNum(selfDimnum);
     size_t paddingDim = 2;
-    if (selfDimnum > paddingDim){
+    if (selfDimnum > paddingDim) {
         size_t dimToCompare = selfDimnum - paddingDim;
-        for (size_t i = 0; i < dimToCompare; i++){
+        for (size_t i = 0; i < dimToCompare; i++) {
             expectShape.SetDim(i, self->GetViewShape().GetDim(i));
         }
     }
@@ -55,7 +54,7 @@ static bool CheckShape(const aclTensor *self, const aclIntArray *padding, const 
     return true;
 }
 
-inline static aclnnStatus CheckParams(const aclTensor *self, const aclIntArray *padding, const aclTensor *out)
+inline static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* padding, const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, padding, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -72,7 +71,7 @@ inline static aclnnStatus CheckParams(const aclTensor *self, const aclIntArray *
     return ACLNN_SUCCESS;
 }
 
-inline static aclnnStatus InputPreprocess(const aclTensor *&self, int64_t dimCp, aclOpExecutor *executor)
+inline static aclnnStatus InputPreprocess(const aclTensor*& self, int64_t dimCp, aclOpExecutor* executor)
 {
     // 如果非连续，需要转连续
     self = l0op::Contiguous(self, executor);
@@ -82,18 +81,19 @@ inline static aclnnStatus InputPreprocess(const aclTensor *&self, int64_t dimCp,
         // 0 is index
         const int64_t appendDim[] = {0};
         // 1 is the dim num to be unsqueezed
-        aclIntArray *dimArray = executor->AllocIntArray(appendDim, 1);
+        aclIntArray* dimArray = executor->AllocIntArray(appendDim, 1);
         self = l0op::UnsqueezeNd(self, dimArray, executor);
         CHECK_RET(self != nullptr, ACLNN_ERR_INNER_NULLPTR);
     }
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnReplicationPad2dGetWorkspaceSize(const aclTensor *self,
-    const aclIntArray *padding, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)
+aclnnStatus aclnnReplicationPad2dGetWorkspaceSize(
+    const aclTensor* self, const aclIntArray* padding, aclTensor* out, uint64_t* workspaceSize,
+    aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
-    
+
     L2_DFX_PHASE_1(aclnnReplicationPad2d, DFX_IN(self, padding), DFX_OUT(out));
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -108,8 +108,9 @@ aclnnStatus aclnnReplicationPad2dGetWorkspaceSize(const aclTensor *self,
         *workspaceSize = 0UL;
         // 3 is dim num
         if (self->GetViewShape().GetDimNum() == 3) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                    "Expected 3D or 4D tensor with possibly 0 batch size and other non-zero dimentions for input.");
+            OP_LOGE(
+                ACLNN_ERR_PARAM_INVALID,
+                "Expected 3D or 4D tensor with possibly 0 batch size and other non-zero dimentions for input.");
             return ACLNN_ERR_PARAM_INVALID;
         }
         // 4 is dim num
@@ -118,8 +119,9 @@ aclnnStatus aclnnReplicationPad2dGetWorkspaceSize(const aclTensor *self,
             if (self->GetViewShape().GetDim(1) == 0 || self->GetViewShape().GetDim(2) == 0 ||
                 // 3 is index
                 self->GetViewShape().GetDim(3) == 0) {
-                OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                        "Expected 3D or 4D tensor with possibly 0 batch size and other non-zero dimentions for input.");
+                OP_LOGE(
+                    ACLNN_ERR_PARAM_INVALID,
+                    "Expected 3D or 4D tensor with possibly 0 batch size and other non-zero dimentions for input.");
                 return ACLNN_ERR_PARAM_INVALID;
             }
         }
@@ -135,16 +137,22 @@ aclnnStatus aclnnReplicationPad2dGetWorkspaceSize(const aclTensor *self,
 
     dim = self->GetViewShape().GetDimNum();
     auto paddingsTensor = GetPaddingTensor(dim, padding, uniqueExecutor.get());
-    aclScalar* constantValueScalar = (uniqueExecutor.get())->AllocScalar(0);
-    CHECK_RET(constantValueScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    auto constantValueTensor = (uniqueExecutor.get())->ConvertToTensor(constantValueScalar, self->GetDataType());
-    const aclTensor *pad2dResult = nullptr;
-    pad2dResult = l0op::PadV3(self, paddingsTensor, constantValueTensor, REPLICATION_MODE, true, uniqueExecutor.get());
+    const aclTensor* pad2dResult = nullptr;
+    if (IsRegBase()) {
+        pad2dResult = l0op::PadV3(self, paddingsTensor, nullptr, REPLICATION_MODE, true, uniqueExecutor.get());
+    } else {
+        aclScalar* constantValueScalar = (uniqueExecutor.get())->AllocScalar(0);
+        CHECK_RET(constantValueScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto constantValueTensor = (uniqueExecutor.get())->ConvertToTensor(constantValueScalar, self->GetDataType());
+        pad2dResult =
+            l0op::PadV3(self, paddingsTensor, constantValueTensor, REPLICATION_MODE, true, uniqueExecutor.get());
+    }
+
     CHECK_RET(pad2dResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
     // 3 is dim num
     if (dimCp == 3) {
         const int64_t appendDim[] = {0};
-        aclIntArray *dimArray = (uniqueExecutor.get())->AllocIntArray(appendDim, 1);
+        aclIntArray* dimArray = (uniqueExecutor.get())->AllocIntArray(appendDim, 1);
         pad2dResult = l0op::SqueezeNd(pad2dResult, dimArray, uniqueExecutor.get());
         CHECK_RET(pad2dResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
     }
@@ -157,10 +165,9 @@ aclnnStatus aclnnReplicationPad2dGetWorkspaceSize(const aclTensor *self,
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(executor);
     return ACLNN_SUCCESS;
-    }
+}
 
-aclnnStatus aclnnReplicationPad2d(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor,
-    aclrtStream stream)
+aclnnStatus aclnnReplicationPad2d(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnReplicationPad2d);
     // 固定写法，调用框架能力，完成计算

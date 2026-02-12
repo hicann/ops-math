@@ -25,7 +25,8 @@ namespace ge {
 * Three inputs, including:
 * @li x: A Tensor. Must be one of the following types: float16, bfloat16,
 * float32, double, int32, uint8, int16, int8, complex64, int64,
-* qint8, quint8, qint32, qint16, quint16, uint16, complex128, uint32, uint64, bool.
+* qint8, quint8, qint32, qint16, quint16, uint16, complex128, uint32, uint64, bool,
+* hifloat8, float8_e5m2, float8_e4m3fn, float8_e8m0.
 * @li paddings: A Tensor of type int32 or int64, specify the padding sizes.
 * The size of paddings should be twice of the x shape size.
 * @li constant_values: A optional Tensor, dtype same as "x".
@@ -48,21 +49,21 @@ namespace ge {
 * y.shape[i] = x.shape[i] + leftpad_i + rightpad_i, where y.shape[i] >= 0.
 
 * @attention Constraints:
-* "symmetric" and "circular" mode is supported since arch35.
-* "symmetric" mode: the leftpad_i and rightpad_i should be in [-x.shape[i], x.shape[i]]
-* "reflect" mode: the leftpad_i and rightpad_i should be in [-x.shape[i], x.shape[i])
-* "constant" mode: the leftpad_i and rightpad_i should be greater than or equal to -x.shape[i].
-* "edge" mode: the leftpad_i and rightpad_i should be greater than or equal to -x.shape[i].
-* "circular" mode: the leftpad_i and rightpad_i should be in [-x.shape[i], x.shape[i]]
+* "symmetric" and "circular" mode is supported since arch35. \n
+* "symmetric" mode: the leftpad_i and rightpad_i should be in [-x.shape[i], x.shape[i]]. \n
+* "reflect" mode: the leftpad_i and rightpad_i should be in [-x.shape[i], x.shape[i]). \n
+* "constant" mode: the leftpad_i and rightpad_i should be greater than or equal to -x.shape[i]. \n
+* "edge" mode: the leftpad_i and rightpad_i should be greater than or equal to -x.shape[i]. \n
+* "circular" mode: the leftpad_i and rightpad_i should be in [-x.shape[i], x.shape[i]]. \n
 
 * @par Third-party framework compatibility:
 * Compatible with ONNX operator Pad.
 */
 REG_OP(PadV3)
-    .INPUT(x, TensorType({TensorType::BasicType(), DT_BOOL}))
+    .INPUT(x, TensorType({TensorType::BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0}))
     .INPUT(paddings, TensorType::IndexNumberType())
-    .OPTIONAL_INPUT(constant_values, TensorType({TensorType::BasicType(), DT_BOOL}))
-    .OUTPUT(y, TensorType({TensorType::BasicType(), DT_BOOL}))
+    .OPTIONAL_INPUT(constant_values, TensorType({TensorType::BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0}))
+    .OUTPUT(y, TensorType({TensorType::BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0}))
     .ATTR(mode, String, "constant")
     .ATTR(paddings_contiguous, Bool, true)
     .OP_END_FACTORY_REG(PadV3)

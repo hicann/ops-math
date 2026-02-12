@@ -24,7 +24,7 @@ namespace ge {
 * @par Inputs:
 * @li x: The tensor to be padded. Format support ND,
 * Type must be one of the following: int8, uint8, int16, uint16, int32, uint32, int64, uint64,
-* bfloat16, float16, float, double, bool, complex64, complex128.
+* bfloat16, float16, float, double, bool, complex64, complex128, hifloat8, float8_e5m2, float8_e4m3fn, float8_e8m0.
 * @li paddings: A two-column matrix specifying the padding sizes.
 * Arranged as [[leftpad_0, rightpad_0], [leftpad_1, rightpad_1], ...]
 * The number of rows has the same rank as "x", type must be int32 or int64.
@@ -50,12 +50,14 @@ REG_OP(MirrorPad)
     .INPUT(
         x, TensorType(
                {DT_INT8, DT_UINT8, DT_INT16, DT_UINT16, DT_INT32, DT_UINT32, DT_INT64, DT_UINT64, DT_BF16, DT_FLOAT16,
-                DT_FLOAT, DT_DOUBLE, DT_BOOL, DT_COMPLEX64, DT_COMPLEX128}))
+                DT_FLOAT, DT_DOUBLE, DT_BOOL, DT_COMPLEX64, DT_COMPLEX128, DT_HIFLOAT8, DT_FLOAT8_E5M2,
+                DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0}))
     .INPUT(paddings, TensorType({DT_INT32, DT_INT64}))
     .OUTPUT(
         y, TensorType(
                {DT_INT8, DT_UINT8, DT_INT16, DT_UINT16, DT_INT32, DT_UINT32, DT_INT64, DT_UINT64, DT_BF16, DT_FLOAT16,
-                DT_FLOAT, DT_DOUBLE, DT_BOOL, DT_COMPLEX64, DT_COMPLEX128}))
+                DT_FLOAT, DT_DOUBLE, DT_BOOL, DT_COMPLEX64, DT_COMPLEX128, DT_HIFLOAT8, DT_FLOAT8_E5M2,
+                DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0}))
     .REQUIRED_ATTR(mode, String)
     .OP_END_FACTORY_REG(MirrorPad)
 } // namespace ge

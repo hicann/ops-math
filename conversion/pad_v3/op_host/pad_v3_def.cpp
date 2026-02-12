@@ -20,18 +20,22 @@ static const std::vector<ge::Format> format = {
     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
 static const std::vector<ge::DataType> valueDataType = {
-    ge::DT_INT8,   ge::DT_UINT8,   ge::DT_INT16,   ge::DT_UINT16, ge::DT_INT32,  ge::DT_UINT32, ge::DT_INT64,
-    ge::DT_UINT64, ge::DT_BF16,    ge::DT_FLOAT16, ge::DT_FLOAT,  ge::DT_DOUBLE, ge::DT_BOOL,   ge::DT_INT8,
-    ge::DT_UINT8,  ge::DT_INT16,   ge::DT_UINT16,  ge::DT_INT32,  ge::DT_UINT32, ge::DT_INT64,  ge::DT_UINT64,
-    ge::DT_BF16,   ge::DT_FLOAT16, ge::DT_FLOAT,   ge::DT_DOUBLE, ge::DT_BOOL};
+    ge::DT_INT8,     ge::DT_UINT8,       ge::DT_INT16,       ge::DT_UINT16,       ge::DT_INT32,         ge::DT_UINT32,
+    ge::DT_INT64,    ge::DT_UINT64,      ge::DT_BF16,        ge::DT_FLOAT16,      ge::DT_FLOAT,         ge::DT_DOUBLE,
+    ge::DT_BOOL,     ge::DT_HIFLOAT8,    ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E8M0,  ge::DT_FLOAT8_E4M3FN, ge::DT_INT8,
+    ge::DT_UINT8,    ge::DT_INT16,       ge::DT_UINT16,      ge::DT_INT32,        ge::DT_UINT32,        ge::DT_INT64,
+    ge::DT_UINT64,   ge::DT_BF16,        ge::DT_FLOAT16,     ge::DT_FLOAT,        ge::DT_DOUBLE,        ge::DT_BOOL,
+    ge::DT_HIFLOAT8, ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E8M0, ge::DT_FLOAT8_E4M3FN};
 
 static const std::vector<ge::DataType> padDataType = {
     ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT32,
+    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
     ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32};
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32};
 
 class PadV3 : public OpDef {
 public:

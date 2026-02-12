@@ -15,56 +15,41 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
+
+static const std::vector<ge::Format> format = {
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+
+static const std::vector<ge::DataType> valueDataType = {
+    ge::DT_INT64,         ge::DT_INT32,        ge::DT_UINT32,   ge::DT_FLOAT,       ge::DT_FLOAT16,
+    ge::DT_DOUBLE,        ge::DT_BF16,         ge::DT_INT16,    ge::DT_UINT16,      ge::DT_INT8,
+    ge::DT_UINT8,         ge::DT_BOOL,         ge::DT_HIFLOAT8, ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E8M0,
+    ge::DT_FLOAT8_E4M3FN, ge::DT_INT64,        ge::DT_INT32,    ge::DT_UINT32,      ge::DT_FLOAT,
+    ge::DT_FLOAT16,       ge::DT_DOUBLE,       ge::DT_BF16,     ge::DT_INT16,       ge::DT_UINT16,
+    ge::DT_INT8,          ge::DT_UINT8,        ge::DT_BOOL,     ge::DT_HIFLOAT8,    ge::DT_FLOAT8_E5M2,
+    ge::DT_FLOAT8_E8M0,   ge::DT_FLOAT8_E4M3FN};
+
+static const std::vector<ge::DataType> padDataType = {
+    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32};
+
 class MirrorPad : public OpDef {
 public:
-    explicit MirrorPad(const char *name) : OpDef(name)
+    explicit MirrorPad(const char* name) : OpDef(name)
     {
-        this->Input("x")
-            .ParamType(REQUIRED)
-            .DataType({ ge::DT_INT64, ge::DT_INT32, ge::DT_UINT32, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_DOUBLE,
-            ge::DT_BF16,  ge::DT_INT16, ge::DT_UINT16, ge::DT_INT8,  ge::DT_UINT8,   ge::DT_BOOL,
-            ge::DT_INT64, ge::DT_INT32, ge::DT_UINT32, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_DOUBLE,
-            ge::DT_BF16,  ge::DT_INT16, ge::DT_UINT16, ge::DT_INT8,  ge::DT_UINT8,   ge::DT_BOOL })
-            .Format({ ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND })
-            .UnknownShapeFormat({ ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND });
+        this->Input("x").ParamType(REQUIRED).DataType(valueDataType).Format(format).UnknownShapeFormat(format);
         this->Input("paddings")
             .ParamType(REQUIRED)
             .ValueDepend(OPTIONAL)
-            .DataType({ ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-            ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT32,
-            ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-            ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32 })
-            .Format({ ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND })
-            .UnknownShapeFormat({ ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND });
-        this->Output("y")
-            .ParamType(REQUIRED)
-            .DataType({ ge::DT_INT64, ge::DT_INT32, ge::DT_UINT32, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_DOUBLE,
-            ge::DT_BF16,  ge::DT_INT16, ge::DT_UINT16, ge::DT_INT8,  ge::DT_UINT8,   ge::DT_BOOL,
-            ge::DT_INT64, ge::DT_INT32, ge::DT_UINT32, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_DOUBLE,
-            ge::DT_BF16,  ge::DT_INT16, ge::DT_UINT16, ge::DT_INT8,  ge::DT_UINT8,   ge::DT_BOOL })
-            .Format({ ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND })
-            .UnknownShapeFormat({ ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND });
+            .DataType(padDataType)
+            .Format(format)
+            .UnknownShapeFormat(format);
+        this->Output("y").ParamType(REQUIRED).DataType(valueDataType).Format(format).UnknownShapeFormat(format);
         this->Attr("mode").AttrType(REQUIRED).String("REFLECT");
         OpAICoreConfig aicore_config;
         aicore_config.DynamicCompileStaticFlag(true)
