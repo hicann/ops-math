@@ -72,7 +72,7 @@ aclnnStatus aclnnLeftShifts(
       <td>self</td>
       <td>输入</td>
       <td>需要进行按位左移的张量，公式中的self。</td>
-      <td>支持空Tensor。<br>数据类型与shiftBits的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" class="md-link">互推导关系</a>）。<br>shape需要与shiftBits满足<a href="../../../docs/zh/context/broadcast关系.md" class="md-link">broadcast关系</a>。</td>
+      <td>支持空Tensor。<br>数据类型与shiftBits的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" class="md-link">互推导关系</a>）。</td>
       <td>INT8、INT16、INT32、INT64、<br>UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>0-8</td>
