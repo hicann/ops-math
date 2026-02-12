@@ -16,7 +16,7 @@
 
 ## 功能说明
 
-- 算子功能：进行l@r矩阵乘计算时，可先通过msModelSlim工具对r矩阵进行无损压缩，减少r矩阵的内存占用大小，然后通过本接口完成无损解压缩、矩阵乘、反量化计算。
+- 接口功能：进行l@r矩阵乘计算时，可先通过msModelSlim工具对r矩阵进行无损压缩，减少r矩阵的内存占用大小，然后通过本接口完成无损解压缩、矩阵乘、反量化计算。
 - 计算公式：
 
   $$
@@ -28,7 +28,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](common/两段式接口.md)，必须先调用“aclnnMatmulCompressDequantGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMatmulCompressDequant”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnMatmulCompressDequantGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMatmulCompressDequant”接口执行计算。
 
 ```cpp
 aclnnStatus aclnnMatmulCompressDequantGetWorkspaceSize(
@@ -268,7 +268,7 @@ aclnnStatus aclnnMatmulCompressDequant(
 
 - **返回值**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -369,7 +369,7 @@ aclnnStatus aclnnMatmulCompressDequant(
 
 - **调用aclnn接口运算**
   
-  示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](common/编译与运行样例.md)。
+  示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

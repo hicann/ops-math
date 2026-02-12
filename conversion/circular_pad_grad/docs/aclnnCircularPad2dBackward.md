@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-- 算子功能：circular_pad2d的反向传播，前向计算参考[[aclnnCircularPad2d](aclnnCircularPad2d.md)]。
+- 接口功能：circular_pad2d的反向传播，前向计算参考[[aclnnCircularPad2d](../../circular_pad/docs/aclnnCircularPad2d.md)]。
 - 示例：
 
   ```
@@ -29,42 +29,194 @@
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnCircularPad2dBackwardGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCircularPad2dBackward”接口执行计算。
 
-- `aclnnStatus aclnnCircularPad2dBackwardGetWorkspaceSize(const aclTensor* gradOutput, const aclTensor* self, const aclIntArray* padding, aclTensor* gradInput, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnCircularPad2dBackward(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```cpp
+aclnnStatus aclnnCircularPad2dBackwardGetWorkspaceSize(
+  const aclTensor*   gradOutput, 
+  const aclTensor*   self, 
+  const aclIntArray* padding, 
+  aclTensor*         gradInput, 
+  uint64_t*          workspaceSize, 
+  aclOpExecutor**    executor)
+```
+
+```cpp
+aclnnStatus aclnnCircularPad2dBackward(
+  void*          workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor* executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnCircularPad2dBackwardGetWorkspaceSize
 
-- **参数说明：**
+- **参数说明**
 
-  - gradOutput（aclTensor*，计算输入）: 反向时输入的梯度数据，Device侧的aclTensor，数据类型支持FLOAT16、BFLOAT16、FLOAT32, 且数据类型与self一致，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape支持3-4维且维度需要与self和gradInput一致，shape需要与circular_pad2d正向传播的output一致。
-  - self（aclTensor*，计算输入）：正向时待填充的原输入数据，Device侧的aclTensor，数据类型支持FLOAT16、BFLOAT16、FLOAT32, [数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape支持3-4维且维度需要与gradOutput和gradInput一致，shape与gradInput一致。
-  - padding（aclIntArray*，计算输入）：正向时填充的维度，Device侧的aclIntArray数组，shape为1维，数据类型为INT64，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，长度为4，数值依次代表左右上下需要填充的值。padding前两个数值都需小于self最后一维度的大小，后两个数值需小于self倒数第二维度的大小。
-  - gradInput（aclTensor*，计算输出）：反向时输出的梯度数据，Device侧的aclTensor，数据类型支持FLOAT16、BFLOAT16、FLOAT32, 且数据类型与self一致，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape支持3-4维且维度与gradOutput和self一致，shape与self一致。
-  - workspaceSize（uint64_t*，出参）：返回需要在Device侧申请的workspace大小。
-  - executor（aclOpExecutor**，出参）：返回op执行器，包含了算子计算流程。
-- **返回值：**
+  <table style="undefined;table-layout: fixed; width: 1584px"><colgroup>
+  <col style="width: 128px">
+  <col style="width: 120px">
+  <col style="width: 267px">
+  <col style="width: 339px">
+  <col style="width: 320px">
+  <col style="width: 123px">
+  <col style="width: 160px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度（shape）</th>
+      <th>非连续张量Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>gradOutput</td>
+      <td>输入</td>
+      <td>反向时输入的梯度数据。</td>
+      <td>shape维度需要与self和gradInput一致，shape需要与circular_pad2d正向传播的output一致。</td>
+      <td>shape需要与circular_pad2d正向传播的output一致。</td>
+      <td>ND</td>
+      <td>3-4</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>正向时待填充的原输入数据。</td>
+      <td>shape维度需要与gradOutput和gradInput一致，shape与gradInput一致。</td>
+      <td>FLOAT16、BFLOAT16、FLOAT32</td>
+      <td>ND</td>
+      <td>3-4</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>padding</td>
+      <td>输入</td>
+      <td>正向时填充的维度。</td>
+      <td><ul><li>数据格式长度为4，数值依次代表左右上下需要填充的值。</li><li>padding前两个数值都需小于self最后一维度的大小，后两个数值需小于self倒数第二维度的大小。</li></ul></td>
+      <td>INT64</td>
+      <td>ND</td>
+      <td>1</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>gradInput</td>
+      <td>输出</td>
+      <td>反向时输出的梯度数据。</td>
+      <td>-</td>
+      <td>与self一致</td>
+      <td>ND</td>
+      <td>shape与self保持一致</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
+
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
-  第一段接口完成入参校验，出现如下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. gradOutput, self, padding, gradInput任何一个为空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. gradOutput、self、padding和gradInput的数据类型或数据格式不在支持的范围之内。
-                                        2. gradOutput、self、padding和gradInput的输入shape在支持范围之外。
-                                        3. self为空tensor且存在非第一维度的大小为0。
-                                        4. padding内的数值大于等于self的维度大小。
-                                        5. gradOutput的shape需要与circular_pad2d正向传播的output一致。
-  ```
+   第一段接口完成入参校验，出现以下场景时报错：
+  <table style="undefined;table-layout: fixed; width: 1218px"><colgroup>
+  <col style="width: 329px">
+  <col style="width: 234px">
+  <col style="width: 655px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>gradOutput, self, padding, gradInput任何一个为空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
+      <td>gradOutput、self、padding和gradInput的数据类型或数据格式不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>gradOutput、self、padding和gradInput的输入shape在支持范围之外。</td>
+    </tr>
+    <tr>
+      <td>self为空tensor且存在非第一维度的大小为0。</td>
+    </tr>
+    <tr>
+      <td>padding内的数值大于等于self的维度大小。</td>
+    </tr>
+    <tr>
+      <td>gradOutput的shape需要与circular_pad2d正向传播的output一致。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnCircularPad2dBackward
 
 - **参数说明：**
 
-  - workspace（void*，入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize（uint64_t，入参）：在Device侧申请的workspace大小，由第一段接口aclnnCircularPad2dBackwardGetWorkspaceSize获取。
-  - executor（aclOpExecutor*，入参）：op执行器，包含了算子计算流程。
-  - stream（aclrtStream，入参）：指定执行任务的Stream。
-- **返回值：**
+  <table style="undefined;table-layout: fixed; width: 1111px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 714px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnCircularPad2dBackwardGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -74,8 +226,8 @@
   - aclnnCircularPad2dBackward默认确定性实现。
 
 - gradOutput的最后一维在不同类型下的大小需满足如下约束：
-float16/bfloat16：(0， 16362)
-float32：(0， 24544)
+float16/bfloat16：(0, 16362)
+float32：(0, 24544)
 
 ## 调用示例
 

@@ -85,5 +85,5 @@
 
 | 调用方式 | 样例代码                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_bernoulli_tensor](./examples/test_aclnn_bernoulli_tensor.cpp) | 通过[aclnnBernoulliTensor](./docs/aclnnBernoulliTensor.md)接口方式调用stateless_bernoulli算子。 |
-| aclnn调用 | [test_aclnn_bernoulli](./examples/test_aclnn_bernoulli.cpp) | 通过[aclnnBernoulli](./docs/aclnnBernoulli.md)接口方式调用stateless_bernoulli算子。 |
+| aclnn调用 | [test_aclnn_bernoulli_tensor](./examples/arch35/test_aclnn_bernoulli_tensor.cpp) | 通过[aclnnBernoulliTensor](./docs/aclnnBernoulliTensor&aclnnInplaceBernoulliTensor.md)接口方式调用stateless_bernoulli算子。 |
+| aclnn调用 | [test_aclnn_bernoulli](./examples/arch35/test_aclnn_bernoulli.cpp) | 通过[aclnnBernoulli](./docs/aclnnBernoulli&aclnnInplaceBernoulli.md)接口方式调用stateless_bernoulli算子。 |

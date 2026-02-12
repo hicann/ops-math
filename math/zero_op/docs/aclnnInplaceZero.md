@@ -82,7 +82,7 @@ aclnnStatus aclnnInplaceZero(
   <tbody>
     <tr>
       <td>selfRef</td>
-      <td>输出/输出</td>
+      <td>输入/输出</td>
       <td>公式中的selfRef</td>
       <td>-</td>
       <td>INT8、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、INT16、UINT16、COMPLEX128、COMPLEX64、BFLOAT16、FLOAT8_E5M2、FLOAT8_E4M3FN、HIFLOAT8、FLOAT4_E1M2、FLOAT4_E2M1</td>
@@ -169,7 +169,7 @@ aclnnStatus aclnnInplaceZero(
       <td>在Device侧申请的workspace内存地址。</td>
     </tr>
     <tr>
-      <td>workspace_size</td>
+      <td>workspaceSize</td>
       <td>输入</td>
       <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceZeroGetWorkspaceSize获取。</td>
     </tr>

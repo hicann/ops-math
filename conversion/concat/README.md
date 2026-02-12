@@ -89,4 +89,4 @@
 
 | 调用方式 | 调用样例                                                    | 说明                                                           |
 |--------------|---------------------------------------------------------|--------------------------------------------------------------|
-| 图模式调用 | [](./examples/test_geir_concat.cpp) | 通过[算子IR](./op_graph/concat_proto.h)构图方式调用Concat算子。 |
+| 图模式调用 | [test_geir_concat](./examples/test_geir_concat.cpp) | 通过[算子IR](./op_graph/concat_proto.h)构图方式调用Concat算子。 |

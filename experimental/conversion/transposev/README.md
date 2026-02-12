@@ -26,4 +26,4 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | :-------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| aclnn接口 | [test_transposev](ops-math/conversion/transposev/examples/test_aclnn_transposev.cpp) | 通过[aclnnTransposev]接口方式调用transposev算子。 |
+| aclnn接口 | [test_transposev](./examples/test_aclnn_transposev.cpp) | 通过[aclnnTransposev]接口方式调用transposev算子。 |

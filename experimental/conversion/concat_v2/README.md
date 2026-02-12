@@ -27,4 +27,4 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | :-------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| aclnn接口 | [test_concat_v2](ops-math/conversion/concat_v2/examples/test_aclnn_concat_v2.cpp) | 通过[aclnnConcatV2]接口方式调用concat_v2算子。 |
+| aclnn接口 | [test_concat_v2](./examples/test_aclnn_concat_v2.cpp) | 通过[aclnnConcatV2]接口方式调用concat_v2算子。 |

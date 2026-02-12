@@ -100,5 +100,5 @@
 
 | 调用方式  | 样例代码                                              | 说明                                                         |
 | --------- | ----------------------------------------------------- | ------------------------------------------------------------ |
-| aclnn接口 | [test_aclnn_fill.cpp](./examples/test_aclnn_fill.cpp) | 通过[aclnnInplaceFillScalar](docs/aclnnInplaceFillScalar.md)和[aclnnInplaceFillTensor](docs/aclnnInplaceFillTensor.md)接口方式调用InplaceFillScalar算子。 |
-
+| aclnn接口 | [test_aclnn_fill_scalar.cpp](./examples/test_aclnn_fill_scalar.cpp) | 通过[aclnnInplaceFillScalar](docs/aclnnInplaceFillScalar.md)接口方式调用InplaceFillScalar算子。 |
+| aclnn接口 | [test_aclnn_fill_tensor.cpp](./examples/test_aclnn_fill_tensor.cpp) | 通过[aclnnInplaceFillTensor](docs/aclnnInplaceFillTensor.md)接口方式调用InplaceFillTensor算子。 |

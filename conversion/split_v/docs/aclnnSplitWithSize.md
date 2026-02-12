@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-将输入self沿dim轴切分至splitSize中每个元素的大小。
+接口功能：将输入self沿dim轴切分至splitSize中每个元素的大小。
 
 ## 函数原型
 
@@ -175,11 +175,6 @@ aclnnStatus aclnnSplitWithSize(
 ## aclnnSplitWithSize
 
 - **参数说明**
-
-  - workspace(void*, 入参)：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnSplitWithSizeGetWorkspaceSize获取。
-  - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
 
   <table style="undefined;table-layout: fixed; width: 1126px"><colgroup>
   <col style="width: 141px">

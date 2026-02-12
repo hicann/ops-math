@@ -45,4 +45,4 @@ Stack Ball Query具体操作如下：
 
 | 调用方式  | 样例代码                                                              | 说明                                                                        |
 | --------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| aclnn接口 | [test_stack_ball_query](tests/ut/op_kernel/test_stack_ball_query.cpp) | 通过[aclnnStackBallQuery](docs/aclnnStackBallQuery.md)接口方式调用StackBallQuery算子。 |
+| aclnn接口 | [test_geir_stack_ball_query](./examples/test_geir_stack_ball_query.cpp) | 通过[算子IR](./op_graph/stack_ball_query_proto.h)构图方式调用StackBallQuery算子。 |

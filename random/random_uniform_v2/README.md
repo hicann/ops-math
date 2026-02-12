@@ -92,4 +92,4 @@
 
 | 调用方式   | 样例代码                                                                       | 说明                                                                                     |
 | ---------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| 图模式调用 | [test_geir_random_uniform_v2](./examples/test_geir_random_standard_normal_v2.cpp) | 通过[算子IR](./op_graph/random_standard_normal_v2_proto.h)构图方式调用RandomUniformV2算子。 |
+| 图模式调用 | [test_geir_random_uniform_v2](./examples/test_geir_random_uniform_v2.cpp) | 通过[算子IR](./op_graph/random_uniform_v2_proto.h)构图方式调用RandomUniformV2算子。 |

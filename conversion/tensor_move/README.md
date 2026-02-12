@@ -61,4 +61,4 @@ $$y=x$$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_tensor_move](./examples/test_aclnn_tensor_move.cpp) | 通过[aclnnSort](./docs/aclnnSort.md)接口方式调用TensorMove算子。 |
+| aclnn调用 | [test_aclnn_tensor_move](./examples/arch35/test_aclnn_tensor_move.cpp) | 通过[aclnnSort](../../math/sort/docs/aclnnSort.md)接口方式调用TensorMove算子。 |

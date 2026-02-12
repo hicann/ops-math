@@ -91,7 +91,7 @@
 
 
 ## 算子使用
-使用该算子前，请参考[社区版CANN开发套件包安装文档](../../../docs/invocation/quick_op_invocation.md)完成开发运行环境的部署。
+使用该算子前，请参考[社区版CANN开发套件包安装文档](../../../docs/zh/invocation/quick_op_invocation.md)完成开发运行环境的部署。
 
 ### 编译部署
   - 进入到仓库目录
@@ -123,4 +123,4 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_col2_im](./examples/test_aclnn_col2_im.cpp) | 通过[aclnnCol2Im](./docs/aclnnCol2Im.md)接口方式调用Col2Im算子。 |
+| aclnn调用 | [test_aclnn_col2_im](./examples/test_aclnn_col2_im.cpp) | 通过[aclnnCol2Im]接口方式调用Col2Im算子。 |

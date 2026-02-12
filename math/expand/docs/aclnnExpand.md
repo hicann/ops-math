@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-- 算子功能：将输入张量self广播成指定size的张量。
+- 接口功能：将输入张量self广播成指定size的张量。
 
 - 举例：
 
@@ -36,50 +36,190 @@
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnExpandGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnExpand”接口执行计算。
 
-- `aclnnStatus aclnnExpandGetWorkspaceSize(const aclTensor* self, const aclIntArray* size, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnExpand(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```cpp
+aclnnStatus aclnnExpandGetWorkspaceSize(
+  const aclTensor*   self, 
+  const aclIntArray* size, 
+  aclTensor*         out, 
+  uint64_t*          workspaceSize, 
+  aclOpExecutor**    executor)
+```
+
+```cpp
+aclnnStatus aclnnExpand(
+  void*          workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor* executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnExpandGetWorkspaceSize
 
-- **参数说明：**
+- **参数说明**
 
-  - self（aclTensor*，计算输入）：表示待广播的目标张量，公式中的self，Device侧的aclTensor。shape支持0-8维，且shape与size满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT、UINT8、INT8、INT32、INT64、BOOL。 
-  - size（aclIntArray*，计算输入）：广播时指定的size，Host侧的aclIntArray，数据类型支持INT。
-  - out（aclTensor*，计算输出）：广播后的张量，Device侧的aclTensor。数据类型需要和self保持一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape需要满足self的shape根据size的推导结果。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT、UINT8、INT8、INT32、INT64、BOOL。
-  - workspaceSize（uint64_t\*，出参）：返回需要在Device侧申请的workspace大小。
-  - executor（aclOpExecutor**，出参）：返回op执行器，包含了算子计算流程。
+    <table style="undefined;table-layout: fixed; width: 1317px"><colgroup>
+    <col style="width: 127px">
+    <col style="width: 120px">
+    <col style="width: 227px">
+    <col style="width: 210px">
+    <col style="width: 270px">
+    <col style="width: 120px">
+    <col style="width: 146px">
+    <col style="width: 145px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+        <th>使用说明</th>
+        <th>数据类型</th>
+        <th>数据格式</th>
+        <th>维度（shape）</th>
+        <th>非连续张量Tensor</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>self</td>
+        <td>输入</td>
+        <td>表示待广播的目标张量，公式中的self</td>
+        <td>shape与size满足broadcast关系</td>
+        <td>FLOAT16、FLOAT、UINT8、INT8、INT32、INT64、BOOL。</td>
+        <td>ND</td>
+        <td>0-8</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>size</td>
+        <td>输入</td>
+        <td>广播时指定的size</td>
+        <td>-</td>
+        <td>INT</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>out</td>
+        <td>输出</td>
+        <td>广播后的张量</td>
+        <td>shape需要满足self的shape根据size的推导结果。</td>
+        <td>与self一致</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>workspaceSize</td>
+        <td>输出</td>
+        <td>返回需要在Device侧申请的workspace大小。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>executor</td>
+        <td>输出</td>
+        <td>返回op执行器，包含了算子计算流程。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+    </tbody></table>
 
-- **返回值：**
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型不支持BFLOAT16。
+
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  161001(ACLNN_ERR_PARAM_NULLPTR)：1. 传入的self、size、out是空指针。
-  161002(ACLNN_ERR_PARAM_INVALID)：1. self、out的数据类型或数据格式不在支持的范围之内。
-                                   2. self和out的数据类型不一致。
-                                   3. self或out的shape和size不匹配。
-                                      3.1 size个数 小于 self的dimNum
-                                      3.2 self任意维度 不等于 size偏移后对应维度， 且self任意维度 不等于 1 （偏移量为size与self的 dimNum差值）
-                                      3.3 output的shape 不等于 预期shape（size）
-                                   4. self最大维度超过8。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1184px"><colgroup>
+  <col style="width: 277px">
+  <col style="width: 133px">
+  <col style="width: 774px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、size、out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
+      <td>self、out的数据类型或数据格式不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self与out的数据类型不一致。</td>
+    </tr>
+    <tr>
+      <td>self或out的shape和size不匹配。<ul><li>size个数小于self的dimNum</li><li>self任意维度不等于 size偏移后对应维度，且self任意维度不等于1（偏移量为size与self的dimNum差值）</li><li>output的shape不等于预期shape（size）</li></ul></td>
+    </tr>
+    <tr>
+      <td>self最大维度超过8。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnExpand
 
-- **参数说明：**
+- **参数说明**
 
-  - workspace（void \*，入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize（uint64_t，入参）：在Device侧申请的workspace大小，由第一段接口aclnnExpandGetWorkspaceSize获取。
-  - executor（aclOpExecutor \*，入参）：op执行器，包含了算子计算流程。
-  - stream（aclrtStream，入参）：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1121px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 132px">
+  <col style="width: 836px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnExpandGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+
+- **返回值**
+
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+
+## 约束说明
 
 - 确定性计算：
   - aclnnExpand默认确定性实现。
-
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 无

@@ -113,4 +113,4 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                             |
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
-| 图模式调用 | [test_strided_slice](./examples/test_strided_slice.cpp) | 通过[算子IR](./op_graph/strided_slice_proto.h)构图方式调用StridedSlice算子    |
+| 图模式调用 | [test_strided_slice](./examples/test_geir_strided_slice.cpp) | 通过[算子IR](./op_graph/strided_slice_proto.h)构图方式调用StridedSlice算子    |

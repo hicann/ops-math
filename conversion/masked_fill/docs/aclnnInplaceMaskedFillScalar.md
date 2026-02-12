@@ -75,7 +75,7 @@ aclnnStatus aclnnInplaceMaskedFillScalar(
   <tbody>
     <tr>
       <td>selfRef</td>
-      <td>输出/输出</td>
+      <td>输入/输出</td>
       <td>输入输出tensor</td>
       <td>-</td>
       <td>BOOL、INT8、INT32、INT64、FLOAT、FLOAT16、BFLOAT16</td>

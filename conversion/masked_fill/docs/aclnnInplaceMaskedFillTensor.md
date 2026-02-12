@@ -16,7 +16,7 @@
 
 ## 功能说明
 
-算子功能：用value填充selfRef里面与mask矩阵中值为true的位置相对应的元素。
+接口功能：用value填充selfRef里面与mask矩阵中值为true的位置相对应的元素。
 
 ## 函数原型
 
@@ -67,7 +67,7 @@ aclnnStatus aclnnInplaceMaskedFillTensor(
   <tbody>
     <tr>
       <td>selfRef</td>
-      <td>输出/输出</td>
+      <td>输入/输出</td>
       <td>输入输出tensor</td>
       <td>-</td>
       <td>BOOL、INT8、INT32、INT64、FLOAT、FLOAT16、BFLOAT16</td>
@@ -89,7 +89,7 @@ aclnnStatus aclnnInplaceMaskedFillTensor(
       <td>value</td>
       <td>输入</td>
       <td>-</td>
-      <td>数据类型需要与selfRef的数据类型满足数据类型推导规则（参见互推导关系）。</td>
+      <td>数据类型需要与selfRef的数据类型满足数据类型推导规则。</td>
       <td>BOOL、INT8、INT32、INT64、FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>0</td>

@@ -200,7 +200,7 @@ aclnnStatus aclnnRepeat(
       <td>参数repeats的参数个数小于输入tensor的维度。</td>
     </tr>
     <tr>
-      <td>参数repeats中含有小于等于0的值。</td>
+      <td>参数repeats中含有小于0的值。</td>
     </tr>
     <tr>
       <td>self的维度数超过8。</td>
@@ -268,12 +268,12 @@ aclnnStatus aclnnRepeat(
   - aclnnRepeat默认确定性实现。
 
 repeat功能内部broadcast的kernel有最大8维度的限制，暂不支持扩维度后超过8维的场景，详细如下：  
-  限制1. 当需要对第一根轴进行repeat时，最大支持同时对4个维度进行repeat操作（即repeats的参数非1格式不超过4）。
+  限制1. 当需要对第一根轴进行repeat时，最大支持同时对4个维度进行repeat操作（即repeats的参数非1数据不超过4）。
   ```
    x.repeat(2, 3, 4, 5, 6)  # 不支持，校验报错，第一根轴为repeat为2，同时5个非1repeat参数
    x.repeat(2, 3, 1, 5, 6)  # 支持，第一根轴为repeat为2，同时4个非1repeat参数
   ```
-  限制2. 当不需要对第一根轴进行repeat时，最大支持同时对3个维度进行repeat操作（即repeats的参数非1格式不超过3）。
+  限制2. 当不需要对第一根轴进行repeat时，最大支持同时对3个维度进行repeat操作（即repeats的参数非1数据不超过3）。
   ```
    x.repeat(1, 3, 4, 5, 6)  # 不支持，校验报错，第一根轴为repeat为1，同时4个非1repeat参数
    x.repeat(1, 3, 1, 5, 6)  # 支持，第一根轴为repeat为1，同时3个非1repeat参数

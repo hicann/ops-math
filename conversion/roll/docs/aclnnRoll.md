@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-算子功能：沿给定尺寸和维度移动Tensor中的数据。
+接口功能：沿给定尺寸和维度移动Tensor中的数据。
 
 举例：
 
@@ -24,7 +24,7 @@ x = tensor([[1, 2],
             [3, 4],
             [5, 6],
             [7, 8]])
-经过torch.roll(x, 1, 0)计算后，（在dim=0的维度上向下整体移动1行）
+经过roll(x, 1, 0)计算后，（在dim=0的维度上向下整体移动1行）
 
 x = tensor([[7, 8],
             [1, 2],
@@ -213,7 +213,7 @@ aclnnStatus aclnnRoll(
     <tr>
       <td>workspaceSize</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnRollGetWorkSpaceSize获取。</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnRollGetWorkspaceSize获取。</td>
     </tr>
     <tr>
       <td>executor</td>

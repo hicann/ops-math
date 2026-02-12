@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-- 算子功能：
+- 接口功能：
     从伯努利分布中提取二进制随机数（0 或 1），prob为生成二进制随机数的概率，输入的张量用于指定shape。
 
 - 计算公式：
@@ -420,7 +420,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
 
   - **返回值：**
 
-    aclnnStatus: 返回状态码，具体参见[aclnn返回码](common/aclnn返回码.md)。
+    aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 

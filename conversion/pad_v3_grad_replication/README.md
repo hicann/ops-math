@@ -72,4 +72,4 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                             |
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_replication_pad3d_backward](examples/test_aclnn_replication_pad3d_backward.cpp) | 通过[aclnnReplicationPad3dBackward](docs/aclnnReplicationPad3dBackward.md)接口方式调用PadV3GradReplication算子。    |
+| aclnn调用 | [test_aclnn_pad_v3_grad_replication](examples/test_aclnn_pad_v3_grad_replication.cpp) | 通过[aclnnReplicationPad3dBackward](docs/aclnnReplicationPad3dBackward.md)接口方式调用PadV3GradReplication算子。    |

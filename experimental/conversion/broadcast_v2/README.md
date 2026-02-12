@@ -29,4 +29,4 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | :-------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| aclnn接口 | [test_aclnn_broadcast_v2](ops-math/experimental/conversion/broadcast_v2/examples/test_aclnn_broadcast_v2.cpp) | 通过[aclnnBroadcastV2]接口方式调用BroadcastV2算子。 |
+| aclnn接口 | [test_aclnn_broadcast_v2](./examples/test_aclnn_broadcast_v2.cpp) | 通过[aclnnBroadcastV2]接口方式调用BroadcastV2算子。 |

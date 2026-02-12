@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-算子功能：在指定维度$dim$上，根据给定的范围$[start, end]$和步长$step$，从输入张量$self$中提取子张量$out$。
+接口功能：在指定维度$dim$上，根据给定的范围$[start, end]$和步长$step$，从输入张量$self$中提取子张量$out$。
 $start$和$end$可以取$[0, self.shape[dim]]$以外的值，取值后根据以下公式转换为合法值，假设self.shape[dim] = N：
 
 $$
@@ -95,7 +95,7 @@ aclnnStatus aclnnSlice(
       <td>输入</td>
       <td>公式中的张量$self$，Device侧的aclTensor。</td>
       <td>self与out的数据类型一致。</td>
-      <td>FLOAT、FLOAT16、INT32、INT64、INT8、UINT8、BOOL</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64、INT8、UINT8、BOOL</td>
       <td>ND</td>
       <td>1-8</td>
       <td>√</td>
@@ -111,11 +111,31 @@ aclnnStatus aclnnSlice(
       <td>-</td>
     </tr>
     <tr>
-      <td>self</td>
+      <td>start</td>
       <td>输入</td>
-      <td>公式中的张量$self$，Device侧的aclTensor。</td>
-      <td>self与out的数据类型一致。</td>
-      <td>FLOAT、FLOAT16、INT32、INT64、INT8、UINT8、BOOL</td>
+      <td>公式中的张量$start$，切片位置的起始索引。</td>
+      <td>Host侧的整型数值。</td>
+      <td>INT64</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>end</td>
+      <td>输入</td>
+      <td>公式中的张量$end$，切片位置的终止索引。</td>
+      <td>Host侧的整型数值。</td>
+      <td>INT64</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>step</td>
+      <td>输入</td>
+      <td>公式中的张量$step$，指定切片的步长。</td>
+      <td>Host侧的整型数值，取值范围必须大于0</td>
+      <td>INT64</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>
@@ -123,11 +143,11 @@ aclnnStatus aclnnSlice(
     <tr>
       <td>out</td>
       <td>输出</td>
-      <td>输出Tensor。</td>
-      <td>非连续的Tensor维度不大于8，且shape需要与input一致。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td>公式中的张量$out$，Device侧的aclTensor。</td>
+      <td>shape满足计算公式中的推到规则。</td>
+      <td>与self保持一致</td>
       <td>ND</td>
-      <td>-</td>
+      <td>1-8</td>
       <td>√</td>
     </tr>
     <tr>
@@ -181,10 +201,10 @@ aclnnStatus aclnnSlice(
     <tr>
       <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="6">161002</td>
-      <td>input或out的数据类型不在支持的范围之内。</td>
+      <td>self或out的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>input和out的shape不一致。</td>
+      <td>self的shape维度为0或大于8。</td>
     </tr>
     <tr>
       <td>dim的取值不在[-self.dim(), self.dim() - 1]。</td>
