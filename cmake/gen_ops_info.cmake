@@ -404,6 +404,9 @@ function(compile_from_config)
   message(STATUS "start to compile unit: ${CONFCMP_COMPUTE_UNIT}")
   set(_ASCENDC_ENV_VAR)
   list(APPEND _ASCENDC_ENV_VAR export HI_PYTHON=${ASCEND_PYTHON_EXECUTABLE} &&)
+  if(CCACHE_PROGRAM)
+    list(APPEND _ASCENDC_ENV_VAR export ASCENDC_CCACHE_EXECUTABLE=${CCACHE_PROGRAM} &&)
+  endif()
 
   add_custom_target(exe_compile_${CONFCMP_COMPUTE_UNIT}_out
     COMMAND ${_ASCENDC_ENV_VAR} bash ${OPS_KERNEL_BINARY_SCRIPT}/build_binary_op_exe_task_out.sh ${CONFCMP_OUT_DIR}/bin
