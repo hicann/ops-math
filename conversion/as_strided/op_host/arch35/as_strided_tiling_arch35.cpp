@@ -345,14 +345,17 @@ static void MergeAxis4MoveAlign(gert::TilingContext* context,
     }
 }
 
-inline bool HasDuplicate(gert::Shape outStride)
+inline bool HasDuplicate(gert::TilingContext* context, gert::Shape outStride)
 {
     // MoveAlign Condition 3
-    int32_t numStride[TILING_ARRAY_LEN] = {0};
+    OP_CHECK_IF(
+        (outStride.GetDimNum() > VALID_DIM),
+        OP_LOGE(context, "the dimension of outStride is more than range."), return false);
+    int32_t numStride[VALID_DIM] = {0};
     for (uint32_t i = 0; i < outStride.GetDimNum(); i++) {
         numStride[i] = outStride[i];
     }
-    std::sort(numStride, numStride + outStride.GetDimNum());
+    std::sort(numStride, numStride + std::min((int32_t)outStride.GetDimNum(), VALID_DIM));
     for (uint32_t i = 1; i < outStride.GetDimNum(); i++) {
         if (numStride[i] == numStride[i - 1]) {
             return true;
@@ -400,7 +403,7 @@ inline static bool CheckLastDim(gert::Shape outSize, gert::Shape outStride, cons
 inline static bool IsMoveAlign(gert::TilingContext* context, gert::Shape outSize, gert::Shape outStride, AsStridedTilingParam& tilingParam)
 {
     if (CheckLastDim(outSize, outStride, tilingParam) && CalStrideRange(outStride, tilingParam) &&
-        (!HasDuplicate(outStride))) {
+        (!HasDuplicate(context, outStride))) {
         OP_LOGD(context, "Need MoveAlign");
         return true;
     }
@@ -508,6 +511,9 @@ inline static void SetSimtTilingParam(const gert::TilingContext* context, gert::
 
 inline static void CalcTilingCore(const gert::TilingContext* context, gert::Shape outSize, AsStridedUbGatherParam& ubGatherParam)
 {
+    OP_CHECK_IF(
+        (outSize.GetDimNum() <= 0),
+        OP_LOGE(context, "the dimension of outSize should be greater than 0."), return);
     uint32_t preSize = 1;
     if (ubGatherParam.blockNum == 1) {
         ubGatherParam.blockAxisIdx = 0;

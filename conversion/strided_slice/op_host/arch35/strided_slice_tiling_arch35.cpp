@@ -93,10 +93,10 @@ void StrideSliceTiling::CalInputOutputSize()
 {
     int64_t outputProd = 1;
     int64_t inputProd = 1;
-    int32_t shapeSize = dimNum_;
+    int64_t shapeSize = std::min((int64_t)dimNum_, MAX_SIMT_UB_SPLIT_AXIS_NUM);
     const auto outputShape = sliceParam_.outputShape;
     const auto inputShape = sliceParam_.inputShape;
-    for (int32_t i = shapeSize - 1; i >= 0; i--) {
+    for (int64_t i = shapeSize - 1; i >= 0; i--) {
         outputProd *= outputShape.GetDim(i);
         outputShapeProd_[i] = outputProd;
         inputProd *= inputShape.GetDim(i);
