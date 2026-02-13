@@ -146,7 +146,7 @@ static bool IsNonContiguousSupport(const aclTensor* self, const aclIntArray* dim
     if (!op::IsReduceNonContiguousSupport(self, dim)) {
         return false;
     }
-    return true;
+    return false;
 }
 
 aclnnStatus aclnnAnyGetWorkspaceSize(

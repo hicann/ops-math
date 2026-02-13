@@ -133,7 +133,7 @@ static bool IsNonContiguousSupport(const aclTensor* self, const aclIntArray* dim
     if (!op::IsReduceNonContiguousSupport(self, dims)) {
         return false;
     }
-    return true;
+    return false;
 }
 
 aclnnStatus aclnnGlobalAveragePoolGetWorkspaceSize(

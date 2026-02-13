@@ -187,7 +187,7 @@ static bool IsNonContiguousSupport(const aclTensor* self, const DataType promote
     if (!op::IsReduceNonContiguousSupport(self, dims)) {
         return false;
     }
-    return true;
+    return false;
 }
 
 aclnnStatus aclnnReduceSumGetWorkspaceSize(

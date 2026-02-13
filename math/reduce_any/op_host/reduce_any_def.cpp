@@ -27,11 +27,11 @@ class ReduceAny : public OpDef {
 public:
     explicit ReduceAny(const char* name) : OpDef(name)
     {
-        this->Input("x").ParamType(REQUIRED).DataType(inDataType).UnknownShapeFormat(format);
+        this->Input("x").ParamType(REQUIRED).DataType(inDataType).Format(format);
 
-        this->Input("axes").ParamType(REQUIRED).ValueDepend(OPTIONAL).DataType(axesDataType).UnknownShapeFormat(format);
+        this->Input("axes").ParamType(REQUIRED).ValueDepend(OPTIONAL).DataType(axesDataType).Format(format);
 
-        this->Output("y").ParamType(REQUIRED).DataType(outDataType).UnknownShapeFormat(format);
+        this->Output("y").ParamType(REQUIRED).DataType(outDataType).Format(format);
 
         this->Attr("keep_dims").AttrType(OPTIONAL).Bool(false);
 
