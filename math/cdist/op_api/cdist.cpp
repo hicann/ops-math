@@ -16,6 +16,7 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -82,7 +83,7 @@ const aclTensor* Cdist(const aclTensor *x1, const aclTensor *x2, float p, int64_
     Shape outShape;
     if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) {
         outShape = InferShapeForA2A3(x1);
-    } else if (socVersion == SocVersion::ASCEND950) {
+    } else if (IsRegBase()) {
         outShape = InferShapeForA5(x1, x2);
     }
     auto out = executor->AllocTensor(outShape, x1->GetDataType(), op::Format::FORMAT_ND);
@@ -93,7 +94,7 @@ const aclTensor* Cdist(const aclTensor *x1, const aclTensor *x2, float p, int64_
             CheckType(x2->GetDataType(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST)) {
             return CdistAiCore(x1, x2, p, out, executor);
         }
-    } else if (socVersion == SocVersion::ASCEND950) {
+    } else if (IsRegBase()) {
         if (CheckType(x1->GetDataType(), ASCEND950_AICORE_DTYPE_SUPPORT_LIST) &&
             CheckType(x2->GetDataType(), ASCEND950_AICORE_DTYPE_SUPPORT_LIST)) {
             INFER_SHAPE(Cdist, OP_INPUT(x1, x2), OP_OUTPUT(out), OP_ATTR(p, compute_mode));

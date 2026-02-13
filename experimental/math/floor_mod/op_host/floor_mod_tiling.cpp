@@ -22,6 +22,7 @@
 #include "../op_kernel/floor_mod_tiling_data.h"
 #include "../op_kernel/floor_mod_tiling_key.h"
 #include "torch_extension/tiling_utils.h"
+#include "op_host/tiling_util.h"
 
 using namespace ge;
 
@@ -102,8 +103,7 @@ static ge::graphStatus TilingPrepare4FloorModTiling(gert::TilingParseContext* co
     auto platformInfo = context->GetPlatformInfo();
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->totalCoreNum = ascendcPlatform.GetCoreNumAiv();
-    auto socVersion = ascendcPlatform.GetSocVersion();
-    compileInfo->isRegbase = (socVersion == platform_ascendc::SocVersion::ASCEND950) ? true : false;
+    compileInfo->isRegbase = (Ops::Math::OpTiling::IsRegbaseSocVersion(context)) ? true : false;
     uint64_t ubSizePlatForm;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSize = static_cast<int64_t>(ubSizePlatForm);

@@ -12,6 +12,7 @@
  * \file view_copy.cpp
  * \brief
  */
+#include "op_api/aclnn_check.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/op_dfx.h"
@@ -97,7 +98,7 @@ static bool IsAiCoreSupport(const op::DataType dataType)
     if (socVersion == op::SocVersion::ASCEND910B || socVersion == op::SocVersion::ASCEND910_93) {
         return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_910B);
     }
-    if (socVersion == op::SocVersion::ASCEND950) {
+    if (op::IsRegBase()) {
         return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_950);
     }
     return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST);
@@ -232,7 +233,7 @@ const aclTensor* ViewCopy(
         executor->ConvertToTensor(op::ToShapeVector(dstSize).data(), dstSize.GetDimNum(), op::ToOpDataType(ACL_INT64));
     auto dstStrideTensor = executor->ConvertToTensor(dstStride.data(), dstStride.size(), op::ToOpDataType(ACL_INT64));
     auto dstOffsetTensor = executor->ConvertToTensor(&dstOffset, 1, op::ToOpDataType(ACL_INT64));
-    if (op::GetCurrentPlatformInfo().GetSocVersion() == op::SocVersion::ASCEND950) {
+    if (op::IsRegBase()) {
         if (IsAiCoreSupport(x->GetDataType())) {
             return ViewCopyAiCore(y, dstSizeTensor, dstStrideTensor, dstOffsetTensor, x, srcSizeTensor, srcStrideTensor,
                 srcOffsetTensor, executor);

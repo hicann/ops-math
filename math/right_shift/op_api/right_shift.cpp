@@ -18,6 +18,7 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -68,8 +69,7 @@ const aclTensor* RightShift(const aclTensor* x, const aclTensor* y, aclOpExecuto
        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The input dtype for rightshift is not supported.");
        return nullptr;
    }
-   auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-   if (socVersion != SocVersion::ASCEND950) {
+   if (!IsRegBase()) {
        return RightShiftAiCpu(x, y, z, executor);
    } else {
        return RightShiftAiCore(x, y, z, executor);

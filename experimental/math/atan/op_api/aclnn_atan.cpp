@@ -50,7 +50,7 @@ static const std::initializer_list<DataType> ASCEND950_DTYPE_SELFREF_LIST = {
 static bool CheckInplaceDtypeValid(aclTensor* selfRef)
 {
     auto inplaceSupportList = GetDtypeSupportListV2(OUTPUT_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_SELFREF_LIST);
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+    if (IsRegBase()) {
         inplaceSupportList = ASCEND950_DTYPE_SELFREF_LIST;
     }
     // 检查selfRef的数据类型是否在inplace atan算子的支持列表内

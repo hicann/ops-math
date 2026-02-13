@@ -24,6 +24,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -87,7 +88,7 @@ static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out) {
   // 获取芯片类型,判断是1971还是1980
   bool is910bSocVersion = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
                            GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-                           GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950);
+                           IsRegBase());
   const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_CURRENT =
     is910bSocVersion ? Ascend910B_DTYPE_SUPPORT_LIST : Ascend910_DTYPE_SUPPORT_LIST;
 
@@ -166,7 +167,7 @@ aclnnStatus aclnnFlattenGetWorkspaceSize(const aclTensor *self, int64_t axis, ac
   auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
   CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+  if (IsRegBase()) {
     auto selfReshape = l0op::Reshape(selfContiguous, out->GetViewShape(), uniqueExecutor.get());
     CHECK_RET(selfReshape != nullptr, ACLNN_ERR_INNER_NULLPTR);
 

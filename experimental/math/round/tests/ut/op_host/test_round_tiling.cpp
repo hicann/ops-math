@@ -64,7 +64,7 @@ TEST_F(RoundTiling, ascend9101_test_tiling_fp16_001)
         tailBlockNum------> 0
         decimals---------->1
     */
-    string expectTilingData = "16 0 0 1 16368 16 0 0 1 "; // 对应round_tiling_data.h中的RoundTilingData
+    string expectTilingData = "16 0 0 1 16384 16 0 0 1 "; // 对应round_tiling_data.h中的RoundTilingData
     std::vector<size_t> expectWorkspaces = {16777216};  
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);

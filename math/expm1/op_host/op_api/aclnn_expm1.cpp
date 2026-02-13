@@ -20,6 +20,7 @@
 #include "opdev/op_dfx.h"
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 #include "op_api/level2_base.h"
 
 using namespace op;
@@ -50,7 +51,7 @@ static const std::initializer_list<DataType> FLOAT_LIST = {DataType::DT_FLOAT16,
 static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out) {
   // self需要在support list内。
   std::initializer_list<op::DataType> supportList;
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+  if (IsRegBase()) {
     supportList = FLOAT_LIST;
   } else {
     supportList = GetDtypeSupportListV1(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST);
@@ -70,7 +71,7 @@ static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out) {
 
 static bool CheckInplaceDtypeValid(const aclTensor *selfRef) {
   std::initializer_list<op::DataType> inplaceSupportList;
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+  if (IsRegBase()) {
     inplaceSupportList = FLOAT_LIST;
   } else {
     inplaceSupportList = GetDtypeSupportListV1(ASCEND910B_DTYPE_SELFREF_LIST, ASCEND910_DTYPE_SELFREF_LIST);

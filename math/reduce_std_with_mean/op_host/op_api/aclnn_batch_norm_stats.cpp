@@ -31,6 +31,7 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
+#include "op_api/aclnn_check.h"
 #include "op_api/level2_base.h"
 
 using namespace op;
@@ -70,7 +71,7 @@ static const std::initializer_list<op::DataType> ASCEND950_DTYPE_SUPPORT_LIST = 
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+    if (IsRegBase()) {
         return ASCEND950_DTYPE_SUPPORT_LIST;
     } else {
         return DTYPE_SUPPORT_LIST;
@@ -221,7 +222,7 @@ aclnnStatus aclnnBatchNormStatsGetWorkspaceSize(
     aclIntArray* axes = uniqueExecutor.get()->AllocIntArray(dimIndexNoC.data(), dimIndexNoC.size());
     CHECK_RET(axes != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+    if (IsRegBase()) {
         return aclnnBatchNormStatsImplUnify(
             reformat, axes, eps, meanOut, invstdOut, workspaceSize, uniqueExecutor, executor);
     }

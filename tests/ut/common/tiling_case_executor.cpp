@@ -102,11 +102,24 @@
                                      .Build();                                                                         \
     string compileInfoStringPrefix = R"({"hardware_info": {"BT_SIZE": 0, "load3d_constraints": "1", "Intrinsic_fix_pipe_l0c2out": false, "Intrinsic_data_move_l12ub": true, "Intrinsic_data_move_l0c2ub": true, "Intrinsic_data_move_out2l1_nd2nz": false, "UB_SIZE": )";\
     string compileInfoStringMiddle = R"(, "L2_SIZE": 33554432, "L1_SIZE": 524288, "L0A_SIZE": 65536, "L0B_SIZE": 65536, "L0C_SIZE": 131072, "CORE_NUM": )";\
+    map<string, string> socToUpper = {                                                                                  \
+        {"ascend910b", "Ascend910B"},                                                                                   \
+        {"ascend910_93", "Ascend910_93"},                                                                               \
+        {"ascend950", "Ascend950"},                                                                                     \
+        {"ascend310p", "Ascend310P"},                                                                                   \
+        {"ascend910", "Ascend910"},                                                                                     \
+        {"ascend310b", "Ascend310B"},                                                                                   \
+        {"ascend610lite", "Ascend610Lite"},                                                                             \
+        {"ascend031", "Ascend031"},                                                                                     \
+        {"ascend035", "Ascend035"},                                                                                     \
+        {"kirinx90", "KrinX90"},                                                                                        \
+        {"kirin9030", "Kirin9030"},                                                                                     \
+        {"mc62cm12a", "MC62CM12A"}                                                                                      \
+    };                                                                                                                 \
     std::string buildSocVersion = STR(BUILD_SOC_VERSION);                                                              \
-    if (!buildSocVersion.empty() && buildSocVersion.length() > 9)                                                                                      \
+    if (!buildSocVersion.empty())                                                                                      \
     {                                                                                                                  \
-        buildSocVersion[0] = std::toupper(static_cast<unsigned char>(buildSocVersion[0]));                             \
-        buildSocVersion[9] = std::toupper(static_cast<unsigned char>(buildSocVersion[9]));                             \
+        buildSocVersion = socToUpper[buildSocVersion];                                                                 \
     }                                                                                                                  \
     string compileInfoStringSuffix = R"(, "socVersion":)" R"(")" + buildSocVersion + R"("} })";                        \
     string compileInfoString = compileInfoStringPrefix +                                                               \

@@ -13,6 +13,7 @@
 #include "opdev/op_dfx.h"
 #include "opdev/op_log.h"
 #include "opdev/make_op_executor.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 namespace l0op {
@@ -24,8 +25,7 @@ static const std::initializer_list<op::DataType> ASCEND950_DTYPE_SUPPORT_LIST = 
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static bool IsAiCoreSupport(const aclTensor* weights)
 {
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND950) {
+    if (IsRegBase()) {
         return CheckType(weights->GetDataType(), ASCEND950_DTYPE_SUPPORT_LIST);
     }
 

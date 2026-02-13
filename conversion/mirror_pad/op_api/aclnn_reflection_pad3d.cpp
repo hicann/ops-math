@@ -47,7 +47,7 @@ static const std::initializer_list<DataType>& GetDtypeSupportList() {
   if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
       GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
     return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
-  } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950) {
+  } else if (IsRegBase()) {
     return ASCEND950_DTYPE_DTYPE_SUPPORT_LIST;
   } else {
     return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;

@@ -125,7 +125,7 @@ public:
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950 ||
+    if (IsRegBase() ||
         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B) {
         return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
@@ -183,7 +183,7 @@ static bool CheckParamsValid(const aclTensor* self, int64_t n, int64_t dim, int6
 
 static bool CheckPlatform()
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950 ||
+    if (IsRegBase() ||
         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B) {
         return true;

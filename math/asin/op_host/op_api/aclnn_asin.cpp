@@ -46,15 +46,11 @@ static const std::initializer_list<op::DataType> DTYPE_OUT_LIST_V100 = {
 static bool isSupportBf16Version()
 {
     auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
-    switch (socVersion) {
-        case SocVersion::ASCEND910B:
-        case SocVersion::ASCEND910_93:
-        case SocVersion::ASCEND950:
-            return true;
-        default: {
-            OP_LOGD("The soc version [%s] does not support BFloat16 with input", op::ToString(socVersion).GetString());
-            return false;
-        }
+    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 || IsRegBase()) {
+        return true;
+    } else {
+        OP_LOGD("The soc version [%s] does not support BFloat16 with input", op::ToString(socVersion).GetString());
+        return false;
     }
 }
 

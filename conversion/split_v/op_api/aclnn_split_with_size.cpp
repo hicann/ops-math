@@ -260,7 +260,7 @@ aclnnStatus aclnnSplitWithSizeGetWorkspaceSize(const aclTensor *self, const aclI
     // 在SplitV2算子的AICore场景且输出个数超过32但不超过64，直接切分，不需要slice
     ret = SplitOnceCalculation(selfContiguous, splitSize, dim, out, uniqueExecutor.get());
   } else if (l0op::SplitVAiCoreSupport(selfContiguous) && splitSize->Size() > SPLIT_LOOP_SIZE &&
-    GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND950) {
+    !IsRegBase()) {
     // 在SplitV算子的AiCore场景或者输出个数超过32个时,使用以32为基数的循环切分
     ret = SplitLoopCalculation(selfContiguous, splitSize, dim, out, uniqueExecutor.get());
   } else if (splitSize->Size() > SPLIT_LOOP_SIZE_512) {
