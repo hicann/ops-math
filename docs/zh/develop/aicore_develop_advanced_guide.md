@@ -1,8 +1,32 @@
 
 
-# Ascend C算子开发指导
+# AI Core算子开发进阶指南
 
-## 算子原型定义
+> 本文档是《AI Core算子开发指南》的详细内容补充，提供算子开发中各模块的深入说明和进阶用法。建议先阅读[主文档](./aicore_develop_guide.md)了解整体开发流程。
+
+## 目录
+
+- [算子定义](#算子定义)
+  - [算子输入/输出/属性定义](#算子输入输出属性定义)
+  - [AI处理器上相关实现信息](#ai处理器上相关实现信息)
+  - [注册Tiling实现、Shape推导等函数](#注册tiling实现shape推导等函数)
+  - [多硬件平台注册差异化的算子原型](#多硬件平台注册差异化的算子原型)
+- [Tiling实现](#tiling实现)
+  - [基本流程](#基本流程)
+  - [使用标准C++语法定义Tiling结构体](#使用标准c语法定义tiling结构体)
+  - [Tiling模板编程](#tiling模板编程)
+- [Kernel实现](#kernel实现)
+  - [核函数定义](#核函数定义)
+  - [GET_TILING_DATA获取Tiling参数](#get_tiling_data获取tiling参数)
+  - [核函数内推导输入数据类型和格式](#核函数内推导输入数据类型和格式)
+- [图模式适配](#图模式适配)
+- [aclnn适配](#aclnn适配)
+- [附录](#附录)
+  - [代际隔离说明](#代际隔离说明)
+
+---
+
+## 算子定义
 
 算子原型主要描述了算子的输入输出、属性等信息以及算子在AI处理器上相关实现信息，并关联tiling实现等函数。算子原型通过自定义的算子类来承载，该算子类继承自OpDef类。完成算子的原型定义等操作后，需要调用OP_ADD接口，传入算子类型（自定义算子类的类名），进行算子原型注册。下面是一个简单的Add算子原型定义和注册的例子。
 
@@ -50,7 +74,7 @@ OP_ADD(AddCustom);
 >     - 大写字符前一个字符为大写字符且后一个字符是小写字符，则在大写字符前插一个下划线“_”，并将该字符转换为小写字符。例如：AbcAAc -> abc_a_ac。
 >     - 其他大写字符转换为小写字符，小写字符保持不变。
 
-#### 算子输入/输出/属性定义
+### 算子输入/输出/属性定义
 
 算子原型定义描述了算子的输入输出、属性等信息。输入输出支持的datatype、format格式的数量需要一致，并保持一一对应的关系。
 
@@ -152,7 +176,7 @@ this->Output("y1")
 | Attr     | AttrType          | 设置算子属性类型，取值为：OPTIONAL（可选）、REQUIRED（必选）。 |
 |          | Bool/Float/Int... | 设置算子属性数据类型为Bool/Float/Int...。                    |
 
-#### AI处理器上相关实现信息
+### AI处理器上相关实现信息
 
 通过AddConfig注册算子支持的AI处理器型号以及相关的配置信息。AddConfig接口原型如下：soc参数表示AI处理器型号，aicore_config表示其他配置信息。
 
@@ -169,7 +193,7 @@ void AddConfig(const char *soc, OpAICoreConfig &aicore_config);
 
 其他AI Core配置信息的配置方式请参考OpAICoreConfig。
 
-#### 注册Tiling实现、Shape推导等函数
+### 注册Tiling实现、Shape推导等函数
 
 通过SetInferShape、SetInferDataType、SetTiling接口来注册对应的Tiling实现和Shape推导等函数，样例如下。注册的Tiling实现等函数由框架侧进行调用，并在调用时传入对应的Context上下文，供开发者使用。Tiling函数的实现方法请参考Host侧Tiling实现，入图相关的Shape推导等函数实现请参考算子入图（GE图）开发。
 
@@ -181,7 +205,7 @@ void AddConfig(const char *soc, OpAICoreConfig &aicore_config);
             .SetTiling(optiling::TilingFunc);
 ```
 
-#### 多硬件平台注册差异化的算子原型
+### 多硬件平台注册差异化的算子原型
 
 算子类继承基类OpDef，使用Input、Output、Attr等注册算子原型信息，硬件平台支持相同的算子原型的情况下，直接通过AICore().AddConfig添加支持的AI处理器型号即可；不同的硬件形态算子原型定义不同的情况，可以通过新增OpAICoreConfig的方式，针对不同的AI处理器型号注册差异化的算子原型。
 
@@ -261,64 +285,7 @@ public:
 };
 ```
 
-## Kernel侧算子实现
-
-#### 自动生成kernel侧算子实现模板
-
-在算子工程目录下的“op_kernel/xxx.cpp”文件中实现算子的核函数。核函数的定义样例如下所示。**注意这里参数的顺序按照“输入、输出、workspace、tiling”的顺序排布，开发者不要调整其顺序。**
-
-```c++
-#include "kernel_operator.h"
-extern "C" __global__ __aicore__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling) {
-    GET_TILING_DATA(tiling_data, tiling);// 获取Tiling参数，详见下文介绍
-    // TODO: user kernel impl
-}
-```
-
-> 说明
-> 算子原型定义中的输入和输出同名的情况下，输出参数增加ref后缀予以区分。示例如下：
->
-> ```c++
-> extern "C" __global__ __aicore__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR x_ref, GM_ADDR workspace, GM_ADDR tiling) {
->     ...
-> }
-> ```
-
-#### GET_TILING_DATA获取Tiling参数
-
-提供`GET_TILING_DATA`，用于获取算子kernel入口函数传入的tiling信息，并填入注册的Tiling结构体中，此函数会以宏展开的方式进行编译。注意，对应的算子host实现中需要定义TilingData结构体，实现并注册计算TilingData的Tiling函数。具体请参考Host侧Tiling实现。
-
-核函数中调用`GET_TILING_DATA`获取TilingData的样例如下：
-
-```c++
-extern "C" __global__ __aicore__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
-{
-    GET_TILING_DATA(tilingData, tiling);
-    KernelAdd op;
-    op.Init(x, y, z, tilingData.totalLength, tilingData.tileNum);
-    if (TILING_KEY_IS(1)) {
-        op.Process();
-    }
-}
-```
-
-#### 核函数内推导输入数据类型和格式
-
-算子工程在核函数内提供了DTYPE\_\<Arg>、ORIG_DTYPE\_\<Arg>、FORMAT_\<Arg>三种宏用于推导核函数入参的数据类型、原始数据类型和数据格式。其中\<Arg>会自动大写。样例如下：
-
-```c++
-template<class T> func() {}
-extern "C" __global__ __aicore__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
-{
-    DTYPE_X temp;
-    func<DTYPE_Z>();
-    if (FORMAT_Y == FORMAT_ND) {
-        ...
-    }
-}
-```
-
-## Host侧Tiling实现
+## Tiling实现
 
 ### 基本流程
 
@@ -499,7 +466,7 @@ TilingData、blockDim、TilingKey、workspace这些概念的具体解释如下�
   }
   ```
 
-#### 使用标准C++语法定义Tiling结构体的优势
+### 使用标准C++语法定义Tiling结构体的优势
 
 相比较使用BEGIN_TILING_DATA_DEF等宏进行定义的方式，该方式不仅更符合C++开发者的开发习惯，并且提供了强大的灵活性。
 
@@ -586,7 +553,7 @@ TilingData、blockDim、TilingKey、workspace这些概念的具体解释如下�
   } // namespace optiling
   ```
 
-#### 使用约束
+### 使用约束
 
 使用标准C++语法定义Tiling结构体时存在如下约束限制：
 
@@ -755,13 +722,13 @@ TilingData、blockDim、TilingKey、workspace这些概念的具体解释如下�
   }
   ```
 
-#### 模板参数定义
+### 模板参数定义
 
-##### 功能说明
+#### 功能说明
 
 通过以下函数原型进行模板参数ASCENDC_TPL_ARGS_DECL和模板参数组合ASCENDC_TPL_ARGS_SEL（即可使用的模板）的定义。
 
-##### 函数原型
+#### 函数原型
 
 ```c++
 // ParamStruct是存放用户设置的模板参数ASCENDC_TPL_ARGS_DECL和模板参数组合ASCENDC_TPL_ARGS_SEL的结构体，用作后续的Tilingkey与模板参数之间的编解码，用户无需关注
@@ -801,7 +768,7 @@ using TilingSelectParams = std::vector<std::vector<ParamStruct>>;
 #define ASCENDC_TPL_SEL(...) static TilingSelectParams g_tilingSelectParams{ __VA_ARGS__ }
 ```
 
-##### 参数说明
+#### 参数说明
 
 -  Tiling模板参数定义说明
 
@@ -830,23 +797,23 @@ using TilingSelectParams = std::vector<std::vector<ParamStruct>>;
   | ASCENDC_TPL_DETERMINISTIC_SEL(args0)           | 该组模板参数组合用于配置是否使能确定性计算。                 | args0: 表示参数名， 可选值范围[true, false, 1, 0]，其中[true/1]表示该组模板参数组合使能确定性计算，[false/0]表示不使能确定性计算。需要注意，该值不作为算子的模板参数入参，在使能该值编译时，会添加"-DDETERMINISTIC_MODE=1", 同时会生成以"_deterministic"结尾的json与.o文件，例如："AddCustomTemplate_816f04e052850554f4b3cacb35f8e8c6_deterministic.json"/"AddCustomTemplate_816f04e052850554f4b3cacb35f8e8c6_deterministic.o"。备注：若通过ASCENDC_TPL_DETERMINISTIC_SEL(true)接口编译出了确定性计算的版本，在算子调用时，通常需要打开确定性计算的的开关，例如通过aclnn单算子调用时，需要使用aclrtCtxSetSysParamOpt接口进行相关配置。该参数仅支持如下型号：Atlas A3 训练系列产品 / Atlas A3 推理系列产品 Atlas A2 训练系列产品 / Atlas A2 推理系列产品 |
   | ASCENDC_TPL_SHARED_KERNEL_TYPE_SEL(args0, ...) | 设置算子模板参数组合的Kernel类型，该参数可以作为核函数的模板参数传入。 | args0: 参数名args1-argsn: 该模板参数组合下，算子的Kernel类型，后续参数为若干Kernel类型。该接口不能与ASCENDC_TPL_KERNEL_TYPE_SEL接口同时使用。若同时使用KERNEL_TASK_TYPE_DEFAULT(value)接口，本接口优先级更高。 |
 
-  #### 返回值说明
+#### 返回值说明
 
-  无。
+无。
 
-  #### 约束说明
+#### 约束说明
 
-  对模板参数定义的取值进行修改或新增后，需要重新编译自定义算子包，不能再继续使用之前的算子二进制。
+对模板参数定义的取值进行修改或新增后，需要重新编译自定义算子包，不能再继续使用之前的算子二进制。
 
-#### GET_TPL_TILING_KEY
+### GET_TPL_TILING_KEY
 
-##### 功能说明
+#### 功能说明
 
 Tiling模板编程时，开发者通过调用此接口自动生成TilingKey。该接口将传入的模板参数通过定义的位宽，转成二进制，按照顺序组合后转成uint64数值，即TilingKey。
 
 使用该接口需要包含定义模板参数和模板参数组合的头文件。
 
-##### 函数原型
+#### 函数原型
 
 ```c++
 namespace AscendC {
@@ -859,21 +826,21 @@ namespace AscendC {
     AscendC::EncodeTilingKey(g_tilingDeclareParams, g_tilingSelectParams, {__VA_ARGS__}) // GET_TPL_TILING_KEY通过调用EncodeTilingKey接口生成TilingKey， EncodeTilingKey属于内部关联接口，开发者无需关注
 ```
 
-##### 参数说明
+#### 参数说明
 
 | 参数 | 输入/输出 | 说明                                                         |
 | ---- | --------- | ------------------------------------------------------------ |
 | ...  | 输入      | 可变长参数，模板参数的具体值，传入时需要与定义模板参数和模板参数组合的头文件中的模板参数顺序保持一致。 |
 
-##### 返回值说明
+#### 返回值说明
 
 TilingKey数值。
 
-##### 约束说明
+#### 约束说明
 
 无。
 
-##### 调用示例
+#### 调用示例
 
 ```c++
 #include "tiling_key_add_custom.h"
@@ -904,15 +871,15 @@ static ge::graphStatus TilingFunc(gert::TilingContext *context)
 }
 ```
 
-#### ASCENDC_TPL_SEL_PARAM
+### ASCENDC_TPL_SEL_PARAM
 
-##### 功能说明
+#### 功能说明
 
 Tiling模板编程时，开发者通过调用此接口自动生成并配置TilingKey。
 
 使用该接口需要包含定义模板参数和模板参数组合的头文件。
 
-##### 函数原型
+#### 函数原型
 
 ```c++
 #define ASCENDC_TPL_SEL_PARAM(context, ...)           \
@@ -923,22 +890,22 @@ do {                                                  \
 // context指代TilingFunc(gert::TilingContext *context)中的context
 ```
 
-##### 参数说明
+#### 参数说明
 
 | 参数    | 输入/输出 | 说明                                                         |
 | ------- | --------- | ------------------------------------------------------------ |
 | context | 输入      | TilingFunc注册上下文。                                       |
 | ...     | 输入      | 可变长参数，模板参数的具体值，传入时需要与定义模板参数和模板参数组合的头文件中的模板参数顺序保持一致。 |
 
-##### 返回值说明
+#### 返回值说明
 
 无
 
-##### 约束说明
+#### 约束说明
 
 无
 
-##### 调用示例
+#### 调用示例
 
 ```c++
 #include "tiling_key_add_custom.h"
@@ -970,15 +937,73 @@ static ge::graphStatus TilingFunc(gert::TilingContext *context)
 
 
 
-## GE图模式原型定义
+## Kernel实现
 
-#### 头文件
+### 核函数定义
+
+在算子工程目录下的“op_kernel/xxx.cpp”文件中实现算子的核函数。核函数的定义样例如下所示。**注意这里参数的顺序按照“输入、输出、workspace、tiling”的顺序排布，开发者不要调整其顺序。**
+
+```c++
+#include "kernel_operator.h"
+extern "C" __global__ __aicore__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling) {
+    GET_TILING_DATA(tiling_data, tiling);// 获取Tiling参数，详见下文介绍
+    // TODO: user kernel impl
+}
+```
+
+> 说明
+> 算子原型定义中的输入和输出同名的情况下，输出参数增加ref后缀予以区分。示例如下：
+>
+> ```c++
+> extern "C" __global__ __aicore__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR x_ref, GM_ADDR workspace, GM_ADDR tiling) {
+>     ...
+> }
+> ```
+
+### GET_TILING_DATA获取Tiling参数
+
+提供`GET_TILING_DATA`，用于获取算子kernel入口函数传入的tiling信息，并填入注册的Tiling结构体中，此函数会以宏展开的方式进行编译。注意，对应的算子host实现中需要定义TilingData结构体，实现并注册计算TilingData的Tiling函数。具体请参考Host侧Tiling实现。
+
+核函数中调用`GET_TILING_DATA`获取TilingData的样例如下：
+
+```c++
+extern "C" __global__ __aicore__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
+{
+    GET_TILING_DATA(tilingData, tiling);
+    KernelAdd op;
+    op.Init(x, y, z, tilingData.totalLength, tilingData.tileNum);
+    if (TILING_KEY_IS(1)) {
+        op.Process();
+    }
+}
+```
+
+### 核函数内推导输入数据类型和格式
+
+算子工程在核函数内提供了DTYPE\_\<Arg>、ORIG_DTYPE\_\<Arg>、FORMAT_\<Arg>三种宏用于推导核函数入参的数据类型、原始数据类型和数据格式。其中\<Arg>会自动大写。样例如下：
+
+```c++
+template<class T> func() {}
+extern "C" __global__ __aicore__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
+{
+    DTYPE_X temp;
+    func<DTYPE_Z>();
+    if (FORMAT_Y == FORMAT_ND) {
+        ...
+    }
+}
+```
+
+## 图模式适配
+
+
+### 头文件
 
 ```c++
 #include <graph/operator_reg.h>
 ```
 
-#### 功能说明
+### 功能说明
 
 定义算子的原型，包括算子的输入、输出、属性以及对应的数据类型。
 
@@ -990,7 +1015,7 @@ conv.set_input_x(feature_map_data)
 conv.set_input_filter(weight_data)
 ```
 
-#### 函数原型
+### 函数原型
 
 函数原型定义示例如下：
 
@@ -1008,7 +1033,7 @@ REG_OP(xxx)
     .OP_END_FACTORY_REG(xxx)
 ```
 
-#### 接口说明
+### 接口说明
 
 | **接口名称**                  | **接口说明**                                                 |
 | ----------------------------- | ------------------------------------------------------------ |
@@ -1029,18 +1054,18 @@ REG_OP(xxx)
 >
 > OpReg类中的OpReg &N()接口的功能是为了用户进行算子注册的时候，使用`.`的方式调用OpReg类的接口，例如`.INPUT(x, type)`、`.OUTPUT(x, type)`，无其他含义。
 
-#### 返回值说明
+### 返回值说明
 
 无
 
-#### 约束说明
+### 约束说明
 
 - REG_OP的算子类型必须全局唯一。
 - 同一个算子的输入名称之间不能重复。
 - 同一个算子的输出名称之间不能重复。
 - 同一个算子的属性名称之间不能重复。
 
-#### 调用示例和相关API
+### 调用示例和相关API
 
 动态输入的算子原型定义示例：
 
@@ -1074,7 +1099,7 @@ REG_OP(If)
     .OP_END_FACTORY_REG(If)
 ```
 
-#### TensorType
+### TensorType
 
 TensorType类用以定义输入或者输出支持的数据类型，TensorType提供以下接口指定支持的数据类型：
 
@@ -1141,71 +1166,11 @@ struct TensorType {
 };
 ```
 
-## 代际隔离说明
-
-> 当某个算子需要同时支持多款芯片且Tiling或kernel实现不同则需要考虑代际隔离问题。
-
-#### 芯片架构映射
-
-| 架构目录 | 对应芯片系列                             |
-| -------- | ---------------------------------------- |
-| `arch35` | Ascend950DT / Ascend950PR / Ascend910_95 |
-| `arch32` | Ascend910B / Ascend910_93                |
-
-#### 隔离位置清单
-
-| 位置               | 是否隔离 | 说明             |
-| ------------------ | -------- | ---------------- |
-| ACLNN接口          | ❌ 不隔离 | 多代际共用       |
-| IR                 | ❌ 不隔离 | 多代际共用       |
-| 算子CMakeLists.txt | ✅ 需隔离 | 芯片号列表要准确 |
-| op_host/arch35     | ✅ 隔离   | Ascend950系列    |
-| op_host/arch32     | ✅ 隔离   | Ascend910B系列   |
-| op_kernel/arch35   | ✅ 隔离   | Ascend950系列    |
-| op_kernel/arch32   | ✅ 隔离   | Ascend910B系列   |
-
-**注意**:
-
-1. 严格按照架构关系规划目录
-2. 高架构芯片可以参考低架构芯片代码，低架构芯片不能照抄高架构芯片的代码!!!
-3. arch35以上才支持MicroAPI微指令编程
-
-#### Kernel入口配置
-
-kernel入口函数文件配置在 `${op_name}_def.cpp` 中：
-
-```cpp
-// 默认配置（第一代芯片）
-ExtendCfgInfo("opFile.value", "{op_name_snake}");
-
-// 第二代芯片隔离（最多支持两代）
-ExtendCfgInfo("opFile.value", "{op_name_snake}_apt");
-```
-
-#### 对应文件关系
-
-| 配置值                | 对应Kernel文件            |
-| --------------------- | ------------------------- |
-| `{op_name_snake}`     | `{op_name_snake}.cpp`     |
-| `{op_name_snake}_apt` | `{op_name_snake}_apt.cpp` |
-
-#### 编译隔离实现
-
-在 `.cpp` 文件中分别include对应的 `.h` 文件：
-
-```cpp
-// {op_name_snake}.cpp (arch32/Ascend910B)
-#include "{op_name_snake}_impl.h"
-
-// {op_name_snake}_apt.cpp (arch35/Ascend950)
-#include "{op_name_snake}_apt_impl.h"
-```
-
-## Aclnn指导
+## aclnn适配
 
 > Aclnn有自动生成和手写两种方式，可根据算子实际情况进行选择。
 
-#### 自动生成Aclnn接口配置方式
+### 自动生成Aclnn接口配置方式
 
 在 `${op_name}/CMakeLists.txt` 中配置：
 
@@ -1213,7 +1178,7 @@ ExtendCfgInfo("opFile.value", "{op_name_snake}_apt");
 ACLNNTYPE aclnn
 ```
 
-#### 自动生成内容
+### 自动生成内容
 
 - 自动生成两个ACLNN接口
 
@@ -1270,16 +1235,79 @@ ACLNNTYPE aclnn
 
 - 自动编入自定义算子包
 
-#### 动态库路径
+### 动态库路径
 
 ```bash
 export LD_LIBRARY_PATH=${ASCEND_HOME_PATH}/cann-{version}/opp/vendors/custom_math/op_api/lib/:${LD_LIBRARY_PATH}
 ```
 
-#### 头文件位置
+### 头文件位置
 
 ```
 ${ASCEND_HOME_PATH}/cann-{version}/opp/vendors/custom_math/op_api/include/
 ```
 
 `${ASCEND_HOME_PATH}`表示CANN软件安装目录。
+
+## 附录
+
+### 代际隔离说明
+
+> 当某个算子需要同时支持多款芯片且Tiling或kernel实现不同则需要考虑代际隔离问题。
+
+#### 芯片架构映射
+
+| 架构目录 | 对应芯片系列                             |
+| -------- | ---------------------------------------- |
+| `arch35` | Ascend950DT / Ascend950PR                |
+| `arch32` | Ascend910B / Ascend910_93                |
+
+#### 隔离位置清单
+
+| 位置               | 是否隔离 | 说明             |
+| ------------------ | -------- | ---------------- |
+| ACLNN接口          | ❌ 不隔离 | 多代际共用       |
+| IR                 | ❌ 不隔离 | 多代际共用       |
+| 算子CMakeLists.txt | ✅ 需隔离 | 芯片号列表要准确 |
+| op_host/arch35     | ✅ 隔离   | Ascend950系列    |
+| op_host/arch32     | ✅ 隔离   | Ascend910B系列   |
+| op_kernel/arch35   | ✅ 隔离   | Ascend950系列    |
+| op_kernel/arch32   | ✅ 隔离   | Ascend910B系列   |
+
+**注意**:
+
+1. 严格按照架构关系规划目录
+2. 高架构芯片可以参考低架构芯片代码，低架构芯片不能照抄高架构芯片的代码!!!
+3. arch35以上才支持MicroAPI微指令编程
+
+#### Kernel入口配置
+
+kernel入口函数文件配置在 `${op_name}_def.cpp` 中：
+
+```cpp
+// 默认配置（第一代芯片）
+ExtendCfgInfo("opFile.value", "{op_name_snake}");
+
+// 第二代芯片隔离（最多支持两代）
+ExtendCfgInfo("opFile.value", "{op_name_snake}_apt");
+```
+
+#### 对应文件关系
+
+| 配置值                | 对应Kernel文件            |
+| --------------------- | ------------------------- |
+| `{op_name_snake}`     | `{op_name_snake}.cpp`     |
+| `{op_name_snake}_apt` | `{op_name_snake}_apt.cpp` |
+
+#### 编译隔离实现
+
+在 `.cpp` 文件中分别include对应的 `.h` 文件：
+
+```cpp
+// {op_name_snake}.cpp (arch32/Ascend910B)
+#include "{op_name_snake}_impl.h"
+
+// {op_name_snake}_apt.cpp (arch35/Ascend950)
+#include "{op_name_snake}_apt_impl.h"
+```
+

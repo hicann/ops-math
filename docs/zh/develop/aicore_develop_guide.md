@@ -88,6 +88,8 @@ ${op_name}                              # 替换为实际算子名的小写下�
 ## 算子定义
 算子定义需要完成两个交付件：`README.md` ```${op_name}_def.cpp```
 
+> 💡 **进阶内容**：关于算子原型定义的详细说明，包括输入/输出/属性定义、AI处理器配置、多硬件平台差异化注册等，请参考[《AI Core算子开发进阶指南 - 算子原型定义》](./aicore_develop_advanced_guide.md#算子原型定义)。
+
 **交付件1：README.md**
 
 开发算子前需要先确定目标算子的功能和计算逻辑。
@@ -100,6 +102,8 @@ ${op_name}                              # 替换为实际算子名的小写下�
 
 以自定义`AddExample`算子说明为例，请参考[AddExample算子信息库](../../../examples/add_example/op_host/add_example_def.cpp)。
 ## Tiling实现
+
+> 💡 **进阶内容**：关于Host侧Tiling实现的详细说明，包括基本流程、Tiling结构体定义、Tiling模板编程等，请参考[《AI Core算子开发进阶指南 - Host侧Tiling实现》](./aicore_develop_advanced_guide.md#host侧tiling实现)。
 
 ### Tiling简介
 
@@ -220,6 +224,8 @@ struct ${op_name}TilingData {
 如需实现复杂参数组合完成分支选择（涉及多TilingKey场景），请参考[《Ascend C算子开发》](https://hiascend.com/document/redirect/CannCommunityOpdevAscendC)中“算子实现 > 工程化算子开发 > Host侧Tiling实现 > Tiling模板编程”。
 
 ## Kernel实现
+
+> 💡 **进阶内容**：关于Kernel侧算子实现的详细说明，包括核函数定义、GET_TILING_DATA获取Tiling参数、核函数内推导输入数据类型和格式等，请参考[《AI Core算子开发进阶指南 - Kernel侧算子实现》](./aicore_develop_advanced_guide.md#kernel侧算子实现)。
 
 ### Kernel简介
 Kernel是算子在NPU执行的核心部分，负责张量数据的加载、计算和存储，是算子功能实现的最终载体。Kernel的实现需要与Tiling策略紧密配合，根据Tiling提供的`TilingData`、`TilingKey`信息进行内存分配和计算调度。
@@ -359,10 +365,14 @@ __aicore__ inline void AddExample<T>::Process()
 
 ## 图模式适配
 
+> 💡 **进阶内容**：关于GE图模式原型定义的详细说明，包括REG_OP接口、TensorType类等，请参考[《AI Core算子开发进阶指南 - GE图模式原型定义》](./aicore_develop_advanced_guide.md#ge图模式原型定义)。
+
 图模式一共需要三个交付件：```${op_name}_graph_infer.cpp``` ```${op_name}_infershape.cpp``` ```${op_name}_proto.h```
 详细说明见图模式适配指南[graph_develop_guide.md](./graph_develop_guide.md)。
 
 ## aclnn适配
+
+> 💡关于Aclnn接口的详细说明，包括自动生成配置方式、动态库路径等，请参考[《AI Core算子开发进阶指南 - Aclnn指导》](./aicore_develop_advanced_guide.md#aclnn指导)。
 
 通常算子开发和编译完成后，会自动生成aclnn接口（一套基于C 的API），可直接在应用程序中调用aclnn接口实现调用算子。
 
@@ -631,6 +641,9 @@ TEST_F(reflection_pad2d_test, case_16)
 ## 附录
 
 自定义算子如需运行图模式，不需要aclnn适配，详细内容请参考[图模式开发指南](./graph_develop_guide.md)。
+
+> 💡 **进阶内容**：
+> - 关于多芯片代际隔离的详细说明，包括芯片架构映射、隔离位置清单、Kernel入口配置等，请参考[《AI Core算子开发进阶指南 - 代际隔离说明》](./aicore_develop_advanced_guide.md#代际隔离说明)。
 
 ### 算子工程迁移
 
@@ -951,5 +964,3 @@ template<int D_T_X, int D_T_Y, int D_T_Z, int TILE_NUM, int IS_SPLIT>
 </div>
 
 保留原有op_kernel/tiling_key_{op_name}.h中算子的模板参数定义，若不存在op_kernel/tiling_key_{op_name}.h，请参考[add_example_tiling_key.h](../../../examples/add_example/op_kernel/add_example_tiling_key.h)新增定义模板参数和模板参数组合。
-
-> **重要提示：** 更多AscendC算子交付件编程规范和约束请参考[ascendc_op_dev_rules.md](./ascendc_op_dev_rules.md)中的说明。

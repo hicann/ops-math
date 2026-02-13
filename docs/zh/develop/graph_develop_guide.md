@@ -1,6 +1,12 @@
 # 图模式适配指南
 
-自定义算子如需运行图模式，整体流程与算子开发指南（[AI Core算子开发指南](aicore_develop_guide.md)/[AI CPU算子开发指南](aicpu_develop_guide.md)）一致。值得注意的是，**不需要aclnn适配**，只需做如下交付件适配。
+> 本文档介绍自定义算子的图模式适配方法，是[AI Core算子开发指南](./aicore_develop_guide.md)和[AI CPU算子开发指南](./aicpu_develop_guide.md)的补充内容。
+
+自定义算子如需运行图模式，整体流程与算子开发指南一致。值得注意的是，**不需要aclnn适配**，只需做如下交付件适配。
+
+## 交付件概述
+
+图模式适配需要完成以下交付件：
 
 ```
 ${op_name}                              # 替换为实际算子名的小写下划线形式
@@ -16,7 +22,7 @@ ${op_name}                              # 替换为实际算子名的小写下�
 
 ## Shape与DataType推导
 
-图模式需要完成两个交付件 ```${op_name}_graph_infer.cpp``` ```${op_name}_infershape.cpp```
+图模式需要完成两个交付件：```${op_name}_infershape.cpp``` 和 ```${op_name}_graph_infer.cpp```
 
 **交付件1：${op_name}_infershape.cpp**
 
@@ -72,40 +78,43 @@ IMPL_OP(AddExample).InferDataType(InferDataTypeAddExample);
 
 ## 算子原型配置
 
-算子原型配置需要完成一个交付件```${op_name}_proto.h```
-
-**交付件1：${op_name}_proto.h**
+**交付件：${op_name}_proto.h**
 
 图模式调用需要将算子原型注册到[Graph Engine](https://www.hiascend.com/cann/graph-engine)（简称GE）中，以便GE能够识别该类算子的输入、输出及属性信息。注册通过`REG_OP`接口完成，开发者需定义算子输入、输出张量类型及数量等基本信息。
 
+### 常用数据类型
 常用张量/属性数据类型示例如下：
-|张量类型|属性类型|示例|
-|-----|------|-----|
-|int64|/|DT_INT64|
-|int32|/|DT_INT32|
-|int16|/|DT_INT16|
-|int8|/|DT_INT8|
-|double|/|DT_DOUBLE|
-|float32|/|DT_FLOAT|
-|float16|/|DT_FLOAT16|
-|bfloat16|/|DT_BF16|
-|complex128|/|DT_COMPLEX128|
-|complex64|/|DT_COMPLEX64|
-|complex32|/|DT_COMPLEX32|
-|/|int|Int|
-|/|bool|Bool|
-|/|string|String|
-|/|float|Float|
-|/|list|ListInt|
 
-基本信息如下：
-|输入/输出|关键字|示例|
+| 张量类型 | 属性类型 | 示例 |
 |-----|------|-----|
-|必选输入|INPUT|.INPUT(${name}, TensorType({input_dtype}))|
-|可选输入|OPTIONAL_INPUT|.OPTIONAL_INPUT(${name}, TensorType({optional_input_dtype}))|
-|必选属性|REQUIRED_ATTR|.REQUIRED_ATTR(${name}, ${dtype})|
-|可选属性|ATTR|.ATTR(${name}, ${dtype}, ${default_value})|
-|输出|OUTPUT|.OUTPUT(${name}, TensorType({output_dtype}))|
+| int64 | / | DT_INT64 |
+| int32 | / | DT_INT32 |
+| int16 | / | DT_INT16 |
+| int8 | / | DT_INT8 |
+| double | / | DT_DOUBLE |
+| float32 | / | DT_FLOAT |
+| float16 | / | DT_FLOAT16 |
+| bfloat16 | / | DT_BF16 |
+| complex128 | / | DT_COMPLEX128 |
+| complex64 | / | DT_COMPLEX64 |
+| complex32 | / | DT_COMPLEX32 |
+| / | int | Int |
+| / | bool | Bool |
+| / | string | String |
+| / | float | Float |
+| / | list | ListInt |
+
+### 输入输出定义
+
+| 输入/输出 | 关键字 | 示例 |
+|-----|------|-----|
+| 必选输入 | INPUT | .INPUT(${name}, TensorType({input_dtype})) |
+| 可选输入 | OPTIONAL_INPUT | .OPTIONAL_INPUT(${name}, TensorType({optional_input_dtype})) |
+| 必选属性 | REQUIRED_ATTR | .REQUIRED_ATTR(${name}, ${dtype}) |
+| 可选属性 | ATTR | .ATTR(${name}, ${dtype}, ${default_value}) |
+| 输出 | OUTPUT | .OUTPUT(${name}, TensorType({output_dtype})) |
+
+### 代码示例
 
 示例代码如下，展示了如何注册`AddExample`算子：
 
@@ -119,4 +128,4 @@ REG_OP(AddExample)
 
 完整代码请参考`examples/add_example/op_graph`目录下[add_example_proto.h](../../../examples/add_example/op_graph/add_example_proto.h)。
 
-> **重要提示：** 更多AscendC算子交付件编程规范和约束请参考[ascendc_op_dev_rules.md](./ascendc_op_dev_rules.md)中的说明。
+> 💡 **进阶内容**：关于GE图模式原型定义的详细说明，包括REG_OP接口、TensorType类等，请参考[《AI Core算子开发进阶指南 - 图模式适配》](./aicore_develop_advanced_guide.md#图模式适配)。
