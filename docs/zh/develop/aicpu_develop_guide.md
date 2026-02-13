@@ -4,6 +4,7 @@
 >
 > 1. 算子开发过程中涉及的基本概念、AI CPU接口等，详细介绍请参考[《TBE&AI CPU算子开发》](https://hiascend.com/document/redirect/CannCommunityOpdevWizard)。
 > 2. AI CPU算子是使用C++语言开发，运行在AI CPU硬件单元算子。
+> 3. build.sh：算子开发过程中涉及的命令可通过`bash build.sh --help`查看，功能参数介绍参考[build参数说明](../context/build.md)。
 
 开发指南以`AddExample`算子开发为例，介绍新算子开发流程以及涉及的交付件，完整样例代码请访问项目`examples`目录。
 
@@ -213,11 +214,11 @@ REGISTER_CPU_KERNEL(kAddExample, AddExampleCpuKernel);
     - -j（可选）：指定编译线程数，加快编译速度。
 
     若提示如下信息，说明编译成功：
-    
+
     ```bash
     Self-extractable archive "cann-ops-math-${vendor_name}_linux-${arch}.run" successfully created.
     ```
-    
+
 3. **安装自定义算子包。**
 
     ```bash

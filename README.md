@@ -2,8 +2,7 @@
 
 ## 🔥Latest News
 - [2026/01] 新增[QuickStart](QUICKSTART.md)，指导新手零基础入门算子项目部署（支持Docker环境）、算子开发和贡献流程。
-- [2025/12] 开源算子支持Ascend 950PR/Ascend 950DT，可以通过CANN Simulator仿真工具开发调试；在add算子中增加了<<<>>>kernel异构调用示例，方便用户自定义使用；
-在多个类别中新支持算子[concat](conversion/concat/)、[lerp](math/lerp/)、[drop_out_v3](random/drop_out_v3/)等。
+- [2025/12] 开源算子支持Ascend 950PR/Ascend 950DT，可以通过CANN Simulator仿真工具开发调试；在add算子中增加了<<<>>>kernel异构调用示例，方便用户自定义使用；在多个类别中新支持算子[concat](conversion/concat/)、[lerp](math/lerp/)、[drop_out_v3](random/drop_out_v3/)等。
 - [2025/11] 完善多个算子README描述，改进算子开发实例文档及example。
 - [2025/10] 新增experimental目录，完善[贡献指南](CONTRIBUTING.md)，支持开发者调试并贡献自定义算子。
 - [2025/09] ops-math项目首次上线。
@@ -21,22 +20,23 @@ ops-math是[CANN](https://hiascend.com/software/cann) （Compute Architecture fo
 
 ## ⚡️快速入门
 
-若您希望**从零到一了解并快速体验项目**，请访问如下文档。可以先了解项目算子信息，再尝试算子调用、开发、贡献等操作。
+若您希望**从零到一了解并快速体验项目**，请访问如下文档。可以先了解项目算子信息，再尝试算子调用、开发、贡献等。
 
 1. [算子列表](docs/zh/op_list.md)：项目全量算子信息，方便快速查询。
+2. [QuickStart](QUICKSTART.md)：**基于WebIDE或Docker环境**提供极简快速上手指南，包括搭建环境、编译部署、算子调用/开发/调试、贡献等。
 
-2. [QuickStart](QUICKSTART.md)：端到端快速上手指南，包括搭建环境、编译部署、算子调用/开发/调试调优、贡献等过程。
+    > **说明**：无论是WebIDE或Docker环境，默认提供最新商发版本CANN软件包，目前是CANN 8.5.0。若您想手动安装CANN包或体验master分支最新能力等，请参考[学习教程](#📖学习教程)中的步骤，完成环境搭建、编译执行、算子开发等操作。
 
 ## 📖学习教程
 
-若您**已完成快速入门**学习，对本项目有了一定认知，并希望**深入了解和体验项目**，请访问如下文档。
+若您已完成**快速入门**学习，对本项目有了一定认知，并希望**深入了解和体验项目**，请访问如下文档。
 
-这些文档提供了多样化的场景介绍和更全面的操作指导，方便您应用于各种AI业务场景。
+这些文档提供了多样化场景和更全面的操作指导，方便您应用于各种AI业务场景。
 
-1. [环境部署](docs/zh/context/quick_install.md)：搭建基础环境的指南，提供了多种场景下第三方依赖和软件包安装方法等。
-2. [算子调用](docs/zh/invocation/quick_op_invocation.md)：编译部署并调用算子的指南，提供了多种编译算子包以及运行算子的方法（包括执行算子样例和UT）等。
-3. [算子开发](docs/zh/develop/aicore_develop_guide.md)：基于本项目工程开发新算子的指南，提供了创建算子工程、实现Tiling和Kernel核心交付件等指导。
-4. [算子调试调优](docs/zh/debug/op_debug_prof.md)：提供了常见的算子调试和调优方法，如DumpTensor、msProf、Simulator等。
+1. [环境部署](docs/zh/context/quick_install.md)：**基础环境搭建**指南，提供多种场景下CANN软件包安装方法，例如Docker部署、手动安装等。
+2. [算子调用](docs/zh/invocation/quick_op_invocation.md)：算子**源码编译和执行**指南，提供多种编译算子包以及运行算子的方法（包括执行算子样例和UT）等。
+3. [算子开发](docs/zh/develop/aicore_develop_guide.md)：基于项目工程**开发新算子**指南，从零学习创建算子工程、实现Tiling和Kernel核心交付件等。
+4. [算子调试调优](docs/zh/debug/op_debug_prof.md)：提供常见的算子**调试和调优**方法，如DumpTensor、msProf、Simulator等。
 
 除了上述指南，还提供了其他文档介绍，例如算子调用方式和流程、算子基本概念等，全量文档介绍请访问[docs](docs/README.md)。
 
