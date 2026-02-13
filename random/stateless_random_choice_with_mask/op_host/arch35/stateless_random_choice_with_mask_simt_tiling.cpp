@@ -163,6 +163,7 @@ ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::GetWorkspaceSize()
 
 ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::PostTiling()
 {
+    blockNum_ = !blockNum_ ? 1 : blockNum_;
     context_->SetBlockDim(blockNum_);
     context_->SetTilingKey(GetTilingKey());
     context_->SetScheduleMode(1);

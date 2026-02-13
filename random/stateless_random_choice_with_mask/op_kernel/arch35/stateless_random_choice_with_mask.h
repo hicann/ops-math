@@ -35,6 +35,10 @@ static constexpr int64_t DOUBLE_BUFFER = 2;
 static constexpr int64_t PER_LOOP_ROWS = 32;
 constexpr int64_t ALIGNMENT_32 = 32;
 constexpr int64_t PrefixUbSize = 20 * 1024; // 每次计算前缀和使用的ub为8k，并行预留20k
+static constexpr int64_t Y_LENGTH_ADDR = 1;
+static constexpr int64_t Y_DIM_ADDR = 2;
+static constexpr int64_t MASK_DIM_ADDR = 9;
+static constexpr int64_t MASK_LENGTH_ADDR = 10;
 
 class StatelessRandomChoiceWithMask {
 public:
@@ -175,10 +179,10 @@ __simt_vf__ LAUNCH_BOUND(1) __aicore__ inline void SimtFisherYatesShuffle(
         outputGM[randomIdx] = tmpIndex;
     }
     outShapeGM[0] = 0x80000002;
-    outShapeGM[1] = outputCount;
-    outShapeGM[2] = inputDim;
-    outShapeGM[9] = 1;
-    outShapeGM[10] = outputCount;
+    outShapeGM[Y_LENGTH_ADDR] = outputCount;
+    outShapeGM[Y_DIM_ADDR] = inputDim;
+    outShapeGM[MASK_DIM_ADDR] = 1;
+    outShapeGM[MASK_LENGTH_ADDR] = outputCount;
 }
 
 __aicore__ inline void StatelessRandomChoiceWithMask::Init(
@@ -315,6 +319,16 @@ __aicore__ inline void StatelessRandomChoiceWithMask::Process()
     if (blockIdx_ >= tiling_->blockNum) {
         return;
     }
+    if (tiling_->inputSize == 0) {
+        __gm__ uint64_t* outShapeGM = (__gm__ uint64_t*)(outShapeGM_.GetPhyAddr());
+        outShapeGM[0] = 0x80000002;
+        outShapeGM[Y_LENGTH_ADDR] = 0;
+        outShapeGM[Y_DIM_ADDR] = tiling_->inputDim;
+        outShapeGM[MASK_DIM_ADDR] = 1;
+        outShapeGM[MASK_LENGTH_ADDR] = 0;
+        return;
+    }
+
     Simt::VF_CALL<SimtComputeNonZeroCount>(
         Simt::Dim3{CORE_THREAD_NUM}, (__gm__ bool*)(inputGM_.GetPhyAddr()),
         (__gm__ volatile int64_t*)(workspaceNoZeroCount_.GetPhyAddr()), tiling_->inputSize, threadProNum_, count_);

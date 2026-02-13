@@ -75,8 +75,14 @@ ge::graphStatus InferShapeRangeForStatelessRandomChoiceWithMask(gert::InferShape
     OP_CHECK_NULL_WITH_CONTEXT(context, maskRange->GetMax());
     OP_CHECK_NULL_WITH_CONTEXT(context, maskRange->GetMin());
 
+    auto countTensorRange = context->GetInputTensorRange(1U);
+    auto countTensor = countTensorRange->GetMax();
+    auto countData = *(countTensor->GetData<int32_t>());
+
     int64_t outputLengthMax = xRange->GetMax()->GetShapeSize();
+    outputLengthMax = outputLengthMax > countData ? outputLengthMax : countData;
     int64_t xDimNum = xRange->GetMax()->GetDimNum();
+
     yRange->GetMax()->SetDimNum(OUTPUT_Y_RANK);
     yRange->GetMax()->SetDim(0, outputLengthMax);
     yRange->GetMax()->SetDim(1, xDimNum);
@@ -108,6 +114,7 @@ ge::graphStatus InferDataTypeForStatelessRandomChoiceWithMask(gert::InferDataTyp
 IMPL_OP(StatelessRandomChoiceWithMask).InferDataType(InferDataTypeForStatelessRandomChoiceWithMask);
 
 IMPL_OP_INFERSHAPE(StatelessRandomChoiceWithMask)
+    .InputsDataDependency({1})
     .InferShape(InferShapeForStatelessRandomChoiceWithMask)
     .InferShapeRange(InferShapeRangeForStatelessRandomChoiceWithMask)
     .InferDataType(InferDataTypeForStatelessRandomChoiceWithMask);
