@@ -44,5 +44,9 @@ __global__ __aicore__ void mod(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR worksp
         using OpDag = ModOp::ModIntOp<int32_t>::OpDag;
         BroadcastSch<schMode, OpDag> sch(tiling);
         sch.Process(x1, x2, y);
+    } else if constexpr (std::is_same<DTYPE_X1, int64_t>::value) {
+        using OpDag = ModOp::ModInt64Op<int64_t>::OpDag;
+        BroadcastSch<schMode, OpDag> sch(tiling);
+        sch.Process(x1, x2, y);
     }
 }

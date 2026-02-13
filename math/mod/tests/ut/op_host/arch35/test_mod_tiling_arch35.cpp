@@ -240,3 +240,24 @@ TEST_F(ModTilingTest, test_tiling_uint8)
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
+
+// Test: mod tiling with int64
+TEST_F(ModTilingTest, test_tiling_int64)
+{
+    BroadcastCompileInfo compileInfo{};
+    gert::TilingContextPara tilingContextPara(
+        "Mod",
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT64, ge::FORMAT_ND},
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT64, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT64, ge::FORMAT_ND},
+        },
+        &compileInfo);
+
+    uint64_t expectTilingKey = 8;
+    string expectTilingData = "8192 137438953600 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}

@@ -45,6 +45,7 @@ protected:
 
 private:
     uint64_t tilingKey = 0;
+    int64_t ubSize_ = 0;
 };
 
 } // namespace optiling

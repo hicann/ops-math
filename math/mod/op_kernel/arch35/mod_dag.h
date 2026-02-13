@@ -128,6 +128,32 @@ struct ModCastIntPostCompute : public Vec::ElemwiseTernaryOP<T1, T2, T2, T2> {
     }
 };
 
+#ifdef __CCE_AICORE__
+template <typename T>
+__simt_vf__ __aicore__
+    LAUNCH_BOUND(1024) inline void ModIntSimt(__ubuf__ T* dst, __ubuf__ T* src1, __ubuf__ T* src2, int count)
+{
+    for (uint32_t index = static_cast<uint32_t>(Simt::GetThreadIdx()); index < count;
+         index += static_cast<uint32_t>(Simt::GetThreadNum())) {
+        const auto rem = src1[index] % src2[index];
+        dst[index] = rem;
+    }
+}
+#endif
+
+template <class T>
+struct ModInt : public Vec::ElemwiseBinaryOP<T, T, T> {
+    __aicore__ inline ModInt(LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2, int count)
+    {
+#ifdef __CCE_AICORE__
+        __ubuf__ T* dst_1 = (__ubuf__ T*)dst.GetPhyAddr();
+        __ubuf__ T* src1_1 = (__ubuf__ T*)src1.GetPhyAddr();
+        __ubuf__ T* src2_1 = (__ubuf__ T*)src2.GetPhyAddr();
+        AscendC::Simt::VF_CALL<ModIntSimt<T>>(AscendC::Simt::Dim3{1024}, dst_1, src1_1, src2_1, count);
+#endif
+    }
+};
+
 template <typename T>
 struct ModFloatWithCastOp {
     using OpInputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
@@ -178,6 +204,17 @@ struct ModIntOp {
     using Output = Bind<ModIntPostCompute<T>, OpInputX1, OpInputX2, DivRes>;
 
     using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, Output>;
+    using Outputs = Elems<OpCopyOut>;
+    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
+    using OpDag = DAGSch<Outputs, void, MemCfg>;
+};
+
+template <typename T>
+struct ModInt64Op {
+    using OpInputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
+    using OpInputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
+    using FmodRes = Bind<ModInt<T>, OpInputX1, OpInputX2>;
+    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, FmodRes>;
     using Outputs = Elems<OpCopyOut>;
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
     using OpDag = DAGSch<Outputs, void, MemCfg>;

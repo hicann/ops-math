@@ -32,7 +32,7 @@ namespace optiling {
 
 using namespace Ops::Base;
 constexpr static uint64_t MOD_COMMON_TILING_PRIORITY = 0;
-
+constexpr static uint64_t DCACHE_SIZE = 32 * 1024;
 ge::graphStatus ModTiling::GetShapeAttrsInfo()
 {
     return ge::GRAPH_SUCCESS;
@@ -105,10 +105,16 @@ ge::graphStatus ModTiling::DoOpTiling()
             context_, static_cast<uint32_t>(BROADCAST_KERNEL_TYPE::KERNEL_TYPE_NDDMA));
         ret = brcBaseTiling.DoTiling(extraBuf, maxLiveNodeCnt);
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0Dtype == ge::DT_INT64) {
+        BroadcastBaseTiling<ModOp::ModIntOp<int64_t>::OpDag> brcBaseTiling(
+            context_, static_cast<uint32_t>(BROADCAST_KERNEL_TYPE::KERNEL_TYPE_NDDMA));
+        extraBuf = DCACHE_SIZE; 
+        ret = brcBaseTiling.DoTiling(extraBuf, 0, true);
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
         OP_LOGE(
             context_->GetNodeName(),
-            "Input dtype is only support fp16, bf16, fp32, int8, uint8, int32, "
+            "Input dtype is only support fp16, bf16, fp32, int8, uint8, int32, int64, "
             "while got %s!",
             ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str());
         return ge::GRAPH_FAILED;
@@ -134,11 +140,24 @@ ge::graphStatus ModTiling::GetWorkspaceSize()
 
 ge::graphStatus ModTiling::PostTiling()
 {
+    context_->SetLocalMemorySize(static_cast<uint32_t>(ubSize_ - DCACHE_SIZE));
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus ModTiling::GetPlatformInfo()
-{
+ge::graphStatus ModTiling::GetPlatformInfo() {
+    auto platformInfo = context_->GetPlatformInfo();
+    if (platformInfo == nullptr) {
+        auto compileInfoPtr = reinterpret_cast<const BroadcastCompileInfo*>(context_->GetCompileInfo());
+        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_, "compile info is null"), return ge::GRAPH_FAILED);
+        ubSize_ = compileInfoPtr->ubSize;
+        OP_LOGD(context_->GetNodeName(), "Get ubSize form compileInfo is: %ld", ubSize_);
+    } else {
+        auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+        uint64_t ubSizePlatform;
+        ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatform);
+        ubSize_ = static_cast<int64_t>(ubSizePlatform);
+        OP_LOGD(context_->GetNodeName(), "Get ubSize form ascendcPlatform is: %ld", ubSize_);
+    }
     return ge::GRAPH_SUCCESS;
 }
 

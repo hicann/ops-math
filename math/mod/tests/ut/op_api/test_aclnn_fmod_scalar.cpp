@@ -71,3 +71,26 @@ TEST_F(l2_fmod_scalar_test, aclnnFmodScalar_20_int32_nd_7) {
   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
   EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
+
+TEST_F(l2_fmod_scalar_test, aclnnFmodScalar_20_int64_nd_7) {
+  // input tensor
+  const vector<int64_t>& selfShape = {20};
+  aclDataType selfDtype = ACL_INT64;
+  aclFormat selfFormat = ACL_FORMAT_ND;
+  // scalar
+  int64_t scalarValue = 7;
+  aclDataType scalarDtype = ACL_INT64;
+  // output
+  const vector<int64_t>& outShape = {20};
+  aclDataType outDtype = ACL_INT64;
+  aclFormat outFormat = ACL_FORMAT_ND;
+
+  auto selfTensorDesc = TensorDesc(selfShape, selfDtype, selfFormat).ValueRange(0, 100);
+  auto scalarDesc = ScalarDesc(scalarValue);
+  auto outTensorDesc = TensorDesc(outShape, outDtype, outFormat).Precision(0, 0);
+
+  auto ut = OP_API_UT(aclnnFmodScalar, INPUT(selfTensorDesc, scalarDesc), OUTPUT(outTensorDesc));
+  uint64_t workspaceSize = 0;
+  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+  EXPECT_EQ(aclRet, ACL_SUCCESS);
+}

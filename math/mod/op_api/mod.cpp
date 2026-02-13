@@ -31,13 +31,19 @@ static const std::initializer_list<op::DataType> ASCEND910B_AICORE_DTYPE_SUPPORT
     op::DataType::DT_FLOAT,   op::DataType::DT_INT32, op::DataType::DT_INT8,
     op::DataType::DT_FLOAT16, op::DataType::DT_UINT8, op::DataType::DT_BF16};
 
+static const std::initializer_list<op::DataType> ASCEND950_AICORE_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT,   op::DataType::DT_INT32, op::DataType::DT_INT8,
+    op::DataType::DT_FLOAT16, op::DataType::DT_UINT8, op::DataType::DT_BF16, op::DataType::DT_INT64};
+
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static bool IsAiCoreSupport(const aclTensor* self)
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-        IsRegBase()) {
+    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) {
         return CheckType(self->GetDataType(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
+    }
+    if (IsRegBase()) {
+        return CheckType(self->GetDataType(), ASCEND950_AICORE_DTYPE_SUPPORT_LIST);
     }
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
 }

@@ -100,7 +100,7 @@ aclnnStatus aclnnInplaceFmodTensor(
     <tr>
       <td>other</td>
       <td>输入</td>
-      <td>Host侧的aclScalar。</td>
+      <td>Device侧的aclTensor。</td>
       <td>无</td>
       <td>DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、INT64、INT8、UINT8</td>
       <td>ND</td>
@@ -263,7 +263,7 @@ aclnnStatus aclnnInplaceFmodTensor(
     <tr>
       <td>other</td>
       <td>输入</td>
-      <td>Host侧的aclScalar。</td>
+      <td>Device侧的aclTensor。</td>
       <td>支持ND</td>
       <td>DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、INT64、INT8、UINT8</td>
       <td>ND</td>

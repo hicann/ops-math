@@ -94,3 +94,49 @@ TEST_F(l2_inplace_fmod_tensor_test, aclnnInplaceFmodTensor_20_int32_nd_3_int32_n
   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
   EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
+
+TEST_F(l2_inplace_fmod_tensor_test, aclnnInplaceFmodTensor_20_int64_nd_20_int64_nd) {
+  // left input
+  const vector<int64_t>& selfShape = {20};
+  aclDataType selfDtype = ACL_INT64;
+  aclFormat selfFormat = ACL_FORMAT_ND;
+  // right input
+  const vector<int64_t>& otherShape = {20};
+  aclDataType otherDtype = ACL_INT64;
+  aclFormat otherFormat = ACL_FORMAT_ND;
+  // output
+  const vector<int64_t>& outShape = {20};
+  aclDataType outDtype = ACL_INT64;
+  aclFormat outFormat = ACL_FORMAT_ND;
+
+  auto selfTensorDesc = TensorDesc(selfShape, selfDtype, selfFormat).ValueRange(0, 100);
+  auto otherTensorDesc = TensorDesc(otherShape, otherDtype, otherFormat).ValueRange(1, 10);
+
+  auto ut = OP_API_UT(aclnnInplaceFmodTensor, INPUT(selfTensorDesc, otherTensorDesc), OUTPUT());
+  uint64_t workspaceSize = 0;
+  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+  EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(l2_inplace_fmod_tensor_test, aclnnInplaceFmodTensor_20_float_nd_20_int64_nd) {
+  // left input
+  const vector<int64_t>& selfShape = {20};
+  aclDataType selfDtype = ACL_FLOAT;
+  aclFormat selfFormat = ACL_FORMAT_ND;
+  // right input
+  const vector<int64_t>& otherShape = {20};
+  aclDataType otherDtype = ACL_INT64;
+  aclFormat otherFormat = ACL_FORMAT_ND;
+  // output
+  const vector<int64_t>& outShape = {20};
+  aclDataType outDtype = ACL_FLOAT;
+  aclFormat outFormat = ACL_FORMAT_ND;
+
+  auto selfTensorDesc = TensorDesc(selfShape, selfDtype, selfFormat).ValueRange(0, 100);
+  auto otherTensorDesc = TensorDesc(otherShape, otherDtype, otherFormat).ValueRange(1, 10);
+
+  auto ut = OP_API_UT(aclnnInplaceFmodTensor, INPUT(selfTensorDesc, otherTensorDesc), OUTPUT());
+  uint64_t workspaceSize = 0;
+  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+  EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
