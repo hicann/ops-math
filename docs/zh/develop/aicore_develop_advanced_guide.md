@@ -4,8 +4,12 @@
 
 > 本文档是《AI Core算子开发指南》的详细内容补充，提供算子开发中各模块的深入说明和进阶用法。建议先阅读[主文档](./aicore_develop_guide.md)了解整体开发流程。
 
+
 ## 目录
 
+- [核心概念](#核心概念)
+- [算子开发流程](#算子开发流程)
+- [文件结构与依赖关系](#文件结构与依赖关系)
 - [算子定义](#算子定义)
   - [算子输入/输出/属性定义](#算子输入输出属性定义)
   - [AI处理器上相关实现信息](#ai处理器上相关实现信息)
@@ -21,8 +25,250 @@
   - [核函数内推导输入数据类型和格式](#核函数内推导输入数据类型和格式)
 - [图模式适配](#图模式适配)
 - [aclnn适配](#aclnn适配)
-- [附录](#附录)
-  - [代际隔离说明](#代际隔离说明)
+- [代际隔离](#代际隔离)
+- [常见问题](#常见问题)
+- [约束条件汇总](#约束条件汇总)
+- [API快速参考](#api快速参考)
+
+---
+
+## 核心概念
+
+### 概念关系图
+
+```mermaid
+graph TD
+    subgraph "算子开发核心概念"
+        A["算子原型<br/>OpDef<br/><sub>op_host/{op}_def.cpp</sub>"] --> B["Tiling实现<br/><sub>op_host/arch*/{op}_tiling.cpp</sub>"]
+        A --> C["Kernel实现<br/><sub>op_kernel/{op}.cpp</sub>"]
+        A --> D["图模式适配<br/><sub>op_graph/{op}_proto.h</sub>"]
+        A --> E["aclnn接口<br/><sub>op_api/aclnn_{op}.cpp</sub>"]
+
+        B --> B2[BlockDim]
+        B --> B4[Workspace]
+
+        C --> C1["TilingData<br/><sub>op_kernel/{op}_tiling.h</sub>"]
+        C --> C2[TilingKey]
+        C --> C3[核函数]
+        C --> C4[Local Memory]
+        C --> C5[Global Memory]
+        
+    end
+
+    subgraph "执行位置"
+        HOST[Host CPU<br/>Tiling计算]
+        DEVICE[AI Core<br/>Kernel执行]
+    end
+
+    B -.->|运行于| HOST
+    C -.->|运行于| DEVICE
+
+    %% Tiling实现设置TilingData和TilingKey
+    B -.->|生成| C1
+    B -.->|生成| C2
+```
+
+### 关键术语表
+
+| 术语 | 英文 | 说明 | 交付件文件 | 相关章节 |
+|------|------|------|------------|----------|
+| **算子原型** | OpDef | 算子输入输出属性定义 | `op_host/{op}_def.cpp` | [算子定义](#算子定义) |
+| **Tiling** | Tiling | 数据切分、分块计算的过程 | `op_host/arch*/{op}_tiling.cpp` | [Tiling实现](#tiling实现) |
+| **TilingData** | Tiling Data | 切分算法相关参数的数据结构 | `op_kernel/{op}_tiling.h` | [Tiling结构体](#使用标准c语法定义tiling结构体) |
+| **BlockDim** | Block Dimension | 核函数执行的核数 | `op_host/arch*/{op}_tiling.cpp` | [基本流程](#基本流程) |
+| **TilingKey** | Tiling Key | 区分不同kernel实现分支的标识 | `op_host/arch*/{op}_tiling.cpp` | [Tiling模板编程](#tiling模板编程) |
+| **Workspace** | Workspace | 设备侧Global Memory上的工作内存 | `op_host/arch*/{op}_tiling.cpp` | [基本流程](#基本流程) |
+| **核函数** | Kernel Function | 在AI Core上执行的函数 | `op_kernel/{op}.cpp` | [核函数定义](#核函数定义) |
+| **IR定义** | IR Definition | 图模式算子原型定义 | `op_graph/{op}_proto.h` | [图模式适配](#图模式适配) |
+| **aclnn** | ACL Neural Network | 单算子调用接口 | `op_api/aclnn_{op}.cpp` | [aclnn适配](#aclnn适配) |
+| **代际隔离** | Generation Isolation | 不同芯片架构的代码隔离 | `arch32/` `arch35/` | [代际隔离](#代际隔离) |
+
+---
+
+## 算子开发流程
+
+### 整体开发流程图
+
+```mermaid
+flowchart TB
+    subgraph "1. 算子设计"
+        A1[分析算子功能需求]
+        A2[确定输入输出规格]
+        A3[设计数据类型支持]
+    end
+
+    subgraph "2. 算子定义"
+        B1[创建算子类继承OpDef]
+        B2[定义输入输出属性]
+        B3[注册Tiling/Shape推导函数]
+        B4[配置AI处理器型号]
+    end
+
+    subgraph "3. Tiling实现"
+        C1[定义TilingData结构体]
+        C2[实现TilingFunc函数]
+        C3[计算数据切分参数]
+        C4[设置BlockDim/Workspace]
+    end
+
+    subgraph "4. Kernel实现"
+        D1[定义核函数入口]
+        D2[获取Tiling参数]
+        D3[实现计算逻辑]
+    end
+
+    subgraph "5. 接口适配"
+        E1[图模式适配<br/>op_graph/]
+        E2[aclnn接口生成<br/>op_api/]
+    end
+
+    subgraph "6. 测试验证"
+        F1[单元测试<br/>tests/ut/]
+        F2[系统测试<br/>tests/st/]
+    end
+
+    A1 --> A2 --> A3
+    A3 --> B1
+    B1 --> B2 --> B3 --> B4
+    B4 --> C1
+    C1 --> C2 --> C3 --> C4
+    C4 --> D1
+    D1 --> D2 --> D3
+    D3 --> E1
+    D3 --> E2
+    E1 --> F1
+    E2 --> F1
+    F1 --> F2
+```
+
+### 开发步骤详解
+
+| 步骤 | 主要文件 | 关键API | 输出产物 |
+|------|----------|---------|----------|
+| 1. 算子设计 | - | - | 算子规格文档 |
+| 2. 算子定义 | `op_host/{op}_def.cpp` | `OpDef`, `Input()`, `Output()`, `OP_ADD()` | 算子原型注册 |
+| 3. Tiling实现 | `op_host/{op}_tiling.cpp` | `TilingFunc`, `GetTilingData<>()`, `SetBlockDim()` | Tiling参数 |
+| 4. Kernel实现 | `op_kernel/{op}.cpp` | `__global__ __aicore__`, `GET_TILING_DATA` | 核函数二进制 |
+| 5. 图模式适配 | `op_graph/{op}_proto.h` | `REG_OP()`, `INPUT()`, `OUTPUT()` | IR定义 |
+| 6. aclnn适配 | `CMakeLists.txt` | `ACLNNTYPE aclnn` | API动态库 |
+
+---
+
+## 文件结构与依赖关系
+
+### 算子工程目录结构
+
+```
+{op_name}/                      # 算子根目录（如 add/）
+├── CMakeLists.txt              # 构建配置（必需）
+├── README.md                   # 算子说明
+│
+├── op_host/                    # Host侧实现（必需）
+│   ├── {op}_def.cpp           # 算子定义（必需）
+│   ├── {op}_infershape.cpp    # Shape推导
+│   ├── arch32/                 # Ascend910B架构
+│   │   ├── {op}_tiling.cpp    # Tiling实现
+│   │   └── {op}_tiling.h
+│   ├── arch35/                 # Ascend950架构
+│   │   ├── {op}_tiling.cpp
+│   │   └── {op}_tiling.h
+│   └── config/                 # 芯片配置
+│       └── ascend950/
+│
+├── op_kernel/                  # Kernel侧实现（必需）
+│   ├── {op}.cpp               # Kernel入口（arch32）
+│   ├── {op}_apt.cpp           # Kernel入口（arch35）
+│   ├── arch32/                 # Ascend910B实现
+│   │   ├── {op}_impl.h
+│   │   └── {op}_struct.h
+│   └── arch35/                 # Ascend950实现
+│       ├── {op}_apt_impl.h
+│       └── {op}_struct.h
+│
+├── op_graph/                   # 图模式适配
+│   ├── {op}_proto.h           # 算子原型
+│   └── {op}_graph_infer.cpp   # 类型推导
+│
+├── op_api/                     # API实现
+│   ├── aclnn_{op}.cpp         # aclnn实现
+│   ├── aclnn_{op}.h           # aclnn头文件
+│   └── {op}.cpp               # 算子实现
+│
+├── docs/                       # 算子文档
+│   └── aclnn{Op}.md
+│
+├── examples/                   # 调用示例
+│   └── test_aclnn_{op}.cpp
+│
+└── tests/                      # 测试代码
+    ├── ut/                     # 单元测试
+    └── st/                     # 系统测试
+```
+
+### 文件依赖关系图
+
+```mermaid
+graph TB
+    subgraph "Host侧文件"
+        DEF["op_host/{op}_def.cpp<br/>算子定义"]
+        TILING_H["op_host/{op}_tiling.h<br/>Tiling结构体"]
+        TILING_CPP["op_host/{op}_tiling.cpp<br/>Tiling实现"]
+        INFER["op_host/{op}_infershape.cpp<br/>Shape推导"]
+    end
+
+    subgraph "Kernel侧文件"
+        KERNEL["op_kernel/{op}.cpp<br/>核函数入口"]
+        IMPL["op_kernel/{op}_impl.h<br/>实现类"]
+        STRUCT["op_kernel/{op}_struct.h<br/>数据结构"]
+        TILING_KERNEL["op_kernel/{op}_tiling.h<br/>Tiling结构体"]
+    end
+
+    subgraph "公共依赖"
+        OP_DEF["register/op_def_registry.h"]
+        TILING_BASE["op_host/tiling_base.h"]
+        KERNEL_OP["kernel_operator.h"]
+    end
+
+    subgraph "接口层"
+        GRAPH["op_graph/{op}_proto.h"]
+        API["op_api/aclnn_{op}.cpp"]
+    end
+
+    DEF --> OP_DEF
+    DEF --> TILING_CPP
+    TILING_CPP --> TILING_H
+    TILING_CPP --> TILING_BASE
+    TILING_H -.->|共享| TILING_KERNEL
+
+    KERNEL --> TILING_KERNEL
+    KERNEL --> IMPL
+    KERNEL --> KERNEL_OP
+    IMPL --> STRUCT
+
+    DEF --> GRAPH
+    DEF --> API
+```
+
+### Host与Kernel数据交互
+
+```mermaid
+sequenceDiagram
+    participant App as 应用程序
+    participant Host as Host侧
+    participant Tiling as TilingFunc
+    participant Kernel as Kernel侧
+
+    App->>Host: 调用算子
+    Host->>Tiling: 执行TilingFunc(context)
+    Tiling->>Tiling: 获取输入Shape/DataType
+    Tiling->>Tiling: 计算切分参数
+    Tiling->>Host: 设置TilingData/BlockDim
+    Host->>Kernel: 启动核函数
+    Kernel->>Kernel: GET_TILING_DATA获取参数
+    Kernel->>Kernel: 执行计算
+    Kernel->>Host: 返回结果
+    Host->>App: 返回输出
+```
 
 ---
 
@@ -50,7 +296,7 @@ public:
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
         // 如下的shape/datatype推导函数仅在算子入图场景使用
         this->SetInferShape(ge::InferShape);
-        this->SetInferDataType(ge::InferDataType);  
+        this->SetInferDataType(ge::InferDataType);
         this->AICore()
             .SetTiling(optiling::TilingFunc);
         // 请替换为实际的昇腾AI处理器型号
@@ -70,22 +316,64 @@ OP_ADD(AddCustom);
 >   - 算子类型需要采用**大驼峰**的命名方式，即采用大写字符区分不同的语义。
 >   - 算子实现文件名称、核函数名称需相同，均为算子类型转换为**下划线**命名方式后的值。下文描述了通过算子类型转换成算子实现文件名称和核函数名称的过程：
 >     - 首字符的大写字符转换为小写字符。例如：Abc -> abc。
->     - 大写字符的前一个字符为小写字符或数字，则在大写字符前插一个下划线“_”，并将该字符转换为小写字符。例如：AbcDef -> abc_def。
->     - 大写字符前一个字符为大写字符且后一个字符是小写字符，则在大写字符前插一个下划线“_”，并将该字符转换为小写字符。例如：AbcAAc -> abc_a_ac。
+>     - 大写字符的前一个字符为小写字符或数字，则在大写字符前插一个下划线"_"，并将该字符转换为小写字符。例如：AbcDef -> abc_def。
+>     - 大写字符前一个字符为大写字符且后一个字符是小写字符，则在大写字符前插一个下划线"_"，并将该字符转换为小写字符。例如：AbcAAc -> abc_a_ac。
 >     - 其他大写字符转换为小写字符，小写字符保持不变。
+
+### 算子命名规则示例
+
+```
+算子类型（大驼峰）  →  实现文件名/核函数名（下划线）
+─────────────────────────────────────────────────
+AddCustom           →  add_custom
+BatchNorm           →  batch_norm
+Conv2DBackprop      →  conv2d_backprop
+ReduceMax           →  reduce_max
+StatelessRandom    →  stateless_random
+```
 
 ### 算子输入/输出/属性定义
 
 算子原型定义描述了算子的输入输出、属性等信息。输入输出支持的datatype、format格式的数量需要一致，并保持一一对应的关系。
 
+> **重要说明：算子原型注册需要排列组合，IR定义只需枚举列举**
+>
+> 当算子有多个输入输出时，**算子原型注册**需要明确标明输入输出之间的数据类型对应关系（排列组合），而**IR定义**只需要各自列举支持的数据类型即可。
+>
+> 例如：某算子输入x支持float32/float16，输出y支持float32/float16，但对应关系为：
+> - float32 → float32
+> - float16 → float16
+> - float16 → float32
+>
+> | 定义位置 | 写法 | 说明 |
+> |----------|------|------|
+> | **算子原型注册** | 需要按**对应关系排列组合**列出 | x的第1个类型对应y的第1个类型，以此类推 |
+> | **IR定义** | 只需**枚举**各输入输出支持的类型 | 无需标明输入输出的对应关系 |
+>
+> ```c++
+> // 算子原型注册 (op_host/{op}_def.cpp) - 需要排列组合
+> this->Input("x")
+>     .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_FLOAT16})  // 第1,2,3个分别对应输出的第1,2,3个
+>     .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
+> this->Output("y")
+>     .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_FLOAT})    // float32->float32, float16->float16, float16->float32
+>     .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
+>
+> // IR定义 (op_graph/{op}_proto.h) - 只需枚举
+> .INPUT(x, TensorType({DT_FLOAT, DT_FLOAT16}))
+> .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16}))
+> ```
+
 如下的代码片段呈现了Add算子输入x的描述信息。
 
-        this->Input("x")
-            .ParamType(REQUIRED)
-            .DataType({ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32})
-            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
+```c++
+this->Input("x")
+    .ParamType(REQUIRED)
+    .DataType({ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32})
+    .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
+```
 
-表1 输入输出参数说明
+**表1 输入输出参数说明**
 
 | 原型定义     | 参数      | 具体描述                                                     |
 | ------------ | --------- | ------------------------------------------------------------ |
@@ -141,7 +429,7 @@ public:
 
 ```
 
-- 通过Follow接口指定当前输入/输出的datatype/format/shape信息与之前定义过的某个输入一致。示例如下：输出“y1”Follow输入“x1”场景，此时“y1”的datatype、format以及shape都将会和“x1”保持一致。使用Follow接口指定shape一致时通常比shape推导函数逻辑更加简单，能用Follow表达的逻辑，建议使用Follow接口，则无需再编写注册InferShape函数。
+- 通过Follow接口指定当前输入/输出的datatype/format/shape信息与之前定义过的某个输入一致。示例如下：输出"y1"Follow输入"x1"场景，此时"y1"的datatype、format以及shape都将会和"x1"保持一致。使用Follow接口指定shape一致时通常比shape推导函数逻辑更加简单，能用Follow表达的逻辑，建议使用Follow接口，则无需再编写注册InferShape函数。
 
 ```c++
 this->Input("x1")
@@ -161,15 +449,15 @@ this->Output("y1")
 原型定义中还包括算子属性信息，如下的代码片段呈现了ReduceMax算子的属性reduceDim和isKeepDim的描述信息。
 
 ```c++
-        this->Attr("reduceDim")
-            .AttrType(REQUIRED)
-            .Int();
-        this->Attr("isKeepDim")
-            .AttrType(OPTIONAL)
-            .Int(1);
+this->Attr("reduceDim")
+    .AttrType(REQUIRED)
+    .Int();
+this->Attr("isKeepDim")
+    .AttrType(OPTIONAL)
+    .Int(1);
 ```
 
-具体参数说明如下：
+**具体参数说明如下：**
 
 | 原型定义 | 注册方式          | 具体描述                                                     |
 | -------- | ----------------- | ------------------------------------------------------------ |
@@ -188,7 +476,7 @@ void AddConfig(const char *soc, OpAICoreConfig &aicore_config);
 通过该接口注册AI处理器型号的样例如下，ascendxxx填写规则请参考算子工程目录下编译配置项文件CMakePresets.json中的ASCEND_COMPUTE_UNIT字段。
 
 ```c++
-        this->AICore().AddConfig("ascendxxx");
+this->AICore().AddConfig("ascendxxx");
 ```
 
 其他AI Core配置信息的配置方式请参考OpAICoreConfig。
@@ -198,18 +486,18 @@ void AddConfig(const char *soc, OpAICoreConfig &aicore_config);
 通过SetInferShape、SetInferDataType、SetTiling接口来注册对应的Tiling实现和Shape推导等函数，样例如下。注册的Tiling实现等函数由框架侧进行调用，并在调用时传入对应的Context上下文，供开发者使用。Tiling函数的实现方法请参考Host侧Tiling实现，入图相关的Shape推导等函数实现请参考算子入图（GE图）开发。
 
 ```c++
-        // 如下的shape/datatype推导函数仅在算子入图场景使用       
-        this->SetInferShape(ge::InferShape);
-        this->SetInferDataType(ge::InferDataType);
-        this->AICore()
-            .SetTiling(optiling::TilingFunc);
+// 如下的shape/datatype推导函数仅在算子入图场景使用
+this->SetInferShape(ge::InferShape);
+this->SetInferDataType(ge::InferDataType);
+this->AICore()
+    .SetTiling(optiling::TilingFunc);
 ```
 
 ### 多硬件平台注册差异化的算子原型
 
 算子类继承基类OpDef，使用Input、Output、Attr等注册算子原型信息，硬件平台支持相同的算子原型的情况下，直接通过AICore().AddConfig添加支持的AI处理器型号即可；不同的硬件形态算子原型定义不同的情况，可以通过新增OpAICoreConfig的方式，针对不同的AI处理器型号注册差异化的算子原型。
 
-差异化的算子原型生效规则如下：
+**差异化算子原型生效规则：**
 
 - 对于算子类的输入输出原型信息，OpAICoreConfig未配置的会继承OpDef定义的原型，比如算子类中定义了输出y，OpAICoreConfig中没有定义输出y，OpAICoreConfig会继承y的原型定义；
 - 对于算子类和新增OpAICoreConfig中定义的算子原型相同的情况，新增OpAICoreConfig中定义的算子原型信息会覆盖OpDef定义的原型信息，比如算子类中定义了输入x支持DT_FLOAT16数据类型，新增OpAICoreConfig中也定义了输入x，但是支持DT_FLOAT16、DT_BF16数据类型，则以OpAICoreConfig新增定义为准。
@@ -285,6 +573,8 @@ public:
 };
 ```
 
+---
+
 ## Tiling实现
 
 ### 基本流程
@@ -307,88 +597,85 @@ flowchart TD
     B --> C
 ```
 
-如上图所示，Tiling实现即为根据算子shape等信息来确定切分算法相关参数的过程，这里的算子shape等信息可以理解为是**Tiling实现的****输入**，切分算法相关参数可以理解为是**Tiling实现的输出**。输入和输出都通过Tiling函数的参数（TilingContext* context上下文结构）来承载。也就是说，开发者可以从上下文结构中获取算子的输入、输出以及属性信息，也就是**Tiling实现的****输入**，经过Tiling计算后，获取到TilingData数据结构（切分算法相关参数）、blockDim变量、用于选择不同的kernel实现分支的TilingKey、算子workspace的大小，也就是**Tiling实现的输出**，并将这些输出设置到上下文结构中。
+如上图所示，Tiling实现即为根据算子shape等信息来确定切分算法相关参数的过程，这里的算子shape等信息可以理解为是**Tiling实现的输入**，切分算法相关参数可以理解为是**Tiling实现的输出**。输入和输出都通过Tiling函数的参数（TilingContext* context上下文结构）来承载。也就是说，开发者可以从上下文结构中获取算子的输入、输出以及属性信息，也就是**Tiling实现的输入**，经过Tiling计算后，获取到TilingData数据结构（切分算法相关参数）、blockDim变量、用于选择不同的kernel实现分支的TilingKey、算子workspace的大小，也就是**Tiling实现的输出**，并将这些输出设置到上下文结构中。
 
-TilingData、blockDim、TilingKey、workspace这些概念的具体解释如下：
+### Tiling输出参数详解
 
-- **TilingData：**切分算法相关参数，比如每次搬运的块大小，以及总共循环多少次，通过结构体存储，由开发者自行设计。
+| 参数 | 类型 | 说明 | 设置方法 |
+|------|------|------|----------|
+| **TilingData** | struct | 切分算法相关参数，如每次搬运的块大小、循环次数 | `context->GetTilingData<T>()` |
+| **blockDim** | uint32_t | 核函数执行的核数，范围[1,65535] | `context->SetBlockDim(n)` |
+| **TilingKey** | uint64_t | 区分不同kernel实现分支的标识 | `context->SetTilingKey(key)` |
+| **WorkspaceSize** | size_t | Global Memory上的工作内存大小 | `context->GetWorkspaceSizes(n)` |
 
-- **blockDim：**规定了核函数将会在几个核上执行。例如，需要计算8M的数据，每个核上计算1M的数据，blockDim设置为8，但是为了充分利用硬件资源，一般将blockDim设置为硬件平台的核数，根据核数进行数据切分。
+### BlockDim设置规则
 
-  > 说明
-  >
-  > blockDim是逻辑核的概念，取值范围为[1,65535]。为了充分利用硬件资源，一般设置为物理核的核数或其倍数。
-  >
-  > - 对于耦合模式和分离模式，blockDim在运行时的意义和设置规则有一些区别，具体说明如下：
-  >   - 耦合模式：由于其Vector、Cube单元是集成在一起的，blockDim用于设置启动多个AI Core核实例执行，不区分Vector、Cube。AI Core的核数可以通过`GetCoreNumAiv`或者`GetCoreNumAic`获取。
-  >   - 分离模式
-  >     - 针对仅包含Vector计算的算子，blockDim用于设置启动多少个Vector（AIV）实例执行，比如某款AI处理器上有40个Vector核，建议设置为40。
-  >     - 针对仅包含Cube计算的算子，blockDim用于设置启动多少个Cube（AIC）实例执行，比如某款AI处理器上有20个Cube核，建议设置为20。
-  >     - 针对Vector/Cube融合计算的算子，启动时，按照AIV和AIC组合启动，blockDim用于设置启动多少个组合执行，比如某款AI处理器上有40个Vector核和20个Cube核，一个组合是2个Vector核和1个Cube核，建议设置为20，此时会启动20个组合，即40个Vector核和20个Cube核。**注意：该场景下，设置的blockDim逻辑核的核数不能超过物理核（2个Vector核和1个Cube核组合为1个物理核）的核数。**
-  >     - AIC/AIV的核数分别通过`GetCoreNumAi`和`GetCoreNumAiv`接口获取。
-  > - 如果开发者使用了Device资源限制特性，那么算子设置的blockDim不应超过`PlatformAscendC`提供核数的API（GetCoreNum/GetCoreNumAic/GetCoreNumAiv等）返回的核数。例如，使用`aclrtSetStreamResLimit`设置Stream级别的Vector核数为8，那么GetCoreNumAiv接口返回值为8，针对Vector算子设置的blockDim不应超过8，否则会抢占其他Stream的资源，导致资源限制失效。
+> blockDim是逻辑核的概念，取值范围为[1,65535]。为了充分利用硬件资源，一般设置为物理核的核数或其倍数。
 
-- **TilingKey（可选）**：TilingKey是一个算子内为了区分不同的实现而将kernel代码进行区分的方法，该方法类似于C++的Template模板机制，可减少不必要的icache miss以及scalar耗时，有助于优化单次调用kernel的性能。不同的kernel实现分支可以通过TilingKey来标识，host侧设置TilingKey后，可以选择对应的分支。例如，一个算子在不同的shape下，有不同的算法逻辑，kernel侧可以通过TilingKey来选择不同的算法逻辑，在host侧Tiling算法也有差异，host/kernel侧通过相同的TilingKey进行关联。
+**不同模式的blockDim设置：**
 
-  假如有如下kernel代码：
+| 模式 | 说明 | 建议值 |
+|------|------|--------|
+| **耦合模式** | Vector、Cube单元集成在一起，不区分类型 | `GetCoreNumAiv()` 或 `GetCoreNumAic()` |
+| **分离模式-Vector算子** | 仅Vector计算 | Vector核数，如40 |
+| **分离模式-Cube算子** | 仅Cube计算 | Cube核数，如20 |
+| **分离模式-融合算子** | Vector/Cube融合，按组合启动 | 组合数（不超过物理组合核数） |
 
-  ```c++
-  if (condition) {
+### TilingKey使用场景
+
+TilingKey用于区分不同的kernel实现分支，减少icache miss和scalar耗时：
+
+```mermaid
+flowchart LR
+    subgraph "Host侧"
+        A[判断条件] --> B{condition?}
+        B -->|true| C[SetTilingKey 1]
+        B -->|false| D[SetTilingKey 2]
+    end
+
+    subgraph "Kernel侧"
+        E[TILING_KEY_IS 1] --> F[ProcessA]
+        G[TILING_KEY_IS 2] --> H[ProcessB]
+    end
+
+    C --> E
+    D --> G
+```
+
+**Host侧示例：**
+```c++
+static ge::graphStatus TilingFunc(gert::TilingContext* context)
+{
+    // some code
+    if (condition) {
+        context->SetTilingKey(1);
+    } else {
+        context->SetTilingKey(2);
+    }
+    return ge::GRAPH_SUCCESS;
+}
+```
+
+**Kernel侧示例：**
+```c++
+if (TILING_KEY_IS(1)) {
     ProcessA();
-  } else {
+} else if (TILING_KEY_IS(2)) {
     ProcessB();
-  }
-  ```
+}
+```
 
-  如果函数ProcessA、ProcessB两个函数是个非常大的函数，那么上述代码在编译后会变得更大，而每次kernel运行只会选择1个分支，条件的判断和跳转在代码大到一定程度（16-32K，不同芯片存在差异）后会出现icache miss。通过TilingKey可以对这种情况进行优化，给2个kernel的处理函数设置不同的TilingKey 1和2：
+### Workspace设置
 
-  ```c++
-  if (TILING_KEY_IS(1)) {
-    ProcessA();
-  } else if (TILING_KEY_IS(2)) {
-    ProcessB();
-  }
-  ```
+Workspace是设备侧Global Memory上的一块内存，分为两部分：
 
-  这样device kernel编译时会自动识别到2个TilingKey并编译2个kernel入口函数，将条件判断进行常量折叠。同时需要和host tiling函数配合，判断走ProcessA的场景设置TilingKey为1，走ProcessB的场景设置TilingKey为2：
+1. **Ascend C API预留内存**：通过`GetLibApiWorkSpaceSize`获取
+2. **算子实现使用内存**：根据算子需求自行分配
 
-  ```c++
-  static ge::graphStatus TilingFunc(gert::TilingContext* context)
-  {
-      // some code
-      if (condition) {
-          context->SetTilingKey(1);
-      } else {
-          context->SetTilingKey(2);
-      }
-      return ge::GRAPH_SUCCESS;
-  }
-  ```
-
-  > 说明
-  >
-  > 编译时，可以通过设置`--tiling_key`编译选项指定TilingKey，编译时只编译指定TilingKey相关的kernel代码，用于加速编译过程。
-
-- **WorkspaceSize**：workspace是设备侧Global Memory上的一块内存。在Tiling函数中可以设置workspace的大小。设置后：单算子API执行场景，可以通过单算子API调用第一段接口获取workspace的大小，然后由开发者申请对应大小的Global Memory；入图场景，框架会根据设置的大小自动申请对应大小的Global Memory。申请workspace后，在算子Kernel实现时，可以使用这块workspace内存。
-
-  workspace内存分为两部分：Ascend C API需要的workspace内存和算子实现使用到的workspace内存（按需）。
-
-  - Ascend C API需要预留workspace内存
-
-    API在计算过程需要一些workspace内存作为缓存，因此算子Tiling函数需要为API预留workspace内存，预留内存大小通过`GetLibApiWorkSpaceSize`接口获取。
-
-    
-
-  - 算子实现使用到的workspace内存（按需）
-
-    算子内部需要通过额外的device内存进行数据交换或者缓存的时候才需要分配，根据算子计算的空间自行分配。
-
-  整体的workspace内存就是上述两部分之和，在Tiling函数中设置方法如下：
-
-  ```c++
-  auto workspaceSizes = context->GetWorkspaceSizes(1); // 只使用1块workspace
-  workspaceSizes[0] = sysWorkspaceSize + usrWorkspaceSize;
-  ```
+```c++
+auto workspaceSizes = context->GetWorkspaceSizes(1); // 只使用1块workspace
+workspaceSizes[0] = sysWorkspaceSize + usrWorkspaceSize;
+```
 
 ### 使用标准C++语法定义Tiling结构体
 
@@ -407,7 +694,7 @@ TilingData、blockDim、TilingKey、workspace这些概念的具体解释如下�
   #define MATMUL_CUSTOM_TILING_H
   #include <cstdint>
   #include "kernel_tiling/kernel_tiling.h"    // for TCubeTiling
-  
+
   struct MatmulCustomTilingData {
       uint64_t localMemSize;
       AscendC::tiling::TCubeTiling cubeTilingData;
@@ -423,7 +710,7 @@ TilingData、blockDim、TilingKey、workspace这些概念的具体解释如下�
   ```c++
   #include "../op_kernel/matmul_custom_tiling.h"  // 包含Tiling结构体定义头文件
   ...
-  
+
   namespace optiling {
   static ge::graphStatus TilingFunc(gert::TilingContext *context)
   {
@@ -453,7 +740,7 @@ TilingData、blockDim、TilingKey、workspace这些概念的具体解释如下�
   ```c++
   #include "kernel_operator.h"
   #include "matmul_custom_tiling.h"  // 包含Tiling结构体定义头文件
-  
+
   extern "C" __global__ __aicore__ void matmul_custom(GM_ADDR a, GM_ADDR b, GM_ADDR bias, GM_ADDR c, GM_ADDR workspace, GM_ADDR tiling)
   {
       REGISTER_TILING_DEFAULT(MatmulCustomTilingData);
@@ -466,461 +753,132 @@ TilingData、blockDim、TilingKey、workspace这些概念的具体解释如下�
   }
   ```
 
-### 使用标准C++语法定义Tiling结构体的优势
+### Tiling结构体定义方式对比
 
-相比较使用BEGIN_TILING_DATA_DEF等宏进行定义的方式，该方式不仅更符合C++开发者的开发习惯，并且提供了强大的灵活性。
+| 特性 | 标准C++语法 | 宏定义方式(BEGIN_TILING_DATA_DEF) |
+|------|-------------|-----------------------------------|
+| 支持bool类型 | ✅ | ❌ |
+| 支持数组/列表初始化 | ✅ | ❌ |
+| 同名不同结构体 | ✅ 支持 | ❌ 冲突 |
+| 自定义赋值函数 | ✅ 直接访问成员 | ❌ 仅set/get方法 |
+| C++开发者习惯 | ✅ 符合 | 需要学习 |
 
-- 支持bool类型，支持数组、结构体数组及列表初始化。
+**标准C++语法优势示例：**
 
-  ```c++
-  class A {
-  public:
-      bool xxx;
-      uint32_t xxx[2][128] = {0};
-  };
-  
-  class B {
-  public:
-      bool xxx = false;
-      uint8_t xxx[2][2]{0};
-      A[10];
-  };
-  ```
+```c++
+// 支持bool、数组、列表初始化
+class TilingData {
+public:
+    bool enableFlag = false;
+    uint32_t shapeInfo[2][128] = {0};
+    uint8_t padding[2][2]{0};
+};
 
-- 不同算子可以支持定义同名但结构不同的Tiling结构体，通过算子引用对应的头文件即可实现区分。这种方式允许每个算子使用符合自身需求的Tiling结构定义，而不会与其他算子产生冲突。
+// 不同算子可以定义同名不同结构的TilingData
+// 算子A
+class TilingData {
+public:
+    uint32_t length;
+};
 
-  相比之下，使用BEGIN_TILING_DATA_DEF等宏方式定义同名但结构不同的Tiling结构体时，由于这些结构体会被注册到全局的Tiling结构体管理变量中，可能导致后续通过结构体名称访问时，无法准确获取当前算子实际使用的Tiling结构体，从而引发未定义行为。
-
-  算子A：
-
-  ```c++
-  class TilingData {
-  public:
-      uint32_t length;
-  };
-  ```
-
-  算子B：
-
-  ```c++
-  class TilingData {
-  public:
-      uint32_t length;
-      uint16_t coreNum;
-  };
-  ```
-
-- 支持自定义Tiling赋值，用户可以通过访问Tiling结构体成员变量直接赋值，或自定义Tiling赋值函数（宏定义方式下，用户仅可通过框架生成的set_xx/get_xx方法赋值/访问）
-
-  Tiling结构体定义：
-
-  ```c++
-  class TilingData {
-  public:
-      uint32_t xxx1;
-      uint32_t xxx2;
-      uint8_t xxx3;
-      bool xxx4;
-  };
-  ```
-
-  Host侧Tiling函数：
-
-  ```c++
-  #include "../op_kernel/xxx_custom_tiling.h"  // 包含Tiling结构体定义头文件
-  ...
-  
-  namespace optiling {
-  static void ComputeTiling(TilingData* tiling, ...)
-  {
-      // 计算Tiling逻辑
-      ...
-      tiling->xxx1 = xxx;
-      tiling->xxx2 = xxx;
-      tiling->xxx3 = xxx;
-      tiling->bool = xxx;
-  }
-  static ge::graphStatus TilingFunc(gert::TilingContext *context)
-  {    
-      ...
-      TilingData *tiling = context->GetTilingData<TilingData>();
-      ...
-      ComputeTiling(tiling, ...)
-      ...
-  
-      return ge::GRAPH_SUCCESS;
-  }
-  } // namespace optiling
-  ```
+// 算子B
+class TilingData {
+public:
+    uint32_t length;
+    uint16_t coreNum;
+};
+```
 
 ### 使用约束
 
 使用标准C++语法定义Tiling结构体时存在如下约束限制：
 
-- Tiling结构体内不支持定义成员函数，因为成员函数存在Device侧和Host侧的差异（Device侧的函数需要__aicore__修饰符），而Tiling结构体Device侧和Host侧共用，所以会在编译或执行时出现问题：
+| 约束类型 | 错误示例 | 原因 |
+|----------|----------|------|
+| **不支持成员函数** | `__aicore__ funcA() {...}` | Host侧不支持__aicore__修饰符 |
+| **不支持指针/引用** | `uint32_t* ptr;` | Host无法传递指针到Device |
+| **仅支持POD类型** | 虚函数、虚继承 | 不支持面向对象特性 |
+| **不支持模板类** | `template<T> class TilingData` | 编译问题 |
 
-  ```c++
-  class TilingData {
-  public:
-      uint32_t xxx;
-  
-      __aicore__ funcA() { ... }  // 错误，host侧编译时不支持__aicore__修饰符，会出现编译错误
-      void func() { ... }         // 错误，device侧缺少__aicore__修饰符，无法执行
-  };
-  ```
+**正确用法示例：**
 
-- Tiling结构体成员变量不支持指针、引用类型，此类数据类型会导致Host侧到Device侧数据解析异常：
+```c++
+// 正确：POD类型结构体
+class TilingData {
+public:
+    uint32_t totalLength;
+    uint32_t tileNum;
+    uint8_t flag;
+};
 
-  ```c++
-  class TilingData {
-  public:
-      uint32_t* totalLength; // 指针场景不支持，Host无法传递指针到Device
-      uint32_t& tileNum;       // 引用场景不支持，Host无法传递指针到Device
-  };
-  ```
-
-- Tiling结构体仅支持POD类型，没有虚函数、虚继承等面向对象特性，也不支持模板类：
-
-  ```c++
-  class A {
-  public:
-      uint32_t totalLength;
-      uint32_t tileNum;
-  };
-  class B: public A {
-  public:
-      uint32_t xxx;
-      uint32_t xxx;
-  };
-  static ge::graphStatus TilingFunc(gert::TilingContext* context)
-  {
-      // 错误用法
-      B *tiling = context->GetTilingData<A>(); // 不支持，会触发未知问题
-      // 正确用法
-      B *tiling = context->GetTilingData<B>();
-      ......
-      return ge::GRAPH_SUCCESS;
-  }
-  ```
-
-- GetTilingData获取的Tiling不包含初值，需显式赋值或在Tiling结构体定义并调用Tiling赋值函数；
-
-  ```c++
-  static ge::graphStatus TilingFunc(gert::TilingContext* context)
-  {
-      TilingData *tiling = context->GetTilingData<TilingData>(); //获取Tiling结构体，此时totalLength、tileNum为0，并不会带入初始值
-      ......
-      // 需显式赋值
-      tiling->totalLength = totalLength;  // 赋值Tiling结构体成员变量
-      tiling->tileNum = TILE_NUM;         // 赋值Tiling结构体成员变量
-      ......
-      return ge::GRAPH_SUCCESS;
-  }
-  ```
+// 正确：显式赋值
+static ge::graphStatus TilingFunc(gert::TilingContext* context)
+{
+    TilingData *tiling = context->GetTilingData<TilingData>();
+    // 必须显式赋值，GetTilingData获取的结构体不包含初值
+    tiling->totalLength = totalLength;
+    tiling->tileNum = TILE_NUM;
+    return ge::GRAPH_SUCCESS;
+}
+```
 
 ### Tiling模板编程
 
 在涉及多个TilingKey的场景中，开发者依赖TilingKey来管理kernel的实现，无论是在管理还是使用上都会遇到相当大的复杂性。为了简化这一过程，可以采用模板编程的方法来替代传统的TilingKey编程，从而减少对TilingKey数值标识的依赖，使kernel的管理更加直观和高效。使用步骤如下：
 
-- 在op_kernel目录下，新增定义模板参数和模板参数组合的头文件，本示例中头文件命名为tiling_key_add_custom.h。
+#### 步骤1：定义模板参数头文件
 
-  - 该头文件中需要包含模板头文件ascendc/host_api/tiling/template_argument.h。
-  - 定义模板参数ASCENDC_TPL_ARGS_DECL和模板参数组合ASCENDC_TPL_ARGS_SEL（即可使用的模板）。具体API参考见[模板参数定义](####模板参数定义)。
-
-  ```c++
-  #include "ascendc/host_api/tiling/template_argument.h"
-  
-  // 模板参数
-  ASCENDC_TPL_ARGS_DECL(AddCustomTemplate, // 算子OpType
-  ASCENDC_TPL_DATATYPE_DECL(D_T_X, C_DT_FLOAT, C_DT_FLOAT16, ASCENDC_TPL_INPUT(0)),  // DataType类型的模板参数定义：输入参数x的数据类型，取值范围为float16/float32, ASCENDC_TPL_INPUT(0)说明对应Kernel侧第0个输入
-  ASCENDC_TPL_DATATYPE_DECL(D_T_Y, C_DT_FLOAT, C_DT_FLOAT16, ASCENDC_TPL_INPUT(1)),  // DataType类型的模板参数定义：输入参数y的数据类型，取值范围为float16/float32, ASCENDC_TPL_INPUT(1)说明对应Kernel侧第1个输入
-  ASCENDC_TPL_DATATYPE_DECL(D_T_Z, C_DT_FLOAT, C_DT_FLOAT16, ASCENDC_TPL_OUTPUT(0)), // DataType类型的模板参数定义：输入参数z的数据类型，取值范围为float16/float32, ASCENDC_TPL_OUTPUT(0)说明对应Kernel侧第0个输出
-  ASCENDC_TPL_UINT_DECL(TILE_NUM, ASCENDC_TPL_8_BW, ASCENDC_TPL_UI_MIX, 2, 0, 2, 3, 5, 10, 12, 13, 9, 8),// 自定义UINT类型（无符号整形）的模板参数定义：模板参数为切分的块数，编码位宽为ASCENDC_TPL_8_BW即8比特，表示该模板参数的个数不超过8比特能表达的范围；ASCENDC_TPL_UI_MIX表示通过混合模式表达取值范围，有2组的数据{0-2}、{3-5}和穷举值10、12、13、9、8，最后结果为{0, 1, 2, 3, 4, 5, 10, 12, 13, 9, 8}
-  ASCENDC_TPL_BOOL_DECL(IS_SPLIT, 0, 1), // 自定义bool类型的模板参数定义：模板参数为是否切分标志位，取值范围为0和1，1表示切分，0表示不切分
-  );
-  
-  // 模板参数组合
-  // 用于调用GET_TPL_TILING_KEY获取TilingKey时，接口内部校验TilingKey是否合法
-  ASCENDC_TPL_SEL(
-      ASCENDC_TPL_ARGS_SEL(
-      ASCENDC_TPL_KERNEL_TYPE_SEL(ASCENDC_TPL_AIV_ONLY), // Kernel类型选择，无需在模板参数声明中定义，在SEL中直接配置，所有ASCENDC_TPL_ARGS_SEL是否配置需要保持统一，如不配置将走自动推导流程
-      ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT16),
-      ASCENDC_TPL_DATATYPE_SEL(D_T_Y, C_DT_FLOAT16),
-      ASCENDC_TPL_DATATYPE_SEL(D_T_Z, C_DT_FLOAT16),
-      ASCENDC_TPL_UINT_SEL(TILE_NUM, ASCENDC_TPL_UI_LIST, 1, 8),
-      ASCENDC_TPL_BOOL_SEL(IS_SPLIT, 0, 1)
-      ),
-      ASCENDC_TPL_ARGS_SEL(
-      ASCENDC_TPL_KERNEL_TYPE_SEL(ASCENDC_TPL_AIV_ONLY),
-      ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT),
-      ASCENDC_TPL_DATATYPE_SEL(D_T_Y, C_DT_FLOAT),
-      ASCENDC_TPL_DATATYPE_SEL(D_T_Z, C_DT_FLOAT),
-      ASCENDC_TPL_UINT_SEL(TILE_NUM, ASCENDC_TPL_UI_LIST, 1, 8),
-      ASCENDC_TPL_BOOL_SEL(IS_SPLIT, 0, 1)
-      ),
-  );
-  ```
-
-- host侧调用ASCENDC_TPL_SEL_PARAM接口自动生成并配置TilingKey。
-
-  - host实现文件中包含[步骤1](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850/opdevg/Ascendcopdevg/atlas_ascendc_10_00025.html#ZH-CN_TOPIC_0000002534495765__li1949014102516)中定义模板参数和模板参数组合的头文件。
-  - 调用ASCENDC_TPL_SEL_PARAM接口自动生成并配置TilingKey，ASCENDC_TPL_SEL_PARAM输入参数为模板参数的具体值，传入时需要与定义模板参数和模板参数组合的头文件中的模板参数顺序保持一致。
-
-  ```c++
-  #include "tiling_key_add_custom.h"
-  static ge::graphStatus TilingFunc(gert::TilingContext *context)
-  {
-      TilingData tiling;
-      uint32_t totalLength = context->GetInputShape(0)->GetOriginShape().GetShapeSize();
-      ge::DataType dtype_x = context->GetInputDesc(0)->GetDataType();
-      ge::DataType dtype_y = context->GetInputDesc(1)->GetDataType();
-      ge::DataType dtype_z = context->GetOutputDesc(1)->GetDataType();
-      uint32_t D_T_X = static_cast<int>(dtype_x), D_T_Y = static_cast<int>(dtype_y), D_T_Z = static_cast<int>(dtype_z), TILE_NUM = 1, IS_SPLIT = 0;
-      if(totalLength< MIN_LENGTH_FOR_SPLIT){
-          IS_SPLIT = 0;
-          TILE_NUM = 1;
-      }else{
-          IS_SPLIT = 1;
-          TILE_NUM = DEFAULT_TILE_NUM;
-      }
-      context->SetBlockDim(BLOCK_DIM);
-      tiling.set_totalLength(totalLength);
-      tiling.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
-      context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
-      ASCENDC_TPL_SEL_PARAM(context, D_T_X, D_T_Y, D_T_Z, TILE_NUM, IS_SPLIT);
-      size_t *currentWorkspace = context->GetWorkspaceSizes(1);
-      currentWorkspace[0] = 0;
-      return ge::GRAPH_SUCCESS;
-  }
-  ```
-
-- kernel侧实现
-
-  - kernel实现文件中包含[步骤1](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850/opdevg/Ascendcopdevg/atlas_ascendc_10_00025.html#ZH-CN_TOPIC_0000002534495765__li1949014102516)中定义模板参数和模板参数组合的头文件。
-  - 核函数添加template模板，以便支持模板参数的传入，参数顺序需要与定义模板参数和模板参数组合的头文件中的模板参数顺序保持一致。
-  - 通过对模板参数的分支判断，选择不同的kernel侧实现。
-
-  ```c++
-  #include "tiling_key_add_custom.h"
-  ...
-  ...
-  template<typename D_T_X, typename D_T_Y, typename D_T_Z, int TILE_NUM, int IS_SPLIT>
-   __global__ __aicore__ void add_custom_template(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
-  {
-      GET_TILING_DATA(tiling_data, tiling);
-      KernelAdd<D_T_X, D_T_Y, D_T_Z> op;
-      op.Init(x, y, z, tiling_data.totalLength, TILE_NUM);
-      if constexpr (std::is_same_v<D_T_X, float> && std::is_same_v<D_T_Y, float> && std::is_same_v<D_T_Z, float>) {
-          op.Process1();
-      } else if constexpr (std::is_same_v<D_T_X, half> && std::is_same_v<D_T_Y, half> && std::is_same_v<D_T_Z, half>){
-          if (IS_SPLIT == 0) {
-              op.Process1();
-          } else if(IS_SPLIT == 1) {
-              op.Process2();
-          }
-      }
-  }
-  ```
-
-### 模板参数定义
-
-#### 功能说明
-
-通过以下函数原型进行模板参数ASCENDC_TPL_ARGS_DECL和模板参数组合ASCENDC_TPL_ARGS_SEL（即可使用的模板）的定义。
-
-#### 函数原型
+在op_kernel目录下，新增定义模板参数和模板参数组合的头文件，本示例中头文件命名为tiling_key_add_custom.h。
 
 ```c++
-// ParamStruct是存放用户设置的模板参数ASCENDC_TPL_ARGS_DECL和模板参数组合ASCENDC_TPL_ARGS_SEL的结构体，用作后续的Tilingkey与模板参数之间的编解码，用户无需关注
-struct ParamStruct {
-    const char* name;
-    uint32_t paramType;
-    uint8_t bitWidth;
-    std::vector<uint64_t> vals;
-    const char* macroType;
-    ParamStruct(const char* inName, uint32_t inParamType, uint8_t inBitWidth, std::vector<uint64_t> inVals,
-        const char* inMacroType):
-        name(inName), paramType(inParamType), bitWidth(inBitWidth), vals(std::move(inVals)),
-        macroType(inMacroType) {}
-};
-using TilingDeclareParams = std::vector<ParamStruct>;
-using TilingSelectParams = std::vector<std::vector<ParamStruct>>;
+#include "ascendc/host_api/tiling/template_argument.h"
 
-// 模板参数定义相关接口
-#define ASCENDC_TPL_DTYPE_DECL(x, ...) ParamStruct{#x, ASCENDC_TPL_DTYPE, ASCENDC_TPL_8_BW, {__VA_ARGS__}, "DECL"}
-#define ASCENDC_TPL_DATATYPE_DECL(x, ...) ParamStruct{#x, ASCENDC_TPL_DTYPE, ASCENDC_TPL_8_BW, {__VA_ARGS__}, "DECL"}
-#define ASCENDC_TPL_FORMAT_DECL(x, ...) ParamStruct{#x, ASCENDC_TPL_FORMAT, ASCENDC_TPL_8_BW, {__VA_ARGS__}, "DECL"}
-#define ASCENDC_TPL_UINT_DECL(x, bw, ...) ParamStruct{#x, ASCENDC_TPL_UINT, bw, {__VA_ARGS__}, "DECL"}
-#define ASCENDC_TPL_BOOL_DECL(x, ...) ParamStruct{#x, ASCENDC_TPL_BOOL, ASCENDC_TPL_1_BW, {__VA_ARGS__}, "DECL"}
-#define ASCENDC_TPL_KERNEL_TYPE_DECL(x, ...) ParamStruct{#x, ASCENDC_TPL_SHARED_KERNEL_TYPE, ASCENDC_TPL_8_BW, {__VA_ARGS__}, "DECL"}
+// 模板参数
+ASCENDC_TPL_ARGS_DECL(AddCustomTemplate, // 算子OpType
+ASCENDC_TPL_DATATYPE_DECL(D_T_X, C_DT_FLOAT, C_DT_FLOAT16, ASCENDC_TPL_INPUT(0)),  // DataType类型的模板参数定义
+ASCENDC_TPL_DATATYPE_DECL(D_T_Y, C_DT_FLOAT, C_DT_FLOAT16, ASCENDC_TPL_INPUT(1)),
+ASCENDC_TPL_DATATYPE_DECL(D_T_Z, C_DT_FLOAT, C_DT_FLOAT16, ASCENDC_TPL_OUTPUT(0)),
+ASCENDC_TPL_UINT_DECL(TILE_NUM, ASCENDC_TPL_8_BW, ASCENDC_TPL_UI_MIX, 2, 0, 2, 3, 5, 10, 12, 13, 9, 8),
+ASCENDC_TPL_BOOL_DECL(IS_SPLIT, 0, 1),
+);
 
-#define ASCENDC_TPL_DTYPE_SEL(x, ...) ParamStruct{#x, ASCENDC_TPL_DTYPE, ASCENDC_TPL_8_BW, {__VA_ARGS__}, "SEL"}
-#define ASCENDC_TPL_DATATYPE_SEL(x, ...) ParamStruct{#x, ASCENDC_TPL_DTYPE, ASCENDC_TPL_8_BW, {__VA_ARGS__}, "SEL"}
-#define ASCENDC_TPL_FORMAT_SEL(x, ...) ParamStruct{#x, ASCENDC_TPL_FORMAT, ASCENDC_TPL_8_BW, {__VA_ARGS__}, "SEL"}
-#define ASCENDC_TPL_UINT_SEL(x, ...) ParamStruct{#x, ASCENDC_TPL_UINT, 0, {__VA_ARGS__}, "SEL"}
-#define ASCENDC_TPL_BOOL_SEL(x, ...) ParamStruct{#x, ASCENDC_TPL_BOOL, ASCENDC_TPL_1_BW, {__VA_ARGS__}, "SEL"}
-#define ASCENDC_TPL_KERNEL_TYPE_SEL(...) ParamStruct{"kernel_type", ASCENDC_TPL_KERNEL_TYPE, ASCENDC_TPL_8_BW, {__VA_ARGS__}, "SEL"}
-#define ASCENDC_TPL_DETERMINISTIC_SEL(...) ParamStruct{"deterministic", ASCENDC_TPL_DETERMINISTIC, ASCENDC_TPL_1_BW, {__VA_ARGS__}, "SEL"}
-#define ASCENDC_TPL_SHARED_KERNEL_TYPE_SEL(x, ...) ParamStruct{#x, ASCENDC_TPL_SHARED_KERNEL_TYPE, ASCENDC_TPL_8_BW, {__VA_ARGS__}, "SEL"}
-
-#define ASCENDC_TPL_ARGS_DECL(x, ...) static TilingDeclareParams g_tilingDeclareParams{ __VA_ARGS__ }
-#define ASCENDC_TPL_ARGS_SEL(...) { __VA_ARGS__}
-#define ASCENDC_TPL_SEL(...) static TilingSelectParams g_tilingSelectParams{ __VA_ARGS__ }
+// 模板参数组合
+ASCENDC_TPL_SEL(
+    ASCENDC_TPL_ARGS_SEL(
+    ASCENDC_TPL_KERNEL_TYPE_SEL(ASCENDC_TPL_AIV_ONLY),
+    ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT16),
+    ASCENDC_TPL_DATATYPE_SEL(D_T_Y, C_DT_FLOAT16),
+    ASCENDC_TPL_DATATYPE_SEL(D_T_Z, C_DT_FLOAT16),
+    ASCENDC_TPL_UINT_SEL(TILE_NUM, ASCENDC_TPL_UI_LIST, 1, 8),
+    ASCENDC_TPL_BOOL_SEL(IS_SPLIT, 0, 1)
+    ),
+    ASCENDC_TPL_ARGS_SEL(
+    ASCENDC_TPL_KERNEL_TYPE_SEL(ASCENDC_TPL_AIV_ONLY),
+    ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT),
+    ASCENDC_TPL_DATATYPE_SEL(D_T_Y, C_DT_FLOAT),
+    ASCENDC_TPL_DATATYPE_SEL(D_T_Z, C_DT_FLOAT),
+    ASCENDC_TPL_UINT_SEL(TILE_NUM, ASCENDC_TPL_UI_LIST, 1, 8),
+    ASCENDC_TPL_BOOL_SEL(IS_SPLIT, 0, 1)
+    ),
+);
 ```
 
-#### 参数说明
-
--  Tiling模板参数定义说明
-
-  | 宏                                              | 功能描述                                                     | 参数解释                                                     |
-  | ----------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-  | ASCENDC_TPL_ARGS_DECL(args0, ...)               | 用于定义算子的模板参数。                                     | args0：表示算子Optype。args1-argsn：后续为若干个DTYPE、FORMAT、UINT、BOOL、KERNEL_TYPE的模板参数定义，分别通过ASCENDC_TPL_DTYPE_DECL、ASCENDC_TPL_DATATYPE_DECL、ASCENDC_TPL_FORMAT_DECL、ASCENDC_TPL_UINT_DECL、ASCENDC_TPL_BOOL_DECL，ASCENDC_TPL_KERNEL_TYPE_DECL进行定义。 |
-  | ASCENDC_TPL_DTYPE_DECL(args0, ...)              | 自定义DataType类型的模板参数定义。                           | args0：参数名。args1-argsn：后续若干个参数为穷举的自定义DataType枚举值。 |
-  | ASCENDC_TPL_DATATYPE_DECL(args0, ...)           | 原生DataType类型的模板参数定义。                             | args0：参数名。args1-argsn：存在两种情况，后续若干个参数为穷举的原生DataType选项；或者为对应的输入参数的索引值（使用ASCENDC_TPL_INPUT(x)进行指定，其中x为对应数值）或对应输出参数的索引值（使用ASCENDC_TPL_OUTPUT(x)进行指定，其中x为对应数值），注意：存在多个时，仅第一个生效。支持设置的原生DataType取值如下，数据类型的具体介绍请参考`C_DataType`。`C_DT_FLOAT C_DT_FLOAT16 C_DT_INT8 C_DT_INT32 C_DT_UINT8 C_DT_INT16 C_DT_UINT16 C_DT_UINT32 C_DT_INT64 C_DT_UINT64 C_DT_DOUBLE C_DT_BOOL C_DT_COMPLEX64 C_DT_BF16 C_DT_INT4 C_DT_UINT1 C_DT_INT2 C_DT_COMPLEX32 C_DT_HIFLOAT8 C_DT_FLOAT8_E5M2 C_DT_FLOAT8_E4M3FN C_DT_FLOAT4_E2M1 C_DT_FLOAT4_E1M2` |
-  | ASCENDC_TPL_FORMAT_DECL(args0, ...)             | 支持两种模式：1. 均为自定义Format类型的模板参数定义。2. 均为原生Format类型的模板参数定义。 | args0：参数名。args1-argsn：存在两种模式1. 后续若干个参数为穷举的自定义Format枚举值。2. 该模式存在两种情况：后续若干个参数为穷举的原生Format选项；或者对应的输入参数的索引值（使用ASCENDC_TPL_INPUT(x)进行指定，其中x为对应数值）或对应输出参数的索引值（使用ASCENDC_TPL_OUTPUT(x)进行指定，其中x为对应数值），注意：存在多个时，仅第一个生效。支持设置的原生Format选项如下，数据格式的具体介绍请参考`C_Format`。`C_FORMAT_NCHW C_FORMAT_NHWC C_FORMAT_ND C_FORMAT_NC1HWC0 C_FORMAT_FRACTAL_Z C_FORMAT_NC1C0HWPAD C_FORMAT_NHWC1C0 C_FORMAT_FSR_NCHW C_FORMAT_FRACTAL_DECONV C_FORMAT_C1HWNC0 C_FORMAT_FRACTAL_DECONV_TRANSPOSE C_FORMAT_FRACTAL_DECONV_SP_STRIDE_TRANS C_FORMAT_NC1HWC0_C04 C_FORMAT_FRACTAL_Z_C04 C_FORMAT_CHWN C_FORMAT_FRACTAL_DECONV_SP_STRIDE8_TRANS C_FORMAT_HWCN C_FORMAT_NC1KHKWHWC0 C_FORMAT_BN_WEIGHT C_FORMAT_FILTER_HWCK C_FORMAT_HASHTABLE_LOOKUP_LOOKUPS C_FORMAT_HASHTABLE_LOOKUP_KEYS C_FORMAT_HASHTABLE_LOOKUP_VALUE C_FORMAT_HASHTABLE_LOOKUP_OUTPUT C_FORMAT_HASHTABLE_LOOKUP_HITS C_FORMAT_C1HWNCoC0 C_FORMAT_MD C_FORMAT_NDHWC C_FORMAT_FRACTAL_ZZ C_FORMAT_FRACTAL_NZ C_FORMAT_NCDHW C_FORMAT_DHWCN C_FORMAT_NDC1HWC0 C_FORMAT_FRACTAL_Z_3D C_FORMAT_CN C_FORMAT_NC C_FORMAT_DHWNC C_FORMAT_FRACTAL_Z_3D_TRANSPOSE C_FORMAT_FRACTAL_ZN_LSTM C_FORMAT_FRACTAL_Z_G C_FORMAT_RESERVED C_FORMAT_ALL C_FORMAT_NULL C_FORMAT_ND_RNN_BIAS C_FORMAT_FRACTAL_ZN_RNN C_FORMAT_NYUV C_FORMAT_NYUV_A C_FORMAT_NCL C_FORMAT_FRACTAL_Z_WINO C_FORMAT_C1HWC0 C_FORMAT_FRACTAL_NZ_C0_16 C_FORMAT_FRACTAL_NZ_C0_32 C_FORMAT_FRACTAL_NZ_C0_2 C_FORMAT_FRACTAL_NZ_C0_4 C_FORMAT_FRACTAL_NZ_C0_8` |
-  | ASCENDC_TPL_UINT_DECL(args0, args1, args2, ...) | 自定义UINT类型（无符号整形）的模板参数定义。                 | args0：参数名。args1：最大位宽，模板参数的个数不能超过最大位宽。args2：参数定义的模式。支持以下三种模式：ASCENDC_TPL_UI_RANGE：范围模式，设置该模式，后续紧跟着第一个值表示范围个数，第一个值后面的每两个数值为一组分别表示该范围的起、终位置；注意定义的范围个数要和后续的组数保持一致。**举例：**ASCENDC_TPL_UINT_DECL(args0, args1,ASCENDC_TPL_UI_RANGE,2,0,2,3,5)表示2组参数，这2组参数范围为{0, 2}，{3, 5}，因此该参数定义的UINT参数合法值为{0, 1, 2, 3, 4, 5}。ASCENDC_TPL_UI_LIST：穷举模式，设置该模式，则表示后续将穷举出所有的参数值。**举例：**ASCENDC_TPL_UINT_DECL(args0, args1,ASCENDC_TPL_UI_LIST,10,12,13,9,8,7,6)表示1组穷举参数，[10, 12, 13, 9, 8, 7, 6]为穷举值，因此该参数定义的UINT参数合法值为{10, 12, 13, 9, 8, 7, 6}。ASCENDC_TPL_UI_MIX：混合模式，设置该模式，则表示前n个数值为范围模式的参数定义，后m个数值为穷举模式的参数定义。**举例**：ASCENDC_TPL_UINT_DECL(args0, args1,ASCENDC_TPL_UI_MIX,2,0,2,3, 5, 10, 12, 13, 9, 8)表示2组穷举参数，这2组范围为{0, 2}, {3, 5}，[10, 12, 13, 9, 8]为穷举值，因此该参数定义的UINT参数合法值为{0, 1, 2, 3, 4, 5, 10, 12, 13, 9, 8}。args3-argsn：对应不同范围模式的参数数值。 |
-  | ASCENDC_TPL_BOOL_DECL(args0, ...)               | 自定义bool类型的模板参数定义。                               | args0：参数名。args1-args2：取值范围0，1。                   |
-  | ASCENDC_TPL_KERNEL_TYPE_DECL(args0, ...)        | 定义算子模板参数的kernel类型                                 | args0：参数名args1-argsn：后续为若干kernel类型。当前支持的Kernel类型如下：ASCENDC_TPL_AIV_ONLY // 算子执行时仅启动AI Core上的Vector核ASCENDC_TPL_AIC_ONLY // 算子执行时仅启动AI Core上的Cube核ASCENDC_TPL_MIX_AIV_1_0 // AIC、AIV混合场景下，算子执行时仅会启动AI Core上的Vector核ASCENDC_TPL_MIX_AIC_1_0 // AIC、AIV混合场景下，算子执行时仅会启动AI Core上的Cube核ASCENDC_TPL_MIX_AIC_1_1 // AIC、AIV混合场景下，算子执行时会同时启动AI Core上的Cube核和Vector核，比例为1：1ASCENDC_TPL_MIX_AIC_1_2 // AIC、AIV混合场景下，算子执行时会同时启动AI Core上的Cube核和Vector核，比例为1：2ASCENDC_TPL_AICORE // 算子执行时仅会启动AI CoreASCENDC_TPL_VECTORCORE // 该参数为预留参数，当前版本暂不支持ASCENDC_TPL_MIX_AICORE // 该参数为预留参数，当前版本暂不支持ASCENDC_TPL_MIX_VECTOR_CORE // 算子执行时会同时启动AI Core和Vector Core本接口只允许与ASCENDC_TPL_SHARED_KERNEL_TYPE_SEL(args0, ...)配合使用。 |
-
-- Tiling模板参数组合定义
-
-  | 宏                                             | 功能描述                                                     | 参数解释                                                     |
-  | ---------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-  | ASCENDC_TPL_SEL(...)                           | 算子的模板参数整体组合。                                     | 包含多个算子的模板参数组合。                                 |
-  | ASCENDC_TPL_ARGS_SEL(...)                      | 算子的模板参数组合。                                         | 一个算子的模板参数组合。                                     |
-  | ASCENDC_TPL_KERNEL_TYPE_SEL(args0)             | 用于设置算子模板参数组合的Kernel类型，但该参数并不能作为核函数的模板参数传入。 | args0：该模板参数组合下，算子的Kernel类型。如不选择将走自动推导流程，ASCENDC_TPL_SEL下的所有算子对于是否选择Kernel类型需要保持一致。当前支持的Kernel类型如下：ASCENDC_TPL_AIV_ONLY // 算子执行时仅启动AI Core上的Vector核ASCENDC_TPL_AIC_ONLY // 算子执行时仅启动AI Core上的Cube核ASCENDC_TPL_MIX_AIV_1_0 // AIC、AIV混合场景下，算子执行时仅会启动AI Core上的Vector核ASCENDC_TPL_MIX_AIC_1_0 // AIC、AIV混合场景下，算子执行时仅会启动AI Core上的Cube核ASCENDC_TPL_MIX_AIC_1_1 // AIC、AIV混合场景下，算子执行时会同时启动AI Core上的Cube核和Vector核，比例为1：1ASCENDC_TPL_MIX_AIC_1_2 // AIC、AIV混合场景下，算子执行时会同时启动AI Core上的Cube核和Vector核，比例为1：2ASCENDC_TPL_AICORE // 算子执行时仅会启动AI CoreASCENDC_TPL_VECTORCORE // 该参数为预留参数，当前版本暂不支持ASCENDC_TPL_MIX_AICORE // 该参数为预留参数，当前版本暂不支持ASCENDC_TPL_MIX_VECTOR_CORE // 算子执行时会同时启动AI Core和Vector Core通过本接口配置Kernel类型，Kernel类型的取值范围同KERNEL_TASK_TYPE_DEFAULT接口一。 |
-  | ASCENDC_TPL_DTYPE_SEL(args0, ...)              | 自定义DataType类型的模板参数组合。                           | args0：表示参数名。args1-argsn ：后续若干个参数为ASCENDC_TPL_DTYPE_DECL中定义的参数范围子集。 |
-  | ASCENDC_TPL_DATATYPE_SEL(args0, ...)           | 原生DataType类型的模板参数组合                               | args0：表示参数名。args1-argsn ：后续若干个参数为ASCENDC_TPL_DATATYPE_DECL中定义的参数选项范围的子集。 |
-  | ASCENDC_TPL_FORMAT_SEL(args0, ...)             | Format类型的模板参数组合。                                   | args0：表示参数名。args1-argsn：后续若干个参数为ASCENDC_TPL_FORMAT_DECL中定义的参数选项范围子集。 |
-  | ASCENDC_TPL_UINT_SEL(args0, args1, args2, ...) | UINT类型的模板参数组合。                                     | args0：表示参数名。args1：参数定义的模式。支持如下取值：ASCENDC_TPL_UI_RANGE：范围模式。ASCENDC_TPL_UI_LIST：穷举模式。ASCENDC_TPL_UI_MIX：混合模式。args2-argsn：后续若干个参数为ASCENDC_TPL_UINT_DECL中定义的参数范围子集。模式和参数的配置方式参考ASCENDC_TPL_UINT_DECL(args0, args1, args2, ...)。 |
-  | ASCENDC_TPL_BOOL_SEL(args0, ...)               | bool类型的模板参数组合。                                     | args0：表示参数名。args1-args2 ：后续若干个参数为ASCENDC_TPL_BOOL_DECL定义的参数范围子集。 |
-  | ASCENDC_TPL_DETERMINISTIC_SEL(args0)           | 该组模板参数组合用于配置是否使能确定性计算。                 | args0: 表示参数名， 可选值范围[true, false, 1, 0]，其中[true/1]表示该组模板参数组合使能确定性计算，[false/0]表示不使能确定性计算。需要注意，该值不作为算子的模板参数入参，在使能该值编译时，会添加"-DDETERMINISTIC_MODE=1", 同时会生成以"_deterministic"结尾的json与.o文件，例如："AddCustomTemplate_816f04e052850554f4b3cacb35f8e8c6_deterministic.json"/"AddCustomTemplate_816f04e052850554f4b3cacb35f8e8c6_deterministic.o"。备注：若通过ASCENDC_TPL_DETERMINISTIC_SEL(true)接口编译出了确定性计算的版本，在算子调用时，通常需要打开确定性计算的的开关，例如通过aclnn单算子调用时，需要使用aclrtCtxSetSysParamOpt接口进行相关配置。该参数仅支持如下型号：Atlas A3 训练系列产品 / Atlas A3 推理系列产品 Atlas A2 训练系列产品 / Atlas A2 推理系列产品 |
-  | ASCENDC_TPL_SHARED_KERNEL_TYPE_SEL(args0, ...) | 设置算子模板参数组合的Kernel类型，该参数可以作为核函数的模板参数传入。 | args0: 参数名args1-argsn: 该模板参数组合下，算子的Kernel类型，后续参数为若干Kernel类型。该接口不能与ASCENDC_TPL_KERNEL_TYPE_SEL接口同时使用。若同时使用KERNEL_TASK_TYPE_DEFAULT(value)接口，本接口优先级更高。 |
-
-#### 返回值说明
-
-无。
-
-#### 约束说明
-
-对模板参数定义的取值进行修改或新增后，需要重新编译自定义算子包，不能再继续使用之前的算子二进制。
-
-### GET_TPL_TILING_KEY
-
-#### 功能说明
-
-Tiling模板编程时，开发者通过调用此接口自动生成TilingKey。该接口将传入的模板参数通过定义的位宽，转成二进制，按照顺序组合后转成uint64数值，即TilingKey。
-
-使用该接口需要包含定义模板参数和模板参数组合的头文件。
-
-#### 函数原型
-
-```c++
-namespace AscendC {
-    uint64_t EncodeTilingKey(TilingDeclareParams declareParams,
-                             TilingSelectParams selectParamsVec,
-                             std::vector<uint64_t> tilingParams);
-}
-
-#define GET_TPL_TILING_KEY(...) \
-    AscendC::EncodeTilingKey(g_tilingDeclareParams, g_tilingSelectParams, {__VA_ARGS__}) // GET_TPL_TILING_KEY通过调用EncodeTilingKey接口生成TilingKey， EncodeTilingKey属于内部关联接口，开发者无需关注
-```
-
-#### 参数说明
-
-| 参数 | 输入/输出 | 说明                                                         |
-| ---- | --------- | ------------------------------------------------------------ |
-| ...  | 输入      | 可变长参数，模板参数的具体值，传入时需要与定义模板参数和模板参数组合的头文件中的模板参数顺序保持一致。 |
-
-#### 返回值说明
-
-TilingKey数值。
-
-#### 约束说明
-
-无。
-
-#### 调用示例
+#### 步骤2：Host侧自动配置TilingKey
 
 ```c++
 #include "tiling_key_add_custom.h"
 static ge::graphStatus TilingFunc(gert::TilingContext *context)
 {
-    TilingDataTemplate tiling;
+    TilingData tiling;
     uint32_t totalLength = context->GetInputShape(0)->GetOriginShape().GetShapeSize();
     ge::DataType dtype_x = context->GetInputDesc(0)->GetDataType();
     ge::DataType dtype_y = context->GetInputDesc(1)->GetDataType();
-    ge::DataType dtype_z = context->GetOutputDesc(0)->GetDataType();
+    ge::DataType dtype_z = context->GetOutputDesc(1)->GetDataType();
     uint32_t D_T_X = static_cast<int>(dtype_x), D_T_Y = static_cast<int>(dtype_y), D_T_Z = static_cast<int>(dtype_z), TILE_NUM = 1, IS_SPLIT = 0;
-    if (totalLength < MIN_LENGTH_FOR_SPLIT) {
+    if(totalLength< MIN_LENGTH_FOR_SPLIT){
         IS_SPLIT = 0;
         TILE_NUM = 1;
-    } else {
-        IS_SPLIT = 1;
-        TILE_NUM = DEFAULT_TILE_NUM;
-    }
-    context->SetBlockDim(BLOCK_DIM);
-    tiling.set_totalLength(totalLength);
-    tiling.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
-    context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
-    const uint64_t tilingKey = GET_TPL_TILING_KEY(D_T_X, D_T_Y, D_T_Z, TILE_NUM, IS_SPLIT);  // 模板参数tilingkey配置
-    context->SetTilingKey(tilingKey);
-    size_t *currentWorkspace = context->GetWorkspaceSizes(1);
-    currentWorkspace[0] = 0;
-    return ge::GRAPH_SUCCESS;
-}
-```
-
-### ASCENDC_TPL_SEL_PARAM
-
-#### 功能说明
-
-Tiling模板编程时，开发者通过调用此接口自动生成并配置TilingKey。
-
-使用该接口需要包含定义模板参数和模板参数组合的头文件。
-
-#### 函数原型
-
-```c++
-#define ASCENDC_TPL_SEL_PARAM(context, ...)           \
-do {                                                  \
-    uint64_t key = GET_TPL_TILING_KEY({__VA_ARGS__}); \
-    context->SetTilingKey(key);                       \
-} while(0)
-// context指代TilingFunc(gert::TilingContext *context)中的context
-```
-
-#### 参数说明
-
-| 参数    | 输入/输出 | 说明                                                         |
-| ------- | --------- | ------------------------------------------------------------ |
-| context | 输入      | TilingFunc注册上下文。                                       |
-| ...     | 输入      | 可变长参数，模板参数的具体值，传入时需要与定义模板参数和模板参数组合的头文件中的模板参数顺序保持一致。 |
-
-#### 返回值说明
-
-无
-
-#### 约束说明
-
-无
-
-#### 调用示例
-
-```c++
-#include "tiling_key_add_custom.h"
-static ge::graphStatus TilingFunc(gert::TilingContext *context)
-{
-    TilingDataTemplate tiling;
-    uint32_t totalLength = context->GetInputShape(0)->GetOriginShape().GetShapeSize();
-    ge::DataType dtype_x = context->GetInputDesc(0)->GetDataType();
-    ge::DataType dtype_y = context->GetInputDesc(1)->GetDataType();
-    ge::DataType dtype_z = context->GetOutputDesc(0)->GetDataType();
-    uint32_t D_T_X = static_cast<int>(dtype_x), D_T_Y = static_cast<int>(dtype_y), D_T_Z = static_cast<int>(dtype_z), TILE_NUM = 1, IS_SPLIT = 0;
-    if (totalLength < MIN_LENGTH_FOR_SPLIT) {
-        IS_SPLIT = 0;
-        TILE_NUM = 1;
-    } else {
+    }else{
         IS_SPLIT = 1;
         TILE_NUM = DEFAULT_TILE_NUM;
     }
@@ -935,13 +893,136 @@ static ge::graphStatus TilingFunc(gert::TilingContext *context)
 }
 ```
 
+#### 步骤3：Kernel侧模板实现
 
+```c++
+#include "tiling_key_add_custom.h"
+...
+template<typename D_T_X, typename D_T_Y, typename D_T_Z, int TILE_NUM, int IS_SPLIT>
+ __global__ __aicore__ void add_custom_template(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
+{
+    GET_TILING_DATA(tiling_data, tiling);
+    KernelAdd<D_T_X, D_T_Y, D_T_Z> op;
+    op.Init(x, y, z, tiling_data.totalLength, TILE_NUM);
+    if constexpr (std::is_same_v<D_T_X, float> && std::is_same_v<D_T_Y, float> && std::is_same_v<D_T_Z, float>) {
+        op.Process1();
+    } else if constexpr (std::is_same_v<D_T_X, half> && std::is_same_v<D_T_Y, half> && std::is_same_v<D_T_Z, half>){
+        if (IS_SPLIT == 0) {
+            op.Process1();
+        } else if(IS_SPLIT == 1) {
+            op.Process2();
+        }
+    }
+}
+```
+
+### 模板参数定义API
+
+#### 功能说明
+
+通过以下函数原型进行模板参数ASCENDC_TPL_ARGS_DECL和模板参数组合ASCENDC_TPL_ARGS_SEL（即可使用的模板）的定义。
+
+#### 模板参数声明宏
+
+| 宏 | 功能 | 参数说明 |
+|----|------|----------|
+| `ASCENDC_TPL_ARGS_DECL(op, ...)` | 定义算子的模板参数 | op: 算子OpType; ...: 模板参数列表 |
+| `ASCENDC_TPL_DATATYPE_DECL(name, ...)` | DataType类型模板参数 | name: 参数名; ...: 枚举值或`ASCENDC_TPL_INPUT(n)` |
+| `ASCENDC_TPL_UINT_DECL(name, bw, mode, ...)` | UINT类型模板参数 | bw: 位宽; mode: RANGE/LIST/MIX |
+| `ASCENDC_TPL_BOOL_DECL(name, ...)` | Bool类型模板参数 | 取值范围0和1 |
+| `ASCENDC_TPL_KERNEL_TYPE_DECL(name, ...)` | Kernel类型参数 | AIV_ONLY/AIC_ONLY/MIX_* |
+
+#### 模板参数选择宏
+
+| 宏 | 功能 |
+|----|------|
+| `ASCENDC_TPL_SEL(...)` | 算子模板参数整体组合 |
+| `ASCENDC_TPL_ARGS_SEL(...)` | 单个算子模板参数组合 |
+| `ASCENDC_TPL_KERNEL_TYPE_SEL(type)` | 设置Kernel类型 |
+| `ASCENDC_TPL_DATATYPE_SEL(name, ...)` | DataType类型组合 |
+| `ASCENDC_TPL_UINT_SEL(name, mode, ...)` | UINT类型组合 |
+| `ASCENDC_TPL_BOOL_SEL(name, ...)` | Bool类型组合 |
+
+#### UINT参数定义模式
+
+| 模式 | 说明 | 示例 |
+|------|------|------|
+| `ASCENDC_TPL_UI_RANGE` | 范围模式 | `{0, 2}, {3, 5}` → {0,1,2,3,4,5} |
+| `ASCENDC_TPL_UI_LIST` | 穷举模式 | `10, 12, 13, 9, 8` |
+| `ASCENDC_TPL_UI_MIX` | 混合模式 | 范围 + 穷举值 |
+
+### GET_TPL_TILING_KEY
+
+#### 功能说明
+
+Tiling模板编程时，开发者通过调用此接口自动生成TilingKey。该接口将传入的模板参数通过定义的位宽，转成二进制，按照顺序组合后转成uint64数值，即TilingKey。
+
+#### 函数原型
+
+```c++
+namespace AscendC {
+    uint64_t EncodeTilingKey(TilingDeclareParams declareParams,
+                             TilingSelectParams selectParamsVec,
+                             std::vector<uint64_t> tilingParams);
+}
+
+#define GET_TPL_TILING_KEY(...) \
+    AscendC::EncodeTilingKey(g_tilingDeclareParams, g_tilingSelectParams, {__VA_ARGS__})
+```
+
+#### 参数说明
+
+| 参数 | 输入/输出 | 说明 |
+| ---- | --------- | ---- |
+| ... | 输入 | 可变长参数，模板参数的具体值，需与头文件中的顺序一致 |
+
+#### 返回值
+
+TilingKey数值（uint64_t）
+
+#### 调用示例
+
+```c++
+#include "tiling_key_add_custom.h"
+static ge::graphStatus TilingFunc(gert::TilingContext *context)
+{
+    // ... 参数计算 ...
+    const uint64_t tilingKey = GET_TPL_TILING_KEY(D_T_X, D_T_Y, D_T_Z, TILE_NUM, IS_SPLIT);
+    context->SetTilingKey(tilingKey);
+    return ge::GRAPH_SUCCESS;
+}
+```
+
+### ASCENDC_TPL_SEL_PARAM
+
+#### 功能说明
+
+Tiling模板编程时，开发者通过调用此接口自动生成并配置TilingKey。
+
+#### 函数原型
+
+```c++
+#define ASCENDC_TPL_SEL_PARAM(context, ...)           \
+do {                                                  \
+    uint64_t key = GET_TPL_TILING_KEY({__VA_ARGS__}); \
+    context->SetTilingKey(key);                       \
+} while(0)
+```
+
+#### 参数说明
+
+| 参数 | 输入/输出 | 说明 |
+| ---- | --------- | ---- |
+| context | 输入 | TilingFunc注册上下文 |
+| ... | 输入 | 模板参数的具体值，需与头文件中的顺序一致 |
+
+---
 
 ## Kernel实现
 
 ### 核函数定义
 
-在算子工程目录下的“op_kernel/xxx.cpp”文件中实现算子的核函数。核函数的定义样例如下所示。**注意这里参数的顺序按照“输入、输出、workspace、tiling”的顺序排布，开发者不要调整其顺序。**
+在算子工程目录下的"op_kernel/xxx.cpp"文件中实现算子的核函数。核函数的定义样例如下所示。**注意这里参数的顺序按照"输入、输出、workspace、tiling"的顺序排布，开发者不要调整其顺序。**
 
 ```c++
 #include "kernel_operator.h"
@@ -959,6 +1040,26 @@ extern "C" __global__ __aicore__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z
 >     ...
 > }
 > ```
+
+### 核函数参数规则
+
+```mermaid
+flowchart LR
+    subgraph "参数顺序（固定）"
+        A[输入参数<br/>GM_ADDR x, y, ...]
+        B[输出参数<br/>GM_ADDR z, ...]
+        C[workspace<br/>GM_ADDR workspace]
+        D[tiling<br/>GM_ADDR tiling]
+    end
+    A --> B --> C --> D
+```
+
+| 参数位置 | 参数类型 | 说明 |
+|----------|----------|------|
+| 1~N | GM_ADDR | 输入参数（按算子定义顺序） |
+| N+1~M | GM_ADDR | 输出参数（按算子定义顺序） |
+| M+1 | GM_ADDR | workspace地址（固定） |
+| M+2 | GM_ADDR | tiling地址（固定） |
 
 ### GET_TILING_DATA获取Tiling参数
 
@@ -994,8 +1095,18 @@ extern "C" __global__ __aicore__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z
 }
 ```
 
-## 图模式适配
+### Kernel宏定义速查
 
+| 宏 | 功能 | 示例 |
+|----|------|------|
+| `DTYPE_<Arg>` | 参数数据类型 | `DTYPE_X`, `DTYPE_Y` |
+| `ORIG_DTYPE_<Arg>` | 参数原始数据类型 | `ORIG_DTYPE_X` |
+| `FORMAT_<Arg>` | 参数数据格式 | `FORMAT_Y == FORMAT_ND` |
+| `TILING_KEY_IS(n)` | 判断TilingKey值 | `if (TILING_KEY_IS(1))` |
+
+---
+
+## 图模式适配
 
 ### 头文件
 
@@ -1017,8 +1128,6 @@ conv.set_input_filter(weight_data)
 
 ### 函数原型
 
-函数原型定义示例如下：
-
 ```c++
 REG_OP(xxx)
     .INPUT(x1, type)
@@ -1035,61 +1144,51 @@ REG_OP(xxx)
 
 ### 接口说明
 
-| **接口名称**                  | **接口说明**                                                 |
-| ----------------------------- | ------------------------------------------------------------ |
-| REG_OP(xxx)                   | 定义一个算子原型，算子类型为xxx。                            |
-| .INPUT(x, type)               | 定义输入名称（x）和类型(type)。类型为TensorType类型，例如：TensorType{DT_FLOAT}TensorType({DT_FLOAT, DT_INT8})TensorType::ALL()关于TensorType类，请参见[TensorType类说明]()。 |
-| .OPTIONAL_INPUT(x, type)      | 定义可选输入的名称（x）和类型（type）。类型为TensorType类型，例如：TensorType{DT_FLOAT}TensorType({DT_FLOAT, DT_INT8})TensorType::ALL()关于TensorType类，请参见[TensorType类说明](####TensorType)。 |
-| .DYNAMIC_INPUT(x, type)       | 定义动态输入的名称（x）和类型（type）。类型为TensorType类型，例如：TensorType{DT_FLOAT}TensorType({DT_FLOAT, DT_INT8})TensorType::ALL()关于TensorType类，请参见[TensorType类说明](####TensorType)。 |
-| .OUTPUT(x, type)              | 定义输出的名称（x）和类型（type）。类型为TensorType类型，例如：TensorType{DT_FLOAT}TensorType({DT_FLOAT, DT_INT8})TensorType::ALL()关于TensorType类，请参见[TensorType类说明](####TensorType)。 |
-| .DYNAMIC_OUTPUT(x, type)      | 定义动态输出的名称（x）和类型（type）。类型为TensorType类型，例如：TensorType{DT_FLOAT}TensorType({DT_FLOAT, DT_INT8})TensorType::ALL()关于TensorType类，请参见[TensorType类说明](####TensorType)。 |
-| .REQUIRED_ATTR(x, type)       | 定义必备属性的名称（x）和类型（type）。type的可选值包括：Int，属性类型为int64_tFloat，属性类型为floatString，属性类型为stringBool，属性类型为boolTensor，属性类型为TensorType，属性为Type枚举定义NamedAttrs，属性类型为NamedAttrsAscendString，属性类型为AscendStringListInt，属性类型为vector<int64_t>，int64_t列表ListFloat，属性类型为vector\<float>，float列表ListString，属性类型为vector\<string>，string列表ListBool，属性类型为vector\<bool>，bool列表ListTensor，属性类型为vector\<Tensor>，Tensor列表Bytes，属性类型为BufferListType，属性类型为vector\<Type>，Type列表ListListInt，属性类型为vector\<vector\<int64_t>>，2维列表ListAscendString，属性类型为vector\<AscendString>，AscendString列表ListNamedAttrs，属性类型为vector\<NamedAttrs>，NamedAttrs列表 |
-| .ATTR(x, type, default_value) | 定义可选属性的名称、类型以及默认值。当用户不设置算子对象的属性时，会使用此处设置的默认值。type的可选值包括：Int，属性类型为int64_tFloat，属性类型为floatString，属性类型为stringBool，属性类型为boolTensor，属性类型为TensorType，属性为Type枚举定义NamedAttrs，属性类型为NamedAttrsAscendString，属性类型为AscendStringListInt，属性类型为vector\<int64_t>，int64_t列表ListFloat，属性类型为vector\<float>，float列表ListString，属性类型为vector\<string>，string列表ListBool，属性类型为vector\<bool>，bool列表ListTensor，属性类型为vector\<Tensor>，Tensor列表Bytes，属性类型为BufferListType，属性类型为vector\<Type>，Type列表ListListInt，属性类型为vector\<vector\<int64_t>>，2维列表ListAscendString，属性类型为vector\<AscendString>，AscendString列表ListNamedAttrs，属性类型为vector\<NamedAttrs>，NamedAttrs列表定义示例：.ATTR(mode, Int, 1).ATTR(pad, ListInt, {0, 0, 0, 0}) |
-| .GRAPH(z1)                    | 注册算子中包含的子图信息，输入z1为子图名称。例如If算子注册的子图为：.GRAPH(then_branch) .GRAPH(else_branch)对于同一个算子，注册的算子子图名称需要保持唯一。 |
-| .DYNAMIC_GRAPH(z2)            | 注册动态算子子图信息，输入z2为子图名称。例如Case算子注册的子图为：.DYNAMIC_GRAPH(branches)对于同一个算子，注册的算子子图名称需要保持唯一。 |
-| .INFER_SHAPE_AND_TYPE()       | 该接口为历史遗留兼容性接口，当前版本用户无需使用。           |
-| .OP_END_FACTORY_REG(x)        | 与REG_OP配对，结束算子原型定义。算子类型（x）与REG_OP(x)中的类型相同。 |
+| **接口名称** | **接口说明** |
+| ------------ | ------------ |
+| `REG_OP(xxx)` | 定义一个算子原型，算子类型为xxx |
+| `.INPUT(x, type)` | 定义输入名称和类型 |
+| `.OPTIONAL_INPUT(x, type)` | 定义可选输入 |
+| `.DYNAMIC_INPUT(x, type)` | 定义动态输入 |
+| `.OUTPUT(x, type)` | 定义输出 |
+| `.DYNAMIC_OUTPUT(x, type)` | 定义动态输出 |
+| `.REQUIRED_ATTR(x, type)` | 定义必备属性 |
+| `.ATTR(x, type, default_value)` | 定义可选属性（带默认值） |
+| `.GRAPH(z1)` | 注册子图信息 |
+| `.DYNAMIC_GRAPH(z2)` | 注册动态算子子图 |
+| `.OP_END_FACTORY_REG(x)` | 结束算子原型定义 |
 
-> 说明
->
-> OpReg类中的OpReg &N()接口的功能是为了用户进行算子注册的时候，使用`.`的方式调用OpReg类的接口，例如`.INPUT(x, type)`、`.OUTPUT(x, type)`，无其他含义。
+### 属性类型说明
 
-### 返回值说明
+| 类型 | C++类型 | 说明 |
+|------|---------|------|
+| Int | int64_t | 整数 |
+| Float | float | 浮点数 |
+| String | string | 字符串 |
+| Bool | bool | 布尔值 |
+| ListInt | vector\<int64_t> | 整数列表 |
+| ListFloat | vector\<float> | 浮点数列表 |
+| ListString | vector\<string> | 字符串列表 |
+| ListBool | vector\<bool> | 布尔列表 |
 
-无
-
-### 约束说明
-
-- REG_OP的算子类型必须全局唯一。
-- 同一个算子的输入名称之间不能重复。
-- 同一个算子的输出名称之间不能重复。
-- 同一个算子的属性名称之间不能重复。
-
-### 调用示例和相关API
-
-动态输入的算子原型定义示例：
+### 调用示例
 
 ```c++
+// 动态输入的算子原型定义
 REG_OP(AddN)
     .DYNAMIC_INPUT(x, TensorType({NumberType(), DT_VARIANT}))
     .OUTPUT(y, TensorType({NumberType(), DT_VARIANT}))
     .REQUIRED_ATTR(N, Int)
     .OP_END_FACTORY_REG(AddN)
-```
 
-多输入的算子原型定义示例：
-
-```c++
+// 多输入的算子原型定义
 REG_OP(GreaterEqual)
     .INPUT(x1, TensorType::RealNumberType())
     .INPUT(x2, TensorType::RealNumberType())
     .OUTPUT(y, TensorType({DT_BOOL}))
     .OP_END_FACTORY_REG(GreaterEqual)
-```
 
-注册子图的算子原型定义示例：
-
-```c++
+// 注册子图的算子原型定义
 REG_OP(If)
     .INPUT(cond, TensorType::ALL())
     .DYNAMIC_INPUT(input, TensorType::ALL())
@@ -1099,78 +1198,32 @@ REG_OP(If)
     .OP_END_FACTORY_REG(If)
 ```
 
-### TensorType
+### TensorType类
 
-TensorType类用以定义输入或者输出支持的数据类型，TensorType提供以下接口指定支持的数据类型：
+TensorType类用以定义输入或者输出支持的数据类型：
 
 ```c++
 struct TensorType {
   explicit TensorType(DataType dt);
-
   TensorType(const std::initializer_list<DataType> &initial_types);
 
-  static TensorType ALL() {
-    return TensorType{DT_BOOL,   DT_COMPLEX128, DT_COMPLEX64, DT_DOUBLE, DT_FLOAT,  DT_FLOAT16, DT_INT16,
-                      DT_INT32,  DT_INT64,      DT_INT8,      DT_QINT16, DT_QINT32, DT_QINT8,   DT_QUINT16,
-                      DT_QUINT8, DT_RESOURCE,   DT_STRING,    DT_UINT16, DT_UINT32, DT_UINT64,  DT_UINT8,
-                      DT_BF16, DT_COMPLEX32};
-  }
-
-  static TensorType QuantifiedType() { return TensorType{DT_QINT16, DT_QINT32, DT_QINT8, DT_QUINT16, DT_QUINT8}; }
-
-  static TensorType OrdinaryType() {
-    return TensorType{DT_BOOL,  DT_COMPLEX128, DT_COMPLEX64, DT_DOUBLE, DT_FLOAT,  DT_FLOAT16, DT_INT16,
-                      DT_INT32, DT_INT64,      DT_INT8,      DT_UINT16, DT_UINT32, DT_UINT64,  DT_UINT8,
-                      DT_BF16, DT_COMPLEX32};
-  }
-
-  static TensorType BasicType() {
-    return TensorType{DT_COMPLEX128, DT_COMPLEX64, DT_DOUBLE, DT_FLOAT,  DT_FLOAT16, DT_INT16,
-                      DT_INT32,      DT_INT64,     DT_INT8,   DT_QINT16, DT_QINT32,  DT_QINT8,
-                      DT_QUINT16,    DT_QUINT8,    DT_UINT16, DT_UINT32, DT_UINT64,  DT_UINT8,
-                      DT_BF16, DT_COMPLEX32};
-  }
-
-  static TensorType NumberType() {
-    return TensorType{DT_COMPLEX128, DT_COMPLEX64, DT_DOUBLE, DT_FLOAT,  DT_FLOAT16, DT_INT16,  DT_INT32,  DT_INT64,
-                      DT_INT8,       DT_QINT32,    DT_QINT8,  DT_QUINT8, DT_UINT16,  DT_UINT32, DT_UINT64, DT_UINT8,
-                      DT_BF16, DT_COMPLEX32};
-  }
-
-  static TensorType RealNumberType() {
-    return TensorType{DT_DOUBLE, DT_FLOAT,  DT_FLOAT16, DT_INT16,  DT_INT32, DT_INT64,
-                      DT_INT8,   DT_UINT16, DT_UINT32,  DT_UINT64, DT_UINT8, DT_BF16};
-  }
-
-  static TensorType ComplexDataType() { return TensorType{DT_COMPLEX128, DT_COMPLEX64, DT_COMPLEX32}; }
-
-  static TensorType IntegerDataType() {
-    return TensorType{DT_INT16, DT_INT32, DT_INT64, DT_INT8, DT_UINT16, DT_UINT32, DT_UINT64, DT_UINT8};
-  }
-
-  static TensorType SignedDataType() { return TensorType{DT_INT16, DT_INT32, DT_INT64, DT_INT8}; }
-
-  static TensorType UnsignedDataType() { return TensorType{DT_UINT16, DT_UINT32, DT_UINT64, DT_UINT8}; }
-
-  static TensorType FloatingDataType() { return TensorType{DT_DOUBLE, DT_FLOAT, DT_FLOAT16}; }
-
-  static TensorType IndexNumberType() { return TensorType{DT_INT32, DT_INT64}; }
-
-  static TensorType UnaryDataType() {
-    return TensorType{DT_COMPLEX128, DT_COMPLEX64, DT_DOUBLE, DT_FLOAT, DT_FLOAT16, DT_BF16, DT_COMPLEX32};
-  }
-
-  static TensorType FLOAT() { return TensorType{DT_FLOAT, DT_FLOAT16, DT_BF16}; }
-
-  std::shared_ptr<TensorTypeImpl> tensor_type_impl_;
+  static TensorType ALL();              // 所有类型
+  static TensorType NumberType();       // 数值类型
+  static TensorType RealNumberType();   // 实数类型
+  static TensorType IntegerDataType();  // 整数类型
+  static TensorType FloatingDataType(); // 浮点类型
+  static TensorType FLOAT();            // float/float16/bf16
+  // ... 更多类型
 };
 ```
+
+---
 
 ## aclnn适配
 
 > Aclnn有自动生成和手写两种方式，可根据算子实际情况进行选择。
 
-### 自动生成Aclnn接口配置方式
+### 自动生成配置
 
 在 `${op_name}/CMakeLists.txt` 中配置：
 
@@ -1178,111 +1231,100 @@ struct TensorType {
 ACLNNTYPE aclnn
 ```
 
-### 自动生成内容
+### 自动生成接口
 
-- 自动生成两个ACLNN接口
+自动生成两个ACLNN接口：
 
-  ```c++
-  /*
-   * calution: this file was generated automaticlly donot change it.
-  */
-  
-  #ifndef ACLNN_SOFTMAX_H_
-  #define ACLNN_SOFTMAX_H_
-  
-  #include "aclnn/acl_meta.h"
-  
-  #ifdef __cplusplus
-  extern "C" {
-  #endif
-  
-  /* funtion: aclnnSoftmaxGetWorkspaceSize
-   * parameters :
-   * x : required
-   * out : required
-   * workspaceSize : size of workspace(output).
-   * executor : executor context(output).
-   */
-  __attribute__((visibility("default")))
-  aclnnStatus aclnnSoftmaxGetWorkspaceSize(
-      const aclTensor *x,
-      const aclTensor *out,
-      uint64_t *workspaceSize,
-      aclOpExecutor **executor);
-  
-  /* funtion: aclnnSoftmax
-   * parameters :
-   * workspace : workspace memory addr(input).
-   * workspaceSize : size of workspace(input).
-   * executor : executor context(input).
-   * stream : acl stream.
-   */
-  __attribute__((visibility("default")))
-  aclnnStatus aclnnSoftmax(
-      void *workspace,
-      uint64_t workspaceSize,
-      aclOpExecutor *executor,
-      aclrtStream stream);
-  
-  #ifdef __cplusplus
-  }
-  #endif
-  
-  #endif
-  ```
+```c++
+// 获取Workspace大小
+aclnnStatus aclnn{OpName}GetWorkspaceSize(
+    const aclTensor *x,
+    const aclTensor *out,
+    uint64_t *workspaceSize,
+    aclOpExecutor **executor);
 
-- 生成代码位置：`build/autogen/` 目录
+// 执行算子
+aclnnStatus aclnn{OpName}(
+    void *workspace,
+    uint64_t workspaceSize,
+    aclOpExecutor *executor,
+    aclrtStream stream);
+```
 
-- 自动编入自定义算子包
+### 生成文件位置
 
-### 动态库路径
+| 内容 | 路径 |
+|------|------|
+| 生成代码 | `build/autogen/` |
+| 动态库 | `${ASCEND_HOME_PATH}/cann-{version}/opp/vendors/custom_math/op_api/lib/` |
+| 头文件 | `${ASCEND_HOME_PATH}/cann-{version}/opp/vendors/custom_math/op_api/include/` |
+
+### 动态库配置
 
 ```bash
 export LD_LIBRARY_PATH=${ASCEND_HOME_PATH}/cann-{version}/opp/vendors/custom_math/op_api/lib/:${LD_LIBRARY_PATH}
 ```
 
-### 头文件位置
+---
 
-```
-${ASCEND_HOME_PATH}/cann-{version}/opp/vendors/custom_math/op_api/include/
-```
-
-`${ASCEND_HOME_PATH}`表示CANN软件安装目录。
-
-## 附录
-
-### 代际隔离说明
+## 代际隔离
 
 > 当某个算子需要同时支持多款芯片且Tiling或kernel实现不同则需要考虑代际隔离问题。
 
-#### 芯片架构映射
+### 芯片架构映射
 
-| 架构目录 | 对应芯片系列                             |
-| -------- | ---------------------------------------- |
-| `arch35` | Ascend950DT / Ascend950PR                |
-| `arch32` | Ascend910B / Ascend910_93                |
+| 架构目录 | 对应芯片系列 |
+| -------- | ------------ |
+| `arch35` | Ascend950DT / Ascend950PR |
+| `arch32` | Ascend910B / Ascend910_93 |
 
-#### 隔离位置清单
+### 隔离位置清单
 
-| 位置               | 是否隔离 | 说明             |
-| ------------------ | -------- | ---------------- |
-| ACLNN接口          | ❌ 不隔离 | 多代际共用       |
-| IR                 | ❌ 不隔离 | 多代际共用       |
+```mermaid
+graph TB
+    subgraph "需要隔离的文件"
+        A["op_host/arch32/<br/>Tiling实现"]
+        B["op_host/arch35/<br/>Tiling实现"]
+        C["op_kernel/arch32/<br/>Kernel实现"]
+        D["op_kernel/arch35/<br/>Kernel实现"]
+        E["CMakeLists.txt<br/>芯片号列表"]
+    end
+
+    subgraph "不需要隔离的文件"
+        F["ACLNN接口"]
+        G["IR定义"]
+    end
+
+    subgraph "架构关系"
+        H["arch32<br/>Ascend910B"]
+        I["arch35<br/>Ascend950<br/>可参考arch32代码"]
+    end
+
+    H --> A
+    H --> C
+    I --> B
+    I --> D
+    I -.->|参考| H
+```
+
+| 位置 | 是否隔离 | 说明 |
+| ---- | -------- | ---- |
+| ACLNN接口 | ❌ 不隔离 | 多代际共用 |
+| IR | ❌ 不隔离 | 多代际共用 |
 | 算子CMakeLists.txt | ✅ 需隔离 | 芯片号列表要准确 |
-| op_host/arch35     | ✅ 隔离   | Ascend950系列    |
-| op_host/arch32     | ✅ 隔离   | Ascend910B系列   |
-| op_kernel/arch35   | ✅ 隔离   | Ascend950系列    |
-| op_kernel/arch32   | ✅ 隔离   | Ascend910B系列   |
+| op_host/arch35 | ✅ 隔离 | Ascend950系列 |
+| op_host/arch32 | ✅ 隔离 | Ascend910B系列 |
+| op_kernel/arch35 | ✅ 隔离 | Ascend950系列 |
+| op_kernel/arch32 | ✅ 隔离 | Ascend910B系列 |
 
-**注意**:
-
+**重要提示：**
 1. 严格按照架构关系规划目录
-2. 高架构芯片可以参考低架构芯片代码，低架构芯片不能照抄高架构芯片的代码!!!
+2. **高架构芯片可以参考低架构芯片代码，低架构芯片不能照抄高架构芯片的代码！**
 3. arch35以上才支持MicroAPI微指令编程
 
-#### Kernel入口配置
+### Kernel入口配置
 
-kernel入口函数文件配置在 `${op_name}_def.cpp` 中：
+在 `${op_name}_def.cpp` 中配置：
 
 ```cpp
 // 默认配置（第一代芯片）
@@ -1292,16 +1334,14 @@ ExtendCfgInfo("opFile.value", "{op_name_snake}");
 ExtendCfgInfo("opFile.value", "{op_name_snake}_apt");
 ```
 
-#### 对应文件关系
+### 对应文件关系
 
-| 配置值                | 对应Kernel文件            |
-| --------------------- | ------------------------- |
-| `{op_name_snake}`     | `{op_name_snake}.cpp`     |
+| 配置值 | 对应Kernel文件 |
+| ------ | -------------- |
+| `{op_name_snake}` | `{op_name_snake}.cpp` |
 | `{op_name_snake}_apt` | `{op_name_snake}_apt.cpp` |
 
-#### 编译隔离实现
-
-在 `.cpp` 文件中分别include对应的 `.h` 文件：
+### 编译隔离实现
 
 ```cpp
 // {op_name_snake}.cpp (arch32/Ascend910B)
@@ -1309,5 +1349,174 @@ ExtendCfgInfo("opFile.value", "{op_name_snake}_apt");
 
 // {op_name_snake}_apt.cpp (arch35/Ascend950)
 #include "{op_name_snake}_apt_impl.h"
+```
+
+---
+
+## 常见问题
+
+### Q1: Tiling结构体定义放在哪个目录？
+
+**A:** Tiling结构体头文件应放置在`op_kernel/`目录下，因为只有该目录下的文件会被打包进算子包。如果放在其他目录，可能导致在线编译失败。
+
+### Q2: 核函数参数顺序可以调整吗？
+
+**A:** 不可以。核函数参数必须按照 **输入 → 输出 → workspace → tiling** 的固定顺序排布。
+
+### Q3: 如何选择BlockDim的值？
+
+**A:**
+- 耦合模式：使用`GetCoreNumAiv()`或`GetCoreNumAic()`获取核数
+- 分离模式Vector算子：设置为Vector核数
+- 分离模式Cube算子：设置为Cube核数
+- 一般建议设置为物理核数以充分利用硬件资源
+
+### Q4: TilingData获取后需要初始化吗？
+
+**A:** 是的。通过`GetTilingData<T>()`获取的Tiling结构体不包含初值，必须显式赋值所有需要使用的成员变量。
+
+### Q5: 算子输入输出同名怎么处理？
+
+**A:** 输出参数会增加`ref`后缀。例如输入`x`，输出也是`x`时，核函数参数为`x`和`x_ref`。
+
+### Q6: 不同芯片架构的代码如何隔离？
+
+**A:**
+1. 在`op_host/`和`op_kernel/`下分别创建`arch32/`和`arch35/`目录
+2. 在`{op}_def.cpp`中通过`ExtendCfgInfo("opFile.value", ...)`配置不同入口
+3. **注意：低架构不能直接复制高架构代码**
+
+---
+
+## 约束条件汇总
+
+### Tiling结构体约束
+
+| 约束项 | 要求 |
+|--------|------|
+| 成员函数 | ❌ 不支持 |
+| 指针/引用类型 | ❌ 不支持 |
+| 虚函数/虚继承 | ❌ 不支持 |
+| 模板类 | ❌ 不支持 |
+| 数据类型 | 仅POD类型 |
+
+### 核函数约束
+
+| 约束项 | 要求 |
+|--------|------|
+| 参数顺序 | 固定为：输入→输出→workspace→tiling |
+| 修饰符 | 必须包含`extern "C" __global__ __aicore__` |
+| 文件位置 | 必须在`op_kernel/`目录下 |
+
+### 算子原型约束
+
+| 约束项 | 要求 |
+|--------|------|
+| 算子类型 | 全局唯一 |
+| 输入名称 | 同一算子内不重复 |
+| 输出名称 | 同一算子内不重复 |
+| 属性名称 | 同一算子内不重复 |
+
+### BlockDim约束
+
+| 约束项 | 要求 |
+|--------|------|
+| 取值范围 | [1, 65535] |
+| 融合算子 | 不超过物理组合核数 |
+| 资源限制场景 | 不超过`GetCoreNum*()`返回值 |
+
+---
+
+## API快速参考
+
+### 算子定义API
+
+```c++
+// 继承OpDef定义算子类
+class XxxCustom : public OpDef {
+public:
+    XxxCustom(const char* name) : OpDef(name) {
+        // 输入定义
+        this->Input("x")
+            .ParamType(REQUIRED)          // REQUIRED/OPTIONAL/DYNAMIC
+            .DataType({ge::DT_FLOAT16})   // 数据类型列表
+            .Format({ge::FORMAT_ND});     // 格式列表
+
+        // 输出定义（Follow简化）
+        this->Output("y")
+            .Follow("x");                 // 跟随输入x的属性
+
+        // 属性定义
+        this->Attr("axis")
+            .AttrType(REQUIRED)
+            .Int();
+
+        // 注册函数
+        this->SetInferShape(ge::InferShape);
+        this->AICore().SetTiling(optiling::TilingFunc);
+        this->AICore().AddConfig("ascend910b");
+    }
+};
+OP_ADD(XxxCustom);  // 注册算子
+```
+
+### Tiling实现API
+
+```c++
+static ge::graphStatus TilingFunc(gert::TilingContext *context)
+{
+    // 获取输入信息
+    auto shape = context->GetInputShape(0)->GetOriginShape();
+    auto dtype = context->GetInputDesc(0)->GetDataType();
+
+    // 获取Tiling结构体
+    auto tiling = context->GetTilingData<TilingData>();
+    tiling->totalLength = shape.GetShapeSize();
+
+    // 设置输出
+    context->SetBlockDim(8);
+    context->SetTilingKey(1);
+
+    // 设置Workspace
+    auto ws = context->GetWorkspaceSizes(1);
+    ws[0] = 1024;
+
+    return ge::GRAPH_SUCCESS;
+}
+```
+
+### Kernel实现API
+
+```c++
+#include "kernel_operator.h"
+
+extern "C" __global__ __aicore__ void xxx_custom(
+    GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+{
+    // 获取Tiling数据
+    GET_TILING_DATA(tilingData, tiling);
+
+    // 类型推导宏
+    DTYPE_X temp;
+    if (FORMAT_Y == FORMAT_ND) { ... }
+
+    // TilingKey分支
+    if (TILING_KEY_IS(1)) {
+        Process1();
+    }
+}
+```
+
+### 图模式API
+
+```c++
+#include <graph/operator_reg.h>
+
+REG_OP(XxxCustom)
+    .INPUT(x, TensorType({DT_FLOAT, DT_FLOAT16}))
+    .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16}))
+    .REQUIRED_ATTR(axis, Int)
+    .ATTR(keep_dims, Bool, false)
+    .OP_END_FACTORY_REG(XxxCustom)
 ```
 
