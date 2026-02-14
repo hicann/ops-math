@@ -251,7 +251,7 @@ aclnnStatus aclnnInplaceFmodTensor(
     </tr></thead>
   <tbody>
     <tr>
-      <td>selfRet</td>
+      <td>selfRef</td>
       <td>输入</td>
       <td>Device侧的aclTensor。</td>
       <td>无</td>
