@@ -53,7 +53,7 @@ static const std::initializer_list<op::DataType> INPUT_DTYPE_SUPPORT_LIST_910B =
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
-    auto outDtypeSupportList = GetDtypeSupportListV1(ASCEND910B_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_SUPPORT_LIST);
+    auto outDtypeSupportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_SUPPORT_LIST);
     auto inputDtypeSupportList = GetDtypeSupportListV2(INPUT_DTYPE_SUPPORT_LIST_910B, INPUT_DTYPE_SUPPORT_LIST_910);
 
     // 检查self和other的数据类型是否为支持的数据类型

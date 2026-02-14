@@ -35,8 +35,8 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_
 static const std::initializer_list<op::DataType> NULL_SUPPORT_LIST = {};
 
 static const std::initializer_list<op::DataType>& GetDtypeSupportList() {
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+  if (op::GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201 ||
+      op::GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510) {
     return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
   } else {
     return NULL_SUPPORT_LIST;

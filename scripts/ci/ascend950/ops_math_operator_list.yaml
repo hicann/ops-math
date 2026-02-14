@@ -35,6 +35,7 @@ operator_group_1:
   - cast
   - cdist
   - ceil
+  - cholesky
   - cos
   - cumsum
   - diag_flat
@@ -133,6 +134,7 @@ operator_group_5:
   - broadcast_to
   - clip_by_value
   - clip_by_value_v2
+  - coalesce_sparse
   - concat
   - concat_d
   - concat_v2
