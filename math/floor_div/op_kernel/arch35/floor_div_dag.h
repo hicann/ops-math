@@ -20,6 +20,7 @@
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
+
 using namespace Ops::Base;
 using namespace AscendC;
 

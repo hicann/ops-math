@@ -16,6 +16,7 @@
 #ifndef ASCENDC_PAD_COMMON_H
 #define ASCENDC_PAD_COMMON_H
 #include "op_kernel/platform_util.h"
+#include "kernel_operator.h"
 
 namespace PadV3 {
 

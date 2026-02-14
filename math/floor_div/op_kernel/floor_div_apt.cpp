@@ -12,7 +12,7 @@
  * \file floor_div_tiling_arch35.cpp
  * \brief
  */
-
+#include "kernel_operator.h"
 #include "arch35/floor_div_dag.h"
 #include "arch35/floor_div_struct.h"
 #include "atvoss/broadcast/broadcast_sch.h"
