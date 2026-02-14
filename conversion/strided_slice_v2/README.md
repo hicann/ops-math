@@ -1,17 +1,17 @@
-# StridedSliceV3
+# StridedSliceV2
 
 |产品             |  是否支持  |
 |:-------------------------|:----------:|
 | <term>Ascend 950PR/Ascend 950DT</term>                     |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |    √     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    ×     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |    ×     |
 | <term>Atlas 200I/500 A2 推理产品</term>                     |    ×     |
 | <term>Atlas 推理系列产品</term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                             |    ×     |
 
 ## 功能说明时
 
-- 算子功能：按照指定的起始、结束位置,轴和步长，从输入张量中提取一个子张量。
+- 算子功能：按照指定的起始、结束位置，轴，步长和二进制位掩码，从输入张量中提取一个子张量。
 
 ## 参数说明
 
@@ -67,6 +67,41 @@
     <td>ND</td>
     </tr>
     <tr>
+    <td>begin_mask</td>
+    <td>属性</td>
+    <td>这个值指定哪些维度的begin被忽略</td>
+    <td>INT32、INT64</td>
+    <td>ND</td>
+    </tr>
+    <tr>
+    <td>end_mask</td>
+    <td>属性</td>
+    <td>这个值指定哪些维度的end被忽略</td>
+    <td>INT32、INT64</td>
+    <td>ND</td>
+    </tr>
+    <tr>
+    <td>ellipsis_mask</td>
+    <td>属性</td>
+    <td>从指定的维度开始全选，直到遇到用户指定begin才退出</td>
+    <td>INT32、INT64</td>
+    <td>ND</td>
+    </tr>
+    <tr>
+    <td>new_axis_mask</td>
+    <td>属性</td>
+    <td>在指定位上增加维度为1的shape</td>
+    <td>INT32、INT64</td>
+    <td>ND</td>
+    </tr>
+    <tr>
+    <td>shrink_axis_mask</td>
+    <td>属性</td>
+    <td>把对应索引处维度强制降为1</td>
+    <td>INT32、INT64</td>
+    <td>ND</td>
+    </tr>
+    <tr>
     <td>y</td>
     <td>输出</td>
     <td>输出张量</td>
@@ -81,7 +116,6 @@
 
 ## 调用说明
 
-| 调用方式 | 调用样例                                                                      | 说明                                                                  |
-|--------------|---------------------------------------------------------------------------|---------------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_strided_slice_v3](./examples/test_aclnn_strided_slice_v3.cpp) | 通过[aclnnSliceV2](./docs/aclnnSliceV2.md)接口方式调用StridedSliceV3算子。     |
-| 图模式调用 | [test_geir_strided_slice_v3](./examples/test_geir_strided_slice_v3.cpp)   | 通过[算子IR](./op_graph/strided_slice_v3_proto.h)构图方式调用StridedSliceV3算子 |
+| 调用方式 | 调用样例                                                                   | 说明                                                                  |
+|--------------|------------------------------------------------------------------------|---------------------------------------------------------------------|
+| 图模式调用 | [test_geir_strided_slice_v2](./examples/test_geir_strided_slice_v2.cpp) | 通过[算子IR](./op_graph/strided_slice_v2_proto.h)构图方式调用StridedSliceV2算子 |

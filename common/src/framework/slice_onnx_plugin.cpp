@@ -10,6 +10,7 @@
 
 #include "onnx_common.h"
 #include "op_math_proto_extend.h"
+#include "conversion/strided_slice_v2/op_graph/strided_slice_v2_proto.h"
 
 using namespace std;
 using namespace ge;

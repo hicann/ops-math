@@ -158,6 +158,8 @@ operator_group_5:
   - split
   - split_v
   - strided_slice
+  - strided_slice_v2
+  - strided_slice_v3
   - strided_slice_assign_v2
   - strided_slice_grad
   - tensor_move
