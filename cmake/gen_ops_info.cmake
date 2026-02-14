@@ -537,6 +537,12 @@ function(gen_ops_info_and_python)
           continue()
         endif()
 
+        list(FIND ASCEND_OP_NAME ${op_name} INDEX)
+        if(NOT "${ASCEND_OP_NAME}" STREQUAL "" AND INDEX EQUAL -1 AND NO_FORCE)
+          # 非指定算子，只编译kernel
+          continue()
+        endif()
+
         set(HAS_OP_COMPILE_OF_COMPUTE_UNIT TRUE)
 
         # generate opc shell scripts for autogen binary config ops

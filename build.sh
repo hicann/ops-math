@@ -18,7 +18,7 @@ SUPPORTED_SHORT_OPTS="hj:vO:uf:-:"
 # 所有支持的长选项
 SUPPORTED_LONG_OPTS=(
   "help" "ops=" "soc=" "vendor_name=" "debug" "cov" "noexec" "aicpu" "opkernel" "opkernel_aicpu" "jit"
-  "pkg" "asan" "valgrind" "make_clean" "static" "build-type="
+  "pkg" "asan" "valgrind" "make_clean" "static" "build-type=" "no_force"
   "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "opkernel_aicpu_test"
   "run_example" "genop=" "genop_aicpu=" "experimental" "cann_3rd_lib_path" "mssanitizer" "oom" "onnxplugin"
   "dump_cce" "bisheng_flags=" "tiling_key="
@@ -171,6 +171,7 @@ usage() {
         echo "    --mssanitizer          Build with mssanitizer mode on the kernel side, with options: '-g --cce-enable-sanitizer'"
         echo "    --oom                  Build with oom mode on the kernel side, with options: '-g --cce-enable-oom'"
         echo "    --dump_cce             Dump kernel precompiled files"
+        echo "    --no_force             Don't force dependency installation"
         echo "    --bisheng_flags=flag1,flag2"
         echo "                           Specify bisheng compiler config (comma-separated for multiple)"
         echo "    --tiling_key=tilingkey1,tilingkey2"
@@ -756,6 +757,7 @@ checkopts() {
   OP_KERNEL_AICPU=FALSE
   ENABLE_CREATE_LIB=FALSE
   ENABLE_RUN_EXAMPLE=FALSE
+  NO_FORCE=FALSE
   BUILD_LIBS=()
   UT_TARGETS=()
 
@@ -895,6 +897,7 @@ checkopts() {
           clean_third_party
           exit 0
           ;;
+        no_force) NO_FORCE=TRUE ;;
         *)
           ## 如果不在RELEASE_TARGETS 或者 UT_TARGETS，不做处理
           if ! in_array "$OPTARG" "${RELEASE_TARGETS[@]}" && ! in_array "$OPTARG" "${UT_TARGETS[@]}"; then
@@ -1108,6 +1111,9 @@ assemble_cmake_args() {
   fi
   if [[ "$ENABLE_DUMP_CCE" == "TRUE" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DENABLE_DUMP_CCE=TRUE"
+  fi
+  if [[ "$NO_FORCE" == "TRUE" ]]; then
+    CMAKE_ARGS="$CMAKE_ARGS -DNO_FORCE=TRUE"
   fi
   if [[ -n $COMPUTE_UNIT ]]; then
     COMPUTE_UNIT=$(echo "$COMPUTE_UNIT" | tr '[:upper:]' '[:lower:]')

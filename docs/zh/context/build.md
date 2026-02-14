@@ -64,3 +64,4 @@ bash build.sh --help
 | --bisheng_flags  | 可选     | 指定毕昇编译器编译参数，多个编译参数用英文逗号“,”分隔，不可与--mssanitizer、--oom、--dump_cce同时使用。     |
 | --tiling-key     | 可选     | 指定编译kernel时的tilingkey，多个tilingkey用英文逗号“,”分隔，与--ops同时使用且只能指定一个算子。     |
 | --cann_3rd_lib_path         | 可选     | 离线编译场景下第三方库存放的目录。                                                   |
+| --no_force       | 可选     | 待编译的算子依赖其他算子时，不再编译其他算子二进制文件                                       |
