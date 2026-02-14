@@ -123,9 +123,23 @@ __aicore__ inline void Im2colNHWC(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_AD
     TPipe pipe;
 
     GET_TILING_DATA_WITH_STRUCT(Im2ColNHWCTilingData, tilingData, tiling);
-    KernelIm2ColNormNhwc<DTYPE_X, isPadding, ubAxis> op;
-    op.Init(x, y, &tilingData, &pipe);
-    op.Process();
+    if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
+        KernelIm2ColNormNhwc<uint8_t, isPadding, ubAxis> op;
+        op.Init(x, y, &tilingData, &pipe);
+        op.Process();
+    } else if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
+        KernelIm2ColNormNhwc<uint16_t, isPadding, ubAxis> op;
+        op.Init(x, y, &tilingData, &pipe);
+        op.Process();
+    } else if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
+        KernelIm2ColNormNhwc<uint32_t, isPadding, ubAxis> op;
+        op.Init(x, y, &tilingData, &pipe);
+        op.Process();
+    } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
+        KernelIm2ColNormNhwc<uint64_t, isPadding, ubAxis> op;
+        op.Init(x, y, &tilingData, &pipe);
+        op.Process();
+    }
 }
 
 template <uint8_t format, uint8_t ubAxis, bool isPadding, bool isSIMT, bool IsBigShape>
