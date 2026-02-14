@@ -108,7 +108,7 @@ list(LENGTH _orig_ops _orig_len)
 set(_filtered_ops "${_orig_ops}")
 list(FILTER _filtered_ops INCLUDE REGEX "add_example")
 list(LENGTH _filtered_ops _filtered_len)
-if(_filtered_len EQUAL _orig_len)
+if(_orig_len GREATER 0 AND _filtered_len EQUAL _orig_len)
     add_subdirectory(examples)
 endif()
 
