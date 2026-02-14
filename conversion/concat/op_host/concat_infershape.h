@@ -18,7 +18,6 @@
 #include "infershape_broadcast_util.h"
 #include "op_common/op_host/util/shape_util.h"
 #include "register/op_impl_registry.h"
-using namespace ge;
 namespace ops {
 constexpr size_t INDEX_CONCAT_DIM = 0;
 constexpr size_t INDEX_N = 1;

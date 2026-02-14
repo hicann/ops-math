@@ -51,7 +51,7 @@ static ge::graphStatus InferShape4ConcatV2(gert::InferShapeContext* context)
     } else if (dtype == ge::DT_INT64) {
         axis = GetAxisValue<int64_t>(context, INDEX_CONCAT_DIM_FOR_CONCAT_V2);
     } else {
-        OP_LOGE(context, "ConcatV2: unsupported concat_dim dtype %d", (int)dtype);
+        OP_LOGE(context, "ConcatV2: unsupported concat_dim dtype %s", Ops::Base::ToString(dtype).c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -66,7 +66,7 @@ static ge::graphStatus InferShape4ConcatV2(gert::InferShapeContext* context)
     size_t rank = outShape->GetDimNum();
     if (axis < 0)
         axis += rank;
-    if (axis < 0 || axis >= (int64_t)rank) {
+    if (axis < 0 || axis >= static_cast<int64_t>(rank)) {
         OP_LOGE(context, "Invalid concat_dim=%ld, rank=%zu.", axis, rank);
         return ge::GRAPH_FAILED;
     }

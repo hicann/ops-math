@@ -60,7 +60,7 @@ static ge::graphStatus PackInferShapeCommon(
     }
     int64_t i = output_dim;
     while (i > axis) {
-        out_shape->SetDim(i, out_shape->GetDim(i - 1));
+        out_shape->SetDim(static_cast<uint32_t>(i), out_shape->GetDim(static_cast<uint32_t>(i - 1)));
         i--;
     }
     out_shape->SetDim(axis, pack_num);
