@@ -292,9 +292,12 @@ aclnnStatus aclnnAllGetWorkspaceSize(
     auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    // 将输入self的数据类型转换成隐式数据类型，根据具体算子语义按需调用
-    auto selfCasted = l0op::Cast(selfContiguous, DataType::DT_BOOL, uniqueExecutor.get());
-    CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto selfCasted = selfContiguous;
+    if (!(selfContiguous->GetDataType() == op::DataType::DT_FLOAT16 || selfContiguous->GetDataType() == op::DataType::DT_BF16 || selfContiguous->GetDataType() == op::DataType::DT_FLOAT)) {
+        // 将输入self的数据类型转换成隐式数据类型，根据具体算子语义按需调用
+        selfCasted = l0op::Cast(selfContiguous, DataType::DT_BOOL, uniqueExecutor.get());
+        CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    }
 
     // 调用l0算子All进行计算
     auto allResult = l0op::ReduceAll(selfCasted, dim, keepdim, uniqueExecutor.get());
