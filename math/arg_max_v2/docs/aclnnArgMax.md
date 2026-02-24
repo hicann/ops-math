@@ -81,7 +81,7 @@ aclnnStatus aclnnArgMax(
         <td>输入</td>
         <td>指定了要进行最大值计算的维度。</td>
         <td>取值范围在[-self.dim(), self.dim())。</td>
-        <td>-</td>
+        <td>INT64</td>
         <td>-</td>
         <td>-</td>
         <td>-</td>

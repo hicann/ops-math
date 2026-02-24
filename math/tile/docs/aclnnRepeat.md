@@ -30,7 +30,9 @@ tensor([[a,b,a,b,a,b,a,b],
         [e,f,e,f,e,f,e,f],
         ])
 ```
+
 当repeats为(2,4,2)时，即repeats的元素个数大于Tensor中的维度，则输出Tensor等效为如下操作：先将输入Tensor的shape扩张到和repeats个数相同的维度：[1,3,2]，而后按照对应维度和repeats的值进行扩张，即输出Tensor的shape为[2,12,4]，结果如下：
+
 ```
 >>> x.repeat(2,4,2)
 tensor([[[a,b,a,b],
@@ -59,6 +61,7 @@ tensor([[[a,b,a,b],
          [c,d,c,d],
          [e,f,e,f]]])
 ```
+
 计算时需要满足以下条件：
 repeats中参数个数不能少于输入Tensor的维度。
 repeats中的值必须大于等于0。
@@ -171,10 +174,11 @@ aclnnStatus aclnnRepeat(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
     
   第一段接口完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed; width: 1207px"><colgroup>
-  <col style="width: 268px">
-  <col style="width: 138px">
-  <col style="width: 801px">
+  
+  <table style="undefined;table-layout: fixed; width: 1145px"><colgroup>
+  <col style="width: 295px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>
@@ -269,11 +273,14 @@ aclnnStatus aclnnRepeat(
 
 repeat功能内部broadcast的kernel有最大8维度的限制，暂不支持扩维度后超过8维的场景，详细如下：  
   限制1. 当需要对第一根轴进行repeat时，最大支持同时对4个维度进行repeat操作（即repeats的参数非1数据不超过4）。
+
   ```
    x.repeat(2, 3, 4, 5, 6)  # 不支持，校验报错，第一根轴为repeat为2，同时5个非1repeat参数
    x.repeat(2, 3, 1, 5, 6)  # 支持，第一根轴为repeat为2，同时4个非1repeat参数
   ```
+
   限制2. 当不需要对第一根轴进行repeat时，最大支持同时对3个维度进行repeat操作（即repeats的参数非1数据不超过3）。
+
   ```
    x.repeat(1, 3, 4, 5, 6)  # 不支持，校验报错，第一根轴为repeat为1，同时4个非1repeat参数
    x.repeat(1, 3, 1, 5, 6)  # 支持，第一根轴为repeat为1，同时3个非1repeat参数

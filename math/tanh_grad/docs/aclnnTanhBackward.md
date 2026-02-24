@@ -3,6 +3,7 @@
 [📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/tanh_grad)
 
 ## 产品支持情况
+
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
 | <term>Ascend 950PR/Ascend 950DT</term>                       |    √     |
@@ -24,6 +25,7 @@ gradInput = gradOutput \cdot (1 -output^2)
 $$
 
 ## 函数原型
+
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnTanhBackwardGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnTanhBackward”接口执行计算。
 
 ```Cpp
@@ -126,6 +128,7 @@ aclnnStatus aclnnTanhBackward(
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  
   第一段接口完成入参校验，出现如下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>

@@ -39,25 +39,87 @@
   
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
   
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）: 1. 传入的 sortedSequence、self、out是空指针时。
-  返回161002（ACLNN_ERR_PARAM_INVALID）: 1. sortedSequence、self 的数据类型不在支持的范围之内。
-                                        2. out的数据类型与outInt32值含义相违背。
-                                        3. sortedSequence与self数据类型不同时，不能做数据类型推导。
-                                        4. 传入的sorter不是INT64类型。
-                                        5. out的shape与self的shape不相同，sorter的shape与sortedSequence的shape不相同。
-                                        6. 当sortedSequence维度大于一，self除最后一维外，其他维度不与sortedSequence对应维度不相等时。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 136px">
+  <col style="width: 715px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的 sortedSequence、self、out是空指针时。</td>
+    </tr>
+    <tr>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
+      <td>sortedSequence、self 的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>out的数据类型与outInt32值含义相违背。</td>
+    </tr>
+    <tr>
+      <td>sortedSequence与self数据类型不同时，不能做数据类型推导。</td>
+    </tr>
+    <tr>
+      <td>传入的sorter不是INT64类型。</td>
+    </tr>
+    <tr>
+      <td>out的shape与self的shape不相同，sorter的shape与sortedSequence的shape不相同。</td>
+    </tr>
+    <tr>
+      <td>当sortedSequence维度大于一，self除最后一维外，其他维度不与sortedSequence对应维度不相等时。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnSearchSorted
 
 - **参数说明**：
   
-  - workspace（void\*, 入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize（uint64_t, 入参）：在Device侧申请的workspace大小，由第一段接口aclnnSearchSortedGetWorkspaceSize获取。
-  - executor（aclOpExecutor\*, 入参）：op执行器，包含了算子计算流程。
-  - stream（aclrtStream, 入参）：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnSearchSortedGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+
 - **返回值：**
   
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。

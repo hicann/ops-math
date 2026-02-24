@@ -162,10 +162,10 @@ aclnnStatus aclnnSvd(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1040px"><colgroup>
-  <col style="width: 260px">
-  <col style="width: 130px">
-  <col style="width: 650px">
+  <table style="undefined;table-layout: fixed; width: 1145px"><colgroup>
+  <col style="width: 296px">
+  <col style="width: 135px">
+  <col style="width: 714px">
   </colgroup>
   <thead>
     <tr>
@@ -200,10 +200,10 @@ aclnnStatus aclnnSvd(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 598px"><colgroup>
-  <col style="width: 144px">
-  <col style="width: 125px">
-  <col style="width: 700px">
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
   </colgroup>
   <thead>
     <tr>

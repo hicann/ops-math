@@ -81,7 +81,7 @@ aclnnStatus aclnnArgMin(
       <td>输入</td>
       <td>需要进行最小值计算的维度。</td>
       <td>取值范围在[-self.dim(), self.dim())。</td>
-      <td>-</td>
+      <td>INT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>

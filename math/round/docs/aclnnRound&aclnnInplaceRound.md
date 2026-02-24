@@ -19,6 +19,7 @@
 算子功能：将输入的值舍入到最接近的整数，若该值与两个整数距离一样则向偶数取整。
 
 ## 函数原型
+
 - aclnnRound和aclnnInplaceRound实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnRound：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceRound：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
@@ -33,6 +34,7 @@
   * `aclnnStatus aclnnInplaceRound(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
 
 ## aclnnRoundGetWorkspaceSize
+
 - **参数说明：**
   
   - self(aclTensor*,计算输入)：Device侧的aclTensor，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape不支持9D及以上。
@@ -48,27 +50,84 @@
 
   aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-```
-第一段接口完成入参校验，出现以下场景时报错：
-161001(ACLNN_ERR_PARAM_NULLPTR)：1. Tensor为空指针。
-161002(ACLNN_ERR_PARAM_INVALID)：1. self和out的数据类型或数据格式不在支持的范围之内。
-                                 2. self和out的shape不一致。
-                                 3. self和out的dtype不一致。
-```
+  第一段接口完成入参校验，出现以下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1152px"><colgroup>
+  <col style="width: 294px">
+  <col style="width: 136px">
+  <col style="width: 722px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>Tensor为空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
+      <td>self和out的数据类型或数据格式不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self和out的shape不一致。</td>
+    </tr>
+    <tr>
+      <td>self和out的dtype不一致。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnRound
+
 - **参数说明：**
 
-  - workspace（void\*, 入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参): 在Device侧申请的workspace大小, 由第一段接口aclnnRoundGetWorkspaceSize获取。
-  - executor(aclOpExecutor*, 入参): op执行器, 包含了算子计算流程。
-  - stream(aclrtStream, 入参): 指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小, 由第一段接口aclnnRoundGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
   
 - **返回值：**
 
   aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceRoundGetWorkspaceSize
+
 - **参数说明：**
   
   - selfRef(aclTensor*,计算输入)：Device侧的aclTensor，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape不支持9D及以上。
@@ -81,19 +140,71 @@
 
   aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-```
-第一段接口完成入参校验，出现以下场景时报错：
-返回161001（ACLNN_ERR_PARAM_NULLPTR）：传入的Tensor为空指针。
-返回561101（ACLNN_ERR_INNER_CREATE_EXECUTOR）：1.内部错误，执行器创建失败。
-```
+  第一段接口完成入参校验，出现以下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 374px">
+  <col style="width: 135px">
+  <col style="width: 641px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的Tensor为空指针。</td>
+    </tr>
+    <tr>
+      <td>ACLNN_ERR_INNER_CREATE_EXECUTOR</td>
+      <td>561101</td>
+      <td>内部错误，执行器创建失败。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnInplaceRound
+
 - **参数说明：**
 
-  - workspace（void\*, 入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参):在Device侧申请的workspace大小, 由第一段接口aclnnInplaceRoundGetWorkspaceSize获取。
-  - executor(aclOpExecutor*, 入参):op执行器, 包含了算子计算流程。
-  - stream(aclrtStream, 入参):指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小, 由第一段接口aclnnInplaceRoundGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
   
 - **返回值：**
 

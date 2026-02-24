@@ -14,6 +14,7 @@
 
 - 算子功能：求解一个具有方形上或下三角形可逆矩阵A和多个右侧b的方程组。
 - 计算公式：
+
   $$
   AX = b
   $$
@@ -53,24 +54,74 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  161001(ACLNN_ERR_PARAM_NULLPTR)：1. 传入的self、A或xOut,mOut是空指针。
-  161002(ACLNN_ERR_PARAM_INVALID)：1. self、A或xOut,mOut的数据类型和数据格式不在支持的范围之内。
-                                   2. self、A或xOut,mOut的shape不符合约束
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1145px"><colgroup>
+  <col style="width: 295px">
+  <col style="width: 134px">
+  <col style="width: 716px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、A或xOut,mOut是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="2">161002</td>
+      <td>self、A或xOut,mOut的数据类型和数据格式不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self、A或xOut,mOut的shape不符合约束。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnTriangularSolve
 
 - **参数说明：**
 
-  - workspace(void *, 入参)：在Device侧申请的workspace内存地址。
-
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnTriangularSolveGetWorkspaceSize获取。
-
-  - executor(aclOpExecutor *, 入参)：op执行器，包含了算子计算流程。
-
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnTriangularSolveGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
@@ -84,6 +135,7 @@
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

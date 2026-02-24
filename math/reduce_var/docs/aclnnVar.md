@@ -3,6 +3,7 @@
 [📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/reduce_var)
 
 ## 产品支持情况
+
 | 产品                                                         |  是否支持   |
 | :----------------------------------------------------------- |:-------:|
 | <term>Ascend 950PR/Ascend 950DT</term>                     |    √     |
@@ -26,6 +27,7 @@
   当dim为nullptr或[]时，视为计算所有维度。
 
 ## 函数原型
+
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnVarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnVar”接口执行计算。
 
 ```Cpp

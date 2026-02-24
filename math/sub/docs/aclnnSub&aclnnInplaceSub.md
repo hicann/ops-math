@@ -76,10 +76,40 @@
 
 - **参数说明**：
   
-  - workspace（void\*, 入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize（uint64_t, 入参）：在Device侧申请的workspace大小，由第一段接口aclnnSubGetWorkspaceSize获取。
-  - executor（aclOpExecutor\*, 入参）：op执行器，包含了算子计算流程。
-  - stream（aclrtStream, 入参）：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnSubGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值**：
   
@@ -104,25 +134,89 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。 
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的selfRef、other、alpha是空指针。
-  返回161002 (ACLNN_ERR_PARAM_INVALID)：1. selfRef和other的数据类型不在支持的范围之内。
-                                       2. selfRef和other不满足数据类型推导规则。
-                                       3. 推导出的数据类型无法转换为selfRef的类型。
-                                       4. alpha无法转换为selfRef和other推导后的数据类型。
-                                       5. selfRef和other的shape无法做broadcast。
-                                       6. broadcast后的shape不等于selfRef的shape。
-                                       7. selfRef、other的维度大于8。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 298px">
+  <col style="width: 135px">
+  <col style="width: 716px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的selfRef、other、alpha是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="7">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="7">161002</td>
+      <td>selfRef和other的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>selfRef和other不满足数据类型推导规则。</td>
+    </tr>
+    <tr>
+      <td>推导出的数据类型无法转换为selfRef的类型。</td>
+    </tr>
+    <tr>
+      <td>alpha无法转换为selfRef和other推导后的数据类型。</td>
+    </tr>
+    <tr>
+      <td>selfRef和other的shape无法做broadcast。</td>
+    </tr>
+    <tr>
+      <td>broadcast后的shape不等于selfRef的shape。</td>
+    </tr>
+    <tr>
+      <td>selfRef、other的维度大于8。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnInplaceSub
 
 * **参数说明**：
-  * workspace（void\*, 入参）：在Device侧申请的workspace内存地址。
-  * workspaceSize（uint64\_t, 入参）：在Device侧申请的workspace大小，由第一段接口aclnnInplaceSubGetWorkspaceSize获取。
-  * executor（aclOpExecutor\*, 入参）：op执行器，包含了算子计算流程。
-  * stream（aclrtStream, 入参）：指定执行任务的Stream。
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceSubGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 * **返回值**：
   

@@ -253,10 +253,10 @@ aclnnStatus aclnnExpSegsum(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
-  <col style="width: 173px">
-  <col style="width: 112px">
-  <col style="width: 668px">
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
   </colgroup>
   <thead>
     <tr>

@@ -14,6 +14,7 @@
 | <term>Atlas 训练系列产品</term>                              |  ×     |
 
 ## 功能说明
+
 - 算子功能：对输入的tensor逐元素进行Sign符号函数的运算并输出结果tensor。
 
 - 计算公式：
@@ -70,6 +71,7 @@
 * `aclnnStatus aclnnSign(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, const aclrtStream stream)`
 
 ## aclnnSignGetWorkspaceSize
+
 - **参数说明：**
 
   * self(const aclTensor，计算输入)：Device侧的tensor，支持1维~8维。支持非连续Tensor，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
@@ -84,21 +86,77 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  161001 ACLNN_ERR_PARAM_NULLPTR: 1.传入的self或result是空指针。
-  161002 ACLNN_ERR_PARAM_INVALID: 1.self和result的数据类型和数据格式不在支持的范围内
-                                  2.self和result的shape不匹配
-                                  3.self和result的type不匹配
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1152px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 136px">
+  <col style="width: 716px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self或result是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
+      <td>self和result的数据类型和数据格式不在支持的范围内。</td>
+    </tr>
+    <tr>
+      <td>self和result的shape不匹配。</td>
+    </tr>
+    <tr>
+      <td>self和result的type不匹配。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnSign
 
 - **参数说明：**
-  * workspace(void \*，入参)：在Device侧申请的workspace内存地址。
-  * workspaceSize(uint64_t，入参)：在Device侧申请的workspace大小，由第一段接口aclnnSignGetWorkspaceSize获取。
-  * executor(aclOpExecutor \*，入参)：op执行器，包含了算子计算流程。
-  * stream(aclrtStream,入参)：指定执行任务的Stream。
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnSignGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
@@ -112,6 +170,7 @@
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

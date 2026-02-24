@@ -49,6 +49,7 @@ aclnnStatus aclnnSilentCheckV2GetWorkspaceSize(
     uint64_t *workspaceSize, 
     aclOpExecutor **executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnSilentCheckV2(
     void *workspace, 
@@ -303,6 +304,7 @@ aclnnStatus aclnnSilentCheckV2(
     </tr>
   </tbody>
   </table>
+  
 - **返回值**：
   
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。

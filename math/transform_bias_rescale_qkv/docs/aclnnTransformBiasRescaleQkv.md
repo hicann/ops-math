@@ -26,11 +26,13 @@
   q_o=(q_i+q_{bias})/\sqrt{dim\_per\_head}\\
 
   $$
+
   $$
   
   k_o=k_i+k_{bias}\\
 
   $$
+
   $$
   
     v_o=v_i+v_{bias}
@@ -182,10 +184,10 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
 
   第一段接口会完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed;width: 979px"><colgroup>
-  <col style="width: 272px">
-  <col style="width: 103px">
-  <col style="width: 604px">
+  <table style="undefined;table-layout: fixed; width: 1145px"><colgroup>
+  <col style="width: 295px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>
@@ -211,10 +213,10 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
-  <col style="width: 173px">
-  <col style="width: 112px">
-  <col style="width: 668px">
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
   </colgroup>
   <thead>
     <tr>
