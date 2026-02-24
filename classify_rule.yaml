@@ -30,6 +30,8 @@ ops_math:
       - "random/drop_out_v3"
       - "random/stateless_random_uniform_v2"
       - "random/random_standard_normal_v2"
+      - "common/inc/op_api/aclnn_check.h"
+      - "common/inc/op_api/level2_base.h"
   llt:
     ut_check: true
     st_check: false
