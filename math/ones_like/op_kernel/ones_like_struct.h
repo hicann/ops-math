@@ -14,7 +14,7 @@
  */
 
 #ifndef __OPS_ONES_LIKE_STRUCT_H__
-#define __OPS_S__OPS_ONES_LIKE_STRUCT_H__IGN_STRUCT_H__
+#define __OPS_ONES_LIKE_STRUCT_H__
 
 #include "atvoss/elewise/elewise_base_struct.h"
 
