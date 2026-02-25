@@ -66,6 +66,8 @@ HPTG2@ops-math:
         - ops/ops-math/example/add_example/tests
         - ops/ops-math/tests/
         - ops/ops-math/build.sh
+        - ops/ops-math/common/inc/op_api/aclnn_check.h
+        - ops/ops-math/common/inc/op_api/level2_base.h
       non_delivery: null
       open_source: null
 
