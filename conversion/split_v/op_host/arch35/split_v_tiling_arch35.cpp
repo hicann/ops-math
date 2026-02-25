@@ -261,8 +261,8 @@ void SplitVTiling::SetPureMoveTilingMode()
 
 void SplitVTiling::FuseInputShape()
 {
-    int32_t outerSize = 1;
-    int32_t innerSize = 1;
+    int64_t outerSize = 1;
+    int64_t innerSize = 1;
     for (size_t i = 0; i < static_cast<size_t>(splitDim_); i++) {
         outerSize *= inputShape_.GetDim(i);
     }
@@ -932,8 +932,8 @@ ge::graphStatus SplitVTiling::InitParamsSameLen(int32_t maxCoreNum, uint32_t ubS
 }
 
 void SplitVTiling::FuseInputShapeSameLen() {
-    int32_t mSize = 1;
-    int32_t nSize = inputShape_.GetDim(splitDim_) / numSplit_;
+    int64_t mSize = 1;
+    int64_t nSize = inputShape_.GetDim(splitDim_) / numSplit_;
     for (size_t i = 0; i < static_cast<size_t>(splitDim_); i++) {
         mSize *= inputShape_.GetDim(i);
     }
