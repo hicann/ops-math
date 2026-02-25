@@ -59,11 +59,11 @@ const std::set<std::pair<op::Format, op::Format>> kTransdataForwardFormatPairs =
 
 static const std::initializer_list<DataType> ASCEND950_WEIGHT_DTYPE_SUPPORT_LIST = {
     DataType::DT_INT8, DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16,
-    DataType::DT_INT32, DataType::DT_FLOAT8_E4M3FN};
+    DataType::DT_INT32, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT4_E2M1};
 
 static const std::initializer_list<DataType> WEIGHT_DTYPE_SUPPORT_LIST = {
     DataType::DT_INT8, DataType::DT_UINT8, DataType::DT_FLOAT, DataType::DT_FLOAT16,
-    DataType::DT_BF16, DataType::DT_INT32, DataType::DT_UINT32, DataType::DT_FLOAT8_E4M3FN};
+    DataType::DT_BF16, DataType::DT_INT32, DataType::DT_UINT32, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT4_E2M1};
 
 static const std::initializer_list<op::Format> INPUT_FORMAT_TO_NZ_SUPPORT_LIST = {
     op::Format::FORMAT_ND, op::Format::FORMAT_NCL, op::Format::FORMAT_NCHW, op::Format::FORMAT_NCDHW};
@@ -571,6 +571,10 @@ aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
 aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
     const aclTensor* srcTensor, aclTensor* dstTensor, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
+    L2_DFX_PHASE_1(aclnnNpuFormatCast, DFX_IN(srcTensor), DFX_OUT(dstTensor));
+    auto uniqueExecutor = CREATE_EXECUTOR();
+    CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
+
     auto ret = CheckGetWorkSpaceSizeInputs(srcTensor, dstTensor);
     op::Format srcFormat = srcTensor->GetStorageFormat();
     op::Format dstFormat = dstTensor->GetStorageFormat();
@@ -585,10 +589,6 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
         ret == ACLNN_SUCCESS,
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to check aclnnNpuFormatCastGetWorkSpaceSizeInputs."),
         return ACLNN_ERR_PARAM_INVALID);
-
-    L2_DFX_PHASE_1(aclnnNpuFormatCast, DFX_IN(srcTensor), DFX_OUT(dstTensor));
-    auto uniqueExecutor = CREATE_EXECUTOR();
-    CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
     auto formatTensor = const_cast<aclTensor*>(srcTensor);
     // 适配srcFormat为NCL的场景
