@@ -16,9 +16,10 @@
 
 ## 功能说明
 
-算子功能：输入一个张量，并对同一通道中的值取最大值
+输入一个张量，并对同一通道中的值取最大值
 
 ## 函数原型
+
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnGlobalMaxPoolGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnGlobalMaxPool”接口执行计算。
 
 - `aclnnStatus aclnnGlobalMaxPoolGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
@@ -41,31 +42,77 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-```
-第一段接口完成入参校验，出现以下场景时报错：
-返回161001(ACLNN_ERR_PARAM_NULLPTR)：1. 传入的self和out是空指针。
-返回161002(ACLNN_ERR_PARAM_INVALID)：1. self和out的数据类型不在支持范围内或不一致。
-                                    2. self和out的数据格式不满足以下支持条件：
-                                      1) self和out的数据格式相同；
-                                      2) self和out支持ND、NCHW、NCDHW。
-                                    3. self和out的shape不满足以下支持条件：
-                                      1) self和out最大维度数为8维；
-                                      2) self和out最小维度数为4维；
-                                      3) self和out维度数相同；
-                                      4) out前两维与self相同，其他维度均为1。
-```
+  第一段接口完成入参校验，出现以下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 287px">
+  <col style="width: 124px">
+  <col style="width: 739px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self和out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
+      <td>self和out的数据类型不在支持范围内或不一致。</td>
+    </tr>
+    <tr>
+      <td>self和out的数据格式不满足以下支持条件：<br>1) self和out的数据格式相同；<br>2) self和out支持ND、NCHW、NCDHW。</td>
+    </tr>
+    <tr>
+      <td>self和out的shape不满足以下支持条件：<br>1) self和out最大维度数为8维；<br>2) self和out最小维度数为4维；<br>3) self和out维度数相同；<br>4) out前两维与self相同，其他维度均为1。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnGlobalMaxPool
 
 - **参数说明：**
 
-  - workspace(void*, 入参)：在Device侧申请的workspace内存地址。
-
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnGlobalMaxPoolGetWorkspaceSize获取。
-
-  - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
-
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnGlobalMaxPoolGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 
 - **返回码：**
@@ -81,6 +128,7 @@
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

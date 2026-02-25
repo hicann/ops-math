@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-* 算子功能：计算self（selfRef）中的元素的值与other的值是否不相等。
+* 接口功能：计算self（selfRef）中的元素的值与other的值是否不相等。
 * 计算公式：
 
 $$
@@ -55,31 +55,97 @@ $$
     * <term>Atlas 训练系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
   + workspaceSize（uint64\_t\*, 出参）：返回需要在Device侧申请的workspace大小。
   + executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
+
 * **返回值**：
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  ````
+  
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的self、other、out是空指针时。 
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. self、other或out的数据类型不在支持的范围之内。
-                                        2. self、other或out的维度大于8。
-                                        3. self和other的数据类型无法进行推导。
-                                        4. self和other的shape无法进行broadcast。
-                                        5. out的shape与broadcast后的shape不一致。
-  ````
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 286px">
+  <col style="width: 123px">
+  <col style="width: 740px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、other、out是空指针时。</td>
+    </tr>
+    <tr>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
+      <td>self、other或out的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self、other或out的维度大于8。</td>
+    </tr>
+    <tr>
+      <td>self和other的数据类型无法进行推导。</td>
+    </tr>
+    <tr>
+      <td>self和other的shape无法进行broadcast。</td>
+    </tr>
+    <tr>
+      <td>out的shape与broadcast后的shape不一致。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnNeTensor
 
 * **参数说明**：
-  - workspace（void\*, 入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize（uint64_t, 入参）：在Device侧申请的workspace大小，由第一段接口aclnnNeTensorGetWorkspaceSize获取。
-  - executor（aclOpExecutor\*, 入参）：op执行器，包含了算子计算流程。
-  - stream（aclrtStream, 入参）：指定执行任务的Stream。
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnNeTensorGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+
 * **返回值**：
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceNeTensorGetWorkspaceSize
 
 * **参数说明**：
+
   * selfRef（aclTensor*, 计算输入/输出）：公式中的`selfRef`。数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），shape需要与other满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     * <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64。
     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
@@ -90,27 +156,91 @@ $$
     * <term>Atlas 训练系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
   + workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
   + executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
+
 * **返回值**：
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-```
-第一段接口完成入参校验，出现以下场景时报错：
-返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的selfRef、other是空指针时。
-返回161002（ACLNN_ERR_PARAM_INVALID）：1. selfRef和other的数据类型不在支持的范围之内。
-                                      2. selfRef和other的数据类型无法进行推导。
-                                      3. selfRef和other的shape无法做broadcast。
-                                      4. selfRef和other做broadcast后的shape不等于selfRef的shape。
-                                      5. selfRef、other的维度大于8。
-```
+  第一段接口完成入参校验，出现以下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 286px">
+  <col style="width: 123px">
+  <col style="width: 740px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的selfRef、other是空指针时。</td>
+    </tr>
+    <tr>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
+      <td>selfRef和other的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>selfRef和other的数据类型无法进行推导。</td>
+    </tr>
+    <tr>
+      <td>selfRef和other的shape无法做broadcast。</td>
+    </tr>
+    <tr>
+      <td>selfRef和other做broadcast后的shape不等于selfRef的shape。</td>
+    </tr>
+    <tr>
+      <td>selfRef、other的维度大于8。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnInplaceNeTensor
 
 * **参数说明**：
-  - workspace（void\*, 入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize（uint64_t, 入参）：在Device侧申请的workspace大小，由第一段接口aclnnInplaceNeTensorGetWorkspaceSize获取。
-  - executor（aclOpExecutor\*, 入参）：op执行器，包含了算子计算流程。
-  - stream（aclrtStream, 入参）：指定执行任务的Stream。
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceNeTensorGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+
 * **返回值**：
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明

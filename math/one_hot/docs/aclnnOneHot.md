@@ -15,7 +15,8 @@
 
 ## 功能说明
 
-- 算子功能：对长度为n的输入self， 经过one_hot的计算后得到一个元素数量为n*k的输出out，其中k的值为numClasses。
+- 接口功能：对长度为n的输入self， 经过one_hot的计算后得到一个元素数量为n*k的输出out，其中k的值为numClasses。
+
   输出的元素满足下列公式：
   
   $$
@@ -34,28 +35,28 @@
 ```Cpp
 aclnnStatus aclnnOneHotGetWorkspaceSize(
   const aclTensor* self, 
-  int numClasses, 
+  int              numClasses, 
   const aclTensor* onValue, 
   const aclTensor* offValue, 
-  int64_t axis, 
-  aclTensor* out, 
-  uint64_t* workspaceSize, 
-  aclOpExecutor** executor)
+  int64_t          axis, 
+  aclTensor*       out, 
+  uint64_t*        workspaceSize, 
+  aclOpExecutor**  executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnOneHot(
-  void* workspace, 
-  uint64_t workspaceSize, 
+  void*          workspace, 
+  uint64_t       workspaceSize, 
   aclOpExecutor* executor, 
-  aclrtStream stream)
+  aclrtStream    stream)
 ```
 
 ## aclnnOneHotGetWorkspaceSize
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1526px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1526px"><colgroup>
   <col style="width: 154px">
   <col style="width: 125px">
   <col style="width: 213px">
@@ -160,12 +161,14 @@ aclnnStatus aclnnOneHot(
   </tbody>
   </table>
 
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持UINT8数据类型。
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持UINT8数据类型。
 
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+
+  第一段接口完成入参校验，出现以下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 288px">
@@ -220,7 +223,7 @@ aclnnStatus aclnnOneHot(
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
     <col style="width: 153px">
     <col style="width: 124px">
     <col style="width: 872px">

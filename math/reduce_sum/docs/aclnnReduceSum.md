@@ -16,7 +16,7 @@
 
 ## 功能说明
 
-算子功能：返回给定维度中输入张量每行的和。
+返回给定维度中输入张量每行的和。
 
 ## 函数原型
 
@@ -52,25 +52,86 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-```
-第一段接口完成入参校验，出现以下场景时报错：
-返回161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self、dims或out是空指针。
-返回161002 (ACLNN_ERR_PARAM_INVALID): 1. self或out的数据类型不在支持的范围之内。
-                                     2. out shape与实际不匹配。
-                                     3. dims数组中的维度超出输入tensor的维度范围。
-                                     4. dims数组中的轴重复。
-                                     5. dtype的数据类型不在支持的范围内。
-                                     6. dtype取值与out的数据类型不一致。
-```
+  第一段接口完成入参校验，出现以下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1152px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 124px">
+  <col style="width: 740px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、dims或out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
+      <td>self或out的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>out shape与实际不匹配。</td>
+    </tr>
+    <tr>
+      <td>dims数组中的维度超出输入tensor的维度范围。</td>
+    </tr>
+    <tr>
+      <td>dims数组中的轴重复。</td>
+    </tr>
+    <tr>
+      <td>dtype的数据类型不在支持的范围内。</td>
+    </tr>
+    <tr>
+      <td>dtype取值与out的数据类型不一致。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnReduceSum
 
 - **参数说明**：
 
-  * workspace（void*, 入参）：在Device侧申请的workspace内存地址。
-  * workspaceSize（uint64_t, 入参）：在Device侧申请的workspace大小，由第一段接口aclnnReduceSumGetWorkspaceSize获取。
-  * executor（aclOpExecutor*, 入参）：op执行器，包含了算子计算流程。
-  * stream（aclrtStream, 入参）：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnReduceSumGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值**：
 

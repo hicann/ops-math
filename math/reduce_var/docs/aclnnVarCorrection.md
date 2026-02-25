@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-- 算子功能：返回输入Tensor指定维度的值求得的方差。
+- 接口功能：返回输入Tensor指定维度的值求得的方差。
 - 计算公式：假设 dim 为 $i$，则对该维度进行计算。$N$为该维度的shape。取 $self_{i}$，求出该维度上的平均值 $\bar{x_{i}}$。
 
   $$
@@ -239,6 +239,7 @@ aclnnStatus aclnnVarCorrection(
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

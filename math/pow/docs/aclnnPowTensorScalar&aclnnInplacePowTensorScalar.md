@@ -15,8 +15,9 @@
 
 ## 功能说明
 
-- 算子功能：exponent每个元素作为input对应元素的幂完成计算。
+- 接口功能：exponent每个元素作为input对应元素的幂完成计算。
 - 计算公式：
+
 $$
 out_i = self_i^{exponent_i}
 $$
@@ -152,6 +153,8 @@ aclnnStatus aclnnInplacePowTensorScalar(
 - **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+
+  第一段接口会完成入参校验，出现以下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 288px">
@@ -309,6 +312,8 @@ aclnnStatus aclnnInplacePowTensorScalar(
 
   aclnnStatus， 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
+  第一段接口会完成入参校验，出现以下场景时报错：
+
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 288px">
   <col style="width: 114px">
@@ -350,7 +355,7 @@ aclnnStatus aclnnInplacePowTensorScalar(
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
     <col style="width: 153px">
     <col style="width: 124px">
     <col style="width: 872px">
@@ -399,7 +404,9 @@ aclnnStatus aclnnInplacePowTensorScalar(
 - exponent = 2场景下调用square算子，当输入self为int8时，只有结果在(-2048, 1920)范围内时保证精度无误差。
 
 ## 调用示例
+
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

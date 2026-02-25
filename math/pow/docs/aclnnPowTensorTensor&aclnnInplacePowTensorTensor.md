@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-- 算子功能：exponent每个元素作为input对应元素的幂完成计算。
+- 接口功能：exponent每个元素作为input对应元素的幂完成计算。
 
 - 计算公式：
 
@@ -154,15 +154,44 @@ aclnnStatus aclnnInplacePowTensorTensor(
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的self、exponent、out是空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. self和exponent的数据类型不在支持的范围之内。
-                                        2. self和exponent无法做数据类型推导。
-                                        3. 推导出的数据类型无法转换为指定输出out的类型。
-                                        4. self和exponent的shape无法做broadcast。
-                                        5. self和exponent同时为bool数据类型。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 286px">
+  <col style="width: 123px">
+  <col style="width: 741px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、exponent、out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
+      <td>self和exponent的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self和exponent无法做数据类型推导。</td>
+    </tr>
+    <tr>
+      <td>推导出的数据类型无法转换为指定输出out的类型。</td>
+    </tr>
+    <tr>
+      <td>self和exponent的shape无法做broadcast。</td>
+    </tr>
+    <tr>
+      <td>self和exponent同时为bool数据类型。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnPowTensorTensor
 
@@ -211,7 +240,7 @@ aclnnStatus aclnnInplacePowTensorTensor(
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1526px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1526px"><colgroup>
   <col style="width: 154px">
   <col style="width: 125px">
   <col style="width: 213px">
@@ -276,11 +305,13 @@ aclnnStatus aclnnInplacePowTensorTensor(
   </tbody>
   </table>
 
-- <term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16数据类型。
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16数据类型。
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+
+  第一段接口完成入参校验，出现以下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 288px">
@@ -326,7 +357,7 @@ aclnnStatus aclnnInplacePowTensorTensor(
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
     <col style="width: 153px">
     <col style="width: 124px">
     <col style="width: 872px">
@@ -370,11 +401,12 @@ aclnnStatus aclnnInplacePowTensorTensor(
 - 确定性计算：
   - aclnnPowTensorTensor&aclnnInplacePowTensorTensor默认确定性实现。
 
-<term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：该场景下，如果计算结果取值超过了设定的数据类型取值范围，则会以该数据类型的边界值作为结果返回。
+- <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：该场景下，如果计算结果取值超过了设定的数据类型取值范围，则会以该数据类型的边界值作为结果返回。
 
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 **aclnnPowTensorTensor示例代码：**
 
 ```Cpp
