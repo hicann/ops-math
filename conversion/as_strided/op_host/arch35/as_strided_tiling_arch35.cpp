@@ -355,7 +355,7 @@ inline bool HasDuplicate(gert::TilingContext* context, gert::Shape outStride)
     for (uint32_t i = 0; i < outStride.GetDimNum(); i++) {
         numStride[i] = outStride[i];
     }
-    std::sort(numStride, numStride + std::min((int32_t)outStride.GetDimNum(), VALID_DIM));
+    std::sort(numStride, numStride + std::min(outStride.GetDimNum(), (size_t)VALID_DIM));
     for (uint32_t i = 1; i < outStride.GetDimNum(); i++) {
         if (numStride[i] == numStride[i - 1]) {
             return true;
