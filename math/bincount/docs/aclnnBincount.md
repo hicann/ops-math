@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-- 算子功能：计算非负整数数组中每个数的频率。minlength为输出tensor的最小size；当weights为空指针时，self中的self[i]每出现一次，则其频率加1，当weights不为空时，self[i]每出现一次，其频率加weights[i]，最后存放到out的self[i]+1位置上；因此out大小为(self的最大值+1)与minlength中的最大值。
+- 接口功能：计算非负整数数组中每个数的频率。minlength为输出tensor的最小size；当weights为空指针时，self中的self[i]每出现一次，则其频率加1，当weights不为空时，self[i]每出现一次，其频率加weights[i]，最后存放到out的self[i]+1位置上；因此out大小为(self的最大值+1)与minlength中的最大值。
 
 - 计算公式：
 
@@ -32,40 +32,179 @@
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnBincountGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnBincount”接口执行计算。
-
-* `aclnnStatus aclnnBincountGetWorkspaceSize(const aclTensor* self, const aclTensor* weights, int64_t minlength,aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-* `aclnnStatus aclnnBincount(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
-
+```cpp
+aclnnStatus aclnnBincountGetWorkspaceSize(
+  const aclTensor*        self, 
+  const aclTensor*        weights, 
+  int64_t                 minlength,
+  aclTensor*              out, 
+  uint64_t*               workspaceSize, 
+  aclOpExecutor**         executor)
+```
+```cpp
+aclnnStatus aclnnBincount(
+  void*                   workspace, 
+  uint64_t                workspaceSize, 
+  aclOpExecutor*          executor, 
+  const aclrtStream       stream)
+```
 ## aclnnBincountGetWorkspaceSize
 
 - **参数说明：**
-
-  * self(aclTensor*,计算输入)：Device侧的aclTensor，数据类型支持INT8、INT16、INT32、INT64、UINT8，且必须是非负整数，[数据格式](../../../docs/zh/context/数据格式.md)支持1维ND，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
-  * weights(aclTensor*,计算输入)：Device侧的aclTensor，self每个值的权重，可为空指针。数据类型支持FLOAT、FLOAT16、FLOAT64、INT8、INT16、INT32、INT64、UINT8、BOOL，[数据格式](../../../docs/zh/context/数据格式.md)支持1维ND，且shape必须与self一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。
-  * minlength(int64_t，计算输入)：Host侧的int型，指定输出tensor最小长度。参数保证输出out的最小长度。如果计算出来的self的最大值小于minlength，则out的长度为minlength，否则为self的最大值加1。
-  * out(aclTensor \*，计算输出)：Device侧的aclTensor，数据类型支持INT32、INT64、FLOAT、DOUBLE，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持1维ND。out的长度为self的最大值加1和minlength二者取最大。
-  * workspaceSize(uint64_t \*，出参)：返回需要在Device侧申请的workspace大小。
-  * executor(aclOpExecutor \**，出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+    <col style="width: 220px">
+    <col style="width: 120px">
+    <col style="width: 350px">
+    <col style="width: 300px">
+    <col style="width: 200px">
+    <col style="width: 100px">
+    <col style="width: 120px">
+    <col style="width: 140px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+        <th>使用说明</th>
+        <th>数据类型</th>
+        <th>数据格式</th>
+        <th>维度(shape)</th>
+        <th>非连续Tensor</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>self (aclTensor*)</td>
+        <td>输入</td>
+        <td>-</td>
+        <td>必须是非负整数</td>
+        <td>INT8、INT16、INT32、INT64、UINT8</td>
+        <td>1维ND</td>
+        <td>-</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>weights (aclTensor*)</td>
+        <td>输入</td>
+        <td>self每个值的权重，可为空指针</td>
+        <td>shape必须与self一致</td>
+        <td>FLOAT、FLOAT16、FLOAT64、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>一维ND</td>
+        <td>-</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>minlength (int64_t)</td>
+        <td>输入</td>
+        <td>指定输出tensor最小长度。参数保证输出out的最小长度。</td>
+        <td>如果计算出来的self的最大值小于minlength，则out的长度为minlength，否则为self的最大值加1。</td>
+        <td>int64_t</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>out (aclTensor*)</td>
+        <td>输出</td>
+        <td>out的长度为self的最大值加1和minlength二者取最大。</td>
+        <td>-</td>
+        <td>INT32、INT64、FLOAT、DOUBLE</td>
+        <td>1维ND</td>
+        <td>-</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>workspaceSize (uint64_t*)</td>
+        <td>输出</td>
+        <td>返回需要在Device侧申请的workspace大小。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>executor (aclOpExecutor**)</td>
+        <td>输出</td>
+        <td>返回op执行器，包含了算子计算流程。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+    </tbody></table>
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-```
-第一段接口完成入参校验，出现以下场景时报错：
-161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的self或out是空指针。
-161002 (ACLNN_ERR_PARAM_INVALID)：1. self、out、weights的数据类型和数据格式不在支持的范围之内。
-                                  2. 当weights 不为空时，self、weights shape不一致。
-```
+  第一段接口完成入参校验，出现以下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self或out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
+      <td>self、out、weights的数据类型和数据格式不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>当weights 不为空时，self、weights shape不一致。</td>
+   
+  </tbody>
+  </table>
+
+
 
 ## aclnnBincount
 
 - **参数说明：**
-
-  * workspace(void\*, 入参)：在Device侧申请的workspace内存地址。
-  * workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnBincountGetWorkspaceSize获取。
-  * executor(aclOpExecutor\*, 入参)：op执行器，包含了算子计算流程。
-  * stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+    <col style="width: 150px">
+    <col style="width: 114px">
+    <col style="width: 500px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>workspace</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace内存地址。</td>
+      </tr>
+      <tr>
+        <td>workspaceSize</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace大小，由第一段接口aclnnBincountGetWorkspaceSize获取。</td>
+      </tr>
+        <td>executor</td>
+        <td>输入</td>
+        <td>op执行器，包含了算子计算流程。</td>
+      <tr>
+        <td>stream</td>
+        <td>输入</td>
+        <td>指定执行任务的Stream。</td>
+    </tbody>
+    </table>
 
 - **返回值：**
 
