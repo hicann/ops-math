@@ -621,50 +621,6 @@ flowchart TD
 | **分离模式-Cube算子** | 仅Cube计算 | Cube核数，如20 |
 | **分离模式-融合算子** | Vector/Cube融合，按组合启动 | 组合数（不超过物理组合核数） |
 
-### TilingKey使用场景
-
-TilingKey用于区分不同的kernel实现分支，减少icache miss和scalar耗时：
-
-```mermaid
-flowchart LR
-    subgraph "Host侧"
-        A[判断条件] --> B{condition?}
-        B -->|true| C[SetTilingKey 1]
-        B -->|false| D[SetTilingKey 2]
-    end
-
-    subgraph "Kernel侧"
-        E[TILING_KEY_IS 1] --> F[ProcessA]
-        G[TILING_KEY_IS 2] --> H[ProcessB]
-    end
-
-    C --> E
-    D --> G
-```
-
-**Host侧示例：**
-```c++
-static ge::graphStatus TilingFunc(gert::TilingContext* context)
-{
-    // some code
-    if (condition) {
-        context->SetTilingKey(1);
-    } else {
-        context->SetTilingKey(2);
-    }
-    return ge::GRAPH_SUCCESS;
-}
-```
-
-**Kernel侧示例：**
-```c++
-if (TILING_KEY_IS(1)) {
-    ProcessA();
-} else if (TILING_KEY_IS(2)) {
-    ProcessB();
-}
-```
-
 ### Workspace设置
 
 Workspace是设备侧Global Memory上的一块内存，分为两部分：
@@ -951,47 +907,6 @@ template<typename D_T_X, typename D_T_Y, typename D_T_Z, int TILE_NUM, int IS_SP
 | `ASCENDC_TPL_UI_LIST` | 穷举模式 | `10, 12, 13, 9, 8` |
 | `ASCENDC_TPL_UI_MIX` | 混合模式 | 范围 + 穷举值 |
 
-### GET_TPL_TILING_KEY
-
-#### 功能说明
-
-Tiling模板编程时，开发者通过调用此接口自动生成TilingKey。该接口将传入的模板参数通过定义的位宽，转成二进制，按照顺序组合后转成uint64数值，即TilingKey。
-
-#### 函数原型
-
-```c++
-namespace AscendC {
-    uint64_t EncodeTilingKey(TilingDeclareParams declareParams,
-                             TilingSelectParams selectParamsVec,
-                             std::vector<uint64_t> tilingParams);
-}
-
-#define GET_TPL_TILING_KEY(...) \
-    AscendC::EncodeTilingKey(g_tilingDeclareParams, g_tilingSelectParams, {__VA_ARGS__})
-```
-
-#### 参数说明
-
-| 参数 | 输入/输出 | 说明 |
-| ---- | --------- | ---- |
-| ... | 输入 | 可变长参数，模板参数的具体值，需与头文件中的顺序一致 |
-
-#### 返回值
-
-TilingKey数值（uint64_t）
-
-#### 调用示例
-
-```c++
-#include "tiling_key_add_custom.h"
-static ge::graphStatus TilingFunc(gert::TilingContext *context)
-{
-    // ... 参数计算 ...
-    const uint64_t tilingKey = GET_TPL_TILING_KEY(D_T_X, D_T_Y, D_T_Z, TILE_NUM, IS_SPLIT);
-    context->SetTilingKey(tilingKey);
-    return ge::GRAPH_SUCCESS;
-}
-```
 
 ### ASCENDC_TPL_SEL_PARAM
 
@@ -1073,9 +988,7 @@ extern "C" __global__ __aicore__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z
     GET_TILING_DATA(tilingData, tiling);
     KernelAdd op;
     op.Init(x, y, z, tilingData.totalLength, tilingData.tileNum);
-    if (TILING_KEY_IS(1)) {
-        op.Process();
-    }
+    op.Process();
 }
 ```
 
@@ -1102,7 +1015,6 @@ extern "C" __global__ __aicore__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z
 | `DTYPE_<Arg>` | 参数数据类型 | `DTYPE_X`, `DTYPE_Y` |
 | `ORIG_DTYPE_<Arg>` | 参数原始数据类型 | `ORIG_DTYPE_X` |
 | `FORMAT_<Arg>` | 参数数据格式 | `FORMAT_Y == FORMAT_ND` |
-| `TILING_KEY_IS(n)` | 判断TilingKey值 | `if (TILING_KEY_IS(1))` |
 
 ---
 
@@ -1482,28 +1394,6 @@ static ge::graphStatus TilingFunc(gert::TilingContext *context)
     ws[0] = 1024;
 
     return ge::GRAPH_SUCCESS;
-}
-```
-
-### Kernel实现API
-
-```c++
-#include "kernel_operator.h"
-
-extern "C" __global__ __aicore__ void xxx_custom(
-    GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
-{
-    // 获取Tiling数据
-    GET_TILING_DATA(tilingData, tiling);
-
-    // 类型推导宏
-    DTYPE_X temp;
-    if (FORMAT_Y == FORMAT_ND) { ... }
-
-    // TilingKey分支
-    if (TILING_KEY_IS(1)) {
-        Process1();
-    }
 }
 ```
 
