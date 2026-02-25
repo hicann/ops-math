@@ -16,7 +16,7 @@
 
 ## 功能说明
 
-- 算子功能：判断输入Tensor中的每个元素是否大于等于other Tensor的值，返回一个Bool类型的Tensor，对应输入Tensor中每个位置的大于等于判断是否成立。
+- 接口功能：判断输入Tensor中的每个元素是否大于等于other Tensor的值，返回一个Bool类型的Tensor，对应输入Tensor中每个位置的大于等于判断是否成立。
 
 - 计算公式：
   对于入参$self$和$other$，ge可以用如下数学公式表示：

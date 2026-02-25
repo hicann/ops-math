@@ -16,7 +16,7 @@
 
 ## 功能说明
 
-- 算子功能：判断输入Tensor中的每个元素是否大于等于other Scalar的值，返回一个Bool类型的Tensor，对应输入Tensor中每个位置的大于等于判断是否成立。
+- 接口功能：判断输入Tensor中的每个元素是否大于等于other Scalar的值，返回一个Bool类型的Tensor，对应输入Tensor中每个位置的大于等于判断是否成立。
 
 - 计算公式：
   对于入参$self$，和比较标量$other$，ge可以用如下数学公式表示：
@@ -388,6 +388,7 @@ aclnnStatus aclnnInplaceGeScalar(
 
 
  ## 调用示例
+ 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 - <term>Ascend 950PR/Ascend 950DT</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term> aclnnGeScalar示例代码：

@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-- 算子功能：对输入的tensor计算幂和的对数（以e为底）。
+- 接口功能：对输入的tensor计算幂和的对数（以e为底）。
 
 - 计算公式：
 
@@ -33,43 +33,102 @@
 
 ## aclnnLogAddExpGetWorkspaceSize
 
-  - **参数说明：**
+- **参数说明：**
 
-    - self（aclTensor*，计算输入）：公式中的$x$，Device侧的aclTensor，shape支持0-8维，数据类型需要可转换成out的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)），self与other的shape满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-      - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、UINT16、INT16、UINT32、INT32、UINT64、INT64、BOOL、BFLOAT16。
-    - other（aclTensor*，计算输入）：公式中的$y$，Device侧的aclTensor，shape支持0-8维，数据类型需要可转换成out的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)），other与self的shape满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-      - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、UINT16、INT16、UINT32、INT32、UINT64、INT64、BOOL、BFLOAT16。
-    - out（aclTensor*，计算输出）：公式中的$out$，Device侧的aclTensor，shape支持0-8维，shape需要与self与other broadcast之后的shape一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-      - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、BFLOAT16。
-    - workspaceSize（uint64_t*，出参）：返回需要在Device侧申请的workspace大小。
-    - executor（aclOpExecutor**，出参）：返回op执行器，包含了算子计算流程。
+  - self（aclTensor*，计算输入）：公式中的$x$，Device侧的aclTensor，shape支持0-8维，数据类型需要可转换成out的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)），self与other的shape满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、UINT16、INT16、UINT32、INT32、UINT64、INT64、BOOL、BFLOAT16。
+  - other（aclTensor*，计算输入）：公式中的$y$，Device侧的aclTensor，shape支持0-8维，数据类型需要可转换成out的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)），other与self的shape满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、UINT16、INT16、UINT32、INT32、UINT64、INT64、BOOL、BFLOAT16。
+  - out（aclTensor*，计算输出）：公式中的$out$，Device侧的aclTensor，shape支持0-8维，shape需要与self与other broadcast之后的shape一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、BFLOAT16。
+  - workspaceSize（uint64_t*，出参）：返回需要在Device侧申请的workspace大小。
+  - executor（aclOpExecutor**，出参）：返回op执行器，包含了算子计算流程。
 
-  - **返回值：**
+- **返回值：**
 
-    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-    ```
-    第一段接口完成入参校验，出现如下场景时报错：
-    返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的self、other或out是空指针。
-    返回161002（ACLNN_ERR_PARAM_INVALID）：1. self、other、out的数据类型不在支持的范围之内。
-                                          2. self和other的数据类型无法转换为out的数据类型。
-                                          3. self、other或out的维度大于8。
-                                          4. self和other的shape无法做broadcast。
-                                          5. out的shape和self与other broadcast之后的shape不一致。
-    ```
+  第一段接口完成入参校验，出现如下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 126px">
+  <col style="width: 734px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、other或out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
+      <td>self、other、out的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self和other的数据类型无法转换为out的数据类型。</td>
+    </tr>
+    <tr>
+      <td>self、other或out的维度大于8。</td>
+    </tr>
+    <tr>
+      <td>self和other的shape无法做broadcast。</td>
+    </tr>
+    <tr>
+      <td>out的shape和self与other broadcast之后的shape不一致。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnLogAddExp
 
-  - **参数说明：**
+- **参数说明：**
 
-    - workspace（void*，入参）：在Device侧申请的workspace内存地址。
-    - workspaceSize（uint64_t，入参）：在Device侧申请的workspace大小，由第一段接口aclnnLogAddExpGetWorkspaceSize获取。
-    - executor（aclOpExecutor*，入参）：op执行器，包含了算子计算流程。
-    - stream（aclrtStream，入参）：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnLogAddExpGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
-  - **返回值：**
+- **返回值：**
 
-    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -79,6 +138,7 @@
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

@@ -11,16 +11,17 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
 
-## 接口原型
+## 功能说明
+
+对输入的压缩后的Tensor基于pdf进行解码，同时于mantissa重组回复原本张量。
+
+## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnHansDecodeGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnHansDecode”接口执行计算。
 
 - `aclnnStatus aclnnHansDecodeGetWorkspaceSize(const aclTensor *mantissa, const aclTensor *fixed, const aclTensor *var, const aclTensor *pdf, bool reshuff, const aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor);`
 - `aclnnStatus aclnnHansDecode(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
 
-## 功能描述
-
-算子功能：对输入的压缩后的Tensor基于pdf进行解码，同时于mantissa重组回复原本张量。
 
 ## aclnnHansDecodeGetWorkspaceSize
 
@@ -38,21 +39,74 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：pdf, mantissa, fixed, var, out是空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. pdf长度错误或mantissa长度错误。
-                                        2. pdf, mantissa, fixed, var, out不支持的数据类型。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1147px"><colgroup>
+  <col style="width: 286px">
+  <col style="width: 123px">
+  <col style="width: 738px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>pdf、mantissa、fixed、var、out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="2">161002</td>
+      <td>pdf长度错误或mantissa长度错误。</td>
+    </tr>
+    <tr>
+      <td>pdf、mantissa、fixed、var、out不支持的数据类型。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnHansDecode
 
 - **参数说明：**
 
-  - workspace(void*, 入参): 在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参): 在Device侧申请的workspace大小，由第一段接口aclnnEyeGetWorkspaceSize获取。
-  - executor(aclOpExecutor*, 入参): op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参): 指定执行任务的AscendCL Stream流。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnHansDecodeGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 

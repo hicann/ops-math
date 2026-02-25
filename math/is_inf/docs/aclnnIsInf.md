@@ -31,6 +31,7 @@
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnIsInfGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnIsInf”接口执行计算。
+
 ```Cpp
 aclnnStatus aclnnIsInfGetWorkspaceSize(
   const aclTensor *x, 
@@ -38,6 +39,7 @@ aclnnStatus aclnnIsInfGetWorkspaceSize(
   uint64_t        *workspaceSize, 
   aclOpExecutor  **executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnIsInf(
   void          *workspace, 
@@ -159,10 +161,11 @@ aclnnStatus aclnnIsInf(
 ## aclnnIsInf
 
 - **参数说明：**
-  <table style="undefined;table-layout: fixed; width: 598px"><colgroup>
-  <col style="width: 173px">
-  <col style="width: 173px">
-  <col style="width: 700px">
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
   </colgroup>
   <thead>
     <tr>

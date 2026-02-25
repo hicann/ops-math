@@ -14,9 +14,10 @@
 
 ## 功能说明
 
-算子功能：计算给定输入Tensor的逐元素逻辑非。如果未指定输出类型，输出Tensor是bool类型。如果输入Tensor不是bool类型，则将零视为False，非零视为True。
+计算给定输入Tensor的逐元素逻辑非。如果未指定输出类型，输出Tensor是bool类型。如果输入Tensor不是bool类型，则将零视为False，非零视为True。
 
 ## 函数原型
+
 - aclnnLogicalNot和aclnnInplaceLogicalNot实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnLogicalNot：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceLogicalNot：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
@@ -28,6 +29,7 @@
   * `aclnnStatus aclnnInplaceLogicalNot(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
 
 ## aclnnLogicalNotGetWorkspaceSize
+
 - **参数说明：**
   
   * self(aclTensor\*, 计算输入)：输入Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
@@ -43,26 +45,81 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self或out是空指针。
-  161002 (ACLNN_ERR_PARAM_INVALID): 1.self或out的数据类型不在支持的范围之内。
-				                      2.self和out的shape不一致。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1148px"><colgroup>
+  <col style="width: 287px">
+  <col style="width: 124px">
+  <col style="width: 737px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self或out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="2">161002</td>
+      <td>self或out的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self和out的shape不一致。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnLogicalNot
+
 - **参数说明：**
   
-  * workspace(void\*, 入参)：在Device侧申请的workspace内存地址。
-  * workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnLogicalNotGetWorkspaceSize获取。
-  * executor(aclOpExecutor\*, 入参)：op执行器，包含了算子计算流程。
-  * stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnLogicalNotGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
   
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceLogicalNotGetWorkspaceSize
+
 - **参数说明：**
   
   * selfRef(aclTensor\*, 计算输入)：输入Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
@@ -75,25 +132,78 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的selfRef是空指针。
-  161002 (ACLNN_ERR_PARAM_INVALID)：1. selfRef的数据类型不在支持的范围之内。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1147px"><colgroup>
+  <col style="width: 287px">
+  <col style="width: 124px">
+  <col style="width: 736px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的selfRef是空指针。</td>
+    </tr>
+    <tr>
+      <td>ACLNN_ERR_PARAM_INVALID</td>
+      <td>161002</td>
+      <td>selfRef的数据类型不在支持的范围之内。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnInplaceLogicalNot
+
 - **参数说明：**
   
-  * workspace(void\*, 入参)：在Device侧申请的workspace内存地址。
-  * workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnInplaceLogicalNotGetWorkspaceSize获取。
-  * executor(aclOpExecutor\*, 入参)：op执行器，包含了算子计算流程。
-  * stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceLogicalNotGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
   
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
+
 无
 
 ## 调用示例

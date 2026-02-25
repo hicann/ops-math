@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-算子功能：对给定的self和other计算element-wise维度的最大公约数，其中self和other都需要为整数。
+对给定的self和other计算element-wise维度的最大公约数，其中self和other都需要为整数。
 
 ## 函数原型
 
@@ -37,24 +37,83 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  161001(ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self、other、out是空指针。
-  161002(ACLNN_ERR_PARAM_INVALID): 1. self、other推导后的数据类型不在支持范围之内，或out的数据类型不在支持的范围之内。
-                                   2. self和other的数据类型不满足数据类型推导规则。
-                                   3. self和other进行数据类型转换后的数据类型无法转换为指定输出out的类型。
-                                   4. self和other的shape不满足broadcast规则。
-                                   5. self和other进行broadcast后的shape与out不一样。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 287px">
+  <col style="width: 124px">
+  <col style="width: 739px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、other、out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
+      <td>self、other推导后的数据类型不在支持范围之内，或out的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self和other的数据类型不满足数据类型推导规则。</td>
+    </tr>
+    <tr>
+      <td>self和other进行数据类型转换后的数据类型无法转换为指定输出out的类型。</td>
+    </tr>
+    <tr>
+      <td>self和other的shape不满足broadcast规则。</td>
+    </tr>
+    <tr>
+      <td>self和other进行broadcast后的shape与out不一样。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnGcd
 
 - **参数说明：**
 
-  - workspace(void*, 入参)：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnGcdGetWorkspaceSize获取。
-  - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnGcdGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
@@ -66,7 +125,9 @@
   - aclnnGcd默认确定性实现。
 
 ## 调用示例
+
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

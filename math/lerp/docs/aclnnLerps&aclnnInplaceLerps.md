@@ -16,14 +16,16 @@
 
 ## 功能说明
 
-- 算子功能：根据给定的权重，在起始和结束Tensor之间进行线性插值，返回插值后的Tensor。
+- 接口功能：根据给定的权重，在起始和结束Tensor之间进行线性插值，返回插值后的Tensor。
 
 - 计算公式：
+
 $$
 \text { out }_i=\text { start }_i+\text { weight } \times\left(\text { end }_i-\text { start }_i\right)
 $$
 
 ## 函数原型
+
 - aclnnLerps和aclnnInplaceLerps实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnLerps：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceLerps：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
@@ -35,6 +37,7 @@ $$
   - `aclnnStatus aclnnInplaceLerps(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
 
 ## aclnnLerpsGetWorkspaceSize
+
 - **参数说明**：
   - self(aclTensor\*, 计算输入)：包含起始数值的张量，公式中的输入`start`，Device侧的aclTensor，self与end的数据类型一致，self与end的shape满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT。
@@ -53,27 +56,87 @@ $$
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：1.传入的self、end、weight和out是空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1.self、end和out的数据类型不在支持的范围之内。
-                                        2.self和end的数据类型不一致。
-                                        3.self和end无法做broadcast。
-                                        4.self和end做broadcast后的shape与out的shape不一致。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 286px">
+  <col style="width: 123px">
+  <col style="width: 741px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、end、weight和out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
+      <td>self、end和out的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self和end的数据类型不一致。</td>
+    </tr>
+    <tr>
+      <td>self和end无法做broadcast。</td>
+    </tr>
+    <tr>
+      <td>self和end做broadcast后的shape与out的shape不一致。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnLerps
+
 - **参数说明**：
-  - workspace(void\*, 入参)：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnLerpsGetWorkspaceSize获取。
-  - executor(aclOpExecutor\*, 入参)：op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnLerpsGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceLerpsGetWorkspaceSize
+
 - **参数说明**：
   - selfRef(aclTensor\*, 计算输入/输出)：包含起始数值的张量和包含结果的张量，公式中的输入`start`和输出`out`，Device侧的aclTensor，selfRef与end数据类型一致，selfRef与end的shape满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，且broadcast后的shape与selfRef一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT。
@@ -89,21 +152,80 @@ $$
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：1.传入的selfRef、end和weight是空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1.selfRef和end的数据类型不在支持的范围之内。
-                                        2.selfRef与end的数据类型不一致。
-                                        3.selfRef和end无法做broadcast。
-                                        4.selfRef和end做broadcast后的shape与selfRef的shape不一致。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 286px">
+  <col style="width: 123px">
+  <col style="width: 741px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的selfRef、end和weight是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
+      <td>selfRef和end的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>selfRef与end的数据类型不一致。</td>
+    </tr>
+    <tr>
+      <td>selfRef和end无法做broadcast。</td>
+    </tr>
+    <tr>
+      <td>selfRef和end做broadcast后的shape与selfRef的shape不一致。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnInplaceLerps
+
 - **参数说明**：
-  - workspace(void\*, 入参)：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnInplaceLerpsGetWorkspaceSize获取。
-  - executor(aclOpExecutor\*, 入参)：op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceLerpsGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值**：
 
@@ -119,6 +241,7 @@ $$
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 aclnnLerps
+
 ```Cpp
 #include <iostream>
 #include <vector>
@@ -266,6 +389,7 @@ int main() {
 ```
 
 aclnnInplaceLerps
+
 ```Cpp
 #include <iostream>
 #include <vector>

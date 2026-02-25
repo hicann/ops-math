@@ -16,7 +16,7 @@
 
 ## 功能说明
 
-- 算子功能：判断self Tensor中的元素是否大于other Tensor中的元素。返回一个Tensor，若self>other，为True(1)；否则为False(0)。
+- 接口功能：判断self Tensor中的元素是否大于other Tensor中的元素。返回一个Tensor，若self>other，为True(1)；否则为False(0)。
 - 计算表达式：
 
   $$

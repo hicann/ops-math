@@ -11,16 +11,17 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
 
-## 接口原型
+## 功能说明
+
+对输入的inputTensor的指数位所在字节实现PDF统计【可选】，按照PDF分布统计进行无损压缩，压缩后的结果可存储在device的HBM上或offload到Host侧。
+
+## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnHansEncodeGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnHansEncode”接口执行计算。
 
 - `aclnnStatus aclnnHansEncodeGetWorkspaceSize(const aclTensor *inputTensor, aclTensor *pdfRef, bool statistic, bool reshuff, const aclTensor *mantissaOut, const aclTensor *fixedOut, const aclTensor *varOut, uint64_t *workspaceSize, aclOpExecutor **executor);`
 - `aclnnStatus aclnnHansEncode(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
 
-## 功能描述
-
-算子功能：对输入的inputTensor的指数位所在字节实现PDF统计【可选】，按照PDF分布统计进行无损压缩，压缩后的结果可存储在device的HBM上或offload到Host侧。
 
 ## aclnnHansEncodeGetWorkspaceSize
 
@@ -40,24 +41,83 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：inputTensor, pdf, mantissaOut, fixedOut, varOut是空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. pdf长度错误或mantissa长度错误。
-                                        2. 累积编码空间设置过小，压缩存在溢出风险，需满足如下公式：(size(fixedOut) + size(mantissaOut)) >= (len(inputTensor) + len(inputTensor) / 64 + 8448 * processCoreDim)
-                                        3. size(fixedOut) 小于512Byte, 无法存储压缩元信息。
-                                        4. 输入的元素个数不为64的倍数或小于32768。
-                                        5. inputTensor, pdf, outputMantissaTensorOut数据类型不支持。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 286px">
+  <col style="width: 124px">
+  <col style="width: 740px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>inputTensor, pdf, mantissaOut, fixedOut, varOut是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
+      <td>pdf长度错误或mantissa长度错误。</td>
+    </tr>
+    <tr>
+      <td>累积编码空间设置过小，压缩存在溢出风险，需满足如下公式：(size(fixedOut) + size(mantissaOut)) &gt;= (len(inputTensor) + len(inputTensor) / 64 + 8448 * processCoreDim)。</td>
+    </tr>
+    <tr>
+      <td>size(fixedOut) 小于512Byte, 无法存储压缩元信息。</td>
+    </tr>
+    <tr>
+      <td>输入的元素个数不为64的倍数或小于32768。</td>
+    </tr>
+    <tr>
+      <td>inputTensor, pdf, outputMantissaTensorOut数据类型不支持。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnHansEncode
 
 - **参数说明：**
 
-  - workspace(void*, 入参): 在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参): 在Device侧申请的workspace大小，由第一段接口aclnnEyeGetWorkspaceSize获取。
-  - executor(aclOpExecutor*, 入参): op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参): 指定执行任务的AscendCL Stream流。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnEyeGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 

@@ -15,7 +15,8 @@
 
 
 ## 功能说明
-- 算子功能：
+
+- 接口功能：
   将tensor self和tensor other进行broadcast成一致的shape后，其中的每个元素都转换为除以other的对应元素以后得到的余数。该结果与除数other同符号，并且该结果的绝对值是小于other的绝对值。
   实际计算remainder(self, other) 等效于以下公式：
 
@@ -76,27 +77,86 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self、other、out是空指针
-  161002 (ACLNN_ERR_PARAM_INVALID): 1. self和other无法做数据类型推导。
-                                    2. self和other推导出的数据类型不属于支持的数据类型。
-                                    3. self和other推导出的数据类型无法转换为指定输出out的类型。
-                                    4. self和other的shape无法做broadcast。
-                                    5. self和other broadcast以后的shape与out的shape不一致
-                                    6. self、other、out的维度数大于8维
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 287px">
+  <col style="width: 124px">
+  <col style="width: 738px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、other、out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
+      <td>self和other无法做数据类型推导。</td>
+    </tr>
+    <tr>
+      <td>self和other推导出的数据类型不属于支持的数据类型。</td>
+    </tr>
+    <tr>
+      <td>self和other推导出的数据类型无法转换为指定输出out的类型。</td>
+    </tr>
+    <tr>
+      <td>self和other的shape无法做broadcast。</td>
+    </tr>
+    <tr>
+      <td>self和other broadcast以后的shape与out的shape不一致。</td>
+    </tr>
+    <tr>
+      <td>self、other、out的维度数大于8维。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnRemainderTensorTensor
 
 - **参数说明：**
-  * workspace(void*，入参)：在Device侧申请的workspace内存地址。
-  
-  * workspaceSize(uint64_t，入参)：在Device侧申请的workspace大小，由第一段接口aclnnRemainderTensorTensorGetWorkspaceSize获取。
-  
-  * executor(aclOpExecutor*，入参)：op执行器，包含了算子计算流程。
-  
-  * stream(aclrtStream，入参)：指定执行任务的Stream。
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnRemainderTensorTensorGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 
 - **返回值：**
@@ -120,26 +180,89 @@
   * executor(aclOpExecutor **，出参)：返回op执行器，包含了算子计算流程。
 
 - **返回值：**
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的selfRef、other是空指针
-  161002 (ACLNN_ERR_PARAM_INVALID): 1. selfRef和other无法做数据类型推导。
-                                    2. selfRef和other推导出的数据类型不属于支持的数据类型。
-                                    3. selfRef和other推导出的数据类型无法转换为selfRef的类型。
-                                    4. selfRef和other的shape无法做broadcast。
-                                    5. selfRef和other broadcast以后的shape与selfRef的shape不一致
-                                    6. selfRef、other的维度数大于8维
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 287px">
+  <col style="width: 124px">
+  <col style="width: 738px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的selfRef、other是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
+      <td>selfRef和other无法做数据类型推导。</td>
+    </tr>
+    <tr>
+      <td>selfRef和other推导出的数据类型不属于支持的数据类型。</td>
+    </tr>
+    <tr>
+      <td>selfRef和other推导出的数据类型无法转换为selfRef的类型。</td>
+    </tr>
+    <tr>
+      <td>selfRef和other的shape无法做broadcast。</td>
+    </tr>
+    <tr>
+      <td>selfRef和other broadcast以后的shape与selfRef的shape不一致。</td>
+    </tr>
+    <tr>
+      <td>selfRef、other的维度数大于8维。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnInplaceRemainderTensorTensor
 
 - **参数说明：**
-  * workspace(void*，入参)：在Device侧申请的workspace内存地址。
-  * workspaceSize(uint64_t，入参)：在Device侧申请的workspace大小，由第一段接口aclnnInplaceRemainderTensorTensorGetWorkspaceSize获取。
-  * executor(aclOpExecutor *，入参)：op执行器，包含了算子计算流程。
-  * stream(aclrtStream，入参)：指定执行任务的Stream。
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceRemainderTensorTensorGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。

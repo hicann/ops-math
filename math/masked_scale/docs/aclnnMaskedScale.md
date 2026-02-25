@@ -24,6 +24,7 @@
   $$
 
 ## 函数原型
+
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnMaskedScaleGetWorkspaceSize”接口获取入参并根据流程计算所需workspace大小，再调用“aclnnMaskedScale”接口执行计算。
 
   ```Cpp
@@ -45,6 +46,7 @@
   ```
 
 ## aclnnMaskedScaleGetWorkspaceSize
+
 - **参数说明：**
 
   <table style="undefined;table-layout: fixed; width: 1496px"><colgroup>
@@ -178,12 +180,13 @@
   </table>
 
 ## aclnnMaskedScale
+
 - **参数说明：**
   
-  <table style="undefined;table-layout: fixed; width: 1045px"><colgroup>
-  <col style="width: 148px">
-  <col style="width: 125px">
-  <col style="width: 772px">
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
   </colgroup>
   <thead>
     <tr>
@@ -225,7 +228,9 @@
   - aclnnMaskedScale默认确定性实现。
 
 ## 调用示例
+
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

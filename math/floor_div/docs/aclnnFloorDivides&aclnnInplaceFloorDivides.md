@@ -16,7 +16,7 @@
 
 ## 功能说明
 
-- 算子功能：完成除法计算，对余数向下取整。
+- 接口功能：完成除法计算，对余数向下取整。
 - 计算公式：
 
   $$
@@ -24,6 +24,7 @@
   $$
 
 ## 函数原型
+
 - aclnnFloorDivides和aclnnInplaceFloorDivides实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnFloorDivides：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceFloorDivides：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
@@ -56,23 +57,80 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-```
-第一段接口完成入参校验，出现如下场景时报错：
-  161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self、other或out是空指针。
-  161002 (ACLNN_ERR_PARAM_INVALID): 1. self和other的数据类型和数据格式不在支持的范围之内。
-                                    2. self和other不满足数据类型推导规则。
-                                    3. 推导出的数据类型无法转换为指定输出out的类型。
-                                    4. self的维度大于8。
-```
+  第一段接口完成入参校验，出现如下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1147px"><colgroup>
+  <col style="width: 287px">
+  <col style="width: 124px">
+  <col style="width: 736px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、other或out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
+      <td>self和other的数据类型和数据格式不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self和other不满足数据类型推导规则。</td>
+    </tr>
+    <tr>
+      <td>推导出的数据类型无法转换为指定输出out的类型。</td>
+    </tr>
+    <tr>
+      <td>self的维度大于8。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnFloorDivides
 
 - **参数说明：**
 
-  - workspace(void*, 入参)：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnFloorDividesGetWorkspaceSize获取。
-  - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnFloorDividesGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
@@ -97,22 +155,77 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-```
-第一段接口完成入参校验，出现如下场景时报错：
-  161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的selfRef、other是空指针。
-  161002 (ACLNN_ERR_PARAM_INVALID): 1. selfRef和other的数据类型和数据格式不在支持的范围之内。
-                                    2. selfRef和other不满足数据类型推导规则。
-                                    3. selfRef和other的维度大于8。
-```
+  第一段接口完成入参校验，出现如下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1146px"><colgroup>
+  <col style="width: 287px">
+  <col style="width: 124px">
+  <col style="width: 735px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的selfRef、other是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
+      <td>selfRef和other的数据类型和数据格式不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>selfRef和other不满足数据类型推导规则。</td>
+    </tr>
+    <tr>
+      <td>selfRef和other的维度大于8。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnInplaceFloorDivides
 
 - **参数说明：**
 
-  - workspace(void*, 入参)：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnInplaceFloorDividesGetWorkspaceSize获取。
-  - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 167px">
+  <col style="width: 134px">
+  <col style="width: 848px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceFloorDividesGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
@@ -126,7 +239,9 @@
 
 
 ## 调用示例
+
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

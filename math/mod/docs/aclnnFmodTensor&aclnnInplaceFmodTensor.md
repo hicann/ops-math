@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-- 算子功能：返回self除以other的余数。
+- 接口功能：返回self除以other的余数。
 
 - 计算公式：
 
@@ -61,11 +61,12 @@ aclnnStatus aclnnInplaceFmodTensor(
   aclOpExecutor *executor, 
   aclrtStream stream)
 ```
+
 ## aclnnFmodTensorGetWorkspaceSize
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1526px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1526px"><colgroup>
   <col style="width: 154px">
   <col style="width: 125px">
   <col style="width: 213px">
@@ -144,6 +145,8 @@ aclnnStatus aclnnInplaceFmodTensor(
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
+  第一段接口完成入参校验，出现以下场景时报错：
+
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 288px">
   <col style="width: 114px">
@@ -185,7 +188,7 @@ aclnnStatus aclnnInplaceFmodTensor(
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
     <col style="width: 153px">
     <col style="width: 124px">
     <col style="width: 872px">
@@ -228,7 +231,7 @@ aclnnStatus aclnnInplaceFmodTensor(
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1526px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1526px"><colgroup>
   <col style="width: 154px">
   <col style="width: 125px">
   <col style="width: 213px">
@@ -299,6 +302,8 @@ aclnnStatus aclnnInplaceFmodTensor(
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
+  第一段接口完成入参校验，出现以下场景时报错：
+
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 288px">
   <col style="width: 114px">
@@ -340,7 +345,7 @@ aclnnStatus aclnnInplaceFmodTensor(
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
     <col style="width: 153px">
     <col style="width: 124px">
     <col style="width: 872px">
