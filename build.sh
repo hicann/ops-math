@@ -18,10 +18,10 @@ SUPPORTED_SHORT_OPTS="hj:vO:uf:-:"
 # 所有支持的长选项
 SUPPORTED_LONG_OPTS=(
   "help" "ops=" "soc=" "vendor_name=" "debug" "cov" "noexec" "aicpu" "opkernel" "opkernel_aicpu" "jit"
-  "pkg" "asan" "valgrind" "make_clean" "static" "build-type=" "no_force"
+  "pkg" "asan" "valgrind" "make_clean" "static" "build-type=" "no_force" "simulator"
   "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "opkernel_aicpu_test"
   "run_example" "genop=" "genop_aicpu=" "experimental" "cann_3rd_lib_path" "mssanitizer" "oom" "onnxplugin"
-  "dump_cce" "bisheng_flags=" "tiling_key="
+  "dump_cce" "bisheng_flags=" "kernel_template_input="
 )
 
 in_array() {
@@ -112,6 +112,9 @@ export GE_EXTERNAL_INCLUDE_PATH="${INCLUDE_PATH}/external"
 export INC_INCLUDE_PATH="${ASCEND_OPP_PATH}/built-in/op_proto/inc"
 export EAGER_LIBRARY_PATH="${ASCEND_HOME_PATH}/lib64"
 export GRAPH_LIBRARY_PATH="${ASCEND_HOME_PATH}/lib64"
+
+USER_SET_SLOG=${ASCEND_SLOG_PRINT_TO_STDOUT:+true}
+USER_SET_LOG_LEVEL=${ASCEND_GLOBAL_LOG_LEVEL:+true}
 if [[ ! -v ASCEND_SLOG_PRINT_TO_STDOUT ]]; then
   export ASCEND_SLOG_PRINT_TO_STDOUT=1
 fi
@@ -146,8 +149,8 @@ usage() {
         echo "    --dump_cce             Dump kernel precompiled files"
         echo "    --bisheng_flags=flag1,flag2"
         echo "                           Specify bisheng compiler flags (comma-separated for multiple)"
-        echo "    --tiling_key=tilingkey1,tilingkey2"
-        echo "                           Specify tiling key (comma-separated for multiple)"
+        echo "    --kernel_template_input=args0,args1"
+        echo "                           Specify kernel template input arguments (comma-separated for multiple)"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --pkg --soc=ascend910b --vendor_name=customize -j16 -O3"
@@ -158,7 +161,7 @@ usage() {
         echo "    bash build.sh --pkg --experimental --soc=ascend910b --ops=abs --oom"
         echo "    bash build.sh --pkg --experimental --soc=ascend910b --ops=abs --dump_cce"
         echo "    bash build.sh --pkg --experimental --soc=ascend910b --ops=abs --bisheng_flags=ccec_g,oom"
-        echo "    bash build.sh --pkg --experimental --soc=ascend950 --ops=abs --tiling_key=101,102"
+        echo "    bash build.sh --pkg --experimental --soc=ascend950 --ops=abs --kernel_template_input=0,1"
         return
         ;;
       opkernel)
@@ -174,8 +177,8 @@ usage() {
         echo "    --no_force             Don't force dependency installation"
         echo "    --bisheng_flags=flag1,flag2"
         echo "                           Specify bisheng compiler config (comma-separated for multiple)"
-        echo "    --tiling_key=tilingkey1,tilingkey2"
-        echo "                           Specify tiling key (comma-separated for multiple)"
+        echo "    --kernel_template_input=args0,args1"
+        echo "                           Specify kernel template input arguments (comma-separated for multiple)"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub"
@@ -184,7 +187,7 @@ usage() {
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub --oom"
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub --dump_cce"
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub --bisheng_flags=ccec_g,oom"
-        echo "    bash build.sh --opkernel --soc=ascend950 --ops=abs --tiling_key=101,102"
+        echo "    bash build.sh --opkernel --soc=ascend950 --ops=abs --kernel_template_input=0,1"
         return
         ;;
       opkernel_aicpu)
@@ -332,12 +335,14 @@ usage() {
         echo "Run examples Options:"
         echo $dotted_line
         echo "    --run_example op_type  mode[eager:graph] [pkg_mode --vendor_name=name]     Compile and execute the test_aclnn_xxx.cpp/test_geir_xxx.cpp"
+        echo "    --simulator   Enable simulator mode when running aclnn examples"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --run_example abs eager"
         echo "    bash build.sh --run_example abs graph"
         echo "    bash build.sh --run_example abs eager cust"
         echo "    bash build.sh --run_example abs eager cust --vendor_name=custom"
+        echo "    bash build.sh --run_example abs eager --simulator --soc=ascend950"
         return
         ;;
       genop)
@@ -406,13 +411,14 @@ usage() {
   echo "    --opkernel_test build and run opkernel unit tests"
   echo "    --opkernel_aicpu_test build and run aicpu opkernel unit tests"
   echo "    --run_example Compile and execute the test_aclnn_xxx.cpp/test_geir_xxx.cpp"
+  echo "    --simulator     Enable simulator mode for run_example (requires --soc parameter)"
   echo "    --genop Create the initial directory for op"
   echo "    --genop_aicpu Create the initial directory for AI CPU op"
   echo "    --mssanitizer Build with mssanitizer mode on the kernel side, with options: '-g --cce-enable-sanitizer'"
   echo "    --oom Build with oom mode on the kernel side, with options: '-g --cce-enable-oom'"
   echo "    --dump_cce Dump kernel precompiled files"
   echo "    --bisheng_flags Specify bisheng compiler config, like: --bisheng_flags=ccec_g,oom, use ',' to separate different compiler flags"
-  echo "    --tiling_key Specify tiling key, like: --tiling_key=0,1, use ',' to separate different tiling key"
+  echo "    --kernel_template_input Specify kernel template input arguments, like: --kernel_template_input=0,1, use ',' to separate different kernel template args"
   echo "to be continued ..."
 }
 
@@ -516,9 +522,9 @@ check_param() {
     fi
   fi
 
-  if [ -n "$TILING_KEY" ]; then
+  if [ -n "$KERNEL_TEMPLATE_INPUT" ]; then
     if [[ -z "${COMPILED_OPS}" || "$COMPILED_OPS" == *","* ]]; then
-      echo "[ERROR] --tiling_key must be used with --ops= and can only specify a single operator"
+      echo "[ERROR] --kernel_template_input must be used with --ops= and can only specify a single operator"
       exit 1
     fi
   fi
@@ -545,6 +551,16 @@ check_param() {
 
   if $(echo ${USE_CMD} | grep -wq "opkernel_aicpu") && $(echo ${USE_CMD} | grep -wq "jit"); then
     echo "[ERROR] --opkernel_aicpu cannot be used with --jit"
+    exit 1
+  fi
+
+  if [[ "$ENABLE_SIMULATOR" == "TRUE" && -z "$COMPUTE_UNIT" ]]; then
+    echo "[ERROR] --simulator requires --soc parameter to be specified"
+    exit 1
+  fi
+
+  if [[ "$ENABLE_SIMULATOR" == "TRUE" && "$EXAMPLE_MODE" == "graph" ]]; then
+    echo "[ERROR] --simulator does not support graph mode. Please use eager mode instead."
     exit 1
   fi
 }
@@ -728,7 +744,7 @@ checkopts() {
   BUILD_TYPE="Release"
   USE_CMD="$*"
   BISHENG_FLAGS=""
-  TILING_KEY=""
+  KERNEL_TEMPLATE_INPUT=""
 
   ENABLE_MSSANITIZER=FALSE
   ENABLE_OOM=FALSE
@@ -743,6 +759,7 @@ checkopts() {
   ENABLE_TEST=FALSE
   ENABLE_EXPERIMENTAL=FALSE
   ENABLE_STATIC=FALSE
+  ENABLE_SIMULATOR=FALSE
   AICPU_ONLY=FALSE
   OP_API_UT=FALSE
   OP_HOST_UT=FALSE
@@ -861,8 +878,8 @@ checkopts() {
         bisheng_flags=*)
           BISHENG_FLAGS=${OPTARG#*=}
           ;;
-        tiling_key=*)
-          TILING_KEY=${OPTARG#*=}
+        kernel_template_input=*)
+          KERNEL_TEMPLATE_INPUT=${OPTARG#*=}
           ;;
         cann_3rd_lib_path=*)
           CANN_3RD_LIB_PATH="$(realpath ${OPTARG#*=})"
@@ -884,6 +901,7 @@ checkopts() {
           ENABLE_VALGRIND=TRUE
           ENABLE_UT_EXEC=FALSE
           ;;
+        simulator) ENABLE_SIMULATOR=TRUE ;;
         run_example)
           checkopts_run_example "$@"
           ;;
@@ -1076,8 +1094,8 @@ assemble_cmake_args() {
   if [[ "x$BISHENG_FLAGS" != "x" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DBISHENG_FLAGS=${BISHENG_FLAGS}"
   fi
-  if [[ "x$TILING_KEY" != "x" ]]; then
-    CMAKE_ARGS="$CMAKE_ARGS -DTILING_KEY=${TILING_KEY}"
+  if [[ "x$KERNEL_TEMPLATE_INPUT" != "x" ]]; then
+    CMAKE_ARGS="$CMAKE_ARGS -DKERNEL_TEMPLATE_INPUT=${KERNEL_TEMPLATE_INPUT}"
   fi
   if [[ "$OP_HOST_UT" == "TRUE" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DOP_HOST_UT=TRUE"
@@ -1397,18 +1415,87 @@ build_example() {
   done
 }
 
+# Helper function to get simulator chip version from soc_version
+get_simulator_chip_version() {
+  local soc=$1
+  case "$soc" in
+    ascend910) echo "dav_1001" ;;
+    ascend910_93|ascend910b) echo "dav_2201" ;;
+    ascend310p) echo "dav_2002" ;;
+    ascend310b) echo "dav_3002" ;;
+    ascend950) echo "dav_3510" ;;
+    *)
+      echo "[ERROR] Unsupported soc version for simulator: $soc" >&2
+      return 1
+      ;;
+  esac
+}
+
+# Helper function to get simulator compile arguments
+get_simulator_args() {
+  if [[ "$ENABLE_SIMULATOR" == "FALSE" ]];then
+    return 0
+  fi
+  if [[ "$ENABLE_SIMULATOR" == "TRUE" ]] && [[ -n "$COMPUTE_UNIT" ]]; then
+    local chip_version=$(get_simulator_chip_version "$COMPUTE_UNIT")
+    if [[ $? -ne 0 ]]; then
+      exit 1
+    fi
+    if [[ -n "$chip_version" ]]; then
+      local sim_lib_path="${ASCEND_HOME_PATH}/tools/simulator/${chip_version}/lib"
+      if [[ ! -d "$sim_lib_path" ]]; then
+        echo "[ERROR] Simulator lib path not found: $sim_lib_path" >&2
+        exit 1
+      else
+        echo "[INFO] Successfully linked simulator libraries: ${sim_lib_path}/libruntime_camodel.so, ${sim_lib_path}/libnpu_drv_camodel.so" >&2
+      fi
+      echo "$sim_lib_path"
+      return 0
+    fi
+  fi
+  echo ""
+  return 1
+}
+
 # Helper function to compile eager examples
 compile_eager_example() {
   local source_file=$1
   local executable_name=$2
+  local sim_lib_path
+  sim_lib_path=$(get_simulator_args)
+  local ret=$?
+  if [ $ret -ne 0 ]; then
+    exit 1
+  fi
 
   if [[ "${PKG_MODE}" == "" ]]; then
-    g++ ${source_file} \
-      -I ${INCLUDE_PATH} \
-      -I ${ACLNN_INCLUDE_PATH} \
-      -L ${EAGER_LIBRARY_PATH} \
-      -lopapi_math -lascendcl -lnnopbase \
-      -o ${executable_name}
+    if [[ -n "$sim_lib_path" ]]; then
+      if [[ "$USER_SET_SLOG" != "true" ]]; then
+        export ASCEND_SLOG_PRINT_TO_STDOUT=0
+      fi
+      if [[ "$USER_SET_LOG_LEVEL" != "true" ]]; then
+        export ASCEND_GLOBAL_LOG_LEVEL=3
+      fi
+      export LD_LIBRARY_PATH=${sim_lib_path}:${LD_LIBRARY_PATH}
+      ln -sf ${sim_lib_path}/libruntime_camodel.so ${sim_lib_path}/libruntime.so
+      ln -sf ${sim_lib_path}/libnpu_drv_camodel.so ${sim_lib_path}/libascend_hal.so
+      g++ ${source_file} \
+        -I ${INCLUDE_PATH} \
+        -I ${ACLNN_INCLUDE_PATH} \
+        -L ${EAGER_LIBRARY_PATH} \
+        -lopapi_math -lascendcl -lnnopbase \
+        -L ${sim_lib_path} \
+        -lruntime_camodel -lnpu_drv_camodel \
+        -o ${executable_name} \
+        -Wl,-rpath=${sim_lib_path}
+    else
+      g++ ${source_file} \
+        -I ${INCLUDE_PATH} \
+        -I ${ACLNN_INCLUDE_PATH} \
+        -L ${EAGER_LIBRARY_PATH} \
+        -lopapi_math -lascendcl -lnnopbase \
+        -o ${executable_name}
+    fi
 
   elif [[ "${PKG_MODE}" == "cust" ]]; then
     echo "pkg_mode:${PKG_MODE} vendor_name:${VENDOR}"
@@ -1425,15 +1512,38 @@ compile_eager_example() {
     fi
 
     # Compile with custom paths
-    g++ ${source_file} \
-      -I ${INCLUDE_PATH} \
-      -I ${INCLUDE_PATH}/aclnnop \
-      -I ${CUST_INCLUDE_PATH} \
-      -L ${CUST_LIBRARY_PATH} \
-      -L ${EAGER_LIBRARY_PATH} \
-      -lcust_opapi -lascendcl -lnnopbase \
-      -o ${executable_name} \
-      -Wl,-rpath=${CUST_LIBRARY_PATH}
+    if [[ -n "$sim_lib_path" ]]; then
+      if [[ "$USER_SET_SLOG" != "true" ]]; then
+        export ASCEND_SLOG_PRINT_TO_STDOUT=0
+      fi
+      if [[ "$USER_SET_LOG_LEVEL" != "true" ]]; then
+        export ASCEND_GLOBAL_LOG_LEVEL=3
+      fi
+      export LD_LIBRARY_PATH=${sim_lib_path}:${LD_LIBRARY_PATH}
+      ln -sf ${sim_lib_path}/libruntime_camodel.so ${sim_lib_path}/libruntime.so
+      ln -sf ${sim_lib_path}/libnpu_drv_camodel.so ${sim_lib_path}/libascend_hal.so
+      g++ ${source_file} \
+        -I ${INCLUDE_PATH} \
+        -I ${INCLUDE_PATH}/aclnnop \
+        -I ${CUST_INCLUDE_PATH} \
+        -L ${CUST_LIBRARY_PATH} \
+        -L ${EAGER_LIBRARY_PATH} \
+        -lcust_opapi -lascendcl -lnnopbase \
+        -L ${sim_lib_path} \
+        -lruntime_camodel -lnpu_drv_camodel \
+        -o ${executable_name} \
+        -Wl,-rpath=${CUST_LIBRARY_PATH}:${sim_lib_path}
+    else
+      g++ ${source_file} \
+        -I ${INCLUDE_PATH} \
+        -I ${INCLUDE_PATH}/aclnnop \
+        -I ${CUST_INCLUDE_PATH} \
+        -L ${CUST_LIBRARY_PATH} \
+        -L ${EAGER_LIBRARY_PATH} \
+        -lcust_opapi -lascendcl -lnnopbase \
+        -o ${executable_name} \
+        -Wl,-rpath=${CUST_LIBRARY_PATH}
+    fi
 
     # Clean up symlink
     if [ -L ${CUST_ACLNNOP_INCLUDE_PATH} ]; then

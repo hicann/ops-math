@@ -94,7 +94,7 @@ main() {
   echo "[INFO]excute file: $0"
   if [ $# -lt 9 ]; then
     echo "[ERROR]input error"
-    echo "[ERROR]bash $0 {op_type} {soc_version} {output_path} {enable_mssanitizer} {enable_debug} {enable_oom} {enable_dump_cce} bisheng_flags={bisheng_flags} tiling_key={tiling_key}"
+    echo "[ERROR]bash $0 {op_type} {soc_version} {output_path} {enable_mssanitizer} {enable_debug} {enable_oom} {enable_dump_cce} bisheng_flags={bisheng_flags} kernel_template_input={kernel_template_input}"
     exit 1
   fi
 
@@ -113,7 +113,7 @@ main() {
   local enable_oom=$6
   local enable_dump_cce=$7
   local bisheng_flags="${8#*=}"
-  local tiling_key="${9#*=}"
+  local kernel_template_input="${9#*=}"
   local task_path=${output_path}/opc_cmd/
   local is_need_gen_opc_info=TRUE
   local python_arg=${HI_PYTHON}
@@ -296,9 +296,9 @@ main() {
         fi
 
         
-        if [[ -n "$tiling_key" ]]; then
-          echo "tiling_key is: ${tiling_key}"
-          cmd="${cmd} --tiling_key=${tiling_key}"
+        if [[ -n "$kernel_template_input" ]]; then
+          echo "kernel_template_input is: ${kernel_template_input}"
+          cmd="${cmd} --kernel_template_input=${kernel_template_input}"
         fi
 
         echo "[INFO] op:${op_type} do opc cmd is ${cmd}"
