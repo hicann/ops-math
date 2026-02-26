@@ -79,7 +79,7 @@ static bool CheckFormat(const aclTensor* self, const aclTensor* out)
     if (self->GetStorageFormat() != out->GetStorageFormat()) {
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID, "Format of input and output should be equal. self [%s], out [%s].",
-            ToString(self->GetStorageShape()).GetString(), ToString(out->GetStorageShape()).GetString());
+            ToString(self->GetStorageFormat()).GetString(), ToString(out->GetStorageFormat()).GetString());
         return false;
     }
 
