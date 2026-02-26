@@ -65,7 +65,7 @@
 
   - executor(aclOpExecutor*, 入参): op执行器，包含了算子计算流程。
   
-  - stream(clrtStream, 入参): 指定执行任务的Stream。
+  - stream(aclrtStream, 入参): 指定执行任务的Stream。
 
 
 - **返回值：**
