@@ -88,13 +88,13 @@ ge::graphStatus GetKeyAndCounter(gert::TilingContext* ctx, uint32_t key[2], uint
         seed = static_cast<int64_t>(New64());
         seed2 = static_cast<int64_t>(New64());
     }
-
+    constexpr uint32_t SHIFT_BITS = 32;
     key[0] = static_cast<uint32_t>(seed);
-    key[1] = static_cast<uint32_t>(seed >> 32);
+    key[1] = static_cast<uint32_t>(seed >> SHIFT_BITS);
     counter[0] = 0;
     counter[1] = 0;
     counter[2] = static_cast<uint32_t>(seed2);
-    counter[3] = static_cast<uint32_t>(seed2 >> 32);
+    counter[3] = static_cast<uint32_t>(seed2 >> SHIFT_BITS);
 
     return ge::GRAPH_SUCCESS;
 }

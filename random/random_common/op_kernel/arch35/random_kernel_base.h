@@ -553,7 +553,8 @@ __aicore__ inline void RandomKernelBaseOp::Skip(const uint64_t count)
 
 __aicore__ inline void RandomKernelBaseOp::GenRandomSIMD(LocalTensor<uint32_t> randomLocal, const uint64_t count)
 {
-    PhiloxRandom<10>(randomLocal, {key_[0], key_[1]}, {counter_[0], counter_[1], counter_[2], counter_[3]}, count);
+    constexpr uint16_t kPhiloxRounds = 10;
+    PhiloxRandom<kPhiloxRounds>(randomLocal, {key_[0], key_[1]}, {counter_[0], counter_[1], counter_[2], counter_[3]}, count);
 }
 
 } // namespace RandomKernelBase

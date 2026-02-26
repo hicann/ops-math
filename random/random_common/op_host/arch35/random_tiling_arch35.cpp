@@ -289,8 +289,9 @@ ge::graphStatus RandomTilingArch35::DoUbTiling()
 
 ge::graphStatus RandomTilingArch35::CalcTilingKeyAndWorkspace()
 {
+    constexpr uint64_t DEFAULT_TILING_KEY = 100;
     workspaceSize_ = 0;
-    tilingKey_ = 100;
+    tilingKey_ = DEFAULT_TILING_KEY;
     return ge::GRAPH_SUCCESS;
 }
 

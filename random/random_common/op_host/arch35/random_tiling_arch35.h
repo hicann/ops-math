@@ -29,7 +29,7 @@ struct RandomOperatorCompileInfo {
 
 ge::graphStatus ExtractTensorValue(const gert::TilingContext* context, const int64_t constIdx, gert::Shape& constShape);
 
-ge::graphStatus RandomTilingParseArch35(gert::TilingParseContext* context, const std::string & operatorName);
+ge::graphStatus RandomTilingParseArch35(gert::TilingParseContext* context, const std::string& operatorName);
 
 // 输入输出Tensor校验规则配置
 struct TensorCheckRule {

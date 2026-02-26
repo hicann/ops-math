@@ -47,7 +47,9 @@ OpTilingConfig RandomUniformV2Tiling::BuildOpConfig()
 
     // 获取key[2]：从attr1(seed) counter[4] attr(seed2)
     config.getKeyAndCounter = [](gert::TilingContext* ctx, uint32_t key[2], uint32_t counter[4]) -> ge::graphStatus {
-        return RandomUtils::GetKeyAndCounter<1,2>(ctx, key, counter);
+        constexpr int SEED_INDEX = 1;
+        constexpr int SEED_INDEX2 = 2;
+        return RandomUtils::GetKeyAndCounter<SEED_INDEX, SEED_INDEX2>(ctx, key, counter);
     };
 
     config.getBufferNum = [](gert::TilingContext* ctx, int64_t& bufNum) -> ge::graphStatus {
