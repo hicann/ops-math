@@ -163,6 +163,7 @@ operator_group_5:
   - strided_slice_assign_v2
   - strided_slice_grad
   - tensor_move
+  - trans_data
   - transpose
   - tril
   - triu

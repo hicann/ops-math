@@ -440,7 +440,7 @@
     {"name":"BroadcastTo", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode":"", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name": "DynamicPartition", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"Tile", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode":"", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
-    {"name":"TransData", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode":""},
+    {"name":"TransData", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"GeluQuant", "compute_units": ["ascend310p", "ascend910b", "ascend910", "ascend950"], "auto_sync" : true},
     {"name":"DequantSwigluQuant", "compute_units": ["ascend910b","ascend910_93", "ascend950"], "auto_sync" : true},
     {"name":"QuantBatchMatmulV3", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : false},
