@@ -75,6 +75,8 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 int main() {
   // 1. （固定写法）device/stream初始化，参考acl对外接口列表
   // 根据自己的实际device填写deviceId
+  constexpr size_t kOutHost = 8;
+  constexpr size_t kMaskOutHost = 16;
   int32_t deviceId = 0;
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
@@ -90,8 +92,8 @@ int main() {
   aclTensor* out = nullptr;
   aclTensor* maskOut = nullptr;
   std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-  std::vector<float> outHostData(8, 0);
-  std::vector<uint8_t> maskOutHostData(16, 0);
+  std::vector<float> outHostData(kOutHost, 0);
+  std::vector<uint8_t> maskOutHostData(kMaskOutHost, 0);
 
   double p = 0.5;
   int64_t seed = 1234;
