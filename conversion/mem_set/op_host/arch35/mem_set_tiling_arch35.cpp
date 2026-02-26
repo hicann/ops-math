@@ -13,16 +13,13 @@
  * \brief tiling for mem set
  */
 
-#include <vector>
 #include <set>
 #include <string>
-#include "register/op_impl_registry.h"
 #include "log/log.h"
 #include "util/math_util.h"
 #include "util/platform_util.h"
 #include "mem_set_tiling_arch35.h"
 #include "op_host/tiling_util.h"
-
 
 using namespace MemSetTpl;
 namespace optiling {
@@ -74,7 +71,7 @@ void MemSetTilingClass::PostDo()
 
 ge::graphStatus MemSetTilingClass::PostTiling()
 {
-    // 不同大小的tilingdata模板
+    // Different sizes of tiling data templates
     const std::vector<int> validNums = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 32, 64, 128, 192, 256};
     if (inputCount_ > validNums.back()) {
         OP_LOGE(context_, "TensorNum is %d unsupported", inputCount_);
@@ -143,19 +140,19 @@ ge::graphStatus MemSetTilingClass::DoOpTiling()
 ge::graphStatus MemSetTilingClass::GetPlatformInfo()
 {
     auto platformInfo = context_->GetPlatformInfo();
-    if (platformInfo != nullptr) {
-        auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
-        aicoreParams_.numBlocks = ascendcPlatform.GetCoreNumAiv();
-        uint64_t ubSizePlatForm;
-        ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
-        aicoreParams_.ubSize = ubSizePlatForm;
-    } else {
+    if (isDynamic_ || platformInfo == nullptr) {
         auto compileInfoPtr = reinterpret_cast<const MemSetCompileInfoArch35*>(context_->GetCompileInfo());
         OP_CHECK_IF(
             compileInfoPtr == nullptr, OP_LOGE(context_->GetNodeName(), "compile info is null"),
             return ge::GRAPH_FAILED);
         aicoreParams_.numBlocks = compileInfoPtr->coreNum;
         aicoreParams_.ubSize = compileInfoPtr->ubSize;
+    } else {
+        auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+        aicoreParams_.numBlocks = ascendcPlatform.GetCoreNumAiv();
+        uint64_t ubSizePlatForm;
+        ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
+        aicoreParams_.ubSize = ubSizePlatForm;
     }
     OP_CHECK_IF(aicoreParams_.numBlocks == 0LL, OP_LOGE(context_, "numBlocks is zero"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(aicoreParams_.ubSize == 0LL, OP_LOGE(context_, "ubSize is zero"), return ge::GRAPH_FAILED);
@@ -176,9 +173,54 @@ void MemSetTilingClass::AllocTilingStruct()
     sizes_.resize(inputCount_);
 }
 
+ge::graphStatus MemSetTilingClass::SetShapeAttrsInfo(bool isGE)
+{
+    const auto* attrs = context_->GetAttrs();
+    const auto* sizesPtr = attrs->GetListInt(0);
+    const auto* dataTypesPtr = attrs->GetListInt(1);
+    const auto* valueIntPtr = attrs->GetListInt(2);
+    const auto* valueFloatPtr = attrs->GetListFloat(3);
+
+    uint16_t valueIntIndex = 0;
+    uint16_t valueFloatIndex = 0;
+    for (uint16_t i = 0; i < inputCount_; i++) {
+        ge::DataType dtype = static_cast<ge::DataType>(dataTypesPtr->GetData()[i]);
+        if (SUPPORT_TYPE_LIST.find(dtype) == SUPPORT_TYPE_LIST.end()) {
+            OP_LOGE(context_->GetNodeName(), "Not Support Type");
+            return ge::GRAPH_FAILED;
+        }
+        listType_[i] = static_cast<uint16_t>(dtype);
+        if (isGE) {
+            if (SUPPORT_TYPE_INT_LIST.find(dtype) != SUPPORT_TYPE_INT_LIST.end()) {
+                intValue_[i] = valueIntPtr->GetData()[valueIntIndex];
+                floatValue_[i] = 0.0f;
+                valueIntIndex++;
+            } else {
+                floatValue_[i] = valueFloatPtr->GetData()[valueFloatIndex];
+                intValue_[i] = 0;
+                valueFloatIndex++;
+            }
+        } else {
+            floatValue_[i] = valueFloatPtr->GetData()[i * 2]; //input is 64B stred, read as float32, hence*2
+            intValue_[i] = valueIntPtr->GetData()[i];
+        }
+        if (isDynamic_) {
+            auto memSetContext = reinterpret_cast<ops::AtomicCleanTilingContext*>(context_);
+            sizes_[i] = memSetContext->GetCleanOutputSize(i);
+        } else {
+            sizes_[i] = sizesPtr->GetData()[i];
+        }
+        OP_CHECK_IF(
+            sizes_[i] % ge::GetSizeByDataType(static_cast<ge::DataType>(listType_[i])) != 0,
+            OP_LOGE(
+                context_->GetNodeName(), "memory size must be a multiple of the type size, check the initvalue type"),
+            return ge::GRAPH_FAILED);
+        OP_LOGI(context_, "dynamic is [%d] sizes[%u] is %ld", static_cast<int>(isDynamic_), i, sizes_[i]);
+    }
+    return ge::GRAPH_SUCCESS;
+}
 ge::graphStatus MemSetTilingClass::GetShapeAttrsInfo()
 {
-    // 获取属性
     const auto* attrs = context_->GetAttrs();
     const auto* sizesPtr = attrs->GetListInt(0);
     const auto* dataTypesPtr = attrs->GetListInt(1);
@@ -200,37 +242,16 @@ ge::graphStatus MemSetTilingClass::GetShapeAttrsInfo()
         isGE = true;
     }
     inputCount_ = sizesDim;
+    if (sizesPtr->GetData()[0] <= 0 || inputCount_ == 0) {
+        isDynamic_ = true;
+    }
+    if (isDynamic_) {
+        inputCount_ = context_->GetComputeNodeInfo()->GetInputsNum() - 1;
+    }
+    OP_LOGD(context_, "dim is %u", inputCount_);
     AllocTilingStruct();
-    uint16_t valueIntIndex = 0;
-    uint16_t valueFloatIndex = 0;
-    for (uint16_t i = 0; i < inputCount_; i++) {
-        ge::DataType dtype = static_cast<ge::DataType>(dataTypesPtr->GetData()[i]);
-        if (SUPPORT_TYPE_LIST.find(dtype) == SUPPORT_TYPE_LIST.end()) {
-            OP_LOGE(context_->GetNodeName(), "Not Support Type");
-            return ge::GRAPH_FAILED;
-        }
-        listType_[i] = static_cast<uint16_t>(dtype);
-        if (isGE) {
-            if (SUPPORT_TYPE_INT_LIST.find(dtype) != SUPPORT_TYPE_INT_LIST.end()) {
-                intValue_[i] = valueIntPtr->GetData()[valueIntIndex];
-                floatValue_[i] = 0.0f;
-                valueIntIndex++;
-            } else {
-                floatValue_[i] = valueFloatPtr->GetData()[valueFloatIndex];
-                intValue_[i] = 0;
-                valueFloatIndex++;
-            }
-        } else {
-            floatValue_[i] = valueFloatPtr->GetData()[i * 2]; //这里传进来的参数为64B保存，用float32读取，因此*2
-            intValue_[i] = valueIntPtr->GetData()[i];
-        }
-        sizes_[i] = sizesPtr->GetData()[i];
-        OP_LOGI(context_, "sizes[%u] is %ld", i, sizes_[i]);
-        OP_CHECK_IF(
-            sizes_[i] % ge::GetSizeByDataType(static_cast<ge::DataType>(listType_[i])) != 0,
-            OP_LOGE(
-                context_->GetNodeName(), "memory size must be a multiple of the type size, check the initvalue type"),
-            return ge::GRAPH_FAILED);
+    if (SetShapeAttrsInfo(isGE) == ge::GRAPH_FAILED) {
+        return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -267,7 +288,6 @@ ge::graphStatus TilingPrepare4MemSetArch35(gert::TilingParseContext* context)
         return ge::GRAPH_FAILED);
 
     OP_LOGD(context->GetNodeName(), "GetCoreNum:%lu, ubSize:%lu.", compileInfo->coreNum, compileInfo->ubSize);
-
     return ge::GRAPH_SUCCESS;
 }
 

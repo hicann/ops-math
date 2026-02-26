@@ -16,10 +16,12 @@
 #ifndef AIR_CXX_RUNTIME_OP_IMPL_MEM_SET_H
 #define AIR_CXX_RUNTIME_OP_IMPL_MEM_SET_H
 
+#include <vector>
 #include "op_host/tiling_base.h"
 #include "conversion/mem_set/op_kernel/arch35/mem_set_struct.h"
 #include "platform/platform_ascendc.h"
-#include <vector>
+#include "register/op_impl_registry.h"
+
 
 namespace optiling {
 using namespace Ops::Math::OpTiling;
@@ -57,6 +59,7 @@ protected:
 
 private:
     void AllocTilingStruct();
+    ge::graphStatus SetShapeAttrsInfo(bool isGE);
     template <uint16_t Count>
     void PostDo();
     template <uint16_t Count>
@@ -70,13 +73,40 @@ private:
     std::vector<float> floatValue_;
     std::vector<int16_t> listType_;
     std::vector<int16_t> useCore_;
-    std::vector<uint64_t> sizes_;
+    std::vector<int64_t> sizes_;
     uint16_t cacheLineSize_;
     uint16_t needCore_;
     int halfUbSize_;
     uint16_t inputCount_;
     uint16_t TilingKey_;
+    bool isDynamic_ = false;
 };
 
 } // namespace optiling
+
+namespace ops {
+class AtomicCleanTilingContext : public gert::TilingContext {
+public:
+    /**
+     * Get workspaceSize list
+     * @return workspaceSize list
+     */
+    const gert::ContinuousVector* GetCleanWorkspaceSizes() const
+    {
+        return GetInputPointer<gert::ContinuousVector>(0);
+    }
+
+    /**
+     * Get the size of the output memory to be cleared by the output index
+     * @param index output index
+     * @return Size of output memory to be cleaned
+     */
+    uint64_t GetCleanOutputSize(size_t index) const
+    {
+        return GetInputValue<uint64_t>(index + 1U);
+    }
+};
+static_assert(
+    std::is_standard_layout<AtomicCleanTilingContext>::value, "The class AtomicCleanTilingContext must be a POD");
+} // namespace ops
 #endif
