@@ -27,6 +27,13 @@ static constexpr size_t ATTR_IDX_DILATIONS = 2U;
 static constexpr size_t ATTR_IDX_PADDING_MODE = 3U;
 static constexpr size_t ATTR_IDX_PADS = 4U;
 
+// 公共常量
+static constexpr int32_t PADDING_SPLIT_CNT = 2;
+static constexpr size_t ATTR_CNT_KSIZES = 2;
+static constexpr size_t ATTR_CNT_STRIDES = 2;
+static constexpr size_t ATTR_CNT_DILATIONS = 2;
+static constexpr int32_t VREG_ELEMENT_MIN_SIZE = 2;
+
 // NCHW 常量
 // BUFFER分割数量
 static constexpr uint32_t NCHW_BUFFER_NUM = 2;
@@ -39,10 +46,16 @@ static constexpr int32_t MAX_UB_GATHER_ELEMENT_NUM = std::numeric_limits<uint16_
 
 // NHWC 常量
 static constexpr uint64_t NHWC_BUFFER_NUM = 2;
+// 最小WC大小
+static constexpr int32_t NHWC_MIN_WC_SIZE = 128;
+// 最小buffer大小
+static constexpr uint64_t NHWC_MIN_BUFFER_SIZE = 64 * 1024;
 
 // SIMT 常量
 static constexpr int64_t MAX_SHAPE_SIZE_FOR_SIMT = 1024;
 static constexpr int64_t MAX_UINT32_NUM = std::numeric_limits<uint32_t>::max();
+static constexpr uint32_t SIMT_BUFFER_NUM = 2;
+static constexpr uint32_t SIMT_THREAD_FACTOR = 2;
 
 class Im2ColTiling {
 private:
@@ -239,21 +252,21 @@ void Im2ColTiling::ShowSIMTTilingData()
 ge::graphStatus Im2ColTiling::CheckKSizes(const gert::RuntimeAttrs* attrs)
 {
     auto ksizes = attrs->GetListInt(ATTR_IDX_KSIZES);
-    return Ops::Math::UnpackFixedDimListIntAttr<2>(
+    return Ops::Math::UnpackFixedDimListIntAttr<ATTR_CNT_KSIZES>(
         context_, "ksizes", ksizes, [](int64_t v) { return v > 0; }, input_.hKernelSize, input_.wKernelSize);
 }
 
 ge::graphStatus Im2ColTiling::CheckStrides(const gert::RuntimeAttrs* attrs)
 {
     auto strides = attrs->GetListInt(ATTR_IDX_STRIDES);
-    return Ops::Math::UnpackAdaptDimListIntAttr<2>(
+    return Ops::Math::UnpackAdaptDimListIntAttr<ATTR_CNT_STRIDES>(
         context_, "strides", strides, [](int64_t v) { return v > 0; }, input_.hStride, input_.wStride);
 }
 
 ge::graphStatus Im2ColTiling::CheckDilations(const gert::RuntimeAttrs* attrs)
 {
     auto dilations = attrs->GetListInt(ATTR_IDX_DILATIONS);
-    auto ret = Ops::Math::UnpackAdaptDimListIntAttr<2>(
+    auto ret = Ops::Math::UnpackAdaptDimListIntAttr<ATTR_CNT_DILATIONS>(
         context_, "dilations", dilations, [](int64_t v) { return v > 0; }, input_.hDilation, input_.wDilation);
     if (unlikely(ret != ge::GRAPH_SUCCESS)) {
         return ret;
@@ -271,7 +284,7 @@ static int64_t CalcNeedPadding(
 {
     int64_t outputSize = Ops::Base::CeilDiv(inputSize, stride);
     int64_t needPadding = std::max(0L, (outputSize - 1) * stride + effectSize - inputSize);
-    paddingBefore = needPadding / 2;
+    paddingBefore = needPadding / PADDING_SPLIT_CNT;
     paddingAfter = needPadding - paddingBefore;
     return outputSize;
 }
@@ -281,7 +294,6 @@ ge::graphStatus Im2ColTiling::CheckPadding(const gert::RuntimeAttrs* attrs)
     auto paddingMode = attrs->GetStr(ATTR_IDX_PADDING_MODE);
     OP_CHECK_NULL_WITH_CONTEXT(context_, paddingMode);
     std::string_view mode = std::string_view(paddingMode);
-
     if (mode == "CALCULATED") {
         auto pads = attrs->GetListInt(ATTR_IDX_PADS);
         auto ret = Ops::Math::UnpackAdaptDimListIntAttr<4>(
@@ -583,8 +595,8 @@ void Im2ColTiling::NHWCSetTilingData(Im2ColNHWCTilingData* tilingData, const int
 ge::graphStatus Im2ColTiling::Tiling4NHWC()
 {
     auto tilingData = context_->GetTilingData<Im2ColNHWCTilingData>();
-    uint64_t UB_SIZE_LIMIT = std::min(ubSize_ / NHWC_BUFFER_NUM, static_cast<uint64_t>(64 * 1024)); // 64KB
-    auto remainingElem = static_cast<int64_t>(UB_SIZE_LIMIT / dSize_); // 剩余UB元素数，初始为最大值
+    uint64_t UB_SIZE_LIMIT = std::min(ubSize_ / NHWC_BUFFER_NUM, NHWC_MIN_BUFFER_SIZE); // 64KB
+    auto remainingElem = static_cast<int64_t>(UB_SIZE_LIMIT / dSize_);                  // 剩余UB元素数，初始为最大值
 
     int64_t ubfactorAlign[4] = {1, convKernelNumInWidth_, input_.wKernelSize, ubBlockElements_}; // 0:N 1:W 2:Kw 3:C 32b
     int64_t ubfactor[4] = {1, 1, 1, 1}; // 对应索引：0=N 1=HW 2=Kw 3=C，初始全为1
@@ -621,7 +633,7 @@ ge::graphStatus Im2ColTiling::Tiling4NHWC()
         remainingElem /= ubfactor[i];
     }
     NHWCSetTilingData(tilingData, ubfactor);
-    if (static_cast<int64_t>(tilingData->ubFactorW * input_.C) * dSize_ < 128) {
+    if (static_cast<int64_t>(tilingData->ubFactorW * input_.C) * dSize_ < NHWC_MIN_WC_SIZE) {
         return Tiling4SIMT();
     }
     ShowNHWCTilingData();
@@ -648,7 +660,7 @@ ge::graphStatus Im2ColTiling::Tiling4SIMT()
 
     // 分核信息
     // SIMT只关注element，所以分核简化为一维，和纯搬运一致
-    uint32_t sideLengthFactor = Ops::Base::GetVRegSize(context_) / 2 / dSize_;
+    uint32_t sideLengthFactor = Ops::Base::GetVRegSize(context_) / SIMT_BUFFER_NUM / dSize_;
     uint64_t alignEleBlockCount = Ops::Base::CeilDiv(outputTotalElement, static_cast<uint64_t>(sideLengthFactor));
     uint64_t cores = std::min(static_cast<uint64_t>(coreNum_), alignEleBlockCount);
     OP_CHECK_IF((cores == 0), OP_LOGE(context_, "cores is 0."), return ge::GRAPH_FAILED);
@@ -657,7 +669,7 @@ ge::graphStatus Im2ColTiling::Tiling4SIMT()
     tilingData->mainCoreNum = (alignEleBlockCount % cores == 0) ? cores : (alignEleBlockCount % cores);
     tilingData->blockTailFactor = tilingData->blockFactor - sideLengthFactor;
     OP_LOGI(context_->GetNodeName(), "Get block split alignEleBlockCount: %ld", alignEleBlockCount);
-    tilingData->threadNum = Ops::Base::GetSimtMaxThreadNum(context_) / 2;
+    tilingData->threadNum = Ops::Base::GetSimtMaxThreadNum(context_) / SIMT_THREAD_FACTOR;
 
     // 打印 tiling data
     ShowSIMTTilingData();
@@ -669,7 +681,7 @@ ge::graphStatus Im2ColTiling::Tiling4Format()
     cacheLineElements_ = cacheLineSize_ / dSize_;
     ubBlockElements_ = ubBlockSize_ / dSize_;
     // gather vector register元素数量
-    gatherVRegElements_ = static_cast<int64_t>(vRegSize_) / std::max(dSize_, 2);
+    gatherVRegElements_ = static_cast<int64_t>(vRegSize_) / std::max(dSize_, VREG_ELEMENT_MIN_SIZE);
 
     int64_t shapeSize = input_.N * input_.C * input_.H * input_.W;
     if (shapeSize <= MAX_SHAPE_SIZE_FOR_SIMT) {
