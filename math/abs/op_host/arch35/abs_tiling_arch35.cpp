@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 #include "register/op_def_registry.h"
 #include "register/tilingdata_base.h"
 #include "../../op_kernel/arch35/abs_dag.h"
+#include "../../op_kernel/arch35/abs_complex_dag.h"
 
 using namespace ge;
 using namespace AbsNs;
@@ -29,7 +30,8 @@ using namespace AbsNs;
 namespace optiling {
 constexpr uint64_t ABS_TILING_KEY_ELEMENTWISE_BF16 = 101;
 constexpr uint64_t ABS_TILING_KEY_ELEMENTWISE_OTHER = 102;
-constexpr uint64_t ABS_WORKSPACE_RESERVE_BYTE = 16777216; // 16 * 1024 * 1024
+constexpr uint64_t ABS_TILING_KEY_ELEMENTWISE_COMPLEX = 103;
+constexpr uint64_t ABS_WORKSPACE_RESERVE_BYTE = 16777216;
 
 ge::graphStatus AbsTiling::SetTilingData()
 {
@@ -37,6 +39,8 @@ ge::graphStatus AbsTiling::SetTilingData()
     currentWorkspace[0] = ABS_WORKSPACE_RESERVE_BYTE;
     if (this->outputDtype == ge::DT_BF16) {
         tilingContext->SetTilingKey(ABS_TILING_KEY_ELEMENTWISE_BF16);
+    } else if (this->inputDtype == ge::DT_COMPLEX64 || this->inputDtype == ge::DT_COMPLEX32) { // 新增complex分支
+        tilingContext->SetTilingKey(ABS_TILING_KEY_ELEMENTWISE_COMPLEX);
     } else {
         tilingContext->SetTilingKey(ABS_TILING_KEY_ELEMENTWISE_OTHER);
     }
@@ -48,15 +52,25 @@ ge::graphStatus AbsTiling::CalcOutputDtype()
 {
     auto inputDesc = tilingContext->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
-    ge::DataType inputDtype = inputDesc->GetDataType();
+    this->inputDtype = inputDesc->GetDataType();
 
     auto outputDesc = tilingContext->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
 
-    OP_CHECK_IF(inputDtype != this->outputDtype,
-        OP_LOGE(tilingContext, "input and output dtype is diff, check failed"),
-        return ge::GRAPH_FAILED);
+    if (this->inputDtype != ge::DT_COMPLEX64 && this->inputDtype != ge::DT_COMPLEX32) {
+        OP_CHECK_IF(this->inputDtype != this->outputDtype,
+                    OP_LOGE(tilingContext, "Abs op input and output dtype not match, check fail"),
+                    return ge::GRAPH_FAILED);
+    } else if (inputDtype == ge::DT_COMPLEX64) {
+        OP_CHECK_IF(this->outputDtype != ge::DT_FLOAT, 
+                    OP_LOGE(tilingContext, "Abs op complex64 input must output float, check fail"),
+                    return ge::GRAPH_FAILED); 
+    } else if (inputDtype == ge::DT_COMPLEX32) {
+        OP_CHECK_IF(this->outputDtype != ge::DT_FLOAT16, 
+                    OP_LOGE(tilingContext, "Abs op complex32 input must output float16, check fail"),
+                    return ge::GRAPH_FAILED); 
+    }
     return ge::GRAPH_SUCCESS;
 }
 
@@ -71,6 +85,10 @@ ge::graphStatus AbsTiling::RunTiling()
     tiling = tilingContext->GetTilingData<AbsTilingData>();
     if (this->outputDtype == ge::DT_FLOAT16) {
         res = elewiseBaseTiling.DoTiling<AbsDag<half, half>::OpDag>(tiling->baseTiling);
+    } else if (this->inputDtype == ge::DT_COMPLEX64) {
+        res = elewiseBaseTiling.DoTiling<AbscomplexDag<int64_t, float>::OpDag>(tiling->baseTiling);
+    } else if (this->inputDtype == ge::DT_COMPLEX32) {
+        res = elewiseBaseTiling.DoTiling<AbscomplexDag<int32_t, half>::OpDag>(tiling->baseTiling); 
     } else if (this->outputDtype == ge::DT_FLOAT) {
         res = elewiseBaseTiling.DoTiling<AbsDag<float, float>::OpDag>(tiling->baseTiling);
     } else if (this->outputDtype == ge::DT_BF16) {

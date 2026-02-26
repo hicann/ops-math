@@ -147,6 +147,35 @@
       ]
     },
     {
+      "bin_filename": "Abs_df11d48f8de6e91ff319613e8e50dc14",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "complex64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "float32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
+        }
+      ]
+    },
+    {
       "bin_filename": "Abs_df11d48f8de6e91ff319613e8e50dd12",
       "inputs": [
         {
@@ -166,6 +195,35 @@
           "name": "y",
           "index": 0,
           "dtype": "int16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
+        }
+      ]
+    },
+    {
+      "bin_filename": "Abs_df11d48f8de6e91ff319613e8e50dd98",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "complex32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "float16",
           "format": "ND",
           "paramType": "required",
           "shape": [

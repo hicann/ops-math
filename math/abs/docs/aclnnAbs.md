@@ -74,7 +74,7 @@ aclnnStatus aclnnAbs(
       <td>输入</td>
       <td>待进行abs计算的入参，公式中的self。</td>
       <td>-</td>
-      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64</td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX32、COMPLEX64</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -112,8 +112,7 @@ aclnnStatus aclnnAbs(
   </tbody>
   </table>
   
-  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16、COMPLEX64。
-  - <term>Ascend 950PR/Ascend 950DT</term>：不支持COMPLEX64。
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16、COMPLEX32、COMPLEX64。
   
 - **返回值：**
 
@@ -151,7 +150,7 @@ aclnnStatus aclnnAbs(
       <td>self和out的数据形状不一致。</td>
     </tr>
     <tr>
-      <td>当self为实数时，self和out的数据类型不一致。当self为COMPLEX64时，out的数据类型不为FLOAT32。</td>
+      <td>当self为实数时，self和out的数据类型不一致。当self为COMPLEX64时，out的数据类型不为FLOAT32。当self为COMPLEX32时，out的数据类型不为FLOAT16</td>
     </tr>
   </tbody></table>
 

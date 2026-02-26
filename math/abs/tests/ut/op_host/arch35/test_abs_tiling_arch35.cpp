@@ -203,3 +203,37 @@ optiling::AbsCompileInfo compileInfo = {64, 262144};
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
 }
+
+TEST_F(AbsTilingTest, test_tiling_complex64_011)
+{
+    optiling::AbsCompileInfo compileInfo = {64, 262144};
+    gert::TilingContextPara tilingContextPara("Abs",
+                                              {
+                                                {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 103;
+    string expectTilingData = "8192 35184372088840 1024 8 1 1 1024 1024 8192 1 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(AbsTilingTest, test_tiling_complex32_012)
+{
+    optiling::AbsCompileInfo compileInfo = {64, 262144};
+    gert::TilingContextPara tilingContextPara("Abs",
+                                              {
+                                                {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_COMPLEX32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 103;
+    string expectTilingData = "8192 140737488355332 2048 4 1 1 2048 2048 32768 1 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}

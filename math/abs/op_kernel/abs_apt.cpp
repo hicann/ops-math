@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "arch35/abs_dag.h"
+#include "arch35/abs_complex_dag.h"
 #include "atvoss/elewise/elewise_sch.h"
 #include "abs_struct.h"
 
@@ -55,6 +56,16 @@ extern "C" __global__ __aicore__ void abs(GM_ADDR x, GM_ADDR y, GM_ADDR workspac
             sch.Process();
         } else if constexpr (std::is_same<DTYPE_X, int64_t>::value) {
             ElementwiseSch<0UL, AbsDag<int64_t, int64_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+            sch.Init(x, y);
+            sch.Process();
+        }
+    } else if (TILING_KEY_IS(103UL)) {
+        if constexpr (std::is_same<DTYPE_X, complex64>::value) {
+            ElementwiseSch<0UL, AbscomplexDag<complex64, float>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+            sch.Init(x, y);
+            sch.Process();
+        } else if constexpr (std::is_same<DTYPE_X, complex32>::value) {
+            ElementwiseSch<0UL, AbscomplexDag<complex32, half>::OpDag> sch(&(tilingData.baseTiling), &pipe);
             sch.Init(x, y);
             sch.Process();
         }

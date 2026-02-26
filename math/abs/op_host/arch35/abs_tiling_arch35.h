@@ -41,6 +41,7 @@ protected:
 private:
     gert::TilingContext *tilingContext;
     ge::DataType outputDtype;
+    ge::DataType inputDtype;
     AbsTilingData* tiling;
 };
 

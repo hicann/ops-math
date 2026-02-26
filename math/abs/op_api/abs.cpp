@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ static const std::initializer_list<op::DataType> ASCEND910B_AICORE_DTYPE_SUPPORT
 
 static const std::initializer_list<op::DataType> ARCH_REGBASE_AICORE_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16, DataType::DT_INT8,
-    DataType::DT_INT16, DataType::DT_INT32,   DataType::DT_INT64};
+    DataType::DT_INT16, DataType::DT_INT32,   DataType::DT_INT64,   DataType::DT_COMPLEX32,   DataType::DT_COMPLEX64};
 
 // 根据芯片类型、dtype判断算子是否支持aicore
 static bool IsAiCoreSupport(const aclTensor* self)
@@ -89,12 +89,20 @@ static const aclTensor* AbsAiCpu(const aclTensor* self, const aclTensor* out, ac
 const aclTensor* Abs(const aclTensor* self, aclOpExecutor* executor)
 {
     Shape outShape;
+    const aclTensor* out = nullptr;
     if (!AbsInferShape(self->GetViewShape(), outShape)) {
-        OP_LOGE(ACL_ERROR_INVALID_PARAM, "infer shape failed.");
-        return nullptr;
-    }
-
-    auto out = executor->AllocTensor(outShape, self->GetDataType());
+            OP_LOGE(ACL_ERROR_INVALID_PARAM, "infer shape failed.");
+            return nullptr;
+        }
+    if(self->GetDataType() != ge::DT_COMPLEX64 && self->GetDataType() != ge::DT_COMPLEX32) {
+        out = executor->AllocTensor(outShape, self->GetDataType());
+    } else { 
+        if (self->GetDataType() == ge::DT_COMPLEX32) {
+            out = executor->AllocTensor(outShape, ge::DT_FLOAT16);
+        } else if (self->GetDataType() == ge::DT_COMPLEX64) {
+            out = executor->AllocTensor(outShape, ge::DT_FLOAT);
+        }
+    } 
 
     if (IsAiCoreSupport(self)) {
         return AbsAiCore(self, out, executor);
