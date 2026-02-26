@@ -95,7 +95,7 @@ private:
 private:
     uint32_t coreNum_ = 0;
     uint32_t ubSize_ = 0;
-    ge::DataType outputDtype_;
+    ge::DataType outputDtype_ = ge::DT_UNDEFINED;
     uint32_t outputDtypeVal_ = 0;
     uint64_t outputSize_ = 1;
     uint32_t outputDtypeSize_ = 0;

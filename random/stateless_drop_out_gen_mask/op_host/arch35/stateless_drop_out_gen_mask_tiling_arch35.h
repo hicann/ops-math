@@ -112,8 +112,8 @@ private:
     gert::Shape inputOffset_;
     uint64_t coreNum_ = 0;
     uint64_t ubSize_ = 0;
-    ge::DataType probDtype_;
-    ge::DataType inputDtype_;
+    ge::DataType probDtype_ = ge::DT_UNDEFINED;
+    ge::DataType inputDtype_ = ge::DT_UNDEFINED;
     uint64_t inputSize_ = 1;
     uint64_t inputDtypeSize_ = 0;
 
