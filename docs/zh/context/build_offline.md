@@ -16,7 +16,7 @@
 
 - 依赖eigen
 
-下载[eigen](https://gitcode.com/cann-src-third-party/eigen/releases/download/5.0.0/eigen-5.0.0.tar.gz)
+下载[eigen](https://gitcode.com/cann-src-third-party/eigen/releases/download/5.0.0-h0.trunk/eigen-5.0.0.tar.gz)
 
 - 依赖protobuf
 
