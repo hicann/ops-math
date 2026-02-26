@@ -39,6 +39,9 @@ const uint32_t SINGLE_CORE_THRESHOLD =
     10000000; // 网络case，测试结果发现singlecore时间为2600，而老模板性能为9000，因此调整走SingleCore的阈值
 const uint32_t CONST_SIMT_SPACE = 32768; // 获取到的UB大小需要预留32KB给simt
 const uint32_t SUPPORT_SORT_MAX_BYTE_SIZE = 8000;
+const float LAST_LOOP_CORE_UTILIZATION = 0.7;
+const uint32_t SMALL_LOOP_UPPER_NUM = 4;
+const uint32_t SMALL_LOOP_LOWER_NUM = 2;
 
 constexpr size_t SYS_WORK_SPACE_SIZE = static_cast<size_t>(16 * 1024 * 1024);
 struct TopkTileInfo {
@@ -169,6 +172,25 @@ uint32_t ComputeTopkTileData(
     return tileData;
 }
 
+// 判断尾loop的核数利用率是否达标
+bool IsLastLoopCoreUtilizationSuccess(uint32_t unsortedDimNum, uint32_t tmpOneCoreRowNum, uint32_t maxCoreNum)
+{
+    uint32_t virUnsortedDimNeedCoreNum = (unsortedDimNum + tmpOneCoreRowNum - 1) / tmpOneCoreRowNum;
+    uint32_t sortLoopTimes = (virUnsortedDimNeedCoreNum + maxCoreNum - 1) / maxCoreNum;
+    uint32_t lastLoopDimNum = unsortedDimNum % (maxCoreNum * tmpOneCoreRowNum);
+    uint32_t lastLoopDimNeedCoreNum = lastLoopDimNum / tmpOneCoreRowNum;
+    // 没有尾loop
+    if (lastLoopDimNum == 0) {
+        return true;
+    }
+    // 最后一次loop剩余待处理的轴数量/每个核处理的dim要大于0.7，确保最后一个loop有超过一半的核在处理，尽可能提高利用率
+    if (sortLoopTimes >= topkV2DataInfo::SMALL_LOOP_LOWER_NUM && sortLoopTimes <= topkV2DataInfo::SMALL_LOOP_UPPER_NUM && 
+        lastLoopDimNeedCoreNum < maxCoreNum * topkV2DataInfo::LAST_LOOP_CORE_UTILIZATION) {
+        return false;
+    }
+    return true;
+}
+
 uint32_t ComputeMergeSortTileData(
     TopKV2TilingDataSimd& topkTilingData, ge::DataType dataType, ge::DataType indicesDType, int64_t lastAxisNum,
     uint32_t maxCoreNum, uint32_t unsortedDimNum, uint64_t ubSizePlatForm)
@@ -189,32 +211,41 @@ uint32_t ComputeMergeSortTileData(
         oneCoreRowNumSize / (aglinNum * topkV2DataInfo::CONST_TWO *
                              (topkV2DataInfo::CONST_TWO * xDtypeSize + indexToDtypeSize + convertTypeSize));
     uint32_t tileMaxData = oneCoreRowNumMax * aglinNum * 2;
+    OP_LOGI("TopKV2TilingForAscendC", "tileMaxData=%u, maxCoreNum=%u", tileMaxData, maxCoreNum);
+
 
     // 思路：1.占满核,均匀分核 2.循环数尽可能小
     uint32_t tileData = topkV2DataInfo::TMP_DATA_NUM;
     uint32_t oneCoreRowNum = (tileData / topkV2DataInfo::CONST_TWO) / aglinNum;
     oneCoreRowNum = (oneCoreRowNum == 0 ? 1 : oneCoreRowNum);
-    uint32_t virUnsortedDimNum = (unsortedDimNum + oneCoreRowNum - 1) / oneCoreRowNum;
-    if (virUnsortedDimNum < maxCoreNum) {
+    uint32_t virUnsortedDimNeedCoreNum = (unsortedDimNum + oneCoreRowNum - 1) / oneCoreRowNum;
+    if (virUnsortedDimNeedCoreNum < maxCoreNum) {
         // 均匀分核
         OP_CHECK_IF(maxCoreNum == 0, OP_LOGE("TopkV2", "maxCoreNum is 0"), return ge::GRAPH_FAILED);
         oneCoreRowNum = (unsortedDimNum + maxCoreNum - 1) / maxCoreNum;
         oneCoreRowNum = (oneCoreRowNum == 0 ? 1 : oneCoreRowNum);
-        virUnsortedDimNum = (unsortedDimNum + oneCoreRowNum - 1) / oneCoreRowNum;
-        // 取整误差可能致使大于满核,应去除这种情况导致的性能降低
-        while (virUnsortedDimNum > maxCoreNum) {
-            oneCoreRowNum += 1;
-            virUnsortedDimNum = (unsortedDimNum + oneCoreRowNum - 1) / oneCoreRowNum;
-        }
+        virUnsortedDimNeedCoreNum = (unsortedDimNum + oneCoreRowNum - 1) / oneCoreRowNum;
         tileData = oneCoreRowNum * topkV2DataInfo::CONST_TWO * aglinNum;
         tileData = std::min(tileData, tileMaxData - topkV2DataInfo::BIN_NUM);
     } else {
         // 原先占满了核则增大tileData，但必须使核占满
-        while (virUnsortedDimNum >= maxCoreNum && tileData < tileMaxData - topkV2DataInfo::BIN_NUM) {
+        while (virUnsortedDimNeedCoreNum >= maxCoreNum && tileData < tileMaxData - topkV2DataInfo::BIN_NUM) {
             tileData += topkV2DataInfo::BIN_NUM;
             oneCoreRowNum = (tileData / topkV2DataInfo::CONST_TWO) / aglinNum;
             oneCoreRowNum = (oneCoreRowNum == 0 ? 1 : oneCoreRowNum);
-            virUnsortedDimNum = (unsortedDimNum + oneCoreRowNum - 1) / oneCoreRowNum;
+            virUnsortedDimNeedCoreNum = (unsortedDimNum + oneCoreRowNum - 1) / oneCoreRowNum;
+        }
+        uint32_t tmpTileData = tileData;
+        while (!IsLastLoopCoreUtilizationSuccess(unsortedDimNum, oneCoreRowNum, maxCoreNum)) {
+            tileData -= topkV2DataInfo::BIN_NUM;
+            // 若自减到0,说明没有合适的tileData,放弃均匀分核,采用前值
+            if (tileData <= 0) {
+                OP_LOGD("TopKV2TilingForAscendC", "final tileData=%u", tmpTileData);
+                return tmpTileData;
+            }
+            oneCoreRowNum = (tileData / topkV2DataInfo::CONST_TWO) / aglinNum;
+            oneCoreRowNum = (oneCoreRowNum == 0 ? 1 : oneCoreRowNum);
+            virUnsortedDimNeedCoreNum = (unsortedDimNum + oneCoreRowNum - 1) / oneCoreRowNum;
         }
     }
 
