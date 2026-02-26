@@ -21,6 +21,7 @@
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/op_dfx.h"
+#include "opdev/platform.h"
 
 using namespace op;
 
@@ -29,11 +30,11 @@ extern "C" {
 #endif
 
 // 根据API定义，需要列出所能支持的所有dtype
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_910 = {
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_DEFAULT = {
     op::DataType::DT_FLOAT,     op::DataType::DT_FLOAT16,  op::DataType::DT_INT32,      op::DataType::DT_DOUBLE,
     op::DataType::DT_INT64,      op::DataType::DT_INT8,     op::DataType::DT_UINT8,      op::DataType::DT_INT16};
 
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_910B = {
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_2201 = {
     op::DataType::DT_FLOAT,     op::DataType::DT_FLOAT16,  op::DataType::DT_INT32,      op::DataType::DT_DOUBLE,
     op::DataType::DT_INT64,      op::DataType::DT_INT8,     op::DataType::DT_UINT8,      op::DataType::DT_INT16,
     op::DataType::DT_BF16};
@@ -53,10 +54,10 @@ static bool CheckShapeValid(const aclTensor *out, int64_t n)
 }
 
 static bool CheckDtypeValid(const aclTensor *out) {
-  bool isBf16Support = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-                        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93);
+  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+  bool isBf16Support = ((npuArch == NpuArch::DAV_2201) || (npuArch == NpuArch::DAV_3510));
   const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST =
-      isBf16Support ? DTYPE_SUPPORT_LIST_910B : DTYPE_SUPPORT_LIST_910;
+      isBf16Support ? DTYPE_SUPPORT_LIST_2201 : DTYPE_SUPPORT_LIST_DEFAULT;
   OP_CHECK_DTYPE_NOT_SUPPORT(out, DTYPE_SUPPORT_LIST, return false);
   return true;
 }
@@ -66,9 +67,9 @@ static aclnnStatus CheckParams(int64_t n, aclTensor* out) {
 
   CHECK_RET(CheckDtypeValid(out), ACLNN_ERR_PARAM_INVALID);
 
-  CHECK_RET(n >= 0, ACLNN_ERR_PARAM_INVALID);
-
   CHECK_RET(CheckShapeValid(out, n), ACLNN_ERR_PARAM_INVALID);
+ 
+  CHECK_RET(n >= 0, ACLNN_ERR_PARAM_INVALID);
 
   return ACLNN_SUCCESS;
 }
@@ -100,16 +101,13 @@ aclnnStatus aclnnRandpermGetWorkspaceSize(int64_t n, int64_t seed, int64_t offse
   auto offsetTensor = executorP->ConvertToTensor(offsetVector.data(), offsetVector.size(), op::DataType::DT_INT64);
   const int64_t layout = 1;
   op::Shape shape({n});
+  op::DataType outDataType = out->GetDataType();
   auto randpermOut = l0op::StatelessRandperm(shape, nTensor, seedTensor, offsetTensor, layout,
-                                             op::DataType::DT_INT64, uniqueExecutor.get());
+                                             outDataType, uniqueExecutor.get());
   CHECK_RET(randpermOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-  // 固定写法，将计算结果转换成输出out的数据类型
-  auto castOut = l0op::Cast(randpermOut, out->GetDataType(), uniqueExecutor.get());
-  CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
   // 固定写法，将计算结果拷贝到输出out上，out可能是非连续的tensor
-  auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
+  auto viewCopyResult = l0op::ViewCopy(randpermOut, out, uniqueExecutor.get());
   CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
   // 固定写法，获取计算过程中需要使用的workspace大小

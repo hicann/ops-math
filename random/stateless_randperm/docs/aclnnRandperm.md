@@ -6,7 +6,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
@@ -37,7 +37,7 @@
 
   - out(aclTensor*, 计算输出)：Device侧的aclTensor，shape为n。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     - <term>Atlas 训练系列产品</term>：数据类型支持INT64、INT32、INT16、UINT8、INT8、FLOAT、FLOAT16、DOUBLE。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT64、INT32、INT16、UINT8、INT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16。
+    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持INT64、INT32、INT16、UINT8、INT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16。
 
   - workspaceSize(uint64_t *, 出参): 返回需要在Device侧申请的workspace大小。
   
@@ -76,8 +76,9 @@
 
 - 确定性计算：
   - aclnnRandperm默认确定性实现。
-
-当n大于268000000时有运行超时风险，详见[超时时间设置方法](https://www.hiascend.com/document/detail/zh/canncommercial/82RC1/API/appdevgapi/aclcppdevg_03_0132.html)。
+- n值大小的约束：
+  - Ascend 950PR/Ascend 950DT（INT64、INT32、INT16、UINT8、INT8、FLOAT、FLOAT16、BFLOAT16）：n不超过int32的最大值。
+  - Ascend 950PR/Ascend 950DT（DOUBLE）、以及其他产品：当n大于268000000时有运行超时风险，详见[超时时间设置方法](https://www.hiascend.com/document/detail/zh/canncommercial/82RC1/API/appdevgapi/aclcppdevg_03_0132.html)。
 
 ## 调用示例
 

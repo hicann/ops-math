@@ -121,6 +121,7 @@ operator_group_4:
   - sqrt_grad
   - square
   - squared_difference
+  - stateless_randperm  # 复用sort。要写在同一分组下，否则CI编译kernel报错。
   - sub
   - tanh
   - tanh_grad
