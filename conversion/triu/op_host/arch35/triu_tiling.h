@@ -24,8 +24,6 @@
 #include "assert.h"
 #include "op_host/tiling_util.h"
 
-using namespace Ops::Math::OpTiling;
-using namespace Ops::Base;
 
 namespace optiling {
 
@@ -116,7 +114,9 @@ template <bool upper>
 ge::graphStatus DoTiling(
     const optiling::TriluCompileInfo* compileInfo, optiling::TriluTilingParams* params, uint8_t dtypeBytes)
 {
-    assert(dtypeBytes > 0);
+    if (dtypeBytes == 0) {
+        return ge::GRAPH_FAILED;
+    }
     auto eltNumPerBlock = BLOCK_BYTES / dtypeBytes;
     int64_t totalEltNum =
         (params->matrixNum * params->row * params->col + eltNumPerBlock - 1) / eltNumPerBlock * eltNumPerBlock;

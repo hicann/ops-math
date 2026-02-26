@@ -988,6 +988,9 @@ static bool TilingForPureCopy(ConcatTilingParam& param)
     int64_t rowsCutPart = 0;
     int64_t colsCutPart = 0;
     std::tie(rowsCutPart, colsCutPart) = AutoBlockTiling(mRows, nCols, param.usedCoreNum);
+    if (rowsCutPart == 0 || colsCutPart == 0) {
+        return false;
+    }
     param.ubFactorDim0 = (param.catDim0 + rowsCutPart - 1) / rowsCutPart;
     param.tailUbFactorDim0 = param.catDim0 - param.ubFactorDim0 * (rowsCutPart - 1);
     param.ubFactorDim1 = (param.catDim1 + colsCutPart - 1) / colsCutPart;
