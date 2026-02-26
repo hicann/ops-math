@@ -64,4 +64,5 @@
 | 调用方式 | 调用样例                                             | 说明                                                                                         |
 |---------|----------------------------------------------------|----------------------------------------------------------------------------------------------|
 | aclnn调用 | [test_aclnn_acos](./examples/test_aclnn_acos.cpp) | 通过[aclnnAcos](./docs/aclnnAcos&aclnnInplaceAcos.md)接口方式调用Acos算子。  |
+| aclnn调用 | [test_aclnn_inplace_acos](./examples/test_aclnn_inplace_acos.cpp) | 通过[aclnnInplaceAcos](./docs/aclnnAcos&aclnnInplaceAcos.md)接口方式调用Acos算子。  |
 | 图模式调用 | [test_geir_acos](./examples/test_geir_acos.cpp)   | 通过[算子IR](./op_graph/acos_proto.h)构图方式调用Acos算子。                                      |

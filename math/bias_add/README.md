@@ -17,7 +17,7 @@
 
 - 计算公式：
 
-$out_i= x_i + bias_i$
+$$out_i= x_i + bias_i$$
 
 ## 参数说明
 
@@ -26,7 +26,7 @@ $out_i= x_i + bias_i$
   <col style="width: 150px">
   <col style="width: 280px">
   <col style="width: 330px">
-  <col style="width: 120px">
+  <col style="width: 330px">
   </colgroup>
   <thead>
     <tr>
@@ -60,7 +60,7 @@ $out_i= x_i + bias_i$
     </tr>
   </tbody></table>
 
-- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
+- Atlas 训练系列产品、Atlas 推理系列产品：不支持BFLOAT16。
 
 ## 约束说明
 

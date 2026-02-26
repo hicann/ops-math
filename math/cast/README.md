@@ -14,7 +14,7 @@
 
 ## 功能说明
 
-- 算子功能：将输入tensor转换为指定的dtype类型。
+将输入tensor转换为指定的dtype类型。
 
 ## 参数说明
 
@@ -50,7 +50,7 @@
     </tr>
   </tbody></table>
 
-- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
+- Atlas 训练系列产品、Atlas 推理系列产品：不支持BFLOAT16。
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品、Atlas A3 训练系列产品/Atlas A3 推理系列产品：不支持COMPLEX32、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT4_E2M1、FLOAT4_E1M2。
 
 ## 约束说明
@@ -62,16 +62,16 @@
   不支持输入为非连续。
 
 - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
-  - 针对数据类型从int32转换为int8的场景：
+  - 针对数据类型从INT32转换为INT8的场景：
     只能保证输入数据在(-2048, 1920)范围内精度无误差。
-  - 针对数据类型从float64/complex64/complex128转换为uint8的场景：
+  - 针对数据类型从FLOAT64/COMPLEX64/COMPLEX128转换为UINT8的场景：
     只能保证输入数据为非负数精度无误差。
 
 - <term>Atlas 推理系列产品</term>：
-  - 针对数据类型从float32转换为int64和float32转换为uint8的场景：
+  - 针对数据类型从FLOAT32转换为INT64和FLOAT32转换为UINT8的场景：
     只能保证输入数据在(-2147483648, 2147483583)范围内精度无误差。
 
-  - 针对数据类型从int64转换为float32的场景：
+  - 针对数据类型从INT64转换为FLOAT32的场景：
     只能保证输入数据在(-2147483648, 2147483647)范围内精度无误差。
 
 - <term>Ascend 950PR/Ascend 950DT</term>：

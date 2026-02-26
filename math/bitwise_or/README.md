@@ -23,16 +23,47 @@
   $$
 
 ## 参数说明：
+  
+  <table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+  <col style="width: 100px">
+  <col style="width: 150px">
+  <col style="width: 280px">
+  <col style="width: 330px">
+  <col style="width: 120px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出/属性</th>
+      <th>描述</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>公式中的输入self。</td>
+      <td>INT16、UINT16、INT32、INT64</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>other</td>
+      <td>输入</td>
+      <td>公式中的输入other。</td>
+      <td>INT16、UINT16、INT32、INT64</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>公式中的输出out。</td>
+      <td>INT16、UINT16、INT32、INT64</td>
+      <td>ND</td>
+    </tr>
+  </tbody></table>
 
-  - self(aclTensor*, 计算输入)：公式中的输入self，Device侧的aclTensor。支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BOOL、INT8、INT16、UINT16、INT32、INT64、UINT8，且数据类型与other的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../docs/zh/context/TensorScalar互推导关系.md)），推导后的数据类型需在支持的数据类型范围内。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BOOL、INT8、INT16、UINT16、INT32、INT64、UINT8，且数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../docs/zh/context/互推导关系.md)），推导后的数据类型需在支持的数据类型范围内。
-  - other(aclScalar*, 计算输入)：公式中的输入other，Host侧的aclScalar。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BOOL、INT8、INT16、UINT16、INT32、INT64、UINT8，且数据类型与self的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../docs/zh/context/TensorScalar互推导关系.md)），推导后的数据类型需在支持的数据类型范围内。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BOOL、INT8、INT16、UINT16、INT32、INT64、UINT8，且数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../docs/zh/context/互推导关系.md)），推导后的数据类型需在支持的数据类型范围内。
-  - out(aclTensor \*, 计算输出)：公式中的输出out，Device侧的aclTensor。数据类型需要是self与other推导之后可转换的数据类型，shape需要与self一致，支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../docs/zh/context/数据格式.md)支持ND，数据维度不支持8维以上。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BOOL、INT8、INT16、UINT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BOOL、INT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX64、COMPLEX128。
+  - Atlas 推理系列产品、Atlas 训练系列产品：数据类型不支持INT64。
 
 ## 约束说明
 
@@ -42,5 +73,7 @@
     
 | 调用方式   | 样例代码           | 说明                                                                         |
 | ---------------- | --------------------------- |----------------------------------------------------------------------------|
-| aclnn接口  | [test_aclnn_bitwise_or_scalar.cpp](examples/test_aclnn_bitwise_or_scalar.cpp) | 通过[aclnnBitwiseOrScalar](docs/aclnnBitwiseOrScalar&aclnnInplaceBitwiseOrScalar.md)接口方式调用BitwiseOrScalar算子。 |
-| aclnn接口  | [test_aclnn_bitwise_or_tensor.cpp](examples/test_aclnn_bitwise_or_tensor.cpp) | 通过[aclnnBitwiseOrTensor](docs/aclnnBitwiseOrTensor&aclnnInplaceBitwiseOrTensor.md)接口方式调用BitwiseOrTensor算子。 |
+| aclnn接口  | [test_aclnn_bitwise_or_scalar](examples/test_aclnn_bitwise_or_scalar.cpp) | 通过[aclnnBitwiseOrScalar](docs/aclnnBitwiseOrScalar&aclnnInplaceBitwiseOrScalar.md)接口方式调用BitwiseOr算子。 |
+| aclnn接口  | [test_aclnn_bitwise_or_tensor](examples/test_aclnn_bitwise_or_tensor.cpp) | 通过[aclnnBitwiseOrTensor](docs/aclnnBitwiseOrTensor&aclnnInplaceBitwiseOrTensor.md)接口方式调用BitwiseOr算子。 |
+| aclnn接口  | [test_aclnn_inplace_bitwise_or_scalar](examples/test_aclnn_inplace_bitwise_or_scalar.cpp) | 通过[aclnnInplaceBitwiseOrScalar](docs/aclnnBitwiseOrScalar&aclnnInplaceBitwiseOrScalar.md)接口方式调用BitwiseOr算子。 |
+| aclnn接口  | [test_aclnn_inplace_bitwise_or_tensor](examples/test_aclnn_inplace_bitwise_or_tensor.cpp) | 通过[aclnnInplaceBitwiseOrTensor](docs/aclnnBitwiseOrTensor&aclnnInplaceBitwiseOrTensor.md)接口方式调用BitwiseOr算子。 |

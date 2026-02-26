@@ -56,8 +56,8 @@ $$\text{y}[c] = \sum_{n=0}^{N-1} \sum_{h=0}^{H-1} \sum_{w=0}^{W-1} \text{x}[n, c
       <td>data_format</td>
       <td>属性</td>
       <td>表示输入张量的格式，可选。</td>
-      <td>FLOAT</td>
-      <td>NHWC</td>
+      <td>STRING</td>
+      <td>-</td>
     </tr>
   </tbody></table>
 

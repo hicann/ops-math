@@ -18,7 +18,7 @@
 
 - 计算公式：
 
-$out_i=|input_i|$
+$$out_i=|input_i|$$
 
 ## 参数说明
 
