@@ -68,3 +68,109 @@ TEST_F(ConcatV2Test, infer_axis_type_test_02)
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
 }
+
+TEST_F(ConcatV2Test, infer_success_int64_axis)
+{
+    int64_t axis_value = 2;
+    gert::InfershapeContextPara infershapeContextPara(
+        "ConcatV2",
+        {
+            {{{16, 4, 8}, {16, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{16, 4, 8}, {16, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{16, 4, 8}, {16, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &axis_value},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+        },
+        {3, 1}, {1});
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {16, 4, 24},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(ConcatV2Test, infer_negative_axis)
+{
+    int64_t axis_value = -1;
+    gert::InfershapeContextPara infershapeContextPara(
+        "ConcatV2",
+        {
+            {{{16, 4, 8}, {16, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{16, 4, 8}, {16, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &axis_value},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+        },
+        {2, 1}, {1});
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {16, 4, 16},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(ConcatV2Test, infer_invalid_axis_too_large)
+{
+    int64_t axis_value = 3;
+    gert::InfershapeContextPara infershapeContextPara(
+        "ConcatV2",
+        {
+            {{{16, 4, 8}, {16, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{16, 4, 8}, {16, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &axis_value},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+        },
+        {2, 1}, {1});
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(ConcatV2Test, infer_invalid_axis_too_negative)
+{
+    int64_t axis_value = -4;
+    gert::InfershapeContextPara infershapeContextPara(
+        "ConcatV2",
+        {
+            {{{16, 4, 8}, {16, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{16, 4, 8}, {16, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &axis_value},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+        },
+        {2, 1}, {1});
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(ConcatV2Test, infer_single_input_error)
+{
+    int64_t axis_value = 2;
+    gert::InfershapeContextPara infershapeContextPara(
+        "ConcatV2",
+        {
+            {{{16, 4, 8}, {16, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &axis_value},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
+        },
+        {1, 1}, {1});
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
+}
