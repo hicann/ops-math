@@ -6,11 +6,11 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |   ×     |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |     ×    |
+| <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
 
 
@@ -19,8 +19,6 @@
 - 接口功能：创建一个大小为$\text{steps}$的一维张量，其值在$\text{base}^\text{start}$到$\text{base}^\text{end}$上对数尺度上均匀间隔，包含端点，以$\text{base}$为底。
 
 - 计算公式：
-
-
 $$
 \text{result} = \left(\text{base}^\text{start},\ \text{base}^{\left(\text{start} + \frac{\text{end} - \text{start}}{\text{steps} - 1}\right)},\ \ldots,\ \text{base}^{\left(\text{start} + (\text{steps} - 2) * \frac{\text{end} - \text{start}}{\text{steps} - 1}\right)},\ \text{base}^\text{end}\right)
 $$
@@ -29,46 +27,137 @@ $$
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnLogSpaceGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLogSpace”接口执行计算。
 
-- `aclnnStatus aclnnLogSpaceGetWorkspaceSize(const aclScalar *start, const aclScalar *end, int64_t steps, double base, const aclTensor *result, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnLogSpace(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```cpp
+aclnnStatus aclnnLogSpaceGetWorkspaceSize(
+  const aclScalar*    start,
+  const aclScalar*    end, 
+  int64_t             steps, 
+  double              base, 
+  const aclTensor*    result, 
+  uint64_t*           workspaceSize, 
+  aclOpExecutor**     executor)
+```
+
+```cpp
+aclnnStatus aclnnLogSpace( 
+  void            *workspace, 
+  uint64_t         workspaceSize, 
+  aclOpExecutor   *executor, 
+  aclrtStream      stream)
+```
 
 ## aclnnLogSpaceGetWorkspaceSize
 
 - **参数说明：**
 
-  * start(aclScalar *，计算输入)：获取值的范围的起始位置，公式中的start，Host侧的aclScalar。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、BFLOAT16、FLOAT
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、BFLOAT16、FLOAT
-
-  * end(aclScalar *，计算输入)：获取值的范围的结束位置，公式中的end，Host侧的aclScalar。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、BFLOAT16、FLOAT
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、BFLOAT16、FLOAT
-
-  * steps(int64_t，计算输入)：获取值的步长，数据类型支持INT64，需要满足steps大于等于0。
-  * base(double，计算输入)：对数空间的底数，默认为10.0，数据类型支持double。
-  * result(aclTensor *，计算输出)：输出的对数间隔序列张量，公式中的result，Device侧的aclTensor，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，且out的元素个数需要与steps一致。不支持空Tensor。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT16、BFLOAT16、FLOAT
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、BFLOAT16、FLOAT
-
-  * workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
-
-  * executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
-
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 220px">
+  <col style="width: 120px">
+  <col style="width: 400px">
+  <col style="width: 150px">
+  <col style="width: 200px">
+  <col style="width: 120px">
+  <col style="width: 120px">
+  <col style="width: 140px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>start (aclScalar*)</td>
+      <td>输入</td>
+      <td>表示LogSpace的第一个输入，对数序列的起始指数。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>end (aclScalar*)</td>
+      <td>输入</td>
+      <td>表示LogSpace的第二个输入，对数序列的结束指数。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>steps (int64_t)</td>
+      <td>输入</td>
+      <td>序列中的元素数量。</td>
+      <td>-</td>
+      <td>int64_t</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+   <tr>
+      <td>base (double)</td>
+      <td>输入</td>
+      <td>对数空间的底数</td>
+      <td>-</td>
+      <td>double</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out (aclTensor*)</td>
+      <td>输出</td>
+      <td>表示LogSpace的输出，输出的对数间隔序列张量。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>2-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize (uint64_t*)</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor (aclOpExecutor**)</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
 - **返回值：**
-
+  
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1144px"><colgroup>
-  <col style="width: 285px">
-  <col style="width: 123px">
-  <col style="width: 736px">
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 900px">
   </colgroup>
   <thead>
     <tr>
-      <th>返回值</th>
+      <th>返回码</th>
       <th>错误码</th>
       <th>描述</th>
     </tr></thead>
@@ -79,24 +168,22 @@ $$
       <td>传入的start、end、steps或out是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="2">161002</td>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
       <td>out的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>steps小于0。</td>
-    </tr>
+   
   </tbody>
   </table>
-
 ## aclnnLogSpace
 
 - **参数说明：**
-
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 167px">
-  <col style="width: 134px">
-  <col style="width: 848px">
+  <col style="width: 150px">
+  <col style="width: 114px">
+  <col style="width: 500px">
   </colgroup>
   <thead>
     <tr>
@@ -115,27 +202,24 @@ $$
       <td>输入</td>
       <td>在Device侧申请的workspace大小，由第一段接口aclnnLogSpaceGetWorkspaceSize获取。</td>
     </tr>
-    <tr>
       <td>executor</td>
       <td>输入</td>
       <td>op执行器，包含了算子计算流程。</td>
-    </tr>
     <tr>
       <td>stream</td>
       <td>输入</td>
       <td>指定执行任务的Stream。</td>
-    </tr>
   </tbody>
   </table>
-
-
+  
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
-- 确定性计算：
+- **确定性计算:**
+  
   - aclnnLogSpace默认确定性实现。
 
 
@@ -274,4 +358,3 @@ int main() {
   return 0;
 }
 ```
-
