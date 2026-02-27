@@ -28,6 +28,7 @@ public:
     int64_t outputSize = 0;
     int64_t probTensorSize = 0;
     int64_t sharedTmpBufSize = 0;
+    float keepProb = 0;
 
     std::ostringstream DumpTilingInfo() {
         std::ostringstream info;
@@ -41,6 +42,7 @@ public:
         info << " outputSize: " << outputSize;
         info << " probTensorSize: " << probTensorSize;
         info << " sharedTmpBufSize: " << sharedTmpBufSize;
+        info << " keepProb: " << keepProb;
 
         return info;
     }

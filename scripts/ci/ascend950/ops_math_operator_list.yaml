@@ -172,6 +172,8 @@ operator_group_5:
   - unpack
   - zeros_like
   - drop_out_do_mask
+  - drop_out_do_mask_v3
+  - drop_out_do_mask_v3_d
   - drop_out_v3
   - random_standard_normal_v2
   - random_uniform_v2

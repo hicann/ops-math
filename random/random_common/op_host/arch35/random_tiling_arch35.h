@@ -62,6 +62,7 @@ struct OpTilingConfig {
     int64_t DcacheSize = 0;
     int64_t sharedTmpBufSize = 0;
     int64_t coreAlignSize = 4;
+    int64_t keepProbNum = 0;
 };
 
 class RandomTilingArch35
