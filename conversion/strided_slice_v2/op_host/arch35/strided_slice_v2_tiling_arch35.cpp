@@ -118,7 +118,6 @@ static int64_t GetConstIndexValue(const gert::Tensor* tensor, int32_t idx, int64
 
    int64_t value = defaultValue;
    const auto dataType = tensor->GetDataType();
-
    if (dataType == ge::DT_INT32) {
        const int32_t* data = tensor->GetData<int32_t>();
        if (data == nullptr) {
@@ -366,7 +365,6 @@ static void MakePerformanceParams(SliceParametersRuntime2 &param, bool isAdjustL
        const auto beginI = param.beginList[i];
        const auto endI = param.endList[i];
        const auto stride_i = endI > beginI ? std::min(param.strideList[i], endI - beginI) : param.strideList[i];
-
        // Fuse continuous stride=1 dimensions
        if (i == 0 || inputShapeI != outputShapeI || stride_i != 1 || perfParams.strideList[perfSize - 1] != 1) {
            perfParams.inputShape.AppendDim(inputShapeI);
@@ -413,18 +411,20 @@ ge::graphStatus Tiling4StridedSliceV2(gert::TilingContext *context) {
    auto attrs = context->GetAttrs();
    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
 
-// Helper macro to safely get mask values
+   uint64_t beginValue, endValue, ellipsisValue, newAxisValue, shrinkAxisValue;
+
 #define GET_MASK_VALUE(index, mask_name) \
-       const int64_t* mask_##mask_name = attrs->GetAttrPointer<int64_t>(index); \
-       OP_CHECK_NULL_WITH_CONTEXT(context, mask_##mask_name); \
-       const auto mask_name##Value = static_cast<uint64_t>(*mask_##mask_name);
+    do { \
+        const int64_t* mask_##mask_name = attrs->GetAttrPointer<int64_t>(index); \
+        OP_CHECK_NULL_WITH_CONTEXT(context, mask_##mask_name); \
+        mask_name##Value = static_cast<uint64_t>(*mask_##mask_name); \
+    } while(0)
 
-   GET_MASK_VALUE(IDX_MASK_BEGIN, begin);
-   GET_MASK_VALUE(IDX_MASK_END, end);
-   GET_MASK_VALUE(IDX_MASK_ELLIPSIS, ellipsis);
-   GET_MASK_VALUE(IDX_MASK_NEW_AXIS, newAxis);
-   GET_MASK_VALUE(IDX_MASK_SHRINK_AXIS, shrinkAxis);
-
+    GET_MASK_VALUE(IDX_MASK_BEGIN, begin);
+    GET_MASK_VALUE(IDX_MASK_END, end);
+    GET_MASK_VALUE(IDX_MASK_ELLIPSIS, ellipsis);
+    GET_MASK_VALUE(IDX_MASK_NEW_AXIS, newAxis);
+    GET_MASK_VALUE(IDX_MASK_SHRINK_AXIS, shrinkAxis);
 #undef GET_MASK_VALUE
 
    // Infer shape
