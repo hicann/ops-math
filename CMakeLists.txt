@@ -94,6 +94,12 @@ include(cmake/func.cmake)
 include(cmake/intf_pub_linux.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/ut.cmake)
 
+include(version.cmake)
+if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
+  check_pkg_build_deps("ops_math")
+endif()
+add_version_info_targets()
+
 add_subdirectory(common)
 if(ENABLE_EXPERIMENTAL)
   add_subdirectory(experimental)
