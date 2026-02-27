@@ -43,6 +43,8 @@ static constexpr uint64_t NCHW_GATHER_INDEX_SIZE = 0;
 static constexpr int32_t NCHW_MIN_OUTPUT_BUFFER = 1024;
 // UB内 gather 操作的最大元素个数
 static constexpr int32_t MAX_UB_GATHER_ELEMENT_NUM = std::numeric_limits<uint16_t>::max();
+// 最大输入输出比率
+static constexpr double NCHW_MAX_INPUT_OUTPUT_RATIO = 128;
 
 // NHWC 常量
 static constexpr uint64_t NHWC_BUFFER_NUM = 2;
@@ -435,6 +437,11 @@ bool Im2ColTiling::NCHWTryFullLoad(int32_t validBufSize)
     // 1个HW输出需要大小，按HW整体对齐
     int64_t outputHW = convKernelNum_ * convKernelSize_;
     int64_t outHWNeedSize = AlignBlock(outputHW) * dSize_;
+    double ratio = static_cast<double>(inHWNeedSize) / outHWNeedSize;
+    if (ratio > NCHW_MAX_INPUT_OUTPUT_RATIO) {
+        return false;
+    }
+
     // 输入输出大小是否满足全载条件
     int64_t allNeedSize = inHWNeedSize + outHWNeedSize;
     if (allNeedSize > validBufSize) {
@@ -536,10 +543,6 @@ bool Im2ColTiling::NCHWTryUnFullLoad(int32_t validBufSize)
 
 ge::graphStatus Im2ColTiling::Tiling4NCHW()
 {
-    if (isPadding_) {
-        return Tiling4SIMT();
-    }
-
     // 可用UB空间, (UB - 索引) / 2
     int32_t validBufSize = static_cast<int32_t>(ubSize_ - NCHW_GATHER_INDEX_SIZE) / NCHW_BUFFER_NUM;
 
