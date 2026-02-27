@@ -249,18 +249,15 @@ public:
 
     __aicore__ inline void DoCopyInAxisW(const LocalTensor<T>& src)
     {
-        // 计算本次搬运的采样点在H和W方向的最大索引以及首个合法采样点的H索引和W索引
         int64_t inHLast = inIndex_[H_AXIS] + (CeilDiv(ubRealFactor_, wKernelSize_) - 1) * hDilation_;
         int64_t inWLast = inIndex_[W_AXIS] + (Std::min(ubRealFactor_, wKernelSize_) - 1) * wDilation_;
         int64_t startValidHIndex = inIndex_[H_AXIS] + CeilDiv(Std::max(
             0L, inIndex_[H_AXIS]) - inIndex_[H_AXIS], hDilation_) * hDilation_;
         int64_t startValidWIndex = inIndex_[W_AXIS] + CeilDiv(Std::max(
             0L, inIndex_[W_AXIS]) - inIndex_[W_AXIS], wDilation_) * wDilation_;
-
-        // 无有效采样点，直接返回
         if (inIndex_[H_AXIS] >= inH || inHLast < 0 || inIndex_[W_AXIS] >= inW || inWLast < 0 ||
             startValidWIndex < 0 || startValidWIndex > inWLast ||
-            startValidHIndex < 0 || startValidHIndex > inHLast) {
+            startValidHIndex < 0 || startValidHIndex > inHLast) { // 无有效采样点，直接返回
             return;
         }
 
@@ -366,15 +363,10 @@ public:
 
     __aicore__ inline void DoCopyInAxisHWithPad(const LocalTensor<T>& src, int64_t ubFactorH)
     {
-        // 计算需要处理H方向的滑动次数
         uint32_t hSlideNum = CeilDiv(ubFactorH, convKernelNumInWidth_);
-
-        // 计算当前坐标在w方向上一共滑动出有多少个（包括首次，同时需要和ubFactorH取最小）
         uint32_t wSlideNum = Std::min(ubFactorH,
             (inW + wPaddingBottom_ - 1 -(inIndex_[W_AXIS] + wKernelEffSize_ - 1)) / wStride_ + 1);
-
-        // W方向有效滑动次数多，优化将W方向的有效滑动次数作为loop参数
-        if (hSlideNum == 1 || wSlideNum >= hSlideNum) {
+        if (hSlideNum == 1 || wSlideNum >= hSlideNum) { // W方向有效滑动次数多，优化将W方向的有效滑动次数作为loop参数
             DoCopyInAxisConvWPrefer(hSlideNum, wSlideNum, src);
             return;
         }
@@ -387,15 +379,11 @@ public:
     {
         for (uint32_t i = 0; i < hSlideNum; ++i) {
             int64_t inHLast = inIndex_[H_AXIS] + (hKernelSize_ - 1) * hDilation_;
-
-            // 计算首尾合法采样点的H索引
             int64_t startValidHIndex = inIndex_[H_AXIS] + CeilDiv(Std::max(
                 0L, inIndex_[H_AXIS]) - inIndex_[H_AXIS], hDilation_) * hDilation_;
             int64_t endValidHIndex = inIndex_[H_AXIS] + (Std::min(inHLast, inH - 1) - inIndex_[H_AXIS]) / hDilation_ * hDilation_;
-
-            // h没有落在有效范围内
             if (inIndex_[H_AXIS] >= inH || inHLast < 0 ||
-                startValidHIndex < 0 || startValidHIndex > inHLast || endValidHIndex < 0) {
+                startValidHIndex < 0 || startValidHIndex > inHLast || endValidHIndex < 0) { // h没有落在有效范围内
                 inIndex_[H_AXIS] += hStride_;
                 continue;
             }
@@ -520,14 +508,11 @@ public:
     __aicore__ inline void DoCopyInKernelWSlideWithPad(const int64_t startValidHIndex,
         const int64_t endValidHIndex, const int64_t inWLast, const LocalTensor<T>& src, uint32_t ubStartAddr)
     {
-        // 计算首尾合法采样点的W索引
         int64_t startValidWIndex = inIndex_[W_AXIS] + CeilDiv(Std::max(
             0L, inIndex_[W_AXIS]) - inIndex_[W_AXIS], wDilation_) * wDilation_;
         int64_t endValidWIndex = inIndex_[W_AXIS] + (Std::min(inWLast, inW - 1) - inIndex_[W_AXIS]) / wDilation_ * wDilation_;
-
-        // w没有落在有效范围内
         if (inIndex_[W_AXIS] >= inW || inWLast < 0 || startValidWIndex < 0 ||
-            startValidWIndex > inWLast || endValidWIndex < 0) {
+            startValidWIndex > inWLast || endValidWIndex < 0) { // w没有落在有效范围内
             return;
         }
 
