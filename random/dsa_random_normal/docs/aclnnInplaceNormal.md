@@ -15,49 +15,203 @@
 
 ## 功能说明
 
-算子功能：使用mean和std的参数正态分布的元素进行填充张量。从给定的均值mean和标准差std的离散正态分布中抽取随机数，用于填充selfRef张量。其中，均值mean是一个基础类型float，包含每个输出元素相关的正态分布均值。std是一个基础类型float，包含每个输出元素相关的正态分布的标准差。
+使用mean和std的参数正态分布的元素进行填充张量。从给定的均值mean和标准差std的离散正态分布中抽取随机数，用于填充selfRef张量。其中，均值mean是一个基础类型float，包含每个输出元素相关的正态分布均值。std是一个基础类型float，包含每个输出元素相关的正态分布的标准差。
 
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnInplaceNormalGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnInplaceNormal”接口执行计算。
 
-- `aclnnStatus aclnnInplaceNormalGetWorkspaceSize(const aclTensor* selfRef, float mean, float std, int64_t seed, int64_t offset, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnInplaceNormal(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnInplaceNormalGetWorkspaceSize(
+  const aclTensor*    selfRef, 
+  float               mean, 
+  float               std, 
+  int64_t             seed, 
+  int64_t             offset, 
+  uint64_t*           workspaceSize, 
+  aclOpExecutor**     executor)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceNormal(
+  void*               workspace, 
+  uint64_t            workspaceSize, 
+  aclOpExecutor*      executor, 
+  aclrtStream         stream)
+```
 
 ## aclnnInplaceNormalGetWorkspaceSize
 
 - **参数描述：**
 
-  - selfRef（aclTensor\*, 计算输入/输出）：Device侧的aclTensor，shape支持0-8维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT32、FLOAT16, BFLOAT16、DOUBLE。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT32、FLOAT16、BFLOAT16、DOUBLE。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT32、INT32、INT64、BFLOAT16、FLOAT16、INT16、INT8、UINT8、BOOL、DOUBLE。
-  - mean（float, 计算输入）：Host侧的浮点类型，表示随机均值。
-  - std（float, 计算输入）：Host侧的浮点类型，表示随机数的标准差。
-  - seed（int64_t, 计算输入）：Host侧的整型，设置随机数生成器的种子值。
-  - offset（int64_t, 计算输入）：Host侧的整型，表示随机数的偏移量。
-  - workspaceSize(uint64_t*, 出参): 返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor**, 出参): 返回op执行器，包含了算子计算流程。
+  <table class="tg" style="undefined;table-layout: fixed; width: 1500px"><colgroup>
+  <col style="width: 245px">
+  <col style="width: 120px">
+  <col style="width: 311px">
+  <col style="width: 96px">
+  <col style="width: 258px">
+  <col style="width: 120px">
+  <col style="width: 119px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-5agr">参数名</th>
+      <th class="tg-0pky">输入/输出</th>
+      <th class="tg-0pky">描述</th>
+      <th class="tg-0pky">使用说明</th>
+      <th class="tg-0pky">数据类型</th>
+      <th class="tg-0pky">数据格式</th>
+      <th class="tg-0pky">维度(shape)</th>
+      <th class="tg-0pky">非连续tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">selfRef（aclTensor*）</td>
+      <td class="tg-0pky">输入/输出</td>
+      <td class="tg-0pky">输入输出tensor。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">FLOAT32、INT32、INT64、BFLOAT16、FLOAT16、INT16、INT8、UINT8、BOOL、DOUBLE</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">支持0-8维</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">mean（float）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">表示随机均值。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">FLOAT32</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">std（float）</td>
+      <td class="tg-0lax">输入</td>
+      <td class="tg-0lax">表示随机数的标准差。</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">FLOAT32</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">seed（int64_t）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">设置随机数生成器的种子值。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">INT64</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">offset（int64_t）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">表示随机数的偏移量。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">INT64</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">workspaceSize（uint64_t*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回需要在Device侧申请的workspace大小。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">executor（aclOpExecutor**）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回op执行器，包括了算子计算流程。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+  </tbody></table>
+
+  - <term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型不支持INT32、INT64、INT16、INT8、UINT8、BOOL。
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的selfRef为空指针。
-  返回161002 (ACLNN_ERR_PARAM_INVALID): 1. selfRef的数据类型不在支持的范围之内。
-                                        2. std、mean的数据类型不符合接口入参要求。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的selfRef为空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="2">161002</td>
+      <td>selfRef的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>std、mean的数据类型不符合接口入参要求。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnInplaceNormal
 
 - **参数描述：**
 
-  - workspace（void\*, 入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize（uint64_t, 入参）：在Device侧申请的workspace大小，由第一段接口aclnnInplaceNormalGetWorkspaceSize获取。
-  - executor（aclOpExecutor\*, 入参）：op执行器，包含了算子计算流程。
-  - stream（aclrtStream, 入参）：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 872px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceNormalGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 

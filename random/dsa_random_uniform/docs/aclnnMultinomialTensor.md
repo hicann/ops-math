@@ -15,54 +15,245 @@
 
 ## 功能说明
 
-算子功能：在输入张量中根据每个对象分布的概率，抽取numsamples个样本，并将这些样本的索引存储在输出张量中。
+在输入张量中根据每个对象分布的概率，抽取numsamples个样本，并将这些样本的索引存储在输出张量中。
 
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnMultinomialTensorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMultinomialTensor”接口执行计算。
 
-- `aclnnStatus aclnnMultinomialTensorGetWorkspaceSize(const aclTensor* self, int64_t numsamples, bool replacement, const aclTensor* seedTensor, const aclTensor* offsetTensor, int64_t offset, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnMultinomialTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnMultinomialTensorGetWorkspaceSize(
+  const aclTensor*      self, 
+  int64_t               numsamples, 
+  bool                  replacement, 
+  const aclTensor*      seedTensor, 
+  const aclTensor*      offsetTensor, 
+  int64_t               offset, 
+  aclTensor*            out, 
+  uint64_t*             workspaceSize, 
+  aclOpExecutor**       executor)
+```
+
+```Cpp
+aclnnStatus aclnnMultinomialTensor(
+  void*                 workspace, 
+  uint64_t              workspaceSize, 
+  aclOpExecutor*        executor, 
+  aclrtStream           stream)
+```
 
 ## aclnnMultinomialTensorGetWorkspaceSize
 
 - **参数说明：**
-  
-  - self（aclTensor*，计算输入）：输入tensor，表示每个对象分布的概率。Device侧的aclTensor。shape为(N, C)或(C)，self的取值范围需要大于等于0且self与out的维度一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。数据类型支持BFLOAT16、FLOAT16、FLOAT、DOUBLE。
-  - numsamples（int64_t，计算输入）：Host侧的整形，从每个多项分布中抽取的样本数。numsamples为正数，当replacement为false时，numsamples不大于C。
-  - replacement（bool，计算输入）：Host侧的布尔类型，决定了抽样时元素是否有放回。
-  - seedTensor（aclTensor*，计算输入）：Device侧的aclTensor，shape为[1]，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据类型支持INT64。设置随机数生成器的种子值，它影响生成的随机数序列。
-  - offsetTensor（aclTensor*，计算输入）：Device侧的aclTensor，shape为[1]，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据类型支持INT64。与标量offset的累加结果作为随机数算子的偏移量。表示随机数的偏移量，它影响生成的随机数序列的位置。设置偏移量后，生成的随机数序列会从指定位置开始。
-  - offset（int64_t，计算输入）：Host侧的整型，作为offsetTensor的累加量。
-  - out（aclTensor*，计算输出）：Device侧的aclTensor，数据类型支持INT64。shape为(N, numsamples)或(numsamples)，self与out的维度一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - workspaceSize（uint64_t*，出参）：返回需要在Device侧申请的workspace大小。
-  - executor（aclOpExecutor**，出参）：返回op执行器，包含了算子计算流程。
+
+  <table class="tg" style="undefined;table-layout: fixed; width: 1571px"><colgroup>
+  <col style="width: 233px">
+  <col style="width: 120px">
+  <col style="width: 300px">
+  <col style="width: 230px">
+  <col style="width: 200px">
+  <col style="width: 120px">
+  <col style="width: 150px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-5agr">参数名</th>
+      <th class="tg-0pky">输入/输出</th>
+      <th class="tg-0pky">描述</th>
+      <th class="tg-0pky">使用说明</th>
+      <th class="tg-0pky">数据类型</th>
+      <th class="tg-0pky">数据格式</th>
+      <th class="tg-0pky">维度(shape)</th>
+      <th class="tg-0pky">非连续tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">self（aclTensor*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">输入tensor，表示每个对象分布的概率。</td>
+      <td class="tg-0pky">self的取值范围需要大于等于0。</td>
+      <td class="tg-0pky">BFLOAT16、FLOAT16、FLOAT、DOUBLE</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">为(N, C)或(C)，且self与out的维度一致。</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">numsamples（int64_t）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">从每个多项分布中抽取的样本数。</td>
+      <td class="tg-0pky">numsamples为正数，当replacement为false时，numsamples不大于C。</td>
+      <td class="tg-0pky">INT64</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">replacement（bool）</td>
+      <td class="tg-0lax">输入</td>
+      <td class="tg-0lax">决定了抽样时元素是否有放回。</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">BOOL</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">seedTensor（aclTensor*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">设置随机数生成器的种子值，它影响生成的随机数序列。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">INT64</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">为[1]。</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">offsetTensor（aclTensor*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">与标量offset的累加结果作为随机数算子的偏移量。随机数的偏移量影响生成的随机数序列的位置。设置偏移量后，生成的随机数序列会从指定位置开始。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">INT64</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">为[1]。</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">offset（int64_t）</td>
+      <td class="tg-0lax">输入</td>
+      <td class="tg-0lax">作为offsetTensor的累加量。</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">INT64</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">out（aclTensor*）</td>
+      <td class="tg-0lax">输出</td>
+      <td class="tg-0lax">输出tensor。</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">INT64</td>
+      <td class="tg-0lax">ND</td>
+      <td class="tg-0lax">为(N, numsamples)或(numsamples)，self与out的维度一致。</td>
+      <td class="tg-0lax">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">workspaceSize（uint64_t*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回需要在Device侧申请的workspace大小。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">executor（aclOpExecutor**）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回op执行器，包括了算子计算流程。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+  </tbody></table>
+
 - **返回值：**
   
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
-  ```
+
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的self、out是空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. self的数据类型不在支持的范围之内。
-                                        2. out的数据类型不是INT64。
-                                        3. self的维度不是1维或2维。
-                                        4. self与out的维度不一致。
-                                        5. numsamples的值小于等于0。
-                                        6. replacement为false且numsamples大于self最后一个维度的大小。
-                                        7. self最后一个维度的大小不能超过2^24。
-                                        8. out的最后一个维度要与numsamples的大小保持一致。
-                                        9. 当self为2维Tensor时，out的第一个维度要与self第一个维度的大小相等。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="9">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="9">161002</td>
+      <td>self的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>out的数据类型不是INT64。</td>
+    </tr>
+    <tr>
+      <td>self的维度不是1维或2维。</td>
+    </tr>
+    <tr>
+      <td>self与out的维度不一致。</td>
+    </tr>
+    <tr>
+      <td>numsamples的值小于等于0。</td>
+    </tr>
+    <tr>
+      <td>replacement为false且numsamples大于self最后一个维度的大小。</td>
+    </tr>
+    <tr>
+      <td>self最后一个维度的大小不能超过2^24。</td>
+    </tr>
+    <tr>
+      <td>out的最后一个维度要与numsamples的大小保持一致。</td>
+    </tr>
+    <tr>
+      <td>当self为2维Tensor时，out的第一个维度要与self第一个维度的大小相等。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnMultinomialTensor
 
-- **参数说明：**
-  
-  - workspace（void*，入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize（uint64_t，入参）：在Device侧申请的workspace大小，由第一段接口aclnnMultinomialTensorGetWorkspaceSize获取。
-  - executor（aclOpExecutor*，入参）：op执行器，包含了算子计算流程。
-  - stream（aclrtStream，入参）：指定执行任务的Stream。
+- **参数描述：**
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 872px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnMultinomialTensorGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+
 - **返回值：**
   
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
