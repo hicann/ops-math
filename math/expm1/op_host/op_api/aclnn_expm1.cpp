@@ -50,12 +50,7 @@ static const std::initializer_list<DataType> FLOAT_LIST = {DataType::DT_FLOAT16,
 
 static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out) {
   // self需要在support list内。
-  std::initializer_list<op::DataType> supportList;
-  if (IsRegBase()) {
-    supportList = FLOAT_LIST;
-  } else {
-    supportList = GetDtypeSupportListV1(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST);
-  }
+  auto supportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST);
   OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
 
   // 检查expm1的计算结果能否转为out的类型。out为整型或者bool则直接返回false
@@ -70,16 +65,10 @@ static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out) {
 }
 
 static bool CheckInplaceDtypeValid(const aclTensor *selfRef) {
-  std::initializer_list<op::DataType> inplaceSupportList;
-  if (IsRegBase()) {
-    inplaceSupportList = FLOAT_LIST;
-  } else {
-    inplaceSupportList = GetDtypeSupportListV1(ASCEND910B_DTYPE_SELFREF_LIST, ASCEND910_DTYPE_SELFREF_LIST);
-  }
-    // 检查selfRef的数据类型是否在inplace Expm算子的支持列表内
-    OP_CHECK_DTYPE_NOT_SUPPORT(selfRef, inplaceSupportList, return false);
-
-    return true;
+  auto inplaceSupportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_SELFREF_LIST, ASCEND910_DTYPE_SELFREF_LIST);
+  // 检查selfRef的数据类型是否在inplace Expm算子的支持列表内
+  OP_CHECK_DTYPE_NOT_SUPPORT(selfRef, inplaceSupportList, return false);
+  return true;
 }
 
 static aclnnStatus CheckParamsExpm1(const aclTensor *self, const aclTensor *out) {
@@ -119,7 +108,9 @@ aclnnStatus aclnnExpm1Common(const aclTensor *self, aclTensor *out,
     uniqueExecutor.ReleaseTo(executor);
     return ACLNN_SUCCESS;
   }
-
+  if (self->GetStorageFormat() != Format::FORMAT_ND) {
+      OP_LOGW("Format only support ND");
+  }
   // self如果非empty，需要转连续
   auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
   CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
