@@ -21,7 +21,7 @@ namespace Slice
 {
 using namespace AscendC;
 
-template <typename T, typename U>
+template <typename T, typename U, typename V = int8_t>
 class SliceTwoDimSmallShape
 {
 public:
@@ -41,8 +41,8 @@ private:
     GlobalTensor<T> outputGM_;
 };
 
-template <typename T, typename U>
-__aicore__ inline void SliceTwoDimSmallShape<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceTwoDimSmallShape<T, U, V>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y,
                                                       const SliceTwoDimSmallSapeTilingData* tilingData, TPipe* pipeIn)
 {
     inputGM_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
@@ -54,6 +54,11 @@ __aicore__ inline void SliceTwoDimSmallShape<T, U>::Init(GM_ADDR x, GM_ADDR begi
         lastDimBegin_ = tilingData->lastOneDimOffset;
     } else {
         lastDimBegin_ = static_cast<int64_t>(((__gm__ U*)begin)[1]);
+        if constexpr (IsSameType<V, fp4x2_e2m1_t>::value || IsSameType<V, fp4x2_e1m2_t>::value) {
+            ascendc_assert(
+                !(lastDimBegin_ & 1), "When the input dtype is fp4, the last dimension of offset must be even.\n");
+            lastDimBegin_ /= 2;
+        }
     }
 
     // pipeBuffer
@@ -61,8 +66,8 @@ __aicore__ inline void SliceTwoDimSmallShape<T, U>::Init(GM_ADDR x, GM_ADDR begi
     pipe_->InitBuffer(vecQue_, bufferCnt_, tilingData_->ubSize);
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceTwoDimSmallShape<T, U>::Process()
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceTwoDimSmallShape<T, U, V>::Process()
 {
     if (blockIdx_ >= tilingData_->realCoreNum) {
         return;

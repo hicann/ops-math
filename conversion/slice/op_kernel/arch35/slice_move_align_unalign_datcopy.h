@@ -24,8 +24,8 @@ namespace Slice
 {
 using namespace AscendC;
 
-template <typename T, typename U>
-class SliceMoveAlignDataCopyUnalign : public SliceBase<T, U>
+template <typename T, typename U, typename V = int8_t>
+class SliceMoveAlignDataCopyUnalign : public SliceBase<T, U, V>
 {
 public:
     __aicore__ inline SliceMoveAlignDataCopyUnalign(){};
@@ -68,8 +68,8 @@ private:
     uint32_t vlCnt_ = Ops::Base::GetVRegSize() / sizeof(T);
 };
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U, V>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y,
                                                               const SliceMoveAlignGatherTilingData* tdPtr, TPipe* pipe)
 {
     blockIdx_ = GetBlockIdx();
@@ -89,16 +89,16 @@ __aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U>::Init(GM_ADDR x, GM_A
     pipe_->InitBuffer(outQue_, bufferCnt_, this->ubSize_);
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U>::ParseMoveAlignGatherTilingData(
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U, V>::ParseMoveAlignGatherTilingData(
     GM_ADDR begin, const SliceMoveAlignGatherTilingData* tdPtr, int64_t blockIdx)
 {
     this->ParseBaseTilingData(begin, &(tdPtr->sliceBaseTilingData), blockIdx);
     this->ubOutLoopSteps_ = tdPtr->ubOutLoopSteps;
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U>::Process()
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U, V>::Process()
 {
     // for empty tensor set realCoreNum as 0, do nothing
     if (blockIdx_ >= this->realCoreNum_) {
@@ -116,8 +116,8 @@ __aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U>::Process()
     ProcessPerBlock(copyOutParamsMain, copyOutParamsTail);
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U>::ParseLoopModeAndMoveAlignParams(LoopModeParams& loopMode,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U, V>::ParseLoopModeAndMoveAlignParams(LoopModeParams& loopMode,
                                                                                          DataCopyExtParams& extParams)
 {
     loopMode.loop1Size = tdPtr_->moveAlignParams.loop1Size;
@@ -133,8 +133,8 @@ __aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U>::ParseLoopModeAndMove
     extParams.dstStride = 0;
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U>::ParseCopyInTilingData()
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U, V>::ParseCopyInTilingData()
 {
     outputMainblockLen_ = tdPtr_->outBlockLen;
     outputTailblockLen_ = outputMainblockLen_;
@@ -154,8 +154,8 @@ __aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U>::ParseCopyInTilingDat
     }
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U>::SetCopyOutAlignParams(DataCopyExtParams& copyOutParams,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U, V>::SetCopyOutAlignParams(DataCopyExtParams& copyOutParams,
                                                                                const DataCopyExtParams& copyInParam,
                                                                                const LoopModeParams& loopMode,
                                                                                const uint32_t blockLen)
@@ -166,8 +166,8 @@ __aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U>::SetCopyOutAlignParam
     copyOutParams.srcStride = 0;
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U>::DataCopyUnalignGather(uint32_t blockCount)
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U, V>::DataCopyUnalignGather(uint32_t blockCount)
 {
     auto inTensor = inQue_.DeQue<T>();
     __local_mem__ T* srcPtr = (__local_mem__ T*)inTensor.GetPhyAddr();
@@ -206,8 +206,8 @@ __aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U>::DataCopyUnalignGathe
     outQue_.EnQue(outTensor);
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U>::ProcessPerBlock(const DataCopyExtParams& copyOutParamsMain,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignDataCopyUnalign<T, U, V>::ProcessPerBlock(const DataCopyExtParams& copyOutParamsMain,
                                                                          const DataCopyExtParams& copyOutParamsTail)
 {
     int64_t inputGmAddr = 0;

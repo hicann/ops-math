@@ -20,8 +20,8 @@
 namespace Slice {
 using namespace AscendC;
 
-template <typename T, typename U>
-class SliceMoveAlignLastDim : public SliceBase<T, U> {
+template <typename T, typename U, typename V = int8_t>
+class SliceMoveAlignLastDim : public SliceBase<T, U, V> {
 public:
     __aicore__ inline SliceMoveAlignLastDim(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y,
@@ -46,8 +46,8 @@ private:
     DataCopyExtParams copyParamsTail_ {1, 0, 0, 0, 0};
 };
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignLastDim<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignLastDim<T, U, V>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
                                                       GM_ADDR y, const SliceMoveAlignLastDimTilingData* tilingData, TPipe* pipeIn)
 {
     blockIdx_ = GetBlockIdx();
@@ -61,8 +61,8 @@ __aicore__ inline void SliceMoveAlignLastDim<T, U>::Init(GM_ADDR x, GM_ADDR begi
     pipe_->InitBuffer(vecQue_, DOUBLE_BUFFER, this->ubSize_ / DOUBLE_BUFFER);
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignLastDim<T, U>::Process()
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignLastDim<T, U, V>::Process()
 {
     if (blockIdx_ >= this->realCoreNum_) {
         return;
@@ -81,8 +81,8 @@ __aicore__ inline void SliceMoveAlignLastDim<T, U>::Process()
     }
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignLastDim<T, U>::ProcessPerBlockInLastDim()
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignLastDim<T, U, V>::ProcessPerBlockInLastDim()
 {
     // blk切最后一根轴，表示 blkSplitOutNum 个核处理一行
     // 该block处理的第几行
@@ -123,8 +123,8 @@ __aicore__ inline void SliceMoveAlignLastDim<T, U>::ProcessPerBlockInLastDim()
     }
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignLastDim<T, U>::ProcessPerBlockNLastDim()
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignLastDim<T, U, V>::ProcessPerBlockNLastDim()
 {
     // ub切最后一根轴，ubSplitOutNum表示最后一根轴的搬运次数及尾块处理
     int64_t ubSplitOutNum = this->outputShape_[this->ubIndex_] / this->ubFactor_;

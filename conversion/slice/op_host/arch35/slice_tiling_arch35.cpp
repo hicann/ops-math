@@ -744,7 +744,7 @@ ge::graphStatus SliceTilingForAscendC(
 template <typename T>
 static ge::graphStatus AssignInputValueOpt(
     gert::TilingContext* context, size_t size, const gert::Tensor* tensor, gert::Shape& list_vector, bool isAscendc,
-    bool& isConst)
+    bool& isConst, const ge::DataType dtype)
 {
     list_vector.SetDimNum(size);
     const T* value = tensor->GetData<T>();
@@ -762,13 +762,24 @@ static ge::graphStatus AssignInputValueOpt(
     for (size_t i = 0; i < size; i++) {
         list_vector[i] = value[i];
     }
+    if (dtype == ge::DT_FLOAT4_E2M1 || dtype == ge::DT_FLOAT4_E1M2) {
+        OP_CHECK_IF(
+            list_vector[size - 1] & 1,
+            OP_LOGE(
+                context->GetNodeName(),
+                "Expected last dimension of offsets to be even for fp4 input, but got offsets = %s",
+                Ops::Base::ToString(list_vector).c_str()),
+            return ge::GRAPH_FAILED);
+        list_vector[size - 1] /= SLICE_CONST2;
+    }
     isConst = true;
     return ge::GRAPH_SUCCESS;
 }
 
 template <typename T>
 static ge::graphStatus AssignInputValue(
-    gert::TilingContext* context, size_t size, const gert::Tensor* tensor, gert::Shape& list_vector)
+    gert::TilingContext* context, size_t size, const gert::Tensor* tensor, gert::Shape& list_vector,
+    const ge::DataType dtype)
 {
     int32_t dim_num = tensor->GetShapeSize();
     list_vector.SetDimNum(dim_num);
@@ -778,6 +789,15 @@ static ge::graphStatus AssignInputValue(
         return ge::GRAPH_FAILED);
     for (size_t i = 0; i < size; i++) {
         list_vector[i] = value[i];
+    }
+    if (dtype == ge::DT_FLOAT4_E2M1 || dtype == ge::DT_FLOAT4_E1M2) {
+        OP_CHECK_IF(
+            list_vector[size - 1] & 1,
+            OP_LOGE(
+                context->GetNodeName(), "Expected last dimension of size to be even for fp4 input, but got size = %s",
+                Ops::Base::ToString(list_vector).c_str()),
+            return ge::GRAPH_FAILED);
+        list_vector[size - 1] /= SLICE_CONST2;
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -894,45 +914,54 @@ static ge::graphStatus Tiling4Slice(gert::TilingContext* context)
         shape_size_offsets != in_shape.GetDimNum(),
         OP_LOGE(context->GetNodeName(), "length of input_shape, offsets and size must be equal."),
         return ge::GRAPH_FAILED);
-
+    ge::DataType inputDtype = shape_tensor_x->GetDataType();
+    if (inputDtype == ge::DT_FLOAT4_E2M1 || inputDtype == ge::DT_FLOAT4_E1M2) {
+        OP_CHECK_IF(
+            sliceparam.input[shape_size_offsets - 1] & 1,
+            OP_LOGE(
+                context->GetNodeName(), "Expected last dimension of input to be even for fp4 input, but got input = %s",
+                Ops::Base::ToString(sliceparam.input).c_str()),
+            return ge::GRAPH_FAILED);
+        sliceparam.input[shape_size_offsets - 1] /= SLICE_CONST2;
+    }
     ge::DataType offset_dtype = shape_tensor_offsets->GetDataType();
     if (offset_dtype == ge::DT_INT32) {
         // Get offset const val
         OP_CHECK_IF(
             AssignInputValueOpt<int32_t>(
                 context, shape_size_offsets, shape_tensor_offsets, sliceparam.begin_list, compile_info->isAscendc,
-                sliceparam.is_begin_const) != ge::GRAPH_SUCCESS,
+                sliceparam.is_begin_const, inputDtype) != ge::GRAPH_SUCCESS,
             OP_LOGE(context->GetNodeName(), "get offset fail, check input is const or not."), return ge::GRAPH_FAILED);
     } else {
         // Get offset const val
         OP_CHECK_IF(
             AssignInputValueOpt<int64_t>(
                 context, shape_size_offsets, shape_tensor_offsets, sliceparam.begin_list, compile_info->isAscendc,
-                sliceparam.is_begin_const) != ge::GRAPH_SUCCESS,
+                sliceparam.is_begin_const, inputDtype) != ge::GRAPH_SUCCESS,
             OP_LOGE(context->GetNodeName(), "get offset fail, check input is const or not."), return ge::GRAPH_FAILED);
     }
     ge::DataType sizeDtype = shape_tensor_size->GetDataType();
     if (sizeDtype == ge::DT_INT32) {
         // Get size const val
         OP_CHECK_IF(
-            AssignInputValue<int32_t>(context, shape_size_size, shape_tensor_size, sliceparam.end_list) !=
+            AssignInputValue<int32_t>(context, shape_size_size, shape_tensor_size, sliceparam.end_list, inputDtype) !=
                 ge::GRAPH_SUCCESS,
             OP_LOGE(context->GetNodeName(), "get size fail, check input is const or not."), return ge::GRAPH_FAILED);
     } else {
         // Get size const val
         OP_CHECK_IF(
-            AssignInputValue<int64_t>(context, shape_size_size, shape_tensor_size, sliceparam.end_list) !=
+            AssignInputValue<int64_t>(context, shape_size_size, shape_tensor_size, sliceparam.end_list, inputDtype) !=
                 ge::GRAPH_SUCCESS,
             OP_LOGE(context->GetNodeName(), "get size fail, check input is const or not."), return ge::GRAPH_FAILED);
     }
     // calc endlist
     bool end_list_flag = true;
     bool isEndValid = CalcEndAndBeginList(
-        sliceparam.end_list, sliceparam.begin_list, in_shape, shape_size_offsets, end_list_flag,
+        sliceparam.end_list, sliceparam.begin_list, sliceparam.input, shape_size_offsets, end_list_flag,
         sliceparam.is_begin_const);
     bool begin_list_flag = false;
     bool isBeginValid = CalcEndAndBeginList(
-        sliceparam.end_list, sliceparam.begin_list, in_shape, shape_size_size, begin_list_flag,
+        sliceparam.end_list, sliceparam.begin_list, sliceparam.input, shape_size_size, begin_list_flag,
         sliceparam.is_begin_const);
     OP_CHECK_IF(
         (compile_info->isAscendc && (!isEndValid || !isBeginValid)), OP_LOGE("Slice", "CalcEndAndBeginList failed"),
@@ -949,14 +978,11 @@ static ge::graphStatus Tiling4Slice(gert::TilingContext* context)
         sliceparam.stride_list[i] = 1;
     }
     MakePerformanceParams(sliceparam);
-
-    auto xDesc = context->GetInputDesc(INPUT_X_INDEX);
-    OP_CHECK_NULL_WITH_CONTEXT(context, xDesc);
-
+    if (inputDtype == ge::DT_FLOAT4_E2M1 || inputDtype == ge::DT_FLOAT4_E1M2) {
+        inputDtype = ge::DT_INT8;
+    }
     return SliceTilingForAscendC(
-        context, compile_info->block_dim, compile_info->ub_size, compile_info->cacheLineSize, sliceparam,
-        xDesc->GetDataType());
-    return ge::GRAPH_SUCCESS;
+        context, compile_info->block_dim, compile_info->ub_size, compile_info->cacheLineSize, sliceparam, inputDtype);
 }
 
 static ge::graphStatus TilingPrepare4Slice(gert::TilingParseContext* context)

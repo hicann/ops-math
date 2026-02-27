@@ -20,8 +20,8 @@
 namespace Slice {
 using namespace AscendC;
 
-template <typename T, typename U>
-class SliceNDDMA : public SliceBase<T, U> {
+template <typename T, typename U, typename V = int8_t>
+class SliceNDDMA : public SliceBase<T, U, V> {
 public:
     __aicore__ inline SliceNDDMA(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y,
@@ -54,8 +54,8 @@ private:
     int64_t curCoreRowsOffset_ = 0; // 当前核处理的output shape中的起始行数
 };
 
-template <typename T, typename U>
-__aicore__ inline void SliceNDDMA<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceNDDMA<T, U, V>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
                                                       GM_ADDR y, const SliceNDDMATilingData* tilingData,
                                                       TPipe* pipeIn)
 {
@@ -69,8 +69,8 @@ __aicore__ inline void SliceNDDMA<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR 
     pipe_->InitBuffer(vecQue_, DOUBLE_BUFFER, this->ubSize_ / DOUBLE_BUFFER);
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceNDDMA<T, U>::ParseNDDMATilingData(GM_ADDR begin, const SliceNDDMATilingData* tilingData,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceNDDMA<T, U, V>::ParseNDDMATilingData(GM_ADDR begin, const SliceNDDMATilingData* tilingData,
     int64_t blockIdx)
 {
     this->ParseBaseTilingData(begin, &(tilingData->sliceBaseTilingData), blockIdx);
@@ -84,8 +84,8 @@ __aicore__ inline void SliceNDDMA<T, U>::ParseNDDMATilingData(GM_ADDR begin, con
     this->nddmaTotalNum_ = tilingData->nddmaTotalNum;
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceNDDMA<T, U>::Process()
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceNDDMA<T, U, V>::Process()
 {
     if (blockIdx_ >= this->realCoreNum_) {
         return;
@@ -97,8 +97,8 @@ __aicore__ inline void SliceNDDMA<T, U>::Process()
     ProcessPerBlock();
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceNDDMA<T, U>::SetLoopInfo(MultiCopyLoopInfo<NDDMA_MAX_DIMS>& loopInfo,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceNDDMA<T, U, V>::SetLoopInfo(MultiCopyLoopInfo<NDDMA_MAX_DIMS>& loopInfo,
                                                          MultiCopyLoopInfo<NDDMA_MAX_DIMS>& loopInfoTail)
 {
     int64_t inUbDims = this->inputDims_ - this->ubIndex_;
@@ -136,8 +136,8 @@ __aicore__ inline void SliceNDDMA<T, U>::SetLoopInfo(MultiCopyLoopInfo<NDDMA_MAX
     }
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceNDDMA<T, U>::SetCopyOutParams(DataCopyExtParams &copyOutParamsMain,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceNDDMA<T, U, V>::SetCopyOutParams(DataCopyExtParams &copyOutParamsMain,
                                                               DataCopyExtParams &copyOutParamsTail)
 {
     copyOutParamsMain.blockCount = 1;
@@ -153,8 +153,8 @@ __aicore__ inline void SliceNDDMA<T, U>::SetCopyOutParams(DataCopyExtParams &cop
     }
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceNDDMA<T, U>::ProcessPerBlock()
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceNDDMA<T, U, V>::ProcessPerBlock()
 {
     int64_t inputGmAddr = 0;
     int64_t outputGmAddr = 0;

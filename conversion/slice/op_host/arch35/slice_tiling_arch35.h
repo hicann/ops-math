@@ -24,6 +24,7 @@ constexpr int64_t SLICE_KEY_MOVE_UNALIGN_GATHER = 301;
 constexpr int64_t SLICE_KEY_TWO_DIM_SMALL_SHAPE = 400;
 constexpr int64_t MIN_OUTPUT_SIZE = int64_t(512 * 1024);
 constexpr size_t INPUT_X_INDEX = 0;
+constexpr int64_t SLICE_CONST2 = 2;
 
 struct SliceCompileParam {
     int64_t block_dim{1};

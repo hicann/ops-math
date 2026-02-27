@@ -21,7 +21,7 @@ namespace Slice
 {
 using namespace AscendC;
 
-template <typename T, typename U>
+template <typename T, typename U, typename V = int8_t>
 class SliceMoveAlignTwoDim
 {
 public:
@@ -41,8 +41,8 @@ private:
     const SliceMoveAlignLast2DimTilingData* tilingData_ = nullptr;
 };
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignTwoDim<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignTwoDim<T, U, V>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
                                                             GM_ADDR y, const SliceMoveAlignLast2DimTilingData* tilingData,
                                                             TPipe* pipeIn)
 {
@@ -58,14 +58,20 @@ __aicore__ inline void SliceMoveAlignTwoDim<T, U>::Init(GM_ADDR x, GM_ADDR begin
             begin_[i] = tilingData->begin[i];
         } else {
             begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[i]);
+            if constexpr (IsSameType<V, fp4x2_e2m1_t>::value || IsSameType<V, fp4x2_e1m2_t>::value) {
+                ascendc_assert(
+                    !(begin_[NUM_TWO - 1] & 1),
+                    "When the input dtype is fp4, the last dimension of offset must be even.\n");
+                begin_[NUM_TWO - 1] /= 2;
+            }
         }
     }
 
     pipe_->InitBuffer(vecQue_, DOUBLE_BUFFER, tilingData->ubSize / DOUBLE_BUFFER);
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignTwoDim<T, U>::Process()
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignTwoDim<T, U, V>::Process()
 {
     if (blockIdx_ >= tilingData_->realCoreNum) {
         return;

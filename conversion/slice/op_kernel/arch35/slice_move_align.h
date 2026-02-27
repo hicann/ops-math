@@ -20,8 +20,8 @@
 namespace Slice {
 using namespace AscendC;
 
-template <typename T, typename U>
-class SliceMoveAlign : public SliceBase<T, U> {
+template <typename T, typename U, typename V = int8_t>
+class SliceMoveAlign : public SliceBase<T, U, V> {
 public:
     __aicore__ inline SliceMoveAlign(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y,
@@ -57,8 +57,8 @@ private:
     DataCopyPadExtParams<T> padParams_ {false, 0, 0, 0};
 };
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlign<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlign<T, U, V>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
                                                       GM_ADDR y, const SliceMoveAlignTilingData* tilingData,
                                                       TPipe* pipeIn)
 {
@@ -74,16 +74,16 @@ __aicore__ inline void SliceMoveAlign<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_A
     pipe_->InitBuffer(vecQue_, DOUBLE_BUFFER, this->ubSize_ / DOUBLE_BUFFER);
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlign<T, U>::ParseMoveAlignTilingData(GM_ADDR begin,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlign<T, U, V>::ParseMoveAlignTilingData(GM_ADDR begin,
     const SliceMoveAlignTilingData* tilingData, int64_t blockIdx)
 {
     this->ParseBaseTilingData(begin, &(tilingData->sliceBaseTilingData), blockIdx);
     this->ubOutLoopSteps_ = tilingData->ubOutLoopSteps;
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlign<T, U>::Process()
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlign<T, U, V>::Process()
 {
     if (blockIdx_ >= this->realCoreNum_) {
         return;
@@ -100,8 +100,8 @@ __aicore__ inline void SliceMoveAlign<T, U>::Process()
     ProcessPerBlock(copyOutParamsMain, copyOutParamsTail);
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlign<T, U>::ParseLoopModeAndMoveAlignParams(LoopModeParams &loopMode,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlign<T, U, V>::ParseLoopModeAndMoveAlignParams(LoopModeParams &loopMode,
     DataCopyExtParams &extParams, const SliceMoveAlignTilingData* tilingData) const
 {
     loopMode.loop1Size = tilingData->moveAlignParams.loop1Size;
@@ -117,8 +117,8 @@ __aicore__ inline void SliceMoveAlign<T, U>::ParseLoopModeAndMoveAlignParams(Loo
     extParams.dstStride = tilingData->moveAlignParams.dstStride;
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlign<T, U>::ParseCopyInTilingData(const SliceMoveAlignTilingData* tilingData)
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlign<T, U, V>::ParseCopyInTilingData(const SliceMoveAlignTilingData* tilingData)
 {
     /********************************************
     1、blk和ub切分不同轴时:
@@ -153,8 +153,8 @@ __aicore__ inline void SliceMoveAlign<T, U>::ParseCopyInTilingData(const SliceMo
     }
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlign<T, U>::SetCopyOutAlignParams(DataCopyExtParams &copyOutParams,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlign<T, U, V>::SetCopyOutAlignParams(DataCopyExtParams &copyOutParams,
                                                                        const DataCopyExtParams &copyInParam,
                                                                        const LoopModeParams &loopMode)
 {
@@ -180,8 +180,8 @@ __aicore__ inline void SliceMoveAlign<T, U>::SetCopyOutAlignParams(DataCopyExtPa
     }
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlign<T, U>::ProcessPerBlock(const DataCopyExtParams &copyOutParamsMain,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlign<T, U, V>::ProcessPerBlock(const DataCopyExtParams &copyOutParamsMain,
                                                                  const DataCopyExtParams &copyOutParamsTail)
 {
     int64_t inputGmAddr = 0;

@@ -24,8 +24,8 @@ namespace Slice
 {
 using namespace AscendC;
 
-template <typename T, typename U>
-class SliceMoveAlignGather : public SliceBase<T, U>
+template <typename T, typename U, typename V = int8_t>
+class SliceMoveAlignGather : public SliceBase<T, U, V>
 {
 public:
     __aicore__ inline SliceMoveAlignGather(){};
@@ -83,8 +83,8 @@ private:
     uint32_t vlCnt_ = Ops::Base::GetVRegSize() / sizeof(T);
 };
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignGather<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignGather<T, U, V>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y,
         const SliceMoveAlignGatherTilingData* tdPtr, TPipe* pipe)
 {
     blockIdx_ = GetBlockIdx();
@@ -107,16 +107,16 @@ __aicore__ inline void SliceMoveAlignGather<T, U>::Init(GM_ADDR x, GM_ADDR begin
     InitLoopIndex();
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignGather<T, U>::ParseMoveAlignGatherTilingData(GM_ADDR begin, 
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignGather<T, U, V>::ParseMoveAlignGatherTilingData(GM_ADDR begin, 
     const SliceMoveAlignGatherTilingData* tdPtr, int64_t blockIdx)
 {
     this->ParseBaseTilingData(begin, &(tdPtr->sliceBaseTilingData), blockIdx);
     this->ubOutLoopSteps_ = tdPtr->ubOutLoopSteps;
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignGather<T, U>::InitLoopIndex()
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignGather<T, U, V>::InitLoopIndex()
 {
     lastOneDimOutputDim_ = this->outputShape_[this->inputDims_ - 1];
     // 根据rangetype决定 lenPerLoop_
@@ -150,8 +150,8 @@ __aicore__ inline void SliceMoveAlignGather<T, U>::InitLoopIndex()
     }
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignGather<T, U>::Process()
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignGather<T, U, V>::Process()
 {
     // for empty tensor set realCoreNum as 0, do nothing
     if (blockIdx_ >= this->realCoreNum_) {
@@ -169,8 +169,8 @@ __aicore__ inline void SliceMoveAlignGather<T, U>::Process()
     ProcessPerBlock(copyOutParamsMain, copyOutParamsTail);
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignGather<T, U>::ParseLoopModeAndMoveAlignParams(LoopModeParams& loopMode,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignGather<T, U, V>::ParseLoopModeAndMoveAlignParams(LoopModeParams& loopMode,
                                                                                 DataCopyExtParams& extParams)
 {
     loopMode.loop1Size = tdPtr_->moveAlignParams.loop1Size;
@@ -186,8 +186,8 @@ __aicore__ inline void SliceMoveAlignGather<T, U>::ParseLoopModeAndMoveAlignPara
     extParams.dstStride = 0;
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignGather<T, U>::ParseCopyInTilingData()
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignGather<T, U, V>::ParseCopyInTilingData()
 {
     outputMainblockLen_ = tdPtr_->outBlockLen;
     outputTailblockLen_ = outputMainblockLen_;
@@ -207,8 +207,8 @@ __aicore__ inline void SliceMoveAlignGather<T, U>::ParseCopyInTilingData()
     }
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignGather<T, U>::SetCopyOutAlignParams(DataCopyExtParams& copyOutParams,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignGather<T, U, V>::SetCopyOutAlignParams(DataCopyExtParams& copyOutParams,
                                                                       const DataCopyExtParams& copyInParam,
                                                                       const LoopModeParams& loopMode,
                                                                       const uint32_t blockLen)
@@ -219,8 +219,8 @@ __aicore__ inline void SliceMoveAlignGather<T, U>::SetCopyOutAlignParams(DataCop
     copyOutParams.srcStride = 0;
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignGather<T, U>::GatherWithIndex(uint32_t blockCount)
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignGather<T, U, V>::GatherWithIndex(uint32_t blockCount)
 {
     __local_mem__ RangeType* loopLastOneDimInitAddr = (__local_mem__ RangeType*)loopLastOneDimInitTensor_.GetPhyAddr();
     __local_mem__ RangeType* loopLastTwoDimInitAddr = (__local_mem__ RangeType*)loopLastTwoDimInitTensor_.GetPhyAddr();
@@ -302,8 +302,8 @@ __aicore__ inline void SliceMoveAlignGather<T, U>::GatherWithIndex(uint32_t bloc
     outQue_.EnQue(outTensor);
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceMoveAlignGather<T, U>::ProcessPerBlock(const DataCopyExtParams& copyOutParamsMain,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceMoveAlignGather<T, U, V>::ProcessPerBlock(const DataCopyExtParams& copyOutParamsMain,
                                                                 const DataCopyExtParams& copyOutParamsTail)
 {
     int64_t inputGmAddr = 0;

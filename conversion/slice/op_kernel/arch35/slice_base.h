@@ -69,7 +69,7 @@ constexpr uint32_t NUM_TWO = 2;
 constexpr uint32_t DOUBLE_BUFFER = 2;
 constexpr uint32_t VL_SIZE_BYTE = Ops::Base::GetVRegSize();
 
-template <typename T, typename U>
+template <typename T, typename U, typename V = int8_t>
 class SliceBase
 {
 public:
@@ -131,8 +131,8 @@ protected:
     int64_t blkSplitOutNum_ = 0; // 切分轴用来开多核的个数
 };
 
-template <typename T, typename U>
-__aicore__ inline void SliceBase<T, U>::ParseBaseTilingData(GM_ADDR begin, const SliceBaseTilingData *tilingData,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceBase<T, U, V>::ParseBaseTilingData(GM_ADDR begin, const SliceBaseTilingData *tilingData,
                                                                 int64_t blockIdx)
 {
     ubSize_ = tilingData->ubSize;
@@ -147,6 +147,12 @@ __aicore__ inline void SliceBase<T, U>::ParseBaseTilingData(GM_ADDR begin, const
             begin_[i] = tilingData->begin[i];
         } else {
             begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[i]);
+            if constexpr (IsSameType<V, fp4x2_e2m1_t>::value || IsSameType<V, fp4x2_e1m2_t>::value) {
+                ascendc_assert(
+                    !(begin_[inputDims_ - 1] & 1),
+                    "When the input dtype is fp4, the last dimension of offset must be even.\n");
+                begin_[inputDims_ - 1] /= 2;
+            }
         }
     }
 
@@ -171,8 +177,8 @@ __aicore__ inline void SliceBase<T, U>::ParseBaseTilingData(GM_ADDR begin, const
   从最内轴向最外轴扩展
   根据每一维度的begin和stride计算第rowIdx行相对于inputGm中的偏移地址
 */
-template <typename T, typename U>
-__aicore__ inline int64_t SliceBase<T, U>::GetInputGmAddr(int64_t rowIdx) const
+template <typename T, typename U, typename V>
+__aicore__ inline int64_t SliceBase<T, U, V>::GetInputGmAddr(int64_t rowIdx) const
 {
     int64_t inputGmAddr = begin_[inputDims_ - 1]; // 最内轴的begin
     int64_t curDim = 0;
@@ -186,8 +192,8 @@ __aicore__ inline int64_t SliceBase<T, U>::GetInputGmAddr(int64_t rowIdx) const
     return inputGmAddr;
 }
 
-template <typename T, typename U>
-__aicore__ inline int64_t SliceBase<T, U>::GetInputGmAddrWithoutLastDim(int64_t rowIdx) const
+template <typename T, typename U, typename V>
+__aicore__ inline int64_t SliceBase<T, U, V>::GetInputGmAddrWithoutLastDim(int64_t rowIdx) const
 {
     int64_t inputGmAddr = 0; // 最内轴的begin
     int64_t curDim = 0;
@@ -201,15 +207,15 @@ __aicore__ inline int64_t SliceBase<T, U>::GetInputGmAddrWithoutLastDim(int64_t 
     return inputGmAddr;
 }
 
-template <typename T, typename U>
-__aicore__ inline int64_t SliceBase<T, U>::GetOutputGmAddr(int64_t rowIdx) const
+template <typename T, typename U, typename V>
+__aicore__ inline int64_t SliceBase<T, U, V>::GetOutputGmAddr(int64_t rowIdx) const
 {
     return rowIdx * outputShape_[inputDims_ - 1];
 }
 
 // 计算当前核处理的行的起始行号，即output中的第几行
-template <typename T, typename U>
-__aicore__ inline void SliceBase<T, U>::GetProcessRowsOffset(int64_t &rowsOffset, int64_t blockIdx) const
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceBase<T, U, V>::GetProcessRowsOffset(int64_t &rowsOffset, int64_t blockIdx) const
 {
     // output: (6, 5, 4, 3)
     // blk切5，blkIndex=1, blkFactor=2;  blkSplitOutNum=ceil(5/2)=3
@@ -220,8 +226,8 @@ __aicore__ inline void SliceBase<T, U>::GetProcessRowsOffset(int64_t &rowsOffset
     return;
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceBase<T, U>::CalcProcessLoopsNum(int64_t &curCoreLoopsNum, int64_t &ubSplitLoopNum,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceBase<T, U, V>::CalcProcessLoopsNum(int64_t &curCoreLoopsNum, int64_t &ubSplitLoopNum,
                                                                 int64_t blockIdx)
 {
     if ((blockIdx % blkSplitOutNum_ == blkSplitOutNum_ - 1) && (blkTailFactor_ != 0)) {
@@ -247,8 +253,8 @@ __aicore__ inline void SliceBase<T, U>::CalcProcessLoopsNum(int64_t &curCoreLoop
 }
 
 // ub split last axis and blk split nlast axis
-template <typename T, typename U>
-__aicore__ inline void SliceBase<T, U>::GetHandleRowsNum(int64_t &rowsNum, int64_t blockIdx) const
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceBase<T, U, V>::GetHandleRowsNum(int64_t &rowsNum, int64_t blockIdx) const
 {
     if ((blockIdx % blkSplitOutNum_ == blkSplitOutNum_ - 1) && (blkTailFactor_ != 0)) {
         rowsNum = blkTailFactor_;
@@ -262,8 +268,8 @@ __aicore__ inline void SliceBase<T, U>::GetHandleRowsNum(int64_t &rowsNum, int64
 }
 
 // ub and blk all split last axis
-template <typename T, typename U>
-__aicore__ inline void SliceBase<T, U>::GetLastDimSplitLoopCnt(int64_t &loopCnt, int64_t blockIdx)
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceBase<T, U, V>::GetLastDimSplitLoopCnt(int64_t &loopCnt, int64_t blockIdx)
 {
     if ((blockIdx % blkSplitOutNum_ == blkSplitOutNum_ - 1) && (blkTailFactor_ != 0)) {
         // blk/ub all split last axis

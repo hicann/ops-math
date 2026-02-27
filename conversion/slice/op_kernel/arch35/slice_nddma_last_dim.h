@@ -20,8 +20,8 @@
 namespace Slice {
 using namespace AscendC;
 
-template <typename T, typename U>
-class SliceNDDMALastDim : public SliceBase<T, U> {
+template <typename T, typename U, typename V = int8_t>
+class SliceNDDMALastDim : public SliceBase<T, U, V> {
 public:
     __aicore__ inline SliceNDDMALastDim(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y,
@@ -51,8 +51,8 @@ private:
     DataCopyExtParams copyOutParamsTail_ {1, 0, 0, 0, 0};
 };
 
-template <typename T, typename U>
-__aicore__ inline void SliceNDDMALastDim<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceNDDMALastDim<T, U, V>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
                                                       GM_ADDR y, const SliceNDDMALastDimTilingData* tilingData,
                                                       TPipe* pipeIn)
 {
@@ -66,8 +66,8 @@ __aicore__ inline void SliceNDDMALastDim<T, U>::Init(GM_ADDR x, GM_ADDR begin, G
     pipe_->InitBuffer(vecQue_, DOUBLE_BUFFER, this->ubSize_ / DOUBLE_BUFFER);
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceNDDMALastDim<T, U>::ParseNDDMALastDimTilingData(GM_ADDR begin,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceNDDMALastDim<T, U, V>::ParseNDDMALastDimTilingData(GM_ADDR begin,
     const SliceNDDMALastDimTilingData* tilingData, int64_t blockIdx)
 {
     this->ParseBaseTilingData(begin, &(tilingData->sliceBaseTilingData), blockIdx);
@@ -77,8 +77,8 @@ __aicore__ inline void SliceNDDMALastDim<T, U>::ParseNDDMALastDimTilingData(GM_A
         this->nddmaLoopDstStride_[i] = tilingData->nddmaLoopDstStride[i];
     }
 }
-template <typename T, typename U>
-__aicore__ inline void SliceNDDMALastDim<T, U>::Process()
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceNDDMALastDim<T, U, V>::Process()
 {
     if (blockIdx_ >= this->realCoreNum_) {
         return;
@@ -97,8 +97,8 @@ __aicore__ inline void SliceNDDMALastDim<T, U>::Process()
     }
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceNDDMALastDim<T, U>::ProcessPerBlockInLastDim()
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceNDDMALastDim<T, U, V>::ProcessPerBlockInLastDim()
 {
     // blk切最后一根轴，表示 blkSplitOutNum 个核处理一行
     // 该block处理的第几行
@@ -145,8 +145,8 @@ __aicore__ inline void SliceNDDMALastDim<T, U>::ProcessPerBlockInLastDim()
     }
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceNDDMALastDim<T, U>::ProcessPerBlock()
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceNDDMALastDim<T, U, V>::ProcessPerBlock()
 {
     // ub切最后一根轴，ubSplitOutNum表示最后一根轴的搬运次数及尾块处理
     int64_t ubSplitOutNum = this->outputShape_[this->ubIndex_] / this->ubFactor_;
@@ -194,8 +194,8 @@ __aicore__ inline void SliceNDDMALastDim<T, U>::ProcessPerBlock()
     }
 }
 
-template <typename T, typename U>
-__aicore__ inline void SliceNDDMALastDim<T, U>::SetLoopInfo(MultiCopyLoopInfo<NDDMA_LAST_DIMS>& loopInfo,
+template <typename T, typename U, typename V>
+__aicore__ inline void SliceNDDMALastDim<T, U, V>::SetLoopInfo(MultiCopyLoopInfo<NDDMA_LAST_DIMS>& loopInfo,
                                                                 MultiCopyLoopInfo<NDDMA_LAST_DIMS>& loopInfoTail)
 {
     // ub main

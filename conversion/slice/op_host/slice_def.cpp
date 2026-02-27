@@ -15,69 +15,61 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-    class Slice : public OpDef {
-    public:
-        const std::vector<ge::DataType> baseDataType = {ge::DT_INT8, ge::DT_UINT8, ge::DT_INT16, ge::DT_UINT16,
-                                                        ge::DT_INT32, ge::DT_UINT32, ge::DT_INT64, ge::DT_UINT64,
-                                                        ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16, ge::DT_BOOL,
-                                                        ge::DT_HIFLOAT8, ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN,
-                                                        ge::DT_INT8, ge::DT_UINT8, ge::DT_INT16, ge::DT_UINT16,
-                                                        ge::DT_INT32, ge::DT_UINT32, ge::DT_INT64, ge::DT_UINT64,
-                                                        ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16, ge::DT_BOOL,
-                                                        ge::DT_HIFLOAT8, ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN};
-        const std::vector<ge::Format> baseFormat = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                    ge::FORMAT_ND, ge::FORMAT_ND};
-        const std::vector<ge::DataType> attrDataType = {ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                                                         ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                                                         ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                                                         ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                                                         ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                                                         ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                                                         ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                                                         ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
-        explicit Slice(const char* name) : OpDef(name)
-        {
-            this->Input("x")
-                    .ParamType(REQUIRED)
-                    .DataType(baseDataType)
-                    .Format(baseFormat)
-                    .UnknownShapeFormat(baseFormat);
-            this->Input("offsets")
-                    .ParamType(REQUIRED)
-                    .ValueDepend(OPTIONAL)
-                    .DataType(attrDataType)
-                    .Format(baseFormat)
-                    .UnknownShapeFormat(baseFormat);
-            this->Input("size")
-                    .ParamType(REQUIRED)
-                    .ValueDepend(OPTIONAL)
-                    .DataType(attrDataType)
-                    .Format(baseFormat)
-                    .UnknownShapeFormat(baseFormat);
-            this->Output("y")
-                    .ParamType(REQUIRED)
-                    .DataType(baseDataType)
-                    .Format(baseFormat)
-                    .UnknownShapeFormat(baseFormat);
+class Slice : public OpDef {
+public:
+    const std::vector<ge::DataType> baseDataType = {
+        ge::DT_INT8,        ge::DT_UINT8,       ge::DT_INT16,         ge::DT_UINT16,      ge::DT_INT32,
+        ge::DT_UINT32,      ge::DT_INT64,       ge::DT_UINT64,        ge::DT_FLOAT,       ge::DT_FLOAT16,
+        ge::DT_BF16,        ge::DT_BOOL,        ge::DT_HIFLOAT8,      ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN,
+        ge::DT_FLOAT8_E8M0, ge::DT_FLOAT4_E2M1, ge::DT_FLOAT4_E1M2,   ge::DT_INT8,        ge::DT_UINT8,
+        ge::DT_INT16,       ge::DT_UINT16,      ge::DT_INT32,         ge::DT_UINT32,      ge::DT_INT64,
+        ge::DT_UINT64,      ge::DT_FLOAT,       ge::DT_FLOAT16,       ge::DT_BF16,        ge::DT_BOOL,
+        ge::DT_HIFLOAT8,    ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT8_E8M0, ge::DT_FLOAT4_E2M1,
+        ge::DT_FLOAT4_E1M2};
 
-            OpAICoreConfig aicore_config;                
-            aicore_config.DynamicCompileStaticFlag(true)
-                .DynamicFormatFlag(false)
-                .DynamicRankSupportFlag(true)
-                .DynamicShapeSupportFlag(true)
-                .NeedCheckSupportFlag(false)
-                .ExtendCfgInfo("opFile.value", "slice_apt");
+    const std::vector<ge::Format> baseFormat = {
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
 
-            this->AICore().AddConfig("ascend950", aicore_config);
-            this->AICore().AddConfig("mc62cm12a", aicore_config);
-        }
-    };
+    const std::vector<ge::DataType> attrDataType = {
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
+    explicit Slice(const char* name) : OpDef(name)
+    {
+        this->Input("x").ParamType(REQUIRED).DataType(baseDataType).Format(baseFormat).UnknownShapeFormat(baseFormat);
+        this->Input("offsets")
+            .ParamType(REQUIRED)
+            .ValueDepend(OPTIONAL)
+            .DataType(attrDataType)
+            .Format(baseFormat)
+            .UnknownShapeFormat(baseFormat);
+        this->Input("size")
+            .ParamType(REQUIRED)
+            .ValueDepend(OPTIONAL)
+            .DataType(attrDataType)
+            .Format(baseFormat)
+            .UnknownShapeFormat(baseFormat);
+        this->Output("y").ParamType(REQUIRED).DataType(baseDataType).Format(baseFormat).UnknownShapeFormat(baseFormat);
 
-    OP_ADD(Slice);
+        OpAICoreConfig aicore_config;
+        aicore_config.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .ExtendCfgInfo("opFile.value", "slice_apt");
+
+        this->AICore().AddConfig("ascend950", aicore_config);
+        this->AICore().AddConfig("mc62cm12a", aicore_config);
+    }
+};
+
+OP_ADD(Slice);
 } // namespace ops
