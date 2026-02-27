@@ -1,6 +1,17 @@
 # 算子接口（aclnn）
 
+##  使用说明
+
 为方便调用算子，提供一套基于C的API（以aclnn为前缀API），无需提供IR（Intermediate Representation）定义，方便高效构建模型与应用开发，该方式被称为“单算子API调用”，简称aclnn调用。
+
+调用算子API时，需引用依赖的头文件和库文件，一般头文件默认在`${INSTALL_DIR}/include/aclnnop`，库文件默认在`${INSTALL_DIR}/lib64`，具体文件如下：
+
+- 依赖的头文件：①方式1 （推荐）：引用算子仓库总头文件aclnn_ops_${ops_project}.h。②方式2：引用单个算子API对应的头文件aclnn_*.h。
+- 依赖的库文件：引用算子仓库文件libopapi_${ops_project}.so。注意，原所有算子仓的总库文件libopapi.so后续会废弃，不推荐使用，也不支持与单个算子仓库文件同时使用。
+
+其中${INSTALL_DIR}表示CANN安装后文件路径；\$\{ops\_project\}表示算子仓（如math、nn、cv、transformer），请配置为实际算子仓名。
+
+## 接口列表
 
 > **确定性简介**：
 >
