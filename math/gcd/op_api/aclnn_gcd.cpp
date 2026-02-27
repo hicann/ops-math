@@ -23,6 +23,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -36,6 +37,9 @@ static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = 
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT32, op::DataType::DT_INT16, op::DataType::DT_INT64};
+
+static const std::initializer_list<op::DataType> ASCEND950_DTYPE_SUPPORT_LIST = {
+     op::DataType::DT_UINT8, op::DataType::DT_INT8, op::DataType::DT_INT16, op::DataType::DT_INT32, op::DataType::DT_INT64};
 
 // 检查入参是否为nullptr
 static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const aclTensor* out)
@@ -69,9 +73,15 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const
             op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
         return false;
     }
-    std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST =
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910 ? ASCEND910_DTYPE_SUPPORT_LIST :
-                                                                            ASCEND910B_DTYPE_SUPPORT_LIST;
+    std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST;
+    auto currentSocVersion = GetCurrentPlatformInfo().GetSocVersion();
+    if (IsRegBase()) {
+        DTYPE_SUPPORT_LIST = ASCEND950_DTYPE_SUPPORT_LIST;
+    } else {
+        DTYPE_SUPPORT_LIST = currentSocVersion == SocVersion::ASCEND910 ? ASCEND910_DTYPE_SUPPORT_LIST : 
+                                                                        ASCEND910B_DTYPE_SUPPORT_LIST;
+    }
+        
     // 检查promoteType的数据类型是否在支持列表内
     if (!CheckType(promoteType, DTYPE_SUPPORT_LIST)) {
         OP_LOGE(

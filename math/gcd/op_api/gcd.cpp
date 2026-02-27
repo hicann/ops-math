@@ -16,6 +16,7 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -23,12 +24,17 @@ namespace l0op {
 OP_TYPE_REGISTER(Gcd);
 
 // AiCore支持的Gcd类型
-static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> ASCEND910B_AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT32, op::DataType::DT_INT16, op::DataType::DT_INT64};
+
+static const std::initializer_list<op::DataType> ASCEND950_AICORE_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_UINT8, op::DataType::DT_INT8, op::DataType::DT_INT32, op::DataType::DT_INT16, op::DataType::DT_INT64};
 
 // 判断走AiCore还是AiCPU
 static bool IsAiCoreSupport(const aclTensor* self, const aclTensor* other)
 {
+    std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = IsRegBase() ? ASCEND950_AICORE_DTYPE_SUPPORT_LIST :
+                                                                                ASCEND910B_AICORE_DTYPE_SUPPORT_LIST;
     if (!CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST)) {
         return false;
     }

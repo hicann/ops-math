@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
@@ -27,8 +27,10 @@
 - **参数说明：**
   - self(aclTensor*, 计算输入)：表示待转换的目标张量，Device侧的aclTensor。数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。shape支持1~8维度，shape与other的shape满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：与other推导后的数据类型支持INT16、INT32、INT64。
+    - <term>Ascend 950PR/Ascend 950DT</term>：与other推导后的数据类型支持UINT8、INT8、INT16、INT32、INT64。
   - other(aclTensor*, 计算输入)：表示待转换的目标张量，Device侧的aclTensor。数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），shape支持1~8维度，shape需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：与self推导后的数据类型支持INT16、INT32、INT64。
+    - <term>Ascend 950PR/Ascend 950DT</term>：与self推导后的数据类型支持UINT8、INT8、INT16、INT32、INT64。
   - out(aclTensor*, 计算输出)：公式中输入`out`，Device侧的aclTensor。数据类型是self与other推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)），shape支持1~8维度，shape需要与self和other做broadcast后的shape一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。数据类型支持UINT8、INT8、UINT16、INT16、INT32、UINT32、INT64、UINT64。
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
