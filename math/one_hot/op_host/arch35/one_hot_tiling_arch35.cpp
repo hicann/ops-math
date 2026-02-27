@@ -118,8 +118,8 @@ ge::graphStatus OneHotTilingBase::MergeDims()
         return ge::GRAPH_FAILED;
     }
     // Merge to 2D Shape(prefixdim, suffixdim)
-    int32_t prefixDim = 1;
-    int32_t suffixDim = 1;
+    int64_t prefixDim = 1;
+    int64_t suffixDim = 1;
     int32_t idx = 0;
     while (idx < tmpAbsAxis) {
         if (inputOriginShape[idx] != 0) {

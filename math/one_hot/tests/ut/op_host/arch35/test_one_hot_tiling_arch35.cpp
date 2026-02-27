@@ -94,7 +94,7 @@ TEST_F(OneHotTilingTest, test0_tiling)
             {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, true, nullptr},
         },
         {
-            {{{4, 3, 4, 10}, {4, 3, 4, 10}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{4, 1024, 4, 10}, {4, 1024, 4, 10}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         {
             MakeAxisAttr(-1),
@@ -126,7 +126,7 @@ TEST_F(OneHotTilingTest, test1_tiling)
             {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, true, nullptr},
         },
         {
-            {{{4, 3, 4, 10}, {4, 3, 4, 10}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{4, 1024, 4, 10}, {4, 1024, 4, 10}}, ge::DT_FLOAT, ge::FORMAT_ND},
         },
         {
             MakeAxisAttr(-1),
@@ -197,6 +197,36 @@ TEST_F(OneHotTilingTest, test3_tiling)
 
     uint64_t expectTilingKey = 1000;
     string expectTilingData = "65536 7 0 0 0 7 1 64 202752 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(OneHotTilingTest, test4_tiling)
+{
+    optiling::OneHotCompileInfo compileInfo = {64, 262144, true};
+    compileInfo.is_regbase_soc_version = false;
+
+    int32_t depth = 4;
+
+    // Use the test framework's ExecuteTiling function
+    gert::TilingContextPara tilingContextPara(
+        "OneHot",
+        {
+            {{{2147483649, 1, 1}, {2147483649, 1, 1}}, ge::DT_INT32, ge::FORMAT_ND, true, nullptr},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &depth},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, nullptr},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, nullptr},
+        },
+        {
+            {{{4, 2147483649, 1, 1}, {4, 2147483649, 1, 1}}, ge::DT_INT64, ge::FORMAT_ND},
+        },
+        {
+            {"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+        },
+        &compileInfo);
+
+    uint64_t expectTilingKey = 1001;
+    string expectTilingData = "18014402808643585 33554432 134217728 0 0 1 2147483649 64 202752 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
