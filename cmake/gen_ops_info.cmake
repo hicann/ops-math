@@ -337,6 +337,7 @@ function(prepare_compile_from_config)
       WORKING_DIRECTORY ${OPS_KERNEL_BINARY_SCRIPT}
       DEPENDS ${ASCEND_KERNEL_CONF_DST}/aic-${CONFCMP_COMPUTE_UNIT}-ops-info.ini
     )
+    add_dependencies(gen_opc_info_${CONFCMP_COMPUTE_UNIT} merge_ini_${compute_unit})
   endif()
   
   add_custom_target(config_compile_${CONFCMP_COMPUTE_UNIT}_${CONFCMP_OP_NAME}
@@ -350,6 +351,7 @@ function(prepare_compile_from_config)
             bin_conf_${CONFCMP_OP_NAME}_${CONFCMP_COMPUTE_UNIT}_copy
             gen_opc_info_${CONFCMP_COMPUTE_UNIT}
   )
+  add_dependencies(config_compile_${CONFCMP_COMPUTE_UNIT}_${CONFCMP_OP_NAME} ascendc_impl_gen)
 
   if(NOT TARGET prepare_binary_compile_${CONFCMP_COMPUTE_UNIT})
     add_custom_target(prepare_binary_compile_${CONFCMP_COMPUTE_UNIT})
@@ -518,6 +520,7 @@ function(gen_ops_info_and_python)
           COMMAND
             cp -f ${ASCEND_TBE_BUILD_PATH}/dynamic/*.py ${CMAKE_BINARY_DIR}/binary/${compute_unit}/src
         )
+        add_dependencies(ascendc_impl_python_copy_${compute_unit} ascendc_impl_gen)
       endif()
       set(HAS_OP_COMPILE_OF_COMPUTE_UNIT FALSE)
       foreach(OP_DIR ${COMPILED_OP_DIRS})

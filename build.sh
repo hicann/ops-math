@@ -1262,9 +1262,15 @@ build_binary() {
 
   echo "--------------- prepare build start ---------------"
   local all_targets=$(cmake --build . --target help)
-  if echo "${all_targets}" | grep -wq "gen_bin_scripts"; then
+  if grep -wq "gen_bin_scripts" <<< "${all_targets}"; then
+    echo "[INFO] Begin to execute build target: gen_bin_scripts."
     cmake --build . --target gen_bin_scripts -- ${VERBOSE} -j $THREAD_NUM
-    if [ $? -ne 0 ]; then exit 1; fi
+    if [ $? -ne 0 ]; then 
+      echo "[ERROR] Failed to execute gen_bin_scripts."
+      exit 1; 
+    fi
+  else 
+    echo "[WARNING] Build target 'gen_bin_scripts' not found in cmake targets, available targets: ${all_targets}"
   fi
   echo "--------------- prepare build end ---------------"
 
@@ -1284,7 +1290,8 @@ build_binary() {
     UNITS+=("ascend910b")
   fi
   for unit in "${UNITS[@]}"; do
-    if echo "${all_targets}" | grep -wq "prepare_binary_compile_${unit}"; then
+    if grep -wq "prepare_binary_compile_${unit}"<<<"${all_targets}"; then
+      echo "[INFO] Begin to prepare binary compile for target: ${unit}"
       cmake --build . --target prepare_binary_compile_${unit} -- ${VERBOSE} -j $THREAD_NUM
       if [ $? -ne 0 ]; then
         echo "[ERROR] Kernel compile failed!" && exit 1
@@ -1297,16 +1304,20 @@ build_binary() {
   echo "[INFO] CMAKE_ARGS is: ${CMAKE_ARGS}"
   cd "$BUILD_PATH" && cmake .. ${CMAKE_ARGS}
 
-  if echo "${all_targets}" | grep -wq "binary"; then
-    echo "[INFO] Start compile kernel binary."
+  if grep -wq "binary" <<< "${all_targets}"; then
+    echo "[INFO] Start to compile kernel binary."
     cmake --build . --target binary -- ${VERBOSE} -j $THREAD_NUM
     if [ $? -ne 0 ]; then
       echo "[ERROR] Kernel compile failed!" && exit 1
     fi
+  else 
+    echo "[WARNING] Compile kernel binary failed! Build target 'binary' not found in cmake targets. Available targets: ${all_targets}"  
   fi
-  if echo "${all_targets}" | grep -wq "gen_bin_info_config"; then
+  if grep -wq "gen_bin_info_config" <<< "${all_targets}"; then
     cmake --build . --target gen_bin_info_config -- ${VERBOSE} -j $THREAD_NUM
     if [ $? -ne 0 ]; then exit 1; fi
+  else 
+    echo "[WARNING] Generate binary info config failed! Build target 'gen_bin_info_config' not found in cmake targets. Available targets: ${all_targets}"  
   fi
   echo "--------------- binary build end ---------------"
 
@@ -1321,13 +1332,13 @@ build_package() {
   local all_targets=$(cmake --build . --target help)
   if [[ "$ENABLE_BINARY" != "TRUE" && "$ENABLE_CUSTOM" != "TRUE" ]]; then
     # gen impl python files
-    if echo "${all_targets}" | grep -wq "ascendc_impl_gen"; then
+    if grep -wq "ascendc_impl_gen" <<< "${all_targets}"; then
       cmake --build . --target ascendc_impl_gen -- ${VERBOSE} -j $THREAD_NUM
       if [ $? -ne 0 ]; then exit 1; fi
     fi
   fi
 
-  if echo "${all_targets}" | grep -wq "build_es_math"; then
+  if grep -wq "build_es_math" <<< "${all_targets}"; then
     cmake --build . --target build_es_math -- ${VERBOSE} -j $THREAD_NUM
     [ $? -ne 0 ] && echo "[ERROR] target:build_es_math compile failed!" && exit 1
   fi
