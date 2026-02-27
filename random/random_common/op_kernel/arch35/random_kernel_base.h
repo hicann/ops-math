@@ -42,6 +42,11 @@ static constexpr uint32_t PHILOX_M4X32_B = 0xCD9E8D57;
 static constexpr float RAND_2POW32_INV = 2.3283064e-10f;
 static constexpr float RAND_2POW32_INV_HALF = RAND_2POW32_INV / 2.0f;
 
+constexpr uint64_t VEC_2 = 2;
+constexpr uint64_t VEC_4 = 4;
+constexpr uint64_t VEC_8 = 8;
+constexpr uint64_t VEC_16 = 16;
+
 template <typename T>
 __aicore__ inline void CopyOut(
     LocalTensor<T> yLocal, GlobalTensor<T> yGm, uint32_t burstNum, uint32_t busrtLength, int64_t gmOffset)
@@ -360,6 +365,7 @@ __aicore__ inline void CopyArray(uint32_t* dst, const uint32_t* src)
     key[0] = static_cast<uint32_t>(seed);
     key[1] = static_cast<uint32_t>(seed >> RIGHT_SHIFT);
 
+    offset = (offset + VEC_4 - 1) / VEC_4;
     SkipLo(counter, offset);
  }
 
@@ -440,9 +446,14 @@ __aicore__ inline void PhiloxRandomSimt(const uint32_t* key, const uint32_t* cou
 template <int32_t STEP, int32_t ARANGE_MODE>
 __aicore__ inline void ThreadMappingAndSkip(uint64_t idx, uint32_t* counter, uint64_t magic, uint64_t shift , uint64_t totalThreads)
 {   
+    static_assert(!(ARANGE_MODE == DIS_CONTINUOUS_USE && STEP != VEC_4),"When ARANGE_MODE is DIS_CONTINUOUS_USE, STEP must be 4");
     uint64_t idxTmp = idx / STEP; 
     uint64_t globalThreadIdx = 0;
-    uint64_t repeat = Simt::UintDiv(idxTmp, magic, shift);;
+    uint64_t repeat = Simt::UintDiv(idxTmp, magic, shift);
+    // DIS_CONTINUOUS_USE模式下 STEP一定要求是4
+    if constexpr(STEP == VEC_8 || STEP == VEC_16) {
+        repeat = repeat * (STEP / VEC_4) + (idx / VEC_4 % (STEP / VEC_4));
+    }
     // 排列方式 0000 1111 ...0000 1111
     if constexpr(ARANGE_MODE == CONTINUOUS_USE) {
         globalThreadIdx = idxTmp - repeat * totalThreads;
