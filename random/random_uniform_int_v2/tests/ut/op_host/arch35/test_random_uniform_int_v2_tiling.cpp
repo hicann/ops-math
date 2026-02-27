@@ -63,7 +63,7 @@ TEST_F(RandomUniformIntV2Tiling, random_uniform_int_v2_tiling_950_int32_int32)
         &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData =
-        "64 256 256 12288 10 5 16384 1 2147483646 ";
+        "64 256 256 10240 10 5 16384 1 2147483646 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -103,7 +103,7 @@ TEST_F(RandomUniformIntV2Tiling, random_uniform_int_v2_tiling_950_int32_int64)
         &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData =
-        "64 256 256 6144 10 5 16384 1 2147483648 ";
+        "64 256 256 5120 10 5 16384 1 2147483648 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -143,7 +143,7 @@ TEST_F(RandomUniformIntV2Tiling, random_uniform_int_v2_tiling_950_int64_int32)
         &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData =
-        "64 256 256 12288 10 5 16384 3 2 ";
+        "64 256 256 10240 10 5 16384 3 2 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -183,7 +183,7 @@ TEST_F(RandomUniformIntV2Tiling, random_uniform_int_v2_tiling_950_int64_int64)
         &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData =
-        "64 256 256 6144 10 5 16384 3 2 ";
+        "64 256 256 5120 10 5 16384 3 2 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
