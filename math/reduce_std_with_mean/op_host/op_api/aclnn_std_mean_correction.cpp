@@ -16,7 +16,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/transdata.h"
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
-#include "math/expand/op_host/op_api/expand.h"
+#include "math/expand/op_api/expand.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"

@@ -15,7 +15,7 @@
 #include "aclnn_kernels/reshape.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
-#include "math/expand/op_host/op_api/expand.h"
+#include "math/expand/op_api/expand.h"
 #include "aclnn_kernels/transdata.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "op_api/op_api_def.h"

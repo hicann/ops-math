@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>          |      ×   |
+| <term>Ascend 950PR/Ascend 950DT</term>          |      √   |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √    |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √    |
 | <term>Atlas 200I/500 A2 推理产品</term>             |    ×    |
@@ -17,20 +17,18 @@
 
 - 举例：
 
-    $$
-    \begin{aligned}
-    & self=\begin{bmatrix}
-    3
-    \end{bmatrix}\\
-    & size = \begin{bmatrix}
-    2,2
-    \end{bmatrix}\\
-    & out =\begin{bmatrix}
-    3 & 3\\
-    3 & 3\\
-    \end{bmatrix}\\
-    \end{aligned}
-    $$
+```
+输入x ：[[a,b,c]]，shape：[2,3]
+输出y：[[a,b,c],
+        [a,b,c]]
+```
+
+```
+输入x ：[[5]]，shape：[3,4]
+输出y：[[5,5,5,5],
+        [5,5,5,5],
+        [5,5,5,5]]
+```
 
 ## 函数原型
 

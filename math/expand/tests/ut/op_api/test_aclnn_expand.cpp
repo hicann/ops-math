@@ -11,7 +11,7 @@
 #include <array>
 #include "gtest/gtest.h"
 
-#include "aclnn_expand.h"
+#include "../../../op_api/aclnn_expand.h"
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/tensor_desc.h"
 

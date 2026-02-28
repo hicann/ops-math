@@ -47,6 +47,7 @@ operator_group_1:
   - dynamic_partition
   - equal
   - exp
+  - expand
   - exp_segsum_grad
   - eye
   - floor

@@ -11,7 +11,7 @@
 #include "aclnn_s_where.h"
 #include "select.h"
 #include "aclnn_kernels/cast.h"
-#include "math/expand/op_host/op_api/expand.h"
+#include "math/expand/op_api/expand.h"
 #include "aclnn/aclnn_base.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
