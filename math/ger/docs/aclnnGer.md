@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
@@ -32,9 +32,9 @@
 
 - **参数说明：**
   
-  - self(aclTensor\*, 计算输入)：公式中的输入`self`, Device侧的aclTensor。数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128，self与vec2的数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。shape支持1维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - vec2(aclTensor\*, 计算输入): 公式中的输入`vec2`, Device侧的aclTensor。数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128，self与vec2的数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。shape支持1维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - out(aclTensor\*, 计算输出)：公式中的输出`out`, Device侧的aclTensor。数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128，且数据类型是self与vec2推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。shape支持2维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  - self(aclTensor\*, 计算输入)：公式中的输入`self`, Device侧的aclTensor。数据类型支持FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128，其中A2, A3版本不支持BFLOAT16数据类型。self与vec2的数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。shape支持1维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  - vec2(aclTensor\*, 计算输入): 公式中的输入`vec2`, Device侧的aclTensor。数据类型支持FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128，其中A2, A3版本不支持BFLOAT16数据类型。self与vec2的数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。shape支持1维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  - out(aclTensor\*, 计算输出)：公式中的输出`out`, Device侧的aclTensor。数据类型支持FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128，其中A2, A3版本不支持BFLOAT16数据类型，且数据类型是self与vec2推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。shape支持2维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
   - workspaceSize(uint64_t\*, 出参): 返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor\*\*, 出参): 返回op执行器，包含了算子计算流程。
   
@@ -274,6 +274,7 @@ int main() {
   if (workspaceSize > 0) {
     aclrtFree(workspaceAddr);
   }
+  
   aclrtDestroyStream(stream);
   aclrtResetDevice(deviceId);
   aclFinalize();

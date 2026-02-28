@@ -55,6 +55,7 @@ operator_group_1:
   - fused_mul_add_n
   - gcd
   - greater
+  - ger
   - greater_equal
   - grouped_bias_add_grad
   - histogram_v2

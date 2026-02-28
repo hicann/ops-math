@@ -25,6 +25,7 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -36,11 +37,17 @@ static constexpr int64_t EXPECT_SIZE = 2;
 
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> GER_SUPPORT_LIST = {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
+static const std::initializer_list<op::DataType> ASCEND950_GER_SUPPORT_LIST = {op::DataType::DT_BF16, op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
 
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16,   op::DataType::DT_INT32,     op::DataType::DT_DOUBLE,
     op::DataType::DT_INT8,  op::DataType::DT_UINT8,     op::DataType::DT_INT16,     op::DataType::DT_BOOL,
-    DataType::DT_INT64,     op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
+    op::DataType::DT_INT64,     op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
+
+static const std::initializer_list<op::DataType> ASCEND950_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16,   op::DataType::DT_INT32,     op::DataType::DT_DOUBLE,
+    op::DataType::DT_INT8,  op::DataType::DT_UINT8,     op::DataType::DT_INT16,     op::DataType::DT_BOOL,
+    op::DataType::DT_BF16,  op::DataType::DT_INT64,     op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
 
 static inline bool CheckNotNull(const aclTensor* self, const aclTensor* vec2, const aclTensor* out)
 {
@@ -52,8 +59,14 @@ static inline bool CheckNotNull(const aclTensor* self, const aclTensor* vec2, co
 
 static inline bool CheckDtypeValid(const aclTensor* self, const aclTensor* vec2)
 {
-    OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
-    OP_CHECK_DTYPE_NOT_SUPPORT(vec2, DTYPE_SUPPORT_LIST, return false);
+     if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND950 &&
+         GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) {
+        OP_CHECK_DTYPE_NOT_SUPPORT(self, ASCEND950_DTYPE_SUPPORT_LIST, return false);
+        OP_CHECK_DTYPE_NOT_SUPPORT(vec2, ASCEND950_DTYPE_SUPPORT_LIST, return false);
+    } else {
+        OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
+        OP_CHECK_DTYPE_NOT_SUPPORT(vec2, DTYPE_SUPPORT_LIST, return false);
+    }
     return true;
 }
 
@@ -164,16 +177,21 @@ aclnnStatus aclnnGerGetWorkspaceSize(
     CHECK_RET(vec2Casted != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     const aclTensor* calcOut = nullptr;
-    if (CheckType(selfCasted->GetDataType(), GER_SUPPORT_LIST)) {
+    
+    // 950版本支持bf16 fp16 fp32 走Ger接口；
+    // 其他版本支持fp16 fp32 走Ger接口
+    if ((IsRegBase() && CheckType(selfCasted->GetDataType(), ASCEND950_GER_SUPPORT_LIST)) ||
+        (!IsRegBase() && CheckType(selfCasted->GetDataType(), GER_SUPPORT_LIST))) {
         calcOut = l0op::Ger(selfCasted, vec2Casted, uniqueExecutor.get());
     } else {
         auto selfNd = l0op::UnsqueezeNd(selfCasted, AXIS_DIM, uniqueExecutor.get());
         CHECK_RET(selfNd != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
         calcOut = selfNd->GetDataType() == op::DataType::DT_BOOL ?
-                      l0op::LogicalAnd(selfNd, vec2Casted, uniqueExecutor.get()) :
-                      l0op::Mul(selfNd, vec2Casted, uniqueExecutor.get());
+                    l0op::LogicalAnd(selfNd, vec2Casted, uniqueExecutor.get()) :
+                    l0op::Mul(selfNd, vec2Casted, uniqueExecutor.get());
     }
+
     CHECK_RET(calcOut != nullptr, ACLNN_ERR_PARAM_NULLPTR);
 
     auto castOut = l0op::Cast(calcOut, out->GetDataType(), uniqueExecutor.get());
