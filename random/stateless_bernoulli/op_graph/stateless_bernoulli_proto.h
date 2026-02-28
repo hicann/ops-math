@@ -32,7 +32,7 @@ include:
 * @li seed: If seed is set to be -1, and offset is set to be 0, the random number
 * generator is seeded by a random seed. Otherwise, it is seeded by the given seed.
 * A tensor of type int64.
-* @li offset: To avoid seed collision. A tensor of type int64.
+* @li offset: To avoid seed collision. A tensor of type int64, must be a multiple of 4.
 
 * @par Attributes:
 * dtype: The data type for the elements of the output tensor.

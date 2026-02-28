@@ -17,7 +17,7 @@
 #define TILING_KEY_FP16 1002
 #define TILING_KEY_BF16 1003
 
-#include "arch35/stateless_bernoulli.h"
+#include "arch35/stateless_bernoulli_simt.h"
 
 __global__ __aicore__ void stateless_bernoulli(
     GM_ADDR shape, GM_ADDR prob, GM_ADDR seed, GM_ADDR offset, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
@@ -29,30 +29,24 @@ __global__ __aicore__ void stateless_bernoulli(
     if constexpr(AscendC::IsSameType<DTYPE_Y, bool>::value) {
         if (TILING_KEY_IS(TILING_KEY_FP32)) {
             StatelessBernoulli::StatelessBernoulliKernel<float, int8_t> op;
-            op.Init(shape, prob, y, workspace, &tilingData, &pipe);
-            op.Process(&tilingData);
+            op.Process(prob, y, &tilingData);
         } else if (TILING_KEY_IS(TILING_KEY_FP16)) {
             StatelessBernoulli::StatelessBernoulliKernel<half, int8_t> op;
-            op.Init(shape, prob, y, workspace, &tilingData, &pipe);
-            op.Process(&tilingData);
+            op.Process(prob, y, &tilingData);
         } else if (TILING_KEY_IS(TILING_KEY_BF16)) {
             StatelessBernoulli::StatelessBernoulliKernel<bfloat16_t, int8_t> op;
-            op.Init(shape, prob, y, workspace, &tilingData, &pipe);
-            op.Process(&tilingData);
+            op.Process(prob, y, &tilingData);
         }
     } else {
-         if (TILING_KEY_IS(TILING_KEY_FP32)) {
+        if (TILING_KEY_IS(TILING_KEY_FP32)) {
             StatelessBernoulli::StatelessBernoulliKernel<float, DTYPE_Y> op;
-            op.Init(shape, prob, y, workspace, &tilingData, &pipe);
-            op.Process(&tilingData);
+            op.Process(prob, y, &tilingData);
         } else if (TILING_KEY_IS(TILING_KEY_FP16)) {
             StatelessBernoulli::StatelessBernoulliKernel<half, DTYPE_Y> op;
-            op.Init(shape, prob, y, workspace, &tilingData, &pipe);
-            op.Process(&tilingData);
+            op.Process(prob, y, &tilingData);
         } else if (TILING_KEY_IS(TILING_KEY_BF16)) {
             StatelessBernoulli::StatelessBernoulliKernel<bfloat16_t, DTYPE_Y> op;
-            op.Init(shape, prob, y, workspace, &tilingData, &pipe);
-            op.Process(&tilingData);
+            op.Process(prob, y, &tilingData);
         }
     }
 }

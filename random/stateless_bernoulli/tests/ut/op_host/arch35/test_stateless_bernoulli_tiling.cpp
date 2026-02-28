@@ -53,7 +53,7 @@ TEST_F(StatelessBernoulliTiling, stateless_bernoulli_test_0)
         },
         &compileInfo);
     uint64_t expectTilingKey = 1001;
-    string expectTilingData = "1 256 1 1 1 256 1 1 1 2 0 8 ";
+    string expectTilingData = "1 1 1 1 2 8 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

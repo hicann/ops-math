@@ -26,16 +26,11 @@ constexpr uint16_t ALG_COUNTER_SIZE = 4;
 
 BEGIN_TILING_DATA_DEF(StatelessBernoulliTilingData)
 TILING_DATA_FIELD_DEF(uint64_t, blockNum);                        // 使用核数
-TILING_DATA_FIELD_DEF(uint64_t, blockTilingSize);                 // 非尾核处理元素个数
-TILING_DATA_FIELD_DEF(uint64_t, tailBlockTilingSize);             // 尾核处理元素个数
-TILING_DATA_FIELD_DEF(uint64_t, blockLoopCount);                  // 非尾核核内loop次数
-TILING_DATA_FIELD_DEF(uint64_t, tailBlockLoopCount);              // 尾核核内loop次数
-TILING_DATA_FIELD_DEF(uint64_t, ubTilingSize);                    // 单次loop处理元素个数
 TILING_DATA_FIELD_DEF(uint64_t, probTensorSize);                  // probTensor元素个数
 TILING_DATA_FIELD_DEF(uint64_t, outputSize);                      // 输出元素个数
 TILING_DATA_FIELD_DEF(uint64_t, isProbScalar);                    // prob是否为scalar
-TILING_DATA_FIELD_DEF_ARR(uint32_t, ALG_KEY_SIZE, key);           // 输入key数组
-TILING_DATA_FIELD_DEF_ARR(uint32_t, ALG_COUNTER_SIZE, counter);   // 输入counter数组
+TILING_DATA_FIELD_DEF(int64_t, seed);
+TILING_DATA_FIELD_DEF(int64_t, philoxOffset);
 END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(StatelessBernoulli, StatelessBernoulliTilingData)
@@ -105,9 +100,6 @@ private:
     ge::graphStatus GetOutputInfo();
     ge::graphStatus GetAttrInfo();
     ge::graphStatus GetInputKeyCounter();
-    int64_t GetCounterSize(Algorithm alg) const;
-    void GetKeyFromMem(const int64_t key);
-    void GetCounterFromMem(const std::vector<int64_t> &counter);
     void BlockTiling();
     ge::graphStatus UbTiling();
     void SetTilingData();
@@ -117,27 +109,20 @@ private:
     gert::Shape inputShape_;
     gert::Shape inputSeed_;
     gert::Shape inputOffset_;
-    ge::DataType probDtype_ = ge::DT_UNDEFINED;
-    ge::DataType inputDtype_ = ge::DT_UNDEFINED;
-    ge::DataType outputDtype_ = ge::DT_UNDEFINED;
+    ge::DataType probDtype_;
+    ge::DataType inputDtype_;
+    ge::DataType outputDtype_;
 
-    uint64_t coreNum_ = 0;
+    uint64_t coreNum_ = 1;
     uint64_t ubSize_ = 0;
     uint64_t inputSize_ = 1;
     uint64_t inputDtypeSize_ = 0;
-    uint64_t blockNum_ = 0;
-    uint64_t blockTilingSize_ = 0;
-    uint64_t tailBlockTilingSize_ = 0;
-    uint64_t blockLoopCount_ = 0;
-    uint64_t tailBlockLoopCount_ = 0;
-    uint64_t ubTilingSize_ = 0;
+    uint64_t blockNum_ = 1;
     uint64_t probTensorSize_ = 0;
     uint64_t outputSize_ = 1;
     uint64_t isProbScalar_ = 1;
-
-    Algorithm alg_ = Algorithm::RNG_ALG_PHILOX;
-    uint32_t key_[ALG_KEY_SIZE] = {0, 0};
-    uint32_t counter_[ALG_COUNTER_SIZE] = {0, 0, 0, 0};
+    int64_t seed_ = 1;
+    int64_t philoxOffset_ = 1;
 
     const char *opName_ = "";
     StatelessBernoulliTilingData m_tilingData_;

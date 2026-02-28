@@ -47,6 +47,10 @@ static constexpr uint64_t COUNTER_IDX_2 = 2;
 static constexpr uint64_t COUNTER_IDX_3 = 3;
 static constexpr uint64_t DIVISOR = 2;
 
+static constexpr int64_t CORE_MINIEST_NUM = 256;
+static constexpr int64_t OFFSET_MULTIPLE = 4;
+static constexpr uint32_t DCACHE_SIZE = 32 * 1024;
+
 void StatelessBernoulliTiling::Reset()
 {
     opName_ = nullptr;
@@ -104,8 +108,7 @@ ge::graphStatus StatelessBernoulliTiling::GetIntToShape(const int64_t constIdx, 
     auto probOriginSize = probTensor->GetShapeSize();
     OP_CHECK_IF(
         (probOriginSize < 0),
-        OP_LOGE(
-            opName_, "prob tensor size should not smaller than 0, but got %ld.", probOriginSize),
+        OP_LOGE(opName_, "prob tensor size should not smaller than 0, but got %ld.", probOriginSize),
         return ge::GRAPH_FAILED);
 
     probTensorSize_ = static_cast<uint64_t>(probOriginSize);
@@ -119,8 +122,7 @@ ge::graphStatus StatelessBernoulliTiling::GetIntToShape(const int64_t constIdx, 
     }
 
     OP_CHECK_IF(
-        ret != ge::GRAPH_SUCCESS, OP_LOGE(context_, "get const value failed, please check."),
-        return ge::GRAPH_FAILED);
+        ret != ge::GRAPH_SUCCESS, OP_LOGE(context_, "get const value failed, please check."), return ge::GRAPH_FAILED);
 
     OP_LOGI(opName_, "current const value is %s", Ops::Base::ToString(constShape).c_str());
     return ge::GRAPH_SUCCESS;
@@ -130,9 +132,8 @@ ge::graphStatus StatelessBernoulliTiling::GetPlatformInfo()
 {
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo == nullptr) {
-        auto compileInfoPtr = reinterpret_cast<const StatelessBernoulliCompileInfoArch35 *>(context_->GetCompileInfo());
-        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_, "compile info is null"),
-            return ge::GRAPH_FAILED);
+        auto compileInfoPtr = reinterpret_cast<const StatelessBernoulliCompileInfoArch35*>(context_->GetCompileInfo());
+        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_, "compile info is null"), return ge::GRAPH_FAILED);
         coreNum_ = static_cast<int64_t>(compileInfoPtr->aivNum);
         ubSize_ = static_cast<int64_t>(compileInfoPtr->ubSize);
     } else {
@@ -174,30 +175,6 @@ ge::graphStatus StatelessBernoulliTiling::GetShapeAttrsInfo()
     return ge::GRAPH_SUCCESS;
 }
 
-int64_t StatelessBernoulliTiling::GetCounterSize(Algorithm alg) const
-{
-    if (alg == Algorithm::RNG_ALG_PHILOX) {
-        return ALG_PHILOX_NUM;
-    } else if (alg == Algorithm::RNG_ALG_THREEFRY) {
-        return ALG_THREEFRY_NUM;
-    }
-    OP_LOGD(opName_, "Current alg not support, please check.");
-    return ALG_OTHERS_NUM;
-}
-
-void StatelessBernoulliTiling::GetKeyFromMem(const int64_t key)
-{
-    key_[0] = static_cast<int32_t>(key);
-    key_[1] = static_cast<int32_t>(key >> RIGHT_SHIFT_NUM);
-}
-void StatelessBernoulliTiling::GetCounterFromMem(const std::vector<int64_t>& counter)
-{
-    counter_[COUNTER_IDX_0] = static_cast<int32_t>(counter[0]);
-    counter_[COUNTER_IDX_1] = static_cast<int32_t>(counter[0] >> RIGHT_SHIFT_NUM);
-    counter_[COUNTER_IDX_2] = static_cast<int32_t>(counter[1]);
-    counter_[COUNTER_IDX_3] = static_cast<int32_t>(counter[1] >> RIGHT_SHIFT_NUM);
-}
-
 ge::graphStatus StatelessBernoulliTiling::GetInputKeyCounter()
 {
     // check seed
@@ -206,15 +183,13 @@ ge::graphStatus StatelessBernoulliTiling::GetInputKeyCounter()
     auto seedDtype = seedDesc->GetDataType();
     OP_CHECK_IF(
         seedDtype != ge::DataType::DT_INT64,
-        OP_LOGE(
-            opName_, "input seed dtype should be int64, but got %s.", Ops::Base::ToString(seedDtype).c_str()),
+        OP_LOGE(opName_, "input seed dtype should be int64, but got %s.", Ops::Base::ToString(seedDtype).c_str()),
         return ge::GRAPH_FAILED);
     auto seedTensor = context_->GetRequiredInputTensor(IN_SEED_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, seedTensor);
     auto seedTensorSize = static_cast<int64_t>(seedTensor->GetShapeSize());
     OP_CHECK_IF(
-        seedTensorSize != 1,
-        OP_LOGE(opName_, "input seed shape_size should be 1, but got %ld.", seedTensorSize),
+        seedTensorSize != 1, OP_LOGE(opName_, "input seed shape_size should be 1, but got %ld.", seedTensorSize),
         return ge::GRAPH_FAILED);
 
     // check offset
@@ -223,21 +198,19 @@ ge::graphStatus StatelessBernoulliTiling::GetInputKeyCounter()
     auto offsetDtype = offsetDesc->GetDataType();
     OP_CHECK_IF(
         offsetDtype != ge::DataType::DT_INT64,
-        OP_LOGE(
-            opName_, "input offset Dtype should be int64, but got %s.", Ops::Base::ToString(offsetDtype).c_str()),
+        OP_LOGE(opName_, "input offset Dtype should be int64, but got %s.", Ops::Base::ToString(offsetDtype).c_str()),
         return ge::GRAPH_FAILED);
     auto offsetTensor = context_->GetRequiredInputTensor(IN_OFFSET_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, offsetTensor);
     auto offsetTensorSize = static_cast<int64_t>(offsetTensor->GetShapeSize());
     OP_CHECK_IF(
-        offsetTensorSize != 1,
-        OP_LOGE(opName_, "input offset shape_size should be 1, but got %ld.", offsetTensorSize),
+        offsetTensorSize != 1, OP_LOGE(opName_, "input offset shape_size should be 1, but got %ld.", offsetTensorSize),
         return ge::GRAPH_FAILED);
 
     // get input value of seed & offset.
     OP_CHECK_IF(
-        GetIntToShape(IN_SEED_IDX, inputSeed_) != ge::GRAPH_SUCCESS,
-        OP_LOGE(opName_, "get const shape of seed failed"), return ge::GRAPH_FAILED);
+        GetIntToShape(IN_SEED_IDX, inputSeed_) != ge::GRAPH_SUCCESS, OP_LOGE(opName_, "get const shape of seed failed"),
+        return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         GetIntToShape(IN_OFFSET_IDX, inputOffset_) != ge::GRAPH_SUCCESS,
         OP_LOGE(opName_, "get const shape of offset failed"), return ge::GRAPH_FAILED);
@@ -245,16 +218,11 @@ ge::graphStatus StatelessBernoulliTiling::GetInputKeyCounter()
         opName_, "const seed = %s, const offset = %s.", Ops::Base::ToString(inputSeed_).c_str(),
         Ops::Base::ToString(inputOffset_).c_str());
 
-    int64_t key = static_cast<int64_t>(inputSeed_[0]);
-    std::vector<int64_t> counter = {0, inputOffset_[0]};
+    seed_ = inputSeed_[0];
+    philoxOffset_ = inputOffset_[0];
     OP_CHECK_IF(
-        static_cast<int64_t>(counter.size()) < GetCounterSize(Algorithm(alg_)),
-        OP_LOGE(
-            opName_, "counter tensor elements number at least %ld.", GetCounterSize(Algorithm(alg_))),
+        philoxOffset_ % OFFSET_MULTIPLE != 0, OP_LOGE(opName_, "the offset value %ld must be a multiple of 4.", philoxOffset_),
         return ge::GRAPH_FAILED);
-
-    GetKeyFromMem(key);
-    GetCounterFromMem(counter);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -266,8 +234,7 @@ ge::graphStatus StatelessBernoulliTiling::GetInputInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, inShapeOri);
     const gert::Shape inShape = inShapeOri->GetStorageShape();
     OP_CHECK_IF(
-        inShape.GetDimNum() != 1,
-        OP_LOGE(opName_, "the rank of shape should be 1, but got %lu.", inShape.GetDimNum()),
+        inShape.GetDimNum() != 1, OP_LOGE(opName_, "the rank of shape should be 1, but got %lu.", inShape.GetDimNum()),
         return ge::GRAPH_FAILED);
 
     // check dtype
@@ -282,8 +249,7 @@ ge::graphStatus StatelessBernoulliTiling::GetInputInfo()
 
     OP_CHECK_IF(
         GetIntToShape(IN_SHAPE_IDX, inputShape_) != ge::GRAPH_SUCCESS,
-        OP_LOGE(opName_, "get const shape of shape failed, please check."),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(opName_, "get const shape of shape failed, please check."), return ge::GRAPH_FAILED);
     OP_LOGD(opName_, "got const input shape = %s.", Ops::Base::ToString(inputShape_).c_str());
 
     uint32_t shapeRank = inputShape_.GetDimNum();
@@ -292,8 +258,7 @@ ge::graphStatus StatelessBernoulliTiling::GetInputInfo()
     }
     OP_CHECK_IF(
         shapeRank > MAX_DIM_NUM_BOUND,
-        OP_LOGE(opName_, "the rank of shape should bewteen [0-8], but got %u.", shapeRank),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(opName_, "the rank of shape should bewteen [0-8], but got %u.", shapeRank), return ge::GRAPH_FAILED);
 
     // check prob
     auto probDesc = context_->GetRequiredInputDesc(IN_PROB_IDX);
@@ -311,8 +276,7 @@ ge::graphStatus StatelessBernoulliTiling::GetInputInfo()
     auto probOriginSize = probTensor->GetShapeSize();
     OP_CHECK_IF(
         (probOriginSize < 0),
-        OP_LOGE(
-            opName_, "prob tensor size should not smaller than 0, but got %ld.", probOriginSize),
+        OP_LOGE(opName_, "prob tensor size should not smaller than 0, but got %ld.", probOriginSize),
         return ge::GRAPH_FAILED);
 
     probTensorSize_ = static_cast<uint64_t>(probOriginSize);
@@ -327,8 +291,7 @@ ge::graphStatus StatelessBernoulliTiling::GetInputInfo()
 
     // check key & counter
     OP_CHECK_IF(
-        GetInputKeyCounter() != ge::GRAPH_SUCCESS,
-        OP_LOGE(opName_, "get value of seed & offset failed, please check."),
+        GetInputKeyCounter() != ge::GRAPH_SUCCESS, OP_LOGE(opName_, "get value of seed & offset failed, please check."),
         return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
@@ -371,75 +334,35 @@ inline uint64_t StatelessBernoulliTiling::GetBytePerData(const ge::DataType& dty
     return static_cast<uint64_t>(ge::GetSizeByDataType(dtype));
 }
 
-void StatelessBernoulliTiling::BlockTiling()
+static inline int64_t Align256CeilSize(int64_t value)
 {
-    inputDtypeSize_ = GetBytePerData(inputDtype_);
-    auto coreAlignFactor = Ops::Base::FloorDiv(CORE_ALIGN_SIZE, inputDtypeSize_);
-    auto blockFactor = Ops::Base::CeilDiv(inputSize_, coreNum_);
-    auto blockAlignFactor = Ops::Base::CeilAlign(Ops::Base::CeilAlign(blockFactor, coreAlignFactor), MIN_TILING_SIZE);
-    auto minTilingSize = MIN_TILING_SIZE;
-    blockTilingSize_ = std::max(static_cast<uint64_t>(blockAlignFactor), minTilingSize);
-    blockNum_ = Ops::Base::CeilDiv(inputSize_, blockTilingSize_);
-    tailBlockTilingSize_ = inputSize_ - blockTilingSize_ * (blockNum_ - 1);
-
-    OP_LOGD(
-        opName_,
-        "inputSize = %lu, blockFactor = %lu, blockAlignFactor = %lu, blockTilingSize = %lu, \
-        tailBlockTilingSize = %lu, blockNum = %lu, coreNum = %lu, ubSize = %lu",
-        inputSize_, blockFactor, blockAlignFactor, blockTilingSize_, tailBlockTilingSize_, blockNum_, coreNum_,
-        ubSize_);
+    return static_cast<int64_t>((value + CORE_MINIEST_NUM - 1) / CORE_MINIEST_NUM * CORE_MINIEST_NUM);
 }
 
-ge::graphStatus StatelessBernoulliTiling::UbTiling()
+void StatelessBernoulliTiling::BlockTiling()
 {
-    // ub size
-    auto quarterUbSize = ubSize_ / BUFFER_NUM / EXIST_NODE_NUM;
-    OP_LOGD(opName_, "quarterUbSize = %lu", quarterUbSize);
-
-    // loop count
-    auto ubTilingSize = Ops::Base::FloorAlign(Ops::Base::FloorDiv(quarterUbSize, inputDtypeSize_), MIN_TILING_SIZE);
-    OP_CHECK_IF(
-        (ubTilingSize == 0), OP_LOGE(opName_, "the divisor is %lu.", ubTilingSize),
-        return ge::GRAPH_FAILED);
-    while (blockTilingSize_ % ubTilingSize) {
-        ubTilingSize /= DIVISOR;
-        if (ubTilingSize <= MIN_TILING_SIZE) {
-            ubTilingSize = MIN_TILING_SIZE;
-            break;
-        }
+    int64_t numOfPerCore = inputSize_;
+    if (inputSize_ > CORE_MINIEST_NUM) {
+        numOfPerCore = Align256CeilSize((inputSize_ + coreNum_ - 1) / coreNum_);
+        blockNum_ = std::min((inputSize_ + numOfPerCore - 1) / numOfPerCore, coreNum_);
     }
 
-    ubTilingSize_ = ubTilingSize;
-    blockLoopCount_ = Ops::Base::CeilDiv(blockTilingSize_, ubTilingSize_);
-    tailBlockLoopCount_ = Ops::Base::CeilDiv(tailBlockTilingSize_, ubTilingSize_);
-    OP_LOGD(
-        opName_, "ubTilingSize_ = %lu, blockLoopCount_ = %lu, tailBlockLoopCount_ = %lu", ubTilingSize_,
-        blockLoopCount_, tailBlockLoopCount_);
-
-    return ge::GRAPH_SUCCESS;
+    OP_LOGD(opName_, "blockNum = %lu", blockNum_);
 }
 
 void StatelessBernoulliTiling::SetTilingData()
 {
     m_tilingData_.set_blockNum(blockNum_);
-    m_tilingData_.set_blockTilingSize(blockTilingSize_);
-    m_tilingData_.set_tailBlockTilingSize(tailBlockTilingSize_);
-    m_tilingData_.set_blockLoopCount(blockLoopCount_);
-    m_tilingData_.set_tailBlockLoopCount(tailBlockLoopCount_);
-    m_tilingData_.set_ubTilingSize(ubTilingSize_);
     m_tilingData_.set_probTensorSize(probTensorSize_);
     m_tilingData_.set_outputSize(outputSize_);
     m_tilingData_.set_isProbScalar(isProbScalar_);
-    m_tilingData_.set_key(key_);
-    m_tilingData_.set_counter(counter_);
+    m_tilingData_.set_seed(seed_);
+    m_tilingData_.set_philoxOffset(philoxOffset_);
 }
 
 ge::graphStatus StatelessBernoulliTiling::DoOpTiling()
 {
     BlockTiling();
-    if (UbTiling() != ge::GRAPH_SUCCESS) {
-        return ge::GRAPH_FAILED;
-    }
     SetTilingData();
     return ge::GRAPH_SUCCESS;
 }
@@ -467,16 +390,11 @@ void StatelessBernoulliTiling::DumpTilingInfo()
 {
     std::ostringstream info;
     info << "blockNum: " << m_tilingData_.get_blockNum() << ", ";
-    info << "blockTilingSize: " << m_tilingData_.get_blockTilingSize() << ", ";
-    info << "tailBlockTilingSize: " << m_tilingData_.get_tailBlockTilingSize() << ", ";
-    info << "blockLoopCount:" << m_tilingData_.get_blockLoopCount() << ", ";
-    info << "tailBlockLoopCount: " << m_tilingData_.get_tailBlockLoopCount() << ", ";
-    info << "ubTilingSize: " << m_tilingData_.get_ubTilingSize() << ", ";
     info << "probTensorSize: " << m_tilingData_.get_probTensorSize() << ", ";
     info << "outputSize: " << m_tilingData_.get_outputSize() << ", ";
     info << "isProbScalar: " << m_tilingData_.get_isProbScalar() << ", ";
-    info << "key: " << m_tilingData_.get_key() << ", ";
-    info << "counter: " << m_tilingData_.get_counter() << ", ";
+    info << "seed: " << m_tilingData_.get_seed() << ", ";
+    info << "philoxOffset: " << m_tilingData_.get_philoxOffset() << ", ";
     OP_LOGI(context_->GetNodeName(), "%s", info.str().c_str());
 }
 
@@ -492,6 +410,7 @@ ge::graphStatus StatelessBernoulliTiling::PostTiling()
     OP_CHECK_NULL_WITH_CONTEXT(context_, workspaces);
     workspaces[0] = workspaceSize_;
     context_->SetBlockDim(blockNum_);
+    context_->SetLocalMemorySize(ubSize_ - DCACHE_SIZE);
     context_->SetTilingKey(GetTilingKey());
 
     if (m_tilingData_.GetDataSize() > context_->GetRawTilingData()->GetCapacity()) {
@@ -508,7 +427,7 @@ ge::graphStatus Tiling4StatelessBernoulli(gert::TilingContext* context)
     return tilingObj.DoTiling();
 }
 
-static ge::graphStatus TilingPrepare4StatelessBernoulli([[maybe_unused]]gert::TilingParseContext* context)
+static ge::graphStatus TilingPrepare4StatelessBernoulli([[maybe_unused]] gert::TilingParseContext* context)
 {
     return ge::GRAPH_SUCCESS;
 }
