@@ -135,4 +135,60 @@ const aclTensor* StridedSlice(
         executor);
 }
 
+const aclTensor* StridedSliceAiCore(
+    const aclTensor* self, const aclTensor* out, const aclTensor* begin, const aclTensor* end, const aclTensor* strides,
+    int64_t beginMask, int64_t endMask, int64_t ellipsisMask, int64_t newAxisMask, int64_t shrinkAxisMask,
+    aclOpExecutor* executor)
+{
+    L0_DFX(
+        StridedSliceAiCore, self, out, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask,
+        shrinkAxisMask);
+    auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(
+        StridedSlice, OP_INPUT(self, begin, end, strides), OP_OUTPUT(out),
+        OP_ATTR(beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask));
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
+        retAicore != ACLNN_SUCCESS, return nullptr, "StridedSlice ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    return out;
+}
+
+const aclTensor* StridedSliceAiCpu(
+    const aclTensor* self, const aclTensor* out, const aclTensor* begin, const aclTensor* end, const aclTensor* strides,
+    int64_t beginMask, int64_t endMask, int64_t ellipsisMask, int64_t newAxisMask, int64_t shrinkAxisMask,
+    aclOpExecutor* executor)
+{
+    L0_DFX(
+        StridedSliceAiCpu, self, out, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask,
+        shrinkAxisMask);
+    static op::internal::AicpuTaskSpace space("StridedSlice", ge::DEPEND_CONST_VALUE, true);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(
+        StridedSlice,
+        OP_ATTR_NAMES({"T", "Index", "begin_mask", "end_mask", "ellipsis_mask", "new_axis_mask", "shrink_axis_mask"}),
+        OP_INPUT(self, begin, end, strides), OP_OUTPUT(out),
+        OP_ATTR(
+            self->GetDataType(), begin->GetDataType(), beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask));
+    CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
+    return out;
+}
+
+const aclTensor* StridedSlice(
+    const aclTensor* self, const aclTensor* begin, const aclTensor* end, const aclTensor* strides, int64_t beginMask,
+    int64_t endMask, int64_t ellipsisMask, int64_t newAxisMask, int64_t shrinkAxisMask, aclOpExecutor* executor)
+{
+    auto out = executor->AllocTensor(self->GetDataType(), self->GetStorageFormat(), self->GetOriginalFormat());
+
+    auto ret = INFER_SHAPE(
+        StridedSlice, OP_INPUT(self, begin, end, strides), OP_OUTPUT(out),
+        OP_ATTR(beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask));
+    if (ret != ACLNN_SUCCESS) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "StridedSlice InferShape failed.");
+        return nullptr;
+    }
+
+    if (IsAiCoreSupport(self)) {
+        return StridedSliceAiCore(
+            self, out, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask, executor);
+    }
+    return StridedSliceAiCpu(
+        self, out, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask, executor);
+}
 } // namespace l0op
