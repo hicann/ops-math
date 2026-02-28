@@ -246,8 +246,12 @@ aclnnStatus aclnnKlDivGetWorkspaceSize(const aclTensor* self, const aclTensor* t
                                      return ACLNN_ERR_PARAM_INVALID);
   if (reduction == None) {
     // reduction为none的场景，检查out和broadcast的shape是否一致
-    OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(out, broadcastShape,
-                                                return ACLNN_ERR_PARAM_INVALID);
+    if (selfDimNum == 0 && targetDimNum == 0) {
+       op::Shape outputShape;
+       OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(out, outputShape, return ACLNN_ERR_PARAM_INVALID);
+    } else {
+       OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(out, broadcastShape, return ACLNN_ERR_PARAM_INVALID);
+    }
   }
   op::FVector<int64_t, op::MAX_DIM_NUM> broadcastDims = op::ToShapeVector(broadcastShape);
   auto broadcastShapeArray = uniqueExecutor.get()->AllocIntArray(broadcastDims.data(), broadcastDims.size());
