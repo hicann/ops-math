@@ -33,7 +33,7 @@ static ge::graphStatus BroadcastToInferShapeWithShapeValues(const gert::InferSha
                                                             const gert::ContinuousVector* shape_attr,
                                                             gert::Shape* out_shape) {
   OP_LOGD(context->GetNodeName(), "Begin to do BroadcastToInfershape.");
-  const int64_t* shape_value = reinterpret_cast<const int64_t*>(shape_attr->GetData());
+  const int64_t* shape_value = static_cast<const int64_t*>(shape_attr->GetData());
   OP_CHECK_NULL_WITH_CONTEXT(context, shape_value);
   const size_t dim_num = shape_attr->GetSize();
 

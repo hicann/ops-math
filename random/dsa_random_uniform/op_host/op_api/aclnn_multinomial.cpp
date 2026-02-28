@@ -149,7 +149,7 @@ static aclnnStatus CheckParams(const aclTensor *self, int64_t numsamples, bool r
 }
 
 const aclTensor *GetRandomUniformReplaceMent(const aclTensor *selfContiguous, int64_t numsamples,
-                                  const int64_t *randomParams, aclOpExecutor *executor)
+                                  const int64_t seed, const int64_t offset, aclOpExecutor *executor)
 {
   const int64_t randAShape[] = {numsamples};
   auto randAShapeArray = executor->AllocIntArray(randAShape, 1);
@@ -157,14 +157,14 @@ const aclTensor *GetRandomUniformReplaceMent(const aclTensor *selfContiguous, in
   if (!IsRegBase()) {
     auto low = executor->AllocScalar(0.0f);
     auto high = executor->AllocScalar(1.0f);
-    randomUniform = l0op::DSARandomUniform(randAShapeArray, *randomParams, *(randomParams + 1), low, high, executor);
+    randomUniform = l0op::DSARandomUniform(randAShapeArray, seed, offset, low, high, executor);
   } else {
     int32_t alg = 1;
     op::Shape shape;
     op::ToShape(randAShapeArray->GetData(), randAShapeArray->Size(), shape);
     auto randAShapeTensor = executor->AllocTensor(shape, selfContiguous->GetDataType(), selfContiguous->GetViewFormat());
     CHECK_RET(randAShapeTensor != nullptr, nullptr);
-    randomUniform = l0op::StatelessRandomUniformV2(randAShapeTensor, *randomParams, *(randomParams + 1), alg, executor);
+    randomUniform = l0op::StatelessRandomUniformV2(randAShapeTensor, seed, offset, alg, executor);
   }
   CHECK_RET(randomUniform != nullptr, nullptr);
   return randomUniform;
@@ -245,7 +245,7 @@ const aclTensor *RunMultinomialReplaceMent(const aclTensor *selfContiguous, int6
   return multinomialOut;
 }
 
-const aclTensor *GetRandomUniformNoReplaceMent(const aclTensor *selfContiguous, const int64_t *randomParams,
+const aclTensor *GetRandomUniformNoReplaceMent(const aclTensor *selfContiguous, const int64_t seed, const int64_t offset,
                                                aclOpExecutor *executor)
 {
   // exponentialOne = torch.exponential_(1)
@@ -256,10 +256,10 @@ const aclTensor *GetRandomUniformNoReplaceMent(const aclTensor *selfContiguous, 
     CHECK_RET(inputShapeArray != nullptr, nullptr);
     auto low = executor->AllocScalar(0.0f);
     auto high = executor->AllocScalar(1.0f);
-    randomUniform = l0op::DSARandomUniform(inputShapeArray, *randomParams, *(randomParams + 1), low, high, executor);
+    randomUniform = l0op::DSARandomUniform(inputShapeArray, seed, offset, low, high, executor);
   } else {
     int32_t alg = 1;
-    auto statelessUniform = l0op::StatelessRandomUniformV2(selfContiguous, *randomParams, *(randomParams + 1), alg, executor);
+    auto statelessUniform = l0op::StatelessRandomUniformV2(selfContiguous, seed, offset, alg, executor);
     CHECK_RET(statelessUniform != nullptr, nullptr);
     randomUniform = l0op::Cast(statelessUniform, DataType::DT_FLOAT, executor);
   }
@@ -365,7 +365,6 @@ aclnnStatus aclnnMultinomialGetWorkspaceSize(const aclTensor *self, int64_t nums
   CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_PARAM_NULLPTR);
 
   const aclTensor *multinomialOut;
-  int64_t randomParams[2] = {seed, offset};
   if (!CheckSocVersionGe910B() || selfSize <= CPU_NPU_BOUNDARY) {
     multinomialOut = l0op::MultinomialWithReplacement(selfContiguous,
                                                       numsamples,
@@ -374,7 +373,7 @@ aclnnStatus aclnnMultinomialGetWorkspaceSize(const aclTensor *self, int64_t nums
                                                       offset,
                                                       uniqueExecutor.get());
   } else if (!replacement || numsamples == 1) {
-    auto randomUniform = GetRandomUniformNoReplaceMent(selfContiguous, randomParams, uniqueExecutor.get());
+    auto randomUniform = GetRandomUniformNoReplaceMent(selfContiguous, seed, offset, uniqueExecutor.get());
     CHECK_RET(randomUniform != nullptr, ACLNN_ERR_PARAM_NULLPTR);
     multinomialOut=RunMultinomialNoReplaceMent(selfContiguous,
                                                 numsamples,
@@ -383,7 +382,7 @@ aclnnStatus aclnnMultinomialGetWorkspaceSize(const aclTensor *self, int64_t nums
                                                 uniqueExecutor.get());
   } else {
     // RandomUniform, shape = {1, ..., 1, numsamples}
-    auto randomUniform = GetRandomUniformReplaceMent(selfContiguous, numsamples, randomParams, uniqueExecutor.get());
+    auto randomUniform = GetRandomUniformReplaceMent(selfContiguous, numsamples, seed, offset, uniqueExecutor.get());
     CHECK_RET(randomUniform != nullptr, ACLNN_ERR_PARAM_NULLPTR);
     multinomialOut=RunMultinomialReplaceMent(selfContiguous,
                                               numsamples,

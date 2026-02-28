@@ -29,6 +29,8 @@
 
 #define FAILED -1
 #define SUCCESS 0
+#define DEFAULT_DATA_SIZE 4
+#define GEN_ONES_DATA_FLOAT32_GENERATOR(ORIG_VAL, IDX) ORIG_VAL + (IDX % 3) * 0.4f
 
 using namespace ge;
 using std::map;
@@ -121,9 +123,9 @@ int32_t GenOnesDataFloat32(vector<int64_t> shapes, Tensor& input_tensor, TensorD
     }
     uint32_t data_len = size * 4;
     float* pData = new (std::nothrow) float[size];
-
     for (size_t i = 0; i < size; ++i) {
-        pData[i] = value + (i % 3) * 0.4f; // 让数据更有意义
+        // make data meaningful
+        pData[i] = GEN_ONES_DATA_FLOAT32_GENERATOR(value, i);
     }
     input_tensor = Tensor(input_tensor_desc, (uint8_t*)pData, data_len);
     return SUCCESS;

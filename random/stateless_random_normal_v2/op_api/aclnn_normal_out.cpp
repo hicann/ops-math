@@ -37,7 +37,7 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_DOUBLE};
 
 /* 查看TensorFloat的Dtype和Shape */
-static bool CheckTensorAndFloatDtype(const aclTensor* mean, aclTensor* out)
+static bool CheckTensorAndFloatDtype(const aclTensor* mean, const aclTensor* out)
 {
     // 检查mean的数据类型是否在normal算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(mean, DTYPE_SUPPORT_LIST, return false);
@@ -46,7 +46,7 @@ static bool CheckTensorAndFloatDtype(const aclTensor* mean, aclTensor* out)
     return true;
 }
 
-static bool CheckTensorAndFloatShapeOfMean(const aclTensor* mean, aclTensor* out)
+static bool CheckTensorAndFloatShapeOfMean(const aclTensor* mean, const aclTensor* out)
 {
     OP_CHECK_MAX_DIM(mean, MAX_DIM_LEN, return false);
     OP_CHECK_MAX_DIM(out, MAX_DIM_LEN, return false);
@@ -71,7 +71,7 @@ static inline bool CheckTensorAndFloatNotNull(const aclTensor* mean, aclTensor* 
 }
 
 /* 查看FloatTensor的Dtype和Shape */
-static bool CheckFloatAndTensorDtype(const aclTensor* std, aclTensor* out)
+static bool CheckFloatAndTensorDtype(const aclTensor* std, const aclTensor* out)
 {
     // 检查std的数据类型是否在normal算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(std, DTYPE_SUPPORT_LIST, return false);
@@ -79,7 +79,7 @@ static bool CheckFloatAndTensorDtype(const aclTensor* std, aclTensor* out)
     return true;
 }
 
-static bool CheckFloatAndTensorShapeOfStd(const aclTensor* std, aclTensor* out)
+static bool CheckFloatAndTensorShapeOfStd(const aclTensor* std, const aclTensor* out)
 {
     if (std->IsEmpty()) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The std can not be an empty tensor.");
@@ -104,7 +104,7 @@ static inline bool CheckFloatAndTensorNotNull(const aclTensor* std, aclTensor* o
 }
 
 /* 查看TensorTensor的Dtype和Shape */
-static bool CheckTensorAndTensorDtype(const aclTensor* mean, const aclTensor* std, aclTensor* out)
+static bool CheckTensorAndTensorDtype(const aclTensor* mean, const aclTensor* std, const aclTensor* out)
 {
     // 检查std/mean的数据类型是否在normal算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(mean, DTYPE_SUPPORT_LIST, return false);
@@ -114,7 +114,7 @@ static bool CheckTensorAndTensorDtype(const aclTensor* mean, const aclTensor* st
     return true;
 }
 
-static bool CheckTensorAndTensorShape(const aclTensor* mean, const aclTensor* std, aclTensor* out)
+static bool CheckTensorAndTensorShape(const aclTensor* mean, const aclTensor* std, const aclTensor* out)
 {
     // 检查std和mean的维度是否大于8
     OP_CHECK_MAX_DIM(mean, MAX_DIM_LEN, return false);
@@ -140,7 +140,7 @@ static inline bool CheckTensorAndTensorNotNull(const aclTensor* mean, const aclT
     return true;
 }
 
-static bool CheckPromoteType(const aclTensor* mean, const aclTensor* std, aclTensor* out, op::DataType promoteType)
+static bool CheckPromoteType(const aclTensor* mean, const aclTensor* std, const aclTensor* out, op::DataType promoteType)
 {
     // 检查self和other能否做数据类型推导
     if (promoteType == DataType::DT_UNDEFINED) {

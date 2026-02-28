@@ -41,6 +41,10 @@ constexpr uint32_t SMALL_BAG = 128;
 constexpr uint32_t SINGLE_CORE_PROCESS_SIZE = 8192;
 constexpr int32_t DIM_TWO = 2;
 
+constexpr size_t CAT_INPUT_NUM_32 = 32;
+constexpr size_t CAT_INPUT_NUM_REGBASE_512 = 512;
+constexpr size_t CAT_INPUT_NUM_V2_512 = 512;
+
 static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_INT32, DataType::DT_INT64,  DataType::DT_FLOAT16,   DataType::DT_INT16,
     DataType::DT_INT8,  DataType::DT_UINT8, DataType::DT_DOUBLE, DataType::DT_COMPLEX64, DataType::DT_BOOL};
@@ -339,10 +343,10 @@ static aclnnStatus SplitToConcat(const aclTensorList* tensors, int64_t dim, aclT
     }
 
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
-    size_t catMaxInputs = (IsRegBase(npuArch)) ? 512 : 32;
+    size_t catMaxInputs = (IsRegBase(npuArch)) ? CAT_INPUT_NUM_REGBASE_512 : CAT_INPUT_NUM_32;
     auto tensorListV2 = executor->AllocTensorList(tensorListA.data(), tensorListA.size());
     if (l0op::IsSupportConcatDV2(tensorListV2, dim)) {
-        catMaxInputs = 512;
+        catMaxInputs = CAT_INPUT_NUM_V2_512;
     }
     bool firstLoop = true;
     while (tensorListA.size() > 1) {

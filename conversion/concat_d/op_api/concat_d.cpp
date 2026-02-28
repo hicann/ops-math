@@ -21,6 +21,9 @@
 #include "opdev/platform.h"
 #include "op_api/aclnn_check.h"
 
+#define NUM_32 32
+#define NUM_512 512
+
 using namespace op;
 namespace l0op {
 
@@ -42,7 +45,7 @@ bool IsSupportConcatDV2(const aclTensorList* inputs, int64_t dim)
     if (dim != 0){
         return false;
     }
-    if (inputs->Size() > 512 || inputs->Size() < 33) {
+    if (inputs->Size() > NUM_512 || inputs->Size() <= NUM_32) {
         return false;
     }
 
@@ -51,7 +54,7 @@ bool IsSupportConcatDV2(const aclTensorList* inputs, int64_t dim)
         op::Shape shape = (*inputs)[i]->GetViewShape();
         int64_t dim_num = shape.GetDimNum();
         int64_t tail_dim = shape.GetDim(dim_num - 1); // 获取尾轴维度
-        if (tail_dim * type_size[promoteType] % 32 != 0) {
+        if (tail_dim * type_size[promoteType] % NUM_32 != 0) {
             return false;
         }
     }
@@ -86,10 +89,10 @@ aclTensor* ConcatD(const aclTensorList* inputs, int64_t dim, aclOpExecutor* exec
 {
     L0_DFX(ConcatD, inputs, dim);
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
-    size_t catMaxInputSize = (IsRegBase(npuArch)) ? 512 : 32;
+    size_t catMaxInputSize = (IsRegBase(npuArch)) ? NUM_512 : NUM_32;
 
     if (IsSupportConcatDV2(inputs, dim)) {
-        catMaxInputSize = 512;
+        catMaxInputSize = NUM_512;
     }
 
     if (inputs->Size() == 0 || inputs->Size() > catMaxInputSize) {

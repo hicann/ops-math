@@ -86,7 +86,7 @@ using std::vector;
     graph.AddOp(placeholder##intputIndex);                                                                  \
     broadcast_to_1.set_input_##intputName(placeholder##intputIndex);                                                  \
     broadcast_to_1.update_input_desc_##intputName(placeholder##intputIndex##_desc);                                   \
-    inputs.push_back(placeholder##intputIndex);
+    inputs.push_back(placeholder##intputIndex)
 
 #define LOG_PRINT(message, ...)         \
     do {                                \

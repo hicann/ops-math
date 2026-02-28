@@ -122,7 +122,7 @@ public:
         totalCombinations_ = 1;
         size_t idx = 0;
         for (auto& item : inputs) {
-            if (nameMap_.count(item.name)) {
+            if (nameMap_.count(item.name) != 0U) {
                 throw std::runtime_error("Duplicate input name: " + item.name);
             }
             nameMap_[item.name] = idx++;

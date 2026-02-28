@@ -43,7 +43,7 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_
     op::DataType::DT_FLOAT16,   op::DataType::DT_FLOAT,      op::DataType::DT_BOOL,   op::DataType::DT_DOUBLE,
     op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16};
 
-static bool CheckNotNull(const aclTensorList* tensors, int64_t* realDim, const aclTensor* out)
+static bool CheckNotNull(const aclTensorList* tensors, const int64_t* realDim, const aclTensor* out)
 {
     if (tensors == nullptr || realDim == nullptr) {
         OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "Input of aclnnStack should not be null.");

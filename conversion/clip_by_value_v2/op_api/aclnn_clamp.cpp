@@ -432,7 +432,7 @@ const aclTensor* AddBroadcastNode(const op::Shape& broadcastShape, const aclTens
     return l0op::BroadcastTo(clipValue, broadcastDstTensor, shape, executor);
 }
 
-bool ClampTensorPromoteShape(
+static bool ClampTensorPromoteShape(
     const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax, const aclTensor* out,
     op::Shape& broadcastShape)
 {
@@ -481,7 +481,7 @@ bool ClampTensorPromoteShape(
     return true;
 }
 
-bool ClampTensorPromoteType(
+static bool ClampTensorPromoteType(
     const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax, const aclTensor* out,
     op::DataType& promoteType)
 {
@@ -511,7 +511,7 @@ bool ClampTensorPromoteType(
     return true;
 }
 
-aclnnStatus aclnnClampTensorCommon(
+static aclnnStatus aclnnClampTensorCommon(
     const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax, aclTensor* out,
     uint64_t* workspaceSize, aclOpExecutor** executor)
 {

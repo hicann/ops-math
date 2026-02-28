@@ -74,7 +74,7 @@ static const aclTensor* StatelessRandomNormalV2AiCpu(
 }
 
 const aclTensor* StatelessRandomNormalV2(
-    const aclTensor* result, const aclIntArray* key, const aclIntArray* counter, const aclTensor* algTensor,
+    const aclTensor* result, const aclIntArray* key, const aclIntArray* counter, const aclTensor* alg,
     aclOpExecutor* executor)
 {
     auto outTensor = executor->AllocTensor(result->GetViewShape(), result->GetDataType(), result->GetViewFormat());
@@ -86,11 +86,9 @@ const aclTensor* StatelessRandomNormalV2(
     auto counterTensor = executor->ConvertToTensor(counter, op::ToOpDataType(ACL_UINT64));
 
     if (IsAiCoreSupport(outTensor->GetDataType())) {
-        return StatelessRandomNormalV2AiCore(
-            result, shapeTensor, keyTensor, counterTensor, algTensor, outTensor, executor);
+        return StatelessRandomNormalV2AiCore(result, shapeTensor, keyTensor, counterTensor, alg, outTensor, executor);
     } else {
-        return StatelessRandomNormalV2AiCpu(
-            result, shapeTensor, keyTensor, counterTensor, algTensor, outTensor, executor);
+        return StatelessRandomNormalV2AiCpu(result, shapeTensor, keyTensor, counterTensor, alg, outTensor, executor);
     }
 }
 } // namespace l0op

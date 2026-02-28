@@ -53,7 +53,6 @@ public:
             } else {
                 SumFP32ResInGMFinalAxeBigSize<T1>(curDstStart, i, this->tasksOnce, this->dstGlobal);
             }
-                
         }
         if (this->tail > 0) {
             this->tasksOnce = this->tail;

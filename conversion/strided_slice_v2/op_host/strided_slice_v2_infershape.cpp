@@ -96,7 +96,6 @@ static int64_t GetConstIndexValue(const gert::Tensor* tensor, int32_t idx, int64
 
     int64_t value = defaultValue;
     const auto dataType = tensor->GetDataType();
-
     if (dataType == ge::DT_INT32) {
         const int32_t* data = tensor->GetData<int32_t>();
         if (data == nullptr) {
@@ -219,7 +218,6 @@ static ge::graphStatus InferShape4StridedSliceV2(gert::InferShapeContext* contex
 
     // Calculate max shape of (begin, end, strides)
     int64_t shape_max = CalcMaxShapeSize(shape_begin->GetDim(0), shape_end->GetDim(0));
-
     // Necessary input valid check
     if (shape_max == static_cast<int64_t>(-1)) {
         OP_LOGD(OP_NAME, "max shape is -1.");
@@ -254,7 +252,7 @@ static ge::graphStatus InferShape4StridedSliceV2(gert::InferShapeContext* contex
 #define GET_MASK_VALUE(index, mask_name)                                     \
     const int64_t* mask_##mask_name = attrs->GetAttrPointer<int64_t>(index); \
     OP_CHECK_NULL_WITH_CONTEXT(context, mask_##mask_name);                   \
-    input_params.mask_name##_mask = static_cast<uint64_t>(*mask_##mask_name);
+    input_params.mask_name##_mask = static_cast<uint64_t>(*mask_##mask_name)
 
     GET_MASK_VALUE(IDX_MASK_BEGIN, begin);
     GET_MASK_VALUE(IDX_MASK_END, end);

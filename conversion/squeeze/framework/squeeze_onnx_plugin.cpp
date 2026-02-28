@@ -15,7 +15,7 @@ using domi::ONNX;
 namespace domi {
 static Status ParseParamsSqueeze(const Message* op_src, ge::Operator& op_dest)
 {
-    const ge::onnx::NodeProto* node = reinterpret_cast<const ge::onnx::NodeProto*>(op_src);
+    auto node = dynamic_cast<const ge::onnx::NodeProto*>(op_src);
     if (node == nullptr) {
         OP_LOGE(GetOpName(op_dest).c_str(), "Dynamic cast op_src to NodeProto failed.");
         return FAILED;
@@ -36,7 +36,7 @@ static Status ParseParamsSqueeze(const Message* op_src, ge::Operator& op_dest)
 
 static Status ParseParamsSqueezeV3(const Message* op_src, ge::Operator& op_dest)
 {
-    const ge::onnx::NodeProto* node = reinterpret_cast<const ge::onnx::NodeProto*>(op_src);
+    const ge::onnx::NodeProto* node = dynamic_cast<const ge::onnx::NodeProto*>(op_src);
     if (node == nullptr) {
         OP_LOGE(GetOpName(op_dest).c_str(), "Dynamic cast op_src to NodeProto failed.");
         return FAILED;

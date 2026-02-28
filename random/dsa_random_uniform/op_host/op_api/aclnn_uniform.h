@@ -93,7 +93,7 @@ ACLNN_API aclnnStatus aclnnInplaceUniformGetWorkspaceSize(
  * @return aclnnStatus: 返回状态码。
  */
 ACLNN_API aclnnStatus
-aclnnInplaceUniform(void* workspace, uint64_t workspace_size, aclOpExecutor* executor, const aclrtStream stream);
+aclnnInplaceUniform(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream);
 
 /**
  * @brief aclnnInplaceUniformTensor的第一段接口，根据具体的计算流程，计算workspace大小。
@@ -129,7 +129,7 @@ ACLNN_API aclnnStatus aclnnInplaceUniformTensorGetWorkspaceSize(
  * @return aclnnStatus: 返回状态码。
  */
 ACLNN_API aclnnStatus
-aclnnInplaceUniformTensor(void* workspace, uint64_t workspace_size, aclOpExecutor* executor, const aclrtStream stream);
+aclnnInplaceUniformTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream);
 
 #ifdef __cplusplus
 }

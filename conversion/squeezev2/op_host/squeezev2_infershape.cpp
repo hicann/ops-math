@@ -83,7 +83,7 @@ static ge::graphStatus InferShapeForSqueezeV2(gert::InferShapeContext* context) 
   // solve unknown_rank
   auto x_dim_num = x_shape->GetDimNum();
   if (x_dim_num == 1U && x_shape->GetDim(0U) == ge::UNKNOWN_DIM_NUM) {
-    OP_LOGD(context, "Input shape is unkown rank!");
+    OP_LOGD(context, "Input shape is unknown rank!");
     *y_shape = *x_shape;
     return ge::SUCCESS;
   }

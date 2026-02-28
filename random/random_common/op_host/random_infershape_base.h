@@ -25,7 +25,6 @@
 #include "util/const_util.h"
 #include "op_api/op_util.h"
 
-using namespace ge;
 namespace ops {
 namespace randomCommon {
 static constexpr int32_t MODE_DEPENDENCY = 0;

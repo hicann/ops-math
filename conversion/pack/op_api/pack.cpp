@@ -59,7 +59,7 @@ static const aclTensor* PackAiCpu(
     L0_DFX(PackAiCpu, inputs, dim, out, out_dtype);
     static internal::AicpuTaskSpace space("Pack", ge::DEPEND_IN_SHAPE, true);
     auto ret = ADD_TO_LAUNCHER_LIST_AICPU(
-        Pack, OP_ATTR_NAMES({"N", "axis"}), OP_INPUT(inputs), OP_OUTPUT(out), OP_ATTR((int64_t)inputs->Size(), dim));
+        Pack, OP_ATTR_NAMES({"N", "axis"}), OP_INPUT(inputs), OP_OUTPUT(out), OP_ATTR(static_cast<int64_t>(inputs->Size()), dim));
     CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
     return out;
 }

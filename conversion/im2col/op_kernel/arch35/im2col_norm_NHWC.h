@@ -278,7 +278,6 @@ public:
         for (uint8_t i = 0; i < MAX_DIMS_NUM; i++) {
             inAddr += inIndex_[i] * inStride_[i];
         }
-
         // 初始化搬运参数
         DataCopyExtParams copyInParams;
         DataCopyPadExtParams<T> padParams{true, 0, 0, 0};
@@ -366,7 +365,8 @@ public:
         uint32_t hSlideNum = CeilDiv(ubFactorH, convKernelNumInWidth_);
         uint32_t wSlideNum = Std::min(ubFactorH,
             (inW + wPaddingBottom_ - 1 -(inIndex_[W_AXIS] + wKernelEffSize_ - 1)) / wStride_ + 1);
-        if (hSlideNum == 1 || wSlideNum >= hSlideNum) { // W方向有效滑动次数多，优化将W方向的有效滑动次数作为loop参数
+        // W方向有效滑动次数多，优化将W方向的有效滑动次数作为loop参数
+        if (hSlideNum == 1 || wSlideNum >= hSlideNum) {
             DoCopyInAxisConvWPrefer(hSlideNum, wSlideNum, src);
             return;
         }
@@ -382,6 +382,7 @@ public:
             int64_t startValidHIndex = inIndex_[H_AXIS] + CeilDiv(Std::max(
                 0L, inIndex_[H_AXIS]) - inIndex_[H_AXIS], hDilation_) * hDilation_;
             int64_t endValidHIndex = inIndex_[H_AXIS] + (Std::min(inHLast, inH - 1) - inIndex_[H_AXIS]) / hDilation_ * hDilation_;
+            // h没有落在有效范围内
             if (inIndex_[H_AXIS] >= inH || inHLast < 0 ||
                 startValidHIndex < 0 || startValidHIndex > inHLast || endValidHIndex < 0) { // h没有落在有效范围内
                 inIndex_[H_AXIS] += hStride_;
@@ -511,6 +512,7 @@ public:
         int64_t startValidWIndex = inIndex_[W_AXIS] + CeilDiv(Std::max(
             0L, inIndex_[W_AXIS]) - inIndex_[W_AXIS], wDilation_) * wDilation_;
         int64_t endValidWIndex = inIndex_[W_AXIS] + (Std::min(inWLast, inW - 1) - inIndex_[W_AXIS]) / wDilation_ * wDilation_;
+        // w没有落在有效范围内
         if (inIndex_[W_AXIS] >= inW || inWLast < 0 || startValidWIndex < 0 ||
             startValidWIndex > inWLast || endValidWIndex < 0) { // w没有落在有效范围内
             return;

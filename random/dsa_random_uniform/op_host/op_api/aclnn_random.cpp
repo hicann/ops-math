@@ -74,7 +74,7 @@ static aclnnStatus updateFrom(int64_t& from, op::DataType dtype)
     if (fromPlusOne < from) {
         int64_t from_ = std::abs(from + 1);
         int32_t n = 0;
-        while (from_ >>= 1) {
+        while ((from_ >>= 1) != 0LL) {
             ++n;
         }
         from = fromPlusOne + (1LL << (n - digits + 1));
@@ -116,7 +116,7 @@ static aclnnStatus updateTo(int64_t& to, op::DataType dtype)
     if (toMinusOne >= to) {
         int64_t to_ = std::abs(to - 1);
         int32_t n = 0;
-        while (to_ >>= 1) {
+        while ((to_ >>= 1) != 0LL) {
             ++n;
         }
         to = toMinusOne - (1LL << (n - digits + 1));

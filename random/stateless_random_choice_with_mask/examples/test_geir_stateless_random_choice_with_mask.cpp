@@ -57,7 +57,7 @@ using std::vector;
     input.push_back(tensor_placeholder##intputIndex);                                        \
     graph.AddOp(placeholder##intputIndex);                                                   \
     add1.set_input_##intputName(placeholder##intputIndex);                                   \
-    inputs.push_back(placeholder##intputIndex);
+    inputs.push_back(placeholder##intputIndex)
 
 #define ADD_INT_INPUT(intputIndex, intputName, intputDtype, inputShape, value)               \
     vector<int64_t> placeholder##intputIndex##_shape = inputShape;                           \
@@ -80,7 +80,7 @@ using std::vector;
     input.push_back(tensor_placeholder##intputIndex);                                        \
     graph.AddOp(placeholder##intputIndex);                                                   \
     add1.set_input_##intputName(placeholder##intputIndex);                                   \
-    inputs.push_back(placeholder##intputIndex);
+    inputs.push_back(placeholder##intputIndex)
 
 #define ADD_INPUT_ATTR(attrName, attrValue)                                                  \
     add1.set_attr_##attrName(attrValue);
@@ -88,7 +88,7 @@ using std::vector;
 #define ADD_OUTPUT(outputIndex, outputName, outputDtype, outputShape)                        \
     TensorDesc outputName##outputIndex##_desc =                                              \
         TensorDesc(ge::Shape(outputShape), FORMAT_ND, outputDtype);                          \
-    add1.update_output_desc_##outputName(outputName##outputIndex##_desc);             
+    add1.update_output_desc_##outputName(outputName##outputIndex##_desc)
 
 #define ADD_CONST_INPUT(intputIndex, intputName, intputDtype, inputShape)                    \
     vector<int64_t> placeholder##intputIndex##_shape = inputShape;                           \
@@ -112,7 +112,7 @@ using std::vector;
     graph.AddOp(placeholder##intputIndex);                                                   \
     add1.set_input_##intputName(placeholder##intputIndex);                                   \
     add1.update_input_desc_##intputName(placeholder##intputIndex##_desc);                    \
-    inputs.push_back(placeholder##intputIndex);
+    inputs.push_back(placeholder##intputIndex)
 
 #define LOG_PRINT(message, ...)     \
   do {                              \
@@ -197,8 +197,7 @@ int32_t GenOnesData(
 
 int32_t WriteDataToFile(string bin_file, uint64_t data_size, uint8_t *inputData)
 {
-    FILE *fp;
-    fp = fopen(bin_file.c_str(), "w");
+    FILE *fp = fopen(bin_file.c_str(), "w");
     fwrite(inputData, sizeof(uint8_t), data_size, fp);
     fclose(fp);
     return SUCCESS;

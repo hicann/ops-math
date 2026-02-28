@@ -147,7 +147,7 @@ static ge::graphStatus StridedSliceV3InferShape(gert::InferShapeContext* context
       }
       end_value = GetConstIndexValue(end_tensor, i, cur_axis_input_size, clip_lower, cur_axis_input_size);
     }
-    int64_t cur_out_size = std::ceil((end_value - begin_value) / static_cast<float>(step_value));
+    int64_t cur_out_size = static_cast<int64_t>(std::ceil((end_value - begin_value) / static_cast<float>(step_value)));
     if (cur_out_size < 0) {
       cur_out_size = 0;
     }

@@ -86,8 +86,8 @@ ge::graphStatus InferShapeMainImplForUnsqueezeV3(const gert::Shape *x_shape, ger
   }
   // solve normal axes
   int64_t copied_axes_data[gert::Shape::kMaxDimNum] = {0};
-  if (memcpy_s(reinterpret_cast<uint8_t*>(copied_axes_data), sizeof(int64_t) * gert::Shape::kMaxDimNum,
-                             reinterpret_cast<uint8_t*>(axes_data), sizeof(int64_t) * axes_size) != 0) {
+  if (memcpy_s(copied_axes_data, sizeof(int64_t) * gert::Shape::kMaxDimNum,
+               axes_data, sizeof(int64_t) * axes_size) != 0) {
     OP_LOGE("UnsqueezeV3", "memcpy_s not success!");
     return ge::GRAPH_FAILED;
   }

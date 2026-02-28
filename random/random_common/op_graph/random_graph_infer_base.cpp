@@ -16,14 +16,14 @@
 namespace ops {
 namespace GraphCommon {
 ge::graphStatus InferDataTypeByAttr(
-    gert::InferDataTypeContext* context, const int32_t dtypeIndex, ge::DataType& outDtype)
+    gert::InferDataTypeContext* context, const int32_t dtypeIndex, ge::DataType& OutDtype)
 {
     auto* attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
 
     const int64_t* attrDtype = attrs->GetAttrPointer<int64_t>(dtypeIndex);
     OP_CHECK_NULL_WITH_CONTEXT(context, attrDtype);
-    outDtype = static_cast<ge::DataType>(*attrDtype);
+    OutDtype = static_cast<ge::DataType>(*attrDtype);
     return ge::GRAPH_SUCCESS;
 }
 
