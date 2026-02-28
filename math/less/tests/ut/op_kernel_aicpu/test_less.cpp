@@ -259,3 +259,50 @@ TEST_F(TEST_LESS_UT, INPUT_BOOL_UNSUPPORT)
     CREATE_NODEDEF(shapes, data_types, datas);
     RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
 }
+
+TEST_F(TEST_LESS_UT, DATA_TYPE_INT32_PARALLEL_SUCC)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_BOOL};
+    vector<vector<int64_t>> shapes = {{64, 32}, {32}, {64, 32}};
+
+    int32_t* input1_data = new int32_t[2048];
+    int32_t* input2_data = new int32_t[32];
+    bool* output_exp_data = new bool[2048];
+
+    for (int64_t i = 0; i < 2048; ++i) {
+        input1_data[i] = static_cast<int32_t>(i % 100);
+    }
+    for (int64_t i = 0; i < 32; ++i) {
+        input2_data[i] = static_cast<int32_t>(50 + i % 50);
+    }
+    for (int64_t i = 0; i < 2048; ++i) {
+        int64_t idx = i % 32;
+        output_exp_data[i] = input1_data[i] < input2_data[idx] ? true : false;
+    }
+
+    RunLessKernel<int32_t, int32_t, bool>(data_types, shapes, input1_data, input2_data, output_exp_data);
+    delete[] input1_data;
+    delete[] input2_data;
+    delete[] output_exp_data;
+}
+
+TEST_F(TEST_LESS_UT, DATA_TYPE_INT32_SAME_SHAPE_PARALLEL_SUCC)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_BOOL};
+    vector<vector<int64_t>> shapes = {{64, 128}, {64, 128}, {64, 128}};
+
+    int32_t* input1_data = new int32_t[8192];
+    int32_t* input2_data = new int32_t[8192];
+    bool* output_exp_data = new bool[8192];
+
+    for (int64_t i = 0; i < 8192; ++i) {
+        input1_data[i] = static_cast<int32_t>(i % 100);
+        input2_data[i] = static_cast<int32_t>((i + 50) % 100);
+        output_exp_data[i] = input1_data[i] < input2_data[i] ? true : false;
+    }
+
+    RunLessKernel<int32_t, int32_t, bool>(data_types, shapes, input1_data, input2_data, output_exp_data);
+    delete[] input1_data;
+    delete[] input2_data;
+    delete[] output_exp_data;
+}
