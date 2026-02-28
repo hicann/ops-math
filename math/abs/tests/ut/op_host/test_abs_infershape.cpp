@@ -18,8 +18,7 @@
 #include "infershape_context_faker.h"
 #include "infershape_case_executor.h"
 
-class AbsInfershape : public testing::Test
-{
+class AbsInfershape : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
@@ -32,28 +31,274 @@ protected:
     }
 };
 
-TEST_F(AbsInfershape, abs_infershape_diff_test) {
-    gert::InfershapeContextPara infershapeContextPara("Abs",
-                                                      {
-                                                        {{{4, 3, 4}, {4, 3, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-                                                      },
-                                                      {
-                                                        {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-                                                      }
-                                                     );
-    std::vector<std::vector<int64_t>> expectOutputShape = {{4, 3, 4},};
+TEST_F(AbsInfershape, abs_infershape_diff_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{4, 3, 4}, {4, 3, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {4, 3, 4},
+    };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-TEST_F(AbsInfershape, abs_infershape_same_test) {
-    gert::InfershapeContextPara infershapeContextPara("Abs",
-                                                      {
-                                                        {{{1, 3, 4}, {1, 3, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-                                                      },
-                                                      {
-                                                        {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-                                                      }
-                                                     );
-    std::vector<std::vector<int64_t>> expectOutputShape = {{1, 3, 4},};
+TEST_F(AbsInfershape, abs_infershape_same_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{1, 3, 4}, {1, 3, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {1, 3, 4},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(AbsInfershape, abs_infershape_float_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{2, 3, 4}, {2, 3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {2, 3, 4},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(AbsInfershape, abs_infershape_int32_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{2, 3, 4}, {2, 3, 4}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {2, 3, 4},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(AbsInfershape, abs_infershape_int64_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{2, 3, 4}, {2, 3, 4}}, ge::DT_INT64, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {2, 3, 4},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(AbsInfershape, abs_infershape_bf16_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{2, 3, 4}, {2, 3, 4}}, ge::DT_BF16, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {2, 3, 4},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(AbsInfershape, abs_infershape_nchw_format_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{2, 3, 4, 5}, {2, 3, 4, 5}}, ge::DT_FLOAT, ge::FORMAT_NCHW},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_NCHW},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {2, 3, 4, 5},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(AbsInfershape, abs_infershape_nhwc_format_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{2, 3, 4, 5}, {2, 3, 4, 5}}, ge::DT_FLOAT, ge::FORMAT_NHWC},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_NHWC},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {2, 3, 4, 5},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(AbsInfershape, abs_infershape_empty_tensor_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{0, 3, 4}, {0, 3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {0, 3, 4},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(AbsInfershape, abs_infershape_complex64_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{2, 3, 4}, {2, 3, 4}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {2, 3, 4},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(AbsInfershape, abs_infershape_complex32_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{2, 3, 4}, {2, 3, 4}}, ge::DT_COMPLEX32, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_COMPLEX32, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {2, 3, 4},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(AbsInfershape, abs_infershape_int8_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{2, 3, 4}, {2, 3, 4}}, ge::DT_INT8, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_INT8, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {2, 3, 4},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(AbsInfershape, abs_infershape_int16_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{2, 3, 4}, {2, 3, 4}}, ge::DT_INT16, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_INT16, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {2, 3, 4},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(AbsInfershape, abs_infershape_uint8_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{2, 3, 4}, {2, 3, 4}}, ge::DT_UINT8, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_UINT8, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {2, 3, 4},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(AbsInfershape, abs_infershape_bool_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{2, 3, 4}, {2, 3, 4}}, ge::DT_BOOL, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_BOOL, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {2, 3, 4},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(AbsInfershape, abs_infershape_1d_tensor_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{10}, {10}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {10},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(AbsInfershape, abs_infershape_5d_tensor_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "Abs",
+        {
+            {{{1, 2, 3, 4, 5}, {1, 2, 3, 4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {1, 2, 3, 4, 5},
+    };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }

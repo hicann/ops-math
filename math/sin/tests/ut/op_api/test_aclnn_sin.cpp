@@ -12,6 +12,7 @@
 #include "math/sin/op_api/aclnn_sin.h"
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/op_api_ut.h"
+#include "opdev/platform.h"
 
 using namespace std;
 
@@ -403,4 +404,156 @@ TEST_F(sin_test, case_23)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+/**
+ * @brief ascend950_case_inplace_1: Float类型Inplace正弦运算测试
+ * @details 验证aclnnInplaceSinGetWorkspaceSize接口Float类型正常工作
+ */
+TEST_F(sin_test, ascend950_case_inplace_1)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+
+    auto selfRef = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceSin, INPUT(selfRef), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+/**
+ * @brief ascend950_case_inplace_2: Float16类型Inplace正弦运算测试
+ * @details 验证aclnnInplaceSinGetWorkspaceSize接口Float16类型正常工作
+ */
+TEST_F(sin_test, ascend950_case_inplace_2)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+
+    auto selfRef = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceSin, INPUT(selfRef), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+/**
+ * @brief ascend950_case_inplace_3: Double类型Inplace正弦运算测试
+ * @details 验证aclnnInplaceSinGetWorkspaceSize接口Double类型正常工作
+ */
+TEST_F(sin_test, ascend950_case_inplace_3)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+
+    auto selfRef = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceSin, INPUT(selfRef), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+/**
+ * @brief ascend950_case_inplace_4: Complex64类型Inplace正弦运算测试
+ * @details 验证aclnnInplaceSinGetWorkspaceSize接口Complex64类型正常工作
+ */
+TEST_F(sin_test, ascend950_case_inplace_4)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+
+    auto selfRef = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceSin, INPUT(selfRef), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+/**
+ * @brief ascend950_case_inplace_5: Complex128类型Inplace正弦运算测试
+ * @details 验证aclnnInplaceSinGetWorkspaceSize接口Complex128类型正常工作
+ */
+TEST_F(sin_test, ascend950_case_inplace_5)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+
+    auto selfRef = TensorDesc({2, 3}, ACL_COMPLEX128, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceSin, INPUT(selfRef), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+/**
+ * @brief ascend950_case_inplace_6: Inplace空指针测试
+ * @details 验证Inplace版本输入为nullptr时返回ACLNN_ERR_PARAM_NULLPTR错误码
+ */
+TEST_F(sin_test, ascend950_case_inplace_6)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+
+    auto ut = OP_API_UT(aclnnInplaceSin, INPUT((aclTensor*)nullptr), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
+}
+
+/**
+ * @brief ascend950_case_inplace_7: BF16类型Inplace正弦运算测试
+ * @details 验证aclnnInplaceSinGetWorkspaceSize接口BF16类型正常工作
+ */
+TEST_F(sin_test, ascend950_case_inplace_7)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+
+    auto selfRef = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceSin, INPUT(selfRef), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+/**
+ * @brief ascend950_case_inplace_8: Inplace不支持的dtype测试
+ * @details 验证Inplace版本Int8类型输入时返回ACLNN_ERR_PARAM_INVALID错误码
+ */
+TEST_F(sin_test, ascend950_case_inplace_8)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+
+    auto selfRef = TensorDesc({2, 3}, ACL_INT8, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceSin, INPUT(selfRef), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+/**
+ * @brief ascend310P_case_bf16_not_supported: BF16在非支持平台测试
+ * @details 验证BF16在Ascend310P平台不支持，返回ACLNN_ERR_PARAM_INVALID错误码
+ */
+TEST_F(sin_test, ascend310P_case_bf16_not_supported)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND310P);
+
+    auto self = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
+    auto out = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnSin, INPUT(self), OUTPUT(out));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
