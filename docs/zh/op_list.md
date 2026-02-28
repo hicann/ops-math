@@ -2274,5 +2274,15 @@
     <td>AI Core</td>
     <td>计算偏置的梯度。</td>
   </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/matrix_set_diag/README.md">matrix_set_diag</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>将输入tensor的对角线元素替换为对角线tensor的值。</td>
+  </tr>
 </tbody>
 </table>
