@@ -303,3 +303,17 @@ TEST_F(l2_svd_test, shape_fullMatrices_false_v) {
   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
   EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
+
+// ComputeUV=fasle时不再对U、V的shape进行校验
+TEST_F(l2_svd_test, shape_fullMatrices_false_v) {
+  auto inputDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(0, 2);
+  bool fullMatrices = false;
+  bool computeUV = false;
+  auto sigmaDesc = TensorDesc({2}, ACL_FLOAT, ACL_FORMAT_ND);
+  auto uDesc = TensorDesc({0}, ACL_FLOAT, ACL_FORMAT_ND);
+  auto vDesc = TensorDesc({0}, ACL_FLOAT, ACL_FORMAT_ND);
+  uint64_t workspace_size = 0;
+  auto ut = OP_API_UT(aclnnSvd, INPUT(inputDesc, fullMatrices, computeUV), OUTPUT(sigmaDesc, uDesc, vDesc));
+  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+  EXPECT_EQ(aclRet, ACL_SUCCESS);
+}

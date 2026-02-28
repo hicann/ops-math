@@ -58,7 +58,7 @@ static bool CheckDtypeValid(const aclTensor *input, const aclTensor *sigma, cons
 }
 
 static bool CheckShape(const aclTensor *input, const aclTensor *sigma, const aclTensor *u,
-                       const aclTensor *v, const bool fullMatrices)
+                       const aclTensor *v, const bool fullMatrices, const bool computeUV)
 {
   const int64_t inputDim = input->GetViewShape().GetDimNum();
   OP_CHECK(
@@ -98,21 +98,25 @@ static bool CheckShape(const aclTensor *input, const aclTensor *sigma, const acl
     vShapeExpected.AppendDim(n);
     vShapeExpected.AppendDim(k);
   }
-  OP_CHECK(uShapeExpected == u->GetViewShape(),
-           OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of output tensor u is invalid."), return false);
   OP_CHECK(sigmaShapeExpected == sigma->GetViewShape(),
            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of output tensor sigma is invalid."), return false);
-  OP_CHECK(vShapeExpected == v->GetViewShape(),
-           OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of output tensor v is invalid."), return false);
+  // computeUV为false时，不再校验输入U、V的shape
+  if (computeUV) {
+    OP_CHECK(uShapeExpected == u->GetViewShape(),
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of output tensor u is invalid."), return false);
+    
+    OP_CHECK(vShapeExpected == v->GetViewShape(),
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of output tensor v is invalid."), return false);
+  }
   return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor *input, const aclTensor *sigma, 
-                               const aclTensor *u, const aclTensor *v, const bool fullMatrices)
+static aclnnStatus CheckParams(const aclTensor *input, const aclTensor *sigma, const aclTensor *u, 
+                               const aclTensor *v, const bool fullMatrices, const bool computeUV)
 {
   CHECK_RET(CheckNotNull(input, sigma, u, v), ACLNN_ERR_PARAM_NULLPTR);
   CHECK_RET(CheckDtypeValid(input, sigma, u, v), ACLNN_ERR_PARAM_INVALID);
-  CHECK_RET(CheckShape(input, sigma, u, v, fullMatrices), ACLNN_ERR_PARAM_INVALID);
+  CHECK_RET(CheckShape(input, sigma, u, v, fullMatrices, computeUV), ACLNN_ERR_PARAM_INVALID);
   return ACLNN_SUCCESS;
 }
 
@@ -126,7 +130,7 @@ aclnnStatus aclnnSvdGetWorkspaceSize(const aclTensor *input, const bool fullMatr
   CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
   // 参数dtype检查
-  auto ret = CheckParams(input, sigma, u, v, fullMatrices);
+  auto ret = CheckParams(input, sigma, u, v, fullMatrices, computeUV);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
   if (input->IsEmpty()) {
@@ -147,11 +151,12 @@ aclnnStatus aclnnSvdGetWorkspaceSize(const aclTensor *input, const bool fullMatr
   // 将计算结果xxxOut拷贝到输出xxx上，xxx可能是非连续的tensor
   auto sigmaViewCopyResult = l0op::ViewCopy(sigmaOut, sigma, uniqueExecutor.get());
   CHECK_RET(sigmaViewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-  auto uViewCopyResult = l0op::ViewCopy(uOut, u, uniqueExecutor.get());
-  CHECK_RET(uViewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-  auto vViewCopyResult = l0op::ViewCopy(vOut, v, uniqueExecutor.get());
-  CHECK_RET(vViewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
+  if (computeUV) {
+    auto uViewCopyResult = l0op::ViewCopy(uOut, u, uniqueExecutor.get());
+    CHECK_RET(uViewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto vViewCopyResult = l0op::ViewCopy(vOut, v, uniqueExecutor.get());
+    CHECK_RET(vViewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  }
   // 获取计算过程中需要使用的workspace大小
   *workspaceSize = uniqueExecutor->GetWorkspaceSize();
   uniqueExecutor.ReleaseTo(executor);

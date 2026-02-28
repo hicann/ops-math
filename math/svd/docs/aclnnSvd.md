@@ -97,7 +97,7 @@ aclnnStatus aclnnSvd(
       <td>computeUV</td>
       <td>输入</td>
       <td>输入参数，表示是否计算输出张量u和v。</td>
-      <td>当设为true时，输出张量sigma、u、v均会被计算。<br>当设为false时，只计算sigma。</td>
+      <td>当设为true时，输出张量sigma、u、v均会被计算。<br>当设为false时，只计算sigma，且不再对u、v的shape进行校验。</td>
       <td>BOOL</td>
       <td>-</td>
       <td>-</td>
