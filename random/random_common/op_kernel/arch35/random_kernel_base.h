@@ -450,10 +450,6 @@ __aicore__ inline void ThreadMappingAndSkip(uint64_t idx, uint32_t* counter, uin
     uint64_t idxTmp = idx / STEP; 
     uint64_t globalThreadIdx = 0;
     uint64_t repeat = Simt::UintDiv(idxTmp, magic, shift);
-    // DIS_CONTINUOUS_USE模式下 STEP一定要求是4
-    if constexpr(STEP == VEC_8 || STEP == VEC_16) {
-        repeat = repeat * (STEP / VEC_4) + (idx / VEC_4 % (STEP / VEC_4));
-    }
     // 排列方式 0000 1111 ...0000 1111
     if constexpr(ARANGE_MODE == CONTINUOUS_USE) {
         globalThreadIdx = idxTmp - repeat * totalThreads;
@@ -461,6 +457,10 @@ __aicore__ inline void ThreadMappingAndSkip(uint64_t idx, uint32_t* counter, uin
         // 排列方式 0123 4567 ... 0123 4567 ...
         auto repeatTmp = Simt::UintDiv(idx, magic, shift);
         globalThreadIdx = idx - repeatTmp * totalThreads;
+    }
+    // DIS_CONTINUOUS_USE模式下 STEP一定要求是4
+    if constexpr(STEP == VEC_8 || STEP == VEC_16) {
+        repeat = repeat * (STEP / VEC_4) + (idx / VEC_4 % (STEP / VEC_4));
     }
 
     FlashCounter(globalThreadIdx, repeat, counter);
@@ -481,8 +481,10 @@ __aicore__ inline void ThreadMappingAndSkip(uint64_t idx, uint32_t* counter, uin
             i += Simt::GetBlockNum() * Simt::GetThreadNum() * step)
          {
             uint32_t results[ALG_COUNTER_SIZE];   // 或者 float类型
-            ThreadMappingAndSkip<step, CONTINUOUS_USE>(i, counter, magic, shift, totalThreads);
-            PhiloxRandomSimt(key, counter, results);
+            uint32_t counterTmp[ALG_COUNTER_SIZE] = {0, 0, 0, 0};
+            CopyArray<ALG_COUNTER_SIZE>(counterTmp, counter);
+            ThreadMappingAndSkip<step, CONTINUOUS_USE>(i, counterTmp, magic, shift, totalThreads);
+            PhiloxRandomSimt(key, counterTmp, results);
             // 使用results 对连续的4个索引做操作
          }
 
@@ -491,8 +493,10 @@ __aicore__ inline void ThreadMappingAndSkip(uint64_t idx, uint32_t* counter, uin
             i += Simt::GetBlockNum() * Simt::GetThreadNum() * step)
          {
             uint32_t results[ALG_COUNTER_SIZE];   // 或者 float类型
-            ThreadMappingAndSkip<step, DIS_CONTINUOUS_USE>(i, counter, magic, shift, totalThreads);
-            PhiloxRandomSimt(key, counter, results);
+            uint32_t counterTmp[ALG_COUNTER_SIZE] = {0, 0, 0, 0};
+            CopyArray<ALG_COUNTER_SIZE>(counterTmp, counter);
+            ThreadMappingAndSkip<step, DIS_CONTINUOUS_USE>(i, counterTmp, magic, shift, totalThreads);
+            PhiloxRandomSimt(key, counterTmp, results);
             // 使用results 对非连续的4个索引做操作，stride为totalThreads
          }
 */ 

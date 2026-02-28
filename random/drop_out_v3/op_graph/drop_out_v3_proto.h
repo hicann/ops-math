@@ -26,11 +26,10 @@ namespace ge {
  * @par Inputs:
  * @li x: A tensor, support ND format. Must be one of the following data types: float32,float16,bfloat16,1 ~ 8-D.
  * @li noise_shape: A tensor, optional tensor. Must be one of the following data types: int64,1-D.
- * @li p: A required input, should be const data. Must be one of the following data types: float32,float16,bfloat16,
- * support [0,1].
+ * @li p: A required input, should be const data. Must be one of the following data types: float32,float16,bfloat16.
  * @li seed: A required input, should be const data. Must be one of the following data types: int32,int64, 1-D.
  * @li offset: A required input, should be const data. Must be one of the following data types: int64, 1-D.
- * Shape is 2 and the value of index 0 is 0.
+ * Shape is 2 and the value of index 0 is 0. Value of index 1 must be a multiple of 4.
  *
  * @par Outputs:
  * @li y: A tensor with the same shape and type as "x".

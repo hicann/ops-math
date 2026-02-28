@@ -58,7 +58,7 @@ TEST_F(drop_out_v3_test, test_case_b32_1)
     std::vector<int64_t> noise_shape = {3};
     std::vector<int64_t> p_shape = {1};
     std::vector<int64_t> seed_shape = {1};
-    std::vector<int64_t> offset_shape = {2};
+    std::vector<int64_t> offset_shape = {4};
     std::vector<int64_t> y_shape = {10, 15, 20};
     std::vector<int64_t> mask_shape = {375};
 

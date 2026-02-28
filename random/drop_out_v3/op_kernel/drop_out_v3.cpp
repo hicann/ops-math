@@ -29,15 +29,15 @@ extern "C" __global__ __aicore__  void drop_out_v3(
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     if (TILING_KEY_IS(FP32_TILING_KEY)) {
         DropOutV3::DropOutV3Impl<float, DTYPE_P> op; 
-        op.Init(x, noiseShape, p, seed, offset, y, mask, workspace, &tilingData, &pipe);
-        op.Process(&tilingData);
+        op.Init(p, mask, workspace, &tilingData, &pipe);
+        op.Process(x, y, mask, &tilingData);
     } else if (TILING_KEY_IS(FP16_TILING_KEY)) {
         DropOutV3::DropOutV3Impl<half, DTYPE_P> op;
-        op.Init(x, noiseShape, p, seed, offset, y, mask, workspace, &tilingData, &pipe);
-        op.Process(&tilingData);
+        op.Init(p, mask, workspace, &tilingData, &pipe);
+        op.Process(x, y, mask, &tilingData);
     } else if (TILING_KEY_IS(BF16_TILING_KEY)) {
         DropOutV3::DropOutV3Impl<bfloat16_t, DTYPE_P> op;
-        op.Init(x, noiseShape, p, seed, offset, y, mask, workspace, &tilingData, &pipe);
-        op.Process(&tilingData);
+        op.Init(p, mask, workspace, &tilingData, &pipe);
+        op.Process(x, y, mask, &tilingData);
     }
 }

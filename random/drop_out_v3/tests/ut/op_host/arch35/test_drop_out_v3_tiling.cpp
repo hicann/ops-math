@@ -38,7 +38,7 @@ TEST_F(DropOutV3TilingTest, drop_out_v3_tiling_ascendc_float_01)
     int64_t noise_value = 10;
     float p_value = 0.5;
     int64_t seed_value = 8;
-    int64_t offset_value[2] = {0, 29};
+    int64_t offset_value[2] = {0, 4};
     gert::TilingContextPara::TensorDescription noise({{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &noise_value);
     gert::TilingContextPara::TensorDescription p({{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, true, &p_value);
     gert::TilingContextPara::TensorDescription seed({{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &seed_value);
@@ -49,7 +49,7 @@ TEST_F(DropOutV3TilingTest, drop_out_v3_tiling_ascendc_float_01)
          {{{15376}, {15376}}, ge::DT_INT8, ge::FORMAT_ND}},
         &compileInfo);
     uint64_t expectTilingKey = 1001;
-    string expectTilingData = "37 40 196608 2048 3328 3172 4608 1 3328 3328 1 3172 3172 1001 16777376 8 0 29 ";
-    std::vector<size_t> expectWorkspaces = {16777376};
+    string expectTilingData = "37 163840 1001 8 4 122980 ";
+    std::vector<size_t> expectWorkspaces = {16900224};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

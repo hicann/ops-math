@@ -29,25 +29,16 @@ namespace optiling {
 constexpr int64_t TILING_ARRAY_LEN_EIGHT = 8;
 constexpr uint16_t ALG_KEY_SIZE = 2;
 constexpr uint16_t ALG_COUNTER_SIZE = 4;
+constexpr int64_t DCACHE_SIZE = 32768;
+constexpr int64_t ALIGNMENT_32 = 32;
 
 BEGIN_TILING_DATA_DEF(DropOutV3TilingData)
   TILING_DATA_FIELD_DEF(int64_t, usedCoreNum);
-  TILING_DATA_FIELD_DEF(int64_t, totalCoreNum);
-  TILING_DATA_FIELD_DEF(int64_t, hardWareUbSize);
-  TILING_DATA_FIELD_DEF(int64_t, shareTmpUbSize);
-  TILING_DATA_FIELD_DEF(int64_t, numOfPerCore);
-  TILING_DATA_FIELD_DEF(int64_t, numOfTailCore);
-  TILING_DATA_FIELD_DEF(int64_t, ubOneLoopNum);
-  TILING_DATA_FIELD_DEF(int64_t, loopOfPerCore);
-  TILING_DATA_FIELD_DEF(int64_t, perOfPerCore);
-  TILING_DATA_FIELD_DEF(int64_t, tailOfPerCore);
-  TILING_DATA_FIELD_DEF(int64_t, loopOfTailCore);
-  TILING_DATA_FIELD_DEF(int64_t, perOfTailCore);
-  TILING_DATA_FIELD_DEF(int64_t, tailOfTailCore);
+  TILING_DATA_FIELD_DEF(int64_t, ubSize);
   TILING_DATA_FIELD_DEF(int64_t, tilingKey);
-  TILING_DATA_FIELD_DEF(int64_t, workspaceSize);
-  TILING_DATA_FIELD_DEF_ARR(uint32_t, ALG_KEY_SIZE, key);           // 输入key数组
-  TILING_DATA_FIELD_DEF_ARR(uint32_t, ALG_COUNTER_SIZE, counter);   // 输入counter数组
+  TILING_DATA_FIELD_DEF(int64_t, seed);
+  TILING_DATA_FIELD_DEF(int64_t, offset);
+  TILING_DATA_FIELD_DEF(int64_t, elementNum);
 END_TILING_DATA_DEF;
 REGISTER_TILING_DATA_CLASS(DropOutV3, DropOutV3TilingData)
 

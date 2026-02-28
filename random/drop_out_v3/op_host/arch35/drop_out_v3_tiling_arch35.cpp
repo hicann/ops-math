@@ -26,6 +26,7 @@ static const int64_t WORKSPACE_SIZE = 16 * 1024 * 1024;
 static const int64_t CORE_MINEST_NUM = 256;
 static const int64_t RESERVED_UB_SIZE = 2048;
 static const int64_t DOUBLE_UB_SIZE = 2;
+static const int64_t OFFSET_LIMIT = 4;
 
 static const int32_t UB_CALCU_RADIO = 5;
 static const int32_t UINT32_TO_UINT8_RADIO = 8;
@@ -49,9 +50,9 @@ static const int32_t TILING_KEY_FP32 = 1001;
 static const int32_t TILING_KEY_FP16 = 1002;
 static const int32_t TILING_KEY_BF16 = 1003;
 
-uint32_t key_[ALG_KEY_SIZE] = {0, 0};
-uint32_t counter_[ALG_COUNTER_SIZE] = {0, 0, 0, 0};
-
+int64_t seed = 0;
+int64_t offset = 0;
+int64_t totalCoreNum = 0;
 static inline int64_t Align256CeilSize(int64_t value)
 {
     return static_cast<int64_t>((value + CORE_MINEST_NUM - 1) / CORE_MINEST_NUM * CORE_MINEST_NUM);
@@ -149,20 +150,6 @@ static inline bool IsMatchShape(const gert::Shape& shape1, const gert::Shape& sh
     }
 }
 
-void GetKeyFromMem(const int64_t key)
-{
-    key_[0] = static_cast<int32_t>(key);
-    key_[1] = static_cast<int32_t>(key >> RIGHT_SHIFT_NUM);
-}
-
-void GetCounterFromMem(const std::vector<int64_t>& counter)
-{
-    counter_[COUNTER_IDX_0] = static_cast<int32_t>(counter[0]);
-    counter_[COUNTER_IDX_1] = static_cast<int32_t>(counter[0] >> RIGHT_SHIFT_NUM);
-    counter_[COUNTER_IDX_2] = static_cast<int32_t>(counter[1]);
-    counter_[COUNTER_IDX_3] = static_cast<int32_t>(counter[1] >> RIGHT_SHIFT_NUM);
-}
-
 static ge::graphStatus CheckParamsShape(const gert::TilingContext* context)
 {
     // 校验shape信息
@@ -222,11 +209,11 @@ static ge::graphStatus GetParamsData(const gert::TilingContext* context)
     OP_CHECK_IF(
         GetIntToShape(context, INDEX_INPUT_OFFSET, inputOffset_) != ge::GRAPH_SUCCESS,
         OP_LOGE(context->GetNodeName(), "get const shape of offset failed"), return ge::GRAPH_FAILED);
-    int64_t key = static_cast<int64_t>(inputSeed_[0]);
-    std::vector<int64_t> counter = {inputOffset_[0], inputOffset_[1]};
-    GetKeyFromMem(key);
-    GetCounterFromMem(counter);
-
+    seed = static_cast<int64_t>(inputSeed_[0]);
+    offset = inputOffset_[1];
+    
+    OP_CHECK_IF(
+        offset % OFFSET_LIMIT != 0, OP_LOGE(context->GetNodeName(), "The offset must be a multiple of 4, but got %ld", offset), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -281,15 +268,6 @@ static ge::graphStatus CheckParamsIsValid(const gert::TilingContext* context)
         CheckParamsShape(context) != ge::GRAPH_SUCCESS,
         OP_LOGE(context->GetNodeName(), "The param of shape is invalid, please check."), return ge::GRAPH_FAILED);
 
-    auto pSizeTensor = context->GetRequiredInputTensor(INDEX_INPUT_P);
-    OP_CHECK_NULL_WITH_CONTEXT(context, pSizeTensor);
-    const float* pSizeVal = pSizeTensor->GetData<float>();
-    OP_CHECK_NULL_WITH_CONTEXT(context, pSizeVal);
-    OP_CHECK_IF(
-        (pSizeVal[0] <= 0) || (pSizeVal[0] >= 1),
-        OP_LOGE(context->GetNodeName(), "Input of p [%f] should between 0~1, please check.", pSizeVal[0]),
-        return ge::GRAPH_FAILED);
-
     OP_CHECK_IF(
         GetParamsData(context) != ge::GRAPH_SUCCESS,
         OP_LOGE(context->GetNodeName(), "Get param data failed, please check."), return ge::GRAPH_FAILED);
@@ -309,44 +287,20 @@ static inline ge::graphStatus CalcTilingKey(const DataType dataType, DropOutV3Ti
     return ge::GRAPH_SUCCESS;
 }
 
-static inline ge::graphStatus CalcShareTmpBuffer(DropOutV3TilingData& tilingData)
-{
-    uint32_t typeSize = 2;
-    std::vector<int64_t> srcDims = {1, RESERVED_UB_SIZE, RESERVED_UB_SIZE};
-    ge::Shape shape(srcDims);
-
-    uint32_t minSize = 0;
-    uint32_t maxSize = 0;
-    AscendC::GetDropOutMaxMinTmpSize(shape, typeSize, false, maxSize, minSize);
-    if (maxSize == 0) {
-        OP_LOGD("[DropOutV3]", "Tiling GetDropOutMaxMinTmpSize fail.");
-        maxSize = RESERVED_UB_SIZE;
-    }
-    uint32_t shareTmpSize = (maxSize > RESERVED_UB_SIZE) ? RESERVED_UB_SIZE : maxSize;
-    int64_t shareTmpSizeInt64 = static_cast<int64_t>(shareTmpSize);
-    tilingData.set_shareTmpUbSize(shareTmpSizeInt64);
-
-    return ge::GRAPH_SUCCESS;
-}
-
 static inline void TilingDataToLogging(DropOutV3TilingData& tilingData)
 {
     OP_LOGI(
         "[DropOutV3]",
-        "[usedCoreNum]: %ld, [totalCoreNum]: %ld, [hardWareUbSize]: %ld, [numOfPerCore]: %ld,  \
-[numOfTailCore]: %ld, [ubOneLoopNum]: %ld, [loopOfPerCore]: %ld, [perOfPerCore]: %ld, [tailOfPerCore]: %ld,    \
-[loopOfTailCore]: %ld, [perOfTailCore]: %ld, [tailOfTailCore]: %ld, [workspaceSize]: %ld, [tilingKey]: %ld, [key]: %s, [counter]: %s",
-        tilingData.get_usedCoreNum(), tilingData.get_totalCoreNum(), tilingData.get_hardWareUbSize(),
-        tilingData.get_numOfPerCore(), tilingData.get_numOfTailCore(), tilingData.get_ubOneLoopNum(),
-        tilingData.get_loopOfPerCore(), tilingData.get_perOfPerCore(), tilingData.get_tailOfPerCore(),
-        tilingData.get_loopOfTailCore(), tilingData.get_perOfTailCore(), tilingData.get_tailOfTailCore(),
-        tilingData.get_workspaceSize(), tilingData.get_tilingKey(),
-        ops::ToStringWithSize(tilingData.get_key(), ALG_KEY_SIZE).c_str(),
-        ops::ToStringWithSize(tilingData.get_counter(), ALG_COUNTER_SIZE).c_str());
+        "[usedCoreNum]: %ld, [elementNum]: %ld, [tilingKey]: %ld, [seed]: %ld, [offset]: %ld",
+        tilingData.get_usedCoreNum(), 
+        tilingData.get_elementNum(),
+        tilingData.get_tilingKey(),
+        tilingData.get_seed(),
+        tilingData.get_offset());
 }
 
 static ge::graphStatus CalcDropOutV3Tiling(
-    const gert::TilingContext* context, DropOutV3TilingData& tilingData, DataType dataType)
+    const gert::TilingContext* context, DropOutV3TilingData& tilingData)
 {
     OP_LOGD(context->GetNodeName(), "TilingDropOutV3 Enter CalcDropOutV3Tiling.");
 
@@ -363,37 +317,11 @@ static ge::graphStatus CalcDropOutV3Tiling(
     int64_t usedCoreNum = 1;
     if (elementNum > CORE_MINEST_NUM) {
         numOfPerCore =
-            Align256CeilSize((elementNum + tilingData.get_totalCoreNum() - 1) / tilingData.get_totalCoreNum());
-        usedCoreNum = min((elementNum + numOfPerCore - 1) / numOfPerCore, tilingData.get_totalCoreNum());
-    }
-    int64_t numOfTailCore = elementNum - (usedCoreNum - 1) * numOfPerCore;
-
-    int64_t ubCap = tilingData.get_hardWareUbSize() / DOUBLE_UB_SIZE;
-    int64_t ubNum = (ubCap - tilingData.get_shareTmpUbSize()) / ge::GetSizeByDataType(dataType);
-    int64_t ubOneLoopNum = 1;
-    if (dataType == ge::DT_FLOAT || dataType == ge::DT_FLOAT16 || dataType == ge::DT_BF16) {
-        ubOneLoopNum = Align256FloorSize(ubNum / UB_CALCU_RADIO);
-    } else {
-        return ge::GRAPH_FAILED;
+            Align256CeilSize((elementNum + totalCoreNum - 1) / totalCoreNum);
+        usedCoreNum = min((elementNum + numOfPerCore - 1) / numOfPerCore, totalCoreNum);
     }
 
-    int64_t perOfPerCore = (numOfPerCore < ubOneLoopNum) ? numOfPerCore : ubOneLoopNum;
-    int64_t loopOfPerCore = Ops::Base::CeilDiv(numOfPerCore, perOfPerCore);
-    int64_t tailOfPerCore = numOfPerCore - perOfPerCore * (loopOfPerCore - 1);
-    int64_t perOfTailCore = (numOfTailCore < ubOneLoopNum) ? numOfTailCore : ubOneLoopNum;
-    int64_t loopOfTailCore = Ops::Base::CeilDiv(numOfTailCore, perOfTailCore);
-    int64_t tailOfTailCore = numOfTailCore - perOfTailCore * (loopOfTailCore - 1);
-
-    tilingData.set_numOfPerCore(numOfPerCore);
-    tilingData.set_loopOfPerCore(loopOfPerCore);
-    tilingData.set_perOfPerCore(perOfPerCore);
-    tilingData.set_tailOfPerCore(tailOfPerCore);
-
-    tilingData.set_numOfTailCore(numOfTailCore);
-    tilingData.set_loopOfTailCore(loopOfTailCore);
-    tilingData.set_perOfTailCore(perOfTailCore);
-    tilingData.set_tailOfTailCore(tailOfTailCore);
-    tilingData.set_ubOneLoopNum(ubOneLoopNum);
+    tilingData.set_elementNum(elementNum);
     tilingData.set_usedCoreNum(usedCoreNum);
 
     return ge::GRAPH_SUCCESS;
@@ -410,25 +338,16 @@ ge::graphStatus Tiling4DropOutV3(gert::TilingContext* context)
 
     auto compileInfo = reinterpret_cast<const DropOutV3CompileInfo*>(context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
-    int64_t totalCoreNum = static_cast<int64_t>(compileInfo->totalCoreNum);
 
+    totalCoreNum = static_cast<int64_t>(compileInfo->totalCoreNum);
     // set ubSize
     int64_t ubSize = compileInfo->ubSizePlatForm;
     // 实例化对象op
     DropOutV3TilingData tilingData;
-    // 设置totalCoreNum && hardWareUbSize
-    tilingData.set_totalCoreNum(totalCoreNum);
-    tilingData.set_hardWareUbSize(ubSize);
-
     // 设置key && counter
-    tilingData.set_key(key_);
-    tilingData.set_counter(counter_);
-
-    // 设置shareTmpBuffer
-    OP_CHECK_IF(
-        CalcShareTmpBuffer(tilingData) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "[CalcShareTmpBuffer] TilingDropOutV3 fail to get share buffer."),
-        return ge::GRAPH_FAILED);
+    tilingData.set_seed(seed);
+    tilingData.set_offset(offset);	 
+    tilingData.set_ubSize(ubSize - DCACHE_SIZE);
 
     // InputDesc判空 && 设置tilingKey
     auto inputDesc = context->GetInputDesc(INDEX_INPUT_X);
@@ -441,18 +360,15 @@ ge::graphStatus Tiling4DropOutV3(gert::TilingContext* context)
 
     // 设置DropOutV3计算中的参数
     OP_CHECK_IF(
-        CalcDropOutV3Tiling(context, tilingData, dataType) != ge::GRAPH_SUCCESS,
+        CalcDropOutV3Tiling(context, tilingData) != ge::GRAPH_SUCCESS,
         OP_LOGE(context->GetNodeName(), "[CalcDropOutV3Tiling] TilingDropOutV3 fail to calulate tiling param."),
         return ge::GRAPH_FAILED);
 
     // 设置workspace
-    size_t userSize = tilingData.get_totalCoreNum() * sizeof(int32_t);
-    size_t sysWorkspaceSize = WORKSPACE_SIZE;
-    size_t* userWorkspaceSize = context->GetWorkspaceSizes(1);
-    OP_CHECK_NULL_WITH_CONTEXT(context, userWorkspaceSize);
-    userWorkspaceSize[0] = userSize + sysWorkspaceSize;
-    tilingData.set_workspaceSize(userWorkspaceSize[0]);
-
+    size_t* workspace = context->GetWorkspaceSizes(1);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
+    workspace[0] = Ops::Base::CeilAlign(tilingData.get_elementNum(), ALIGNMENT_32) * sizeof(uint8_t)+ 
+                   ascendcPlatform.GetLibApiWorkSpaceSize();
     OP_CHECK_IF(
         DropOutV3SetTilingData(context, tilingData) != ge::GRAPH_SUCCESS,
         OP_LOGE(context->GetNodeName(), "[DropOutV3SetTilingData] TilingDropOutV3 fail to set tiling data."),
@@ -461,6 +377,7 @@ ge::graphStatus Tiling4DropOutV3(gert::TilingContext* context)
     context->SetBlockDim(tilingData.get_usedCoreNum());
     context->SetTilingKey(tilingData.get_tilingKey());
     TilingDataToLogging(tilingData);
+    context->SetScheduleMode(1);
 
     return ge::GRAPH_SUCCESS;
 }
