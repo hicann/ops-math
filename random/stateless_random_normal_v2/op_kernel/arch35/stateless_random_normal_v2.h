@@ -65,8 +65,8 @@ private:
     uint32_t ubTilingSize_ = 0;
     uint32_t currBlockTilingSize_ = 0;
     uint32_t currUbTilingSize_ = 0;
-    uint32_t blockOffset_ = 0;
-    uint32_t currOffset_ = 0;
+    uint64_t blockOffset_ = 0;
+    uint64_t currOffset_ = 0;
     uint32_t ubLoopCnt_ = 0;
     uint32_t key_[ALG_KEY_SIZE] = {0};
     uint32_t counter_[ALG_COUNTER_SIZE] = {0};
