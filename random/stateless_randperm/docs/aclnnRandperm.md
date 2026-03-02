@@ -16,57 +16,192 @@
 
 ## 功能说明
 
-算子功能：返回从0到n-1的整数随机排列。
+返回从0到n-1的整数随机排列。
 
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnRandpermGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnRandperm”接口执行计算。
 
-- `aclnnStatus aclnnRandpermGetWorkspaceSize(int64_t n, int64_t seed, int64_t offset, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnRandperm(void* workspace, uint64_t workspaceSize,  aclOpExecutor* executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnRandpermGetWorkspaceSize(
+  int64_t             n, 
+  int64_t             seed, 
+  int64_t             offset, 
+  aclTensor*          out, 
+  uint64_t*           workspaceSize, 
+  aclOpExecutor**     executor)
+```
+
+```Cpp
+aclnnStatus aclnnRandperm(
+  void*               workspace, 
+  uint64_t            workspaceSize,  
+  aclOpExecutor*      executor, 
+  aclrtStream         stream)
+```
 
 ## aclnnRandpermGetWorkspaceSize
 
 - **参数说明：**
 
-  - n(int64_t, 计算输入)：host侧的整型，取随机数的上界。数据类型支持INT64。
+  <table class="tg" style="undefined;table-layout: fixed; width: 1351px"><colgroup>
+  <col style="width: 233px">
+  <col style="width: 120px">
+  <col style="width: 295px">
+  <col style="width: 120px">
+  <col style="width: 218px">
+  <col style="width: 120px">
+  <col style="width: 120px">
+  <col style="width: 120px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-5agr">参数名</th>
+      <th class="tg-0pky">输入/输出</th>
+      <th class="tg-0pky">描述</th>
+      <th class="tg-0pky">使用说明</th>
+      <th class="tg-0pky">数据类型</th>
+      <th class="tg-0pky">数据格式</th>
+      <th class="tg-0pky">维度(shape)</th>
+      <th class="tg-0pky">非连续tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">n（int64_t）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">取随机数的上界。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">INT64</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">seed（int64_t）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">随机数生成器的种子，它影响生成的随机数序列。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">INT64</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">offset（int64_t）</td>
+      <td class="tg-0lax">输入</td>
+      <td class="tg-0lax">随机数生成器的偏移量，它影响生成的随机数序列的位置。设置偏移量后，生成的随机数序列会从指定位置开始。</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">INT64</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">out（aclTensor*）</td>
+      <td class="tg-0lax">输出</td>
+      <td class="tg-0lax">输出tensor。</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">INT64、INT32、INT16、UINT8、INT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
+      <td class="tg-0lax">ND</td>
+      <td class="tg-0lax">为[n]。</td>
+      <td class="tg-0lax">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">workspaceSize（uint64_t*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回需要在Device侧申请的workspace大小。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">executor（aclOpExecutor**）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回op执行器，包括了算子计算流程。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+  </tbody></table>
 
-  - seed(int64_t, 计算输入)：随机数生成器的种子，它影响生成的随机数序列。数据类型支持INT64。
-
-  - offset(int64_t, 计算输入)：随机数生成器的偏移量，它影响生成的随机数序列的位置。设置偏移量后，生成的随机数序列会从指定位置开始。数据类型支持INT64。
-
-  - out(aclTensor*, 计算输出)：Device侧的aclTensor，shape为n。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持INT64、INT32、INT16、UINT8、INT8、FLOAT、FLOAT16、DOUBLE。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持INT64、INT32、INT16、UINT8、INT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16。
-
-  - workspaceSize(uint64_t *, 出参): 返回需要在Device侧申请的workspace大小。
-  
-  - executor(aclOpExecutor **, 出参): 返回op执行器，包含了算子计算流程。
+  - <term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-```
-第一段接口完成入参校验，出现以下场景时报错：
-返回161001(ACLNN_ERR_PARAM_NULLPTR): 1. 传入的out是空指针。
-返回161002(ACLNN_ERR_PARAM_INVALID): 1. 传入的n小于0。
-                                     2.out的shape不为n。
+  第一段接口完成入参校验，出现如下场景时报错：
 
-```
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="2">161002</td>
+      <td>传入的n小于0。</td>
+    </tr>
+    <tr>
+      <td>out的shape不为n。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnRandperm
 
 - **参数说明：**
 
-  - workspace(void*, 入参): 在Device侧申请的workspace内存地址。
-
-  - workspaceSize(uint64_t, 入参): 在Device侧申请的workspace大小，由第一段接口aclnnRandpermGetWorkspaceSize获取。
-
-  - executor(aclOpExecutor*, 入参): op执行器，包含了算子计算流程。
-  
-  - stream(aclrtStream, 入参): 指定执行任务的Stream。
-
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 872px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnRandpermGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
@@ -76,9 +211,9 @@
 
 - 确定性计算：
   - aclnnRandperm默认确定性实现。
-- n值大小的约束：
-  - Ascend 950PR/Ascend 950DT（INT64、INT32、INT16、UINT8、INT8、FLOAT、FLOAT16、BFLOAT16）：n不超过int32的最大值。
-  - Ascend 950PR/Ascend 950DT（DOUBLE）、以及其他产品：当n大于268000000时有运行超时风险，详见[超时时间设置方法](https://www.hiascend.com/document/detail/zh/canncommercial/82RC1/API/appdevgapi/aclcppdevg_03_0132.html)。
+- Ascend 950PR/Ascend 950DT：
+  - INT64、INT32、INT16、UINT8、INT8、FLOAT、FLOAT16、BFLOAT16：n不超过int32的最大值。
+  - DOUBLE、以及其它产品：当n大于268000000时有运行超时风险，详见[超时时间设置方法](https://www.hiascend.com/document/detail/zh/canncommercial/850/API/appdevgapi/aclcppdevg_03_0132.html)。
 
 ## 调用示例
 
