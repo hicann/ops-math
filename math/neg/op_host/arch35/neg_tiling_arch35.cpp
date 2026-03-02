@@ -114,6 +114,7 @@ ge::graphStatus NegTiling::RunTiling()
 {
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     tiling = tilingContext->GetTilingData<NegTilingData>();
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tiling);
     // 获取tiling计算所需的参数
     ge::graphStatus status = CalcOutputDtype();
     OP_CHECK_IF(
@@ -167,6 +168,7 @@ ge::graphStatus NegTiling::SetTilingData()
     size_t usrWorkspaceSize = 0;
     size_t sysWorkspaceSize = static_cast<size_t>(16 * 1024 * 1024);
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = sysWorkspaceSize + usrWorkspaceSize;
     OP_LOGD(tilingContext->GetNodeName(), "END Neg AscendC Tiling \n");
     return ge::GRAPH_SUCCESS;
@@ -187,6 +189,7 @@ ge::graphStatus TilingPrepareForNeg(gert::TilingParseContext* context)
     fe::PlatFormInfos* platformInfo = context->GetPlatformInfo();
     auto compileInfo = context->GetCompiledInfo<ElewiseCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
+    OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
