@@ -63,6 +63,26 @@ do
             break
         fi
     done
+    # #如果file_path为scripts/ci/mirror_update_time.txt，则将准备好的需验证算子列表加到ops_name与ops_name_mirror中
+    # 暂无950设备，注释掉，待支持后放开
+    # if [[ "$file_path" == "scripts/ci/mirror_update_time.txt" ]]; then
+
+    #     calc_ops_950=("add" "sub" "mul" "div")
+    #     operator_list_950=("${calc_ops_950[@]}")
+
+    #     for op in "${operator_list_950[@]}"; do
+    #         op_exists=0
+    #         for existing_op in "${ops_name[@]}"; do
+    #             if [ "$existing_op" = "$op" ]; then
+    #                 op_exists=1
+    #                 break
+    #             fi
+    #         done
+    #         if [ "$op_exists" -eq 0 ]; then
+    #             ops_name+=("$op")
+    #         fi
+    #     done
+    # fi
 done
 
 for name in "${ops_name[@]}"
