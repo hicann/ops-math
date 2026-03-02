@@ -1390,7 +1390,13 @@ build_example() {
   fi
 
   # Find example files
-  local find_cmd="find ${search_path} -path \"*/${EXAMPLE_NAME}/examples/*\" -name \"${file_pattern}\" -not -path \"*/scripts/*\""
+  local find_cmd="find ${search_path}"
+  if [[ "$COMPUTE_UNIT" == "ascend950" ]]; then
+    find_cmd="${find_cmd} \\( -path \"*/${EXAMPLE_NAME}/examples/*\" -o -path \"*/${EXAMPLE_NAME}/examples/arch35/*\" \\)"
+  else
+    find_cmd="${find_cmd} -path \"*/${EXAMPLE_NAME}/examples/*\""
+  fi
+  find_cmd="${find_cmd} -name \"${file_pattern}\" -not -path \"*/scripts/*\""
   if [[ "$ENABLE_EXPERIMENTAL" != "TRUE" ]]; then
     find_cmd="${find_cmd} -not -path \"*/experimental/*\""
   fi
