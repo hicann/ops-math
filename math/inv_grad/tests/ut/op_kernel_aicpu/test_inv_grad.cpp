@@ -339,3 +339,48 @@ TEST_F(TEST_INVGRAD_UT, INPUT_BOOL_UNSUPPORT)
     CREATE_NODEDEF(shapes, data_types, datas);
     RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
 }
+
+TEST_F(TEST_INVGRAD_UT, DATA_TYPE_DOUBLE_SUCC_1D)
+{
+    vector<DataType> data_types = {DT_DOUBLE, DT_DOUBLE, DT_DOUBLE};
+    vector<vector<int64_t>> shapes = {{8}, {8}, {8}};
+    const double input1_data[] = {1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8};
+    const double input2_data[] = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8};
+    const double output_exp_data[] = {-0.121, -0.968, -3.267, -7.744, -15.125, -26.136, -41.503, -61.952};
+
+    RunInvGradKernel<double, double, double>(data_types, shapes, input1_data, input2_data, output_exp_data);
+}
+
+TEST_F(TEST_INVGRAD_UT, DATA_TYPE_COMPLEX64_SUCC_1D)
+{
+    vector<DataType> data_types = {DT_COMPLEX64, DT_COMPLEX64, DT_COMPLEX64};
+    vector<vector<int64_t>> shapes = {{4}, {4}, {4}};
+    const std::complex<float> input1_data[] = {{1.0f, 0.0f}, {2.0f, 0.0f}, {3.0f, 0.0f}, {4.0f, 0.0f}};
+    const std::complex<float> input2_data[] = {{0.1f, 0.0f}, {0.2f, 0.0f}, {0.3f, 0.0f}, {0.4f, 0.0f}};
+    const std::complex<float> output_exp_data[] = {{-0.1f, 0.0f}, {-0.8f, 0.0f}, {-2.7f, 0.0f}, {-6.4f, 0.0f}};
+
+    RunInvGradKernel<std::complex<float>, std::complex<float>, std::complex<float>>(data_types, shapes, input1_data, input2_data, output_exp_data);
+}
+
+TEST_F(TEST_INVGRAD_UT, DATA_TYPE_COMPLEX128_SUCC_1D)
+{
+    vector<DataType> data_types = {DT_COMPLEX128, DT_COMPLEX128, DT_COMPLEX128};
+    vector<vector<int64_t>> shapes = {{3}, {3}, {3}};
+    const std::complex<double> input1_data[] = {{1.0, 0.0}, {2.0, 0.0}, {3.0, 0.0}};
+    const std::complex<double> input2_data[] = {{0.1, 0.0}, {0.2, 0.0}, {0.3, 0.0}};
+    const std::complex<double> output_exp_data[] = {{-0.1, 0.0}, {-0.8, 0.0}, {-2.7, 0.0}};
+
+    RunInvGradKernel<std::complex<double>, std::complex<double>, std::complex<double>>(data_types, shapes, input1_data, input2_data, output_exp_data);
+}
+
+TEST_F(TEST_INVGRAD_UT, DATA_TYPE_INT32_UNSUPPORT)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{4}, {4}, {4}};
+    int32_t input1[4] = {1, 2, 3, 4};
+    int32_t input2[4] = {1, 1, 1, 1};
+    int32_t output[4] = {0};
+    vector<void*> datas = {(void*)input1, (void*)input2, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
+}

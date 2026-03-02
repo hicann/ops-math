@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "aclnn_logdet.h"
+#include "math/logdet/op_host/op_api/aclnn_logdet.h"
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/tensor_desc.h"
