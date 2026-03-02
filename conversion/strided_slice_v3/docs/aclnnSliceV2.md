@@ -43,22 +43,22 @@ $$
 
 ```cpp
 aclnnStatus aclnnSliceV2GetWorkspaceSize(
-  const aclTensor*   self, 
-  const aclIntArray* starts, 
-  const aclIntArray* ends, 
-  const aclIntArray* axes, 
-  const aclIntArray* steps, 
-  aclTensor*         out, 
-  uint64_t*          workspaceSize, 
-  aclOpExecutor**    executor)
+    const aclTensor*   self, 
+    const aclIntArray* starts, 
+    const aclIntArray* ends, 
+    const aclIntArray* axes, 
+    const aclIntArray* steps, 
+    aclTensor*         out, 
+    uint64_t*          workspaceSize, 
+    aclOpExecutor**    executor)
 ```
 
 ```cpp
 aclnnStatus aclnnSliceV2(
-  void*          workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor* executor, 
-  aclrtStream    stream)
+    void*          workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor* executor, 
+    aclrtStream    stream)
 ```
 
 ## aclnnSliceV2GetWorkspaceSize
@@ -88,7 +88,7 @@ aclnnStatus aclnnSliceV2(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的self</td>
       <td>-</td>
@@ -98,7 +98,7 @@ aclnnStatus aclnnSliceV2(
       <td>√</td>
     </tr>
     <tr>
-      <td>starts</td>
+      <td>starts（aclIntArray*）</td>
       <td>输入</td>
       <td>公式中的starts</td>
       <td>切片位置的起始索引，starts、ends、axes、steps的元素个数相同。</td>
@@ -108,7 +108,7 @@ aclnnStatus aclnnSliceV2(
       <td>-</td>
     </tr>
     <tr>
-      <td>ends</td>
+      <td>ends（aclIntArray*）</td>
       <td>输入</td>
       <td>公式中的ends</td>
       <td>切片位置的终止索引，starts、ends、axes、steps的元素个数相同。</td>
@@ -118,7 +118,7 @@ aclnnStatus aclnnSliceV2(
       <td>-</td>
     </tr>
     <tr>
-      <td>axes</td>
+      <td>axes（aclIntArray*）</td>
       <td>输入</td>
       <td>公式中的axes，切片的轴。</td>
       <td>starts、ends 、axes、steps的元素个数相同。axes的元素需要在[-self.dim(), self.dim() - 1]范围内，且表示的轴不能重复。</td>
@@ -128,7 +128,7 @@ aclnnStatus aclnnSliceV2(
       <td>-</td>
     </tr>
     <tr>
-      <td>steps</td>
+      <td>steps（aclIntArray*）</td>
       <td>输入</td>
       <td>公式中的steps。</td>
       <td>starts、ends、axes、steps的元素个数相同，steps的元素均为正整数。</td>
@@ -138,7 +138,7 @@ aclnnStatus aclnnSliceV2(
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的out</td>
       <td>shape满足计算公式中的推导规则</td>
@@ -148,7 +148,7 @@ aclnnStatus aclnnSliceV2(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -158,7 +158,7 @@ aclnnStatus aclnnSliceV2(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

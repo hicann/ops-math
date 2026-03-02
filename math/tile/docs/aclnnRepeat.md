@@ -72,19 +72,19 @@ repeats中的值必须大于等于0。
 
 ```cpp
 aclnnStatus aclnnRepeatGetWorkspaceSize(
-  const aclTensor   *self, 
-  const aclIntArray *repeats, 
-  aclTensor         *out, 
-  uint64_t          *workspaceSize, 
-  aclOpExecutor    **executor)
+    const aclTensor   *self, 
+    const aclIntArray *repeats, 
+    aclTensor         *out, 
+    uint64_t          *workspaceSize, 
+    aclOpExecutor    **executor)
 ```
 
 ```cpp
 aclnnStatus aclnnRepeat(
-  void          *workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor, 
-  aclrtStream    stream)
+    void          *workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor *executor, 
+    aclrtStream    stream)
 ```
 
 ## aclnnRepeatGetWorkspaceSize
@@ -114,7 +114,7 @@ aclnnStatus aclnnRepeat(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>-</td>
       <td>-</td>
@@ -124,7 +124,7 @@ aclnnStatus aclnnRepeat(
       <td>√</td>
     </tr>
     <tr>
-      <td>repeats</td>
+      <td>repeats（aclIntArray*）</td>
       <td>输入</td>
       <td>-</td>
       <td>表示沿每个维度重复输入tensor的次数，参数个数不大于8, 当前不支持对超过4个维度同时做repeat的场景，详细约束请见约束说明。</td>
@@ -134,7 +134,7 @@ aclnnStatus aclnnRepeat(
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>-</td>
       <td>-</td>
@@ -144,7 +144,7 @@ aclnnStatus aclnnRepeat(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -154,7 +154,7 @@ aclnnStatus aclnnRepeat(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -373,8 +373,8 @@ int main() {
   aclTensor* self = nullptr;
   aclTensor* out = nullptr;
   aclIntArray* repeat = nullptr;
-  std::vector<float> selfHostData(GetShapeSize(selfShape) * 2, 1);
-  std::vector<float> outHostData(GetShapeSize(outShape) * 2, 1);
+  std::vector<float> selfHostData(GetShapeSize(selfShape) 1);
+  std::vector<float> outHostData(GetShapeSize(outShape), 1);
   // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);

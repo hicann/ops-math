@@ -14,7 +14,7 @@
 
 ## 功能说明
 
-- 算子功能：
+- 接口功能：
   在Matmul算子ND格式输入下，计算如果要转换到NZ格式下需要占用的空间大小（单位为元素个数），该接口仅仅用于判断对weight Tensor预处理需要使用多少size才可使Matmul算子执行性能最优。
   例如：
   
@@ -38,28 +38,113 @@
 
 ## 函数原型
 
-`aclnnStatus aclnnCalculateMatmulWeightSizeV2(const aclIntArray *tensorShape, aclDataType dataType, uint64_t *weightTensorSize)`
+```cpp
+aclnnStatus aclnnCalculateMatmulWeightSizeV2(
+    const aclIntArray *tensorShape, 
+    aclDataType        dataType, 
+    uint64_t          *weightTensorSize)
+```
 
 ## aclnnCalculateMatmulWeightSizeV2
 
 - **参数说明：**
 
-  * tensorShape(aclIntArray *, 计算输入)：用于表达该次Matmul载入权重矩阵的Shape，公式中的Shapesize，Host侧的aclIntArray，输入shape支持2-6维，即（batch，n，k），其中batch表示权重矩阵的批次大小，支持0-4维，n表示单个batch权重矩阵第1维的大小，k表示单个batch权重矩阵第2维的大小，不支持空Array。
-  * weightDtype(aclDataType, 计算输入)：weight的Dtype，支持FLOAT16、BFLOAT16、INT8。
-  * weightTensorSize(uint64_t \*, 计算输出)：转换为NZ格式所占用的空间大小（单位为元素个数），公式中的result。
+</style>
+<table class="tg" style="undefined;table-layout: fixed; width: 1210px"><colgroup>
+<col style="width: 211px">
+<col style="width: 120px">
+<col style="width: 198px">
+<col style="width: 226px">
+<col style="width: 106px">
+<col style="width: 95px">
+<col style="width: 109px">
+<col style="width: 145px">
+</colgroup>
+<thead>
+  <tr>
+    <th class="tg-0pky">参数名</th>
+    <th class="tg-0pky">输入/输出</th>
+    <th class="tg-0pky">描述</th>
+    <th class="tg-0pky">使用说明</th>
+    <th class="tg-0pky">数据类型</th>
+    <th class="tg-0pky">数据格式</th>
+    <th class="tg-0pky">维度(shape)</th>
+    <th class="tg-0pky">非连续Tensor</th>
+  </tr></thead>
+<tbody>
+  <tr>
+    <td class="tg-0pky">tensorShape（aclIntArray *）</td>
+    <td class="tg-0pky">输入</td>
+    <td class="tg-0pky">用于表达该次Matmul载入权重矩阵的Shape，公式中的Shapesize。</td>
+    <td class="tg-0pky">输入shape支持2-6维，即（batch，n，k），其中batch表示权重矩阵的批次大小，支持0-4维，n表示单个batch权重矩阵第1维的大小，k表示单个batch权重矩阵第2维的大小，不支持空Array。</td>
+    <td class="tg-0pky">FLOAT16、BFLOAT16、INT8</td>
+    <td class="tg-0pky">-</td>
+    <td class="tg-0pky">2-6</td>
+    <td class="tg-0pky">-</td>
+  </tr>
+  <tr>
+    <td class="tg-0lax">weightDtype（aclDataType）</td>
+    <td class="tg-0lax">输入</td>
+    <td class="tg-0lax">weight的Dtype</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">FLOAT16、BFLOAT16、INT8</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">-</td>
+  </tr>
+  <tr>
+    <td class="tg-0pky">weightTensorSize（uint64_t *）</td>
+    <td class="tg-0pky">输出</td>
+    <td class="tg-0pky">转换为NZ格式所占用的空间大小（单位为元素个数），公式中的result。</td>
+    <td class="tg-0pky">-</td>
+    <td class="tg-0pky">-</td>
+    <td class="tg-0pky">-</td>
+    <td class="tg-0pky">-</td>
+    <td class="tg-0pky">-</td>
+  </tr>
+</tbody></table>
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  161001(ACLNN_ERR_PARAM_NULLPTR)：1. 输入是空指针。
-  161002(ACLNN_ERR_PARAM_INVALID)：1.不支持空Tensor的输入空Tensor
-                                   2.输入shape的维度不满足要求
-                                   3.输入的数据类型不满足要求
-  361001(ACLNN_ERR_RUNTIME_ERROR): 产品型号不支持。
-  ```
+  </style>
+  <table class="tg" style="undefined;table-layout: fixed; width: 722px"><colgroup>
+  <col style="width: 273px">
+  <col style="width: 132px">
+  <col style="width: 317px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">返回值</th>
+      <th class="tg-0pky">错误码</th>
+      <th class="tg-0pky">描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">ACLNN_ERR_PARAM_NULLPTR</td>
+      <td class="tg-0pky">161001</td>
+      <td class="tg-0pky">输入是空指针。</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky" rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td class="tg-0pky" rowspan="3">161002</td>
+      <td class="tg-0pky">不支持空Tensor的输入空Tensor。</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">输入shape的维度不满足要求。</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">输入的数据类型不满足要求。</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">ACLNN_ERR_RUNTIME_ERROR</td>
+      <td class="tg-0lax">361001</td>
+      <td class="tg-0lax">产品型号不支持。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## 约束说明
 

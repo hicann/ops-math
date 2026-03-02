@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-算子功能：实现Unfold算子的反向功能，计算相应的梯度。
+接口功能：实现Unfold算子的反向功能，计算相应的梯度。
 
 Unfold算子根据入参self，计算出维度$dim$的所有大小为$size$的切片。两个切片之间的步长由$step$给出。如果$sizedim$是入参self的维度$dim$的大小，则返回的张量中维度$dim$的大小将为$(sizedim-size)/step+1$。返回的张量中附加了一个大小为$size$的附加维度。
 
@@ -45,45 +45,220 @@ tensor([1, 2, 3, 4, 5, 6, 0])
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnUnfoldGradGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnUnfoldGrad”接口执行计算。
 
-- `aclnnStatus aclnnUnfoldGradGetWorkspaceSize(const aclTensor *gradOut, const aclIntArray *inputSizes, int64_t dim, int64_t size, int64_t step, const aclTensor *gradIn, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnUnfoldGrad(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```cpp
+aclnnStatus aclnnUnfoldGradGetWorkspaceSize(
+    const aclTensor   *gradOut, 
+    const aclIntArray *inputSizes, 
+    int64_t            dim, 
+    int64_t            size, 
+    int64_t            step, 
+    const aclTensor   *gradIn, 
+    uint64_t          *workspaceSize, 
+    aclOpExecutor    **executor)
+```
+```cpp
+aclnnStatus aclnnUnfoldGrad(
+    void          *workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor *executor, 
+    aclrtStream    stream)
+```
 
 ## aclnnUnfoldGradGetWorkspaceSize
 
 - **参数说明：**
 
-  - gradOut(aclTensor*, 计算输入)：Device侧的aclTensor，表示梯度更新系数，shape为(..., (sizedim-size)/step+1, size)，要求满足gradOut的第dim维等于$(inputSizes[dim]-size)/step+1$和gradOut的size等于inputSizes的size+1。数据类型支持FLOAT、FLOAT16、BFLOAT16，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - inputSizes(aclIntArray*, 计算输入): Host侧的aclIntArray，表示输出张量的形状，值为(..., sizedim)，inputSizes的size小于等于8。数据类型支持INT64，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - dim（int64_t，计算输入）：公式中的$dim$。表示展开发生的维度。$dim$需要满足dim大于等于0且dim小于inputSizes的size。
-  - size（int64_t，计算输入）：公式中的$size$。表示展开的每个切片的大小。$size$需要满足size大于0且size小于等于inputSizes的第dim维。
-  - step（int64_t，计算输入）：公式中的$step$。表示每个切片之间的步长。$step$需要满足step大于0。
-  - gradIn（aclTensor*，计算输出）：表示Unfold的对应梯度，Device侧的aclTensor，shape为inputSizes。数据类型支持FLOAT、FLOAT16、BFLOAT16，且数据类型必须和gradOut一致。
-  - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
+</style>
+<table class="tg" style="undefined;table-layout: fixed; width: 1247px"><colgroup>
+<col style="width: 211px">
+<col style="width: 120px">
+<col style="width: 198px">
+<col style="width: 226px">
+<col style="width: 143px">
+<col style="width: 95px">
+<col style="width: 109px">
+<col style="width: 145px">
+</colgroup>
+<thead>
+  <tr>
+    <th class="tg-0pky">参数名</th>
+    <th class="tg-0pky">输入/输出</th>
+    <th class="tg-0pky">描述</th>
+    <th class="tg-0pky">使用说明</th>
+    <th class="tg-0pky">数据类型</th>
+    <th class="tg-0pky">数据格式</th>
+    <th class="tg-0pky">维度(shape)</th>
+    <th class="tg-0pky">非连续Tensor</th>
+  </tr></thead>
+<tbody>
+  <tr>
+    <td class="tg-0pky">gradOut（aclTensor *）</td>
+    <td class="tg-0pky">输入</td>
+    <td class="tg-0pky">表示梯度更新系数。</td>
+    <td class="tg-0pky">shape为(..., (sizedim-size)/step+1, size)，要求满足gradOut的第dim维等于$(inputSizes[dim]-size)/step+1$和gradOut的size等于inputSizes的size+1。</td>
+    <td class="tg-0pky">FLOAT、FLOAT16、BFLOAT16</td>
+    <td class="tg-0pky">ND</td>
+    <td class="tg-0pky">1-8</td>
+    <td class="tg-0pky">-</td>
+  </tr>
+  <tr>
+    <td class="tg-0lax">inputSizes（aclIntArray*）</td>
+    <td class="tg-0lax">输入</td>
+    <td class="tg-0lax">表示输出张量的形状。</td>
+    <td class="tg-0lax">值为(..., sizedim)，inputSizes的size小于等于8。</td>
+    <td class="tg-0lax">INT64</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">-</td>
+  </tr>
+  <tr>
+    <td class="tg-0pky">dim（int64_t）</td>
+    <td class="tg-0pky">输入</td>
+    <td class="tg-0pky">表示展开发生的维度，公式中的dim。</td>
+    <td class="tg-0pky">$dim$需要满足dim大于等于0且dim小于inputSizes的size。</td>
+    <td class="tg-0pky">INT64</td>
+    <td class="tg-0pky">-</td>
+    <td class="tg-0pky">-</td>
+    <td class="tg-0pky">-</td>
+  </tr>
+  <tr>
+    <td class="tg-0lax">size（int64_t）</td>
+    <td class="tg-0lax">输入</td>
+    <td class="tg-0lax">表示展开的每个切片的大小，公式中的size。</td>
+    <td class="tg-0lax">$size$需要满足size大于0且size小于等于inputSizes的第dim维。</td>
+    <td class="tg-0lax">INT64</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">-</td>
+  </tr>
+  <tr>
+    <td class="tg-0lax">step（int64_t）</td>
+    <td class="tg-0lax">输入</td>
+    <td class="tg-0lax">表示每个切片之间的步长，公式中的step。</td>
+    <td class="tg-0lax">$step$需要满足step大于0。</td>
+    <td class="tg-0lax">INT64</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">-</td>
+  </tr>
+  <tr>
+    <td class="tg-0lax">gradIn（aclTensor *）</td>
+    <td class="tg-0lax">输出</td>
+    <td class="tg-0lax">表示Unfold的对应梯度。</td>
+    <td class="tg-0lax">shape为inputSizes。</td>
+    <td class="tg-0lax">与gradOut保持一致</td>
+    <td class="tg-0lax">ND</td>
+    <td class="tg-0lax">1-8</td>
+    <td class="tg-0lax">-</td>
+  </tr>
+  <tr>
+    <td class="tg-0lax">workspaceSize（uint64_t*）</td>
+    <td class="tg-0lax">输出</td>
+    <td class="tg-0lax">返回需要在Device侧申请的workspace大小。</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">-</td>
+  </tr>
+  <tr>
+    <td class="tg-0lax">executor（aclOpExecutor**）</td>
+    <td class="tg-0lax">输出</td>
+    <td class="tg-0lax">返回op执行器，包含了算子计算流程。</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">-</td>
+    <td class="tg-0lax">-</td>
+  </tr>
+</tbody></table>
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
+
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 输入和输出的Tensor是空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. 输入和输出的数据类型和数据格式不在支持的范围之内。
-  返回561002（ACLNN_ERR_INNER_TILING_ERROR）:1. gradOut的第dim维不等于(inputSizes[dim]-size)/step+1
-                                              2. gradOut的size不等于inputSizes的size+1
-                                              3. dim小于0或dim大于等于inputSizes的size
-                                              4. size小于等于0或size大于inputSizes的第dim维
-                                              5. step小于等于0
-  ```
+    </style>
+    <table class="tg" style="undefined;table-layout: fixed; width: 808px"><colgroup>
+    <col style="width: 290px">
+    <col style="width: 120px">
+    <col style="width: 398px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th class="tg-0pky">返回值</th>
+        <th class="tg-0pky">错误码</th>
+        <th class="tg-0pky">描述</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td class="tg-0pky">ACLNN_ERR_PARAM_NULLPTR</td>
+        <td class="tg-0pky">161001</td>
+        <td class="tg-0pky">输入和输出的Tensor是空指针。</td>
+      </tr>
+      <tr>
+        <td class="tg-0pky">ACLNN_ERR_PARAM_INVALID</td>
+        <td class="tg-0pky">161002</td>
+        <td class="tg-0pky">输入和输出的数据类型和数据格式不在支持的范围之内。</td>
+      </tr>
+      <tr>
+        <td class="tg-0lax" rowspan="5">ACLNN_ERR_INNER_TILING_ERROR</td>
+        <td class="tg-0lax" rowspan="5">561002</td>
+        <td class="tg-0lax">gradOut的第dim维不等于(inputSizes[dim]-size)/step+1。</td>
+      </tr>
+      <tr>
+        <td class="tg-0lax">gradOut的size不等于inputSizes的size+1。</td>
+      </tr>
+      <tr>
+        <td class="tg-0lax">dim小于0或dim大于等于inputSizes的size。</td>
+      </tr>
+      <tr>
+        <td class="tg-0lax">size小于等于0或size大于inputSizes的第dim维。</td>
+      </tr>
+      <tr>
+        <td class="tg-0lax">step小于等于0。</td>
+      </tr>
+    </tbody>
+    </table>
 
 ## aclnnUnfoldGrad
 
-- **参数说明：**
-
-  - workspace(void*, 入参)：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnUnfoldGradGetWorkspaceSize获取。
-  - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+- **参数说明**：
+  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
+  <col style="width: 173px">
+  <col style="width: 112px">
+  <col style="width: 668px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnUnfoldGradGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 

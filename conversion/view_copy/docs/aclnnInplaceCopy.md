@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-- 算子功能：将src中的元素复制到selfRef张量中并返回selfRef。
+- 接口功能：将src中的元素复制到selfRef张量中并返回selfRef。
 
 - 计算公式：
 
@@ -40,42 +40,167 @@
 
 算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnInplaceCopyGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnInplaceCopy”接口执行计算。
 
-- `aclnnStatus aclnnInplaceCopyGetWorkspaceSize(aclTensor *selfRef, const aclTensor *src, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnInplaceCopy(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, const aclrtStream stream)`
+```cpp
+aclnnStatus aclnnInplaceCopyGetWorkspaceSize(
+    aclTensor       *selfRef, 
+    const aclTensor *src, 
+    uint64_t        *workspaceSize, 
+    aclOpExecutor  **executor)
+```
+```cpp
+aclnnStatus aclnnInplaceCopy(
+    void             *workspace,
+    uint64_t          workspaceSize,
+    aclOpExecutor    *executor,
+    const aclrtStream stream)
+```
 
 ## aclnnInplaceCopyGetWorkspaceSize
 
 - **参数说明**：
 
-  - selfRef(aclTensor*, 计算输入|计算输出)：公式中的`selfRef`，注意目前只有selfRef为连续时，才支持复数间的拷贝。shape需要与src满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、COMPLEX64、COMPLEX128、UINT16、UINT32、UINT64、BFLOAT16
-  - src(aclTensor*, 计算输入)：公式中的`src`，注意目前只有selfRef为连续时，才支持复数间的拷贝。shape需要与selfRef满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、COMPLEX64、COMPLEX128、UINT16、UINT32、UINT64、BFLOAT16
-  - workspaceSize（uint64_t\*, 出参）：返回需要在Device侧申请的workspace大小。
-
-  - executor（aclOpExecutor\**, 出参）：返回op执行器，包含了算子计算流程。
+  </style>
+  <table class="tg" style="undefined;table-layout: fixed; width: 1231px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 120px">
+  <col style="width: 147px">
+  <col style="width: 194px">
+  <col style="width: 210px">
+  <col style="width: 95px">
+  <col style="width: 109px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">参数名</th>
+      <th class="tg-0pky">输入/输出</th>
+      <th class="tg-0pky">描述</th>
+      <th class="tg-0pky">使用说明</th>
+      <th class="tg-0pky">数据类型</th>
+      <th class="tg-0pky">数据格式</th>
+      <th class="tg-0pky">维度(shape)</th>
+      <th class="tg-0pky">非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">selfRef（aclTensor *）</td>
+      <td class="tg-0pky">输入/输出</td>
+      <td class="tg-0pky">公式中的selfRef。</td>
+      <td class="tg-0pky">注意目前只有selfRef为连续时，才支持复数间的拷贝，shape需要与src满足[broadcast关系]。</td>
+      <td class="tg-0pky">INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、COMPLEX64、COMPLEX128、UINT16、UINT32、UINT64、BFLOAT16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">1-8</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">src（aclTensor *）</td>
+      <td class="tg-0lax">输入</td>
+      <td class="tg-0lax">公式中的src。</td>
+      <td class="tg-0lax">注意目前只有selfRef为连续时，才支持复数间的拷贝，shape需要与selfRef满足[broadcast关系]。</td>
+      <td class="tg-0lax">INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、COMPLEX64、COMPLEX128、UINT16、UINT32、UINT64、BFLOAT16</td>
+      <td class="tg-0lax">ND</td>
+      <td class="tg-0lax">1-8</td>
+      <td class="tg-0lax">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">workspaceSize（uint64_t*）</td>
+      <td class="tg-0lax">输出</td>
+      <td class="tg-0lax">返回需要在Device侧申请的workspace大小。</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">executor（aclOpExecutor**）</td>
+      <td class="tg-0lax">输出</td>
+      <td class="tg-0lax">返回op执行器，包含了算子计算流程。</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+    </tr>
+  </tbody></table>
 
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的selfRef或src是空指针时。
-  返回161002 (ACLNN_ERR_PARAM_INVALID)：1. selfRef和src的数据类型不在支持的范围之内。
-                                    2. selfRef的shape超过8维。
-                                    3. src的shape不能广播至selfRef。
-                                    4. src的数据类型不在支持范围内，或不能转换到selfRef。
-  ```
+    </style>
+    <table class="tg" style="undefined;table-layout: fixed; width: 808px"><colgroup>
+    <col style="width: 290px">
+    <col style="width: 120px">
+    <col style="width: 398px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th class="tg-0pky">返回值</th>
+        <th class="tg-0pky">错误码</th>
+        <th class="tg-0pky">描述</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td class="tg-0pky">ACLNN_ERR_PARAM_NULLPTR</td>
+        <td class="tg-0pky">161001</td>
+        <td class="tg-0pky">传入的selfRef或src是空指针时。</td>
+      </tr>
+      <tr>
+        <td class="tg-0pky" rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+        <td class="tg-0pky" rowspan="4">161002</td>
+        <td class="tg-0pky">传入的selfRef或src是空指针时。</td>
+      </tr>
+      <tr>
+        <td class="tg-0lax">selfRef的shape超过8维。</td>
+      </tr>
+      <tr>
+        <td class="tg-0lax">src的shape不能广播至selfRef。</td>
+      </tr>
+      <tr>
+        <td class="tg-0lax">src的数据类型不在支持范围内，或不能转换到selfRef。</td>
+      </tr>
+    </tbody>
+    </table>
 
 ## aclnnInplaceCopy
 
 - **参数说明**：
-
-  - workspace（void\*, 入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize（uint64_t, 入参）：在Device侧申请的workspace大小，由第一段接口aclnnInplaceCopyGetWorkspaceSize获取。
-  - executor（aclOpExecutor\*, 入参）：op执行器，包含了算子计算流程。
-  - stream（aclrtStream, 入参）：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
+  <col style="width: 173px">
+  <col style="width: 112px">
+  <col style="width: 668px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceCopyGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值**：
 

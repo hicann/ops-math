@@ -65,7 +65,7 @@ aclnnStatus aclnnTransMatmulWeight(
       <td>输入</td>
       <td>表示一个待处理的Matmul的weightTensor。</td>
       <td>经过此接口后刷新成预处理后的Matmul weightTensor，格式根据亲和性进行ND或私有格式的转换。</td>
-      <td>FLOAT16、INT8</td>
+      <td>FLOAT16、BFLOAT16、INT8</td>
       <td>ND</td>
       <td>2-6</td>
       <td>√</td>
@@ -91,6 +91,7 @@ aclnnStatus aclnnTransMatmulWeight(
       <td>-</td>
     </tr>
   </tbody></table>  
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：mmWeightRef数据类型不支持BFLOAT16。
 
 - **返回值**
 

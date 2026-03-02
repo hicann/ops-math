@@ -74,7 +74,7 @@ aclnnStatus aclnnCircularPad2dBackward(
     </tr></thead>
   <tbody>
     <tr>
-      <td>gradOutput</td>
+      <td>gradOutput（aclTensor*）</td>
       <td>输入</td>
       <td>反向时输入的梯度数据。</td>
       <td>shape维度需要与self和gradInput一致，shape需要与circular_pad2d正向传播的output一致。</td>
@@ -84,7 +84,7 @@ aclnnStatus aclnnCircularPad2dBackward(
       <td>√</td>
     </tr>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>正向时待填充的原输入数据。</td>
       <td>shape维度需要与gradOutput和gradInput一致，shape与gradInput一致。</td>
@@ -94,17 +94,17 @@ aclnnStatus aclnnCircularPad2dBackward(
       <td>√</td>
     </tr>
     <tr>
-      <td>padding</td>
+      <td>padding（aclIntArray*）</td>
       <td>输入</td>
       <td>正向时填充的维度。</td>
       <td><ul><li>数据格式长度为4，数值依次代表左右上下需要填充的值。</li><li>padding前两个数值都需小于self最后一维度的大小，后两个数值需小于self倒数第二维度的大小。</li></ul></td>
       <td>INT64</td>
       <td>ND</td>
-      <td>1</td>
+      <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>gradInput</td>
+      <td>gradInput（aclTensor*）</td>
       <td>输出</td>
       <td>反向时输出的梯度数据。</td>
       <td>-</td>
@@ -114,7 +114,7 @@ aclnnStatus aclnnCircularPad2dBackward(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -124,7 +124,7 @@ aclnnStatus aclnnCircularPad2dBackward(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

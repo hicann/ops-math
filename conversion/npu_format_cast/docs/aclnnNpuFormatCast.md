@@ -29,26 +29,26 @@
 ```c++
 aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
     const aclTensor* srcTensor,
-    const int dstFormat,
-    int additionalDtype,
-    int64_t** dstShape,
-    uint64_t* dstShapeSize,
-    int* actualFormat)
+    const int        dstFormat,
+    int              additionalDtype,
+    int64_t**        dstShape,
+    uint64_t*        dstShapeSize,
+    int*             actualFormat)
 ```
 
 ```c++
 aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
     const aclTensor* srcTensor,
-    aclTensor* dstTensor,
-    uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+    aclTensor*       dstTensor,
+    uint64_t*        workspaceSize,
+    aclOpExecutor**  executor)
 ```
 ```c++
 aclnnStatus aclnnNpuFormatCast(
-    void* workspace,
-    uint64_t workspaceSize,
+    void*          workspace,
+    uint64_t       workspaceSize,
     aclOpExecutor* executor,
-    aclOpExecutor** executor)
+    aclrtStream    stream)
 ```
 
 ## aclnnNpuFormatCastCalculateSizeAndFormat
@@ -78,7 +78,7 @@ aclnnStatus aclnnNpuFormatCast(
   </thead>
   <tbody>
         <tr>
-            <td>srcTensor</td>
+            <td>srcTensor（aclTensor*）</td>
             <td>输入</td>
             <td>转换的源Tensor</td>
             <td>INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16<sup>2</sup>、FLOAT8_E4M3FN、FlOAT8_E4M3FN<sup>2</sup>、FLOAT4_E2M1<sup>2</sup></td>
@@ -86,7 +86,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>2-6</td>
         </tr>
         <tr>
-            <td>dstFormat</td>
+            <td>dstFormat（int）</td>
             <td>输入</td>
             <td>输出张量的数据格式</td>
             <td>None</td>
@@ -94,7 +94,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>None</td>
         </tr>
         <tr>
-            <td>additionalDtype</td>
+            <td>additionalDtype（int）</td>
             <td>可选输入</td>
             <td>转换为FRACTAL_NZ数据格式时，推断C0大小所使用的基本数据类型</td>
             <td>ACL_FLOAT16(1)、ACL_BF16(27)、INT8(2)、ACL_FLOAT8_E4M3FN(36)</td>
@@ -102,7 +102,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>None</td>
         </tr>
         <tr>
-            <td>dstShape</td>
+            <td>dstShape（int64_t**）</td>
             <td>输出</td>
             <td>用于输出dstTensor的shape数组的指针。该指针指向的内存由本接口申请，调用者释放。</td>
             <td>None</td>
@@ -110,7 +110,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>4-8</td>
         </tr>
         <tr>
-            <td>dstShapeSize</td>
+            <td>dstShapeSize（uint64_t**）</td>
             <td>输出</td>
             <td>用于输出dstTensor的shape数组大小的指针。</td>
             <td>None</td>
@@ -118,7 +118,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>None</td>
         </tr>
         <tr>
-            <td>actualFormat</td>
+            <td>actualFormat（int*）</td>
             <td>输出</td>
             <td>用于输出dstTensor实际数据格式的指针。</td>
             <td>None</td>
@@ -212,7 +212,7 @@ aclnnStatus aclnnNpuFormatCast(
   </thead>
   <tbody>
         <tr>
-            <td>srcTensor</td>
+            <td>srcTensor（aclTensor*）</td>
             <td>输入</td>
             <td>输入张量，Device侧的aclTensor，输入的数据只支持连续的Tensor。</td>
             <td>INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16<sup>2</sup>、FlOAT8_E4M3FN<sup>2</sup>、FLOAT4_E2M1<sup>2</sup></td>
@@ -220,7 +220,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>2-6</td>
         </tr>
         <tr>
-            <td>dstTensor</td>
+            <td>dstTensor（aclTensor*）</td>
             <td>输入</td>
             <td>转换后的目标张量，Device侧的aclTensor，只支持连续的Tensor。</td>
             <td>INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16<sup>2</sup>、FLOAT8_E4M3FN、FlOAT8_E4M3FN<sup>2</sup>、FLOAT4_E2M1<sup>2</sup></td>
@@ -228,7 +228,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>4-8</td>
         </tr>
         <tr>
-            <td>workspaceSize</td>
+            <td>workspaceSize（uint64_t*）</td>
             <td>输入</td>
             <td>需要在Device侧申请的workspace的大小。</td>
             <td>None</td>
@@ -236,7 +236,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>None</td>
         </tr>
         <tr>
-            <td>executor</td>
+            <td>executor（aclOpExecutor**）</td>
             <td>输入</td>
             <td>包含算子计算流程的op执行器。</td>
             <td>None</td>

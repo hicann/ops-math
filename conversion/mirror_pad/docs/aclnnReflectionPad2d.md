@@ -81,7 +81,7 @@ aclnnStatus aclnnReflectionPad2d(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>Device侧的aclTensor。</td>
       <td>维度支持三维或四维。</td>
@@ -91,7 +91,7 @@ aclnnStatus aclnnReflectionPad2d(
       <td>√</td>
     </tr>
     <tr>
-      <td>padding</td>
+      <td>padding（aclIntArray*）</td>
       <td>输入</td>
       <td>Device侧的aclIntArray数组。</td>
       <td>长度为4，数值依次代表左右上下需要填充的值。padding前两个数值需小于self最后一维度的数值，后两个数值需小于self倒数第二维度的数值。</td>
@@ -101,7 +101,7 @@ aclnnStatus aclnnReflectionPad2d(
       <td>√</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>Device侧的aclTensor。</td>
       <td>维度与self一致，out倒数第二维度的数值等于self倒数第二维度的数值加padding后两个值，out最后一维度的数值等于self最后一维度的数值加padding前两个值。</td>
@@ -111,7 +111,7 @@ aclnnStatus aclnnReflectionPad2d(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -121,7 +121,7 @@ aclnnStatus aclnnReflectionPad2d(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

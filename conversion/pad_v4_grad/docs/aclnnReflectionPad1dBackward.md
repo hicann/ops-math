@@ -74,7 +74,7 @@ aclnnStatus aclnnReflectionPad1dBackward(
     </tr></thead>
   <tbody>
     <tr>
-      <td>gradOutput</td>
+      <td>gradOutput（aclTensor*）</td>
       <td>输入</td>
       <td>输入的梯度</td>
       <td>-</td>
@@ -84,7 +84,7 @@ aclnnStatus aclnnReflectionPad1dBackward(
       <td>√</td>
     </tr>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>需要进行填充的tensor</td>
       <td>shape支持2-3维且维度需要与gradOutput和gradInput一致，shape与gradInput一致。</td>
@@ -94,7 +94,7 @@ aclnnStatus aclnnReflectionPad1dBackward(
       <td>√</td>
     </tr>
     <tr>
-      <td>padding</td>
+      <td>padding（aclIntArray*）</td>
       <td>输入</td>
       <td>填充范围</td>
       <td>数据类型长度为2。padding的两个数值都需小于self最后一维度的数值。</td>
@@ -104,7 +104,7 @@ aclnnStatus aclnnReflectionPad1dBackward(
       <td>-</td>
     </tr>
     <tr>
-      <td>gradInput</td>
+      <td>gradInput（aclTensor*）</td>
       <td>输出</td>
       <td>计算得到的self的梯度</td>
       <td>-</td>
@@ -114,7 +114,7 @@ aclnnStatus aclnnReflectionPad1dBackward(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -124,7 +124,7 @@ aclnnStatus aclnnReflectionPad1dBackward(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

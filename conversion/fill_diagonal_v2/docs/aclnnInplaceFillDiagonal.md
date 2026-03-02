@@ -16,49 +16,190 @@
 
 ## 功能说明
 
-- 算子功能：以fillValue填充tensor对角线。
+- 接口功能：以fillValue填充tensor对角线。
 - 计算公式：以二维为例，`wrap`为False时，填充位置为 `[r, r]`，其中`0 <= r < m`，`m = min(col, row)`，`col`为列的长度，`row`为行的长度。`wrap`为True时，填充位置为 `[r + (m + 1) * i, r]`，其中`0 <= r < m`，`m = min(col, row)`，`col`为列的长度，`row`为行的长度，`0 <= i < col // r`。
 
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnInplaceFillDiagonalGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnInplaceFillDiagonal”接口执行计算。
 
-- `aclnnStatus aclnnInplaceFillDiagonalGetWorkspaceSize(aclTensor* selfRef, const aclScalar* fillValue, bool wrap, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnInplaceFillDiagonal(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```cpp
+aclnnStatus aclnnInplaceFillDiagonalGetWorkspaceSize(
+    aclTensor*        selfRef, 
+    const aclScalar*  fillValue, 
+    bool              wrap, 
+    uint64_t*         workspaceSize,
+    aclOpExecutor**   executor)
+```
+
+```cpp
+aclnnStatus aclnnInplaceFillDiagonal(
+    void          *workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor *executor, 
+    aclrtStream    stream)
+```
 
 ## aclnnInplaceFillDiagonalGetWorkspaceSize
 
 - **参数说明**
 
-  - selfRef（aclTensor\*, 计算输入/输出）：表示输入/输出张量，Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-  - fillValue（aclScalar\*, 计算输入）：表示填充值，Host侧的aclScalar，数据类型需要是可转换为FLOAT的数据类型。
-  - wrap（bool, 计算输入）：表示填充方式，公式中的`wrap`，Host侧的BOOL类型。对于高矩阵（行数row大于列数col），若为True，每经过N行形成一条新的对角线，其中`N = min(col, row)`。
-  - workspaceSize（uint64_t\*, 出参）：返回需要在Device侧申请的workspace大小。
-  - executor（aclOpExecutor\**, 出参）：返回op执行器，包含了算子计算流程。
+  </style>
+  <table class="tg" style="undefined;table-layout: fixed; width: 1161px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 88px">
+  <col style="width: 198px">
+  <col style="width: 156px">
+  <col style="width: 195px">
+  <col style="width: 95px">
+  <col style="width: 109px">
+  <col style="width: 109px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">参数名</th>
+      <th class="tg-0pky">输入/输出</th>
+      <th class="tg-0pky">描述</th>
+      <th class="tg-0pky">使用说明</th>
+      <th class="tg-0pky">数据类型</th>
+      <th class="tg-0pky">数据格式</th>
+      <th class="tg-0pky">维度(shape)</th>
+      <th class="tg-0pky">非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">selfRef（aclTensor*）</td>
+      <td class="tg-0pky">输入/输出</td>
+      <td class="tg-0pky">表示需要填充的输入、输出Tensor</td>
+      <td class="tg-0pky">self最大维度不能超过2。</td>
+      <td class="tg-0pky">FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、BFLOAT16。</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">1、2</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">fillValue（aclScalar*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">表示填充值。</td>
+      <td class="tg-0pky">数据类型需要是可转换为FLOAT的数据类型。</td>
+      <td class="tg-0pky">INT64</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">wrap（bool）</td>
+      <td class="tg-0lax">输入</td>
+      <td class="tg-0lax">表示填充方式，公式中的wrap。</td>
+      <td class="tg-0lax">对于高矩阵（行数row大于列数col），若为True，每经过N行形成一条新的对角线，其中N = min(col, row)。</td>
+      <td class="tg-0lax">BOOL</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">1、2</td>
+      <td class="tg-0lax">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">workspaceSize（uint64_t*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回需要在Device侧申请的workspace大小。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">（aclOpExecutor**）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回op执行器，包含了算子计算流程。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+  </tbody></table>
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：传入的fillValue或selfRef是空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. selfRef的数据类型不在支持的范围之内。
-                                        2. selfRef的维度小于等于1。
-                                        3. 当selfRef的维度大于2时，各维度的长度不相同。
-                                        4. 当fillValue不能转换为FLOAT时。
-                                        5. 当fillValue转换为selfRef的数据类型时发生溢出。
-  ```
+  </style>
+  <table class="tg" style="undefined;table-layout: fixed; width: 905px"><colgroup>
+  <col style="width: 249px">
+  <col style="width: 120px">
+  <col style="width: 536px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">返回值</th>
+      <th class="tg-0pky">错误码</th>
+      <th class="tg-0pky">描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">ACLNN_ERR_PARAM_NULLPTR</td>
+      <td class="tg-0pky">161001</td>
+      <td class="tg-0pky">传入的fillValue或selfRef是空指针。</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky" rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td class="tg-0pky" rowspan="5">161002</td>
+      <td class="tg-0pky">selfRef的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">selfRef的维度小于等于1。</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">当selfRef的维度大于2时，各维度的长度不相同。</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">当fillValue不能转换为FLOAT时。</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">当fillValue转换为selfRef的数据类型时发生溢出。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnInplaceFillDiagonal
 
 - **参数说明**
 
-  - workspace（void\*, 入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize（uint64_t, 入参）：在Device侧申请的workspace大小，由第一段接口aclnnInplaceFillDiagonalGetWorkspaceSize获取。
-  - executor（aclOpExecutor\*, 入参）：op执行器，包含了算子计算流程。
-  - stream（aclrtStream, 入参）：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1241px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 881px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceFillDiagonalGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 

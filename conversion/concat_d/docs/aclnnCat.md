@@ -65,7 +65,7 @@ aclnnStatus aclnnCat(
     </tr></thead>
   <tbody>
     <tr>
-      <td>tensors</td>
+      <td>tensors（aclTensor*）</td>
       <td>输入</td>
       <td>需要级联的tensor列表，列表长度不超过32，且数据类型需要列表内部构成满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
       <td>-</td>
@@ -75,17 +75,17 @@ aclnnStatus aclnnCat(
       <td>√</td>
     </tr>
     <tr>
-      <td>dim</td>
+      <td>dim（int64_t）</td>
       <td>输入</td>
       <td>需要级联的维度，int类型的值，范围[-tensors.dim(), tensors.dim() - 1]</td>
       <td>-</td>
-      <td>-</td>
+      <td>INT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>输出tensor，且数据类型需要是tensors内部推导之后可转换的类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td>-</td>
@@ -95,7 +95,7 @@ aclnnStatus aclnnCat(
       <td>-</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -105,7 +105,7 @@ aclnnStatus aclnnCat(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

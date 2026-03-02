@@ -54,7 +54,7 @@ aclnnStatus aclnnTransConvolutionWeight(
   <th style="width:145px">非连续 Tensor</th>
   </tr>
   <tr>
-  <td>weightIn</td>
+  <td>weightIn（uint64_t*）</td>
   <td>输入</td>
   <td>表示一个待处理的Convolution的weightTensor。</td>
   <td>支持空Tensor输入；当weightIn为空Tensor时，weightOut也必须为空Tensor。</td>
@@ -64,7 +64,7 @@ aclnnStatus aclnnTransConvolutionWeight(
   <td style="text-align:center">√</td>
   </tr>
   <tr>
-  <td>transposed</td>
+  <td>transposed（bool）</td>
   <td>输入</td>
   <td>表明是否为转置卷积。</td>
   <td>目前仅支持设为false。</td>
@@ -74,7 +74,7 @@ aclnnStatus aclnnTransConvolutionWeight(
   <td style="text-align:center">-</td>
   </tr>
   <tr>
-  <td>groups</td>
+  <td>groups（int64_t）</td>
   <td>输入</td>
   <td>表示从输入通道到输出通道的块链接个数。</td>
   <td>取值范围为[1,65535]。</td>
@@ -84,7 +84,7 @@ aclnnStatus aclnnTransConvolutionWeight(
   <td style="text-align:center">-</td>
   </tr>
   <tr>
-  <td>weightOut</td>
+  <td>weightOut（aclTensor*）</td>
   <td>输出</td>
   <td>表示返回输入weight转换为私有格式后的tensor。</td>
   <td>支持空Tensor输出；当weightOut为空Tensor时，weightIn也必须为空Tensor。</td>
@@ -94,7 +94,7 @@ aclnnStatus aclnnTransConvolutionWeight(
   <td style="text-align:center">-</td>
   </tr>
   <tr>
-  <td>workspaceSize</td>
+  <td>workspaceSize（uint64_t*）</td>
   <td>输出</td>
   <td>返回需要在Device侧申请的workspace大小</td>
   <td>不能为空指针；空Tensor场景下返回0。</td>
@@ -104,7 +104,7 @@ aclnnStatus aclnnTransConvolutionWeight(
   <td style="text-align:center">-</td>
   </tr>
   <tr>
-  <td>executor</td>
+  <td>executor（aclOpExecutor**）</td>
   <td>输出</td>
   <td>返回op执行器，包含了算子计算流程。</td>
   <td>不能为空指针。</td>

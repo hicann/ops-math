@@ -92,7 +92,7 @@ aclnnStatus aclnnReflectionPad3d(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>Device侧的aclTensor。</td>
       <td>维度支持四维或五维，在最后三维做pad。</td>
@@ -102,7 +102,7 @@ aclnnStatus aclnnReflectionPad3d(
       <td>√</td>
     </tr>
     <tr>
-      <td>padding</td>
+      <td>padding（aclIntArray*）</td>
       <td>输入</td>
       <td>Device侧的aclIntArray数组。</td>
       <td>长度为6，数值依次代表左右上下前后需要填充的值。padding前两个数值需小于self最后一维度的数值，中间两个数值需小于self倒数第二维度的数值，后两个数值需小于self倒数第三维度的数值。</td>
@@ -112,7 +112,7 @@ aclnnStatus aclnnReflectionPad3d(
       <td>√</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>Device侧的aclTensor。</td>
       <td>维度与self一致，out倒数第三维度的数值等于self倒数第三维度的数值加padding后两个值，out倒数第二维度的数值等于self倒数第二维度的数值加padding中间两个值，out最后一维度的数值等于self最后一维度的数值加padding前两个值。</td>
@@ -122,7 +122,7 @@ aclnnStatus aclnnReflectionPad3d(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -132,7 +132,7 @@ aclnnStatus aclnnReflectionPad3d(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -329,7 +329,7 @@ int main() {
 
     std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
     std::vector<int64_t> paddingData = {1, 1, 1, 1, 1, 1};
-    std::vector<float> outHostData(GetShapeSize(outShape) * 2, 0);
+    std::vector<float> outHostData(GetShapeSize(outShape), 0);
 
     // 创建self aclTensor
     ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);

@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-- 算子功能：
+- 接口功能：
   在Matmul算子ND格式输入下，计算需要申请的weight的大小，该接口仅仅用于判断对weight Tensor进行预处理需要使用多少size才可使Matmul算子执行性能最优。
   例如输入【510， 510】：该函数出于性能角度考虑，会将shape变化为【512，512】，因此函数会将引用输入修改为262144。
 
@@ -33,25 +33,92 @@
 
 ## 函数原型
 
-`aclnnStatus aclnnCalculateMatmulWeightSize(const aclIntArray *tensorShape, uint64_t *weightTensorSize)`
+```cpp
+aclnnStatus aclnnCalculateMatmulWeightSize(
+    const aclIntArray *tensorShape, 
+    uint64_t          *weightTensorSize)
+```
 
 ## aclnnCalculateMatmulWeightSize
 
 - **参数说明：**
 
-  * tensorShape(aclIntArray *, 计算输入)：用于表达该次Matmul载入权重矩阵的Shape，公式中的Shapesize，Host侧的aclIntArray，输入shape只支持2维（n，k），其中n表示第1维的大小，k表示第2维的大小，不支持空Array。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、BFLOAT16。
-  * weightTensorSize(uint64_t \*, 计算输出)：根据MatMul内部处理逻辑，计算该输入下weight需要多少个元素的数据量，公式中的result。
+  </style>
+  <table class="tg" style="undefined;table-layout: fixed; width: 1229px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 120px">
+  <col style="width: 198px">
+  <col style="width: 156px">
+  <col style="width: 195px">
+  <col style="width: 95px">
+  <col style="width: 109px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">参数名</th>
+      <th class="tg-0pky">输入/输出</th>
+      <th class="tg-0pky">描述</th>
+      <th class="tg-0pky">使用说明</th>
+      <th class="tg-0pky">数据类型</th>
+      <th class="tg-0pky">数据格式</th>
+      <th class="tg-0pky">维度(shape)</th>
+      <th class="tg-0pky">非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">tensorShape（aclIntArray*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">用于表达该次Matmul载入权重矩阵的Shape，公式中的Shapesize。</td>
+      <td class="tg-0pky">输入shape只支持2维（n，k），其中n表示第1维的大小，k表示第2维的大小，不支持空Array。</td>
+      <td class="tg-0pky">FLOAT16、BFLOAT16</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">2</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">weightTensorSize（uint64_t*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">根据MatMul内部处理逻辑，计算该输入下weight需要多少个元素的数据量，公式中的result。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+  </tbody></table>
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  161001(ACLNN_ERR_PARAM_NULLPTR)：1. 输入是空指针。
-  161002(ACLNN_ERR_PARAM_INVALID)：1. 计算过程失败。
-  ```
+  
+  </style>
+  <table class="tg" style="undefined;table-layout: fixed; width: 665px"><colgroup>
+  <col style="width: 252px">
+  <col style="width: 121px">
+  <col style="width: 292px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">返回值</th>
+      <th class="tg-0pky">错误码</th>
+      <th class="tg-0pky">描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">ACLNN_ERR_PARAM_NULLPTR</td>
+      <td class="tg-0pky">161001</td>
+      <td class="tg-0pky">输入是空指针。</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">ACLNN_ERR_PARAM_INVALID</td>
+      <td class="tg-0pky">161002</td>
+      <td class="tg-0pky">计算过程失败。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## 约束说明
 

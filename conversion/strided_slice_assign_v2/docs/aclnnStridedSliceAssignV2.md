@@ -15,46 +15,209 @@
 
 ## 功能说明
 
-算子功能：StridedSliceAssign是一种张量切片赋值操作，它可以将张量inputValue的内容，赋值给目标张量varRef中的指定位置。
+接口功能：StridedSliceAssign是一种张量切片赋值操作，它可以将张量inputValue的内容，赋值给目标张量varRef中的指定位置。
 
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用`aclnnStridedSliceAssignV2GetWorkspaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnStridedSliceAssignV2`接口执行计算。
 
-- `aclnnStatus aclnnStridedSliceAssignV2GetWorkspaceSize(aclTensor *varRef, const aclTensor *inputValue, const aclIntArray *begin, const aclIntArray *end, const aclIntArray *strides, const aclIntArray *axesOptional, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnStridedSliceAssignV2( void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```cpp
+aclnnStatus aclnnStridedSliceAssignV2GetWorkspaceSize(
+    aclTensor         *varRef, 
+    const aclTensor   *inputValue, 
+    const aclIntArray *begin, 
+    const aclIntArray *end, 
+    const aclIntArray *strides, 
+    const aclIntArray *axesOptional,
+    uint64_t          *workspaceSize, 
+    aclOpExecutor    **executor)
+```
+
+```cpp
+aclnnStatus aclnnStridedSliceAssignV2(
+    void          *workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor *executor, 
+    aclrtStream    stream)
+```
 
 ## aclnnStridedSliceAssignV2GetWorkspaceSize
 
 - **参数说明：**
 
-  * varRef(aclTensor*，计算输入|计算输出)：Device侧的aclTensor，数据类型支持FLOAT16、FLOAT、BFLOAT16、INT32、INT64、DOUBLE、INT8，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  * inputValue(aclTensor*,计算输入)：Device侧的aclTensor，数据类型支持FLOAT16、FLOAT、BFLOAT16、INT32、INT64、DOUBLE、INT8，且数据类型需与varRef保持一致，shape需要与varRef计算得出的切片shape保持一致，综合约束请见[约束说明](#约束说明)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  * begin(aclIntArray*,计算输入)：切片位置的起始索引，Host侧的aclIntArray。数据类型支持INT64，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  * end(aclIntArray*,计算输入)：切片位置的终止索引，Host侧的aclIntArray。数据类型支持INT64，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  * strides(aclIntArray*,计算输入)：切片的步长，Host侧的aclIntArray。数据类型支持INT64。strides必须为正数，varRef最后一维对应的strides取值必须为1。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  * axesOptional(aclIntArray*,计算输入)：可选参数，切片的轴，Host侧的aclIntArray。数据类型支持INT64，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  * workspaceSize(uint64_t*，出参)：返回需要在Device侧申请的workspace大小。
-  * executor(aclOpExecutor**，出参)：返回op执行器，包含了算子计算流程。
+  </style>
+  <table class="tg" style="undefined;table-layout: fixed; width: 1161px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 88px">
+  <col style="width: 198px">
+  <col style="width: 156px">
+  <col style="width: 195px">
+  <col style="width: 95px">
+  <col style="width: 109px">
+  <col style="width: 109px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">参数名</th>
+      <th class="tg-0pky">输入/输出</th>
+      <th class="tg-0pky">描述</th>
+      <th class="tg-0pky">使用说明</th>
+      <th class="tg-0pky">数据类型</th>
+      <th class="tg-0pky">数据格式</th>
+      <th class="tg-0pky">维度(shape)</th>
+      <th class="tg-0pky">非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">varRef（aclTensor*）</td>
+      <td class="tg-0pky">输入/输出</td>
+      <td class="tg-0pky">输入Tensor。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">FLOAT16、FLOAT、BFLOAT16、INT32、INT64、DOUBLE、INT8</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">1-8</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">inputValue（aclTensor*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">输入axis。</td>
+      <td class="tg-0pky">shape需要与varRef计算得出的切片shape保持一致，,综合约束请见[约束说明]</td>
+      <td class="tg-0pky">FLOAT16、FLOAT、BFLOAT16、INT32、INT64、DOUBLE、INT8</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">begin（aclIntArray*）</td>
+      <td class="tg-0lax">输入</td>
+      <td class="tg-0lax">切片位置的起始索引，Host侧的aclIntArray。</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">INT64</td>
+      <td class="tg-0lax">ND</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">end（aclIntArray*）</td>
+      <td class="tg-0lax">输入</td>
+      <td class="tg-0lax">切片位置的终止索引，Host侧的aclIntArray。</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">INT64</td>
+      <td class="tg-0lax">ND</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">strides（aclIntArray*）</td>
+      <td class="tg-0lax">输入</td>
+      <td class="tg-0lax">切片步长，Host侧的aclIntArray。</td>
+      <td class="tg-0lax">strides必须为正数，varRef最后一维对应的strides取值必须为1。</td>
+      <td class="tg-0lax">INT64</td>
+      <td class="tg-0lax">ND</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">axesOptinal（aclIntArray*）</td>
+      <td class="tg-0lax">输入</td>
+      <td class="tg-0lax">可选参数，切片的轴。</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">INT64</td>
+      <td class="tg-0lax">ND</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">workspaceSize（uint64_t*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回需要在Device侧申请的workspace大小。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">（aclOpExecutor**）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回op执行器，包含了算子计算流程。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+  </tbody></table>
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self、out或dim是空指针。
-  返回161002 (ACLNN_ERR_PARAM_INVALID)：输入和输出的数据类型不在支持的范围之内。
-  ```
+  </style>
+  <table class="tg" style="undefined;table-layout: fixed; width: 665px"><colgroup>
+  <col style="width: 252px">
+  <col style="width: 121px">
+  <col style="width: 292px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">返回值</th>
+      <th class="tg-0pky">错误码</th>
+      <th class="tg-0pky">描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">ACLNN_ERR_PARAM_NULLPTR</td>
+      <td class="tg-0pky">161001</td>
+      <td class="tg-0pky">传入的self、out或dim是空指针。</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">ACLNN_ERR_PARAM_INVALID</td>
+      <td class="tg-0pky">161002</td>
+      <td class="tg-0pky">输入和输出的数据类型不在支持的范围之内。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnStridedSliceAssignV2
 
-- **参数说明：**
-
-  * workspace(void*, 入参)：在Device侧申请的workspace内存地址。
-  * workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnStridedSliceAssignV2GetWorkspaceSize获取。
-  * executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
-  * stream(aclrtStream, 入参)：指定执行任务的Stream。
+- **参数说明**：
+  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
+  <col style="width: 173px">
+  <col style="width: 112px">
+  <col style="width: 668px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnStridedSliceAssignV2GetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 

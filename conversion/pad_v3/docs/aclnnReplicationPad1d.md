@@ -73,7 +73,7 @@
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>待填充的原输入数据。</td>
       <td>-</td>
@@ -83,7 +83,7 @@
       <td>√</td>
     </tr>
     <tr>
-      <td>padding</td>
+      <td>padding（aclIntArray*）</td>
       <td>输入</td>
       <td>输入中需要填充的维度。</td>
       <td>长度为2，两个数值依次代表左右两边需要填充的值。</td>
@@ -93,7 +93,7 @@
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>填充后的输出结果。</td>
       <td>输出shape中，除被填充的最后一维外，需要与self一致，out最后一维度的数值等于self最后一维度的数值加padding前两个值。</td>
@@ -103,7 +103,7 @@
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -113,7 +113,7 @@
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

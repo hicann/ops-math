@@ -66,7 +66,7 @@ aclnnStatus aclnnInplaceFillTensor(
   <tbody>
     <tr>
       <td>selfRef</td>
-      <td>输出/输出</td>
+      <td>输入/输出</td>
       <td>输入输出tensor</td>
       <td>-</td>
       <td>INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、BFLOAT16、FLOAT、FLOAT16</td>

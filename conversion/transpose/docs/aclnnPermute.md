@@ -23,19 +23,19 @@
 
 ```cpp
 aclnnStatus aclnnPermuteGetWorkspaceSize(
-  const aclTensor*   self, 
-  const aclIntArray* dims, 
-  aclTensor*         out,
-  uint64_t*          workspaceSize, 
-  aclOpExecutor**    executor)
+    const aclTensor*   self, 
+    const aclIntArray* dims, 
+    aclTensor*         out,
+    uint64_t*          workspaceSize, 
+    aclOpExecutor**    executor)
 ```
 
 ```cpp
 aclnnStatus aclnnPermute(
-  void             *workspace, 
-  uint64_t          workspaceSize, 
-  aclOpExecutor    *executor, 
-  const aclrtStream stream)
+    void             *workspace, 
+    uint64_t          workspaceSize, 
+    aclOpExecutor    *executor, 
+    const aclrtStream stream)
 ```
 
 ## aclnnPermuteGetWorkspaceSize
@@ -65,7 +65,7 @@ aclnnStatus aclnnPermute(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>输入的tensor</td>
       <td>-</td>
@@ -75,17 +75,17 @@ aclnnStatus aclnnPermute(
       <td>√</td>
     </tr>
     <tr>
-      <td>dims</td>
+      <td>dims（aclIntArray*）</td>
       <td>输入</td>
       <td>整型数组，代表原来tensor的维度，指定新的轴顺序。</td>
       <td>取值需在[-self的维度数量，self的维度数量-1]范围内。</td>
-      <td>-</td>
+      <td>INT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>输出的tensor</td>
       <td>shape由dims和原self的shape共同决定，dtype需要与self一致。</td>
@@ -95,7 +95,7 @@ aclnnStatus aclnnPermute(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -105,7 +105,7 @@ aclnnStatus aclnnPermute(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

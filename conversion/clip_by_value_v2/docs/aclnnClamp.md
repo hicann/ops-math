@@ -34,7 +34,7 @@ aclnnStatus aclnnClampGetWorkspaceSize(
   const aclScalar* clipValueMax, 
   aclTensor       *out, 
   uint64_t        *workspaceSize, 
-  aclOpExecutor  **executor)`
+  aclOpExecutor  **executor)
 ```
 
 ```cpp
@@ -72,47 +72,47 @@ aclnnStatus aclnnClamp(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
-      <td>输入tensor</td>
+      <td>输入Tensor，需要进行限制的张量，即公式中的x<sub>i</sub>。</td>
       <td>-</td>
       <td>FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
       <td>ND</td>
-      <td>4-5</td>
+      <td>1-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>clipValueMin</td>
+      <td>clipValueMin（aclScalar*）</td>
       <td>输入</td>
-      <td>正向时填充的维度。</td>
-      <td>-</td>
+      <td>输入Scalar，对self的下界进行限制，即公式中的min_value<sub>i</sub>。</td>
+      <td>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td>FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
-      <td></td>
-      <td></td>
+      <td>-</td>
+      <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>clipValueMax</td>
+      <td>clipValueMax（aclScalar*）</td>
       <td>输入</td>
-      <td>上界，数据类型需要可转换成self的数据类型。</td>
-      <td>-</td>
+      <td>输入Scalar，对self的上界进行限制，即公式中的max_value<sub>i</sub>。</td>
+      <td>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td>FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
-      <td></td>
-      <td></td>
-      <td></td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>输出tensor，shape和self保持一致</td>
+      <td>输出tensor，shape和self保持一致。</td>
       <td>-</td>
       <td>FLOAT16、FLOAT、FLOAT64、INT8、UINT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
-      <td></td>
-      <td></td>
-      <td>-</td>
+      <td>ND</td>
+      <td>与self保持一致</td>
+      <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -122,7 +122,7 @@ aclnnStatus aclnnClamp(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

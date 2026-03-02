@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-- 算子功能：将输入的所有元素限制在[-inf,max]范围内。
+- 接口功能：将输入的所有元素限制在[-inf,max]范围内。
 
 - 计算公式：
 
@@ -32,52 +32,205 @@
 
 - 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnClampMaxGetWorkspaceSize”或者“aclnnInplaceClampMaxGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnClampMax”或者“aclnnInplaceClampMax”接口执行计算。
 
-  - `aclnnStatus aclnnClampMaxGetWorkspaceSize(const aclTensor *self, const aclScalar *clipValueMax, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-  - `aclnnStatus aclnnClampMax(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor,  aclrtStream stream)`
-  - `aclnnStatus aclnnInplaceClampMaxGetWorkspaceSize(const aclTensor *selfRef, const aclScalar *clipValueMax,  uint64_t *workspaceSize, aclOpExecutor **executor)`
-  - `aclnnStatus aclnnInplaceClampMax(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```cpp
+aclnnStatus aclnnClampMaxGetWorkspaceSize(
+    const aclTensor* self, 
+    const aclScalar* clipValueMax, 
+    aclTensor*       out, 
+    uint64_t*        workspaceSize,
+    aclOpExecutor**  executor)
+```
+
+```cpp
+aclnnStatus aclnnClampMax(
+    void*          workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor* executor, 
+    aclrtStream    stream)
+```
+
+```cpp
+aclnnStatus aclnnInplaceClampMaxGetWorkspaceSize(
+    const aclTensor* selfRef, 
+    const aclScalar* clipValueMax,
+    uint64_t*        workspaceSize, 
+    aclOpExecutor**  executor)
+```
+
+```cpp
+aclnnStatus aclnnInplaceClampMax(
+    void*          workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor* executor, 
+    aclrtStream    stream)
+```
 
 ## aclnnClampMaxGetWorkspaceSize
 
 - **参数说明：**
 
-  - self(aclTensor*,计算输入): 输入tensor，Device侧的aclTensor，shape支持1维-8维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，且数据类型与clipValueMax的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）。
+  </style>
+  <table class="tg" style="undefined;table-layout: fixed; width: 1072px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 88px">
+  <col style="width: 157px">
+  <col style="width: 156px">
+  <col style="width: 147px">
+  <col style="width: 95px">
+  <col style="width: 109px">
+  <col style="width: 109px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">参数名</th>
+      <th class="tg-0pky">输入/输出</th>
+      <th class="tg-0pky">描述</th>
+      <th class="tg-0pky">使用说明</th>
+      <th class="tg-0pky">数据类型</th>
+      <th class="tg-0pky">数据格式</th>
+      <th class="tg-0pky">维度(shape)</th>
+      <th class="tg-0pky">非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">self（aclTensor*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">需要进行限制的Tensor，即公式中的x<sub>i</sub>。</td>
+      <td class="tg-0pky">数据类型与clipValueMax的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">1-8</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">clipValueMax（aclScalar*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">输入scalar，对self的上界进行限制，即公式中的max。</td>
+      <td class="tg-0pky">且数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">1-8</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">out（aclTensor*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">输出限制后的Tensor，即公式中的y<sub>i</sub>。</td>
+      <td class="tg-0pky">shape和self保持一致，且数据类型需要是self、clipValueMax推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">与self保持一致</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">workspaceSize（uint64_t*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回需要在Device侧申请的workspace大小。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">executor（aclOpExecutor**）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回op执行器，包含了算子计算流程。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+  </tbody></table>
 
-  - clipValueMax(aclScalar*,计算输入): 上界。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，且数据类型与self的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）。
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：
+    - self和out的数据类型不支持BOOL、BFLOAT16。
+    - clipValueMax的数据类型不支持BFLOAT16。
 
-  - out(aclTensor *，计算输出)：输出tensor，shape和self保持一致，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64，数据类型和self保持一致。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，数据类型和self保持一致。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，数据类型需要是self、clipValueMax推导之后可转换的数据类型。
-
-  - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor **，出参)：返回op执行器，包含了算子计算流程。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>
+     - self和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）。
+     - out的数据类型需要是self、clipValueMax推导之后可转换的数据类型。
+     - self和out的数据类型不支持BOOL。
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
-  (161001)ACLNN_ERR_PARAM_NULLPTR: 1. 传入的self、out其中一个为空指针，max为空指针。
-  (161002)ACLNN_ERR_PARAM_INVALID: 1. self、out的数据类型不在支持的范围之内。
-                                   2. self的shape与输出out的不一致。
-  ```
+  第一段接口完成入参校验，出现以下场景时报错：
+
+  </style>
+  <table class="tg" style="undefined;table-layout: fixed; width: 803px"><colgroup>
+  <col style="width: 252px">
+  <col style="width: 121px">
+  <col style="width: 430px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">返回值</th>
+      <th class="tg-0pky">错误码</th>
+      <th class="tg-0pky">描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">ACLNN_ERR_PARAM_NULLPTR</td>
+      <td class="tg-0pky">161001</td>
+      <td class="tg-0pky">传入的self、out其中一个为空指针，clipValueMax为空指针。</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky" rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td class="tg-0pky" rowspan="4">161002</td>
+      <td class="tg-0pky">self、out的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">self的shape与输出out的不一致。</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">self的数据类型不能转化成out的数据类型。</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">self和clipValueMax推导后的数据类型不能转化成out的数据类型。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnClampMax
 
-- **参数说明：**
-
-  - workspace(void \*, 入参)：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnClampMaxGetWorkspaceSize获取。
-  - executor(aclOpExecutor *, 入参)：op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+- **参数说明**
+  <table style="undefined;table-layout: fixed; width: 1241px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 881px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnClampMaxGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
@@ -86,37 +239,147 @@
 ## aclnnInplaceClampMaxGetWorkspaceSize
 - **参数说明：**
 
-  - selfRef(aclTensor*,计算输入|计算输出): 输入tensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，且数据类型与clipValueMax的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）。
+  </style>
+  <table class="tg" style="undefined;table-layout: fixed; width: 1072px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 88px">
+  <col style="width: 157px">
+  <col style="width: 156px">
+  <col style="width: 147px">
+  <col style="width: 95px">
+  <col style="width: 109px">
+  <col style="width: 109px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">参数名</th>
+      <th class="tg-0pky">输入/输出</th>
+      <th class="tg-0pky">描述</th>
+      <th class="tg-0pky">使用说明</th>
+      <th class="tg-0pky">数据类型</th>
+      <th class="tg-0pky">数据格式</th>
+      <th class="tg-0pky">维度(shape)</th>
+      <th class="tg-0pky">非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">selfRef（aclTensor*）</td>
+      <td class="tg-0pky">输入/输出</td>
+      <td class="tg-0pky">需要进行限制的Tensor，即公式中的x<sub>i</sub>。</td>
+      <td class="tg-0pky">数据类型与clipValueMax的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">1-8</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">clipValueMax（aclScalar*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">输入scalar，对self的上界进行限制，即公式中的max。</td>
+      <td class="tg-0pky">且数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">1-8</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">workspaceSize（uint64_t*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回需要在Device侧申请的workspace大小。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">（aclOpExecutor**）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回op执行器，包含了算子计算流程。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+  </tbody></table>
 
-  - clipValueMax(aclScalar*,计算输入): 上界。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16，且数据类型与selfRef的数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）。
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：
+    - selfRef的数据类型不支持BOOL、BFLOAT16。
+    - clipValueMax的数据类型不支持BFLOAT16。
 
-  - workspaceSize(uint64_t*，出参)：返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor**，出参)：返回op执行器，包含了算子计算流程。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>
+    - selfRef和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）。
+    - selfRef的数据类型不支持BOOL。
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
-  (161001)ACLNN_ERR_PARAM_NULLPTR：1. 传入的selfRef为空指针，max为空指针。
-  (161002)ACLNN_ERR_PARAM_INVALID：1. selfRef的数据类型不在支持的范围之内。
-  ```
+  第一段接口完成入参校验，出现以下场景时报错：
+  </style>
+  <table class="tg" style="undefined;table-layout: fixed; width: 790px"><colgroup>
+  <col style="width: 251px">
+  <col style="width: 121px">
+  <col style="width: 418px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">返回值</th>
+      <th class="tg-0pky">错误码</th>
+      <th class="tg-0pky">描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">ACLNN_ERR_PARAM_NULLPTR</td>
+      <td class="tg-0pky">161001</td>
+      <td class="tg-0pky">传入的self、out其中一个为空指针，clipValueMax为空指针。</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">ACLNN_ERR_PARAM_INVALID</td>
+      <td class="tg-0pky">161002</td>
+      <td class="tg-0pky">selfRef的数据类型不在支持的范围之内。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnInplaceClampMax
 
-- **参数说明：**
-
-  - workspace(void \*, 入参)：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnInplaceClampMaxGetWorkspaceSize获取。
-  - executor(aclOpExecutor \*, 入参)：op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+- **参数说明**
+  <table style="undefined;table-layout: fixed; width: 1241px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 881px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceClampMaxGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
@@ -446,4 +709,3 @@ int main() {
   return 0;
 }
 ```
-

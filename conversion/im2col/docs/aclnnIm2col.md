@@ -14,7 +14,7 @@
 
 ## 功能说明
 
-- 算子功能：图像到列，滑动局部窗口数据转为列向量，拼接为大张量。从批处理输入张量中提取滑动窗口。考虑一个形状为（N, C, H, W）或 (C, H, W) 的批处理input张量，其中N是批处理维度， C是通道维度， 而 H, W 表示图像大小，此操作将input的空间维度内的每个滑动kernel_size大小的块展平为（N, C $\times \prod$（kernel_size）, L）的3-D 或 （C $\times \prod$（kernel_szie）, L）的2-D 的 output张量的列（即最后一维），而L是这些块的总数。
+- 接口功能：图像到列，滑动局部窗口数据转为列向量，拼接为大张量。从批处理输入张量中提取滑动窗口。考虑一个形状为（N, C, H, W）或 (C, H, W) 的批处理input张量，其中N是批处理维度， C是通道维度， 而 H, W 表示图像大小，此操作将input的空间维度内的每个滑动kernel_size大小的块展平为（N, C $\times \prod$（kernel_size）, L）的3-D 或 （C $\times \prod$（kernel_szie）, L）的2-D 的 output张量的列（即最后一维），而L是这些块的总数。
 - 计算公式：
 $L = \prod_{d} \lfloor \frac{spatial\_size[d] + 2 \times padding[d] - dilation[d] \times （kernel\_size[d] -1） -1}{stride[d]} + 1 \rfloor$, 其中spatial_size由上述input张量的H,W构成。
 
@@ -22,21 +22,21 @@ $L = \prod_{d} \lfloor \frac{spatial\_size[d] + 2 \times padding[d] - dilation[d
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnIm2colGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnIm2col”接口执行计算。
 ```Cpp
 aclnnStatus aclnnIm2colGetWorkspaceSize(
-  const aclTensor   *self,
-  const aclIntArray *kernelSize,
-  const aclIntArray *dilation,
-  const aclIntArray *padding,
-  const aclIntArray *stride,
-  const aclTensor   *out,
-  uint64_t          *workspaceSize,
-  aclOpExecutor     **executor)
+    const aclTensor   *self,
+    const aclIntArray *kernelSize,
+    const aclIntArray *dilation,
+    const aclIntArray *padding,
+    const aclIntArray *stride,
+    const aclTensor   *out,
+    uint64_t          *workspaceSize,
+    aclOpExecutor     **executor)
 ```
 ```Cpp
 aclnnStatus aclnnIm2col(
-  void          *workspace,
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor,
-  aclrtStream    stream)
+    void          *workspace,
+    uint64_t       workspaceSize, 
+    aclOpExecutor *executor,
+    aclrtStream    stream)
 ```
 
 ## aclnnIm2colGetWorkspaceSize
@@ -65,7 +65,7 @@ aclnnStatus aclnnIm2col(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self (aclTensor*)</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>待进行im2col计算的入参，对应公式中的self。</td>
       <td>支持空Tensor。</td>
@@ -75,7 +75,7 @@ aclnnStatus aclnnIm2col(
       <td>√</td>
     </tr>
     <tr>
-      <td>kernelSize (aclIntArray*)</td>
+      <td>kernelSize（aclIntArray*）</td>
       <td>输入</td>
       <td>卷积核的大小，对应公式中的kernelSize。</td>
       <td>kernelSize[0]表示'H'方向，kernelSize[1]表示'W'方向。</td>
@@ -85,7 +85,7 @@ aclnnStatus aclnnIm2col(
       <td>-</td>
     </tr>
     <tr>
-      <td>dilation (aclIntArray*)</td>
+      <td>dilation （aclIntArray*）</td>
       <td>输入</td>
       <td>膨胀参数，对应公式中的dilation。</td>
       <td>dilation[0]表示'H'方向，dilation[1]表示'W'方向。</td>
@@ -95,7 +95,7 @@ aclnnStatus aclnnIm2col(
       <td>-</td>
     </tr>
     <tr>
-      <td>padding (aclIntArray*)</td>
+      <td>padding（aclIntArray*）</td>
       <td>输入</td>
       <td>卷积的填充大小，对应公式中的padding。</td>
       <td>padding[0]表示'H'方向，padding[1]表示'W'方向。</td>
@@ -105,7 +105,7 @@ aclnnStatus aclnnIm2col(
       <td>-</td>
     </tr>
     <tr>
-      <td>stride (aclIntArray*)</td>
+      <td>stride （aclIntArray*）</td>
       <td>输入</td>
       <td>卷积的步长，对应公式中的stride。</td>
       <td>stride[0]表示'H'方向，stride[1]表示'W'方向。</td>
@@ -115,7 +115,7 @@ aclnnStatus aclnnIm2col(
       <td>-</td>
     </tr>
     <tr>
-      <td>out (aclTensor*)</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>待进行im2col计算的出参，对应公式中的out。</td>
       <td>shape根据上述参数推导。</td>
@@ -125,7 +125,7 @@ aclnnStatus aclnnIm2col(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -135,7 +135,7 @@ aclnnStatus aclnnIm2col(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

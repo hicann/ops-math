@@ -22,12 +22,13 @@
   - out tensor的shape推导公式：
     $$
     \begin{align}
-    假设输入&self的shape为：\\
-    [dim0_{in},& dim1_{in}, dim2_{in}, dim3_{in}] \\
-    假设pad  = &\lbrace dim3_{begin},dim3_{end},\\
-    & dim2_{begin},dim2_{end},\\
-    & dim1_{begin},dim1_{end},\\
-    & dim0_{begin},dim0_{end} \rbrace
+    \\ &假设输入self的shape为：
+    \\ &[dim0_{in},dim1_{in}, dim2_{in}, dim3_{in}]
+    \\ &假设pad  = 
+    \\ &dim3_{begin},dim3_{end},
+    \\ &dim2_{begin},dim2_{end},
+    \\ &dim1_{begin},dim1_{end},
+    \\ &dim0_{begin},dim0_{end} 
     \end{align}
     $$
     $$
@@ -110,7 +111,7 @@
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>待填充的原输入数据</td>
       <td>-</td>
@@ -120,7 +121,7 @@
       <td>√</td>
     </tr>
     <tr>
-      <td>pad</td>
+      <td>pad（aclIntArray*）</td>
       <td>输入</td>
       <td>输入中各轴需要填充的维度</td>
       <td>数组长度必须为偶数且不能超过self维度的两倍。</td>
@@ -130,7 +131,7 @@
       <td>-</td>
     </tr>
     <tr>
-      <td>value</td>
+      <td>value（aclScalar*）</td>
       <td>输入</td>
       <td>填充部分的填充值</td>
       <td>-</td>
@@ -140,17 +141,17 @@
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>输出tensor，shape和self保持一致</td>
+      <td>输出tensor</td>
       <td>填充后的输出结果</td>
       <td>与self一致</td>
       <td>ND</td>
-      <td></td>
+      <td>shape和self保持一致</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -160,7 +161,7 @@
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

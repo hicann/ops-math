@@ -66,7 +66,7 @@ aclnnStatus aclnnSplitWithSize(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>表示被split的输入tensor。</td>
       <td>-</td>
@@ -76,7 +76,7 @@ aclnnStatus aclnnSplitWithSize(
       <td>√</td>
     </tr>
     <tr>
-      <td>splitSize</td>
+      <td>splitSize（aclIntArray*）</td>
       <td>输入</td>
       <td>表示需要split的各块大小。</td>
       <td>所有块的大小总和需要等于self在dim维度上的shape大小。</td>
@@ -86,7 +86,7 @@ aclnnStatus aclnnSplitWithSize(
       <td>-</td>
     </tr>
     <tr>
-      <td>dim</td>
+      <td>dim（int64_t）</td>
       <td>输入</td>
       <td>表示输入tensor被split的维度。</td>
       <td>-</td>
@@ -96,7 +96,7 @@ aclnnStatus aclnnSplitWithSize(
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensorList*）</td>
       <td>输出</td>
       <td>表示被split后的输出tensor的列表。</td>
       <td>-</td>
@@ -106,7 +106,7 @@ aclnnStatus aclnnSplitWithSize(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -116,7 +116,7 @@ aclnnStatus aclnnSplitWithSize(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

@@ -81,7 +81,7 @@ aclnnStatus aclnnRoll(
     </tr></thead>
   <tbody>
     <tr>
-      <td>x</td>
+      <td>x（aclTensor*）</td>
       <td>输入</td>
       <td>输入的原始数据。</td>
       <td>-</td>
@@ -91,7 +91,7 @@ aclnnStatus aclnnRoll(
       <td>√</td>
     </tr>
     <tr>
-      <td>shifts</td>
+      <td>shifts（aclIntArray*）</td>
       <td>输入</td>
       <td>指定每个维度上要滚动的步数。</td>
       <td>数组长度与dims保持一致。</td>
@@ -101,7 +101,7 @@ aclnnStatus aclnnRoll(
       <td>-</td>
     </tr>
     <tr>
-      <td>dims</td>
+      <td>dims（aclIntArray*）</td>
       <td>输入</td>
       <td>指定要滚动的维度。</td>
       <td>数组长度与shifts保持一致，取值范围在[-x.dim(), x.dim() - 1]之内，例如：x的维度是4，则取值范围在[-4, 3]。</td>
@@ -111,7 +111,7 @@ aclnnStatus aclnnRoll(
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>滚动处理后的输出数据。</td>
       <td>-</td>
@@ -121,7 +121,7 @@ aclnnStatus aclnnRoll(
       <td>-</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -131,7 +131,7 @@ aclnnStatus aclnnRoll(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

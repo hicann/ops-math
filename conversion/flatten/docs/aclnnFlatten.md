@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-算子功能：将输入Tensor，基于给定的axis，扁平化为一个2D的Tensor。
+接口功能：将输入Tensor，基于给定的axis，扁平化为一个2D的Tensor。
 
 - 若self的shape为(d\_0, d\_1, ..., d\_n)，那么输出out的shape为(d\_0\*d\_1 ... \*d\_\(axis-1\), d\_axis\*d\_\(axis+1\)... \*d\_n)。
 - 若axis取值为0，则输出out的shape为(1, d\_0\*d\_1 ... \*d\_n)。
@@ -24,47 +24,180 @@
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnFlattenGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnFlatten”接口执行计算。
 
-- `aclnnStatus aclnnFlattenGetWorkspaceSize(const aclTensor *self, int64_t axis, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnFlatten(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, const aclrtStream stream)`
+```cpp
+aclnnStatus aclnnFlattenGetWorkspaceSize(
+    const aclTensor *self, 
+    int64_t          axis,
+    aclTensor       *out, 
+    uint64_t        *workspaceSize, 
+    aclOpExecutor  **executor)
+```
+
+```cpp
+aclnnStatus aclnnFlatten(
+    void          *workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor *executor, 
+    aclrtStream    stream)
+```
 
 ## aclnnFlattenGetWorkspaceSize
 
 - **参数说明：**
 
-  - self(aclTensor*,计算输入)：输入`self`。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，维度在2D~8D之间。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、BFLOAT16、FLOAT、FLOAT16
-  - axis(int64_t, 计算输入)：输入`axis`，int64_t类型整数。表示flatten计算的基准轴。取值范围为[-self.dim(),self.dim()-1]，目前仅支持axis=1。
-
-  - out(aclTensor*,计算输出)：输出`out`。shape为2D。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、BFLOAT16、FLOAT、FLOAT16
-  - workspaceSize(uint64_t*,出参)：返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor**,出参)：返回op执行器，包含了算子计算流程。
+  </style>
+  <table class="tg" style="undefined;table-layout: fixed; width: 1161px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 88px">
+  <col style="width: 198px">
+  <col style="width: 156px">
+  <col style="width: 195px">
+  <col style="width: 95px">
+  <col style="width: 109px">
+  <col style="width: 109px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">参数名</th>
+      <th class="tg-0pky">输入/输出</th>
+      <th class="tg-0pky">描述</th>
+      <th class="tg-0pky">使用说明</th>
+      <th class="tg-0pky">数据类型</th>
+      <th class="tg-0pky">数据格式</th>
+      <th class="tg-0pky">维度(shape)</th>
+      <th class="tg-0pky">非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">self（aclTensor*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">表示需要填充的输入、输出Tensor</td>
+      <td class="tg-0pky">self最大维度不能超过2。</td>
+      <td class="tg-0pky">INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、BFLOAT16、FLOAT、FLOAT16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">2-8</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">axis（int64_t）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">输入axis。</td>
+      <td class="tg-0pky">表示flatten计算的基准轴。取值范围为[-self.dim(),self.dim()-1]，若self的dim为0或者1，axis=0，其余情况仅支持axis=1。</td>
+      <td class="tg-0pky">INT64</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">out（aclTensor*）</td>
+      <td class="tg-0lax">输出</td>
+      <td class="tg-0lax">输出out。</td>
+      <td class="tg-0lax">shape为2D。</td>
+      <td class="tg-0lax">与self保持一致</td>
+      <td class="tg-0lax">ND</td>
+      <td class="tg-0lax">2</td>
+      <td class="tg-0lax">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">workspaceSize（uint64_t*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回需要在Device侧申请的workspace大小。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">executor（aclOpExecutor**）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回op执行器，包含了算子计算流程。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+  </tbody></table>
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  161001(ACLNN_ERR_PARAM_NULLPTR): 1. 传入的self、out是空指针。
-  161002(ACLNN_ERR_PARAM_INVALID): 1. self和out的数据类型不在支持的范围之内。
-                                   2. self和out的数据类型不一致。
-                                   3. axis不在输入self的合理维度范围之内。
-                                   4. self的维度大于8。
-  ```
+  </style>
+  <table class="tg" style="undefined;table-layout: fixed; width: 923px"><colgroup>
+  <col style="width: 254px">
+  <col style="width: 122px">
+  <col style="width: 547px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">返回值</th>
+      <th class="tg-0pky">错误码</th>
+      <th class="tg-0pky">描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">ACLNN_ERR_PARAM_NULLPTR</td>
+      <td class="tg-0pky">161001</td>
+      <td class="tg-0pky">传入的self、out是空指针。</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky" rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td class="tg-0pky" rowspan="4">161002</td>
+      <td class="tg-0pky">self和out的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">self和out的数据类型不一致。</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">axis不在输入self的合理维度范围之内。</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">self的维度大于8。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnFlatten
 
-- **参数说明：**
+- **参数说明**
 
-  - workspace(void*, 入参)：在Device侧申请的workspace内存地址。
-
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnFlattenGetWorkspaceSize获取。
-
-  - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
-
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1241px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 881px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnFlattenGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 

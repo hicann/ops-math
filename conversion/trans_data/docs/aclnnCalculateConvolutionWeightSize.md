@@ -46,7 +46,7 @@ aclnnStatus aclnnCalculateConvolutionWeightSize(
   <th style="width:150px">非连续张量Tensor</th>
   </tr>
   <tr>
-  <td>tensorShape</td>
+  <td>tensorShape（aclIntArray*）</td>
   <td>输入</td>
   <td>用于表达该次Convolution载入权重矩阵的Shape.</td>
   <td>仅支持NCHW格式的4维shape，且各维度需&gt;=0。支持空Tensor，返回weightTensorSize为0。</td>
@@ -56,7 +56,7 @@ aclnnStatus aclnnCalculateConvolutionWeightSize(
   <td>-</td>
   </tr>
   <tr>
-  <td>transposed</td>
+  <td>transposed（bool）</td>
   <td>输入</td>
   <td>表明是否为转置卷积。</td>
   <td>目前仅支持设为false。</td>
@@ -66,7 +66,7 @@ aclnnStatus aclnnCalculateConvolutionWeightSize(
   <td>-</td>
   </tr>
   <tr>
-  <td>groups</td>
+  <td>groups（int64_t）</td>
   <td>输入</td>
   <td>表示从输入通道到输出通道的块链接个数。</td>
   <td>取值范围为[1,65535]。</td>
@@ -76,7 +76,7 @@ aclnnStatus aclnnCalculateConvolutionWeightSize(
   <td>-</td>
   </tr>
   <tr>
-  <td>dataType</td>
+  <td>dataType（aclDataType）</td>
   <td>输入</td>
   <td>表示转换后weight的数据类型。</td>
   <td>仅支持ACL_FLOAT16。</td>
@@ -86,7 +86,7 @@ aclnnStatus aclnnCalculateConvolutionWeightSize(
   <td>-</td>
   </tr>
   <tr>
-  <td>weightTensorSize</td>
+  <td>weightTensorSize（uint64_t*）</td>
   <td>输出</td>
   <td>根据Convolution内部处理逻辑，计算该输入下weight需要多少个元素的数据量。</td>
   <td>-</td>

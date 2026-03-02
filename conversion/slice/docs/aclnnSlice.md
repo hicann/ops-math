@@ -46,22 +46,22 @@ $$
 
 ```Cpp
 aclnnStatus aclnnSliceGetWorkspaceSize(
-  const aclTensor *self, 
-  int64_t         dim, 
-  int64_t         start,
-  int64_t         end,
-  int64_t         step,
-  aclTensor       out,
-  uint64_t        *workspaceSize, 
-  aclOpExecutor   **executor)
+    const aclTensor *self, 
+    int64_t         dim, 
+    int64_t         start,
+    int64_t         end,
+    int64_t         step,
+    aclTensor       *out,
+    uint64_t        *workspaceSize, 
+    aclOpExecutor   **executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnSlice(
-  void             *workspace, 
-  uint64_t          workspaceSize, 
-  aclOpExecutor    *executor, 
-  const aclrtStream stream)
+    void             *workspace, 
+    uint64_t          workspaceSize, 
+    aclOpExecutor    *executor, 
+    const aclrtStream stream)
 ```
 
 ## aclnnSliceGetWorkspaceSize
@@ -91,9 +91,9 @@ aclnnStatus aclnnSlice(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
-      <td>公式中的张量$self$，Device侧的aclTensor。</td>
+      <td>公式中的张量self，Device侧的aclTensor。</td>
       <td>self与out的数据类型一致。</td>
       <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64、INT8、UINT8、BOOL</td>
       <td>ND</td>
@@ -101,9 +101,9 @@ aclnnStatus aclnnSlice(
       <td>√</td>
     </tr>
     <tr>
-      <td>dim</td>
+      <td>dim（int64_t）</td>
       <td>输入</td>
-      <td>公式中的参数$dim$，指定的维度，Host侧的整型数值</td>
+      <td>公式中的参数dim，指定的维度，Host侧的整型数值</td>
       <td>取值范围为[-self.dim(), self.dim() - 1]。</td>
       <td>INT64</td>
       <td>ND</td>
@@ -111,9 +111,9 @@ aclnnStatus aclnnSlice(
       <td>-</td>
     </tr>
     <tr>
-      <td>start</td>
+      <td>start（int64_t）</td>
       <td>输入</td>
-      <td>公式中的张量$start$，切片位置的起始索引。</td>
+      <td>公式中的张量start，切片位置的起始索引。</td>
       <td>Host侧的整型数值。</td>
       <td>INT64</td>
       <td>ND</td>
@@ -121,9 +121,9 @@ aclnnStatus aclnnSlice(
       <td>√</td>
     </tr>
     <tr>
-      <td>end</td>
+      <td>end（int64_t）</td>
       <td>输入</td>
-      <td>公式中的张量$end$，切片位置的终止索引。</td>
+      <td>公式中的张量end，切片位置的终止索引。</td>
       <td>Host侧的整型数值。</td>
       <td>INT64</td>
       <td>ND</td>
@@ -131,9 +131,9 @@ aclnnStatus aclnnSlice(
       <td>√</td>
     </tr>
     <tr>
-      <td>step</td>
+      <td>step（int64_t）</td>
       <td>输入</td>
-      <td>公式中的张量$step$，指定切片的步长。</td>
+      <td>公式中的张量step，指定切片的步长。</td>
       <td>Host侧的整型数值，取值范围必须大于0</td>
       <td>INT64</td>
       <td>ND</td>
@@ -141,9 +141,9 @@ aclnnStatus aclnnSlice(
       <td>√</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>公式中的张量$out$，Device侧的aclTensor。</td>
+      <td>公式中的张量out，Device侧的aclTensor。</td>
       <td>shape满足计算公式中的推到规则。</td>
       <td>与self保持一致</td>
       <td>ND</td>
@@ -151,7 +151,7 @@ aclnnStatus aclnnSlice(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -161,7 +161,7 @@ aclnnStatus aclnnSlice(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

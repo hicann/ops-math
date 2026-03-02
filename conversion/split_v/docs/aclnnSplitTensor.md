@@ -23,20 +23,20 @@
 
 ```cpp
 aclnnStatus aclnnSplitTensorGetWorkspaceSize(
-  const aclTensor* self, 
-  uint64_t         splitSections, 
-  int64_t          dim, 
-  aclTensorList*   out, 
-  uint64_t*        workspaceSize, 
-  aclOpExecutor**  executor)
+    const aclTensor* self, 
+    uint64_t         splitSections, 
+    int64_t          dim, 
+    aclTensorList*   out, 
+    uint64_t*        workspaceSize, 
+    aclOpExecutor**  executor)
 ```
 
 ```cpp
 aclnnStatus aclnnSplitTensor(
-  void*          workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor* executor, 
-  aclrtStream    stream)
+    void*          workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor* executor, 
+    aclrtStream    stream)
 ```
 
 ## aclnnSplitTensorGetWorkspaceSize
@@ -66,7 +66,7 @@ aclnnStatus aclnnSplitTensor(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>表示被split的输入tensor</td>
       <td>-</td>
@@ -76,29 +76,29 @@ aclnnStatus aclnnSplitTensor(
       <td>√</td>
     </tr>
     <tr>
-      <td>splitSections</td>
+      <td>splitSections（uint64_t）</td>
       <td>输入</td>
       <td>表示沿dim轴均匀切分后的块大小, 最后一块可以小于splitSections。</td>
-      <td>切片位置的起始索引，starts、ends、axes、steps的元素个数相同。</td>
+      <td>-</td>
       <td>UINT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>dim</td>
+      <td>dim（int64_t）</td>
       <td>输入</td>
-      <td>表示输入tensor被split的维度，取值范围在[-self.dim(), self.dim())<br></td>
-      <td>starts、ends、axes、steps的元素个数相同，steps的元素均为正整数。</td>
+      <td>表示输入self被split的维度，取值范围在[-self.dim(), self.dim())<br></td>
+      <td>-</td>
       <td>INT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensorList*）</td>
       <td>输出</td>
-      <td>表示被split后的输出tensor的列表</td>
+      <td>表示被split后的输出tensor的列表。</td>
       <td>每个输出的dtype需要保持一致。TensorList中每个输出tensor的维度与self的维度一致。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
@@ -106,7 +106,7 @@ aclnnStatus aclnnSplitTensor(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -116,7 +116,7 @@ aclnnStatus aclnnSplitTensor(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
