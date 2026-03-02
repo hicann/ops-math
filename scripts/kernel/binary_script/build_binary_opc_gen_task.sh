@@ -297,8 +297,8 @@ main() {
 
         
         if [[ -n "$kernel_template_input" ]]; then
-          echo "kernel_template_input is: ${kernel_template_input}"
-          cmd="${cmd} --kernel_template_input=${kernel_template_input}"
+          echo "kernel-template-input is: ${kernel_template_input}"
+          cmd="${cmd} --kernel-template-input=${kernel_template_input}"
         fi
 
         echo "[INFO] op:${op_type} do opc cmd is ${cmd}"
