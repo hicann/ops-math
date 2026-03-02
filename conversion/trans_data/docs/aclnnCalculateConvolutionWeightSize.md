@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-接口功能：在Convolution算子NCHW格式输入下，计算需要申请的weight的大小，仅支持Float16数据类型，该接口仅仅用于判断对weight Tensor进行预处理需要使用多少size才可使Convolution算子执行性能最优。
+在Convolution算子NCHW格式输入下，计算需要申请的weight的大小，仅支持Float16数据类型，该接口仅仅用于判断对weight Tensor进行预处理需要使用多少size才可使Convolution算子执行性能最优。
 
 例如：输入[2, 4, 8, 8]，该函数出于性能角度考虑，会将shape变化为[64, 1, 16, 16]，因此函数会将输入修改为16384。
 
@@ -38,11 +38,12 @@ aclnnStatus aclnnCalculateConvolutionWeightSize(
   <tr>
   <th style="width:170px">参数名</th>
   <th style="width:120px">输入/输出</th>
-  <th style="width:450px">描述</th>
-  <th style="width:450px">使用说明</th>
-  <th style="width:212px">数据类型</th>
-  <th style="width:100px">数据格式</th>
-  <th style="width:100px">维度（shape）</th>
+  <th style="width:400px">描述</th>
+  <th style="width:400px">使用说明</th>
+  <th style="width:150px">数据类型</th>
+  <th style="width:120px">数据格式</th>
+  <th style="width:120px">维度（shape）</th>
+  <th style="width:150px">非连续张量Tensor</th>
   </tr>
   <tr>
   <td>tensorShape</td>
@@ -50,15 +51,17 @@ aclnnStatus aclnnCalculateConvolutionWeightSize(
   <td>用于表达该次Convolution载入权重矩阵的Shape.</td>
   <td>仅支持NCHW格式的4维shape，且各维度需&gt;=0。支持空Tensor，返回weightTensorSize为0。</td>
   <td>INT64</td>
+  <td>NCHW</td>
   <td>-</td>
   <td>-</td>
   </tr>
   <tr>
   <td>transposed</td>
   <td>输入</td>
-  <td>Host侧的布尔值，表明是否为转置卷积。</td>
+  <td>表明是否为转置卷积。</td>
   <td>目前仅支持设为false。</td>
   <td>BOOL</td>
+  <td>-</td>
   <td>-</td>
   <td>-</td>
   </tr>
@@ -70,12 +73,14 @@ aclnnStatus aclnnCalculateConvolutionWeightSize(
   <td>INT64</td>
   <td>-</td>
   <td>-</td>
+  <td>-</td>
   </tr>
   <tr>
   <td>dataType</td>
   <td>输入</td>
   <td>表示转换后weight的数据类型。</td>
   <td>仅支持ACL_FLOAT16。</td>
+  <td>-</td>
   <td>-</td>
   <td>-</td>
   <td>-</td>
@@ -88,6 +93,7 @@ aclnnStatus aclnnCalculateConvolutionWeightSize(
   <td>INT64</td>
   <td>-</td>
   <td>-</td>
+  <td>-</td>
   </tr>
   </table>
 
@@ -97,21 +103,21 @@ aclnnStatus aclnnCalculateConvolutionWeightSize(
 
   一段接口完成入参校验，出现以下场景时报错：
 
-  <table>
+  <table border="1" style="width: 100%; table-layout: fixed;">
   <tr>
-  <td align="center">返回值</td>
-  <td align="center">错误码</td>
-  <td align="center">描述</td>
+    <td align="center" style="width: 35%;">返回值</td>
+    <td align="center" style="width: 15%;">错误码</td>
+    <td align="center" style="width: 50%;">描述</td>
   </tr>
   <tr>
-  <td align="left">ACLNN_ERR_PARAM_NULLPTR</td>
-  <td align="left">161001</td>
-  <td align="left">输入是空指针。</td>
+    <td align="left" style="width: 35%;">ACLNN_ERR_PARAM_NULLPTR</td>
+    <td align="left" style="width: 15%;">161001</td>
+    <td align="left" style="width: 50%;">输入是空指针。</td>
   </tr>
   <tr>
-  <td align="left">ACLNN_ERR_PARAM_INVALID</td>
-  <td align="left">161002</td>
-  <td align="left">输入shape校验失败或其他输入不符合预期。</td>
+    <td align="left" style="width: 35%;">ACLNN_ERR_PARAM_INVALID</td>
+    <td align="left" style="width: 15%;">161002</td>
+    <td align="left" style="width: 50%;">输入shape校验失败或其他输入不符合预期。</td>
   </tr>
   </table>
 

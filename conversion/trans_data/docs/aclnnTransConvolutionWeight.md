@@ -15,11 +15,10 @@
 
 ## 功能说明
 
-接口功能：需要和<a href="./aclnnCalculateConvolutionWeightSize.md">aclnnCalculateConvolutionWeightSize</a>接口配套使用，用于创建一个对于Convolution算子计算性能亲和的weight Tensor。
+需要和[aclnnCalculateConvolutionWeightSize](./aclnnCalculateConvolutionWeightSize.md)接口配套使用，用于创建一个对于Convolution算子计算性能亲和的weight Tensor。
 
 ## 函数原型
-
-每个算子分为<a href="../../../docs/context/两段式接口.md">两段式接口</a>，必须先调用“aclnnTransConvolutionWeightGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnTransConvolutionWeight”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnTransConvolutionWeightGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnTransConvolutionWeight”接口执行计算。
 
 ```cpp
 aclnnStatus aclnnTransConvolutionWeightGetWorkspaceSize(
@@ -48,10 +47,10 @@ aclnnStatus aclnnTransConvolutionWeight(
   <th style="width:170px">参数名</th>
   <th style="width:120px">输入/输出</th>
   <th style="width:300px">描述</th>
-  <th style="width:420px">使用说明</th>
-  <th style="width:212px">数据类型</th>
-  <th style="width:100px">数据格式</th>
-  <th style="width:100px">维度（shape）</th>
+  <th style="width:400px">使用说明</th>
+  <th style="width:200px">数据类型</th>
+  <th style="width:120px">数据格式</th>
+  <th style="width:120px">维度（shape）</th>
   <th style="width:145px">非连续 Tensor</th>
   </tr>
   <tr>
@@ -121,54 +120,68 @@ aclnnStatus aclnnTransConvolutionWeight(
   `aclnnStatus`：返回状态码，具体参见 <a href="../../../docs/context/aclnn返回码.md">aclnn 返回码</a>。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  <table>
-  <tr>
-  <td align="center">返回值</td>
-  <td align="center">错误码</td>
-  <td align="center">描述</td>
-  </tr>
-  <tr>
-  <td align="left">ACLNN_ERR_PARAM_NULLPTR</td>
-  <td align="left">161001</td>
-  <td align="left">输入是空指针。</td>
-  </tr>
-  <tr>
-  <td align="left">ACLNN_ERR_PARAM_INVALID</td>
-  <td align="left">161002</td>
-  <td align="left">输入输出Tensor的数据类型、数据格式以及其他参数不符合预期。比如输入weightIn为非FLOAT16、FLOAT32数据类型或者非NCHW数据格式；或weightIn/weightOut空Tensor状态不一致。</td>
-  </tr>
+  <table style="undefined;table-layout: fixed; width: 785px"><colgroup>
+  <col style="width: 248px">
+  <col style="width: 86px">
+  <col style="width: 451px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>输入是空指针。</td>
+    </tr>
+    <tr>
+      <td>ACLNN_ERR_PARAM_INVALID</td>
+      <td>161002</td>
+      <td>输入输出Tensor的数据类型、数据格式以及其他参数不符合预期。比如输入weightIn为非FLOAT16、FLOAT32数据类型或者非NCHW数据格式；或weightIn/weightOut空Tensor状态不一致。</td>
+    </tr>
+  </tbody>
   </table>
 
 ## aclnnTransConvolutionWeight
 
 - **参数说明：**
 
-  <table>
-  <tr>
-  <th style="width:240px">参数名</th>
-  <th style="width:240px">输入/输出</th>
-  <th style="width:360px">描述</th>
-  </tr>
-  <tr>
-  <td>workspace</td>
-  <td>输入</td>
-  <td>在Device侧申请的workspace内存地址。</td>
-  </tr>
-  <tr>
-  <td>workspaceSize</td>
-  <td>输入</td>
-  <td>在Device侧申请的workspace大小，由第一段接口aclnnTransConvolutionWeightGetWorkspaceSize获取。</td>
-  </tr>
-  <tr>
-  <td>executor</td>
-  <td>输入</td>
-  <td>op执行器，包含了算子计算流程，由第一段接口aclnnTransConvolutionWeightGetWorkspaceSize获取。</td>
-  </tr>
-  <tr>
-  <td>stream</td>
-  <td>输入</td>
-  <td>指定执行任务的Stream。</td>
-  </tr>
+  <table style="undefined;table-layout: fixed; width: 689px"><colgroup>
+  <col style="width: 151px">
+  <col style="width: 86px">
+  <col style="width: 452px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnTransConvolutionWeightGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程，由第一段接口aclnnTransConvolutionWeightGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
   </table>
 
 
