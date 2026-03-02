@@ -13,8 +13,7 @@
 #include "infershape_context_faker.h"
 #include "infershape_case_executor.h"
 
-class SplitInfershape : public testing::Test
-{
+class SplitInfershape : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
@@ -28,9 +27,11 @@ protected:
 };
 
 // Test: Split infershape with same shape
-TEST_F(SplitInfershape, split_infershape_same_shape) {
+TEST_F(SplitInfershape, split_infershape_same_shape)
+{
     int32_t split_dim = 1;
-    gert::InfershapeContextPara infershapeContextPara("Split",
+    gert::InfershapeContextPara infershapeContextPara(
+        "Split",
         {
             {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, &split_dim},
             {{{11, 16}, {11, 16}}, ge::DT_INT32, ge::FORMAT_ND},
@@ -41,16 +42,17 @@ TEST_F(SplitInfershape, split_infershape_same_shape) {
         },
         {
             {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
-        }
-        );
+        });
     std::vector<std::vector<int64_t>> expectOutputShape = {{11, 8}, {11, 8}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 // Test: Split infershape with invalid shape
-TEST_F(SplitInfershape, split_infershape_invalid_xshape) {
+TEST_F(SplitInfershape, split_infershape_invalid_xshape)
+{
     int32_t split_dim = 1;
-    gert::InfershapeContextPara infershapeContextPara("Split",
+    gert::InfershapeContextPara infershapeContextPara(
+        "Split",
         {
             {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, &split_dim},
             {{{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND},
@@ -61,16 +63,17 @@ TEST_F(SplitInfershape, split_infershape_invalid_xshape) {
         },
         {
             {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
-        }
-        );
+        });
     std::vector<std::vector<int64_t>> expectOutputShape = {{-2}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 // Test: Split infershape with invalid shape
-TEST_F(SplitInfershape, split_infershape_invalid_split_dim) {
+TEST_F(SplitInfershape, split_infershape_invalid_split_dim)
+{
     int32_t split_dim = 1;
-    gert::InfershapeContextPara infershapeContextPara("Split",
+    gert::InfershapeContextPara infershapeContextPara(
+        "Split",
         {
             {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, &split_dim},
             {{{-1, -1}, {-1, -1}}, ge::DT_INT32, ge::FORMAT_ND},
@@ -81,16 +84,17 @@ TEST_F(SplitInfershape, split_infershape_invalid_split_dim) {
         },
         {
             {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
-        }
-        );
+        });
     std::vector<std::vector<int64_t>> expectOutputShape = {{-1, -1}, {-1, -1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-// Test: Split infershape with invalid shape
-TEST_F(SplitInfershape, split_infershape_invalid_dtype) {
+// Test: Split infershape with invalid dtype
+TEST_F(SplitInfershape, split_infershape_invalid_dtype)
+{
     int32_t split_dim = 1;
-    gert::InfershapeContextPara infershapeContextPara("Split",
+    gert::InfershapeContextPara infershapeContextPara(
+        "Split",
         {
             {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, true, &split_dim},
             {{{-1, -1}, {-1, -1}}, ge::DT_FLOAT, ge::FORMAT_ND},
@@ -101,8 +105,112 @@ TEST_F(SplitInfershape, split_infershape_invalid_dtype) {
         },
         {
             {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
-        }
-        );
+        });
     std::vector<std::vector<int64_t>> expectOutputShape = {{-1, -1}, {-1, -1}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test: Split infershape with negative split_dim (relative indexing)
+TEST_F(SplitInfershape, split_infershape_negative_split_dim)
+{
+    int32_t split_dim = -1;
+    gert::InfershapeContextPara infershapeContextPara(
+        "Split",
+        {
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, &split_dim},
+            {{{4, 8}, {4, 8}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{4, 4}, {4, 4}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test: Split infershape with split_dim not get const (unknown split_dim)
+TEST_F(SplitInfershape, split_infershape_unknown_split_dim)
+{
+    std::vector<int64_t> splitDimValue = {0};
+    gert::InfershapeContextPara infershapeContextPara(
+        "Split",
+        {
+            {{{-1}, {-1}}, ge::DT_INT32, ge::FORMAT_ND, true, splitDimValue.data()},
+            {{{4, 8}, {4, 8}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{2, 8}, {2, 8}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test: Split infershape with dynamic dim (-1) in split dimension
+TEST_F(SplitInfershape, split_infershape_dynamic_dim)
+{
+    int32_t split_dim = 1;
+    gert::InfershapeContextPara infershapeContextPara(
+        "Split",
+        {
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, &split_dim},
+            {{{-1, -1}, {-1, -1}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{-1, -1}, {-1, -1}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test: Split infershape with num_split equals 1
+TEST_F(SplitInfershape, split_infershape_single_split)
+{
+    int32_t split_dim = 0;
+    gert::InfershapeContextPara infershapeContextPara(
+        "Split",
+        {
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, &split_dim},
+            {{{10}, {10}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{10}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test: Split infershape with 3D tensor
+TEST_F(SplitInfershape, split_infershape_3d_tensor)
+{
+    int32_t split_dim = 0;
+    gert::InfershapeContextPara infershapeContextPara(
+        "Split",
+        {
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, &split_dim},
+            {{{6, 4, 8}, {6, 4, 8}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{2, 4, 8}, {2, 4, 8}, {2, 4, 8}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }

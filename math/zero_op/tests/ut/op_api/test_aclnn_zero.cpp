@@ -142,65 +142,101 @@ TEST_F(l2ZeroTest, l2_zero_test_bool)
 }
 
 // 正常路径, aicpu, double
-// TEST_F(l2ZeroTest, l2_zero_test_double)
-// {
-//     auto selfDesc = TensorDesc({2, 4}, ACL_DOUBLE, ACL_FORMAT_ND);
+TEST_F(l2ZeroTest, l2_zero_test_double)
+{
+    auto selfDesc = TensorDesc({2, 4}, ACL_DOUBLE, ACL_FORMAT_ND);
 
-//     auto ut = OP_API_UT(aclnnInplaceZero, INPUT(selfDesc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceZero, INPUT(selfDesc), OUTPUT());
 
-//     uint64_t workspaceSize = 0;
-//     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-//     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-//     // ut.TestPrecision();
-// }
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+    // ut.TestPrecision();
+}
 
 // 正常路径, aicpu, INT16
-// TEST_F(l2ZeroTest, l2_zero_test_int16)
-// {
-//     auto selfDesc = TensorDesc({2, 4}, ACL_INT16, ACL_FORMAT_ND);
+TEST_F(l2ZeroTest, l2_zero_test_int16)
+{
+    auto selfDesc = TensorDesc({2, 4}, ACL_INT16, ACL_FORMAT_ND);
 
-//     auto ut = OP_API_UT(aclnnInplaceZero, INPUT(selfDesc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceZero, INPUT(selfDesc), OUTPUT());
 
-//     uint64_t workspaceSize = 0;
-//     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-//     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-//     // ut.TestPrecision();
-// }
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+    // ut.TestPrecision();
+}
 
 // 正常路径, aicpu, UINT16, 原pytorch不支持uint16, 所以此处未设置精度测试
-// TEST_F(l2ZeroTest, l2_zero_test_uint16)
-// {
-//     auto selfDesc = TensorDesc({2, 4}, ACL_UINT16, ACL_FORMAT_ND);
+TEST_F(l2ZeroTest, l2_zero_test_uint16)
+{
+    auto selfDesc = TensorDesc({2, 4}, ACL_UINT16, ACL_FORMAT_ND);
 
-//     auto ut = OP_API_UT(aclnnInplaceZero, INPUT(selfDesc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceZero, INPUT(selfDesc), OUTPUT());
 
-//     uint64_t workspaceSize = 0;
-//     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-//     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-// }
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
 
 // 正常路径, aicpu, COMPLEX64
-// TEST_F(l2ZeroTest, l2_zero_test_complex64)
-// {
-//     auto selfDesc = TensorDesc({2, 4}, ACL_COMPLEX64, ACL_FORMAT_ND);
+TEST_F(l2ZeroTest, l2_zero_test_complex64)
+{
+    auto selfDesc = TensorDesc({2, 4}, ACL_COMPLEX64, ACL_FORMAT_ND);
 
-//     auto ut = OP_API_UT(aclnnInplaceZero, INPUT(selfDesc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceZero, INPUT(selfDesc), OUTPUT());
 
-//     uint64_t workspaceSize = 0;
-//     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-//     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-//     // ut.TestPrecision();
-// }
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+    // ut.TestPrecision();
+}
 
 // 正常路径, aicpu, COMPLEX128
-// TEST_F(l2ZeroTest, l2_zero_test_complex128)
-// {
-//     auto selfDesc = TensorDesc({2, 4}, ACL_COMPLEX128, ACL_FORMAT_ND);
+TEST_F(l2ZeroTest, l2_zero_test_complex128)
+{
+    auto selfDesc = TensorDesc({2, 4}, ACL_COMPLEX128, ACL_FORMAT_ND);
 
-//     auto ut = OP_API_UT(aclnnInplaceZero, INPUT(selfDesc), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceZero, INPUT(selfDesc), OUTPUT());
 
-//     uint64_t workspaceSize = 0;
-//     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-//     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-//     // ut.TestPrecision();
-// }
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+    // ut.TestPrecision();
+}
+
+// 正常路径, 测试 ACL_BF16 类型（仅在910B上支持aicore，其他型号走aicpu）
+TEST_F(l2ZeroTest, l2_zero_test_bf16)
+{
+    auto selfDesc = TensorDesc({2, 4}, ACL_BF16, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceZero, INPUT(selfDesc), OUTPUT());
+
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+// 正常路径, 触发 CheckDim 函数（维度为8时）
+TEST_F(l2ZeroTest, l2_zero_test_max_dim)
+{
+    auto selfDesc = TensorDesc({1, 1, 1, 1, 1, 1, 1, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceZero, INPUT(selfDesc), OUTPUT());
+
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+// 测试多维度 aicpu 类型
+TEST_F(l2ZeroTest, l2_zero_test_multi_dim_double)
+{
+    auto selfDesc = TensorDesc({1, 2, 3, 4}, ACL_DOUBLE, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceZero, INPUT(selfDesc), OUTPUT());
+
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}

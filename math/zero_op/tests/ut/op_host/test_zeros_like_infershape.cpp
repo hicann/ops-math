@@ -41,3 +41,67 @@ TEST_F(ZerosLike, zeros_like_infershape_test)
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
+
+TEST_F(ZerosLike, zeros_like_infershape_test_float)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "ZerosLike",
+        {
+            {{{2, 3, 4}, {2, 3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {2, 3, 4},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(ZerosLike, zeros_like_infershape_test_int32)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "ZerosLike",
+        {
+            {{{10, 20}, {10, 20}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {10, 20},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(ZerosLike, zeros_like_infershape_test_int64)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "ZerosLike",
+        {
+            {{{5, 6, 7, 8}, {5, 6, 7, 8}}, ge::DT_INT64, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {5, 6, 7, 8},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(ZerosLike, zeros_like_infershape_test_bool)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "ZerosLike",
+        {
+            {{{1, 2}, {1, 2}}, ge::DT_BOOL, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_BOOL, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {1, 2},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}

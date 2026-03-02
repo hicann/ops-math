@@ -29,17 +29,24 @@ protected:
 
 TEST_F(MirrorPadInfershapeTest, mirror_pad_infershape_case_0)
 {
-    gert::StorageShape xShape = {{6,}, {6,}};
-	// padShape和pad_value的形状要相同
+    gert::StorageShape xShape = {
+        {
+            6,
+        },
+        {
+            6,
+        }};
+    // padShape和pad_value的形状要相同
     gert::StorageShape padShape = {{1, 2}, {1, 2}};
     int pad_value[2] = {2, 2};
 
     gert::InfershapeContextPara infershapeContextPara(
-        "MirrorPad",
-        {{xShape, ge::DT_INT32, ge::FORMAT_ND}, {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value}},
-        {{{{-2},{-2}}, ge::DT_INT32, ge::FORMAT_ND}});
+        "MirrorPad", {{xShape, ge::DT_INT32, ge::FORMAT_ND}, {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value}},
+        {{{{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND}});
 
-    std::vector<std::vector<int64_t>> expectOutputShape = {{ 10, }};
+    std::vector<std::vector<int64_t>> expectOutputShape = {{
+        10,
+    }};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
@@ -50,11 +57,12 @@ TEST_F(MirrorPadInfershapeTest, mirror_pad_infershape_case_1)
     int pad_value[2][2] = {{1, 2}, {3, 4}};
 
     gert::InfershapeContextPara infershapeContextPara(
-        "MirrorPad",
-        {{xShape, ge::DT_INT32, ge::FORMAT_ND}, {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value}},
-        {{{{-2},{-2}}, ge::DT_INT32, ge::FORMAT_ND}});
+        "MirrorPad", {{xShape, ge::DT_INT32, ge::FORMAT_ND}, {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value}},
+        {{{{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND}});
 
-    std::vector<std::vector<int64_t>> expectOutputShape = {{ 5, 10 },};
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {5, 10},
+    };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
@@ -65,10 +73,90 @@ TEST_F(MirrorPadInfershapeTest, mirror_pad_infershape_case_2)
     int pad_value[3][2] = {{1, 2}, {3, 4}, {5, 6}};
 
     gert::InfershapeContextPara infershapeContextPara(
-        "MirrorPad",
-        {{xShape, ge::DT_INT32, ge::FORMAT_ND}, {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value}},
-        {{{{-2},{-2}}, ge::DT_INT32, ge::FORMAT_ND}});
+        "MirrorPad", {{xShape, ge::DT_INT32, ge::FORMAT_ND}, {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value}},
+        {{{{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND}});
 
-    std::vector<std::vector<int64_t>> expectOutputShape = {{ 11, 23, 43 },};
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {11, 23, 43},
+    };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
-} 
+}
+
+TEST_F(MirrorPadInfershapeTest, mirror_pad_infershape_case_3_int64)
+{
+    gert::StorageShape xShape = {{2, 3}, {2, 3}};
+    gert::StorageShape padShape = {{2, 2}, {2, 2}};
+    int64_t pad_value[2][2] = {{1, 2}, {3, 4}};
+
+    gert::InfershapeContextPara infershapeContextPara(
+        "MirrorPad", {{xShape, ge::DT_FLOAT, ge::FORMAT_ND}, {padShape, ge::DT_INT64, ge::FORMAT_ND, true, pad_value}},
+        {{{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND}});
+
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {5, 10},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(MirrorPadInfershapeTest, mirror_pad_infershape_case_4_error_paddings_num)
+{
+    gert::StorageShape xShape = {{2, 3}, {2, 3}};
+    gert::StorageShape padShape = {{3, 2}, {3, 2}};
+    int pad_value[3][2] = {{1, 2}, {3, 4}, {5, 6}};
+
+    gert::InfershapeContextPara infershapeContextPara(
+        "MirrorPad", {{xShape, ge::DT_INT32, ge::FORMAT_ND}, {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value}},
+        {{{{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND}});
+
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {5, 10},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
+}
+
+TEST_F(MirrorPadInfershapeTest, mirror_pad_infershape_case_5_error_negative_output)
+{
+    gert::StorageShape xShape = {{2, 3}, {2, 3}};
+    gert::StorageShape padShape = {{2, 2}, {2, 2}};
+    int pad_value[2][2] = {{-5, -1}, {-2, -1}};
+
+    gert::InfershapeContextPara infershapeContextPara(
+        "MirrorPad", {{xShape, ge::DT_INT32, ge::FORMAT_ND}, {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value}},
+        {{{{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND}});
+
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {5, 10},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
+}
+
+TEST_F(MirrorPadInfershapeTest, mirror_pad_infershape_case_6_unknown_rank)
+{
+    gert::StorageShape xShape = {{-2}, {-2}};
+    gert::StorageShape padShape = {{2, 2}, {2, 2}};
+    int pad_value[2][2] = {{1, 2}, {3, 4}};
+
+    gert::InfershapeContextPara infershapeContextPara(
+        "MirrorPad", {{xShape, ge::DT_INT32, ge::FORMAT_ND}, {padShape, ge::DT_INT32, ge::FORMAT_ND, true, pad_value}},
+        {{{{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND}});
+
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-2},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(MirrorPadInfershapeTest, mirror_pad_infershape_case_7_dynamic_paddings)
+{
+    gert::StorageShape xShape = {{2, 3}, {2, 3}};
+    gert::StorageShape padShape = {{2, 2}, {2, 2}};
+
+    gert::InfershapeContextPara infershapeContextPara(
+        "MirrorPad", {{xShape, ge::DT_INT32, ge::FORMAT_ND}, {padShape, ge::DT_INT32, ge::FORMAT_ND, false}},
+        {{{{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND}});
+
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-1, -1},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}

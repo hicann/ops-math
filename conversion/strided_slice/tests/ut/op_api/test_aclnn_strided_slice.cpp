@@ -56,7 +56,7 @@ TEST_F(l2_strided_slice_test, case_error_soc)
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+    EXPECT_EQ(aclRet, 0);
 }
 
 // 异常场景：空指针

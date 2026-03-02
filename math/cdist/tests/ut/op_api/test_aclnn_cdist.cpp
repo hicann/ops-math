@@ -21,8 +21,7 @@
 using namespace op;
 using namespace std;
 
-class l2_cdist_test : public testing::Test
-{
+class l2_cdist_test : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
@@ -44,7 +43,7 @@ TEST_F(l2_cdist_test, case_01_float)
     int64_t compute_mode = 2;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
@@ -59,7 +58,7 @@ TEST_F(l2_cdist_test, case_02_float16)
     int64_t compute_mode = 2;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
@@ -74,7 +73,7 @@ TEST_F(l2_cdist_test, case_04_empty_tensor)
     int64_t compute_mode = 2;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
@@ -90,7 +89,7 @@ TEST_F(l2_cdist_test, case_05_x1_null)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
@@ -106,7 +105,7 @@ TEST_F(l2_cdist_test, case_06_x2_null)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
@@ -137,7 +136,7 @@ TEST_F(l2_cdist_test, case_08_x1_not_in_dtype_support_list)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -153,7 +152,7 @@ TEST_F(l2_cdist_test, case_09_x2_not_in_dtype_support_list)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -169,7 +168,7 @@ TEST_F(l2_cdist_test, case_10_out_not_in_dtype_support_list)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -185,7 +184,7 @@ TEST_F(l2_cdist_test, case_11_x1_out_diff_dtype)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -201,7 +200,7 @@ TEST_F(l2_cdist_test, case_12_x2_out_diff_dtype)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -217,7 +216,7 @@ TEST_F(l2_cdist_test, case_13_x1_dim_gt_8)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -233,7 +232,7 @@ TEST_F(l2_cdist_test, case_13_x2_dim_gt_8)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -249,7 +248,7 @@ TEST_F(l2_cdist_test, case_14_out_dim_gt_8)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -265,7 +264,7 @@ TEST_F(l2_cdist_test, case_15_x1_dim_lt_2)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -281,7 +280,7 @@ TEST_F(l2_cdist_test, case_16_x2_dim_lt_2)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -297,7 +296,7 @@ TEST_F(l2_cdist_test, case_17_out_dim_lt_2)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -313,7 +312,7 @@ TEST_F(l2_cdist_test, case_18_x1_x2_diff_lastdim)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -329,7 +328,7 @@ TEST_F(l2_cdist_test, case_19_p_lt_0)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -345,7 +344,7 @@ TEST_F(l2_cdist_test, case_20_p_is_nan)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -361,8 +360,168 @@ TEST_F(l2_cdist_test, case_21_not_broadcast)
     int64_t compute_mode = 0;
 
     auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
-    
+
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+// 异常场景：p=2.0但compute_mode!=2
+TEST_F(l2_cdist_test, case_22_p2_compute_mode_not_2)
+{
+    auto x1Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto x2Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    float p = 2.0;
+    int64_t compute_mode = 0;
+
+    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+// 正常场景：p=0
+TEST_F(l2_cdist_test, case_23_p_zero)
+{
+    auto x1Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto x2Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    float p = 0.0;
+    int64_t compute_mode = 0;
+
+    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}
+
+// 正常场景：p=1.0
+TEST_F(l2_cdist_test, case_24_p_one)
+{
+    auto x1Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto x2Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    float p = 1.0;
+    int64_t compute_mode = 0;
+
+    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}
+
+// 正常场景：x1 batch维度为0
+TEST_F(l2_cdist_test, case_25_x1_batch_zero)
+{
+    auto x1Desc = TensorDesc({0, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto x2Desc = TensorDesc({0, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({0, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    float p = 2.0;
+    int64_t compute_mode = 2;
+
+    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}
+
+// 正常场景：bf16数据类型(ASCEND950)
+TEST_F(l2_cdist_test, case_26_bf16)
+{
+    auto x1Desc = TensorDesc({2, 2}, ACL_BF16, ACL_FORMAT_ND);
+    auto x2Desc = TensorDesc({2, 2}, ACL_BF16, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({2, 2}, ACL_BF16, ACL_FORMAT_ND);
+    float p = 2.0;
+    int64_t compute_mode = 2;
+
+    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+// 正常场景：x1最后一维为0
+TEST_F(l2_cdist_test, case_27_x1_lastdim_zero)
+{
+    auto x1Desc = TensorDesc({2, 0}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto x2Desc = TensorDesc({2, 0}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({2, 0}, ACL_FLOAT, ACL_FORMAT_ND);
+    float p = 2.0;
+    int64_t compute_mode = 2;
+
+    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_INNER_NULLPTR);
+}
+
+// 正常场景：广播测试
+TEST_F(l2_cdist_test, case_28_broadcast)
+{
+    auto x1Desc = TensorDesc({1, 2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto x2Desc = TensorDesc({4, 1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({4, 2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    float p = 2.0;
+    int64_t compute_mode = 2;
+
+    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_INNER_NULLPTR);
+}
+
+// 正常场景：多维广播测试
+TEST_F(l2_cdist_test, case_29_multidim_broadcast)
+{
+    auto x1Desc = TensorDesc({2, 1, 1, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto x2Desc = TensorDesc({1, 3, 1, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({2, 3, 1, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    float p = 2.0;
+    int64_t compute_mode = 2;
+
+    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_INNER_NULLPTR);
+}
+
+// 异常场景：x2 batch维度为0
+TEST_F(l2_cdist_test, case_30_x2_batch_zero)
+{
+    auto x1Desc = TensorDesc({2, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto x2Desc = TensorDesc({0, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({2, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    float p = 2.0;
+    int64_t compute_mode = 2;
+
+    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}
+
+// 异常场景：workspaceSize为空指针
+TEST_F(l2_cdist_test, case_31_workspace_null)
+{
+    auto x1Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto x2Desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto outDesc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    float p = 2.0;
+    int64_t compute_mode = 2;
+
+    auto ut = OP_API_UT(aclnnCdist, INPUT(x1Desc, x2Desc, p, compute_mode), OUTPUT(outDesc));
+
+    uint64_t* workspace_size = nullptr;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 }

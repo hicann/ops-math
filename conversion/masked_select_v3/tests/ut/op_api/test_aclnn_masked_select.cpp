@@ -11,7 +11,7 @@
 #include <vector>
 #include "gtest/gtest.h"
 
-#include "aclnn_masked_select.h"
+#include "conversion/masked_select_v3/op_api/aclnn_masked_select.h"
 
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"

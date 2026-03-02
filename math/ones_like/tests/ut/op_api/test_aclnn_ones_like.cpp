@@ -195,3 +195,134 @@ TEST_F(l2_ones_test, l2_ones_test_dtype_bool)
     EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
     // ut.TestPrecision();
 }
+
+// 正常路径，double，aicpu
+TEST_F(l2_ones_test, l2_ones_test_dtype_double)
+{
+    auto selfDesc = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnInplaceOne, INPUT(selfDesc), OUTPUT());
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+// 正常路径，int16，aicpu
+TEST_F(l2_ones_test, l2_ones_test_dtype_int16)
+{
+    auto selfDesc = TensorDesc({2, 3}, ACL_INT16, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnInplaceOne, INPUT(selfDesc), OUTPUT());
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+// 正常路径，int64，aicpu
+TEST_F(l2_ones_test, l2_ones_test_dtype_int64)
+{
+    auto selfDesc = TensorDesc({2, 3}, ACL_INT64, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnInplaceOne, INPUT(selfDesc), OUTPUT());
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+// 测试1D tensor
+TEST_F(l2_ones_test, l2_ones_test_shape_1d)
+{
+    auto selfDesc = TensorDesc({16}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnInplaceOne, INPUT(selfDesc), OUTPUT());
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+// 测试3D tensor
+TEST_F(l2_ones_test, l2_ones_test_shape_3d)
+{
+    auto selfDesc = TensorDesc({2, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnInplaceOne, INPUT(selfDesc), OUTPUT());
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+// 测试4D tensor
+TEST_F(l2_ones_test, l2_ones_test_shape_4d)
+{
+    auto selfDesc = TensorDesc({2, 3, 4, 5}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnInplaceOne, INPUT(selfDesc), OUTPUT());
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+// 测试5D tensor
+TEST_F(l2_ones_test, l2_ones_test_shape_5d)
+{
+    auto selfDesc = TensorDesc({1, 2, 3, 4, 5}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnInplaceOne, INPUT(selfDesc), OUTPUT());
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+// 测试大shape tensor
+TEST_F(l2_ones_test, l2_ones_test_shape_large)
+{
+    auto selfDesc = TensorDesc({1024, 1024}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnInplaceOne, INPUT(selfDesc), OUTPUT());
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+// 测试小shape tensor
+TEST_F(l2_ones_test, l2_ones_test_shape_small)
+{
+    auto selfDesc = TensorDesc({1}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnInplaceOne, INPUT(selfDesc), OUTPUT());
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+// 测试连续tensor
+TEST_F(l2_ones_test, l2_ones_test_contiguous)
+{
+    auto selfDesc = TensorDesc({3, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnInplaceOne, INPUT(selfDesc), OUTPUT());
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+// 测试非连续tensor
+TEST_F(l2_ones_test, l2_ones_test_non_contiguous)
+{
+    auto selfDesc = TensorDesc({5, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 5}, 0, {4, 5});
+    auto ut = OP_API_UT(aclnnInplaceOne, INPUT(selfDesc), OUTPUT());
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+// 测试0维tensor
+TEST_F(l2_ones_test, l2_ones_test_scalar)
+{
+    auto selfDesc = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnInplaceOne, INPUT(selfDesc), OUTPUT());
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
+}
+
+// 测试ASCEND910_93平台bfloat16
+TEST_F(l2_ones_test, ascend910_93_l2_ones_test_dtype_bfloat16)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910_93);
+    auto selfDesc = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnInplaceOne, INPUT(selfDesc), OUTPUT());
+    uint64_t workspaceSize = 0;
+    aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
+}

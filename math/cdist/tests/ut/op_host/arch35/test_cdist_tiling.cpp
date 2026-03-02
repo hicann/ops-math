@@ -10,8 +10,8 @@
 
 #include <iostream>
 #include <gtest/gtest.h>
-#include "../../../op_host/arch35/cdist_tiling_arch35.h"
-#include "../../../op_kernel/cdist_tiling_data.h"
+#include "../../../../op_host/arch35/cdist_tiling_arch35.h"
+#include "../../../../op_kernel/cdist_tiling_data.h"
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
 

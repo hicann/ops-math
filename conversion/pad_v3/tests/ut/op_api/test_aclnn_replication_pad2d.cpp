@@ -239,3 +239,92 @@ TEST_F(replication_pad2d_test, case_16)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
+
+TEST_F(replication_pad2d_test, case_float32)
+{
+    auto self_tensor_desc = TensorDesc({1, 1, 4, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
+    auto out_desc = TensorDesc({1, 1, 8, 7}, ACL_FLOAT, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnReplicationPad2d, INPUT(self_tensor_desc, padding_desc), OUTPUT(out_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(replication_pad2d_test, case_float32_5d)
+{
+    auto self_tensor_desc = TensorDesc({1, 2, 4, 3, 5}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto padding_desc = IntArrayDesc(vector<int64_t>{1, 1, 2, 2});
+    auto out_desc = TensorDesc({1, 2, 6, 7, 5}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnReplicationPad2d, INPUT(self_tensor_desc, padding_desc), OUTPUT(out_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+TEST_F(replication_pad2d_test, case_int32)
+{
+    auto self_tensor_desc = TensorDesc({1, 1, 4, 3}, ACL_INT32, ACL_FORMAT_ND);
+    auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
+    auto out_desc = TensorDesc({1, 1, 8, 7}, ACL_INT32, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnReplicationPad2d, INPUT(self_tensor_desc, padding_desc), OUTPUT(out_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(replication_pad2d_test, case_int64)
+{
+    auto self_tensor_desc = TensorDesc({1, 1, 4, 3}, ACL_INT64, ACL_FORMAT_ND);
+    auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
+    auto out_desc = TensorDesc({1, 1, 8, 7}, ACL_INT64, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnReplicationPad2d, INPUT(self_tensor_desc, padding_desc), OUTPUT(out_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(replication_pad2d_test, case_int8)
+{
+    auto self_tensor_desc = TensorDesc({1, 1, 4, 3}, ACL_INT8, ACL_FORMAT_ND);
+    auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
+    auto out_desc = TensorDesc({1, 1, 8, 7}, ACL_INT8, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnReplicationPad2d, INPUT(self_tensor_desc, padding_desc), OUTPUT(out_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(replication_pad2d_test, case_uint8)
+{
+    auto self_tensor_desc = TensorDesc({1, 1, 4, 3}, ACL_UINT8, ACL_FORMAT_ND);
+    auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
+    auto out_desc = TensorDesc({1, 1, 8, 7}, ACL_UINT8, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnReplicationPad2d, INPUT(self_tensor_desc, padding_desc), OUTPUT(out_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(replication_pad2d_test, case_double)
+{
+    auto self_tensor_desc = TensorDesc({1, 1, 4, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
+    auto padding_desc = IntArrayDesc(vector<int64_t>{2, 2, 2, 2});
+    auto out_desc = TensorDesc({1, 1, 8, 7}, ACL_DOUBLE, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnReplicationPad2d, INPUT(self_tensor_desc, padding_desc), OUTPUT(out_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
