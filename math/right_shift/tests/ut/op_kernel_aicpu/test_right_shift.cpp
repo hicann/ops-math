@@ -308,3 +308,141 @@ TEST_F(TEST_RIGHTSHIFT_UT, INPUT2_NEGATIVE_OR_GREATER)
     bool compare = CompareResult(output, output_exp, 6);
     EXPECT_EQ(compare, true);
 }
+
+TEST_F(TEST_RIGHTSHIFT_UT, DATA_TYPE_INT16_SUCC)
+{
+    vector<DataType> data_types = {DT_INT16, DT_INT16, DT_INT16};
+    vector<vector<int64_t>> shapes = {{2, 3}, {2, 3}, {2, 3}};
+    const int16_t input1[6] = {100, 50, 25, 12, 8, 4};
+    const int16_t input2[6] = {2, 3, 1, 2, 1, 2};
+    int16_t output[6] = {0};
+    vector<void*> datas = {(void*)input1, (void*)input2, (void*)output};
+
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    int16_t output_exp[6] = {25, 6, 12, 3, 4, 1};
+    bool compare = CompareResult(output, output_exp, 6);
+    EXPECT_EQ(compare, true);
+}
+
+TEST_F(TEST_RIGHTSHIFT_UT, DATA_TYPE_INT64_SUCC)
+{
+    vector<DataType> data_types = {DT_INT64, DT_INT64, DT_INT64};
+    vector<vector<int64_t>> shapes = {{2, 3}, {2, 3}, {2, 3}};
+    const int64_t input1[6] = {1000, 500, 250, 125, 62, 31};
+    const int64_t input2[6] = {3, 4, 2, 3, 1, 2};
+    int64_t output[6] = {0};
+    vector<void*> datas = {(void*)input1, (void*)input2, (void*)output};
+
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    int64_t output_exp[6] = {125, 31, 62, 15, 31, 7};
+    bool compare = CompareResult(output, output_exp, 6);
+    EXPECT_EQ(compare, true);
+}
+
+TEST_F(TEST_RIGHTSHIFT_UT, DATA_TYPE_UINT8_SUCC)
+{
+    vector<DataType> data_types = {DT_UINT8, DT_UINT8, DT_UINT8};
+    vector<vector<int64_t>> shapes = {{2, 3}, {2, 3}, {2, 3}};
+    const uint8_t input1[6] = {200, 100, 50, 25, 12, 6};
+    const uint8_t input2[6] = {2, 3, 1, 2, 1, 1};
+    uint8_t output[6] = {0};
+    vector<void*> datas = {(void*)input1, (void*)input2, (void*)output};
+
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    uint8_t output_exp[6] = {50, 12, 25, 6, 6, 3};
+    bool compare = CompareResult(output, output_exp, 6);
+    EXPECT_EQ(compare, true);
+}
+
+TEST_F(TEST_RIGHTSHIFT_UT, LARGE_DATA_NOBCAST_PARALLEL_SUCC)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{64, 32}, {64, 32}, {64, 32}};
+
+    constexpr uint64_t input1_size = 64 * 32;
+    int32_t input1[input1_size];
+    for (int64_t i = 0; i < input1_size; ++i) {
+        input1[i] = static_cast<int32_t>((i + 100) % 1000);
+    }
+
+    constexpr uint64_t input2_size = 64 * 32;
+    int32_t input2[input2_size];
+    for (int64_t i = 0; i < input2_size; ++i) {
+        input2[i] = static_cast<int32_t>((i + 1) % 4);
+    }
+
+    constexpr uint64_t output_size = 64 * 32;
+    int32_t output[output_size] = {0};
+    vector<void*> datas = {(void*)input1, (void*)input2, (void*)output};
+
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    int32_t output_exp[output_size];
+    int32_t* in1_clamped = new int32_t[input2_size];
+    for (int64_t i = 0; i < input2_size; i++) {
+        in1_clamped[i] = input2[i];
+        if (in1_clamped[i] < 0) {
+            in1_clamped[i] = 0;
+        } else if (in1_clamped[i] > static_cast<int32_t>(sizeof(int32_t) * CHAR_BIT) - 1) {
+            in1_clamped[i] = static_cast<int32_t>(sizeof(int32_t) * CHAR_BIT) - 1;
+        }
+    }
+    for (int64_t i = 0; i < output_size; ++i) {
+        output_exp[i] = input1[i] >> in1_clamped[i];
+    }
+    delete[] in1_clamped;
+
+    bool compare = CompareResult(output, output_exp, output_size);
+    EXPECT_EQ(compare, true);
+}
+
+TEST_F(TEST_RIGHTSHIFT_UT, LARGE_DATA_BCAST_PARALLEL_SUCC)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{64, 32}, {32}, {64, 32}};
+
+    constexpr uint64_t input1_size = 64 * 32;
+    int32_t input1[input1_size];
+    for (int64_t i = 0; i < input1_size; ++i) {
+        input1[i] = static_cast<int32_t>((i + 100) % 1000);
+    }
+
+    constexpr uint64_t input2_size = 32;
+    int32_t input2[input2_size];
+    for (int64_t i = 0; i < input2_size; ++i) {
+        input2[i] = static_cast<int32_t>((i + 1) % 4);
+    }
+
+    constexpr uint64_t output_size = 64 * 32;
+    int32_t output[output_size] = {0};
+    vector<void*> datas = {(void*)input1, (void*)input2, (void*)output};
+
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    int32_t output_exp[output_size];
+    int32_t* in1_clamped = new int32_t[input2_size];
+    for (int64_t i = 0; i < input2_size; i++) {
+        in1_clamped[i] = input2[i];
+        if (in1_clamped[i] < 0) {
+            in1_clamped[i] = 0;
+        } else if (in1_clamped[i] > static_cast<int32_t>(sizeof(int32_t) * CHAR_BIT) - 1) {
+            in1_clamped[i] = static_cast<int32_t>(sizeof(int32_t) * CHAR_BIT) - 1;
+        }
+    }
+    for (int64_t i = 0; i < output_size; ++i) {
+        int64_t idx = i % input2_size;
+        output_exp[i] = input1[i] >> in1_clamped[idx];
+    }
+    delete[] in1_clamped;
+
+    bool compare = CompareResult(output, output_exp, output_size);
+    EXPECT_EQ(compare, true);
+}
