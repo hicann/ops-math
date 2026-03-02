@@ -174,7 +174,7 @@ ge::graphStatus NegTiling::SetTilingData()
 
 static ge::graphStatus TilingFuncNeg(gert::TilingContext* tilingContext)
 {
-    auto compileInfo = reinterpret_cast<const ElewiseCompileInfo*>(tilingContext->GetCompileInfo());
+    auto compileInfo = static_cast<const ElewiseCompileInfo*>(tilingContext->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, compileInfo);
     // 走新的模板tiling
     OP_LOGD(tilingContext->GetNodeName(), "START Neg AscendC Tiling \n");

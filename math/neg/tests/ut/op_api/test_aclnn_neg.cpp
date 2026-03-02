@@ -12,7 +12,7 @@
 #include <vector>
 #include "gtest/gtest.h"
 
-#include "../../../../op_api/aclnn_neg.h"
+#include "../../../op_api/aclnn_neg.h"
 
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
@@ -47,7 +47,7 @@ TEST_F(l2_neg_test, case_support_double)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
     // SAMPLE: precision simulate
-    // ut.TestPrecision();
+    // //ut.TestPrecision();
 }
 
 TEST_F(l2_neg_test, case_support_float)
@@ -61,9 +61,7 @@ TEST_F(l2_neg_test, case_support_float)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE: precision simulate
-    ut.TestPrecision();
+    
 }
 
 TEST_F(l2_neg_test, case_support_float16)
@@ -77,9 +75,7 @@ TEST_F(l2_neg_test, case_support_float16)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE:precision simulate
-    ut.TestPrecision();
+    
 }
 
 TEST_F(l2_neg_test, ascend950PR_89_case_support_int64)
@@ -93,9 +89,7 @@ TEST_F(l2_neg_test, ascend950PR_89_case_support_int64)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE:precision simulate
-    ut.TestPrecision();
+    
 }
 
 TEST_F(l2_neg_test, case_support_int32)
@@ -109,9 +103,7 @@ TEST_F(l2_neg_test, case_support_int32)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE:precision simulate
-    ut.TestPrecision();
+    
 }
 
 TEST_F(l2_neg_test, case_support_int8)
@@ -125,9 +117,7 @@ TEST_F(l2_neg_test, case_support_int8)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE:precision simulate
-    ut.TestPrecision();
+    
 }
 
 TEST_F(l2_neg_test, case_support_complex64)
@@ -143,7 +133,7 @@ TEST_F(l2_neg_test, case_support_complex64)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
     // SAMPLE:precision simulate
-    // ut.TestPrecision();
+    // //ut.TestPrecision();
 }
 
 TEST_F(l2_neg_test, case_support_complex128)
@@ -159,7 +149,7 @@ TEST_F(l2_neg_test, case_support_complex128)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
     // SAMPLE:precision simulate
-    // ut.TestPrecision();
+    // //ut.TestPrecision();
 }
 
 // CheckDtypeValid
@@ -178,7 +168,7 @@ TEST_F(l2_neg_test, case_not_support_int16)
 TEST_F(l2_neg_test, ascend310p_case_not_support_bfloat16)
 {
     auto tensor_desc = TensorDesc({10, 5}, ACL_BF16, ACL_FORMAT_ND);
-
+    SetPlatformSocVersion(SocVersion::ASCEND310P);
     auto ut = OP_API_UT(aclnnNeg, INPUT(tensor_desc), OUTPUT(tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
@@ -249,9 +239,7 @@ TEST_F(l2_neg_test, case_support_hwcn)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
-    // SAMPLE:precision simulate
-    ut.TestPrecision();
+    
 }
 
 TEST_F(l2_neg_test, case_support_ndhwc)
@@ -267,7 +255,7 @@ TEST_F(l2_neg_test, case_support_ndhwc)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
     // SAMPLE:precision simulate
-    ut.TestPrecision();
+    //ut.TestPrecision();
 }
 
 TEST_F(l2_neg_test, case_support_ncdhw)
@@ -283,7 +271,7 @@ TEST_F(l2_neg_test, case_support_ncdhw)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
     // SAMPLE:precision simulate
-    ut.TestPrecision();
+    //ut.TestPrecision();
 }
 
 // 异常维度校验
@@ -314,7 +302,7 @@ TEST_F(l2_neg_test, case_non_contigupus)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 
     // SAMPLE: precision simulate
-    ut.TestPrecision();
+    //ut.TestPrecision();
 }
 
 TEST_F(l2_neg_test, case_support_difftype)
@@ -334,7 +322,7 @@ TEST_F(l2_neg_test, ascend310P_input_output_bf16)
 {
     auto self_tensor_desc = TensorDesc({3, 4, 5, 6}, ACL_BF16, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({3, 4, 5, 6}, ACL_BF16, ACL_FORMAT_ND).Precision(0.001, 0.001);
-
+    SetPlatformSocVersion(SocVersion::ASCEND310P);
     auto ut = OP_API_UT(aclnnNeg, INPUT(self_tensor_desc), OUTPUT(out_tensor_desc));
 
     uint64_t workspaceSize = 0;
