@@ -31,6 +31,8 @@ constexpr int64_t CORE_ALIGN_SIZE = 512;
 constexpr static int32_t UNROLL = 4;
 constexpr static int32_t CUTHREADS = 256;
 constexpr uint16_t CORE_THREAD_NUM = 1024;
+constexpr float double_epsilon = 2.22045e-16f; // std::numeric_limits<double>::epsilon()
+
 template <typename T, typename U>
 class DropOutV3Impl {
 public:
@@ -42,6 +44,7 @@ public:
     __aicore__ inline void CopyOutMask(const int64_t offset, const uint32_t count);
     __aicore__ inline void UpdateMask(const DropOutV3TilingData *tilingData);
     __aicore__ inline uint64_t GetVectorSize(uint64_t eleCount);
+    __aicore__ inline bool IsProbEqual(float a, float b);
 
 private:
     TPipe *pipe_;
@@ -113,6 +116,17 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(CORE_THREAD_NUM) inline void SimtDropOutVec(
             outputGM[linearIndex + iVec] = inputGM[linearIndex + iVec] * scale * fMaskBit;
             maskGM[linearIndex + iVec] = maskBit;
         }
+    }
+}
+
+template <typename T>
+__simt_vf__ __aicore__ LAUNCH_BOUND(CORE_THREAD_NUM) inline void ProcessZero(__gm__ volatile T *outputGM, 
+    __gm__ volatile uint8_t *maskGM, int64_t elementNum)
+{
+    for (int64_t linearIndex = Simt::GetBlockIdx() * Simt::GetThreadNum() + Simt::GetThreadIdx(); linearIndex < elementNum; 
+        linearIndex += Simt::GetThreadNum() * Simt::GetBlockNum()) {
+            outputGM[linearIndex] = 0;
+            maskGM[linearIndex] = 0;
     }
 }
 
@@ -253,11 +267,25 @@ __aicore__ inline uint64_t DropOutV3Impl<T, U>::GetVectorSize(uint64_t eleCount)
 }
 
 template <typename T, typename U>
+__aicore__ inline bool DropOutV3Impl<T, U>::IsProbEqual(float a, float b)
+{
+    return std::abs(a - b) <= double_epsilon;
+}
+
+template <typename T, typename U>
 __aicore__ inline void DropOutV3Impl<T, U>::Process(
     GM_ADDR x, GM_ADDR y, GM_ADDR mask, const DropOutV3TilingData *tilingData)
 {
     blockIdx_ = GetBlockIdx();
     if (blockIdx_ >= tilingData->usedCoreNum) {
+        return;
+    }
+
+    if (IsProbEqual(prob_, 0.0f)) {
+        AscendC::Simt::VF_CALL<ProcessZero<T>>(AscendC::Simt::Dim3(CORE_THREAD_NUM),
+            (__gm__ volatile T*)y, (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()), tilingData->elementNum);
+        SyncAll();
+        UpdateMask(tilingData);
         return;
     }
     // 2048 / 256 * 78 * 256 = 159744
