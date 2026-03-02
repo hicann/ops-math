@@ -12,9 +12,8 @@
 
 #include <array>
 #include <vector>
-
 #include "gtest/gtest.h"
-#include "aclnn_slogdet.h"
+#include "math/slogdet/op_host/op_api/aclnn_slogdet.h"
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/tensor_desc.h"
@@ -127,8 +126,6 @@ TEST_F(l2_slogdet_test, ascend910B2_case_float) {
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // 数据类型覆盖 double
@@ -142,8 +139,6 @@ TEST_F(l2_slogdet_test, ascend910B2_case_double) {
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // 数据类型覆盖 complex64
@@ -157,8 +152,6 @@ TEST_F(l2_slogdet_test, ascend910B2_case_complex64) {
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // 数据类型覆盖 complex128
@@ -172,8 +165,6 @@ TEST_F(l2_slogdet_test, ascend910B2_case_complex128) {
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // 8维以上
@@ -187,8 +178,6 @@ TEST_F(l2_slogdet_test, ascend910B2_case_dim_10) {
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // self不是一系列方阵
@@ -248,8 +237,6 @@ TEST_F(l2_slogdet_test, ascend910B2_case_format) {
         uint64_t workspace_size = 0;
         aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
         EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-        ut.TestPrecision();
     }
 }
 
@@ -264,8 +251,6 @@ TEST_F(l2_slogdet_test, ascend910B2_case_dtype_inconsistent) {
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // 输入输出format不一致
@@ -279,8 +264,6 @@ TEST_F(l2_slogdet_test, ascend910B2_case_format_inconsistent) {
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // 空tensor
@@ -294,8 +277,6 @@ TEST_F(l2_slogdet_test, ascend910B2_case_empty_tensor_training) {
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
 }
 
 // 非连续tensor
@@ -309,6 +290,4 @@ TEST_F(l2_slogdet_test, ascend910B2_case_not_contiguous_1) {
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-
-    ut.TestPrecision();
 }

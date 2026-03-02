@@ -9,19 +9,20 @@
  */
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include <iostream>
 
 #include "opdev/make_op_executor.h"
-#include "math/svd/op_host/op_api/svd.h"
+#include "math/slogdet/op_host/op_api/log_matrix_determinant.h"
 
 using namespace op;
 using namespace std;
 
-const int64_t DATA_SIZE = 6;
+const int64_t DATA_SIZE = 1024;
 
-class SvdTest : public ::testing::Test {
+class LogMatrixDeterminant : public ::testing::Test {
  public:
- SvdTest() : exe(nullptr) {
+   LogMatrixDeterminant() : exe(nullptr) {
   }
 
   aclTensor* CreateAclTensor(std::vector<int64_t> shape, aclDataType dtype) {
@@ -30,7 +31,6 @@ class SvdTest : public ::testing::Test {
   }
 
   void Clear() {
-    exe->kernelLaunchObjList_.clear();
   }
 
   void SetUp() override {
@@ -45,26 +45,12 @@ class SvdTest : public ::testing::Test {
 
  public:
   aclOpExecutor* exe;
-  int64_t data[DATA_SIZE] = {1};
+  int64_t data[DATA_SIZE] = {0};
 };
 
-TEST_F(SvdTest, SvdTest_fullMatrices_true_SUCC) {
-  auto x = CreateAclTensor({2, 3}, ACL_FLOAT);
-  bool fullMatrices = true;
-  bool computeUV= true;
-  auto [sigma, u, v] = l0op::Svd(x, fullMatrices, computeUV, exe);
-  ASSERT_NE(sigma, nullptr);
-  ASSERT_NE(u, nullptr);
-  ASSERT_NE(v, nullptr);
+TEST_F(LogMatrixDeterminant, LogMatrixDeterminant_SUCC) {
+  auto self = CreateAclTensor({5, 5}, ACL_FLOAT);
+  auto [signout, logout] = l0op::LogMatrixDeterminant(self, exe);
+  EXPECT_NE(signout, nullptr);
+  EXPECT_NE(logout, nullptr);
 }
-
-TEST_F(SvdTest, SvdTest_fullMatrices_false_SUCC) {
-  auto x = CreateAclTensor({2, 3}, ACL_FLOAT);
-  bool fullMatrices = false;
-  bool computeUV= true;
-  auto [sigma, u, v] = l0op::Svd(x, fullMatrices, computeUV, exe);
-  ASSERT_NE(sigma, nullptr);
-  ASSERT_NE(u, nullptr);
-  ASSERT_NE(v, nullptr);
-}
-

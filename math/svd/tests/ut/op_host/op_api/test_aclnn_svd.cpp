@@ -14,7 +14,7 @@
 #include <fstream>
 #include "gtest/gtest.h"
 
-#include "level2/aclnn_svd.h"
+#include "math/svd/op_host/op_api/aclnn_svd.h"
 #include "op_api/op_api_def.h"
 
 #include "op_api_ut_common/inner/rts_interface.h"
@@ -22,7 +22,6 @@
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/tensor_desc.h"
 #include "opdev/platform.h"
-#include "ut_stub.h"
 
 using namespace std;
 using namespace op;
@@ -305,7 +304,7 @@ TEST_F(l2_svd_test, shape_fullMatrices_false_v) {
 }
 
 // ComputeUV=fasle时不再对U、V的shape进行校验
-TEST_F(l2_svd_test, shape_fullMatrices_false_v) {
+TEST_F(l2_svd_test, shape_fullMatrices_false_uv) {
   auto inputDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(0, 2);
   bool fullMatrices = false;
   bool computeUV = false;
