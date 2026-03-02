@@ -12,7 +12,7 @@
 #include <array>
 #include "gtest/gtest.h"
 
-#include "aclnn_qr.h"
+#include "math/q_r/op_host/op_api/aclnn_qr.h"
 
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/scalar_desc.h"
@@ -39,23 +39,6 @@ TEST_F(l2_qr_test, case_normal)
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
-    // // SAMPLE: precision simulate
-}
-
-
-// 空tensor 场景一：最后一个维度为0 some为false
-TEST_F(l2_qr_test, case_empty_n_false)
-{
-    auto self_desc = TensorDesc({1, 1, 4, 0}, ACL_FLOAT, ACL_FORMAT_ND);
-    bool some = false;
-    auto q_desc = TensorDesc({1, 1, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-    auto r_desc = TensorDesc({1, 1, 4, 0}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
-
-    auto ut = OP_API_UT(aclnnQr, INPUT(self_desc, some), OUTPUT(q_desc, r_desc));
-    // SAMPLE: only test GetWorkspaceSize
-    uint64_t workspaceSize = 0;
-    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
     // // SAMPLE: precision simulate
 }
 

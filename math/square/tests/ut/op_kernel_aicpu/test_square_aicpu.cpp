@@ -299,3 +299,66 @@ TEST_F(TEST_SQUARE_UT, INPUT_COMPLEX64_SUCC)
 
     RunTestSquare<std::complex<std::float_t>>(dim_data, shape_data, input_data, output_exp_data);
 }
+
+TEST_F(TEST_SQUARE_UT, INPUT_INT32_SUCC)
+{
+    const std::uint64_t dim_data[] = {2};
+    const std::uint64_t shape_data[] = {3, 4};
+    const std::int32_t input_data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+    const std::int32_t output_exp_data[] = {1, 4, 9, 16, 25, 36, 49, 64, 81, 100, 121, 144};
+    RunTestSquare<std::int32_t>(dim_data, shape_data, input_data, output_exp_data);
+}
+
+TEST_F(TEST_SQUARE_UT, INPUT_INT64_SUCC)
+{
+    const std::uint64_t dim_data[] = {2};
+    const std::uint64_t shape_data[] = {3, 4};
+    const std::int64_t input_data[] = {1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L};
+    const std::int64_t output_exp_data[] = {1L, 4L, 9L, 16L, 25L, 36L, 49L, 64L, 81L, 100L, 121L, 144L};
+    RunTestSquare<std::int64_t>(dim_data, shape_data, input_data, output_exp_data);
+}
+
+TEST_F(TEST_SQUARE_UT, INPUT_FLOAT16_SUCC)
+{
+    const std::uint64_t dim_data[] = {2};
+    const std::uint64_t shape_data[] = {3, 4};
+    const Eigen::half input_data[] = {Eigen::half(1.0f), Eigen::half(2.0f), Eigen::half(3.0f), Eigen::half(4.0f),
+                                       Eigen::half(5.0f), Eigen::half(6.0f), Eigen::half(7.0f), Eigen::half(8.0f),
+                                       Eigen::half(9.0f), Eigen::half(10.0f), Eigen::half(11.0f), Eigen::half(12.0f)};
+    const Eigen::half output_exp_data[] = {Eigen::half(1.0f), Eigen::half(4.0f), Eigen::half(9.0f), Eigen::half(16.0f),
+                                            Eigen::half(25.0f), Eigen::half(36.0f), Eigen::half(49.0f), Eigen::half(64.0f),
+                                            Eigen::half(81.0f), Eigen::half(100.0f), Eigen::half(121.0f), Eigen::half(144.0f)};
+    RunTestSquare<Eigen::half>(dim_data, shape_data, input_data, output_exp_data);
+}
+
+TEST_F(TEST_SQUARE_UT, INPUT_FLOAT_SUCC)
+{
+    const std::uint64_t dim_data[] = {2};
+    const std::uint64_t shape_data[] = {3, 4};
+    const std::float_t input_data[] = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f, 12.0f};
+    const std::float_t output_exp_data[] = {1.0f, 4.0f, 9.0f, 16.0f, 25.0f, 36.0f, 49.0f, 64.0f, 81.0f, 100.0f, 121.0f, 144.0f};
+    RunTestSquare<std::float_t>(dim_data, shape_data, input_data, output_exp_data);
+}
+
+TEST_F(TEST_SQUARE_UT, INPUT_COMPLEX128_SUCC)
+{
+    const std::uint64_t dim_data[] = {2};
+    const std::uint64_t shape_data[] = {2, 3};
+    const std::complex<std::double_t> input_data[] = {{1.0, 2.0}, {3.0, 4.0}, {5.0, 6.0}, {7.0, 8.0}, {9.0, 10.0}, {11.0, 12.0}};
+    const std::complex<std::double_t> output_exp_data[] = {{-3.0, 4.0}, {-7.0, 24.0}, {-11.0, 60.0}, {-15.0, 112.0}, {-19.0, 180.0}, {-23.0, 264.0}};
+    RunTestSquare<std::complex<std::double_t>>(dim_data, shape_data, input_data, output_exp_data);
+}
+
+TEST_F(TEST_SQUARE_UT, INPUT_DTYPE_UNSUPPORTED)
+{
+    const auto data_type_in{aicpu::DataType::DT_INT8};
+    const auto data_type_out{aicpu::DataType::DT_INT8};
+    std::int8_t input[12] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+    std::int8_t output[12] = {0};
+    auto node_def{aicpu::CpuKernelUtils::CreateNodeDef()};
+    aicpu::NodeDefBuilder(node_def.get(), "Square", "Square")
+        .Input({"x", data_type_in, {3, 4}, input})
+        .Output({"y", data_type_out, {3, 4}, output});
+    RunKernelSquare(node_def, aicpu::DeviceType::HOST, aicpu::KERNEL_STATUS_PARAM_INVALID);
+}
+

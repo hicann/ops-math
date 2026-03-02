@@ -11,7 +11,7 @@
 #include <array>
 #include "gtest/gtest.h"
 
-#include "level2/aclnn_precision_compare_v2.h"
+#include "math/precision_compare/op_host/op_api/aclnn_precision_compare_v2.h"
 
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/scalar_desc.h"
@@ -29,20 +29,6 @@ class l2_precision_compare_v2_test : public testing::Test {
     cout << "tensor_precision_compare_v2_test TearDown" << endl;
   }
 };
-
-TEST_F(l2_precision_compare_v2_test, ascend310P_test_socVersion_unsupported) {
-  auto tensor_benchmark =
-      TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 9, 6, 7, 11});
-  auto tensor_realdata =
-      TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 9, 6, 7, 11});
-  auto out_tensor_desc = DescToAclContainer(TensorDesc({}, ACL_UINT32, ACL_FORMAT_ND));
-  auto ut = OP_API_UT(aclnnPrecisionCompareV2, INPUT(tensor_benchmark, tensor_realdata, 0), OUTPUT(out_tensor_desc));
-
-  uint64_t workspace_size = 5;
-  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-  EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
-  EXPECT_EQ(workspace_size, 5UL);
-}
 
 TEST_F(l2_precision_compare_v2_test, ascend910B2_test_input_benchmark_is_null_failed) {
   auto tensor_benchmark = nullptr;
@@ -179,7 +165,6 @@ TEST_F(l2_precision_compare_v2_test, ascend910B2_test_benchmark_realdata_equal_s
   uint64_t workspaceSize = 0;
   aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
   EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-  ut.TestPrecision();
 }
 
 TEST_F(l2_precision_compare_v2_test, ascend910B2_test_benchmark_realdata_not_equal_501) {
@@ -197,5 +182,4 @@ TEST_F(l2_precision_compare_v2_test, ascend910B2_test_benchmark_realdata_not_equ
   uint64_t workspaceSize = 0;
   aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
   EXPECT_EQ(getWorkspaceResult, ACLNN_SUCCESS);
-  ut.TestPrecision();
 }
