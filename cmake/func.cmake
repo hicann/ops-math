@@ -25,6 +25,75 @@ function(add_modules)
   endforeach()
 endfunction()
 
+# 添加opbase object
+function(add_opbase_modules)
+  if(TARGET opbase_infer_objs OR TARGET opbase_tiling_objs OR TARGET opbase_util_objs)
+    return()
+  endif()
+  file(GLOB_RECURSE OPS_BASE_INFER_SRC
+    ${OPBASE_SOURCE_PATH}/src/op_common/op_host/infershape_broadcast_util.cpp
+    ${OPBASE_SOURCE_PATH}/src/op_common/op_host/infershape_elewise_util.cpp
+    ${OPBASE_SOURCE_PATH}/src/op_common/op_host/infershape_reduce_util.cpp
+  )
+
+  file(GLOB_RECURSE OPS_BASE_TILING_SRC
+    ${OPBASE_SOURCE_PATH}/src/op_common/atvoss/elewise/*.cpp
+    ${OPBASE_SOURCE_PATH}/src/op_common/atvoss/broadcast/*.cpp
+    ${OPBASE_SOURCE_PATH}/src/op_common/atvoss/reduce/*.cpp
+  )
+
+  file(GLOB_RECURSE OPS_BASE_UTIL_SRC
+    ${OPBASE_SOURCE_PATH}/src/op_common/op_host/util/*.cpp
+    ${OPBASE_SOURCE_PATH}/src/op_common/log/*.cpp
+  )
+
+  if(OPS_BASE_INFER_SRC)
+    add_library(opbase_infer_objs OBJECT ${OPS_BASE_INFER_SRC})
+    target_include_directories(opbase_infer_objs PRIVATE ${OP_PROTO_INCLUDE})
+    target_compile_options(opbase_infer_objs
+        PRIVATE
+        $<$<NOT:$<BOOL:${ENABLE_TEST}>>:-DDISABLE_COMPILE_V1> -Dgoogle=ascend_private
+        -fvisibility=hidden
+    )
+    target_link_libraries(
+      opbase_infer_objs
+      PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx17,intf_pub_cxx17>>
+              $<BUILD_INTERFACE:dlog_headers>
+      )
+  endif()
+
+  if(OPS_BASE_TILING_SRC)
+    add_library(opbase_tiling_objs OBJECT ${OPS_BASE_TILING_SRC})
+    target_include_directories(opbase_tiling_objs PRIVATE ${OP_TILING_INCLUDE})
+    target_compile_options(opbase_tiling_objs
+        PRIVATE
+        $<$<NOT:$<BOOL:${ENABLE_TEST}>>:-DDISABLE_COMPILE_V1> -Dgoogle=ascend_private
+                                        -fvisibility=hidden -fno-strict-aliasing
+    )
+    target_link_libraries(
+      opbase_tiling_objs
+      PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx17,intf_pub_cxx17>>
+              $<BUILD_INTERFACE:dlog_headers>
+              tiling_api
+      )
+  endif()
+
+  if(OPS_BASE_UTIL_SRC)
+    add_library(opbase_util_objs OBJECT ${OPS_BASE_UTIL_SRC})
+    target_include_directories(opbase_util_objs PRIVATE ${OP_TILING_INCLUDE})
+    target_compile_options(opbase_util_objs
+        PRIVATE
+        $<$<NOT:$<BOOL:${ENABLE_TEST}>>:-DDISABLE_COMPILE_V1> -Dgoogle=ascend_private
+        -fvisibility=hidden
+    )
+    target_link_libraries(
+      opbase_util_objs
+      PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx17,intf_pub_cxx17>>
+              $<BUILD_INTERFACE:dlog_headers>
+      )
+  endif()
+endfunction()
+
 # 添加infer object
 function(add_infer_modules)
   if(NOT TARGET ${OPHOST_NAME}_infer_obj)
@@ -38,7 +107,7 @@ function(add_infer_modules)
     target_include_directories(${OPHOST_NAME}_infer_obj PRIVATE ${OP_PROTO_INCLUDE})
     target_compile_definitions(
       ${OPHOST_NAME}_infer_obj PRIVATE OPS_UTILS_LOG_SUB_MOD_NAME="OP_PROTO" OP_SUBMOD_NAME="${OP_SUBMOD_NAME}"
-                                       $<$<BOOL:${ENABLE_TEST}>:ASCEND_OPSPROTO_UT> LOG_CPP
+                                       $<$<BOOL:${ENABLE_TEST}>:ASCEND_OPSPROTO_UT>
       )
     target_compile_options(
       ${OPHOST_NAME}_infer_obj PRIVATE $<$<NOT:$<BOOL:${ENABLE_TEST}>>:-DDISABLE_COMPILE_V1> -Dgoogle=ascend_private
@@ -48,8 +117,8 @@ function(add_infer_modules)
       ${OPHOST_NAME}_infer_obj
       PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx17,intf_pub_cxx17>>
               $<BUILD_INTERFACE:dlog_headers>
-              $<$<TARGET_EXISTS:ops_base_util_objs>:$<TARGET_OBJECTS:ops_base_util_objs>>
-              $<$<TARGET_EXISTS:ops_base_infer_objs>:$<TARGET_OBJECTS:ops_base_infer_objs>>
+              $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>> 
+              $<$<TARGET_EXISTS:opbase_infer_objs>:$<TARGET_OBJECTS:opbase_infer_objs>>
       )
   endif()
 endfunction()
@@ -67,7 +136,7 @@ function(add_tiling_modules)
     target_include_directories(${OPHOST_NAME}_tiling_obj PRIVATE ${OP_TILING_INCLUDE})
     target_compile_definitions(
       ${OPHOST_NAME}_tiling_obj PRIVATE OPS_UTILS_LOG_SUB_MOD_NAME="OP_TILING" OP_SUBMOD_NAME="${OP_SUBMOD_NAME}"
-                                        $<$<BOOL:${ENABLE_TEST}>:ASCEND_OPTILING_UT> LOG_CPP
+                                        $<$<BOOL:${ENABLE_TEST}>:ASCEND_OPTILING_UT>
       )
     target_compile_options(
       ${OPHOST_NAME}_tiling_obj PRIVATE $<$<NOT:$<BOOL:${ENABLE_TEST}>>:-DDISABLE_COMPILE_V1> -Dgoogle=ascend_private
@@ -78,8 +147,8 @@ function(add_tiling_modules)
       PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx17,intf_pub_cxx17>>
               $<BUILD_INTERFACE:dlog_headers>
               $<$<TARGET_EXISTS:${COMMON_NAME}_obj>:$<TARGET_OBJECTS:${COMMON_NAME}_obj>>
-              $<$<TARGET_EXISTS:ops_base_util_objs>:$<TARGET_OBJECTS:ops_base_util_objs>>
-              $<$<TARGET_EXISTS:ops_base_tiling_objs>:$<TARGET_OBJECTS:ops_base_tiling_objs>>
+              $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>> 
+              $<$<TARGET_EXISTS:opbase_tiling_objs>:$<TARGET_OBJECTS:opbase_tiling_objs>>
               tiling_api
       )
   endif()
@@ -97,12 +166,10 @@ function(add_opapi_modules)
             ${opapi_ut_depends_inc}
             ${OPAPI_INCLUDE})
     target_compile_options(${OPHOST_NAME}_opapi_obj PRIVATE -Dgoogle=ascend_private -DACLNN_LOG_FMT_CHECK)
-    target_compile_definitions(${OPHOST_NAME}_opapi_obj PRIVATE LOG_CPP)
     target_link_libraries(
       ${OPHOST_NAME}_opapi_obj
       PUBLIC $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx17,intf_pub_cxx17>>
       PRIVATE $<BUILD_INTERFACE:adump_headers> $<BUILD_INTERFACE:dlog_headers>
-      $<$<TARGET_EXISTS:ops_base_util_objs>:$<TARGET_OBJECTS:ops_base_util_objs>>
       )
   endif()
 endfunction()
@@ -166,7 +233,7 @@ function(add_op_graph_modules)
   if(NOT TARGET ${GRAPH_PLUGIN_NAME}_obj)
     add_library(${GRAPH_PLUGIN_NAME}_obj OBJECT)
     target_include_directories(${GRAPH_PLUGIN_NAME}_obj PRIVATE ${OP_PROTO_INCLUDE})
-    target_compile_definitions(${GRAPH_PLUGIN_NAME}_obj PRIVATE OPS_UTILS_LOG_SUB_MOD_NAME="OP_GRAPH" LOG_CPP)
+    target_compile_definitions(${GRAPH_PLUGIN_NAME}_obj PRIVATE OPS_UTILS_LOG_SUB_MOD_NAME="OP_GRAPH")
 
     if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
       target_compile_options(
@@ -183,8 +250,55 @@ function(add_op_graph_modules)
       ${GRAPH_PLUGIN_NAME}_obj
       PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx17,intf_pub_cxx17>>
               $<BUILD_INTERFACE:dlog_headers>
-              $<$<TARGET_EXISTS:ops_base_util_objs>:$<TARGET_OBJECTS:ops_base_util_objs>>
-              $<$<TARGET_EXISTS:ops_base_infer_objs>:$<TARGET_OBJECTS:ops_base_infer_objs>>
+              $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>> 
+              $<$<TARGET_EXISTS:opbase_infer_objs>:$<TARGET_OBJECTS:opbase_infer_objs>>
+      )
+  endif()
+endfunction()
+
+function(add_onnx_plugin_modules)
+  if (NOT TARGET ${ONNX_PLUGIN_NAME}_obj)
+    set(ge_onnx_proto_srcs
+      ${ASCEND_DIR}/include/proto/ge_onnx.proto)
+    
+    protobuf_generate_external(onnx ge_onnx_proto_cc ge_onnx_proto_h ${ge_onnx_proto_srcs})
+
+    add_library(${ONNX_PLUGIN_NAME}_obj OBJECT ${ge_onnx_proto_h})
+    # 为特定目标设置C++14标准
+    set_target_properties(${ONNX_PLUGIN_NAME}_obj PROPERTIES
+      CXX_STANDARD 14
+      CXX_STANDARD_REQUIRED ON
+      CXX_EXTENSIONS OFF
+    )
+    target_include_directories(${ONNX_PLUGIN_NAME}_obj
+      PRIVATE
+      ${OP_PROTO_INCLUDE}
+      ${Protobuf_INCLUDE}
+      ${Protobuf_PATH}
+      ${CMAKE_BINARY_DIR}/proto
+      ${ONNX_PLUGIN_COMMON_INCLUDE}
+      ${JSON_INCLUDE_DIR}
+      ${ABSL_SOURCE_DIR}
+    )
+    target_compile_definitions(${ONNX_PLUGIN_NAME}_obj PRIVATE OPS_UTILS_LOG_SUB_MOD_NAME="ONNX_PLUGIN")
+
+    if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
+      target_compile_options(
+        ${ONNX_PLUGIN_NAME}_obj PRIVATE -Dgoogle=ascend_private -fvisibility=hidden -Wno-shadow -Wno-unused-parameter
+      )
+    else()
+      target_compile_options(
+        ${ONNX_PLUGIN_NAME}_obj PRIVATE $<$<NOT:$<BOOL:${ENABLE_TEST}>>:-DDISABLE_COMPILE_V1> -Dgoogle=ascend_private
+                                       -fvisibility=hidden -Wno-shadow -Wno-unused-parameter
+      )
+    endif()
+
+    target_link_libraries(
+      ${ONNX_PLUGIN_NAME}_obj
+      PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx14,intf_pub_cxx14>>
+              $<BUILD_INTERFACE:dlog_headers>
+              $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>> 
+              json
       )
   endif()
 endfunction()
@@ -197,6 +311,7 @@ macro(add_modules_sources)
   cmake_parse_arguments(MODULE "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
+  add_opbase_modules()
   # opapi l0 默认全部编译
   file(GLOB OPAPI_L0_SRCS ${SOURCE_DIR}/op_api/*.cpp)
   list(FILTER OPAPI_L0_SRCS EXCLUDE REGEX ".*/aclnn_[^/]*$")
@@ -412,6 +527,7 @@ macro(add_all_modules_sources)
   cmake_parse_arguments(MODULE "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
+  add_opbase_modules()
   # opapi l0 默认全部编译
   file(GLOB OPAPI_L0_SRCS ${SOURCE_DIR}/op_api/*.cpp)
   list(FILTER OPAPI_L0_SRCS EXCLUDE REGEX ".*/aclnn_[^/]*$")
@@ -725,50 +841,6 @@ function(protobuf_generate_external comp c_var h_var)
 endfunction()
 
 
-function(add_onnx_plugin_modules)
-  if (NOT TARGET ${ONNX_PLUGIN_NAME}_obj)
-    set(ge_onnx_proto_srcs
-      ${ASCEND_DIR}/include/proto/ge_onnx.proto)
-    
-    protobuf_generate_external(onnx ge_onnx_proto_cc ge_onnx_proto_h ${ge_onnx_proto_srcs})
-
-    if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
-      npu_op_library(${ONNX_PLUGIN_NAME}_obj GRAPH ${ge_onnx_proto_h})
-    else()
-      add_library(${ONNX_PLUGIN_NAME}_obj OBJECT ${ge_onnx_proto_h})
-    endif()
-    # 为特定目标设置C++14标准
-    set_target_properties(${ONNX_PLUGIN_NAME}_obj PROPERTIES
-      CXX_STANDARD 14
-      CXX_STANDARD_REQUIRED ON
-      CXX_EXTENSIONS OFF
-    )
-    target_include_directories(${ONNX_PLUGIN_NAME}_obj PRIVATE ${OP_PROTO_INCLUDE} ${Protobuf_INCLUDE} ${Protobuf_PATH} ${CMAKE_BINARY_DIR}/proto ${ONNX_PLUGIN_COMMON_INCLUDE} ${JSON_INCLUDE_DIR} ${ABSL_SOURCE_DIR})
-    target_compile_definitions(${ONNX_PLUGIN_NAME}_obj PRIVATE OPS_UTILS_LOG_SUB_MOD_NAME="ONNX_PLUGIN" LOG_CPP)
-
-    if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
-      target_compile_options(
-        ${ONNX_PLUGIN_NAME}_obj PRIVATE -Dgoogle=ascend_private -fvisibility=hidden -Wno-shadow -Wno-unused-parameter
-      )
-    else()
-      target_compile_options(
-        ${ONNX_PLUGIN_NAME}_obj PRIVATE $<$<NOT:$<BOOL:${ENABLE_TEST}>>:-DDISABLE_COMPILE_V1> -Dgoogle=ascend_private
-                                       -fvisibility=hidden -Wno-shadow -Wno-unused-parameter
-      )
-    endif()
-
-    target_link_libraries(
-      ${ONNX_PLUGIN_NAME}_obj
-      PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx14,intf_pub_cxx14>>
-              $<BUILD_INTERFACE:dlog_headers>
-              $<$<TARGET_EXISTS:ops_base_util_objs>:$<TARGET_OBJECTS:ops_base_util_objs>>
-              $<$<TARGET_EXISTS:ops_base_infer_objs>:$<TARGET_OBJECTS:ops_base_infer_objs>>
-              json
-      )
-  endif()
-endfunction()
-
-
 function(get_op_type_from_binary_json BINARY_JSON OP_TYPE)
   execute_process(COMMAND grep -w op_type ${BINARY_JSON} OUTPUT_VARIABLE op_type)
   string(REGEX REPLACE "\"op_type\"" "" op_type ${op_type})
@@ -777,7 +849,6 @@ function(get_op_type_from_binary_json BINARY_JSON OP_TYPE)
 
   set(${OP_TYPE} ${op_type} PARENT_SCOPE)
 endfunction()
-
 
 macro(add_onnx_plugin_sources)
   set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})

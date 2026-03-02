@@ -13,17 +13,15 @@
  * \brief
  */
 #include "reciprocal_tiling_arch35.h"
-#include "tiling/tiling_api.h"
 #include "math/reciprocal/op_kernel/arch35/reciprocal_dag.h"
 #include "math/reciprocal/op_kernel/arch35/reciprocal_struct.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 #include "atvoss/elewise/elewise_tiling.h"
-#include "atvoss/broadcast/broadcast_tiling.h"
-#include <iostream>
+#include "op_host/tiling_util.h"
+#include "util/platform_util.h"
 
-namespace optiling
-{
+namespace optiling {
 using namespace Ops::Base;
 const int64_t ASCEND_WORKSPACE = 32;
 
@@ -35,52 +33,51 @@ ge::graphStatus ReciprocalTiling::SetTilingData()
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);
     tilingContext->SetTilingKey(tilingKey);
     tilingContext->SetBlockDim(tiling->baseTiling.blockNum);
-	return ge::GRAPH_SUCCESS;
+    return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus ReciprocalTiling::CalcInputDtype()
 {
-	OP_LOGD(tilingContext->GetNodeName(), "ReciprocalTiling CalcInputDtype enter.");
+    OP_LOGD(tilingContext->GetNodeName(), "ReciprocalTiling CalcInputDtype enter.");
     auto inputDesc = tilingContext->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
     this->inputDtype = inputDesc->GetDataType();
     OP_CHECK_IF(
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT,
 
-        OP_LOGE(tilingContext->GetNodeName(), "input x dtype not support"),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(tilingContext->GetNodeName(), "input x dtype not support"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus ReciprocalTiling::CheckShape()
 {
-	OP_LOGD(tilingContext->GetNodeName(), "ReciprocalTiling CheckShape enter.");
+    OP_LOGD(tilingContext->GetNodeName(), "ReciprocalTiling CheckShape enter.");
     auto xStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, xStorageShape);
-    const gert::Shape& inputXShape = EnsureNotScalar(xStorageShape->GetStorageShape());
- 
+    const gert::Shape& inputXShape = Ops::Math::OpTiling::EnsureNotScalar(xStorageShape->GetStorageShape());
+
     auto yStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, yStorageShape);
-    const gert::Shape& outputYShape = EnsureNotScalar(yStorageShape->GetStorageShape());
+    const gert::Shape& outputYShape = Ops::Math::OpTiling::EnsureNotScalar(yStorageShape->GetStorageShape());
 
-    OP_CHECK_IF(inputXShape != outputYShape,
-               OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),
-               return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        inputXShape != outputYShape, OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),
+        return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus ReciprocalTiling::CalcOutputDtype()
 {
-	OP_LOGD(tilingContext->GetNodeName(), "ReciprocalTiling CalcOutputDtype enter.");
+    OP_LOGD(tilingContext->GetNodeName(), "ReciprocalTiling CalcOutputDtype enter.");
     auto outputDesc = tilingContext->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
     OP_CHECK_IF(
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT,
         OP_LOGE(tilingContext, "output dtype not support"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(this->outputDtype != this->inputDtype,
-               OP_LOGE(tilingContext->GetNodeName(), "output y dtype not same as input y"),
-               return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        this->outputDtype != this->inputDtype,
+        OP_LOGE(tilingContext->GetNodeName(), "output y dtype not same as input y"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -89,28 +86,32 @@ ge::graphStatus ReciprocalTiling::RunTiling()
     OP_LOGD(tilingContext->GetNodeName(), "ReciprocalTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     tiling = tilingContext->GetTilingData<ReciprocalNs::ReciprocalTilingData>();
-    OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext, "get input dtype failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext, "get output dtype failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"),
-               return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     if (this->outputDtype == ge::DT_FLOAT16) {
-		dType = TPL_FP16;
+        dType = TPL_FP16;
         baseTilingResult = elewiseBaseTiling.DoTiling<ReciprocalDag::ReciprocalDag<half>::OpDag>(tiling->baseTiling);
     } else if (this->outputDtype == ge::DT_BF16) {
-		dType = TPL_BF16;
-		baseTilingResult = elewiseBaseTiling.DoTiling<ReciprocalDag::ReciprocalDag<bfloat16_t>::OpDag>(tiling->baseTiling); 
+        dType = TPL_BF16;
+        baseTilingResult =
+            elewiseBaseTiling.DoTiling<ReciprocalDag::ReciprocalDag<bfloat16_t>::OpDag>(tiling->baseTiling);
     } else if (this->outputDtype == ge::DT_FLOAT) {
-		dType = TPL_FP32;
-		baseTilingResult = elewiseBaseTiling.DoTiling<ReciprocalDag::ReciprocalDag<float>::OpDag>(tiling->baseTiling);
-	} else {
+        dType = TPL_FP32;
+        baseTilingResult = elewiseBaseTiling.DoTiling<ReciprocalDag::ReciprocalDag<float>::OpDag>(tiling->baseTiling);
+    } else {
         OP_LOGE(tilingContext->GetNodeName(), "output dtype not support");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext, "elewiseBaseTiling failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
+        return ge::GRAPH_FAILED);
     SetTilingData();
     return ge::GRAPH_SUCCESS;
 }
@@ -124,12 +125,12 @@ static ge::graphStatus Tiling4Reciprocal(gert::TilingContext* tilingContextGen)
     return baseOpTiling.RunTiling();
 }
 
-ge::graphStatus TilingPrepareForReciprocal(gert::TilingParseContext *context)
+ge::graphStatus TilingPrepareForReciprocal(gert::TilingParseContext* context)
 {
     OP_LOGD("ElewiseTiling", "Enter TilingPrepareForReciprocal.");
     auto compileInfoPtr = context->GetCompiledInfo<ElewiseCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfoPtr);
-    fe::PlatFormInfos *platformInfoPtr = context->GetPlatformInfo();
+    fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
     compileInfoPtr->coreNum = ascendcPlatform.GetCoreNumAiv();
@@ -138,4 +139,4 @@ ge::graphStatus TilingPrepareForReciprocal(gert::TilingParseContext *context)
 }
 
 IMPL_OP_OPTILING(Reciprocal).Tiling(Tiling4Reciprocal).TilingParse<ElewiseCompileInfo>(TilingPrepareForReciprocal);
-}  // namespace optiling
+} // namespace optiling

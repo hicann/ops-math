@@ -183,11 +183,6 @@ def {}({}, kernel_name="{}", impl_mode=""):
         "..", "..", "..", "latest", os.uname().machine+"-linux", "asc", "atcos"))
     options.append("-I" + os.path.join(PYF_PATH, "..", "ascendc", "common"))
 
-    ascend_home_path = os.environ.get('ASCEND_HOME_PATH')
-    if ascend_home_path is None:
-        ascend_home_path = os.path.realpath("/usr/local/Ascend/cann")
-    options.append("-I" + os.path.join(ascend_home_path, "pkg_inc", "op_common"))
-
     if impl_mode == "high_performance":
         options.append("-DHIGH_PERFORMANCE=1")
     elif impl_mode == "high_precision":

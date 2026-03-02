@@ -12,7 +12,7 @@
  * \file square_sum_v1_infershape.cpp
  * \brief
  */
-#include "op_api/infershape_reduce_util.h"
+#include "op_host/infershape_reduce_util.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 

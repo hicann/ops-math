@@ -22,7 +22,6 @@
 
 namespace MulsDag
 {
-using namespace AscendC;
 using namespace Ops::Base;
 
 constexpr int CAST_MODE_NONE = 0;

@@ -28,6 +28,9 @@ function(gen_ophost_symbol)
     $<$<TARGET_EXISTS:${OPHOST_NAME}_tiling_obj>:$<TARGET_OBJECTS:${OPHOST_NAME}_tiling_obj>>
     $<$<TARGET_EXISTS:${OPHOST_NAME}_aicpu_objs>:$<TARGET_OBJECTS:${OPHOST_NAME}_aicpu_objs>>
     $<$<TARGET_EXISTS:${COMMON_NAME}_obj>:$<TARGET_OBJECTS:${COMMON_NAME}_obj>>
+    $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>>
+    $<$<TARGET_EXISTS:opbase_infer_objs>:$<TARGET_OBJECTS:opbase_infer_objs>>
+    $<$<TARGET_EXISTS:opbase_tiling_objs>:$<TARGET_OBJECTS:opbase_tiling_objs>>
     )
 
   target_link_libraries(
@@ -36,7 +39,6 @@ function(gen_ophost_symbol)
             c_sec
             -Wl,--no-as-needed
             register
-            $<$<TARGET_EXISTS:opsbase>:opsbase>
             -Wl,--as-needed
             -Wl,--whole-archive
             rt2_registry_static
@@ -44,6 +46,7 @@ function(gen_ophost_symbol)
             tiling_api
             -Wl,-Bsymbolic
             runtime
+            unified_dlog
     )
 
   target_link_directories(${OPHOST_NAME} PRIVATE ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64)
@@ -86,7 +89,9 @@ function(gen_opgraph_symbol)
   add_library(
     ${OPGRAPH_NAME} SHARED
     $<$<TARGET_EXISTS:${GRAPH_PLUGIN_NAME}_obj>:$<TARGET_OBJECTS:${GRAPH_PLUGIN_NAME}_obj>>
-    )
+    $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>>
+    $<$<TARGET_EXISTS:opbase_infer_objs>:$<TARGET_OBJECTS:opbase_infer_objs>>
+  )
   merge_graph_headers(TARGET merge_ops_proto OUT_DIR ${ASCEND_GRAPH_CONF_DST})
   add_dependencies(${OPGRAPH_NAME} merge_ops_proto)
 
@@ -100,13 +105,13 @@ function(gen_opgraph_symbol)
             c_sec
             -Wl,--no-as-needed
             register
-            $<$<TARGET_EXISTS:opsbase>:opsbase>
             -Wl,--as-needed
             -Wl,--whole-archive
             rt2_registry_static
             -Wl,--no-whole-archive
             -Wl,-Bsymbolic
             runtime
+            unified_dlog
     )
 
   target_link_directories(${OPGRAPH_NAME} PRIVATE ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64)
@@ -148,7 +153,6 @@ function(gen_opapi_symbol)
     ${OPAPI_NAME}
     PUBLIC $<BUILD_INTERFACE:intf_pub_cxx17>
     PRIVATE c_sec nnopbase
-    $<$<TARGET_EXISTS:opsbase>:opsbase>
     )
 
   install(
@@ -168,7 +172,6 @@ function(gen_cust_opapi_symbol)
   target_link_libraries(
     cust_opapi
     PUBLIC $<BUILD_INTERFACE:intf_pub_cxx17>
-    $<$<TARGET_EXISTS:opsbase>:opsbase>
     )
 endfunction()
 
@@ -182,11 +185,13 @@ function(gen_cust_optiling_symbol)
     cust_opmaster
     PUBLIC $<$<TARGET_EXISTS:${OPHOST_NAME}_tiling_obj>:$<TARGET_OBJECTS:${OPHOST_NAME}_tiling_obj>>
            $<$<TARGET_EXISTS:${COMMON_NAME}_obj>:$<TARGET_OBJECTS:${COMMON_NAME}_obj>>
+           $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>>
+           $<$<TARGET_EXISTS:opbase_tiling_objs>:$<TARGET_OBJECTS:opbase_tiling_objs>>
     )
   target_link_libraries(
     cust_opmaster
     PUBLIC $<BUILD_INTERFACE:intf_pub_cxx17>
-    PRIVATE $<$<TARGET_EXISTS:opsbase>:opsbase>
+    unified_dlog
     )
 endfunction()
 
@@ -203,12 +208,14 @@ function(gen_cust_proto_symbol)
     cust_proto
     PUBLIC $<$<TARGET_EXISTS:${OPHOST_NAME}_infer_obj>:$<TARGET_OBJECTS:${OPHOST_NAME}_infer_obj>>
            $<$<TARGET_EXISTS:${GRAPH_PLUGIN_NAME}_obj>:$<TARGET_OBJECTS:${GRAPH_PLUGIN_NAME}_obj>>
+           $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>>
+           $<$<TARGET_EXISTS:opbase_infer_objs>:$<TARGET_OBJECTS:opbase_infer_objs>>
     PRIVATE ${ASCEND_GRAPH_CONF_DST}/ops_proto_math.cpp
     )
   target_link_libraries(
     cust_proto
     PUBLIC $<BUILD_INTERFACE:intf_pub_cxx17>
-    PRIVATE $<$<TARGET_EXISTS:opsbase>:opsbase>
+    unified_dlog
     )
   get_target_property(proto_headers ${GRAPH_PLUGIN_NAME}_proto_headers INTERFACE_SOURCES)
   install(
@@ -303,11 +310,11 @@ function(gen_onnx_plugin_symbol)
             c_sec
             -Wl,--no-as-needed
             register
-            $<$<TARGET_EXISTS:opsbase>:opsbase>
             -Wl,--as-needed
             -Wl,--whole-archive
             rt2_registry_static
             -Wl,--no-whole-archive
+            unified_dlog
     )
 
   target_link_directories(${ONNX_PLUGIN_NAME} PRIVATE ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64)

@@ -13,7 +13,7 @@
  * \brief
  */
 
-#include "op_api/infershape_reduce_util.h"
+#include "op_host/infershape_reduce_util.h"
 #include "register/op_impl_registry.h"
 
 namespace ops {

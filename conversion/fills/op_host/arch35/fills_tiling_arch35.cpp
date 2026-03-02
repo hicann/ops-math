@@ -13,17 +13,15 @@
  * \brief
  */
 
-#include <iostream>
-#include <graph/utils/type_utils.h>
 #include "fills_tiling_arch35.h"
 #include "platform/platform_ascendc.h"
 #include "log/log.h"
 #include "util/fp16.h"
+#include "util/bfloat16.h"
 #include "atvoss/elewise/elewise_tiling.h"
-#include "atvoss/broadcast/broadcast_tiling.h"
 #include "conversion/fills/op_kernel/arch35/fills_dag.h"
 #include "conversion/fills/op_kernel/arch35/fills_tiling_key.h"
-#include "util/bfloat16.h"
+#include "op_host/tiling_util.h"
 
 namespace optiling {
 const int64_t ASCEND_WORKSPACE = 16777216; // 16 * 1024 * 1024
@@ -125,11 +123,11 @@ ge::graphStatus FillsTiling::CheckShape()
     OP_LOGD(tilingContext->GetNodeName(), "FillsTiling CheckShape enter.");
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
-    const gert::Shape& inputYShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
+    const gert::Shape& inputYShape = Ops::Math::OpTiling::EnsureNotScalar(inputStorageShape->GetStorageShape());
 
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& outputZShape = Ops::Math::OpTiling::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         inputYShape != outputZShape, OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),
@@ -178,14 +176,18 @@ ge::graphStatus FillsTiling::SetAttr()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus FillsTiling::RunTiling() {
+ge::graphStatus FillsTiling::RunTiling()
+{
     OP_LOGD(tilingContext->GetNodeName(), "FillsTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
+    OP_CHECK_IF(
+        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
         return ge::GRAPH_FAILED);
-    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
+    OP_CHECK_IF(
+        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
         return ge::GRAPH_FAILED);
-    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
 
     // get tilingdata address in context
     tiling = tilingContext->GetTilingData<FillsTilingData>();
@@ -212,13 +214,15 @@ ge::graphStatus FillsTiling::RunTiling() {
         OP_LOGE(tilingContext->GetNodeName(), "output dtype not support");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
+    OP_CHECK_IF(
+        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
         return ge::GRAPH_FAILED);
 
     return SetTilingData();
 }
 
-static ge::graphStatus Tiling4Fills(gert::TilingContext* tilingContextGen) {
+static ge::graphStatus Tiling4Fills(gert::TilingContext* tilingContextGen)
+{
     OP_LOGD(tilingContextGen->GetNodeName(), "Tiling4Fills rt2.0 is running.");
     auto compileInfo = reinterpret_cast<const Ops::Base::ElewiseCompileInfo*>(tilingContextGen->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
@@ -227,7 +231,8 @@ static ge::graphStatus Tiling4Fills(gert::TilingContext* tilingContextGen) {
     return baseOpTiling.RunTiling();
 }
 
-static ge::graphStatus TilingPrepareForFills([[maybe_unused]] gert::TilingParseContext *context) {
+static ge::graphStatus TilingPrepareForFills([[maybe_unused]] gert::TilingParseContext* context)
+{
     return ge::GRAPH_SUCCESS;
 }
 

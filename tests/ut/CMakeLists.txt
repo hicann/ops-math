@@ -9,18 +9,22 @@
 
 # load ut common depends
 include(${PROJECT_SOURCE_DIR}/cmake/intf_pub_llt_gccnative.cmake)
-include(${PROJECT_SOURCE_DIR}/cmake/third_party/gtest.cmake)
 
-file(
-  GLOB SUBDIRECTORIES
-  LIST_DIRECTORIES true
-  RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/*)
-foreach(SUBDIR ${SUBDIRECTORIES})
-  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}/CMakeLists.txt)
-    add_subdirectory(${SUBDIR})
-  endif()
-endforeach()
+if(UT_TEST_ALL OR OP_HOST_UT)
+  add_subdirectory(op_host)
+endif()
+
+if(UT_TEST_ALL OR OP_API_UT)
+  add_subdirectory(op_api)
+endif()
+
+if(UT_TEST_ALL OR OP_KERNEL_UT)
+  add_subdirectory(op_kernel)
+endif()
+
+if(UT_TEST_ALL OR OP_KERNEL_AICPU_UT)
+  add_subdirectory(op_kernel_aicpu)
+endif()
 
 if(ENABLE_COVERAGE)
   if(UT_TEST_ALL OR OP_KERNEL_UT)

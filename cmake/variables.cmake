@@ -158,7 +158,6 @@ set(OP_TILING_INCLUDE
   ${OPBASE_INC_DIRS}
   ${OPS_MATH_DIR}
   ${OPS_MATH_DIR}/common/inc/
-  ${OPS_MATH_DIR}/common/inc/op_api
 )
 
 set(OP_PROTO_INCLUDE

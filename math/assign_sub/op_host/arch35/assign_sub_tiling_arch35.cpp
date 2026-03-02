@@ -8,18 +8,12 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <graph/utils/type_utils.h>
-
 #include "tiling/platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
-#include "atvoss/broadcast/broadcast_tiling.h"
-
 #include "log/log.h"
-#include "register/tilingdata_base.h"
 #include "assign_sub_tiling_arch35.h"
-#include "../../op_kernel/arch35/assign_sub_dag.h"
-
-#include <iostream>
+#include "math/assign_sub/op_kernel/arch35/assign_sub_dag.h"
+#include "op_host/tiling_util.h"
 
 using namespace ge;
 
@@ -80,9 +74,9 @@ ge::graphStatus AssignSubTiling::CheckShape() const
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, valueStorageShape);
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& varShape = Ops::Base::EnsureNotScalar(varStorageShape->GetStorageShape());
-    const gert::Shape& valueShape = Ops::Base::EnsureNotScalar(valueStorageShape->GetStorageShape());
-    const gert::Shape& outputShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& varShape = Ops::Math::OpTiling::EnsureNotScalar(varStorageShape->GetStorageShape());
+    const gert::Shape& valueShape = Ops::Math::OpTiling::EnsureNotScalar(valueStorageShape->GetStorageShape());
+    const gert::Shape& outputShape = Ops::Math::OpTiling::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         varShape != valueShape || varShape != outputShape,

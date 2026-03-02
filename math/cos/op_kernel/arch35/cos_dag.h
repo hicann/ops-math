@@ -21,13 +21,14 @@
 #include "atvoss/util/placeholder.h"
 namespace CosOp
 {
-using namespace AscendC;
 using namespace Ops::Base;
 const int CAST_MODE_NONE = 0;
 const int CAST_MODE_RINT = 1;
 constexpr uint32_t THREAD_NUM = 1024;
 
 #ifdef __CCE_AICORE__
+using namespace AscendC;
+
 template<typename T>
 __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void CosSimtCompute(__ubuf__ T* x, __ubuf__ T* y, const int64_t totalNum)
 {

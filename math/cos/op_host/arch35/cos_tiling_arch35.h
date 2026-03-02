@@ -15,7 +15,6 @@
 #ifndef OPS_MATH_COS_OP_HOST_COS_ARCH35_H_
 #define OPS_MATH_COS_OP_HOST_COS_ARCH35_H_
 
-#include "register/tilingdata_base.h"
 #include "atvoss/elewise/elewise_tiling.h"
 #include "math/cos/op_kernel/arch35/cos_tilingdata.h"
 

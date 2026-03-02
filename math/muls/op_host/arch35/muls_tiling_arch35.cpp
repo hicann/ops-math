@@ -12,18 +12,15 @@
  * \file muls_tiling.cc
  * \brief
  */
-#include <iostream>
-#include <graph/utils/type_utils.h>
 #include "muls_tiling_arch35.h"
 #include "platform/platform_ascendc.h"
 #include "log/log.h"
 #include "atvoss/elewise/elewise_tiling.h"
-#include "atvoss/broadcast/broadcast_tiling.h"
 #include "math/muls/op_kernel/arch35/muls_dag.h"
+#include "op_host/tiling_util.h"
 
 namespace optiling
 {
-using namespace AscendC;
 using namespace ge;
 using namespace MulsDag;
 
@@ -57,11 +54,11 @@ ge::graphStatus MulsTiling::CheckShape()
     OP_LOGD(tilingContext->GetNodeName(), "MulsTiling CheckShape enter.");
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
-    const gert::Shape& inputShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
+    const gert::Shape& inputShape = Ops::Math::OpTiling::EnsureNotScalar(inputStorageShape->GetStorageShape());
 
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& outputShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& outputShape = Ops::Math::OpTiling::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(inputShape != outputShape, OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),
                return ge::GRAPH_FAILED);

@@ -16,14 +16,11 @@
 #include "tiling/platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
 #include "log/log.h"
-#include "atvoss/broadcast/broadcast_tiling.h"
 #include "math/trunc/op_kernel/arch35/trunc_dag.h"
 #include "math/trunc/op_kernel/arch35/trunc_struct.h"
+#include "op_host/tiling_util.h"
 
-#include <iostream>
-
-namespace optiling
-{
+namespace optiling {
 using namespace Ops::Base;
 const int64_t ASCEND_WORKSPACE = 16 * 1024 * 1024;
 
@@ -46,11 +43,10 @@ ge::graphStatus TruncTiling::CalcInputDtype()
     auto inputDesc = tilingContext->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
     this->inputDtype = inputDesc->GetDataType();
-    OP_CHECK_IF(this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 &&
-                   this->inputDtype != ge::DT_FLOAT && this->inputDtype != ge::DT_INT8 &&
-                   this->inputDtype != ge::DT_UINT8 && this->inputDtype != ge::DT_INT32,
-               OP_LOGE(tilingContext->GetNodeName(), "input x dtype not support"),
-               return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT &&
+            this->inputDtype != ge::DT_INT8 && this->inputDtype != ge::DT_UINT8 && this->inputDtype != ge::DT_INT32,
+        OP_LOGE(tilingContext->GetNodeName(), "input x dtype not support"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -59,15 +55,15 @@ ge::graphStatus TruncTiling::CheckShape()
     OP_LOGD(tilingContext->GetNodeName(), "TruncTiling CheckShape enter.");
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
-    const gert::Shape& inputYShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
+    const gert::Shape& inputYShape = Ops::Math::OpTiling::EnsureNotScalar(inputStorageShape->GetStorageShape());
 
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& outputZShape = Ops::Math::OpTiling::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
-    OP_CHECK_IF(inputYShape != outputZShape,
-               OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),
-               return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        inputYShape != outputZShape, OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),
+        return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -77,9 +73,9 @@ ge::graphStatus TruncTiling::CalcOutputDtype()
     auto outputDesc = tilingContext->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
-    OP_CHECK_IF(this->outputDtype != this->inputDtype,
-               OP_LOGE(tilingContext->GetNodeName(), "output y dtype not same as input x"),
-               return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        this->outputDtype != this->inputDtype,
+        OP_LOGE(tilingContext->GetNodeName(), "output y dtype not same as input x"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -87,12 +83,14 @@ ge::graphStatus TruncTiling::RunTiling()
 {
     OP_LOGD(tilingContext->GetNodeName(), "TruncTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext, "get input dtype failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext, "get output dtype failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"),
-               return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     tiling = tilingContext->GetTilingData<TruncTilingData>();
@@ -118,8 +116,9 @@ ge::graphStatus TruncTiling::RunTiling()
         OP_LOGE(tilingContext->GetNodeName(), "output dtype not support");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext, "elewiseBaseTiling failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
+        return ge::GRAPH_FAILED);
 
     return SetTilingData();
 }
@@ -137,4 +136,4 @@ ge::graphStatus TilingPrepareForTrunc([[maybe_unused]] gert::TilingParseContext*
 }
 
 IMPL_OP_OPTILING(Trunc).Tiling(TilingForTrunc).TilingParse<TruncCompileInfo>(TilingPrepareForTrunc);
-}  // namespace optiling
+} // namespace optiling

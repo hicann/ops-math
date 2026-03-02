@@ -20,7 +20,6 @@
 #include "atvoss/util/placeholder.h"
 
 namespace ReciprocalDag{
-using namespace AscendC;
 using namespace Ops::Base;
 
 constexpr int CastModeBf16ToFp32 = 0;

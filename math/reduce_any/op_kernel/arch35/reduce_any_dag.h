@@ -21,7 +21,9 @@
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 #include "atvoss/reduce/reduce_operator.h"
+#ifdef __CCE_AICORE__
 #include "op_kernel/math_util.h"
+#endif
 
 namespace ReduceAny {
 using namespace Ops::Base;

@@ -21,6 +21,7 @@
 #include "atvoss/reduce/reduce_util.h"
 #include "atvoss/reduce/reduce_tiling.h"
 #include "atvoss/reduce/reduce_tiling_data.h"
+#include "register/tilingdata_base.h"
 
 namespace optiling {
 constexpr int64_t MAX_CORE_COUNT = 128;

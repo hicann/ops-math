@@ -13,13 +13,12 @@
  * \brief cos_tiling_arch35
  */
 #include "cos_tiling_arch35.h"
-#include "register/op_def_registry.h"
-#include "atvoss/broadcast/broadcast_tiling.h"
+#include "register/op_impl_registry.h"
 #include "math/cos/op_kernel/arch35/cos_dag.h"
 #include "math/cos/op_kernel/arch35/cos_struct.h"
 #include "tiling/platform/platform_ascendc.h"
+#include "op_host/tiling_util.h"
 
-#include <iostream>
 
 namespace optiling
 {
@@ -75,11 +74,11 @@ ge::graphStatus CosTiling::CheckShape()
     OP_LOGD(tilingContext->GetNodeName(), "CosTiling CheckShape enter.");
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
-    const gert::Shape& inputYShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
+    const gert::Shape& inputYShape = Ops::Math::OpTiling::EnsureNotScalar(inputStorageShape->GetStorageShape());
 
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& outputZShape = Ops::Math::OpTiling::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(inputYShape != outputZShape,
                OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),

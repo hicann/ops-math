@@ -20,8 +20,9 @@
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
-
+#ifdef __CCE_AICORE__
 using namespace AscendC;
+#endif
 using namespace Ops::Base;
 const uint32_t UINT32_SIGN = 0x80000000;
 const uint16_t UINT16_SIGN = 0x8000;
