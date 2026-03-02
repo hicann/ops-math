@@ -23,7 +23,7 @@
 using namespace AscendC;
 
 constexpr int32_t BUFFER_NUM = 1;
-constexpr uint32_t DOUBLE_INT32 = 2;
+constexpr int64_t DOUBLE_INT32 = 2;
 constexpr uint32_t BLOCKSIZE = Ops::Base::GetUbBlockSize();
 
 template <typename EQS_TYPE, typename INPUT_TYPE, typename OUT_TYPE>
@@ -59,13 +59,13 @@ public:
 
     __aicore__ inline void Process()
     {
-        uint32_t BlockId = GetBlockIdx();
-        uint32_t startIdx = BlockId * (tilingNum_ - 1);
+        int64_t BlockId = GetBlockIdx();
+        int64_t startIdx = BlockId * (tilingNum_ - 1);
         if  (startIdx > totalSize_) {
             return;
         }
         uint32_t loop = 0;
-        for (int32_t remainLen = totalSize_ - BlockId * (tilingNum_ - 1), idx = 0; remainLen - 1 > 0; remainLen -= coreNum_ * (tilingNum_ - 1), idx++) {
+        for (int64_t remainLen = totalSize_ - BlockId * (tilingNum_ - 1), idx = 0; remainLen - 1 > 0; remainLen -= coreNum_ * (tilingNum_ - 1), idx++) {
             uint32_t copyLen = min(tilingNum_, totalSize_ - startIdx);
             GetResult(startIdx, copyLen);
             startIdx += coreNum_ * (tilingNum_ - 1);
@@ -76,7 +76,7 @@ public:
         }
     }
 
-    __aicore__ inline void CopyInX(uint32_t startIdx, uint32_t copyLen) 
+    __aicore__ inline void CopyInX(int64_t startIdx, uint32_t copyLen) 
     {
         DataCopyPadExtParams<EQS_TYPE> padParams;
         padParams.isPad = false;
@@ -94,7 +94,7 @@ public:
         x1Queue_.EnQue(x1Local);
     }
 
-    __aicore__ inline void CopyOutY(uint32_t startIdx, uint32_t copyLen) 
+    __aicore__ inline void CopyOutY(int64_t startIdx, uint32_t copyLen) 
     {
         DataCopyExtParams dataCopyParams;
         dataCopyParams.blockCount = 1;
@@ -283,7 +283,7 @@ public:
         }
     }
 
-    __aicore__ inline void compute(uint32_t startIdx, uint32_t copyLen)
+    __aicore__ inline void compute(int64_t startIdx, uint32_t copyLen)
     {
         LocalTensor<EQS_TYPE> x1Local = x1Queue_.template DeQue<EQS_TYPE>();
         LocalTensor<int32_t> yLocal = yQueue_.template AllocTensor<int32_t>();
@@ -307,7 +307,7 @@ public:
         yQueue_.EnQue(yLocal);
     }
 
-    __aicore__ inline void GetResult(uint32_t startIdx, uint32_t copyLen)
+    __aicore__ inline void GetResult(int64_t startIdx, uint32_t copyLen)
     {
         CopyInX(startIdx, copyLen);
         compute(startIdx, copyLen);
@@ -322,9 +322,9 @@ private:
     GlobalTensor<EQS_TYPE> x1Gm_;
     GlobalTensor<int32_t> yGm_;
 
-    uint32_t totalSize_;
-    uint32_t coreNum_;
-    uint32_t tilingNum_;
+    int64_t totalSize_;
+    int64_t coreNum_;
+    int64_t tilingNum_;
     uint32_t vLength_;
 
     TPipe* pipe_ = nullptr;
