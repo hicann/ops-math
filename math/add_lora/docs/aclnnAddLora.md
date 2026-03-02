@@ -224,42 +224,42 @@ aclnnStatus aclnnAddLora(
 
 - **返回值：**
 
-aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-第一段接口会完成入参校验，出现以下场景时报错：
+  第一段接口会完成入参校验，出现以下场景时报错：
 
-<table style="undefined;table-layout: fixed; width: 1048px"><colgroup>
-<col style="width: 319px">
-<col style="width: 108px">
-<col style="width: 621px">
-</colgroup>
-<thead>
-  <tr>
-    <th>返回码</th>
-    <th>错误码</th>
-    <th>描述</th>
-  </tr></thead>
-<tbody>
-  <tr>
-    <td>ACLNN_ERR_PARAM_NULLPTR</td>
-    <td>161001</td>
-    <td>传入的输入参数（x, y, weightB, indices）或输出参数out是空指针。</td>
-  </tr>
-  <tr>
-    <td>ACLNN_ERR_PARAM_INVALID</td>
-    <td>161002</td>
-    <td>输入参数（x, y, weightB, indices）或输出参数的数据类型不在支持的范围之内。</td>
-  </tr>
-  <tr>
-    <td rowspan="3">ACLNN_ERR_INNER_TILING_ERROR</td>
-    <td rowspan="3">561002</td>
-    <td>多个输入tensor之间的shape信息不匹配（详见参数说明）。</td>
-  </tr>
-  <tr>
-    <td>输入tensor的shape信息暂不支持（详见参数说明）。</td>
-  </tr>
-</tbody>
-</table>
+  <table style="undefined;table-layout: fixed; width: 1048px"><colgroup>
+  <col style="width: 319px">
+  <col style="width: 108px">
+  <col style="width: 621px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的输入参数（x, y, weightB, indices）或输出参数out是空指针。</td>
+    </tr>
+    <tr>
+      <td>ACLNN_ERR_PARAM_INVALID</td>
+      <td>161002</td>
+      <td>输入参数（x, y, weightB, indices）或输出参数的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td rowspan="3">ACLNN_ERR_INNER_TILING_ERROR</td>
+      <td rowspan="3">561002</td>
+      <td>多个输入tensor之间的shape信息不匹配（详见参数说明）。</td>
+    </tr>
+    <tr>
+      <td>输入tensor的shape信息暂不支持（详见参数说明）。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnAddLora
 

@@ -12,50 +12,171 @@
 
 ## 功能说明
 
-算子功能：返回输入tensors列表中每个输入tensor依次做add求和。
+返回输入tensors列表中每个输入tensor依次做add求和。
 
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSum”接口执行计算。
 
-- `aclnnStatus aclnnSumGetWorkspaceSize(const aclTensorList* tensors, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnSum(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnSumGetWorkspaceSize(
+  const aclTensorList* tensors, 
+  aclTensor*           out, 
+  uint64_t*            workspaceSize, 
+  aclOpExecutor**      executor)
+```
+
+```Cpp
+aclnnStatus aclnnSum(
+  void*          workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor* executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnSumGetWorkspaceSize
 
 - **参数说明：**
 
-  - tensors（aclTensorList*, 计算输入）：需要计算的输入tensors列表，Device侧的aclTensorList。数据类型支持FLOAT16、FLOAT、INT8、INT32、UINT8，需要与out数据类型相同。tensors中各tensor的shape需要与out满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，维度不大于8。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-
-  - out（aclTensor*, 计算输出）：输出tensor，Device侧的aclTensor。数据类型支持FLOAT、FLOAT16、INT8、INT32、UINT8。需要与tensors数据类型相同。shape需要与tensors中各tensor的shape满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-
-  - workspaceSize（uint64_t*, 出参）：返回需要在Device侧申请的workspace大小。
-
-  - executor（aclOpExecutor**, 出参）：返回op执行器，包含了算子计算流程。
+<table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+<col style="width: 217px">
+<col style="width: 125px">
+<col style="width: 247px">
+<col style="width: 317px">
+<col style="width: 233px">
+<col style="width: 126px">
+<col style="width: 144px">
+<col style="width: 146px">
+</colgroup>
+<thead>
+  <tr>
+    <th>参数名</th>
+    <th>输入/输出</th>
+    <th>描述</th>
+    <th>使用说明</th>
+    <th>数据类型</th>
+    <th>数据格式</th>
+    <th>维度(shape)</th>
+    <th>非连续Tensor</th>
+  </tr></thead>
+<tbody>
+  <tr>
+    <td>tensors（aclTensorList*）</td>
+    <td>输入</td>
+    <td>需要计算的输入tensors列表。</td>
+    <td>需要与out数据类型相同。tensors中各tensor的shape需要与out满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+    <td>FLOAT16、FLOAT、INT8、INT32、UINT8</td>
+    <td>ND</td>
+    <td>不大于8</td>
+    <td>√</td>
+  </tr>
+  <tr>
+    <td>out（aclTensor*）</td>
+    <td>输出</td>
+    <td>输出tensor。</td>
+    <td>需要与tensors数据类型相同。shape需要与tensors中各tensor的shape满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+    <td>FLOAT、FLOAT16、INT8、INT32、UINT8</td>
+    <td>ND</td>
+    <td>-</td>
+    <td>√</td>
+  </tr>
+  <tr>
+    <td>workspaceSize（uint64_t*）</td>
+    <td>输出</td>
+    <td>返回需要在Device侧申请的workspace大小。</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td>executor（aclOpExecutor**）</td>
+    <td>输出</td>
+    <td>返回op执行器，包含了算子计算流程。</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+  </tr>
+</tbody></table>
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现如下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的tensors或out是空指针时。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. tensors列表中tensor或out的数据类型不在支持的范围之内。
-                                        2. tensors列表和out的数据类型不一致。
-                                        3. tensors和out的shape不满足broadcast规则,或者broadcast后的shape与out不一致。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的tensors或out是空指针时。</td>
+    </tr>
+    <tr>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
+      <td>tensors列表中tensor或out的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>tensors列表和out的数据类型不一致。</td>
+    </tr>
+    <tr>
+      <td>tensors和out的shape不满足broadcast规则,或者broadcast后的shape与out不一致。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnSum
 
 - **参数说明：**
 
-  - workspace（void*, 入参）：在Device侧申请的workspace内存地址。
-
-  - workspaceSize（uint64_t, 入参）：在Device侧申请的workspace大小，由第一段接口aclnnSumGetWorkspaceSize获取。
-
-  - executor（aclOpExecutor*, 入参）：op执行器，包含了算子计算流程。
-
-  - stream（aclrtStream, 入参）：指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 833px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnSumGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
@@ -69,6 +190,7 @@
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>
