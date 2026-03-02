@@ -13,30 +13,62 @@
  * \brief sort_with_index cc impl
  */
 
-#include "arch35/radix_sort_with_index_simd_entry.h"
 #include "arch35/merge_sort_with_index.h"
+#include "arch35/radix_sort_with_index_multi_block.h"
+#include "arch35/radix_sort_with_index_single_block.h"
 
 using namespace AscendC;
+using namespace SortWithIndex;
 
-template <typename T, typename CONVERT_TYPE, typename UNSINGED_TYPE, int32_t NUM_PASS>
-__aicore__ inline void generateOpObject(GM_ADDR x, GM_ADDR index, GM_ADDR sortedX, GM_ADDR sortedIndex, GM_ADDR globalWorkGm,
+template <typename XType, typename ConvertType, typename UnsignedType, typename IndexType>
+__aicore__ inline void generateOpObject(GM_ADDR x, GM_ADDR index, GM_ADDR y, GM_ADDR sortedIndex, GM_ADDR globalWorkGm,
                                         GM_ADDR tiling)
 {
     GET_TILING_DATA(tilingData, tiling);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
     bool isDescend = tilingData.isDescend > 0 ? true : false;
-    if (isDescend) {
-        RadixSortWithIndexSimdEntry<T, CONVERT_TYPE, UNSINGED_TYPE, NUM_PASS, true, int32_t, int32_t> radixSort;
-        radixSort.Init(x, index, sortedX, sortedIndex, globalWorkGm, &tilingData);
-        radixSort.ProcessSort();
-    } else {
-        RadixSortWithIndexSimdEntry<T, CONVERT_TYPE, UNSINGED_TYPE, NUM_PASS, false, int32_t, int32_t> radixSort;
-        radixSort.Init(x, index, sortedX, sortedIndex, globalWorkGm, &tilingData);
-        radixSort.ProcessSort();
+    bool isInt32Range = tilingData.isInInt32Range == 1 ? true : false;
+    bool isSingleBlock = tilingData.lastDimNeedCore == 1 ? true : false;
+    TPipe pipe;
+    if (isSingleBlock) {
+        if (isDescend) {
+            RadixSortWithIndexSingleBlock<XType, true, IndexType> radixSort;
+            radixSort.Init(x, index, y, sortedIndex, globalWorkGm, &tilingData, &pipe);
+            radixSort.Process();
+        } else {
+            RadixSortWithIndexSingleBlock<XType, false, IndexType> radixSort;
+            radixSort.Init(x, index, y, sortedIndex, globalWorkGm, &tilingData, &pipe);
+            radixSort.Process();
+        }
+        return;
     }
+
+    if (isInt32Range) {
+        if (isDescend) {
+            RadixSortWithIndexMultiBlock<XType, UnsignedType, true, uint32_t, IndexType> radixSort;
+            radixSort.Init(x, index, y, sortedIndex, globalWorkGm, &tilingData, &pipe);
+            radixSort.Process();
+        } else {
+            RadixSortWithIndexMultiBlock<XType, UnsignedType, false, uint32_t, IndexType> radixSort;
+            radixSort.Init(x, index, y, sortedIndex, globalWorkGm, &tilingData, &pipe);
+            radixSort.Process();
+        }
+    } else {
+        if (isDescend) {
+            RadixSortWithIndexMultiBlock<XType, UnsignedType, true, int64_t, IndexType> radixSort;
+            radixSort.Init(x, index, y, sortedIndex, globalWorkGm, &tilingData, &pipe);
+            radixSort.Process();
+        } else {
+            RadixSortWithIndexMultiBlock<XType, UnsignedType, false, int64_t, IndexType> radixSort;
+            radixSort.Init(x, index, y, sortedIndex, globalWorkGm, &tilingData, &pipe);
+            radixSort.Process();
+        }
+    }
+    
 }
 
-template <typename T, typename CONVERT_TYPE>
+// todo MergeSort适配Int64
+template <typename XType, typename ConvertType, typename IndexType>
 __aicore__ inline void generateMergeSortObject(GM_ADDR x, GM_ADDR index, GM_ADDR values, GM_ADDR indices, GM_ADDR globalWorkGm,
                                                GM_ADDR tiling)
 {
@@ -44,17 +76,17 @@ __aicore__ inline void generateMergeSortObject(GM_ADDR x, GM_ADDR index, GM_ADDR
     bool isDescend = (tilingData.isDescend > 0) ? true : false;
     TPipe pipe;
     if (isDescend) {
-        MergeSortWithIndex<T, CONVERT_TYPE, SortWithIndexTilingDataSimt, true, int32_t> mergeSort;
+        MergeSortWithIndex<XType, ConvertType, SortWithIndexTilingDataSimt, true, IndexType> mergeSort;
         mergeSort.Init(x, index, values, indices, globalWorkGm, &tilingData, &pipe);
         mergeSort.ProcessSort();
     } else {
-        MergeSortWithIndex<T, CONVERT_TYPE, SortWithIndexTilingDataSimt, false, int32_t> mergeSort;
+        MergeSortWithIndex<XType, ConvertType, SortWithIndexTilingDataSimt, false, IndexType> mergeSort;
         mergeSort.Init(x, index, values, indices, globalWorkGm, &tilingData, &pipe);
         mergeSort.ProcessSort();
     }
 }
 
-extern "C" __global__ __aicore__ void sort_with_index(GM_ADDR x, GM_ADDR index, GM_ADDR sortedX, GM_ADDR sortedIndex,
+extern "C" __global__ __aicore__ void sort_with_index(GM_ADDR x, GM_ADDR index, GM_ADDR y, GM_ADDR sortedIndex,
                                                       GM_ADDR workspace, GM_ADDR tiling)
 {
     if (workspace == nullptr) {
@@ -66,39 +98,32 @@ extern "C" __global__ __aicore__ void sort_with_index(GM_ADDR x, GM_ADDR index, 
         return;
     }
     if (TILING_KEY_IS(1001)) {
-        generateOpObject<int8_t, int8_t, uint8_t, B8_BITE_SIZE>(x, index, sortedX, sortedIndex, globalWorkGm, tiling);
+        generateOpObject<int8_t, uint8_t, uint8_t, DTYPE_INDEX>(x, index, y, sortedIndex, globalWorkGm, tiling);
     } else if (TILING_KEY_IS(1002)) {
-        generateOpObject<int16_t, int16_t, uint16_t, B16_BITE_SIZE>(x, index, sortedX, sortedIndex, globalWorkGm,
-                                                                    tiling);
+        generateOpObject<int16_t, uint16_t, uint16_t, DTYPE_INDEX>(x, index, y, sortedIndex, globalWorkGm, tiling);
     } else if (TILING_KEY_IS(1003)) {
-        generateOpObject<int32_t, int32_t, uint32_t, B32_BITE_SIZE>(x, index, sortedX, sortedIndex, globalWorkGm,
-                                                                    tiling);
+        generateOpObject<int32_t, uint32_t, uint32_t, DTYPE_INDEX>(x, index, y, sortedIndex, globalWorkGm, tiling);
     } else if (TILING_KEY_IS(1004)) {
-        generateOpObject<int64_t, int64_t, uint64_t, B64_BITE_SIZE>(x, index, sortedX, sortedIndex, globalWorkGm,
-                                                                    tiling);
+        generateOpObject<int64_t, uint64_t, uint64_t, DTYPE_INDEX>(x, index, y, sortedIndex, globalWorkGm, tiling);
     } else if (TILING_KEY_IS(2001)) {
-        generateOpObject<uint8_t, uint8_t, uint8_t, B8_BITE_SIZE>(x, index, sortedX, sortedIndex, globalWorkGm, tiling);
+        generateOpObject<uint8_t, uint8_t, uint8_t, DTYPE_INDEX>(x, index, y, sortedIndex, globalWorkGm, tiling);
     } else if (TILING_KEY_IS(2004)) {
-        generateOpObject<uint64_t, uint64_t, uint64_t, B64_BITE_SIZE>(x, index, sortedX, sortedIndex, globalWorkGm,
-                                                                      tiling);
+        generateOpObject<uint64_t, uint64_t, uint64_t, DTYPE_INDEX>(x, index, y, sortedIndex, globalWorkGm, tiling);
     } else if (TILING_KEY_IS(2003)) {
-        generateOpObject<uint32_t, uint32_t, uint32_t, B32_BITE_SIZE>(x, index, sortedX, sortedIndex, globalWorkGm,
-                                                                      tiling);
+        generateOpObject<uint32_t, uint32_t, uint32_t, DTYPE_INDEX>(x, index, y, sortedIndex, globalWorkGm, tiling);
     } else if (TILING_KEY_IS(2002)) {
-        generateOpObject<uint16_t, uint16_t, uint16_t, B16_BITE_SIZE>(x, index, sortedX, sortedIndex, globalWorkGm,
-                                                                      tiling);
+        generateOpObject<uint16_t, uint16_t, uint16_t, DTYPE_INDEX>(x, index, y, sortedIndex, globalWorkGm, tiling);
     } else if (TILING_KEY_IS(3003)) {
-        generateOpObject<float, float, uint32_t, B32_BITE_SIZE>(x, index, sortedX, sortedIndex, globalWorkGm, tiling);
+        generateOpObject<float, float, uint32_t, DTYPE_INDEX>(x, index, y, sortedIndex, globalWorkGm, tiling);
     } else if (TILING_KEY_IS(3002)) {
-        generateOpObject<half, half, uint16_t, B16_BITE_SIZE>(x, index, sortedX, sortedIndex, globalWorkGm, tiling);
+        generateOpObject<half, half, uint16_t, DTYPE_INDEX>(x, index, y, sortedIndex, globalWorkGm, tiling);
     } else if (TILING_KEY_IS(4002)) {
-        generateOpObject<bfloat16_t, float, uint16_t, B16_BITE_SIZE>(x, index, sortedX, sortedIndex, globalWorkGm,
-                                                                     tiling);
+        generateOpObject<bfloat16_t, float, uint16_t, DTYPE_INDEX>(x, index, y, sortedIndex, globalWorkGm, tiling);
     } else if (TILING_KEY_IS(13003)) {
-        generateMergeSortObject<float, float>(x, index, sortedX, sortedIndex, globalWorkGm, tiling);
+        generateMergeSortObject<float, float, DTYPE_INDEX>(x, index, y, sortedIndex, globalWorkGm, tiling);
     } else if (TILING_KEY_IS(13002)) {
-        generateMergeSortObject<half, half>(x, index, sortedX, sortedIndex, globalWorkGm, tiling);
+        generateMergeSortObject<half, half, DTYPE_INDEX>(x, index, y, sortedIndex, globalWorkGm, tiling);
     } else if (TILING_KEY_IS(14002)) {
-        generateMergeSortObject<bfloat16_t, float>(x, index, sortedX, sortedIndex, globalWorkGm, tiling);
+        generateMergeSortObject<bfloat16_t, float, DTYPE_INDEX>(x, index, y, sortedIndex, globalWorkGm, tiling);
     }
 }

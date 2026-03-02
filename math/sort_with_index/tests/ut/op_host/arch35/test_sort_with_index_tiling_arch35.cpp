@@ -56,7 +56,7 @@ TEST_F(SortWithIndexTilingTest, test_tiling_int32) {
         &compileInfo);
 
     uint64_t expectTilingKey = 1003;
-    string expectTilingData = "4294967297 8589934594 4294967297 2 4294967296 4294967298 2 ";
-    std::vector<size_t> expectWorkspaces = {16787520};
+    string expectTilingData = "4294967297 2 2 4294967297 2 4294967296 4294967298 2 0 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

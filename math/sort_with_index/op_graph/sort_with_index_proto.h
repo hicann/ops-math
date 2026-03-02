@@ -47,10 +47,10 @@ namespace ge {
 REG_OP(SortWithIndex)
     .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16, DT_INT8, DT_INT16, DT_INT32, DT_INT64,
                           DT_UINT8, DT_UINT16, DT_UINT32, DT_UINT64}))
-    .INPUT(index, TensorType({DT_INT32}))
+    .INPUT(index, TensorType({DT_INT32, DT_INT64}))
     .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16, DT_INT8, DT_INT16, DT_INT32, DT_INT64,
                           DT_UINT8, DT_UINT16, DT_UINT32, DT_UINT64}))
-    .OUTPUT(sorted_index, TensorType({DT_INT32}))
+    .OUTPUT(sorted_index, TensorType({DT_INT32, DT_INT64}))
     .ATTR(axis, Int, -1)
     .ATTR(descending, Bool, false)
     .ATTR(stable, Bool, false)

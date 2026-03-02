@@ -23,7 +23,7 @@ BEGIN_TILING_DATA_DEF(SortWithIndexTilingDataSimt)
     TILING_DATA_FIELD_DEF(int32_t, isDescend);
     TILING_DATA_FIELD_DEF(uint32_t, sortLoopTimes);
     TILING_DATA_FIELD_DEF(uint32_t, unsortedDimParallel);
-    TILING_DATA_FIELD_DEF(uint32_t, unsortedDimNum);
+    TILING_DATA_FIELD_DEF(uint64_t, unsortedDimNum);
     TILING_DATA_FIELD_DEF(uint32_t, lastDimTileNum);
     TILING_DATA_FIELD_DEF(uint32_t, lastDimNeedCore);
     TILING_DATA_FIELD_DEF(uint32_t, numTileDataSize);
@@ -33,6 +33,14 @@ BEGIN_TILING_DATA_DEF(SortWithIndexTilingDataSimt)
     TILING_DATA_FIELD_DEF(uint32_t, outputLastDimValue);
     TILING_DATA_FIELD_DEF(uint32_t, isInInt32Range);
     TILING_DATA_FIELD_DEF(int64_t, lastAxisNum);
+    // adatp sort add 
+    TILING_DATA_FIELD_DEF(uint32_t, keyParams0);
+    TILING_DATA_FIELD_DEF(uint32_t, keyParams1);
+    TILING_DATA_FIELD_DEF(uint32_t, keyParams2);    
+    TILING_DATA_FIELD_DEF(uint32_t, keyParams3);
+    TILING_DATA_FIELD_DEF(uint32_t, keyParams4);
+    TILING_DATA_FIELD_DEF(uint32_t, keyParams5);
+    TILING_DATA_FIELD_DEF(uint32_t, tmpUbSize);           
 END_TILING_DATA_DEF;
 REGISTER_TILING_DATA_CLASS(SortWithIndex, SortWithIndexTilingDataSimt)
 

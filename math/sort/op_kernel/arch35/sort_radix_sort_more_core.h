@@ -21,6 +21,7 @@
 #include "op_kernel/platform_util.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "util_type_simd.h"
+#include "sort_tiling_data.h" // 不引入的话无法识别 SortRegBaseTilingData 结构体
 
 namespace Sort {
 using namespace AscendC;
@@ -80,7 +81,7 @@ public:
         const SortRegBaseTilingData *__restrict tilingData, TPipe *pipe);
     __aicore__ inline void Process();
 
-private:
+protected:
     __aicore__ inline void ClearWorkSapce();
     __aicore__ inline LocalTensor<UT> PreProcess(LocalTensor<T1> inputX, uint32_t numTileData);
     __aicore__ inline void PreGlobalExcusiveSum(LocalTensor<UT> &inputXCopy, LocalTensor<T3> &blockExcusiveUb,
@@ -121,7 +122,7 @@ private:
         uint32_t cureTileSize);
     __aicore__ inline uint64_t CeilDivMul(uint64_t a, uint64_t b);
 
-private:
+protected:
     GlobalTensor<T1> inputXGm_;
     GlobalTensor<T1> outValueGm_;
     GlobalTensor<uint32_t> outIdxGm_;

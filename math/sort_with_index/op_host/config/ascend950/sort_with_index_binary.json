@@ -2,7 +2,7 @@
   "op_type": "SortWithIndex",
   "op_list": [
     {
-      "bin_filename": "SortWithIndex_bf16",
+      "bin_filename": "SortWithIndex_bf16_int32",
       "inputs": [
         {
           "name": "x",
@@ -66,7 +66,7 @@
       ]
     },
     {
-      "bin_filename": "SortWithIndex_fp16",
+      "bin_filename": "SortWithIndex_fp16_int32",
       "inputs": [
         {
           "name": "x",
@@ -130,7 +130,7 @@
       ]
     },
     {
-      "bin_filename": "SortWithIndex_fp32",
+      "bin_filename": "SortWithIndex_fp32_int32",
       "inputs": [
         {
           "name": "x",
@@ -194,7 +194,7 @@
       ]
     },
     {
-      "bin_filename": "SortWithIndex_int16",
+      "bin_filename": "SortWithIndex_int16_int32",
       "inputs": [
         {
           "name": "x",
@@ -258,7 +258,7 @@
       ]
     },
     {
-      "bin_filename": "SortWithIndex_uint16",
+      "bin_filename": "SortWithIndex_uint16_int32",
       "inputs": [
         {
           "name": "x",
@@ -322,7 +322,7 @@
       ]
     },
     {
-      "bin_filename": "SortWithIndex_uint8",
+      "bin_filename": "SortWithIndex_uint8_int32",
       "inputs": [
         {
           "name": "x",
@@ -386,7 +386,7 @@
       ]
     },
     {
-      "bin_filename": "SortWithIndex_int8",
+      "bin_filename": "SortWithIndex_int8_int32",
       "inputs": [
         {
           "name": "x",
@@ -450,7 +450,7 @@
       ]
     },    
     {
-      "bin_filename": "SortWithIndex_int32",
+      "bin_filename": "SortWithIndex_int32_int32",
       "inputs": [
         {
           "name": "x",
@@ -514,7 +514,7 @@
       ]
     },    
     {
-      "bin_filename": "SortWithIndex_uint32",
+      "bin_filename": "SortWithIndex_uint32_int32",
       "inputs": [
         {
           "name": "x",
@@ -578,7 +578,7 @@
       ]
     },
     {
-      "bin_filename": "SortWithIndex_uint64",
+      "bin_filename": "SortWithIndex_uint64_int32",
       "inputs": [
         {
           "name": "x",
@@ -642,7 +642,7 @@
       ]
     },
     {
-      "bin_filename": "SortWithIndex_int64",
+      "bin_filename": "SortWithIndex_int64_int32",
       "inputs": [
         {
           "name": "x",
@@ -704,6 +704,710 @@
           "value": null
         }
       ]
-    }
+    },
+    {
+      "bin_filename": "SortWithIndex_bf16_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "bfloat16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+            "name": "index",
+            "index": 1,
+            "dtype": "int64",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "bfloat16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "sorted_index",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "axis",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "descending",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "stable",
+          "dtype": "bool",
+          "value": null
+        }
+      ]
+    },
+    {
+      "bin_filename": "SortWithIndex_fp16_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "float16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+            "name": "index",
+            "index": 1,
+            "dtype": "int64",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "float16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "sorted_index",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "axis",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "descending",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "stable",
+          "dtype": "bool",
+          "value": null
+        }
+      ]
+    },
+    {
+      "bin_filename": "SortWithIndex_fp32_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "float32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+            "name": "index",
+            "index": 1,
+            "dtype": "int64",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "float32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "sorted_index",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "axis",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "descending",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "stable",
+          "dtype": "bool",
+          "value": null
+        }
+      ]
+    },
+    {
+      "bin_filename": "SortWithIndex_int16_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "int16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+            "name": "index",
+            "index": 1,
+            "dtype": "int64",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "int16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "sorted_index",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "axis",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "descending",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "stable",
+          "dtype": "bool",
+          "value": null
+        }
+      ]
+    },
+    {
+      "bin_filename": "SortWithIndex_uint16_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "uint16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+            "name": "index",
+            "index": 1,
+            "dtype": "int64",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "uint16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "sorted_index",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "axis",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "descending",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "stable",
+          "dtype": "bool",
+          "value": null
+        }
+      ]
+    },
+    {
+      "bin_filename": "SortWithIndex_uint8_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "uint8",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+            "name": "index",
+            "index": 1,
+            "dtype": "int64",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "uint8",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "sorted_index",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "axis",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "descending",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "stable",
+          "dtype": "bool",
+          "value": null
+        }
+      ]
+    },
+    {
+      "bin_filename": "SortWithIndex_int8_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "int8",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+            "name": "index",
+            "index": 1,
+            "dtype": "int64",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "int8",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "sorted_index",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "axis",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "descending",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "stable",
+          "dtype": "bool",
+          "value": null
+        }
+      ]
+    },    
+    {
+      "bin_filename": "SortWithIndex_int32_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "int32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+            "name": "index",
+            "index": 1,
+            "dtype": "int64",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "int32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "sorted_index",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "axis",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "descending",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "stable",
+          "dtype": "bool",
+          "value": null
+        }
+      ]
+    },    
+    {
+      "bin_filename": "SortWithIndex_uint32_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "uint32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+            "name": "index",
+            "index": 1,
+            "dtype": "int64",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "uint32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "sorted_index",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "axis",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "descending",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "stable",
+          "dtype": "bool",
+          "value": null
+        }
+      ]
+    },
+    {
+      "bin_filename": "SortWithIndex_uint64_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "uint64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+            "name": "index",
+            "index": 1,
+            "dtype": "int64",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "uint64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "sorted_index",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "axis",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "descending",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "stable",
+          "dtype": "bool",
+          "value": null
+        }
+      ]
+    },
+    {
+      "bin_filename": "SortWithIndex_int64_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+            "name": "index",
+            "index": 1,
+            "dtype": "int64",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "sorted_index",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "axis",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "descending",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "stable",
+          "dtype": "bool",
+          "value": null
+        }
+      ]
+    }   
   ]
 }

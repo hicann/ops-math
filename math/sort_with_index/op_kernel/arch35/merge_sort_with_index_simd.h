@@ -14,7 +14,6 @@
 #ifndef MERGE_SORT_WITH_INDEX_SIMD_H
 #define MERGE_SORT_WITH_INDEX_SIMD_H
 #include "kernel_operator.h"
-#include "util_type_simd.h"
 #include "constant_var_simd.h"
 #include "merge_sort_simd.h"
 

@@ -17,6 +17,9 @@
 #include "constant_var_simd.h"
 #include "kernel_operator.h"
 #include "merge_sort_simd.h"
+#include "../../sort/arch35/util_type_simd.h" // 引入使用 ROUND_UP_AGLIN
+#include "util_type_simd.h"
+
 using namespace AscendC;
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
 struct MergeSort {
@@ -54,6 +57,12 @@ public:
     TQue<QuePosition::VECOUT, DOUBLE_BUFFER> outValueQueue_;
     TQue<QuePosition::VECOUT, DOUBLE_BUFFER> outIndexQueue_;
 
+    TQue<QuePosition::VECIN, 1> inQueueXValue_;         // 存放输入数据
+    TQue<QuePosition::VECIN, 1> inQueueXInt64Index_;    // 存放输入索引
+    TQue<QuePosition::VECOUT, 1> outIdxQueue_;          // 存放调用Sort api之后输出的索引
+    TQue<QuePosition::VECOUT, 1> outPutValueQueue_;        // 存放调用Sort api之后输出的值  
+    TBuf<TPosition::VECCALC> tmpSortApiUbSpace_;    
+
     // input value
     GlobalTensor<T> inputValueGm_;
     // output value
@@ -61,6 +70,8 @@ public:
     // output index
     GlobalTensor<INDEX_TYPE> outIndexGm_;
 
+    const uint32_t THREAD_DIM_NUM = 1024; // simt 开1024线程
+    uint32_t radixSortApiNeedSpace_ = 0;
     uint32_t oneCoreRowNum_ = 0;
     uint32_t mergSortAcApiNeedBufferSize_ = 0;
     uint32_t numTileData_ = 0;
@@ -101,6 +112,7 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     oneCoreRowNum_ = tilingData->oneCoreRowNum;
     // 高阶API需要的临时空间大小
     mergSortAcApiNeedBufferSize_ = tilingData->mergSortAcApiNeedBufferSize;
+    radixSortApiNeedSpace_ = tilingData->sortAcApiNeedBufferSize;
 }
 
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
@@ -116,6 +128,12 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     pipe->InitBuffer(outValueQueue_, DOUBLE_BUFFER, ROUND_UP_AGLIN(realNum * sizeof(T)));
     // 改为实际来支持int64_t
     pipe->InitBuffer(outIndexQueue_, DOUBLE_BUFFER, ROUND_UP_AGLIN(realNum * sizeof(INDEX_TYPE)));
+
+    pipe->InitBuffer(outPutValueQueue_, 1, ROUND_UP_AGLIN(numTileData_ * sizeof(T)));
+    pipe->InitBuffer(outIdxQueue_, 1, realNum * sizeof(uint32_t));  
+    pipe->InitBuffer(inQueueXValue_, 1, realNum * sizeof(T));
+    pipe->InitBuffer(inQueueXInt64Index_, 1, realNum * sizeof(INDEX_TYPE));
+    pipe->InitBuffer(tmpSortApiUbSpace_, radixSortApiNeedSpace_);
 }
 
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>

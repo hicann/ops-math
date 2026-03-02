@@ -14,8 +14,9 @@
 #ifndef SORT_WITH_INDEX_MERGE_SORT_SIMD_H
 #define SORT_WITH_INDEX_MERGE_SORT_SIMD_H
 #include "kernel_operator.h"
-#include "util_type_simd.h"
+#include "../../sort/arch35/util_type_simd.h" // 引入使用 ROUND_UP_AGLIN
 #include "constant_var_simd.h"
+#include "util_type_simd.h"
 
 using namespace AscendC;
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND>

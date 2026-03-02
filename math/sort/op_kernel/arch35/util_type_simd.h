@@ -15,6 +15,7 @@
 #ifndef UTIL_TYPE_SIMD_H
 #define UTIL_TYPE_SIMD_H
 #include "kernel_operator.h"
+#include "op_kernel/platform_util.h" // 不引入导致 GetUbBlockSize 方法无法使用
 
 __aicore__ inline uint32_t ROUND_UP_AGLIN(uint32_t x)
 {

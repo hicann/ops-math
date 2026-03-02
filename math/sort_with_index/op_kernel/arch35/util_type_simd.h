@@ -26,34 +26,9 @@ struct is_same : public false_type {};
 template <typename Tp>
 struct is_same<Tp, Tp> : public true_type {};
 
-__aicore__ inline uint32_t ROUND_UP_AGLIN(uint32_t x) {
-    return (x + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE * UB_AGLIN_VALUE;
-}
-
 template <typename T>
 __aicore__ inline T SortGetMin(T left, T right)
 {
     return (left > right ? right : left);
 }
-template <typename T>
-struct DoubleBufferSimd
-{
-    AscendC::GlobalTensor<T> doubleBuffer_[2];
-    int selector_ = 0;
-    __aicore__ inline DoubleBufferSimd() {}
-    __aicore__ inline void SetDoubleBuffer(AscendC::GlobalTensor<T> currentBuffer, AscendC::GlobalTensor<T> alternateBuffer) {
-        selector_ = 0;
-        doubleBuffer_[0] = currentBuffer;
-        doubleBuffer_[1] = alternateBuffer;
-    }
-    __aicore__ inline AscendC::GlobalTensor<T> Current() const {
-        return doubleBuffer_[selector_];
-    }
-    __aicore__ inline AscendC::GlobalTensor<T> Alternate() const {
-        return doubleBuffer_[selector_ ^ 1];
-    }
-    __aicore__ inline void UpdateSelect() {
-        selector_ = selector_ ^ 1;
-    }
-};
 #endif
