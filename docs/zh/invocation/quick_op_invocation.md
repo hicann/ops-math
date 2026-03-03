@@ -25,25 +25,25 @@
 准备好开源第三方软件后，可采用如下编译方式，请按需选择：
 
 - **自定义算子包**：
-    选择部分算子编译生成的包称为自定义算子包，以**挂载**形式作用于CANN包，不改变原始包内容。生成的自定义算子包优先级高于原始CANN包。该包支持aclnn和图模式调用AI Core、AI CPU算子。
+
+  选择部分算子编译生成的包称为自定义算子包，以**挂载**形式作用于CANN包，不改变原始包内容。生成的自定义算子包优先级高于原始CANN包。该包支持aclnn和图模式调用AI Core、AI CPU算子。
 
 - **ops-math包**：
-    选择整个项目编译生成的包称为ops-math包，可**完整替换**CANN包对应部分。该包支持aclnn和图模式调用AI Core算子。
+
+  选择整个项目编译生成的包称为ops-math包，可**完整替换**CANN包对应部分。该包支持aclnn和图模式调用AI Core算子。
 
 - **ops-math静态库**：
-    指整个项目编译为一个静态库文件，包含libcann_math_static.a和aclnn接口头文件。该包仅支持aclnn调用AI Core算子。
 
-    >说明：若您需要**基于本项目进行二次发布**并且对**软件包大小有要求**时，建议采用静态库编译，该库可以链接您的应用开发程序，仅保留业务所需的算子，从而实现软件最小化部署。
+  > 说明：若您需要**基于本项目进行二次发布**并且对**软件包大小有要求**时，建议采用静态库编译，该库可以链接您的应用开发程序，仅保留业务所需的算子，从而实现软件最小化部署。
+
+  指整个项目编译为一个静态库文件，包含libcann_math_static.a和aclnn接口头文件。该包仅支持aclnn调用AI Core算子。
 
 ### 联网编译
-
 #### 自定义算子包
 
 1. **编译自定义算子包**
 
     进入项目根目录，执行如下编译命令：
-
-    > 说明：编译过程依赖第三方开源软件，联网场景会自动下载，离线编译场景需要自行安装，具体参考[离线编译](../context/build_offline.md)。
 
     ```bash
     bash build.sh --pkg --soc=${soc_version} [--vendor_name=${vendor_name}] [--ops=${op_list}] [-j${n}]
@@ -52,30 +52,35 @@
     # 编译experimental贡献目录下的用户算子（以Abs算子为例，编译时请以实际贡献算子为准）
     # bash build.sh --pkg --experimental --soc=ascend910b --ops=abs -j16
     ```
+
     - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas A2 推理系列产品使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"，Ascend 950PR/Ascend 950DT产品使用"ascend950"。
     - --vendor_name（可选）：\$\{vendor\_name\}表示构建的自定义算子包名，默认名为custom。
     - --ops（可选）：\$\{op\_list\}表示待编译算子，不指定时默认编译所有算子。格式形如"abs,add_lora,..."，多算子之间用英文逗号","分隔。
     - --experimental（可选）：表示编译用户保存在experimental贡献目录下的算子。
+    - -j（可选）：指定编译线程数，加快编译速度。
 
     更多build参数介绍参见[build参数说明](../context/build.md)。
     
-    若\$\{vendor\_name\}和\$\{op\_list\}都不传入编译的是ops-math包；若编译所有算子的自定义算子包，需传入\$\{vendor\_name\}；编译自定义算子包不支持--jit。当提示如下信息，说明编译成功。
+    若\$\{vendor\_name\}和\$\{op\_list\}都不传入编译的是ops-math包；若编译所有算子的自定义算子包，需传入\$\{vendor\_name\}。当提示如下信息，说明编译成功。
+
     ```bash
     Self-extractable archive "cann-ops-math-${vendor_name}_linux-${arch}.run" successfully created.
     ```
+
     编译成功后，run包存放于项目根目录的build_out目录下。
-    
+
 2. **安装自定义算子包**
-   
+
     ```bash
     ./build_out/cann-ops-math-${vendor_name}_linux-${arch}.run
     ```
-    
+
     自定义算子包安装路径为```${ASCEND_HOME_PATH}/opp/vendors```，\$\{ASCEND\_HOME\_PATH\}已通过环境变量配置，表示CANN toolkit包安装路径，一般为\$\{install\_path\}/cann。
 
 3. **（可选）卸载自定义算子包。**
 
     自定义算子包安装后在```${ASCEND_HOME_PATH}/opp/vendors/${vendor_name}_math/scripts```目录会生成`uninstall.sh`，通过该脚本可卸载自定义算子包，命令如下：
+
     ```bash
     bash ${ASCEND_HOME_PATH}/opp/vendors/${vendor_name}_math/scripts/uninstall.sh
     ```
@@ -86,14 +91,13 @@
 
     进入项目根目录，执行如下编译命令：
 
-    > 说明：编译过程依赖第三方开源软件，联网场景会自动下载，离线编译场景需要自行安装，具体参考[离线编译](../context/build_offline.md)。
-
     ```bash
     # 编译除experimental目录外的所有算子
     bash build.sh --pkg --soc=${soc_version} [-j${n}]
     # 编译experimental目录下的所有算子
     # bash build.sh --pkg --experimental --soc=${soc_version} [-j${n}]
     ```
+
     - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas A2 推理系列产品使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"，Ascend 950PR/Ascend 950DT产品使用"ascend950"。
     - --experimental（可选）：表示编译用户保存在experimental目录下的算子。
     - -j（可选）：指定编译线程数，加快编译速度。
@@ -106,7 +110,7 @@
     Self-extractable archive "cann-${soc_name}-ops-math_${cann_version}_linux-${arch}.run" successfully created.
     ```
 
-   \$\{soc\_name\}表示NPU型号名称，即\$\{soc\_version\}删除“ascend”后剩余的内容。编译成功后，run包存放于build_out目录下。
+    \$\{soc\_name\}表示NPU型号名称，即\$\{soc\_version\}删除“ascend”后剩余的内容。编译成功后，run包存放于build_out目录下。
 
 2. **安装ops-math包**
 
@@ -124,7 +128,7 @@
     ./${install_path}/cann/share/info/ops_math/script/uninstall.sh
     ```
 
-### ops-math静态库
+#### ops-math静态库
 
 > 说明：静态库仅支持Atlas A2、Atlas A3系列产品。experimental算子暂不支持使用静态库。
 
@@ -135,8 +139,9 @@
     ```bash
     bash build.sh --pkg --static --soc=${soc_version} [-j${n}]
     ```
-    \$\{soc\_version\}表示NPU型号。Atlas A2系列产品使用"ascend910b"（默认），Atlas A3系列产品使用"ascend910_93"。
 
+    - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2系列产品使用"ascend910b"（默认），Atlas A3系列产品使用"ascend910_93"。
+    - -j（可选）：指定编译线程数，加快编译速度。
     若提示如下信息，说明编译并压缩成功。
 
     ```bash
@@ -265,7 +270,7 @@
     # bash build.sh --run_example abs eager
     ```
     
-    - \$\{op\}：表示待执行算子，算子名小写下划线形式，如abs。       
+    - \$\{op\}：表示待执行算子，算子名小写下划线形式，如abs。
     - \$\{mode\}：表示算子执行模式，目前支持eager（aclnn调用）、graph（图模式调用）。
     - \$\{soc_version\}（可选）：表示NPU型号。
     
@@ -322,11 +327,11 @@
         其中lcann\_math\_static、lcann\_legacy\_static表示算子依赖的静态库文件，从静态库统一放置路径\$\{static\_lib\_path\}中获取；  
         lgraph、lmetadef等表示算子依赖的底层库文件，可在CANN toolkit包获取。 
 
-        3. **执行run.sh**
+    3. **执行run.sh**
 
-            ```bash
-            bash run.sh
-            ```
+        ```bash
+        bash run.sh
+        ```
 
 无论上述哪种方式，算子样例执行后会打印结果，以Abs算子为例：
 
