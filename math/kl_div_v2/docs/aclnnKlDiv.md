@@ -46,20 +46,100 @@
 ## aclnnKlDivGetWorkspaceSize
 
 * **参数说明**：
-  * self (aclTensor*,计算输入)：公式中的`self`。Device侧的aclTensor。且数据类型与target的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），shape需要与target满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、
-  * target (aclTensor*, 计算输入)：公式中的`target`。且数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），shape需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、
-  * reduction (int64_t，计算输入): 公式中的`reduction`，指定计算完loss_pointwise之后的操作。
-    - 0：none，表示不做reduction操作。
-    - 1：mean，表示计算loss_pointwise的均值。
-    - 2：sum，表示对loss_pointwise求和。
-    - 3：batchmean，表示计算批次的平均损失，与Kullback_Leibler散度的数学定义一致。
-  * logTarget(bool，计算输入): 指定传入的target数据是否已经做过log操作。
-  * out (aclTensor*，计算输出)：公式中的`out`。数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。当`reduction`为 0 时，shape需要与self和target满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。当`reduction`不为0时，shape固定为(1,)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、
-  * workspaceSize(uint64_t*，出参)：返回需要在Device侧申请的workspace大小。
-  * executor(aclOpExecutor**，出参)：返回op执行器，包含了算子计算流程。
+
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 280px">
+  <col style="width: 320px">
+  <col style="width: 250px">
+  <col style="width: 120px">
+  <col style="width: 140px">
+  <col style="width: 140px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>公式中的self</td>
+      <td>数据类型与target的数据类型需满足数据类型推导规则，shape需要与target满足broadcast关系。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>target</td>
+      <td>输入</td>
+      <td>公式中的target</td>
+      <td>数据类型与self的数据类型需满足数据类型推导规则，shape需要与self满足broadcast关系。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>reduction</td>
+      <td>输入</td>
+      <td>公式中的reduction</td>
+      <td><ul><li>0：none，表示不做reduction操作。</li><li>1：mean，表示计算loss_pointwise的均值。</li><li>2：sum，表示对loss_pointwise求和。</li><li>3：batchmean，表示计算批次的平均损失，与Kullback_Leibler散度的数学定义一致。</li></td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>logTarget</td>
+      <td>输入</td>
+      <td>指定传入的target数据是否已经做过log操作</td>
+      <td>无</td>
+      <td>BOOL</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>公式中的out</td>
+      <td>数据类型与self的数据类型需满足数据类型推导规则。当`reduction`为 0 时，shape需要与self和target满足broadcast关系。当`reduction`不为0时，shape固定为(1,)。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>需要在Device侧申请的workspace大小</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>op执行器，包含了算子计算流程</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
 * **返回值**：
 
