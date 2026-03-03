@@ -16,7 +16,7 @@ endif()
 include(FindPackageHandleStandardArgs)
 
 set(OPBASE_HEAD_SEARCH_PATHS
-  ${OPBASE_SOURCE_PATH}/pkg_inc     # 本地下载的opbase
+  ${OPBASE_SOURCE_PATH}/pkg_inc           # 本地下载的opbase
   ${TOP_DIR}/ops-base/pkg_inc             # compile with ci
 )
 
@@ -34,7 +34,7 @@ get_filename_component(OPBASE_INC_DIR ${OPBASE_INC_DIR} REALPATH)
 
 if(OPBASE_FOUND)
   if(NOT OPBASE_FIND_QUIETLY)
-    message(STATUS "Found OPABSE include:${OPBASE_INC_DIR}")
+    message(STATUS "Found OPBASE include:${OPBASE_INC_DIR}")
   endif()
   set(OPBASE_INC_DIRS
     ${OPBASE_INC_DIR}
