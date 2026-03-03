@@ -33,8 +33,8 @@ public:
     __aicore__ inline void CopyInAndOut2Gm(
         const int64_t offset1, const int64_t offset2, const int64_t calCount, const int32_t blkIdx);
     __aicore__ inline void ComputeHGrad(const int64_t calCount);
-    __aicore__ inline void ComputeHGradBF16(const int64_t calCount);
-    __aicore__ inline void FloatCast2BF16(const int64_t calCount);
+    __aicore__ inline void ComputeHGradF16(const int64_t calCount);
+    __aicore__ inline void FloatCast2F16(const int64_t calCount);
     __aicore__ inline void Process();
 
 private:
@@ -74,7 +74,7 @@ private:
     int64_t outBatchStride = 0;
     event_t eventId0;
     event_t eventId1;
-
+    static constexpr bool isCastFp32 = AscendC::IsSameType<T, bfloat16_t>::value || AscendC::IsSameType<T, half>::value;
     GlobalTensor<T> mGmX;
     GlobalTensor<T> mGmY;
 };
@@ -117,7 +117,7 @@ template <typename T>
 __aicore__ inline void PadV3GradReplicateH<T>::InitBuffer(TPipe* inputPipe)
 {
     pipe = inputPipe;
-    if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
+    if constexpr (isCastFp32) {
         pipe->InitBuffer(xInQueue, BUFFER_NUM, ubFactorElement * sizeof(T) * CONST_VALUE_2);
         pipe->InitBuffer(yOutQueue, BUFFER_NUM, ubFactorElement * sizeof(T) * CONST_VALUE_2);
         pipe->InitBuffer(floatQueue, BUFFER_NUM, ubFactorElement * sizeof(float));
@@ -185,7 +185,7 @@ __aicore__ inline void PadV3GradReplicateH<T>::ComputeHGrad(const int64_t calCou
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateH<T>::ComputeHGradBF16(const int64_t calCount)
+__aicore__ inline void PadV3GradReplicateH<T>::ComputeHGradF16(const int64_t calCount)
 {
     LocalTensor<T> xLocal = xInQueue.DeQue<T>();
     Cast(floatTensor, xLocal, RoundMode::CAST_NONE, ubFactorElement);
@@ -204,7 +204,7 @@ __aicore__ inline void PadV3GradReplicateH<T>::ComputeHGradBF16(const int64_t ca
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateH<T>::FloatCast2BF16(const int64_t calCount)
+__aicore__ inline void PadV3GradReplicateH<T>::FloatCast2F16(const int64_t calCount)
 {
     LocalTensor<T> yLocal = yOutQueue.AllocTensor<T>();
     LocalTensor<float> floatLocal = floatQueue.DeQue<float>();
@@ -237,7 +237,7 @@ __aicore__ inline void PadV3GradReplicateH<T>::Process()
         ncOffset = blockIdx * ncPerCore + tailNC;
     }
 
-    if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
+    if constexpr (isCastFp32) {
         floatTensor = floatCastResBuf.Get<float>();
     }
 
@@ -254,14 +254,14 @@ __aicore__ inline void PadV3GradReplicateH<T>::Process()
                     SetFlag<HardEvent::S_MTE2>(eventId0);
                     WaitFlag<HardEvent::S_MTE2>(eventId0);
                     CopyFromGm2UB(gmXOffset, calCount);
-                    if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                        ComputeHGradBF16(calCount);
+                    if constexpr (isCastFp32) {
+                        ComputeHGradF16(calCount);
                     } else {
                         ComputeHGrad(calCount);
                     }
                 }
-                if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                    FloatCast2BF16(calCount);
+                if constexpr (isCastFp32) {
+                    FloatCast2F16(calCount);
                 }
                 gmYOffset = time * ubFactorElement + loop * outBatchStride + ncOffset * outBatchStride;
                 SetFlag<HardEvent::S_MTE3>(eventId1);
@@ -278,14 +278,14 @@ __aicore__ inline void PadV3GradReplicateH<T>::Process()
                 SetFlag<HardEvent::S_MTE2>(eventId0);
                 WaitFlag<HardEvent::S_MTE2>(eventId0);
                 CopyFromGm2UB(gmXOffset1, calCount);
-                if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                    ComputeHGradBF16(calCount);
+                if constexpr (isCastFp32) {
+                    ComputeHGradF16(calCount);
                 } else {
                     ComputeHGrad(calCount);
                 }
             }
-            if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                FloatCast2BF16(calCount);
+            if constexpr (isCastFp32) {
+                FloatCast2F16(calCount);
             }
             // padTop累加完成，输出到边缘首行
             gmYOffset1 = time * ubFactorElement + loop * outBatchStride + ncOffset * outBatchStride;
@@ -301,14 +301,14 @@ __aicore__ inline void PadV3GradReplicateH<T>::Process()
                 SetFlag<HardEvent::S_MTE2>(eventId0);
                 WaitFlag<HardEvent::S_MTE2>(eventId0);
                 CopyFromGm2UB(gmXOffset2, calCount);
-                if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                    ComputeHGradBF16(calCount);
+                if constexpr (isCastFp32) {
+                    ComputeHGradF16(calCount);
                 } else {
                     ComputeHGrad(calCount);
                 }
             }
-            if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                FloatCast2BF16(calCount);
+            if constexpr (isCastFp32) {
+                FloatCast2F16(calCount);
             }
             // padBottom累加完成，输出到边缘尾行
             gmYOffset2 =

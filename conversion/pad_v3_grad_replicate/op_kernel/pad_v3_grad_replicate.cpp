@@ -18,9 +18,9 @@
 #include "pad_v3_grad_replicate_h_w.h"
 #include "pad_v3_grad_replicate_h_w_mini.h"
 #include "pad_v3_grad_replicate_small_h_large_w.h"
-#include "pad_v3_grad_replicate_small_h_large_w_bf16.h"
+#include "pad_v3_grad_replicate_small_h_large_w_f16.h"
 #include "pad_v3_grad_replicate_large_h_small_w.h"
-#include "pad_v3_grad_replicate_large_h_small_w_bf16.h"
+#include "pad_v3_grad_replicate_large_h_small_w_f16.h"
 #include "pad_v3_grad_replicate_h_w_large.h"
 
 extern "C" __global__ __aicore__ void pad_v3_grad_replicate(
@@ -92,13 +92,13 @@ extern "C" __global__ __aicore__ void pad_v3_grad_replicate(
         op.Process();
     }
     if (TILING_KEY_IS(2100)) {
-        PadV3GradReplicateSmallHLargeW<half> op;
+        PadV3GradReplicateSmallHLargeWF16<half> op;
         op.Init(tilingData, x, paddings, y, workspace);
         op.InitBuffer(&pipe);
         op.Process();
     }
     if (TILING_KEY_IS(3100)) {
-        PadV3GradReplicateSmallHLargeWBf16<bfloat16_t> op;
+        PadV3GradReplicateSmallHLargeWF16<bfloat16_t> op;
         op.Init(tilingData, x, paddings, y, workspace);
         op.InitBuffer(&pipe);
         op.Process();
@@ -110,13 +110,13 @@ extern "C" __global__ __aicore__ void pad_v3_grad_replicate(
         op.Process();
     }
     if (TILING_KEY_IS(2010)) {
-        PadV3GradReplicateLargeHSmallW<half> op;
+        PadV3GradReplicateLargeHSmallWF16<half> op;
         op.Init(tilingData, x, paddings, y, workspace);
         op.InitBuffer(&pipe);
         op.Process();
     }
     if (TILING_KEY_IS(3010)) {
-        PadV3GradReplicateLargeHSmallWBf16<bfloat16_t> op;
+        PadV3GradReplicateLargeHSmallWF16<bfloat16_t> op;
         op.Init(tilingData, x, paddings, y, workspace);
         op.InitBuffer(&pipe);
         op.Process();

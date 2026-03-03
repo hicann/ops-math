@@ -41,9 +41,9 @@ public:
         const int64_t ncOffset, const int32_t flag);
     __aicore__ inline void CopyOut2Workspace(const int32_t tIdx, const int64_t calCount, const int32_t flag);
     __aicore__ inline void ComputeHGrad(const int32_t calCount, const int32_t flag);
-    __aicore__ inline void ComputeHGradBF16(const int32_t calCount, const int32_t flag);
+    __aicore__ inline void ComputeHGradF16(const int32_t calCount, const int32_t flag);
     __aicore__ inline void ImplTransposeAndCompute(const int64_t transCount, const int32_t flag);
-    __aicore__ inline void ImplTransposeAndComputeBF16(const int64_t transCount, const int32_t flag);
+    __aicore__ inline void ImplTransposeAndComputeF16(const int64_t transCount, const int32_t flag);
     __aicore__ inline void CopyIn(const int32_t copyCount, const int64_t workspaceOffset);
     __aicore__ inline void Compute(const int32_t copyCount);
     __aicore__ inline void CopyOut(const int32_t copyCount, const int64_t offset);
@@ -86,7 +86,7 @@ private:
     uint32_t loopNC = 0;
     int64_t ncOffset = 0;
     event_t MTE3ToMTE2Event;
-
+    static constexpr bool isCastFp32 = AscendC::IsSameType<T, bfloat16_t>::value || AscendC::IsSameType<T, half>::value;
     GlobalTensor<T> mGmX;
     GlobalTensor<T> mGmY;
     GlobalTensor<T> mGmWorkspace;
@@ -139,7 +139,7 @@ template <typename T>
 __aicore__ inline void PadV3GradReplicateHWLarge<T>::InitBuffer(TPipe* inputPipe)
 {
     pipe = inputPipe;
-    if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
+    if constexpr (isCastFp32) {
         pipe->InitBuffer(xInQueue, BUFFER_NUM, ubFactorElement * sizeof(T) * COPY_ROWS_AND_COLS);
         pipe->InitBuffer(yOutQueue, BUFFER_NUM, ubFactorElement * sizeof(T) * COPY_ROWS_AND_COLS);
         pipe->InitBuffer(transposeBuf, ubFactorElement * sizeof(float) * COPY_ROWS_AND_COLS);
@@ -510,7 +510,7 @@ __aicore__ inline void PadV3GradReplicateHWLarge<T>::ImplTransposeAndCompute(
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateHWLarge<T>::ImplTransposeAndComputeBF16(
+__aicore__ inline void PadV3GradReplicateHWLarge<T>::ImplTransposeAndComputeF16(
     const int64_t transCount, const int32_t flag)
 {
     uint32_t loopTimes = CeilDiv(transCount, TRANSDATA_BASE_H);
@@ -612,7 +612,7 @@ __aicore__ inline void PadV3GradReplicateHWLarge<T>::ComputeHGrad(const int32_t 
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateHWLarge<T>::ComputeHGradBF16(const int32_t calCount, const int32_t flag)
+__aicore__ inline void PadV3GradReplicateHWLarge<T>::ComputeHGradF16(const int32_t calCount, const int32_t flag)
 {
     LocalTensor<T> xLocal = xInQueue.DeQue<T>();
     LocalTensor<T> yLocal = yOutQueue.AllocTensor<T>();
@@ -695,7 +695,7 @@ __aicore__ inline void PadV3GradReplicateHWLarge<T>::Process()
     uint32_t copyMidDataTimes =
         CeilDiv(width - CONST_VALUE_2 * COPY_ROWS_AND_COLS, COPY_ROWS_AND_COLS * ubFactorElement);
 
-    if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
+    if constexpr (isCastFp32) {
         floatTensor = floatCastResBuf.Get<float>();
         transposeData = transposeBuf.Get<float>();
     }
@@ -709,8 +709,8 @@ __aicore__ inline void PadV3GradReplicateHWLarge<T>::Process()
             // 搬padTop16行
             CopyGm2UB(time, calCount, loop, ncOffset, 0);
             // padTop累加
-            if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                ComputeHGradBF16(calCount, 0);
+            if constexpr (isCastFp32) {
+                ComputeHGradF16(calCount, 0);
             } else {
                 ComputeHGrad(calCount, 0);
             }
@@ -719,8 +719,8 @@ __aicore__ inline void PadV3GradReplicateHWLarge<T>::Process()
             // 搬padBottom16行
             CopyGm2UB(time, calCount, loop, ncOffset, 1);
             // padBottom累加
-            if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                ComputeHGradBF16(calCount, 1);
+            if constexpr (isCastFp32) {
+                ComputeHGradF16(calCount, 1);
             } else {
                 ComputeHGrad(calCount, 1);
             }
@@ -766,15 +766,15 @@ __aicore__ inline void PadV3GradReplicateHWLarge<T>::Process()
         }
         if (transTimesOneCol == 1) {
             CopyGmAndWorkspace2UB1(loop, COPY_ROWS_AND_COLS, ncOffset, 0);
-            if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                ImplTransposeAndComputeBF16(ubFactorElement, 0);
+            if constexpr (isCastFp32) {
+                ImplTransposeAndComputeF16(ubFactorElement, 0);
             } else {
                 ImplTransposeAndCompute(ubFactorElement, 0);
             }
             CopyOut2Gm(loop, ncOffset, outHeight, 0, 0);
             CopyGmAndWorkspace2UB1(loop, COPY_ROWS_AND_COLS, ncOffset, 1);
-            if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                ImplTransposeAndComputeBF16(ubFactorElement, 1);
+            if constexpr (isCastFp32) {
+                ImplTransposeAndComputeF16(ubFactorElement, 1);
             } else {
                 ImplTransposeAndCompute(ubFactorElement, 1);
             }
@@ -786,15 +786,15 @@ __aicore__ inline void PadV3GradReplicateHWLarge<T>::Process()
                     cycleTimes = outHeight - (transTimesOneCol - 1) * ubFactorElement;
                 }
                 CopyGmAndWorkspace2UB2(transBlk, transTimesOneCol, cycleTimes, loop, ncOffset, 0);
-                if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                    ImplTransposeAndComputeBF16(ubFactorElement, 0);
+                if constexpr (isCastFp32) {
+                    ImplTransposeAndComputeF16(ubFactorElement, 0);
                 } else {
                     ImplTransposeAndCompute(ubFactorElement, 0);
                 }
                 CopyOut2Gm(loop, ncOffset, cycleTimes, transBlk, 0);
                 CopyGmAndWorkspace2UB2(transBlk, transTimesOneCol, cycleTimes, loop, ncOffset, 1);
-                if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                    ImplTransposeAndComputeBF16(ubFactorElement, 1);
+                if constexpr (isCastFp32) {
+                    ImplTransposeAndComputeF16(ubFactorElement, 1);
                 } else {
                     ImplTransposeAndCompute(ubFactorElement, 1);
                 }

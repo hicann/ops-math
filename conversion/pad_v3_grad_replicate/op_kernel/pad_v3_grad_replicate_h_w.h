@@ -34,12 +34,12 @@ public:
     __aicore__ inline void CopyOut2Workspace(const int64_t offset, const int64_t calCount);
     __aicore__ inline void CopyOut2Gm(const int64_t offset, const int64_t calCount);
     __aicore__ inline void ComputeHGrad(const int64_t calCount);
-    __aicore__ inline void ComputeHGradBF16(const int64_t calCount);
+    __aicore__ inline void ComputeHGradF16(const int64_t calCount);
     __aicore__ inline void ComputeDiagonalGrad(const int64_t offset, const int64_t calCount);
-    __aicore__ inline void ComputeDiagonalGradBF16(const int64_t offset, const int64_t calCount);
+    __aicore__ inline void ComputeDiagonalGradF16(const int64_t offset, const int64_t calCount);
     __aicore__ inline void ComputeWGrad(const int64_t calCount);
-    __aicore__ inline void ComputeWGradBF16(const int64_t calCount);
-    __aicore__ inline void FloatCast2BF16(const int64_t calCount);
+    __aicore__ inline void ComputeWGradF16(const int64_t calCount);
+    __aicore__ inline void FloatCast2F16(const int64_t calCount);
     __aicore__ inline void Process();
 
 private:
@@ -80,7 +80,7 @@ private:
     event_t eventId0;
     event_t eventId1;
     event_t eventId2;
-
+    static constexpr bool isCastFp32 = AscendC::IsSameType<T, bfloat16_t>::value || AscendC::IsSameType<T, half>::value;
     GlobalTensor<T> mGmX;
     GlobalTensor<T> mGmY;
     GlobalTensor<T> mGmWorkspace;
@@ -126,7 +126,7 @@ template <typename T>
 __aicore__ inline void PadV3GradReplicateHW<T>::InitBuffer(TPipe* inputPipe)
 {
     pipe = inputPipe;
-    if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
+    if constexpr (isCastFp32) {
         pipe->InitBuffer(xInQueue, BUFFER_NUM, ubFactorElement * sizeof(T) * COPY_ROWS_AND_COLS);
         pipe->InitBuffer(yOutQueue, BUFFER_NUM, ubFactorElement * sizeof(T) * COPY_ROWS_AND_COLS);
         pipe->InitBuffer(floatQueue, BUFFER_NUM, ubFactorElement * sizeof(float));
@@ -218,7 +218,7 @@ __aicore__ inline void PadV3GradReplicateHW<T>::ComputeHGrad(const int64_t calCo
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateHW<T>::ComputeHGradBF16(const int64_t calCount)
+__aicore__ inline void PadV3GradReplicateHW<T>::ComputeHGradF16(const int64_t calCount)
 {
     LocalTensor<T> xLocal = xInQueue.DeQue<T>();
     Cast(floatTensor, xLocal, RoundMode::CAST_NONE, ubFactorElement);
@@ -237,7 +237,7 @@ __aicore__ inline void PadV3GradReplicateHW<T>::ComputeHGradBF16(const int64_t c
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateHW<T>::FloatCast2BF16(const int64_t calCount)
+__aicore__ inline void PadV3GradReplicateHW<T>::FloatCast2F16(const int64_t calCount)
 {
     LocalTensor<T> yLocal = yOutQueue.AllocTensor<T>();
     LocalTensor<float> floatLocal = floatQueue.DeQue<float>();
@@ -282,7 +282,7 @@ __aicore__ inline void PadV3GradReplicateHW<T>::ComputeDiagonalGrad(const int64_
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateHW<T>::ComputeDiagonalGradBF16(const int64_t offset, const int64_t calCount)
+__aicore__ inline void PadV3GradReplicateHW<T>::ComputeDiagonalGradF16(const int64_t offset, const int64_t calCount)
 {
     LocalTensor<T> yLocal = yOutQueue.AllocTensor<T>();
     LocalTensor<float> floatLocal = floatQueue.DeQue<float>();
@@ -341,7 +341,7 @@ __aicore__ inline void PadV3GradReplicateHW<T>::ComputeWGrad(const int64_t calCo
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateHW<T>::ComputeWGradBF16(const int64_t calCount)
+__aicore__ inline void PadV3GradReplicateHW<T>::ComputeWGradF16(const int64_t calCount)
 {
     LocalTensor<T> yLocal = yOutQueue.AllocTensor<T>();
     LocalTensor<float> floatLocal = floatQueue.DeQue<float>();
@@ -391,7 +391,7 @@ __aicore__ inline void PadV3GradReplicateHW<T>::Process()
         ncOffset = blockIdx * ncPerCore + tailNC;
     }
 
-    if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
+    if constexpr (isCastFp32) {
         floatTensor = floatCastResBuf.Get<float>();
     }
 
@@ -411,8 +411,8 @@ __aicore__ inline void PadV3GradReplicateHW<T>::Process()
                 SetFlag<HardEvent::S_MTE2>(eventId0);
                 WaitFlag<HardEvent::S_MTE2>(eventId0);
                 CopyGm2UBWhole(gmXOffset, calCount);
-                if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                    ComputeHGradBF16(calCount); // 计算结果存在floatQueue
+                if constexpr (isCastFp32) {
+                    ComputeHGradF16(calCount); // 计算结果存在floatQueue
                 } else {
                     ComputeHGrad(calCount); // 计算结果存在yOutQueue
                 }
@@ -422,8 +422,8 @@ __aicore__ inline void PadV3GradReplicateHW<T>::Process()
             SetFlag<HardEvent::S_MTE3>(eventId2);
             WaitFlag<HardEvent::S_MTE3>(eventId2);
             // padLeft和padRight的梯度累加到对角线元素上，并将ub整行搬运到workspace上
-            if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                ComputeDiagonalGradBF16(workspaceOffset, calCount);
+            if constexpr (isCastFp32) {
+                ComputeDiagonalGradF16(workspaceOffset, calCount);
             } else {
                 ComputeDiagonalGrad(workspaceOffset, calCount);
             }
@@ -449,8 +449,8 @@ __aicore__ inline void PadV3GradReplicateHW<T>::Process()
                 SetFlag<HardEvent::S_MTE2>(eventId0);
                 WaitFlag<HardEvent::S_MTE2>(eventId0);
                 CopyGm2UB(gmXOffset1, gmXOffset2, calCount);
-                if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                    ComputeHGradBF16(CONST_VALUE_2 * calCount); // 计算结果存在floatQueue
+                if constexpr (isCastFp32) {
+                    ComputeHGradF16(CONST_VALUE_2 * calCount); // 计算结果存在floatQueue
                 } else {
                     ComputeHGrad(CONST_VALUE_2 * calCount); // 计算结果存在yOutQueue
                 }
@@ -458,8 +458,8 @@ __aicore__ inline void PadV3GradReplicateHW<T>::Process()
             // workspace上的偏移量
             workspaceOffset1 = loop * CONST_VALUE_2 * calCount + ncOffset * CONST_VALUE_2 * calCount;
             // 左右两侧分别进行累加计算到edge
-            if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                ComputeWGradBF16(calCount);
+            if constexpr (isCastFp32) {
+                ComputeWGradF16(calCount);
             } else {
                 ComputeWGrad(calCount);
             }
@@ -498,14 +498,14 @@ __aicore__ inline void PadV3GradReplicateHW<T>::Process()
                     SetFlag<HardEvent::S_MTE2>(eventId0);
                     WaitFlag<HardEvent::S_MTE2>(eventId0);
                     CopyGm2UBWhole(gmXOffset3, copyCount);
-                    if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                        ComputeHGradBF16(copyCount); // 计算结果存在floatQueue
+                    if constexpr (isCastFp32) {
+                        ComputeHGradF16(copyCount); // 计算结果存在floatQueue
                     } else {
                         ComputeHGrad(copyCount); // 计算结果存在yOutQueue
                     }
                 }
-                if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                    FloatCast2BF16(copyCount);
+                if constexpr (isCastFp32) {
+                    FloatCast2F16(copyCount);
                 }
                 // 输出body的起始位置
                 gmYOffset3 =

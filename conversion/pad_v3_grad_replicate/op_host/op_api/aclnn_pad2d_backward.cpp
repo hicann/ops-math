@@ -260,7 +260,8 @@ static aclnnStatus commonPad2dBackward(const aclTensor *gradOutput, const aclTen
     const aclTensor *pad2dbackwardResult = nullptr;
     auto originOutDataType = gradOutput->GetDataType();
     // cast to fp32
-    if (originOutDataType == op::DataType::DT_FLOAT16 || originOutDataType == op::DataType::DT_BF16) {
+    if ((originOutDataType == op::DataType::DT_FLOAT16 && mode == "reflect") || 
+        originOutDataType == op::DataType::DT_BF16) {
         gradOutput = l0op::Cast(gradOutput, op::DataType::DT_FLOAT, uniqueExecutor.get());
         OP_LOGD("[PadV3Grad] FP16 or BF16 Cast to FP32: true");
     }
@@ -278,7 +279,8 @@ static aclnnStatus commonPad2dBackward(const aclTensor *gradOutput, const aclTen
     }
 
     // cast to fp16 or bf16
-    if (originOutDataType == op::DataType::DT_FLOAT16 || originOutDataType == op::DataType::DT_BF16) {
+    if ((originOutDataType == op::DataType::DT_FLOAT16 && mode == "reflect") || 
+        originOutDataType == op::DataType::DT_BF16) {
         pad2dbackwardResult = l0op::Cast(pad2dbackwardResult, originOutDataType, uniqueExecutor.get());
         OP_LOGD("[PadV3Grad] FP32 Cast to FP16 or BF16: true");
     }

@@ -9,18 +9,18 @@
  */
 
 /*!
- * \file pad_v3_grad_replicate_small_h_large_w_bf16.h
+ * \file pad_v3_grad_replicate_small_h_large_w_f16.h
  * \brief
  */
-#ifndef _PAD_V3_GRAD_REPLICATE_SMALL_H_LARGE_W_BF16_H_
-#define _PAD_V3_GRAD_REPLICATE_SMALL_H_LARGE_W_BF16_H_
+#ifndef _PAD_V3_GRAD_REPLICATE_SMALL_H_LARGE_W_F16_H_
+#define _PAD_V3_GRAD_REPLICATE_SMALL_H_LARGE_W_F16_H_
 
 #include "pad_v3_grad_replicate_base.h"
 
 template <typename T>
-class PadV3GradReplicateSmallHLargeWBf16 {
+class PadV3GradReplicateSmallHLargeWF16 {
 public:
-    __aicore__ inline PadV3GradReplicateSmallHLargeWBf16(){};
+    __aicore__ inline PadV3GradReplicateSmallHLargeWF16(){};
     __aicore__ inline void Init(
         const PadV3GradReplicateTilingData& __restrict tilingData, GM_ADDR x, GM_ADDR padding, GM_ADDR y,
         GM_ADDR workspace);
@@ -78,7 +78,7 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::Init(
+__aicore__ inline void PadV3GradReplicateSmallHLargeWF16<T>::Init(
     const PadV3GradReplicateTilingData& __restrict tilingData, GM_ADDR x, GM_ADDR padding, GM_ADDR y, GM_ADDR workspace)
 {
     batch = tilingData.batch;
@@ -120,7 +120,7 @@ __aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::Init(
 
 // init used buffer
 template <typename T>
-__aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::InitBuffer(TPipe* inputPipe)
+__aicore__ inline void PadV3GradReplicateSmallHLargeWF16<T>::InitBuffer(TPipe* inputPipe)
 {
     pipe = inputPipe;
     pipe->InitBuffer(xInQueue, 1, SMALL_HEIGHT_LIMIT * ubFactorElement * sizeof(T));
@@ -130,7 +130,7 @@ __aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::InitBuffer(TPipe* 
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::CopyGm2UB(
+__aicore__ inline void PadV3GradReplicateSmallHLargeWF16<T>::CopyGm2UB(
     const int32_t cycleIdx, const int64_t copyCount, const int32_t batchIdx)
 {
     LocalTensor<T> xLocal = xInQueue.AllocTensor<T>();
@@ -146,7 +146,7 @@ __aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::CopyGm2UB(
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::CopyOut2Gm(
+__aicore__ inline void PadV3GradReplicateSmallHLargeWF16<T>::CopyOut2Gm(
     const int32_t batchIdx, const int32_t cycles, const int32_t flag)
 {
     int64_t gmYOffset = 0;
@@ -169,7 +169,7 @@ __aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::CopyOut2Gm(
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::CopyWs2UB(
+__aicore__ inline void PadV3GradReplicateSmallHLargeWF16<T>::CopyWs2UB(
     const int32_t batchIdx, const int64_t copyCount, const int32_t flag)
 {
     DataCopyExtParams copyParams{1, (uint32_t)(COPY_ROWS_AND_COLS * sizeof(T)), 0, 0, 0};
@@ -191,7 +191,7 @@ __aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::CopyWs2UB(
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::CopyOut2Workspace(
+__aicore__ inline void PadV3GradReplicateSmallHLargeWF16<T>::CopyOut2Workspace(
     const int32_t tIdx, const int64_t calCount)
 {
     int64_t workspaceOffset;
@@ -205,7 +205,7 @@ __aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::CopyOut2Workspace(
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::ImplTransposeAndCompute(
+__aicore__ inline void PadV3GradReplicateSmallHLargeWF16<T>::ImplTransposeAndCompute(
     const int64_t transCount, const int32_t flag)
 {
     uint32_t loopTimes = CeilDiv(transCount, TRANSDATA_BASE_H);
@@ -278,7 +278,7 @@ __aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::ImplTransposeAndCo
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::ComputeHGrad(const int32_t calCount)
+__aicore__ inline void PadV3GradReplicateSmallHLargeWF16<T>::ComputeHGrad(const int32_t calCount)
 {
     LocalTensor<T> xLocal = xInQueue.DeQue<T>();
     LocalTensor<T> yLocal = yOutQueue.AllocTensor<T>();
@@ -298,7 +298,7 @@ __aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::ComputeHGrad(const
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::CopyIn(
+__aicore__ inline void PadV3GradReplicateSmallHLargeWF16<T>::CopyIn(
     const int32_t copyCount, const int64_t workspaceOffset)
 {
     DataCopyExtParams copyParams{1, (uint32_t)(copyCount * sizeof(T)), 0, 0, 0};
@@ -309,7 +309,7 @@ __aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::CopyIn(
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::Compute(const int32_t copyCount)
+__aicore__ inline void PadV3GradReplicateSmallHLargeWF16<T>::Compute(const int32_t copyCount)
 {
     LocalTensor<T> xLocal = xInQueue.DeQue<T>();
     LocalTensor<T> yLocal = yOutQueue.AllocTensor<T>();
@@ -320,7 +320,7 @@ __aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::Compute(const int3
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::CopyOut(const int32_t copyCount, const int64_t offset)
+__aicore__ inline void PadV3GradReplicateSmallHLargeWF16<T>::CopyOut(const int32_t copyCount, const int64_t offset)
 {
     LocalTensor<T> yLocal = yOutQueue.DeQue<T>();
     DataCopyExtParams copyParams{1, (uint32_t)(copyCount * sizeof(T)), 0, 0, 0};
@@ -329,7 +329,7 @@ __aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::CopyOut(const int3
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::Process()
+__aicore__ inline void PadV3GradReplicateSmallHLargeWF16<T>::Process()
 {
     int64_t gmYOffset;
     int64_t workspaceOffset;
@@ -377,4 +377,4 @@ __aicore__ inline void PadV3GradReplicateSmallHLargeWBf16<T>::Process()
         CopyOut2Gm(loop, outHeight, 1);
     }
 }
-#endif // _PAD_V3_GRAD_REPLICATE_SMALL_H_LARGE_W_BF16_H_
+#endif // _PAD_V3_GRAD_REPLICATE_SMALL_H_LARGE_W_F16_H_

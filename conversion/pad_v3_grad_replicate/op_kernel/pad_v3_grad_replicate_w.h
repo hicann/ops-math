@@ -34,9 +34,9 @@ public:
     __aicore__ inline void CopyInAndOut2Gm(const int64_t offset1, const int64_t offset2, const int64_t calCount);
     __aicore__ inline void CopyOut2Workspace(const int64_t offset, const int64_t calCount);
     __aicore__ inline void ComputeWGrad(const int32_t calCount);
-    __aicore__ inline void ComputeWGradBF16(const int32_t calCount);
+    __aicore__ inline void ComputeWGradF16(const int32_t calCount);
     __aicore__ inline void ComputeWGradWhole(const int32_t calCount);
-    __aicore__ inline void ComputeWGradWholeBF16(const int32_t calCount);
+    __aicore__ inline void ComputeWGradWholeF16(const int32_t calCount);
     __aicore__ inline void Process();
 
 private:
@@ -77,7 +77,7 @@ private:
     event_t eventId1;
     event_t eventId2;
     event_t eventId3;
-
+    static constexpr bool isCastFp32 = AscendC::IsSameType<T, bfloat16_t>::value || AscendC::IsSameType<T, half>::value;
     GlobalTensor<T> mGmX;
     GlobalTensor<T> mGmY;
     GlobalTensor<T> mGmWorkspace;
@@ -125,7 +125,7 @@ template <typename T>
 __aicore__ inline void PadV3GradReplicateW<T>::InitBuffer(TPipe* inputPipe)
 {
     pipe = inputPipe;
-    if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
+    if constexpr (isCastFp32) {
         pipe->InitBuffer(xInQueue, BUFFER_NUM, wCalCount * sizeof(T) * CONST_VALUE_2);
         pipe->InitBuffer(yOutQueue, BUFFER_NUM, ubFactorElement * sizeof(T));
         pipe->InitBuffer(floatCastResBuf, ubFactorElement * sizeof(float));
@@ -246,7 +246,7 @@ __aicore__ inline void PadV3GradReplicateW<T>::ComputeWGrad(const int32_t calCou
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateW<T>::ComputeWGradBF16(const int32_t calCount)
+__aicore__ inline void PadV3GradReplicateW<T>::ComputeWGradF16(const int32_t calCount)
 {
     LocalTensor<T> xLocal = xInQueue.DeQue<T>();
     LocalTensor<T> yLocal = yOutQueue.AllocTensor<T>();
@@ -309,7 +309,7 @@ __aicore__ inline void PadV3GradReplicateW<T>::ComputeWGradWhole(const int32_t c
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateW<T>::ComputeWGradWholeBF16(const int32_t calCount)
+__aicore__ inline void PadV3GradReplicateW<T>::ComputeWGradWholeF16(const int32_t calCount)
 {
     LocalTensor<T> xLocal = xInQueue.DeQue<T>();
     LocalTensor<T> yLocal = yOutQueue.AllocTensor<T>();
@@ -374,8 +374,8 @@ __aicore__ inline void PadV3GradReplicateW<T>::Process()
             WaitFlag<HardEvent::S_MTE2>(eventId0);
             CopyGm2UBWhole(gmXOffset, calCount * CONST_VALUE_2);
             // 左右两侧分别进行累加计算到edge
-            if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-                ComputeWGradWholeBF16(calCount);
+            if constexpr (isCastFp32) {
+                ComputeWGradWholeF16(calCount);
             } else {
                 ComputeWGradWhole(calCount);
             }
@@ -408,8 +408,8 @@ __aicore__ inline void PadV3GradReplicateW<T>::Process()
         WaitFlag<HardEvent::S_MTE2>(eventId0);
         CopyGm2UB(gmXOffset1, gmXOffset2, calCount);
         // 左右两侧分别进行累加计算到edge
-        if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-            ComputeWGradBF16(calCount);
+        if constexpr (isCastFp32) {
+            ComputeWGradF16(calCount);
         } else {
             ComputeWGrad(calCount);
         }

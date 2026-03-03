@@ -30,7 +30,7 @@ public:
     __aicore__ inline void InitBuffer(TPipe* inputPipe);
     __aicore__ inline void CopyIn(const int32_t loop);
     __aicore__ inline void Compute();
-    __aicore__ inline void ComputeBF16();
+    __aicore__ inline void ComputeF16();
     __aicore__ inline void CopyOut(const int32_t loop);
     __aicore__ inline void Process();
 
@@ -69,7 +69,7 @@ private:
     int64_t outBatchStride = 0;
     uint32_t loopNC = 0;
     int64_t ncOffset = 0;
-
+    static constexpr bool isCastFp32 = AscendC::IsSameType<T, bfloat16_t>::value || AscendC::IsSameType<T, half>::value;
     GlobalTensor<T> mGmX;
     GlobalTensor<T> mGmY;
     GlobalTensor<T> mGmWorkspace;
@@ -121,7 +121,7 @@ template <typename T>
 __aicore__ inline void PadV3GradReplicateHWMini<T>::InitBuffer(TPipe* inputPipe)
 {
     pipe = inputPipe;
-    if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
+    if constexpr (isCastFp32) {
         pipe->InitBuffer(xInQueue, 1, ubFactorElement * sizeof(T) * MINI_SHAPE_MAX_ROWS);
         pipe->InitBuffer(yOutQueue, 1, ubFactorElement * sizeof(T) * MINI_SHAPE_MAX_ROWS);
         pipe->InitBuffer(transposeBuf, ubFactorElement * sizeof(float) * MINI_SHAPE_MAX_ROWS);
@@ -275,7 +275,7 @@ __aicore__ inline void PadV3GradReplicateHWMini<T>::Compute()
 }
 
 template <typename T>
-__aicore__ inline void PadV3GradReplicateHWMini<T>::ComputeBF16()
+__aicore__ inline void PadV3GradReplicateHWMini<T>::ComputeF16()
 {
     uint64_t srcLocalList0[16];
     uint64_t dstLocalList0[16];
@@ -373,7 +373,7 @@ __aicore__ inline void PadV3GradReplicateHWMini<T>::CopyOut(const int32_t loop)
 template <typename T>
 __aicore__ inline void PadV3GradReplicateHWMini<T>::Process()
 {
-    if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
+    if constexpr (isCastFp32) {
         floatTransposeData = transposeBuf.Get<float>();
         floatTenosr = floatCastResBuf.Get<float>();
     } else {
@@ -381,8 +381,8 @@ __aicore__ inline void PadV3GradReplicateHWMini<T>::Process()
     }
     for (size_t loop = 0; loop < loopNC; loop++) {
         CopyIn(loop);
-        if constexpr (AscendC::IsSameType<T, bfloat16_t>::value) {
-            ComputeBF16();
+        if constexpr (isCastFp32) {
+            ComputeF16();
         } else {
             Compute();
         }
