@@ -72,11 +72,11 @@ TEST_F(l2_trans_matmul_weight_test, ascend910B2_test_empty)
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
-TEST_F(l2_trans_matmul_weight_test, ascend910B2_dim_larger_than_3)
+TEST_F(l2_trans_matmul_weight_test, ascend910B2_dim_larger_than_6)
 {
     SetPlatformSocVersion(SocVersion::ASCEND910B);
     // 使用**Desc描述host api输入输出
-    auto x1_desc = TensorDesc({16, 16, 16, 32}, ACL_FLOAT16, ACL_FORMAT_ND);
+    auto x1_desc = TensorDesc({16, 16, 16, 16, 16, 16, 32}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto ut = OP_API_UT(aclnnTransMatmulWeight, INPUT(x1_desc), OUTPUT());
 
     // SAMPLE: only test GetWorkspaceSize
@@ -120,7 +120,7 @@ TEST_F(l2_trans_matmul_weight_test, ascend910B2_test_invalid)
 {
     SetPlatformSocVersion(SocVersion::ASCEND910B);
     aclIntArray* tensorShape = nullptr;
-    vector<int64_t> tensorShapeVec = {16, 16, 32, 16};
+    vector<int64_t> tensorShapeVec = {16, 16, 16, 16, 16, 32, 16};
     tensorShape = aclCreateIntArray(tensorShapeVec.data(), tensorShapeVec.size());
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = aclnnCalculateMatmulWeightSize(tensorShape, &workspace_size);

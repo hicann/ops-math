@@ -37,7 +37,7 @@ namespace {
 static const int MIN_INT8_DIM_NUM_ND = 2;
 static const int MAX_INT8_DIM_NUM_ND = 6;
 static const int MIN_FLOAT16_DIM_NUM_ND = 2;
-static const int MAX_FLOAT16_DIM_NUM_ND = 3;  
+static const int MAX_FLOAT16_DIM_NUM_ND = 6;  
 }
 
 #ifdef __cplusplus
@@ -75,9 +75,9 @@ static inline bool CheckShapeDim(const aclIntArray *tensorShape) {
   uint64_t dimSize = tensorShape->Size();
   if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
       GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
-    // Only support matmul operations with dimSize is 2 or 3
+    // Only support matmul operations with dimSize is between 2 and 6
     if (dimSize < MIN_FLOAT16_DIM_NUM_ND || dimSize > MAX_FLOAT16_DIM_NUM_ND) {
-      OP_LOGE(ACLNN_ERR_PARAM_INVALID, "It is expected that tensorShape has 2-3 dimensions, but got dimensions %lu.", dimSize);
+      OP_LOGE(ACLNN_ERR_PARAM_INVALID, "It is expected that tensorShape has 2-6 dimensions, but got dimensions %lu.", dimSize);
       return false;
     }
   } else {
