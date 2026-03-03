@@ -24,7 +24,6 @@
 #include "opdev/op_dfx.h"
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
-#include "acl/acl.h"
 #include "math/lin_space/op_host/op_api/linspace.h"
 #include "math/pow/op_api/pow.h"
 

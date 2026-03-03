@@ -9,7 +9,6 @@
  */
 #include "aclnn_trans_convolution_weight.h"
 
-#include "acl/acl.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/transdata.h"
