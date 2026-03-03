@@ -32,12 +32,12 @@ public:
         this->Input("start")
             .ParamType(REQUIRED)
             .DataTypeList({ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT8, ge::DT_INT16, ge::DT_INT32, ge::DT_UINT8, ge::DT_BF16})
-            .FormatList({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .FormatList({ge::FORMAT_ND})
             .AutoContiguous();
         this->Input("end")
             .ParamType(REQUIRED)
             .DataTypeList({ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT8, ge::DT_INT16, ge::DT_INT32, ge::DT_UINT8, ge::DT_BF16})
-            .FormatList({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .FormatList({ge::FORMAT_ND})
             .AutoContiguous();
         this->Input("num")
             .ValueDepend(REQUIRED)
