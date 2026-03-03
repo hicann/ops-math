@@ -38,69 +38,69 @@ aclnnStatus aclnnSum(
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
-<col style="width: 217px">
-<col style="width: 125px">
-<col style="width: 247px">
-<col style="width: 317px">
-<col style="width: 233px">
-<col style="width: 126px">
-<col style="width: 144px">
-<col style="width: 146px">
-</colgroup>
-<thead>
-  <tr>
-    <th>参数名</th>
-    <th>输入/输出</th>
-    <th>描述</th>
-    <th>使用说明</th>
-    <th>数据类型</th>
-    <th>数据格式</th>
-    <th>维度(shape)</th>
-    <th>非连续Tensor</th>
-  </tr></thead>
-<tbody>
-  <tr>
-    <td>tensors（aclTensorList*）</td>
-    <td>输入</td>
-    <td>需要计算的输入tensors列表。</td>
-    <td>需要与out数据类型相同。tensors中各tensor的shape需要与out满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-    <td>FLOAT16、FLOAT、INT8、INT32、UINT8</td>
-    <td>ND</td>
-    <td>不大于8</td>
-    <td>√</td>
-  </tr>
-  <tr>
-    <td>out（aclTensor*）</td>
-    <td>输出</td>
-    <td>输出tensor。</td>
-    <td>需要与tensors数据类型相同。shape需要与tensors中各tensor的shape满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-    <td>FLOAT、FLOAT16、INT8、INT32、UINT8</td>
-    <td>ND</td>
-    <td>-</td>
-    <td>√</td>
-  </tr>
-  <tr>
-    <td>workspaceSize（uint64_t*）</td>
-    <td>输出</td>
-    <td>返回需要在Device侧申请的workspace大小。</td>
-    <td>-</td>
-    <td>-</td>
-    <td>-</td>
-    <td>-</td>
-    <td>-</td>
-  </tr>
-  <tr>
-    <td>executor（aclOpExecutor**）</td>
-    <td>输出</td>
-    <td>返回op执行器，包含了算子计算流程。</td>
-    <td>-</td>
-    <td>-</td>
-    <td>-</td>
-    <td>-</td>
-    <td>-</td>
-  </tr>
-</tbody></table>
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>tensors（aclTensorList*）</td>
+      <td>输入</td>
+      <td>需要计算的输入tensors列表。</td>
+      <td>需要与out数据类型相同。tensors中各tensor的shape需要与out满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>FLOAT16、FLOAT、INT8、INT32、UINT8</td>
+      <td>ND</td>
+      <td>不大于8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>输出tensor。</td>
+      <td>需要与tensors数据类型相同。shape需要与tensors中各tensor的shape满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>FLOAT、FLOAT16、INT8、INT32、UINT8</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
 - **返回值：**
 

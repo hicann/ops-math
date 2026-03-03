@@ -21,16 +21,18 @@
 
   - out tensor的shape推导公式：
     $$
-    \begin{align}
-    \\ &假设输入self的shape为：
+    \begin{aligned}
+    &假设输入self的shape为：
     \\ &[dim0_{in},dim1_{in}, dim2_{in}, dim3_{in}]
-    \\ &假设pad  = 
-    \\ &dim3_{begin},dim3_{end},
-    \\ &dim2_{begin},dim2_{end},
-    \\ &dim1_{begin},dim1_{end},
-    \\ &dim0_{begin},dim0_{end} 
-    \end{align}
+    &假设
+    \\ &pad = 
+    &[dim3_{begin},dim3_{end},
+    \\&&dim2_{begin},dim2_{end},
+    \\&&dim1_{begin},dim1_{end},
+    \\&&dim0_{begin},dim0_{end}]
+    \end{aligned}
     $$
+
     $$
     \begin{aligned}
     &则输出out的shape为：
@@ -41,8 +43,10 @@
     \\&&dim3_{begin}+dim3_{in}+dim3_{end}]
     \end{aligned}
     $$
+
   - 例子1：  
     (pad数组长度等于self维度的两倍的情况)
+
     $$
     \begin{aligned}
     selfShape &= [1, 1, 1, 1, 1]\\
@@ -51,8 +55,10 @@
     &= [18,14,10,6,2]
     \end{aligned}
     $$
+
   - 例子2：  
     (pad数组长度小于self维度的两倍的情况)
+
     $$
     \begin{aligned}
     selfShape &= [1, 1, 1, 1, 1]\\
@@ -66,14 +72,14 @@
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnConstantPadNdGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnConstantPadNd”接口执行计算。
 
-  ```cpp
-    aclnnStatus aclnnConstantPadNdGetWorkspaceSize(
-      const aclTensor*   self,
-      const aclIntArray* pad, 
-      const aclScalar*   value, 
-      aclTensor*         out, 
-      uint64_t*          workspaceSize, 
-      aclOpExecutor**    executor)
+```cpp
+  aclnnStatus aclnnConstantPadNdGetWorkspaceSize(
+    const aclTensor*   self,
+    const aclIntArray* pad, 
+    const aclScalar*   value, 
+    aclTensor*         out, 
+    uint64_t*          workspaceSize, 
+    aclOpExecutor**    executor)
 ```
     
   ```cpp
@@ -87,15 +93,14 @@
 ## aclnnConstantPadNdGetWorkspaceSize
 
 - **参数说明**
-
-  <table style="undefined;table-layout: fixed; width: 1357px"><colgroup>
-  <col style="width: 142px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
   <col style="width: 120px">
-  <col style="width: 227px">
-  <col style="width: 247px">
-  <col style="width: 270px">
-  <col style="width: 120px">
-  <col style="width: 160px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -107,7 +112,7 @@
       <th>数据类型</th>
       <th>数据格式</th>
       <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
@@ -183,10 +188,10 @@
 
     第一段接口完成入参校验，出现以下场景时报错：
 
-    <table style="undefined;table-layout: fixed; width: 1244px"><colgroup>
-    <col style="width: 277px">
-    <col style="width: 133px">
-    <col style="width: 834px">
+    <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+    <col style="width: 291px">
+    <col style="width: 135px">
+    <col style="width: 724px">
     </colgroup>
     <thead>
       <tr>
@@ -238,10 +243,10 @@
 ## aclnnConstantPadNd
 
 - **参数说明**
-  <table style="undefined;table-layout: fixed; width: 1241px"><colgroup>
-  <col style="width: 198px">
-  <col style="width: 162px">
-  <col style="width: 881px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

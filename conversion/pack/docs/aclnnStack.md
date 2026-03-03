@@ -16,7 +16,7 @@
 
 ## 功能说明
 
-- 沿着新维度连接张量序列。
+- 接口功能：沿着新维度连接张量序列。
 - 如给定shape为（A, B, C）、长度为N的张量列表，如果轴axis为0，则输出张量shape为(N, A, B, C)。
 
 ## 函数原型
@@ -25,34 +25,34 @@
 
 ```CPP
 aclnnStatus aclnnStackGetWorkspaceSize(
-  const aclTensorList *tensors, 
-  int64_t              dim, 
-  aclTensor           *out, 
-  uint64_t            *workspaceSize, 
-  aclOpExecutor      **executor)
+    const aclTensorList *tensors, 
+    int64_t              dim, 
+    aclTensor           *out, 
+    uint64_t            *workspaceSize, 
+    aclOpExecutor      **executor)
 ```
 
 ```CPP
 aclnnStatus aclnnStack(
-  void             *workspace, 
-  uint64_t          workspaceSize, 
-  aclOpExecutor    *executor, 
-  const aclrtStream stream)
+    void             *workspace, 
+    uint64_t          workspaceSize, 
+    aclOpExecutor    *executor, 
+    const aclrtStream stream)
 ```
 
 ## aclnnStackGetWorkspaceSize
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1755px"><colgroup>
-  <col style="width: 138px">
-  <col style="width: 126px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 120px">
+  <col style="width: 266px">
+  <col style="width: 308px">
   <col style="width: 240px">
-  <col style="width: 414px">
-  <col style="width: 383px">
-  <col style="width: 132px">
-  <col style="width: 169px">
-  <col style="width: 153px">
+  <col style="width: 110px">
+  <col style="width: 150px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -63,7 +63,7 @@ aclnnStatus aclnnStack(
       <th>数据类型</th>
       <th>数据格式</th>
       <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
@@ -125,10 +125,10 @@ aclnnStatus aclnnStack(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed; width: 1298px"><colgroup>
-  <col style="width: 288px">
-  <col style="width: 148px">
-  <col style="width: 862px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -163,10 +163,10 @@ aclnnStatus aclnnStack(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1040px"><colgroup>
-  <col style="width: 141px">
-  <col style="width: 110px">
-  <col style="width: 789px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

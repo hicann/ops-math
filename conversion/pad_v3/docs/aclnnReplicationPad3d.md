@@ -18,30 +18,30 @@
 
 - 接口功能：使用输入边界填充输入tensor的最后三维。
 - 示例：
-```
-输入tensor([[[[[0,1],
-               [2,3]],
-              [[4,5],
-               [6,7]]]]])
-padding([1,1,1,1,1,1])
-输出为
-([[[[[0,0,1,1],
-[0,0,1,1],
-[2,2,3,3],
-[2,2,3,3]],
-[[0,0,1,1],
-[0,0,1,1],
-[2,2,3,3],
-[2,2,3,3]],
-[[4,4,5,5],
-[4,4,5,5],
-[6,6,7,7],
-[6,6,7,7]],
-[[4,4,5,5],
-[4,4,5,5],
-[6,6,7,7],
-[6,6,7,7]]]]])
-```
+  ```
+  输入tensor([[[[[0,1],
+                [2,3]],
+                [[4,5],
+                [6,7]]]]])
+  padding([1,1,1,1,1,1])
+  输出为
+  ([[[[[0,0,1,1],
+  [0,0,1,1],
+  [2,2,3,3],
+  [2,2,3,3]],
+  [[0,0,1,1],
+  [0,0,1,1],
+  [2,2,3,3],
+  [2,2,3,3]],
+  [[4,4,5,5],
+  [4,4,5,5],
+  [6,6,7,7],
+  [6,6,7,7]],
+  [[4,4,5,5],
+  [4,4,5,5],
+  [6,6,7,7],
+  [6,6,7,7]]]]])
+  ```
 
 ## 函数原型
 
@@ -49,33 +49,33 @@ padding([1,1,1,1,1,1])
 
 ```cpp
 aclnnStatus aclnnReplicationPad3dGetWorkspaceSize(
-  const aclTensor*   self, 
-  const aclIntArray* padding, 
-  aclTensor*         out, 
-  uint64_t*          workspaceSize, 
-  aclOpExecutor**    executor)
+    const aclTensor*   self, 
+    const aclIntArray* padding, 
+    aclTensor*         out, 
+    uint64_t*          workspaceSize, 
+    aclOpExecutor**    executor)
 ```
 
 ```cpp
 aclnnStatus aclnnReplicationPad3d(
-  void*          workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor* executor, 
-  aclrtStream    stream)
+    void*          workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor* executor, 
+    aclrtStream    stream)
 ```
 
 ## aclnnReplicationPad3dGetWorkspaceSize
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1580px"><colgroup>
-  <col style="width: 132px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
   <col style="width: 120px">
-  <col style="width: 255px">
-  <col style="width: 307px">
-  <col style="width: 332px">
-  <col style="width: 126px">
-  <col style="width: 160px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -87,7 +87,7 @@ aclnnStatus aclnnReplicationPad3d(
       <th>数据类型</th>
       <th>数据格式</th>
       <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
@@ -103,7 +103,7 @@ aclnnStatus aclnnReplicationPad3d(
     <tr>
       <td>padding（aclIntArray*）</td>
       <td>输入</td>
-      <td>输入中需要填充的维度。</td>
+      <td>输入中需要填充的大小。</td>
       <td>长度为6，数值依次代表左右上下前后需要填充的值。</td>
       <td>-</td>
       <td>-</td>
@@ -148,10 +148,10 @@ aclnnStatus aclnnReplicationPad3d(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed; width: 1207px"><colgroup>
-  <col style="width: 268px">
-  <col style="width: 138px">
-  <col style="width: 801px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -192,10 +192,10 @@ aclnnStatus aclnnReplicationPad3d(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1126px"><colgroup>
-  <col style="width: 141px">
-  <col style="width: 140px">
-  <col style="width: 845px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

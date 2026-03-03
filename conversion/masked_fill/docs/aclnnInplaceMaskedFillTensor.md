@@ -24,33 +24,33 @@
 
 ```cpp
 aclnnStatus aclnnInplaceMaskedFillTensorGetWorkspaceSize(
-  aclTensor       *selfRef, 
-  const aclTensor *mask, 
-  const aclTensor *value, 
-  uint64_t        *workspaceSize, 
-  aclOpExecutor  **executor)
+    aclTensor       *selfRef, 
+    const aclTensor *mask, 
+    const aclTensor *value, 
+    uint64_t        *workspaceSize, 
+    aclOpExecutor  **executor)
 ```
 
 ```cpp
 aclnnStatus aclnnInplaceMaskedFillTensor(
-  void*          workspace, 
-  uint64_t       workspace_size, 
-  aclOpExecutor* executor, 
-  aclrtStream    stream)
+    void*          workspace, 
+    uint64_t       workspace_size, 
+    aclOpExecutor* executor, 
+    aclrtStream    stream)
 ```
 
 ## aclnnInplaceMaskedFillTensorGetWorkspaceSize
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1398px"><colgroup>
-  <col style="width: 128px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
   <col style="width: 120px">
-  <col style="width: 229px">
-  <col style="width: 251px">
-  <col style="width: 253px">
-  <col style="width: 122px"> 
-  <col style="width: 160px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -62,7 +62,7 @@ aclnnStatus aclnnInplaceMaskedFillTensor(
       <th>数据类型</th>
       <th>数据格式</th>
       <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
@@ -79,7 +79,7 @@ aclnnStatus aclnnInplaceMaskedFillTensor(
       <td>mask</td>
       <td>输入</td>
       <td>-</td>
-      <td>shape与selfRef满足broadcast关系</td>
+      <td>shape与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>BOOL</td>
       <td>ND</td>
       <td>-</td>
@@ -125,9 +125,9 @@ aclnnStatus aclnnInplaceMaskedFillTensor(
 
   第一段接口完成入参校验，出现以下场景时报错：
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
-  <col style="width: 262px">
-  <col style="width: 129px">
-  <col style="width: 759px">
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -159,10 +159,10 @@ aclnnStatus aclnnInplaceMaskedFillTensor(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1141px"><colgroup>
-  <col style="width: 157px">
-  <col style="width: 156px">
-  <col style="width: 828px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

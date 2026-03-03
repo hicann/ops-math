@@ -23,32 +23,32 @@
 
 ```cpp
 aclnnStatus aclnnInplaceFillScalarGetWorkspaceSize(
-  aclTensor       *selfRef, 
-  const aclScalar *value, 
-  uint64_t        *workspaceSize, 
-  aclOpExecutor  **executor)
+    aclTensor       *selfRef, 
+    const aclScalar *value, 
+    uint64_t        *workspaceSize, 
+    aclOpExecutor  **executor)
 ```
 
 ```cpp
 aclnnStatus aclnnInplaceFillScalar(
-  void          *workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor, 
-  aclrtStream    stream)
+    void          *workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor *executor, 
+    aclrtStream    stream)
 ```
 
 ## aclnnInplaceFillScalarGetWorkspaceSize
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1414px"><colgroup>
-  <col style="width: 127px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
   <col style="width: 120px">
-  <col style="width: 227px">
-  <col style="width: 250px">
-  <col style="width: 250px">
-  <col style="width: 120px">
-  <col style="width: 146px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -60,7 +60,7 @@ aclnnStatus aclnnInplaceFillScalar(
       <th>数据类型</th>
       <th>数据格式</th>
       <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
@@ -114,10 +114,10 @@ aclnnStatus aclnnInplaceFillScalar(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1162px"><colgroup>
-  <col style="width: 255px">
-  <col style="width: 133px">
-  <col style="width: 774px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -146,10 +146,10 @@ aclnnStatus aclnnInplaceFillScalar(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1121px"><colgroup>
-  <col style="width: 153px">
-  <col style="width: 132px">
-  <col style="width: 836px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

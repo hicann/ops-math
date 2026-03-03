@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-接口功能：StridedSliceAssign是一种张量切片赋值操作，它可以将张量inputValue的内容，赋值给目标张量varRef中的指定位置。
+StridedSliceAssign是一种张量切片赋值操作，它可以将张量inputValue的内容，赋值给目标张量varRef中的指定位置。
 
 ## 函数原型
 
@@ -46,15 +46,15 @@ aclnnStatus aclnnStridedSliceAssignV2(
 - **参数说明：**
 
   </style>
-  <table class="tg" style="undefined;table-layout: fixed; width: 1161px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
-  <col style="width: 88px">
-  <col style="width: 198px">
-  <col style="width: 156px">
-  <col style="width: 195px">
-  <col style="width: 95px">
-  <col style="width: 109px">
-  <col style="width: 109px">
+  <col style="width: 120px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -82,7 +82,7 @@ aclnnStatus aclnnStridedSliceAssignV2(
       <td class="tg-0pky">inputValue（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入axis。</td>
-      <td class="tg-0pky">shape需要与varRef计算得出的切片shape保持一致，,综合约束请见[约束说明]</td>
+      <td class="tg-0pky">shape需要与varRef计算得出的切片shape保持一致。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、BFLOAT16、INT32、INT64、DOUBLE、INT8</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">-</td>
@@ -91,7 +91,7 @@ aclnnStatus aclnnStridedSliceAssignV2(
     <tr>
       <td class="tg-0lax">begin（aclIntArray*）</td>
       <td class="tg-0lax">输入</td>
-      <td class="tg-0lax">切片位置的起始索引，Host侧的aclIntArray。</td>
+      <td class="tg-0lax">切片位置的起始索引。</td>
       <td class="tg-0lax">-</td>
       <td class="tg-0lax">INT64</td>
       <td class="tg-0lax">ND</td>
@@ -101,7 +101,7 @@ aclnnStatus aclnnStridedSliceAssignV2(
     <tr>
       <td class="tg-0lax">end（aclIntArray*）</td>
       <td class="tg-0lax">输入</td>
-      <td class="tg-0lax">切片位置的终止索引，Host侧的aclIntArray。</td>
+      <td class="tg-0lax">切片位置的终止索引。</td>
       <td class="tg-0lax">-</td>
       <td class="tg-0lax">INT64</td>
       <td class="tg-0lax">ND</td>
@@ -111,7 +111,7 @@ aclnnStatus aclnnStridedSliceAssignV2(
     <tr>
       <td class="tg-0lax">strides（aclIntArray*）</td>
       <td class="tg-0lax">输入</td>
-      <td class="tg-0lax">切片步长，Host侧的aclIntArray。</td>
+      <td class="tg-0lax">切片步长。</td>
       <td class="tg-0lax">strides必须为正数，varRef最后一维对应的strides取值必须为1。</td>
       <td class="tg-0lax">INT64</td>
       <td class="tg-0lax">ND</td>
@@ -156,10 +156,10 @@ aclnnStatus aclnnStridedSliceAssignV2(
 
   第一段接口完成入参校验，出现以下场景时报错：
   </style>
-  <table class="tg" style="undefined;table-layout: fixed; width: 665px"><colgroup>
-  <col style="width: 252px">
-  <col style="width: 121px">
-  <col style="width: 292px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -184,10 +184,10 @@ aclnnStatus aclnnStridedSliceAssignV2(
 ## aclnnStridedSliceAssignV2
 
 - **参数说明**：
-  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
-  <col style="width: 173px">
-  <col style="width: 112px">
-  <col style="width: 668px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

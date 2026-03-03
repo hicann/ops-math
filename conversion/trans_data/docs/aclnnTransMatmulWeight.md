@@ -16,36 +16,36 @@
 
 ## 功能说明
 
-接口功能：需要和[aclnnCalculateMatmulWeightSize](./aclnnCalculateMatmulWeightSize.md)、[aclnnCalculateMatmulWeightSizeV2](./aclnnCalculateMatmulWeightSizeV2.md)接口配套使用，用于创建一个对于Matmul算子计算性能亲和的weight Tensor。支持FLOAT16, BFLOAT16, Int8数据类型.
+需要和[aclnnCalculateMatmulWeightSize](./aclnnCalculateMatmulWeightSize.md)、[aclnnCalculateMatmulWeightSizeV2](./aclnnCalculateMatmulWeightSizeV2.md)接口配套使用，用于创建一个对于Matmul算子计算性能亲和的weight Tensor。支持FLOAT16, BFLOAT16, Int8数据类型.
 
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnTransMatmulWeightGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnTransMatmulWeight”接口执行计算。
 ```Cpp
 aclnnStatus aclnnTransMatmulWeightGetWorkspaceSize(
-  aclTensor      *mmWeightRef, 
-  uint64_t       *workspaceSize, 
-  aclOpExecutor **executor)
+    aclTensor      *mmWeightRef, 
+    uint64_t       *workspaceSize, 
+    aclOpExecutor **executor)
 ```
 ```Cpp
 aclnnStatus aclnnTransMatmulWeight(
-  void          *workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor, 
-  aclrtStream    stream)
+    void          *workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor *executor, 
+    aclrtStream    stream)
 ```
 
 ## aclnnTransMatmulWeightGetWorkspaceSize
 
 - **参数说明**
-  <table style="undefined;table-layout: fixed; width: 1475px"><colgroup>
-  <col style="width: 167px">
-  <col style="width: 123px">
-  <col style="width: 325px">
-  <col style="width: 230px">
-  <col style="width: 128px">
-  <col style="width: 118px">
-  <col style="width: 239px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 120px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -90,7 +90,8 @@ aclnnStatus aclnnTransMatmulWeight(
       <td>-</td>
       <td>-</td>
     </tr>
-  </tbody></table>  
+  </tbody></table>
+
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：mmWeightRef数据类型不支持BFLOAT16。
 
 - **返回值**
@@ -98,10 +99,11 @@ aclnnStatus aclnnTransMatmulWeight(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)
 
   第一段接口完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed; width: 1475px"><colgroup>
-  <col style="width: 300px">
-  <col style="width: 200px">
-  <col style="width: 975px">
+  
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -135,10 +137,10 @@ aclnnStatus aclnnTransMatmulWeight(
 ## aclnnTransMatmulWeight
 
 - **参数说明**
-  <table style="undefined;table-layout: fixed; width: 1475px"><colgroup>
-  <col style="width: 300px">
-  <col style="width: 200px">
-  <col style="width: 975px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

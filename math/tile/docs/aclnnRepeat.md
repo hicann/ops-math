@@ -16,55 +16,55 @@
 
 ## 功能说明
 
-接口功能：对输入tensor沿着repeats中对每个维度指定的复制次数进行复制。示例：
-假设输入Tensor为[[a,b],[c,d],[e,f]]，即shape为[3,2]，repeats为(2,4)，则生成的Tensor的shape为[6,8]，值如下所示：
+- 接口功能：对输入tensor沿着repeats中对每个维度指定的复制次数进行复制。
+- 示例：假设输入Tensor为[[a,b],[c,d],[e,f]]，即shape为[3,2]，repeats为(2,4)，则生成的Tensor的shape为[6,8]，值如下所示：
 
-```
->>> x = torch.tensor([[a,b],[c,d],[e,f]])
->>> x.repeat(2,4)
-tensor([[a,b,a,b,a,b,a,b],
-        [c,d,c,d,c,d,c,d],
-        [e,f,e,f,e,f,e,f],
-        [a,b,a,b,a,b,a,b],
-        [c,d,c,d,c,d,c,d],
-        [e,f,e,f,e,f,e,f],
-        ])
-```
+  ```
+  >>> x = torch.tensor([[a,b],[c,d],[e,f]])
+  >>> x.repeat(2,4)
+  tensor([[a,b,a,b,a,b,a,b],
+          [c,d,c,d,c,d,c,d],
+          [e,f,e,f,e,f,e,f],
+          [a,b,a,b,a,b,a,b],
+          [c,d,c,d,c,d,c,d],
+          [e,f,e,f,e,f,e,f],
+          ])
+  ```
 
-当repeats为(2,4,2)时，即repeats的元素个数大于Tensor中的维度，则输出Tensor等效为如下操作：先将输入Tensor的shape扩张到和repeats个数相同的维度：[1,3,2]，而后按照对应维度和repeats的值进行扩张，即输出Tensor的shape为[2,12,4]，结果如下：
+- 当repeats为(2,4,2)时，即repeats的元素个数大于Tensor中的维度，则输出Tensor等效为如下操作：先将输入Tensor的shape扩张到和repeats个数相同的维度：[1,3,2]，而后按照对应维度和repeats的值进行扩张，即输出Tensor的shape为[2,12,4]，结果如下：
 
-```
->>> x.repeat(2,4,2)
-tensor([[[a,b,a,b],
-         [c,d,c,d],
-         [e,f,e,f],
-         [a,b,a,b],
-         [c,d,c,d],
-         [e,f,e,f],
-         [a,b,a,b],
-         [c,d,c,d],
-         [e,f,e,f],
-         [a,b,a,b],
-         [c,d,c,d],
-         [e,f,e,f]],
+  ```
+  >>> x.repeat(2,4,2)
+  tensor([[[a,b,a,b],
+          [c,d,c,d],
+          [e,f,e,f],
+          [a,b,a,b],
+          [c,d,c,d],
+          [e,f,e,f],
+          [a,b,a,b],
+          [c,d,c,d],
+          [e,f,e,f],
+          [a,b,a,b],
+          [c,d,c,d],
+          [e,f,e,f]],
 
-        [[a,b,a,b],
-         [c,d,c,d],
-         [e,f,e,f],
-         [a,b,a,b],
-         [c,d,c,d],
-         [e,f,e,f],
-         [a,b,a,b],
-         [c,d,c,d],
-         [e,f,e,f],
-         [a,b,a,b],
-         [c,d,c,d],
-         [e,f,e,f]]])
-```
+          [[a,b,a,b],
+          [c,d,c,d],
+          [e,f,e,f],
+          [a,b,a,b],
+          [c,d,c,d],
+          [e,f,e,f],
+          [a,b,a,b],
+          [c,d,c,d],
+          [e,f,e,f],
+          [a,b,a,b],
+          [c,d,c,d],
+          [e,f,e,f]]])
+  ```
 
-计算时需要满足以下条件：
-repeats中参数个数不能少于输入Tensor的维度。
-repeats中的值必须大于等于0。
+ - 计算时需要满足以下条件：
+    - repeats中参数个数不能少于输入Tensor的维度。
+    - repeats中的值必须大于等于0。
 
 ## 函数原型
 
@@ -91,16 +91,16 @@ aclnnStatus aclnnRepeat(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1528px"><colgroup>
-  <col style="width: 132px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
   <col style="width: 120px">
-  <col style="width: 256px">
-  <col style="width: 253px">
-  <col style="width: 333px">
-  <col style="width: 126px">
-  <col style="width: 160px">
-  <col style="width: 145px"> 
-  </colgroup> 
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
+  <col style="width: 145px">
+  </colgroup>
   <thead> 
     <tr>
       <th>参数名</th>
@@ -175,10 +175,10 @@ aclnnStatus aclnnRepeat(
     
   第一段接口完成入参校验，出现以下场景时报错：
   
-  <table style="undefined;table-layout: fixed; width: 1145px"><colgroup>
-  <col style="width: 295px">
-  <col style="width: 134px">
-  <col style="width: 716px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -227,10 +227,10 @@ aclnnStatus aclnnRepeat(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1143px"><colgroup>
-  <col style="width: 158px">
-  <col style="width: 140px">
-  <col style="width: 845px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

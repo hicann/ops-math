@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-- 接口功能：计算[aclnnReplicationPad3d](../../pad_v3/docs/aclnnReplicationPad3d.md)的反向传播。
+计算[aclnnReplicationPad3d](../../pad_v3/docs/aclnnReplicationPad3d.md)的反向传播。
 
 ## 函数原型
 
@@ -23,35 +23,35 @@
 
 ```cpp
 aclnnStatus aclnnReplicationPad3dBackwardGetWorkspaceSize(
-  const aclTensor*   gradOutput, 
-  const aclTensor*   self, 
-  const aclIntArray* padding, 
-  aclTensor*         gradInput, 
-  uint64_t*          workspaceSize, 
-  aclOpExecutor**    executor)
+    const aclTensor*   gradOutput, 
+    const aclTensor*   self, 
+    const aclIntArray* padding, 
+    aclTensor*         gradInput, 
+    uint64_t*          workspaceSize, 
+    aclOpExecutor**    executor)
 ```
 
 ```cpp
 aclnnStatus aclnnReplicationPad3dBackward(
-  void*             workspace, 
-  uint64_t          workspaceSize, 
-  aclOpExecutor*    executor, 
-  const aclrtStream stream)
+    void*             workspace, 
+    uint64_t          workspaceSize, 
+    aclOpExecutor*    executor, 
+    const aclrtStream stream)
 ```
 
 ## aclnnReplicationPad3dBackwardGetWorkspaceSize
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1629px"><colgroup>
-  <col style="width: 131px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 120px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
   <col style="width: 110px">
-  <col style="width: 235px">
-  <col style="width: 331px">
-  <col style="width: 387px">
-  <col style="width: 125px">
-  <col style="width: 162px">
-  <col style="width: 148px">
+  <col style="width: 150px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -62,7 +62,7 @@ aclnnStatus aclnnReplicationPad3dBackward(
       <th>数据类型</th>
       <th>数据格式</th>
       <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
@@ -100,9 +100,9 @@ aclnnStatus aclnnReplicationPad3dBackward(
       <td>输出</td>
       <td>反向传播的输出</td>
       <td>维度支持四维或五维且与gradOutput和self一致，dtype需要与gradOutput一致。</td>
-      <td>与self一致</td>
+      <td>与self保持一致</td>
       <td>ND</td>
-      <td>shape与self一致</td>
+      <td>与self保持一致</td>
       <td>√</td>
     </tr>
     <tr>
@@ -134,10 +134,10 @@ aclnnStatus aclnnReplicationPad3dBackward(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed; width: 1148px"><colgroup>
-  <col style="width: 255px">
-  <col style="width: 131px">
-  <col style="width: 762px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -175,10 +175,10 @@ aclnnStatus aclnnReplicationPad3dBackward(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1143px"><colgroup>
-  <col style="width: 158px">
-  <col style="width: 140px">
-  <col style="width: 845px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

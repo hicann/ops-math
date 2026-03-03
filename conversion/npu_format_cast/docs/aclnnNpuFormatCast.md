@@ -57,13 +57,13 @@ aclnnStatus aclnnNpuFormatCast(
 
   <table style="undefined;table-layout: fixed; width: 1550px;">
   <colgroup>
-      <col style="width: 170px">
+      <col style="width: 211px">
       <col style="width: 120px">
-      <col style="width: 300px">
-      <col style="width: 330px">
-      <col style="width: 212px">
-      <col style="width: 100px">
-      <col style="width: 190px">
+      <col style="width: 266px">
+      <col style="width: 308px">
+      <col style="width: 240px">
+      <col style="width: 110px">
+      <col style="width: 150px">
       <col style="width: 145px">
   </colgroup>
   <thead>
@@ -146,9 +146,9 @@ aclnnStatus aclnnNpuFormatCast(
   <table>
     <thead>
       <tr>
-        <th style="width: 250px">返回值</th>
-        <th style="width: 130px">错误码</th>
-        <th style="width: 850px">描述</th>
+        <th style="width: 291px">返回值</th>
+        <th style="width: 135px">错误码</th>
+        <th style="width: 724px">描述</th>
       </tr>
     </thead>
     <tbody>
@@ -191,13 +191,13 @@ aclnnStatus aclnnNpuFormatCast(
 
   <table style="undefined;table-layout: fixed; width: 1550px;">
   <colgroup>
-      <col style="width: 170px">
+      <col style="width: 211px">
       <col style="width: 120px">
-      <col style="width: 300px">
-      <col style="width: 330px">
-      <col style="width: 212px">
-      <col style="width: 100px">
-      <col style="width: 190px">
+      <col style="width: 266px">
+      <col style="width: 308px">
+      <col style="width: 240px">
+      <col style="width: 110px">
+      <col style="width: 150px">
       <col style="width: 145px">
   </colgroup>
   <thead>
@@ -264,9 +264,9 @@ aclnnStatus aclnnNpuFormatCast(
     <table>
     <thead>
       <tr>
-        <th style="width: 250px">返回值</th>
-        <th style="width: 130px">错误码</th>
-        <th style="width: 850px">描述</th>
+        <th style="width: 291px">返回值</th>
+        <th style="width: 135px">错误码</th>
+        <th style="width: 724px">描述</th>
       </tr>
     </thead>
     <tbody>
@@ -310,12 +310,40 @@ aclnnStatus aclnnNpuFormatCast(
 
 - **参数说明**
 
-  |参数名| 输入/输出   |    描述|
-  |-------|---------|----------------|
-  |workspace|输入|在Device侧申请的workspace内存地址。|
-  |workspaceSize|输入|在Device侧申请的workspace大小，由第一段接口aclnnNpuFormatCastGetWorkspaceSize获取。|
-  |executor|输入|包含算子计算流程的op执行器。|
-  |stream|输入|指定执行任务的Stream。|
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnNpuFormatCastGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 

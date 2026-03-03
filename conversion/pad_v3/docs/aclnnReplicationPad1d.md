@@ -29,35 +29,35 @@
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnReplicationPad1dGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReplicationPad1d”接口执行计算。
 
-  ```cpp
-  aclnnStatus aclnnReplicationPad1dGetWorkspaceSize(
+```cpp
+aclnnStatus aclnnReplicationPad1dGetWorkspaceSize(
     const aclTensor*   self, 
     const aclIntArray* padding, 
     aclTensor*         out, 
     uint64_t*          workspaceSize, 
     aclOpExecutor**    executor)
-  ```
+```
    
-  ```cpp
-  aclnnStatus aclnnReplicationPad1d(
+```cpp
+aclnnStatus aclnnReplicationPad1d(
     void*          workspace, 
     uint64_t       workspaceSize, 
     aclOpExecutor* executor, 
     aclrtStream    stream)
-  ```
+```
 
 ## aclnnReplicationPad1dGetWorkspaceSize
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1580px"><colgroup>
-  <col style="width: 132px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
   <col style="width: 120px">
-  <col style="width: 255px">
-  <col style="width: 307px">
-  <col style="width: 332px">
-  <col style="width: 126px">
-  <col style="width: 160px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -69,7 +69,7 @@
       <th>数据类型</th>
       <th>数据格式</th>
       <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
@@ -85,7 +85,7 @@
     <tr>
       <td>padding（aclIntArray*）</td>
       <td>输入</td>
-      <td>输入中需要填充的维度。</td>
+      <td>输入中需要填充的大小。</td>
       <td>长度为2，两个数值依次代表左右两边需要填充的值。</td>
       <td>-</td>
       <td>-</td>
@@ -130,10 +130,10 @@
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed; width: 1207px"><colgroup>
-  <col style="width: 268px">
-  <col style="width: 138px">
-  <col style="width: 801px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -174,10 +174,10 @@
 
 - **参数说明** 
   
-  <table style="undefined;table-layout: fixed; width: 1143px"><colgroup>
-  <col style="width: 158px">
-  <col style="width: 140px">
-  <col style="width: 845px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

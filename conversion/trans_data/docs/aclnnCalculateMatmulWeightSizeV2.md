@@ -49,60 +49,60 @@ aclnnStatus aclnnCalculateMatmulWeightSizeV2(
 
 - **参数说明：**
 
-</style>
-<table class="tg" style="undefined;table-layout: fixed; width: 1210px"><colgroup>
-<col style="width: 211px">
-<col style="width: 120px">
-<col style="width: 198px">
-<col style="width: 226px">
-<col style="width: 106px">
-<col style="width: 95px">
-<col style="width: 109px">
-<col style="width: 145px">
-</colgroup>
-<thead>
-  <tr>
-    <th class="tg-0pky">参数名</th>
-    <th class="tg-0pky">输入/输出</th>
-    <th class="tg-0pky">描述</th>
-    <th class="tg-0pky">使用说明</th>
-    <th class="tg-0pky">数据类型</th>
-    <th class="tg-0pky">数据格式</th>
-    <th class="tg-0pky">维度(shape)</th>
-    <th class="tg-0pky">非连续Tensor</th>
-  </tr></thead>
-<tbody>
-  <tr>
-    <td class="tg-0pky">tensorShape（aclIntArray *）</td>
-    <td class="tg-0pky">输入</td>
-    <td class="tg-0pky">用于表达该次Matmul载入权重矩阵的Shape，公式中的Shapesize。</td>
-    <td class="tg-0pky">输入shape支持2-6维，即（batch，n，k），其中batch表示权重矩阵的批次大小，支持0-4维，n表示单个batch权重矩阵第1维的大小，k表示单个batch权重矩阵第2维的大小，不支持空Array。</td>
-    <td class="tg-0pky">FLOAT16、BFLOAT16、INT8</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">2-6</td>
-    <td class="tg-0pky">-</td>
-  </tr>
-  <tr>
-    <td class="tg-0lax">weightDtype（aclDataType）</td>
-    <td class="tg-0lax">输入</td>
-    <td class="tg-0lax">weight的Dtype</td>
-    <td class="tg-0lax">-</td>
-    <td class="tg-0lax">FLOAT16、BFLOAT16、INT8</td>
-    <td class="tg-0lax">-</td>
-    <td class="tg-0lax">-</td>
-    <td class="tg-0lax">-</td>
-  </tr>
-  <tr>
-    <td class="tg-0pky">weightTensorSize（uint64_t *）</td>
-    <td class="tg-0pky">输出</td>
-    <td class="tg-0pky">转换为NZ格式所占用的空间大小（单位为元素个数），公式中的result。</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">-</td>
-    <td class="tg-0pky">-</td>
-  </tr>
-</tbody></table>
+  </style>
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 120px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">参数名</th>
+      <th class="tg-0pky">输入/输出</th>
+      <th class="tg-0pky">描述</th>
+      <th class="tg-0pky">使用说明</th>
+      <th class="tg-0pky">数据类型</th>
+      <th class="tg-0pky">数据格式</th>
+      <th class="tg-0pky">维度(shape)</th>
+      <th class="tg-0pky">非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">tensorShape（aclIntArray *）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">用于表达该次Matmul载入权重矩阵的Shape，公式中的Shapesize。</td>
+      <td class="tg-0pky">输入shape支持2-6维，即（batch，n，k），其中batch表示权重矩阵的批次大小，支持0-4维，n表示单个batch权重矩阵第1维的大小，k表示单个batch权重矩阵第2维的大小，不支持空Array。</td>
+      <td class="tg-0pky">FLOAT16、BFLOAT16、INT8</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">2-6</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0lax">weightDtype（aclDataType）</td>
+      <td class="tg-0lax">输入</td>
+      <td class="tg-0lax">weight的Dtype</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">FLOAT16、BFLOAT16、INT8</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">weightTensorSize（uint64_t *）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">转换为NZ格式所占用的空间大小（单位为元素个数），公式中的result。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+  </tbody></table>
 
 - **返回值：**
 
@@ -110,10 +110,10 @@ aclnnStatus aclnnCalculateMatmulWeightSizeV2(
 
   第一段接口完成入参校验，出现以下场景时报错：
   </style>
-  <table class="tg" style="undefined;table-layout: fixed; width: 722px"><colgroup>
-  <col style="width: 273px">
-  <col style="width: 132px">
-  <col style="width: 317px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>

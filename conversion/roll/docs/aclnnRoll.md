@@ -15,22 +15,22 @@
 
 ## 功能说明
 
-接口功能：沿给定尺寸和维度移动Tensor中的数据。
+- 接口功能：沿给定尺寸和维度移动Tensor中的数据。
 
-举例：
+- 举例：
 
-```
-x = tensor([[1, 2],
-            [3, 4],
-            [5, 6],
-            [7, 8]])
-经过roll(x, 1, 0)计算后，（在dim=0的维度上向下整体移动1行）
+  ```
+  x = tensor([[1, 2],
+              [3, 4],
+              [5, 6],
+              [7, 8]])
+  经过roll(x, 1, 0)计算后，（在dim=0的维度上向下整体移动1行）
 
-x = tensor([[7, 8],
-            [1, 2],
-            [3, 4],
-            [5, 6]])
-```
+  x = tensor([[7, 8],
+              [1, 2],
+              [3, 4],
+              [5, 6]])
+  ```
 
 ## 函数原型
 
@@ -38,35 +38,35 @@ x = tensor([[7, 8],
 
 ```cpp
 aclnnStatus aclnnRollGetWorkspaceSize(
-  const aclTensor*   x, 
-  const aclIntArray* shifts, 
-  const aclIntArray* dims, 
-  aclTensor*         out, 
-  uint64_t*          workspaceSize, 
-  aclOpExecutor**    executor)
+    const aclTensor*   x, 
+    const aclIntArray* shifts, 
+    const aclIntArray* dims, 
+    aclTensor*         out, 
+    uint64_t*          workspaceSize, 
+    aclOpExecutor**    executor)
 ```
 
 ```cpp
 aclnnStatus aclnnRoll(
-  void*          workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor* executor, 
-  aclrtStream    stream)
+    void*          workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor* executor, 
+    aclrtStream    stream)
 ```
 
 ## aclnnRollGetWorkspaceSize
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1629px"><colgroup>
-  <col style="width: 133px">
-  <col style="width: 122px">
-  <col style="width: 226px">
-  <col style="width: 387px">
-  <col style="width: 323px">
-  <col style="width: 127px">
-  <col style="width: 163px">
-  <col style="width: 148px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 120px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -77,7 +77,7 @@ aclnnStatus aclnnRoll(
       <th>数据类型</th>
       <th>数据格式</th>
       <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
@@ -146,10 +146,11 @@ aclnnStatus aclnnRoll(
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  <table style="undefined;table-layout: fixed; width: 1283px"><colgroup>
-  <col style="width: 285px">
-  <col style="width: 146px">
-  <col style="width: 852px">
+  第一段接口完成入参校验，出现以下场景时报错：
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -193,10 +194,10 @@ aclnnStatus aclnnRoll(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1126px"><colgroup>
-  <col style="width: 141px">
-  <col style="width: 140px">
-  <col style="width: 845px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

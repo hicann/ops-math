@@ -24,32 +24,32 @@
 
 ```cpp
 aclnnStatus aclnnInplaceFillTensorGetWorkspaceSize(
-  aclTensor       *selfRef, 
-  const aclTensor *value, 
-  uint64_t        *workspaceSize, 
-  aclOpExecutor  **executor)
+    aclTensor       *selfRef, 
+    const aclTensor *value, 
+    uint64_t        *workspaceSize, 
+    aclOpExecutor  **executor)
 ```
 
 ```cpp
 aclnnStatus aclnnInplaceFillTensor(
-  void          *workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor, 
-  aclrtStream    stream)
+    void          *workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor *executor, 
+    aclrtStream    stream)
 ```
 
 ## aclnnInplaceFillTensorGetWorkspaceSize
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1376px"><colgroup>
-  <col style="width: 131px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
   <col style="width: 120px">
-  <col style="width: 254px">
-  <col style="width: 162px">
-  <col style="width: 279px">
-  <col style="width: 125px">
-  <col style="width: 160px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -61,7 +61,7 @@ aclnnStatus aclnnInplaceFillTensor(
       <th>数据类型</th>
       <th>数据格式</th>
       <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
@@ -114,10 +114,10 @@ aclnnStatus aclnnInplaceFillTensor(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
   
   第一段接口完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed; width: 1221px"><colgroup>
-  <col style="width: 268px">
-  <col style="width: 140px">
-  <col style="width: 813px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -155,10 +155,10 @@ aclnnStatus aclnnInplaceFillTensor(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1121px"><colgroup>
-  <col style="width: 153px">
-  <col style="width: 132px">
-  <col style="width: 836px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

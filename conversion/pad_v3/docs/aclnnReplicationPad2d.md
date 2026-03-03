@@ -19,19 +19,19 @@
 - 接口功能：使用输入边界填充输入tensor的最后两维。
 - 示例：
 
-```
-输入tensor([[[[0,1,2],
-              [3,4,5],
-              [6,7,8]]]])
-padding([2,2,2,2])
-输出为([[[[0,0,0,1,2,2,2],
-[0,0,0,1,2,2,2],
-[0,0,0,1,2,2,2],
-[3,3,3,4,5,5,5],
-[6,6,6,7,8,8,8],
-[6,6,6,7,8,8,8],
-[6,6,6,7,8,8,8]]]])
-```
+  ```
+  输入tensor([[[[0,1,2],
+                [3,4,5],
+                [6,7,8]]]])
+  padding([2,2,2,2])
+  输出为([[[[0,0,0,1,2,2,2],
+  [0,0,0,1,2,2,2],
+  [0,0,0,1,2,2,2],
+  [3,3,3,4,5,5,5],
+  [6,6,6,7,8,8,8],
+  [6,6,6,7,8,8,8],
+  [6,6,6,7,8,8,8]]]])
+  ```
 
 ## 函数原型
 
@@ -39,33 +39,33 @@ padding([2,2,2,2])
 
 ```cpp
 aclnnStatus aclnnReplicationPad2dGetWorkspaceSize(
-  const aclTensor*   self, 
-  const aclIntArray* padding, 
-  aclTensor*         out, 
-  uint64_t*          workspaceSize, 
-  aclOpExecutor**    executor)
+    const aclTensor*   self, 
+    const aclIntArray* padding, 
+    aclTensor*         out, 
+    uint64_t*          workspaceSize, 
+    aclOpExecutor**    executor)
 ```
 
 ```cpp
 aclnnStatus aclnnReplicationPad2d(
-  void*          workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor* executor, 
-  aclrtStream    stream)
+    void*          workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor* executor, 
+    aclrtStream    stream)
 ```
 
 ## aclnnReplicationPad2dGetWorkspaceSize
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1580px"><colgroup>
-  <col style="width: 132px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
   <col style="width: 120px">
-  <col style="width: 255px">
-  <col style="width: 307px">
-  <col style="width: 332px">
-  <col style="width: 126px">
-  <col style="width: 160px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -77,7 +77,7 @@ aclnnStatus aclnnReplicationPad2d(
       <th>数据类型</th>
       <th>数据格式</th>
       <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
@@ -93,7 +93,7 @@ aclnnStatus aclnnReplicationPad2d(
     <tr>
       <td>padding（aclIntArray*）</td>
       <td>输入</td>
-      <td>-</td>
+      <td>输入中需要填充的大小。</td>
       <td><ul><li>数据类型长度为4。数值依次代表左右上下需要填充的值。</li><li>padding前两维度的数值都需小于self最后一维度的数值，后两维度的数值需小于self倒数第二维度的数值。</li></ul></td>
       <td>INT64</td>
       <td>-</td>
@@ -138,10 +138,10 @@ aclnnStatus aclnnReplicationPad2d(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
    
   第一段接口完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed; width: 1207px"><colgroup>
-  <col style="width: 268px">
-  <col style="width: 138px">
-  <col style="width: 801px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -182,10 +182,10 @@ aclnnStatus aclnnReplicationPad2d(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1143px"><colgroup>
-  <col style="width: 158px">
-  <col style="width: 140px">
-  <col style="width: 845px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

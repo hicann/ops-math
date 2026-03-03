@@ -60,14 +60,14 @@ aclnnStatus aclnnInplaceCopy(
 - **参数说明**：
 
   </style>
-  <table class="tg" style="undefined;table-layout: fixed; width: 1231px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
-  <col style="width: 147px">
-  <col style="width: 194px">
-  <col style="width: 210px">
-  <col style="width: 95px">
-  <col style="width: 109px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -86,7 +86,7 @@ aclnnStatus aclnnInplaceCopy(
       <td class="tg-0pky">selfRef（aclTensor *）</td>
       <td class="tg-0pky">输入/输出</td>
       <td class="tg-0pky">公式中的selfRef。</td>
-      <td class="tg-0pky">注意目前只有selfRef为连续时，才支持复数间的拷贝，shape需要与src满足[broadcast关系]。</td>
+      <td class="tg-0pky">注意目前只有selfRef为连续时，才支持复数间的拷贝，shape需要与src满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td class="tg-0pky">INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、COMPLEX64、COMPLEX128、UINT16、UINT32、UINT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -96,7 +96,7 @@ aclnnStatus aclnnInplaceCopy(
       <td class="tg-0lax">src（aclTensor *）</td>
       <td class="tg-0lax">输入</td>
       <td class="tg-0lax">公式中的src。</td>
-      <td class="tg-0lax">注意目前只有selfRef为连续时，才支持复数间的拷贝，shape需要与selfRef满足[broadcast关系]。</td>
+      <td class="tg-0lax">注意目前只有selfRef为连续时，才支持复数间的拷贝，shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td class="tg-0lax">INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、COMPLEX64、COMPLEX128、UINT16、UINT32、UINT64、BFLOAT16</td>
       <td class="tg-0lax">ND</td>
       <td class="tg-0lax">1-8</td>
@@ -130,10 +130,10 @@ aclnnStatus aclnnInplaceCopy(
 
   第一段接口完成入参校验，出现以下场景时报错：
     </style>
-    <table class="tg" style="undefined;table-layout: fixed; width: 808px"><colgroup>
-    <col style="width: 290px">
-    <col style="width: 120px">
-    <col style="width: 398px">
+    <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+    <col style="width: 291px">
+    <col style="width: 135px">
+    <col style="width: 724px">
     </colgroup>
     <thead>
       <tr>
@@ -167,10 +167,10 @@ aclnnStatus aclnnInplaceCopy(
 ## aclnnInplaceCopy
 
 - **参数说明**：
-  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
-  <col style="width: 173px">
-  <col style="width: 112px">
-  <col style="width: 668px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

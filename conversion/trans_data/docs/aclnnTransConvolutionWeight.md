@@ -44,13 +44,13 @@ aclnnStatus aclnnTransConvolutionWeight(
 
   <table>
   <tr>
-  <th style="width:170px">参数名</th>
+  <th style="width:211px">参数名</th>
   <th style="width:120px">输入/输出</th>
-  <th style="width:300px">描述</th>
-  <th style="width:400px">使用说明</th>
-  <th style="width:200px">数据类型</th>
-  <th style="width:120px">数据格式</th>
-  <th style="width:120px">维度（shape）</th>
+  <th style="width:266px">描述</th>
+  <th style="width:308px">使用说明</th>
+  <th style="width:240px">数据类型</th>
+  <th style="width:110px">数据格式</th>
+  <th style="width:150px">维度（shape）</th>
   <th style="width:145px">非连续 Tensor</th>
   </tr>
   <tr>
@@ -120,10 +120,10 @@ aclnnStatus aclnnTransConvolutionWeight(
   `aclnnStatus`：返回状态码，具体参见 <a href="../../../docs/context/aclnn返回码.md">aclnn 返回码</a>。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed; width: 785px"><colgroup>
-  <col style="width: 248px">
-  <col style="width: 86px">
-  <col style="width: 451px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -149,10 +149,10 @@ aclnnStatus aclnnTransConvolutionWeight(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 689px"><colgroup>
-  <col style="width: 151px">
-  <col style="width: 86px">
-  <col style="width: 452px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>
@@ -174,7 +174,7 @@ aclnnStatus aclnnTransConvolutionWeight(
     <tr>
       <td>executor</td>
       <td>输入</td>
-      <td>op执行器，包含了算子计算流程，由第一段接口aclnnTransConvolutionWeightGetWorkspaceSize获取。</td>
+      <td>op执行器，包含了算子计算流程。</td>
     </tr>
     <tr>
       <td>stream</td>

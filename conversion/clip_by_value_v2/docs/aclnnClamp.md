@@ -29,34 +29,34 @@ $$
 
 ```cpp
 aclnnStatus aclnnClampGetWorkspaceSize(
-  const aclTensor *self, 
-  const aclScalar* clipValueMin, 
-  const aclScalar* clipValueMax, 
-  aclTensor       *out, 
-  uint64_t        *workspaceSize, 
-  aclOpExecutor  **executor)
+    const aclTensor *self, 
+    const aclScalar* clipValueMin, 
+    const aclScalar* clipValueMax, 
+    aclTensor       *out, 
+    uint64_t        *workspaceSize, 
+    aclOpExecutor  **executor)
 ```
 
 ```cpp
 aclnnStatus aclnnClamp(
-  void*             workspace, 
-  uint64_t          workspaceSize, 
-  aclOpExecutor*    executor, 
-  const aclrtStream stream)
+    void*             workspace, 
+    uint64_t          workspaceSize, 
+    aclOpExecutor*    executor, 
+    const aclrtStream stream)
 ```
 
 ## aclnnClampGetWorkspaceSize
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1305px"><colgroup>
-  <col style="width: 142px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
   <col style="width: 120px">
-  <col style="width: 227px">
-  <col style="width: 147px">
-  <col style="width: 261px">
-  <col style="width: 120px">
-  <col style="width: 146px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -68,7 +68,7 @@ aclnnStatus aclnnClamp(
       <th>数据类型</th>
       <th>数据格式</th>
       <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
@@ -151,10 +151,10 @@ aclnnStatus aclnnClamp(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1243px"><colgroup>
-  <col style="width: 278px">
-  <col style="width: 132px">
-  <col style="width: 833px">
+ <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -179,10 +179,10 @@ aclnnStatus aclnnClamp(
 ## aclnnClamp
 
 - **参数说明**
-  <table style="undefined;table-layout: fixed; width: 1241px"><colgroup>
-  <col style="width: 153px">
-  <col style="width: 124px">
-  <col style="width: 881px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

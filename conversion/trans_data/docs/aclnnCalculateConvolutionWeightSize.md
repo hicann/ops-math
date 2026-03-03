@@ -15,9 +15,9 @@
 
 ## 功能说明
 
-在Convolution算子NCHW格式输入下，计算需要申请的weight的大小，仅支持Float16数据类型，该接口仅仅用于判断对weight Tensor进行预处理需要使用多少size才可使Convolution算子执行性能最优。
+- 接口功能：在Convolution算子NCHW格式输入下，计算需要申请的weight的大小，仅支持Float16数据类型，该接口仅仅用于判断对weight Tensor进行预处理需要使用多少size才可使Convolution算子执行性能最优。
 
-例如：输入[2, 4, 8, 8]，该函数出于性能角度考虑，会将shape变化为[64, 1, 16, 16]，因此函数会将输入修改为16384。
+- 例如：输入[2, 4, 8, 8]，该函数出于性能角度考虑，会将shape变化为[64, 1, 16, 16]，因此函数会将输入修改为16384。
 
 ## 函数原型
 
@@ -36,14 +36,14 @@ aclnnStatus aclnnCalculateConvolutionWeightSize(
 
   <table>
   <tr>
-  <th style="width:170px">参数名</th>
+  <th style="width:211px">参数名</th>
   <th style="width:120px">输入/输出</th>
-  <th style="width:400px">描述</th>
-  <th style="width:400px">使用说明</th>
-  <th style="width:150px">数据类型</th>
-  <th style="width:120px">数据格式</th>
-  <th style="width:120px">维度（shape）</th>
-  <th style="width:150px">非连续张量Tensor</th>
+  <th style="width:266px">描述</th>
+  <th style="width:308px">使用说明</th>
+  <th style="width:240px">数据类型</th>
+  <th style="width:110px">数据格式</th>
+  <th style="width:150px">维度（shape）</th>
+  <th style="width:145px">非连续Tensor</th>
   </tr>
   <tr>
   <td>tensorShape（aclIntArray*）</td>
@@ -101,24 +101,32 @@ aclnnStatus aclnnCalculateConvolutionWeightSize(
 
   `aclnnStatus`：返回状态码，具体参见 <a href="../../../docs/context/aclnn返回码.md">aclnn 返回码</a>。
 
-  一段接口完成入参校验，出现以下场景时报错：
+  第一段接口完成入参校验，出现以下场景时报错：
 
-  <table border="1" style="width: 100%; table-layout: fixed;">
-  <tr>
-    <td align="center" style="width: 35%;">返回值</td>
-    <td align="center" style="width: 15%;">错误码</td>
-    <td align="center" style="width: 50%;">描述</td>
-  </tr>
-  <tr>
-    <td align="left" style="width: 35%;">ACLNN_ERR_PARAM_NULLPTR</td>
-    <td align="left" style="width: 15%;">161001</td>
-    <td align="left" style="width: 50%;">输入是空指针。</td>
-  </tr>
-  <tr>
-    <td align="left" style="width: 35%;">ACLNN_ERR_PARAM_INVALID</td>
-    <td align="left" style="width: 15%;">161002</td>
-    <td align="left" style="width: 50%;">输入shape校验失败或其他输入不符合预期。</td>
-  </tr>
+  </style>
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">返回值</th>
+      <th class="tg-0pky">错误码</th>
+      <th class="tg-0pky">描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">ACLNN_ERR_PARAM_NULLPTR</td>
+      <td class="tg-0pky">161001</td>
+      <td class="tg-0pky">输入是空指针。</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">ACLNN_ERR_PARAM_INVALID</td>
+      <td class="tg-0pky">161002</td>
+      <td class="tg-0pky">输入shape校验失败或其他输入不符合预期。</td>
+    </tr>
+  </tbody>
   </table>
 
 ## 约束说明

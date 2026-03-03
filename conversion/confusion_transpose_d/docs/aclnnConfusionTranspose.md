@@ -2,24 +2,31 @@
 
 ## 产品支持情况
 
-|产品             |  是否支持  |
-|:-------------------------|:----------:|
-|<term>Ascend 950PR/Ascend 950DT</term>|√|
+| 产品                                              | 是否支持 |
+|:------------------------------------------------| :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>          |    √     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>    |    x     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>    |    x     |
+| <term>Atlas 200I/500 A2 推理产品</term>             |    ×     |
+| <term>Atlas 推理系列产品</term>                       |    x     |
+| <term>Atlas 训练系列产品</term>                       |    x     |
 
 ## 功能说明
 
-- 算子功能：
+- 接口功能：
 
   融合reshape和transpose运算。
 
 - 计算公式：
   
   1. transposeFirst为False时：
+
      $$
      y=transpose(reshape(x,shape),perm)
      $$
      
   2. transposeFirst为True时：
+  
      $$
      y=reshape(transpose(x,perm),shape)
      $$
@@ -52,15 +59,15 @@ aclnnStatus aclnnConfusionTranspose(
 - **参数说明**：
 
   </style>
-  <table class="tg" style="undefined;table-layout: fixed; width: 1240px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
-  <col style="width: 88px">
-  <col style="width: 198px">
-  <col style="width: 235px">
-  <col style="width: 195px">
-  <col style="width: 95px">
-  <col style="width: 109px">
-  <col style="width: 109px">
+  <col style="width: 120px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -153,10 +160,10 @@ aclnnStatus aclnnConfusionTranspose(
   第一段接口完成入参校验，出现以下场景时报错：
 
   </style>
-  <table class="tg" style="undefined;table-layout: fixed; width: 828px"><colgroup>
-  <col style="width: 297px">
-  <col style="width: 123px">
-  <col style="width: 408px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -187,10 +194,10 @@ aclnnStatus aclnnConfusionTranspose(
 
 - **参数说明**：
 
-  <table style="undefined;table-layout: fixed; width: 1111px"><colgroup>
-  <col style="width: 153px">
-  <col style="width: 124px">
-  <col style="width: 882px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>
@@ -220,7 +227,7 @@ aclnnStatus aclnnConfusionTranspose(
       <td>指定执行任务的Stream。</td>
     </tr>
   </tbody>
-  </table>                                                            |
+  </table>
 
 - **返回值**：
 
@@ -230,16 +237,16 @@ aclnnStatus aclnnConfusionTranspose(
 
 * 确定性说明：aclnnConfusionTranspose默认确定性实现。
 
-例如：
-    
-    设 shape_before 为 reshape 操作前的数据形状，shape_after 为 reshape 操作后的数据形状，
+  例如：
+      
+      设 shape_before 为 reshape 操作前的数据形状，shape_after 为 reshape 操作后的数据形状，
 
-        shape_before = [(ab),(cd),f,(gh)]
-        shape_after = [a,(bc),d,e,(fg),h]
-    
-    而如下的 shape_after 是不被允许的：
+          shape_before = [(ab),(cd),f,(gh)]
+          shape_after = [a,(bc),d,e,(fg),h]
+      
+      而如下的 shape_after 是不被允许的：
 
-        shape_after_illegal = [a,b,d,e,(fg),(ch)]
+          shape_after_illegal = [a,b,d,e,(fg),(ch)]
 
 ## 调用示例
 

@@ -31,35 +31,35 @@
 
 ```cpp
 aclnnStatus aclnnReflectionPad2dBackwardGetWorkspaceSize(
-  const aclTensor*   gradOutput, 
-  const aclTensor*   self, 
-  const aclIntArray* padding, 
-  aclTensor*         gradInput, 
-  uint64_t*          workspaceSize, 
-  aclOpExecutor**    executor)
+    const aclTensor*   gradOutput, 
+    const aclTensor*   self, 
+    const aclIntArray* padding, 
+    aclTensor*         gradInput, 
+    uint64_t*          workspaceSize, 
+    aclOpExecutor**    executor)
 ```
 
 ```cpp
 aclnnStatus aclnnReflectionPad2dBackward(
-  void*             workspace, 
-  uint64_t          workspaceSize, 
-  aclOpExecutor*    executor, 
-  const aclrtStream stream)
+    void*             workspace, 
+    uint64_t          workspaceSize, 
+    aclOpExecutor*    executor, 
+    const aclrtStream stream)
 ```
 
 ## aclnnReflectionPad2dBackwardGetWorkspaceSize
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1622px"><colgroup>
-  <col style="width: 131px">
-  <col style="width: 125px">
-  <col style="width: 235px">
-  <col style="width: 309px">
-  <col style="width: 387px">
-  <col style="width: 125px">
-  <col style="width: 162px">
-  <col style="width: 148px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 120px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -70,7 +70,7 @@ aclnnStatus aclnnReflectionPad2dBackward(
       <th>数据类型</th>
       <th>数据格式</th>
       <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
@@ -78,7 +78,7 @@ aclnnStatus aclnnReflectionPad2dBackward(
       <td>输入</td>
       <td>输入的梯度</td>
       <td>shape需要与reflection_pad2d正向传播的output一致</td>
-      <td>与self一致</td>
+      <td>与self保持一致</td>
       <td>ND</td>
       <td>3-4</td>
       <td>√</td>
@@ -108,9 +108,9 @@ aclnnStatus aclnnReflectionPad2dBackward(
       <td>输出</td>
       <td>计算得到的self的梯度</td>
       <td>-</td>
-      <td>与self一致</td>
+      <td>与self保持一致</td>
       <td>ND</td>
-      <td>shape与self一致</td>
+      <td>与self保持一致</td>
       <td>√</td>
     </tr>
     <tr>
@@ -140,10 +140,10 @@ aclnnStatus aclnnReflectionPad2dBackward(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
   
   第一段接口完成入参校验，出现如下场景时报错：
-    <table style="undefined;table-layout: fixed; width: 1148px"><colgroup>
-  <col style="width: 255px">
-  <col style="width: 131px">
-  <col style="width: 762px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -181,10 +181,10 @@ aclnnStatus aclnnReflectionPad2dBackward(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1143px"><colgroup>
-  <col style="width: 158px">
-  <col style="width: 140px">
-  <col style="width: 845px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

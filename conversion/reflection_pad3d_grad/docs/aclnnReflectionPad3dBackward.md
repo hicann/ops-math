@@ -16,7 +16,7 @@
 
 ## 功能说明
 
-- 接口功能：计算[aclnnReflectionPad3d](aclnnReflectionPad3d.md)api的反向传播。
+计算[aclnnReflectionPad3d](aclnnReflectionPad3d.md)api的反向传播。
 
 ## 函数原型
 
@@ -24,34 +24,34 @@
 
 ```cpp
 aclnnStatus aclnnReflectionPad3dBackwardGetWorkspaceSize(
-  const aclTensor*   gradOutput, 
-  const aclTensor*   self, 
-  const aclIntArray* padding, 
-  aclTensor*         gradInput, 
-  uint64_t*          workspaceSize, 
-  aclOpExecutor**    executor)
+    const aclTensor*   gradOutput, 
+    const aclTensor*   self, 
+    const aclIntArray* padding, 
+    aclTensor*         gradInput, 
+    uint64_t*          workspaceSize, 
+    aclOpExecutor**    executor)
 ```
 
 ```cpp
 aclnnStatus aclnnReflectionPad3dBackward(
-  void*             workspace, 
-  uint64_t          workspaceSize, 
-  aclOpExecutor*    executor, 
-  const aclrtStream stream)
+    void*             workspace, 
+    uint64_t          workspaceSize, 
+    aclOpExecutor*    executor, 
+    const aclrtStream stream)
 ```
 
 ## aclnnReflectionPad3dBackwardGetWorkspaceSize
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1695px"><colgroup>
-  <col style="width: 141px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
   <col style="width: 120px">
-  <col style="width: 297px">
-  <col style="width: 408px">
-  <col style="width: 282px">
-  <col style="width: 135px">
-  <col style="width: 160px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -63,7 +63,7 @@ aclnnStatus aclnnReflectionPad3dBackward(
       <th>数据类型</th>
       <th>数据格式</th>
       <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
@@ -74,7 +74,7 @@ aclnnStatus aclnnReflectionPad3dBackward(
       <td>与self保持一致</td>
       <td>ND</td>
       <td>4/5</td>
-      <td>-</td>
+      <td>√</td>
     </tr>
     <tr>
       <td>self（aclTensor*）</td>
@@ -84,7 +84,7 @@ aclnnStatus aclnnReflectionPad3dBackward(
       <td>BFLOAT16、FLOAT16、FLOAT32、DOUBLE、 COMPLEX64、COMPLEX128。</td>
       <td>ND</td>
       <td>4/5</td>
-      <td>-</td>
+      <td>√</td>
     </tr>
     <tr>
       <td>padding（aclIntArray*）</td>
@@ -102,9 +102,9 @@ aclnnStatus aclnnReflectionPad3dBackward(
       <td>反向传播的输出。</td>
       <td>-</td>
       <td>FLOAT16、FLOAT32、DOUBLE、 COMPLEX64、COMPLEX128。</td>
-      <td>  ND</td>
+      <td>ND</td>
       <td>4/5</td>
-      <td>-</td>
+      <td>√</td>
     </tr>
     <tr>
       <td>workspaceSize（uint64_t*）</td>
@@ -133,10 +133,10 @@ aclnnStatus aclnnReflectionPad3dBackward(
 
 
   第一段接口完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed; width: 1244px"><colgroup>
-  <col style="width: 276px">
-  <col style="width: 142px">
-  <col style="width: 826px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -172,42 +172,6 @@ aclnnStatus aclnnReflectionPad3dBackward(
 
 ## aclnnReflectionPad3dBackward
 
-- **参数说明**
-
-  <table style="undefined;table-layout: fixed; width: 1126px"><colgroup>
-  <col style="width: 141px">
-  <col style="width: 140px">
-  <col style="width: 845px">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>参数名</th>
-      <th>输入/输出</th>
-      <th>描述</th>
-    </tr></thead>
-  <tbody>
-    <tr>
-      <td>workspace</td>
-      <td>输入</td>
-      <td>在Device侧申请的workspace内存地址。</td>
-    </tr>
-    <tr>
-      <td>workspaceSize</td>
-      <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnReflectionPad3dBackwardGetWorkspaceSize获取。</td>
-    </tr>
-    <tr>
-      <td>executor</td>
-      <td>输入</td>
-      <td>op执行器，包含了算子计算流程。</td>
-    </tr>
-    <tr>
-      <td>stream</td>
-      <td>输入</td>
-      <td>指定执行任务的Stream。</td>
-    </tr>
-  </tbody>
-  </table>
 - **参数说明**
 
   <table style="undefined;table-layout: fixed; width: 1126px"><colgroup>

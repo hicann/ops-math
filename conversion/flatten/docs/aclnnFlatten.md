@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-接口功能：将输入Tensor，基于给定的axis，扁平化为一个2D的Tensor。
+- 接口功能：将输入Tensor，基于给定的axis，扁平化为一个2D的Tensor。
 
 - 若self的shape为(d\_0, d\_1, ..., d\_n)，那么输出out的shape为(d\_0\*d\_1 ... \*d\_\(axis-1\), d\_axis\*d\_\(axis+1\)... \*d\_n)。
 - 若axis取值为0，则输出out的shape为(1, d\_0\*d\_1 ... \*d\_n)。
@@ -46,15 +46,15 @@ aclnnStatus aclnnFlatten(
 - **参数说明：**
 
   </style>
-  <table class="tg" style="undefined;table-layout: fixed; width: 1161px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
-  <col style="width: 88px">
-  <col style="width: 198px">
-  <col style="width: 156px">
-  <col style="width: 195px">
-  <col style="width: 95px">
-  <col style="width: 109px">
-  <col style="width: 109px">
+  <col style="width: 120px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -126,10 +126,10 @@ aclnnStatus aclnnFlatten(
 
   第一段接口完成入参校验，出现以下场景时报错：
   </style>
-  <table class="tg" style="undefined;table-layout: fixed; width: 923px"><colgroup>
-  <col style="width: 254px">
-  <col style="width: 122px">
-  <col style="width: 547px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -164,10 +164,10 @@ aclnnStatus aclnnFlatten(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1241px"><colgroup>
-  <col style="width: 153px">
-  <col style="width: 124px">
-  <col style="width: 881px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

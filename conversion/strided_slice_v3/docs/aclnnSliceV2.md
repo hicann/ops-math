@@ -65,15 +65,15 @@ aclnnStatus aclnnSliceV2(
 
 - **参数说明**
     
-  <table style="undefined;table-layout: fixed; width: 1688px"><colgroup>
-  <col style="width: 138px">
-  <col style="width: 126px">
-  <col style="width: 234px">
-  <col style="width: 401px">
-  <col style="width: 335px">
-  <col style="width: 132px">
-  <col style="width: 169px">
-  <col style="width: 153px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 120px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -84,13 +84,13 @@ aclnnStatus aclnnSliceV2(
       <th>数据类型</th>
       <th>数据格式</th>
       <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
       <td>self（aclTensor*）</td>
       <td>输入</td>
-      <td>公式中的self</td>
+      <td>公式中的self。</td>
       <td>-</td>
       <td>FLOAT、FLOAT16、INT32、INT64、INT8、UINT8、BOOL、BFLOAT16</td>
       <td>ND</td>
@@ -100,7 +100,7 @@ aclnnStatus aclnnSliceV2(
     <tr>
       <td>starts（aclIntArray*）</td>
       <td>输入</td>
-      <td>公式中的starts</td>
+      <td>公式中的starts。</td>
       <td>切片位置的起始索引，starts、ends、axes、steps的元素个数相同。</td>
       <td>-</td>
       <td>-</td>
@@ -110,7 +110,7 @@ aclnnStatus aclnnSliceV2(
     <tr>
       <td>ends（aclIntArray*）</td>
       <td>输入</td>
-      <td>公式中的ends</td>
+      <td>公式中的ends。</td>
       <td>切片位置的终止索引，starts、ends、axes、steps的元素个数相同。</td>
       <td>-</td>
       <td>-</td>
@@ -140,7 +140,7 @@ aclnnStatus aclnnSliceV2(
     <tr>
       <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>公式中的out</td>
+      <td>公式中的out。</td>
       <td>shape满足计算公式中的推导规则</td>
       <td>FLOAT、FLOAT16、INT32、INT64、INT8、UINT8、BOOL、BFLOAT16</td>
       <td>ND</td>
@@ -176,10 +176,10 @@ aclnnStatus aclnnSliceV2(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
    
   第一段接口完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed; width: 1300px"><colgroup>
-  <col style="width: 288px">
-  <col style="width: 148px">
-  <col style="width: 864px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -223,10 +223,10 @@ aclnnStatus aclnnSliceV2(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1126px"><colgroup>
-  <col style="width: 141px">
-  <col style="width: 140px">
-  <col style="width: 845px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

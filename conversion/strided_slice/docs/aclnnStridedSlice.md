@@ -16,36 +16,36 @@
 
 - 接口功能：按照指定的起始、结束位置和步长，从输入张量中提取一个子张量。
 - 计算公式：在指定维度$dim$上，按照指定的起始位置$begin$、结束位置$end$和步长$strides$，从输入张量$self$中提取子张量$out$。
-$begin$和$end$可以取$[0, self.shape[dim]]$以外的值，取值后根据以下公式转换为合法值，假设self.shape[dim] = N：
+  $begin$和$end$可以取$[0, self.shape[dim]]$以外的值，取值后根据以下公式转换为合法值，假设self.shape[dim] = N：
 
-$$
-begin = \begin{cases}
-&0, & if\;begin < -N \\
-&N, & if\;begin >= N\\
-&(begin+N) \% N, & otherwise
-\end{cases}
-$$
+  $$
+  begin = \begin{cases}
+  &0, & if\;begin < -N \\
+  &N, & if\;begin >= N\\
+  &(begin+N) \% N, & otherwise
+  \end{cases}
+  $$
 
-$$
-end = \begin{cases}
-&N, & if\; end >= N\\
-&begin, & else\;if\;  (end+N)\%N < begin \\
-&(end+N)\%N, & otherwise\\
-\end{cases}
-$$
+  $$
+  end = \begin{cases}
+  &N, & if\; end >= N\\
+  &begin, & else\;if\;  (end+N)\%N < begin \\
+  &(end+N)\%N, & otherwise\\
+  \end{cases}
+  $$
 
-$out.shape$与$self.shape$只有dim轴上不一致，其他轴一致:
+  $out.shape$与$self.shape$只有dim轴上不一致，其他轴一致:
 
-$$
-out.shape[dim] = ⌊\frac{end - begin + strides - 1}{strides}⌋
-$$
+  $$
+  out.shape[dim] = ⌊\frac{end - begin + strides - 1}{strides}⌋
+  $$
 
-若存在mask参数，则按照以下规则对outshape进行进一步计算，
-$beginMask$指定$bit$位为1对应的索引维度的$begin$被忽略，
-$endMask$指定$bit$位为1对应的索引维度的$end$被忽略，
-$ellipsisMask$从$bit$位为1对应的索引维度开始全选后续维度，直到遇到指定$begin$才退出，
-$newAxisMask$指定$bit$位为1对应的索引维度增加维度为1的$shape$，
-$shrinkAxisMask$指定$bit$位为1对应的索引维度强制降为1 。
+  若存在mask参数，则按照以下规则对outshape进行进一步计算，
+  $beginMask$指定$bit$位为1对应的索引维度的$begin$被忽略，
+  $endMask$指定$bit$位为1对应的索引维度的$end$被忽略，
+  $ellipsisMask$从$bit$位为1对应的索引维度开始全选后续维度，直到遇到指定$begin$才退出，
+  $newAxisMask$指定$bit$位为1对应的索引维度增加维度为1的$shape$，
+  $shrinkAxisMask$指定$bit$位为1对应的索引维度强制降为1 。
 
 ## 函数原型
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnStridedSliceGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnStridedSlice”接口执行计算。
@@ -66,24 +66,24 @@ aclnnStatus aclnnStridedSliceGetWorkspaceSize(
 ```
 ```Cpp
 aclnnStatus aclnnStridedSlice(
-  void          *workspace,
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor,
-  aclrtStream    stream)
+    void          *workspace,
+    uint64_t       workspaceSize, 
+    aclOpExecutor *executor,
+    aclrtStream    stream)
 ```
 
 ## aclnnStridedSliceGetWorkspaceSize
 
 - **参数说明**：
-  <table style="undefined;table-layout: fixed; width: 1494px"><colgroup>
-  <col style="width: 146px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 120px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
   <col style="width: 110px">
-  <col style="width: 301px">
-  <col style="width: 219px">
-  <col style="width: 328px">
-  <col style="width: 101px">
-  <col style="width: 143px">
-  <col style="width: 146px">
+  <col style="width: 150px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -223,12 +223,13 @@ aclnnStatus aclnnStridedSlice(
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed;width: 1155px"><colgroup>
-  <col style="width: 319px">
-  <col style="width: 144px">
-  <col style="width: 671px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
   <tr>
@@ -277,10 +278,10 @@ aclnnStatus aclnnStridedSlice(
 ## aclnnStridedSlice
 
 - **参数说明**：
-  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
-  <col style="width: 173px">
-  <col style="width: 112px">
-  <col style="width: 668px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

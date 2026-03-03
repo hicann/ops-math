@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-接口功能：将(*, C, H, W)张量的channels分成g个组，然后将每个通道组中的通道进行随机重排，最后将所有通道合并输出，同时保持最终输出张量的shape和输入张量保持一致。
+将(*, C, H, W)张量的channels分成g个组，然后将每个通道组中的通道进行随机重排，最后将所有通道合并输出，同时保持最终输出张量的shape和输入张量保持一致。
 
 ## 函数原型
 
@@ -42,14 +42,14 @@ aclnnStatus aclnnChannelShuffle(
 - **参数说明：**
 
   </style>
-  <table class="tg" style="undefined;table-layout: fixed; width: 1298px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
-  <col style="width: 198px">
-  <col style="width: 226px">
-  <col style="width: 194px">
-  <col style="width: 95px">
-  <col style="width: 109px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -123,10 +123,10 @@ aclnnStatus aclnnChannelShuffle(
 
   第一段接口完成入参校验，出现以下场景时报错：
   </style>
-  <table class="tg" style="undefined;table-layout: fixed; width: 778px"><colgroup>
-  <col style="width: 269px">
-  <col style="width: 130px">
-  <col style="width: 379px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -163,10 +163,10 @@ aclnnStatus aclnnChannelShuffle(
 ## aclnnChannelShuffle
 
 - **参数说明**：
-  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
-  <col style="width: 173px">
-  <col style="width: 112px">
-  <col style="width: 668px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

@@ -39,33 +39,33 @@
 
 ```cpp
 aclnnStatus aclnnReflectionPad2dGetWorkspaceSize(
-  const aclTensor   *self, 
-  const aclIntArray *padding, 
-  aclTensor         *out, 
-  uint64_t          *workspaceSize, 
-  aclOpExecutor    **executor)
+    const aclTensor   *self, 
+    const aclIntArray *padding, 
+    aclTensor         *out, 
+    uint64_t          *workspaceSize, 
+    aclOpExecutor    **executor)
 ```
 
 ```cpp
 aclnnStatus aclnnReflectionPad2d(
-  void             *workspace, 
-  uint64_t          workspaceSize, 
-  aclOpExecutor    *executor, 
-  const aclrtStream stream)
+    void             *workspace, 
+    uint64_t          workspaceSize, 
+    aclOpExecutor    *executor, 
+    const aclrtStream stream)
 ```
 
 ## aclnnReflectionPad2dGetWorkspaceSize
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
-  <col style="width: 153px">
-  <col style="width: 124px">
-  <col style="width: 212px">
-  <col style="width: 359px">
-  <col style="width: 305px">
-  <col style="width: 114px">
-  <col style="width: 135px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 120px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -83,7 +83,7 @@ aclnnStatus aclnnReflectionPad2d(
     <tr>
       <td>self（aclTensor*）</td>
       <td>输入</td>
-      <td>Device侧的aclTensor。</td>
+      <td>待填充的原输入数据。</td>
       <td>维度支持三维或四维。</td>
       <td>BOOL、INT8、UINT8、INT16、UINT16、FLOAT16、BFLOAT16、INT32、UINT32、FLOAT32、INT64、UINT64、DOUBLE、COMPLEX64、COMPLEX128、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0</td>
       <td>ND</td>
@@ -93,7 +93,7 @@ aclnnStatus aclnnReflectionPad2d(
     <tr>
       <td>padding（aclIntArray*）</td>
       <td>输入</td>
-      <td>Device侧的aclIntArray数组。</td>
+      <td>输入中需要填充的大小。</td>
       <td>长度为4，数值依次代表左右上下需要填充的值。padding前两个数值需小于self最后一维度的数值，后两个数值需小于self倒数第二维度的数值。</td>
       <td>INT64</td>
       <td>ND</td>
@@ -141,10 +141,10 @@ aclnnStatus aclnnReflectionPad2d(
 
   第一段接口完成入参校验，出现以下场景时报错：
     
-  <table style="undefined;table-layout: fixed; width: 1131px"><colgroup>
-  <col style="width: 251px">
-  <col style="width: 129px">
-  <col style="width: 751px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -185,10 +185,10 @@ aclnnStatus aclnnReflectionPad2d(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1143px"><colgroup>
-  <col style="width: 158px">
-  <col style="width: 140px">
-  <col style="width: 845px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

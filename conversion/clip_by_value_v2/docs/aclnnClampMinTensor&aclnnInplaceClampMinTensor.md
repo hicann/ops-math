@@ -15,7 +15,7 @@
 
 
 ## 功能说明
-接口功能：将输入的所有元素限制在[min, inf]范围内。
+- 接口功能：将输入的所有元素限制在[min, inf]范围内。
 
 - 计算公式：
 
@@ -69,15 +69,15 @@ aclnnStatus aclnnInplaceClampMinTensor(
 - **参数说明**：
 
   </style>
-  <table class="tg" style="undefined;table-layout: fixed; width: 1072px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
-  <col style="width: 88px">
-  <col style="width: 157px">
-  <col style="width: 156px">
-  <col style="width: 147px">
-  <col style="width: 95px">
-  <col style="width: 109px">
-  <col style="width: 109px">
+  <col style="width: 120px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -156,10 +156,10 @@ aclnnStatus aclnnInplaceClampMinTensor(
 
   第一段接口完成入参校验，出现以下场景时报错：
   </style>
-  <table class="tg" style="undefined;table-layout: fixed; width: 842px"><colgroup>
-  <col style="width: 253px">
-  <col style="width: 122px">
-  <col style="width: 467px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -186,13 +186,11 @@ aclnnStatus aclnnInplaceClampMinTensor(
 
 ## aclnnClampMinTensor
 
-- **参数说明：**
-
 - **参数说明**
-  <table style="undefined;table-layout: fixed; width: 1241px"><colgroup>
-  <col style="width: 153px">
-  <col style="width: 124px">
-  <col style="width: 881px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>
@@ -233,15 +231,15 @@ aclnnStatus aclnnInplaceClampMinTensor(
 - **参数说明：**
 
   </style>
-  <table class="tg" style="undefined;table-layout: fixed; width: 1072px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
-  <col style="width: 88px">
-  <col style="width: 157px">
-  <col style="width: 156px">
-  <col style="width: 147px">
-  <col style="width: 95px">
-  <col style="width: 109px">
-  <col style="width: 109px">
+  <col style="width: 120px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -311,10 +309,10 @@ aclnnStatus aclnnInplaceClampMinTensor(
 
   第一段接口完成入参校验，出现以下场景时报错：
   </style>
-  <table class="tg" style="undefined;table-layout: fixed; width: 842px"><colgroup>
-  <col style="width: 253px">
-  <col style="width: 122px">
-  <col style="width: 467px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -348,10 +346,10 @@ aclnnStatus aclnnInplaceClampMinTensor(
 ## aclnnInplaceClampMinTensor
 
 - **参数说明**
-  <table style="undefined;table-layout: fixed; width: 1241px"><colgroup>
-  <col style="width: 153px">
-  <col style="width: 124px">
-  <col style="width: 881px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>

@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-接口功能：在指定维度$dim$上，根据给定的范围$[start, end]$和步长$step$，从输入张量$self$中提取子张量$out$。
+- 接口功能：在指定维度$dim$上，根据给定的范围$[start, end]$和步长$step$，从输入张量$self$中提取子张量$out$。
 $start$和$end$可以取$[0, self.shape[dim]]$以外的值，取值后根据以下公式转换为合法值，假设self.shape[dim] = N：
 
 $$
@@ -68,14 +68,14 @@ aclnnStatus aclnnSlice(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
-  <col style="width: 153px">
-  <col style="width: 124px">
-  <col style="width: 212px">
-  <col style="width: 359px">
-  <col style="width: 305px">
-  <col style="width: 114px">
-  <col style="width: 135px">
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 211px">
+  <col style="width: 120px">
+  <col style="width: 266px">
+  <col style="width: 308px">
+  <col style="width: 240px">
+  <col style="width: 110px">
+  <col style="width: 150px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -93,7 +93,7 @@ aclnnStatus aclnnSlice(
     <tr>
       <td>self（aclTensor*）</td>
       <td>输入</td>
-      <td>公式中的张量self，Device侧的aclTensor。</td>
+      <td>公式中的张量self。</td>
       <td>self与out的数据类型一致。</td>
       <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64、INT8、UINT8、BOOL</td>
       <td>ND</td>
@@ -103,7 +103,7 @@ aclnnStatus aclnnSlice(
     <tr>
       <td>dim（int64_t）</td>
       <td>输入</td>
-      <td>公式中的参数dim，指定的维度，Host侧的整型数值</td>
+      <td>公式中的参数dim，指定的维度。</td>
       <td>取值范围为[-self.dim(), self.dim() - 1]。</td>
       <td>INT64</td>
       <td>ND</td>
@@ -114,7 +114,7 @@ aclnnStatus aclnnSlice(
       <td>start（int64_t）</td>
       <td>输入</td>
       <td>公式中的张量start，切片位置的起始索引。</td>
-      <td>Host侧的整型数值。</td>
+      <td>-</td>
       <td>INT64</td>
       <td>ND</td>
       <td>-</td>
@@ -124,7 +124,7 @@ aclnnStatus aclnnSlice(
       <td>end（int64_t）</td>
       <td>输入</td>
       <td>公式中的张量end，切片位置的终止索引。</td>
-      <td>Host侧的整型数值。</td>
+      <td>-</td>
       <td>INT64</td>
       <td>ND</td>
       <td>-</td>
@@ -134,7 +134,7 @@ aclnnStatus aclnnSlice(
       <td>step（int64_t）</td>
       <td>输入</td>
       <td>公式中的张量step，指定切片的步长。</td>
-      <td>Host侧的整型数值，取值范围必须大于0</td>
+      <td>取值范围必须大于0。</td>
       <td>INT64</td>
       <td>ND</td>
       <td>-</td>
@@ -143,7 +143,7 @@ aclnnStatus aclnnSlice(
     <tr>
       <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>公式中的张量out，Device侧的aclTensor。</td>
+      <td>公式中的张量out。</td>
       <td>shape满足计算公式中的推到规则。</td>
       <td>与self保持一致</td>
       <td>ND</td>
@@ -173,7 +173,7 @@ aclnnStatus aclnnSlice(
   </tbody>
   </table>
 
- - <term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+  - <term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
 - **返回值：**
 
@@ -181,10 +181,10 @@ aclnnStatus aclnnSlice(
 
   第一段接口完成入参校验，出现以下场景时报错：
   
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 288px">
-  <col style="width: 114px">
-  <col style="width: 747px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 724px">
   </colgroup>
   <thead>
     <tr>
@@ -225,10 +225,10 @@ aclnnStatus aclnnSlice(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 153px">
-  <col style="width: 124px">
-  <col style="width: 872px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 832px">
   </colgroup>
   <thead>
     <tr>
