@@ -37,11 +37,11 @@ $$
 - **参数说明：**
 
   * start(aclScalar *，计算输入)：获取值的范围的起始位置，公式中的start，Host侧的aclScalar。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：FLOAT16、BFLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、BOOL
+     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：FLOAT16、BFLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64，BOOL
      * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT32
 
   * end(aclScalar *，计算输入)：获取值的范围的结束位置，公式中的end，Host侧的aclScalar。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：FLOAT16、BFLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、BOOL
+     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：FLOAT16、BFLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64，BOOL
      * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT32
 
   * steps(int64_t，计算输入)：获取值的步长，数据类型支持INT64，需要满足steps大于等于0。

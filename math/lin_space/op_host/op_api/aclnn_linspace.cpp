@@ -54,7 +54,7 @@ static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
       op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16,
       op::DataType::DT_INT32, op::DataType::DT_INT16, op::DataType::DT_INT8,
-      op::DataType::DT_UINT8,
+      op::DataType::DT_UINT8, op::DataType::DT_INT64,
       // AiCpu支持数据类型
       op::DataType::DT_DOUBLE};
 
@@ -107,6 +107,9 @@ inline static DataType OutPromoteType(DataType outDataType) {
     }
     else if (outDataType == op::DataType::DT_COMPLEX64) {
         return op::DataType::DT_FLOAT;
+    }
+    else if (outDataType == op::DataType::DT_INT64) {
+        return op::DataType::DT_FLOAT; 
     }
     else {
         return outDataType;
