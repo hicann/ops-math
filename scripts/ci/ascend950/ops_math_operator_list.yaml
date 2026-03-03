@@ -38,6 +38,7 @@ operator_group_1:
   - cholesky
   - cos
   - cumsum
+  - cummin
   - diag_flat
   - diag_v2
   - diag_part

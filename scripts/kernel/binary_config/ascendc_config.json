@@ -536,6 +536,7 @@
     {"name":"SortWithIndex", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"TopKV2", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"Cumsum", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
+    {"name":"Cummin", "compute_units": ["ascend950"], "auto_sync" : true},
     {"name":"LayerNormQuant", "compute_units": ["ascend910b", "ascend910_93", "ascend310p"], "auto_sync" : true},
     {"name":"GetPaddingOffset", "compute_units": ["ascend910b", "ascend910_93", "ascend310p"], "auto_sync": true},
     {"name":"GemmV3", "compute_units": ["ascend950"], "auto_sync" : false},
