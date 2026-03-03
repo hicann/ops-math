@@ -246,16 +246,19 @@ __aicore__ inline void DataCopyScope(uint16_t size0, int64_t offset, int64_t nis
         AscendC::MicroAPI::UnalignReg u0;
         AscendC::MicroAPI::UnalignReg u1;
         for (uint16_t i = 0; i < size0; i++) {
-            AscendC::MicroAPI::AddrReg srcOffset = AscendC::MicroAPI::CreateAddrReg<T1>(i, offset);
-            AscendC::MicroAPI::DataCopyUnAlignPre(u0, srcPtr, srcOffset);
+            __ubuf__ T1* srcPtr1 = srcPtr + i * offset;
+            AscendC::MicroAPI::DataCopyUnAlignPre(u0, srcPtr1);
             for (uint16_t j = 0; j < repeatTimes; j++) {
-                AscendC::MicroAPI::AddrReg srcAddReg = AscendC::MicroAPI::CreateAddrReg<T1>(i, offset, j, vfLen1);
-                AscendC::MicroAPI::DataCopyUnAlign(vd0, u0, srcPtr, srcAddReg, vfLen1);
-                AscendC::MicroAPI::DataCopyUnAlign(dstPtr, vd0, u1, vfLen1);
+                AscendC::MicroAPI::DataCopyUnAlign<T1, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vd0, u0,
+                    srcPtr1, vfLen1);
+                AscendC::MicroAPI::DataCopyUnAlign<T1, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(dstPtr, vd0,
+                    u1, vfLen1);
             }
-            AscendC::MicroAPI::DataCopyUnAlign(vd0, u0, srcPtr + i * offset + repeatTimes * vfLen1);
-            AscendC::MicroAPI::DataCopyUnAlign(dstPtr, vd0, u1, tail);
-            AscendC::MicroAPI::DataCopyUnAlignPost(dstPtr, u1, 0);
+            AscendC::MicroAPI::DataCopyUnAlign<T1, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vd0, u0,
+                srcPtr1, vfLen1);
+            AscendC::MicroAPI::DataCopyUnAlign<T1, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(dstPtr, vd0,
+                u1, tail);
+            AscendC::MicroAPI::DataCopyUnAlignPost<T1, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(dstPtr, u1, 0);
         }
     }
 }
