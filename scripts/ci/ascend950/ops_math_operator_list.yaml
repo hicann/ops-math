@@ -86,6 +86,7 @@ operator_group_2:
   - mod
   - mul
   - muls
+  - mul_addn
   - neg
   - non_finite_check
   - not_equal

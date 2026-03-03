@@ -291,7 +291,7 @@
     {"name":"MoeTokenUnpermute", "compute_units": ["ascend910_93","ascend910b"], "auto_sync" : true},
     {"name":"MoeTokenUnpermuteWithEp", "compute_units": ["ascend910_93","ascend910b"], "auto_sync" : true},
     {"name":"MoeTokenUnpermuteWithRoutingMap", "compute_units": ["ascend910_93","ascend910b"], "auto_sync" : true},
-    {"name":"MulAddn", "compute_units": ["ascend910_93","ascend910b", "kirinx90", "kirin9030"], "auto_sync" : true},
+    {"name":"MulAddn", "compute_units": ["ascend910_93","ascend910b", "kirinx90", "kirin9030","ascend950"], "auto_sync" : true},
     {"name":"MoeTokenPermuteGrad", "compute_units": ["ascend910_93", "ascend910b"], "auto_sync" : true},
     {"name":"MoeTokenPermuteWithRoutingMapGrad", "compute_units": ["ascend910_93", "ascend910b"], "auto_sync" : true},
     {"name":"MoeTokenPermuteWithEpGrad", "compute_units": ["ascend910_93", "ascend910b"], "auto_sync" : true},
