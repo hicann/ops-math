@@ -12,7 +12,7 @@
 | <term>Atlas 训练系列产品</term>                       |    ×     |
 ## 功能说明
 
-- 接口功能：完成aclnnCdist的反向
+- 接口功能：完成aclnnCdist的反向。
 - 计算公式：
 
   $$
@@ -40,8 +40,8 @@ aclnnStatus aclnnCdistBackwardGetWorkspaceSize(
     const aclTensor *x1,
     const aclTensor *x2,
     const aclTensor *cdist
-    float           p,
-    const aclTensor *out,
+    float            p,
+    aclTensor       *out,
     uint64_t        *workspaceSize,
     aclOpExecutor  **executor)
 ```

@@ -1,74 +1,231 @@
 # aclnnCummin
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/cummin)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>          |      ×   |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √    |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √    |
-| <term>Atlas 200I/500 A2 推理产品</term>             |    ×    |
-| <term>Atlas 推理系列产品</term>                       |     ×    |
-| <term>Atlas 训练系列产品</term>                       |     √    |
+| <term>Ascend 950PR/Ascend 950DT</term>                     |    √     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                     |    √     |
+| <term>Atlas 推理系列产品</term>                             |    √     |
+| <term>Atlas 训练系列产品</term>                             |    √     |
 
 ## 功能说明
 
-- 算子功能：计算self中的累积最小值，并返回最小值以及对应的索引。
+- 接口功能：计算self中的累积最小值，并返回该值以及其对应的索引。
 
 - 计算公式：
-
   valuesOut：
-
+  
   $$
-  valuesOut{i} = min(self_{1}, self_{2}, self_{3}, ...... , self_{i})
+  valuesOut_{i} = min(self_{1}, self_{2}, self_{3}, ...... , self_{i})
   $$
-
+  
   indicesOut：
-
+  
   $$
-  indicesOut{i} = argmin(self_{1}, self_{2}, self_{3}, ...... , self_{i})
+  indicesOut_{i} = argmin(self_{1}, self_{2}, self_{3}, ...... , self_{i})
   $$
 
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnCumminGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCummin”接口执行计算。
 
-- `aclnnStatus aclnnCumminGetWorkspaceSize(const aclTensor* self, int64_t dim, aclTensor* valuesOut, aclTensor* indicesOut, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnCummin(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnCumminGetWorkspaceSize(
+  const aclTensor *self, 
+  int64_t          dim, 
+  aclTensor       *valuesOut, 
+  aclTensor       *indicesOut, 
+  uint64_t        *workspaceSize, 
+  aclOpExecutor  **executor)
+```
+
+```Cpp
+aclnnStatus aclnnCummin(
+  void          *workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor *executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnCumminGetWorkspaceSize
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)：表示输入张量，Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。数据维度不支持8维以上。shape必须与valuesOut、indicesOut一致。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16。
-  - dim(int64_t, 计算输入)：表示处理维度，Host侧的整型。
-  - valuesOut(aclTensor*, 计算输出)：表示self中的累积最小值，Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。数据维度不支持8维以上。shape必须与self、indicesOut一致。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16。
-  - indicesOut(aclTensor*, 计算输出)：表示valuesOut对应的索引，Device侧的aclTensor。数据类型支持INT32、INT64。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。数据维度不支持8维以上。shape必须与self、valuesOut一致。
-  - workspaceSize(uint64_t*, 出参): 返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor**, 出参): 返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1548px"><colgroup>
+  <col style="width: 155px">
+  <col style="width: 126px">
+  <col style="width: 215px">
+  <col style="width: 292px">
+  <col style="width: 361px">
+  <col style="width: 115px">
+  <col style="width: 137px">
+  <col style="width: 147px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>输入Tensor。</td>
+      <td>数据类型需要能转换成valuesOut的数据类型，数据维度不支持8维以上。</td>
+      <td>FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、FLOAT16、BFLOAT16、BOOL</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>dim</td>
+      <td>输入</td>
+      <td>进行操作的维度。</td>
+      <td>取值范围在[-self.dim(), self.dim()-1]内。</td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>valuesOut</td>
+      <td>输出</td>
+      <td>累积最小值输出Tensor。</td>
+      <td>数据类型需要与self一致，shape需要与self一致，数据维度不支持8维以上。</td>
+      <td>FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、FLOAT16、BFLOAT16、BOOL</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>indicesOut</td>
+      <td>输出</td>
+      <td>累积最小值对应索引输出Tensor。</td>
+      <td>数据类型支持INT32、INT64，shape需要与self一致，数据维度不支持8维以上。</td>
+      <td>INT32、INT64</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
+
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
+
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）: 传入的self、valuesOut、indicesOut是空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）: 1. self、valuesOut、indicesOut的数据类型不在支持的范围内。
-                                        2. self、valuesOut、indicesOut的shape不在支持的范围内。
-                                        3. 当self.dim()=0时，参数dim的取值范围不在[-1, 0]内；当self.dim()>0时，参数dim的取值范围不在[-self.dim(), self.dim()-1]内。
-  ```
+ 
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 270px">
+  <col style="width: 124px">
+  <col style="width: 755px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>参数self、valuesOut、indicesOut是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
+      <td>参数self、valuesOut、indicesOut的数据类型不在支持的范围内。</td>
+    </tr>
+    <tr>
+      <td>参数self、valuesOut、indicesOut的shape不一致。</td>
+    </tr>
+    <tr>
+      <td>当self.dim()=0时，参数dim的取值范围不在[-1, 0]内；当self.dim()&gt;0时，参数dim的取值范围不在[-self.dim(), self.dim()-1]内。</td>
+    </tr>
+    <tr>
+      <td>参数self的数据类型不能转换为valuesOut的数据类型。</td>
+    </tr>
+    <tr>
+      <td>参数self、valuesOut、indicesOut的维度大于8。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnCummin
 
 - **参数说明：**
 
-  - workspace(void*, 入参): 在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参): 在Device侧申请的workspace大小，由第一段接口aclnnCumminGetWorkspaceSize获取。
-  - executor(aclOpExecutor*, 入参): op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参): 指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 872px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnCumminGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+
 
 - **返回值：**
 
@@ -198,30 +355,34 @@ int main() {
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
   // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
-  // 获取valuesOut
-  auto size = GetShapeSize(valuesOutShape);
-  std::vector<float> resultData(size, 0);
-  ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), valuesOutDeviceAddr,
-                    size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
-  for (int64_t i = 0; i < size; i++) {
-    LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
-  }
-  // 获取indicesOut
+  auto valuesSize = GetShapeSize(valuesOutShape);
+  std::vector<float> valuesResultData(valuesSize, 0);
+  ret = aclrtMemcpy(valuesResultData.data(), valuesResultData.size() * sizeof(valuesResultData[0]), valuesOutDeviceAddr,
+                    valuesSize * sizeof(valuesResultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy values result from device to host failed. ERROR: %d\n", ret); return ret);
+  
   auto indicesSize = GetShapeSize(indicesOutShape);
   std::vector<int64_t> indicesResultData(indicesSize, 0);
   ret = aclrtMemcpy(indicesResultData.data(), indicesResultData.size() * sizeof(indicesResultData[0]), indicesOutDeviceAddr,
                     indicesSize * sizeof(indicesResultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy indices result from device to host failed. ERROR: %d\n", ret); return ret);
+  
+  LOG_PRINT("Values result:\n");
+  for (int64_t i = 0; i < valuesSize; i++) {
+    LOG_PRINT("valuesResult[%ld] is: %f\n", i, valuesResultData[i]);
+  }
+  
+  LOG_PRINT("Indices result:\n");
   for (int64_t i = 0; i < indicesSize; i++) {
-    LOG_PRINT("result[%ld] is: %ld\n", i, indicesResultData[i]);
+    LOG_PRINT("indicesResult[%ld] is: %ld\n", i, indicesResultData[i]);
   }
 
   // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyTensor(valuesOut);
   aclDestroyTensor(indicesOut);
-  // 7. 释放device 资源，需要根据具体API的接口定义修改
+
+  // 7. 释放device资源，需要根据具体API的接口定义修改
   aclrtFree(selfDeviceAddr);
   aclrtFree(valuesOutDeviceAddr);
   aclrtFree(indicesOutDeviceAddr);
