@@ -70,6 +70,10 @@ std::tuple<aclTensor*, aclTensor*> Qr(const aclTensor *self, bool some, aclOpExe
    op::Shape rShape = std::get<1>(QrShape);
    auto Q = executor->AllocTensor(qShape, self->GetDataType(), self->GetStorageFormat());
    auto R = executor->AllocTensor(rShape, self->GetDataType(), self->GetStorageFormat());
+   if (Q == nullptr || R == nullptr) {
+       OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "Q or R alloc out tensor failed.");
+       return std::tuple<aclTensor*, aclTensor*>(nullptr, nullptr);
+   }
    return QrAiCPU(self, some, Q, R, executor);
 }
 }
