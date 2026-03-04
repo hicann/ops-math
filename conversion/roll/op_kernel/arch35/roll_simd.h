@@ -61,7 +61,6 @@ private:
     int64_t blockIdx_ = 0;
     int64_t inputIndices_[MAX_DIM_NUM] = {0};
     bool isBlockMove = false;
-    int64_t divNum = 1;
 };
 
 template <typename T>
@@ -78,24 +77,6 @@ __aicore__ inline void RollSimd<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR workspace
     xGm_.SetGlobalBuffer((__gm__ T*)x);
     yGm_.SetGlobalBuffer((__gm__ T*)y);
     pipe_->InitBuffer(xInQue_, BUF_NUM, tilingData_->maxElements * sizeof(T));
-
-    if (tilingData_->shapes[tilingData_->dimNum - 1] * sizeof(T) % ALIGN_NUM != 0 ||
-        tilingData_->shifts[tilingData_->dimNum - 1] * sizeof(T) % ALIGN_NUM != 0) {
-        int64_t divNum1 =
-            ((tilingData_->shapes[tilingData_->dimNum - 1] - tilingData_->shifts[tilingData_->dimNum - 1]) * sizeof(T) +
-             ALIGN_NUM - 1) /
-                ALIGN_NUM * ALIGN_NUM / sizeof(T) -
-            (tilingData_->shapes[tilingData_->dimNum - 1] - tilingData_->shifts[tilingData_->dimNum - 1]);
-        divNum1 /= (tilingData_->shapes[tilingData_->dimNum - 1] - tilingData_->shifts[tilingData_->dimNum - 1]);
-        int64_t divNum2 = (tilingData_->shifts[tilingData_->dimNum - 1] * sizeof(T) + ALIGN_NUM - 1) / ALIGN_NUM *
-                              ALIGN_NUM / sizeof(T) -
-                          tilingData_->shifts[tilingData_->dimNum - 1];
-        divNum2 /= tilingData_->shifts[tilingData_->dimNum - 1];
-        divNum = divNum1 + 1;
-        if (divNum < divNum2 + 1) {
-            divNum = divNum2 + 1;
-        }
-    }
 }
 
 template <typename T>
@@ -186,7 +167,7 @@ __aicore__ inline void RollSimd<T>::ComputeOutIndex(int64_t inputIndex, int64_t&
         isBlockMove = false;
     } else if (tilingData_->shifts[tilingData_->dimNum - 1] != 0) {
         // 考虑搬运后的UB对齐
-        int64_t perUbMaxElements = Std::min(curCoreElements_, tilingData_->maxElements / divNum); // 单次UB最大搬运量
+        int64_t perUbMaxElements = Std::min(curCoreElements_, tilingData_->maxElements); // 单次UB最大搬运量
         // W轴需要shift，优化
         if (inputIndices_[tilingData_->dimNum - 1] != 0) {
             // W轴的index不为0，说明从中间开始的，只搬运这一行
@@ -212,7 +193,9 @@ __aicore__ inline void RollSimd<T>::ComputeOutIndex(int64_t inputIndex, int64_t&
             }
         } else {
             // W轴的index从0开始 hLen个 W
-            int64_t hLen = perUbMaxElements / (tilingData_->shapes[tilingData_->dimNum - 1]);
+            int64_t wAlign = (tilingData_->shapes[tilingData_->dimNum - 1] * sizeof(T) + ALIGN_NUM - 1) / ALIGN_NUM * ALIGN_NUM / sizeof(T);
+            int64_t hLen = tilingData_->maxElements / wAlign;
+            hLen = Std::min(hLen, curCoreElements_ / tilingData_->shapes[tilingData_->dimNum - 1]);
             if (hLen == 0) {
                 // 不足一个 W，处理最后一块
                 count = perUbMaxElements;

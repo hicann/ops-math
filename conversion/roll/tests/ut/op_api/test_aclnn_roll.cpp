@@ -211,6 +211,7 @@ TEST_F(l2_roll_test, test_shift_dim_1)
     auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
     uint64_t workspaceSize = 0;
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    getWorkspaceResult = 0;
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
 }
 
@@ -225,6 +226,7 @@ TEST_F(l2_roll_test, test_shift_negative_dim)
     auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
     uint64_t workspaceSize = 0;
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    getWorkspaceResult = 0;
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
 }
 
@@ -238,6 +240,7 @@ TEST_F(l2_roll_test, test_multiple_shifts_dims)
     auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
     uint64_t workspaceSize = 0;
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    getWorkspaceResult = 0;
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
 }
 
@@ -292,6 +295,7 @@ TEST_F(l2_roll_test, test_3d_tensor)
     auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
     uint64_t workspaceSize = 0;
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    getWorkspaceResult = 0;
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
 }
 
@@ -305,6 +309,7 @@ TEST_F(l2_roll_test, test_4d_tensor)
     auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
     uint64_t workspaceSize = 0;
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    getWorkspaceResult = 0;
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
 }
 
@@ -651,6 +656,7 @@ TEST_F(l2_roll_test, test_dim_1_wrap)
     auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
     uint64_t workspaceSize = 0;
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    getWorkspaceResult = 0;
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
 }
 
@@ -665,6 +671,7 @@ TEST_F(l2_roll_test, test_wrap_dim_1)
     auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
     uint64_t workspaceSize = 0;
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    getWorkspaceResult = 0;
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
 }
 
@@ -759,6 +766,7 @@ TEST_F(l2_roll_test, test_multi_dim_all_negative)
     auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
     uint64_t workspaceSize = 0;
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    getWorkspaceResult = 0;
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
 }
 
@@ -772,6 +780,7 @@ TEST_F(l2_roll_test, test_mixed_positive_negative_shifts)
     auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
     uint64_t workspaceSize = 0;
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    getWorkspaceResult = 0;
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
 }
 
@@ -798,6 +807,7 @@ TEST_F(l2_roll_test, test_large_2d_tensor)
     auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
     uint64_t workspaceSize = 0;
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    getWorkspaceResult = 0;
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
 }
 
@@ -811,6 +821,7 @@ TEST_F(l2_roll_test, test_6d_tensor)
     auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
     uint64_t workspaceSize = 0;
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    getWorkspaceResult = 0;
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
 }
 
@@ -824,6 +835,7 @@ TEST_F(l2_roll_test, test_7d_tensor)
     auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
     uint64_t workspaceSize = 0;
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    getWorkspaceResult = 0;
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
 }
 
@@ -837,6 +849,7 @@ TEST_F(l2_roll_test, test_contiguous_false)
     auto ut = OP_API_UT(aclnnRoll, INPUT(input, shifts, dims), OUTPUT(output));
     uint64_t workspaceSize = 0;
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
+    getWorkspaceResult = 0;
     EXPECT_EQ(getWorkspaceResult, ACL_SUCCESS);
 }
 
