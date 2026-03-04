@@ -83,23 +83,23 @@ ge::graphStatus AbsTiling::RunTiling()
 
     ge::graphStatus res = ge::GRAPH_FAILED;
     tiling = tilingContext->GetTilingData<AbsTilingData>();
-    if (this->outputDtype == ge::DT_FLOAT16) {
+    if (this->inputDtype == ge::DT_FLOAT16) {
         res = elewiseBaseTiling.DoTiling<AbsDag<half, half>::OpDag>(tiling->baseTiling);
     } else if (this->inputDtype == ge::DT_COMPLEX64) {
         res = elewiseBaseTiling.DoTiling<AbscomplexDag<int64_t, float>::OpDag>(tiling->baseTiling);
     } else if (this->inputDtype == ge::DT_COMPLEX32) {
         res = elewiseBaseTiling.DoTiling<AbscomplexDag<int32_t, half>::OpDag>(tiling->baseTiling); 
-    } else if (this->outputDtype == ge::DT_FLOAT) {
+    } else if (this->inputDtype == ge::DT_FLOAT) {
         res = elewiseBaseTiling.DoTiling<AbsDag<float, float>::OpDag>(tiling->baseTiling);
-    } else if (this->outputDtype == ge::DT_BF16) {
+    } else if (this->inputDtype == ge::DT_BF16) {
         res = elewiseBaseTiling.DoTiling<AbsDag<bfloat16_t, float>::OpDag>(tiling->baseTiling);
-    } else if (this->outputDtype == ge::DT_INT8) {
+    } else if (this->inputDtype == ge::DT_INT8) {
         res = elewiseBaseTiling.DoTiling<AbsDag<int8_t, int8_t>::OpDag>(tiling->baseTiling);
-    } else if (this->outputDtype == ge::DT_INT16) {
+    } else if (this->inputDtype == ge::DT_INT16) {
         res = elewiseBaseTiling.DoTiling<AbsDag<int16_t, int16_t>::OpDag>(tiling->baseTiling);
-    } else if (this->outputDtype == ge::DT_INT32) {
+    } else if (this->inputDtype == ge::DT_INT32) {
         res = elewiseBaseTiling.DoTiling<AbsDag<int32_t, int32_t>::OpDag>(tiling->baseTiling);
-    } else if (this->outputDtype == ge::DT_INT64) {
+    } else if (this->inputDtype == ge::DT_INT64) {
         res = elewiseBaseTiling.DoTiling<AbsDag<int64_t, int64_t>::OpDag>(tiling->baseTiling);
     } else {
         OP_LOGE(tilingContext, "data type check failed. getype：%d", this->outputDtype);

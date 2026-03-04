@@ -233,7 +233,7 @@ TEST_F(AbsTilingTest, test_tiling_complex32_012)
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 103;
-    string expectTilingData = "8192 140737488355332 2048 4 1 1 2048 2048 32768 1 ";
+    string expectTilingData = "8192 70368744177668 2048 4 1 1 2048 2048 16384 1 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
