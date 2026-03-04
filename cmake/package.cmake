@@ -142,16 +142,10 @@ function(pack_built_in)
   )
 
   install(FILES ${CONF_FILES}
-      DESTINATION ops_math/conf
+      DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/conf
   )
   install(FILES ${PACKAGE_FILES}
       DESTINATION share/info/ops_math/script
-  )
-  install(FILES ${LATEST_MANGER_FILES}
-      DESTINATION latest_manager
-  )
-  install(DIRECTORY ${CMAKE_SOURCE_DIR}/scripts/package/latest_manager/scripts/
-      DESTINATION latest_manager
   )
   string(FIND "${ASCEND_COMPUTE_UNIT}" ";" SEMICOLON_INDEX)
   if (SEMICOLON_INDEX GREATER -1)

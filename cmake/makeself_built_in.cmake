@@ -71,8 +71,19 @@ configure_file(
 )
 configure_file(
     ${MATH_VERSION_OUT_PUT}
-    ${STAGING_DIR}/share/info/ops_math/
+    ${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/include/version/ops_math_version.h
     COPYONLY
+)
+# 统一设置安装的文件权限为550
+execute_process(
+    COMMAND find ${STAGING_DIR} -type f -exec chmod 550 {} \;
+    RESULT_VARIABLE CHMOD_RESULT
+)
+file(CHMOD ${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/include/version/ops_math_version.h
+    PERMISSIONS OWNER_READ GROUP_READ
+)
+file(CHMOD ${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/conf/path.cfg
+    PERMISSIONS OWNER_READ GROUP_READ
 )
 # makeself打包
 file(STRINGS ${CPACK_CMAKE_BINARY_DIR}/makeself.txt script_output)
