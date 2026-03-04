@@ -149,8 +149,8 @@ usage() {
         echo "    --dump_cce             Dump kernel precompiled files"
         echo "    --bisheng_flags=flag1,flag2"
         echo "                           Specify bisheng compiler flags (comma-separated for multiple)"
-        echo "    --kernel_template_input=args0,args1"
-        echo "                           Specify kernel template input arguments (comma-separated for multiple)"
+        echo "    --kernel_template_input='args0=args0;args1=args1'"
+        echo "                           Specify kernel template input arguments (semicolon-separated for multiple)"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --pkg --soc=ascend910b --vendor_name=customize -j16 -O3"
@@ -161,7 +161,7 @@ usage() {
         echo "    bash build.sh --pkg --experimental --soc=ascend910b --ops=abs --oom"
         echo "    bash build.sh --pkg --experimental --soc=ascend910b --ops=abs --dump_cce"
         echo "    bash build.sh --pkg --experimental --soc=ascend910b --ops=abs --bisheng_flags=ccec_g,oom"
-        echo "    bash build.sh --pkg --experimental --soc=ascend950 --ops=abs --kernel_template_input=0,1"
+        echo "    bash build.sh --pkg --experimental --soc=ascend950 --ops=fills --kernel_template_input='schMode=0;dType=1'"
         return
         ;;
       opkernel)
@@ -177,8 +177,8 @@ usage() {
         echo "    --no_force             Don't force dependency installation"
         echo "    --bisheng_flags=flag1,flag2"
         echo "                           Specify bisheng compiler config (comma-separated for multiple)"
-        echo "    --kernel_template_input=args0,args1"
-        echo "                           Specify kernel template input arguments (comma-separated for multiple)"
+        echo "    --kernel_template_input='args0=args0;args1=args1'"
+        echo "                           Specify kernel template input arguments (semicolon-separated for multiple)"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub"
@@ -187,7 +187,7 @@ usage() {
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub --oom"
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub --dump_cce"
         echo "    bash build.sh --opkernel --soc=ascend310p --ops=add,sub --bisheng_flags=ccec_g,oom"
-        echo "    bash build.sh --opkernel --soc=ascend950 --ops=abs --kernel_template_input=0,1"
+        echo "    bash build.sh --opkernel --soc=ascend950 --ops=fills --kernel_template_input='schMode=0;dType=1'"
         return
         ;;
       opkernel_aicpu)
@@ -418,7 +418,7 @@ usage() {
   echo "    --oom Build with oom mode on the kernel side, with options: '-g --cce-enable-oom'"
   echo "    --dump_cce Dump kernel precompiled files"
   echo "    --bisheng_flags Specify bisheng compiler config, like: --bisheng_flags=ccec_g,oom, use ',' to separate different compiler flags"
-  echo "    --kernel_template_input Specify kernel template input arguments, like: --kernel_template_input=0,1, use ',' to separate different kernel template args"
+  echo "    --kernel_template_input Specify kernel template input arguments, like: --kernel_template_input='args0=args0;args1=args1', use ';' to separate different kernel template args"
   echo "to be continued ..."
 }
 
