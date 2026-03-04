@@ -55,24 +55,12 @@ static bool CheckStepsValid(int64_t steps){
     return true;
 }
 
-static bool CheckBaseValid(double base){
-    //底数base需要大于0
-    if (base <= 0){
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,"LogSpace requires non-negative base, given base is %f", base);
-        return false;
-    }
-    return true;
-}
-
-static aclnnStatus CheckParams(const aclScalar *start, const aclScalar *end, int64_t steps, double base ,const aclTensor *result){
+static aclnnStatus CheckParams(const aclScalar *start, const aclScalar *end, int64_t steps, const aclTensor *result){
     CHECK_RET(CheckNotNull(start, end, result),ACLNN_ERR_INNER_NULLPTR);
     //检查数据类型支持
     CHECK_RET(CheckDtypeValid(result), ACLNN_ERR_PARAM_INVALID);
     //检查steps有效性
     CHECK_RET(CheckStepsValid(steps), ACLNN_ERR_PARAM_INVALID);
-    //检查base有效性
-    CHECK_RET(CheckBaseValid(base), ACLNN_ERR_PARAM_INVALID);
-    
     return ACLNN_SUCCESS;
 }
 
@@ -89,7 +77,7 @@ aclnnStatus aclnnLogSpaceGetWorkspaceSize(const aclScalar *start, const aclScala
 
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr,ACLNN_ERR_INNER_CREATE_EXECUTOR);
-    auto ret = CheckParams(start, end, steps, base, result);
+    auto ret = CheckParams(start, end, steps, result);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
     //如果steps为0，直接返回空张量
