@@ -53,11 +53,11 @@ aclnnStatus aclnnVarCorrection(
 - **参数说明：**
 
   <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
-  <col style="width: 153px">
+  <col style="width: 198px">
   <col style="width: 124px">
-  <col style="width: 212px">
-  <col style="width: 359px">
-  <col style="width: 305px">
+  <col style="width: 262px">
+  <col style="width: 319px">
+  <col style="width: 250px">
   <col style="width: 114px">
   <col style="width: 135px">
   <col style="width: 145px">
@@ -75,7 +75,7 @@ aclnnStatus aclnnVarCorrection(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>计算公式中的<code>self</code>。</td>
       <td>shape支持0到8维。</td>
@@ -85,9 +85,9 @@ aclnnStatus aclnnVarCorrection(
       <td>√</td>
     </tr>
     <tr>
-      <td>dim</td>
+      <td>dim（aclIntArray*）</td>
       <td>输入</td>
-      <td>公式中的<code>dim</code>，Host侧的aclIntArray。</td>
+      <td>公式中的<code>dim</code>。</td>
       <td>参与计算的维度，取值范围为[-self.dim(), self.dim()-1]，且其中的数据不能相同；支持的数据类型为INT64；当dim为nullptr或[]时，视为计算所有维度。</td>
       <td>-</td>
       <td>-</td>
@@ -95,9 +95,9 @@ aclnnStatus aclnnVarCorrection(
       <td>-</td>
     </tr>
     <tr>
-      <td>correction</td>
+      <td>correction（int64_t）</td>
       <td>输入</td>
-      <td>公式中的输入$\delta N$，修正值，数据类型为int64_t。</td>
+      <td>公式中的输入$\delta N$，修正值。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -105,9 +105,9 @@ aclnnStatus aclnnVarCorrection(
       <td>-</td>
     </tr>
     <tr>
-      <td>keepdim</td>
+      <td>keepdim（bool）</td>
       <td>输入</td>
-      <td>reduce轴的维度是否保留，Host侧的bool型数值。</td>
+      <td>reduce轴的维度是否保留。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -115,9 +115,9 @@ aclnnStatus aclnnVarCorrection(
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>Device侧的aclTensor。</td>
+      <td>输出tensor。</td>
       <td>shape支持0到8维。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
@@ -125,7 +125,7 @@ aclnnStatus aclnnVarCorrection(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -135,7 +135,7 @@ aclnnStatus aclnnVarCorrection(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -146,6 +146,7 @@ aclnnStatus aclnnVarCorrection(
     </tr>
   </tbody>
   </table>
+
   - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型不支持BFLOAT16。
 
 - **返回值：**

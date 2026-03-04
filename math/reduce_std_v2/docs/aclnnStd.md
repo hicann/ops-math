@@ -51,13 +51,13 @@ aclnnStatus aclnnStd(
 ## aclnnStdGetWorkspaceSize
 
 - **参数说明**：
-  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
-  <col style="width: 153px">
-  <col style="width: 124px">
-  <col style="width: 212px">
-  <col style="width: 359px">
-  <col style="width: 305px">
-  <col style="width: 114px">
+  <table style="undefined;table-layout: fixed; width: 1565px"><colgroup>
+  <col style="width: 200px">
+  <col style="width: 120px">
+  <col style="width: 300px">
+  <col style="width: 290px">
+  <col style="width: 260px">
+  <col style="width: 115px">
   <col style="width: 135px">
   <col style="width: 145px">
   </colgroup>
@@ -74,9 +74,9 @@ aclnnStatus aclnnStd(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
-      <td>计算公式中的<code>self</code>，Device侧的aclTensor。</td>
+      <td>计算公式中的<code>self</code>。</td>
       <td>-</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
@@ -84,9 +84,9 @@ aclnnStatus aclnnStd(
       <td>√</td>
     </tr>
     <tr>
-      <td>dim</td>
+      <td>dim（aclIntArray*）</td>
       <td>输入</td>
-      <td>公式中的<code>dim</code>，Host侧的aclIntArray。</td>
+      <td>公式中的<code>dim</code>。</td>
       <td>参与计算的维度，取值范围为[-self.dim(), self.dim()-1]，且其中的数据不能相同; 当dim为nullptr或[]时，视为计算所有维度。</td>
       <td>-</td>
       <td>-</td>
@@ -94,9 +94,9 @@ aclnnStatus aclnnStd(
       <td>-</td>
     </tr>
     <tr>
-      <td>correction</td>
+      <td>correction（int64_t）</td>
       <td>输入</td>
-      <td>修正值，Host侧的整型，计算公式中的$\delta N$值。</td>
+      <td>修正值，计算公式中的δN值。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -104,9 +104,9 @@ aclnnStatus aclnnStd(
       <td>-</td>
     </tr>
     <tr>
-      <td>keepdim</td>
+      <td>keepdim（bool）</td>
       <td>输入</td>
-      <td>是否在输出张量中保留输入张量的维度，Host侧的布尔型，计算公式中的`keepdim`值。</td>
+      <td>是否在输出张量中保留输入张量的维度，计算公式中的`keepdim`值。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -114,9 +114,9 @@ aclnnStatus aclnnStd(
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>Device侧的aclTensor。</td>
+      <td>输出tensor。</td>
       <td>-</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
@@ -124,7 +124,7 @@ aclnnStatus aclnnStd(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -134,7 +134,7 @@ aclnnStatus aclnnStd(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

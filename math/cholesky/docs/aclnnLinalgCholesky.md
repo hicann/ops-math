@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-- 算子功能：计算实数对称正定矩阵的Cholesky分解。
+- 接口功能：计算实数对称正定矩阵的Cholesky分解。
 - 计算公式：
 
   $$
@@ -22,7 +22,7 @@
 
 ## 函数原型
 
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnLinalgCholeskyGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLinalgCholesky”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnLinalgCholeskyGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLinalgCholesky”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnLinalgCholeskyGetWorkspaceSize(
@@ -45,14 +45,14 @@ aclnnStatus aclnnLinalgCholesky(
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1567px"><colgroup>
-  <col style="width: 170px">
+  <table style="undefined;table-layout: fixed; width: 1537px"><colgroup>
+  <col style="width: 200px">
   <col style="width: 120px">
   <col style="width: 300px">
   <col style="width: 330px">
   <col style="width: 212px">
   <col style="width: 100px">
-  <col style="width: 190px">
+  <col style="width: 130px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -68,37 +68,37 @@ aclnnStatus aclnnLinalgCholesky(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入self。</td>
-      <td><li>shape的最后两维需要相等，self需为对称正定矩阵。</li></td>
+      <td>shape的最后两维需要相等，self需为对称正定矩阵。</td>
       <td>FLOAT、BFLOAT16</td>
       <td>ND</td>
       <td>2-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>upper</td>
+      <td>upper（bool）</td>
       <td>输入</td>
       <td>选择cholesky上三角分解还是下三角分解。</td>
-      <td><li>True：实现上三角cholesky分解。</li><li>False：实现下三角cholesky分解。</li></td>
+      <td><ul><li>True：实现上三角cholesky分解。</li><li>False：实现下三角cholesky分解。</li></ul></td>
       <td>BOOL</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的输出out。</td>
-      <td><li>数据类型与self相同。</li><li>shape与self相同。</li></td>
+      <td><ul><li>数据类型与self相同。</li><li>shape与self相同。</li></ul></td>
       <td>FLOAT、BFLOAT16</td>
       <td>ND</td>
       <td>2-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -108,7 +108,7 @@ aclnnStatus aclnnLinalgCholesky(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -118,7 +118,7 @@ aclnnStatus aclnnLinalgCholesky(
       <td>-</td>
     </tr>
   </tbody>
-</table>
+  </table>
 
 - **返回值：**
 
@@ -126,10 +126,10 @@ aclnnStatus aclnnLinalgCholesky(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 820px"><colgroup>
-  <col style="width: 100px">
-  <col style="width: 150px">
-  <col style="width: 190px">
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 291px">
+  <col style="width: 135px">
+  <col style="width: 723px">
   </colgroup>
   <thead>
     <tr>
@@ -173,10 +173,10 @@ aclnnStatus aclnnLinalgCholesky(
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 820px"><colgroup>
-  <col style="width: 100px">
-  <col style="width: 150px">
-  <col style="width: 190px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 833px">
   </colgroup>
   <thead>
     <tr>
@@ -206,7 +206,7 @@ aclnnStatus aclnnLinalgCholesky(
       <td>指定执行任务的Stream。</td>
     </tr>
   </tbody>
-</table>
+  </table>
 
 - **返回值：**
 

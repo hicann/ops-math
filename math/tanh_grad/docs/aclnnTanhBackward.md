@@ -16,7 +16,7 @@
 
 ## 功能说明
 
-- 算子功能：aclnnTanh的反向。
+- 接口功能：aclnnTanh的反向。
 
 - 计算公式：
 
@@ -50,10 +50,10 @@ aclnnStatus aclnnTanhBackward(
 - **参数说明**
 
   <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
-  <col style="width: 153px">
+  <col style="width: 203px">
   <col style="width: 124px">
   <col style="width: 212px">
-  <col style="width: 359px">
+  <col style="width: 309px">
   <col style="width: 305px">
   <col style="width: 114px">
   <col style="width: 135px">
@@ -72,9 +72,9 @@ aclnnStatus aclnnTanhBackward(
     </tr></thead>
   <tbody>
     <tr>
-      <td>gradOutput</td>
+      <td>gradOutput（aclTensor*）</td>
       <td>输入</td>
-      <td>公式中的输入<code>gradOutput</code>，Device侧的aclTensor。</td>
+      <td>公式中的输入<code>gradOutput</code>。</td>
       <td><ul><li>与output、gradInput的数据格式一致。</li><li>与output、gradInput的shape一致或满足<a href="../../../docs/zh/context/broadcast关系.md">broadcast关系</a>。</li><li>与output、gradInput的数据类型一致。</li></ul></td>
       <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
       <td>ND</td>
@@ -82,9 +82,9 @@ aclnnStatus aclnnTanhBackward(
       <td>√</td>
     </tr>
     <tr>
-      <td>output</td>
+      <td>output（aclTensor*）</td>
       <td>输入</td>
-      <td>公式中的输入<code>output</code>，Device侧的aclTensor。</td>
+      <td>公式中的输入<code>output</code>。</td>
       <td><ul><li>与gradOutput、gradInput的数据格式一致。</li><li>与gradOutput、gradInput的shape一致或满足<a href="../../../docs/zh/context/broadcast关系.md">broadcast关系</a>。</li><li>与gradOutput、gradInput的数据类型一致。</li></ul></td>
       <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
       <td>ND</td>
@@ -92,9 +92,9 @@ aclnnStatus aclnnTanhBackward(
       <td>√</td>
     </tr>
     <tr>
-      <td>gradInput</td>
+      <td>gradInput（aclTensor*）</td>
       <td>输出</td>
-      <td>公式中的<code>gradInput</code>，Device侧的aclTensor。</td>
+      <td>公式中的<code>gradInput</code>。</td>
       <td><ul><li>与gradOutput、output的数据格式一致。</li><li>与gradOutput、output的shape一致或是gradOutput与output broadcast之后的shape。</li><li>与gradOutput、output的数据类型一致。</li></ul></td>
       <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
       <td>ND</td>
@@ -102,7 +102,7 @@ aclnnStatus aclnnTanhBackward(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -112,7 +112,7 @@ aclnnStatus aclnnTanhBackward(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -123,6 +123,7 @@ aclnnStatus aclnnTanhBackward(
     </tr>
   </tbody>
   </table>
+
   - term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
 - **返回值：**
