@@ -67,7 +67,7 @@
 
 ## 约束说明
 
--输入x和index的shape必须一致
+- 输入x和index的shape必须一致
 
 ## 调用说明
 
