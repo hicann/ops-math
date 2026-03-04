@@ -127,6 +127,7 @@ static aclnnStatus GetWorkspaceSizeCommon(
     auto castSelf = contiguousSelf;
     if (self->GetDataType() == DataType::DT_BOOL || self->GetDataType() == DataType::DT_INT64) {
         castSelf = l0op::Cast(contiguousSelf, DataType::DT_FLOAT, uniqueExecutor.get());
+        CHECK_RET(castSelf != nullptr, ACLNN_ERR_INNER_NULLPTR);
     }
 
     // 调用Exp算子kernel

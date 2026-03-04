@@ -128,6 +128,7 @@ aclnnStatus aclnnSqrtGetWorkspaceSize(const aclTensor *self, aclTensor *out,
   auto selfCast = (CheckType(selfContiguous->GetDataType(), DTYPE_CAST_LIST)) ?
                   l0op::Cast(selfContiguous, castDtype, uniqueExecutor.get()) :
                   selfContiguous;
+  CHECK_RET(selfCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
   // 调用sqrt进行计算
   auto sqrtOpOut = l0op::Sqrt(selfCast, uniqueExecutor.get());
