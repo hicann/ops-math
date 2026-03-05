@@ -12,17 +12,17 @@
  * \file truncated_normal_v2.cpp
  * \brief
  */
-#include "arch35/random_standard_normal_v2_struct.h"
 #include "arch35/random_standard_normal_v2.h"
+
 using namespace AscendC;
 using namespace RandomStandardNormalV2;
 
-#define RANDOM_STANDARD_NORMAL_V2_DEFAULT_TILING_KEY 1
+#define RANDOM_STANDARD_NORMAL_V2_DEFAULT_TILING_KEY 100
 
 extern "C" __global__ __aicore__ void random_standard_normal_v2(
     GM_ADDR shape, GM_ADDR offset, GM_ADDR y, GM_ADDR count, GM_ADDR workspace, GM_ADDR tiling)
 {
-    REGISTER_TILING_DEFAULT(RandomStandardNormalV2TilingData4RegBase);
+    REGISTER_TILING_DEFAULT(RandomUnifiedTilingDataStruct);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
     GET_TILING_DATA(tilingData, tiling);
 

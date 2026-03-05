@@ -12,8 +12,7 @@
 #include <gtest/gtest.h>
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
-#include "../../../op_host/random_standard_normal_v2_tiling.h"
-#include "../../../op_host/random_standard_normal_v2_tiling_arch35.h"
+#include "../../../op_host/arch35/random_standard_normal_v2_tiling_arch35.h"
 
 using namespace std;
 using namespace ge;
@@ -49,10 +48,10 @@ TEST_F(RandomStandardNormalV2Tiling, random_standard_normal_v2_tiling_950_float_
          gert::TilingContextPara::OpAttr("seed", seed),
          gert::TilingContextPara::OpAttr("seed2", seed2)},
         &compileInfo);
-    uint64_t expectTilingKey = 1;
+    uint64_t expectTilingKey = 100;
     string expectTilingData =
-        "256 1 1 5456 256 256 10 5 16384 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+        "64 256 256 10912 10 0 5 16384 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
