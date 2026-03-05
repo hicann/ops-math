@@ -36,7 +36,7 @@
 
   > 说明：若您需要**基于本项目进行二次发布**并且对**软件包大小有要求**时，建议采用静态库编译，该库可以链接您的应用开发程序，仅保留业务所需的算子，从而实现软件最小化部署。
 
-  指整个项目编译为一个静态库文件，包含libcann_math_static.a和aclnn接口头文件。该包仅支持aclnn调用AI Core算子。
+  表示整个项目编译为一个静态库文件，包含libcann_math_static.a和aclnn接口头文件。该包仅支持aclnn调用AI Core算子。
 
 ### 联网编译
 #### 自定义算子包
@@ -59,14 +59,12 @@
     - --experimental（可选）：表示编译用户保存在experimental贡献目录下的算子。
     - -j（可选）：指定编译线程数，加快编译速度。
 
-    更多build参数介绍参见[build参数说明](../context/build.md)。
-    
     若\$\{vendor\_name\}和\$\{op\_list\}都不传入编译的是ops-math包；若编译所有算子的自定义算子包，需传入\$\{vendor\_name\}。当提示如下信息，说明编译成功。
-
+    
     ```bash
-    Self-extractable archive "cann-ops-math-${vendor_name}_linux-${arch}.run" successfully created.
+Self-extractable archive "cann-ops-math-${vendor_name}_linux-${arch}.run" successfully created.
     ```
-
+    
     编译成功后，run包存放于项目根目录的build_out目录下。
 
 2. **安装自定义算子包**
@@ -102,14 +100,12 @@
     - --experimental（可选）：表示编译用户保存在experimental目录下的算子。
     - -j（可选）：指定编译线程数，加快编译速度。
 
-    更多build参数介绍参见[build参数说明](../context/build.md)。
-
     若提示如下信息，说明编译成功。
 
     ```bash
-    Self-extractable archive "cann-${soc_name}-ops-math_${cann_version}_linux-${arch}.run" successfully created.
+Self-extractable archive "cann-${soc_name}-ops-math_${cann_version}_linux-${arch}.run" successfully created.
     ```
-
+    
     \$\{soc\_name\}表示NPU型号名称，即\$\{soc\_version\}删除“ascend”后剩余的内容。编译成功后，run包存放于build_out目录下。
 
 2. **安装ops-math包**
@@ -170,7 +166,7 @@
     ```
 
 ### 未联网编译
- 	 
+
 若在没有连接互联网的环境下编译，需要提前准备好依赖的第三方软件，再进行源码编译。具体过程如下：
 
 1. **检查基础环境是否完备**
@@ -244,7 +240,7 @@
 ### 执行算子样例
 
 > **说明**：Ascend 950PR产品使用仿真执行算子样例，请见[仿真指导](../debug/op_debug_prof.md#方式二针对ascend-950pr)。
-    
+
 - 基于**自定义算子包**执行算子样例，包安装后，执行如下命令：
     ```bash
     bash build.sh --run_example ${op} ${mode} ${pkg_mode} [--vendor_name=${vendor_name}] [--soc=${soc_version}] [--experimental]
@@ -280,7 +276,7 @@
 
         ops-math静态库依赖于ops-legacy静态库，将上述静态库准备好，解压并将所有lib64、include目录移动至统一目录\$\{static\_lib\_path\}下。
 
-        > 说明：ops-legacy静态库```cann-${soc_name}-ops-legacy-static_${cann_version}_linux-${arch}.tar.gz```可通过单击[下载链接](https://mirror-centralrepo.devcloud.cn-north-4.huaweicloud.com/artifactory/cann-run-release/software/9.0.0/)获取，ops-math静态库暂未提供软件包，请通过本地编译生成。
+        > 说明：ops-legacy静态库```cann-${soc_name}-ops-legacy-static_${cann_version}_linux-${arch}.tar.gz```可通过单击[下载链接](https://ascend.devcloud.huaweicloud.com/artifactory/cann-run-release/software/master)获取，ops-math静态库暂未提供软件包，请通过本地编译生成。
 
     2. **创建run.sh**
 
@@ -320,32 +316,31 @@
         ./test_aclnn_abs
         ```
 
-        \$\{static\_lib\_path\}表示静态库统一放置路径；  
-        \$\{ASCEND\_INSTALL\_PATH\}已通过环境变量配置，表示CANN toolkit包安装路径；  
-        最终可执行文件名请替换为**实际算子可执行文件名**。  
+        \$\{static\_lib\_path\}表示静态库统一放置路径； \$\{ASCEND\_INSTALL\_PATH\}已通过环境变量配置，表示CANN toolkit包安装路径； 最终可执行文件名请替换为**实际算子可执行文件名**。  
         
-        其中lcann\_math\_static、lcann\_legacy\_static表示算子依赖的静态库文件，从静态库统一放置路径\$\{static\_lib\_path\}中获取；  
+        其中lcann\_math\_static、lcann\_legacy\_static表示算子依赖的静态库文件，从静态库统一放置路径\$\{static\_lib\_path\}中获取； 
         lgraph、lmetadef等表示算子依赖的底层库文件，可在CANN toolkit包获取。 
-
+        
     3. **执行run.sh**
 
         ```bash
-        bash run.sh
+    bash run.sh
         ```
 
 无论上述哪种方式，算子样例执行后会打印结果，以Abs算子为例：
 
-    ```
-    abs result[0] is: 1.000000
-    abs result[1] is: 1.000000
-    abs result[2] is: 1.000000
-    abs result[3] is: 2.000000
-    abs result[4] is: 2.000000
-    abs result[5] is: 2.000000
-    abs result[6] is: 3.000000
-    abs result[7] is: 3.000000
-    ```
-- **执行算子UT**
+```
+abs result[0] is: 1.000000
+abs result[1] is: 1.000000
+abs result[2] is: 1.000000
+abs result[3] is: 2.000000
+abs result[4] is: 2.000000
+abs result[5] is: 2.000000
+abs result[6] is: 3.000000
+abs result[7] is: 3.000000
+```
+
+### 执行算子UT
 
 > 说明：执行UT用例依赖googletest单元测试框架，详细介绍参见[googletest官网](https://google.github.io/googletest/advanced.html#running-a-subset-of-the-tests)。
 

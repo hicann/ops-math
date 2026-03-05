@@ -2,7 +2,7 @@
 
 基于本项目进行[算子调用](../invocation/quick_op_invocation.md)或[算子开发](../develop/aicore_develop_guide.md)之前，请您先参考下面步骤完成基础环境搭建。
 
-注意本文提到的编译态和运行态含义如下，请按需操作：
+注意本文提到的编译态和运行态含义如下，请按需安装：
 
 - 编译态：针对仅编译不运行本项目的场景，只需安装前置依赖和CANN toolkit包。
 - 运行态：针对运行本项目的场景（编译运行或纯运行），除了安装前置依赖和CANN toolkit包，还需安装驱动与固件、CANN ops包。
@@ -39,25 +39,28 @@
 
 ## 环境准备（三选一）
 
-### WebIDE环境（内测中）
-    
-对于无环境的用户，可直接使用WebIDE开发平台，即“**算子一站式开发平台**”。该平台为您提供在线可直接运行的昇腾环境，环境中已安装必备的软件包，无需手动安装。
+本项目提供了多种部署CANN包的方式，请按需选择。
 
-> **前提说明：**
->
-> - 该平台功能正在内测中，若您想体验，请先单击[LINK](https://gitcode.com/org/cann/discussions/47)申请云开发平台资源，并获取平台介绍文档。只有成功申请了平台资源，开源项目的首页才会有“**云开发**”按钮，您才可以参考下述步骤体验。
-> - 版本说明：环境默认提供最新商发版CANN软件包，目前是8.5.0。
+- WebIDE和Docker环境：提供极简环境搭建，**默认安装最新商发版CANN软件包**（目前是CANN 8.5.0）。
+- 手动安装CANN包：如果您想体验手动安装CANN包或体验最新master分支能力，推荐手动安装。
 
-进入本开源项目首页，单击“`云开发 > WebIDE for Ascend`”进入算子一站式开发平台，根据页面提示启动云开发环境。
+### 使用WebIDE环境
 
-<img src="../figures/cloudIDE.png" alt="云平台"  width="700px" height="100px">
+对于无环境的用户，可直接使用WebIDE开发平台，即“**算子一站式开发平台**”，该平台为您提供在线可直接运行的昇腾环境，环境中已安装必备的软件包，无需手动安装。更多关于开发平台的介绍请参考[LINK](https://gitcode.com/org/cann/discussions/54)。
+
+1. 进入开源项目，单击“`云开发`”按钮，使用已认证过的华为云账号登录。若未注册或认证，请根据页面提示进行注册和认证。
+
+   <img src="../figures/cloudIDE.png" alt="云平台"  width="750px" height="90px">
+
+2. 根据页面提示创建并启动云开发环境，单击“`连接 > WebIDE `”进入算子一站式开发平台，开源项目的资源默认在`/mnt/workspace`目录下。
+
+   <img src="../figures/webIDE.png" alt="云平台"  width="1000px" height="150px">
 
 ### 使用Docker部署
 
 > **说明：**
 > - Docker镜像是一种高效部署方式，目前仅适用于Atlas A2系列产品，且目前仅适配Ubuntu操作系统。
 > - 镜像文件比较大，下载需要一定时间，请您耐心等待。
-> - 版本说明：环境默认提供最新商发版CANN软件包，目前是8.5.0。
 
 #### 1. 下载镜像
 
@@ -98,8 +101,7 @@ docker run --name cann_container --device /dev/davinci0 --device /dev/davinci_ma
 
 #### 1. 下载软件包
 
-请根据下述场景，按需获取`Ascend-cann-toolkit_${cann_version}_linux-${arch}.run`、`Ascend-cann-${soc_name}-ops_${cann_version}_linux-${arch}.run`。
- 	 
+请根据下述场景，按需获取`Ascend-cann-toolkit_${cann_version}_linux-${arch}.run`、`Ascend-cann-${soc_name}-ops_${cann_version}_linux-${arch}.run`。	 
 - 场景1：如果您想体验**官网正式发布的CANN包**能力，访问[CANN官网下载中心](https://www.hiascend.com/cann/download)，选择对应版本CANN软件包（仅支持CANN 8.5.0及后续版本），安装指导详见《[CANN 软件安装指南](https://www.hiascend.com/document/redirect/CannCommunityInstSoftware)》。
 
 - 场景2：如果您想体验**master分支最新能力**，单击[下载链接](https://ascend.devcloud.huaweicloud.com/artifactory/cann-run-release/software/master)获取。
