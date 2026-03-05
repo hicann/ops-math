@@ -16,9 +16,6 @@
 #include <cstdint>
 #include <cstring>
 
-#define DT_BF16 bfloat16_t
-#define DT_FP16 half
-#define DT_FP32 float
 #define DTYPE_QKV DT_FP32
 
 #define __CCE_UT_TEST__
@@ -30,7 +27,7 @@ struct TransformBiasRescaleQkvTilingData {
     uint32_t needCoreNum = 1;
     int64_t batch = 3;
     int64_t token = 4;
-    int64_t dimension = 144;
+    int64_t dimension = 48;
     int64_t numHeads = 3;
     int64_t dimPerHead = 16;
     int64_t maxEleNumUB = 12 * 1024;

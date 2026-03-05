@@ -12,7 +12,6 @@
 #include <fstream>
 #include <vector>
 #include <gtest/gtest.h>
-#include "base/registry/op_impl_space_registry_v2.h"
 #include "../../../op_host/transform_bias_rescale_qkv_tiling.h"
 #include "exe_graph/runtime/tiling_context.h"
 #include "tiling_context_faker.h"
