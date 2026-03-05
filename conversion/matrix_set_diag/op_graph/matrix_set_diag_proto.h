@@ -20,13 +20,15 @@ namespace ge {
 
 * @par Inputs:
 * Two inputs, including:
-* @li x: A Tensor. Must be one of the following types:
+* @li x: A Tensor. 2-8 dimensions. Must be one of the following types:
 *    float16, float32, double, int32, uint8, int16, int8, complex64, int64,
-*    qint8, quint8, qint32, uint16, complex128, uint32, uint64.
-* @li diagonal: A Tensor of the same type as "x" . \n
+*    qint8, quint8, qint32, uint16, complex128, uint32, uint64, bfloat16, bool.
+* @li diagonal: A Tensor of the same type as "x". 1-7 dimensions (must be one less than x).
+     The last dimension is the smaller of the last two dimensions of x, 
+     while the other dimensions are same as those in x. \n
 
 * @par Outputs:
-* y: A Tensor. Has the same type as "x" . \n
+* y: A Tensor. Has the same type and shape as "x" . \n
 
 * @par Third-party framework compatibility
 * Compatible with the TensorFlow operator MatrixSetDiag.
