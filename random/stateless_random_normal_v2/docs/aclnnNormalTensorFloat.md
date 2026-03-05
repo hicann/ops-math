@@ -80,7 +80,7 @@ aclnnStatus aclnnNormalTensorFloat(
     <tr>
       <td>std</td>
       <td>输入</td>
-      <td>生成随机数分布标准差的张量。</td>
+      <td>生成随机数分布的标准差。</td>
       <td>-</td>
       <td>FLOAT</td>
       <td>ND</td>
