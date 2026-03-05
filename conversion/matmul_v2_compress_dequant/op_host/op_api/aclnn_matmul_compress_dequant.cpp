@@ -180,6 +180,31 @@ inline static const aclTensor *TensorReformat(const aclTensor *x, const op::Form
   return formatTensor;
 }
 
+static aclnnStatus InputsContiguousAndTransFormat(const aclTensor *tensor, const aclTensor *&reformatedTensor,
+                                                  const std::string &tensorName, aclOpExecutor *executor)
+{
+    if (tensor == nullptr) {
+        return ACLNN_SUCCESS;
+    }
+    op::Format tensorFormat = tensor->GetStorageFormat();
+    if (tensorFormat != Format::FORMAT_FRACTAL_NZ) {
+        reformatedTensor = l0op::Contiguous(tensor, executor);
+        CHECK_COND(reformatedTensor != nullptr, ACLNN_ERR_INNER_NULLPTR, "%s Contiguous failed.", tensorName.c_str());
+
+        bool is310P = GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310P;
+        // only in 310P, tensor should be transdata to NZ format
+        if (!is310P) {
+            return ACLNN_SUCCESS;
+        }
+
+        reformatedTensor = l0op::TransData(reformatedTensor, Format::FORMAT_FRACTAL_NZ, 1, executor);
+        CHECK_COND(reformatedTensor != nullptr, ACLNN_ERR_INNER_NULLPTR, "%s TransData failed.", tensorName.c_str());
+        return ACLNN_SUCCESS;
+    }
+    reformatedTensor = tensor;
+    return ACLNN_SUCCESS;
+}
+
 static const aclTensor *BuildMatMulUnzipGraph(MatmulUnzipInput matmulUnzipInput, const int offsetX,
                                               const aclIntArray *compressInfo, aclTensor *out,
                                               aclOpExecutor *executor) {
@@ -202,7 +227,8 @@ static const aclTensor *BuildMatMulUnzipGraph(MatmulUnzipInput matmulUnzipInput,
     CHECK_RET(emptyOut != nullptr, nullptr);
     return emptyOut;
   }
-  const aclTensor *x1FractalNZ = l0op::TransData(matmulUnzipInput.x1, op::Format::FORMAT_FRACTAL_NZ, 1, executor);
+  const aclTensor *reformatedX = nullptr;
+  (void)InputsContiguousAndTransFormat(matmulUnzipInput.x1, reformatedX, "x1", executor);
   const aclTensor *deqScale5HD = matmulUnzipInput.deqScale;
   if (matmulUnzipInput.deqScale->Numel() % DEQUANT_SCALE_ALIGN_SIZE == 0) {
     deqScale5HD = TensorReformat(matmulUnzipInput.deqScale, op::Format::FORMAT_NC1HWC0, executor);
@@ -211,7 +237,7 @@ static const aclTensor *BuildMatMulUnzipGraph(MatmulUnzipInput matmulUnzipInput,
     return ProcessEmptyTensor(matmulUnzipInput.x1, out, executor);
   }
   const aclTensor *x2ReFormatFractalZ = TensorReformat(matmulUnzipInput.x2, op::Format::FORMAT_FRACTAL_Z, executor);
-  const aclTensor *matmulOut = l0op::MatMulCompressDequant(x1FractalNZ, x2ReFormatFractalZ,
+  const aclTensor *matmulOut = l0op::MatMulCompressDequant(reformatedX, x2ReFormatFractalZ,
                                                            matmulUnzipInput.compressIndex, deqScale5HD,
                                                            matmulUnzipInput.bias, nullptr, false, false, compressInfo,
                                                            offsetX, GetAlgStr(UnzipMode::WEIGHT_UNZIP), executor);
