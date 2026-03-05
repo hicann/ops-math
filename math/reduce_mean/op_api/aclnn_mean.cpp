@@ -203,10 +203,13 @@ static aclnnStatus FillScalar(aclTensor* out, float val, aclOpExecutor* executor
         shape.push_back(tmpVal);
     }
     auto dims = executor->ConvertToTensor(shape.data(), shape.size(), DataType::DT_INT64);
+    CHECK_RET(dims != nullptr, ACLNN_ERR_INNER_NULLPTR);
     auto shapeArray = executor->AllocIntArray(shape.data(), shape.size());
+    CHECK_RET(shapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     FVector<float> valVector = {val};
     auto valTensor = executor->ConvertToTensor(valVector.data(), valVector.size(), out->GetDataType());
+    CHECK_RET(valTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
     auto fillOut = l0op::Fill(dims, valTensor, shapeArray, executor);
     CHECK_RET(fillOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
     auto viewCopyResult = l0op::ViewCopy(fillOut, out, executor);
@@ -254,7 +257,7 @@ aclnnStatus aclnnMeanGetWorkspaceSize(
         OP_LOGD("Enter NonContigous");
         auto selfContiguous = uniqueExecutor.get()->CreateView(
             self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
-
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto meanOpOut = l0op::ReduceMean(selfContiguous, dim, keepDim, uniqueExecutor.get());
         CHECK_RET(meanOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
         CHECK_RET(CheckShapeAndScalarSame(meanOpOut, out), ACLNN_ERR_PARAM_INVALID);
