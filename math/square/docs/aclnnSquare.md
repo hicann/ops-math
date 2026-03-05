@@ -28,19 +28,90 @@ $$
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSquareGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSquare”接口执行计算。
 
-* `aclnnStatus aclnnSquareGetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-* `aclnnStatus aclnnSquare(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, const aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnSquareGetWorkspaceSize(
+  const aclTensor *self, 
+  aclTensor       *out, 
+  uint64_t        *workspaceSize,  
+  aclOpExecutor  **executor)
+```
+
+```Cpp
+aclnnStatus aclnnSquare(
+  void             *workspace, 
+  uint64_t          workspaceSize, 
+  aclOpExecutor    *executor, 
+  const aclrtStream stream)
+```
 
 ## aclnnSquareGetWorkspaceSize
 
 - **参数说明：**
 
-  - self(aclTensor\*, 计算输入): Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16、INT32、INT64。
-  - out(aclTensor\*, 计算输出): Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。shape和type需与self一致。
-    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16、INT32、INT64。
-  - workspaceSize(uint64_t\*, 出参): 返回用户需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor\*\*, 出参): 返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1494px"><colgroup>
+  <col style="width: 242px">
+  <col style="width: 129px">
+  <col style="width: 241px">
+  <col style="width: 165px">
+  <col style="width: 286px">
+  <col style="width: 122px">
+  <col style="width: 162px">
+  <col style="width: 147px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>输入Tensor。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>输出Tensor。</td>
+      <td>shape和type需与self一致。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 

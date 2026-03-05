@@ -32,24 +32,133 @@
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnStdMeanCorrectionGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnStdMeanCorrection”接口执行计算。
 
-- `aclnnStatus aclnnStdMeanCorrectionGetWorkspaceSize(const aclTensor* self, const aclIntArray* dim, int64_t correction, bool keepdim, aclTensor* stdOut, aclTensor* meanOut, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnStdMeanCorrection(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnStdMeanCorrectionGetWorkspaceSize(
+  const aclTensor*   self, 
+  const aclIntArray* dim, 
+  int64_t            correction, 
+  bool               keepdim, 
+  aclTensor*         stdOut, 
+  aclTensor*         meanOut, 
+  uint64_t*          workspaceSize, 
+  aclOpExecutor**    executor)
+```
+
+```Cpp
+aclnnStatus aclnnStdMeanCorrection(
+  void*             workspace, 
+  uint64_t          workspaceSize, 
+  aclOpExecutor*    executor, 
+  const aclrtStream stream)
+```
 
 ## aclnnStdMeanCorrectionGetWorkspaceSize
 
 - **参数说明**
 
-  - self（aclTensor\*, 计算输入）：公式中的`self`，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16。
-  - dim（aclIntArray\*, 计算输入）：公式中的`dim`，Host侧的aclIntArray，表示参与计算的维度，取值范围为[-self.dim(), self.dim()-1]，且其中的数据不能相同，支持的数据类型为INT64。当dim为nullptr或[]时，视为计算所有维度。
-  - correction（int64_t, 计算输入）：公式中的$\delta N$值，Host侧的整型，修正值。
-  - keepdim（bool, 计算输入）：公式中`keepdim`，Host侧的布尔型，是否在输出张量中保留输入张量的维度。
-  - stdOut（aclTensor\*, 计算输出）：公式中`stdOut`，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16。
-  - meanOut（aclTensor\*, 计算输出）：公式中`meanOut`，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16。
-  - workspaceSize（uint64_t\*, 出参）：返回需要在Device侧申请的workspace大小。
-  - executor（aclOpExecutor\**, 出参）：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1540px"><colgroup>
+  <col style="width: 248px">
+  <col style="width: 131px">
+  <col style="width: 265px">
+  <col style="width: 218px">
+  <col style="width: 264px">
+  <col style="width: 124px">
+  <col style="width: 142px">
+  <col style="width: 148px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>公式中的self。</td>
+      <td>-</td>
+      <td>FLOAT、BFLOAT16、FLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>dim（aclIntArray*）</td>
+      <td>输入</td>
+      <td>公式中的dim，表示参与计算的维度。</td>
+      <td>取值范围为[-self.dim(), self.dim()-1]，且其中的数据不能相同。<br>当dim为nullptr或[]时，视为计算所有维度。</td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>correction（int64_t）</td>
+      <td>输入</td>
+      <td>公式中的δN值，修正值。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>keepdim（bool）</td>
+      <td>输入</td>
+      <td>公式中keepdim，是否在输出张量中保留输入张量的维度。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>stdOut（aclTensor*）</td>
+      <td>输出</td>
+      <td>公式中stdOut。</td>
+      <td>-</td>
+      <td>FLOAT、BFLOAT16、FLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>meanOut（aclTensor*）</td>
+      <td>输出</td>
+      <td>公式中meanOut。</td>
+      <td>-</td>
+      <td>FLOAT、BFLOAT16、FLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
 - **返回值：**
 
