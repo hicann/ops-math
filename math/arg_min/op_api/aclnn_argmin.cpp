@@ -39,32 +39,26 @@ static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_LIST = {op::D
 
 static const int64_t FIVE_DIM = 5;
 
+static const std::initializer_list<DataType> ASCEND910_DTYPE_DTYPE_SUPPORT_LIST = {
+      DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_INT8, DataType::DT_INT16,
+      DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT8};
+
+static const std::initializer_list<DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST = {
+      DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_INT8, DataType::DT_INT16,
+      DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT8, DataType::DT_BF16};
+
+static const std::initializer_list<DataType> EMPTY_DTYPE_SUPPORT_LIST = {};
+
 static const inline std::initializer_list<DataType>& GetSupportDtypeList(NpuArch arch) {
-  static const std::initializer_list<DataType> emptyDtypes = {};
-  static const std::map<NpuArch, std::initializer_list<DataType>> dataTypeSupportedMap = {
-    {NpuArch::DAV_2002, {
-      DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_INT8, DataType::DT_INT16,
-      DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT8}},
-    {NpuArch::DAV_1001, {
-      DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_INT8, DataType::DT_INT16,
-      DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT8}},
-    {NpuArch::DAV_2201, {
-      DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_INT8, DataType::DT_INT16,
-      DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT8, DataType::DT_BF16}},
-    {NpuArch::DAV_3510, {
-      DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_INT8, DataType::DT_INT16,
-      DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT8, DataType::DT_BF16}},
-    {NpuArch::DAV_3002, {
-      DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_INT8, DataType::DT_INT16,
-      DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT8, DataType::DT_BF16}},
-  };
-
-  auto found = dataTypeSupportedMap.find(arch);
-  if (found == dataTypeSupportedMap.end()) {
-    return emptyDtypes;
+  if (arch == NpuArch::DAV_2002 || arch == NpuArch::DAV_1001) {
+    return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
+  } else if (arch == NpuArch::DAV_2201 || arch == NpuArch::DAV_3002) {
+    return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
+  } else if (IsRegBase(arch)) {
+    return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
+  } else {
+    return EMPTY_DTYPE_SUPPORT_LIST;
   }
-
-  return found->second;
 }
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out) {
