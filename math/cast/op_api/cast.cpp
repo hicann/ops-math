@@ -258,6 +258,8 @@ static const std::initializer_list<std::pair<op::DataType, op::DataType>> REGBAS
     {op::DataType::DT_UINT32, op::DataType::DT_FLOAT16},
     {op::DataType::DT_UINT32, op::DataType::DT_FLOAT},
     {op::DataType::DT_UINT32, op::DataType::DT_BF16},
+    {op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX32},
+    {op::DataType::DT_COMPLEX32, op::DataType::DT_COMPLEX64},
     {op::DataType::DT_DOUBLE, op::DataType::DT_FLOAT},
     {op::DataType::DT_DOUBLE, op::DataType::DT_BF16},
     {op::DataType::DT_INT64, op::DataType::DT_DOUBLE},

@@ -236,6 +236,7 @@ aclnnStatus aclnnCast(
   - 针对输入、输出类型，涉及COMPLEX32、FLOAT4_E2M1、FLOAT4_E1M2、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、INT4的，只支持如下表格中的转换路径：
     | `self`数据类型 | `out`数据类型 |
     | ------------ | ------------ |
+    | COMPLEX32 | COMPLEX64 |
     | COMPLEX32 | FLOAT16 |
     | FLOAT16 | COMPLEX32 |
     | FLOAT32/FLOAT16/BFLOAT16 | FLOAT4_E2M1/FLOAT4_E1M2 |
