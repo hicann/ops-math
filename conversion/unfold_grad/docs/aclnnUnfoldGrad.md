@@ -72,9 +72,9 @@ aclnnStatus aclnnUnfoldGrad(
   <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
-  <col style="width: 266px">
-  <col style="width: 308px">
-  <col style="width: 240px">
+  <col style="width: 200px">
+  <col style="width: 350px">
+  <col style="width: 150px">
   <col style="width: 110px">
   <col style="width: 150px">
   <col style="width: 145px">
@@ -115,7 +115,7 @@ aclnnStatus aclnnUnfoldGrad(
       <td class="tg-0pky">dim（int64_t）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">表示展开发生的维度，公式中的dim。</td>
-      <td class="tg-0pky">dim需要满足dim大于等于0且dim小于inputSizes的size。</td>
+      <td class="tg-0pky">dim仅支持len(inputSizes)-1或者len(inputSizes)-2。</td>
       <td class="tg-0pky">INT64</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
@@ -125,7 +125,7 @@ aclnnStatus aclnnUnfoldGrad(
       <td class="tg-0lax">size（int64_t）</td>
       <td class="tg-0lax">输入</td>
       <td class="tg-0lax">表示展开的每个切片的大小，公式中的size。</td>
-      <td class="tg-0lax">size需要满足size大于0且size小于等于inputSizes的第dim维。</td>
+      <td class="tg-0lax"><ul><li>size需要满足size大于0且size小于等于inputSizes的第dim维。</li><li>dim等于len(inputSizes)-1时，fp32数据类型，size小于等于49088。fp16数据类型，size小于等于32720。</li><li>dim等于len(inputSizes)-2时，fp32数据类型，size小于等于88。fp16数据类型，step、size小于等于72。</li></ul></td>
       <td class="tg-0lax">INT64</td>
       <td class="tg-0lax">-</td>
       <td class="tg-0lax">-</td>
@@ -135,7 +135,7 @@ aclnnStatus aclnnUnfoldGrad(
       <td class="tg-0lax">step（int64_t）</td>
       <td class="tg-0lax">输入</td>
       <td class="tg-0lax">表示每个切片之间的步长，公式中的step。</td>
-      <td class="tg-0lax">step需要满足step大于0。</td>
+      <td class="tg-0lax"><ul><li>step需要满足step大于0。</li><li>dim等于len(inputSizes)-1时，fp32数据类型，size小于等于49088。fp16数据类型，size小于等于32720。</li><li>dim等于len(inputSizes)-2时，fp32数据类型，size小于等于88。fp16数据类型，step、size小于等于72。</li></ul></td>
       <td class="tg-0lax">INT64</td>
       <td class="tg-0lax">-</td>
       <td class="tg-0lax">-</td>
@@ -203,21 +203,27 @@ aclnnStatus aclnnUnfoldGrad(
         <td class="tg-0pky">输入和输出的数据类型和数据格式不在支持的范围之内。</td>
       </tr>
       <tr>
-        <td class="tg-0lax" rowspan="5">ACLNN_ERR_INNER_TILING_ERROR</td>
-        <td class="tg-0lax" rowspan="5">561002</td>
+        <td class="tg-0lax" rowspan="7">ACLNN_ERR_INNER_TILING_ERROR</td>
+        <td class="tg-0lax" rowspan="7">561002</td>
         <td class="tg-0lax">gradOut的第dim维不等于(inputSizes[dim]-size)/step+1。</td>
       </tr>
       <tr>
         <td class="tg-0lax">gradOut的size不等于inputSizes的size+1。</td>
       </tr>
       <tr>
-        <td class="tg-0lax">dim小于0或dim大于等于inputSizes的size。</td>
-      </tr>
-      <tr>
         <td class="tg-0lax">size小于等于0或size大于inputSizes的第dim维。</td>
       </tr>
       <tr>
         <td class="tg-0lax">step小于等于0。</td>
+      </tr>
+      <tr>
+        <td class="tg-0lax">dim不等于len(inputSizes)-1且dim不等于len(inputSizes)-2轴。</td>
+      </tr>
+      <tr>
+        <td class="tg-0lax">dim等于len(inputSizes)-1时，fp32数据类型，step、size大于49088。fp16数据类型，step、size大于32720。</td>
+      </tr>
+      <tr>
+        <td class="tg-0lax">dim等于len(inputSizes)-2时，fp32数据类型，step、size大于88。fp16数据类型，step、size大于72。</td>
       </tr>
     </tbody>
     </table>
@@ -270,12 +276,14 @@ aclnnStatus aclnnUnfoldGrad(
   - aclnnUnfoldGrad默认确定性实现。
 
 1. gradOut的shape满足约束： 
-    1）gradOut的第dim维等于(inputSizes[dim]-size)/step+1
-    2）gradOut的size等于inputSizes的size+1
+    - gradOut的第dim维等于(inputSizes[dim]-size)/step+1。
+    - gradOut的size等于inputSizes的size+1。
 2. dim、size、step的要求：
-    1）dim大于等于0且dim小于inputSizes的size
-    2）size大于0且size小于等于inputSizes的第dim维
-    3）step大于0
+    - size大于0且size小于等于inputSizes的第dim维。
+    - step大于0。
+    - dim等于len(inputSizes)-1或者dim等于len(inputSizes)-2轴。
+    - dim等于len(inputSizes)-1时，fp32数据类型，step、size大于49088。fp16数据类型，step、size大于32720。
+    - dim等于len(inputSizes)-2时，fp32数据类型，step、size大于88。fp16数据类型，step、size大于72。
 
 ## 调用示例
 
