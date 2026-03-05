@@ -54,14 +54,14 @@ template <typename T>
 class CopyOutSimt : public StridedSliceGradBase
 {
 public:
-    [aicore] CopyOutSimt() {};
-    [aicore] inline void Init(GM_ADDR dy, GM_ADDR output, const StridedSliceGradTilingData& tilingData, TPipe& pipeIn);
-    [aicore] inline void Process();
-    [aicore] inline void InitCopyParams();
-    [aicore] inline void ConstructDivParams();
+    __aicore__ CopyOutSimt() {};
+    __aicore__ inline void Init(GM_ADDR dy, GM_ADDR output, const StridedSliceGradTilingData& tilingData, TPipe& pipeIn);
+    __aicore__ inline void Process();
+    __aicore__ inline void InitCopyParams();
+    __aicore__ inline void ConstructDivParams();
 
 private:
-    [aicore] inline void ProcessPerLoop();
+    __aicore__ inline void ProcessPerLoop();
 
 private:
     TPipe pipe_;
@@ -95,7 +95,7 @@ private:
 };
 
 template <typename T>
-[aicore] inline void CopyOutSimt<T>::Init(GM_ADDR dy, GM_ADDR output, const StridedSliceGradTilingData& tilingData,
+__aicore__ inline void CopyOutSimt<T>::Init(GM_ADDR dy, GM_ADDR output, const StridedSliceGradTilingData& tilingData,
                                           TPipe& pipeIn)
 {
     // tiling_data
@@ -126,7 +126,7 @@ template <typename T>
 }
 
 template <typename T>
-[aicore] inline void CopyOutSimt<T>::ConstructDivParams()
+__aicore__ inline void CopyOutSimt<T>::ConstructDivParams()
 {
     for (uint32_t i = 0; i < MAX_SUPPORT_DIM; i++) {
         GetUintDivMagicAndShift<uint32_t>(m_[0], shift_[0], fusedSliceInnerShape_[i]);
@@ -134,7 +134,7 @@ template <typename T>
 }
 
 template <typename T>
-[aicore] inline void CopyOutSimt<T>::Process()
+__aicore__ inline void CopyOutSimt<T>::Process()
 {
     if (blockIdx_ >= usedCoreNum_) {
         return;
@@ -149,7 +149,7 @@ template <typename T>
 }
 
 template <typename T>
-[aicore] inline void CopyOutSimt<T>::ProcessPerLoop()
+__aicore__ inline void CopyOutSimt<T>::ProcessPerLoop()
 {
     LocalTensor<T> xLocal = dataQueue_.AllocTensor<T>();
     DataCopyPad(xLocal, srcGm_[normalLoopBlockNum_ * loopNum_], curCopyParams_, padParams_);
@@ -181,7 +181,7 @@ template <typename T>
 }
 
 template <typename T>
-[aicore] inline void CopyOutSimt<T>::InitCopyParams()
+__aicore__ inline void CopyOutSimt<T>::InitCopyParams()
 {
     normalCopyParams_ = {static_cast<uint16_t>(1), static_cast<uint32_t>(normalLoopBlockNum_ * sizeof(T)),
                          static_cast<uint32_t>(0), static_cast<uint32_t>(0), static_cast<uint32_t>(0)};
