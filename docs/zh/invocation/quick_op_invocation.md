@@ -60,11 +60,11 @@
     - -j（可选）：指定编译线程数，加快编译速度。
 
     若\$\{vendor\_name\}和\$\{op\_list\}都不传入编译的是ops-math包；若编译所有算子的自定义算子包，需传入\$\{vendor\_name\}。当提示如下信息，说明编译成功。
-    
+
     ```bash
-Self-extractable archive "cann-ops-math-${vendor_name}_linux-${arch}.run" successfully created.
+    Self-extractable archive "cann-ops-math-${vendor_name}_linux-${arch}.run" successfully created.
     ```
-    
+
     编译成功后，run包存放于项目根目录的build_out目录下。
 
 2. **安装自定义算子包**
@@ -103,7 +103,7 @@ Self-extractable archive "cann-ops-math-${vendor_name}_linux-${arch}.run" succes
     若提示如下信息，说明编译成功。
 
     ```bash
-Self-extractable archive "cann-${soc_name}-ops-math_${cann_version}_linux-${arch}.run" successfully created.
+    Self-extractable archive "cann-${soc_name}-ops-math_${cann_version}_linux-${arch}.run" successfully created.
     ```
     
     \$\{soc\_name\}表示NPU型号名称，即\$\{soc\_version\}删除“ascend”后剩余的内容。编译成功后，run包存放于build_out目录下。
@@ -187,6 +187,7 @@ Self-extractable archive "cann-${soc_name}-ops-math_${cann_version}_linux-${arch
         ```bash
         python ${scripts_dir}/third_lib_download.py
         ```
+
     \$\{scripts\_dir\}表示脚本存放路径，下载的第三方软件包默认存放在当前脚本所在目录。
 
 3. **编译算子包**
@@ -324,7 +325,7 @@ Self-extractable archive "cann-${soc_name}-ops-math_${cann_version}_linux-${arch
     3. **执行run.sh**
 
         ```bash
-    bash run.sh
+        bash run.sh
         ```
 
 无论上述哪种方式，算子样例执行后会打印结果，以Abs算子为例：
