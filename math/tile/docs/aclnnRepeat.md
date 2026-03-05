@@ -373,7 +373,7 @@ int main() {
   aclTensor* self = nullptr;
   aclTensor* out = nullptr;
   aclIntArray* repeat = nullptr;
-  std::vector<float> selfHostData(GetShapeSize(selfShape) 1);
+  std::vector<float> selfHostData(GetShapeSize(selfShape), 1);
   std::vector<float> outHostData(GetShapeSize(outShape), 1);
   // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
