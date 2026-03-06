@@ -42,6 +42,9 @@ const uint32_t UB_CONST_INT32 = 4096;           // 输出idx为int32时kernel侧
 const uint32_t UB_CONST_INT64 = 7168;           // 输出idx为int64时kernel侧需要的固定ub大小
 // 排序轴在int32范围内的最大值, 超过这个值, cutsum，前缀和就要用int64数据范围表示              
 const uint32_t INT32_MAX_RANGE_VALUE = 1073741823; 
+const uint32_t SMALL_SIZE_OPTIM_MODE = 0;
+const uint32_t SMALL_SIZE_MODE = 1;
+const uint32_t MULT_CORE_MODE = 2;
 struct SortTileInfo {
     uint32_t coreNumNeed = 0;
     uint32_t lastDimTileNum = 0;
@@ -211,7 +214,7 @@ void PrintTilingDataOfIdx(SortTileInfo& sortTileInfo, SortWithIndexTilingDataSim
         "sortAcApiNeedBufferSize is %u, mergSortAcApiNeedBufferSize is %u, "
         "oneCoreRowNum is %u, outputLastDimValue is %u, tmp ub size is %u, "
         "keyParams0 is %u, keyParams1 is %u, keyParams2 is %u, keyParams3 is %u, keyParams4 is %u, "
-        "keyParams5 is %u, ub avalibal size=%lu.",
+        "keyParams5 is %u, ub avalibal size=%lu, modeType=%u.",
         sortTileInfo.coreNumNeed, sortTilingData.get_lastAxisNum(), sortTilingData.get_isInInt32Range(),
         sortTilingData.get_sortLoopTimes(), sortTilingData.get_unsortedDimParallel(),
         sortTilingData.get_unsortedDimNum(), sortTilingData.get_lastDimTileNum(), 
@@ -220,7 +223,7 @@ void PrintTilingDataOfIdx(SortTileInfo& sortTileInfo, SortWithIndexTilingDataSim
         sortTilingData.get_oneCoreRowNum(), sortTilingData.get_outputLastDimValue(), 
         sortTilingData.get_tmpUbSize(), sortTilingData.get_keyParams0(), sortTilingData.get_keyParams1(), 
         sortTilingData.get_keyParams2(), sortTilingData.get_keyParams3(), sortTilingData.get_keyParams4(), 
-        sortTilingData.get_keyParams5(), sortTileInfo.ubSize);
+        sortTilingData.get_keyParams5(), sortTileInfo.ubSize, sortTilingData.get_modeType());
     return;
 }
 
@@ -533,14 +536,17 @@ ge::graphStatus RadixSortTilingOfIdx(gert::TilingContext* context, int32_t maxCo
     // 设置高级api tmpUbSize需要的空间
     SetSortTmpSizeOfIdx(dataType, sortAxisNum, tileData, *isDescending, true, sortTilingData, sortTileInfo);
     if (sortAxisNum <= SMALL_SORT_MAX_DATA_SIZE && optDataTypeBitMap.count(dataType) != 0) {
+        sortTilingData.set_modeType(SMALL_SIZE_OPTIM_MODE);
         uint32_t tileDataS = TILE_DATA_NUM;
         TileModeSmallSizeOptimOfIdx(unSortDimNum, maxCoreNum, sortAxisNum, tileDataS, sortTileInfo);
         SetMergeSortTmpSizeOfIdx(context, dataType, sortAxisNum, sortTilingData);
         tilingKey += MERGE_SORT_TILING_OFFSET;
     } else if (sortAxisNum <= static_cast<int64_t>(tileData)) {
+        sortTilingData.set_modeType(SMALL_SIZE_MODE);
         TileModeSmallSizeOfIdx(context, unSortDimNum, maxCoreNum, sortAxisNum, sortTileInfo);
     } else {
         // more core radix sort case
+        sortTilingData.set_modeType(MULT_CORE_MODE);
         TileMoreCoreModeOfIdx(context, sortTileInfo);
     }
     OP_LOGI(context->GetNodeName(), "ubSize: %ld, ubAglinSize: %ld, dtypeSize: %u, y2DtypeSize=%u,"

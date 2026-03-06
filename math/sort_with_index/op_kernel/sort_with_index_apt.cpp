@@ -20,6 +20,8 @@
 using namespace AscendC;
 using namespace SortWithIndex;
 
+const uint32_t SMALL_SIZE_MODE = 1;
+
 template <typename XType, typename ConvertType, typename UnsignedType, typename IndexType>
 __aicore__ inline void generateOpObject(GM_ADDR x, GM_ADDR index, GM_ADDR y, GM_ADDR sortedIndex, GM_ADDR globalWorkGm,
                                         GM_ADDR tiling)
@@ -29,8 +31,9 @@ __aicore__ inline void generateOpObject(GM_ADDR x, GM_ADDR index, GM_ADDR y, GM_
     bool isDescend = tilingData.isDescend > 0 ? true : false;
     bool isInt32Range = tilingData.isInInt32Range == 1 ? true : false;
     bool isSingleBlock = tilingData.lastDimNeedCore == 1 ? true : false;
+    uint32_t modeType = tilingData.modeType;
     TPipe pipe;
-    if (isSingleBlock) {
+    if (isSingleBlock && SMALL_SIZE_MODE == modeType) {
         if (isDescend) {
             RadixSortWithIndexSingleBlock<XType, true, IndexType> radixSort;
             radixSort.Init(x, index, y, sortedIndex, globalWorkGm, &tilingData, &pipe);

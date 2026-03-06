@@ -73,7 +73,7 @@ __aicore__ inline void RadixSortWithIndexMultiBlock<XType, UnsignedType, IsDesce
     this->realCoreNum_ = GetBlockNum();
     if constexpr (sizeof(XRangeType) == sizeof(int64_t)) { 
          this->factor_ = Sort::CONST_2;
-     }
+    }
     // 输入输出GlobalTensor初始化
     this->inputXGm_.SetGlobalBuffer((__gm__ XType *)x);
     indexGm_.SetGlobalBuffer((__gm__ IndexType *)index);

@@ -40,7 +40,8 @@ BEGIN_TILING_DATA_DEF(SortWithIndexTilingDataSimt)
     TILING_DATA_FIELD_DEF(uint32_t, keyParams3);
     TILING_DATA_FIELD_DEF(uint32_t, keyParams4);
     TILING_DATA_FIELD_DEF(uint32_t, keyParams5);
-    TILING_DATA_FIELD_DEF(uint32_t, tmpUbSize);           
+    TILING_DATA_FIELD_DEF(uint32_t, tmpUbSize);
+    TILING_DATA_FIELD_DEF(uint32_t, modeType);           
 END_TILING_DATA_DEF;
 REGISTER_TILING_DATA_CLASS(SortWithIndex, SortWithIndexTilingDataSimt)
 
