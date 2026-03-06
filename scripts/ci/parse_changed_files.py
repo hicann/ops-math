@@ -111,9 +111,9 @@ def get_file_change_info_from_ci(changed_file_info_from_ci, ops_path):
 
 def get_change_relate_ut_dir_list(changed_file_info_from_ci, is_experimental):
     if is_experimental == "TRUE":
-        ops_path=NEW_EXPERIMENTAL_OPS_PATH
+        ops_path = NEW_EXPERIMENTAL_OPS_PATH
     else:
-        ops_path=NEW_OPS_MATH
+        ops_path = NEW_OPS_PATH
     file_change_info = get_file_change_info_from_ci(changed_file_info_from_ci, ops_path)
     if not file_change_info:
         logging.info("[INFO] not found file change info, run all c++.")
