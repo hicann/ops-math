@@ -15,6 +15,7 @@
 
 
 ## 功能说明
+
 - 接口功能：将输入的所有元素限制在[min, inf]范围内。
 
 - 计算公式：
@@ -69,12 +70,12 @@ aclnnStatus aclnnInplaceClampMinTensor(
 - **参数说明**：
 
   </style>
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1600px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
   <col style="width: 266px">
   <col style="width: 308px">
-  <col style="width: 240px">
+  <col style="width: 290px">
   <col style="width: 110px">
   <col style="width: 150px">
   <col style="width: 145px">
@@ -147,7 +148,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
     - self和out的数据类型不支持BOOL、BFLOAT16。
     - clipValueMin的数据类型不支持BFLOAT16。
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
     - self和out的数据类型不支持BOOL。
 
 - **返回值：**
@@ -231,12 +232,12 @@ aclnnStatus aclnnInplaceClampMinTensor(
 - **参数说明：**
 
   </style>
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1600px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
   <col style="width: 266px">
   <col style="width: 308px">
-  <col style="width: 240px">
+  <col style="width: 290px">
   <col style="width: 110px">
   <col style="width: 150px">
   <col style="width: 145px">
@@ -299,7 +300,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
     - selfRef的数据类型不支持BOOL、BFLOAT16。
     - clipValueMax的数据类型不支持BFLOAT16。
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：
     - selfRef和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）。
     - selfRef的数据类型不支持BOOL。
 
@@ -392,6 +393,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
 
 
 ## 调用示例
+
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 **aclnnClampMinTensor示例代码：**

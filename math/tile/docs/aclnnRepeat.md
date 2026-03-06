@@ -91,12 +91,12 @@ aclnnStatus aclnnRepeat(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1600px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
   <col style="width: 266px">
   <col style="width: 308px">
-  <col style="width: 240px">
+  <col style="width: 290px">
   <col style="width: 110px">
   <col style="width: 150px">
   <col style="width: 145px">
@@ -110,7 +110,7 @@ aclnnStatus aclnnRepeat(
       <th>数据类型</th>
       <th>数据格式</th>
       <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
@@ -127,7 +127,7 @@ aclnnStatus aclnnRepeat(
       <td>repeats（aclIntArray*）</td>
       <td>输入</td>
       <td>-</td>
-      <td>表示沿每个维度重复输入tensor的次数，参数个数不大于8, 当前不支持对超过4个维度同时做repeat的场景，详细约束请见约束说明。</td>
+      <td>表示沿每个维度重复输入tensor的次数，参数个数不大于8。<br>当前不支持对超过4个维度同时做repeat的场景，详细约束请见约束说明。</td>
       <td>INT64</td>
       <td>-</td>
       <td>-</td>

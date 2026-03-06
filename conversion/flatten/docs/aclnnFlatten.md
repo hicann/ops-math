@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-- 接口功能：将输入Tensor，基于给定的axis，扁平化为一个2D的Tensor。
+将输入Tensor，基于给定的axis，扁平化为一个2D的Tensor。
 
 - 若self的shape为(d\_0, d\_1, ..., d\_n)，那么输出out的shape为(d\_0\*d\_1 ... \*d\_\(axis-1\), d\_axis\*d\_\(axis+1\)... \*d\_n)。
 - 若axis取值为0，则输出out的shape为(1, d\_0\*d\_1 ... \*d\_n)。
@@ -82,7 +82,7 @@ aclnnStatus aclnnFlatten(
       <td class="tg-0pky">axis（int64_t）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入axis。</td>
-      <td class="tg-0pky">表示flatten计算的基准轴。取值范围为[-self.dim(),self.dim()-1]，若self的dim为0或者1，axis=0，其余情况仅支持axis=1。</td>
+      <td class="tg-0pky">表示flatten计算的基准轴。<br>取值范围为[-self.dim(),self.dim()-1]，若self的dim为0或者1，axis=0，其余情况仅支持axis=1。</td>
       <td class="tg-0pky">INT64</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
@@ -211,6 +211,7 @@ aclnnStatus aclnnFlatten(
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

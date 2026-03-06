@@ -47,8 +47,8 @@ aclnnStatus aclnnSplitWithSize(
   <col style="width: 211px">
   <col style="width: 120px">
   <col style="width: 266px">
-  <col style="width: 308px">
-  <col style="width: 240px">
+  <col style="width: 258px">
+  <col style="width: 290px">
   <col style="width: 110px">
   <col style="width: 150px">
   <col style="width: 145px">

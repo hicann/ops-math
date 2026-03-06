@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-- 接口功能：在指定维度$dim$上，根据给定的范围$[start, end]$和步长$step$，从输入张量$self$中提取子张量$out$。
+指定维度$dim$上，根据给定的范围$[start, end]$和步长$step$，从输入张量$self$中提取子张量$out$。
 $start$和$end$可以取$[0, self.shape[dim]]$以外的值，取值后根据以下公式转换为合法值，假设self.shape[dim] = N：
 
   $$
@@ -271,6 +271,7 @@ aclnnStatus aclnnSlice(
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

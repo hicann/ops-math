@@ -46,9 +46,9 @@ aclnnStatus aclnnDiagFlat(
   <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
-  <col style="width: 266px">
-  <col style="width: 308px">
-  <col style="width: 240px">
+  <col style="width: 296px">
+  <col style="width: 228px">
+  <col style="width: 280px">
   <col style="width: 110px">
   <col style="width: 150px">
   <col style="width: 145px">
@@ -78,7 +78,7 @@ aclnnStatus aclnnDiagFlat(
     <tr>
       <td class="tg-0pky">diagonal（int64_t）</td>
       <td class="tg-0pky">输入</td>
-      <td class="tg-0pky">数据类型支持INT64，用来指定对角线，diagonal = 0表示主对角线，diagonal > 0表示主对角线上方的对角线，diagonal < 0表示主对角线下方的对角线。</td>
+      <td class="tg-0pky">用来指定对角线。<br>diagonal = 0表示主对角线。<br>diagonal > 0表示主对角线上方的对角线。<br>diagonal < 0表示主对角线下方的对角线。</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">INT64</td>
       <td class="tg-0pky">ND</td>
@@ -204,6 +204,7 @@ aclnnStatus aclnnDiagFlat(
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

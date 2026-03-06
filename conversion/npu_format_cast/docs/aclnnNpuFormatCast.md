@@ -15,13 +15,19 @@
 
 
 ## 功能说明
+
 - **接口功能**：
+
   - <term>Ascend 950PR/Ascend 950DT</term>：
-    - 完成ND[数据格式](../../../docs/zh/context/数据格式.md)到指定C0大小的FRACTAL_NZ[数据格式](../../../docs/zh/context/数据格式.md)的转换功能，C0是FRACTAL_NZ[数据格式](../../../docs/zh/context/数据格式.md)最后一维的大小，C0由`additionalDtype`确定。
+
+    完成ND[数据格式](../../../docs/zh/context/数据格式.md)到指定C0大小的FRACTAL_NZ[数据格式](../../../docs/zh/context/数据格式.md)的转换功能，C0是FRACTAL_NZ[数据格式](../../../docs/zh/context/数据格式.md)最后一维的大小，C0由`additionalDtype`确定。
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
     - 完成ND←→[NZ](../../../docs/zh/context/数据格式.md)的转换功能。C0是[NZ](../../../docs/zh/context/数据格式.md)数据格式最后一维的大小。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast<aclDataType>additionalDtype)。
     - 完成NCDHW←→[NDC1HWC0](../../../docs/zh/context/数据格式.md)、NCDHW←→[FRACTAL_Z_3D](../../../docs/zh/context/数据格式.md)的转换功能。其中，C0与微架构强相关，该值等于cube单元的size，例如16。C1是将C维度按照C0切分：C1=C/C0， 若结果不整除，最后一份数据需要padding到C0。计算方法C0 = 32B srcDataType（例如FP16为2byte）
-- **计算流程**：`aclnnNpuFormatCastCalculateSizeAndFormat`根据输入张量srcTensor、数据类型`additionalDtype`和目标张量的数据格式dstFormat计算出转换后目标张量dstTensor的shape和实际数据格式，用于构造dstTensor，然后调用`aclnnNpuFormatCast`把srcTensor转换为实际数据格式的目标张量dstTensor。
+- **计算流程**：
+
+  `aclnnNpuFormatCastCalculateSizeAndFormat`根据输入张量srcTensor、数据类型`additionalDtype`和目标张量的数据格式dstFormat计算出转换后目标张量dstTensor的shape和实际数据格式，用于构造dstTensor，然后调用`aclnnNpuFormatCast`把srcTensor转换为实际数据格式的目标张量dstTensor。
+
 ## 函数原型
 
 必须先调用`aclnnNpuFormatCastCalculateSizeAndFormat`计算出dstTensor的shape和实际数据格式，再调用[两段式接口](../../../docs/zh/context/两段式接口.md)。 两段式接口先调用`aclnnNpuFormatCastGetWorkSpaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnNpuFormatCast`接口执行计算。
@@ -55,14 +61,14 @@ aclnnStatus aclnnNpuFormatCast(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1550px;">
+  <table style="undefined;table-layout: fixed; width: 1466px;">
   <colgroup>
       <col style="width: 211px">
       <col style="width: 120px">
-      <col style="width: 266px">
-      <col style="width: 308px">
-      <col style="width: 240px">
-      <col style="width: 110px">
+      <col style="width: 300px">
+      <col style="width: 220px">
+      <col style="width: 290px">
+      <col style="width: 320px">
       <col style="width: 150px">
       <col style="width: 145px">
   </colgroup>
@@ -144,18 +150,16 @@ aclnnStatus aclnnNpuFormatCast(
 
 
   - <term>Ascend 950PR/Ascend 950DT</term>：
-
     - 上表数据类型列中的角标“1”代表该系列不支持的数据类型或数据格式。
 
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
-
     - 上表数据类型列中的角标“2”代表该系列不支持的数据类型或数据格式。
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  入参校验，出现以下场景时报错：
+  第一段接口完成入参校验，出现以下场景时报错：
   
   <table>
     <thead>
@@ -203,14 +207,14 @@ aclnnStatus aclnnNpuFormatCast(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1550px;">
+  <table style="undefined;table-layout: fixed; width: 1466px;">
   <colgroup>
       <col style="width: 211px">
       <col style="width: 120px">
-      <col style="width: 266px">
-      <col style="width: 308px">
-      <col style="width: 240px">
-      <col style="width: 110px">
+      <col style="width: 300px">
+      <col style="width: 220px">
+      <col style="width: 290px">
+      <col style="width: 320px">
       <col style="width: 150px">
       <col style="width: 145px">
   </colgroup>
@@ -460,6 +464,7 @@ aclnnStatus aclnnNpuFormatCast(
 
 - <term>Ascend 950PR/Ascend 950DT</term>：
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
   ```Cpp
   #include <iostream>
   #include <vector>
@@ -653,6 +658,7 @@ aclnnStatus aclnnNpuFormatCast(
 
 - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
   ```c++
   #include <iostream>
   #include <vector>
