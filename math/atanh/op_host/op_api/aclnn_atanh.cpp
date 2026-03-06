@@ -81,6 +81,10 @@ static aclnnStatus CheckParamsAtanh(const aclTensor* input, const aclTensor* out
     CHECK_RET(CheckDtypeValid(input, out), ACLNN_ERR_PARAM_INVALID);
     // 检查输入和输出的shape是否满足约束
     CHECK_RET(CheckSameShape1In1Out(input, out), ACLNN_ERR_PARAM_INVALID);
+
+    if (input->GetStorageFormat() != Format::FORMAT_ND) {
+        OP_LOGW("Only support ND format for atanh/inplaceAtanh operator.");
+    }
     return ACLNN_SUCCESS;
 }
 

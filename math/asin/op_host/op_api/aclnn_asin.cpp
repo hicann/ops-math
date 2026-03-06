@@ -73,6 +73,10 @@ static aclnnStatus CheckParams1In1Out(
     CHECK_RET(CheckDtypeValid1In1Out(self, out, dtypeSupportList, dtypeOutList), ACLNN_ERR_PARAM_INVALID);
     // 检查输入的数据的值是否合理
     CHECK_RET(CheckSameShape1In1Out(self, out), ACLNN_ERR_PARAM_INVALID);
+    
+    if (self->GetStorageFormat() != Format::FORMAT_ND) {
+        OP_LOGW("Only support ND format for asin/inplaceAsin operator.");
+    }
     return ACLNN_SUCCESS;
 }
 

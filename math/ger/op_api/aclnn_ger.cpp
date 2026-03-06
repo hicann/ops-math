@@ -133,7 +133,10 @@ static inline aclnnStatus CheckParams(const aclTensor* self, const aclTensor* ve
 
     // 4. 检查输出shape
     CHECK_RET(CheckShape(self, vec2, out), ACLNN_ERR_PARAM_INVALID);
-
+    
+    if (self->GetStorageFormat() != Format::FORMAT_ND || vec2->GetStorageFormat() != Format::FORMAT_ND) {
+        OP_LOGW("Only support ND format for ger operator.");
+    }
     return ACLNN_SUCCESS;
 }
 

@@ -93,6 +93,9 @@ static bool CheckFormat(const aclTensor* self, const aclTensor* weights, const a
     // self和weights shape必须相同
     OP_CHECK_SHAPE_NOT_EQUAL(self, weights, return false);
 
+    if (self->GetStorageFormat() != Format::FORMAT_ND || weights->GetStorageFormat() != Format::FORMAT_ND) {
+        OP_LOGW("Only support ND format for bincount operator.");
+    }
     return true;
 }
 

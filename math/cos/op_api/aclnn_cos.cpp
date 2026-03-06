@@ -86,6 +86,10 @@ static aclnnStatus CheckParamsCos(const aclTensor* input, const aclTensor* out) 
   CHECK_RET(CheckDtypeValid(input, out), ACLNN_ERR_PARAM_INVALID);
   // 3. 检查输入的数据的值是否合理
   CHECK_RET(CheckSameShape1In1Out(input, out), ACLNN_ERR_PARAM_INVALID);
+  
+  if (input->GetStorageFormat() != Format::FORMAT_ND) {
+      OP_LOGW("Only support ND format for cos/inplaceCos operator.");
+  }
   return ACLNN_SUCCESS;
 }
 

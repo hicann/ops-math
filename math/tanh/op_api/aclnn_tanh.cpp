@@ -99,6 +99,10 @@ static bool CheckFormat(const aclTensor *self, const aclTensor *out) {
             ToString(self->GetViewFormat()).GetString());
     return false;
   }
+  // 非资料中的格式，打印warning log
+  if (self->GetStorageFormat() != Format::FORMAT_ND) {
+    OP_LOGW("Only support ND format for tanh/inplaceTanh operator.");
+  }
   return true;
 }
 

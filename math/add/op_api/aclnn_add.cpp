@@ -284,7 +284,10 @@ static aclnnStatus CheckParams(
 
     // 4. 检查双输入是否能broadcast
     CHECK_RET(CheckShape(self, other, y), ACLNN_ERR_PARAM_INVALID);
-
+    
+    if (self->GetStorageFormat() != Format::FORMAT_ND || other->GetStorageFormat() != Format::FORMAT_ND) {
+        OP_LOGW("Only support ND format for add/inplaceAdd operator.");
+    }
     return ACLNN_SUCCESS;
 }
 

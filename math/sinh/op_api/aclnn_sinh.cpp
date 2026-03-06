@@ -62,7 +62,11 @@ static aclnnStatus CheckParams(const aclTensor *self, const aclTensor *out)
     auto outSupportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_OUT_LIST, ASCEND910_DTYPE_OUT_LIST);
     CHECK_RET(CheckDtypeValid1In1Out(self, out, supportList, outSupportList), ACLNN_ERR_PARAM_INVALID);
 
-    // 3. ND 算子不检查格式
+    // 3. 算子检查格式
+    if (self->GetStorageFormat() != Format::FORMAT_ND) {
+        OP_LOGW("Only support ND format for sinh/inplaceSinh operator.");
+    }
+
     // 4. 检查self和out的shape是否一致
     CHECK_RET(CheckSameShape1In1Out(self, out), ACLNN_ERR_PARAM_INVALID);
 

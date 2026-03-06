@@ -117,7 +117,10 @@ static aclnnStatus CheckParams(const aclTensor *self, const aclTensor *out) {
 
   // 4. 检查是否可以转成out数据类型
   CHECK_RET(CheckDtypeCanCast(self, out), ACLNN_ERR_PARAM_INVALID);
-
+  if (self->GetStorageFormat() != Format::FORMAT_ND) {
+      OP_LOGW("Only support ND format for tan operator.");
+  }
+  
   return ACLNN_SUCCESS;
 }
 
@@ -158,7 +161,9 @@ static aclnnStatus CheckParamsInplace(const aclTensor *self, const aclTensor *ou
 
   // 4. 检查是否可以转成out数据类型
   CHECK_RET(CheckDtypeCanCast(self, out), ACLNN_ERR_PARAM_INVALID);
-
+  if (self->GetStorageFormat() != Format::FORMAT_ND) {
+      OP_LOGW("Only support ND format for inplace tan operator.");
+  }
   return ACLNN_SUCCESS;
 }
 

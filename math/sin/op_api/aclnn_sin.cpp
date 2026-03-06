@@ -79,7 +79,10 @@ static aclnnStatus CheckParamsSin(const aclTensor* self, const aclTensor* out)
     // 3. ND 算子不检查格式
     // 4. 检查self和out的shape是否一致
     CHECK_RET(CheckSameShape1In1Out(self, out), ACLNN_ERR_PARAM_INVALID);
-
+    
+    if (self->GetStorageFormat() != Format::FORMAT_ND) {
+        OP_LOGW("Only support ND format for sin/inplaceSin operator.");
+    }
     return ACLNN_SUCCESS;
 }
 
