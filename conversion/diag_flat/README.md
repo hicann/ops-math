@@ -59,6 +59,9 @@
 </tbody>
 </table>
 
+- Kirin X90/Kirin 9030 处理器系列产品: self、out数据类型不支持BOOL、COMPLEX64、BFLOAT16，但除上述表格外还支持UINT16、UINT32、UINT64。
+
+
 ## 约束说明
 
 无。

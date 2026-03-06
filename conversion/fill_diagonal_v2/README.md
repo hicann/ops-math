@@ -63,6 +63,8 @@
 </tbody>
 </table>
 
+- Kirin X90/Kirin 9030 处理器系列产品: 不支持BFLOAT16。
+
 ## 约束说明
 
 - selfRef的维度必须大于1。

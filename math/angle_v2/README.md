@@ -57,6 +57,10 @@ $$
     </tr>
   </tbody></table>
 
+
+- Kirin X90/Kirin 9030 处理器系列产品: 不支持COMPLEX64。
+
+
 ## 约束说明
 
 无
