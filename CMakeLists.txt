@@ -120,6 +120,9 @@ if(_orig_len GREATER 0 AND _filtered_len EQUAL _orig_len)
 endif()
 
 if(ENABLE_TEST)
+  if(UT_TEST_ALL OR OP_GRAPH_UT)
+    include(cmake/symbol.cmake)
+  endif()
   add_subdirectory(tests/ut)
 endif()
 

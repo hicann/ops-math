@@ -688,7 +688,8 @@ macro(add_graph_plugin_sources)
     return()
   endif()
 
-  file(GLOB OP_GRAPH_SRCS ${SOURCE_DIR}/*_graph_*.cpp)
+  file(GLOB OP_GRAPH_SRCS ${SOURCE_DIR}/*_graph_*.cpp ${SOURCE_DIR}/fusion_pass/*_pass.cpp)
+
   if(OP_GRAPH_SRCS)
     add_op_graph_modules()
     target_sources(${GRAPH_PLUGIN_NAME}_obj PRIVATE ${OP_GRAPH_SRCS})

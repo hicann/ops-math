@@ -33,6 +33,10 @@ set(AICPU_OP_KERNEL_MODULE_NAME
     ${PKG_NAME}_aicpu_op_kernel_ut
     CACHE STRING "aicpu_op_kernel ut module name" FORCE)
 
+set(OP_GRAPH_MODULE_NAME
+    ${PKG_NAME}_op_graph_ut
+    CACHE STRING "op_graph ut module name" FORCE)
+
 function(add_optiling_ut_modules OP_TILING_MODULE_NAME)
   # add optiling ut common object: math_op_tiling_ut_common_obj
   add_library(${OP_TILING_MODULE_NAME}_common_obj OBJECT)
@@ -126,6 +130,49 @@ function(add_opapi_ut_modules OP_API_MODULE_NAME)
   target_link_libraries(
     ${OP_API_MODULE_NAME}_cases_obj
     PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> json gtest)
+endfunction()
+
+function(add_op_graph_ut_modules OP_GRAPH_MODULE_NAME)
+  if(TARGET ${GRAPH_PLUGIN_NAME}_obj)
+    add_dependencies(${GRAPH_PLUGIN_NAME}_obj build_es_math)
+    target_link_libraries(${GRAPH_PLUGIN_NAME}_obj PRIVATE es_math)
+  endif()
+
+  add_library(${OP_GRAPH_MODULE_NAME}_cases_obj OBJECT)
+  
+  target_include_directories(
+    ${OP_GRAPH_MODULE_NAME}_cases_obj PRIVATE
+    ${UT_COMMON_INC}
+    ${OP_PROTO_INCLUDE}
+    ${CMAKE_BINARY_DIR}/es_packages/include/es_math/
+    )
+  target_link_libraries(
+    ${OP_GRAPH_MODULE_NAME}_cases_obj PRIVATE
+    $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
+    $<BUILD_INTERFACE:dlog_headers>
+    -Wl,--no-as-needed
+    metadef
+    graph
+    gtest
+    register
+    ge_compiler
+    )
+
+  target_compile_options(
+    ${OP_GRAPH_MODULE_NAME}_cases_obj PRIVATE
+    -fno-access-control
+  )
+
+  # add infershape ut static lib
+  add_library(${OP_GRAPH_MODULE_NAME}_static_lib STATIC)
+  target_link_libraries(
+    ${OP_GRAPH_MODULE_NAME}_static_lib PRIVATE
+    ${OP_GRAPH_MODULE_NAME}_cases_obj
+    ${GRAPH_PLUGIN_NAME}_obj
+    es_math
+  )
+  add_dependencies(${OP_GRAPH_MODULE_NAME}_static_lib build_es_math)
+  target_link_libraries(${OP_GRAPH_MODULE_NAME}_static_lib PRIVATE es_math)
 endfunction()
 
 function(add_aicpu_opkernel_ut_modules AICPU_OP_KERNEL_MODULE_NAME)
@@ -302,6 +349,29 @@ function(add_modules_ut_sources)
     target_sources(${MODULE_UT_NAME}_cases_obj ${MODULE_MODE}
                                                ${OPAPI_CASES_SRC})
   endif()
+
+  if("${MODULE_UT_NAME}" STREQUAL "${OP_GRAPH_MODULE_NAME}")
+    get_filename_component(UT_DIR ${MODULE_DIR} DIRECTORY)
+    get_filename_component(TESTS_DIR ${UT_DIR} DIRECTORY)
+    get_filename_component(OP_NAME_DIR ${TESTS_DIR} DIRECTORY)
+    get_filename_component(OP_NAME ${OP_NAME_DIR} NAME)
+    list(FIND ASCEND_OP_NAME ${OP_NAME} INDEX)
+    # if "--ops" is not NULL, opName not include, jump over. if "--ops" is NULL, include all.
+    if(NOT "${ASCEND_OP_NAME}" STREQUAL "" AND INDEX EQUAL -1)
+      return()
+    endif()
+
+    file(GLOB OPGRAPH_CASES_SRC ${MODULE_DIR}/test_*_pass.cpp)
+    if(NOT OPGRAPH_CASES_SRC)
+      return()
+    endif()
+
+    if(NOT TARGET ${MODULE_UT_NAME}_cases_obj)
+      add_op_graph_ut_modules(${OP_GRAPH_MODULE_NAME})
+    endif()
+    target_sources(${MODULE_UT_NAME}_cases_obj ${MODULE_MODE} ${OPGRAPH_CASES_SRC})
+  endif()
+
 endfunction()
 
 function(AddOpsTestCase)

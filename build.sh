@@ -640,6 +640,9 @@ set_ut_mode() {
   if [[ "$UT_TEST_ALL" == "TRUE" ]] || [[ "$OP_KERNEL_AICPU_UT" == "TRUE" ]]; then
     UT_TARGETS+=("${REPOSITORY_NAME}_aicpu_op_kernel_ut")
   fi
+  if [[ "$UT_TEST_ALL" == "TRUE" ]] || [[ "$OP_GRAPH_UT" == "TRUE" ]]; then
+    UT_TARGETS+=("${REPOSITORY_NAME}_op_graph_ut")
+  fi
 }
 
 process_genop() {
@@ -1201,6 +1204,9 @@ clean_build_binary() {
   fi
   if [ -d "${BUILD_PATH}/es_math_build" ]; then
     rm -rf ${BUILD_PATH}/es_math_build/
+  fi
+  if [ -d "${BUILD_PATH}/tests/ut/op_graph/es_math_build" ]; then
+    rm -rf ${BUILD_PATH}/tests/ut/op_graph/es_math_build/
   fi
   if [[ "$ENABLE_STATIC" == "TRUE" ]]; then
     if [ -d "${BUILD_PATH}/static_library_files" ]; then

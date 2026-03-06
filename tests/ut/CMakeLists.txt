@@ -26,6 +26,10 @@ if(UT_TEST_ALL OR OP_KERNEL_AICPU_UT)
   add_subdirectory(op_kernel_aicpu)
 endif()
 
+if(UT_TEST_ALL OR OP_GRAPH_UT)
+  add_subdirectory(op_graph)
+endif()
+
 if(ENABLE_COVERAGE)
   if(UT_TEST_ALL OR OP_KERNEL_UT)
     set(depend_module ${depend_module} ${PKG_NAME}_op_kernel_ut)

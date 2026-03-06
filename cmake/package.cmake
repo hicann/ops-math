@@ -44,16 +44,6 @@ function(pack_custom)
         LIBRARY
         cust_proto
     )
-    add_es_library(
-      ES_LINKABLE_AND_ALL_TARGET es_math
-      OPP_PROTO_TARGET ${PACK_CUSTOM_NAME}_ascendc_cust_op_proto
-      OUTPUT_PATH ${CMAKE_BINARY_DIR}/es_packages
-    )
-    install(
-      DIRECTORY ${CMAKE_BINARY_DIR}/es_packages/include/es_math/
-      DESTINATION ${ES_INC_INSTALL_DIR}
-      OPTIONAL
-    )
     if(ENABLE_STATIC)
       install(
         DIRECTORY ${CMAKE_BINARY_DIR}/es_packages/include/es_math/
