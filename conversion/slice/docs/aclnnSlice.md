@@ -18,27 +18,27 @@
 - 接口功能：在指定维度$dim$上，根据给定的范围$[start, end]$和步长$step$，从输入张量$self$中提取子张量$out$。
 $start$和$end$可以取$[0, self.shape[dim]]$以外的值，取值后根据以下公式转换为合法值，假设self.shape[dim] = N：
 
-$$
-start = \begin{cases}
-&0, & if\;start < -N \\
-&N, & if\;start >= N\\
-&(start+N) \% N, & otherwise
-\end{cases}
-$$
+  $$
+  start = \begin{cases}
+  &0, & if\;start < -N \\
+  &N, & if\;start >= N\\
+  &(start+N) \% N, & otherwise
+  \end{cases}
+  $$
 
-$$
-end = \begin{cases}
-&N, & if\; end >= N\\
-&start, & else\;if\;  (end+N)\%N < start \\
-&(end+N)\%N, & otherwise\\
-\end{cases}
-$$
+  $$
+  end = \begin{cases}
+  &N, & if\; end >= N\\
+  &start, & else\;if\;  (end+N)\%N < start \\
+  &(end+N)\%N, & otherwise\\
+  \end{cases}
+  $$
 
-$out.shape$与$self.shape$只有dim轴上不一致，其他轴一致:
+  $out.shape$与$self.shape$只有dim轴上不一致，其他轴一致:
 
-$$
-out.shape[dim] = ⌊\frac{end - start + step - 1}{step}⌋
-$$
+  $$
+  out.shape[dim] = ⌊\frac{end - start + step - 1}{step}⌋
+  $$
 
 ## 函数原型
 

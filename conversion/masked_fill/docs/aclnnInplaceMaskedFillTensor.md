@@ -16,7 +16,7 @@
 
 ## 功能说明
 
-接口功能：用value填充selfRef里面与mask矩阵中值为true的位置相对应的元素。
+用value填充selfRef里面与mask矩阵中值为true的位置相对应的元素。
 
 ## 函数原型
 

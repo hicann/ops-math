@@ -70,8 +70,8 @@ aclnnStatus aclnnInplaceFillDiagonal(
     <tr>
       <td class="tg-0pky">selfRef（aclTensor*）</td>
       <td class="tg-0pky">输入/输出</td>
-      <td class="tg-0pky">表示需要填充的输入、输出Tensor</td>
-      <td class="tg-0pky">self最大维度不能超过2。</td>
+      <td class="tg-0pky">表示需要填充的输入、输出Tensor。</td>
+      <td class="tg-0pky">selfRef最大维度不能超过2，当selfRef的总字节数超过2^31字节时(即超过2GB时)，会触发算子执行超时。</td>
       <td class="tg-0pky">FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、BFLOAT16。</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1、2</td>
@@ -209,8 +209,6 @@ aclnnStatus aclnnInplaceFillDiagonal(
 
 - 确定性计算：
   - aclnnInplaceFillDiagonal默认确定性实现。
-
-  selfRef（aclTensor\*, 计算输入/输出）：当aclTensor的总字节数超过2^31字节时(即超过2GB时)，会触发算子执行超时。
 
 ## 调用示例
 

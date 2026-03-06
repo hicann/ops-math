@@ -52,8 +52,8 @@ aclnnStatus aclnnClampMinTensor(
 aclnnStatus aclnnInplaceClampMinTensorGetWorkspaceSize(
     aclTensor*       selfRef, 
     const aclTensor* clipValueMin, 
-    uint64_t        *workspaceSize, 
-    aclOpExecutor  **executor)
+    uint64_t*        workspaceSize, 
+    aclOpExecutor**  executor)
 ```
 
 ```cpp

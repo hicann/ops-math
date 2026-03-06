@@ -71,7 +71,7 @@ aclnnStatus aclnnFlatten(
     <tr>
       <td class="tg-0pky">self（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
-      <td class="tg-0pky">表示需要填充的输入、输出Tensor</td>
+      <td class="tg-0pky">表示需要填充的输入、输出Tensor。</td>
       <td class="tg-0pky">self最大维度不能超过2。</td>
       <td class="tg-0pky">INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、BFLOAT16、FLOAT、FLOAT16</td>
       <td class="tg-0pky">ND</td>

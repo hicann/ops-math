@@ -16,7 +16,7 @@
 
 ## 功能说明
 
-需要和[aclnnCalculateMatmulWeightSize](./aclnnCalculateMatmulWeightSize.md)、[aclnnCalculateMatmulWeightSizeV2](./aclnnCalculateMatmulWeightSizeV2.md)接口配套使用，用于创建一个对于Matmul算子计算性能亲和的weight Tensor。支持FLOAT16, BFLOAT16, Int8数据类型.
+需要和[aclnnCalculateMatmulWeightSize](./aclnnCalculateMatmulWeightSize.md)、[aclnnCalculateMatmulWeightSizeV2](./aclnnCalculateMatmulWeightSizeV2.md)接口配套使用，用于创建一个对于Matmul算子计算性能亲和的weight Tensor。支持FLOAT16、BFLOAT16、 Int8数据类型。
 
 ## 函数原型
 

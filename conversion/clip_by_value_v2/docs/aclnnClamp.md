@@ -151,7 +151,7 @@ aclnnStatus aclnnClamp(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
- <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
   <col style="width: 724px">
