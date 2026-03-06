@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+* Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ protected:
 
 TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_01)
 {
-    optiling::StatelessDropOutGenMaskCompileInfo compileInfo = {40, 196608};
+    optiling::RandomOperatorCompileInfo compileInfo = {40, 196608};
     vector<int64_t> shapeValue = {32, 512};
     vector<float> probValue = {1.0};
     vector<int64_t> seedValue = {2};
@@ -57,15 +57,15 @@ TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_01)
         {{{ 2048 }, { 2048 } },ge::DT_UINT8, ge::FORMAT_ND},
     }, 
     &compileInfo);
-    uint64_t expectTilingKey = 1001;
-    string expectTilingData = "32 512 512 2 2 256 2 0 8 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    uint64_t expectTilingKey = 100;
+    string expectTilingData = "64 256 256 18720 2 0 8 16384 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
 TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_02)
 {
-    optiling::StatelessDropOutGenMaskCompileInfo compileInfo = {40, 196608};
+    optiling::RandomOperatorCompileInfo compileInfo = {40, 196608};
     vector<int32_t> shapeValue = {8, 512, 10};
     vector<float> probValue = {0.6};
     vector<int32_t> seedValue = {24};
@@ -85,15 +85,15 @@ TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_02)
         {{{ 5120 }, { 5120 } },ge::DT_UINT8, ge::FORMAT_ND},
     }, 
     &compileInfo);
-    uint64_t expectTilingKey = 1001;
-    string expectTilingData = "40 1024 1024 4 4 256 24 0 36 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    uint64_t expectTilingKey = 100;
+    string expectTilingData = "54 768 256 18720 24 0 36 40960 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
 TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_03)
 {
-    optiling::StatelessDropOutGenMaskCompileInfo compileInfo = {40, 196608};
+    optiling::RandomOperatorCompileInfo compileInfo = {40, 196608};
     vector<int32_t> shapeValue = {8, 512, 2, 5};
     vector<float> probValue = {0.6};
     vector<int32_t> seedValue = {24};
@@ -113,15 +113,15 @@ TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_03)
         {{{ 5120 }, { 5120 } },ge::DT_UINT8, ge::FORMAT_ND},
     }, 
     &compileInfo);
-    uint64_t expectTilingKey = 1002;
-    string expectTilingData = "40 1024 1024 4 4 256 24 0 36 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    uint64_t expectTilingKey = 100;
+    string expectTilingData = "54 768 256 18720 24 0 36 40960 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
 TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_04)
 {
-    optiling::StatelessDropOutGenMaskCompileInfo compileInfo = {40, 196608};
+    optiling::RandomOperatorCompileInfo compileInfo = {40, 196608};
     vector<int32_t> shapeValue = {8, 512, 2, 5};
     vector<float> probValue = {0.6};
     vector<int32_t> seedValue = {24};
@@ -141,15 +141,15 @@ TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_04)
         {{{ 5120 }, { 5120 } },ge::DT_UINT8, ge::FORMAT_ND},
     }, 
     &compileInfo);
-    uint64_t expectTilingKey = 1003;
-    string expectTilingData = "40 1024 1024 4 4 256 24 0 36 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    uint64_t expectTilingKey = 100;
+    string expectTilingData = "54 768 256 18720 24 0 36 40960 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
 TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_05)
 {
-    optiling::StatelessDropOutGenMaskCompileInfo compileInfo = {40, 196608};
+    optiling::RandomOperatorCompileInfo compileInfo = {40, 196608};
     vector<int64_t> shapeValue = {8, 512, 20, 5, 2};
     vector<float> probValue = {0.7};
     vector<int64_t> seedValue = {16};
@@ -169,15 +169,15 @@ TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_05)
         {{{ 102400 }, { 102400 } },ge::DT_UINT8, ge::FORMAT_ND},
     }, 
     &compileInfo);
-    uint64_t expectTilingKey = 1003;
-    string expectTilingData = "40 20480 20480 80 80 256 16 0 36 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    uint64_t expectTilingKey = 100;
+    string expectTilingData = "64 12800 12800 18720 16 0 36 819200 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
 TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_06)
 {
-    optiling::StatelessDropOutGenMaskCompileInfo compileInfo = {40, 196608};
+    optiling::RandomOperatorCompileInfo compileInfo = {40, 196608};
     vector<int64_t> shapeValue = {8, 256, 2, 5};
     vector<float> probValue = {0.6};
     vector<int64_t> seedValue = {24};
@@ -197,15 +197,15 @@ TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_06)
         {{{ 2560 }, { 2560 } },ge::DT_UINT8, ge::FORMAT_ND},
     }, 
     &compileInfo);
-    uint64_t expectTilingKey = 1002;
-    string expectTilingData = "40 512 512 2 2 256 24 0 36 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    uint64_t expectTilingKey = 100;
+    string expectTilingData = "40 512 512 18720 24 0 36 20480 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
 TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_07)
 {
-    optiling::StatelessDropOutGenMaskCompileInfo compileInfo = {40, 196608};
+    optiling::RandomOperatorCompileInfo compileInfo = {40, 196608};
     vector<int64_t> shapeValue = {8, 256, 3, 4};
     vector<float> probValue = {0.6};
     vector<int64_t> seedValue = {24};
@@ -225,8 +225,8 @@ TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_07)
         {{{ 3072 }, { 3072 } },ge::DT_UINT8, ge::FORMAT_ND},
     }, 
     &compileInfo);
-    uint64_t expectTilingKey = 1002;
-    string expectTilingData = "32 768 768 3 3 256 24 0 36 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    uint64_t expectTilingKey = 100;
+    string expectTilingData = "48 512 512 18720 24 0 36 24576 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

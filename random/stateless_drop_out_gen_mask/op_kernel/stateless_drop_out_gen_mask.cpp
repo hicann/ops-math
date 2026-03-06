@@ -12,58 +12,26 @@
  * \file stateless_drop_out_gen_mask.cpp
  * \brief
  */
+#define STATELESS_DROP_OUT_GEN_MASK_DEFAULT_TILING_KEY 100
 
-#define PT_FP32_TILING_KEY 1001
-#define PT_FP16_TILING_KEY 1002
-#define PT_BF16_TILING_KEY 1003
-#define TF_FP32_TILING_KEY 1004
-#define TF_FP16_TILING_KEY 1005
-#define TF_BF16_TILING_KEY 1006
-
-#include "arch35/stateless_drop_out_gen_mask_tf.h"
 #include "arch35/stateless_drop_out_gen_mask_pt.h"
 
 using namespace AscendC;
+using namespace StatelessDropOutGenMask;
 
 extern "C" __global__ __aicore__ void stateless_drop_out_gen_mask(
     GM_ADDR shape, GM_ADDR prob, GM_ADDR seed, GM_ADDR seed1, GM_ADDR offset, GM_ADDR y, GM_ADDR workspace,
     GM_ADDR tiling)
 {
-    if (workspace == nullptr) {
-        return;
-    }
-    SetSysWorkspace(workspace);
-    GM_ADDR userWS = GetUserWorkspace(workspace);
-    if (userWS == nullptr) {
-        return;
-    }
 
+    REGISTER_TILING_DEFAULT(RandomUnifiedTilingDataStruct);
     GET_TILING_DATA(tilingData, tiling);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    TPipe pipe;
-    if (TILING_KEY_IS(PT_FP32_TILING_KEY)) {
-        StatelessDropOutGenMask::StatelessDropOutGenMaskPt<float> op;
-        op.Init(shape, prob, y, userWS, &tilingData, &pipe);
+
+    AscendC::TPipe pipe;
+    if (TILING_KEY_IS(STATELESS_DROP_OUT_GEN_MASK_DEFAULT_TILING_KEY)) {
+        StatelessDropOutGenMask::StatelessDropOutGenMaskPt<DTYPE_PROB> op(&pipe, &tilingData);
+        op.Init(shape, prob, y);
         op.Process();
-    } else if (TILING_KEY_IS(PT_FP16_TILING_KEY)) {
-        StatelessDropOutGenMask::StatelessDropOutGenMaskPt<half> op;
-        op.Init(shape, prob, y, userWS, &tilingData, &pipe);
-        op.Process();
-    } else if (TILING_KEY_IS(PT_BF16_TILING_KEY)) {
-        StatelessDropOutGenMask::StatelessDropOutGenMaskPt<bfloat16_t> op;
-        op.Init(shape, prob, y, userWS, &tilingData, &pipe);
-        op.Process();
-    } else if (TILING_KEY_IS(TF_FP32_TILING_KEY)) {
-        StatelessDropOutGenMask::StatelessDropOutGenMaskTf<float> op;
-        op.Init(shape, prob, y, userWS, &tilingData, &pipe);
-        op.Process();
-    } else if (TILING_KEY_IS(TF_FP16_TILING_KEY)) {
-        StatelessDropOutGenMask::StatelessDropOutGenMaskTf<half> op;
-        op.Init(shape, prob, y, userWS, &tilingData, &pipe);
-        op.Process();
-    } else if (TILING_KEY_IS(TF_BF16_TILING_KEY)) {
-        StatelessDropOutGenMask::StatelessDropOutGenMaskTf<bfloat16_t> op;
-        op.Init(shape, prob, y, userWS, &tilingData, &pipe);
-        op.Process();
-    }
+    } 
 }
