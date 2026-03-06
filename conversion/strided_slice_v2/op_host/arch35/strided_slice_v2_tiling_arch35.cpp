@@ -509,5 +509,6 @@ ge::graphStatus TilingPrepare4StridedSliceV2(gert::TilingParseContext* context) 
 
 IMPL_OP_OPTILING(StridedSliceV2)
    .Tiling(Tiling4StridedSliceV2)
-   .TilingParse<StridedSliceV2CompileInfo>(TilingPrepare4StridedSliceV2);
+   .TilingParse<StridedSliceV2CompileInfo>(TilingPrepare4StridedSliceV2)
+   .TilingInputsDataDependency({INDEX_BEGIN, INDEX_END, INDEX_AXES, INDEX_STRIDES});
 } // namespace optiling

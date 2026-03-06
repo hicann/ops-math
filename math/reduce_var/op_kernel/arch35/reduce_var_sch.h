@@ -158,7 +158,7 @@ public:
     __aicore__ inline void ReInitWelfordGroups()
     {
         for (int32_t i = 0; i < WELFORD_GROUP_NUM + 1; i++) {
-            rCntGroupWelford_[0] = 0;
+            rCntGroupWelford_[i] = 0;
         }
 
         rCntGroupIdx_ = 0;
