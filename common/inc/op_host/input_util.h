@@ -25,6 +25,11 @@ static constexpr size_t NHWC_N_DIM = 0U;
 static constexpr size_t NHWC_H_DIM = 1U;
 static constexpr size_t NHWC_W_DIM = 2U;
 static constexpr size_t NHWC_C_DIM = 3U;
+static constexpr size_t NHWC_DIM_NUM = 4U;
+// unpack
+static constexpr size_t UNPACK_TWO_ATTRS = 2U;
+static constexpr size_t UNPACK_FOUR_ATTRS = 4U;
+
 
 namespace {
 // 内部方法
@@ -79,9 +84,9 @@ static inline bool CheckUnpackAdaptDimListIntAttr(
     OP_CHECK_IF(vec == nullptr, OP_LOGE(context, "attr %s is nullptr!", attrName), return false);
     size_t packSize = vec->GetSize();
     if (unlikely(packSize == 0 || packSize > unpackLen || unpackLen % packSize != 0)) {
-        if constexpr (unpackLen == 2) {
+        if constexpr (unpackLen == UNPACK_TWO_ATTRS) {
             OP_LOGE(context, "The size of attr %s must be 1 or 2, but got %lu", attrName, packSize);
-        } else if constexpr (unpackLen == 4) {
+        } else if constexpr (unpackLen == UNPACK_FOUR_ATTRS) {
             OP_LOGE(context, "The size of attr %s must be 1, 2 or 4, but got %lu", attrName, packSize);
         } else {
             OP_LOGE(context, "The size of attr %s must be divisor of %lu, but got %lu", attrName, unpackLen, packSize);
@@ -241,12 +246,12 @@ static inline ge::graphStatus UnpackAdaptDimListIntAttr(
  *      - result:   按NCHW顺序的shape的维度
  */
 template <typename T>
-static inline std::tuple<ge::graphStatus, std::array<int64_t, 4>> GetImgDataDimsByNCHWOrder(
+static inline std::tuple<ge::graphStatus, std::array<int64_t, NHWC_DIM_NUM>> GetImgDataDimsByNCHWOrder(
     T* context, const gert::Shape& shape, const ge::Format& format)
 {
-    std::array<int64_t, 4> dims{0};
+    std::array<int64_t, NHWC_DIM_NUM> dims{0};
     int64_t dimNum = shape.GetDimNum();
-    if (unlikely(dimNum != 4)) {
+    if (unlikely(dimNum != NHWC_DIM_NUM)) {
         OP_LOGE(context, "input shape dim num should be 4, but got %ld", dimNum);
         return {ge::GRAPH_FAILED, dims};
     }
@@ -292,7 +297,7 @@ static inline ge::graphStatus GetImgDataDimsByNCHWOrder(
     T* context, const gert::Shape& shape, const ge::Format& format, int64_t& n, int64_t& c, int64_t& h, int64_t& w)
 {
     int64_t dimNum = shape.GetDimNum();
-    if (unlikely(dimNum != 4)) {
+    if (unlikely(dimNum != NHWC_DIM_NUM)) {
         OP_LOGE(context, "input shape dim num should be 4, but got %ld", dimNum);
         return ge::GRAPH_FAILED;
     }
