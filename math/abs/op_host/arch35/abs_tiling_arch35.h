@@ -40,9 +40,9 @@ protected:
 
 private:
     gert::TilingContext *tilingContext;
-    ge::DataType outputDtype;
-    ge::DataType inputDtype;
-    AbsTilingData* tiling;
+    ge::DataType outputDtype = ge::DT_UNDEFINED;
+    ge::DataType inputDtype = ge::DT_UNDEFINED;
+    AbsTilingData* tiling = nullptr;
 };
 
 }  // namespace optiling

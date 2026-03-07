@@ -12,6 +12,7 @@
 #include "math/rsqrt/op_api/aclnn_rsqrt.h"
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/op_api_ut.h"
+#include "opdev/platform.h"
 
 using namespace std;
 
@@ -283,6 +284,7 @@ TEST_F(rsqrt_test, case_15)
  */
 TEST_F(rsqrt_test, ascend910B2_case_16)
 {
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
     auto self = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
 

@@ -42,9 +42,9 @@ protected:
 
 private:
     gert::TilingContext* tilingContext;
-    ge::DataType inputDtype;
-    ge::DataType outputDtype;
-    IsNanTilingData* tiling;
+    ge::DataType inputDtype = ge::DT_UNDEFINED;
+    ge::DataType outputDtype = ge::DT_UNDEFINED;
+    IsNanTilingData* tiling = nullptr;
 };
 } // namespace optiling
 #endif // OPS_BUILD_IN_OP_TILING_RUNTIME_IS_NAN_TILING_H

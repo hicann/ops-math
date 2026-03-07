@@ -26,7 +26,7 @@ class AssignSubTiling {
 public:
     explicit AssignSubTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
-    AssignSubTilingData* tiling;
+    AssignSubTilingData* tiling = nullptr;
 
 protected:
     ge::graphStatus CheckDtype();
@@ -34,7 +34,7 @@ protected:
     void SetTilingData();
 
 private:
-    ge::DataType outputDtype;
+    ge::DataType outputDtype = ge::DT_UNDEFINED;
     gert::TilingContext* tilingContext;
 };
 

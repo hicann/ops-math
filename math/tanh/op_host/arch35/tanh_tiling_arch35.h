@@ -34,10 +34,10 @@ protected:
 
 private:
     gert::TilingContext* tilingContext;
-    ge::DataType outputDtype;
-    ge::DataType inputDtype;
+    ge::DataType outputDtype = ge::DT_UNDEFINED;
+    ge::DataType inputDtype = ge::DT_UNDEFINED;
     uint64_t dType = 0;
-    TanhTilingData* tiling;
+    TanhTilingData* tiling = nullptr;
 };
 }  // namespace optiling
 #endif  // OPS_BUILD_IN_OP_TILING_RUNTIME_TANH_TILING_H

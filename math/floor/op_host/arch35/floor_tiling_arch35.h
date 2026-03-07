@@ -65,10 +65,10 @@ private:
     std::map<uint64_t, ComputeParams> GetComputeMap(uint64_t paramOpKey);
 
     FloorTilingData tilingData;
-    uint64_t opKey;
-    int64_t coreNum;
-    int64_t ubSize;
-    uint64_t blockNum;
+    uint64_t opKey = 0;
+    int64_t coreNum = 0;
+    int64_t ubSize = 0;
+    uint64_t blockNum = 0;
 };
 
 } // namespace optiling

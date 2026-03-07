@@ -16,6 +16,7 @@
 #ifndef OP_KERNEL_V35_ADD_N_REGBASE_H
 #define OP_KERNEL_V35_ADD_N_REGBASE_H
 #include "kernel_operator_list_tensor_intf.h"
+constexpr int64_t DB_BUFFER = 2;
 
 namespace AddNRegbase {
 using namespace AscendC;
@@ -45,8 +46,8 @@ private:
     GlobalTensor<T> x1Gm, x2Gm;
     GlobalTensor<T> yGm;
 
-    TQue<QuePosition::VECIN, 2> inQueue1, inQueue2;
-    TQue<QuePosition::VECOUT, 2> outQueue;
+    TQue<QuePosition::VECIN, DB_BUFFER> inQueue1, inQueue2;
+    TQue<QuePosition::VECOUT, DB_BUFFER> outQueue;
 
     ListTensorDesc inputList_;
     uint32_t blockIdx_{0};

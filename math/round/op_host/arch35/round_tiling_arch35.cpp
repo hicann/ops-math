@@ -55,8 +55,8 @@ private:
     uint64_t dType = 0;
     uint64_t schMode = 0;
     gert::TilingContext* tilingContext;
-    ge::DataType outputDtype;
-    ge::DataType inputDtype;
+    ge::DataType outputDtype = ge::DT_UNDEFINED;
+    ge::DataType inputDtype = ge::DT_UNDEFINED;
 };
 
 ge::graphStatus RoundTiling::SetTilingData()

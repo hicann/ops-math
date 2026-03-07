@@ -37,11 +37,11 @@ private:
     uint64_t schMode = 0;
     uint64_t attrWork = 0;
     gert::TilingContext* tilingContext;
-    ge::DataType outputDtype;
-    ge::DataType inputDtype;
-    float attrScale;
-    float attrShift;
-    float attrlnBase;
+    ge::DataType outputDtype = ge::DT_UNDEFINED;
+    ge::DataType inputDtype = ge::DT_UNDEFINED;
+    float attrScale = 0.0f;
+    float attrShift = 0.0f;
+    float attrlnBase = 0.0f;
 };
 } // namespace optiling
 #endif // OPS_BUILD_IN_OP_TILING_RUNTIME_EXP_TILING_H

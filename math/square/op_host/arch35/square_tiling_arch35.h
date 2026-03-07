@@ -36,10 +36,10 @@ protected:
 
 private:
     uint64_t tilingKey = 0;
-    ge::DataType inputDtype;
-    ge::DataType outputDtype;
+    ge::DataType inputDtype = ge::DT_UNDEFINED;
+    ge::DataType outputDtype = ge::DT_UNDEFINED;
     gert::TilingContext* tilingContext;
-    SquareTilingData* tiling;
+    SquareTilingData* tiling = nullptr;
 };
 } // namespace optiling
 

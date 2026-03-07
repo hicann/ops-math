@@ -45,8 +45,8 @@ protected:
     ge::graphStatus CheckShape() const;
 
 private:
-    ge::DataType outputDtype;
-    ge::DataType valueDtype;
+    ge::DataType outputDtype = ge::DT_UNDEFINED;
+    ge::DataType valueDtype = ge::DT_UNDEFINED;
     gert::TilingContext* tilingContext;
 };
 

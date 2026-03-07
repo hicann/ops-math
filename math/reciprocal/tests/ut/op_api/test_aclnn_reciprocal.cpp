@@ -12,6 +12,7 @@
 #include "math/reciprocal/op_api/aclnn_reciprocal.h"
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/op_api_ut.h"
+#include "opdev/platform.h"
 
 using namespace std;
 
@@ -107,6 +108,7 @@ TEST_F(reciprocal_test, case_4)
  */
 TEST_F(reciprocal_test, case_5)
 {
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
     auto self = TensorDesc({2, 3}, ACL_INT16, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
 

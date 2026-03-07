@@ -284,6 +284,7 @@ TEST_F(sin_test, case_15)
  */
 TEST_F(sin_test, ascend910B2_case_16)
 {
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
     auto self = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
     auto out = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
 

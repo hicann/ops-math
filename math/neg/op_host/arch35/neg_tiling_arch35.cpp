@@ -53,7 +53,7 @@ public:
     explicit NegTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
     ge::graphStatus SetTilingData();
-    NegTilingData* tiling;
+    NegTilingData* tiling = nullptr;
 
 protected:
     ge::graphStatus CalcOutputDtype();
@@ -61,7 +61,7 @@ protected:
     ge::graphStatus CheckOutputShape();
 
 private:
-    ge::DataType outputDtype;
+    ge::DataType outputDtype = ge::DT_UNDEFINED;
     uint32_t numBlocks = 0;
     int64_t outputSize = 0;
     gert::TilingContext* tilingContext;
