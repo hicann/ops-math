@@ -134,6 +134,8 @@ aclnnStatus aclnnInplaceFillScalarGetWorkspaceSize(
     // 固定写法，将输入self转换成连续的tensor
     aclOpExecutor* executorP = uniqueExecutor.get();
     const aclTensor* castTensor = executorP->ConvertToTensor(value, selfRef->GetDataType());
+    CHECK_RET(castTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
     const aclTensor* dims;
     aclIntArray* shapeArray;
     if (selfRef->GetViewShape().GetDimNum() != 0) {
@@ -151,9 +153,15 @@ aclnnStatus aclnnInplaceFillScalarGetWorkspaceSize(
         dims = executorP->ConvertToTensor(tmp.data(), tmp.size(), op::ToOpDataType(ACL_INT64));
         shapeArray = executorP->AllocIntArray(tmp.data(), tmp.size());
     }
+    CHECK_RET(dims != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    CHECK_RET(shapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
     auto fillOut = l0op::Fill(dims, castTensor, shapeArray, executorP);
+    CHECK_RET(fillOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
     auto viewCopyResult = l0op::ViewCopy(fillOut, selfRef, executorP);
     CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
     // 固定写法，获取计算过程中需要使用的workspace大小
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(executor);
