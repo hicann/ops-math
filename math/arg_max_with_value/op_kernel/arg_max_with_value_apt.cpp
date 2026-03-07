@@ -21,14 +21,14 @@
 #define TILING_KEY_RA 20003
 #define TILING_KEY_GROUP_REDUCE 30001
 
-#include "../arg_common_base/arch35/arg_max_with_value_ar.h"
-#include "../arg_common_base/arch35/arg_max_with_value_ara.h"
-#include "../arg_common_base/arch35/arg_max_with_value_copy.h"
-#include "../arg_common_base/arch35/arg_max_with_value_ar_gather.h"
-#include "../arg_common_base/arch35/arg_max_with_value_ara_gather.h"
-#include "../arg_common_base/arch35/arg_max_with_value_ra.h"
-#include "../arg_common_base/arch35/arg_max_with_value_group_reduce.h"
-#include "../arg_common_base/arch35/arg_max_with_value_ara_cut_a_and_next_a.h"
+#include "arch35/arg_max_with_value_ar.h"
+#include "arch35/arg_max_with_value_ara.h"
+#include "arch35/arg_max_with_value_copy.h"
+#include "arch35/arg_max_with_value_ar_gather.h"
+#include "arch35/arg_max_with_value_ara_gather.h"
+#include "arch35/arg_max_with_value_ra.h"
+#include "arch35/arg_max_with_value_group_reduce.h"
+#include "arch35/arg_max_with_value_ara_cut_a_and_next_a.h"
 
 using namespace ArgMaxWithValue;
 

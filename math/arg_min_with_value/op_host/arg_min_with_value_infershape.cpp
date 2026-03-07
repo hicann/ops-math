@@ -12,7 +12,7 @@
  * \file arg_max_v2_infershape.cpp
  * \brief
  */
-#include "../../arg_common_base/op_host/arg_common_base_infershape.h"
+#include "math/arg_max_with_value/op_host/arg_common_base_infershape.h"
 #include "register/op_impl_registry.h"
 
 namespace ops {

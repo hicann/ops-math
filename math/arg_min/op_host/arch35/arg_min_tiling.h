@@ -15,7 +15,7 @@
 #ifndef OPS_BUILT_IN_OP_TILING_RUNTIME_ARG_MIN_H_
 #define OPS_BUILT_IN_OP_TILING_RUNTIME_ARG_MIN_H_
 
-#include "../../../arg_common_base/op_host/arch35/arg_common_base_tiling.h"
+#include "math/arg_max_with_value/op_host/arch35/arg_common_base_tiling.h"
 
 namespace optiling {
 

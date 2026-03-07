@@ -248,7 +248,6 @@ VC2@ops-math:
         - ops/ops-math/conversion/matrix_diag/
         - ops/ops-math/math/cdist/
         - ops/ops-math/math/addr/
-        - ops/ops-math/math/arg_common_base/
         - ops/ops-math/math/arg_max_v2/
         - ops/ops-math/math/arg_max_with_value/
         - ops/ops-math/math/arg_min/
