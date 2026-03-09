@@ -36,7 +36,7 @@ __aicore__ inline constexpr T GetDumpValue()
     }
 }
 
-template <uint32_t PatternID, uint32_t LoopARCount, uint32_t LoopInnerARCount>
+template <REDUCE_TPL_PARAM>
 __global__ __aicore__ void reduce_log_sum_exp(GM_ADDR x, GM_ADDR axes, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     if (g_coreType == AIC) {

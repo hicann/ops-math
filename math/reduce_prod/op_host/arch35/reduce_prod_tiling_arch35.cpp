@@ -74,8 +74,8 @@ static ge::graphStatus Tiling4ReduceProd(gert::TilingContext* context)
     OP_CHECK_IF(
         (DoTiling(context, opInput, key) == ge::GRAPH_FAILED),
         OP_LOGE(context->GetNodeName(), "DoTiling Failed for ReduceProd"), return ge::GRAPH_FAILED);
-
-    const uint64_t tilingKey = GET_TPL_TILING_KEY(key.patternID, key.loopARCount, key.loopInnerARCount);
+    uint64_t tilingKey;
+    GEN_REDUCE_TILING_KEY(tilingKey, key);
     OP_LOGI(
         context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, Tiling Key is:%lu", key.patternID,
         key.loopARCount, key.loopInnerARCount, tilingKey);

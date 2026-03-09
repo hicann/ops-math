@@ -157,8 +157,8 @@ static ge::graphStatus Tiling4KLDivV2AscendC(gert::TilingContext *context, const
     OP_CHECK_IF(it == STR_2_INT.end(),
                     OP_LOGE(context->GetNodeName(), "reduction Failed for KLDivV2"),
                     return ge::GRAPH_FAILED);
-    const uint64_t tilingKey = GET_TPL_TILING_KEY(key.patternID, key.loopARCount, key.loopInnerARCount, it->second,
-        static_cast<uint32_t>(logTarget));
+    uint64_t tilingKey;
+    GEN_REDUCE_TILING_KEY(tilingKey, key, it->second, static_cast<uint32_t>(logTarget));
     OP_LOGI(context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, reduction is:%u, logTarget is %u Tiling Key is:%lu",
             key.patternID, key.loopARCount, key.loopInnerARCount, it->second, static_cast<uint32_t>(logTarget), tilingKey);
     context->SetTilingKey(tilingKey);

@@ -24,7 +24,7 @@ else()
   FetchContent_Declare(
     opbase
     GIT_REPOSITORY https://gitcode.com/cann/opbase.git
-    GIT_TAG 929902e577bb809a377a6ab17cb7b00a4dfddc1a
+    GIT_TAG 07383cb90f23b3c4e9b1e16eff40a048c888555f
     GIT_PROGRESS TRUE
     SOURCE_DIR ${CANN_3RD_LIB_PATH}/opbase)
 

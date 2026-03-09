@@ -29,8 +29,8 @@ static ge::graphStatus Tiling4ReduceStdV2(gert::TilingContext* context) {
     OP_CHECK_IF((tiling.RunTiling(key) != ge::GRAPH_SUCCESS),
         OP_LOGE(context->GetNodeName(), "RunTiling Failed for ReduceStdV2"),
         return ge::GRAPH_FAILED);
-
-    const uint64_t tilingKey = GET_TPL_TILING_KEY(key.patternID, key.loopARCount, key.loopInnerARCount);
+    uint64_t tilingKey;
+    GEN_REDUCE_TILING_KEY(tilingKey, key);
     OP_LOGI(context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, Tiling Key is:%lu",
         key.patternID, key.loopARCount, key.loopInnerARCount, tilingKey);
     context->SetTilingKey(tilingKey);
