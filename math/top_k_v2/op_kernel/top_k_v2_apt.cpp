@@ -22,6 +22,21 @@
 
 using namespace AscendC;
 
+#define TOPK_COMMON_TILING_KEY_INT64 1004
+#define TOPK_COMMON_TILING_KEY_INT32 1003
+#define TOPK_COMMON_TILING_KEY_INT16 1002
+#define TOPK_COMMON_TILING_KEY_INT8 1001
+#define TOPK_COMMON_TILING_KEY_UINT64 2004
+#define TOPK_COMMON_TILING_KEY_UINT32 2003
+#define TOPK_COMMON_TILING_KEY_UINT16 2002
+#define TOPK_COMMON_TILING_KEY_UINT8 2001
+#define TOPK_COMMON_TILING_KEY_FLOAT 3003
+#define TOPK_COMMON_TILING_KEY_FLOAT16 3002
+#define TOPK_COMMON_TILING_KEY_BF16 4002
+#define TOPK_MERGE_SORT_TILING_KEY_FLOAT 13003
+#define TOPK_MERGE_SORT_TILING_KEY_FLOAT16 13002
+#define TOPK_MERGE_SORT_TILING_KEY_BF16 14002
+
 const uint32_t SINGLE_CORE_MODE = 1;
 const uint32_t MULT_CORE_OPTIM_MODE = 4;
 
@@ -229,136 +244,101 @@ __aicore__ inline void generateMergeTopKObject(
 
 extern "C" __global__ __aicore__ void top_k_v2(GM_ADDR x, GM_ADDR k, GM_ADDR values, GM_ADDR indices, GM_ADDR workspace, GM_ADDR tiling)
 {
-  if (workspace == nullptr) {
-      return;
-  }
-  SetSysWorkspace(workspace);
-  GM_ADDR globalWorkGm = GetUserWorkspace(workspace);
-  if (globalWorkGm == nullptr) {
-      return;
-  }
-  if (TILING_KEY_IS(1004)) {
-      generateOpObject<int64_t, uint64_t, B64_BITE_SIZE, DTYPE_INDICES>(
-          x,
-          k,
-          values,
-          indices,
-          globalWorkGm,
-          tiling
-      );
-  } else if (TILING_KEY_IS(1003)) {
-      generateOpObject<int32_t, uint32_t, B32_BITE_SIZE, DTYPE_INDICES>(
-          x,
-          k,
-          values,
-          indices,
-          globalWorkGm,
-          tiling
-      );
-  } else if (TILING_KEY_IS(1002)) {
-      generateOpObject<int16_t, uint16_t, B16_BITE_SIZE, DTYPE_INDICES>(
-          x,
-          k,
-          values,
-          indices,
-          globalWorkGm,
-          tiling
-      );
-  } else if (TILING_KEY_IS(2004)) {
-      generateOpObject<uint64_t, uint64_t, B64_BITE_SIZE, DTYPE_INDICES>(
-          x,
-          k,
-          values,
-          indices,
-          globalWorkGm,
-          tiling
-      );
-  } else if (TILING_KEY_IS(2003)) {
-      generateOpObject<uint32_t, uint32_t, B32_BITE_SIZE, DTYPE_INDICES>(
-          x,
-          k,
-          values,
-          indices,
-          globalWorkGm,
-          tiling
-      );
-  } else if (TILING_KEY_IS(2002)) {
-      generateOpObject<uint16_t, uint16_t, B16_BITE_SIZE, DTYPE_INDICES>(
-          x,
-          k,
-          values,
-          indices,
-          globalWorkGm,
-          tiling
-      );
-  } else if (TILING_KEY_IS(3003)) {
-      generateOpObject<float, uint32_t, B32_BITE_SIZE, DTYPE_INDICES>(
-          x,
-          k,
-          values,
-          indices,
-          globalWorkGm,
-          tiling
-      );
-  } else if (TILING_KEY_IS(3002)) {
-      generateOpObject<half, uint16_t, B16_BITE_SIZE, DTYPE_INDICES>(
-          x,
-          k,
-          values,
-          indices,
-          globalWorkGm,
-          tiling
-      );
-  } else if (TILING_KEY_IS(4002)) {
-      generateOpObject<bfloat16_t, uint16_t, B16_BITE_SIZE, DTYPE_INDICES>(
-          x,
-          k,
-          values,
-          indices,
-          globalWorkGm,
-          tiling
-      );
-  } else if (TILING_KEY_IS(2001)) {
-      generateOpObject<uint8_t, uint8_t, B8_BITE_SIZE, DTYPE_INDICES>(
-          x,
-          k,
-          values,
-          indices,
-          globalWorkGm,
-          tiling
-      );
-  } else if (TILING_KEY_IS(1001)) {
-      generateOpObject<int8_t, uint8_t, B8_BITE_SIZE, DTYPE_INDICES>(
-          x,
-          k,
-          values,
-          indices,
-          globalWorkGm,
-          tiling
-      );
-  } else if (TILING_KEY_IS(13003)) {
-      generateMergeTopKObject<float, float, DTYPE_INDICES>(
-          x,
-          values,
-          indices,
-          globalWorkGm,
-          tiling
-      );
-  } else if (TILING_KEY_IS(13002)) {
-      generateMergeTopKObject<half, half, DTYPE_INDICES>(
-          x,
-          values,
-          indices,
-          globalWorkGm,
-          tiling
-      );
-  } else if (TILING_KEY_IS(14002)) {
-      generateMergeTopKObject<bfloat16_t, float, DTYPE_INDICES>(
-          x,
-          values,
-          indices,
-          globalWorkGm,
-          tiling
-      );
-  }
+    if (workspace == nullptr) {
+        return;
+    }
+    SetSysWorkspace(workspace);
+    GM_ADDR globalWorkGm = GetUserWorkspace(workspace);
+    if (globalWorkGm == nullptr) {
+        return;
+    }
+  
+    #if ORIG_DTYPE_X == DT_INT64
+        TILING_KEY_IS(TOPK_COMMON_TILING_KEY_INT64);
+        #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_INT64
+            generateOpObject<int64_t, uint64_t, B64_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+        #endif
+    #endif
+
+    #if ORIG_DTYPE_X == DT_INT32
+        TILING_KEY_IS(TOPK_COMMON_TILING_KEY_INT32);
+        #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_INT32
+            generateOpObject<int32_t, uint32_t, B32_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+        #endif
+    #endif
+
+    #if ORIG_DTYPE_X == DT_INT16
+        TILING_KEY_IS(TOPK_COMMON_TILING_KEY_INT16);
+        #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_INT16
+            generateOpObject<int16_t, uint16_t, B16_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+        #endif
+    #endif
+
+    #if ORIG_DTYPE_X == DT_INT8
+        TILING_KEY_IS(TOPK_COMMON_TILING_KEY_INT8);
+        #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_INT8
+            generateOpObject<int8_t, uint8_t, B8_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+        #endif
+    #endif
+
+    #if ORIG_DTYPE_X == DT_UINT64
+        TILING_KEY_IS(TOPK_COMMON_TILING_KEY_UINT64);
+        #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_UINT64
+            generateOpObject<uint64_t, uint64_t, B64_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+        #endif
+    #endif
+
+    #if ORIG_DTYPE_X == DT_UINT32
+        TILING_KEY_IS(TOPK_COMMON_TILING_KEY_UINT32);   
+        #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_UINT32
+            generateOpObject<uint32_t, uint32_t, B32_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+        #endif
+    #endif
+
+    #if ORIG_DTYPE_X == DT_UINT16
+        TILING_KEY_IS(TOPK_COMMON_TILING_KEY_UINT16);
+        #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_UINT16
+            generateOpObject<uint16_t, uint16_t, B16_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+        #endif
+    #endif
+    
+    #if ORIG_DTYPE_X == DT_UINT8
+        TILING_KEY_IS(TOPK_COMMON_TILING_KEY_UINT8);
+        #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_UINT8
+            generateOpObject<uint8_t, uint8_t, B8_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+        #endif
+    #endif
+
+    #if ORIG_DTYPE_X == DT_FLOAT
+        TILING_KEY_IS(TOPK_COMMON_TILING_KEY_FLOAT);
+        TILING_KEY_IS(TOPK_MERGE_SORT_TILING_KEY_FLOAT);
+
+        #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_FLOAT
+            generateOpObject<float, uint32_t, B32_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+        #elif TILING_KEY_VAR == TOPK_MERGE_SORT_TILING_KEY_FLOAT
+            generateMergeTopKObject<float, float, DTYPE_INDICES>(x, values, indices, globalWorkGm, tiling);
+        #endif
+    #endif
+
+    #if ORIG_DTYPE_X == DT_FLOAT16
+        TILING_KEY_IS(TOPK_COMMON_TILING_KEY_FLOAT16);
+        TILING_KEY_IS(TOPK_MERGE_SORT_TILING_KEY_FLOAT16);
+
+        #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_FLOAT16
+            generateOpObject<half, uint16_t, B16_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+        #elif TILING_KEY_VAR == TOPK_MERGE_SORT_TILING_KEY_FLOAT16
+            generateMergeTopKObject<half, half, DTYPE_INDICES>(x, values, indices, globalWorkGm, tiling);
+        #endif
+    #endif
+
+    #if ORIG_DTYPE_X == DT_BF16
+        TILING_KEY_IS(TOPK_COMMON_TILING_KEY_BF16);
+        TILING_KEY_IS(TOPK_MERGE_SORT_TILING_KEY_BF16);
+
+        #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_BF16
+            generateOpObject<bfloat16_t, uint16_t, B16_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+        #elif TILING_KEY_VAR == TOPK_MERGE_SORT_TILING_KEY_BF16
+            generateMergeTopKObject<bfloat16_t, float, DTYPE_INDICES>(x, values, indices, globalWorkGm, tiling);
+        #endif
+    #endif
 }
