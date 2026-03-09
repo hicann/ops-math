@@ -54,7 +54,7 @@ private:
     uint64_t xRowNum_{0};      // x的行数 Dn-2
     uint64_t xColNum_{0};      // x的列数 Dn-1
     uint64_t diagLen_{0};      // 对角线长度，min(Dn-2, Dn-1)
-    uint64_t diagLenAlign_{0};
+    uint64_t diagLoadLenAlign_{0};
     uint64_t ubPerCore_{0}; // 单核处理的ubFactor个数
     uint64_t ubPerTail_{0}; // 每个尾轴需要切的ubFactor个数
     uint64_t ubFactor_{0};  // 单核每次处理的尾轴数据个数
@@ -80,7 +80,8 @@ public:
         ubPerCore_ = tdPtr_->ubPerCore;
         ubPerTail_ = tdPtr_->ubPerTail;
         ubFactor_ = tdPtr_->ubFactor;
-        diagLenAlign_ = Ops::Base::CeilAlign(diagLen_, static_cast<uint64_t>(ALIGN_NUM));
+
+        diagLoadLenAlign_ = Ops::Base::CeilAlign(ubFactor_ / (xColNum_ + 1) + 1, static_cast<uint64_t>(ALIGN_NUM));
         ubFactorAlign_ = Ops::Base::CeilAlign(ubFactor_, static_cast<uint64_t>(ALIGN_NUM));
 
         inputGm_.SetGlobalBuffer((__gm__ T*)x);
@@ -88,7 +89,7 @@ public:
         outputGm_.SetGlobalBuffer((__gm__ T*)y);
 
         pipe_->InitBuffer(inQue_, BUF_NUM * ubFactorAlign_ * sizeof(T));
-        pipe_->InitBuffer(diagQue_, BUF_NUM * diagLenAlign_ * sizeof(T));
+        pipe_->InitBuffer(diagQue_, BUF_NUM * diagLoadLenAlign_ * sizeof(T));
     }
 
     __aicore__ inline void Process()
@@ -107,7 +108,7 @@ public:
 
         for (uint64_t idx = blockIdx_; idx < ubPerTail_ * mergeDimSize_; idx += coreNum_) {
             LocalTensor<T> x = xLocal[(bufIdx & BUFIDX_BIT0) * ubFactorAlign_];
-            LocalTensor<T> diag = diagLocal[(bufIdx & BUFIDX_BIT0) * diagLenAlign_];
+            LocalTensor<T> diag = diagLocal[(bufIdx & BUFIDX_BIT0) * diagLoadLenAlign_];
 
             xOffsetInTail = (idx % ubPerTail_) * ubFactor_;
             xOffsetCurCore = (idx / ubPerTail_) * xRowNum_ * xColNum_ + xOffsetInTail;
