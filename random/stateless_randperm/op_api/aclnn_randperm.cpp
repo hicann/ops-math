@@ -87,6 +87,12 @@ aclnnStatus aclnnRandpermGetWorkspaceSize(int64_t n, int64_t seed, int64_t offse
   // 固定写法，参数检查
   auto ret = CheckParams(n, out);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
+  // n = 0 时返回空tensor
+  if (n == 0) {
+    *workspaceSize = 0;
+    uniqueExecutor.ReleaseTo(executor);
+    return ACLNN_SUCCESS;
+  }
 
 // 调用算子kernel
   auto executorP = uniqueExecutor.get();
