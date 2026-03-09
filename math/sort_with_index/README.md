@@ -46,9 +46,30 @@
       <td>index</td>
       <td>输入</td>
       <td>待进行元素值排序的输入张量。</td>
-      <td>INT32</td>
+      <td>INT32、INT64</td>
       <td>ND</td>
     </tr>
+    <tr>
+      <td>axis</td>
+      <td>输入</td>
+      <td>用来作为排序标准的维度。</td>
+      <td>INT64</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>descending</td>
+      <td>输入</td>
+      <td>控制排序顺序，True为降序，False为升序。</td>
+      <td>BOOL</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>stable</td>
+      <td>输入</td>
+      <td>是否稳定排序, True为稳定排序，False为非稳定排序。</td>
+      <td>BOOL</td>
+      <td>-</td>
+    </tr>    
     <tr>
       <td>y</td>
       <td>输出</td>
@@ -60,7 +81,7 @@
       <td>sorted_index</td>
       <td>输出</td>
       <td>索引值随元素值排序后的输出结果。</td>
-      <td>INT32</td>
+      <td>INT32、INT64</td>
       <td>ND</td>
     </tr>
   </tbody></table>
