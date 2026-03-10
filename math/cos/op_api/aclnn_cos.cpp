@@ -110,10 +110,6 @@ static aclnnStatus ExecCosGetWorkspaceSize(const aclTensor* input, aclTensor* ou
   // 参数检查
   auto ret = CheckParamsCos(input, out);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
-  
-  if (input->GetStorageFormat() != Format::FORMAT_ND) {
-      OP_LOGW("Format only support ND");
-  }
 
   if (input->IsEmpty()) {
     // 根据实际支持情况补充
