@@ -218,17 +218,13 @@ usage() {
         echo "    --noexec               Only compile ut, do not execute"
         echo "    --cov                  Enable code coverage for unit tests"
         echo "    --soc=soc_version      Run unit tests for specified Ascend SoC"
-        echo "    --ophost_test          Build and run ophost unit tests"
-        echo "    --opapi_test           Build and run opapi unit tests"
-        echo "    --opgraph_test         Build and run opgraph unit tests"
-        echo "    --ophost -u            Same as --ophost_test"
-        echo "    --opapi -u             Same as --opapi_test"
-        echo "    --opgraph -u           Same as --opgraph_test"
+        echo "    --ophost -u            Build and run ophost unit tests"
+        echo "    --opapi -u             Build and run opapi unit tests"
+        echo "    --opgraph -u           Build and run opgraph unit tests"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh -u --noexec --cov"
         echo "    bash build.sh -u --ophost --soc=ascend910b --ops=is_finite"
-        echo "    bash build.sh --ophost_test --opapi_test --noexec"
         echo "    bash build.sh --ophost --opapi --opgraph -u --cov"
         return
         ;;
@@ -296,39 +292,6 @@ usage() {
         echo "Examples:"
         echo "    bash build.sh --onnxplugin -j16 -O3"
         echo "    bash build.sh --onnxplugin --debug"
-        return
-        ;;
-      ophost_test)
-        echo "Ophost Test Options:"
-        echo $dotted_line
-        echo "    --ophost_test          Build and run ophost unit tests"
-        echo "    --noexec               Only compile ut, do not execute"
-        echo "    --cov                  Enable code coverage for unit tests"
-        echo $dotted_line
-        echo "Examples:"
-        echo "    bash build.sh --ophost_test --noexec --cov"
-        return
-        ;;
-      opapi_test)
-        echo "Opapi Test Options:"
-        echo $dotted_line
-        echo "    --opapi_test           Build and run opapi unit tests"
-        echo "    --noexec               Only compile ut, do not execute"
-        echo "    --cov                  Enable code coverage for unit tests"
-        echo $dotted_line
-        echo "Examples:"
-        echo "    bash build.sh --opapi_test --noexec --cov"
-        return
-        ;;
-      opgraph_test)
-        echo "Opgraph Test Options:"
-        echo $dotted_line
-        echo "    --opgraph_test         Build and run opgraph unit tests"
-        echo "    --noexec               Only compile ut, do not execute"
-        echo "    --cov                  Enable code coverage for unit tests"
-        echo $dotted_line
-        echo "Examples:"
-        echo "    bash build.sh --opgraph_test --noexec --cov"
         return
         ;;
       run_example)
@@ -405,10 +368,6 @@ usage() {
   echo "    --build-type specify build-type (Type options: Release/Debug), Default:Release"
   echo "    --static build static library package"
   echo "    --experimental Build experimental version"
-  echo "    --opapi_test build and run opapi unit tests"
-  echo "    --ophost_test build and run ophost unit tests"
-  echo "    --opgraph_test build and run opgraph unit tests"
-  echo "    --opkernel_test build and run opkernel unit tests"
   echo "    --opkernel_aicpu_test build and run aicpu opkernel unit tests"
   echo "    --run_example Compile and execute the test_aclnn_xxx.cpp/test_geir_xxx.cpp"
   echo "    --simulator     Enable simulator mode for run_example (requires --soc parameter)"
