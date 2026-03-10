@@ -25,33 +25,126 @@
 
 ## 函数原型
 
-- aclnnFloorDivides和aclnnInplaceFloorDivides实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
-  - aclnnFloorDivides：需新建一个输出张量对象存储计算结果。
-  - aclnnInplaceFloorDivides：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用 “aclnnFloorDividesGetWorkspaceSize” 或者 “aclnnInplaceFloorDividesGetWorkspaceSize” 接口获取入参并根据计算流程计算所需workspace大小，再调用 “aclnnFloorDivides” 或者 “aclnnInplaceFloorDivides” 接口执行计算。
+aclnnFloorDivides和aclnnInplaceFloorDivides实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
+- aclnnFloorDivides：需新建一个输出张量对象存储计算结果。
+- aclnnInplaceFloorDivides：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-- `aclnnStatus aclnnFloorDividesGetWorkspaceSize(const aclTensor *self, const aclScalar *other, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnFloorDivides(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
-- `aclnnStatus aclnnInplaceFloorDividesGetWorkspaceSize(aclTensor *selfRef, const aclScalar *other, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnInplaceFloorDivides(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnFloorDividesGetWorkspaceSize"或者"aclnnInplaceFloorDividesGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnFloorDivides"或者"aclnnInplaceFloorDivides"接口执行计算。
+
+```Cpp
+aclnnStatus aclnnFloorDividesGetWorkspaceSize(
+  const aclTensor*   self,
+  const aclScalar*   other,
+  aclTensor*         out,
+  uint64_t*          workspaceSize,
+  aclOpExecutor**    executor)
+```
+
+```Cpp
+aclnnStatus aclnnFloorDivides(
+  void*              workspace,
+  uint64_t           workspaceSize,
+  aclOpExecutor*     executor,
+  aclrtStream        stream)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceFloorDividesGetWorkspaceSize(
+  aclTensor*         selfRef,
+  const aclScalar*   other,
+  uint64_t*          workspaceSize,
+  aclOpExecutor**    executor)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceFloorDivides(
+  void*              workspace,
+  uint64_t           workspaceSize,
+  aclOpExecutor*     executor,
+  aclrtStream        stream)
+```
 
 ## aclnnFloorDividesGetWorkspaceSize
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)：Device侧的aclTensor，shape需要与other满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、INT16、BOOL、BFLOAT16，数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
-     * <term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL，数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
-     * <term>Ascend 950PR/Ascend 950DT</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、INT16、BOOL、BFLOAT16，数据类型与other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
-  - other(aclScalar*, 计算输入)：Host侧的aclScalar。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、INT16、BOOL、BFLOAT16，数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
-     * <term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL，数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
-     * <term>Ascend 950PR/Ascend 950DT</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、INT16、BOOL、BFLOAT16，数据类型与self的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
-  - out(aclTensor*, 计算输出)：Device侧的aclTensor，数据类型需要是self与other推导之后可转换的数据类型，shape需要是self与other broadcast之后的shape。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、INT16、BOOL、BFLOAT16
-     * <term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL
-  - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>-</td>
+      <td>数据类型需要与other满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL</td>
+      <td>ND</td>
+      <td>不超过8维</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>other（aclScalar*）</td>
+      <td>输入</td>
+      <td>-</td>
+      <td>数据类型需要与self满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>-</td>
+      <td>数据类型需要是self与other推导之后可转换的数据类型，shape需要是self与other broadcast之后的shape。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL</td>
+      <td>ND</td>
+      <td>不超过8维</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
+
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：self额外支持BFLOAT16，other额外支持BFLOAT16，out额外支持BFLOAT16。
+
+  - <term>Ascend 950PR/Ascend 950DT</term>：self额外支持BFLOAT16，other额外支持BFLOAT16，out额外支持BFLOAT16。数据类型需满足TensorScalar互推导关系。
 
 - **返回值：**
 
@@ -59,10 +152,10 @@
 
   第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1147px"><colgroup>
-  <col style="width: 287px">
-  <col style="width: 124px">
-  <col style="width: 736px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>
@@ -74,7 +167,7 @@
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的self、other或out是空指针。</td>
+      <td>传入的self、other或out是空指针时。</td>
     </tr>
     <tr>
       <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
@@ -97,10 +190,10 @@
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 167px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
   <col style="width: 134px">
-  <col style="width: 848px">
+  <col style="width: 833px">
   </colgroup>
   <thead>
     <tr>
@@ -140,16 +233,73 @@
 
 - **参数说明：**
 
-  - selfRef(aclTensor*, 计算输入)：Device侧的aclTensor，shape需要与other满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、INT16、BOOL、BFLOAT16，数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
-     * <term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL，数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
-     * <term>Ascend 950PR/Ascend 950DT</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、INT16、BOOL、BFLOAT16，数据类型与other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
-  - other(aclScalar*, 计算输入)：Host侧的aclScalar。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、INT16、BOOL、BFLOAT16，数据类型与selfRef的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
-     * <term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL，数据类型与selfRef的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
-     * <term>Ascend 950PR/Ascend 950DT</term>：FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、INT16、BOOL、BFLOAT16，数据类型与selfRef的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
-  - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>selfRef（aclTensor*）</td>
+      <td>输入/输出</td>
+      <td>-</td>
+      <td>数据类型需要与other满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL</td>
+      <td>ND</td>
+      <td>不超过8维</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>other（aclScalar*）</td>
+      <td>输入</td>
+      <td>-</td>
+      <td>数据类型需要与selfRef满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
+
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：selfRef额外支持BFLOAT16，other额外支持BFLOAT16。
+
+  - <term>Ascend 950PR/Ascend 950DT</term>：selfRef额外支持BFLOAT16，other额外支持BFLOAT16。数据类型需满足TensorScalar互推导关系。
 
 - **返回值：**
 
@@ -157,10 +307,10 @@
 
   第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1146px"><colgroup>
-  <col style="width: 287px">
-  <col style="width: 124px">
-  <col style="width: 735px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>
@@ -172,7 +322,7 @@
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的selfRef、other是空指针。</td>
+      <td>传入的selfRef或other是空指针时。</td>
     </tr>
     <tr>
       <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
@@ -183,7 +333,7 @@
       <td>selfRef和other不满足数据类型推导规则。</td>
     </tr>
     <tr>
-      <td>selfRef和other的维度大于8。</td>
+      <td>selfRef的维度大于8。</td>
     </tr>
   </tbody>
   </table>
@@ -192,10 +342,10 @@
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 167px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
   <col style="width: 134px">
-  <col style="width: 848px">
+  <col style="width: 833px">
   </colgroup>
   <thead>
     <tr>
@@ -235,7 +385,8 @@
 
 - 确定性计算：
   - aclnnFloorDivides&aclnnInplaceFloorDivides默认确定性实现。
-* 因FLOAT16/BFLOAT16数据类型精度有限，无法表示所有小数，在向下取整时存在一定误差，可以选择更高精度的数据类型如FLOAT32。
+
+> <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：因FLOAT16/BFLOAT16数据类型精度有限，无法表示所有小数，在向下取整时存在一定误差，可以选择更高精度的数据类型如FLOAT32。
 
 
 ## 调用示例
