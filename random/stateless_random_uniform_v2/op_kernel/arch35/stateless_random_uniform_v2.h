@@ -195,12 +195,12 @@ __aicore__ inline void StatelessRandomUniformV2<T>::Uint32ToFloat(LocalTensor<T>
     |1|_____8____|___________23___________|
     |s|exponent  | mantissa               |
 
-    const uint32_t man = x & 0x7fffffu; // 23 bit mantissa
-    const uint32_t exp = static_cast<uint32_t>(127);  // 7 bit exp
-    const uint32_t val = (exp << 23) | man;
-    float result;
-    memcpy(&result, &val, sizeof(val));
-    return  result - 1.0f;
+    |_param__|___type___|________value_________|
+    |__man___|_uint32_t_|_____x&0x7fffffu______|
+    |__exp___|_uint32_t_|_________127__________|
+    |__val___|_uint32_t_|___(exp << 23)|man____|
+    |_result_|___float__|memcpy(&result,&val..)|
+    |return result - 1.0f                      |
     */
 
     // philox result saved in PhiloxQueBuf
@@ -251,13 +251,13 @@ __aicore__ inline void StatelessRandomUniformV2<T>::Uint16ToHalf(LocalTensor<T>&
       |1|____5____|__________10___________|
       |s|exponent  | mantissa             |
 
-      const uint16_t man = x & 0x3ffu; // 10 bit mantissa
-      const uint16_t expr = staic_cast<uint16_t>(15);  // 5 bit exp
-      const uint16_t val = (exp << 10) | man;
-      float16 result;
-      memcpy(&result, &val, sizeof(val));
-      return  result - half(1.0);
-      */
+      |_param__|___type___|________value_________|
+      |__man___|_uint16_t_|_______x&0x3ffu_______|
+      |__exp___|_uint16_t_|__________15__________|
+      |__val___|_uint16_t_|____(exp<<10)|man_____|
+      |_result_|__float16_|memcpy(&result,&val..)|
+      |return result - half(1.0)                 |
+    */
 
     // philox result saved in PhiloxQueBuf
     LocalTensor<uint32_t> philoxRes = philoxQueBuf_.Get<uint32_t>();
@@ -314,13 +314,13 @@ __aicore__ inline void StatelessRandomUniformV2<T>::Uint16ToBfloat16(LocalTensor
       |1|______8______|_____7_____|
       |s|exponent     | mantissa   |
 
-      const uint16_t man = x & 0x7fu; // 7 bit mantissa
-      const uint16_t expr = staic_cast<uint16_t>(127);  // 8 bit exp
-      const uint16_t val = (exp << 7) | man;
-      bfloat16 result;
-      memcpy(&result, &val, sizeof(val));
-      return result - bfloat16(1.0);
-      */
+      |_param__|____type____|_________value________|
+      |__man___|__uint16_t__|_________x&0x7fu______|
+      |__exp___|__uint16_t__|__________127_________|
+      |__val___|__uint16_t__|_____(exp<<7)|man_____|
+      |_result_|__bfloat16__|memcpy(&result,&val..)|
+      |return result - bfloat16(1.0)               |
+    */
 
     // philox result saved in PhiloxQueBuf
     LocalTensor<uint32_t> philoxRes = philoxQueBuf_.Get<uint32_t>();
