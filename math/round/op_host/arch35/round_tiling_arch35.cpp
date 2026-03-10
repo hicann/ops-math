@@ -29,12 +29,17 @@ namespace optiling
 {
 using namespace Ops::Math::OpTiling;
 
-const uint64_t ASCEND_WORKSPACE = 16777216;
-const std::int32_t ATTR_ROUND_DECIMALS_POS = 0;
+const uint64_t ASCEND_WORKSPACE = 0;
+const int32_t ATTR_ROUND_DECIMALS_POS = 0;
+const int32_t powerArr[10] = {0, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 0};
+const int32_t numArr[10] = {0, 2147483645, -2147483600, 2147483499, -2147480000, 2147450000, -2147000000, 2145000000, -2100000000, 0};
 const int64_t DEFAULT_ZERO = 0;
-const float DEFAULT_FP32_ZERO = 0.0;
 const int64_t DEFAULT_TEN = 10;
+const int64_t DEFAULT_NEG_NINE = -9;
+const int64_t DEFAULT_NEG_MAX = -308;
+const int64_t DEFAULT_FP32_MIN = -2147483648;
 const int64_t DEFAULT_THIRTY_EIGHT = 38;
+const float DEFAULT_FP32_ZERO = 0.0;
 const float DEFAULT_INF = INFINITY;
 
 class RoundTiling
@@ -49,7 +54,8 @@ protected:
     ge::graphStatus CalcInputDtype();
     ge::graphStatus CheckShape();
     ge::graphStatus SetTilingData();
-    ge::graphStatus DoTiling(bool decimalsNeg, bool decimalsNan);
+    ge::graphStatus DoTilingF(bool decimalsNeg, bool decimalsNan);
+    ge::graphStatus DoTilingI(int64_t decimals);
 
 private:
     uint64_t dType = 0;
@@ -125,7 +131,7 @@ ge::graphStatus RoundTiling::CalcOutputDtype()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus RoundTiling::DoTiling(bool decimalsNeg, bool decimalsNan)
+ge::graphStatus RoundTiling::DoTilingF(bool decimalsNeg, bool decimalsNan)
 {
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
@@ -171,38 +177,81 @@ ge::graphStatus RoundTiling::DoTiling(bool decimalsNeg, bool decimalsNan)
             dType = static_cast<uint64_t>(ROUND_TPL_POSITIVE_DECIMALS);
             baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundPositiveDecimals<float>::OpDag>(tiling_->baseTiling);
         }
-    } else if (this->outputDtype == ge::DT_INT32) {
-        dType = static_cast<uint64_t>(ROUND_TPL_INT32);
-        baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundInt<int>::OpDag>(tiling_->baseTiling);
-    }
+    } 
     OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext, "elewiseBaseTiling failed"), return ge::GRAPH_FAILED);
+               OP_LOGE(tilingContext, "elewiseBaseTilingF failed"), return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus RoundTiling::DoTilingI(int64_t decimals)
+{
+    ElewiseBaseTiling elewiseBaseTiling(tilingContext);
+    ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
+
+    if (decimals >= DEFAULT_ZERO) {
+        dType = static_cast<uint64_t>(ROUND_TPL_INT32);
+        baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundInt<int32_t>::OpDag>(tiling_->baseTiling);
+    }
+    if ((decimals < DEFAULT_ZERO) && (decimals > DEFAULT_NEG_NINE)){
+        tiling_->power = powerArr[llabs(static_cast<int32_t>(decimals))];
+        tiling_->num = numArr[llabs(static_cast<int32_t>(decimals))];
+        if (llabs(static_cast<int32_t>(decimals)) & 1) {
+            dType = static_cast<uint64_t>(ROUND_TPL_INT32_NEGINF);
+            baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundIntNegativeDecimalsInf<int32_t>::OpDag>(tiling_->baseTiling);
+        } else {
+            dType = static_cast<uint64_t>(ROUND_TPL_INT32_NEG);
+            baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundIntNegativeDecimals<int32_t>::OpDag>(tiling_->baseTiling);
+        }
+    }
+    if (decimals == DEFAULT_NEG_NINE){
+        dType = static_cast<uint64_t>(ROUND_TPL_INT32_NEG_NINE);
+        baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundIntNegativeDecimalsNine<int32_t>::OpDag>(tiling_->baseTiling);
+    }
+    if (decimals < DEFAULT_NEG_NINE) {
+        tiling_->num = static_cast<int32_t>(DEFAULT_FP32_ZERO);
+        if (decimals < DEFAULT_NEG_MAX) {
+            tiling_->num = static_cast<int32_t>(DEFAULT_FP32_MIN);
+        }
+        dType = static_cast<uint64_t>(ROUND_TPL_INT32_CONST);
+        baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundIntConst<int>::OpDag>(tiling_->baseTiling);
+    }
+
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                OP_LOGE(tilingContext, "elewiseBaseTilingInt failed"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus RoundTiling::RunTiling()
 {
     OP_LOGD(tilingContext->GetNodeName(), "RoundTiling RunTiling enter.");
+
     tiling_ = tilingContext->GetTilingData<RoundTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tiling_);
+
     OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED,
                OP_LOGE(tilingContext, "get input x dtype failed"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED,
                OP_LOGE(tilingContext, "get output y dtype failed"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"),
                return ge::GRAPH_FAILED);
+
     auto runtimeAttrs = tilingContext->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, runtimeAttrs);
     const int64_t *decimalsPtr = runtimeAttrs->GetAttrPointer<int64_t>(ATTR_ROUND_DECIMALS_POS);
-    bool decimalsNeg = false;
-    bool decimalsNan = false;
-    if (decimalsPtr != nullptr) {
-        if (*decimalsPtr < DEFAULT_ZERO) {
-            decimalsNeg = true;
-        }
-        if (*decimalsPtr == DEFAULT_ZERO) {
-            tiling_->decimals = DEFAULT_FP32_ZERO;
-        } else {
+    OP_CHECK_IF(decimalsPtr == nullptr, OP_LOGE(tilingContext, "check decimalsPtr failed"),
+               return ge::GRAPH_FAILED);
+    
+    if (this->outputDtype == ge::DT_INT32) {
+        DoTilingI(*decimalsPtr);
+    } else {
+        bool decimalsNeg = false;
+        bool decimalsNan = false;
+
+        tiling_->decimals = DEFAULT_FP32_ZERO;
+        if (*decimalsPtr < DEFAULT_ZERO) {	 
+            decimalsNeg = true;	 
+        }	 
+        if (*decimalsPtr != DEFAULT_ZERO) {
             if (llabs(*decimalsPtr) > DEFAULT_THIRTY_EIGHT) {
                 tiling_->decimals = DEFAULT_INF;
                 decimalsNan = true;
@@ -211,10 +260,8 @@ ge::graphStatus RoundTiling::RunTiling()
                 tiling_->decimals = pow(DEFAULT_TEN, llabs(*decimalsPtr));
             }
         }
-    } else {
-        tiling_->decimals = DEFAULT_FP32_ZERO;
+        DoTilingF(decimalsNeg, decimalsNan);
     }
-    DoTiling(decimalsNeg, decimalsNan);
 
     SetTilingData();
     return ge::GRAPH_SUCCESS;

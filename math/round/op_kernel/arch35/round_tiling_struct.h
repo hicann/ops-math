@@ -18,5 +18,7 @@ using namespace Ops::Base;
 struct RoundTilingData {
     EleBaseTilingData baseTiling;
     float decimals;
+    int32_t power;
+    int32_t num;
 };
 #endif
