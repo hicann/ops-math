@@ -49,9 +49,6 @@ static bool CheckInplaceDtypeValid(const aclTensor* selfRef)
     auto inplaceSupportList = GetDtypeSupportListV2(OUTPUT_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_SELFREF_LIST);
     // 检查selfRef的数据类型是否在inplace atan算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(selfRef, inplaceSupportList, return false);
-    if (selfRef->GetStorageFormat() != Format::FORMAT_ND) {
-        OP_LOGW("Only support ND format for inplace atan operator.");
-    }
 
     return true;
 }
@@ -63,6 +60,10 @@ static aclnnStatus CheckParamsAtan(const aclTensor* input, const aclTensor* out)
     CHECK_RET(CheckDtypeValid1In1Out(input, out, supportList, OUTPUT_DTYPE_SUPPORT_LIST), ACLNN_ERR_PARAM_INVALID);
     // 检查输入的数据的值是否合理
     CHECK_RET(CheckSameShape1In1Out(input, out), ACLNN_ERR_PARAM_INVALID);
+
+    if (input->GetStorageFormat() != Format::FORMAT_ND) {
+        OP_LOGW("Only support ND format for atan/inplaceAtan operator.");
+    }
     return ACLNN_SUCCESS;
 }
 

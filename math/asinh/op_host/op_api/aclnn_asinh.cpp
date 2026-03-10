@@ -57,9 +57,6 @@ static bool CheckInplaceDtypeValid(aclTensor* selfRef)
     auto inplaceSupportList = GetDtypeSupportListV2(OUTPUT_DTYPE_SUPPORT_LIST_ASIN, ASCEND910_DTYPE_SELFREF_LIST_ASIN);
     // 检查selfRef的数据类型是否在inplace asinh算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(selfRef, inplaceSupportList, return false);
-    if (selfRef->GetStorageFormat() != Format::FORMAT_ND) {
-        OP_LOGW("Only support ND format for inplace asinh operator.");
-    }
     return true;
 }
 
@@ -71,6 +68,10 @@ static aclnnStatus CheckParamsAsinh(const aclTensor* input, const aclTensor* out
     CHECK_RET(CheckDtypeValid1In1Out(input, out, supportList, OUTPUT_DTYPE_SUPPORT_LIST_ASIN), ACLNN_ERR_PARAM_INVALID);
     // 检查输入和输出的shape是否满足约束
     CHECK_RET(CheckSameShape1In1Out(input, out), ACLNN_ERR_PARAM_INVALID);
+
+    if (input->GetStorageFormat() != Format::FORMAT_ND) {
+        OP_LOGW("Only support ND format for asinh/inplaceAsinh operator.");
+    }
     return ACLNN_SUCCESS;
 }
 

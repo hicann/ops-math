@@ -93,7 +93,7 @@ static aclnnStatus CheckParams(const aclTensor* input, const aclTensor* out) {
   // 3. 检查输入的数据的值是否合理
   CHECK_RET(CheckShape(input, out), ACLNN_ERR_PARAM_INVALID);
   if (input->GetStorageFormat() != Format::FORMAT_ND) {
-      OP_LOGW("Only support ND format for inplace acos operator.");
+      OP_LOGW("Only support ND format for acos/inplaceAcos operator.");
   }
   return ACLNN_SUCCESS;
 }
