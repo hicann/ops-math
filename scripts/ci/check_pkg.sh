@@ -29,7 +29,7 @@ do
         done
     fi 
 done
-valid_example_dirs=()
+valid_example_dirs=("add_example")
 for first_level in "$current_dir"/*/
 do
     for second_level in "$first_level"*/
@@ -43,7 +43,7 @@ do
         fi
     done
 done
-ops_name=()
+ops_name=("add_example")
 mapfile -t lines < ${pr_file}
 for file_path in "${lines[@]}"
 do
