@@ -3,9 +3,8 @@
 [📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/neg)
 
 ## 产品支持情况
-
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
+| 产品                                                         |  是否支持   |
+| :----------------------------------------------------------- |:-------:|
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
@@ -26,50 +25,50 @@
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnNegGetWorkspaceSize”或者”aclnnInplaceNegGetWorkspaceSize“接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnNeg”或者”aclnnInplaceNeg“接口执行计算。
 
-```cpp
+```Cpp
 aclnnStatus aclnnNegGetWorkspaceSize(
     const aclTensor *self,
-    aclTensor *out,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor)
+    aclTensor       *out,
+    uint64_t        *workspaceSize,
+    aclOpExecutor  **executor)
 ```
 
-```cpp
+```Cpp
 aclnnStatus aclnnNeg(
-    void *workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor *executor,
+    void             *workspace,
+    uint64_t          workspaceSize,
+    aclOpExecutor    *executor,
     const aclrtStream stream)
 ```
 
-```cpp
+```Cpp
 aclnnStatus aclnnInplaceNegGetWorkspaceSize(
-    aclTensor *selfRef,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor)
+    aclTensor       *selfRef,
+    uint64_t        *workspaceSize,
+    aclOpExecutor  **executor)
 ```
 
-```cpp
+```Cpp
 aclnnStatus aclnnInplaceNeg(
-    void *workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor *executor,
-    aclrtStream stream)
+    void             *workspace,
+    uint64_t          workspaceSize,
+    aclOpExecutor    *executor,
+    aclrtStream       stream)
 ```
 
 ## aclnnNegGetWorkspaceSize
 
-- **参数说明**
+- **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
-  <col style="width: 158px">
-  <col style="width: 120px">
-  <col style="width: 333px">
-  <col style="width: 137px">
-  <col style="width: 212px">
-  <col style="width: 100px">
-  <col style="width: 107px">
-  <col style="width: 145px">
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
   </colgroup>
   <thead>
     <tr>
@@ -79,12 +78,12 @@ aclnnStatus aclnnInplaceNeg(
       <th>使用说明</th>
       <th>数据类型</th>
       <th>数据格式</th>
-      <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>输入tensor。</td>
       <td>支持非连续。</td>
@@ -94,7 +93,7 @@ aclnnStatus aclnnInplaceNeg(
       <td>√</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>取反输出结果。</td>
       <td>out的数据类型需要是self可转换的数据类型。</td>
@@ -104,9 +103,9 @@ aclnnStatus aclnnInplaceNeg(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
-      <td>  </td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -114,7 +113,7 @@ aclnnStatus aclnnInplaceNeg(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -131,12 +130,12 @@ aclnnStatus aclnnInplaceNeg(
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  第一段接口完成入参校验，出现以下场景时报错：
+  第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1148px"><colgroup>
-  <col style="width: 255px">
-  <col style="width: 131px">
-  <col style="width: 762px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>
@@ -148,7 +147,7 @@ aclnnStatus aclnnInplaceNeg(
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的self、out是空指针。</td>
+      <td>传入的self、out是空指针时。</td>
     </tr>
     <tr>
       <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
@@ -167,12 +166,12 @@ aclnnStatus aclnnInplaceNeg(
 
 ## aclnnNeg
 
-- **参数说明**
+- **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1143px"><colgroup>
-  <col style="width: 158px">
-  <col style="width: 140px">
-  <col style="width: 845px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 833px">
   </colgroup>
   <thead>
     <tr>
@@ -204,25 +203,23 @@ aclnnStatus aclnnInplaceNeg(
   </tbody>
   </table>
 
-- **返回值**
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-
-
 ## aclnnInplaceNegGetWorkspaceSize
 
-- **参数说明**
+- **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
-  <col style="width: 158px">
-  <col style="width: 120px">
-  <col style="width: 333px">
-  <col style="width: 137px">
-  <col style="width: 212px">
-  <col style="width: 100px">
-  <col style="width: 107px">
-  <col style="width: 145px">
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
   </colgroup>
   <thead>
     <tr>
@@ -232,12 +229,12 @@ aclnnStatus aclnnInplaceNeg(
       <th>使用说明</th>
       <th>数据类型</th>
       <th>数据格式</th>
-      <th>维度（shape）</th>
-      <th>非连续张量Tensor</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
-      <td>selfRef</td>
+      <td>selfRef（aclTensor*）</td>
       <td>输入输出</td>
       <td>输入tensor同时也是取反后存放输出结果的tensor。</td>
       <td>支持非连续。</td>
@@ -247,9 +244,9 @@ aclnnStatus aclnnInplaceNeg(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
-      <td>  </td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -257,7 +254,7 @@ aclnnStatus aclnnInplaceNeg(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -274,12 +271,12 @@ aclnnStatus aclnnInplaceNeg(
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  第一段接口完成入参校验，出现以下场景时报错：
+  第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1148px"><colgroup>
-  <col style="width: 255px">
-  <col style="width: 131px">
-  <col style="width: 762px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>
@@ -291,7 +288,7 @@ aclnnStatus aclnnInplaceNeg(
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的self、out是空指针。</td>
+      <td>传入的selfRef是空指针时。</td>
     </tr>
     <tr>
       <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
@@ -304,15 +301,14 @@ aclnnStatus aclnnInplaceNeg(
   </tbody>
   </table>
 
-
 ## aclnnInplaceNeg
 
-- **参数说明**
+- **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1143px"><colgroup>
-  <col style="width: 158px">
-  <col style="width: 140px">
-  <col style="width: 845px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 833px">
   </colgroup>
   <thead>
     <tr>
@@ -329,7 +325,7 @@ aclnnStatus aclnnInplaceNeg(
     <tr>
       <td>workspaceSize</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnNegGetWorkspaceSize获取。</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceNegGetWorkspaceSize获取。</td>
     </tr>
     <tr>
       <td>executor</td>
@@ -344,7 +340,7 @@ aclnnStatus aclnnInplaceNeg(
   </tbody>
   </table>
 
-- **返回值**
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -353,12 +349,11 @@ aclnnStatus aclnnInplaceNeg(
 - 确定性计算：
   - aclnnNeg&aclnnInplaceNeg默认确定性实现。
 
-
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
-- <term>Ascend 950PR/Ascend 950DT</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 训练系列产品</term> aclnnNeg示例代码：
+aclnnNeg示例代码：
 
 ```Cpp
 #include <iostream>
@@ -490,8 +485,8 @@ int main() {
   return 0;
 }
 ```
-- <term>Ascend 950PR/Ascend 950DT</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 训练系列产品</term> aclnnInplaceNeg示例代码：
 
+**aclnnInplaceNeg接口调用示例代码：**
 ```Cpp
 #include <iostream>
 #include <vector>
@@ -616,4 +611,3 @@ int main() {
   return 0;
 }
 ```
-
