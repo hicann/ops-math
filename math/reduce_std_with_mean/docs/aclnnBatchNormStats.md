@@ -1,7 +1,6 @@
 # aclnnBatchNormStats
-
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/reduce_std_with_mean)
 ## 产品支持情况
-
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
@@ -13,8 +12,8 @@
 
 ## 功能说明
 
-- 算子功能：
-计算单卡输入数据的均值和标准差的倒数。
+- 接口功能：
+      计算单卡输入数据的均值和标准差的倒数。
 
 - 计算公式：
 
@@ -32,32 +31,124 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnBatchNormStatsGetWorkspaceSize”接口获取入参并根据流程计算所需workspace大小，再调用“aclnnBatchNormStats”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnBatchNormStatsGetWorkspaceSize"接口获取入参并根据流程计算所需workspace大小，再调用"aclnnBatchNormStats"接口执行计算。
 
-- `aclnnStatus aclnnBatchNormStatsGetWorkspaceSize(const aclTensor* input, double eps, aclTensor* mean, aclTensor* invstd, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnBatchNormStats(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnBatchNormStatsGetWorkspaceSize(
+  const aclTensor*            input, 
+  double                      eps, 
+  aclTensor*                  mean, 
+  aclTensor*                  invstd, 
+  uint64_t*                   workspaceSize, 
+  aclOpExecutor**             executor)
+```
+
+```Cpp
+aclnnStatus aclnnBatchNormStats(
+  void*                       workspace, 
+  uint64_t                    workspaceSize, 
+  aclOpExecutor*              executor, 
+  const aclrtStream           stream)
+```
 
 ## aclnnBatchNormStatsGetWorkspaceSize
 
 - **参数说明：**
-  - input(aclTensor \*, 计算输入)：输入Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，支持的shape和[数据格式](../../../docs/zh/context/数据格式.md)有：2维（对应的格式为NC），3维（对应的格式为NCL），4维（对应的格式为NCHW），5维（对应的格式为NCDHW），6-8维（对应的格式为ND，其中第2维固定为channel轴）。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16。
-  - eps(double, 计算输入)：为数值稳定性添加到分母中的值，double类型的值。
-  - mean(aclTensor \*, 计算输出)：输出均值，Device侧的aclTensor，数据类型支持FLOAT，当input的类型为FLOAT16、BFLOAT16时，会转成FLOAT进行处理，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - invstd(aclTensor \*, 计算输出)：输出标准差倒数，Device侧的aclTensor，数据类型支持FLOAT，当input的类型为FLOAT16、BFLOAT16时，会转成FLOAT进行处理，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor **, 出参)：返回op执行器，包含了算子计算流程。
-  
+
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>input（aclTensor*）</td>
+      <td>输入</td>
+      <td>-</td>
+      <td>支持的shape和数据格式有：2维（NC），3维（NCL），4维（NCHW），5维（NCDHW），6-8维（ND，其中第2维固定为channel轴）。</td>
+      <td>FLOAT、FLOAT16</td>
+      <td>ND</td>
+      <td>2-8维</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>eps（double）</td>
+      <td>输入</td>
+      <td>为数值稳定性添加到分母中的值。</td>
+      <td>-</td>
+      <td>double</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>mean（aclTensor*）</td>
+      <td>输出</td>
+      <td>输出均值</td>
+      <td>当input的类型为FLOAT16、BFLOAT16时，会转成FLOAT进行处理。</td>
+      <td>FLOAT</td>
+      <td>ND</td>
+      <td>1维</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>invstd（aclTensor*）</td>
+      <td>输出</td>
+      <td>输出标准差倒数。</td>
+      <td>当input的类型为FLOAT16、BFLOAT16时，会转成FLOAT进行处理。</td>
+      <td>FLOAT</td>
+      <td>ND</td>
+      <td>1维</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  第一段接口完成入参校验，出现以下场景时报错：
+  第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
-  <col style="width: 296px">
-  <col style="width: 135px">
-  <col style="width: 720px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>
@@ -92,10 +183,10 @@
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 167px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
   <col style="width: 134px">
-  <col style="width: 848px">
+  <col style="width: 833px">
   </colgroup>
   <thead>
     <tr>
