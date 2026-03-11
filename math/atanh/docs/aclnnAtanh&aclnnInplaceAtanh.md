@@ -1,5 +1,8 @@
 # aclnnAtanh&aclnnInplaceAtanh
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/atanh)
+
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -13,88 +16,337 @@
 
 ## 功能说明
 
-- 算子功能：对输入Tensor中的每个元素进行反双曲正切操作后输出。
+- 接口功能：对输入张量中的每个元素进行反双曲正切运算。
 
 - 计算公式：
 
-$$
-out_{i}=ln((1 + input_{i})/(1 - input_{i}))
-$$
+  $$
+  out_{i}=ln((1 + input_{i})/(1 - input_{i}))
+  $$
 
 ## 函数原型
 
-- aclnnAtanh和aclnnInplaceAtanh实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
-  - aclnnAtanh：需新建一个输出张量对象存储计算结果。
-  - aclnnInplaceAtanh：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnAtanhGetWorkspaceSize”或者“aclnnInplaceAtanhGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnAtanh”或者“aclnnInplaceAtanh”接口执行计算。
+aclnnAtanh和aclnnInplaceAtanh实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
+- aclnnAtanh：需新建一个输出张量对象存储计算结果。
+- aclnnInplaceAtanh：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-  - `aclnnStatus aclnnAtanhGetWorkspaceSize(const aclTensor *input, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-  - `aclnnStatus aclnnAtanh(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
-  - `aclnnStatus aclnnInplaceAtanhGetWorkspaceSize(aclTensor *inputRef, uint64_t *workspaceSize, aclOpExecutor **executor)`
-  - `aclnnStatus aclnnInplaceAtanh(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnAtanhGetWorkspaceSize"或者"aclnnInplaceAtanhGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnAtanh"或者"aclnnInplaceAtanh"接口执行计算。
+
+```Cpp
+aclnnStatus aclnnAtanhGetWorkspaceSize(
+  const aclTensor*   input,
+  aclTensor*         out,
+  uint64_t*          workspaceSize,
+  aclOpExecutor**    executor)
+```
+
+```Cpp
+aclnnStatus aclnnAtanh(
+  void*           workspace,
+  uint64_t        workspaceSize,
+  aclOpExecutor*  executor,
+  aclrtStream     stream)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceAtanhGetWorkspaceSize(
+  aclTensor*       inputRef,
+  uint64_t*        workspaceSize,
+  aclOpExecutor**  executor)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceAtanh(
+  void*           workspace,
+  uint64_t        workspaceSize,
+  aclOpExecutor*  executor,
+  aclrtStream     stream)
+```
 
 ## aclnnAtanhGetWorkspaceSize
 
-- **参数说明**：
-  - input(aclTensor*,计算输入)：输入Tensor，Device侧的aclTensor。当类型为INT8、INT16、INT32、INT64、UINT8、BOOL时，转化为FLOAT32进行运算，输出FLOAT32类型。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，非连续的Tensor维度不大于8，且shape需要与out一致。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。
-  - out(aclTensor\*，计算输出)：输出Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，非连续的Tensor维度不大于8，且shape需要与input一致。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。
-  - workspaceSize(uint64_t\*，出参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor \*\*，出参)：返回op执行器，包含了算子计算流程。
+- **参数说明：**
 
-- **返回值**：
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>input（aclTensor*）</td>
+      <td>输入</td>
+      <td>输入tensor，进行反双曲正切运算。</td>
+      <td>shape需要与out一致。</td>
+      <td>INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE</td>
+      <td>ND</td>
+      <td>不超过8维</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>输出tensor，存储计算结果。</td>
+      <td>shape需要与input一致。</td>
+      <td>FLOAT、FLOAT16、DOUBLE</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-
-  ```
-  第一段接口完成入参校验，出现以下场景时报错：
-  161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的input或out是空指针。
-  161002 (ACLNN_ERR_PARAM_INVALID)：1. input或out的数据类型不在支持的范围之内。
-                                    2. input和out的shape不一致。
-                                    3. input或out的维数大于8。
-  ```
-
-## aclnnAtanh
-
-- **参数说明**：
-  - workspace(void\*, 入参)：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnAtanhGetWorkspaceSize获取。
-  - executor(aclOpExecutor\*, 入参)：op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
-
-- **返回值**：
-
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-
-## aclnnInplaceAtanhGetWorkspaceSize
-
-- **参数说明**：
-  - inputRef(aclTensor\*，计算输入|输出)：输入输出Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，非连续的Tensor维度不大于8。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。
-  - workspaceSize(uint64_t\*，出参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor \*\*，出参)：返回op执行器，包含了算子计算流程。
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：input数据类型额外支持COMPLEX64、COMPLEX128、BFLOAT16；out数据类型额外支持COMPLEX64、COMPLEX128、BFLOAT16。
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
-  第一段接口完成入参校验，出现以下场景时报错：
-  161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的inputRef是空指针。
-  161002 (ACLNN_ERR_PARAM_INVALID)：1. inputRef的数据类型不在支持的范围之内。
-                                    2. inputRef的维数大于8。
-  ```
+  第一段接口完成入参校验，出现如下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的input或out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
+      <td>input或out的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>input和out的shape不一致。</td>
+    </tr>
+    <tr>
+      <td>input或out的维数大于8。</td>
+    </tr>
+  </tbody>
+  </table>
+
+## aclnnAtanh
+
+- **参数说明：**
+
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 833px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnAtanhGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+
+- **返回值：**
+
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+
+## aclnnInplaceAtanhGetWorkspaceSize
+
+- **参数说明：**
+
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>inputRef（aclTensor*）</td>
+      <td>输入/输出</td>
+      <td>输入输出tensor，进行反双曲正切运算，计算结果存储在inputRef中。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、DOUBLE</td>
+      <td>ND</td>
+      <td>不超过8维</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
+
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：inputRef数据类型额外支持COMPLEX64、COMPLEX128、BFLOAT16。
+
+- **返回值：**
+
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+
+  第一段接口完成入参校验，出现如下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的inputRef是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="2">161002</td>
+      <td>inputRef的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>inputRef的维数大于8。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnInplaceAtanh
 
-- **参数说明**：
-  - workspace(void\*, 入参)：在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnInplaceAtanhGetWorkspaceSize获取。
-  - executor(aclOpExecutor\*, 入参)：op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参)：指定执行任务的Stream。
+- **参数说明：**
 
-- **返回值**：
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 833px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceAtanhGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -104,7 +356,9 @@ $$
   - aclnnAtanh&aclnnInplaceAtanh默认确定性实现。
 
 ## 调用示例
+
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>
@@ -149,7 +403,6 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
   // 调用aclrtMalloc申请device侧内存
   auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMalloc failed. ERROR: %d\n", ret); return ret);
-
   // 调用aclrtMemcpy将host侧数据拷贝到device侧内存上
   ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
@@ -161,8 +414,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
   }
 
   // 调用aclCreateTensor接口创建aclTensor
-  *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
-                            shape.data(), shape.size(), *deviceAddr);
+  *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), *deviceAddr);
   return 0;
 }
 
@@ -174,7 +426,6 @@ int main() {
   auto ret = Init(deviceId, &stream);
   // check根据自己的需要处理
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
-
   // 2. 构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> selfShape = {4, 2};
   std::vector<int64_t> outShape = {4, 2};
@@ -182,7 +433,7 @@ int main() {
   void* outDeviceAddr = nullptr;
   aclTensor* self = nullptr;
   aclTensor* out = nullptr;
-  std::vector<float> selfHostData = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,0.8};
+  std::vector<float> selfHostData = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8};
   std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
   // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
@@ -191,11 +442,11 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
   // aclnnAtanh接口调用示例
+  // 3. 调用CANN算子库API
+  // 调用aclnnAtanh第一段接口
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
-  // 调用aclnnAtanh第一段接口
   ret = aclnnAtanhGetWorkspaceSize(self, out, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAtanhGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
   // 根据第一段接口计算出的workspaceSize申请device内存
@@ -211,7 +462,6 @@ int main() {
   // aclnnInplaceAtanh接口调用示例
   uint64_t inplaceWorkspaceSize = 0;
   aclOpExecutor* inplaceExecutor;
-  // 调用aclnnInplaceAtanh第一段接口
   ret = aclnnInplaceAtanhGetWorkspaceSize(self, &inplaceWorkspaceSize, &inplaceExecutor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceAtanhGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
   // 根据第一段接口计算出的workspaceSize申请device内存
@@ -223,7 +473,7 @@ int main() {
   // 调用aclnnInplaceAtanh第二段接口
   ret = aclnnInplaceAtanh(inplaceWorkspaceAddr, inplaceWorkspaceSize, inplaceExecutor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceAtanh failed. ERROR: %d\n", ret); return ret);
-
+    
   // 4. （固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
