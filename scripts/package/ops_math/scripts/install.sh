@@ -51,8 +51,8 @@ OPP_COMMON_FILE="${CURR_PATH}/opp_common.sh"
 
 ARCH_INFO=$(grep -e "arch" "$RUN_PKG_INFO_FILE" | cut --only-delimited -d"=" -f2-)
 # 包内路径
-GRAPH_SO_PATH="${CURR_PATH}/../../../../${OPP_PLATFORM_DIR}/built-in/op_graph/lib/linux/${ARCH_INFO}/libopgraph_math.so"
-HOST_SO_PATH="${CURR_PATH}/../../../../${OPP_PLATFORM_DIR}/built-in/op_impl/ai_core/tbe/op_host/lib/linux/${ARCH_INFO}/libophost_math.so"
+GRAPH_SO_PATH="${CURR_PATH}/../../../../opp/built-in/op_graph/lib/linux/${ARCH_INFO}/libopgraph_math.so"
+HOST_SO_PATH="${CURR_PATH}/../../../../opp/built-in/op_impl/ai_core/tbe/op_host/lib/linux/${ARCH_INFO}/libophost_math.so"
 # defaluts info determinated by user's inputs
 ASCEND_INSTALL_INFO="ascend_install.info"
 TARGET_INSTALL_PATH="${DEFAULT_INSTALL_PATH}" #--input-path
@@ -545,6 +545,40 @@ install_package() {
   comm_log_operation "Install" "${IN_INSTALL_TYPE}" "OpsMath" "$?" "${CMD_LIST}"
 }
 
+# 通用函数：删除so文件和空目录（带权限检查）
+# 参数: $1 - so文件完整路径
+remove_so_and_empty_dir() {
+  local so_path="$1"
+  local so_dir_path=$(dirname "${so_path}")
+  local parent_dir=$(dirname "${so_dir_path}")
+  local so_dir_w_added=0
+  local parent_dir_w_added=0
+
+  # 删除so文件
+  if [ -f "${so_path}" ]; then
+    # 检查目录写权限，无权限时临时添加
+    if [ -d "${so_dir_path}" ] && [ ! -w "${so_dir_path}" ]; then
+      chmod u+w "${so_dir_path}" 2>/dev/null
+      so_dir_w_added=1
+    fi
+    rm -f "${so_path}"
+  fi
+
+  # 删除空目录
+  if [ -d "${so_dir_path}" ] && [ -z "$(ls -A "${so_dir_path}")" ]; then
+    # 检查父目录写权限，无权限时临时添加
+    if [ -d "${parent_dir}" ] && [ ! -w "${parent_dir}" ]; then
+      chmod u+w "${parent_dir}" 2>/dev/null
+      parent_dir_w_added=1
+    fi
+    rm -rf "${so_dir_path}"
+  fi
+
+  # 恢复权限
+  [ ${parent_dir_w_added} -eq 1 ] && chmod -w "${parent_dir}" 2>/dev/null
+  [ ${so_dir_w_added} -eq 1 ] && chmod -w "${so_dir_path}" 2>/dev/null
+}
+
 uninstall_package() {
   if [ "${IS_UNINSTALL}" = "n" ]; then
     return
@@ -564,6 +598,7 @@ uninstall_package() {
 
   # 如果是异构卸载
   local architecture=$(uname -m)
+  local target_arch=""
   if [ "${architecture}" != ${ARCH_INFO} ]; then
     target_arch=${ARCH_INFO}
   else
@@ -574,27 +609,13 @@ uninstall_package() {
         target_arch="x86_64"
     fi
   fi
+
+  # 删除异构so文件和空目录
   local graph_so_path="${TARGET_VERSION_DIR}/opp/built-in/op_graph/lib/linux/${target_arch}/libopgraph_math.so"
-  local graph_so_dir_path="${TARGET_VERSION_DIR}/opp/built-in/op_graph/lib/linux/${target_arch}"
   local host_so_path="${TARGET_VERSION_DIR}/opp/built-in/op_impl/ai_core/tbe/op_host/lib/linux/${target_arch}/libophost_math.so"
-  local host_so_dir_path="${TARGET_VERSION_DIR}/opp/built-in/op_impl/ai_core/tbe/op_host/lib/linux/${target_arch}"
-  if [ -f "${graph_so_path}" ]; then
-      rm -f "${graph_so_path}"
-  fi
-  if [ -f "${host_so_path}" ]; then
-      rm -f "${host_so_path}"
-  fi
-  # 判断目录是否存在且是否为空
-  if [ -d "${graph_so_dir_path}" ]; then
-      if [ -z "$(ls -A "${graph_so_dir_path}")" ]; then
-          rm -rf "${graph_so_dir_path}"
-      fi
-  fi
-  if [ -d "${host_so_dir_path}" ]; then
-      if [ -z "$(ls -A "${host_so_dir_path}")" ]; then
-          rm -rf "${host_so_dir_path}"
-      fi
-  fi
+  remove_so_and_empty_dir "${graph_so_path}"
+  remove_so_and_empty_dir "${host_so_path}"
+
   if [ "${architecture}" != ${ARCH_INFO} ]; then
       return
   fi
