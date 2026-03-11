@@ -32,114 +32,113 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnCumminGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCummin”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnCumminGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnCummin"接口执行计算。
 
-```Cpp
+```cpp
 aclnnStatus aclnnCumminGetWorkspaceSize(
-  const aclTensor *self, 
-  int64_t          dim, 
-  aclTensor       *valuesOut, 
-  aclTensor       *indicesOut, 
-  uint64_t        *workspaceSize, 
-  aclOpExecutor  **executor)
+  const aclTensor*    self, 
+  int64_t             dim, 
+  aclTensor*          valuesOut, 
+  aclTensor*          indicesOut, 
+  uint64_t*           workspaceSize, 
+  aclOpExecutor**     executor)
 ```
 
-```Cpp
+```cpp
 aclnnStatus aclnnCummin(
-  void          *workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor *executor, 
-  aclrtStream    stream)
+  void*             workspace, 
+  uint64_t          workspaceSize, 
+  aclOpExecutor*    executor, 
+  aclrtStream       stream)
 ```
 
 ## aclnnCumminGetWorkspaceSize
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1548px"><colgroup>
-  <col style="width: 155px">
-  <col style="width: 126px">
-  <col style="width: 215px">
-  <col style="width: 292px">
-  <col style="width: 361px">
-  <col style="width: 115px">
-  <col style="width: 137px">
-  <col style="width: 147px">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>参数名</th>
-      <th>输入/输出</th>
-      <th>描述</th>
-      <th>使用说明</th>
-      <th>数据类型</th>
-      <th>数据格式</th>
-      <th>维度(shape)</th>
-      <th>非连续Tensor</th>
-    </tr></thead>
-  <tbody>
-    <tr>
-      <td>self</td>
-      <td>输入</td>
-      <td>输入Tensor。</td>
-      <td>数据类型需要能转换成valuesOut的数据类型，数据维度不支持8维以上。</td>
-      <td>FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、FLOAT16、BFLOAT16、BOOL</td>
-      <td>ND</td>
-      <td>-</td>
-      <td>√</td>
-    </tr>
-    <tr>
-      <td>dim</td>
-      <td>输入</td>
-      <td>进行操作的维度。</td>
-      <td>取值范围在[-self.dim(), self.dim()-1]内。</td>
-      <td>INT64</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-    </tr>
-    <tr>
-      <td>valuesOut</td>
-      <td>输出</td>
-      <td>累积最小值输出Tensor。</td>
-      <td>数据类型需要与self一致，shape需要与self一致，数据维度不支持8维以上。</td>
-      <td>FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、FLOAT16、BFLOAT16、BOOL</td>
-      <td>ND</td>
-      <td>-</td>
-      <td>√</td>
-    </tr>
-    <tr>
-      <td>indicesOut</td>
-      <td>输出</td>
-      <td>累积最小值对应索引输出Tensor。</td>
-      <td>数据类型支持INT32、INT64，shape需要与self一致，数据维度不支持8维以上。</td>
-      <td>INT32、INT64</td>
-      <td>ND</td>
-      <td>-</td>
-      <td>√</td>
-    </tr>
-    <tr>
-      <td>workspaceSize</td>
-      <td>输出</td>
-      <td>返回需要在Device侧申请的workspace大小。</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-    </tr>
-    <tr>
-      <td>executor</td>
-      <td>输出</td>
-      <td>返回op执行器，包含了算子计算流程。</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-    </tr>
-  </tbody>
-  </table>
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+    <col style="width: 220px">
+    <col style="width: 120px">
+    <col style="width: 350px">
+    <col style="width: 300px">
+    <col style="width: 200px">
+    <col style="width: 100px">
+    <col style="width: 120px">
+    <col style="width: 140px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+        <th>使用说明</th>
+        <th>数据类型</th>
+        <th>数据格式</th>
+        <th>维度(shape)</th>
+        <th>非连续Tensor</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>self (aclTensor*)</td>
+        <td>输入</td>
+        <td>输入Tensor。</td>
+        <td>数据类型需要能转换成valuesOut的数据类型。</td>
+        <td>FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、FLOAT16、BFLOAT16、BOOL</td>
+        <td>ND</td>
+        <td>不超过8维。</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>dim (int64_t)</td>
+        <td>输入</td>
+        <td>进行操作的维度。</td>
+        <td>取值范围在[-self.dim(), self.dim()-1)内。</td>
+        <td>INT64</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>valuesOut (aclTensor*)</td>
+        <td>输出</td>
+        <td>累积最小值输出Tensor。</td>
+        <td>数据类型需要与self一致，shape需要与self一致。</td>
+        <td>FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、FLOAT16、BFLOAT16、BOOL</td>
+        <td>ND</td>
+        <td>不超过8维。</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>indicesOut (aclTensor*)</td>
+        <td>输出</td>
+        <td>累积最小值对应索引输出Tensor。</td>
+        <td>数据类型支持INT32、INT64，shape需要与self一致。</td>
+        <td>INT32、INT64</td>
+        <td>ND</td>
+        <td>不超过8维。</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>workspaceSize (uint64_t*)</td>
+        <td>输出</td>
+        <td>返回需要在Device侧申请的workspace大小。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>executor (aclOpExecutor**)</td>
+        <td>输出</td>
+        <td>返回op执行器，包含了算子计算流程。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+    </tbody></table>
 
   - <term>Atlas 推理系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
@@ -149,11 +148,11 @@ aclnnStatus aclnnCummin(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
- 
+
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 270px">
-  <col style="width: 124px">
-  <col style="width: 755px">
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
   </colgroup>
   <thead>
     <tr>
@@ -176,7 +175,7 @@ aclnnStatus aclnnCummin(
       <td>参数self、valuesOut、indicesOut的shape不一致。</td>
     </tr>
     <tr>
-      <td>当self.dim()=0时，参数dim的取值范围不在[-1, 0]内；当self.dim()&gt;0时，参数dim的取值范围不在[-self.dim(), self.dim()-1]内。</td>
+      <td>当self.dim()=0时，参数dim的取值范围不在[-1, 0]内；当self.dim()>0时，参数dim的取值范围不在[-self.dim(), self.dim()-1]内。</td>
     </tr>
     <tr>
       <td>参数self的数据类型不能转换为valuesOut的数据类型。</td>
@@ -192,39 +191,38 @@ aclnnStatus aclnnCummin(
 - **参数说明：**
 
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 153px">
-  <col style="width: 124px">
-  <col style="width: 872px">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>参数名</th>
-      <th>输入/输出</th>
-      <th>描述</th>
-    </tr></thead>
-  <tbody>
-    <tr>
-      <td>workspace</td>
-      <td>输入</td>
-      <td>在Device侧申请的workspace内存地址。</td>
-    </tr>
-    <tr>
-      <td>workspaceSize</td>
-      <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnCumminGetWorkspaceSize获取。</td>
-    </tr>
-    <tr>
-      <td>executor</td>
-      <td>输入</td>
-      <td>op执行器，包含了算子计算流程。</td>
-    </tr>
-    <tr>
-      <td>stream</td>
-      <td>输入</td>
-      <td>指定执行任务的Stream。</td>
-    </tr>
-  </tbody>
-  </table>
+    <col style="width: 150px">
+    <col style="width: 114px">
+    <col style="width: 500px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>workspace</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace内存地址。</td>
+      </tr>
+      <tr>
+        <td>workspaceSize</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace大小，由第一段接口aclnnCumminGetWorkspaceSize获取。</td>
+      </tr>
+      <tr>
+        <td>executor</td>
+        <td>输入</td>
+        <td>op执行器，包含了算子计算流程。</td>
+      </tr>
+      <tr>
+        <td>stream</td>
+        <td>输入</td>
+        <td>指定执行任务的Stream。</td>
+      </tr>
+    </tbody></table>
 
 
 - **返回值：**
