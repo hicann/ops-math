@@ -3,8 +3,6 @@
 [📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/reduce_max)
 
 ## 产品支持情况
-
-
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
@@ -14,14 +12,13 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 返回张量在指定维度(dim)上每个切片的最大值。
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnAmaxGetWorkspaceSize”接口获取入参并根据流程计算所需workspace大小，再调用“aclnnAmax”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnAmaxGetWorkspaceSize"接口获取入参并根据流程计算所需workspace大小，再调用"aclnnAmax"接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnAmaxGetWorkspaceSize(
@@ -41,183 +38,181 @@ aclOpExecutor *executor,
 aclrtStream    stream)
 ```
 
-
 ## aclnnAmaxGetWorkspaceSize
 
 - **参数说明：**
-  
-    <table style="undefined;table-layout: fixed; width: 1487px"><colgroup>
-    <col style="width: 153px">
-    <col style="width: 120px">
-    <col style="width: 259px">
-    <col style="width: 238px">
-    <col style="width: 320px">
-    <col style="width: 119px">
-    <col style="width: 132px">
-    <col style="width: 146px">
-    </colgroup>
-    <thead>
-      <tr>
-        <th>参数名</th>
-        <th>输入/输出</th>
-        <th>描述</th>
-        <th>使用说明</th>
-        <th>数据类型</th>
-        <th>数据格式</th>
-        <th>维度(shape)</th>
-        <th>非连续Tensor</th>
-      </tr></thead>
-    <tbody>
-      <tr>
-        <td>self</td>
-        <td>输入</td>
-        <td>Device侧的aclTensor。</td>
-        <td>-</td>
-        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
-        <td>ND</td>
-        <td>-</td>
-        <td>√</td>
-      </tr>
-      <tr>
-        <td>dim</td>
-        <td>输入</td>
-        <td>host侧的aclIntArray。</td>
-        <td>范围[-self.dim(), self.dim() - 1]，且dim中的元素不能重复。</td>
-        <td>INT64</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-      </tr>
-      <tr>
-        <td>keepdim</td>
-        <td>输入</td>
-        <td>reduce轴的维度是否保留。</td>
-        <td>-</td>
-        <td>BOOL</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-      </tr>
-      <tr>
-        <td>out</td>
-        <td>输出</td>
-        <td>Device侧的aclTensor。</td>
-        <td>要与self数据类型相同。</td>
-        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
-        <td>ND</td>
-        <td>-</td>
-        <td>√</td>
-      </tr>
-      <tr>
-        <td>workspaceSize</td>
-        <td>输出</td>
-        <td>返回需要在Device侧申请的workspace大小。</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-      </tr>
-      <tr>
-        <td>executor</td>
-        <td>输出</td>
-        <td>返回op执行器，包含了算子计算流程。</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-      </tr>
-    </tbody>
-    </table>
 
-  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
-  
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>-</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>dim（aclIntArray*）</td>
+      <td>输入</td>
+      <td>-</td>
+      <td>范围[-self.dim(), self.dim() - 1]，且dim中的元素不能重复。</td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>keepdim（bool）</td>
+      <td>输入</td>
+      <td>reduce轴的维度是否保留。</td>
+      <td>-</td>
+      <td>BOOL</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>-</td>
+      <td>要与self数据类型相同。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
+
+- <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  第一段接口完成入参校验，出现以下场景时报错：
+  第一段接口完成入参校验，出现如下场景时报错：
 
-    <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-    <col style="width: 288px">
-    <col style="width: 114px">
-    <col style="width: 747px">
-    </colgroup>
-    <thead>
-      <tr>
-        <th>返回码</th>
-        <th>错误码</th>
-        <th>描述</th>
-      </tr></thead>
-    <tbody>
-      <tr>
-        <td>ACLNN_ERR_PARAM_NULLPTR</td>
-        <td>161001</td>
-        <td>传入的self、out和dim是空指针时。</td>
-      </tr>
-      <tr>
-        <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
-        <td rowspan="6">161002</td>
-        <td>self、out和dim的数据类型不在支持的范围内时。</td>
-      </tr>
-      <tr>
-        <td>self、out的数据格式不在支持的范围内时。</td>
-      </tr>
-      <tr>
-        <td>self和out的维度超过8维。</td>
-      </tr>
-      <tr>
-        <td>dim数组中的维度超出输入Tensor的维度范围。</td>
-      </tr>
-      <tr>
-        <td>dim数组中元素重复。</td>
-      </tr>
-      <tr>
-        <td>self中需要reduce的维度size为0。</td>
-      </tr>
-    </tbody>
-    </table>
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、out和dim是空指针时。</td>
+    </tr>
+    <tr>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
+      <td>self、out和dim的数据类型不在支持的范围内时。</td>
+    </tr>
+    <tr>
+      <td>self、out的数据格式不在支持的范围内时。</td>
+    </tr>
+    <tr>
+      <td>self和out的维度超过8维。</td>
+    </tr>
+    <tr>
+      <td>dim数组中的维度超出输入Tensor的维度范围。</td>
+    </tr>
+    <tr>
+      <td>dim数组中元素重复。</td>
+    </tr>
+    <tr>
+      <td>self中需要reduce的维度size为0。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnAmax
 
 - **参数说明：**
-  
-    <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-    <col style="width: 153px">
-    <col style="width: 124px">
-    <col style="width: 872px">
-    </colgroup>
-    <thead>
-      <tr>
-        <th>参数名</th>
-        <th>输入/输出</th>
-        <th>描述</th>
-      </tr></thead>
-    <tbody>
-      <tr>
-        <td>workspace</td>
-        <td>输入</td>
-        <td>在Device侧申请的workspace内存地址。</td>
-      </tr>
-      <tr>
-        <td>workspaceSize</td>
-        <td>输入</td>
-        <td>在Device侧申请的workspace大小，由第一段接口aclnnAmaxGetWorkspaceSize获取。</td>
-      </tr>
-      <tr>
-        <td>executor</td>
-        <td>输入</td>
-        <td>op执行器，包含了算子计算流程。</td>
-      </tr>
-      <tr>
-        <td>stream</td>
-        <td>输入</td>
-        <td>指定执行任务的Stream。</td>
-      </tr>
-    </tbody>
-    </table>
-  
+
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 833px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnAmaxGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -226,7 +221,6 @@ aclrtStream    stream)
 
 - 确定性计算：
   - aclnnAmax默认确定性实现。
-
 
 ## 调用示例
 
