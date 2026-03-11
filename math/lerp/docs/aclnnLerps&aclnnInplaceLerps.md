@@ -29,39 +29,146 @@ $$
 - aclnnLerps和aclnnInplaceLerps实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnLerps：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceLerps：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnLerpsGetWorkspaceSize”或者“aclnnInplaceLerpsGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLerps”或者“aclnnInplaceLerps”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnLerpsGetWorkspaceSize"或者"aclnnInplaceLerpsGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnLerps"或者"aclnnInplaceLerps"接口执行计算。
 
-  - `aclnnStatus aclnnLerpsGetWorkspaceSize(const aclTensor* self, const aclTensor* end, const aclScalar* weight, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-  - `aclnnStatus aclnnLerps(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
-  - `aclnnStatus aclnnInplaceLerpsGetWorkspaceSize(aclTensor* selfRef, const aclTensor* end, const aclScalar* weight, uint64_t* workspaceSize, aclOpExecutor** executor)`
-  - `aclnnStatus aclnnInplaceLerps(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnLerpsGetWorkspaceSize(
+  const aclTensor*          self,
+  const aclTensor*          end,
+  const aclScalar*          weight,
+  aclTensor*                out,
+  uint64_t*                 workspaceSize,
+  aclOpExecutor**           executor)
+```
+```Cpp
+aclnnStatus aclnnLerps(
+  void*                     workspace,
+  uint64_t                  workspaceSize,
+  aclOpExecutor*            executor,
+  aclrtStream               stream)
+```
+```Cpp
+aclnnStatus aclnnInplaceLerpsGetWorkspaceSize(
+  aclTensor*                selfRef,
+  const aclTensor*          end,
+  const aclScalar*          weight,
+  uint64_t*                 workspaceSize,
+  aclOpExecutor**           executor)
+```
+```Cpp
+aclnnStatus aclnnInplaceLerps(
+  void*                     workspace,
+  uint64_t                  workspaceSize,
+  aclOpExecutor*            executor,
+  aclrtStream               stream)
+```
 
 ## aclnnLerpsGetWorkspaceSize
 
-- **参数说明**：
-  - self(aclTensor\*, 计算输入)：包含起始数值的张量，公式中的输入`start`，Device侧的aclTensor，self与end的数据类型一致，self与end的shape满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT。
-  - end(aclTensor\*, 计算输入)：包含结束数值的张量，公式中的输入`end`，Device侧的aclTensor，self与end的数据类型一致，self与end的shape满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT。
-  - weight(aclScalar\*, 计算输入)：权重，公式中的输入`weight`，Host侧的aclScalar，数据类型需要可转换成self的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。
-  - out(aclTensor\*, 计算输出)：包含结果的张量，公式中的`out`，Device侧的aclTensor，out与self和end broadcast之后的tensor的shape一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT、DOUBLE。
-  - workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
+- **参数说明：**
 
-- **返回值**：
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>公式中的输入start。</td>
+      <td>数据类型与end一致。shape需要与end满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>
+        <term> FLOAT、FLOAT16、BFLOAT16</term>
+      </td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>end（aclTensor*）</td>
+      <td>输入</td>
+      <td>公式中的输入end。</td>
+      <td>数据类型与self一致。shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>
+        <term> FLOAT、FLOAT16、BFLOAT16</term>
+      </td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>weight（aclScalar*）</td>
+      <td>输入</td>
+      <td>公式中的输入weight。</td>
+      <td>Host侧的aclScalar，数据类型需要可转换成self的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>公式中的out。</td>
+      <td>shape需要与self和end broadcast后的shape一致。</td>
+      <td>
+        <term> FLOAT、FLOAT16、BFLOAT16、DOUBLE</term>
+      </td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
+
+    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：self、end、out不支持BFLOAT16。
+
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  第一段接口完成入参校验，出现以下场景时报错：
+  第一段接口完成入参校验，出现如下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
-  <col style="width: 286px">
-  <col style="width: 123px">
-  <col style="width: 741px">
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>
@@ -73,7 +180,7 @@ $$
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的self、end、weight和out是空指针。</td>
+      <td>传入的self、end、weight或out是空指针。</td>
     </tr>
     <tr>
       <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
@@ -94,12 +201,12 @@ $$
 
 ## aclnnLerps
 
-- **参数说明**：
+- **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 167px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
   <col style="width: 134px">
-  <col style="width: 848px">
+  <col style="width: 833px">
   </colgroup>
   <thead>
     <tr>
@@ -131,33 +238,104 @@ $$
   </tbody>
   </table>
 
-- **返回值**：
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceLerpsGetWorkspaceSize
 
-- **参数说明**：
-  - selfRef(aclTensor\*, 计算输入/输出)：包含起始数值的张量和包含结果的张量，公式中的输入`start`和输出`out`，Device侧的aclTensor，selfRef与end数据类型一致，selfRef与end的shape满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，且broadcast后的shape与selfRef一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT。
-  - end(aclTensor\*, 计算输入)：包含结束数值的张量，公式中的输入`end`，Device侧的aclTensor，selfRef与end的数据类型一致，selfRef与end的shape满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BFLOAT16、FLOAT16、FLOAT。
-  - weight(aclScalar\*, 计算输入)：权重，公式中的输入`weight`，Host侧的aclScalar，数据类型需要可转换成selfRef的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。
-  - workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
+- **参数说明：**
 
-- **返回值**：
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>selfRef（aclTensor*）</td>
+      <td>输入/输出</td>
+      <td>公式中的输入start和输出out。</td>
+      <td>数据类型与end一致。shape需要与end满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>，且broadcast后的shape与selfRef一致。</td>
+      <td>
+        <term> FLOAT、FLOAT16、BFLOAT16</term>
+      </td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>end（aclTensor*）</td>
+      <td>输入</td>
+      <td>公式中的输入end。</td>
+      <td>数据类型与selfRef一致。shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>
+        <term> FLOAT、FLOAT16、BFLOAT16</term>
+      </td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>weight（aclScalar*）</td>
+      <td>输入</td>
+      <td>公式中的输入weight。</td>
+      <td>Host侧的aclScalar，数据类型需要可转换成selfRef的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
+
+    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：selfRef、end不支持BFLOAT16。
+
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  第一段接口完成入参校验，出现以下场景时报错：
+  第一段接口完成入参校验，出现如下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
-  <col style="width: 286px">
-  <col style="width: 123px">
-  <col style="width: 741px">
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>
@@ -169,7 +347,7 @@ $$
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的selfRef、end和weight是空指针。</td>
+      <td>传入的selfRef、end或weight是空指针。</td>
     </tr>
     <tr>
       <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
@@ -190,12 +368,12 @@ $$
 
 ## aclnnInplaceLerps
 
-- **参数说明**：
+- **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 167px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
   <col style="width: 134px">
-  <col style="width: 848px">
+  <col style="width: 833px">
   </colgroup>
   <thead>
     <tr>
@@ -227,7 +405,7 @@ $$
   </tbody>
   </table>
 
-- **返回值**：
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 

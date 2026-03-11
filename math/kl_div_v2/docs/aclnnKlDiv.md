@@ -1,5 +1,7 @@
 # aclnnKlDiv
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/kl_div_v2)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -38,24 +40,39 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnKlDivGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnKlDiv”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnKlDivGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnKlDiv"接口执行计算。
 
-* `aclnnStatus aclnnKlDivGetWorkspaceSize(const aclTensor *self, const aclTensor *target, int64_t reduction, bool logTarget, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-* `aclnnStatus aclnnKlDiv(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnKlDivGetWorkspaceSize(
+  const aclTensor*          self,
+  const aclTensor*          target,
+  int64_t                   reduction,
+  bool                      logTarget,
+  aclTensor*                out,
+  uint64_t*                 workspaceSize,
+  aclOpExecutor**           executor)
+```
+```Cpp
+aclnnStatus aclnnKlDiv(
+  void*                     workspace,
+  uint64_t                  workspaceSize,
+  aclOpExecutor*            executor,
+  aclrtStream               stream)
+```
 
 ## aclnnKlDivGetWorkspaceSize
 
-* **参数说明**：
+- **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
-  <col style="width: 180px">
-  <col style="width: 120px">
-  <col style="width: 280px">
-  <col style="width: 320px">
-  <col style="width: 250px">
-  <col style="width: 120px">
-  <col style="width: 140px">
-  <col style="width: 140px">
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
   </colgroup>
   <thead>
     <tr>
@@ -65,64 +82,70 @@
       <th>使用说明</th>
       <th>数据类型</th>
       <th>数据格式</th>
-      <th>维度(shape)</th>
-      <th>非连续tensor</th>
+      <th>维度</th>
+      <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
-      <td>公式中的self</td>
-      <td>数据类型与target的数据类型需满足数据类型推导规则，shape需要与target满足broadcast关系。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>公式中的self。</td>
+      <td>数据类型与target满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。shape需要与target满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>
+        <term> FLOAT、FLOAT16、BFLOAT16</term>
+      </td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>target</td>
+      <td>target（aclTensor*）</td>
       <td>输入</td>
-      <td>公式中的target</td>
-      <td>数据类型与self的数据类型需满足数据类型推导规则，shape需要与self满足broadcast关系。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>公式中的target。</td>
+      <td>数据类型与self满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>
+        <term> FLOAT、FLOAT16、BFLOAT16</term>
+      </td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>reduction</td>
+      <td>reduction（int64_t）</td>
       <td>输入</td>
-      <td>公式中的reduction</td>
+      <td>公式中的reduction。</td>
       <td><ul><li>0：none，表示不做reduction操作。</li><li>1：mean，表示计算loss_pointwise的均值。</li><li>2：sum，表示对loss_pointwise求和。</li><li>3：batchmean，表示计算批次的平均损失，与Kullback_Leibler散度的数学定义一致。</li></td>
-      <td>INT64</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>logTarget</td>
+      <td>logTarget（bool）</td>
       <td>输入</td>
-      <td>指定传入的target数据是否已经做过log操作</td>
-      <td>无</td>
-      <td>BOOL</td>
+      <td>指定传入的target数据是否已经做过log操作。</td>
+      <td>-</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>公式中的out</td>
-      <td>数据类型与self的数据类型需满足数据类型推导规则。当`reduction`为 0 时，shape需要与self和target满足broadcast关系。当`reduction`不为0时，shape固定为(1,)。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>公式中的out。</td>
+      <td>数据类型与self满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。当`reduction`为0时，shape需要与self和target满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。当`reduction`不为0时，shape固定为(1,)。</td>
+      <td>
+        <term> FLOAT、FLOAT16、BFLOAT16</term>
+      </td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
-      <td>需要在Device侧申请的workspace大小</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -130,9 +153,9 @@
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
-      <td>op执行器，包含了算子计算流程</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -141,16 +164,18 @@
     </tr>
   </tbody></table>
 
-* **返回值**：
+    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16。
+
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  第一段接口完成入参校验，出现以下场景时报错：
+  第一段接口完成入参校验，出现如下场景时报错：
 
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
-  <col style="width: 286px">
-  <col style="width: 123px">
-  <col style="width: 741px">
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>
@@ -162,33 +187,33 @@
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的 self 或 target 或 out 是空指针。</td>
+      <td>传入的self或target或out是空指针。</td>
     </tr>
     <tr>
       <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="4">161002</td>
-      <td>self 或 target 或 out 的数据类型不在支持的范围之内。</td>
+      <td>self或target或out的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>self 的 shape 不能与 target broadcast。</td>
+      <td>self的shape不能与target broadcast。</td>
     </tr>
     <tr>
-      <td>self 或 target 不能转换成 out 的数据类型。</td>
+      <td>self或target不能转换成out的数据类型。</td>
     </tr>
     <tr>
-      <td>self 或 target 的shape dim大于8。</td>
+      <td>self或target的shape dim大于8。</td>
     </tr>
   </tbody>
   </table>
 
 ## aclnnKlDiv
 
-- **参数说明**：
-  
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 167px">
+- **参数说明：**
+
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
   <col style="width: 134px">
-  <col style="width: 848px">
+  <col style="width: 833px">
   </colgroup>
   <thead>
     <tr>
@@ -220,8 +245,8 @@
   </tbody>
   </table>
 
-- **返回值**：
-  
+- **返回值：**
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
