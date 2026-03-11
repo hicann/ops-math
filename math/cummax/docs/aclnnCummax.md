@@ -1,5 +1,7 @@
 # aclnnCummax
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/cummax)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -13,7 +15,7 @@
 
 ## 功能说明
 
-- 算子功能：计算self中的累积最大值，并返回最大值以及对应的索引。
+- 接口功能：计算self中的累积最大值，并返回最大值以及对应的索引。
 
 - 计算公式：
 
@@ -31,44 +33,190 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnCummaxGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCummax”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnCummaxGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnCummax"接口执行计算。
 
-- `aclnnStatus aclnnCummaxGetWorkspaceSize(const aclTensor* self, int64_t dim, aclTensor* valuesOut, aclTensor* indicesOut, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnCummax(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```cpp
+aclnnStatus aclnnCummaxGetWorkspaceSize(
+  const aclTensor*    self, 
+  int64_t             dim, 
+  aclTensor*          valuesOut, 
+  aclTensor*          indicesOut, 
+  uint64_t*           workspaceSize, 
+  aclOpExecutor**     executor)
+```
+
+```cpp
+aclnnStatus aclnnCummax(
+  void*             workspace, 
+  uint64_t          workspaceSize, 
+  aclOpExecutor*    executor, 
+  aclrtStream       stream)
+```
 
 ## aclnnCummaxGetWorkspaceSize
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)：表示输入张量，Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。数据支持维度为[1,8]。shape必须与valuesOut、indicesOut一致。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16。
-  - dim(int64_t, 计算输入)：表示处理维度，Host侧的整型。
-  - valuesOut(aclTensor*, 计算输出)：表示self中的累积最大值，Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。数据维度不支持8维以上。shape必须与self、indicesOut一致。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16。
-  - indicesOut(aclTensor*, 计算输出)：表示valuesOut对应的索引，Device侧的aclTensor。数据类型支持INT32、INT64。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。数据维度不支持8维以上。shape必须与self、valuesOut一致。
-  - workspaceSize(uint64_t*, 出参): 返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor**, 出参): 返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+    <col style="width: 220px">
+    <col style="width: 120px">
+    <col style="width: 350px">
+    <col style="width: 300px">
+    <col style="width: 200px">
+    <col style="width: 100px">
+    <col style="width: 120px">
+    <col style="width: 140px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+        <th>使用说明</th>
+        <th>数据类型</th>
+        <th>数据格式</th>
+        <th>维度(shape)</th>
+        <th>非连续Tensor</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>self (aclTensor*)</td>
+        <td>输入</td>
+        <td>表示输入张量。</td>
+        <td>shape必须与valuesOut、indicesOut一致。</td>
+        <td>FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
+        <td>ND</td>
+        <td>[1,8]</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>dim (int64_t)</td>
+        <td>输入</td>
+        <td>表示处理维度。</td>
+        <td>当self.dim()=0时，取值范围[-1, 0]；<br>当self.dim()>0时，取值范围[-self.dim(), self.dim()-1)。</td>
+        <td>int64_t</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>valuesOut (aclTensor*)</td>
+        <td>输出</td>
+        <td>表示self中的累积最大值。</td>
+        <td>shape必须与self、indicesOut一致。</td>
+        <td>FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
+        <td>ND</td>
+        <td>不支持8维以上</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>indicesOut (aclTensor*)</td>
+        <td>输出</td>
+        <td>表示valuesOut对应的索引。</td>
+        <td>shape必须与self、valuesOut一致。</td>
+        <td>INT32、INT64</td>
+        <td>ND</td>
+        <td>不支持8维以上</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>workspaceSize (uint64_t*)</td>
+        <td>输出</td>
+        <td>返回需要在Device侧申请的workspace大小。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>executor (aclOpExecutor**)</td>
+        <td>输出</td>
+        <td>返回op执行器，包含了算子计算流程。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+    </tbody></table>
+
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：self、valuesOut数据类型不支持BFLOAT16。
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：self、valuesOut、indicesOut是空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. self、valuesOut、indicesOut的数据类型不在支持的范围内。
-                                        2. self、valuesOut、indicesOut的shape不在支持的范围内。
-                                        3. 当self.dim()=0时，参数dim的取值范围不在[-1, 0]内；当self.dim()>0时，参数dim的取值范围不在[-self.dim(), self.dim()-1]内。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>self、valuesOut、indicesOut是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
+      <td>self、valuesOut、indicesOut的数据类型不在支持的范围内。</td>
+    </tr>
+    <tr>
+      <td>self、valuesOut、indicesOut的shape不在支持的范围内。</td>
+    </tr>
+    <tr>
+      <td>当self.dim()=0时，参数dim的取值范围不在[-1, 0]内；当self.dim()>0时，参数dim的取值范围不在[-self.dim(), self.dim()-1]内。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnCummax
 
 - **参数说明：**
 
-  - workspace(void*, 入参): 在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参): 在Device侧申请的workspace大小，由第一段接口aclnnCummaxGetWorkspaceSize获取。
-  - executor(aclOpExecutor*, 入参): op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参): 指定执行任务的Stream。
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+    <col style="width: 150px">
+    <col style="width: 114px">
+    <col style="width: 500px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>workspace</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace内存地址。</td>
+      </tr>
+      <tr>
+        <td>workspaceSize</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace大小，由第一段接口aclnnCummaxGetWorkspaceSize获取。</td>
+      </tr>
+      <tr>
+        <td>executor</td>
+        <td>输入</td>
+        <td>op执行器，包含了算子计算流程。</td>
+      </tr>
+      <tr>
+        <td>stream</td>
+        <td>输入</td>
+        <td>指定执行任务的Stream。</td>
+      </tr>
+    </tbody></table>
 
 - **返回值：**
 
