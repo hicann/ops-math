@@ -1,20 +1,22 @@
 # aclnnLinalgCross
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/cross)
+
 ## 产品支持情况
 
-| 产品                                                         |  是否支持   |
-| :----------------------------------------------------------- |:-------:|
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √    |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √    |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √    |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    √    |
+| 产品                                                         | 是否支持 |
+| :----------------------------------------------------------- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
 | <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √    |
+| <term>Atlas 训练系列产品</term>                              |    √     |
 
 
 ## 功能说明
 
-- 算子功能：对输入Tensor完成linear_cross运算。
+- 接口功能：对输入Tensor完成linear_cross运算。
 
 - 计算公式：
 
@@ -24,62 +26,204 @@ $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnLinalgCrossGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLinalgCross”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnLinalgCrossGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnLinalgCross"接口执行计算。
 
-- `aclnnStatus aclnnLinalgCrossGetWorkspaceSize(const aclTensor* self, const aclTensor* other, int64_t dim, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnLinalgCross(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnLinalgCrossGetWorkspaceSize(
+  const aclTensor*          self,
+  const aclTensor*          other,
+  int64_t                   dim,
+  aclTensor*                out,
+  uint64_t*                 workspaceSize,
+  aclOpExecutor**           executor)
+```
+```Cpp
+aclnnStatus aclnnLinalgCross(
+  void*                     workspace,
+  uint64_t                  workspaceSize,
+  aclOpExecutor*            executor,
+  aclrtStream               stream)
+```
 
 ## aclnnLinalgCrossGetWorkspaceSize
 
 - **参数说明：**
 
-  - self（aclTensor*，计算输入）: 公式中的self，Device侧的aclTensor，数据类型与other和out一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度支持0-8维, 需要与other满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，且shape在dim指定的轴广播后的值为3。
-    - <term>Atlas 训练系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128。
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>公式中的self。</td>
+      <td>数据类型与other和out一致。需与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>，且shape在dim指定的轴广播后的值为3。</td>
+      <td>
+        <term> INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128</term>
+      </td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>other（aclTensor*）</td>
+      <td>输入</td>
+      <td>公式中的other。</td>
+      <td>数据类型与self和out一致。需与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>
+        <term> INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128</term>
+      </td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>dim（int64_t）</td>
+      <td>输入</td>
+      <td>指定self进行linear_cross的轴。</td>
+      <td>若不指定则默认为-1，范围在[-self维度数量，self维度数量-1]。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>公式中的out。</td>
+      <td>数据类型与self和other一致。shape需要与self和other broadcast后的shape一致。</td>
+      <td>
+        <term> INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128</term>
+      </td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
-  - other（aclTensor*，计算输入）: 公式中的other，Device侧的aclTensor，数据类型与self和out一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，数据维度支持0-8维, 需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。
-    - <term>Atlas 训练系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128。
-
-  - dim（int64_t，计算输入）: 指定self进行linear_cross的轴，数据类型为INT64，若不指定则默认为-1，范围在[-self维度数量，self维度数量-1]
-
-  - out（aclTensor*，计算输出）: 公式中的out，Device侧的aclTensor，数据类型与self和other一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，且shape需要与self和other broadcast后的shape一致。
-    - <term>Atlas 训练系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、FLOAT16、BFLOAT16、FLOAT、FLOAT64、COMPLEX64、COMPLEX128。
-
-  - workspaceSize（uint64_t*，出参）：返回需要在Device侧申请的workspace大小。
-
-  - executor（aclOpExecutor\**，出参）：返回op执行器，包含了算子计算流程。
-
-
+    - <term>Atlas 训练系列产品</term>不支持BFLOAT16。
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
-  第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：传入的self或out是空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. self、other、out的数据类型不一致或数据格式不在支持的范围之内。
-                                        2. self和other的维度大于8。
-                                        3. self和other不符合broadcast关系。
-                                        4. self和other broadcast后的shape与out不一致。
-                                        5. self在对应dim维度上的shape不为3。
-                                        6. dim的值不在[-self的维度数量，self的维度数量-1]范围内。
+  第一段接口完成入参校验，出现如下场景时报错：
 
-  ```
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self或out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
+      <td>self、other、out的数据类型不一致或数据格式不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self和other的维度大于8。</td>
+    </tr>
+    <tr>
+      <td>self和other不符合broadcast关系。</td>
+    </tr>
+    <tr>
+      <td>self和other broadcast后的shape与out不一致。</td>
+    </tr>
+    <tr>
+      <td>self在对应dim维度上的shape不为3。</td>
+    </tr>
+    <tr>
+      <td>dim的值不在[-self的维度数量，self的维度数量-1]范围内。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnLinalgCross
 
 - **参数说明：**
 
-  - workspace（void*，入参）：在Device侧申请的workspace内存地址。
-
-  - workspaceSize（uint64_t，入参）：在Device侧申请的workspace大小，由第一段接口aclnnLinalgCrossGetWorkspaceSize获取。
-
-  - executor（aclOpExecutor*，入参）：op执行器，包含了算子计算流程。
-
-  - stream（aclrtStream，入参）：指定执行任务的Stream。
-
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 833px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnLinalgCrossGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
@@ -95,16 +239,6 @@ $$
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 ```Cpp
-/**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
-
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
