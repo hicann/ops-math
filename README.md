@@ -87,4 +87,3 @@ test for math
 - **问题反馈**：通过GitCode[【Issues】](https://gitcode.com/cann/ops-math/issues)提交问题。
 - **社区互动**：通过GitCode[【讨论】](https://gitcode.com/cann/ops-math/discussions)参与交流。
 - **技术专栏**：通过GitCode[【Wiki】](https://gitcode.com/cann/ops-math/wiki)获取技术文章。
-jcf
