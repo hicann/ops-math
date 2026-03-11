@@ -1,5 +1,7 @@
 # aclnnAcos&aclnnInplaceAcos
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/acos)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -13,7 +15,7 @@
 
 ## 功能说明
 
-- 算子功能：对输入矩阵的每个元素进行反余弦操作后输出。
+- 接口功能：对输入矩阵的每个元素进行反余弦操作后输出。
 
 - 计算公式：
 
@@ -26,23 +28,108 @@
 - aclnnAcos和aclnnInplaceAcos实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnAcos：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceAcos：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnAcosGetWorkspaceSize”或者“aclnnInplaceAcosGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnAcos”或者"aclnnInplaceAcos"接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnAcosGetWorkspaceSize"或者"aclnnInplaceAcosGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnAcos"或者"aclnnInplaceAcos"接口执行计算。
 
-  - `aclnnStatus aclnnAcosGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-  - `aclnnStatus aclnnAcos(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
-  - `aclnnStatus aclnnInplaceAcosGetWorkspaceSize(aclTensor *inputRef, uint64_t *workspaceSize, aclOpExecutor **executor)`
-  - `aclnnStatus aclnnInplaceAcos(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, const aclrtStream stream)`
+```cpp
+aclnnStatus aclnnAcosGetWorkspaceSize(
+  const aclTensor*    input, 
+  aclTensor*          out, 
+  uint64_t*           workspaceSize, 
+  aclOpExecutor**     executor)
+```
+
+```cpp
+aclnnStatus aclnnAcos(
+  void*             workspace, 
+  uint64_t          workspaceSize, 
+  aclOpExecutor*    executor, 
+  const aclrtStream stream)
+```
+
+```cpp
+aclnnStatus aclnnInplaceAcosGetWorkspaceSize(
+  aclTensor*          inputRef, 
+  uint64_t*           workspaceSize, 
+  aclOpExecutor**     executor)
+```
+
+```cpp
+aclnnStatus aclnnInplaceAcos(
+  void*             workspace, 
+  uint64_t          workspaceSize, 
+  aclOpExecutor*    executor, 
+  const aclrtStream stream)
+```
 
 ## aclnnAcosGetWorkspaceSize
 
 - **参数说明：**
 
-  - input (aclTensor*, 计算输入)：Device侧的aclTensor。当类型为INT8、INT16、INT32、INT64、UINT8、BOOL时，转化为FLOAT进行运算，输出FLOAT类型。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，非连续的Tensor维度不大于8，且shape需要与out一致。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、BFLOAT16、FLOAT16、DOUBLE
-  - out (aclTensor\*, 计算输出)：Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，非连续的Tensor维度不大于8，且shape需要与input一致。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、DOUBLE
-  - workspaceSize (uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
-  - executor (aclOpExecutor\**, 出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+    <col style="width: 220px">
+    <col style="width: 120px">
+    <col style="width: 350px">
+    <col style="width: 300px">
+    <col style="width: 200px">
+    <col style="width: 100px">
+    <col style="width: 120px">
+    <col style="width: 140px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+        <th>使用说明</th>
+        <th>数据类型</th>
+        <th>数据格式</th>
+        <th>维度(shape)</th>
+        <th>非连续Tensor</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>input (aclTensor*)</td>
+        <td>输入</td>
+        <td>-</td>
+        <td>当类型为INT8、INT16、INT32、INT64、UINT8、BOOL时，转化为FLOAT进行运算，输出FLOAT类型。shape需要与out一致。</td>
+        <td>INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>out (aclTensor*)</td>
+        <td>输出</td>
+        <td>-</td>
+        <td>shape需要与input一致。</td>
+        <td>FLOAT、FLOAT16、DOUBLE</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>workspaceSize (uint64_t*)</td>
+        <td>输出</td>
+        <td>返回需要在Device侧申请的workspace大小。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>executor (aclOpExecutor**)</td>
+        <td>输出</td>
+        <td>返回op执行器，包含了算子计算流程。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+    </tbody></table>
+
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：input和out数据类型额外支持BFLOAT16。
 
 - **返回值：**
 
@@ -50,14 +137,14 @@
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1152px"><colgroup>
-  <col style="width: 302px">
-  <col style="width: 135px">
-  <col style="width: 715px">
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
   </colgroup>
   <thead>
     <tr>
-      <th>返回值</th>
+      <th>返回码</th>
       <th>错误码</th>
       <th>描述</th>
     </tr></thead>
@@ -85,40 +172,40 @@
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
-  <col style="width: 184px">
-  <col style="width: 134px">
-  <col style="width: 833px">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>参数名</th>
-      <th>输入/输出</th>
-      <th>描述</th>
-    </tr></thead>
-  <tbody>
-    <tr>
-      <td>workspace</td>
-      <td>输入</td>
-      <td>在Device侧申请的workspace内存地址。</td>
-    </tr>
-    <tr>
-      <td>workspaceSize</td>
-      <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnAcosGetWorkspaceSize获取。</td>
-    </tr>
-    <tr>
-      <td>executor</td>
-      <td>输入</td>
-      <td>op执行器，包含了算子计算流程。</td>
-    </tr>
-    <tr>
-      <td>stream</td>
-      <td>输入</td>
-      <td>指定执行任务的Stream。</td>
-    </tr>
-  </tbody>
-  </table>
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+    <col style="width: 150px">
+    <col style="width: 114px">
+    <col style="width: 500px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>workspace</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace内存地址。</td>
+      </tr>
+      <tr>
+        <td>workspaceSize</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace大小，由第一段接口aclnnAcosGetWorkspaceSize获取。</td>
+      </tr>
+      <tr>
+        <td>executor</td>
+        <td>输入</td>
+        <td>op执行器，包含了算子计算流程。</td>
+      </tr>
+      <tr>
+        <td>stream</td>
+        <td>输入</td>
+        <td>指定执行任务的Stream。</td>
+      </tr>
+    </tbody>
+    </table>
 
 - **返回值：**
 
@@ -128,10 +215,61 @@
 
 - **参数说明：**
 
-  - inputRef(aclTensor\*, 计算输入|计算输出)：输入输出Tensor，即公式中的input与out。Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，非连续的Tensor维度不大于8。
-     * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、BFLOAT16、FLOAT16、DOUBLE
-  - workspaceSize(uint64_t\*, 入参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor\**, 入参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+    <col style="width: 220px">
+    <col style="width: 120px">
+    <col style="width: 350px">
+    <col style="width: 300px">
+    <col style="width: 200px">
+    <col style="width: 100px">
+    <col style="width: 120px">
+    <col style="width: 140px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+        <th>使用说明</th>
+        <th>数据类型</th>
+        <th>数据格式</th>
+        <th>维度(shape)</th>
+        <th>非连续Tensor</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>inputRef (aclTensor*)</td>
+        <td>输入/输出</td>
+        <td>输入输出Tensor，即公式中的input与out。</td>
+        <td>-</td>
+        <td>FLOAT、FLOAT16、DOUBLE</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>workspaceSize (uint64_t*)</td>
+        <td>输出</td>
+        <td>返回需要在Device侧申请的workspace大小。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>executor (aclOpExecutor**)</td>
+        <td>输出</td>
+        <td>返回op执行器，包含了算子计算流程。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+    </tbody></table>
+
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：inputRef数据类型额外支持BFLOAT16。
 
 - **返回值：**
 
@@ -139,14 +277,14 @@
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
-  <col style="width: 300px">
-  <col style="width: 134px">
-  <col style="width: 716px">
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
   </colgroup>
   <thead>
     <tr>
-      <th>返回值</th>
+      <th>返回码</th>
       <th>错误码</th>
       <th>描述</th>
     </tr></thead>
@@ -171,40 +309,40 @@
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
-  <col style="width: 184px">
-  <col style="width: 134px">
-  <col style="width: 833px">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>参数名</th>
-      <th>输入/输出</th>
-      <th>描述</th>
-    </tr></thead>
-  <tbody>
-    <tr>
-      <td>workspace</td>
-      <td>输入</td>
-      <td>在Device侧申请的workspace内存地址。</td>
-    </tr>
-    <tr>
-      <td>workspaceSize</td>
-      <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceAcosGetWorkspaceSize获取。</td>
-    </tr>
-    <tr>
-      <td>executor</td>
-      <td>输入</td>
-      <td>op执行器，包含了算子计算流程。</td>
-    </tr>
-    <tr>
-      <td>stream</td>
-      <td>输入</td>
-      <td>指定执行任务的Stream。</td>
-    </tr>
-  </tbody>
-  </table>
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+    <col style="width: 150px">
+    <col style="width: 114px">
+    <col style="width: 500px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>workspace</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace内存地址。</td>
+      </tr>
+      <tr>
+        <td>workspaceSize</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceAcosGetWorkspaceSize获取。</td>
+      </tr>
+      <tr>
+        <td>executor</td>
+        <td>输入</td>
+        <td>op执行器，包含了算子计算流程。</td>
+      </tr>
+      <tr>
+        <td>stream</td>
+        <td>输入</td>
+        <td>指定执行任务的Stream。</td>
+      </tr>
+    </tbody>
+    </table>
 
 - **返回值：**
 
@@ -216,9 +354,7 @@
   - aclnnAcos&aclnnInplaceAcos默认确定性实现。
 
 ## 调用示例
-
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
-
 ```Cpp
 #include <iostream>
 #include <vector>

@@ -13,11 +13,9 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
-
 ## 功能说明
 
-- 算子功能：求一维向量vec1和vec2的外积得到一个二维矩阵，并将外积结果矩阵乘一个系数后和自身乘系数相加后输出
+- 接口功能：求一维向量vec1和vec2的外积得到一个二维矩阵，并将外积结果矩阵乘一个系数后和自身乘系数相加后输出
 
 - 计算公式：
   $$
@@ -29,59 +27,171 @@
 - aclnnAddr和aclnnInplaceAddr实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnAddr：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceAddr：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnAddrGetWorkspaceSize”或者“aclnnInplaceAddrGetWorkspaceSize”接口获取入参并根据流程计算所需workspace大小，再调用“aclnnAddr”或者“aclnnInplaceAddr”接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnAddrGetWorkspaceSize"或者"aclnnInplaceAddrGetWorkspaceSize"接口获取入参并根据流程计算所需workspace大小，再调用"aclnnAddr"或者"aclnnInplaceAddr"接口执行计算。
 
-  * `aclnnStatus aclnnAddrGetWorkspaceSize(const aclTensor *self, const aclTensor *vec1, const aclTensor *vec2, const aclScalar *betaOptional, const aclScalar *alphaOptional, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-  * `aclnnStatus aclnnAddr(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
-  * `aclnnStatus aclnnInplaceAddrGetWorkspaceSize(aclTensor *selfRef, const aclTensor *vec1, const aclTensor *vec2, const aclScalar *betaOptional, const aclScalar *alphaOptional, uint64_t *workspaceSize, aclOpExecutor **executor)`
-  * `aclnnStatus aclnnInplaceAddr(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
+```cpp
+aclnnStatus aclnnAddrGetWorkspaceSize(
+  const aclTensor*    self, 
+  const aclTensor*    vec1, 
+  const aclTensor*    vec2, 
+  const aclScalar*    betaOptional, 
+  const aclScalar*    alphaOptional, 
+  aclTensor*          out, 
+  uint64_t*           workspaceSize, 
+  aclOpExecutor**     executor)
+```
+
+```cpp
+aclnnStatus aclnnAddr(
+  void*             workspace, 
+  uint64_t          workspaceSize, 
+  aclOpExecutor*    executor, 
+  const aclrtStream stream)
+```
+
+```cpp
+aclnnStatus aclnnInplaceAddrGetWorkspaceSize(
+  aclTensor*          selfRef, 
+  const aclTensor*    vec1, 
+  const aclTensor*    vec2, 
+  const aclScalar*    betaOptional, 
+  const aclScalar*    alphaOptional, 
+  uint64_t*           workspaceSize, 
+  aclOpExecutor**     executor)
+```
+
+```cpp
+aclnnStatus aclnnInplaceAddr(
+  void*             workspace, 
+  uint64_t          workspaceSize, 
+  aclOpExecutor*    executor, 
+  const aclrtStream stream)
+```
 
 ## aclnnAddrGetWorkspaceSize
 
 - **参数说明：**
-  
-  - self(aclTensor*, 计算输入): 外积扩展矩阵，Device侧的aclTensor，shape维度不能超过2，并且需要与vec1、vec2满足[broadcast关系](../../../docs/zh/context/broadcast关系.md), 支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
 
-  - vec1(aclTensor*, 计算输入): 外积入参第一向量，一维向量，Device侧的aclTensor，shape需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md), 支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+    <col style="width: 220px">
+    <col style="width: 120px">
+    <col style="width: 350px">
+    <col style="width: 300px">
+    <col style="width: 200px">
+    <col style="width: 100px">
+    <col style="width: 120px">
+    <col style="width: 140px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+        <th>使用说明</th>
+        <th>数据类型</th>
+        <th>数据格式</th>
+        <th>维度(shape)</th>
+        <th>非连续Tensor</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>self (aclTensor*)</td>
+        <td>输入</td>
+        <td>外积扩展矩阵。</td>
+        <td>shape维度不能超过2，并且需要与vec1、vec2满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>vec1 (aclTensor*)</td>
+        <td>输入</td>
+        <td>外积入参第一向量，一维向量。</td>
+        <td>shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>vec2 (aclTensor*)</td>
+        <td>输入</td>
+        <td>外积入参第二向量，一维向量。</td>
+        <td>shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>betaOptional (aclScalar*)</td>
+        <td>输入</td>
+        <td>外积扩展矩阵比例因子，即公式中的β。</td>
+        <td>如果betaOptional为bool类型，则self/vec1/vec2的数据类型只能是bool；如果self/vec1/vec2为整型，则betaOptional、alphaOptional不能为浮点型。</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>alphaOptional (aclScalar*)</td>
+        <td>输入</td>
+        <td>外积比例因子，即公式中的α。</td>
+        <td>如果alphaOptional为bool类型，则self/vec1/vec2的数据类型只能是bool；如果self/vec1/vec2为整型，则betaOptional、alphaOptional不能为浮点型。</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>out (aclTensor*)</td>
+        <td>输出</td>
+        <td>输出结果。</td>
+        <td>-</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>workspaceSize (uint64_t*)</td>
+        <td>输出</td>
+        <td>返回需要在Device侧申请的workspace大小。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>executor (aclOpExecutor**)</td>
+        <td>输出</td>
+        <td>返回op执行器，包含了算子计算流程。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+    </tbody></table>
 
-  - vec2(aclTensor*, 计算输入): 外积入参第二向量，一维向量，Device侧的aclTensor，shape需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md), 支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：self、vec1、vec2、betaOptional、alphaOptional、out数据类型额外支持BFLOAT16。
 
-  - betaOptional(aclScalar*, 计算输入): 外积扩展矩阵比例因子，即公式中的β，host侧的aclScalar，如果betaOptional为bool类型，则self/vec1/vec2的数据类型只能是bool；如果self/vec1/vec2为整型，则betaOptional、alphaOptional不能为浮点型；[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
-
-  - alphaOptional(aclScalar*, 计算输入): 外积比例因子，即公式中的α，host侧的aclScalar，如果alphaOptional为bool类型，则self/vec1/vec2的数据类型只能是bool；如果self/vec1/vec2为整型，则betaOptional、alphaOptional不能为浮点型；[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
-
-  - out(aclTensor\*, 计算输出): 输出结果，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
-
-  - workspaceSize(uint64_t\*, 出参): 返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor\*\*, 出参): 返回op执行器，包含了算子计算流程。
-  
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
-  <col style="width: 301px">
-  <col style="width: 135px">
-  <col style="width: 715px">
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
   </colgroup>
   <thead>
     <tr>
-      <th>返回值</th>
+      <th>返回码</th>
       <th>错误码</th>
       <th>描述</th>
     </tr></thead>
@@ -106,7 +216,7 @@
       <td>beta或者alpha为bool类型时，self、vec1、vec2数据类型非bool类型。</td>
     </tr>
     <tr>
-      <td>self、vec1、vec2类型都为整型或bool或“整型+bool”时，beta或alpha为浮点型。</td>
+      <td>self、vec1、vec2类型都为整型或bool或"整型+bool"时，beta或alpha为浮点型。</td>
     </tr>
   </tbody>
   </table>
@@ -114,89 +224,160 @@
 ## aclnnAddr
 
 - **参数说明：**
-  
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
-  <col style="width: 184px">
-  <col style="width: 134px">
-  <col style="width: 833px">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>参数名</th>
-      <th>输入/输出</th>
-      <th>描述</th>
-    </tr></thead>
-  <tbody>
-    <tr>
-      <td>workspace</td>
-      <td>输入</td>
-      <td>在Device侧申请的workspace内存地址。</td>
-    </tr>
-    <tr>
-      <td>workspaceSize</td>
-      <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnAddrGetWorkspaceSize获取。</td>
-    </tr>
-    <tr>
-      <td>executor</td>
-      <td>输入</td>
-      <td>op执行器，包含了算子计算流程。</td>
-    </tr>
-    <tr>
-      <td>stream</td>
-      <td>输入</td>
-      <td>指定执行任务的Stream。</td>
-    </tr>
-  </tbody>
-  </table>
-  
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+    <col style="width: 150px">
+    <col style="width: 114px">
+    <col style="width: 500px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>workspace</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace内存地址。</td>
+      </tr>
+      <tr>
+        <td>workspaceSize</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace大小，由第一段接口aclnnAddrGetWorkspaceSize获取。</td>
+      </tr>
+      <tr>
+        <td>executor</td>
+        <td>输入</td>
+        <td>op执行器，包含了算子计算流程。</td>
+      </tr>
+      <tr>
+        <td>stream</td>
+        <td>输入</td>
+        <td>指定执行任务的Stream。</td>
+      </tr>
+    </tbody>
+    </table>
+
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceAddrGetWorkspaceSize
 
 - **参数说明：**
-  
-  - selfRef(aclTensor\*, 计算输入|计算输出): 外积扩展矩阵及输出矩阵，Device侧的aclTensor，shape维度为2，不支持空Tensor，并且需要与vec1、vec2满足[broadcast关系](../../../docs/zh/context/broadcast关系.md), 支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
 
-  - vec1(aclTensor*, 计算输入)：外积入参第一向量，一维向量，Device侧的aclTensor，shape需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md), 支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+    <col style="width: 220px">
+    <col style="width: 120px">
+    <col style="width: 350px">
+    <col style="width: 300px">
+    <col style="width: 200px">
+    <col style="width: 100px">
+    <col style="width: 120px">
+    <col style="width: 140px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+        <th>使用说明</th>
+        <th>数据类型</th>
+        <th>数据格式</th>
+        <th>维度(shape)</th>
+        <th>非连续Tensor</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>selfRef (aclTensor*)</td>
+        <td>输入/输出</td>
+        <td>外积扩展矩阵及输出矩阵。</td>
+        <td>shape维度为2，不支持空Tensor，并且需要与vec1、vec2满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>vec1 (aclTensor*)</td>
+        <td>输入</td>
+        <td>外积入参第一向量，一维向量。</td>
+        <td>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>vec2 (aclTensor*)</td>
+        <td>输入</td>
+        <td>外积入参第二向量，一维向量。</td>
+        <td>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>betaOptional (aclScalar*)</td>
+        <td>输入</td>
+        <td>外积扩展矩阵比例因子，即公式中的β。</td>
+        <td>如果betaOptional为bool类型，则self/vec1/vec2的数据类型只能是bool；如果self/vec1/vec2为整型，则betaOptional、alphaOptional不能为浮点型。</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>alphaOptional (aclScalar*)</td>
+        <td>输入</td>
+        <td>外积比例因子，即公式中的α。</td>
+        <td>如果alphaOptional为bool类型，则self/vec1/vec2的数据类型只能是bool；如果self/vec1/vec2为整型，则betaOptional、alphaOptional不能为浮点型。</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>workspaceSize (uint64_t*)</td>
+        <td>输出</td>
+        <td>返回需要在Device侧申请的workspace大小。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>executor (aclOpExecutor**)</td>
+        <td>输出</td>
+        <td>返回op执行器，包含了算子计算流程。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+    </tbody></table>
 
-  - vec2(aclTensor*, 计算输入): 外积入参第二向量，一维向量，Device侧的aclTensor，shape需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md), 支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：selfRef、vec1、vec2、betaOptional、alphaOptional数据类型额外支持BFLOAT16。
 
-  - betaOptional(aclScalar*, 计算输入): 外积扩展矩阵比例因子，即公式中的β，host侧的aclScalar，如果betaOptional为bool类型，则self/vec1/vec2的数据类型只能是bool；如果self/vec1/vec2为整型，则betaOptional、alphaOptional不能为浮点型；[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
-
-  - alphaOptional(aclScalar*, 计算输入): 外积比例因子，即公式中的α，host侧的aclScalar，如果alphaOptional为bool类型，则self/vec1/vec2的数据类型只能是bool；如果self/vec1/vec2为整型，则betaOptional、alphaOptional不能为浮点型；[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
-
-  - workspaceSize(uint64_t\*, 出参): 返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor\*\*, 出参): 返回op执行器，包含了算子计算流程。
-  
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
-  <col style="width: 301px">
-  <col style="width: 135px">
-  <col style="width: 715px">
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
   </colgroup>
   <thead>
     <tr>
-      <th>返回值</th>
+      <th>返回码</th>
       <th>错误码</th>
       <th>描述</th>
     </tr></thead>
@@ -221,7 +402,7 @@
       <td>beta或者alpha为bool类型时，selfRef、vec1、vec2数据类型非bool类型。</td>
     </tr>
     <tr>
-      <td>selfRef、vec1、vec2类型都为整型或bool或“整型+bool”时，beta或alpha为浮点型。</td>
+      <td>selfRef、vec1、vec2类型都为整型或bool或"整型+bool"时，beta或alpha为浮点型。</td>
     </tr>
   </tbody>
   </table>
@@ -229,45 +410,45 @@
 ## aclnnInplaceAddr
 
 - **参数说明：**
-  
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
-  <col style="width: 184px">
-  <col style="width: 134px">
-  <col style="width: 833px">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>参数名</th>
-      <th>输入/输出</th>
-      <th>描述</th>
-    </tr></thead>
-  <tbody>
-    <tr>
-      <td>workspace</td>
-      <td>输入</td>
-      <td>在Device侧申请的workspace内存地址。</td>
-    </tr>
-    <tr>
-      <td>workspaceSize</td>
-      <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceAddrGetWorkspaceSize获取。</td>
-    </tr>
-    <tr>
-      <td>executor</td>
-      <td>输入</td>
-      <td>op执行器，包含了算子计算流程。</td>
-    </tr>
-    <tr>
-      <td>stream</td>
-      <td>输入</td>
-      <td>指定执行任务的Stream。</td>
-    </tr>
-  </tbody>
-  </table>
-  
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+    <col style="width: 150px">
+    <col style="width: 114px">
+    <col style="width: 500px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>workspace</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace内存地址。</td>
+      </tr>
+      <tr>
+        <td>workspaceSize</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceAddrGetWorkspaceSize获取。</td>
+      </tr>
+      <tr>
+        <td>executor</td>
+        <td>输入</td>
+        <td>op执行器，包含了算子计算流程。</td>
+      </tr>
+      <tr>
+        <td>stream</td>
+        <td>输入</td>
+        <td>指定执行任务的Stream。</td>
+      </tr>
+    </tbody>
+    </table>
+
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
