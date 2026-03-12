@@ -17,7 +17,21 @@ from datetime import datetime
 from pathlib import Path
 from collections import defaultdict
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# 获取指定目录中.o的总大小
+def get_size_from_ops_dir(dir_path):
+    total_size = 0
+    if dir_path.exists():
+        for o_file in dir_path.rglob("*.o"):
+            if o_file.is_file():
+                try:
+                    total_size += o_file.stat().st_size
+                except (OSError, ValueError):
+                    pass
+    return total_size
+
+
+script_dir = Path(__file__).parent.resolve()
 
 build_dir = os.path.join(script_dir, "../../build/")
 build_dir = os.path.abspath(build_dir)
@@ -76,7 +90,7 @@ for log_dir_path in log_dirs:
             continue
         
         # 约定：第一行一定以时间戳+Build started开始，最后一行以时间戳+exe_time结束 
-        # 参照ops-nn\scripts\kernel\binary_script\build_binary_op_exe_task.sh
+        # 参照scripts\kernel\binary_script\build_binary_op_exe_task.sh
         first_line = lines[0].strip()
         last_line = lines[-1].strip()
         
@@ -111,15 +125,14 @@ for log_dir_path in log_dirs:
         if not stats['obj_dir_checked']:
             stats['obj_dir_checked'] = True
             obj_dir = ops_root / op
-            total_size = 0
+            apt_dir = ops_root / (op + "_apt")
             if obj_dir.exists():
-                for o_file in obj_dir.rglob("*.o"):
-                    if o_file.is_file():
-                        try:
-                            total_size += o_file.stat().st_size
-                        except (OSError, ValueError):
-                            pass
-            stats['obj_size_bytes'] = total_size
+                op_size = get_size_from_ops_dir(obj_dir)
+            elif apt_dir.exists():
+                op_size = get_size_from_ops_dir(apt_dir)
+            else:
+                op_size = 0
+            stats['obj_size_bytes'] = op_size
 
 for soc_name, op_dict in all_stats.items():
     csv_rows = []
