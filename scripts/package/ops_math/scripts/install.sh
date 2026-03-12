@@ -491,6 +491,36 @@ mkdir_install_path() {
   fi
 }
 
+handle_multi_arch_install() {
+  local target_dir="$1"
+  local so_file="$2"
+  local lib_dir
+  lib_dir=$(dirname "${target_dir}")
+  local need_restore_lib_w="n"
+  local need_restore_target_w="n"
+
+  if [ -d "${lib_dir}" ]; then
+    if [ ! -w "${lib_dir}" ]; then
+      need_restore_lib_w="y"
+      chmod u+w "${lib_dir}"
+    fi
+  else
+    mkdir -p "${lib_dir}"
+  fi
+  if [ -d "${target_dir}" ]; then
+    if [ ! -w "${target_dir}" ]; then
+      need_restore_target_w="y"
+      chmod u+w "${target_dir}"
+    fi
+  else
+    mkdir -p "${target_dir}"
+  fi
+  cp -f "${so_file}" "${target_dir}"
+  chmod 755 "${target_dir}"/*
+  [ "${need_restore_target_w}" = "y" ] && chmod u-w "${target_dir}"
+  [ "${need_restore_lib_w}" = "y" ] && chmod u-w "${lib_dir}"
+}
+
 install_package() {
   if [ "${IS_INSTALL}" = "n" ] && [ "${IS_UPGRADE}" = "n" ]; then
     return
@@ -505,21 +535,8 @@ install_package() {
   # check platform
   if [ "${architecture}" != "${ARCH_INFO}" ]; then
     logandprint "[INFO]: the architecture of the run package is inconsistent with that of the current environment. "
-    # 异构安装场景，拷贝so到指定目录
-    if [ -d "${TARGET_VERSION_DIR}/opp/built-in/op_graph/lib/linux" ]; then
-      chmod u+w ${TARGET_VERSION_DIR}/opp/built-in/op_graph/lib/linux
-    fi
-    if [ -d "${TARGET_VERSION_DIR}/opp/built-in/op_impl/ai_core/tbe/op_host/lib/linux" ]; then
-      chmod u+w ${TARGET_VERSION_DIR}/opp/built-in/op_impl/ai_core/tbe/op_host/lib/linux
-    fi
-    mkdir -p ${graph_so_dir_path}
-    mkdir -p ${host_so_dir_path}
-    cp ${GRAPH_SO_PATH} ${graph_so_dir_path}
-    cp ${HOST_SO_PATH} ${host_so_dir_path}
-    chmod 755 ${graph_so_dir_path}/*
-    chmod 755 ${host_so_dir_path}/*
-    chmod u-w ${TARGET_VERSION_DIR}/opp/built-in/op_graph/lib/linux
-    chmod u-w ${TARGET_VERSION_DIR}/opp/built-in/op_impl/ai_core/tbe/op_host/lib/linux
+    handle_multi_arch_install "${graph_so_dir_path}" "${GRAPH_SO_PATH}"
+    handle_multi_arch_install "${host_so_dir_path}" "${HOST_SO_PATH}"
     exit 0
   fi
   # use uninstall to clean the install folder
