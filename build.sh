@@ -1440,6 +1440,120 @@ get_simulator_args() {
 }
 
 # Helper function to compile eager examples
+compile_eager_example_default() {
+  local source_file=$1
+  local executable_name=$2
+  local sim_lib_path=$3
+
+  if [[ -n "$sim_lib_path" ]]; then
+    if [[ "$USER_SET_SLOG" != "true" ]]; then
+      export ASCEND_SLOG_PRINT_TO_STDOUT=0
+    fi
+    if [[ "$USER_SET_LOG_LEVEL" != "true" ]]; then
+      export ASCEND_GLOBAL_LOG_LEVEL=3
+    fi
+    export LD_LIBRARY_PATH=${sim_lib_path}:${LD_LIBRARY_PATH}
+    ln -sf ${sim_lib_path}/libruntime_camodel.so ${sim_lib_path}/libruntime.so
+    ln -sf ${sim_lib_path}/libnpu_drv_camodel.so ${sim_lib_path}/libascend_hal.so
+    g++ ${source_file} \
+      -I ${INCLUDE_PATH} \
+      -I ${ACLNN_INCLUDE_PATH} \
+      -L ${EAGER_LIBRARY_PATH} \
+      -lopapi_math -lascendcl -lnnopbase \
+      -L ${sim_lib_path} \
+      -lruntime_camodel -lnpu_drv_camodel \
+      -o ${executable_name} \
+      -Wl,-rpath=${sim_lib_path}
+  else
+    g++ ${source_file} \
+      -I ${INCLUDE_PATH} \
+      -I ${ACLNN_INCLUDE_PATH} \
+      -L ${EAGER_LIBRARY_PATH} \
+      -lopapi_math -lascendcl -lnnopbase \
+      -o ${executable_name}
+  fi
+}
+
+compile_eager_example_cust() {
+  local source_file=$1
+  local executable_name=$2
+  local sim_lib_path=$3
+
+  echo "pkg_mode:${PKG_MODE} vendor_name:${VENDOR}"
+
+  local cust_include_flags=""
+  local cust_library_flags=""
+  local cust_rpath_flags=""
+  local cust_aclnnop_paths=""
+
+  if [[ -n "${ASCEND_CUSTOM_OPP_PATH}" ]]; then
+    IFS=':' read -ra PATH_ARRAY <<< "${ASCEND_CUSTOM_OPP_PATH}"
+    for path in "${PATH_ARRAY[@]}"; do
+      cust_include_flags="${cust_include_flags} -I ${path}/op_api/include"
+      cust_library_flags="${cust_library_flags} -L ${path}/op_api/lib"
+      cust_rpath_flags="${cust_rpath_flags}:${path}/op_api/lib"
+      cust_aclnnop_paths="${cust_aclnnop_paths} ${path}/op_api/include/aclnnop"
+    done
+    cust_rpath_flags="${cust_rpath_flags#:}"
+  else
+    cust_include_flags="-I ${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/include"
+    cust_library_flags="-L ${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/lib"
+    cust_rpath_flags="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/lib"
+    cust_aclnnop_paths="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/include/aclnnop"
+  fi
+
+  for aclnnop_path in ${cust_aclnnop_paths}; do
+    local include_dir=$(dirname ${aclnnop_path})
+    local include_dir_mode=$(stat -c %a ${include_dir} 2>/dev/null)
+    if [ ! -L ${aclnnop_path} ]; then
+      chmod u+w ${include_dir} 2>/dev/null
+      ln -s ${include_dir} ${aclnnop_path} 2>/dev/null
+    fi
+  done
+
+  if [[ -n "$sim_lib_path" ]]; then
+    if [[ "$USER_SET_SLOG" != "true" ]]; then
+      export ASCEND_SLOG_PRINT_TO_STDOUT=0
+    fi
+    if [[ "$USER_SET_LOG_LEVEL" != "true" ]]; then
+      export ASCEND_GLOBAL_LOG_LEVEL=3
+    fi
+    export LD_LIBRARY_PATH=${sim_lib_path}:${LD_LIBRARY_PATH}
+    ln -sf ${sim_lib_path}/libruntime_camodel.so ${sim_lib_path}/libruntime.so
+    ln -sf ${sim_lib_path}/libnpu_drv_camodel.so ${sim_lib_path}/libascend_hal.so
+    g++ ${source_file} \
+      ${cust_include_flags} \
+      -I ${INCLUDE_PATH} \
+      -I ${INCLUDE_PATH}/aclnnop \
+      ${cust_library_flags} \
+      -L ${EAGER_LIBRARY_PATH} \
+      -lcust_opapi -lascendcl -lnnopbase \
+      -L ${sim_lib_path} \
+      -lruntime_camodel -lnpu_drv_camodel \
+      -o ${executable_name} \
+      -Wl,-rpath=${cust_rpath_flags}:${sim_lib_path}
+  else
+    g++ ${source_file} \
+      ${cust_include_flags} \
+      -I ${INCLUDE_PATH} \
+      -I ${INCLUDE_PATH}/aclnnop \
+      ${cust_library_flags} \
+      -L ${EAGER_LIBRARY_PATH} \
+      -lcust_opapi -lascendcl -lnnopbase \
+      -o ${executable_name} \
+      -Wl,-rpath=${cust_rpath_flags}
+  fi
+
+  for aclnnop_path in ${cust_aclnnop_paths}; do
+    if [ -L ${aclnnop_path} ]; then
+      local include_dir=$(dirname ${aclnnop_path})
+      local include_dir_mode=$(stat -c %a ${include_dir} 2>/dev/null)
+      rm ${aclnnop_path} 2>/dev/null
+      chmod ${include_dir_mode} ${include_dir} 2>/dev/null
+    fi
+  done
+}
+
 compile_eager_example() {
   local source_file=$1
   local executable_name=$2
@@ -1451,87 +1565,9 @@ compile_eager_example() {
   fi
 
   if [[ "${PKG_MODE}" == "" ]]; then
-    if [[ -n "$sim_lib_path" ]]; then
-      if [[ "$USER_SET_SLOG" != "true" ]]; then
-        export ASCEND_SLOG_PRINT_TO_STDOUT=0
-      fi
-      if [[ "$USER_SET_LOG_LEVEL" != "true" ]]; then
-        export ASCEND_GLOBAL_LOG_LEVEL=3
-      fi
-      export LD_LIBRARY_PATH=${sim_lib_path}:${LD_LIBRARY_PATH}
-      ln -sf ${sim_lib_path}/libruntime_camodel.so ${sim_lib_path}/libruntime.so
-      ln -sf ${sim_lib_path}/libnpu_drv_camodel.so ${sim_lib_path}/libascend_hal.so
-      g++ ${source_file} \
-        -I ${INCLUDE_PATH} \
-        -I ${ACLNN_INCLUDE_PATH} \
-        -L ${EAGER_LIBRARY_PATH} \
-        -lopapi_math -lascendcl -lnnopbase \
-        -L ${sim_lib_path} \
-        -lruntime_camodel -lnpu_drv_camodel \
-        -o ${executable_name} \
-        -Wl,-rpath=${sim_lib_path}
-    else
-      g++ ${source_file} \
-        -I ${INCLUDE_PATH} \
-        -I ${ACLNN_INCLUDE_PATH} \
-        -L ${EAGER_LIBRARY_PATH} \
-        -lopapi_math -lascendcl -lnnopbase \
-        -o ${executable_name}
-    fi
-
+    compile_eager_example_default "${source_file}" "${executable_name}" "${sim_lib_path}"
   elif [[ "${PKG_MODE}" == "cust" ]]; then
-    echo "pkg_mode:${PKG_MODE} vendor_name:${VENDOR}"
-
-    export CUST_LIBRARY_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/lib"
-    export CUST_INCLUDE_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/include"
-    local CUST_ACLNNOP_INCLUDE_PATH="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/include/aclnnop"
-
-    # Backup and set up symlink
-    local include_dir_mode=$(stat -c %a $CUST_INCLUDE_PATH 2>/dev/null)
-    if [ ! -L ${CUST_ACLNNOP_INCLUDE_PATH} ]; then
-      chmod u+w $(dirname ${CUST_ACLNNOP_INCLUDE_PATH}) 2>/dev/null
-      ln -s ${CUST_INCLUDE_PATH} ${CUST_ACLNNOP_INCLUDE_PATH} 2>/dev/null
-    fi
-
-    # Compile with custom paths
-    if [[ -n "$sim_lib_path" ]]; then
-      if [[ "$USER_SET_SLOG" != "true" ]]; then
-        export ASCEND_SLOG_PRINT_TO_STDOUT=0
-      fi
-      if [[ "$USER_SET_LOG_LEVEL" != "true" ]]; then
-        export ASCEND_GLOBAL_LOG_LEVEL=3
-      fi
-      export LD_LIBRARY_PATH=${sim_lib_path}:${LD_LIBRARY_PATH}
-      ln -sf ${sim_lib_path}/libruntime_camodel.so ${sim_lib_path}/libruntime.so
-      ln -sf ${sim_lib_path}/libnpu_drv_camodel.so ${sim_lib_path}/libascend_hal.so
-      g++ ${source_file} \
-        -I ${INCLUDE_PATH} \
-        -I ${INCLUDE_PATH}/aclnnop \
-        -I ${CUST_INCLUDE_PATH} \
-        -L ${CUST_LIBRARY_PATH} \
-        -L ${EAGER_LIBRARY_PATH} \
-        -lcust_opapi -lascendcl -lnnopbase \
-        -L ${sim_lib_path} \
-        -lruntime_camodel -lnpu_drv_camodel \
-        -o ${executable_name} \
-        -Wl,-rpath=${CUST_LIBRARY_PATH}:${sim_lib_path}
-    else
-      g++ ${source_file} \
-        -I ${INCLUDE_PATH} \
-        -I ${INCLUDE_PATH}/aclnnop \
-        -I ${CUST_INCLUDE_PATH} \
-        -L ${CUST_LIBRARY_PATH} \
-        -L ${EAGER_LIBRARY_PATH} \
-        -lcust_opapi -lascendcl -lnnopbase \
-        -o ${executable_name} \
-        -Wl,-rpath=${CUST_LIBRARY_PATH}
-    fi
-
-    # Clean up symlink
-    if [ -L ${CUST_ACLNNOP_INCLUDE_PATH} ]; then
-      rm ${CUST_ACLNNOP_INCLUDE_PATH} 2>/dev/null
-      chmod ${include_dir_mode} $CUST_INCLUDE_PATH 2>/dev/null
-    fi
+    compile_eager_example_cust "${source_file}" "${executable_name}" "${sim_lib_path}"
   else
     echo "Error: pkg_mode(${PKG_MODE}) must be cust or empty."
     exit 1
