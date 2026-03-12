@@ -35,7 +35,8 @@ static inline const std::initializer_list<op::DataType>& GetAiCoreDtypeSupportLi
 {
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     switch (npuArch) {
-        case NpuArch::DAV_3510: {
+        case NpuArch::DAV_3510:
+        case NpuArch::DAV_2201: {
             return REGBASE_DTYPE_SUPPORT_LIST;
         }
         default: {
