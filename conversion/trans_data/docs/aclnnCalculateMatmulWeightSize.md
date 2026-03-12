@@ -70,10 +70,10 @@ aclnnStatus aclnnCalculateMatmulWeightSize(
       <td class="tg-0pky">tensorShape（aclIntArray*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">用于表达该次Matmul载入权重矩阵的Shape，公式中的Shapesize。</td>
-      <td class="tg-0pky">输入shape只支持2维（n，k），其中n表示第1维的大小，k表示第2维的大小，不支持空Array。</td>
+      <td class="tg-0pky">输入shape支持2-6维，即（batch，n，k），其中batch表示权重矩阵的批次大小，支持0-4维，n表示单个batch权重矩阵第1维的大小，k表示单个batch权重矩阵第2维的大小，不支持空Array。</td>
       <td class="tg-0pky">FLOAT16、BFLOAT16</td>
       <td class="tg-0pky">-</td>
-      <td class="tg-0pky">2</td>
+      <td class="tg-0pky">2-6</td>
       <td class="tg-0pky">-</td>
     </tr>
     <tr>
