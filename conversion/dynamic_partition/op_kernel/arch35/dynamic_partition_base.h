@@ -63,7 +63,7 @@ private:
     __aicore__ inline void InitProcessBuffer();
     __aicore__ inline void InitAfterProcessBuffer();
 
-private:
+protected:
     const DynPartTilingData* tdPtr_ = nullptr;
     TPipe* pipe_ = nullptr;
     int64_t gmXInBlockOffset_ = 0;
@@ -90,8 +90,6 @@ private:
     TBufPool<QuePosition::VECCALC, MAX_BUFFER_NUM> bufPoolAfter_;
     TBufPool<QuePosition::VECCALC, MAX_BUFFER_NUM> bufPoolProcess_;
     bool refreshFirstShape_ = true;
-
-protected:
     int32_t coreWS_ = 0;
     int32_t coreWSAlign_ = 0;
     int64_t blockIdx_ = 0;

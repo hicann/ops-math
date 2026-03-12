@@ -35,6 +35,7 @@ static constexpr int64_t MC_TIMES = 2;
 static constexpr uint32_t NUM_TWO = 2;
 static constexpr uint32_t INT32_BYTES = 4;
 static constexpr uint32_t UINT64_BYTES = 8;
+static constexpr uint32_t W_THRESHOLD = 6;
 static constexpr size_t SYS_WORKSPACE_SIZE = static_cast<size_t>(16) * 1024 * 1024;
 
 bool DynamicPartitionTiling::CheckInputs()
@@ -161,7 +162,7 @@ void DynamicPartitionTiling::CalcTilingMCHWSize()
 void DynamicPartitionTiling::CalcTilingHWLpUnit()
 {
     // move in W first
-    if (xShape_.GetShapeSize() > 1L && partShape_.GetShapeSize() > 1L) {
+    if (xShape_.GetShapeSize() > 1L && partShape_.GetShapeSize() >= 1L) {
         // ping pong
         int64_t blockSize = static_cast<int64_t>(compileInfo_->blockSize);
         int64_t coreWSAlign_ = Ops::Base::CeilAlign(static_cast<int64_t>(coreWS_), blockSize);
@@ -169,7 +170,6 @@ void DynamicPartitionTiling::CalcTilingHWLpUnit()
         int64_t clSize = static_cast<int64_t>(compileInfo_->clSize / dtypeSize_);
         auto hMSize = tilingData_.hMSize;
         auto wMSize = tilingData_.wMSize;
-
         // first two xIn and xOut, second two partition and partition seq
 
         if (Ops::Base::CeilAlign(wMSize * dtypeSize_, blockSize) * NUM_TWO + blockSize * NUM_TWO >= availUBSize) {
@@ -182,9 +182,16 @@ void DynamicPartitionTiling::CalcTilingHWLpUnit()
             tilingData_.hLpUnit = hMSize;
             tilingData_.wLpUnit = wMSize;
         } else {
-            while ((Ops::Base::CeilAlign(wMSize * dtypeSize_, blockSize) * hMSize * NUM_TWO +
+            if (wMSize <= W_THRESHOLD) {
+                while ((Ops::Base::CeilAlign(wMSize * hMSize * dtypeSize_, blockSize) * NUM_TWO +
+                    Ops::Base::CeilAlign(wMSize * hMSize * INT32_BYTES, blockSize)  * NUM_TWO) > availUBSize) {
+                    --hMSize;
+                }
+            } else {
+                while ((Ops::Base::CeilAlign(wMSize * dtypeSize_, blockSize) * hMSize * NUM_TWO +
                     Ops::Base::CeilAlign(hMSize * INT32_BYTES, blockSize) * NUM_TWO) > availUBSize) {
-                --hMSize;
+                    --hMSize;
+                }
             }
             tilingData_.hLpUnit = hMSize;
             tilingData_.wLpUnit = wMSize;
@@ -220,7 +227,11 @@ void DynamicPartitionTiling::CalcTilingKey()
 
     if (tilingData_.wMSize == tilingData_.wLpUnit) {
         if (isHBlockAxis_) {
-            tilingData_.tilingKey = ::DynPart::TILING_H_MC_UB_CAN_HOLD_SPLIT_W;
+            if (tilingData_.wMSize <= W_THRESHOLD) {
+                tilingData_.tilingKey = ::DynPart::TILING_H_MC_WITH_SMALL_W;
+            } else {
+                tilingData_.tilingKey = ::DynPart::TILING_H_MC_UB_CAN_HOLD_SPLIT_W;
+            }
         } else {
             tilingData_.tilingKey = ::DynPart::TILING_W_MC_UB_CAN_HOLD_SPLIT_W;
         }

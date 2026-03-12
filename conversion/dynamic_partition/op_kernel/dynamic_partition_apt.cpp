@@ -16,6 +16,7 @@
 #include <type_traits>
 
 #include "arch35/dynamic_partition_with_h_mc.h"
+#include "arch35/dynamic_partition_with_h_mc_small_w.h"
 #include "arch35/dynamic_partition_with_w_mc.h"
 #include "arch35/dynamic_partition_with_x_empty.h"
 #include "arch35/dynamic_partition_with_xp_empty.h"
@@ -49,6 +50,11 @@ extern "C" __global__ __aicore__ void dynamic_partition(GM_ADDR x, GM_ADDR parti
     if (TILING_KEY_IS(KEY_H_MC_UB_CAN_HOLD_SPLIT_W)) {
         KERNEL_TASK_TYPE(KEY_H_MC_UB_CAN_HOLD_SPLIT_W, KERNEL_TYPE_MIX_AIV_1_0);
         DynPartWithHMC<DTYPE_X_> op;
+        op.Init(x, partitions, y, yshape, workspace, &tilingData, &pipe);
+        op.Process();
+    } else if (TILING_KEY_IS(KEY_H_MC_WITH_SMALL_W)) {
+        KERNEL_TASK_TYPE(KEY_H_MC_WITH_SMALL_W, KERNEL_TYPE_MIX_AIV_1_0);
+        DynPartWithHMCSMALLW<DTYPE_X_> op;
         op.Init(x, partitions, y, yshape, workspace, &tilingData, &pipe);
         op.Process();
     } else if (TILING_KEY_IS(KEY_H_MC_UB_CANNOT_HOLD_SPLIT_W)) {

@@ -29,6 +29,7 @@ constexpr uint64_t TILING_W_MC_UB_CANNOT_HOLD_SPLIT_W = 50003UL;
 constexpr uint64_t TILING_XP_EMPTY = 50004UL;
 constexpr uint64_t TILING_XP_SCALAR = 50005UL;
 constexpr uint64_t TILING_X_EMPTY = 50006UL;
+constexpr uint64_t TILING_H_MC_WITH_SMALL_W = 50007UL;
 
 #define KEY_H_MC_UB_CAN_HOLD_SPLIT_W 50000
 #define KEY_W_MC_UB_CAN_HOLD_SPLIT_W 50001
@@ -37,6 +38,7 @@ constexpr uint64_t TILING_X_EMPTY = 50006UL;
 #define KEY_XP_EMPTY 50004
 #define KEY_XP_SCALAR 50005
 #define KEY_X_EMPTY 50006
+#define KEY_H_MC_WITH_SMALL_W 50007
 
 struct DynPartTilingData {
     uint64_t tilingKey{0};

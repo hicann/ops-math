@@ -33,18 +33,19 @@ public:
 
 protected:
     __aicore__ inline void CalcPartCnt(int32_t begPart, int32_t endPart);
+    __aicore__ inline void CalcPartBase(int32_t begPart, int32_t endPart);
 
 private:
     __aicore__ inline void InnerProcess4CalcPartCnt(uint32_t ubPartLen, int32_t begPart, int32_t endPart);
-    __aicore__ inline void CalcPartBase(int32_t begPart, int32_t endPart);
+
 
 protected:
     GlobalTensor<uint64_t> ws_;
+    GlobalTensor<int32_t> pInGM_;
 
 private:
     const DynPartTilingData* tdPtr_ = nullptr;
     TQue<QuePosition::VECIN, 1> pR1InQue_;  // calc partition base value for each core
-    GlobalTensor<int32_t> pInGM_;
     uint32_t ubPartLen_ = 0;
 };
 
@@ -74,6 +75,7 @@ __aicore__ inline void DynPartWithHMC<T, isSingleW>::Process()
 {
     int32_t partLpCnt = tdPtr_->numPartitions / NUM_PARTITION_UNIT;
     int32_t partLeft = tdPtr_->numPartitions % NUM_PARTITION_UNIT;
+
     for (int32_t pLpIdx = 0; pLpIdx < partLpCnt; ++pLpIdx) {
         int32_t begPart = pLpIdx * NUM_PARTITION_UNIT;
         int32_t endPart = (pLpIdx + 1) * NUM_PARTITION_UNIT;
