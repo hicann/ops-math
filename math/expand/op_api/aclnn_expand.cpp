@@ -112,17 +112,17 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* size, const acl
     if (outShape != expectShape) {
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID,
-            "expect out shape to be same as expectShape, but got out shape [%s], \
-            expect shape [%s]",
+            "expect out shape to be same as expectShape, but got out shape [%s], expect shape [%s]",
             op::ToString(outShape).GetString(), op::ToString(expectShape).GetString());
         return false;
     }
     return true;
 }
 
-static bool CheckMaxDimension(const aclTensor* tensor)
+static bool CheckMaxDimension(const aclTensor* self, const aclTensor* out)
 {
-    OP_CHECK_MAX_DIM(tensor, MAX_SUPPORT_DIM, return false);
+    OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIM, return false);
+    OP_CHECK_MAX_DIM(out, MAX_SUPPORT_DIM, return false);
     return true;
 }
 
@@ -138,7 +138,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* size, c
     CHECK_RET(CheckShape(self, size, out), ACLNN_ERR_PARAM_INVALID);
 
     // 4. 检查最大维度是否超过8
-    CHECK_RET(CheckMaxDimension(self) && CheckMaxDimension(out), ACLNN_ERR_PARAM_INVALID);
+
+    CHECK_RET(CheckMaxDimension(self, out), ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
 
