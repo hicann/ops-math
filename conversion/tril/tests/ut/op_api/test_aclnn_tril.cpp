@@ -11,7 +11,7 @@
 #include <array>
 #include <vector>
 
-#include "../../../op_api/aclnn_tril.h"
+#include "conversion/tril/op_api/aclnn_tril.h"
 #include "opdev/platform.h"
 #include "op_api_ut_common/inner/types.h"
 #include "op_api_ut_common/op_api_ut.h"

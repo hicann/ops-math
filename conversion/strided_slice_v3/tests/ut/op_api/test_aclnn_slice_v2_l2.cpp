@@ -12,7 +12,7 @@
 #include <vector>
 #include "gtest/gtest.h"
 
-#include "../../../op_host/op_api/aclnn_slice_v2.h"
+#include "conversion/strided_slice_v3/op_api/aclnn_slice_v2.h"
 #include "../../../../../tests/ut/op_api/op_api_ut_common/inc/op_api_ut_common/op_api_ut.h"
 #include "../../../../../tests/ut/op_api/op_api_ut_common/inc/op_api_ut_common/scalar_desc.h"
 #include "../../../../../tests/ut/op_api/op_api_ut_common/inc/op_api_ut_common/tensor_desc.h"
