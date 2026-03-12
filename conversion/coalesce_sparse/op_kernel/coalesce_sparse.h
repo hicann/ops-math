@@ -17,7 +17,6 @@
 
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
-#include "kernel_utils.h"
 
 using namespace AscendC;
 constexpr uint32_t BUFFER_NUM = 1u;
