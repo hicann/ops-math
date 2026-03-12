@@ -18,6 +18,7 @@
 
 - 接口功能：判断输入张量哪些元素是有限数值，即不是inf、-inf或nan。
 - 计算公式：
+
   $$
   out_i=(input_i != \pm inf) \: and \: (input_i!= nan)
   $$
@@ -26,19 +27,92 @@
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnIsFiniteGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnIsFinite”接口执行计算。
 
-- `aclnnStatus aclnnIsFiniteGetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnIsFinite(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnIsFiniteGetWorkspaceSize(
+  const aclTensor*  self,
+  aclTensor*        out,
+  uint64_t*         workspaceSize,
+  aclOpExecutor**   executor)
+```
+
+```Cpp
+aclnnStatus aclnnIsFinite(
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
+  aclrtStream    stream)
+```
 
 ## aclnnIsFiniteGetWorkspaceSize
 
 - **参数说明：**
 
-  - self（aclTensor*，计算输入）：公式中的`input`，Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape的维度不高于8维。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT64、INT32、INT16、INT8、UINT8、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT64、INT32、INT16、INT8、UINT8、BOOL。
-  - out（aclTensor*，计算输出）：公式中的`out`，Device侧的aclTensor。数据类型支持BOOL，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)为ND。shape与`self`一致，且shape的维度不高于8维。
-  - workspaceSize（uint64_t*，出参）：返回用户需要在Device侧申请的workspace大小。
-  - executor（aclOpExecutor**，出参）：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>输入张量，公式中的self。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>输出张量，公式中的out。</td>
+      <td>数据类型为BOOL。shape与self相同。</td>
+      <td>BOOL</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
+
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16。
+
 
 - **返回值：**
 
@@ -46,14 +120,14 @@
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 286px">
-  <col style="width: 123px">
-  <col style="width: 740px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>
-      <th>返回值</th>
+      <th>返回码</th>
       <th>错误码</th>
       <th>描述</th>
     </tr></thead>
@@ -66,25 +140,24 @@
     <tr>
       <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="3">161002</td>
-      <td>参数self或out的数据类型不在支持范围内。</td>
+      <td>self或out的数据类型不在支持范围之内。</td>
     </tr>
     <tr>
-      <td>self、out的shape不一致。</td>
+      <td>self和out的维度超过8维。</td>
     </tr>
     <tr>
-      <td>self的维度大于8维。</td>
+      <td>self和out的shape不一致。</td>
     </tr>
-  </tbody>
-  </table>
+  </tbody></table>
 
 ## aclnnIsFinite
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 167px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
   <col style="width: 134px">
-  <col style="width: 848px">
+  <col style="width: 833px">
   </colgroup>
   <thead>
     <tr>
@@ -113,8 +186,7 @@
       <td>输入</td>
       <td>指定执行任务的Stream。</td>
     </tr>
-  </tbody>
-  </table>
+  </tbody></table>
 
 - **返回值：**
 
@@ -124,7 +196,6 @@
 
 - 确定性计算：
   - aclnnIsFinite默认确定性实现。
-
 
 ## 调用示例
 
@@ -263,4 +334,3 @@ int main() {
   return 0;
 }
 ```
-

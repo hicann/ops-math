@@ -1,5 +1,7 @@
 # aclnnGroupedBiasAddGrad
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/grouped_bias_add_grad)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -15,20 +17,20 @@
 
 - 接口功能：分组偏置加法（GroupedBiasAdd）的反向计算。本接口的扩展接口是[aclnnGroupedBiasAddGradV2](./aclnnGroupedBiasAddGradV2.md)。
 - 计算公式：<br>
-(1) 有可选输入groupIdxOptional时：
+  (1) 有可选输入groupIdxOptional时：
 
-$$
-out(G,H) = \begin{cases} \sum_{i=groupIdxOptional(j-1)}^{groupIdxOptional(j)}  gradY(i, H), & 1 \leq j \leq G-1 \\  \sum_{i=0}^{groupIdxOptional(j)}  gradY(i, H), & j = 0 \end{cases}
-$$
+  $$
+  out(G,H) = \begin{cases} \sum_{i=groupIdxOptional(j-1)}^{groupIdxOptional(j)}  gradY(i, H), & 1 \leq j \leq G-1 \\  \sum_{i=0}^{groupIdxOptional(j)}  gradY(i, H), & j = 0 \end{cases}
+  $$
 
-&emsp;&emsp;其中，gradY共2维，H表示gradY最后一维的大小，G表示groupIdxOptional第0维的大小，即groupIdxOptional有G个数，groupIdxOptional(j)表示第j个数的大小，计算后out为2维，shape为(G, H)。<br>
-&emsp;&emsp;(2) 无可选输入groupIdxOptional时：
+  其中，gradY共2维，H表示gradY最后一维的大小，G表示groupIdxOptional第0维的大小，即groupIdxOptional有G个数，groupIdxOptional(j)表示第j个数的大小，计算后out为2维，shape为(G, H)。<br>
+  (2) 无可选输入groupIdxOptional时：
 
-$$
-out(G, H) = \sum_{i=0}^{C} gradY(G, i, H)
-$$
+  $$
+  out(G, H) = \sum_{i=0}^{C} gradY(G, i, H)
+  $$
 
-&emsp;&emsp;其中，gradY共3维，G, C, H依次表示gradY第0-2维的大小，计算后out为2维，shape为(G, H)。
+  其中，gradY共3维，G, C, H依次表示gradY第0-2维的大小，计算后out为2维，shape为(G, H)。
 - 示例：<br>
 (1) 有可选输入groupIdxOptional时：<br>
   gradY的shape为(1000, 30)，groupIdxOptional为(400, 600, 1000)，将gradY分为3组，每组累加的行数依次为400、200、400，计算后out的shape为(3, 30)。<br>
@@ -39,33 +41,115 @@ $$
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnGroupedBiasAddGradGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnGroupedBiasAddGrad”接口执行计算。
 
-- `aclnnStatus aclnnGroupedBiasAddGradGetWorkspaceSize(const aclTensor *gradY, const aclTensor *groupIdxOptional, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnGroupedBiasAddGrad(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnGroupedBiasAddGradGetWorkspaceSize(
+  const aclTensor*  gradY,
+  const aclTensor*  groupIdxOptional,
+  aclTensor*        out,
+  uint64_t*         workspaceSize,
+  aclOpExecutor**   executor)
+```
+
+```Cpp
+aclnnStatus aclnnGroupedBiasAddGrad(
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
+  aclrtStream    stream)
+```
 
 ## aclnnGroupedBiasAddGradGetWorkspaceSize
 
 - **参数说明：**
 
-  * gradY（aclTensor\*，计算输入）: 必选参数，反向传播梯度，公式中的gradY，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16。有可选输入groupIdxOptional时，shape仅支持2维，无可选输入groupIdxOptional时，shape仅支持3维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  * groupIdxOptional（aclTensor\*，计算输入）: 可选参数，每个分组结束位置，公式中的groupIdxOptional，Device侧的aclTensor，数据类型支持INT32，INT64，shape仅支持1维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  * out（aclTensor\*，计算输出）: bias的梯度，公式中的out，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16，数据类型必须与gradY的数据类型一致，shape仅支持2维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  * workspaceSize（uint64\_t\*，出参）: 返回需要在Device侧申请的workspace大小。
-  * executor（aclOpExecutor\*\*，出参）: 返回op执行器，包含了算子计算流程。
-
-- **返回值：**
-
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-
-  第一段接口完成入参校验，出现以下场景时报错：
-
-  <table style="undefined;table-layout: fixed; width: 1148px"><colgroup>
-  <col style="width: 286px">
-  <col style="width: 124px">
-  <col style="width: 738px">
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
   </colgroup>
   <thead>
     <tr>
-      <th>返回值</th>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>gradY（aclTensor*）</td>
+      <td>输入</td>
+      <td>反向传播梯度，公式中的gradY。</td>
+      <td>有可选输入groupIdxOptional时，shape仅支持2维。<br>无可选输入groupIdxOptional时，shape仅支持3维。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>2-3</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>groupIdxOptional（aclTensor*）</td>
+      <td>输入</td>
+      <td>每个分组结束位置，公式中的groupIdxOptional。</td>
+      <td>-</td>
+      <td>INT32、INT64</td>
+      <td>ND</td>
+      <td>1</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>bias的梯度，公式中的out。</td>
+      <td>数据类型必须与gradY的数据类型一致，shape仅支持2维。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>2</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
+
+- **返回值：**
+
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+
+  第一段接口完成入参校验，出现以下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
       <th>错误码</th>
       <th>描述</th>
     </tr></thead>
@@ -86,17 +170,16 @@ $$
     <tr>
       <td>group组数超过2048。</td>
     </tr>
-  </tbody>
-  </table>
+  </tbody></table>
 
 ## aclnnGroupedBiasAddGrad
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 167px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
   <col style="width: 134px">
-  <col style="width: 848px">
+  <col style="width: 833px">
   </colgroup>
   <thead>
     <tr>
@@ -125,12 +208,11 @@ $$
       <td>输入</td>
       <td>指定执行任务的Stream。</td>
     </tr>
-  </tbody>
-  </table>
+  </tbody></table>
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 

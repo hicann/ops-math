@@ -17,7 +17,7 @@
 ## 功能说明
 
 - 接口功能：判断self Tensor中的元素是否大于other Tensor中的元素。返回一个Tensor，若self>other，为True(1)；否则为False(0)。
-- 计算表达式：
+- 计算公式：
 
   $$
   out = (self_i > other_i)  ?  [True] : [False]
@@ -29,35 +29,35 @@
 
 ```Cpp
 aclnnStatus aclnnGtTensorGetWorkspaceSize(
-    const aclTensor *self,
-    const aclTensor *other,
-    aclTensor *out,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor)
+  const aclTensor*  self,
+  const aclTensor*  other,
+  aclTensor*        out,
+  uint64_t*         workspaceSize,
+  aclOpExecutor**   executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnGtTensor(
-    void *workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor *executor,
-    aclrtStream stream)
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
+  aclrtStream    stream)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceGtTensorGetWorkspaceSize(
-    const aclTensor *selfRef,
-    const aclTensor *other,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor)
+  aclTensor*        selfRef,
+  const aclTensor*  other,
+  uint64_t*         workspaceSize,
+  aclOpExecutor**   executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceGtTensor(
-    void *workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor *executor,
-    aclrtStream stream)
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
+  aclrtStream    stream)
 ```
 
 ## aclnnGtTensorGetWorkspaceSize
@@ -87,27 +87,27 @@ aclnnStatus aclnnInplaceGtTensor(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>参与Greater大小比较计算的输入张量，公式中的self。</td>
-      <td>支持非连续tensor。</td>
+      <td>-</td>
       <td>DOUBLE、FLOAT16、FLOAT32、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>other</td>
+      <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>参与greater大小比较计算的输入张量，公式中的other。</td>
-      <td>Tensor类型，数据类型需要与self满足数据类型推导规则，shape需要与self的shape满足。</td>
+      <td>Tensor类型，数据类型需要与self满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>，shape需要与self的shape满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>DOUBLE、FLOAT16、FLOAT32、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>比较大小后的输出，公式中的输出out。</td>
       <td>数据类型需要是BOOL可转换的数据类型。</td>
@@ -117,7 +117,7 @@ aclnnStatus aclnnInplaceGtTensor(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -127,7 +127,7 @@ aclnnStatus aclnnInplaceGtTensor(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -174,13 +174,13 @@ aclnnStatus aclnnInplaceGtTensor(
       <td>self、other或out的维度大于8。</td>
     </tr>
     <tr>
-      <td>self和other的数据类型无法进行推导。</td>
+      <td>self和other的数据类型无法进行<a href="../../../docs/zh/context/互推导关系.md" target="_blank">推导</a>。</td>
     </tr>
     <tr>
       <td>self和other的shape无法进行broadcast。</td>
     </tr>
     <tr>
-      <td>out的shape与broadcast后的shape不一致。</td>
+      <td>out的shape与<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>后的shape不一致。</td>
     </tr>
   </tbody>
   </table>
@@ -256,17 +256,17 @@ aclnnStatus aclnnInplaceGtTensor(
     </tr></thead>
   <tbody>
     <tr>
-      <td>selfRef</td>
+      <td>selfRef（aclTensor*）</td>
       <td>输入输出</td>
       <td>参与Greater大小比较计算的输入张量，同时也是Greater比较后的输出，公式中的self和out。</td>
-      <td>支持非连续tensor。</td>
+      <td>-</td>
       <td>DOUBLE、FLOAT16、FLOAT32、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>other</td>
+      <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>参与greater大小比较计算的输入张量，公式中的other。</td>
       <td>Tensor类型，数据类型需要与selfRef的数据类型满足数据类型推导规则。</td>
@@ -276,7 +276,7 @@ aclnnStatus aclnnInplaceGtTensor(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -286,7 +286,7 @@ aclnnStatus aclnnInplaceGtTensor(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -333,10 +333,10 @@ aclnnStatus aclnnInplaceGtTensor(
       <td>selfRef和other的数据类型无法进行推导。</td>
     </tr>
     <tr>
-      <td>selfRef和other的shape无法做broadcast。</td>
+      <td>selfRef和other的shape无法做<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>。</td>
     </tr>
     <tr>
-      <td>selfRef和other做broadcast后的shape不等于selfRef的shape。</td>
+      <td>selfRef和other做<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>后的shape不等于selfRef的shape。</td>
     </tr>
     <tr>
       <td>selfRef、other的维度大于8。</td>

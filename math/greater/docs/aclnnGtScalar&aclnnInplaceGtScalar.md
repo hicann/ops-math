@@ -31,35 +31,35 @@
 
 ```Cpp
 aclnnStatus aclnnGtScalarGetWorkspaceSize(
-    const aclTensor *self,
-    const aclScalar *other,
-    aclTensor *out,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor)
+  const aclTensor*  self,
+  const aclScalar*  other,
+  aclTensor*        out,
+  uint64_t*         workspaceSize,
+  aclOpExecutor**   executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnGtScalar(
-    void *workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor *executor,
-    aclrtStream stream)
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
+  aclrtStream    stream)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceGtScalarGetWorkspaceSize(
-    aclTensor *selfRef,
-    const aclScalar *other,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor)
+  aclTensor*        selfRef,
+  const aclScalar*  other,
+  uint64_t*         workspaceSize,
+  aclOpExecutor**   executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceGtScalar(
-    void *workspace,
-    uint64_t workspaceSize,
-    aclOpExecutor *executor,
-    aclrtStream stream)
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
+  aclrtStream    stream)
 ```
 
 ## aclnnGtScalarGetWorkspaceSize
@@ -89,17 +89,17 @@ aclnnStatus aclnnInplaceGtScalar(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>参与Greater大小比较计算的输入张量，公式中的self。</td>
-      <td>支持非连续tensor。</td>
+      <td>-</td>
       <td>DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>other</td>
+      <td>other（aclScalar*）</td>
       <td>输入</td>
       <td>参与greater大小比较计算的输入张量，公式中的other。</td>
       <td>scalar变量，数据类型需要与selfRef的数据类型满足数据类型推导规则。</td>
@@ -109,7 +109,7 @@ aclnnStatus aclnnInplaceGtScalar(
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>tensor与scalar值比较大小后的输出，公式中的输出out。</td>
       <td>数据类型需要是BOOL可转换的数据类型。</td>
@@ -119,7 +119,7 @@ aclnnStatus aclnnInplaceGtScalar(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -129,7 +129,7 @@ aclnnStatus aclnnInplaceGtScalar(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -256,17 +256,17 @@ aclnnStatus aclnnInplaceGtScalar(
     </tr></thead>
   <tbody>
     <tr>
-      <td>selfRef</td>
+      <td>selfRef（aclTensor*）</td>
       <td>输入输出</td>
       <td>参与Greater大小比较计算的输入张量，同时也是Greater比较后的输出，公式中的self和out。</td>
-      <td>支持非连续tensor。</td>
+      <td>-</td>
       <td>DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、BOOL</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>other</td>
+      <td>other（aclScalar*）</td>
       <td>输入</td>
       <td>参与greater大小比较计算的输入张量，公式中的other。</td>
       <td>scalar变量，数据类型需要与selfRef的数据类型满足数据类型推导规则。</td>
@@ -276,7 +276,7 @@ aclnnStatus aclnnInplaceGtScalar(
       <td>-</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -286,7 +286,7 @@ aclnnStatus aclnnInplaceGtScalar(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -330,7 +330,7 @@ aclnnStatus aclnnInplaceGtScalar(
       <td>selfRef和other的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>selfRef和other的数据类型不满足数据类型推导规则。</td>
+      <td>selfRef和other的数据类型不满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。</td>
     </tr>
     <tr>
       <td>selfRef的维度大于8。</td>
