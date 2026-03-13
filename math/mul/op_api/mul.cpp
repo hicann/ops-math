@@ -42,6 +42,8 @@ static const std::initializer_list<DataType> REGBASE_AICORE_DTYPE_SUPPORT_LIST =
 static const std::initializer_list<DataType> ASCEND610LITE_AICORE_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_INT32, DataType::DT_INT8, DataType::DT_UINT8};
 
+static constexpr int64_t DIM_FOUR = 4;
+
 static inline const std::initializer_list<DataType>& GetAiCoreDtypeSupportListBySocVersion() {
   auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
   switch (curArch) {
@@ -71,13 +73,33 @@ bool IsDoubleSupport(const aclTensor *self, const aclTensor *other) {
   return false;
 }
 
+static bool isBroadcastTemplateNonContiguousSupport(const aclTensor* input)
+{
+    auto viewShape = input->GetViewShape();
+    size_t shapeDim = viewShape.GetDimNum();
+
+    // dim > 4 不支持
+    if (shapeDim > DIM_FOUR) {
+        OP_LOGI("Broadcast Template NonContiguous UnSupported. shapeDim: %d > 4", shapeDim);
+        return false;
+    }
+
+    // 仅regbase类的芯片支持
+    if (!IsRegBase()) {
+        OP_LOGI("Broadcast Template NonContiguous UnSupported. not RegBase");
+        return false;
+    }
+
+    return true;
+}
+
 // 根据芯片类型、dtype判断算子是否支持走AiCore
 inline static bool IsAiCoreSupport(const aclTensor *self) {
   return CheckType(self->GetDataType(), GetAiCoreDtypeSupportListBySocVersion());
 }
 
 bool IsMulSupportNonContiguous(const aclTensor* self, const aclTensor *other) {
-  bool isSupportNonContiguous = IsRegBase();
+  bool isSupportNonContiguous = isBroadcastTemplateNonContiguousSupport(self) && isBroadcastTemplateNonContiguousSupport(other);
   return isSupportNonContiguous && ((IsAiCoreSupport(self) && IsAiCoreSupport(other)) || IsDoubleSupport(self, other));
 }
 
