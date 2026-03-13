@@ -13,7 +13,7 @@
 #include "op_kernel/platform_util.h"
 namespace SplitV {
 using namespace AscendC;
-const int32_t SPLIT_LIST_MAX_LEN = 64;
+const int32_t SPLIT_LIST_MAX_LEN = 72;
 
 template <typename T>
 class SplitVPureCopyMode
