@@ -21,32 +21,124 @@
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnReduceSumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReduceSum”接口执行计算。
-* `aclnnStatus aclnnReduceSumGetWorkspaceSize(const aclTensor *self, const aclIntArray *dims, bool keepDims, aclDataType dtype, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-* `aclnnStatus aclnnReduceSum(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnReduceSumGetWorkspaceSize(
+  const aclTensor*   self, 
+  const aclIntArray* dims, 
+  bool               keepDims, 
+  aclDataType        dtype, 
+  aclTensor*         out, 
+  uint64_t*          workspaceSize, 
+  aclOpExecutor**    executor)
+```
+
+```Cpp
+aclnnStatus aclnnReduceSum(
+  void*          workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor* executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnReduceSumGetWorkspaceSize
 
 - **参数说明**：
 
-  - self（aclTensor*, 计算输入）：Device侧的aclTensor，shape支持0-8维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、DOUBLE、COMPLEX64、COMPLEX128。输入为空tensor时，输出类型不能是复数类型COMPLEX64和COMPLEX128。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。输入为空tensor时，输出类型不能是复数类型COMPLEX64和COMPLEX128。
-
-  - dims（aclIntArray*, 计算输入）：Host侧的aclIntArray，指定reduce维度，数据类型支持INT64，取值范围为[-self.dim(), self.dim()-1]。
-
-  - keepDims（bool, 计算输入）：Host侧的BOOL值，指定是否在输出张量中保留输入张量的维度。
-
-  - dtype（aclDataType, 计算输入）：Device侧的aclDataType，指定输出张量的数据类型。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT32、INT8、 INT16、 INT32、 INT64、UINT8、BOOL、DOUBLE、COMPLEX64、COMPLEX128。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT32、INT8、 INT16、 INT32、 INT64、UINT8、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。
-
-  - out（aclTensor*, 计算输出）：Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、DOUBLE、COMPLEX64、COMPLEX128。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。
-
-  - workspaceSize（uint64_t*, 出参）：返回需要在Device侧申请的workspace大小。
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 280px">
+  <col style="width: 320px">
+  <col style="width: 370px">
+  <col style="width: 120px">
+  <col style="width: 140px">
+  <col style="width: 140px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>输入tensor。</td>
+      <td>支持空Tensor。<br>输入为空tensor时，输出类型不能是复数类型COMPLEX64和COMPLEX128。</td>
+      <td>FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>dims（aclIntArray*）</td>
+      <td>输入</td>
+      <td>指定reduce维度。</td>
+      <td>取值范围为[-self.dim(), self.dim()-1]。</td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>keepDims（bool）</td>
+      <td>输入</td>
+      <td>指定是否在输出张量中保留输入张量的维度。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>dtype（aclDataType）</td>
+      <td>输入</td>
+      <td>指定输出张量的数据类型。</td>
+      <td>-</td>
+      <td>FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>输出tensor。</td>
+      <td>支持空Tensor。shape需要是self经过计算后的shape。</td>
+      <td>FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
   
-  - executor（aclOpExecutor**, 出参）：返回op执行器，包含了算子计算流程。
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：`self`、`dtype`、`out` 不支持BFLOAT16。
 
 - **返回值：**
 
@@ -54,10 +146,10 @@
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1152px"><colgroup>
-  <col style="width: 288px">
-  <col style="width: 124px">
-  <col style="width: 740px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>
@@ -135,7 +227,7 @@
 
 - **返回值**：
 
-  **aclnnStatus**：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 

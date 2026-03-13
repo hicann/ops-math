@@ -19,26 +19,122 @@
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnReduceNansumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReduceNansum”接口执行计算。
 
-- `aclnnStatus aclnnReduceNansumGetWorkspaceSize(const aclTensor* self, const aclIntArray* dim, bool keepDim, aclDataType dtype, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnReduceNansum(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnReduceNansumGetWorkspaceSize(
+  const aclTensor*   self, 
+  const aclIntArray* dim, 
+  bool               keepDim, 
+  aclDataType        dtype, 
+  aclTensor*         out, 
+  uint64_t*          workspaceSize, 
+  aclOpExecutor**    executor)
+```
+
+```Cpp
+aclnnStatus aclnnReduceNansum(
+  void*          workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor* executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnReduceNansumGetWorkspaceSize
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)：输入tensor，数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16，且数据类型和out的dtype满足可转换关系（参见[互转换关系](../../../docs/zh/context/互转换关系.md)），支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-
-  - dim(aclIntArray*, 计算输入)：参与计算的维度，取值范围为[-self.dim(), self.dim())，dim数组长度为0时，对所有轴做ReduceNansum计算，数据类型支持INT64。
-
-  - keepDim(bool, 计算输入)：是否在输出张量中保留要缩减的维度。
-
-  - dtype(aclDataType, 计算输入)：返回张量的所需数据类型，数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16。
-
-  - out(aclTensor*, 计算输出)：输出tensor，数据类型支持FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16，且数据类型和self的dtype满足可转换关系（参见[互转换关系](../../../docs/zh/context/互转换关系.md)），支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-
-  - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 210px">
+  <col style="width: 120px">
+  <col style="width: 280px">
+  <col style="width: 320px">
+  <col style="width: 220px">
+  <col style="width: 120px">
+  <col style="width: 140px">
+  <col style="width: 140px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>输入tensor。</td>
+      <td>支持空Tensor。数据类型需和out的dtype满足可转换关系（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td>FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>dim（aclIntArray*）</td>
+      <td>输入</td>
+      <td>参与计算的维度。</td>
+      <td>取值范围为[-self.dim(), self.dim())，dim数组长度为0时，对所有轴做ReduceNansum计算。</td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>keepDim（bool）</td>
+      <td>输入</td>
+      <td>是否在输出张量中保留要缩减的维度。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>dtype（aclDataType）</td>
+      <td>输入</td>
+      <td>返回张量的所需数据类型。</td>
+      <td>-</td>
+      <td>FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>输出tensor。</td>
+      <td>支持空Tensor。数据类型需和self的dtype满足可转换关系（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。shape需要是self经过计算后的shape。</td>
+      <td>FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
 - **返回值：**
 
@@ -46,10 +142,10 @@
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1152px"><colgroup>
-  <col style="width: 288px">
-  <col style="width: 124px">
-  <col style="width: 740px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>

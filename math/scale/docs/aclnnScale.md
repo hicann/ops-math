@@ -13,19 +13,21 @@
 
 ## 功能说明
 
-计算公式：
+- 接口功能：计算输入的scale和bias的结果。
 
-若不输入bias，则
+- 计算公式：
 
-$$
+  若不输入bias，则
+
+  $$
   y=x*scale
-$$
+  $$
 
   若输入bias，则
 
-$$
+  $$
   y=x*scale + bias
-$$
+  $$
 
   说明：scale/bias支持跟X的broadcast，scale/bias的shape规则如下
   - 当scaleFromBlob为True时（axis转换为正数，numAxes为-1时表示到最后轴）：
@@ -40,7 +42,7 @@ $$
 
     biasShape为xShape[axis:axis + rank(scaleShape)]
 
-  举例:
+- 示例:
 
   - scaleFromBlob = True：
 
@@ -62,26 +64,144 @@ $$
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnScaleGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnScale”接口执行计算。
 
-* `aclnnStatus aclnnScaleGetWorkspaceSize(const aclTensor *x, const aclTensor *scale, const aclTensor *bias, int64_t axis, int64_t numAxes, bool scaleFromBlob, aclTensor *y, uint64_t *workspaceSize, aclOpExecutor **executor)`
-* `aclnnStatus aclnnScale(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnScaleGetWorkspaceSize(
+  const aclTensor* x, 
+  const aclTensor* scale, 
+  const aclTensor* bias, 
+  int64_t          axis, 
+  int64_t          numAxes, 
+  bool             scaleFromBlob, 
+  aclTensor*       y, 
+  uint64_t*        workspaceSize, 
+  aclOpExecutor**  executor)
+```
+
+```Cpp
+aclnnStatus aclnnScale(
+  void*          workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor* executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnScaleGetWorkspaceSize
 
 - **参数说明：**
 
-  - x(aclTensor*, 计算输入): 算子输入的Tensor，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。    
-  - scale(aclTensor*, 计算输入): 算子输入的Tensor，Device侧的aclTensor，数据类型需要与x的数据类型相同，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND.shape满足broadcast要求，参见[功能说明](#功能说明)。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
-  - bias(aclTensor*, 计算输入): 算子输入的Tensor，Device侧的aclTensor，不为空时数据类型需要与scale的数据类型相同，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND.shape与scale保持一致。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
-  - axis(int64_t, 计算输入) host侧INT64类型，指定进行scale的起始轴, 取值范围 [-x_rank, x_rank)（x_rank表示x的shape维度）。
-  - numAxes(int64_t, 计算输入) host侧INT64类型，指定进行scale的轴长度, 取值范围 >= -1, numAxes = -1, 表示从axis轴开始scale到最后一轴。
-  - scaleFromBlob(bool, 计算输入) host侧BOOL类型，指定要scaleFromBlob类型, True: scale from blob, 使用numAxes + axis进行scale, False: scale from input scale, 从axis开始 scale input scale长度, 忽略numAxes取值。
-  - y(aclTensor*, 计算输出): 输出Tensor，shape维度和x保持一致，Device侧的aclTensor，数据类型需要与x的数据类型相同，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。 
-  - workspaceSize(uint64_t\*, 出参): 返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor\*\*, 出参): 返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 190px">
+  <col style="width: 120px">
+  <col style="width: 250px">
+  <col style="width: 320px">
+  <col style="width: 250px">
+  <col style="width: 120px">
+  <col style="width: 140px">
+  <col style="width: 160px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>x（aclTensor*）</td>
+      <td>输入</td>
+      <td>算子输入的Tensor。</td>
+      <td>支持空Tensor。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>scale（aclTensor*）</td>
+      <td>输入</td>
+      <td>算子输入的Tensor。</td>
+      <td>支持空Tensor。数据类型需要与x的数据类型相同。shape满足broadcast要求（参见<a href="#功能说明">功能说明</a>）。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>bias（aclTensor*）</td>
+      <td>可选输入</td>
+      <td>算子输入的Tensor。</td>
+      <td>支持空Tensor。不为空时数据类型需要与scale的数据类型相同，shape与scale保持一致。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>axis（int64_t）</td>
+      <td>输入</td>
+      <td>指定进行scale的起始轴。</td>
+      <td>取值范围[-x_rank, x_rank)（x_rank表示x的shape维度）。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>numAxes（int64_t）</td>
+      <td>输入</td>
+      <td>指定进行scale的轴长度。</td>
+      <td>取值范围>=-1。numAxes=-1表示从axis轴开始scale到最后一轴。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>scaleFromBlob（bool）</td>
+      <td>输入</td>
+      <td>指定要scaleFromBlob类型。</td>
+      <td><ul><li>True：scale from blob，使用numAxes + axis进行scale；</li><li>False：scale from input scale，从axis开始 scale input scale长度，忽略numAxes取值。</li></ul></td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>y（aclTensor*）</td>
+      <td>输出</td>
+      <td>输出Tensor。</td>
+      <td>支持空Tensor。数据类型需要与x的数据类型相同，shape维度和x保持一致。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
 - **返回值：**
 
@@ -89,10 +209,10 @@ $$
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1147px"><colgroup>
-  <col style="width: 299px">
-  <col style="width: 136px">
-  <col style="width: 712px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>
