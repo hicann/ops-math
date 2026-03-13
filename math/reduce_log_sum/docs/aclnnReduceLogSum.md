@@ -18,20 +18,124 @@
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnReduceLogSumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReduceLogSum”接口执行计算。
-* `aclnnStatus aclnnReduceLogSumGetWorkspaceSize(const aclTensor* data, const aclIntArray* axes, bool keepDims, bool noopWithEmptyAxes, aclTensor* reduce, uint64_t* workspaceSize, aclOpExecutor** executor)`
-* `aclnnStatus aclnnReduceLogSum(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+
+```Cpp
+aclnnStatus aclnnReduceLogSumGetWorkspaceSize(
+  const aclTensor*   data, 
+  const aclIntArray* axes, 
+  bool               keepDims, 
+  bool               noopWithEmptyAxes, 
+  aclTensor*         reduce, 
+  uint64_t*          workspaceSize, 
+  aclOpExecutor**    executor)
+```
+
+```Cpp
+aclnnStatus aclnnReduceLogSum(
+  void*          workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor* executor, 
+  aclrtStream    stream)
+```
+
 
 ## aclnnReduceLogSumGetWorkspaceSize
 
 - **参数说明**：
 
-  * data（aclTensor*, 计算输入）：表示参与计算的目标张量，Device侧的aclTensor，shape支持0-8维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，数据类型支持FLOAT16、FLOAT32，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  * axes（aclIntArray*, 计算输入）：指定计算维度，Host侧的aclIntArray，数据类型支持INT64，取值范围为[-self.dim(), self.dim()-1]。
-  * keepDims（bool, 计算输入）：指定是否在输出张量中保留输入张量的维度，Host侧的BOOL值。
-  * noopWithEmptyAxes（bool, 计算输入）：指定axes为空时的行为：false即对所有轴进行计算；true即不进行计算，输出张量等于输入张量，Host侧的BOOL值。
-  * reduce（aclTensor*, 计算输出）：表示计算后的结果，Device侧的aclTensor，shape支持0-8维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，数据类型支持FLOAT16、FLOAT32，需与data一致，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  * workspaceSize（uint64_t*, 出参）：返回需要在Device侧申请的workspace大小。
-  * executor（aclOpExecutor**, 出参）：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 210px">
+  <col style="width: 120px">
+  <col style="width: 280px">
+  <col style="width: 320px">
+  <col style="width: 220px">
+  <col style="width: 120px">
+  <col style="width: 140px">
+  <col style="width: 140px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>data（aclTensor*）</td>
+      <td>输入</td>
+      <td>表示参与计算的目标张量。</td>
+      <td>支持空Tensor。</td>
+      <td>FLOAT16、FLOAT32</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>axes（aclIntArray*）</td>
+      <td>输入</td>
+      <td>指定计算维度。</td>
+      <td>取值范围为[-data.dim(), data.dim()-1]。</td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>keepDims（bool）</td>
+      <td>输入</td>
+      <td>指定是否在输出张量中保留输入张量的维度。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>noopWithEmptyAxes（bool）</td>
+      <td>输入</td>
+      <td>指定axes为空时的行为。</td>
+      <td><ul><li>false：对所有轴进行计算；</li><li>true：不进行计算，输出张量等于输入张量。</li></ul></td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>reduce（aclTensor*）</td>
+      <td>输出</td>
+      <td>表示计算后的结果。</td>
+      <td>支持空Tensor。数据类型需与data一致。shape需要是data经过计算后的shape。</td>
+      <td>FLOAT16、FLOAT32</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
 - **返回值：**
 
@@ -114,7 +218,7 @@
 
 - **返回值**：
 
-  **aclnnStatus**：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 

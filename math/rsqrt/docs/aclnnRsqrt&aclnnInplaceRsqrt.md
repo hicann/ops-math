@@ -16,13 +16,13 @@
 
 ## 功能说明
 
-- 算子功能：求input(Tensor)每个元素的平方根的倒数
+- 接口功能：求input(Tensor)每个元素的平方根的倒数
 
 - 计算公式：
 
-$$
-out = \frac{1}{\sqrt{input}}
-$$
+  $$
+  out = \frac{1}{\sqrt{input}}
+  $$
 
 ## 函数原型
 
@@ -31,34 +31,117 @@ $$
   - aclnnInplaceRsqrt：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 - 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnRsqrtGetWorkspaceSize”或者”aclnnInplaceRsqrtGetWorkspaceSize“接口获取入参并根据流程计算所需workspace大小，再调用“aclnnRsqrt”或者”aclnnInplaceRsqrt“接口执行计算。
 
-  * `aclnnStatus aclnnRsqrtGetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-  * `aclnnStatus aclnnRsqrt(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
-  * `aclnnStatus aclnnInplaceRsqrtGetWorkspaceSize(aclTensor* selfRef, uint64_t* workspaceSize, aclOpExecutor** executor)`
-  * `aclnnStatus aclnnInplaceRsqrt(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+  ```Cpp
+  aclnnStatus aclnnRsqrtGetWorkspaceSize(
+    const aclTensor* self, 
+    aclTensor*       out, 
+    uint64_t*        workspaceSize, 
+    aclOpExecutor**  executor)
+  ```
+
+  ```Cpp
+  aclnnStatus aclnnRsqrt(
+    void*          workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor* executor, 
+    aclrtStream    stream)
+  ```
+
+  ```Cpp
+  aclnnStatus aclnnInplaceRsqrtGetWorkspaceSize(
+    aclTensor*       selfRef, 
+    uint64_t*        workspaceSize, 
+    aclOpExecutor**  executor)
+  ```
+
+  ```Cpp
+  aclnnStatus aclnnInplaceRsqrt(
+    void*          workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor* executor, 
+    aclrtStream    stream)
+  ```
 
 ## aclnnRsqrtGetWorkspaceSize
 
 - **参数说明：**
   
-  * self(aclTensor*, 计算输入): 公式中的$input$，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND, 且shape需要与out一致。
-    - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、UINT8、INT8、INT16、INT32、INT64、BOOL。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16。
-  * out(aclTensor *, 计算输出): 公式中的$out$，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，且shape需要与self一致。
-    - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。
-  * workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
-  * executor(aclOpExecutor \**, 出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 280px">
+  <col style="width: 320px">
+  <col style="width: 370px">
+  <col style="width: 120px">
+  <col style="width: 140px">
+  <col style="width: 140px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>公式中的input。</td>
+      <td>支持空Tensor。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>公式中的out。</td>
+      <td>支持空Tensor。shape需要与self一致。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
   
-- **返回值：**
+  - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：`self`、`out` 不支持 BFLOAT16。
+  
+- **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1139px"><colgroup>
-  <col style="width: 297px">
-  <col style="width: 135px">
-  <col style="width: 707px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>
@@ -87,10 +170,10 @@ $$
 
 - **参数说明：**
   
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
-  <col style="width: 848px">
+  <col style="width: 849px">
   </colgroup>
   <thead>
     <tr>
@@ -122,7 +205,7 @@ $$
   </tbody>
   </table>
   
-- **返回值：**
+- **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -130,22 +213,72 @@ $$
 
 - **参数说明：**
   
-  * selfRef(aclTensor *, 计算输入): 公式中的$input$，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape维度不大于8。
-    - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。
-  * workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
-  * executor(aclOpExecutor \**, 出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 280px">
+  <col style="width: 320px">
+  <col style="width: 370px">
+  <col style="width: 120px">
+  <col style="width: 140px">
+  <col style="width: 140px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>selfRef（aclTensor*）</td>
+      <td>输入/输出</td>
+      <td>公式中的input。</td>
+      <td>支持空Tensor。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
   
-- **返回值：**
+  - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：`selfRef` 不支持 BFLOAT16。
+  
+- **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1139px"><colgroup>
-  <col style="width: 297px">
-  <col style="width: 135px">
-  <col style="width: 707px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>
@@ -171,10 +304,10 @@ $$
 
 - **参数说明：**
   
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
-  <col style="width: 848px">
+  <col style="width: 849px">
   </colgroup>
   <thead>
     <tr>
@@ -206,7 +339,7 @@ $$
   </tbody>
   </table>
   
-- **返回值：**
+- **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
