@@ -13,40 +13,105 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
+
 ## 功能说明
 
 返回形状和类型相同的张量，所有元素都设置为1。
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnInplaceOneGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnInplaceOne”接口执行计算。
-* `aclnnStatus aclnnInplaceOneGetWorkspaceSize(const aclTensor *selfRef, uint64_t *workspaceSize, aclOpExecutor **executor)`
-* `aclnnStatus aclnnInplaceOne(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnInplaceOneGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnInplaceOne"接口执行计算。
+
+```Cpp
+aclnnStatus aclnnInplaceOneGetWorkspaceSize(
+  aclTensor*      selfRef,
+  uint64_t*       workspaceSize,
+  aclOpExecutor** executor)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceOne(
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
+  aclrtStream    stream)
+```
 
 ## aclnnInplaceOneGetWorkspaceSize
 
-- **参数说明**：
+- **参数说明：**
 
-  * selfRef（aclTensor*, 计算输入）：Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、INT8、 INT16、 INT32、 INT64、UINT8、BOOL、DOUBLE。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、INT8、 INT16、 INT32、 INT64、UINT8、BOOL、DOUBLE、BFLOAT16。
-  * workspaceSize（uint64_t*, 出参）：返回需要在Device侧申请的workspace大小。
-  * executor（aclOpExecutor**, 出参）：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>selfRef（aclTensor*）</td>
+      <td>输出</td>
+      <td>输出张量，公式中的out。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、UINT16、BOOL、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
-- **返回值**：
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16。
+
+
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1145px"><colgroup>
-  <col style="width: 285px">
-  <col style="width: 123px">
-  <col style="width: 737px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 134px">
+  <col style="width: 716px">
   </colgroup>
   <thead>
     <tr>
-      <th>返回值</th>
+      <th>返回码</th>
       <th>错误码</th>
       <th>描述</th>
     </tr></thead>
@@ -54,24 +119,23 @@
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的selfRef为空指针。</td>
+      <td>传入的selfRef是空指针。</td>
     </tr>
     <tr>
       <td>ACLNN_ERR_PARAM_INVALID</td>
       <td>161002</td>
-      <td>selfRef的数据类型不在支持的范围之内。</td>
+      <td>selfRef的数据类型不在支持范围之内。</td>
     </tr>
-  </tbody>
-  </table>
+  </tbody></table>
 
 ## aclnnInplaceOne
 
-- **参数说明**：
+- **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 167px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
   <col style="width: 134px">
-  <col style="width: 848px">
+  <col style="width: 833px">
   </colgroup>
   <thead>
     <tr>
@@ -100,10 +164,9 @@
       <td>输入</td>
       <td>指定执行任务的Stream。</td>
     </tr>
-  </tbody>
-  </table>
+  </tbody></table>
 
-- **返回值**：
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 

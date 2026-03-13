@@ -1,12 +1,14 @@
 # aclnnGcd
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/gcd)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Ascend 950PR/Ascend 950DT</term>                      |    √     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>      |    √     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>       |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
@@ -17,23 +19,104 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnGcdGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnGcd”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnGcdGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnGcd"接口执行计算。
 
-- `aclnnStatus aclnnGcdGetWorkspaceSize(const aclTensor *self, const aclTensor *other, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnGcd(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnGcdGetWorkspaceSize(
+  const aclTensor*  self,
+  const aclTensor*  other,
+  aclTensor*        out,
+  uint64_t*         workspaceSize,
+  aclOpExecutor**   executor)
+```
+
+```Cpp
+aclnnStatus aclnnGcd(
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
+  aclrtStream    stream)
+```
 
 ## aclnnGcdGetWorkspaceSize
 
 - **参数说明：**
-  - self(aclTensor*, 计算输入)：表示待转换的目标张量，Device侧的aclTensor。数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。shape支持1~8维度，shape与other的shape满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：与other推导后的数据类型支持INT16、INT32、INT64。
-    - <term>Ascend 950PR/Ascend 950DT</term>：与other推导后的数据类型支持UINT8、INT8、INT16、INT32、INT64。
-  - other(aclTensor*, 计算输入)：表示待转换的目标张量，Device侧的aclTensor。数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），shape支持1~8维度，shape需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：与self推导后的数据类型支持INT16、INT32、INT64。
-    - <term>Ascend 950PR/Ascend 950DT</term>：与self推导后的数据类型支持UINT8、INT8、INT16、INT32、INT64。
-  - out(aclTensor*, 计算输出)：公式中输入`out`，Device侧的aclTensor。数据类型是self与other推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)），shape支持1~8维度，shape需要与self和other做broadcast后的shape一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。数据类型支持UINT8、INT8、UINT16、INT16、INT32、UINT32、INT64、UINT64。
-  - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
+
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>表示待转换的目标张量。</td>
+      <td>数据类型与other的数据类型需满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。shape与other的shape满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>UINT8、INT8、INT16、INT32、INT64</td>
+      <td>ND</td>
+      <td>1-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>other（aclTensor*）</td>
+      <td>输入</td>
+      <td>表示待转换的目标张量。</td>
+      <td>数据类型与self的数据类型需满足数据类型推导规则。shape需要与self满足broadcast关系。</td>
+      <td>UINT8、INT8、INT16、INT32、INT64</td>
+      <td>ND</td>
+      <td>1-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>公式中的out。</td>
+      <td>数据类型是self与other推导之后可转换的数据类型。shape需要与self和other做<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>后的shape一致。</td>
+      <td>UINT8、INT8、UINT16、INT16、INT32、UINT32、INT64、UINT64</td>
+      <td>ND</td>
+      <td>1-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
+
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持UINT8、INT8数据类型。
 
 - **返回值：**
 
@@ -41,10 +124,10 @@
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
-  <col style="width: 287px">
-  <col style="width: 124px">
-  <col style="width: 739px">
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
   </colgroup>
   <thead>
     <tr>
@@ -73,7 +156,7 @@
       <td>self和other的shape不满足broadcast规则。</td>
     </tr>
     <tr>
-      <td>self和other进行broadcast后的shape与out不一样。</td>
+      <td>self和other进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>后的shape与out不一样。</td>
     </tr>
   </tbody>
   </table>
@@ -83,39 +166,39 @@
 - **参数说明：**
 
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 167px">
-  <col style="width: 134px">
-  <col style="width: 848px">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>参数名</th>
-      <th>输入/输出</th>
-      <th>描述</th>
-    </tr></thead>
-  <tbody>
-    <tr>
-      <td>workspace</td>
-      <td>输入</td>
-      <td>在Device侧申请的workspace内存地址。</td>
-    </tr>
-    <tr>
-      <td>workspaceSize</td>
-      <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnGcdGetWorkspaceSize获取。</td>
-    </tr>
-    <tr>
-      <td>executor</td>
-      <td>输入</td>
-      <td>op执行器，包含了算子计算流程。</td>
-    </tr>
-    <tr>
-      <td>stream</td>
-      <td>输入</td>
-      <td>指定执行任务的Stream。</td>
-    </tr>
-  </tbody>
-  </table>
+    <col style="width: 153px">
+    <col style="width: 124px">
+    <col style="width: 872px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>workspace</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace内存地址。</td>
+      </tr>
+      <tr>
+        <td>workspaceSize</td>
+        <td>输入</td>
+        <td>在Device侧申请的workspace大小，由第一段接口aclnnGcdGetWorkspaceSize获取。</td>
+      </tr>
+      <tr>
+        <td>executor</td>
+        <td>输入</td>
+        <td>op执行器，包含了算子计算流程。</td>
+      </tr>
+      <tr>
+        <td>stream</td>
+        <td>输入</td>
+        <td>指定执行任务的Stream。</td>
+      </tr>
+    </tbody>
+    </table>
 
 - **返回值：**
 
@@ -260,4 +343,3 @@ int main() {
   return 0;
 }
 ```
-
