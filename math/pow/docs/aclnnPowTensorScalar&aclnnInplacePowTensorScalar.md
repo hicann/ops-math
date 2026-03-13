@@ -16,57 +16,52 @@
 ## 功能说明
 
 - 接口功能：exponent每个元素作为input对应元素的幂完成计算。
+
 - 计算公式：
 
-$$
-out_i = self_i^{exponent_i}
-$$
-
-- 算子约束：INT32整型计算在如下范围以外的场景，会出现超时；
-
-  | shape  | exponent_value|
-  |----|----|
-  |<=100000（十万） |-200000000~200000000(两亿)|
-  |<=1000000（百万） |-20000000~20000000(两千万)|
-  |<=10000000（千万） |-2000000~2000000(两百万)|
-  |<=100000000（亿） |-200000~200000(二十万)|
-  |<=1000000000（十亿） |-20000~20000(两万)|
+  $$
+  out_i = self_i^{exponent_i}
+  $$
 
 ## 函数原型
 
- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnPowTensorScalarGetWorkspaceSize”或者“aclnnInplacePowTensorScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnPowTensorScalar”或者“aclnnInplacePowTensorScalar”接口执行计算。
+aclnnPowTensorScalar和aclnnInplacePowTensorScalar实现相同的功能，使用区别如下：
+- aclnnPowTensorScalar：需新建一个输出张量对象存储计算结果。
+- aclnnInplacePowTensorScalar：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
+
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用”aclnnPowTensorScalarGetWorkspaceSize”或者”aclnnInplacePowTensorScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用”aclnnPowTensorScalar”或者”aclnnInplacePowTensorScalar”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnPowTensorScalarGetWorkspaceSize(
-  const aclTensor* self, 
-  const aclScalar* exponent, 
-  const aclTensor* out, 
-  uint64_t* workspaceSize, 
-  aclOpExecutor** executor)
+  const aclTensor*  self,
+  const aclScalar*  exponent,
+  const aclTensor*  out,
+  uint64_t*         workspaceSize,
+  aclOpExecutor**   executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnPowTensorScalar(
-  void *workspace, 
-  uint64_t workspaceSize,  
-  aclOpExecutor *executor, 
-  const aclrtStream stream)
+  void*             workspace,
+  uint64_t          workspaceSize,
+  aclOpExecutor*    executor,
+  aclrtStream       stream)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplacePowTensorScalarGetWorkspaceSize(
-  const aclTensor* self, 
-  const aclScalar* exponent, 
-  uint64_t *workspaceSize, 
-  aclOpExecutor **executor)
+  const aclTensor*  self,
+  const aclScalar*  exponent,
+  uint64_t*         workspaceSize,
+  aclOpExecutor**   executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplacePowTensorScalar(
-  void *workspace, 
-  uint64_t workspaceSize,  
-  aclOpExecutor *executor, 
-  aclrtStream stream)
+  void*             workspace,
+  uint64_t          workspaceSize,
+  aclOpExecutor*    executor,
+  aclrtStream       stream)
 ```
 
 ## aclnnPowTensorScalarGetWorkspaceSize
@@ -96,9 +91,9 @@ aclnnStatus aclnnInplacePowTensorScalar(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
-      <td>公式中的输入self，Device侧的aclTensor。</td>
+      <td>公式中的输入self</td>
       <td>数据类型需要是与exponent的数据类型推导之后可转换的数据类型。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、BOOL、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
@@ -106,19 +101,19 @@ aclnnStatus aclnnInplacePowTensorScalar(
       <td>√</td>
     </tr>
     <tr>
-      <td>exponent</td>
+      <td>exponent（aclScalar*）</td>
       <td>输入</td>
-      <td>公式中的输入exponent，Device侧的aclScalar。</td>
-      <td>数据类型不能和self的数据类型同时为BOOL。self和exponent推导后的数据类型为整型时，exponent需要大于等于0。exponent的值需要在self和exponent推导后的数据类型的取值范围内。</td>
+      <td>公式中的输入exponent</td>
+      <td>数据类型不能和self的数据类型同时为BOOL。<br>self和exponent推导后的数据类型为整型时，exponent需要大于等于0。<br>exponent的值需要在self和exponent推导后的数据类型的取值范围内。（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、BOOL、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>公式中的输出`out`，Device侧的aclTensor。</td>
+      <td>公式中的输出out</td>
       <td>shape需要与self一致, 数据类型需要是self的数据类型与exponent的数据类型推导之后可转换的数据类型</td>
       <td>FLOAT、FLOAT16、DOUBLE、BOOL、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16、UINT16、UINT32、UINT64</td>
       <td>ND</td>
@@ -126,7 +121,7 @@ aclnnStatus aclnnInplacePowTensorScalar(
       <td>-</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -136,7 +131,7 @@ aclnnStatus aclnnInplacePowTensorScalar(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -220,7 +215,7 @@ aclnnStatus aclnnInplacePowTensorScalar(
     <tr>
       <td>workspaceSize</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceExp2GetWorkspaceSize获取。</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnPowTensorScalarGetWorkspaceSize获取。</td>
     </tr>
     <tr>
       <td>executor</td>
@@ -243,70 +238,70 @@ aclnnStatus aclnnInplacePowTensorScalar(
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1526px"><colgroup>
-  <col style="width: 154px">
-  <col style="width: 125px">
-  <col style="width: 213px">
-  <col style="width: 288px">
-  <col style="width: 333px">
-  <col style="width: 124px">
-  <col style="width: 138px">
-  <col style="width: 151px">
-  </colgroup>
-  <thead>
-    <tr>
-      <th>参数名</th>
-      <th>输入/输出</th>
-      <th>描述</th>
-      <th>使用说明</th>
-      <th>数据类型</th>
-      <th>数据格式</th>
-      <th>维度(shape)</th>
-      <th>非连续Tensor</th>
-    </tr></thead>
-  <tbody>
-    <tr>
-      <td>selfRet</td>
-      <td>输入</td>
-      <td>公式中的输入self/out，Device侧的aclTensor。</td>
-      <td>无</td>
-      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、INT16、BFLOAT16</td>
-      <td>ND</td>
-      <td>-</td>
-      <td>√</td>
-    </tr>
-    <tr>
-      <td>exponent</td>
-      <td>输入</td>
-      <td>公式中的输入exponent，Device侧的aclScalar。</td>
-      <td>selfRef和exponent推导后的数据类型为整型时，exponent需要大于等于0。exponent的值需要在selfRef和exponent推导后的数据类型的取值范围内。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、INT16、BFLOAT16</td>
-      <td>ND</td>
-      <td>0-8</td>
-      <td>-</td>
-    </tr>
-    <tr>
-      <td>workspaceSize</td>
-      <td>输出</td>
-      <td>返回需要在Device侧申请的workspace大小。</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-    </tr>
-    <tr>
-      <td>executor</td>
-      <td>输出</td>
-      <td>返回op执行器，包含了算子计算流程。</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-    </tr>
-  </tbody>
-  </table>
+  <table style="undefined;table-layout: fixed; width: 1526px"><colgroup>
+    <col style="width: 154px">
+    <col style="width: 125px">
+    <col style="width: 213px">
+    <col style="width: 288px">
+    <col style="width: 333px">
+    <col style="width: 124px">
+    <col style="width: 138px">
+    <col style="width: 151px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+        <th>使用说明</th>
+        <th>数据类型</th>
+        <th>数据格式</th>
+        <th>维度(shape)</th>
+        <th>非连续Tensor</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>selfRet（aclTensor*）</td>
+        <td>输入</td>
+        <td>公式中的输入self/out</td>
+        <td>无</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、INT16、BFLOAT16</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>exponent（aclScalar*）</td>
+        <td>输入</td>
+        <td>公式中的输入exponent</td>
+        <td>selfRef和exponent推导后的数据类型为整型时，exponent需要大于等于0。<br>exponent的值需要在selfRef和exponent推导后的数据类型的取值范围内。（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、INT16、BFLOAT16</td>
+        <td>ND</td>
+        <td>0-8</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>workspaceSize（uint64_t*）</td>
+        <td>输出</td>
+        <td>返回需要在Device侧申请的workspace大小。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>executor（aclOpExecutor**）</td>
+        <td>输出</td>
+        <td>返回op执行器，包含了算子计算流程。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+    </tbody>
+    </table>
 
 - **返回值**
 
@@ -375,7 +370,7 @@ aclnnStatus aclnnInplacePowTensorScalar(
       <tr>
         <td>workspaceSize</td>
         <td>输入</td>
-        <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceFmodTensorGetWorkspaceSize获取。</td>
+        <td>在Device侧申请的workspace大小，由第一段接口aclnnInplacePowTensorScalarGetWorkspaceSize获取。</td>
       </tr>
       <tr>
         <td>executor</td>
@@ -396,8 +391,17 @@ aclnnStatus aclnnInplacePowTensorScalar(
 
 ## 约束说明
 
-- 确定性计算：
-  - aclnnPowTensorScalar&aclnnInplacePowTensorScalar默认确定性实现。
+- INT32整型计算在如下范围以外的场景，会出现超时：
+
+  | shape  | exponent_value|
+  |----|----|
+  |<=100000（十万） |-200000000~200000000(两亿)|
+  |<=1000000（百万） |-20000000~20000000(两千万)|
+  |<=10000000（千万） |-2000000~2000000(两百万)|
+  |<=100000000（亿） |-200000~200000(二十万)|
+  |<=1000000000（十亿） |-20000~20000(两万)|
+
+- 确定性计算：aclnnPowTensorScalar&aclnnInplacePowTensorScalar默认确定性实现。
 
 - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：该场景下，如果计算结果取值超过了设定的数据类型取值范围，则会以该数据类型的边界值作为结果返回。
 

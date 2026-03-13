@@ -38,35 +38,35 @@
 
 ```Cpp
 aclnnStatus aclnnPowTensorTensorGetWorkspaceSize(
-  const aclTensor* self, 
-  const aclTensor* exponent, 
-  aclTensor* out, 
-  uint64_t* workspaceSize, 
-  aclOpExecutor** executor)
+  const aclTensor*  self,
+  const aclTensor*  exponent,
+  aclTensor*        out,
+  uint64_t*         workspaceSize,
+  aclOpExecutor**   executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnPowTensorTensor(
-  void* workspace, 
-  uint64_t workspaceSize,  
-  aclOpExecutor* executor, 
-  aclrtStream stream)
+  void*             workspace,
+  uint64_t          workspaceSize,
+  aclOpExecutor*    executor,
+  aclrtStream       stream)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplacePowTensorTensorGetWorkspaceSize(
-  const aclTensor* self, 
-  const aclTensor* exponent, 
-  uint64_t* workspaceSize, 
-  aclOpExecutor** executor)
+  const aclTensor*  self,
+  const aclTensor*  exponent,
+  uint64_t*         workspaceSize,
+  aclOpExecutor**   executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplacePowTensorTensor(
-  void* workspace, 
-  uint64_t workspaceSize, 
-  aclOpExecutor* executor, 
-  aclrtStream stream)
+  void*             workspace,
+  uint64_t          workspaceSize,
+  aclOpExecutor*    executor,
+  aclrtStream       stream)
 ```
 
 ## aclnnPowTensorTensorGetWorkspaceSize
@@ -96,37 +96,37 @@ aclnnStatus aclnnInplacePowTensorTensor(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
-      <td>Device侧的aclTensor。</td>
-      <td>self和exponent数据类型不支持同时为BOOL，shape需要与exponent满足broadcast关系。</td>
+      <td>公式中的x，pow运算的底数。</td>
+      <td>self和exponent数据类型不支持同时为BOOL，shape需要与exponent满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT16、BOOL、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>exponent</td>
+      <td>exponent（aclTensor*）</td>
       <td>输入</td>
-      <td>Device侧的aclTensor。</td>
-      <td>self和exponent数据类型不支持同时为BOOL，shape需要与self满足broadcast关系。</td>
+      <td>公式中的exponent，pow运算的指数。</td>
+      <td>self和exponent数据类型不支持同时为BOOL，shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT16、BOOL、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>Device侧的aclTensor。</td>
-      <td>数据类型需要是self与exponent推导之后可转换的数据类型，shape需要是self与exponent broadcast之后的shape。</td>
+      <td>公式中的out，存储计算结果。</td>
+      <td>数据类型需要是self与exponent推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），shape需要是self与exponent <a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>之后的shape。</td>
       <td>FLOAT、FLOAT16、DOUBLE、BOOL、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -136,7 +136,7 @@ aclnnStatus aclnnInplacePowTensorTensor(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -217,7 +217,7 @@ aclnnStatus aclnnInplacePowTensorTensor(
     <tr>
       <td>workspaceSize</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceExp2GetWorkspaceSize获取。</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnPowTensorTensorGetWorkspaceSize获取。</td>
     </tr>
     <tr>
       <td>executor</td>
@@ -263,27 +263,27 @@ aclnnStatus aclnnInplacePowTensorTensor(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
-      <td>输入</td>
-      <td>输入输出tensor，即公式中的输入x与输出out。</td>
-      <td>数据类型是self与exponent推导之后可转换的数据类型，shape需要与exponent满足broadcast关系。</td>
+      <td>self（aclTensor*）</td>
+      <td>输入|输出</td>
+      <td>公式中的x和out，pow运算的底数，计算结果写回此tensor。</td>
+      <td>数据类型是self与exponent推导之后可转换的数据类型，shape需要与exponent满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、INT16、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>exponent</td>
+      <td>exponent（aclTensor*）</td>
       <td>输入</td>
-      <td>公式中的输入exponent。</td>
-      <td>数据类型是self与exponent推导之后可转换的数据类型，shape需要与exponent满足broadcast关系。</td>
+      <td>公式中的exponent，pow运算的指数。</td>
+      <td>数据类型是self与exponent推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），shape需要与exponent满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、INT16、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -293,7 +293,7 @@ aclnnStatus aclnnInplacePowTensorTensor(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（uint64_t*）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -377,7 +377,7 @@ aclnnStatus aclnnInplacePowTensorTensor(
       <tr>
         <td>workspaceSize</td>
         <td>输入</td>
-        <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceFmodTensorGetWorkspaceSize获取。</td>
+        <td>在Device侧申请的workspace大小，由第一段接口aclnnInplacePowTensorTensorGetWorkspaceSize获取。</td>
       </tr>
       <tr>
         <td>executor</td>

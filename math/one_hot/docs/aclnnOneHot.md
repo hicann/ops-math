@@ -15,10 +15,10 @@
 
 ## 功能说明
 
-- 接口功能：对长度为n的输入self， 经过one_hot的计算后得到一个元素数量为n*k的输出out，其中k的值为numClasses。
+- 接口功能：对长度为n的输入self， 经过one_hot的计算后得到一个元素数量为n*k的输出out，其中k的值为numClasses。 
 
-  输出的元素满足下列公式：
-  
+- 计算公式：
+
   $$
   out[i][j]=\left\{
   \begin{aligned}
@@ -28,27 +28,29 @@
   \right.
   $$
 
+
+
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnOneHotGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnOneHot”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnOneHotGetWorkspaceSize(
-  const aclTensor* self, 
-  int              numClasses, 
-  const aclTensor* onValue, 
-  const aclTensor* offValue, 
-  int64_t          axis, 
-  aclTensor*       out, 
-  uint64_t*        workspaceSize, 
+  const aclTensor* self,
+  int              numClasses,
+  const aclTensor* onValue,
+  const aclTensor* offValue,
+  int64_t          axis,
+  aclTensor*       out,
+  uint64_t*        workspaceSize,
   aclOpExecutor**  executor)
 ```
 
 ```Cpp
 aclnnStatus aclnnOneHot(
-  void*          workspace, 
-  uint64_t       workspaceSize, 
-  aclOpExecutor* executor, 
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
   aclrtStream    stream)
 ```
 
@@ -79,67 +81,67 @@ aclnnStatus aclnnOneHot(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
-      <td>Device侧的aclTensor。</td>
-      <td>shape支持1-8维度。</td>
+      <td>输入张量。</td>
+      <td>-</td>
       <td>UINT8、INT32、INT64</td>
       <td>ND</td>
       <td>1-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>numClasses</td>
+      <td>numClasses（int）</td>
       <td>输入</td>
       <td>表示类别数。</td>
-      <td>当self为空Tensor时，numClasses的值需大于0；当self不为空Tensor时，numClasses需大于等于0。若numClasses的值为0，则返回空Tensor。如果self存在元素大于numClasses，这些元素会被编码成全offValue。</td>
+      <td>当self为空Tensor时，numClasses的值需大于0；<br>当self不为空Tensor时，numClasses需大于等于0。<br>若numClasses的值为0，则返回空Tensor。如果self存在元素大于numClasses，这些元素会被编码成全offValue。</td>
       <td>INT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>onValue</td>
+      <td>onValue（aclTensor*）</td>
       <td>输入</td>
-      <td>表示索引位置的填充值，公式中的onValue，Device侧的aclTensor。</td>
-      <td>shape支持1-8维度，且计算时只使用其中第一个元素值进行计算。数据类型与out一致。</td>
+      <td>表示索引位置的填充值，公式中的onValue。</td>
+      <td>计算时只使用其中第一个元素值进行计算。<br>数据类型与out一致。</td>
       <td>FLOAT16、FLOAT、INT8、UINT8、INT32、INT64</td>
       <td>ND</td>
       <td>1-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>offValue</td>
+      <td>offValue（aclTensor*）</td>
       <td>输入</td>
-      <td>表示非索引位置的填充值，公式中的offValue，Device侧的aclTensor。</td>
-      <td>shape支持1-8维度，且计算时只使用其中第一个元素值进行计算。数据类型与out一致。</td>
+      <td>表示非索引位置的填充值，公式中的offValue。</td>
+      <td>计算时只使用其中第一个元素值进行计算。<br>数据类型与out一致。</td>
       <td>FLOAT16、FLOAT、INT8、UINT8、INT32、INT64</td>
       <td>ND</td>
       <td>1-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>axis</td>
+      <td>axis（int64_t）</td>
       <td>输入</td>
       <td>表示编码向量的插入维度。</td>
       <td>最小值为-1，最大值为self的维度数。若值为-1，编码向量会往self的最后一维插入。</td>
-      <td>FLOAT16、FLOAT、INT8、UINT8、INT32、INT64</td>
+      <td>INT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>表示one-hot张量，公式中的输出out，Device侧的aclTensor。</td>
-      <td>最小值为-1，最大值为self的维度数。若值为-1，编码向量会往self的最后一维插入。</td>
+      <td>表示one-hot张量，公式中的输出out。</td>
+      <td>输出维度比self维度多1维，输出的shape与在self的shape在axis轴插入numClasses后的shape一致。</td>
       <td>FLOAT16、FLOAT、INT8、UINT8、INT32、INT64</td>
       <td>ND</td>
       <td>1-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -149,7 +151,7 @@ aclnnStatus aclnnOneHot(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -177,7 +179,7 @@ aclnnStatus aclnnOneHot(
   </colgroup>
   <thead>
     <tr>
-      <th>返回码</th>
+      <th>返回值</th>
       <th>错误码</th>
       <th>描述</th>
     </tr></thead>
@@ -266,7 +268,7 @@ aclnnStatus aclnnOneHot(
 
 - 确定性计算：
   - aclnnOneHot默认确定性实现。
-- <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+- <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
   - 当offValue的数据类型为INT64时，其首元素取值仅支持0或1。
   - 输入self大小为selfSize，输出out大小为outSize，ub大小为ubSize，当axis取值为0，满足下列条件的场景暂不支持：
     - selfSize * 3 < ubSize - 16K < outSize * 3 / 2

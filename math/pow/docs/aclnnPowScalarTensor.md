@@ -23,7 +23,7 @@ $$
 out_i = x_i^{exponent_i}
 $$
 
-- 算子约束：INT32整型计算在如下范围以外的场景，会出现超时；
+- 算子约束：INT32整型计算在如下范围以外的场景，会出现超时。
 
   | shape  | exponent_value|
   |----|----|
@@ -81,9 +81,9 @@ aclnnStatus aclnnPowScalarTensor(
       </tr></thead>
     <tbody>
       <tr>
-        <td>self</td>
+        <td>self（aclScalar*）</td>
         <td>输入</td>
-        <td>输入aclScalar*</td>
+        <td>pow运算中的底数，公式中的x</td>
       <td>数据类型与exponent满足<a href ="../../../docs/zh/context/TensorScalar互推导关系.md">TensorScalar互推导关系</a>。</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
         <td>-</td>
@@ -91,9 +91,9 @@ aclnnStatus aclnnPowScalarTensor(
         <td>-</td>
       </tr>
       <tr>
-        <td>exponent</td>
+        <td>exponent（aclTensor*）</td>
         <td>输入</td>
-        <td>输入aclTensor*</td>
+        <td>pow运算中的指数，公式中的exponent</td>
       <td>数据类型与self满足<a href ="../../../docs/zh/context/TensorScalar互推导关系.md">TensorScalar互推导关系</a>。</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
         <td>ND</td>
@@ -101,9 +101,9 @@ aclnnStatus aclnnPowScalarTensor(
         <td>√</td>
       </tr>
       <tr>
-        <td>out</td>
+        <td>out（aclTensor*）</td>
         <td>输出</td>
-        <td>输出aclTensor*</td>
+        <td>pow运算中的指数输出，公式中的out</td>
       <td>数据类型需要是self的数据类型与exponent的数据类型推导之后可转换的数据类型（参见<a href ="../../../docs/zh/context/互转换关系.md">互转换关系</a>）。</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16、UINT16、UINT32、UINT64</td>
         <td>ND</td>
@@ -111,7 +111,7 @@ aclnnStatus aclnnPowScalarTensor(
         <td>√</td>
       </tr>
       <tr>
-        <td>workspaceSize</td>
+        <td>workspaceSize（uint64_t*）</td>
         <td>输出</td>
         <td>返回需要在Device侧申请的workspace大小。</td>
         <td>-</td>
@@ -121,7 +121,7 @@ aclnnStatus aclnnPowScalarTensor(
         <td>-</td>
       </tr>
       <tr>
-        <td>executor</td>
+        <td>executor（aclOpExecutor**）</td>
         <td>输出</td>
         <td>返回op执行器，包含了算子计算流程。</td>
         <td>-</td>
@@ -222,7 +222,7 @@ aclnnStatus aclnnPowScalarTensor(
 - 确定性计算：
   - aclnnPowScalarTensor默认确定性实现。
 
-<term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：该场景下，如果计算结果取值超过了设定的数据类型取值范围，则会以该数据类型的边界值作为结果返回。
+- <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：该场景下，如果计算结果取值超过了设定的数据类型取值范围，则会以该数据类型的边界值作为结果返回。
 
 ## 调用示例
 
