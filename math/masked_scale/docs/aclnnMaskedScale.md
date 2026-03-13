@@ -16,8 +16,8 @@
 
 ## 功能说明
 
-- **算子功能**：完成elementwise计算
-- **计算公式**：
+- 接口功能：完成elementwise计算。
+- 计算公式：
 
   $$
   out = self \times mask \times scale
@@ -27,36 +27,36 @@
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnMaskedScaleGetWorkspaceSize”接口获取入参并根据流程计算所需workspace大小，再调用“aclnnMaskedScale”接口执行计算。
 
-  ```Cpp
-  aclnnStatus  aclnnMaskedScaleGetWorkspaceSize(
-    const aclTensor* self, 
-    const aclTensor* mask, 
-    float scale, 
-    aclTensor* y, 
-    uint64_t*        workspaceSize, 
-    aclOpExecutor**  executor)
-  ```
+```Cpp
+aclnnStatus aclnnMaskedScaleGetWorkspaceSize(
+  const aclTensor*     self, 
+  const aclTensor*     mask,
+  float                scale,
+  aclTensor*           y, 
+  uint64_t*            workspaceSize, 
+  aclOpExecutor**      executor)
+```
 
-  ```Cpp
-  aclnnStatus aclnnMaskedScale(
-    void*          workspace, 
-    uint64_t       workspaceSize, 
-    aclOpExecutor* executor, 
-    aclrtStream    stream)
-  ```
+```Cpp
+aclnnStatus aclnnMaskedScale(
+  void*          workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor* executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnMaskedScaleGetWorkspaceSize
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1496px"><colgroup>
-  <col style="width: 149px">
-  <col style="width: 120px">
-  <col style="width: 205px">
-  <col style="width: 305px">
-  <col style="width: 317px">
-  <col style="width: 121px">
-  <col style="width: 134px">
+  <table style="undefined;table-layout: fixed; width: 1445px"><colgroup>
+  <col style="width: 165px">
+  <col style="width: 160px">
+  <col style="width: 150px">
+  <col style="width: 300px">
+  <col style="width: 280px">
+  <col style="width: 115px">
+  <col style="width: 130px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -85,11 +85,7 @@
       <td>mask</td>
       <td>输入</td>
       <td>公式中的输入mask。</td>
-      <td>
-        <ul>
-          <li>shape需要与self一致。</li>
-        <ul>
-      </td>
+      <td>shape需要与self一致。</td>
       <td>UINT8、INT8、FLOAT16、FLOAT</td>
       <td>ND</td>
       <td>-</td>
@@ -109,11 +105,7 @@
       <td>y</td>
       <td>输出</td>
       <td>公式中的out。</td>
-      <td>
-        <ul>
-          <li>数据类型和shape需要与self一致。</li>
-        </ul>
-      </td>
+      <td>数据类型和shape需要与self一致。</td>
       <td>FLOAT16、BFLOAT16、FLOAT</td>
       <td>ND</td>
       <td>-</td>
