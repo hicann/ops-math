@@ -1,5 +1,7 @@
 # aclnnReal
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/real)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -20,29 +22,99 @@
   $$
   input_i = a_i + b_i * j，a_i是复数的实部，b_i是复数的虚部
   $$
-    
+
   $$
   output_i= a_i
   $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnRealGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReal”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnRealGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnReal"接口执行计算。
 
-* `aclnnStatus aclnnRealGetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-* `aclnnStatus aclnnReal(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnRealGetWorkspaceSize(
+  const aclTensor* self,
+  aclTensor*       out,
+  uint64_t*        workspaceSize,
+  aclOpExecutor**  executor)
+```
+
+```Cpp
+aclnnStatus aclnnReal(
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
+  aclrtStream    stream)
+```
 
 ## aclnnRealGetWorkspaceSize
 
 - **参数说明：**
 
-  * self(aclTensor*, 计算输入)：Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、COMPLEX64、COMPLEX32、COMPLEX128。
-  * out(aclTensor\*, 计算输出)：Device侧的aclTensor。输入输出关系见表1，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    * <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE。
-  * workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
-
-  * executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>需要取实部的输入张量。</td>
+      <td>支持输入输出关系见<a href="#表-1-输入输出数据类型对应关系">表1</a>。</td>
+      <td>FLOAT、FLOAT16、COMPLEX64、COMPLEX32、COMPLEX128</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>实部输出张量。</td>
+      <td>支持输入输出关系见<a href="#表-1-输入输出数据类型对应关系">表1</a>。</td>
+      <td>FLOAT、FLOAT16、DOUBLE</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
@@ -123,15 +195,23 @@
 - 确定性计算：
   - aclnnReal默认确定性实现。
 
-**表 1**  输入/输出数据类型对应关系
+<p id="表-1-输入输出数据类型对应关系"><strong>表 1</strong>  输入/输出数据类型对应关系</p>
 
-| self类型  | out类型 |
-| :------: | :--: |
-| FLOAT  | FLOAT |
-| FLOAT16  | FLOAT16 |
-| COMPLEX64  | FLOAT |
-| COMPLEX32  | FLOAT16 |
-| COMPLEX128  | DOUBLE |
+<table>
+  <thead>
+    <tr>
+      <th style="width: 150px; text-align: center;">self类型</th>
+      <th style="width: 150px; text-align: center;">out类型</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style="text-align: center;">FLOAT</td><td style="text-align: center;">FLOAT</td></tr>
+    <tr><td style="text-align: center;">FLOAT16</td><td style="text-align: center;">FLOAT16</td></tr>
+    <tr><td style="text-align: center;">COMPLEX64</td><td style="text-align: center;">FLOAT</td></tr>
+    <tr><td style="text-align: center;">COMPLEX32</td><td style="text-align: center;">FLOAT16</td></tr>
+    <tr><td style="text-align: center;">COMPLEX128</td><td style="text-align: center;">DOUBLE</td></tr>
+  </tbody>
+</table>
 
 ## 调用示例
 

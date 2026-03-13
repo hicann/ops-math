@@ -1,5 +1,7 @@
 # aclnnPrecisionCompare
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/precision_compare)
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -17,26 +19,103 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnPrecisionCompareGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnPrecisionCompare”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnPrecisionCompareGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnPrecisionCompare"接口执行计算。
 
-* `aclnnStatus aclnnPrecisionCompareGetWorkspaceSize(const aclTensor *golden, const aclTensor *realdata, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-* `aclnnStatus aclnnPrecisionCompare(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnPrecisionCompareGetWorkspaceSize(
+  const aclTensor*  golden,
+  const aclTensor*  realdata,
+  aclTensor*        out,
+  uint64_t*         workspaceSize,
+  aclOpExecutor**   executor)
+```
+
+```Cpp
+aclnnStatus aclnnPrecisionCompare(
+  void*          workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor* executor,
+  aclrtStream    stream)
+```
 
 ## aclnnPrecisionCompareGetWorkspaceSize
 
 - **参数说明：**
 
-  * golden(aclTensor*, 计算输入): Device侧的aclTensor，数据类型支持FLOAT16、FLOAT、BFLOAT16，数据类型需要与realdata一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape支持0-8维，且shape需要与realdata一致。
-  * realdata(aclTensor*, 计算输入): Device侧的aclTensor，数据类型支持FLOAT16、FLOAT、BFLOAT16, 数据类型需要与golden一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape支持0-8维，且shape需要与golden一致。
-  * out(aclTensor*, 计算输出): Device侧的aclTensor，数据类型支持UINT32，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape支持0维。
-  ```
-  0: 成功。
-  1: 精度比对算子内部入参校验失败。
-  2: 精度比对算子内部执行失败。
-  503: 精度比对异常，不触发管理面故障上报。
-  ```
-  * workspaceSize(uint64_t *, 出参): 返回需要在Device侧申请的workspace大小。
-  * executor(aclOpExecutor **, 出参): 返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>golden（aclTensor*）</td>
+      <td>输入</td>
+      <td>精度比对的基准数据。</td>
+      <td>数据类型需要与realdata一致，shape需要与realdata一致。</a>。</td>
+      <td>FLOAT16、FLOAT、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>realdata（aclTensor*）</td>
+      <td>输入</td>
+      <td>精度比对的待测数据。</td>
+      <td>数据类型需要与golden一致，shape需要与golden一致。</td>
+      <td>FLOAT16、FLOAT、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>精度比对的结果状态码。</td>
+      <td>只支持0维。返回值含义：<br>0：成功。<br>1：精度比对算子内部入参校验失败。<br>2：精度比对算子内部执行失败。<br>503：精度比对异常，不触发管理面故障上报。</td>
+      <td>UINT32</td>
+      <td>ND</td>
+      <td>0</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
