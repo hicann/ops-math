@@ -49,6 +49,7 @@ ge::graphStatus DoTiling(gert::TilingContext* context, uint64_t& tilingKey,
     return ge::GRAPH_SUCCESS;
 }
 
+namespace {
 // 定义数据类型组合结构体
 struct DtypeCombination {
     ge::DataType input0;
@@ -151,10 +152,12 @@ const std::unordered_map<DtypeCombination, TilingFunc, DtypeCombinationHash> DTY
          OP_LOGD("MulTiling", "Enter complex32 branch.");
          return DoTiling<MulComplex32Op<int32_t, int64_t>::OpDag>(tiling->GetContext(), tiling->tilingKey_);
      }},
-    {{ge::DT_COMPLEX64, ge::DT_COMPLEX64, ge::DT_COMPLEX64}, [](MulTiling* tiling) {
+    {{ge::DT_COMPLEX64, ge::DT_COMPLEX64, ge::DT_COMPLEX64},
+     [](MulTiling* tiling) {
          OP_LOGD("MulTiling", "Enter complex64 branch.");
          return DoTiling<MulOp<int64_t>::OpDag>(tiling->GetContext(), tiling->tilingKey_);
      }}};
+}  // 匿名命名空间结束
 
 ge::graphStatus MulTiling::GetShapeAttrsInfo() {
     return ge::GRAPH_SUCCESS;
