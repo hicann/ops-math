@@ -60,11 +60,30 @@ protected:
     {
         int dSize = ge::GetSizeByDataType(dataType);
         // 检查输入buf是否够用
-        int64_t needInputBufSize =
+        // 没有左pad时的最大输入buf
+        int64_t maxInputBufSize =
             AlignBlockSize(data->w4ubFactorW * dSize) * data->lines4ubFactorW * data->lines4ubFactorH;
-        EXPECT_GE(data->inputBufferSize, needInputBufSize);
+        std::cout << "CheckUnFullLoadBuf, nopad needInputBufSize:" << maxInputBufSize << std::endl;
+        // 计算有左pad场景的最大输入buff
+        int64_t inputWRectOffset = data->ubFactorW * data->input.wStride;
+        for (int64_t start = 0; start < data->input.wPaddingBefore; start += inputWRectOffset) {
+            if (start + data->w4ubFactorW <= data->input.wPaddingBefore) {
+                continue;
+            }
+            int64_t padPart = data->input.wPaddingBefore - start;
+            int64_t restPart = data->w4ubFactorW - padPart;
+            int64_t needInputBufSize = (AlignBlockSize(padPart * dSize) + AlignBlockSize(restPart * dSize)) *
+                                       data->lines4ubFactorW * data->lines4ubFactorH;
+            std::cout << "CheckUnFullLoadBuf, input w interval=[" << start << ", " << start + data->w4ubFactorW << "]"
+                      << ", padPart=" << padPart << ", restPart=" << restPart
+                      << ", needInputBufSize:" << needInputBufSize << std::endl;
+            maxInputBufSize = std::max(maxInputBufSize, needInputBufSize);
+        }
+        std::cout << "CheckUnFullLoadBuf, max needInputBufSize:" << maxInputBufSize << std::endl;
+        EXPECT_GE(data->inputBufferSize, maxInputBufSize);
         // 检查输出buf是否够用
         int64_t needOutputBufSize = data->ubFactorH * data->ubFactorW * data->ubFactorNC * dSize;
+        std::cout << "CheckUnFullLoadBuf, needOutputBufSize:" << needOutputBufSize << std::endl;
         EXPECT_GE(data->outputBufferSize, needOutputBufSize);
         // 检查输入元素数量是否不超过64K
         int64_t inputElementCount = data->w4ubFactorW * data->lines4ubFactorW * data->lines4ubFactorH;
@@ -300,4 +319,40 @@ TEST_F(Im2colTilingNCHWTest, Im2colTilingNCHWTest_nopad_cuthw_bufSize_notExceed)
     TestUnFullLoadNopadBufSize({1, 1, 4409, 1}, ge::DT_FLOAT, {51, 1}, {1, 1}, {1, 1});
     TestUnFullLoadNopadBufSize({1, 80, 773, 67}, ge::DT_FLOAT, {6, 6}, {2, 2}, {1, 1});
     TestUnFullLoadNopadBufSize({1, 69, 1453, 1}, ge::DT_FLOAT, {124, 1}, {1, 1}, {1, 1});
+}
+
+TEST_F(Im2colTilingNCHWTest, Im2colTilingNCHWTest_pad_bigLeftPad_int8_cuthw)
+{
+    gert::TilingContextPara tilingContextPara(
+        "Im2col",
+        {
+            {{{1, 1, 256, 720}, {1, 1, 256, 720}}, ge::DT_INT16, ge::FORMAT_NCHW},
+        },
+        {
+            {{{1, 512, 129, 984}, {1, 512, 129, 984}}, ge::DT_INT16, ge::FORMAT_NCHW},
+        },
+        {
+            {"ksizes", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({128, 4})},
+            {"strides", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1, 1})},
+            {"dilations", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1, 1})},
+            {"padding_mode", Ops::Math::AnyValue::CreateFrom<std::string>("CALCULATED")},
+            {"pads", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0, 0, 257, 10})},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    ASSERT_TRUE(tilingRet);
+    EXPECT_EQ(tilingInfo.tilingKey, 0b0'0'1'00000001'00000000);
+    ASSERT_EQ(tilingInfo.tilingDataSize, sizeof(Im2ColNCHWTilingData));
+    Im2ColNCHWTilingData* data = reinterpret_cast<Im2ColNCHWTilingData*>(tilingInfo.tilingData.get());
+    EXPECT_EQ(data->ubFactorH, 388);
+    EXPECT_EQ(data->ubFactorW, 128);
+    EXPECT_EQ(data->ubFactorNC, 1);
+    EXPECT_EQ(data->w4ubFactorW, 131);
+    EXPECT_EQ(data->convKernelNumInWidth, 984);
+    EXPECT_EQ(data->convKernelNumInHeight, 129);
+    EXPECT_EQ(data->totalRectAngles, 2064);
+    EXPECT_EQ(data->rectAnglesPerCore, 33);
+    EXPECT_EQ(tilingInfo.blockNum, 63);
+    CheckUnFullLoadBuf(data, ge::DT_INT16);
 }

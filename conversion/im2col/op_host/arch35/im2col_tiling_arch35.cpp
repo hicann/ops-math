@@ -41,6 +41,8 @@ static constexpr uint32_t NCHW_BUFFER_NUM = 2;
 static constexpr uint64_t NCHW_GATHER_INDEX_SIZE = 0;
 // 最小输出大小
 static constexpr int32_t NCHW_MIN_OUTPUT_BUFFER = 1024;
+// 无效BUFFER大小
+static constexpr int32_t NCHW_INVALID_BUFFER = -1;
 // UB内 gather 操作的最大元素个数
 static constexpr int32_t MAX_UB_GATHER_ELEMENT_NUM = std::numeric_limits<uint16_t>::max();
 // 最大输入输出比率
@@ -390,10 +392,20 @@ std::tuple<int32_t, int32_t> Im2ColTiling::NCHWCalcBufSize(int32_t validBufSize)
     rectH = std::min(rectH, groupH);
     // rectW 对应的输入长度
     int64_t inputW = NCHWCalcBurstLen(rectW, rectH);
-    // 对应最大输入长度
-    int64_t inputW1 = std::abs(inputW - input_.wPaddingBefore);
-    int64_t inputW2 = inputW - inputW1;
-    int64_t alignBurstLen = AlignBlock(inputW1) + AlignBlock(inputW2);
+    if (unlikely(inputW <= 0)) {
+        OP_LOGW(context_, "The input length(%ld) should be positive", inputW);
+        return {NCHW_INVALID_BUFFER, NCHW_INVALID_BUFFER};
+    }
+    // 求对应最大输入长度
+    // 当最后一个包含左pad的输入，超过左pad的长度时，说明存在跨左pad和非左pad的场景，则需要考虑左pad，否则不需要
+    // 当没有需要考虑的左pad时，最大输入长度为 block对齐burstLen
+    // 当有需要考虑的左pad时，最大输入长度为 burstLen 拆分为左pad部分和剩余部分，两部分均block对齐
+    // 则最大为对齐block后再加一个block： (ceil(burstLen / block) + 1) * block
+    int64_t inputWRectOffset = rectW * input_.wStride;
+    int64_t lastLeftPadEnd =
+        input_.wPaddingBefore == 0 ? 0 : Ops::Base::FloorAlign(input_.wPaddingBefore, inputWRectOffset) + inputW;
+    int64_t alignBurstLen =
+        lastLeftPadEnd <= input_.wPaddingBefore ? AlignBlock(inputW) : AlignBlock(inputW + ubBlockElements_);
     // 一行有几个分组
     int64_t groupCnt = groupW >= gatherVRegElements_ ?
                            1 :
