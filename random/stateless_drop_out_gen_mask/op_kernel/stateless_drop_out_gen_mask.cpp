@@ -23,7 +23,6 @@ extern "C" __global__ __aicore__ void stateless_drop_out_gen_mask(
     GM_ADDR shape, GM_ADDR prob, GM_ADDR seed, GM_ADDR seed1, GM_ADDR offset, GM_ADDR y, GM_ADDR workspace,
     GM_ADDR tiling)
 {
-
     REGISTER_TILING_DEFAULT(RandomUnifiedTilingDataStruct);
     GET_TILING_DATA(tilingData, tiling);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);

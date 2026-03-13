@@ -109,9 +109,9 @@ private:
     gert::Shape inputShape_;
     gert::Shape inputSeed_;
     gert::Shape inputOffset_;
-    ge::DataType probDtype_;
-    ge::DataType inputDtype_;
-    ge::DataType outputDtype_;
+    ge::DataType probDtype_{ge::DT_FLOAT};
+    ge::DataType inputDtype_{ge::DT_INT32};
+    ge::DataType outputDtype_{ge::DT_INT32};
 
     uint64_t coreNum_ = 1;
     uint64_t ubSize_ = 0;
