@@ -1502,9 +1502,12 @@ compile_eager_example_cust() {
     cust_aclnnop_paths="${ASCEND_HOME_PATH}/opp/vendors/${VENDOR}_math/op_api/include/aclnnop"
   fi
 
+  local include_dir_mode=""
   for aclnnop_path in ${cust_aclnnop_paths}; do
     local include_dir=$(dirname ${aclnnop_path})
-    local include_dir_mode=$(stat -c %a ${include_dir} 2>/dev/null)
+    if [[ -z "${include_dir_mode}" ]]; then
+      include_dir_mode=$(stat -c %a ${include_dir} 2>/dev/null)
+    fi
     if [ ! -L ${aclnnop_path} ]; then
       chmod u+w ${include_dir} 2>/dev/null
       ln -s ${include_dir} ${aclnnop_path} 2>/dev/null
@@ -1547,7 +1550,6 @@ compile_eager_example_cust() {
   for aclnnop_path in ${cust_aclnnop_paths}; do
     if [ -L ${aclnnop_path} ]; then
       local include_dir=$(dirname ${aclnnop_path})
-      local include_dir_mode=$(stat -c %a ${include_dir} 2>/dev/null)
       rm ${aclnnop_path} 2>/dev/null
       chmod ${include_dir_mode} ${include_dir} 2>/dev/null
     fi
