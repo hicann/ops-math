@@ -86,8 +86,7 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* size, const acl
     if (sizeDimNum < selfDimNum) {
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID,
-            "the number of size %zu must be greater or equal to the number of dimensions \
-            in the self %zu.",
+            "the number of size %zu must be greater or equal to the number of dimensions in the self %zu.",
             sizeDimNum, selfDimNum);
         return false;
     }
