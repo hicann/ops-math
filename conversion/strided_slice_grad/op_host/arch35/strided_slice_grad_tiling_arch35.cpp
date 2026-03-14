@@ -68,6 +68,8 @@ constexpr int64_t TUPLE_INDEX_0 = 0;
 constexpr int64_t TUPLE_INDEX_1 = 1;
 constexpr int64_t TUPLE_INDEX_2 = 2;
 
+constexpr uint32_t BATCH_MODE = 1;
+
 template <typename T>
 void GetIntValue(const gert::Tensor* constTensor, gert::Shape& constShape)
 {
@@ -900,6 +902,10 @@ ge::graphStatus TilingForStridedSliceGrad(gert::TilingContext* context)
     userWorkspaceSize[0] = WORKSPACE_SIZE;
     tilingData.set_workspaceSize(userWorkspaceSize[0]);
     int64_t maxUsedCoreNum = ComputeMaxUsedCoreNum(inputParams);
+    if (!(inputParams.caluMode == MODE_SPLIT_FRONT_NDDMA || inputParams.caluMode == MODE_SPLIT_ALL_NDDMA)) {
+        context->SetScheduleMode(BATCH_MODE);
+    }
+    
     context->SetBlockDim(maxUsedCoreNum);
     context->SetTilingKey(tilingData.get_tilingKey());
     TilingDataToLogging(tilingData);
