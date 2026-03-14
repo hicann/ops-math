@@ -11,7 +11,7 @@
 #include <array>
 #include <vector>
 
-#include "../../../op_api/aclnn_stack.h"
+#include "conversion/pack/op_api/aclnn_stack.h"
 #include "gtest/gtest.h"
 #include "op_api_ut_common/inner/types.h"
 #include "op_api_ut_common/op_api_ut.h"

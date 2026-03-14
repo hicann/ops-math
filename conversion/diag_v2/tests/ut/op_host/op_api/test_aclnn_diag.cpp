@@ -11,7 +11,7 @@
 #include <vector>
 #include "gtest/gtest.h"
 
-#include "conversion/diag_v2/op_host/op_api/aclnn_diag.h"
+#include "conversion/diag_v2/op_api/aclnn_diag.h"
 
 #include "op_api_ut_common/inner/types.h"
 #include "op_api_ut_common/op_api_ut.h"
