@@ -87,6 +87,7 @@ TEST_F(unfold_grad_test, test_case_float32_outputshape_8_2_dim_0_size_3_step_2)
     tilingData->tailColLength = 1;
 
     ICPU_SET_TILING_KEY(212);
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(unfold_grad, numBlocks, gradOut, inputSize, output, workspace, tiling);
 
     AscendC::GmFree(gradOut);
@@ -143,6 +144,7 @@ TEST_F(unfold_grad_test, test_case_float32_outputshape_6_3_dim_1_size_2_step_1)
     tilingData->tailColLength = 8;
 
     ICPU_SET_TILING_KEY(211);
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(unfold_grad, numBlocks, gradOut, inputSize, output, workspace, tiling);
 
     AscendC::GmFree(gradOut);
@@ -199,6 +201,7 @@ TEST_F(unfold_grad_test, test_case_float16_outputshape_6_3_dim_1_size_2_step_1)
     tilingData->tailColLength = 8;
 
     ICPU_SET_TILING_KEY(221);
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(unfold_grad, numBlocks, gradOut, inputSize, output, workspace, tiling);
 
     AscendC::GmFree(gradOut);
@@ -255,6 +258,7 @@ TEST_F(unfold_grad_test, test_case_float16_outputshape_8_2_dim_0_size_3_step_2)
     tilingData->tailColLength = 1;
 
     ICPU_SET_TILING_KEY(222);
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(unfold_grad, numBlocks, gradOut, inputSize, output, workspace, tiling);
 
     AscendC::GmFree(gradOut);
@@ -311,6 +315,7 @@ TEST_F(unfold_grad_test, test_case_float32_outputshape_6_3_dim_1_size_1_step_2)
     tilingData->tailColLength = 2;
 
     ICPU_SET_TILING_KEY(311);
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(unfold_grad, numBlocks, gradOut, inputSize, output, workspace, tiling);
 
     AscendC::GmFree(gradOut);
@@ -367,6 +372,7 @@ TEST_F(unfold_grad_test, test_case_float32_outputshape_8_2_dim_0_size_2_step_3)
     tilingData->tailColLength = 1;
 
     ICPU_SET_TILING_KEY(312);
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(unfold_grad, numBlocks, gradOut, inputSize, output, workspace, tiling);
 
     AscendC::GmFree(gradOut);
@@ -423,6 +429,7 @@ TEST_F(unfold_grad_test, test_case_float16_outputshape_6_3_dim_1_size_1_step_2)
     tilingData->tailColLength = 2;
 
     ICPU_SET_TILING_KEY(321);
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(unfold_grad, numBlocks, gradOut, inputSize, output, workspace, tiling);
 
     AscendC::GmFree(gradOut);
@@ -479,6 +486,7 @@ TEST_F(unfold_grad_test, test_case_float16_outputshape_8_2_dim_0_size_2_step_3)
     tilingData->tailColLength = 1;
 
     ICPU_SET_TILING_KEY(322);
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(unfold_grad, numBlocks, gradOut, inputSize, output, workspace, tiling);
 
     AscendC::GmFree(gradOut);
@@ -535,6 +543,7 @@ TEST_F(unfold_grad_test, test_case_float16_outputshape_7_8192_dim_1_size_3958_st
     tilingData->tailColLength = 31331528;
 
     ICPU_SET_TILING_KEY(1221);
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(unfold_grad, numBlocks, gradOut, inputSize, output, workspace, tiling);
 
     AscendC::GmFree(gradOut);
@@ -590,6 +599,7 @@ TEST_F(unfold_grad_test, test_case_float32_outputshape_7_8192_dim_1_size_3958_st
     tilingData->tailColLength = 31331528;
 
     ICPU_SET_TILING_KEY(1211);
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(unfold_grad, numBlocks, gradOut, inputSize, output, workspace, tiling);
 
     AscendC::GmFree(gradOut);
@@ -646,6 +656,7 @@ TEST_F(unfold_grad_test, test_case_float16_outputshape_8_32768_dim_1_size_3924_s
     tilingData->tailColLength = 201042216;
 
     ICPU_SET_TILING_KEY(1321);
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(unfold_grad, numBlocks, gradOut, inputSize, output, workspace, tiling);
 
     AscendC::GmFree(gradOut);
