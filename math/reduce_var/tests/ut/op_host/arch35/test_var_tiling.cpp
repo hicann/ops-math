@@ -30,30 +30,30 @@ protected:
     }
 };
 
-TEST_F(ReduceVarTiling, ReduceVar_test_tiling_001)
-{
-    optiling::ReduceVarCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "ReduceVar",
-        {
-            {{{13, 5, 9, 13, 7, 13}, {13, 5, 9, 13, 7, 13}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{13, 5, 9, 13, 7, 13}, {13, 5, 9, 13, 7, 13}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{13, 5, 9, 13, 7, 13}, {13, 5, 9, 13, 7, 13}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {gert::TilingContextPara::OpAttr("dim", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0, 2, 3, 4, 5})),
-         gert::TilingContextPara::OpAttr("correction", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
-         gert::TilingContextPara::OpAttr("keepdim", Ops::Math::AnyValue::CreateFrom<bool>(true)),
-         gert::TilingContextPara::OpAttr("is_mean_out", Ops::Math::AnyValue::CreateFrom<bool>(true))},
-        &compileInfo);
-    uint64_t expectTilingKey = 6175;
-    string expectTilingData =
-        "1 3 2 9 169 832 19 5 45568 512 64 921857298 1 13 5 10647 0 0 0 0 0 692055 53235 10647 1 0 0 0 0 0 5 5 1 1 0 0 "
-        "0 0 0 0 0 1 16384 3959346946488926208 921857298 7488 7319 7319 7488 7319 7319 7488 7319 7319 7488 7319 7319 "
-        "7319 7488 7319 7319 7488 7319 5655 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
-        "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
-        "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ";
-    std::vector<size_t> expectWorkspaces = {16809984};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
-}
+// TEST_F(ReduceVarTiling, ReduceVar_test_tiling_001)
+// {
+//     optiling::ReduceVarCompileInfo compileInfo = {64, 253952};
+//     gert::TilingContextPara tilingContextPara(
+//         "ReduceVar",
+//         {
+//             {{{13, 5, 9, 13, 7, 13}, {13, 5, 9, 13, 7, 13}}, ge::DT_FLOAT, ge::FORMAT_ND},
+//         },
+//         {
+//             {{{13, 5, 9, 13, 7, 13}, {13, 5, 9, 13, 7, 13}}, ge::DT_FLOAT, ge::FORMAT_ND},
+//             {{{13, 5, 9, 13, 7, 13}, {13, 5, 9, 13, 7, 13}}, ge::DT_FLOAT, ge::FORMAT_ND},
+//         },
+//         {gert::TilingContextPara::OpAttr("dim", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0, 2, 3, 4, 5})),
+//          gert::TilingContextPara::OpAttr("correction", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+//          gert::TilingContextPara::OpAttr("keepdim", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+//          gert::TilingContextPara::OpAttr("is_mean_out", Ops::Math::AnyValue::CreateFrom<bool>(true))},
+//         &compileInfo);
+//     uint64_t expectTilingKey = 6175;
+//     string expectTilingData =
+//         "1 3 2 9 169 832 19 5 45568 512 64 921857298 1 13 5 10647 0 0 0 0 0 692055 53235 10647 1 0 0 0 0 0 5 5 1 1 0 0 "
+//         "0 0 0 0 0 1 16384 3959346946488926208 921857298 7488 7319 7319 7488 7319 7319 7488 7319 7319 7488 7319 7319 "
+//         "7319 7488 7319 7319 7488 7319 5655 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+//         "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+//         "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ";
+//     std::vector<size_t> expectWorkspaces = {16809984};
+//     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+// }

@@ -187,7 +187,7 @@ static bool IsNonContiguousSupport(const aclTensor* self, const DataType promote
     if (!op::IsReduceNonContiguousSupport(self, dims)) {
         return false;
     }
-    return false;
+    return true;
 }
 
 aclnnStatus aclnnReduceSumGetWorkspaceSize(
@@ -261,7 +261,7 @@ aclnnStatus aclnnReduceSumGetWorkspaceSize(
         OP_LOGD("Enter NonContigous");
         auto selfContiguous = uniqueExecutor.get()->CreateView(
             self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
-
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         // 调用ReduceSum算子kernel,将输入self的数据类型转换成指定的数据类型
         const aclTensor* reduceSumOut = nullptr;
         reduceSumOut = l0op::ReduceSumOp(selfContiguous, dims, keepDims, uniqueExecutor.get());

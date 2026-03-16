@@ -133,7 +133,7 @@ static bool IsNonContiguousSupport(const aclTensor* self, const aclIntArray* dim
     if (!op::IsReduceNonContiguousSupport(self, dims)) {
         return false;
     }
-    return false;
+    return true;
 }
 
 aclnnStatus aclnnGlobalAveragePoolGetWorkspaceSize(
@@ -161,6 +161,7 @@ aclnnStatus aclnnGlobalAveragePoolGetWorkspaceSize(
         OP_LOGD("Enter NonContigous");
         auto selfContiguous = uniqueExecutor.get()->CreateView(
             self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto meanOpOut = l0op::ReduceMean(selfContiguous, dims, true, uniqueExecutor.get());
         CHECK_RET(meanOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
         CHECK_RET(CheckShapeAndScalarSame(meanOpOut, out), ACLNN_ERR_PARAM_INVALID);

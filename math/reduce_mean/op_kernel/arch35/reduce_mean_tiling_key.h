@@ -17,8 +17,9 @@
 #define _REDUCE_MEAN_TILING_KEY_H_
 
 #include "atvoss/reduce/reduce_tiling_key_decl.h"
-#include "atvoss/reduce/reduce_tiling_key_sel.h"
+#include "atvoss/reduce/reduce_tiling_key_decl_non_contiguous.h"
+#include "atvoss/reduce/reduce_tiling_key_sel_non_contiguous.h"
 
-ASCENDC_TPL_ARGS_DECL(ReduceMean, REDUCE_TPL_KEY_DECL());
+ASCENDC_TPL_ARGS_DECL(ReduceMean, REDUCE_TPL_KEY_DECL_NON_CONTIGUOUS());
 
 #endif

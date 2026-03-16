@@ -228,7 +228,7 @@ static bool IsNonContiguousSupport(const aclTensor* self, DataType dtype, const 
     if (!op::IsReduceNonContiguousSupport(self, dim)) {
         return false;
     }
-    return false;
+    return true;
 }
 
 aclnnStatus aclnnMeanGetWorkspaceSize(
@@ -337,7 +337,7 @@ aclnnStatus aclnnMeanV2GetWorkspaceSize(
         OP_LOGD("Enter NonContigous");
         auto selfContiguous = uniqueExecutor.get()->CreateView(
             self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
-
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto meanOpOut = l0op::ReduceMean(selfContiguous, dim, keepDim, noopWithEmptyAxes, uniqueExecutor.get());
         CHECK_RET(meanOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
         CHECK_RET(CheckShapeAndScalarSame(meanOpOut, out), ACLNN_ERR_PARAM_INVALID);

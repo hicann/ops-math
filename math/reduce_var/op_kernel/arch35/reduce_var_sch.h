@@ -21,7 +21,7 @@
 
 namespace ReduceOpTmpl
 {
-template <typename DataType, typename PromoteDataType, uint32_t PatternID, uint32_t LoopARCount,
+template <typename DataType, typename PromoteDataType, bool isContiguous, uint32_t PatternID, uint32_t LoopARCount,
           uint32_t LoopInnerARCount, bool isStd = false>
 class ReduceVarSch
 {

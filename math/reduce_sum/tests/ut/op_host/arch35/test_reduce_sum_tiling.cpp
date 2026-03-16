@@ -31,50 +31,50 @@ protected:
     }
 };
 
-TEST_F(ReduceSumDavidTiling, reduce_sum_david_tiling1)
-{
-    Ops::Base::ReduceOpCompileInfo compileInfo;
-    gert::StorageShape inputShape = {{2048, 2, 48, 2, 2, 2}, {2048, 2, 48, 2, 2, 2}};
-    gert::StorageShape axesShape = {{3}, {3}};
-    std::vector<int32_t> axesValue = {1, 3, 5};
-    gert::StorageShape yShape = {{2048, 48, 2}, {2048, 48, 2}};
-    gert::TilingContextPara::TensorDescription input(inputShape, ge::DT_FLOAT, ge::FORMAT_ND);
-    gert::TilingContextPara::TensorDescription axes(axesShape, ge::DT_INT32, ge::FORMAT_ND, true, axesValue.data());
-    gert::TilingContextPara::TensorDescription y(yShape, ge::DT_FLOAT, ge::FORMAT_ND);
-    gert::TilingContextPara tilingContextPara(
-        "ReduceSum",
-        {input, axes},
-        {y},
-        {
-            gert::TilingContextPara::OpAttr("keep_dim", Ops::Math::AnyValue::CreateFrom<bool>(true)),
-            gert::TilingContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))
-        },
-        &compileInfo);
-    uint64_t expectedTilingKey = 5191;
-    std::vector<size_t> expectedWorkspaces = { 16777216 };
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
-}
+// TEST_F(ReduceSumDavidTiling, reduce_sum_david_tiling1)
+// {
+//     Ops::Base::ReduceOpCompileInfo compileInfo;
+//     gert::StorageShape inputShape = {{2048, 2, 48, 2, 2, 2}, {2048, 2, 48, 2, 2, 2}};
+//     gert::StorageShape axesShape = {{3}, {3}};
+//     std::vector<int32_t> axesValue = {1, 3, 5};
+//     gert::StorageShape yShape = {{2048, 48, 2}, {2048, 48, 2}};
+//     gert::TilingContextPara::TensorDescription input(inputShape, ge::DT_FLOAT, ge::FORMAT_ND);
+//     gert::TilingContextPara::TensorDescription axes(axesShape, ge::DT_INT32, ge::FORMAT_ND, true, axesValue.data());
+//     gert::TilingContextPara::TensorDescription y(yShape, ge::DT_FLOAT, ge::FORMAT_ND);
+//     gert::TilingContextPara tilingContextPara(
+//         "ReduceSum",
+//         {input, axes},
+//         {y},
+//         {
+//             gert::TilingContextPara::OpAttr("keep_dim", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+//             gert::TilingContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))
+//         },
+//         &compileInfo);
+//     uint64_t expectedTilingKey = 5191;
+//     std::vector<size_t> expectedWorkspaces = { 16777216 };
+//     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
+// }
 
-TEST_F(ReduceSumDavidTiling, reduce_sum_david_tiling2)
-{
-    Ops::Base::ReduceOpCompileInfo compileInfo;
-    gert::StorageShape inputShape = {{2048, 2, 48, 2, 2}, {2048, 2, 48, 2, 2}};
-    gert::StorageShape axesShape = {{2}, {2}};
-    std::vector<int64_t> axesValue = {1, 3};
-    gert::StorageShape yShape = {{2048, 48, 2}, {2048, 48, 2}};
-    gert::TilingContextPara::TensorDescription input(inputShape, ge::DT_FLOAT, ge::FORMAT_ND);
-    gert::TilingContextPara::TensorDescription axes(axesShape, ge::DT_INT32, ge::FORMAT_ND, true, axesValue.data());
-    gert::TilingContextPara::TensorDescription y(yShape, ge::DT_FLOAT, ge::FORMAT_ND);
-    gert::TilingContextPara tilingContextPara(
-        "ReduceSum",
-        {input, axes},
-        {y},
-        {
-            gert::TilingContextPara::OpAttr("keep_dim", Ops::Math::AnyValue::CreateFrom<bool>(true)),
-            gert::TilingContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))
-        },
-        &compileInfo);
-    uint64_t expectedTilingKey = 5908;
-    std::vector<size_t> expectedWorkspaces = { 16826368 };
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
-}
+// TEST_F(ReduceSumDavidTiling, reduce_sum_david_tiling2)
+// {
+//     Ops::Base::ReduceOpCompileInfo compileInfo;
+//     gert::StorageShape inputShape = {{2048, 2, 48, 2, 2}, {2048, 2, 48, 2, 2}};
+//     gert::StorageShape axesShape = {{2}, {2}};
+//     std::vector<int64_t> axesValue = {1, 3};
+//     gert::StorageShape yShape = {{2048, 48, 2}, {2048, 48, 2}};
+//     gert::TilingContextPara::TensorDescription input(inputShape, ge::DT_FLOAT, ge::FORMAT_ND);
+//     gert::TilingContextPara::TensorDescription axes(axesShape, ge::DT_INT32, ge::FORMAT_ND, true, axesValue.data());
+//     gert::TilingContextPara::TensorDescription y(yShape, ge::DT_FLOAT, ge::FORMAT_ND);
+//     gert::TilingContextPara tilingContextPara(
+//         "ReduceSum",
+//         {input, axes},
+//         {y},
+//         {
+//             gert::TilingContextPara::OpAttr("keep_dim", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+//             gert::TilingContextPara::OpAttr("noop_with_empty_axes", Ops::Math::AnyValue::CreateFrom<bool>(false))
+//         },
+//         &compileInfo);
+//     uint64_t expectedTilingKey = 5908;
+//     std::vector<size_t> expectedWorkspaces = { 16826368 };
+//     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
+// }

@@ -146,7 +146,7 @@ static bool IsNonContiguousSupport(const aclTensor* self, const aclIntArray* dim
     if (!op::IsReduceNonContiguousSupport(self, dim)) {
         return false;
     }
-    return false;
+    return true;
 }
 
 aclnnStatus aclnnAnyGetWorkspaceSize(
@@ -178,6 +178,7 @@ aclnnStatus aclnnAnyGetWorkspaceSize(
         OP_LOGI("Entering NonContiguous Reduce Any");
         auto selfContiguous = uniqueExecutor.get()->CreateView(
             self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto anyResult = l0op::ReduceAny(selfContiguous, dim, keepdim, uniqueExecutor.get());
         CHECK_RET(anyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
         CHECK_RET(CheckShapeAndScalarSame(anyResult, out), ACLNN_ERR_PARAM_INVALID);
