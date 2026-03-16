@@ -1,4 +1,4 @@
-# MatmulV2CompressDequant
+# MatMulV2CompressDequant
 
 ## 产品支持情况
 
