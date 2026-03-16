@@ -34,7 +34,7 @@ static void GetConstValueToShape(const gert::Tensor* tensor, size_t size, gert::
 
 static ge::graphStatus InferShape4Expand(gert::InferShapeContext* context)
 {
-    OP_LOGD(context->GetNodeName(),"Enter Math AICore InferShape4Expand!");
+    OP_LOGD(context->GetNodeName(),"Enter Math InferShape4Expand!");
     auto x_shape = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, x_shape);
     auto out_shape = context->GetOutputShape(0);
@@ -44,16 +44,16 @@ static ge::graphStatus InferShape4Expand(gert::InferShapeContext* context)
     OP_CHECK_IF(
         shape_size < x_shape->GetDimNum(),
         OP_LOGE(context->GetNodeName(), "%s",
-            ConcatString("shape size ", shape_size, " cannot be less than x size ", x_shape->GetDimNum(), ", error!")
+        ConcatString("input1 size ", shape_size, " cannot be less than input0 size ", x_shape->GetDimNum(), ", error!")
                 .c_str()),
         return ge::GRAPH_FAILED);
     out_shape->SetDimNum(shape_size);
-    OP_LOGD(context->GetNodeName(), "shape_size is %zu", shape_size);
+    OP_LOGD(context->GetNodeName(), "input1 size is %zu", shape_size);
     DataType data_type = shape_tensor->GetDataType();
     OP_CHECK_IF(
         (data_type != DT_INT32) && (data_type != DT_INT64),
         OP_LOGE(context->GetNodeName(), "%s",
-            ConcatString("shape's dtype ", Ops::Base::ToString(data_type), " must be in (int32,int64)!").c_str()),
+            ConcatString("input1 dtype ", Ops::Base::ToString(data_type), " must be in (int32,int64)!").c_str()),
         return ge::GRAPH_FAILED);
     size_t diff = shape_size - x_shape->GetDimNum();
     if (data_type == DT_INT32) {
@@ -61,24 +61,41 @@ static ge::graphStatus InferShape4Expand(gert::InferShapeContext* context)
     } else {
         GetConstValueToShape<int64_t>(shape_tensor, shape_size, out_shape);
     }
+    OP_LOGD(context->GetNodeName(), "%s",
+        ConcatString("input0 shape is ", Ops::Base::ToString(*x_shape).c_str(),
+            ", input1 shape is ", Ops::Base::ToString(*out_shape).c_str()).c_str());
     for (size_t i = 0; i < shape_size; i++) {
-        if (out_shape->GetDim(i) == -1) {
-            if (i >= diff) {
-                out_shape->SetDim(i, x_shape->GetDim(i - diff));
-            } else {
+        if (i >= diff) {
+            int64_t x_dim = x_shape->GetDim(i - diff);
+            int64_t out_dim = out_shape->GetDim(i);
+            // Handle -1: replace with x dimension
+            if (out_dim == -1) {
+                out_shape->SetDim(i, x_dim);
+                continue;
+            }
+            // If target is 1 but x is not 1, use x dimension (no bidirectional broadcast)
+            if (out_dim == 1 && x_dim != 1) {
+                out_shape->SetDim(i, x_dim);
+                continue;
+            }
+            // Broadcast check: x must be 1 or equal to target dimension
+            if (x_dim != 1 && x_dim != out_dim) {
+                OP_LOGE(context->GetNodeName(), "%s",
+                    ConcatString("x dimension ", x_dim, " at axis ", (i - diff),
+                        " cannot be broadcast to ", out_dim, " at axis ", i).c_str());
+                return ge::GRAPH_FAILED;
+            }
+        } else {
+            // New dimension added in front, treat as 1 for broadcasting
+            int64_t out_dim = out_shape->GetDim(i);
+            if (out_dim == -1) {
                 out_shape->SetDim(i, 1);
             }
         }
-        if (i < diff) {
-            continue;
-        }
-        OP_CHECK_IF(
-            (out_shape->GetDim(i) != x_shape->GetDim(i - diff)) && (1 != x_shape->GetDim(i - diff)),
-            OP_LOGE(context->GetNodeName(), "%s",
-                    ConcatString(Ops::Base::ToString(*x_shape).c_str(), " can not expand ",
-                    Ops::Base::ToString(*out_shape).c_str()).c_str()),
-            return ge::GRAPH_FAILED);
     }
+    OP_LOGD(context->GetNodeName(), "%s",
+        ConcatString("input0 and input1 infer output, output shape is ",
+            Ops::Base::ToString(*out_shape).c_str()).c_str());
     return GRAPH_SUCCESS;
 }
 
