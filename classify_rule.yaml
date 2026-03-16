@@ -646,9 +646,6 @@ conversion@ops-math:
         - ops/ops-math/conversion/coalesce_sparse/op_graph/
         - ops/ops-math/conversion/space_to_depth/README.md
         - ops/ops-math/conversion/space_to_depth/op_graph/
-        - ops/ops-math/conversion/unsqueezev2/README.md
-        - ops/ops-math/conversion/unsqueezev2/op_host/
-        - ops/ops-math/conversion/unsqueezev2/op_graph/
         - ops/ops-math/conversion/trans_data/docs/
         - ops/ops-math/conversion/trans_data/op_api/
         - ops/ops-math/conversion/trans_data/README.md
@@ -787,8 +784,6 @@ conversion@ops-math:
         - ops/ops-math/conversion/strided_slice_v3/tests/
         - ops/ops-math/conversion/coalesce_sparse/examples/
         - ops/ops-math/conversion/coalesce_sparse/tests/
-        - ops/ops-math/conversion/unsqueezev2/examples/
-        - ops/ops-math/conversion/unsqueezev2/tests/
         - ops/ops-math/conversion/trans_data/examples/
         - ops/ops-math/conversion/trans_data/tests/
         - ops/ops-math/conversion/diag_flat/examples/
