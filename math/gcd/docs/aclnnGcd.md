@@ -87,7 +87,7 @@ aclnnStatus aclnnGcd(
     <tr>
       <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>公式中的out。</td>
+      <td>self和other求最大公约数的结果。</td>
       <td>数据类型是self与other推导之后可转换的数据类型。shape需要与self和other做<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>后的shape一致。</td>
       <td>UINT8、INT8、UINT16、INT16、INT32、UINT32、INT64、UINT64</td>
       <td>ND</td>

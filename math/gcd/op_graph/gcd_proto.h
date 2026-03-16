@@ -26,9 +26,9 @@ namespace ge {
 
 * @par Inputs:
 * Two inputs, including:
-* @li x1: A ND Tensor.
+* @li x1: A ND Tensor, support 1D ~ 8D.
 * Must be one of the following types: uint8, int8, int16, int32, int64.
-* @li x2: A ND Tensor of the same dtype as "x1". \n
+* @li x2: A ND Tensor of the same dtype as "x1", support 1D ~ 8D. \n
 
 * @par Outputs:
 * y: A ND Tensor. Has the same dtype as "x1". \n
