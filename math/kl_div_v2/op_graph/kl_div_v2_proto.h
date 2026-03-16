@@ -29,12 +29,12 @@ namespace ge {
 * @li target: Tensor of the same shape and dtype as x. \n
 
 * @par Attributes:
-* reduction: An optional "string", Specifies the reduction to apply to the output;
-* Reduction supports the modes of "sum" and "mean", default value is "mean". \n
-* log_target: An optional bool, a flag indicating whether target is passed in the log space. Default value is false. \n
+* @li reduction: An optional "string", Specifies the reduction to apply to the output;
+* Reduction supports the modes of "sum", "mean", "none" and "batchmean", default value is "mean". \n
+* @li log_target: An optional bool, a flag indicating whether target is passed in the log space. Default value is false. \n
 
 * @par Outputs:
-* y: A ND Tensor of the same dtype as x.
+* y: A ND Tensor of the same dtype as x. When reduction is "none", input and output has same shape, otherwise output is a scalar.
 * @par Third-party framework compatibility
 * Compatible with the PyTorch operator kl_div_v2.
 */

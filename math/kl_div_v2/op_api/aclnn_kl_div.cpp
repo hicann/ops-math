@@ -113,7 +113,18 @@ static bool CheckShape(const aclTensor* self, const aclTensor* target) {
   return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* target, aclTensor* out) {
+static bool CheckReduction(int64_t reduction) {
+  // 校验是否为合法值（0, 1, 2, 3）
+  if (reduction < 0 || reduction > 3) {
+    OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+    "Invalid reduction value: %ld. Allowed values are 0 (None), 1 (Mean), 2 (Sum), 3 (Batchmean).", reduction);
+    return false;
+  }
+  return true;
+}
+
+
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* target, aclTensor* out, int64_t reduction) {
   // 1. 检查参数是否为空指针
   CHECK_RET(CheckNotNull(self, target, out), ACLNN_ERR_PARAM_NULLPTR);
 
@@ -125,6 +136,9 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* target, a
 
   // 4. 检查输出输出shape, 双输入shape能否做broadcast
   CHECK_RET(CheckShape(self, target), ACLNN_ERR_PARAM_INVALID);
+
+  // 5. 检查reduction
+  CHECK_RET(CheckReduction(reduction), ACLNN_ERR_PARAM_INVALID);
 
   return ACLNN_SUCCESS;
 }
@@ -168,7 +182,7 @@ aclnnStatus aclnnKlDivGetWorkspaceSize(const aclTensor* self, const aclTensor* t
   CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
   // 固定写法，参数检查
-  auto ret = CheckParams(self, target, out);
+  auto ret = CheckParams(self, target, out, reduction);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
   CheckFormat(self, target);
