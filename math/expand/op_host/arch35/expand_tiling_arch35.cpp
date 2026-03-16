@@ -20,40 +20,27 @@
 #include "op_host/util/const_util.h"
 #include "op_host/tiling_util.h"
 #include "util/platform_util.h"
+#include <sstream>
 
 namespace optiling {
 constexpr size_t MAX_DIM_NUM = 0x8;
 constexpr size_t BRCTO_MAX_DIM_NUM = 0x8;
 
 template <typename T>
-static std::string Shape2String(const T& shape)
+inline std::string ConcatString(const T& arg)
 {
     std::ostringstream oss;
-    oss << "[";
-    if (shape.GetDimNum() > 0) {
-        for (size_t i = 0; i < shape.GetDimNum() - 1; ++i) {
-            oss << shape.GetDim(i) << ", ";
-        }
-        oss << shape.GetDim(shape.GetDimNum() - 1);
-    }
-    oss << "]";
+    oss << arg;
     return oss.str();
 }
 
-static ge::graphStatus CheckExpandRule(
-    const gert::TilingContext* context, const gert::Shape& inShape, const gert::Shape& outShape)
+template <typename T, typename... Ts>
+static std::string ConcatString(const T& arg, const Ts&... arg_left)
 {
-    auto outDimNum = outShape.GetDimNum();
-    OP_CHECK_IF(
-        inShape.GetDimNum() != outDimNum,
-        OP_LOGE(context->GetNodeName(), "The input shape dims are different with output's!"), return ge::GRAPH_FAILED);
-
-    for (size_t i = 0; i < outDimNum; i++) {
-        if (inShape[i] != 1 && outShape[i] != inShape[i]) {
-            return ge::GRAPH_FAILED;
-        }
-    }
-    return ge::GRAPH_SUCCESS;
+    std::ostringstream oss;
+    oss << arg;
+    oss << ConcatString(arg_left...);
+    return oss.str();
 }
 
 void AdjustShapesToSameDimNum(gert::Shape& inShape, size_t outDimNum)
@@ -155,49 +142,89 @@ ge::graphStatus MergeAxis(const gert::TilingContext* context, gert::Shape& inSha
     return ge::GRAPH_SUCCESS;
 }
 
+// Read outShape from shape tensor (index 1)
+static ge::graphStatus ReadOutShapeFromTensor(const gert::TilingContext* context, gert::Shape& outShape)
+{
+    auto shapeTensor = context->GetInputTensor(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, shapeTensor);
+    auto shapeSize = static_cast<size_t>(shapeTensor->GetShapeSize());
+    outShape.SetDimNum(shapeSize);
+
+    ge::DataType dataType = shapeTensor->GetDataType();
+    OP_CHECK_IF(
+        (dataType != ge::DT_INT32) && (dataType != ge::DT_INT64),
+        OP_LOGE(context->GetNodeName(), "shape's dtype must be in (int32,int64)!"),
+        return ge::GRAPH_FAILED);
+
+    if (dataType == ge::DT_INT32) {
+        const int32_t* values = shapeTensor->GetData<int32_t>();
+        for (size_t i = 0; i < shapeSize; i++) {
+            outShape.SetDim(i, static_cast<int64_t>(values[i]));
+        }
+    } else {
+        const int64_t* values = shapeTensor->GetData<int64_t>();
+        for (size_t i = 0; i < shapeSize; i++) {
+            outShape.SetDim(i, values[i]);
+        }
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+static ge::graphStatus ApplyBroadcastRules(const gert::TilingContext* context, gert::Shape& inShape,
+                                           gert::Shape& outShape)
+{
+    size_t outDimNum = outShape.GetDimNum();
+
+    for (size_t i = 0; i < outDimNum; i++) {
+        int64_t xDim = inShape.GetDim(i);
+        int64_t outDim = outShape.GetDim(i);
+        if (outDim == -1) {
+            outShape.SetDim(i, xDim);
+            continue;
+        }
+        if (outDim == 1 && xDim != 1) {
+            outShape.SetDim(i, xDim);
+            continue;
+        }
+        if (xDim != 1 && xDim != outDim) {
+            OP_LOGE(context->GetNodeName(), "x dimension %ld at axis %zu cannot be broadcast to %ld!",
+                xDim, i, outDim);
+            return ge::GRAPH_FAILED;
+        }
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
 ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape)
 {
     auto xStorage = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xStorage);
     inShape = Ops::Math::OpTiling::EnsureNotScalar(xStorage->GetStorageShape());
-    auto yStorage = context->GetOutputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, yStorage);
-    outShape = Ops::Math::OpTiling::EnsureNotScalar(yStorage->GetStorageShape());
 
+    OP_CHECK_IF(ReadOutShapeFromTensor(context, outShape) != ge::GRAPH_SUCCESS,
+        OP_LOGE(context->GetNodeName(), "Failed to read outShape from tensor!"), return ge::GRAPH_FAILED);
+    OP_LOGD(context->GetNodeName(), "%s",
+        ConcatString("input0 shape is ", Ops::Base::ToString(inShape).c_str(),
+            ", input1 shape is ", Ops::Base::ToString(outShape).c_str()).c_str());
     auto outDimNum = outShape.GetDimNum();
-    OP_CHECK_IF(
-        inShape.GetDimNum() > outDimNum,
-        OP_LOGE(context->GetNodeName(), "The input shape has more dimensions than output shape!"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        outDimNum > BRCTO_MAX_DIM_NUM, OP_LOGE(context->GetNodeName(), "Not support the dim num: %lu yet!", outDimNum),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inShape.GetDimNum() > outDimNum, OP_LOGE(context->GetNodeName(),
+        "The input0 shape has more dimensions than input1 shape!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(outDimNum > BRCTO_MAX_DIM_NUM, OP_LOGE(context->GetNodeName(),
+        "Not support the dim num: %lu yet!", outDimNum), return ge::GRAPH_FAILED);
+
     AdjustShapesToSameDimNum(inShape, outDimNum);
-    OP_CHECK_IF(
-        inShape.GetShapeSize() == 0 || outShape.GetShapeSize() == 0,
-        OP_LOGE(context->GetNodeName(), "The input or output shape is empty!"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckExpandRule(context, inShape, outShape) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "The input and output shapes mismatch the broadcast rule!"),
-        return ge::GRAPH_FAILED);
-    OP_LOGI(
-        context->GetNodeName(), "The input and output is: %s and %s", Shape2String(inShape).c_str(),
-        Shape2String(outShape).c_str());
-
-    OP_CHECK_IF(
-        DeleteOneSizeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS,
+    OP_CHECK_IF(ApplyBroadcastRules(context, inShape, outShape) != ge::GRAPH_SUCCESS,
+        OP_LOGE(context->GetNodeName(), "Failed to apply broadcast rules!"), return ge::GRAPH_FAILED);
+    OP_LOGD(context->GetNodeName(), "%s",
+        ConcatString("input0 and input1 infer output, output shape is ",
+            Ops::Base::ToString(outShape).c_str()).c_str());
+    OP_CHECK_IF(DeleteOneSizeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS,
         OP_LOGE(context->GetNodeName(), "Failed to delete one size axes!"), return ge::GRAPH_FAILED);
-    OP_LOGI(
-        context->GetNodeName(), "The reshaped input and output is: %s and %s", Shape2String(inShape).c_str(),
-        Shape2String(outShape).c_str());
-
-    OP_CHECK_IF(
-        MergeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS,
+    OP_CHECK_IF(MergeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS,
         OP_LOGE(context->GetNodeName(), "Failed to merge axes!"), return ge::GRAPH_FAILED);
-    OP_LOGI(
-        context->GetNodeName(), "The merged input and output is: %s and %s", Shape2String(inShape).c_str(),
-        Shape2String(outShape).c_str());
-
+    OP_LOGD(context->GetNodeName(), "%s",
+        ConcatString("input0 shape MergeAxis result is ", Ops::Base::ToString(inShape).c_str(),
+            ", output shape MergeAxis result is ", Ops::Base::ToString(outShape).c_str()).c_str());
     return ge::GRAPH_SUCCESS;
 }
 

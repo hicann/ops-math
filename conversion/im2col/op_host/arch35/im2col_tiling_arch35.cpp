@@ -449,7 +449,7 @@ bool Im2ColTiling::NCHWTryFullLoad(int32_t validBufSize)
     // 1个HW输出需要大小，按HW整体对齐
     int64_t outputHW = convKernelNum_ * convKernelSize_;
     int64_t outHWNeedSize = AlignBlock(outputHW) * dSize_;
-    double ratio = static_cast<double>(inHWNeedSize) / outHWNeedSize;
+    double ratio = static_cast<double>(inputHW) / static_cast<double>(outputHW);
     if (ratio > NCHW_MAX_INPUT_OUTPUT_RATIO) {
         return false;
     }
