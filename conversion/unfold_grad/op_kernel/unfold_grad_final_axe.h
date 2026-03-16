@@ -100,7 +100,6 @@ private:
         T1 zeroVal(0.0);
         int srcDataSize = ISCAST ? this->ubSizeT1 : this->T2SrcDataSize;
         AscendC::Duplicate<T1>(srcLocal, zeroVal, srcDataSize / this->typeSizeT1);
-        AscendC::PipeBarrier<PIPE_V>();
 
         int64_t realSize = this->step < this->size ? this->size : this->step;
         int64_t colHandleNum = this->ubSizeT2 / (TRANS_BLOCK * FP32_TYPESIZE) / realSize * this->size;
@@ -110,7 +109,7 @@ private:
         uint32_t srcStride = 0;
         uint32_t dstStride =
             (colNumSpace - (colHandleNum * this->typeSizeT1 + BLOCK_SIZE - 1) / BLOCK_SIZE * BLOCK_SIZE) / BLOCK_SIZE;
-
+        AscendC::PipeBarrier<PIPE_ALL>();
         AscendC::DataCopyExtParams copyParamsIn{
             static_cast<uint16_t>(blockCount - 1), blockLen, srcStride, dstStride, 0};
         if (blockCount > 1) {

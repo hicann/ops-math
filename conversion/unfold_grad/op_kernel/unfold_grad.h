@@ -111,6 +111,7 @@ public:
         AscendC::Duplicate<T1>(zeroLocal, 0, zeroNum);
         uint32_t blockLen = static_cast<uint32_t>(T2DstDataSize);
         AscendC::DataCopyExtParams copyParams = {1, blockLen, 0, 0, 0};
+        AscendC::PipeBarrier<PIPE_ALL>();
         for (int i = 0; i < loop; i++) {
             AscendC::DataCopyPad(dstGlobal[dstGlobalStart + i * zeroNum], zeroLocal, copyParams);
         }
@@ -118,6 +119,7 @@ public:
             copyParams.blockLen = static_cast<uint32_t>(tail * typeSizeT1);
             AscendC::DataCopyPad(dstGlobal[dstGlobalStart + loop * zeroNum], zeroLocal, copyParams);
         }
+        AscendC::PipeBarrier<PIPE_ALL>();
         computeOutQueueDst.FreeTensor(zeroLocal);
     }
 
@@ -130,6 +132,7 @@ public:
         AscendC::Duplicate<T2>(zeroLocal, 0, zeroNum);
         uint32_t blockLen = static_cast<uint32_t>(T2DstDataSize);
         AscendC::DataCopyExtParams copyParams = {1, blockLen, 0, 0, 0};
+        AscendC::PipeBarrier<PIPE_ALL>();
         for (int i = 0; i < loop; i++) {
             AscendC::DataCopyPad(workspaceT2SumRes[dstGlobalStart + i * zeroNum], zeroLocal, copyParams);
         }
@@ -137,6 +140,7 @@ public:
             copyParams.blockLen = static_cast<uint32_t>(tail * typeSizeT2);
             AscendC::DataCopyPad(workspaceT2SumRes[dstGlobalStart + loop * zeroNum], zeroLocal, copyParams);
         }
+        AscendC::PipeBarrier<PIPE_ALL>();
         computeOutQueueDst.FreeTensor(zeroLocal);
     }
 

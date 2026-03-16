@@ -106,8 +106,7 @@ private:
         T1 zeroVal(0.0);
         int srcDataSize = ISCAST ? this->ubSizeT1 : this->T2SrcDataSize;
         AscendC::Duplicate<T1>(srcLocal, zeroVal, srcDataSize / this->typeSizeT1);
-        AscendC::PipeBarrier<PIPE_V>();
-        
+        PipeSync<AscendC::HardEvent::V_MTE2>();
         // 搬运次数，一定能整除，tiling里分核已对齐size的倍数
         uint16_t blockCount = curHandleNum / this->size; 
 
