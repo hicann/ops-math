@@ -721,8 +721,6 @@ conversion@ops-math:
         - ops/ops-math/conversion/assign/tests/
         - ops/ops-math/conversion/feeds_repeat/examples/
         - ops/ops-math/conversion/feeds_repeat/tests/
-        - ops/ops-math/conversion/pack/examples/
-        - ops/ops-math/conversion/pack/tests/
         - ops/ops-math/conversion/strided_slice_grad/examples/
         - ops/ops-math/conversion/strided_slice_grad/tests/
         - ops/ops-math/conversion/pad_v4_grad/examples/
