@@ -1,0 +1,27 @@
+{
+    "UnfoldGrad":{
+        "opInfo":{
+            "computeCost":"100",
+            "engine":"DNN_VM_AICPU",
+            "flagAsync":"False",
+            "flagPartial":"False",
+            "functionName":"RunCpuKernel",
+            "kernelSo":"libmath_aicpu_kernels.so",
+            "opKernelLib":"CUSTAICPUKernel",
+            "userDefined":"True",
+            "workspaceSize":"100"
+        },
+        "input0": {
+            "type": "DT_FLOAT16,DT_BFLOAT16,DT_FLOAT",
+            "name": "grad_out"
+        },
+        "input1": {
+            "type": "DT_INT64,DT_INT64,DT_INT64",
+            "name": "input_sizes"
+        },
+        "output0": {
+            "type": "DT_FLOAT16,DT_BFLOAT16,DT_FLOAT",
+            "name": "grad_in"
+        }
+    }
+}
