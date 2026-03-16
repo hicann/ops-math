@@ -113,7 +113,7 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(CORE_THREAD_NUM) inline void SimtDropOutVec(
         for (uint8_t iVec = 0; iVec < VEC; iVec++) {
             uint8_t maskBit = (resultsAll[iVec] < p) ? 1 : 0;
             float fMaskBit = (resultsAll[iVec] < p) ? 1.0f : 0.0f;
-            outputGM[linearIndex + iVec] = inputGM[linearIndex + iVec] * scale * fMaskBit;
+            outputGM[linearIndex + iVec] = inputGM[linearIndex + iVec] * fMaskBit * scale;
             maskGM[linearIndex + iVec] = maskBit;
         }
     }
