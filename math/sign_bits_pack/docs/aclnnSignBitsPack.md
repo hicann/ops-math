@@ -27,7 +27,7 @@
 
 - **参数说明**：
 
-  - self（aclTensor\*，计算输入）：表示用于计算的1D张量，Device侧的tensor，支持空tensor场景，数据类型支持FLOAT16和FLOAT。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。支持[数据格式](../../../docs/zh/context/数据格式.md)为ND。
+  - self（aclTensor\*，计算输入）：表示用于计算的1D张量，Device侧的tensor，支持空tensor场景，数据类型支持FLOAT16和FLOAT，不支持Nan值输入。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。支持[数据格式](../../../docs/zh/context/数据格式.md)为ND。
 
   - size（int64_t，计算输入）：表示处理维度，reshape时输出张量的第一个维度。
 
