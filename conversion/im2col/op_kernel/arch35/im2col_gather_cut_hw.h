@@ -68,6 +68,7 @@ private:
     TPipe& pipe_;
     constexpr static int32_t BUFFER_NUM = 2;
     constexpr static int64_t BLOCK_ELENUM = Ops::Base::GetUbBlockSize() / sizeof(T);
+    constexpr static int64_t BLOCK_SIZE = Ops::Base::GetUbBlockSize();
     constexpr static int64_t VL_LEN = Ops::Base::GetVRegSize();
     constexpr static int32_t DATA_COPY_GATHER = 128; // DataCopyGather并行度
     const Im2ColNCHWTilingData* tilingData_;
@@ -113,6 +114,7 @@ private:
     int64_t blockFactor_ = 0;
     int64_t blockCount_ = 0;
     int64_t rectAnglesPerCore_ = 0;
+    int32_t inputElemNum_ = 0;
 
     int32_t uVL_ = Ops::Base::GetVRegSize() / sizeof(U);
     int32_t blockIdx_ = 0;
@@ -143,12 +145,17 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::Init(
     ubFactorH_ = tilingData_->ubFactorH;
     ubFactorW_ = tilingData_->ubFactorW;
 
-    int64_t inputSize = tilingData_->inputBufferSize;
+    int64_t inputSize = Ops::Base::CeilAlign(static_cast<int64_t>(tilingData_->inputBufferSize), BLOCK_SIZE);
+    inputElemNum_ = inputSize / sizeof(T);
     int64_t outputSize = tilingData_->outputBufferSize;
     xGm_.SetGlobalBuffer((__gm__ T*)x);
     yGm_.SetGlobalBuffer((__gm__ T*)y);
-    pipe_.InitBuffer(inXBuf_, inputSize * BUFFER_NUM);
-    inTensorX_ = inXBuf_.template Get<T>();
+    if constexpr (isPadding) {
+        pipe_.InitBuffer(inXBuf_, inputSize * BUFFER_NUM);
+        inTensorX_ = inXBuf_.template Get<T>();
+    } else {
+        pipe_.InitBuffer(inQueueX_, BUFFER_NUM, inputSize);
+    }
     pipe_.InitBuffer(outQueueY_, BUFFER_NUM, outputSize);
 }
 
@@ -198,8 +205,8 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::IsDataCopyPad(
     padParam_.isPad = true;
     if (inIdx >= 1) {
         int32_t nextIdx = inIdx + 1;
-        LocalTensor<T> nextLocal = inTensorX_[(nextIdx & 1) * tilingData_->inputBufferSize / sizeof(T)];
-        Duplicate(nextLocal, static_cast<T>(0), tilingData_->inputBufferSize / sizeof(T));
+        LocalTensor<T> nextLocal = inTensorX_[(nextIdx & 1) * inputElemNum_];
+        Duplicate(nextLocal, static_cast<T>(0), inputElemNum_);
         if ((nextIdx & 1) == 0) {
             SetFlag<HardEvent::V_MTE2>(EVENT_ID0);
         } else {
@@ -861,7 +868,7 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::PadInWInH()
     int64_t nowMatrixHUbOffset = 0; // 矩阵块内H方向UB索引
     int64_t wPad = inputInfo_->W + inputInfo_->wPaddingBefore + inputInfo_->wPaddingAfter;
     int32_t inIdx = 0;
-    Duplicate(inTensorX_, static_cast<T>(0), BUFFER_NUM * tilingData_->inputBufferSize / sizeof(T));
+    Duplicate(inTensorX_, static_cast<T>(0), BUFFER_NUM * inputElemNum_);
     SetFlag<HardEvent::V_MTE2>(EVENT_ID0);
     SetFlag<HardEvent::V_MTE2>(EVENT_ID1);
 
@@ -909,7 +916,7 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::PadInWInH()
             procUbCount--;
             continue;
         }
-        LocalTensor<T> srcUb = inTensorX_[(inIdx & 1) * tilingData_->inputBufferSize / sizeof(T)];
+        LocalTensor<T> srcUb = inTensorX_[(inIdx & 1) * inputElemNum_];
         IsDataCopyPad(1, 1, blockLen, inIdx, srcUb);
         CalcIdxAndGather(1, 1, blockLen, ubFactorW, ubFactorH, ubFactorW, srcUb);
         LocalTensor<T> yUb = outQueueY_.DeQue<T>();
@@ -950,7 +957,7 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::PadOutWInH()
     int64_t perWUbMatrixCntReal = 0;
     int64_t wPad = inputInfo_->W + inputInfo_->wPaddingBefore + inputInfo_->wPaddingAfter;
     int32_t inIdx = 0;
-    Duplicate(inTensorX_, static_cast<T>(0), BUFFER_NUM * tilingData_->inputBufferSize / sizeof(T));
+    Duplicate(inTensorX_, static_cast<T>(0), BUFFER_NUM * inputElemNum_);
     SetFlag<HardEvent::V_MTE2>(EVENT_ID0);
     SetFlag<HardEvent::V_MTE2>(EVENT_ID1);
 
@@ -998,7 +1005,7 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::PadOutWInH()
             continue;
         }
 
-        LocalTensor<T> srcUb = inTensorX_[(inIdx & 1) * tilingData_->inputBufferSize / sizeof(T)];
+        LocalTensor<T> srcUb = inTensorX_[(inIdx & 1) * inputElemNum_];
         IsDataCopyPad(perWUbMatrixCntReal, 1, blockLen, inIdx, srcUb);
         if (wUbCount == 1 && outW_ <= maxGatherNum_) {
             CalcOneUBIdxAndGather(1, 1, blockLen, kernelNumW_, ubFactorH, ubFactorW, srcUb);
@@ -1044,7 +1051,7 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::PadInWOutH()
     int64_t perHUbMatrixCntReal = 0;
     int64_t wPad = inputInfo_->W + inputInfo_->wPaddingBefore + inputInfo_->wPaddingAfter;
     int32_t inIdx = 0;
-    Duplicate(inTensorX_, static_cast<T>(0), BUFFER_NUM * tilingData_->inputBufferSize / sizeof(T));
+    Duplicate(inTensorX_, static_cast<T>(0), BUFFER_NUM * inputElemNum_);
     SetFlag<HardEvent::V_MTE2>(EVENT_ID0);
     SetFlag<HardEvent::V_MTE2>(EVENT_ID1);
     while (procUbCount > 0) {
@@ -1089,7 +1096,7 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::PadInWOutH()
             continue;
         }
 
-        LocalTensor<T> srcUb = inTensorX_[(inIdx & 1) * tilingData_->inputBufferSize / sizeof(T)];
+        LocalTensor<T> srcUb = inTensorX_[(inIdx & 1) * inputElemNum_];
         IsDataCopyPad(1, perHUbMatrixCntReal, blockLen, inIdx, srcUb);
         CalcIdxAndGather(1, perHUbMatrixCntReal, blockLen, ubFactorW, inputInfo_->wKernelSize, ubFactorW, srcUb);
         LocalTensor<T> yUb = outQueueY_.DeQue<T>();
@@ -1129,7 +1136,7 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::PadOutWOutH()
     int64_t perWUbMatrixCntReal = 0;
     int64_t wPad = inputInfo_->W + inputInfo_->wPaddingBefore + inputInfo_->wPaddingAfter;
     int32_t inIdx = 0;
-    Duplicate(inTensorX_, static_cast<T>(0), BUFFER_NUM * tilingData_->inputBufferSize / sizeof(T));
+    Duplicate(inTensorX_, static_cast<T>(0), BUFFER_NUM * inputElemNum_);
     SetFlag<HardEvent::V_MTE2>(EVENT_ID0);
     SetFlag<HardEvent::V_MTE2>(EVENT_ID1);
     while (procUbCount > 0) {
@@ -1176,7 +1183,7 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::PadOutWOutH()
             continue;
         }
 
-        LocalTensor<T> srcUb = inTensorX_[(inIdx & 1) * tilingData_->inputBufferSize / sizeof(T)];
+        LocalTensor<T> srcUb = inTensorX_[(inIdx & 1) * inputElemNum_];
         IsDataCopyPad(perWUbMatrixCntReal, perHUbMatrixCntReal, blockLen, inIdx, srcUb);
         if (wUbCount == 1 && outW_ <= maxGatherNum_) {
             CalcOneUBIdxAndGather(
