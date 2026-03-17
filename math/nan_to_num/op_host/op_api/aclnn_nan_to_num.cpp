@@ -60,6 +60,13 @@ static inline aclnnStatus CheckParamsNanToNum(const aclTensor* self, const aclTe
   return ACLNN_SUCCESS;
 }
 
+static void CheckFormat(const aclTensor* self) {
+    ge::Format selfStorageFormat = self->GetStorageFormat();
+    if (selfStorageFormat == ge::Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("aclnnNanToNum doesn't support format NZ.");
+    }
+}
+ 
 static aclnnStatus ExecNanToNumGetWorkspaceSize(const aclTensor *self, float nan, float posinf, float neginf,
                                                 aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor) {
   // 固定写法，创建OpExecutor
@@ -69,7 +76,10 @@ static aclnnStatus ExecNanToNumGetWorkspaceSize(const aclTensor *self, float nan
   // 固定写法，参数检查
   auto ret = CheckParamsNanToNum(self, out);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
-
+  
+  // 检查self的format是否支持
+  CheckFormat(self);
+  
   // 空Tensor处理
   if (self->IsEmpty()) {
     *workspaceSize = 0;

@@ -279,6 +279,21 @@ static bool UseAxpyV2(const DataType promoteType, [[maybe_unused]] const aclScal
     return false;
 }
 
+static void CheckFormat(const aclTensor* self, const aclTensor* other){
+  ge::Format selfStorageFormat = self->GetStorageFormat();
+  ge::Format otherStorageFormat = other->GetStorageFormat();
+  if (selfStorageFormat != ge::Format::FORMAT_ND || otherStorageFormat != ge::Format::FORMAT_ND){
+    OP_LOGW("aclnnSub/aclnnInplaceSub only support format ND.");
+  }
+}
+
+static void SubsCheckFormat(const aclTensor* self) {
+    ge::Format selfStorageFormat = self->GetStorageFormat();
+    if (selfStorageFormat == ge::Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("aclnnSubs/aclnnInplaceSubs doesn't support format NZ.");
+    }
+}
+
 aclnnStatus aclnnSubGetWorkspaceSize(
     const aclTensor* self, const aclTensor* other, const aclScalar* alpha, aclTensor* out, uint64_t* workspaceSize,
     aclOpExecutor** executor)
@@ -292,6 +307,9 @@ aclnnStatus aclnnSubGetWorkspaceSize(
     // 固定写法，参数检查
     auto ret = CheckParams(self, other, alpha, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
+
+    // 检查self和other的format是否支持
+    CheckFormat(self, other);
 
     // Sub算子的空tensor在kernel中支持
     if (self->IsEmpty() || other->IsEmpty()) {
@@ -444,6 +462,9 @@ aclnnStatus aclnnSubsGetWorkspaceSize(
     // 固定写法，参数检查
     auto ret = CheckParamsScalar(self, other, alpha, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
+
+    // 检查self的format是否支持
+    SubsCheckFormat(self);
 
     // Sub算子的空tensor在kernel中支持
     if (self->IsEmpty()) {

@@ -231,6 +231,13 @@ static bool IsNonContiguousSupport(const aclTensor* self, DataType dtype, const 
     return true;
 }
 
+static void CheckFormat(const aclTensor* self) {
+    ge::Format selfStorageFormat = self->GetStorageFormat();
+    if (selfStorageFormat == ge::Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("aclnnMean doesn't support format NZ.");
+    }
+}
+
 aclnnStatus aclnnMeanGetWorkspaceSize(
     const aclTensor* self, const aclIntArray* dim, bool keepDim, aclDataType dtype, aclTensor* out,
     uint64_t* workspaceSize, aclOpExecutor** executor)
@@ -244,6 +251,9 @@ aclnnStatus aclnnMeanGetWorkspaceSize(
     auto ret = CheckParams(self, dim, dtype, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
+    // 检查self的format是否支持
+    CheckFormat(self);
+        
     // 算子的空tensor处理
     if (self->IsEmpty()) {
         // 空tensor填充NAN
@@ -313,7 +323,10 @@ aclnnStatus aclnnMeanV2GetWorkspaceSize(
     // 参数检查
     auto ret = CheckParamsONNX(self, dim, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
-
+        
+    // 检查self的format是否支持
+    CheckFormat(self);
+        
     // 算子的空tensor处理
     if (self->IsEmpty()) {
         // 空tensor填充NAN

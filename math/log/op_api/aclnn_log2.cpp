@@ -109,6 +109,13 @@ static aclnnStatus CheckParams(const aclTensor *self, const aclTensor *out) {
   return ACLNN_SUCCESS;
 }
 
+static void CheckFormat(const aclTensor* self) {
+    ge::Format selfStorageFormat = self->GetStorageFormat();
+    if (selfStorageFormat == ge::Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("aclnnLog2 doesn't support format NZ.");
+    }
+}
+
 static aclnnStatus CheckInplaceParams(const aclTensor *selfRef) {
   OP_CHECK_NULL(selfRef, return ACLNN_ERR_PARAM_NULLPTR);
 
@@ -127,6 +134,8 @@ static aclnnStatus aclnnLog2Common(const aclTensor *self, const aclTensor *out,
   auto uniqueExecutor = CREATE_EXECUTOR();
   CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
+  CheckFormat(self);
+  
   // log算子的空tensor在kernel中支持，对标竞品根据算子实际情况补充
   if (self->IsEmpty()) {
     // 根据实际支持情况补充

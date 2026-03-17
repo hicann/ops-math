@@ -358,7 +358,7 @@ static bool CheckSupportPows(const aclTensor *selfCast, const aclScalar *exponen
 static void CheckFormat(const aclTensor* self){
   ge::Format selfStorageFormat = self->GetStorageFormat();
   if (selfStorageFormat != ge::Format::FORMAT_ND){
-    OP_LOGW("aclnnPowTensorScalar only support format ND.");
+    OP_LOGW("aclnnPowTensorScalar/aclnnInplacePowTensorScalar only support format ND.");
   }
 }
 

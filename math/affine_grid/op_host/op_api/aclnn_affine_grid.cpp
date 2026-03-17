@@ -114,6 +114,13 @@ static bool CheckShape(const aclTensor *theta, const aclIntArray *size, const ac
   return true;
 }
 
+static void CheckFormat(const aclTensor* theta) {
+    ge::Format thetaStorageFormat = theta->GetStorageFormat();
+    if (thetaStorageFormat == ge::Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("aclnnAffineGrid doesn't support format NZ.");
+    }
+}
+
 static inline aclnnStatus CheckParams(const aclTensor *theta, const aclIntArray *size, const aclTensor *out) {
   // 1. 检查参数是否为空指针
   CHECK_RET(CheckNotNull(theta, size, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -139,6 +146,9 @@ aclnnStatus aclnnAffineGridGetWorkspaceSize(const aclTensor *theta, const aclInt
   // 固定写法，参数检查
   auto ret = CheckParams(theta, size, out);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
+  
+  // 检查格式
+  CheckFormat(theta);
 
   // 固定写法，将输入theta转换成连续的tensor
   auto thetaContiguous = l0op::Contiguous(theta, uniqueExecutor.get());

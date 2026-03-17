@@ -106,6 +106,14 @@ inline static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* ot
     return ACLNN_SUCCESS;
 }
 
+static void CheckFormat(const aclTensor* self, const aclTensor* other){
+  ge::Format selfStorageFormat = self->GetStorageFormat();
+  ge::Format otherStorageFormat = other->GetStorageFormat();
+  if (selfStorageFormat != ge::Format::FORMAT_ND || otherStorageFormat != ge::Format::FORMAT_ND){
+    OP_LOGW("aclnnLogicalAnd only support format ND.");
+  }
+}
+
 static aclnnStatus CalculateResult(
     const aclTensor* self, const aclTensor* other, aclTensor* out, aclOpExecutor* executor)
 {
@@ -118,6 +126,8 @@ static aclnnStatus CalculateResult(
         return ACLNN_SUCCESS;
     }
 
+    CheckFormat(self, other);
+    
     // 将输入self转换成连续的tensor
     auto selfContiguous = l0op::Contiguous(self, executor);
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
