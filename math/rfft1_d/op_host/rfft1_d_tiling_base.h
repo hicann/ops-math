@@ -76,8 +76,8 @@ protected:
     uint32_t ubSize;
     uint32_t coreNum;
     uint32_t batches;
-    int32_t length;
-    int32_t normal;
+    int64_t length;
+    int64_t normal;
     ge::DataType dtype;
 };
 } // namespace optiling

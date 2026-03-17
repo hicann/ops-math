@@ -21,7 +21,7 @@ ge::graphStatus InferDataTypeForEye(gert::InferDataTypeContext *context)
     OP_LOGD(context->GetNodeName(), "InferDataTypeForEye start");
     auto attrPtr = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrPtr);
-    auto dTypePtr = attrPtr->GetAttrPointer<int32_t>(EYE_ATTR_DTYPE);
+    auto dTypePtr = attrPtr->GetAttrPointer<int64_t>(EYE_ATTR_DTYPE);
     OP_CHECK_NULL_WITH_CONTEXT(context, dTypePtr);
     ge::DataType outDtype = static_cast<ge::DataType>(*dTypePtr);
     std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_UINT8,
