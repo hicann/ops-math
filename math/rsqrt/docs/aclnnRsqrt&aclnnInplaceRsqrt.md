@@ -66,15 +66,15 @@
 
 - **参数说明：**
   
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1595px"><colgroup>
   <col style="width: 180px">
   <col style="width: 120px">
   <col style="width: 280px">
+  <col style="width: 300px">
   <col style="width: 320px">
-  <col style="width: 370px">
   <col style="width: 120px">
-  <col style="width: 140px">
-  <col style="width: 140px">
+  <col style="width: 130px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -130,7 +130,7 @@
     </tr>
   </tbody></table>
   
-  - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：`self`、`out` 不支持 BFLOAT16。
+  - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
   
 - **返回值**：
 
@@ -213,15 +213,15 @@
 
 - **参数说明：**
   
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1595px"><colgroup>
   <col style="width: 180px">
   <col style="width: 120px">
   <col style="width: 280px">
+  <col style="width: 300px">
   <col style="width: 320px">
-  <col style="width: 370px">
   <col style="width: 120px">
-  <col style="width: 140px">
-  <col style="width: 140px">
+  <col style="width: 130px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>

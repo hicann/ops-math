@@ -64,15 +64,15 @@
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1595px"><colgroup>
   <col style="width: 180px">
   <col style="width: 120px">
   <col style="width: 280px">
+  <col style="width: 300px">
   <col style="width: 320px">
-  <col style="width: 370px">
   <col style="width: 120px">
-  <col style="width: 140px">
-  <col style="width: 140px">
+  <col style="width: 130px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -110,7 +110,7 @@
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>输出Tensor。</td>
-      <td>支持空Tensor。shape需要与self一致。</td>
+      <td>支持空Tensor。<br>shape需要与self一致。</td>
       <td>FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT32、INT64</td>
       <td>ND</td>
       <td>0-8</td>
@@ -138,7 +138,7 @@
     </tr>
   </tbody></table>
   
-  - <term>Atlas 训练系列产品</term>：`self`、`out` 不支持 BFLOAT16。
+  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
 
 - **返回值**：
@@ -237,15 +237,15 @@
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1595px"><colgroup>
   <col style="width: 180px">
   <col style="width: 120px">
   <col style="width: 280px">
+  <col style="width: 300px">
   <col style="width: 320px">
-  <col style="width: 370px">
   <col style="width: 120px">
-  <col style="width: 140px">
-  <col style="width: 140px">
+  <col style="width: 130px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>

@@ -88,15 +88,15 @@
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1615px"><colgroup>
   <col style="width: 180px">
   <col style="width: 120px">
   <col style="width: 280px">
   <col style="width: 320px">
-  <col style="width: 370px">
+  <col style="width: 320px">
   <col style="width: 120px">
-  <col style="width: 140px">
-  <col style="width: 140px">
+  <col style="width: 130px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -114,7 +114,7 @@
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入self。</td>
-      <td>支持空Tensor。数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>/<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
+      <td>支持空Tensor。<br>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>/<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
       <td>INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
@@ -134,7 +134,7 @@
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的输出out。</td>
-      <td>支持空Tensor。数据类型需要是self与other推导之后可转换的数据类型。shape需要与self一致。</td>
+      <td>支持空Tensor。<br>数据类型需要是self与other推导之后可转换的数据类型。<br>shape需要与self一致。</td>
       <td>UINT8、INT8、INT16、INT32、INT64、FLOAT16、FLOAT、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
@@ -162,7 +162,7 @@
     </tr>
   </tbody></table>
   
-  - <term>Atlas 训练系列产品</term>：`self`、`other`、`out` 不支持 BFLOAT16。
+  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
 
 - **返回值：**
@@ -259,15 +259,15 @@
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1615px"><colgroup>
   <col style="width: 180px">
   <col style="width: 120px">
   <col style="width: 280px">
   <col style="width: 320px">
-  <col style="width: 370px">
+  <col style="width: 320px">
   <col style="width: 120px">
-  <col style="width: 140px">
-  <col style="width: 140px">
+  <col style="width: 130px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>

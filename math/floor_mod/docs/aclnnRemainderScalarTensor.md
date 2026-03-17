@@ -101,7 +101,7 @@ aclnnStatus aclnnRemainderScalarTensor(
       <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入other。</td>
-      <td>支持空Tensor。数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>/<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），并且推导出的数据类型必须能转换为out的数据类型。</td>
+      <td>支持空Tensor。<br>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>/<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），并且推导出的数据类型必须能转换为out的数据类型。</td>
       <td>INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
@@ -111,7 +111,7 @@ aclnnStatus aclnnRemainderScalarTensor(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的输出out。</td>
-      <td>支持空Tensor。shape需要与other一致。</td>
+      <td>支持空Tensor。<br>shape需要与other一致。</td>
       <td>INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
@@ -139,7 +139,7 @@ aclnnStatus aclnnRemainderScalarTensor(
     </tr>
   </tbody></table>
   
-  - <term>Atlas 训练系列产品</term>：`self`、`other`、`out` 不支持 BFLOAT16。
+  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
 
 - **返回值：**
