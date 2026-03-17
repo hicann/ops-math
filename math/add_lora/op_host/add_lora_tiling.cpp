@@ -211,7 +211,7 @@ ge::graphStatus AddLoraTiling::CheckInputAttrLimit()
     OP_CHECK_IF(attrs_ == nullptr, OP_LOGE(context_->GetNodeName(), "AddLora attrs got from GE is nullptr."),
                 return ge::GRAPH_FAILED);
 
-    const int *layerIdxPtr = attrs_->GetAttrPointer<int>(LAYER_IDX_ATTR_INDEX);
+    const int64_t *layerIdxPtr = attrs_->GetAttrPointer<int64_t>(LAYER_IDX_ATTR_INDEX);
     OP_CHECK_IF(layerIdxPtr == nullptr, OP_LOGE(context_->GetNodeName(), "AddLora attr layerIdx is nullptr."),
                 return ge::GRAPH_FAILED);
     layerIdx_ = static_cast<uint32_t>(*layerIdxPtr);
@@ -225,7 +225,7 @@ ge::graphStatus AddLoraTiling::CheckInputAttrLimit()
                 return ge::GRAPH_FAILED);
     scale_ = *scalePtr;
 
-    const int *yOffsetPtr = attrs_->GetAttrPointer<int>(Y_OFFSET_ATTR_INDEX);
+    const int64_t *yOffsetPtr = attrs_->GetAttrPointer<int64_t>(Y_OFFSET_ATTR_INDEX);
     OP_CHECK_IF(yOffsetPtr == nullptr, OP_LOGE(context_->GetNodeName(), "AddLora attr yOffset is nullptr."),
                 return ge::GRAPH_FAILED);
     yOffset_ = static_cast<uint32_t>(*yOffsetPtr);
@@ -234,7 +234,7 @@ ge::graphStatus AddLoraTiling::CheckInputAttrLimit()
                 "AddLora attr yOffset must less than y dim 1, current is %u.", yOffset_),
                 return ge::GRAPH_FAILED);
 
-    const int *ySliceSizePtr = attrs_->GetAttrPointer<int>(Y_SLICE_SIZE_ATTR_INDEX);
+    const int64_t *ySliceSizePtr = attrs_->GetAttrPointer<int64_t>(Y_SLICE_SIZE_ATTR_INDEX);
     OP_CHECK_IF(ySliceSizePtr == nullptr, OP_LOGE(context_->GetNodeName(), "AddLora attr ySliceSize is nullptr."),
                 return ge::GRAPH_FAILED);
     ySliceSize_ = static_cast<uint32_t>(*ySliceSizePtr);

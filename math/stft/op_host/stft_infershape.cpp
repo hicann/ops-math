@@ -64,17 +64,17 @@ static ge::graphStatus InferShape4STFT(gert::InferShapeContext* context)
         one_sided = false;
     }
 
-    const int32_t* n_fft_attr = attrs->GetAttrPointer<int32_t>(N_FFT_IDX);
+    const int64_t* n_fft_attr = attrs->GetAttrPointer<int64_t>(N_FFT_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context, n_fft_attr);
     int n_fft = *n_fft_attr;
 
-    const int32_t* hop_length_attr = attrs->GetAttrPointer<int32_t>(HOP_LENGTH_IDX);
+    const int64_t* hop_length_attr = attrs->GetAttrPointer<int64_t>(HOP_LENGTH_IDX);
     int hop_length = (n_fft >> 2);
     if (hop_length_attr != nullptr && *hop_length_attr != 0) {
         hop_length = *hop_length_attr;
     }
 
-    const int32_t* win_length_attr = attrs->GetAttrPointer<int32_t>(WIN_LENGTH_IDX);
+    const int64_t* win_length_attr = attrs->GetAttrPointer<int64_t>(WIN_LENGTH_IDX);
     int win_length = n_fft;
     if (win_length_attr != nullptr && *win_length_attr != 0) {
         win_length = *win_length_attr;

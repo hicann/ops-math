@@ -48,8 +48,8 @@ ge::graphStatus Rfft1DBaseTiling::GetShapeAttrsInfo()
 {
     auto runtimeAttrs = context_->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context_, runtimeAttrs);
-    length = *runtimeAttrs->GetAttrPointer<int32_t>(0);
-    normal = *runtimeAttrs->GetAttrPointer<int32_t>(1);
+    length = *runtimeAttrs->GetAttrPointer<int64_t>(0);
+    normal = *runtimeAttrs->GetAttrPointer<int64_t>(1);
 
     auto inputXDesc = context_->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, inputXDesc);
