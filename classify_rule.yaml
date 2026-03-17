@@ -105,6 +105,11 @@ HPTG3@ops-math:
         - ops/ops-math/math/bincount/op_host/config/ascend950/
         - ops/ops-math/math/bincount/op_kernel/arch35/
         - ops/ops-math/math/bincount/op_kernel/bincount.cpp
+        - ops/ops-math/conversion/clip_by_value/op_host/arch35/clip_by_value_single_dim_tiling.cpp
+        - ops/ops-math/conversion/clip_by_value/op_host/arch35/clip_by_value_tiling.cpp
+        - ops/ops-math/conversion/clip_by_value/op_host/arch35/clip_by_value_ub_broadcast_tiling.cpp
+        - ops/ops-math/conversion/clip_by_value_v2/op_host/arch35/clip_by_value_v2_tiling.cpp
+
       opensource_style: null
       kernel_style: null
     unrelease:
