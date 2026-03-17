@@ -21,11 +21,6 @@ constexpr int64_t MAX_AXIS_NUM_FOR_STRIDESLICE = 8;
 constexpr int64_t MAX_NDDMA_UB_SPLIT_AXIS_NUM = 5;
 constexpr int64_t MAX_SIMT_UB_SPLIT_AXIS_NUM = 8;
 constexpr int64_t NUMBER_TWO = 2;
-constexpr int64_t MAX_TILINGDATA_BYTES = 4096;
-
-struct SliceFakeTilingData {
-    char scalarData[MAX_TILINGDATA_BYTES];
-};
 
 struct SliceBaseTilingData {
     int8_t isBeginConst;

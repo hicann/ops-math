@@ -31,7 +31,7 @@ extern "C" __global__ __aicore__ void slice(
     GM_ADDR x, GM_ADDR offsets, GM_ADDR size, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    REGISTER_TILING_DEFAULT(SliceFakeTilingData);
+    REGISTER_NONE_TILING;
     TPipe pipe;
     if (TILING_KEY_IS(SLICE_KEY_MOVE_ALIGN)) {
         GET_TILING_DATA_WITH_STRUCT(SliceMoveAlignTilingData, tilingData, tiling);
@@ -49,6 +49,7 @@ extern "C" __global__ __aicore__ void slice(
         GET_TILING_DATA_WITH_STRUCT(SliceMoveAlignLast2DimTilingData, tilingData, tiling);
         SliceMoveAlignTwoDimProcess(x, offsets, size, y, &tilingData, &pipe);
     } else if (TILING_KEY_IS(SLICE_KEY_SIMT)) {
+        GET_TILING_DATA_WITH_STRUCT(SliceTilingData, tilingData, tiling);
         // 空tenseor处理
     } else if (TILING_KEY_IS(SLICE_KEY_MOVE_ALIGN_GATHER)) {
         GET_TILING_DATA_WITH_STRUCT(SliceMoveAlignGatherTilingData, tilingData, tiling);

@@ -358,7 +358,7 @@ void SliceTiling::FillSliceTilingData101()
     size_t tilingDataSize = sizeof(SliceMoveAlignLastDimTilingData);
     OP_LOGD(tilingContext_->GetNodeName(), "Entering FillTilingData101.");
     FillSliceBaseTilingData(sliceMoveAlignLastDimTilingData_.sliceBaseTilingData);
-    auto tilingData = tilingContext_->GetTilingData<SliceMoveAlignTilingData>();
+    auto tilingData = tilingContext_->GetTilingData<SliceMoveAlignLastDimTilingData>();
     errno_t ret = memcpy_s(
         tilingData, tilingDataSize, reinterpret_cast<void*>(&sliceMoveAlignLastDimTilingData_), tilingDataSize);
     if (ret != EOK) {

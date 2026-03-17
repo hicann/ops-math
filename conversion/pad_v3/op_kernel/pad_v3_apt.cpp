@@ -89,7 +89,7 @@ extern "C" __global__ __aicore__ void pad_v3(
     GM_ADDR x, GM_ADDR paddings, GM_ADDR constValues, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    REGISTER_TILING_DEFAULT(SliceFakeTilingData);
+    REGISTER_NONE_TILING;
     if (TILING_KEY_IS(CONSTANT_CUT_LAST_DIM_BRANCH)) { // 30000
         PadV3::LaunchKernelPadWithHugeWidth<DTYPE_X>(x, paddings, y, tiling, constValues);
     } else if (TILING_KEY_IS(CONSTANT_BIG_LAST_DIM_BRANCH_DIM2)) { // 30021
@@ -227,6 +227,7 @@ extern "C" __global__ __aicore__ void pad_v3(
             GET_TILING_DATA_WITH_STRUCT(SliceMoveAlignLast2DimTilingData, tilingData, tiling);
             PadSliceMoveAlignTwoDimProcess(x, offsets, size, y, &tilingData, &pipe);
         } else if (TILING_KEY_IS(PAD_SLICE_KEY_SIMT)) {
+            GET_TILING_DATA_WITH_STRUCT(SliceTilingData, tilingData, tiling);
             // 空tenseor处理
         } else if (TILING_KEY_IS(PAD_SLICE_KEY_MOVE_ALIGN_GATHER)) {
             GET_TILING_DATA_WITH_STRUCT(SliceMoveAlignGatherTilingData, tilingData, tiling);
