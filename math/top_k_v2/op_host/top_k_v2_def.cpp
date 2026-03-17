@@ -19,21 +19,52 @@ static const std::vector<ge::DataType> valuesDataType = {ge::DT_INT64,   ge::DT_
                                                          ge::DT_FLOAT16, ge::DT_FLOAT,  ge::DT_UINT64,
                                                          ge::DT_INT64,   ge::DT_INT32,  ge::DT_INT16, ge::DT_INT8,
                                                          ge::DT_UINT32,  ge::DT_UINT16, ge::DT_UINT8, ge::DT_BF16,
+                                                         ge::DT_FLOAT16, ge::DT_FLOAT,  ge::DT_UINT64,
+                                                         ge::DT_INT64,   ge::DT_INT32,  ge::DT_INT16, ge::DT_INT8,
+                                                         ge::DT_UINT32,  ge::DT_UINT16, ge::DT_UINT8, ge::DT_BF16,
+                                                         ge::DT_FLOAT16, ge::DT_FLOAT,  ge::DT_UINT64,
+                                                         ge::DT_INT64,   ge::DT_INT32,  ge::DT_INT16, ge::DT_INT8,
+                                                         ge::DT_UINT32,  ge::DT_UINT16, ge::DT_UINT8, ge::DT_BF16,
                                                          ge::DT_FLOAT16, ge::DT_FLOAT,  ge::DT_UINT64};
 
 static const std::vector<ge::Format> topKFormat = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+                                                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                                   ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
 
 static const std::vector<ge::DataType> indicesDataType = {ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
                                                           ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
                                                           ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
                                                           ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
                                                           ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+                                                          ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+                                                          ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+                                                          ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+                                                          ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+                                                          ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+                                                          ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
                                                           ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
+
+static const std::vector<ge::DataType> kDataType = {ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+                                                    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+                                                    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+                                                    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+                                                    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+                                                    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+                                                    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+                                                    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+                                                    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+                                                    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+                                                    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+                                                    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};  
 
 class TopKV2: public OpDef {
 public:
@@ -44,7 +75,7 @@ public:
             .Format({topKFormat});
         this->Input("k")
             .ParamType(REQUIRED)
-            .DataType(indicesDataType)
+            .DataType(kDataType)
             .Format({topKFormat});
         this->Output("values")
             .ParamType(REQUIRED)

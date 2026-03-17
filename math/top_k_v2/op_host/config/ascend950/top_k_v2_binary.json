@@ -2,7 +2,7 @@
   "op_type": "TopKV2",
   "op_list": [
     {
-      "bin_filename": "TopKV2_bfloat16_int32",
+      "bin_filename": "TopKV2_x_bfloat16_indices_int32_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -71,7 +71,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_float16_int32",
+      "bin_filename": "TopKV2_x_float16_indices_int32_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -140,7 +140,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_float32_int32",
+      "bin_filename": "TopKV2_x_float32_indices_int32_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -209,7 +209,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_uint8_int32",
+      "bin_filename": "TopKV2_x_uint8_indices_int32_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -278,7 +278,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_int8_int32",
+      "bin_filename": "TopKV2_x_int8_indices_int32_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -347,7 +347,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_int16_int32",
+      "bin_filename": "TopKV2_x_int16_indices_int32_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -416,7 +416,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_uint16_int32",
+      "bin_filename": "TopKV2_x_uint16_indices_int32_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -485,7 +485,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_int32_int32",
+      "bin_filename": "TopKV2_x_int32_indices_int32_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -554,7 +554,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_uint32_int32",
+      "bin_filename": "TopKV2_x_uint32_indices_int32_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -623,7 +623,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_uint64_int32",
+      "bin_filename": "TopKV2_x_uint64_indices_int32_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -692,7 +692,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_int64_int32",
+      "bin_filename": "TopKV2_x_int64_indices_int32_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -761,7 +761,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_bfloat16_int64",
+      "bin_filename": "TopKV2_x_bfloat16_indices_int64_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -830,7 +830,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_float16_int64",
+      "bin_filename": "TopKV2_x_float16_indices_int64_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -899,7 +899,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_float32_int64",
+      "bin_filename": "TopKV2_x_float32_indices_int64_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -968,7 +968,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_uint8_int64",
+      "bin_filename": "TopKV2_x_uint8_indices_int64_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -1037,7 +1037,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_int8_int64",
+      "bin_filename": "TopKV2_x_int8_indices_int64_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -1106,7 +1106,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_int16_int64",
+      "bin_filename": "TopKV2_x_int16_indices_int64_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -1175,7 +1175,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_uint16_int64",
+      "bin_filename": "TopKV2_x_uint16_indices_int64_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -1244,7 +1244,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_int32_int64",
+      "bin_filename": "TopKV2_x_int32_indices_int64_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -1313,7 +1313,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_uint32_int64",
+      "bin_filename": "TopKV2_x_uint32_indices_int64_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -1382,7 +1382,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_uint64_int64",
+      "bin_filename": "TopKV2_x_uint64_indices_int64_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -1451,7 +1451,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_int64_int64",
+      "bin_filename": "TopKV2_x_int64_indices_int64_k_int32",
       "inputs": [
         {
           "name": "x",
@@ -1520,7 +1520,766 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_bfloat16_int64_k_int64",
+      "bin_filename": "TopKV2_x_bfloat16_indices_int32_k_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "bfloat16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "k",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "values",
+          "index": 0,
+          "dtype": "bfloat16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "indices",
+          "index": 1,
+          "dtype": "int32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "sorted",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "dim",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "largest",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indices_dtype",
+          "dtype": "int",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "bin_filename": "TopKV2_x_float16_indices_int32_k_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "float16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "k",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "values",
+          "index": 0,
+          "dtype": "float16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "indices",
+          "index": 1,
+          "dtype": "int32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "sorted",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "dim",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "largest",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indices_dtype",
+          "dtype": "int",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "bin_filename": "TopKV2_x_float32_indices_int32_k_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "float32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "k",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "values",
+          "index": 0,
+          "dtype": "float32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "indices",
+          "index": 1,
+          "dtype": "int32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "sorted",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "dim",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "largest",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indices_dtype",
+          "dtype": "int",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "bin_filename": "TopKV2_x_uint8_indices_int32_k_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "uint8",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "k",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "values",
+          "index": 0,
+          "dtype": "uint8",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "indices",
+          "index": 1,
+          "dtype": "int32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "sorted",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "dim",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "largest",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indices_dtype",
+          "dtype": "int",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "bin_filename": "TopKV2_x_int8_indices_int32_k_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "int8",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "k",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "values",
+          "index": 0,
+          "dtype": "int8",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "indices",
+          "index": 1,
+          "dtype": "int32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "sorted",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "dim",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "largest",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indices_dtype",
+          "dtype": "int",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "bin_filename": "TopKV2_x_int16_indices_int32_k_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "int16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "k",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "values",
+          "index": 0,
+          "dtype": "int16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "indices",
+          "index": 1,
+          "dtype": "int32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "sorted",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "dim",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "largest",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indices_dtype",
+          "dtype": "int",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "bin_filename": "TopKV2_x_uint16_indices_int32_k_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "uint16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "k",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "values",
+          "index": 0,
+          "dtype": "uint16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "indices",
+          "index": 1,
+          "dtype": "int32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "sorted",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "dim",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "largest",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indices_dtype",
+          "dtype": "int",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "bin_filename": "TopKV2_x_int32_indices_int32_k_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "int32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "k",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "values",
+          "index": 0,
+          "dtype": "int32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "indices",
+          "index": 1,
+          "dtype": "int32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "sorted",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "dim",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "largest",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indices_dtype",
+          "dtype": "int",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "bin_filename": "TopKV2_x_uint32_indices_int32_k_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "uint32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "k",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "values",
+          "index": 0,
+          "dtype": "uint32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "indices",
+          "index": 1,
+          "dtype": "int32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "sorted",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "dim",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "largest",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indices_dtype",
+          "dtype": "int",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "bin_filename": "TopKV2_x_uint64_indices_int32_k_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "uint64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "k",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "values",
+          "index": 0,
+          "dtype": "uint64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "indices",
+          "index": 1,
+          "dtype": "int32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "sorted",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "dim",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "largest",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indices_dtype",
+          "dtype": "int",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "bin_filename": "TopKV2_x_int64_indices_int32_k_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "k",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "values",
+          "index": 0,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        },
+        {
+          "name": "indices",
+          "index": 1,
+          "dtype": "int32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ]
+        }
+      ],
+      "attrs": [
+        {
+          "name": "sorted",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "dim",
+          "dtype": "int",
+          "value": null
+        },
+        {
+          "name": "largest",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "indices_dtype",
+          "dtype": "int",
+          "value": 3
+        }
+      ]
+    },    
+    {
+      "bin_filename": "TopKV2_x_bfloat16_indices_int64_k_int64",
       "inputs": [
         {
           "name": "x",
@@ -1589,7 +2348,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_float16_int64_k_int64",
+      "bin_filename": "TopKV2_x_float16_indices_int64_k_int64",
       "inputs": [
         {
           "name": "x",
@@ -1658,7 +2417,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_float32_int64_k_int64",
+      "bin_filename": "TopKV2_x_float32_indices_int64_k_int64",
       "inputs": [
         {
           "name": "x",
@@ -1727,7 +2486,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_uint8_int64_k_int64",
+      "bin_filename": "TopKV2_x_uint8_indices_int64_k_int64",
       "inputs": [
         {
           "name": "x",
@@ -1796,7 +2555,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_int8_int64_k_int64",
+      "bin_filename": "TopKV2_x_int8_indices_int64_k_int64",
       "inputs": [
         {
           "name": "x",
@@ -1865,7 +2624,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_int16_int64_k_int64",
+      "bin_filename": "TopKV2_x_int16_indices_int64_k_int64",
       "inputs": [
         {
           "name": "x",
@@ -1934,7 +2693,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_uint16_int64_k_int64",
+      "bin_filename": "TopKV2_x_uint16_indices_int64_k_int64",
       "inputs": [
         {
           "name": "x",
@@ -2003,7 +2762,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_int32_int64_k_int64",
+      "bin_filename": "TopKV2_x_int32_indices_int64_k_int64",
       "inputs": [
         {
           "name": "x",
@@ -2072,7 +2831,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_uint32_int64_k_int64",
+      "bin_filename": "TopKV2_x_uint32_indices_int64_k_int64",
       "inputs": [
         {
           "name": "x",
@@ -2141,7 +2900,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_uint64_int64_k_int64",
+      "bin_filename": "TopKV2_x_uint64_indices_int64_k_int64",
       "inputs": [
         {
           "name": "x",
@@ -2210,7 +2969,7 @@
       ]
     },
     {
-      "bin_filename": "TopKV2_int64_int64_k_int64",
+      "bin_filename": "TopKV2_x_int64_indices_int64_k_int64",
       "inputs": [
         {
           "name": "x",

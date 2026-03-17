@@ -745,11 +745,8 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
     // check the indices_dtype attr and actual value of indices output
     const int* indicesDTypeValuePtr = attrs->GetAttrPointer<int>(3);
     OP_CHECK_NULL_WITH_CONTEXT(context, indicesDTypeValuePtr);
-    OP_LOGI(context->GetNodeName(), "indicesDTypeValuePtr=%d", *indicesDTypeValuePtr);
-    if ((*indicesDTypeValuePtr) != static_cast<int64_t>(indicesDType)) {
-        OP_LOGE("TopKV2TilingForAscendC", "The indices_dtype attr differs from the actual dtype of output indices.");
-        return ge::GRAPH_FAILED;
-    }
+    OP_LOGI(context->GetNodeName(), "indicesDTypeValuePtr=%d, outPutIndexType=%ld.", *indicesDTypeValuePtr, 
+        static_cast<int64_t>(indicesDType));
 
     size_t inputDimNum = inputShape.GetDimNum();
     OP_CHECK_IF(
