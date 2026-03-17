@@ -74,13 +74,13 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
 - **参数说明：**
 
   <table style="undefined;table-layout: fixed; width: 1370px"><colgroup>
-  <col style="width: 171px">
+  <col style="width: 271px">
   <col style="width: 115px">
   <col style="width: 220px">
   <col style="width: 200px">
   <col style="width: 177px">
   <col style="width: 104px">
-  <col style="width: 238px">
+  <col style="width: 138px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -96,7 +96,7 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
     </tr></thead>
    <tbody>
      <tr>
-      <td>qkv</td>
+      <td>qkv（aclTensor*）</td>
       <td>输入</td>
       <td>输入的张量，公式中的q<sub>o</sub>、k<sub>o</sub>、v<sub>o</sub>。</td>
       <td>shape为{B,T,3 * num_heads * dim_per_head}三维张量。B为批量大小，T为序列长度，num_heads为注意力头数，dim_per_head为每个注意力头的维度。</td>
@@ -106,7 +106,7 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
       <td>√</td>
     </tr>
     <tr>
-      <td>qkvBias</td>
+      <td>qkvBias（aclTensor*）</td>
       <td>输入</td>
       <td>输入的张量，公式中的q<sub>bias</sub>、k<sub>bias</sub>、v<sub>bias</sub>。</td>
       <td><ul><li>shape为{3 * num_heads * dim_per_head}一维张量。</li><li>不支持空Tensor。</li></ul></td>
@@ -116,17 +116,17 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
       <td>√</td>
     </tr>
     <tr>
-      <td>numHeads</td>
+      <td>numHeads（int64_t）</td>
       <td>输入</td>
       <td>输入的头数。</td>
       <td>取值大于0。</td>
-      <td>INT64</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
      <tr>
-      <td>qOut</td>
+      <td>qOut（aclTensor*）</td>
       <td>输出</td>
       <td>输出张量，公式中的q<sub>o</sub>。</td>
       <td>shape为{B,num_heads,T,dim_per_head}四维张量。</td>
@@ -136,7 +136,7 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
       <td>√</td>
     </tr>
     <tr>
-      <td>kOut</td>
+      <td>kOut（aclTensor*）</td>
       <td>输出</td>
       <td>输出张量，公式中的k<sub>o</sub>。</td>
       <td>shape为{B,num_heads,T,dim_per_head}四维张量。</td>
@@ -146,7 +146,7 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
       <td>√</td>
     </tr>
     <tr>
-      <td>vOut</td>
+      <td>vOut（aclTensor*）</td>
       <td>输出</td>
       <td>输出张量，公式中的v<sub>o</sub>。</td>
       <td>shape为{B,num_heads,T,dim_per_head}四维张量。</td>
@@ -156,7 +156,7 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
       <td>√</td>
     </tr>
       <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -166,7 +166,7 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
       <td>-</td>
     </tr>
       <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
