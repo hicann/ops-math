@@ -76,13 +76,13 @@ aclnnStatus aclnnAddLora(
 - **参数说明：**
 
   <table style="undefined;table-layout: fixed; width: 1420px"><colgroup>
-  <col style="width: 171px">
+  <col style="width: 271px">
   <col style="width: 115px">
   <col style="width: 220px">
   <col style="width: 250px">
   <col style="width: 177px">
   <col style="width: 104px">
-  <col style="width: 238px">
+  <col style="width: 138px">
   <col style="width: 145px">
   </colgroup>
   <thead>
@@ -98,7 +98,7 @@ aclnnStatus aclnnAddLora(
     </tr></thead>
    <tbody>
      <tr>
-      <td>y</td>
+      <td>y（aclTensor*）</td>
       <td>输入</td>
       <td>表示待进行累加更新的张量，公式中的y。</td>
       <td><ul><li>shape维度2维：[B, H3]，H3是16的整数倍，同时H3的范围必须支持1~131072。</li><li>第一维需要和x的第一维一致，都用`B`表示。</li><li>不支持空Tensor。</li></ul></td>
@@ -108,7 +108,7 @@ aclnnStatus aclnnAddLora(
       <td>√</td>
     </tr>
     <tr>
-      <td>x</td>
+      <td>x（aclTensor*）</td>
       <td>输入</td>
       <td>表示分组前的输入张量，公式中的x。</td>
       <td><ul><li>shape维度2维：[B, H1]，且H1是16的整数倍。</li><li>不支持空Tensor。</li></ul></td>
@@ -118,7 +118,7 @@ aclnnStatus aclnnAddLora(
       <td>√</td>
     </tr>
     <tr>
-      <td>weightB</td>
+      <td>weightB（aclTensor*）</td>
       <td>输入</td>
       <td>表示进行矩阵乘的第二个权重矩阵，公式中的weightB。</td>
       <td><ul><li>shape维度4维：[W, L, H2, R]，第三维需要小于等于y的第二维（H2 ≤ H3），且H2是16的整数倍，同时H2的范围必须支持1~131072；R的范围必须支持1~128，同时为16的整数倍。</li><li>不支持空Tensor。</li></ul></td>
@@ -128,7 +128,7 @@ aclnnStatus aclnnAddLora(
       <td>√</td>
     </tr>
      <tr>
-      <td>indices</td>
+      <td>indices（aclTensor*）</td>
       <td>输入</td>
       <td>标识输入x的分组索引，公式中的输入indices。</td>
       <td><ul><li>shape维度1维：[B]。</li><li>第一维需要和x以及y的第一维保持一致，都用`B`表示。</li><li>不支持空Tensor。</li></ul></td>
@@ -138,7 +138,7 @@ aclnnStatus aclnnAddLora(
       <td>√</td>
     </tr>
     <tr>
-      <td>weightAOptional</td>
+      <td>weightAOptional（aclTensor*）</td>
       <td>输入</td>
       <td>表示进行矩阵乘的第一个权重矩阵，为空时会跳过第一个矩阵乘，公式中的weightA。</td>
       <td><ul><li>shape维度4维：[W, L, R, H1]，前两维需要和`weightB`的前两维一致，用`W`和`L`表示，其中W的范围支持1~32；L的范围支持1~32；第三维需要和`weightB`的第四维保持一致，都用`R`表示；第四维需要和`x`的第二维保持一致，都用`H1`表示，需要是16的整数倍。</li><li>不支持空Tensor。</li></ul></td>
@@ -148,47 +148,47 @@ aclnnStatus aclnnAddLora(
       <td>√</td>
     </tr>
     <tr>
-      <td>layerIdx</td>
+      <td>layerIdx（int64_t）</td>
       <td>输入</td>
       <td>表示层数索引，公式中的layerIdx。</td>
       <td>值需要小于weightB的第二个维度L。</td>
-      <td>INT</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>scale</td>
+      <td>scale（double）</td>
       <td>输入</td>
       <td>表示缩放系数，公式中的scale。</td>
       <td>-</td>
-      <td>FLOAT</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>yOffset</td>
+      <td>yOffset（int64_t）</td>
       <td>输入</td>
       <td>表示y更新时的偏移量，公式中的yOffset。</td>
       <td>值需要小于y的第二个维度H3。</td>
-      <td>INT</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>ySliceSize</td>
+      <td>ySliceSize（int64_t）</td>
       <td>输入</td>
       <td>表示y更新时的范围，公式中的ySliceSize。</td>
       <td>值需要小于等于y的第二个维度H3。</td>
-      <td>INT</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>输出张量，公式中的输出out。</td>
       <td><ul><li>输出的数据类型与输入保持一致。</li><li>输出shape和输入y的shape维度一致。</li></ul></td>
@@ -198,7 +198,7 @@ aclnnStatus aclnnAddLora(
       <td>√</td>
     </tr>
       <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -208,7 +208,7 @@ aclnnStatus aclnnAddLora(
       <td>-</td>
     </tr>
       <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
