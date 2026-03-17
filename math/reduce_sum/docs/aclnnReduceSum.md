@@ -21,6 +21,7 @@
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnReduceSumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnReduceSum”接口执行计算。
+
 ```Cpp
 aclnnStatus aclnnReduceSumGetWorkspaceSize(
   const aclTensor*   self, 
@@ -110,7 +111,7 @@ aclnnStatus aclnnReduceSum(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>输出tensor。</td>
-      <td>支持空Tensor。shape需要是self经过计算后的shape。</td>
+      <td>支持空Tensor。<br>shape需要是self经过计算后的shape。</td>
       <td>FLOAT16、FLOAT32、INT8、INT16、INT32、INT64、UINT8、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>

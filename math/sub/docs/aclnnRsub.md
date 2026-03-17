@@ -75,7 +75,7 @@ aclnnStatus aclnnRsub(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入self。</td>
-      <td>支持空Tensor。数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>支持空Tensor。<br>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。<br>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>INT8、UINT8、INT16、INT32、INT64、FLOAT16、FLOAT、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
@@ -85,7 +85,7 @@ aclnnStatus aclnnRsub(
       <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入other。</td>
-      <td>支持空Tensor。数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>支持空Tensor。<br>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。<br>shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>INT8、UINT8、INT16、INT32、INT64、FLOAT16、FLOAT、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
@@ -105,7 +105,7 @@ aclnnStatus aclnnRsub(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的输出out。</td>
-      <td>支持空Tensor。数据类型需要是self与other推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），shape需要是self与other broadcast之后的shape。</td>
+      <td>支持空Tensor。<br>数据类型需要是self与other推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。<br>shape需要是self与other broadcast之后的shape。</td>
       <td>INT8、UINT8、INT16、INT32、INT64、FLOAT16、FLOAT、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
@@ -133,7 +133,7 @@ aclnnStatus aclnnRsub(
     </tr>
   </tbody></table>
   
-  - <term>Atlas 训练系列产品</term>：`self`、`other`、`alpha`、`out` 不支持 BFLOAT16。
+  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
 
 - **返回值：**
