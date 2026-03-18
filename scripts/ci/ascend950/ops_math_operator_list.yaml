@@ -46,6 +46,7 @@ operator_group_1:
   - div_no_nan
   - dot
   - dynamic_partition
+  - dynamic_stitch
   - equal
   - exp
   - expand
