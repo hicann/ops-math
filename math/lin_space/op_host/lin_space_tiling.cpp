@@ -139,7 +139,16 @@ inline static int64_t CalcAlignNumPerCore(const ge::DataType outputDtype, const 
 
 inline static int64_t CalcMaxOutNum(const ge::DataType outDataType, const gert::TilingContext* context)
 {
-    int32_t outTypeSize = ge::GetSizeByDataType(outDataType);
+    ge::DataType calcDataType = outDataType;
+    
+    if (outDataType == ge::DT_BF16 || outDataType == ge::DT_INT32) {
+        calcDataType = ge::DT_FLOAT;
+    } else if (outDataType == ge::DT_INT8 || outDataType == ge::DT_UINT8 || 
+               outDataType == ge::DT_INT16) {
+        calcDataType = ge::DT_FLOAT16;
+    }
+    
+    int32_t outTypeSize = ge::GetSizeByDataType(calcDataType);
     OP_CHECK_IF(
         (outTypeSize <= 0),
         OP_LOGE(context->GetNodeName(), "Tiling4LinSpace outTypeSize is invalid %d, please check.", outTypeSize),
