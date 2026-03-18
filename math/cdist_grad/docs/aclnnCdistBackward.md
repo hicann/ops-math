@@ -39,7 +39,7 @@ aclnnStatus aclnnCdistBackwardGetWorkspaceSize(
     const aclTensor *grad,
     const aclTensor *x1,
     const aclTensor *x2,
-    const aclTensor *cdist
+    const aclTensor *cdist,
     float            p,
     aclTensor       *out,
     uint64_t        *workspaceSize,
@@ -81,47 +81,47 @@ aclnnStatus aclnnCdistBackward(
       </tr></thead>
     <tbody>
       <tr>
-        <td>grad</td>
+        <td>grad（aclTensor*）</td>
         <td>输入</td>
         <td>公式中的grad。</td>
         <td>-</td>
-        <td>FLOAT、FLOAT16</td>
+        <td>FLOAT、FLOAT16、BFLOAT16</td>
         <td>ND</td>
         <td>2-7维。</td>
         <td>√</td>
       </tr>
       <tr>
-        <td>x1</td>
+        <td>x1（aclTensor*）</td>
         <td>输入</td>
         <td>公式中的x1。</td>
         <td>数据类型与grad一致。</td>
-        <td>FLOAT、FLOAT16</td>
+        <td>FLOAT、FLOAT16、BFLOAT16</td>
         <td>ND</td>
         <td>维度与grad相等，除最后一维外，shape与grad一致。</td>
         <td>√</td>
       </tr>
       <tr>
-        <td>x2</td>
+        <td>x2（aclTensor*）</td>
         <td>输入</td>
         <td>公式中的x2。</td>
         <td>数据类型与grad一致。</td>
-        <td>FLOAT、FLOAT16</td>
+        <td>FLOAT、FLOAT16、BFLOAT16</td>
         <td>ND</td>
         <td>维度与grad相等，倒数第二维与grad的倒数第一维相等，倒数第一维与x1的倒数第一维相等，其余维度与grad应满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
         <td>√</td>
       </tr>
       <tr>
-        <td>cdist</td>
+        <td>cdist（aclTensor*）</td>
         <td>输入</td>
         <td>公式中的cdist。</td>
         <td>数据类型与grad一致。</td>
-        <td>FLOAT、FLOAT16</td>
+        <td>FLOAT、FLOAT16、BFLOAT16</td>
         <td>ND</td>
         <td>shape与grad一致。</td>
         <td>√</td>
       </tr>
-        <tr>
-        <td>p</td>
+      <tr>
+        <td>p（float）</td>
         <td>属性</td>
         <td>公式中的p。</td>
         <td>-</td>
@@ -131,17 +131,17 @@ aclnnStatus aclnnCdistBackward(
         <td>-</td>
       </tr>
       <tr>
-        <td>out</td>
+        <td>out（aclTensor*）</td>
         <td>输出</td>
         <td>公式中的out。</td>
         <td>数据类型与grad一致。</td>
-        <td>FLOAT、FLOAT16</td>
+        <td>FLOAT、FLOAT16、BFLOAT16</td>
         <td>ND</td>
         <td>shape与x1一致。</td>
         <td>√</td>
       </tr>
       <tr>
-        <td>workspaceSize</td>
+        <td>workspaceSize（uint64_t*）</td>
         <td>输出</td>
         <td>返回需要在Device侧申请的workspace大小。</td>
         <td>-</td>
@@ -151,7 +151,7 @@ aclnnStatus aclnnCdistBackward(
         <td>-</td>
       </tr>
       <tr>
-        <td>executor</td>
+        <td>executor（aclOpExecutor**）</td>
         <td>输出</td>
         <td>返回op执行器，包含了算子计算流程。</td>
         <td>-</td>
@@ -247,10 +247,10 @@ aclnnStatus aclnnCdistBackward(
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
-#include
+#include <iostream>
 #include <vector>
 #include "acl/acl.h"
-#include "aclnn_cdist_backward.h"
+#include "aclnnop/aclnn_cdist_backward.h"
 
 #define CHECK_RET(cond, return_expr) \
     do {                             \
@@ -343,9 +343,9 @@ int main()
     aclTensor *out = nullptr;
     float p = 0.5;
     std::vector<float> gradHostData(B * P * Q, 1);
-    std::vector<float> x1HostData = {B * P * M, 2};
-    std::vector<float> x2HostData = {B * Q * M, 4};
-    std::vector<float> cdistHostData = {B * P * Q, 0.5};
+    std::vector<float> x1HostData(B * P * M, 2);
+    std::vector<float> x2HostData(B * Q * M, 4);
+    std::vector<float> cdistHostData(B * P * Q, 0.5);
     std::vector<float> outHostData(B * P * M, 1);
     // 创建grad aclTensor
     ret = CreateAclTensor(gradHostData, gradShape, &gradDeviceAddr, aclDataType::ACL_FLOAT, &grad);

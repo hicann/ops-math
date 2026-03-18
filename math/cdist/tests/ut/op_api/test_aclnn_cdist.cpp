@@ -443,7 +443,7 @@ TEST_F(l2_cdist_test, case_26_bf16)
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }
 
 // 正常场景：x1最后一维为0

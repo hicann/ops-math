@@ -91,7 +91,7 @@ aclnnStatus aclnnInplaceEqTensor(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>输入tensor。</td>
       <td><ul><li>数据类型需要与other满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li><li>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li></ul></td>
@@ -101,7 +101,7 @@ aclnnStatus aclnnInplaceEqTensor(
       <td>√</td>
     </tr>
     <tr>
-      <td>other</td>
+      <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>输入tensor。</td>
       <td><ul><li>数据类型需要与self满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li><li>shape需要与self的shape满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li></ul></td>
@@ -111,7 +111,7 @@ aclnnStatus aclnnInplaceEqTensor(
       <td>√</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>输出tensor。</td>
       <td><ul><li>数据类型需要是BOOL可转换的数据类型<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>。</li><li>shape与self、other广播之后的shape（参见<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>）一致。</li></ul></td>
@@ -121,7 +121,7 @@ aclnnStatus aclnnInplaceEqTensor(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -131,7 +131,7 @@ aclnnStatus aclnnInplaceEqTensor(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -144,9 +144,9 @@ aclnnStatus aclnnInplaceEqTensor(
   </table>
 
   - <term>Ascend 950PR/Ascend 950DT</term>：
-    - selfRef、other不支持UINT32数据类型。
+    - self、other不支持UINT32数据类型。
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
-    - selfRef、other不支持UINT32、UINT64数据类型。
+    - self、other不支持UINT32、UINT64数据类型。
     - out不支持UINT64、UINT32、UINT16数据类型。
   - <term>Atlas 训练系列产品</term>：
     - 不支持BFLOAT16数据类型。
