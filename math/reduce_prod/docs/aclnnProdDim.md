@@ -45,15 +45,15 @@ aclnnStatus aclnnProdDim(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
-  <col style="width: 217px">
-  <col style="width: 125px">
-  <col style="width: 247px">
-  <col style="width: 317px">
-  <col style="width: 233px">
-  <col style="width: 126px">
-  <col style="width: 144px">
-  <col style="width: 146px">
+  <table style="undefined;table-layout: fixed; width: 1545px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 250px">
+  <col style="width: 300px">
+  <col style="width: 300px">
+  <col style="width: 120px">
+  <col style="width: 130px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -139,7 +139,7 @@ aclnnStatus aclnnProdDim(
     </tr>
   </tbody></table>
 
-  - Atlas 推理系列产品、Atlas 训练系列产品不支持BFLOAT16数据类型
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型
 
 - **返回值：**
 

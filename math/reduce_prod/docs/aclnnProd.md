@@ -43,15 +43,15 @@ aclnnStatus aclnnProd(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
-  <col style="width: 217px">
-  <col style="width: 125px">
-  <col style="width: 247px">
-  <col style="width: 317px">
-  <col style="width: 233px">
-  <col style="width: 126px">
-  <col style="width: 144px">
-  <col style="width: 146px">
+  <table style="undefined;table-layout: fixed; width: 1545px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 250px">
+  <col style="width: 300px">
+  <col style="width: 300px">
+  <col style="width: 120px">
+  <col style="width: 130px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -79,7 +79,7 @@ aclnnStatus aclnnProd(
       <td>dtype（const aclDataType）</td>
       <td>输入</td>
       <td>输出tensor的数据类型。</td>
-      <td>需要与out的数据类型一致。若dtype未传入则数据类型与self一致。</td>
+      <td>需要与out的数据类型一致。<br>若dtype未传入则数据类型与self一致。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -89,7 +89,7 @@ aclnnStatus aclnnProd(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>输出的tensor。</td>
-      <td>数据类型与dtype一致。输出shape为(1)。</td>
+      <td>数据类型与dtype一致。<br>输出shape为(1)。</td>
       <td>FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BOOL、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
@@ -118,7 +118,7 @@ aclnnStatus aclnnProd(
   </tbody>
   </table>
 
-  - Atlas 推理系列产品、Atlas 训练系列产品不支持BFLOAT16数据类型
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型
 
 - **返回值：**
 

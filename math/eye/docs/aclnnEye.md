@@ -15,6 +15,7 @@
 
 
 ## 功能说明
+
 返回一个二维张量，该张量的对角线上元素值为1，其余元素值为0。
 
 ## 函数原型
@@ -42,15 +43,15 @@ aclnnStatus aclnnEye(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
-    <col style="width: 220px">
-    <col style="width: 120px">
-    <col style="width: 350px">
-    <col style="width: 300px">
-    <col style="width: 200px">
-    <col style="width: 100px">
-    <col style="width: 120px">
-    <col style="width: 140px">
+    <table style="undefined;table-layout: fixed; width: 1530px"><colgroup>
+    <col style="width: 223px">
+    <col style="width: 132px">
+    <col style="width: 263px">
+    <col style="width: 259px">
+    <col style="width: 243px">
+    <col style="width: 119px">
+    <col style="width: 146px">
+    <col style="width: 145px">
     </colgroup>
     <thead>
       <tr>
@@ -162,10 +163,10 @@ aclnnStatus aclnnEye(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-    <col style="width: 150px">
-    <col style="width: 114px">
-    <col style="width: 500px">
+    <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+    <col style="width: 184px">
+    <col style="width: 134px">
+    <col style="width: 833px">
     </colgroup>
     <thead>
       <tr>

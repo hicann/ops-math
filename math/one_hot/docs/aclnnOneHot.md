@@ -58,15 +58,15 @@ aclnnStatus aclnnOneHot(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1526px"><colgroup>
-  <col style="width: 154px">
-  <col style="width: 125px">
-  <col style="width: 213px">
-  <col style="width: 288px">
-  <col style="width: 333px">
-  <col style="width: 124px">
-  <col style="width: 138px">
-  <col style="width: 151px">
+  <table style="undefined;table-layout: fixed; width: 1565px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 250px">
+  <col style="width: 320px">
+  <col style="width: 300px">
+  <col style="width: 120px">
+  <col style="width: 130px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -94,7 +94,7 @@ aclnnStatus aclnnOneHot(
       <td>numClasses（int）</td>
       <td>输入</td>
       <td>表示类别数。</td>
-      <td>当self为空Tensor时，numClasses的值需大于0；<br>当self不为空Tensor时，numClasses需大于等于0。<br>若numClasses的值为0，则返回空Tensor。如果self存在元素大于numClasses，这些元素会被编码成全offValue。</td>
+      <td><ul><li>当self为空Tensor时，numClasses的值需大于0；</li><li>当self不为空Tensor时，numClasses需大于等于0。</li><li>若numClasses的值为0，则返回空Tensor。</li><li>如果self存在元素大于numClasses，这些元素会被编码成全offValue。</li></ul></td>
       <td>INT64</td>
       <td>-</td>
       <td>-</td>
@@ -104,7 +104,7 @@ aclnnStatus aclnnOneHot(
       <td>onValue（aclTensor*）</td>
       <td>输入</td>
       <td>表示索引位置的填充值，公式中的onValue。</td>
-      <td>计算时只使用其中第一个元素值进行计算。<br>数据类型与out一致。</td>
+      <td><ul><li>计算时只使用其中第一个元素值进行计算。</li><li>数据类型与out一致。</li></ul></td>
       <td>FLOAT16、FLOAT、INT8、UINT8、INT32、INT64</td>
       <td>ND</td>
       <td>1-8</td>
@@ -114,7 +114,7 @@ aclnnStatus aclnnOneHot(
       <td>offValue（aclTensor*）</td>
       <td>输入</td>
       <td>表示非索引位置的填充值，公式中的offValue。</td>
-      <td>计算时只使用其中第一个元素值进行计算。<br>数据类型与out一致。</td>
+      <td><ul><li>计算时只使用其中第一个元素值进行计算。</li><li>数据类型与out一致。</li></ul></td>
       <td>FLOAT16、FLOAT、INT8、UINT8、INT32、INT64</td>
       <td>ND</td>
       <td>1-8</td>
@@ -124,7 +124,7 @@ aclnnStatus aclnnOneHot(
       <td>axis（int64_t）</td>
       <td>输入</td>
       <td>表示编码向量的插入维度。</td>
-      <td>最小值为-1，最大值为self的维度数。若值为-1，编码向量会往self的最后一维插入。</td>
+      <td><ul><li>最小值为-1，最大值为self的维度数。</li><li>若值为-1，编码向量会往self的最后一维插入。</li></ul></td>
       <td>INT64</td>
       <td>-</td>
       <td>-</td>
