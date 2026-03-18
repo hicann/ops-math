@@ -30,34 +30,34 @@
 aclnnStatus aclnnCdistGetWorkspaceSize(
   const aclTensor* x1,
   const aclTensor* x2,
-  float p,
-  int64_t compute_mode,
-  aclTensor* out,
-  uint64_t* workspaceSize,
-  aclOpExecutor** executor)
+  float            p,
+  int64_t          compute_mode,
+  aclTensor       *out,
+  uint64_t        *workspaceSize,
+  aclOpExecutor  **executor)
 ```
 
 ```cpp
 aclnnStatus aclnnCdist(
-  void* workspace,
-  uint64_t workspaceSize,
-  aclOpExecutor* executor,
-  aclrtStream stream)
+  void          *workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor *executor,
+  aclrtStream    stream)
 ```
 
 ## aclnnCdistGetWorkspaceSize
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
-  <col style="width: 170px">
-  <col style="width: 120px">
-  <col style="width: 200px">
-  <col style="width: 300px">
-  <col style="width: 250px">
-  <col style="width: 100px">
-  <col style="width: 100px">
-  <col style="width: 100px">
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
   </colgroup>
   <thead>
     <tr>
@@ -72,9 +72,9 @@ aclnnStatus aclnnCdist(
     </tr></thead>
   <tbody>
     <tr>
-      <td>x1</td>
+      <td>x1（aclTensor*）</td>
       <td>输入</td>
-      <td>表示Cdist的第一个输入，对应公式中的x1，Device侧的aclTensor。</td>
+      <td>表示Cdist的第一个输入，对应公式中的x1。</td>
       <td><ul><li>支持空Tensor。</li><li>shape除倒数两维，其他维度需要与x2 shape除倒数两维的其他维度满足<a href="../../../docs/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li><li>shape的尾轴大小需要和x2 shape的尾轴大小相同</li></td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
@@ -82,9 +82,9 @@ aclnnStatus aclnnCdist(
       <td>√</td>
     </tr>
     <tr>
-      <td>x2</td>
+      <td>x2（aclTensor*）</td>
       <td>输入</td>
-      <td>表示Cdist的第二个输入，对应公式中的x2，Device侧的aclTensor。</td>
+      <td>表示Cdist的第二个输入，对应公式中的x2。</td>
       <td><ul><li>支持空Tensor。</li><li>shape除倒数两维，其他维度需要与x1 shape除倒数两维的其他维度满足<a href="../../../docs/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li><li>shape的尾轴大小需要和x1 shape的尾轴大小相同</li></td>
       <td>数据类型与x1保持一致。</td>
       <td>ND</td>
@@ -92,7 +92,7 @@ aclnnStatus aclnnCdist(
       <td>√</td>
     </tr>
     <tr>
-      <td>p</td>
+      <td>p（float）</td>
       <td>输入</td>
       <td>表示范数的系数，对应公式中的p。</td>
       <td><ul><li>常用0、1.0、2.0、inf范数。</li><li>取值范围[0, +Inf]。</li></td>
@@ -102,19 +102,19 @@ aclnnStatus aclnnCdist(
       <td>-</td>
     </tr>
    <tr>
-      <td>compute_mode</td>
+      <td>compute_mode（int64_t）</td>
       <td>输入</td>
       <td>表示计算模式，预留参数，暂无作用。</td>
-      <td><ul><li>预留参数，当前无作用，当p为2.0时，此参数只支持2。</li></td>
+      <td>预留参数，当前无作用，当p为2.0时，此参数只支持2。</td>
       <td>int64_t</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensorList*）</td>
       <td>输出</td>
-      <td>表示Cdist的输出，对应公式中的y，Device侧的aclTensor。</td>
+      <td>表示Cdist的输出，对应公式中的y。</td>
       <td><ul><li>支持空Tensor。</li><li>数据类型与x1和x2相同。</li><li>若x1的shape为[D, P, M]，x2的shape为[D, R, M]，则out的shape为[D, P, R]，其中D为输入输出除倒数两维其他维度broadcast并合轴后的维度。</li></td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
@@ -122,7 +122,7 @@ aclnnStatus aclnnCdist(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -132,7 +132,7 @@ aclnnStatus aclnnCdist(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -143,52 +143,74 @@ aclnnStatus aclnnCdist(
     </tr>
   </tbody></table>
 
-- **返回值：**
+- **返回值：** 
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-
-   ```
-  第一段接口完成入参校验，出现如下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的x1或x2或out是空指针。
-  返回161002（ACLNN_ERR_PARAM_INVALID）：1. x1或x2或out的数据类型不在支持的范围之内。
-                                       2. x1或x2和out的数据类型不一致。
-                                       3. x1或x2或out的维度小于2维。
-                                       4. x1或x2或out的维度大于8维。
-                                       5. x1的点特征维度和x2的不一致。
-                                       6. p为负数或nan。
-   ```
+  
+  第一段接口完成入参校验，出现以下场景时报错：
+  
+  <table style="undefined;table-layout: fixed; width: 1110px"><colgroup>
+    <col style="width: 291px">
+    <col style="width: 112px">
+    <col style="width: 707px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>返回码</th>
+        <th>错误码</th>
+        <th>描述</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>ACLNN_ERR_PARAM_NULLPTR</td>
+        <td>161001</td>
+        <td>传入的grad、x1、x2或cdist是空指针。</td>
+      </tr>
+      <tr>
+        <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+        <td rowspan="6">161002</td>
+        <td>x1或x2或out的数据类型不在支持的范围之内。</td>
+      </tr>
+      <tr>
+        <td>x1或x2和out的数据类型不一致。</td>
+      </tr>
+      <tr>
+        <td>x1或x2或out的维度不在支持范围内。</td>
+      </tr>
+      <tr>
+        <td>x1的点特征维度和x2的不一致。</td>
+      </tr>
+      <tr>
+        <td>p为负数或nan。</td>
+      </tr>
+    </tbody>
+    </table>
 
 ## aclnnCdist
 
 - **参数说明：**
 
-- <table>
-      <thead>
-            <tr><th>参数名</th><th>输入/输出</th><th>描述</th></tr>
-        </thead>
-        <tbody>
-            <tr><td>workspace</td><td>输入</td><td>在Device侧申请的workspace内存地址。</td></tr>
-            <tr><td>workspaceSize</td><td>输入</td><td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceAddGetWorkspaceSize获取。</td></tr>
-            <tr><td>executor</td><td>输入</td><td> op执行器，包含了算子计算流程。 </td></tr>
-            <tr><td>stream</td><td>输入</td><td> 指定执行任务的Stream。 </td></tr>
-        </tbody>
-    </table>
+  <table>
+    <thead>
+          <tr><th>参数名</th><th>输入/输出</th><th>描述</th></tr>
+      </thead>
+      <tbody>
+          <tr><td>workspace</td><td>输入</td><td>在Device侧申请的workspace内存地址。</td></tr>
+          <tr><td>workspaceSize</td><td>输入</td><td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceAddGetWorkspaceSize获取。</td></tr>
+          <tr><td>executor</td><td>输入</td><td> op执行器，包含了算子计算流程。 </td></tr>
+          <tr><td>stream</td><td>输入</td><td> 指定执行任务的Stream。 </td></tr>
+      </tbody>
+  </table>
   
 - **返回值：**
 
-- aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
-- **功能维度**
-  * 数据类型支持
-    * <term>Ascend 950PR/Ascend 950DT</term>：x1、x2、y支持FLOAT32、FLOAT16、BFLOAT16。<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：x1、x2、y支持FLOAT32、FLOAT16。
-    * p 支持：float。
-    * compute_mode 支持：int64_t。
-  * 数据格式支持：ND。
-- **支持类型说明**
-  是否支持空Tensor：支持空进空出。
-- **确定性计算**
-  aclnnCdist默认为确定性实现。
+
+- 确定性计算：
+  - aclnnCdist默认为确定性实现。
+
 
 ## 调用示例
 
@@ -275,7 +297,7 @@ int main() {
   std::vector<float> x2HostData = {-2.1763, -0.4713, -0.6986, 1.3702};
   std::vector<float> outHostData = {3.1193, 2.0959, 2.7138, 3.8322, 2.2830, 0.3791};
   float p = 2.0f;
-  int64_t compute_mode = 0;
+  int64_t compute_mode = 2;
 
   // 创建x1 aclTensor
   ret = CreateAclTensor(x1HostData, x1Shape, &x1DeviceAddr, aclDataType::ACL_FLOAT, &x1);

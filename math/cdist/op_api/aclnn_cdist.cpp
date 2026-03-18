@@ -36,18 +36,14 @@ extern "C" {
 constexpr size_t MAX_DIM_LEN = 8;
 constexpr size_t MIN_DIM_LEN = 2;
 
-static const std::initializer_list<op::DataType> ASCEND950_DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
-static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
 
 static const inline std::initializer_list<DataType>& GetSupportDtypeList(SocVersion socVersion)
 {
     static const std::initializer_list<DataType> emptyDtypes = {};
-    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) {
-        return ASCEND910B_DTYPE_SUPPORT_LIST;
-    } else if (IsRegBase()) {
-        return ASCEND950_DTYPE_SUPPORT_LIST;
+    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 || IsRegBase()) {
+        return DTYPE_SUPPORT_LIST;
     } else {
         return emptyDtypes;
     }
@@ -190,6 +186,7 @@ aclnnStatus aclnnCdistGetWorkspaceSize(
         return ACLNN_SUCCESS;
     }
 
+    bool needCast = x1->GetDataType() == op::DataType::DT_BF16 && (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93);
     // 将输入x1和x2转换成连续的tensor
     auto x1Contiguous = l0op::Contiguous(x1, uniqueExecutor.get());
     CHECK_RET(x1Contiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -259,6 +256,13 @@ aclnnStatus aclnnCdistGetWorkspaceSize(
         CHECK_RET(x2Broadcast != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
         if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) {
+            if (needCast) {
+                x1Broadcast = l0op::Cast(x1Broadcast, op::DataType::DT_FLOAT, uniqueExecutor.get());
+                CHECK_RET(x1Broadcast != nullptr, ACLNN_ERR_INNER_NULLPTR);
+                x2Broadcast = l0op::Cast(x2Broadcast, op::DataType::DT_FLOAT, uniqueExecutor.get());
+                CHECK_RET(x2Broadcast != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            }
+
             // 获取算子输入所需的shape，将其输入进行broadcast
             gert::Shape x1Shape = x1Broadcast->GetViewShape();
             gert::Shape x2Shape = x2Broadcast->GetViewShape();
@@ -289,6 +293,11 @@ aclnnStatus aclnnCdistGetWorkspaceSize(
 
         // 进行计算
         CdistOutRet = l0op::Cdist(x1Broadcast, x2Broadcast, p, compute_mode, uniqueExecutor.get());
+
+        if (needCast) {
+            CdistOutRet = l0op::Cast(CdistOutRet, op::DataType::DT_BF16, uniqueExecutor.get());
+            CHECK_RET(CdistOutRet != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        }
     }
     CHECK_RET(CdistOutRet != nullptr, ACLNN_ERR_INNER_NULLPTR);
 

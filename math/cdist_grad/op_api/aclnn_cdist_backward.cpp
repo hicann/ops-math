@@ -41,7 +41,7 @@ static const int64_t NUMBER_TWO = 2;
 
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
 static inline bool CheckNotNull(
     const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist, aclTensor* out)
@@ -184,6 +184,20 @@ aclnnStatus aclnnCdistBackwardGetWorkspaceSize(
         gradContiguous != nullptr && x1Contiguous != nullptr && x2Contiguous != nullptr &&
             cdistContiguous != nullptr,
         ACLNN_ERR_INNER_NULLPTR);
+    
+    SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
+    bool needCast = x1 -> GetDataType() == op::DataType::DT_BF16 && (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93);
+
+    if (needCast) {
+        gradContiguous = l0op::Cast(gradContiguous, op::DataType::DT_FLOAT, uniqueExecutor.get());
+        x1Contiguous = l0op::Cast(x1Contiguous, op::DataType::DT_FLOAT, uniqueExecutor.get());
+        x2Contiguous = l0op::Cast(x2Contiguous, op::DataType::DT_FLOAT, uniqueExecutor.get());
+        cdistContiguous = l0op::Cast(cdistContiguous, op::DataType::DT_FLOAT, uniqueExecutor.get());
+        CHECK_RET(
+            gradContiguous != nullptr && x1Contiguous != nullptr && x2Contiguous != nullptr &&
+                cdistContiguous != nullptr,
+            ACLNN_ERR_INNER_NULLPTR);
+    }
 
     auto gradUnsqueezeNd = l0op::UnsqueezeNd(gradContiguous, dimNum, uniqueExecutor.get());
     auto x1UnsqueezeNd = l0op::UnsqueezeNd(x1Contiguous, dimNum - 1, uniqueExecutor.get());
@@ -203,6 +217,11 @@ aclnnStatus aclnnCdistBackwardGetWorkspaceSize(
     auto result =
         l0op::CdistGrad(gradBroadcast, x1Broadcast, x2Broadcast, cdistBroadcast, p, uniqueExecutor.get());
     CHECK_RET(result != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    if (needCast) {
+        result = l0op::Cast(result, op::DataType::DT_BF16, uniqueExecutor.get());
+        CHECK_RET(result != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    }
 
     auto viewCopyOutputResult = l0op::ViewCopy(result, out, uniqueExecutor.get());
 
