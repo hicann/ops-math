@@ -97,8 +97,8 @@ aclnnStatus aclnnInplaceDivMod(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>表示被除数，公式中的输入self。</td>
-      <td>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64</td>
+      <td><ul><li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li><li>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li></ul></td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
       <td>不超过8维</td>
       <td>√</td>
@@ -107,8 +107,8 @@ aclnnStatus aclnnInplaceDivMod(
       <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>表示除数，公式中的输入other。</td>
-      <td>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64</td>
+      <td><ul><li>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li><li>shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li></ul></td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
       <td>不超过8维</td>
       <td>√</td>
@@ -117,7 +117,7 @@ aclnnStatus aclnnInplaceDivMod(
       <td>mode（int）</td>
       <td>输入</td>
       <td>表示对商的舍入模式的选择。</td>
-      <td>枚举值如下：0-对应None：默认不执行舍入；1-对应trunc：将除法的小数部分舍入为零；2-对应floor：向下舍入除法的结果。</td>
+      <td>枚举值如下：<ul><li>0-对应None：默认不执行舍入。</li><li>1-对应trunc：将除法的小数部分舍入为零。</li><li>2-对应floor：向下舍入除法的结果。</li></ul></td>
       <td>int</td>
       <td>-</td>
       <td>-</td>
@@ -127,8 +127,8 @@ aclnnStatus aclnnInplaceDivMod(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>表示商，公式中的out。</td>
-      <td>数据类型需要是self与other推导之后可转换的数据类型，shape需要是self与other broadcast之后的shape。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64</td>
+      <td><ul><li>数据类型需要是self与other推导之后可转换的数据类型。</li><li>shape需要是self与other broadcast之后的shape。</li></ul></td>
+      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>
@@ -155,15 +155,12 @@ aclnnStatus aclnnInplaceDivMod(
     </tr>
   </tbody></table>
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：self和other数据类型额外支持BFLOAT16。
-
-  - <term>Ascend 950PR/Ascend 950DT</term>：self和other数据类型额外支持BFLOAT16。当mode为0且self与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
-
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：out数据类型额外支持BFLOAT16。
+  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
   - <term>Ascend 950PR/Ascend 950DT</term>：
     - mode为0时，out数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX128、COMPLEX64；
     - mode为1或2时，out数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、COMPLEX128、COMPLEX64。
+    - 当mode为0且self与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
 
 - **返回值：**
 
@@ -287,7 +284,7 @@ aclnnStatus aclnnInplaceDivMod(
       <td>selfRef（aclTensor*）</td>
       <td>输入/输出</td>
       <td>表示被除数和商，公式中的输入input和out。</td>
-      <td>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），数据类型需要是selfRef与other推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>），shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td><ul><li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li><li>数据类型需要是selfRef与other推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</li><li>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li></ul></td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64</td>
       <td>ND</td>
       <td>不超过8维</td>
@@ -297,7 +294,7 @@ aclnnStatus aclnnInplaceDivMod(
       <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>表示除数，公式中的输入other。</td>
-      <td>数据类型与selfRef的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td><ul><li>数据类型与selfRef的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li><li>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li></ul></td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL</td>
       <td>ND</td>
       <td>不超过8维</td>
@@ -307,7 +304,7 @@ aclnnStatus aclnnInplaceDivMod(
       <td>mode（int）</td>
       <td>输入</td>
       <td>表示对商的舍入模式的选择。</td>
-      <td>枚举值如下：0-对应None：默认不执行舍入；1-对应trunc：将除法的小数部分舍入为零；2-对应floor：向下舍入除法的结果。</td>
+      <td>枚举值如下：<ul><li>0-对应None：默认不执行舍入。</li><li>1-对应trunc：将除法的小数部分舍入为零。</li><li>2-对应floor：向下舍入除法的结果。</li></ul></td>
       <td>int</td>
       <td>-</td>
       <td>-</td>
@@ -335,13 +332,12 @@ aclnnStatus aclnnInplaceDivMod(
     </tr>
   </tbody></table>
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：selfRef和other数据类型额外支持BFLOAT16。
+  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
   - <term>Ascend 950PR/Ascend 950DT</term>：
-    - mode为0时，selfRef数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16，selfRef与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT；
+    - mode为0时，selfRef数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。
     - mode为1或2时，selfRef数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16。
-
-  - <term>Ascend 950PR/Ascend 950DT</term>：other数据类型额外支持BFLOAT16。当mode为0且selfRef与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
+    - 当mode为0且selfRef与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
 
 - **返回值：**
 

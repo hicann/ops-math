@@ -66,15 +66,15 @@ aclnnStatus aclnnInplaceExpm1(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
-  <col style="width: 217px">
-  <col style="width: 125px">
-  <col style="width: 247px">
-  <col style="width: 317px">
-  <col style="width: 233px">
-  <col style="width: 126px">
-  <col style="width: 144px">
+  <table style="undefined;table-layout: fixed; width: 1497px"><colgroup>
+  <col style="width: 223px">
+  <col style="width: 132px">
+  <col style="width: 310px">
+  <col style="width: 206px">
+  <col style="width: 216px">
+  <col style="width: 119px">
   <col style="width: 146px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -93,7 +93,7 @@ aclnnStatus aclnnInplaceExpm1(
       <td>输入</td>
       <td>公式中输入self。</td>
       <td>shape需要与out一致。</td>
-      <td>INT64、BOOL、FLOAT、FLOAT16</td>
+      <td>INT64、BOOL、FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>
@@ -103,7 +103,7 @@ aclnnStatus aclnnInplaceExpm1(
       <td>输出</td>
       <td>公式中输入out。</td>
       <td>shape需要与self一致。</td>
-      <td>FLOAT、FLOAT16、FLOAT64</td>
+      <td>FLOAT、FLOAT16、FLOAT64、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>
@@ -130,7 +130,7 @@ aclnnStatus aclnnInplaceExpm1(
     </tr>
   </tbody></table>
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：self额外支持BFLOAT16，out额外支持BFLOAT16。
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
 - **返回值：**
 
@@ -216,15 +216,15 @@ aclnnStatus aclnnInplaceExpm1(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
-  <col style="width: 217px">
-  <col style="width: 125px">
-  <col style="width: 247px">
-  <col style="width: 317px">
-  <col style="width: 233px">
-  <col style="width: 126px">
-  <col style="width: 144px">
+  <table style="undefined;table-layout: fixed; width: 1497px"><colgroup>
+  <col style="width: 223px">
+  <col style="width: 132px">
+  <col style="width: 310px">
+  <col style="width: 206px">
+  <col style="width: 216px">
+  <col style="width: 119px">
   <col style="width: 146px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -243,7 +243,7 @@ aclnnStatus aclnnInplaceExpm1(
       <td>输入/输出</td>
       <td>输入输出tensor，即公式中输入self与out。</td>
       <td>-</td>
-      <td>FLOAT、FLOAT16</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>
@@ -270,7 +270,7 @@ aclnnStatus aclnnInplaceExpm1(
     </tr>
   </tbody></table>
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：selfRef额外支持BFLOAT16。
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
 - **返回值：**
 

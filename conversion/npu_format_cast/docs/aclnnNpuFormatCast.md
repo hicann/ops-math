@@ -49,6 +49,7 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
     uint64_t*        workspaceSize,
     aclOpExecutor**  executor)
 ```
+
 ```c++
 aclnnStatus aclnnNpuFormatCast(
     void*          workspace,
@@ -61,16 +62,16 @@ aclnnStatus aclnnNpuFormatCast(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1466px;">
-  <colgroup>
-      <col style="width: 211px">
-      <col style="width: 120px">
-      <col style="width: 300px">
-      <col style="width: 220px">
-      <col style="width: 290px">
-      <col style="width: 320px">
-      <col style="width: 150px">
-      <col style="width: 145px">
+  <table style="undefined;table-layout: fixed; width: 1665px;">
+    <colgroup>
+        <col style="width: 180px">
+        <col style="width: 120px">
+        <col style="width: 300px">
+        <col style="width: 200px">
+        <col style="width: 290px">
+        <col style="width: 300px">
+        <col style="width: 130px">
+        <col style="width: 145px">
   </colgroup>
   <thead>
       <tr>
@@ -207,16 +208,16 @@ aclnnStatus aclnnNpuFormatCast(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1466px;">
-  <colgroup>
-      <col style="width: 211px">
-      <col style="width: 120px">
-      <col style="width: 300px">
-      <col style="width: 220px">
-      <col style="width: 290px">
-      <col style="width: 320px">
-      <col style="width: 150px">
-      <col style="width: 145px">
+  <table style="undefined;table-layout: fixed; width: 1665px;">
+    <colgroup>
+        <col style="width: 180px">
+        <col style="width: 120px">
+        <col style="width: 300px">
+        <col style="width: 200px">
+        <col style="width: 290px">
+        <col style="width: 300px">
+        <col style="width: 130px">
+        <col style="width: 145px">
   </colgroup>
   <thead>
       <tr>
@@ -383,7 +384,9 @@ aclnnStatus aclnnNpuFormatCast(
 
 - 输入和输出支持以下数据类型组合：
 
-  - <term>Ascend 950PR/Ascend 950DT</term>：
+  <details>
+
+  <summary><term>Ascend 950PR/Ascend 950DT</term></summary>
 
     - aclnnNpuFormatCastCalculateSizeAndFormat接口参数：
 
@@ -424,7 +427,11 @@ aclnnStatus aclnnNpuFormatCast(
       - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
       - 当srcTensor的shape后两维任意一维度shape等于1场景，也不允许转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作, 包括transpose。
 
-  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
+  </details>
+
+  <details>
+
+  <summary><term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term></summary>
 
     - aclnnNpuFormatCastCalculateSizeAndFormat接口参数：
 
@@ -459,6 +466,8 @@ aclnnStatus aclnnNpuFormatCast(
     - 当前不支持的特殊场景:
       - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
       - 不允许转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作, 包括transpose。
+
+  </details>
 
 ## 调用示例
 
