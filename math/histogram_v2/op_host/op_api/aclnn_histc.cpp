@@ -239,6 +239,13 @@ static aclnnStatus EmptyTensor(aclTensor* out, aclOpExecutor* executor)
     return ACLNN_SUCCESS;
 }
 
+static void CheckFormat(const aclTensor* self) {
+    ge::Format selfStorageFormat = self->GetStorageFormat();
+    if (selfStorageFormat == ge::Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("aclnnHistc doesn't support format NZ.");
+    }
+}
+
 aclnnStatus aclnnHistcGetWorkspaceSize(
     const aclTensor* self, int64_t bins, const aclScalar* min, const aclScalar* max, aclTensor* out,
     uint64_t* workspaceSize, aclOpExecutor** executor)
@@ -250,6 +257,8 @@ aclnnStatus aclnnHistcGetWorkspaceSize(
     // 参数检查
     auto ret = CheckHistcParams(self, bins, min, max, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
+
+    CheckFormat(self);
 
     // 创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();

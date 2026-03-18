@@ -441,10 +441,10 @@ aclnnStatus aclnnMulsGetWorkspaceSize(const aclTensor *self, const aclScalar *ot
   return ACLNN_SUCCESS;
 }
 
-static void MulCheckFormat(const aclTensor* self, const aclTensor* target){
+static void MulCheckFormat(const aclTensor* self, const aclTensor* other){
   ge::Format selfStorageFormat = self->GetStorageFormat();
-  ge::Format targetStorageFormat = target->GetStorageFormat();
-  if (selfStorageFormat != ge::Format::FORMAT_ND || targetStorageFormat != ge::Format::FORMAT_ND){
+  ge::Format otherStorageFormat = other->GetStorageFormat();
+  if (selfStorageFormat != ge::Format::FORMAT_ND || otherStorageFormat != ge::Format::FORMAT_ND){
     OP_LOGW("aclnnMul only support format ND.");
   }
 }
@@ -612,6 +612,9 @@ aclnnStatus aclnnInplaceMulGetWorkspaceSize(aclTensor *selfRef, const aclTensor 
   // 固定写法，参数检查
   auto ret = CheckInplaceMulParams(selfRef, other);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
+  
+  // 检查格式
+  MulCheckFormat(selfRef, other);
 
   // 空tensor处理
   if (selfRef->IsEmpty() || other->IsEmpty()) {

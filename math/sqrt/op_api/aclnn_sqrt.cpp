@@ -96,6 +96,13 @@ static aclnnStatus CheckInplaceParamsSqrt(aclTensor *selfRef) {
     return ACLNN_SUCCESS;
 }
 
+static void CheckFormat(const aclTensor* self) {
+    ge::Format selfStorageFormat = self->GetStorageFormat();
+    if (selfStorageFormat == ge::Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("aclnnSqrt/aclnnInplaceSqrt doesn't support format NZ.");
+    }
+}
+
 aclnnStatus aclnnSqrtGetWorkspaceSize(const aclTensor *self, aclTensor *out,
                                       uint64_t *workspaceSize, aclOpExecutor **executor) {
   OP_CHECK_COMM_INPUT(workspaceSize, executor);
@@ -110,6 +117,9 @@ aclnnStatus aclnnSqrtGetWorkspaceSize(const aclTensor *self, aclTensor *out,
   auto ret = CheckParamsSqrt(self, out);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
+  // 检查self的format是否支持
+  CheckFormat(self);
+  
   // 空tensor支持
   if (self->IsEmpty()) {
     *workspaceSize = 0;

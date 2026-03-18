@@ -110,6 +110,15 @@ static bool CheckShape(const aclTensor *self, const aclTensor *exponent, const a
   return true;
 }
 
+static void CheckFormat(const aclTensor* self, const aclTensor* exponent) {
+    ge::Format selfStorageFormat = self->GetStorageFormat();
+    ge::Format exponentStorageFormat = exponent->GetStorageFormat();
+    if (selfStorageFormat == ge::Format::FORMAT_FRACTAL_NZ || 
+        exponentStorageFormat == ge::Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("aclnnPowTensorTensor doesn't support format NZ.");
+    }
+}
+
 static aclnnStatus CheckParams(const aclTensor *self, const aclTensor *exponent, const aclTensor *out) {
   // 1. 检查参数是否为空指针
   CHECK_RET(CheckNotNull(self, exponent, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -137,6 +146,9 @@ aclnnStatus aclnnPowTensorTensorGetWorkspaceSize(const aclTensor *self, const ac
   // 固定写法，参数检查
   auto ret = CheckParams(self, exponent, out);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
+  
+  // 检查格式
+  CheckFormat(self, exponent);
 
   // pow算子的空tensor在kernel中支持，对标竞品根据算子实际情况补充
   if (self->IsEmpty() || exponent->IsEmpty()) {

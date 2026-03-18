@@ -72,6 +72,13 @@ static aclnnStatus CheckInplaceParams(aclTensor *selfRef) {
     return ACLNN_SUCCESS;
 }
 
+static void CheckFormat(const aclTensor* self) {
+    ge::Format selfStorageFormat = self->GetStorageFormat();
+    if (selfStorageFormat == ge::Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("aclnnLog1p doesn't support format NZ.");
+    }
+}
+
 static aclnnStatus ExecLog1pGetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize,
     aclOpExecutor **executor)
 {
@@ -83,6 +90,8 @@ static aclnnStatus ExecLog1pGetWorkspaceSize(const aclTensor *self, aclTensor *o
     auto ret = CheckParams(self, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
+    CheckFormat(self);
+    
     // log1p算子的空tensor在kernel中不支持，对标竞品根据算子实际情况补充
     if (self->IsEmpty()) {
         OP_LOGD("empty input tensor");

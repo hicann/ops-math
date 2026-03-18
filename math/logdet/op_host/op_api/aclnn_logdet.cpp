@@ -112,6 +112,13 @@ static aclnnStatus ReshapeDim(const aclTensor *self, op::Shape &selfBatchShape, 
   return ACLNN_SUCCESS;
 }
 
+static void CheckFormat(const aclTensor* self) {
+    ge::Format selfStorageFormat = self->GetStorageFormat();
+    if (selfStorageFormat == ge::Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("aclnnLogdet doesn't support format NZ.");
+    }
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -132,6 +139,8 @@ aclnnStatus aclnnLogdetGetWorkspaceSize(const aclTensor *self, aclTensor *out, u
     uniqueExecutor.ReleaseTo(executor);
     return ACLNN_SUCCESS;
   }
+  
+  CheckFormat(self);
 
   auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
   CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);

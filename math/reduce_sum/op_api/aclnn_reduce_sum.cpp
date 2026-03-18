@@ -190,6 +190,13 @@ static bool IsNonContiguousSupport(const aclTensor* self, const DataType promote
     return false;
 }
 
+static void CheckFormat(const aclTensor* self) {
+    ge::Format selfStorageFormat = self->GetStorageFormat();
+    if (selfStorageFormat == ge::Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("aclnnReduceSum doesn't support format NZ.");
+    }
+}
+
 aclnnStatus aclnnReduceSumGetWorkspaceSize(
     const aclTensor* self, const aclIntArray* dims, bool keepDims, aclDataType dtype, aclTensor* out,
     uint64_t* workspaceSize, aclOpExecutor** executor)
@@ -204,6 +211,9 @@ aclnnStatus aclnnReduceSumGetWorkspaceSize(
     auto ret = CheckParams(self, dims, dtype, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
+    // 检查self的format是否支持
+    CheckFormat(self);
+        
     // 输入self为空tensor时，直接返回dtype类型的空tensor
     if (self->IsEmpty()) {
         ret = FillScalar(out, 0.0f, uniqueExecutor.get());

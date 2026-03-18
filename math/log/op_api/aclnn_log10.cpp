@@ -67,6 +67,13 @@ static bool CheckInplaceDtypeValid(aclTensor *selfRef) {
   return true;
 }
 
+static void CheckFormat(const aclTensor* self) {
+    ge::Format selfStorageFormat = self->GetStorageFormat();
+    if (selfStorageFormat == ge::Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("aclnnLog10 doesn't support format NZ.");
+    }
+}
+
 static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out) {
   // 1. 检查参数是否为空指针
   CHECK_RET(CheckNotNull2Tensor(self, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -99,6 +106,8 @@ aclnnStatus aclnnLog10GetWorkspaceSize(const aclTensor* self, aclTensor* out, ui
   // 固定写法，参数检查
   auto ret = CheckParams(self, out);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
+  
+  CheckFormat(self);
 
   // log算子的空tensor在kernel中支持，对标竞品根据算子实际情况补充
   if (self->IsEmpty()) {

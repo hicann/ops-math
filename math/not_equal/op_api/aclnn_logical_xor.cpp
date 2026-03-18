@@ -142,6 +142,14 @@ static const aclTensor* InputProcessForComplex(const aclTensor* input, aclOpExec
   return inputCastedAll;
 }
 
+static void CheckFormat(const aclTensor* self, const aclTensor* target){
+  ge::Format selfStorageFormat = self->GetStorageFormat();
+  ge::Format targetStorageFormat = target->GetStorageFormat();
+  if (selfStorageFormat != ge::Format::FORMAT_ND || targetStorageFormat != ge::Format::FORMAT_ND){
+    OP_LOGW("aclnnLogicalXor only support format ND.");
+  }
+}
+
 aclnnStatus aclnnLogicalXorGetWorkspaceSize(const aclTensor *self, const aclTensor *other, aclTensor *out,
                                             uint64_t *workspaceSize, aclOpExecutor **executor) {
   L2_DFX_PHASE_1(aclnnLogicalXor, DFX_IN(self, other), DFX_OUT(out));
@@ -153,6 +161,8 @@ aclnnStatus aclnnLogicalXorGetWorkspaceSize(const aclTensor *self, const aclTens
   // 参数检查
   auto ret = CheckParams(self, other, out);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
+
+  CheckFormat(self, other);
 
   // 空tensor处理
   if (self->IsEmpty() || other->IsEmpty()) {
