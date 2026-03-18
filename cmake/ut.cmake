@@ -378,9 +378,7 @@ function(AddOpsTestCase)
   set(options OPTION_RESERVED)
   set(oneValueArgs OP_NAME OTHER_COMPILE_OPTIONS)
   set(multiValueArgs SOC_VERSION TILING_SRC_FILES UT_SRC_FILES)
-  cmake_parse_arguments(MODULE "${options}" "${oneValueArgs}"
-                        "${multiValueArgs}" ${ARGN})
-  message("my_MODULE_SOC_VERSION=${MODULE_SOC_VERSION}")
+  cmake_parse_arguments(MODULE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   # check if the case should be executed according to soc
   if(NOT ${ASCEND_COMPUTE_UNIT} IN_LIST MODULE_SOC_VERSION)
     return()
@@ -514,23 +512,22 @@ function(AddOpsTestCase)
               tikicpulib::${socVersion} gtest)
 
     # add object: math_op_kernel_ut_${oriSocVersion}_cases_obj
-    if(NOT TARGET ${OP_KERNEL_MODULE_NAME}_${oriSocVersion}_cases_obj)
-      add_library(${OP_KERNEL_MODULE_NAME}_${oriSocVersion}_cases_obj OBJECT
+    if(NOT TARGET ${OP_KERNEL_MODULE_NAME}_${socVersion}_cases_obj)
+      add_library(${OP_KERNEL_MODULE_NAME}_${socVersion}_cases_obj OBJECT
                   $<TARGET_OBJECTS:${MODULE_OP_NAME}_${socVersion}_cases_obj>)
     else()
       target_sources(
-        ${OP_KERNEL_MODULE_NAME}_${oriSocVersion}_cases_obj
+        ${OP_KERNEL_MODULE_NAME}_${socVersion}_cases_obj
         PRIVATE $<TARGET_OBJECTS:${MODULE_OP_NAME}_${socVersion}_cases_obj>)
     endif()
     target_link_libraries(
-      ${OP_KERNEL_MODULE_NAME}_${oriSocVersion}_cases_obj
+      ${OP_KERNEL_MODULE_NAME}_${socVersion}_cases_obj
       PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
               $<TARGET_OBJECTS:${MODULE_OP_NAME}_${socVersion}_cases_obj>)
 
-    list(FIND fastOpTestSocVersions "${oriSocVersion}" index)
+    list(FIND fastOpTestSocVersions "${socVersion}" index)
     if(index EQUAL -1)
-      set(fastOpTestSocVersions
-          ${fastOpTestSocVersions} ${oriSocVersion}
+      set(fastOpTestSocVersions ${fastOpTestSocVersions} ${socVersion}
           CACHE STRING "fastOp Test SocVersions" FORCE)
     endif()
   endforeach()
@@ -538,7 +535,7 @@ endfunction()
 
 function(AddOpTestCase opName shortSocVersion otherCompileOptions
          tilingSrcFiles)
-  addopstestcase(
+  AddOpsTestCase(
     OP_NAME
     ${opName}
     SOC_VERSION
