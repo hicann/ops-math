@@ -426,7 +426,7 @@ aclnnStatus aclnnNpuFormatCast(
       - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
       - 当srcTensor的shape后两维任意一维度shape等于1场景，也不允许转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作, 包括transpose。
 
-    </details>
+  </details>
 
   <details>
 
@@ -466,7 +466,7 @@ aclnnStatus aclnnNpuFormatCast(
       - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
       - 不允许转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作, 包括transpose。
 
-    <details>
+  </details>
 
 ## 调用示例
 

@@ -243,7 +243,7 @@ aclnnStatus aclnnInplaceExpm1(
       <td>输入/输出</td>
       <td>输入输出tensor，即公式中输入self与out。</td>
       <td>-</td>
-      <td>FLOAT、FLOAT16</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>
@@ -270,7 +270,7 @@ aclnnStatus aclnnInplaceExpm1(
     </tr>
   </tbody></table>
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：selfRef额外支持BFLOAT16。
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
 - **返回值：**
 
