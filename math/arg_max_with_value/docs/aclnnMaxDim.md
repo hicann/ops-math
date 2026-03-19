@@ -22,45 +22,138 @@
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnMaxDimGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMaxDim”接口执行计算。
 
-- `aclnnStatus aclnnMaxDimGetWorkspaceSize(const aclTensor *self, int64_t dim, bool keepdim, aclTensor *out, aclTensor *indices, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnMaxDim(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnMaxDimGetWorkspaceSize(
+  const aclTensor* self, 
+  int64_t          dim, 
+  bool             keepdim, 
+  aclTensor*       out, 
+  aclTensor*       indices, 
+  uint64_t*        workspaceSize, 
+  aclOpExecutor**  executor)
+```
+
+```Cpp
+aclnnStatus aclnnMaxDim(
+  void*          workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor* executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnMaxDimGetWorkspaceSize
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)：Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。支持[1, 8]维。
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、INT64、BOOL
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、INT64、BOOL、BFLOAT16
-     * <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、INT64、BOOL、BFLOAT16、INT32
-
-  - dim(int64_t, 计算输入)：指定的维度，数据类型为INT64，取值范围在[-self.dim(), self.dim())。
-
-  - keepdim(bool，计算输入)：reduce轴的维度是否保留，数据类型为BOOL。
-
-  - out(aclTensor*, 计算输出)：Device侧的aclTensor，且数据类型和self一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。如果keepdim为false，则输出维度为self维度减1；如果keepdim为true，则输出维度等于self维度。
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、INT64、BOOL
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、INT64、BOOL、BFLOAT16
-     * <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、INT64、BOOL、BFLOAT16、INT32
-
-
-  - indices(aclTensor*, 计算输出)：Device侧的aclTensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持BOOL、FLOAT32、FLOAT16、INT8、INT16、UINT16、UINT8、INT32、INT64、UINT32、UINT64、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持BOOL、FLOAT32、FLOAT16、INT8、INT16、UINT16、UINT8、INT32、INT64、UINT32、UINT64、DOUBLE、COMPLEX64、COMPLEX128。
-
-  - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 200px">
+  <col style="width: 350px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>待计算最大值的输入张量。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、INT64、BOOL、BFLOAT16、INT32</td>
+      <td>ND</td>
+      <td>1-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>dim（int64_t）</td>
+      <td>输入</td>
+      <td>指定的计算维度。</td>
+      <td>取值范围在[-self.dim(), self.dim())。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>keepdim（bool）</td>
+      <td>输入</td>
+      <td>是否保留reduce轴的维度。</td>
+      <td><ul><li>如果keepdim为false，则不保留对应的轴</li><li>如果为true，则保留指定轴的维度值为1。</li></ul></td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>最大值输出张量。</td>
+      <td><ul><li>数据类型和self一致</li><li>如果keepdim为false，则输出维度为self维度减1</li><li>如果keepdim为true，则输出维度等于self维度</li></ul></td>
+      <td>FLOAT、FLOAT16、INT64、BOOL、BFLOAT16、INT32</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>indices（aclTensor*）</td>
+      <td>输出</td>
+      <td>最大值索引输出张量。</td>
+      <td>-</td>
+      <td>BOOL、FLOAT32、FLOAT16、INT8、INT16、UINT16、UINT8、INT32、INT64、UINT32、UINT64、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
+  
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：
+    - self和out不支持BFLOAT16和INT32数据类型
+    - indices不支持BFLOAT16数据类型
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+    - self和out不支持INT32数据类型
 
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-  第一段接口完成入参校验，出现以下场景时报错：
+  第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
-  <col style="width: 301px">
+  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <col style="width: 300px">
   <col style="width: 134px">
   <col style="width: 716px">
   </colgroup>
@@ -74,15 +167,15 @@
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的self、out和indices是空指针。</td>
+      <td>传入的self、out或indices是空指针时。</td>
     </tr>
     <tr>
       <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="3">161002</td>
-      <td>self、out和indices数据类型不在支持的范围内。</td>
+      <td>self、out或indices的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>self、out和indices的数据格式不在支持的范围内。</td>
+      <td>self、out或indices的数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>dim超出输入self的维度范围。</td>
