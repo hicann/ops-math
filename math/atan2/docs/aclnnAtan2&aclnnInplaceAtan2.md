@@ -142,7 +142,9 @@ aclnnStatus aclnnInplaceAtan2(
     </tr>
   </tbody></table>
 
-  - <term>Ascend 950PR/Ascend 950DT</term>：self和other数据类型支持BFLOAT16、FLOAT16、FLOAT32；out数据类型支持BFLOAT16、FLOAT16、FLOAT32。
+  - <term>Ascend 950PR/Ascend 950DT</term>：
+    - self和other数据类型支持BFLOAT16、FLOAT16、FLOAT32；
+    - out数据类型支持BFLOAT16、FLOAT16、FLOAT32。
 
 - **返回值：**
 

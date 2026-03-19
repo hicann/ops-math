@@ -92,7 +92,7 @@ aclnnStatus aclnnInplaceCosh(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入self。</td>
-      <td>数据类型与out的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），shape需要与out一致。</td>
+      <td>数据类型与out的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。<br>shape需要与out一致。</td>
       <td>FLOAT、FLOAT16、DOUBLE</td>
       <td>ND</td>
       <td>不大于8</td>
@@ -102,7 +102,7 @@ aclnnStatus aclnnInplaceCosh(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的out。</td>
-      <td>与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），shape需要与self一致。</td>
+      <td>与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。<br>shape需要与self一致。</td>
       <td>FLOAT、FLOAT16、DOUBLE</td>
       <td>ND</td>
       <td>-</td>
@@ -130,7 +130,9 @@ aclnnStatus aclnnInplaceCosh(
     </tr>
   </tbody></table>
 
-  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：self数据类型额外支持INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16；out数据类型额外支持COMPLEX64、COMPLEX128、BFLOAT16。
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+    - self数据类型额外支持INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16；
+    - out数据类型额外支持COMPLEX64、COMPLEX128、BFLOAT16。
 
 - **返回值：**
 

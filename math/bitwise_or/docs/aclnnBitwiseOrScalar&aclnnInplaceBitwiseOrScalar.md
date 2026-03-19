@@ -116,7 +116,7 @@ aclnnStatus aclnnInplaceBitwiseOrScalar(
       <td>输出</td>
       <td>输出tensor，存储计算结果。</td>
       <td>shape需要与self一致。</td>
-      <td>BOOL、INT8、INT16、UINT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE</td>
+      <td>BOOL、INT8、INT16、UINT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>
@@ -143,9 +143,11 @@ aclnnStatus aclnnInplaceBitwiseOrScalar(
     </tr>
   </tbody></table>
 
-  - <term>Ascend 950PR/Ascend 950DT</term>：self和other需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)；out数据类型额外支持UINT32、UINT64、BFLOAT16、COMPLEX64、COMPLEX128。
+  - <term>Ascend 950PR/Ascend 950DT</term>：
+    - self和other需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)；
+    - out数据类型额外支持UINT32、UINT64、COMPLEX64、COMPLEX128。
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：out数据类型额外支持BFLOAT16。
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
 - **返回值：**
 

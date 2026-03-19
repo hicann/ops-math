@@ -40,6 +40,7 @@ aclnnStatus aclnnLeScalarGetWorkspaceSize(
   uint64_t*                 workspaceSize,
   aclOpExecutor**           executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnLeScalar(
   void*                     workspace,
@@ -47,6 +48,7 @@ aclnnStatus aclnnLeScalar(
   aclOpExecutor*            executor,
   aclrtStream               stream)
 ```
+
 ```Cpp
 aclnnStatus aclnnInplaceLeScalarGetWorkspaceSize(
   aclTensor*                selfRef,
@@ -54,6 +56,7 @@ aclnnStatus aclnnInplaceLeScalarGetWorkspaceSize(
   uint64_t*                 workspaceSize,
   aclOpExecutor**           executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnInplaceLeScalar(
   void*                     workspace,
@@ -66,15 +69,15 @@ aclnnStatus aclnnInplaceLeScalar(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
-  <col style="width: 217px">
-  <col style="width: 125px">
-  <col style="width: 247px">
-  <col style="width: 317px">
-  <col style="width: 233px">
-  <col style="width: 126px">
-  <col style="width: 144px">
+  <table style="undefined;table-layout: fixed; width: 1552px"><colgroup>
+  <col style="width: 202px">
+  <col style="width: 132px">
+  <col style="width: 208px">
+  <col style="width: 265px">
+  <col style="width: 335px">
+  <col style="width: 119px">
   <col style="width: 146px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -149,6 +152,7 @@ aclnnStatus aclnnInplaceLeScalar(
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：self、other不支持BFLOAT16、UINT64。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：self、other不支持UINT64。
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：out不支持BFLOAT16。
+
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -236,15 +240,15 @@ aclnnStatus aclnnInplaceLeScalar(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
-  <col style="width: 217px">
-  <col style="width: 125px">
-  <col style="width: 247px">
-  <col style="width: 317px">
-  <col style="width: 233px">
-  <col style="width: 126px">
-  <col style="width: 144px">
+  <table style="undefined;table-layout: fixed; width: 1552px"><colgroup>
+  <col style="width: 202px">
+  <col style="width: 132px">
+  <col style="width: 208px">
+  <col style="width: 265px">
+  <col style="width: 335px">
+  <col style="width: 119px">
   <col style="width: 146px">
+  <col style="width: 145px">
   </colgroup>
   <thead>
     <tr>
@@ -306,6 +310,7 @@ aclnnStatus aclnnInplaceLeScalar(
 
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：selfRef、other不支持BFLOAT16、UINT64。
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：selfRef、other不支持UINT64。
+    
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。

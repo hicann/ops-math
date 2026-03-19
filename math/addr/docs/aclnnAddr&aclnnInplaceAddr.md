@@ -72,13 +72,13 @@ aclnnStatus aclnnInplaceAddr(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1570px"><colgroup>
     <col style="width: 220px">
     <col style="width: 120px">
     <col style="width: 350px">
     <col style="width: 300px">
     <col style="width: 200px">
-    <col style="width: 100px">
+    <col style="width: 120px">
     <col style="width: 120px">
     <col style="width: 140px">
     </colgroup>
@@ -99,7 +99,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>输入</td>
         <td>外积扩展矩阵。</td>
         <td>shape维度不能超过2，并且需要与vec1、vec2满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
         <td>√</td>
@@ -109,7 +109,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>输入</td>
         <td>外积入参第一向量，一维向量。</td>
         <td>shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
         <td>√</td>
@@ -119,7 +119,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>输入</td>
         <td>外积入参第二向量，一维向量。</td>
         <td>shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
         <td>√</td>
@@ -129,7 +129,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>输入</td>
         <td>外积扩展矩阵比例因子，即公式中的β。</td>
         <td>如果betaOptional为bool类型，则self/vec1/vec2的数据类型只能是bool；如果self/vec1/vec2为整型，则betaOptional、alphaOptional不能为浮点型。</td>
-        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
         <td>-</td>
@@ -139,7 +139,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>输入</td>
         <td>外积比例因子，即公式中的α。</td>
         <td>如果alphaOptional为bool类型，则self/vec1/vec2的数据类型只能是bool；如果self/vec1/vec2为整型，则betaOptional、alphaOptional不能为浮点型。</td>
-        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
         <td>-</td>
@@ -149,7 +149,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>输出</td>
         <td>输出结果。</td>
         <td>-</td>
-        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
         <td>√</td>
@@ -176,7 +176,7 @@ aclnnStatus aclnnInplaceAddr(
       </tr>
     </tbody></table>
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：self、vec1、vec2、betaOptional、alphaOptional、out数据类型额外支持BFLOAT16。
+  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
 - **返回值：**
 
@@ -225,10 +225,10 @@ aclnnStatus aclnnInplaceAddr(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-    <col style="width: 150px">
-    <col style="width: 114px">
-    <col style="width: 500px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 833px">
     </colgroup>
     <thead>
       <tr>
@@ -268,13 +268,13 @@ aclnnStatus aclnnInplaceAddr(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1570px"><colgroup>
     <col style="width: 220px">
     <col style="width: 120px">
     <col style="width: 350px">
     <col style="width: 300px">
     <col style="width: 200px">
-    <col style="width: 100px">
+    <col style="width: 120px">
     <col style="width: 120px">
     <col style="width: 140px">
     </colgroup>
@@ -295,7 +295,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>输入/输出</td>
         <td>外积扩展矩阵及输出矩阵。</td>
         <td>shape维度为2，不支持空Tensor，并且需要与vec1、vec2满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
         <td>√</td>
@@ -305,7 +305,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>输入</td>
         <td>外积入参第一向量，一维向量。</td>
         <td>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
         <td>√</td>
@@ -315,7 +315,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>输入</td>
         <td>外积入参第二向量，一维向量。</td>
         <td>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
         <td>√</td>
@@ -325,7 +325,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>输入</td>
         <td>外积扩展矩阵比例因子，即公式中的β。</td>
         <td>如果betaOptional为bool类型，则self/vec1/vec2的数据类型只能是bool；如果self/vec1/vec2为整型，则betaOptional、alphaOptional不能为浮点型。</td>
-        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
         <td>-</td>
@@ -335,7 +335,7 @@ aclnnStatus aclnnInplaceAddr(
         <td>输入</td>
         <td>外积比例因子，即公式中的α。</td>
         <td>如果alphaOptional为bool类型，则self/vec1/vec2的数据类型只能是bool；如果self/vec1/vec2为整型，则betaOptional、alphaOptional不能为浮点型。</td>
-        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、BFLOAT16</td>
         <td>ND</td>
         <td>-</td>
         <td>-</td>
@@ -362,7 +362,7 @@ aclnnStatus aclnnInplaceAddr(
       </tr>
     </tbody></table>
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：selfRef、vec1、vec2、betaOptional、alphaOptional数据类型额外支持BFLOAT16。
+  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
 - **返回值：**
 
@@ -411,10 +411,10 @@ aclnnStatus aclnnInplaceAddr(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-    <col style="width: 150px">
-    <col style="width: 114px">
-    <col style="width: 500px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <col style="width: 184px">
+  <col style="width: 134px">
+  <col style="width: 833px">
     </colgroup>
     <thead>
       <tr>

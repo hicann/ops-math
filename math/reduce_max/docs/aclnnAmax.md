@@ -3,6 +3,7 @@
 [📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/reduce_max)
 
 ## 产品支持情况
+
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
@@ -126,7 +127,7 @@ aclrtStream    stream)
     </tr>
   </tbody></table>
 
-- <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
 - **返回值：**
 

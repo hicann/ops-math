@@ -131,7 +131,9 @@ aclnnStatus aclnnInplaceAtanh(
     </tr>
   </tbody></table>
 
-  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：input数据类型额外支持COMPLEX64、COMPLEX128、BFLOAT16；out数据类型额外支持COMPLEX64、COMPLEX128、BFLOAT16。
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+    - input数据类型额外支持COMPLEX64、COMPLEX128、BFLOAT16；
+    - out数据类型额外支持COMPLEX64、COMPLEX128、BFLOAT16。
 
 - **返回值：**
 

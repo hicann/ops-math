@@ -77,7 +77,7 @@ aclnnStatus aclnnBitwiseAndTensor(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的self。</td>
-      <td>数据类型需要与other满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>），shape需要与other满足broadcast关系。</td>
+      <td><ul><li>数据类型需要与other满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</li><li>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li></ul></td>
       <td>BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16</td>
       <td>ND</td>
       <td>不超过8维</td>
@@ -87,7 +87,7 @@ aclnnStatus aclnnBitwiseAndTensor(
       <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的other。</td>
-      <td>数据类型需要与self满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>），shape需要与self满足broadcast关系。</td>
+      <td><ul><li>数据类型需要与self满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</li><li>shape需要与self满足broadcast关系。</li></ul></td>
       <td>BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16</td>
       <td>ND</td>
       <td>不超过8维</td>
@@ -97,7 +97,7 @@ aclnnStatus aclnnBitwiseAndTensor(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的out。</td>
-      <td>数据类型需要是self与other推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>），shape需要是self与other broadcast之后的shape。</td>
+      <td><ul><li>数据类型需要是self与other推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</li><li>shape需要是self与other broadcast之后的shape。</li></ul></td>
       <td>BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>不超过8维</td>

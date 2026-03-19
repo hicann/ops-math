@@ -93,7 +93,7 @@ aclnnStatus aclnnInplaceCeil(
       <td>输入</td>
       <td>输入tensor，需要向上取整的张量。</td>
       <td>shape和数据类型需要与out一致。</td>
-      <td>FLOAT16、FLOAT、DOUBLE</td>
+      <td>FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
       <td>ND</td>
       <td>不超过8维</td>
       <td>√</td>
@@ -103,7 +103,7 @@ aclnnStatus aclnnInplaceCeil(
       <td>输出</td>
       <td>输出tensor，存储向上取整的结果。</td>
       <td>shape和数据类型需要与self一致。</td>
-      <td>FLOAT16、FLOAT、DOUBLE</td>
+      <td>FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
       <td>ND</td>
       <td>不超过8维</td>
       <td>√</td>
@@ -130,7 +130,7 @@ aclnnStatus aclnnInplaceCeil(
     </tr>
   </tbody></table>
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：self和out数据类型额外支持BFLOAT16。
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16数据类型。
 
 - **返回值：**
 
@@ -246,7 +246,7 @@ aclnnStatus aclnnInplaceCeil(
       <td>输入/输出</td>
       <td>输入输出tensor，需要向上取整的张量，计算结果存储在selfRef中。</td>
       <td>shape和数据类型需要与selfRef一致。</td>
-      <td>FLOAT16、FLOAT、DOUBLE</td>
+      <td>FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
       <td>ND</td>
       <td>不超过8维</td>
       <td>√</td>
@@ -273,7 +273,7 @@ aclnnStatus aclnnInplaceCeil(
     </tr>
   </tbody></table>
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：selfRef数据类型额外支持BFLOAT16。
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16数据类型。
 
 - **返回值：**
 
