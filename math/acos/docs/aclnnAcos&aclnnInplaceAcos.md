@@ -172,10 +172,10 @@ aclnnStatus aclnnInplaceAcos(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-    <col style="width: 150px">
-    <col style="width: 114px">
-    <col style="width: 500px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+    <col style="width: 184px">
+    <col style="width: 134px">
+    <col style="width: 833px">
     </colgroup>
     <thead>
       <tr>
@@ -309,10 +309,10 @@ aclnnStatus aclnnInplaceAcos(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-    <col style="width: 150px">
-    <col style="width: 114px">
-    <col style="width: 500px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+    <col style="width: 184px">
+    <col style="width: 134px">
+    <col style="width: 833px">
     </colgroup>
     <thead>
       <tr>
@@ -354,7 +354,9 @@ aclnnStatus aclnnInplaceAcos(
   - aclnnAcos&aclnnInplaceAcos默认确定性实现。
 
 ## 调用示例
+
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

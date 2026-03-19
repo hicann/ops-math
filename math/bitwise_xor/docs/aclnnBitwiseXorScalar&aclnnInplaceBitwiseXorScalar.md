@@ -1,4 +1,4 @@
-# aclnnBitwiseXorTensor&aclnnInplaceBitwiseXorTensor
+# aclnnBitwiseXorScalar&aclnnInplaceBitwiseXorScalar
 
 [📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/bitwise_xor)
 
@@ -116,7 +116,7 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
       <td>输出</td>
       <td>输出tensor，存储计算结果。</td>
       <td>维度不大于8，shape是self与other broadcast之后的shape。</td>
-      <td>BOOL、INT8、INT16、INT32、INT64、UINT8</td>
+      <td>BOOL、INT8、INT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>
@@ -143,8 +143,7 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
     </tr>
   </tbody></table>
 
-  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：out数据类型额外支持FLOAT、FLOAT16、DOUBLE。
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：out数据类型额外支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。 
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16数据类型。
 
 
 - **返回值：**

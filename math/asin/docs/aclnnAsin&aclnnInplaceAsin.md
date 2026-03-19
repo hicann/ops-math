@@ -172,10 +172,10 @@ aclnnStatus aclnnInplaceAsin(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-    <col style="width: 150px">
-    <col style="width: 114px">
-    <col style="width: 500px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+    <col style="width: 184px">
+    <col style="width: 134px">
+    <col style="width: 833px">
     </colgroup>
     <thead>
       <tr>
@@ -309,10 +309,10 @@ aclnnStatus aclnnInplaceAsin(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-    <col style="width: 150px">
-    <col style="width: 114px">
-    <col style="width: 500px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+    <col style="width: 184px">
+    <col style="width: 134px">
+    <col style="width: 833px">
     </colgroup>
     <thead>
       <tr>

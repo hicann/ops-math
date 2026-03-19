@@ -156,7 +156,7 @@ aclnnStatus aclnnInplaceCumprod(
       <td>dtype（aclDataType）</td>
       <td>输入</td>
       <td>指定计算过程input的数据类型。</td>
-      <td>若为ACL_DT_UNDEFINED，使用传入input的原始类型计算；若指定具体类型（需在input支持数据类型范围内），计算前将input转换为此类型。</td>
+      <td><ul><li>若为ACL_DT_UNDEFINED，使用传入input的原始类型计算。</li><li>若指定具体类型（需在input支持数据类型范围内），计算前将input转换为此类型。</li></ul></td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -166,7 +166,7 @@ aclnnStatus aclnnInplaceCumprod(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>累积乘积的结果。</td>
-      <td>dtype=ACL_DT_UNDEFINED时，数据类型必须与input相同；dtype指定时，数据类型必须与dtype相同。out的shape必须与input一致。</td>
+      <td><ul><li>dtype=ACL_DT_UNDEFINED时，数据类型必须与input相同。</li><li>dtype指定时，数据类型必须与dtype相同。</li><li>out的shape必须与input一致。</li></ul></td>
       <td>FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>-</td>

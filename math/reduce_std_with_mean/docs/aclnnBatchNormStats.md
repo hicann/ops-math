@@ -81,7 +81,7 @@ aclnnStatus aclnnBatchNormStats(
       <td>input（aclTensor*）</td>
       <td>输入</td>
       <td>-</td>
-      <td>支持的shape和数据格式有：2维（NC），3维（NCL），4维（NCHW），5维（NCDHW），6-8维（ND，其中第2维固定为channel轴）。</td>
+      <td>支持的shape和数据格式有：<br>2维（NC）。<br>3维（NCL）。<br>4维（NCHW）。<br>5维（NCDHW）。<br>6-8维（ND，其中第2维固定为channel轴）。</td>
       <td>FLOAT、FLOAT16</td>
       <td>ND</td>
       <td>2-8维</td>

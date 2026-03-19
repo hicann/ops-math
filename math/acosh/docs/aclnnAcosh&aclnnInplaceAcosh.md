@@ -129,7 +129,9 @@ aclnnStatus aclnnInplaceAcosh(
       </tr>
     </tbody></table>
 
-  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：self数据类型额外支持INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16；out数据类型额外支持COMPLEX64、COMPLEX128、BFLOAT16。
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+    - self数据类型额外支持INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16；
+    - out数据类型额外支持COMPLEX64、COMPLEX128、BFLOAT16。
 
 - **返回值：**
 
@@ -172,10 +174,10 @@ aclnnStatus aclnnInplaceAcosh(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-    <col style="width: 150px">
-    <col style="width: 114px">
-    <col style="width: 500px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+    <col style="width: 184px">
+    <col style="width: 134px">
+    <col style="width: 833px">
     </colgroup>
     <thead>
       <tr>
@@ -306,10 +308,10 @@ aclnnStatus aclnnInplaceAcosh(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-    <col style="width: 150px">
-    <col style="width: 114px">
-    <col style="width: 500px">
+  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+    <col style="width: 184px">
+    <col style="width: 134px">
+    <col style="width: 833px">
     </colgroup>
     <thead>
       <tr>
