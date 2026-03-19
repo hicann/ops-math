@@ -154,7 +154,7 @@ void StrideSliceTiling::CalcBlockSplitInfo()
 {
     const auto& outputShape = sliceParam_.outputShape;
     int64_t minCoreProcessSize = 0;
-    if (dimNum_ > NUMBER_SIX && maxSplitDim_ == MAX_NDDMA_UB_SPLIT_AXIS_NUM) {
+    if (dimNum_ >= NUMBER_SIX && maxSplitDim_ == MAX_NDDMA_UB_SPLIT_AXIS_NUM) {
         int64_t lastFourDimProd = 1L;
         for (int32_t i = 0; i < NUMBER_FOUR; i++) {
             lastFourDimProd *= outputShape.GetDim(dimNum_ - 1 - i);
