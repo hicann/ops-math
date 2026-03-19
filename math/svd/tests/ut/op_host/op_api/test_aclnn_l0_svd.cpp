@@ -67,3 +67,12 @@ TEST_F(SvdTest, SvdTest_fullMatrices_false_SUCC) {
   ASSERT_NE(v, nullptr);
 }
 
+TEST_F(SvdTest, SvdTest_ComputeUV_false_SUCC) {
+  auto x = CreateAclTensor({2, 3}, ACL_FLOAT);
+  bool fullMatrices = false;
+  bool computeUV= false;
+  auto [sigma, u, v] = l0op::Svd(x, fullMatrices, computeUV, exe);
+  ASSERT_NE(sigma, nullptr);
+  ASSERT_NE(u, nullptr);
+  ASSERT_NE(v, nullptr);
+}

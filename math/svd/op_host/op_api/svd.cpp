@@ -26,7 +26,8 @@ OP_TYPE_REGISTER(Svd);
 
 static constexpr int32_t MIN_X_DIM = 2;
 
-static std::tuple<aclTensor*, aclTensor*, aclTensor*> allocOutTensor(const aclTensor *x, const bool fullMatrices, aclOpExecutor *executor)
+static std::tuple<aclTensor*, aclTensor*, aclTensor*>
+  allocOutTensor(const aclTensor *x, const bool fullMatrices, aclOpExecutor *executor, const bool computeUV)
 {
   int64_t xDim = x->GetViewShape().GetDimNum();
   op::Shape xShape = x->GetViewShape();
@@ -39,27 +40,30 @@ static std::tuple<aclTensor*, aclTensor*, aclTensor*> allocOutTensor(const aclTe
   // sigma、u、v与x的前xDim-2维格式相同
   for (int64_t i = 0; i < xDim - MIN_X_DIM; i++) {
     sigmaShape.AppendDim(xShape[i]);
-    uShape.AppendDim(xShape[i]);
-    vShape.AppendDim(xShape[i]);
+    if(computeUV) {
+      uShape.AppendDim(xShape[i]);
+      vShape.AppendDim(xShape[i]);
+    }
   }
   /*
   * x:[..., m, n]  k = min(m, n)
   * fullMatrices == true --> u:[..., m, m]，(sigma):[..., k]，v:[..., n, n]，diag(sigma):[..., m, n]
   * fullMatrices == false --> u:[..., m, k]，(sigma):[..., k]，v:[..., n, k]，diag(sigma):[..., k, k]
   */
-  if (fullMatrices) {
-    uShape.AppendDim(m);
-    uShape.AppendDim(m);
-    sigmaShape.AppendDim(k);
-    vShape.AppendDim(n);
-    vShape.AppendDim(n);
-  } else {
-    uShape.AppendDim(m);
-    uShape.AppendDim(k);
-    sigmaShape.AppendDim(k);
-    vShape.AppendDim(n);
-    vShape.AppendDim(k);
+  if (computeUV) {
+    if (fullMatrices) {
+      uShape.AppendDim(m);
+      uShape.AppendDim(m);
+      vShape.AppendDim(n);
+      vShape.AppendDim(n);
+    } else {
+      uShape.AppendDim(m);
+      uShape.AppendDim(k);
+      vShape.AppendDim(n);
+      vShape.AppendDim(k);
+    }
   }
+  sigmaShape.AppendDim(k);
   auto u = executor->AllocTensor(uShape, x->GetDataType());
   auto sigma = executor->AllocTensor(sigmaShape, x->GetDataType());
   auto v = executor->AllocTensor(vShape, x->GetDataType());
@@ -70,7 +74,7 @@ static std::tuple<aclTensor*, aclTensor*, aclTensor*> allocOutTensor(const aclTe
 const std::tuple<aclTensor*, aclTensor*, aclTensor*> Svd(
   const aclTensor *x, const bool fullMatrices, const bool computeUV, aclOpExecutor *executor)
 {
-  std::tuple<aclTensor*, aclTensor*, aclTensor*> outTensor = allocOutTensor(x, fullMatrices, executor);
+  std::tuple<aclTensor*, aclTensor*, aclTensor*> outTensor = allocOutTensor(x, fullMatrices, executor, computeUV);
   aclTensor *sigma = get<0>(outTensor);
   aclTensor *u = get<1>(outTensor);
   aclTensor *v = get<2>(outTensor);
