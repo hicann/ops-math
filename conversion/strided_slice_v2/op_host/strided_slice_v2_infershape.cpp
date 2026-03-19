@@ -17,6 +17,7 @@
 #include "../../strided_slice/op_host/strided_slice_util.h"
 #include "log/log.h"
 #include "util/const_util.h"
+#include "util/shape_util.h"
 
 namespace ops {
 using namespace ge;
@@ -63,8 +64,10 @@ static void PositiveAxisImpl(int32_t inputDims, const gert::Tensor* axesTensor, 
         int32_t value = static_cast<int32_t>(data[i]);
         if (value >= 0 && value < inputDims) {
             newAxes.push_back(value);
+            OP_LOGD(OP_NAME, "add new axes value:%d", value);
         } else if (value < 0 && value >= -inputDims) {
             newAxes.push_back(value + inputDims);
+            OP_LOGD(OP_NAME, "add new axes value plus:%d", value + inputDims);
         }
     }
 }
@@ -206,14 +209,19 @@ static ge::graphStatus InferShape4StridedSliceV2(gert::InferShapeContext* contex
     auto tensor_end = context->GetInputTensor(IDX_END);
     OP_CHECK_NULL_WITH_CONTEXT(context, tensor_end);
 
+    if (Ops::Base::IsUnknownRank(*shape_x)) {
+        Ops::Base::SetUnknownRank(*shape_y);
+        return GRAPH_SUCCESS;
+    }
+
     int32_t input_dim_num = static_cast<int32_t>(shape_x->GetDimNum());
     std::vector<int64_t> new_axis = ConstructValidAxis(context->GetOptionalInputTensor(IDX_AXES), input_dim_num);
     const gert::Tensor* tensor_strides = context->GetOptionalInputTensor(IDX_STRIDES);
     ConstructStrideList(tensor_strides, input_dim_num, new_axis, input_params.strides);
 
     OP_LOGI(
-        context, "shape_x:%s, shape_y:%s, shape_begin:%s, shape_end:%s.", Ops::Base::ToString(*shape_x).c_str(),
-        Ops::Base::ToString(*shape_y).c_str(), Ops::Base::ToString(*shape_begin).c_str(),
+        context, "shape_x:%s, shape_begin:%s, shape_end:%s.",
+        Ops::Base::ToString(*shape_x).c_str(), Ops::Base::ToString(*shape_begin).c_str(),
         Ops::Base::ToString(*shape_end).c_str());
 
     // Calculate max shape of (begin, end, strides)

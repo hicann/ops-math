@@ -9,16 +9,18 @@
  */
 
 /*!
- * \file strided_slice_v3.cc
+ * \file strided_slice_v3_infershape.cpp
  * \brief
  */
 
 #include <numeric>
-#include <cmath>
 #include "register/op_impl_registry.h"
 #include "../../strided_slice/op_host/strided_slice_util.h"
 #include "log/log.h"
+#include "op_api/op_util.h"
 #include "util/const_util.h"
+#include "util/math_util.h"
+#include "util/shape_util.h"
 
 using namespace std;
 namespace {
@@ -29,133 +31,232 @@ const int INDEX_END = 2;
 const int INDEX_AXES = 3;
 const int INDEX_STRIDES = 4;
 const int INDEX_Y = 0;
-}  // namespace
+static constexpr int64_t UNKNOWN_DIM_VALUE_ = -1L;
+} // namespace
 
 namespace ops {
-static int64_t GetConstIndexValue(const gert::Tensor* tensor, size_t idx) {
-  // idx must be valid
-  int64_t value = 0;
-  if (tensor->GetDataType() == ge::DT_INT32) {
-    const int32_t* data = tensor->GetData<int32_t>();
-    value = static_cast<int64_t>(data[idx]);
-  } else {
-    const int64_t* data = tensor->GetData<int64_t>();
-    value = data[idx];
-  }
-  OP_LOGD(OP_NAME.c_str(), "const tensor[%ld] is %ld.", idx, value);
-  return value;
+static int64_t GetConstIndexValue(const gert::Tensor* tensor, size_t idx)
+{
+    // idx must be valid
+    int64_t value = 0;
+    if (tensor->GetDataType() == ge::DT_INT32) {
+        const int32_t* data = tensor->GetData<int32_t>();
+        value = static_cast<int64_t>(data[idx]);
+    } else {
+        const int64_t* data = tensor->GetData<int64_t>();
+        value = data[idx];
+    }
+    OP_LOGD(OP_NAME, "const tensor[%ld] is %ld.", idx, value);
+    return value;
 }
 
-static int64_t GetConstIndexValue(const gert::Tensor* tensor, size_t idx, int64_t input_size, int64_t clip_lower,
-                                  int64_t clip_upper) {
-  // idx must be valid
-  int64_t value = 0;
-  if (tensor->GetDataType() == ge::DT_INT32) {
-    const int32_t* data = tensor->GetData<int32_t>();
-    value = static_cast<int64_t>(data[idx]);
-  } else {
-    const int64_t* data = tensor->GetData<int64_t>();
-    value = data[idx];
-  }
-  if (value < 0) {
-    value += input_size;
-  }
+static int64_t GetConstIndexValue(
+    const gert::Tensor* tensor, size_t idx, int64_t inputSize, int64_t clipLower, int64_t clipUpper)
+{
+    // idx must be valid
+    int64_t value = 0;
+    if (tensor->GetDataType() == ge::DT_INT32) {
+        const int32_t* data = tensor->GetData<int32_t>();
+        value = static_cast<int64_t>(data[idx]);
+    } else {
+        const int64_t* data = tensor->GetData<int64_t>();
+        value = data[idx];
+    }
+    if (value < 0) {
+        value += inputSize;
+    }
 
-  // clamp value
-  if (value < clip_lower) {
-    value = clip_lower;
-  } else if (value > clip_upper) {
-    value = clip_upper;
-  }
-  OP_LOGD(OP_NAME.c_str(), "const tensor[%ld] is %ld.", idx, value);
-  return value;
+    // clamp value
+    if (value < clipLower) {
+        value = clipLower;
+    } else if (value > clipUpper) {
+        value = clipUpper;
+    }
+    OP_LOGD(OP_NAME, "const tensor[%ld] is %ld.", idx, value);
+    return value;
 }
 
 template <typename T>
-static void PositiveAxisImpl(int32_t input_dims, const gert::Tensor* axis_tensor, vector<int32_t>& new_axis) {
-  const int64_t axis_size = axis_tensor->GetShapeSize();
-  const T* data = axis_tensor->GetData<T>();
-  for (int i = 0; i < axis_size; i++) {
-    int64_t value = static_cast<int64_t>(data[i]);
-    if (value >= 0 && value < input_dims) {
-      new_axis.push_back(value);
-    } else if (value < 0 && value >= -input_dims) {
-      new_axis.push_back(value + input_dims);
+static void PositiveAxisImpl(int32_t inputDims, const gert::Tensor* axisTensor, vector<int32_t>& newAxis)
+{
+    const int64_t axisSize = axisTensor->GetShapeSize();
+    const T* data = axisTensor->GetData<T>();
+    for (int i = 0; i < axisSize; i++) {
+        int64_t value = static_cast<int64_t>(data[i]);
+        if (value >= 0 && value < inputDims) {
+            newAxis.push_back(value);
+            OP_LOGD(OP_NAME, "add new axes value:%ld", value);
+        } else if (value < 0 && value >= -inputDims) {
+            newAxis.push_back(value + inputDims);
+            OP_LOGD(OP_NAME, "add new axes value plus:%ld", value + inputDims);
+        } else {
+            OP_LOGI(OP_NAME, "idx:%d axes value:%ld invalid, inputDims:%d", i, value, inputDims);
+        }
     }
-  }
-  return;
+    return;
 }
 
-static std::vector<int32_t> ConstructValidAxis(int32_t input_dims, const gert::Tensor* axis_tensor) {
-  std::vector<int32_t> new_axis;
-  if (!axis_tensor || axis_tensor->GetShapeSize() == 0) {
-    new_axis.resize(input_dims);
-    std::iota(new_axis.begin(), new_axis.end(), 0);
-    return new_axis;
-  }
-  if (axis_tensor->GetDataType() == ge::DT_INT32) {
-    PositiveAxisImpl<int32_t>(input_dims, axis_tensor, new_axis);
-  } else if (axis_tensor->GetDataType() == ge::DT_INT64) {
-    PositiveAxisImpl<int64_t>(input_dims, axis_tensor, new_axis);
-  }
-  return new_axis;
+static bool ConstructValidAxis(int32_t inputDims, const gert::Tensor* axisTensor, std::vector<int32_t>& newAxis)
+{
+    if (!axisTensor || axisTensor->GetShapeSize() == 0) {
+        newAxis.resize(inputDims);
+        std::iota(newAxis.begin(), newAxis.end(), 0);
+        return true;
+    }
+    if (axisTensor->GetDataType() == ge::DT_INT32) {
+        PositiveAxisImpl<int32_t>(inputDims, axisTensor, newAxis);
+    } else if (axisTensor->GetDataType() == ge::DT_INT64) {
+        PositiveAxisImpl<int64_t>(inputDims, axisTensor, newAxis);
+    } else {
+        OP_LOGE(
+            OP_NAME, "axesTensor dtype:%s invalid, only support DT_INT32 or DT_INT64",
+            Ops::Base::ToString(axisTensor->GetDataType()).c_str());
+        return false;
+    }
+    return true;
 }
 
-static ge::graphStatus StridedSliceV3InferShape(gert::InferShapeContext* context) {
-  const gert::Shape* x_shape = context->GetInputShape(INDEX_X);
-  gert::Shape* out_shape = context->GetOutputShape(INDEX_Y);
-  const gert::Tensor* begin_tensor = context->GetInputTensor(INDEX_BEGIN);
-  const gert::Tensor* end_tensor = context->GetInputTensor(INDEX_END);
-  if (x_shape == nullptr || out_shape == nullptr || begin_tensor == nullptr || end_tensor == nullptr) {
-    OP_LOGE(OP_NAME.c_str(), "input tensor or output tensor is null. Please check.");
-    return ge::GRAPH_FAILED;
-  }
-  *out_shape = *x_shape;  // init output_shape with input_shape
+static ge::graphStatus SetAllUnknownDim(const int64_t rank, gert::Shape* outputShape)
+{
+    outputShape->SetDimNum(rank);
+    for (int64_t i = 0; i < rank; ++i) {
+        outputShape->SetDim(i, UNKNOWN_DIM_VALUE_);
+    }
+    OP_LOGD(OP_NAME, "set all dim = -1, output = %s", Ops::Base::ToString(*outputShape).c_str());
 
-  int32_t input_dim_num = static_cast<int32_t>(x_shape->GetDimNum());
-  std::vector<int32_t> new_axis = ConstructValidAxis(input_dim_num, context->GetOptionalInputTensor(INDEX_AXES));
-  const gert::Tensor* strides_tensor = context->GetOptionalInputTensor(INDEX_STRIDES);
-  const int32_t strides_size = (strides_tensor) ? static_cast<int32_t>(strides_tensor->GetShapeSize()) : 0;
-  const int32_t begins_size = static_cast<int32_t>(begin_tensor->GetShapeSize());
-  const int32_t ends_size = static_cast<int32_t>(end_tensor->GetShapeSize());
+    return ge::GRAPH_SUCCESS;
+}
 
-  const int32_t axis_size = static_cast<int32_t>(new_axis.size());
-  if (axis_size == 0) {
-    OP_LOGE(OP_NAME.c_str(), "axis_size is 0. Please check.");
-    return ge::GRAPH_FAILED;
-  }
-  for (int32_t i = 0; i < axis_size; i++) {
-    const int32_t axis_value = new_axis[i];
-    int64_t step_value = 1;
-    if (i < strides_size) {
-      step_value = GetConstIndexValue(strides_tensor, i);
+static bool GetBeginValue(
+    int64_t curAxisInputSize, int64_t stepValue, const gert::Tensor* beginTensor, int32_t idx, int64_t& beginValue)
+{
+    if (!IsConstTensor(beginTensor)) {
+        OP_LOGD(OP_NAME, "beginTensor is unconst");
+        return false;
     }
-    int64_t cur_axis_input_size = x_shape->GetDim(axis_value);
-    int64_t begin_value = 0;
-    if (i < begins_size) {
-      int64_t clip_upper = cur_axis_input_size;
-      if (step_value < 0) {
-        clip_upper -= 1;  // if stpep <0, start from last valid_index
-      }
-      begin_value = GetConstIndexValue(begin_tensor, i, cur_axis_input_size, 0, clip_upper);
+
+    int64_t clipUpper = curAxisInputSize;
+    if (stepValue < 0) {
+        clipUpper -= 1; // if step < 0, start from last valid_index
     }
-    int64_t end_value = cur_axis_input_size;
-    if (i < ends_size) {
-      int64_t clip_lower = 0;
-      if (step_value < 0) {
-        clip_lower = -1;  // if stpep <0, end with first valid_index
-      }
-      end_value = GetConstIndexValue(end_tensor, i, cur_axis_input_size, clip_lower, cur_axis_input_size);
+    beginValue = GetConstIndexValue(beginTensor, idx, curAxisInputSize, 0, clipUpper);
+    return true;
+}
+
+static bool GetEndValue(
+    int64_t curAxisInputSize, int64_t stepValue, const gert::Tensor* endTensor, int32_t idx, int64_t& endValue)
+{
+    if (!IsConstTensor(endTensor)) {
+        OP_LOGD(OP_NAME, "endTensor is unconst");
+        return false;
     }
-    int64_t cur_out_size = static_cast<int64_t>(std::ceil((end_value - begin_value) / static_cast<float>(step_value)));
-    if (cur_out_size < 0) {
-      cur_out_size = 0;
+    int64_t clipLower = 0;
+    if (stepValue < 0) {
+        clipLower = -1; // if step < 0, end with first valid_index
     }
-    out_shape->SetDim(axis_value, cur_out_size);
-  }
-  OP_LOGD(OP_NAME.c_str(), "out_shape: %s", Ops::Base::ToString(*out_shape).c_str());
-  return ge::GRAPH_SUCCESS;
+    endValue = GetConstIndexValue(endTensor, idx, curAxisInputSize, clipLower, curAxisInputSize);
+    return true;
+}
+
+static bool GetStepValue(const gert::Tensor* stridesTensor, int32_t idx, int64_t& stepValue)
+{
+    if (!IsConstTensor(stridesTensor)) {
+        OP_LOGD(OP_NAME, "stridesTensor is unconst");
+        return false;
+    }
+    stepValue = GetConstIndexValue(stridesTensor, idx);
+    return true;
+}
+
+static bool DoInferShape(
+    const gert::Shape* xShape, gert::Shape* yShape, const gert::Tensor* stridesTensor, const gert::Tensor* beginTensor,
+    const gert::Tensor* endTensor, const std::vector<int32_t>& newAxis)
+{
+    const int32_t stridesSize = (stridesTensor) ? static_cast<int32_t>(stridesTensor->GetShapeSize()) : 0;
+    const int32_t beginsSize = static_cast<int32_t>(beginTensor->GetShapeSize());
+    const int32_t endsSize = static_cast<int32_t>(endTensor->GetShapeSize());
+
+    const int32_t axisSize = static_cast<int32_t>(newAxis.size());
+    for (int32_t i = 0; i < axisSize; i++) {
+        const int32_t axisValue = newAxis[i];
+        int64_t stepValue = 1;
+        if (i < stridesSize && !GetStepValue(stridesTensor, i, stepValue)) {
+            yShape->SetDim(axisValue, UNKNOWN_DIM_VALUE_);
+            continue;
+        }
+
+        if (stepValue == 0) {
+            OP_LOGE(OP_NAME, "idx:%d stepValue[%ld] must be non-zero", i, stepValue);
+            return false;
+        }
+
+        int64_t curAxisInputSize = xShape->GetDim(axisValue);
+        if (curAxisInputSize == UNKNOWN_DIM_VALUE_) {
+            yShape->SetDim(axisValue, UNKNOWN_DIM_VALUE_);
+            continue;
+        }
+
+        int64_t beginValue = 0;
+        if (i < beginsSize && !GetBeginValue(curAxisInputSize, stepValue, beginTensor, i, beginValue)) {
+            yShape->SetDim(axisValue, UNKNOWN_DIM_VALUE_);
+            continue;
+        }
+        int64_t endValue = curAxisInputSize;
+        if (i < endsSize && !GetEndValue(curAxisInputSize, stepValue, endTensor, i, endValue)) {
+            yShape->SetDim(axisValue, UNKNOWN_DIM_VALUE_);
+            continue;
+        }
+        int64_t curOutSize = Ops::Base::CeilDiv((endValue - beginValue), stepValue);
+        if (curOutSize < 0) {
+            curOutSize = 0;
+        }
+        yShape->SetDim(axisValue, curOutSize);
+    }
+    return true;
+}
+
+static ge::graphStatus StridedSliceV3InferShape(gert::InferShapeContext* context)
+{
+    const gert::Shape* xShape = context->GetInputShape(INDEX_X);
+    OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
+    gert::Shape* yShape = context->GetOutputShape(INDEX_Y);
+    OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
+    const gert::Tensor* beginTensor = context->GetInputTensor(INDEX_BEGIN);
+    OP_CHECK_NULL_WITH_CONTEXT(context, beginTensor);
+    const gert::Tensor* endTensor = context->GetInputTensor(INDEX_END);
+    OP_CHECK_NULL_WITH_CONTEXT(context, endTensor);
+    const gert::Tensor* axesTensor = context->GetOptionalInputTensor(INDEX_AXES);
+    const gert::Tensor* stridesTensor = context->GetOptionalInputTensor(INDEX_STRIDES);
+
+    if (Ops::Base::IsUnknownRank(*xShape)) {
+        Ops::Base::SetUnknownRank(*yShape);
+        return ge::GRAPH_SUCCESS;
+    }
+    if (axesTensor && !IsConstTensor(axesTensor)) {
+        OP_LOGD(OP_NAME, "axes is not const tensor");
+        return SetAllUnknownDim(xShape->GetDimNum(), yShape);
+    }
+
+    *yShape = *xShape; // init output_shape with input_shape
+
+    int32_t inputDimNum = static_cast<int32_t>(xShape->GetDimNum());
+    std::vector<int32_t> newAxis;
+    if (!ConstructValidAxis(inputDimNum, axesTensor, newAxis)) {
+        return ge::GRAPH_FAILED;
+    }
+    const int32_t axisSize = static_cast<int32_t>(newAxis.size());
+    if (axisSize == 0) {
+        OP_LOGE(OP_NAME, "axisSize is 0. Please check.");
+        return ge::GRAPH_FAILED;
+    }
+
+    if (!DoInferShape(xShape, yShape, stridesTensor, beginTensor, endTensor, newAxis)) {
+        return ge::GRAPH_FAILED;
+    }
+
+    OP_LOGI(OP_NAME, "out shape: %s", Ops::Base::ToString(*yShape).c_str());
+    return ge::GRAPH_SUCCESS;
 }
 
 IMPL_OP_INFERSHAPE(StridedSliceV3).InferShape(StridedSliceV3InferShape).InputsDataDependency({1, 2, 3, 4});
-}  // namespace ops
+} // namespace ops
