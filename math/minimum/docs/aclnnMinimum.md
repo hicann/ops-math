@@ -14,7 +14,13 @@
 
 ## 功能说明
 
-计算两个张量中每个元素的最小值，并返回一个新的张量。
+- 接口功能：计算两个张量中每个元素的最小值，并返回一个新的张量。
+
+- 计算公式：
+
+  $$
+  \text{out}_i = \min(\text{self}_i, \text{other}_i)
+  $$
 
 ## 函数原型
 
@@ -36,7 +42,6 @@ aclnnStatus aclnnMinimum(
   aclOpExecutor  *executor, 
   aclrtStream     stream)
 ```
-
 
 ## aclnnMinimumGetWorkspaceSize
 
@@ -348,5 +353,5 @@ int main() {
   aclrtResetDevice(deviceId);
   aclFinalize();
   return 0;
-}```
-
+}
+```
