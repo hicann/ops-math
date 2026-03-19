@@ -13,7 +13,19 @@
 
 ## 功能说明
 
-将输入中的NaN、正无穷大和负无穷大值分别替换为nan、posinf、neginf指定的值。
+- 接口功能：将输入中的NaN、正无穷大和负无穷大值分别替换为nan、posinf、neginf指定的值。
+
+- 计算公式：
+
+  $$
+  \text{out}_i = 
+  \begin{cases} 
+  \text{nan} & \text{if } \text{self}_i \text{ is NaN} \\ 
+  \text{posinf} & \text{if } \text{self}_i \text{ is } +\infty \\ 
+  \text{neginf} & \text{if } \text{self}_i \text{ is } -\infty \\ 
+  \text{self}_i & \text{otherwise} 
+  \end{cases}
+  $$
 
 ## 函数原型
 
@@ -676,5 +688,4 @@ int main() {
   aclrtResetDevice(deviceId);
   aclFinalize();
   return 0;
-}
-```
+}```

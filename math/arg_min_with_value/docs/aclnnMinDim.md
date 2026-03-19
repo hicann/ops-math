@@ -14,7 +14,17 @@
 
 ## 功能说明
 
-返回self中指定维度的最小值及其索引位置。最小值保存到out中，最小值的索引保存到indices中。如果keepdim为false，则不保留对应的轴；如果为true，则保留指定轴的维度值为1。
+- 接口功能：返回self中指定维度的最小值及其索引位置。最小值保存到out中，最小值的索引保存到indices中。如果keepdim为false，则不保留对应的轴；如果为true，则保留指定轴的维度值为1。
+
+- 计算公式：
+
+  最小值计算：
+  $$
+  \text{out}_i = \min_{\text{dim}}(\text{self})
+  $$
+  索引计算：
+  $$
+  \text{indices}_i = \arg\min_{\text{dim}}(\text{self})$$
 
 ## 函数原型
 
