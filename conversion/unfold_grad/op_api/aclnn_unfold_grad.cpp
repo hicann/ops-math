@@ -23,6 +23,7 @@
 #include "opdev/op_dfx.h"
 #include "opdev/platform.h"
 #include "op_api/op_api_def.h"
+#include "aclnn_kernels/transdata.h"
 
 using namespace op;
 
@@ -147,8 +148,11 @@ aclnnStatus aclnnUnfoldGradGetWorkspaceSize(
     auto outCast = l0op::Cast(unfoldGradOut, gradOutContiguous->GetDataType(), uniqueExecutor.get());
     CHECK_RET(outCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
+    auto outReformat = l0op::ReFormat(outCast, gradIn->GetStorageFormat());
+    CHECK_RET(outReformat != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
     // 固定写法，将计算结果拷贝到输出out上，out可能是非连续的tensor
-    auto viewCopyResult = l0op::ViewCopy(outCast, gradIn, uniqueExecutor.get());
+    auto viewCopyResult = l0op::ViewCopy(outReformat, gradIn, uniqueExecutor.get());
     CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 固定写法，获取计算过程中需要使用的workspace大小
