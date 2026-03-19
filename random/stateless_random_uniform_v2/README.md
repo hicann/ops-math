@@ -80,4 +80,4 @@
 
 | 调用方式 | 样例代码                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_stateless_random_uniform_v2](examples/test_aclnn_stateless_random_uniform_v2.cpp) | 通过[StatelessRandomUniformV2](../dsa_random_uniform/docs/aclnnInplaceUniform.md)接口方式调用stateless_random_uniform_v2算子。 |
+| aclnn调用 | [test_aclnn_stateless_random_uniform_v2](examples/arch35/test_aclnn_stateless_random_uniform_v2.cpp) | 通过[StatelessRandomUniformV2](../dsa_random_uniform/docs/aclnnInplaceUniform.md)接口方式调用stateless_random_uniform_v2算子。 |
