@@ -926,6 +926,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/reciprocal/README.md">reciprocal</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>返回一个新的张量，该张量的每个元素都是输入张量对应元素的倒数。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/exp_segsum_grad/README.md">exp_segsum_grad</a></td>
     <td>√</td>
     <td>√</td>
