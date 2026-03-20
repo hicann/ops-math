@@ -280,10 +280,13 @@ ge::graphStatus RandomTilingArch35::DoUbTiling()
     // 通用分UB逻辑：根据存活节点数量计算 singleBufferSize
     OP_CHECK_IF((bufNum_ == 0), OP_LOGE(opName_, "bufNum_ is equal to 0. please check."), return ge::GRAPH_FAILED);
     tilingData_.singleBufferSize = ubSize_ / bufNum_;
-    auto ubBlockSize = Ops::Base::GetUbBlockSize(context_);
-    OP_CHECK_IF(
-        (ubBlockSize == 0), OP_LOGE(opName_, "ubBlockSize is equal to 0. please check."), return ge::GRAPH_FAILED);
-    tilingData_.singleBufferSize = tilingData_.singleBufferSize / ubBlockSize * ubBlockSize;
+    if (config_.ubAlignSize == 0) {
+        auto ubBlockSize = Ops::Base::GetUbBlockSize(context_);
+        OP_CHECK_IF((ubBlockSize == 0), OP_LOGE(opName_, "ubBlockSize is equal to 0. please check."), return ge::GRAPH_FAILED);
+        tilingData_.singleBufferSize = tilingData_.singleBufferSize / ubBlockSize * ubBlockSize;
+    } else {
+        tilingData_.singleBufferSize = tilingData_.singleBufferSize / config_.ubAlignSize * config_.ubAlignSize;
+    }
     return ge::GRAPH_SUCCESS;
 }
 

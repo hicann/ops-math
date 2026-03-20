@@ -35,6 +35,9 @@ static constexpr int64_t OUT_Y_IDX = 0;
 static constexpr uint64_t BUFFER_NUM = 2;
 static constexpr uint64_t EXIST_NODE_NUM = 3;
 static constexpr uint64_t CORE_ALIGN_SIZE =256;
+static constexpr uint64_t UB_ALIGN_SIZE = 256;
+static constexpr uint64_t REGBASE_CCEC_CACHE_SIZE = 8 * 1024;
+static constexpr uint32_t RIGHT_SHIFT_NUM = 32;
 
 // ========== 仅需配置校验规则+特定字段回调函数 ==========
 OpTilingConfig StatelessDropOutGenMaskTiling::BuildOpConfig()
@@ -100,18 +103,20 @@ OpTilingConfig StatelessDropOutGenMaskTiling::BuildOpConfig()
             counterTemp = { inputOffset_[0], inputOffset_[1] };
         }
         key[0] = static_cast<int32_t>(keyTemp);
-        key[1] = static_cast<int32_t>(keyTemp >> 32); // 32 for lower 32 bits
+        key[1] = static_cast<int32_t>(keyTemp >> RIGHT_SHIFT_NUM); // 32 for lower 32 bits
         counter[0] = static_cast<int32_t>(counterTemp[0]);
-        counter[1] = static_cast<int32_t>(counterTemp[0] >> 32); // 32 for lower 32 bits
+        counter[1] = static_cast<int32_t>(counterTemp[0] >> RIGHT_SHIFT_NUM); // 32 for lower 32 bits
         counter[2] = static_cast<int32_t>(counterTemp[1]);
-        counter[3] = static_cast<int32_t>(counterTemp[1] >> 32); // 32 for lower 32 bits
+        counter[3] = static_cast<int32_t>(counterTemp[1] >> RIGHT_SHIFT_NUM); // 32 for lower 32 bits
         return ge::GRAPH_SUCCESS;
     };
+
+    config.ubAlignSize = UB_ALIGN_SIZE;   
 
     config.getBufferNum = [](gert::TilingContext* ctx, int64_t& bufNum) -> ge::graphStatus {
         auto outDesc = ctx->GetOutputDesc(0);
         OP_CHECK_NULL_WITH_CONTEXT(ctx, outDesc);
-        bufNum = sizeof(uint32_t) + sizeof(float) * BUFFER_NUM + sizeof(uint8_t) * BUFFER_NUM;
+        bufNum = sizeof(uint32_t) + sizeof(float) * BUFFER_NUM + sizeof(float) * BUFFER_NUM;
         return ge::GRAPH_SUCCESS;
     };
 
@@ -120,7 +125,7 @@ OpTilingConfig StatelessDropOutGenMaskTiling::BuildOpConfig()
     return config;
 }
 
-StatelessDropOutGenMaskTiling::StatelessDropOutGenMaskTiling(gert::TilingContext* context) : RandomTilingArch35(context, BuildOpConfig()){}
+StatelessDropOutGenMaskTiling::StatelessDropOutGenMaskTiling(gert::TilingContext* ctx) : RandomTilingArch35(ctx, BuildOpConfig()){}
 
 static ge::graphStatus TilingPrepare4StatelessDropOutGenMaskTiling(gert::TilingParseContext* context)
 {

@@ -58,7 +58,7 @@ TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_01)
     }, 
     &compileInfo);
     uint64_t expectTilingKey = 100;
-    string expectTilingData = "64 256 256 18720 2 0 8 16384 0 0 0 ";
+    string expectTilingData = "64 256 256 13056 2 0 8 16384 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -86,7 +86,7 @@ TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_02)
     }, 
     &compileInfo);
     uint64_t expectTilingKey = 100;
-    string expectTilingData = "54 768 256 18720 24 0 36 40960 0 0 0 ";
+    string expectTilingData = "54 768 256 13056 24 0 36 40960 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -114,7 +114,7 @@ TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_03)
     }, 
     &compileInfo);
     uint64_t expectTilingKey = 100;
-    string expectTilingData = "54 768 256 18720 24 0 36 40960 0 0 0 ";
+    string expectTilingData = "54 768 256 13056 24 0 36 40960 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -142,7 +142,7 @@ TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_04)
     }, 
     &compileInfo);
     uint64_t expectTilingKey = 100;
-    string expectTilingData = "54 768 256 18720 24 0 36 40960 0 0 0 ";
+    string expectTilingData = "54 768 256 13056 24 0 36 40960 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -170,7 +170,7 @@ TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_05)
     }, 
     &compileInfo);
     uint64_t expectTilingKey = 100;
-    string expectTilingData = "64 12800 12800 18720 16 0 36 819200 0 0 0 ";
+    string expectTilingData = "64 12800 12800 13056 16 0 36 819200 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -198,7 +198,7 @@ TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_06)
     }, 
     &compileInfo);
     uint64_t expectTilingKey = 100;
-    string expectTilingData = "40 512 512 18720 24 0 36 20480 0 0 0 ";
+    string expectTilingData = "40 512 512 13056 24 0 36 20480 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -226,7 +226,7 @@ TEST_F(StatelessDropOutGenMaskTilingTest, stateless_drop_out_gen_mask_test_07)
     }, 
     &compileInfo);
     uint64_t expectTilingKey = 100;
-    string expectTilingData = "48 512 512 18720 24 0 36 24576 0 0 0 ";
+    string expectTilingData = "48 512 512 13056 24 0 36 24576 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
