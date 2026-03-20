@@ -13,6 +13,8 @@
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/op_dfx.h"
+#include "opdev/op_log.h"
+#include "opdev/format_utils.h"
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
 #include "conversion/squeeze/op_host/op_api/squeeze.h"
 #include "op_replication_pad.h"
@@ -86,6 +88,15 @@ inline static aclnnStatus InputPreprocess(
     return ACLNN_SUCCESS;
 }
 
+static void CheckFormatNzWarning(const aclTensor* self)
+{
+    // 检查format，若是NZ格式，则添加警告
+    if (self->GetStorageFormat() == Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("Format of self gets [%s], this format may lead to precision failure.",
+        op::ToString(self->GetStorageFormat()).GetString());
+    }
+}
+
 inline static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* padding, const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
@@ -100,6 +111,8 @@ inline static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* 
     // 4. 检查shape是否满足约束
     CHECK_RET(CheckShape(self, padding, out), ACLNN_ERR_PARAM_INVALID);
 
+    // 检查format，若是NZ格式，则添加警告
+    CheckFormatNzWarning(self);
     return ACLNN_SUCCESS;
 }
 
