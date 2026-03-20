@@ -201,6 +201,15 @@ static bool CheckArray(
     return true;
 }
 
+static void CheckFormat(const aclTensor* self)
+{
+    // 检查format，若是NZ格式，则添加警告
+    if (self->GetStorageFormat() == Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("Format of self gets [%s], this format may lead to precision failure.",
+        op::ToString(self->GetStorageFormat()).GetString());
+    }
+}
+
 static aclnnStatus CheckParams(
     const aclTensor* self, const aclIntArray* kernelSize, const aclIntArray* dilation, const aclIntArray* padding,
     const aclIntArray* stride, const aclTensor* out)
@@ -224,6 +233,9 @@ static aclnnStatus CheckParams(
 
     // 5. 检查输入输出Tensor out
     CHECK_RET(CheckOutputDims(self, kernelSize, dilation, padding, stride, out), ACLNN_ERR_PARAM_INVALID);
+
+    // 检查format，若是NZ格式，则添加警告
+    CheckFormat(self);
     return ACLNN_SUCCESS;
 }
 

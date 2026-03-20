@@ -101,6 +101,15 @@ static bool CheckShape(const aclTensor* selfRef, const aclTensor* mask, const ac
     return true;
 }
 
+static void CheckFormat(const aclTensor* selfRef)
+{
+    // 检查format，若是NZ格式，则添加警告
+    if (selfRef->GetStorageFormat() == Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGW("Format of selfRef gets [%s], this format may lead to precision failure.",
+        op::ToString(selfRef->GetStorageFormat()).GetString());
+    }
+}
+
 static aclnnStatus CheckParams(const aclTensor* selfRef, const aclTensor* mask, const aclTensor* value)
 {
     // 1. 检查参数是否为空指针
@@ -112,6 +121,8 @@ static aclnnStatus CheckParams(const aclTensor* selfRef, const aclTensor* mask, 
     // 3. 检查双输入是否能broadcast
     CHECK_RET(CheckShape(selfRef, mask, value), ACLNN_ERR_PARAM_INVALID);
 
+    // 检查format，若是NZ格式，则添加警告
+    CheckFormat(selfRef);
     return ACLNN_SUCCESS;
 }
 
