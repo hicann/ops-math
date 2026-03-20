@@ -89,10 +89,10 @@ __aicore__ inline void StatelessDropOutGenMaskPt<T>::Init(
     outputGm_.SetGlobalBuffer((__gm__ uint8_t*)y + (blockOffset_ / byteBitRatio));
 
     // InitBuffer
-    pipe_->InitBuffer(outQueY_, BUFFER_NUM, this->AlignUp256(singleBufferProNum * sizeof(float)));
-    pipe_->InitBuffer(philoxQueBuf_, this->AlignUp256(singleBufferProNum * sizeof(uint32_t)));
-    pipe_->InitBuffer(calcuDataBuf_, this->AlignUp256(singleBufferProNum * sizeof(float)));
-    pipe_->InitBuffer(tempDataBuf_, this->AlignUp256(singleBufferProNum * sizeof(float)));
+    pipe_->InitBuffer(outQueY_, BUFFER_NUM, singleBufferProNum * sizeof(float));
+    pipe_->InitBuffer(philoxQueBuf_, singleBufferProNum * sizeof(uint32_t));
+    pipe_->InitBuffer(calcuDataBuf_, singleBufferProNum * sizeof(float));
+    pipe_->InitBuffer(tempDataBuf_, singleBufferProNum * sizeof(float));
 
     // GetValue
     T currProb = probInputGm_.GetValue(0);
