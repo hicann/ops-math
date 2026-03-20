@@ -22,20 +22,30 @@ namespace ge
     adding stride to the index until all dimensions are not less than end.
 
 * @par Inputs:
-* Four inputs, including:
-* @li x: A Tensor. Must be one of the following types: float32, float64, int32, uint8, int16, int8,
+* Five inputs, including:
+* @li x: A Tensor. 1-8 dimensions. Must be one of the following types: float32, float64, int32, uint8, int16, int8,
 *     complex64, int64, qint8, quint8, qint32, qint16, quint16, uint16,
-*     complex128, float16, bfloat16, uint32, uint64.
-* @li begin: A Tensor of type int32 or int64, for the index of the first value to select . \n
-
-* @li end: A Tensor of type int32 or int64, for the index of the last value to select . \n
-
-* @li strides: A Tensor of type int32 or int64, for the increment . \n
-
-* @li axes: A Tensor of type int32 or int64, for the increment . \n
+*     complex128, float16, bfloat16, uint32, uint64, bool, hifloat8, float8_e5m2, float8_e4m3fn, float8_e8m0.
+* @li begin: A Tensor of type int32 or int64, for the index of the first value to select.
+*     Elements in begin with negative values are interpreted as indices from the end of the dimension. 
+*     Negative indices are clamped to the valid range after conversion.
+*     If the length of begin is less than the number of axes, the missing values default to 0. \n
+* @li end: A Tensor of type int32 or int64, for the index of the last value to select.
+*     Elements in end with negative values are interpreted as indices from the end of the dimension.
+*     Negative indices are clamped to the valid range after conversion.
+*     If the length of end is less than the number of axes, the missing values default to the input dimension size. \n
+* @li strides: Optional. A Tensor of type int32 or int64, for the increment.
+*     When not provided, stride defaults to 1.
+*     If the length of strides is less than the number of axes, the missing values default to 1. \n
+* @li axes: Optional. A Tensor of type int32 or int64, specifying the axes to apply slicing.
+*     Each element in axes must be in the range [-rank(x), rank(x)-1].
+*     When not provided, slices all dimensions [0, 1, 2, ..., rank(x)-1]. \n
 
 * @par Outputs:
 * y: A Tensor. Has the same type as "x" . \n
+
+* @attention Constraints:
+* @li At least one valid axis value must be provided (either via axes tensor or default).
 
 * @par Restrictions:
 * Warning: THIS FUNCTION IS EXPERIMENTAL.  Please do not use.

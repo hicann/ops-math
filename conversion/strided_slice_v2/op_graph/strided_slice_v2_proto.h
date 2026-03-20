@@ -23,37 +23,37 @@ namespace ge
 *
 * @par Inputs:
 * Five inputs, including:
-* @li x: A Tensor. Must be one of the following types:
+* @li x: A Tensor. 1-8 dimensions. Must be one of the following types:
 * double, float32, float16, bfloat16, complex32, complex64, complex128,
-* int8, uint8, int16, uint16, int32, uint32, int64, uint64, qint8, quint8, qint16, quint16, qint32, bool.
+* int8, uint8, int16, uint16, int32, uint32, int64, uint64, qint8, quint8, qint16, quint16, qint32, bool, hifloat8,
+* float8_e5m2, float8_e4m3fn, float8_e8m0.
 * @li begin: A Tensor of type int32 or int64, for the index of the first value to select.
+*     Elements in begin with negative values are interpreted as indices from the end of the dimension.
 * @li end: A Tensor of type int32 or int64, for the index of the last value to select.
+*     Elements in end with negative values are interpreted as indices from the end of the dimension.
 * @li axes: A Tensor of type int32 or int64, indicate axis to be select.
-* @li strides: A Tensor of type int32 or int64, for the increment. \n
+*     When not provided, slices all dimensions.
+* @li strides: A Tensor of type int32 or int64, for the increment.
+*     When not provided, stride defaults to 1. All elements in strides must be non-zero integers. \n
 *
 * @par Attributes:
-* @li begin_mask: A Tensor of type int32.
-*     Developers can ignore this attribute.
+* @li begin_mask: An attribute of type Int.
 *     A bitmask where a bit "i" being "1" means to ignore the begin
-*     value and instead use the largest interval possible.
-* @li end_mask: A Tensor of type int32.
-*     Developers can ignore this attribute.
-*     Analogous to "begin_mask".
-* @li ellipsis_mask: A Tensor of type int32.
-*     Developers can ignore this attribute.
+*     value and instead use the largest interval possible. Default value is 0.
+* @li end_mask: An attribute of type Int.
+*     Analogous to "begin_mask". Default value is 0.
+* @li ellipsis_mask: An attribute of type Int.
 *     A bitmask where bit "i" being "1" means the "i"th position
-*     is actually an ellipsis.
-* @li new_axis_mask: A Tensor of type int32.
-*     Developers can ignore this attribute.
+*     is actually an ellipsis. Default value is 0.
+* @li new_axis_mask: An attribute of type Int.
 *     A bitmask where bit "i" being "1" means the "i"th
-*     specification creates a new shape 1 dimension.
-* @li shrink_axis_mask: A Tensor of type int32.
-*     Developers can ignore this attribute.
+*     specification creates a new shape 1 dimension. Default value is 0.
+* @li shrink_axis_mask: An attribute of type Int.
 *     A bitmask where bit "i" implies that the "i"th
-*     specification should shrink the dimensionality. \n
+*     specification should shrink the dimensionality. Default value is 0. \n
 *
 * @par Outputs:
-* y: A Tensor that has the same type as "x", but except bool.
+* y: A Tensor that has the same type as "x".
 *
 * @attention Constraints:
 *
