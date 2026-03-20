@@ -28,8 +28,8 @@ struct SortRegBaseTilingData {
     uint32_t keyParams1; // radix分支清零excusiveBinsGmWk_的核， radix_one_core y2OutQue需要的ub大小, merge xQue ub大小
     uint32_t keyParams2; // radix分支清零的一次ub数据量, radix_one_core 输出int64时，一半的ub偏移, merge y2OutQue的ub大小
     uint32_t keyParams3; // radix分支清零globalHistGmWk_ ub循环次数, merge表示32个数对齐的alginH
-    uint32_t keyParams4; // 清零excusiveBinsGmWk_, 每个核处理多少个数
-    uint32_t keyParams5; // 清零globalHistGmWk_，每个核处理多少
+    uint32_t keyParams4; // radix：清零chunk大小；merge_sort(sch0)：队列buffer数；merge_big_batch(sch4)：extract chunk大小
+    uint32_t keyParams5; // radix：清零chunk大小；merge_big_batch(sch4)：最大归并迭代次数
     uint32_t tmpUbSize; // sort高级api需要的临时ub大小
     int64_t lastAxisNum; // h轴大小
     int64_t unsortedDimNum; // b轴大小
