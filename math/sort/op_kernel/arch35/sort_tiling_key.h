@@ -19,15 +19,21 @@
 
 #define SORT_SCHID_2 2
 #define SORT_SCHID_3 3
+#define SORT_SCHID_4 4
 
 #define SORT_TPL_KEY_DECL()                                                                                 \
-    ASCENDC_TPL_UINT_DECL(schId, ASCENDC_TPL_8_BW, ASCENDC_TPL_UI_LIST, 0, 1, SORT_SCHID_2, SORT_SCHID_3),  \
-        ASCENDC_TPL_UINT_DECL(                                                                              \
-            isInt32, ASCENDC_TPL_8_BW, ASCENDC_TPL_UI_LIST, 0, 1),                                          \
-        ASCENDC_TPL_UINT_DECL(isDescend, ASCENDC_TPL_8_BW, ASCENDC_TPL_UI_LIST, 0,1)                        \
+    ASCENDC_TPL_UINT_DECL(schId, ASCENDC_TPL_8_BW, ASCENDC_TPL_UI_LIST, 0, 1, SORT_SCHID_2, SORT_SCHID_3,   \
+                          SORT_SCHID_4),                                                                    \
+    ASCENDC_TPL_UINT_DECL(isInt32, ASCENDC_TPL_8_BW, ASCENDC_TPL_UI_LIST, 0, 1),                            \
+    ASCENDC_TPL_UINT_DECL(isDescend, ASCENDC_TPL_8_BW, ASCENDC_TPL_UI_LIST, 0, 1)                        \
 
 #define SORT_TPL_RADIX_MORE_CORE_KEY_SEL()                                                                  \
     ASCENDC_TPL_UINT_SEL(schId, ASCENDC_TPL_UI_LIST, SORT_SCHID_2),                                         \
+        ASCENDC_TPL_UINT_SEL(isInt32, ASCENDC_TPL_UI_LIST, 0, 1),                                           \
+        ASCENDC_TPL_UINT_SEL(isDescend, ASCENDC_TPL_UI_LIST, 0, 1)                                          \
+
+#define SORT_TPL_MERGE_BIG_BATCH_KEY_SEL()                                                                  \
+    ASCENDC_TPL_UINT_SEL(schId, ASCENDC_TPL_UI_LIST, SORT_SCHID_4),                                         \
         ASCENDC_TPL_UINT_SEL(isInt32, ASCENDC_TPL_UI_LIST, 0, 1),                                           \
         ASCENDC_TPL_UINT_SEL(isDescend, ASCENDC_TPL_UI_LIST, 0, 1)                                          \
 
@@ -40,5 +46,6 @@ ASCENDC_TPL_ARGS_DECL(Sort, SORT_TPL_KEY_DECL());
 
 ASCENDC_TPL_SEL(
     ASCENDC_TPL_ARGS_SEL(SORT_TPL_RADIX_MORE_CORE_KEY_SEL()),
+    ASCENDC_TPL_ARGS_SEL(SORT_TPL_MERGE_BIG_BATCH_KEY_SEL()),
     ASCENDC_TPL_ARGS_SEL(SORT_TPL_ELSE_KEY_SEL()));
 #endif

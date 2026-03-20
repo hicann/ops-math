@@ -28,7 +28,6 @@ const int32_t XOR_OP_VALUE_FP = 0x80000000;
 const int16_t XOR_OP_VALUE_HALF = 0x8000;
 const uint32_t UB_AGLIN_VALUE = 32;
 const uint32_t CONCAT_AGLIN_VALUE = 16;
-const uint32_t DOUBLE_BUFFER = 2;
 // T1输入x dtype T2输出Idx dtype UT无符号的数据类型
 template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend>
 class MergeSort {
@@ -94,9 +93,10 @@ __aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::Init(GM_ADDR 
     outValueGm_.SetGlobalBuffer((__gm__ T1 *)value);
     outIdxGm_.SetGlobalBuffer((__gm__ T2 *)sortIndex);
 
-    pipe_->InitBuffer(inQueueX_, DOUBLE_BUFFER, tilingData_->keyParams1);
-    pipe_->InitBuffer(outValueQueue_, DOUBLE_BUFFER, tilingData_->keyParams1);
-    pipe_->InitBuffer(outIdxQueue_, DOUBLE_BUFFER, tilingData_->keyParams2);
+    uint32_t bufferNum = tilingData_->keyParams4;
+    pipe_->InitBuffer(inQueueX_, bufferNum, tilingData_->keyParams1);
+    pipe_->InitBuffer(outValueQueue_, bufferNum, tilingData_->keyParams1);
+    pipe_->InitBuffer(outIdxQueue_, bufferNum, tilingData_->keyParams2);
     pipe_->InitBuffer(tmpUb_, tmpUbSize_);
 
     uint32_t byteSize = 8;

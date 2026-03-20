@@ -34,18 +34,22 @@ const uint32_t SIMT_UB = 32768;                 // 预留了32k给simt使用
 const uint32_t TILE_DATA_NUM = 4096;            // merge_sort一次ub处理的数据量
 const uint32_t UB_CONST_INT32 = 4096;           // 输出idx为int32时kernel侧需要的固定ub大小
 const uint32_t UB_CONST_INT64 = 7168;           // 输出idx为int64时kernel侧需要的固定ub大小
-const uint32_t SMALL_SORT_MAX_DATA_SIZE_FP32 = 2048; // fp32 走merge sort条件
+const uint32_t SMALL_SORT_MAX_DATA_SIZE_FP32 = 4096; // fp32 走merge sort条件
 const uint32_t SMALL_SORT_MAX_DATA_SIZE_FP16 = 1024; // fp16 或者 bf16 走merge sort条件
 const uint32_t CONST_10 = 10;
 const uint32_t CONST_14 = 14;
 const uint64_t SCH_ID_2 = 2;
 const uint64_t SCH_ID_3 = 3;
+const uint64_t SCH_ID_4 = 4;
 const uint32_t CONST_2 = 2;
 const uint32_t MULTI_CORE_MERGE_SORT_MAX_SIZE = 32768;
 const uint32_t MERGE_SORT_DEALING_LIST_NUM = 4;
 const uint32_t MERGE_SORT_DATASIZE = 8;
 const int64_t MERGE_SORT_WORKSPACE_PARAM = 5;
 const int64_t ONE_CORE_DATA_SIZE = 1024;
+const uint32_t SORT_STRUCT_SIZE_FP32 = 8;          // fp32 sort struct size (index + value)
+const uint32_t MERGE_BIG_BATCH_SORT_ALIGN = 32;    // Sort/Extract API alignment requirement (elements)
+const uint32_t MERGE_BIG_BATCH_MAX_BLOCKS = 256;   // Beyond 4 merge rounds (>256 blocks), radix sort has little performance disadvantage
 
 struct SortTileInfo {
     uint32_t coreNumNeed = 0;
@@ -213,6 +217,66 @@ bool IsMergeSortMultiCore(SortTileInfo &sortTileInfo)
     return isMuiltiCoreMergeSort;
 }
 
+uint32_t ComputeMergeBigBatchBlockSortSize(const SortTileInfo &sortTileInfo)
+{
+    // Phase 2 bottleneck: mergeIn(4 blocks) + mergeOut(4 blocks) of sort-struct data
+    //   = MERGE_LIST_MAX_NUM * 2(in+out) * SORT_STRUCT_SIZE_FP32 * blockSortSize
+    constexpr uint32_t MERGE_LIST_MAX_NUM = 4;
+    constexpr uint32_t PHASE2_BYTES_PER_ELEM = MERGE_LIST_MAX_NUM * 2 * SORT_STRUCT_SIZE_FP32;  // = 64
+
+    uint32_t blockSortSize = sortTileInfo.ubSize / PHASE2_BYTES_PER_ELEM;
+    return (blockSortSize / MERGE_BIG_BATCH_SORT_ALIGN) * MERGE_BIG_BATCH_SORT_ALIGN;
+}
+
+uint32_t ComputeMergeBigBatchExtractChunkSize(const SortTileInfo &sortTileInfo)
+{
+    // Phase 3: extractIn(x2) + outValue(x2) + outIdx(x2) + outIdxInt64(x2, int64 only)
+    //   int32: (SORT_STRUCT_SIZE_FP32 + sizeof(float) + sizeof(int32_t)) * DOUBLE_BUFFER = 32
+    //   int64: + sizeof(int64_t) * DOUBLE_BUFFER = 48
+    constexpr uint32_t PHASE3_BYTES_PER_ELEM = (SORT_STRUCT_SIZE_FP32 + sizeof(float) +
+        sizeof(int32_t) + sizeof(int64_t)) * 2;  // = 48, use int64 for safety
+
+    uint32_t extractChunkSize = sortTileInfo.ubSize / PHASE3_BYTES_PER_ELEM;
+    return (extractChunkSize / MERGE_BIG_BATCH_SORT_ALIGN) * MERGE_BIG_BATCH_SORT_ALIGN;
+}
+
+bool IsMergeBigBatchAxisInRange(const SortTileInfo &sortTileInfo, uint32_t blockSortSize)
+{
+    if (blockSortSize == 0) {
+        return false;
+    }
+    int64_t maxSortAxisNum = static_cast<int64_t>(blockSortSize) * MERGE_BIG_BATCH_MAX_BLOCKS;
+    return sortTileInfo.sortAxisNum <= maxSortAxisNum;
+}
+
+/**
+ * @brief Check if we should use SORT_MERGE for big batch scenario
+ * @details Conditions: fp32 + B >= maxCoreNum + N > 4096 + blocksPerRow <= 256
+ */
+bool IsMergeBigBatch(SortTileInfo &sortTileInfo)
+{
+    if (sortTileInfo.dataType != ge::DT_FLOAT) {
+        return false;
+    }
+    if (sortTileInfo.unSortDimNum < sortTileInfo.maxCoreNum) {
+        return false;
+    }
+    if (sortTileInfo.sortAxisNum <= SMALL_SORT_MAX_DATA_SIZE_FP32) {
+        return false;
+    }
+
+    uint32_t blockSortSize = ComputeMergeBigBatchBlockSortSize(sortTileInfo);
+    if (!IsMergeBigBatchAxisInRange(sortTileInfo, blockSortSize)) {
+        return false;
+    }
+
+    if (ComputeMergeBigBatchExtractChunkSize(sortTileInfo) == 0) {
+        return false;
+    }
+
+    return true;
+}
+
 bool IsRadixSortOneCore(SortTileInfo &sortTileInfo)
 {
     if (sortTileInfo.isInt32 == static_cast<uint32_t>(0)) {
@@ -367,7 +431,7 @@ void GetMergeSortMultiCore(gert::TilingContext *context, SortTileInfo &sortTileI
     sortTileInfo.lastDimTileNum = static_cast<uint32_t>(sortTileInfo.sortAxisNum);
     sortTileInfo.lastDimNeedCore = coreNumNeed;
     sortTileInfo.numTileDataSize = tileNum;
-	sortTileInfo.coreNumNeed = coreNumNeed;
+    sortTileInfo.coreNumNeed = coreNumNeed;
 
     uint32_t byteNum = MERGE_SORT_DEALING_LIST_NUM * MERGE_SORT_DATASIZE * 2;//4list 8byte 2input/output
     byteNum += MERGE_SORT_DEALING_LIST_NUM * static_cast<uint32_t>(sizeof(uint32_t));//extract index
@@ -376,10 +440,10 @@ void GetMergeSortMultiCore(gert::TilingContext *context, SortTileInfo &sortTileI
     }
     if (sortTileInfo.dataType == ge::DT_BF16) {
         byteNum += MERGE_SORT_DEALING_LIST_NUM * mergeType.find(ge::DT_BF16)->second;
-		byteNum += MERGE_SORT_DEALING_LIST_NUM * static_cast<uint32_t>(sizeof(float));//extract value
+        byteNum += MERGE_SORT_DEALING_LIST_NUM * static_cast<uint32_t>(sizeof(float));//extract value
     } else {
-		byteNum += MERGE_SORT_DEALING_LIST_NUM * tilingDataTypeBitMap.find(sortTileInfo.dataType)->second;//extract value
-	}
+        byteNum += MERGE_SORT_DEALING_LIST_NUM * tilingDataTypeBitMap.find(sortTileInfo.dataType)->second;//extract value
+    }
     sortTileInfo.keyParams0 = sortTileInfo.ubSize / byteNum;
 
     OP_LOGI("[mergeSort]", "maxDealingNum: %u", sortTileInfo.keyParams0);
@@ -572,8 +636,91 @@ void GetMergeSort(gert::TilingContext *context, SortTileInfo &sortTileInfo)
     sortTileInfo.keyParams1 = alignNum * oneCoreRowNum * sortTileInfo.dtypeSize;
     sortTileInfo.keyParams2 = alignNum * oneCoreRowNum * sortTileInfo.y2DtypeSize;
     sortTileInfo.keyParams3 = alignNum;
+    sortTileInfo.keyParams4 = sortTileInfo.sortAxisNum > 2048 ? 1 : 2; // 输入输出队列数量，超过2048无法开启double buffer
     size_t *userWorkSpaceSize = context->GetWorkspaceSizes(1);
     userWorkSpaceSize[0] = WORK_SPACE_SIZE;
+}
+
+/**
+ * @brief Compute workspace size for MergeBigBatch scenario
+ * @details Workspace layout:
+ *          [0]: TMP_CACHE - per-core cache for sorted blocks
+ *          Cache stores sort struct format (8 bytes/element: value + index interleaved)
+ *          Cache layout per core: 1 batch's ping-pong buffer (reused across batches)
+ *          Each batch: GetSortLen(alignNum) * SORT_STRUCT_SIZE_FP32 bytes
+ */
+void ComputeMergeBigBatchWorkSpace(gert::TilingContext *context, SortTileInfo &sortTileInfo,
+    uint32_t batchPerCore, uint32_t alignNum)
+{
+    // Calculate cache size per batch using GetSortLen (32-element aligned)
+    // Cache stores sort struct format (8 bytes/element: value + index interleaved)
+    // Each batch needs alignNum * SORT_STRUCT_SIZE_FP32 * 2 (ping-pong)
+    size_t cachePerBatch = static_cast<size_t>(alignNum) * SORT_STRUCT_SIZE_FP32 * 2;  // 8 bytes per element
+    cachePerBatch = CeilDivMul<size_t>(cachePerBatch, sortTileInfo.blockUbSize);
+
+    // Per core cache = 1 batch's cache (reused across batches within the same core)
+    size_t cachePerCore = cachePerBatch;
+
+    // Total workspace = per-core cache * actual core used
+    uint32_t actualCoreNum = CeilDiv(sortTileInfo.unSortDimNum, batchPerCore);
+    size_t totalCacheSize = cachePerCore * actualCoreNum;
+
+    size_t *userWorkSpaceSize = context->GetWorkspaceSizes(1);
+    userWorkSpaceSize[0] = totalCacheSize + WORK_SPACE_SIZE;
+
+    OP_LOGI("MergeBigBatchTiling", "cachePerBatch %lu, cachePerCore %lu, actualCoreNum %u, totalCacheSize %lu",
+        cachePerBatch, cachePerCore, actualCoreNum, totalCacheSize);
+}
+
+/**
+ * @brief Get tiling parameters for MergeBigBatch scenario
+ * @details Uses block-axis parallelism (batch dimension)
+ *          Each core processes multiple batches serially
+ */
+void GetMergeBigBatch(gert::TilingContext *context, SortTileInfo &sortTileInfo)
+{
+    // 1. Batch per core
+    uint32_t batchPerCore = CeilDiv(sortTileInfo.unSortDimNum, sortTileInfo.maxCoreNum);
+    sortTileInfo.keyParams0 = batchPerCore;
+    
+    // 2. Actual core number needed
+    uint32_t actualCoreNum = CeilDiv(sortTileInfo.unSortDimNum, batchPerCore);
+    sortTileInfo.coreNumNeed = actualCoreNum;
+    sortTileInfo.unsortedDimParallel = actualCoreNum;
+    
+    // 3. Block sort size (elements per UB sort block)
+    uint32_t blockSortSize = ComputeMergeBigBatchBlockSortSize(sortTileInfo);
+
+    // 4. Extract chunk size (elements per Phase 3 extract iteration)
+    uint32_t extractChunkSize = ComputeMergeBigBatchExtractChunkSize(sortTileInfo);
+    
+    sortTileInfo.numTileDataSize = blockSortSize;
+    sortTileInfo.keyParams4 = extractChunkSize;
+    
+    // Calculate max merge iterations to prevent infinite loops: INT32_MAX / blockSortSize
+    sortTileInfo.keyParams5 = (blockSortSize > 0) ? 
+        static_cast<uint32_t>(std::numeric_limits<int32_t>::max() / blockSortSize) : 
+        static_cast<uint32_t>(std::numeric_limits<int32_t>::max());
+    
+    // 5. Blocks per row (upper-bounded by 256 in IsMergeBigBatch)
+    uint32_t blocksPerRow = CeilDiv(sortTileInfo.sortAxisNum, blockSortSize);
+    sortTileInfo.lastDimTileNum = blocksPerRow;
+    
+    // 6. Aligned N for cache allocation
+    uint32_t alignNum = blocksPerRow * blockSortSize;
+    sortTileInfo.keyParams3 = alignNum;
+    
+    // 7. Actual core num used
+    sortTileInfo.lastDimNeedCore = actualCoreNum;
+    
+    // 8. Compute workspace
+    ComputeMergeBigBatchWorkSpace(context, sortTileInfo, batchPerCore, alignNum);
+    
+    OP_LOGI("MergeBigBatchTiling", 
+        "B %ld, N %ld, batchPerCore %u, actualCoreNum %u, blockSortSize %u, extractChunkSize %u, "
+        "blocksPerRow %u, alignNum %u, ubSize %u",
+        sortTileInfo.unSortDimNum, sortTileInfo.sortAxisNum, batchPerCore, actualCoreNum, 
+        blockSortSize, extractChunkSize, blocksPerRow, alignNum, sortTileInfo.ubSize);
 }
 
 ge::graphStatus RadixSortTiling(gert::TilingContext *context, int32_t maxCoreNum)
@@ -605,6 +752,9 @@ ge::graphStatus RadixSortTiling(gert::TilingContext *context, int32_t maxCoreNum
     } else if (IsRadixSortOneCore(sortTileInfo)) {
         schId = static_cast<uint64_t>(1);
         GetRadixSortOneCore(context, sortTileInfo);
+    } else if (IsMergeBigBatch(sortTileInfo)) {
+        schId = SCH_ID_4;
+        GetMergeBigBatch(context, sortTileInfo);
     } else {
         schId = SCH_ID_2;
         GetRadixSortMoreCore(context, sortTileInfo);

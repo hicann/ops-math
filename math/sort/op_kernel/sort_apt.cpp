@@ -20,6 +20,7 @@
 #include "arch35/sort_radix_sort_one_core.h"
 #include "arch35/sort_merge_sort.h"
 #include "arch35/merge_sort_big_size.h"
+#include "arch35/sort_merge_big_batch.h"
 
 using namespace AscendC;
 using namespace Sort;
@@ -130,6 +131,20 @@ __global__ __aicore__ void sort(
                 op.Process();
             } else {
                 MergeSortBigSize<DTYPE_X, DTYPE_X, false, DTYPE_Y2> op;
+                op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
+                op.Process();
+            }
+        }
+        return;
+    }
+    if constexpr (schId == 4) {
+        if constexpr (IsSameType<float, DTYPE_X>::value) {
+            if constexpr (isDescend == 1) {
+                Sort::SortMergeBigBatch<DTYPE_X, DTYPE_Y2, true> op;
+                op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
+                op.Process();
+            } else {
+                Sort::SortMergeBigBatch<DTYPE_X, DTYPE_Y2, false> op;
                 op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
                 op.Process();
             }
