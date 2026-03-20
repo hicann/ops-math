@@ -58,7 +58,7 @@ aclnnStatus aclStftGetWorkspaceSize(
 ```
 
 ```Cpp
-aclnnStatus aclnnExpSegsum(
+aclnnStatus aclStft(
   void          *workspace,
   uint64_t       workspaceSize,
   aclOpExecutor *executor,
@@ -295,7 +295,7 @@ aclnnStatus aclnnExpSegsum(
 ## 约束说明
 
 - 输入self与PyTorch接口的不同：PyTorch接口的输入self为原始输入；aclStftGetWorkspaceSize的入参self是原始输入经过前端PyTorch补pad后得到的结果。
-- 当输入self的shpe为[B, L]时，如下公式的计算结果较大时，当前接口的计算可能会超时。
+- 当输入self的shape为[B, L]时，如下公式的计算结果较大时，当前接口的计算可能会超时。
   
   $$
   B * ((L - nFft) / hopLength + 1) * nFft
