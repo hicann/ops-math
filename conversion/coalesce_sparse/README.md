@@ -85,4 +85,4 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| 图模式调用 | [test_geir_coalesce_sparse](./examples/test_geir_coalesce_sparse.cpp)   | 通过[算子IR](./op_graph/coalesce_sparse_proto.h)构图方式调用CoalesceSparse算子。 |
+| 图模式调用 | [test_aclnn_coalesce_sparse](./examples/test_aclnn_coalesce_sparse.cpp)   | 通过aclnnCoalesceSparse接口方式调用CoalesceSparse算子。 |

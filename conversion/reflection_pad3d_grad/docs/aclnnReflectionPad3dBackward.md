@@ -16,7 +16,7 @@
 
 ## 功能说明
 
-计算[aclnnReflectionPad3d](aclnnReflectionPad3d.md)api的反向传播。
+计算[aclnnReflectionPad3d](../../mirror_pad/docs/aclnnReflectionPad3d.md)api的反向传播。
 
 ## 函数原型
 
