@@ -66,43 +66,13 @@ public:
     void ProcessShapeInfo(ShapeInfo& shapeInfo);
 
 private:
-    int64_t Prod(vector<int64_t>& inputShape);
-    vector<int64_t> ReshapeFrac(vector<int64_t>& inputShape, vector<int64_t>& axisList);
-    vector<vector<int64_t>> SplitShapeIn(vector<vector<int64_t>>& inputShape, vector<int64_t>& axisList);
-    vector<vector<int64_t>> MergeFrac(vector<int64_t>& shapeTensor, vector<int64_t>& fracShape);
-    vector<vector<int64_t>> MergeFrac1(vector<int64_t>& shapeTensor, vector<int64_t>& fracShape);
-    bool MergeFrac2Judge(
-        vector<int64_t>& shapeTensor, vector<int64_t>& fracShape, vector<int64_t>& shapeList, int64_t& tensorIdx,
-        int64_t& fracIdx, int64_t& listProduct, int64_t& outElmt);
-    vector<vector<int64_t>> MergeFrac2(vector<int64_t>& shapeTensor, vector<int64_t>& fracShape);
-    vector<vector<int64_t>> MergePerm(vector<int64_t>& srcList, vector<vector<int64_t>>& dstList);
-    vector<int64_t> FlatPerm(vector<vector<int64_t>>& mergedPerm);
-    vector<int64_t> PermOrigToNz(vector<vector<int64_t>>& permMerged, int64_t splitIdx);
-    void PermNzToOrig(
-        vector<vector<int64_t>>& mergedOrig, int64_t splitIdx, vector<int64_t>& permToOrig, vector<int64_t>& fracNzIn);
-    vector<vector<int64_t>> ShapeAfterTranspose(vector<vector<int64_t>>& inputShape, vector<int64_t>& transPerm);
-    vector<int64_t> ShapeAfterTranspose(vector<int64_t>& inputShape, vector<int64_t>& transPerm);
-    vector<vector<int64_t>> ShapeBeforeTranspose(vector<vector<int64_t>>& mergedFrac, vector<int64_t>& transposePerm);
-    void TransposeReshape(
-        vector<int64_t>& transposePerm, vector<int64_t>& reshapeIn, vector<int64_t>& reshapeOut,
-        vector<int64_t>& fracNzIn, vector<int64_t>& finalPerm);
-    void ReshapeTranspose(
-        vector<int64_t>& transposePerm, vector<int64_t>& reshapeIn, vector<int64_t>& reshapeOut,
-        vector<int64_t>& fracNzIn, vector<int64_t>& finalPerm);
-
-    vector<int64_t> TransShapeToVector(gert::Shape inShape);
-    string VectorToString(vector<vector<int64_t>>& vec);
-    string VectorToString(vector<int64_t>& vec);
-
     ge::graphStatus GetParameters();
     ge::graphStatus ParametersVerifyingFormatAndDatatype();
     ge::graphStatus ParametersVerifyingInputAndOutput();
     ge::graphStatus ParametersVerifyingDimNd();
-    ge::graphStatus ParametersVerifyingDimNz();
     ge::graphStatus ParametersVerifyingPerm();
     ge::graphStatus ParametersVerifyingProdAndPositive();
 
-    void ProcessShapeInfoForNz(ShapeInfo& shapeInfo);
     void ProcessShapeInfoForNd(ShapeInfo& shapeInfo);
 
     ConfusionTransposeDParamInfo paramInfo_;
