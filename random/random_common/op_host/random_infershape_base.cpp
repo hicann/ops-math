@@ -17,12 +17,11 @@
 namespace ops {
 namespace randomCommon {
 template <typename T>
-ge::graphStatus HandleShapeTensor(gert::Shape& outputShape, size_t xShapeSize, const T* xShapeData)
+ge::graphStatus HandleShapeTensor(gert::Shape& outputShape, size_t shapeSize, const T* shapeData)
 {
-    std::cerr << "[DEBUG] HandleShapeTensor with type: " << typeid(T).name() << ", dims " << xShapeSize << std::endl;
-    outputShape.SetDimNum(xShapeSize);
-    for (size_t i = 0U; i < xShapeSize; i++) {
-        outputShape.SetDim(i, xShapeData[i]);
+    outputShape.SetDimNum(shapeSize);
+    for (size_t i = 0U; i < shapeSize; i++) {
+        outputShape.SetDim(i, shapeData[i]);
     }
     return ge::GRAPH_SUCCESS;
 }

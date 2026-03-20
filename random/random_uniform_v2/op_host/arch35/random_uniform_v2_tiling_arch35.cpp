@@ -58,7 +58,7 @@ OpTilingConfig RandomUniformV2Tiling::BuildOpConfig()
         auto outDtype = outDesc->GetDataType();
         auto outputDtypeSize = ge::GetSizeByDataType(outDtype);
         static constexpr uint32_t BUFFER_NUM = 2;
-        bufNum = sizeof(uint32_t) + outputDtypeSize * BUFFER_NUM;
+        bufNum = static_cast<int64_t>(sizeof(uint32_t)) + static_cast<int64_t>(outputDtypeSize) * static_cast<int64_t>(BUFFER_NUM);
         return ge::GRAPH_SUCCESS;
     };
 
@@ -66,7 +66,7 @@ OpTilingConfig RandomUniformV2Tiling::BuildOpConfig()
     return config;
 }
 
-RandomUniformV2Tiling::RandomUniformV2Tiling(gert::TilingContext* ctx) : RandomTilingArch35(ctx, BuildOpConfig()){}
+RandomUniformV2Tiling::RandomUniformV2Tiling(gert::TilingContext* context) : RandomTilingArch35(context, BuildOpConfig()){}
 
 static ge::graphStatus TilingPrepare4RandomUniformV2Tiling(gert::TilingParseContext* context)
 {

@@ -70,7 +70,7 @@ OpTilingConfig DropOutDoMaskV3DTiling::BuildOpConfig()
         auto inDtype = InputDesc->GetDataType();
         auto inputDtypeSize = ge::GetSizeByDataType(inDtype);
         static constexpr uint32_t BUFFER_NUM = 2;
-        bufNum = (inputDtypeSize * BUFFER_NUM + 1) * BUFFER_NUM;
+        bufNum = (static_cast<int64_t>(inputDtypeSize) * static_cast<int64_t>(BUFFER_NUM) + 1) * static_cast<int64_t>(BUFFER_NUM);
         return ge::GRAPH_SUCCESS;
     };
 
@@ -117,7 +117,7 @@ ge::graphStatus DropOutDoMaskV3DTiling::UniqueProcess()
     return ge::GRAPH_SUCCESS;
 }
 
-DropOutDoMaskV3DTiling::DropOutDoMaskV3DTiling(gert::TilingContext* ctx) : RandomTilingArch35(ctx, BuildOpConfig())
+DropOutDoMaskV3DTiling::DropOutDoMaskV3DTiling(gert::TilingContext* context) : RandomTilingArch35(context, BuildOpConfig())
 {}
 
 static ge::graphStatus TilingPrepare4DropOutDoMaskV3DTiling(gert::TilingParseContext* context)

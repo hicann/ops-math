@@ -63,13 +63,13 @@ protected:
 
     void DumpTilingInfo() override;
 private:
-    StatelessRandpermTilingData* tilingData_;
-    SortRegBaseTilingDataForRandperm* sortTilingData_;
-    uint64_t tilingKey_;
-    uint64_t tilingKeyForSort_;
-    size_t workSpaceSize_;
-    size_t workSpaceSizeForSort_;
-    size_t workSpaceSizeForRandom_;
+    StatelessRandpermTilingData* tilingData_{nullptr};
+    SortRegBaseTilingDataForRandperm* sortTilingData_{nullptr};
+    uint64_t tilingKey_{0};
+    uint64_t tilingKeyForSort_{0};
+    size_t workSpaceSize_{0};
+    size_t workSpaceSizeForSort_{0};
+    size_t workSpaceSizeForRandom_{0};
     const std::string opName_;
     int64_t ubSize_{0};
     int64_t totalCoreNum_{0};
@@ -78,17 +78,17 @@ private:
     uint64_t nIsInt32_{0};
     uint32_t key_[PHILOX_KEY_SIZE]{0};
     uint64_t offset_{0};
-    uint32_t islandFactor_;
-    uint32_t islandFactorTail_;
-    uint32_t castFactor_;
-    uint32_t castFactorTail_;
-    int32_t randomBits_;
-    uint64_t randomIsInt32_;
+    uint32_t islandFactor_{0};
+    uint32_t islandFactorTail_{0};
+    uint32_t castFactor_{0};
+    uint32_t castFactorTail_{0};
+    int32_t randomBits_{0};
+    uint64_t randomIsInt32_{0};
     std::vector<int32_t> subNs_;
-    uint32_t subNSize_;
+    uint32_t subNSize_{0};
     ge::DataType attrOutDtype_;
     ge::DataType randomDtype_;
-    int32_t randomType_;
+    int32_t randomType_{0};
 
     ge::graphStatus GetInputN();
     ge::graphStatus GetInputSeed();

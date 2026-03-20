@@ -13,9 +13,10 @@
  * \brief
  */
 
-#include "ascendc/host_api/tiling/template_argument.h"
 #ifndef CANN_CUSTOM_OPS_STATELESS_RANDOM_CHOICE_WITH_MASK_STRUCT_H_
 #define CANN_CUSTOM_OPS_STATELESS_RANDOM_CHOICE_WITH_MASK_STRUCT_H_
+
+#include "ascendc/host_api/tiling/template_argument.h"
 
 #define TPL_SCH_MODE_0 0
 #define TILING_ARRAY_LEN_EIGHT 8

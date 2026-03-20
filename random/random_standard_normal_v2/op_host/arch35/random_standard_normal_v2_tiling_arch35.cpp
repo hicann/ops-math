@@ -64,8 +64,8 @@ OpTilingConfig RandomStandardNormalV2Tiling::BuildOpConfig()
 }
 
 // ========== 算子构造函数
-RandomStandardNormalV2Tiling::RandomStandardNormalV2Tiling(gert::TilingContext* ctx)
-    : RandomTilingArch35(ctx, BuildOpConfig())
+RandomStandardNormalV2Tiling::RandomStandardNormalV2Tiling(gert::TilingContext* context)
+    : RandomTilingArch35(context, BuildOpConfig())
 {}
 
 static ge::graphStatus TilingPrepare4RandomStandardNormalV2Tiling(gert::TilingParseContext* context)
