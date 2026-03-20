@@ -125,7 +125,7 @@ OpTilingConfig StatelessDropOutGenMaskTiling::BuildOpConfig()
     return config;
 }
 
-StatelessDropOutGenMaskTiling::StatelessDropOutGenMaskTiling(gert::TilingContext* ctx) : RandomTilingArch35(ctx, BuildOpConfig()){}
+StatelessDropOutGenMaskTiling::StatelessDropOutGenMaskTiling(gert::TilingContext* context) : RandomTilingArch35(context, BuildOpConfig()){}
 
 static ge::graphStatus TilingPrepare4StatelessDropOutGenMaskTiling(gert::TilingParseContext* context)
 {
