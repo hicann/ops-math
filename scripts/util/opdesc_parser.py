@@ -44,7 +44,18 @@ SOC_TO_SHORT_SOC_MAP = {
     "bs9sx1aa": "bs9sx1a",
     "kirinx90": "kirinx90",
     "kirin9030": "kirin9030",
-    "mc62cm12aa": "mc62cm12a"
+    "mc62cm12aa": "mc62cm12a",
+    "ascend950pr_957b": "ascend950",
+    "ascend950pr_957d": "ascend950",
+    "ascend950pr_950z": "ascend950",
+    "ascend950pr_9589": "ascend950",
+    "ascend950pr_9599": "ascend950",
+    "ascend950pr_958a": "ascend950",
+    "ascend950pr_958b": "ascend950",
+    "ascend950dt_9591": "ascend950",
+    "ascend950pr_957c": "ascend950",
+    "ascend950pr_9579": "ascend950",
+    "ascend950dt_9592": "ascend950"
 }
 CONFLICT_KEYWORDS = {
     "and", "as", "assert", "break", "class", "continue", "def", "del", "elif", "else", 
@@ -244,9 +255,10 @@ def _set_options_to_opdesc(op_descs, op_type, soc_ver_compile_options):
 def _trans_soc_ver_to_short(soc_ver: str):
     low_soc_ver = soc_ver.lower()
     if low_soc_ver not in SOC_TO_SHORT_SOC_MAP:
-        print(f'WARNING: caution: {soc_ver} will trans into ascend910, if not your intention,'
-            f'use ascend910b1~4 instead')
-    return SOC_TO_SHORT_SOC_MAP[low_soc_ver]
+        print(f'WARNING: unknown soc version: {soc_ver}, return as is')
+        return low_soc_ver
+    short_soc = SOC_TO_SHORT_SOC_MAP[low_soc_ver]
+    return short_soc
 
 
 def _get_op_custom_options(op_descs: list, auto_gen_dir: str):
