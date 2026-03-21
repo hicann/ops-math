@@ -279,13 +279,6 @@ void ConfusionTransposeDTiling::ProcessShapeInfo(ShapeInfo& shapeInfo)
     ProcessShapeInfoForNd(shapeInfo);
 }
 
-static ge::graphStatus DslTilingForRelatedToTranspose(gert::TilingContext* context)
-{
-    OP_LOGD(context->GetNodeName(), "Dsl Tiling is running.");
-
-    return ge::GRAPH_SUCCESS;
-}
-
 ge::graphStatus ConfusionTransposeDTilingForAscendC(gert::TilingContext* context, uint64_t coreNum, uint64_t ubSize)
 {
     OP_LOGD(context->GetNodeName(), "Start ConfusionTransposeDTilingForAscendC.");
