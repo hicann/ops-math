@@ -55,7 +55,7 @@ detect_os() {
                 PKG_MANAGER="yum"
             fi
         else
-            echo "自动安装脚本不支持该Linux发型版本，请手动安装依赖"
+            echo "自动安装脚本不支持该Linux发型版本,请手动安装依赖"
             exit 1
         fi
     elif [[ "$(uname -s)" == "Darwin" ]]; then
