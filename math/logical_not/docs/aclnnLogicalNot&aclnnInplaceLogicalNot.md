@@ -16,7 +16,17 @@
 
 ## 功能说明
 
-计算给定输入Tensor的逐元素逻辑非。如果未指定输出类型，输出Tensor是bool类型。如果输入Tensor不是bool类型，则将零视为False，非零视为True。
+- 接口功能：计算给定输入Tensor的逐元素逻辑非。如果未指定输出类型，输出Tensor是bool类型。如果输入Tensor不是bool类型，则将零视为False，非零视为True。
+
+- 计算公式：
+
+$$
+out[i]=
+\begin{cases}
+1, & \text{if } self[i]=0 \\
+0, & \text{if } self[i] \ne 0
+\end{cases}
+$$
 
 ## 函数原型
 

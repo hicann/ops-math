@@ -16,7 +16,13 @@
 
 ## 功能说明
 
-将输入tensor中的元素根据某个维度进行升序/降序排序，返回对应的index值。
+- 接口功能：将输入tensor中的元素根据某个维度进行升序/降序排序，返回对应的index值。
+
+- 计算公式：
+
+$$
+out[\mathbf{i}_{\neg dim}, j] = \text{arg\_sort}_{dim}(self[\mathbf{i}_{\neg dim}, :])[j]
+$$
 
 ## 函数原型
 
