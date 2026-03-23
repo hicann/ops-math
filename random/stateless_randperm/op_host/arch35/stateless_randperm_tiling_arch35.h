@@ -22,9 +22,9 @@
 #include "tiling/platform/platform_ascendc.h"
 #include "log/log.h"
 #include "util/math_util.h"
-#include "../op_kernel/stateless_randperm_key.h"
-#include "../op_kernel/stateless_randperm_struct.h"
-#include "../../../math/sort/op_kernel/arch35/sort_tiling_data.h"
+#include "../../op_kernel/stateless_randperm_key.h"
+#include "../../op_kernel/stateless_randperm_struct.h"
+#include "../../../../math/sort/op_kernel/arch35/sort_tiling_data.h"
 
 namespace optiling{
 static constexpr uint16_t INPUT_IDX_N = 0;
