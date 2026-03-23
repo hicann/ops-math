@@ -15,11 +15,12 @@
 
 ## 功能说明
 
-算子功能：训练过程中，按照概率p随机将输入中的元素置零，并将输出按照1/(1-p)的比例缩放。
+- 接口功能：训练过程中，按照概率p随机将输入中的元素置零，并将输出按照1/(1-p)的比例缩放。
 
-$$
-out_i=\begin{cases}0,&\text { with probability }p \\\frac{1}{1-p}input_i,&\text { with probability }1-p\end{cases}
-$$
+- 计算公式：
+  $$
+  out_i=\begin{cases}0,&\text { with probability }p \\\frac{1}{1-p}input_i,&\text { with probability }1-p\end{cases}
+  $$
 
 注意：aclnnDropoutV2正在开发中。
 
@@ -191,15 +192,18 @@ aclnnStatus aclnnDropoutV3(
       <td>传入的input、out、maskOut为空指针。</td>
     </tr>
     <tr>
-      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="4">161002</td>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
       <td>input、out、maskOut的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>p的值不在0和1之间。</td>
     </tr>
     <tr>
-      <td>input维度超过8维，input和out的shape不一致。</td>
+      <td>input维度超过8维。</td>
+    </tr>
+    <tr>
+      <td>input和out的shape不一致。</td>
     </tr>
     <tr>
       <td>maskOut的shape不满足条件。</td>

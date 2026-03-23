@@ -15,7 +15,15 @@
 
 ## 功能说明
 
-算子功能：训练过程中，根据mask中对应bit位的值，将输入中的元素置零，并按照scale放大或者置零。若mask对应比特位为1，则gradOutput相应的元素放大。若mask中比特位为0，则gradOutput相应的元素置零。特别地，若scale为0，则将所有元素置为0；若scale为1，则不改变gradOutput的元素。建议与aclnnDropoutGenMask或者aclnnDropoutGenMaskV2组合使用。
+- 接口功能：训练过程中，根据mask中对应bit位的值，将输入中的元素置零，并按照scale放大或者置零。若mask对应比特位为1，则gradOutput相应的元素放大。若mask中比特位为0，则gradOutput相应的元素置零。特别地，若scale为0，则将所有元素置为0；若scale为1，则不改变gradOutput的元素。建议与aclnnDropoutGenMask或者aclnnDropoutGenMaskV2组合使用。
+
+- 计算公式：
+  $$
+  out_i=\begin{cases}
+  0,&\text { with probability }1-1/scale \\
+  scale * self_i, &\text { with probability }1/scale
+  \end{cases}
+  $$
 
 ## 函数原型
 
@@ -66,47 +74,47 @@ aclnnStatus aclnnDropoutBackward(
     </tr></thead>
   <tbody>
     <tr>
-      <td>gradOutput</td>
+      <td>gradOutput（aclTensor*）</td>
       <td>输入</td>
-      <td>示待处理的张量，Device侧的aclTensor。</td>
-      <td>不支持空tensor场景。</td>
+      <td>表示待处理的张量。</td>
+      <td>不支持空Tensor。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
-      <td>-</td>
+      <td>1-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>mask</td>
+      <td>mask（aclTensor*）</td>
       <td>输入</td>
-      <td>bit类型并使用UINT8类型存储的mask数据，Device侧的aclTensor。</td>
-      <td>不支持空tensor场景。数据类型支持UINT8，shape需要为(align(gradOutput的元素个数,128)/8)，表示比特数需要与128对齐，其中，align表示将input的元素个数向上对齐为128的倍数，如align(1111, 128)的结果为1152。</td>
+      <td>bit类型并使用UINT8类型存储的mask数据。</td>
+      <td><ul><li>不支持空Tensor。</li><li>数据类型支持UINT8。</li><li>shape需要为(align(gradOutput的元素个数,128)/8)，表示比特数需要与128对齐，其中，align表示将input的元素个数向上对齐为128的倍数，如align(1111, 128)的结果为1152。</li></ul></td>
       <td>UINT8</td>
       <td>ND</td>
-      <td>-</td>
+      <td>1-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>scale</td>
+      <td>scale（double）</td>
       <td>输入</td>
-      <td>Host侧DOUBLE类型，输入<code>scale</code>，输出数据缩放比例。</td>
-      <td>数据类型支持DOUBLE</td>
+      <td>输入<code>scale</code>，输出数据缩放比例。</td>
+      <td><ul><li>数据类型支持DOUBLE。</li><li>scale需要为0或者大于等于1。</li></ul></td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>输出<code>out</code>，Device侧的aclTensor。</td>
-      <td>数据类型需要是gradOutput可转换的数据类型，shape需要与gradOutput一致。</td>
+      <td>输出<code>out</code>。</td>
+      <td><ul><li>不支持空Tensor。</li><li>数据类型需要满足是gradOutput可转换的数据类型。</li><li>shape需要与gradOutput一致。</li></ul></td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
-      <td>-</td>
+      <td>1-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -116,7 +124,7 @@ aclnnStatus aclnnDropoutBackward(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -153,15 +161,18 @@ aclnnStatus aclnnDropoutBackward(
       <td>传入的gradOutput、mask、out为空指针。</td>
     </tr>
     <tr>
-      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="4">161002</td>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
       <td>gradOutput、mask、out的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>scale需要为0或者大于等于1。</td>
+      <td>scale小于1且不为0。</td>
     </tr>
     <tr>
-      <td>gradOutput维度超过8维，gradOutput和out的shape不一致。</td>
+      <td>gradOutput维度超过8维。</td>
+    </tr>
+    <tr>
+      <td>gradOutput和out的shape不一致。</td>
     </tr>
     <tr>
       <td>mask的shape不满足条件。</td>
