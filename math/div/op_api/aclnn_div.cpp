@@ -114,6 +114,14 @@ static const int MODE_REAL_DIV = 0;
 static const int MODE_TRUNC_DIV = 1;
 static const int MODE_FLOOR_DIV = 2;
 
+static const std::initializer_list<std::pair<op::DataType, op::DataType>> AllowedMixDtypePairs = {
+    {op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT16}, {op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT}, 
+    {op::DataType::DT_FLOAT16, op::DataType::DT_BF16}, {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16}, 
+    {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT}, {op::DataType::DT_FLOAT, op::DataType::DT_BF16}, 
+    {op::DataType::DT_BF16, op::DataType::DT_FLOAT16}, {op::DataType::DT_BF16, op::DataType::DT_FLOAT}, 
+    {op::DataType::DT_BF16, op::DataType::DT_BF16}
+};
+
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
@@ -373,12 +381,10 @@ inline static bool isDivsMixDtypeSupport(const aclTensor* self, const aclScalar*
 }
 
 inline static bool checkMixDtypeConditions(DataType selfDtype, DataType otherDtype){
-    return (selfDtype == DataType::DT_FLOAT16 && otherDtype == DataType::DT_FLOAT) ||
-        (selfDtype == DataType::DT_FLOAT16 && otherDtype == DataType::DT_BF16) ||
-        (selfDtype == DataType::DT_BF16 && otherDtype == DataType::DT_FLOAT) ||
-        (selfDtype == DataType::DT_BF16 && otherDtype == DataType::DT_FLOAT16) ||
-        (selfDtype == DataType::DT_FLOAT && otherDtype == DataType::DT_FLOAT16) ||
-        (selfDtype == DataType::DT_FLOAT && otherDtype == DataType::DT_BF16);
+    return std::find(
+               AllowedMixDtypePairs.begin(), AllowedMixDtypePairs.end(),
+               std::pair<op::DataType, op::DataType>(selfDtype, otherDtype)) !=
+           AllowedMixDtypePairs.end();
 }
 
 inline static bool isMixDtypeScalarSupport(const aclTensor* self, const aclScalar* other)
@@ -823,13 +829,12 @@ aclnnStatus aclnnDivModsGetWorkspaceSize(
         CHECK_RET(otherConvert != nullptr, ACLNN_ERR_INNER_NULLPTR);
         if (mode == MODE_FLOOR_DIV) {
             divOpOut = l0op::FloorDiv(selfCasted, otherConvert, true, uniqueExecutor.get());
-        } else {
+        } else if (mode == MODE_REAL_DIV) {
             divOpOut = l0op::RealDiv(selfCasted, otherConvert, true, uniqueExecutor.get());
+        } else if (mode == MODE_TRUNC_DIV) {
+            divOpOut = l0op::RealDiv(selfCasted, otherConvert, false, uniqueExecutor.get());
             CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-            if (mode == MODE_TRUNC_DIV && divOpOut->GetDataType() != op::DataType::DT_INT64 &&
-                divOpOut->GetDataType() != op::DataType::DT_INT16) {
-                divOpOut = l0op::InplaceTrunc(divOpOut, uniqueExecutor.get());
-            }
+            divOpOut = l0op::InplaceTrunc(divOpOut, uniqueExecutor.get());
         }
         CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
     } else {
@@ -922,7 +927,50 @@ aclnnStatus aclnnInplaceDivGetWorkspaceSize(
     auto ret = CheckInplace(selfRef, other);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
     auto out = const_cast<aclTensor*>(selfRef);
-    return aclnnDivGetWorkspaceSize(selfRef, other, out, workspaceSize, executor);
+    if (isMixDtypeTensorSupport(selfRef, other)) {
+        L2_DFX_PHASE_1(aclnnInplaceDiv, DFX_IN(selfRef, other), DFX_OUT(out));
+        // 固定写法，创建OpExecutor
+        auto uniqueExecutor = CREATE_EXECUTOR();
+        CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
+
+        // 固定写法，参数检查
+        auto retMix = CheckParams(selfRef, other, out, MODE_REAL_DIV);
+        CHECK_RET(retMix == ACLNN_SUCCESS, retMix);
+
+        // div算子的空tensor在kernel中支持，对标竞品根据算子实际情况补充
+        if (selfRef->IsEmpty() || other->IsEmpty()) {
+            // 根据实际支持情况补充
+            *workspaceSize = 0;
+            uniqueExecutor.ReleaseTo(executor);
+            return ACLNN_SUCCESS;
+        }
+
+        // 固定写法，将输入self转换成连续的tensor
+        auto selfRefContiguous = l0op::Contiguous(selfRef, uniqueExecutor.get());
+        CHECK_RET(selfRefContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+        // 固定写法，将输入other转换成连续的tensor
+        auto otherContiguous = l0op::Contiguous(other, uniqueExecutor.get());
+        CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+        auto divOpOut = l0op::RealDiv(selfRefContiguous, otherContiguous, true, uniqueExecutor.get());
+        CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+        // 固定写法，将计算结果转换成输出out的数据类型
+        auto castOut = l0op::Cast(divOpOut, out->GetDataType(), uniqueExecutor.get());
+        CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+        // 固定写法，将计算结果拷贝到输出out上，out可能是非连续的tensor
+        auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
+        CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+        // 固定写法，获取计算过程中需要使用的workspace大小
+        *workspaceSize = uniqueExecutor->GetWorkspaceSize();
+        uniqueExecutor.ReleaseTo(executor);
+        return ACLNN_SUCCESS;
+    } else {
+        return aclnnDivGetWorkspaceSize(selfRef, other, out, workspaceSize, executor);
+    }
 }
 
 aclnnStatus aclnnInplaceDiv(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
@@ -950,7 +998,52 @@ aclnnStatus aclnnInplaceDivModGetWorkspaceSize(
     auto ret = CheckInplace(selfRef, other);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
     auto out = const_cast<aclTensor*>(selfRef);
-    return aclnnDivModGetWorkspaceSize(selfRef, other, mode, out, workspaceSize, executor);
+    if (isMixDtypeTensorSupport(selfRef, other)) {
+        L2_DFX_PHASE_1(aclnnInplaceDivMod, DFX_IN(selfRef, other, mode), DFX_OUT(out));
+
+        auto uniqueExecutor = CREATE_EXECUTOR();
+        CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
+
+        auto retMix = CheckParams(selfRef, other, out, mode);
+        CHECK_RET(retMix == ACLNN_SUCCESS, retMix);
+        CHECK_RET(CheckMode(mode), ACLNN_ERR_PARAM_INVALID);
+
+        if (selfRef->IsEmpty() || other->IsEmpty()) {
+            *workspaceSize = 0;
+            uniqueExecutor.ReleaseTo(executor);
+            return ACLNN_SUCCESS;
+        }
+
+        auto otherContiguous = l0op::Contiguous(other, uniqueExecutor.get());
+        CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+        auto selfRefContiguous = l0op::Contiguous(selfRef, uniqueExecutor.get());
+        CHECK_RET(selfRefContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+        const aclTensor* divOpOut = nullptr;
+        if (mode == MODE_FLOOR_DIV) {
+            divOpOut = l0op::FloorDiv(selfRefContiguous, otherContiguous, true, uniqueExecutor.get());
+        } else if (mode == MODE_REAL_DIV) {
+            divOpOut = l0op::RealDiv(selfRefContiguous, otherContiguous, true, uniqueExecutor.get());
+        } else if (mode == MODE_TRUNC_DIV) {
+            divOpOut = l0op::RealDiv(selfRefContiguous, otherContiguous, false, uniqueExecutor.get());
+            CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            divOpOut = l0op::InplaceTrunc(divOpOut, uniqueExecutor.get());
+        }
+        CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        
+        auto castOut = l0op::Cast(divOpOut, out->GetDataType(), uniqueExecutor.get());
+        CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+        auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
+        CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+        *workspaceSize = uniqueExecutor->GetWorkspaceSize();
+        uniqueExecutor.ReleaseTo(executor);
+        return ACLNN_SUCCESS;
+    } else {
+        return aclnnDivModGetWorkspaceSize(selfRef, other, mode, out, workspaceSize, executor);
+    }
 }
 
 aclnnStatus aclnnInplaceDivMod(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
