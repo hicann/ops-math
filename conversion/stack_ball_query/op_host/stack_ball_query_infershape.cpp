@@ -43,7 +43,7 @@ static ge::graphStatus InferShape4StackBallQuery(gert::InferShapeContext *contex
 
     auto* attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
-    auto* sampl_num_ptr = attrs->GetAttrPointer<int>(INDEX_ATTR_SAMPLE_NUM);
+    auto* sampl_num_ptr = attrs->GetAttrPointer<int64_t>(INDEX_ATTR_SAMPLE_NUM);
     OP_CHECK_NULL_WITH_CONTEXT(context, sampl_num_ptr);
     auto sampl_num = *sampl_num_ptr;
 

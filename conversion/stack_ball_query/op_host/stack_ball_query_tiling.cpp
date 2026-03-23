@@ -101,7 +101,7 @@ void StackBallQueryTiling::CalRunningInfo(gert::TilingContext* context, const ui
 {
     const gert::RuntimeAttrs* attrs = context->GetAttrs();
     OP_CHECK_IF(attrs == nullptr, OP_LOGE(context, "[CalRunningInfo] attrs is null."), return);
-    const int32_t* sampleNumPtr = attrs->GetAttrPointer<int32_t>(SAMPLE_NUM_IDX);
+    const int64_t* sampleNumPtr = attrs->GetAttrPointer<int64_t>(SAMPLE_NUM_IDX);
     this->sampleNum = *sampleNumPtr;
 
     const float* maxRadiusPtr = attrs->GetAttrPointer<float>(MAX_RADIUS_IDX);

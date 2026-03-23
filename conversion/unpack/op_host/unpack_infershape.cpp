@@ -22,9 +22,9 @@ static graphStatus InferShapeForUnpack(gert::InferShapeContext* context) {
   OP_LOGI(context->GetNodeName(), "UnpackInferShape function start!");
   const gert::RuntimeAttrs *attrs = context->GetAttrs();
   OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
-  const int *num = attrs->GetAttrPointer<int>(0);
+  const int64_t *num = attrs->GetAttrPointer<int64_t>(0);
   OP_CHECK_NULL_WITH_CONTEXT(context, num);
-  const int *axis = attrs->GetAttrPointer<int>(1);
+  const int64_t *axis = attrs->GetAttrPointer<int64_t>(1);
   OP_CHECK_NULL_WITH_CONTEXT(context, axis);
   if (!context->GetOutputShape(*num - 1) || context->GetOutputShape(*num)) {
     OP_LOGE(context->GetNodeName(), "Get num value err.");
