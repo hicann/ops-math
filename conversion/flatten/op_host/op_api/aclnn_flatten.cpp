@@ -46,6 +46,11 @@ static const std::initializer_list<op::DataType> Ascend910B_DTYPE_SUPPORT_LIST =
     op::DataType::DT_UINT8, op::DataType::DT_INT64, op::DataType::DT_INT16, op::DataType::DT_UINT16,
     op::DataType::DT_UINT32, op::DataType::DT_UINT64, op::DataType::DT_BOOL, op::DataType::DT_BF16};
 
+struct ShapeResult {
+  Shape outShape{};
+  bool  isLegal{true};
+};
+
 static inline int64_t MakeWrapDim(int64_t dim, int64_t dimPostExpr) {
   // 支持0维tensor
   if (dimPostExpr <= 0) {
@@ -57,22 +62,33 @@ static inline int64_t MakeWrapDim(int64_t dim, int64_t dimPostExpr) {
   return dim;
 }
 
-static Shape GetOutShape(const aclTensor *self, const int64_t axis) {
+static ShapeResult GetOutShape(const aclTensor *self, const int64_t axis) {
   // self的dimNum为0时，axis只能为0，out的shape为[1,1];
   // self的dimNum为1时，axis只能为0，out的shape为[1,self.GetDim(0)]。
-  Shape outShape;
+  ShapeResult shapeResult;
   int64_t dim0 = 1;
   int64_t dim1 = 1;
   size_t selfDim = self->GetViewShape().GetDimNum();
   for (int64_t i = 0; i < axis; i++) {
-      dim0 *= self->GetViewShape().GetDim(i);
+    int64_t dim = self->GetViewShape().GetDim(i);
+    if (dim > 0 && (dim0 > INT64_MAX / dim)) {
+        shapeResult.isLegal = false;
+        return shapeResult;
+    }
+      dim0 *= dim;
   }
   for (size_t i = axis; i < selfDim; i++) {
-      dim1 *= self->GetViewShape().GetDim(i);
+      int64_t dim = self->GetViewShape().GetDim(i);
+    if (dim > 0 && (dim1 > INT64_MAX / dim)) {
+        shapeResult.isLegal = false;
+        return shapeResult;
+    }
+      dim1 *= dim;
   }
-  outShape.AppendDim(dim0);
-  outShape.AppendDim(dim1);
-  return outShape;
+
+  shapeResult.outShape.AppendDim(dim0);
+  shapeResult.outShape.AppendDim(dim1);
+  return shapeResult;
 }
 
 static bool CheckNotNull(const aclTensor *self, const aclTensor *out) {
@@ -122,9 +138,16 @@ static bool CheckShape(const aclTensor *self, const int64_t axis, const aclTenso
   }
 
   // 根据算子语义，推导算子输出shape
-  Shape outShape = GetOutShape(self, axisWrap);
+  ShapeResult outShapeResult = GetOutShape(self, axisWrap);
+
+  if (!outShapeResult.isLegal) {
+    OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+            "The output shape exceeds the int64_t data range");    
+    return false;
+  }
+
   // 判断out的shape与推导出的输出shape是否相等
-  OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(out, outShape, return false);
+  OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(out, outShapeResult.outShape, return false);
 
   return true;
 }
