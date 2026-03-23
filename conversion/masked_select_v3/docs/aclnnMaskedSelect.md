@@ -16,7 +16,13 @@
 
 ## 功能说明
 
-根据一个布尔掩码张量（mask）中的值选择输入张量（self）中的元素作为输出，形成一个新的一维张量。
+- 接口功能：根据一个布尔掩码张量（mask）中的值选择输入张量（self）中的元素作为输出，形成一个新的一维张量。
+ 	 
+- 计算公式：
+
+$$
+out = \left[ self[i] \right]_{i \in \mathcal{I}}, \quad \text{where } \mathcal{I} = \left\{ i \mid mask[i] = \text{True} \right\}
+$$
 
 ## 函数原型
 

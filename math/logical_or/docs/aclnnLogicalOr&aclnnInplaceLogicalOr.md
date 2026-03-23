@@ -16,7 +16,17 @@
 
 ## 功能说明
 
-完成给定输入张量元素的逻辑或运算。当两个输入张量为非bool类型时，0被视为False，非0被视为True。
+- 接口功能：完成给定输入张量元素的逻辑或运算。当两个输入张量为非bool类型时，0被视为False，非0被视为True。
+ 	 
+- 计算公式：
+
+$$
+out[i]=
+\begin{cases}
+1, & \text{if } self[i] \neq 0 \text{ or } other[i] \neq 0 \\
+0, & \text{otherwise}
+\end{cases}
+$$
 
 ## 函数原型
 

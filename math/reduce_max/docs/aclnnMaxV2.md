@@ -16,36 +16,141 @@
 
 ## 功能说明
 
-按指定维度对输入tensor求元素最大值。
+- 接口功能：按指定维度对输入tensor求元素最大值。
+ 	 
+- 计算公式：
+
+$$
+Y = \max_{\text{dims}}(X)
+$$
 
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnMaxV2GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMaxV2”接口执行计算。
 
-- `aclnnStatus aclnnMaxV2GetWorkspaceSize(const aclTensor *self, const aclIntArray *dims, bool keepDims, bool noopWithEmptyDims, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnMaxV2(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnMaxV2GetWorkspaceSize(
+  const aclTensor*     self, 
+  const aclIntArray*   dims,
+  bool                 keepDims,
+  bool                 noopWithEmptyDims,
+  aclTensor*           out, 
+  uint64_t*            workspaceSize, 
+  aclOpExecutor**      executor)
+```
+
+```Cpp
+aclnnStatus aclnnMaxV2(
+  void*          workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor* executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnMaxV2GetWorkspaceSize
 
 - **参数说明：**
 
-  - self（aclTensor*, 计算输入）：参与计算的输入tensor。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：FLOAT、FLOAT16、INT8、INT16、INT32、INT64、UINT8、DOUBLE、BOOL、BFLOAT16
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、INT8、INT16、INT32、INT64、UINT8、DOUBLE、BOOL
-
-  - dims（aclIntArray*, 计算输入）：参与计算的维度，取值范围为[-self.dim(), self.dim()-1]，数据类型支持INT64。
-
-  - keepDims（bool, 计算输入）：是否保留reduce轴的维度，数据类型支持BOOL。
-
-  - noopWithEmptyDims（bool, 计算输入）：定义dims为空时的行为，为true时，dims为空输入tensor不会reduce，即输出tensor和输入tensor一致；为false时，dims为空输入tensor会reduce所有轴，数据类型支持BOOL。
-
-  - out（aclTensor*, 计算输出）：输出tensor，out数据类型与self保持一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：FLOAT、FLOAT16、INT8、INT16、INT32、INT64、UINT8、DOUBLE、BOOL、BFLOAT16
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT、FLOAT16、INT8、INT16、INT32、INT64、UINT8、DOUBLE、BOOL
-
-  - workspaceSize（uint64_t*, 出参）：返回需要在Device侧申请的workspace大小。
-
-  - executor（aclOpExecutor**, 出参）：返回op执行器，包含了算子计算流程。
+  <table class="tg" style="undefined;table-layout: fixed; width: 1445px"><colgroup>
+  <col style="width: 165px">
+  <col style="width: 160px">
+  <col style="width: 150px">
+  <col style="width: 300px">
+  <col style="width: 280px">
+  <col style="width: 115px">
+  <col style="width: 130px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">参数名</th>
+      <th class="tg-0pky">输入/输出</th>
+      <th class="tg-0pky">描述</th>
+      <th class="tg-0pky">使用说明</th>
+      <th class="tg-0pky">数据类型</th>
+      <th class="tg-0pky">数据格式</th>
+      <th class="tg-0pky">维度(shape)</th>
+      <th class="tg-0pky">非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">self（aclTensor*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">参与计算的输入tensor。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">FLOAT、FLOAT16、INT8、INT16、INT32、INT64、UINT8、DOUBLE、BOOL、BFLOAT16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">0-8</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">dims（aclIntArray*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">参与计算的维度。</td>
+      <td class="tg-0pky">取值范围为[-self.dim(), self.dim()-1]。</td>
+      <td class="tg-0pky">INT64</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">keepDims（bool）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">是否保留reduce轴的维度。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">BOOL</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">noopWithEmptyDims（bool）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">定义dims为空时的行为。</td>
+      <td class="tg-0pky">
+        <ul>
+          <li>为true时，dims为空输入tensor不会reduce，即输出tensor和输入tensor一致。</li>
+          <li>为false时，dims为空输入tensor会reduce所有轴。</li>
+        </ul>
+      </td>
+      <td class="tg-0pky">BOOL</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">out（aclTensor*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">输出tensor。</td>
+      <td class="tg-0pky">out数据类型与self保持一致。</td>
+      <td class="tg-0pky">FLOAT、FLOAT16、INT8、INT16、INT32、INT64、UINT8、DOUBLE、BOOL、BFLOAT16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">0-8</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">workspaceSize（uint64_t*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回需要在Device侧申请的workspace大小。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">executor（aclOpExecutor**）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回op执行器，包含了算子计算流程。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+  </tbody></table>
+  
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
 
 - **返回值：**
@@ -134,7 +239,7 @@
 - 确定性计算：
   - aclnnMaxV2默认确定性实现。
 
-- 输入self为Tensor类型时，不支持reduce轴为0的场景
+- 输入self为Tensor类型时，不支持reduce轴为0的场景。
 
 ## 调用示例
 

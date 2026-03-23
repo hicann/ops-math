@@ -27,26 +27,101 @@ $$
 ## 函数原型
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnMaxNGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMaxN”接口执行计算。
 
-* `aclnnStatus aclnnMaxNGetWorkspaceSize(const aclTensorList* tensors, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-* `aclnnStatus aclnnMaxN(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnMaxNGetWorkspaceSize(
+  const aclTensorList*     tensors, 
+  aclTensor*               out, 
+  uint64_t*                workspaceSize, 
+  aclOpExecutor**          executor)
+```
+
+```Cpp
+aclnnStatus aclnnMaxN(
+  void*          workspace, 
+  uint64_t       workspaceSize, 
+  aclOpExecutor* executor, 
+  aclrtStream    stream)
+```
 
 ## aclnnMaxNGetWorkspaceSize
 
 - **参数说明：**
 
-  - tensors(aclTensorList*, 计算输入)：Device侧的aclTensorList，tensors里面的tensor的shape需要互相满足[broadcast关系](../../../docs/zh/context/broadcast关系.md), tensors里面的tensor的dtype需要保持一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、INT8、INT32、INT64。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、INT8、INT32、INT64、BFLOAT16。
-
-  - out(aclTensor*，计算输出)：Device侧的aclTensor，dtype需要和tensors中的tensor的dtype一致, shape需要是输入tensorlist中所有tensor broadcast之后的shape。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-
-    - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、INT8、INT32、INT64。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、INT8、INT32、INT64、BFLOAT16。
-
-  - workspaceSize(uint64_t*, 出参)：返回用户需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
+  <table class="tg" style="undefined;table-layout: fixed; width: 1445px"><colgroup>
+  <col style="width: 165px">
+  <col style="width: 160px">
+  <col style="width: 150px">
+  <col style="width: 300px">
+  <col style="width: 280px">
+  <col style="width: 115px">
+  <col style="width: 130px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">参数名</th>
+      <th class="tg-0pky">输入/输出</th>
+      <th class="tg-0pky">描述</th>
+      <th class="tg-0pky">使用说明</th>
+      <th class="tg-0pky">数据类型</th>
+      <th class="tg-0pky">数据格式</th>
+      <th class="tg-0pky">维度(shape)</th>
+      <th class="tg-0pky">非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">self（aclTensorList*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">公式中的input。</td>
+      <td class="tg-0pky">
+        <ul>
+          <li>tensors里面的tensor的shape需要互相满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+          <li>tensors里面的tensor的dtype需要保持一致。</li>
+        </ul>
+      </td>
+      <td class="tg-0pky">FLOAT16、FLOAT、INT8、INT32、INT64、BFLOAT16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">0-8</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">out（aclTensor*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">公式中的out。</td>
+      <td class="tg-0pky">
+        <ul>
+          <li>dtype需要和tensors中的tensor的dtype一致。</li>
+          <li>shape需要是输入tensorlist中所有tensor broadcast之后的shape。</li>
+        </ul>
+      </td>
+      <td class="tg-0pky">FLOAT16、FLOAT、INT8、INT32、INT64、BFLOAT16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">0-8</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">workspaceSize（uint64_t*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回需要在Device侧申请的workspace大小。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">executor（aclOpExecutor**）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回op执行器，包含了算子计算流程。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+  </tbody></table>
+  
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
 - **返回值：**
 
