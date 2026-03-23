@@ -15,14 +15,15 @@
 
 ## 功能说明
 
-算子功能：训练过程中，按照概率prob随机将输入中的元素置零，并将输出按照1/(1-prob)的比例放大。若mask对应比特位为1，则输入中相应的元素放大。若mask中比特位为0，则gradOutput相应的元素置零。特别地，若prob为0，则不改变gradOutput的元素；若prob为1，则将所有元素置为0。
+- 接口功能：训练过程中，按照概率prob随机将输入中的元素置零，并将输出按照1/(1-prob)的比例放大。若mask对应比特位为1，则输入中相应的元素放大。若mask中比特位为0，则self相应的元素置零。特别地，若prob为0，则不改变self的元素；若prob为1，则将所有元素置为0。
 
-$$
-out_i=\begin{cases}
-0,&\text { with probability }prob \\
-\frac{1}{1-prob}self_i, &\text { with probability }1-prob
-\end{cases}
-$$
+- 计算公式：
+  $$
+  out_i=\begin{cases}
+  0,&\text { with probability }prob \\
+  \frac{1}{1-prob}self_i, &\text { with probability }1-prob
+  \end{cases}
+  $$
 
 ## 函数原型
 
@@ -73,47 +74,47 @@ aclnnStatus aclnnDropoutDoMask(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
-      <td>公式中的输入<code>self</code>。</td>
-      <td>shape支持0-8维。</td>
+      <td>对应公式中的输入<code>self</code>。</td>
+      <td>支持空Tensor。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>mask</td>
+      <td>mask（aclTensor*）</td>
       <td>输入</td>
       <td>bit类型并使用UINT8类型存储的mask数据。</td>
-      <td>元素个数需要为(align(self的元素个数,128)/8)，表示比特数需要与128对齐，其中，align表示将input的元素个数向上对齐为128的倍数，如align(1111, 128)的结果为1152。</td>
+      <td><ul><li>支持空Tensor。</li><li>元素个数需要为(align(self的元素个数,128)/8)，表示比特数需要与128对齐，其中，align表示将input的元素个数向上对齐为128的倍数，如align(1111, 128)的结果为1152。</li></ul></td>
       <td>UINT8</td>
       <td>ND</td>
-      <td>1-8</td>
+      <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>prob</td>
+      <td>prob（double）</td>
       <td>输入</td>
-      <td>公式中的输入<code>prob</code>，用于计算输出数据缩放比例。</td>
-      <td>数据类型支持double</td>
+      <td>对应公式中的输入<code>prob</code>，用于计算输出数据缩放比例。</td>
+      <td>prob的取值范围为[0,1]。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>输出<code>out</code>，Device侧的aclTensor。</td>
-      <td>数据类型需要是self可转换的数据类型，shape需要与self一致。</td>
+      <td>对应公式中的输出<code>out</code>。</td>
+      <td><ul><li>支持空Tensor。</li><li>数据类型需要是self可转换的数据类型。</li><li>shape需要与self的一致。</li></ul></td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
-      <td>-</td>
+      <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -123,7 +124,7 @@ aclnnStatus aclnnDropoutDoMask(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

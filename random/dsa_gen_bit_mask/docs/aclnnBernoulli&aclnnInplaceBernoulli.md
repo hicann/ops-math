@@ -98,11 +98,11 @@ aclnnStatus aclnnInplaceBernoulli(
     <tr>
       <td>self（aclTensor*）</td>
       <td>输入</td>
-      <td>用于指定输出out的shape。</td>
-      <td>数据类型需要与out一致，且shape需要与out一致。</td>
+      <td>输入tensor。</td>
+      <td><ul><li>支持空Tensor。</li><li>数据类型需要与out一致。</li><li>shape需要与out的一致。</li></ul></td>
       <td>FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
       <td>ND</td>
-      <td>支持0-8维。</td>
+      <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
@@ -139,10 +139,10 @@ aclnnStatus aclnnInplaceBernoulli(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的<code>out</code>。</td>
-      <td>数据类型需要与self一致，shape支持0-8维，且shape需要与self一致。</td>
+      <td><ul><li>支持空Tensor。</li><li>数据类型需要与self一致。</li><li>shape需要与self的一致。</li></ul></td>
       <td>FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
       <td>ND</td>
-      <td>-</td>
+      <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
@@ -194,7 +194,7 @@ aclnnStatus aclnnInplaceBernoulli(
     <tr>
       <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="6">161002</td>
-      <td>self或out的数据类型和数据格式不在支持的范围之内。</td>
+      <td>self或out的数据类型或数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>prob的数据类型不在支持的范围之内。</td>
@@ -288,10 +288,10 @@ aclnnStatus aclnnInplaceBernoulli(
       <td>selfRef（aclTensor*）</td>
       <td>输入/输出</td>
       <td>公式中的out。</td>
-      <td>-</td>
+      <td>支持空Tensor。</td>
       <td>FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
       <td>ND</td>
-      <td>支持0-8维。</td>
+      <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
@@ -373,7 +373,7 @@ aclnnStatus aclnnInplaceBernoulli(
     <tr>
       <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="4">161002</td>
-      <td>selfRef的数据类型和数据格式不在支持的范围之内。</td>
+      <td>selfRef的数据类型或数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>prob的数据类型不在支持的范围之内。</td>

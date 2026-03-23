@@ -51,15 +51,15 @@ aclnnStatus aclnnDropout(
 
 - **参数说明：**
 
-  <table class="tg" style="undefined;table-layout: fixed; width: 1500px"><colgroup>
+  <table class="tg" style="undefined;table-layout: fixed; width: 1530px"><colgroup>
   <col style="width: 220px">
-  <col style="width: 90px">
+  <col style="width: 120px">
   <col style="width: 220px">
-  <col style="width: 250px">
-  <col style="width: 230px">
-  <col style="width: 94px">
-  <col style="width: 220px">
-  <col style="width: 121px">
+  <col style="width: 350px">
+  <col style="width: 200px">
+  <col style="width: 120px">
+  <col style="width: 120px">
+  <col style="width: 120px">
   </colgroup>
   <thead>
     <tr>
@@ -77,10 +77,10 @@ aclnnStatus aclnnDropout(
       <td class="tg-0pky">input（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">表示待处理的张量，公式中的input。</td>
-      <td class="tg-0pky">不支持空tensor场景。</td>
+      <td class="tg-0pky">不支持空Tensor。</td>
       <td class="tg-0pky">BFLOAT16、FLOAT16、FLOAT32</td>
       <td class="tg-0pky">ND</td>
-      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">1-8</td>
       <td class="tg-0pky">√</td>
     </tr>
     <tr>
@@ -88,7 +88,7 @@ aclnnStatus aclnnDropout(
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">元素置零的概率，公式中的p。</td>
       <td class="tg-0pky">数值的值域为[0, 1]。</td>
-      <td class="tg-0pky">DOUBLE</td>
+      <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
@@ -98,7 +98,7 @@ aclnnStatus aclnnDropout(
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">是否为训练场景。</td>
       <td class="tg-0pky">-</td>
-      <td class="tg-0pky">BOOL</td>
+      <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
@@ -108,7 +108,7 @@ aclnnStatus aclnnDropout(
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">随机数的种子，影响生成的随机数序列。</td>
       <td class="tg-0pky">-</td>
-      <td class="tg-0pky">INT64</td>
+      <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
@@ -118,7 +118,7 @@ aclnnStatus aclnnDropout(
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">随机数的偏移量，它影响生成的随机数序列的位置。</td>
       <td class="tg-0pky">-</td>
-      <td class="tg-0pky">INT64</td>
+      <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
@@ -127,20 +127,20 @@ aclnnStatus aclnnDropout(
       <td class="tg-0lax">out（aclTensor*）</td>
       <td class="tg-0lax">输出</td>
       <td class="tg-0lax">输出的tensor，公式中的out。</td>
-      <td class="tg-0lax">数据类型需要是input可转换的数据类型，shape需要与input一致。</td>
+      <td class="tg-0lax"><ul><li>不支持空Tensor。</li><li>数据类型需要是input可转换的数据类型，shape需要与input一致。</li></ul></td>
       <td class="tg-0lax">BFLOAT16、FLOAT16、FLOAT32</td>
       <td class="tg-0lax">ND</td>
-      <td class="tg-0lax">-</td>
+      <td class="tg-0lax">1-8</td>
       <td class="tg-0lax">√</td>
     </tr>
     <tr>
       <td class="tg-0lax">maskOut（aclTensor*）</td>
       <td class="tg-0lax">输出</td>
       <td class="tg-0lax">bit类型并使用UINT8类型存储的mask数据。</td>
-      <td class="tg-0lax">当p=0、p=1或train=false场景下，不对传入的maskOut做任何处理；其他场景下以给定的p为置零概率生成mask。</td>
+      <td class="tg-0lax"><ul><li>不支持空Tensor。</li><li>当p=0、p=1或train=false场景下，不对传入的maskOut做任何处理；其他场景下以给定的p为置零概率生成mask。</li><li>shape需要为(align(input的元素个数, 128)/8)，表示比特数需要与128对齐，其中，align表示将input的元素个数向上对齐为128的倍数，如align(1111, 128)的结果为1152。</li></ul></td>
       <td class="tg-0lax">UINT8</td>
       <td class="tg-0lax">ND</td>
-      <td class="tg-0lax">shape需要为(align(input的元素个数, 128)/8)，表示比特数需要与128对齐，其中，align表示将input的元素个数向上对齐为128的倍数，如align(1111, 128)的结果为1152。</td>
+      <td class="tg-0lax">1</td>
       <td class="tg-0lax">√</td>
     </tr>
     <tr>
@@ -192,15 +192,18 @@ aclnnStatus aclnnDropout(
       <td>传入的input、out、maskOut为空指针。</td>
     </tr>
     <tr>
-      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="4">161002</td>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
       <td>input、out、maskOut的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>p的值不在0和1之间。</td>
     </tr>
     <tr>
-      <td>input维度超过8维，input和out的shape不一致。</td>
+      <td>input维度超过8维。</td>
+    </tr>
+    <tr>
+      <td>input和out的shape不一致。</td>
     </tr>
     <tr>
       <td>maskOut的shape不满足条件。</td>

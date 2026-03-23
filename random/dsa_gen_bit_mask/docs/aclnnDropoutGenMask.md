@@ -70,10 +70,10 @@ aclnnStatus aclnnDropoutGenMask(
       <td class="tg-0pky">shape（aclIntArray*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">表示待处理的数据量。</td>
+      <td class="tg-0pky">数组元素个数为1-8。</td>
+      <td class="tg-0pky">INT32、INT64</td>
       <td class="tg-0pky">-</td>
-      <td class="tg-0pky">-</td>
-      <td class="tg-0pky">-</td>
-      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">1</td>
       <td class="tg-0pky">-</td>
     </tr>
     <tr>
@@ -81,7 +81,7 @@ aclnnStatus aclnnDropoutGenMask(
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">元素置零的概率。</td>
       <td class="tg-0pky">-</td>
-      <td class="tg-0pky">DOUBLE</td>
+      <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
@@ -91,7 +91,7 @@ aclnnStatus aclnnDropoutGenMask(
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">随机数的种子，影响生成的随机数序列。</td>
       <td class="tg-0pky">-</td>
-      <td class="tg-0pky">INT64</td>
+      <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
@@ -101,7 +101,7 @@ aclnnStatus aclnnDropoutGenMask(
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">随机数的偏移量，它影响生成的随机数序列的位置。</td>
       <td class="tg-0pky">-</td>
-      <td class="tg-0pky">INT64</td>
+      <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
@@ -110,10 +110,10 @@ aclnnStatus aclnnDropoutGenMask(
       <td class="tg-0pky">out（aclTensor*）</td>
       <td class="tg-0pky">输出</td>
       <td class="tg-0pky">输出的tensor。bit类型并使用UINT8类型存储的mask数据。</td>
-      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">shape需要为(align(input的元素个数, 128)/8)。</td>
       <td class="tg-0pky">UINT8</td>
       <td class="tg-0pky">ND</td>
-      <td class="tg-0pky">shape需要为(align(input的元素个数, 128)/8)。</td>
+      <td class="tg-0pky">1</td>
       <td class="tg-0pky">√</td>
     </tr>
     <tr>
