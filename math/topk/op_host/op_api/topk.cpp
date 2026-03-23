@@ -31,6 +31,9 @@ OP_TYPE_REGISTER(TopK);
 
 const int64_t MAX_AICORE_CALC_INPUTSIZE = 32768;
 const int64_t MAX_AICORE_CALC_DIM = 8;
+const int64_t MAX_AICORE_CALC_REG_BASE_INT64_DIM = 14;
+const int64_t MAX_AICORE_CALC_REG_BASE_INT64_INPUTSIZE = 25000000;
+const int64_t MIN_AICORE_CALC_REG_BASE_INT64_INPUTSIZE = 120000;
 const int64_t MAX_K = 16;
 
 constexpr int64_t TWO_THOUSAND = 2000;
@@ -45,6 +48,12 @@ static const std::initializer_list<op::DataType> FUTURE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT64,  op::DataType::DT_INT32,   op::DataType::DT_INT16,  op::DataType::DT_INT8,
     op::DataType::DT_UINT64, op::DataType::DT_UINT32,  op::DataType::DT_UINT16, op::DataType::DT_UINT8,
     op::DataType::DT_BF16,   op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT};
+
+static bool IsFloatTypeSoc(SocVersion version) {
+    return (version >= SocVersion::ASCEND910B && version <= SocVersion::ASCEND910E) ||
+        (version >= SocVersion::ASCEND310P && version <= SocVersion::ASCEND310C) ||
+        (version == SocVersion::ASCEND610LITE);
+}
 
 // 根据芯片类型、dtype判断算子是否支持走AiCore
 static bool IsAiCoreSupport(const aclTensor* self, int64_t k)
@@ -69,17 +78,30 @@ static bool IsAiCoreSupport(const aclTensor* self, int64_t k)
         OP_LOGW("l0op::TopK use CURRENT_DTYPE_SUPPORT_LIST for socVerison[%d]", static_cast<int32_t>(version));
         return CheckType(self->GetDataType(), CURRENT_DTYPE_SUPPORT_LIST);
     } else if (IsRegBase()) {
+        // 在950的int64场景上，需要判断inputsize和排序轴的大小，因为在排序轴较小时，aicpu性能比aicore更好；
+        if (self->GetDataType() == op::DataType::DT_INT64) {
+            auto inputShape = self->GetViewShape();
+            int64_t tmpDim = static_cast<int64_t>(inputShape.GetDimNum());
+            int64_t inputSize = 1;
+            for (int64_t i = 0; i < tmpDim; i++) {
+                inputSize *= inputShape.GetDim(i);
+            }
+            
+            if (
+                inputSize < MAX_AICORE_CALC_REG_BASE_INT64_INPUTSIZE && inputSize > MIN_AICORE_CALC_REG_BASE_INT64_INPUTSIZE
+                && inputShape.GetDim(tmpDim - 1) < MAX_AICORE_CALC_REG_BASE_INT64_DIM
+            ) {
+                return false;
+            }
+        }
         OP_LOGW("l0op::TopK use FUTURE_DTYPE_SUPPORT_LIST for socVerison[%d]", static_cast<int32_t>(version));
         return CheckType(self->GetDataType(), FUTURE_DTYPE_SUPPORT_LIST);
     } else {
         // 非以上平台，使用旧有逻辑处理。
     }
 
-    if ((version >= SocVersion::ASCEND910B && version <= SocVersion::ASCEND910E) ||
-        (version >= SocVersion::ASCEND310P && version <= SocVersion::ASCEND310C) ||
-        (version == SocVersion::ASCEND610LITE)) {
-        return CheckType(
-            self->GetDataType(), {op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16});
+    if (IsFloatTypeSoc(version)) {
+        return CheckType(self->GetDataType(), {op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16});
     }
     // 910、310芯片
     return self->GetDataType() == op::DataType::DT_FLOAT16;
