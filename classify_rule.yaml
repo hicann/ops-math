@@ -527,6 +527,7 @@ conversion@ops-math:
         - ops/ops-math/conversion/unfold_grad/docs/
         - ops/ops-math/conversion/unfold_grad/README.md
         - ops/ops-math/conversion/unfold_grad/op_kernel/
+        - ops/ops-math/conversion/unfold_grad/op_kernel_aicpu/
         - ops/ops-math/conversion/unfold_grad/op_host/
         - ops/ops-math/conversion/unfold_grad/op_graph/
         - ops/ops-math/conversion/tril/docs/
