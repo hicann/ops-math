@@ -86,8 +86,8 @@ private:
     uint64_t randomIsInt32_{0};
     std::vector<int32_t> subNs_;
     uint32_t subNSize_{0};
-    ge::DataType attrOutDtype_;
-    ge::DataType randomDtype_;
+    ge::DataType attrOutDtype_ = ge::DT_UNDEFINED;
+    ge::DataType randomDtype_ = ge::DT_UNDEFINED;
     int32_t randomType_{0};
 
     ge::graphStatus GetInputN();
