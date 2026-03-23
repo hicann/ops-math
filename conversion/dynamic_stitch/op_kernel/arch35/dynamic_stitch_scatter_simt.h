@@ -65,7 +65,7 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void SimtDataCopy(
 {
     for (int32_t tensorIndex = startTensorIndex + static_cast<int32_t>(Simt::GetThreadIdx<0>());
          tensorIndex <= endTensorIndex; tensorIndex += static_cast<int32_t>(Simt::GetThreadNum<0>())) {
-        __gm__ T* inputTensor = GetTensorAddr<T>(tensorIndex, inTensorsPtr);
+        __gm__ T* inputTensor = GetTensorSimtAddr<T>(tensorIndex, inTensorsPtr);
         int64_t curElemCount = tensorCumsum[tensorIndex + 1] - tensorCumsum[tensorIndex]; // 获取当前tensor的个数
         int64_t curStartIndex = 0;
         int64_t curEndIndex = curElemCount - 1;

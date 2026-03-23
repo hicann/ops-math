@@ -47,7 +47,7 @@ constexpr uint32_t PHILOX_USED_THREAD = 256;
 constexpr uint32_t PHILOX_THREAD_LAUNCH = 256;
 constexpr uint32_t DATACOPY_THREAD_LAUNCH = 2048;
 
-__aicore__ inline void CopyArray4(uint32_t* dst, const uint32_t* src)
+__simt_callee__ __aicore__ inline void CopyArray4(uint32_t* dst, const uint32_t* src)
 {
     dst[0] = src[0];
     dst[1] = src[1];
@@ -56,13 +56,13 @@ __aicore__ inline void CopyArray4(uint32_t* dst, const uint32_t* src)
 }
 
 template <typename T>
-__aicore__ inline void CopyArray2(T* dst, const T* src)
+__simt_callee__ __aicore__ inline void CopyArray2(T* dst, const T* src)
 {
     dst[0] = src[0];
     dst[1] = src[1];
 }
 
-__aicore__ inline void StateIncr(uint32_t* counter)
+__simt_callee__ __aicore__ inline void StateIncr(uint32_t* counter)
 {
     if(++counter[0]) return;
     if(++counter[1]) return;
@@ -70,7 +70,7 @@ __aicore__ inline void StateIncr(uint32_t* counter)
     ++counter[3];
 }
 
-__aicore__ inline void StateIncr(uint32_t* counter, const uint64_t n) 
+__simt_callee__ __aicore__ inline void StateIncr(uint32_t* counter, const uint64_t n) 
 {
     uint32_t nlo = static_cast<uint32_t>(n);
     uint32_t nhi = static_cast<uint32_t>(n >> 32);
@@ -86,7 +86,7 @@ __aicore__ inline void StateIncr(uint32_t* counter, const uint64_t n)
     ++counter[3];
 }
 
-__aicore__ inline void StateIncrHi(uint32_t* counter, uint64_t n)
+__simt_callee__ __aicore__ inline void StateIncrHi(uint32_t* counter, uint64_t n)
 {
     const uint32_t countLo = static_cast<uint32_t>(n);
     uint32_t countHi = static_cast<uint32_t>(n >> 32);
@@ -103,7 +103,7 @@ __aicore__ inline void StateIncrHi(uint32_t* counter, uint64_t n)
  * Helper function to return the lower and higher 32-bits from two 32-bit
  * integer multiplications.
  */
-__aicore__ inline void MultiplyHighLow(uint32_t a, uint32_t b, uint32_t* result_low, uint32_t* result_high)
+__simt_callee__ __aicore__ inline void MultiplyHighLow(uint32_t a, uint32_t b, uint32_t* result_low, uint32_t* result_high)
 {
     const uint64_t product = static_cast<uint64_t>(a) * b;
     *result_low = static_cast<uint32_t>(product);
@@ -111,7 +111,7 @@ __aicore__ inline void MultiplyHighLow(uint32_t a, uint32_t b, uint32_t* result_
 }
 
 // Helper function for a single round of the underlying Philox algorithm.
-__aicore__ inline void ComputeSingleRound(uint32_t* counter, const uint32_t* key)
+__simt_callee__ __aicore__ inline void ComputeSingleRound(uint32_t* counter, const uint32_t* key)
 {
     uint32_t lo0;
     uint32_t hi0;
@@ -130,7 +130,7 @@ __aicore__ inline void ComputeSingleRound(uint32_t* counter, const uint32_t* key
     CopyArray4(counter, result);
 }
 
-__aicore__ inline void RaiseKey(uint32_t* key)
+__simt_callee__ __aicore__ inline void RaiseKey(uint32_t* key)
 {
     key[0] += PHILOX_W32_A;
     key[1] += PHILOX_W32_B;
@@ -140,7 +140,7 @@ __aicore__ inline void RaiseKey(uint32_t* key)
  * Returns counter: a group of four random numbers using the underlying Philox
  * algorithm.
  */
-__aicore__ inline void PhiloxRandom(const uint32_t* keyCst, uint32_t* counter, uint32_t* results)
+__simt_callee__ __aicore__ inline void PhiloxRandom(const uint32_t* keyCst, uint32_t* counter, uint32_t* results)
 {
     uint32_t key[ALG_KEY_SIZE];
     uint32_t counterTmp[ALG_COUNTER_SIZE];
@@ -155,7 +155,7 @@ __aicore__ inline void PhiloxRandom(const uint32_t* keyCst, uint32_t* counter, u
     CopyArray4(results, counterTmp);
 }
 
-__aicore__ inline void SkipAhead(uint64_t n, uint32_t& state, const uint32_t* keyCst, 
+__simt_callee__ __aicore__ inline void SkipAhead(uint64_t n, uint32_t& state, const uint32_t* keyCst, 
                                 uint32_t* counter, uint32_t* results)
 {
     // counter is result
@@ -169,14 +169,14 @@ __aicore__ inline void SkipAhead(uint64_t n, uint32_t& state, const uint32_t* ke
     PhiloxRandom(keyCst, counter, results);
 }
 
-__aicore__ inline void SkipAhead_Sequence(uint64_t n, uint32_t& state, const uint32_t* keyCst, 
+__simt_callee__ __aicore__ inline void SkipAhead_Sequence(uint64_t n, uint32_t& state, const uint32_t* keyCst, 
                                         uint32_t* counter, uint32_t* results)
 {
     StateIncrHi(counter, n);
     PhiloxRandom(keyCst, counter, results);
 }
 
-__aicore__ inline void RandInit(uint32_t& state, uint64_t subsequence, uint64_t offset,
+__simt_callee__ __aicore__ inline void RandInit(uint32_t& state, uint64_t subsequence, uint64_t offset,
                     uint32_t* key, uint32_t* counter, uint32_t* results)
 {
     uint32_t counterZero[ALG_COUNTER_SIZE] = {0, 0, 0, 0};
@@ -187,7 +187,7 @@ __aicore__ inline void RandInit(uint32_t& state, uint64_t subsequence, uint64_t 
     SkipAhead(offset, state, key, counter, results);
 }
 
-__aicore__ inline void Rand4(uint32_t& state, uint32_t* key, uint32_t* counter, uint32_t* results, uint32_t* last)
+__simt_callee__ __aicore__ inline void Rand4(uint32_t& state, uint32_t* key, uint32_t* counter, uint32_t* results, uint32_t* last)
 {
     uint32_t tmp[ALG_COUNTER_SIZE];
     uint32_t r[ALG_COUNTER_SIZE];
@@ -224,7 +224,7 @@ __aicore__ inline void Rand4(uint32_t& state, uint32_t* key, uint32_t* counter, 
     return;
 }
 
-__aicore__ inline void Rand1(uint32_t& state, uint32_t* key, uint32_t* counter, uint32_t& results, uint32_t* last)
+__simt_callee__ __aicore__ inline void Rand1(uint32_t& state, uint32_t* key, uint32_t* counter, uint32_t& results, uint32_t* last)
 {
     uint32_t curRes[ALG_COUNTER_SIZE];
     switch(state++) {
@@ -251,13 +251,13 @@ __aicore__ inline void Rand1(uint32_t& state, uint32_t* key, uint32_t* counter, 
 }
 
 template <typename T, typename V>
-__aicore__ inline T uniform_int_from_to(V val, uint64_t range, int64_t base)
+__simt_callee__ __aicore__ inline T uniform_int_from_to(V val, uint64_t range, int64_t base)
 {
     return static_cast<T>(static_cast<int64_t>((val % range) + base));
 }
 
 template <typename T>
-__aicore__ inline void ConvertToResult(T* output, const uint32_t* results)
+__simt_callee__ __aicore__ inline void ConvertToResult(T* output, const uint32_t* results)
 {
     int64_t from;
     int64_t to;

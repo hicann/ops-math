@@ -310,7 +310,7 @@ __aicore__ inline void BoxMullerMulSIMD(
 }
 
 template <uint16_t COPY_SIZE>
-__aicore__ inline void CopyArray(uint32_t* dst, const uint32_t* src)
+__simt_callee__ __aicore__ inline void CopyArray(uint32_t* dst, const uint32_t* src)
 {
     #pragma unroll
     for (uint16_t i =0; i < COPY_SIZE; i++) {
@@ -318,7 +318,7 @@ __aicore__ inline void CopyArray(uint32_t* dst, const uint32_t* src)
     }
 }
 
- __aicore__ inline void SkipOne(uint32_t* counter)
+ __simt_callee__ __aicore__ inline void SkipOne(uint32_t* counter)
 {
     if(++counter[0]) return;
     if(++counter[1]) return;
@@ -326,7 +326,7 @@ __aicore__ inline void CopyArray(uint32_t* dst, const uint32_t* src)
     ++counter[IDX_3];
 }
 
- __aicore__ inline void SkipLo(uint32_t* counter, uint64_t n)
+ __simt_callee__ __aicore__ inline void SkipLo(uint32_t* counter, uint64_t n)
 {
     const uint32_t nlo = static_cast<uint32_t>(n);
     uint32_t nhi = static_cast<uint32_t>(n >> RIGHT_SHIFT);
@@ -342,7 +342,7 @@ __aicore__ inline void CopyArray(uint32_t* dst, const uint32_t* src)
     ++counter[IDX_3];
 }
 
- __aicore__ inline void SkipHi(uint32_t* counter, uint64_t n)
+ __simt_callee__ __aicore__ inline void SkipHi(uint32_t* counter, uint64_t n)
 {
     const uint32_t countLo = static_cast<uint32_t>(n);
         uint32_t countHi = static_cast<uint32_t>(n >> RIGHT_SHIFT);
@@ -354,13 +354,13 @@ __aicore__ inline void CopyArray(uint32_t* dst, const uint32_t* src)
     counter[IDX_3] += countHi;
 }
 
- __aicore__ inline void FlashCounter(uint64_t globalThreadIdx, uint64_t offset, uint32_t* counter)
+ __simt_callee__ __aicore__ inline void FlashCounter(uint64_t globalThreadIdx, uint64_t offset, uint32_t* counter)
  {
     SkipHi(counter, globalThreadIdx);
     SkipLo(counter, offset);
  }
 
- __aicore__ inline void PhiloxAlgParsInit(uint32_t* key, uint32_t* counter, int64_t seed, int64_t offset)
+ __simt_callee__ __aicore__ inline void PhiloxAlgParsInit(uint32_t* key, uint32_t* counter, int64_t seed, int64_t offset)
  {
     key[0] = static_cast<uint32_t>(seed);
     key[1] = static_cast<uint32_t>(seed >> RIGHT_SHIFT);
@@ -369,14 +369,14 @@ __aicore__ inline void CopyArray(uint32_t* dst, const uint32_t* src)
     SkipLo(counter, offset);
  }
 
-__aicore__ inline void MultiplyHighLow(uint32_t a, uint32_t b, uint32_t* resultLow, uint32_t* resultHigh)
+ __simt_callee__ __aicore__ inline void MultiplyHighLow(uint32_t a, uint32_t b, uint32_t* resultLow, uint32_t* resultHigh)
 {
     const uint64_t product = static_cast<uint64_t>(a) * b;
     *resultLow = static_cast<uint32_t>(product);
     *resultHigh = static_cast<uint32_t>(product >> RIGHT_SHIFT);
 }
 
-__aicore__ inline void Philox4x32Round(uint32_t* counter, const uint32_t* key)
+ __simt_callee__ __aicore__ inline void Philox4x32Round(uint32_t* counter, const uint32_t* key)
 {
     uint32_t lo0;
     uint32_t hi0;
@@ -395,14 +395,14 @@ __aicore__ inline void Philox4x32Round(uint32_t* counter, const uint32_t* key)
     CopyArray<ALG_COUNTER_SIZE>(counter, result);
 }
 
-__aicore__ inline void KeyInc(uint32_t* key)
+ __simt_callee__ __aicore__ inline void KeyInc(uint32_t* key)
 {
     key[0] += PHILOX_W32_A;
     key[1] += PHILOX_W32_B;
 }
 
 // 算法内部在迭代时使用临时变量，不会修改传入的key 和 counter
-__aicore__ inline void PhiloxRandomSimt(const uint32_t* key, const uint32_t* counter, uint32_t* results)
+__simt_callee__ __aicore__ inline void PhiloxRandomSimt(const uint32_t* key, const uint32_t* counter, uint32_t* results)
 {
     uint32_t keyTmp[ALG_KEY_SIZE];
     uint32_t counterTmp[ALG_COUNTER_SIZE];
@@ -432,7 +432,7 @@ __aicore__ inline void PhiloxRandomSimt(const uint32_t* key, const uint32_t* cou
 }
 
 // 算法内部在迭代时使用临时变量，不会修改传入的key 和 counter
-__aicore__ inline void PhiloxRandomSimt(const uint32_t* key, const uint32_t* counter, float* results)
+ __simt_callee__ __aicore__ inline void PhiloxRandomSimt(const uint32_t* key, const uint32_t* counter, float* results)
 {
     uint32_t resultU32[ALG_COUNTER_SIZE];
     PhiloxRandomSimt(key, counter, resultU32);
@@ -444,7 +444,7 @@ __aicore__ inline void PhiloxRandomSimt(const uint32_t* key, const uint32_t* cou
 
 // 除数 (gridDimx * blockDim) 使用uint64快除接口， 提升性能
 template <int32_t STEP, int32_t ARANGE_MODE>
-__aicore__ inline void ThreadMappingAndSkip(uint64_t idx, uint32_t* counter, uint64_t magic, uint64_t shift , uint64_t totalThreads)
+ __simt_callee__ __aicore__ inline void ThreadMappingAndSkip(uint64_t idx, uint32_t* counter, uint64_t magic, uint64_t shift , uint64_t totalThreads)
 {   
     static_assert(!(ARANGE_MODE == DIS_CONTINUOUS_USE && STEP != VEC_4),"When ARANGE_MODE is DIS_CONTINUOUS_USE, STEP must be 4");
     uint64_t idxTmp = idx / STEP; 

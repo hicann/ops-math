@@ -99,7 +99,7 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void DeduplicateIndices(G
     for (int tensorIndex = startTensorIndex + static_cast<int32_t>(Simt::GetThreadIdx<0>());
          tensorIndex <= endTensorIndex;
          tensorIndex += static_cast<int32_t>(Simt::GetThreadNum<0>())) {
-        __gm__ int32_t *inputTensor = GetTensorAddr<int32_t>(tensorIndex, inTensorsPtr);
+        __gm__ int32_t *inputTensor = GetTensorSimtAddr<int32_t>(tensorIndex, inTensorsPtr);
         int64_t startIndex = 0;
         int64_t endIndex = tensorCumsumList[tensorIndex + 1] - tensorCumsumList[tensorIndex] - 1;
         if (tensorIndex == startTensorIndex) {
@@ -113,7 +113,7 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void DeduplicateIndices(G
              index += static_cast<int32_t>(Simt::GetThreadNum<1>())) {
             int32_t dstIndex = inputTensor[index];
             int32_t dstValue = tensorCumsumList[tensorIndex] + index;
-            AtomicMax(deDuplicateIndices + dstIndex, dstValue);
+            Simt::AtomicMax(deDuplicateIndices + dstIndex, dstValue);
         }
     }
 }
