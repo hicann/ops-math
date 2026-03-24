@@ -26,7 +26,7 @@ static const gert::Shape g_vec_1_shape = {1};
 static bool IsRegbaseSocVersion(NpuArch npuArch)
 {
     const static std::set<NpuArch> regbaseArch = {
-        NpuArch::DAV_3510};
+        NpuArch::DAV_3510, NpuArch::DAV_5102};
 
     return regbaseArch.find(npuArch) != regbaseArch.end();
 }
