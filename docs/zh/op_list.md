@@ -276,6 +276,16 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/chunk_cat/README.md">chunk_cat</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>将tensors中所有tensor先按照维度dim切分为numChunks块，再按照dim后一维进行级联，最后转换为out的数据类型。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/circular_pad/README.md">circular_pad</a></td>
     <td>√</td>
     <td>√</td>
