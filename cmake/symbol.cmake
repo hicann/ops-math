@@ -145,7 +145,9 @@ function(gen_opapi_symbol)
   target_link_libraries(
     ${OPAPI_NAME}
     PUBLIC $<BUILD_INTERFACE:intf_pub_cxx17>
-    PRIVATE c_sec nnopbase
+    PRIVATE c_sec
+            nnopbase
+            -Wl,-Bsymbolic
     $<$<TARGET_EXISTS:opsbase>:opsbase>
     )
 
