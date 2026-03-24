@@ -97,6 +97,13 @@ static bool CheckDim(const aclTensor *self, int64_t dim) {
   return true;
 }
 
+static void CheckFormat(const aclTensor* self) {
+      op::Format format = self->GetStorageFormat();
+      if (format == Format::FORMAT_FRACTAL_NZ){
+          OP_LOGW("Format of inputs gets [%s],this format mat lead to precision failure",op::ToString(format).GetString());
+      }
+  }
+  
 static bool CheckIfNeedReshape(const aclTensor *self) {
   return self->GetViewShape().GetDimNum() == MAX_SUPPORT_DIMS_NUMS &&
          self->GetDataType() != op::DataType::DT_FLOAT &&
@@ -155,7 +162,8 @@ static aclnnStatus CheckParams(const aclTensor *self, const aclTensor *out, int6
 
   // 4. 检查dim是否在支持范围内
   CHECK_RET(CheckDim(self, dim), ACLNN_ERR_PARAM_INVALID);
-
+  // 5. 检查是否是ND格式
+  CheckFormat(self);
   return ACLNN_SUCCESS;
 }
 
