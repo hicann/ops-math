@@ -221,11 +221,12 @@ usage() {
         echo "    --ophost -u            Build and run ophost unit tests"
         echo "    --opapi -u             Build and run opapi unit tests"
         echo "    --opgraph -u           Build and run opgraph unit tests"
+	      echo "    --opkernel -u          Build and run kernel unit tests"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh -u --noexec --cov"
         echo "    bash build.sh -u --ophost --soc=ascend910b --ops=is_finite"
-        echo "    bash build.sh --ophost --opapi --opgraph -u --cov"
+        echo "    bash build.sh --ophost --opapi --opgraph --opkernel -u --cov"
         return
         ;;
       clean)
