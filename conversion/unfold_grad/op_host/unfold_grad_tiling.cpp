@@ -380,13 +380,13 @@ ge::graphStatus UnfoldGradTiling::SetAttrParams()
     auto attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
 
-    const int* dimPtr = attrs->GetAttrPointer<int>(ATTR_0);
+    const int64_t* dimPtr = attrs->GetAttrPointer<int64_t>(ATTR_0);
     OP_CHECK_NULL_WITH_CONTEXT(context, dimPtr);
     dim = static_cast<int64_t>(*dimPtr);
-    const int* sizePtr = attrs->GetAttrPointer<int>(ATTR_1);
+    const int64_t* sizePtr = attrs->GetAttrPointer<int64_t>(ATTR_1);
     OP_CHECK_NULL_WITH_CONTEXT(context, sizePtr);
     size = static_cast<int64_t>(*sizePtr);
-    const int* stepPtr = attrs->GetAttrPointer<int>(ATTR_2);
+    const int64_t* stepPtr = attrs->GetAttrPointer<int64_t>(ATTR_2);
     OP_CHECK_NULL_WITH_CONTEXT(context, stepPtr);
     step = static_cast<int64_t>(*stepPtr);
 

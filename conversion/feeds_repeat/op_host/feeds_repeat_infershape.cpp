@@ -63,7 +63,7 @@ static ge::graphStatus InferShape4FeedsRepeat(gert::InferShapeContext* context)
         return SetUnknownRankForFeeds(y_shape);
     } else {
         *y_shape = *feeds_shape;
-        const int* output_feeds_size = attrs->GetAttrPointer<int>(0);
+        const int64_t* output_feeds_size = attrs->GetAttrPointer<int64_t>(0);
         y_shape->SetDim(0, *output_feeds_size);
     }
     OP_LOGD(context, "End to do InferShape4FeedsRepeat");
