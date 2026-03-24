@@ -275,6 +275,16 @@
     <td>一个用于处理多头注意力机制中查询（Query）、键（Key）、值（Value）向量的接口，用于调整这些向量的偏置（Bias）和缩放（Rescale）因子。</td>
   </tr>
   <tr>
+      <td>conversion</td>
+      <td><a href="../../conversion/chunk_cat/README.md">chunk_cat</a></td>
+      <td>√</td>
+      <td>√</td>
+      <td>×</td>
+      <td>×</td>
+      <td>AI Core</td>
+      <td>将tensors中所有tensor先按照维度dim切分为numChunks块，再按照dim后一维进行级联，最后转换为out的数据类型。</td>
+    </tr>
+  <tr>
     <td>conversion</td>
     <td><a href="../../conversion/circular_pad/README.md">circular_pad</a></td>
     <td>√</td>
