@@ -133,6 +133,7 @@ private:
     void GetABAxesParams();
     void GetAxesInfo();
     void GetMCTilingInfo();
+    void OptimizeMCTilingForDoubleMode();
     void UpdateDimSize(int64_t& aDims, int64_t& bDims, int64_t& brwAxis, int64_t& outLastDim);
     void CheckBrwd(int64_t& aDims, int64_t& bDims, int64_t& brwAxis, bool& isBrwd);
     int64_t CalcTensorSize4Brwd(int64_t aDims, int64_t bDims, int64_t brwAxis);

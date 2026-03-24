@@ -274,6 +274,23 @@ void BroadcastToTilingAscendC::UpdateTilingKey()
         auto lastDimAlign = Ops::Base::CeilAlign(outShapePtr_->GetDim(dimNum - 1) * dtypeSize_, blockSize_);
         if (outShapePtr_->GetDim(dimNum - nTwo) * lastDimAlign <= vlSize_) {
             tilingKey_ = TILING_MODE_LAST_DIM_SMALL_A;
+            // 优化：LAST_DIM_SMALL_A模板下，当CopyDataIn单次搬运数据量小于cacheLine时，增大uLpUnit_
+            // 单次搬运数据量 = blockCount * blockLen = uLpUnit_ * uInOffset_ * dtypeSize_
+            // 条件：U轴是A轴 且 当前搬运量<cacheLine 且 uLpUnit_可增大
+            if (isUNotB_ == 1 && uLpUnit_ * uInOffset_ * dtypeSize_ < cacheLine_ && uLpUnit_ < uAxisLen_) {
+                // 计算满足 >= cacheLine_ 的最小uLpUnit_
+                int64_t minULpUnit = Ops::Base::CeilDiv(cacheLine_, uInOffset_ * dtypeSize_);
+                // 取满足条件的最小值，但不超过uAxisLen_
+                uLpUnit_ = std::min(minULpUnit, uAxisLen_);
+                xSize_[0] = static_cast<uint32_t>(uLpUnit_);  // 更新DMA参数
+                // 更新tensorSize_以适应新的uLpUnit_
+                // UB中需要的空间 = uLpUnit_ * outShape[dimNum-2] * CeilAlign(outShape[dimNum-1], blockSize_/dtypeSize_)
+                int64_t lastDimBA = Ops::Base::CeilAlign(outShapePtr_->GetDim(dimNum - 1), blockSize_ / dtypeSize_);
+                int64_t newTensorSize = uLpUnit_ * outShapePtr_->GetDim(dimNum - nTwo) * lastDimBA;
+                if (newTensorSize > tensorSize_) {
+                    tensorSize_ = newTensorSize;
+                }
+            }
             return;
         }
     }
@@ -348,6 +365,23 @@ uint32_t BroadcastToTilingAscendC::CalcAxisWeight(int64_t lpCnt)
     return weight;
 }
 
+void BroadcastToTilingAscendC::OptimizeMCTilingForDoubleMode()
+{
+    // 优化：当U轴切分导致核数不足时，改为A轴切分，以便利用doubleMode在U轴二次切分
+    // 条件：1.核数不足 2.当前是U轴切分 3.A轴可切分 4.U轴有二次切分空间
+    if (usedCoreCnt_ < coreNum_ / nTwo && blockAxis_ == nTwo && aAxisLen_ > 1 && uAxisLen_ > uLpUnit_) {
+        OP_LOGD("BroadcastTo","Enter BroadcastToTilingAscendC::GetMCTilingInfo");
+        blockAxis_ = 0;
+        usedCoreCnt_ = Ops::Base::CeilDiv(aAxisLen_, Ops::Base::CeilDiv(aAxisLen_, coreNum_));
+        ntcALen_ = Ops::Base::CeilDiv(aAxisLen_, usedCoreCnt_);
+        tcALen_ = aAxisLen_ - ntcALen_ * (usedCoreCnt_ - 1);
+        ntcBLen_ = bAxisLen_;
+        tcBLen_ = bAxisLen_;
+        ntcULen_ = uAxisLen_;
+        tcULen_ = uAxisLen_;
+    }
+}
+
 void BroadcastToTilingAscendC::GetMCTilingInfo()
 {
     int64_t aLpCnt = aAxisLen_;
@@ -385,6 +419,7 @@ void BroadcastToTilingAscendC::GetMCTilingInfo()
         ntcULen_ = uAxisLen_;
         tcULen_ = uAxisLen_;
     }
+    OptimizeMCTilingForDoubleMode();
     aLpUnit_ = ntcALen_ > tensorSize_ ? tensorSize_ : ntcALen_;
 }
 
