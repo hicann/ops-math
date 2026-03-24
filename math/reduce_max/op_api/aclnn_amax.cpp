@@ -117,6 +117,13 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 
     return true;
 }
+static void CheckFormat(const aclTensor* self)
+{
+    op::Format format = self->GetStorageFormat();
+    if (format == Format::FORMAT_FRACTAL_NZ){
+        OP_LOGW("Format of inputs gets [%s],this format mat lead to precision failure",op::ToString(format).GetString());
+    }
+}
 
 static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim)
 {
@@ -181,6 +188,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* dim, co
 
     // 4. 检查out的shape是否满足reduce推导
     CHECK_RET(CheckShape(self, dim, keepDim, out), ACLNN_ERR_PARAM_INVALID);
+
+    CheckFormat(self);
     return ACLNN_SUCCESS;
 }
 
