@@ -32,11 +32,14 @@ static ge::graphStatus InferShape4ChunkCat(gert::InferShapeContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
     const int64_t dim = *attrs->GetAttrPointer<int64_t>(0);
     const int64_t numChunks = *attrs->GetAttrPointer<int64_t>(1);
+    OP_CHECK_IF(dim != 0,
+        OP_LOGE(context->GetNodeName(), "dim only support 0 now"),
+        return ge::GRAPH_FAILED);
 
-    auto out_shape = context->GetOutputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, out_shape);
-    out_shape->SetDimNum(dim + 2); // 2是由于输出的维度在dim维后所有维度合维
-    out_shape->SetDim(dim, numChunks);
+    auto outShape = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, outShape);
+    outShape->SetDimNum(dim + 2); // 2是由于输出的维度在dim维后所有维度合维
+    outShape->SetDim(dim, numChunks);
 
     int64_t outputCol = 0;
     for (uint32_t i = 0; i < inputNum; i++) {
@@ -48,14 +51,14 @@ static ge::graphStatus InferShape4ChunkCat(gert::InferShapeContext* context)
         int64_t dim1Size = chunkCol;
         int64_t inputTensorDimNum = inputTensorShape->GetDimNum();
         for (int64_t j = 0; j < dim; j++) {
-            out_shape->SetDim(j, inputTensorShape->GetDim(j));
+            outShape->SetDim(j, inputTensorShape->GetDim(j));
         }
         for (int64_t j = dim + 1; j < inputTensorDimNum; j++) {
             dim1Size *= inputTensorShape->GetDim(j);
         }
         outputCol += dim1Size;
     }
-    out_shape->SetDim(dim + 1, outputCol);
+    outShape->SetDim(dim + 1, outputCol);
 
     return ge::GRAPH_SUCCESS;
 }

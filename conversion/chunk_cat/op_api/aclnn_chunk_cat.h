@@ -22,7 +22,7 @@ extern "C" {
  * @domain aclnn_ops_infer
  */
 ACLNN_API aclnnStatus aclnnChunkCatGetWorkspaceSize(
-    const aclTensorList* tensors, int64_t dim, int64_t num_chunks, aclTensor* out,
+    const aclTensorList* tensors, int64_t dim, int64_t numChunks, aclTensor* out,
     uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**

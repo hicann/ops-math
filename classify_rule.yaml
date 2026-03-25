@@ -477,6 +477,7 @@ conversion@ops-math:
   src:
     release:
       style:
+        - ops/ops-math/conversion/chunk_cat/
         - ops/ops-math/conversion/stack_ball_query/README.md
         - ops/ops-math/conversion/stack_ball_query/op_kernel/
         - ops/ops-math/conversion/stack_ball_query/op_host/
@@ -721,6 +722,8 @@ conversion@ops-math:
       kernel_style: null
     unrelease:
       test_code:
+        - ops/ops-math/conversion/chunk_cat/examples/
+        - ops/ops-math/conversion/chunk_cat/tests/
         - ops/ops-math/conversion/stack_ball_query/examples/
         - ops/ops-math/conversion/stack_ball_query/tests/
         - ops/ops-math/conversion/assign/examples/

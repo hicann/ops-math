@@ -138,15 +138,14 @@ const aclTensor* MergeLastDims(const aclTensor* tensor, int64_t dim, aclOpExecut
     
     op::Shape newShape;
     for (int64_t i = 0; i <= dim; i++) {
-        newShape.AppendDim((int64_t)shapeTensor.GetDim(i));
+        newShape.AppendDim(static_cast<int64_t>(shapeTensor.GetDim(i)));
     }
     int64_t catdimSize = 1;
     for (int64_t i = dim + 1; i < dimNum; i++) {
         catdimSize *= shapeTensor.GetDim(i);
     }
     newShape.AppendDim(catdimSize);
-    auto reshapeTensor = executor == nullptr ? const_cast<aclTensor *>(tensor)
-                                            : executor->CreateView(tensor, tensor->GetViewShape(), tensor->GetViewOffset());
+    auto reshapeTensor = executor->CreateView(tensor, tensor->GetViewShape(), tensor->GetViewOffset());
     reshapeTensor->SetViewShape(newShape);
     reshapeTensor->SetOriginalShape(newShape);
     reshapeTensor->SetStorageShape(newShape);
@@ -234,7 +233,7 @@ aclnnStatus aclnnChunkCatGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnChunkCat(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+aclnnStatus aclnnChunkCat(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnChunkCat);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
