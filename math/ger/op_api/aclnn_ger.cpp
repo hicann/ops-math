@@ -59,8 +59,7 @@ static inline bool CheckNotNull(const aclTensor* self, const aclTensor* vec2, co
 
 static inline bool CheckDtypeValid(const aclTensor* self, const aclTensor* vec2)
 {
-     if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND950 &&
-         GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) {
+     if (IsRegBase()) {
         OP_CHECK_DTYPE_NOT_SUPPORT(self, ASCEND950_DTYPE_SUPPORT_LIST, return false);
         OP_CHECK_DTYPE_NOT_SUPPORT(vec2, ASCEND950_DTYPE_SUPPORT_LIST, return false);
     } else {
