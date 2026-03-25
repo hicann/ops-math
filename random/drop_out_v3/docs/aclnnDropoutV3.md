@@ -22,8 +22,6 @@
   out_i=\begin{cases}0,&\text { with probability }p \\\frac{1}{1-p}input_i,&\text { with probability }1-p\end{cases}
   $$
 
-注意：aclnnDropoutV2正在开发中。
-
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnDropoutV3GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnDropoutV3”接口执行计算。
@@ -82,7 +80,7 @@ aclnnStatus aclnnDropoutV3(
       <td>shape支持0到8维。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
-      <td>-</td>
+      <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
@@ -90,9 +88,9 @@ aclnnStatus aclnnDropoutV3(
       <td>输入</td>
       <td>预留参数，入参请用空指针代替。</td>
       <td>-</td>
-      <td>-</td>
+      <td>INT64</td>
       <td>ND</td>
-      <td>-</td>
+      <td>0</td>
       <td>√</td>
     </tr>
     <tr>
@@ -100,7 +98,7 @@ aclnnStatus aclnnDropoutV3(
       <td>输入</td>
       <td>元素置零的概率。</td>
       <td>取值范围为[0, 1]</td>
-      <td>double</td>
+      <td>DOUBLE</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -110,7 +108,7 @@ aclnnStatus aclnnDropoutV3(
       <td>输入</td>
       <td>随机数的种子，影响生成的随机数序列。</td>
       <td>-</td>
-      <td>int64_t</td>
+      <td>INT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -120,7 +118,7 @@ aclnnStatus aclnnDropoutV3(
       <td>输入</td>
       <td>随机数的偏移量，它影响生成的随机数序列的位置。</td>
       <td>-</td>
-      <td>int64_t</td>
+      <td>INT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -132,7 +130,7 @@ aclnnStatus aclnnDropoutV3(
       <td>数据类型需要是input可转换的数据类型，shape需要与input一致。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
-      <td>-</td>
+      <td>0-8</td>
       <td>√</td>
     </tr>
     <tr>
@@ -142,7 +140,7 @@ aclnnStatus aclnnDropoutV3(
       <td>元素个数需要为(align(input的元素个数,128)/8)；当p=0或p=1场景下，不对传入的maskOut做任何处理；其它场景下以给定的p为置零概率生成mask。</td>
       <td>UINT8</td>
       <td>ND</td>
-      <td>-</td>
+      <td>1</td>
       <td>√</td>
     </tr>
     <tr>
@@ -150,7 +148,7 @@ aclnnStatus aclnnDropoutV3(
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
-      <td>-</td>
+      <td>INT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>

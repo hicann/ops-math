@@ -13,6 +13,10 @@
 ## 功能说明
 
 - 算子功能：训练过程中，按照概率p随机将输入中的元素置零，并将输出按照1/(1-p)的比例缩放。
+- 计算公式：
+  $$
+  out_i=\begin{cases}0,&\text { with probability }p \\\frac{1}{1-p}input_i,&\text { with probability }1-p\end{cases}
+  $$
 
 ## 参数说明
 
@@ -43,7 +47,7 @@
       <td>noise_shape</td>
       <td>输入</td>
       <td>预留参数，入参请用空指针代替。</td>
-      <td>INT64、INT32</td>
+      <td>INT64</td>
       <td>ND</td>
     </tr>
     <tr>
