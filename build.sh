@@ -346,7 +346,7 @@ usage() {
   echo "    -u Compile all ut"
   echo $dotted_line
   echo "    examples, Build ophost_test with O3 level compilation optimization and do not execute."
-  echo "    ./build.sh --ophost_test --noexec -O3"
+  echo "    ./build.sh -u --ophost --noexec -O3"
   echo $dotted_line
   echo "    The following are all supported arguments:"
   echo $dotted_line
