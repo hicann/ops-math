@@ -30,7 +30,7 @@ constexpr static uint32_t NUM_2048 = 2048;
 constexpr int64_t CORE_ALIGN_SIZE = 512;
 constexpr static int32_t UNROLL = 4;
 constexpr static int32_t CUTHREADS = 256;
-constexpr uint16_t CORE_THREAD_NUM = 1024;
+constexpr uint16_t CORE_THREAD_NUM = 512;
 constexpr float double_epsilon = 2.22045e-16f; // std::numeric_limits<double>::epsilon()
 
 template <typename T, typename U>
