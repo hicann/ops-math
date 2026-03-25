@@ -28,6 +28,7 @@
 #include "../../op_kernel/arch35/dynamic_stitch_tiling_def.h"
 #include "platform/platform_info.h"
 #include "op_common/op_host/util/math_util.h"
+#include "op_host/tiling_util.h"
 
 using namespace Ops::Math::OpTiling;
 
@@ -35,7 +36,6 @@ namespace optiling {
 struct DynamicStitchCompileInfo {
     uint64_t blockDim;
     uint64_t ubSize;
-    platform_ascendc::SocVersion socVersion;
 };
 
 enum class SliceDivisorType : int64_t
@@ -62,7 +62,7 @@ protected:
     ge::graphStatus GetPlatformInfo() override;
     bool IsCapable() override
     {
-        return socVersion_ == platform_ascendc::SocVersion::ASCEND950;
+        return IsRegbaseSocVersion(context_);
     }
     ge::graphStatus DoOpTiling() override;
     ge::graphStatus DoLibApiTiling() override
@@ -94,7 +94,6 @@ private:
     void PrintTiling() const;
     bool IsBigSliceSize() const;
 
-    platform_ascendc::SocVersion socVersion_ = platform_ascendc::SocVersion::ASCEND950;
     ge::DataType dataType_ = ge::DT_UNDEFINED;
     int64_t clrBlockNum_{0};
     int64_t clrBlockWsSize_{0};

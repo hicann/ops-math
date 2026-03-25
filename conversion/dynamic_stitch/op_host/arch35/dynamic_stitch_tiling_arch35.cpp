@@ -52,7 +52,6 @@ ge::graphStatus DynamicStitchTilingClass::GetPlatformInfo()
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo != nullptr) {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
-        socVersion_ = ascendcPlatform.GetSocVersion();
         aicoreParams_.numBlocks = ascendcPlatform.GetCoreNumAiv();
         uint64_t ubSizePlatForm;
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
@@ -62,7 +61,6 @@ ge::graphStatus DynamicStitchTilingClass::GetPlatformInfo()
         OP_CHECK_IF(
             compileInfoPtr == nullptr, OP_LOGE(context_->GetNodeName(), "compile info is null"),
             return ge::GRAPH_FAILED);
-        socVersion_ = compileInfoPtr->socVersion;
         aicoreParams_.numBlocks = compileInfoPtr->blockDim;
         aicoreParams_.ubSize = compileInfoPtr->ubSize;
     }
@@ -558,7 +556,6 @@ static ge::graphStatus TilingPrepare4DynamicStitchTiling(gert::TilingParseContex
     auto compileInfoPtr = context->GetCompiledInfo<DynamicStitchCompileInfo>();
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
     compileInfoPtr->blockDim = ascendcPlatform.GetCoreNum();
-    compileInfoPtr->socVersion = ascendcPlatform.GetSocVersion();
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, compileInfoPtr->ubSize);
     return ge::GRAPH_SUCCESS;
 }

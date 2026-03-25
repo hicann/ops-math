@@ -42,7 +42,7 @@ class DynamicStitchTilingTest : public testing::Test {
 
 TEST_F(DynamicStitchTilingTest, DynamicStitchTiling_tiling_test_1)
 {
-    optiling::DynamicStitchCompileInfo compileInfo = {64, 245760, platform_ascendc::SocVersion::ASCEND950};
+    optiling::DynamicStitchCompileInfo compileInfo = {64, 245760};
     gert::TilingContextPara tilingContextPara("DynamicStitch",
                                               {
                                                 {{{24, 4, 128}, {24, 4, 128}}, ge::DT_INT32, ge::FORMAT_ND},
@@ -62,7 +62,7 @@ TEST_F(DynamicStitchTilingTest, DynamicStitchTiling_tiling_test_1)
 
 TEST_F(DynamicStitchTilingTest, DynamicStitchTiling_tiling_test_multi_dim_slice)
 {
-    optiling::DynamicStitchCompileInfo compileInfo = {64, 245760, platform_ascendc::SocVersion::ASCEND950};
+    optiling::DynamicStitchCompileInfo compileInfo = {64, 245760};
     gert::TilingContextPara tilingContextPara("DynamicStitch",
                                               {
                                                 {{{24, 4, 128}, {24, 4, 128}}, ge::DT_INT32, ge::FORMAT_ND},
@@ -82,7 +82,7 @@ TEST_F(DynamicStitchTilingTest, DynamicStitchTiling_tiling_test_multi_dim_slice)
 
 TEST_F(DynamicStitchTilingTest, DynamicStitchTiling_tiling_test_for_zero_slice)
 {
-    optiling::DynamicStitchCompileInfo compileInfo = {64, 245760, platform_ascendc::SocVersion::ASCEND950};
+    optiling::DynamicStitchCompileInfo compileInfo = {64, 245760};
     gert::TilingContextPara tilingContextPara("DynamicStitch",
                                               {
                                                 {{{24, 4, 128}, {24, 4, 128}}, ge::DT_INT32, ge::FORMAT_ND},
@@ -102,7 +102,7 @@ TEST_F(DynamicStitchTilingTest, DynamicStitchTiling_tiling_test_for_zero_slice)
 
 TEST_F(DynamicStitchTilingTest, DynamicStitchTiling_tiling_test_for_large_slice)
 {
-    optiling::DynamicStitchCompileInfo compileInfo = {64, 245760, platform_ascendc::SocVersion::ASCEND950};
+    optiling::DynamicStitchCompileInfo compileInfo = {64, 245760};
     gert::TilingContextPara tilingContextPara("DynamicStitch",
                                               {
                                                 {{{24, 4, 128}, {24, 4, 128}}, ge::DT_INT32, ge::FORMAT_ND},
