@@ -13,7 +13,6 @@
  * \brief top_k_v2 impl
  */
 #include "top_k_v2_tiling_arch35.h"
-#include <vector>
 #include "log/log.h"
 #include "util/math_util.h"
 #include "util/platform_util.h"
@@ -109,27 +108,6 @@ ge::graphStatus GetTopkApiTmpBufferSize(
         aglinInnerValue);
     OP_CHECK_IF(
         false == isSuccess, OP_LOGE(context->GetNodeName(), "Get topk api temp buffer fail"), return ge::GRAPH_FAILED);
-    topkTilingData.set_topkAcApiTmpBufferSize(maxBufferSize);
-    return ge::GRAPH_SUCCESS;
-}
-
-ge::graphStatus GetSortApiTmpBufferSize(TopKV2TilingDataSimd& topkTilingData, int64_t lastAxisNum, 
-    bool isLargest, ge::DataType dataType, ge::DataType indicesDType)
-{
-    uint32_t maxBufferSize = 0;
-    uint32_t minBufferSize = 0;
-    int64_t lastAxisNumAlign = Ops::Base::CeilAlign(lastAxisNum, static_cast<int64_t>(topkV2DataInfo::AGLIN_FACTOR));
-
-    std::vector<int64_t> shape_vec = {lastAxisNumAlign};
-    ge::Shape srcShape(shape_vec);
-
-    AscendC::SortConfig config = {AscendC::SortType::RADIX_SORT, isLargest};
-
-    AscendC::GetSortMaxMinTmpSize(srcShape, dataType, indicesDType, false, config, maxBufferSize, minBufferSize);
-
-    OP_LOGI("TopKV2TilingForAscendC", "Need tmp buffer %u byte for sort api", maxBufferSize);
-    OP_LOGI("TopKV2TilingForAscendC", "lastAxisNumAlign=%ld", lastAxisNumAlign);
-
     topkTilingData.set_topkAcApiTmpBufferSize(maxBufferSize);
     return ge::GRAPH_SUCCESS;
 }
@@ -341,30 +319,28 @@ uint64_t GetSingleBlockTopkRunTimeNeedSpace(
         Ops::Base::CeilAlign(static_cast<uint64_t>(kValue * indexToDtypeSize), topkV2DataInfo::AGLIN_FACTOR);
     uint64_t aglinIndicesOutTbuf =
         Ops::Base::CeilAlign(static_cast<uint64_t>(kValue * sizeof(int32_t)), topkV2DataInfo::AGLIN_FACTOR);
-    // 留ub空间给kernel的valuesTmpForSortQue_、indicesTmpForSortQue_
-    uint64_t valueTempForSortSize = Ops::Base::CeilAlign(static_cast<uint64_t>(lastAxisNum * xDtypeSize), topkV2DataInfo::AGLIN_FACTOR);
-    uint64_t indicesTempForSortSize = Ops::Base::CeilAlign(static_cast<uint64_t>(lastAxisNum * indexToDtypeSize), topkV2DataInfo::AGLIN_FACTOR);
-
     uint64_t initUb = batchNumInUb * (aglinkValue * xDtypeSize + aglinkValueMultDtypeSize +
-        aglinkValueMultIndexDtypeSize + aglinIndicesOutTbuf) + valueTempForSortSize + indicesTempForSortSize;
+                                      aglinkValueMultIndexDtypeSize + aglinIndicesOutTbuf);
     return initUb;
 }
 
 uint32_t ComputeSingleBlockTileData(
-    TopKV2TilingDataSimd& topkTilingData, ge::DataType dataType,
-    ge::DataType indicesDType, bool isLargest, int64_t lastAxisNum, int64_t kValue,
+    gert::TilingContext* context, TopKV2TilingDataSimd& topkTilingData, ge::DataType dataType,
+    ge::DataType indicesDType, bool isLargest, bool isSort, int64_t lastAxisNum, int64_t kValue,
     uint64_t ubSizePlatForm)
 {
     uint32_t xDtypeSize = static_cast<uint32_t>(topkV2DataInfo::tilingDataTypeBitMap.find(dataType)->second);
     uint32_t indexToDtypeSize = static_cast<uint32_t>(topkV2DataInfo::tilingDataTypeBitMap.find(indicesDType)->second);
     uint32_t tileData = (topkV2DataInfo::b64DataTypeBitMap.count(dataType) != 0) ? topkV2DataInfo::TMP_DATA_NUM_B64 :
                                                                                    topkV2DataInfo::TMP_DATA_NUM;
-    GetSortApiTmpBufferSize(topkTilingData, lastAxisNum, isLargest, dataType, indicesDType);
+    GetTopkApiTmpBufferSize(context, topkTilingData, tileData, kValue, isLargest, dataType, isSort, tileData);
     uint32_t topkAcApiNeedBuffer = topkTilingData.get_topkAcApiTmpBufferSize();
     uint64_t needSpace =
         GetSingleBlockTopkRunTimeNeedSpace(lastAxisNum, tileData, xDtypeSize, indexToDtypeSize, kValue);
     while (topkAcApiNeedBuffer + needSpace > ubSizePlatForm) {
         tileData = tileData - topkV2DataInfo::BIN_NUM;
+        GetTopkApiTmpBufferSize(context, topkTilingData, tileData, kValue, isLargest, dataType, isSort, tileData);
+        topkAcApiNeedBuffer = topkTilingData.get_topkAcApiTmpBufferSize();
         needSpace = GetSingleBlockTopkRunTimeNeedSpace(lastAxisNum, tileData, xDtypeSize, indexToDtypeSize, kValue);
     }
     OP_LOGI(
@@ -829,7 +805,7 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
         dataTypeKey += topkV2DataInfo::MERGE_SORT_TILING_OFFSET;
     } else if (lastAxisNum <= nowTileSize) {
         uint32_t nowTileSizeTmp = ComputeSingleBlockTileData(
-            topkTilingData, dataType, indicesDType, *isLargest, lastAxisNum, outLastAxisNum,
+            context, topkTilingData, dataType, indicesDType, *isLargest, *isSorted, lastAxisNum, outLastAxisNum,
             ubSizePlatForm);
         TileModeSmallSize(unsortedDimNum, maxCoreNum, lastAxisNum, topkTilingData, topkTileInfo, nowTileSizeTmp);
     } else if (IsModeSingleCore(unsortedDimNum, maxCoreNum, static_cast<uint32_t>(lastAxisNum))) {
