@@ -36,12 +36,11 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
 
 inline static bool CheckNotNull(const aclTensor *self, const aclTensor *A,
-                                const aclTensor *xOut, const aclTensor *mOut)
+                                const aclTensor *xOut)
 {
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(A, return false);
     OP_CHECK_NULL(xOut, return false);
-    OP_CHECK_NULL(mOut, return false);
     return true;
 }
 
@@ -54,11 +53,15 @@ inline static bool CheckDtypeValid(const aclTensor *self, const aclTensor *A,
     OP_CHECK_DTYPE_NOT_SUPPORT(A, DTYPE_SUPPORT_LIST, return false);
     // 检查xOut的数据类型是否在triangularSolve算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(xOut, DTYPE_SUPPORT_LIST, return false);
-    // 检查mOut的数据类型是否在triangularSolve算子的支持列表内
-    OP_CHECK_DTYPE_NOT_SUPPORT(mOut, DTYPE_SUPPORT_LIST, return false);
+
     OP_CHECK_DTYPE_NOT_SAME(self, A, return false);
     OP_CHECK_DTYPE_NOT_SAME(self, xOut, return false);
-    OP_CHECK_DTYPE_NOT_SAME(self, mOut, return false);
+    if (mOut != nullptr) {
+        // 检查mOut的数据类型是否在triangularSolve算子的支持列表内
+        OP_CHECK_DTYPE_NOT_SUPPORT(mOut, DTYPE_SUPPORT_LIST, return false);
+        OP_CHECK_DTYPE_NOT_SAME(self, mOut, return false);
+    }
+
     return true;
 }
 
@@ -69,11 +72,9 @@ static bool CheckShape(const aclTensor *self, const aclTensor *A,
     OP_CHECK_MIN_DIM(self, 2, return false);
     OP_CHECK_MIN_DIM(A, 2, return false);
     OP_CHECK_MIN_DIM(xOut, 2, return false);
-    OP_CHECK_MIN_DIM(mOut, 2, return false);
     OP_CHECK_MAX_DIM(self, 8, return false);
     OP_CHECK_MAX_DIM(A, 8, return false);
     OP_CHECK_MAX_DIM(xOut, 8, return false);
-    OP_CHECK_MAX_DIM(mOut, 8, return false);
     // A最后两维相等
     auto aShape = A->GetViewShape();
     size_t aDimNum = aShape.GetDimNum();
@@ -107,9 +108,13 @@ static bool CheckShape(const aclTensor *self, const aclTensor *A,
     auto xShape = broadcastShape;
     xShape.SetDim(xShape.GetDimNum() - 1, bWDim);
     OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(xOut, xShape, return false);
-    // mOut shape与broadcast后的A相同(*, m, m)
-    auto mShape = broadcastShape;
-    OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(mOut, mShape, return false);
+    if (mOut != nullptr) {
+        // mOut shape与broadcast后的A相同(*, m, m)
+        OP_CHECK_MIN_DIM(mOut, 2, return false);
+        OP_CHECK_MAX_DIM(mOut, 8, return false);
+        auto mShape = broadcastShape;
+        OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(mOut, mShape, return false);
+    }
     return true;
 }
 
@@ -117,7 +122,7 @@ static aclnnStatus CheckParams(const aclTensor *self, const aclTensor *A,
                                const aclTensor *xOut, const aclTensor *mOut)
 {
     // 1. 检查参数是否为空指针
-    CHECK_RET(CheckNotNull(self, A, xOut, mOut), ACLNN_ERR_INNER_NULLPTR);
+    CHECK_RET(CheckNotNull(self, A, xOut), ACLNN_ERR_INNER_NULLPTR);
     // 2. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
     CHECK_RET(CheckDtypeValid(self, A, xOut, mOut), ACLNN_ERR_PARAM_INVALID);
     // 3. ND 算子不检查格式
@@ -206,15 +211,17 @@ aclnnStatus aclnnTriangularSolveGetWorkspaceSize(
         selfBroadcast = BroadcastTensor(xOut->GetViewShape(), selfContiguous, uniqueExecutor.get());
         CHECK_RET(selfBroadcast != nullptr, ACLNN_ERR_INNER_NULLPTR);
     }
-    if (aContiguous->GetViewShape() != mOut->GetViewShape()) {
-        aBroadcast = BroadcastTensor(mOut->GetViewShape(), aContiguous, uniqueExecutor.get());
-        CHECK_RET(aBroadcast != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    }
+    if (mOut != nullptr) {
+        if (aContiguous->GetViewShape() != mOut->GetViewShape()) {
+            aBroadcast = BroadcastTensor(mOut->GetViewShape(), aContiguous, uniqueExecutor.get());
+            CHECK_RET(aBroadcast != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        }
 
-    // a broadcast之后的结果作为输出mOut
-    auto resultM = aBroadcast;
-    auto viewCopyResultM = l0op::ViewCopy(resultM, mOut, uniqueExecutor.get());
-    CHECK_RET(viewCopyResultM != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        // a broadcast之后的结果作为输出mOut
+        auto resultM = aBroadcast;
+        auto viewCopyResultM = l0op::ViewCopy(resultM, mOut, uniqueExecutor.get());
+        CHECK_RET(viewCopyResultM != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    }
 
     // 若 unitriangular为true，需要归一A主对角线
     if (unitriangular) {
