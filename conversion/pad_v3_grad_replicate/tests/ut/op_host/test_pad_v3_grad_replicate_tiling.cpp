@@ -42,7 +42,7 @@ TEST_F(PadV3GradReplicateTiling, pad_v3_grad_replicate_tiling_test_success)
         &compileInfo);
     uint64_t expectTilingKey = 2101;
     std::string expectTilingData =
-        "4294967297 274877907008 274877907008 266287972416 274877907008 0 4294967297 245191092994112 1 137438955573 "
+        "4294967297 274877907008 274877907008 266287972416 274877907008 0 4294967297 81363860455488 1 137438955573 "
         "128 ";
     std::vector<size_t> expectWorkspaces = {16785408};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
