@@ -19,18 +19,19 @@ namespace ops
 class TransData : public OpDef
 {
 public:
-    const std::vector<ge::DataType> dType = {ge::DT_INT8, ge::DT_UINT8, ge::DT_INT16, ge::DT_UINT16, ge::DT_FLOAT16,
-                                             ge::DT_BF16, ge::DT_INT32, ge::DT_UINT32, ge::DT_FLOAT, ge::DT_FLOAT,
-                                             ge::DT_FLOAT, ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT4_E2M1, ge::DT_HIFLOAT8, ge::DT_UINT8};
-    const std::vector<ge::Format> srcFormat = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    const std::vector<ge::DataType> dType = {ge::DT_INT8,        ge::DT_UINT8,    ge::DT_INT16, ge::DT_UINT16,
+                                             ge::DT_FLOAT16,     ge::DT_BF16,     ge::DT_INT32, ge::DT_UINT32,
+                                             ge::DT_FLOAT,       ge::DT_FLOAT,    ge::DT_FLOAT, ge::DT_FLOAT8_E4M3FN,
+                                             ge::DT_FLOAT4_E2M1, ge::DT_HIFLOAT8, ge::DT_UINT8, ge::DT_FLOAT4_E2M1};
+    const std::vector<ge::Format> srcFormat = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
                                                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
     const std::vector<ge::Format> dstFormat = {
-        ge::FORMAT_FRACTAL_NZ,       ge::FORMAT_FRACTAL_NZ,       ge::FORMAT_FRACTAL_NZ,
-        ge::FORMAT_FRACTAL_NZ,       ge::FORMAT_FRACTAL_NZ,       ge::FORMAT_FRACTAL_NZ,
-        ge::FORMAT_FRACTAL_NZ_C0_16, ge::FORMAT_FRACTAL_NZ_C0_16, ge::FORMAT_FRACTAL_NZ_C0_16, ge::FORMAT_FRACTAL_NZ,
-        ge::FORMAT_FRACTAL_NZ_C0_32, ge::FORMAT_FRACTAL_NZ,       ge::FORMAT_FRACTAL_NZ_C0_32, ge::FORMAT_FRACTAL_NZ, ge::FORMAT_FRACTAL_NZ};
+        ge::FORMAT_FRACTAL_NZ,       ge::FORMAT_FRACTAL_NZ, ge::FORMAT_FRACTAL_NZ,       ge::FORMAT_FRACTAL_NZ,
+        ge::FORMAT_FRACTAL_NZ,       ge::FORMAT_FRACTAL_NZ, ge::FORMAT_FRACTAL_NZ_C0_16, ge::FORMAT_FRACTAL_NZ_C0_16,
+        ge::FORMAT_FRACTAL_NZ_C0_16, ge::FORMAT_FRACTAL_NZ, ge::FORMAT_FRACTAL_NZ_C0_32, ge::FORMAT_FRACTAL_NZ,
+        ge::FORMAT_FRACTAL_NZ_C0_32, ge::FORMAT_FRACTAL_NZ, ge::FORMAT_FRACTAL_NZ,       ge::FORMAT_FRACTAL_NZ};
 
     explicit TransData(const char* name) : OpDef(name)
     {

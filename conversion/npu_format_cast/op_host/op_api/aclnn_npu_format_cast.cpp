@@ -45,6 +45,7 @@ static constexpr size_t DIMS_FIVE = 5;
 static constexpr size_t DIMS_SIX = 6;
 static constexpr size_t DIMS_EIGHT = 8;
 static constexpr int64_t BLOCK_SIZE = 32;
+static constexpr size_t FRACTAL_NZ_C0_4B = 64;
 
 const std::set<std::pair<op::Format, op::Format>> kTransdataForwardFormatPairs = {
     {op::Format::FORMAT_ND, op::Format::FORMAT_FRACTAL_NZ},
@@ -79,7 +80,8 @@ static bool IsNonQuantMatmulDtype(int dtype, op::Format dstFormat = op::Format::
 static bool IsQuantMatmulDtype(const DataType srcDtype, const DataType dstDtype)
 {
     return srcDtype == dstDtype &&
-           (srcDtype == ge::DT_INT8 || srcDtype == ge::DT_UINT8 || srcDtype == ge::DT_FLOAT8_E4M3FN || srcDtype == ge::DT_HIFLOAT8 || srcDtype == ge::DT_UINT8);
+           (srcDtype == ge::DT_INT8 || srcDtype == ge::DT_UINT8 || srcDtype == ge::DT_FLOAT8_E4M3FN ||
+            srcDtype == ge::DT_HIFLOAT8 || srcDtype == ge::DT_UINT8 || srcDtype == ge::DT_FLOAT4_E2M1);
 }
 
 static bool CheckInputFormatSupportedToNz(const op::Format inputFormat)
@@ -135,10 +137,12 @@ static aclnnStatus ValidateQuantMatmulParams(
     int32_t additionalDtype, [[maybe_unused]] const gert::Shape& viewShape, size_t viewShapeDim)
 {
     OP_CHECK(
-        additionalDtype == ge::DT_INT8 || additionalDtype == ge::DT_UINT8 || additionalDtype == ge::DT_FLOAT8_E4M3FN || additionalDtype == ge::DT_HIFLOAT8,
+        additionalDtype == ge::DT_INT8 || additionalDtype == ge::DT_UINT8 || additionalDtype == ge::DT_FLOAT8_E4M3FN ||
+            additionalDtype == ge::DT_HIFLOAT8 || additionalDtype == ge::DT_FLOAT4_E2M1,
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID,
-            "Only support additionalDtype is int8/uint8/float8_e4m3fn/hifloat8 when additionalDtype equals srcTensors's dtype and "
+            "Only support additionalDtype is int8/uint8/float8_e4m3fn/hifloat8 when additionalDtype equals "
+            "srcTensors's dtype and "
             "additionalDtype "
             "is not float16 or bfloat16, current additionalDtype: [%s].",
             op::ToString(static_cast<op::DataType>(additionalDtype)).GetString()),
@@ -385,6 +389,9 @@ aclnnStatus CalcNdToNz(
         static_cast<op::DataType>(additionalDtype) == srcDtype) {
         // 当前要求C0 * ge::GetSizeByDataType(dtype) = 32B
         c0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
+        if (additionalDtype == ge::DT_FLOAT4_E2M1) {
+            c0 = FRACTAL_NZ_C0_4B;
+        }
         *actualFormat = op::Format::FORMAT_FRACTAL_NZ;
     } else {
         // 当A矩阵数据类型大小为2B，C0 = 16

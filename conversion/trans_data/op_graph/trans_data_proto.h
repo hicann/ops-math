@@ -83,6 +83,7 @@ namespace ge
 | FRACTAL_Z_C04 ====> NCHW    | float32                            | 16    | 1      |\n
 | ND ====> FRACTAL_NZ_C0_16   | float32, uint32, int32             | 16    | 1      |\n
 | ND ====> FRACTAL_NZ_C0_32   | float4_e2m1                        | 32    | 1      |\n
+| ND ====> FRACTAL_NZ_C0_64   | float4_e2m1                        | 64    | 1      |\n
 *\n
 *
 */

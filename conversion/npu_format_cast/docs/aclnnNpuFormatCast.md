@@ -400,6 +400,7 @@ aclnnStatus aclnnNpuFormatCast(
       | BFLOAT16     | ACL_FORMAT_FRACTAL_NZ(29) | ACL_BF16(27)   | ACL_FORMAT_FRACTAL_NZ(29) |
       | FLOAT8_E4M3FN     | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT8_E4M3FN(36)   | ACL_FORMAT_FRACTAL_NZ(29) |
       | FLOAT4_E2M1 | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT8_E4M3FN(36)   | ACL_FORMAT_FRACTAL_NZ(29) |
+      | FLOAT4_E2M1 | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT4_E2M1(40)   | ACL_FORMAT_FRACTAL_NZ(29) |
 
     - aclnnNpuFormatCastGetWorkspaceSize接口：
 
@@ -412,6 +413,7 @@ aclnnStatus aclnnNpuFormatCast(
       | BFLOAT16  | BFLOAT16          | ACL_FORMAT_FRACTAL_NZ(29)       |
       | FLOAT8_E4M3FN  | FLOAT8_E4M3FN          | ACL_FORMAT_FRACTAL_NZ(29)       |
       | FLOAT4_E2M1  | FLOAT4_E2M1          | ACL_FORMAT_FRACTAL_NZ_C0_32(51)       |
+      | FLOAT4_E2M1  | FLOAT4_E2M1          | ACL_FORMAT_FRACTAL_NZ(29)       |
 
     - C0计算方法：$C0=\frac{32B}{size\ of\ additionalDtype}$
 
