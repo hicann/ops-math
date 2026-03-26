@@ -75,3 +75,4 @@
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
 | aclnn调用 | [test_aclnn_inplace_one](./examples/test_aclnn_inplace_one.cpp) | 通过[aclnnInplaceOne](./docs/aclnnInplaceOne.md)接口方式调用OnesLike算子。 |
+

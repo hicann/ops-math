@@ -20,7 +20,6 @@
   - 以二维为例，`wrap`为False时，填充位置为 `[r, r]`，其中`0 <= r < m`，`m = min(col, row)`，`col`为列的长度，`row`为行的长度。
   - `wrap`为True时，填充位置为 `[r + (m + 1) * i , r]`，其中`0 <= r < m`，`m = min(col, row)`，`col`为列的长度，`row`为行的长度，`0 <= i < col // m`。
 
-
 ## 参数说明
 
 <table style="undefined;table-layout: fixed; width: 1043px"><colgroup>
@@ -76,4 +75,3 @@
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | aclnn接口 | [test_aclnn_inplace_fill_diagonal](./examples/test_aclnn_fill_diagonal_v2.cpp) | 通过[aclnnInplaceFillDiagonal](docs/aclnnInplaceFillDiagonal.md)接口方式调用InplaceFillDiagonal算子。 |
-

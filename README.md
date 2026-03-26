@@ -1,6 +1,7 @@
 # ops-math
 
 ## 🔥Latest News
+
 - [2026/01] 新增[QuickStart](docs/QUICKSTART.md)，指导新手零基础入门算子项目部署（支持Docker环境）、算子开发和贡献流程。
 - [2025/12] 开源算子支持Ascend 950PR/Ascend 950DT，可以通过CANN Simulator仿真工具开发调试；在add算子中增加了<<<>>>kernel异构调用示例，方便用户自定义使用；在多个类别中新支持算子[concat](conversion/concat/)、[lerp](math/lerp/)、[drop_out_v3](random/drop_out_v3/)等。
 - [2025/11] 完善多个算子README描述，改进算子开发实例文档及example。
@@ -37,7 +38,9 @@ ops-math是[CANN](https://hiascend.com/software/cann) （Compute Architecture fo
 除了上述关键教程，还有其他文档介绍，例如算子调用方式、build参数说明、术语概念等，全量文档请访问[docs](docs/README.md)。
 
 ## 🔍目录结构
+
 关键目录如下，详细目录介绍参见[项目目录](./docs/zh/install/dir_structure.md)。
+
 ```
 ├── cmake                          # 项目工程编译目录
 ├── common                         # 项目公共头文件和公共源码

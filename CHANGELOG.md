@@ -3,6 +3,7 @@
 > 本文档记录各版本的重要变更，版本按时间倒序排列。
 
 ## v8.5.0-beta.1
+
 发布日期：2025-12-30
 
 ops-math 首个 Beta 版本 v8.5.0-beta.1 现已发布。
@@ -11,6 +12,7 @@ ops-math 首个 Beta 版本 v8.5.0-beta.1 现已发布。
 使用方式请参阅[官方文档](https://gitcode.com/cann/ops-math/blob/master/README.md)。
 
 ### 🔗 版本地址
+
 [CANN 8.5.0-beta 1](https://ascend.devcloud.huaweicloud.com/cann/run/software/8.5.0-beta.1/)
 
 ```
@@ -22,6 +24,7 @@ ops-math 首个 Beta 版本 v8.5.0-beta.1 现已发布。
 │   ├── ops                  # ops算子包目录，用于归档算子子包
 │   ├── ...
 ```
+
 ### 📌 版本配套
 
 **ops-math子包及相关组件与CANN版本配套关系**

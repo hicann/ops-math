@@ -1,6 +1,6 @@
 # Axpy
 
-##  产品支持情况
+## 产品支持情况
 
 | 产品                                            | 是否支持 |
 |-----------------------------------------------|:----:|
@@ -20,6 +20,7 @@
 $out_i=self_i + alpha × other_i$
 
 ## 参数说明
+
 <table style="undefined;table-layout: fixed; width: 820px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
@@ -67,6 +68,7 @@ $out_i=self_i + alpha × other_i$
   </tbody></table>
 
 ## 约束说明
+
 无
 
 ## 调用说明

@@ -47,20 +47,25 @@ bash build.sh --pkg --soc=ascend910b --ops=add_example -j16
 ```
 
 若提示如下信息，说明编译成功。
+
 ```bash
 Self-extractable archive "cann-ops-math-custom-linux.${arch}.run" successfully created.
 ```
+
 编译成功后，run包存放于项目根目录的build_out目录下。
 
 ### 3. 安装AddExample算子包
+
 ```bash
 ./build_out/cann-ops-math-*linux*.run
 ```
+
 `AddExample`安装在```${ASCEND_HOME_PATH}/opp/vendors```路径中，```${ASCEND_HOME_PATH}```表示CANN软件安装目录。
 
 ### 4. 配置环境变量
 
 将自定义算子包的路径加入环境变量，确保运行时能够找到。
+
 ```bash
 export LD_LIBRARY_PATH=${ASCEND_HOME_PATH}/opp/vendors/custom_math/op_api/lib:${LD_LIBRARY_PATH}
 ```
@@ -74,6 +79,7 @@ export LD_LIBRARY_PATH=${ASCEND_HOME_PATH}/opp/vendors/custom_math/op_api/lib:${
 ```bash
 bash build.sh --run_example add_example eager cust --vendor_name=custom
 ```
+
 预期输出：打印算子`AddExample`的加法计算结果，表明算子已成功部署并正确执行。
 
 ```
@@ -93,6 +99,7 @@ add_example first input[7] is: 1.000000, second input[7] is: 1.000000, result[7]
 本阶段目的是对已成功运行的AddExample算子尝试**修改核函数代码**。
 
 ### 1. 修改Kernel实现
+
 找到AddExample算子的核心kernel实现文件`ops-math/examples/add_example/op_kernel/add_example.h`，尝试将算子中的Add操作改为Mul操作：
 
 ```cpp
@@ -115,6 +122,7 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
 重复[编译运行](#一编译运行)章节中的步骤：
 
 1. **重新编译**：
+
     先回到项目根目录，编译命令如下：
     
     ```bash
@@ -122,16 +130,19 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
     ```
     
 2. **重新安装**：
+
     ```bash
     ./build_out/cann-ops-math-*linux*.run
     ```
 
 3. **重新验证**：
+
     ```bash
     bash build.sh --run_example add_example eager cust --vendor_name=custom
     ```
 
 4. **成功标志**：输出结果变成乘法结果。
+
     ```
     add_example first input[0] is: 1.000000, second input[0] is: 1.000000, result[0] is: 1.000000
     add_example first input[1] is: 1.000000, second input[1] is: 1.000000, result[1] is: 1.000000
@@ -145,9 +156,11 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
     ```
 
 ## 三、算子调试
+
 本阶段以AddExample为例，在算子中添加打印并采集算子性能数据，以便后续问题分析定位。
 
 ### 1. 打印
+
 算子如果出现执行失败、精度异常等问题，添加打印进行问题分析和定位。
 
 请在`examples/add_example/op_kernel/add_example.h`中进行代码修改。
@@ -164,6 +177,7 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
   // 打印当前核计算Block长度
   AscendC::PRINTF("Tiling blockLength is %llu\n", blockLength_);
   ```
+  
 * **DumpTensor**
 
   该接口支持Dump指定Tensor的内容，同时支持打印自定义附加信息，比如当前行号等，详细介绍请参见[《Ascend C API》](https://hiascend.com/document/redirect/CannCommunityAscendCApi)中“算子调测API > DumpTensor”。
@@ -173,6 +187,7 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
   // 打印zLocal Tensor信息
   DumpTensor(zLocal, 0, 128);
   ```
+
 ### 2. 性能采集
 
 当算子功能验证正确后，可通过`msprof`工具采集算子性能数据。
@@ -180,6 +195,7 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
 -  **生成可执行文件**
    
     调用AddExample算子的example样例，生成可执行文件（test_aclnn_add_example），该文件位于项目`ops-math/build`目录。
+
     ```bash
     bash build.sh --run_example add_example eager cust --vendor_name=custom
     ```
@@ -191,6 +207,7 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
     ```bash
     msprof --application="./test_aclnn_add_example"
     ```
+
 采集结果在项目`ops-math/build/`目录，msprof命令执行完后会自动解析并导出性能数据结果文件，详细内容请参见[msprof](https://www.hiascend.com/document/detail/zh/mindstudio/82RC1/T&ITools/Profiling/atlasprofiling_16_0110.html#ZH-CN_TOPIC_0000002504160251)。
 
 ## 四、算子验证
@@ -198,6 +215,7 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
 本阶段通过修改AddExample算子example样例中的输入数据，验证该算子在多种场景下的功能正确性。
 
 ### 1. 修改测试输入
+
 找到并编辑`AddExample`的`ops-math/examples/add_example/examples/test_aclnn_add_example.cpp`，修改输入张量的形状和数值。
 
 **修改输入/输出数据**：修改输入、输出的shape信息，以及初始化数据，构造相应的输入、输出tensor。
@@ -220,6 +238,7 @@ int main() {
     // ... 后续执行代码 ...
 }
 ```
+
 ### 2. 重新编译并验证
 
 1. 由于只修改了example测试代码，无需重新编译算子包。

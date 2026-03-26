@@ -22,6 +22,7 @@
 - 算子通过[PyTorch](https://gitee.com/ascend/pytorch)方式调用时，可能会因为版本不匹配导致运行错误，具体请参考[PyTorch安全声明](https://gitee.com/ascend/pytorch#%E5%AE%89%E5%85%A8%E5%A3%B0%E6%98%8E)。
 
 ## 公网地址声明
+
 本项目代码中包含的公网地址声明如下所示：
 
 |      类型      |                                           开源代码地址                                           |                            文件名                             |             公网IP地址/公网URL地址/域名/邮箱地址/压缩文件地址             |                   用途说明                    |
@@ -33,6 +34,7 @@
 ---
 
 ## 漏洞机制说明
+
 [漏洞管理](https://gitcode.com/cann/community/blob/master/security/security.md)
 
 ## 附录

@@ -1,4 +1,5 @@
 # SimThreadExponential
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -78,10 +79,8 @@
 
 无
 
-
 ## 调用说明
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | aclnn接口 | [test_sim_thread_exponential](tests/ut/op_kernel/test_sim_thread_exponential.cpp) | 通过[aclnnSimThreadExponential](docs/aclnnSimThreadExponential.md)接口方式调用SimThreadExponential算子。 |
-

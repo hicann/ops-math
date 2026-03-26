@@ -66,9 +66,9 @@
 
 ## 约束说明
 
-   - 输入shape限制：gradOutput、self 和 gradInput 的维度需一致（支持三/四维），且它们的形状需与 reflection_pad1d/reflection_pad2d 正向传播的输出形状相互一致。
+- 输入shape限制：gradOutput、self 和 gradInput 的维度需一致（支持三/四维），且它们的形状需与 reflection_pad1d/reflection_pad2d 正向传播的输出形状相互一致。
 
-  - 输入值域限制：padding长度为2时，padding的前两个值都需要小于self最后一维度的数值；长度为4时，padding的前两个值都需要小于self最后一维度的数值，后两个值需要小于倒数第二维的数值。
+- 输入值域限制：padding长度为2时，padding的前两个值都需要小于self最后一维度的数值；长度为4时，padding的前两个值都需要小于self最后一维度的数值，后两个值需要小于倒数第二维的数值。
 
 ## 调用说明
 

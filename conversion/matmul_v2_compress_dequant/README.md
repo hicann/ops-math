@@ -16,6 +16,7 @@
   x2_unzip = unzip(x2, compressIndex, compressInfo)
   result = (x1 @ x2_unzip + bias) * deqScale
   ```
+  
   其中x2表示右矩阵经过msModelSlim工具压缩后的一维数据，x2_unzip是接口内部进行无损解压缩后的数据（与原始右矩阵数据一致）。
 
 ## 参数说明约束说明

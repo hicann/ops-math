@@ -22,7 +22,9 @@
 >>> tf.dynamic_partition(x, partitions, num_partitions=2)
 [array([1, 3, 2]), array([6, 8, 9])]
 ```
+
 支持对多维张量的分区操作，例如将矩阵按行或列拆分：
+
 ```
 >>> x = tf.reshape(tf.range(12), [3, 4])
 // 按行分区

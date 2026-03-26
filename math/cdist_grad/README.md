@@ -11,7 +11,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 算子功能：完成Cdist的反向。。
@@ -32,7 +31,7 @@
   - $\mathrm{diff} = x_1 - x_2$ ：变量差值
   - $\mathrm{cdist} = \sqrt[p]{\sum (x_1 - x_2)^p}$ ： $p$ -范数距离
 
-## 参数说明：
+## 参数说明
   
   <table style="undefined;table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">

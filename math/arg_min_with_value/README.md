@@ -11,7 +11,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 算子功能：返回self中指定维度的最小值及其索引位置。最小值保存到out中，最小值的索引保存到indices中。如果keepdim为false，则不保留对应的轴；如果为true，则保留指定轴的维度值为1。
@@ -32,7 +31,6 @@
      * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：FLOAT、FLOAT16、INT64、BOOL、BFLOAT16
      * <term>Ascend 950PR/Ascend 950DT</term>：FLOAT、FLOAT16、INT64、BOOL、BFLOAT16、INT32
 
-
   - dim(int64_t, 计算输入)：指定的维度，数据类型为INT64，取值范围在[-self.dim(), self.dim())。
 
   - keepdim(bool，计算输入)：reduce轴的维度是否保留，数据类型为BOOL。
@@ -47,7 +45,6 @@
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
 
   - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
-
 
 - **返回值：**
 
@@ -71,7 +68,6 @@
   - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
 
   - stream(aclrtStream, 入参)：指定执行任务的Stream。
-
 
 - **返回值：**
 

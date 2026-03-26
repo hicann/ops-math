@@ -1,6 +1,6 @@
 # Log
 
-##  产品支持情况
+## 产品支持情况
 
 | 产品 | 是否支持 |
 | ---- | :----: | 
@@ -12,6 +12,7 @@
 | <term>Atlas 训练系列产品</term>                              |     ×    |
 
 ## 功能说明
+
 - 算子功能：对输入张量x的元素，逐元素进行对数计算，并将结果保存到输出张量y中。可支持多种类型输入张量，并支持对输入张量x进行缩放（shift/scale）操作。
 - 计算公式：
 
@@ -19,8 +20,8 @@
     y = log_{base}(shift + scale * x)
     $$
 
-
 ## 参数说明
+
 <table style="undefined;table-layout: fixed; width: 1576px"><colgroup>
   <col style="width: 170px">
   <col style="width: 170px">

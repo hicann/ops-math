@@ -28,7 +28,6 @@
     X[w,m]=\frac{1}{\sqrt{nFft}}(\sum_{k=0}^{winLength-1}window[k]*self[m*hopLength+k]*exp(-j*\frac{2{\pi}wk}{nFft}))
     $$
 
-
   其中：
   - $w$为FFT的频点。
   - $m$为滑动窗口的index。
@@ -119,7 +118,6 @@
       <td>ND</td>
     </tr>
   </tbody></table>
-
 
 ## 约束说明
 

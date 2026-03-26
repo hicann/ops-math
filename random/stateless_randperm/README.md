@@ -1,4 +1,5 @@
 # StatelessRandperm
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -9,7 +10,6 @@
 | Atlas 200I/500 A2 推理产品                      |    √     |
 | Atlas 推理系列产品                              |    √     |
 | Atlas 训练系列产品                              |    √     |
-
 
 ## 功能说明
 
@@ -81,10 +81,8 @@
 
 无
 
-
 ## 调用说明
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | aclnn接口 | [test_aclnn_randperm](examples/test_aclnn_randperm.cpp) | 通过[aclnnRandperm](docs/aclnnRandperm.md)接口方式调用StatelessRandperm算子。 |
-

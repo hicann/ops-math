@@ -11,13 +11,13 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 * 将输入张量的值舍入到最接近的整数，若该值与两个整数距离一样则向偶数取整。
 * 将输入张量的元素四舍五入到指定的位数。
 
 ## 参数说明
+
 <table style="undefined;table-layout: fixed; width: 1576px"><colgroup>
   <col style="width: 170px">
   <col style="width: 170px">
@@ -57,8 +57,8 @@
     </tr>
   </tbody></table>
 
-
 ## 约束说明
+
 * 当输入值在[-0.5, -0]之间时，输出值为0。
 * 针对decimals不为0的场景：输入数据超过(-347000, 347000)范围，精度可能会有影响。
 

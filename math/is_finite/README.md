@@ -68,5 +68,3 @@
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
 | aclnn调用 | [test_aclnn_is_finite](./examples/test_aclnn_is_finite.cpp) | 通过[aclnnIsFinite](./docs/aclnnIsFinite.md)接口方式调用IsFinite算子。    |
 | 图模式调用 | [test_geir_is_finite](./examples/test_geir_is_finite.cpp)   | 通过[算子IR](./op_graph/is_finite_proto.h)构图方式调用IsFinite算子。 |
-
-

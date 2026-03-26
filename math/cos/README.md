@@ -11,7 +11,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：对输入矩阵的每个元素进行余弦操作后输出。
@@ -22,9 +21,7 @@ $$
 out_{i}=cos(input_{i})
 $$
 
-
 ## 参数说明
-
 
 <table style="undefined;table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
@@ -59,9 +56,11 @@ $$
   </tbody></table>
 
   - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+
 ## 约束说明
 
 无
+
 ## 调用说明
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
