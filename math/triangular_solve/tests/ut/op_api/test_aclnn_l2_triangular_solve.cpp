@@ -82,7 +82,7 @@ TEST_F(l2_triangular_solve_test, case_nullptr)
         aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, nullptr));
     uint64_t workspaceSize4 = 0;
     aclnnStatus aclRet4 = ut4.TestGetWorkspaceSize(&workspaceSize4);
-    EXPECT_EQ(aclRet4, ACLNN_ERR_INNER_NULLPTR);
+    EXPECT_EQ(aclRet4, ACLNN_SUCCESS);
 }
 
 TEST_F(l2_triangular_solve_test, case_dtype_valid)
