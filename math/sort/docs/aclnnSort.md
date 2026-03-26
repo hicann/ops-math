@@ -15,12 +15,16 @@
 
 ## 功能说明
 
-- 接口功能：将输入tensor中的元素根据指定维度进行升序/降序， 并且返回对应的index值。输入tensor self总共是N维 [0, N-1]，根据dim指定的维度进行排序。
- 	 
+- 接口功能：将输入tensor中的元素根据指定维度进行升序/降序排序，返回排序后的结果值(valuesOut)以及对应的索引值(indicesOut)。
+
 - 计算公式：
 
 $$
-out[\mathbf{i}_{\neg dim}, j] = \text{arg\_sort}_{dim}(self[\mathbf{i}_{\neg dim}, :])[j]
+valuesOut[\mathbf{i}_{\neg dim}, j] = \text{sort}_{dim}(self[\mathbf{i}_{\neg dim}, :])[j]
+$$
+
+$$
+indicesOut[\mathbf{i}_{\neg dim}, j] = \text{argsort}_{dim}(self[\mathbf{i}_{\neg dim}, :])[j]
 $$
 
 ## 函数原型
@@ -160,7 +164,7 @@ aclnnStatus aclnnSort(
     - self数据类型不支持UINT16、UINT32、UINT64。
     - 当self的数据类型为BFLOAT16时，参数dim指定的轴不能等于1。
     - valuesOut数据类型不支持UINT16、UINT32、UINT64。
-  - <term>Ascend 950PR/Ascend 950DT</term>：valuesOut数据类型不支持DOUBLE、BOOL。
+  - <term>Ascend 950PR/Ascend 950DT</term>：valuesOut数据类型不支持DOUBLE。
 
 - **返回值**：
 

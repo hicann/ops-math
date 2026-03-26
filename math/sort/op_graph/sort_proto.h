@@ -30,7 +30,7 @@ namespace ge {
 
 *@par Attributes:
 * @li axis: An optional attribute indicates the sorting axis. Defaults to "-1".
-* @li descending: An optional attribute indicates desending sort or not. Defaults to "false".
+* @li descending: An optional attribute indicates descending sort or not. Defaults to "false".
 * @li stable: An optional attribute indicates the sort result of y2 is stable or not. Defaults to "false" . \n
 * @li y2_dtype: An optional attribute indicates the sort result of y2's dtype. Defaults to "int32" . \n
 
