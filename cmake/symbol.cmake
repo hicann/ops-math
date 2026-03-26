@@ -434,7 +434,54 @@ function(gen_onnx_plugin_symbol)
     TARGETS ${ONNX_PLUGIN_NAME}
     LIBRARY DESTINATION ${ONNX_PLUGIN_LIB_INSTALL_DIR}
     )
+endfunction()
 
+function(gen_tf_plugin_symbol)
+  if (NOT TARGET ${TF_PLUGIN_NAME}_obj)
+    return()
+  endif()
+
+  # 获取 OBJECT 库的源文件
+  get_target_property(_tf_plugin_sources ${TF_PLUGIN_NAME}_obj SOURCES)
+
+  # 过滤出 tf_plugin.cpp 源文件
+  if(_tf_plugin_sources)
+    list(FILTER _tf_plugin_sources INCLUDE REGEX "_tf_plugin\\.(cpp|cc|hpp)$")
+  endif()
+
+  # 如果没有 tf_plugin 源文件，跳过库创建
+  if(NOT _tf_plugin_sources)
+    message(STATUS "No tf_plugin sources found for ${TF_PLUGIN_NAME}_obj, skipping tf_plugin library creation")
+    return()
+  endif()
+
+  message(STATUS "tf_plugin sources for ${TF_PLUGIN_NAME}_obj: ${_tf_plugin_sources}")
+
+  add_library(
+    ${TF_PLUGIN_NAME} SHARED
+    $<TARGET_OBJECTS:${TF_PLUGIN_NAME}_obj>
+  )
+
+  target_link_libraries(
+    ${TF_PLUGIN_NAME}
+            PRIVATE $<BUILD_INTERFACE:intf_pub_cxx17>
+            c_sec
+            -Wl,--no-as-needed
+            register
+            -Wl,--as-needed
+            -Wl,--whole-archive
+            rt2_registry_static
+            -Wl,--no-whole-archive
+            unified_dlog
+            $<$<CONFIG:Release>:-s>
+  )
+
+  target_link_directories(${TF_PLUGIN_NAME} PRIVATE ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64)
+
+  install(
+    TARGETS ${TF_PLUGIN_NAME}
+    LIBRARY DESTINATION ${TF_PLUGIN_LIB_INSTALL_DIR}
+    )
 endfunction()
 
 function(gen_norm_symbol)
@@ -447,6 +494,8 @@ function(gen_norm_symbol)
   gen_opapi_symbol()
 
   gen_onnx_plugin_symbol()
+  
+  gen_tf_plugin_symbol()
 endfunction()
 
 function(gen_cust_symbol)

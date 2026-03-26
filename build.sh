@@ -9,7 +9,7 @@
 # ============================================================================
 
 set -e
-RELEASE_TARGETS=("ophost" "opapi" "opgraph" "opkernel" "opkernel_aicpu" "onnxplugin")
+RELEASE_TARGETS=("ophost" "opapi" "opgraph" "opkernel" "opkernel_aicpu" "onnxplugin" "tfplugin")
 UT_TARGETS=("ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "opkernel_aicpu_test")
 SUPPORT_COMPUTE_UNIT_SHORT=("ascend910b" "ascend910_93" "ascend950" "ascend310p" "ascend910" "ascend310b" "ascend630" "ascend610lite" "ascend031" "ascend035" "kirinx90"  "kirin9030" "mc62cm12a")
 # 所有支持的短选项
@@ -20,7 +20,7 @@ SUPPORTED_LONG_OPTS=(
   "help" "ops=" "soc=" "vendor_name=" "debug" "cov" "noexec" "aicpu" "opkernel" "opkernel_aicpu" "jit"
   "pkg" "asan" "valgrind" "make_clean" "static" "build-type=" "no_force" "simulator"
   "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "opkernel_aicpu_test"
-  "run_example" "genop=" "genop_aicpu=" "experimental" "cann_3rd_lib_path" "mssanitizer" "oom" "onnxplugin"
+  "run_example" "genop=" "genop_aicpu=" "experimental" "cann_3rd_lib_path" "mssanitizer" "oom" "onnxplugin" "tfplugin"
   "dump_cce" "bisheng_flags=" "kernel_template_input="
 )
 
@@ -295,6 +295,19 @@ usage() {
         echo "    bash build.sh --onnxplugin --debug"
         return
         ;;
+      tfplugin)
+        echo "TFPlugin Build Options:"
+        echo $dotted_line
+        echo "    --tfplugin             Build tfplugin library"
+        echo "    -j[n]                  Compile thread nums, default is 8, eg: -j8"
+        echo "    -O[n]                  Compile optimization options, support [O0 O1 O2 O3], eg:-O3"
+        echo "    --debug                Build with debug mode"
+        echo $dotted_line
+        echo "Examples:"
+        echo "    bash build.sh --tfplugin -j16 -O3"
+        echo "    bash build.sh --tfplugin --debug"
+        return
+        ;;
       run_example)
         echo "Run examples Options:"
         echo $dotted_line
@@ -361,6 +374,7 @@ usage() {
   echo "    --aicpu build aicpu task"
   echo "    --opgraph build opgraph_math.so"
   echo "    --onnxplugin build op_math_onnx_plugin.so"
+  echo "    --tfplugin build liboptf_plugin_math.so"
   echo "    --opapi build opapi_math.so"
   echo "    --ophost build ophost_math.so"
   echo "    --opkernel build binary kernel"
@@ -394,7 +408,7 @@ check_help_combinations() {
   for arg in "${args[@]}"; do
     case "$arg" in
       -u) has_u=true ;;
-      --ophost_test | --opapi_test | --opgraph_test | --ophost | --opapi | --opgraph | --onnxplugin)
+      --ophost_test | --opapi_test | --opgraph_test | --ophost | --opapi | --opgraph | --onnxplugin | --tfplugin)
         has_test_command=true
         has_build_command=true
         ;;
@@ -530,7 +544,7 @@ set_create_libs() {
     return
   fi
   if [[ "$ENABLE_PACKAGE" == "TRUE" && "$ENABLE_CUSTOM" != "TRUE" ]]; then
-    BUILD_LIBS=("ophost_${REPOSITORY_NAME}" "opapi_${REPOSITORY_NAME}" "opgraph_${REPOSITORY_NAME}" "op_${REPOSITORY_NAME}_onnx_plugin")
+    BUILD_LIBS=("ophost_${REPOSITORY_NAME}" "opapi_${REPOSITORY_NAME}" "opgraph_${REPOSITORY_NAME}" "op_${REPOSITORY_NAME}_onnx_plugin" "optf_plugin_${REPOSITORY_NAME}")
     ENABLE_CREATE_LIB=TRUE
   else
     if [[ "$OP_HOST" == "TRUE" ]]; then
@@ -547,6 +561,10 @@ set_create_libs() {
     fi
     if [[ "$ONNX_PLUGIN" == "TRUE" ]]; then
       BUILD_LIBS+=("op_${REPOSITORY_NAME}_onnx_plugin")
+      ENABLE_CREATE_LIB=TRUE
+    fi
+    if [[ "$TF_PLUGIN" == "TRUE" ]]; then
+      BUILD_LIBS+=("optf_plugin_${REPOSITORY_NAME}")
       ENABLE_CREATE_LIB=TRUE
     fi
     if [[ "$OP_KERNEL" == "TRUE" ]]; then
@@ -733,6 +751,7 @@ checkopts() {
   OP_HOST=FALSE
   OP_GRAPH=FALSE
   ONNX_PLUGIN=FALSE
+  TF_PLUGIN=FALSE
   OP_KERNEL=FALSE
   OP_KERNEL_AICPU=FALSE
   ENABLE_CREATE_LIB=FALSE
@@ -781,6 +800,7 @@ checkopts() {
           --opapi) SHOW_HELP="opapi" ;;
           --opgraph) SHOW_HELP="opgraph" ;;
           --onnxplugin) SHOW_HELP="onnxplugin" ;;
+          --tfplugin) SHOW_HELP="tfplugin" ;;
           --ophost_test) SHOW_HELP="ophost_test" ;;
           --opapi_test) SHOW_HELP="opapi_test" ;;
           --opgraph_test) SHOW_HELP="opgraph_test" ;;
@@ -900,6 +920,8 @@ checkopts() {
             OP_GRAPH=TRUE
           elif [[ "$OPTARG" == "onnxplugin" ]]; then
             ONNX_PLUGIN=TRUE
+          elif [[ "$OPTARG" == "tfplugin" ]]; then
+            TF_PLUGIN=TRUE
           elif [[ "$OPTARG" == "opkernel" ]]; then
             OP_KERNEL=TRUE
           elif [[ "$OPTARG" == "opkernel_aicpu" ]]; then

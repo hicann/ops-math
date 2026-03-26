@@ -101,6 +101,11 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
 endif()
 add_version_info_targets()
 
+# ===================================================
+# TF 插件模块初始化（无条件调用，函数内部检查条件）
+# ===================================================
+init_tf_plugin_modules()
+
 add_subdirectory(common)
 if(ENABLE_EXPERIMENTAL)
   add_subdirectory(experimental)

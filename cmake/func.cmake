@@ -646,6 +646,14 @@ macro(add_all_modules_sources)
     target_sources(${ONNX_PLUGIN_NAME}_obj PRIVATE ${ONNX_PLUGIN_SRCS})
   endif()
 
+  # 添加tf_plugin文件
+  file(GLOB TF_PLUGIN_SRCS ${SOURCE_DIR}/framework/*_tf_plugin.cpp)                                                                               
+  if (TF_PLUGIN_SRCS)                                                                                                                             
+    if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG AND NOT ENABLE_TEST)                                                                              
+      target_sources(${TF_PLUGIN_NAME}_obj PRIVATE ${TF_PLUGIN_SRCS})                                                                             
+    endif()                                                                                                                                       
+  endif()  
+
   # 添加所有的UT
   add_all_ut_sources(UT_TILING_DIR "${TILING_SOC_DIR}" OP_NAME ${OP_NAME})
 endmacro()
@@ -860,6 +868,71 @@ macro(add_onnx_plugin_sources)
     target_sources(${ONNX_PLUGIN_NAME}_obj PRIVATE ${ONNX_PLUGIN_SRCS})
   else()
     message(WARNING "No onnx plugin source files found in ${SOURCE_DIR}")
+  endif()
+endmacro()
+
+# TF plugin 初始化函数（顶层调用一次，内部条件检查）
+function(init_tf_plugin_modules)
+  # 条件不满足，直接返回，不创建 OBJECT 库（零浪费）
+  if(NOT BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG OR ENABLE_TEST)
+    return()
+  endif()
+
+  # 条件满足，生成 TF protobuf  
+  set(tf_proto_srcs
+    ${ASCEND_DIR}/include/proto/ge_ir.proto
+  )
+
+  protobuf_generate_external(tf tf_proto_cc tf_proto_h ${tf_proto_srcs})
+
+  # 创建 OBJECT 库（只创建一次）
+  add_library(${TF_PLUGIN_NAME}_obj OBJECT ${tf_proto_h})
+
+  # 配置编译选项
+  set_target_properties(${TF_PLUGIN_NAME}_obj PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+  )
+
+  target_include_directories(${TF_PLUGIN_NAME}_obj
+    PRIVATE
+    ${OP_PROTO_INCLUDE}
+    ${Protobuf_INCLUDE}
+    ${CMAKE_BINARY_DIR}/proto
+    ${TF_PLUGIN_COMMON_INCLUDE}
+  )
+
+  target_compile_options(${TF_PLUGIN_NAME}_obj
+    PRIVATE -Dgoogle=ascend_private
+            -fvisibility=hidden
+            -Wno-shadow
+            -Wno-unused-parameter
+  )
+
+  target_link_libraries(${TF_PLUGIN_NAME}_obj
+    PRIVATE $<BUILD_INTERFACE:intf_pub_cxx17>
+            $<BUILD_INTERFACE:dlog_headers>
+            json
+  )
+endfunction()
+
+# TF plugin 源文件收集宏（各目录调用，内部条件检查）
+macro(add_tf_plugin_sources)
+  # 条件不满足，直接返回，不添加源文件（零浪费）
+  if(NOT BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG OR ENABLE_TEST)
+    return()
+  endif()
+
+  set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+  # 扫描源文件
+  file(GLOB TF_PLUGIN_SRCS ${SOURCE_DIR}/*_tf_plugin.cpp)
+  if (TF_PLUGIN_SRCS)
+    # 直接添加源文件，无需检查 TARGET 是否存在（已在阶段1创建）
+    target_sources(${TF_PLUGIN_NAME}_obj PRIVATE ${TF_PLUGIN_SRCS})
+  else()
+    message(WARNING "No TF plugin source files found in ${SOURCE_DIR}")
   endif()
 endmacro()
 

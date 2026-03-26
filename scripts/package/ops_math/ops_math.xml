@@ -55,6 +55,7 @@
         <path value="opp/built-in/op_impl/aicpu" install_mode="550"/>
         <path value="opp/built-in/framework" install_mode="550"/>
         <path value="opp/built-in/framework/onnx" install_mode="550"/>
+        <path value="opp/built-in/framework/tensorflow" install_mode="550"/>
         <path value="opp/script" install_mod="550"/>
         <path value="opp/bin" install_mod="550"/>
         <path value="opp/include" install_mod="550"/>

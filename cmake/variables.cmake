@@ -87,6 +87,7 @@ else()
   set(OPGRAPH_INC_INSTALL_DIR         ${OPP_PREFIX}/built-in/op_graph/inc)
   set(OPGRAPH_LIB_INSTALL_DIR         ${OPP_PREFIX}/built-in/op_graph/lib/linux/${CMAKE_SYSTEM_PROCESSOR})
   set(ONNX_PLUGIN_LIB_INSTALL_DIR     ${OPP_PREFIX}/built-in/framework/onnx)
+  set(TF_PLUGIN_LIB_INSTALL_DIR       ${OPP_PREFIX}/built-in/framework/tensorflow)
   set(COMMON_INC_INSTALL_DIR          ${CMAKE_SYSTEM_PROCESSOR}-linux/include)
   set(COMMON_LIB_INSTALL_DIR          ops_math/lib)
   set(VERSION_INFO_INSTALL_DIR        ${CMAKE_SYSTEM_PROCESSOR}-linux)
@@ -186,6 +187,14 @@ set(AICPU_INCLUDE
 )
 
 set(ONNX_PLUGIN_COMMON_INCLUDE
+  ${OPS_MATH_DIR}
+  ${OPS_MATH_DIR}/common/inc/framework
+  ${OPS_MATH_DIR}/common/inc/op_graph
+  ${OPS_MATH_DIR}/common/stub/inc/framework
+)
+
+set(TF_PLUGIN_NAME optf_plugin_${PKG_NAME})
+set(TF_PLUGIN_COMMON_INCLUDE
   ${OPS_MATH_DIR}
   ${OPS_MATH_DIR}/common/inc/framework
   ${OPS_MATH_DIR}/common/inc/op_graph
