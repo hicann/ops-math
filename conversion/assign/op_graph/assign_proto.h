@@ -21,7 +21,7 @@ namespace ge {
 
 *@par Inputs:
 * @li ref: A ND Tensor. Support 1D ~ 8D. Must be one of the following types: bfloat16, float16, float32,
-*    double, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
+*    double, int8, int16, int32, int64, uint8, uint16, uint32, uint64, complex32,
 *    complex64, complex128, qint8, quint8, qint16, qint32, quint16, bool, string.
 *    Support format list: ["NC1HWC0", "ND", "C1HWNCoC0", "FRACTAL_Z", "FRACTAL_Z_3D",
 *    "NDC1HWC0", "FRACTAL_NZ"].
