@@ -88,23 +88,15 @@ static bool CheckNotNull(const aclTensorList* tensors, const aclTensor* out)
 
 static bool CheckFormat(const aclTensorList* tensors, const aclTensor* out)
 {
-    op::Format format = (*tensors)[0]->GetStorageFormat();
-    if (op::IsPrivateFormat(format)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
-        return false;
-    }
-    for (uint64_t i = 1; i < tensors->Size(); i++) {
-        if ((*tensors)[i]->GetStorageFormat() != format) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "Format of tensors should be equal, tensor %lu [%s], tensor 0 [%s].", i,
-                op::ToString((*tensors)[i]->GetStorageFormat()).GetString(), op::ToString(format).GetString());
+    for (uint64_t i = 0; i < tensors->Size(); i++) {
+        op::Format format = (*tensors)[i]->GetStorageFormat();
+        if (op::IsPrivateFormat(format)) {
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
             return false;
         }
     }
-    if (out->GetStorageFormat() != format) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Format of input and output should be equal, tensor 0 [%s] out [%s].",
-            op::ToString(out->GetStorageFormat()).GetString(), op::ToString(out->GetStorageFormat()).GetString());
+    if (op::IsPrivateFormat(out->GetStorageFormat())) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
         return false;
     }
     return true;
@@ -152,12 +144,31 @@ const aclTensor* MergeLastDims(const aclTensor* tensor, int64_t dim, aclOpExecut
     return reshapeTensor;
 }
 
-static aclnnStatus SplitToChunkCat(const aclTensorList* tensors, int64_t dim, int64_t numchunks,
+const aclTensor* PostProcess(const aclTensor* tensor, const aclTensor* out, aclOpExecutor* executor) {
+    auto reFormatTensor = executor->CreateView(tensor, tensor->GetViewShape(), tensor->GetViewOffset());
+    reFormatTensor->SetViewFormat(out->GetViewFormat());
+    reFormatTensor->SetOriginalFormat(out->GetOriginalFormat());
+    reFormatTensor->SetStorageFormat(out->GetStorageFormat());
+    return reFormatTensor;
+}
+
+static aclnnStatus ProcessOneTensor(const aclTensorList* tensors, int64_t dim, int64_t numChunks,
+                                    aclTensor* out, aclOpExecutor* executor)
+{
+    auto concatTensor = l0op::ChunkCat(tensors, dim, numChunks, out->GetDataType(), executor);
+    CHECK_RET(concatTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    CHECK_RET(CheckShapeAndScalarSame(concatTensor, out), ACLNN_ERR_PARAM_INVALID);
+    auto outTensor = PostProcess(concatTensor, out, executor);
+    auto viewCopyResult = l0op::ViewCopy(outTensor, out, executor);
+    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    return ACLNN_SUCCESS;
+}
+
+static aclnnStatus SplitToChunkCat(const aclTensorList* tensors, int64_t dim, int64_t numChunks,
                                  aclTensor* out, aclOpExecutor* executor)
 {
     op::FVector<const aclTensor*> tensorListA;
     auto outType = out ->GetDataType();
-
     for (uint64_t i = 0; i < tensors->Size(); i++) {
         if (!(*tensors)[i]->IsEmpty()) {
             auto contiguous = l0op::Contiguous((*tensors)[i], executor);
@@ -168,12 +179,7 @@ static aclnnStatus SplitToChunkCat(const aclTensorList* tensors, int64_t dim, in
     }
     if (tensorListA.size() == 1) {
         auto tensorList = executor->AllocTensorList(tensorListA.data(), tensorListA.size());
-        auto concatTensor = l0op::ChunkCat(tensorList, dim, numchunks, outType, executor);
-        CHECK_RET(concatTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        CHECK_RET(CheckShapeAndScalarSame(concatTensor, out), ACLNN_ERR_PARAM_INVALID);
-        auto viewCopyResult = l0op::ViewCopy(concatTensor, out, executor);
-        CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        return ACLNN_SUCCESS;
+        return ProcessOneTensor(tensorList, dim, numChunks, out, executor);
     }
     while (tensorListA.size() > 1) {
         op::FVector<const aclTensor*> tensorListOnce;
@@ -182,7 +188,7 @@ static aclnnStatus SplitToChunkCat(const aclTensorList* tensors, int64_t dim, in
             tensorListOnce.emplace_back(tensor);
             if (tensorListOnce.size() == CAT_INPUT_NUM) {
                 auto tensorList = executor->AllocTensorList(tensorListOnce.data(), tensorListOnce.size());
-                auto concatTensor = l0op::ChunkCat(tensorList, dim, numchunks, outType, executor);
+                auto concatTensor = l0op::ChunkCat(tensorList, dim, numChunks, outType, executor);
                 CHECK_RET(concatTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
                 tensorListB.emplace_back(concatTensor);
                 tensorListOnce.clear();
@@ -190,7 +196,7 @@ static aclnnStatus SplitToChunkCat(const aclTensorList* tensors, int64_t dim, in
         }
         if (!tensorListOnce.empty()) {
             auto aclTensorListTail = executor->AllocTensorList(tensorListOnce.data(), tensorListOnce.size());
-            auto concatTensorTail = l0op::ChunkCat(aclTensorListTail, dim, numchunks, outType, executor);
+            auto concatTensorTail = l0op::ChunkCat(aclTensorListTail, dim, numChunks, outType, executor);
             CHECK_RET(concatTensorTail != nullptr, ACLNN_ERR_INNER_NULLPTR);
             tensorListB.emplace_back(concatTensorTail);
             tensorListOnce.clear();
@@ -201,18 +207,17 @@ static aclnnStatus SplitToChunkCat(const aclTensorList* tensors, int64_t dim, in
         return ACLNN_SUCCESS;
     }
     CHECK_RET(CheckShapeAndScalarSame(tensorListA.front(), out), ACLNN_ERR_PARAM_INVALID);
-    
-    auto viewCopyResult = l0op::ViewCopy(tensorListA.front(), out, executor);
+    auto outTensor = PostProcess(tensorListA.front(), out, executor);
+    auto viewCopyResult = l0op::ViewCopy(outTensor, out, executor);
     CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
     return ACLNN_SUCCESS;
 }
 
 aclnnStatus aclnnChunkCatGetWorkspaceSize(
-    const aclTensorList* tensors, int64_t dim, int64_t numchunks, aclTensor* out,
+    const aclTensorList* tensors, int64_t dim, int64_t numChunks, aclTensor* out,
     uint64_t* workspaceSize, aclOpExecutor** executor)
 {
-    L2_DFX_PHASE_1(aclnnChunkCat, DFX_IN(tensors, dim, numchunks), DFX_OUT(out));
+    L2_DFX_PHASE_1(aclnnChunkCat, DFX_IN(tensors, dim, numChunks), DFX_OUT(out));
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
     if (dim != 0) {
@@ -225,7 +230,7 @@ aclnnStatus aclnnChunkCatGetWorkspaceSize(
     auto ret = CheckParams(tensors, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
-    ret = SplitToChunkCat(tensors, dim, numchunks, out, uniqueExecutor.get());
+    ret = SplitToChunkCat(tensors, dim, numChunks, out, uniqueExecutor.get());
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
