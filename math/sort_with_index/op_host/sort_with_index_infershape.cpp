@@ -10,7 +10,7 @@
 
 /*!
  * \file sort_with_index_infershape.cpp
- * \brief
+ * \brief Infer shape implementation for SortWithIndex operator
  */
 
 #include "register/op_impl_registry.h"
@@ -41,9 +41,15 @@ ge::graphStatus InferShape4SortWithIndex(gert::InferShapeContext* context)
     const gert::Shape* indexShape = context->GetInputShape(INDEX_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context, indexShape);
 
-    OP_CHECK_IF((*xShape != *indexShape),
+    bool isDynamicShape = (Ops::Base::IsUnknownRank(*xShape) || Ops::Base::IsUnknownRank(*indexShape) || 
+                           Ops::Base::IsUnknownShape(*xShape) || Ops::Base::IsUnknownShape(*indexShape));
+
+    OP_LOGD(context->GetNodeName(), "isDynamicShape=[%d]", isDynamicShape);
+    if (!isDynamicShape) {
+        OP_CHECK_IF((*xShape != *indexShape),
         OP_LOGE(context->GetNodeName(), "input[x] and input[index] shape is different, infershape failed."),
         return GRAPH_FAILED);
+    }
 
     gert::Shape* y1Shape = context->GetOutputShape(Y1_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context, y1Shape);
