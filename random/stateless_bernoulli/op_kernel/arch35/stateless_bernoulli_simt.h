@@ -29,7 +29,7 @@ using namespace RandomKernelBase;
 
 constexpr uint64_t PROB_SCALAR = 1;
 constexpr uint64_t PROB_TENSOR = 0;
-constexpr uint32_t PHILOX_THREAD_LAUNCH = 1024;
+constexpr uint32_t PHILOX_THREAD_LAUNCH = 512;
 constexpr uint32_t MAX_THREADS_PER_PROCESSOR = 2048;
 constexpr uint32_t PHILOX_BLOCK_THREAD = 512;
 constexpr uint32_t GPU_GRID_SIZE = 2147483647;
