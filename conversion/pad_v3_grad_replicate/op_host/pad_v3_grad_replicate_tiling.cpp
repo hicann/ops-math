@@ -210,25 +210,25 @@ void PadV3GradReplicateTiling<TilingData, dataTypeLen>::GetTilingKey()
     } else if (dtype == FLOAT16_DTYPE && mode == EDGE_MODE) {
         if (padLeft == 0 && padRight == 0 && (padTop != 0 || padBottom != 0)) {
             tilingKey = FLOAT16_NO_W_PAD_TILING_KEY; // mode1: float16, replicate, w dim no pad
-            divideUbNum = CONST_VALUE_8;
+            divideUbNum = CONST_VALUE_12;
         } else if (padTop == 0 && padBottom == 0 && (padLeft != 0 || padRight != 0)) {
             tilingKey = FLOAT16_NO_H_PAD_TILING_KEY; // mode1: float16, replicate, h dim no pad
-            divideUbNum = CONST_VALUE_2;
+            divideUbNum = CONST_VALUE_6;
         } else if (height <= SMALL_H_LIMIT && width <= SMALL_W_LIMIT) {
             tilingKey = FLOAT16_MINI_SHAPE_TILING_KEY; // mode1: float16, replicate, h and w dim pad, small shape
-            divideUbNum = CONST_VALUE_4;
+            divideUbNum = CONST_VALUE_8;
         } else if (height <= SMALL_H_LIMIT && width > SMALL_W_LIMIT) {
             tilingKey = FLOAT16_SMALL_H_LARGE_W_TILING_KEY; // float, mini h dim
-            divideUbNum = CONST_VALUE_3;
+            divideUbNum = CONST_VALUE_6;
         } else if (height > SMALL_H_LIMIT && width <= SMALL_W_LIMIT) {
             tilingKey = FLOAT16_LARGE_H_SMALL_W_TILING_KEY; // float, mini w dim
-            divideUbNum = CONST_VALUE_3;
+            divideUbNum = CONST_VALUE_6;
         } else if (outHeight == 1) {
             tilingKey = FLOAT16_H_W_ONE_TILING_KEY; // mode1: float16, replicate, h and w dim pad, outHeight == 1
-            divideUbNum = CONST_VALUE_4;
+            divideUbNum = CONST_VALUE_8;
         } else {
             tilingKey = FLOAT16_H_W_PAD_TILING_KEY; // mode1: float16, replicate, h and w dim pad, big shape
-            divideUbNum = CONST_VALUE_4;
+            divideUbNum = CONST_VALUE_8;
         }
     } else if (dtype == BF16_DTYPE && mode == EDGE_MODE) {
         if (padLeft == 0 && padRight == 0 && (padTop != 0 || padBottom != 0)) {
