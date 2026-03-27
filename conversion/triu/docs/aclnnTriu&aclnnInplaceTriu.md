@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |   √     |
 | <term>Atlas 训练系列产品</term>                              |   √     |
 
-
 ## 功能说明
 
 - 算子功能：将输入的self张量的最后二维（按shape从左向右数）沿对角线的左下部分置零。参数diagonal可正可负，默认为零，正数表示主对角线向右上方向移动，负数表示主对角线向左下方向移动。
@@ -35,10 +34,12 @@
   $\begin{bmatrix} [9&6&3] \\ [1&2&3] \\ [0&4&1] \end{bmatrix}$。
 
 ## 函数原型
+
   - aclnnTriu和aclnnInplaceTriu实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
     - aclnnTriu：需新建一个输出张量对象存储计算结果。
     - aclnnInplaceTriu：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
   - 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用 “aclnnTriuGetWorkspaceSize” 或者 “aclnnInplaceTriuGetWorkspaceSize” 接口获取入参并根据计算流程计算所需workspace大小，再调用 “aclnnTriu” 或者 “aclnnInplaceTriu” 接口执行计算。
+
 ```cpp
 aclnnStatus aclnnTriuGetWorkspaceSize(
   const aclTensor* self, 
@@ -47,6 +48,7 @@ aclnnStatus aclnnTriuGetWorkspaceSize(
   uint64_t*        workspaceSize, 
   aclOpExecutor**  executor)
 ```
+
 ```cpp
 aclnnStatus aclnnTriu(
   void*          workspace, 
@@ -54,6 +56,7 @@ aclnnStatus aclnnTriu(
   aclOpExecutor* executor, 
   aclrtStream    stream)
 ```    
+
 ```cpp
 aclnnStatus aclnnInplaceTriuGetWorkspaceSize(
   aclTensor*      selfRef, 
@@ -61,6 +64,7 @@ aclnnStatus aclnnInplaceTriuGetWorkspaceSize(
   uint64_t*       workspaceSize, 
   aclOpExecutor** executor)
 ```  
+
 ```cpp
 aclnnStatus aclnnInplaceTriu(
   void*          workspace, 
@@ -156,12 +160,11 @@ aclnnStatus aclnnInplaceTriu(
       - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16。
       - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16、COMPLEX32、COMPLEX64。
  
+- **返回值：**
 
-  - **返回值：**
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-
-第一段接口完成入参校验，出现以下场景时报错：
+  第一段接口完成入参校验，出现以下场景时报错：
   <table style="undefined;table-layout: fixed; width: 887px"><colgroup>
   <col style="width: 300px">
   <col style="width: 200px">
@@ -204,12 +207,8 @@ aclnnStatus aclnnInplaceTriu(
 
 ## aclnnTriu
 
-  - **参数说明：**
+- **参数说明：**
 
-    - workspace(void*, 入参)：在Device侧申请的workspace内存地址。
-    - workspaceSize(uint64_t, 入参)：在Device侧申请的workspace大小，由第一段接口aclnnTriuGetWorkspaceSize获取。
-    - executor(aclOpExecutor*, 入参)：op执行器，包含了算子计算流程。
-    - stream(aclrtStream, 入参)：指定执行任务的Stream。
   <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
   <col style="width: 230px">
   <col style="width: 150px">
@@ -245,13 +244,13 @@ aclnnStatus aclnnInplaceTriu(
   </tbody>
   </table>
 
-  - **返回值：**
+- **返回值：**
 
     aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceTriuGetWorkspaceSize
 
-  - **参数说明：**
+- **参数说明：**
   
   <table style="undefined;table-layout: fixed; width: 1587px"><colgroup>
   <col style="width: 159px">
@@ -322,11 +321,11 @@ aclnnStatus aclnnInplaceTriu(
       - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16。
       - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16、COMPLEX32、COMPLEX64。   
 
-  - **返回值：**
+- **返回值：**
 
-    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-第一段接口完成入参校验，出现以下场景时报错：
+  第一段接口完成入参校验，出现以下场景时报错：
   <table style="undefined;table-layout: fixed; width: 887px"><colgroup>
   <col style="width: 300px">
   <col style="width: 200px">
@@ -360,7 +359,7 @@ aclnnStatus aclnnInplaceTriu(
 
 ## aclnnInplaceTriu
 
-  - **参数说明：**
+- **参数说明：**
 
   <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
   <col style="width: 230px">
@@ -397,7 +396,7 @@ aclnnStatus aclnnInplaceTriu(
   </tbody>
   </table>
 
-  - **返回值：**
+- **返回值：**
 
     aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 

@@ -3,6 +3,7 @@
 [📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/strided_slice)
 
 ## 产品支持情况
+
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
@@ -48,7 +49,9 @@
   $shrinkAxisMask$指定$bit$位为1对应的索引维度强制降为1 。
 
 ## 函数原型
+
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnStridedSliceGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnStridedSlice”接口执行计算。
+
 ```Cpp
 aclnnStatus aclnnStridedSliceGetWorkspaceSize(
     const aclTensor   *self, 
@@ -64,6 +67,7 @@ aclnnStatus aclnnStridedSliceGetWorkspaceSize(
     uint64_t          *workspaceSize, 
     aclOpExecutor     **executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnStridedSlice(
     void          *workspace,
@@ -323,7 +327,9 @@ aclnnStatus aclnnStridedSlice(
   - aclnnStridedSlice默认确定性实现。
 
 ## 调用示例
+
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
@@ -496,4 +502,3 @@ int main()
     return 0;
 }
 ```
-

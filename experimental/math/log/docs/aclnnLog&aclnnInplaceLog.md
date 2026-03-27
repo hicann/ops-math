@@ -66,7 +66,6 @@ $$
   * executor(aclOpExecutor \*, 入参)：op执行器，包含了算子计算流程。
   * stream(aclrtStream, 入参)：指定执行任务的Stream。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
@@ -80,7 +79,6 @@ $$
   - workspaceSize(uint64_t*,出参)：返回需要在Device侧申请的workspace大小。
 
   - executor(aclOpExecutor**,出参)：返回op执行器，包含了算子计算流程。
-
 
 - **返回值：**
 
@@ -104,7 +102,6 @@ $$
   - executor(aclOpExecutor*,入参)：op执行器，包含了算子计算流程。
 
   - stream(aclrtStream,入参)：指定执行任务的Stream。
-
 
 - **返回值：**
 

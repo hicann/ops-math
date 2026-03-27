@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 对selfRef张量填充value，value是张量。
@@ -198,7 +197,6 @@ aclnnStatus aclnnInplaceFillTensor(
 
 - 确定性计算：
   - aclnnInplaceFillTensor默认确定性实现。
-
 
 ## 调用示例
 

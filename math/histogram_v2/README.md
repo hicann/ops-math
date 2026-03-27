@@ -65,7 +65,7 @@
     <tr>
       <td>bins</td>
       <td>可选属性</td>
-      <td><ul><li>表示被划分的区间数量。</li><li>默认值为100。</li></td>
+      <td><ul><li>表示被划分的区间数量。</li><li>默认值为100。</li></ul></td>
       <td>INT</td>
       <td>-</td>
     </tr>

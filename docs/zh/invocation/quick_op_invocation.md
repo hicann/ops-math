@@ -41,6 +41,7 @@
   表示整个项目编译为一个静态库文件，包含libcann_math_static.a和aclnn接口头文件。该包仅支持aclnn调用AI Core算子。
 
 ### 联网编译
+
 #### 自定义算子包
 
 1. **编译自定义算子包**
@@ -151,7 +152,6 @@
 
     \$\{repo\_path\}表示项目根目录，\$\{soc\_name\}表示NPU型号名称，即\$\{soc\_version\}删除“ascend”后剩余的内容。编译成功后，压缩包存放于build_out目录下。
 
-
 2. **解压ops-math静态库**
 
     进入build_out目录执行解压命令：
@@ -161,6 +161,7 @@
     ```
 
     \$\{static\_lib\_path\}表示静态库解压路径。解压后目录结构如下：
+
     ```
     ├── cann-${soc_name}-ops-math-static_${cann_version}_linux-${arch}
     │   ├── lib64
@@ -247,6 +248,7 @@
 > **说明**：Ascend 950PR产品使用仿真执行算子样例，请见[仿真指导](../debug/op_debug_prof.md#方式二针对ascend-950pr)。
 
 - 基于**自定义算子包**执行算子样例，包安装后，执行如下命令：
+
     ```bash
     bash build.sh --run_example ${op} ${mode} ${pkg_mode} [--vendor_name=${vendor_name}] [--soc=${soc_version}] [--experimental]
     # 以Abs算子example执行为例
@@ -265,6 +267,7 @@
     说明：\$\{mode\}为graph时，不指定\$\{pkg_mode\}和\$\{vendor\_name\}
 
 - 基于**ops-math包**执行算子样例，安装后，执行如下命令：
+
     ```bash
     bash build.sh --run_example ${op} ${mode} [--soc=${soc_version}]
     # 以Abs算子example执行为例
@@ -380,4 +383,5 @@ Global Environment TearDown
 [  PASSED  ] ${n} tests.
 [100%] Built target math_op_host_ut
 ```
+
 \$\{n\}表示执行了n个用例，\$\{m\}表示m项测试，\$\{x\}表示执行用例消耗的时间，单位为毫秒。

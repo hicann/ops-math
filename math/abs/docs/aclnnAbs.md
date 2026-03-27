@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                       |    √     |
 | <term>Atlas 训练系列产品</term>                       |    √     |
 
-
 ## 功能说明
 
 - 接口功能：为输入张量的每一个元素取绝对值。
@@ -193,7 +192,6 @@ aclnnStatus aclnnAbs(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -202,7 +200,6 @@ aclnnStatus aclnnAbs(
 
 - 确定性计算：
   - aclnnAbs默认确定性实现。
-
 
 ## 调用示例
 

@@ -37,6 +37,7 @@
       <th>数据类型</th>
       <th>数据格式</th>
     </tr></thead>
+  <tbody>
     <tr>
       <td>x1</td>
       <td>输入</td>

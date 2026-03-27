@@ -49,21 +49,21 @@
     <tr>
       <td>base</td>
       <td>可选属性</td>
-      <td><ul><li>对数运算的底。</li><li>默认为-1.0（表示自然对数e）。</ul><td>
+      <td><ul><li>对数运算的底。</li><li>默认为-1.0（表示自然对数e）。</li></ul></td>
       <td>FLOAT</td>
       <td>-</td>
     </tr>
     <tr>
       <td>scale</td>
       <td>可选属性</td>
-      <td><ul><li>输入张量x的缩放因子。</li><li>默认为1.0。</ul></td>
+      <td><ul><li>输入张量x的缩放因子。</li><li>默认为1.0。</li></ul></td>
       <td>FLOAT</td>
       <td>-</td>
     </tr>
     <tr>
       <td>shift</td>
       <td>可选属性</td>
-      <td><ul><li>输入张量x的偏移量。</li><li>默认为0.0。</ul></td>
+      <td><ul><li>输入张量x的偏移量。</li><li>默认为0.0。</li></ul></td>
       <td>FLOAT</td>
       <td>-</td>
     </tr>

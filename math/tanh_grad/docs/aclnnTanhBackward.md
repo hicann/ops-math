@@ -123,7 +123,7 @@ aclnnStatus aclnnTanhBackward(
   </tbody>
   </table>
 
-  - term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
 - **返回值：**
 

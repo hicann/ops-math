@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 返回Tensor指定维度的最大值及其索引位置。最大值保存到out中，最大值的索引保存到indices中。如果keepdim为false，则不保留对应的轴；如果为true，则保留指定轴的维度值为1。
@@ -145,7 +144,6 @@ aclnnStatus aclnnMaxDim(
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
     - self和out不支持INT32数据类型
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -222,7 +220,6 @@ aclnnStatus aclnnMaxDim(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -231,7 +228,6 @@ aclnnStatus aclnnMaxDim(
 
 - 确定性计算：
   - aclnnMaxDim默认确定性实现。
-
 
 ## 调用示例
 

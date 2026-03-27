@@ -40,13 +40,13 @@ $$
 * **返回值**：
   aclnnStatus：返回状态码，具体参见[aclnn返回码](./common/aclnn返回码.md)。
 
-```
-第一段接口完成入参校验，出现以下场景时报错：
-返回161001 (ACLNN_ERR_PARAM_NULLPTR)：传入的self或other或condition或out是空指针。
-返回161002 (ACLNN_ERR_PARAM_INVALID)：1.self或other或condition的数据类型和维度不在支持的范围之内。
-                                      2.self和other无法做数据类型推导。
-                                      3.self、other、condition broadcast推导失败或broadcast结果与out的shape不相同。
-```
+  ```
+  第一段接口完成入参校验，出现以下场景时报错：
+  返回161001 (ACLNN_ERR_PARAM_NULLPTR)：传入的self或other或condition或out是空指针。
+  返回161002 (ACLNN_ERR_PARAM_INVALID)：1.self或other或condition的数据类型和维度不在支持的范围之内。
+                                        2.self和other无法做数据类型推导。
+                                        3.self、other、condition broadcast推导失败或broadcast结果与out的shape不相同。
+  ```
 
 ## aclnnTanhBackward
 

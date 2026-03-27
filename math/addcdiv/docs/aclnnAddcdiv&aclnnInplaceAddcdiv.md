@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：执行 `tensor1` 除以 `tensor2` 的元素除法，将结果乘以标量 `value` 并将其添加到 `self`。
@@ -25,7 +24,9 @@
   $$
 
 ## 函数原型
+
 - aclnnAddcdiv和aclnnInplaceAddcdiv实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
+
   - aclnnAddcdiv：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceAddcdiv：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 - 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用 “aclnnAddcdivGetWorkspaceSize” 或者 “aclnnInplaceAddcdivGetWorkspaceSize” 接口获取入参并根据计算流程计算所需workspace大小，再调用 “aclnnAddcdiv” 或者 “aclnnInplaceAddcdiv” 接口执行计算。
@@ -188,7 +189,6 @@
 
   - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -234,7 +234,6 @@
     </tr>
   </tbody>
   </table>
-
 
 ## aclnnAddcdiv
 
@@ -642,8 +641,8 @@ int main() {
 }
 ```
 
-
 aclnnInplaceAddcdiv
+
 ```Cpp
 #include <iostream>
 #include <vector>

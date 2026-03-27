@@ -23,6 +23,7 @@
   $$
 
 ## 函数原型
+
 - aclnnAdd和aclnnInplaceAdd实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
 
   - aclnnAdd：需新建一个输出张量对象存储计算结果。
@@ -99,7 +100,7 @@
         <ul>
           <li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
           <li>shape需要与other满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。</li>
-        <ul>
+        </ul>
       </td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
@@ -114,7 +115,7 @@
         <ul>
           <li>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
           <li>shape需要与other满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。</li>
-        <ul>
+        </ul>
       </td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
@@ -219,7 +220,6 @@
     </tr>
   </tbody>
   </table>
-
 
 ## aclnnAdd
 
@@ -443,7 +443,6 @@
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -452,7 +451,6 @@
 
 - 确定性计算：
   - aclnnAdd&aclnnInplaceAdd默认确定性实现。
-
 
 ## 调用示例
 

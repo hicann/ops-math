@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
 
-
 ## 功能说明
 
 - **接口功能**：
@@ -149,7 +148,6 @@ aclnnStatus aclnnNpuFormatCast(
     </tbody>
     </table>
 
-
   - <term>Ascend 950PR/Ascend 950DT</term>：
     - 上表数据类型列中的角标“1”代表该系列不支持的数据类型或数据格式。
 
@@ -275,7 +273,6 @@ aclnnStatus aclnnNpuFormatCast(
     </tbody>
     </table>
 
-
   - <term>Ascend 950PR/Ascend 950DT</term>：
 
     - 上表数据类型列中的角标“1”代表该系列不支持的数据类型或数据格式。
@@ -325,7 +322,6 @@ aclnnStatus aclnnNpuFormatCast(
       </tr>
     </tbody>
   </table>
-
 
   - <term>Ascend 950PR/Ascend 950DT</term>：
 
@@ -445,7 +441,6 @@ aclnnStatus aclnnNpuFormatCast(
       | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_NDC1HWC0(32) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FORMAT_NDC1HWC0(32) |
       | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FRACTAL_Z_3D(33) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FRACTAL_Z_3D(33) |
 
-
     - aclnnNpuFormatCastGetWorkspaceSize接口：
 
       | srcTensor | dstTensor数据类型 | dstTensor数据格式               |
@@ -463,7 +458,6 @@ aclnnStatus aclnnNpuFormatCast(
       | ACL_FLOAT(0)、ACL_INT32(3)、ACL_UINT32(8)     | 8 |
       | ACL_FLOAT16(1)、ACL_BF16(27)  | 16 |
       | ACL_INT8(2)、ACL_UINT8(4)    | 32 |
-
 
     - 当前不支持的特殊场景:
       - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
@@ -885,4 +879,3 @@ aclnnStatus aclnnNpuFormatCast(
       return 0;
   }
   ```
-

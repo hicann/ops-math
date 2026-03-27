@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：对输入Tensor完成linear_cross运算。
@@ -37,6 +36,7 @@ aclnnStatus aclnnLinalgCrossGetWorkspaceSize(
   uint64_t*                 workspaceSize,
   aclOpExecutor**           executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnLinalgCross(
   void*                     workspace,
@@ -233,7 +233,6 @@ aclnnStatus aclnnLinalgCross(
 
 - 确定性计算：
   - aclnnLinalgCross默认确定性实现。
-
 
 ## 调用示例
 

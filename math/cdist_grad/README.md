@@ -77,6 +77,7 @@
       <td>FLOAT16、FLOAT32</td>
       <td>ND</td>
     </tr>
+    <tr>
       <td>p</td>
       <td>属性</td>
       <td>公式中的输入p。</td>

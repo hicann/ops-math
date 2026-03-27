@@ -1,9 +1,7 @@
 
-
 # AI Core算子开发进阶指南
 
 > 本文档是《AI Core算子开发指南》的详细内容补充，提供算子开发中各模块的深入说明和进阶用法。建议先阅读[主文档](./aicore_develop_guide.md)了解整体开发流程。
-
 
 ## 目录
 
@@ -907,7 +905,6 @@ template<typename D_T_X, typename D_T_Y, typename D_T_Z, int TILE_NUM, int IS_SP
 | `ASCENDC_TPL_UI_LIST` | 穷举模式 | `10, 12, 13, 9, 8` |
 | `ASCENDC_TPL_UI_MIX` | 混合模式 | 范围 + 穷举值 |
 
-
 ### ASCENDC_TPL_SEL_PARAM
 
 #### 功能说明
@@ -1230,6 +1227,7 @@ graph TB
 | op_kernel/arch32 | ✅ 隔离 | Ascend910B系列 |
 
 **重要提示：**
+
 1. 严格按照架构关系规划目录
 2. **高架构芯片可以参考低架构芯片代码，低架构芯片不能照抄高架构芯片的代码！**
 3. arch35以上才支持MicroAPI微指令编程
@@ -1278,6 +1276,7 @@ ExtendCfgInfo("opFile.value", "{op_name_snake}_apt");
 ### Q3: 如何选择BlockDim的值？
 
 **A:**
+
 - 耦合模式：使用`GetCoreNumAiv()`或`GetCoreNumAic()`获取核数
 - 分离模式Vector算子：设置为Vector核数
 - 分离模式Cube算子：设置为Cube核数
@@ -1294,6 +1293,7 @@ ExtendCfgInfo("opFile.value", "{op_name_snake}_apt");
 ### Q6: 不同芯片架构的代码如何隔离？
 
 **A:**
+
 1. 在`op_host/`和`op_kernel/`下分别创建`arch32/`和`arch35/`目录
 2. 在`{op}_def.cpp`中通过`ExtendCfgInfo("opFile.value", ...)`配置不同入口
 3. **注意：低架构不能直接复制高架构代码**
@@ -1409,4 +1409,3 @@ REG_OP(XxxCustom)
     .ATTR(keep_dims, Bool, false)
     .OP_END_FACTORY_REG(XxxCustom)
 ```
-

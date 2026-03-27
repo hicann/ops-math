@@ -71,7 +71,7 @@
     <tr>
       <td>reshuff</td>
       <td>可选属性</td>
-      <td><ul><li>表示是否在连续内存上进行重新填充。</li><li>默认值为false。</li></td>
+      <td><ul><li>表示是否在连续内存上进行重新填充。</li><li>默认值为false。</li></ul></td>
       <td>Bool</td>
       <td>-</td>
     </tr>

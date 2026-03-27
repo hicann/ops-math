@@ -1,6 +1,7 @@
 # Axpy
 
 ## 贡献说明
+
 | 贡献者      | 贡献方              | 贡献算子 | 贡献时间       | 贡献内容     |
 |----------|------------------|------|------------|----------|
 | Zhoujianhua | 哈尔滨工业大学-苏统华团队 | Axpy | 2025/12/12 | 新增Axpy算子 |
@@ -10,8 +11,8 @@
 - Atlas A2训练系列产品
 - Atlas 200I/500 A2推理产品
 
-
 ## 算子描述
+
 - 功能描述
 
   `Axpy`算子计算 $y = alpha * x + y$。
@@ -21,7 +22,7 @@
   <table>
     <tr><th align="center">算子类型(OpType)</th><th colspan="4" align="center">Axpy</th></tr> 
     <tr><td align="center"> </td><td align="center">name</td><td align="center">Type</td><td align="center">data type</td><td align="center">format</td></tr>  
-    <tr><td rowspan="3" align="center">算子输入</td>
+    <tr><td rowspan="3" align="center">算子输入</td></tr>  
      
     <tr><td align="center">x</td><td align="center">tensor</td><td align="center">float32,float16</td><td align="center">ND</td></tr>  
     <tr><td align="center">y</td><td align="center">tensor</td><td align="center">float32,float16</td><td align="center">ND</td></tr>
@@ -37,9 +38,11 @@
 - x，y，out的数据类型仅支持float32,float16，数据格式仅支持ND
 
 ## 算子使用
+
 使用该算子前，请参考[社区版CANN开发套件包安装文档](../../../docs/zh/invocation/quick_op_invocation.md)完成开发运行环境的部署。
 
 ### 编译部署
+
   - 进入到仓库目录
 
     ```bash
@@ -57,7 +60,9 @@
     ```bash
     ./build_out/cann-ops-math-custom_linux-aarch64.run
     ```
+
 ### 算子调用
+
   - 执行调用
 
     ```bash

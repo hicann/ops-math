@@ -17,7 +17,6 @@
 
 ## 参数说明
 
-</style>
 <table class="tg" style="undefined;table-layout: fixed; width: 922px"><colgroup>
 <col style="width: 168.333333px">
 <col style="width: 116.666666px">

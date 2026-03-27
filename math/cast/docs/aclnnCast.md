@@ -20,6 +20,7 @@
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnCastGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCast”接口执行计算。
+
 ```Cpp
 aclnnStatus aclnnCastGetWorkspaceSize(
   const aclTensor   *self, 
@@ -28,6 +29,7 @@ aclnnStatus aclnnCastGetWorkspaceSize(
   uint64_t          *workspaceSize, 
   aclOpExecutor    **executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnCast(
   void          *workspace, 
@@ -35,6 +37,7 @@ aclnnStatus aclnnCast(
   aclOpExecutor *executor, 
   aclrtStream    stream)
 ```
+
 ## aclnnCastGetWorkspaceSize
 
 - **参数说明：**
@@ -202,7 +205,6 @@ aclnnStatus aclnnCast(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -234,6 +236,7 @@ aclnnStatus aclnnCast(
 - <term>Ascend 950PR/Ascend 950DT</term>：
   - 针对输出类型为INT4的场景：不支持输入Shape的尾轴为奇数、不支持输入为非连续。
   - 针对输入、输出类型，涉及COMPLEX32、COMPLEX64、FLOAT4_E2M1、FLOAT4_E1M2、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、INT4的，只支持如下表格中的转换路径：
+
     | `self`数据类型 | `out`数据类型 |
     | ------------ | ------------ |
     | COMPLEX32 | COMPLEX64 |
@@ -253,6 +256,7 @@ aclnnStatus aclnnCast(
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

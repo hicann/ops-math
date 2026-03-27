@@ -47,6 +47,7 @@ aclnnStatus aclnnInplaceCopyGetWorkspaceSize(
     uint64_t        *workspaceSize, 
     aclOpExecutor  **executor)
 ```
+
 ```cpp
 aclnnStatus aclnnInplaceCopy(
     void             *workspace,
@@ -59,7 +60,6 @@ aclnnStatus aclnnInplaceCopy(
 
 - **参数说明**：
 
-  </style>
   <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
@@ -129,7 +129,6 @@ aclnnStatus aclnnInplaceCopy(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-    </style>
     <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
     <col style="width: 291px">
     <col style="width: 135px">
@@ -212,6 +211,7 @@ aclnnStatus aclnnInplaceCopy(
   - aclnnInplaceCopy默认确定性实现。
 
 当src和selfRef的数据类型不一致时，HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN浮点类型转换规则：
+
  - HIFLOAT8 -> FLOAT32、BFLOAT16、FLOAT16
  - FLOAT8_E5M2 -> FLOAT32、BFLOAT16、FLOAT16
  - FLOAT8_E4M3FN -> FLOAT32、BFLOAT16、FLOAT16
@@ -352,4 +352,3 @@ int main() {
   return 0;
 }
 ```
-

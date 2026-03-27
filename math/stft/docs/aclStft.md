@@ -230,6 +230,7 @@ aclnnStatus aclStft(
       <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="6">161002</td>
       <td>self的数据格式不在支持的范围之内。</td>
+    </tr>
     <tr>
       <td>self、windowOptional的数据类型不一致。</td>
     </tr>
@@ -237,7 +238,7 @@ aclnnStatus aclStft(
       <td>self、windowOptional、out的数据类型不在平台的支持范围之内。</td>
     </tr>
     <tr>
-      <td>nFft、hopLength、winLength输入无效值。</tr>
+      <td>nFft、hopLength、winLength输入无效值。</td></tr>
     <tr>
       <td>self、windowOptional、out的维度不在支持的范围之内。</td>
     </tr>

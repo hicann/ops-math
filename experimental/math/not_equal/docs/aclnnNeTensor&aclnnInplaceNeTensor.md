@@ -16,7 +16,6 @@
 * 算子功能：计算self（selfRef）中的元素的值与other的值是否不相等。
 * 计算公式：
 
-
 $$
 out_i=(self_i != other_i)?[1]:[0]
 $$
@@ -56,6 +55,7 @@ $$
   + executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
 * **返回值**：
   aclnnStatus：返回状态码，具体参见[aclnn返回码](./common/aclnn返回码.md)。
+  
   ````
   第一段接口完成入参校验，出现以下场景时报错：
   返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的self、other、out是空指针时。 

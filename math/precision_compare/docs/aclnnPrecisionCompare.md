@@ -68,7 +68,7 @@ aclnnStatus aclnnPrecisionCompare(
       <td>golden（aclTensor*）</td>
       <td>输入</td>
       <td>精度比对的基准数据。</td>
-      <td>数据类型需要与realdata一致，shape需要与realdata一致。</a>。</td>
+      <td>数据类型需要与realdata一致，shape需要与realdata一致。。</td>
       <td>FLOAT16、FLOAT、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>

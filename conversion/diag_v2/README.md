@@ -51,7 +51,7 @@
     <tr>
       <td>diagonal</td>
       <td>可选属性</td>
-      <td><ul><li>表示选择对角线的位置。</li><li>默认值为0，表示主对角线。</li></td>
+      <td><ul><li>表示选择对角线的位置。</li><li>默认值为0，表示主对角线。</li></ul></td>
       <td>INT</td>
       <td>-</td>
     </tr>

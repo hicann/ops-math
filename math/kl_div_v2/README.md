@@ -71,14 +71,14 @@
     <tr>
       <td>reduction</td>
       <td>可选属性</td>
-      <td><ul><li>公式中的reduction。</li><li>默认值为mean。</li></td>
+      <td><ul><li>公式中的reduction。</li><li>默认值为mean。</li></ul></td>
       <td>STRING</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>log_target</td>
       <td>可选属性</td>
-      <td><ul><li>公式中的logTarget。</li><li>默认值为false。</li></td>
+      <td><ul><li>公式中的logTarget。</li><li>默认值为false。</li></ul></td>
       <td>BOOL</td>
       <td>ND</td>
     </tr>

@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 返回张量在指定维度（dim）上的最大值的索引，并保存到out张量中。
@@ -131,7 +130,6 @@ aclnnStatus aclnnArgMax(
 
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
-
 - **返回值**：
 
     aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -216,7 +214,6 @@ aclnnStatus aclnnArgMax(
 
 - 确定性计算：
   - aclnnArgMax默认确定性实现。
-
 
 ## 调用示例
 

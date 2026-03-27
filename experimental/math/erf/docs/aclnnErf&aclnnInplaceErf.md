@@ -39,6 +39,7 @@ $$
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+
   ```
   第一段接口完成入参校验，出现如下场景时报错：
   161001(ACLNN_ERR_PARAM_NULLPTR)：1. 传入的self或out是空指针。
@@ -73,6 +74,7 @@ $$
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
+
   ```
   第一段接口完成入参校验，出现如下场景时报错：
   161001(ACLNN_ERR_PARAM_NULLPTR)：1. 传入的selfRef是空指针。
@@ -94,6 +96,7 @@ $$
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
+
 无
 
 ## 调用示例

@@ -44,6 +44,7 @@ aclnnStatus aclnnMatmulCompressDequantGetWorkspaceSize(
   uint64_t*          workspaceSize, 
   aclOpExecutor**    executor)
 ```
+
 ```cpp
 aclnnStatus aclnnMatmulCompressDequant(
   void*           workspace, 
@@ -190,7 +191,6 @@ aclnnStatus aclnnMatmulCompressDequant(
   </tbody>
   </table>
 
-
 - **返回值**
   
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -275,7 +275,6 @@ aclnnStatus aclnnMatmulCompressDequant(
 - 确定性计算：
   - aclnnMatmulCompressDequant默认确定性实现。
 
-
 ## 调用示例
 
 - **准备压缩前的数据**
@@ -357,6 +356,7 @@ aclnnStatus aclnnMatmulCompressDequant(
     # 压缩数据的相关信息，对应aclnnMatmulCompressDequantGetWorkspaceSize接口的compressInfo
     compressor.export(compress_info, './data/compress_info')
     ```
+
   - **将原始float类型的反量化参数deqscale进行转换， 得到aclnn接口需要的uint64数据**
 
     deqScale原始为float类型，以int32读取并转换为int64

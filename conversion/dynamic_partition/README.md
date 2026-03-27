@@ -71,7 +71,7 @@ array([[0, 1, 2, 3],
     <tr>
       <td>num_partitions</td>
       <td>可选属性</td>
-      <td><ul><li>指定总分区的数量</li><li>默认值为1。</li></td>
+      <td><ul><li>指定总分区的数量</li><li>默认值为1。</li></ul></td>
       <td>INT64</td>
       <td>ND</td>
     </tr>
