@@ -34,6 +34,7 @@ constexpr uint32_t INDEXTHREE = 3;
 constexpr int64_t BUFFER_NUM = 6;
 constexpr int64_t TYPE_SIZE = 4;
 
+// 非必要交付件，可以提供空实现
 struct AddExampleCompileInfo {};
 
 // 获取平台信息如ubSize, coreNum
@@ -96,7 +97,7 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-// tiling 分发入口
+// 必要交付件，tiling 分发入口
 static ge::graphStatus AddExampleTilingFunc(gert::TilingContext* context)
 {
     // 1、获取平台运行信息
@@ -148,6 +149,7 @@ static ge::graphStatus AddExampleTilingFunc(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
+// 非必要交付件，可以提供空实现
 static ge::graphStatus TilingParseForAddExample([[maybe_unused]] gert::TilingParseContext* context)
 {
     return ge::GRAPH_SUCCESS;
