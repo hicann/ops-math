@@ -140,17 +140,9 @@ __aicore__ inline void OneHotMix<T1, T2, T3>::Init(
 template <typename T1, typename T2, typename T3>
 __aicore__ inline void OneHotMix<T1, T2, T3>::CopyOut(LocalTensor<T3>& srcTensor, int64_t offset, int32_t copyLength)
 {
-    if constexpr ((IsSameType<T3, int64_t>::value) || (IsSameType<T3, int4>::value)) {
-        if ASCEND_IS_AIV {
-            copy_ubuf_to_gm_align_v2(
-                (__gm__ int8_t*)outputGm[offset].GetPhyAddr(), (__ubuf__ int8_t*)srcTensor.GetPhyAddr(), 0,
-                static_cast<uint16_t>(1), static_cast<uint32_t>(copyLength * sizeof(T3)), 0, 0, 0);
-        }
-    } else {
-        DataCopyPad(
-            outputGm[offset], srcTensor,
-            {static_cast<uint16_t>(1), static_cast<uint32_t>(copyLength * sizeof(T3)), 0, 0, 0});
-    }
+    DataCopyPad(
+        outputGm[offset], srcTensor,
+        {static_cast<uint16_t>(1), static_cast<uint32_t>(copyLength * sizeof(T3)), 0, 0, 0});
 }
 
 template <typename T1, typename T2, typename T3>
