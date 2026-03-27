@@ -128,6 +128,22 @@ static inline bool CheckSocVersionIsSupportBf16(void) {
          GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E;
 }
 
+// 判断910B芯片上，pow是否走AICPU路径
+static inline bool IsPowAiCpuOn910B(const op::DataType dtype) {
+  auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
+  if (socVersion < SocVersion::ASCEND910B || socVersion > SocVersion::ASCEND910E) {
+    return false;
+  }
+  if (IsRegBase()) {
+    return false;
+  }
+  // 910B AICORE支持的dtype
+  static const std::initializer_list<op::DataType> AICORE_DTYPE_LIST = {
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT32,
+    op::DataType::DT_INT8, op::DataType::DT_UINT8, op::DataType::DT_BF16};
+  return !CheckType(dtype, AICORE_DTYPE_LIST);
+}
+
 static bool CheckDtypeValid(const op::DataType selfDtype, const op::DataType expDtype, const op::DataType outDtype) {
   if (!CheckSocVersionIsSupportBf16() &&
      (selfDtype == op::DataType::DT_BF16 || expDtype == op::DataType::DT_BF16)) {
@@ -466,6 +482,63 @@ aclnnStatus aclnnInplacePowTensorScalar(void *workspace, uint64_t workspaceSize,
   return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
+// self为1时的fill(1)分支
+static aclnnStatus BuildPowScalarTensorFillOne(const aclTensor *out, aclOpExecutor *executor) {
+  FVector<int64_t> shape;
+  for (size_t idx = 0; idx < out->GetViewShape().GetDimNum(); idx++) {
+    int64_t tmpVal = out->GetViewShape().GetDim(idx);
+    shape.push_back(tmpVal);
+  }
+  auto dims = executor->ConvertToTensor(shape.data(), shape.size(), DataType::DT_INT64);
+  CHECK_RET(dims != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  auto shapeArray = executor->AllocIntArray(shape.data(), shape.size());
+  CHECK_RET(shapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+  FVector<float> valVector = {1.0};
+  auto valTensor = executor->ConvertToTensor(valVector.data(), valVector.size(), out->GetDataType());
+  CHECK_RET(valTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  auto powOut = l0op::Fill(dims, valTensor, shapeArray, executor);
+  CHECK_RET(powOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+  auto viewCopyResult = l0op::ViewCopy(powOut, out, executor);
+  CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+  return ACLNN_SUCCESS;
+}
+
+// pow计算分支：contiguous -> cast -> pow -> cast -> viewcopy
+static aclnnStatus BuildPowScalarTensorCompute(const aclScalar *self, const aclTensor *exponent,
+                                               const aclTensor *out, const op::DataType promoteType,
+                                               aclOpExecutor *executor) {
+  auto expContiguous = l0op::Contiguous(exponent, executor);
+  CHECK_RET(expContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+  // 910B且走AICPU时，exponent不cast到promoteType
+  bool skipCastForAicpu = IsPowAiCpuOn910B(promoteType);
+  const aclTensor* powExp = expContiguous;
+  if (!skipCastForAicpu) {
+    powExp = l0op::Cast(expContiguous, promoteType, executor);
+    CHECK_RET(powExp != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  }
+
+  auto selfTensor = executor->ConvertToTensor(self, promoteType);
+  CHECK_RET(selfTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+  // 调用pow进行计算
+  auto powOut = l0op::Pow(selfTensor, powExp, executor);
+  CHECK_RET(powOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+  // 固定写法，将计算结果转换成输出out的数据类型
+  auto castOut = l0op::Cast(powOut, out->GetDataType(), executor);
+  CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+  // 固定写法，将计算结果拷贝到输出out上，out可能是非连续的tensor
+  auto viewCopyResult = l0op::ViewCopy(castOut, out, executor);
+  CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+  return ACLNN_SUCCESS;
+}
+
 aclnnStatus aclnnPowScalarTensorGetWorkspaceSize(const aclScalar *self,
                                                  const aclTensor *exponent,
                                                  const aclTensor *out,
@@ -492,26 +565,7 @@ aclnnStatus aclnnPowScalarTensorGetWorkspaceSize(const aclScalar *self,
   if (IsRegBase() &&
       static_cast<float>(self->ToFloat()) == 1.0 &&
       !IsComplexType(exponent->GetDataType()) && !IsComplexType(out->GetDataType())) {
-    FVector<int64_t> shape;
-    for (size_t idx = 0; idx < out->GetViewShape().GetDimNum(); idx++) {
-      int64_t tmpVal = out->GetViewShape().GetDim(idx);
-      shape.push_back(tmpVal);
-    }
-    auto dims = uniqueExecutor.get()->ConvertToTensor(shape.data(), shape.size(), DataType::DT_INT64);
-    CHECK_RET(dims != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    auto shapeArray = uniqueExecutor.get()->AllocIntArray(shape.data(), shape.size());
-    CHECK_RET(shapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    FVector<float> valVector = {1.0};
-    auto valTensor = uniqueExecutor.get()->ConvertToTensor(valVector.data(), valVector.size(), out->GetDataType());
-    CHECK_RET(valTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    auto powOut = l0op::Fill(dims, valTensor, shapeArray, uniqueExecutor.get());
-    CHECK_RET(powOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 固定写法，将计算结果拷贝到输出out上，out可能是非连续的tensor
-    auto viewCopyResult = l0op::ViewCopy(powOut, out, uniqueExecutor.get());
-    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
+    CHECK_RET(BuildPowScalarTensorFillOne(out, uniqueExecutor.get()) == ACLNN_SUCCESS, ACLNN_ERR_INNER);
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(executor);
     return ACLNN_SUCCESS;
@@ -519,27 +573,8 @@ aclnnStatus aclnnPowScalarTensorGetWorkspaceSize(const aclScalar *self,
 
   auto promoteType = InferScalarTensorDtype(self, exponent, out);
 
-  // 固定写法，将输入self转换成连续的tensor
-  auto expContiguous = l0op::Contiguous(exponent, uniqueExecutor.get());
-  CHECK_RET(expContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-  auto expCast = l0op::Cast(expContiguous, promoteType, uniqueExecutor.get());
-  CHECK_RET(expCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-  auto selfTensor = uniqueExecutor.get()->ConvertToTensor(self, promoteType);
-  CHECK_RET(selfTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-  // 调用pow进行计算
-  auto powOut = l0op::Pow(selfTensor, expCast, uniqueExecutor.get());
-  CHECK_RET(powOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-  // 固定写法，将计算结果转换成输出out的数据类型
-  auto castOut = l0op::Cast(powOut, out->GetDataType(), uniqueExecutor.get());
-  CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-  // 固定写法，将计算结果拷贝到输出out上，out可能是非连续的tensor
-  auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
-  CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  CHECK_RET(BuildPowScalarTensorCompute(self, exponent, out, promoteType,
+             uniqueExecutor.get()) == ACLNN_SUCCESS, ACLNN_ERR_INNER);
 
   *workspaceSize = uniqueExecutor->GetWorkspaceSize();
   uniqueExecutor.ReleaseTo(executor);
