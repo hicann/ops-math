@@ -13,7 +13,7 @@
 #include <iostream>
 #include <string>
 #include "gtest/gtest.h"
-#include "../../../op_host/grouped_bias_add_grad_tiling.h"
+#include "../../../op_host/arch32/grouped_bias_add_grad_tiling.h"
 
 
 #ifdef __CCE_KT_TEST__

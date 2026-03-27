@@ -437,7 +437,7 @@
     {"name":"DynamicQuantUpdateScatterV2", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
     {"name":"DynamicQuant", "compute_units": ["ascend310p", "ascend910b", "ascend910", "ascend910_93", "ascend950"], "auto_sync" : true},
     {"name":"DynamicQuantV2", "compute_units": ["ascend310p", "ascend910b", "ascend910_93", "ascend950"], "auto_sync" : true},
-    {"name":"GroupedBiasAddGrad", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
+    {"name":"GroupedBiasAddGrad", "compute_units": ["ascend910b", "ascend910_93", "ascend950"], "auto_sync" : true, "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"BroadcastTo", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode":"", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name": "DynamicPartition", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"Tile", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode":"", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},

@@ -14,10 +14,10 @@
  */
 
 #include "kernel_operator.h"
-#include "grouped_bias_add_grad_base.h"
-#include "grouped_bias_add_grad_equal_c.h"
-#include "grouped_bias_add_grad_unequal_c.h"
-#include "grouped_bias_add_grad_unequal_c_perf.h"
+#include "arch32/grouped_bias_add_grad_base.h"
+#include "arch32/grouped_bias_add_grad_equal_c.h"
+#include "arch32/grouped_bias_add_grad_unequal_c.h"
+#include "arch32/grouped_bias_add_grad_unequal_c_perf.h"
 
 using namespace GroupedBiasAddGradAll;
 #define THREE_DIMS_HALF 1000000

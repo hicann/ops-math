@@ -13,7 +13,7 @@
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
 
-#include "../../../op_host/grouped_bias_add_grad_tiling.h"
+#include "../../../../op_host/arch32/grouped_bias_add_grad_tiling.h"
 
 using namespace std;
 
