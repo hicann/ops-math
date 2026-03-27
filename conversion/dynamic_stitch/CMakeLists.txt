@@ -13,3 +13,7 @@ set(SUPPORT_COMPUTE_UNIT "ascend950")
 # 设置每种芯片类型对应的tiling文件目录，即采用op_host目录下哪个文件夹下的tiling文件编译
 set(SUPPORT_TILING_DIR "arch35")
 add_all_modules_sources(OPTYPE dynamic_stitch ACLNNTYPE aclnn_exclude COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT} TILING_DIR ${SUPPORT_TILING_DIR} DISABLE_IN_OPP TRUE)
+
+if(TARGET ${OPHOST_NAME}_tiling_obj)
+    target_sources(${OPHOST_NAME}_tiling_obj PRIVATE op_host/dynamic_stitch_def.cpp)
+endif()

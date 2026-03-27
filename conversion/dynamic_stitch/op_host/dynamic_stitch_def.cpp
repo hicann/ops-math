@@ -1,59 +1,55 @@
 /**
- * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 /*!
  * \file dynamic_stitch_def.cpp
  * \brief op config of dynamic_stitch
  */
-#include <iostream>
-#include <sstream>
+#include <vector>
 #include "register/op_def_registry.h"
+#include "graph/operator.h"
 
-namespace ops {
+namespace {
+using namespace ge;
+
 constexpr int32_t AICORE_CHECK_LIST_CNT = 64;
 
-static const std::vector<ge::DataType> xDType = {
-    ge::DT_INT8,   ge::DT_UINT8, ge::DT_INT16,   ge::DT_UINT16, ge::DT_INT32, ge::DT_UINT32, ge::DT_INT64,
-    ge::DT_UINT64, ge::DT_BOOL,  ge::DT_FLOAT16, ge::DT_BF16,   ge::DT_FLOAT, ge::DT_DOUBLE, ge::DT_COMPLEX64};
-static const std::vector<ge::DataType> indicesDType = {
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32};
-static const std::vector<ge::Format> xFormat = {
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+const std::vector<DataType> xDType = {
+    DT_INT8,   DT_UINT8, DT_INT16,   DT_UINT16, DT_INT32, DT_UINT32, DT_INT64,
+    DT_UINT64, DT_BOOL,  DT_FLOAT16, DT_BF16,   DT_FLOAT, DT_DOUBLE, DT_COMPLEX64};
+const std::vector<DataType> indicesDType = {
+    DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32,
+    DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32};
+const std::vector<Format> xFormat = {
+    FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND,
+    FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND};
 
-static ge::graphStatus CheckSupported(const ge::Operator& op, ge::AscendString& result) {
+graphStatus CheckIfAICoreSupported(const Operator& op, AscendString& result)
+{
     int32_t attrN = 0;
-    std::string resultJsonStr;
-    ge::graphStatus retStatus = op.GetAttr("N", attrN);
-    if (retStatus != ge::GRAPH_SUCCESS) {
-        resultJsonStr = R"({"isSupported": "False", "dynamicCompileStatic": "True", "reason": "GetAttr N error"})";
-        result = ge::AscendString(resultJsonStr.c_str());
-        return ge::GRAPH_FAILED;
+    graphStatus retStatus = op.GetAttr("N", attrN);
+    if (retStatus != GRAPH_SUCCESS) {
+        result = AscendString(R"({"isSupported": "False", "dynamicCompileStatic": "True", "reason": "GetAttr N error"})");
+        return GRAPH_FAILED;
     }
     if (attrN < 1 || attrN > AICORE_CHECK_LIST_CNT) {
-        resultJsonStr = R"({"isSupported": "False", "dynamicCompileStatic": "True", "reason": "attr out of range."})";
-        result = ge::AscendString(resultJsonStr.c_str());
-        return ge::GRAPH_FAILED;
+        result = AscendString(R"({"isSupported": "False", "dynamicCompileStatic": "True", "reason": "attr out of range."})");
+        return GRAPH_FAILED;
     }
-    resultJsonStr = R"({"isSupported": "True", "dynamicCompileStatic": "True", "reason": "CheckSupported success."})";
-    result = ge::AscendString(resultJsonStr.c_str());
-    return ge::GRAPH_SUCCESS;
+    result = AscendString(R"({"isSupported": "True", "dynamicCompileStatic": "True", "reason": "CheckSupported success."})");
+    return GRAPH_SUCCESS;
 }
 
+} // namespace
+
+namespace ops {
 class DynamicStitch : public OpDef
 {
 public:
@@ -73,7 +69,7 @@ public:
             .AutoContiguous();
         this->Output("y").ParamType(REQUIRED).DataType(xDType).Format(xFormat).UnknownShapeFormat(xFormat);
         this->Attr("N").AttrType(OPTIONAL).Int(1);
-        this->AICore().SetCheckSupport(CheckSupported);
+        this->AICore().SetCheckSupport(CheckIfAICoreSupported);
 
         OpAICoreConfig aicoreConfig;
         aicoreConfig.DynamicCompileStaticFlag(true)
@@ -87,4 +83,12 @@ public:
 };
 
 OP_ADD(DynamicStitch);
+// 手动注册opDef.AICore()里设置的CheckSupport函数
+// 需要当前目录下的CMakeLists.txt将本_def.cpp加入${OPHOST_NAME}_tiling_obj编译目标内
+static int g_DynamicStitch_register_check_support = [](const char* name) {
+    DynamicStitch opDef(name);
+    optiling::OpCheckFuncHelper(FUNC_CHECK_SUPPORTED, name, opDef.AICore().GetCheckSupport());
+    return 0;
+}("DynamicStitch");
+
 } // namespace ops
