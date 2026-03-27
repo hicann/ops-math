@@ -75,9 +75,8 @@ $$
 ## 约束说明
 
 1. keep_prob的值必须在0和1之间。
-2. x和out的shape必须一致。
-3. mask的shape必须满足条件：align(x的元素个数,128)/8。
-4. 数据维度支持0-8维。
+2. mask的shape必须满足条件：$$\text{mask\_shape} = \frac{\text{align}(\text{num}(x), 128)}{8}$$
+3. 数据维度支持0-8维。
 
 ## 调用说明
 

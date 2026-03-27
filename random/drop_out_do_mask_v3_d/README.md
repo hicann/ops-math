@@ -13,14 +13,14 @@
 
 ## 功能说明
 
-- 算子功能：训练过程中，按照概率prob随机将输入中的元素置零，并将输出按照1/(1-prob)的比例放大。若mask对应比特位为1，则输入中相应的元素放大。若mask中比特位为0，则gradOutput相应的元素置零。特别地，若prob为0，则不改变gradOutput的元素；若prob为1，则将所有元素置为0。
+- 算子功能：训练过程中，按照概率keep_prob随机将输入中的元素置零，并将输出按照1/(1-keep_prob)的比例放大。若mask对应比特位为1，则输入中相应的元素放大。若mask中比特位为0，则gradOutput相应的元素置零。特别地，若keep_prob为0，则不改变gradOutput的元素；若keep_prob为1，则将所有元素置为0。
 
 - 计算公式：
 
 $$
-out_i=\begin{cases}
-0,&\text { with probability }prob \\
-\frac{1}{1-prob}self_i, &\text { with probability }1-prob
+gradOutput_i=\begin{cases}
+0,&\text { with probability }keep\_prob \\
+\frac{1}{1-keep\_prob}self_i, &\text { with probability }1-keep\_prob
 \end{cases}
 $$
 
@@ -66,7 +66,7 @@ $$
     <tr>
       <td>y</td>
       <td>输出</td>
-      <td>公式中的out，数据类型需要是self可转换的数据类型，shape需要与self一致。</td>
+      <td>公式中的gradOutput，数据类型需要是self可转换的数据类型，shape需要与self一致。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
@@ -74,10 +74,9 @@ $$
 
 ## 约束说明
 
-1. prob的值必须在0和1之间。
-2. self和out的shape必须一致。
-3. mask的shape必须满足条件：align(self的元素个数,128)/8。
-4. 数据维度支持0-8维。
+1. keep_prob的值必须在0和1之间。
+2. mask的shape必须满足条件：$$\text{mask\_shape} = \frac{\text{align}(\text{num}(self), 128)}{8}$$
+3. 数据维度支持0-8维。
 
 ## 调用说明
 
