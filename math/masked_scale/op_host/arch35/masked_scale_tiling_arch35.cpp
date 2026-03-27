@@ -20,6 +20,8 @@
 #include "../../op_kernel/arch35/masked_scale_tiling_struct.h"
 
 namespace optiling {
+using namespace Ops::Base;
+
 const uint64_t VALUE_ATTR_IDX = 0;
 const uint64_t INPUT_X_IDX = 0;
 const uint64_t INPUT_MASK_IDX = 1;
@@ -46,37 +48,50 @@ const uint64_t TILING_KEY_X_FP32_MASK_FP32 = 43;
 
 MaskedScaleNs::MaskedScaleTilingData *maskedScaleTilingData = nullptr;
 
-static ge::graphStatus Tiling4DoTilingDag(gert::TilingContext *tilingContext, uint64_t tilingKey) {
-  ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-  maskedScaleTilingData = tilingContext->GetTilingData<MaskedScaleNs::MaskedScaleTilingData>();
-  OP_CHECK_NULL_WITH_CONTEXT(tilingContext, maskedScaleTilingData);
-  if (tilingKey == TILING_KEY_X_HALF_MASK_UINT8) { // 11: half uint8
-    return elewiseBaseTiling.DoTiling<MaskedScaleMaskCastTwo<half, uint8_t>::OpDag>(maskedScaleTilingData->baseTiling);
-  } else if (tilingKey == TILING_KEY_X_BF16_MASK_UINT8) { // 12: bfloat16 uint8
-    return elewiseBaseTiling.DoTiling<MaskedScaleMaskCastTwo<half, uint8_t>::OpDag>(maskedScaleTilingData->baseTiling);
-  } else if (tilingKey == TILING_KEY_X_FP32_MASK_UINT8) { // 13: fp32 uint8
-    return elewiseBaseTiling.DoTiling<MaskedScaleMaskCastTwo<float, uint8_t>::OpDag>(maskedScaleTilingData->baseTiling);
-  } else if (tilingKey == TILING_KEY_X_HALF_MASK_INT8) { // 21: half int8
-    return elewiseBaseTiling.DoTiling<MaskedScaleMaskCastTwo<half, int8_t>::OpDag>(maskedScaleTilingData->baseTiling);
-  } else if (tilingKey == TILING_KEY_X_BF16_MASK_INT8) { // 22: bfloat16 int8
-    return elewiseBaseTiling.DoTiling<MaskedScaleMaskCastTwo<half, int8_t>::OpDag>(maskedScaleTilingData->baseTiling);
-  } else if (tilingKey == TILING_KEY_X_FP32_MASK_INT8) { // 23: fp32 int8
-    return elewiseBaseTiling.DoTiling<MaskedScaleMaskCastTwo<float, int8_t>::OpDag>(maskedScaleTilingData->baseTiling);
-  } else if (tilingKey == TILING_KEY_X_HALF_MASK_HALF) { // 31: half half
-    return elewiseBaseTiling.DoTiling<MaskedScaleMaskCastOne<half, half>::OpDag>(maskedScaleTilingData->baseTiling);
-  } else if (tilingKey == TILING_KEY_X_BF16_MASK_HALF) { // 32: bfloat16 half
-    return elewiseBaseTiling.DoTiling<MaskedScaleMaskCastOne<half, half>::OpDag>(maskedScaleTilingData->baseTiling);
-  } else if (tilingKey == TILING_KEY_X_FP32_MASK_HALF) { // 33: fp32 half
-    return elewiseBaseTiling.DoTiling<MaskedScaleMaskCastOne<float, half>::OpDag>(maskedScaleTilingData->baseTiling);
-  } else if (tilingKey == TILING_KEY_X_HALF_MASK_FP32) { // 41: half fp32
-    return elewiseBaseTiling.DoTiling<MaskedScaleMaskCastOne<half, float>::OpDag>(maskedScaleTilingData->baseTiling);
-  } else if (tilingKey == TILING_KEY_X_BF16_MASK_FP32) { // 42: bfloat16 fp32
-    return elewiseBaseTiling.DoTiling<MaskedScaleMaskCastOne<half, float>::OpDag>(maskedScaleTilingData->baseTiling);
-  } else if (tilingKey == TILING_KEY_X_FP32_MASK_FP32) { // 43: fp32 fp32
-    return elewiseBaseTiling.DoTiling<MaskedScaleMaskCastOne<float, float>::OpDag>(maskedScaleTilingData->baseTiling);
-  } else {
-    return ge::GRAPH_FAILED;
-  }
+static ge::graphStatus Tiling4DoTilingDag(gert::TilingContext* tilingContext, uint64_t tilingKey)
+{
+    ElewiseBaseTiling elewiseBaseTiling(tilingContext);
+    maskedScaleTilingData = tilingContext->GetTilingData<MaskedScaleNs::MaskedScaleTilingData>();
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, maskedScaleTilingData);
+    if (tilingKey == TILING_KEY_X_HALF_MASK_UINT8) { // 11: half uint8
+        return elewiseBaseTiling.DoTiling<MaskedScaleOp::MaskedScaleMaskCastTwo<half, uint8_t>::OpDag>(
+            maskedScaleTilingData->baseTiling);
+    } else if (tilingKey == TILING_KEY_X_BF16_MASK_UINT8) { // 12: bfloat16 uint8
+        return elewiseBaseTiling.DoTiling<MaskedScaleOp::MaskedScaleMaskCastTwo<half, uint8_t>::OpDag>(
+            maskedScaleTilingData->baseTiling);
+    } else if (tilingKey == TILING_KEY_X_FP32_MASK_UINT8) { // 13: fp32 uint8
+        return elewiseBaseTiling.DoTiling<MaskedScaleOp::MaskedScaleMaskCastTwo<float, uint8_t>::OpDag>(
+            maskedScaleTilingData->baseTiling);
+    } else if (tilingKey == TILING_KEY_X_HALF_MASK_INT8) { // 21: half int8
+        return elewiseBaseTiling.DoTiling<MaskedScaleOp::MaskedScaleMaskCastTwo<half, int8_t>::OpDag>(
+            maskedScaleTilingData->baseTiling);
+    } else if (tilingKey == TILING_KEY_X_BF16_MASK_INT8) { // 22: bfloat16 int8
+        return elewiseBaseTiling.DoTiling<MaskedScaleOp::MaskedScaleMaskCastTwo<half, int8_t>::OpDag>(
+            maskedScaleTilingData->baseTiling);
+    } else if (tilingKey == TILING_KEY_X_FP32_MASK_INT8) { // 23: fp32 int8
+        return elewiseBaseTiling.DoTiling<MaskedScaleOp::MaskedScaleMaskCastTwo<float, int8_t>::OpDag>(
+            maskedScaleTilingData->baseTiling);
+    } else if (tilingKey == TILING_KEY_X_HALF_MASK_HALF) { // 31: half half
+        return elewiseBaseTiling.DoTiling<MaskedScaleOp::MaskedScaleMaskCastOne<half, half>::OpDag>(
+            maskedScaleTilingData->baseTiling);
+    } else if (tilingKey == TILING_KEY_X_BF16_MASK_HALF) { // 32: bfloat16 half
+        return elewiseBaseTiling.DoTiling<MaskedScaleOp::MaskedScaleMaskCastOne<half, half>::OpDag>(
+            maskedScaleTilingData->baseTiling);
+    } else if (tilingKey == TILING_KEY_X_FP32_MASK_HALF) { // 33: fp32 half
+        return elewiseBaseTiling.DoTiling<MaskedScaleOp::MaskedScaleMaskCastOne<float, half>::OpDag>(
+            maskedScaleTilingData->baseTiling);
+    } else if (tilingKey == TILING_KEY_X_HALF_MASK_FP32) { // 41: half fp32
+        return elewiseBaseTiling.DoTiling<MaskedScaleOp::MaskedScaleMaskCastOne<half, float>::OpDag>(
+            maskedScaleTilingData->baseTiling);
+    } else if (tilingKey == TILING_KEY_X_BF16_MASK_FP32) { // 42: bfloat16 fp32
+        return elewiseBaseTiling.DoTiling<MaskedScaleOp::MaskedScaleMaskCastOne<half, float>::OpDag>(
+            maskedScaleTilingData->baseTiling);
+    } else if (tilingKey == TILING_KEY_X_FP32_MASK_FP32) { // 43: fp32 fp32
+        return elewiseBaseTiling.DoTiling<MaskedScaleOp::MaskedScaleMaskCastOne<float, float>::OpDag>(
+            maskedScaleTilingData->baseTiling);
+    } else {
+        return ge::GRAPH_FAILED;
+    }
 }
 
 static ge::graphStatus Tiling4MaskedScale(gert::TilingContext *tilingContext)

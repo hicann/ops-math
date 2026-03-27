@@ -20,10 +20,9 @@
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
+namespace RoundDag {
 using namespace Ops::Base;
 
-namespace RoundDag {
-    
 constexpr int32_t CAST_MODE_NONE = 0;
 constexpr int32_t CAST_MODE_RINT = 1;
 

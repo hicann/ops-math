@@ -21,8 +21,6 @@
 #include "atvoss/util/placeholder.h"
 #include "atvoss/util/elems.h"
 
-using namespace Ops::Base;
-
 #ifdef __CCE_AICORE__
 constexpr static AscendC::MicroAPI::CastTrait castTrait0 = {
     AscendC::MicroAPI::RegLayout::ZERO, AscendC::MicroAPI::SatMode::UNKNOWN, AscendC::MicroAPI::MaskMergeMode::ZEROING,
@@ -33,7 +31,7 @@ constexpr static AscendC::MicroAPI::CastTrait castTrait1 = {
 #endif
 
 namespace ExpDag {
-
+using namespace Ops::Base;
 const int PLACEHOLDER_INDEX_0 = 0;
 const int PLACEHOLDER_INDEX_1 = 1;
 const int PLACEHOLDER_INDEX_2 = 2;

@@ -19,9 +19,9 @@
 #include "atvoss/elewise/elewise_tiling.h"
 #include "../../op_kernel/abs_struct.h"
 
-using namespace AbsNs;
 
 namespace optiling {
+using namespace AbsNs;
 using namespace Ops::Base;
 
 struct AbsCompileInfo {

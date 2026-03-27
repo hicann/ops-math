@@ -67,7 +67,7 @@ static inline bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
     return true;
 }
 
-static bool CheckInplaceDtypeValid(aclTensor* selfRef)
+static bool CheckInplaceDtypeValid(const aclTensor* selfRef)
 {
     auto inplaceSupportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_SELFREF_LIST, ASCEND910_DTYPE_SELFREF_LIST);
     // 检查selfRef的数据类型是否在inplace exp算子的支持列表内

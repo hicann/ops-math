@@ -19,6 +19,7 @@
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
+namespace MaskedScaleOp {
 using namespace Ops::Base;
 
 template <typename Tx, typename Tmask>
@@ -54,4 +55,5 @@ struct MaskedScaleMaskCastTwo {
   using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
 
+}  // namespace MaskedScaleOp
 #endif  // CANN_CUSTOM_OPS_MASKED_SCALE_DAG_H

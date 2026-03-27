@@ -18,13 +18,11 @@
 
 #include "atvoss/elewise/elewise_base_struct.h"
 
-using namespace Ops::Base;
-
 namespace AbsNs {
-
+using namespace Ops::Base;
 struct AbsTilingData {
     EleBaseTilingData baseTiling;
 };
 
-}
+} // namespace AbsNs
 #endif // ABS_STRUCT_H

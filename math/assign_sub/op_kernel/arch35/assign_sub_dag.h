@@ -14,9 +14,8 @@
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
-using namespace Ops::Base;
-
 namespace AssignSubDag {
+using namespace Ops::Base;
 template <class T>
 struct SubCustom : public Ops::Base::Vec::ElemwiseBinaryOP<T, T, T> {
     __aicore__ inline SubCustom(LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2, uint32_t count)
@@ -61,7 +60,7 @@ struct AssignSubOp {
     using OpSub = Ops::Base::Bind<AssignSubDag::SubCustom<T>, OpCopyIn0, OpCopyIn1>;
     using OpCopyOut = Ops::Base::Bind<Ops::Base::Vec::CopyOut<T>, Ops::Base::Placeholder::Out0<T>, OpSub>;
     // 指定输出节点
-    using Outputs = Elems<OpCopyOut>;
+    using Outputs = Ops::Base::Elems<OpCopyOut>;
     using OpDag = Ops::Base::DAGSch<Outputs>;
 };
 

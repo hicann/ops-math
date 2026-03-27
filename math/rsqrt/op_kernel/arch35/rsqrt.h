@@ -19,9 +19,8 @@
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
-using namespace Ops::Base;
-
 namespace RsqrtDag{
+using namespace Ops::Base;
 constexpr int CastModeBf16ToFp32 = 0;
 constexpr int CastModeFp32ToBf16 = 1;
 

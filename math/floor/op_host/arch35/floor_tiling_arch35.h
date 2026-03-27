@@ -20,10 +20,9 @@
 #include "atvoss/elewise/elewise_tiling.h"
 #include "register/tilingdata_base.h"
 
+namespace optiling {
 using namespace Ops::Math::OpTiling;
 using namespace Ops::Base;
-
-namespace optiling {
 
 BEGIN_TILING_DATA_DEF(FloorTilingData)
 TILING_DATA_FIELD_DEF(int64_t, dim0);
@@ -57,7 +56,7 @@ protected:
     uint64_t GetTilingKey() const override;
     ge::graphStatus GetWorkspaceSize() override;
     ge::graphStatus PostTiling() override;
-    std::string ToString(FloorTilingData& tilingData);
+    std::string ToString(FloorTilingData& paramTilingData);
 
 private:
     uint64_t GetOpKey(ge::DataType xDtype, ge::DataType yDtype);

@@ -15,13 +15,11 @@
 #include "atvoss/elewise/elewise_tiling.h"
 #include "../../op_kernel/arch35/tanh_tiling_struct.h"
 
+namespace optiling {
 using namespace TanhNs;
 using namespace Ops::Base;
 
-namespace optiling {
-
-class TanhTiling
-{
+class TanhTiling {
 public:
     explicit TanhTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
@@ -39,5 +37,5 @@ private:
     uint64_t dType = 0;
     TanhTilingData* tiling = nullptr;
 };
-}  // namespace optiling
-#endif  // OPS_BUILD_IN_OP_TILING_RUNTIME_TANH_TILING_H
+} // namespace optiling
+#endif // OPS_BUILD_IN_OP_TILING_RUNTIME_TANH_TILING_H

@@ -21,7 +21,7 @@
 #include "arch35/log1p_tiling_struct.h"
 
 using namespace AscendC;
-
+using namespace Log1pOp;
 template <uint64_t schMode, uint64_t dType>
 __global__ __aicore__ void log1p(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling) {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);

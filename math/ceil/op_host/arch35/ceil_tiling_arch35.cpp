@@ -107,13 +107,13 @@ ge::graphStatus CeilTiling::RunTiling()
     tiling = tilingContext->GetTilingData<CeilTilingData>();
     if (this->outputDtype == ge::DT_FLOAT16) {
         dType = TPL_FP16;
-        baseTilingResult = elewiseBaseTiling.DoTiling<CeilDAG<half>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<CeilOp::CeilDAG<half>::OpDag>(tiling->baseTiling);
     } else if (this->outputDtype == ge::DT_BF16) {
         dType = TPL_BF16;
-        baseTilingResult = elewiseBaseTiling.DoTiling<CeilDAG<bfloat16_t>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<CeilOp::CeilDAG<bfloat16_t>::OpDag>(tiling->baseTiling);
     } else if (this->outputDtype == ge::DT_FLOAT) {
         dType = TPL_FP32;
-        baseTilingResult = elewiseBaseTiling.DoTiling<CeilDAG<float>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<CeilOp::CeilDAG<float>::OpDag>(tiling->baseTiling);
     } else {
         OP_LOGE(
             tilingContext->GetNodeName(), "output dtype[%s] not support",

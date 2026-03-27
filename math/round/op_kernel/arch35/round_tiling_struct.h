@@ -13,10 +13,8 @@
 
 #include "atvoss/elewise/elewise_base_struct.h"
 
-using namespace Ops::Base;
-
 struct RoundTilingData {
-    EleBaseTilingData baseTiling;
+    Ops::Base::EleBaseTilingData baseTiling;
     float decimals;
     int32_t power;
     int32_t num;

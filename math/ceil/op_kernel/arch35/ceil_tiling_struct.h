@@ -11,9 +11,9 @@
 #ifndef CEIL_TILING_STRUCT_H
 #define CEIL_TILING_STRUCT_H
 #include "atvoss/elewise/elewise_base_struct.h"
-using namespace Ops::Base;
-namespace CeilNs {
 
+namespace CeilNs {
+using namespace Ops::Base;
 struct CeilTilingData {
     EleBaseTilingData baseTiling;
 };

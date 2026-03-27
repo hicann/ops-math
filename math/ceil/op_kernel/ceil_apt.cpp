@@ -22,7 +22,7 @@
 using namespace AscendC;
 using namespace Ops::Base;
 using namespace CeilNs;
-
+using namespace CeilOp;
 template <uint64_t schMode, uint64_t dType>
 __global__ __aicore__ void ceil(GM_ADDR input_x, GM_ADDR output_y, GM_ADDR workspace, GM_ADDR tiling)
 {

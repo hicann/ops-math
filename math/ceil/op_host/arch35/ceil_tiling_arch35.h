@@ -19,9 +19,9 @@
 #include "atvoss/elewise/elewise_tiling.h"
 #include "../../op_kernel/arch35/ceil_tiling_struct.h"
 
+namespace optiling {
 using namespace CeilNs;
 using namespace Ops::Base;
-namespace optiling {
 
 struct CeilCompileInfo {
     uint64_t coreNum;

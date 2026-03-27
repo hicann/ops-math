@@ -21,6 +21,7 @@
 #include "arch35/trunc_tilingdata.h"
 
 using namespace AscendC;
+using namespace TruncOp;
 
 template <uint64_t schMode, uint64_t dType>
 __global__ __aicore__ void trunc(GM_ADDR input_x, GM_ADDR output_y, GM_ADDR workspace, GM_ADDR tiling) {

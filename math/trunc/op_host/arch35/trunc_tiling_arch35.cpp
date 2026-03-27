@@ -96,22 +96,22 @@ ge::graphStatus TruncTiling::RunTiling()
     tiling = tilingContext->GetTilingData<TruncTilingData>();
     if (this->outputDtype == ge::DT_FLOAT16) {
         dType = TPL_FP16;
-        baseTilingResult = elewiseBaseTiling.DoTiling<TruncDAG<half>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<TruncOp::TruncDAG<half>::OpDag>(tiling->baseTiling);
     } else if (this->outputDtype == ge::DT_BF16) {
         dType = TPL_BF16;
-        baseTilingResult = elewiseBaseTiling.DoTiling<TruncDAG<bfloat16_t>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<TruncOp::TruncDAG<bfloat16_t>::OpDag>(tiling->baseTiling);
     } else if (this->outputDtype == ge::DT_FLOAT) {
         dType = TPL_FP32;
-        baseTilingResult = elewiseBaseTiling.DoTiling<TruncDAG<float>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<TruncOp::TruncDAG<float>::OpDag>(tiling->baseTiling);
     } else if (this->outputDtype == ge::DT_INT8) {
         dType = TPL_INT8;
-        baseTilingResult = elewiseBaseTiling.DoTiling<TruncDAGInt<int8_t>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<TruncOp::TruncDAGInt<int8_t>::OpDag>(tiling->baseTiling);
     } else if (this->outputDtype == ge::DT_UINT8) {
         dType = TPL_UINT8;
-        baseTilingResult = elewiseBaseTiling.DoTiling<TruncDAGInt<uint8_t>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<TruncOp::TruncDAGInt<uint8_t>::OpDag>(tiling->baseTiling);
     } else if (this->outputDtype == ge::DT_INT32) {
         dType = TPL_INT32;
-        baseTilingResult = elewiseBaseTiling.DoTiling<TruncDAGInt<int32_t>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<TruncOp::TruncDAGInt<int32_t>::OpDag>(tiling->baseTiling);
     } else {
         OP_LOGE(tilingContext->GetNodeName(), "output dtype not support");
         return ge::GRAPH_FAILED;

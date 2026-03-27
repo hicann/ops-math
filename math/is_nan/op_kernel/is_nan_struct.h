@@ -18,10 +18,8 @@
 
 #include "atvoss/elewise/elewise_base_struct.h"
 
-using namespace Ops::Base;
-
 namespace IsNanNs {
-
+using namespace Ops::Base;
 struct IsNanTilingData {
     EleBaseTilingData baseTiling;
 };

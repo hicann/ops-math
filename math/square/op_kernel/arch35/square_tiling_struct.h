@@ -11,8 +11,9 @@
 #ifndef SQUARE_TILING_STRUCT_H
 #define SQUARE_TILING_STRUCT_H
 #include "atvoss/elewise/elewise_base_struct.h"
-using namespace Ops::Base;
+
 namespace SquareNs {
+using namespace Ops::Base;
 
 struct SquareTilingData {
     EleBaseTilingData baseTiling;

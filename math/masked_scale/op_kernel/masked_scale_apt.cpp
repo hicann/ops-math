@@ -20,7 +20,7 @@
 #include "atvoss/util/dfx.h"
 
 using namespace AscendC;
-
+using namespace MaskedScaleOp;
 extern "C" __global__ __aicore__ void masked_scale(GM_ADDR x, GM_ADDR mask, GM_ADDR y, GM_ADDR workspace,
                                                    GM_ADDR tiling) {
   if (workspace == nullptr) {

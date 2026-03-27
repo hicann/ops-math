@@ -20,6 +20,7 @@
 #include "math/log1p/op_kernel/arch35/log1p_dag.h"
 #include "math/log1p/op_kernel/arch35/log1p_struct.h"
 
+using namespace Ops::Base;
 namespace optiling
 {
 const int64_t ASCEND_WORKSPACE = static_cast<int64_t>(16) * 1024 * 1024;
@@ -96,13 +97,13 @@ ge::graphStatus Log1pTiling::RunTiling()
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     if (this->outputDtype == ge::DT_FLOAT16) {
         dType = TPL_FP16;
-        baseTilingResult = elewiseBaseTiling.DoTiling<Log1pDAG<half>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<Log1pOp::Log1pDAG<half>::OpDag>(tiling->baseTiling);
     } else if (this->outputDtype == ge::DT_BF16) {
         dType = TPL_BF16;
-        baseTilingResult = elewiseBaseTiling.DoTiling<Log1pDAG<bfloat16_t>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<Log1pOp::Log1pDAG<bfloat16_t>::OpDag>(tiling->baseTiling);
     } else if (this->outputDtype == ge::DT_FLOAT) {
         dType = TPL_FP32;
-        baseTilingResult = elewiseBaseTiling.DoTiling<Log1pDAG<float>::OpDag>(tiling->baseTiling);
+        baseTilingResult = elewiseBaseTiling.DoTiling<Log1pOp::Log1pDAG<float>::OpDag>(tiling->baseTiling);
     } else {
         OP_LOGE(tilingContext->GetNodeName(), "output dtype not support");
         return ge::GRAPH_FAILED;

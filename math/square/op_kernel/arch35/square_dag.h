@@ -19,18 +19,16 @@
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
-using namespace Ops::Base;
-
 template <typename T>
 struct SquareOp {
     // 通过Compute构造计算图
     // y = x * x
-    using OpCopyIn = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;
-    using OpSquare = Bind<Vec::Mul<T>, OpCopyIn, OpCopyIn>;
-    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpSquare>;
+    using OpCopyIn = Ops::Base::Bind<Ops::Base::Vec::CopyIn<T>, Ops::Base::Placeholder::In0<T>>;
+    using OpSquare = Ops::Base::Bind<Ops::Base::Vec::Mul<T>, OpCopyIn, OpCopyIn>;
+    using OpCopyOut = Ops::Base::Bind<Ops::Base::Vec::CopyOut<T>, Ops::Base::Placeholder::Out0<T>, OpSquare>;
     // 指定输出节点
-    using Outputs = Elems<OpCopyOut>; // 设置输出
-    using OpDag = DAGSch<Outputs>;
+    using Outputs = Ops::Base::Elems<OpCopyOut>; // 设置输出
+    using OpDag = Ops::Base::DAGSch<Outputs>;
 };
 
 #endif // CANN_CUSTOM_OPS_SQUARE_DAG_H

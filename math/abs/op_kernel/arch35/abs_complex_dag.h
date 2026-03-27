@@ -20,6 +20,7 @@
 #include "atvoss/util/placeholder.h"
 #include "atvoss/util/elems.h"
 
+namespace AbsOp {
 using namespace AscendC;
 using namespace Ops::Base;
 
@@ -65,5 +66,5 @@ struct AbscomplexDag {
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
     using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
-
+} // namespace AbsOp
 #endif // CANN_CUSTOM_OPS_ABS_COMPLEX_DAG_H

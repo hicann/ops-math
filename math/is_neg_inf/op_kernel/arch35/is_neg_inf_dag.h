@@ -23,9 +23,8 @@
 #define INFINITY (__builtin_inff())
 #endif
 
-using namespace Ops::Base;
-
 namespace IsNegInfOp {
+using namespace Ops::Base;
 constexpr int32_t CAST_MODE = 0;
 constexpr int32_t CMP_MODE = 2;
 constexpr int32_t SELECT_MODE = 1;

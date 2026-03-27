@@ -20,6 +20,7 @@
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
+namespace Log1pOp {
 using namespace Ops::Base;
 const float FP32_ONE = 1.0;
 const float FP32_NEG_ONE = -1.0;
@@ -31,7 +32,6 @@ constexpr static AscendC::MicroAPI::CastTrait castTrait1 = { AscendC::MicroAPI::
 AscendC::MicroAPI::SatMode::NO_SAT, AscendC::MicroAPI::MaskMergeMode::ZEROING, AscendC::RoundMode::CAST_RINT };
 #endif
 namespace Log1pDag1 {
-
 template<class T>
 struct Log1pCustom : public Vec::ElemwiseUnaryOP<T, T> {
     __aicore__ inline Log1pCustom(LocalTensor<T> &dst, LocalTensor<T> &src, uint32_t count) {
@@ -113,5 +113,5 @@ struct Log1pDAG {
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
     using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
-
-#endif  // CANN_CUSTOM_OPS_LOG1P_DAG_H
+} // namespace Log1pOp
+#endif // CANN_CUSTOM_OPS_LOG1P_DAG_H

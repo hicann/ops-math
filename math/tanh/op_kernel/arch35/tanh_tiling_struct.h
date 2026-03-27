@@ -18,10 +18,8 @@
 
 #include "atvoss/elewise/elewise_base_struct.h"
 
-using namespace Ops::Base;
-
 namespace TanhNs {
-
+using namespace Ops::Base;
 struct TanhTilingData {
     EleBaseTilingData baseTiling;
 };

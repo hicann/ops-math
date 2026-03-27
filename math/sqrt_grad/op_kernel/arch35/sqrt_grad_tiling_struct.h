@@ -17,8 +17,9 @@
 #define SQRT_GRAD_TILING_STRUCT_H
 
 #include "atvoss/elewise/elewise_base_struct.h"
-using namespace Ops::Base;
+
 namespace SqrtGradNs {
+using namespace Ops::Base;
 struct SqrtGradTilingData {
     EleBaseTilingData basetiling;
 };

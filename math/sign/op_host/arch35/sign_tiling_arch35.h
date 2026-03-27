@@ -39,9 +39,9 @@ protected:
 
 private:
     gert::TilingContext* tilingContext;
-    ge::DataType outputDtype;
-    ge::DataType inputDtype;
-    SignTilingData* tiling;
+    ge::DataType outputDtype = ge::DT_UNDEFINED;
+    ge::DataType inputDtype = ge::DT_UNDEFINED;
+    SignTilingData* tiling = nullptr;
 };
 
 } // namespace optiling

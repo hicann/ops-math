@@ -20,6 +20,7 @@
 
 using namespace AscendC;
 using namespace LogOp;
+using namespace Ops::Base;
 template <uint64_t schMode, uint64_t attrWork, typename DtypeX>
 __global__ __aicore__ void LogKernel(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {

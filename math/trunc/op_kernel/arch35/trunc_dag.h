@@ -15,11 +15,12 @@
 
 #ifndef CANN_CUSTOM_OPS_TRUNC_DAG_H
 #define CANN_CUSTOM_OPS_TRUNC_DAG_H
- 
+
 #include "atvoss/util/dag.h"
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
+namespace TruncOp {
 #ifdef __CCE_AICORE__
 using namespace AscendC;
 #endif
@@ -104,5 +105,5 @@ struct TruncDAGInt {
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
     using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
-
-#endif  // CANN_CUSTOM_OPS_TRUNC_DAG_H
+} // namespace TruncOp
+#endif // CANN_CUSTOM_OPS_TRUNC_DAG_H

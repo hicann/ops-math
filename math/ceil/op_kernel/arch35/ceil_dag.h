@@ -20,6 +20,7 @@
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
+namespace CeilOp {
 using namespace Ops::Base;
 const uint32_t UINT32_SIGN = 0x80000000;
 const uint16_t UINT16_SIGN = 0x8000;
@@ -97,5 +98,5 @@ struct CeilDAG {
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
     using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
-
+} // namespace CeilOp
 #endif // CANN_CUSTOM_OPS_CEIL_DAG_H

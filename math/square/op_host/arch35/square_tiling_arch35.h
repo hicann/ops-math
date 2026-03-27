@@ -19,9 +19,9 @@
 #include "atvoss/elewise/elewise_tiling.h"
 #include "../../op_kernel/arch35/square_tiling_struct.h"
 
-using namespace SquareNs;
-
 namespace optiling {
+using namespace SquareNs;
+using namespace Ops::Base;
 
 class SquareTiling {
 public:

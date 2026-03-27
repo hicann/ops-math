@@ -65,7 +65,7 @@ private:
     uint32_t numBlocks = 0;
     int64_t outputSize = 0;
     gert::TilingContext* tilingContext;
-    int64_t tilingKey = 0;
+    uint64_t tilingKey = 0;
 };
 
 ge::graphStatus NegTiling::CalcOutputDtype()

@@ -14,9 +14,9 @@
 #include "atvoss/elewise/elewise_tiling.h"
 #include "../../op_kernel/arch35/assign_sub_tiling_struct.h"
 
+namespace optiling {
 using namespace AssignSubNs;
 using namespace Ops::Base;
-namespace optiling {
 struct AssignSubCompileInfo {
     uint64_t coreNum = 0;
     uint64_t ubSize = 0;
