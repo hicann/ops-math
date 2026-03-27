@@ -77,6 +77,7 @@ private:
     ge::graphStatus DoUBSliceForR(CumminSplitInfo& info, int64_t length);
     ge::graphStatus DoUBSliceForN(CumminSplitInfo& info, int64_t length);
     ge::graphStatus DoUBSlice(CumminSplitInfo& info, int64_t length);
+    ge::graphStatus DoComputeWithSimt();
     void PrintCumminAll();
     void PrintCumminSplitInfo(const CumminSplitInfo& info);
 };

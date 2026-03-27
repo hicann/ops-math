@@ -19,20 +19,24 @@ __global__ __aicore__ void cummin(GM_ADDR x, GM_ADDR y, GM_ADDR argmin, GM_ADDR 
 
 #if (defined(DTYPE_X))
     if (TILING_KEY_IS(RN_FULLY_LOAD)) {
-        CumminRegbase::Cummin<DTYPE_X> op(tpipe, tilingData);
+        CumminRegbase::Cummin<DTYPE_X, DTYPE_ARGMIN> op(tpipe, tilingData);
         op.Init(x, y, argmin);
         op.ComputeM();
         op.ComputeReservedM(x, y, argmin);
     } else if (TILING_KEY_IS(N_FULLY_LOAD)) {
-        CumminRegbase::Cummin<DTYPE_X> op(tpipe, tilingData);
+        CumminRegbase::Cummin<DTYPE_X, DTYPE_ARGMIN> op(tpipe, tilingData);
         op.Init(x, y, argmin);
         op.ComputeR(op.generalProcessInfo);
         op.ComputeReservedM(x, y, argmin);
     } else if (TILING_KEY_IS(N_NOT_FULLY_LOAD)) {
-        CumminRegbase::Cummin<DTYPE_X> op(tpipe, tilingData);
+        CumminRegbase::Cummin<DTYPE_X, DTYPE_ARGMIN> op(tpipe, tilingData);
         op.Init(x, y, argmin);
         op.ComputeN(op.generalProcessInfo);
         op.ComputeReservedM(x, y, argmin);
+    } else if (TILING_KEY_IS(COMPUTE_SIMT)) {
+        CumminRegbase::Cummin<DTYPE_X, DTYPE_ARGMIN> op(tpipe, tilingData);
+        op.InitForSimT(x, y, argmin);
+        op.ComputeSimT();
     }
 #endif
 }
