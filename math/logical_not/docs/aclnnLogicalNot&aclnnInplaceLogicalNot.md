@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：计算给定输入Tensor的逐元素逻辑非。如果未指定输出类型，输出Tensor是bool类型。如果输入Tensor不是bool类型，则将零视为False，非零视为True。

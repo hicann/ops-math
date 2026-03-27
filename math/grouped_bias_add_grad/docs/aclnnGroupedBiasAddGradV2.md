@@ -27,7 +27,6 @@ $$
 groupIdx(i) = \sum_{i=0}^{j} groupIdxOptional(j), j=0...G
 $$
 
-
 $$
 out(G,H) = \begin {cases} \sum_{i=groupIdx(j-1)}^{groupIdx(j)} gradY(i,H), & 1 \leq j \leq G-1 \\ \sum_{i=0}^{groupIdx(j)} gradY(i, H), & j=0 \end {cases}
 $$
@@ -40,6 +39,7 @@ out(G, H) = \sum_{i=0}^{C} gradY(G, i, H)
 $$
 
 &emsp;&emsp;其中，gradY共3维，G, C, H依次表示gradY第0-2维的大小，计算后out为2维，shape为(G, H)。
+
 - 示例：<br>
 (1) 有可选输入groupIdxOptional，且groupIdxType为0时：<br>
   gradY的shape为(1000, 30)，groupIdxOptional为(400, 600, 1000)，将gradY分为3组，每组累加的行数依次为400、200、400，计算后out的shape为(3, 30)。<br>

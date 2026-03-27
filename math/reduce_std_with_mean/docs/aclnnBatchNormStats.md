@@ -1,6 +1,9 @@
 # aclnnBatchNormStats
+
 [📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/reduce_std_with_mean)
+
 ## 产品支持情况
+
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |

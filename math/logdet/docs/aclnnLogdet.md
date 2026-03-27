@@ -42,7 +42,6 @@
 
   * executor(aclOpExecutor **，出参)：返回op执行器，包含了算子计算流程。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -118,7 +117,6 @@
     </tr>
   </tbody>
   </table>
-
 
 - **返回值：**
 

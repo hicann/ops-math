@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |   ×     |
 | <term>Atlas 训练系列产品</term>                              |   √     |
 
-
 ## 功能说明
 
 - 算子功能：完成非负数平方根计算，负数情况返回nan。
@@ -217,7 +216,6 @@ $$
 
 - 确定性计算：
   - aclnnSqrt&aclnnInplaceSqrt默认确定性实现。
-
 
 ## 调用示例
 

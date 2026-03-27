@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：判断输入Tensor中的每个元素是否大于等于other Scalar的值，返回一个Bool类型的Tensor，对应输入Tensor中每个位置的大于等于判断是否成立。
@@ -142,7 +141,6 @@ aclnnStatus aclnnInplaceGeScalar(
 
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -220,11 +218,9 @@ aclnnStatus aclnnInplaceGeScalar(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-
 
 ## aclnnInplaceGeScalarGetWorkspaceSize
 
@@ -296,7 +292,6 @@ aclnnStatus aclnnInplaceGeScalar(
   </table>
 
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
-
 
 - **返回值：**
 
@@ -372,18 +367,16 @@ aclnnStatus aclnnInplaceGeScalar(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
- ## 约束说明
+## 约束说明
 
 - 确定性计算：
   - aclnnGeScalar&aclnnInplaceGeScalar默认确定性实现。
 
-
- ## 调用示例
+## 调用示例
  
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 

@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：将tensor self中的每个元素都转换为除以scalar other以后得到的余数。该结果与除数other同符号，并且该结果的绝对值是小于other的绝对值。
@@ -23,8 +22,6 @@
   $$
   out_i = self_i - floor(self_i / other) * other
   $$
-
-
 
 - 示例：
 
@@ -164,7 +161,6 @@
   
   - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -249,7 +245,6 @@
     </tr>
   </tbody>
   </table>
-
 
 - **返回值：**
 
@@ -559,6 +554,7 @@ int main() {
   return 0;
 }
 ```
+
 **aclnnInplaceRemainderTensorScalar示例代码：**
 
 ```Cpp

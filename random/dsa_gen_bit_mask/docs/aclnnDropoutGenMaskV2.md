@@ -41,7 +41,6 @@ aclnnStatus aclnnDropoutGenMaskV2(
   aclrtStream         stream)
 ```
 
-
 ## aclnnDropoutGenMaskV2GetWorkspaceSize
 
 - **参数说明：**

@@ -26,7 +26,9 @@
 ## 函数原型
 
 aclnnPowTensorScalar和aclnnInplacePowTensorScalar实现相同的功能，使用区别如下：
+
 - aclnnPowTensorScalar：需新建一个输出张量对象存储计算结果。
+
 - aclnnInplacePowTensorScalar：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用”aclnnPowTensorScalarGetWorkspaceSize”或者”aclnnInplacePowTensorScalarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用”aclnnPowTensorScalar”或者”aclnnInplacePowTensorScalar”接口执行计算。

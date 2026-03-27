@@ -13,8 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
-
 ## 功能说明
 
 返回输入张量在指定维度上每行的最小值和最大值。
@@ -236,7 +234,6 @@ aclrtStream    stream)
 
 - 确定性计算：
   - aclnnAminmax默认确定性实现。
-
 
 ## 调用示例
 

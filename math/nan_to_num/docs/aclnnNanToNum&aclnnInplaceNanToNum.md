@@ -566,6 +566,7 @@ int main() {
 ```
 
 **aclnnInplaceNanToNum接口调用示例代码：**
+
 ```Cpp
 #include <iostream>
 #include <vector>

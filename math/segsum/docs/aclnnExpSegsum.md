@@ -13,7 +13,6 @@
 |  <term>Atlas 推理系列产品</term>    |     ×    |
 |  <term>Atlas 训练系列产品</term>    |     ×    |
 
-
 ## 功能说明
 
 - 接口功能：进行分段和计算。生成对角线为0的半可分矩阵，且上三角为-inf。
@@ -76,7 +75,6 @@ aclnnStatus aclnnExpSegsum(
 ## aclnnExpSegsumGetWorkspaceSize
 
 - **参数说明**：
-
 
   <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 170px">

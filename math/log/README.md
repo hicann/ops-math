@@ -92,4 +92,3 @@
 | aclnn调用 | [test_aclnn_log2](./examples/test_aclnn_log2.cpp) <br> [test_aclnn_inplace_log2](./examples/test_aclnn_inplace_log2.cpp) | 通过[aclnnLog2或aclnnInplaceLog2](./docs/aclnnLog2&aclnnInplaceLog2.md)接口方式调用Log算子。    |
 | aclnn调用 | [test_aclnn_log10](./examples/test_aclnn_log10.cpp) <br> [test_aclnn_inplace_log10](./examples/test_aclnn_inplace_log10.cpp) | 通过[aclnnLog10或aclnnInplaceLog10](./docs/aclnnLog10&aclnnInplaceLog10.md)接口方式调用Log算子。    |
 | 图模式调用 | [test_geir_log](./examples/test_geir_log.cpp)   | 通过[算子IR](./op_graph/log_proto.h)构图方式调用Log算子。 |
-

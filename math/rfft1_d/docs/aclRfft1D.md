@@ -11,7 +11,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×    |
 | <term>Atlas 训练系列产品</term>                              |    ×    |
 
-
 ## 功能说明 
 
 * 算子功能：对输入张量self进行RFFT（傅里叶变换）计算，输出是一个包含非负频率的复数张量。
@@ -41,7 +40,6 @@
     * out (aclTensor\*, 计算输出): 表示公式中的输出。数据类型支持FLOAT。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
     * workspaceSize (uint64_t, 出参): 返回需要在Device侧申请的workspace大小。
     * executor(aclOpExecutor\*, 出参): 返回op执行器，包含了算子计算流程。
-
 
 * **返回值**：
 

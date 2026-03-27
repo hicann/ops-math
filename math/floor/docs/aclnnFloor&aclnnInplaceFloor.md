@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能: 返回输入Tensor中每个元素向下取整，并将结果回填到输入Tensor中。
@@ -26,6 +25,7 @@
 ## 函数原型
 
 aclnnFloor和aclnnInplaceFloor实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
+
 - aclnnFloor：需新建一个输出张量对象存储计算结果。
 - aclnnInplaceFloor：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
@@ -357,7 +357,6 @@ aclnnStatus aclnnInplaceFloor(
 - 确定性计算：
   - aclnnFloor&aclnnInplaceFloor默认确定性实现。
 
-
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
@@ -616,4 +615,3 @@ int main() {
   return 0;
 }
 ```
-

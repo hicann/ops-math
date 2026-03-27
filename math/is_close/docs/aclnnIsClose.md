@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：返回一个带有布尔元素的新张量，判断给定的self和other是否彼此接近，如果值接近，则返回True，否则返回False。
@@ -160,7 +159,6 @@ aclnnStatus aclnnIsClose(
   </tbody></table>
 
   - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16。
-
 
 - **返回值：**
 

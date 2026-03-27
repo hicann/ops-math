@@ -26,7 +26,6 @@
 
 - **参数说明**：
 
-
   - sortedSequence（aclTensor*, 计算输入）：Device侧的aclTensor，为已排序的张量，只能为一维张量，数据类型支持DOUBLE、FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64，且数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
   - self（aclScalar*, 计算输入）：Host侧的aclScalar，为要插入的值，数据类型支持DOUBLE、FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64，且数据类型与sortedSequence的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
   - outInt32（bool,计算输入）：Host侧的布尔型，表示指定输出Tensor是否为INT32类型。
@@ -129,7 +128,6 @@
 
 - 确定性计算：
   - aclnnSearchSorteds默认确定性实现。
-
 
 ## 调用示例
 

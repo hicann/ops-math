@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
 
-
 ## 功能说明
 
 判断输入张量的元素是否为负无穷。
@@ -107,7 +106,6 @@ aclnnStatus aclnnIsNegInf(
   </tbody></table>
 
   - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16。
-
 
 - **返回值：**
 

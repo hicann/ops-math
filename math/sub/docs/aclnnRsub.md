@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：完成减法计算。
@@ -135,7 +134,6 @@ aclnnStatus aclnnRsub(
   
   - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -224,7 +222,6 @@ aclnnStatus aclnnRsub(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -234,10 +231,10 @@ aclnnStatus aclnnRsub(
 - 确定性计算：
   - aclnnRsub默认确定性实现。
 
-
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>
@@ -383,4 +380,3 @@ int main() {
   return 0;
 }
 ```
-

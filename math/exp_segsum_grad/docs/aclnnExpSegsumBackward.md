@@ -13,7 +13,6 @@
 |  <term>Atlas 推理系列产品</term>    |     ×    |
 |  <term>Atlas 训练系列产品</term>    |     ×    |
 
-
 ## 功能说明
 
 - 接口功能：[aclnnExpSegsum](../../segsum/docs/aclnnExpSegsum.md)的反向计算。
@@ -54,7 +53,6 @@
      $$
 
   9. 返回gradInput为out\_flip2最后一维每行的和。
-
 
 ## 函数原型
 

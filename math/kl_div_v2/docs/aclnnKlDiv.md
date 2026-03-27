@@ -52,6 +52,7 @@ aclnnStatus aclnnKlDivGetWorkspaceSize(
   uint64_t*                 workspaceSize,
   aclOpExecutor**           executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnKlDiv(
   void*                     workspace,

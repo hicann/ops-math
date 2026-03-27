@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 返回输入tensor中所有元素的乘积。
@@ -202,7 +201,6 @@ aclnnStatus aclnnProd(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -211,7 +209,6 @@ aclnnStatus aclnnProd(
 
 - 确定性计算：
   - aclnnProd默认确定性实现。
-
 
 ## 调用示例
 
@@ -350,4 +347,3 @@ int main() {
   return 0;
 }
 ```
-

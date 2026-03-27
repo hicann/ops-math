@@ -11,7 +11,6 @@
 |  <term>Atlas 推理系列产品</term>    |     ×    |
 |  <term>Atlas 训练系列产品</term>    |     ×    |
 
-
 ## 功能说明
 
 - 接口功能：计算输入在滑动窗口内的傅里叶变换。
@@ -29,7 +28,6 @@
     X[w,m]=\frac{1}{\sqrt{nFft}}(\sum_{k=0}^{winLength-1}window[k]*self[m*hopLength+k]*exp(-j*\frac{2{\pi}wk}{nFft}))
     $$
 
-  
   其中：
   - $w$为FFT的频点。
   - $m$为滑动窗口的index。
@@ -68,7 +66,6 @@ aclnnStatus aclStft(
 ## aclStftGetWorkspaceSize
 
 - **参数说明：**
-
 
   <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 170px">
@@ -324,7 +321,6 @@ aclnnStatus aclStft(
 
 - 确定性计算：
   - aclStft默认确定性实现。
-
 
 ## 调用示例
 

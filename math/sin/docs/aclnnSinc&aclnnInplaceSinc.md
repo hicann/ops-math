@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |   ×     |
 | <term>Atlas 训练系列产品</term>                              |   √     |
 
-
 ## 功能说明
 
 - 算子功能：对输入Tensor完成sinc运算。
@@ -135,7 +134,6 @@
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -234,7 +232,6 @@
 
 - 确定性计算：
   - aclnnSinc&aclnnInplaceSinc默认确定性实现。
-
 
 ## 调用示例
 

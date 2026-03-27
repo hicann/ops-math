@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：判断输入self中的每个元素是否小于输入other中的元素，返回一个Bool类型的Tensor。
@@ -418,7 +417,6 @@ aclnnStatus aclnnInplaceLtTensor(
 
 - 确定性计算：
   - aclnnLtTensor&aclnnInplaceLtTensor默认确定性实现。
-
 
 ## 调用示例
 

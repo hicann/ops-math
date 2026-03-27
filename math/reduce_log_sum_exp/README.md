@@ -36,7 +36,6 @@
   out: [2, 1, 1]        # out_shape=[2, 1, 1];
 ```
 
-
 ## 参数说明
 
 - self（aclTensor*, 计算输入）：公式中的`self`，Device侧的aclTensor。shape支持0-8维，数据类型需要可转换成out数据类型（参见[互转换关系](../../docs/zh/context/互转换关系.md)）。支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../docs/zh/context/数据格式.md)支持ND。

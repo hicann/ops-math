@@ -28,8 +28,6 @@
   \right.
   $$
 
-
-
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnOneHotGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnOneHot”接口执行计算。
@@ -165,7 +163,6 @@ aclnnStatus aclnnOneHot(
 
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持UINT8数据类型。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -268,7 +265,6 @@ aclnnStatus aclnnOneHot(
 
 - 确定性计算：
   - aclnnOneHot默认确定性实现。
-
 
 ## 调用示例
 

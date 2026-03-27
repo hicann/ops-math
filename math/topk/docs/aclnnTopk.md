@@ -3,6 +3,7 @@
 [📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/topk)
 
 ## 产品支持情况
+
 | 产品                                                         |  是否支持   |
 | :----------------------------------------------------------- |:-------:|
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
@@ -12,12 +13,12 @@
 | <term>Atlas 推理系列产品</term>                             |    √    |
 | <term>Atlas 训练系列产品</term>                              |    √    |
 
-
 ## 功能说明
 
 算子功能：返回输入Tensor在指定维度上的k个极值及索引。
 
 ## 函数原型
+
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnTopkGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnTopk”接口执行计算。
 
 - `aclnnStatus aclnnTopkGetWorkspaceSize(const aclTensor *self, int64_t k, int64_t dim, bool largest, bool sorted, aclTensor *valuesOut, aclTensor *indicesOut, uint64_t *workspaceSize, aclOpExecutor **executor)`
@@ -72,7 +73,6 @@
 
 - 确定性计算：
   - aclnnTopk默认确定性实现。
-
 
 ## 调用示例
 

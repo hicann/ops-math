@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：计算两个张量中每个元素的最大值，并返回一个新的张量。
@@ -140,7 +139,6 @@ aclnnStatus aclnnMaximum(
   
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -220,7 +218,6 @@ aclnnStatus aclnnMaximum(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -229,7 +226,6 @@ aclnnStatus aclnnMaximum(
 
 - 确定性计算：
   - aclnnMaximum默认确定性实现。
-
 
 ## 调用示例
 

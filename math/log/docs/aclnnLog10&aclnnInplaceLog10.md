@@ -42,6 +42,7 @@ aclnnStatus aclnnLog10GetWorkspaceSize(
   uint64_t*                 workspaceSize,
   aclOpExecutor**           executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnLog10(
   void*                     workspace,
@@ -49,12 +50,14 @@ aclnnStatus aclnnLog10(
   aclOpExecutor*            executor,
   aclrtStream               stream)
 ```
+
 ```Cpp
 aclnnStatus aclnnInplaceLog10GetWorkspaceSize(
   aclTensor*                selfRef,
   uint64_t*                 workspaceSize,
   aclOpExecutor**           executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnInplaceLog10(
   void*                     workspace,
@@ -493,6 +496,7 @@ int main() {
 ```
 
 **aclnnInplaceLog10示例代码：**
+
 ```CPP
 #include <iostream>
 #include <vector>

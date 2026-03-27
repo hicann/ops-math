@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：完成除法计算
@@ -309,7 +308,6 @@ aclnnStatus aclnnInplaceDiv(
   - <term>Ascend 950PR/Ascend 950DT</term>：
     - selfRef与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
     - selfRef不支持INT32、INT64、INT16、INT8、UINT8、BOOL。
-
 
 - **返回值：**
 

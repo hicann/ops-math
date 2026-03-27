@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
 
-
 ## 功能说明
 
 - 接口功能：判断张量中哪些元素是无限大值，即是inf、-inf。
@@ -205,7 +204,6 @@ aclnnStatus aclnnIsInf(
 
 - 确定性计算：
   - aclnnIsInf默认确定性实现。
-
 
 ## 调用示例
 

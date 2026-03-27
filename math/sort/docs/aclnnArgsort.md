@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：将输入tensor中的元素根据某个维度进行升序/降序排序，返回对应的index值。
@@ -45,7 +44,6 @@ $$
   aclOpExecutor *executor, 
   aclrtStream    stream)
 ```
-
 
 ## aclnnArgsortGetWorkspaceSize
 
@@ -140,7 +138,6 @@ $$
     - 数据类型不支持UINT16、UINT32、UINT64。
     - 当self数据类型为BFLOAT16时，不支持排序轴为1。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -227,7 +224,6 @@ $$
 
 - 确定性计算：
   - aclnnArgsort默认确定性实现。
-
 
 ## 调用示例
 

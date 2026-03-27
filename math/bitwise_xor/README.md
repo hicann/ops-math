@@ -11,7 +11,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 算子功能：计算输入张量self中每个元素与输入张量other中对应位置元素的按位异或，输入self和other必须是整数或布尔类型，对于布尔类型，计算逻辑异或。
@@ -22,7 +21,7 @@
   \text{self}_i \, \bigoplus\, \text{other}_i
   $$
 
-## 参数说明：
+## 参数说明
   
   <table style="undefined;table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">

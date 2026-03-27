@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 传入一个输入张量X，并在同一通道中的值上应用平均池化
@@ -108,7 +107,6 @@ aclnnStatus aclnnGlobalAveragePool(
 
   - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型不支持BFLOAT16。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -183,7 +181,6 @@ aclnnStatus aclnnGlobalAveragePool(
     </tr>
   </tbody></table>
 
-
 - **返回码：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -193,10 +190,10 @@ aclnnStatus aclnnGlobalAveragePool(
 - 确定性计算：
   - aclnnGlobalAveragePool默认确定性实现。
 
-
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>
@@ -347,4 +344,3 @@ int main() {
   return 0;
 }
 ```
-

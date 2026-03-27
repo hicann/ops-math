@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
 
-
 ## 功能说明
 
 - 接口功能：创建一个大小为$\text{steps}$的一维张量，其值在$\text{base}^\text{start}$到$\text{base}^\text{end}$上对数尺度上均匀间隔，包含端点，以$\text{base}$为底。
@@ -223,7 +222,6 @@ aclnnStatus aclnnLogSpace(
 - **确定性计算:**
   
   - aclnnLogSpace默认确定性实现。
-
 
 ## 调用示例
 

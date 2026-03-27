@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 对于给定维度`dim`中的每一维，如果输入Tensor中该维度对应的任意元素计算为True，则返回True，否则返回False。如果`keepdim`为True，则输出Tensor的维度与输入相同，否则，`dim`维将会被压缩，导致输出Tensor减少`len(dim)`个维度。
@@ -133,7 +132,6 @@ aclnnStatus aclnnAny(
   
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：不支持BFLOAT16数据类型。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -215,7 +213,6 @@ aclnnStatus aclnnAny(
 
 - 确定性计算：
   - aclnnAny默认确定性实现。
-
 
 ## 调用示例
 

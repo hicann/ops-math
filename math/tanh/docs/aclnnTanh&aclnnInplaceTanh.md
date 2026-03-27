@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |   ×     |
 | <term>Atlas 训练系列产品</term>                              |   √     |
 
-
 ## 功能说明
 
 - 算子功能：激活函数。返回与输入tensor shape相同的tensor，对输入tensor进行elementwise的计算。
@@ -220,7 +219,6 @@ $$
 
 - 确定性计算：
   - aclnnTanh&aclnnInplaceTanh默认确定性实现。
-
 
 ## 调用示例
 

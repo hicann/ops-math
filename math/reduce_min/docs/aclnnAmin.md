@@ -13,8 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
-
 ## 功能说明
 
 返回张量在指定维度(dim)上每个切片的最小值。
@@ -215,7 +213,7 @@ aclnnStatus aclnnAmin(
       <td>指定执行任务的Stream。</td>
     </tr>
   </tbody>
-</table>
+  </table>
   
 - **返回值：**
 
@@ -225,7 +223,6 @@ aclnnStatus aclnnAmin(
 
 - 确定性计算：
   - aclnnAmin默认确定性实现。
-
 
 ## 调用示例
 

@@ -17,7 +17,6 @@
 
 - 计算公式：
 
-
 $$
 A = QR
 $$
@@ -57,7 +56,6 @@ R = tensor([[-3.1623, -4.4272],
   - workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
 
   - executor(aclOpExecutor \**, 出参)：返回op执行器，包含了算子计算流程。
-
 
 - **返回值：**
 
@@ -132,7 +130,6 @@ R = tensor([[-3.1623, -4.4272],
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -141,7 +138,6 @@ R = tensor([[-3.1623, -4.4272],
 
 - 确定性计算：
   - aclnnQr默认确定性实现。
-
 
 ## 调用示例
 

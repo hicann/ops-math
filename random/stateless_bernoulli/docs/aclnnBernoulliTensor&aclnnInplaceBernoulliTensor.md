@@ -69,9 +69,9 @@ aclnnStatus aclnnInplaceBernoulliTensor(
 
 ## aclnnBernoulliTensorGetWorkspaceSize
 
-  - **参数说明：**
+- **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
   <col style="width: 170px">
   <col style="width: 120px">
   <col style="width: 300px">
@@ -166,10 +166,10 @@ aclnnStatus aclnnInplaceBernoulliTensor(
   </tbody>
   </table>
 
- - <term>Atlas 训练系列产品</term>：数据类型不支持UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16。
- - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型不支持UINT8、INT8、INT16、INT32、INT64、BOOL。
+  - <term>Atlas 训练系列产品</term>：数据类型不支持UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型不支持UINT8、INT8、INT16、INT32、INT64、BOOL。
 
-  - **返回值：**
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)
 
@@ -209,12 +209,11 @@ aclnnStatus aclnnInplaceBernoulliTensor(
   </tbody>
   </table>
 
-
 ## aclnnBernoulliTensor
 
-  - **参数说明：**
+- **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 153px">
   <col style="width: 124px">
   <col style="width: 872px">
@@ -249,15 +248,15 @@ aclnnStatus aclnnInplaceBernoulliTensor(
   </tbody>
   </table>
 
-  - **返回值：**
+- **返回值：**
 
     aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceBernoulliTensorGetWorkspaceSize
 
-  - **参数说明：**
+- **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
   <col style="width: 170px">
   <col style="width: 120px">
   <col style="width: 300px">
@@ -342,9 +341,9 @@ aclnnStatus aclnnInplaceBernoulliTensor(
   </tbody>
   </table>
 
-- <term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+  - <term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
-  - **返回值：**
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)
 
@@ -378,12 +377,11 @@ aclnnStatus aclnnInplaceBernoulliTensor(
   </tbody>
   </table>
 
-
 ## aclnnInplaceBernoulliTensor
 
-  - **参数说明：**
+- **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 153px">
   <col style="width: 124px">
   <col style="width: 872px">
@@ -418,7 +416,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
   </tbody>
   </table>
 
-  - **返回值：**
+- **返回值：**
 
     aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -430,6 +428,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 计算张量直方图。
@@ -237,7 +236,6 @@ aclnnStatus aclnnHistc(
 
 - 确定性计算：
   - aclnnHistc默认确定性实现。
-
 
 ## 调用示例
 
