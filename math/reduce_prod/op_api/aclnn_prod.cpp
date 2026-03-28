@@ -85,9 +85,12 @@ static bool CheckDimValid(const aclTensor* self, int64_t dim, bool isCheckDim)
     auto selfViewShape = self->GetViewShape();
     auto selfDimNum = static_cast<int64_t>(selfViewShape.GetDimNum());
     // 检查指定dim是否在self的维度范围内
-    if ((dim == 0 || dim == -1) && selfDimNum == 0) {
-        return true;
+    if (selfDimNum == 0){
+        if (dim == 0 || dim == -1) {
+            return true;
+        }
     }
+
     if (dim >= selfDimNum || dim < (-selfDimNum)) {
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID, "Expected dim to be in range of [%ld, %ld], but got %ld.", -selfDimNum,
