@@ -78,7 +78,7 @@ aclnnStatus aclnnSimThreadExponential(
         <td>FLOAT16、BFLOAT16、FLOAT32</td>
         <td>ND</td>
         <td>小于等于8维</td>
-        <td>×</td>
+        <td>√</td>
       </tr>
       <tr>
         <td>count</td>

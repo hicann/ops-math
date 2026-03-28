@@ -33,7 +33,7 @@
 ```Cpp
 aclnnStatus aclnnBernoulliTensorGetWorkspaceSize(
   const aclTensor   *self,
-  const aclScalar   *prob,
+  const aclTensor   *prob,
   int64_t           seed,
   int64_t           offset,
   aclTensor         *out,
@@ -52,7 +52,7 @@ aclnnStatus aclnnBernoulliTensor(
 ```Cpp
 aclnnStatus aclnnInplaceBernoulliTensorGetWorkspaceSize(
   const aclTensor   *selfRef,
-  const aclScalar   *prob,
+  const aclTensor   *prob,
   int64_t           seed,
   int64_t           offset,
   uint64_t          *workspaceSize,
