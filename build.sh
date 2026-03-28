@@ -971,12 +971,14 @@ parse_changed_files() {
   COMPILED_OPS=$(python3 scripts/ci/parse_changed_ops.py $CHANGED_FILES "$ENABLE_EXPERIMENTAL")
   echo "related ops "$COMPILED_OPS
 
+  local DEFAULT_OP_SET=FALSE
   if [[ -z $COMPILED_OPS ]]; then
     if [[ "$ENABLE_EXPERIMENTAL" == "TRUE" ]]; then
-      COMPILED_OPS='log'
+      COMPILED_OPS='acos'
     else
       COMPILED_OPS='is_finite'
     fi
+    DEFAULT_OP_SET=TRUE
     echo "No ops changed found, set op $COMPILED_OPS as default."
   fi
 
@@ -992,6 +994,16 @@ parse_changed_files() {
   COMPUTE_UNIT=$soc_info
 
   if [[ "$related_ut" == "set()" ]]; then
+    # 默认算子时，固定触发 op_api UT 和 op_kernel UT
+    if [[ "$DEFAULT_OP_SET" == "TRUE" ]]; then
+      echo "Default op $COMPILED_OPS set, trigger op_api UT and op_kernel UT"
+      OP_API_UT=TRUE
+      OP_KERNEL_UT=TRUE
+      ENABLE_CUSTOM=TRUE
+      ENABLE_TEST=TRUE
+      return
+    fi
+
     ENABLE_TEST=FALSE
     echo "no ut matched! no need to run!"
     echo "---------------- CANN build finished ----------------"
