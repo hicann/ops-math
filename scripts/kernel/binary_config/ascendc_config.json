@@ -379,6 +379,7 @@
     {"name":"MrgbaCustom", "compute_units": ["ascend310p"], "auto_sync" : true},
     {"name":"GeGluV2", "compute_units": ["ascend950", "ascend910_93", "ascend910b", "ascend310p"], "auto_sync": true, "compile_options": {"ascend950":["--cce-simd-vf-fusion=true"]}},
     {"name":"IsFinite", "compute_units": ["ascend950", "ascend910_93", "ascend910b", "ascend310p", "kirinx90", "kirin9030"], "auto_sync": true, "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
+    {"name": "BatchToSpaceND", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name": "MatrixDiag", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name": "MatrixSetDiag", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name": "Im2col", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
