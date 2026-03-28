@@ -60,6 +60,7 @@
     {"name":"Gelu", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : "" },
     {"name":"GeluGrad", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : ""},
     {"name":"SwishGrad", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : "" },
+    {"name":"Asin", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"Sin", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"Cos", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"Swish", "compute_units": ["ascend950"], "auto_sync": true, "impl_mode" : ""},

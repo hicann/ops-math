@@ -24,6 +24,7 @@ operator_group_1:
   - arg_min_with_value
   - assign_add
   - assign_sub
+  - asin
   - atan
   - axpy
   - axpy_v2

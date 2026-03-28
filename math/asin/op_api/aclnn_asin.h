@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ ACLNN_API aclnnStatus aclnnAsinGetWorkspaceSize(const aclTensor* self, aclTensor
 
 /**
  * @brief aclnnAsin的第二段接口，用于执行计算。
- * 功能描述：从输入矩阵的每一个元素进行反余弦操作后输出。。
+ * 功能描述：从输入矩阵的每一个元素进行反余弦操作后输出。
  * 计算公式：
  * out_{i}=sin^{-1}(input_{i})
  * 实现说明：
