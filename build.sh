@@ -1001,6 +1001,7 @@ parse_changed_files() {
       OP_KERNEL_UT=TRUE
       ENABLE_CUSTOM=TRUE
       ENABLE_TEST=TRUE
+      COMPUTE_UNIT="ascend910b"
       return
     fi
 
