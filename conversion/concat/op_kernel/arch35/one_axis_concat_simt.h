@@ -34,18 +34,27 @@ class OneAxisConcatSimt {
 public:
     __aicore__ inline OneAxisConcatSimt(const ConcatTilingDataForSimt& tilingData) : tilingData_(tilingData){};
     __aicore__ inline void ProcessForSimt(GM_ADDR x, GM_ADDR dst);
+    __aicore__ inline __gm__ T *GetTensorSimtAddr(uint16_t index, GM_ADDR tensorPtr);
 
 private:
     const ConcatTilingDataForSimt& tilingData_;
 };
 
 template <typename T>
+__simt_callee__ __aicore__ inline __gm__ T *GetTensorSimtAddr(uint16_t index, GM_ADDR tensorPtr)
+{
+    __gm__ uint64_t *dataAddr = reinterpret_cast<__gm__ uint64_t *>(tensorPtr);
+    uint64_t tensorPtrOffset = *dataAddr;
+    __gm__ uint64_t *retPtr = dataAddr + (tensorPtrOffset >> 3);
+    return reinterpret_cast<__gm__ T *>(*(retPtr + index));
+}
+
+template <typename T>
 __simt_vf__ __aicore__ LAUNCH_BOUND(MAX_THREAD_NUM) inline void ConcatSimt(
     GM_ADDR x, GM_ADDR y, uint32_t tensorIdx, uint32_t colsSize, uint32_t colsOffset, uint32_t m, uint32_t n,
     uint32_t magic, uint32_t shift)
 {
-    ListTensorDesc tensorList = ListTensorDesc(reinterpret_cast<__gm__ void*>(x));
-    auto src = tensorList.GetDataPtr<T>(tensorIdx);
+    auto src = GetTensorSimtAddr<T>(tensorIdx, x);
     __gm__ T* dst = (__gm__ T*)y;
     for (uint32_t i = Simt::GetThreadIdx(); i < m * colsSize; i += Simt::GetThreadNum()) {
         uint32_t t1 = Simt::MulHi(i, magic);
