@@ -24,6 +24,7 @@ operator_group_1:
   - arg_min_with_value
   - assign_add
   - assign_sub
+  - atan
   - axpy
   - axpy_v2
   - bias_add
@@ -48,8 +49,10 @@ operator_group_1:
   - dynamic_partition
   - dynamic_stitch
   - equal
+  - erf
   - exp
   - expand
+  - expm1
   - exp_segsum_grad
   - eye
   - floor
@@ -89,6 +92,7 @@ operator_group_2:
   - mul
   - muls
   - mul_addn
+  - nan_to_num
   - neg
   - non_finite_check
   - not_equal
@@ -113,6 +117,7 @@ operator_group_3:
   - reduce_log_sum_exp
 operator_group_4:
   - rfft1_d
+  - right_shift
   - round
   - rsqrt
   - rsqrt_grad

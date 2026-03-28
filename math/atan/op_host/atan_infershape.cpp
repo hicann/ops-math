@@ -1,5 +1,5 @@
-/* Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+/**
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -14,11 +14,11 @@
 
 using namespace ge;
 namespace ops {
-static ge::graphStatus InferShapeForAtan(gert::InferShapeContext *context) {
-  OP_LOGI("Begin InferShapeForAtan");
-  return Ops::Base::InferShape4Elewise(context);
+static ge::graphStatus InferShapeForAtan(gert::InferShapeContext* context)
+{
+    OP_LOGI("Begin InferShapeForAtan");
+    return Ops::Base::InferShape4Elewise(context);
 }
 
 IMPL_OP_INFERSHAPE(Atan).InferShape(InferShapeForAtan);
-}
-// namespace ops
+} // namespace ops

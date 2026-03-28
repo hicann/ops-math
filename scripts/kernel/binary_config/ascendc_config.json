@@ -625,7 +625,7 @@
     {"name":"Arange", "compute_units": ["ascend910b", "ascend310b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"SubV2", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"Onehot", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
-    {"name":"Erf", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
+    {"name":"Erf", "compute_units": ["ascend910b", "ascend950"], "auto_sync" : false, "compile_options": {"ascend950":["--cce-simd-vf-fusion=true", "-mllvm -cce-aicore-dcci-before-kernel-end=false"]}, "impl_mode" : ""},
     {"name":"Sinh", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"MaximumV2", "compute_units": ["ascend910b"], "auto_sync" : true, "impl_mode" : "high_performance"},
     {"name":"ReflectionPad1dV2", "compute_units": ["ascend910b"], "auto_sync":true, "impl_mode" : "high_performance"},
@@ -640,5 +640,9 @@
     {"name": "DropOutDoMask", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name": "DropOutDoMaskV3", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name": "DropOutDoMaskV3D", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
-    {"name": "StatelessRandomChoiceWithMask", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode" : ""}
+    {"name": "StatelessRandomChoiceWithMask", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode" : ""},
+    {"name":"Atan", "compute_units": ["ascend950"], "auto_sync": false, "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
+ 	{"name":"Expm1", "compute_units": ["ascend950"], "auto_sync": false, "compile_options": {"ascend950": ["--cce-simd-vf-fusion=true", "-mllvm -cce-aicore-dcci-before-kernel-end=false"]}, "impl_mode": ""},
+    {"name":"RightShift", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
+    {"name":"NanToNum", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}}
 ]

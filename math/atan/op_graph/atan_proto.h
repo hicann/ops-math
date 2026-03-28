@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@
 
 #include "graph/operator_reg.h"
 
-namespace ge
-{
+namespace ge {
 /**
 *@brief Computes the trignometric inverse tangent of x element-wise.
 * The atan operation returns the inverse of tan, such that if y = tan(x) then, x = atan(y).
