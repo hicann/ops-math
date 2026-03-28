@@ -647,12 +647,12 @@ macro(add_all_modules_sources)
   endif()
 
   # 添加tf_plugin文件
-  file(GLOB TF_PLUGIN_SRCS ${SOURCE_DIR}/framework/*_tf_plugin.cpp)                                                                               
-  if (TF_PLUGIN_SRCS)                                                                                                                             
-    if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG AND NOT ENABLE_TEST)                                                                              
-      target_sources(${TF_PLUGIN_NAME}_obj PRIVATE ${TF_PLUGIN_SRCS})                                                                             
-    endif()                                                                                                                                       
-  endif()  
+  file(GLOB TF_PLUGIN_SRCS ${SOURCE_DIR}/framework/*_tf_plugin.cpp)
+  if (TF_PLUGIN_SRCS)
+    if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG AND NOT ENABLE_TEST)
+      target_sources(${TF_PLUGIN_NAME}_obj PRIVATE ${TF_PLUGIN_SRCS})
+    endif()
+  endif()
 
   # 添加所有的UT
   add_all_ut_sources(UT_TILING_DIR "${TILING_SOC_DIR}" OP_NAME ${OP_NAME})
