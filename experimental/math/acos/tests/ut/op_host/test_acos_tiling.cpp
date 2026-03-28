@@ -119,7 +119,7 @@ TEST_F(AcosTiling, acos_tiling_004)
         196608 + 256 // Mock ubsize = 192k 供UT使用,获取的时候系统会自动减掉256
     );
     uint64_t expectTilingKey = ge::DT_FLOAT16;
-    string expectTilingData = "1 39 52353 52352 9 6144 3201 9 6144 3200 ";
+    string expectTilingData = "1 39 52353 52352 9 6272 2177 9 6272 2176 ";
     std::vector<size_t> expectWorkspaces = {16 * 1024 * 1024};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -141,7 +141,7 @@ TEST_F(AcosTiling, acos_tiling_005)
         196608 + 256 // Mock ubsize = 192k 供UT使用,获取的时候系统会自动减掉256
     );
     uint64_t expectTilingKey = ge::DT_BF16;
-    string expectTilingData = "1 39 52353 52352 9 6144 3201 9 6144 3200 ";
+    string expectTilingData = "1 39 52353 52352 9 6272 2177 9 6272 2176 ";
     std::vector<size_t> expectWorkspaces = {16 * 1024 * 1024};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

@@ -164,6 +164,7 @@ operator_group_5:
   - mirror_pad
   - pack
   - pad_v3
+  - pad_v3_grad
   - reflection_pad3d_grad
   - roll
   - slice

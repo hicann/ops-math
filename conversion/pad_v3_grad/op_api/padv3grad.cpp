@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 #include "opdev/op_def.h"
 #include "opdev/op_dfx.h"
 #include "opdev/aicpu/aicpu_task.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -27,6 +28,8 @@ OP_TYPE_REGISTER(CircularPadGrad);
 
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT};
+static const std::initializer_list<op::DataType> AICORE_REGBASE_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16};
 static const std::initializer_list<op::DataType> PAD_V4_GRAD_AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16};
 static const std::initializer_list<op::DataType> REPLICATION_2D_AICORE_DTYPE_SUPPORT_LIST = {
@@ -83,6 +86,14 @@ inline static bool IsPadV4GradAicoreSupport(const aclTensor *gradOutput, const s
             GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93);
 }
 
+inline static bool IsPadV4GradAicoreRegBaseSupport(const aclTensor *gradOutput, const std::string &mode) {
+    // padv4grad 支持类型和平台
+    if (gradOutput->GetViewShape().GetDimNum() > AI_CORE_DIM_BOUND) {
+        return false;
+    }
+    return mode == "reflect" && CheckType(gradOutput->GetDataType(), AICORE_REGBASE_DTYPE_SUPPORT_LIST) && IsRegBase();
+}
+
 inline static bool IsPadV3GradReplicateAicoreSupport(const aclTensor *gradOutput, const std::string &mode) {
     // PadV3GradReplicate 支持类型和平台
     if (gradOutput->GetViewShape().GetDimNum() > AI_CORE_DIM_BOUND) {
@@ -92,6 +103,15 @@ inline static bool IsPadV3GradReplicateAicoreSupport(const aclTensor *gradOutput
             CheckType(gradOutput->GetDataType(), REPLICATION_2D_AICORE_DTYPE_SUPPORT_LIST) &&
             (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
             GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93);
+}
+
+inline static bool IsPadV3GradReplicateAicoreRegBaseSupport(const aclTensor *gradOutput, const std::string &mode) {
+    // PadV3GradReplicate 支持类型和平台
+    if (gradOutput->GetViewShape().GetDimNum() > AI_CORE_DIM_BOUND) {
+        return false;
+    }
+    return mode == REPLICATION_PAD_MODE &&
+            CheckType(gradOutput->GetDataType(), AICORE_REGBASE_DTYPE_SUPPORT_LIST) && IsRegBase();
 }
 
 inline static bool IsAiCoreSupportReplication3D(const aclTensor *gradOutput, const std::string &mode)
@@ -106,6 +126,20 @@ inline static bool IsAiCoreSupportReplication3D(const aclTensor *gradOutput, con
         return true;
     }
     OP_LOGD("[PadV3Grad] IsAiCoreSupportReplication3D: false");
+    return false;
+}
+
+inline static bool IsAiCoreRegBaseSupportReplication3D(const aclTensor *gradOutput, const std::string &mode)
+{
+    if (gradOutput->GetViewShape().GetDimNum() == AI_CORE_DIM_3D && \
+        mode == REPLICATION_PAD_MODE && \
+        CheckType(gradOutput->GetDataType(), REPLICATION_3D_AICORE_DTYPE_SUPPORT_LIST) && \
+        IsRegBase()
+    ) {
+        OP_LOGD("[PadV3Grad] IsAiCoreRegBaseSupportReplication3D: true");
+        return true;
+    }
+    OP_LOGD("[PadV3Grad] IsAiCoreRegBaseSupportReplication3D: false");
     return false;
 }
 
@@ -125,6 +159,25 @@ inline static bool IsAiCoreSupportReflection3D(const aclTensor *gradOutput, cons
         return false;
     } 
     OP_LOGD("[PadV3Grad] IsAiCoreSupportReflection3D: ture");
+    return true;
+}
+
+inline static bool IsAiCoreRegBaseSupportReflection3D(const aclTensor *gradOutput, const std::string &mode)
+{
+    // AscendC仅支持Pad3d的部分场景，其余需要走AiCpu分支
+    if (gradOutput->GetViewShape().GetDimNum() != AI_CORE_DIM_3D || mode != "reflect") {
+        OP_LOGD("[PadV3Grad] IsAiCoreRegBaseSupportReflection3D: false, The input dimension is not a 3d scene or the mode is not reflect");
+        return false;
+    }
+    if (!IsRegBase()) {
+        OP_LOGD("[PadV3Grad] IsAiCoreRegBaseSupportReflection3D: false, The device is not support");
+        return false;
+    }
+    if (CheckType(gradOutput->GetDataType(), REFLECT_3D_AICORE_DTYPE_SUPPORT_LIST) == false) {
+        OP_LOGD("[PadV3Grad] IsAiCoreRegBaseSupportReflection3D: false, The data type does not support aicore");
+        return false;
+    } 
+    OP_LOGD("[PadV3Grad] IsAiCoreRegBaseSupportReflection3D: ture");
     return true;
 }
 
@@ -218,16 +271,27 @@ const aclTensor *PadV3Grad(const aclTensor *gradOutput,
                 OP_ATTR(mode, paddingsContiguous));
 
     if (mode == "circular") {
+        if(IsRegBase()){
+            return PadV3GradAiCore(gradOutput, paddings, mode, paddingsContiguous, padV3GradOut, executor);
+        }
         return CircularPadGradAiCore(gradOutput, paddings, padV3GradOut, executor);
     }
     if (padFlag && IsPadV4GradAicoreSupport(gradOutput, mode)) {
         return PadV4GradAiCore(gradOutput, paddings, mode, paddingsContiguous, padV3GradOut, executor);
+    } else if(padFlag && IsPadV4GradAicoreRegBaseSupport(gradOutput, mode)){
+        return PadV3GradAiCore(gradOutput, paddings, mode, paddingsContiguous, padV3GradOut, executor);
     } else if (padFlag && IsPadV3GradReplicateAicoreSupport(gradOutput, mode)) {
         return PadV3GradReplicateAiCore(gradOutput, paddings, mode, paddingsContiguous, padV3GradOut, executor);
-    } else if (IsAiCoreSupportReplication3D(gradOutput, mode)) {
+    } else if (padFlag && IsPadV3GradReplicateAicoreRegBaseSupport(gradOutput, mode)) {
+        return PadV3GradAiCore(gradOutput, paddings, mode, paddingsContiguous, padV3GradOut, executor);
+    }else if (IsAiCoreSupportReplication3D(gradOutput, mode)) {
         return PadV3GradReplicationAiCore(gradOutput, paddings, padV3GradOut, executor);
-    } else if (padFlag && IsAiCoreSupportReflection3D(gradOutput, mode)) {
+    } else if (IsAiCoreRegBaseSupportReplication3D(gradOutput, mode)) {
+        return PadV3GradAiCore(gradOutput, paddings, mode, paddingsContiguous, padV3GradOut, executor);
+    }else if (padFlag && IsAiCoreSupportReflection3D(gradOutput, mode)) {
         return PadV3Grad3DAiCoreReflection(gradOutput, paddings, padV3GradOut, executor);
+    } else if (padFlag && IsAiCoreRegBaseSupportReflection3D(gradOutput, mode)) {
+        return PadV3GradAiCore(gradOutput, paddings, mode, paddingsContiguous, padV3GradOut, executor);
     } else if (padFlag && IsTbeSupport(gradOutput)) {
         return PadV3GradAiCore(gradOutput, paddings, mode, paddingsContiguous, padV3GradOut, executor);
     } else {

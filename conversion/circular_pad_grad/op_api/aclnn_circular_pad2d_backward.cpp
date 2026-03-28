@@ -9,7 +9,7 @@
  */
 
 #include "aclnn_circular_pad2d_backward.h"
-#include "conversion/pad_v3_grad/op_host/op_api/padv3grad.h"
+#include "conversion/pad_v3_grad/op_api/padv3grad.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/op_dfx.h"

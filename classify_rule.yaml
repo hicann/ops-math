@@ -265,6 +265,7 @@ VC2@ops-math:
         - ops/ops-math/conversion/mirror_pad/
         - ops/ops-math/conversion/pad/
         - ops/ops-math/conversion/pad_v3/
+        - ops/ops-math/conversion/pad_v3_grad/
         - ops/ops-math/conversion/fill/
         - ops/ops-math/conversion/fills/
         - ops/ops-math/conversion/masked_fill/
@@ -322,6 +323,7 @@ VC2@ops-math:
         - ops/ops-math/conversion/pad/tests/
         - ops/ops-math/conversion/pad_v3/examples/
         - ops/ops-math/conversion/pad_v3/tests/
+        - ops/ops-math/conversion/pad_v3_grad/tests/
         - ops/ops-math/conversion/fills/examples/
         - ops/ops-math/conversion/fills/tests/
         - ops/ops-math/conversion/fill/examples/

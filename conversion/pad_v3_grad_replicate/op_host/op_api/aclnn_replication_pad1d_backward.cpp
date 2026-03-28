@@ -9,7 +9,7 @@
  */
 
 #include "aclnn_replication_pad1d_backward.h"
-#include "../../../pad_v3_grad/op_host/op_api/padv3grad.h"
+#include "../../../pad_v3_grad/op_api/padv3grad.h"
 #include "aclnn_kernels/contiguous.h"
 #include "../../../squeeze/op_host/op_api/squeeze.h"
 #include "../../../unsqueeze/op_host/op_api/unsqueeze.h"
