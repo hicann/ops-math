@@ -29,7 +29,7 @@ constexpr uint64_t GROUP_SIZE = 2;
 constexpr uint64_t USED_THREAD = 1024;
 constexpr uint64_t THREAD_LAUNCH = 1024;
 
-__aicore__ inline void BoxMullerFloat(const float x0, const float x1, float* f0, float* f1)
+__simt_callee__ __aicore__ inline void BoxMullerFloat(const float x0, const float x1, float* f0, float* f1)
 {
     const float eps = 1.0e-7f;
     float u1 = x0;

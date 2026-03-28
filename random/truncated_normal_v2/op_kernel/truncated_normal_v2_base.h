@@ -39,7 +39,7 @@ constexpr float RANDOM_THREAD_L = -2.0f;
 constexpr uint32_t MANTISSA_BIT = 23;
 
 // Skip the specified number of samples of 128-bits in the current stream.
-__aicore__ inline void Skip(const uint64_t count, uint32_t* counter)
+__simt_callee__ __aicore__ inline void Skip(const uint64_t count, uint32_t* counter)
 {
     const uint32_t countLo = static_cast<uint32_t>(count);
     uint32_t countHi = static_cast<uint32_t>(count >> ALG_RGIHT_BIT);
@@ -56,7 +56,7 @@ __aicore__ inline void Skip(const uint64_t count, uint32_t* counter)
     }
 }
 
-__aicore__ inline void CopyArray4(uint32_t* dst, const uint32_t* src)
+__simt_callee__ __aicore__ inline void CopyArray4(uint32_t* dst, const uint32_t* src)
 {
     dst[0] = src[0];
     dst[1] = src[1];
@@ -65,7 +65,7 @@ __aicore__ inline void CopyArray4(uint32_t* dst, const uint32_t* src)
 }
 
 // Helper function to skip the next sample of 128-bits in the current stream.
-__aicore__ inline void SkipOne(uint32_t* counter)
+__simt_callee__ __aicore__ inline void SkipOne(uint32_t* counter)
 {
     if (++counter[0] == 0) {
         if (++counter[1] == 0) {
@@ -80,7 +80,7 @@ __aicore__ inline void SkipOne(uint32_t* counter)
  * Helper function to return the lower and higher 32-bits from two 32-bit
  * integer multiplications.
  */
-__aicore__ inline void MultiplyHighLow(uint32_t a, uint32_t b, uint32_t* result_low, uint32_t* result_high)
+__simt_callee__ __aicore__ inline void MultiplyHighLow(uint32_t a, uint32_t b, uint32_t* result_low, uint32_t* result_high)
 {
     const uint64_t product = static_cast<uint64_t>(a) * b;
     *result_low = static_cast<uint32_t>(product);
@@ -88,7 +88,7 @@ __aicore__ inline void MultiplyHighLow(uint32_t a, uint32_t b, uint32_t* result_
 }
 
 // Helper function for a single round of the underlying Philox algorithm.
-__aicore__ inline void ComputeSingleRound(uint32_t* counter, const uint32_t* key)
+__simt_callee__ __aicore__ inline void ComputeSingleRound(uint32_t* counter, const uint32_t* key)
 {
     uint32_t lo0;
     uint32_t hi0;
@@ -107,7 +107,7 @@ __aicore__ inline void ComputeSingleRound(uint32_t* counter, const uint32_t* key
     CopyArray4(counter, result);
 }
 
-__aicore__ inline void RaiseKey(uint32_t* key)
+__simt_callee__ __aicore__ inline void RaiseKey(uint32_t* key)
 {
     key[0] += PHILOX_W32_A;
     key[1] += PHILOX_W32_B;
@@ -117,7 +117,7 @@ __aicore__ inline void RaiseKey(uint32_t* key)
  * Returns counter: a group of four random numbers using the underlying Philox
  * algorithm.
  */
-__aicore__ inline void PhiloxRandom(const uint32_t* keyCst, uint32_t* counter, uint32_t* counterOrig)
+__simt_callee__ __aicore__ inline void PhiloxRandom(const uint32_t* keyCst, uint32_t* counter, uint32_t* counterOrig)
 {
     uint32_t key[ALG_KEY_SIZE];
     CopyArray4(key, keyCst);
@@ -148,7 +148,7 @@ __aicore__ inline void PhiloxRandom(const uint32_t* keyCst, uint32_t* counter, u
 }
 
 // Helper function to convert an 32-bit integer to a float between [0..1).
-__aicore__ inline float Uint32ToFloat(const uint32_t& x)
+__simt_callee__ __aicore__ inline float Uint32ToFloat(const uint32_t& x)
 {
     const uint32_t man = x & 0x7fffffu; // 23 bit mantissa
     const uint32_t exp = static_cast<uint32_t>(127);
@@ -159,7 +159,7 @@ __aicore__ inline float Uint32ToFloat(const uint32_t& x)
 }
 
 // This function implements the Box-Muller transform:
-__aicore__ inline void BoxMullerFloat(const uint32_t& x0, const uint32_t& x1, float* f0, float* f1)
+__simt_callee__ __aicore__ inline void BoxMullerFloat(const uint32_t& x0, const uint32_t& x1, float* f0, float* f1)
 {
     const float eps = 1.0e-7f;
     float u1 = Uint32ToFloat(x0);
@@ -173,7 +173,7 @@ __aicore__ inline void BoxMullerFloat(const uint32_t& x0, const uint32_t& x1, fl
     *f1 *= u2;
 }
 
-__aicore__ inline void FilterSample(float* results, int& index, float f0)
+__simt_callee__ __aicore__ inline void FilterSample(float* results, int& index, float f0)
 {
     if (Simt::Abs(f0) < RANDOM_THREAD_R) {
         results[index] = f0;
@@ -181,7 +181,7 @@ __aicore__ inline void FilterSample(float* results, int& index, float f0)
     }
 }
 
-__aicore__ inline void GenSamples(float* results, const uint32_t* key, const uint32_t* counter)
+__simt_callee__ __aicore__ inline void GenSamples(float* results, const uint32_t* key, const uint32_t* counter)
 {
     int index = 0;
     uint32_t counterSkip[ALG_COUNTER_SIZE];
