@@ -68,7 +68,7 @@ aclnnStatus aclnnHistc(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>待被统计元素在各个bins的数量的张量。</td>
       <td>-</td>
@@ -78,7 +78,7 @@ aclnnStatus aclnnHistc(
       <td>√</td>
     </tr>
     <tr>
-      <td>bins</td>
+      <td>bins（int64_t）</td>
       <td>输入</td>
       <td>直方图bins的数量。</td>
       <td>取值范围需大于0。</td>
@@ -88,7 +88,7 @@ aclnnStatus aclnnHistc(
       <td>-</td>
     </tr>
     <tr>
-      <td>min</td>
+      <td>min（aclScalar*）</td>
       <td>输入</td>
       <td>直方图的统计下限（包括）。</td>
       <td>数据类型需要是可转换成FLOAT的类型，取值范围不能大于max的值。</td>
@@ -98,7 +98,7 @@ aclnnStatus aclnnHistc(
       <td>-</td>
     </tr>
     <tr>
-      <td>max</td>
+      <td>max（aclScalar*）</td>
       <td>输入</td>
       <td>直方图的统计上限（包括）。</td>
       <td>数据类型需要是可转换成FLOAT的类型，取值范围不能小于min的值。</td>
@@ -108,7 +108,7 @@ aclnnStatus aclnnHistc(
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>直方图统计结果。</td>
       <td><ul><li>out数据类型需要可转换为self的数据类型，（参考<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</li><li>元素个数等于bins。</li></ul></td>
@@ -118,7 +118,7 @@ aclnnStatus aclnnHistc(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -128,7 +128,7 @@ aclnnStatus aclnnHistc(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -169,7 +169,7 @@ aclnnStatus aclnnHistc(
       <td>self和out的数据类型和数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>self与out的数据类型不满足互推导关系。</td>
+      <td>self与out的数据类型不满足互转换关系。</td>
     </tr>
     <tr>
       <td>传入的bins小于等于0。</td>
