@@ -79,12 +79,12 @@ int ExecuteInplaceLtScalarOperator(aclrtStream stream)
     void* selfDeviceAddr = nullptr;
     aclTensor* self = nullptr;
     aclScalar* other = nullptr;
-    std::vector<double> selfHostData = {0, 1, 1.2, 0.3, 4.1, 5, 1.6, 7};
-    double otherValue = 1.2;
+    std::vector<float> selfHostData = {0, 1, 1.2, 0.3, 4.1, 5, 1.6, 7};
+    float otherValue = 1.2;
 
-    ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_DOUBLE, &self);
+    ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-    other = aclCreateScalar(&otherValue, aclDataType::ACL_DOUBLE);
+    other = aclCreateScalar(&otherValue, aclDataType::ACL_FLOAT);
     CHECK_RET(other != nullptr, return ret);
 
     uint64_t workspaceSize = 0;
@@ -106,7 +106,7 @@ int ExecuteInplaceLtScalarOperator(aclrtStream stream)
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
     auto size = GetShapeSize(selfShape);
-    std::vector<double> resultData(size, 0);
+    std::vector<float> resultData(size, 0);
     ret = aclrtMemcpy(
         resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr, size * sizeof(resultData[0]),
         ACL_MEMCPY_DEVICE_TO_HOST);

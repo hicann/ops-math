@@ -82,9 +82,9 @@ struct LtTensorData {
     aclTensor* self = nullptr;
     aclTensor* other = nullptr;
     aclTensor* out = nullptr;
-    std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-    std::vector<double> otherHostData = {5, 5, 5, 5, 5, 5, 5, 5};
-    std::vector<double> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
+    std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+    std::vector<float> otherHostData = {5, 5, 5, 5, 5, 5, 5, 5};
+    std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
     void* workspaceAddr = nullptr;
     uint64_t workspaceSize = 0;
 };
@@ -94,14 +94,14 @@ int CreateInputAndOutputTensors(LtTensorData& data)
     auto ret = 0;
 
     // 创建self aclTensor
-    ret = CreateAclTensor(data.selfHostData, data.selfShape, &data.selfDeviceAddr, aclDataType::ACL_DOUBLE, &data.self);
+    ret = CreateAclTensor(data.selfHostData, data.selfShape, &data.selfDeviceAddr, aclDataType::ACL_FLOAT, &data.self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建other aclTensor
     ret = CreateAclTensor(
-        data.otherHostData, data.otherShape, &data.otherDeviceAddr, aclDataType::ACL_DOUBLE, &data.other);
+        data.otherHostData, data.otherShape, &data.otherDeviceAddr, aclDataType::ACL_FLOAT, &data.other);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建out aclTensor
-    ret = CreateAclTensor(data.outHostData, data.outShape, &data.outDeviceAddr, aclDataType::ACL_DOUBLE, &data.out);
+    ret = CreateAclTensor(data.outHostData, data.outShape, &data.outDeviceAddr, aclDataType::ACL_FLOAT, &data.out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     return ret;
@@ -138,7 +138,7 @@ int ProcessAndPrintResults(const LtTensorData& data)
 {
     auto ret = 0;
     auto size = GetShapeSize(data.outShape);
-    std::vector<double> resultData(size, 0);
+    std::vector<float> resultData(size, 0);
     ret = aclrtMemcpy(
         resultData.data(), resultData.size() * sizeof(resultData[0]), data.outDeviceAddr, size * sizeof(resultData[0]),
         ACL_MEMCPY_DEVICE_TO_HOST);

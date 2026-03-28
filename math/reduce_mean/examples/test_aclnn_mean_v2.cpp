@@ -73,18 +73,18 @@ int PrepareInputAndOutput(
     std::vector<int64_t>& selfShape, std::vector<int64_t>& outShape, void** selfDeviceAddr, aclTensor** self, aclIntArray** dim,
     void** outDeviceAddr, aclTensor** out)
 {
-    std::vector<int64_t> selfHostData = {2, 3, 5, 8, 4, 12, 6, 7};
-    std::vector<int64_t> outHostData = {2, 3, 5, 8};
+    std::vector<float> selfHostData = {2, 3, 5, 8, 4, 12, 6, 7};
+    std::vector<float> outHostData = {2, 3, 5, 8};
     std::vector<int64_t> dimData = {1, 2};
 
     // 创建self aclTensor
-    auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_INT64, self);
+    auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_FLOAT, self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建dim aclIntArray
     *dim = aclCreateIntArray(dimData.data(), 1);
     CHECK_RET(ret == ACL_SUCCESS, return false);
     // 创建out aclTensor
-    ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_INT64, out);
+    ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_FLOAT, out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     return ACL_SUCCESS;

@@ -81,10 +81,10 @@ int ExecuteInplaceLtTensorOperator(aclrtStream stream)
     void* otherDeviceAddr = nullptr;
     aclTensor* self = nullptr;
     aclTensor* other = nullptr;
-    std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-    std::vector<int> otherHostData = {1, 1, 1, 1, 0, 0, 0, 0};
+    std::vector<int32_t> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+    std::vector<int32_t> otherHostData = {1, 1, 1, 1, 0, 0, 0, 0};
 
-    ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_DOUBLE, &self);
+    ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_INT32, &self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     ret = CreateAclTensor(otherHostData, otherShape, &otherDeviceAddr, aclDataType::ACL_INT32, &other);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -108,13 +108,13 @@ int ExecuteInplaceLtTensorOperator(aclrtStream stream)
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
     auto size = GetShapeSize(selfShape);
-    std::vector<double> resultData(size, 0);
+    std::vector<int32_t> resultData(size, 0);
     ret = aclrtMemcpy(
         resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr, size * sizeof(resultData[0]),
         ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
     for (int64_t i = 0; i < size; i++) {
-        LOG_PRINT("result[%ld] is: %lf\n", i, resultData[i]);
+        LOG_PRINT("result[%ld] is: %d\n", i, resultData[i]);
     }
 
     aclDestroyTensor(self);

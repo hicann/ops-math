@@ -74,13 +74,13 @@ int CreateAclTensor(
 
 int PrepareInputAndOutput(std::vector<int64_t>& selfShape, void** selfDeviceAddr, aclTensor** self, aclScalar** max)
 {
-    std::vector<int8_t> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-    int8_t maxValue = 4;
+    std::vector<int32_t> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+    int32_t maxValue = 4;
     // 创建self aclTensor
-    auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_INT8, self);
+    auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_INT32, self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建max aclScalar
-    *max = aclCreateScalar(&maxValue, aclDataType::ACL_INT8);
+    *max = aclCreateScalar(&maxValue, aclDataType::ACL_INT32);
     CHECK_RET(*max != nullptr, return ret);
 
     return ACL_SUCCESS;

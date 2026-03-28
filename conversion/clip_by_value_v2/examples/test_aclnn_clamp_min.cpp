@@ -77,19 +77,19 @@ int PrepareInputAndOutput(
     std::vector<int64_t>& shape, void** selfDeviceAddr, aclTensor** self, aclScalar** min, void** outDeviceAddr,
     aclTensor** out)
 {
-    double min_v = 2;
+    float min_v = 2;
 
-    std::vector<double> selfHostData = {0, 1, 0, 3, 0, 5, 0, 7};
-    std::vector<double> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
+    std::vector<float> selfHostData = {0, 1, 0, 3, 0, 5, 0, 7};
+    std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
 
     // 创建self aclTensor
-    auto ret = CreateAclTensor(selfHostData, shape, selfDeviceAddr, aclDataType::ACL_DOUBLE, self);
+    auto ret = CreateAclTensor(selfHostData, shape, selfDeviceAddr, aclDataType::ACL_FLOAT, self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建min
-    *min = aclCreateScalar(&min_v, aclDataType::ACL_DOUBLE);
+    *min = aclCreateScalar(&min_v, aclDataType::ACL_FLOAT);
     CHECK_RET(*min != nullptr, return ret);
     // 创建out aclTensor
-    ret = CreateAclTensor(outHostData, shape, outDeviceAddr, aclDataType::ACL_DOUBLE, out);
+    ret = CreateAclTensor(outHostData, shape, outDeviceAddr, aclDataType::ACL_FLOAT, out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     return ACL_SUCCESS;
@@ -157,9 +157,9 @@ int main()
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
     // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
     auto size = GetShapeSize(shape);
-    std::vector<double> resultData(size, 0);
+    std::vector<float> resultData(size, 0);
     ret = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, size * sizeof(double),
+        resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, size * sizeof(float),
         ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
 

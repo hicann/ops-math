@@ -82,14 +82,14 @@ int main() {
   void* otherDeviceAddr = nullptr;
   aclTensor* self = nullptr;
   aclTensor* other = nullptr;
-  std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-  std::vector<double> otherHostData = {0, 1, 1, 2, 3, 4, 5, 6};
+  std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+  std::vector<float> otherHostData = {0, 1, 1, 2, 3, 4, 5, 6};
 
   // 创建self aclTensor
-  ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_DOUBLE, &self);
+  ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   // 创建other aclTensor
-  ret = CreateAclTensor(otherHostData, otherShape, &otherDeviceAddr, aclDataType::ACL_DOUBLE, &other);
+  ret = CreateAclTensor(otherHostData, otherShape, &otherDeviceAddr, aclDataType::ACL_FLOAT, &other);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   // 3. 调用CANN算子库API，需要修改为具体的API
@@ -112,7 +112,7 @@ int main() {
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
   // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
   auto size = GetShapeSize(selfShape);
-  std::vector<double> resultData(size, 0);
+  std::vector<float> resultData(size, 0);
   ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr, size * sizeof(resultData[0]),
                     ACL_MEMCPY_DEVICE_TO_HOST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);

@@ -84,20 +84,20 @@ aclError CreateInputs(
     void** selfDeviceAddr, void** otherDeviceAddr, void** outDeviceAddr, aclTensor** self, aclTensor** other,
     aclTensor** out)
 {
-  std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<double> otherHostData = {1, 1, 1, 2, 2, 2, 3, 3, 3};
-  std::vector<double> outHostData = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+  std::vector<float> otherHostData = {1, 1, 1, 2, 2, 2, 3, 3, 3};
+  std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
   // 创建 self aclTensor
-  auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_DOUBLE, self);
+  auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_FLOAT, self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   // 创建 other aclTensor
-  ret = CreateAclTensor(otherHostData, otherShape, otherDeviceAddr, aclDataType::ACL_DOUBLE, other);
+  ret = CreateAclTensor(otherHostData, otherShape, otherDeviceAddr, aclDataType::ACL_FLOAT, other);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   // 创建 out aclTensor
-  ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_DOUBLE, out);
+  ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_FLOAT, out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   return ACL_SUCCESS;
@@ -131,7 +131,7 @@ aclError ExecOpApi(
 
   // 从 device 拷贝结果到 host
   auto size = GetShapeSize(outShape);
-  std::vector<double> resultData(size, 0);
+  std::vector<float> resultData(size, 0);
 
   ret = aclrtMemcpy(
       resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, size * sizeof(resultData[0]),

@@ -326,12 +326,6 @@ private:
         Ops::Math::OpTiling::RegisterNew(#op_type).tiling<class_name>(priority, soc_versions)
 
 // op_type: 算子名称， class_name: 注册的 tiling 类,
-// priority: tiling 类的优先级, 越小表示优先级越高, 即被选中的概率越大
-#define REGISTER_TILING_TEMPLATE(op_type, class_name, priority)                                \
-    static Ops::Math::OpTiling::Register VAR_UNUSED##op_type_##class_name##priority_register = \
-        Ops::Math::OpTiling::Register(op_type).tiling<class_name>(priority)
-
-// op_type: 算子名称， class_name: 注册的 tiling 类,
 // soc_version: soc版本，用于区分不同的soc
 // priority: tiling 类的优先级, 越小表示优先级越高, 即会优先选择这个tiling类
 #define REGISTER_TILING_TEMPLATE_NEW(op_type, class_name, soc_version, priority)                 \

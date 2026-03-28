@@ -95,18 +95,18 @@ int main()
     aclTensor *self = nullptr;
     aclScalar *other = nullptr;
     aclTensor *out = nullptr;
-    std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-    std::vector<double> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
-    double otherValue = 1.0f;
+    std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+    std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
+    float otherValue = 1.0f;
 
     // 创建self aclTensor
-    ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_DOUBLE, &self);
+    ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建other aclScalar
-    other = aclCreateScalar(&otherValue, aclDataType::ACL_DOUBLE);
+    other = aclCreateScalar(&otherValue, aclDataType::ACL_FLOAT);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建out aclTensor
-    ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_DOUBLE, &out);
+    ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
  
     // aclnnNeScalar调用示例
@@ -130,7 +130,7 @@ int main()
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
     // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
     auto size = GetShapeSize(selfShape);
-    std::vector<double> resultData(size, 0);
+    std::vector<float> resultData(size, 0);
     ret = aclrtMemcpy(resultData.data(),
         resultData.size() * sizeof(resultData[0]),
         outDeviceAddr,

@@ -83,15 +83,15 @@ aclError CreateInputs(
     std::vector<int64_t>& inputShape, std::vector<int64_t>& outShape, void** selfDeviceAddr, void** outDeviceAddr,
     aclTensor** self, aclTensor** out)
 {
-    std::vector<double> selfHostData = {0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7};
-    std::vector<double> outHostData(8, 0);
+    std::vector<float> selfHostData = {0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7};
+    std::vector<float> outHostData(8, 0);
 
     // 创建 self aclTensor
-    auto ret = CreateAclTensor(selfHostData, inputShape, selfDeviceAddr, aclDataType::ACL_DOUBLE, self);
+    auto ret = CreateAclTensor(selfHostData, inputShape, selfDeviceAddr, aclDataType::ACL_FLOAT, self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     // 创建 out aclTensor
-    ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_DOUBLE, out);
+    ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_FLOAT, out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     return ACL_SUCCESS;
@@ -103,7 +103,7 @@ aclError ExecOpApi(
 {
     aclOpExecutor* executor;
     auto size = GetShapeSize(outShape);
-    std::vector<double> resultData(size, 0);
+    std::vector<float> resultData(size, 0);
 
     // aclnnCeil 接口调用示例
     LOG_PRINT("test aclnnCeil\n");

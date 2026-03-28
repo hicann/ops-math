@@ -83,15 +83,15 @@ aclError CreateInputs(
     std::vector<int64_t>& selfShape, std::vector<int64_t>& otherShape, void** selfDeviceAddr, void** otherDeviceAddr,
     aclTensor** self, aclTensor** other)
 {
-  std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-  std::vector<double> otherHostData = {1, 1, 3, 3, 5, 5, 7, 7};
+  std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+  std::vector<float> otherHostData = {1, 1, 3, 3, 5, 5, 7, 7};
 
   // 创建 self
-  auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_DOUBLE, self);
+  auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_FLOAT, self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   // 创建 other
-  ret = CreateAclTensor(otherHostData, otherShape, otherDeviceAddr, aclDataType::ACL_DOUBLE, other);
+  ret = CreateAclTensor(otherHostData, otherShape, otherDeviceAddr, aclDataType::ACL_FLOAT, other);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   return ACL_SUCCESS;
@@ -125,10 +125,10 @@ aclError ExecOpApi(
 
   // 拷贝输出
   auto size = GetShapeSize(selfShape);
-  std::vector<double> resultData(size);
+  std::vector<float> resultData(size);
 
   ret = aclrtMemcpy(
-      resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr, size * sizeof(double),
+      resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr, size * sizeof(resultData[0]),
       ACL_MEMCPY_DEVICE_TO_HOST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
 

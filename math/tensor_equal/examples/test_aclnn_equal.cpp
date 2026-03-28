@@ -85,14 +85,14 @@ aclError CreateInputs(
     void** selfDeviceAddr, void** otherDeviceAddr, void** outDeviceAddr, aclTensor** self, aclTensor** other,
     aclTensor** out)
 {
-  std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-  std::vector<double> otherHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+  std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+  std::vector<float> otherHostData = {0, 1, 2, 3, 4, 5, 6, 7};
   std::vector<char> outHostData = {0};
 
-  auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_DOUBLE, self);
+  auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_FLOAT, self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  ret = CreateAclTensor(otherHostData, otherShape, otherDeviceAddr, aclDataType::ACL_DOUBLE, other);
+  ret = CreateAclTensor(otherHostData, otherShape, otherDeviceAddr, aclDataType::ACL_FLOAT, other);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_BOOL, out);

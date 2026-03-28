@@ -96,18 +96,18 @@ int main()
     aclTensor *self = nullptr;
     aclTensor *other = nullptr;
     aclTensor *out = nullptr;
-    std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-    std::vector<double> otherHostData = {1, 1, 1, 2, 2, 2, 3, 3};
-    std::vector<double> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
+    std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+    std::vector<float> otherHostData = {1, 1, 1, 2, 2, 2, 3, 3};
+    std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
 
     // 创建self aclTensor
-    ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_DOUBLE, &self);
+    ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建other aclTensor
-    ret = CreateAclTensor(otherHostData, otherShape, &otherDeviceAddr, aclDataType::ACL_DOUBLE, &other);
+    ret = CreateAclTensor(otherHostData, otherShape, &otherDeviceAddr, aclDataType::ACL_FLOAT, &other);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建out aclTensor
-    ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_DOUBLE, &out);
+    ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     // aclnnNeTensor接口调用示例
@@ -133,7 +133,7 @@ int main()
 
     // 5. 获取输出的值，将Device侧内存上的结果拷贝至Host侧
     auto size = GetShapeSize(outShape);
-    std::vector<double> resultData(size, 0);
+    std::vector<float> resultData(size, 0);
     ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr,
                       size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);

@@ -77,22 +77,22 @@ int PrepareInputAndOutput(
     std::vector<int64_t>& shape, void** selfDeviceAddr, aclTensor** self, void** minDeviceAddr,
     aclTensor** clipValueMin, void** maxDeviceAddr, aclTensor** clipValueMax, void** outDeviceAddr, aclTensor** out)
 {
-    std::vector<int8_t> selfHostData = {0, 1, 0, 3, 0, 5, 0, 7};
-    std::vector<int8_t> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
-    std::vector<int8_t> minHostData = {1, 3, 0, 0, 0, 0, 0, 0};
-    std::vector<int8_t> maxHostData = {5, 5, 3, 3, 4, 5, 6, 6};
+    std::vector<int32_t> selfHostData = {0, 1, 0, 3, 0, 5, 0, 7};
+    std::vector<int32_t> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
+    std::vector<int32_t> minHostData = {1, 3, 0, 0, 0, 0, 0, 0};
+    std::vector<int32_t> maxHostData = {5, 5, 3, 3, 4, 5, 6, 6};
 
     // 创建self aclTensor
-    auto ret = CreateAclTensor(selfHostData, shape, selfDeviceAddr, aclDataType::ACL_INT8, self);
+    auto ret = CreateAclTensor(selfHostData, shape, selfDeviceAddr, aclDataType::ACL_INT32, self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建min aclTensor
-    ret = CreateAclTensor(minHostData, shape, minDeviceAddr, aclDataType::ACL_INT8, clipValueMin);
+    ret = CreateAclTensor(minHostData, shape, minDeviceAddr, aclDataType::ACL_INT32, clipValueMin);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建max aclTensor
-    ret = CreateAclTensor(maxHostData, shape, maxDeviceAddr, aclDataType::ACL_INT8, clipValueMax);
+    ret = CreateAclTensor(maxHostData, shape, maxDeviceAddr, aclDataType::ACL_INT32, clipValueMax);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建out aclTensor
-    ret = CreateAclTensor(outHostData, shape, outDeviceAddr, aclDataType::ACL_INT8, out);
+    ret = CreateAclTensor(outHostData, shape, outDeviceAddr, aclDataType::ACL_INT32, out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     return ACL_SUCCESS;

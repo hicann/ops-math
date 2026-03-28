@@ -143,5 +143,5 @@ ge::graphStatus PowTensorScalarTiling::PostTiling()
     return ge::GRAPH_SUCCESS;
 }
 
-REGISTER_TILING_TEMPLATE("Pow", PowTensorScalarTiling, 0);
+REGISTER_OPS_TILING_TEMPLATE(Pow, PowTensorScalarTiling, 0);
 }  // namespace optiling

@@ -76,14 +76,14 @@ int PrepareInputAndOutput(
     std::vector<int64_t>& selfShape, std::vector<int64_t>& minShape, void** selfDeviceAddr, aclTensor** self,
     void** minDeviceAddr, aclTensor** min)
 {
-    std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-    std::vector<double> minHostData = {2, 1, 1, 2, 2, 6, 6, 9};
+    std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+    std::vector<float> minHostData = {2, 1, 1, 2, 2, 6, 6, 9};
 
     // 创建self aclTensor
-    auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_DOUBLE, self);
+    auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_FLOAT, self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建min aclTensor
-    ret = CreateAclTensor(minHostData, minShape, minDeviceAddr, aclDataType::ACL_DOUBLE, min);
+    ret = CreateAclTensor(minHostData, minShape, minDeviceAddr, aclDataType::ACL_FLOAT, min);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     return ACL_SUCCESS;
@@ -151,7 +151,7 @@ int main()
 
     // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧
     auto size = GetShapeSize(selfShape);
-    std::vector<double> resultData(size, 0);
+    std::vector<float> resultData(size, 0);
     ret = aclrtMemcpy(
         resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr, size * sizeof(resultData[0]),
         ACL_MEMCPY_DEVICE_TO_HOST);

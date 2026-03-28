@@ -81,15 +81,15 @@ aclError InitAcl(int32_t deviceId, aclrtStream* stream)
 
 aclError CreateInputs(std::vector<int64_t>& selfShape, void** selfDeviceAddr, aclTensor** self, aclScalar** other)
 {
-  std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-  double otherValue = 2.0;
+  std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+  float otherValue = 2.0;
 
   // 创建self aclTensor
-  auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_DOUBLE, self);
+  auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_FLOAT, self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   // 创建other aclScalar
-  *other = aclCreateScalar(&otherValue, aclDataType::ACL_DOUBLE);
+  *other = aclCreateScalar(&otherValue, aclDataType::ACL_FLOAT);
   CHECK_RET(*other != nullptr, return ACL_ERROR_INVALID_PARAM);
 
   return ACL_SUCCESS;
@@ -124,7 +124,7 @@ aclError ExecOpApi(
 
   // 拷贝输出
   auto size = GetShapeSize(selfShape);
-  std::vector<double> resultData(size);
+  std::vector<float> resultData(size);
 
   ret = aclrtMemcpy(
       resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr, size * sizeof(resultData[0]),

@@ -77,18 +77,18 @@ int PrepareInputAndOutput(
     void** selfDeviceAddr, aclTensor** self, void** maxDeviceAddr, aclTensor** max, void** outDeviceAddr,
     aclTensor** out)
 {
-    std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-    std::vector<double> maxHostData = {1, 1, 1, 2, 2, 2, 3, 3};
-    std::vector<double> outHostData(8, 0);
+    std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+    std::vector<float> maxHostData = {1, 1, 1, 2, 2, 2, 3, 3};
+    std::vector<float> outHostData(8, 0);
 
     // 创建self aclTensor
-    auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_DOUBLE, self);
+    auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_FLOAT, self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建max aclTensor
-    ret = CreateAclTensor(maxHostData, maxShape, maxDeviceAddr, aclDataType::ACL_DOUBLE, max);
+    ret = CreateAclTensor(maxHostData, maxShape, maxDeviceAddr, aclDataType::ACL_FLOAT, max);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建out aclTensor
-    ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_DOUBLE, out);
+    ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_FLOAT, out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     return ACL_SUCCESS;
@@ -163,7 +163,7 @@ int main()
 
     // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
     auto size = GetShapeSize(outShape);
-    std::vector<double> resultData(size, 0);
+    std::vector<float> resultData(size, 0);
     ret = aclrtMemcpy(
         resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, size * sizeof(resultData[0]),
         ACL_MEMCPY_DEVICE_TO_HOST);

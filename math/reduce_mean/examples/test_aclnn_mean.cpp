@@ -81,18 +81,18 @@ int PrepareInputAndOutput(
     std::vector<int64_t>& selfShape, std::vector<int64_t>& outShape, void** selfDeviceAddr, aclTensor** self, aclIntArray** dim,
     void** outDeviceAddr, aclTensor** out)
 {
-    std::vector<int64_t> selfHostData = {2, 3, 5, 8, 4, 12, 6, 7};
-    std::vector<int64_t> outHostData = {2, 3, 5, 8};
+    std::vector<float> selfHostData = {2, 3, 5, 8, 4, 12, 6, 7};
+    std::vector<float> outHostData = {2, 3, 5, 8};
     std::vector<int64_t> dimData = {1, 2};
 
     // 创建self aclTensor
-    auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_INT64, self);
+    auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_FLOAT, self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建dim aclIntArray
     ret = CreateAclIntArray(dimData, dim);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建out aclTensor
-    ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_INT64, out);
+    ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_FLOAT, out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     return ACL_SUCCESS;
@@ -145,7 +145,7 @@ int main() {
   bool keepdim = false;
   aclOpExecutor* executor;
   // 调用aclnnMean第一段接口
-  ret = aclnnMeanGetWorkspaceSize(self, dim, keepdim, aclDataType::ACL_INT64, out, &workspaceSize, &executor);
+  ret = aclnnMeanGetWorkspaceSize(self, dim, keepdim, aclDataType::ACL_FLOAT, out, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnMeanGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
   // 根据第一段接口计算出的workspaceSize申请device内存
   void* workspaceAddr = nullptr;

@@ -83,10 +83,10 @@ int main() {
   std::vector<int64_t> outShape = {4, 2};
   void* selfDeviceAddr = nullptr;
   aclTensor* self = nullptr;
-  std::vector<double> selfHostData = {1, -1, 0, 0.5, -1.732/2, 12, NAN, -INFINITY};
-  std::vector<double> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
+  std::vector<float> selfHostData = {1, -1, 0, 0.5, -1.732/2, 12, NAN, -INFINITY};
+  std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
   // 创建self aclTensor
-  ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_DOUBLE, &self);
+  ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   uint64_t workspaceSize = 0;
@@ -114,7 +114,7 @@ int main() {
 
   // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧
   auto size = GetShapeSize(outShape);
-  std::vector<double> resultData(size, 0);
+  std::vector<float> resultData(size, 0);
   ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr,
                     size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);

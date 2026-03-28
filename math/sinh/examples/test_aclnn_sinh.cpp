@@ -104,7 +104,7 @@ int ExecuteInplaceSinh(aclTensor* self, aclrtStream stream) {
 int PrintResults(void* outDeviceAddr, std::vector<int64_t>& outShape,
                     void* selfDeviceAddr, std::vector<int64_t>& selfShape) {
     auto size = GetShapeSize(outShape);
-    std::vector<double> resultData(size, 0);
+    std::vector<float> resultData(size, 0);
     int ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr,
                           size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
     if (ret != ACL_SUCCESS) return ret;
@@ -114,9 +114,9 @@ int PrintResults(void* outDeviceAddr, std::vector<int64_t>& outShape,
     }
 
     auto inplaceSize = GetShapeSize(selfShape);
-    std::vector<double> inplaceResultData(inplaceSize, 0);
+    std::vector<float> inplaceResultData(inplaceSize, 0);
     ret = aclrtMemcpy(inplaceResultData.data(), inplaceResultData.size() * sizeof(inplaceResultData[0]),
-                      selfDeviceAddr, inplaceSize * sizeof(double), ACL_MEMCPY_DEVICE_TO_HOST);
+                      selfDeviceAddr, inplaceSize * sizeof(float), ACL_MEMCPY_DEVICE_TO_HOST);
     if (ret != ACL_SUCCESS) return ret;
 
     for (int64_t i = 0; i < inplaceSize; i++) {
@@ -130,14 +130,14 @@ int CreateInputOutputTensors(aclTensor** self, aclTensor** out,
                              void** selfDeviceAddr, void** outDeviceAddr) {
     std::vector<int64_t> selfShape = {4, 2};
     std::vector<int64_t> outShape = {4, 2};
-    std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-    std::vector<double> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
+    std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+    std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
 
     // 创建self aclTensor
-    int ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_DOUBLE, self);
+    int ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_FLOAT, self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建out aclTensor
-    ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_DOUBLE, out);
+    ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_FLOAT, out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     return ACL_SUCCESS;
