@@ -54,33 +54,27 @@ __aicore__ inline void PadV3GradEdgeSimt<T>::Init(GM_ADDR x, GM_ADDR y, const Pa
 }
 
 template <uint8_t DIM, typename U>
-__simt_callee__ __aicore__ bool IsCut(U* inIndex, __ubuf__ U* inShapes)
-{
-    // 判断当前输入位置是否被裁剪
-    for (uint8_t i = 0; i < DIM; i++) {
-        if (inIndex[i] < 0 || inIndex[i] >= inShapes[i]) {
-            return true;
-        }
-    }
-    return false;
-}
-
-template <uint8_t DIM, typename U, typename GmOffsetType>
 __simt_callee__ __aicore__ void CalScope(
-    GmOffsetType (*scopeIndex)[2], U* inIndex, U* outIndex, __ubuf__ U* rightPads, __ubuf__ U* outShapes)
+    U (*scopeIndex)[2], U* inIndex, U* outIndex, __ubuf__ U* rightPads, __ubuf__ U* inShapes, __ubuf__ U* outShapes)
 {
+    int8_t flag = 0;
     for (uint8_t i = 0; i < DIM; i++) {
+        // 判断是否被裁剪
+        flag = 0;
+        if (inIndex[i] < 0 || inIndex[i] >= inShapes[i]) {
+            flag = 1;
+        }
         // 判断起始范围
         if (outIndex[i] == 0) {
             scopeIndex[i][0] = 0;
         } else {
-            scopeIndex[i][0] = inIndex[i];
+            scopeIndex[i][0] = inIndex[i] + flag;
         }
         // 判断结束范围
         if (outIndex[i] == outShapes[i] - 1) {
             scopeIndex[i][1] = inIndex[i] + rightPads[i];
         } else {
-            scopeIndex[i][1] = inIndex[i];
+            scopeIndex[i][1] = inIndex[i] - flag;
         }
     }
 }
@@ -100,27 +94,23 @@ __simt_vf__ LAUNCH_BOUND(EDGE_THREAD_DIM) __aicore__ void SimtComputeEdgeDimOne(
         // 计算输入输出索引
         CalPos<DIM, U, GmOffsetType>(yIdx, inIndex, outIndex, outStrides, leftPads, magics, shifts);
 
-        GmOffsetType scopeIndex[DIM][2]; // 每个维度的padding范围
-        if (IsCut<DIM, U>(inIndex, inShapes)) {
-            outputGM[idx] = 0;
-        } else {
-            CalScope<DIM, U, GmOffsetType>(scopeIndex, inIndex, outIndex, rightPads, outShapes);
+        U scopeIndex[DIM][2]; // 每个维度的padding范围
+        CalScope<DIM, U>(scopeIndex, inIndex, outIndex, rightPads, inShapes, outShapes);
 
-            CastType total = 0;
-            for (GmOffsetType a0 = scopeIndex[0][0]; a0 <= scopeIndex[0][1]; ++a0) {
-                GmOffsetType inputOffset = a0;
-                CastType tmpVal;
-                if constexpr (std::is_same_v<T, bfloat16_t>) {
-                    tmpVal = __bfloat162float(inputGM[inputOffset]);
-                } else if constexpr (std::is_same_v<T, float16_t>) {
-                    tmpVal = __half2float(inputGM[inputOffset]);
-                } else {
-                    tmpVal = inputGM[inputOffset];
-                }
-                total += tmpVal;
+        CastType total = 0;
+        for (U a0 = scopeIndex[0][0]; a0 <= scopeIndex[0][1]; ++a0) {
+            GmOffsetType inputOffset = static_cast<GmOffsetType>(a0);
+            CastType tmpVal;
+            if constexpr (std::is_same_v<T, bfloat16_t>) {
+                tmpVal = __bfloat162float(inputGM[inputOffset]);
+            } else if constexpr (std::is_same_v<T, float16_t>) {
+                tmpVal = __half2float(inputGM[inputOffset]);
+            } else {
+                tmpVal = inputGM[inputOffset];
             }
-            CopyOut<T, CastType, GmOffsetType>(idx, outputGM, total);
+            total += tmpVal;
         }
+        CopyOut<T, CastType, GmOffsetType>(idx, outputGM, total);
     }
 }
 
@@ -139,29 +129,26 @@ __simt_vf__ LAUNCH_BOUND(EDGE_HALF_THREAD_DIM) __aicore__ void SimtComputeEdgeDi
         // 计算输入输出索引
         CalPos<DIM, U, GmOffsetType>(yIdx, inIndex, outIndex, outStrides, leftPads, magics, shifts);
 
-        GmOffsetType scopeIndex[DIM][2]; // 每个维度的padding范围
-        if (IsCut<DIM, U>(inIndex, inShapes)) {
-            outputGM[idx] = 0;
-        } else {
-            CalScope<DIM, U, GmOffsetType>(scopeIndex, inIndex, outIndex, rightPads, outShapes);
+        U scopeIndex[DIM][2]; // 每个维度的padding范围
 
-            CastType total = 0;
-            for (GmOffsetType a0 = scopeIndex[0][0]; a0 <= scopeIndex[0][1]; ++a0) {
-                for (GmOffsetType a1 = scopeIndex[1][0]; a1 <= scopeIndex[1][1]; ++a1) {
-                    GmOffsetType inputOffset = a0 * inStrides[0] + a1;
-                    CastType tmpVal;
-                    if constexpr (std::is_same_v<T, bfloat16_t>) {
-                        tmpVal = __bfloat162float(inputGM[inputOffset]);
-                    } else if constexpr (std::is_same_v<T, float16_t>) {
-                        tmpVal = __half2float(inputGM[inputOffset]);
-                    } else {
-                        tmpVal = inputGM[inputOffset];
-                    }
-                    total += tmpVal;
+        CalScope<DIM, U>(scopeIndex, inIndex, outIndex, rightPads, inShapes, outShapes);
+
+        CastType total = 0;
+        for (U a0 = scopeIndex[0][0]; a0 <= scopeIndex[0][1]; ++a0) {
+            for (U a1 = scopeIndex[1][0]; a1 <= scopeIndex[1][1]; ++a1) {
+                GmOffsetType inputOffset = static_cast<GmOffsetType>(a0 * inStrides[0] + a1);
+                CastType tmpVal;
+                if constexpr (std::is_same_v<T, bfloat16_t>) {
+                    tmpVal = __bfloat162float(inputGM[inputOffset]);
+                } else if constexpr (std::is_same_v<T, float16_t>) {
+                    tmpVal = __half2float(inputGM[inputOffset]);
+                } else {
+                    tmpVal = inputGM[inputOffset];
                 }
+                total += tmpVal;
             }
-            CopyOut<T, CastType, GmOffsetType>(idx, outputGM, total);
         }
+        CopyOut<T, CastType, GmOffsetType>(idx, outputGM, total);
     }
 }
 
@@ -180,31 +167,28 @@ __simt_vf__ LAUNCH_BOUND(EDGE_QUATER_THREAD_DIM) __aicore__ void SimtComputeEdge
         // 计算输入输出索引
         CalPos<DIM, U, GmOffsetType>(yIdx, inIndex, outIndex, outStrides, leftPads, magics, shifts);
 
-        GmOffsetType scopeIndex[DIM][2]; // 每个维度的padding范围
-        if (IsCut<DIM, U>(inIndex, inShapes)) {
-            outputGM[idx] = 0;
-        } else {
-            CalScope<DIM, U, GmOffsetType>(scopeIndex, inIndex, outIndex, rightPads, outShapes);
+        U scopeIndex[DIM][2]; // 每个维度的padding范围
 
-            CastType total = 0;
-            for (GmOffsetType a0 = scopeIndex[0][0]; a0 <= scopeIndex[0][1]; ++a0) {
-                for (GmOffsetType a1 = scopeIndex[1][0]; a1 <= scopeIndex[1][1]; ++a1) {
-                    for (GmOffsetType a2 = scopeIndex[2][0]; a2 <= scopeIndex[2][1]; ++a2) {
-                        GmOffsetType inputOffset = a0 * inStrides[0] + a1 * inStrides[1] + a2;
-                        CastType tmpVal;
-                        if constexpr (std::is_same_v<T, bfloat16_t>) {
-                            tmpVal = __bfloat162float(inputGM[inputOffset]);
-                        } else if constexpr (std::is_same_v<T, float16_t>) {
-                            tmpVal = __half2float(inputGM[inputOffset]);
-                        } else {
-                            tmpVal = inputGM[inputOffset];
-                        }
-                        total += tmpVal;
+        CalScope<DIM, U>(scopeIndex, inIndex, outIndex, rightPads, inShapes, outShapes);
+
+        CastType total = 0;
+        for (U a0 = scopeIndex[0][0]; a0 <= scopeIndex[0][1]; ++a0) {
+            for (U a1 = scopeIndex[1][0]; a1 <= scopeIndex[1][1]; ++a1) {
+                for (U a2 = scopeIndex[2][0]; a2 <= scopeIndex[2][1]; ++a2) {
+                    GmOffsetType inputOffset = static_cast<GmOffsetType>(a0 * inStrides[0] + a1 * inStrides[1] + a2);
+                    CastType tmpVal;
+                    if constexpr (std::is_same_v<T, bfloat16_t>) {
+                        tmpVal = __bfloat162float(inputGM[inputOffset]);
+                    } else if constexpr (std::is_same_v<T, float16_t>) {
+                        tmpVal = __half2float(inputGM[inputOffset]);
+                    } else {
+                        tmpVal = inputGM[inputOffset];
                     }
+                    total += tmpVal;
                 }
             }
-            CopyOut<T, CastType, GmOffsetType>(idx, outputGM, total);
         }
+        CopyOut<T, CastType, GmOffsetType>(idx, outputGM, total);
     }
 }
 
@@ -223,33 +207,31 @@ __simt_vf__ LAUNCH_BOUND(EDGE_EIGHTH_THREAD_DIM) __aicore__ void SimtComputeEdge
         // 计算输入输出索引
         CalPos<DIM, U, GmOffsetType>(yIdx, inIndex, outIndex, outStrides, leftPads, magics, shifts);
 
-        GmOffsetType scopeIndex[DIM][2]; // 每个维度的padding范围
-        if (IsCut<DIM, U>(inIndex, inShapes)) {
-            outputGM[idx] = 0;
-        } else {
-            CalScope<DIM, U, GmOffsetType>(scopeIndex, inIndex, outIndex, rightPads, outShapes);
+        U scopeIndex[DIM][2]; // 每个维度的padding范围
 
-            CastType total = 0;
-            for (GmOffsetType a0 = scopeIndex[0][0]; a0 <= scopeIndex[0][1]; ++a0) {
-                for (GmOffsetType a1 = scopeIndex[1][0]; a1 <= scopeIndex[1][1]; ++a1) {
-                    for (GmOffsetType a2 = scopeIndex[2][0]; a2 <= scopeIndex[2][1]; ++a2) {
-                        for (GmOffsetType a3 = scopeIndex[3][0]; a3 <= scopeIndex[3][1]; ++a3) {
-                            GmOffsetType inputOffset = a0 * inStrides[0] + a1 * inStrides[1] + a2 * inStrides[2] + a3;
-                            CastType tmpVal;
-                            if constexpr (std::is_same_v<T, bfloat16_t>) {
-                                tmpVal = __bfloat162float(inputGM[inputOffset]);
-                            } else if constexpr (std::is_same_v<T, float16_t>) {
-                                tmpVal = __half2float(inputGM[inputOffset]);
-                            } else {
-                                tmpVal = inputGM[inputOffset];
-                            }
-                            total += tmpVal;
+        CalScope<DIM, U>(scopeIndex, inIndex, outIndex, rightPads, inShapes, outShapes);
+
+        CastType total = 0;
+        for (U a0 = scopeIndex[0][0]; a0 <= scopeIndex[0][1]; ++a0) {
+            for (U a1 = scopeIndex[1][0]; a1 <= scopeIndex[1][1]; ++a1) {
+                for (U a2 = scopeIndex[2][0]; a2 <= scopeIndex[2][1]; ++a2) {
+                    for (U a3 = scopeIndex[3][0]; a3 <= scopeIndex[3][1]; ++a3) {
+                        GmOffsetType inputOffset =
+                            static_cast<GmOffsetType>(a0 * inStrides[0] + a1 * inStrides[1] + a2 * inStrides[2] + a3);
+                        CastType tmpVal;
+                        if constexpr (std::is_same_v<T, bfloat16_t>) {
+                            tmpVal = __bfloat162float(inputGM[inputOffset]);
+                        } else if constexpr (std::is_same_v<T, float16_t>) {
+                            tmpVal = __half2float(inputGM[inputOffset]);
+                        } else {
+                            tmpVal = inputGM[inputOffset];
                         }
+                        total += tmpVal;
                     }
                 }
             }
-            CopyOut<T, CastType, GmOffsetType>(idx, outputGM, total);
         }
+        CopyOut<T, CastType, GmOffsetType>(idx, outputGM, total);
     }
 }
 
@@ -268,36 +250,33 @@ __simt_vf__ LAUNCH_BOUND(EDGE_EIGHTH_THREAD_DIM) __aicore__ void SimtComputeEdge
         // 计算输入输出索引
         CalPos<DIM, U, GmOffsetType>(yIdx, inIndex, outIndex, outStrides, leftPads, magics, shifts);
 
-        GmOffsetType scopeIndex[DIM][2]; // 每个维度的padding范围
-        if (IsCut<DIM, U>(inIndex, inShapes)) {
-            outputGM[idx] = 0;
-        } else {
-            CalScope<DIM, U, GmOffsetType>(scopeIndex, inIndex, outIndex, rightPads, outShapes);
+        U scopeIndex[DIM][2]; // 每个维度的padding范围
 
-            CastType total = 0;
-            for (GmOffsetType a0 = scopeIndex[0][0]; a0 <= scopeIndex[0][1]; ++a0) {
-                for (GmOffsetType a1 = scopeIndex[1][0]; a1 <= scopeIndex[1][1]; ++a1) {
-                    for (GmOffsetType a2 = scopeIndex[2][0]; a2 <= scopeIndex[2][1]; ++a2) {
-                        for (GmOffsetType a3 = scopeIndex[3][0]; a3 <= scopeIndex[3][1]; ++a3) {
-                            for (GmOffsetType a4 = scopeIndex[4][0]; a4 <= scopeIndex[4][1]; ++a4) {
-                                GmOffsetType inputOffset =
-                                    a0 * inStrides[0] + a1 * inStrides[1] + a2 * inStrides[2] + a3 * inStrides[3] + a4;
-                                CastType tmpVal;
-                                if constexpr (std::is_same_v<T, bfloat16_t>) {
-                                    tmpVal = __bfloat162float(inputGM[inputOffset]);
-                                } else if constexpr (std::is_same_v<T, float16_t>) {
-                                    tmpVal = __half2float(inputGM[inputOffset]);
-                                } else {
-                                    tmpVal = inputGM[inputOffset];
-                                }
-                                total += tmpVal;
+        CalScope<DIM, U>(scopeIndex, inIndex, outIndex, rightPads, inShapes, outShapes);
+
+        CastType total = 0;
+        for (U a0 = scopeIndex[0][0]; a0 <= scopeIndex[0][1]; ++a0) {
+            for (U a1 = scopeIndex[1][0]; a1 <= scopeIndex[1][1]; ++a1) {
+                for (U a2 = scopeIndex[2][0]; a2 <= scopeIndex[2][1]; ++a2) {
+                    for (U a3 = scopeIndex[3][0]; a3 <= scopeIndex[3][1]; ++a3) {
+                        for (U a4 = scopeIndex[4][0]; a4 <= scopeIndex[4][1]; ++a4) {
+                            GmOffsetType inputOffset = static_cast<GmOffsetType>(
+                                a0 * inStrides[0] + a1 * inStrides[1] + a2 * inStrides[2] + a3 * inStrides[3] + a4);
+                            CastType tmpVal;
+                            if constexpr (std::is_same_v<T, bfloat16_t>) {
+                                tmpVal = __bfloat162float(inputGM[inputOffset]);
+                            } else if constexpr (std::is_same_v<T, float16_t>) {
+                                tmpVal = __half2float(inputGM[inputOffset]);
+                            } else {
+                                tmpVal = inputGM[inputOffset];
                             }
+                            total += tmpVal;
                         }
                     }
                 }
             }
-            CopyOut<T, CastType, GmOffsetType>(idx, outputGM, total);
         }
+        CopyOut<T, CastType, GmOffsetType>(idx, outputGM, total);
     }
 }
 
