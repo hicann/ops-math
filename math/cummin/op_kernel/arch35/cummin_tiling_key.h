@@ -20,5 +20,6 @@
 #define RN_FULLY_LOAD 0
 #define N_FULLY_LOAD 1
 #define N_NOT_FULLY_LOAD 2
+#define COMPUTE_SIMT 3
 
 #endif // CUMMIN_REGBASE_TILING_KEY_H

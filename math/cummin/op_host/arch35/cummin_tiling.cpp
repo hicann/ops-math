@@ -26,6 +26,8 @@ static constexpr int64_t BLOCK_SIZE = 32;
 static constexpr int64_t UB_SLICE_FOUR = 4;
 static constexpr int64_t UB_SLICE_THREE = 3;
 static constexpr int64_t TWO_ROWS = 2;
+static constexpr int64_t MIN_N = 128;
+static constexpr int64_t MAX_COUNT = 12800;
 
 void CumminTiling::PrintCumminSplitInfo(const CumminSplitInfo& info)
 {
@@ -174,11 +176,8 @@ ge::graphStatus CumminTiling::DoUBSliceForR(CumminSplitInfo& info, int64_t lengt
 
 ge::graphStatus CumminTiling::DoUBSliceForN(CumminSplitInfo& info, int64_t length)
 {
-    int64_t ubSliceNum = UB_SLICE_FOUR;
-    if (dSize_ == sizeof(int32_t))
-        ubSliceNum = UB_SLICE_THREE;
     info.computeN =
-        Ops::Base::FloorAlign(compileInfo_->ubSize / ubSliceNum, static_cast<int64_t>(compileInfo_->vRegSize)) / dSize_;
+        Ops::Base::FloorAlign(ubSize_ / TWO_ROWS, static_cast<int64_t>(compileInfo_->vRegSize)) / dSize_;
     info.splitN = Ops::Base::CeilDiv(length, info.computeN);
     info.reservedN = length % info.computeN;
     info.computeLength = info.computeN;
@@ -197,6 +196,15 @@ ge::graphStatus CumminTiling::DoUBSlice(CumminSplitInfo& info, int64_t length)
     } else {
         info.isNFullyLoad = 0;
         DoUBSliceForN(info, length);
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus CumminTiling::DoComputeWithSimt()
+{
+    if (N < MIN_N && M > MAX_COUNT && R < MAX_COUNT) {
+        tilingKey_ = COMPUTE_SIMT;
+        blockDim_ = M > compileInfo_->coreNum ? compileInfo_->coreNum : M;
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -236,6 +244,7 @@ ge::graphStatus CumminTiling::DoOpTiling()
         DoUBSlice(tilingData_.tailCoreProcessInfo, tilingData_.tailCoreComputeLength);
     }
     blockDim_ = tilingData_.mRowsPerCore > 0 ? compileInfo_->coreNum : tilingData_.coreNum;
+    DoComputeWithSimt();
     return ge::GRAPH_SUCCESS;
 }
 

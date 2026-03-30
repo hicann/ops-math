@@ -116,13 +116,19 @@ static aclnnStatus ExecCumminRegbase(
     const aclTensor* self, int64_t dim, aclTensor* valuesOut, aclTensor* indicesOut, aclOpExecutor* executor)
 {
     auto selfCast = self;
-    if (!(self->GetDataType() == op::DataType::DT_FLOAT || self->GetDataType() == op::DataType::DT_INT32)) {
-        selfCast = l0op::Cast(self, op::DataType::DT_FLOAT, executor);
+    bool needCast = self->GetDataType() == op::DataType::DT_INT8 || self->GetDataType() == op::DataType::DT_UINT8;
+    if (needCast) {
+        selfCast = l0op::Cast(self, op::DataType::DT_FLOAT16, executor);
         CHECK_RET(selfCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
     }
 
     std::tuple<aclTensor*, aclTensor*> cumminResult;
-    cumminResult = l0op::CumminOutInt32(selfCast, dim, executor);
+    if (indicesOut->GetDataType() ==  op::DataType::DT_INT32) {
+        cumminResult = l0op::CumminOutInt32(selfCast, dim, executor);
+    } else {
+        cumminResult = l0op::CumminOutInt64(selfCast, dim, executor);
+    }
+    
 
     const aclTensor* valuesResult = std::get<0>(cumminResult);
     CHECK_RET(valuesResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -130,16 +136,15 @@ static aclnnStatus ExecCumminRegbase(
     const aclTensor* indicesResult = std::get<1>(cumminResult);
     CHECK_RET(indicesResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    auto valuesCastResult = l0op::Cast(valuesResult, valuesOut->GetDataType(), executor);
-    CHECK_RET(valuesCastResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
+    auto valuesCastResult = valuesResult;
+    if (needCast) {
+        valuesCastResult = l0op::Cast(valuesResult, valuesOut->GetDataType(), executor);
+        CHECK_RET(valuesCastResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    }
     auto valuesViewCopyResult = l0op::ViewCopy(valuesCastResult, valuesOut, executor);
     CHECK_RET(valuesViewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    auto indicesCastResult = l0op::Cast(indicesResult, indicesOut->GetDataType(), executor);
-    CHECK_RET(indicesCastResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    auto indicesViewCopyResult = l0op::ViewCopy(indicesCastResult, indicesOut, executor);
+    auto indicesViewCopyResult = l0op::ViewCopy(indicesResult, indicesOut, executor);
     CHECK_RET(indicesViewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
     return ACLNN_SUCCESS;
 }

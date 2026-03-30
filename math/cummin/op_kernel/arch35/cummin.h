@@ -29,32 +29,69 @@ using namespace AscendC;
 constexpr static uint32_t BLOCK_SIZE = 32;
 constexpr static uint32_t VREGTENSOR_SIZE = 256;
 constexpr static uint32_t BUFFER_NUM = 1;
+constexpr static uint32_t THREAD_DIM = 2048;
 
-template <typename T>
+template <typename X, typename ARGMIN>
+__simt_vf__ LAUNCH_BOUND(THREAD_DIM) void SimtCompute(
+    __gm__ X* xGm, __gm__ X* yGm, __gm__ ARGMIN* argminGm, int64_t M, int64_t R, int64_t N, int64_t count)
+{
+    const int64_t threadNum = Simt::GetThreadNum();
+
+    const int64_t RN = R * N;
+    int64_t blockId = Simt::GetThreadIdx();;
+    int64_t idx = (blockId / N) * RN + (blockId % N); 
+
+    while (idx < count) { 
+        X minVal = xGm[idx];         
+        ARGMIN minIdx = static_cast<ARGMIN>(0);
+
+        yGm[idx] = minVal;
+        argminGm[idx] = minIdx;
+
+        for (int64_t j = 1; j < R; ++j) {
+            const int64_t curr_idx = idx + j * N;
+            const X curr_val = xGm[curr_idx];
+
+            const bool is_smaller = (curr_val <= minVal);
+            minVal = is_smaller ? curr_val : minVal;
+            minIdx = is_smaller ? static_cast<ARGMIN>(j) : minIdx;
+
+            yGm[curr_idx] = minVal;
+            argminGm[curr_idx] = minIdx;
+        }
+        blockId += threadNum;
+        idx = (blockId / N) * RN + (blockId % N);
+    }
+}
+
+template <typename X, typename ARGMIN>
 class Cummin {
 public:
     __aicore__ inline Cummin(TPipe& tpipe, CumminRegbaseTilingData& tilingData) : tpipe(tpipe), tiling(tilingData){};
 
 public:
     __aicore__ inline void InitGMBuffers(GM_ADDR x, GM_ADDR y, GM_ADDR argmin, int64_t offset);
-    __aicore__ inline void InitBuffers(int64_t yBufferSize, int64_t rows, bool isNeedArgminTensor);
+    __aicore__ inline void InitBuffers(int64_t yBufferSize, int64_t rows);
     __aicore__ inline void InitBuffersForN(int64_t yBufferSize);
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR argmin);
-    static __aicore__ inline void InsertSync(const HardEvent& event);
+    __aicore__ inline void InitForSimT(GM_ADDR x, GM_ADDR y, GM_ADDR argmin);
+    __aicore__ inline void InsertSync(const HardEvent& event);
 
-    __aicore__ inline void CopyIn(LocalTensor<T>& tensor, uint16_t copyRows, uint32_t dataNum, int64_t xOffset);
+    __aicore__ inline void CopyIn(LocalTensor<X>& tensor, uint16_t copyRows, uint32_t dataNum, int64_t xOffset);
 
     template <typename C>
     __aicore__ inline void CopyOut(
-        GlobalTensor<C>& gm, LocalTensor<C>& tensor, uint16_t copyRows, uint32_t dataNum, int64_t offset);
+        GlobalTensor<C>& gm, LocalTensor<C>& tensor, uint16_t copyRows, uint32_t dataNum, int64_t offset,
+        bool needcast);
 
     __aicore__ inline void ComputeM();
+    __aicore__ inline void ComputeSimT();
     __aicore__ inline void ComputeR(CumminSplitInfo info);
     __aicore__ inline void ComputeN(CumminSplitInfo info);
     __aicore__ inline void ComputeReservedM(GM_ADDR x, GM_ADDR y, GM_ADDR argmin);
     __aicore__ inline void DoCompare(
-        LocalTensor<int32_t>& argminTensor, int64_t computeTimes, int64_t offset, int64_t regComputeTimes,
-        uint32_t reservedRegComputeTimes, int32_t duplicate);
+        int64_t computeTimes, int64_t offset, int64_t regComputeTimes, uint32_t reservedRegComputeTimes,
+        int32_t duplicate);
 
 public:
     TPipe& tpipe;
@@ -63,8 +100,9 @@ public:
     int64_t M = 0;
     int64_t N = 0;
     int64_t R = 0;
-    int64_t AlignedN = 0;
-
+    int64_t alignedN = 0;
+    bool needCast = sizeof(ARGMIN) == 8;
+    int64_t castOffset = 0;
     int64_t splitM = 0;
     int64_t computeM = 0;
     int64_t ReservedM = 0;
@@ -77,13 +115,14 @@ public:
     int64_t stride = 0;
     int64_t blockId = 0;
     int64_t blockCount = 0;
-    uint32_t dSize = sizeof(T);
-    uint32_t regTensorPerComputeLength = VREGTENSOR_SIZE / sizeof(T);
+    int64_t computeCountForSimt = 0;
+    uint32_t dSize = sizeof(X);
+    uint32_t regTensorPerComputeLength = VREGTENSOR_SIZE / sizeof(X);
     CumminSplitInfo generalProcessInfo;
     CumminSplitInfo resevedMgeneralProcessInfo;
 
-    GlobalTensor<T> xGm;
-    GlobalTensor<T> yGm;
+    GlobalTensor<X> xGm;
+    GlobalTensor<X> yGm;
     GlobalTensor<int32_t> argminGm;
 
     TQue<TPosition::VECIN, BUFFER_NUM> xTmpQue;
@@ -91,14 +130,14 @@ public:
     TQue<TPosition::VECIN, BUFFER_NUM> yQue;
     TQue<TPosition::VECIN, BUFFER_NUM> argminQue;
 
-    LocalTensor<T> tmpXTensor;
+    LocalTensor<X> tmpXTensor;
     LocalTensor<int32_t> tmpArgminTensor;
-    LocalTensor<T> yTensor;
+    LocalTensor<X> yTensor;
     LocalTensor<int32_t> argminTensor;
 };
 
-template <typename T>
-__aicore__ inline void Cummin<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR argmin)
+template <typename X, typename ARGMIN>
+__aicore__ inline void Cummin<X, ARGMIN>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR argmin)
 {
     blockId = GetBlockIdx();
     blockCount = GetBlockNum();
@@ -107,9 +146,8 @@ __aicore__ inline void Cummin<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR argmin)
     M = tiling.M;
     N = tiling.N;
     R = tiling.R;
-    ;
 
-    AlignedN = Ops::Base::CeilAlign(N, static_cast<int64_t>(BLOCK_SIZE / dSize));
+    alignedN = Ops::Base::CeilAlign(N, static_cast<int64_t>(BLOCK_SIZE / dSize));
 
     splitM = tiling.splitM;
     computeM = tiling.computeM;
@@ -132,35 +170,63 @@ __aicore__ inline void Cummin<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR argmin)
     }
 
     auto offset = blockId * mRowsPerCore * N * R;
+
     InitGMBuffers(x, y, argmin, offset);
 }
 
-template <typename T>
-__aicore__ inline void Cummin<T>::InitGMBuffers(GM_ADDR x, GM_ADDR y, GM_ADDR argmin, int64_t offset)
+template <typename X, typename ARGMIN>
+ __aicore__ inline void Cummin<X, ARGMIN>::InitForSimT(GM_ADDR x, GM_ADDR y, GM_ADDR argmin) {
+    blockId = GetBlockIdx();
+    blockCount = GetBlockNum();
+    M = tiling.M;
+    N = tiling.N;
+    R = tiling.R;
+    computeM = M / blockCount;
+    ReservedM = M % blockCount;
+    auto offset = 0;
+    if (blockId < ReservedM) {
+        computeM = computeM + 1;
+        offset = blockId * computeM * N * R ;
+    } else {
+        offset = blockId * computeM * N * R + ReservedM * N * R;
+    }
+    computeCountForSimt = computeM * N * R;
+    InitGMBuffers(x, y, argmin, offset);
+ }
+
+ template <typename X, typename ARGMIN>
+ __aicore__ inline void Cummin<X, ARGMIN>::ComputeSimT() {
+    Simt::VF_CALL<SimtCompute<X, ARGMIN>>(Simt::Dim3(THREAD_DIM), (__gm__ X*)(xGm.GetPhyAddr()), (__gm__ X*)(yGm.GetPhyAddr()), (__gm__ ARGMIN*)(argminGm.GetPhyAddr()), M, R, N, computeCountForSimt);
+ }
+
+template <typename X, typename ARGMIN>
+__aicore__ inline void Cummin<X, ARGMIN>::InitGMBuffers(GM_ADDR x, GM_ADDR y, GM_ADDR argmin, int64_t offset)
 {
-    xGm.SetGlobalBuffer((__gm__ T*)x + offset);
-    yGm.SetGlobalBuffer((__gm__ T*)y + offset);
-    argminGm.SetGlobalBuffer((__gm__ int32_t*)argmin + offset);
+    xGm.SetGlobalBuffer((__gm__ X*)x + offset);
+    yGm.SetGlobalBuffer((__gm__ X*)y + offset);
+    argminGm.SetGlobalBuffer((__gm__ int32_t*)argmin + offset * sizeof(ARGMIN) / sizeof(int32_t));
 }
-template <typename T>
-__aicore__ inline void Cummin<T>::InitBuffers(int64_t yBufferSize, int64_t rows, bool isNeedArgminTensor)
+template <typename X, typename ARGMIN>
+__aicore__ inline void Cummin<X, ARGMIN>::InitBuffers(int64_t yBufferSize, int64_t rows)
 {
     auto argminBuffersize = Ops::Base::CeilAlign(yBufferSize, static_cast<int64_t>(VREGTENSOR_SIZE / dSize));
     tpipe.InitBuffer(xTmpQue, BUFFER_NUM, yBufferSize * dSize);
     tpipe.InitBuffer(argminTmpQue, BUFFER_NUM, argminBuffersize * sizeof(int32_t));
     tpipe.InitBuffer(yQue, BUFFER_NUM, yBufferSize * rows * dSize);
-    tmpXTensor = xTmpQue.AllocTensor<T>();
+    tmpXTensor = xTmpQue.AllocTensor<X>();
     tmpArgminTensor = argminTmpQue.AllocTensor<int32_t>();
-    yTensor = yQue.AllocTensor<T>();
+    yTensor = yQue.AllocTensor<X>();
 
-    if (isNeedArgminTensor) {
-        tpipe.InitBuffer(argminQue, BUFFER_NUM, yBufferSize * rows * sizeof(int32_t));
-        argminTensor = argminQue.AllocTensor<int32_t>();
+    tpipe.InitBuffer(argminQue, BUFFER_NUM, yBufferSize * rows * sizeof(ARGMIN));
+    argminTensor = argminQue.AllocTensor<int32_t>();
+
+    if (needCast) {
+        castOffset = yBufferSize * rows;
     }
 }
 
-template <typename T>
-static __aicore__ inline void Cummin<T>::InsertSync(const HardEvent& event)
+template <typename X, typename ARGMIN>
+__aicore__ inline void Cummin<X, ARGMIN>::InsertSync(const HardEvent& event)
 {
     event_t eventID = static_cast<event_t>(GetTPipePtr()->FetchEventID(event));
     switch (event) {
@@ -189,36 +255,49 @@ static __aicore__ inline void Cummin<T>::InsertSync(const HardEvent& event)
     }
 }
 
-template <typename T>
-__aicore__ inline void Cummin<T>::CopyIn(LocalTensor<T>& tensor, uint16_t copyRows, uint32_t dataNum, int64_t xOffset)
+template <typename X, typename ARGMIN>
+__aicore__ inline void Cummin<X, ARGMIN>::CopyIn(
+    LocalTensor<X>& tensor, uint16_t copyRows, uint32_t dataNum, int64_t xOffset)
 {
     InsertSync(HardEvent::MTE3_MTE2);
-    DataCopyPadExtParams<T> dataCopyPadExtParams = {false, 0, 0, 0};
+    DataCopyPadExtParams<X> dataCopyPadExtParams = {false, 0, 0, 0};
     DataCopyExtParams copyParams{copyRows, dataNum * dSize, stride * dSize, 0, 0};
     DataCopyPad(tensor, this->xGm[xOffset], copyParams, dataCopyPadExtParams);
     InsertSync(HardEvent::MTE2_V);
 }
 
-template <typename T>
+template <typename X, typename ARGMIN>
 template <typename C>
-__aicore__ inline void Cummin<T>::CopyOut(
-    GlobalTensor<C>& gm, LocalTensor<C>& tensor, uint16_t copyRows, uint32_t dataNum, int64_t offset)
+__aicore__ inline void Cummin<X, ARGMIN>::CopyOut(
+    GlobalTensor<C>& gm, LocalTensor<C>& tensor, uint16_t copyRows, uint32_t dataNum, int64_t offset, bool needCast)
 {
+    uint32_t size = sizeof(C);
+    if (needCast) {
+        size = sizeof(ARGMIN);
+        offset *= 2;
+        auto castTensor = tensor.template ReinterpretCast<int64_t>();
+        Cast(castTensor, tensor[castOffset], RoundMode::CAST_NONE, castOffset);
+    }
     InsertSync(HardEvent::V_MTE3);
-    DataCopyExtParams copyParams{copyRows, dataNum * dSize, 0, stride * dSize, 0};
+    uint32_t ubStride = (Ops::Base::CeilAlign(dataNum, static_cast<uint32_t>(BLOCK_SIZE / dSize)) -
+                         Ops::Base::CeilAlign(dataNum, static_cast<uint32_t>(BLOCK_SIZE / size))) /
+                        (BLOCK_SIZE / size);
+
+    DataCopyExtParams copyParams{copyRows, dataNum * size, ubStride, stride * size, 0};
     DataCopyPad(gm[offset], tensor, copyParams);
+
     InsertSync(HardEvent::MTE3_MTE2);
     InsertSync(HardEvent::MTE3_V);
 }
 
-template <typename T>
-__aicore__ inline void Cummin<T>::ComputeM()
+template <typename X, typename ARGMIN>
+__aicore__ inline void Cummin<X, ARGMIN>::ComputeM()
 {
-    InitBuffers(AlignedN, computeM * R, true);
-    allocLength = AlignedN;
+    InitBuffers(alignedN, computeM * R);
+    allocLength = alignedN;
     auto rows = computeM;
-    auto regComputeTimes = Ops::Base::CeilDiv(AlignedN, static_cast<int64_t>(VREGTENSOR_SIZE / dSize));
-    auto reservedRegComputeTimes = AlignedN % regTensorPerComputeLength;
+    auto regComputeTimes = Ops::Base::CeilDiv(alignedN, static_cast<int64_t>(VREGTENSOR_SIZE / dSize));
+    auto reservedRegComputeTimes = alignedN % regTensorPerComputeLength;
 
     for (auto i = 0; i < splitM; i++) {
         if (i == splitM - 1 && ReservedM > 0) {
@@ -229,23 +308,22 @@ __aicore__ inline void Cummin<T>::ComputeM()
         CopyIn(yTensor, static_cast<uint16_t>(rows * R), N, offset);
 
         for (auto j = 0; j < rows; j++) {
-            DataCopy(tmpXTensor, yTensor[j * R * AlignedN], AlignedN);
+            DataCopy(tmpXTensor, yTensor[j * R * alignedN], alignedN);
 
-            auto dupLen = Ops::Base::CeilAlign(AlignedN, static_cast<int64_t>(VREGTENSOR_SIZE / dSize));
+            auto dupLen = Ops::Base::CeilAlign(alignedN, static_cast<int64_t>(VREGTENSOR_SIZE / dSize));
             Duplicate<int32_t>(tmpArgminTensor, 0, dupLen);
-            Duplicate<int32_t>(argminTensor[j * R * AlignedN], 0, dupLen);
-
-            DoCompare(argminTensor, R - 1, j * R * AlignedN + AlignedN, regComputeTimes, reservedRegComputeTimes, 1);
+            Duplicate<int32_t>(argminTensor[j * R * alignedN + castOffset], 0, dupLen);
+            DoCompare(R - 1, j * R * alignedN + alignedN, regComputeTimes, reservedRegComputeTimes, 1);
         }
-        CopyOut(yGm, yTensor, R * rows, N, offset);
-        CopyOut(argminGm, argminTensor, R * rows, N, offset);
+        CopyOut(yGm, yTensor, R * rows, N, offset, false);
+        CopyOut(argminGm, argminTensor, R * rows, N, offset, needCast);
     }
 }
 
-template <typename T>
-__aicore__ inline void Cummin<T>::ComputeR(CumminSplitInfo info)
+template <typename X, typename ARGMIN>
+__aicore__ inline void Cummin<X, ARGMIN>::ComputeR(CumminSplitInfo info)
 {
-    InitBuffers(info.allocLength, info.computeR, true);
+    InitBuffers(info.allocLength, info.computeR);
     allocLength = info.allocLength;
 
     auto regComputeTimes = Ops::Base::CeilDiv(info.allocLength, static_cast<int64_t>(VREGTENSOR_SIZE / dSize));
@@ -268,18 +346,18 @@ __aicore__ inline void Cummin<T>::ComputeR(CumminSplitInfo info)
                 Duplicate<int32_t>(tmpArgminTensor, 0, dupLen);
             }
 
-            DoCompare(argminTensor, rows, 0, regComputeTimes, reservedRegComputeTimes, j * info.computeR);
+            DoCompare(rows, 0, regComputeTimes, reservedRegComputeTimes, j * info.computeR);
 
-            CopyOut(yGm, yTensor, rows, info.computeLength, offset);
-            CopyOut(argminGm, argminTensor, rows, info.computeLength, offset);
+            CopyOut(yGm, yTensor, rows, info.computeLength, offset, false);
+            CopyOut(argminGm, argminTensor, rows, info.computeLength, offset, needCast);
         }
     }
 }
 
-template <typename T>
-__aicore__ inline void Cummin<T>::ComputeN(CumminSplitInfo info)
+template <typename X, typename ARGMIN>
+__aicore__ inline void Cummin<X, ARGMIN>::ComputeN(CumminSplitInfo info)
 {
-    InitBuffers(info.computeN, 1, false);
+    InitBuffers(info.computeN, 1);
     allocLength = info.computeN;
 
     for (auto i = 0; i < mRowsPerCore; i++) {
@@ -298,22 +376,31 @@ __aicore__ inline void Cummin<T>::ComputeN(CumminSplitInfo info)
                 if (k == 0) {
                     CopyIn(tmpXTensor, static_cast<uint16_t>(1), length, offset);
                     Duplicate<int32_t>(
-                        tmpArgminTensor, 0, Ops::Base::CeilAlign(length, static_cast<int64_t>(VREGTENSOR_SIZE / dSize)));
-                    CopyOut(yGm, tmpXTensor, 1, length, offset);
-                    CopyOut(argminGm, tmpArgminTensor, 1, length, offset);
+                        tmpArgminTensor, 0,
+                        Ops::Base::CeilAlign(length, static_cast<int64_t>(VREGTENSOR_SIZE / dSize)));
+                    CopyOut(yGm, tmpXTensor, 1, length, offset, false);
+                    if (needCast) {
+                        DataCopy(
+                            argminTensor[castOffset], tmpArgminTensor,
+                            Ops::Base::CeilAlign(length, static_cast<int64_t>(VREGTENSOR_SIZE / dSize)));
+                        CopyOut(argminGm, argminTensor, 1, length, offset, needCast);
+                    } else {
+                        CopyOut(argminGm, tmpArgminTensor, 1, length, offset, needCast);
+                    }
+
                     continue;
                 }
                 CopyIn(yTensor, static_cast<uint16_t>(1), length, offset);
-                DoCompare(tmpArgminTensor, 1, 0, regComputeTimes, reservedRegComputeTimes, k);
-                CopyOut(yGm, tmpXTensor, 1, length, offset);
-                CopyOut(argminGm, tmpArgminTensor, 1, length, offset);
+                DoCompare(1, 0, regComputeTimes, reservedRegComputeTimes, k);
+                CopyOut(yGm, tmpXTensor, 1, length, offset, false);
+                CopyOut(argminGm, argminTensor, 1, length, offset, needCast);
             }
         }
     }
 }
 
-template <typename T>
-__aicore__ inline void Cummin<T>::ComputeReservedM(GM_ADDR x, GM_ADDR y, GM_ADDR argmin)
+template <typename X, typename ARGMIN>
+__aicore__ inline void Cummin<X, ARGMIN>::ComputeReservedM(GM_ADDR x, GM_ADDR y, GM_ADDR argmin)
 {
     InitGMBuffers(x, y, argmin, gmOffset);
     tpipe.Reset();
@@ -328,30 +415,29 @@ __aicore__ inline void Cummin<T>::ComputeReservedM(GM_ADDR x, GM_ADDR y, GM_ADDR
     }
 }
 
-template <typename T>
-__aicore__ inline void Cummin<T>::DoCompare(
-    LocalTensor<int32_t>& argminTensor, int64_t computeTimes, int64_t offset, int64_t regComputeTimes,
-    uint32_t reservedRegComputeTimes, int32_t duplicate)
+template <typename X, typename ARGMIN>
+__aicore__ inline void Cummin<X, ARGMIN>::DoCompare(
+    int64_t computeTimes, int64_t offset, int64_t regComputeTimes, uint32_t reservedRegComputeTimes, int32_t duplicate)
 {
     __VEC_SCOPE__
     {
-        __local_mem__ T* selectXAddr = (__local_mem__ T*)tmpXTensor.GetPhyAddr();
+        __local_mem__ X* selectXAddr = (__local_mem__ X*)tmpXTensor.GetPhyAddr();
         __local_mem__ int32_t* selectargminAddr = (__local_mem__ int32_t*)tmpArgminTensor.GetPhyAddr();
-        __local_mem__ T* yAddr = (__local_mem__ T*)yTensor.GetPhyAddr() + offset;
-        __local_mem__ int32_t* argminAddr = (__local_mem__ int32_t*)argminTensor.GetPhyAddr() + offset;
+        __local_mem__ X* yAddr = (__local_mem__ X*)yTensor.GetPhyAddr() + offset;
+        __local_mem__ int32_t* argminAddr = (__local_mem__ int32_t*)argminTensor.GetPhyAddr() + offset + castOffset;
 
-        if constexpr (sizeof(T) == 4) {
-            MicroAPI::RegTensor<T> xReg;
-            MicroAPI::RegTensor<T> yReg;
+        if constexpr (sizeof(X) == 4) {
+            MicroAPI::RegTensor<X> xReg;
+            MicroAPI::RegTensor<X> yReg;
             MicroAPI::RegTensor<int32_t> argminReg;
             MicroAPI::RegTensor<int32_t> dupReg;
             AscendC::MicroAPI::MaskReg yMaskReg =
-                AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL>();
+                AscendC::MicroAPI::CreateMask<X, AscendC::MicroAPI::MaskPattern::ALL>();
 
             AscendC::MicroAPI::MaskReg cmpReg;
             for (int i = 0; i < regComputeTimes; i++) {
                 if (i == regComputeTimes - 1 && reservedRegComputeTimes != 0) {
-                    yMaskReg = MicroAPI::UpdateMask<T>(reservedRegComputeTimes);
+                    yMaskReg = MicroAPI::UpdateMask<X>(reservedRegComputeTimes);
                 }
                 int64_t tmpOffset = i * VREGTENSOR_SIZE / dSize;
                 AscendC::MicroAPI::DataCopy(xReg, selectXAddr + tmpOffset);
@@ -360,7 +446,7 @@ __aicore__ inline void Cummin<T>::DoCompare(
                     auto yOffset = tmpOffset + j * allocLength;
                     AscendC::MicroAPI::DataCopy(yReg, yAddr + yOffset);
                     AscendC::MicroAPI::Duplicate(dupReg, j + duplicate);
-                    AscendC::MicroAPI::Compare<T, CMPMODE::LT>(cmpReg, xReg, yReg, yMaskReg);
+                    AscendC::MicroAPI::Compare<X, CMPMODE::LT>(cmpReg, xReg, yReg, yMaskReg);
                     AscendC::MicroAPI::Select(xReg, xReg, yReg, cmpReg);
                     AscendC::MicroAPI::Select(argminReg, argminReg, dupReg, cmpReg);
                     AscendC::MicroAPI::DataCopy(yAddr + yOffset, xReg, yMaskReg);
@@ -368,6 +454,54 @@ __aicore__ inline void Cummin<T>::DoCompare(
                 }
                 AscendC::MicroAPI::DataCopy(selectXAddr + tmpOffset, xReg, yMaskReg);
                 AscendC::MicroAPI::DataCopy(selectargminAddr + tmpOffset, argminReg, yMaskReg);
+            }
+        } else {
+            MicroAPI::RegTensor<X> xReg;
+            MicroAPI::RegTensor<X> yReg;
+            MicroAPI::RegTensor<int32_t> argminReg1;
+            MicroAPI::RegTensor<int32_t> argminReg2;
+            MicroAPI::RegTensor<int32_t> dupReg;
+            AscendC::MicroAPI::MaskReg yMaskReg =
+                AscendC::MicroAPI::CreateMask<X, AscendC::MicroAPI::MaskPattern::ALL>();
+
+            AscendC::MicroAPI::MaskReg argminMaskReg1;
+            AscendC::MicroAPI::MaskReg argminMaskReg2;
+            AscendC::MicroAPI::UnPack<AscendC::MicroAPI::HighLowPart::LOWEST>(argminMaskReg1, yMaskReg);
+            AscendC::MicroAPI::UnPack<AscendC::MicroAPI::HighLowPart::HIGHEST>(argminMaskReg2, yMaskReg);
+
+            AscendC::MicroAPI::MaskReg cmpReg;
+            AscendC::MicroAPI::MaskReg cmpReg1;
+            AscendC::MicroAPI::MaskReg cmpReg2;
+            for (int i = 0; i < regComputeTimes; i++) {
+                if (i == regComputeTimes - 1 && reservedRegComputeTimes != 0) {
+                    yMaskReg = MicroAPI::UpdateMask<X>(reservedRegComputeTimes);
+                    AscendC::MicroAPI::UnPack<AscendC::MicroAPI::HighLowPart::LOWEST>(argminMaskReg1, yMaskReg);
+                    AscendC::MicroAPI::UnPack<AscendC::MicroAPI::HighLowPart::HIGHEST>(argminMaskReg2, yMaskReg);
+                }
+                int64_t tmpOffset = i * VREGTENSOR_SIZE / dSize;
+                AscendC::MicroAPI::DataCopy(xReg, selectXAddr + tmpOffset);
+                AscendC::MicroAPI::DataCopy(argminReg1, selectargminAddr + tmpOffset);
+                AscendC::MicroAPI::DataCopy(argminReg2, selectargminAddr + tmpOffset + 64);
+                for (int j = 0; j < computeTimes; j++) {
+                    auto yOffset = tmpOffset + j * allocLength;
+                    AscendC::MicroAPI::DataCopy(yReg, yAddr + yOffset);
+                    AscendC::MicroAPI::Duplicate(dupReg, j + duplicate);
+
+                    AscendC::MicroAPI::Compare<X, CMPMODE::LT>(cmpReg, xReg, yReg, yMaskReg);
+                    AscendC::MicroAPI::UnPack<AscendC::MicroAPI::HighLowPart::LOWEST>(cmpReg1, cmpReg);
+                    AscendC::MicroAPI::UnPack<AscendC::MicroAPI::HighLowPart::HIGHEST>(cmpReg2, cmpReg);
+
+                    AscendC::MicroAPI::Select(xReg, xReg, yReg, cmpReg);
+                    AscendC::MicroAPI::Select(argminReg1, argminReg1, dupReg, cmpReg1);
+                    AscendC::MicroAPI::Select(argminReg2, argminReg2, dupReg, cmpReg2);
+
+                    AscendC::MicroAPI::DataCopy(yAddr + yOffset, xReg, yMaskReg);
+                    AscendC::MicroAPI::DataCopy(argminAddr + yOffset, argminReg1, argminMaskReg1);
+                    AscendC::MicroAPI::DataCopy(argminAddr + yOffset + 64, argminReg2, argminMaskReg2);
+                }
+                AscendC::MicroAPI::DataCopy(selectXAddr + tmpOffset, xReg, yMaskReg);
+                AscendC::MicroAPI::DataCopy(selectargminAddr + tmpOffset, argminReg1, argminMaskReg1);
+                AscendC::MicroAPI::DataCopy(selectargminAddr + tmpOffset + 64, argminReg2, argminMaskReg2);
             }
         }
     }

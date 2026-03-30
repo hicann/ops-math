@@ -22,6 +22,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -32,10 +33,14 @@ static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_INT8, DataType::DT_UINT8,
     DataType::DT_INT32, DataType::DT_BF16};
 
+static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST_REG = {
+    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_INT32, DataType::DT_BF16};
+
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static inline bool IsAiCoreSupport(const aclTensor* self) {
   // Cummin只需要判断dtype
-  return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
+  auto DTYPE_SUPPORT_LIST = IsRegBase() ? AICORE_DTYPE_SUPPORT_LIST_REG : AICORE_DTYPE_SUPPORT_LIST;
+  return CheckType(self->GetDataType(), DTYPE_SUPPORT_LIST);
 }
 
 // AICORE算子kernel
@@ -94,6 +99,10 @@ std::tuple<aclTensor*, aclTensor*> CumminOutInt64(const aclTensor* self, int64_t
     return {nullptr, nullptr};
   }
 
-  return CumminAiCpu(self, dim, valuesOut, indicesOut, executor);
+  if (IsAiCoreSupport(self) && IsRegBase()) {
+    return CumminAiCore(self, dim, valuesOut, indicesOut, executor);
+  } else {
+    return CumminAiCpu(self, dim, valuesOut, indicesOut, executor);
+  }
 }
 }  // namespace l0op
