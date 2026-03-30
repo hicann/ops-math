@@ -1,8 +1,12 @@
 # aclnnTriangularSolve
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/random/stateless_random_normal_v2)
+
+## 产品支持情况
+
 | 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |     ×     |
+|:----------------------------------------------------------- |:--------:|
+| <term>Ascend 950PR/Ascend 950DT</term>                             |     √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √       |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
@@ -11,43 +15,159 @@
 
 ## 功能说明
 
-- 算子功能：求解一个具有方形上或下三角形可逆矩阵A和多个右侧b的方程组。
-- 计算公式：
+算子功能：求解一个具有方形上或下三角形可逆矩阵A和多个右侧b的方程组。
 
-  $$
-  AX = b
-  $$
-  
-  其中$A$是一个上三角方阵（当upper为false时为下三角方阵），其主对角线不含0的元素。$b,A$为二维矩阵或者二维矩阵的batch，当输入为batch时，返回输出的X也为对应的batch。当$A$的主对角线含有0，或元素非常接近0，且unitriangular为false时，输出结果可能包含$NaN$
+计算公式：
+
+$$
+AX = b
+$$
+
+其中$A$是一个上三角方阵（当upper为false时为下三角方阵），其主对角线不含0的元素。$b,A$为二维矩阵或者二维矩阵的batch，当输入为batch时，返回输出的X也为对应的batch。当$A$的主对角线含有0，或元素非常接近0，且unitriangular为false时，输出结果可能包含$NaN$。
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnTriangularSolveGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnTriangularSolve”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnTriangularSolveGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnTriangularSolve"接口执行计算。
 
-- `aclnnStatus aclnnTriangularSolveGetWorkspaceSize(const aclTensor *self, const aclTensor *A, bool upper, bool transpose, bool unitriangular, aclTensor *xOut, aclTensor *mOut, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnTriangularSolve(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, const aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnTriangularSolveGetWorkspaceSize(
+  const aclTensor *self,
+  const aclTensor *A,
+  bool            upper,
+  bool            transpose,
+  bool            unitriangular,
+  aclTensor       *xOut,
+  aclTensor       *mOut,
+  uint64_t        *workspaceSize,
+  aclOpExecutor   **executor)
+```
+
+```Cpp
+aclnnStatus aclnnTriangularSolve(
+  void           *workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor  *executor,
+  aclrtStream    stream)
+```
 
 ## aclnnTriangularSolveGetWorkspaceSize
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入): 公式中的$b$，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128, 且数据类型与`A`一致，且数据维度至少为2且不大于8。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。self[-2]=A[-2]。除最后两个维度之外，A和self的其余维度满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。
-
-  - A(aclTensor*, 计算输入): 公式中的$A$，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128, 且数据类型与`self`一致，且数据维度至少为2且不大于8。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。最后两个轴相等。除最后两个维度之外，A和self的其余维度满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)。
-
-  - upper(bool, 计算输入)：计算属性，默认为true， `A`为上三角方阵，当upper为false时，`A`为下三角方阵。
-
-  - transpose(bool, 计算输入)：计算属性，默认为false， 当transpose为true时，计算$A^T X=b$。
-
-  - unitriangular(bool, 计算输入)：计算属性，默认为false，当unitriangular为true时，`A`的主对角线元素视为1，而不是从`A`引用，并且unitriangular为true时输入`self`和`A`，输出`xOut`和`mOut`的数据类型只支持FLOAT。
-
-  - xOut(aclTensor *, 计算输出): 公式中的$X$，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128，且数据类型与self一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，且shape需要与broadcast后的`A`,`b`满足$AX=b$约束。A和self满足broadcast关系之后的维度，最后一根轴dim=self[-1]。
-
-  - mOut(aclTensor *, 计算输出): broadcast后`A`的上三角（下三角）拷贝，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128，且数据类型与self一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。A和self满足broadcast关系之后的维度，最后一根轴dim=A[-1]。
-
-  - workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor \**, 出参)：返回op执行器，包含了算子计算流程。
+<table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <col style="width: 170px">
+  <col style="width: 120px">
+  <col style="width: 300px">
+  <col style="width: 330px">
+  <col style="width: 212px">
+  <col style="width: 100px">
+  <col style="width: 190px">
+  <col style:="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self</td>
+      <td>输入</td>
+      <td>公式中的b。</td>
+      <td>数据类型与A一致。self[-2]=A[-2]。除最后两个维度之外，A和self的其余维度满足broadcast关系。</td>
+      <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>2-8</td>
+      <td>支持</td>
+    </tr>
+    <tr>
+      <td>A</td>
+      <td>输入</td>
+      <td>公式中的A。</td>
+      <td>数据类型与self一致。最后两个轴相等。除最后两个维度之外，A和self的其余维度满足broadcast关系。</td>
+      <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>2-8</td>
+      <td>支持</td>
+    </tr>
+    <tr>
+      <td>upper</td>
+      <td>输入</td>
+      <td>计算属性。</td>
+      <td>默认为true，A为上三角方阵，当upper为为false时，A为下三角方阵。</td>
+      <td>BOOL</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>transpose</td>
+      <td>输入</td>
+      <td>计算属性。</td>
+      <td>默认为false，当transpose为true时，计算A<sup>T</sup>X=b。</td>
+      <td>BOOL</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-<td>
+    </tr>
+    <tr>
+      <td>unitriangular</td>
+      <td>输入</td>
+      <td>计算属性。</td>
+      <td>默认为false，当unitriangular为true时，A的主对角线元素视为1，而不是从A引用，并且unitriangular为true时输入self和A，输出xOut和mOut的数据类型只支持FLOAT。</td>
+      <td>BOOL</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>xOut</td>
+      <td>输出</td>
+      <td>公式中的X。</td>
+      <td>数据类型与self一致。shape需要与broadcast后的A,b满足AX=b约束。A和self满足broadcast关系之后的维度，最后一根轴dim=self[-1]。</td>
+      <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>支持</td>
+    </tr>
+    <tr>
+      <td>mOut</td>
+      <td>输出</td>
+      <td>broadcast后A的上三角（下三角）拷贝。</td>
+      <td>数据类型与self一致。A和self满足broadcast关系之后的维度，最后一根轴dim=A[-1]。</td>
+      <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>支持</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
