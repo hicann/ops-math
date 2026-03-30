@@ -8,6 +8,11 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+ /**
+* NOTE: Portions of this code were AI-generated and have been
+* technically reviewed for functional accuracy and security
+*/
+
 #include <iostream>
 #include <vector>
 #include "math.h"

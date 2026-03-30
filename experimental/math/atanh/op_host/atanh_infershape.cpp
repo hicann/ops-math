@@ -1,4 +1,4 @@
- /**
+/**
  * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
@@ -8,10 +8,16 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
  	 
- /**
+/**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
  */
+
+/*!
+ * \file atanh_infershape.cpp
+ * \brief Atanh 算子形状推导（一元算子：输出shape = 输入shape）
+ */
+
 #include "register/op_impl_registry.h"
 #include "exe_graph/runtime/infer_shape_context.h"
 
@@ -19,26 +25,22 @@ using namespace ge;
 
 namespace ops {
 
-static ge::graphStatus InferShape4Acos(gert::InferShapeContext* context)
+static ge::graphStatus InferShape4Atanh(gert::InferShapeContext* context)
 {
-    // Get input shape
     const gert::Shape* inputShape = context->GetInputShape(0);
     if (inputShape == nullptr) {
         return ge::GRAPH_FAILED;
     }
 
-    // Get output shape
     gert::Shape* outputShape = context->GetOutputShape(0);
     if (outputShape == nullptr) {
         return ge::GRAPH_FAILED;
     }
 
-    // Output shape = Input shape
     *outputShape = *inputShape;
-
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(AcosV2).InferShape(InferShape4Acos);
+IMPL_OP_INFERSHAPE(Atanh).InferShape(InferShape4Atanh);
 
 } // namespace ops

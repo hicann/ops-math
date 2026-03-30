@@ -1,4 +1,4 @@
- /**
+/**
  * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
@@ -8,41 +8,45 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
  	 
- /**
+/**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
+ */
+
+/*!
+ * \file atanh_def.cpp
+ * \brief Atanh 算子定义
  */
 #include "register/op_def_registry.h"
 
 namespace ops {
-class AcosV2 : public OpDef {
+class Atanh : public OpDef {
 public:
-    explicit AcosV2(const char* name) : OpDef(name)
+    explicit Atanh(const char* name) : OpDef(name)
     {
-        this->Input("self")
+        this->Input("x")
             .ParamType(REQUIRED)
-            .DataType({ge::DT_FLOAT16, ge::DT_BF16, ge::DT_FLOAT})
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
-        this->Output("out")
+        this->Output("y")
             .ParamType(REQUIRED)
-            .DataType({ge::DT_FLOAT16, ge::DT_BF16, ge::DT_FLOAT})
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
 
-        // Ascend910B (arch32) configuration
         OpAICoreConfig aicoreConfig910B;
         aicoreConfig910B.DynamicCompileStaticFlag(true)
             .DynamicFormatFlag(false)
-            .DynamicRankSupportFlag(false)
+            .DynamicRankSupportFlag(true)
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
-            .PrecisionReduceFlag(false)
-            .ExtendCfgInfo("opFile.value", "acos_v2");
+            .PrecisionReduceFlag(true)
+            .ExtendCfgInfo("opFile.value", "atanh");
         this->AICore().AddConfig("ascend910b", aicoreConfig910B);
     }
 };
-OP_ADD(AcosV2);
+OP_ADD(Atanh);
 } // namespace ops

@@ -1,4 +1,4 @@
- /**
+/**
  * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
@@ -8,37 +8,18 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
  	 
- /**
+/**
  * NOTE: Portions of this code were AI-generated and have been
  * technically reviewed for functional accuracy and security
  */
-#include "register/op_impl_registry.h"
-#include "exe_graph/runtime/infer_shape_context.h"
 
-using namespace ge;
+#ifndef _ATANH_TILING_DATA_H_
+#define _ATANH_TILING_DATA_H_
 
-namespace ops {
+struct AtanhTilingData {
+    int64_t totalNum = 0;     // 总元素数量
+    int64_t blockFactor = 0;  // 每个核处理的元素数量
+    int64_t ubFactor = 0;     // 每次 UB 循环处理的元素数量
+};
 
-static ge::graphStatus InferShape4Acos(gert::InferShapeContext* context)
-{
-    // Get input shape
-    const gert::Shape* inputShape = context->GetInputShape(0);
-    if (inputShape == nullptr) {
-        return ge::GRAPH_FAILED;
-    }
-
-    // Get output shape
-    gert::Shape* outputShape = context->GetOutputShape(0);
-    if (outputShape == nullptr) {
-        return ge::GRAPH_FAILED;
-    }
-
-    // Output shape = Input shape
-    *outputShape = *inputShape;
-
-    return ge::GRAPH_SUCCESS;
-}
-
-IMPL_OP_INFERSHAPE(AcosV2).InferShape(InferShape4Acos);
-
-} // namespace ops
+#endif
