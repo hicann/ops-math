@@ -144,6 +144,7 @@ operator_group_5:
   - trunc
   - assign
   - as_strided
+  - batch_to_space_nd
   - broadcast_to
   - clip_by_value
   - clip_by_value_v2

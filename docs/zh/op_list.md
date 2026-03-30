@@ -1817,6 +1817,16 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/batch_to_space_nd/README.md">batch_to_space_nd</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>将批次维度的数据重新排列到空间维度，并裁剪空间维度。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/concat/README.md">concat</a></td>
     <td>√</td>
     <td>√</td>
