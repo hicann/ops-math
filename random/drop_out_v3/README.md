@@ -96,4 +96,5 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | :-------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| aclnn接口 | [test_aclnn_drop_out_v3](./examples/arch35/test_aclnn_drop_out_v3.cpp) | 通过[aclnn_drop_out_v3](docs/aclnnDropoutV3.md)接口方式调用drop_out_v3算子。 |
+| aclnn接口 | [test_aclnn_drop_out_v3](./examples/arch35/test_aclnn_drop_out_v3.cpp) | 通过[aclnn_drop_out_v3](docs/aclnnDropoutV3.md)接口方式调用DropOutV3算子。 |
+| 图模式调用 | [test_geir_drop_out_v3](./examples/arch35/test_geir_drop_out_v3.cpp)   | 通过[算子IR](./op_graph/drop_out_v3_proto.h)构图方式调用DropOutV3算子。 |
