@@ -274,23 +274,6 @@ void BroadcastToTilingAscendC::UpdateTilingKey()
         auto lastDimAlign = Ops::Base::CeilAlign(outShapePtr_->GetDim(dimNum - 1) * dtypeSize_, blockSize_);
         if (outShapePtr_->GetDim(dimNum - nTwo) * lastDimAlign <= vlSize_) {
             tilingKey_ = TILING_MODE_LAST_DIM_SMALL_A;
-            // 优化：LAST_DIM_SMALL_A模板下，当CopyDataIn单次搬运数据量小于cacheLine时，增大uLpUnit_
-            // 单次搬运数据量 = blockCount * blockLen = uLpUnit_ * uInOffset_ * dtypeSize_
-            // 条件：U轴是A轴 且 当前搬运量<cacheLine 且 uLpUnit_可增大
-            if (isUNotB_ == 1 && uLpUnit_ * uInOffset_ * dtypeSize_ < cacheLine_ && uLpUnit_ < uAxisLen_) {
-                // 计算满足 >= cacheLine_ 的最小uLpUnit_
-                int64_t minULpUnit = Ops::Base::CeilDiv(cacheLine_, uInOffset_ * dtypeSize_);
-                // 取满足条件的最小值，但不超过uAxisLen_
-                uLpUnit_ = std::min(minULpUnit, uAxisLen_);
-                xSize_[0] = static_cast<uint32_t>(uLpUnit_);  // 更新DMA参数
-                // 更新tensorSize_以适应新的uLpUnit_
-                // UB中需要的空间 = uLpUnit_ * outShape[dimNum-2] * CeilAlign(outShape[dimNum-1], blockSize_/dtypeSize_)
-                int64_t lastDimBA = Ops::Base::CeilAlign(outShapePtr_->GetDim(dimNum - 1), blockSize_ / dtypeSize_);
-                int64_t newTensorSize = uLpUnit_ * outShapePtr_->GetDim(dimNum - nTwo) * lastDimBA;
-                if (newTensorSize > tensorSize_) {
-                    tensorSize_ = newTensorSize;
-                }
-            }
             return;
         }
     }
@@ -538,9 +521,15 @@ void BroadcastToTilingAscendC::CalcTensorSize()
     bool isBrwd = false;
 
     int64_t ubGate = maxTensorSize_ / nTwo / nTwo;
+    int64_t r4DimSize = minTensorSize_;
+    if (dimNum > 5) {
+        r4DimSize = CalcDimSize(inShapePtr_, dimNum - 4, dimNum);
+    }
+     
     isDMABrcA_ =
         (dimNum > 1 && (nTwo * outLastDim <= LAST_DIM_GATE || (outLastDim == LAST_DIM_GATE / nTwo + 1 &&
-                                                               outShapePtr_->GetDim(dimNum - nTwo) <= LAST_DIM_GATE)));
+                                                               outShapePtr_->GetDim(dimNum - nTwo) <= LAST_DIM_GATE)
+                                                           || ((outLastDim < 8) && (r4DimSize < minTensorSize_))));
     if ((!abInfo_[dimNum - 1] && outLastDim <= ubGate && !isDMABrcA_) ||
         (abInfo_[dimNum - 1] && outLastDim >= LAST_DIM_GATE)) {  // UB broadcast
         tmpTensorSize = std::min(ubGate, MAX_TENSOR_SIZE);
