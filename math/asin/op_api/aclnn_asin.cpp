@@ -134,10 +134,10 @@ static aclnnStatus ExecAsinGetWorkspaceSize(
     CHECK_RET(selfCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 执行L0算子
-    auto acosOutRet = l0op::Asin(selfCast, uniqueExecutor.get());
-    CHECK_RET(acosOutRet != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto asinOutRet = l0op::Asin(selfCast, uniqueExecutor.get());
+    CHECK_RET(asinOutRet != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    auto castOut = l0op::Cast(acosOutRet, out->GetDataType(), uniqueExecutor.get());
+    auto castOut = l0op::Cast(asinOutRet, out->GetDataType(), uniqueExecutor.get());
     CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 将计算结果拷贝到输出out上，out可能是非连续的tensor

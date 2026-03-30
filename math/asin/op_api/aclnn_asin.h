@@ -20,7 +20,7 @@ extern "C" {
 /**
  * @brief aclnnAsin的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_math
- * 功能描述：从输入矩阵的每一个元素进行反余弦操作后输出。
+ * 功能描述：从输入矩阵的每一个元素进行反正弦操作后输出。
  * 计算公式：
  * out_{i}=sin^{-1}(input_{i})
  * 参数描述：
@@ -38,7 +38,7 @@ ACLNN_API aclnnStatus aclnnAsinGetWorkspaceSize(const aclTensor* self, aclTensor
 
 /**
  * @brief aclnnAsin的第二段接口，用于执行计算。
- * 功能描述：从输入矩阵的每一个元素进行反余弦操作后输出。
+ * 功能描述：从输入矩阵的每一个元素进行反正弦操作后输出。
  * 计算公式：
  * out_{i}=sin^{-1}(input_{i})
  * 实现说明：
@@ -62,7 +62,7 @@ ACLNN_API aclnnStatus aclnnAsin(void* workspace, uint64_t workspaceSize, aclOpEx
 /**
  * @brief aclnnInplaceAsin的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_math
- * 功能描述：从输入矩阵的每一个元素进行反余弦操作后输出。
+ * 功能描述：从输入矩阵的每一个元素进行反正弦操作后输出。
  * 计算公式：
  * out_{i}=sin^{-1}(input_{i})
  * 参数描述：
