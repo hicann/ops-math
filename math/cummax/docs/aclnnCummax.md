@@ -86,7 +86,7 @@ aclnnStatus aclnnCummax(
         <td>shape必须与valuesOut、indicesOut一致。</td>
         <td>FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
         <td>ND</td>
-        <td>[1,8]</td>
+        <td>[0,8]</td>
         <td>√</td>
       </tr>
       <tr>
