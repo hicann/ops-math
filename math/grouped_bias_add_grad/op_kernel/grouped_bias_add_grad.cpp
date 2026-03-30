@@ -95,6 +95,7 @@ extern "C" __global__ __aicore__ void grouped_bias_add_grad(
     if (userWS == nullptr) {
         return;
     }
+    
     GET_TILING_DATA(tilingData, tiling_data);
 
     if (TILING_KEY_IS(TWO_DIMS_FLOAT)) {

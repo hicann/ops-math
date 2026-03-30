@@ -32,8 +32,7 @@ using PromoteDataT = float;
 constexpr static int64_t ALIGN_BYTE_32 = 32;
 constexpr static int32_t BUFFER_NUM = 2;
 constexpr static float ZERO_VALUE = 0.0;
-constexpr static uint64_t H_CUT_BLOCK_SIZE = 128;
-constexpr static uint64_t TEMP_BUF_SIZE = 4096;
+constexpr static uint64_t H_CUT_BLOCK_SIZE = 512;
 constexpr static uint64_t CS_BUF_SIZE = 32;
 constexpr static uint64_t BLOCK_UB_SIZE = ALIGN_BYTE_32 / sizeof(T);
 constexpr static int32_t ELEMENT_ONE_REPEAT_COMPUTE = Ops::Base::GetVRegSize() / sizeof(PromoteDataT);
@@ -133,7 +132,7 @@ __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::Init(
     if (groupIdxType_) {
         if constexpr (!IsSameType<U, int64_t>::value) {
             // U 为 int32 且需要前缀和：扣除 cast 空间 + cumSum 空间
-            inUbSize_ = tiling_->useUbSize - CS_BUF_SIZE - 2 * groupedIdxSize_;
+            inUbSize_ = tiling_->useUbSize - CS_BUF_SIZE - groupedIdxSize_;
             pipe_.InitBuffer(groupIdxCastBuf_, 2 * groupedIdxSize_);  // int32→int64，空间翻倍
             pipe_.InitBuffer(cumSumBuf_, CS_BUF_SIZE);
             groupIdxCastLocal_ = groupIdxCastBuf_.Get<int64_t>();
@@ -195,13 +194,13 @@ __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::UpdateCurParam(int64_t cur
             // groupIdx 存的是每行的长度，需要 reduceSum
             uint32_t shape[] = { static_cast<uint32_t>(currRowIdx), 1};
             if constexpr (!IsSameType<U, int64_t>::value) {
-                ReduceSum<int64_t, Pattern::Reduce::RA, false>(cumSumLocal_, groupIdxCastLocal_, shape, false);
+                ReduceSum<int64_t, Pattern::Reduce::RA, true>(cumSumLocal_, groupIdxCastLocal_, shape, false);
                 event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
                 SetFlag<HardEvent::V_S>(eventId);
                 WaitFlag<HardEvent::V_S>(eventId);
                 currRowWidth = groupIdxCastLocal_.GetValue(currRowIdx);
             } else {
-                ReduceSum<U, Pattern::Reduce::RA, false>(cumSumLocal_, groupIdxLocal_, shape, false);
+                ReduceSum<U, Pattern::Reduce::RA, true>(cumSumLocal_, groupIdxLocal_, shape, false);
                 event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
                 SetFlag<HardEvent::V_S>(eventId);
                 WaitFlag<HardEvent::V_S>(eventId);
@@ -261,18 +260,18 @@ __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::Process()
             currBlockIdx += 1; 
             i += 1;
         } else if (currBlockSize * sizeof(PromoteDataT) > inUbSize_) {
-            // ===== 分支1: 二分累加 =====
+            // ===== 分支2: 二分累加 =====
             SetGParam(currRowWidth, currHLen);
             BinaryReduceSum(currRowCumSum, currRowIdx, currHIdx, currRowWidth, currHLen);
             currBlockIdx += 1;
             i += 1;
         } else if (currBlockSize  * sizeof(PromoteDataT) <= inUbSize_ / 2 && !isHTail) {
-            // ===== 分支2: 扩展 H 轴处理多块 =====
+            // ===== 分支3: 扩展 H 轴处理多块 =====
             ProcessMultiHBlock(currRowIdx, currHIdx, currRowWidth, currRowCumSum, i);
             currBlockIdx += curProcessHBlocks_;
             i += curProcessHBlocks_;
         } else {
-            // ===== 分支3: 单块处理 =====
+            // ===== 分支4: 单块处理 =====
             ProcessSingleHBlock(currHLen, currRowIdx, currHIdx, currRowWidth, currRowCumSum);
             currBlockIdx += 1;
             i += 1;
@@ -301,8 +300,10 @@ __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::ProcessMultiHBlock(int64_t
     int64_t remainHBlocks = cutHDim_ - currHIdx;  // 当前行剩余 H 块数
     int64_t remainTaskBlocks = currBlockFactor_ - loop;  // 当前核剩余任务块数
     int64_t maxProcessBlocks = remainHBlocks < remainTaskBlocks ? remainHBlocks : remainTaskBlocks;
-    maxProcessBlocks = maxProcessBlocks < (maxPerHLen_ / (H_CUT_BLOCK_SIZE / sizeof(PromoteDataT))) ? 
-                                            maxProcessBlocks : (maxPerHLen_ / (H_CUT_BLOCK_SIZE / sizeof(PromoteDataT)));
+    if (maxProcessBlocks * H_CUT_BLOCK_SIZE > maxPerHLen_ * sizeof(T)) {
+        maxProcessBlocks = maxPerHLen_ * sizeof(T) / H_CUT_BLOCK_SIZE;
+    }
+
     int64_t processHBlocks = 0;
     int64_t processHLen = 0;
     CalcMaxHLen(currRowWidth, currHIdx, maxProcessBlocks, processHBlocks, processHLen);
@@ -469,12 +470,14 @@ __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::CopyGroupIdx()
     groupIdxQue_.EnQue<U>(groupIdxLocal_);
     groupIdxLocal_ = groupIdxQue_.DeQue<U>();
 
-    if constexpr (!IsSameType<U, int64_t>::value) {
-        Cast(groupIdxCastLocal_, groupIdxLocal_, RoundMode::CAST_NONE, cutGDim_);
+    if (groupIdxType_ == 1) {
+        if constexpr (!IsSameType<U, int64_t>::value) {
+            Cast(groupIdxCastLocal_, groupIdxLocal_, RoundMode::CAST_NONE, cutGDim_);
 
-        event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
-        SetFlag<HardEvent::V_S>(eventId);
-        WaitFlag<HardEvent::V_S>(eventId);
+            event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
+            SetFlag<HardEvent::V_S>(eventId);
+            WaitFlag<HardEvent::V_S>(eventId);
+        }
     }
 }
 

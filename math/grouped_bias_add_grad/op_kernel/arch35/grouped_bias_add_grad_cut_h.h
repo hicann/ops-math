@@ -30,9 +30,9 @@ class GroupedBiasAddGradSplitH
 {
 using PromoteDataT = float;                                             // DataType in compute
 
-constexpr static int64_t BLOCK_BYTE = 128;                              // Processed block: 128B
+constexpr static int64_t BLOCK_BYTE = 512;                              // Processed block: 512B
 constexpr static uint64_t ALIGN_BYTE = 32;
-constexpr static int64_t BLOCK_SIZE = BLOCK_BYTE / sizeof(T);           // Processed block length: 128B
+constexpr static int64_t BLOCK_SIZE = BLOCK_BYTE / sizeof(T);           // Processed block length: 512B
 constexpr static uint64_t BLOCK_UB_SIZE = ALIGN_BYTE / sizeof(T);       // Aligned block length
 constexpr static float ZERO_VALUE = 0.0;
 constexpr static int32_t ELEMENT_ONE_REPEAT_COMPUTE = Ops::Base::GetVRegSize() / sizeof(PromoteDataT);

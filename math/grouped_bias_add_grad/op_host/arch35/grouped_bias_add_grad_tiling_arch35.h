@@ -34,10 +34,10 @@ constexpr int64_t ARA_DIM_NUM = 3;
 constexpr int64_t RA_DIM_NUM = 2;
 constexpr int64_t USE_TEMP_CACHELINE_NUM = 4;
 constexpr int64_t INPUT_MAX_GROUP = 2048;
-constexpr int64_t TEMP_BUF_SIZE = 4096;
+constexpr int64_t TEMP_BUF_SIZE = 20 * 1024;
 constexpr int64_t MAX_OUT_SIZE = 16384;
 constexpr int64_t EMPTY_WORKSPACE_SIZE = 4096;
-constexpr int64_t CACHELINE_DEFINE = 128;
+constexpr int64_t CACHELINE_DEFINE = 512;
 
 // Compile info for arch35
 struct GroupedBiasAddGradCompileInfoArch35 {
