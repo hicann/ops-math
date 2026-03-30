@@ -163,6 +163,10 @@ static bool Checkformat(const aclTensor* self, const aclTensor* out)
             op::ToString(self->GetStorageFormat()).GetString(), op::ToString(out->GetStorageFormat()).GetString());
         return false;
     }
+    if (op::IsPrivateFormat(self->GetStorageFormat()) || op::IsPrivateFormat(out->GetStorageFormat())) {
+        OP_LOGW("Format of input gets [%s] and output gets [%s], this format may lead to precision failure",
+        op::ToString(self->GetStorageFormat()).GetString(), op::ToString(out->GetStorageFormat()).GetString());
+    }
     return true;
 }
 
