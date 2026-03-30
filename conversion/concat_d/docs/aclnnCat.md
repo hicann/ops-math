@@ -118,6 +118,7 @@ aclnnStatus aclnnCat(
 
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term> : 不支持BFLOAT16数据类型。
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持UINT16、UINT32、UINT64。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0。
 
 - **返回值：**
 
@@ -208,8 +209,7 @@ aclnnStatus aclnnCat(
 
 - 确定性计算：
   - aclnnCat默认确定性实现。
-
-
+- 仅dim = 0 时，支持输入tensorList大于32且小于512。
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
