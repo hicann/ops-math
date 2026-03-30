@@ -42,7 +42,6 @@ constexpr uint64_t B64_BYTES = 8;
 constexpr uint64_t BUFFER_NUM = 2;
 constexpr uint64_t WORK_SPACE_SIZE = 16 * 1024 * 1024;
 constexpr double VEC_CORE_USED_THRES_HOLD = 0.9;
-constexpr int64_t SMALL_SHAPE_BYTES_THRES_HOLD = 4000000;
 constexpr int64_t MOVEALIGN_LAST_MIN_ELE = 32;
 constexpr int64_t SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE = 128;
 constexpr int64_t INPUT_IDX = 0;
@@ -59,6 +58,8 @@ constexpr int64_t DIM_THREE = 3;
 constexpr int64_t DIM_FOUR = 4;
 constexpr int64_t DIM_FIVE = 5;
 constexpr int64_t DIM_SIX = 6;
+constexpr int64_t DIM_EIGHT = 8;
+constexpr int64_t TOTAL_UBSIZE = 248 * 1024;
 BEGIN_TILING_DATA_DEF(TransposeOpTilingData)
 TILING_DATA_FIELD_DEF(int64_t, permSize);
 TILING_DATA_FIELD_DEF(int64_t, inCutIndex);
@@ -113,6 +114,7 @@ enum class SplitMode : int64_t
     N_LAST_TRANSPOSE = 10004, // nLast transpose and last axis bigger than cacheLine
     BIG_DIM = 10005,          // dim bigger than 5 and last transpose
     GATHER_TRANSPOSE = 10006, // transpose with gather
+    VCONV_TRANSPOSE = 10007,
     NDDMA_BASE = 90000        // nddma base key and not a real used key
 };
 
@@ -168,6 +170,7 @@ private:
     ge::graphStatus GetShapeInfo();
     ge::graphStatus CheckShapeInfo();
     ge::graphStatus CheckReducedShapeInfo();
+    ge::graphStatus TryVCONVTiling();
     void FlushBaseNumForBigDim();
     void EntryTilingTemplate();
     void CalcUBSplitInfo();
@@ -213,6 +216,7 @@ private:
     int64_t blkTailFactor_ = 0;
     int64_t totalNddmaNum_ = 1;
     int64_t isNddmaAxisContinue_ = 0;
+    int64_t SMALL_SHAPE_BYTES_THRES_HOLD = 4000000;
     int64_t inputShape_[MAX_AXIS_NUM_FOR_TRANSPOSE] = {0};
     int64_t outputShape_[MAX_AXIS_NUM_FOR_TRANSPOSE] = {0};
     int64_t perm_[MAX_AXIS_NUM_FOR_TRANSPOSE] = {0};

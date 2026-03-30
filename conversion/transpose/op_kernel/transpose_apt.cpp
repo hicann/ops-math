@@ -20,6 +20,7 @@
 #include "arch35/transpose_small_shape.h"
 #include "arch35/transpose_tensor_move.h"
 #include "arch35/transpose_with_gather.h"
+#include "arch35/transpose_transdata_5hd.h"
 
 #define TENSOR_MOVE 10000
 #define SMALL_SHAPE 10001
@@ -28,6 +29,7 @@
 #define N_LAST_TRANSPOSE 10004
 #define BIG_DIM 10005
 #define GATHER_TRANSPOSE 10006
+#define VCONV_TRANSPOSE 10007
 
 using namespace Transpose;
 
@@ -209,6 +211,16 @@ extern "C" __aicore__ inline void TransposeGatherProcess(
     }
 }
 
+extern "C"  __aicore__ inline void TransposeVconvProcess(
+    GM_ADDR x, GM_ADDR y, const TransposeVCONVTilingData* tilingData, TPipe* pipe)
+{
+    if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
+        Transpose::KernelTransDataTo5HD<int16_t> op;
+        op.Init(x, y, tilingData, pipe);
+        op.Process();
+    }
+}
+
 extern "C" __global__ __aicore__ void transpose(GM_ADDR x, GM_ADDR perm, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     TPipe pipe;
@@ -234,5 +246,8 @@ extern "C" __global__ __aicore__ void transpose(GM_ADDR x, GM_ADDR perm, GM_ADDR
     } else if (TILING_KEY_IS(GATHER_TRANSPOSE)) {
         GET_TILING_DATA_WITH_STRUCT(GatherTransposeTilingData, tilingData, tiling);
         TransposeGatherProcess(x, y, &tilingData, &pipe);
+    } else if (TILING_KEY_IS(VCONV_TRANSPOSE)) {
+        GET_TILING_DATA_WITH_STRUCT(TransposeVCONVTilingData, tilingData, tiling);
+        TransposeVconvProcess(x, y, &tilingData, &pipe);
     }
 }

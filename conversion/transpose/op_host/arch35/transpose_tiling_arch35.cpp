@@ -17,6 +17,7 @@
 #include "transpose_tiling_base.h"
 #include "transpose_tiling_arch35.h"
 #include "transpose_tiling_with_gather_arch35.h"
+#include "transpose_tiling_with_nchwconv_arch35.h"
 
 namespace optiling {
 static int IncreaseCompare(const void* a, const void* b)
@@ -67,6 +68,10 @@ ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
         CheckReducedShapeInfo() != ge::GRAPH_SUCCESS,
         OP_LOGE(tilingContext_->GetNodeName(), "Failed to check reduced shape info!"), return ge::GRAPH_FAILED);
 
+    CalcTotalVolumeActual();
+    OP_CHECK_IF(TryVCONVTiling() == ge::GRAPH_SUCCESS,
+                OP_LOGD(tilingContext_->GetNodeName(), "Do convTiling success"), return ge::GRAPH_SUCCESS);
+
     SetIsLastAxisTranspose();
     if (!isReleatedTranspsoe_ && shapeInfo_.isLastAxisTranspose) {
         TransWithGather::PlatInfo platInfo{coreNum_, ubSize_, cacheLineSize_, ubBlockSize_};
@@ -100,6 +105,26 @@ ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
     workspaces[0] = WORK_SPACE_SIZE;
     OP_LOGD(tilingContext_->GetNodeName(), "Tiling4Transpose success.");
     return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus TransposeNddmaTiling::TryVCONVTiling() {
+    OP_LOGD(tilingContext_->GetNodeName(), "Start Try VCONVTiling.");
+    auto platformInfo = tilingContext_->GetPlatformInfo();
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    auto arch = ascendcPlatform.GetCurNpuArch();
+    if (arch == NpuArch::DAV_5102) {
+        SMALL_SHAPE_BYTES_THRES_HOLD = coreNum_ * TOTAL_UBSIZE;
+        if (shapeInfo_.totalVolumeActual * shapeInfo_.eleLenInBytes > ubSize_) {
+            if (shapeInfo_.reducedPerm[0] == 1 && shapeInfo_.reducedPerm[1] == 0 && shapeInfo_.dim == 2 &&
+                shapeInfo_.eleLenInBytes == 2 && shapeInfo_.reducedInShape[0] > DIM_EIGHT) {
+                TransposeWithVCONV::PlatInfo platInfo{coreNum_, ubSize_};
+                TransposeWithVCONV::TransposeVCONVTiling vconvTiling(tilingContext_, platInfo, shapeInfo_);
+                OP_CHECK_IF(vconvTiling.DoTiling() == ge::GRAPH_SUCCESS,
+                            OP_LOGD(tilingContext_->GetNodeName(), "Do convTiling done"), return ge::GRAPH_SUCCESS);
+            }
+        }
+    }
+    return ge::GRAPH_FAILED;
 }
 
 template <typename T>
@@ -508,7 +533,6 @@ void TransposeNddmaTiling::EntryTilingTemplate()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering EntryTilingTemplate.");
     SetIsLastAxisTranspose();
-    CalcTotalVolumeActual();
     splitInfo_.ubElement = ubSize_ / shapeInfo_.eleLenInBytes;
     if (shapeInfo_.dim == 1) {
         // just tensor move
