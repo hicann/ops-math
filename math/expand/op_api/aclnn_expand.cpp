@@ -168,7 +168,8 @@ aclnnStatus aclnnExpandGetWorkspaceSize(
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
     // 空tensor处理
-    if (self->IsEmpty()) {
+    if (self->IsEmpty() || out->IsEmpty()) {
+        OP_LOGI("aclnnExpandGetWorkspaceSize", "empty tensor!");
         // 根据实际支持情况补充
         *workspaceSize = 0;
         uniqueExecutor.ReleaseTo(executor);
