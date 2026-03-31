@@ -216,7 +216,7 @@ aclnnStatus aclnnInplaceAddr(
       <td>beta或者alpha为bool类型时，self、vec1、vec2数据类型非bool类型。</td>
     </tr>
     <tr>
-      <td>self、vec1、vec2类型都为整型或bool或"整型+bool"时，beta或alpha为浮点型。</td>
+      <td>self、vec1、vec2类型都为整型或bool或“整型+bool”时，beta或alpha为浮点型。</td>
     </tr>
   </tbody>
   </table>

@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-- 接口功能：生成一个等间隔数值序列。创建一个大小为steps的1维向量，其值从start起始到end结束（包含）线性均匀分布。
+- 接口功能：生成一个等间隔数值序列。创建一个大小为steps的一维向量，其值从start起始到end结束（包含）线性均匀分布。
 
 - 计算公式：
 
@@ -98,7 +98,7 @@ aclnnStatus aclnnLinspace(
     <tr>
       <td>steps（int64_t）</td>
       <td>输入</td>
-      <td>获取值的步长。</td>
+      <td>生成元素的个数。</td>
       <td>需要满足steps大于等于0。</td>
       <td>-</td>
       <td>-</td>

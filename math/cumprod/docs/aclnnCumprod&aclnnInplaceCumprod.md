@@ -591,7 +591,7 @@ int main()
     // 3.调用CANN算子库API
     // 调用aclnnInplaceCumprod第一段接口
     ret = aclnnInplaceCumprodGetWorkspaceSize(input, axis, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnCumprodGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceCumprodGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 根据第一段接口计算出的workspaceSize申请device内存
     if (workspaceSize > 0)

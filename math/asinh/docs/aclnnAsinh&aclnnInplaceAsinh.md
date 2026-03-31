@@ -239,7 +239,7 @@ aclnnStatus aclnnInplaceAsinh(
     <tbody>
       <tr>
         <td>inputRef (aclTensor*)</td>
-        <td>输入/输出</td>
+        <td>输入</td>
         <td>-</td>
         <td>-</td>
         <td>FLOAT、FLOAT16、DOUBLE</td>

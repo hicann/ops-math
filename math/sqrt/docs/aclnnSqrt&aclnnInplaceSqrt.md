@@ -15,13 +15,13 @@
 
 ## 功能说明
 
-- 算子功能：完成非负数平方根计算，负数情况返回nan。
+- 算子功能：完成非负数平方根计算，负数情况返回NaN。
 - 计算公式：
 
 $$
 out=sqrt(self)=\begin{cases}
 \sqrt {self}, & self\ge 0 , \\
-nan, &  self\lt 0
+NaN, &  self\lt 0
 \end{cases}
 $$
 

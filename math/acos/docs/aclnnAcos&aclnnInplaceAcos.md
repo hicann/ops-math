@@ -43,7 +43,7 @@ aclnnStatus aclnnAcos(
   void*             workspace, 
   uint64_t          workspaceSize, 
   aclOpExecutor*    executor, 
-  const aclrtStream stream)
+  aclrtStream       stream)
 ```
 
 ```cpp
@@ -58,7 +58,7 @@ aclnnStatus aclnnInplaceAcos(
   void*             workspace, 
   uint64_t          workspaceSize, 
   aclOpExecutor*    executor, 
-  const aclrtStream stream)
+  aclrtStream       stream)
 ```
 
 ## aclnnAcosGetWorkspaceSize

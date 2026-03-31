@@ -87,7 +87,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/diag_v2/README.md">diag_v2</a></td>
+    <td><a href="../../conversion/diag_v2/README.md">diag_v2</a></td>
     <td>√</td>
     <td>√</td>
     <td>×</td>
@@ -224,16 +224,6 @@
     <td>×</td>sum
     <td>AI Core</td>
     <td>对输入张量self进行RFFT（傅里叶变换）计算，输出是一个包含非负频率的复数张量。</td>
-  </tr>
-  <tr>
-    <td>math</td>
-    <td><a href="../../math/ring_attention_update/README.md">ring_attention_update</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>RingAttentionUpdate算子功能是将两次FlashAttention的输出根据其不同的softmax的max和sum更新。</td>
   </tr>
   <tr>
     <td>math</td>
