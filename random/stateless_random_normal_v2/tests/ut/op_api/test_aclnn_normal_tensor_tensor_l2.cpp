@@ -114,3 +114,61 @@ TEST_F(l2_normal_tensor_tensor_test, case_out_nullptr_ND_018)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 }
+
+// ======================== 正常场景新增 ========================
+
+// 正常场景：float类型，走StatelessRandomNormalV3路径
+TEST_F(l2_normal_tensor_tensor_test, case_float_ND_normal)
+{
+    auto meanDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(0, 5);
+    auto stdDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(0, 3);
+    auto outDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t seed = 1;
+    int64_t offset = 1;
+    auto ut = OP_API_UT(aclnnNormalTensorTensor, INPUT(meanDesc, stdDesc, seed, offset), OUTPUT(outDesc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 正常场景：float16类型，走StatelessRandomNormalV3路径
+TEST_F(l2_normal_tensor_tensor_test, case_float16_ND_normal)
+{
+    auto meanDesc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(0, 5);
+    auto stdDesc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(0, 3);
+    auto outDesc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
+    int64_t seed = 1;
+    int64_t offset = 1;
+    auto ut = OP_API_UT(aclnnNormalTensorTensor, INPUT(meanDesc, stdDesc, seed, offset), OUTPUT(outDesc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 正常场景：double类型，走StatelessRandomNormalV2 fallback路径
+TEST_F(l2_normal_tensor_tensor_test, case_double_ND_normal)
+{
+    auto meanDesc = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(0, 5);
+    auto stdDesc = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND).ValueRange(0, 3);
+    auto outDesc = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
+    int64_t seed = 1;
+    int64_t offset = 1;
+    auto ut = OP_API_UT(aclnnNormalTensorTensor, INPUT(meanDesc, stdDesc, seed, offset), OUTPUT(outDesc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 正常场景：mean和std类型不一致（需要PromoteType），float16 + float -> float
+TEST_F(l2_normal_tensor_tensor_test, case_mixed_dtype_ND_normal)
+{
+    auto meanDesc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(0, 5);
+    auto stdDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(0, 3);
+    auto outDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t seed = 1;
+    int64_t offset = 1;
+    auto ut = OP_API_UT(aclnnNormalTensorTensor, INPUT(meanDesc, stdDesc, seed, offset), OUTPUT(outDesc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}

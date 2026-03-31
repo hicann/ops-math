@@ -2237,7 +2237,7 @@
   </tr>
   <tr>
     <td>random</td>
-    <td><a href="../../random/stateless_random_norm_v2/README.md">stateless_random_norm_v2</a></td>
+    <td><a href="../../random/stateless_random_normal_v2/README.md">stateless_random_normal_v2</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>
@@ -2252,6 +2252,26 @@
     <td>√</td>
     <td>×</td>
     <td>√</td>
+    <td>AI Core</td>
+    <td>生成均匀分布随机数。</td>
+  </tr>
+  <tr>
+    <td>random</td>
+    <td><a href="../../random/stateless_random_normal_v3/README.md">stateless_random_normal_v3</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>生成正态分布随机数。</td>
+  </tr>
+  <tr>
+    <td>random</td>
+    <td><a href="../../random/stateless_random_uniform_v3/README.md">stateless_random_uniform_v3</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
     <td>AI Core</td>
     <td>生成均匀分布随机数。</td>
   </tr>

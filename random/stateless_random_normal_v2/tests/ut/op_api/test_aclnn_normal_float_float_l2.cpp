@@ -43,3 +43,76 @@ TEST_F(l2_normal_float_float_test, case_float_ND_001)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
+
+// ======================== 正常场景新增 ========================
+
+// 正常场景：float16 out类型，走StatelessRandomNormalV3路径
+TEST_F(l2_normal_float_float_test, case_float16_ND_normal)
+{
+    auto outDesc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
+    float mean = 1.5f;
+    float std = 2.5f;
+    int64_t seed = 1;
+    int64_t offset = 1;
+    auto ut = OP_API_UT(aclnnNormalFloatFloat, INPUT(mean, std, seed, offset), OUTPUT(outDesc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 正常场景：double out类型，走StatelessRandomNormalV2 fallback路径
+TEST_F(l2_normal_float_float_test, case_double_ND_normal)
+{
+    auto outDesc = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
+    float mean = 1.5f;
+    float std = 2.5f;
+    int64_t seed = 1;
+    int64_t offset = 1;
+    auto ut = OP_API_UT(aclnnNormalFloatFloat, INPUT(mean, std, seed, offset), OUTPUT(outDesc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// ======================== 异常场景新增 ========================
+
+// 异常场景：out为nullptr
+TEST_F(l2_normal_float_float_test, case_out_nullptr)
+{
+    float mean = 1.5f;
+    float std = 2.5f;
+    int64_t seed = 1;
+    int64_t offset = 1;
+    auto ut = OP_API_UT(aclnnNormalFloatFloat, INPUT(mean, std, seed, offset), OUTPUT((aclTensor*)nullptr));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
+}
+
+// 异常场景：超过8维
+TEST_F(l2_normal_float_float_test, case_9dim_invalid)
+{
+    auto outDesc = TensorDesc({2, 3, 2, 2, 3, 2, 3, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    float mean = 1.5f;
+    float std = 2.5f;
+    int64_t seed = 1;
+    int64_t offset = 1;
+    auto ut = OP_API_UT(aclnnNormalFloatFloat, INPUT(mean, std, seed, offset), OUTPUT(outDesc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+// 异常场景：不支持的dtype（INT32不在DTYPE_SUPPORT_LIST中）
+TEST_F(l2_normal_float_float_test, case_unsupported_dtype)
+{
+    auto outDesc = TensorDesc({2, 3}, ACL_INT32, ACL_FORMAT_ND);
+    float mean = 1.5f;
+    float std = 2.5f;
+    int64_t seed = 1;
+    int64_t offset = 1;
+    auto ut = OP_API_UT(aclnnNormalFloatFloat, INPUT(mean, std, seed, offset), OUTPUT(outDesc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}

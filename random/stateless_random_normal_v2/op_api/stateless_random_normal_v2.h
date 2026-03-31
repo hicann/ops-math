@@ -17,6 +17,12 @@ namespace l0op {
 const aclTensor* StatelessRandomNormalV2(
     const aclTensor* result, const aclIntArray* key, const aclIntArray* counter, const aclTensor* alg,
     aclOpExecutor* executor);
+
+const aclTensor* StatelessRandomNormalV2(
+    const aclTensor* result,
+    const aclTensor* keyTensor, const aclTensor* counterTensor,
+    const aclTensor* alg, aclOpExecutor* executor);
+
 }
 
 #endif // PTA_NPU_OP_API_INC_LEVEL0_OP_STATELESS_OP_H_

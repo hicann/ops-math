@@ -8,16 +8,19 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include "acl/acl_rt.h"
 #include "aclnn_normal.h"
 #include "math/add/op_api/add.h"
 #include "math/mul/op_api/mul.h"
 #include "random/stateless_random_normal_v2/op_api/stateless_random_normal_v2.h"
+#include "random/stateless_random_normal_v3/op_api/stateless_random_normal_v3.h"
 #include "dsa_random_normal.h"
 #include "../../../../conversion/concat_d/op_api/concat_d.h"
 #include "opdev/platform.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"
@@ -49,14 +52,14 @@ static const std::initializer_list<op::DataType> OUTPUT_SUPPORT_LIST = {
 
 static inline bool CheckSocVersionIsSupportBf16(void)
 {
-    return GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-           GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E;
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    return curArch == NpuArch::DAV_2201 || IsRegBase(curArch);
 }
 
 static inline bool CheckSocVersionIsSupportDSA(void)
 {
-    return GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-           GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E;
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    return curArch == NpuArch::DAV_2201 || IsRegBase(curArch);
 }
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
@@ -140,6 +143,102 @@ static aclTensor* ProcessOffsetTensor(const aclTensor* offsetTensor, int64_t off
     return concatTensor;
 }
 
+// DT_DOUBLE 路径：StatelessRandomNormalV2 + Mul(std) + Add(mean)
+static const aclTensor* normalDoublePath(
+    const aclTensor* selfContiguous, const aclTensor* stateLessOut,
+    float mean, float std, aclOpExecutor* executor)
+{
+    CHECK_RET(stateLessOut != nullptr, nullptr);
+
+    // 调用mul_算子kernel function(AI Core算子), 将float -> stdScalar -> stdTensor类型
+    auto stdScalar2 = executor->AllocScalar(std);
+    auto stdTensor = executor->ConvertToTensor(stdScalar2, selfContiguous->GetDataType());
+    auto mulOut = l0op::Mul(stateLessOut, stdTensor, executor);
+    CHECK_RET(mulOut != nullptr, nullptr);
+
+    // 调用add_算子kernel function(AI Core算子)， 将float -> meanScalar -> meanTensor类型
+    auto meanScalar2 = executor->AllocScalar(mean);
+    auto meanTensor = executor->ConvertToTensor(meanScalar2, selfContiguous->GetDataType());
+    return l0op::Add(mulOut, meanTensor, executor);
+}
+
+// 非DSA路径的 normal 正态分布计算
+static const aclTensor* normalDavidPath(
+    const aclTensor* selfContiguous, int64_t seed, int64_t offset,
+    float mean, float std, aclOpExecutor* executor)
+{
+    // seed转化为key
+    FVector<int64_t, op::MAX_DIM_NUM> key_vec = {seed};
+    auto keyArr = executor->AllocIntArray(key_vec.data(), key_vec.size());
+
+    // offset转化为counter
+    FVector<int64_t, op::MAX_DIM_NUM> counter_vec = {0, offset};
+    auto counterArr = executor->AllocIntArray(counter_vec.data(), counter_vec.size());
+
+    if (selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
+        FVector<float> meanVector = {mean};
+        auto meanTensorV3 = executor->ConvertToTensor(meanVector.data(), meanVector.size(), op::DataType::DT_FLOAT);
+
+        FVector<float> stdVector = {std};
+        auto stdTensorV3 = executor->ConvertToTensor(stdVector.data(), stdVector.size(), op::DataType::DT_FLOAT);
+        // 调用normal_算子kernel function(AI Core算子)
+        return l0op::StatelessRandomNormalV3(
+           selfContiguous, keyArr, counterArr, meanTensorV3, stdTensorV3, executor);
+    } else {
+        // 调用normal_算子kernel function(AI Cpu算子)
+        int64_t alg = 1;
+        auto algScalar = executor->AllocScalar((void*)&alg, DataType::DT_INT32);
+        const aclTensor* algTensor = executor->ConvertToTensor(algScalar, op::ToOpDataType(ACL_INT32));
+        auto stateLessOut =
+            l0op::StatelessRandomNormalV2(selfContiguous, keyArr, counterArr, algTensor, executor);
+        return normalDoublePath(selfContiguous, stateLessOut, mean, std, executor);
+    }
+}
+
+// 非DSA路径的 normal 正态分布计算（Tensor seed/offset 版本）
+static const aclTensor* normalTensorDavidPath(
+    const aclTensor* selfContiguous, const aclTensor* seedTensor, const aclTensor* offsetTensor,
+    int64_t offset, float mean, float std, aclOpExecutor* executor)
+{
+    if (seedTensor->GetDataType() != op::DataType::DT_INT64) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Normal seedTensor dtype must be DT_INT64, got %s.",
+                op::ToString(seedTensor->GetDataType()).GetString());
+        return nullptr;
+    }
+    if (offsetTensor->GetDataType() != op::DataType::DT_INT64) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Normal offsetTensor dtype must be DT_INT64, got %s.",
+                op::ToString(offsetTensor->GetDataType()).GetString());
+        return nullptr;
+    }
+    // seedTensor/offsetTensor 从 int64 Cast 为 uint64（V3 OpDef 要求 uint64）
+    auto normalSeedU64 = l0op::Cast(seedTensor, op::DataType::DT_UINT64, executor);
+    CHECK_RET(normalSeedU64 != nullptr, nullptr);
+    auto normalOffsetU64 = l0op::Cast(offsetTensor, op::DataType::DT_UINT64, executor);
+    CHECK_RET(normalOffsetU64 != nullptr, nullptr);
+
+    FVector<int64_t> offsetVector{0, static_cast<int64_t>(offset)};
+    aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), 2);
+    auto tmpTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_UINT64);
+    auto resultAddOut = l0op::Add(normalOffsetU64, tmpTensor, executor);
+    CHECK_RET(resultAddOut != nullptr, nullptr);
+
+    if (selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
+        FVector<float> meanVector = {mean};
+        auto meanTensorV3 = executor->ConvertToTensor(meanVector.data(), meanVector.size(), op::DataType::DT_FLOAT);
+        FVector<float> stdVector = {std};
+        auto stdTensorV3 = executor->ConvertToTensor(stdVector.data(), stdVector.size(), op::DataType::DT_FLOAT);
+        return l0op::StatelessRandomNormalV3(
+            selfContiguous, normalSeedU64, resultAddOut, meanTensorV3, stdTensorV3, executor);
+    } else {
+        int64_t alg = 1;
+        auto algScalar = executor->AllocScalar((void*)&alg, DataType::DT_INT32);
+        const aclTensor* algTensor = executor->ConvertToTensor(algScalar, op::ToOpDataType(ACL_INT32));
+        auto stateLessOut =
+            l0op::StatelessRandomNormalV2(selfContiguous, normalSeedU64, resultAddOut, algTensor, executor);
+        return normalDoublePath(selfContiguous, stateLessOut, mean, std, executor);
+    }
+}
+
 /**
  * torch.Tensor.normal_()的API的总体调用流程
  */
@@ -179,8 +278,7 @@ aclnnStatus aclnnInplaceNormalGetWorkspaceSize(
     }
 
     const aclTensor* computeOut = nullptr;
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201) {
         auto inputShape = op::ToShapeVector(selfContiguous->GetViewShape());
         auto inputShapeArray = uniqueExecutor.get()->AllocIntArray(inputShape.data(), inputShape.size());
         CHECK_RET(inputShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -190,34 +288,7 @@ aclnnStatus aclnnInplaceNormalGetWorkspaceSize(
         CHECK_RET(stdScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
         computeOut = l0op::DSARandomNormal(inputShapeArray, seed, offset, meanScalar, stdScalar, uniqueExecutor.get());
     } else {
-        // 设置算法序号 int64_t -> scalar -> tensor
-        int64_t alg = 1;
-        auto algScalar = (uniqueExecutor.get())->AllocScalar((void*)&alg, DataType::DT_INT32);
-        const aclTensor* algTensor = (uniqueExecutor.get())->ConvertToTensor(algScalar, op::ToOpDataType(ACL_INT32));
-
-        // seed转化为key
-        FVector<int64_t, op::MAX_DIM_NUM> key_vec = {seed};
-        auto keyArr = (uniqueExecutor.get())->AllocIntArray(key_vec.data(), key_vec.size());
-
-        // offset转化为counter
-        FVector<int64_t, op::MAX_DIM_NUM> counter_vec = {0, offset};
-        auto counterArr = (uniqueExecutor.get())->AllocIntArray(counter_vec.data(), counter_vec.size());
-
-        // 调用normal_算子kernel function(AI Cpu算子)
-        auto stateLessOut =
-            l0op::StatelessRandomNormalV2(selfContiguous, keyArr, counterArr, algTensor, uniqueExecutor.get());
-        CHECK_RET(stateLessOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        // 调用mul_算子kernel function(AI Core算子), 将float -> stdScalar -> stdTensor类型
-        auto stdScalar = (uniqueExecutor.get())->AllocScalar(std);
-        auto stdTensor = (uniqueExecutor.get())->ConvertToTensor(stdScalar, selfContiguous->GetDataType());
-        auto mulOut = l0op::Mul(stateLessOut, stdTensor, uniqueExecutor.get());
-        CHECK_RET(mulOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        // 调用add_算子kernel function(AI Core算子)， 将float -> meanScalar -> meanTensor类型
-        auto meanScalar = (uniqueExecutor.get())->AllocScalar(mean);
-        auto meanTensor = (uniqueExecutor.get())->ConvertToTensor(meanScalar, selfContiguous->GetDataType());
-        computeOut = l0op::Add(mulOut, meanTensor, uniqueExecutor.get());
+        computeOut = normalDavidPath(selfContiguous, seed, offset, mean, std, uniqueExecutor.get());
     }
     CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
@@ -249,7 +320,6 @@ aclnnStatus aclnnInplaceNormalTensorGetWorkspaceSize(
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
-    CHECK_RET(CheckSocVersionIsSupportDSA(), ACLNN_ERR_PARAM_INVALID);
     // 固定写法，参数检查
     auto ret = CheckParams(selfRef, std);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
@@ -273,18 +343,22 @@ aclnnStatus aclnnInplaceNormalTensorGetWorkspaceSize(
     }
 
     const aclTensor* computeOut = nullptr;
-    auto inputShape = op::ToShapeVector(selfContiguous->GetViewShape());
-    auto inputShapeArray = uniqueExecutor.get()->AllocIntArray(inputShape.data(), inputShape.size());
-    CHECK_RET(inputShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    auto meanScalar = uniqueExecutor.get()->AllocScalar(mean);
-    CHECK_RET(meanScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    auto stdScalar = uniqueExecutor.get()->AllocScalar(std);
-    CHECK_RET(stdScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    auto concatTensor = ProcessOffsetTensor(offsetTensor, offset, uniqueExecutor.get());
-    CHECK_RET(concatTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    computeOut = l0op::DSARandomNormalTensor(
-        inputShapeArray, seedTensor, concatTensor, meanScalar, stdScalar, uniqueExecutor.get());
+    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201) {
+        auto inputShape = op::ToShapeVector(selfContiguous->GetViewShape());
+        auto inputShapeArray = uniqueExecutor.get()->AllocIntArray(inputShape.data(), inputShape.size());
+        CHECK_RET(inputShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto meanScalar = uniqueExecutor.get()->AllocScalar(mean);
+        CHECK_RET(meanScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto stdScalar = uniqueExecutor.get()->AllocScalar(std);
+        CHECK_RET(stdScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto concatTensor = ProcessOffsetTensor(offsetTensor, offset, uniqueExecutor.get());
+        CHECK_RET(concatTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        computeOut = l0op::DSARandomNormalTensor(
+            inputShapeArray, seedTensor, concatTensor, meanScalar, stdScalar, uniqueExecutor.get());
+    } else {
+        computeOut = normalTensorDavidPath(
+            selfContiguous, seedTensor, offsetTensor, offset, mean, std, uniqueExecutor.get());
+    }
     CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 固定写法，将计算结果转换成输出self的数据类型

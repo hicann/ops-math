@@ -36,7 +36,8 @@ template <typename T>
 class StatelessRandomNormalV2 {
 public:
     __aicore__ inline StatelessRandomNormalV2(){};
-    __aicore__ inline void Init(GM_ADDR y, const StatelessRandomNormalV2TilingData* __restrict tilingData, TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR y, GM_ADDR key, GM_ADDR counter,
+                                const StatelessRandomNormalV2TilingData* __restrict tilingData, TPipe* pipe);
     __aicore__ inline void Process();
 
 private:
@@ -70,13 +71,33 @@ private:
     uint32_t ubLoopCnt_ = 0;
     uint32_t key_[ALG_KEY_SIZE] = {0};
     uint32_t counter_[ALG_COUNTER_SIZE] = {0};
+
+    GlobalTensor<uint64_t> keyGm_;
+    GlobalTensor<uint64_t> counterGm_;
 };
 
 template <typename T>
 __aicore__ inline void StatelessRandomNormalV2<T>::Init(
-    GM_ADDR y, const StatelessRandomNormalV2TilingData* __restrict tilingData, TPipe* pipe)
+    GM_ADDR y, GM_ADDR key, GM_ADDR counter,
+    const StatelessRandomNormalV2TilingData* __restrict tilingData, TPipe* pipe)
 {
     ParseTilingData(tilingData);
+
+    // 从 GM 直接读取 key/counter，覆盖 ParseTilingData 中的零值
+    keyGm_.SetGlobalBuffer((__gm__ uint64_t*)key);
+    counterGm_.SetGlobalBuffer((__gm__ uint64_t*)counter);
+    uint64_t keyVal = keyGm_(0);
+    uint64_t counterVal0 = counterGm_(0);
+    uint64_t counterVal1 = counterGm_(1);
+
+    constexpr uint32_t SHIFT_BITS = 32;
+    key_[0] = static_cast<uint32_t>(keyVal);
+    key_[1] = static_cast<uint32_t>(keyVal >> SHIFT_BITS);
+    counter_[0] = static_cast<uint32_t>(counterVal0);
+    counter_[1] = static_cast<uint32_t>(counterVal0 >> SHIFT_BITS);
+    counter_[2] = static_cast<uint32_t>(counterVal1);
+    counter_[3] = static_cast<uint32_t>(counterVal1 >> SHIFT_BITS);
+
     auto blockIdx = GetBlockIdx();
     blockOffset_ = blockIdx * blockTilingSize_;
 

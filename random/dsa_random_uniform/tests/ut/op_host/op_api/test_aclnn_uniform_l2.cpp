@@ -225,3 +225,194 @@ TEST_F(l2_uniform_test, ascend910B2_aclnnUniform_0to1_3_4_fp16_nd)
     aclnnStatus acl_ret = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(acl_ret, ACL_SUCCESS);
 }
+
+// ======================== aclnnInplaceUniform 新增用例 ========================
+
+// double类型走StatelessRandomUniformV2 fallback路径
+TEST_F(l2_uniform_test, aclnnUniform_3_4_double_nd)
+{
+    double from = 2;
+    double to = 4;
+    uint64_t seed = 0;
+    uint64_t offset = 0;
+
+    auto self_tensor_desc = TensorDesc({3, 4}, ACL_DOUBLE, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceUniform, INPUT(self_tensor_desc, from, to, seed, offset), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus acl_ret = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(acl_ret, ACL_SUCCESS);
+}
+
+// ======================== aclnnInplaceUniformTensor 新增用例 ========================
+
+// 正常场景：float类型
+TEST_F(l2_uniform_test, aclnnUniformTensor_3_4_float_nd)
+{
+    double from = 2;
+    double to = 4;
+    uint64_t offset = 0;
+
+    auto self_tensor_desc = TensorDesc({3, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto seed_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+    auto offset_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceUniformTensor,
+        INPUT(self_tensor_desc, from, to, seed_tensor_desc, offset_tensor_desc, offset), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus acl_ret = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(acl_ret, ACL_SUCCESS);
+}
+
+// 正常场景：float16类型
+TEST_F(l2_uniform_test, aclnnUniformTensor_5_4_6_float16_nd)
+{
+    double from = 0;
+    double to = 1;
+    uint64_t offset = 0;
+
+    auto self_tensor_desc = TensorDesc({5, 4, 6}, ACL_FLOAT16, ACL_FORMAT_ND);
+    auto seed_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+    auto offset_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceUniformTensor,
+        INPUT(self_tensor_desc, from, to, seed_tensor_desc, offset_tensor_desc, offset), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus acl_ret = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(acl_ret, ACL_SUCCESS);
+}
+
+// 正常场景：bf16类型
+TEST_F(l2_uniform_test, aclnnUniformTensor_3_4_bf16_nd)
+{
+    double from = 0;
+    double to = 1;
+    uint64_t offset = 0;
+
+    auto self_tensor_desc = TensorDesc({3, 4}, ACL_BF16, ACL_FORMAT_ND);
+    auto seed_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+    auto offset_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceUniformTensor,
+        INPUT(self_tensor_desc, from, to, seed_tensor_desc, offset_tensor_desc, offset), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus acl_ret = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(acl_ret, ACL_SUCCESS);
+}
+
+// 正常场景：double类型，走StatelessRandomUniformV2 fallback路径
+TEST_F(l2_uniform_test, aclnnUniformTensor_3_4_double_nd)
+{
+    double from = 2;
+    double to = 4;
+    uint64_t offset = 0;
+
+    auto self_tensor_desc = TensorDesc({3, 4}, ACL_DOUBLE, ACL_FORMAT_ND);
+    auto seed_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+    auto offset_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceUniformTensor,
+        INPUT(self_tensor_desc, from, to, seed_tensor_desc, offset_tensor_desc, offset), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus acl_ret = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(acl_ret, ACL_SUCCESS);
+}
+
+// 异常场景：from > to
+TEST_F(l2_uniform_test, aclnnUniformTensor_5_4_6_invalid_from_to)
+{
+    double from = 3;
+    double to = 2;
+    uint64_t offset = 0;
+
+    auto self_tensor_desc = TensorDesc({5, 4, 6}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto seed_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+    auto offset_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceUniformTensor,
+        INPUT(self_tensor_desc, from, to, seed_tensor_desc, offset_tensor_desc, offset), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus acl_ret = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(acl_ret, ACLNN_ERR_PARAM_INVALID);
+}
+
+// 异常场景：self为nullptr
+TEST_F(l2_uniform_test, aclnnUniformTensor_5_4_6_input_nullptr)
+{
+    double from = 2;
+    double to = 3;
+    uint64_t offset = 0;
+
+    auto seed_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+    auto offset_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceUniformTensor,
+        INPUT((aclTensor*)nullptr, from, to, seed_tensor_desc, offset_tensor_desc, offset), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus acl_ret = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(acl_ret, ACLNN_ERR_PARAM_NULLPTR);
+}
+
+// 异常场景：不支持的数据类型UINT32
+TEST_F(l2_uniform_test, aclnnUniformTensor_5_4_6_invalid_dtype)
+{
+    double from = 2;
+    double to = 3;
+    uint64_t offset = 0;
+
+    auto self_tensor_desc = TensorDesc({5, 4, 6}, ACL_UINT32, ACL_FORMAT_ND);
+    auto seed_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+    auto offset_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceUniformTensor,
+        INPUT(self_tensor_desc, from, to, seed_tensor_desc, offset_tensor_desc, offset), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus acl_ret = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(acl_ret, ACLNN_ERR_PARAM_INVALID);
+}
+
+// 异常场景：超过8维
+TEST_F(l2_uniform_test, aclnnUniformTensor_5_4_6_invalid_shape_9_dims)
+{
+    double from = 2;
+    double to = 3;
+    uint64_t offset = 0;
+
+    auto self_tensor_desc = TensorDesc({5, 4, 6, 1, 1, 1, 1, 1, 1}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto seed_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+    auto offset_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceUniformTensor,
+        INPUT(self_tensor_desc, from, to, seed_tensor_desc, offset_tensor_desc, offset), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus acl_ret = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(acl_ret, ACLNN_ERR_PARAM_INVALID);
+}
+
+// 正常场景：带非零offset
+TEST_F(l2_uniform_test, aclnnUniformTensor_3_4_float_with_offset)
+{
+    double from = 0;
+    double to = 1;
+    uint64_t offset = 100;
+
+    auto self_tensor_desc = TensorDesc({3, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto seed_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+    auto offset_tensor_desc = TensorDesc({1}, ACL_UINT64, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnInplaceUniformTensor,
+        INPUT(self_tensor_desc, from, to, seed_tensor_desc, offset_tensor_desc, offset), OUTPUT());
+
+    uint64_t workspace_size = 0;
+    aclnnStatus acl_ret = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(acl_ret, ACL_SUCCESS);
+}

@@ -39,15 +39,15 @@ extern "C" __global__ __aicore__ void stateless_random_uniform_v2(
     TPipe pipe;
     if (TILING_KEY_IS(FLOAT_TILING_KEY)) {
         StatelessRandomUniformV2<float> op;
-        op.Init(y, &tilingData, &pipe);
+        op.Init(y, key, counter, &tilingData, &pipe);
         op.Process();
     } else if (TILING_KEY_IS(FLOAT16_TILING_KEY)) {
         StatelessRandomUniformV2<half> op;
-        op.Init(y, &tilingData, &pipe);
+        op.Init(y, key, counter, &tilingData, &pipe);
         op.Process();
     } else if (TILING_KEY_IS(BFLOAT16_TILING_KEY)) {
         StatelessRandomUniformV2<bfloat16_t> op;
-        op.Init(y, &tilingData, &pipe);
+        op.Init(y, key, counter, &tilingData, &pipe);
         op.Process();
     }
 }

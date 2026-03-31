@@ -13,8 +13,15 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
+// 原标量接口（保留，向后兼容）
 const aclTensor* StatelessRandomUniformV2(
     const aclTensor* self, uint64_t seed, uint64_t offset, int32_t alg, aclOpExecutor* executor);
+
+// 新增：tensor 接口（seed/offset 以 device tensor 形式传入，不做 D2H 拷贝）
+const aclTensor* StatelessRandomUniformV2(
+    const aclTensor* self,
+    const aclTensor* seedTensor, const aclTensor* offsetTensor,
+    int32_t alg, aclOpExecutor* executor);
 }
 
 #endif // OP_API_INC_LEVEL0_UNIFORM_H_

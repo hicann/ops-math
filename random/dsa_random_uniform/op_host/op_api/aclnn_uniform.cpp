@@ -7,15 +7,19 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include "acl/acl_rt.h"
 #include "aclnn_uniform.h"
 #include "random/stateless_random_uniform_v2/op_api/stateless_random_uniform_v2.h"
+#include "random/stateless_random_uniform_v3/op_api/stateless_random_uniform_v3.h"
 #include "dsa_random_uniform.h"
 #include "aclnn_kernels/cast.h"
 #include "math/muls/op_api/muls.h"
 #include "math/add/op_api/add.h"
 #include "../../../../conversion/concat_d/op_api/concat_d.h"
+#include "../../../../conversion/pack/op_api/pack.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 #include "op_api/op_api_def.h"
 #include "opdev/platform.h"
 #include "aclnn/aclnn_base.h"
@@ -46,14 +50,14 @@ static bool CheckNotNull(const aclTensor* self)
 
 inline static bool CheckSocVersionIsSupportBf16(void)
 {
-    return GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-           GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E;
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    return curArch == NpuArch::DAV_2201 || IsRegBase(curArch);
 }
 
 static inline bool CheckSocVersionIsSupportDSA(void)
 {
-    return GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-           GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E;
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    return curArch == NpuArch::DAV_2201 || IsRegBase(curArch);
 }
 
 static bool CheckDtypeValid(const aclTensor* self)
@@ -128,6 +132,73 @@ static aclTensor* ProcessOffsetTensor(const aclTensor* offsetTensor, int64_t off
     return concatTensor;
 }
 
+// DT_DOUBLE 路径：StatelessRandomUniformV2 + Muls(to-from) + Add(from)
+static const aclTensor* uniformDoublePath(
+    const aclTensor* uniformOut, double from, double to, aclOpExecutor* executor)
+{
+    CHECK_RET(uniformOut != nullptr, nullptr);
+
+    auto mulsOut = l0op::Muls(uniformOut, to - from, executor);
+    CHECK_RET(mulsOut != nullptr, nullptr);
+
+    auto fromTensor = executor->ConvertToTensor(&from, 1, mulsOut->GetDataType());
+    return l0op::Add(mulsOut, fromTensor, executor);
+}
+
+// 非DSA路径的 uniform 计算公共函数
+// uniformV3ScaleMode: 0 = uniform (连续)
+static const aclTensor* uniformDavidPath(
+    const aclTensor* selfRef, uint64_t seed, uint64_t offset,
+    double from, double to, int32_t uniformV3ScaleMode, aclOpExecutor* executor)
+{
+    if (selfRef->GetDataType() != DataType::DT_DOUBLE) {
+        auto fromOut = static_cast<float>(from);
+        auto toOut = static_cast<float>(to);
+        return l0op::StatelessRandomUniformV3(
+            selfRef, seed, offset, fromOut, toOut, uniformV3ScaleMode, executor);
+    } else {
+        int32_t alg = 1;
+        auto uniformOut = l0op::StatelessRandomUniformV2(selfRef, seed, offset, alg, executor);
+        return uniformDoublePath(uniformOut, from, to, executor);
+    }
+}
+
+// 非DSA路径的 uniform 计算公共函数（Tensor seed/offset 版本）
+static const aclTensor* uniformTensorDavidPath(
+    const aclTensor* selfRef, const aclTensor* seedTensor, const aclTensor* offsetTensor,
+    uint64_t offset, double from, double to, aclOpExecutor* executor)
+{
+    // seedTensor/offsetTensor 必须是 uint64（与 V3 OpDef 一致）
+    if (seedTensor->GetDataType() != op::DataType::DT_UINT64) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "seedTensor dtype must be DT_UINT64, got %s.",
+                op::ToString(seedTensor->GetDataType()).GetString());
+        return nullptr;
+    }
+    if (offsetTensor->GetDataType() != op::DataType::DT_UINT64) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "offsetTensor dtype must be DT_UINT64, got %s.",
+                op::ToString(offsetTensor->GetDataType()).GetString());
+        return nullptr;
+    }
+
+    FVector<int64_t> offsetVector{0, static_cast<int64_t>(offset)};
+    aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), 2);
+    auto tmpTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_UINT64);
+    auto resultAddOut = l0op::Add(offsetTensor, tmpTensor, executor);
+    CHECK_RET(resultAddOut != nullptr, nullptr);
+
+    int32_t uniformV3ScaleMode = 0;
+    if (selfRef->GetDataType() != DataType::DT_DOUBLE) {
+        auto fromOut = static_cast<float>(from);
+        auto toOut = static_cast<float>(to);
+        return l0op::StatelessRandomUniformV3(
+            selfRef, seedTensor, resultAddOut, fromOut, toOut, uniformV3ScaleMode, executor);
+    } else {
+        int32_t alg = 1;
+        auto uniformOut = l0op::StatelessRandomUniformV2(selfRef, seedTensor, resultAddOut, alg, executor);
+        return uniformDoublePath(uniformOut, from, to, executor);
+    }
+}
+
 aclnnStatus aclnnInplaceUniformGetWorkspaceSize(
     const aclTensor* selfRef, double from, double to, uint64_t seed, uint64_t offset, uint64_t* workspaceSize,
     aclOpExecutor** executor)
@@ -147,8 +218,7 @@ aclnnStatus aclnnInplaceUniformGetWorkspaceSize(
     }
 
     const aclTensor* computeOut = nullptr;
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201) {
         auto inputShape = op::ToShapeVector(selfRef->GetViewShape());
         auto inputShapeArray = uniqueExecutor.get()->AllocIntArray(inputShape.data(), inputShape.size());
         CHECK_RET(inputShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -166,15 +236,8 @@ aclnnStatus aclnnInplaceUniformGetWorkspaceSize(
         CHECK_RET(toScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
         computeOut = l0op::DSARandomUniform(inputShapeArray, seed, offset, fromScalar, toScalar, uniqueExecutor.get());
     } else {
-        int32_t alg = 1;
-        auto uniformOut = l0op::StatelessRandomUniformV2(selfRef, seed, offset, alg, uniqueExecutor.get());
-        CHECK_RET(uniformOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        auto mulsOut = l0op::Muls(uniformOut, to - from, uniqueExecutor.get());
-        CHECK_RET(mulsOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        auto fromTensor = uniqueExecutor.get()->ConvertToTensor(&from, 1, mulsOut->GetDataType());
-        computeOut = l0op::Add(mulsOut, fromTensor, uniqueExecutor.get());
+        int32_t uniformV3ScaleMode = 0;
+        computeOut = uniformDavidPath(selfRef, seed, offset, from, to, uniformV3ScaleMode, uniqueExecutor.get());
     }
     CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
@@ -200,7 +263,6 @@ aclnnStatus aclnnInplaceUniformTensorGetWorkspaceSize(
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
-    CHECK_RET(CheckSocVersionIsSupportDSA(), ACLNN_ERR_PARAM_INVALID);
     auto ret = CheckParams(selfRef, from, to);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
@@ -211,26 +273,30 @@ aclnnStatus aclnnInplaceUniformTensorGetWorkspaceSize(
     }
 
     const aclTensor* computeOut = nullptr;
-    auto inputShape = op::ToShapeVector(selfRef->GetViewShape());
-    auto inputShapeArray = uniqueExecutor.get()->AllocIntArray(inputShape.data(), inputShape.size());
-    CHECK_RET(inputShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    op::DataType dtype = selfRef->GetDataType();
-    aclScalar* fromScalar = nullptr;
-    aclScalar* toScalar = nullptr;
-    if (dtype == op::DataType::DT_FLOAT16 || dtype == op::DataType::DT_BF16) {
-        fromScalar = CreateScalar(static_cast<float>(from), selfRef->GetDataType(), uniqueExecutor.get());
-        toScalar = CreateScalar(static_cast<float>(to), selfRef->GetDataType(), uniqueExecutor.get());
+    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201) {
+        auto inputShape = op::ToShapeVector(selfRef->GetViewShape());
+        auto inputShapeArray = uniqueExecutor.get()->AllocIntArray(inputShape.data(), inputShape.size());
+        CHECK_RET(inputShapeArray != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        op::DataType dtype = selfRef->GetDataType();
+        aclScalar* fromScalar = nullptr;
+        aclScalar* toScalar = nullptr;
+        if (dtype == op::DataType::DT_FLOAT16 || dtype == op::DataType::DT_BF16) {
+            fromScalar = CreateScalar(static_cast<float>(from), selfRef->GetDataType(), uniqueExecutor.get());
+            toScalar = CreateScalar(static_cast<float>(to), selfRef->GetDataType(), uniqueExecutor.get());
+        } else {
+            fromScalar = uniqueExecutor.get()->AllocScalar(static_cast<float>(from));
+            toScalar = uniqueExecutor.get()->AllocScalar(static_cast<float>(to));
+        }
+        CHECK_RET(fromScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        CHECK_RET(toScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto concatTensor = ProcessOffsetTensor(offsetTensor, offset, uniqueExecutor.get());
+        CHECK_RET(concatTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        computeOut = l0op::DSARandomUniformTensor(
+            inputShapeArray, seedTensor, concatTensor, fromScalar, toScalar, uniqueExecutor.get());
     } else {
-        fromScalar = uniqueExecutor.get()->AllocScalar(static_cast<float>(from));
-        toScalar = uniqueExecutor.get()->AllocScalar(static_cast<float>(to));
+        computeOut = uniformTensorDavidPath(
+            selfRef, seedTensor, offsetTensor, offset, from, to, uniqueExecutor.get());
     }
-    CHECK_RET(fromScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_RET(toScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    auto concatTensor = ProcessOffsetTensor(offsetTensor, offset, uniqueExecutor.get());
-    CHECK_RET(concatTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    computeOut = l0op::DSARandomUniformTensor(
-        inputShapeArray, seedTensor, concatTensor, fromScalar, toScalar, uniqueExecutor.get());
     CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     auto castOut = l0op::Cast(computeOut, selfRef->GetDataType(), uniqueExecutor.get());

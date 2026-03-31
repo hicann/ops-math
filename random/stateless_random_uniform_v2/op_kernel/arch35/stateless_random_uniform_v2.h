@@ -29,7 +29,8 @@ class StatelessRandomUniformV2 {
 public:
     __aicore__ inline StatelessRandomUniformV2(){};
     __aicore__ inline void Init(
-        GM_ADDR y, const StatelessRandomUniformV2TilingData* __restrict tilingData, TPipe* pipeIn);
+        GM_ADDR y, GM_ADDR key, GM_ADDR counter,
+        const StatelessRandomUniformV2TilingData* __restrict tilingData, TPipe* pipeIn);
     __aicore__ inline void Process();
 
 private:
@@ -53,6 +54,8 @@ private:
     static constexpr uint32_t INT32_ONE_REPEAT = Ops::Base::GetVRegSize() / sizeof(int32_t);
 
     GlobalTensor<T> outputGm_;
+    GlobalTensor<uint64_t> keyGm_;
+    GlobalTensor<uint64_t> counterGm_;
     TBuf<QuePosition::VECCALC> philoxQueBuf_;
     TQue<QuePosition::VECOUT, BUFFER_NUM> outQueY_;
 
@@ -74,9 +77,26 @@ private:
 
 template <typename T>
 __aicore__ inline void StatelessRandomUniformV2<T>::Init(
-    GM_ADDR y, const StatelessRandomUniformV2TilingData* __restrict tilingData, TPipe* pipeIn)
+    GM_ADDR y, GM_ADDR key, GM_ADDR counter,
+    const StatelessRandomUniformV2TilingData* __restrict tilingData, TPipe* pipeIn)
 {
     ParseTilingData(tilingData);
+
+    // 从 GM 直接读取 key/counter（替代 ParseTilingData 中从 tilingData 读取的零值）
+    keyGm_.SetGlobalBuffer((__gm__ uint64_t*)key);
+    counterGm_.SetGlobalBuffer((__gm__ uint64_t*)counter);
+    uint64_t keyVal = keyGm_(0);
+    uint64_t counterVal0 = counterGm_(0);
+    uint64_t counterVal1 = counterGm_(1);
+
+    constexpr uint32_t SHIFT_BITS = 32;
+    key_[0] = static_cast<uint32_t>(keyVal);
+    key_[1] = static_cast<uint32_t>(keyVal >> SHIFT_BITS);
+    counter_[0] = static_cast<uint32_t>(counterVal0);
+    counter_[1] = static_cast<uint32_t>(counterVal0 >> SHIFT_BITS);
+    counter_[2] = static_cast<uint32_t>(counterVal1);
+    counter_[3] = static_cast<uint32_t>(counterVal1 >> SHIFT_BITS);
+
     auto blockIdx = GetBlockIdx();
     blockOffSet_ = blockTilingSize_ * blockIdx;
 

@@ -91,4 +91,21 @@ const aclTensor* StatelessRandomNormalV2(
         return StatelessRandomNormalV2AiCpu(result, shapeTensor, keyTensor, counterTensor, alg, outTensor, executor);
     }
 }
+
+const aclTensor* StatelessRandomNormalV2(
+    const aclTensor* result,
+    const aclTensor* keyTensor, const aclTensor* counterTensor,
+    const aclTensor* alg, aclOpExecutor* executor)
+{
+    auto outTensor = executor->AllocTensor(result->GetViewShape(), result->GetDataType(), result->GetViewFormat());
+
+    auto sizeV = op::ToShapeVector(result->GetViewShape());
+    auto shapeTensor = executor->ConvertToTensor(sizeV.data(), sizeV.size(), op::ToOpDataType(ACL_INT64));
+
+    if (IsAiCoreSupport(outTensor->GetDataType())) {
+        return StatelessRandomNormalV2AiCore(result, shapeTensor, keyTensor, counterTensor, alg, outTensor, executor);
+    } else {
+        return StatelessRandomNormalV2AiCpu(result, shapeTensor, keyTensor, counterTensor, alg, outTensor, executor);
+    }
+}
 } // namespace l0op

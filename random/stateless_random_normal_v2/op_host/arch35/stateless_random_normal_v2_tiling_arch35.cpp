@@ -69,83 +69,6 @@ ge::graphStatus StatelessRandomNormalV2Tiling::GetShapeAttrsInfo()
     return ge::GRAPH_SUCCESS;
 }
 
-int64_t StatelessRandomNormalV2Tiling::GetCounterSize(Algorithm alg) const
-{
-    if (alg == Algorithm::RNG_ALG_PHILOX) {
-        return 2; // 2 if for philox
-    } else if (alg == Algorithm::RNG_ALG_THREEFRY) {
-        return 1;
-    }
-    return 2; // 2 is for philox
-}
-
-void StatelessRandomNormalV2Tiling::GetKeyFromMem(const uint64_t key)
-{
-    key_[0] = static_cast<uint32_t>(key);
-    key_[1] = static_cast<uint32_t>(key >> 32); // 32 for lower 32 bits
-}
-void StatelessRandomNormalV2Tiling::GetCounterFromMem(const std::vector<uint64_t>& counter)
-{
-    counter_[0] = static_cast<uint32_t>(counter[0]);
-    counter_[1] = static_cast<uint32_t>(counter[0] >> 32); // 32 for lower 32 bits
-    counter_[2] = static_cast<uint32_t>(counter[1]);
-    counter_[3] = static_cast<uint32_t>(counter[1] >> 32); // 32 for lower 32 bits
-}
-
-ge::graphStatus StatelessRandomNormalV2Tiling::GetInputKeyCounter()
-{
-    auto keyDesc = context_->GetInputDesc(INPUT_IDX_KEY);
-    OP_CHECK_NULL_WITH_CONTEXT(context_, keyDesc);
-    auto keyDtype = keyDesc->GetDataType();
-    if (keyDtype != ge::DataType::DT_UINT64) {
-        OP_LOGE(opName, "input key Dtype should be uint64, but got [%d]", keyDtype);
-        return ge::GRAPH_FAILED;
-    }
-    auto keyShape = context_->GetInputShape(INPUT_IDX_KEY);
-    OP_CHECK_NULL_WITH_CONTEXT(context_, keyShape);
-    if (keyShape->GetStorageShape().GetShapeSize() != 1) {
-        OP_LOGE(opName, "input key number should be 1, but got [%ld]", keyShape->GetStorageShape().GetShapeSize());
-        return ge::GRAPH_FAILED;
-    }
-
-    auto counterDesc = context_->GetInputDesc(INPUT_IDX_COUNTER);
-    OP_CHECK_NULL_WITH_CONTEXT(context_, counterDesc);
-    auto counterDtype = counterDesc->GetDataType();
-    if (counterDtype != ge::DataType::DT_UINT64) {
-        OP_LOGE(opName, "input counter Dtype should be uint64, but got [%d]", counterDtype);
-        return ge::GRAPH_FAILED;
-    }
-    // input key has one uint64, Philox counter need 2 element.
-    std::vector<uint64_t> counter = {0, 0};
-    auto keyTensor = context_->GetInputTensor(INPUT_IDX_KEY);
-    OP_CHECK_NULL_WITH_CONTEXT(context_, keyTensor);
-    int32_t keyNum = keyTensor->GetShapeSize();
-    OP_CHECK_IF(
-        keyNum != 1, OP_LOGE(opName, "key data must be 1 tensor scalar, but get %d.", keyNum), return ge::GRAPH_FAILED);
-    const uint64_t* key = keyTensor->GetData<uint64_t>();
-    OP_CHECK_NULL_WITH_CONTEXT(context_, key);
-
-    auto counterTensor = context_->GetInputTensor(INPUT_IDX_COUNTER);
-    OP_CHECK_NULL_WITH_CONTEXT(context_, counterTensor);
-    int64_t counterNum = static_cast<int64_t>(counterTensor->GetShapeSize());
-    OP_CHECK_IF(
-        !counterNum, OP_LOGE(opName, "counter tensor elements number should not be 0."), return ge::GRAPH_FAILED);
-    const uint64_t* counterVal = counterTensor->GetData<uint64_t>();
-    OP_CHECK_NULL_WITH_CONTEXT(context_, counterVal);
-    counter[0] = counterVal[0];
-    if (counterNum == COUNTER_NUMBER_LOW_BOUND) {
-        counter[1] = 0;
-    } else {
-        counter[1] = counterVal[1];
-    }
-
-    OP_LOGD(opName, "key = %ld, counter value is [%lu, %lu]", key[0], counter[0], counter[1]);
-
-    GetKeyFromMem(key[0]);
-    GetCounterFromMem(counter);
-    return ge::GRAPH_SUCCESS;
-}
-
 ge::graphStatus StatelessRandomNormalV2Tiling::GetInputInfo()
 {
     auto outputShape = context_->GetOutputShape(OUTPUT_IDX_Y);
@@ -175,10 +98,6 @@ ge::graphStatus StatelessRandomNormalV2Tiling::GetInputInfo()
             static_cast<int32_t>(alg_)),
         return ge::GRAPH_FAILED);
 
-    auto res = GetInputKeyCounter();
-    if (res != ge::GRAPH_SUCCESS) {
-        return ge::GRAPH_FAILED;
-    }
     return ge::GRAPH_SUCCESS;
 }
 
@@ -310,6 +229,6 @@ static ge::graphStatus TilingPrepare4StatelessRandomNormalV2(gert::TilingParseCo
 IMPL_OP_OPTILING(StatelessRandomNormalV2)
     .Tiling(Tiling4StatelessRandomNormalV2)
     .TilingParse<StatelessRandomNormalV2CompileInfo>(TilingPrepare4StatelessRandomNormalV2)
-    .TilingInputsDataDependency({INPUT_IDX_KEY, INPUT_IDX_COUNTER, INPUT_IDX_ALG});
+    .TilingInputsDataDependency({INPUT_IDX_ALG});
 
 } // namespace optiling

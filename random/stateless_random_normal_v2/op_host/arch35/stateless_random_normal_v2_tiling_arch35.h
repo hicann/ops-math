@@ -84,10 +84,6 @@ private:
     inline T1 CeilDiv(const T1 a, const T2 b) const;
     ge::graphStatus GetInputInfo();
     ge::graphStatus GetOutputInfo();
-    ge::graphStatus GetInputKeyCounter();
-    int64_t GetCounterSize(Algorithm alg) const;
-    void GetKeyFromMem(const uint64_t key);
-    void GetCounterFromMem(const std::vector<uint64_t>& counter);
     void BlockTiling();
     ge::graphStatus UbTiling();
     void SetTilingData();

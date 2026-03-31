@@ -37,15 +37,15 @@ extern "C" __global__ __aicore__ void stateless_random_normal_v2(
     TPipe pipe;
     if (TILING_KEY_IS(FLOAT_TILING_KEY)) {
         StatelessRandomNormalV2<float> op;
-        op.Init(y, &tilingData, &pipe);
+        op.Init(y, key, counter, &tilingData, &pipe);
         op.Process();
     } else if (TILING_KEY_IS(FLOAT16_TILING_KEY)) {
         StatelessRandomNormalV2<half> op;
-        op.Init(y, &tilingData, &pipe);
+        op.Init(y, key, counter, &tilingData, &pipe);
         op.Process();
     } else if (TILING_KEY_IS(BFLOAT16_TILING_KEY)) {
         StatelessRandomNormalV2<bfloat16_t> op;
-        op.Init(y, &tilingData, &pipe);
+        op.Init(y, key, counter, &tilingData, &pipe);
         op.Process();
     }
 }

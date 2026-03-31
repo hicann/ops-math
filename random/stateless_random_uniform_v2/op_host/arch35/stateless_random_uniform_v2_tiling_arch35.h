@@ -84,9 +84,6 @@ private:
     ge::graphStatus GetInputInfo();
     ge::graphStatus GetOutputInfo();
     ge::graphStatus GetInputKeyCounter();
-    int64_t GetCounterSize(Algorithm alg) const;
-    void GetKeyFromMem(const uint64_t key);
-    void GetCounterFromMem(const std::vector<uint64_t>& counter);
     void BlockTiling();
     ge::graphStatus UbTiling();
     void SetTilingData();
@@ -103,8 +100,6 @@ private:
     uint32_t tailBlockTilingSize_ = 0;
     uint32_t ubTilingSize_ = 0;
     Algorithm alg_ = Algorithm::RNG_ALG_PHILOX;
-    uint32_t key_[ALG_KEY_SIZE] = {0};
-    uint32_t counter_[ALG_COUNTER_SIZE] = {0};
     const char* opName = "StatelessRandomUniformV2";
     StatelessRandomUniformV2TilingData tilingData;
 };

@@ -31,6 +31,18 @@ namespace l0op {
 OP_TYPE_REGISTER(StatelessRandomUniformV2);
 static const int64_t OFFSET_LIST_SIZE = 2;
 
+static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST = {
+    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16};
+
+// 根据芯片类型、dtype判断算子是否支持走aicore
+static inline bool IsAiCoreSupport(DataType inputDtype)
+{
+    if (IsRegBase()) {
+        return CheckType(inputDtype, AICORE_DTYPE_SUPPORT_LIST);
+    }
+    return false;
+}
+
 // AICPU算子kernel 
 static const aclTensor* StatelessRandomUniformV2AiCpu( 
     const aclTensor* inputSize, const aclTensor* seed, const aclTensor* offset, const aclTensor* alg, aclTensor* out, 
@@ -79,13 +91,39 @@ const aclTensor* StatelessRandomUniformV2(
         out = executor->AllocTensor(self->GetViewShape(), op::DataType::DT_FLOAT, self->GetViewFormat());
     }
 
-    // 根据芯片型号，判断AICore 是否支持 
-    if (IsRegBase())
+    // 根据芯片类型、输入dtype判断AICore是否支持（out可能被映射为DT_FLOAT，需用原始输入dtype判断）
+    if (IsAiCoreSupport(self->GetDataType()))
     {
         return StatelessRandomUniformV2AiCore(inputSize, seedTensor, offsetTensor, algTensor, out, executor);
     } else {
         return StatelessRandomUniformV2AiCpu(inputSize, seedTensor, offsetTensor, algTensor, out, executor);
     }
-    
+
+}
+
+const aclTensor* StatelessRandomUniformV2(
+    const aclTensor* self,
+    const aclTensor* seedTensor, const aclTensor* offsetTensor,
+    int32_t alg, aclOpExecutor* executor)
+{
+    auto inputShape = op::ToShapeVector(self->GetViewShape());
+    auto inputSizeArray = executor->AllocIntArray(inputShape.data(), inputShape.size());
+    auto inputSize = executor->ConvertToTensor(inputSizeArray, DataType::DT_INT32);
+
+    auto algTensor = executor->ConvertToTensor(executor->AllocScalar(alg), op::DataType::DT_INT32);
+    aclTensor* out = nullptr;
+    if (self->GetDataType() == op::DataType::DT_FLOAT16)
+    {
+        out = executor->AllocTensor(self->GetViewShape(), op::DataType::DT_FLOAT16, self->GetViewFormat());
+    } else {
+        out = executor->AllocTensor(self->GetViewShape(), op::DataType::DT_FLOAT, self->GetViewFormat());
+    }
+
+    if (IsAiCoreSupport(self->GetDataType()))
+    {
+        return StatelessRandomUniformV2AiCore(inputSize, seedTensor, offsetTensor, algTensor, out, executor);
+    } else {
+        return StatelessRandomUniformV2AiCpu(inputSize, seedTensor, offsetTensor, algTensor, out, executor);
+    }
 }
 } // namespace l0op

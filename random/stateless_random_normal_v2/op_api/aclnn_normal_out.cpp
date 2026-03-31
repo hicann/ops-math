@@ -11,7 +11,8 @@
 #include "aclnn_normal_out.h"
 #include "math/add/op_api/add.h"
 #include "math/mul/op_api/mul.h"
-#include "stateless_random_normal_v2.h"
+#include "random/stateless_random_normal_v2/op_api/stateless_random_normal_v2.h"
+#include "random/stateless_random_normal_v3/op_api/stateless_random_normal_v3.h"
 #include "aclnn_kernels/cast.h"
 #include "conversion/view_copy/op_api/view_copy.h"
 #include "aclnn_kernels/contiguous.h"
@@ -214,32 +215,42 @@ aclnnStatus CommonLogicGeneralNormal(
     // offset转化为counter
     FVector<int64_t, op::MAX_DIM_NUM> counter_vec = {0, offset};
     auto counterArr = (uniqueExecutor.get())->AllocIntArray(counter_vec.data(), counter_vec.size());
+    const aclTensor* addOut = nullptr;
+    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201 ||
+        self->GetDataType() == DataType::DT_DOUBLE) {
+        // 调用normal_算子kernel function(AI Cpu算子)
+        auto stateLessOut = l0op::StatelessRandomNormalV2(self, keyArr, counterArr, algTensor, uniqueExecutor.get());
+        CHECK_RET(stateLessOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    // 调用normal_算子kernel function(AI Cpu算子)
-    auto stateLessOut = l0op::StatelessRandomNormalV2(self, keyArr, counterArr, algTensor, uniqueExecutor.get());
-    CHECK_RET(stateLessOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        // 调用mul_算子kernel function(AI Core算子)
+        auto mulOut = l0op::Mul(stateLessOut, std, uniqueExecutor.get());
+        CHECK_RET(mulOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    // 调用mul_算子kernel function(AI Core算子)
-    auto mulOut = l0op::Mul(stateLessOut, std, uniqueExecutor.get());
-    CHECK_RET(mulOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        // 如果类型不一致，先做类型提升，再进行ADD算子运算
+        auto meanCast = mean;
+        auto mulOutCast = mulOut;
+        auto meanType = mean->GetDataType();
+        auto mulOutType = mulOut->GetDataType();
+        if (meanType != mulOutType) {
+            auto promoteType = op::PromoteType(meanType, mulOutType);
+            meanCast = l0op::Cast(mean, promoteType, uniqueExecutor.get());
+            CHECK_RET(meanCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            mulOutCast = l0op::Cast(mulOut, promoteType, uniqueExecutor.get());
+            CHECK_RET(mulOutCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        }
 
-    // 如果类型不一致，先做类型提升，再进行ADD算子运算
-    auto meanCast = mean;
-    auto mulOutCast = mulOut;
-    auto meanType = mean->GetDataType();
-    auto mulOutType = mulOut->GetDataType();
-    if (meanType != mulOutType) {
-      auto promoteType = op::PromoteType(meanType, mulOutType);
-      meanCast = l0op::Cast(mean, promoteType, uniqueExecutor.get());
-      CHECK_RET(meanCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
-      mulOutCast = l0op::Cast(mulOut, promoteType, uniqueExecutor.get());
-      CHECK_RET(mulOutCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        // 调用add_算子kernel function(AI Core算子)
+        addOut = l0op::Add(mulOutCast, meanCast, uniqueExecutor.get());
+    } else {
+        // 调用normal_算子kernel function(AI Core算子)
+        // V3 kernel 要求 mean/std 参数为 DT_FLOAT，与 InplaceNormal 保持一致
+        auto meanFP32 = l0op::Cast(mean, DataType::DT_FLOAT, uniqueExecutor.get());
+        CHECK_RET(meanFP32 != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto stdFP32 = l0op::Cast(std, DataType::DT_FLOAT, uniqueExecutor.get());
+        CHECK_RET(stdFP32 != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        addOut = l0op::StatelessRandomNormalV3(self, keyArr, counterArr, meanFP32, stdFP32, uniqueExecutor.get());
     }
-
-    // 调用add_算子kernel function(AI Core算子)
-    auto addOut = l0op::Add(mulOutCast, meanCast, uniqueExecutor.get());
     CHECK_RET(addOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
     // 固定写法，将计算结果转换成输出self的数据类型
     auto castOut = l0op::Cast(addOut, out->GetDataType(), uniqueExecutor.get());
     CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);

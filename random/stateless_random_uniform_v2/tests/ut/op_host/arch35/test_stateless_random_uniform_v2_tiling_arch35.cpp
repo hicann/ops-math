@@ -58,7 +58,7 @@ TEST_F(StatelessRandomUniformV2TilingTest, stateless_random_uniform_v2_test_0)
     },
     &compileInfo);
     uint64_t expectTilingKey = 101;
-    string expectTilingData = "2199023255584 70368744178176 8589934593 34359738368 38654705664 0 ";
+    string expectTilingData = "2199023255584 70368744178176 1 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
