@@ -37,7 +37,7 @@ if(UT_TEST_ALL OR OP_GRAPH_UT)
 
     target_compile_definitions(${OP_GRAPH_UT_EXE} PRIVATE LOG_CPP)
     target_compile_options(${OP_GRAPH_UT_EXE} PUBLIC -fPIE -fno-access-control)
-    add_dependencies(${OP_GRAPH_UT_EXE} json build_es_math)
+    add_dependencies(${OP_GRAPH_UT_EXE} json build_es_math opbase_util_objs opbase_infer_objs)
     target_link_directories(${OP_GRAPH_UT_EXE} PRIVATE ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64)
     target_link_libraries(${OP_GRAPH_UT_EXE} PRIVATE
         es_math

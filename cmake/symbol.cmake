@@ -182,6 +182,13 @@ function(gen_opgraph_symbol)
       $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>> 
       $<$<TARGET_EXISTS:opbase_infer_objs>:$<TARGET_OBJECTS:opbase_infer_objs>>
       )
+    add_dependencies(${OPGRAPH_NAME} merge_ops_proto_${PKG_NAME})
+
+    target_sources( 
+ 	    ${OPGRAPH_NAME} 
+ 	    PRIVATE 
+ 	    ${ASCEND_GRAPH_CONF_DST}/ops_proto_math.cpp 
+ 	    )
  	       
     target_link_libraries(
       ${OPGRAPH_NAME}
@@ -189,13 +196,13 @@ function(gen_opgraph_symbol)
               c_sec
               -Wl,--no-as-needed
               register
+              es_math
               -Wl,--as-needed
               -Wl,--whole-archive
               rt2_registry_static
               -Wl,--no-whole-archive
               -Wl,-Bsymbolic
               ge_compiler
-              es_math
       )
  	 
     target_link_directories(${OPGRAPH_NAME} PRIVATE 
