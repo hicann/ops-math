@@ -195,11 +195,42 @@ static ge::graphStatus ApplyBroadcastRules(const gert::TilingContext* context, g
     return ge::GRAPH_SUCCESS;
 }
 
+ge::graphStatus IsEmptyTensor(const gert::TilingContext* context)
+{
+    auto xStorage = context->GetInputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, xStorage);
+    gert::Shape xShape = Ops::Math::OpTiling::EnsureNotScalar(xStorage->GetStorageShape());
+
+    auto yStorage = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, yStorage);
+    gert::Shape yShape = Ops::Math::OpTiling::EnsureNotScalar(yStorage->GetStorageShape());
+
+    auto xDimNum = xShape.GetDimNum();
+    auto yDimNum = yShape.GetDimNum();
+
+    for (size_t i = 0; i < xDimNum; i++) {
+        if (xShape[i] == 0) {
+            return ge::GRAPH_FAILED;
+        }
+    }
+
+    for (size_t i = 0; i < yDimNum; i++) {
+        if (yShape[i] == 0) {
+            return ge::GRAPH_FAILED;
+        }
+    }
+
+    return ge::GRAPH_SUCCESS;
+}
+
 ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape)
 {
     auto xStorage = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xStorage);
     inShape = Ops::Math::OpTiling::EnsureNotScalar(xStorage->GetStorageShape());
+
+    OP_CHECK_IF(IsEmptyTensor(context) != ge::GRAPH_SUCCESS,
+        OP_LOGE(context->GetNodeName(), "Do not support x or y is empty tensor!"), return ge::GRAPH_FAILED);
 
     OP_CHECK_IF(ReadOutShapeFromTensor(context, outShape) != ge::GRAPH_SUCCESS,
         OP_LOGE(context->GetNodeName(), "Failed to read outShape from tensor!"), return ge::GRAPH_FAILED);
@@ -234,7 +265,7 @@ ge::graphStatus Tiling4ExpandAscendC(
     OP_CHECK_NULL_WITH_CONTEXT(context, inShapePtr);
     OP_CHECK_NULL_WITH_CONTEXT(context, outShapePtr);
     brcto::BroadcastToTilingAscendC brcToTiling(context, inShapePtr, outShapePtr);
-
+    
     OP_CHECK_IF(
         (brcToTiling.GetHardwareInfo<ExpandCompileInfo>() != ge::GRAPH_SUCCESS),
         OP_LOGE(context->GetNodeName(), "BroadcastToTilingAscendC failed to get hardware info."),

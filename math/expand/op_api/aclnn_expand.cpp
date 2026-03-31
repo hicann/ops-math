@@ -86,8 +86,7 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* size, const acl
     if (sizeDimNum < selfDimNum) {
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID,
-            "the number of size %zu must be greater or equal to the number of dimensions \
-            in the self %zu.",
+            "the number of size %zu must be greater or equal to the number of dimensions in the self %zu.",
             sizeDimNum, selfDimNum);
         return false;
     }
@@ -112,17 +111,17 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* size, const acl
     if (outShape != expectShape) {
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID,
-            "expect out shape to be same as expectShape, but got out shape [%s], \
-            expect shape [%s]",
+            "expect out shape to be same as expectShape, but got out shape [%s], expect shape [%s]",
             op::ToString(outShape).GetString(), op::ToString(expectShape).GetString());
         return false;
     }
     return true;
 }
 
-static bool CheckMaxDimension(const aclTensor* tensor)
+static bool CheckMaxDimension(const aclTensor* self, const aclTensor* out)
 {
-    OP_CHECK_MAX_DIM(tensor, MAX_SUPPORT_DIM, return false);
+    OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIM, return false);
+    OP_CHECK_MAX_DIM(out, MAX_SUPPORT_DIM, return false);
     return true;
 }
 
@@ -147,7 +146,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* size, c
     CHECK_RET(CheckShape(self, size, out), ACLNN_ERR_PARAM_INVALID);
 
     // 4. 检查最大维度是否超过8
-    CHECK_RET(CheckMaxDimension(self) && CheckMaxDimension(out), ACLNN_ERR_PARAM_INVALID);
+
+    CHECK_RET(CheckMaxDimension(self, out), ACLNN_ERR_PARAM_INVALID);
 
     // 检查format，若是NZ格式，则添加警告
     CheckFormat(self);
@@ -168,7 +168,7 @@ aclnnStatus aclnnExpandGetWorkspaceSize(
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
     // 空tensor处理
-    if (self->IsEmpty()) {
+    if (self->IsEmpty() || out->IsEmpty()) {
         // 根据实际支持情况补充
         *workspaceSize = 0;
         uniqueExecutor.ReleaseTo(executor);
