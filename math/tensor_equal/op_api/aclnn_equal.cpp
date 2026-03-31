@@ -173,7 +173,9 @@ aclnnStatus aclnnEqualGetWorkspaceSize(const aclTensor *self, const aclTensor *o
   }
 
   auto promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
-
+  if (promoteType == op::DataType::DT_BF16) {
+      promoteType = op::DataType::DT_FLOAT;
+  }
   // 固定写法，将输入self转换成连续的tensor
   auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
   CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
