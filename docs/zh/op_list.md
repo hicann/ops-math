@@ -672,7 +672,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI CPU</td>
+    <td>AI Core/AI CPU</td>
     <td>该算子对输入的每个元素进行反正切操作后输出。</td>
   </tr>
   <tr>
@@ -908,12 +908,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/erf/README.md">erf</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>×</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>返回输入张量中每个元素对应的误差函数的值。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -968,12 +968,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/expm1/README.md">expm1</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>×</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>以输入张量为指数，计算自然常数e的幂，并对指数计算结果进行减1计算。对于输入张量取值较小的场景，提供比直接用公式计算结果更高的精度。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1268,12 +1268,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/nan_to_num/README.md">nan_to_num</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>×</td>
     <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>将输入中的NaN、正无穷大和负无穷大值分别替换为nan、posinf、neginf指定的值。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1522,7 +1522,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI CPU</td>
+    <td>AI Core/AI CPU</td>
     <td>该算子按元素计算输入张量 x 与 y 的按位右移操作。</td>
   </tr>
   <tr>
