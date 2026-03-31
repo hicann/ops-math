@@ -71,7 +71,7 @@ aclnnStatus aclnnNormalTensorFloat(
       <td>输入</td>
       <td>生成随机数分布均值的张量，Device侧的aclTensor。</td>
       <td>-</td>
-      <td>FLOAT16、FLOAT、DOUBLE</td>
+      <td>BF16、FLOAT16、FLOAT、DOUBLE</td>
       <td>ND</td>
       <td>0-8</td>
       <td>-</td>
@@ -111,7 +111,7 @@ aclnnStatus aclnnNormalTensorFloat(
       <td>输出</td>
       <td>输出张量，Device侧的aclTensor。</td>
       <td>-</td>
-      <td>FLOAT16、FLOAT、DOUBLE</td>
+      <td>BF16、FLOAT16、FLOAT、DOUBLE</td>
       <td>ND</td>
       <td>0-8</td>
       <td>-</td>

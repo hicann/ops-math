@@ -71,7 +71,7 @@ aclnnStatus aclnnNormalTensorTensor(
       <td>输入</td>
       <td>生成随机数分布均值的张量，Device侧的aclTensor。</td>
       <td>数据类型与std的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。shape需要与std满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-      <td>FLOAT16、FLOAT、DOUBLE</td>
+      <td>BF16、FLOAT16、FLOAT、DOUBLE</td>
       <td>ND</td>
       <td>0-8</td>
       <td>-</td>
@@ -81,7 +81,7 @@ aclnnStatus aclnnNormalTensorTensor(
       <td>输入</td>
       <td>生成随机数分布标准差的张量，Device侧的aclTensor。</td>
       <td>数据类型与mean的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。shape需要与mean满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-      <td>FLOAT16、FLOAT、DOUBLE</td>
+      <td>BF16、FLOAT16、FLOAT、DOUBLE</td>
       <td>ND</td>
       <td>0-8</td>
       <td>-</td>
@@ -111,7 +111,7 @@ aclnnStatus aclnnNormalTensorTensor(
       <td>输出</td>
       <td>输出张量，Device侧的aclTensor。</td>
       <td>数据类型需要是mean与std推导之后可转换的数据类型。shape需要和mean与std broadcast之后的shape相等。</td>
-      <td>FLOAT16、FLOAT、DOUBLE</td>
+      <td>BF16、FLOAT16、FLOAT、DOUBLE</td>
       <td>ND</td>
       <td>0-8</td>
       <td>-</td>

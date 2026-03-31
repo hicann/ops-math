@@ -34,7 +34,7 @@ extern "C" {
 static constexpr size_t MAX_DIM_LEN = 8;
 
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_DOUBLE};
+    op::DataType::DT_BF16, op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_DOUBLE};
 
 /* 查看TensorFloat的Dtype和Shape */
 static bool CheckTensorAndFloatDtype(const aclTensor* mean, const aclTensor* out)

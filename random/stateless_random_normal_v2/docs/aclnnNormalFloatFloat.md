@@ -111,7 +111,7 @@ aclnnStatus aclnnNormalFloatFloat(
       <td>输出</td>
       <td>输出张量，Device侧的aclTensor。</td>
       <td>-</td>
-      <td>FLOAT16、FLOAT、DOUBLE</td>
+      <td>BF16、FLOAT16、FLOAT、DOUBLE</td>
       <td>ND</td>
       <td>0-8</td>
       <td>-</td>
