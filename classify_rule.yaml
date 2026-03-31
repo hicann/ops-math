@@ -32,6 +32,8 @@ ops_math:
       - "random/random_standard_normal_v2"
       - "common/inc/op_api/aclnn_check.h"
       - "common/inc/op_api/level2_base.h"
+      - "random/stateless_random_uniform_v3"
+      - "random/stateless_random_normal_v3"
   llt:
     ut_check: true
     st_check: false
@@ -373,12 +375,22 @@ VC6@ops-math:
         # stateless_random_normal_v2
         - ops/ops-math/random/stateless_random_normal_v2/op_host/
         - ops/ops-math/random/stateless_random_normal_v2/op_kernel/
+        # random_common
+        - ops/ops-math/random/random_common/op_kernel/
+        # stateless_random_normal_v3u
+        - ops/ops-math/random/stateless_random_normal_v3/
+        - ops/ops-math/random/stateless_random_normal_v3/op_host/
+        - ops/ops-math/random/stateless_random_normal_v3/op_kernel/
         # stateless_random_uniform_v2u
         - ops/ops-math/random/stateless_random_uniform_v2/op_host/
         - ops/ops-math/random/stateless_random_uniform_v2/op_kernel/
         # strided_slice_grad
         - ops/ops-math/conversion/strided_slice_grad/op_host/
         - ops/ops-math/conversion/strided_slice_grad/op_kernel/
+        # stateless_random_uniform_v3u
+        - ops/ops-math/random/stateless_random_uniform_v3/
+        - ops/ops-math/random/stateless_random_uniform_v3/op_host/
+        - ops/ops-math/random/stateless_random_uniform_v3/op_kernel/
         # tril
         - ops/ops-math/conversion/tril/op_host/
         - ops/ops-math/conversion/tril/op_kernel/
@@ -415,11 +427,17 @@ VC6@ops-math:
         # stateless_random_normal_v2
         - ops/ops-math/random/stateless_random_normal_v2/examples/
         - ops/ops-math/random/stateless_random_normal_v2/tests/
+        # stateless_random_normal_v3
+        - ops/ops-math/random/stateless_random_normal_v3/examples/
+        - ops/ops-math/random/stateless_random_normal_v3/tests/
         # stateless_random_uniform_v2u
         - ops/ops-math/random/stateless_random_uniform_v2/tests/
         # tril
         - ops/ops-math/conversion/tril/examples/
         - ops/ops-math/conversion/tril/tests/
+        # stateless_random_uniform_v3u
+        - ops/ops-math/random/stateless_random_uniform_v3/examples/
+        - ops/ops-math/random/stateless_random_uniform_v3/tests/
         # triu
         - ops/ops-math/conversion/triu/examples/
         - ops/ops-math/conversion/triu/tests/
@@ -685,12 +703,18 @@ conversion@ops-math:
         - ops/ops-math/random/stateless_random_normal_v2/op_api/
         - ops/ops-math/random/stateless_random_normal_v2/README.md
         - ops/ops-math/random/stateless_random_normal_v2/op_graph/
+        - ops/ops-math/random/stateless_random_normal_v3/docs/
+        - ops/ops-math/random/stateless_random_normal_v3/op_api/
+        - ops/ops-math/random/stateless_random_normal_v3/README.md
+        - ops/ops-math/random/stateless_random_normal_v3/op_graph/
         - ops/ops-math/random/drop_out_v3/docs/
         - ops/ops-math/random/drop_out_v3/op_api/
         - ops/ops-math/random/drop_out_v3/op_graph/
         - ops/ops-math/random/stateless_random_uniform_v2/op_api/
         - ops/ops-math/random/stateless_random_uniform_v2/README.md
         - ops/ops-math/random/stateless_random_uniform_v2/op_graph/
+        - ops/ops-math/random/stateless_random_uniform_v3/op_api/
+        - ops/ops-math/random/stateless_random_uniform_v3/README.md
         - ops/ops-math/random/stateless_randperm/docs/
         - ops/ops-math/random/stateless_randperm/op_api/
         - ops/ops-math/random/stateless_randperm/op_host/stateless_randperm_tiling_for_sort.h
@@ -804,6 +828,7 @@ conversion@ops-math:
         - ops/ops-math/random/sim_thread_exponential/examples/
         - ops/ops-math/random/sim_thread_exponential/tests/
         - ops/ops-math/random/stateless_random_uniform_v2/examples/
+        - ops/ops-math/random/stateless_random_uniform_v3/examples/
         - ops/ops-math/random/stateless_randperm/examples/
         - ops/ops-math/random/stateless_randperm/tests/
         - ops/ops-math/random/dsa_random_normal/examples/
