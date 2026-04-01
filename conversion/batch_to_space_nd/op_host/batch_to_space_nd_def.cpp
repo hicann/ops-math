@@ -60,12 +60,14 @@ public:
         this->Input("block_shape")
             .ParamType(REQUIRED)
             .DataType(std::vector<ge::DataType>(BS_DATA_TYPE_LIST.begin(), BS_DATA_TYPE_LIST.end()))
-            .Format(DATA_FORMAT_LIST);
+            .Format(DATA_FORMAT_LIST)
+            .ValueDepend(OPTIONAL);
         // crops 参数（2D 张量）
         this->Input("crops")
             .ParamType(REQUIRED)
             .DataType(std::vector<ge::DataType>(CROPS_DATA_TYPE_LIST.begin(), CROPS_DATA_TYPE_LIST.end()))
-            .Format(DATA_FORMAT_LIST);
+            .Format(DATA_FORMAT_LIST)
+            .ValueDepend(OPTIONAL);
         // 输出张量 y
         this->Output("y").Follow("x");
 
