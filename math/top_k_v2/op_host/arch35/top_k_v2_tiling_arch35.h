@@ -21,6 +21,7 @@
 #include "tiling/tiling_api.h"
 namespace optiling {
 BEGIN_TILING_DATA_DEF(TopKV2TilingDataSimd)
+    // TopK field
     TILING_DATA_FIELD_DEF(int32_t, isLargest);
     TILING_DATA_FIELD_DEF(int32_t, isSort);
     TILING_DATA_FIELD_DEF(uint32_t, sortLoopTimes);
@@ -43,6 +44,31 @@ BEGIN_TILING_DATA_DEF(TopKV2TilingDataSimd)
     TILING_DATA_FIELD_DEF(int64_t, lastDimTileNum);
     TILING_DATA_FIELD_DEF(int64_t, outputLastDimValue);
     TILING_DATA_FIELD_DEF(int64_t, lastDimTileNumTimes);
+    // sort field
+    TILING_DATA_FIELD_DEF(uint32_t, tilingKeyForSort);
+    TILING_DATA_FIELD_DEF(uint32_t, sortLoopTimesForSort);
+    TILING_DATA_FIELD_DEF(uint32_t, unsortedDimParallelForSort);
+    TILING_DATA_FIELD_DEF(uint64_t, unsortedDimNumForSort);
+    TILING_DATA_FIELD_DEF(uint32_t, lastDimTileNumForSort);
+    TILING_DATA_FIELD_DEF(uint32_t, lastDimNeedCoreForSort);
+    TILING_DATA_FIELD_DEF(uint32_t, numTileDataSizeForSort);
+    TILING_DATA_FIELD_DEF(uint32_t, sortAcApiNeedBufferSizeForSort);
+    TILING_DATA_FIELD_DEF(uint32_t, mergSortAcApiNeedBufferSizeForSort);
+    TILING_DATA_FIELD_DEF(uint32_t, oneCoreRowNumForSort);
+    TILING_DATA_FIELD_DEF(uint32_t, outputLastDimValueForSort);
+    TILING_DATA_FIELD_DEF(uint32_t, isInInt32RangeForSort);
+    TILING_DATA_FIELD_DEF(int64_t, lastAxisNumForSort);
+    TILING_DATA_FIELD_DEF(uint32_t, modeTypeForSort);    
+    TILING_DATA_FIELD_DEF(uint32_t, keyParams0);
+    TILING_DATA_FIELD_DEF(uint32_t, keyParams1);
+    TILING_DATA_FIELD_DEF(uint32_t, keyParams2);
+    TILING_DATA_FIELD_DEF(uint32_t, keyParams3);
+    TILING_DATA_FIELD_DEF(uint32_t, keyParams4);
+    TILING_DATA_FIELD_DEF(uint32_t, keyParams5);
+    TILING_DATA_FIELD_DEF(uint32_t, tmpUbSize);
+    TILING_DATA_FIELD_DEF(uint32_t, sortAndTopkTileDataSize);
+    TILING_DATA_FIELD_DEF(uint32_t, sortAndTopkBlockTileNum);
+    TILING_DATA_FIELD_DEF(uint32_t, sortAndTopkTailTileNum);
 END_TILING_DATA_DEF;
 REGISTER_TILING_DATA_CLASS(TopKV2, TopKV2TilingDataSimd)
 struct TopKV2CompileInfo {

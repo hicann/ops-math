@@ -17,6 +17,7 @@
 #include "top_k_util_type_simd.h"
 #include "top_k_constant_var_simd.h"
 using namespace AscendC;
+using namespace topkV2;
 template <typename T, typename UNSINGED_TYPE, int32_t NUM_PASS, bool IS_DESCEND, typename T_INDEX>
 struct RadixBlockSortSimdB64 {
 public:

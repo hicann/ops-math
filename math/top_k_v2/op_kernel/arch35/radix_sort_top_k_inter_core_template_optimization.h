@@ -21,6 +21,7 @@
 #include <algorithm>
 
 using namespace AscendC;
+using namespace topkV2;
 
 // 类比当前文件
 template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO>
@@ -88,8 +89,8 @@ __aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT
     pipe.InitBuffer(topkOutValueQueue_, 1, ROUND_UP_AGLIN(topkValueInput_ * sizeof(T)));
     pipe.InitBuffer(tempIndexConversionQueue_, 1, ROUND_UP_AGLIN(topkValueInput_ * sizeof(T_INDEX_TO)));
     pipe.InitBuffer(topKApiTmpTBuf_, ROUND_UP_AGLIN(topKApiTmpSize_));
-    uint32_t oneBlockNum = UB_AGLIN_VALUE / static_cast<uint32_t>(sizeof(T));
-    uint32_t oneBlockNumB32 = UB_AGLIN_VALUE / static_cast<uint32_t>(sizeof(int32_t));
+    uint32_t oneBlockNum = topkV2::UB_AGLIN_VALUE / static_cast<uint32_t>(sizeof(T));
+    uint32_t oneBlockNumB32 = topkV2::UB_AGLIN_VALUE / static_cast<uint32_t>(sizeof(int32_t));
     uint32_t sortResultOffset = CeilDivMul(unsortedDimParallel_ * topkValueInput_ * lastDimTileNum_, oneBlockNum);
     tempSortResultDataGm_.SetGlobalBuffer((__gm__ T*)workspace_, sortResultOffset);
     workSpaceOffset += sortResultOffset * static_cast<uint32_t>(sizeof(T)) / static_cast<uint32_t>(sizeof(int32_t));
@@ -135,7 +136,12 @@ __aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT
     int tileCount = (totalDataNum_ + numTileData_ - 1) / numTileData_;
     uint32_t unsortedAxisId = GetBlockIdx() / lastDimRealCore_;
     uint32_t unsortedDimIndex = unsortedAxisId + sortLoopRound * unsortedDimParallel_;
+    // inUnsortedDimRange决定是否执行本次计算流程，超出Batch轴数量范围不执行
     bool inUnsortedDimRange = unsortedDimIndex >= unsortedDimNum_ ? false : true;
+    // 超出需要的核心数不执行
+    if (GetBlockIdx() >= lastDimTileNum_ * unsortedDimParallel_) {
+        inUnsortedDimRange = false;
+    }
     uint32_t startTileId = GetBlockIdx() % lastDimRealCore_;
     uint32_t inputXUnsortedAxisOffset = unsortedAxisId * totalDataNum_;
     LocalTensor<bool> emptyFinishLocal;

@@ -15,6 +15,9 @@
 #define SORT_WITH_INDEX_UTIL_TYPE_SIMD_H
 #include "kernel_operator.h"
 #include "constant_var_simd.h"
+
+namespace SortWithIndex {
+
 template <typename Tp, Tp v>
 struct integral_constant {
     static constexpr Tp value = v;
@@ -30,5 +33,33 @@ template <typename T>
 __aicore__ inline T SortGetMin(T left, T right)
 {
     return (left > right ? right : left);
+}
+
+#ifdef TOP_K_V2_APT_H
+struct SortWithIndexTilingDataSimt {
+    int32_t isDescend;
+    uint32_t sortLoopTimes;
+    uint32_t unsortedDimParallel;
+    uint64_t unsortedDimNum;
+    uint32_t lastDimTileNum;
+    uint32_t lastDimNeedCore;
+    uint32_t numTileDataSize;
+    uint32_t sortAcApiNeedBufferSize;
+    uint32_t mergSortAcApiNeedBufferSize;
+    uint32_t oneCoreRowNum;
+    uint32_t outputLastDimValue;
+    uint32_t isInInt32Range;
+    int64_t lastAxisNum;
+    uint32_t keyParams0;
+    uint32_t keyParams1;
+    uint32_t keyParams2;    
+    uint32_t keyParams3;
+    uint32_t keyParams4;
+    uint32_t keyParams5;
+    uint32_t tmpUbSize;
+    uint32_t modeType;        
+};
+#endif
+
 }
 #endif

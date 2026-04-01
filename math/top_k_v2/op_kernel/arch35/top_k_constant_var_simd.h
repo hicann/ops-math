@@ -13,6 +13,7 @@
  */
 #ifndef TOP_K_CONSTANT_VAR_SIMD_H
 #define TOP_K_CONSTANT_VAR_SIMD_H
+namespace topkV2 {
 const uint32_t THREAD_DIM_NUM = 1024;
 const int32_t ONE_TIMES_B64_NUM = 32;
 const int32_t ONE_TIMES_B32_NUM = 64;
@@ -65,4 +66,5 @@ const int16_t XOR_OP_VALUE_HALF = 0x8000;
 const int32_t SMALL_SORT_MAX_DATA_SIZE = 128;
 const uint32_t CONCAT_AGLIN_VALUE = 16;
 const uint32_t DOUBLE_BUFFER = 2;
+}
 #endif

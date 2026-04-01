@@ -15,6 +15,8 @@
 #define UTIL_TYPE_SIMD_H
 #include "kernel_operator.h"
 #include "top_k_constant_var_simd.h"
+
+namespace topkV2 {
 template <typename Tp, Tp v>
 struct integral_constant {
     static constexpr Tp value = v;
@@ -36,6 +38,15 @@ __aicore__ inline uint32_t CeilDivMul(uint32_t a, uint32_t b)
         return a;
     }
     return ((a + b - 1) / b) * b;
+}
+
+template <typename T>
+__aicore__ auto CeilAlignDivMul(uint64_t a, uint64_t b) ->T const
+{
+    if (b == 0) {
+        return static_cast<T>(a);
+    }
+    return static_cast<T>(((a + b - 1) / b) * b);
 }
 
 template <typename T>
@@ -64,4 +75,5 @@ struct DoubleBufferSimd
         selector_ = selector_ ^ 1;
     }
 };
+}
 #endif

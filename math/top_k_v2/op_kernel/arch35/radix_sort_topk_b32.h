@@ -15,6 +15,8 @@
 #define RADIX_SORT_TOPK_B32_H
 #include "kernel_operator.h"
 #include "top_k_util_type_simd.h"
+
+using namespace topkV2;
 template <typename T, typename UNSIGNED_TYPE, int32_t NUM_PASS, bool IS_DESCEND, typename T_INDEX>
 struct RadixSortTopKB32{
     __aicore__ inline RadixSortTopKB32() {}

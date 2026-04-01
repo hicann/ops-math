@@ -18,6 +18,7 @@
 #include "top_k_constant_var_simd.h"
 #include "top_k_merge_sort_simd.h"
 using namespace AscendC;
+namespace topkV2 {
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
 struct MergeSort {
     __aicore__ inline MergeSort() {}
@@ -71,7 +72,7 @@ public:
     uint32_t platformCoreNum_ = 0;
     uint32_t outputLastDimValue_ = 0;
     // merge sort kernel
-    KernelVbsMergeSort<T, CONVERT_TYPE, IS_LARGEST> vbsSort;
+    topkV2::KernelVbsMergeSort<T, CONVERT_TYPE, IS_LARGEST> vbsSort;
 };
 
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
@@ -258,5 +259,6 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     AscendC::DataCopyPad(outIndexGm_[gmOffset + tileOffset], outIndexLocal, dataCopyParamIndex);
     outIndexQueue_.FreeTensor(outIndexLocal);
     outValueQueue_.FreeTensor(outValueLocal);
+}
 }
 #endif

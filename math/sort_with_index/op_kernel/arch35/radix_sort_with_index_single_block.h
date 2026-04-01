@@ -29,13 +29,13 @@ public:
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR index, GM_ADDR y, GM_ADDR sortedIndex,
                                 GM_ADDR workspace, const SortWithIndexTilingDataSimt* tilingData, TPipe* pipe);
     __aicore__ inline void Process();
+    __aicore__ inline void ProcessSingleBlock(GlobalTensor<XType> xGm, GlobalTensor<IndexType> indexGm, uint64_t loopRound);
 
 private:
     __aicore__ inline void CopyIn(GlobalTensor<XType> inputX, uint64_t tileOffset, uint32_t tileData);
     __aicore__ inline void CopyIndexIn(GlobalTensor<IndexType> inputIndex, uint64_t tileOffset, uint32_t tileData);
-    __aicore__ inline void ProcessSingleBlock(GlobalTensor<XType> xGm, GlobalTensor<IndexType> indexGm, uint64_t loopRound);
 
-private:
+protected:
     // 输入GlobalTensor
     GlobalTensor<XType> xGm_;
     GlobalTensor<IndexType> indexGm_;

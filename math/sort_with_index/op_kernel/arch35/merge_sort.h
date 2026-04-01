@@ -20,7 +20,10 @@
 #include "../../sort/arch35/util_type_simd.h" // 引入使用 ROUND_UP_AGLIN
 #include "util_type_simd.h"
 
+namespace SortWithIndex {
+
 using namespace AscendC;
+
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
 struct MergeSort {
     __aicore__ inline MergeSort() {}
@@ -276,5 +279,6 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     AscendC::DataCopyPad(outIndexGm_[gmOffset + tileOffset], outIndexLocal, dataCopyParamIndex);
     outIndexQueue_.FreeTensor(outIndexLocal);
     outValueQueue_.FreeTensor(outValueLocal);
+}
 }
 #endif

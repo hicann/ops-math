@@ -23,6 +23,8 @@
 #include <algorithm>
 #include "util_type_simd.h"
 
+namespace SortWithIndex {
+
 using namespace AscendC;
 
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
@@ -275,5 +277,5 @@ __aicore__ inline void MergeSortWithIndex<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_
     }  
     this->inQueueXInt64Index_.EnQue(indexLocal);
 }
-
+}
 #endif

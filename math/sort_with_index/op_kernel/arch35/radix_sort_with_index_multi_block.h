@@ -34,6 +34,8 @@ public:
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR index, GM_ADDR y, GM_ADDR sortedIndex,
                                 GM_ADDR workspace, const SortWithIndexTilingDataSimt* tilingData, TPipe* pipe);
     __aicore__ inline void Process();
+    __aicore__ inline void ComputeOnePass(uint32_t round, uint64_t sortLoopRound, GlobalTensor<XType> inputXGm,
+                                      GlobalTensor<IndexType> indexGm);
 
 private:
     __aicore__ inline void ParserTilingData();
@@ -41,8 +43,6 @@ private:
                                              uint64_t gmOffset, uint64_t loopRound);
     __aicore__ inline void CopyInputIndexDataIn(GlobalTensor<IndexType> inputIndex, LocalTensor<IndexType> &xLocal,
                                                 uint64_t tileOffset, uint32_t currTileSize);
-    __aicore__ inline void ComputeOnePass(uint32_t round, uint64_t sortLoopRound, GlobalTensor<XType> inputXGm,
-                                          GlobalTensor<IndexType> indexGm);
     __aicore__ inline void ScatterKeysGlobal(LocalTensor<XType> xInputValueLocal, 
                                             LocalTensor<uint32_t> sortedIndexLocal,
                                             LocalTensor<IndexType> xInputIndexLocal, 
@@ -51,7 +51,7 @@ private:
                                             LocalTensor<XRangeType> blockDataInGlobalPos,
                                             LocalTensor<uint32_t> blockHistFlag, LocalTensor<uint16_t> blockHist,
                                             uint32_t sortRound, XRangeType tileDataStart, uint32_t cureTileSize);
-private:
+protected:
     const SortWithIndexTilingDataSimt* tilingData_;
     GlobalTensor<IndexType> indexGm_;
     GlobalTensor<IndexType> outIdxGm_;

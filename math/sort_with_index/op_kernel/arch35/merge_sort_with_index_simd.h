@@ -17,7 +17,10 @@
 #include "constant_var_simd.h"
 #include "merge_sort_simd.h"
 
+namespace SortWithIndex {
+
 using namespace AscendC;
+
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND>
 struct KernelVbsMergeSortWithIndex : public KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND>{
 public:
@@ -101,5 +104,5 @@ __aicore__ inline void KernelVbsMergeSortWithIndex<T, CONVERT_TYPE, IS_DESCEND>:
     }
     AscendC::Cast(sortedValueLocal, sortedValueLocalCast, AscendC::RoundMode::CAST_RINT, aglinTileSize * nowCoreRealRowNum);
 }
-
+}
 #endif

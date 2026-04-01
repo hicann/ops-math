@@ -118,12 +118,6 @@ static bool IsAscendCSupport(const aclTensor* self, int64_t k)
     return false;
 }
 
-// 根据芯片类型、k 和 sotrd 判断是否需要额外增加 SortWithIndex
-static bool IsSortWithIndex(int64_t k, bool sorted)
-{
-    return (IsRegBase()) && (k > TWO_THOUSAND) && (sorted == true);
-}
-
 // AICORE算子kernel
 std::tuple<aclTensor*, aclTensor*> TopkV2AiCore(
     const aclTensor* self, const aclTensor* k, int64_t dim, bool largest, bool sorted, aclTensor* values,
@@ -143,18 +137,6 @@ std::tuple<aclTensor*, aclTensor*> TopkV2AiCoreForDavid(
     ADD_TO_LAUNCHER_LIST_AICORE(
         TopKV2, OP_INPUT(self, k), OP_OUTPUT(values, indices), OP_ATTR(sorted, dim, largest, indicesDType));
     return std::tuple<aclTensor*, aclTensor*>(values, indices);
-}
-
-// 950 TopK + SortWithIndex
-std::tuple<aclTensor*, aclTensor*> TopKAndSort(
-    const aclTensor* self, const aclTensor* k, int64_t dim, bool largest, bool sorted, aclTensor* values,
-    aclTensor* indices, aclOpExecutor* executor)
-{
-    L0_DFX(TopKAndSort, self, k, dim, largest, sorted, values, indices);
-    // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore TopKV2算子加入任务队列
-    ADD_TO_LAUNCHER_LIST_AICORE(
-        TopKV2, OP_INPUT(self, k), OP_OUTPUT(values, indices), OP_ATTR(sorted, dim, largest, op::DataType::DT_INT32));
-    return SortWithIndex(values, indices, dim, largest, true, executor);
 }
 
 std::tuple<aclTensor*, aclTensor*> TopkV3(
@@ -198,7 +180,7 @@ std::tuple<aclTensor*, aclTensor*> Topk(
     const aclTensor* kTensor = executor->ConvertToTensor(kScalar, op::ToOpDataType(ACL_INT32));
     auto valuesOut = executor->AllocTensor(outShape, self->GetDataType(), self->GetStorageFormat());
     aclTensor* indicesOut = nullptr;
-    if ((IsRegBase()) && !IsSortWithIndex(k, sorted)) {
+    if (IsRegBase()) {
         indicesOut = executor->AllocTensor(outShape, indicesDType, self->GetStorageFormat());
     } else {
         indicesOut = executor->AllocTensor(outShape, op::DataType::DT_INT32, self->GetStorageFormat());
@@ -207,8 +189,6 @@ std::tuple<aclTensor*, aclTensor*> Topk(
     if (IsAiCoreSupport(self, k)) {
         if (IsAscendCSupport(self, k)) {
             return TopkV3(self, kTensor, dim, largest, sorted, valuesOut, indicesOut, executor);
-        } else if (IsSortWithIndex(k, sorted)) {
-            return TopKAndSort(self, kTensor, dim, largest, sorted, valuesOut, indicesOut, executor);
         } else {
             if (IsRegBase()) {
                 return TopkV2AiCoreForDavid(

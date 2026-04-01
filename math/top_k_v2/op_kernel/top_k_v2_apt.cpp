@@ -13,14 +13,19 @@
  * \brief top k v2 impl
  */
 
+#ifndef TOP_K_V2_APT_H
+#define TOP_K_V2_APT_H
+
 #include "arch35/radix_sort_top_k.h"
 #include "arch35/radix_topk_constant.h"
 #include "arch35/top_k_merge_sort.h"
 #include "arch35/radix_sort_top_k_single_block.h"
 #include "arch35/radix_sort_top_k_single_core.h"
 #include "arch35/radix_sort_top_k_inter_core_template_optimization.h"
+#include "arch35/sort_and_top_k_more_core.h"
 
 using namespace AscendC;
+using namespace SortAndTopK;
 
 #define TOPK_COMMON_TILING_KEY_INT64 1004
 #define TOPK_COMMON_TILING_KEY_INT32 1003
@@ -39,6 +44,7 @@ using namespace AscendC;
 
 const uint32_t SINGLE_CORE_MODE = 1;
 const uint32_t MULT_CORE_OPTIM_MODE = 4;
+const uint32_t SORT_AND_TOP_K_MODE = 5;
 
 template <typename T, typename UNSINGED_TYPE, int32_t NUM_PASS, typename T_INDEX, typename T_INDEX_TO>
 __aicore__ inline void RadixSortTopKOpObject(
@@ -69,6 +75,25 @@ __aicore__ inline void RadixSortTopKOpObject(
             radixSortTopK.Init(x, k, values, indices, globalWorkGm, &tilingData);
             radixSortTopK.ProcessTopK();
         }
+    }
+}
+
+template <typename T, typename UNSINGED_TYPE, int32_t NUM_PASS, typename T_INDEX, typename T_INDEX_TO>
+__aicore__ inline void SortAndTopKOpObject(GM_ADDR x, GM_ADDR values, GM_ADDR indices, GM_ADDR globalWorkGm, 
+    GM_ADDR tiling)
+{
+    GET_TILING_DATA(tilingData, tiling);
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
+    bool isLargest = (tilingData.isLargest > 0) ? true : false;
+    TPipe tPipe;
+    if (isLargest) {
+        SortAndTopK::SortAndTopKMoreCore<T, T_INDEX_TO, UNSINGED_TYPE, T_INDEX, 1> sortAndTopKMoreCore;
+        sortAndTopKMoreCore.InitParam(x, values, indices, globalWorkGm, &tilingData, &tPipe);
+        sortAndTopKMoreCore.ProcessTopK();
+    } else {
+        SortAndTopK::SortAndTopKMoreCore<T, T_INDEX_TO, UNSINGED_TYPE, T_INDEX, 0> sortAndTopKMoreCore;
+        sortAndTopKMoreCore.InitParam(x, values, indices, globalWorkGm, &tilingData, &tPipe);
+        sortAndTopKMoreCore.ProcessTopK();
     }
 }
 
@@ -179,6 +204,7 @@ __aicore__ inline void generateOpObject(
     bool isSort = (tilingData.isSort > 0) ? true : false;
     bool isSingleBlock = (tilingData.lastDimNeedCore == 1) ? true : false;
     bool isSingleCore = (tilingData.modeType == SINGLE_CORE_MODE) ? true : false;
+    bool isSortAndTopK = (tilingData.modeType == SORT_AND_TOP_K_MODE) ? true : false;
     bool isInInt32Range = (tilingData.isInInt32Range > 0) ? true : false;
     bool isMultiCoreOptimMode = (tilingData.modeType == MULT_CORE_OPTIM_MODE) ? true : false;
 
@@ -190,6 +216,18 @@ __aicore__ inline void generateOpObject(
         } else {
             RadixSortTopKSingleBlockOpObject<T, UNSINGED_TYPE, NUM_PASS, int64_t, T_INDEX_TO>(
                 x, k, values, indices, globalWorkGm, tiling);
+        }
+        return;
+    }
+
+    // SortAndTopK模板
+    if (isSortAndTopK) {
+        if (isInInt32Range) {
+            SortAndTopKOpObject<T, UNSINGED_TYPE, NUM_PASS, uint32_t, T_INDEX_TO>(
+                x, values, indices, globalWorkGm, tiling);
+        } else {
+            SortAndTopKOpObject<T, UNSINGED_TYPE, NUM_PASS, int64_t, T_INDEX_TO>(
+                x, values, indices, globalWorkGm, tiling);
         }
         return;
     }
@@ -232,11 +270,11 @@ __aicore__ inline void generateMergeTopKObject(
     bool isLargest = (tilingData.isLargest > 0) ? true : false;
     TPipe pipe;
     if (isLargest) {
-        MergeSort<T, CONVERT_TYPE, TopKV2TilingDataSimd, true, INDEX_DTYPE> mergeSort;
+        topkV2::MergeSort<T, CONVERT_TYPE, TopKV2TilingDataSimd, true, INDEX_DTYPE> mergeSort;
         mergeSort.Init(x, values, indices, globalWorkGm, &tilingData, &pipe);
         mergeSort.ProcessSort();
     } else {
-        MergeSort<T, CONVERT_TYPE, TopKV2TilingDataSimd, false, INDEX_DTYPE> mergeSort;
+        topkV2::MergeSort<T, CONVERT_TYPE, TopKV2TilingDataSimd, false, INDEX_DTYPE> mergeSort;
         mergeSort.Init(x, values, indices, globalWorkGm, &tilingData, &pipe);
         mergeSort.ProcessSort();
     }
@@ -256,56 +294,56 @@ extern "C" __global__ __aicore__ void top_k_v2(GM_ADDR x, GM_ADDR k, GM_ADDR val
     #if ORIG_DTYPE_X == DT_INT64
         TILING_KEY_IS(TOPK_COMMON_TILING_KEY_INT64);
         #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_INT64
-            generateOpObject<int64_t, uint64_t, B64_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+            generateOpObject<int64_t, uint64_t, topkV2::B64_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
         #endif
     #endif
 
     #if ORIG_DTYPE_X == DT_INT32
         TILING_KEY_IS(TOPK_COMMON_TILING_KEY_INT32);
         #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_INT32
-            generateOpObject<int32_t, uint32_t, B32_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+            generateOpObject<int32_t, uint32_t, topkV2::B32_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
         #endif
     #endif
 
     #if ORIG_DTYPE_X == DT_INT16
         TILING_KEY_IS(TOPK_COMMON_TILING_KEY_INT16);
         #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_INT16
-            generateOpObject<int16_t, uint16_t, B16_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+            generateOpObject<int16_t, uint16_t, topkV2::B16_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
         #endif
     #endif
 
     #if ORIG_DTYPE_X == DT_INT8
         TILING_KEY_IS(TOPK_COMMON_TILING_KEY_INT8);
         #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_INT8
-            generateOpObject<int8_t, uint8_t, B8_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+            generateOpObject<int8_t, uint8_t, topkV2::B8_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
         #endif
     #endif
 
     #if ORIG_DTYPE_X == DT_UINT64
         TILING_KEY_IS(TOPK_COMMON_TILING_KEY_UINT64);
         #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_UINT64
-            generateOpObject<uint64_t, uint64_t, B64_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+            generateOpObject<uint64_t, uint64_t, topkV2::B64_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
         #endif
     #endif
 
     #if ORIG_DTYPE_X == DT_UINT32
         TILING_KEY_IS(TOPK_COMMON_TILING_KEY_UINT32);   
         #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_UINT32
-            generateOpObject<uint32_t, uint32_t, B32_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+            generateOpObject<uint32_t, uint32_t, topkV2::B32_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
         #endif
     #endif
 
     #if ORIG_DTYPE_X == DT_UINT16
         TILING_KEY_IS(TOPK_COMMON_TILING_KEY_UINT16);
         #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_UINT16
-            generateOpObject<uint16_t, uint16_t, B16_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+            generateOpObject<uint16_t, uint16_t, topkV2::B16_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
         #endif
     #endif
     
     #if ORIG_DTYPE_X == DT_UINT8
         TILING_KEY_IS(TOPK_COMMON_TILING_KEY_UINT8);
         #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_UINT8
-            generateOpObject<uint8_t, uint8_t, B8_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+            generateOpObject<uint8_t, uint8_t, topkV2::B8_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
         #endif
     #endif
 
@@ -314,7 +352,7 @@ extern "C" __global__ __aicore__ void top_k_v2(GM_ADDR x, GM_ADDR k, GM_ADDR val
         TILING_KEY_IS(TOPK_MERGE_SORT_TILING_KEY_FLOAT);
 
         #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_FLOAT
-            generateOpObject<float, uint32_t, B32_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+            generateOpObject<float, uint32_t, topkV2::B32_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
         #elif TILING_KEY_VAR == TOPK_MERGE_SORT_TILING_KEY_FLOAT
             generateMergeTopKObject<float, float, DTYPE_INDICES>(x, values, indices, globalWorkGm, tiling);
         #endif
@@ -325,7 +363,7 @@ extern "C" __global__ __aicore__ void top_k_v2(GM_ADDR x, GM_ADDR k, GM_ADDR val
         TILING_KEY_IS(TOPK_MERGE_SORT_TILING_KEY_FLOAT16);
 
         #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_FLOAT16
-            generateOpObject<half, uint16_t, B16_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+            generateOpObject<half, uint16_t, topkV2::B16_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
         #elif TILING_KEY_VAR == TOPK_MERGE_SORT_TILING_KEY_FLOAT16
             generateMergeTopKObject<half, half, DTYPE_INDICES>(x, values, indices, globalWorkGm, tiling);
         #endif
@@ -336,9 +374,10 @@ extern "C" __global__ __aicore__ void top_k_v2(GM_ADDR x, GM_ADDR k, GM_ADDR val
         TILING_KEY_IS(TOPK_MERGE_SORT_TILING_KEY_BF16);
 
         #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_BF16
-            generateOpObject<bfloat16_t, uint16_t, B16_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
+            generateOpObject<bfloat16_t, uint16_t, topkV2::B16_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
         #elif TILING_KEY_VAR == TOPK_MERGE_SORT_TILING_KEY_BF16
             generateMergeTopKObject<bfloat16_t, float, DTYPE_INDICES>(x, values, indices, globalWorkGm, tiling);
         #endif
     #endif
 }
+#endif // TOP_K_V2_APT_H

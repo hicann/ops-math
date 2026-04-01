@@ -18,6 +18,7 @@
 #include "top_k_constant_var_simd.h"
 
 using namespace AscendC;
+namespace topkV2 {
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND>
 struct KernelVbsMergeSort {
 public:
@@ -168,5 +169,6 @@ __aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND>::flipSign
         AscendC::LocalTensor<int16_t> castTensor = xLocal[offsetOneRow].template ReinterpretCast<int16_t>();
         AscendC::Adds(castTensor, castTensor, XOR_OP_VALUE_HALF, aglinTileSize);
     }
+}
 }
 #endif

@@ -16,6 +16,7 @@
 #include "kernel_operator.h"
 #include "top_k_util_type_simd.h"
 using namespace AscendC;
+using namespace topkV2;
 template <typename T, typename UNSIGNED_TYPE, int32_t NUM_PASS, bool IS_DESCEND, typename T_INDEX>
 struct RadixSortTopKB16{
     __aicore__ inline RadixSortTopKB16() {}

@@ -21,7 +21,7 @@
 #include <algorithm>
 
 using namespace AscendC;
-
+using namespace topkV2;
 template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO>
 struct RadixSortTopKSingleBlock : public RadixSortTopKBase<T, T_INDEX, T_INDEX_TO> {
     __aicore__ inline RadixSortTopKSingleBlock() {};
@@ -195,7 +195,7 @@ __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS
     uint32_t aglinIndicesOffset = ROUND_UP_AGLIN(this->k_ * sizeof(int32_t)) / sizeof(int32_t);
     uint32_t blockCastIntervalBytes = (aglinIndicesOffset - this->k_) * sizeof(T_INDEX_TO);
     bool needsCast = IsSameType<T_INDEX_TO, int64_t>::value;
-    uint32_t srcStride = needsCast &&  blockCastIntervalBytes >= UB_AGLIN_VALUE && parallelBatchNum >= 2 ? 1 : 0;
+    uint32_t srcStride = needsCast &&  blockCastIntervalBytes >= topkV2::UB_AGLIN_VALUE && parallelBatchNum >= 2 ? 1 : 0;
     AscendC::LocalTensor<T_INDEX_TO> indicesLocal = this->indicesQue_.template DeQue<T_INDEX_TO>();
     AscendC::DataCopyExtParams dataCopyParamIndex{static_cast<uint16_t>(parallelBatchNum),
                                                 static_cast<uint32_t>(this->k_ * sizeof(T_INDEX_TO)), srcStride, 0, 0};
