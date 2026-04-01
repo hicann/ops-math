@@ -41,15 +41,15 @@ aclnnStatus aclnnErfcGetWorkspaceSize(
 
 ```Cpp
 aclnnStatus aclnnErfc(
-  void*              workspace,
-  uint64_t           workspaceSize,
-  aclOpExecutor*     executor,
-  aclrtStream        stream)
+  void*                workspace,
+  uint64_t             workspaceSize,
+  aclOpExecutor*       executor,
+  const aclrtStream    stream)
 ```
 
 ```Cpp
 aclnnStatus aclnnInplaceErfcGetWorkspaceSize(
-  aclTensor*         selfRef,
+  const aclTensor*   selfRef,
   uint64_t*          workspaceSize,
   aclOpExecutor**    executor)
 ```

@@ -34,10 +34,10 @@
 
 ```Cpp
 aclnnStatus aclnnLog2GetWorkspaceSize(
-  const aclTensor*          self,
-  aclTensor*                out,
-  uint64_t*                 workspaceSize,
-  aclOpExecutor**           executor)
+  const aclTensor*    self,
+  const aclTensor*    out,
+  uint64_t*           workspaceSize,
+  aclOpExecutor**     executor)
 ```
 
 ```Cpp

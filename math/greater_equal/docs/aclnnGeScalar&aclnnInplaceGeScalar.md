@@ -38,10 +38,10 @@ aclnnStatus aclnnGeScalarGetWorkspaceSize(
 
 ```Cpp
 aclnnStatus aclnnGeScalar(
-  void*          workspace,
-  uint64_t       workspaceSize,
-  aclOpExecutor* executor,
-  aclrtStream    stream)
+  void*                workspace,
+  uint64_t             workspaceSize,
+  aclOpExecutor*       executor,
+  const aclrtStream    stream)
 ```
 
 ```Cpp
@@ -54,10 +54,10 @@ aclnnStatus aclnnInplaceGeScalarGetWorkspaceSize(
 
 ```Cpp
 aclnnStatus aclnnInplaceGeScalar(
-  void*          workspace,
-  uint64_t       workspaceSize,
-  aclOpExecutor* executor,
-  aclrtStream    stream)
+  void*                workspace,
+  uint64_t             workspaceSize,
+  aclOpExecutor*       executor,
+  const aclrtStream    stream)
 ```
 
 ## aclnnGeScalarGetWorkspaceSize
