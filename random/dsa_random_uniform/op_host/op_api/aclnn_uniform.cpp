@@ -151,7 +151,7 @@ static const aclTensor* uniformDavidPath(
     const aclTensor* selfRef, uint64_t seed, uint64_t offset,
     double from, double to, int32_t uniformV3ScaleMode, aclOpExecutor* executor)
 {
-    if (selfRef->GetDataType() != DataType::DT_DOUBLE) {
+    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfRef->GetDataType() != DataType::DT_DOUBLE) {
         auto fromOut = static_cast<float>(from);
         auto toOut = static_cast<float>(to);
         return l0op::StatelessRandomUniformV3(
@@ -187,7 +187,7 @@ static const aclTensor* uniformTensorDavidPath(
     CHECK_RET(resultAddOut != nullptr, nullptr);
 
     int32_t uniformV3ScaleMode = 0;
-    if (selfRef->GetDataType() != DataType::DT_DOUBLE) {
+    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfRef->GetDataType() != DataType::DT_DOUBLE) {
         auto fromOut = static_cast<float>(from);
         auto toOut = static_cast<float>(to);
         return l0op::StatelessRandomUniformV3(

@@ -216,8 +216,17 @@ aclnnStatus CommonLogicGeneralNormal(
     FVector<int64_t, op::MAX_DIM_NUM> counter_vec = {0, offset};
     auto counterArr = (uniqueExecutor.get())->AllocIntArray(counter_vec.data(), counter_vec.size());
     const aclTensor* addOut = nullptr;
-    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201 ||
-        self->GetDataType() == DataType::DT_DOUBLE) {
+
+    if(GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && self->GetDataType() != DataType::DT_DOUBLE){
+        // 调用normal_算子kernel function(AI Core算子)
+        // V3 kernel 要求 mean/std 参数为 DT_FLOAT，与 InplaceNormal 保持一致
+        auto meanFP32 = l0op::Cast(mean, DataType::DT_FLOAT, uniqueExecutor.get());
+        CHECK_RET(meanFP32 != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto stdFP32 = l0op::Cast(std, DataType::DT_FLOAT, uniqueExecutor.get());
+        CHECK_RET(stdFP32 != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        addOut = l0op::StatelessRandomNormalV3(self, keyArr, counterArr, meanFP32, stdFP32, uniqueExecutor.get());
+    }
+    else{
         // 调用normal_算子kernel function(AI Cpu算子)
         auto stateLessOut = l0op::StatelessRandomNormalV2(self, keyArr, counterArr, algTensor, uniqueExecutor.get());
         CHECK_RET(stateLessOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -241,14 +250,6 @@ aclnnStatus CommonLogicGeneralNormal(
 
         // 调用add_算子kernel function(AI Core算子)
         addOut = l0op::Add(mulOutCast, meanCast, uniqueExecutor.get());
-    } else {
-        // 调用normal_算子kernel function(AI Core算子)
-        // V3 kernel 要求 mean/std 参数为 DT_FLOAT，与 InplaceNormal 保持一致
-        auto meanFP32 = l0op::Cast(mean, DataType::DT_FLOAT, uniqueExecutor.get());
-        CHECK_RET(meanFP32 != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto stdFP32 = l0op::Cast(std, DataType::DT_FLOAT, uniqueExecutor.get());
-        CHECK_RET(stdFP32 != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        addOut = l0op::StatelessRandomNormalV3(self, keyArr, counterArr, meanFP32, stdFP32, uniqueExecutor.get());
     }
     CHECK_RET(addOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
     // 固定写法，将计算结果转换成输出self的数据类型

@@ -175,7 +175,7 @@ static const aclTensor* normalDavidPath(
     FVector<int64_t, op::MAX_DIM_NUM> counter_vec = {0, offset};
     auto counterArr = executor->AllocIntArray(counter_vec.data(), counter_vec.size());
 
-    if (selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
+    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
         FVector<float> meanVector = {mean};
         auto meanTensorV3 = executor->ConvertToTensor(meanVector.data(), meanVector.size(), op::DataType::DT_FLOAT);
 
@@ -222,7 +222,7 @@ static const aclTensor* normalTensorDavidPath(
     auto resultAddOut = l0op::Add(normalOffsetU64, tmpTensor, executor);
     CHECK_RET(resultAddOut != nullptr, nullptr);
 
-    if (selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
+    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
         FVector<float> meanVector = {mean};
         auto meanTensorV3 = executor->ConvertToTensor(meanVector.data(), meanVector.size(), op::DataType::DT_FLOAT);
         FVector<float> stdVector = {std};
