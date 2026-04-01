@@ -25,8 +25,9 @@ const int64_t SHAPE_NDDMA_LEN = 5;
 constexpr int64_t BLOCK_BYTES = 32;
 
 struct AxisInf {
-    AxisInf(int64_t dim_, int64_t stride_, int64_t idx_)
+    AxisInf(int64_t dim_, int64_t stride_, int64_t idx_, gert::TilingContext* context)
     {
+        context_ = context;
         this->dim = dim_;
         this->stride = stride_;
         this->idx = idx_;
@@ -36,7 +37,7 @@ struct AxisInf {
 
     void PrintDebug()
     {
-        OP_LOGI("AxisInf", "(%ld, %ld, %u, 0x%x)", dim, stride, idx, code);
+        OP_LOGI(context_, "(%ld, %ld, %u, 0x%x)", dim, stride, idx, code);
         this->conter += 1;
     }
 
@@ -48,6 +49,7 @@ struct AxisInf {
         this->code = 1 << idx_;
     }
 
+    gert::TilingContext* context_ = nullptr;
     int64_t dim;
     int64_t stride;
     uint32_t idx;
@@ -64,8 +66,9 @@ void PrintAxisList(std::vector<AxisInf>& axisList)
 
 class AxisCutter {
 public:
-    AxisCutter(std::vector<AxisInf>& axisList_, int alignedFactor_)
+    AxisCutter(std::vector<AxisInf>& axisList_, int alignedFactor_, gert::TilingContext* context)
     {
+        context_ = context;
         this->initDimNums = axisList_.size();
         this->alignedFactor = alignedFactor_;
         for (uint32_t i = 0; i < this->initDimNums; i++) {
@@ -75,7 +78,7 @@ public:
                 int64_t alignedFinalDim =
                     (axisList_[i].dim + this->alignedFactor - 1) / this->alignedFactor * this->alignedFactor;
                 this->originFinalDim = axisList_[i].dim;
-                this->axisList.push_back(AxisInf(alignedFinalDim, axisList_[i].stride, axisList_[i].idx));
+                this->axisList.push_back(AxisInf(alignedFinalDim, axisList_[i].stride, axisList_[i].idx, context));
             }
         }
     }
@@ -86,6 +89,8 @@ public:
     AxisInf* GetCutAxis();
 
 public:
+    gert::TilingContext* context_ = nullptr;
+
     int conter{0};
     uint32_t initDimNums{0};
     int alignedFactor{0};
@@ -94,8 +99,8 @@ public:
     unsigned int cutSet{0};
     int cutIdx = -1;
     bool cutFinal{false};
-    AxisInf innerCutAxis = AxisInf(0, 0, 0);
-    AxisInf outerCutAxis = AxisInf(0, 0, 0);
+    AxisInf innerCutAxis = AxisInf(0, 0, 0, context_);
+    AxisInf outerCutAxis = AxisInf(0, 0, 0, context_);
     AxisInf* cutAxisPtr{NULL};
     std::vector<AxisInf> axisList;
 };
@@ -140,11 +145,11 @@ void AxisCutter::RemoveAxis(unsigned int setCode)
 
 void AxisCutter::PrintDebug()
 {
-    OP_LOGI("AxisCutter", "AxisList: ");
+    OP_LOGI(context_, "AxisList: ");
     PrintAxisList(this->axisList);
-    OP_LOGI("AxisCutter", "InnerCutAxis: ");
+    OP_LOGI(context_, "InnerCutAxis: ");
     this->innerCutAxis.PrintDebug();
-    OP_LOGI("AxisCutter", "OuterCutAxis: ");
+    OP_LOGI(context_, "OuterCutAxis: ");
     this->outerCutAxis.PrintDebug();
     this->conter += 1;
 }
@@ -156,32 +161,33 @@ AxisInf* AxisCutter::GetCutAxis()
 
 class DualCutAxisSeeker {
 public:
-    DualCutAxisSeeker(int64_t* shape, int64_t* strides, int dimNums_, int dtSize_)
+    DualCutAxisSeeker(int64_t* shape, int64_t* strides, int dimNums_, int dtSize_, gert::TilingContext* context)
     {
+        context_ = context;
         this->dtSize = dtSize_;
         if(dtSize_ <= 0) {
-            OP_LOGE("DualCutAxisSeeker", "the dtSize_ is less than or equal zero");
+            OP_LOGE(context_, "the dtSize_ is less than or equal zero");
             dtSize_ = 1;
         }
         this->alignedFactor = BLOCK_BYTES / dtSize_;
         this->dimNums = dimNums_;
         for (int i = 0; i < dimNums_; i++) {
-            this->outputAxis.push_back(AxisInf(shape[i], strides[i], i));
-            this->reorderAxis.push_back(AxisInf(shape[i], strides[i], i));
+            this->outputAxis.push_back(AxisInf(shape[i], strides[i], i, context));
+            this->reorderAxis.push_back(AxisInf(shape[i], strides[i], i, context));
         }
         std::stable_sort(this->reorderAxis.begin(), this->reorderAxis.end(), [](const AxisInf a, const AxisInf b) {
             return (a.stride == b.stride) ? a.dim > b.dim : (a.stride > b.stride);
         });
-        this->outputCutter = new AxisCutter(this->outputAxis, alignedFactor);
-        this->inputCutter = new AxisCutter(this->reorderAxis, alignedFactor);
+        this->outputCutter = new AxisCutter(this->outputAxis, alignedFactor, context);
+        this->inputCutter = new AxisCutter(this->reorderAxis, alignedFactor, context);
     }
 
     ~DualCutAxisSeeker()
     {
-        OP_LOGI("DualCutAxisSeeker", "Delete AxisCutter Start");
+        OP_LOGI(context_, "Delete AxisCutter Start");
         delete this->outputCutter;
         delete this->inputCutter;
-        OP_LOGI("DualCutAxisSeeker", "Delete AxisCutter End");
+        OP_LOGI(context_, "Delete AxisCutter End");
     }
 
     bool FindDualCutAxis(int ubSize, int bufferNum);
@@ -205,6 +211,8 @@ public:
     int ComputeOutputShape(AxisInf& axis);
 
 public:
+    gert::TilingContext* context_ = nullptr;
+
     std::vector<AxisInf> outputAxis;
     std::vector<AxisInf> reorderAxis;
     //  The gmAxis is for multi core loop
@@ -244,14 +252,14 @@ public:
 
 void DualCutAxisSeeker::PrintDebug()
 {
-    OP_LOGI("DualCutAxisSeeker", "OutputCutter:");
+    OP_LOGI(context_, "OutputCutter:");
     this->outputCutter->PrintDebug();
-    OP_LOGI("DualCutAxisSeeker", "InputCutter:");
+    OP_LOGI(context_, "InputCutter:");
     this->inputCutter->PrintDebug();
 
-    OP_LOGI("DualCutAxisSeeker", "OutputAxis:");
+    OP_LOGI(context_, "OutputAxis:");
     PrintAxisList(this->outputAxis);
-    OP_LOGI("DualCutAxisSeeker", "InputAxis:");
+    OP_LOGI(context_, "InputAxis:");
     PrintAxisList(this->reorderAxis);
     this->conter += 1;
 }
@@ -335,7 +343,7 @@ int DualCutAxisSeeker::ComputeOutputShape(AxisInf& axis)
 bool DualCutAxisSeeker::FindDualCutAxis(int ubSize, int bufferNum)
 {
     if(bufferNum == 0) {
-        OP_LOGE("FindDualCutAxis", "the bufferNum is equal zero");
+        OP_LOGE(context_, "the bufferNum is equal zero");
         bufferNum = 2;
     }
     int ubNum = ubSize / this->dtSize / bufferNum;
@@ -343,15 +351,14 @@ bool DualCutAxisSeeker::FindDualCutAxis(int ubSize, int bufferNum)
     unsigned int ubAxisSet = 0;
     unsigned int joinUbAxisSet = 0;
     if (this->outputAxis[dimNums - 1].dim <= alignedFactor) {
-        OP_LOGW("DualCutAxisSeeker::FindDualCutAxis", "Last dim is smaller than 32B, no need do dual cut!");
+        OP_LOGW(context_, "Last dim is smaller than 32B, no need do dual cut!");
         return false;
     }
-
     for (int findLoops = SHAPE_ARRAY_LEN; findLoops >= 0; findLoops--) {
         int64_t remainUB = this->ComputeRemainUB(ubNum, ubAxisSet);
         ubBound = std::floor(std::sqrt(remainUB));
         if (ubBound <= 0) {
-            OP_LOGI("DualCutAxisSeeker::FindDualCutAxis", "ubBound is invalid.");
+            OP_LOGI(context_, "ubBound is invalid.");
             break;
         }
         this->outputCutter->FindCutAxis(ubBound);
@@ -363,12 +370,12 @@ bool DualCutAxisSeeker::FindDualCutAxis(int ubSize, int bufferNum)
         if (commonUbAxisSet == 0) {
             unsigned int commonCutAxisSet = this->FindCommonCutAxis(this->outputCutter, this->inputCutter);
             if (commonCutAxisSet == 0) {
-                OP_LOGI("DualCutAxisSeeker::FindDualCutAxis", "Cut two axis.");
+                OP_LOGI(context_, "Cut two axis.");
                 break;
             } else {
                 int64_t currentJoinUbSize = this->ComputeSetAxisProd(joinUbAxisSet | ubAxisSet | commonCutAxisSet);
                 if (currentJoinUbSize >= ubNum) {
-                    OP_LOGI("DualCutAxisSeeker::FindDualCutAxis", "Cut one axis.");
+                    OP_LOGI(context_, "Cut one axis.");
                     break;
                 } else {
                     ubAxisSet = ubAxisSet | commonCutAxisSet;
@@ -382,6 +389,7 @@ bool DualCutAxisSeeker::FindDualCutAxis(int ubSize, int bufferNum)
     }
     ubAxisSet = ubAxisSet | joinUbAxisSet;
     int64_t remainNums = this->ComputeRemainUB(ubNum, ubAxisSet);
+    OP_LOGD(context_, "remainNums = %ld", remainNums);
     return this->CutAxis(ubAxisSet, remainNums);
 }
 
@@ -392,11 +400,13 @@ bool DualCutAxisSeeker::CutAxis(unsigned int ubAxisSet, int64_t remainNums)
 
     bool successCut = true;
     if (this->outputCutter->cutSet != this->inputCutter->cutSet) {
+        OP_LOGD(context_, "CutTwoAxis");
         successCut = this->CutTwoAxis(ubAxisSet, remainNums, innerAxis, outerAxis);
     } else {
+        OP_LOGD(context_, "CutOneAxis");
         successCut = this->CutOneAxis(ubAxisSet, remainNums, innerAxis, outerAxis);
     }
-    OP_CHECK_IF(!successCut, OP_LOGW("DualCutAxisSeeker::CutAxis", "cutting failed, back to Sole Cut."), return false);
+    OP_CHECK_IF(!successCut, OP_LOGW(context_, "cutting failed, back to Sole Cut."), return false);
 
     this->cutAxisNums = innerAxis.size();
 
@@ -409,7 +419,7 @@ bool DualCutAxisSeeker::CutAxis(unsigned int ubAxisSet, int64_t remainNums)
         }
     }
 
-    // move big stride axit into gm if more than 5 axis in ub
+    // move big stride axis into gm if more than 5 axis in ub
     if (this->ubAxis.size() + innerAxis.size() > SHAPE_NDDMA_LEN) {
         std::sort(this->ubAxis.begin(), this->ubAxis.end(), [](const AxisInf a, const AxisInf b) {
             return a.stride == b.stride ? a.dim > b.dim : a.stride < b.stride;
@@ -443,11 +453,11 @@ bool DualCutAxisSeeker::CutAxis(unsigned int ubAxisSet, int64_t remainNums)
 bool DualCutAxisSeeker::CutTwoAxis(
     unsigned int ubAxisSet, int64_t remainNums, std::vector<AxisInf>& innerAxis, std::vector<AxisInf>& outerAxis)
 {
-    OP_LOGI("DualCutAxisSeeker::CutTwoAxis", "cutTwo ubAxisSet: 0x%x", ubAxisSet);
-    AxisInf outputCutOuterAixs(0, 0, 0);
-    AxisInf outputCutInnerAixs(0, 0, 0);
-    AxisInf inputCutOuterAixs(0, 0, 0);
-    AxisInf inputCutInnerAixs(0, 0, 0);
+    OP_LOGI(context_, "cutTwo ubAxisSet: 0x%x", ubAxisSet);
+    AxisInf outputCutOuterAixs(0, 0, 0, context_);
+    AxisInf outputCutInnerAixs(0, 0, 0, context_);
+    AxisInf inputCutOuterAixs(0, 0, 0, context_);
+    AxisInf inputCutInnerAixs(0, 0, 0, context_);
 
     outputCutOuterAixs.ResetInf(
         this->outputCutter->outerCutAxis.dim, this->outputCutter->outerCutAxis.stride,
@@ -469,7 +479,7 @@ bool DualCutAxisSeeker::CutTwoAxis(
                                         (inputCutInnerAixs.dim / alignedFactor * alignedFactor);
             OP_CHECK_IF(
                 (inputCutInnerAixs.dim == 0),
-                OP_LOGW("DualCutAxisSeeker::CutOneAxis", "inputCutInnerAixs.dim get 0, back to Sole Cut."),
+                OP_LOGW(context_, "inputCutInnerAixs.dim get 0, back to Sole Cut."),
                 return false);
             outputCutInnerAixs.dim = remainNums / inputCutInnerAixs.dim; // If get zero back to single cut
         } else if (this->outputCutter->cutFinal) {
@@ -479,7 +489,7 @@ bool DualCutAxisSeeker::CutTwoAxis(
                     (outputCutInnerAixs.dim / alignedFactor * alignedFactor);
             OP_CHECK_IF(
                 (outputCutInnerAixs.dim == 0),
-                OP_LOGW("DualCutAxisSeeker::CutOneAxis", "outputCutInnerAixs.dim get 0, back to Sole Cut."),
+                OP_LOGW(context_, "outputCutInnerAixs.dim get 0, back to Sole Cut."),
                 return false);
             inputCutInnerAixs.dim = remainNums / outputCutInnerAixs.dim; // If get zero back to single cut
         }
@@ -491,29 +501,32 @@ bool DualCutAxisSeeker::CutTwoAxis(
         outputCutOuterAixs.stride = outputCutInnerAixs.dim * outputCutInnerAixs.stride;
     }
 
+    OP_LOGD(context_, "CutTwoAxis success");
     outerAxis.push_back(outputCutOuterAixs);
     outerAxis.push_back(inputCutOuterAixs);
     innerAxis.push_back(outputCutInnerAixs);
     innerAxis.push_back(inputCutInnerAixs);
+
     return true;
 }
 
 bool DualCutAxisSeeker::CutOneAxis(
     unsigned int ubAxisSet, int64_t remainNums, std::vector<AxisInf>& innerAxis, std::vector<AxisInf>& outerAxis)
 {
-    OP_LOGI("DualCutAxisSeeker::CutOneAxis", "cutOne ubAxisSet: 0x%x", ubAxisSet);
+    OP_LOGI(context_, "cutOne ubAxisSet: 0x%x", ubAxisSet);
     int64_t innerDim = (this->inputCutter->cutFinal) ? (remainNums / alignedFactor * alignedFactor) : remainNums;
+    
     // If zero, throw bad cut.
     OP_CHECK_IF(
-        (innerDim == 0), OP_LOGW("DualCutAxisSeeker::CutOneAxis", "innerDim get 0, back to Sole Cut."), return false);
+        (innerDim == 0), OP_LOGW(context_, "innerDim get 0, back to Sole Cut."), return false);
     int64_t innerStride = this->inputCutter->cutAxisPtr->stride;
     int64_t axisIdx = this->inputCutter->cutAxisPtr->idx;
 
     int64_t outerDim = (this->inputCutter->cutAxisPtr->dim + innerDim - 1) / innerDim;
     int64_t outerStride = innerStride * innerDim;
 
-    AxisInf cutInnerAixs(innerDim, innerStride, axisIdx);
-    AxisInf cutOuterAixs(outerDim, outerStride, axisIdx);
+    AxisInf cutInnerAixs(innerDim, innerStride, axisIdx, context_);
+    AxisInf cutOuterAixs(outerDim, outerStride, axisIdx, context_);
 
     outerAxis.push_back(cutOuterAixs);
     innerAxis.push_back(cutInnerAixs);

@@ -42,7 +42,7 @@ extern "C" __global__ __aicore__ void as_strided(GM_ADDR input, GM_ADDR outShape
     GM_ADDR storageOffset, GM_ADDR output, GM_ADDR workspace, GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    REGISTER_TILING_DEFAULT(AsStridedTilingData);
+    REGISTER_NONE_TILING;
     if (TILING_KEY_IS(AS_STRIDED_B8)) {
         GET_TILING_DATA_WITH_STRUCT(AsStridedTilingData, tilingData, tiling);
         KernelAsStrided<int8_t> op;
@@ -152,5 +152,6 @@ extern "C" __global__ __aicore__ void as_strided(GM_ADDR input, GM_ADDR outShape
             op.Process();
         }
     } else if (TILING_KEY_IS(EMPTY_TENSOR_KEY)){
+        GET_TILING_DATA_WITH_STRUCT(AsStridedEmptyTilingData, tilingData, tiling);
     }
 }

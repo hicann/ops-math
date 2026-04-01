@@ -74,6 +74,7 @@ private:
     uint32_t sizeArr_[TILING_ARRAY_LEN];
 
     uint32_t realInUbSize_ = 0;
+    uint32_t realInDataLen_ = 0;
     uint32_t dimNum_ = 10;
     uint32_t tilingAxisIdx_ = 9;
     uint32_t blockInnerAxisFactor_ = 0;
@@ -116,6 +117,7 @@ __aicore__ inline void KernelAsStridedGather<T>::Init(GM_ADDR input, GM_ADDR out
     CopyArray(tdPtr_->idxStrideArr, ubBatchArr_, TILING_ARRAY_LEN);
     CopyArray(tdPtr_->sizeArr, sizeArr_, TILING_ARRAY_LEN);
     realInUbSize_ = tdPtr_->inUbSize;
+    realInDataLen_ = tdPtr_->inDataLen;
     dimNum_ = tdPtr_->outDimNum;
     tilingAxisIdx_ =  tdPtr_->tilingAxisIdx;
     blockInnerAxisFactor_ = tdPtr_->mainBlockUbParam.innerAxisFactor;
@@ -140,7 +142,7 @@ __aicore__ inline void KernelAsStridedGather<T>::Init(GM_ADDR input, GM_ADDR out
     inputGM_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(input) + storageOffset_);
     outputGM_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(output));
 
-    pipe_.InitBuffer(inQue_, 1, realInUbSize_ * sizeof(T));
+    pipe_.InitBuffer(inQue_, 1, realInUbSize_);
     pipe_.InitBuffer(outQue_, bufferCnt_, blockUbFactor_ * sizeof(T));
     pipe_.InitBuffer(indexBuf_, blockUbFactor_ * sizeof(IdxType_));
 
@@ -280,7 +282,7 @@ __aicore__ inline void KernelAsStridedGather<T>::AsCopyGM2Ub()
 {
     DataCopyExtParams copyInParams;
     copyInParams.blockCount = 1;
-    copyInParams.blockLen = realInUbSize_ * sizeof(T);
+    copyInParams.blockLen = realInDataLen_ * sizeof(T);
     copyInParams.srcStride = 0;
     copyInParams.dstStride = 0;
     DataCopyPadExtParams<T> copyInPadParams {false, 0, 0, 0};

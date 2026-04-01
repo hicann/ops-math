@@ -62,6 +62,10 @@ struct AsStridedSimtTilingData {
     uint32_t outSizeStride[TILING_ARRAY_LEN] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1}; // 输出shape每维相邻元素步长
 };
 
+struct AsStridedEmptyTilingData {
+    uint32_t blockNum{0};
+};
+
 struct AsStridedZeroStrideTilingData {
     uint32_t blockNum{0};
     uint32_t ubSizePlatForm{0};
@@ -87,7 +91,8 @@ struct AsStridedWithGatherTilingData {
     uint32_t blockNum{0};
     uint32_t mainBlockCnt{0};
     uint32_t outDimNum{0};
-    uint32_t inUbSize = 0;
+    uint32_t inUbSize = 0;         // x need ub size, B
+    uint32_t inDataLen = 0;        // move x len, element
     uint32_t blockAxisIdx{0};
     uint32_t coreCurAxisFactor{0};         // 左→右到当前轴，轴的前缀积
     uint32_t coreInnerAxisFactor{0};       // 核切分轴的内部轴
@@ -155,6 +160,7 @@ struct AsStridedUbGatherParam {
     uint64_t ubSizePlatForm = 0;
     uint32_t outDimNum = 0;
     uint32_t inUbSize = 0;
+    uint32_t inDataLen = 0;
 
     uint32_t blockAxisIdx = 0;
     uint32_t coreCurAxisFactor = 0;         // 左→右到当前轴，轴的前缀积

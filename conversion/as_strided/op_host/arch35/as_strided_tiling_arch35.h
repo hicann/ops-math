@@ -42,27 +42,31 @@ struct AsStridedRunInfo {
 class AsStridedTilingClass
 {
 public:
-    ge::graphStatus TilingForAsStridedOfAsc(gert::TilingContext *context, uint32_t maxCoreNum, uint32_t ubSizePlatform,
+    AsStridedTilingClass(gert::TilingContext *context) : context_ (context) {}
+    ge::graphStatus TilingForAsStridedOfAsc(uint32_t maxCoreNum, uint32_t ubSizePlatform,
                                         AsStridedRunInfo& runInfo, int64_t storageOffset);
-    ge::graphStatus NDDMAForAsStrided(gert::TilingContext* context, AsStridedTilingParam& tilingParam, gert::Shape outSize,
+    ge::graphStatus NDDMAForAsStrided(AsStridedTilingParam& tilingParam, gert::Shape outSize,
                                 gert::Shape outStride, AsStridedTilingData& tiling);
-    ge::graphStatus SingleCutOfNDDMAForAsStrided(gert::TilingContext* context, AsStridedTilingParam& tilingParam, gert::Shape outSize, 
+    ge::graphStatus SingleCutOfNDDMAForAsStrided(AsStridedTilingParam& tilingParam, gert::Shape outSize, 
                                 gert::Shape outStride, AsStridedTilingData& tiling);
-    ge::graphStatus SetTilingData(gert::TilingContext* context, AsStridedTilingData& tiling,
+    ge::graphStatus SetTilingData(AsStridedTilingData& tiling,
                                     AsStridedTilingParam& tilingParam);
-    void NoTilingMergeAxis(gert::TilingContext* context, AsStridedTilingData& tiling, AsStridedTilingParam& tilingParam, gert::Shape outSize);
-    void MergeAxisAfterTiling([[maybe_unused]] const AsStridedTilingData& tiling, AsStridedTilingParam& tilingParam, gert::Shape outSize, gert::TilingContext* context);
-    ge::graphStatus AsStridedSetTilingData(gert::TilingContext* context, AsStridedTilingData& tilingData);
-    void SetZeroStrideTilingData(gert::TilingContext* context, AsStridedTilingParam& tilingParam);
-    void SetSimtTilingData(gert::TilingContext* context, AsStridedTilingParam& tilingParam);
-    void SetWithGatherTilingData(gert::TilingContext* context, AsStridedUbGatherParam& ubGatherParam);
+    void NoTilingMergeAxis(AsStridedTilingData& tiling, AsStridedTilingParam& tilingParam, gert::Shape outSize);
+    void MergeAxisAfterTiling([[maybe_unused]] const AsStridedTilingData& tiling, AsStridedTilingParam& tilingParam, gert::Shape outSize);
+    ge::graphStatus AsStridedSetTilingData(AsStridedTilingData& tilingData);
+    void SetZeroStrideTilingData(AsStridedTilingParam& tilingParam);
+    void SetSimtTilingData(AsStridedTilingParam& tilingParam);
+    void SetWithGatherTilingData(AsStridedUbGatherParam& ubGatherParam);
 
 private:
+    gert::TilingContext* context_ = nullptr;
+    
     // 各模板tilingData
     AsStridedTilingData* tilingData_{nullptr};
     AsStridedSimtTilingData* simtTilingData_{nullptr};
     AsStridedZeroStrideTilingData* zeroStrideTilingData_{nullptr};
     AsStridedWithGatherTilingData* gatherTilingData_{nullptr};
+    AsStridedEmptyTilingData* emptyTilingData_{nullptr};
 };
 
 } // namespace optiling
