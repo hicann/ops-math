@@ -43,7 +43,7 @@ REG_OP(BatchToSpaceND)
     .INPUT(x, TensorType({BasicType(), DT_BOOL}))
     .INPUT(block_shape, TensorType::IndexNumberType())
     .INPUT(crops, TensorType::IndexNumberType())
-    .OUTPUT(y, TensorType::BasicType())
+    .OUTPUT(y, TensorType({BasicType(), DT_BOOL}))
     .OP_END_FACTORY_REG(BatchToSpaceND)
 } // namespace ge
 

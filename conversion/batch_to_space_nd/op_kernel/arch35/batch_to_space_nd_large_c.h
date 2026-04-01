@@ -46,12 +46,12 @@ private:
     uint64_t originC_, alignC_;
 
     // tileQueryNums矩阵维度 totalCount_/N',切H时用该矩阵来索引。
-    int32_t tileQueryNumsDim_{0};
+    uint32_t tileQueryNumsDim_{0};
     // 整块切分内部切分矩阵维度
-    int32_t innerTileNumsDim_{0};
-
+    uint32_t innerTileNumsDim_{0};
     uint32_t headTilesDim_{0};
     uint32_t tailTilesDim_{0};
+    uint32_t ubRealFactorTotal_{0};
 
     uint32_t alignedCLength_{0};
 
@@ -61,13 +61,24 @@ private:
     uint64_t inStride_[MAX_INPUT_RANK] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
     uint64_t outStride_[MAX_INPUT_RANK] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
     uint64_t instrideBS[MAX_INPUT_RANK] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-    uint32_t cropHtop_{0};
-    uint32_t cropHbottom_{0};
-    uint32_t BSH_{0};
-    uint32_t inH_{0};
-    uint32_t headLenH_{0}; 
-    uint32_t middleLenH_{0};
-    uint32_t tailLenH_{0};
+    uint64_t cropHtop_{0};
+    uint64_t cropHbottom_{0};
+    uint64_t BSH_{0};
+    uint64_t outH_{0};
+    uint64_t headLenH_{0};
+    uint64_t middleLenH_{0};
+    uint64_t tailLenH_{0};
+
+    uint64_t cropLeft_{0};
+    uint64_t cropRight_{0};
+    uint64_t BSW_{0};
+    uint64_t outW_{0};
+    uint64_t inW_{0};
+    uint64_t inC_{0};
+    uint64_t leftCopyLen_{0};
+    uint64_t middleCopyLen_{0};
+    uint64_t rightCopyLen_{0};
+
     constexpr static uint32_t BUFFER_NUM = 2;
     constexpr static uint32_t UB_BLOCK = Ops::Base::GetUbBlockSize();
     constexpr static uint32_t BLK_ELEMS = UB_BLOCK / sizeof(T);
@@ -101,21 +112,39 @@ public:
         }
         tileQueryNumsDim_ = totalCount_ / axisPreProduct_;
         if (blockShapeSize_ >= 2) {
+            // H 轴
             cropHtop_ = tdPtr_->input.crops[blockShapeSize_ - 2][0];
             cropHbottom_ = tdPtr_->input.crops[blockShapeSize_ - 2][1];
             BSH_ = tdPtr_->input.blockShape[blockShapeSize_ - 2];
-            inH_ = tdPtr_->input.inShape[rank_ - 3];
-            if (inH_ == 1) {
-                headTilesDim_ = 0;
-                tailTilesDim_ = 0;
-                middleLenH_ = tdPtr_->input.outShape[rank_ - 3];
+            outH_ = tdPtr_->input.outShape[rank_ - 3];
+
+            CalcBoundaryBlock(cropHtop_, cropHbottom_, BSH_, outH_, headLenH_, tailLenH_, middleLenH_);
+
+            headTilesDim_ = Ops::Base::CeilDiv(headLenH_, static_cast<uint64_t>(ubFactor_));
+            tailTilesDim_ = Ops::Base::CeilDiv(tailLenH_, static_cast<uint64_t>(ubFactor_));
+
+            if (middleLenH_ > 0) {
+                if (ubFactor_ < BSH_) {
+                    innerTileNumsDim_ = Ops::Base::CeilDiv(BSH_, static_cast<uint64_t>(ubFactor_));
+                    ubRealFactorTotal_ = BSH_;
+                } else {
+                    innerTileNumsDim_ = tileQueryNumsDim_ - headTilesDim_ - tailTilesDim_;
+                    ubRealFactorTotal_ = outH_ - headLenH_ % ubFactor_ - tailLenH_ % ubFactor_;
+                }
             } else {
-                headLenH_ = remainToBoundary(cropHtop_, BSH_);
-                tailLenH_ = remainToBoundary(cropHbottom_, BSH_);
-                middleLenH_ = tdPtr_->input.outShape[rank_ - 3] - headLenH_ % ubFactor_ - tailLenH_ % ubFactor_;
-                headTilesDim_ = Ops::Base::CeilDiv(headLenH_, ubFactor_);
-                tailTilesDim_ = Ops::Base::CeilDiv(tailLenH_, ubFactor_);
+                innerTileNumsDim_ = 0;
+                ubRealFactorTotal_ = 0;
             }
+
+            // ===================== W 轴 初始化 =====================
+            cropLeft_ = tdPtr_->input.crops[blockShapeSize_ - 1][0];
+            cropRight_ = tdPtr_->input.crops[blockShapeSize_ - 1][1];
+            BSW_ = tdPtr_->input.blockShape[blockShapeSize_ - 1];
+            outW_ = tdPtr_->input.outShape[rank_ - 2];
+            inW_ = tdPtr_->input.inShape[rank_ - 2];
+            inC_ = tdPtr_->input.inShape[rank_ - 1];
+
+            CalcBoundaryBlock(cropLeft_, cropRight_, BSW_, outW_, leftCopyLen_, rightCopyLen_, middleCopyLen_);
         }
     }
 
@@ -451,7 +480,7 @@ private:
             wIndex -= headLoop;
             if (centerMode != 0) {
                 if (centerBSLoop > 1) {
-                    if ((wIndex + 1) % centerBSLoop == 0) {
+                    if ((wIndex + 1) % (centerLoop / centerBSLoop) == 0) {
                         ubAxisInCopyNum = centerMode;
                         return;
                     }
@@ -472,15 +501,8 @@ private:
     __aicore__ inline void DoCopyInAxisH(
         const LocalTensor<T>& src, uint64_t* curOutIndex, uint64_t* inIndex, uint32_t& ubAxisInCopyNum, uint32_t idx)
     {
-        uint32_t curUbFactor = 0;
-        if (ubFactor_ < BSH_ && middleLenH_ >= BSH_) {
-            innerTileNumsDim_ = Ops::Base::CeilDiv(BSH_, ubFactor_);
-            curUbFactor = getTileNumByIdx(idx, tileQueryNumsDim_, innerTileNumsDim_, headLenH_, tailLenH_, BSH_);
-        } else {
-            innerTileNumsDim_ = safeSubU32(tileQueryNumsDim_, headTilesDim_ + tailTilesDim_);
-            curUbFactor = getTileNumByIdx(idx, tileQueryNumsDim_, innerTileNumsDim_, headLenH_, tailLenH_, middleLenH_);
-        }
-
+        uint32_t curUbFactor =
+            getTileNumByIdx(idx, tileQueryNumsDim_, innerTileNumsDim_, headLenH_, tailLenH_, ubRealFactorTotal_);
         ubAxisInCopyNum = curUbFactor;
         DoCopyInAxisHForTile(src, curOutIndex, inIndex, curUbFactor);
     }
@@ -491,51 +513,59 @@ private:
         if (curUbFactor == 0)
             return;
 
-        // 获取维度参数
-        uint32_t cropLeft = tdPtr_->input.crops[blockShapeSize_ - 1][0];
-        uint32_t cropRight = tdPtr_->input.crops[blockShapeSize_ - 1][1];
-        uint32_t inW = tdPtr_->input.inShape[rank_ - 2];
-        uint32_t inC = tdPtr_->input.inShape[rank_ - 1];
-        uint32_t outW = tdPtr_->input.outShape[rank_ - 2];
-        uint32_t BSW = tdPtr_->input.blockShape[blockShapeSize_ - 1];
-        uint32_t instrideBSW = instrideBS[rank_ - 2];
-        uint32_t instrideBSH_ = instrideBS[rank_ - 3];
+        uint64_t instrideBSW = instrideBS[rank_ - 2];
+        uint64_t instrideBSH = instrideBS[rank_ - 3];
 
-        uint32_t leftCopyLen = 0, rightCopyLen = 0, middleCopyLen = 0;
-        if (inW == 1) {
-            middleCopyLen = BSW - cropLeft - cropRight;
-        } else {
-            leftCopyLen   = (cropLeft == 0) ? 0 : remainToBoundary(cropLeft, BSW);
-            rightCopyLen  = (cropRight == 0) ? 0 : remainToBoundary(cropRight, BSW);
-            middleCopyLen = safeSubU32(outW, leftCopyLen + rightCopyLen);
-        }
+        uint64_t leftCopyLen = leftCopyLen_;
+        uint64_t rightCopyLen = rightCopyLen_;
+        uint64_t middleCopyLen = middleCopyLen_;
 
         uint32_t ubAddr = 0;
 
         // 左残块拷贝
         if (leftCopyLen > 0) {
             CopySegment(
-                src, outIndex, inIndex, leftCopyLen, ubAddr, curUbFactor, inW, inC, outW, BSW, instrideBSW, instrideBSH_,
+                src, outIndex, inIndex, leftCopyLen, ubAddr, curUbFactor, inW_, inC_, outW_, BSW_, instrideBSW, instrideBSH,
                 true, true);
         }
 
         // 中间连续段拷贝
         if (middleCopyLen > 0) {
             CopySegment(
-                src, outIndex, inIndex, middleCopyLen, ubAddr, curUbFactor, inW, inC, outW, BSW, instrideBSW,
-                instrideBSH_, false, true);
+                src, outIndex, inIndex, middleCopyLen, ubAddr, curUbFactor, inW_, inC_, outW_, BSW_, instrideBSW,
+                instrideBSH, false, true);
         }
 
         // 右残块拷贝
         if (rightCopyLen > 0) {
             CopySegment(
-                src, outIndex, inIndex, rightCopyLen, ubAddr, curUbFactor, inW, inC, outW, BSW, instrideBSW,
-                instrideBSH_, true, false);
+                src, outIndex, inIndex, rightCopyLen, ubAddr, curUbFactor, inW_, inC_, outW_, BSW_, instrideBSW,
+                instrideBSH, true, false);
         }
 
-        // 更新索引
         outIndex[rank_ - 2] = 0;
         updateOutIndexByCarry(outIndex, curUbFactor, rank_ - 3);
+    }
+
+    __aicore__ inline void CalcBoundaryBlock(
+        uint64_t cropStart, uint64_t cropEnd, uint64_t blockSize, uint64_t outLen, uint64_t& outStartLen,
+        uint64_t& outEndLen, uint64_t& outMiddleLen)
+    {
+        outStartLen = remainToBoundary(cropStart, blockSize);
+        outEndLen = remainToBoundary(cropEnd, blockSize);
+
+        if (outStartLen + outEndLen >= outLen) {
+            if (cropStart % blockSize != 0) {
+                outStartLen = outLen;
+                outEndLen = 0;
+            } else {
+                outStartLen = 0;
+                outEndLen = outLen;
+            }
+            outMiddleLen = 0;
+        } else {
+            outMiddleLen = safeSubU64(outLen, outStartLen + outEndLen);
+        }
     }
 
     __aicore__ inline uint64_t getTileNumPrefixSum(uint32_t m)
@@ -547,34 +577,15 @@ private:
         if (P == 0)
             return 0;
 
-        uint32_t innerTileNumsDim = 0;
-        uint32_t ubRealFactorTotal = 0;
-
-        if (ubFactor_ < BSH_ && middleLenH_ >= BSH_) {
-            innerTileNumsDim = Ops::Base::CeilDiv(BSH_, ubFactor_);
-            ubRealFactorTotal = BSH_;
-        } else {
-            uint32_t ht = headTilesDim_;
-            uint32_t tt = tailTilesDim_;
-            innerTileNumsDim = (P >= ht + tt) ? (P - ht - tt) : 0;
-            ubRealFactorTotal = middleLenH_;
-        }
-
-        // 每周期总和：必须按 getTileNumByIdx 实际累加（保证一致）
-        uint64_t periodTotal = 0;
-        for (uint32_t i = 0; i < P; ++i) {
-            periodTotal += getTileNumByIdx(i, P, innerTileNumsDim, headLenH_, tailLenH_, ubRealFactorTotal);
-        }
-
         uint32_t k = m / P;
         uint32_t r = m % P;
 
         uint64_t rem = 0;
         for (uint32_t i = 0; i < r; ++i) {
-            rem += getTileNumByIdx(i, P, innerTileNumsDim, headLenH_, tailLenH_, ubRealFactorTotal);
+            rem += getTileNumByIdx(i, P, innerTileNumsDim_, headLenH_, tailLenH_, ubRealFactorTotal_);
         }
 
-        return (uint64_t)k * periodTotal + rem;
+        return (uint64_t)k * outH_ + rem;
     }
 
     __aicore__ inline uint32_t getTileNumByInnerModIdx(
@@ -618,7 +629,7 @@ private:
     }
 
     __aicore__ inline uint32_t getTileNumByIdx(
-        uint32_t idx, uint32_t tileQueryNumsDim, uint32_t innerTileNumsDim, uint32_t headLenH_, uint32_t tailLenH_,
+        uint32_t idx, uint32_t tileQueryNumsDim, uint32_t innerTileNumsDim, uint32_t headLen, uint32_t tailLen,
         uint32_t ubRealFactorTotal)
     {
         if (tileQueryNumsDim == 0) {
@@ -631,7 +642,7 @@ private:
         if (modIdx < headTilesDim_) {
             return getTileNumByInnerModIdx(
                 modIdx, // 0,1,2...
-                headLenH_, ubFactor_, true);
+                headLen, ubFactor_, true);
         }
 
         // 尾部区域：保持原先方向 smallFirst=false
@@ -639,7 +650,7 @@ private:
             uint32_t tailIdx = modIdx - (tileQueryNumsDim - tailTilesDim_);
             return getTileNumByInnerModIdx(
                 tailIdx, // 0,1,2...
-                tailLenH_, ubFactor_, false);
+                tailLen, ubFactor_, false);
         }
 
         // 中间区域：smallFirst=false
@@ -653,14 +664,14 @@ private:
         return getTileNumByInnerModIdx(innerModIdx, ubRealFactorTotal, ubFactor_, false);
     }
 
-    __aicore__ inline uint32_t remainToBoundary(uint32_t crop, uint32_t block)
+    __aicore__ inline uint64_t remainToBoundary(uint64_t crop, uint64_t block)
     {
         if (block == 0)
             return 0;
         return (block - (crop % block)) % block;
     }
 
-    __aicore__ inline uint32_t safeSubU32(uint32_t a, uint32_t b)
+    __aicore__ inline uint64_t safeSubU64(uint64_t a, uint64_t b)
     {
         return (a >= b) ? (a - b) : 0;
     }
@@ -694,7 +705,7 @@ private:
         for (int32_t d = (int32_t)axis; d > 0; --d) {
             uint64_t dim = tdPtr_->input.outShape[d];
             if (dim == 0)
-                return false; // 防御
+                return false;
 
             uint64_t carry = outIndex[d] / dim;
             outIndex[d] = outIndex[d] % dim;
@@ -709,13 +720,10 @@ private:
         return true;
     }
 
-    // 辅助函数：执行单段拷贝
     __aicore__ inline void CopySegment(
-        const LocalTensor<T>& src, uint64_t* outIndex, uint64_t* inIndex, uint32_t copyLen, uint32_t& ubAddr,
-        uint32_t curUbFactor, uint32_t inW, uint32_t inC, uint32_t outW, uint32_t BSW, uint32_t instrideBSW,
-        uint32_t instrideBSH_,
-        bool isResidual, // true: 残块(left/right), false: 中间连续段
-        bool updateAddr) // true: 更新ubAddr和outIndex, false: 不更新(右残块)
+        const LocalTensor<T>& src, uint64_t* outIndex, uint64_t* inIndex, uint64_t copyLen, uint32_t& ubAddr,
+        uint32_t curUbFactor, uint64_t inW, uint64_t inC, uint64_t outW, uint64_t BSW, uint64_t instrideBSW,
+        uint64_t instrideBSH, bool isResidual, bool updateAddr)
     {
         Conver2InIndex(outIndex, inIndex);
 
@@ -749,14 +757,12 @@ private:
 
         // 设置loop2参数
         uint32_t outerLoop = 1;
+        loopParams.loop2SrcStride = instrideBSH * sizeof(T);
+        loopParams.loop2DstStride = alignedCLength_ * outW * sizeof(T);
         if (curUbFactor <= BSH_) {
             loopParams.loop2Size = curUbFactor;
-            loopParams.loop2SrcStride = instrideBSH_ * sizeof(T);
-            loopParams.loop2DstStride = alignedCLength_ * outW * sizeof(T);
         } else {
             loopParams.loop2Size = BSH_;
-            loopParams.loop2SrcStride = instrideBSH_ * sizeof(T);
-            loopParams.loop2DstStride = alignedCLength_ * outW * sizeof(T);
             outerLoop = curUbFactor / BSH_;
         }
 
@@ -784,26 +790,20 @@ private:
             outAddr += outIndex[i] * outStride_[i];
         }
         DataCopyExtParams copyOutParams;
+        copyOutParams.srcStride = 0;
+        copyOutParams.dstStride = 0;
         if (ubAxis_ == rank_ - 1) {
             copyOutParams.blockCount = 1;
             copyOutParams.blockLen = ubAxisOutCopyNum * outStride_[ubAxis_] * sizeof(T);
-            copyOutParams.srcStride = 0;
-            copyOutParams.dstStride = 0;
         } else if (ubAxis_ == rank_ - 2) {
             copyOutParams.blockCount = ubAxisOutCopyNum;
             copyOutParams.blockLen = originC_ * sizeof(T);
-            copyOutParams.srcStride = 0;
-            copyOutParams.dstStride = 0;
         } else if (ubAxis_ == rank_ - 3 && rank_ == 3) {
             copyOutParams.blockCount = ubAxisOutCopyNum * tdPtr_->input.outShape[ubAxis_ + 1]; // N-Axis*L
             copyOutParams.blockLen = originC_ * sizeof(T);                                     // C
-            copyOutParams.srcStride = 0;
-            copyOutParams.dstStride = 0;
-        } else if (ubAxis_ == rank_ - 3 && rank_ >= 4) { // H轴
+        } else if (ubAxis_ == rank_ - 3 && rank_ >= 4) {                                       // H轴
             copyOutParams.blockCount = ubAxisOutCopyNum * tdPtr_->input.outShape[rank_ - 2];
             copyOutParams.blockLen = tdPtr_->input.outShape[rank_ - 1] * sizeof(T);
-            copyOutParams.srcStride = 0;
-            copyOutParams.dstStride = 0;
         }
         DataCopyPad(outputGm_[outAddr], src[0], copyOutParams);
     }
