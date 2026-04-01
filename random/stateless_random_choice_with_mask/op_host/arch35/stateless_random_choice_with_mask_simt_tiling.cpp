@@ -99,6 +99,7 @@ ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::ComputeCoreNum()
         normalCoreProNum_ = Ops::Base::CeilDiv(inputSize_, blockNum_);
         return ge::GRAPH_SUCCESS;
     }
+    blockNum_ = !blockNum_ ? 1 : blockNum_;
     normalCoreProNum_ = THREAD_NUM;
     return ge::GRAPH_SUCCESS;
 }
@@ -163,7 +164,6 @@ ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::GetWorkspaceSize()
 
 ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::PostTiling()
 {
-    blockNum_ = !blockNum_ ? 1 : blockNum_;
     context_->SetBlockDim(blockNum_);
     context_->SetTilingKey(GetTilingKey());
     context_->SetScheduleMode(1);
