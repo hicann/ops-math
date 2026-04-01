@@ -16,7 +16,7 @@
 
 ## 功能说明
 
-- 接口功能：生成一个等间隔数值序列。创建一个大小为steps的1维向量，其值从start起始到end结束（包含）线性均匀分布。
+- 接口功能：生成一个等间隔数值序列。创建一个大小为steps的一维向量，其值从start起始到end结束（包含）线性均匀分布。
 
 - 计算公式：
 
@@ -36,23 +36,95 @@ $$
 
 - **参数说明：**
 
-  * start(aclScalar *，计算输入)：获取值的范围的起始位置，公式中的start，Host侧的aclScalar。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：FLOAT16、BFLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64，BOOL
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT32
-
-  * end(aclScalar *，计算输入)：获取值的范围的结束位置，公式中的end，Host侧的aclScalar。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：FLOAT16、BFLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64，BOOL
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT32
-
-  * steps(int64_t，计算输入)：获取值的步长，数据类型支持INT64，需要满足steps大于等于0。
-
-  * out(aclTensor *，计算输出)：指定的输出Tensor，包含从start起始到end结束（包含）线性均匀分布的值，公式中的out，Device侧的aclTensor，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，且out的元素个数需要与steps一致。不支持空Tensor。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：FLOAT16、BFLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT32
-
-  * workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
-
-  * executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>start（aclScalar*）</td>
+      <td>输入</td>
+      <td>公式中的start。</td>
+      <td>-</td>
+      <td>
+        <term> INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、BFLOAT16</term>
+      </td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>end（aclScalar*）</td>
+      <td>输入</td>
+      <td>公式中的end。</td>
+      <td>-</td>
+      <td>
+        <term> INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、BFLOAT16</term>
+      </td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>steps（int64_t）</td>
+      <td>输入</td>
+      <td>生成元素的个数。</td>
+      <td>需要满足steps大于等于0。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>公式中的out。</td>
+      <td>out的元素个数需要与steps一致。不支持空Tensor。</td>
+      <td>
+        <term> INT8、INT16、INT32、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16</term>
+      </td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
 
 - **返回值：**

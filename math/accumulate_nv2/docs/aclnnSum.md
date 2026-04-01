@@ -134,7 +134,7 @@ aclnnStatus aclnnSum(
       <td>tensors列表和out的数据类型不一致。</td>
     </tr>
     <tr>
-      <td>tensors和out的shape不满足broadcast规则,或者broadcast后的shape与out不一致。</td>
+      <td>tensors和out的shape不满足broadcast规则，或者broadcast后的shape与out不一致。</td>
     </tr>
   </tbody>
   </table>

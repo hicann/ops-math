@@ -169,7 +169,7 @@ aclnnStatus aclnnLinalgCholesky(
   </tbody>
 </table>
 
-## aclnnLinagCholesky
+## aclnnLinalgCholesky
 
 - **参数说明：**
 
@@ -193,7 +193,7 @@ aclnnStatus aclnnLinalgCholesky(
     <tr>
       <td>workspaceSize</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnLinagCholeskyGetWorkspaceSize获取。</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnLinalgCholeskyGetWorkspaceSize获取。</td>
     </tr>
     <tr>
       <td>executor</td>

@@ -48,7 +48,7 @@
       <td>self</td>
       <td>输入</td>
       <td>表示第一个输入。</td>
-      <td>self与other的数据类型满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
+      <td>self与other的数据类型满足数据类型推导规则（参见<a href="../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
       <td>FLOAT16、FLOAT、INT32、INT8、UINT8、BOOL、DOUBLE、INT64、INT16、UINT16、UINT32、UINT64、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
@@ -58,7 +58,7 @@
       <td>other</td>
       <td>输入</td>
       <td>表示第二个输入。</td>
-      <td>other与self的数据类型满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
+      <td>other与self的数据类型满足数据类型推导规则（参见<a href="../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
       <td>FLOAT16、FLOAT、INT32、INT8、UINT8、BOOL、DOUBLE、INT64、INT16、UINT16、UINT32、UINT64、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>

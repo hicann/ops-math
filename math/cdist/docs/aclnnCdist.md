@@ -75,7 +75,7 @@ aclnnStatus aclnnCdist(
       <td>x1（aclTensor*）</td>
       <td>输入</td>
       <td>表示Cdist的第一个输入，对应公式中的x1。</td>
-      <td><ul><li>支持空Tensor。</li><li>shape除倒数两维，其他维度需要与x2 shape除倒数两维的其他维度满足<a href="../../../docs/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li><li>shape的尾轴大小需要和x2 shape的尾轴大小相同</li></td>
+      <td><ul><li>支持空Tensor。</li><li>shape除倒数两维，其他维度需要与x2 shape除倒数两维的其他维度满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li><li>shape的尾轴大小需要和x2 shape的尾轴大小相同</li></ul></td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>2-8</td>
@@ -85,7 +85,7 @@ aclnnStatus aclnnCdist(
       <td>x2（aclTensor*）</td>
       <td>输入</td>
       <td>表示Cdist的第二个输入，对应公式中的x2。</td>
-      <td><ul><li>支持空Tensor。</li><li>shape除倒数两维，其他维度需要与x1 shape除倒数两维的其他维度满足<a href="../../../docs/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li><li>shape的尾轴大小需要和x1 shape的尾轴大小相同</li></td>
+      <td><ul><li>支持空Tensor。</li><li>shape除倒数两维，其他维度需要与x1 shape除倒数两维的其他维度满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li><li>shape的尾轴大小需要和x1 shape的尾轴大小相同</li></ul></td>
       <td>数据类型与x1保持一致。</td>
       <td>ND</td>
       <td>2-8</td>
@@ -95,7 +95,7 @@ aclnnStatus aclnnCdist(
       <td>p（float）</td>
       <td>输入</td>
       <td>表示范数的系数，对应公式中的p。</td>
-      <td><ul><li>常用0、1.0、2.0、inf范数。</li><li>取值范围[0, +Inf]。</li></td>
+      <td><ul><li>常用0、1.0、2.0、inf范数。</li><li>取值范围[0, +Inf]。</li></ul></td>
       <td>float</td>
       <td>-</td>
       <td>-</td>
@@ -115,7 +115,7 @@ aclnnStatus aclnnCdist(
       <td>out（aclTensorList*）</td>
       <td>输出</td>
       <td>表示Cdist的输出，对应公式中的y。</td>
-      <td><ul><li>支持空Tensor。</li><li>数据类型与x1和x2相同。</li><li>若x1的shape为[D, P, M]，x2的shape为[D, R, M]，则out的shape为[D, P, R]，其中D为输入输出除倒数两维其他维度broadcast并合轴后的维度。</li></td>
+      <td><ul><li>支持空Tensor。</li><li>数据类型与x1和x2相同。</li><li>若x1的shape为[D, P, M]，x2的shape为[D, R, M]，则out的shape为[D, P, R]，其中D为输入输出除倒数两维其他维度broadcast并合轴后的维度。</li></ul></td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>2-8</td>

@@ -293,7 +293,7 @@ int main() {
   aclOpExecutor* executor;
   // 调用aclnnTrace第一段接口
   ret = aclnnTraceGetWorkspaceSize(self, out, &workspaceSize, &executor);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnntraceGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnTraceGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
   // 根据第一段接口计算出的workspaceSize申请device内存
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
@@ -302,7 +302,7 @@ int main() {
   }
   // 调用aclnnTrace第二段接口
   ret = aclnnTrace(workspaceAddr, workspaceSize, executor, stream);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnntrace failed. ERROR: %d\n", ret); return ret);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnTrace failed. ERROR: %d\n", ret); return ret);
   // 4. （固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);

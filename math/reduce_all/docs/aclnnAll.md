@@ -70,7 +70,7 @@ const aclrtStream stream)
       <tr>
         <td>self</td>
         <td>输入</td>
-        <td>输入tenor。</td>
+        <td>输入tensor。</td>
         <td>-</td>
         <td>BOOL、UINT8、INT8、INT16、INT32、INT64、FLOAT、FLOAT16、BFLOAT16、DOUBLE</td>
         <td>ND</td>
