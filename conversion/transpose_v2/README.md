@@ -26,7 +26,7 @@
 | out    | 输出           | 维度最大不超过8维，shape由dims和原self的shape共同决定，dtype需要与self一致。 | 同self   | ND       |
 
 - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、UINT64、INT64、UINT32、INT32、UINT16、INT16、UINT8、INT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16。
-- <term>Kirin X90/Kirin 9030 处理器系列产品</term>：数据类型支持FLOAT、FLOAT16；dims数据类型支持INT32、INT64。
+- <term>Kirin X90/Kirin 9030 处理器系列产品</term>：不支持BFLOAT16。
 
 ## 约束说明
 

@@ -59,7 +59,7 @@
 </tbody>
 </table>
 
-- Kirin X90/Kirin 9030 处理器系列产品: self、out的数据类型，不支持BFLOAT16，但除上述表格外支持UINT16、UINT32、UINT64；mask数据类型不支持UINT8。
+- Kirin X90/Kirin 9030 处理器系列产品: 不支持BFLOAT16。
 
 ## 约束说明
 
