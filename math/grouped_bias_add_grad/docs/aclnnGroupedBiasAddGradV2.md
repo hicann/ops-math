@@ -64,7 +64,7 @@ $$
   * groupIdxType（int64_t，计算输入）：表示groupIdx的类型。支持的值为：
     * 0：表示groupIdxOptional中的值为每个group的结束索引。
     * 1：表示groupIdxOptional中的值为每个group的大小。
-  * out（aclTensor\*，计算输出）: bias的梯度，公式中的out，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16，数据类型必须与gradY的数据类型一致，shape仅支持2维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  * out（aclTensor\*，计算输出）: bias的梯度，公式中的out，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16，数据类型必须与gradY的数据类型一致，shape仅支持2维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。如果输入为三维(G, C, H), 则输出shape为(G, H)；如果输入为二维(GB, H), group_idx为(G), 则输出shape为(G, H)。
   * workspaceSize（uint64\_t\*，出参）: 返回需要在Device侧申请的workspace大小。
   * executor（aclOpExecutor\*\*，出参）: 返回op执行器，包含了算子计算流程。
 
