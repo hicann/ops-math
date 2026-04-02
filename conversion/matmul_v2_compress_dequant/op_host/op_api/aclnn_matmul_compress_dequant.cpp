@@ -229,6 +229,8 @@ static const aclTensor *BuildMatMulUnzipGraph(MatmulUnzipInput matmulUnzipInput,
   }
   const aclTensor *reformatedX = nullptr;
   (void)InputsContiguousAndTransFormat(matmulUnzipInput.x1, reformatedX, "x1", executor);
+  matmulUnzipInput.bias = l0op::Contiguous(matmulUnzipInput.bias, executor);
+  CHECK_RET(matmulUnzipInput.bias != nullptr, nullptr);
   const aclTensor *deqScale5HD = matmulUnzipInput.deqScale;
   if (matmulUnzipInput.deqScale->Numel() % DEQUANT_SCALE_ALIGN_SIZE == 0) {
     deqScale5HD = TensorReformat(matmulUnzipInput.deqScale, op::Format::FORMAT_NC1HWC0, executor);

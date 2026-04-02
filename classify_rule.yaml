@@ -686,6 +686,8 @@ conversion@ops-math:
         - ops/ops-math/conversion/diag_flat/op_host/diag_flat_def.cpp
         - ops/ops-math/conversion/diag_flat/op_host/diag_flat_tiling.cpp
         - ops/ops-math/conversion/diag_flat/op_graph/
+        - ops/ops-math/conversion/matmul_v2_compress_dequant/
+        - ops/ops-math/conversion/matmul_v2_compress_dequant/op_host/op_api/aclnn_matmul_compress_dequant.cpp
         - ops/ops-math/math/tile/op_api/
         - ops/ops-math/math/tile/docs/
         - ops/ops-math/math/tile/op_graph/
