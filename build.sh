@@ -948,16 +948,14 @@ checkopts() {
 
   check_param
   set_create_libs
-  parse_changed_files
   set_ut_mode
   check_group_compile_config
+  if [[ "$CI_MODE" == "TRUE" ]]; then
+    run_ci_mode
+  fi
 }
 
-parse_changed_files() {
-  if [[ -z "$CHANGED_FILES" ]]; then
-    return
-  fi
-
+run_ci_mode() {
   if [[ "$CHANGED_FILES" != /* ]]; then
     CHANGED_FILES=$PWD/$CHANGED_FILES
   fi
@@ -968,73 +966,16 @@ parse_changed_files() {
   cat $CHANGED_FILES
   echo $dotted_line
 
-  COMPILED_OPS=$(python3 scripts/ci/parse_changed_ops.py $CHANGED_FILES "$ENABLE_EXPERIMENTAL")
-  echo "related ops "$COMPILED_OPS
-
-  local DEFAULT_OP_SET=FALSE
-  if [[ -z $COMPILED_OPS ]]; then
-    if [[ "$ENABLE_EXPERIMENTAL" == "TRUE" ]]; then
-      COMPILED_OPS='acos'
-    else
-      COMPILED_OPS='is_finite'
-    fi
-    DEFAULT_OP_SET=TRUE
-    echo "No ops changed found, set op $COMPILED_OPS as default."
+  # 直接调用 gen_ci_cmd.py 生成命令并执行
+  local resolve_cmd="python3 scripts/ci/gen_ci_cmd.py -f $CHANGED_FILES --exec --experimental=${ENABLE_EXPERIMENTAL} --pkg=${ENABLE_PACKAGE} --run_example=${ENABLE_RUN_EXAMPLE}"
+  if [[ -n "$CANN_3RD_LIB_PATH" && "$CANN_3RD_LIB_PATH" != "${BASE_PATH}/third_party" ]]; then
+    resolve_cmd="$resolve_cmd --cann_3rd_lib_path=$CANN_3RD_LIB_PATH"
   fi
+  $resolve_cmd
+  local ret=$?
 
-  if [[ "$ENABLE_PACKAGE" == "TRUE" ]]; then
-    return
-  fi
-
-  local script_ret=$(python3 scripts/ci/parse_changed_files.py $CHANGED_FILES "$ENABLE_EXPERIMENTAL")
-  IFS='&&' read -r related_ut soc_info <<<"$script_ret"
-  echo "related ut "$related_ut
-  echo "related soc_info "$soc_info
-
-  COMPUTE_UNIT=$soc_info
-
-  if [[ "$related_ut" == "set()" ]]; then
-    # 默认算子时，固定触发 op_api UT 和 op_kernel UT
-    if [[ "$DEFAULT_OP_SET" == "TRUE" ]]; then
-      echo "Default op $COMPILED_OPS set, trigger op_api UT and op_kernel UT"
-      OP_API_UT=TRUE
-      OP_KERNEL_UT=TRUE
-      ENABLE_CUSTOM=TRUE
-      ENABLE_TEST=TRUE
-      COMPUTE_UNIT="ascend910b"
-      return
-    fi
-
-    ENABLE_TEST=FALSE
-    echo "no ut matched! no need to run!"
-    echo "---------------- CANN build finished ----------------"
-    return
-  else
-    ENABLE_TEST=TRUE
-  fi
-
-  if [[ "$related_ut" =~ "ALL_UT" ]]; then
-    echo "ALL UT is triggered!"
-    return
-  fi
-  if [[ ("$related_ut" =~ "OP_HOST_UT" || "$related_ut" =~ "OP_GRAPH_UT") && "$OP_HOST" == "TRUE" ]]; then
-    echo "OP_HOST_UT is triggered!"
-    OP_HOST_UT=TRUE
-    OP_KERNEL_UT=TRUE
-    OP_KERNEL=TRUE
-    OP_GRAPH=TRUE
-    ENABLE_CUSTOM=TRUE
-  fi
-  if [[ "$related_ut" =~ "OP_API_UT" && "$OP_API" == "TRUE" ]]; then
-    echo "OP_API_UT is triggered!"
-    OP_API_UT=TRUE
-    ENABLE_CUSTOM=TRUE
-  fi
-  if [[ "$related_ut" =~ "OP_KERNEL_UT" && "$OP_KERNEL" == "TRUE" ]]; then
-    echo "OP_KERNEL_UT is triggered!"
-    OP_KERNEL_UT=TRUE
-    ENABLE_CUSTOM=TRUE
-  fi
+  # 执行完成后退出，返回 gen_ci_cmd.py 的退出码
+  exit $ret
 }
 
 custom_cmake_args() {
