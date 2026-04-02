@@ -23,11 +23,11 @@
 
 ```Cpp
 aclnnStatus aclnnIsInTensorScalarGetWorkspaceSize(
-  const aclTensor*  self,
-  const aclScalar*  element,
+  const aclTensor*  element,
+  const aclScalar*  testElement,
   bool              assumeUnique,
   bool              invert,
-  aclScalar*        out,
+  aclTensor*        out,
   uint64_t*         workspaceSize,
   aclOpExecutor**   executor)
 ```
@@ -66,9 +66,9 @@ aclnnStatus aclnnIsInTensorScalar(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self（aclTensor*）</td>
+      <td>element（aclTensor*）</td>
       <td>输入</td>
-      <td>输入张量，公式中的self。</td>
+      <td>输入张量，公式中的element。</td>
       <td>-</td>
       <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、UINT16、BOOL、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
@@ -76,10 +76,10 @@ aclnnStatus aclnnIsInTensorScalar(
       <td>√</td>
     </tr>
     <tr>
-      <td>element（aclScalar*）</td>
+      <td>testElement（aclScalar*）</td>
       <td>输入</td>
-      <td>输入标量，公式中的element。</td>
-      <td>数据类型需要与self的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。</td>
+      <td>输入标量，公式中的testElement。</td>
+      <td>数据类型需要与element的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、UINT16、BOOL、COMPLEX64、COMPLEX128</td>
       <td>-</td>
       <td>-</td>
@@ -106,14 +106,14 @@ aclnnStatus aclnnIsInTensorScalar(
       <td>-</td>
     </tr>
     <tr>
-      <td>out（aclScalar*）</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>输出标量，公式中的out。</td>
-      <td>数据类型为BOOL。</td>
+      <td>输出张量，公式中的out。</td>
+      <td>数据类型为BOOL。shape与element相同。</td>
       <td>BOOL</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
     </tr>
     <tr>
       <td>workspaceSize（uint64_t*）</td>
@@ -161,15 +161,15 @@ aclnnStatus aclnnIsInTensorScalar(
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的self、element或out是空指针。</td>
+      <td>传入的element、testElement或out是空指针。</td>
     </tr>
     <tr>
       <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="2">161002</td>
-      <td>self的数据类型不在支持范围之内。</td>
+      <td>element的数据类型不在支持范围之内。</td>
     </tr>
     <tr>
-      <td>self的维度超过8维。</td>
+      <td>element的维度超过8维。</td>
     </tr>
   </tbody></table>
 

@@ -29,10 +29,10 @@
 
 ```Cpp
 aclnnStatus aclnnInplaceBitwiseAndTensorGetWorkspaceSize(
-  aclTensor*        selfRef,
-  const aclTensor*  other,
-  uint64_t*         workspaceSize,
-  aclOpExecutor**   executor)
+  const aclTensor*   selfRef,
+  const aclTensor*   other,
+  uint64_t*          workspaceSize,
+  aclOpExecutor**    executor)
 ```
 
 ```Cpp

@@ -32,10 +32,10 @@ aclnnStatus aclnnGlobalAveragePoolGetWorkspaceSize(
 
 ```Cpp
 aclnnStatus aclnnGlobalAveragePool(
-  void*          workspace,
-  uint64_t       workspaceSize,
-  aclOpExecutor* executor,
-  aclrtStream    stream)
+  void*                workspace,
+  uint64_t             workspaceSize,
+  aclOpExecutor*       executor,
+  const aclrtStream    stream)
 ```
 
 ## aclnnGlobalAveragePoolGetWorkspaceSize

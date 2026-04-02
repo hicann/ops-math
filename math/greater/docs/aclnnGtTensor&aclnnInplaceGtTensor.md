@@ -46,7 +46,7 @@ aclnnStatus aclnnGtTensor(
 
 ```Cpp
 aclnnStatus aclnnInplaceGtTensorGetWorkspaceSize(
-  aclTensor*        selfRef,
+  const aclTensor*  selfRef,
   const aclTensor*  other,
   uint64_t*         workspaceSize,
   aclOpExecutor**   executor)

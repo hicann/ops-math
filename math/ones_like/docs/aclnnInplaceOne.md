@@ -24,9 +24,9 @@
 
 ```Cpp
 aclnnStatus aclnnInplaceOneGetWorkspaceSize(
-  aclTensor*      selfRef,
-  uint64_t*       workspaceSize,
-  aclOpExecutor** executor)
+  const aclTensor*  selfRef,
+  uint64_t*         workspaceSize,
+  aclOpExecutor**   executor)
 ```
 
 ```Cpp
