@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
@@ -27,7 +27,6 @@ $$
 groupIdx(i) = \sum_{i=0}^{j} groupIdxOptional(j), j=0...G
 $$
 
-
 $$
 out(G,H) = \begin {cases} \sum_{i=groupIdx(j-1)}^{groupIdx(j)} gradY(i,H), & 1 \leq j \leq G-1 \\ \sum_{i=0}^{groupIdx(j)} gradY(i, H), & j=0 \end {cases}
 $$
@@ -40,6 +39,7 @@ out(G, H) = \sum_{i=0}^{C} gradY(G, i, H)
 $$
 
 &emsp;&emsp;其中，gradY共3维，G, C, H依次表示gradY第0-2维的大小，计算后out为2维，shape为(G, H)。
+
 - 示例：<br>
 (1) 有可选输入groupIdxOptional，且groupIdxType为0时：<br>
   gradY的shape为(1000, 30)，groupIdxOptional为(400, 600, 1000)，将gradY分为3组，每组累加的行数依次为400、200、400，计算后out的shape为(3, 30)。<br>
@@ -64,7 +64,7 @@ $$
   * groupIdxType（int64_t，计算输入）：表示groupIdx的类型。支持的值为：
     * 0：表示groupIdxOptional中的值为每个group的结束索引。
     * 1：表示groupIdxOptional中的值为每个group的大小。
-  * out（aclTensor\*，计算输出）: bias的梯度，公式中的out，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16，数据类型必须与gradY的数据类型一致，shape仅支持2维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  * out（aclTensor\*，计算输出）: bias的梯度，公式中的out，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16，数据类型必须与gradY的数据类型一致，shape仅支持2维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。如果输入为三维(G, C, H), 则输出shape为(G, H)；如果输入为二维(GB, H), group_idx为(G), 则输出shape为(G, H)。
   * workspaceSize（uint64\_t\*，出参）: 返回需要在Device侧申请的workspace大小。
   * executor（aclOpExecutor\*\*，出参）: 返回op执行器，包含了算子计算流程。
 

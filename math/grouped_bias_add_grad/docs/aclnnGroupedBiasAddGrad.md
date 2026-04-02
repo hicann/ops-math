@@ -6,7 +6,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
@@ -98,7 +98,7 @@ aclnnStatus aclnnGroupedBiasAddGrad(
       <td>groupIdxOptional（aclTensor*）</td>
       <td>输入</td>
       <td>每个分组结束位置，公式中的groupIdxOptional。</td>
-      <td>-</td>
+      <td>只支持一维。</td>
       <td>INT32、INT64</td>
       <td>ND</td>
       <td>1</td>
@@ -108,7 +108,7 @@ aclnnStatus aclnnGroupedBiasAddGrad(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>bias的梯度，公式中的out。</td>
-      <td>数据类型必须与gradY的数据类型一致，shape仅支持2维。</td>
+      <td>数据类型必须与gradY的数据类型一致，shape仅支持2维。<br> 如果输入为三维(G, C, H), 则输出shape为(G, H)；<br>如果输入为二维(GB, H), group_idx为(G), 则输出shape为(G, H)。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>2</td>

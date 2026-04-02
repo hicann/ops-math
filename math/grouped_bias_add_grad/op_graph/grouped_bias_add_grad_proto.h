@@ -25,8 +25,13 @@ namespace ge {
 * @li group_idx: An optional Tensor. Type is:Int32 or Int64.
 *             Optional parameter, the end position of each group, shape only supports 1 dimension, supports non-continuous tensors, and the data format supports ND.
 * @par Outputs:
-* grad_bias: A Tensor. Type is:BFloat16, Float16 or Float32.
-*             The data type must be the same as that of grad_y, and the shape only supports 2 dimensions, supports non-continuous tensors, and the data format supports ND.
+* @li grad_bias: A Tensor. Data type must match that of 'grad_y' (BFloat16, Float16 or Float32).
+*             - Shape constraints are determined based on the dimensionality of 'grad_y':
+*               - If 'grad_y' has 3 dimensions ('group_idx' is not provided), then:
+*                    'grad_bias.shape = [grad_y.shape[0], grad_y.shape[2]]'
+*               - If 'grad_y' has 2 dimensions ('group_idx' is provided), then:
+*                    'grad_bias.shape = [group_idx.shape[0], grad_y.shape[1]]'                
+*             - Supports non-continuous tensors, and data format supports "ND".
 * @par Attributes:
 * @li group_idx_type: An optional Int, specifying the significance of group_idx, default to 0.
 * @attention Constraints:
