@@ -306,7 +306,7 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/depth_to_space/README.md">diag_flat</a></td>
+    <td><a href="../../conversion/depth_to_space/README.md">depth_to_space</a></td>
     <td>√</td>
     <td>√</td>
     <td>×</td>
