@@ -61,4 +61,7 @@ ascend_download
 tbetoolkits-*.log
 *_result.csv
 
-/third_party
+third_party/
+oat_reports/
+
+log/
