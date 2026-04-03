@@ -32,6 +32,7 @@ public:
         // 获取tiling信息
         isAllAlign_ = tilingData.isAllAlign;
         isHalfAlign_ = tilingData.isHalfAlign;
+        isOneConcat_ = tilingData.isOneConcat;
         dim_ = tilingData.dim;
         numChunk_ = tilingData.numChunk;
         outputRow_ = tilingData.outputRow;
@@ -116,7 +117,18 @@ private:
             tensorInfo.chunkCol = (tensorInfo.chunkDimSize + numChunk_ - 1) / numChunk_;
             CopyInChunk(totalCol, localOffset, ubLoopInfo, tensorInfo);
 
-            if (ubLoopInfo.count > 31) {
+            if (isOneConcat_ && ubLoopInfo.count > 31) {
+                // 计算
+                Compute(ubLoopInfo);
+                // 搬出
+                CopyCout(ubLoopInfo);
+                localOffset = 0;
+                ubLoopInfo.preCatCol += ubLoopInfo.totalUbCol;
+                ubLoopInfo.count = 0;
+                ubLoopInfo.totalUbCol = 0;
+                ubLoopInfo.totalUbColAlign = 0;
+            }
+            else if (ubLoopInfo.count > 31) {
                 // 提前做部分concat
                 if (!ubLoopInfo.isAllZero) {
                     SetFlag<HardEvent::MTE2_V>(event_);
@@ -149,7 +161,10 @@ private:
 
     __aicore__ inline void Compute(const UbLoopInfo& ubLoopInfo)
     {
-        if (ubLoopInfo.isAllZero) {
+        if (isOneConcat_) {
+            ComputeOneConcat(ubLoopInfo);
+        }
+        else if (ubLoopInfo.isAllZero) {
             PipeBarrier<PIPE_V>();
             SetFlag<HardEvent::MTE3_V>(event_);
             WaitFlag<HardEvent::MTE3_V>(event_);
@@ -181,6 +196,22 @@ private:
 
     __aicore__ inline void CopyCout(const UbLoopInfo& ubLoopInfo)
     {
+        if (isOneConcat_) {
+            int64_t localOffset = 0;
+            int64_t globalOffset = ubLoopInfo.ubRowGroup * ubRowFactor_ * outputCol_ + ubLoopInfo.ubColGroup * ubColFactor_ + ubLoopInfo.preCatCol;
+            for (int i = 0; i < ubLoopInfo.count; i++) {
+                uint16_t blockCount = ubLoopInfo.currentUbRowFactor;
+                uint32_t blockLen = ubLoopInfo.inputCol[i] * sizeof(T2);
+                uint32_t dstStride = (outputCol_ - ubLoopInfo.inputCol[i]) * sizeof(T2);
+                DataCopyExtParams copyParamsOut{blockCount, blockLen, 0, dstStride, 0};
+                DataCopyPad(dstGlobal_[globalOffset], dstLocal_[localOffset], copyParamsOut);
+                localOffset += GetAlign(ubLoopInfo.inputCol[i], srcEleUbBlock_);
+                globalOffset += ubLoopInfo.inputCol[i];
+            }
+            SetFlag<HardEvent::MTE3_MTE2>(event_);
+            WaitFlag<HardEvent::MTE3_MTE2>(event_);
+            return;
+        }
         uint16_t blockCount = ubLoopInfo.currentUbRowFactor;
         uint32_t blockLen = ubLoopInfo.currentUbColFactor * sizeof(T2);
         uint32_t dstStride = (outputCol_ - ubLoopInfo.currentUbColFactor)* sizeof(T2);
@@ -314,15 +345,15 @@ private:
         SplitTensorDim0(totalCol, ubLoopInfo, tensorInfo);
         tensorInfo.chunkRow = tensorInfo.chunkDimSize / tensorInfo.chunkCol;
         tensorInfo.chunkRowAlign = GetAlign(tensorInfo.chunkDimSize, tensorInfo.chunkCol) / tensorInfo.chunkCol;
-        int64_t localOffsetIncrement = isAllAlign_ ? ubLoopInfo.currentUbRowFactor * tensorInfo.splitCol :
-            (isHalfAlign_ ? TRANS_BLOCK * HALF * tensorInfo.splitCol : TRANS_BLOCK * srcEleUbBlock_ * tensorInfo.splitCol);
+        int64_t localOffsetIncrement = (isOneConcat_ || isAllAlign_) ? ubLoopInfo.currentUbRowFactor :
+            (isHalfAlign_ ? TRANS_BLOCK * HALF : TRANS_BLOCK * srcEleUbBlock_);
         if (ubLoopInfo.rowStart >= tensorInfo.chunkRowAlign) {
             ubLoopInfo.inputCol[ubLoopInfo.count] = tensorInfo.splitCol;
             ubLoopInfo.totalUbColAlign += tensorInfo.splitCol;
             ubLoopInfo.totalUbCol += tensorInfo.splitCol;
             ubLoopInfo.count++;
             totalCol += tensorInfo.tensorCol;
-            localOffset += localOffsetIncrement;
+            localOffset += localOffsetIncrement * tensorInfo.splitCol;
             return;
         }
         ubLoopInfo.isAllZero = false;
@@ -334,14 +365,16 @@ private:
             DoLastRowsCopy(localOffset, ubLoopInfo, tensorInfo);
         }
         
-        if (isAllAlign_) {
+        localOffsetIncrement *= (isOneConcat_ || tensorInfo.isSplit) ? tensorInfo.splitColAlign : tensorInfo.splitCol;
+        if (isOneConcat_) {
+            ubLoopInfo.inputCol[ubLoopInfo.count] = tensorInfo.splitCol;
+            ubLoopInfo.totalUbColAlign += tensorInfo.splitColAlign;
+        } else if (isAllAlign_) {
             ubLoopInfo.inputCol[ubLoopInfo.count] = tensorInfo.splitCol;
             ubLoopInfo.totalUbColAlign += tensorInfo.splitCol;
         } else if (tensorInfo.isSplit) {
             ubLoopInfo.inputCol[ubLoopInfo.count] = -tensorInfo.splitCol;
             ubLoopInfo.totalUbColAlign += tensorInfo.splitColAlign;
-            localOffsetIncrement = isHalfAlign_ ? TRANS_BLOCK * HALF * tensorInfo.splitColAlign :
-                                                  TRANS_BLOCK * srcEleUbBlock_ * tensorInfo.splitColAlign;
         } else {
             ubLoopInfo.inputCol[ubLoopInfo.count] = tensorInfo.splitCol;
             ubLoopInfo.totalUbColAlign += tensorInfo.splitCol;
@@ -507,6 +540,18 @@ private:
         }
     }
 
+    __aicore__ inline void ComputeOneConcat(const UbLoopInfo& ubLoopInfo)
+    {
+        SetFlag<HardEvent::MTE2_V>(event_);
+        WaitFlag<HardEvent::MTE2_V>(event_);
+        if constexpr (NEAD_CAST) {
+            uint32_t castCount = ubLoopInfo.currentUbRowFactor * ubLoopInfo.totalUbColAlign;
+            DoCast(ubLoopInfo, castCount);
+        } else {
+            DataCopy(dstLocalT1_, srcLocal_, ubLoopInfo.totalUbColAlign);
+        }
+    }
+
     __aicore__ inline void ComputeAllAlign(const UbLoopInfo& ubLoopInfo)
     {
         SetFlag<HardEvent::MTE2_V>(event_);
@@ -545,6 +590,7 @@ private:
 private:
     bool isAllAlign_{false};
     bool isHalfAlign_{false};
+    bool isOneConcat_{false};
     int64_t blockIdx_{0};
     int64_t inputNum_{0};
     int64_t ubRowFactor_{0};
