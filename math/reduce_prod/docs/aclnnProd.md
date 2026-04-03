@@ -16,7 +16,15 @@
 
 ## 功能说明
 
-返回输入tensor中所有元素的乘积。
+- 接口功能：返回输入tensor中所有元素的乘积。
+
+- 计算公式：
+
+  $$
+  out = \prod_{i=0}^{n-1} self_i
+  $$
+
+  其中$n$为self中元素的总数，$self_i$为self中第$i$个元素。
 
 ## 函数原型
 
@@ -118,7 +126,7 @@ aclnnStatus aclnnProd(
   </tbody>
   </table>
 
-  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
 - **返回值：**
 

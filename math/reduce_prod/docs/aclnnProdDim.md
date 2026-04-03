@@ -16,7 +16,15 @@
 
 ## 功能说明
 
-返回输入tensor给定维度上每行的乘积。
+- 接口功能：返回输入tensor给定维度上每行的乘积。
+
+- 计算公式：
+
+  $$
+  out = \prod_{i=0}^{S_{dim}-1} self_{[..., \, i, \, ...]}
+  $$
+
+  其中$S_{dim}$为self在维度$dim$上的大小，$dim$为指定的缩减维度，$keepDim$控制输出是否保留该维度。
 
 ## 函数原型
 
@@ -139,7 +147,7 @@ aclnnStatus aclnnProdDim(
     </tr>
   </tbody></table>
 
-  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
 - **返回值：**
 
