@@ -166,7 +166,7 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::Process() {
 
         // Comput and Copy out
         processNum = processMNum * nSize_;
-        gnAlignSize = CeilDivision(processGNum * nSize_, BLOCK_ELENUM) * BLOCK_ELENUM;
+        gnAlignSize = processGNum * nSize_;
         mnAlignSize = CeilDivision(processMNum * nSize_, BLOCK_ELENUM) * BLOCK_ELENUM;
         nRegSize_ = nSize_ * tmpLoop_;
 
@@ -202,7 +202,7 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::CopyIn(int64_t blockCount,
     copyInParam_.blockLen = blockLen * dtypeSize_;
     copyInParam_.srcStride = srcStride * dtypeSize_;
     copyInParam_.dstStride = dstStride / BLOCK_ELENUM;
-    DataCopyPad(xUb, xGm_[srcOffset], copyInParam_, padParam_);
+    DataCopyPad<T, PaddingMode::Compact>(xUb, xGm_[srcOffset], copyInParam_, padParam_);
     inQueueX_.EnQue(xUb);
 }
 
