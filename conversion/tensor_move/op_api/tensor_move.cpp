@@ -22,6 +22,7 @@ OP_TYPE_REGISTER(TensorMove);
 
 static const int64_t DATA_LIMIT_910 = 200000 * 4;
 static const int64_t DATA_LIMIT_910B = 100000 * 4;
+static const int64_t DATA_LIMIT_310P = 32;
 
 // float,float16,int32,uint32,int8,int16,uint16,uint8,bool,int64,uint64,bfloat16,double,hifloat8,float8_e5m2,float8_e4m3fn,complex32,complex64
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_REGBASE = {
@@ -83,6 +84,9 @@ bool IsCopyNpuToNpu(const aclTensor* x)
     }
     if (socVersion == op::SocVersion::ASCEND910) {
         return static_cast<int64_t>(dataSize) <= DATA_LIMIT_910;
+    }
+    if (socVersion == op::SocVersion::ASCEND310P) {
+        return static_cast<int64_t>(dataSize) < DATA_LIMIT_310P;
     }
     return false;
 }
