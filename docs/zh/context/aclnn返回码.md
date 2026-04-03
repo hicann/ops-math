@@ -122,7 +122,7 @@
 <td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p48969225564"><a name="zh-cn_topic_0000001563019104_p48969225564"></a><a name="zh-cn_topic_0000001563019104_p48969225564"></a>内部异常：aclnn API内部发生异常，算子的属性个数异常。</p>
 </td>
 </tr>
-<tr id="zh-cn_topic_0000001563019104_row989662295618"><td class="cellrowborder" valign="top" width="30.183018301830185%" headers="mcps1.2.4.1.1 "><p id="zh-cn_topic_0000001563019104_p14896022205612"><a name="zh-cn_topic_0000001563019104_p14896022205612"></a><a name="zh-cn_topic_0000001563019104_p14896022205612"></a>ACLNN_ERR_INNER_KEY_CONFILICT</p>
+<tr id="zh-cn_topic_0000001563019104_row989662295618"><td class="cellrowborder" valign="top" width="30.183018301830185%" headers="mcps1.2.4.1.1 "><p id="zh-cn_topic_0000001563019104_p14896022205612"><a name="zh-cn_topic_0000001563019104_p14896022205612"></a><a name="zh-cn_topic_0000001563019104_p14896022205612"></a>ACLNN_ERR_INNER_KEY_CONFLICT</p>
 </td>
 <td class="cellrowborder" valign="top" width="16.521652165216523%" headers="mcps1.2.4.1.2 "><p id="zh-cn_topic_0000001563019104_p1489632285612"><a name="zh-cn_topic_0000001563019104_p1489632285612"></a><a name="zh-cn_topic_0000001563019104_p1489632285612"></a>561105</p>
 </td>
@@ -147,28 +147,28 @@
 </td>
 <td class="cellrowborder" valign="top" width="16.521652165216523%" headers="mcps1.2.4.1.2 "><p id="zh-cn_topic_0000001563019104_p175481975913"><a name="zh-cn_topic_0000001563019104_p175481975913"></a><a name="zh-cn_topic_0000001563019104_p175481975913"></a>561108</p>
 </td>
-<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p1389713225560"><a name="zh-cn_topic_0000001563019104_p1389713225560"></a><a name="zh-cn_topic_0000001563019104_p1389713225560"></a>内部异常：aclnn API内部发生异常，加载算子kernel库中算子信息json文件失败。</p>
+<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p1389713225560"><a name="zh-cn_topic_0000001563019104_p1389713225560"></a><a name="zh-cn_topic_0000001563019104_p1389713225560"></a>内部异常：aclnn API内部发生异常，加载算子kernel库中算子信息JSON文件失败。</p>
 </td>
 </tr>
 <tr id="zh-cn_topic_0000001563019104_row98304266565"><td class="cellrowborder" valign="top" width="30.183018301830185%" headers="mcps1.2.4.1.1 "><p id="zh-cn_topic_0000001563019104_p88311261563"><a name="zh-cn_topic_0000001563019104_p88311261563"></a><a name="zh-cn_topic_0000001563019104_p88311261563"></a>ACLNN_ERR_INNER_JSON_VALUE_NOT_FOUND</p>
 </td>
 <td class="cellrowborder" valign="top" width="16.521652165216523%" headers="mcps1.2.4.1.2 "><p id="zh-cn_topic_0000001563019104_p1312692118598"><a name="zh-cn_topic_0000001563019104_p1312692118598"></a><a name="zh-cn_topic_0000001563019104_p1312692118598"></a>561109</p>
 </td>
-<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p1815317191816"><a name="zh-cn_topic_0000001563019104_p1815317191816"></a><a name="zh-cn_topic_0000001563019104_p1815317191816"></a>内部异常：aclnn API内部发生异常，加载算子kernel库中算子信息json文件的某个字段失败。</p>
+<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p1815317191816"><a name="zh-cn_topic_0000001563019104_p1815317191816"></a><a name="zh-cn_topic_0000001563019104_p1815317191816"></a>内部异常：aclnn API内部发生异常，加载算子kernel库中算子信息JSON文件的某个字段失败。</p>
 </td>
 </tr>
 <tr id="zh-cn_topic_0000001563019104_row68311826135612"><td class="cellrowborder" valign="top" width="30.183018301830185%" headers="mcps1.2.4.1.1 "><p id="zh-cn_topic_0000001563019104_p1783182615617"><a name="zh-cn_topic_0000001563019104_p1783182615617"></a><a name="zh-cn_topic_0000001563019104_p1783182615617"></a>ACLNN_ERR_INNER_JSON_FORMAT_INVALID</p>
 </td>
 <td class="cellrowborder" valign="top" width="16.521652165216523%" headers="mcps1.2.4.1.2 "><p id="zh-cn_topic_0000001563019104_p1457642315912"><a name="zh-cn_topic_0000001563019104_p1457642315912"></a><a name="zh-cn_topic_0000001563019104_p1457642315912"></a>561110</p>
 </td>
-<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p183162616566"><a name="zh-cn_topic_0000001563019104_p183162616566"></a><a name="zh-cn_topic_0000001563019104_p183162616566"></a>内部异常：aclnn API内部发生异常，算子kernel库中算子信息json文件的format填写为非法值。</p>
+<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p183162616566"><a name="zh-cn_topic_0000001563019104_p183162616566"></a><a name="zh-cn_topic_0000001563019104_p183162616566"></a>内部异常：aclnn API内部发生异常，算子kernel库中算子信息JSON文件的format填写为非法值。</p>
 </td>
 </tr>
 <tr id="zh-cn_topic_0000001563019104_row7831122615568"><td class="cellrowborder" valign="top" width="30.183018301830185%" headers="mcps1.2.4.1.1 "><p id="zh-cn_topic_0000001563019104_p1621113315313"><a name="zh-cn_topic_0000001563019104_p1621113315313"></a><a name="zh-cn_topic_0000001563019104_p1621113315313"></a>ACLNN_ERR_INNER_JSON_DTYPE_INVALID</p>
 </td>
 <td class="cellrowborder" valign="top" width="16.521652165216523%" headers="mcps1.2.4.1.2 "><p id="zh-cn_topic_0000001563019104_p1649183615914"><a name="zh-cn_topic_0000001563019104_p1649183615914"></a><a name="zh-cn_topic_0000001563019104_p1649183615914"></a>561111</p>
 </td>
-<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p1831152645612"><a name="zh-cn_topic_0000001563019104_p1831152645612"></a><a name="zh-cn_topic_0000001563019104_p1831152645612"></a>内部异常：aclnn API内部发生异常，算子kernel库中算子信息json文件的dtype填写为非法值。</p>
+<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p1831152645612"><a name="zh-cn_topic_0000001563019104_p1831152645612"></a><a name="zh-cn_topic_0000001563019104_p1831152645612"></a>内部异常：aclnn API内部发生异常，算子kernel库中算子信息JSON文件的dtype填写为非法值。</p>
 </td>
 </tr>
 <tr id="zh-cn_topic_0000001563019104_row149375307560"><td class="cellrowborder" valign="top" width="30.183018301830185%" headers="mcps1.2.4.1.1 "><p id="zh-cn_topic_0000001563019104_p993717301567"><a name="zh-cn_topic_0000001563019104_p993717301567"></a><a name="zh-cn_topic_0000001563019104_p993717301567"></a>ACLNN_ERR_INNER_OPP_KERNEL_PKG_NOT_FOUND</p>
@@ -182,21 +182,21 @@
 </td>
 <td class="cellrowborder" valign="top" width="16.521652165216523%" headers="mcps1.2.4.1.2 "><p id="zh-cn_topic_0000001563019104_p10866237205919"><a name="zh-cn_topic_0000001563019104_p10866237205919"></a><a name="zh-cn_topic_0000001563019104_p10866237205919"></a>561113</p>
 </td>
-<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p1893763018567"><a name="zh-cn_topic_0000001563019104_p1893763018567"></a><a name="zh-cn_topic_0000001563019104_p1893763018567"></a>内部异常：aclnn API内部发生异常，加载算子json文件字段时，发生异常。</p>
+<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p1893763018567"><a name="zh-cn_topic_0000001563019104_p1893763018567"></a><a name="zh-cn_topic_0000001563019104_p1893763018567"></a>内部异常：aclnn API内部发生异常，加载算子JSON文件字段时，发生异常。</p>
 </td>
 </tr>
 <tr id="zh-cn_topic_0000001563019104_row793723015614"><td class="cellrowborder" valign="top" width="30.183018301830185%" headers="mcps1.2.4.1.1 "><p id="zh-cn_topic_0000001563019104_p159371730135616"><a name="zh-cn_topic_0000001563019104_p159371730135616"></a><a name="zh-cn_topic_0000001563019104_p159371730135616"></a>ACLNN_ERR_INNER_ATTR_NUM_OUT_OF_BOUND</p>
 </td>
 <td class="cellrowborder" valign="top" width="16.521652165216523%" headers="mcps1.2.4.1.2 "><p id="zh-cn_topic_0000001563019104_p19606143813591"><a name="zh-cn_topic_0000001563019104_p19606143813591"></a><a name="zh-cn_topic_0000001563019104_p19606143813591"></a>561114</p>
 </td>
-<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p1693793095614"><a name="zh-cn_topic_0000001563019104_p1693793095614"></a><a name="zh-cn_topic_0000001563019104_p1693793095614"></a>内部异常：aclnn API内部发生异常，算子的属性个数与算子信息json中不一致，超过了json中指定的attr个数。</p>
+<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p1693793095614"><a name="zh-cn_topic_0000001563019104_p1693793095614"></a><a name="zh-cn_topic_0000001563019104_p1693793095614"></a>内部异常：aclnn API内部发生异常，算子的属性个数与算子信息JSON中不一致，超过了JSON中指定的attr个数。</p>
 </td>
 </tr>
 <tr id="zh-cn_topic_0000001563019104_row16937203010566"><td class="cellrowborder" valign="top" width="30.183018301830185%" headers="mcps1.2.4.1.1 "><p id="zh-cn_topic_0000001563019104_p593714304562"><a name="zh-cn_topic_0000001563019104_p593714304562"></a><a name="zh-cn_topic_0000001563019104_p593714304562"></a>ACLNN_ERR_INNER_ATTR_LEN_NOT_ENOUGH</p>
 </td>
 <td class="cellrowborder" valign="top" width="16.521652165216523%" headers="mcps1.2.4.1.2 "><p id="zh-cn_topic_0000001563019104_p1417113925912"><a name="zh-cn_topic_0000001563019104_p1417113925912"></a><a name="zh-cn_topic_0000001563019104_p1417113925912"></a>561115</p>
 </td>
-<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p293816300566"><a name="zh-cn_topic_0000001563019104_p293816300566"></a><a name="zh-cn_topic_0000001563019104_p293816300566"></a>内部异常：aclnn API内部发生异常，算子的属性个数与算子信息json中不一致，少于json中指定的attr个数。</p>
+<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p293816300566"><a name="zh-cn_topic_0000001563019104_p293816300566"></a><a name="zh-cn_topic_0000001563019104_p293816300566"></a>内部异常：aclnn API内部发生异常，算子的属性个数与算子信息JSON中不一致，少于JSON中指定的attr个数。</p>
 </td>
 </tr>
 <tr id="zh-cn_topic_0000001563019104_row16937203010566"><td class="cellrowborder" valign="top" width="30.183018301830185%" headers="mcps1.2.4.1.1 "><p id="zh-cn_topic_0000001563019104_p593714304562"><a name="zh-cn_topic_0000001563019104_p593714304562"></a><a name="zh-cn_topic_0000001563019104_p593714304562"></a>ACLNN_ERR_INNER_INPUT_NUM_IN_JSON_TOO_LARGE</p>
@@ -210,21 +210,21 @@
 </td>
 <td class="cellrowborder" valign="top" width="16.521652165216523%" headers="mcps1.2.4.1.2 "><p id="zh-cn_topic_0000001563019104_p1417113925912"><a name="zh-cn_topic_0000001563019104_p1417113925912"></a><a name="zh-cn_topic_0000001563019104_p1417113925912"></a>561117</p>
 </td>
-<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p293816300566"><a name="zh-cn_topic_0000001563019104_p293816300566"></a><a name="zh-cn_topic_0000001563019104_p293816300566"></a>内部异常：aclnn API内部发生异常，算子信息json文件信息描述有缺失。</p>
+<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p293816300566"><a name="zh-cn_topic_0000001563019104_p293816300566"></a><a name="zh-cn_topic_0000001563019104_p293816300566"></a>内部异常：aclnn API内部发生异常，算子信息JSON文件信息描述有缺失。</p>
 </td>
 </tr>
 <tr id="zh-cn_topic_0000001563019104_row16937203010566"><td class="cellrowborder" valign="top" width="30.183018301830185%" headers="mcps1.2.4.1.1 "><p id="zh-cn_topic_0000001563019104_p593714304562"><a name="zh-cn_topic_0000001563019104_p593714304562"></a><a name="zh-cn_topic_0000001563019104_p593714304562"></a>ACLNN_ERR_INNER_STATIC_WORKSPACE_INVALID</p>
 </td>
 <td class="cellrowborder" valign="top" width="16.521652165216523%" headers="mcps1.2.4.1.2 "><p id="zh-cn_topic_0000001563019104_p1417113925912"><a name="zh-cn_topic_0000001563019104_p1417113925912"></a><a name="zh-cn_topic_0000001563019104_p1417113925912"></a>561118</p>
 </td>
-<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p293816300566"><a name="zh-cn_topic_0000001563019104_p293816300566"></a><a name="zh-cn_topic_0000001563019104_p293816300566"></a>内部异常：aclnn API内部发生异常，解析静态二进制json文件中的workspace信息时，发生异常。</p>
+<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p293816300566"><a name="zh-cn_topic_0000001563019104_p293816300566"></a><a name="zh-cn_topic_0000001563019104_p293816300566"></a>内部异常：aclnn API内部发生异常，解析静态二进制JSON文件中的workspace信息时，发生异常。</p>
 </td>
 </tr>
 <tr id="zh-cn_topic_0000001563019104_row16937203010566"><td class="cellrowborder" valign="top" width="30.183018301830185%" headers="mcps1.2.4.1.1 "><p id="zh-cn_topic_0000001563019104_p593714304562"><a name="zh-cn_topic_0000001563019104_p593714304562"></a><a name="zh-cn_topic_0000001563019104_p593714304562"></a>ACLNN_ERR_INNER_STATIC_BLOCK_DIM_INVALID</p>
 </td>
 <td class="cellrowborder" valign="top" width="16.521652165216523%" headers="mcps1.2.4.1.2 "><p id="zh-cn_topic_0000001563019104_p1417113925912"><a name="zh-cn_topic_0000001563019104_p1417113925912"></a><a name="zh-cn_topic_0000001563019104_p1417113925912"></a>561119</p>
 </td>
-<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p293816300566"><a name="zh-cn_topic_0000001563019104_p293816300566"></a><a name="zh-cn_topic_0000001563019104_p293816300566"></a>内部异常：aclnn API内部发生异常，解析静态二进制json文件中的核数使用信息时，发生异常。</p>
+<td class="cellrowborder" valign="top" width="53.295329532953296%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000001563019104_p293816300566"><a name="zh-cn_topic_0000001563019104_p293816300566"></a><a name="zh-cn_topic_0000001563019104_p293816300566"></a>内部异常：aclnn API内部发生异常，解析静态二进制JSON文件中的核数使用信息时，发生异常。</p>
 </td>
 </tr>
 </tbody>
