@@ -85,7 +85,7 @@ aclnnStatus aclnnBatchNormStats(
       <td>输入</td>
       <td>-</td>
       <td>支持的shape和数据格式有：<br>2维（NC）。<br>3维（NCL）。<br>4维（NCHW）。<br>5维（NCDHW）。<br>6-8维（ND，其中第2维固定为channel轴）。</td>
-      <td>FLOAT、FLOAT16</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>2-8维</td>
       <td>√</td>
@@ -104,7 +104,7 @@ aclnnStatus aclnnBatchNormStats(
       <td>mean（aclTensor*）</td>
       <td>输出</td>
       <td>输出均值</td>
-      <td>当input的类型为FLOAT16、BFLOAT16时，会转成FLOAT进行处理。</td>
+      <td>-</td>
       <td>FLOAT</td>
       <td>ND</td>
       <td>1维</td>
@@ -114,7 +114,7 @@ aclnnStatus aclnnBatchNormStats(
       <td>invstd（aclTensor*）</td>
       <td>输出</td>
       <td>输出标准差倒数。</td>
-      <td>当input的类型为FLOAT16、BFLOAT16时，会转成FLOAT进行处理。</td>
+      <td>-</td>
       <td>FLOAT</td>
       <td>ND</td>
       <td>1维</td>
@@ -141,6 +141,9 @@ aclnnStatus aclnnBatchNormStats(
       <td>-</td>
     </tr>
   </tbody></table>
+
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas 训练系列产品</term>：
+    - 参数`input`数据类型不支持BFLOAT16。
 
 - **返回值：**
 
