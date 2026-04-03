@@ -130,7 +130,7 @@ ge::graphStatus CeilTiling::RunTiling()
 static ge::graphStatus Tiling4Ceil(gert::TilingContext* tilingContextGen)
 {
     OP_LOGD(tilingContextGen->GetNodeName(), "Tiling4Ceil rt2.0 is running.");
-    auto compileInfo = reinterpret_cast<const CeilCompileInfo*>(tilingContextGen->GetCompileInfo());
+    auto compileInfo = tilingContextGen->GetCompileInfo<CeilCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
     CeilTiling baseOpTiling(tilingContextGen);
     return baseOpTiling.RunTiling();

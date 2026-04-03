@@ -42,7 +42,7 @@ ge::graphStatus CosTiling::SetTilingData()
     uint64_t ubSize = 0;
     auto platformInfo = tilingContext->GetPlatformInfo();
     if (platformInfo == nullptr) {
-        auto compileInfoPtr = reinterpret_cast<const ElewiseCompileInfo*>(tilingContext->GetCompileInfo());
+        auto compileInfoPtr = tilingContext->GetCompileInfo<ElewiseCompileInfo>();
         OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(tilingContext, "compile info is null"),
                         return ge::GRAPH_FAILED);
         ubSize = compileInfoPtr->ubSize;
@@ -134,7 +134,7 @@ ge::graphStatus CosTiling::RunTiling()
 static ge::graphStatus TilingForCos(gert::TilingContext* tilingContextGen)
 {
     OP_LOGD(tilingContextGen->GetNodeName(), "TilingForCos rt2.0 is running.");
-    auto compileInfo = reinterpret_cast<const ElewiseCompileInfo*>(tilingContextGen->GetCompileInfo());
+    auto compileInfo = tilingContextGen->GetCompileInfo<ElewiseCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
     CosTiling baseOpTiling(tilingContextGen);
     return baseOpTiling.RunTiling();

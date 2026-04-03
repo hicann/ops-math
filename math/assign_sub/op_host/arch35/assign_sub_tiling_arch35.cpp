@@ -128,7 +128,7 @@ ge::graphStatus AssignSubTiling::RunTiling()
 static ge::graphStatus Tiling4AssignSub(gert::TilingContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Tiling4AssignSub rt2.0 is running.");
-    auto compileInfo = reinterpret_cast<const AssignSubCompileInfo*>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<AssignSubCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     AssignSubTiling assignSubTiling(context);

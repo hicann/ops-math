@@ -172,7 +172,7 @@ static ge::graphStatus TilingPrepareForRsqrtGrad(gert::TilingParseContext *conte
 static ge::graphStatus Tiling4RsqrtGrad(gert::TilingContext* tilingContextGen)
 {
     OP_LOGD(tilingContextGen->GetNodeName(), "Tiling4RsqrtGrad rt2.0 is running.");
-    auto compileInfo = static_cast<const RsqrtGradCompileInfo*>(tilingContextGen->GetCompileInfo());
+    auto compileInfo = tilingContextGen->GetCompileInfo<RsqrtGradCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
     RsqrtGradTiling baseOpTiling(tilingContextGen);
     return baseOpTiling.RunTiling();

@@ -129,7 +129,7 @@ static ge::graphStatus TilingPrepareForLog1p(gert::TilingParseContext* context)
 static ge::graphStatus Tiling4Log1p(gert::TilingContext* tilingContextGen)
 {
     OP_LOGD(tilingContextGen->GetNodeName(), "Tiling4Log1p rt2.0 is running.");
-    auto compileInfo = reinterpret_cast<const Log1pCompileInfo*>(tilingContextGen->GetCompileInfo());
+    auto compileInfo = tilingContextGen->GetCompileInfo<Log1pCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
     Log1pTiling baseOpTiling(tilingContextGen);
     return baseOpTiling.RunTiling();

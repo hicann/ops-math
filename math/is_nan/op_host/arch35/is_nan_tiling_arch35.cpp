@@ -165,7 +165,7 @@ static ge::graphStatus Tiling4IsNan(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, in_shape);
     auto out_shape = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, out_shape);
-    auto compile_info = reinterpret_cast<const IsNanCompileInfo*>(context->GetCompileInfo());
+    auto compile_info = context->GetCompileInfo<IsNanCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
 
     return Tiling4IsNanForAscendC(context);

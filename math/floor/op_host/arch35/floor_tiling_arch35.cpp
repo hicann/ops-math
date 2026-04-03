@@ -194,7 +194,7 @@ ge::graphStatus FloorTiling::PostTiling()
 
 static ge::graphStatus TilingForFloor(gert::TilingContext* context)
 {
-    auto compileInfo = reinterpret_cast<const FloorCompileInfo*>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<FloorCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     FloorTiling tiling(context);
     return tiling.DoTiling();

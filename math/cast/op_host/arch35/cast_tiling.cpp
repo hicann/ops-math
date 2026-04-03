@@ -54,7 +54,7 @@ ge::graphStatus CastTiling::GetPlatformInfo()
 {
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo == nullptr) {
-        auto compileInfoPtr = reinterpret_cast<const CastCompileInfo *>(context_->GetCompileInfo());
+        auto compileInfoPtr = context_->GetCompileInfo<CastCompileInfo>();
         OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_, "compile info is null"),
                         return ge::GRAPH_FAILED);
         coreNum_ = compileInfoPtr->coreNum;
@@ -475,7 +475,7 @@ static ge::graphStatus TilingForCast(gert::TilingContext *context)
         OP_LOGE(context, "Tiling context is null"),
         return ge::GRAPH_FAILED);
 
-    auto compileInfo = reinterpret_cast<const CastCompileInfo *>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<CastCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     OP_LOGD("CastTiling", "Enter new CastTiling");
     return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);

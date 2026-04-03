@@ -119,7 +119,7 @@ ge::graphStatus ReciprocalTiling::RunTiling()
 static ge::graphStatus Tiling4Reciprocal(gert::TilingContext* tilingContextGen)
 {
     OP_LOGD(tilingContextGen->GetNodeName(), "Tiling4Reciprocal rt2.0 is running.");
-    auto compileInfo = reinterpret_cast<const ElewiseCompileInfo*>(tilingContextGen->GetCompileInfo());
+    auto compileInfo = tilingContextGen->GetCompileInfo<ElewiseCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
     ReciprocalTiling baseOpTiling(tilingContextGen);
     return baseOpTiling.RunTiling();

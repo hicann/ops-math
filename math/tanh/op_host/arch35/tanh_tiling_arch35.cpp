@@ -114,7 +114,7 @@ ge::graphStatus TanhTiling::RunTiling()
 static ge::graphStatus Tiling4Tanh(gert::TilingContext* tilingContextGen)
 {
     OP_LOGD(tilingContextGen->GetNodeName(), "Tiling4Tanh rt2.0 is running.");
-    auto compileInfo = reinterpret_cast<const ElewiseCompileInfo*>(tilingContextGen->GetCompileInfo());
+    auto compileInfo = tilingContextGen->GetCompileInfo<ElewiseCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
     TanhTiling baseOpTiling(tilingContextGen);
     return baseOpTiling.RunTiling();

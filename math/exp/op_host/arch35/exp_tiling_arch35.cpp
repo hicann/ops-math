@@ -170,7 +170,7 @@ ge::graphStatus ExpTiling::RunTiling()
 static ge::graphStatus Tiling4Exp(gert::TilingContext* tilingContextGen)
 {
     OP_LOGD(tilingContextGen->GetNodeName(), "Tiling4Exp rt2.0 is running.");
-    auto compileInfo = static_cast<const ElewiseCompileInfo*>(tilingContextGen->GetCompileInfo());
+    auto compileInfo = tilingContextGen->GetCompileInfo<ElewiseCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
     ExpTiling baseOpTiling(tilingContextGen);
     return baseOpTiling.RunTiling();

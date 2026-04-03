@@ -143,7 +143,7 @@ static ge::graphStatus Tiling4Square(gert::TilingContext* tilingContext)
 
 static ge::graphStatus Tiling4SelectMode(gert::TilingContext* tilingContext)
 {
-    auto compileInfo = reinterpret_cast<const ElewiseCompileInfo*>(tilingContext->GetCompileInfo());
+    auto compileInfo = tilingContext->GetCompileInfo<ElewiseCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, compileInfo);
     return Tiling4Square(tilingContext); // ascendc
 }

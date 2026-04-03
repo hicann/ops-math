@@ -92,7 +92,7 @@ ge::graphStatus AddNTiling::SetTilingKey()
 
 ge::graphStatus AddNTiling::GetCompileInfo()
 {
-    auto compileInfo = reinterpret_cast<const AddNCompileInfo*>(tilingContext->GetCompileInfo());
+    auto compileInfo = tilingContext->GetCompileInfo<AddNCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, compileInfo);
     coreNum_ = compileInfo->coreNum;
     ubSize_ = compileInfo->ubSize;

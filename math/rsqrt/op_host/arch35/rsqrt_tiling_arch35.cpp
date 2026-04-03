@@ -150,7 +150,7 @@ static ge::graphStatus TilingForRsqrt(gert::TilingContext* tilingContextGen)
         OP_LOGE("TilingForRsqrt", "Tiling context is null"),
         return ge::GRAPH_FAILED);
     OP_LOGD(tilingContextGen->GetNodeName(), "TilingForRsqrt is running.");
-    auto compileInfo = static_cast<const RsqrtCompileInfo*>(tilingContextGen->GetCompileInfo());
+    auto compileInfo = tilingContextGen->GetCompileInfo<RsqrtCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
     // 走新的模板tiling
     OP_LOGD("RsqrtTiling", "Enter new RsqrtTiling");

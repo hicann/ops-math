@@ -116,7 +116,7 @@ static ge::graphStatus Tiling4Sqrt(gert::TilingContext *context)
         return ge::GRAPH_FAILED;
     }
 
-    auto compileInfo = reinterpret_cast<const SqrtCompileInfo*>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<SqrtCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     OP_LOGD("SqrtTiling", "Enter new SqrtTiling");
     SqrtTiling tiling(context);

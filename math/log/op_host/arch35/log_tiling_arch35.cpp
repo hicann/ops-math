@@ -176,7 +176,7 @@ ge::graphStatus LogTiling::RunTiling()
 static ge::graphStatus Tiling4Log(gert::TilingContext* tilingContextGen)
 {
     OP_LOGD(tilingContextGen->GetNodeName(), "Tiling4Log rt2.0 is running.");
-    auto compileInfo = reinterpret_cast<const ElewiseCompileInfo*>(tilingContextGen->GetCompileInfo());
+    auto compileInfo = tilingContextGen->GetCompileInfo<ElewiseCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
     LogTiling baseOpTiling(tilingContextGen);
     return baseOpTiling.RunTiling();

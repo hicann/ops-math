@@ -61,7 +61,7 @@ ge::graphStatus LogicalNotTiling::RunTiling()
 
 static ge::graphStatus Tiling4LogicalNot(gert::TilingContext *context)
 {
-    auto compileInfo = static_cast<const ElewiseCompileInfo*>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<ElewiseCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     LogicalNotTiling logicalNotTiling(context);

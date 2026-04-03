@@ -46,7 +46,7 @@ ge::graphStatus SinTiling::SetTilingData()
     uint64_t ubSize = 0;
     auto platformInfo = tilingContext->GetPlatformInfo();
     if (platformInfo == nullptr) {
-        auto compileInfoPtr = reinterpret_cast<const SinCompileInfo*>(tilingContext->GetCompileInfo());
+        auto compileInfoPtr = tilingContext->GetCompileInfo<SinCompileInfo>();
         OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(tilingContext, "compile info is null"),
                         return ge::GRAPH_FAILED);
         ubSize = compileInfoPtr->ubSize;
@@ -140,7 +140,7 @@ ge::graphStatus SinTiling::RunTiling()
 static ge::graphStatus Tiling4Sin(gert::TilingContext* tilingContextGen)
 {
     OP_LOGD(tilingContextGen->GetNodeName(), "Tiling4Sin rt2.0 is running.");
-    auto compileInfo = reinterpret_cast<const SinCompileInfo*>(tilingContextGen->GetCompileInfo());
+    auto compileInfo = tilingContextGen->GetCompileInfo<SinCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
 
     SinTiling baseOpTiling(tilingContextGen);

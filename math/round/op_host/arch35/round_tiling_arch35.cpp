@@ -287,7 +287,7 @@ static ge::graphStatus Tiling4Round(gert::TilingContext *context)
         
     OP_LOGD(context->GetNodeName(), "Tiling4Round rt2.0 is running.");
 
-    auto compileInfo = static_cast<const RoundCompileInfo*>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<RoundCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     OP_LOGD(context->GetNodeName(), "Enter new Round.");
     RoundTiling baseOpTiling(context);

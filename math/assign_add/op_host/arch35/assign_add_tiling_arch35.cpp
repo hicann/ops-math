@@ -160,7 +160,7 @@ ge::graphStatus AssignAddTiling::RunTiling()
 static ge::graphStatus Tiling4AssignAdd(gert::TilingContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Tiling4AssignAdd rt2.0 is running.");
-    auto compileInfo = reinterpret_cast<const AssignAddCompileInfo*>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<AssignAddCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     AssignAddTiling assignAddTiling(context);
     return assignAddTiling.RunTiling();

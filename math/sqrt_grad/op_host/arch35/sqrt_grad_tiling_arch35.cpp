@@ -158,7 +158,7 @@ ge::graphStatus SqrtGradTiling::RunTiling()
 static ge::graphStatus Tiling4SqrtGrad(gert::TilingContext* tilingContextGen)
 {
     OP_LOGD(tilingContextGen->GetNodeName(), "Tiling4SqrtGrad rt2.0 is running.");
-    auto compileInfo = reinterpret_cast<const SqrtGradCompileInfo*>(tilingContextGen->GetCompileInfo());
+    auto compileInfo = tilingContextGen->GetCompileInfo<SqrtGradCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
     SqrtGradTiling baseOpTiling(tilingContextGen);
     return baseOpTiling.RunTiling();
