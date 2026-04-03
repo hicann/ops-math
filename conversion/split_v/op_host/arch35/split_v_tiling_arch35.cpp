@@ -1014,7 +1014,7 @@ void SplitVTiling::CalcSameLenSplitTilingInfo(int64_t halfUbEleNum, int64_t bloc
     int64_t nAlignNum = CeilDiv(fusedShape_[1], blockEleNum) * blockEleNum;
     int64_t mnAlignNum = fusedShape_[0] * nAlignNum;
 
-    factorTmp = std::floor(std::sqrt(halfUbEleNum / nAlignNum));
+    factorTmp = std::floor(std::sqrt(halfUbEleNum / fusedShape_[1]));
     mBlockFactor_ =
         FloorAlign(factorTmp, blockEleNum) >= fusedShape_[0] ? fusedShape_[0] : FloorAlign(factorTmp, blockEleNum);
     mBlockCount_ = CeilDiv(fusedShape_[0], mBlockFactor_);
