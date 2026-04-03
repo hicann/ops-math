@@ -26,7 +26,7 @@
 |   └── CMakeLists.txt
 ├── ${op_class}                                         # 算子分类，如conversion、math、 random类算子
 │   ├── ${op_name}                                         # 算子工程目录，${op_name}表示算子名（小写下划线形式）
-│   │   ├── CMakeLists.txt                              # 算子cmakelist入口
+│   │   ├── CMakeLists.txt                              # 算子CMakeLists.txt入口
 │   │   ├── README.md                                   # 算子介绍文档
 │   │   ├── docs                                        # 算子文档目录
 │   │   │   └── aclnn${OpName}.md                       # 算子aclnn接口介绍文档，${OpName}表示算子名（大驼峰形式）
@@ -34,12 +34,12 @@
 │   │   │   ├── test_aclnn_${op_name}.cpp               # 算子通过aclnn调用的示例
 │   │   │   └── test_geir_${op_name}.cpp                # 算子通过geir调用的示例
 │   │   ├── op_graph                                    # 图融合相关实现
-│   │   │   ├── CMakeLists.txt                          # op_graph侧cmakelist文件
+│   │   │   ├── CMakeLists.txt                          # op_graph侧CMakeLists.txt文件
 │   │   │   ├── ${op_name}_graph_infer.cpp              # InferDataType文件，实现算子数据类型推导
 │   │   │   ├── ${op_name}_proto.h                      # 算子原型定义，用于图优化和融合阶段识别算子
 │   │   │   └── fusion_pass                             # 算子融合规则目录
 │   │   ├── op_host                                     # Host侧实现
-│   │   │   ├── CMakeLists.txt                          # Host侧cmakelist文件
+│   │   │   ├── CMakeLists.txt                          # Host侧CMakeLists.txt文件
 │   │   │   ├── config                                  # 可选，二进制配置文件，若未配置工程自动生成
 │   │   │   │   ├── ${soc_version}                      # 算子在NPU上配置的二进制信息，${soc_version}表示NPU型号
 │   │   │   │   │   ├── ${op_name}_binary.json          # 算子二进制配置文件
@@ -71,7 +71,7 @@
 │   │   └── tests                                       # 算子测试用例目录
 │   │       ├── CMakeLists.txt
 │   │       └── ut                                      # 可选，UT测试用例，根据实际情况开发相应的用例
-│   │           ├── CMakeLists.txt                      # UT用例cmakelist文件
+│   │           ├── CMakeLists.txt                      # UT用例CMakeLists.txt文件
 │   │           ├── graph_plugin                        # graph_plugin测试用例目录
 │   │           │   ├── CMakeLists.txt
 │   │           │   └── fusion_pass                     # 融合规则测试用例目录
@@ -121,12 +121,12 @@
 ├── tests                                               # 项目级测试目录
 │   ├── requirements.txt                                # 测试用例依赖的第三方组件
 │   └── ut                                              # UT用例工程
-│       ├── CMakeLists.txt                              # UT工程的cmakelist脚本
+│       ├── CMakeLists.txt                              # UT工程的CMakeLists.txt脚本
 │       ├── common                                      # UT工程中使用的公共代码
 │       ├── op_api                                      # op_api测试工程
 │       ├── op_host                                     # op_host测试工程
 │       └── op_kernel                                   # op_kernel测试工程
-├── CMakeLists.txt                                      # 项目工程cmakelist入口
+├── CMakeLists.txt                                      # 项目工程CMakeLists.txt入口
 ├── CONTRIBUTING.md                                     # 项目贡献指南文件
 ├── LICENSE                                             # 项目开源许可证信息
 ├── OAT.xml                                             # 配置脚本，代码仓工具使用，用于检查License是否规范
