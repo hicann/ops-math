@@ -48,6 +48,9 @@ cmake-build-release
 # Visual Studio Code
 .vscode
 
+# CodeArts
+.arts
+
 # UT report file
 ut_report.txt
 
