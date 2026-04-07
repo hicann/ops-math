@@ -48,6 +48,7 @@ struct UbLoopInfo {
     int64_t totalUbColAlign{0};
     int64_t colStart{0};
     int64_t rowStart{0};
+    int64_t preCatCol{0};
     int64_t* inputCol;
 };
 

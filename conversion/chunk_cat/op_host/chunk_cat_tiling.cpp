@@ -37,7 +37,7 @@ std::string ChunkCatTiling::TilingDataToString() const {
         ", ubRowFactor = " + std::to_string(ubRowFactor_) + ", ubColFactor = " + std::to_string(ubColFactor_) +
         ", inputNum = " + std::to_string(inputNum_) + ", inUbSize = " + std::to_string(inUbSize_) +
         ", outUbSize = " + std::to_string(outUbSize_) + ", isAllAlign = " + std::to_string(isAllAlign_) +
-        ", isHalfAlign = " + std::to_string(isHalfAlign_);
+        ", isHalfAlign = " + std::to_string(isHalfAlign_) + ", isOneConcat = " + std::to_string(isOneConcat_);
 }
 
 // 获取硬件信息
@@ -132,14 +132,16 @@ ge::graphStatus ChunkCatTiling::CalculateOutputInfo()
         }
         outputCol_ += dim1Size;
     }
+    isOneConcat_ = (outputRow_ == 1) && (!isAllAlign_);
     return ge::GRAPH_SUCCESS;
 }
 
 void ChunkCatTiling::DoUbSplit()
 {
-    if (isAllAlign_) {
+    if (isAllAlign_ || isOneConcat_) {
         // 列切
         uint32_t colLimit = inUbSize_ / srcDtypeSize_;
+        colLimit = (isOneConcat_) ? colLimit - 32 * (srcEleUbBlock_ - 1) : colLimit;
         int64_t ubColLoop = (outputCol_ + colLimit - 1) / colLimit ;
         ubColFactor_ = (outputCol_ + ubColLoop - 1) / ubColLoop;
         ubColFactor_ = (ubColFactor_ + srcEleUbBlock_ - 1) / srcEleUbBlock_ * srcEleUbBlock_;
@@ -184,6 +186,7 @@ void ChunkCatTiling::SetTilingData(ChunkCatTilingData* tilingData)
 {
     tilingData->isAllAlign = isAllAlign_;
     tilingData->isHalfAlign = isHalfAlign_;
+    tilingData->isOneConcat = isOneConcat_;
     tilingData->dim = dim_;
     tilingData->numChunk = numChunk_;
     tilingData->outputRow = outputRow_;

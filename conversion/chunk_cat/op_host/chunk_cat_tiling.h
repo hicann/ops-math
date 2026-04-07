@@ -49,6 +49,7 @@ private:
 
     bool isAllAlign_{true};
     bool isHalfAlign_{true};
+    bool isOneConcat_{false};
     int64_t inputNum_{0};
     int64_t dim_{0};
     int64_t numChunk_{0};

@@ -19,6 +19,7 @@
 struct ChunkCatTilingData {
     bool isAllAlign;
     bool isHalfAlign;
+    bool isOneConcat;
     int64_t inputNum;
     int64_t dim;
     int64_t numChunk;
