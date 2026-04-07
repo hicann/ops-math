@@ -58,7 +58,7 @@ aclnnStatus aclnnInplaceLogicalNotGetWorkspaceSize(
 ```
 
 ```Cpp
-aclnnStatus aclnnInplaceLogicalAnd(
+aclnnStatus aclnnInplaceLogicalNot(
   void*          workspace, 
   uint64_t       workspaceSize, 
   aclOpExecutor* executor, 
