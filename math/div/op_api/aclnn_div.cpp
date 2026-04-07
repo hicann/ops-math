@@ -151,6 +151,16 @@ static inline op::DataType CompatibleInferDivDtype(const op::DataType selfDtype,
     return promoteType;
 }
 
+static inline aclnnStatus CheckDivModComplexDtype(const op::DataType promoteType, const int mode)
+{
+    if ((mode == MODE_TRUNC_DIV || mode == MODE_FLOOR_DIV) &&
+        (promoteType == op::DataType::DT_COMPLEX128 || promoteType == op::DataType::DT_COMPLEX64)) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "promoteType do not support DT_COMPLEX128 or DT_COMPLEX64.");
+        return ACLNN_ERR_PARAM_INVALID;
+    }
+    return ACLNN_SUCCESS;
+}
+
 static inline op::DataType InferDivModeDtype(
     const op::DataType selfDtype, const op::DataType otherDtype, const int mode)
 {
@@ -748,6 +758,8 @@ aclnnStatus aclnnDivModGetWorkspaceSize(
             CHECK_RET(promoteRet == ACLNN_SUCCESS, promoteRet);
         } else {
             promoteType = InferDivModeDtype(self->GetDataType(), other->GetDataType(), mode);
+            auto complexRet = CheckDivModComplexDtype(promoteType, mode);
+            CHECK_RET(complexRet == ACLNN_SUCCESS, complexRet);
             // customization
             bool needToFloat = (promoteType == op::DataType::DT_BOOL && mode == MODE_FLOOR_DIV);
             promoteType = needToFloat ? op::DataType::DT_FLOAT : promoteType;
@@ -847,6 +859,8 @@ aclnnStatus aclnnDivModsGetWorkspaceSize(
             CHECK_RET(promoteRet == ACLNN_SUCCESS, promoteRet);
         } else {
             promoteType = InferDivsModeDtype(self->GetDataType(), other->GetDataType(), mode);
+            auto complexRet = CheckDivModComplexDtype(promoteType, mode);
+            CHECK_RET(complexRet == ACLNN_SUCCESS, complexRet);
             // customization
             bool needToFloat = (promoteType == op::DataType::DT_BOOL && mode == MODE_FLOOR_DIV);
             promoteType = needToFloat ? op::DataType::DT_FLOAT : promoteType;
