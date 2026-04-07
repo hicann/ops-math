@@ -554,7 +554,7 @@ private:
         outStartLen = remainToBoundary(cropStart, blockSize);
         outEndLen = remainToBoundary(cropEnd, blockSize);
 
-        if (outStartLen + outEndLen >= outLen) {
+        if (outStartLen + outEndLen > outLen) {
             if (cropStart % blockSize != 0) {
                 outStartLen = outLen;
                 outEndLen = 0;
