@@ -32,7 +32,6 @@ protected:
     static void SetUpTestCase()
     {
         cout << "AddExampleTest SetUp\n" << endl;
-        std::cout << "is_finite_test SetUp" << std::endl;
         const string cmd = "cp -rf " + dataPath + " ./";
         system(cmd.c_str());
         system("chmod -R 755 ./add_example_data/");
@@ -55,7 +54,7 @@ TEST_F(AddExampleTest, test_case_0)
     size_t yByteSize = 32 * 4 * 4 * 4 * sizeof(float);
     size_t zByteSize = 32 * 4 * 4 * 4 * sizeof(float);
     size_t tiling_data_size = sizeof(AddExampleTilingData);
-    uint32_t numBlocks = 64;
+    uint32_t numBlocks = 1;
 
     system("cd ./add_example_data/ && python3 gen_data.py '(32, 4, 4, 4)' 'float32'");
     std::string fileName = "./add_example_data/float32_input_add_example.bin";
@@ -72,7 +71,7 @@ TEST_F(AddExampleTest, test_case_0)
 
     AddExampleTilingData* tilingDatafromBin = reinterpret_cast<AddExampleTilingData*>(tiling);
     tilingDatafromBin->totalNum = 32 * 4 * 4 * 4;
-    tilingDatafromBin->blockFactor = 32;
+    tilingDatafromBin->blockFactor = 32 * 4 * 4 * 4;
     tilingDatafromBin->ubFactor = 32;
 
     ICPU_SET_TILING_KEY(0);

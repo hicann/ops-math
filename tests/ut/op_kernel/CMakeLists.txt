@@ -13,6 +13,22 @@ set(OP_KERNEL_UT_EXE ${PKG_NAME}_op_kernel_ut)
 # add opkernel ut cases dynamic lib: libmath_op_kernel_ut_cases.so
 add_opkernel_ut_modules(${OP_KERNEL_MODULE_NAME})
 
+# add op tiling so
+add_library(
+  ${OP_KERNEL_MODULE_NAME}_tiling SHARED
+  $<$<TARGET_EXISTS:${OPHOST_NAME}_tiling_obj>:$<TARGET_OBJECTS:${OPHOST_NAME}_tiling_obj>>
+  $<$<TARGET_EXISTS:${COMMON_NAME}_obj>:$<TARGET_OBJECTS:${COMMON_NAME}_obj>>
+  $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>>
+  $<$<TARGET_EXISTS:opbase_tiling_objs>:$<TARGET_OBJECTS:opbase_tiling_objs>>)
+
+target_link_libraries(
+  ${OP_KERNEL_MODULE_NAME}_tiling
+  PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
+          -Wl,--whole-archive
+          rt2_registry_static
+          -Wl,--no-whole-archive
+          tiling_api)
+
 # add op kernel ut exe for each socVersion
 foreach(socVersion ${fastOpTestSocVersions})
   # append all exe
@@ -21,6 +37,7 @@ foreach(socVersion ${fastOpTestSocVersions})
 
   # add opkernel ut exe for socVersion
   add_executable(${OP_KERNEL_UT_EXE}_${socVersion} test_op_kernel_main.cpp)
+  add_dependencies(${OP_KERNEL_UT_EXE}_${socVersion} ${OP_KERNEL_MODULE_NAME}_tiling)
   target_include_directories(${OP_KERNEL_UT_EXE}_${socVersion}
                              PRIVATE ${ASCEND_DIR}/pkg_inc)
   target_link_libraries(
