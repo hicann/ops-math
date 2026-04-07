@@ -42,7 +42,23 @@ aclnnStatus aclnnBitwiseAndTensorOut(
   void*             workspace,
   uint64_t          workspaceSize,
   aclOpExecutor*    executor,
-  const aclrtStream stream)
+  aclrtStream       stream)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceBitwiseAndTensorOutGetWorkspaceSize(
+  const aclTensor*  self,
+  const aclTensor*  other,
+  uint64_t*         workspaceSize,
+  aclOpExecutor**   executor)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceBitwiseAndTensorOut(
+  void*             workspace,
+  uint64_t          workspaceSize,
+  aclOpExecutor*    executor,
+  aclrtStream       stream)
 ```
 
 ## aclnnBitwiseAndTensorOutGetWorkspaceSize
