@@ -24,7 +24,14 @@ const aclTensor* ReduceAll(const aclTensor* self, const aclIntArray* dim, bool k
     L0_DFX(ReduceAll, self, dim, keepdim);
     // 固定写法，创建OpExecutor
     auto dims = executor->ConvertToTensor(dim, op::DataType::DT_INT64);
-    auto out = executor->AllocTensor(self->GetViewShape(), op::DataType::DT_BOOL);
+    const aclTensor* out = nullptr;
+    if (self->GetDataType() == op::DataType::DT_BF16 || self->GetDataType() == op::DataType::DT_FLOAT) {
+        out = executor->AllocTensor(self->GetViewShape(), op::DataType::DT_FLOAT);
+    } else if (self->GetDataType() == op::DataType::DT_FLOAT16) {
+        out = executor->AllocTensor(self->GetViewShape(), op::DataType::DT_FLOAT16);
+    } else {
+        out = executor->AllocTensor(self->GetViewShape(), op::DataType::DT_BOOL);
+    }
     if (self->GetViewShape().GetDimNum() != 0 || !keepdim) {
         auto ret = INFER_SHAPE(ReduceAll, OP_INPUT(self, dims), OP_OUTPUT(out), OP_ATTR(keepdim));
         if (ret != ACLNN_SUCCESS) {
