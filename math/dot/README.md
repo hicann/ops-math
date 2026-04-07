@@ -57,14 +57,14 @@ $$
     <tr>
       <td>tensor</td>
       <td>输入</td>
-      <td>参与点积计算的输入张量，公式中的tensor。与tensor、out的数据类型一致，与tensor的shape一致。</td>
+      <td>参与点积计算的输入张量，公式中的tensor。与self、out的数据类型一致，与self的shape一致。</td>
       <td>BFLOAT16、FLOAT16、FLOAT、INT8、INT32、UINT8</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>out</td>
       <td>输出</td>
-      <td>点积计算结果，公式中的输出out。与tensor、out的数据类型一致。</td>
+      <td>点积计算结果，公式中的输出out。与self、tensor的数据类型一致。</td>
       <td>BFLOAT16、FLOAT16、FLOAT、INT8、INT32、UINT8</td>
       <td>ND</td>
     </tr>
