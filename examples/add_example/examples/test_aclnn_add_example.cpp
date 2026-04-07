@@ -10,8 +10,13 @@
 
 #include <iostream>
 #include <vector>
+#include <numeric>
+#include <random>
+#include <algorithm>
 #include "acl/acl.h"
 #include "aclnn_add_example.h"
+
+constexpr uint32_t PRINT_LENGTH = 10;
 
 #define CHECK_RET(cond, return_expr) \
     do {                             \
@@ -43,7 +48,8 @@ void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr,
         resultData.data(), resultData.size() * sizeof(resultData[0]), *deviceAddr, size * sizeof(resultData[0]),
         ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
-    for (int64_t i = 0; i < size; i++) {
+    LOG_PRINT("Print the first %u groups of data: \n", PRINT_LENGTH);
+    for (int64_t i = 0; i < PRINT_LENGTH; i++) {
         LOG_PRINT("add_example first input[%ld] is: %f, second input[%ld] is: %f, result[%ld] is: %f\n", i, selfXHostData[i], i, selfYHostData[i], i, resultData[i]);
     }
 }
@@ -99,14 +105,25 @@ int main()
     void* selfXDeviceAddr = nullptr;
     // 当前样例算子未进行shape、dtype全泛化，其他输入场景可能存在不支持情况
     std::vector<int64_t> selfXShape = {32, 4, 4, 4};
-    std::vector<float> selfXHostData(2048, 1);
+    std::vector<float> selfXHostData(2048);
+    // 此行代码仅为填充输入的值，从指定初始值1.0递增，步长为1的等差数列，也可自行选用其他填充方法
+    std::iota(selfXHostData.begin(), selfXHostData.end(), 1.0f);
+    
     ret = CreateAclTensor(selfXHostData, selfXShape, &selfXDeviceAddr, aclDataType::ACL_FLOAT, &selfX);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     aclTensor* selfY = nullptr;
     void* selfYDeviceAddr = nullptr;
     std::vector<int64_t> selfYShape = {32, 4, 4, 4};
-    std::vector<float> selfYHostData(2048, 1);
+    std::vector<float> selfYHostData(2048);
+    // 指定随机数种子，生成指定范围内的随机数
+    const uint32_t seed = 42;
+    std::mt19937 gen(seed);
+    std::uniform_int_distribution<int> dist(-1024, 1024);
+    std::generate(selfYHostData.begin(), selfYHostData.end(), [&dist, &gen]() {
+        return dist(gen);
+    });
+
     ret = CreateAclTensor(selfYHostData, selfYShape, &selfYDeviceAddr, aclDataType::ACL_FLOAT, &selfY);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 

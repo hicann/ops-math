@@ -57,17 +57,17 @@ cannsim.log
 从仿真工具日志文件可以看到示例中的打印信息：
 
 ```
-add_example result[2011] is: 2.000000
-add_example result[2012] is: 2.000000
-add_example result[2013] is: 2.000000
-add_example result[2014] is: 2.000000
-add_example result[2015] is: 2.000000
-add_example result[2016] is: 2.000000
-add_example result[2017] is: 2.000000
-add_example result[2018] is: 2.000000
-add_example result[2019] is: 2.000000
-add_example result[2020] is: 2.000000
-add_example result[2021] is: 2.000000
+Print the first 10 groups of data: 
+add_example first input[0] is: 1.000000, second input[0] is: -257.000000, result[0] is: -256.000000
+add_example first input[1] is: 2.000000, second input[1] is: 608.000000, result[1] is: 610.000000
+add_example first input[2] is: 3.000000, second input[2] is: 924.000000, result[2] is: 927.000000
+add_example first input[3] is: 4.000000, second input[3] is: -649.000000, result[3] is: -645.000000
+add_example first input[4] is: 5.000000, second input[4] is: 475.000000, result[4] is: 480.000000
+add_example first input[5] is: 6.000000, second input[5] is: 573.000000, result[5] is: 579.000000
+add_example first input[6] is: 7.000000, second input[6] is: 202.000000, result[6] is: 209.000000
+add_example first input[7] is: 8.000000, second input[7] is: 198.000000, result[7] is: 206.000000
+add_example first input[8] is: 9.000000, second input[8] is: -705.000000, result[8] is: -696.000000
+add_example first input[9] is: 10.000000, second input[9] is: -111.000000, result[9] is: -101.000000
 ```
 
 ## 查看性能流水
