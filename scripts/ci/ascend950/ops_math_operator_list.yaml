@@ -11,6 +11,7 @@
 # 分组编译，当前支持5个分组，需将每个算子配置到对应的分组里，此配置文件仅仅在CI上编译出包有效
 # 配置方式：math仓当前有三个子目录，分别为math、conversion、random，将对应目录内的算子按照字母表的顺序从前往后配置即可
 operator_group_1:
+  - signbit
   - abs
   - add
   - addcdiv
