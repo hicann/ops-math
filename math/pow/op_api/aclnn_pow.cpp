@@ -129,12 +129,19 @@ static inline bool CheckSocVersionIsSupportBf16(void) {
 }
 
 // 判断910B芯片上，pow是否走AICPU路径
-static inline bool IsPowAiCpuOn910B(const op::DataType dtype) {
+static inline bool IsPowAiCpuOn910B(const op::DataType dtype, const aclScalar *self, const aclTensor *exponent) {
   auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
   if (socVersion < SocVersion::ASCEND910B || socVersion > SocVersion::ASCEND910E) {
     return false;
   }
   if (IsRegBase()) {
+    return false;
+  }
+  // self或exponent为bool或bf16类型时，不走AICPU路径
+  const auto selfDtype = self->GetDataType();
+  const auto expDtype = exponent->GetDataType();
+  if (selfDtype == op::DataType::DT_BOOL || expDtype == op::DataType::DT_BOOL ||
+      selfDtype == op::DataType::DT_BF16 || expDtype == op::DataType::DT_BF16) {
     return false;
   }
   // 910B AICORE支持的dtype
@@ -514,7 +521,7 @@ static aclnnStatus BuildPowScalarTensorCompute(const aclScalar *self, const aclT
   CHECK_RET(expContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
   // 910B且走AICPU时，exponent不cast到promoteType
-  bool skipCastForAicpu = IsPowAiCpuOn910B(promoteType);
+  bool skipCastForAicpu = IsPowAiCpuOn910B(promoteType, self, exponent);
   const aclTensor* powExp = expContiguous;
   if (!skipCastForAicpu) {
     powExp = l0op::Cast(expContiguous, promoteType, executor);
