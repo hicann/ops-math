@@ -1,4 +1,4 @@
-# 算子多平台适配指南
+# 跨平台迁移指导
 
 本指南介绍算子在多平台间迁移的适配要点与方案。以算子从Atlas A2系列迁移至Ascend 950系列为例，对比硬件架构差异项及所涉适配点，并提供相关算子适配样例。
 
@@ -46,27 +46,6 @@
     <td>54T</td>
   </tr>
   <tr>
-    <td rowspan="4">SOC</td>
-    <td>L2 容量(MB)</td>
-    <td>192</td>
-    <td>128</td>
-  </tr>
-  <tr>
-    <td>L2 带宽(read)</td>
-    <td>4.4TB/s</td>
-    <td>5.28TB/s</td>
-  </tr>
-  <tr>
-    <td>跨Die带宽(单向有效带宽)</td>
-    <td>180GB/s(1981)</td>
-    <td>1.44TB/s(2Die)</td>
-  </tr>
-  <tr>
-    <td>AICPU</td>
-    <td>Linx910M 2GHz, 8C8T</td>
-    <td>Linx816 1.5GHz, 8C16T</td>
-  </tr>
-  <tr>
     <td rowspan="2">Memory</td>
     <td>Memory 容量(GB)</td>
     <td>64</td>
@@ -101,7 +80,7 @@
     <td>可用ND2NZ/DN2NZ在MTE2阶段完成格式转换，减少中间buffer和格式转换开销；需关注步长、对齐与NZ形状映射</td>
   </tr>
   <tr>
-    <td>支持Cube->Vector高效内部 数据通路:L1<->UB、L0C->UB、FIXP->UB</td>
+    <td>支持Cube-&gt;Vector高效内部 数据通路:L1&lt;-&gt;UB、L0C-&gt;UB、FIXP-&gt;UB</td>
     <td>可在UB侧做中间累加/激活/融合（如切K累加、后处理），减少GM往返；对应同步与管线切分需调整</td>
   </tr>
   <tr>
@@ -140,7 +119,7 @@
 
 ## 三、推荐迁移步骤
 1. 确认算子涉及的计算单元（Cube/Vector）和对应单元支持的数据类型是否在平台间存在差异。
-2. 确认涉及的数据搬运单元（ND->NZ、GM<->Lx、集合通信等）是否在平台间存在差异。
+2. 确认涉及的数据搬运单元（ND-&gt;NZ、GM&lt;-&gt;Lx、集合通信等）是否在平台间存在差异。
 3. 按硬件能力变更点逐项对照修改（Vector架构、Cube支持数据类型、L1/L0/UB大小、CCU通信等）。
 4. 参考算子迁移样例调整/补齐 Atlas A2/Ascend 950 分支逻辑。
 
