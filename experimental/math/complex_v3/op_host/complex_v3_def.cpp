@@ -43,15 +43,16 @@ public:
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
 
-        OpAICoreConfig aicoreConfig910B;
-        aicoreConfig910B.DynamicCompileStaticFlag(true)
+        OpAICoreConfig aicoreConfig;
+        aicoreConfig.DynamicCompileStaticFlag(true)
             .DynamicFormatFlag(false)
             .DynamicRankSupportFlag(true)
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(false)  // Bit-exact: no precision loss allowed
             .ExtendCfgInfo("opFile.value", "complex_v3");
-        this->AICore().AddConfig("ascend910b", aicoreConfig910B);
+        this->AICore().AddConfig("ascend910b", aicoreConfig);
+        this->AICore().AddConfig("ascend950", aicoreConfig);
     }
 };
 OP_ADD(ComplexV3);
