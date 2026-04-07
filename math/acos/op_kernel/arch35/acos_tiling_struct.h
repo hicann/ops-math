@@ -8,13 +8,15 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef PTA_NPU_OP_API_INC_LEVEL0_OP_ACOS_OP_H_
-#define PTA_NPU_OP_API_INC_LEVEL0_OP_ACOS_OP_H_
+#ifndef ACOS_TILING_STRUCT_H
+#define ACOS_TILING_STRUCT_H
 
-#include "opdev/op_executor.h"
+#include "atvoss/elewise/elewise_base_struct.h"
 
-namespace l0op {
-const aclTensor* Acos(const aclTensor* input, aclOpExecutor* executor);
-}
+using namespace Ops::Base;
 
-#endif
+struct AcosTilingData {
+    EleBaseTilingData baseTiling;
+};
+
+#endif //ACOS_TILING_STRUCT_H

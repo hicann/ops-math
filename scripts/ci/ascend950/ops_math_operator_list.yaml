@@ -13,6 +13,7 @@
 operator_group_1:
   - signbit
   - abs
+  - acos
   - add
   - addcdiv
   - addcmul
