@@ -1682,7 +1682,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>完成减法计算，被减数按alpha进行缩放。</td>
   </tr>
   <tr>
