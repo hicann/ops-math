@@ -20,11 +20,16 @@ using ::testing::Contains;
 using ::testing::ElementsAreArray;
 using ::testing::Not;
 
+namespace {
+B2SNDCompileInfo compileInfo;
+}
+
 class BatchToSpaceNDTilingSmallCTest : public testing::Test {
+    static constexpr uint32_t SMALL_C_RESERVE_BUFFER_SIZE = 256U;
+
 protected:
     static void SetUpTestCase()
     {
-        GTEST_SKIP() << "Temporarily skip the entire test class until the SmallC template is reopened.";
         std::cout << "BatchToSpaceNDTilingSmallCTest SetUp" << std::endl;
     }
 
@@ -71,13 +76,26 @@ protected:
 
     uint64_t ComputeNeedBuffSize(
         int dSize, B2SNDSmallCTilingData* data, const std::set<size_t>& inner, const std::set<size_t>& outter,
-        uint32_t cutAxisFactor, uint32_t otherSideFactor)
+        uint32_t cutAxisFactor, uint32_t otherSideFactor, bool needAlignOnSomeAxis = false)
     {
         // 计算内轴，要Block对齐
-        uint64_t needBufSize = dSize * cutAxisFactor;
-        for (auto i : inner) {
-            needBufSize *= data->croppedInShape[i];
+        uint64_t needBufSize = dSize;
+        bool needAlign = needAlignOnSomeAxis;
+        int16_t compactCnt = 1;
+        for (auto it = inner.rbegin(); it != inner.rend(); ++it) {
+            needBufSize *= data->croppedInShape[*it];
+            // 轴被crop，需要对齐
+            if (needAlign && data->croppedInShape[*it] != data->oriInShape[*it]) {
+                if (compactCnt > 0) {
+                    compactCnt--;
+                    continue;
+                }
+                needBufSize = CeilAlignBlockSize(needBufSize);
+                // 对齐一次即可
+                needAlign = false;
+            }
         }
+        needBufSize *= cutAxisFactor;
         needBufSize = CeilAlignBlockSize(needBufSize);
         // UB外轴
         needBufSize *= (data->inUbAxis == data->outUbAxis) ? 1 : otherSideFactor;
@@ -137,17 +155,38 @@ protected:
 
         int dSize = ge::GetSizeByDataType(dataType);
         // 计算输入需要bufsize
-        uint64_t xNeedBufSize = ComputeNeedBuffSize(dSize, data, xInner, xOutter, data->inUbFactor, data->outUbFactor);
-        EXPECT_GE(data->ubTileSize, xNeedBufSize);
+        uint64_t xNeedBufSize =
+            ComputeNeedBuffSize(dSize, data, xInner, xOutter, data->inUbFactor, data->outUbFactor, true);
+        EXPECT_GE(data->ubTileSize - SMALL_C_RESERVE_BUFFER_SIZE, xNeedBufSize);
         // 计算输出需要bufsize
         uint64_t yNeedBufSize = ComputeNeedBuffSize(dSize, data, yInner, yOutter, data->outUbFactor, data->inUbFactor);
-        EXPECT_GE(data->ubTileSize, yNeedBufSize);
+        EXPECT_GE(data->ubTileSize - SMALL_C_RESERVE_BUFFER_SIZE, yNeedBufSize);
+    }
+
+    void TestCheckBuffer(
+        ge::DataType dataType, const std::initializer_list<int64_t>& xShape,
+        const std::vector<int32_t>& blockShapeValues, const std::vector<int32_t>& cropsValues)
+    {
+        int64_t bsDimNum = blockShapeValues.size();
+        gert::TilingContextPara tilingContextPara(
+            "BatchToSpaceND",
+            {
+                {{xShape, xShape}, dataType, ge::FORMAT_ND},
+                {{{bsDimNum}, {bsDimNum}}, ge::DT_INT32, ge::FORMAT_ND, true, (void*)blockShapeValues.data()},
+                {{{bsDimNum, 2}, {bsDimNum, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, (void*)cropsValues.data()},
+            },
+            {
+                {{{}, {}}, dataType, ge::FORMAT_ND},
+            },
+            &compileInfo);
+        TilingInfo tilingInfo;
+        auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+        ASSERT_TRUE(tilingRet);
+        ASSERT_EQ(tilingInfo.tilingDataSize, sizeof(B2SNDSmallCTilingData));
+        B2SNDSmallCTilingData* data = reinterpret_cast<B2SNDSmallCTilingData*>(tilingInfo.tilingData.get());
+        CheckBuffSize(data, blockShapeValues.size(), dataType);
     }
 };
-
-namespace {
-B2SNDCompileInfo compileInfo;
-}
 
 TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_precrop_nocrop)
 {
@@ -236,7 +275,7 @@ TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_precrop_cr
     EXPECT_THAT(Shape2Vec(*data->crops, 4), ElementsAreArray(cropsValues));
 }
 
-TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_fullload)
+TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_nocrop_fullload)
 {
     auto dataType = ge::DT_FLOAT;
     std::vector<int32_t> blockShapeValues = {2, 3};
@@ -274,7 +313,7 @@ TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_fullload)
     CheckBuffSize(data, blockShapeValues.size(), dataType);
 }
 
-TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_cut_common)
+TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_nocrop_cut_common)
 {
     auto dataType = ge::DT_FLOAT;
     std::vector<int32_t> blockShapeValues = {2, 3};
@@ -304,15 +343,15 @@ TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_cut_common
     EXPECT_EQ(data->coreNum, 64);
     EXPECT_EQ(data->inUbAxis, 4);
     EXPECT_EQ(data->outUbAxis, 4);
-    EXPECT_EQ(data->inUbFactor, 1364);
-    EXPECT_EQ(data->outUbFactor, 1364);
+    EXPECT_EQ(data->inUbFactor, 1360);
+    EXPECT_EQ(data->outUbFactor, 1360);
     EXPECT_EQ(data->ubTotalCount, 12000);
     EXPECT_EQ(data->ubPerCount, 188);
     EXPECT_EQ(tilingInfo.blockNum, 64);
     CheckBuffSize(data, blockShapeValues.size(), dataType);
 }
 
-TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_cut_diff)
+TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_nocrop_cut_xs0_bs0_2d)
 {
     auto dataType = ge::DT_FLOAT;
     std::vector<int32_t> blockShapeValues = {2, 3};
@@ -350,7 +389,45 @@ TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_cut_diff)
     CheckBuffSize(data, blockShapeValues.size(), dataType);
 }
 
-TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_cut_n)
+TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_nocrop_cut_xs0_bs0_1d)
+{
+    auto dataType = ge::DT_INT16;
+    std::vector<int32_t> blockShapeValues = {24};
+    std::vector<int32_t> cropsValues = {0, 0};
+    gert::TilingContextPara tilingContextPara(
+        "BatchToSpaceND",
+        {
+            {{{576, 55, 115}, {576, 55, 115}}, dataType, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, blockShapeValues.data()},
+            {{{1, 2}, {1, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, cropsValues.data()},
+        },
+        {
+            {{{24, 1320, 115}, {24, 1320, 115}}, dataType, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    ASSERT_TRUE(tilingRet);
+    std::vector<int64_t> expectWorkspaces = {0};
+    EXPECT_EQ(tilingInfo.workspaceSizes, expectWorkspaces);
+    EXPECT_EQ(tilingInfo.tilingKey, 0b0'00000001'00000010);
+    ASSERT_EQ(tilingInfo.tilingDataSize, sizeof(B2SNDSmallCTilingData));
+    B2SNDSmallCTilingData* data = reinterpret_cast<B2SNDSmallCTilingData*>(tilingInfo.tilingData.get());
+    EXPECT_THAT(Shape2Vec(data->oriInShape, 4), ElementsAreArray({24, 24, 55, 115}));
+    EXPECT_THAT(Shape2Vec(data->croppedInShape, 4), ElementsAreArray({24, 24, 55, 115}));
+    EXPECT_THAT(Shape2Vec(*data->crops, 2), ElementsAreArray(cropsValues));
+    EXPECT_EQ(data->coreNum, 64);
+    EXPECT_EQ(data->inUbAxis, 2);
+    EXPECT_EQ(data->outUbAxis, 0);
+    EXPECT_EQ(data->inUbFactor, 17);
+    EXPECT_EQ(data->outUbFactor, 16);
+    EXPECT_EQ(data->ubTotalCount, 192);
+    EXPECT_EQ(data->ubPerCount, 3);
+    EXPECT_EQ(tilingInfo.blockNum, 64);
+    CheckBuffSize(data, blockShapeValues.size(), dataType);
+}
+
+TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_nocrop_cut_n)
 {
     auto dataType = ge::DT_FLOAT;
     std::vector<int32_t> blockShapeValues = {3, 5};
@@ -388,7 +465,7 @@ TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_cut_n)
     CheckBuffSize(data, blockShapeValues.size(), dataType);
 }
 
-TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_cut_xs0_bs0)
+TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_crop_cut_xs0_bs0_2d)
 {
     auto dataType = ge::DT_INT64;
     std::vector<int32_t> blockShapeValues = {25, 8};
@@ -426,7 +503,7 @@ TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_cut_xs0_bs
     CheckBuffSize(data, blockShapeValues.size(), dataType);
 }
 
-TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_cut_n_bs0)
+TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_crop_cut_n_bs0)
 {
     auto dataType = ge::DT_FLOAT;
     std::vector<int32_t> blockShapeValues = {42, 1};
@@ -462,4 +539,86 @@ TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_cut_n_bs0)
     EXPECT_EQ(data->ubPerCount, 1);
     EXPECT_EQ(tilingInfo.blockNum, 12);
     CheckBuffSize(data, blockShapeValues.size(), dataType);
+}
+
+TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_crop_cut_alignaxis)
+{
+    auto dataType = ge::DT_UINT16;
+    std::vector<int32_t> blockShapeValues = {2, 1, 317};
+    std::vector<int32_t> cropsValues = {0, 1, 825, 97, 105, 414};
+    gert::TilingContextPara tilingContextPara(
+        "BatchToSpaceND",
+        {
+            {{{634, 2, 1597, 2, 3}, {634, 2, 1597, 2, 3}}, dataType, ge::FORMAT_ND},
+            {{{3}, {3}}, ge::DT_INT32, ge::FORMAT_ND, true, blockShapeValues.data()},
+            {{{3, 2}, {3, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, cropsValues.data()},
+        },
+        {
+            {{{1, 3, 675, 115, 3}, {1, 3, 675, 115, 3}}, dataType, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    ASSERT_TRUE(tilingRet);
+    std::vector<int64_t> expectWorkspaces = {0};
+    EXPECT_EQ(tilingInfo.workspaceSizes, expectWorkspaces);
+    EXPECT_EQ(tilingInfo.tilingKey, 0b0'00000011'00000010);
+    ASSERT_EQ(tilingInfo.tilingDataSize, sizeof(B2SNDSmallCTilingData));
+    B2SNDSmallCTilingData* data = reinterpret_cast<B2SNDSmallCTilingData*>(tilingInfo.tilingData.get());
+    EXPECT_THAT(Shape2Vec(data->oriInShape, 8), ElementsAreArray({2, 1, 317, 1, 2, 1597, 2, 3}));
+    EXPECT_THAT(Shape2Vec(data->croppedInShape, 8), ElementsAreArray({2, 1, 115, 1, 2, 675, 1, 3}));
+    EXPECT_THAT(Shape2Vec(*data->crops, 6), ElementsAreArray(cropsValues));
+    EXPECT_EQ(data->coreNum, 56);
+    EXPECT_EQ(data->inUbAxis, 5);
+    EXPECT_EQ(data->outUbAxis, 2);
+    EXPECT_EQ(data->inUbFactor, 106);
+    EXPECT_EQ(data->outUbFactor, 101);
+    EXPECT_EQ(data->ubTotalCount, 56);
+    EXPECT_EQ(data->ubPerCount, 1);
+    EXPECT_EQ(tilingInfo.blockNum, 56);
+    CheckBuffSize(data, blockShapeValues.size(), dataType);
+}
+
+TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_crop_almost_full)
+{
+    auto dataType = ge::DT_INT16;
+    std::vector<int32_t> blockShapeValues = {1, 1, 1};
+    std::vector<int32_t> cropsValues = {992, 530, 11, 0, 1, 0};
+    gert::TilingContextPara tilingContextPara(
+        "BatchToSpaceND",
+        {
+            {{{2, 3310, 13, 2, 2}, {2, 3310, 13, 2, 2}}, dataType, ge::FORMAT_ND},
+            {{{3}, {3}}, ge::DT_INT32, ge::FORMAT_ND, true, blockShapeValues.data()},
+            {{{3, 2}, {3, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, cropsValues.data()},
+        },
+        {
+            {{{2, 1788, 2, 1}, {2, 1788, 2, 1}}, dataType, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    auto tilingRet = ExecuteTiling(tilingContextPara, tilingInfo);
+    ASSERT_TRUE(tilingRet);
+    std::vector<int64_t> expectWorkspaces = {0};
+    EXPECT_EQ(tilingInfo.workspaceSizes, expectWorkspaces);
+    EXPECT_EQ(tilingInfo.tilingKey, 0b0'00000011'00000010);
+    ASSERT_EQ(tilingInfo.tilingDataSize, sizeof(B2SNDSmallCTilingData));
+    B2SNDSmallCTilingData* data = reinterpret_cast<B2SNDSmallCTilingData*>(tilingInfo.tilingData.get());
+    EXPECT_THAT(Shape2Vec(data->oriInShape, 6), ElementsAreArray({1, 1, 1, 2, 3310, 13}));
+    EXPECT_THAT(Shape2Vec(data->croppedInShape, 6), ElementsAreArray({1, 1, 1, 2, 1788, 2}));
+    EXPECT_THAT(Shape2Vec(*data->crops, 6), ElementsAreArray(cropsValues));
+    EXPECT_EQ(data->coreNum, 2);
+    EXPECT_EQ(data->inUbAxis, 3);
+    EXPECT_EQ(data->outUbAxis, 3);
+    EXPECT_EQ(data->inUbFactor, 1);
+    EXPECT_EQ(data->outUbFactor, 1);
+    EXPECT_EQ(data->ubTotalCount, 2);
+    EXPECT_EQ(data->ubPerCount, 1);
+    EXPECT_EQ(tilingInfo.blockNum, 2);
+    CheckBuffSize(data, blockShapeValues.size(), dataType);
+}
+
+TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_check_buffer)
+{
+    TestCheckBuffer(ge::DT_UINT16, {2, 2346, 2060, 2, 2}, {1, 1, 2}, {541, 224, 631, 1046, 2, 0});
+    TestCheckBuffer(ge::DT_UINT16, {2, 2346, 2060, 2, 2}, {1, 1}, {1, 0, 1, 0});
 }

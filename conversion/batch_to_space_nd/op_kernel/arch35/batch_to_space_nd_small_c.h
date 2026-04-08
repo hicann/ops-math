@@ -28,10 +28,9 @@ template <typename T, uint8_t BLOCK_DIM_NUM>
 class BatchToSpaceSmallC {
 private:
     constexpr static uint32_t BUFFER_NUM = 2;
-    constexpr static uint32_t UB_BLOCK = Ops::Base::GetUbBlockSize();
-    constexpr static uint32_t BLK_ELEMS = UB_BLOCK / sizeof(T);
-    constexpr static uint32_t VL_SIZE = Ops::Base::GetVRegSize();
-    constexpr static uint32_t VL_ELEMS = VL_SIZE / sizeof(T);
+    constexpr static uint32_t BLK_ELEMS = Ops::Base::GetUbBlockSize() / sizeof(T);
+    constexpr static uint32_t SUB_BASE = uint32_t(4294967296);
+    constexpr static int16_t DIV_BASE = 32;
     constexpr static uint8_t MAX_DIMS_NUM = 8;
     constexpr static uint8_t MAX_CROP_NUM = 3;
     constexpr static uint8_t MAX_CROP_DIM_NUM = 2;
@@ -43,10 +42,8 @@ private:
     constexpr static uint8_t OUTLOOP2_IDX = 4;
     constexpr static uint8_t LEFT_CROP = 0;
     constexpr static uint8_t RIGHT_CROP = 1;
-    constexpr static uint8_t OFFSET_UPATE_STRIDE = 2;
-    constexpr static int8_t CROP_START_INDEX = 4;
-    constexpr static uint8_t TMP_SIZE_REG = 0;
-    constexpr static uint8_t TMP_BS_REG = 1;
+    constexpr static uint8_t TWO_DIMENSION = 2;
+    constexpr static uint8_t THIRD_DIMENSION = 3;
     constexpr static int8_t BS_PIXEL_MAP[4][3] = {{-1, -1, -1}, {2, -1, -1}, {3, 4, -1}, {4, 5, 6}};
     constexpr static uint8_t SHAPE_DIM_NUM = MAX_CROP_DIM_NUM * BLOCK_DIM_NUM + N_C_NUM;
     const B2SNDSmallCTilingData* td_ = nullptr;
@@ -82,6 +79,7 @@ private:
     DataCopyPadExtParams<T> padParams_{false, 0, 0, 0};
     using RangeType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>;
     using IdxType_ = std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>;
+    using FloatType_ = float;
     using CastType_ =
         std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
     uint32_t vlSize_ = static_cast<uint32_t>(Ops::Base::GetVRegSize() / sizeof(CastType_));
@@ -222,7 +220,7 @@ public:
             if ((copyInAxis & (1 << i)) != 0 || i == 0){
                 if (tempIndex == COPYPARAM_IDX){
                     copyInParams.blockLen = tempFactor * sizeof(T);
-                    copyInParams.dstStride = (i == 0) ? 0 : (ubInStride_[i - 1] - tempFactor) / BLK_ELEMS;
+                    copyInParams.dstStride = 0;
                     copyInParams.srcStride = (i == 0) ? 0 : (srcStride_[i - 1] - tempFactor) * sizeof(T);
                 } else if (tempIndex == LOOP1PARAM_IDX){
                     if (tiledInShape_[i] > 1 || i == 0 || tempFactor > 1){
@@ -268,7 +266,7 @@ public:
         for (uint64_t a = 0; a < outerLoop2; a++){
             for (uint64_t b = 0; b < outerLoop1; b++){
                 SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
-                DataCopyPad(src[a * outDstStride2 + b * outDstStride1],
+                DataCopyPad<T, PaddingMode::Compact>(src[a * outDstStride2 + b * outDstStride1],
                  inputGM_[gmStart + a * outSrcStride2 + b * outSrcStride1], copyInParams, padParams_);
                 ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
             }
@@ -298,7 +296,7 @@ public:
         uint64_t tiledOutShape[SHAPE_DIM_NUM])
     {
         __ubuf__ T* outputAddrTmp = outputAddr;
-        if constexpr (sizeof(T) == 8) {
+        if constexpr (sizeof(T) == sizeof(uint64_t)) {
             tiledProcessSize *= 2;
         }
         uint32_t vlSize = vlSize_;
@@ -313,12 +311,12 @@ public:
         uint64_t outStride5;
         uint64_t outStride6;
         uint64_t outStride7;
-        uint16_t bs0Axis;
-        uint16_t noBs0Axis;
-        uint16_t bs1Axis;
-        uint16_t noBs1Axis;
-        uint16_t bs2Axis;
-        uint16_t noBs2Axis;
+        uint16_t bs0Axis = 0;
+        uint16_t noBs0Axis = 0;
+        uint16_t bs1Axis = 0;
+        uint16_t noBs1Axis = 0;
+        uint16_t bs2Axis = 0;
+        uint16_t noBs2Axis = 0;
         uint64_t shape2 = tiledOutShape[2];
         uint64_t shape4;
         uint64_t shape6;
@@ -330,34 +328,88 @@ public:
         uint64_t tiledInStride5;
         uint64_t tiledInStride6;
         uint64_t tiledInStride7;
+        FloatType_ epsilon = 1e-5f;
+        FloatType_ invStride0 = 1.0f / outStride0;
+        FloatType_ invStride1 = 1.0f / outStride1;
+        FloatType_ invStride2 = 1.0f / outStride2;
+        FloatType_ invStride3 = 1.0f / outStride3;
+        FloatType_ invStride4;
+        FloatType_ invStride5;
+        FloatType_ invStride6;
+        static constexpr MicroAPI::CastTrait castTrait3 = {
+                MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::NO_SAT, MicroAPI::MaskMergeMode::ZEROING,
+                RoundMode::CAST_FLOOR};
+        static constexpr MicroAPI::CastTrait castTrait4 = {
+                MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::UNKNOWN, MicroAPI::MaskMergeMode::ZEROING,
+                RoundMode::UNKNOWN};
+        static constexpr MicroAPI::CastTrait castTrait5 = {
+                MicroAPI::RegLayout::ONE, MicroAPI::SatMode::NO_SAT, MicroAPI::MaskMergeMode::ZEROING,
+                RoundMode::CAST_FLOOR};
+        static constexpr MicroAPI::CastTrait castTrait6 = {
+                MicroAPI::RegLayout::ONE, MicroAPI::SatMode::UNKNOWN, MicroAPI::MaskMergeMode::ZEROING,
+                RoundMode::UNKNOWN};
+        int16_t k0;
+        int16_t k1;
+        int16_t k2;
+        int16_t k3;
+        int16_t k4;
+        int16_t k5;
+        int16_t k6;
+        IdxType_ m0;
+        IdxType_ m1;
+        IdxType_ m2;
+        IdxType_ m3;
+        IdxType_ m4;
+        IdxType_ m5;
+        IdxType_ m6;
+
+        if constexpr (sizeof(T) > sizeof(uint16_t)) {
+            k0 = DIV_BASE + CeilLog2(outStride0);
+            m0 = CeilDiv((1UL << k0), outStride0) - SUB_BASE;
+            k0 -= DIV_BASE;
+            k1 = DIV_BASE + CeilLog2(outStride1);
+            m1 = CeilDiv((1UL << k1), outStride1) - SUB_BASE;
+            k1 -= DIV_BASE;
+            k2 = DIV_BASE + CeilLog2(outStride2);
+            m2 = CeilDiv((1UL << k2), outStride2) - SUB_BASE;
+            k2 -= DIV_BASE;
+            k3 = DIV_BASE + CeilLog2(outStride3);
+            m3 = CeilDiv((1UL << k3), outStride3) - SUB_BASE;
+            k3 -= DIV_BASE;
+        }
 
         if ((inUbAxis_ == 0 || outUbAxis_ == 0) && !noCut_ && copyMode_[0]) {
             bs0Axis = 1;
-            noBs0Axis = 0;
-        } else {
-            bs0Axis = 0;
+        } else if (offset0 > 0) {
             noBs0Axis = 1;
         }
-        if constexpr (BLOCK_DIM_NUM >= 2) {
+        if constexpr (BLOCK_DIM_NUM >= TWO_DIMENSION) {
             offset1 = cropOffset_[1][0];
             outStride4 = ubOutStride_[4];
             outStride5 = ubOutStride_[5];
-            bs1Axis = 0;
-            noBs1Axis = 0;
             shape4 = tiledOutShape[4];
             tiledInStride4 = ubInStride_[indexMap_[4]];
             tiledInStride5 = ubInStride_[indexMap_[5]];
+            invStride4 = 1.0f / outStride4;
+            invStride5 = 1.0f / outStride5;
 
             if ((inUbAxis_ == 1 || outUbAxis_ == 1) && !noCut_ && copyMode_[1]) {
                 bs1Axis = 1;
-                noBs1Axis = 0;
-            } else {
-                bs1Axis = 0;
+            } else if (offset1 > 0) {
                 noBs1Axis = 1;
             }
+
+            if constexpr (sizeof(T) > sizeof(uint16_t)) {
+                k4 = DIV_BASE + CeilLog2(outStride4);
+                m4 = CeilDiv((1UL << k4), outStride4) - SUB_BASE;
+                k4 -= DIV_BASE;
+                k5 = DIV_BASE + CeilLog2(outStride5);
+                m5 = CeilDiv((1UL << k5), outStride5) - SUB_BASE;
+                k5 -= DIV_BASE;
+            }
         }
-        if constexpr (BLOCK_DIM_NUM == 3) {
-            offset2 = cropOffset_[2][0] % tiledOutShape[6];
+        if constexpr (BLOCK_DIM_NUM == THIRD_DIMENSION) {
+            offset2 = cropOffset_[2][0];
             outStride6 = ubOutStride_[6];
             outStride7 = ubOutStride_[7];
             bs2Axis = 0;
@@ -365,13 +417,18 @@ public:
             shape6 = tiledOutShape[6];
             tiledInStride6 = ubInStride_[indexMap_[6]];
             tiledInStride7 = ubInStride_[indexMap_[7]];
+            invStride6 = 1.0f / outStride6;
 
             if ((inUbAxis_ == 2 || outUbAxis_ == 2) && !noCut_ && copyMode_[2]) {
                 bs2Axis = 1;
-                noBs2Axis = 0;
-            } else {
-                bs2Axis = 0;
+            } else if (offset2 > 0) {
                 noBs2Axis = 1;
+            }
+
+            if constexpr (sizeof(T) > sizeof(uint16_t)) {
+                k6 = DIV_BASE + CeilLog2(outStride6);
+                m6 = CeilDiv((1UL << k6), outStride6) - SUB_BASE;
+                k6 -= DIV_BASE;
             }
         }
 
@@ -379,6 +436,9 @@ public:
         {
             MicroAPI::RegTensor<RangeType_> tmpIdxReg;
             MicroAPI::RegTensor<IdxType_> idxReg;
+            MicroAPI::RegTensor<FloatType_> floatReg;
+            MicroAPI::RegTensor<RangeType_> temReg;
+            MicroAPI::RegTensor<RangeType_> temReg2;
             MicroAPI::RegTensor<IdxType_> outIdx0Reg;
             MicroAPI::RegTensor<IdxType_> outIdx1Reg;
             MicroAPI::RegTensor<IdxType_> outIdx2Reg;
@@ -394,7 +454,6 @@ public:
             MicroAPI::RegTensor<IdxType_> outStride4Reg;
             MicroAPI::RegTensor<IdxType_> outStride5Reg;
             MicroAPI::RegTensor<IdxType_> outStride6Reg;
-            MicroAPI::RegTensor<IdxType_> outStride7Reg;
             MicroAPI::RegTensor<IdxType_> tmpCalReg;
             MicroAPI::RegTensor<IdxType_> tmpModReg;
             MicroAPI::RegTensor<IdxType_> tmpCompareReg;
@@ -404,128 +463,241 @@ public:
             MicroAPI::MaskReg mask;
             MicroAPI::MaskReg vmask;
             MicroAPI::MaskReg offsetMask;
-            MicroAPI::Duplicate(outStride0Reg, outStride0);
-            MicroAPI::Duplicate(outStride1Reg, outStride1);
-            MicroAPI::Duplicate(outStride2Reg, outStride2);
-            MicroAPI::Duplicate(outStride3Reg, outStride3);
-            if constexpr (BLOCK_DIM_NUM >= 2) {
-                MicroAPI::Duplicate(outStride4Reg, outStride4);
-                MicroAPI::Duplicate(outStride5Reg, outStride5);
+            MicroAPI::MaskReg allMask;
+
+            if constexpr (sizeof(T) > sizeof(uint16_t)) {
+                MicroAPI::Duplicate(outStride0Reg, m0);
+                MicroAPI::Duplicate(outStride1Reg, m1);
+                MicroAPI::Duplicate(outStride2Reg, m2);
+                MicroAPI::Duplicate(outStride3Reg, m3);
             }
-            if constexpr (BLOCK_DIM_NUM == 3) {
-                MicroAPI::Duplicate(outStride6Reg, outStride6);
-                MicroAPI::Duplicate(outStride7Reg, outStride7);
+            if constexpr (BLOCK_DIM_NUM >= TWO_DIMENSION && sizeof(T) > sizeof(uint16_t)) {
+                MicroAPI::Duplicate(outStride4Reg, m4);
+                MicroAPI::Duplicate(outStride5Reg, m5);
+            }
+            if constexpr (BLOCK_DIM_NUM == THIRD_DIMENSION && sizeof(T) > sizeof(uint16_t)) {
+                MicroAPI::Duplicate(outStride6Reg, m6);
             }
 
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                 MicroAPI::Arange(tmpIdxReg, loopIdx * vlSize);
                 idxReg = (MicroAPI::RegTensor<IdxType_>&)tmpIdxReg;
                 mask = MicroAPI::UpdateMask<IdxType_>(tiledProcessSize);
+                if constexpr (sizeof(T) == sizeof(uint16_t)) {
+                    allMask = MicroAPI::CreateMask<IdxType_, AscendC::MicroAPI::MaskPattern::ALLF>();
+                    MicroAPI::MaskInterleave<IdxType_>(allMask, vmask, allMask, mask);
+                }
 
-                MicroAPI::Div(outIdx0Reg, idxReg, outStride0Reg, mask);
+                if constexpr (sizeof(T) > sizeof(uint16_t)) {
+                    MicroAPI::Mull(tmpCalReg, tmpCompareReg, idxReg, outStride0Reg, mask);
+                    MicroAPI::Add(tmpCalReg, idxReg, tmpCompareReg, mask);
+                    MicroAPI::ShiftRights(outIdx0Reg, tmpCalReg, k0, mask);
+                } else {
+                    MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(floatReg, tmpIdxReg, mask);
+                    MicroAPI::Muls(floatReg, floatReg, invStride0, mask);
+                    MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
+                    MicroAPI::Cast<RangeType_, FloatType_, castTrait3>(temReg, floatReg, mask);
+                    MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(floatReg, tmpIdxReg, mask);
+                    MicroAPI::Muls(floatReg, floatReg, invStride0, mask);
+                    MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
+                    MicroAPI::Cast<RangeType_, FloatType_, castTrait5>(temReg2, floatReg, mask);
+                    MicroAPI::Select(outIdx0Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg, allMask);
+                }
 
-                MicroAPI::Mul(tmpCalReg, outIdx0Reg, outStride0Reg, mask);
+                MicroAPI::Muls(tmpCalReg, outIdx0Reg, outStride0, mask);
                 MicroAPI::Sub(tmpModReg, idxReg, tmpCalReg, mask);
-                MicroAPI::Div(outIdx1Reg, tmpModReg, outStride1Reg, mask);
-
-                MicroAPI::Div(tmpCalReg, tmpModReg, outStride1Reg, mask);
-                MicroAPI::Mul(tmpCalReg, tmpCalReg, outStride1Reg, mask);
-                MicroAPI::Sub(tmpModReg, tmpModReg, tmpCalReg, mask);
-                MicroAPI::Div(outIdx2Reg, tmpModReg, outStride2Reg, mask);
-
-                MicroAPI::Div(tmpCalReg, tmpModReg, outStride2Reg, mask);
-                MicroAPI::Mul(tmpCalReg, tmpCalReg, outStride2Reg, mask);
-                MicroAPI::Sub(tmpModReg, tmpModReg, tmpCalReg, mask);
-                MicroAPI::Div(outIdx3Reg, tmpModReg, outStride3Reg, mask);
-
-                if constexpr (BLOCK_DIM_NUM >= 2) {
-                    MicroAPI::Div(tmpCalReg, tmpModReg, outStride3Reg, mask);
-                    MicroAPI::Mul(tmpCalReg, tmpCalReg, outStride3Reg, mask);
-                    MicroAPI::Sub(tmpModReg, tmpModReg, tmpCalReg, mask);
-                    MicroAPI::Div(outIdx4Reg, tmpModReg, outStride4Reg, mask);
-
-                    MicroAPI::Div(tmpCalReg, tmpModReg, outStride4Reg, mask);
-                    MicroAPI::Mul(tmpCalReg, tmpCalReg, outStride4Reg, mask);
-                    MicroAPI::Sub(tmpModReg, tmpModReg, tmpCalReg, mask);
-                    MicroAPI::Div(outIdx5Reg, tmpModReg, outStride5Reg, mask);
+                if constexpr (sizeof(T) > sizeof(uint16_t)) {
+                    MicroAPI::Mull(tmpCalReg, tmpCompareReg, tmpModReg, outStride1Reg, mask);
+                    MicroAPI::Add(tmpCalReg, tmpModReg, tmpCompareReg, mask);
+                    MicroAPI::ShiftRights(outIdx1Reg, tmpCalReg, k1, mask);
+                } else {
+                    MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                    MicroAPI::Muls(floatReg, floatReg, invStride1, mask);
+                    MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
+                    MicroAPI::Cast<RangeType_, FloatType_, castTrait3>(temReg, floatReg, mask);
+                    MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                    MicroAPI::Muls(floatReg, floatReg, invStride1, mask);
+                    MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
+                    MicroAPI::Cast<RangeType_, FloatType_, castTrait5>(temReg2, floatReg, mask);
+                    MicroAPI::Select(outIdx1Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg, allMask);
                 }
 
-                if constexpr (BLOCK_DIM_NUM == 3) {
-                    MicroAPI::Div(tmpCalReg, tmpModReg, outStride5Reg, mask);
-                    MicroAPI::Mul(tmpCalReg, tmpCalReg, outStride5Reg, mask);
-                    MicroAPI::Sub(tmpModReg, tmpModReg, tmpCalReg, mask);
-                    MicroAPI::Div(outIdx6Reg, tmpModReg, outStride6Reg, mask);
-
-                    MicroAPI::Div(tmpCalReg, tmpModReg, outStride6Reg, mask);
-                    MicroAPI::Mul(tmpCalReg, tmpCalReg, outStride6Reg, mask);
-                    MicroAPI::Sub(tmpModReg, tmpModReg, tmpCalReg, mask);
-                    MicroAPI::Div(outIdx7Reg, tmpModReg, outStride7Reg, mask);
+                MicroAPI::Muls(tmpCalReg, outIdx1Reg, outStride1, mask);
+                MicroAPI::Sub(tmpModReg, tmpModReg, tmpCalReg, mask);
+                if constexpr (sizeof(T) > sizeof(uint16_t)) {
+                    MicroAPI::Mull(tmpCalReg, tmpCompareReg, tmpModReg, outStride2Reg, mask);
+                    MicroAPI::Add(tmpCalReg, tmpModReg, tmpCompareReg, mask);
+                    MicroAPI::ShiftRights(outIdx2Reg, tmpCalReg, k2, mask);
+                } else {
+                    MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                    MicroAPI::Muls(floatReg, floatReg, invStride2, mask);
+                    MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
+                    MicroAPI::Cast<RangeType_, FloatType_, castTrait3>(temReg, floatReg, mask);
+                    MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                    MicroAPI::Muls(floatReg, floatReg, invStride2, mask);
+                    MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
+                    MicroAPI::Cast<RangeType_, FloatType_, castTrait5>(temReg2, floatReg, mask);
+                    MicroAPI::Select(outIdx2Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg, allMask);
                 }
 
-                MicroAPI::Duplicate(idxReg, shape2);
+                MicroAPI::Muls(tmpCalReg, outIdx2Reg, outStride2, mask);
+                if constexpr (BLOCK_DIM_NUM < TWO_DIMENSION) {
+                    MicroAPI::Sub(outIdx3Reg, tmpModReg, tmpCalReg, mask);
+                }
+
+                if constexpr (BLOCK_DIM_NUM >= TWO_DIMENSION) {
+                    MicroAPI::Sub(tmpModReg, tmpModReg, tmpCalReg, mask);
+                    if constexpr (sizeof(T) > sizeof(uint16_t)) {
+                        MicroAPI::Mull(tmpCalReg, tmpCompareReg, tmpModReg, outStride3Reg, mask);
+                        MicroAPI::Add(tmpCalReg, tmpModReg, tmpCompareReg, mask);
+                        MicroAPI::ShiftRights(outIdx3Reg, tmpCalReg, k3, mask);
+                    } else {
+                        MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                        MicroAPI::Muls(floatReg, floatReg, invStride3, mask);
+                        MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
+                        MicroAPI::Cast<RangeType_, FloatType_, castTrait3>(temReg, floatReg, mask);
+                        MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                        MicroAPI::Muls(floatReg, floatReg, invStride3, mask);
+                        MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
+                        MicroAPI::Cast<RangeType_, FloatType_, castTrait5>(temReg2, floatReg, mask);
+                        MicroAPI::Select(outIdx3Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg, allMask);
+                    }
+                    MicroAPI::Muls(tmpCalReg, outIdx3Reg, outStride3, mask);
+                    MicroAPI::Sub(tmpModReg, tmpModReg, tmpCalReg, mask);
+                    if constexpr (sizeof(T) > sizeof(uint16_t)) {
+                        MicroAPI::Mull(tmpCalReg, tmpCompareReg, tmpModReg, outStride4Reg, mask);
+                        MicroAPI::Add(tmpCalReg, tmpModReg, tmpCompareReg, mask);
+                        MicroAPI::ShiftRights(outIdx4Reg, tmpCalReg, k4, mask);
+                    } else {
+                        MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                        MicroAPI::Muls(floatReg, floatReg, invStride4, mask);
+                        MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
+                        MicroAPI::Cast<RangeType_, FloatType_, castTrait3>(temReg, floatReg, mask);
+                        MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                        MicroAPI::Muls(floatReg, floatReg, invStride4, mask);
+                        MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
+                        MicroAPI::Cast<RangeType_, FloatType_, castTrait5>(temReg2, floatReg, mask);
+                        MicroAPI::Select(outIdx4Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg, allMask);
+                    }
+
+                    MicroAPI::Muls(tmpCalReg, outIdx4Reg, outStride4, mask);
+                    if constexpr (BLOCK_DIM_NUM < THIRD_DIMENSION) {
+                        MicroAPI::Sub(outIdx5Reg, tmpModReg, tmpCalReg, mask);
+                    }
+                }
+
+                if constexpr (BLOCK_DIM_NUM == THIRD_DIMENSION) {
+                    MicroAPI::Sub(tmpModReg, tmpModReg, tmpCalReg, mask);
+                    if constexpr (sizeof(T) > sizeof(uint16_t)) {
+                        MicroAPI::Mull(tmpCalReg, tmpCompareReg, tmpModReg, outStride5Reg, mask);
+                        MicroAPI::Add(tmpCalReg, tmpModReg, tmpCompareReg, mask);
+                        MicroAPI::ShiftRights(outIdx5Reg, tmpCalReg, k5, mask);
+                    } else {
+                        MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                        MicroAPI::Muls(floatReg, floatReg, invStride5, mask);
+                        MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
+                        MicroAPI::Cast<RangeType_, FloatType_, castTrait3>(temReg, floatReg, mask);
+                        MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                        MicroAPI::Muls(floatReg, floatReg, invStride5, mask);
+                        MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
+                        MicroAPI::Cast<RangeType_, FloatType_, castTrait5>(temReg2, floatReg, mask);
+                        MicroAPI::Select(outIdx5Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg, allMask);
+                    }
+                    MicroAPI::Muls(tmpCalReg, outIdx5Reg, outStride5, mask);
+                    MicroAPI::Sub(tmpModReg, tmpModReg, tmpCalReg, mask);
+                    if constexpr (sizeof(T) > sizeof(uint16_t)) {
+                        MicroAPI::Mull(tmpCalReg, tmpCompareReg, tmpModReg, outStride6Reg, mask);
+                        MicroAPI::Add(tmpCalReg, tmpModReg, tmpCompareReg, mask);
+                        MicroAPI::ShiftRights(outIdx6Reg, tmpCalReg, k6, mask);
+                    } else {
+                        MicroAPI::Cast<FloatType_, RangeType_, castTrait4>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                        MicroAPI::Muls(floatReg, floatReg, invStride6, mask);
+                        MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
+                        MicroAPI::Cast<RangeType_, FloatType_, castTrait3>(temReg, floatReg, mask);
+                        MicroAPI::Cast<FloatType_, RangeType_, castTrait6>(floatReg, (MicroAPI::RegTensor<RangeType_>&)tmpModReg, mask);
+                        MicroAPI::Muls(floatReg, floatReg, invStride6, mask);
+                        MicroAPI::Adds(floatReg, floatReg, epsilon, mask);
+                        MicroAPI::Cast<RangeType_, FloatType_, castTrait5>(temReg2, floatReg, mask);
+                        MicroAPI::Select(outIdx6Reg, (MicroAPI::RegTensor<IdxType_>&)temReg2, (MicroAPI::RegTensor<IdxType_>&)temReg, allMask);
+                    }
+
+                    MicroAPI::Muls(tmpCalReg, outIdx6Reg, outStride6, mask);
+                    MicroAPI::Sub(outIdx7Reg, tmpModReg, tmpCalReg, mask);
+                }
+         
                 for (uint16_t i = 0; i < bs0Axis; ++i) {
                     MicroAPI::Compares(offsetMask, outIdx1Reg, 0, mask);
-                    MicroAPI::Adds(tmpModReg, outIdx2Reg, offset0, offsetMask);
-                    MicroAPI::Div(tmpCalReg, tmpModReg, idxReg, offsetMask);
-                    MicroAPI::Mul(tmpCalReg, idxReg, tmpCalReg, offsetMask);
-                    MicroAPI::Sub(tmpCompareReg, tmpModReg, tmpCalReg, offsetMask);
-                    MicroAPI::Select(outIdx2Reg, tmpCompareReg, outIdx2Reg, offsetMask);
-                    MicroAPI::Div(tmpModReg, tmpModReg, idxReg, offsetMask);
-                    MicroAPI::Add(tmpCompareReg, outIdx1Reg, tmpModReg, offsetMask);
-                    MicroAPI::Select(outIdx1Reg, tmpCompareReg, outIdx1Reg, offsetMask);
+                    MicroAPI::Adds(tmpModReg, outIdx2Reg, offset0, mask);
+                    MicroAPI::Duplicate(idxReg, shape2);
+                    IdxType_ value = shape2;
+                    MicroAPI::Compares<IdxType_, AscendC::CMPMODE::GE>(vmask, tmpModReg, value, mask);
+                    MicroAPI::Sub(idxReg, tmpModReg, idxReg, vmask);
+                    MicroAPI::Select(tmpModReg, idxReg, tmpModReg, vmask);
+                    MicroAPI::Select(outIdx2Reg, tmpModReg, outIdx2Reg, offsetMask);
+                    MicroAPI::Adds(tmpCalReg, outIdx1Reg, 1, vmask);
+                    MicroAPI::Select(tmpCalReg, tmpCalReg, outIdx1Reg, vmask);
+                    MicroAPI::Select(outIdx1Reg, tmpCalReg, outIdx1Reg, offsetMask);
                 }
                 for (uint16_t i = 0; i < noBs0Axis; ++i) {
                     MicroAPI::Adds(tmpModReg, outIdx2Reg, offset0, mask);
-                    MicroAPI::Div(tmpCalReg, tmpModReg, idxReg, mask);
-                    MicroAPI::Mul(tmpCalReg, idxReg, tmpCalReg, mask);
-                    MicroAPI::Sub(outIdx2Reg, tmpModReg, tmpCalReg, mask);
-                    MicroAPI::Div(tmpModReg, tmpModReg, idxReg, mask);
-                    MicroAPI::Add(outIdx1Reg, outIdx1Reg, tmpModReg, mask);
+                    MicroAPI::Duplicate(idxReg, shape2);
+                    IdxType_ value = shape2;
+                    MicroAPI::Compares<IdxType_, AscendC::CMPMODE::GE>(vmask, tmpModReg, value, mask);
+                    MicroAPI::Sub(idxReg, tmpModReg, idxReg, vmask);
+                    MicroAPI::Select(outIdx2Reg, idxReg, tmpModReg, vmask);
+                    MicroAPI::Adds(tmpCalReg, outIdx1Reg, 1, vmask);
+                    MicroAPI::Select(outIdx1Reg, tmpCalReg, outIdx1Reg, vmask);
                 }
 
-                if constexpr (BLOCK_DIM_NUM >= 2) {
-                    MicroAPI::Duplicate(idxReg, shape4);
+                if constexpr (BLOCK_DIM_NUM >= TWO_DIMENSION) {
                     for (uint16_t i = 0; i < bs1Axis; ++i) {
                         MicroAPI::Compares(offsetMask, outIdx3Reg, 0, mask);
-                        MicroAPI::Adds(tmpModReg, outIdx4Reg, offset1, offsetMask);
-                        MicroAPI::Div(tmpCalReg, tmpModReg, idxReg, offsetMask);
-                        MicroAPI::Mul(tmpCalReg, idxReg, tmpCalReg, offsetMask);
-                        MicroAPI::Sub(tmpCompareReg, tmpModReg, tmpCalReg, offsetMask);
-                        MicroAPI::Select(outIdx4Reg, tmpCompareReg, outIdx4Reg, offsetMask);
-                        MicroAPI::Div(tmpModReg, tmpModReg, idxReg, offsetMask);
-                        MicroAPI::Add(tmpCompareReg, outIdx3Reg, tmpModReg, offsetMask);
-                        MicroAPI::Select(outIdx3Reg, tmpCompareReg, outIdx3Reg, offsetMask);
+                        MicroAPI::Adds(tmpModReg, outIdx4Reg, offset1, mask);
+                        MicroAPI::Duplicate(idxReg, shape4);
+                        IdxType_ value = shape4;
+                        MicroAPI::Compares<IdxType_, AscendC::CMPMODE::GE>(vmask, tmpModReg, value, mask);
+                        MicroAPI::Sub(idxReg, tmpModReg, idxReg, vmask);
+                        MicroAPI::Select(tmpModReg, idxReg, tmpModReg, vmask);
+                        MicroAPI::Select(outIdx4Reg, tmpModReg, outIdx4Reg, offsetMask);
+                        MicroAPI::Adds(tmpCalReg, outIdx3Reg, 1, vmask);
+                        MicroAPI::Select(tmpCalReg, tmpCalReg, outIdx3Reg, vmask);
+                        MicroAPI::Select(outIdx3Reg, tmpCalReg, outIdx3Reg, offsetMask);
                     }
                     for (uint16_t i = 0; i < noBs1Axis; ++i) {
                         MicroAPI::Adds(tmpModReg, outIdx4Reg, offset1, mask);
-                        MicroAPI::Div(tmpCalReg, tmpModReg, idxReg, mask);
-                        MicroAPI::Mul(tmpCalReg, idxReg, tmpCalReg, mask);
-                        MicroAPI::Sub(outIdx4Reg, tmpModReg, tmpCalReg, mask);
-                        MicroAPI::Div(tmpModReg, tmpModReg, idxReg, mask);
-                        MicroAPI::Add(outIdx3Reg, outIdx3Reg, tmpModReg, mask);
+                        MicroAPI::Duplicate(idxReg, shape4);
+                        IdxType_ value = shape4;
+                        MicroAPI::Compares<IdxType_, AscendC::CMPMODE::GE>(vmask, tmpModReg, value, mask);
+                        MicroAPI::Sub(idxReg, tmpModReg, idxReg, vmask);
+                        MicroAPI::Select(outIdx4Reg, idxReg, tmpModReg, vmask);
+                        MicroAPI::Adds(tmpCalReg, outIdx3Reg, 1, vmask);
+                        MicroAPI::Select(outIdx3Reg, tmpCalReg, outIdx3Reg, vmask);
                     }
                 }
 
-                if constexpr (BLOCK_DIM_NUM == 3) {
-                    MicroAPI::Duplicate(idxReg, shape6);
+                if constexpr (BLOCK_DIM_NUM == THIRD_DIMENSION) {
                     for (uint16_t i = 0; i < bs2Axis; ++i) {
                         MicroAPI::Compares(offsetMask, outIdx5Reg, 0, mask);
-                        MicroAPI::Adds(tmpModReg, outIdx6Reg, offset2, offsetMask);
-                        MicroAPI::Div(tmpCalReg, tmpModReg, idxReg, offsetMask);
-                        MicroAPI::Mul(tmpCalReg, idxReg, tmpCalReg, offsetMask);
-                        MicroAPI::Sub(tmpCompareReg, tmpModReg, tmpCalReg, offsetMask);
-                        MicroAPI::Select(outIdx6Reg, tmpCompareReg, outIdx6Reg, offsetMask);
-                        MicroAPI::Div(tmpModReg, tmpModReg, idxReg, offsetMask);
-                        MicroAPI::Add(tmpCompareReg, outIdx5Reg, tmpModReg, offsetMask);
-                        MicroAPI::Select(outIdx5Reg, tmpCompareReg, outIdx5Reg, offsetMask);
+                        MicroAPI::Adds(tmpModReg, outIdx6Reg, offset2, mask);
+                        MicroAPI::Duplicate(idxReg, shape6);
+                        IdxType_ value = shape6;
+                        MicroAPI::Compares<IdxType_, AscendC::CMPMODE::GE>(vmask, tmpModReg, value, mask);
+                        MicroAPI::Sub(idxReg, tmpModReg, idxReg, vmask);
+                        MicroAPI::Select(tmpModReg, idxReg, tmpModReg, vmask);
+                        MicroAPI::Select(outIdx6Reg, tmpModReg, outIdx6Reg, offsetMask);
+                        MicroAPI::Adds(tmpCalReg, outIdx5Reg, 1, vmask);
+                        MicroAPI::Select(tmpCalReg, tmpCalReg, outIdx5Reg, vmask);
+                        MicroAPI::Select(outIdx5Reg, tmpCalReg, outIdx5Reg, offsetMask);
                     }
                     for (uint16_t i = 0; i < noBs2Axis; ++i) {
                         MicroAPI::Adds(tmpModReg, outIdx6Reg, offset2, mask);
-                        MicroAPI::Div(tmpCalReg, tmpModReg, idxReg, mask);
-                        MicroAPI::Mul(tmpCalReg, idxReg, tmpCalReg, mask);
-                        MicroAPI::Sub(outIdx6Reg, tmpModReg, tmpCalReg, mask);
-                        MicroAPI::Div(tmpModReg, tmpModReg, idxReg, mask);
-                        MicroAPI::Add(outIdx5Reg, outIdx5Reg, tmpModReg, mask);
+                        MicroAPI::Duplicate(idxReg, shape6);
+                        IdxType_ value = shape6;
+                        MicroAPI::Compares<IdxType_, AscendC::CMPMODE::GE>(vmask, tmpModReg, value, mask);
+                        MicroAPI::Sub(idxReg, tmpModReg, idxReg, vmask);
+                        MicroAPI::Select(outIdx6Reg, idxReg, tmpModReg, vmask);
+                        MicroAPI::Adds(tmpCalReg, outIdx5Reg, 1, vmask);
+                        MicroAPI::Select(outIdx5Reg, tmpCalReg, outIdx5Reg, vmask);
                     }
                 }
 
@@ -539,13 +711,13 @@ public:
                 MicroAPI::Add(idxReg, idxReg, tmpCalReg, mask);
                 MicroAPI::Muls(tmpCalReg, outIdx3Reg, tiledInStride3, mask);
                 MicroAPI::Add(idxReg, idxReg, tmpCalReg, mask);
-                if constexpr (BLOCK_DIM_NUM >= 2) {
+                if constexpr (BLOCK_DIM_NUM >= TWO_DIMENSION) {
                     MicroAPI::Muls(tmpCalReg, outIdx4Reg, tiledInStride4, mask);
                     MicroAPI::Add(idxReg, idxReg, tmpCalReg, mask);
                     MicroAPI::Muls(tmpCalReg, outIdx5Reg, tiledInStride5, mask);
                     MicroAPI::Add(idxReg, idxReg, tmpCalReg, mask);
                 }
-                if constexpr (BLOCK_DIM_NUM == 3) {
+                if constexpr (BLOCK_DIM_NUM == THIRD_DIMENSION) {
                     MicroAPI::Muls(tmpCalReg, outIdx6Reg, tiledInStride6, mask);
                     MicroAPI::Add(idxReg, idxReg, tmpCalReg, mask);
                     MicroAPI::Muls(tmpCalReg, outIdx7Reg, tiledInStride7, mask);
@@ -610,7 +782,7 @@ public:
         if (indexMap_[axis1] >= BLOCK_DIM_NUM) {
             copyOutParams.blockLen = tiledInShape_[indexMap_[axis1]] * ubOutStride_[axis1] * sizeof(T);
             if (axis1 > 0) {
-                copyOutParams.blockLen = copyOutParams.blockLen - (cropOffset_[indexMap_[axis1 + 1]][0] +
+                copyOutParams.blockLen = (tiledInShape_[indexMap_[axis1]] * tiledInShape_[indexMap_[axis1 + 1]] - cropOffset_[indexMap_[axis1 + 1]][0] -
                  cropOffset_[indexMap_[axis1 + 1]][1]) * ubOutStride_[axis1 + 1] * sizeof(T);
             }
             copyOutParams.srcStride = axis1 == 0 ? 0 : (ubOutStride_[axis1 - 1] - copyOutParams.blockLen / sizeof(T)) / BLK_ELEMS;
@@ -807,6 +979,7 @@ public:
     __aicore__ inline void CalUbStride() {
         uint64_t curInStride = 1;
         uint64_t curOutStride = 1;
+        uint64_t blockLen = 0;
         for (int8_t i = SHAPE_DIM_NUM - 1; i >= 0; i--) {
             ubInStride_[i] = curInStride;
             ubOutStride_[i] = curOutStride;
@@ -815,7 +988,10 @@ public:
             curInStride = curInStride * tiledInShape_[i];
             if (tiledInShape_[i] != td_->oriInShape[i]){
                 copyInAxis |= (1 << i);
-                curInStride = Ops::Base::CeilAlign(curInStride, static_cast<uint64_t>(BLK_ELEMS));
+                if (blockLen > 0 && (tiledInShape_[i] > 1 || curInStride > blockLen)) {
+                    curInStride = Ops::Base::CeilAlign(curInStride, static_cast<uint64_t>(BLK_ELEMS));
+                }
+                blockLen = curInStride;
             }
             curOutStride = curOutStride * tiledInShape_[outI];
             //W/H/D轴需处理crop
@@ -874,6 +1050,22 @@ public:
             if ((outIndexs_ & (1 << indexMap_[i])) != 0) {
                 res = i;
             }
+        }
+        return res;
+    }
+
+    __aicore__ inline uint32_t CeilLog2(uint32_t input)
+    {
+        input--;
+        input |= input >> 1;
+        input |= input >> 2;
+        input |= input >> 4;
+        input |= input >> 8;
+        input |= input >> 16;
+        input++;
+        uint32_t res = 0;
+        while (input >>= 1) {
+            res++;
         }
         return res;
     }

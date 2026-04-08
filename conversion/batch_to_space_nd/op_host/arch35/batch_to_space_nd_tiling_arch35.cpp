@@ -46,6 +46,10 @@ static constexpr uint32_t SMALL_C_BUFFER_NUM = 2;
 static constexpr uint32_t SMALL_C_BUFFER_FACTOR = 2;
 // 最大UB大小
 static constexpr uint32_t SMALL_C_MAX_BUFFER_SIZE = 64 * 1024U;
+// 每块预留大小
+static constexpr uint32_t SMALL_C_RESERVE_BUFFER_SIZE = 256U;
+// 被压缩的轴数量
+static constexpr uint16_t SMALL_C_AXIS_COMPACT_CNT = 1U;
 
 // SIMT 常量
 static constexpr size_t MIN_RANK_FOR_SIMT = 6;
@@ -88,6 +92,8 @@ private:
     // tiling context
     gert::TilingContext* context_;
 
+    uint64_t lastDimSize_{0};
+
 public:
     explicit BatchToSpaceNDTiling(gert::TilingContext* context) : context_(context) {};
     ~BatchToSpaceNDTiling() {};
@@ -112,17 +118,18 @@ private:
 
     // 辅助函数
     // LargeC
-    ge::graphStatus moveAlignTilingBlock(
+    ge::graphStatus MoveAlignTilingBlock(
         uint32_t maxUBElements, const std::vector<uint64_t>& ubFactorAlign, const std::vector<uint64_t>& leftAlign,
         const std::vector<uint64_t>& dimValue, int32_t minCutAxis, B2SNDLargeCTilingData* tilingData);
     // SmallC
-    void SmallCSetInput(B2SNDSmallCTilingData* tilingData, size_t yAxisPerm[]);
-    void SmallCDoubleTiling(uint32_t inputElements, size_t yAxisPerm[], B2SNDSmallCTilingData* tilingData);
+    void SmallCSetInput(B2SNDSmallCTilingData* tilingData);
+    std::array<size_t, MAX_EXPAND_RANK> SmallCComputeOutputAxisPerm();
+    int16_t SmallCComputeInputNeedAlign(uint64_t oriInShape[], uint64_t croppedInShape[]);
     // SIMT
 
     // 公共方法
     template <typename T>
-    inline T AlignBlockElement(T elementCount);
+    inline T CeilAlignBlockElement(T elementCount);
 
     // 打印
     void ShowBaseTilingData();
@@ -157,7 +164,7 @@ ge::graphStatus BatchToSpaceNDTiling::DoTiling()
 }
 
 template <typename T>
-inline T BatchToSpaceNDTiling::AlignBlockElement(T elementCount)
+inline T BatchToSpaceNDTiling::CeilAlignBlockElement(T elementCount)
 {
     return Ops::Base::CeilAlign(elementCount, static_cast<T>(ubBlockElements_));
 }
@@ -466,7 +473,7 @@ ge::graphStatus BatchToSpaceNDTiling::ParamCheck()
     return MergeInput();
 }
 
-ge::graphStatus BatchToSpaceNDTiling::moveAlignTilingBlock(
+ge::graphStatus BatchToSpaceNDTiling::MoveAlignTilingBlock(
     uint32_t maxUBElements, const std::vector<uint64_t>& ubFactorAlign, const std::vector<uint64_t>& leftAlign,
     const std::vector<uint64_t>& dimValue, int32_t minCutAxis, B2SNDLargeCTilingData* tilingData)
 {
@@ -480,7 +487,7 @@ ge::graphStatus BatchToSpaceNDTiling::moveAlignTilingBlock(
     for (int32_t i = tailIdx; i >= minIdx; --i) {
         ubAxis = i;
         // 尾轴要ub block对齐
-        uint64_t dimVal = (i == tailIdx) ? AlignBlockElement(dimValue[i]) : dimValue[i];
+        uint64_t dimVal = (i == tailIdx) ? CeilAlignBlockElement(dimValue[i]) : dimValue[i];
         // 塞得下就直接算，但最小维要做对齐处理
         if (restFactor >= dimVal && i != minIdx) {
             // 剩余空间充足，按维度值对齐后赋值
@@ -572,7 +579,7 @@ ge::graphStatus BatchToSpaceNDTiling::Tiling4LargeC()
 
     // 分块
     auto ret =
-        moveAlignTilingBlock(maxUBElements, ubFactorAlign, leftAlign, dimValue, LARGE_C_OUTMOST_CUT_AXIS, tilingData);
+        MoveAlignTilingBlock(maxUBElements, ubFactorAlign, leftAlign, dimValue, LARGE_C_OUTMOST_CUT_AXIS, tilingData);
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context_, "large C tiling failed"), return ret);
 
     // 分核
@@ -584,7 +591,7 @@ ge::graphStatus BatchToSpaceNDTiling::Tiling4LargeC()
     return ge::GRAPH_SUCCESS;
 }
 
-void BatchToSpaceNDTiling::SmallCSetInput(B2SNDSmallCTilingData* tilingData, size_t yAxisPerm[])
+void BatchToSpaceNDTiling::SmallCSetInput(B2SNDSmallCTilingData* tilingData)
 {
     // 展开 x shape
     size_t rank = blockShapeDimNum_ + mergedInput_.rank;
@@ -619,7 +626,15 @@ void BatchToSpaceNDTiling::SmallCSetInput(B2SNDSmallCTilingData* tilingData, siz
     // remain
     tilingData->croppedInShape[rank - 1] = mergedInput_.inShape[mergedInput_.rank - 1];
 
+    // crops
+    std::copy(*mergedInput_.crops, (*mergedInput_.crops) + blockShapeDimNum_ * 2, *(tilingData->crops));
+}
+
+std::array<size_t, MAX_EXPAND_RANK> BatchToSpaceNDTiling::SmallCComputeOutputAxisPerm()
+{
     // 输出轴映射输入轴
+    size_t rank = blockShapeDimNum_ + mergedInput_.rank;
+    std::array<size_t, MAX_EXPAND_RANK> yAxisPerm{};
     // batch
     yAxisPerm[0] = blockShapeDimNum_;
     // remain
@@ -630,9 +645,20 @@ void BatchToSpaceNDTiling::SmallCSetInput(B2SNDSmallCTilingData* tilingData, siz
         // space
         yAxisPerm[1 + i * 2] = blockShapeDimNum_ + 1 + i;
     }
+    return yAxisPerm;
+}
 
-    // crops
-    std::copy(*mergedInput_.crops, (*mergedInput_.crops) + blockShapeDimNum_ * 2, *(tilingData->crops));
+int16_t BatchToSpaceNDTiling::SmallCComputeInputNeedAlign(uint64_t oriInShape[], uint64_t croppedInShape[])
+{
+    size_t rank = blockShapeDimNum_ + mergedInput_.rank;
+    // 从倒数第N个满足条件（有预裁剪）的轴开始需要对齐
+    int16_t restCompactCnt = SMALL_C_AXIS_COMPACT_CNT;
+    for (int16_t i = rank - 1; i >= 0; --i) {
+        if (oriInShape[i] != croppedInShape[i] && (restCompactCnt--) == 0) {
+            return i;
+        }
+    }
+    return INVALID_ALIGN_AXIS;
 }
 
 ge::graphStatus BatchToSpaceNDTiling::Tiling4SmallC()
@@ -645,17 +671,22 @@ ge::graphStatus BatchToSpaceNDTiling::Tiling4SmallC()
     auto tilingData = context_->GetTilingData<B2SNDSmallCTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context_, tilingData);
     // 处理输入数据
-    size_t yAxisPerm[MAX_EXPAND_RANK]{};
-    SmallCSetInput(tilingData, yAxisPerm);
+    SmallCSetInput(tilingData);
+
+    // 轴排列
+    auto yAxisPerm = SmallCComputeOutputAxisPerm();
+    // 是否对齐
+    int16_t xNeedAlignAxis = SmallCComputeInputNeedAlign(tilingData->oriInShape, tilingData->croppedInShape);
 
     // 可用UB大小
     uint32_t validBufSize = ubSize_ / SMALL_C_BUFFER_NUM;
     tilingData->ubTileSize = std::min(validBufSize / SMALL_C_BUFFER_FACTOR, SMALL_C_MAX_BUFFER_SIZE);
-    uint32_t inputElements = tilingData->ubTileSize / dSize_;
+    uint32_t inputElements = (tilingData->ubTileSize - SMALL_C_RESERVE_BUFFER_SIZE) / dSize_;
 
     // 输入输出双切分
     auto tiling = DualSideTiling(
-        context_, ubBlockElements_, tilingData->croppedInShape, yAxisPerm, blockShapeDimNum_ + mergedInput_.rank);
+        context_, ubBlockElements_, tilingData->croppedInShape, yAxisPerm.data(), xNeedAlignAxis,
+        blockShapeDimNum_ + mergedInput_.rank);
     tiling.DoTiling(inputElements);
     tilingData->inUbAxis = tiling.inAxis;
     tilingData->inUbFactor = tiling.inFactor;
@@ -737,7 +768,11 @@ ge::graphStatus BatchToSpaceNDTiling::DoOpTiling()
     if (mergedInput_.inShape[mergedInput_.rank - 1] >= static_cast<uint64_t>(cacheLineElements_)) {
         return Tiling4LargeC();
     }
-    return Tiling4SIMT();
+
+    if (dSize_ == 1) {
+        return Tiling4SIMT();
+    }
+    return Tiling4SmallC();
 }
 
 ge::graphStatus BatchToSpaceNDTiling::GetSocInfo()

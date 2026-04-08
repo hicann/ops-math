@@ -16,23 +16,31 @@
 #include "op_host/util/math_util.h"
 
 namespace optiling {
+constexpr int16_t INVALID_ALIGN_AXIS = -1;
 
 namespace {
-struct CutInfo {                // 切分信息
-    std::set<size_t> axisSet{}; // 轴集合
-    size_t cutAxis{0};          // 切分轴
-    uint32_t cutFactor{1};      // 切分轴维度数量
-    uint32_t innerProd{1};      // 内轴积
-    uint32_t outterProd{1};     // 外轴积
-    const size_t* axisPerm;     // 轴的排列
+struct CutInfo {                  // 切分信息
+    const size_t* axisPerm;       // 轴的排列
+    const int16_t alignAxis;      // 需要对齐的轴
+    std::set<size_t> axisSet{};   // 轴集合
+    size_t cutAxis{0};            // 切分轴
+    uint32_t cutFactor{1};        // 切分轴维度数量
+    uint32_t innerProd{1};        // 内轴积
+    uint32_t alignedInnerProd{1}; // 对齐的内轴积
+    uint32_t outterProd{1};       // 外轴积
 
-    CutInfo() : axisPerm(nullptr) {};
-    CutInfo(const size_t* perm) : axisPerm(perm) {};
+    CutInfo(const size_t* perm, const int16_t align, uint32_t initInnerProd)
+        : axisPerm(perm), alignAxis(align), innerProd(initInnerProd), alignedInnerProd(initInnerProd) {};
     ~CutInfo() {};
 
-    size_t Idx2Axis(int16_t idx) const
+    inline size_t Idx2Axis(int16_t idx) const
     {
         return axisPerm == nullptr ? idx : axisPerm[idx];
+    }
+
+    inline bool IsNeedAlign(int16_t idx) const
+    {
+        return alignAxis == idx;
     }
 };
 } // namespace
@@ -46,6 +54,7 @@ private:
     const uint32_t ubBlockElements_; // UB block 对应元素个数
     const uint64_t* axisSizeList_;   // 每根轴大小
     const size_t* outAxisPerm_;      // 输出轴的排列
+    const int16_t needAlignAxis_;    // 需要对齐的轴的序号
     const size_t rank_;              // 轴的数量
     uint32_t maxBufElements_;        // 单侧最大缓存元素个数
 
@@ -71,6 +80,16 @@ public:
           ubBlockElements_(ubBlockElements),
           axisSizeList_(axisSizeList),
           outAxisPerm_(outAxisPerm),
+          needAlignAxis_(INVALID_ALIGN_AXIS),
+          rank_(rank) {};
+    DualSideTiling(
+        gert::TilingContext* context, const uint32_t ubBlockElements, const uint64_t* axisSizeList,
+        const size_t* outAxisPerm, const int16_t needAlign, const size_t rank)
+        : context_(context),
+          ubBlockElements_(ubBlockElements),
+          axisSizeList_(axisSizeList),
+          outAxisPerm_(outAxisPerm),
+          needAlignAxis_(needAlign),
           rank_(rank) {};
     ~DualSideTiling() {};
 
@@ -86,9 +105,14 @@ private:
     // 初始化
     void Init();
     // 计算最大内轴积
+    inline uint32_t ComputeActualMaxInnerProd(uint32_t outterProd) const;
     inline uint32_t ComputeActualMaxInnerProd(const CutInfo& currInfo) const;
     // 新增公共轴
     inline void AddCommonAxis(size_t axis);
+    // 计算新增轴后的内轴积
+    inline uint64_t ComputeAlignedInnerProdAfterAddAxis(CutInfo& currInfo, size_t axis) const;
+    // 新增内轴
+    inline void AddInnerAxis(CutInfo& currInfo, size_t axis);
     // 计算应该切哪根轴
     inline size_t ComputeCutAxis(int16_t& currIdx, CutInfo& currInfo, CutInfo& otherInfo);
     // 计算切分轴上的最大维度数量
@@ -139,12 +163,15 @@ void DualSideTiling::Init()
 
 bool DualSideTiling::TryFullLoad()
 {
-    uint64_t allElements = 1;
-    for (size_t i = 0; i < rank_; ++i) {
-        allElements *= axisSizeList_[i];
+    uint64_t needSize = 1;
+    for (int16_t i = rank_ - 1; i >= 0; --i) {
+        needSize *= axisSizeList_[i];
+        if (i == needAlignAxis_) {
+            needSize = CeilAlignBlockElement(needSize);
+        }
     }
     // 能全载
-    if (allElements > maxBufElements_) {
+    if (needSize > maxBufElements_) {
         return false;
     }
     inAxis = 0;
@@ -155,11 +182,16 @@ bool DualSideTiling::TryFullLoad()
     return true;
 }
 
-inline uint32_t DualSideTiling::ComputeActualMaxInnerProd(const CutInfo& currInfo) const
+inline uint32_t DualSideTiling::ComputeActualMaxInnerProd(uint32_t outterProd) const
 {
     // 每侧元素数 = 内轴向上block对齐 * 外轴
     // 则每侧的最大值为：最大元素数/当前侧的UB外轴，然后向下block对齐
-    return FloorAlignBlockElement(Ops::Base::FloorDiv(maxBufElements_, currInfo.outterProd));
+    return FloorAlignBlockElement(Ops::Base::FloorDiv(maxBufElements_, outterProd));
+}
+
+inline uint32_t DualSideTiling::ComputeActualMaxInnerProd(const CutInfo& currInfo) const
+{
+    return ComputeActualMaxInnerProd(currInfo.outterProd);
 }
 
 inline void DualSideTiling::AddCommonAxis(size_t axis)
@@ -168,6 +200,21 @@ inline void DualSideTiling::AddCommonAxis(size_t axis)
     commAxisSet_.insert(axis);
     expectMaxInnerProd_ = FloorAlignBlockElement(static_cast<uint64_t>(std::sqrt(maxBufElements_ * commAxisProd_)));
     isCommAxisUpdated_ = true;
+}
+
+inline uint64_t DualSideTiling::ComputeAlignedInnerProdAfterAddAxis(CutInfo& currInfo, size_t axis) const
+{
+    uint64_t tmpInner = currInfo.alignedInnerProd * axisSizeList_[axis];
+    if (currInfo.IsNeedAlign(axis)) {
+        tmpInner = CeilAlignBlockElement(tmpInner);
+    }
+    return tmpInner;
+}
+
+inline void DualSideTiling::AddInnerAxis(CutInfo& currInfo, size_t axis)
+{
+    currInfo.innerProd *= axisSizeList_[axis];
+    currInfo.alignedInnerProd = ComputeAlignedInnerProdAfterAddAxis(currInfo, axis);
 }
 
 inline size_t DualSideTiling::ComputeCutAxis(int16_t& currIdx, CutInfo& currInfo, CutInfo& otherInfo)
@@ -183,18 +230,19 @@ inline size_t DualSideTiling::ComputeCutAxis(int16_t& currIdx, CutInfo& currInfo
             AddCommonAxis(currAxis);
             otherInfo.axisSet.erase(currAxis);
             // 加入内轴
-            currInfo.innerProd *= axisSize;
+            AddInnerAxis(currInfo, currAxis);
             // 从外轴中去除
             currInfo.outterProd /= std::max(axisSize, 1UL);
             maxInnerProd = ComputeActualMaxInnerProd(currInfo);
             continue;
         }
-        uint64_t tmpInner = currInfo.innerProd * axisSize;
+        uint64_t tmpInner = ComputeAlignedInnerProdAfterAddAxis(currInfo, currAxis);
         // 放不下，当前轴即为切分轴
         if (tmpInner > expectMaxInnerProd_ || tmpInner > maxInnerProd) {
             return currAxis;
         }
-        currInfo.innerProd = tmpInner;
+        currInfo.alignedInnerProd = tmpInner;
+        currInfo.innerProd *= axisSize;
         currInfo.axisSet.emplace(currAxis);
         otherInfo.outterProd *= axisSize; // 加入另一侧外轴
         kernelAxisSet_.erase(currAxis);
@@ -204,7 +252,7 @@ inline size_t DualSideTiling::ComputeCutAxis(int16_t& currIdx, CutInfo& currInfo
 
 inline uint64_t DualSideTiling::ComputeMaxFactor(const CutInfo& currInfo, uint64_t maxInnerProd) const
 {
-    return Ops::Base::FloorDiv(maxInnerProd, static_cast<uint64_t>(currInfo.innerProd));
+    return Ops::Base::FloorDiv(maxInnerProd, static_cast<uint64_t>(currInfo.alignedInnerProd));
 }
 
 inline uint32_t DualSideTiling::ComputeAxisFactor(const CutInfo& currInfo) const
@@ -218,8 +266,8 @@ inline uint32_t DualSideTiling::ComputeAxisFactor(const CutInfo& currInfo) const
 
 inline void DualSideTiling::FillAxisFactor(CutInfo& currInfo, const CutInfo& otherInfo)
 {
-    uint32_t maxInnerProd = ComputeActualMaxInnerProd(currInfo);
-    maxInnerProd = Ops::Base::FloorDiv(maxInnerProd, otherInfo.cutFactor);
+    // 使用UB内最终外轴计算，最终外轴不会超过UB大小，不会超过uint32
+    uint32_t maxInnerProd = ComputeActualMaxInnerProd(currInfo.outterProd * otherInfo.cutFactor);
     uint64_t axisFactor = ComputeMaxFactor(currInfo, maxInnerProd);
     currInfo.cutFactor = static_cast<uint32_t>(std::clamp(axisFactor, 1UL, axisSizeList_[currInfo.cutAxis]));
 }
@@ -241,11 +289,9 @@ void DualSideTiling::CutAxis()
     // 起始索引
     int16_t xIdx = startIdx_;
     int16_t yIdx = startIdx_;
-    CutInfo inputInfo{};              // 输入切分信息
-    CutInfo outputInfo{outAxisPerm_}; // 输出切分信息
     // 初始内积为公共内积
-    inputInfo.innerProd = commAxisProd_;
-    outputInfo.innerProd = commAxisProd_;
+    CutInfo inputInfo{nullptr, needAlignAxis_, commAxisProd_};           // 输入切分信息
+    CutInfo outputInfo{outAxisPerm_, INVALID_ALIGN_AXIS, commAxisProd_}; // 输出切分信息
 
     while (true) {
         isCommAxisUpdated_ = false;
@@ -258,25 +304,25 @@ void DualSideTiling::CutAxis()
         }
         // 切同一根轴，即当前切分轴为公共轴
         if (inputInfo.cutAxis == outputInfo.cutAxis) {
-            uint64_t axisElements = axisSizeList_[inputInfo.cutAxis];
+            uint64_t axisSize = axisSizeList_[inputInfo.cutAxis];
             // 输入侧当前轴最大切分值
             uint64_t maxInFactor = ComputeMaxFactor(inputInfo, ComputeActualMaxInnerProd(inputInfo));
             // 输出侧当前轴最大切分值
             uint64_t maxOutFactor = ComputeMaxFactor(outputInfo, ComputeActualMaxInnerProd(outputInfo));
             // 能放下
-            if (axisElements <= maxInFactor && axisElements <= maxOutFactor) {
+            if (axisSize <= maxInFactor && axisSize <= maxOutFactor) {
                 AddCommonAxis(inputInfo.cutAxis);
                 kernelAxisSet_.erase(inputInfo.cutAxis);
                 // 加入内轴，不需要更新外轴
-                inputInfo.innerProd *= axisElements;
-                outputInfo.innerProd *= axisElements;
+                AddInnerAxis(inputInfo, inputInfo.cutAxis);
+                AddInnerAxis(outputInfo, inputInfo.cutAxis);
                 xIdx--;
                 yIdx--;
                 continue;
             }
             // 放不下，就切这根轴
             uint64_t factor = std::min(maxInFactor, maxOutFactor);
-            factor = std::clamp(factor, 1UL, axisElements);
+            factor = std::clamp(factor, 1UL, axisSize);
             inputInfo.cutFactor = factor;
             outputInfo.cutFactor = factor;
             break;
