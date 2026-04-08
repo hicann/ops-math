@@ -348,7 +348,12 @@ private:
         uint8_t ubAxis, uint32_t ubFactor, uint32_t& headLoop, uint32_t& headMode, uint32_t& centerLoop,
         uint32_t& centerMode, uint32_t& centerBSLoop, uint32_t& tailLoop, uint32_t& tailMode, uint32_t& totalLoop)
     {
-        if (tdPtr_->input.outShape[ubAxis] <= tdPtr_->input.blockShape[ubAxis - 1]) {
+        uint32_t tmp = tdPtr_->input.crops[ubAxis - 1][0] % tdPtr_->input.blockShape[ubAxis - 1];
+        uint32_t headCountAxis = tmp == 0 ? 0 : tdPtr_->input.blockShape[ubAxis - 1] - tmp;
+        tmp = tdPtr_->input.crops[ubAxis - 1][1] % tdPtr_->input.blockShape[ubAxis - 1];
+        uint32_t tailCountAxis = tmp == 0 ? 0 : tdPtr_->input.blockShape[ubAxis - 1] - tmp;
+
+        if (headCountAxis + tailCountAxis > tdPtr_->input.outShape[ubAxis]) {
             uint32_t centerCountAxis = tdPtr_->input.outShape[ubAxis];
             centerLoop = Ops::Base::CeilDiv(centerCountAxis, ubFactor);
             centerMode = centerCountAxis % ubFactor;
@@ -356,10 +361,6 @@ private:
             return;
         }
 
-        uint32_t tmp = tdPtr_->input.crops[ubAxis - 1][0] % tdPtr_->input.blockShape[ubAxis - 1];
-        uint32_t headCountAxis = tmp == 0 ? 0 : tdPtr_->input.blockShape[ubAxis - 1] - tmp;
-        tmp = tdPtr_->input.crops[ubAxis - 1][1] % tdPtr_->input.blockShape[ubAxis - 1];
-        uint32_t tailCountAxis = tmp == 0 ? 0 : tdPtr_->input.blockShape[ubAxis - 1] - tmp;
         uint32_t centerCountAxis = tdPtr_->input.outShape[ubAxis] - headCountAxis - tailCountAxis;
 
         headLoop = Ops::Base::CeilDiv(headCountAxis, ubFactor);
@@ -460,7 +461,8 @@ private:
             bool cond = ubWInCopyNum <= wBlockShape;
             copyInParams.blockCount = cond ? ubWInCopyNum : wBlockShape;
             loopParams.loop1Size = cond ? 1 : ubWInCopyNum / wBlockShape;
-            loopParams.loop1DstStride = alignC_ * copyInParams.blockCount * sizeof(T);
+            loopParams.loop1DstStride = loopParams.loop1Size == 1 ? 0 : alignC_ * copyInParams.blockCount * sizeof(T);
+            loopParams.loop1SrcStride = loopParams.loop1Size == 1 ? 0 : originC_ * sizeof(T);
             loopParams.loop2Size = ubAxisInCopyNum;
             loopParams.loop2SrcStride = inStride_[ubAxis_] * sizeof(T);
             loopParams.loop2DstStride = wSize * alignC_ * sizeof(T);
