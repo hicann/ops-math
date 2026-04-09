@@ -130,6 +130,7 @@ aclnnStatus aclnnQrGetWorkspaceSize(const aclTensor *self, bool some, aclTensor 
    if (selfContiguous->GetDataType() == op::DataType::DT_FLOAT16) {
        // AICPU does not support with fp16 input
        selfContiguous = l0op::Cast(selfContiguous, op::DataType::DT_FLOAT, uniqueExecutor.get());
+       CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
    }
    // 调用QR算子Kernel
    auto outArray = l0op::Qr(selfContiguous, some, uniqueExecutor.get());
