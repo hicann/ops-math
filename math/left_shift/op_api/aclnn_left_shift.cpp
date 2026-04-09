@@ -37,17 +37,7 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
 
 static inline const std::initializer_list<op::DataType>& GetDtypeSupportListBySocVersion()
 {
-    static const std::initializer_list<op::DataType> emptyDtypes = {};
-    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
-    OP_LOGI("AddAclnn", "curArch is %u", static_cast<uint32_t>(curArch));
-    switch (curArch) {
-        case NpuArch::DAV_2201: {
-            return DTYPE_SUPPORT_LIST;
-        }
-        default: {
-            return emptyDtypes;
-        }
-    }
+    return DTYPE_SUPPORT_LIST;
 }
 
 static bool CheckNotNull(const aclTensor* self, const aclTensor* shiftBits, aclTensor* out)
