@@ -312,6 +312,7 @@ static aclnnStatus DoPadV3(
         // 调用l0算子PadV3进行计算
         (*padV3Result) = l0op::PadV3(selfCasted, padTensor, nullptr, MODE, true, executor);
         CHECK_RET(padV3Result != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        CHECK_RET((*padV3Result) != nullptr, ACLNN_ERR_INNER_NULLPTR);
         return ACLNN_SUCCESS;
     }
 
@@ -329,6 +330,7 @@ static aclnnStatus DoPadV3(
     // 调用l0算子PadV3进行计算
     (*padV3Result) = l0op::PadV3(selfCasted, padTensor, valueCasted, MODE, true, executor);
     CHECK_RET(padV3Result != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    CHECK_RET((*padV3Result) != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     return ACLNN_SUCCESS;
 }
