@@ -329,8 +329,16 @@ aclnnStatus aclnnBernoulliTensorGetWorkspaceSize(
     auto prob_contiguous = l0op::Contiguous(prob, uniqueExecutor.get());
     CHECK_RET(prob_contiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
+    const aclTensor* prob_calc = nullptr;
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch == NpuArch::DAV_3510) {
+        prob_calc = l0op::Cast(prob_contiguous, op::DataType::DT_FLOAT, uniqueExecutor.get());
+    } else {
+        prob_calc = prob_contiguous;
+    }
+
     // 调用StatelessBernoulli算子kernel
-    auto op_out = l0op::StatelessBernoulli(input_contiguous, prob_contiguous, seed, offset, uniqueExecutor.get());
+    auto op_out = l0op::StatelessBernoulli(input_contiguous, prob_calc, seed, offset, uniqueExecutor.get());
     CHECK_RET(op_out != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 固定写法，将计算结果拷贝到输出out上，out可能是非连续的tensor
