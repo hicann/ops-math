@@ -454,14 +454,14 @@ TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_nocrop_cut
     EXPECT_THAT(Shape2Vec(data->oriInShape, 6), ElementsAreArray({3, 5, 57, 85, 1, 6}));
     EXPECT_THAT(Shape2Vec(data->croppedInShape, 6), ElementsAreArray({3, 5, 57, 85, 1, 6}));
     EXPECT_THAT(Shape2Vec(*data->crops, 4), ElementsAreArray(cropsValues));
-    EXPECT_EQ(data->coreNum, 29);
+    EXPECT_EQ(data->coreNum, 57);
     EXPECT_EQ(data->inUbAxis, 2);
     EXPECT_EQ(data->outUbAxis, 2);
-    EXPECT_EQ(data->inUbFactor, 2);
-    EXPECT_EQ(data->outUbFactor, 2);
-    EXPECT_EQ(data->ubTotalCount, 29);
+    EXPECT_EQ(data->inUbFactor, 1);
+    EXPECT_EQ(data->outUbFactor, 1);
+    EXPECT_EQ(data->ubTotalCount, 57);
     EXPECT_EQ(data->ubPerCount, 1);
-    EXPECT_EQ(tilingInfo.blockNum, 29);
+    EXPECT_EQ(tilingInfo.blockNum, 57);
     CheckBuffSize(data, blockShapeValues.size(), dataType);
 }
 
@@ -530,14 +530,14 @@ TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_crop_cut_n
     EXPECT_THAT(Shape2Vec(data->oriInShape, 6), ElementsAreArray({42, 1, 7, 21, 8, 22}));
     EXPECT_THAT(Shape2Vec(data->croppedInShape, 6), ElementsAreArray({42, 1, 7, 9, 2, 22}));
     EXPECT_THAT(Shape2Vec(*data->crops, 4), ElementsAreArray(cropsValues));
-    EXPECT_EQ(data->coreNum, 12);
+    EXPECT_EQ(data->coreNum, 35);
     EXPECT_EQ(data->inUbAxis, 2);
     EXPECT_EQ(data->outUbAxis, 0);
-    EXPECT_EQ(data->inUbFactor, 2);
-    EXPECT_EQ(data->outUbFactor, 19);
-    EXPECT_EQ(data->ubTotalCount, 12);
+    EXPECT_EQ(data->inUbFactor, 1);
+    EXPECT_EQ(data->outUbFactor, 9);
+    EXPECT_EQ(data->ubTotalCount, 35);
     EXPECT_EQ(data->ubPerCount, 1);
-    EXPECT_EQ(tilingInfo.blockNum, 12);
+    EXPECT_EQ(tilingInfo.blockNum, 35);
     CheckBuffSize(data, blockShapeValues.size(), dataType);
 }
 
@@ -606,14 +606,14 @@ TEST_F(BatchToSpaceNDTilingSmallCTest, BatchToSpaceNDTilingSmallCTest_crop_almos
     EXPECT_THAT(Shape2Vec(data->oriInShape, 6), ElementsAreArray({1, 1, 1, 2, 3310, 13}));
     EXPECT_THAT(Shape2Vec(data->croppedInShape, 6), ElementsAreArray({1, 1, 1, 2, 1788, 2}));
     EXPECT_THAT(Shape2Vec(*data->crops, 6), ElementsAreArray(cropsValues));
-    EXPECT_EQ(data->coreNum, 2);
-    EXPECT_EQ(data->inUbAxis, 3);
-    EXPECT_EQ(data->outUbAxis, 3);
-    EXPECT_EQ(data->inUbFactor, 1);
-    EXPECT_EQ(data->outUbFactor, 1);
-    EXPECT_EQ(data->ubTotalCount, 2);
+    EXPECT_EQ(data->coreNum, 16);
+    EXPECT_EQ(data->inUbAxis, 4);
+    EXPECT_EQ(data->outUbAxis, 4);
+    EXPECT_EQ(data->inUbFactor, 255);
+    EXPECT_EQ(data->outUbFactor, 255);
+    EXPECT_EQ(data->ubTotalCount, 16);
     EXPECT_EQ(data->ubPerCount, 1);
-    EXPECT_EQ(tilingInfo.blockNum, 2);
+    EXPECT_EQ(tilingInfo.blockNum, 16);
     CheckBuffSize(data, blockShapeValues.size(), dataType);
 }
 

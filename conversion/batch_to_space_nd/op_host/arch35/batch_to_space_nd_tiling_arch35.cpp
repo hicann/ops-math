@@ -46,6 +46,10 @@ static constexpr uint32_t SMALL_C_BUFFER_NUM = 2;
 static constexpr uint32_t SMALL_C_BUFFER_FACTOR = 2;
 // 最大UB大小
 static constexpr uint32_t SMALL_C_MAX_BUFFER_SIZE = 64 * 1024U;
+// 最小UB大小
+static constexpr uint32_t SMALL_C_MIN_BUFFER_SIZE = 4 * 1024U;
+static constexpr double MIN_USED_CORES_RATIO = 0.6;
+static constexpr int16_t MAX_TILING_TIME = 4;
 // 每块预留大小
 static constexpr uint32_t SMALL_C_RESERVE_BUFFER_SIZE = 256U;
 // 被压缩的轴数量
@@ -693,6 +697,26 @@ ge::graphStatus BatchToSpaceNDTiling::Tiling4SmallC()
     tilingData->outUbAxis = tiling.outAxis;
     tilingData->outUbFactor = tiling.outFactor;
     tilingData->ubTotalCount = tiling.totalCount;
+    int16_t tempCnt = 0;
+    while (static_cast<double>(tilingData->ubTotalCount) / static_cast<double>(coreNum_) < MIN_USED_CORES_RATIO) {
+        tempCnt++;
+        if (tempCnt >= MAX_TILING_TIME){
+            break;
+        }
+        inputElements = inputElements / 2;
+        auto tiling1 = DualSideTiling(
+        context_, ubBlockElements_, tilingData->croppedInShape, yAxisPerm.data(), xNeedAlignAxis,
+        blockShapeDimNum_ + mergedInput_.rank);
+        tiling1.DoTiling(inputElements);
+        if (tiling1.totalCount > coreNum_) {
+            break;
+        }
+        tilingData->inUbAxis = tiling1.inAxis;
+        tilingData->inUbFactor = tiling1.inFactor;
+        tilingData->outUbAxis = tiling1.outAxis;
+        tilingData->outUbFactor = tiling1.outFactor;
+        tilingData->ubTotalCount = tiling1.totalCount;  
+    }
 
     // 分核
     tilingData->ubPerCount = Ops::Base::CeilDiv(tilingData->ubTotalCount, static_cast<uint64_t>(coreNum_));
