@@ -36,6 +36,7 @@ public:
         ubSize_ = compileInfo->ubSize;
         cacheLineSize_ = compileInfo->clSize; // 从平台获取的cacheLineSize
         blockSize_ = compileInfo->blockSize;  // 32B
+        coreNumThreshold_ = compileInfo->coreNum / 2;
     }
 
     void Reset(gert::TilingContext* context) override
@@ -100,6 +101,8 @@ private:
     uint64_t ubSize_;
     int64_t cacheLineSize_;
     int64_t blockSize_;
+
+    int64_t coreNumThreshold_;
 
     // Tiling mode
     GroupedBiasAddGradTilingModeArch35 tilingMode_ = GroupedBiasAddGradTilingModeArch35::CUT_H_MODE;

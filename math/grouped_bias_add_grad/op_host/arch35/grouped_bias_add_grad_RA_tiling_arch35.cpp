@@ -167,14 +167,14 @@ ge::graphStatus GroupedBiasAddGradTilingArch35::DetermineMode()
     // 2D case: determine by H split count
     auto computeTypeSize = ge::GetSizeByDataType(gradYDtype_);
     int64_t hBlockCount = Ops::Base::CeilDiv(dimH_ * computeTypeSize, cacheLineSize_);
-    if (hBlockCount > static_cast<int64_t>(CORE_NUM_THRESHOLD)) {
+    if (hBlockCount > static_cast<int64_t>(coreNumThreshold_)) {
         // Core count would be > 32, use H-axis split (Template 2)
         tilingMode_ = GroupedBiasAddGradTilingModeArch35::CUT_H_MODE;
-        OP_LOGD(context_, "Tiling mode: CUT_H_MODE (hBlockCount=%ld > %ld)", hBlockCount, CORE_NUM_THRESHOLD);
+        OP_LOGD(context_, "Tiling mode: CUT_H_MODE (hBlockCount=%ld > %ld)", hBlockCount, coreNumThreshold_);
     } else {
         // Core count <= 32, use G*H block split (Template 3)
         tilingMode_ = GroupedBiasAddGradTilingModeArch35::CUT_G_MODE;
-        OP_LOGD(context_, "Tiling mode: CUT_G_MODE (hBlockCount=%ld <= %ld)", hBlockCount, CORE_NUM_THRESHOLD);
+        OP_LOGD(context_, "Tiling mode: CUT_G_MODE (hBlockCount=%ld <= %ld)", hBlockCount, coreNumThreshold_);
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -244,7 +244,7 @@ ge::graphStatus GroupedBiasAddGradTilingArch35::DoCutHTiling()
     int64_t outputSize = AlignUp(hPerBlock * blockFactor * static_cast<int64_t>(sizeof(float)), ALIGN_32_BYTE);
     outputSize = outputSize < MAX_OUT_SIZE ? outputSize : MAX_OUT_SIZE;
     int64_t maxOutputElements = MAX_OUT_SIZE / static_cast<int64_t>(sizeof(float));
-    int64_t useUbSize = (availableUb - groupedIdxSize - outputSize) / BUFFER_NUM_ARCH35;
+    int64_t useUbSize = (availableUb - groupedIdxSize - outputSize * BUFFER_NUM_ARCH35 * QUE_NUM) / BUFFER_NUM_ARCH35;
     useUbSize = AlignDown(useUbSize, ALIGN_32_BYTE);
 
     cutHTilingData_.blockFactor = blockFactor;
@@ -288,7 +288,7 @@ ge::graphStatus GroupedBiasAddGradTilingArch35::DoCutGTiling()
     int64_t outputSize = AlignUp(maxHBlocks * hPerBlock * sizeof(float), ALIGN_32_BYTE);
     outputSize = outputSize < MAX_OUT_SIZE ? outputSize : MAX_OUT_SIZE;
     int64_t maxOutputElements = MAX_OUT_SIZE / static_cast<int64_t>(sizeof(float));
-    int64_t useUbSize = (availableUb - groupedIdxSize - outputSize) / BUFFER_NUM_ARCH35;
+    int64_t useUbSize = (availableUb - groupedIdxSize - outputSize * BUFFER_NUM_ARCH35 * QUE_NUM) / BUFFER_NUM_ARCH35;
     useUbSize = AlignDown(useUbSize, ALIGN_32_BYTE);
 
     // 计算UB内H尾部长度

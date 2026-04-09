@@ -30,7 +30,7 @@ class GroupedBiasAddGradCutGH
 using PromoteDataT = float;
 
 constexpr static int64_t ALIGN_BYTE_32 = 32;
-constexpr static int32_t BUFFER_NUM = 2;
+constexpr static int32_t BUFFER_NUM = 4;
 constexpr static float ZERO_VALUE = 0.0;
 constexpr static uint64_t H_CUT_BLOCK_SIZE = 512;
 constexpr static uint64_t CS_BUF_SIZE = 32;
@@ -54,10 +54,14 @@ private:
     __aicore__ inline void CopyGroupIdx();
     __aicore__ inline void UpdateCurParam(int64_t currRowIdx, int64_t& currRowCumSum, int64_t& currRowWidth);
     __aicore__ inline void ProcessZeroG(int64_t currRowIdx, int64_t currHIdx, int64_t dimH);
+    __aicore__ inline void ProcessOneG(int64_t currRowIdx, int64_t currHIdx, int64_t currRowWidth, int64_t currRowCumSum, int64_t loop);
     __aicore__ inline void ProcessMultiHBlock(int64_t currRowIdx, int64_t currHIdx, int64_t currRowWidth, int64_t currRowCumSum, int64_t loop);
     __aicore__ inline void ProcessSingleHBlock(int64_t currHLen, int64_t currRowIdx, int64_t currHIdx, int64_t currRowWidth, int64_t currRowCumSum);
     __aicore__ inline void CopyDataIn(int64_t burstLen, int64_t burstNum, int64_t srcGmOffset);
-    __aicore__ inline void CopyDataOut(int64_t outputDataOffset, LocalTensor<PromoteDataT>& ubRes, int64_t dimH);
+    __aicore__ inline void CopyDataInForOne(int64_t burstLen, int64_t burstNum, int64_t srcGmOffset);
+    __aicore__ inline void CopyDataOut(int64_t outputDataOffset, int64_t dimH);
+    __aicore__ inline void CopyDataOutForBuf(int64_t outputDataOffset, LocalTensor<PromoteDataT>& ubRes, int64_t dimH);
+    __aicore__ inline void CopyDataOutUnCast(int64_t outputDataOffset, int64_t dimH, bool isOne);
     __aicore__ inline void BinaryReduceSum(int64_t currRowCumSum, int64_t currRowIdx, int64_t currHIdx,
                                            int64_t currRowWidth, int64_t singleH);
     __aicore__ inline void UpdateCacheAux(const int64_t cacheID, const int64_t stride, const int64_t count);
@@ -74,7 +78,8 @@ private:
     GlobalTensor<U> groupIdxGm_;
 
     TQue<QuePosition::VECIN, 1> xQue_;    
-    TQue<QuePosition::VECOUT, 1> outQue_;    
+    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> outQue_;
+    TQue<TPosition::VECOUT, 1> zeroOutQue_; 
     TQue<QuePosition::VECIN, 1> groupIdxQue_;
 
     TBuf<QuePosition::VECCALC> groupIdxCastBuf_;
@@ -132,14 +137,16 @@ __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::Init(
     if (groupIdxType_) {
         if constexpr (!IsSameType<U, int64_t>::value) {
             // U 为 int32 且需要前缀和：扣除 cast 空间 + cumSum 空间
-            inUbSize_ = tiling_->useUbSize - CS_BUF_SIZE - groupedIdxSize_;
+            inUbSize_ = tiling_->useUbSize - CS_BUF_SIZE - groupedIdxSize_ / 2;
             pipe_.InitBuffer(groupIdxCastBuf_, 2 * groupedIdxSize_);  // int32→int64，空间翻倍
             pipe_.InitBuffer(cumSumBuf_, CS_BUF_SIZE);
             groupIdxCastLocal_ = groupIdxCastBuf_.Get<int64_t>();
+            cumSumLocal_ = cumSumBuf_.Get<int64_t>();
         } else {
             // U 为 int64 且需要前缀和：只扣除 cumSum 空间
             inUbSize_ = tiling_->useUbSize - CS_BUF_SIZE;
             pipe_.InitBuffer(cumSumBuf_, CS_BUF_SIZE);
+            cumSumLocal_ = cumSumBuf_.Get<U>();
         }
     } else {
         inUbSize_ = tiling_->useUbSize;
@@ -150,7 +157,8 @@ __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::Init(
     groupIdxGm_.SetGlobalBuffer((__gm__ U*)groupIdx);
 
     pipe_.InitBuffer(xQue_, BUFFER_NUM, inUbSize_);
-    pipe_.InitBuffer(outQue_, 1, tiling_->outputSize);
+    pipe_.InitBuffer(outQue_, BUFFER_NUM, tiling_->outputSize);
+    pipe_.InitBuffer(zeroOutQue_, BUFFER_NUM, tiling_->outputSize);
     pipe_.InitBuffer(groupIdxQue_, 1, groupedIdxSize_);
 
     pipe_.InitBuffer(tempBufBuf_, tiling_->useTempBuf);
@@ -259,6 +267,10 @@ __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::Process()
             ProcessZeroG(currRowIdx, currHIdx, currHLen);
             currBlockIdx += 1; 
             i += 1;
+        } else if (currRowWidth == 1) {
+            ProcessOneG(currRowIdx, currHIdx, currRowWidth, currRowCumSum, i);
+            currBlockIdx += curProcessHBlocks_;
+            i += curProcessHBlocks_;
         } else if (currBlockSize * sizeof(PromoteDataT) > inUbSize_) {
             // ===== 分支2: 二分累加 =====
             SetGParam(currRowWidth, currHLen);
@@ -283,15 +295,31 @@ template<typename T, typename U>
 __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::ProcessZeroG(int64_t currRowIdx, int64_t currHIdx, int64_t dimH)
 {
     int64_t outputDataOffset = currRowIdx * inputCol_ + currHIdx * H_CUT_BLOCK_SIZE / sizeof(T);
-    LocalTensor<PromoteDataT> outputTensor = outQue_.AllocTensor<PromoteDataT>();
-    Duplicate<PromoteDataT>(outputTensor, ZERO_VALUE, dimH);
+    LocalTensor<T> outputTensor = zeroOutQue_.AllocTensor<T>();
+    Duplicate<T>(outputTensor, static_cast<T>(ZERO_VALUE), dimH);
 
-    event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
-    SetFlag<HardEvent::V_MTE3>(eventId);
-    WaitFlag<HardEvent::V_MTE3>(eventId);
+    zeroOutQue_.EnQue<T>(outputTensor);
+    CopyDataOutUnCast(outputDataOffset, dimH, 0);
+}
 
-    CopyDataOut(outputDataOffset, outputTensor, dimH);
-    outQue_.FreeTensor(outputTensor);
+template<typename T, typename U>
+__aicore__ inline void GroupedBiasAddGradCutGH<T, U>::ProcessOneG(int64_t currRowIdx, int64_t currHIdx, int64_t currRowWidth, int64_t currRowCumSum, int64_t loop)
+{
+    int64_t remainHBlocks = cutHDim_ - currHIdx;
+    int64_t remainTaskBlocks = currBlockFactor_ - loop;
+    int64_t maxProcessBlocks = remainHBlocks < remainTaskBlocks ? remainHBlocks : remainTaskBlocks;
+    if (maxProcessBlocks * H_CUT_BLOCK_SIZE > maxPerHLen_ * sizeof(T)) {
+        maxProcessBlocks = maxPerHLen_ * sizeof(T) / H_CUT_BLOCK_SIZE;
+    }
+
+    int64_t processHBlocks = 0;
+    int64_t processHLen = 0;
+    CalcMaxHLen(currRowWidth, currHIdx, maxProcessBlocks, processHBlocks, processHLen);
+    curProcessHBlocks_ = processHBlocks;
+    int64_t dataCopyOffset = currRowCumSum * inputCol_ + currHIdx * H_CUT_BLOCK_SIZE / sizeof(T);
+    int64_t outputDataOffset = currRowIdx * inputCol_ + currHIdx * H_CUT_BLOCK_SIZE / sizeof(T);
+    CopyDataInForOne(processHLen * sizeof(T), currRowWidth, dataCopyOffset);
+    CopyDataOutUnCast(outputDataOffset, processHLen, 1);
 }
 
 template<typename T, typename U>
@@ -315,13 +343,11 @@ __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::ProcessMultiHBlock(int64_t
     uint32_t srcShape[2] = {static_cast<uint32_t>(currRowWidth), static_cast<uint32_t>(processHLenAlign)};
     LocalTensor<PromoteDataT> outputTensor = outQue_.AllocTensor<PromoteDataT>();
     ReduceSum<PromoteDataT, AscendC::Pattern::Reduce::RA, true>(outputTensor, xTensor_, srcShape, false);
-    outQue_.EnQue<PromoteDataT>(outputTensor);
-    outputTensor = outQue_.DeQue<PromoteDataT>();
+    outQue_.EnQue<TPosition::VECOUT, TPosition::GM, PromoteDataT>(outputTensor);
 
     int64_t outputDataOffset = currRowIdx * inputCol_ + currHIdx * H_CUT_BLOCK_SIZE / sizeof(T);
-    CopyDataOut(outputDataOffset, outputTensor, processHLen);
+    CopyDataOut(outputDataOffset, processHLen);
     xQue_.FreeTensor(xTensor_);
-    outQue_.FreeTensor(outputTensor);
 }
 
 template<typename T, typename U>
@@ -334,13 +360,11 @@ __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::ProcessSingleHBlock(int64_
     uint32_t srcShape[2] = {static_cast<uint32_t>(currRowWidth), static_cast<uint32_t>(currHLenAlign)};
     LocalTensor<PromoteDataT> outputTensor = outQue_.AllocTensor<PromoteDataT>();
     ReduceSum<PromoteDataT, AscendC::Pattern::Reduce::RA, true>(outputTensor, xTensor_, srcShape, false);
-    outQue_.EnQue<PromoteDataT>(outputTensor);
-    outputTensor = outQue_.DeQue<PromoteDataT>();
+    outQue_.EnQue<TPosition::VECOUT, TPosition::GM, PromoteDataT>(outputTensor);
 
     int64_t outputDataOffset = currRowIdx * inputCol_ + currHIdx * H_CUT_BLOCK_SIZE / sizeof(T);
-    CopyDataOut(outputDataOffset, outputTensor, currHLen);
+    CopyDataOut(outputDataOffset, currHLen);
     xQue_.FreeTensor(xTensor_);
-    outQue_.FreeTensor(outputTensor);
 }
 
 template <typename T, typename U>
@@ -390,7 +414,6 @@ __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::BinaryReduceSum(int64_t cu
                        ELEMENT_ONE_REPEAT_COMPUTE;
         UpdateCacheAux(cacheID, cacheStride, singleH);
     }
-
     event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
     SetFlag<HardEvent::V_MTE3>(eventId);
     WaitFlag<HardEvent::V_MTE3>(eventId);
@@ -398,7 +421,7 @@ __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::BinaryReduceSum(int64_t cu
     int64_t tmpBufOffest = (cacheCount_ - 1) * cacheStride;
     LocalTensor<PromoteDataT> ubRes = tempBuf_[tmpBufOffest];
     int64_t outputDataOffset = currRowIdx * inputCol_ + currHIdx * H_CUT_BLOCK_SIZE / sizeof(T);
-    CopyDataOut(outputDataOffset, ubRes, singleH);
+    CopyDataOutForBuf(outputDataOffset, ubRes, singleH);
 }
 
 template <typename T, typename U>
@@ -482,6 +505,21 @@ __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::CopyGroupIdx()
 }
 
 template <typename T, typename U>
+__aicore__ inline void GroupedBiasAddGradCutGH<T, U>::CopyDataInForOne(int64_t burstLen, int64_t burstNum, int64_t srcGmOffset)
+{
+    LocalTensor<T> xTensorT = outQue_.AllocTensor<T>();
+    DataCopyExtParams copyInParams;
+    copyInParams.blockCount = burstNum;
+    copyInParams.blockLen = burstLen;
+    copyInParams.srcStride = (inputCol_ - burstLen / sizeof(T)) * sizeof(T);
+    copyInParams.dstStride = 0;
+    DataCopyPadExtParams<T> dataCopyPadExtParams = {false, 0, 0, 0};
+
+    DataCopyPad(xTensorT, xGm_[srcGmOffset], copyInParams, dataCopyPadExtParams);
+    outQue_.EnQue<T>(xTensorT);
+}
+
+template <typename T, typename U>
 __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::CopyDataIn(int64_t burstLen, int64_t burstNum, int64_t srcGmOffset)
 {
     xTensor_ = xQue_.AllocTensor<PromoteDataT>();
@@ -532,7 +570,24 @@ __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::CopyDataIn(int64_t burstLe
 }
 
 template <typename T, typename U>
-__aicore__ inline void GroupedBiasAddGradCutGH<T, U>::CopyDataOut(int64_t outputDataOffset, LocalTensor<PromoteDataT>& ubRes, int64_t dimH)
+__aicore__ inline void GroupedBiasAddGradCutGH<T, U>::CopyDataOutUnCast(int64_t outputDataOffset, int64_t dimH, bool isOne)
+{
+    DataCopyExtParams copyOutParams = {1, 1, 0, 0, 0};
+    copyOutParams.blockLen = dimH * sizeof(T);
+
+    if (isOne) {
+        LocalTensor<T> outputTensor = outQue_.DeQue<T>();
+        DataCopyPad(yGm_[outputDataOffset], outputTensor, copyOutParams);
+        outQue_.FreeTensor(outputTensor);
+    } else {
+        LocalTensor<T> outputTensor = zeroOutQue_.DeQue<T>();
+        DataCopyPad(yGm_[outputDataOffset], outputTensor, copyOutParams);
+        zeroOutQue_.FreeTensor(outputTensor);
+    }
+}
+
+template <typename T, typename U>
+__aicore__ inline void GroupedBiasAddGradCutGH<T, U>::CopyDataOutForBuf(int64_t outputDataOffset, LocalTensor<PromoteDataT>& ubRes, int64_t dimH)
 {
     DataCopyExtParams copyOutParams = {1, 1, 0, 0, 0};
     copyOutParams.blockLen = dimH * sizeof(T);
@@ -551,6 +606,28 @@ __aicore__ inline void GroupedBiasAddGradCutGH<T, U>::CopyDataOut(int64_t output
     event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_V));
     SetFlag<HardEvent::MTE3_V>(eventId);
     WaitFlag<HardEvent::MTE3_V>(eventId);
+}
+
+template <typename T, typename U>
+__aicore__ inline void GroupedBiasAddGradCutGH<T, U>::CopyDataOut(int64_t outputDataOffset, int64_t dimH)
+{
+    DataCopyExtParams copyOutParams = {1, 1, 0, 0, 0};
+    copyOutParams.blockLen = dimH * sizeof(T);
+
+    LocalTensor<PromoteDataT> outputTensor = outQue_.DeQue<TPosition::VECOUT, TPosition::GM, PromoteDataT>();
+    if constexpr (IsSameType<PromoteDataT, T>::value) {
+        DataCopyPad(yGm_[outputDataOffset], outputTensor, copyOutParams);
+    } else {
+        LocalTensor<T> outputLocal = outputTensor.template ReinterpretCast<T>();
+        Cast(outputLocal, outputTensor, RoundMode::CAST_RINT, dimH);
+
+        event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
+        SetFlag<HardEvent::V_MTE3>(eventId);
+        WaitFlag<HardEvent::V_MTE3>(eventId);
+
+        DataCopyPad(yGm_[outputDataOffset], outputLocal, copyOutParams);
+    }
+    outQue_.FreeTensor(outputTensor);
 }
 
 }  // namespace

@@ -24,18 +24,18 @@ namespace optiling {
 
 // Constants for arch35 tiling
 constexpr int64_t ALIGN_32_BYTE = 32;
-constexpr int64_t BUFFER_NUM_ARCH35 = 2;   // double buffer
-constexpr int64_t CORE_NUM_THRESHOLD = 32; // 核数阈值，决定切分模式
+constexpr int64_t BUFFER_NUM_ARCH35 = 4;   // 4 buffer
 constexpr int64_t GRAD_Y_INPUT_IDX = 0;
 constexpr int64_t GROUP_IDX_INPUT_IDX = 1;
 constexpr int64_t GRAD_BIAS_OUTPUT_IDX = 0;
 constexpr int64_t ATTR_GROUP_IDX_TYPE_IDX = 0;
 constexpr int64_t ARA_DIM_NUM = 3;
 constexpr int64_t RA_DIM_NUM = 2;
+constexpr int64_t QUE_NUM = 2;
 constexpr int64_t USE_TEMP_CACHELINE_NUM = 4;
 constexpr int64_t INPUT_MAX_GROUP = 2048;
 constexpr int64_t TEMP_BUF_SIZE = 20 * 1024;
-constexpr int64_t MAX_OUT_SIZE = 16384;
+constexpr int64_t MAX_OUT_SIZE = 8192;
 constexpr int64_t EMPTY_WORKSPACE_SIZE = 4096;
 constexpr int64_t CACHELINE_DEFINE = 512;
 
