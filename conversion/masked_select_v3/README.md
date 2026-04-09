@@ -39,21 +39,21 @@
     <td>self</td>
     <td>输入张量</td>
     <td>输入张量，shape需要与mask满足broadcast关系，支持非连续的Tensor。</td>
-    <td>BFLOAT16、FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+    <td>BFLOAT16、FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL</td>
     <td>ND</td>
   </tr>
   <tr>
     <td>mask</td>
     <td>输入张量</td>
     <td>布尔掩码张量，shape要和self满足broadcast关系，支持非连续的Tensor。</td>
-    <td>UINT8、BOOL</td>
+    <td>BOOL</td>
     <td>ND</td>
   </tr>
   <tr>
     <td>out</td>
     <td>输出张量</td>
     <td>输出一维张量，元素个数为mask和self广播后的维度大小，不支持非连续的Tensor。</td>
-    <td>BFLOAT16、FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+    <td>BFLOAT16、FLOAT16、FLOAT32、DOUBLE、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL</td>
     <td>ND</td>
   </tr>
 </tbody>

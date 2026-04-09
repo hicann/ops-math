@@ -235,7 +235,7 @@ int main() {
     for (int i = 0; i < 4096; ++i) {
         selfXHostData[i] = static_cast<float>(i % 10); // 填充0-9的循环值
     }
-    // === ② 参考selfX，同理修改selfY、selfZ的输入 ===
+    // === ② 参考selfX，同理修改selfY、out的输入 ===
     
     // ... 后续执行代码 ...
 }

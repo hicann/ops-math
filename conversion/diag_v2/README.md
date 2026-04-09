@@ -25,12 +25,12 @@
 
 ## 参数说明
 
-<table class="tg" style="undefined;table-layout: fixed; width: 1576px"><colgroup>
-  <col style="width: 50px">
-  <col style="width: 70px">
+<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+  <col style="width: 100px">
+  <col style="width: 150px">
+  <col style="width: 280px">
+  <col style="width: 330px">
   <col style="width: 120px">
-  <col style="width: 300px">
-  <col style="width: 50px">
   </colgroup>
   <thead>
     <tr>
@@ -45,7 +45,7 @@
       <td>x</td>
       <td>输入</td>
       <td>输入张量。</td>
-      <td>INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、FLOAT、FLOAT16、BFLOAT16、DOUBLE、BOOL、COMPLEX32、COMPLEX128、COMPLEX64</td>
+      <td>INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、FLOAT、FLOAT16、BFLOAT16、DOUBLE、BOOL、COMPLEX64</td>
       <td>ND</td>
     </tr>
     <tr>
@@ -59,12 +59,12 @@
       <td>out</td>
       <td>输出</td>
       <td>输出张量。</td>
-      <td>INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、FLOAT、FLOAT16、BFLOAT16、DOUBLE、BOOL、COMPLEX32、COMPLEX128、COMPLEX64</td>
+      <td>INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、FLOAT、FLOAT16、BFLOAT16、DOUBLE、BOOL、COMPLEX64</td>
       <td>ND</td>
     </tr>
   </tbody></table>
 
-- Atlas 训练、推理系列产品：不支持BFLOAT16。
+- Atlas 训练系列产品、Atlas 推理系列产品：不支持BFLOAT16。
 - Kirin X90/Kirin 9030 处理器系列产品: 不支持BFLOAT16、COMPLEX。
 
 ## 约束说明

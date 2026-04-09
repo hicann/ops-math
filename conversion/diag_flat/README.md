@@ -39,7 +39,7 @@
     <td>self</td>
     <td>输入张量</td>
     <td>表示填充到对角线的向量，最大维度支持8维，支持非连续的Tensor。</td>
-    <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、BFLOAT16</td>
+    <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、COMPLEX64、BFLOAT16</td>
     <td>ND</td>
   </tr>
   <tr>
@@ -53,13 +53,14 @@
     <td>out</td>
     <td>输出张量</td>
     <td>输出的对角线张量。</td>
-    <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、BFLOAT16</td>
+    <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、COMPLEX64、BFLOAT16</td>
     <td>ND</td>
   </tr>
 </tbody>
 </table>
 
 - Kirin X90/Kirin 9030 处理器系列产品: self、out数据类型不支持COMPLEX、BFLOAT16。
+- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
 
 ## 约束说明
 
