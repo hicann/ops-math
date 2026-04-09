@@ -41,6 +41,7 @@ operator_group_1:
   - ceil
   - cholesky
   - cos
+  - cosh
   - cumsum
   - cummin
   - diag_flat
