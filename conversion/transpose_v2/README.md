@@ -1,4 +1,5 @@
 # TransposeV2
+
 ## 产品支持情况
 
 | 产品                                              | 是否支持 |
@@ -21,12 +22,11 @@
 | 参数名 | 输入/输出/属性 | 描述                                                         | 数据类型 | 数据格式 |
 | :----- | :------------- | :----------------------------------------------------------- | :------- | :------- |
 | self   | 输入张量       | 需要进行维度置换的输入张量。                                 | 见下方   | ND       |
-| dims   | 输入数组       | 整型数组，代表原来tensor的维度，指定新的轴顺序。取值需在[-self的维度数量，self的维度数量-1]范围内。 | INT64    | -        |
+| dims   | 输入数组       | 整型数组，代表原来tensor的维度，指定新的轴顺序。取值需在[-self的维度数量，self的维度数量-1]范围内。 | INT32、INT64    | -        |
 | out    | 输出           | 维度最大不超过8维，shape由dims和原self的shape共同决定，dtype需要与self一致。 | 同self   | ND       |
 
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、UINT64、INT64、UINT32、INT32、UINT16、INT16、UINT8、INT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16。
-- <term>Kirin X90/Kirin 9030 处理器系列产品</term>：数据类型支持FLOAT、FLOAT16；dims数据类型支持INT32、INT64。
-
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
+- <term>Kirin X90/Kirin 9030 处理器系列产品</term>：数据类型支持FLOAT、FLOAT16。
 
 ## 约束说明
 

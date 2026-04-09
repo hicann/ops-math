@@ -1,6 +1,6 @@
 # Pows
 
-##  产品支持情况
+## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
@@ -10,8 +10,8 @@
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
-| <term>Kirin X90 处理器系列产品</term>                         |    √     |	 
-| <term>Kirin 9030 处理器系列产品</term> | √ |	 
+| <term>Kirin X90 处理器系列产品</term>                         |    √     |  
+| <term>Kirin 9030 处理器系列产品</term> | √ |  
 
 
 ## 功能说明
@@ -45,28 +45,30 @@ $$
       <td>self</td>
       <td>输入</td>
       <td>公式中的输入`self`，Device侧的aclTensor。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>exponent</td>
       <td>输入</td>
       <td>公式中的输入`exponent`，Device侧的aclScalar。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>out</td>
       <td>输出</td>
       <td>公式中的输出`out`，Device侧的aclTensor。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、BOOL、INT8、UINT8、INT16、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
   </tbody></table>
 
-- Kirin X90/Kirin 9030 处理器系列产品: 仅支持FLOAT、FLOAT16。
+- Kirin X90/Kirin 9030 处理器系列产品、Atlas 训练系列产品、Atlas 推理系列产品：不支持BFLOAT16。
 
 ## 约束说明
+
+无
 
 ## 调用说明
 

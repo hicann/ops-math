@@ -43,14 +43,14 @@ $$
       <td>start</td>
       <td>输入</td>
       <td>公式中的输入张量start，必须为1维张量。</td>
-      <td>FLOAT、DOUBLE、INT8、UINT8、INT32、INT16、FLOAT16、BFLOAT16</td>
+      <td>INT8、UINT8、INT16、INT32、FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>stop</td>
       <td>输入</td>
       <td>公式中的输入张量stop，必须为1维张量。</td>
-      <td>FLOAT、DOUBLE、INT8、UINT8、INT32、INT16、FLOAT16、BFLOAT16</td>
+      <td>INT8、UINT8、INT16、INT32、FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
@@ -64,13 +64,12 @@ $$
       <td>output</td>
       <td>输出</td>
       <td>公式中的输出张量output。</td>
-      <td>FLOAT、DOUBLE、INT8、UINT8、INT32、INT16、FLOAT16、BFLOAT16</td>
+      <td>INT8、UINT8、INT16、INT32、FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>
   </tbody></table>
 
-
-- Kirin X90/Kirin 9030 处理器系列产品: 不支持BFLOAT16、DOUBLE。
+- Kirin X90/Kirin 9030 处理器系列产品、Atlas 训练系列产品、Atlas 推理系列产品：不支持BFLOAT16、INT16。
 
 ## 约束说明
 
