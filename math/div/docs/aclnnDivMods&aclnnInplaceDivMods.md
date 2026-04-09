@@ -159,7 +159,7 @@ aclnnStatus aclnnInplaceDivMods(
   - <term>Ascend 950PR/Ascend 950DT</term>：
     - 数据类型需满足<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>，推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
     - out在mode为0时，支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX128、COMPLEX64。
-    - mode为1或2时，支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16。
+    - mode为1或2时，支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、COMPLEX128、COMPLEX64。
 
 - **返回值：**
 
