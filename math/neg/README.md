@@ -42,14 +42,14 @@
       <td>x</td>
       <td>输入</td>
       <td>公式中的输出张量self。</td>
-      <td>BFLOAT16、FLOAT16、FLOAT、INT32、INT8、INT64</td>
+      <td>BFLOAT16、FLOAT16、FLOAT、DOUBLE、INT32、INT8、INT64、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
       <td>取反输出，公式中的输出张量output。</td>
-      <td>BFLOAT16、FLOAT16、FLOAT、INT32、INT8、INT64</td>
+      <td>BFLOAT16、FLOAT16、FLOAT、DOUBLE、INT32、INT8、INT64、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
   </tbody></table>
@@ -63,3 +63,4 @@
 | 调用方式 | 调用样例                                                                   | 说明                                                             |
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
 | aclnn调用 | [test_aclnn_neg](./examples/test_aclnn_neg.cpp) | 通过[aclnnNeg](./docs/aclnnNeg&aclnnInplaceNeg.md)接口方式调用Neg算子。    |
+| 图模式调用 | [test_geir_neg](./examples/test_geir_neg.cpp) | 通过[算子IR](./op_graph/neg_proto.h)构图方式调用Neg算子。 |

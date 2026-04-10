@@ -193,10 +193,11 @@ int CreateOppInGraph(
 {
     Status ret = SUCCESS;
     // 自定义代码：添加单算子定义到图中
-    auto addN = op::AddN("addN").create_dynamic_input_x(1, false);
+    auto addN = op::AddN("addN").create_dynamic_input_x(2, false);
     std::vector<int64_t> xShape = {4, 2};
     ADD_DYNAMIC_INPUT(0, inDtype, xShape, 1);
-    ADD_INPUT_ATTR(N, 4);
+    ADD_DYNAMIC_INPUT(1, inDtype, xShape, 2);
+    ADD_INPUT_ATTR(N, 2);
 
     ADD_OUTPUT(1, y, inDtype, xShape);
     outputs.push_back(addN);

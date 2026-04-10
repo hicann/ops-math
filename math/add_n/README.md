@@ -43,7 +43,7 @@
       <td>x</td>
       <td>输入</td>
       <td>公式中的输入张量x</td>
-      <td>INT32, INT64, FLOAT16, BFLOAT16, FLOAT32</td>
+      <td>INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64，FLOAT16, BFLOAT16, FLOAT32, DOUBLE, COMPLEX64, COMPLEX128</td>
       <td>ND</td>
     </tr>
     <tr>

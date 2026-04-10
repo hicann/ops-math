@@ -42,7 +42,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>对输入进行主元素相加求和操作。</td>
   </tr>
   <tr>
@@ -1272,7 +1272,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>计算每个元素的相反数。</td>
   </tr>
   <tr>
