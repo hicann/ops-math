@@ -18,7 +18,7 @@
 #include "opdev/op_def.h"
 
 namespace l0op {
-
+const aclTensor* TensorMoveAiCore(const aclTensor* x, const aclTensor* y, aclOpExecutor* executor);
 const aclTensor* TensorMove(const aclTensor* x, const aclTensor* y, aclOpExecutor* executor);
 } // namespace l0op
 
