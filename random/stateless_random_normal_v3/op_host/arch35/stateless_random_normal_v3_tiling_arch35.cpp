@@ -93,16 +93,30 @@ ge::graphStatus StatelessRandomNormalV3Tiling::UniqueProcess()
 {
     uint32_t v3KernelMode = 0;
 
+    auto outputShape = context_->GetOutputShape(OUTPUT_IDX_Y);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, outputShape);
+    int64_t outputSize = outputShape->GetStorageShape().GetShapeSize();
+
     auto meanTensor = context_->GetInputTensor(INPUT_IDX_MEAN);
     OP_CHECK_NULL_WITH_CONTEXT(context_, meanTensor);
-    if (meanTensor->GetShapeSize() == 1) {
+    int64_t meanSize = meanTensor->GetShapeSize();
+    if (meanSize == 1) {
         v3KernelMode |= MEAN_SCALAR_FLAG;
+    } else if (meanSize != outputSize) {
+        OP_LOGE(context_, "StatelessRandomNormalV3 does not support broadcast for mean, "
+                "mean shapeSize: %ld != output shapeSize: %ld.", meanSize, outputSize);
+        return ge::GRAPH_FAILED;
     }
 
     auto stdevTensor = context_->GetInputTensor(INPUT_IDX_STDEV);
     OP_CHECK_NULL_WITH_CONTEXT(context_, stdevTensor);
-    if (stdevTensor->GetShapeSize() == 1) {
+    int64_t stdevSize = stdevTensor->GetShapeSize();
+    if (stdevSize == 1) {
         v3KernelMode |= STDEV_SCALAR_FLAG;
+    } else if (stdevSize != outputSize) {
+        OP_LOGE(context_, "StatelessRandomNormalV3 does not support broadcast for stdev, "
+                "stdev shapeSize: %ld != output shapeSize: %ld.", stdevSize, outputSize);
+        return ge::GRAPH_FAILED;
     }
 
     tilingData_.v3KernelMode = v3KernelMode;
