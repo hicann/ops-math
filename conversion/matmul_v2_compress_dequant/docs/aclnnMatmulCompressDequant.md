@@ -6,9 +6,9 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>昇腾950 AI处理器</term>                             |    ×     |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    ×     |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    ×     |
+| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    ×     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
 | <term>Atlas 推理系列产品 </term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
@@ -80,7 +80,7 @@ aclnnStatus aclnnMatmulCompressDequant(
     <tr>
       <td>x1</td>
       <td>输入</td>
-      <td>表示矩阵乘的左输入，2维ND格式aclTensor。</td>
+      <td>表示矩阵乘的左输入。</td>
       <td>-</td>
       <td>INT8</td>
       <td>ND</td>
@@ -90,7 +90,7 @@ aclnnStatus aclnnMatmulCompressDequant(
     <tr>
       <td>x2</td>
       <td>输入</td>
-      <td>表示压缩后的矩阵乘的右输入，1维ND格式aclTensor，为通过msModelSlim工具中weight_compression模块压缩后的输入。</td>
+      <td>表示压缩后的矩阵乘的右输入，为通过msModelSlim工具中weight_compression模块压缩后的输入。</td>
       <td>-</td>
       <td>INT8</td>
       <td>ND</td>
@@ -100,7 +100,7 @@ aclnnStatus aclnnMatmulCompressDequant(
     <tr>
       <td>compressIndex</td>
       <td>输入</td>
-      <td>表示矩阵乘右输入的压缩索引表，1维ND格式aclTensor。</td>
+      <td>表示矩阵乘右输入的压缩索引表。</td>
       <td>通过示例中的msModelSlim工具中获取</td>
       <td>INT8</td>
       <td>ND</td>
@@ -110,7 +110,7 @@ aclnnStatus aclnnMatmulCompressDequant(
     <tr>
       <td>bias</td>
       <td>输入</td>
-      <td>2维ND格式aclTensor。</td>
+      <td>参与矩阵乘计算的偏置项。</td>
       <td>支持空指针传入。</td>
       <td>INT8</td>
       <td>ND</td>
@@ -120,7 +120,7 @@ aclnnStatus aclnnMatmulCompressDequant(
     <tr>
       <td>deqScale</td>
       <td>输入</td>
-      <td>表示反量化参数，2维ND格式aclTensor。</td>
+      <td>表示反量化参数。</td>
       <td>tensor中的值为float通过下述示例中转换后的UINT64的数据。</td>
       <td>UINT64</td>
       <td>ND</td>
@@ -159,8 +159,8 @@ aclnnStatus aclnnMatmulCompressDequant(
     </tr>
     <tr>
       <td>out</td>
-      <td>输入</td>
-      <td>2维ND格式aclTensor。</td>
+      <td>输出</td>
+      <td>计算输出。</td>
       <td>-</td>
       <td>FLOAT16</td>
       <td>ND</td>
