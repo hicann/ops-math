@@ -201,16 +201,20 @@ void RunTestSquare(
     auto input1_size{SizeOf(dims)};
 
     T* data1 = (T*)malloc(input1_size * sizeof(T));
-    for (std::uint64_t i = 0; i < input1_size; i++) {
-        data1[i] = input_data[i];
+    if (data1) {
+        for (std::uint64_t i = 0; i < input1_size; i++) {
+            data1[i] = input_data[i];
+        }
     }
 
     T* output = (T*)malloc(input1_size * sizeof(T));
     CreateAndRunKernelSquare(dims, data1, output);
 
     T* expect_out = (T*)malloc(input1_size * sizeof(T));
-    for (std::uint64_t i = 0; i < input1_size; i++) {
-        expect_out[i] = output_exp_data[i];
+    if (expect_out) {
+        for (std::uint64_t i = 0; i < input1_size; i++) {
+            expect_out[i] = output_exp_data[i];
+        }
     }
 
     EXPECT_EQ(CompareResult(output, expect_out, input1_size), true);
