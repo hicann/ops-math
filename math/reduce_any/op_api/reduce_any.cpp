@@ -14,6 +14,7 @@
 #include "opdev/shape_utils.h"
 #include "aclnn_kernels/common/op_error_check.h"
 
+using namespace op;
 namespace l0op {
 OP_TYPE_REGISTER(ReduceAny);
 const aclTensor* ReduceAny(const aclTensor* self, const aclIntArray* dim, bool keepDim, aclOpExecutor* executor)
@@ -21,9 +22,10 @@ const aclTensor* ReduceAny(const aclTensor* self, const aclIntArray* dim, bool k
     L0_DFX(ReduceAny, self, dim, keepDim);
     auto dims = executor->ConvertToTensor(dim, op::DataType::DT_INT64);
     const aclTensor* out = nullptr;
-    if (self->GetDataType() == op::DataType::DT_BF16 || self->GetDataType() == op::DataType::DT_FLOAT) {
+    bool isSpecialPlatform = GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B || GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93;
+    if (isSpecialPlatform && (self->GetDataType() == op::DataType::DT_BF16 || self->GetDataType() == op::DataType::DT_FLOAT)) {
         out = executor->AllocTensor(self->GetViewShape(), op::DataType::DT_FLOAT);
-    } else if (self->GetDataType() == op::DataType::DT_FLOAT16) {
+    } else if (isSpecialPlatform && self->GetDataType() == op::DataType::DT_FLOAT16) {
         out = executor->AllocTensor(self->GetViewShape(), op::DataType::DT_FLOAT16);
     } else {
         out = executor->AllocTensor(self->GetViewShape(), op::DataType::DT_BOOL);
