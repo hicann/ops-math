@@ -52,11 +52,12 @@ ge::graphStatus BitwiseOrTiling::DoOpTiling()
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputYDesc);
     ge::DataType outputDtype = outputYDesc->GetDataType();
     if (!((input0DType == input1DType) && (input0DType == outputDtype))) {
-        OP_LOGE(context_->GetNodeName(),
-            "dtype of input0[%s], dtype of input1[%s], dtype of output[%s] are not equal.",
-            ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(input1DType).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str());
+        std::string reasonMsg = "dtype of x1 should be same with x2[" +
+                                ge::TypeUtils::DataTypeToSerialString(input1DType) + "] and y[" +
+                                ge::TypeUtils::DataTypeToSerialString(outputDtype) + "]";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
+            reasonMsg.c_str());
          return ge::GRAPH_FAILED;
     }
     if (input0DType == ge::DT_INT16) {
@@ -80,11 +81,9 @@ ge::graphStatus BitwiseOrTiling::DoOpTiling()
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     }
     else {
-        OP_LOGE(context_->GetNodeName(),
-           "dtype of input0[%s], input1[%s], output[%s] are not valid, expect dtype is int16 uint16 int32 int64.",
-           ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
-           ge::TypeUtils::DataTypeToSerialString(input1DType).c_str(),
-           ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str());
+        OP_LOGE_WITH_INVALID_INPUT_DTYPE(
+            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
+            "int16, uint16, int32, int64");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;

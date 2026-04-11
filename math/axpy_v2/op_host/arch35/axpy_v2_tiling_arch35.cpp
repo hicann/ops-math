@@ -50,20 +50,19 @@ bool AxpyV2Tiling::CheckDtype(const ge::DataType& input0Dtype, const ge::DataTyp
                              input0Dtype == ge::DT_BF16 || input0Dtype == ge::DT_BOOL || input0Dtype == ge::DT_INT64 ||
                              input0Dtype == ge::DT_UINT8 || input0Dtype == ge::DT_INT8 || input0Dtype == ge::DT_INT32);
     if (!isDtypeSame) {
-        OP_LOGE(
-            context_->GetNodeName(),
-            "Dtype of x1[%s] should be equal to dtype of x2[%s] and dtype of alpha[%s] and y dtype[%s].",
-            ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(input1Dtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(inputAlphaDtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str());
+        std::string reasonMsg = "Dtype of x1 should be equal to dtype of x2[" +
+                                ge::TypeUtils::DataTypeToSerialString(input1Dtype) + "], alpha[" +
+                                ge::TypeUtils::DataTypeToSerialString(inputAlphaDtype) + "] and y dtype[" +
+                                ge::TypeUtils::DataTypeToSerialString(outputDtype) + "]";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
+            reasonMsg.c_str());
         return false;
     }
     if (!isDtypeSupported) {
-        OP_LOGE(context_->GetNodeName(),
-                                        "Dtype of x1[%s] not in support dtype list [float32, float16, bfloat16, "
-                                        "int32, int64, int8, uint8, bool].",
-                                        ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str());
+        OP_LOGE_WITH_INVALID_INPUT_DTYPE(
+            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
+            "float32, float16, bfloat16, int32, int64, int8, uint8, bool");
         return false;
     }
     return true;

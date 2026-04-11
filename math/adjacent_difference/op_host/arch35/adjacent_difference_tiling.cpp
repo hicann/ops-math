@@ -18,6 +18,7 @@
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 #include "util/platform_util.h"
+#include "op_host/tiling_templates_registry.h"
 
 namespace optiling
 {
@@ -49,8 +50,11 @@ static ge::graphStatus Tiling4AdjacentDifference(gert::TilingContext* context) {
     OP_CHECK_NULL_WITH_CONTEXT(context, yDtypePtr);
     int64_t yDtype = *yDtypePtr;
     if (static_cast<int64_t>(outputType) != yDtype) {
-        OP_LOGE("AdjacentDifference", "outputType and yDtype(Attr) should be equal, outputType [%ld], yDtype [%ld]",
-            static_cast<int64_t>(outputType), yDtype);
+        std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(static_cast<ge::DataType>(outputType)) + " and " +
+                               ge::TypeUtils::DataTypeToSerialString(static_cast<ge::DataType>(yDtype));
+        std::string reasonMsg = "Dtype of y and y_dtype(Attr) should be same";
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            "AdjacentDifference", "y and y_dtype", dtypeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     if (yDtype == static_cast<int64_t>(ge::DataType::DT_INT64)) {
@@ -59,7 +63,9 @@ static ge::graphStatus Tiling4AdjacentDifference(gert::TilingContext* context) {
     } else if (yDtype == static_cast<int64_t>(ge::DataType::DT_INT32)) {
         OP_LOGI("AdjacentDifference", "yDtype is DT_INT32");
     } else {
-        OP_LOGE("AdjacentDifference", "yDtype not support [%ld]", yDtype);
+        OP_LOGE_WITH_INVALID_ATTR(
+            "AdjacentDifference", "y_dtype",
+            ge::TypeUtils::DataTypeToSerialString(static_cast<ge::DataType>(yDtype)).c_str(), "int32, int64");
         return ge::GRAPH_FAILED;
     }
     uint64_t ubSizePlatform;
@@ -69,7 +75,12 @@ static ge::graphStatus Tiling4AdjacentDifference(gert::TilingContext* context) {
     int64_t ubSize = static_cast<int64_t>(ubSizePlatform);
     int64_t aivCoreNum = ascendcPlatform.GetCoreNumAiv();
     auto sizeOfInputType = GetSizeByDataType(dataType);
-    OP_CHECK_IF(sizeOfInputType == 0, OP_LOGE("AdjacentDifference", "Input dtype size is zero."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        sizeOfInputType == 0,
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            "AdjacentDifference", "x", ge::TypeUtils::DataTypeToSerialString(dataType).c_str(),
+            "Input x dtype size is zero"),
+        return ge::GRAPH_FAILED);
     OP_CHECK_IF(aivCoreNum == 0, OP_LOGE("AdjacentDifference", "aivCoreNum is zero."), return ge::GRAPH_FAILED);
     int64_t blockNum = Ops::Base::GetUbBlockSize(context) / sizeOfInputType;
     OP_CHECK_IF(blockNum == 0, OP_LOGE("AdjacentDifference", "blockNum is zero."), return ge::GRAPH_FAILED);

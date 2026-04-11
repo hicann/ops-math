@@ -49,19 +49,20 @@ bool AddcmulTiling::CheckDtype(
 {
     if (!isMixedDtype && (inputDataDtype != inputX1Dtype || inputDataDtype != inputX2Dtype ||
                           inputDataDtype != inputValDtype || inputDataDtype != outputDtype)) {
-        OP_LOGE(
-            context_->GetNodeName(),
-            "Dtype of inputdata[%s] should be equal to dtype of inputx1[%s] and inputx2[%s] and output[%s]",
-            ge::TypeUtils::DataTypeToSerialString(inputDataDtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(inputX1Dtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(inputX2Dtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str());
+        std::string reasonMsg = "Dtype of input_data should be equal to dtype of x1[" +
+                                ge::TypeUtils::DataTypeToSerialString(inputX1Dtype) + "], x2[" +
+                                ge::TypeUtils::DataTypeToSerialString(inputX2Dtype) + "] and y[" +
+                                ge::TypeUtils::DataTypeToSerialString(outputDtype) + "]";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context_->GetNodeName(), "input_data", ge::TypeUtils::DataTypeToSerialString(inputDataDtype).c_str(),
+            reasonMsg.c_str());
         return false;
     }
     if (isMixedDtype && inputValDtype != ge::DT_FLOAT) {
-        OP_LOGE(
-            context_->GetNodeName(), "Dtype of inputvalueDtype[%s] should be fp32 when input dtypes is mixed.",
-            ge::TypeUtils::DataTypeToSerialString(inputValDtype).c_str());
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context_->GetNodeName(), "value",
+            ge::TypeUtils::DataTypeToSerialString(inputValDtype).c_str(),
+            "Dtype of input value should be fp32 when input dtypes is mixed.");
         return false;
     }
     return true;
@@ -111,11 +112,9 @@ ge::graphStatus AddcmulTiling::DoOpTiling()
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
-        OP_LOGE(
-            context_->GetNodeName(),
-            "Input dtype is only support fp16, bf16, fp32, int32, "
-            "while got %s!",
-            ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str());
+        OP_LOGE_FOR_INVALID_DTYPE(
+            context_->GetNodeName(), "input_data", ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
+            "fp16, bf16, fp32, int32");
         return ge::GRAPH_FAILED;
     }
 

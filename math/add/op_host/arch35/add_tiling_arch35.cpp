@@ -47,20 +47,21 @@ bool AddTiling::CheckDtype(
     bool isMixedDtype) const
 {
     if (!isMixedDtype && (input0Dtype != input1Dtype || input0Dtype != outputDtype)) {
-        OP_LOGE(
-            context_->GetNodeName(),
-            "Dtype of input0[%s] should be equal to dtype of input1[%s] and output[%s], "
-            "except input0 is fp16 && input1 is fp32, or input0 is fp32 && input1 is fp16, "
-            "or input0 is bf16 && input1 is fp32, or input0 is fp32 && input1 is bf16.",
-            ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(input1Dtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str());
+        std::string reasonMsg = "Dtype of x1 should be equal to dtype of x2[" +
+                                ge::TypeUtils::DataTypeToSerialString(input1Dtype) + "] and y[" +
+                                ge::TypeUtils::DataTypeToSerialString(outputDtype) +
+                                "], except x1 is fp16 and x2 is fp32, or x1 is fp32 and x2 is fp16, or x1 is bf16 and x2 "
+                                "is fp32, or x1 is fp32 and x2 is bf16.";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
+            reasonMsg.c_str());
         return false;
     }
     if (isMixedDtype && outputDtype != ge::DT_FLOAT) {
-        OP_LOGE(
-            context_->GetNodeName(), "Dtype of output[%s] should be fp32 when input dtypes is mixed.",
-            ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str());
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context_->GetNodeName(), "y",
+            ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str(),
+            "Dtype of output y should be fp32 when input dtypes is mixed.");
         return false;
     }
     return true;
@@ -119,11 +120,9 @@ ge::graphStatus AddTiling::DoOpTiling()
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
-        OP_LOGE(
-            context_->GetNodeName(),
-            "Input dtype is only support fp16, bf16, fp32, int64, int32, uint8, int8, bool, complex32, complex64, "
-            "while got %s!",
-            ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str());
+        OP_LOGE_FOR_INVALID_DTYPE(
+            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
+            "fp16, bf16, fp32, int64, int32, uint8, int8, bool, complex32, complex64");
         return ge::GRAPH_FAILED;
     }
 
