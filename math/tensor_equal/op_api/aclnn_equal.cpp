@@ -162,7 +162,8 @@ aclnnStatus aclnnEqualGetWorkspaceSize(const aclTensor *self, const aclTensor *o
 
     // 调用Fill算子kernel，对一维一元张量赋予bool值
     auto equalOpOut = l0op::Fill(dims, value, outShape, uniqueExecutor.get());
-
+    CHECK_RET(equalOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    
     // 固定写法，将计算结果拷贝到输出out上，out可能是非连续的tensor
     auto viewCopyResult = l0op::ViewCopy(equalOpOut, out, uniqueExecutor.get());
     CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
