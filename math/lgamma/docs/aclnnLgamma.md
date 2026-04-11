@@ -1,63 +1,139 @@
 # aclnnLgamma
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/lgamma)
+
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
+| 产品 | 是否支持 |
+| :--- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term> |    ×     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term> |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term> |    ×     |
+| <term>Atlas 推理系列产品</term> |    √     |
+| <term>Atlas 训练系列产品</term> |    √     |
 
 ## 功能说明
 
-- 接口功能：为输入张量的每一个元素进行lgamma数学运算
-
+- 接口功能：为输入张量的每一个元素进行lgamma数学运算。
 - 计算公式：
 
-$$
-out_i=log_e(\Gamma(|self_i|))
-$$
+  $$
+  out_i=log_e(\Gamma(|self_i|))
+  $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](./../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnLgammaGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLgamma”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用`aclnnLgammaGetWorkspaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnLgamma`接口执行计算。
 
-* `aclnnStatus aclnnLgammaGetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-* `aclnnStatus aclnnLgamma(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnLgammaGetWorkspaceSize(
+  const aclTensor* self,
+  aclTensor*       out,
+  uint64_t*        workspaceSize,
+  aclOpExecutor**  executor)
+```
+
+```Cpp
+aclnnStatus aclnnLgamma(
+  void*            workspace,
+  uint64_t         workspaceSize,
+  aclOpExecutor*   executor,
+  aclrtStream      stream)
+```
 
 ## aclnnLgammaGetWorkspaceSize
 
-- **参数说明：**
-  - self(aclTensor*, 计算输入): Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE，支持[非连续的Tensor](./../../../docs/zh/context/非连续的Tensor.md)，[数据格式](./../../../docs/zh/context/数据格式.md)支持ND。
-  - out(aclTensor\*, 计算输出): Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE，支持[非连续的Tensor](./../../../docs/zh/context/非连续的Tensor.md)，[数据格式](./../../../docs/zh/context/数据格式.md)支持ND，shape、数据格式、数据类型需与self一致。
-  - workspaceSize(uint64_t\*, 出参): 返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor\*\*, 出参): 返回op执行器，包含了算子计算流程。
+- **参数说明**
 
-- **返回值：**
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 280px">
+  <col style="width: 320px">
+  <col style="width: 250px">
+  <col style="width: 120px">
+  <col style="width: 140px">
+  <col style="width: 140px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>公式中的<code>self</code>。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、DOUBLE</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>公式中的<code>out</code>。</td>
+      <td>shape、数据格式、数据类型需与<code>self</code>一致。</td>
+      <td>FLOAT、FLOAT16、DOUBLE</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](./../../../docs/zh/context/aclnn返回码.md)。
+- **返回值**
+
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
-  <col style="width: 287px">
-  <col style="width: 124px">
-  <col style="width: 740px">
+  <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 150px">
+  <col style="width: 550px">
   </colgroup>
   <thead>
     <tr>
       <th>返回值</th>
       <th>错误码</th>
       <th>描述</th>
-    </tr></thead>
+    </tr>
+  </thead>
   <tbody>
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的tensor或out是空指针。</td>
+      <td>传入的self、out中存在空指针。</td>
     </tr>
     <tr>
       <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
@@ -70,24 +146,24 @@ $$
     <tr>
       <td>self和out的维数大于8。</td>
     </tr>
-  </tbody>
-  </table>
+  </tbody></table>
 
 ## aclnnLgamma
 
-- **参数说明：**
+- **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 167px">
-  <col style="width: 134px">
-  <col style="width: 848px">
+  <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 700px">
   </colgroup>
   <thead>
     <tr>
       <th>参数名</th>
       <th>输入/输出</th>
       <th>描述</th>
-    </tr></thead>
+    </tr>
+  </thead>
   <tbody>
     <tr>
       <td>workspace</td>
@@ -97,7 +173,7 @@ $$
     <tr>
       <td>workspaceSize</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnLgammaGetWorkspaceSize获取。</td>
+      <td>由第一段接口 <code>aclnnLgammaGetWorkspaceSize</code> 获取的workspace大小。</td>
     </tr>
     <tr>
       <td>executor</td>
@@ -112,18 +188,17 @@ $$
   </tbody>
   </table>
 
-- **返回值：**
+- **返回值**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](./../../../docs/zh/context/aclnn返回码.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
-- 确定性计算：
-  - aclnnLgamma默认确定性实现。
+- 确定性说明：`aclnnLgamma`默认确定性实现。
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](./../../../docs/zh/context/编译与运行样例.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

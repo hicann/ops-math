@@ -1,86 +1,174 @@
 # aclnnQr
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/q_r)
+
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
+| 产品 | 是否支持 |
+| :--- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term> |    ×     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term> |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term> |    ×     |
+| <term>Atlas 推理系列产品</term> |    ×     |
+| <term>Atlas 训练系列产品</term> |    √     |
 
 ## 功能说明
 
 - 接口功能：对输入Tensor进行正交分解。
-
 - 计算公式：
 
+  $$
+  A = QR
+  $$
 
-$$
-A = QR
-$$
-
-其中$A$为输入Tensor，维度至少为2， A可以表示为正交矩阵$Q$与上三角矩阵$R$的乘积的形式。
+  其中$A$为输入Tensor，维度至少为2，A可以表示为正交矩阵$Q$与上三角矩阵$R$的乘积的形式。
 
 - 示例：
 
-```
-A = tensor([[1, 2], [3, 4]], dtype=torch.float)
-Q,R = QR(A, some =False)
-Q = tensor([[-0.3162, -0.9487],
-            [-0.9487, 0.3162]])
-R = tensor([[-3.1623, -4.4272],
-            [0.0000, -0.6325]])
-```
+  ```text
+  A = tensor([[1, 2], [3, 4]], dtype=torch.float)
+  Q, R = QR(A, some=False)
+  Q = tensor([[-0.3162, -0.9487],
+              [-0.9487, 0.3162]])
+  R = tensor([[-3.1623, -4.4272],
+              [0.0000, -0.6325]])
+  ```
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnQrGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnQr”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用`aclnnQrGetWorkspaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnQr`接口执行计算。
 
-- `aclnnStatus aclnnQrGetWorkspaceSize(const aclTensor *self, bool some, aclTensor *Q, aclTensor *R, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnQr(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnQrGetWorkspaceSize(
+  const aclTensor* self,
+  bool             some,
+  aclTensor*       Q,
+  aclTensor*       R,
+  uint64_t*        workspaceSize,
+  aclOpExecutor**  executor)
+```
+
+```Cpp
+aclnnStatus aclnnQr(
+  void*            workspace,
+  uint64_t         workspaceSize,
+  aclOpExecutor*   executor,
+  aclrtStream      stream)
+```
 
 ## aclnnQrGetWorkspaceSize
 
-- **参数说明：**
+- **参数说明**
 
-  - self(aclTensor*, 计算输入)：公式中的$A$，数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape维度至少为2且不大于8, shape形如[..., M, N], 其中...表示0-6维。
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 280px">
+  <col style="width: 320px">
+  <col style="width: 250px">
+  <col style="width: 120px">
+  <col style="width: 140px">
+  <col style="width: 140px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>公式中的A。</td>
+      <td>shape维度至少为2且不大于8，shape形如[..., M, N]，其中...表示0-6维。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>2-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>some（bool）</td>
+      <td>输入</td>
+      <td>控制公式中的Q、R输出形态的计算属性。</td>
+      <td><ul><li>设为false时，Q为方阵，例如A[..., M, N]，输出完整的Q[..., M, M]、R[..., M, N]。</li><li>设为true时，Q为瘦矩阵，例如A[..., M, N]，输出Q[..., M, K]、R[..., K, N]，其中K为M、N的最小值。</li></ul></td>
+      <td>BOOL</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Q（aclTensor*）</td>
+      <td>输出</td>
+      <td>公式中的Q，正交分解输出的正交矩阵。</td>
+      <td>shape约束参考<code>some</code>参数说明，且数据格式需要与<code>self</code>、R一致。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>由some推导</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>R（aclTensor*）</td>
+      <td>输出</td>
+      <td>公式中的R，正交分解输出的上三角矩阵。</td>
+      <td>shape约束参考<code>some</code>参数说明，且数据格式需要与<code>self</code>、Q一致。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>由some推导</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
-  - some(bool, 计算输入)：该参数决定了Q是否为方阵。设为false时，Q为方阵，例如A[..., M, N]，输出完整的Q[..., M, M]、R[...,M, N]；设为true时，Q为瘦矩阵，例如A[..., M, N]，输出Q[..., M, K]、R[..., K, N]，其中K为M、N的最小值。
-
-  - Q(aclTensor *, 计算输出)：公式中的$Q$，数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，且[数据格式](../../../docs/zh/context/数据格式.md)需要与self、R一致。shape约束参考some参数说明。
-
-  - R(aclTensor *, 计算输出)：公式中的$R$，数据类型支持FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，且[数据格式](../../../docs/zh/context/数据格式.md)需要与self、Q一致。shape约束参考some参数说明。
-
-  - workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor \**, 出参)：返回op执行器，包含了算子计算流程。
-
-
-- **返回值：**
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1146px"><colgroup>
-  <col style="width: 287px">
-  <col style="width: 124px">
-  <col style="width: 735px">
+  <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 150px">
+  <col style="width: 550px">
   </colgroup>
   <thead>
     <tr>
       <th>返回值</th>
       <th>错误码</th>
       <th>描述</th>
-    </tr></thead>
+    </tr>
+  </thead>
   <tbody>
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的self、Q或R是空指针。</td>
+      <td>传入的self、Q、R中存在空指针。</td>
     </tr>
     <tr>
       <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
@@ -90,24 +178,24 @@ R = tensor([[-3.1623, -4.4272],
     <tr>
       <td>self、Q、R的shape不符合约束。</td>
     </tr>
-  </tbody>
-  </table>
+  </tbody></table>
 
 ## aclnnQr
 
-- **参数说明：**
+- **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 167px">
-  <col style="width: 134px">
-  <col style="width: 848px">
+  <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 700px">
   </colgroup>
   <thead>
     <tr>
       <th>参数名</th>
       <th>输入/输出</th>
       <th>描述</th>
-    </tr></thead>
+    </tr>
+  </thead>
   <tbody>
     <tr>
       <td>workspace</td>
@@ -117,7 +205,7 @@ R = tensor([[-3.1623, -4.4272],
     <tr>
       <td>workspaceSize</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnQrGetWorkspaceSize获取。</td>
+      <td>由第一段接口 <code>aclnnQrGetWorkspaceSize</code> 获取的workspace大小。</td>
     </tr>
     <tr>
       <td>executor</td>
@@ -132,15 +220,13 @@ R = tensor([[-3.1623, -4.4272],
   </tbody>
   </table>
 
-
-- **返回值：**
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
-- 确定性计算：
-  - aclnnQr默认确定性实现。
+- 确定性说明：`aclnnQr`默认确定性实现。
 
 
 ## 调用示例
@@ -195,13 +281,13 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
   ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
 
-  // 计算连续tensor的strides
+  // 计算连续tensor的 strides
   std::vector<int64_t> strides(shape.size(), 1);
   for (int64_t i = shape.size() - 2; i >= 0; i--) {
     strides[i] = shape[i + 1] * strides[i + 1];
   }
 
-  // 调用aclCreateTensor接口创建aclTensor
+  // 调用aclCreateTensor接口创建 aclTensor
   *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
                             shape.data(), shape.size(), *deviceAddr);
   return 0;
@@ -214,10 +300,10 @@ int PrepareInputAndOutput(
   std::vector<float> selfHostData = {1, 2, 3, 4};
   std::vector<float> qHostData = {0, 0, 0, 0};
   std::vector<float> rHostData = {0, 0, 0, 0};
-  // 创建self aclTensor
+  // 创建 self aclTensor
   auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_FLOAT, self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  // 创建q,r aclTensor
+  // 创建 q,r aclTensor
   ret = CreateAclTensor(qHostData, qShape, qDeviceAddr, aclDataType::ACL_FLOAT, q);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   ret = CreateAclTensor(rHostData, rShape, rDeviceAddr, aclDataType::ACL_FLOAT, r);
@@ -249,7 +335,7 @@ void ReleaseDevice(
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1. （固定写法）device/stream初始化，参考 acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -309,7 +395,7 @@ int main() {
     LOG_PRINT("result R[%ld] is: %f\n", i, resultRData[i]);
   }
 
-  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
+  // 6. 释放aclTensor和 aclScalar，需要根据具体API的接口定义修改
   ReleaseTensorAndScalar(self, q, r);
 
   // 7. 释放device资源，需要根据具体API的接口定义参数

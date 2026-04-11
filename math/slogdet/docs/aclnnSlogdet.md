@@ -1,20 +1,21 @@
 # aclnnSlogdet
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/slogdet)
+
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |     ×     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √       |
+| 产品 | 是否支持 |
+| :--- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term> |    ×     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term> |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |     ×     |
-| <term>Atlas 推理系列产品</term>                             |   √     |
-| <term>Atlas 训练系列产品</term>                              |   √     |
+| <term>Atlas 200I/500 A2 推理产品</term> |    ×     |
+| <term>Atlas 推理系列产品</term> |    √     |
+| <term>Atlas 训练系列产品</term> |    √     |
 
 ## 功能说明
 
-- 算子功能：计算输入self的行列式的符号和自然对数。
-
+- 接口功能：计算输入self的行列式的符号和自然对数。
 - 计算公式：
 
   $$
@@ -22,57 +23,136 @@
   logOut = log(abs(det(self)))
   $$
 
-  其中det表示行列式计算，abs表示绝对值计算。 如果$det(self)$的结果是0，则$logOut = -inf$。
+  其中det表示行列式计算，abs表示绝对值计算。如果$det(self)$的结果是0，则$logOut = -inf$。
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSlogdetGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSlogdet”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用`aclnnSlogdetGetWorkspaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnSlogdet`接口执行计算。
 
-- `aclnnStatus aclnnSlogdetGetWorkspaceSize(const aclTensor *self, aclTensor *signOut, aclTensor *logOut, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnSlogdet(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnSlogdetGetWorkspaceSize(
+  const aclTensor* self,
+  aclTensor*       signOut,
+  aclTensor*       logOut,
+  uint64_t*        workspaceSize,
+  aclOpExecutor**  executor)
+```
+
+```Cpp
+aclnnStatus aclnnSlogdet(
+  void*            workspace,
+  uint64_t         workspaceSize,
+  aclOpExecutor*   executor,
+  aclrtStream      stream)
+```
 
 ## aclnnSlogdetGetWorkspaceSize
 
-- **参数说明：**
+- **参数说明**
 
-  - self(aclTensor*,计算输入): 公式中的`self`，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128。
-    shape满足(\*, n, n)形式，其中`*`表示0或更多维度的batch, n表示任意正整数。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - signOut(aclTensor *，计算输出): 公式中的`signOut`，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128且需要和self满足推导关系，
-  `self`为COMPLEX类型，不支持`signOut`为非COMPLEX类型。shape与self的batch一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - logOut(aclTensor *，计算输出): 公式中的`logOut`，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128且需要和self满足推导关系，
-  `self`为COMPLEX类型，不支持`logOut`为非COMPLEX类型。shape与self的batch一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  * workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 280px">
+  <col style="width: 320px">
+  <col style="width: 250px">
+  <col style="width: 120px">
+  <col style="width: 140px">
+  <col style="width: 140px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>公式中的<code>self</code>，输入矩阵。</td>
+      <td>shape满足(*, n, n)形式，其中<code>*</code>表示0或更多维度的batch，n表示任意正整数。</td>
+      <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>2及以上</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>signOut（aclTensor*）</td>
+      <td>输出</td>
+      <td>公式中的<code>signOut</code>，行列式符号结果。</td>
+      <td><ul><li>需要和<code>self</code>满足推导关系。</li><li><code>self</code>为COMPLEX类型时，不支持<code>signOut</code>为非COMPLEX类型。</li><li>shape与<code>self</code>的batch一致。</li></ul></td>
+      <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>与self的batch一致</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>logOut（aclTensor*）</td>
+      <td>输出</td>
+      <td>公式中的<code>logOut</code>，行列式自然对数结果。</td>
+      <td><ul><li>需要和<code>self</code>满足推导关系。</li><li><code>self</code>为COMPLEX类型时，不支持<code>logOut</code>为非COMPLEX类型。</li><li>shape与<code>self</code>的batch一致。</li></ul></td>
+      <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>与self的batch一致</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
-  * executor(aclOpExecutor **，出参)：返回op执行器，包含了算子计算流程。
-
-
-- **返回值：**
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1153px"><colgroup>
-  <col style="width: 301px">
-  <col style="width: 137px">
-  <col style="width: 715px">
+  <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 150px">
+  <col style="width: 550px">
   </colgroup>
   <thead>
     <tr>
       <th>返回值</th>
       <th>错误码</th>
       <th>描述</th>
-    </tr></thead>
+    </tr>
+  </thead>
   <tbody>
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的self, signOut或logOut是空指针。</td>
+      <td>传入的self、signOut、logOut中存在空指针。</td>
     </tr>
     <tr>
       <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="3">161002</td>
-      <td>self, signOut或logOut的数据类型和数据格式不在支持的范围之内。</td>
+      <td>self、signOut、logOut的数据类型和数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>self的shape不满足约束。</td>
@@ -80,24 +160,24 @@
     <tr>
       <td>signOut和logOut的shape不满足约束。</td>
     </tr>
-  </tbody>
-  </table>
+  </tbody></table>
 
 ## aclnnSlogdet
 
-- **参数说明：**
+- **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 167px">
-  <col style="width: 134px">
-  <col style="width: 848px">
+  <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 700px">
   </colgroup>
   <thead>
     <tr>
       <th>参数名</th>
       <th>输入/输出</th>
       <th>描述</th>
-    </tr></thead>
+    </tr>
+  </thead>
   <tbody>
     <tr>
       <td>workspace</td>
@@ -107,7 +187,7 @@
     <tr>
       <td>workspaceSize</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnSlogdetGetWorkspaceSize获取。</td>
+      <td>由第一段接口 <code>aclnnSlogdetGetWorkspaceSize</code> 获取的workspace大小。</td>
     </tr>
     <tr>
       <td>executor</td>
@@ -122,17 +202,14 @@
   </tbody>
   </table>
 
-
-- **返回值：**
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
-- 确定性计算：
-  - aclnnSlogdet默认确定性实现。
-
-输入数据中不支持存在溢出值Inf/Nan。
+- 确定性说明：`aclnnSlogdet`默认确定性实现。
+- 输入数据中不支持存在溢出值`Inf`/`NaN`。
 
 ## 调用示例
 
@@ -190,13 +267,13 @@ int CreateAclTensor(
   ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
 
-  // 计算连续tensor的strides
+  // 计算连续tensor的 strides
   std::vector<int64_t> strides(shape.size(), 1);
   for (int64_t i = shape.size() - 2; i >= 0; i--) {
     strides[i] = shape[i + 1] * strides[i + 1];
   }
 
-  // 调用aclCreateTensor接口创建aclTensor
+  // 调用aclCreateTensor接口创建 aclTensor
   *tensor = aclCreateTensor(
       shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
       *deviceAddr);
@@ -245,7 +322,7 @@ aclError ExecOpApi(
   auto ret = aclnnSlogdetGetWorkspaceSize(self, signOut, logOut, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSlogdetGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
-  // 根据 workspaceSize 申请 device 内存
+  // 根据workspaceSize申请device内存
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -311,7 +388,7 @@ int main()
       &logOut);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用 CANN 算子 API
+  // 3. 调用CANN算子API
   uint64_t workspaceSize = 0;
   void* workspaceAddr = nullptr;
 
@@ -325,7 +402,7 @@ int main()
   aclDestroyTensor(signOut);
   aclDestroyTensor(logOut);
 
-  // 7. 释放 device 资源
+  // 7. 释放device资源
   aclrtFree(selfDeviceAddr);
   aclrtFree(signOutDeviceAddr);
   aclrtFree(logOutDeviceAddr);
