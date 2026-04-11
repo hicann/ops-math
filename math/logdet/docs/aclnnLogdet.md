@@ -1,69 +1,142 @@
 # aclnnLogdet
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/logdet)
+
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
+| 产品 | 是否支持 |
+| :--- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term> |    √     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term> |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+| <term>Atlas 200I/500 A2 推理产品</term> |    ×     |
+| <term>Atlas 推理系列产品</term> |    ×     |
+| <term>Atlas 训练系列产品</term> |    √     |
 
 ## 功能说明
 
 - 接口功能：计算输入self的行列式的自然对数。
-
 - 计算公式：
 
   $$
   out = log(det(self))
   $$
-  
+
   - 如果$det(self)$的结果是0，则$out = -inf$。
   - 如果$det(self)$的结果是负数，则$out = nan$。
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnLogdetGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnLogdet”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用`aclnnLogdetGetWorkspaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnLogdet`接口执行计算。
 
-- `aclnnStatus aclnnLogdetGetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnLogdet(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnLogdetGetWorkspaceSize(
+  const aclTensor* self,
+  aclTensor*       out,
+  uint64_t*        workspaceSize,
+  aclOpExecutor**  executor)
+```
+
+```Cpp
+aclnnStatus aclnnLogdet(
+  void*            workspace,
+  uint64_t         workspaceSize,
+  aclOpExecutor*   executor,
+  aclrtStream      stream)
+```
 
 ## aclnnLogdetGetWorkspaceSize
 
-- **参数说明：**
+- **参数说明**
 
-  - self(aclTensor*,计算输入)：公式中的`self`，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128。
-    shape满足( *, n, n)形式，其中`*`表示0或更多维度的batch,shape不能大于8维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - out(aclTensor *，计算输出)：公式中的`out`，数据类型支持FLOAT、DOUBLE、COMPLEX64、COMPLEX128。且需要和self满足推导关系，shape与self的batch一致。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  * workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 280px">
+  <col style="width: 320px">
+  <col style="width: 250px">
+  <col style="width: 120px">
+  <col style="width: 140px">
+  <col style="width: 140px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>公式中的<code>self</code>，输入矩阵。</td>
+      <td>shape满足(*, n, n)形式，其中<code>*</code>表示0或更多维度的batch。</td>
+      <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>2-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>公式中的<code>out</code>，行列式自然对数结果。</td>
+      <td>需要和self满足推导关系，shape与self的batch一致。</td>
+      <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
+      <td>ND</td>
+      <td>与self的batch一致</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
-  * executor(aclOpExecutor **，出参)：返回op执行器，包含了算子计算流程。
-
-- **返回值：**
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 286px">
-  <col style="width: 123px">
-  <col style="width: 740px">
+  <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
+  <col style="width: 300px">
+  <col style="width: 150px">
+  <col style="width: 550px">
   </colgroup>
   <thead>
     <tr>
       <th>返回值</th>
       <th>错误码</th>
       <th>描述</th>
-    </tr></thead>
+    </tr>
+  </thead>
   <tbody>
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的self或out是空指针。</td>
+      <td>传入的self、out中存在空指针。</td>
     </tr>
     <tr>
       <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
@@ -76,24 +149,24 @@
     <tr>
       <td>out的shape和self的batch大小不一致。</td>
     </tr>
-  </tbody>
-  </table>
+  </tbody></table>
 
 ## aclnnLogdet
 
-- **参数说明：**
+- **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 167px">
-  <col style="width: 134px">
-  <col style="width: 848px">
+  <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 700px">
   </colgroup>
   <thead>
     <tr>
       <th>参数名</th>
       <th>输入/输出</th>
       <th>描述</th>
-    </tr></thead>
+    </tr>
+  </thead>
   <tbody>
     <tr>
       <td>workspace</td>
@@ -103,7 +176,7 @@
     <tr>
       <td>workspaceSize</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnLogdetGetWorkspaceSize获取。</td>
+      <td>由第一段接口 <code>aclnnLogdetGetWorkspaceSize</code> 获取的workspace大小。</td>
     </tr>
     <tr>
       <td>executor</td>
@@ -118,16 +191,14 @@
   </tbody>
   </table>
 
-- **返回值：**
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
-- 确定性计算：
-  - aclnnLogdet默认确定性实现。
-
-输入数据中不支持存在溢出值Inf/Nan。
+- 确定性说明：`aclnnLogdet`默认确定性实现。
+- 输入数据中不支持存在溢出值`Inf`/`NaN`。
 
 ## 调用示例
 
@@ -185,13 +256,13 @@ int CreateAclTensor(
   ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
 
-  // 计算连续tensor的strides
+  // 计算连续tensor的 strides
   std::vector<int64_t> strides(shape.size(), 1);
   for (int64_t i = shape.size() - 2; i >= 0; i--) {
     strides[i] = shape[i + 1] * strides[i + 1];
   }
 
-  // 调用aclCreateTensor接口创建aclTensor
+  // 调用aclCreateTensor接口创建 aclTensor
   *tensor = aclCreateTensor(
       shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
       *deviceAddr);
@@ -284,11 +355,11 @@ int main()
   ret = ExecOpApi(self, out, &workspaceAddr, workspaceSize, outDeviceAddr, outShape, stream);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 释放 Tensor
+  // 释放Tensor
   aclDestroyTensor(self);
   aclDestroyTensor(out);
 
-  // 释放 device 内存
+  // 释放device内存
   aclrtFree(selfDeviceAddr);
   aclrtFree(outDeviceAddr);
 
