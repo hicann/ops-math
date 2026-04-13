@@ -2325,5 +2325,15 @@
     <td>AI Core</td>
     <td>将输入tensor的对角线元素替换为对角线tensor的值。</td>
   </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/matrix_diag/README.md">matrix_diag</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>返回一个给定批量对角值的批量对角Tensor。</td>
+  </tr>
 </tbody>
 </table>
