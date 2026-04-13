@@ -576,6 +576,7 @@ conversion@ops-math:
         - ops/ops-math/conversion/contiguous/op_host/
         - ops/ops-math/conversion/mem_set/op_api/
         - ops/ops-math/conversion/mem_set/op_graph/
+        - ops/ops-math/conversion/mem_set/op_host/mem_set_def.cpp
         - ops/ops-math/conversion/pad_v3_grad_replication/docs/
         - ops/ops-math/conversion/pad_v3_grad_replication/README.md
         - ops/ops-math/conversion/pad_v3_grad_replication/op_kernel/
@@ -583,6 +584,7 @@ conversion@ops-math:
         - ops/ops-math/conversion/pad_v3_grad_replication/op_graph/
         - ops/ops-math/conversion/depth_to_space/README.md
         - ops/ops-math/conversion/depth_to_space/op_graph/
+        - ops/ops-math/conversion/depth_to_space/op_host/depth_to_space_def.cpp
         - ops/ops-math/conversion/clip_by_value_v2/docs/
         - ops/ops-math/conversion/clip_by_value_v2/op_api/
         - ops/ops-math/conversion/clip_by_value_v2/README.md
@@ -596,6 +598,7 @@ conversion@ops-math:
         - ops/ops-math/conversion/clip_by_value/README.md
         - ops/ops-math/conversion/clip_by_value/op_host/clip_by_value_infershape.cpp
         - ops/ops-math/conversion/clip_by_value/op_graph/
+        - ops/ops-math/conversion/clip_by_value/op_host/clip_by_value_def.cpp
         - ops/ops-math/conversion/reflection_pad3d_grad/docs/
         - ops/ops-math/conversion/reflection_pad3d_grad/op_api/
         - ops/ops-math/conversion/reflection_pad3d_grad/README.md
@@ -638,9 +641,11 @@ conversion@ops-math:
         - ops/ops-math/conversion/strided_slice_v2/README.md
         - ops/ops-math/conversion/strided_slice_v2/op_host/strided_slice_v2_infershape.cpp
         - ops/ops-math/conversion/strided_slice_v2/op_graph/
+        - ops/ops-math/conversion/strided_slice_v2/op_host/strided_slice_v2_def.cpp
         - ops/ops-math/conversion/mem_set_v2/op_api/
         - ops/ops-math/conversion/mem_set_v2/README.md
         - ops/ops-math/conversion/mem_set_v2/op_graph/
+        - ops/ops-math/conversion/mem_set_v2/op_host/mem_set_v2_def.cpp
         - ops/ops-math/conversion/unsqueezev3/README.md
         - ops/ops-math/conversion/unsqueezev3/op_host/
         - ops/ops-math/conversion/unsqueezev3/op_graph/
@@ -652,6 +657,7 @@ conversion@ops-math:
         - ops/ops-math/conversion/tensor_move/README.md
         - ops/ops-math/conversion/tensor_move/op_host/tensor_move_infershape.cpp
         - ops/ops-math/conversion/tensor_move/op_graph/
+        - ops/ops-math/conversion/tensor_move/op_host/tensor_move_def.cpp
         - ops/ops-math/conversion/concat_dv2/op_kernel/
         - ops/ops-math/conversion/concat_dv2/op_host/
         - ops/ops-math/conversion/pad_v3_grad/README.md
@@ -662,6 +668,7 @@ conversion@ops-math:
         - ops/ops-math/conversion/strided_slice_v3/README.md
         - ops/ops-math/conversion/strided_slice_v3/op_host/strided_slice_v3_infershape.cpp
         - ops/ops-math/conversion/strided_slice_v3/op_graph/
+        - ops/ops-math/conversion/strided_slice_v3/op_host/strided_slice_v3_def.cpp
         - ops/ops-math/conversion/coalesce_sparse/README.md
         - ops/ops-math/conversion/coalesce_sparse/op_kernel/
         - ops/ops-math/conversion/coalesce_sparse/op_host/coalesce_sparse_tiling.cpp
@@ -672,6 +679,7 @@ conversion@ops-math:
         - ops/ops-math/conversion/coalesce_sparse/op_graph/
         - ops/ops-math/conversion/space_to_depth/README.md
         - ops/ops-math/conversion/space_to_depth/op_graph/
+        - ops/ops-math/conversion/space_to_depth/op_host/space_to_depth_def.cpp
         - ops/ops-math/conversion/trans_data/docs/
         - ops/ops-math/conversion/trans_data/op_api/
         - ops/ops-math/conversion/trans_data/README.md
