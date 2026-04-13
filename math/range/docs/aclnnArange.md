@@ -135,7 +135,6 @@ aclnnStatus aclnnArange(
   </table>
 
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
-  - <term>Ascend 950PR/Ascend 950DT</term>：out不支持DOUBLE数据类型。
 
 - **返回值：**
 
