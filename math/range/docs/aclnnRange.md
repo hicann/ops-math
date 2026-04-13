@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-- 接口功能：从start起始到end结束按照step的间隔取值，并返回大小为 $ \lfloor \frac{end - start} {step} \rfloor + 1 $的1维张量。其中，步长step是张量中相邻两个值的间隔。
+- 接口功能：从start起始到end结束按照step的间隔取值，并返回大小为 $\lfloor\frac{end-start}{step}\rfloor+1$ 的1维张量。其中，步长step是张量中相邻两个值的间隔。
 
 - 计算公式：
 
