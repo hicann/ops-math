@@ -52,21 +52,111 @@ $$
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnGroupedBiasAddGradV2GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnGroupedBiasAddGradV2”接口执行计算。
 
-- `aclnnStatus aclnnGroupedBiasAddGradV2GetWorkspaceSize(const aclTensor *gradY, const aclTensor *groupIdxOptional, int64_t groupIdxType, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnGroupedBiasAddGradV2(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```c++
+aclnnStatus aclnnGroupedBiasAddGradV2GetWorkspaceSize(
+  const aclTensor *gradY,
+  const aclTensor *groupIdxOptional,
+  int64_t          groupIdxType,
+  aclTensor       *out,
+  uint64_t        *workspaceSize,
+  aclOpExecutor   **executor)
+```
+
+```c++
+aclnnStatus aclnnGroupedBiasAddGradV2(
+  void          *workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor *executor,
+  aclrtStream    stream)
+```
 
 ## aclnnGroupedBiasAddGradV2GetWorkspaceSize
 
-- **参数说明：**
+- **参数说明**
 
-  * gradY（aclTensor\*，计算输入）: 必选参数，反向传播梯度，公式中的gradY，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16。有可选输入groupIdxOptional时，shape仅支持2维，无可选输入groupIdxOptional时，shape仅支持3维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  * groupIdxOptional（aclTensor\*，计算输入）: 可选参数，每个分组结束位置，公式中的groupIdxOptional，Device侧的aclTensor，数据类型支持INT32，INT64，shape仅支持1维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  * groupIdxType（int64_t，计算输入）：表示groupIdx的类型。支持的值为：
-    * 0：表示groupIdxOptional中的值为每个group的结束索引。
-    * 1：表示groupIdxOptional中的值为每个group的大小。
-  * out（aclTensor\*，计算输出）: bias的梯度，公式中的out，Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16，数据类型必须与gradY的数据类型一致，shape仅支持2维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。如果输入为三维(G, C, H), 则输出shape为(G, H)；如果输入为二维(GB, H), group_idx为(G), 则输出shape为(G, H)。
-  * workspaceSize（uint64\_t\*，出参）: 返回需要在Device侧申请的workspace大小。
-  * executor（aclOpExecutor\*\*，出参）: 返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1692px"><colgroup>
+  <col style="width: 232px">
+  <col style="width: 126px">
+  <col style="width: 294px">
+  <col style="width: 294px">
+  <col style="width: 197px">
+  <col style="width: 197px">
+  <col style="width: 197px">
+  <col style="width: 155px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>gradY</td>
+      <td>输入</td>
+      <td>反向传播梯度，公式中的gradY。</td>
+      <td>有可选输入groupIdxOptional时，shape仅支持2维，无可选输入groupIdxOptional时，shape仅支持3维。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>2-3</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>groupIdxOptional</td>
+      <td>输入</td>
+      <td>每个分组结束位置，公式中的groupIdxOptional。</td>
+      <td>-</td>
+      <td>INT32、INT64</td>
+      <td>ND</td>
+      <td>1</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>groupIdxType</td>
+      <td>groupIdxType</td>
+      <td>表示groupIdx的类型。</td>
+      <td>0：表示groupIdxOptional中的值为每个group的结束索引。<br>1：表示groupIdxOptional中的值为每个group的大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out</td>
+      <td>输出</td>
+      <td>bias的梯度，公式中的out。</td>
+      <td>-</td>
+      <td>与gradY一致。</td>
+      <td>ND</td>
+      <td>2</td>
+      <td>×</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
 - **返回值：**
 
