@@ -30,6 +30,7 @@ static constexpr uint16_t BLOCK_SIZE = 32;
 static constexpr uint16_t DOUBLE_UNIFORM_RESULT = 2;
 static constexpr uint32_t INT32_FLOAT32_ONE_REPEAT = Ops::Base::GetVRegSize() / sizeof(int32_t);
 static constexpr float DOUBLE_MULTIPLE = 2.0f;
+static constexpr float PI = 3.14159265358979323846f;
 
 static constexpr int IDX_2 = 2;
 static constexpr int IDX_3 = 3;
@@ -307,6 +308,19 @@ __aicore__ inline void BoxMullerMulSIMD(
                 (MicroAPI::RegTensor<int32_t>&)(vreg3), (MicroAPI::RegTensor<int32_t>&)(vreg4), mask);
         }
     }
+}
+
+// Box-Muller transform
+__simt_callee__ __aicore__ inline void BoxMullerFloat(float u1, const float u2, float* z0, float* z1) {
+    const float eps = 1.0e-7f; 
+    if (u1 < eps) {
+        u1 = eps;
+    }
+    float v = static_cast<float>(DOUBLE_MULTIPLE * PI * u2);
+    float r = Simt::Sqrt(-DOUBLE_MULTIPLE * Simt::Log(u1));
+    Simt::Sincos(v, *z0, *z1);
+    *z0 *= r;
+    *z1 *= r;
 }
 
 template <uint16_t COPY_SIZE>

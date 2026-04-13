@@ -13,19 +13,18 @@
  * \brief truncated_normal_v2
  */
 
-#include "truncated_normal_v2_simt.h"
+#include "arch35/truncated_normal_v2_simt.h"
 
 using namespace TruncatedNormalV2;
 
 extern "C" __global__ __aicore__ void truncated_normal_v2(
     GM_ADDR shape, GM_ADDR offset, GM_ADDR y, GM_ADDR offset_ref, GM_ADDR workspace, GM_ADDR tiling)
 {
-    REGISTER_TILING_DEFAULT(TruncatedNormalV2TilingData);
+    REGISTER_TILING_DEFAULT(RandomUnifiedSimtTilingDataStruct);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
     GET_TILING_DATA(tilingData, tiling);
-    if (TILING_KEY_IS(1)) {
+    if (TILING_KEY_IS(100)) {
         TruncatedNormalV2::TruncatedNormalV2Simt<DTYPE_Y, DTYPE_OFFSET> op(&tilingData);
-        op.Init(y, offset);
-        op.Process();
+        op.Process(y, offset);
     }
 }

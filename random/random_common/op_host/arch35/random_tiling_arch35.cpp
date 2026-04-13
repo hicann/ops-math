@@ -111,7 +111,8 @@ ge::graphStatus RandomTilingArch35::DoTiling()
     }
 
     // 步骤3： 填充TilingData
-    ret = FillUnifiedTilingData();
+    ret = config_.kernelMode == RandomKernelMode::SIMD ?
+        FillUnifiedTilingData() : FillUnifiedSimtTilingData();
     if (ret != ge::GRAPH_SUCCESS) {
         OP_LOGE(opName_, "Fill tiling data failed");
         return ret;
@@ -139,9 +140,8 @@ ge::graphStatus RandomTilingArch35::DoTiling()
     }
 
     // 步骤7：调用dump函数
-    auto info = tilingData_.DumpTilingInfo();
-    OP_LOGI("RandomTiling", "%s", info.str().c_str());
-
+    OP_LOGI("RandomTiling", "%s", (config_.kernelMode == RandomKernelMode::SIMD ?
+        tilingData_.DumpTilingInfo() : simtTilingData_.DumpTilingInfo()).c_str());
     OP_LOGD(opName_, "Tiling success for op: %s", opName_);
     return ge::GRAPH_SUCCESS;
 }
@@ -215,6 +215,47 @@ ge::graphStatus RandomTilingArch35::GetPlatformInfo()
     OP_CHECK_IF(
         (ubSize_ <= 0), OP_LOGE(opName_, "ub size less than Dcache Size. please check."), return ge::GRAPH_FAILED);
     OP_LOGI(opName_, "RandomTilingArch35::GetPlatformInfo ubSize_=%d, totalCoreNum_=%d", ubSize_, totalCoreNum_);
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus RandomTilingArch35::FillUnifiedSimtTilingData()
+{
+    // 1. 调用算子回调函数
+    auto ret = config_.getOutputSize(context_, simtTilingData_.outputSize);
+    if (ret != ge::GRAPH_SUCCESS) {
+        return ret;
+    }
+
+    OP_CHECK_IF(
+        (simtTilingData_.outputSize <= 0), OP_LOGE(opName_, "outputSize is less than or equal to 0. please check."),
+        return ge::GRAPH_FAILED);
+    ret = config_.getSeedAndOffset(context_, simtTilingData_.seed, simtTilingData_.offset);
+    if (ret != ge::GRAPH_SUCCESS) {
+        return ret;
+    }
+
+    // 2. 通用分核计算
+    ret = DoSimtBlockTiling();
+    if (ret != ge::GRAPH_SUCCESS) {
+        return ret;
+    }
+
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus RandomTilingArch35::DoSimtBlockTiling()
+{
+    OP_CHECK_IF(
+        (totalCoreNum_ <= 0), OP_LOGE(opName_, "totalCoreNum is less than or equal to 0. please check."),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        (config_.coreAlignSize == 0), OP_LOGE(opName_, "coreAlignSize is  equal to 0. please check."),
+        return ge::GRAPH_FAILED);
+
+    int64_t avgPerCore = Ops::Base::CeilDiv(simtTilingData_.outputSize, totalCoreNum_);
+    int64_t numOfPerCore = Ops::Base::CeilAlign(avgPerCore, config_.coreAlignSize);
+    int64_t usedCoreNum = Ops::Base::CeilDiv(simtTilingData_.outputSize, numOfPerCore);
+    simtTilingData_.usedCoreNum = std::min(totalCoreNum_, usedCoreNum);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -306,7 +347,8 @@ ge::graphStatus RandomTilingArch35::WriteBackToContext()
     workspaces[0] = workspaceSize_;
 
     // 写入启动核数
-    context_->SetBlockDim(tilingData_.usedCoreNum);
+    context_->SetBlockDim(config_.kernelMode == RandomKernelMode::SIMD ?
+        tilingData_.usedCoreNum : simtTilingData_.usedCoreNum);
 
     // 设置多核启动关系
     context_->SetScheduleMode(config_.isNeedSyncAll);
@@ -322,9 +364,15 @@ ge::graphStatus RandomTilingArch35::WriteBackToContext()
     }
 
     // 填充tilingData
-    RandomUnifiedTilingDataStruct* tilingData = context_->GetTilingData<RandomUnifiedTilingDataStruct>();
-    OP_CHECK_IF(tilingData == nullptr, OP_LOGE(opName_, "tilingData ptr is null"), return ge::GRAPH_FAILED);
-    *tilingData = tilingData_;
+    if (config_.kernelMode == RandomKernelMode::SIMD) {
+        auto* tilingData = context_->GetTilingData<RandomUnifiedTilingDataStruct>();
+        OP_CHECK_IF(tilingData == nullptr, OP_LOGE(opName_, "tilingData ptr is null"), return ge::GRAPH_FAILED);
+        *tilingData = tilingData_;
+    } else {
+        auto* tilingData = context_->GetTilingData<RandomUnifiedSimtTilingDataStruct>();
+        OP_CHECK_IF(tilingData == nullptr, OP_LOGE(opName_, "simtTilingData ptr is null"), return ge::GRAPH_FAILED);
+        *tilingData = simtTilingData_;
+    }
 
     return ge::GRAPH_SUCCESS;
 }

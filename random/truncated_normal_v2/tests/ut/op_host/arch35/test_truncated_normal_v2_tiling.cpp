@@ -12,7 +12,7 @@
 #include <gtest/gtest.h>
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
-#include "../../../op_host/truncated_normal_v2_tiling.h"
+#include "../../../../op_host/arch35/truncated_normal_v2_tiling_arch35.h"
 
 using namespace std;
 using namespace ge;
@@ -30,7 +30,7 @@ class TruncatedNormalV2Tiling : public testing::Test {
 
 TEST_F(TruncatedNormalV2Tiling, truncated_normal_v2_tiling_910D_float_001)
 {
-    optiling::TruncatedNormalV2CompileInfo compileInfo = {64, 196608};
+    optiling::RandomOperatorCompileInfo compileInfo = {64, 196608};
     gert::StorageShape shape_shape = {{2}, {2}};
     gert::StorageShape offset_shape = {{1}, {1}};
     gert::StorageShape out_shape = {{32, 512}, {32, 512}};
@@ -48,9 +48,9 @@ TEST_F(TruncatedNormalV2Tiling, truncated_normal_v2_tiling_910D_float_001)
          gert::TilingContextPara::OpAttr("seed2", seed2),
          gert::TilingContextPara::OpAttr("dtype", dtype)},
         &compileInfo);
-    uint64_t expectTilingKey = 1;
+    uint64_t expectTilingKey = 100;
     string expectTilingData =
-        "10 5 16384 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+        "64 16384 10 5 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

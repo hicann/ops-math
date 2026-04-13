@@ -32,22 +32,44 @@ public:
     uint32_t reserved = 0;
     uint32_t v3KernelMode = 0;
     
-    std::ostringstream DumpTilingInfo() {
+    std::string DumpTilingInfo() const {
         std::ostringstream info;
-        info << " usedCoreNum: " << usedCoreNum;
-        info << " normalCoreProNum: " << normalCoreProNum;
-        info << " tailCoreProNum: " << tailCoreProNum;
-        info << " singleBufferSize: " << singleBufferSize;
-        info << " key: [" << key[0] << ", " << key[1] << "]";
-        info << " counter: [" << counter[0] << ", " << counter[1] << ", "
-        << counter[2] << ", " << counter[3] << "]";
-        info << " outputSize: " << outputSize;
-        info << " probTensorSize: " << probTensorSize;
-        info << " sharedTmpBufSize: " << sharedTmpBufSize;
-        info << " keepProb: " << keepProb;
-        info << " v3KernelMode: " << v3KernelMode;
-        return info;
+        info << "[RandomUnifiedTilingData] "
+            << "usedCoreNum: " << usedCoreNum
+            << ", normalCoreProNum: " << normalCoreProNum
+            << ", tailCoreProNum: " << tailCoreProNum
+            << ", singleBufferSize: " << singleBufferSize
+            << ", key: [" << key[0] << ", " << key[1] << "]"
+            << ", counter: [" << counter[0] << ", " << counter[1]
+            << ", " << counter[2] << ", " << counter[3] << "]"
+            << ", outputSize: " << outputSize
+            << ", probTensorSize: " << probTensorSize
+            << ", sharedTmpBufSize: " << sharedTmpBufSize
+            << ", keepProb: " << keepProb
+            << ", v3KernelMode: " << v3KernelMode;
+        return info.str();
     }
 };
 
+class RandomUnifiedSimtTilingDataStruct {
+public:
+    int64_t usedCoreNum = 0;
+    int64_t outputSize = 0;
+    int64_t seed = 0;
+    int64_t offset = 0;
+    int64_t ubSize = 0;
+    int64_t extraParam1 = 0; // 扩展字段：供需要额外参数的算子使用
+
+    std::string DumpTilingInfo() const {
+        std::ostringstream info;
+        info << "[RandomUnifiedSimtTilingData] "
+            << "usedCoreNum: " << usedCoreNum
+            << ", outputSize: " << outputSize
+            << ", seed: " << seed
+            << ", offset: " << offset
+            << ", ubSize: " << ubSize
+            << ", extraParam1: " << extraParam1;
+        return info.str();
+    }
+};
 #endif

@@ -42,6 +42,8 @@ struct TensorCheckRule {
 };
 
 // 算子私有配置
+enum class RandomKernelMode {SIMD, SIMT};
+
 struct OpTilingConfig {
     // 输入tensor校验规则（key: 输入索引，value: 校验规则）
     std::unordered_map<int32_t, TensorCheckRule> inputCheckRules;
@@ -54,6 +56,7 @@ struct OpTilingConfig {
     std::function<ge::graphStatus(gert::TilingContext*, int64_t&)> getOutputSize;
     std::function<ge::graphStatus(gert::TilingContext*, uint32_t[2], uint32_t[4])> getKeyAndCounter;
     std::function<ge::graphStatus(gert::TilingContext*, int64_t&)> getBufferNum;
+    std::function<ge::graphStatus(gert::TilingContext*, int64_t&, int64_t&)> getSeedAndOffset;
 
     // 启动相关
     bool isNeedSyncAll;
@@ -64,6 +67,8 @@ struct OpTilingConfig {
     int64_t coreAlignSize = 4;
     int64_t ubAlignSize = 0;
     int64_t keepProbNum = 0;
+
+    RandomKernelMode kernelMode = RandomKernelMode::SIMD;
 };
 
 class RandomTilingArch35
@@ -87,7 +92,9 @@ protected:
     ge::graphStatus CheckInputsOutputsAndAttrs();
     ge::graphStatus GetPlatformInfo();
     ge::graphStatus FillUnifiedTilingData();
+    ge::graphStatus FillUnifiedSimtTilingData();
     ge::graphStatus DoBlockTiling();
+    virtual ge::graphStatus DoSimtBlockTiling();
     ge::graphStatus DoUbTiling();
     ge::graphStatus CalcTilingKeyAndWorkspace();
     ge::graphStatus WriteBackToContext();
@@ -98,6 +105,7 @@ protected:
     gert::TilingContext* context_ = nullptr;
     OpTilingConfig config_;
     RandomUnifiedTilingDataStruct tilingData_;
+    RandomUnifiedSimtTilingDataStruct simtTilingData_;
 
     std::string opName_;
     int64_t totalCoreNum_ = 0;
@@ -106,6 +114,5 @@ protected:
     uint64_t workspaceSize_ = 0;
     int64_t bufNum_= 0;
 };
-
 } // namespace optiling
 #endif // RANDOM_TILING_ARCH35_H
