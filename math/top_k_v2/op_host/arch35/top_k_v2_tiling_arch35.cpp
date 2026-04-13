@@ -22,6 +22,7 @@
 namespace optiling {
 namespace topkV2 {
 namespace topkV2DataInfo {
+const uint32_t CONST_ZERO = 0;
 const uint32_t CONST_TWO = 2;
 const uint32_t CONST_THREE = 3;
 const uint32_t MAX_K_FOR_INT64 = 2000;
@@ -1085,7 +1086,11 @@ ge::graphStatus SortCheckParams(gert::TilingContext *context, topkV2DataInfo::So
 void FillTilingDataSort(gert::TilingContext *context, topkV2DataInfo::SortTileInfo &sortTileInfo,
     TopKV2TilingDataSimd &topkTilingData)
 {
-    topkTilingData.set_isLargest(sortTileInfo.isDescend);
+    if (sortTileInfo.isDescend) {
+        topkTilingData.set_isLargest(topkV2DataInfo::CONST_TWO);
+    } else {
+        topkTilingData.set_isLargest(topkV2DataInfo::CONST_ZERO);
+    }
     topkTilingData.set_isInInt32Range(sortTileInfo.isInt32);
     topkTilingData.set_numTileDataSize(sortTileInfo.numTileDataSize);
     topkTilingData.set_unsortedDimParallel(sortTileInfo.unsortedDimParallel);
@@ -1243,7 +1248,7 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
         OP_LOGI("[TopKV2Tiling]", "topkTilingData.set_modeType is: %u, SORT_AND_TOP_K_MODE: %u",
             topkTilingData.get_modeType() , topkV2DataInfo::SORT_AND_TOP_K_MODE);
         sortTileInfo.maxCoreNum = static_cast<uint32_t>(maxCoreNum);
-        sortTileInfo.isDescend = static_cast<bool>(isLargest);
+        sortTileInfo.isDescend = static_cast<bool>(*isLargest);
         sortTileInfo.isInt32 = static_cast<uint32_t>(lastAxisNum <= topkV2DataInfo::INT32_MAX_RANGE_VALUE_FOR_SORT);
         sortTileInfo.topKRealValue = outLastAxisNum;
         OP_CHECK_IF(GetRadixSortMoreCore(context, sortTileInfo) != ge::GRAPH_SUCCESS,

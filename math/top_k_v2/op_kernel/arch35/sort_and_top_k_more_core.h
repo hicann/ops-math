@@ -174,8 +174,8 @@ __aicore__ inline void SortAndTopKMoreCore<T1, T2, UT, T3, isDescend>::GetValueR
     int64_t sortOutValueGMOffset;
     int64_t outValueGmOffset;
     uint32_t tileDataSize = tileDataSize_;
-    LocalTensor<T1> topkResTensor = topkResQueue_.AllocTensor<T1>();
     for (uint32_t i = 0; i < dataCopyLoopTimes; i++) {
+        LocalTensor<T1> topkResTensor = topkResQueue_.AllocTensor<T1>();
         if (hasLastTile &&  i == dataCopyLoopTimes - 1) {
             tileDataSize = topKRealValue_ % tileDataSize_;
         }
@@ -191,8 +191,8 @@ __aicore__ inline void SortAndTopKMoreCore<T1, T2, UT, T3, isDescend>::GetValueR
         topkResQueue_.EnQue(topkResTensor);
         topkResTensor = topkResQueue_.DeQue<T1>();
         DataCopyPad(this->outValueGm_[outValueGmOffset], topkResTensor, dataCopyParam);
+        topkResQueue_.FreeTensor(topkResTensor);
     }
-    topkResQueue_.FreeTensor(topkResTensor);
 }
 
 template <typename T1, typename T2, typename UT, typename T3, uint64_t isDescend>
@@ -208,8 +208,8 @@ __aicore__ inline void SortAndTopKMoreCore<T1, T2, UT, T3, isDescend>::GetIndexR
     int64_t sortOutIdxGMOffset;
     int64_t outIdxTmpGmOffset;
     uint32_t tileDataSize = tileDataSize_;
-    LocalTensor<T2> topkResTensor = topkResQueue_.AllocTensor<T2>();
-    for (uint32_t i = 0; i < dataCopyLoopTimes; i++) { 
+    for (uint32_t i = 0; i < dataCopyLoopTimes; i++) {
+        LocalTensor<T2> topkResTensor = topkResQueue_.AllocTensor<T2>();
         if (hasLastTile &&  i == dataCopyLoopTimes - 1) {
             tileDataSize = topKRealValue_ % tileDataSize_;
         }
@@ -225,8 +225,8 @@ __aicore__ inline void SortAndTopKMoreCore<T1, T2, UT, T3, isDescend>::GetIndexR
         topkResQueue_.EnQue(topkResTensor);
         topkResTensor = topkResQueue_.DeQue<T2>();
         DataCopyPad(outIdxTmpGm_[outIdxTmpGmOffset], topkResTensor, dataCopyParam);
+        topkResQueue_.FreeTensor(topkResTensor);
     }
-    topkResQueue_.FreeTensor(topkResTensor);
 }
 
 template <typename T1, typename T2, typename UT, typename T3, uint64_t isDescend>
