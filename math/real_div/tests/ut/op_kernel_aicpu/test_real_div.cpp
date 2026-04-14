@@ -71,7 +71,7 @@ void CalcExpectFunc(const NodeDef &node_def, T expect_out[]) {
     CompareResult<base_type>(output.data(), expect_out.data(), data_num[2]);       \
   }
 
-  #define ADD_ZERO_CASE(base_type, aicpu_type)                                    \
+#define ADD_ZERO_CASE(base_type, aicpu_type)                                      \
   TEST_F(TEST_REALDIV_UT, TestRealDiv_ZeroInput_##aicpu_type) {                   \
     vector<DataType> data_types = {aicpu_type, aicpu_type, aicpu_type};           \
     vector<vector<int64_t>> shapes = {{24}, {24}, {24}};                          \
@@ -178,3 +178,217 @@ ADD_ZERO_CASE(int64_t, DT_INT64)
 ADD_ZERO_CASE(uint8_t, DT_UINT8)
 
 ADD_ZERO_CASE(uint16_t, DT_UINT16)
+
+// ==================== coverage: large same-shape parallel path ====================
+// data_num >= kParallelDataNumSameShape (7*1024=7168) triggers ParallelFor in NoBcastComputeImpl
+TEST_F(TEST_REALDIV_UT, TestRealDiv_LargeSameShape_Parallel) {
+    const int64_t num = 8192;
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{num}, {num}, {num}};
+    std::vector<float> input1(num, 2.0f);
+    std::vector<float> input2(num, 2.0f);
+    std::vector<float> output(num, 0.0f);
+    vector<void *> datas = {input1.data(), input2.data(), output.data()};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    std::vector<float> expect_out(num, 1.0f);
+    CompareResult<float>(output.data(), expect_out.data(), num);
+}
+
+// data_num in [kParallelDataNumSameShape, kParallelDataNumSameShapeMid] → max 4 cores
+TEST_F(TEST_REALDIV_UT, TestRealDiv_LargeSameShape_MidThreshold) {
+    const int64_t num = 16384;
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{num}, {num}, {num}};
+    std::vector<float> input1(num, 6.0f);
+    std::vector<float> input2(num, 3.0f);
+    std::vector<float> output(num, 0.0f);
+    vector<void *> datas = {input1.data(), input2.data(), output.data()};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    std::vector<float> expect_out(num, 2.0f);
+    CompareResult<float>(output.data(), expect_out.data(), num);
+}
+
+// ==================== coverage: X_ONE_ELEMENT path (scalar / vector) ====================
+TEST_F(TEST_REALDIV_UT, TestRealDiv_ScalarDivVector) {
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{1}, {4}, {4}};
+    float input1[1] = {12.0f};
+    float input2[4] = {1.0f, 2.0f, 3.0f, 4.0f};
+    float output[4] = {0};
+    vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    float expect_out[4] = {12.0f, 6.0f, 4.0f, 3.0f};
+    CompareResult<float>(output, expect_out, 4);
+}
+
+// ==================== coverage: Y_ONE_ELEMENT path (vector / scalar) ====================
+TEST_F(TEST_REALDIV_UT, TestRealDiv_VectorDivScalar) {
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{4}, {1}, {4}};
+    float input1[4] = {4.0f, 8.0f, 12.0f, 16.0f};
+    float input2[1] = {4.0f};
+    float output[4] = {0};
+    vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    float expect_out[4] = {1.0f, 2.0f, 3.0f, 4.0f};
+    CompareResult<float>(output, expect_out, 4);
+}
+
+// ==================== coverage: broadcast parallel path (>= kParallelDataNum=2048) ====================
+// Broadcast with large output to trigger ParallelFor in BcastComputeImpl
+TEST_F(TEST_REALDIV_UT, TestRealDiv_BcastLargeParallel) {
+    const int64_t rows = 64;
+    const int64_t cols = 64;
+    const int64_t out_num = rows * cols;
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{rows, cols}, {1, cols}, {rows, cols}};
+    std::vector<float> input1(out_num, 10.0f);
+    std::vector<float> input2(cols, 5.0f);
+    std::vector<float> output(out_num, 0.0f);
+    vector<void *> datas = {input1.data(), input2.data(), output.data()};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    std::vector<float> expect_out(out_num, 2.0f);
+    CompareResult<float>(output.data(), expect_out.data(), out_num);
+}
+
+// ==================== coverage: broadcast y_inner==0 (Y broadcast on innermost dim) ====================
+// x shape (3,4), y shape (3,1) → output (3,4), y broadcasts on innermost → y_inner=0
+TEST_F(TEST_REALDIV_UT, TestRealDiv_BcastYInner0) {
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{3, 4}, {3, 1}, {3, 4}};
+    float input1[12] = {2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24};
+    float input2[3] = {2, 2, 2};
+    float output[12] = {0};
+    vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    float expect_out[12] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+    CompareResult<float>(output, expect_out, 12);
+}
+
+// ==================== coverage: broadcast x_inner==0 (X broadcast on innermost dim) ====================
+// x shape (3,1), y shape (3,4) → output (3,4), x broadcasts on innermost → x_inner=0
+TEST_F(TEST_REALDIV_UT, TestRealDiv_BcastXInner0) {
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{3, 1}, {3, 4}, {3, 4}};
+    float input1[3] = {12.0f, 24.0f, 36.0f};
+    float input2[12] = {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4};
+    float output[12] = {0};
+    vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    float expect_out[12] = {12, 6, 4, 3, 24, 12, 8, 6, 36, 18, 12, 9};
+    CompareResult<float>(output, expect_out, 12);
+}
+
+// ==================== coverage: broadcast both contiguous innermost (outer dim broadcast) ====================
+// x (4,3), y (1,3) → output (4,3), x_inner=1, y_inner=1, broadcast only on dim 0
+TEST_F(TEST_REALDIV_UT, TestRealDiv_BcastBothContiguous) {
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{4, 3}, {1, 3}, {4, 3}};
+    float input1[12] = {3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36};
+    float input2[3] = {3, 3, 3};
+    float output[12] = {0};
+    vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    float expect_out[12] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+    CompareResult<float>(output, expect_out, 12);
+}
+
+// ==================== coverage: "Div" op type registration ====================
+TEST_F(TEST_REALDIV_UT, TestDiv_OpType) {
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{4}, {4}, {4}};
+    float input1[4] = {10.0f, 20.0f, 30.0f, 40.0f};
+    float input2[4] = {2.0f, 4.0f, 5.0f, 8.0f};
+    float output[4] = {0};
+    vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};
+    auto node_def = CpuKernelUtils::CpuKernelUtils::CreateNodeDef();
+    NodeDefBuilder(node_def.get(), "Div", "Div")
+        .Input({"x1", data_types[0], shapes[0], datas[0]})
+        .Input({"x2", data_types[1], shapes[1], datas[1]})
+        .Output({"y", data_types[2], shapes[2], datas[2]});
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    float expect_out[4] = {5.0f, 5.0f, 6.0f, 5.0f};
+    CompareResult<float>(output, expect_out, 4);
+}
+
+// ==================== coverage: type mismatch error ====================
+TEST_F(TEST_REALDIV_UT, TestRealDiv_TypeMismatch) {
+    vector<vector<int64_t>> shapes = {{4}, {4}, {4}};
+    float input1[4] = {1.0f, 2.0f, 3.0f, 4.0f};
+    int32_t input2[4] = {1, 2, 3, 4};
+    float output[4] = {0};
+    vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};
+    auto node_def = CpuKernelUtils::CpuKernelUtils::CreateNodeDef();
+    NodeDefBuilder(node_def.get(), "RealDiv", "RealDiv")
+        .Input({"x1", DT_FLOAT, shapes[0], datas[0]})
+        .Input({"x2", DT_INT32, shapes[1], datas[1]})
+        .Output({"y", DT_FLOAT, shapes[2], datas[2]});
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
+}
+
+// ==================== coverage: broadcast with incompatible shapes ====================
+TEST_F(TEST_REALDIV_UT, TestRealDiv_IncompatibleBroadcast) {
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{3}, {5}, {5}};
+    float input1[3] = {1, 2, 3};
+    float input2[5] = {1, 2, 3, 4, 5};
+    float output[5] = {0};
+    vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
+}
+
+// ==================== coverage: broadcast mid threshold (kParallelDataNumMid=16*1024) ====================
+TEST_F(TEST_REALDIV_UT, TestRealDiv_BcastMidThreshold) {
+    const int64_t rows = 128;
+    const int64_t cols = 128;
+    const int64_t out_num = rows * cols;
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{rows, cols}, {1, cols}, {rows, cols}};
+    std::vector<float> input1(out_num, 8.0f);
+    std::vector<float> input2(cols, 4.0f);
+    std::vector<float> output(out_num, 0.0f);
+    vector<void *> datas = {input1.data(), input2.data(), output.data()};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    std::vector<float> expect_out(out_num, 2.0f);
+    CompareResult<float>(output.data(), expect_out.data(), out_num);
+}
+
+// ==================== coverage: NoBcast large X_ONE_ELEMENT parallel ====================
+TEST_F(TEST_REALDIV_UT, TestRealDiv_ScalarDivVector_LargeParallel) {
+    const int64_t num = 8192;
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{1}, {num}, {num}};
+    float input1[1] = {100.0f};
+    std::vector<float> input2(num, 10.0f);
+    std::vector<float> output(num, 0.0f);
+    vector<void *> datas = {(void *)input1, input2.data(), output.data()};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    std::vector<float> expect_out(num, 10.0f);
+    CompareResult<float>(output.data(), expect_out.data(), num);
+}
+
+// ==================== coverage: NoBcast large Y_ONE_ELEMENT parallel ====================
+TEST_F(TEST_REALDIV_UT, TestRealDiv_VectorDivScalar_LargeParallel) {
+    const int64_t num = 8192;
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{num}, {1}, {num}};
+    std::vector<float> input1(num, 50.0f);
+    float input2[1] = {5.0f};
+    std::vector<float> output(num, 0.0f);
+    vector<void *> datas = {input1.data(), (void *)input2, output.data()};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    std::vector<float> expect_out(num, 10.0f);
+    CompareResult<float>(output.data(), expect_out.data(), num);
+}

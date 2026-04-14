@@ -26,13 +26,6 @@ class RealDivKernel : public CpuKernel {
   bool IsInputHasZero(T *input_data, const int64_t num_of_elems);
   template <typename T>
   uint32_t RealDivCompute(const CpuKernelContext &ctx, const bool verify_zero = true);
-  template <int32_t RANK, typename T>
-  uint32_t RealDivCalculateWithAlignedCheck(BCalcInfo &calc_info);
-  bool AlignedCheck(const BCalcInfo &calc_info) const;
-  template <int32_t RANK, typename T, int32_t OPTION>
-  uint32_t RealDivCalculate(BCalcInfo &calc_info);
-  template <typename T>
-  uint32_t DispatchByRank(int32_t rank, BCalcInfo &calc_info, const CpuKernelContext &ctx);
 };
 }  // namespace aicpu
 #endif
