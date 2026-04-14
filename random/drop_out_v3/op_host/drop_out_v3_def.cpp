@@ -19,7 +19,7 @@ namespace ops {
 class DropOutV3 : public OpDef {
 public:
     const std::vector<ge::DataType> inOutType = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
-    const std::vector<ge::DataType> probType = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
+    const std::vector<ge::DataType> probType = {ge::DT_DOUBLE, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
     const std::vector<ge::DataType> seedType = {ge::DT_INT64, ge::DT_INT32};
     const std::vector<ge::DataType> offsetType = {ge::DT_INT64};
     const std::vector<ge::DataType> maskType = {ge::DT_UINT8};

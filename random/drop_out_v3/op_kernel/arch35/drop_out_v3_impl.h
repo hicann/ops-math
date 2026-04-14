@@ -65,24 +65,13 @@ __aicore__ inline void DropOutV3Impl<T, U>::Init(GM_ADDR p, GM_ADDR mask, GM_ADD
     pipe_ = pipe;
     // SetBuffer
     probInputGm_.SetGlobalBuffer((__gm__ U *)p);
-
-    U currProb = probInputGm_.GetValue(0);
-    if constexpr (AscendC::IsSameType<U, half>::value) {
-        prob_ = static_cast<float>(currProb);
-    } else if constexpr (AscendC::IsSameType<U, float>::value) {
-        prob_ = static_cast<U>(currProb);
-    } else if constexpr (AscendC::IsSameType<U, bfloat16_t>::value) {
-        prob_ = AscendC::ToFloat(currProb);
-    }
-    
+    prob_ = tilingData->prob;
     maskGM_.SetGlobalBuffer((__gm__ uint8_t*)mask);
     maskWorkspace_.SetGlobalBuffer((__gm__ uint8_t*)workspace);
 
     queSize_ = Ops::Base::FloorAlign((tilingData->ubSize / NUM_4) , static_cast<int64_t>(NUM_256));
     pipe_->InitBuffer(maskInQueue_, NUM_2, queSize_);
     pipe_->InitBuffer(maskOutQueue_, NUM_2, queSize_);
-
-    prob_ = 1.0f - prob_;
 }
 
 template <typename T, int32_t VEC>

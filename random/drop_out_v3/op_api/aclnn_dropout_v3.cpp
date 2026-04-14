@@ -207,9 +207,9 @@ aclnnStatus aclnnDropoutV3GetWorkspaceSize(
         outResult = l0op::ZerosLike(inputContiguous, uniqueExecutor.get());
         maskResult = FillScalar(maskOut, 0, uniqueExecutor.get());
     } else {
-        FVector<float> probVector = {static_cast<float>(p)};
+        FVector<double> probVector = {p};
         auto probTensor =
-            uniqueExecutor.get()->ConvertToTensor(probVector.data(), probVector.size(), op::DataType::DT_FLOAT);
+            uniqueExecutor.get()->ConvertToTensor(probVector.data(), probVector.size(), op::DataType::DT_DOUBLE);
         FVector<int64_t> seedVector = {seed};
         auto seedTensor =
             uniqueExecutor.get()->ConvertToTensor(seedVector.data(), seedVector.size(), op::DataType::DT_INT64);

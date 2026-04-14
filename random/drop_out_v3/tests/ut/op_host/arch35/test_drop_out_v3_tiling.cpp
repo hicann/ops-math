@@ -49,7 +49,7 @@ TEST_F(DropOutV3TilingTest, drop_out_v3_tiling_ascendc_float_01)
          {{{15376}, {15376}}, ge::DT_INT8, ge::FORMAT_ND}},
         &compileInfo);
     uint64_t expectTilingKey = 1001;
-    string expectTilingData = "37 163840 1001 8 4 122980 ";
+    string expectTilingData = "37 163840 1001 8 1056964608 4 122980 ";
     std::vector<size_t> expectWorkspaces = {16900224};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

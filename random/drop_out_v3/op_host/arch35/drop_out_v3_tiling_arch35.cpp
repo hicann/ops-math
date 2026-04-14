@@ -16,6 +16,8 @@
 #include <vector>
 #include <cmath>
 #include "drop_out_v3_tiling_arch35.h"
+#include "util/fp16.h"
+#include "util/bfloat16.h"
 
 using namespace std;
 using namespace ge;
@@ -53,6 +55,7 @@ static const int32_t TILING_KEY_BF16 = 1003;
 int64_t seed = 0;
 int64_t offset = 0;
 int64_t totalCoreNum = 0;
+float prob = 0.0f;
 static inline int64_t Align256CeilSize(int64_t value)
 {
     return static_cast<int64_t>((value + CORE_MINEST_NUM - 1) / CORE_MINEST_NUM * CORE_MINEST_NUM);
@@ -211,9 +214,38 @@ static ge::graphStatus GetParamsData(const gert::TilingContext* context)
         OP_LOGE(context->GetNodeName(), "get const shape of offset failed"), return ge::GRAPH_FAILED);
     seed = static_cast<int64_t>(inputSeed_[0]);
     offset = inputOffset_[1];
-    
     OP_CHECK_IF(
         offset % OFFSET_LIMIT != 0, OP_LOGE(context->GetNodeName(), "The offset must be a multiple of 4, but got %ld", offset), return ge::GRAPH_FAILED);
+        
+    auto pTensor = context->GetRequiredInputTensor(INDEX_INPUT_P);
+    OP_CHECK_NULL_WITH_CONTEXT(context, pTensor);
+    OP_CHECK_IF(
+        pTensor->GetShapeSize() <= 0,
+        OP_LOGE(context->GetNodeName(), "get const shape of prob failed"), return ge::GRAPH_FAILED);
+    auto pDescPtr = context->GetRequiredInputDesc(INDEX_INPUT_P);
+    OP_CHECK_NULL_WITH_CONTEXT(context, pDescPtr);
+    switch (pDescPtr->GetDataType()) {
+        case ge::DT_DOUBLE:
+            prob = static_cast<float>(double(1) - pTensor->GetData<double>()[0]);
+            break;
+        case ge::DT_FLOAT16: {
+            auto srcP = pTensor->GetData<Ops::Base::fp16_t>()[0];
+            prob = 1.0f - srcP.toFloat();
+            break;
+        }
+        case ge::DT_BF16:{
+            float srcP = pTensor->GetData<Ops::Base::bfloat16>()[0];
+            prob = 1.0f - srcP;
+            break;
+        }
+        case ge::DT_FLOAT:
+            prob = 1.0f - pTensor->GetData<float>()[0];
+            break;
+        default:
+            OP_LOGD(
+                context->GetNodeName(), "GetProbShape only support [double, float, bf16, fp16]");
+            return ge::GRAPH_FAILED;
+    }
     return ge::GRAPH_SUCCESS;
 }
 
@@ -237,7 +269,7 @@ static ge::graphStatus CheckParamsIsValid(const gert::TilingContext* context)
     auto offsetInputType = offsetInputPtr->GetDataType();
 
     OP_CHECK_IF(
-        (pInputType != ge::DT_FLOAT) && (pInputType != ge::DT_FLOAT16) && (pInputType != ge::DT_BF16),
+        (pInputType != ge::DT_DOUBLE) &&(pInputType != ge::DT_FLOAT) && (pInputType != ge::DT_FLOAT16) && (pInputType != ge::DT_BF16),
         OP_LOGE(
             context->GetNodeName(), "The type of p should be FP32/FP16/BF16, but got %s, please check.",
             Ops::Base::ToString(pInputType).c_str()),
@@ -291,12 +323,13 @@ static inline void TilingDataToLogging(DropOutV3TilingData& tilingData)
 {
     OP_LOGI(
         "[DropOutV3]",
-        "[usedCoreNum]: %ld, [elementNum]: %ld, [tilingKey]: %ld, [seed]: %ld, [offset]: %ld",
+        "[usedCoreNum]: %ld, [elementNum]: %ld, [tilingKey]: %ld, [seed]: %ld, [offset]: %ld, [prob]: %f",
         tilingData.get_usedCoreNum(), 
         tilingData.get_elementNum(),
         tilingData.get_tilingKey(),
         tilingData.get_seed(),
-        tilingData.get_offset());
+        tilingData.get_offset(),
+        tilingData.get_prob());
 }
 
 static ge::graphStatus CalcDropOutV3Tiling(
@@ -345,6 +378,7 @@ ge::graphStatus Tiling4DropOutV3(gert::TilingContext* context)
     // 实例化对象op
     DropOutV3TilingData tilingData;
     // 设置key && counter
+    tilingData.set_prob(prob);
     tilingData.set_seed(seed);
     tilingData.set_offset(offset);	 
     tilingData.set_ubSize(ubSize - DCACHE_SIZE);

@@ -37,6 +37,7 @@ BEGIN_TILING_DATA_DEF(DropOutV3TilingData)
   TILING_DATA_FIELD_DEF(int64_t, ubSize);
   TILING_DATA_FIELD_DEF(int64_t, tilingKey);
   TILING_DATA_FIELD_DEF(int64_t, seed);
+  TILING_DATA_FIELD_DEF(float, prob);
   TILING_DATA_FIELD_DEF(int64_t, offset);
   TILING_DATA_FIELD_DEF(int64_t, elementNum);
 END_TILING_DATA_DEF;

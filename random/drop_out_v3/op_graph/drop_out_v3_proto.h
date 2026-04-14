@@ -25,10 +25,10 @@ namespace ge {
  *
  * @par Inputs:
  * @li x: A tensor, support ND format. Must be one of the following data types: float32,float16,bfloat16,1 ~ 8-D.
- * @li noise_shape: A tensor, optional tensor. Must be one of the following data types: int64,1-D.
- * @li p: A required input, should be const data. Must be one of the following data types: float32,float16,bfloat16.
+ * @li noise_shape: A tensor, optional tensor. Must be int64,1-D.
+ * @li p: A required input, should be const data. Must be one of the following data types: double,float32,float16,bfloat16.
  * @li seed: A required input, should be const data. Must be one of the following data types: int32,int64, 1-D.
- * @li offset: A required input, should be const data. Must be one of the following data types: int64, 1-D.
+ * @li offset: A required input, should be const data. Must be int64, 1-D.
  * Shape is 2 and the value of index 0 is 0. Value of index 1 must be a multiple of 4.
  *
  * @par Outputs:
@@ -39,7 +39,7 @@ namespace ge {
 REG_OP(DropOutV3)
     .INPUT(x, "T")
     .OPTIONAL_INPUT(noise_shape, TensorType({DT_INT64}))
-    .INPUT(p, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16}))
+    .INPUT(p, TensorType({DT_DOUBLE, DT_FLOAT16, DT_FLOAT, DT_BF16}))
     .INPUT(seed, TensorType({DT_INT32, DT_INT64}))
     .INPUT(offset, TensorType({DT_INT64}))
     .OUTPUT(y, "T")
