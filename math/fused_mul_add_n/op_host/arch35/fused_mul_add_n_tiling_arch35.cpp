@@ -134,15 +134,16 @@ ge::graphStatus FusedMulAddNTiling::GetShapeAttrsInfo()
 
     SetOpKey();
     opKey = GetOpKey(inputX1Dtype, inputX2Dtype, inputX3Dtype, outputYDtype);
-    OP_CHECK_IF(
-        (opKey == OP_KEY_INVALID),
-        OP_LOGE(
-            context_->GetNodeName(),
-            "dtype only support [DT_FLOAT, DT_FLOAT16, DT_INT32, DT_INT16, "
-            "DT_BF16] and should be same, but got x1:%s, x2:%s, x3:%s, y:%s",
-            Ops::Base::ToString(inputX1Dtype).c_str(), Ops::Base::ToString(inputX2Dtype).c_str(),
-            Ops::Base::ToString(inputX3Dtype).c_str(), Ops::Base::ToString(outputYDtype).c_str()),
-        return ge::GRAPH_FAILED);
+    if (opKey == OP_KEY_INVALID) {
+        std::string dtypeMsg = Ops::Base::ToString(inputX1Dtype) + ", " + Ops::Base::ToString(inputX2Dtype) + ", " +
+                               Ops::Base::ToString(inputX3Dtype) + " and " + Ops::Base::ToString(outputYDtype);
+        std::string reasonMsg =
+            "All input and output tensors (x1, x2, x3, and y) must have the same dtype, "
+            "restricted to: FLOAT, FLOAT16, INT32, INT16 and BF16";
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            context_->GetNodeName(), "x1, x2, x3 and y", dtypeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     return ge::GRAPH_SUCCESS;
 }
 
@@ -162,23 +163,16 @@ ge::graphStatus FusedMulAddNTiling::DoOpTiling()
     auto inputX3Shape = context_->GetInputShape(INDEX_2);
     OP_CHECK_NULL_WITH_CONTEXT(context_, inputX3Shape);
     auto shapeX3 = inputX3Shape->GetStorageShape();
-    if (shapeX1.GetDimNum() != shapeX2.GetDimNum()) {
-        OP_LOGE(
-            context_->GetNodeName(), "shapes dim num is not equal, x1shape is %zu, x2shape is %zu", shapeX1.GetDimNum(),
-            shapeX2.GetDimNum());
+    if (shapeX1 != shapeX2) {
+        std::string shapeMsg = Ops::Base::ToString(shapeX1) + " and " + Ops::Base::ToString(shapeX2);
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context_->GetNodeName(), "x1 and x2", shapeMsg.c_str(), "Shapes of x1 and x2 should be same");
         return ge::GRAPH_FAILED;
     }
 
-    for (size_t i = 0; i < shapeX1.GetDimNum(); i++) {
-        if (shapeX1.GetDim(i) != shapeX2.GetDim(i)) {
-            OP_LOGE(
-                context_->GetNodeName(), "shape dim %zu not equal, x1shape is %ld, x2shape is %ld", i,
-                shapeX1.GetDim(i), shapeX2.GetDim(i));
-            return ge::GRAPH_FAILED;
-        }
-    }
     if (shapeX3.GetShapeSize() != 1) {
-        OP_LOGE(context_->GetNodeName(), "inputX3 shape size should be 1, but got %ld", shapeX3.GetShapeSize());
+        OP_LOGE_FOR_INVALID_SHAPESIZE(
+            context_->GetNodeName(), "x3", std::to_string(shapeX3.GetShapeSize()).c_str(), "1D");
         return ge::GRAPH_FAILED;
     }
     ElewiseTilingParams elewiseTilingParams;

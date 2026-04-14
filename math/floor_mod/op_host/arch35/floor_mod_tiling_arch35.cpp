@@ -43,11 +43,11 @@ bool FloorModTiling::CheckDtype(
     const ge::DataType& inputX1Dtype, const ge::DataType& inputX2Dtype, const ge::DataType& outputDtype) const
 {
     if (inputX1Dtype != inputX2Dtype || inputX1Dtype != outputDtype) {
-        OP_LOGE(
-            context_->GetNodeName(), "Dtype of inputx1[%s] should be equal to dtype of inputx2[%s] and output[%s]",
-            ge::TypeUtils::DataTypeToSerialString(inputX1Dtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(inputX2Dtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str());
+        std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(inputX1Dtype) + ", " +
+                               ge::TypeUtils::DataTypeToSerialString(inputX2Dtype) + " and " +
+                               ge::TypeUtils::DataTypeToSerialString(outputDtype);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            context_->GetNodeName(), "x1, x2 and y", dtypeMsg.c_str(), "dtype of x1, x2 and y should be same");
         return false;
     }
     return true;
@@ -99,11 +99,9 @@ ge::graphStatus FloorModTiling::DoOpTiling()
         ret = brcBaseTiling.DoTiling(extraBuf, maxLiveNodeCnt, true);
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
-        OP_LOGE(
-            context_->GetNodeName(),
-            "Input dtype is only support fp16, bf16, fp32, int32, int64, "
-            "while got %s!",
-            ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str());
+        OP_LOGE_FOR_INVALID_DTYPE(
+            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
+            "fp16, bf16, fp32, int32 and int64");
         return ge::GRAPH_FAILED;
     }
 

@@ -149,8 +149,18 @@ ge::graphStatus ClipByValueTiling::GetShapeAttrsInfo()
     auto yDtype = y->GetDataType();
 
     opKey = GetOpKey(xDtype, clipValueMinDtype, clipValueMaxDtype, yDtype);
-    OP_CHECK_IF(
-        (opKey == OP_KEY_INVALID), OP_LOGE(context_->GetNodeName(), "can not get opKey"), return ge::GRAPH_FAILED);
+    if (opKey == OP_KEY_INVALID) {
+        std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(xDtype) + ", " +
+                               ge::TypeUtils::DataTypeToSerialString(clipValueMinDtype) + ", " +
+                               ge::TypeUtils::DataTypeToSerialString(clipValueMaxDtype) + " and " +
+                               ge::TypeUtils::DataTypeToSerialString(yDtype);
+        std::string reasonMsg =
+            "The dtype of input x is not supported (must be FLOAT, FLOAT16, BFLOAT16, INT32, or INT64), "
+            "or does not match the dtypes of clip_value_min, clip_value_max, and y";
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            context_->GetNodeName(), "x, clip_value_min, clip_value_max and y", dtypeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     return ge::GRAPH_SUCCESS;
 }
 

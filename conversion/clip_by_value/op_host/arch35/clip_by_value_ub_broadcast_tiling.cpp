@@ -181,14 +181,27 @@ ge::graphStatus ClipByValueTilingUbBroadcast::DoDimensionCollapse()
 
     OP_CHECK_IF((res != ge::GRAPH_SUCCESS), OP_LOGE(context_->GetNodeName(), "DimensionCollapse failed."), return res);
 
-    OP_CHECK_IF(
-        (dims.size() != ClipByValueUbBroadcast::INOUT_PARAM_NUM),
-        OP_LOGE(context_->GetNodeName(), "DimensionCollapse failed. check dims is illegal. dim num: %lu", dims.size()),
-        return ge::GRAPH_FAILED);
+    if (dims.size() != ClipByValueUbBroadcast::INOUT_PARAM_NUM) {
+        std::string shapeMsg =
+            Ops::Base::ToString(xStorageShape) + ", " + Ops::Base::ToString(minStorageShape) + ", " +
+            Ops::Base::ToString(maxStorageShape) + " and " + Ops::Base::ToString(yStorageShape);
+        std::string reasonMsg = "DimensionCollapse failed. check dims is illegal, out dims num " +
+                                std::to_string(dims.size()) + " not equal " +
+                                std::to_string(ClipByValueUbBroadcast::INOUT_PARAM_NUM);
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context_->GetNodeName(), "x, clip_value_min, clip_value_max and y", shapeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
-    OP_CHECK_IF(
-        static_cast<int64_t>(dims.back().size()) > static_cast<int64_t>(Ops::Base::BROADCAST_MAX_DIMS),
-        OP_LOGE("UB BroadcastTiling", "broadcast can't support dim size greater than 8."), return ge::GRAPH_FAILED);
+    if (static_cast<int64_t>(dims.back().size()) > static_cast<int64_t>(Ops::Base::BROADCAST_MAX_DIMS)) {
+        std::string shapeMsg =
+            Ops::Base::ToString(xStorageShape) + ", " + Ops::Base::ToString(minStorageShape) + ", " +
+            Ops::Base::ToString(maxStorageShape) + " and " + Ops::Base::ToString(yStorageShape);
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context_->GetNodeName(), "x, clip_value_min, clip_value_max and y", shapeMsg.c_str(),
+            "broadcast can't support dim size greater than 8");
+        return ge::GRAPH_FAILED;
+    }
 
     return ge::GRAPH_SUCCESS;
 }
@@ -211,15 +224,21 @@ ge::graphStatus ClipByValueTilingUbBroadcast::GetDtypes()
     OP_CHECK_NULL_WITH_CONTEXT(context_, yDesc);
     yDtype = yDesc->GetDataType();
     if (xDtype != minDtype || xDtype != maxDtype || xDtype != yDtype) {
-        OP_LOGE(
-            context_->GetNodeName(), "xDataType: %d minDataType: %d maxDataType: %d yDataType: %d check failed.",
-            xDtype, minDtype, maxDtype, yDtype);
+        std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(xDtype) + ", " +
+                               ge::TypeUtils::DataTypeToSerialString(minDtype) + ", " +
+                               ge::TypeUtils::DataTypeToSerialString(maxDtype) + " and " +
+                               ge::TypeUtils::DataTypeToSerialString(yDtype);
+        std::string reasonMsg = "dtypes of x, clip_value_min, clip_value_max and y should be same";
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            context_->GetNodeName(), "x, clip_value_min, clip_value_max and y", dtypeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
     if (xDtype != ge::DataType::DT_FLOAT && xDtype != ge::DataType::DT_INT32 && xDtype != ge::DataType::DT_FLOAT16 &&
         xDtype != ge::DataType::DT_BF16 && xDtype != ge::DataType::DT_INT64) {
-        OP_LOGE(context_->GetNodeName(), "dataType: %d Not supported datatype.", xDtype);
+        OP_LOGE_FOR_INVALID_DTYPE(
+            context_->GetNodeName(), "x", ge::TypeUtils::DataTypeToSerialString(xDtype).c_str(),
+            "float, float16, bfloat16, int32 and int64");
         return ge::GRAPH_FAILED;
     }
 
@@ -244,9 +263,18 @@ ge::graphStatus ClipByValueTilingUbBroadcast::GetShapeAttrsInfo()
     }
 
     opKey = GetOpKey(xDtype, minDtype, maxDtype, yDtype);
-    OP_CHECK_IF(
-        (opKey == ClipByValueUbBroadcast::OP_KEY_INVALID), OP_LOGE(context_->GetNodeName(), "can not get opKey"),
-        return ge::GRAPH_FAILED);
+    if (opKey == ClipByValueUbBroadcast::OP_KEY_INVALID) {
+        std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(xDtype) + ", " +
+                               ge::TypeUtils::DataTypeToSerialString(minDtype) + ", " +
+                               ge::TypeUtils::DataTypeToSerialString(maxDtype) + " and " +
+                               ge::TypeUtils::DataTypeToSerialString(yDtype);
+        std::string reasonMsg =
+            "The dtype of input x is not supported (must be FLOAT, FLOAT16, BFLOAT16, INT32, or INT64), "
+            "or does not match the dtypes of clip_value_min, clip_value_max, and y";
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            context_->GetNodeName(), "x, clip_value_min, clip_value_max and y", dtypeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     // UB内broadcast条件： 尾轴32B对齐场景。
     int64_t yLastDim = dims[ClipByValueUbBroadcast::Y_INDEX].back();

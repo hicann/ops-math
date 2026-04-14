@@ -491,17 +491,13 @@ ge::graphStatus ConfusionTransposeDTiling::ParametersVerifyingFormatAndDatatype(
     if (paramInfo_.xFormat == ge::FORMAT_ND) {
         OP_CHECK_IF(
             std::find(SUPPORT_DTYPE_ND.begin(), SUPPORT_DTYPE_ND.end(), paramInfo_.xDtype) == SUPPORT_DTYPE_ND.end(),
-            OP_LOGE(
-                tilingContext_->GetNodeName(),
-                "The input x's data type %s is not supported. We only support INT8, INT16, INT32, INT64, UINT8, \
-UINT16, UINT32, UINT64, FLOAT16, FLOAT and BF16 in ND format.",
-                Ops::Base::ToString(paramInfo_.xDtype).c_str()),
+            OP_LOGE_FOR_INVALID_DTYPE(
+                tilingContext_->GetNodeName(), "x", Ops::Base::ToString(paramInfo_.xDtype).c_str(),
+                "INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64, FLOAT16, FLOAT and BF16"),
             return ge::GRAPH_FAILED);
     } else {
-        OP_LOGE(
-            tilingContext_->GetNodeName(),
-            "The input x's data format %s is not supported. We only support ND format.",
-            Ops::Base::ToString(paramInfo_.xFormat).c_str());
+        OP_LOGE_FOR_INVALID_FORMAT(
+            tilingContext_->GetNodeName(), "x", Ops::Base::ToString(paramInfo_.xFormat).c_str(), "ND");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -509,56 +505,61 @@ UINT16, UINT32, UINT64, FLOAT16, FLOAT and BF16 in ND format.",
 
 ge::graphStatus ConfusionTransposeDTiling::ParametersVerifyingInputAndOutput()
 {
-    OP_CHECK_IF(
-        paramInfo_.xDtype != paramInfo_.yDtype,
-        OP_LOGE(
-            tilingContext_->GetNodeName(),
-            "x and output must have the same data type, but x data type is %s, output data type is %s.",
-            Ops::Base::ToString(paramInfo_.xDtype).c_str(), Ops::Base::ToString(paramInfo_.yDtype).c_str()),
-        return ge::GRAPH_FAILED);
+    if (paramInfo_.xDtype != paramInfo_.yDtype) {
+        std::string dtypeMsg =
+            Ops::Base::ToString(paramInfo_.xDtype) + " and " + Ops::Base::ToString(paramInfo_.yDtype);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            tilingContext_->GetNodeName(), "x and y", dtypeMsg.c_str(), "x and output must have the same data type");
+        return ge::GRAPH_FAILED;
+    }
 
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus ConfusionTransposeDTiling::ParametersVerifyingDimNd()
 {
-    OP_CHECK_IF(
-        paramInfo_.xShape.GetDimNum() > MAX_DIM_ND || paramInfo_.xShape.GetDimNum() < MIN_DIM_ND,
-        OP_LOGE(
-            tilingContext_->GetNodeName(), "Invalid x's dim, which should between %ld and %ld, but actually %zu.",
-            MIN_DIM_ND, MAX_DIM_ND, paramInfo_.xShape.GetDimNum()),
-        return ge::GRAPH_FAILED);
+    if (paramInfo_.xShape.GetDimNum() > MAX_DIM_ND || paramInfo_.xShape.GetDimNum() < MIN_DIM_ND) {
+        std::string dimExpectRange = "between " + std::to_string(MIN_DIM_ND) + " and " + std::to_string(MAX_DIM_ND);
+        OP_LOGE_FOR_INVALID_SHAPEDIM(
+            tilingContext_->GetNodeName(), "x", std::to_string(paramInfo_.xShape.GetDimNum()).c_str(),
+            dimExpectRange.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
-    OP_CHECK_IF(
-        paramInfo_.yShape.GetDimNum() > MAX_DIM_ND || paramInfo_.yShape.GetDimNum() < MIN_DIM_ND,
-        OP_LOGE(
-            tilingContext_->GetNodeName(), "Invalid output's dim, which should between %ld and %ld, but actually %zu.",
-            MIN_DIM_ND, MAX_DIM_ND, paramInfo_.yShape.GetDimNum()),
-        return ge::GRAPH_FAILED);
+    if (paramInfo_.yShape.GetDimNum() > MAX_DIM_ND || paramInfo_.yShape.GetDimNum() < MIN_DIM_ND) {
+        std::string dimExpectRange = "between " + std::to_string(MIN_DIM_ND) + " and " + std::to_string(MAX_DIM_ND);
+        OP_LOGE_FOR_INVALID_SHAPEDIM(
+            tilingContext_->GetNodeName(), "y", std::to_string(paramInfo_.yShape.GetDimNum()).c_str(),
+            dimExpectRange.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
-    OP_CHECK_IF(
-        paramInfo_.shape.GetDimNum() > MAX_DIM_ND || paramInfo_.shape.GetDimNum() < MIN_DIM_ND,
-        OP_LOGE(
-            tilingContext_->GetNodeName(), "Invalid shape's dim, which should between %ld and %ld, but actually %zu.",
-            MIN_DIM_ND, MAX_DIM_ND, paramInfo_.shape.GetDimNum()),
-        return ge::GRAPH_FAILED);
+    if (paramInfo_.shape.GetDimNum() > MAX_DIM_ND || paramInfo_.shape.GetDimNum() < MIN_DIM_ND) {
+        std::string dimExpectRange = "between " + std::to_string(MIN_DIM_ND) + " and " + std::to_string(MAX_DIM_ND);
+        OP_LOGE_FOR_INVALID_SHAPEDIM(
+            tilingContext_->GetNodeName(), "shape", std::to_string(paramInfo_.shape.GetDimNum()).c_str(),
+            dimExpectRange.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     if (paramInfo_.transpose_first) {
-        OP_CHECK_IF(
-            paramInfo_.perm.GetDimNum() != paramInfo_.xShape.GetDimNum(),
-            OP_LOGE(
-                tilingContext_->GetNodeName(),
-                "perm and x's dim should be equal, but perm's dim is %zu, x's dim is %zu.", paramInfo_.perm.GetDimNum(),
-                paramInfo_.xShape.GetDimNum()),
-            return ge::GRAPH_FAILED);
+        if (paramInfo_.perm.GetDimNum() != paramInfo_.xShape.GetDimNum()) {
+            std::string dimMsg =
+                std::to_string(paramInfo_.xShape.GetDimNum()) + " and " + std::to_string(paramInfo_.perm.GetDimNum());
+            std::string reasonMsg = "perm and x's shape dim should be equal";
+            OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+                tilingContext_->GetNodeName(), "x and perm", dimMsg.c_str(), reasonMsg.c_str());
+            return ge::GRAPH_FAILED;
+        }
     } else {
-        OP_CHECK_IF(
-            paramInfo_.perm.GetDimNum() != paramInfo_.shape.GetDimNum(),
-            OP_LOGE(
-                tilingContext_->GetNodeName(),
-                "perm and shape's dim should be equal, but perm's dim is %zu, shape's dim is %zu.",
-                paramInfo_.perm.GetDimNum(), paramInfo_.shape.GetDimNum()),
-            return ge::GRAPH_FAILED);
+        if (paramInfo_.perm.GetDimNum() != paramInfo_.shape.GetDimNum()) {
+            std::string dimMsg =
+                std::to_string(paramInfo_.perm.GetDimNum()) + " and " + std::to_string(paramInfo_.shape.GetDimNum());
+            std::string reasonMsg = "perm's dim num and shape's dim num should be equal";
+            OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+                tilingContext_->GetNodeName(), "perm and shape", dimMsg.c_str(), reasonMsg.c_str());
+            return ge::GRAPH_FAILED;
+        }
     }
 
     return ge::GRAPH_SUCCESS;
@@ -566,43 +567,48 @@ ge::graphStatus ConfusionTransposeDTiling::ParametersVerifyingDimNd()
 
 ge::graphStatus ConfusionTransposeDTiling::ParametersVerifyingDimNz()
 {
-    OP_CHECK_IF(
-        paramInfo_.xShape.GetDimNum() > MAX_DIM_NZ || paramInfo_.xShape.GetDimNum() < MIN_DIM_NZ,
-        OP_LOGE(
-            tilingContext_->GetNodeName(), "Invalid x's dim, which should between %ld and %ld, but actually %zu.",
-            MIN_DIM_NZ, MAX_DIM_NZ, paramInfo_.xShape.GetDimNum()),
-        return ge::GRAPH_FAILED);
+    if (paramInfo_.xShape.GetDimNum() > MAX_DIM_NZ || paramInfo_.xShape.GetDimNum() < MIN_DIM_NZ) {
+        std::string dimExpectRange = "between " + std::to_string(MIN_DIM_NZ) + " and " + std::to_string(MAX_DIM_NZ);
+        OP_LOGE_FOR_INVALID_SHAPEDIM(
+            tilingContext_->GetNodeName(), "x", std::to_string(paramInfo_.xShape.GetDimNum()).c_str(),
+            dimExpectRange.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
-    OP_CHECK_IF(
-        paramInfo_.yShape.GetDimNum() > MAX_DIM_NZ || paramInfo_.yShape.GetDimNum() < MIN_DIM_NZ,
-        OP_LOGE(
-            tilingContext_->GetNodeName(), "Invalid output's dim, which should between %ld and %ld, but actually %zu.",
-            MIN_DIM_NZ, MAX_DIM_NZ, paramInfo_.yShape.GetDimNum()),
-        return ge::GRAPH_FAILED);
+    if (paramInfo_.yShape.GetDimNum() > MAX_DIM_NZ || paramInfo_.yShape.GetDimNum() < MIN_DIM_NZ) {
+        std::string dimExpectRange = "between " + std::to_string(MIN_DIM_NZ) + " and " + std::to_string(MAX_DIM_NZ);
+        OP_LOGE_FOR_INVALID_SHAPEDIM(
+            tilingContext_->GetNodeName(), "y", std::to_string(paramInfo_.yShape.GetDimNum()).c_str(),
+            dimExpectRange.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
-    OP_CHECK_IF(
-        paramInfo_.shape.GetDimNum() > MAX_DIM_NZ2ND || paramInfo_.shape.GetDimNum() < MIN_DIM_NZ2ND,
-        OP_LOGE(
-            tilingContext_->GetNodeName(), "Invalid shape's dim, which should between %ld and %ld, but actually %zu.",
-            MIN_DIM_NZ2ND, MAX_DIM_NZ2ND, paramInfo_.shape.GetDimNum()),
-        return ge::GRAPH_FAILED);
+    if (paramInfo_.shape.GetDimNum() > MAX_DIM_NZ2ND || paramInfo_.shape.GetDimNum() < MIN_DIM_NZ2ND) {
+        std::string dimExpectRange = "between " + std::to_string(MIN_DIM_NZ2ND) + " and " + std::to_string(MAX_DIM_NZ2ND);
+        OP_LOGE_FOR_INVALID_SHAPEDIM(
+            tilingContext_->GetNodeName(), "shape", std::to_string(paramInfo_.shape.GetDimNum()).c_str(),
+            dimExpectRange.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     if (paramInfo_.transpose_first) {
-        OP_CHECK_IF(
-            paramInfo_.perm.GetDimNum() != paramInfo_.xShape.GetDimNum() - 2,
-            OP_LOGE(
-                tilingContext_->GetNodeName(),
-                "for NZ type, perm and x's dim - 2 should be equal, but perm's dim is %zu, x's dim is %zu.",
-                paramInfo_.perm.GetDimNum(), paramInfo_.xShape.GetDimNum()),
-            return ge::GRAPH_FAILED);
+        if (paramInfo_.perm.GetDimNum() != paramInfo_.xShape.GetDimNum() - 2) {
+            std::string dimMsg =
+                std::to_string(paramInfo_.xShape.GetDimNum()) + " and " + std::to_string(paramInfo_.perm.GetDimNum());
+            std::string reasonMsg = "When format is NZ, the rank of perm should equal the rank of x's shape minus 2";
+            OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+                tilingContext_->GetNodeName(), "x and perm", dimMsg.c_str(), reasonMsg.c_str());
+            return ge::GRAPH_FAILED;
+        }
     } else {
-        OP_CHECK_IF(
-            paramInfo_.perm.GetDimNum() != paramInfo_.shape.GetDimNum(),
-            OP_LOGE(
-                tilingContext_->GetNodeName(),
-                "perm and shape's dim should be equal, but perm's dim is %zu, shape's dim is %zu.",
-                paramInfo_.perm.GetDimNum(), paramInfo_.shape.GetDimNum()),
-            return ge::GRAPH_FAILED);
+        if (paramInfo_.perm.GetDimNum() != paramInfo_.shape.GetDimNum()) {
+            std::string dimMsg =
+                std::to_string(paramInfo_.perm.GetDimNum()) + " and " + std::to_string(paramInfo_.shape.GetDimNum());
+            std::string reasonMsg = "perm and shape's shape dim should be equal";
+            OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+                tilingContext_->GetNodeName(), "perm and shape", dimMsg.c_str(), reasonMsg.c_str());
+            return ge::GRAPH_FAILED;
+        }
     }
 
     return ge::GRAPH_SUCCESS;
@@ -616,11 +622,12 @@ ge::graphStatus ConfusionTransposeDTiling::ParametersVerifyingPerm()
             checkPerm += (1l << paramInfo_.perm[i]);
         }
     }
-    OP_CHECK_IF(
-        checkPerm != (1l << paramInfo_.perm.GetDimNum()) - 1,
-        OP_LOGE(
-            tilingContext_->GetNodeName(), "perm should be a permutation of 0,1, ..., dim - 1"),
-        return ge::GRAPH_FAILED);
+    if (checkPerm != (1l << paramInfo_.perm.GetDimNum()) - 1) {
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            tilingContext_->GetNodeName(), "perm", Ops::Base::ToString(paramInfo_.perm).c_str(),
+            "perm should be a permutation of 0,1, ..., dim - 1");
+        return ge::GRAPH_FAILED;
+    }
 
     return ge::GRAPH_SUCCESS;
 }
@@ -648,30 +655,31 @@ ge::graphStatus ConfusionTransposeDTiling::ParametersVerifyingProdAndPositive()
 
     OP_CHECK_IF(
         xPositive == false,
-        OP_LOGE(
-            tilingContext_->GetNodeName(), "x's dims should be all positive, but actually %s.",
-            Ops::Base::ToString(paramInfo_.xShape).c_str()),
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            tilingContext_->GetNodeName(), "x", Ops::Base::ToString(paramInfo_.xShape).c_str(),
+            "x's dims should be all positive"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         yPositive == false,
-        OP_LOGE(
-            tilingContext_->GetNodeName(), "output's dims should be all positive, but actually %s.",
-            Ops::Base::ToString(paramInfo_.yShape).c_str()),
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            tilingContext_->GetNodeName(), "y", Ops::Base::ToString(paramInfo_.yShape).c_str(),
+            "output y's dims should be all positive"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         shapePositive == false,
-        OP_LOGE(
-            tilingContext_->GetNodeName(), "shape's dims should be all positive, but actually %s.",
-            Ops::Base::ToString(paramInfo_.shape).c_str()),
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            tilingContext_->GetNodeName(), "shape", Ops::Base::ToString(paramInfo_.shape).c_str(),
+            "shape's dims should be all positive"),
         return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        prodX != prodY || prodX != prodShape,
-        OP_LOGE(
-            tilingContext_->GetNodeName(),
-            "x, output and shape must have equal dimension product, but actually %ld, %ld, and %ld.", prodX, prodY,
-            prodShape),
-        return ge::GRAPH_FAILED);
+    if (prodX != prodY || prodX != prodShape) {
+        std::string shapeMsg = Ops::Base::ToString(paramInfo_.xShape) + ", " + Ops::Base::ToString(paramInfo_.yShape) +
+                               " and " + Ops::Base::ToString(paramInfo_.shape);
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            tilingContext_->GetNodeName(), "x, y and shape", shapeMsg.c_str(),
+            "x, output and shape must have equal dimension product");
+        return ge::GRAPH_FAILED;
+    }
 
     return ge::GRAPH_SUCCESS;
 }

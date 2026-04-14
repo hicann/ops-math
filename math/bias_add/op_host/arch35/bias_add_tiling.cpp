@@ -179,12 +179,13 @@ ge::graphStatus BiasAddTiling::DoOpTiling()
             "dtype of x and bias must be same."),
         return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        xDType != outputDType, std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(xDType) + " and " +
-                                                      ge::TypeUtils::DataTypeToSerialString(outputDType);
+    if (xDType != outputDType) {
+        std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(xDType) + " and " +
+                               ge::TypeUtils::DataTypeToSerialString(outputDType);
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            context_->GetNodeName(), "x and y", dtypeMsg.c_str(), "dtype of x and y must be same."),
-        return ge::GRAPH_FAILED);
+            context_->GetNodeName(), "x and y", dtypeMsg.c_str(), "Dtype of x and y must be same.");
+        return ge::GRAPH_FAILED;
+    }
 
     vector<gert::Shape> inputShapes;
     OP_CHECK_IF(
