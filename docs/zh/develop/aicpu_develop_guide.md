@@ -1,34 +1,32 @@
 # AI CPU算子开发指南
 
-## 概述
+### 使用说明
 
-> 说明：
->
-> 1. 算子开发过程中涉及的基本概念、AI CPU接口等，详细介绍请参考[《TBE&AI CPU算子开发》](https://hiascend.com/document/redirect/CannCommunityOpdevWizard)。
-> 2. AI CPU算子是使用C++语言开发，运行在AI CPU硬件单元算子。
-> 3. build.sh：算子开发过程中涉及的命令可通过`bash build.sh --help`查看，功能参数介绍参考[build参数说明](../install/build.md)。
+算子根据运行的硬件单元不同，可分为AI Core算子和AI CPU算子（少数）。前者使用Ascend C语言开发，运行在AI Core硬件单元；后者使用C++语言开发，运行在AI CPU硬件单元。
 
-开发指南以`AddExample`算子开发为例，介绍新算子开发流程以及涉及的交付件，完整样例代码请访问项目`examples`目录。
+本文重点介绍如何基于标准工程开发AI CPU算子，如果您想贡献AI Core算子，请参考[AI Core算子开发指南](./aicore_develop_guide.md)。
 
-1. [工程创建](#工程创建)：开发算子前，需完成环境部署并创建算子目录，方便后续算子编译和部署。
+算子开发前，请先了解如下信息：
 
-2. [算子定义](#算子定义)：确定算子功能与原型定义。
+- 基础知识：请先学习C++编程语言，了解基本语法和原理，参考[《TBE&AI CPU算子开发》](https://hiascend.com/document/redirect/CannCommunityOpdevWizard)熟悉硬件架构、开发API等。
 
-3. [Kernel实现](#Kernel实现)：实现Device侧算子核函数。
+### 开发流程
 
-4. [aclnn适配](#aclnn适配)：自定义算子推荐aclnn接口调用，需提前完成二进制发布。**如采用图模式调用算子**，请参考[图模式适配指南](./graph_develop_guide.md)。
+以`AddExample`算子为例，介绍标准AI CPU算子开发的全流程和交付件，完整样例请访问项目`examples`目录。
 
-5. [编译部署](#编译部署)：通过工程编译脚本完成自定义算子的编译和安装。
+1. [前提条件](../../../README.md)：参考项目README完成环境准备和源码下载，此处不再赘述。
+2. [工程创建](#工程创建)：创建标准算子工程目录，方便后续算子编译和部署。
+3. [算子定义](#算子定义)：确定算子功能与原型定义。
 
-6. [算子验证](#算子验证)：通过常见算子调用方式，验证自定义算子功能。  
+4. [Kernel实现](#Kernel实现)：实现Device侧算子核函数。
+
+5. [aclnn适配](#aclnn适配)：自定义算子推荐aclnn接口调用，需提前完成二进制发布。**如采用图模式调用算子**，请参考[图模式适配指南](./graph_develop_guide.md)。
+
+6. [编译部署](#编译部署)：通过工程编译脚本完成自定义算子的编译和安装。
+
+7. [算子验证](#算子验证)：通过常见算子调用方式，验证自定义算子功能。  
 
 ## 工程创建
-
-**1. 环境部署**
-
-开发算子前，请先参考[环境部署](../install/quick_install.md)完成基础环境搭建。
-
-**2. 目录创建**
 
 目录创建是算子开发的重要步骤，为后续代码编写、编译构建和调试提供统一的目录结构和文件组织方式。
 
@@ -257,4 +255,4 @@ export ASCEND_CUSTOM_OPP_PATH=${ASCEND_HOME_PATH}/opp/vendors/${vendor_name}_mat
 
 - **aclnn调用验证**
 
-  开发好的算子完成编译部署后，可通过aclnn方式验证功能，方法请参考[算子调用方式](../invocation/op_invocation.md)。
+  开发好的算子完成编译部署后，可通过aclnn方式验证功能，方法请参考[算子调用方式](../invocation/quick_op_invocation.md)。

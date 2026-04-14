@@ -2,11 +2,11 @@
 
 ## 使用须知
 
-本指南旨在帮助您快速上手CANN和`ops-math`算子仓的使用。为方便快速了解算子开发全流程，将以**AddExample**算子为实践对象，其源文件位于`ops-math/examples/add_example`，具体操作流程如下：
+本指南旨在帮助您快速上手CANN和`ops-math`算子仓的使用。为方便您快速了解算子开发全流程，以**AddExample**算子为实践对象，算子源码位于`ops-math/examples/add_example`，操作流程如下：
 
-1. **[环境部署](zh/install/quick_install.md)**：完成软件安装和源码下载，此处不再赘述。快速入门场景下，**推荐WebIDE或Docker环境**，安装操作简单。
+1. **[前提条件](../README.md)**：参考项目README完成环境准备和源码下载，此处不再赘述。快速入门场景**推荐WebIDE或Docker部署**，操作简单。
 
-   > **说明**：WebIDE或Docker环境默认提供最新商发版CANN包；如需体验master分支最新能力，可手动搭建环境。注意软件包与源码版本是否配套。
+   > **说明**：WebIDE或Docker环境默认提供最新商发版CANN包；如需体验master分支最新能力，可手动搭建环境。
 
 2. **[编译运行](#一编译运行)**：编译自定义算子包并安装，实现快速调用算子。
 
@@ -20,21 +20,29 @@
 
 本阶段目的是**快速体验项目标准流程**，验证环境能否成功进行算子源码编译、打包、安装和运行。
 
-### 1. 进入项目目录
+### 1. 进入项目源码
 
-环境准备好后（注意软件与源码版本配套），进入项目目录。
+1. 检查源码版本。
 
-- 对于Docker部署或手动安装场景，项目源码位于
+    根据[release仓库](https://gitcode.com/cann/release-management)CANN版本配套关系检查源码版本是否配套，若不配套请参考下述命令重新下载，\$\{tag\_version\}替换为目标分支标签。
 
-  ```bash
-  cd ops-math
-  ```
+    > 说明：对于WebIDE环境，**已默认提供最新商发版CANN配套的项目源码**。
+    
+    ```bash
+    git clone -b ${tag_version} https://gitcode.com/cann/ops-math.git
+    ```
 
-- 对于WebIDE场景，项目源码位于
-
-  ```bash
-  cd /mnt/workspace/ops-math
-  ```
+    若出现提示信息`fatal: destination path 'ops-math' already exists and is not an empty directory.`，说明项目源码已存在。
+    
+2. 进入源码目录。
+    - Docker或手动安装场景下源码位于：
+      ```bash
+      cd ops-math
+      ```
+    - WebIDE场景下源码位于：
+      ```bash
+      cd /mnt/workspace/ops-math
+      ```
 
 ### 2. 编译AddExample算子
 
@@ -83,17 +91,15 @@ bash build.sh --run_example add_example eager cust --vendor_name=custom
 预期输出：打印算子`AddExample`的加法计算结果，表明算子已成功部署并正确执行。
 
 ```
-Print the first 10 groups of data: 
-add_example first input[0] is: 1.000000, second input[0] is: -257.000000, result[0] is: -256.000000
-add_example first input[1] is: 2.000000, second input[1] is: 608.000000, result[1] is: 610.000000
-add_example first input[2] is: 3.000000, second input[2] is: 924.000000, result[2] is: 927.000000
-add_example first input[3] is: 4.000000, second input[3] is: -649.000000, result[3] is: -645.000000
-add_example first input[4] is: 5.000000, second input[4] is: 475.000000, result[4] is: 480.000000
-add_example first input[5] is: 6.000000, second input[5] is: 573.000000, result[5] is: 579.000000
-add_example first input[6] is: 7.000000, second input[6] is: 202.000000, result[6] is: 209.000000
-add_example first input[7] is: 8.000000, second input[7] is: 198.000000, result[7] is: 206.000000
-add_example first input[8] is: 9.000000, second input[8] is: -705.000000, result[8] is: -696.000000
-add_example first input[9] is: 10.000000, second input[9] is: -111.000000, result[9] is: -101.000000
+add_example first input[0] is: 1.000000, second input[0] is: 1.000000, result[0] is: 2.000000
+add_example first input[1] is: 1.000000, second input[1] is: 1.000000, result[1] is: 2.000000
+add_example first input[2] is: 1.000000, second input[2] is: 1.000000, result[2] is: 2.000000
+add_example first input[3] is: 1.000000, second input[3] is: 1.000000, result[3] is: 2.000000
+add_example first input[4] is: 1.000000, second input[4] is: 1.000000, result[4] is: 2.000000
+add_example first input[5] is: 1.000000, second input[5] is: 1.000000, result[5] is: 2.000000
+add_example first input[6] is: 1.000000, second input[6] is: 1.000000, result[6] is: 2.000000
+add_example first input[7] is: 1.000000, second input[7] is: 1.000000, result[7] is: 2.000000
+...
 ```
 
 ## 二、算子开发
@@ -195,7 +201,7 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
 当算子功能验证正确后，可通过`msprof`工具采集算子性能数据。
 
 - **生成可执行文件**
-   
+  
     调用AddExample算子的example样例，生成可执行文件（test_aclnn_add_example），该文件位于项目`ops-math/build`目录。
 
     ```bash
@@ -235,7 +241,7 @@ int main() {
     for (int i = 0; i < 4096; ++i) {
         selfXHostData[i] = static_cast<float>(i % 10); // 填充0-9的循环值
     }
-    // === ② 参考selfX，同理修改selfY、out的输入 ===
+    // === ② 参考selfX，同理修改selfY、selfZ的输入 ===
     
     // ... 后续执行代码 ...
 }
@@ -255,4 +261,4 @@ int main() {
 
 ## 结语
 
-体验完上述流程后，您已基本完成一个算子开发，如果您想贡献算子或学习更多高阶技能，请访问本项目README，进一步了解[学习教程](../README.md#学习教程)和[贡献指南](../README.md#相关信息)等。
+体验完上述流程，您已基本完成算子开发过程，如果您想进一步贡献新算子或学习更多高阶开发、调试等技能，请访问本项目README学习[进阶教程](../README.md#学习教程)和[贡献指南](../README.md#相关信息)等。
