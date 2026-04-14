@@ -90,7 +90,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>输入</td>
             <td>转换的源Tensor。</td>
             <td>-</td>
-            <td>INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16<sup>2</sup>、FLOAT8_E4M3FN、FlOAT8_E4M3FN<sup>2</sup>、FLOAT4_E2M1<sup>2</sup></td>
+            <td>INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16<sup>2</sup>、FLOAT8_E4M3FN、FlOAT8_E4M3FN<sup>2</sup>、FLOAT4_E2M1<sup>2</sup>、HIFLOAT8</td>
             <td>ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、NCL<sup>2</sup></td>
             <td>2-6</td>
             <td>-</td>
@@ -110,7 +110,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>可选输入</td>
             <td>转换为FRACTAL_NZ数据格式时，推断C0大小所使用的基本数据类型</td>
             <td>-</td>
-            <td>ACL_FLOAT16(1)、ACL_BF16(27)、INT8(2)、ACL_FLOAT8_E4M3FN(36)</td>
+            <td>ACL_FLOAT16(1)、ACL_BF16(27)、INT8(2)、ACL_FLOAT8_E4M3FN(36)、ACL_HIFLOAT8(34)</td>
             <td>None</td>
             <td>None</td>
             <td>-</td>
@@ -177,13 +177,13 @@ aclnnStatus aclnnNpuFormatCast(
       <tr>
         <td rowspan="5"> ACLNN_ERR_PARAM_INVALID </td>
         <td rowspan="5"> 161002 </td>
-        <td>srcTensor的数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、NCL，数据类型非INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16、FLOAT8_E4M3FN、FLOAT4_E2M1。</td>
+        <td>srcTensor的数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、NCL，数据类型非INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16、FLOAT8_E4M3FN、FLOAT4_E2M1、HIFLOAT8。</td>
       </tr>
       <tr>
         <td>dstFormat的数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D</td>
       </tr>
       <tr>
-        <td>additionalDtype的数据类型非ACL_FLOAT16(1)、ACL_BF16(27)、INT8(2)、ACL_FLOAT8_E4M3FN(36)。</td>
+        <td>additionalDtype的数据类型非ACL_FLOAT16(1)、ACL_BF16(27)、INT8(2)、ACL_FLOAT8_E4M3FN(36)、ACL_HIFLOAT8(34)。</td>
       </tr>
       <tr>
         <td>srcTensor的view shape维度不在[2, 6]的范围</td>
@@ -235,7 +235,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>输入</td>
             <td>输入张量，输入的数据只支持连续的Tensor。</td>
             <td>-</td>
-            <td>INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16<sup>2</sup>、FlOAT8_E4M3FN<sup>2</sup>、FLOAT4_E2M1<sup>2</sup></td>
+            <td>INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16<sup>2</sup>、FlOAT8_E4M3FN<sup>2</sup>、FLOAT4_E2M1<sup>2</sup>、HIFLOAT8</td>
             <td>ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、NCL<sup>2</sup></td>
             <td>2-6</td>
             <td>-</td>
@@ -245,7 +245,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>输入</td>
             <td>转换后的目标张量，只支持连续的Tensor。</td>
             <td>-</td>
-            <td>INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16<sup>2</sup>、FLOAT8_E4M3FN、FlOAT8_E4M3FN<sup>2</sup>、FLOAT4_E2M1<sup>2</sup></td>
+            <td>INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16<sup>2</sup>、FLOAT8_E4M3FN、FlOAT8_E4M3FN<sup>2</sup>、FLOAT4_E2M1<sup>2</sup>、HIFLOAT8</td>
             <td>ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、ACL_FORMAT_FRACTAL_NZ_C0_16(50)<sup>2</sup>、ACL_FORMAT_FRACTAL_NZ_C0_32(51)<sup>2</sup></td>
             <td>4-8</td>
             <td>-</td>
@@ -304,10 +304,10 @@ aclnnStatus aclnnNpuFormatCast(
       <tr>
         <td rowspan="4"> ACLNN_ERR_PARAM_INVALID </td>
         <td rowspan="4"> 161002 </td>
-        <td>srcTensor的数据类型非INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16、FLOAT8_E4M3FN、FLOAT4_E2M1，数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、NCL。</td>
+        <td>srcTensor的数据类型非INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16、FLOAT8_E4M3FN、FLOAT4_E2M1、HIFLOAT8，数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、NCL。</td>
       </tr>
       <tr>
-        <td>dstTensor的数据类型非INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16、FLOAT8_E4M3FN、FLOAT4_E2M1，数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。</td>
+        <td>dstTensor的数据类型非INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16、FLOAT8_E4M3FN、FLOAT4_E2M1、HIFLOAT8，数据格式非ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D。</td>
       </tr>
       <tr>
         <td>srcTensor、dstTensor传入非连续的Tensor。</td>
@@ -397,6 +397,7 @@ aclnnStatus aclnnNpuFormatCast(
       | FLOAT8_E4M3FN     | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT8_E4M3FN(36)   | ACL_FORMAT_FRACTAL_NZ(29) |
       | FLOAT4_E2M1 | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT8_E4M3FN(36)   | ACL_FORMAT_FRACTAL_NZ(29) |
       | FLOAT4_E2M1 | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT4_E2M1(40)   | ACL_FORMAT_FRACTAL_NZ(29) |
+      | HIFLOAT8 | ACL_FORMAT_FRACTAL_NZ(29) | HIFLOAT8(34)   | ACL_FORMAT_FRACTAL_NZ(29) |
 
     - aclnnNpuFormatCastGetWorkspaceSize接口：
 
@@ -410,6 +411,7 @@ aclnnStatus aclnnNpuFormatCast(
       | FLOAT8_E4M3FN  | FLOAT8_E4M3FN          | ACL_FORMAT_FRACTAL_NZ(29)       |
       | FLOAT4_E2M1  | FLOAT4_E2M1          | ACL_FORMAT_FRACTAL_NZ_C0_32(51)       |
       | FLOAT4_E2M1  | FLOAT4_E2M1          | ACL_FORMAT_FRACTAL_NZ(29)       |
+      | HIFLOAT8  | HIFLOAT8          | ACL_FORMAT_FRACTAL_NZ(29)       |
 
     - C0计算方法：$C0=\frac{32B}{size\ of\ additionalDtype}$
 
@@ -419,6 +421,7 @@ aclnnStatus aclnnNpuFormatCast(
       | ACL_FLOAT16(1)  | 16 |
       | ACL_BF16(27)    | 16 |
       | ACL_FLOAT8_E4M3FN(36)    | 32 |
+      | ACL_HIFLOAT8(34)    | 32 |
 
     - 当前不支持的特殊场景:
       - srcTensor的数据类型和additionalDtype相同，且类型为FLOAT16或BFLOAT16时，若维度表示为[k, n], 则k为1场景暂不支持。
@@ -435,21 +438,21 @@ aclnnStatus aclnnNpuFormatCast(
 
       | srcTensor | dstFormat                 | additionalDtype              | actualFormat                    |
       | --------- | ------------------------- | ---------------------------- | ------------------------------- |
-      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32      | ACL_FORMAT_FRACTAL_NZ(29) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32                 | ACL_FORMAT_FRACTAL_NZ(29)       |
-      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_ND(2) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FORMAT_ND(2) |
-      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_NCDHW(30) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FORMAT_NCDHW(30) |
-      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_NDC1HWC0(32) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FORMAT_NDC1HWC0(32) |
-      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FRACTAL_Z_3D(33) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FRACTAL_Z_3D(33) |
+      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8      | ACL_FORMAT_FRACTAL_NZ(29) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8                 | ACL_FORMAT_FRACTAL_NZ(29)       |
+      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8    | ACL_FORMAT_ND(2) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8   | ACL_FORMAT_ND(2) |
+      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8    | ACL_FORMAT_NCDHW(30) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8   | ACL_FORMAT_NCDHW(30) |
+      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8    | ACL_FORMAT_NDC1HWC0(32) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8   | ACL_FORMAT_NDC1HWC0(32) |
+      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8    | ACL_FRACTAL_Z_3D(33) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8   | ACL_FRACTAL_Z_3D(33) |
 
     - aclnnNpuFormatCastGetWorkspaceSize接口：
 
       | srcTensor | dstTensor数据类型 | dstTensor数据格式               |
       | --------- | ----------------- | ------------------------------- |
-      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32              | ACL_FORMAT_FRACTAL_NZ(29)       |
-      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32          | ACL_FORMAT_ND(2)       |
-      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32          | ACL_FORMAT_NCDHW(30)       |
-      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32          | ACL_FORMAT_NDC1HWC0(32)       |
-      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32          | ACL_FRACTAL_Z_3D(33)       |
+      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8              | ACL_FORMAT_FRACTAL_NZ(29)       |
+      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8          | ACL_FORMAT_ND(2)       |
+      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8          | ACL_FORMAT_NCDHW(30)       |
+      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8          | ACL_FORMAT_NDC1HWC0(32)       |
+      | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32, HIFLOAT8          | ACL_FRACTAL_Z_3D(33)       |
 
     - C0计算方法：$C0=\frac{32B}{size\ of\ srcTensor的基础类型}$
 
@@ -457,7 +460,7 @@ aclnnStatus aclnnNpuFormatCast(
       | --------------- | -- |
       | ACL_FLOAT(0)、ACL_INT32(3)、ACL_UINT32(8)     | 8 |
       | ACL_FLOAT16(1)、ACL_BF16(27)  | 16 |
-      | ACL_INT8(2)、ACL_UINT8(4)    | 32 |
+      | ACL_INT8(2)、ACL_UINT8(4)、ACL_HIFLOAT8(34)    | 32 |
 
     - 当前不支持的特殊场景:
       - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
