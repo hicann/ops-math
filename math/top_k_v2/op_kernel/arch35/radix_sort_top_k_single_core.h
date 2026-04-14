@@ -157,7 +157,7 @@ __aicore__ inline void RadixSortTopKSingleCore<T, UNSIGNED_TYPE, NUM_PASS, IS_LA
     this->tPipe_->InitBuffer(this->indicesOutTbuf_, ROUND_UP_AGLIN(outQueueNum * sizeof(int32_t)));
 
     // 存放所有块统计直方图的结果
-    uint32_t workSpaceOffset = unsortedDimParallel_ * topkV2::RADIX_SORT_BIN_NUM * tileCount_;
+    uint64_t workSpaceOffset = unsortedDimParallel_ * topkV2::RADIX_SORT_BIN_NUM * tileCount_;
     tilesCusumGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T_INDEX*>(workSpace), int64_t(workSpaceOffset));
     workSpaceOffset = workSpaceOffset * sizeof(T_INDEX);
 
@@ -173,6 +173,13 @@ __aicore__ inline void RadixSortTopKSingleCore<T, UNSIGNED_TYPE, NUM_PASS, IS_LA
         uint32_t lastAxisNumForSort = tilingData->lastAxisNumForSort;
         // sort 外轴的大小
         uint32_t unsortedDimNumForSort = tilingData->unsortedDimNumForSort;
+        uint64_t topkValuesGmOffset = lastAxisNumForSort * unsortedDimNumForSort;
+        topkValuesGmOffset = CeilAlignDivMul<uint64_t>(int64_t(topkValuesGmOffset * sizeof(T)), int64_t(oneBlock_)) /
+            sizeof(T);
+        topkValuesGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(workSpace + workSpaceOffset), topkValuesGmOffset);
+        topkValuesGmAddr_ = workSpace + workSpaceOffset;
+        workSpaceOffset += topkValuesGmOffset * sizeof(T);
+
         uint64_t topkIndicesGmOffset = lastAxisNumForSort * unsortedDimNumForSort;
         topkIndicesGmOffset =
             CeilAlignDivMul<uint64_t>(int64_t(topkIndicesGmOffset * sizeof(T_INDEX_TO)), int64_t(oneBlock_)) /
@@ -180,13 +187,6 @@ __aicore__ inline void RadixSortTopKSingleCore<T, UNSIGNED_TYPE, NUM_PASS, IS_LA
         topkIndicesGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T_INDEX_TO*>(workSpace + workSpaceOffset), topkIndicesGmOffset);
         topkIndicesGmAddr_ = workSpace + workSpaceOffset;
         workSpaceOffset += topkIndicesGmOffset * sizeof(T_INDEX_TO);
-
-        uint64_t topkValuesGmOffset = lastAxisNumForSort * unsortedDimNumForSort;
-        topkValuesGmOffset = CeilAlignDivMul<uint64_t>(int64_t(topkValuesGmOffset * sizeof(T)), int64_t(oneBlock_)) /
-            sizeof(T);
-        topkValuesGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(workSpace + workSpaceOffset), topkValuesGmOffset);
-        topkValuesGmAddr_ = workSpace + workSpaceOffset;
-        workSpaceOffset += topkValuesGmOffset * sizeof(T);
 
         sortWithIndexWorkspace_ = workSpace + workSpaceOffset;
         valueAddr_ = value;

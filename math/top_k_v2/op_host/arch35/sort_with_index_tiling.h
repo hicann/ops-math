@@ -558,7 +558,7 @@ ge::graphStatus RadixSortTilingOfIdx(gert::TilingContext* context, TopKV2TilingD
         int64_t(AGLIN_VALUE));
     *usrSize = *usrSize + topkValuesGmSize + topkIndicesGmSize;
     OP_LOGI(context->GetNodeName(),
-        "RadixSortTilingOfIdx final usrSize=%d, topkValuesGmSize: %d, topkIndicesGmSize: %d.",
+        "RadixSortTilingOfIdx final usrSize=%ld, topkValuesGmSize: %ld, topkIndicesGmSize: %ld.",
         *usrSize, topkValuesGmSize, topkIndicesGmSize);
     return ge::GRAPH_SUCCESS;
 }

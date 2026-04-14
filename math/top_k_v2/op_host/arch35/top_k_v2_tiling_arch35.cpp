@@ -1388,7 +1388,7 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
     // set userWorkSpaceSize
     size_t* userWorkSpaceSize = context->GetWorkspaceSizes(1);
     userWorkSpaceSize[0] = usrSize + topkV2DataInfo::SYS_WORK_SPACE_SIZE;
-    OP_LOGI("[TopKV2Tiling]", "user & system WorkSpace Size is : %u", userWorkSpaceSize[0]);
+    OP_LOGI("[TopKV2Tiling]", "user & system WorkSpace Size is : %lu", userWorkSpaceSize[0]);
     context->SetLocalMemorySize(ubSizePlatForm);
     context->SetScheduleMode(1);
     OP_LOGI("TopKV2TilingForAscendC", "TopKV2Tiling end");
