@@ -1,6 +1,6 @@
 # aclnnSignbit
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/less)
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/signbit)
 
 ## 产品支持情况
 
@@ -20,7 +20,7 @@
 - 计算公式：
 
 $$
-out_i = (self_i < 0)  ?  [True] : [False]
+out_i = (self_i < 0)  ?  [True] : [False]  (当self_i为-0时， 返回True)
 $$
 
 ## 函数原型

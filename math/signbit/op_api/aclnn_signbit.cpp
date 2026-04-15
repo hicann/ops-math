@@ -8,8 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include "signbit.h"
 #include "aclnn_signbit.h"
-#include "less.h"
+#include "math/less/op_api/less.h"
 #include "aclnn_kernels/cast.h"
 #include "conversion/fill/op_api/fill.h"
 #include "aclnn_kernels/contiguous.h"
@@ -24,6 +25,7 @@
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
 #include "opdev/tensor_view_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -43,6 +45,16 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST =
     op::DataType::DT_INT16,  op::DataType::DT_INT8,   op::DataType::DT_UINT8, op::DataType::DT_DOUBLE,
     op::DataType::DT_UINT32, op::DataType::DT_UINT64, op::DataType::DT_BOOL,  op::DataType::DT_UINT16,
     op::DataType::DT_BF16};
+
+static const std::initializer_list<op::DataType> SIGNBIT_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT,  op::DataType::DT_INT32,  op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
+    op::DataType::DT_INT8,   op::DataType::DT_UINT8, op::DataType::DT_DOUBLE, op::DataType::DT_UINT64,
+    op::DataType::DT_BOOL, op::DataType::DT_BF16};
+
+static bool CanUseSignbit(const aclTensor* self)
+{
+    return IsRegBase() && CheckType(self->GetDataType(), SIGNBIT_DTYPE_SUPPORT_LIST);
+}
 
 static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
 {
@@ -154,13 +166,18 @@ aclnnStatus aclnnSignbitGetWorkspaceSize(
         uniqueExecutor.ReleaseTo(executor);
         return ret;
     }
-    // 创建数据为0的tensor
-    FVector<float> zeroVector = {0};
-    auto zeroTensor = uniqueExecutor.get()->ConvertToTensor(zeroVector.data(), zeroVector.size(), self->GetDataType());
-    CHECK_RET(zeroTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    // 调用Less算子kernel
-    auto signBitOpOut = l0op::Less(selfContiguous, zeroTensor, uniqueExecutor.get());
+    const aclTensor* signBitOpOut = nullptr;
+    if (CanUseSignbit(self)) {
+        // 调用Signbit可以解决-0精度问题
+        signBitOpOut = l0op::Signbit(selfContiguous, uniqueExecutor.get());
+    } else {
+        // 创建数据为0的tensor
+        FVector<float> zeroVector = {0};
+        auto zeroTensor = uniqueExecutor.get()->ConvertToTensor(zeroVector.data(), zeroVector.size(), self->GetDataType());
+        CHECK_RET(zeroTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        signBitOpOut = l0op::Less(selfContiguous, zeroTensor, uniqueExecutor.get());
+    }
     CHECK_RET(signBitOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 固定写法，将计算结果(BOOL)转换成输出out的数据类型

@@ -11,7 +11,7 @@
 #include <vector>
 #include "gtest/gtest.h"
 
-#include "math/less/op_api/aclnn_signbit.h"
+#include "math/signbit/op_api/aclnn_signbit.h"
 
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
