@@ -31,7 +31,6 @@
      y=reshape(transpose(x,perm),shape)
      $$
      
-
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnConfusionTransposeGetWorkspaceSize"接口获取入参并根据计算流程计算所需workspace大小，再调用"aclnnConfusionTranspose"接口执行计算。
@@ -46,6 +45,7 @@ aclnnStatus aclnnConfusionTransposeGetWorkspaceSize(
     uint64_t           *workspaceSize, 
     aclOpExecutor      **executor)
 ```
+
 ```Cpp 
 aclnnStatus aclnnConfusionTranspose(
     void               *workspace, 
@@ -58,7 +58,6 @@ aclnnStatus aclnnConfusionTranspose(
 
 - **参数说明**：
 
-  </style>
   <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
@@ -159,7 +158,6 @@ aclnnStatus aclnnConfusionTranspose(
   
   第一段接口完成入参校验，出现以下场景时报错：
 
-  </style>
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">

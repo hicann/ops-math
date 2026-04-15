@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：
@@ -71,7 +70,6 @@
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持UINT8、INT8、INT16、INT32、INT64、FLOAT16、FLOAT、DOUBLE、COMPLEX64、COMPLEX128。    
   * workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
   * executor(aclOpExecutor **，出参)：返回op执行器，包含了算子计算流程。
-
 
 - **返回值：**
 
@@ -157,7 +155,6 @@
     </tr>
   </tbody>
   </table>
-
 
 - **返回值：**
 

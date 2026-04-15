@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：完成除法计算，对结果向下取整。
@@ -26,6 +25,7 @@
 ## 函数原型
 
 aclnnFloorDivide和aclnnInplaceFloorDivide实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
+
 - aclnnFloorDivide：需新建一个输出张量对象存储计算结果。
 - aclnnInplaceFloorDivide：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 

@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：判断self Tensor中的元素是否大于other Tensor中的元素。返回一个Tensor，若self>other，为True(1)；否则为False(0)。
@@ -141,7 +140,6 @@ aclnnStatus aclnnInplaceGtTensor(
 
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -224,7 +222,6 @@ aclnnStatus aclnnInplaceGtTensor(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -299,7 +296,6 @@ aclnnStatus aclnnInplaceGtTensor(
   </table>
 
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
-
 
 - **返回值：**
 
@@ -383,7 +379,6 @@ aclnnStatus aclnnInplaceGtTensor(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -392,7 +387,6 @@ aclnnStatus aclnnInplaceGtTensor(
 
 - 确定性计算：
   - aclnnGtTensor&aclnnInplaceGtTensor默认确定性实现。
-
 
 ## 调用示例
 

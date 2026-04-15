@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                               |    ×     |
 | <term>Atlas 训练系列产品</term>                               |    ×     |
 
-
 ## 功能说明
 
 算子功能：返回一个随机数，该随机数是从给定的均值(tensor)和标准差(tensor)的独立正态分布中获取，mean和std的shape不需匹配，但需要满足broadcast关系。
@@ -381,4 +380,3 @@ int main() {
   return 0;
 }
 ```
-

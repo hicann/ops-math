@@ -1,6 +1,6 @@
 # IsinPart
 
-##  产品支持情况
+## 产品支持情况
 
 | 产品 | 是否支持 |
 | ---- | :----:|
@@ -19,7 +19,6 @@ combine\_elements = cat(elements, test\_elements) \\
 value, index = sort(combine\_elements) \\
 z = isin\_part\_v1(value, index, elementsNum) \\
 $$
-
 
 ## 参数说明
 

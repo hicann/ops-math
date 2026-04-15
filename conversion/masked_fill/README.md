@@ -1,4 +1,5 @@
 # MaskedFill
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -23,7 +24,6 @@
   value_i, \, \, mask_i=True\\
   \end{cases}
   $$
-
 
 ## 参数说明
 
@@ -82,10 +82,8 @@
 * value的数据类型能够转换为x的数据类型。
 * y的shape可以由x、mask、value共同广播。
 
-
 ## 调用说明
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | aclnn接口 | [test_aclnn_inplace_masked_fill_scalar](examples/test_aclnn_inplace_masked_fill_scalar.cpp) | 通过[aclnnInplaceMaskedFillScalar](docs/aclnnInplaceMaskedFillScalar.md)接口方式调用MaskedFill算子。 |
-

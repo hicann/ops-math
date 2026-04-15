@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                               |    ×     |
 | <term>Atlas 训练系列产品</term>                               |    ×     |
 
-
 ## 功能说明
 
 算子功能：返回一个随机数张量，该随机数是从给定的均值(tensor)和标准差(float)的独立正态分布中获取。
@@ -225,10 +224,10 @@ aclnnStatus aclnnNormalTensorFloat(
 - 确定性计算：
   - aclnnNormalTensorFloat默认确定性实现。
 
-
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>
@@ -363,4 +362,3 @@ int main() {
   return 0;
 }
 ```
-

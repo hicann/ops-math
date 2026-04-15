@@ -13,8 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
-
 ## 功能说明
 
 返回输入张量在所有维度上的最小值和最大值。
@@ -197,17 +195,14 @@ aclrtStream    stream)
     </tbody>
     </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-
 
 ## 约束说明
 
 - 确定性计算：
   - aclnnAminmaxAll默认确定性实现。
-
 
 ## 调用示例
 

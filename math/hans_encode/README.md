@@ -1,6 +1,6 @@
 # HansEncode
 
-##  产品支持情况
+## 产品支持情况
 
 | 产品 | 是否支持 |
 | ---- | :----:|
@@ -71,19 +71,18 @@
     <tr>
       <td>statistic</td>
       <td>可选属性</td>
-      <td><ul><li>表示是否进行pdf统计。</li><li>默认值为false。</li></td>
+      <td><ul><li>表示是否进行pdf统计。</li><li>默认值为false。</li></ul></td>
       <td>Bool</td>
       <td>-</td>
     </tr>
     <tr>
       <td>reshuff</td>
       <td>可选属性</td>
-      <td><ul><li>表示是否对各核编码后的结果进行内存重整。</li><li>默认值为false。</li></td>
+      <td><ul><li>表示是否对各核编码后的结果进行内存重整。</li><li>默认值为false。</li></ul></td>
       <td>Bool</td>
       <td>-</td>
     </tr>
   </tbody></table>
-
 
 ## 约束说明
 

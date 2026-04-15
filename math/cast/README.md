@@ -1,6 +1,6 @@
 # Cast
 
-##  产品支持情况
+## 产品支持情况
 
 | 产品 | 是否支持 |
 | ---- | :----:|
@@ -10,7 +10,6 @@
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
-
 
 ## 功能说明
 
@@ -76,6 +75,7 @@
 
 - <term>Ascend 950PR/Ascend 950DT</term>：
   - 针对输入、输出类型，涉及COMPLEX32、FLOAT4_E2M1、FLOAT4_E1M2、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN的，只支持如下表格中的转换路径：
+
     | `self`数据类型 | `out`数据类型 |
     | -------- | -------- |
     | COMPLEX32 | FLOAT16 |

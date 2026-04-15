@@ -22,7 +22,6 @@
 - `aclnnStatus aclnnHansDecodeGetWorkspaceSize(const aclTensor *mantissa, const aclTensor *fixed, const aclTensor *var, const aclTensor *pdf, bool reshuff, const aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor);`
 - `aclnnStatus aclnnHansDecode(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
 
-
 ## aclnnHansDecodeGetWorkspaceSize
 
 - **参数说明：**

@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：计算self中的元素值是否小于等于other的值，将self每个元素与other值的比较结果写入out中。
@@ -404,7 +403,6 @@ aclnnStatus aclnnInplaceLeTensor(
 
 - 确定性计算：
   - aclnnLeTensor&aclnnInplaceLeTensor默认确定性实现。
-
 
 ## 调用示例
 

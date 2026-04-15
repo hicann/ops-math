@@ -11,7 +11,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
 
-
 ## 功能说明
 
 - **算子功能**：完成elementwise计算
@@ -22,12 +21,14 @@
   $$
 
 ## 函数原型
+
 每个算子分为[两段式接口](../../docs/zh/context/两段式接口.md)，必须先调用“aclnnMaskedScaleGetWorkspaceSize”接口获取入参并根据流程计算所需workspace大小，再调用“aclnnMaskedScale”接口执行计算。
 
 * `aclnnStatus aclnnMaskedScaleGetWorkspaceSize(const aclTensor* self, const aclTensor* mask, float scale, aclTensor* y, uint64_t* workspaceSize, aclOpExecutor** executor)`
 * `aclnnStatus aclnnMaskedScale(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
 
 ## aclnnMaskedScaleGetWorkspaceSize
+
 - **参数说明：**
   
   - self(aclTensor*, 计算输入)：公式中的输入`self`，Device侧的aclTensor。支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)。
@@ -54,6 +55,7 @@
   ```
 
 ## aclnnMaskedScale
+
 - **参数说明：**
   
   * workspace(void\*, 入参)：在Device侧申请的workspace内存地址。

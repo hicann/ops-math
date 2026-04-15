@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：判断输入Tensor中的每个元素是否大于等于other Tensor的值，返回一个Bool类型的Tensor，对应输入Tensor中每个位置的大于等于判断是否成立。
@@ -24,9 +23,6 @@
   $$
   out_{i}= (self_i >= other_i) ? True : False
   $$
-
-
-
 
 ## 函数原型
 
@@ -146,7 +142,6 @@ aclnnStatus aclnnInplaceGeTensor(
 
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -229,7 +224,6 @@ aclnnStatus aclnnInplaceGeTensor(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -304,7 +298,6 @@ aclnnStatus aclnnInplaceGeTensor(
   </table>
 
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
-
 
 - **返回值：**
 
@@ -388,7 +381,6 @@ aclnnStatus aclnnInplaceGeTensor(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -397,7 +389,6 @@ aclnnStatus aclnnInplaceGeTensor(
 
 - 确定性计算：
   - aclnnGeTensor&aclnnInplaceGeTensor默认确定性实现。
-
 
 ## 调用示例
 

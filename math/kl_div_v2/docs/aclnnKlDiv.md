@@ -52,6 +52,7 @@ aclnnStatus aclnnKlDivGetWorkspaceSize(
   uint64_t*                 workspaceSize,
   aclOpExecutor**           executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnKlDiv(
   void*                     workspace,
@@ -114,7 +115,7 @@ aclnnStatus aclnnKlDiv(
       <td>reduction（int64_t）</td>
       <td>输入</td>
       <td>公式中的reduction。</td>
-      <td><ul><li>0：none，表示不做reduction操作。</li><li>1：mean，表示计算loss_pointwise的均值。</li><li>2：sum，表示对loss_pointwise求和。</li><li>3：batchmean，表示计算批次的平均损失，与Kullback_Leibler散度的数学定义一致。</li></td>
+      <td><ul><li>0：none，表示不做reduction操作。</li><li>1：mean，表示计算loss_pointwise的均值。</li><li>2：sum，表示对loss_pointwise求和。</li><li>3：batchmean，表示计算批次的平均损失，与Kullback_Leibler散度的数学定义一致。</li></ul></td>
       <td>-</td>
       <td>-</td>
       <td>-</td>

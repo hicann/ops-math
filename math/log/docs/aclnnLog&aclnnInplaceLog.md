@@ -39,6 +39,7 @@ aclnnStatus aclnnLogGetWorkspaceSize(
   uint64_t*                 workspaceSize,
   aclOpExecutor**           executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnLog(
   void*                     workspace,
@@ -46,12 +47,14 @@ aclnnStatus aclnnLog(
   aclOpExecutor*            executor,
   aclrtStream               stream)
 ```
+
 ```Cpp
 aclnnStatus aclnnInplaceLogGetWorkspaceSize(
   aclTensor*                selfRef,
   uint64_t*                 workspaceSize,
   aclOpExecutor**           executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnInplaceLog(
   void*                     workspace,

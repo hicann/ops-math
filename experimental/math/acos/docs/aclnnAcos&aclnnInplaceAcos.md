@@ -18,6 +18,7 @@
   $$
 
 ## 函数原型
+
 - aclnnAcos和aclnnInplaceAcos实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnAcos：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceAcos：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
@@ -103,7 +104,9 @@
   - aclnnAcos&aclnnInplaceAcos默认确定性实现。
 
 ## 调用示例
+
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

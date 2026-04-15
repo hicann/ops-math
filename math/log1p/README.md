@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 算子功能：对输入Tensor完成log1p运算
@@ -24,6 +23,7 @@ out = {\ {{log1p}{(self)}}} = {\ {{log_e}{(self+1)}}}
 $$
 
 ## 函数原型
+
 - aclnnLog1p和aclnnInplaceLog1p实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnLog1p：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceLog1p：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
@@ -34,6 +34,7 @@ $$
   - `aclnnStatus aclnnInplaceLog1p(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
 
 ## aclnnLog1pGetWorkspaceSize
+
 - **参数说明**：
   - self(aclTensor*,计算输入): 公式中的self，Device侧的aclTensor。支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../docs/zh/context/数据格式.md)支持ND，shape维度不大于8, 且shape需要与out一致，和out的数据满足数据类型推导规则。
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE。
@@ -58,6 +59,7 @@ $$
 ```
 
 ## aclnnLog1p
+
 - **参数说明**：
   - workspace(void *，入参)：在Device侧申请的workspace内存地址。
   - workspaceSize(uint64_t，入参)：在Device侧申请的workspace大小，由第一段接口aclnnLog1pGetWorkspaceSize获取。
@@ -69,6 +71,7 @@ $$
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceLog1pGetWorkspaceSize
+
 - **参数说明**：
   - selfRef(aclTensor *，计算输入|计算输出): Device侧的aclTensor。支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../docs/zh/context/数据格式.md)支持ND，shape维度不大于8。
     - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE。
@@ -88,6 +91,7 @@ $$
 ```
 
 ## aclnnInplaceLog1p
+
 - **参数说明**：
   - workspace(void *，入参)：在Device侧申请的workspace内存地址。
   - workspaceSize(uint64_t，入参)：在Device侧申请的workspace大小，由第一段接口aclnnInplaceLog1pGetWorkspaceSize获取。

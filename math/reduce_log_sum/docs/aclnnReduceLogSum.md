@@ -38,7 +38,6 @@ aclnnStatus aclnnReduceLogSum(
   aclrtStream    stream)
 ```
 
-
 ## aclnnReduceLogSumGetWorkspaceSize
 
 - **参数说明**：

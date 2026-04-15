@@ -6,7 +6,6 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
-
 ## 功能说明
 
 - 算子功能：根据给定的权重，在起始和结束Tensor之间进行线性插值，返回插值后的Tensor。
@@ -65,6 +64,7 @@ $$
   </tbody></table>
 
 ## 约束说明
+
 end、weight的dtype需要与self一致。
 
 ## 调用说明
@@ -74,8 +74,8 @@ end、weight的dtype需要与self一致。
 | aclnn调用 | [test_aclnn_lerp](./examples/test_aclnn_lerp.cpp) | 通过[aclnnLerp](docs/aclnnLerp&aclnnInplaceLerp.md)接口方式调用Lerp算子。 |
 | aclnn调用 | [test_aclnn_inplace_lerp](./examples/test_aclnn_inplace_lerp.cpp) | 通过[aclnnLerp](docs/aclnnLerp&aclnnInplaceLerp.md)接口方式调用Lerp算子。 |
 
- ## 贡献说明
- 	  	 
+## 贡献说明
+
 | 贡献者 | 贡献方 | 贡献算子 | 贡献时间 | 贡献内容 |
 | ---- | ---- | ---- | ---- | ---- |
 | fulltower | 个人开发者 | Lerp | 2026/2/28 | Lerp算子适配开源仓 |

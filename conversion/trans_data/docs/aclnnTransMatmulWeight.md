@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品 </term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |     ×      |
 
-
 ## 功能说明
 
 需要和[aclnnCalculateMatmulWeightSize](./aclnnCalculateMatmulWeightSize.md)、[aclnnCalculateMatmulWeightSizeV2](./aclnnCalculateMatmulWeightSizeV2.md)接口配套使用，用于创建一个对于Matmul算子计算性能亲和的weight Tensor。支持FLOAT16、BFLOAT16、 Int8数据类型。
@@ -186,7 +185,6 @@ aclnnStatus aclnnTransMatmulWeight(
 - 不支持cache缓存能力。
 
 ## 调用示例
-
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 

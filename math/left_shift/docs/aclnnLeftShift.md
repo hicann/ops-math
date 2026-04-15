@@ -11,7 +11,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
 
-
 ## 功能说明
 
 - 接口功能：对于输入张量self中每个元素，根据输入张量shiftBits对应位置的参数，按位进行左移。
@@ -82,7 +81,7 @@ aclnnStatus aclnnLeftShift(
       <td>shiftBits</td>
       <td>输入</td>
       <td>左移操作数的张量，公式中的shiftBits。</td>
-      <td>支持空Tensor。<br>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" class="md-link">互推导关系</a>）。<br>shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" class="md-link">broadcast关系</a>。
+      <td>支持空Tensor。<br>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" class="md-link">互推导关系</a>）。<br>shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" class="md-link">broadcast关系</a>。</td>
       <td>INT8、INT16、INT32、INT64、<br>UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>0-8</td>
@@ -119,7 +118,6 @@ aclnnStatus aclnnLeftShift(
       <td>-</td>
     </tr>
   </tbody></table>
-
 
 - **返回值：**
 
@@ -204,7 +202,6 @@ aclnnStatus aclnnLeftShift(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -216,10 +213,10 @@ aclnnStatus aclnnLeftShift(
 
 - 只能保证shiftBits的数值小于self数据类型位宽时，精度无误差。
 
-
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

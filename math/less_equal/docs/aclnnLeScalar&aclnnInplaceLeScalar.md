@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：判断输入self中的元素值是否小于等于other的值，并将self的每个元素的值与other值的比较结果写入out中。
@@ -537,6 +536,7 @@ int main() {
   return 0;
 }
 ```
+
 **aclnnInplaceLeScalar示例代码：**
 
 ```Cpp

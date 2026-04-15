@@ -11,7 +11,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：计算两个一维张量的点积结果。
@@ -30,9 +29,7 @@ $$
 out = x_{1}*y_{1} + x_{2}*y_{2} + ... + x_{n}*y_{n}
 $$
 
-
 ## 参数说明
-
 
 <table style="undefined;table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
@@ -79,6 +76,7 @@ $$
 ## 约束说明
 
 无
+
 ## 调用说明
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |

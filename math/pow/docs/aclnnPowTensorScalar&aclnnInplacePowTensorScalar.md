@@ -26,6 +26,7 @@
 ## 函数原型
 
 aclnnPowTensorScalar和aclnnInplacePowTensorScalar实现相同的功能，使用区别如下：
+
 - aclnnPowTensorScalar：需新建一个输出张量对象存储计算结果。
 - aclnnInplacePowTensorScalar：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 

@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 将输入Tensor的元素四舍五入到指定的位数。
@@ -140,7 +139,6 @@
   
   - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
-
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -219,7 +217,6 @@
     </tr>
   </tbody>
   </table>
-
 
 - **返回值**：
 
@@ -303,7 +300,6 @@
   
   - <term>Atlas 训练系列产品</term>：`selfRef` 不支持 BFLOAT16。
 
-
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -376,7 +372,6 @@
     </tr>
   </tbody>
   </table>
-
 
 - **返回值**：
 
@@ -556,4 +551,3 @@ int main() {
   return 0;
 }
 ```
-

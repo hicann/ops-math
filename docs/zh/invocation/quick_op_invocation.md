@@ -40,6 +40,7 @@
   表示整个项目编译为一个静态库文件，包含libcann_math_static.a和aclnn接口头文件。该包仅支持aclnn调用AI Core算子。
 
 ### 联网编译
+
 #### 自定义算子包
 
 1. **编译自定义算子包**
@@ -244,6 +245,7 @@
 > **说明**：Ascend 950PR产品使用仿真执行算子样例，请见[仿真指导](../debug/op_debug_prof.md#方式二针对ascend-950pr)。
 
 - 基于**自定义算子包**执行算子样例，包安装后，执行如下命令：
+
     ```bash
     bash build.sh --run_example ${op} ${mode} ${pkg_mode} [--vendor_name=${vendor_name}] [--soc=${soc_version}] [--experimental]
     # 以Abs算子example执行为例

@@ -13,8 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
-
 ## 功能说明
 
 - 接口功能：完成加法计算
@@ -141,7 +139,6 @@
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：self与other数据类型满足[互推导关系](../../../docs/zh/context/互推导关系.md)。  
     - <term>Ascend 950PR/Ascend 950DT</term>：other数据类型与与self满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
 
- 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。

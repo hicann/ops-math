@@ -167,7 +167,7 @@ aclnnStatus aclnnLinalgCholesky(
       <td>self的最后两维维度不相等。</td>
     </tr>
   </tbody>
-</table>
+  </table>
 
 ## aclnnLinalgCholesky
 

@@ -66,7 +66,6 @@ $$
   * executor(aclOpExecutor \*, 入参)：op执行器，包含了算子计算流程。
   * stream(aclrtStream, 入参)：指定执行任务的Stream。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
@@ -81,12 +80,10 @@ $$
 
   - executor(aclOpExecutor**,出参)：返回op执行器，包含了算子计算流程。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
   第一段接口完成入参校验，出现以下场景时报错：
   161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的selfRef是空指针时。
   161002 (ACLNN_ERR_PARAM_INVALID): 1. selfRef的数据类型不在支持的范围之内。
@@ -104,7 +101,6 @@ $$
   - executor(aclOpExecutor*,入参)：op执行器，包含了算子计算流程。
 
   - stream(aclrtStream,入参)：指定执行任务的Stream。
-
 
 - **返回值：**
 

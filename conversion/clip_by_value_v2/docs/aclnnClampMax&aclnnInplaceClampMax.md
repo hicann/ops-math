@@ -69,7 +69,6 @@ aclnnStatus aclnnInplaceClampMax(
 
 - **参数说明：**
 
-  </style>
   <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
@@ -159,7 +158,6 @@ aclnnStatus aclnnInplaceClampMax(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  </style>
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
@@ -237,9 +235,9 @@ aclnnStatus aclnnInplaceClampMax(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceClampMaxGetWorkspaceSize
+
 - **参数说明：**
 
-  </style>
   <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
@@ -317,7 +315,7 @@ aclnnStatus aclnnInplaceClampMax(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  </style>
+
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
@@ -390,8 +388,8 @@ aclnnStatus aclnnInplaceClampMax(
 - 确定性计算：
   - aclnnClampMax&aclnnInplaceClampMax默认确定性实现。
 
-
 ## 调用示例
+
 以下示例代码仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 **aclnnClampMax示例代码：**
 

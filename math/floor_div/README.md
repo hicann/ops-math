@@ -11,7 +11,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 算子功能：完成除法计算，对结果向下取整。
@@ -53,7 +52,7 @@
         <ul>
           <li>数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../docs/zh/context/互推导关系.md)）。</li>
           <li>shape需要与other满足[broadcast关系](../../docs/zh/context/broadcast关系.md)。</li>
-        <ul>
+        </ul>
       </td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
@@ -68,7 +67,7 @@
         <ul>
           <li>数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../docs/zh/context/互推导关系.md)）。</li>
           <li>shape需要与other满足[broadcast关系](../../docs/zh/context/broadcast关系.md)。</li>
-        <ul>
+        </ul>
       </td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
@@ -124,7 +123,6 @@
   </table>
 
   - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
-
 
 ## 调用说明
 

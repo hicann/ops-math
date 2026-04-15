@@ -10,7 +10,7 @@
 |  <term>Atlas 200I/500 A2 推理产品</term>    |     ×    |
 |  <term>Atlas 推理系列产品</term>    |     ×    |
 |  <term>Atlas 训练系列产品</term>    |     ×    |
-|  <term>Kirin X90 处理器系列产品</term> | √ |	 
+|  <term>Kirin X90 处理器系列产品</term>  | √ |	 
 |  <term>Kirin 9030 处理器系列产品</term> | √ |
 
 ## 功能说明
@@ -87,7 +87,6 @@ $$
     </tr>
   </tbody></table>
 
-
 - Kirin X90/Kirin 9030 处理器系列产品: 不支持BFLOAT16。
 
 ## 约束说明
@@ -101,4 +100,3 @@ $$
 | 调用方式 | 调用样例                                                                   | 说明                                                             |
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
 | 图模式调用 | [test_geir_mul_addn](./examples/test_geir_mul_addn.cpp)   | 通过[算子IR](./op_graph/mul_addn_proto.h)构图方式调用MulAddn算子。 |
-

@@ -11,7 +11,6 @@
 | <term>Atlas 推理系列产品 </term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 算子功能: 返回输入Tensor中每个元素向下取整，并将结果回填到输入Tensor中。

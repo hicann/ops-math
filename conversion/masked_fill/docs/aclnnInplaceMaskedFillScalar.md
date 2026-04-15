@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：用value填充selfRef里面与mask矩阵中值为true的位置相对应的元素。
@@ -209,7 +208,6 @@ aclnnStatus aclnnInplaceMaskedFillScalar(
 
 - 确定性计算：
   - aclnnInplaceMaskedFillScalar默认确定性实现。
-
 
 ## 调用示例
 

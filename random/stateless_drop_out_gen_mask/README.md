@@ -83,6 +83,7 @@
 无
 
 ## 调用说明
+
 | 调用方式 | 样例代码                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
 | aclnn调用 | [test_aclnn_stateless_drop_out_gen_mask](examples/test_aclnn_stateless_drop_out_gen_mask.cpp) | 通过[aclnnDropoutGenMask](../dsa_gen_bit_mask/docs/aclnnDropoutGenMask.md)接口方式调用stateless_drop_out_gen_mask算子。 |

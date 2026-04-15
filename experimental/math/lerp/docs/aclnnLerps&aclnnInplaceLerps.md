@@ -6,7 +6,6 @@
 | :----------------------------------------------------------- | :------: |
 | Atlas A2 训练系列产品/Atlas A2 推理系列产品 |    √     |
 
-
 ## 功能说明
 
 - 接口功能：根据给定的权重，在起始和结束Tensor之间进行线性插值，返回插值后的Tensor。
@@ -465,7 +464,6 @@ int main() {
     // 创建weight aclScalar
     weight = aclCreateScalar(&weightValue, aclDataType::ACL_FLOAT);
     CHECK_RET(weight != nullptr, return ret);
-	
     // 3. 调用CANN算子库API
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;

@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 返回tensor中指定轴的最小值索引，并保存到out中。如果keepdim为false，则不保留对应的轴；如果为true，则保留指定轴的维度值为1。

@@ -1,4 +1,5 @@
 # RandomStandardNormalV2
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -87,10 +88,8 @@
 
 无
 
-
 ## 调用说明
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | 图模式调用 | [test_geir_random_standard_normal_v2](./examples/test_geir_random_standard_normal_v2.cpp)   | 通过[算子IR](./op_graph/random_standard_normal_v2_proto.h)构图方式调用RandomStandardNormalV2算子。 |
-

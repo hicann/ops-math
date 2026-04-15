@@ -78,7 +78,6 @@
 * size_splits的长度等于num_split的值。
 * size_splits中的元素总和为维度split_dim的大小。
 
-
 ## 调用说明
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |

@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |   ×     |
 | <term>Atlas 训练系列产品</term>                              |   √     |
 
-
 ## 功能说明
 
 * 算子功能：完成减法计算，被减数按alpha进行缩放。
@@ -226,7 +225,6 @@
 
 - 确定性计算：
   - aclnnSub&aclnnInplaceSub默认确定性实现。
-
 
 ## 调用示例
 

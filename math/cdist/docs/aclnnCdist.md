@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
 
-
 ## 功能说明
 
 - 算子功能：计算两个向量集合中每个点之间的p范数距离。
@@ -211,10 +210,10 @@ aclnnStatus aclnnCdist(
 - 确定性计算：
   - aclnnCdist默认为确定性实现。
 
-
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

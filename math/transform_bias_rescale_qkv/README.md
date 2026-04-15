@@ -38,6 +38,7 @@
   $$
 
   公式中：
+
   - dim_per_head为每个注意力头的维度。
   - q<sub>o</sub>、k<sub>o</sub>、v<sub>o</sub>分别为查询（Query）、键（Key）、值（Value）向量的输出元素。
   - q<sub>i</sub>、k<sub>i</sub>、v<sub>i</sub>分别为查询（Query）、键（Key）、值（Value）向量的输入元素。
@@ -104,7 +105,6 @@
       <td>ND</td>
     </tr>
   </tbody></table>
-
 
 - Kirin X90/Kirin 9030 处理器系列产品: 不支持BFLOAT16。
 

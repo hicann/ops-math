@@ -11,7 +11,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 算子功能：判断输入Tensor中的每个元素是否大于other Scalar的值，返回一个Bool类型的Tensor，对应输入Tensor中每个位置的大于判断是否成立。
@@ -64,7 +63,6 @@
     </tr>
   </tbody></table>
 
-
 ## 约束说明
 
 无
@@ -75,5 +73,3 @@
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
 | aclnn调用 | [test_aclnn_gt_scalar](./examples/test_aclnn_gt_scalar.cpp) | 通过[aclnnGtScalar&aclnnInplaceGtScalar](./docs/aclnnGtScalar&aclnnInplaceGtScalar.md)接口方式调用Greater算子。    |
 | 图模式调用 | [test_geir_greater](./examples/test_geir_greater.cpp)   | 通过[算子IR](./op_graph/greater_proto.h)构图方式调用Greater算子。 |
-
-

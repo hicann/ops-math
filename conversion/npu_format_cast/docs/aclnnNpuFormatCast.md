@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
 
-
 ## 功能说明
 
 - **接口功能**：
@@ -22,7 +21,7 @@
 
     完成ND[数据格式](../../../docs/zh/context/数据格式.md)到指定C0大小的FRACTAL_NZ[数据格式](../../../docs/zh/context/数据格式.md)的转换功能，C0是FRACTAL_NZ[数据格式](../../../docs/zh/context/数据格式.md)最后一维的大小，C0由`additionalDtype`确定。
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
-    - 完成ND←→[NZ](../../../docs/zh/context/数据格式.md)的转换功能。C0是[NZ](../../../docs/zh/context/数据格式.md)数据格式最后一维的大小。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast<aclDataType>additionalDtype)。
+    - 完成ND←→[NZ](../../../docs/zh/context/数据格式.md)的转换功能。C0是[NZ](../../../docs/zh/context/数据格式.md)数据格式最后一维的大小。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast additionalDtype)。
     - 完成NCDHW←→[NDC1HWC0](../../../docs/zh/context/数据格式.md)、NCDHW←→[FRACTAL_Z_3D](../../../docs/zh/context/数据格式.md)的转换功能。其中，C0与微架构强相关，该值等于cube单元的size，例如16。C1是将C维度按照C0切分：C1=C/C0， 若结果不整除，最后一份数据需要padding到C0。计算方法C0 = 32B srcDataType（例如FP16为2byte）
 - **计算流程**：
 
@@ -49,6 +48,7 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
     uint64_t*        workspaceSize,
     aclOpExecutor**  executor)
 ```
+
 ```c++
 aclnnStatus aclnnNpuFormatCast(
     void*          workspace,
@@ -147,7 +147,6 @@ aclnnStatus aclnnNpuFormatCast(
         </tr>
     </tbody>
     </table>
-
 
   - <term>Ascend 950PR/Ascend 950DT</term>：
     - 上表数据类型列中的角标“1”代表该系列不支持的数据类型或数据格式。
@@ -274,7 +273,6 @@ aclnnStatus aclnnNpuFormatCast(
     </tbody>
     </table>
 
-
   - <term>Ascend 950PR/Ascend 950DT</term>：
 
     - 上表数据类型列中的角标“1”代表该系列不支持的数据类型或数据格式。
@@ -324,7 +322,6 @@ aclnnStatus aclnnNpuFormatCast(
       </tr>
     </tbody>
   </table>
-
 
   - <term>Ascend 950PR/Ascend 950DT</term>：
 
@@ -430,7 +427,7 @@ aclnnStatus aclnnNpuFormatCast(
 
   <details>
 
-  <summary>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term></summary>
+  <summary><term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term></summary>
 
     - aclnnNpuFormatCastCalculateSizeAndFormat接口参数：
 
@@ -441,7 +438,6 @@ aclnnStatus aclnnNpuFormatCast(
       | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_NCDHW(30) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FORMAT_NCDHW(30) |
       | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_NDC1HWC0(32) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FORMAT_NDC1HWC0(32) |
       | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FRACTAL_Z_3D(33) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32   | ACL_FRACTAL_Z_3D(33) |
-
 
     - aclnnNpuFormatCastGetWorkspaceSize接口：
 
@@ -460,7 +456,6 @@ aclnnStatus aclnnNpuFormatCast(
       | ACL_FLOAT(0)、ACL_INT32(3)、ACL_UINT32(8)     | 8 |
       | ACL_FLOAT16(1)、ACL_BF16(27)  | 16 |
       | ACL_INT8(2)、ACL_UINT8(4)    | 32 |
-
 
     - 当前不支持的特殊场景:
       - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
@@ -882,4 +877,3 @@ aclnnStatus aclnnNpuFormatCast(
       return 0;
   }
   ```
-

@@ -48,7 +48,6 @@
       <td>ND</td>
     </tr>
     <tr>
-    <tr>
       <td>counter</td>
       <td>输入</td>
       <td>用于基于计数器的随机数生成算法的初始计数值。</td>
@@ -62,7 +61,6 @@
       <td>INT32</td>
       <td>ND</td>
     </tr>
-    <tr>
     <tr>
       <td>out</td>
       <td>输出</td>

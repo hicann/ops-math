@@ -29,6 +29,7 @@ aclnnStatus aclnnChannelShuffleGetWorkspaceSize(
     uint64_t        *workspaceSize, 
     aclOpExecutor  **executor)
 ```
+
 ```cpp
 aclnnStatus aclnnChannelShuffle(
     void          *workspace, 
@@ -41,7 +42,6 @@ aclnnStatus aclnnChannelShuffle(
 
 - **参数说明：**
 
-  </style>
   <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
@@ -116,13 +116,12 @@ aclnnStatus aclnnChannelShuffle(
     </tr>
   </tbody></table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  </style>
+
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
@@ -207,7 +206,6 @@ aclnnStatus aclnnChannelShuffle(
 
 - 确定性计算：
   - aclnnChannelShuffle默认确定性实现。
-
 
 ## 调用示例
 
@@ -344,4 +342,3 @@ int main() {
   return 0;
 }
 ```
-

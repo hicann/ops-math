@@ -3,6 +3,7 @@
 > 本文档记录各版本的重要变更，版本按时间倒序排列。
 
 ## v8.5.0-beta.1
+
 发布日期：2025-12-30
 
 ops-math 首个 Beta 版本 v8.5.0-beta.1 现已发布。
@@ -11,6 +12,7 @@ ops-math 首个 Beta 版本 v8.5.0-beta.1 现已发布。
 使用方式请参阅[官方文档](https://gitcode.com/cann/ops-math/blob/master/README.md)。
 
 ### 🔗 版本地址
+
 [CANN 8.5.0-beta 1](https://ascend.devcloud.huaweicloud.com/cann/run/software/8.5.0-beta.1/)
 
 ```
@@ -22,6 +24,7 @@ ops-math 首个 Beta 版本 v8.5.0-beta.1 现已发布。
 │   ├── ops                  # ops算子包目录，用于归档算子子包
 │   ├── ...
 ```
+
 ### 📌 版本配套
 
 **ops-math子包及相关组件与CANN版本配套关系**
@@ -44,6 +47,7 @@ drop_out_v3([#539](https://gitcode.com/cann/ops-math/pull/539))等。
 - 【易用性提升】kernel编译流程优化，开启info级别日志打屏。([#326](https://gitcode.com/cann/ops-math/pull/326))
 
 ### 🐛 问题修复
+
 - tile算子aclnn接口与算子原型不符，内置算子调用失败。([Issue239](https://gitcode.com/cann/ops-math/issues/239))
 - experimental目录算子使用代码仓自带op_api执行时报错。([Issue143](https://gitcode.com/cann/ops-math/issues/143))
 - 算子部署路径与指定vendor_name不一致。([Issue86](https://gitcode.com/cann/ops-math/issues/86))

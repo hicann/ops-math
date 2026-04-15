@@ -11,7 +11,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 算子功能：求input(Tensor)每个元素的平方根的倒数
@@ -23,6 +22,7 @@ out = \frac{1}{\sqrt{input}}
 $$
 
 ## 函数原型
+
 - aclnnRsqrt和aclnnInplaceRsqrt实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnRsqrt：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceRsqrt：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
@@ -34,6 +34,7 @@ $$
   * `aclnnStatus aclnnInplaceRsqrt(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
 
 ## aclnnRsqrtGetWorkspaceSize
+
 - **参数说明：**
   
   * self(aclTensor*, 计算输入): 公式中的$input$，Device侧的aclTensor，支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../docs/zh/context/数据格式.md)支持ND, 且shape需要与out一致。
@@ -55,6 +56,7 @@ $$
 ```
 
 ## aclnnRsqrt
+
 - **参数说明：**
   
   * workspace(void *, 入参)：在Device侧申请的workspace内存地址。
@@ -67,6 +69,7 @@ $$
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceRsqrtGetWorkspaceSize
+
 - **参数说明：**
   
   * selfRef(aclTensor *, 计算输入): 公式中的$input$，Device侧的aclTensor，支持[非连续的Tensor](../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../docs/zh/context/数据格式.md)支持ND，shape维度不大于8。
@@ -86,6 +89,7 @@ $$
 ```
 
 ## aclnnInplaceRsqrt
+
 - **参数说明：**
   
   * workspace(void *, 入参)：在Device侧申请的workspace内存地址。
@@ -103,4 +107,5 @@ $$
   - aclnnRsqrt&aclnnInplaceRsqrt默认确定性实现。
 
 ## 调用示例
+
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../docs/zh/context/编译与运行样例.md)。

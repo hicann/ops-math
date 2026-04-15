@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：按指定维度对输入tensor求元素最大值。
@@ -152,7 +151,6 @@ aclnnStatus aclnnMaxV2(
   
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -228,7 +226,6 @@ aclnnStatus aclnnMaxV2(
     </tr>
   </tbody>
   </table>
-
 
 - **返回值：**
 

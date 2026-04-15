@@ -18,6 +18,7 @@
 需要和[aclnnCalculateConvolutionWeightSize](./aclnnCalculateConvolutionWeightSize.md)接口配套使用，用于创建一个对于Convolution算子计算性能亲和的weight Tensor。
 
 ## 函数原型
+
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnTransConvolutionWeightGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnTransConvolutionWeight”接口执行计算。
 
 ```cpp
@@ -184,7 +185,6 @@ aclnnStatus aclnnTransConvolutionWeight(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   `aclnnStatus`：返回状态码，具体参见 <a href="../../../docs/context/aclnn返回码.md">aclnn 返回码</a>。
@@ -201,8 +201,8 @@ aclnnStatus aclnnTransConvolutionWeight(
 
 ## 调用示例
 
-
 示例代码如下，仅供参考，具体编译和执行过程请参考<a href="../../../docs/context/编译与运行样例.md">编译与运行样例</a>。
+
 ```Cpp
 #include <iostream>
 #include <memory>

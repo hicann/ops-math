@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：计算输入tensor中每个元素和输入标量other的按位与结果。输入的tensor与other必须是整型或者BOOL型变量。当输入为BOOL型时，计算逻辑与的结果。
@@ -187,7 +186,6 @@ aclnnStatus aclnnInplaceBitwiseAndScalar(
       <td>指定执行任务的Stream。</td>
     </tr>
   </tbody></table>
-
 
 - **返回值：**
 

@@ -6,7 +6,6 @@
 | :----------------------------------------------------------- | :------: |
 | Atlas A2 训练系列产品/Atlas A2 推理系列产品 |    √     |
 
-
 ## 功能说明
 
 - 算子功能：判断输入self中的每个元素是否小于输入other的值，返回一个Bool类型的Tensor。
@@ -58,7 +57,6 @@
     </tr>
   </tbody></table>
 
-
 ## 约束说明
 
 无
@@ -71,7 +69,7 @@
 | aclnn调用 | [test_aclnn_lt_tensor](./examples/test_aclnn_lt_tensor.cpp) | 通过[aclnnLtTensor&aclnnInplaceLtTensor](./docs/aclnnLtTensor&aclnnInplaceLtTensor.md)接口方式调用Less算子。    |
 
 ## 贡献说明
- 	 
+
 | 贡献者 | 贡献方 | 贡献算子 | 贡献时间 | 贡献内容 |
 | ---- | ---- | ---- | ---- | ---- |
 | fulltower | 个人开发者 | Less | 2026/2/27 | Less算子适配开源仓 |

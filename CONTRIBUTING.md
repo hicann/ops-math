@@ -33,9 +33,10 @@ Sig组将指派Committer对您提交的Issue进行评审并反馈修改意见。
 
 若需求被接纳，[sig成员](https://gitcode.com/cann/community/blob/master/CANN/sigs/ops-basic/README.md)将为您分配合适的算子分类路径（如：`experimental/math`），请将贡献的算子提交至`experimental`对应算子分类目录。
 
-### 3. PR提交 
+### 3. PR提交
 
 生态最简算子交付件如下：
+
 ```
 ${op_class}                                          # 算子分类
 ├── ${op_name}                                       # 算子名

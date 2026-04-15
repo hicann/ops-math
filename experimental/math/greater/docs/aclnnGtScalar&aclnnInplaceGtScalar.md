@@ -135,7 +135,6 @@ aclnnStatus aclnnInplaceGtScalar(
 
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
@@ -215,11 +214,9 @@ aclnnStatus aclnnInplaceGtScalar(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
-
 
 ## aclnnInplaceGtScalarGetWorkspaceSize
 
@@ -291,7 +288,6 @@ aclnnStatus aclnnInplaceGtScalar(
   </table>
 
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
-
 
 - **返回值：**
 
@@ -369,18 +365,16 @@ aclnnStatus aclnnInplaceGtScalar(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
- ## 约束说明
+## 约束说明
 
 - 确定性计算：
   - aclnnGtScalar&aclnnInplaceGtScalar默认确定性实现。
 
-
- ## 调用示例
+## 调用示例
  
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
 

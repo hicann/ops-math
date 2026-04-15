@@ -41,7 +41,6 @@ $$
       <td>FLOAT、FLOAT16、BFLOAT16、INT32</td>
       <td>ND</td>
     </tr>  
-    <tr>  
     <tr>
       <td>x2</td>
       <td>输入</td>

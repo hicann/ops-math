@@ -11,7 +11,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 算子功能：判断输入self中的元素值是否小于等于other的值，并将self的每个元素的值与other值的比较结果写入out中。
@@ -38,6 +37,7 @@
       <th>数据类型</th>
       <th>数据格式</th>
     </tr></thead>
+    <tbody>
     <tr>
       <td>x1</td>
       <td>输入</td>

@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：对输入Tensor完成log1p运算。
@@ -39,6 +38,7 @@ aclnnStatus aclnnLog1pGetWorkspaceSize(
   uint64_t*                 workspaceSize,
   aclOpExecutor**           executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnLog1p(
   void*                     workspace,
@@ -46,12 +46,14 @@ aclnnStatus aclnnLog1p(
   aclOpExecutor*            executor,
   aclrtStream               stream)
 ```
+
 ```Cpp
 aclnnStatus aclnnInplaceLog1pGetWorkspaceSize(
   aclTensor*                selfRef,
   uint64_t*                 workspaceSize,
   aclOpExecutor**           executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnInplaceLog1p(
   void*                     workspace,

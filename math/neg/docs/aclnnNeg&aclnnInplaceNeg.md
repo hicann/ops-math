@@ -3,6 +3,7 @@
 [📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/neg)
 
 ## 产品支持情况
+
 | 产品                                                         |  是否支持   |
 | :----------------------------------------------------------- |:-------:|
 | <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
@@ -162,7 +163,6 @@ aclnnStatus aclnnInplaceNeg(
     </tr>
   </tbody>
   </table>
-
 
 ## aclnnNeg
 
@@ -487,6 +487,7 @@ int main() {
 ```
 
 **aclnnInplaceNeg接口调用示例代码：**
+
 ```Cpp
 #include <iostream>
 #include <vector>

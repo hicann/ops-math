@@ -6,7 +6,6 @@
 | :----------------------------------------------------------- | :------: |
 | Atlas A2 训练系列产品/Atlas A2 推理系列产品 |    √     |
 
-
 ## 功能说明
 
 - 算子功能：判断输入Tensor中的每个元素是否大于other Scalar的值，返回一个Bool类型的Tensor，对应输入Tensor中每个位置的大于判断是否成立。
@@ -59,7 +58,6 @@
     </tr>
   </tbody></table>
 
-
 ## 约束说明
 
 无
@@ -72,10 +70,8 @@
 | aclnn调用 | [test_aclnn_gt_tensor](./examples/test_aclnn_gt_tensor.cpp) | 通过[aclnnGtTensor&aclnnInplaceGtTensor](./docs/aclnnGtTensor&aclnnInplaceGtTensor.md)接口方式调用Greater算子。    |
 
 ## 贡献说明
- 	 
-| 贡献者 | 贡献方 | 贡献算子 | 贡献时间 | 贡献内容 |
+
+|贡献者 | 贡献方 | 贡献算子 | 贡献时间 | 贡献内容 |
 | ------   | ---- | ---- | ---- | ---- |
 | fulltower | 个人开发者 | Greater | 2026/2/27 | Greater算子适配开源仓 |
 | 中国海洋大学王胜科团队 | 个人开发者 | Greater | 2025/7/30 | 新增Greater算子 |
-
-

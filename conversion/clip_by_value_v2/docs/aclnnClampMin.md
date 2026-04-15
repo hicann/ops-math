@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：将输入的所有元素限制在[min, inf]范围内。
@@ -136,7 +135,7 @@ aclnnStatus aclnnClampMin(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  </style>
+
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
@@ -212,6 +211,7 @@ aclnnStatus aclnnClampMin(
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>
@@ -284,8 +284,8 @@ int PrepareInputAndOutput(
     // 创建self aclTensor
     auto ret = CreateAclTensor(selfHostData, shape, selfDeviceAddr, aclDataType::ACL_DOUBLE, self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-	// 创建min
-	  *min = aclCreateScalar(&min_v, aclDataType::ACL_DOUBLE);
+    // 创建min
+    *min = aclCreateScalar(&min_v, aclDataType::ACL_DOUBLE);
     CHECK_RET(*min != nullptr, return ret);
     // 创建out aclTensor
     ret = CreateAclTensor(outHostData, shape, outDeviceAddr, aclDataType::ACL_DOUBLE, out);
@@ -331,8 +331,8 @@ int main() {
     aclTensor* self = nullptr;
     aclScalar* min = nullptr;
     aclTensor* out = nullptr;
-	
-	  ret = PrepareInputAndOutput(shape, &selfDeviceAddr, &self, &min, &outDeviceAddr, &out);
+
+    ret = PrepareInputAndOutput(shape, &selfDeviceAddr, &self, &min, &outDeviceAddr, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     // 3. 调用CANN算子库API，需要修改为具体的API

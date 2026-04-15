@@ -13,13 +13,11 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：判断输入self中的每个元素符号位是否为1，返回一个Bool类型的Tensor。
 
 - 计算公式：
-
 
 $$
 out_i = (self_i < 0)  ?  [True] : [False]
@@ -194,7 +192,6 @@ aclnnStatus aclnnSignbit(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -203,7 +200,6 @@ aclnnStatus aclnnSignbit(
 
 - 确定性计算：
   - aclnnSignbit默认确定性实现。
-
 
 ## 调用示例
 
@@ -339,4 +335,3 @@ int main() {
   return 0;
 }
 ```
-

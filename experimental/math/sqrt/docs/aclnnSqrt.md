@@ -22,6 +22,7 @@
 ## 函数原型
 
 每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnAbsGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnAbs”接口执行计算。
+
 ```Cpp
 aclnnStatus aclnnSqrtGetWorkspaceSize(
   const aclTensor *self, 
@@ -30,7 +31,6 @@ aclnnStatus aclnnSqrtGetWorkspaceSize(
   aclOpExecutor  **executor)
 ```
 
-
 ```Cpp
 aclnnStatus aclnnSqrt(
   void              *workspace, 
@@ -38,6 +38,7 @@ aclnnStatus aclnnSqrt(
   aclOpExecutor     *executor, 
   const aclrtStream  stream)
 ```
+
 ### aclnnSqrtGetWorkspaceSize
 
 - **参数说明：**
@@ -188,11 +189,9 @@ aclnnStatus aclnnSqrt(
 
 aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
-
 ## 约束与限制
 
 - self，out的数据类型支持FLOAT16、BFLOAT16、FLOAT32，数据格式只支持ND
-
 
 ## 调用示例
 

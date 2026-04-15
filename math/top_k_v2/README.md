@@ -11,7 +11,6 @@
 | <term>Atlas 推理系列产品</term>                              |    √    |
 | <term>Atlas 训练系列产品</term>                              |    √    |
 
-
 ## 功能说明
 
 - 接口功能：返回输入Tensor在指定维度上的k个极值及索引。TopKV2算子支持通过输入Tensor指定k值，并支持可配置的indices输出数据类型。

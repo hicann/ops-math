@@ -11,7 +11,6 @@
 |  <term>Atlas 推理系列产品</term>    |     ×    |
 |  <term>Atlas 训练系列产品</term>    |     ×    |
 
-
 ## 功能说明
 
 - 接口功能：计算输入在滑动窗口内的傅里叶变换。
@@ -29,7 +28,6 @@
     X[w,m]=\frac{1}{\sqrt{nFft}}(\sum_{k=0}^{winLength-1}window[k]*self[m*hopLength+k]*exp(-j*\frac{2{\pi}wk}{nFft}))
     $$
 
-  
   其中：
   - $w$为FFT的频点。
   - $m$为滑动窗口的index。
@@ -68,7 +66,6 @@ aclnnStatus aclStft(
 ## aclStftGetWorkspaceSize
 
 - **参数说明：**
-
 
   <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 170px">
@@ -233,6 +230,7 @@ aclnnStatus aclStft(
       <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="6">161002</td>
       <td>self的数据格式不在支持的范围之内。</td>
+    </tr>
     <tr>
       <td>self、windowOptional的数据类型不一致。</td>
     </tr>
@@ -240,7 +238,8 @@ aclnnStatus aclStft(
       <td>self、windowOptional、out的数据类型不在平台的支持范围之内。</td>
     </tr>
     <tr>
-      <td>nFft、hopLength、winLength输入无效值。</tr>
+      <td>nFft、hopLength、winLength输入无效值。</td>
+    </tr>
     <tr>
       <td>self、windowOptional、out的维度不在支持的范围之内。</td>
     </tr>
@@ -324,7 +323,6 @@ aclnnStatus aclStft(
 
 - 确定性计算：
   - aclStft默认确定性实现。
-
 
 ## 调用示例
 

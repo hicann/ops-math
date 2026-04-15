@@ -22,7 +22,6 @@
 | shape   | 输入张量       | 表示 x 广播后的shape大小。| INT64、INT32    | -        |
 | y    | 输出           | 维度最大不超过8维，shape由shape输入决定，dtype需要与self一致。 | 同 x   | ND       |
 
-
 ## 约束说明
 
 无

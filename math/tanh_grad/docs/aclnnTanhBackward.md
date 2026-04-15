@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                               |    √     |
 | <term>Atlas 训练系列产品</term>                               |    √     |
 
-
 ## 功能说明
 
 - 接口功能：aclnnTanh的反向。
@@ -124,7 +123,7 @@ aclnnStatus aclnnTanhBackward(
   </tbody>
   </table>
 
-  - term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+  - <term>term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
 - **返回值：**
 
@@ -355,4 +354,3 @@ int main() {
   return 0;
 }
 ```
-

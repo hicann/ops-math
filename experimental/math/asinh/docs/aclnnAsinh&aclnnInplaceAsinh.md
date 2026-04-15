@@ -85,10 +85,10 @@ $$
 ## aclnnInplaceAsinh
 
 - **参数说明**：
-  -  workspace(void\*，入参)：在Device侧申请的workspace内存地址。
-  -  workspaceSize(uint64_t，入参)：在Device侧申请的workspace大小，由第一段接口aclnnInplaceAsinhGetWorkspaceSize获取。
-  -  executor(aclOpExecutor\*，入参)：op执行器，包含了算子计算流程。
-  -  stream(aclrtStream，入参)：指定执行任务的Stream。
+  - workspace(void\*，入参)：在Device侧申请的workspace内存地址。
+  - workspaceSize(uint64_t，入参)：在Device侧申请的workspace大小，由第一段接口aclnnInplaceAsinhGetWorkspaceSize获取。
+  - executor(aclOpExecutor\*，入参)：op执行器，包含了算子计算流程。
+  - stream(aclrtStream，入参)：指定执行任务的Stream。
 
 - **返回值**：
 
@@ -100,7 +100,9 @@ $$
   - aclnnAsinh&aclnnInplaceAsinh默认确定性实现。
 
 ## 调用示例
+
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

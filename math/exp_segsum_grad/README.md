@@ -11,7 +11,6 @@
 |  <term>Atlas 推理系列产品</term>    |     ×    |
 |  <term>Atlas 训练系列产品</term>    |     ×    |
 
-
 ## 功能说明
 
 - 算子功能：[Segsum](../segsum/README.md)的反向计算。
@@ -94,7 +93,6 @@
       <td>ND</td>
     </tr>
   </tbody></table>
-
 
 ## 约束说明
 

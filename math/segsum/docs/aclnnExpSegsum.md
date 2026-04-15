@@ -13,7 +13,6 @@
 |  <term>Atlas 推理系列产品</term>    |     ×    |
 |  <term>Atlas 训练系列产品</term>    |     ×    |
 
-
 ## 功能说明
 
 - 接口功能：进行分段和计算。生成对角线为0的半可分矩阵，且上三角为-inf。
@@ -24,18 +23,18 @@
   3. 生成（N4,N4）类型为bool的三角矩阵A，上三角为True，下三角为False，对角线为True。
   4. 用0填充输入self里面与矩阵A中值为True的位置相对应的元素。
 
-    $$
-    self_i=
-    \begin{cases}self_i,\quad A_i==False
-    \\0, \quad A_i==True
-    \end{cases}
-    $$
+      $$
+      self_i=
+      \begin{cases}self_i,\quad A_i==False
+      \\0, \quad A_i==True
+      \end{cases}
+      $$
 
   5. 以self的倒数第二维进行cumsum累加。从维度视角来看的某个元素（其它维度下标不变，当前维度下标依次递增），$selfTemp\_{i}$是输出张量中对应位置的元素。
 
-     $$
-     selfTemp_{i} = self_{1} + self_{2} + self_{3} + ...... + self_{i}
-     $$
+      $$
+      selfTemp_{i} = self_{1} + self_{2} + self_{3} + ...... + self_{i}
+      $$
 
   6. 生成（N4,N4）类型为bool的三角矩阵B，上三角为True，下三角为False，对角线为False。
   7. 用-inf填充selfTemp里面与矩阵B中值为True的位置相对应的元素。
@@ -77,7 +76,6 @@ aclnnStatus aclnnExpSegsum(
 
 - **参数说明**：
 
-
   <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 170px">
   <col style="width: 120px">
@@ -114,7 +112,12 @@ aclnnStatus aclnnExpSegsum(
       <td>out</td>
       <td>输出</td>
       <td>完成分段和计算后的输出，对应公式中的`out`。</td>
-      <td><ul><li>支持空Tensor。</li><li>数据类型与输入`self`的数据类型保持一致。</li><li>输出维度必须比输入维度大1。<ul><li>当输入`self`为3D时，输出前3维的维度大小与`self`保持一致，最后1维的维度大小与第3维保持一致。</li><li>当输入`self`为4D时，输出前4维的维度大小与`self`保持一致，最后1维的维度大小与第4维保持一致。</ul></li></li></ul></td>
+      <td><ul>
+      <li>支持空Tensor。</li>
+      <li>数据类型与输入`self`的数据类型保持一致。</li>
+      <li>输出维度必须比输入维度大1。<ul>
+      <li>当输入`self`为3D时，输出前3维的维度大小与`self`保持一致，最后1维的维度大小与第3维保持一致。</li>
+      <li>当输入`self`为4D时，输出前4维的维度大小与`self`保持一致，最后1维的维度大小与第4维保持一致。</li></ul></li></ul></td>
       <td>FLOAT16、FLOAT32、BFLOAT16</td>
       <td>ND</td>
       <td>4-5</td>

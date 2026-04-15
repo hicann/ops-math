@@ -11,7 +11,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
 
-
 ## 功能说明
 
 - 接口功能：对于输入张量self中每个元素，根据输入标量shiftBits，按位进行左移。
@@ -120,7 +119,6 @@ aclnnStatus aclnnLeftShifts(
     </tr>
   </tbody></table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -201,7 +199,6 @@ aclnnStatus aclnnLeftShifts(
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -212,7 +209,6 @@ aclnnStatus aclnnLeftShifts(
   - aclnnLeftShifts默认确定性实现。
   
 - 只能保证shiftBits的数值小于self数据类型位宽时，精度无误差。
-
 
 ## 调用示例
 

@@ -64,13 +64,16 @@
       <td>同input</td>
       <td>ND</td>
       <td>√</td>
+    </tr>
    </tbody>
   </table>
 
 ## 算子使用
+
 使用该算子前，请参考[社区版CANN开发套件包安装文档](../../../docs/zh/invocation/quick_op_invocation.md)完成开发运行环境的部署。
 
 ### 编译部署
+
   - 进入到仓库目录
 
     ```bash
@@ -88,7 +91,9 @@
     ```bash
     ./build_out/cann-ops-<vendor_name>-linux.<arch>.run
     ```
+
 ### 算子调用
+
   - 执行调用
 
     ```bash
@@ -100,6 +105,7 @@
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
 | aclnn调用 | [test_aclnn_sign](./examples/test_aclnn_sign.cpp) | 通过[aclnnSign](./docs/aclnnSign.md)接口方式调用Sign算子。 |    
+
 ## 贡献说明
 
 | 贡献者 | 贡献方 | 贡献算子 | 贡献时间 | 贡献内容 |

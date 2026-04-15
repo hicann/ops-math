@@ -27,7 +27,9 @@ tensor([[a,b,a,b,a,b,a,b],
         [e,f,e,f,e,f,e,f],
         ])
 ```
+
 当repeats为(2,4,2)时，即repeats的元素个数大于Tensor中的维度，则输出Tensor等效为如下操作：先将输入Tensor的shape扩张到和repeats个数相同的维度：[1,3,2]，而后按照对应维度和repeats的值进行扩张，即输出Tensor的shape为[2,12,4]，结果如下：
+
 ```
 >>> x.repeat(2,4,2)
 tensor([[[a,b,a,b],
@@ -56,6 +58,7 @@ tensor([[[a,b,a,b],
          [c,d,c,d],
          [e,f,e,f]]])
 ```
+
 计算时需要满足以下条件：
 repeats中参数个数不能少于输入Tensor的维度。
 repeats中的值必须大于等于0。

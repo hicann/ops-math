@@ -1,4 +1,5 @@
 # DivNoNan
+
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -9,7 +10,6 @@
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    √    |
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √    |
-
 
 ## 功能说明
 
@@ -64,6 +64,7 @@
   </tbody></table>
 
   - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：不支持BFLOAT16。
+
 ## 约束说明
 
 无

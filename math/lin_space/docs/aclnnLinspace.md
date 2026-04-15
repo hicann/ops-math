@@ -13,13 +13,11 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：生成一个等间隔数值序列。创建一个大小为steps的一维向量，其值从start起始到end结束（包含）线性均匀分布。
 
 - 计算公式：
-
 
 $$
 out = (start, start + \frac{end - start}{steps - 1},...,start + (steps - 2) * \frac{end - start}{steps -1}, end)
@@ -126,7 +124,6 @@ $$
     </tr>
   </tbody></table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -203,7 +200,6 @@ $$
   </tbody>
   </table>
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -212,7 +208,6 @@ $$
 
 - 确定性计算：
   - aclnnLinspace默认确定性实现。
-
 
 ## 调用示例
 
@@ -358,4 +353,3 @@ int main() {
   return 0;
 }
 ```
-

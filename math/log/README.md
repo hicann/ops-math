@@ -1,6 +1,6 @@
 # Log
 
-##  产品支持情况
+## 产品支持情况
 
 | 产品 | 是否支持 |
 | ---- | :----: | 
@@ -12,6 +12,7 @@
 | <term>Atlas 训练系列产品</term>                              |     ×    |
 
 ## 功能说明
+
 - 算子功能：对输入张量x的元素，逐元素进行对数计算，并将结果保存到输出张量y中。可支持多种类型输入张量，并支持对输入张量x进行缩放（shift/scale）操作。
 - 计算公式：
 
@@ -19,8 +20,8 @@
     y = log_{base}(shift + scale * x)
     $$
 
-
 ## 参数说明
+
 <table style="undefined;table-layout: fixed; width: 1576px"><colgroup>
   <col style="width: 170px">
   <col style="width: 170px">
@@ -48,21 +49,21 @@
     <tr>
       <td>base</td>
       <td>可选属性</td>
-      <td><ul><li>对数运算的底。</li><li>默认为-1.0（表示自然对数e）。</ul><td>
+      <td><ul><li>对数运算的底。</li><li>默认为-1.0（表示自然对数e）。</li></ul></td>
       <td>FLOAT</td>
       <td>-</td>
     </tr>
     <tr>
       <td>scale</td>
       <td>可选属性</td>
-      <td><ul><li>输入张量x的缩放因子。</li><li>默认为1.0。</ul></td>
+      <td><ul><li>输入张量x的缩放因子。</li><li>默认为1.0。</li></ul></td>
       <td>FLOAT</td>
       <td>-</td>
     </tr>
     <tr>
       <td>shift</td>
       <td>可选属性</td>
-      <td><ul><li>输入张量x的偏移量。</li><li>默认为0.0。</ul></td>
+      <td><ul><li>输入张量x的偏移量。</li><li>默认为0.0。</li></ul></td>
       <td>FLOAT</td>
       <td>-</td>
     </tr>
@@ -91,4 +92,3 @@
 | aclnn调用 | [test_aclnn_log2](./examples/test_aclnn_log2.cpp) <br> [test_aclnn_inplace_log2](./examples/test_aclnn_inplace_log2.cpp) | 通过[aclnnLog2或aclnnInplaceLog2](./docs/aclnnLog2&aclnnInplaceLog2.md)接口方式调用Log算子。    |
 | aclnn调用 | [test_aclnn_log10](./examples/test_aclnn_log10.cpp) <br> [test_aclnn_inplace_log10](./examples/test_aclnn_inplace_log10.cpp) | 通过[aclnnLog10或aclnnInplaceLog10](./docs/aclnnLog10&aclnnInplaceLog10.md)接口方式调用Log算子。    |
 | 图模式调用 | [test_geir_log](./examples/test_geir_log.cpp)   | 通过[算子IR](./op_graph/log_proto.h)构图方式调用Log算子。 |
-

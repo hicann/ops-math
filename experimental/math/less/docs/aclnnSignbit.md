@@ -6,13 +6,11 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
-
 ## 功能说明
 
 - 接口功能：判断输入self中的每个元素符号位是否为1，返回一个Bool类型的Tensor。
 
 - 计算公式：
-
 
 $$
 out_i = (self_i < 0)  ?  [True] : [False]
@@ -37,7 +35,6 @@ $$
   * workspaceSize(uint64_t*, 出参)：返回用户需要在Device侧申请的workspace大小。
 
   * executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
-
 
 - **返回值：**
 
@@ -117,7 +114,6 @@ $$
     </tr>
   </tbody>
   </table>
-
 
 - **返回值：**
 
@@ -257,4 +253,3 @@ int main() {
   return 0;
 }
 ```
-

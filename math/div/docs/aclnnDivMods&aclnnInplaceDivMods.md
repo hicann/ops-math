@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：完成除法计算，并根据mode参数选择舍入操作。
@@ -26,6 +25,7 @@ $$
 ## 函数原型
 
 aclnnDivMods和aclnnInplaceDivMods实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
+
 - aclnnDivMods：需新建一个输出张量对象存储计算结果。
 - aclnnInplaceDivMods：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
@@ -428,7 +428,9 @@ aclnnStatus aclnnInplaceDivMods(
 - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：当mode为1（trunc模式）或2（floor模式），因FLOAT16/BFLOAT16数据类型精度有限，无法表示所有小数，在舍入取整/向下取整时存在一定误差，可以选择更高精度的数据类型如FLOAT32。
 
 ## 调用示例
+
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

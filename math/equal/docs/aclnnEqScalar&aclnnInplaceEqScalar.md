@@ -307,7 +307,6 @@ aclnnStatus aclnnInplaceEqScalar(
   </tbody>
   </table>
 
-
   - <term>Ascend 950PR/Ascend 950DT</term>：
     - selfRef与other满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
     - selfRef、other不支持UINT32数据类型。
@@ -591,6 +590,7 @@ int main()
   return 0;
 }
 ```
+
 **aclnnInplaceEqScalar示例代码：**
 
 ```Cpp
@@ -762,4 +762,3 @@ int main()
 }
 
 ```
-

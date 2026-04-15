@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
 
-
 ## 功能说明
 
 - 接口功能：创建一个大小为$\text{steps}$的一维张量，其值在$\text{base}^\text{start}$到$\text{base}^\text{end}$上对数尺度上均匀间隔，包含端点，以$\text{base}$为底。
@@ -174,7 +173,7 @@ aclnnStatus aclnnLogSpace(
     </tr>
     <tr>
       <td>steps小于0。</td>
-   
+   </tr>
   </tbody>
   </table>
 
@@ -204,13 +203,16 @@ aclnnStatus aclnnLogSpace(
       <td>输入</td>
       <td>在Device侧申请的workspace大小，由第一段接口aclnnLogSpaceGetWorkspaceSize获取。</td>
     </tr>
+    <tr>
       <td>executor</td>
       <td>输入</td>
       <td>op执行器，包含了算子计算流程。</td>
+     </tr>
     <tr>
       <td>stream</td>
       <td>输入</td>
       <td>指定执行任务的Stream。</td>
+     </tr>
   </tbody>
   </table>
   
@@ -223,7 +225,6 @@ aclnnStatus aclnnLogSpace(
 - **确定性计算:**
   
   - aclnnLogSpace默认确定性实现。
-
 
 ## 调用示例
 

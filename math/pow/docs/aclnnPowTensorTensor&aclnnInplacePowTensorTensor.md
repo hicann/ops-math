@@ -548,6 +548,7 @@ int main() {
   return 0;
 }
 ```
+
 **aclnnInplacePowTensorTensor示例代码：**
 
 ```Cpp

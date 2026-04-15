@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 返回形状和类型相同的张量，所有元素都设置为1。
@@ -96,7 +95,6 @@ aclnnStatus aclnnInplaceOne(
   </tbody></table>
 
   - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16。
-
 
 - **返回值：**
 
@@ -300,4 +298,3 @@ int main() {
   return 0;
 }
 ```
-

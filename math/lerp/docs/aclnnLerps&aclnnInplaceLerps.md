@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：根据给定的权重，在起始和结束Tensor之间进行线性插值，返回插值后的Tensor。
@@ -40,6 +39,7 @@ aclnnStatus aclnnLerpsGetWorkspaceSize(
   uint64_t*                 workspaceSize,
   aclOpExecutor**           executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnLerps(
   void*                     workspace,
@@ -47,6 +47,7 @@ aclnnStatus aclnnLerps(
   aclOpExecutor*            executor,
   const aclrtStream         stream)
 ```
+
 ```Cpp
 aclnnStatus aclnnInplaceLerpsGetWorkspaceSize(
   aclTensor*                selfRef,
@@ -55,6 +56,7 @@ aclnnStatus aclnnInplaceLerpsGetWorkspaceSize(
   uint64_t*                 workspaceSize,
   aclOpExecutor**           executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnInplaceLerps(
   void*                     workspace,

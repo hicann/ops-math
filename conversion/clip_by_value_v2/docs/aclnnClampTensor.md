@@ -50,7 +50,6 @@ aclnnStatus aclnnClampTensor(
 
 - **参数说明：**
 
-  </style>
   <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
@@ -140,7 +139,7 @@ aclnnStatus aclnnClampTensor(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  </style>
+
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
@@ -225,6 +224,7 @@ aclnnStatus aclnnClampTensor(
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>
@@ -388,11 +388,10 @@ int main() {
         LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
     }
 
-    // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
-	ReleaseTensorAndScalar(self, clipValueMax, clipValueMin, out);
+    // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改ReleaseTensorAndScalar(self, clipValueMax, clipValueMin, out);
 
     // 7. 释放device 资源
-	ReleaseDevice(selfDeviceAddr, minDeviceAddr, maxDeviceAddr, outDeviceAddr, workspaceSize, workspaceAddr, stream, deviceId);
+    ReleaseDevice(selfDeviceAddr, minDeviceAddr, maxDeviceAddr, outDeviceAddr, workspaceSize, workspaceAddr, stream, deviceId);
 
     return 0;
 }

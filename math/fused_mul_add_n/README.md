@@ -11,7 +11,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 算子功能：将mul和addn算子进行融合，要求addn的n为2，mul的其中一个输入必须是scalar或者只包含一个数的tensor。

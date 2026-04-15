@@ -69,7 +69,6 @@ aclnnStatus aclnnInplaceClampMinTensor(
 
 - **参数说明**：
 
-  </style>
   <table style="undefined;table-layout: fixed; width: 1600px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
@@ -156,7 +155,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  </style>
+
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
@@ -231,7 +230,6 @@ aclnnStatus aclnnInplaceClampMinTensor(
 
 - **参数说明：**
 
-  </style>
   <table style="undefined;table-layout: fixed; width: 1600px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
@@ -309,7 +307,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  </style>
+
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
@@ -390,7 +388,6 @@ aclnnStatus aclnnInplaceClampMinTensor(
 
 - 确定性计算：
   - aclnnClampMinTensor&aclnnInplaceClampMinTensor默认确定性实现。
-
 
 ## 调用示例
 

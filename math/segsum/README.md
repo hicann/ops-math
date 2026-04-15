@@ -13,7 +13,6 @@
 |  <term>Kirin X90 处理器系列产品</term> | √ | 
 |  <term>Kirin 9030 处理器系列产品</term> | √ |
 
-
 ## 功能说明
 
 - 算子功能：进行分段和计算。生成对角线为0的半可分矩阵，且上三角为-inf。
@@ -24,12 +23,12 @@
   3. 生成（N4,N4）类型为bool的三角矩阵A，上三角为True，下三角为False，对角线为True。
   4. 用0填充输入self里面与矩阵A中值为True的位置相对应的元素。
     
-    $$
-    self_i=
-    \begin{cases}self_i,\quad A_i==False
-    \\0, \quad A_i==True
-    \end{cases}
-    $$
+      $$
+      self_i=
+      \begin{cases}self_i,\quad A_i==False
+      \\0, \quad A_i==True
+      \end{cases}
+      $$
 
   5. 以self的倒数第二维进行cumsum累加。从维度视角来看的某个元素（其它维度下标不变，当前维度下标依次递增），$selfTemp\_{i}$是输出张量中对应位置的元素。
 
@@ -88,7 +87,6 @@
   </tbody></table>
 
 - Kirin X90/Kirin 9030 处理器系列产品: 不支持BFLOAT16。
-
 
 ## 约束说明
 

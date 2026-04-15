@@ -21,6 +21,7 @@ $$
 ## 函数原型
 
 每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnAxpyV2GetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnAxpyV2”接口执行计算。
+
 ```Cpp
 aclnnStatus aclnnAxpyV2GetWorkspaceSize(
   const aclTensor *self, 
@@ -128,7 +129,6 @@ aclnnStatus aclnnAxpyV2(
   </tbody>
   </table>
   
-  
 - **返回值：**
   
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
@@ -203,7 +203,6 @@ aclnnStatus aclnnAxpyV2(
     </tr>
   </tbody>
   </table>
-
 
 - **返回值：**
 

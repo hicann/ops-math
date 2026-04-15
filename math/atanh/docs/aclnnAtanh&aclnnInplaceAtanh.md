@@ -2,7 +2,6 @@
 
 [📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/atanh)
 
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -27,6 +26,7 @@
 ## 函数原型
 
 aclnnAtanh和aclnnInplaceAtanh实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
+
 - aclnnAtanh：需新建一个输出张量对象存储计算结果。
 - aclnnInplaceAtanh：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 

@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |   √     |
 | <term>Atlas 训练系列产品</term>                              |   √     |
 
-
 ## 功能说明
 
 - 接口功能：沿着新维度连接张量序列。
@@ -206,7 +205,6 @@ aclnnStatus aclnnStack(
 
 - 确定性计算：
   - aclnnStack默认确定性实现。
-
 
 ## 调用示例
 

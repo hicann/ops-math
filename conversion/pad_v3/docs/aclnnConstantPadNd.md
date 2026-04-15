@@ -232,11 +232,11 @@
         <td>当self的数据格式不为ND，out的数据格式与self的数据格式不一致。</td>
       </tr>
       <tr>
- 	      <td>当self的数据类型为fp8时，pad中元素不能为负数。</td>
- 	    </tr>
+      <td>当self的数据类型为fp8时，pad中元素不能为负数。</td>
+      </tr>
       <tr>
- 	      <td>当self的数据类型为HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0时，value不为0。</td>
- 	    </tr>
+      <td>当self的数据类型为HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0时，value不为0。</td>
+      </tr>
     </tbody>
     </table>
 
@@ -286,7 +286,6 @@
 
 - 确定性计算：
   - aclnnConstantPadNd默认确定性实现。
-
 
 ## 调用示例
 
