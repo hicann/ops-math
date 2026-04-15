@@ -97,4 +97,4 @@
 
 | 调用方式  | 样例代码   | 说明    |
 | :-------- | :---------- | :------------------------ |
-|  图模式  |[test_geir_depht_to_space](examples/test_geir_depth_to_space.cpp) | 通过[算子IR](./op_graph/depth_to_space_proto.h)构图方式调用DepthToSpace算子。 |
+|  图模式  |[test_geir_depth_to_space](examples/test_geir_depth_to_space.cpp) | 通过[算子IR](./op_graph/depth_to_space_proto.h)构图方式调用DepthToSpace算子。 |

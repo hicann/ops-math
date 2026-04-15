@@ -64,13 +64,6 @@
       <td>NHWC、NCHW</td>
     </tr>
     <tr>
-      <td>filter</td>
-      <td>输入（可选）</td>
-      <td>可选输入张量，在某些特定应用场景中使用</td>
-      <td>与x一致</td>
-      <td>NHWC、NCHW</td>
-    </tr>
-    <tr>
       <td>block_size</td>
       <td>属性（必需）</td>
       <td>表示空间块的尺寸大小，必须是大于1的整数。高度和宽度维度必须能被block_size整除</td>
@@ -95,5 +88,4 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | :-------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| aclnn接口 | [test_aclnn_channel_shuffle](../transpose/examples/test_aclnn_channel_shuffle.cpp) | 通过[aclnn_channel_shuffle](../transpose/docs/aclnnChannelShuffle.md)接口方式调用SpaceToDepth算子。 |
-| aclnn接口 | [test_aclnn_permute](../transpose/examples/test_aclnn_permute.cpp) | 通过[aclnn_permute](../transpose/docs/aclnnPermute.md)接口方式调用SpaceToDepth算子。 |
+|  图模式  |[test_geir_space_to_depth](examples/test_geir_space_to_depth.cpp) | 通过[算子IR](./op_graph/space_to_depth_proto.h)构图方式调用SpaceToDepth算子。 |

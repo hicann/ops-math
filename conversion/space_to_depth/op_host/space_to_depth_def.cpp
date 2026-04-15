@@ -39,12 +39,6 @@ class SpaceToDepth : public OpDef {
             .Format(format)
             .UnknownShapeFormat(format);
 
-        this->Input("filter")
-            .ParamType(OPTIONAL)
-            .DataType(dataType)
-            .Format(format)
-            .UnknownShapeFormat(format);
-
         this->Output("y")
             .ParamType(REQUIRED)
             .DataType(dataType)

@@ -13,16 +13,6 @@
           "shape": [
             -2
           ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "float32",
-          "format": "NHWC",
-          "paramType": "optional",
-          "shape": [
-            -2
-          ]
         }
       ],
       "outputs": [
@@ -59,16 +49,6 @@
           "dtype": "float32",
           "format": "NCHW",
           "paramType": "required",
-          "shape": [
-            -2
-          ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "float32",
-          "format": "NCHW",
-          "paramType": "optional",
           "shape": [
             -2
           ]
@@ -111,16 +91,6 @@
           "shape": [
             -2
           ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "float16",
-          "format": "NHWC",
-          "paramType": "optional",
-          "shape": [
-            -2
-          ]
         }
       ],
       "outputs": [
@@ -157,16 +127,6 @@
           "dtype": "float16",
           "format": "NCHW",
           "paramType": "required",
-          "shape": [
-            -2
-          ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "float16",
-          "format": "NCHW",
-          "paramType": "optional",
           "shape": [
             -2
           ]
@@ -209,16 +169,6 @@
           "shape": [
             -2
           ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "int8",
-          "format": "NHWC",
-          "paramType": "optional",
-          "shape": [
-            -2
-          ]
         }
       ],
       "outputs": [
@@ -255,16 +205,6 @@
           "dtype": "int8",
           "format": "NCHW",
           "paramType": "required",
-          "shape": [
-            -2
-          ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "int8",
-          "format": "NCHW",
-          "paramType": "optional",
           "shape": [
             -2
           ]
@@ -307,16 +247,6 @@
           "shape": [
             -2
           ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "int16",
-          "format": "NHWC",
-          "paramType": "optional",
-          "shape": [
-            -2
-          ]
         }
       ],
       "outputs": [
@@ -353,16 +283,6 @@
           "dtype": "int16",
           "format": "NCHW",
           "paramType": "required",
-          "shape": [
-            -2
-          ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "int16",
-          "format": "NCHW",
-          "paramType": "optional",
           "shape": [
             -2
           ]
@@ -405,16 +325,6 @@
           "shape": [
             -2
           ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "int32",
-          "format": "NHWC",
-          "paramType": "optional",
-          "shape": [
-            -2
-          ]
         }
       ],
       "outputs": [
@@ -451,16 +361,6 @@
           "dtype": "int32",
           "format": "NCHW",
           "paramType": "required",
-          "shape": [
-            -2
-          ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "int32",
-          "format": "NCHW",
-          "paramType": "optional",
           "shape": [
             -2
           ]
@@ -503,16 +403,6 @@
           "shape": [
             -2
           ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "uint8",
-          "format": "NHWC",
-          "paramType": "optional",
-          "shape": [
-            -2
-          ]
         }
       ],
       "outputs": [
@@ -549,16 +439,6 @@
           "dtype": "uint8",
           "format": "NCHW",
           "paramType": "required",
-          "shape": [
-            -2
-          ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "uint8",
-          "format": "NCHW",
-          "paramType": "optional",
           "shape": [
             -2
           ]
@@ -601,16 +481,6 @@
           "shape": [
             -2
           ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "uint16",
-          "format": "NHWC",
-          "paramType": "optional",
-          "shape": [
-            -2
-          ]
         }
       ],
       "outputs": [
@@ -647,16 +517,6 @@
           "dtype": "uint16",
           "format": "NCHW",
           "paramType": "required",
-          "shape": [
-            -2
-          ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "uint16",
-          "format": "NCHW",
-          "paramType": "optional",
           "shape": [
             -2
           ]
@@ -699,16 +559,6 @@
           "shape": [
             -2
           ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "uint32",
-          "format": "NHWC",
-          "paramType": "optional",
-          "shape": [
-            -2
-          ]
         }
       ],
       "outputs": [
@@ -745,16 +595,6 @@
           "dtype": "uint32",
           "format": "NCHW",
           "paramType": "required",
-          "shape": [
-            -2
-          ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "uint32",
-          "format": "NCHW",
-          "paramType": "optional",
           "shape": [
             -2
           ]
@@ -797,16 +637,6 @@
           "shape": [
             -2
           ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "uint64",
-          "format": "NHWC",
-          "paramType": "optional",
-          "shape": [
-            -2
-          ]
         }
       ],
       "outputs": [
@@ -843,16 +673,6 @@
           "dtype": "uint64",
           "format": "NCHW",
           "paramType": "required",
-          "shape": [
-            -2
-          ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "uint64",
-          "format": "NCHW",
-          "paramType": "optional",
           "shape": [
             -2
           ]
@@ -895,16 +715,6 @@
           "shape": [
             -2
           ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "int64",
-          "format": "NHWC",
-          "paramType": "optional",
-          "shape": [
-            -2
-          ]
         }
       ],
       "outputs": [
@@ -941,16 +751,6 @@
           "dtype": "int64",
           "format": "NCHW",
           "paramType": "required",
-          "shape": [
-            -2
-          ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "int64",
-          "format": "NCHW",
-          "paramType": "optional",
           "shape": [
             -2
           ]
@@ -993,16 +793,6 @@
           "shape": [
             -2
           ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "bfloat16",
-          "format": "NHWC",
-          "paramType": "optional",
-          "shape": [
-            -2
-          ]
         }
       ],
       "outputs": [
@@ -1039,16 +829,6 @@
           "dtype": "bfloat16",
           "format": "NCHW",
           "paramType": "required",
-          "shape": [
-            -2
-          ]
-        },
-        {
-          "name": "filter",
-          "index": 1,
-          "dtype": "bfloat16",
-          "format": "NCHW",
-          "paramType": "optional",
           "shape": [
             -2
           ]
