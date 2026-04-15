@@ -8,24 +8,16 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef AICPU_KERNELS_NORMALIZED_NEG_H
-#define AICPU_KERNELS_NORMALIZED_NEG_H
+#ifndef COSH_PROTO_H_
+#define COSH_PROTO_H_
 
-#include "cpu_kernel.h"
-#include "unsupported/Eigen/CXX11/Tensor"
+#include "graph/operator_reg.h"
 
-namespace aicpu {
+namespace ge {
+REG_OP(Cosh)
+    .INPUT(x, TensorType::UnaryDataType())
+    .OUTPUT(y, TensorType::UnaryDataType())
+    .OP_END_FACTORY_REG(Cosh)
+}  // namespace ge
 
-class NegCpuKernel : public CpuKernel {
- public:
-  NegCpuKernel() = default;
-  ~NegCpuKernel() override = default;
-
-  uint32_t Compute(CpuKernelContext &ctx) override;
-
- private:
-  template <typename T>
-  uint32_t DoCompute(const CpuKernelContext &ctx);
-};
-}  // namespace aicpu
-#endif
+#endif  // COSH_PROTO_H_

@@ -802,8 +802,8 @@
     <td>×</td>
     <td>×</td>
     <td>×</td>
-    <td>AI Core</td>
-    <td>计算输入Tensor（A）中每个元素和输入标量（B）的按位与结果。</td>
+    <td>AI Core/AI CPU</td>
+    <td>返回输入张量元素进行的双曲余弦值结果。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1692,7 +1692,7 @@
     <td>×</td>
     <td>×</td>
     <td>×</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
   <tr>

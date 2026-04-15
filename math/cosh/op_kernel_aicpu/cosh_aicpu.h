@@ -8,24 +8,16 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef AICPU_KERNELS_NORMALIZED_NEG_H
-#define AICPU_KERNELS_NORMALIZED_NEG_H
+#ifndef AICPU_KERNELS_NORMALIZED_COSH_AICPU_H_
+#define AICPU_KERNELS_NORMALIZED_COSH_AICPU_H_
 
 #include "cpu_kernel.h"
-#include "unsupported/Eigen/CXX11/Tensor"
 
 namespace aicpu {
-
-class NegCpuKernel : public CpuKernel {
+class CoshCpuKernel final : public CpuKernel {
  public:
-  NegCpuKernel() = default;
-  ~NegCpuKernel() override = default;
-
-  uint32_t Compute(CpuKernelContext &ctx) override;
-
- private:
-  template <typename T>
-  uint32_t DoCompute(const CpuKernelContext &ctx);
+  std::uint32_t Compute(CpuKernelContext &ctx) override;
 };
 }  // namespace aicpu
-#endif
+
+#endif  // AICPU_KERNELS_NORMALIZED_COSH_AICPU_H_

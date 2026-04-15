@@ -43,14 +43,14 @@ $$
       <td>self</td>
       <td>输入</td>
       <td>待进行cosh计算的入参，公式中的input_i。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>out</td>
       <td>输出</td>
       <td>待进行cosh计算的出参，公式中的out_i。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
   </tbody></table>
@@ -66,3 +66,4 @@ $$
 | 调用方式 | 说明                                                           |
 |--------------|--------------------------------------------------------------|
 | aclnn调用 | 通过[aclnnCosh](./docs/aclnnCosh&aclnnInplaceCosh.md)接口方式调用Cosh算子。 |
+| 图模式调用 | 通过[算子IR](op_graph/cosh_proto.h)构图方式调用Cosh算子。             |

@@ -8,24 +8,18 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef AICPU_KERNELS_NORMALIZED_NEG_H
-#define AICPU_KERNELS_NORMALIZED_NEG_H
+#include "register/op_impl_registry.h"
+#include "log/log.h"
 
-#include "cpu_kernel.h"
-#include "unsupported/Eigen/CXX11/Tensor"
+using namespace ge;
+namespace ops {
+static ge::graphStatus InferDataTypeForCosh(gert::InferDataTypeContext *context)
+{
+    OP_LOGI("Begin InferDataTypeForCosh");
+    const ge::DataType xDataType = context->GetInputDataType(0);
+    context->SetOutputDataType(0, xDataType);
+    return ge::GRAPH_SUCCESS;
+}
 
-namespace aicpu {
-
-class NegCpuKernel : public CpuKernel {
- public:
-  NegCpuKernel() = default;
-  ~NegCpuKernel() override = default;
-
-  uint32_t Compute(CpuKernelContext &ctx) override;
-
- private:
-  template <typename T>
-  uint32_t DoCompute(const CpuKernelContext &ctx);
-};
-}  // namespace aicpu
-#endif
+IMPL_OP(Cosh).InferDataType(InferDataTypeForCosh);
+}  // namespace ops

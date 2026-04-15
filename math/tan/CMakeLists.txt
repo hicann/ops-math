@@ -17,3 +17,7 @@ foreach(SUB_DIR ${CURRENT_DIRS})
         add_subdirectory(${SUB_DIR})
     endif()
 endforeach()
+
+if(ENABLE_TEST AND (UT_TEST_ALL OR OP_KERNEL_AICPU_UT))
+    add_aicpu_op_test_case(tan)
+endif()

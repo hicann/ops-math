@@ -8,24 +8,18 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef AICPU_KERNELS_NORMALIZED_NEG_H
-#define AICPU_KERNELS_NORMALIZED_NEG_H
+#ifndef TAN_PROTO_H_
+#define TAN_PROTO_H_
 
-#include "cpu_kernel.h"
-#include "unsupported/Eigen/CXX11/Tensor"
+#include "graph/operator_reg.h"
 
-namespace aicpu {
+namespace ge {
+REG_OP(Tan)
+    .INPUT(x, TensorType({DT_FLOAT, DT_BF16, DT_FLOAT16, DT_DOUBLE, DT_COMPLEX64,
+                          DT_COMPLEX128, DT_INT32}))
+    .OUTPUT(y, TensorType({DT_FLOAT, DT_BF16, DT_FLOAT16, DT_DOUBLE, DT_COMPLEX64,
+                           DT_COMPLEX128, DT_INT32}))
+    .OP_END_FACTORY_REG(Tan)
+}  // namespace ge
 
-class NegCpuKernel : public CpuKernel {
- public:
-  NegCpuKernel() = default;
-  ~NegCpuKernel() override = default;
-
-  uint32_t Compute(CpuKernelContext &ctx) override;
-
- private:
-  template <typename T>
-  uint32_t DoCompute(const CpuKernelContext &ctx);
-};
-}  // namespace aicpu
-#endif
+#endif  // TAN_PROTO_H_
