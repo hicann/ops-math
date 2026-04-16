@@ -44,7 +44,6 @@ class SelectV2 : public OpDef {
                 .PrecisionReduceFlag(true)
                 .ExtendCfgInfo("opFile.value", "select_v2_apt");
             this->AICore().AddConfig("ascend950", aicoreConfig);
-            this->AICore().AddConfig("mc62cm12a", aicoreConfig);
         }
 };
 

@@ -43,7 +43,6 @@ class Abs : public OpDef {
                 .PrecisionReduceFlag(true)
                 .ExtendCfgInfo("opFile.value", "abs_apt");
             this->AICore().AddConfig("ascend950", aicoreConfig);
-            this->AICore().AddConfig("mc62cm12a", aicoreConfig);
         }
 };
 

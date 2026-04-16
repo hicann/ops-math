@@ -96,7 +96,6 @@ namespace ops {
                 .NeedCheckSupportFlag(false)
                 .ExtendCfgInfo("opFile.value", "strided_slice_v2_apt");
             this->AICore().AddConfig("ascend950", aicore_config);
-            this->AICore().AddConfig("mc62cm12a", aicore_config);
         }
     };
 

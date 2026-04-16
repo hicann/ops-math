@@ -40,7 +40,6 @@ class LogicalNot : public OpDef {
                 .PrecisionReduceFlag(true)
                 .ExtendCfgInfo("opFile.value", "logical_not_apt");
             this->AICore().AddConfig("ascend950", aicoreConfig);
-            this->AICore().AddConfig("mc62cm12a", aicoreConfig);
         }
 };
 

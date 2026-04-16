@@ -50,7 +50,6 @@ class ReduceLogSumExp : public OpDef {
             .DynamicShapeSupportFlag(true)
             .ExtendCfgInfo("opFile.value", "reduce_log_sum_exp_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
-        this->AICore().AddConfig("mc62cm12a", aicoreConfig);
     }
 };
  

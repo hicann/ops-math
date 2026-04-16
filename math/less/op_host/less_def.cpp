@@ -48,7 +48,6 @@ public:
             .ExtendCfgInfo("opFile.value", "less_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
         this->AICore().AddConfig("ascend910_55", aicoreConfig);
-        this->AICore().AddConfig("mc62cm12a", aicoreConfig);
     }
 };
 

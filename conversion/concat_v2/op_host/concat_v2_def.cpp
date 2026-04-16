@@ -91,7 +91,6 @@ public:
             .ExtendCfgInfo("opFile.value", "concat_v2_apt")
             .ExtendCfgInfo("aclnnSupport.value", "support_aclnn");
         this->AICore().AddConfig("ascend950", aicoreConfig);
-        this->AICore().AddConfig("mc62cm12a", aicoreConfig);
     }
 };
 

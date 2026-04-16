@@ -287,6 +287,13 @@ function(check_op_supported OP_NAME OP_DIR COMPUTE_UNIT OP_SUPPORTED_COMPUTE_UNI
     COMMAND bash -c "${cmd}"
     OUTPUT_VARIABLE op_supported_compute_unit
     )
+  if(NOT ${MODULE_EXT} STREQUAL "")
+    set(cmd_ext "find ${MODULE_EXT} -name ${OP_NAME}_*_def.cpp -exec grep 'OpAICoreConfig.*\"${COMPUTE_UNIT}\"' {} \;")
+    execute_process(
+      COMMAND bash -c "${cmd_ext}"
+      OUTPUT_VARIABLE op_supported_compute_unit
+      )
+  endif()
   if(NOT op_supported_compute_unit)
     set(op_supported_compute_unit FALSE)
   else()

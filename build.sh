@@ -21,7 +21,7 @@ SUPPORTED_LONG_OPTS=(
   "pkg" "asan" "valgrind" "make_clean" "static" "build-type=" "no_force" "simulator"
   "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "opkernel_aicpu_test"
   "run_example" "genop=" "genop_aicpu=" "experimental" "cann_3rd_lib_path" "mssanitizer" "oom" "onnxplugin" "tfplugin"
-  "dump_cce" "bisheng_flags=" "kernel_template_input="
+  "dump_cce" "bisheng_flags=" "kernel_template_input=" "module_extension="
 )
 
 in_array() {
@@ -726,6 +726,7 @@ checkopts() {
   USE_CMD="$*"
   BISHENG_FLAGS=""
   KERNEL_TEMPLATE_INPUT=""
+  MODULE_EXT=""
 
   ENABLE_MSSANITIZER=FALSE
   ENABLE_OOM=FALSE
@@ -854,6 +855,9 @@ checkopts() {
           ;;
         build-type=*)
           BUILD_TYPE=${OPTARG#*=}
+          ;;
+        module_extension=*)
+          MODULE_EXT=${OPTARG#*=}
           ;;
         mssanitizer) ENABLE_MSSANITIZER=TRUE ;;
         oom) ENABLE_OOM=TRUE ;;
@@ -1090,6 +1094,7 @@ assemble_cmake_args() {
     CMAKE_ARGS="$CMAKE_ARGS -DASCEND_COMPUTE_UNIT=$COMPUTE_UNIT"
   fi
   CMAKE_ARGS="$CMAKE_ARGS -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}"
+  CMAKE_ARGS="$CMAKE_ARGS -DMODULE_EXT=${MODULE_EXT}"
 }
 
 cmake_init() {

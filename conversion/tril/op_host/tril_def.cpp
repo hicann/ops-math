@@ -58,7 +58,6 @@ public:
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "tril_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
-        this->AICore().AddConfig("mc62cm12a", aicoreConfig);
     }
 };
 OP_ADD(Tril);

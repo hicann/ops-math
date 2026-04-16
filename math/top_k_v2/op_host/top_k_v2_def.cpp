@@ -99,7 +99,6 @@ public:
             .ExtendCfgInfo("opFile.value", "top_k_v2_apt")
             .ExtendCfgInfo("opInterface.value",  "top_k_v2");
         this->AICore().AddConfig("ascend950", aicoreConfig);
-        this->AICore().AddConfig("mc62cm12a", aicoreConfig);
     }
 };
 OP_ADD(TopKV2);

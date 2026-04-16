@@ -56,7 +56,6 @@ public:
         .PrecisionReduceFlag(true)
         .ExtendCfgInfo("opFile.value", "greater_apt");
     this->AICore().AddConfig("ascend950", aicoreConfig);
-    this->AICore().AddConfig("mc62cm12a", aicoreConfig);
   }
 };
 

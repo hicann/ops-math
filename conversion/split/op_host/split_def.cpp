@@ -70,7 +70,6 @@ class Split : public OpDef {
             .DynamicShapeSupportFlag(true)
             .ExtendCfgInfo("opFile.value", "split_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
-        this->AICore().AddConfig("mc62cm12a", aicoreConfig);
     }
 };
 

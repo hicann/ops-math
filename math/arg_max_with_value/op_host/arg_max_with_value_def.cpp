@@ -55,7 +55,6 @@ public:
             .ExtendCfgInfo("opFile.value", "arg_max_with_value_apt");
 
         this->AICore().AddConfig("ascend950", aicore_config);
-        this->AICore().AddConfig("mc62cm12a", aicore_config);
     }
 };
 
