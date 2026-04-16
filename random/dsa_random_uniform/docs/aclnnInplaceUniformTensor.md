@@ -122,7 +122,7 @@ aclnnStatus aclnnInplaceUniformTensor(
       <td>输入</td>
       <td>作为offsetTensor的累加量。</td>
       <td>-</td>
-      <td>-</td>
+      <td>INT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>

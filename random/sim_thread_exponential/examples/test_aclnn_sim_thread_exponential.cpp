@@ -87,14 +87,14 @@ int main() {
     ret = CreateAclTensor(selfRefHostData, selfRefShape, &selfRefDeviceAddr, aclDataType::ACL_FLOAT, &selfRef);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     uint64_t count = 10;
-    double lambd = 1.0;
+    double lambda = 1.0;
     uint64_t seed = 5;
     uint64_t offset = 0;
     // 3. 调用CANN算子库API，需要修改为具体的API
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
     // 调用aclnnSimThreadExponential第一段接口
-    ret = aclnnSimThreadExponentialGetWorkspaceSize(selfRef, count, lambd, seed, offset, &workspaceSize, &executor);
+    ret = aclnnSimThreadExponentialGetWorkspaceSize(selfRef, count, lambda, seed, offset, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSimThreadExponentialGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
@@ -104,7 +104,7 @@ int main() {
     }
     // 调用aclnnSimThreadExponential第二段接口
     ret = aclnnSimThreadExponential(workspaceAddr, workspaceSize, executor, stream);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSimRandomUniform failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSimThreadExponential failed. ERROR: %d\n", ret); return ret);
     // 4. 固定写法，同步等待任务执行结束
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);

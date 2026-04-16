@@ -32,50 +32,228 @@
     - aclnnInplaceBernoulli：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
   - 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnBernoulliGetWorkspaceSize”或者“aclnnInplaceBernoulliGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnBernoulli”或者“aclnnInplaceBernoulli”接口执行计算。
 
-    - `aclnnStatus aclnnBernoulliGetWorkspaceSize(const aclTensor* self, const aclScalar* prob, int64_t seed, int64_t offset, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-    - `aclnnStatus aclnnBernoulli(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
-    - `aclnnStatus aclnnInplaceBernoulliGetWorkspaceSize(const aclTensor* selfRef, const aclScalar* prob, int64_t seed, int64_t offset, uint64_t* workspaceSize, aclOpExecutor** executor)`
-    - `aclnnStatus aclnnInplaceBernoulli(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnBernoulliGetWorkspaceSize(
+  const aclTensor*  self, 
+  const aclScalar*  prob, 
+  int64_t           seed, 
+  int64_t           offset, 
+  aclTensor*        out, 
+  uint64_t*         workspaceSize, 
+  aclOpExecutor**   executor)
+```
+
+```Cpp
+aclnnStatus aclnnBernoulli(
+  void*           workspace, 
+  uint64_t        workspaceSize, 
+  aclOpExecutor*  executor, 
+  aclrtStream     stream)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceBernoulliGetWorkspaceSize(
+  const aclTensor*  selfRef, 
+  const aclScalar*  prob, 
+  int64_t           seed, 
+  int64_t           offset, 
+  uint64_t*         workspaceSize, 
+  aclOpExecutor**   executor)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceBernoulli(
+  void*           workspace, 
+  uint64_t        workspaceSize, 
+  aclOpExecutor*  executor, 
+  aclrtStream     stream)
+```
 
 ## aclnnBernoulliGetWorkspaceSize
 
-  - **参数说明：**
-    - self（aclTensor*，计算输入）：用于指定输出out的shape，Device侧的aclTensor，数据类型需要与out一致，shape支持0-8维，且shape需要与out一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-      - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL。
-      - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16。
-    - prob（aclScalar*，计算输入）：公式中的prob，Host侧的aclScalar，满足$ 0≤prob≤1 $。
-      - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE。
-      - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、BFLOAT16。
-    - seed（int64_t，计算输入）：Host侧的整型，设置随机数生成器的种子。
-    - offset（int64_t，计算输入）：Host侧的整型，设置随机数偏移量。
-    - out（aclTensor*，计算输出）：公式中的out，Device侧的aclTensor，数据类型需要与self一致，shape支持0-8维，且shape需要与self一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-      - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL。
-      - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16。
-    - workspaceSize（uint64_t*，出参）：返回需要在Device侧申请的workspace大小。
-    - executor（aclOpExecutor**，出参）：返回op执行器，包含了算子计算流程。
+- **参数说明：**
 
-  - **返回值：**
+  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <col style="width: 220px">
+  <col style="width: 124px">
+  <col style="width: 212px">
+  <col style="width: 250px">
+  <col style="width: 305px">
+  <col style="width: 114px">
+  <col style="width: 135px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>输入tensor。</td>
+      <td><ul><li>支持空Tensor。</li><li>数据类型需要与out一致。</li><li>shape需要与out的一致。</li></ul></td>
+      <td>FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>prob（aclScalar*）</td>
+      <td>输入</td>
+      <td>公式中的prob。</td>
+      <td>满足0≤prob≤1。</td>
+      <td>FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>seed（int64_t）</td>
+      <td>输入</td>
+      <td>设置随机数生成器的种子。</td>
+      <td>-</td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>offset（int64_t）</td>
+      <td>输入</td>
+      <td>设置随机数偏移量。</td>
+      <td>-</td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>公式中的<code>out</code>。</td>
+      <td><ul><li>支持空Tensor。</li><li>数据类型需要与self一致。</li><li>shape需要与self的一致。</li></ul></td>
+      <td>FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
 
-    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  - <term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
-    ```
-    第一段接口完成入参校验，出现如下场景时报错：
-    返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的self、prob或out是空指针。
-    返回161002（ACLNN_ERR_PARAM_INVALID）：1. self或out的数据类型和数据格式不在支持的范围之内。
-                                          2. prob的数据类型不在支持的范围之内。
-                                          3. self和out的数据类型不一致。
-                                          4. prob不满足0≤prob≤1。
-                                          5. self或out的维度大于8维。
-                                          6. self和out的shape不一致。
-    ```
+- **返回值：**
+
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+
+  第一段接口完成入参校验，出现如下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的self、prob或out是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
+      <td>self或out的数据类型或数据格式不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>prob的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self和out的数据类型不一致。</td>
+    </tr>
+    <tr>
+      <td>prob不满足0≤prob≤1。</td>
+    </tr>
+    <tr>
+      <td>self或out的维度大于8维。</td>
+    </tr>
+    <tr>
+      <td>self和out的shape不一致。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnBernoulli
 
 - **参数说明：**
-  - workspace（void*，入参）：在Device侧申请的workspace内存地址。
-  - workspaceSize（uint64_t，入参）：在Device侧申请的workspace大小，由第一段接口aclnnBernoulliGetWorkspaceSize获取。
-  - executor（aclOpExecutor*，入参）：op执行器，包含了算子计算流程。
-  - stream（aclrtStream，入参）：指定执行任务的Stream。
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 872px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnBernoulliGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
 
 - **返回值：**
 
@@ -83,40 +261,175 @@
 
 ## aclnnInplaceBernoulliGetWorkspaceSize
 
-  - **参数说明：**
-    - selfRef（aclTensor*，计算输入/输出）：公式中的out，Device侧的aclTensor，shape支持0-8维，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-      - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL。
-      - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16。
-    - prob（aclScalar*，计算输入）：公式中的prob，Host侧的aclScalar，满足$ 0≤prob≤1 $。
-      - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT16、FLOAT、DOUBLE。
-      - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT16、FLOAT、DOUBLE、BFLOAT16。
-    - seed（int64_t，计算输入）：Host侧的整型，设置随机数偏移量。
-    - offset（int64_t，计算输入）：Host侧的整型，设置随机数偏移量。
-    - workspaceSize（uint64_t*，出参）：返回需要在Device侧申请的workspace大小。
-    - executor（aclOpExecutor**，出参）：返回op执行器，包含了算子计算流程。
+- **参数说明：**
 
-  - **返回值：**
+  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <col style="width: 220px">
+  <col style="width: 124px">
+  <col style="width: 212px">
+  <col style="width: 200px">
+  <col style="width: 305px">
+  <col style="width: 114px">
+  <col style="width: 140px">
+  <col style="width: 130px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>selfRef（aclTensor*）</td>
+      <td>输入/输出</td>
+      <td>公式中的out。</td>
+      <td>支持空Tensor。</td>
+      <td>FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16</td>
+      <td>ND</td>
+      <td>0-8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>prob（aclScalar*）</td>
+      <td>输入</td>
+      <td>公式中的prob。</td>
+      <td>满足0≤prob≤1。</td>
+      <td>FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>seed（int64_t）</td>
+      <td>输入</td>
+      <td>设置随机数生成器的种子。</td>
+      <td>-</td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>offset（int64_t）</td>
+      <td>输入</td>
+      <td>设置随机数偏移量。</td>
+      <td>-</td>
+      <td>INT64</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody>
+  </table>
 
-    aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+  - <term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
 
-    ```
-    第一段接口完成入参校验，出现如下场景时报错：
-    返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的selfRef或prob是空指针。
-    返回161002（ACLNN_ERR_PARAM_INVALID）：1. selfRef的数据类型和数据格式不在支持的范围之内。
-                                          2. prob的数据类型不在支持的范围之内。
-                                          3. prob不满足0≤prob≤1。
-                                          4. selfRef的维度大于8维。
-    ```
+- **返回值：**
+
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
+
+  第一段接口完成入参校验，出现如下场景时报错：
+
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 288px">
+  <col style="width: 114px">
+  <col style="width: 747px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回码</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的selfRef或prob是空指针。</td>
+    </tr>
+    <tr>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
+      <td>selfRef的数据类型或数据格式不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>prob的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>prob不满足0≤prob≤1。</td>
+    </tr>
+    <tr>
+      <td>selfRef的维度大于8维。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnInplaceBernoulli
 
-  - **参数说明：**
-    - workspace（void*，入参）：在Device侧申请的workspace内存地址。
-    - workspaceSize（uint64_t，入参）：在Device侧申请的workspace大小，由第一段接口aclnnInplaceBernoulliGetWorkspaceSize获取。
-    - executor（aclOpExecutor*，入参）：op执行器，包含了算子计算流程。
-    - stream（aclrtStream，入参）：指定执行任务的Stream。
+- **参数说明：**
 
-  - **返回值：**
+  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <col style="width: 153px">
+  <col style="width: 124px">
+  <col style="width: 872px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>workspace</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace内存地址。</td>
+    </tr>
+    <tr>
+      <td>workspaceSize</td>
+      <td>输入</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceBernoulliGetWorkspaceSize获取。</td>
+    </tr>
+    <tr>
+      <td>executor</td>
+      <td>输入</td>
+      <td>op执行器，包含了算子计算流程。</td>
+    </tr>
+    <tr>
+      <td>stream</td>
+      <td>输入</td>
+      <td>指定执行任务的Stream。</td>
+    </tr>
+  </tbody>
+  </table>
+
+- **返回值：**
 
     aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
