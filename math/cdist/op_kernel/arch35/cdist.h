@@ -694,6 +694,9 @@ __aicore__ inline void Cdist<T>::ProcessNoSplitM(uint32_t bOffset, uint32_t pOff
     for (uint32_t rIdx = 0; rIdx < ubLoopNumR_; rIdx++) {
         rOffset = rOffsetBlock + rIdx * ubFactorR_;
         rSize_ = (rIdx == ubLoopNumR_ - 1) ? (blockFactorR - ubFactorR_ * rIdx) : ubFactorR_;
+        if (rSize_ == 0) {
+            continue;
+        }
         RAlign_ = ((rSize_ * sizeof(T) + BLOCK_SIZE - 1) / BLOCK_SIZE * BLOCK_SIZE) / sizeof(T);
         offsetX2 = bOffset * R_ * M_ + rOffset * M_;
         offsetY = bOffset * P_ * R_ + pOffset * R_ + rOffset;
@@ -717,6 +720,9 @@ __aicore__ inline void Cdist<T>::ProcessSplitM(uint32_t bOffset, uint32_t pOffse
     for (uint32_t rIdx = 0; rIdx < ubLoopNumR_; rIdx++) {
         rOffset = rOffsetBlock + rIdx * ubFactorR_;
         rSize_ = (rIdx == ubLoopNumR_ - 1) ? (blockFactorR - ubFactorR_ * rIdx) : ubFactorR_;
+        if (rSize_ == 0) {
+            continue;
+        }
         processNum = bSize_ * pSize_ * rSize_;
         offsetY = bOffset * P_ * R_ + pOffset * R_ + rOffset;
         if constexpr (sizeof(T) != sizeof(float)) {
@@ -778,9 +784,15 @@ __aicore__ inline void Cdist<T>::Process()
     for(uint32_t bIdx = 0; bIdx < ubLoopNumB_; bIdx++){
         bOffset = bOffsetBlock + bIdx * ubFactorB_;
         bSize_ = (bIdx == ubLoopNumB_ - 1) ? (blockFactorB - ubFactorB_ * bIdx) : ubFactorB_;
+        if (bSize_ == 0) {
+            continue;
+        }
         for (uint32_t pIdx = 0; pIdx < ubLoopNumP_; pIdx++) {
             pOffset = pOffsetBlock + pIdx * ubFactorP_;
             pSize_ = (pIdx == ubLoopNumP_ - 1) ? (blockFactorP - ubFactorP_ * pIdx) : ubFactorP_;
+            if (pSize_ == 0) {
+                continue;
+            }
             if (ubLoopNumM_ == 1) {
                 ProcessNoSplitM(bOffset, pOffset, rOffsetBlock, blockFactorR);
             } else {
