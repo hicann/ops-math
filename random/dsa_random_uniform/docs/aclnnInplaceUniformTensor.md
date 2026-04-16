@@ -71,11 +71,11 @@ aclnnStatus aclnnInplaceUniformTensor(
       <td>selfRef</td>
       <td>输入/输出</td>
       <td>输入输出tensor。</td>
-      <td>-</td>
+      <td>支持空tensor场景。</td>
       <td>BFLOAT16、FLOAT16、FLOAT32、INT32、INT64、INT16、INT8、UINT8、DOUBLE</td>
       <td>ND</td>
-      <td>-</td>
-      <td>√</td>
+      <td>1-8</td>
+      <td>×</td>
     </tr>
     <tr>
       <td>from</td>
@@ -104,8 +104,8 @@ aclnnStatus aclnnInplaceUniformTensor(
       <td>-</td>
       <td>UINT64</td>
       <td>ND</td>
-      <td>[1]</td>
-      <td>√</td>
+      <td>1</td>
+      <td>×</td>
     </tr>
     <tr>
       <td>offsetTensor</td>
@@ -114,8 +114,8 @@ aclnnStatus aclnnInplaceUniformTensor(
       <td>-</td>
       <td>UINT64</td>
       <td>ND</td>
-      <td>[1]</td>
-      <td>√</td>
+      <td>1</td>
+      <td>×</td>
     </tr>
     <tr>
       <td>offset</td>
