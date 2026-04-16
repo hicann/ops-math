@@ -42,8 +42,8 @@ constexpr uint32_t SINGLE_CORE_PROCESS_SIZE = 8192;
 constexpr int32_t DIM_TWO = 2;
 
 constexpr size_t CAT_INPUT_NUM_32 = 32;
-constexpr size_t CAT_INPUT_NUM_REGBASE_512 = 512;
-constexpr size_t CAT_INPUT_NUM_V2_512 = 512;
+constexpr size_t CAT_INPUT_NUM_REGBASE_512 = 2048;
+constexpr size_t CAT_INPUT_NUM_V2_512 = 2048;
 
 static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_INT32, DataType::DT_INT64,  DataType::DT_FLOAT16,   DataType::DT_INT16,

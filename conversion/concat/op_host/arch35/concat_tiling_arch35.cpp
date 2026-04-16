@@ -68,7 +68,6 @@ constexpr int64_t PURE_COPY_SPLIT_DIM1_TILINGKEY = 20002;
 constexpr int64_t SIMT_PER_CORE_THRESHOLD = 65536; // 64k
 constexpr int64_t SIMT_TILINGKEY_PREFIX = 30000;
 constexpr int64_t SIMT_COMPARE_THRESHOLD = 1024;
-constexpr int64_t MAX_UINT32_NUM = 4294967295;
 constexpr int64_t SMALL_BAG = 128;
 constexpr int64_t ALL_DATA_SMALL = 8192;
 
@@ -696,7 +695,7 @@ inline static void SetTilingData(T& tilingData, ConcatTilingParam& param)
     tilingData.set_preLoadDim1(param.preLoadDim1Arr);
     tilingData.set_isNonContiguous(static_cast<int16_t>(param.isNonContiguous ? 1 : 0));
     if (param.isNonContiguous) {
-        uint32_t strideList[NON_CON_TENSOR_SIZE];
+        uint64_t strideList[NON_CON_TENSOR_SIZE];
         std::copy(param.strideList.begin(), param.strideList.end(), strideList);
         tilingData.set_strideList(strideList);
         std::copy(param.concatDimList.begin(), param.concatDimList.end(), strideList);
@@ -1304,14 +1303,11 @@ ge::graphStatus CheckNonContiguous(gert::TilingContext* context, ConcatTilingPar
                         return ge::GRAPH_FAILED);
                 } 
             }
-            param.strideList[i] = static_cast<uint32_t>(nonStrideI->GetStride(param.strideDim));
+            param.strideList[i] = static_cast<uint64_t>(nonStrideI->GetStride(param.strideDim));
         } else {
             param.strideList[i] = MergeDim(param.tensorList[i], param.strideDim + 1, param.tensorList[i].size());
         }
         param.concatDimList[i] = static_cast<uint32_t>(param.tensorList[i][param.dim]);
-        OP_CHECK_IF(param.strideList[i] >= MAX_UINT32_NUM, OP_LOGE(context->GetNodeName(),
-            "the stride of the non contiguous axis in a non contiguous tensor must be less than the maximum value of the uint32 type."),
-            return ge::GRAPH_FAILED);
         // 非连续tensor要校验，不满足尾轴大包；尾轴小包但stride大包；尾轴小包总体数据小包的场景，不支持非连续
         allData = MergeDim(param.tensorList[i], 0, param.tensorList[i].size());
         OP_CHECK_IF(!(param.tensorListDim1[i] * param.dtypeSize >= SMALL_BAG) 

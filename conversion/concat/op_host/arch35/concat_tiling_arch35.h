@@ -57,8 +57,8 @@ TILING_DATA_FIELD_DEF(int64_t, sameShapeTensorDim1);
 TILING_DATA_FIELD_DEF_ARR(int16_t, TILING_ARRAY_LENGTH, endTensorIdx);
 TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LENGTH, endTensorOffset);
 TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_PRELOAD_DIM1_LENGTH, preLoadDim1);
-TILING_DATA_FIELD_DEF_ARR(uint32_t, NON_CON_TENSOR_SIZE, strideList);
-TILING_DATA_FIELD_DEF_ARR(uint32_t, NON_CON_TENSOR_SIZE, concatDimList);
+TILING_DATA_FIELD_DEF_ARR(uint64_t, NON_CON_TENSOR_SIZE, strideList);
+TILING_DATA_FIELD_DEF_ARR(uint64_t, NON_CON_TENSOR_SIZE, concatDimList);
 END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(Concat, ConcatTilingData)
@@ -82,8 +82,8 @@ TILING_DATA_FIELD_DEF(int64_t, uoDim1);
 TILING_DATA_FIELD_DEF(int64_t, catDim1); // 输出1轴大小
 TILING_DATA_FIELD_DEF(int64_t, sameShapeTensorDim1);
 TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_PRELOAD_DIM1_LENGTH, preLoadDim1);
-TILING_DATA_FIELD_DEF_ARR(uint32_t, NON_CON_TENSOR_SIZE, strideList);
-TILING_DATA_FIELD_DEF_ARR(uint32_t, NON_CON_TENSOR_SIZE, concatDimList);
+TILING_DATA_FIELD_DEF_ARR(uint64_t, NON_CON_TENSOR_SIZE, strideList);
+TILING_DATA_FIELD_DEF_ARR(uint64_t, NON_CON_TENSOR_SIZE, concatDimList);
 END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(Concat_12111, ConcatTilingDataNoArray)
@@ -166,8 +166,8 @@ struct ConcatTilingParam {
     std::vector<int32_t> tensorColsOffset;
     std::vector<std::vector<int64_t>> tensorList;
     std::vector<std::vector<int64_t>> mergeTensorList;
-    std::vector<uint32_t> strideList{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
-    std::vector<uint32_t> concatDimList{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+    std::vector<uint64_t> strideList{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+    std::vector<uint64_t> concatDimList{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
     int16_t endIdxArr[TILING_ARRAY_LENGTH]{0};
     int64_t endOffsetArr[TILING_ARRAY_LENGTH]{0};
     int64_t preLoadDim1Arr[TILING_PRELOAD_DIM1_LENGTH]{0};

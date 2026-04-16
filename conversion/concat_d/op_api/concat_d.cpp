@@ -22,7 +22,7 @@
 #include "op_api/aclnn_check.h"
 
 #define NUM_32 32
-#define NUM_512 512
+#define NUM_2048 2048
 
 using namespace op;
 namespace l0op {
@@ -45,7 +45,7 @@ bool IsSupportConcatDV2(const aclTensorList* inputs, int64_t dim)
     if (dim != 0){
         return false;
     }
-    if (inputs->Size() > NUM_512 || inputs->Size() <= NUM_32) {
+    if (inputs->Size() > NUM_2048 || inputs->Size() <= NUM_32) {
         return false;
     }
 
@@ -89,10 +89,10 @@ aclTensor* ConcatD(const aclTensorList* inputs, int64_t dim, aclOpExecutor* exec
 {
     L0_DFX(ConcatD, inputs, dim);
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
-    size_t catMaxInputSize = (IsRegBase(npuArch)) ? NUM_512 : NUM_32;
+    size_t catMaxInputSize = (IsRegBase(npuArch)) ? NUM_2048 : NUM_32;
 
     if (IsSupportConcatDV2(inputs, dim)) {
-        catMaxInputSize = NUM_512;
+        catMaxInputSize = NUM_2048;
     }
 
     if (inputs->Size() == 0 || inputs->Size() > catMaxInputSize) {
