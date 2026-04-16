@@ -372,7 +372,7 @@ __aicore__ inline void PadV3GradReplicateW<T>::Process()
             workspaceOffset = blockIdx * CONST_VALUE_2 * calCount; // workspace上的64空间
             SetFlag<HardEvent::S_MTE2>(eventId0);
             WaitFlag<HardEvent::S_MTE2>(eventId0);
-            CopyGm2UBWhole(gmXOffset, calCount * CONST_VALUE_2);
+            CopyGm2UBWhole(gmXOffset, width);
             // 左右两侧分别进行累加计算到edge
             if constexpr (isCastFp32) {
                 ComputeWGradWholeF16(calCount);
