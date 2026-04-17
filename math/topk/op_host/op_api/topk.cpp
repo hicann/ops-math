@@ -50,10 +50,11 @@ static const std::initializer_list<op::DataType> FUTURE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_UINT64, op::DataType::DT_UINT32,  op::DataType::DT_UINT16, op::DataType::DT_UINT8,
     op::DataType::DT_BF16,   op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT};
 
-static bool IsFloatTypeSoc(SocVersion version) {
+static bool IsFloatTypeSoc(SocVersion version)
+{
     return (version >= SocVersion::ASCEND910B && version <= SocVersion::ASCEND910E) ||
-        (version >= SocVersion::ASCEND310P && version <= SocVersion::ASCEND310C) ||
-        (version == SocVersion::ASCEND610LITE);
+           (version >= SocVersion::ASCEND310P && version <= SocVersion::ASCEND310C) ||
+           (version == SocVersion::ASCEND610LITE);
 }
 
 // 根据芯片类型、dtype判断算子是否支持走AiCore
@@ -87,11 +88,10 @@ static bool IsAiCoreSupport(const aclTensor* self, int64_t k)
             for (int64_t i = 0; i < tmpDim; i++) {
                 inputSize *= inputShape.GetDim(i);
             }
-            
-            if (
-                inputSize < MAX_AICORE_CALC_REG_BASE_INT64_INPUTSIZE && inputSize > MIN_AICORE_CALC_REG_BASE_INT64_INPUTSIZE
-                && inputShape.GetDim(tmpDim - 1) < MAX_AICORE_CALC_REG_BASE_INT64_DIM
-            ) {
+
+            if (inputSize < MAX_AICORE_CALC_REG_BASE_INT64_INPUTSIZE &&
+                inputSize > MIN_AICORE_CALC_REG_BASE_INT64_INPUTSIZE &&
+                inputShape.GetDim(tmpDim - 1) < MAX_AICORE_CALC_REG_BASE_INT64_DIM) {
                 return false;
             }
         }
@@ -102,7 +102,8 @@ static bool IsAiCoreSupport(const aclTensor* self, int64_t k)
     }
 
     if (IsFloatTypeSoc(version)) {
-        return CheckType(self->GetDataType(), {op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16});
+        return CheckType(
+            self->GetDataType(), {op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16});
     }
     // 910、310芯片
     return self->GetDataType() == op::DataType::DT_FLOAT16;
@@ -198,7 +199,17 @@ std::tuple<aclTensor*, aclTensor*> Topk(
             }
         }
     } else {
-        return TopkAiCpu(self, kTensor, dim, largest, sorted, valuesOut, indicesOut, executor);
+        // AiCpu 路径：indices 固定返回 INT32，若需其他类型则后续 Cast
+        aclTensor* indicesInt32 = executor->AllocTensor(outShape, op::DataType::DT_INT32, self->GetStorageFormat());
+        auto result = TopkAiCpu(self, kTensor, dim, largest, sorted, valuesOut, indicesInt32, executor);
+        if (std::get<0>(result) == nullptr || std::get<1>(result) == nullptr) {
+            return result;
+        }
+        if (IsRegBase() && indicesDType != op::DataType::DT_INT32) {
+            auto indicesCast = Cast(indicesInt32, indicesDType, executor);
+            return std::tuple<aclTensor*, aclTensor*>(valuesOut, const_cast<aclTensor*>(indicesCast));
+        }
+        return std::tuple<aclTensor*, aclTensor*>(valuesOut, indicesInt32);
     }
 }
 } // namespace l0op
