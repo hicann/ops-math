@@ -185,6 +185,12 @@ inline bool IsReduceNonContiguousSupport(const aclTensor* x, const aclIntArray* 
             return false; // 不支持as_stride,transpose
         }
     }
+    for (size_t i = 0; i + 1 < viewShape.GetDimNum(); i++) {
+        if (viewStrides[i] < viewStrides[i + 1]) {
+            OP_LOGD("Stride order violation (likely transpose) NonContiguous not Support");
+            return false; // 必须是Row-Major的顺序，排除transpose或维度大小为1的非连续
+        }
+    }
     return true;
 }
 
