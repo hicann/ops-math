@@ -77,7 +77,8 @@ ge::graphStatus ModTiling::DoOpTiling()
     // 获取fmod额外空间和存活节点
     uint32_t maxLiveNodeCnt = 0;
     uint32_t extraBuf = 0;
-    AscendC::GetFmodTmpBufferFactorSize(sizeof(input0Dtype), maxLiveNodeCnt, extraBuf);
+    // kernel中所有输入类型均cast到float32后进入高阶API计算，因此临时buffer按float大小计算
+    AscendC::GetFmodTmpBufferFactorSize(sizeof(float), maxLiveNodeCnt, extraBuf);
 
     ge::graphStatus ret = ge::GRAPH_SUCCESS;
     if (input0Dtype == ge::DT_FLOAT16 || input0Dtype == ge::DT_BF16) {

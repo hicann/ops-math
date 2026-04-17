@@ -261,3 +261,22 @@ TEST_F(ModTilingTest, test_tiling_int64)
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
+
+TEST_F(ModTilingTest, test_tiling_bf16)
+{
+    BroadcastCompileInfo compileInfo{};
+    gert::TilingContextPara tilingContextPara(
+        "Mod",
+        {
+            {{{1, 32, 4, 32}, {1, 32, 4, 32}}, ge::DT_BF16, ge::FORMAT_ND},
+            {{{1, 32, 4, 32}, {1, 32, 4, 32}}, ge::DT_BF16, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 32, 4, 32}, {1, 32, 4, 32}}, ge::DT_BF16, ge::FORMAT_ND},
+        },
+        &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}

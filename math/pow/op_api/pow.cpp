@@ -53,9 +53,12 @@ static const aclTensor *PowAiCore(const aclTensor *self, const aclTensor *expone
                                   aclTensor *powOut, aclOpExecutor *executor) {
   L0_DFX(PowAiCore, self, exponent, powOut);
 
-  ADD_TO_LAUNCHER_LIST_AICORE(Pow,
+  auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Pow,
                               OP_INPUT(self, exponent),
                               OP_OUTPUT(powOut));
+  OP_CHECK(
+      ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "PowAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
+      return nullptr);
   return powOut;
 }
  

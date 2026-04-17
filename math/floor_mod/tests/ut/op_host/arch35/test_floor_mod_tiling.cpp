@@ -54,3 +54,39 @@ TEST_F(FloorModTiling, floor_mod_test_0)
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
+
+TEST_F(FloorModTiling, floor_mod_test_float16)
+{
+    optiling::FloorModCompileInfo compileInfo = {64, 245760};
+    gert::TilingContextPara tilingContextPara(
+        "FloorMod",
+        {
+            {{{1, 32, 4, 32}, {1, 32, 4, 32}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+            {{{1, 32, 4, 32}, {1, 32, 4, 32}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 32, 4, 32}, {1, 32, 4, 32}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}
+
+TEST_F(FloorModTiling, floor_mod_test_int64)
+{
+    optiling::FloorModCompileInfo compileInfo = {64, 245760};
+    gert::TilingContextPara tilingContextPara(
+        "FloorMod",
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT64, ge::FORMAT_ND},
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT64, ge::FORMAT_ND},
+        },
+        {
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT64, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}

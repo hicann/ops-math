@@ -97,10 +97,8 @@ const aclTensor* Div(const aclTensor* self, const aclTensor* other, aclOpExecuto
     auto divOut = executor->AllocTensor(broadcastShape, self->GetDataType());
     if (IsAiCoreSupport(self)) {
         return DivAiCore(self, other, divOut, executor);
-    } else {
-        return DivAiCpu(self, other, divOut, executor);
     }
-    return divOut;
+    return DivAiCpu(self, other, divOut, executor);
 }
 
 } // namespace l0op

@@ -144,13 +144,12 @@ ge::graphStatus AddcdivTiling::GetPlatformInfo()
 
 ge::graphStatus TilingForAddcdiv(gert::TilingContext* context)
 {
-    auto nodeName = context->GetNodeName();
-    OP_LOGD(nodeName, "Enter TilingForAddcdiv");
+    OP_LOGD("AddcdivTiling", "Enter TilingForAddcdiv");
     if (context == nullptr) {
-        OP_LOGE(nodeName, "Tiling context is nullptr");
+        OP_LOGE("AddcdivTiling", "Tiling context is nullptr");
         return ge::GRAPH_FAILED;
     }
-
+    auto nodeName = context->GetNodeName();
     auto compileInfo = reinterpret_cast<const AddcdivCompileInfo*>(context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     OP_LOGD(nodeName, "Enter ascendc AddcdivTiling");

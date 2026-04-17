@@ -458,7 +458,7 @@ static aclnnStatus HandleNotMixDataTypeDiv(
 
     // 处理other输入
     const aclTensor* otherProcessed = nullptr;
-    if (other->GetDataType() == promoteType && l0op::IsRealDivSupportNonContiguous(self)) {
+    if (other->GetDataType() == promoteType && l0op::IsRealDivSupportNonContiguous(other)) {
         otherProcessed = executor->CreateView(
             other, other->GetViewShape(), other->GetStorageShape(), other->GetViewStrides(), other->GetViewOffset());
     } else {
