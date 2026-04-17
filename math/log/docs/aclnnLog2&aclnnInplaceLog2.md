@@ -50,7 +50,7 @@ aclnnStatus aclnnLog2(
 
 ```Cpp
 aclnnStatus aclnnInplaceLog2GetWorkspaceSize(
-  aclTensor*                selfRef,
+  const aclTensor*          selfRef,
   uint64_t*                 workspaceSize,
   aclOpExecutor**           executor)
 ```
