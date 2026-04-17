@@ -1,67 +1,197 @@
 # aclnnSearchSorted
 
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/search_sorted)
+
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+| 产品 | 是否支持 |
+| :--- | :------: |
+| <term>Ascend 950PR/Ascend 950DT</term> | × |
+| <term>Atlas A3训练系列产品/Atlas A3推理系列产品</term> | √ |
+| <term>Atlas A2训练系列产品/Atlas A2推理系列产品</term> | √ |
+| <term>Atlas 200I/500 A2推理产品</term> | × |
+| <term>Atlas推理系列产品</term> | × |
+| <term>Atlas训练系列产品</term> | √ |
 
 ## 功能说明
 
-算子功能：在一个已排序的张量（sortedSequence）中查找给定tensor值（self）应该插入的位置。返回与self相同大小的张量，其中每个元素表示给定值在原始张量中应该插入的位置。如果self为scalar类型，请参考文档[aclnnSearchSorteds](./aclnnSearchSorteds.md)
+- 算子功能：在一个已排序的张量（sortedSequence）中查找给定Tensor值（self）应该插入的位置。返回与self相同大小的张量，其中每个元素表示给定值在原始张量中应该插入的位置。如果self为Scalar类型，请参考文档[aclnnSearchSorteds](./aclnnSearchSorteds.md)。
+- 计算公式：设最内层待检索序列长度为 N，对每个输入元素 x = self<sub>i</sub>：
+  - 当 `right=false` 时，返回左插入点：
+
+  $$
+  out_i=\min\{j\in[0,N]\mid sortedSequence_j\ge x\}
+  $$
+
+  - 当 `right=true` 时，返回右插入点：
+
+  $$
+  out_i=\min\{j\in[0,N]\mid sortedSequence_j>x\}
+  $$
+
+  若不存在满足条件的 $j$，则返回 $N$。
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSearchSortedGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSearchSorted”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用`aclnnSearchSortedGetWorkspaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnSearchSorted`接口执行计算。
 
-- `aclnnStatus aclnnSearchSortedGetWorkspaceSize(const aclTensor *sortedSequence, const aclTensor *self, const bool outInt32, const bool right, const aclTensor *sorter, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnSearchSorted(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnSearchSortedGetWorkspaceSize(
+  const aclTensor* sortedSequence,
+  const aclTensor* self,
+  bool             outInt32,
+  bool             right,
+  const aclTensor* sorter,
+  aclTensor*       out,
+  uint64_t*        workspaceSize,
+  aclOpExecutor**  executor)
+```
+
+```Cpp
+aclnnStatus aclnnSearchSorted(
+  void*            workspace,
+  uint64_t         workspaceSize,
+  aclOpExecutor*   executor,
+  aclrtStream      stream)
+```
 
 ## aclnnSearchSortedGetWorkspaceSize
 
-- **参数说明**：
-  
-  - sortedSequence（aclTensor*,计算输入）：Device侧的aclTensor，为已排序的张量，shape不超过8维，数据类型支持DOUBLE、FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64，且数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - self（aclTensor*,计算输入）：Device侧的aclTensor，存储的是要插入的值，数据类型支持DOUBLE、FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64，且数据类型与sortedSequence的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。shape不超过8维。
-  - outInt32（bool,计算输入）：Host侧的布尔型，表示指定输出Tensor是否为INT32类型。
-  - right（bool,计算输入）：Host侧的布尔型，表示如果找到相同的值，是否返回右侧的位置。如果为False，则返回左侧的位置。
-  - sorter（aclTensor*,计算输入）：Device侧的aclTensor，指定sortedSequence中元素顺序，取值范围为零到最内层维度的dim值减一，数据类型为INT64，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。shape与sortedSequence一致。
-  - out（aclTensor*,计算输出）: Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，数据类型支持INT32、INT64，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。shape与self一致。
-  - workspaceSize（uint64_t*,出参）：返回需要在Device侧申请的workspace大小。
-  - executor（aclOpExecutor**,出参）：返回op执行器，包含了算子计算流程。
-  
-- **返回值**：
+- **参数说明**
+
+  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 280px">
+  <col style="width: 320px">
+  <col style="width: 250px">
+  <col style="width: 120px">
+  <col style="width: 140px">
+  <col style="width: 140px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>sortedSequence（aclTensor*）</td>
+      <td>输入</td>
+      <td>已排序的输入张量。</td>
+      <td><ul><li>与<code>self</code>数据类型需满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</li><li>公式中的<code>N</code>为<code>sortedSequence</code>最内层长度，<code>sortedSequence<sub>j</sub></code>为最内层第<code>j</code>个元素。</li></ul></td>
+      <td>DOUBLE、FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64</td>
+      <td>ND</td>
+      <td>不超过 8 维</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>待查找插入位置的输入张量。</td>
+      <td><ul><li>与<code>sortedSequence</code>数据类型需满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</li><li>公式中<code>x=self<sub>i</sub></code>，<code>i</code>为<code>self</code>中元素索引。</li></ul></td>
+      <td>DOUBLE、FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64</td>
+      <td>ND</td>
+      <td>不超过 8 维</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>outInt32（bool）</td>
+      <td>输入</td>
+      <td>是否输出INT32结果。</td>
+      <td>用于指定输出索引的数据类型。</td>
+      <td>BOOL</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>right（bool）</td>
+      <td>输入</td>
+      <td>命中相等值时返回左/右插入点。</td>
+      <td><ul><li><code>false</code>对应公式中的<code>sortedSequence<sub>j</sub> &ge; x</code>。</li><li><code>true</code>对应<code>sortedSequence<sub>j</sub> &gt; x</code>。</li></ul></td>
+      <td>BOOL</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>sorter（aclTensor*）</td>
+      <td>输入</td>
+      <td>指定<code>sortedSequence</code>元素顺序。</td>
+      <td><ul><li>shape需与<code>sortedSequence</code>一致。</li><li>元素取值范围为[0, 最内层维度dim-1]。</li><li>传入<code>sorter</code>时，公式中的<code>sortedSequence<sub>j</sub></code>按<code>sorter</code>指定顺序取值。</li></ul></td>
+      <td>INT64</td>
+      <td>ND</td>
+      <td>与sortedSequence一致</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>插入位置输出结果。</td>
+      <td><ul><li>shape需与<code>self</code>一致。</li><li>公式中的<code>out<sub>i</sub></code>对应输出<code>out</code>第<code>i</code>个元素。</li></ul></td>
+      <td>INT32、INT64</td>
+      <td>ND</td>
+      <td>与self一致</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
+
+- **返回值**
   
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
   
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
   <col style="width: 300px">
-  <col style="width: 136px">
-  <col style="width: 715px">
+  <col style="width: 150px">
+  <col style="width: 550px">
   </colgroup>
   <thead>
     <tr>
       <th>返回值</th>
       <th>错误码</th>
       <th>描述</th>
-    </tr></thead>
+    </tr>
+  </thead>
   <tbody>
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的 sortedSequence、self、out是空指针时。</td>
+      <td>传入的sortedSequence、self、out中存在空指针。</td>
     </tr>
     <tr>
       <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="6">161002</td>
-      <td>sortedSequence、self 的数据类型不在支持的范围之内。</td>
+      <td>sortedSequence、self的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>out的数据类型与outInt32值含义相违背。</td>
@@ -78,24 +208,24 @@
     <tr>
       <td>当sortedSequence维度大于一，self除最后一维外，其他维度不与sortedSequence对应维度不相等时。</td>
     </tr>
-  </tbody>
-  </table>
+  </tbody></table>
 
 ## aclnnSearchSorted
 
-- **参数说明**：
+- **参数说明**
   
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
-  <col style="width: 167px">
-  <col style="width: 134px">
-  <col style="width: 848px">
+  <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 700px">
   </colgroup>
   <thead>
     <tr>
       <th>参数名</th>
       <th>输入/输出</th>
       <th>描述</th>
-    </tr></thead>
+    </tr>
+  </thead>
   <tbody>
     <tr>
       <td>workspace</td>
@@ -105,7 +235,7 @@
     <tr>
       <td>workspaceSize</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnSearchSortedGetWorkspaceSize获取。</td>
+      <td>由第一段接口 <code>aclnnSearchSortedGetWorkspaceSize</code> 获取的workspace大小。</td>
     </tr>
     <tr>
       <td>executor</td>
@@ -120,14 +250,13 @@
   </tbody>
   </table>
 
-- **返回值：**
+- **返回值**
   
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
-- 确定性计算：
-  - aclnnSearchSorted默认确定性实现。
+- 确定性说明：`aclnnSearchSorted`默认确定性实现。
 
 ## 调用示例
 
@@ -146,7 +275,7 @@
     }                                \
   } while (0)
 
-#define LOG_PRINT(message, ...)     \
+#define LOG_PRINT(message,...)     \
   do {                              \
     printf(message, ##__VA_ARGS__); \
   } while (0)
