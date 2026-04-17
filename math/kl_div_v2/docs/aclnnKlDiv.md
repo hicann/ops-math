@@ -93,7 +93,7 @@ aclnnStatus aclnnKlDiv(
       <td>公式中的self。</td>
       <td>数据类型与target满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。shape需要与target满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
+        FLOAT、FLOAT16、BFLOAT16
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -105,7 +105,7 @@ aclnnStatus aclnnKlDiv(
       <td>公式中的target。</td>
       <td>数据类型与self满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
+        FLOAT、FLOAT16、BFLOAT16
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -137,7 +137,7 @@ aclnnStatus aclnnKlDiv(
       <td>公式中的out。</td>
       <td>数据类型与self满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。当`reduction`为0时，shape需要与self和target满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。当`reduction`不为0时，shape固定为(1,)。</td>
       <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
+       FLOAT、FLOAT16、BFLOAT16
       </td>
       <td>ND</td>
       <td>0-8</td>

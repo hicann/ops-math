@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 算子功能：对输入Tensor完成sin运算。
@@ -361,7 +360,9 @@ aclnnStatus aclnnInplaceSin(
 - <term>Atlas 推理系列产品</term>：FLOAT、FLOAT16数据类型的输入数据范围为[-65504, 65504]时满足精度要求，超过数值范围无法保证，请使用CPU进行计算。
 
 ## 调用示例
+
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
+
 ```Cpp
 #include <iostream>
 #include <vector>

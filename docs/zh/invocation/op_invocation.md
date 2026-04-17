@@ -205,9 +205,10 @@ int main()
    ```bash
    bash run.sh
    ```
+   
     默认在当前执行路径 `/build/bin`下生成可执行文件test\_aclnn\_add\_example，运行结果如下：
 
-   ```
+   ```bash
    mean result[2046] is 2.000000
    mean result[2047] is 2.000000
    ```
@@ -356,7 +357,7 @@ int main() {
    
     默认在当前执行路径 `/build/bin`下生成可执行文件test\_geir\_add\_example，运行结果如下：
    
-    ```
+    ```bash
     INFO - [XIR]: Finalize ir graph session success
     ```
     

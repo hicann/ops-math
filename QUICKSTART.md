@@ -11,7 +11,6 @@
 > 3. [算子开发指南](./docs/zh/develop/aicore_develop_guide.md)：自定义开发标准算子的指南，学习从零创建算子工程、实现Tiling和Kernel。
 > 4. [调试调优指南](./docs/zh/debug/op_debug_prof.md)：不同场景下的系统性调试技巧与性能优化方法。
 
-
 算子开发和贡献的基本流程如下图，欢迎并鼓励您在社区贡献算子，共同丰富项目生态。
 
 ![算子开发贡献流程](./docs/zh/figures/算子开发贡献流程.png "算子开发贡献流程图")
@@ -202,7 +201,7 @@ bash build.sh --run_example add_example eager cust --vendor_name=custom
 
 预期输出：打印算子`AddExample`的加法计算结果，表明算子已成功部署并正确执行。
 
-```
+```bash
 add_example first input[0] is: 1.000000, second input[0] is: 1.000000, result[0] is: 2.000000
 add_example first input[1] is: 1.000000, second input[1] is: 1.000000, result[1] is: 2.000000
 add_example first input[2] is: 1.000000, second input[2] is: 1.000000, result[2] is: 2.000000
@@ -262,7 +261,7 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
 
 4. **成功标志**：输出结果变成乘法结果。
 
-    ```
+    ```bash
     add_example first input[0] is: 1.000000, second input[0] is: 1.000000, result[0] is: 1.000000
     add_example first input[1] is: 1.000000, second input[1] is: 1.000000, result[1] is: 1.000000
     add_example first input[2] is: 1.000000, second input[2] is: 1.000000, result[2] is: 1.000000

@@ -8,7 +8,6 @@
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
 
-
 ## 功能说明
 
 - 算子功能：输入为BOOL型tensor时，进行逻辑与运算；输入为INT型时，进行位与运算。
@@ -43,7 +42,7 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
-```
+```text
 第一段接口完成入参校验，出现以下场景时报错：
 161001(ACLNN_ERR_PARAM_NULLPTR)：1. 传入的self、other或out是空指针。
 161002(ACLNN_ERR_PARAM_INVALID)：1. self和other的数据类型不在支持的范围之内。

@@ -25,7 +25,7 @@
 
 - 示例：
 
-  ```
+  ```text
   self = tensor([[-1, -2],
                  [-3, -4]]).type(int32)
   other = 3.5   # float
@@ -554,6 +554,7 @@ int main() {
   return 0;
 }
 ```
+
 **aclnnInplaceRemainderTensorScalar示例代码：**
 
 ```Cpp

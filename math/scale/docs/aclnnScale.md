@@ -30,35 +30,36 @@
   $$
 
   说明：scale/bias支持跟X的broadcast，scale/bias的shape规则如下
+
   - 当scaleFromBlob为True时（axis转换为正数，numAxes为-1时表示到最后轴）：
 
     scaleShape为xShape[axis:axis + numAxes]
 
     biasShape为xShape[axis:axis + numAxes]
 
-  - 当scaleFromBlob为False时（axis转换为正数， numAxes为-1时表示到最前轴）：
+  - 当scaleFromBlob为False时（axis转换为正数，numAxes为-1时表示到最前轴）：
 
     scaleShape为xShape[axis:axis + rank(scaleShape)]
 
     biasShape为xShape[axis:axis + rank(scaleShape)]
 
-- 示例:
+  - 示例:
 
-  - scaleFromBlob = True：
+    - scaleFromBlob = True：
 
-    xShape = [a, b, c, d, e, f] axis = 3 numAxes = 2  --> scaleShape = [d, e]
+      xShape = [a, b, c, d, e, f] axis = 3 numAxes = 2  --> scaleShape = [d, e]
 
-    xShape = [a, b, c, d, e, f] axis = 3 numAxes = 3  --> scaleShape = [d, e, f]
+      xShape = [a, b, c, d, e, f] axis = 3 numAxes = 3  --> scaleShape = [d, e, f]
 
-    xShape = [a, b, c, d, e, f] axis = 3 numAxes = -1 --> scaleShape = [d, e, f]
+      xShape = [a, b, c, d, e, f] axis = 3 numAxes = -1 --> scaleShape = [d, e, f]
 
-  - scaleFromBlob = False：
+    - scaleFromBlob = False：
 
-    xShape = [a, b, c, d, e, f] axis = 3 rank(scaleShape) = 2 --> scaleShape = [d, e]
+      xShape = [a, b, c, d, e, f] axis = 3 rank(scaleShape) = 2 --> scaleShape = [d, e]
 
-    xShape = [a, b, c, d, e, f] axis = 3 rank(scaleShape) = 3 --> scaleShape = [d, e, f]
-  
-    xShape = [a, b, c, d, e, f] axis = 3 rank(scaleShape) = 1 --> scaleShape = [d]
+      xShape = [a, b, c, d, e, f] axis = 3 rank(scaleShape) = 3 --> scaleShape = [d, e, f]
+    
+      xShape = [a, b, c, d, e, f] axis = 3 rank(scaleShape) = 1 --> scaleShape = [d]
 
 ## 函数原型
 

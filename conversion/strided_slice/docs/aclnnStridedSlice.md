@@ -49,7 +49,9 @@
   $shrinkAxisMask$指定$bit$位为1对应的索引维度强制降为1 。
 
 ## 函数原型
+
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnStridedSliceGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnStridedSlice”接口执行计算。
+
 ```Cpp
 aclnnStatus aclnnStridedSliceGetWorkspaceSize(
     const aclTensor   *self, 
@@ -65,6 +67,7 @@ aclnnStatus aclnnStridedSliceGetWorkspaceSize(
     uint64_t          *workspaceSize, 
     aclOpExecutor     **executor)
 ```
+
 ```Cpp
 aclnnStatus aclnnStridedSlice(
     void          *workspace,
@@ -499,4 +502,3 @@ int main()
     return 0;
 }
 ```
-

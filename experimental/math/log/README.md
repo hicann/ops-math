@@ -47,7 +47,6 @@ $$
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
     </tr>  
-    <tr>  
     <tr>
       <td>y</td>
       <td>输出</td>

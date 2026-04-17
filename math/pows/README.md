@@ -13,7 +13,6 @@
 | <term>Kirin X90 处理器系列产品</term>                         |    √     |  
 | <term>Kirin 9030 处理器系列产品</term> | √ |  
 
-
 ## 功能说明
 
 - 算子功能：对input中的每个元素应用指数为exponent的幂运算。

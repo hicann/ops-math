@@ -21,7 +21,7 @@
 
   例子：
 
-  ```
+  ```text
   >>> x = torch.arange(1., 8)
   >>> x
   tensor([ 1.,  2.,  3.,  4.,  5.,  6.,  7.])
@@ -39,7 +39,6 @@
   >>> res = torch.ops.aten.unfold_backward(grad, [7], 0, 2, 2)
   tensor([1, 2, 3, 4, 5, 6, 0])
   ```
-
 
 ## 参数说明
 

@@ -522,6 +522,7 @@ int main() {
   return 0;
 }
 ```
+
 **aclnnInplaceMuls示例代码：**
 
 ```Cpp

@@ -25,7 +25,7 @@
 
 - 示例：
 
-  ```
+  ```text
   self = 5.0   # float
   other = tensor([[-1, -2],
                   [-3, -4]]).type(int32)

@@ -155,7 +155,7 @@ flowchart TB
 
 ### 算子工程目录结构
 
-```
+```text
 {op_name}/                      # 算子根目录（如 add/）
 ├── CMakeLists.txt              # 构建配置（必需）
 ├── README.md                   # 算子说明
@@ -319,7 +319,7 @@ OP_ADD(AddCustom);
 
 ### 算子命名规则示例
 
-```
+```text
 算子类型（大驼峰）  →  实现文件名/核函数名（下划线）
 ─────────────────────────────────────────────────
 AddCustom           →  add_custom
@@ -904,7 +904,6 @@ template<typename D_T_X, typename D_T_Y, typename D_T_Z, int TILE_NUM, int IS_SP
 | `ASCENDC_TPL_UI_RANGE` | 范围模式 | `{0, 2}, {3, 5}` → {0,1,2,3,4,5} |
 | `ASCENDC_TPL_UI_LIST` | 穷举模式 | `10, 12, 13, 9, 8` |
 | `ASCENDC_TPL_UI_MIX` | 混合模式 | 范围 + 穷举值 |
-
 
 ### ASCENDC_TPL_SEL_PARAM
 

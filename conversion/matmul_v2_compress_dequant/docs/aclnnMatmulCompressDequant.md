@@ -356,6 +356,7 @@ aclnnStatus aclnnMatmulCompressDequant(
     # 压缩数据的相关信息，对应aclnnMatmulCompressDequantGetWorkspaceSize接口的compressInfo
     compressor.export(compress_info, './data/compress_info')
     ```
+    
   - **将原始float类型的反量化参数deqscale进行转换， 得到aclnn接口需要的uint64数据**
 
     deqScale原始为float类型，以int32读取并转换为int64

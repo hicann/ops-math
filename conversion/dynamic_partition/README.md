@@ -16,7 +16,7 @@
 接口功能：用于根据分区索引将输入数据动态分割成多个张量。示例：
 假设输入Tensor为[1, 6, 3, 8, 2, 9]，将一维张量按条件分成两组（如元素值≤5和>5），值如下所示：
 
-```
+```text
 >>> x = tf.constant([1, 6, 3, 8, 2, 9])
 >>> partitions = tf.cast(data ≤ 5, tf.int32)
 >>> tf.dynamic_partition(x, partitions, num_partitions=2)
@@ -25,7 +25,7 @@
 
 支持对多维张量的分区操作，例如将矩阵按行或列拆分：
 
-```
+```text
 >>> x = tf.reshape(tf.range(12), [3, 4])
 // 按行分区
 >>> tf.dynamic_partition(matrix, [0, 1, 0], num_partitions=2)

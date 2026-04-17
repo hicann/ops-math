@@ -62,7 +62,7 @@ $$
       <td>公式中的start。</td>
       <td>-</td>
       <td>
-        <term> INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、BFLOAT16</term>
+       INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、BFLOAT16
       </td>
       <td>-</td>
       <td>-</td>
@@ -74,7 +74,7 @@ $$
       <td>公式中的end。</td>
       <td>-</td>
       <td>
-        <term> INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、BFLOAT16</term>
+        INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、BFLOAT16
       </td>
       <td>-</td>
       <td>-</td>
@@ -96,7 +96,7 @@ $$
       <td>公式中的out。</td>
       <td>out的元素个数需要与steps一致。不支持空Tensor。</td>
       <td>
-        <term> INT8、INT16、INT32、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16</term>
+        INT8、INT16、INT32、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16
       </td>
       <td>ND</td>
       <td>0-8</td>

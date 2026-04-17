@@ -38,8 +38,7 @@ $out_i=if(condition_i) ? self_i : other_i$
       <td>待进行select_v2计算的入参，公式中的condition。</td>
       <td>BOOL</td>
       <td>ND</td>
-    </tr>  
-    <tr>  
+    </tr>    
     <tr>
       <td>self</td>
       <td>输入</td>

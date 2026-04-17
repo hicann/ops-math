@@ -30,13 +30,11 @@
      $$
      Z1 = x_{i} \cdot weightA[i, layerIdx, :, :]
      $$
-  
   3. 得到的`Z1`继续和weightB做矩阵乘：
 
      $$
      Z2 = Z1 \cdot weightB[i, layerIdx, :, :] \times scale
      $$
-  
   4. 最终把`Z2`输出累加到y上：
 
      $$

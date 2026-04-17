@@ -97,7 +97,7 @@ aclnnStatus aclnnInplaceLerps(
       <td>公式中的输入start。</td>
       <td>数据类型与end一致。shape需要与end满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
+       FLOAT、FLOAT16、BFLOAT16
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -109,7 +109,7 @@ aclnnStatus aclnnInplaceLerps(
       <td>公式中的输入end。</td>
       <td>数据类型与self一致。shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
+        FLOAT、FLOAT16、BFLOAT16
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -131,7 +131,7 @@ aclnnStatus aclnnInplaceLerps(
       <td>公式中的out。</td>
       <td>shape需要与self和end broadcast后的shape一致。</td>
       <td>
-        <term> FLOAT、FLOAT16、BFLOAT16、DOUBLE</term>
+        FLOAT、FLOAT16、BFLOAT16、DOUBLE
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -276,7 +276,7 @@ aclnnStatus aclnnInplaceLerps(
       <td>公式中的输入start和输出out。</td>
       <td>数据类型与end一致。shape需要与end满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>，且broadcast后的shape与selfRef一致。</td>
       <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
+       FLOAT、FLOAT16、BFLOAT16
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -288,7 +288,7 @@ aclnnStatus aclnnInplaceLerps(
       <td>公式中的输入end。</td>
       <td>数据类型与selfRef一致。shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
+        FLOAT、FLOAT16、BFLOAT16
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -657,7 +657,6 @@ int main() {
     // 创建weight aclScalar
     weight = aclCreateScalar(&weightValue, aclDataType::ACL_FLOAT);
     CHECK_RET(weight != nullptr, return ret);
-	
     // 3. 调用CANN算子库API
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;

@@ -99,5 +99,5 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                             |
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_kl_div_v2](./examples/test_aclnn_kl_div_v2.cpp) | 通过[aclnnKlDiv](./docs/aclnnIsFinite.md)接口方式调用KlDivV2算子。    |
+| aclnn调用 | [test_aclnn_kl_div_v2](./examples/test_aclnn_kl_div_v2.cpp) | 通过[aclnnKlDiv](../../math/kl_div_v2/docs/aclnnKlDiv.md)接口方式调用KlDivV2算子。    |
 | 图模式调用 | [test_geir_kl_div_v2](./examples/test_geir_kl_div_v2.cpp)   | 通过[算子IR](./op_graph/kl_div_v2_proto.h)构图方式调用KlDivV2算子。 |

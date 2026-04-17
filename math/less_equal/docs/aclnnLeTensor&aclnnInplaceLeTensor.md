@@ -97,7 +97,7 @@ aclnnStatus aclnnInplaceLeTensor(
       <td>公式中的输入self。</td>
       <td>数据类型需要与other满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），需与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>
-        <term> INT8、UINT8、INT16、INT32、INT64、FLOAT16、UINT16、BFLOAT16、FLOAT、DOUBLE、BOOL、UINT64</term>
+       INT8、UINT8、INT16、INT32、INT64、FLOAT16、UINT16、BFLOAT16、FLOAT、DOUBLE、BOOL、UINT64
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -109,7 +109,7 @@ aclnnStatus aclnnInplaceLeTensor(
       <td>公式中的输入other。</td>
       <td>数据类型需要与self满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），需与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>
-        <term> INT8、UINT8、INT16、INT32、INT64、FLOAT16、UINT16、BFLOAT16、FLOAT、DOUBLE、BOOL、UINT64</term>
+        INT8、UINT8、INT16、INT32、INT64、FLOAT16、UINT16、BFLOAT16、FLOAT、DOUBLE、BOOL、UINT64
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -121,7 +121,7 @@ aclnnStatus aclnnInplaceLeTensor(
       <td>公式中的out。</td>
       <td>数据类型需要是BOOL可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>），shape与self、other广播之后的shape一致。</td>
       <td>
-        <term> FLOAT、INT32、INT64、FLOAT16、INT16、INT8、UINT8、DOUBLE、UINT32、UINT64、BOOL、UINT16、COMPLEX64、COMPLEX128、BFLOAT16</term>
+        FLOAT、INT32、INT64、FLOAT16、INT16、INT8、UINT8、DOUBLE、UINT32、UINT64、BOOL、UINT16、COMPLEX64、COMPLEX128、BFLOAT16
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -271,7 +271,7 @@ aclnnStatus aclnnInplaceLeTensor(
       <td>输入输出tensor，即公式中的self与out。</td>
       <td>数据类型需要与other满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），需与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>，且broadcast后的shape需要与selfRef的shape一致。</td>
       <td>
-        <term> INT8、UINT8、INT16、INT32、INT64、FLOAT16、UINT16、BFLOAT16、FLOAT、DOUBLE、BOOL、UINT64</term>
+       INT8、UINT8、INT16、INT32、INT64、FLOAT16、UINT16、BFLOAT16、FLOAT、DOUBLE、BOOL、UINT64
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -283,7 +283,7 @@ aclnnStatus aclnnInplaceLeTensor(
       <td>公式中的other。</td>
       <td>数据类型需要与selfRef满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>），需与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>，且broadcast后的shape需要与selfRef的shape一致。</td>
       <td>
-        <term> INT8、UINT8、INT16、INT32、INT64、FLOAT16、UINT16、BFLOAT16、FLOAT、DOUBLE、BOOL、UINT64</term>
+        INT8、UINT8、INT16、INT32、INT64、FLOAT16、UINT16、BFLOAT16、FLOAT、DOUBLE、BOOL、UINT64
       </td>
       <td>ND</td>
       <td>0-8</td>

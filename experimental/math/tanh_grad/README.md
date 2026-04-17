@@ -32,7 +32,7 @@ $$
 
 | 调用方式    | 样例代码                                                        | 说明                                                                  |
 |:------- |:----------------------------------------------------------- |:------------------------------------------------------------------- |
-| aclnn接口 | [test_aclnn_tanh_grad](./examples/test_aclnn_tanh_grad.cpp) | 通过[aclnnTanhBackward](./docs/aclnnTanhBackward.md)接口方式调用TanhGrad算子。 |
+| aclnn接口 | [test_aclnn_tanh_grad](./examples/test_aclnn_tanh_grad.cpp) | 通过[aclnnTanhBackward](../../../experimental/math/tanh_grad/doc/aclnnTanhBackward.md)接口方式调用TanhGrad算子。 |
 
 ## 贡献说明
 

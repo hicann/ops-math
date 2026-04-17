@@ -22,7 +22,7 @@
 
 - 示例
 
-```
+```text
 例1：
   self: [2, 3, 4]       # self_shape=[2, 3, 4];
   dim: [2]              # dim_shape=[2], dim_data = {1, 2}, 指定维度;

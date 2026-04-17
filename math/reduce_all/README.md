@@ -16,7 +16,6 @@
 - 接口功能：对于给定维度`dim`中的每一维，如果输入Tensor中该维度对应的所有元素计算为True，则返回True，否则返回False。如果`keepdim`为True，则输出Tensor的维度与输入相同，否则，`dim`维将会被压缩，导致输出Tensor减少`len(dim)`个维度。
 - 例如，输入Tensor的shape是：$(A\times B \times C \times D)$，`dim`值为[0, 2]，如果`keepdim`为False，则输出Tensor的shape是：$(B \times D)$，输出Tensor比输入少两维，如果`keepdim`为True，则输出Tensor的shape是：$(1 \times B \times 1 \times D)$，输出Tensor的维度与输入相同。
 
-
 ## 参数说明
 
  <table style="undefined;table-layout: fixed; width: 1499px"><colgroup>

@@ -82,7 +82,7 @@ print("Verification successful!")
 
 2. 在soc目录下新建一个`CMakeLists.txt`
 
-    ```
+    ```sh
     add_sources("--npu-arch=dav-2201")
     ```
 

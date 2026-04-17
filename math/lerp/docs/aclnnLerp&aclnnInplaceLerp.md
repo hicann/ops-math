@@ -97,7 +97,7 @@ aclnnStatus aclnnInplaceLerp(
       <td>公式中的输入start。</td>
       <td>数据类型与end、weight、out一致。shape需要与end、weight满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
+       FLOAT、FLOAT16、BFLOAT16
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -109,7 +109,7 @@ aclnnStatus aclnnInplaceLerp(
       <td>公式中的输入end。</td>
       <td>数据类型与self、weight、out一致。shape需要与self、weight满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
+        FLOAT、FLOAT16、BFLOAT16
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -121,7 +121,7 @@ aclnnStatus aclnnInplaceLerp(
       <td>公式中的输入weight。</td>
       <td>数据类型与self、end、out一致。shape需要与self、end满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
+        FLOAT、FLOAT16、BFLOAT16
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -133,7 +133,7 @@ aclnnStatus aclnnInplaceLerp(
       <td>公式中的out。</td>
       <td>数据类型与self、end、weight一致。shape需要与self、end、weight broadcast后的shape一致。</td>
       <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
+       FLOAT、FLOAT16、BFLOAT16
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -278,7 +278,7 @@ aclnnStatus aclnnInplaceLerp(
       <td>公式中的输入start和输出out。</td>
       <td>数据类型与end、weight一致。shape需要与end、weight满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>，且broadcast后的shape与selfRef一致。</td>
       <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
+         FLOAT、FLOAT16、BFLOAT16
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -290,7 +290,7 @@ aclnnStatus aclnnInplaceLerp(
       <td>公式中的输入end。</td>
       <td>数据类型与selfRef、weight一致。shape需要与selfRef、weight满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
+        FLOAT、FLOAT16、BFLOAT16
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -302,7 +302,7 @@ aclnnStatus aclnnInplaceLerp(
       <td>公式中的输入weight。</td>
       <td>数据类型与selfRef、end一致。shape需要与selfRef、end满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>
-        <term> FLOAT、FLOAT16、BFLOAT16</term>
+        FLOAT、FLOAT16、BFLOAT16
       </td>
       <td>ND</td>
       <td>0-8</td>

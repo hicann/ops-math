@@ -58,7 +58,7 @@
 
     aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-    ```
+    ```text
     第一段接口完成入参校验，出现如下场景时报错：
     返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的self、prob或out是空指针。
     返回161002（ACLNN_ERR_PARAM_INVALID）：1. self或out的数据类型和数据格式不在支持的范围之内。
@@ -99,7 +99,7 @@
 
     aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-    ```
+    ```text
     第一段接口完成入参校验，出现如下场景时报错：
     返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的selfRef或prob是空指针。
     返回161002（ACLNN_ERR_PARAM_INVALID）：1. selfRef的数据类型和数据格式不在支持的范围之内。

@@ -13,7 +13,6 @@
 | <term>Atlas 推理系列产品</term>                             |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
-
 ## 功能说明
 
 - 接口功能：输入为BOOL型tensor时，进行逻辑与运算；输入为INT型时，进行位与运算。
@@ -199,7 +198,6 @@ aclnnStatus aclnnInplaceBitwiseAndTensor(
 
 - 确定性计算：
   - aclnnInplaceBitwiseAndTensor默认确定性实现。
-
 
 ## 调用示例
 

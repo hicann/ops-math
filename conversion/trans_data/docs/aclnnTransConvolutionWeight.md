@@ -118,7 +118,7 @@ aclnnStatus aclnnTransConvolutionWeight(
 
 - **返回值：**
 
-  `aclnnStatus`：返回状态码，具体参见 <a href="../../../docs/context/aclnn返回码.md">aclnn 返回码</a>。
+  `aclnnStatus`：返回状态码，具体参见 <a href="../../../docs/zh/context/aclnn返回码.md">aclnn 返回码</a>。
 
   第一段接口完成入参校验，出现以下场景时报错：
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
@@ -187,7 +187,7 @@ aclnnStatus aclnnTransConvolutionWeight(
 
 - **返回值：**
 
-  `aclnnStatus`：返回状态码，具体参见 <a href="../../../docs/context/aclnn返回码.md">aclnn 返回码</a>。
+  `aclnnStatus`：返回状态码，具体参见 <a href="../../../docs/zh/context/aclnn返回码.md">aclnn 返回码</a>。
 
 ## 约束说明
 
@@ -201,7 +201,7 @@ aclnnStatus aclnnTransConvolutionWeight(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考<a href="../../../docs/context/编译与运行样例.md">编译与运行样例</a>。
+示例代码如下，仅供参考，具体编译和执行过程请参考<a href="../../../docs/zh/context/编译与运行样例.md">编译与运行样例</a>。
 
 ```Cpp
 #include <iostream>

@@ -98,7 +98,7 @@ aclnnStatus aclnnInplaceLog10(
       <td>公式中的self。</td>
       <td>-</td>
       <td>
-        <term> INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX64、COMPLEX128</term>
+        INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX64、COMPLEX128
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -110,7 +110,7 @@ aclnnStatus aclnnInplaceLog10(
       <td>公式中的out。</td>
       <td>当self为支持的整型或布尔类型时，out必须为FLOAT类型，其余支持类型out应该和self保持dtype一致。数据shape与self一致。</td>
       <td>
-        <term> FLOAT、FLOAT16、BFLOAT16、COMPLEX64、COMPLEX128</term>
+        FLOAT、FLOAT16、BFLOAT16、COMPLEX64、COMPLEX128
       </td>
       <td>ND</td>
       <td>0-8</td>
@@ -250,7 +250,7 @@ aclnnStatus aclnnInplaceLog10(
       <td>公式中的selfRef。</td>
       <td>-</td>
       <td>
-        <term> FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX64、COMPLEX128</term>
+       FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX64、COMPLEX128
       </td>
       <td>ND</td>
       <td>0-8</td>

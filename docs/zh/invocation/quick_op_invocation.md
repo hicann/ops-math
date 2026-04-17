@@ -149,7 +149,6 @@
 
     \$\{repo\_path\}表示项目根目录，\$\{soc\_name\}表示NPU型号名称，即\$\{soc\_version\}删除“ascend”后剩余的内容。编译成功后，压缩包存放于build_out目录下。
 
-
 2. **解压ops-math静态库**
 
     进入build_out目录执行解压命令：
@@ -159,7 +158,8 @@
     ```
 
     \$\{static\_lib\_path\}表示静态库解压路径。解压后目录结构如下：
-    ```
+
+    ```text
     ├── cann-${soc_name}-ops-math-static_${cann_version}_linux-${arch}
     │   ├── lib64
     │   │   ├── libcann_math_static.a               # 静态库文件
@@ -264,6 +264,7 @@
     说明：\$\{mode\}为graph时，不指定\$\{pkg_mode\}和\$\{vendor\_name\}
 
 - 基于**ops-math包**执行算子样例，安装后，执行如下命令：
+
     ```bash
     bash build.sh --run_example ${op} ${mode} [--soc=${soc_version}]
     # 以Abs算子example执行为例
@@ -333,7 +334,7 @@
 
 无论上述哪种方式，算子样例执行后会打印结果，以Abs算子为例：
 
-```
+```text
 abs result[0] is: 1.000000
 abs result[1] is: 1.000000
 abs result[2] is: 1.000000
@@ -379,4 +380,5 @@ Global Environment TearDown
 [  PASSED  ] ${n} tests.
 [100%] Built target math_op_host_ut
 ```
+
 \$\{n\}表示执行了n个用例，\$\{m\}表示m项测试，\$\{x\}表示执行用例消耗的时间，单位为毫秒。
