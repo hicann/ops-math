@@ -26,6 +26,7 @@ namespace optiling {
 struct TransDataCompileInfo {
     int64_t coreNum;
     int64_t ubSize;
+    int64_t blockSize;
 };
 
 BEGIN_TILING_DATA_DEF(TransDataASCTilingData)
@@ -36,60 +37,89 @@ TILING_DATA_FIELD_DEF(int64_t, c);
 TILING_DATA_FIELD_DEF(int64_t, tNum);  // thread number
 END_TILING_DATA_DEF;
 
+BEGIN_TILING_DATA_DEF(TransDataNzToNdTilingData)
+TILING_DATA_FIELD_DEF(int64_t, c0);
+TILING_DATA_FIELD_DEF(int64_t, c1);
+TILING_DATA_FIELD_DEF(int64_t, n0);
+TILING_DATA_FIELD_DEF(int64_t, n1);
+TILING_DATA_FIELD_DEF(int64_t, h);
+TILING_DATA_FIELD_DEF(int64_t, n);
+TILING_DATA_FIELD_DEF(int64_t, c);
+END_TILING_DATA_DEF;
+
 REGISTER_TILING_DATA_CLASS(TransData, TransDataASCTilingData);
+REGISTER_TILING_DATA_CLASS(TransData_21002, TransDataNzToNdTilingData);
 
 ge::graphStatus Tiling4TransDataAscendC(gert::TilingContext* context);
 
 namespace transdata_asc {
 constexpr int64_t TILING_MODE_SIMT = 21000;
 constexpr int64_t TILING_MODE_SIMT_LARGE_SHAPE = 21001;
+constexpr int64_t TILING_MODE_SIMT_NZ_TO_ND = 21002;
 constexpr int64_t MAX_INT32_SIZE = 0x7fffffff;
+constexpr size_t B4_BIT_SIZE = 4;
+constexpr size_t nFour = 4;
+constexpr size_t nThree = 3;
 constexpr size_t nTwo = 2;
 constexpr size_t kSyncWorkSpaceSize = static_cast<size_t>(16) * 1024 * 1024;
 constexpr int64_t tNum256 = 256;
 constexpr int64_t tNum512 = 512;
+constexpr int64_t C0_2 = 2;
+constexpr int64_t C0_4 = 4;
 constexpr int64_t C0_8 = 8;
 constexpr int64_t C0_16 = 16;
 constexpr int64_t C0_32 = 32;
+constexpr int64_t N0_16 = 16;
 constexpr int64_t SIMT_RSV_SIZE = 128 * 1024L;
 
 class TransDataTilingAscendC {
 public:
     explicit TransDataTilingAscendC(gert::TilingContext* context) : context_(context){};
     ge::graphStatus DoTiling();
+    ge::graphStatus DoNz2NdTiling();
     ge::graphStatus GetHardwareInfo();
 
 private:
     ge::graphStatus CalcTilingData();
     bool GetTransFormatAndDType();
+    bool GetTransNz2NdFormatAndDType();
     bool GetShapeInfo();
     bool CalcC0Size();
     void CalcHSize();
     void CalcNCSize();
+    bool CalcNzToNdShapeSize();
     void CalcBlockAndThreadNum();
     void ReshapeInShape();
     void CalcTilingKey();
     void WriteTilingData();
+    void WriteNzToNdTilingData();
     std::string PrintTilingData();
+    std::string PrintNz2NdTilingData();
 
 private:
     gert::TilingContext* context_ = nullptr;
     TransDataASCTilingData tilingData_;
-    gert::Shape inShape;
-    gert::Shape outShape;
-    ge::Format dstFormat;
-    size_t dtypeSize;
+    TransDataNzToNdTilingData tilingNzToNdData_;
+    gert::Shape inShape_;
+    gert::Shape outShape_;
+    ge::Format dstFormat_;
+    size_t dtypeSize_;
     ge::DataType srcDtype_;
 
     uint32_t coreNum_{1};
     uint32_t bNum_;
     int64_t ubSize_;
+    int64_t blockSize_;
     int64_t tilingKey_{TILING_MODE_SIMT};
 
+    int64_t expectC0_;
     int64_t c0_;
     int64_t h_;
     int64_t n_;
     int64_t c_;
+    int64_t c1_;
+    int64_t n0_;
+    int64_t n1_;
     int64_t tNum_;
 };
 }  // namespace transdata_asc

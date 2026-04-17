@@ -19,12 +19,14 @@
 #include <type_traits>
 
 #include "trans_data_with_simt.h"
+#include "trans_data_nz2nd_with_simt.h"
 
 using namespace AscendC;
 using namespace TRSD;
 
 #define TILING_MODE_SIMT 21000
 #define TILING_MODE_SIMT_LARGE_SHAPE 21001
+#define TILING_MODE_SIMT_NZ_TO_ND 21002
 
 __aicore__ void inline trans_data_impl(GM_ADDR src, GM_ADDR dst, GM_ADDR workspace, GM_ADDR tiling)
 {
@@ -46,14 +48,20 @@ __aicore__ void inline trans_data_impl(GM_ADDR src, GM_ADDR dst, GM_ADDR workspa
         DTYPE_SRC>;
 
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    GET_TILING_DATA(tilingData, tiling);
 
     if (TILING_KEY_IS(TILING_MODE_SIMT)) {
+        GET_TILING_DATA_WITH_STRUCT(TransDataASCTilingData, tilingData, tiling);
         TransWithSIMT<DTYPE_SRC_> op;
         op.Init(src, dst, &tilingData);
         op.Process<uint32_t>();
     } else if (TILING_KEY_IS(TILING_MODE_SIMT_LARGE_SHAPE)) {
+        GET_TILING_DATA_WITH_STRUCT(TransDataASCTilingData, tilingData, tiling);
         TransWithSIMT<DTYPE_SRC_> op;
+        op.Init(src, dst, &tilingData);
+        op.Process<uint64_t>();
+    } else if (TILING_KEY_IS(TILING_MODE_SIMT_NZ_TO_ND)) {
+        GET_TILING_DATA_WITH_STRUCT(TransDataNzToNdTilingData, tilingData, tiling);
+        TransNZ2NDWithSIMT<DTYPE_SRC_> op;
         op.Init(src, dst, &tilingData);
         op.Process<uint64_t>();
     }
