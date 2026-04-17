@@ -242,15 +242,12 @@ uint32_t ProcessingEmptyTensor(CpuKernelContext* context)
     auto out_data = static_cast<T*>(out_tensor);
     KERNEL_CHECK_NULLPTR(
         out_data, KERNEL_STATUS_PARAM_INVALID, "%s get out_data failed.", context->GetOpType().c_str());
-    static const std::vector<DataType> OutputZeroValue = {DT_INT8,  DT_INT16,  DT_INT32,     DT_INT64,
-                                                          DT_UINT8, DT_UINT16, DT_COMPLEX64, DT_COMPLEX128};
-    static const std::vector<DataType> OutputMaxValue = {DT_UINT32, DT_UINT64};
+    static const std::vector<DataType> OutputZeroValue = {DT_INT8,  DT_INT16,  DT_INT32,      DT_INT64,  DT_UINT8,
+                                                          DT_UINT16, DT_UINT32, DT_UINT64, DT_COMPLEX64, DT_COMPLEX128};
     static const std::vector<DataType> OutputNanValue = {DT_FLOAT16, DT_FLOAT, DT_DOUBLE};
     T output_data{};
     if (find(OutputZeroValue.begin(), OutputZeroValue.end(), input_type) != OutputZeroValue.end()) {
         output_data = static_cast<T>(0);
-    } else if (find(OutputMaxValue.begin(), OutputMaxValue.end(), input_type) != OutputMaxValue.end()) {
-        output_data = static_cast<T>(std::numeric_limits<T>::max());
     } else if (find(OutputNanValue.begin(), OutputNanValue.end(), input_type) != OutputNanValue.end()) {
         output_data = static_cast<T>(std::numeric_limits<T>::quiet_NaN());
     } else {
