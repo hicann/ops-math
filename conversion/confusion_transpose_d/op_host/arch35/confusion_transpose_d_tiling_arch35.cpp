@@ -672,12 +672,12 @@ ge::graphStatus ConfusionTransposeDTiling::ParametersVerifyingProdAndPositive()
             "shape's dims should be all positive"),
         return ge::GRAPH_FAILED);
 
-    if (prodX != prodY || prodX != prodShape) {
+    if (prodX > prodY || prodX != prodShape) {
         std::string shapeMsg = Ops::Base::ToString(paramInfo_.xShape) + ", " + Ops::Base::ToString(paramInfo_.yShape) +
                                " and " + Ops::Base::ToString(paramInfo_.shape);
         OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
             tilingContext_->GetNodeName(), "x, y and shape", shapeMsg.c_str(),
-            "x, output and shape must have equal dimension product");
+            "prodX must be equal with prodShape and prodX must less or equal than prodY.");
         return ge::GRAPH_FAILED;
     }
 

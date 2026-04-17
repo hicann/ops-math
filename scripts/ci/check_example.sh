@@ -81,7 +81,7 @@ done
 # run example for the modified op
 for name in "${ops_name[@]}"
 do
-    ./single/cann-ops-math-${name}_linux*.run
+    ./single/cann-ops-math-${name}_linux*.run --force
     echo "[EXECUTE_COMMAND] bash build.sh --run_example $name eager cust --vendor_name=$name"
     bash build.sh --run_example $name eager cust --vendor_name=$name
     status=$?
