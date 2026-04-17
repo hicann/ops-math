@@ -16,8 +16,8 @@
 #define STATELESS_RANDPERM_TILING_FOR_SORT_H
 #include "register/op_def_registry.h"
 #include "register/tilingdata_base.h"
-#include "../../../math/sort/op_kernel/arch35/sort_tiling_data.h"  // 侵入修改：头文件路径
-#include "../../../math/sort/op_kernel/arch35/sort_tiling_key.h"   // 侵入修改：头文件路径
+#include "../../../../math/sort/op_kernel/arch35/sort_tiling_data.h"  // 侵入修改：头文件路径
+#include "../../../../math/sort/op_kernel/arch35/sort_tiling_key.h"   // 侵入修改：头文件路径
 
 namespace optiling {
 namespace statelessRandpermTiling{
