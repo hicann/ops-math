@@ -21,24 +21,92 @@
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnMinGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnMin”接口执行计算。
 
-- `aclnnStatus aclnnMinGetWorkspaceSize(const aclTensor *self, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-- `aclnnStatus aclnnMin(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnMinGetWorkspaceSize(
+const aclTensor *self, 
+aclTensor       *out, 
+uint64_t        *workspaceSize, 
+aclOpExecutor  **executor)
+```
+
+```Cpp
+aclnnStatus aclnnMin(
+void          *workspace, 
+uint64_t       workspaceSize, 
+aclOpExecutor *executor, 
+aclrtStream    stream)
+```
 
 ## aclnnMinGetWorkspaceSize
 
 - **参数说明：**
 
-  - self(aclTensor*, 计算输入)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL
+    <table style="undefined;table-layout: fixed; width: 1446px"><colgroup>
+    <col style="width: 154px">
+    <col style="width: 121px">
+    <col style="width: 261px">
+    <col style="width: 188px">
+    <col style="width: 323px">
+    <col style="width: 120px">
+    <col style="width: 133px">
+    <col style="width: 146px">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>参数名</th>
+        <th>输入/输出</th>
+        <th>描述</th>
+        <th>使用说明</th>
+        <th>数据类型</th>
+        <th>数据格式</th>
+        <th>维度(shape)</th>
+        <th>非连续Tensor</th>
+      </tr></thead>
+    <tbody>
+      <tr>
+        <td>self</td>
+        <td>输入</td>
+        <td>输入tensor。</td>
+        <td>-</td>
+        <td>FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>ND</td>
+        <td>-</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>out</td>
+        <td>输出</td>
+        <td>输出的最小值tensor。</td>
+        <td>数据类型与self一致。</td>
+        <td>FLOAT、BFLOAT16、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+        <td>ND</td>
+        <td>(1)</td>
+        <td>√</td>
+      </tr>
+      <tr>
+        <td>workspaceSize</td>
+        <td>输出</td>
+        <td>返回需要在Device侧申请的workspace大小。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td>executor</td>
+        <td>输出</td>
+        <td>返回op执行器，包含了算子计算流程。</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+    </tbody>
+    </table>
 
-  - out(aclTensor*, 计算输出)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。输出shape为(1)。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL、BFLOAT16
-     * <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：FLOAT16、FLOAT、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL
-
-  - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
 - **返回值：**
 
@@ -53,7 +121,7 @@
   </colgroup>
   <thead>
     <tr>
-      <th>返回值</th>
+      <th>返回码</th>
       <th>错误码</th>
       <th>描述</th>
     </tr></thead>
