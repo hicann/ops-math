@@ -28,7 +28,7 @@ $$
 ```Cpp
 aclnnStatus aclnnAngleV2GetWorkspaceSize(
   const aclTensor* x,
-  aclTensor*       y,
+  const aclTensor* out,
   uint64_t*        workspaceSize,
   aclOpExecutor**  executor)
 ```
@@ -78,7 +78,7 @@ aclnnStatus aclnnAngleV2(
       <td>√</td>
     </tr>
     <tr>
-      <td>y（aclTensor*）</td>
+      <td>out（const aclTensor*）</td>
       <td>输出</td>
       <td>待进行angle计算的出参，公式中的out。</td>
       <td>shape与x相同。</td>
@@ -143,7 +143,7 @@ aclnnStatus aclnnAngleV2(
       <td>x的数据维度超过了8维。</td>
     </tr>
     <tr>
-      <td>x和y的数据形状不一致。</td>
+      <td>x和out的数据形状不一致。</td>
     </tr>
   </tbody></table>
 

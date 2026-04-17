@@ -45,7 +45,7 @@
 
   ```Cpp
   aclnnStatus aclnnInplaceRoundDecimalsGetWorkspaceSize(
-    const aclTensor* selfRef, 
+    aclTensor*       selfRef, 
     int64_t          decimals, 
     uint64_t*        workspaceSize, 
     aclOpExecutor**  executor)

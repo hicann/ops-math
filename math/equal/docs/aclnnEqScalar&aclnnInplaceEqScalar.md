@@ -45,7 +45,7 @@ aclnnStatus aclnnEqScalar(
   void*             workspace, 
   uint64_t          workspaceSize, 
   aclOpExecutor*    executor, 
-  aclrtStream       stream)
+  const aclrtStream stream)
 ```
 
 ```Cpp

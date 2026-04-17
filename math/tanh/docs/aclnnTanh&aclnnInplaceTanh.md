@@ -28,27 +28,110 @@ $$
   - aclnnTanh：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceTanh：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnTanhGetWorkspaceSize”或者“aclnnInplaceTanhGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnTanh”或者“aclnnInplaceTanh”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用”aclnnTanhGetWorkspaceSize”或者”aclnnInplaceTanhGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用”aclnnTanh”或者”aclnnInplaceTanh”接口执行计算。
 
-  - `aclnnStatus aclnnTanhGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)`
-  - `aclnnStatus aclnnTanh(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
-  - `aclnnStatus aclnnInplaceTanhGetWorkspaceSize(aclTensor* selfRef, uint64_t* workspaceSize, aclOpExecutor** executor)`
-  - `aclnnStatus aclnnInplaceTanh(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnTanhGetWorkspaceSize(
+  const aclTensor* self,
+  aclTensor*       out,
+  uint64_t*        workspaceSize,
+  aclOpExecutor**  executor)
+```
+
+```Cpp
+aclnnStatus aclnnTanh(
+  void*             workspace,
+  uint64_t          workspaceSize,
+  aclOpExecutor*    executor,
+  const aclrtStream stream)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceTanhGetWorkspaceSize(
+  aclTensor*       selfRef,
+  uint64_t*        workspaceSize,
+  aclOpExecutor**  executor)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceTanh(
+  void*             workspace,
+  uint64_t          workspaceSize,
+  aclOpExecutor*    executor,
+  const aclrtStream stream)
+```
 
 ## aclnnTanhGetWorkspaceSize
 
-- **参数说明**
+- **参数说明：**
 
-  - self（aclTensor\*, 计算输入）：公式中的输入`self`，Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，shape维度不大于8, 且shape需要与out一致，和out的数据类型满足数据类型推导规则。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、BOOL、UINT8、INT8、INT16、INT32、INT64。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、BOOL、UINT8、INT8、INT16、INT32、INT64、BFLOAT16。
-  - out（aclTensor\*, 计算输出）：Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，且shape需要与self一致，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，和self的数据类型满足数据类型推导规则。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
-  - workspaceSize（uint64_t\*, 出参）：返回需要在Device侧申请的workspace大小。
-  - executor（aclOpExecutor\**, 出参）：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>公式中的输入self。</td>
+      <td>shape需要与out一致，和out的数据类型满足<a href="../../../docs/zh/context/数据类型推导.md" target="_blank">数据类型推导规则</a>。</td>
+      <td>FLOAT、FLOAT16、BOOL、UINT8、INT8、INT16、INT32、INT64、BFLOAT16</td>
+      <td>ND</td>
+      <td>不大于8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>公式中的out。</td>
+      <td>shape需要与self一致，和self的数据类型满足<a href="../../../docs/zh/context/数据类型推导.md" target="_blank">数据类型推导规则</a>。</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>-</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
+  
+  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16。
 
-- **返回值**
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -77,7 +160,7 @@ $$
       <td>self和out的数据类型和数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>self和out的数据类型不满足数据类型推导规则。</td>
+      <td>self和out的数据类型不满足<a href="../../../docs/zh/context/数据类型推导.md" target="_blank">数据类型推导规则</a>。</td>
     </tr>
     <tr>
       <td>self和out的维度大于8。</td>
@@ -90,7 +173,7 @@ $$
 
 ## aclnnTanh
 
-- **参数说明**
+- **参数说明：**
 
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
@@ -127,21 +210,71 @@ $$
   </tbody>
   </table>
 
-- **返回值**
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceTanhGetWorkspaceSize
 
-- **参数说明**
+- **参数说明：**
 
-  - selfRef（aclTensor*, 计算输入/输出）：Device侧的aclTensor，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
-  - workspaceSize（uint64_t\*, 出参）：返回需要在Device侧申请的workspace大小。
-  - executor（aclOpExecutor\**, 出参）：返回op执行器，包含了算子计算流程。
+  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <col style="width: 217px">
+  <col style="width: 125px">
+  <col style="width: 247px">
+  <col style="width: 317px">
+  <col style="width: 233px">
+  <col style="width: 126px">
+  <col style="width: 144px">
+  <col style="width: 146px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>selfRef（aclTensor*）</td>
+      <td>输入/输出</td>
+      <td>公式中的self。</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>ND</td>
+      <td>不大于8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
+  
+  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16。
 
-- **返回值**
+- **返回值：**
 
   aclnnStatus， 返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
@@ -174,7 +307,7 @@ $$
 
 ## aclnnInplaceTanh
 
-- **参数说明**
+- **参数说明：**
 
   <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
@@ -211,7 +344,7 @@ $$
   </tbody>
   </table>
 
-- **返回值**
+- **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
