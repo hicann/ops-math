@@ -412,7 +412,7 @@ macro(add_modules_sources)
   endif()
 endmacro()
 
-# 添加待编译算子
+# 添加待编译的算子
 function(add_need_compile_ops op_name)
   if(NOT NEED_COMPILE_OPS)
     # 为空则不需要更新
