@@ -9,13 +9,14 @@
 # ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.16)
+include(cmake/fetch_cann_cmake.cmake)
 set(PKG_NAME math)
 project(${PKG_NAME} VERSION 1.0.0)
 
-find_program(CCACHE_PROGRAM ccache)
-if(CCACHE_PROGRAM)
-  set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
-  set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+init_cann_project()
+
+if(NOT ASCEND_INSTALL_PATH AND DEFINED ENV{ASCEND_HOME_PATH})
+  set(ASCEND_INSTALL_PATH $ENV{ASCEND_HOME_PATH})
 endif()
 
 if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
@@ -97,9 +98,9 @@ include(${PROJECT_SOURCE_DIR}/cmake/ut.cmake)
 
 include(version.cmake)
 if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
-  check_pkg_build_deps("ops_math")
+  check_cann_pkg_build_deps("ops_math")
 endif()
-add_version_info_targets()
+add_cann_version_info_targets()
 
 # ===================================================
 # TF 插件模块初始化（无条件调用，函数内部检查条件）
