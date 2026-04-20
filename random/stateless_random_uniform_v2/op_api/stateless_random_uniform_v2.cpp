@@ -91,8 +91,8 @@ const aclTensor* StatelessRandomUniformV2(
         out = executor->AllocTensor(self->GetViewShape(), op::DataType::DT_FLOAT, self->GetViewFormat());
     }
 
-    // 根据芯片类型、输入dtype判断AICore是否支持（out可能被映射为DT_FLOAT，需用原始输入dtype判断）
-    if (IsAiCoreSupport(self->GetDataType()))
+    // aclnnInplaceRandom、aclnnInplaceUniform 接口，根据芯片类型判断AICore是否支持
+    if (IsRegBase())
     {
         return StatelessRandomUniformV2AiCore(inputSize, seedTensor, offsetTensor, algTensor, out, executor);
     } else {
@@ -119,6 +119,7 @@ const aclTensor* StatelessRandomUniformV2(
         out = executor->AllocTensor(self->GetViewShape(), op::DataType::DT_FLOAT, self->GetViewFormat());
     }
 
+    // 根据芯片类型、输入dtype判断AICore是否支持（out可能被映射为DT_FLOAT，需用原始输入dtype判断）
     if (IsAiCoreSupport(self->GetDataType()))
     {
         return StatelessRandomUniformV2AiCore(inputSize, seedTensor, offsetTensor, algTensor, out, executor);
