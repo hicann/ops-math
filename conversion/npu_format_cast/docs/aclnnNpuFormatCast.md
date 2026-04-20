@@ -22,7 +22,7 @@
     完成ND[数据格式](../../../docs/zh/context/数据格式.md)到指定C0大小的FRACTAL_NZ[数据格式](../../../docs/zh/context/数据格式.md)的转换功能，C0是FRACTAL_NZ[数据格式](../../../docs/zh/context/数据格式.md)最后一维的大小，C0由`additionalDtype`确定。
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
     - 完成ND←→[NZ](../../../docs/zh/context/数据格式.md)的转换功能。C0是[NZ](../../../docs/zh/context/数据格式.md)数据格式最后一维的大小。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast additionalDtype)。
-    - 完成NCDHW←→[NDC1HWC0](../../../docs/zh/context/数据格式.md)、NCDHW←→[FRACTAL_Z_3D](../../../docs/zh/context/数据格式.md)的转换功能。其中，C0与微架构强相关，该值等于cube单元的size，例如16。C1是将C维度按照C0切分：C1=C/C0， 若结果不整除，最后一份数据需要padding到C0。计算方法C0 = 32B srcDataType（例如FP16为2byte）
+    - 完成NCDHW←→[NDC1HWC0](../../../docs/zh/context/数据格式.md)、NCDHW←→[FRACTAL_Z_3D](../../../docs/zh/context/数据格式.md)的转换功能。其中，C0与微架构强相关，该值等于cube单元的size，例如16。C1是将C维度按照C0切分：C1=C/C0， 若结果不整除，最后一份数据需要padding到C0。计算方法C0 = 32B / srcDataType（例如FP16为2byte）
 - **计算流程**：
 
   `aclnnNpuFormatCastCalculateSizeAndFormat`根据输入张量srcTensor、数据类型`additionalDtype`和目标张量的数据格式dstFormat计算出转换后目标张量dstTensor的shape和实际数据格式，用于构造dstTensor，然后调用`aclnnNpuFormatCast`把srcTensor转换为实际数据格式的目标张量dstTensor。
@@ -90,7 +90,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>输入</td>
             <td>转换的源Tensor。</td>
             <td>-</td>
-            <td>INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16<sup>2</sup>、FLOAT8_E4M3FN、FlOAT8_E4M3FN<sup>2</sup>、FLOAT4_E2M1<sup>2</sup></td>
+            <td>INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16<sup>2</sup>、FLOAT8_E4M3FN、FLOAT8_E4M3FN<sup>2</sup>、FLOAT4_E2M1<sup>2</sup></td>
             <td>ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、NCL<sup>2</sup></td>
             <td>2-6</td>
             <td>-</td>
@@ -126,7 +126,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>-</td>
         </tr>
         <tr>
-            <td>dstShapeSize（uint64_t**）</td>
+            <td>dstShapeSize（uint64_t*）</td>
             <td>输出</td>
             <td>用于输出dstTensor的shape数组大小的指针。</td>
             <td>-</td>
@@ -235,7 +235,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>输入</td>
             <td>输入张量，输入的数据只支持连续的Tensor。</td>
             <td>-</td>
-            <td>INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16<sup>2</sup>、FlOAT8_E4M3FN<sup>2</sup>、FLOAT4_E2M1<sup>2</sup></td>
+            <td>INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16<sup>2</sup>、FLOAT8_E4M3FN<sup>2</sup>、FLOAT4_E2M1<sup>2</sup></td>
             <td>ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、NCL<sup>2</sup></td>
             <td>2-6</td>
             <td>-</td>
@@ -245,7 +245,7 @@ aclnnStatus aclnnNpuFormatCast(
             <td>输入</td>
             <td>转换后的目标张量，只支持连续的Tensor。</td>
             <td>-</td>
-            <td>INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16<sup>2</sup>、FLOAT8_E4M3FN、FlOAT8_E4M3FN<sup>2</sup>、FLOAT4_E2M1<sup>2</sup></td>
+            <td>INT8、UINT8、INT32、UINT32、FLOAT、FLOAT16、BFLOAT16<sup>2</sup>、FLOAT8_E4M3FN、FLOAT8_E4M3FN<sup>2</sup>、FLOAT4_E2M1<sup>2</sup></td>
             <td>ND、NZ、NCDHW、NDC1HWC0、FRACTAL_Z_3D、ACL_FORMAT_FRACTAL_NZ_C0_16(50)<sup>2</sup>、ACL_FORMAT_FRACTAL_NZ_C0_32(51)<sup>2</sup></td>
             <td>4-8</td>
             <td>-</td>

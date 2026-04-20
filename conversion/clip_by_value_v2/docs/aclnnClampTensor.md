@@ -29,7 +29,7 @@
 
 ```cpp
 aclnnStatus aclnnClampTensorGetWorkspaceSize(
-    const aclTensor* elf,
+    const aclTensor* self,
     const aclTensor* clipValueMin, 
     const aclTensor* clipValueMax, 
     aclTensor*       out, 
@@ -162,10 +162,10 @@ aclnnStatus aclnnClampTensor(
       <td class="tg-0pky">self、out的数据类型和数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td class="tg-0lax">self、clipValueMin、clipValueMax的shape不满足broadcast关系或broadcast后的shape与输出out的shape不一致。</td>
+      <td class="tg-0lax">self、clipValueMin、clipValueMax的shape不满足broadcast关系。</td>
     </tr>
     <tr>
-      <td class="tg-0lax">或broadcast后的shape与输出out的shape不一致。</td>
+      <td class="tg-0lax">self、clipValueMin、clipValueMax进行broadcast后的shape与输出out的shape不一致。</td>
     </tr>
     <tr>
       <td class="tg-0lax">self、clipValueMin、clipValueMax类型推导失败，或推导类型无法转为out的数据类型。</td>

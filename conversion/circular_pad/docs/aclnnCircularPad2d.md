@@ -91,7 +91,7 @@ aclnnStatus aclnnCircularPad2d(
     <tr>
       <td>padding（aclIntArray*）</td>
       <td>输入</td>
-      <td>输入中需要填充的表格。</td>
+      <td>长度为4，数值依次代表左右上下需要填充的值。</td>
       <td><ul><li>长度为4，数值依次代表左右上下需要填充的值。</li><li>padding前两个数值都需小于self最后一维度的大小，后两个数值需小于self倒数第二维度的大小。</li></ul></td>
       <td>INT64</td>
       <td>-</td>

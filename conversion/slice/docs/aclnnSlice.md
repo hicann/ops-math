@@ -144,7 +144,7 @@ aclnnStatus aclnnSlice(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的张量out。</td>
-      <td>shape满足计算公式中的推到规则。</td>
+      <td>shape满足计算公式中的推导规则。</td>
       <td>与self保持一致</td>
       <td>ND</td>
       <td>1-8</td>

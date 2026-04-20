@@ -66,7 +66,7 @@ aclnnStatus aclnnStack(
     </tr></thead>
   <tbody>
     <tr>
-      <td>tensors（aclTensor*）</td>
+      <td>tensors（aclTensorList*）</td>
       <td>输入</td>
       <td>需要连接的tensor序列。</td>
       <td>-</td>

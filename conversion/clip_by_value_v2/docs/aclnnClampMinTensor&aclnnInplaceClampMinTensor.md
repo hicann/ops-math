@@ -94,7 +94,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
       <td class="tg-0pky">self（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入Tensor，需要进行限制的张量，即公式中的x<sub>i</sub>。</td>
-      <td class="tg-0pky">shape可以与clipValueMin进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与max的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape可以与clipValueMin进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与clipValueMin的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -255,7 +255,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
       <td class="tg-0pky">selfRef（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入Tensor，需要进行限制的张量，即公式中的x<sub>i</sub>。</td>
-      <td class="tg-0pky">shape可以与clipValueMin进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与max的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape可以与clipValueMin进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与clipValueMin的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -295,10 +295,10 @@ aclnnStatus aclnnInplaceClampMinTensor(
 
   - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：
     - selfRef的数据类型不支持BOOL、BFLOAT16。
-    - clipValueMax的数据类型不支持BFLOAT16。
+    - clipValueMin的数据类型不支持BFLOAT16。
 
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：
-    - selfRef和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）。
+    - selfRef和clipValueMin数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）。
     - selfRef的数据类型不支持BOOL。
 
 - **返回值：**

@@ -65,7 +65,7 @@ aclnnStatus aclnnCat(
     </tr></thead>
   <tbody>
     <tr>
-      <td>tensors（aclTensor*）</td>
+      <td>tensors（aclTensorList*）</td>
       <td>输入</td>
       <td>需要级联的tensor列表，列表长度不超过32，且数据类型需要列表内部构成满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
       <td>-</td>

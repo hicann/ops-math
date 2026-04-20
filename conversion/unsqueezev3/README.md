@@ -1,3 +1,3 @@
 # Unsqueezev3
 
-本目录仅包含Unsqueezev3算子对应的aclnn接口；如您想要贡献该算子的AscendC实现，请参考[贡献流程](../../CONTRIBUTING.md)。
+本目录仅包含Unsqueezev3算子对应的ACLNN接口；如您想要贡献该算子的AscendC实现，请参考[贡献流程](../../CONTRIBUTING.md)。

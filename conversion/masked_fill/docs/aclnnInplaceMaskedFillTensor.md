@@ -65,19 +65,19 @@ aclnnStatus aclnnInplaceMaskedFillTensor(
     </tr></thead>
   <tbody>
     <tr>
-      <td>selfRef</td>
+      <td>selfRef（aclTensor*）</td>
       <td>输入/输出</td>
       <td>输入输出tensor</td>
-      <td>-</td>
+      <td>被填充的张量。</td>
       <td>BOOL、INT8、INT32、INT64、FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>mask</td>
+      <td>mask（aclTensor*）</td>
       <td>输入</td>
-      <td>-</td>
+      <td>输入selfRef中需要被填充的mask标记。</td>
       <td>shape与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>BOOL</td>
       <td>ND</td>
@@ -85,17 +85,17 @@ aclnnStatus aclnnInplaceMaskedFillTensor(
       <td>√</td>
     </tr>
     <tr>
-      <td>value</td>
+      <td>value（aclTensor*）</td>
       <td>输入</td>
-      <td>-</td>
-      <td>数据类型需要与selfRef的数据类型满足数据类型推导规则。</td>
+      <td>用于填充的张量。</td>
+      <td>数据类型需要与selfRef的数据类型满足数据类型推导规则，维度仅支持0维。</td>
       <td>BOOL、INT8、INT32、INT64、FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>0</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -105,7 +105,7 @@ aclnnStatus aclnnInplaceMaskedFillTensor(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

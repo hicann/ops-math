@@ -105,7 +105,7 @@ aclnnStatus aclnnDiagFlat(
       <td class="tg-0pky">-</td>
     </tr>
     <tr>
-      <td class="tg-0pky">（aclOpExecutor**）</td>
+      <td class="tg-0pky">executor（aclOpExecutor**）</td>
       <td class="tg-0pky">输出</td>
       <td class="tg-0pky">返回op执行器，包含了算子计算流程。</td>
       <td class="tg-0pky">-</td>
