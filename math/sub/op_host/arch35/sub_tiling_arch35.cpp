@@ -43,11 +43,11 @@ bool SubTiling::CheckDtype(const ge::DataType& input0Dtype, const ge::DataType& 
                            const ge::DataType& outputDtype) const
 {
     if (input0Dtype != input1Dtype || input0Dtype != outputDtype) {
-        OP_LOGE(context_->GetNodeName(),
-               "Dtype of input0[%s] should be equal to dtype of input1[%s] and output[%s].",
-                ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
-                ge::TypeUtils::DataTypeToSerialString(input1Dtype).c_str(),
-                ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str());
+        std::string dtypesStr = ge::TypeUtils::DataTypeToSerialString(input0Dtype) + ", " +
+                                ge::TypeUtils::DataTypeToSerialString(input1Dtype) + " and " +
+                                ge::TypeUtils::DataTypeToSerialString(outputDtype);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1, x2 and y",
+            dtypesStr.c_str(), "dtypes of x1, x2 and y must be the same");
         return false;
     }
     return true;
@@ -98,9 +98,9 @@ ge::graphStatus SubTiling::DoOpTiling()
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
-        OP_LOGE(context_->GetNodeName(),
-            "Input dtype is only support fp16, bf16, fp32, int64, int32, uint8, int8, bool, complex32, complex64, "
-            "while got %s!", ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str());
+        std::string dtypeStr = ge::TypeUtils::DataTypeToSerialString(input0Dtype);
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1", dtypeStr.c_str(),
+            "fp16, bf16, fp32, int64, int32, uint8, int8, bool, complex32 or complex64");
         return ge::GRAPH_FAILED;
     }
 

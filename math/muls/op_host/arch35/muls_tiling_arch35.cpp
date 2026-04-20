@@ -13,6 +13,7 @@
  * \brief
  */
 #include "muls_tiling_arch35.h"
+#include <graph/utils/type_utils.h>
 #include "platform/platform_ascendc.h"
 #include "log/log.h"
 #include "atvoss/elewise/elewise_tiling.h"
@@ -44,8 +45,12 @@ ge::graphStatus MulsTiling::CalcOutputDtype()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
 
-    OP_CHECK_IF(inputDtype != this->outputDtype, OP_LOGE(tilingContext, "input and output dtype is diff, check failed"),
-               return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputDtype != this->outputDtype,
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x and y",
+            (ge::TypeUtils::DataTypeToSerialString(inputDtype) + " and " +
+             ge::TypeUtils::DataTypeToSerialString(this->outputDtype)).c_str(),
+            "dtypes of x and y must be the same"),
+        return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -60,8 +65,15 @@ ge::graphStatus MulsTiling::CheckShape()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
     const gert::Shape& outputShape = Ops::Math::OpTiling::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
-    OP_CHECK_IF(inputShape != outputShape, OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),
-               return ge::GRAPH_FAILED);
+    if (inputShape != outputShape) {
+        std::string inputShapeStr = Ops::Base::ToString(inputShape);
+        std::string outputShapeStr = Ops::Base::ToString(outputShape);
+        std::string shapesStr = inputShapeStr + " and " + outputShapeStr;
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x and y",
+            shapesStr.c_str(), "shapes of x and y must be the same");
+        return ge::GRAPH_FAILED;
+    }
+
     return ge::GRAPH_SUCCESS;
 }
 

@@ -13,6 +13,7 @@
  * \brief
  */
 #include "pows_tiling.h"
+#include <graph/utils/type_utils.h>
 #include "register/op_impl_registry.h"
 #include "util/math_util.h"
 #include "log/log.h"
@@ -136,7 +137,8 @@ static ge::graphStatus CheckInputParams(const gert::TilingContext* context)
 
     OP_CHECK_IF(
         dtype != ge::DT_FLOAT16 && dtype != ge::DT_BF16 && dtype != ge::DT_FLOAT,
-        OP_LOGE(context, "input dtype only support fp16, fp32, bf16 currently, please check."),
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "x1",
+            ge::TypeUtils::DataTypeToSerialString(dtype).c_str(), "fp16, fp32 or bf16"),
         return ge::GRAPH_FAILED);
 
     OP_CHECK_IF(

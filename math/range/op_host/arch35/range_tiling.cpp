@@ -157,13 +157,22 @@ static ge::graphStatus CheckStep(gert::TilingContext* context, T start, T limit,
 {
     OP_CHECK_IF(
         !(delta > (static_cast<T>(0)) || delta < (static_cast<T>(0))),
-        OP_LOGE(context->GetNodeName(), "delta is zero."), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "delta", "0", "delta must not be zero"),
+        return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         ((limit > start) && (delta < 0)),
-        OP_LOGE(context->GetNodeName(), "increate is positive, but delta is negative"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+            context->GetNodeName(), "start, limit and delta",
+            (std::to_string(start) + ", " + std::to_string(limit) + " and " + std::to_string(delta)).c_str(),
+            "when limit is greater than start, delta must be greate than or equal to 0."),
+        return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         ((limit < start) && (delta > 0)),
-        OP_LOGE(context->GetNodeName(), "increate is negative, but delta is positive"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+            context->GetNodeName(), "start, limit and delta",
+            (std::to_string(start) + ", " + std::to_string(limit) + " and " + std::to_string(delta)).c_str(),
+            "when limit is less than start, delta must be less than or equal to 0."),
+        return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -365,10 +374,13 @@ ge::graphStatus RangeMemBaseTilingClass::DoOpTiling()
     auto dtypeOutput = context_->GetOutputDesc(0)->GetDataType();
     OP_CHECK_IF(
         InputTypeIsInvalid(dtypeStart, dtypeLimit, dtypeDelta, dtypeOutput),
-        OP_LOGE(
-            context_->GetNodeName(), "input dtype is invalid. start:%s, limit:%s, delta:%s, output:%s",
-            Ops::Base::ToString(dtypeStart).c_str(), Ops::Base::ToString(dtypeLimit).c_str(),
-            Ops::Base::ToString(dtypeDelta).c_str(), Ops::Base::ToString(dtypeOutput).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            context_->GetNodeName(), "start, limit, delta and y",
+            (Ops::Base::ToString(dtypeStart) + ", " + Ops::Base::ToString(dtypeLimit) + ", " +
+             Ops::Base::ToString(dtypeDelta) + " and " + Ops::Base::ToString(dtypeOutput))
+                .c_str(),
+            "dtype of start, limit and delta must be int32, int64, float, float16, bf16 or double. dtype of y must "
+            "be int32, int64, float, float16 or bf16"),
         return ge::GRAPH_FAILED);
 
     auto ret = OpTilingCalculateOutputSize(context_, tensorStart, tensorLimit, tensorDelta, dtypeOutput);

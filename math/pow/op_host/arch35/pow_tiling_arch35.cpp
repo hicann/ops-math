@@ -84,8 +84,9 @@ ge::graphStatus PowTilingBase::GetShapeAttrsInfo()
         params_.baseDtypeSize = INPUT_DTYPE_B8;
         params_.computeDtypeSize = INPUT_DTYPE_B8;
     } else {
-        OP_LOGE("Pow",
-            "base input dtype error, only support float32, float16, bfloat16, uint8, int8, int16, int32.");
+        OP_LOGE_FOR_INVALID_DTYPE("Pow", "x1",
+            ge::TypeUtils::DataTypeToSerialString(params_.baseDtype).c_str(),
+            "float32, float16, bfloat16, uint8, int8, int16 or int32");
         return ge::GRAPH_FAILED;
     }
 

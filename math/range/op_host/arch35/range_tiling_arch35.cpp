@@ -53,31 +53,23 @@ static ge::graphStatus CheckDtypeIsInvalid(
 
     OP_CHECK_IF(
         inputDtype.count(start) == 0,
-        OP_LOGE(
-            context->GetNodeName(),
-            "Input start dtype(%s) is invalid, it should be int32, int64, float32, float16, bfloat16 or double.",
-            Ops::Base::ToString(start).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "start", Ops::Base::ToString(start).c_str(),
+            "int32, int64, float32, float16, bfloat16 or double"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         inputDtype.count(limit) == 0,
-        OP_LOGE(
-            context->GetNodeName(),
-            "Input limit dtype(%s) is invalid, it should be int32, int64, float32, float16, bfloat16 or double.",
-            Ops::Base::ToString(limit).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "limit", Ops::Base::ToString(limit).c_str(),
+            "int32, int64, float32, float16, bfloat16 or double"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         inputDtype.count(delta) == 0,
-        OP_LOGE(
-            context->GetNodeName(),
-            "Input delta dtype(%s) is invalid, it should be int32, int64, float32, float16, bfloat16 or double.",
-            Ops::Base::ToString(delta).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "delta", Ops::Base::ToString(delta).c_str(),
+            "int32, int64, float32, float16, bfloat16 or double"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         outputDtype.count(output) == 0,
-        OP_LOGE(
-            context->GetNodeName(),
-            "Output dtype(%s) is invalid, it should be int32, int64, float32, float16 or bfloat16.",
-            Ops::Base::ToString(output).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "output", Ops::Base::ToString(output).c_str(),
+            "int32, int64, float32, float16 or bfloat16"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }

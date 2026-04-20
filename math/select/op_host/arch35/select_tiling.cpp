@@ -74,13 +74,12 @@ ge::graphStatus SelectCheckInputDtype(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, outputYDesc);
     ge::DataType outputDtype = outputYDesc->GetDataType();
     if ((input0DType != ge::DT_BOOL) || (input1DType != input2DType) || (outputDtype != input1DType)) {
-        OP_LOGE(
-            context->GetNodeName(),
-            "dtype of condition[%s] is not bool, or dtype of x1[%s], x2[%s] and y[%s] are not equal.",
-            ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(input1DType).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(input2DType).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str());
+        std::string dtypesStr = ge::TypeUtils::DataTypeToSerialString(input0DType) + ", " +
+                                ge::TypeUtils::DataTypeToSerialString(input1DType) + ", " +
+                                ge::TypeUtils::DataTypeToSerialString(input2DType) + " and " +
+                                ge::TypeUtils::DataTypeToSerialString(outputDtype);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context->GetNodeName(), "condition, x1, x2 and y",
+            dtypesStr.c_str(), "condition must be bool, x1, x2 and y must have the same dtype");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -102,16 +101,20 @@ ge::graphStatus InferSelectShape(gert::TilingContext* context, vector<gert::Shap
     OP_CHECK_NULL_WITH_CONTEXT(context, x2StorageShape);
     auto& x2Shape = Ops::Base::EnsureNotScalar(x2StorageShape->GetStorageShape());
 
-    OP_CHECK_IF(x1Shape != x2Shape,
-        OP_LOGE(context->GetNodeName(),
-                                        "shape of x1[%s] must be the same shape as the shape of x2[%s].",
-                                        Shape2String(x1Shape).c_str(),
-                                        Shape2String(x2Shape).c_str()),
-        return ge::GRAPH_FAILED);
-
+    if (x1Shape != x2Shape) {
+        std::string x1ShapeStr = Ops::Base::ToString(x1Shape);
+        std::string x2ShapeStr = Ops::Base::ToString(x2Shape);
+        std::string shapesStr = x1ShapeStr + " and " + x2ShapeStr;
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x1 and x2",
+            shapesStr.c_str(), "shapes of x1 and x2 must be the same");
+        return ge::GRAPH_FAILED;
+    }
+        
     int64_t conditionResize = x1DimNum - conditionDimNum;
     OP_CHECK_IF(conditionResize < 0,
-        OP_LOGE(context->GetNodeName(), "conditionDimNum must less equal the x1DimNum."),
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "condition and x1",
+            (std::to_string(conditionDimNum) + " and " + std::to_string(x1DimNum)).c_str(),
+            "dim of condition should not be greater than dim of x1"),
         return ge::GRAPH_FAILED);
 
     gert::Shape conditionNewShape;
@@ -179,9 +182,9 @@ ge::graphStatus SelectTiling::DoOpTiling()
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), 0);
     } else {
-        OP_LOGE(context_->GetNodeName(),
-            "input x1 dtype is only support int64, int32, int8, uint8, float16, bf16, fp32, bool, while got %s!",
-            ge::TypeUtils::DataTypeToSerialString(input1DType).c_str());
+        std::string dtypeStr = ge::TypeUtils::DataTypeToSerialString(input1DType);
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1", dtypeStr.c_str(),
+            "int64, int32, int8, uint8, float16, bf16, fp32 or bool");
         return ge::GRAPH_FAILED;
     }
 

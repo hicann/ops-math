@@ -58,9 +58,10 @@ ge::graphStatus MaximumTiling::DoOpTiling()
     OP_CHECK_NULL_WITH_CONTEXT(context_, input1Desc);
     ge::DataType x2DType = input1Desc->GetDataType();
     if (x1DType != x2DType) {
-        OP_LOGE(
-            context_->GetNodeName(), "dtype of x1[%s] ne x2[%s].", TypeUtils::DataTypeToSerialString(x1DType).c_str(),
-            TypeUtils::DataTypeToSerialString(x2DType).c_str());
+        std::string dtypesStr = TypeUtils::DataTypeToSerialString(x1DType) + " and " +
+                                TypeUtils::DataTypeToSerialString(x2DType);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1 and x2",
+            dtypesStr.c_str(), "dtypes of x1 and x2 must be the same");
         return ge::GRAPH_FAILED;
     }
 
@@ -68,19 +69,18 @@ ge::graphStatus MaximumTiling::DoOpTiling()
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
     ge::DataType yDType = outputDesc->GetDataType();
     if (x1DType != yDType) {
-        OP_LOGE(
-            context_->GetNodeName(), "dtype of x1[%s] != dtype of output[%s].",
-            TypeUtils::DataTypeToSerialString(x1DType).c_str(), TypeUtils::DataTypeToSerialString(yDType).c_str());
+        std::string dtypesStr =
+            TypeUtils::DataTypeToSerialString(x1DType) + " and " + TypeUtils::DataTypeToSerialString(yDType);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            context_->GetNodeName(), "x1 and y", dtypesStr.c_str(), "dtypes of x1 and y must be the same");
         return ge::GRAPH_FAILED;
     }
 
     OP_CHECK_IF(
         std::find(DTYPE_LIST.begin(), DTYPE_LIST.end(), x1DType) == DTYPE_LIST.end(),
-        OP_LOGE(
-            context_->GetNodeName(),
-            "x1's dtype must be fp16/bf16/fp32/int64/int32/int8"
-            "/uint8, but: %s!",
-            ge::TypeUtils::DataTypeToSerialString(x1DType).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE(
+            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(x1DType).c_str(),
+            "fp16, bf16, fp32, int64, int32, int8 or uint8"),
         return ge::GRAPH_FAILED);
 
     ge::graphStatus ret = ge::GRAPH_SUCCESS;

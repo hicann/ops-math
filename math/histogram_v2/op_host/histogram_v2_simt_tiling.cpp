@@ -119,15 +119,19 @@ ge::graphStatus HistogramV2SimtTiling::GetShapeAttrsInfo()
     const int64_t* binsPtr = attrs->GetAttrPointer<int64_t>(BINS_IDX);
     bins_ = (binsPtr == nullptr) ? DEFAULT_BINS : *binsPtr;
     OP_CHECK_IF(
-        bins_ <= 0, OP_LOGE(context_, "bins must be > 0, but got %ld for dimension 0.", bins_),
+        bins_ <= 0, 
+        OP_LOGE_WITH_INVALID_ATTR(context_->GetNodeName(), "bins", std::to_string(bins_).c_str(), "a positive integer"),
         return ge::GRAPH_FAILED);
 
     auto outputShape = context_->GetOutputShape(OUTPUT_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputShape);
     auto outputDataLength = outputShape->GetStorageShape().GetShapeSize();
-    OP_CHECK_IF(
-        outputDataLength != bins_, OP_LOGE(context_, "The size of out tensor should be same as bins."),
-        return ge::GRAPH_FAILED);
+    if (outputDataLength != bins_) {
+        std::string sizeStr = std::to_string(outputDataLength) + " and " + std::to_string(bins_);
+        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(context_->GetNodeName(), "y and bins",
+            sizeStr.c_str(), "y size should be same as bins");
+        return ge::GRAPH_FAILED;
+    }
 
     auto inputDesc = context_->GetInputDesc(INPUT_IDX_X);
     OP_CHECK_NULL_WITH_CONTEXT(context_, inputDesc);
@@ -138,16 +142,20 @@ ge::graphStatus HistogramV2SimtTiling::GetShapeAttrsInfo()
         OP_CHECK_NULL_WITH_CONTEXT(context_, inputMinMaxDesc);
         auto minMaxDtype = inputMinMaxDesc->GetDataType();
         if (minMaxDtype != dType) {
-            OP_LOGE(
-                context_, "dtype of input %ld is %s, which should be same as input 0.", i,
-                Ops::Base::ToString(minMaxDtype).c_str());
+            std::string dtypesStr = Ops::Base::ToString(dType) + " and " + Ops::Base::ToString(minMaxDtype);
+            std::string paramNames = std::string("x and ") + (i == 1 ? "min" : "max");
+            std::string reason = std::string("dtypes of ") + paramNames + " must be the same";
+            OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), paramNames.c_str(),
+                dtypesStr.c_str(), reason.c_str());
             return ge::GRAPH_FAILED;
         }
         auto minMaxShape = context_->GetInputShape(i);
         OP_CHECK_NULL_WITH_CONTEXT(context_, minMaxShape);
         auto minMaxLength = minMaxShape->GetStorageShape().GetShapeSize();
         if (minMaxLength != 1) {
-            OP_LOGE(context_, "element num of input %ld is %ld, which should be 1.", i, minMaxLength);
+            std::string paramName = (i == 1) ? "min" : "max";
+            OP_LOGE_FOR_INVALID_SHAPESIZE(context_->GetNodeName(), paramName.c_str(),
+                std::to_string(minMaxLength).c_str(), "1");
             return ge::GRAPH_FAILED;
         }
     }
@@ -155,7 +163,8 @@ ge::graphStatus HistogramV2SimtTiling::GetShapeAttrsInfo()
     auto iter = INPUT_DATA_TYPE_TO_INT.find(dType);
     OP_CHECK_IF(
         (iter == INPUT_DATA_TYPE_TO_INT.end()),
-        OP_LOGE(context_, "input dtype = %s not supported, please check.", Ops::Base::ToString(dType).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x", Ops::Base::ToString(dType).c_str(),
+            "float, int32, int8, uint8, int16, int64 or float16"),
         return ge::GRAPH_FAILED);
     inputDtypeVal_ = iter->second;
 
@@ -164,7 +173,7 @@ ge::graphStatus HistogramV2SimtTiling::GetShapeAttrsInfo()
     auto outputDType = outputDesc->GetDataType();
     OP_CHECK_IF(
         outputDType != ge::DataType::DT_INT32,
-        OP_LOGE(context_, "output dtype = %s not supported, please check.", Ops::Base::ToString(outputDType).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "y", Ops::Base::ToString(outputDType).c_str(), "int32"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }

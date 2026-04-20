@@ -196,30 +196,23 @@ static ge::graphStatus CheckDtypeIsValid(
 
     OP_CHECK_IF(
         otherDtype.count(start) == 0,
-        OP_LOGE(
-            context->GetNodeName(),
-            "Input start dtype(%s) is invalid, it should be uint8, int8, int16, int32, float32, float16, bf16",
-            Ops::Base::ToString(start).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "start", Ops::Base::ToString(start).c_str(),
+            "uint8, int8, int16, int32, float32, float16 or bf16"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         otherDtype.count(stop) == 0,
-        OP_LOGE(
-            context->GetNodeName(),
-            "Input stop dtype(%s) is invalid, it should be uint8, int8, int16, int32, float32, float16, bf16",
-            Ops::Base::ToString(stop).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "stop", Ops::Base::ToString(stop).c_str(),
+            "uint8, int8, int16, int32, float32, float16 or bf16"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         otherDtype.count(output) == 0,
-        OP_LOGE(
-            context->GetNodeName(),
-            "Output dtype(%s) is invalid, it should be uint8, int8, int16, int32, float32, float16, bf16",
-            Ops::Base::ToString(output).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "output", Ops::Base::ToString(output).c_str(),
+            "uint8, int8, int16, int32, float32, float16 or bf16"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         numDtype.count(num) == 0,
-        OP_LOGE(
-            context->GetNodeName(), "Input num dtype(%s) is invalid, it should be int32, int64",
-            Ops::Base::ToString(num).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "num", Ops::Base::ToString(num).c_str(),
+            "int32 or int64"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }

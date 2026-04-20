@@ -13,6 +13,7 @@
  * \brief
  */
 #include "non_finite_check_tiling.h"
+#include <graph/utils/type_utils.h>
 #include "register/op_impl_registry.h"
 #include "util/math_util.h"
 #include "log/log.h"
@@ -77,7 +78,8 @@ ge::graphStatus NonFiniteCheckTiling::Init()
     totalTensorCount = int32_t(tilingContext->GetComputeNodeInputNum());
     OP_CHECK_IF(
         totalTensorCount > MAX_TENSOR_COUNT || totalTensorCount <= 0,
-        OP_LOGE(tilingContext, "The number of input tensors [%d] not in (0, %hu].", totalTensorCount, MAX_TENSOR_COUNT),
+        OP_LOGE_FOR_INVALID_TENSORNUM(tilingContext->GetNodeName(), "tensor_list",
+            totalTensorCount, ("between 1 and " + std::to_string(MAX_TENSOR_COUNT)).c_str()),
         return ge::GRAPH_FAILED);
     // Get shape, dtype information, and the total number of data.
     for (int32_t i = 0; i < totalTensorCount; i++) {
@@ -93,14 +95,22 @@ ge::graphStatus NonFiniteCheckTiling::Init()
                 return ge::GRAPH_FAILED);
             elementsPerBlock = BYTE_BLOCK / dataTypeSize;
         } else if (tempDtype != dataType) {
-            OP_LOGE(tilingContext, "All tensor data types must be consistent.");
+            std::string paramNames = "tensor_list" + std::to_string(i + 1) + "th tensor";
+            std::string reasonMsg = "dtype of all input tensor_list should be the same, but tensor_list " +
+                                    std::to_string(i) + "th tensor`s dtype is not same as 0th tensor`s dtype " +
+                                    Ops::Base::ToString(dataType);
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+                tilingContext->GetNodeName(), paramNames.c_str(),
+                Ops::Base::ToString(tempDtype).c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
         auto shapePtr = tilingContext->GetDynamicInputShape(0, i);
         OP_CHECK_NULL_WITH_CONTEXT(tilingContext, shapePtr);
         tensorDataCountList[i] = shapePtr->GetStorageShape().GetShapeSize();
         OP_CHECK_IF(
-            tensorDataCountList[i] == 0, OP_LOGE(tilingContext, "The input shape not support empty tensor."),
+            tensorDataCountList[i] == 0,
+            OP_LOGE_FOR_INVALID_SHAPESIZE(tilingContext->GetNodeName(),
+                (std::to_string(i) + "th tensor").c_str(), "0", "greater than 0"),
             return ge::GRAPH_FAILED);
         // Make a 32-byte alignment for each Tensor
         tensorDataCountAlignedList[i] = Ops::Base::CeilAlign(tensorDataCountList[i], int64_t(elementsPerBlock));
@@ -154,12 +164,16 @@ ge::graphStatus NonFiniteCheckTiling::CheckParams() const
         totalTensorCount, totalDataCountAligned);
     OP_CHECK_IF(
         dataType != ge::DT_FLOAT16 && dataType != ge::DT_BF16 && dataType != ge::DT_FLOAT,
-        OP_LOGE(tilingContext, "The input dtype not in [float16, bfloat16, float]."), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "tensor_list",
+            ge::TypeUtils::DataTypeToSerialString(dataType).c_str(), "float16, bfloat16 or float"),
+        return ge::GRAPH_FAILED);
 
     auto flagDescPtr = tilingContext->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, flagDescPtr);
     OP_CHECK_IF(
-        flagDescPtr->GetDataType() != ge::DT_FLOAT, OP_LOGE(tilingContext, "The output dtype must be float."),
+        flagDescPtr->GetDataType() != ge::DT_FLOAT,
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "found_flag",
+            ge::TypeUtils::DataTypeToSerialString(flagDescPtr->GetDataType()).c_str(), "float"),
         return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;

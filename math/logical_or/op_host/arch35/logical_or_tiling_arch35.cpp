@@ -54,11 +54,11 @@ ge::graphStatus LogicalOrTiling::DoOpTiling()
     ge::DataType outputDtype = outputYDesc->GetDataType();
     if ((input0DType != ge::DT_BOOL) || (input1DType != ge::DT_BOOL) ||
         (outputDtype != ge::DT_BOOL)) {
-        OP_LOGE(
-           context_->GetNodeName(), "dtype of input0[%s], dtype of input1[%s], dtype of output[%s] are not bool.",
-           ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
-           ge::TypeUtils::DataTypeToSerialString(input1DType).c_str(),
-           ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str());
+        std::string dtypesStr = ge::TypeUtils::DataTypeToSerialString(input0DType) + ", " +
+                                ge::TypeUtils::DataTypeToSerialString(input1DType) + " and " +
+                                ge::TypeUtils::DataTypeToSerialString(outputDtype);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1, x2 and y",
+            dtypesStr.c_str(), "dtypes of x1, x2 and y must be bool");
         return ge::GRAPH_FAILED;
     }
     

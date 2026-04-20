@@ -132,20 +132,27 @@ bool GerTiling::CheckShapes()
     gert::Shape yShape_ = EnsureNotScalar(yStorageShape->GetStorageShape());
     // 校验空tensor
     if (x1Shape_.GetShapeSize() <= 0L || x2Shape_.GetShapeSize() <= 0L || yShape_.GetShapeSize() <= 0L) {
-        OP_LOGE(context_->GetNodeName(), "The input x1, input x2, output y shape should not be empty.");
+        std::string sizesStr = std::to_string(x1Shape_.GetShapeSize()) + ", " +
+                               std::to_string(x2Shape_.GetShapeSize()) + " and " +
+                               std::to_string(yShape_.GetShapeSize());
+        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(context_->GetNodeName(), "x1, x2 and y",
+            sizesStr.c_str(), "shape sizes of x1, x2 and y should be greater than 0.");
         return false;
     }
     // 校验x1，x2为1维
-    OP_CHECK_IF(
-        x1Shape_.GetDimNum() != 1, OP_LOGE(context_->GetNodeName(), "the input x1 shape rank must be 1."), return false);
-    OP_CHECK_IF(
-        x2Shape_.GetDimNum() != 1, OP_LOGE(context_->GetNodeName(), "the input x2 shape rank must be 1."), return false);
+    OP_CHECK_IF(x1Shape_.GetDimNum() != 1,
+        OP_LOGE_FOR_INVALID_SHAPEDIM(context_->GetNodeName(), "x1", std::to_string(x1Shape_.GetDimNum()).c_str(), "1"),
+        return false);
+    OP_CHECK_IF(x2Shape_.GetDimNum() != 1,
+        OP_LOGE_FOR_INVALID_SHAPEDIM(context_->GetNodeName(), "x2", std::to_string(x2Shape_.GetDimNum()).c_str(), "1"),
+        return false);
 
     // 校验y
     OP_CHECK_IF(
         yShape_.GetDimNum() != NTWO ||
             (yShape_.GetDim(0) != x1Shape_.GetDim(0) || yShape_.GetDim(1) != x2Shape_.GetDim(0)),
-        OP_LOGE(context_->GetNodeName(), "y Shape must be [%ld, %ld].", x1Shape_.GetDim(0), x2Shape_.GetDim(0)),
+        OP_LOGE_FOR_INVALID_SHAPE(context_->GetNodeName(), "y", Ops::Base::ToString(yShape_).c_str(),
+            ("[" + std::to_string(x1Shape_.GetDim(0)) + "," + std::to_string(x2Shape_.GetDim(0)) + "]").c_str()),
         return false);
     return true;
 }
@@ -175,10 +182,11 @@ ge::graphStatus GerTiling::DoOpTiling() {
     if (it != GER_DTYPE_MAP.end()) {
         return it->second(this);
     }
-    OP_LOGE("GerTiling", "Dtypes are not support. Input0DType is: %s, input1DType is: %s, outputDtype is: %s.",
-            ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(input1DType).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(outputDType).c_str());
+    std::string dtypesStr = ge::TypeUtils::DataTypeToSerialString(input0DType) + ", " +
+                            ge::TypeUtils::DataTypeToSerialString(input1DType) + " and " +
+                            ge::TypeUtils::DataTypeToSerialString(outputDType);
+    OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1, x2 and y", dtypesStr.c_str(),
+        "dtypes of x1, x2 and y must be the same, and must be float16, bfloat16 or float");
     return ge::GRAPH_FAILED;
 }
 
