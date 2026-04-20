@@ -89,7 +89,7 @@ ge::graphStatus ExtractTensorValue(const gert::TilingContext* context, const int
 }
 
 RandomTilingArch35::RandomTilingArch35(gert::TilingContext* context, const OpTilingConfig& config)
-    : context_(context), config_(config)
+    : context_(context), config_(config), tilingData_{}, simtTilingData_{}
 {}
 
 ge::graphStatus RandomTilingArch35::DoTiling()

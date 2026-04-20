@@ -10,16 +10,17 @@
 
 if(UT_TEST_ALL OR OP_KERNEL_UT)
     set(KERNEL_STAGING_DIR ${CMAKE_CURRENT_BINARY_DIR}/kernel_dep_staging)
-    file(MAKE_DIRECTORY ${KERNEL_STAGING_DIR}/stateless_bernoulli/arch35)
+    file(MAKE_DIRECTORY ${KERNEL_STAGING_DIR}/stateless_drop_out_gen_mask/arch35)
     execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
         ${PROJECT_SOURCE_DIR}/random/random_common/op_kernel
         ${KERNEL_STAGING_DIR}/random_common)
 
-    set(stateless_bernoulli_tiling_files
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/arch35/stateless_bernoulli_tiling_arch35.cpp)
+    set(stateless_drop_out_gen_mask_tiling_files
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/arch35/stateless_drop_out_gen_mask_tiling_arch35.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../random_common/op_host/arch35/random_tiling_arch35.cpp)
     AddOpTestCase(
-        stateless_bernoulli
+        stateless_drop_out_gen_mask
         "ascend950"
-        "-DDTYPE_Y=float -I${KERNEL_STAGING_DIR}/stateless_bernoulli/arch35"
-        "${stateless_bernoulli_tiling_files}")
+        "-DDTYPE_PROB=float -DTestUtDefaultTilingStruct=RandomUnifiedTilingDataStruct -I${KERNEL_STAGING_DIR}/stateless_drop_out_gen_mask/arch35"
+        "${stateless_drop_out_gen_mask_tiling_files}")
 endif()

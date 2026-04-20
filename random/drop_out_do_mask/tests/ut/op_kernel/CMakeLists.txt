@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -8,9 +8,16 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-file(GLOB CURRENT_SOURCE_DIRS LIST_DIRECTORIES true ${CMAKE_CURRENT_SOURCE_DIR}/*)
-foreach(SUB_DIR ${CURRENT_SOURCE_DIRS})
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${SUB_DIR}/CMakeLists.txt")
-        add_subdirectory(${SUB_DIR})
-    endif()
-endforeach()
+if (UT_TEST_ALL OR OP_KERNEL_UT)
+    set(drop_out_do_mask_tiling_files
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/arch35/drop_out_do_mask_tiling.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/arch35/drop_out_do_mask_tiling_arch35.cpp)
+    AddOpsTestCase(
+        OP_NAME drop_out_do_mask
+        SOC_VERSION "ascend950"
+        OTHER_COMPILE_OPTIONS "-DDTYPE_X=float"
+        TILING_SRC_FILES ${drop_out_do_mask_tiling_files}
+        UT_SRC_FILES
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_kernel/drop_out_do_mask_apt.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/test_drop_out_do_mask.cpp)
+endif()
