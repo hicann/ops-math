@@ -168,10 +168,6 @@ __aicore__ inline void OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::ProcessB
             DataCopyExtParams copyInParam = {
                 rows, static_cast<uint32_t>(copyCols * sizeof(T)),
                 static_cast<int64_t>((dim0stride - copyCols) * sizeof(T)), static_cast<int64_t>(copyCols * sizeof(T)), 0};
-            if (copyCols == dim1Size) {
-                copyInParam.blockCount = 1;
-                copyInParam.blockLen = rows * copyCols * sizeof(T);
-            }
             srcGlobal.SetGlobalBuffer(GetTensorAddr(tensorIdx, blockOffset_ * dim0stride + colsOffset));
             DataCopyPad<T, PaddingMode::Compact>(srcLocal[tensorStride], srcGlobal, copyInParam, padParams);
             ComputeSplitDim1(dstLocal, srcLocal[tensorStride], rows, copyCols, totalCopyCols, curLoopHandleCols);
