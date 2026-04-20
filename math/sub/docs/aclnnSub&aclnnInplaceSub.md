@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-* 算子功能：完成减法计算，被减数按alpha进行缩放。
+* 接口功能：完成减法计算，被减数按alpha进行缩放。
 * 计算公式：
   
   $$
@@ -32,44 +32,194 @@
   * aclnnSub：需新建一个输出张量对象存储计算结果。
   * aclnnInplaceSub：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 * 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnSubGetWorkspaceSize”或者“aclnnInplaceSubGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnSub”或者“aclnnInplaceSub”接口执行计算。
-  * `aclnnStatus aclnnSubGetWorkspaceSize(const aclTensor *self, const aclTensor *other, const aclScalar *alpha, aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-  * `aclnnStatus aclnnSub(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
-  * `aclnnStatus aclnnInplaceSubGetWorkspaceSize(aclTensor *selfRef, const aclTensor *other, const aclScalar *alpha, uint64_t *workspaceSize, aclOpExecutor **executor)`
-  * `aclnnStatus aclnnInplaceSub(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+
+```cpp
+aclnnStatus aclnnSubGetWorkspaceSize(
+    const aclTensor* self, 
+    const aclTensor* other,
+    const aclScalar* alpha, 
+    aclTensor*       out, 
+    uint64_t*        workspaceSize,
+    aclOpExecutor**  executor)
+```
+
+```cpp
+aclnnStatus aclnnSub(
+    void*          workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor* executor, 
+    aclrtStream    stream)
+```
+
+```cpp
+aclnnStatus aclnnInplaceSubGetWorkspaceSize(
+    const aclTensor* selfRef, 
+    const aclTensor* other,
+    const aclScalar* alpha, 
+    uint64_t*        workspaceSize,
+    aclOpExecutor**  executor)
+```
+
+```cpp
+aclnnStatus aclnnInplaceSub(
+    void*          workspace, 
+    uint64_t       workspaceSize, 
+    aclOpExecutor* executor, 
+    aclrtStream    stream)
+```
 
 ## aclnnSubGetWorkspaceSize
 
 * **参数说明**：
-  * self(aclTensor*, 计算输入)：公式中的输入`self`，且数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），shape需要与other满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，维度不超过8维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16
-     * <term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64
-  * other(aclTensor*, 计算输入)：公式中的输入`other`，数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），shape需要与self满足[broadcast关系](../../../docs/zh/context/broadcast关系.md)，维度不超过8维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16
-     * <term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64
-  * alpha(aclScalar*, 计算输入)：公式中的`alpha`，数据类型需要可转换成self与other推导后的数据类型（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
-    - <term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16。
-  * out(aclTensor\*, 计算输出)：公式中的`out`，数据类型需要是self与other推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)），shape需要是self与other [broadcast](../../../docs/zh/context/broadcast关系.md)之后的shape，维度不超过8维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-    - <term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16。
-  * workspaceSize(uint64\_t\*, 出参)：返回需要在Device侧申请的workspace大小。
-  * executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
+
+  <table class="tg" style="undefined;table-layout: fixed; width: 1445px"><colgroup>
+  <col style="width: 165px">
+  <col style="width: 160px">
+  <col style="width: 150px">
+  <col style="width: 300px">
+  <col style="width: 280px">
+  <col style="width: 115px">
+  <col style="width: 130px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">参数名</th>
+      <th class="tg-0pky">输入/输出</th>
+      <th class="tg-0pky">描述</th>
+      <th class="tg-0pky">使用说明</th>
+      <th class="tg-0pky">数据类型</th>
+      <th class="tg-0pky">数据格式</th>
+      <th class="tg-0pky">维度(shape)</th>
+      <th class="tg-0pky">非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">self（aclTensor*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">公式中的self。</td>
+      <td class="tg-0pky">
+        <ul>
+          <li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
+          <li>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+        </ul>
+      </td>
+      <td class="tg-0pky">FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">0-8</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">other（aclTensor*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">公式中的other。</td>
+      <td class="tg-0pky">
+        <ul>
+          <li>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
+          <li>shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+        </ul>
+      </td>
+      <td class="tg-0pky">FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">0-8</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">alpha（aclScalar*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">公式中的alpha。</td>
+      <td class="tg-0pky">数据类型需要可转换成self与other推导后的数据类型（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
+      <td class="tg-0pky">FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">out（aclTensor*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">公式中的out。</td>
+      <td class="tg-0pky">
+        <ul>
+          <li>数据类型需要是self与other推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</li>
+          <li>shape需要是self与other<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>之后的shape。</li>
+        </ul>
+      </td>
+      <td class="tg-0pky">FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">0-8</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">workspaceSize（uint64_t*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回需要在Device侧申请的workspace大小。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">executor（aclOpExecutor**）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回op执行器，包含了算子计算流程。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+  </tbody></table>
+  
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：不支持BFLOAT16数据类型。
 
 * **返回值**：
-  
+
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-  
-  ```text
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的 self、other、alpha、out 是空指针时。
-  返回161002 (ACLNN_ERR_PARAM_INVALID)：1. self 和 other 的数据类型不在支持的范围之内。
-                                        2. self 和 other 不满足数据类型推导规则。
-                                        3. 推导出的数据类型无法转换为指定输出 out 的类型。
-                                        4. alpha 无法转换为 self 和 other 推导后的数据类型。
-                                        5. self 和 other 的 shape 无法做 broadcast。
-                                        6. out的shape不是self与other broadcast之后的shape。
-                                        7. self或other的shape大于8维。
-  ```
+
+  <table style="undefined;table-layout: fixed; width: 1142px"><colgroup>
+  <col style="width: 305px">
+  <col style="width: 138px">
+  <col style="width: 699px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>返回值</th>
+      <th>错误码</th>
+      <th>描述</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>ACLNN_ERR_PARAM_NULLPTR</td>
+      <td>161001</td>
+      <td>传入的 self、other、alpha、out 是空指针时。</td>
+    </tr>
+    <tr>
+      <td rowspan="7">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="7">161002</td>
+      <td>self 和 other 的数据类型不在支持的范围之内。</td>
+    </tr>
+    <tr>
+      <td>self 和 other 不满足数据类型推导规则。</td>
+    </tr>
+    <tr>
+      <td>推导出的数据类型无法转换为指定输出 out 的类型。</td>
+    </tr>
+    <tr>
+      <td>alpha 无法转换为 self 和 other 推导后的数据类型。</td>
+    </tr>
+    <tr>
+      <td>self 和 other 的 shape 无法做 broadcast。</td>
+    </tr>
+    <tr>
+      <td>out的shape不是self与other broadcast之后的shape。</td>
+    </tr>
+    <tr>
+      <td>self或other的shape大于8维。</td>
+    </tr>
+  </tbody>
+  </table>
 
 ## aclnnSub
 
@@ -117,17 +267,92 @@
 ## aclnnInplaceSubGetWorkspaceSize
 
 * **参数说明**：
-  + selfRef (aclTensor*, 计算输入/输出)：公式中的输入`selfRef`，数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），且需要是推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/互转换关系.md)）。selfRef的shape需要与other [broadcast](../../../docs/zh/context/broadcast关系.md)后的shape一致，维度不超过8维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16
-     * <term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64
-  + other (aclTensor*,计算输入)：公式中的输入`other`，数据类型与selfRef的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)），shape需要与selfRef满足 [broadcast](../../../docs/zh/context/broadcast关系.md)，维度不超过8维。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-     * <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16
-     * <term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64
-  + alpha (aclScalar*,计算输入)：公式中的`alpha`，数据类型需要可转换成selfRef与other推导后的数据类型（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
-    - <term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16。
-  + workspaceSize (uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
-  + executor (aclOpExecutor**, 出参)：返回op执行器，包含了算子计算流程。
+
+  <table class="tg" style="undefined;table-layout: fixed; width: 1445px"><colgroup>
+  <col style="width: 165px">
+  <col style="width: 160px">
+  <col style="width: 150px">
+  <col style="width: 300px">
+  <col style="width: 280px">
+  <col style="width: 115px">
+  <col style="width: 130px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-0pky">参数名</th>
+      <th class="tg-0pky">输入/输出</th>
+      <th class="tg-0pky">描述</th>
+      <th class="tg-0pky">使用说明</th>
+      <th class="tg-0pky">数据类型</th>
+      <th class="tg-0pky">数据格式</th>
+      <th class="tg-0pky">维度(shape)</th>
+      <th class="tg-0pky">非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-0pky">selfRef（aclTensor*）</td>
+      <td class="tg-0pky">输入|输出</td>
+      <td class="tg-0pky">公式中的selfRef。</td>
+      <td class="tg-0pky">
+        <ul>
+          <li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>，且需要是推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系。</li>
+          <li>selfRef的shape需要与other<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>后的shape一致。</li>
+        </ul>
+      </td>
+      <td class="tg-0pky">FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">0-8</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">other（aclTensor*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">公式中的other。</td>
+      <td class="tg-0pky">
+        <ul>
+          <li>数据类型与selfRef的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</li>
+          <li>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+        </ul>
+      </td>
+      <td class="tg-0pky">FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">0-8</td>
+      <td class="tg-0pky">√</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">alpha（aclScalar*）</td>
+      <td class="tg-0pky">输入</td>
+      <td class="tg-0pky">公式中的alpha。</td>
+      <td class="tg-0pky">数据类型需要可转换成selfRef与other推导后的数据类型（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
+      <td class="tg-0pky">FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">workspaceSize（uint64_t*）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回需要在Device侧申请的workspace大小。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+    <tr>
+      <td class="tg-0pky">executor（aclOpExecutor**）</td>
+      <td class="tg-0pky">输出</td>
+      <td class="tg-0pky">返回op执行器，包含了算子计算流程。</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">-</td>
+    </tr>
+  </tbody></table>
+  
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 200I/500 A2 推理产品</term>：不支持BFLOAT16数据类型。
 
 * **返回值**：
 
