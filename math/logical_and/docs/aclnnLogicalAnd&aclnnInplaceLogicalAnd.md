@@ -55,7 +55,7 @@ aclnnStatus aclnnLogicalAnd(
 
 ```Cpp
 aclnnStatus aclnnInplaceLogicalAndGetWorkspaceSize(
-  const aclTensor*     selfRef, 
+  aclTensor*           selfRef, 
   const aclTensor*     other,
   uint64_t*            workspaceSize, 
   aclOpExecutor**      executor)
