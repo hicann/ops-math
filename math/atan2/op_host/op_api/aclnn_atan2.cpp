@@ -46,15 +46,10 @@ static const std::initializer_list<DataType> ASCEND910_OPERATOR_SUPPORT_LIST = {
 static const std::initializer_list<DataType> ASCEND910B_OPERATOR_SUPPORT_LIST = {
   DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_BF16};
 
-static const std::initializer_list<DataType> ARCH3510_DTYPE_SUPPORT_LIST = {
-  DataType::DT_FLOAT, DataType::DT_FLOAT16,  DataType::DT_BF16};
-
 static inline const std::initializer_list<DataType>& GetDtypeSupportList(bool isInput) {
-  if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-      GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+  if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
+      GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) {
     return isInput ? ASCEND910B_INPUT_DTYPE_SUPPORT_LIST : ASCEND910B_OPERATOR_SUPPORT_LIST;
-  } else if (IsRegBase()) {
-    return ARCH3510_DTYPE_SUPPORT_LIST;
   } else {
     return isInput ? ASCEND910_INPUT_DTYPE_SUPPORT_LIST : ASCEND910_OPERATOR_SUPPORT_LIST;
   }
