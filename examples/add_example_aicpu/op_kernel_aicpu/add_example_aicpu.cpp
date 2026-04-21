@@ -79,7 +79,7 @@ uint32_t AddExampleCpuKernel::AddCompute(CpuKernelContext& ctx)
     }
 
     int64_t num_elements = input0->NumElements();
-    KERNEL_LOG_INFO("Num of elements is %ld", data_size);
+    KERNEL_LOG_INFO("Num of elements is %ld", num_elements);
     for (int i = 0; i < num_elements; i++) {
         y[i] = x0[i] + x1[i];
     }
