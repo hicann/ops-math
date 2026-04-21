@@ -667,8 +667,7 @@ void CumsumAscendcTilingImpl::RNGreaterClBorrowM(int64_t mAfterBorrow)
     } else { // R UB全载，M按照borrowMCount_为单元，尽量多的载入UB
         UbFullLoad(td_.innerTd.rBlockPara.blockTailFactor, td_.innerTd.rUbPara.tailCoreUbPara);
         int64_t mMaxForFullUb = MaxForFullUb(
-            ubSize_ - UB_SS_BUFFER_SIZE - UB_SS_BR_BUFF_SIZE - UB_SS_BR_IDX_BUFF_SIZE,
-            static_cast<int32_t>(td_.innerTd.lenR * borrowMCount_ * alignN_));
+            ubSize_, static_cast<int32_t>(td_.innerTd.lenR * borrowMCount_ * alignN_));
         DoUbSplit(
             td_.innerTd.mBlockPara.blockFactor, borrowMCount_ * mMaxForFullUb, td_.innerTd.mUbPara.mainCoreUbPara);
         DoUbSplit(
