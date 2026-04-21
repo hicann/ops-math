@@ -52,7 +52,7 @@ aclnnStatus aclnnLogicalNot(
 
 ```Cpp
 aclnnStatus aclnnInplaceLogicalNotGetWorkspaceSize(
-  const aclTensor*     selfRef, 
+  aclTensor*           selfRef, 
   uint64_t*            workspaceSize, 
   aclOpExecutor**      executor)
 ```

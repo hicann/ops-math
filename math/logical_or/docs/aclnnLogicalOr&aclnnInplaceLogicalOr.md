@@ -54,7 +54,7 @@ aclnnStatus aclnnLogicalOr(
 
 ```Cpp
 aclnnStatus aclnnInplaceLogicalOrGetWorkspaceSize(
-  const aclTensor*     selfRef, 
+  aclTensor*           selfRef, 
   const aclTensor*     other,
   uint64_t*            workspaceSize, 
   aclOpExecutor**      executor)
