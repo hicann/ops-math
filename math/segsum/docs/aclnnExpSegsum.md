@@ -23,18 +23,18 @@
   3. 生成（N4,N4）类型为bool的三角矩阵A，上三角为True，下三角为False，对角线为True。
   4. 用0填充输入self里面与矩阵A中值为True的位置相对应的元素。
 
-    $$
-    self_i=
-    \begin{cases}self_i,\quad A_i==False
-    \\0, \quad A_i==True
-    \end{cases}
-    $$
+      $$
+      self_i=
+      \begin{cases}self_i,\quad A_i==False
+      \\0, \quad A_i==True
+      \end{cases}
+      $$
 
   5. 以self的倒数第二维进行cumsum累加。从维度视角来看的某个元素（其它维度下标不变，当前维度下标依次递增），$selfTemp\_{i}$是输出张量中对应位置的元素。
 
-     $$
-     selfTemp_{i} = self_{1} + self_{2} + self_{3} + ...... + self_{i}
-     $$
+      $$
+      selfTemp_{i} = self_{1} + self_{2} + self_{3} + ...... + self_{i}
+      $$
 
   6. 生成（N4,N4）类型为bool的三角矩阵B，上三角为True，下三角为False，对角线为False。
   7. 用-inf填充selfTemp里面与矩阵B中值为True的位置相对应的元素。
@@ -45,13 +45,13 @@
      \\-inf, \quad B_i==True
      \end{cases}
      $$
-
+     
   8. 计算selfTemp里面每个元素的指数。
 
      $$
      out_i=e^{selfTemp_i}
      $$
-
+  
 ## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnExpSegsumGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnExpSegsum”接口执行计算。

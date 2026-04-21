@@ -16,6 +16,7 @@
 ## 功能说明
 
 - 算子功能：激活函数。返回与输入tensor shape相同的tensor，对输入tensor进行elementwise的计算。
+
 - 计算公式：
 
 $$
@@ -91,7 +92,7 @@ aclnnStatus aclnnInplaceTanh(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入self。</td>
-      <td>shape需要与out一致，和out的数据类型满足<a href="../../../docs/zh/context/数据类型推导.md" target="_blank">数据类型推导规则</a>。</td>
+      <td>shape需要与out一致，和out的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</td>
       <td>FLOAT、FLOAT16、BOOL、UINT8、INT8、INT16、INT32、INT64、BFLOAT16</td>
       <td>ND</td>
       <td>不大于8</td>
@@ -101,7 +102,7 @@ aclnnStatus aclnnInplaceTanh(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的out。</td>
-      <td>shape需要与self一致，和self的数据类型满足<a href="../../../docs/zh/context/数据类型推导.md" target="_blank">数据类型推导规则</a>。</td>
+      <td>shape需要与self一致，和self的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
@@ -160,7 +161,7 @@ aclnnStatus aclnnInplaceTanh(
       <td>self和out的数据类型和数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>self和out的数据类型不满足<a href="../../../docs/zh/context/数据类型推导.md" target="_blank">数据类型推导规则</a>。</td>
+      <td>self和out的数据类型不满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</td>
     </tr>
     <tr>
       <td>self和out的维度大于8。</td>
