@@ -2217,7 +2217,7 @@
   </tr>
   <tr>
     <td>random</td>
-    <td><a href="../../random/stateless_random_norm_v2/README.md">stateless_random_norm_v2</a></td>
+    <td><a href="../../random/stateless_random_normal_v2/README.md">stateless_random_normal_v2</a></td>
     <td>√</td>
     <td>√</td>
     <td>√</td>

@@ -16,6 +16,7 @@
 - 算子功能：根据给定的权重，在起始和结束Tensor之间进行线性插值，返回插值后的Tensor。
 
 - 计算公式：
+
 $$
 \text { out }_i=\text { start }_i+\text { weight }_i \times\left(\text { end }_i-\text { start }_i\right)
 $$

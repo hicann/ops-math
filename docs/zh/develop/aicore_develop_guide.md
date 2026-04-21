@@ -237,7 +237,7 @@ struct ${op_name}TilingData {
 
 ## Kernel实现
 
-> 💡 **进阶内容**：关于Kernel侧算子实现的详细说明，包括核函数定义、GET_TILING_DATA获取Tiling参数、核函数内推导输入数据类型和格式等，请参考[《AI Core算子开发进阶指南 - Kernel侧算子实现》](./aicore_develop_advanced_guide.md#kernel侧算子实现)。
+> 💡 **进阶内容**：关于Kernel侧算子实现的详细说明，包括核函数定义、GET_TILING_DATA获取Tiling参数、核函数内推导输入数据类型和格式等，请参考[《AI Core算子开发进阶指南 - Kernel侧算子实现》](./aicore_develop_advanced_guide.md)。
 
 ### Kernel简介
 

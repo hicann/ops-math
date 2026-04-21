@@ -104,7 +104,7 @@ aclnnStatus aclnnInplaceTan(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入self。</td>
-      <td>shape需要与out一致，和out的数据类型满足<a href="../../../docs/zh/context/数据类型推导.md" target="_blank">数据类型推导规则</a>。</td>
+      <td>shape需要与out一致，和out的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
       <td>不大于8</td>
@@ -114,7 +114,7 @@ aclnnStatus aclnnInplaceTan(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的out。</td>
-      <td>shape需要与self一致，和self的数据类型满足<a href="../../../docs/zh/context/数据类型推导.md" target="_blank">数据类型推导规则</a>。</td>
+      <td>shape需要与self一致，和self的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
@@ -173,7 +173,7 @@ aclnnStatus aclnnInplaceTan(
       <td>self的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>self不能转为out的数据类型，或self和out的数据类型不满足<a href="../../../docs/zh/context/数据类型推导.md" target="_blank">数据类型推导规则</a>。</td>
+      <td>self不能转为out的数据类型，或self和out的数据类型不满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>。</td>
     </tr>
     <tr>
       <td>self和out的维度大于8。</td>
