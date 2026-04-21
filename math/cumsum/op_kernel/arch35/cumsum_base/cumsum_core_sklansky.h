@@ -470,6 +470,8 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::DoAddTailN(DataCopyExtPara
     uint16_t addFactorCircleLoop = Ops::Base::CeilDiv(addLoop, addFactorCircleCount_);
     __ubuf__ uint32_t* addFactorOffset = (__ubuf__ uint32_t*)addFactorOffset_.Get<int32_t>().GetPhyAddr();
     uint32_t vlElementCount = vlElementCount_;
+    uint16_t addFactorCircleCountTail = addLoop - (addFactorCircleLoop - 1) * addFactorCircleCount_;
+    uint32_t addTotalTail = addTotal - ((addFactorCircleLoop - 1) * addFactorCircleCount_) * vlElementCount;
 
     __VEC_SCOPE__
     {
@@ -478,7 +480,7 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::DoAddTailN(DataCopyExtPara
         AscendC::MicroAPI::RegTensor<uint32_t> addFactorIndexRegTensor;
         AscendC::MicroAPI::RegTensor<PromtT> addFactorRegTensor;
         AscendC::MicroAPI::RegTensor<PromtT> addDataRegTensor;
-        for (uint16_t i = 0; i < addFactorCircleLoop; i++) {
+        for (uint16_t i = 0; i < addFactorCircleLoop - 1; i++) {
             for (uint16_t j = 0; j < addFactorCircleCount_; j++) {
                 // 搬入addFactor
                 AscendC::MicroAPI::AddrReg addrReg = AscendC::MicroAPI::CreateAddrReg<uint32_t>(j, vlElementCount);
@@ -495,6 +497,24 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::DoAddTailN(DataCopyExtPara
                 // 对齐连续搬出addData
                 DataCopy(addData + (i * addFactorCircleCount_ + j) * vlElementCount, addDataRegTensor, mask);
             }
+        }
+
+        // 尾块，只需执行一次
+        for (uint16_t j = 0; j < addFactorCircleCountTail; j++) {
+            // 搬入addFactor
+            AscendC::MicroAPI::AddrReg addrReg = AscendC::MicroAPI::CreateAddrReg<uint32_t>(j, vlElementCount);
+            AscendC::MicroAPI::DataCopy(addFactorIndexRegTensor, addFactorOffset, addrReg);
+            AscendC::MicroAPI::DataCopyGather(addFactorRegTensor, addFactor, addFactorIndexRegTensor, p0);
+
+            // 对齐连续搬入addData
+            DataCopy(addDataRegTensor, addData + ((addFactorCircleLoop - 1) * addFactorCircleCount_ + j) * vlElementCount);
+
+            // Add
+            mask = AscendC::MicroAPI::UpdateMask<uint32_t>(addTotalTail);
+            Add(addDataRegTensor, addFactorRegTensor, addDataRegTensor, mask);
+
+            // 对齐连续搬出addData
+            DataCopy(addData + ((addFactorCircleLoop - 1) * addFactorCircleCount_ + j) * vlElementCount, addDataRegTensor, mask);
         }
     } // __VEC_SCOPE__
 }
