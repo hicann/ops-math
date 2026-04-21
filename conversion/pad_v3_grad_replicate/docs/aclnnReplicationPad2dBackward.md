@@ -41,10 +41,10 @@ aclnnStatus aclnnReplicationPad2dBackwardGetWorkspaceSize(
 
 ```cpp
 aclnnStatus aclnnReplicationPad2dBackward(
-    void          *workspace,
-    uint64_t       workspaceSize, 
-    aclOpExecutor *executor, 
-    aclrtStream    stream)
+    void              *workspace,
+    uint64_t           workspaceSize, 
+    aclOpExecutor     *executor, 
+    const aclrtStream  stream)
 ```
 
 ## aclnnReplicationPad2dBackwardGetWorkspaceSize
