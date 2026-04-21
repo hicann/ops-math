@@ -12,23 +12,15 @@
 #include <cstring>
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
+#include "../../../../random_common/op_kernel/arch35/random_unified_tiling_data_arch35.h"
 
 __global__ __aicore__ void stateless_bernoulli(
     GM_ADDR shape, GM_ADDR prob, GM_ADDR seed, GM_ADDR offset, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
 
 namespace {
 constexpr uint32_t kNumBlocks = 1;
-constexpr uint64_t kTilingKey = 1001;
+constexpr uint64_t kTilingKey = 100;
 constexpr int64_t kElementCount = 256;
-
-struct BernoulliTilingData {
-    uint64_t blockNum;
-    uint64_t probTensorSize;
-    uint64_t outputSize;
-    uint64_t isProbScalar;
-    int64_t seed;
-    int64_t philoxOffset;
-};
 
 inline size_t Align32(size_t size)
 {
@@ -47,23 +39,22 @@ TEST_F(StatelessBernoulliKernelTest, smoke_float)
     auto* offset = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(sizeof(int64_t))));
     auto* y = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(kElementCount * sizeof(float))));
     auto* workspace = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(16 * 1024 * 1024)));
-    auto* tiling = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(sizeof(BernoulliTilingData))));
+    auto* tiling = static_cast<uint8_t*>(AscendC::GmAlloc(Align32(sizeof(RandomUnifiedSimtTilingDataStruct))));
 
     std::memset(y, 0, kElementCount * sizeof(float));
-    std::memset(tiling, 0, sizeof(BernoulliTilingData));
+    std::memset(tiling, 0, sizeof(RandomUnifiedSimtTilingDataStruct));
     reinterpret_cast<int32_t*>(shape)[0] = 16;
     reinterpret_cast<int32_t*>(shape)[1] = 16;
     *reinterpret_cast<float*>(prob) = 0.5f;
     *reinterpret_cast<int64_t*>(seed) = 42;
     *reinterpret_cast<int64_t*>(offset) = 0;
 
-    auto* tilingData = reinterpret_cast<BernoulliTilingData*>(tiling);
-    tilingData->blockNum = kNumBlocks;
-    tilingData->probTensorSize = 1;
+    auto* tilingData = reinterpret_cast<RandomUnifiedSimtTilingDataStruct*>(tiling);
+    tilingData->usedCoreNum = kNumBlocks;
     tilingData->outputSize = kElementCount;
-    tilingData->isProbScalar = 1;
     tilingData->seed = 42;
-    tilingData->philoxOffset = 0;
+    tilingData->offset = 0;
+    tilingData->extraParam1 = 1;
 
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_SET_TILING_KEY(kTilingKey);

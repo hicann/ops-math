@@ -20,6 +20,6 @@ if(UT_TEST_ALL OR OP_KERNEL_UT)
     AddOpTestCase(
         stateless_bernoulli
         "ascend950"
-        "-DDTYPE_Y=float -I${KERNEL_STAGING_DIR}/stateless_bernoulli/arch35"
+        "-DDTYPE_Y=float -DDTYPE_PROB=float -DTestUtDefaultTilingStruct=RandomUnifiedSimtTilingDataStruct -I${KERNEL_STAGING_DIR}/stateless_bernoulli/arch35"
         "${stateless_bernoulli_tiling_files}")
 endif()

@@ -13,39 +13,27 @@
  * \brief
  */
 
-#define TILING_KEY_FP32 1001
-#define TILING_KEY_FP16 1002
-#define TILING_KEY_BF16 1003
-
 #include "arch35/stateless_bernoulli_simt.h"
+
+using namespace StatelessBernoulli;
 
 __global__ __aicore__ void stateless_bernoulli(
     GM_ADDR shape, GM_ADDR prob, GM_ADDR seed, GM_ADDR offset, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
+    REGISTER_TILING_DEFAULT(RandomUnifiedSimtTilingDataStruct);
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
     GET_TILING_DATA(tilingData, tiling);
 
-    AscendC::TPipe pipe;
-    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
-    if constexpr(AscendC::IsSameType<DTYPE_Y, bool>::value) {
-        if (TILING_KEY_IS(TILING_KEY_FP32)) {
-            StatelessBernoulli::StatelessBernoulliKernel<float, int8_t> op;
+    if (TILING_KEY_IS(100)) {
+        using To = typename AscendC::Conditional<AscendC::IsSameType<DTYPE_Y, bool>::value, int8_t, DTYPE_Y>::type;
+        if constexpr (AscendC::IsSameType<DTYPE_PROB, float>::value) {
+            StatelessBernoulliKernel<float, To> op;
             op.Process(prob, y, &tilingData);
-        } else if (TILING_KEY_IS(TILING_KEY_FP16)) {
-            StatelessBernoulli::StatelessBernoulliKernel<half, int8_t> op;
+        } else if constexpr (AscendC::IsSameType<DTYPE_PROB, half>::value) {
+            StatelessBernoulliKernel<half, To> op;
             op.Process(prob, y, &tilingData);
-        } else if (TILING_KEY_IS(TILING_KEY_BF16)) {
-            StatelessBernoulli::StatelessBernoulliKernel<bfloat16_t, int8_t> op;
-            op.Process(prob, y, &tilingData);
-        }
-    } else {
-        if (TILING_KEY_IS(TILING_KEY_FP32)) {
-            StatelessBernoulli::StatelessBernoulliKernel<float, DTYPE_Y> op;
-            op.Process(prob, y, &tilingData);
-        } else if (TILING_KEY_IS(TILING_KEY_FP16)) {
-            StatelessBernoulli::StatelessBernoulliKernel<half, DTYPE_Y> op;
-            op.Process(prob, y, &tilingData);
-        } else if (TILING_KEY_IS(TILING_KEY_BF16)) {
-            StatelessBernoulli::StatelessBernoulliKernel<bfloat16_t, DTYPE_Y> op;
+        } else if constexpr (AscendC::IsSameType<DTYPE_PROB, bfloat16_t>::value) {
+            StatelessBernoulliKernel<bfloat16_t, To> op;
             op.Process(prob, y, &tilingData);
         }
     }

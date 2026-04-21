@@ -8,15 +8,14 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- /*!
+/*!
  * \file test_stateless_bernoulli_tiling.cpp
  * \brief
  */
 
-#include <gtest/gtest.h>
 #include <iostream>
+#include <gtest/gtest.h>
 #include <vector>
-#include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
 #include "../../../../op_host/arch35/stateless_bernoulli_tiling_arch35.h"
 
@@ -33,27 +32,24 @@ class StatelessBernoulliTiling : public testing::Test {
 
 TEST_F(StatelessBernoulliTiling, stateless_bernoulli_test_0)
 {
-    optiling::StatelessBernoulliCompileInfoArch35 compileInfo = {64, 253952};
+    optiling::RandomOperatorCompileInfo compileInfo = {64, 253952};
     vector<int64_t> shapeValue = {1};
     vector<int64_t> seedValue = {2};
     vector<int64_t> offsetValue = {8};
+
     gert::TilingContextPara tilingContextPara(
         "StatelessBernoulli",
-        {
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, shapeValue.data()},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND,},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, seedValue.data()},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, offsetValue.data()},
-        },
-        {
-            {{{1}, {1}}, ge::DT_UINT8, ge::FORMAT_ND},
-        },
-        {
-            {"dtype", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
-        },
+        {{{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, shapeValue.data()},
+         {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+         {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, seedValue.data()},
+         {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, offsetValue.data()},},
+        {{{{1}, {1}}, ge::DT_UINT8, ge::FORMAT_ND}},
+        {{"dtype", Ops::Math::AnyValue::CreateFrom<int64_t>(0)}},
         &compileInfo);
-    uint64_t expectTilingKey = 1001;
-    string expectTilingData = "1 1 1 1 2 8 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+
+    uint64_t expectTilingKey = 100;
+    string expectTilingData = "1 1 2 8 0 1 ";
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCase(
+        tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
