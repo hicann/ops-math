@@ -55,7 +55,7 @@ $$
     </tr>
     <tr>
       <td>clip_value_max</td>
-      <td>属性</td>
+      <td>输入</td>
       <td>限制元素范围的最大值。</td>
       <td>同输入张量x</td>
       <td>ND</td>

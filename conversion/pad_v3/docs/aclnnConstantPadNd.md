@@ -82,7 +82,7 @@
     aclOpExecutor**    executor)
 ```
     
-  ```cpp
+```cpp
     aclnnStatus aclnnConstantPadNd(
       void*          workspace, 
       uint64_t       workspaceSize, 
@@ -130,7 +130,7 @@
       <td>输入</td>
       <td>输入中各轴需要填充的维度</td>
       <td>数组长度必须为偶数且不能超过self维度的两倍。</td>
-      <td>-</td>
+      <td>INT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -140,7 +140,7 @@
       <td>输入</td>
       <td>填充部分的填充值</td>
       <td>-</td>
-      <td>-</td>
+      <td>可转换为self的数据类型</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>

@@ -17,19 +17,19 @@
 - 示例：
 
   ```
-  输入tensor([[0,1,2]])
+  1.输入tensor([[0,1,2]])
   paddings([2,2])
 
-  1.mode("REFLECT")
+  2.mode("REFLECT")
   输出为([[2,1,0,1,2,1,0]])
 
-  2.mode("SYMMETRIC")
+  3.mode("SYMMETRIC")
   输出为([[1,0,0,1,2,2,1]])
 
-  3.mode("constant")
+  4.mode("constant")
   输出为([[0,0,0,1,2,0,0]])
 
-  2.mode("edge")
+  5.mode("edge")
   输出为([[0,0,0,1,2,2,2]])
   ```
 

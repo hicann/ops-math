@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-将tensors中所有tensor先按照维度dim切分为numChunks块，再按照dim后一维进行级联，最后转换为out的数据类型。
+将tensors中所有tensor先按照维度dim切分为num_chunks块，再按照dim后一维进行级联，最后转换为out的数据类型。
 
 ## 参数说明
 

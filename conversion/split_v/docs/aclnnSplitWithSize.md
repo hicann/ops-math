@@ -161,7 +161,7 @@ aclnnStatus aclnnSplitWithSize(
       <td>self的长度不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>out中的tensor长度不在支持的范围之内时。</td>
+      <td>out中的tensor长度不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>dim的取值越界不在[-dimNum, dimNum -1],dimNum为self的维度大小。</td>

@@ -16,7 +16,7 @@
 - 算子功能：从张量中提取一个切片。 此操作是从张量“x”中提取大小为“size”的切片，其中起始位置由“offsets”指定。
 
 $$
-y = x[offset:offset + size]
+y = x[offsets:offsets + size]
 $$
 
 ## 参数说明
@@ -45,7 +45,7 @@ $$
     <td>ND</td>
     </tr>
     <tr>
-    <td>offset</td>
+    <td>offsets</td>
     <td>输入</td>
     <td>slice起始位置</td>
     <td>INT32、INT64</td>
@@ -69,7 +69,7 @@ $$
 
 ## 约束说明
 
-- 对于输入x的每一个维度n，需要满足：0 <= offset[i] <= offset[i] + size[i] <= x_dim[i] for i in [0,n]。
+- 对于输入x的每一个维度n，需要满足：0 <= offsets[i] <= offsets[i] + size[i] <= x_dim[i] for i in [0,n]。
 
 ## 调用说明
 

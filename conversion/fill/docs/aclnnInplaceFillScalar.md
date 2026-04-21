@@ -66,7 +66,7 @@ aclnnStatus aclnnInplaceFillScalar(
     <tr>
       <td>selfRef（aclTensor*）</td>
       <td>输入/输出</td>
-      <td>输入输出tensor</td>
+      <td>输入输出tensor。</td>
       <td>-</td>
       <td>FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16</td>
       <td>ND</td>
@@ -76,8 +76,8 @@ aclnnStatus aclnnInplaceFillScalar(
     <tr>
       <td>value（aclScalar*）</td>
       <td>输入</td>
-      <td>指定的标量值</td>
-      <td>数据类型需要与selfRef的数据类型满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。
+      <td>指定填充selfRef的标量值。</td>
+      <td>数据类型需要可以推导到selfRef的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。
       </td>
       <td>FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16</td>
       <td>-</td>

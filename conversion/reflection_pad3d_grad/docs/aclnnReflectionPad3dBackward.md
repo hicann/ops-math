@@ -100,7 +100,7 @@ aclnnStatus aclnnReflectionPad3dBackward(
       <td>输出</td>
       <td>反向传播的输出。</td>
       <td>-</td>
-      <td>FLOAT16、FLOAT32、DOUBLE、 COMPLEX64、COMPLEX128。</td>
+      <td>与self保持一致。</td>
       <td>ND</td>
       <td>4/5</td>
       <td>√</td>

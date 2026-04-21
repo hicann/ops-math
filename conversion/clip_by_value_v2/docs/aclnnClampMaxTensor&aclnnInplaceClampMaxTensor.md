@@ -93,7 +93,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
       <td class="tg-0pky">self（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入tensor，需要进行限制的张量，即公式中的self<sub>i</sub>。</td>
-      <td class="tg-0pky">shape可以与max进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与clipValueMax的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape可以与max进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与max的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -169,7 +169,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
     <tr>
       <td class="tg-0pky">ACLNN_ERR_PARAM_NULLPTR</td>
       <td class="tg-0pky">161001</td>
-      <td class="tg-0pky">传入的self、out其中一个为空指针，clipValueMax为空指针。</td>
+      <td class="tg-0pky">传入的self、out其中一个为空指针，max为空指针。</td>
     </tr>
     <tr>
       <td class="tg-0pky" rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
@@ -300,10 +300,10 @@ aclnnStatus aclnnInplaceClampMaxTensor(
 
   - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：
     - selfRef的数据类型不支持BOOL、BFLOAT16。
-    - clipValueMax的数据类型不支持BFLOAT16。
+    - max的数据类型不支持BFLOAT16。
 
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>
-    - selfRef和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）。
+    - selfRef和max数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)）。
     - selfRef的数据类型不支持BOOL。
 
 - **返回值：**

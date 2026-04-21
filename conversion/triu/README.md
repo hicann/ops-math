@@ -52,21 +52,21 @@
     <tr>
       <td>self</td>
       <td>输入</td>
-      <td>待进行tril计算的入参，公式中的self。</td>
+      <td>待进行triu计算的入参，公式中的self。</td>
       <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、COMPLEX32、COMPLEX64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>diagonal</td>
       <td>输入</td>
-      <td>待进行tril计算的入参，公式中的diagonal。</td>
+      <td>待进行triu计算的入参，公式中的diagonal。</td>
       <td>INT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>out</td>
       <td>输出</td>
-      <td>待进行abs计算的出参，公式中的out_i。</td>
+      <td>待进行triu计算的出参，公式中的out_i。</td>
       <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
       <td>ND</td>
     </tr>

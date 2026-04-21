@@ -155,7 +155,7 @@ aclnnStatus aclnnReflectionPad1dBackward(
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>gradOutput, self, padding, gradInput任何一个为空指针。</td>
+      <td>gradOutput、 self、 padding、 gradInput任何一个为空指针。</td>
     </tr>
     <tr>
       <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>

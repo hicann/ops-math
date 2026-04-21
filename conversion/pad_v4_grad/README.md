@@ -36,7 +36,7 @@
   <tr>
     <td class="tg-0pky">gradOutput</td>
     <td class="tg-0pky">输入</td>
-    <td class="tg-0lax">reflection_pad1d/reflection_pad2d的正向传播，shape支持2~4维且维度需要与self和gradInput保持一致，2/3维为1d，3/4维为2d。</td>
+    <td class="tg-0lax">reflection_pad1d/reflection_pad2d的正向传播，shape支持2~4维且维度需要与self和gradInput保持一致，reflection_pad1d的反向算子对应维度为2/3维，reflection_pad2d的反向算子对应维度为3/4维。</td>
     <td class="tg-0lax">FLOAT16、FLOAT32、DOUBLE、COMPLEX64、COMPLEX128</td>
     <td class="tg-0lax">ND</td>
   </tr>

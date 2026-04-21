@@ -330,7 +330,7 @@ aclnnStatus aclnnInplaceClampMax(
     <tr>
       <td class="tg-0pky">ACLNN_ERR_PARAM_NULLPTR</td>
       <td class="tg-0pky">161001</td>
-      <td class="tg-0pky">传入的self、out其中一个为空指针，clipValueMax为空指针。</td>
+      <td class="tg-0pky">传入的selfRef为空指针，或clipValueMax为空指针。</td>
     </tr>
     <tr>
       <td class="tg-0pky">ACLNN_ERR_PARAM_INVALID</td>

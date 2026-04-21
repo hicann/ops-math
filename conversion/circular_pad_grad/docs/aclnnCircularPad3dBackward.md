@@ -106,7 +106,7 @@ aclnnStatus aclnnCircularPad3dBackward(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize（aclOpExecutor**）</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -116,7 +116,7 @@ aclnnStatus aclnnCircularPad3dBackward(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

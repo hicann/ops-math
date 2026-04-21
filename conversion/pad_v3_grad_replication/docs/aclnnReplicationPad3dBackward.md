@@ -90,7 +90,7 @@ aclnnStatus aclnnReplicationPad3dBackward(
       <td>输入</td>
       <td>-</td>
       <td>长度为6，数值依次代表左右上下前后需要填充的值。padding前两个数值需小于self最后一维度的数值，中间两个数值需小于self倒数第二维度的数值，后两个数值需小于self倒数第三维度的数值。</td>
-      <td>-</td>
+      <td>INT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>

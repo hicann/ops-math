@@ -64,7 +64,7 @@ aclnnStatus aclnnInplaceFillTensor(
     </tr></thead>
   <tbody>
     <tr>
-      <td>selfRef</td>
+      <td>selfRef（aclTensor*）</td>
       <td>输入/输出</td>
       <td>输入输出tensor</td>
       <td>-</td>
@@ -74,17 +74,17 @@ aclnnStatus aclnnInplaceFillTensor(
       <td>√</td>
     </tr>
     <tr>
-      <td>value</td>
+      <td>value（aclTensor*）</td>
       <td>输入</td>
-      <td>-</td>
-      <td>-</td>
+      <td>指定填充selfRef的张量值。</td>
+      <td>数据类型需要可以推导到selfRef的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td>与selfRef一致</td>
       <td>-</td>
       <td>0D/ size=1的1D</td>
       <td>-</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -94,7 +94,7 @@ aclnnStatus aclnnInplaceFillTensor(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

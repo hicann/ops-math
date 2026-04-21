@@ -36,7 +36,7 @@
     <tr>
     <td>x</td>
     <td>输入</td>
-    <td>需要切分的tensor列表。</td>
+    <td>需要切分的tensor。</td>
     <td>FLOAT16、FLOAT32、INT8、INT16、INT64、INT32、UINT8、UINT16、UINT32、UINT64、BOOL</td>
     <td>ND</td>
     </tr>

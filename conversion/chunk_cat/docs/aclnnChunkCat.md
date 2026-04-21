@@ -66,7 +66,7 @@ aclnnStatus aclnnChunkCat(
     </tr></thead>
   <tbody>
     <tr>
-      <td>tensors（aclTensor*）</td>
+      <td>tensors（aclTensorList*）</td>
       <td>输入</td>
       <td>输入的tensor列表。</td>
       <td>列表内数据类型需一致。</td>

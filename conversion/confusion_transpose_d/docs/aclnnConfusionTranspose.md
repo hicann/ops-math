@@ -123,8 +123,8 @@ aclnnStatus aclnnConfusionTranspose(
     <tr>
       <td class="tg-0lax">out（aclTensor*）</td>
       <td class="tg-0lax">输出</td>
-      <td class="tg-0lax">切片步长，Host侧的aclIntArray。</td>
-      <td class="tg-0lax">strides必须为正数，varRef最后一维对应的strides取值必须为1。</td>
+      <td class="tg-0lax">表示reshape和transpose之后的计算结果。</td>
+      <td class="tg-0lax">-</td>
       <td class="tg-0lax">与输入x保持一致</td>
       <td class="tg-0lax">与输入x保持一致</td>
       <td class="tg-0lax">-</td>
