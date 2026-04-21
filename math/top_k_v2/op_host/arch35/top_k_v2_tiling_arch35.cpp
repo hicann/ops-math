@@ -1213,6 +1213,30 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
     // 校验ubSizePlatForm
     ubSizePlatForm -= topkV2DataInfo::CONST_SIMT_SPACE;
 
+    // sortAndTopk模板tiling处理流程，和topk其他模板没有关联性
+    if (lastAxisNum > topkV2DataInfo::SORT_AND_TOP_K_THRESHOLD) {
+        topkV2DataInfo::SortTileInfo sortTileInfo;
+        OP_CHECK_IF(SortCheckParams(context, sortTileInfo) != ge::GRAPH_SUCCESS,
+            OP_LOGE(context->GetNodeName(), "sort and topk check params failed"), return ge::GRAPH_FAILED);
+        topkTilingData.set_modeType(topkV2DataInfo::SORT_AND_TOP_K_MODE);
+        OP_LOGI("[TopKV2Tiling]", "topkTilingData.set_modeType is: %u, SORT_AND_TOP_K_MODE: %u",
+            topkTilingData.get_modeType() , topkV2DataInfo::SORT_AND_TOP_K_MODE);
+        sortTileInfo.maxCoreNum = static_cast<uint32_t>(maxCoreNum);
+        sortTileInfo.isDescend = static_cast<bool>(*isLargest);
+        sortTileInfo.isInt32 = static_cast<uint32_t>(lastAxisNum <= topkV2DataInfo::INT32_MAX_RANGE_VALUE_FOR_SORT);
+        sortTileInfo.topKRealValue = outLastAxisNum;
+        OP_CHECK_IF(GetRadixSortMoreCore(context, sortTileInfo) != ge::GRAPH_SUCCESS,
+            OP_LOGE(context->GetNodeName(), "Get RadixSortMoreCore tiling failed"), return ge::GRAPH_FAILED);
+        context->SetTilingKey(dataTypeKey);
+        context->SetBlockDim(sortTileInfo.coreNumNeed);
+        context->SetLocalMemorySize(sortTileInfo.ubSize);
+        FillTilingDataSort(context, sortTileInfo, topkTilingData);
+        PrintTilindDataSort(context, sortTileInfo);
+        // sortAndTopK模板核心是Sort，不需要后续Topk相关的tiling计算过程
+        OP_LOGI("TopKV2TilingForAscendC", "TopKV2Tiling end");
+        return ge::GRAPH_SUCCESS;
+    }
+
     // 用于核间优化模板 tilingSize计算流程
     topkV2DataInfo::TopkComputingNowTileSizeInfo computingNowTileSizeInfo;
     computingNowTileSizeInfo.isLargest = *isLargest;
@@ -1249,27 +1273,6 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
             context, topkTilingData, dataType, indicesDType, *isLargest, *isSorted, lastAxisNum, outLastAxisNum,
             ubSizePlatForm);
         TileModeSmallSize(unsortedDimNum, maxCoreNum, lastAxisNum, topkTilingData, topkTileInfo, nowTileSizeTmp);
-    } else if (lastAxisNum > topkV2DataInfo::SORT_AND_TOP_K_THRESHOLD) {
-        topkV2DataInfo::SortTileInfo sortTileInfo;
-        OP_CHECK_IF(SortCheckParams(context, sortTileInfo) != ge::GRAPH_SUCCESS,
-            OP_LOGE(context->GetNodeName(), "sort and topk check params failed"), return ge::GRAPH_FAILED);
-        topkTilingData.set_modeType(topkV2DataInfo::SORT_AND_TOP_K_MODE);
-        OP_LOGI("[TopKV2Tiling]", "topkTilingData.set_modeType is: %u, SORT_AND_TOP_K_MODE: %u",
-            topkTilingData.get_modeType() , topkV2DataInfo::SORT_AND_TOP_K_MODE);
-        sortTileInfo.maxCoreNum = static_cast<uint32_t>(maxCoreNum);
-        sortTileInfo.isDescend = static_cast<bool>(*isLargest);
-        sortTileInfo.isInt32 = static_cast<uint32_t>(lastAxisNum <= topkV2DataInfo::INT32_MAX_RANGE_VALUE_FOR_SORT);
-        sortTileInfo.topKRealValue = outLastAxisNum;
-        OP_CHECK_IF(GetRadixSortMoreCore(context, sortTileInfo) != ge::GRAPH_SUCCESS,
-            OP_LOGE(context->GetNodeName(), "Get RadixSortMoreCore tiling failed"), return ge::GRAPH_FAILED);
-        context->SetTilingKey(dataTypeKey);
-        context->SetBlockDim(sortTileInfo.coreNumNeed);
-        context->SetLocalMemorySize(sortTileInfo.ubSize);
-        FillTilingDataSort(context, sortTileInfo, topkTilingData);
-        PrintTilindDataSort(context, sortTileInfo);
-        // sortAndTopK模板核心是Sort，不需要后续Topk相关的tiling计算过程
-        OP_LOGI("TopKV2TilingForAscendC", "TopKV2Tiling end");
-        return ge::GRAPH_SUCCESS;
     } else if (IsModeSingleCore(unsortedDimNum, maxCoreNum)) {
         uint32_t nowTileSizeTmp = ComputeSingleCoreTileData(
             context, topkTilingData, dataType, indicesDType, *isLargest, *isSorted, lastAxisNum, outLastAxisNum,
