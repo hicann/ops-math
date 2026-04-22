@@ -55,7 +55,7 @@ TEST_F(CholeskyTiling, cholesky_test_tiling_case0)
         },
         &compileInfo);
     uint64_t expectTilingKey = 2;
-    string expectTilingData = "12884901894 ";
+    string expectTilingData = "6 3 4294967302 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

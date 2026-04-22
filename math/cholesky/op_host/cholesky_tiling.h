@@ -16,12 +16,14 @@
 namespace optiling {
 
 struct CholeskyCompileInfo {
-  int32_t coreNum = 0;
+  uint32_t coreNum = 0;
 };
 
 BEGIN_TILING_DATA_DEF(CholeskyTilingData)
     TILING_DATA_FIELD_DEF(uint32_t, matSizeN);
-    TILING_DATA_FIELD_DEF(uint32_t, matrixNumCount);
+    TILING_DATA_FIELD_DEF(uint64_t, matrixNumCount);
+    TILING_DATA_FIELD_DEF(uint32_t, blockSize);
+    TILING_DATA_FIELD_DEF(uint32_t, blockNum);
 END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(Cholesky, CholeskyTilingData)

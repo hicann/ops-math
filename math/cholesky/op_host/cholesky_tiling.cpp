@@ -17,10 +17,10 @@
 namespace optiling {
 constexpr uint32_t TILING_KEY_FALSE = 1;
 constexpr uint32_t TILING_KEY_TRUE = 2;
-constexpr uint32_t BYTE_LEN_4 = 4;
 constexpr uint32_t MINIMUM_DIMENSION = 2;
 constexpr uint32_t UPPER_INDEX = 0;
 constexpr uint32_t WS_SYS_SIZE = 16U * 1024U * 1024U;
+constexpr uint32_t MAX_BLOCK_SIZE = 128;
 
 class CholeskyTiling {
 public:
@@ -29,19 +29,18 @@ public:
     ge::graphStatus RunBigKernelTiling();
 
 private:
-    uint8_t GetDataTypeSize();
-    uint64_t GetTilingKeyVal();
-    void FillTilingData();
+    uint32_t GetTilingKeyVal() const;
+    void PrintTilingData();
 
 private:
     gert::TilingContext* tilingContext = nullptr;
-    ge::DataType dataType = ge::DT_UNDEFINED;
     CholeskyTilingData tilingData;
-    uint8_t dataTypeSize = 4;
     uint32_t matSizeN = 0;
-    uint32_t matrixNumCount = 0;
+    uint64_t matrixNumCount = 1;
     uint32_t needCoreNum = 0;
     bool upper = false;
+    uint32_t blockSize = 0;
+    uint32_t blockNum = 0;
 };
 
 ge::graphStatus CholeskyTiling::Init() {
@@ -50,14 +49,11 @@ ge::graphStatus CholeskyTiling::Init() {
         return ge::GRAPH_FAILED;
     }
 
-    auto inputDtype = inputTensor->GetDataType();
-    if (dataType == ge::DT_UNDEFINED) {
-        dataType = inputDtype;
-        dataTypeSize = GetDataTypeSize();
-    }
-
     auto attrs = tilingContext->GetAttrs();
     const bool* ptrUpper = attrs->GetAttrPointer<bool>(UPPER_INDEX);
+    if (ptrUpper == nullptr) {
+        return ge::GRAPH_FAILED;
+    }
     upper = *ptrUpper;
 
     auto matAShape = tilingContext->GetInputShape(0)->GetOriginShape();
@@ -66,13 +62,20 @@ ge::graphStatus CholeskyTiling::Init() {
         return ge::GRAPH_FAILED;
     }
     matSizeN = static_cast<uint32_t>(matAShape[inputDim-1]);
-    matrixNumCount = 1;
     for (uint32_t i = 0; i < (inputDim - MINIMUM_DIMENSION); i++) {
-        matrixNumCount = matrixNumCount * static_cast<uint32_t>(matAShape[i]);
+        matrixNumCount = matrixNumCount * static_cast<uint64_t>(matAShape[i]);
+    }
+
+    if (matSizeN <= MAX_BLOCK_SIZE) {
+        blockSize = matSizeN;
+        blockNum = 1;
+    } else {
+        blockSize = MAX_BLOCK_SIZE;
+        blockNum = (matSizeN + blockSize - 1) / blockSize;
     }
 
     auto compileInfo = reinterpret_cast<const CholeskyCompileInfo*>(tilingContext->GetCompileInfo());
-    int64_t coreNumPlatForm = compileInfo->coreNum;
+    uint32_t coreNumPlatForm = compileInfo->coreNum;
     needCoreNum = coreNumPlatForm < matrixNumCount ? coreNumPlatForm : matrixNumCount;
 
     size_t* currentWorkSpace = tilingContext->GetWorkspaceSizes(1);
@@ -86,20 +89,22 @@ ge::graphStatus CholeskyTiling::RunBigKernelTiling() {
     tilingContext->SetBlockDim(needCoreNum);
     tilingContext->SetTilingKey(GetTilingKeyVal());
     tilingContext->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
-    FillTilingData();
+    
+    tilingData.set_matrixNumCount(matrixNumCount);
+    tilingData.set_matSizeN(matSizeN);
+    tilingData.set_blockSize(blockSize);
+    tilingData.set_blockNum(blockNum);
+    
+    if (tilingContext->GetRawTilingData() == nullptr) {
+        return ge::GRAPH_FAILED;
+    }
+    tilingData.SaveToBuffer(tilingContext->GetRawTilingData()->GetData(), tilingContext->GetRawTilingData()->GetCapacity());
+
+    PrintTilingData();
     return ge::GRAPH_SUCCESS;
 }
 
-uint8_t CholeskyTiling::GetDataTypeSize() {
-    switch (dataType) {
-        case ge::DT_FLOAT:
-            return BYTE_LEN_4;
-        default:
-            return BYTE_LEN_4;
-    }
-}
-
-uint64_t CholeskyTiling::GetTilingKeyVal() {
+uint32_t CholeskyTiling::GetTilingKeyVal() const {
     if (upper == true) {
         return TILING_KEY_TRUE;
     } else {
@@ -107,10 +112,11 @@ uint64_t CholeskyTiling::GetTilingKeyVal() {
     }
 }
 
-void CholeskyTiling::FillTilingData() {
-    tilingData.set_matrixNumCount(matrixNumCount);
-    tilingData.set_matSizeN(matSizeN);
-    tilingData.SaveToBuffer(tilingContext->GetRawTilingData()->GetData(), tilingContext->GetRawTilingData()->GetCapacity());
+void CholeskyTiling::PrintTilingData() {
+    OP_LOGD(tilingContext, "matSizeN: %ld", matSizeN);
+    OP_LOGD(tilingContext, "matrixNumCount: %ld", matrixNumCount);
+    OP_LOGD(tilingContext, "blockSize: %ld", blockSize);
+    OP_LOGD(tilingContext, "blockNum: %ld", blockNum);
 }
 
 static ge::graphStatus CholeskyTilingFunc(gert::TilingContext* context)
@@ -132,7 +138,7 @@ static ge::graphStatus tilingPrepareTiling(gert::TilingParseContext* context)
     
     OP_CHECK_IF(
         (compileInfo->coreNum <= 0),
-        OP_LOGE(context->GetNodeName(), "Cholesky GetHardwareInfo Failed, vectorCoreNum: %d", compileInfo->coreNum), return ge::GRAPH_FAILED);
+        OP_LOGE(context->GetNodeName(), "Cholesky GetHardwareInfo Failed, vectorCoreNum: %u", compileInfo->coreNum), return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }

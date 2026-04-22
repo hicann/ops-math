@@ -28,6 +28,7 @@ extern "C" {
 
 const int64_t SECOND_LAST_DIM_OFFSET = 2;
 const int64_t LAST_DIM_OFFSET = 1;
+const int64_t THRESHOLD_VALUE = 10;
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_BF16};
@@ -49,7 +50,7 @@ static bool CheckNotNull(const aclTensor* self, aclTensor* out) {
   return true;
 }
 
-static bool CheckDtypeValid(const aclTensor *self, aclTensor *out) {
+static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out) {
   auto supportList = GetDtypeSupportList();
 
   //检查self与out的数据类型是否一致
@@ -60,7 +61,7 @@ static bool CheckDtypeValid(const aclTensor *self, aclTensor *out) {
   return true;
 }
 
-static bool CheckFormat(const aclTensor *self, aclTensor *out) {
+static bool CheckFormat(const aclTensor *self, const aclTensor *out) {
   // 输入输出的格式需要一致
   if (self->GetStorageFormat() != out->GetStorageFormat()) {
     OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format of input and output should be equal. self [%s], out [%s].",
@@ -77,7 +78,7 @@ static bool CheckFormat(const aclTensor *self, aclTensor *out) {
   return true;
 }
 
-static bool CheckShape(const aclTensor *self, aclTensor *out) {
+static bool CheckShape(const aclTensor *self, const aclTensor *out) {
   // 维度不能超过8
   OP_CHECK_MAX_DIM(self, ACLNN_MAX_SHAPE_RANK, return false);
 
@@ -85,16 +86,7 @@ static bool CheckShape(const aclTensor *self, aclTensor *out) {
   OP_CHECK_MIN_DIM(self, 2, return false);
 
   // self和out的shape必须一致
-  OP_CHECK_SHAPE_NOT_EQUAL(self, out, return false);
-
-  // self最后两维必须为相同
-  auto dims = static_cast<int64_t>(self->GetViewShape().GetDimNum());
-  int64_t last_dim_size = self->GetViewShape().GetDim(dims -1);
-  int64_t second_last_dim_size = self->GetViewShape().GetDim(dims -2);
-  if (last_dim_size != second_last_dim_size) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self must be batches of square matrices, but they are [%ld] by [%ld] matrices", second_last_dim_size, last_dim_size);
-    return false;
-  } 
+  OP_CHECK_SHAPE_NOT_EQUAL(self, out, return false); 
 
   return true;
 }
@@ -141,15 +133,25 @@ aclnnStatus aclnnLinalgCholeskyGetWorkspaceSize(const aclTensor *self, bool uppe
   auto ret = CheckParams(self, out);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
+  if (self->IsEmpty()) {
+      // 根据实际支持情况补充
+      *workspaceSize = 0;
+      uniqueExecutor.ReleaseTo(executor);
+      return ACLNN_SUCCESS;
+  }
+
+  // self最后两维必须为相同
+  auto dims = static_cast<int64_t>(self->GetViewShape().GetDimNum());
+  int64_t last_dim_size = self->GetViewShape().GetDim(dims -1);
+  int64_t second_last_dim_size = self->GetViewShape().GetDim(dims -2);
+  if (last_dim_size != second_last_dim_size) {
+    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self must be batches of square matrices, but they are [%ld] by [%ld] matrices", second_last_dim_size, last_dim_size);
+    return ACLNN_ERR_PARAM_INVALID;
+  }
+
   // self如果非连续，需要转换
   auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
   CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-  // upper是false时，需要进行转置
-  if (!upper) {
-    selfContiguous = SwapDim(selfContiguous, uniqueExecutor.get());
-    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-  }
 
   // 输入类型是bf16时，需要转换成fp32
   if (self->GetDataType() == op::DataType::DT_BF16) {
@@ -157,19 +159,28 @@ aclnnStatus aclnnLinalgCholeskyGetWorkspaceSize(const aclTensor *self, bool uppe
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
   }
 
-  // 调用l0算子Cholesky进行计算
-  auto choleskyResult = l0op::Cholesky(selfContiguous, true, uniqueExecutor.get());
-  CHECK_RET(choleskyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  const aclTensor* choleskyResult = nullptr;
+
+  // upper是true并且最后一维大于10时，需要进行转置
+  if (upper && last_dim_size > THRESHOLD_VALUE) {
+    selfContiguous = SwapDim(selfContiguous, uniqueExecutor.get());
+    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    // 调用l0算子Cholesky进行计算
+    choleskyResult = l0op::Cholesky(selfContiguous, false, uniqueExecutor.get());
+    CHECK_RET(choleskyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    choleskyResult = SwapDim(choleskyResult, uniqueExecutor.get());
+    CHECK_RET(choleskyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  } else {
+    // 调用l0算子Cholesky进行计算
+    choleskyResult = l0op::Cholesky(selfContiguous, upper, uniqueExecutor.get());
+    CHECK_RET(choleskyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  }
 
   // 输入类型是bf16时，需要将结果重新转换回去
   if (self->GetDataType() == op::DataType::DT_BF16) {
     choleskyResult = l0op::Cast(choleskyResult, op::DataType::DT_BF16, uniqueExecutor.get());
-    CHECK_RET(choleskyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-  }
-
-  // upper是false时，需要将结果重新转置回去
-  if (!upper) {
-    choleskyResult = SwapDim(choleskyResult, uniqueExecutor.get());
     CHECK_RET(choleskyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
   }
 
