@@ -534,3 +534,230 @@ TEST_F(TEST_CUMSUM_UT, INPUT_BOOL_UNSUPPORT)
     CREATE_NODEDEF(shapes, data_types, datas, exclusive, reverse);
     RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
 }
+
+// Helper: run cumsum with a specific axis value (not random)
+template <typename T1, typename T3>
+void RunCumsumKernelWithAxis(
+    vector<DataType> data_types, vector<vector<int64_t>>& shapes, bool exclusive, bool reverse, int32_t axis_val)
+{
+    uint64_t input_size = CalTotalElements(shapes, 0);
+    T1* input = new T1[input_size];
+    SetRandomValue<T1>(input, input_size);
+
+    uint64_t axis_size = CalTotalElements(shapes, 1);
+    int32_t* axis = new int32_t[axis_size];
+    axis[0] = axis_val;
+
+    uint64_t output_size = CalTotalElements(shapes, 2);
+    T3* output = new T3[output_size];
+    vector<void*> datas = {(void*)input, (void*)axis, (void*)output};
+
+    CREATE_NODEDEF(shapes, data_types, datas, exclusive, reverse);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    T3* output_exp = new T3[output_size];
+    CalcExpectWithType<T1>(*node_def.get(), exclusive, reverse, output_exp);
+
+    bool compare = CompareResult(output, output_exp, output_size);
+    EXPECT_EQ(compare, true);
+    delete[] input;
+    delete[] axis;
+    delete[] output;
+    delete[] output_exp;
+}
+
+// ==================== Data type coverage ====================
+
+TEST_F(TEST_CUMSUM_UT, DATA_TYPE_FLOAT_EF_RF)
+{
+    vector<DataType> data_types = {DT_FLOAT, DT_INT32, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{3, 4, 5}, {1}, {3, 4, 5}};
+    RunCumsumKernel2<float, int32_t, float>(data_types, shapes, false, false);
+}
+
+TEST_F(TEST_CUMSUM_UT, DATA_TYPE_DOUBLE_ET_RT)
+{
+    vector<DataType> data_types = {DT_DOUBLE, DT_INT32, DT_DOUBLE};
+    vector<vector<int64_t>> shapes = {{3, 4, 5}, {1}, {3, 4, 5}};
+    RunCumsumKernel2<double, int32_t, double>(data_types, shapes, true, true);
+}
+
+TEST_F(TEST_CUMSUM_UT, DATA_TYPE_INT8_EF_RF)
+{
+    vector<DataType> data_types = {DT_INT8, DT_INT32, DT_INT8};
+    vector<vector<int64_t>> shapes = {{4, 5, 3}, {1}, {4, 5, 3}};
+    RunCumsumKernel2<int8_t, int32_t, int8_t>(data_types, shapes, false, false);
+}
+
+TEST_F(TEST_CUMSUM_UT, DATA_TYPE_INT16_EF_RT)
+{
+    vector<DataType> data_types = {DT_INT16, DT_INT32, DT_INT16};
+    vector<vector<int64_t>> shapes = {{4, 5, 3}, {1}, {4, 5, 3}};
+    RunCumsumKernel2<int16_t, int32_t, int16_t>(data_types, shapes, false, true);
+}
+
+TEST_F(TEST_CUMSUM_UT, DATA_TYPE_INT32_EF_RF)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{3, 4, 5}, {1}, {3, 4, 5}};
+    RunCumsumKernel2<int32_t, int32_t, int32_t>(data_types, shapes, false, false);
+}
+
+TEST_F(TEST_CUMSUM_UT, DATA_TYPE_INT64_ET_RF)
+{
+    vector<DataType> data_types = {DT_INT64, DT_INT32, DT_INT64};
+    vector<vector<int64_t>> shapes = {{3, 4, 5}, {1}, {3, 4, 5}};
+    RunCumsumKernel2<int64_t, int32_t, int64_t>(data_types, shapes, true, false);
+}
+
+TEST_F(TEST_CUMSUM_UT, DATA_TYPE_UINT8_EF_RF)
+{
+    vector<DataType> data_types = {DT_UINT8, DT_INT32, DT_UINT8};
+    vector<vector<int64_t>> shapes = {{4, 5, 3}, {1}, {4, 5, 3}};
+    RunCumsumKernel2<uint8_t, int32_t, uint8_t>(data_types, shapes, false, false);
+}
+
+TEST_F(TEST_CUMSUM_UT, DATA_TYPE_UINT16_ET_RT)
+{
+    vector<DataType> data_types = {DT_UINT16, DT_INT32, DT_UINT16};
+    vector<vector<int64_t>> shapes = {{4, 5, 3}, {1}, {4, 5, 3}};
+    RunCumsumKernel2<uint16_t, int32_t, uint16_t>(data_types, shapes, true, true);
+}
+
+TEST_F(TEST_CUMSUM_UT, DATA_TYPE_COMPLEX64_ET_RF)
+{
+    vector<DataType> data_types = {DT_COMPLEX64, DT_INT32, DT_COMPLEX64};
+    vector<vector<int64_t>> shapes = {{3, 4, 5}, {1}, {3, 4, 5}};
+    RunCumsumKernel2<complex<float>, int32_t, complex<float>>(data_types, shapes, true, false);
+}
+
+TEST_F(TEST_CUMSUM_UT, DATA_TYPE_COMPLEX128_EF_RT)
+{
+    vector<DataType> data_types = {DT_COMPLEX128, DT_INT32, DT_COMPLEX128};
+    vector<vector<int64_t>> shapes = {{3, 4, 5}, {1}, {3, 4, 5}};
+    RunCumsumKernel2<complex<double>, int32_t, complex<double>>(data_types, shapes, false, true);
+}
+
+// ==================== Edge cases: 1D / 4D / specific axis ====================
+
+TEST_F(TEST_CUMSUM_UT, SHAPE_1D_AXIS0)
+{
+    vector<DataType> data_types = {DT_FLOAT, DT_INT32, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{20}, {1}, {20}};
+    RunCumsumKernelWithAxis<float, float>(data_types, shapes, false, false, 0);
+}
+
+TEST_F(TEST_CUMSUM_UT, SHAPE_4D_AXIS2_ET_RT)
+{
+    vector<DataType> data_types = {DT_FLOAT, DT_INT32, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{2, 3, 4, 5}, {1}, {2, 3, 4, 5}};
+    RunCumsumKernelWithAxis<float, float>(data_types, shapes, true, true, 2);
+}
+
+TEST_F(TEST_CUMSUM_UT, SHAPE_4D_AXIS_NEG1)
+{
+    vector<DataType> data_types = {DT_DOUBLE, DT_INT32, DT_DOUBLE};
+    vector<vector<int64_t>> shapes = {{2, 3, 4, 5}, {1}, {2, 3, 4, 5}};
+    RunCumsumKernelWithAxis<double, double>(data_types, shapes, false, true, -1);
+}
+
+// ==================== Large tensor: ParallelFor path ====================
+
+TEST_F(TEST_CUMSUM_UT, LARGE_TENSOR_AXIS0_PARALLEL)
+{
+    // shape [256, 1024], axis=0 => inner=1, depth=256, outer=1024
+    // data_size = 256*1024*4 = 1MB > 512KB threshold
+    vector<DataType> data_types = {DT_FLOAT, DT_INT32, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{256, 1024}, {1}, {256, 1024}};
+    RunCumsumKernelWithAxis<float, float>(data_types, shapes, false, false, 0);
+}
+
+TEST_F(TEST_CUMSUM_UT, LARGE_TENSOR_AXIS1_PARALLEL)
+{
+    // shape [256, 1024], axis=1 => inner=256, depth=1024, outer=1
+    // Old code: outer=1 => single core! New code: total_sequences=256 => parallel
+    vector<DataType> data_types = {DT_FLOAT, DT_INT32, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{256, 1024}, {1}, {256, 1024}};
+    RunCumsumKernelWithAxis<float, float>(data_types, shapes, false, false, 1);
+}
+
+TEST_F(TEST_CUMSUM_UT, LARGE_TENSOR_AXIS_NEG1_ET_RT_PARALLEL)
+{
+    // shape [128, 1024], axis=-1 => inner=128, depth=1024, outer=1
+    // Tests reverse + exclusive on large tensor with parallel path
+    vector<DataType> data_types = {DT_FLOAT, DT_INT32, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{128, 1024}, {1}, {128, 1024}};
+    RunCumsumKernelWithAxis<float, float>(data_types, shapes, true, true, -1);
+}
+
+TEST_F(TEST_CUMSUM_UT, LARGE_TENSOR_COMPLEX64_PARALLEL)
+{
+    // shape [64, 1024], axis=1, complex64 => 64*1024*8 = 512KB => just at threshold
+    // Use slightly larger to ensure parallel path
+    vector<DataType> data_types = {DT_COMPLEX64, DT_INT32, DT_COMPLEX64};
+    vector<vector<int64_t>> shapes = {{128, 1024}, {1}, {128, 1024}};
+    RunCumsumKernelWithAxis<complex<float>, complex<float>>(data_types, shapes, false, false, 1);
+}
+
+// ==================== Inner >> outer optimization verification ====================
+
+TEST_F(TEST_CUMSUM_UT, INNER_GT_OUTER_AXIS1)
+{
+    // shape [64, 8, 2], axis=1 => inner=64, depth=8, outer=2
+    // total_sequences = 128 vs old parallel on outer=2
+    vector<DataType> data_types = {DT_FLOAT, DT_INT32, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{64, 8, 2}, {1}, {64, 8, 2}};
+    RunCumsumKernelWithAxis<float, float>(data_types, shapes, false, false, 1);
+}
+
+TEST_F(TEST_CUMSUM_UT, INNER_GT_OUTER_AXIS1_ET_RF)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{32, 16, 4}, {1}, {32, 16, 4}};
+    RunCumsumKernelWithAxis<int32_t, int32_t>(data_types, shapes, true, false, 1);
+}
+
+TEST_F(TEST_CUMSUM_UT, INNER_GT_OUTER_AXIS1_EF_RT)
+{
+    vector<DataType> data_types = {DT_DOUBLE, DT_INT32, DT_DOUBLE};
+    vector<vector<int64_t>> shapes = {{32, 16, 4}, {1}, {32, 16, 4}};
+    RunCumsumKernelWithAxis<double, double>(data_types, shapes, false, true, 1);
+}
+
+TEST_F(TEST_CUMSUM_UT, INNER_GT_OUTER_AXIS1_ET_RT)
+{
+    vector<DataType> data_types = {DT_INT64, DT_INT32, DT_INT64};
+    vector<vector<int64_t>> shapes = {{32, 16, 4}, {1}, {32, 16, 4}};
+    RunCumsumKernelWithAxis<int64_t, int64_t>(data_types, shapes, true, true, 1);
+}
+
+// ==================== Batched parallel path coverage ====================
+
+TEST_F(TEST_CUMSUM_UT, LARGE_TENSOR_AXIS1_BATCHED_PARALLEL)
+{
+    // shape [32, 32, 512], axis=1 => inner=32, depth=32, outer=512
+    // data_size = 32*32*512*4 = 2MB > 512KB threshold
+    // inner=32 >= avail_cores => Path 2 (batched, parallel over inner, full outer range)
+    vector<DataType> data_types = {DT_FLOAT, DT_INT32, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{32, 32, 512}, {1}, {32, 32, 512}};
+    RunCumsumKernelWithAxis<float, float>(data_types, shapes, false, false, 1);
+}
+
+TEST_F(TEST_CUMSUM_UT, LARGE_TENSOR_AXIS0_OUTER_CHUNKING)
+{
+    // shape [256, 1024], axis=0 => inner=1, depth=256, outer=1024
+    // data_size = 256*1024*4 = 1MB > 512KB threshold
+    // inner=1 < avail_cores => Path 3 (batched with outer chunking)
+    // This was the original bug: inner=1 caused single-core execution for 1MB data
+    vector<DataType> data_types = {DT_FLOAT, DT_INT32, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{256, 1024}, {1}, {256, 1024}};
+    RunCumsumKernelWithAxis<float, float>(data_types, shapes, false, false, 0);
+}
+
+TEST_F(TEST_CUMSUM_UT, LARGE_TENSOR_AXIS0_OUTER_CHUNKING_ET_RT)
+{
+    // Same shape as above but with exclusive=true, reverse=true to cover all code paths
+    vector<DataType> data_types = {DT_DOUBLE, DT_INT32, DT_DOUBLE};
+    vector<vector<int64_t>> shapes = {{128, 1024}, {1}, {128, 1024}};
+    RunCumsumKernelWithAxis<double, double>(data_types, shapes, true, true, 0);
+}

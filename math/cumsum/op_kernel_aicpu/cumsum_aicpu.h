@@ -14,23 +14,22 @@
 
 namespace aicpu {
 class CumsumCpuKernel : public CpuKernel {
- public:
-  CumsumCpuKernel() = default;
-  ~CumsumCpuKernel() override = default;
+public:
+    CumsumCpuKernel() = default;
+    ~CumsumCpuKernel() override = default;
 
-  uint32_t Compute(CpuKernelContext& ctx) override;
+    uint32_t Compute(CpuKernelContext& ctx) override;
 
- private:
-  uint32_t CumsumCheck(const CpuKernelContext& ctx);
-  
-  void CumsumGetAttr(const CpuKernelContext &ctx, bool &exclusive, bool &reverse) const;
+private:
+    uint32_t CumsumCheck(const CpuKernelContext& ctx);
 
-  template <typename T>
-  uint32_t CumsumCompute(CpuKernelContext& ctx);
-  
-  template <typename T, typename T2>
-  uint32_t CumsumCompute2(CpuKernelContext& ctx);
-  void AxesCal(CpuKernelContext &ctx, int64_t &inner, int64_t &outer, int64_t &depth, const int32_t &axis);
+    void CumsumGetAttr(const CpuKernelContext& ctx, bool& exclusive, bool& reverse) const;
+
+    template <typename T>
+    uint32_t CumsumCompute(CpuKernelContext& ctx) const;
+
+    void AxesCal(
+        const CpuKernelContext& ctx, int64_t& inner, int64_t& outer, int64_t& depth, const int32_t& axis) const;
 };
-}  // namespace aicpu
+} // namespace aicpu
 #endif
