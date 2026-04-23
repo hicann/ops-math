@@ -60,30 +60,42 @@ ge::graphStatus BitwiseOrTiling::DoOpTiling()
             reasonMsg.c_str());
          return ge::GRAPH_FAILED;
     }
-    if (input0DType == ge::DT_INT16) {
+    if (input0DType == ge::DT_INT8) {
+        BroadcastBaseTiling<BitwiseOrOp::BitwiseOrCompute<int8_t>::OpDag> brcBaseTiling(context_);
+        brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0DType == ge::DT_INT16) {
         BroadcastBaseTiling<BitwiseOrOp::BitwiseOrCompute<int16_t>::OpDag> brcBaseTiling(context_);
         brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
-    }
-    else if (input0DType == ge::DT_UINT16) {
+    } else if (input0DType == ge::DT_UINT8) {
+        BroadcastBaseTiling<BitwiseOrOp::BitwiseOrCompute<uint8_t>::OpDag> brcBaseTiling(context_);
+        brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0DType == ge::DT_UINT16) {
         BroadcastBaseTiling<BitwiseOrOp::BitwiseOrCompute<uint16_t>::OpDag> brcBaseTiling(context_);
         brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
-    }
-    else if (input0DType == ge::DT_INT32) {
+    } else if (input0DType == ge::DT_INT32) {
         BroadcastBaseTiling<BitwiseOrOp::BitwiseOrCompute<int32_t>::OpDag> brcBaseTiling(context_);
         brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
-    }
-    else if (input0DType == ge::DT_INT64) {
+    } else if (input0DType == ge::DT_UINT32) {
+        BroadcastBaseTiling<BitwiseOrOp::BitwiseOrCompute<uint32_t>::OpDag> brcBaseTiling(context_);
+        brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0DType == ge::DT_INT64) {
         BroadcastBaseTiling<BitwiseOrOp::BitwiseOrCompute<int64_t>::OpDag> brcBaseTiling(context_);
         brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
-    }
-    else {
+    } else if (input0DType == ge::DT_UINT64) {
+        BroadcastBaseTiling<BitwiseOrOp::BitwiseOrCompute<uint64_t>::OpDag> brcBaseTiling(context_);
+        brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else {
         OP_LOGE_WITH_INVALID_INPUT_DTYPE(
             context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
-            "int16, uint16, int32, int64");
+            "int8, uint8, int16, uint16, int32, uint32, int64, uint64");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;

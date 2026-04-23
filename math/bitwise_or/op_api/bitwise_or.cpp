@@ -29,14 +29,22 @@ static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST = {
   DataType::DT_INT16, DataType::DT_INT32, DataType::DT_UINT16};
 
 static const std::initializer_list<DataType> ASCEND910B_AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_INT16, DataType::DT_UINT16, DataType::DT_INT32, DataType::DT_INT64};
+  DataType::DT_INT16, DataType::DT_UINT16, DataType::DT_INT32, DataType::DT_INT64};
+
+static const std::initializer_list<DataType> ASCEND950_AICORE_DTYPE_SUPPORT_LIST = {
+  DataType::DT_INT8, DataType::DT_INT16, DataType::DT_UINT8, DataType::DT_UINT16,
+  DataType::DT_INT32, DataType::DT_UINT32, DataType::DT_INT64, DataType::DT_UINT64};
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static inline bool IsAiCoreSupport(const aclTensor *self) {
-  // 910B、910_93、regbase
+  // 910B、910_93
   auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
-  if (curArch == NpuArch::DAV_2201 || IsRegBase(curArch)) {
+  if (curArch == NpuArch::DAV_2201) {
     return CheckType(self->GetDataType(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
+  }
+  // regbase
+  if (IsRegBase(curArch)) {
+    return CheckType(self->GetDataType(), ASCEND950_AICORE_DTYPE_SUPPORT_LIST);
   }
   // 910及其他
   return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
