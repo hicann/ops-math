@@ -34,8 +34,6 @@ struct PadV3GradCompileInfo {
     int64_t core_num;
     // how much input data can the UB store, instead of UB's size in Bytes
     int64_t ub_size;
-    // how much input data can 4Bytes store in 5HD format, instead of dtype's size.
-    // float16: 2; float32/int32: 1.tring
     int64_t size;
     int64_t dtype_rate;
     bool paddings_contiguous;

@@ -23,7 +23,7 @@
 
 constexpr int32_t EDGE_THREAD_DIM = 2048;
 constexpr int32_t EDGE_HALF_THREAD_DIM = 1024;
-constexpr int32_t EDGE_QUATER_THREAD_DIM = 512;
+constexpr int32_t EDGE_QUARTER_THREAD_DIM = 512;
 constexpr int32_t EDGE_EIGHTH_THREAD_DIM = 256;
 constexpr int32_t EDGE_SIXTEENTH_THREAD_DIM = 128;
 namespace PadV3Grad {
@@ -153,7 +153,7 @@ __simt_vf__ LAUNCH_BOUND(EDGE_HALF_THREAD_DIM) __aicore__ void SimtComputeEdgeDi
 }
 
 template <typename T, int32_t DIM, typename U, typename GmOffsetType, typename CastType>
-__simt_vf__ LAUNCH_BOUND(EDGE_QUATER_THREAD_DIM) __aicore__ void SimtComputeEdgeDimThree(
+__simt_vf__ LAUNCH_BOUND(EDGE_QUARTER_THREAD_DIM) __aicore__ void SimtComputeEdgeDimThree(
     __gm__ T* inputGM, __gm__ volatile T* outputGM, GmOffsetType outputSize, uint32_t blockIdx, uint32_t blockNum,
     __ubuf__ U* inShapes, __ubuf__ U* outShapes, __ubuf__ U* inStrides, __ubuf__ U* outStrides, __ubuf__ U* leftPads,
     __ubuf__ U* rightPads, __ubuf__ GmOffsetType* magics, __ubuf__ GmOffsetType* shifts)
@@ -336,7 +336,7 @@ __aicore__ inline void PadV3GradEdgeSimt<T>::Process()
             inStrides, outStrides, leftPads, rightPads, magics, shifts);
     } else if (mDimNum == 3) {
         Simt::VF_CALL<SimtComputeEdgeDimThree<T, 3, U, GmOffsetType, CastType>>(
-            Simt::Dim3(EDGE_QUATER_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
+            Simt::Dim3(EDGE_QUARTER_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
             (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize, mBlockIdx_, blockNum, inShapes, outShapes,
             inStrides, outStrides, leftPads, rightPads, magics, shifts);
     } else if (mDimNum == 4) {

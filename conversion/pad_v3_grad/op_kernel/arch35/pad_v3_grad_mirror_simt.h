@@ -24,7 +24,7 @@
 
 constexpr int32_t MIRROR_THREAD_DIM = 2048;
 constexpr int32_t MIRROR_HALF_THREAD_DIM = 1024;
-constexpr int32_t MIRROR_QUATER_THREAD_DIM = 512;
+constexpr int32_t MIRROR_QUARTER_THREAD_DIM = 512;
 constexpr int32_t MIRROR_EIGHTH_THREAD_DIM = 256;
 constexpr int32_t MIRROR_SIXTEENTH_THREAD_DIM = 128;
 

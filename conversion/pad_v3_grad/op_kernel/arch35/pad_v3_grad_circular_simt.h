@@ -24,7 +24,7 @@
 
 constexpr int32_t CIRCULAR_THREAD_DIM = 2048;
 constexpr int32_t CIRCULAR_HALF_THREAD_DIM = 1024;
-constexpr int32_t CIRCULAR_QUATER_THREAD_DIM = 512;
+constexpr int32_t CIRCULAR_QUARTER_THREAD_DIM = 512;
 constexpr int32_t CIRCULAR_EIGHTH_THREAD_DIM = 256;
 constexpr int32_t CIRCULAR_SIXTEENTH_THREAD_DIM = 128;
 constexpr int8_t CONST3 = 3;
@@ -80,7 +80,7 @@ __simt_callee__ __aicore__ void CalPos(
 }
 
 template <uint8_t DIM_NUM, typename U>
-__simt_callee__ __aicore__ void CalCandiate(
+__simt_callee__ __aicore__ void CalCandidate(
     IdxAndTimes<U>* inIdxCnt, U* inIndex, U* outIndex, __ubuf__ U* inStrides, __ubuf__ U* outShapes,
     __ubuf__ U* leftPads, __ubuf__ U* rightPads)
 {
@@ -129,7 +129,7 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__ void SimtCompute
         // 在每一维上填充的个数（包括自身）及其偏移
         IdxAndTimes<U> inIdxCnt[DIM_NUM];
 
-        CalCandiate<DIM_NUM, U>(inIdxCnt, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
+        CalCandidate<DIM_NUM, U>(inIdxCnt, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
 
         CastType total = 0;
         for (uint8_t a0 = 0; a0 < inIdxCnt[0].cnt; a0++) {
@@ -169,7 +169,7 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__ void SimtCompute
         // 在每一维上填充的个数（包括自身）及其偏移
         IdxAndTimes<U> inIdxCnt[DIM_NUM];
 
-        CalCandiate<DIM_NUM, U>(inIdxCnt, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
+        CalCandidate<DIM_NUM, U>(inIdxCnt, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
 
         CastType total = 0;
         for (uint8_t a0 = 0; a0 < inIdxCnt[0].cnt; a0++) {
@@ -215,7 +215,7 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__ void SimtCompute
         // 在每一维上填充的个数（包括自身）及其偏移
         IdxAndTimes<U> inIdxCnt[DIM_NUM];
 
-        CalCandiate<DIM_NUM, U>(inIdxCnt, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
+        CalCandidate<DIM_NUM, U>(inIdxCnt, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
 
         CastType total = 0;
 
@@ -268,7 +268,7 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__ void SimtCompute
         // 在每一维上填充的个数（包括自身）及其偏移
         IdxAndTimes<U> inIdxCnt[DIM_NUM];
 
-        CalCandiate<DIM_NUM, U>(inIdxCnt, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
+        CalCandidate<DIM_NUM, U>(inIdxCnt, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
 
         CastType total = 0;
         for (uint8_t a0 = 0; a0 < inIdxCnt[0].cnt; a0++) {
@@ -326,7 +326,7 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__ void SimtCompute
         // 在每一维上填充的个数（包括自身）及其偏移
         IdxAndTimes<U> inIdxCnt[DIM_NUM];
 
-        CalCandiate<DIM_NUM, U>(inIdxCnt, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
+        CalCandidate<DIM_NUM, U>(inIdxCnt, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
 
         CastType total = 0;
         for (uint8_t a0 = 0; a0 < inIdxCnt[0].cnt; a0++) {

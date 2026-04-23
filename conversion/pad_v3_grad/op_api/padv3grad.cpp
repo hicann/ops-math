@@ -158,7 +158,7 @@ inline static bool IsAiCoreSupportReflection3D(const aclTensor *gradOutput, cons
         OP_LOGD("[PadV3Grad] IsAiCoreSupportReflection3D: false, The data type does not support aicore");
         return false;
     } 
-    OP_LOGD("[PadV3Grad] IsAiCoreSupportReflection3D: ture");
+    OP_LOGD("[PadV3Grad] IsAiCoreSupportReflection3D: true");
     return true;
 }
 
@@ -177,7 +177,7 @@ inline static bool IsAiCoreRegBaseSupportReflection3D(const aclTensor *gradOutpu
         OP_LOGD("[PadV3Grad] IsAiCoreRegBaseSupportReflection3D: false, The data type does not support aicore");
         return false;
     } 
-    OP_LOGD("[PadV3Grad] IsAiCoreRegBaseSupportReflection3D: ture");
+    OP_LOGD("[PadV3Grad] IsAiCoreRegBaseSupportReflection3D: true");
     return true;
 }
 
