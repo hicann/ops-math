@@ -660,9 +660,6 @@ conversion@ops-math:
         - ops/ops-math/conversion/tensor_move/op_host/tensor_move_def.cpp
         - ops/ops-math/conversion/concat_dv2/op_kernel/
         - ops/ops-math/conversion/concat_dv2/op_host/
-        - ops/ops-math/conversion/pad_v3_grad/README.md
-        - ops/ops-math/conversion/pad_v3_grad/op_kernel/
-        - ops/ops-math/conversion/pad_v3_grad/op_host/
         - ops/ops-math/conversion/strided_slice_v3/docs/
         - ops/ops-math/conversion/strided_slice_v3/op_api/
         - ops/ops-math/conversion/strided_slice_v3/README.md
