@@ -27,13 +27,13 @@ ops-math是[CANN](https://hiascend.com/software/cann) （Compute Architecture fo
 
 ## ⬇️源码下载
 
-环境准备好后，根据环境中CANN版本下载与之配套的分支源码，\$\{tag\_version\}替换为配套的分支标签名。
+环境准备好后，下载与CANN版本配套的分支源码，命令如下，\$\{tag\_version\}替换为分支标签名。
+
+> 说明：若环境中已存在配套分支源码，**可跳过本步骤**，例如WedIDE默认已提供最新商发版CANN对应的源码 。
 
 ```bash
 git clone -b ${tag_version} https://gitcode.com/cann/ops-math.git
 ```
-说明：对于WebIDE环境，已默认提供最新商发CANN版本配套的源码，如需获取其他版本源码，参考上述命令获取。
-
 ## 📖学习教程
 
 - [快速入门](docs/QUICKSTART.md)：从零开始快速体验项目核心基础能力，涵盖源码编译、算子调用、开发与调试等操作。
