@@ -16,7 +16,7 @@ if (UT_TEST_ALL OR OP_KERNEL_UT)
     #         )
     # 算子自己的tiling文件路径
     set(chunk_cattiling_files
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/chunk_cattiling.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/chunk_cat_tiling.cpp
         # ${elewise_common_tiling_files}
         )
     # 使用AddOpTestCase
@@ -24,5 +24,5 @@ if (UT_TEST_ALL OR OP_KERNEL_UT)
     # param2：soc版本，多个以分号分隔，例如："ascend950;ascend910b"
     # param3：自定义编译选项，一般填写测试的一种典型数据类型组合，不需要则传入空字符串，例如："-DDTYPE_X=float"，多个使用空格分隔，例如："-DDTYPE_X=float -DDTYPE_Y=float"
     # param4：该算子依赖的所有tiling源码文件
-    AddOpTestCase(transpose_v2 "ascend910b" "-DDTYPE_X=float -DDTYPE_Y=float" "${chunk_cattiling_files}")
+    AddOpTestCase(chunk_cat "ascend910b" "-DDTYPE_X=float -DDTYPE_Y=float" "${chunk_cattiling_files}")
 endif()
