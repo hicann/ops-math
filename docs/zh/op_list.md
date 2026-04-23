@@ -317,6 +317,16 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/diag/README.md">diag</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>创建一个以小于等于4维的输入张量为对角线元素的对角矩阵。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/diag_flat/README.md">diag_flat</a></td>
     <td>√</td>
     <td>√</td>

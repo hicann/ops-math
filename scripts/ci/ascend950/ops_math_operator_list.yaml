@@ -44,6 +44,7 @@ operator_group_1:
   - cosh
   - cumsum
   - cummin
+  - diag
   - diag_flat
   - diag_v2
   - diag_part

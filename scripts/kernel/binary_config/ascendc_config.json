@@ -275,6 +275,7 @@
     {"name":"MultiScaleDeformableAttnFunction", "compute_units": ["ascend910","ascend910b", "ascend910_93", "ascend310p"], "auto_sync" : true},
     {"name":"DeformableOffsetsGrad", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : ""},
     {"name":"DeformableConv2d", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : false},
+    {"name":"Diag", "compute_units": ["ascend950"], "auto_sync" : true},
     {"name":"DiagV2", "compute_units": ["ascend910_93", "ascend910b", "ascend910", "ascend310p", "ascend950", "kirinx90", "kirin9030"], "auto_sync" : true},
     {"name":"ForeachAddListInplace", "compute_units": ["ascend910b"], "auto_sync" : false},
     {"name":"ForeachSubListInplace", "compute_units": ["ascend910b"], "auto_sync" : false},
