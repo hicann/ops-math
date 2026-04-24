@@ -41,4 +41,4 @@ main() {
   bash build_binary_single_op_exe_task.sh $task_path $thread_num $output_path
 }
 set -o pipefail
-main "$@" | gawk '{print strftime("[%Y-%m-%d %H:%M:%S]"), $0}'
+main "$@" | while IFS= read -r line; do echo "$(date '+[%Y-%m-%d %H:%M:%S]') $line"; done

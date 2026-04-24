@@ -1732,4 +1732,4 @@ if [ $# -eq 0 ]; then
   usage
   exit 0
 fi
-main "$@" 2>&1 | gawk '{print strftime("[%Y-%m-%d %H:%M:%S]"), $0}'
+main "$@" 2>&1 | while IFS= read -r line; do echo "$(date '+[%Y-%m-%d %H:%M:%S]') $line"; done
