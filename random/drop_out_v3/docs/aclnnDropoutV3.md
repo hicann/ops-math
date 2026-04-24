@@ -117,7 +117,7 @@ aclnnStatus aclnnDropoutV3(
       <td>offset</td>
       <td>输入</td>
       <td>随机数的偏移量，它影响生成的随机数序列的位置。</td>
-      <td>-</td>
+      <td>取值约束：offset % 4 == 0，例如可以取 0、4、8 ...，不满足约束会调用失败</td>
       <td>INT64</td>
       <td>-</td>
       <td>-</td>
