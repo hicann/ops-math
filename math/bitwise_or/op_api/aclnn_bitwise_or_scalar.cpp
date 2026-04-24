@@ -32,45 +32,8 @@ extern "C" {
 
 static constexpr size_t MAX_DIM_LEN = 8;
 
-static op::DataType InnerTypeToComplexType(const op::DataType input) {
-  switch (input) {
-    case op::DataType::DT_BF16:
-      // BFloat16 has range equivalent to Float,
-      // so we map it to ComplexFloat.
-      return op::DataType::DT_COMPLEX64;
-    case op::DataType::DT_FLOAT16:
-      return op::DataType::DT_COMPLEX32;
-    case op::DataType::DT_FLOAT:
-      return op::DataType::DT_COMPLEX64;
-    case op::DataType::DT_DOUBLE:
-      return op::DataType::DT_COMPLEX128;
-    case op::DataType::DT_COMPLEX32:
-      return op::DataType::DT_COMPLEX32;
-    case op::DataType::DT_COMPLEX64:
-      return op::DataType::DT_COMPLEX64;
-    case op::DataType::DT_COMPLEX128:
-      return op::DataType::DT_COMPLEX128;
-    default:
-      OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Unknown Complex ScalarType for [%s]", ToString(input).GetString());
-      return op::DataType::DT_UNDEFINED;
-  }
-}
-
-static op::DataType CombineCategoriesWithComplex(const op::DataType higher, const op::DataType lower) {
-  if(IsComplexType(higher)) {
-    return higher;
-  } else if (IsComplexType(lower)) {
-    // preserve value type of higher if it is floating type.
-    if (IsFloatingType(higher)) {
-      return InnerTypeToComplexType(higher);
-    }
-    // in case of integral input
-    // lower complex takes precedence.
-    return lower;
-  } else if (IsFloatingType(higher)) {
-    return higher;
-  }
-  if (higher == op::DataType::DT_BOOL || IsFloatingType(lower)) {
+static op::DataType CombineCategories(const op::DataType higher, const op::DataType lower) {
+  if (higher == op::DataType::DT_BOOL) {
     return op::PromoteType(higher, lower);
   }
   if (higher != op::DataType::DT_UNDEFINED) {
@@ -79,25 +42,20 @@ static op::DataType CombineCategoriesWithComplex(const op::DataType higher, cons
   return lower;
 }
 
-static op::DataType GetScalarDefaultDtype(const op::DataType input) {
-  if (IsComplexType(input)) {
-    return op::DataType::DT_COMPLEX64;
-  } else if (IsFloatingType(input)) {
-    return op::DataType::DT_FLOAT;
-  }
-  return input;
-}
-
 // 根据API定义，需要列出所能支持的所有dtype
-static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_DEFAULT = {
   DataType::DT_INT8, DataType::DT_INT16, DataType::DT_INT32, DataType::DT_INT64,
   DataType::DT_UINT8, DataType::DT_BOOL, DataType::DT_UINT16};
+
+static const std::initializer_list<DataType> REGBASE_DTYPE_SUPPORT_LIST = {
+  DataType::DT_INT8, DataType::DT_INT16, DataType::DT_INT32, DataType::DT_INT64,
+  DataType::DT_UINT8, DataType::DT_UINT16, DataType::DT_UINT32, DataType::DT_UINT64,
+  DataType::DT_BOOL};
 
 static DataType GetPromoteDType(const aclTensor *self, const aclScalar *other) {
   auto promoteType = DataType::DT_UNDEFINED;
   if (IsRegBase()) {
-    auto otherDefaultDtype = GetScalarDefaultDtype(other->GetDataType());
-    promoteType = CombineCategoriesWithComplex(self->GetDataType(), otherDefaultDtype);
+    promoteType = CombineCategories(self->GetDataType(), other->GetDataType());
     return promoteType;
   }
 
@@ -116,11 +74,12 @@ static DataType GetPromoteDType(const aclTensor *self, const aclScalar *other) {
 
 static inline bool CheckDtypeValid(const aclTensor *self, const aclScalar *other, const aclTensor *out,
                                    DataType &promoteType) {
+  auto supportList = IsRegBase() ? REGBASE_DTYPE_SUPPORT_LIST : DTYPE_SUPPORT_LIST_DEFAULT;
   // 检查self的数据类型是否在LogicalOr或者BitwiseOr算子的支持列表内
-  OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
+  OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
 
   // 检查other的数据类型是否在LogicalOr或者BitwiseOr算子的支持列表内
-  OP_CHECK_DTYPE_NOT_SUPPORT(other, DTYPE_SUPPORT_LIST, return false);
+  OP_CHECK_DTYPE_NOT_SUPPORT(other, supportList, return false);
 
   // 检查self和other能否做数据类型推导
   promoteType = GetPromoteDType(self, other);

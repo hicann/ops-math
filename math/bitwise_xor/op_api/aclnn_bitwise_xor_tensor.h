@@ -62,16 +62,20 @@ extern "C" {
 /**
  * @brief aclnnBitwiseXorTensor的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_math
- * @param [in] self: npu
- * device侧的aclTensor，数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8，且数据类型与other的数据类型
- * 需满足数据类型推导规则，shape需要与other满足broadcast关系，支持非连续的Tensor，数据格式支持ND，数据维度不支持8维以上。
- * @param [in] other：npu
- * device侧的aclTensor，数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8，且数据类型与self的数据类型
- * 需满足数据类型推导规则，shape需要与self满足broadcast关系，支持非连续的Tensor，数据格式支持ND，数据维度不支持8维以上。
- * @param [in] out: npu
- * device侧的aclTensor，数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE、
- * BFLOAT16、COMPLEX64、COMPLEX128，且数据类型需要是self与other推导之后可转换的数据类型，shape需要是self与other
- * broadcast之后 的shape，支持非连续的Tensor，数据格式支持ND，数据维度不支持8维以上。
+ * @param [in] self: npu device侧的aclTensor，
+ * 昇腾950 AI处理器：数据类型支持BOOL、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64。
+ * 其他系列产品：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8。
+ * 数据类型与other的数据类型需满足数据类型推导规则，shape需要与other满足broadcast关系，支持非连续的Tensor，数据格式支持ND，数据维度不支持8维以上。
+ * @param [in] other：npu device侧的aclTensor，
+ * 昇腾950 AI处理器：数据类型支持BOOL、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64。
+ * 其他系列产品：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8。
+ * 数据类型与self的数据类型需满足数据类型推导规则，shape需要与self满足broadcast关系，支持非连续的Tensor，数据格式支持ND，数据维度不支持8维以上。
+ * @param [in] out: npu device侧的aclTensor，
+ * Atlas 训练系列产品，Atlas 推理系列产品：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE。
+ * Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件、Atlas A3 训练系列产品/Atlas A3 推理系列产品：
+ * 数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16。
+ * 昇腾950 AI处理器：数据类型支持BOOL、INT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX64、COMPLEX128。
+ * 数据类型需要是self与other推导之后可转换的数据类型，shape需要是self与other broadcast之后 的shape，支持非连续的Tensor，数据格式支持ND，数据维度不支持8维以上。
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含了算子计算流程。
  * @return aclnnStatus: 返回状态码。
@@ -94,12 +98,16 @@ ACLNN_API aclnnStatus aclnnBitwiseXorTensor(void* workspace, uint64_t workspaceS
 /**
  * @brief aclnnInplaceBitwiseXorTensor的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_math
- * @param [in] selfRef: npu device侧的aclTensor，数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8，且数据类型与other的
- * 数据类型需满足数据类型推导规则，且推导后的数据类型需要能转换成selfRef自身的数据类型，shape需要与other满足broadcast关系，且
- * broadcast之后的shape需要与selfRef自身的shape相同，支持非连续的Tensor，数据格式支持ND，数据维度不支持8维以上。
- * @param [in] other：npu device侧的aclTensor，数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8，且数据类型与selfRef的
- * 数据类型需满足数据类型推导规则，shape需要与selfRef满足broadcast关系，支持非连续的Tensor，数据格式支持ND，数据维度不支持8维
- * 以上。
+ * @param [in] selfRef: npu device侧的aclTensor，
+ * 昇腾950 AI处理器：数据类型支持BOOL、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64。
+ * 其他系列产品：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8。
+ * 数据类型与other的数据类型需满足数据类型推导规则，且推导后的数据类型需要能转换成selfRef自身的数据类型，shape需要与other
+ * 满足broadcast关系，且broadcast之后的shape需要与selfRef自身的shape相同，支持非连续的Tensor，数据格式支持ND，数据维度不支持8维以上。
+ * @param [in] other：npu device侧的aclTensor，
+ * 昇腾950 AI处理器：数据类型支持BOOL、INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64。
+ * 其他系列产品：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8。
+ * 数据类型与selfRef的数据类型需满足数据类型推导规则，shape需要与selfRef满足broadcast关系，支持非连续的Tensor，数据格式支持ND，数据维
+ * 度不支持8维以上。
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含了算子计算流程。
  * @return aclnnStatus: 返回状态码。

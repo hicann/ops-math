@@ -22,6 +22,7 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -31,8 +32,12 @@ extern "C" {
 static constexpr size_t MAX_DIM_LEN = 8;
 
 // 根据API定义，需要列出所能支持的所有dtype
-static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST = {
+static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_DEFAULT = {
   DataType::DT_INT8, DataType::DT_INT16, DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT8, DataType::DT_BOOL};
+
+static const std::initializer_list<DataType> REGBASE_DTYPE_SUPPORT_LIST = {
+  DataType::DT_INT8, DataType::DT_INT16, DataType::DT_INT32, DataType::DT_INT64, DataType::DT_UINT8, DataType::DT_BOOL,
+  DataType::DT_UINT16, DataType::DT_UINT32, DataType::DT_UINT64};
 
 static inline bool CheckNotNull(const aclTensor *self, const aclTensor *other, const aclTensor *out) {
   // self、other、out不能为空指针
@@ -44,11 +49,12 @@ static inline bool CheckNotNull(const aclTensor *self, const aclTensor *other, c
 
 static inline bool CheckDtypeValid(const aclTensor *self, const aclTensor *other, const aclTensor *out,
                                    DataType &promoteType) {
+  auto supportList = IsRegBase() ? REGBASE_DTYPE_SUPPORT_LIST : DTYPE_SUPPORT_LIST_DEFAULT;
   // 检查self的数据类型是否在支持列表内
-  OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
+  OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
 
   // 检查other的数据类型是否在支持列表内
-  OP_CHECK_DTYPE_NOT_SUPPORT(other, DTYPE_SUPPORT_LIST, return false);
+  OP_CHECK_DTYPE_NOT_SUPPORT(other, supportList, return false);
 
   // 检查self和other能否做数据类型推导
   promoteType = PromoteType(self->GetDataType(), other->GetDataType());

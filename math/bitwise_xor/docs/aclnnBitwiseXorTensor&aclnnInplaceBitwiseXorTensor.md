@@ -97,7 +97,7 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
       <td>输入</td>
       <td>输入tensor，与other进行按位异或运算。</td>
       <td>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-      <td>BOOL、INT8、INT16、INT32、INT64、UINT8</td>
+      <td>BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>不大于8</td>
       <td>√</td>
@@ -107,7 +107,7 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
       <td>输入</td>
       <td>输入tensor，与self进行按位异或运算。</td>
       <td>shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-      <td>BOOL、INT8、INT16、INT32、INT64、UINT8</td>
+      <td>BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>不大于8</td>
       <td>√</td>
@@ -117,7 +117,7 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
       <td>输出</td>
       <td>输出tensor，存储计算结果。</td>
       <td>shape是self与other broadcast之后的shape。</td>
-      <td>BOOL、INT8、INT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
+      <td>BOOL、INT8、INT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16、UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>不大于8</td>
       <td>√</td>
@@ -143,8 +143,14 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
       <td>-</td>
     </tr>
   </tbody></table>
-
-  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16数据类型。
+  
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
+    - self和other的数据类型不支持UINT16、UINT32、UINT64；
+    - out数据类型不支持UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128。
+  
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：
+    - self和other的数据类型不支持UINT16、UINT32、UINT64；
+    - out数据类型不支持BFLOAT16、UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128。
 
 - **返回值：**
 
@@ -266,7 +272,7 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
       <td>输入/输出</td>
       <td>输入输出tensor，与other进行按位异或运算，计算结果存储在selfRef中。</td>
       <td>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-      <td>BOOL、INT8、INT16、INT32、INT64、UINT8</td>
+      <td>BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>不大于8</td>
       <td>√</td>
@@ -276,7 +282,7 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
       <td>输入</td>
       <td>输入tensor，与selfRef进行按位异或运算。</td>
       <td>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-      <td>BOOL、INT8、INT16、INT32、INT64、UINT8</td>
+      <td>BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>不大于8</td>
       <td>√</td>
@@ -302,6 +308,8 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
       <td>-</td>
     </tr>
   </tbody></table>
+
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：selfRef和other的数据类型不支持UINT16、UINT32、UINT64。
 
 - **返回值：**
 

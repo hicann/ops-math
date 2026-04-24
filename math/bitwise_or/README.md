@@ -43,26 +43,27 @@
       <td>self</td>
       <td>输入</td>
       <td>公式中的输入self。</td>
-      <td>INT16、UINT16、INT32、INT64</td>
+      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、UINT32、UINT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>other</td>
       <td>输入</td>
       <td>公式中的输入other。</td>
-      <td>INT16、UINT16、INT32、INT64</td>
+      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、UINT32、UINT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>out</td>
       <td>输出</td>
       <td>公式中的输出out。</td>
-      <td>INT16、UINT16、INT32、INT64</td>
+      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、UINT32、UINT64</td>
       <td>ND</td>
     </tr>
   </tbody></table>
 
-  - Atlas 推理系列产品、Atlas 训练系列产品：数据类型不支持INT64。
+  - Atlas 推理系列产品、Atlas 训练系列产品：数据类型不支持INT8、UINT8、UINT32、INT64、UINT64。
+  - Atlas A2 训练系列产品/Atlas A2 推理系列产品、Atlas A3 训练系列产品/Atlas A3 推理系列产品：不支持INT8、UINT8、UINT32、UINT64。
 
 ## 约束说明
 

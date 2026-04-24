@@ -97,7 +97,7 @@ aclnnStatus aclnnInplaceBitwiseXorScalar(
       <td>输入</td>
       <td>输入tensor，与other进行按位异或运算。</td>
       <td>shape需要与out一致。</td>
-      <td>BOOL、INT8、INT16、INT32、INT64、UINT8</td>
+      <td>BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>不超过8维</td>
       <td>√</td>
@@ -107,7 +107,7 @@ aclnnStatus aclnnInplaceBitwiseXorScalar(
       <td>输入</td>
       <td>输入scalar，与self进行按位异或运算。</td>
       <td>数据类型需要与self满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
-      <td>BOOL、INT8、INT16、INT32、INT64、UINT8</td>
+      <td>BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -117,7 +117,7 @@ aclnnStatus aclnnInplaceBitwiseXorScalar(
       <td>输出</td>
       <td>输出tensor，存储计算结果。</td>
       <td>shape需要与self一致。</td>
-      <td>BOOL、INT8、INT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
+      <td>BOOL、INT8、INT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16、UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>不超过8维</td>
       <td>√</td>
@@ -144,8 +144,15 @@ aclnnStatus aclnnInplaceBitwiseXorScalar(
     </tr>
   </tbody></table>
 
-  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16数据类型。
-  - <term>Ascend 950PR/Ascend 950DT</term>：self和other数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
+  - <term>Ascend 950PR/Ascend 950DT</term>：self和other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
+  
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
+    - self和other的数据类型不支持UINT16、UINT32、UINT64；
+    - out数据类型不支持UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128。
+  
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：
+    - self和other的数据类型不支持UINT16、UINT32、UINT64；
+    - out数据类型不支持BFLOAT16、UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128。
   
 - **返回值：**
 
@@ -264,7 +271,7 @@ aclnnStatus aclnnInplaceBitwiseXorScalar(
       <td>输入/输出</td>
       <td>输入输出tensor，与other进行按位异或运算，计算结果存储在selfRef中。</td>
       <td>-</td>
-      <td>BOOL、INT8、INT16、INT32、INT64、UINT8</td>
+      <td>BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>不超过8维</td>
       <td>√</td>
@@ -274,7 +281,7 @@ aclnnStatus aclnnInplaceBitwiseXorScalar(
       <td>输入</td>
       <td>输入scalar，与selfRef进行按位异或运算。</td>
        <td>数据类型需要与selfRef满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
-      <td>BOOL、INT8、INT16、INT32、INT64、UINT8</td>
+      <td>BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -302,6 +309,8 @@ aclnnStatus aclnnInplaceBitwiseXorScalar(
   </tbody></table>
 
   - <term>Ascend 950PR/Ascend 950DT</term>：selfRef和other数据类型需满足<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>，且需要是推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。
+
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：selfRef和other的数据类型不支持UINT16、UINT32、UINT64。
 
 - **返回值：**
 
