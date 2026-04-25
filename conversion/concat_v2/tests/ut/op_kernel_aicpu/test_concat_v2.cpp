@@ -29,6 +29,7 @@ using namespace aicpu;
 
 class TEST_CONCATV2_UT : public testing::Test {};
 
+// ---------- helper: single-input variant that duplicates input0 twice ----------
 template <typename T>
 void CalcExpectFunc(const NodeDef& node_def, T expect_out[])
 {
@@ -99,27 +100,246 @@ vector<vector<int64_t>> shapes = {{2, 4}, {2, 4}, {}, {4, 4}};
 ADD_CASE_WITH_SHAPE(2_4__2_4__0__4_4, float, DT_FLOAT, shapes, 8)
 
 ADD_CASE(int8_t, DT_INT8)
-
 ADD_CASE(int16_t, DT_INT16)
-
 ADD_CASE(int32_t, DT_INT32)
-
 ADD_CASE(int64_t, DT_INT64)
-
 ADD_CASE(uint8_t, DT_UINT8)
-
 ADD_CASE(uint16_t, DT_UINT16)
-
 ADD_CASE(uint32_t, DT_UINT32)
-
 ADD_CASE(uint64_t, DT_UINT64)
-
 ADD_CASE(bool, DT_BOOL)
-
 ADD_CASE(double, DT_DOUBLE)
-
 ADD_CASE(std::complex<float>, DT_COMPLEX64)
-
 ADD_CASE(std::complex<double>, DT_COMPLEX128)
-
 ADD_CASE(Eigen::bfloat16, DT_BFLOAT16)
+
+// =========================================================================
+//   Extended UT: covers critical paths added by the optimization
+//   (axis selection, ByRow/ByInput code paths, >2 inputs, int64 concat_dim,
+//    negative axis, row-level correctness, error paths).
+// =========================================================================
+
+// Concat along axis=1 (inner) -> exercises RunParallelByRow with row_size>0
+TEST_F(TEST_CONCATV2_UT, TestConcatV2_Axis1_Float)
+{
+    // Shapes: x0[2,3] x1[2,5] -> y[2,8]
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_INT32, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{2, 3}, {2, 5}, {}, {2, 8}};
+    float x0[6] = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
+    float x1[10] = {10.0f, 11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f, 17.0f, 18.0f, 19.0f};
+    float y[16] = {0.0f};
+    int32_t concat_dim = 1;
+    vector<void*> datas = {(void*)x0, (void*)x1, (void*)&concat_dim, (void*)y};
+
+    auto node_def = CpuKernelUtils::CreateNodeDef();
+    NodeDefBuilder builder(node_def.get(), "ConcatV2", "ConcatV2");
+    builder.Input({"x0", DT_FLOAT, shapes[0], datas[0]})
+           .Input({"x1", DT_FLOAT, shapes[1], datas[1]})
+           .Input({"concat_dim", DT_INT32, shapes[2], datas[2]})
+           .Output({"y", DT_FLOAT, shapes[3], datas[3]})
+           .Attr("N", 2);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    float expect[16] = {
+        1.0f, 2.0f, 3.0f, 10.0f, 11.0f, 12.0f, 13.0f, 14.0f,
+        4.0f, 5.0f, 6.0f, 15.0f, 16.0f, 17.0f, 18.0f, 19.0f};
+    for (int i = 0; i < 16; ++i) {
+        EXPECT_FLOAT_EQ(y[i], expect[i]) << "mismatch at i=" << i;
+    }
+}
+
+// Concat along axis=0 with flat_dim0=1 after reshape path: shapes [1,N]
+// -> exercises RunParallelByInput when flat_dim0==1.
+TEST_F(TEST_CONCATV2_UT, TestConcatV2_ByInputPath_Float)
+{
+    // After axis=0 concat: x0[3] x1[4] -> y[7], inputs_flat_dim0_=1 (axis=0 on 1-D)
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_INT32, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{3}, {4}, {}, {7}};
+    float x0[3] = {1.0f, 2.0f, 3.0f};
+    float x1[4] = {10.0f, 20.0f, 30.0f, 40.0f};
+    float y[7] = {0.0f};
+    int32_t concat_dim = 0;
+    vector<void*> datas = {(void*)x0, (void*)x1, (void*)&concat_dim, (void*)y};
+
+    auto node_def = CpuKernelUtils::CreateNodeDef();
+    NodeDefBuilder builder(node_def.get(), "ConcatV2", "ConcatV2");
+    builder.Input({"x0", DT_FLOAT, shapes[0], datas[0]})
+           .Input({"x1", DT_FLOAT, shapes[1], datas[1]})
+           .Input({"concat_dim", DT_INT32, shapes[2], datas[2]})
+           .Output({"y", DT_FLOAT, shapes[3], datas[3]})
+           .Attr("N", 2);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    float expect[7] = {1.0f, 2.0f, 3.0f, 10.0f, 20.0f, 30.0f, 40.0f};
+    for (int i = 0; i < 7; ++i) {
+        EXPECT_FLOAT_EQ(y[i], expect[i]) << "mismatch at i=" << i;
+    }
+}
+
+// Three inputs with different axis=1 sizes (exercises multi-input ByRow hot loop)
+TEST_F(TEST_CONCATV2_UT, TestConcatV2_ThreeInputs_Axis1)
+{
+    vector<vector<int64_t>> shapes = {{2, 1}, {2, 2}, {2, 3}, {}, {2, 6}};
+    int32_t x0[2] = {1, 2};
+    int32_t x1[4] = {10, 11, 20, 21};
+    int32_t x2[6] = {100, 101, 102, 200, 201, 202};
+    int32_t y[12] = {0};
+    int32_t concat_dim = 1;
+
+    auto node_def = CpuKernelUtils::CreateNodeDef();
+    NodeDefBuilder builder(node_def.get(), "ConcatV2", "ConcatV2");
+    builder.Input({"x0", DT_INT32, shapes[0], (void*)x0})
+           .Input({"x1", DT_INT32, shapes[1], (void*)x1})
+           .Input({"x2", DT_INT32, shapes[2], (void*)x2})
+           .Input({"concat_dim", DT_INT32, shapes[3], (void*)&concat_dim})
+           .Output({"y", DT_INT32, shapes[4], (void*)y})
+           .Attr("N", 3);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    int32_t expect[12] = {1, 10, 11, 100, 101, 102, 2, 20, 21, 200, 201, 202};
+    for (int i = 0; i < 12; ++i) {
+        EXPECT_EQ(y[i], expect[i]) << "mismatch at i=" << i;
+    }
+}
+
+// concat_dim supplied as DT_INT64
+TEST_F(TEST_CONCATV2_UT, TestConcatV2_ConcatDimInt64)
+{
+    vector<vector<int64_t>> shapes = {{2, 2}, {2, 2}, {1}, {2, 4}};
+    float x0[4] = {1.0f, 2.0f, 3.0f, 4.0f};
+    float x1[4] = {5.0f, 6.0f, 7.0f, 8.0f};
+    float y[8] = {0.0f};
+    int64_t concat_dim = 1;
+
+    auto node_def = CpuKernelUtils::CreateNodeDef();
+    NodeDefBuilder builder(node_def.get(), "ConcatV2", "ConcatV2");
+    builder.Input({"x0", DT_FLOAT, shapes[0], (void*)x0})
+           .Input({"x1", DT_FLOAT, shapes[1], (void*)x1})
+           .Input({"concat_dim", DT_INT64, shapes[2], (void*)&concat_dim})
+           .Output({"y", DT_FLOAT, shapes[3], (void*)y})
+           .Attr("N", 2);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    float expect[8] = {1.0f, 2.0f, 5.0f, 6.0f, 3.0f, 4.0f, 7.0f, 8.0f};
+    for (int i = 0; i < 8; ++i) {
+        EXPECT_FLOAT_EQ(y[i], expect[i]);
+    }
+}
+
+// negative concat_dim -> should normalize to positive
+TEST_F(TEST_CONCATV2_UT, TestConcatV2_NegativeConcatDim)
+{
+    vector<vector<int64_t>> shapes = {{2, 2}, {2, 2}, {}, {2, 4}};
+    float x0[4] = {1.0f, 2.0f, 3.0f, 4.0f};
+    float x1[4] = {5.0f, 6.0f, 7.0f, 8.0f};
+    float y[8] = {0.0f};
+    int32_t concat_dim = -1;
+
+    auto node_def = CpuKernelUtils::CreateNodeDef();
+    NodeDefBuilder builder(node_def.get(), "ConcatV2", "ConcatV2");
+    builder.Input({"x0", DT_FLOAT, shapes[0], (void*)x0})
+           .Input({"x1", DT_FLOAT, shapes[1], (void*)x1})
+           .Input({"concat_dim", DT_INT32, shapes[2], (void*)&concat_dim})
+           .Output({"y", DT_FLOAT, shapes[3], (void*)y})
+           .Attr("N", 2);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    float expect[8] = {1.0f, 2.0f, 5.0f, 6.0f, 3.0f, 4.0f, 7.0f, 8.0f};
+    for (int i = 0; i < 8; ++i) {
+        EXPECT_FLOAT_EQ(y[i], expect[i]);
+    }
+}
+
+// Large input, multiple rows, axis=1 -> stresses ParallelFor + row loop
+TEST_F(TEST_CONCATV2_UT, TestConcatV2_Large_Axis1)
+{
+    constexpr int64_t kRows = 64;
+    constexpr int64_t kCols0 = 31;
+    constexpr int64_t kCols1 = 17;
+    vector<vector<int64_t>> shapes = {{kRows, kCols0}, {kRows, kCols1}, {}, {kRows, kCols0 + kCols1}};
+    vector<float> x0(kRows * kCols0);
+    vector<float> x1(kRows * kCols1);
+    for (int i = 0; i < kRows * kCols0; ++i) x0[i] = static_cast<float>(i);
+    for (int i = 0; i < kRows * kCols1; ++i) x1[i] = static_cast<float>(i + 100000);
+    vector<float> y(kRows * (kCols0 + kCols1), 0.0f);
+    int32_t concat_dim = 1;
+
+    auto node_def = CpuKernelUtils::CreateNodeDef();
+    NodeDefBuilder builder(node_def.get(), "ConcatV2", "ConcatV2");
+    builder.Input({"x0", DT_FLOAT, shapes[0], (void*)x0.data()})
+           .Input({"x1", DT_FLOAT, shapes[1], (void*)x1.data()})
+           .Input({"concat_dim", DT_INT32, shapes[2], (void*)&concat_dim})
+           .Output({"y", DT_FLOAT, shapes[3], (void*)y.data()})
+           .Attr("N", 2);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    for (int64_t r = 0; r < kRows; ++r) {
+        for (int64_t c = 0; c < kCols0; ++c) {
+            EXPECT_FLOAT_EQ(y[r * (kCols0 + kCols1) + c], x0[r * kCols0 + c]);
+        }
+        for (int64_t c = 0; c < kCols1; ++c) {
+            EXPECT_FLOAT_EQ(y[r * (kCols0 + kCols1) + kCols0 + c], x1[r * kCols1 + c]);
+        }
+    }
+}
+
+// Error path: bad concat_dim out of range -> returns KERNEL_STATUS_PARAM_INVALID
+TEST_F(TEST_CONCATV2_UT, TestConcatV2_BadConcatDim)
+{
+    vector<vector<int64_t>> shapes = {{2, 2}, {2, 2}, {}, {2, 4}};
+    float x0[4] = {0.0f};
+    float x1[4] = {0.0f};
+    float y[8] = {0.0f};
+    int32_t concat_dim = 5; // out of range for rank-2 tensor
+
+    auto node_def = CpuKernelUtils::CreateNodeDef();
+    NodeDefBuilder builder(node_def.get(), "ConcatV2", "ConcatV2");
+    builder.Input({"x0", DT_FLOAT, shapes[0], (void*)x0})
+           .Input({"x1", DT_FLOAT, shapes[1], (void*)x1})
+           .Input({"concat_dim", DT_INT32, shapes[2], (void*)&concat_dim})
+           .Output({"y", DT_FLOAT, shapes[3], (void*)y})
+           .Attr("N", 2);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
+}
+
+// Error path: shape rank mismatch between inputs
+TEST_F(TEST_CONCATV2_UT, TestConcatV2_ShapeRankMismatch)
+{
+    vector<vector<int64_t>> shapes = {{2, 2}, {4}, {}, {4, 2}};
+    float x0[4] = {0.0f};
+    float x1[4] = {0.0f};
+    float y[8] = {0.0f};
+    int32_t concat_dim = 0;
+
+    auto node_def = CpuKernelUtils::CreateNodeDef();
+    NodeDefBuilder builder(node_def.get(), "ConcatV2", "ConcatV2");
+    builder.Input({"x0", DT_FLOAT, shapes[0], (void*)x0})
+           .Input({"x1", DT_FLOAT, shapes[1], (void*)x1})
+           .Input({"concat_dim", DT_INT32, shapes[2], (void*)&concat_dim})
+           .Output({"y", DT_FLOAT, shapes[3], (void*)y})
+           .Attr("N", 2);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
+}
+
+// Empty input tensor (NumElements == 0 in one input) -> should be skipped
+TEST_F(TEST_CONCATV2_UT, TestConcatV2_EmptyInputSkipped)
+{
+    vector<vector<int64_t>> shapes = {{2, 3}, {2, 0}, {}, {2, 3}};
+    float x0[6] = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
+    float x1[1] = {0.0f}; // unused
+    float y[6] = {0.0f};
+    int32_t concat_dim = 1;
+
+    auto node_def = CpuKernelUtils::CreateNodeDef();
+    NodeDefBuilder builder(node_def.get(), "ConcatV2", "ConcatV2");
+    builder.Input({"x0", DT_FLOAT, shapes[0], (void*)x0})
+           .Input({"x1", DT_FLOAT, shapes[1], (void*)x1})
+           .Input({"concat_dim", DT_INT32, shapes[2], (void*)&concat_dim})
+           .Output({"y", DT_FLOAT, shapes[3], (void*)y})
+           .Attr("N", 2);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    for (int i = 0; i < 6; ++i) {
+        EXPECT_FLOAT_EQ(y[i], x0[i]);
+    }
+}
