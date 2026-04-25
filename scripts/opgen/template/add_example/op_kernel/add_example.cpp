@@ -22,7 +22,7 @@ enum class AddExampleTilingKey : uint32_t
 };
 
 template <uint32_t schMode>
-__global__ __aicore__ void add_example(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void add_example(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(AddExampleTilingData);
     GET_TILING_DATA_WITH_STRUCT(AddExampleTilingData, tilingData, tiling);
@@ -30,14 +30,14 @@ __global__ __aicore__ void add_example(GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR 
     // 场景1
     if constexpr (schMode == static_cast<uint32_t>(AddExampleTilingKey::TILING_KEY_EXAMPLE_FLOAT)) {
         NsAddExample::AddExample<float> op; // 算子kernel实例获取
-        op.Init(x, y, z, &tilingData);      // 算子kernel实例初始化
+        op.Init(x, y, &tilingData);      // 算子kernel实例初始化
         op.Process();                       // 算子kernel实例执行
     }
 
     // 场景2
     if constexpr (schMode == static_cast<uint32_t>(AddExampleTilingKey::TILING_KEY_EXAMPLE_INT32)) {
         NsAddExample::AddExample<int32_t> op; // 算子kernel实例获取
-        op.Init(x, y, z, &tilingData);        // 算子kernel实例初始化
+        op.Init(x, y, &tilingData);        // 算子kernel实例初始化
         op.Process();                         // 算子kernel实例执行
     }
 }

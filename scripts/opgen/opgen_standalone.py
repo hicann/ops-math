@@ -37,6 +37,7 @@ class OpGenerator:
         self._copy_template()
         self._rename_files()
         self._replace_content()
+        self._update_cmake_chain()
         logging.info(f"成功为 {self.op_type}/{self.op_name} 创建算子工程！")
         logging.info(f"工程路径: {self.dest_dir}")
 
@@ -79,6 +80,36 @@ class OpGenerator:
                     os.rename(old_path, new_path)
                 except OSError as e:
                     raise OSError(f"重命名 '{old_path}' 到 '{new_path}' 失败: {e}") from e
+
+    def _update_cmake_chain(self):
+        """在父目录的CMakeLists.txt中添加add_subdirectory，确保构建系统能找到新目录"""
+        current = self.dest_dir
+        project_root = os.path.abspath(self.output_path)
+
+        while True:
+            parent = os.path.dirname(current)
+            child = os.path.basename(current)
+            parent_abs = os.path.abspath(parent)
+
+            cmake_file = os.path.join(parent, "CMakeLists.txt")
+            if os.path.exists(cmake_file):
+                with open(cmake_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+
+                already_included = bool(re.search(
+                    rf'add_subdirectory\s*\(\s*{re.escape(child)}\s*[\s\)]', content
+                ))
+                uses_glob = bool(re.search(r'file\s*\(\s*GLOB', content))
+
+                if not already_included and not uses_glob:
+                    with open(cmake_file, 'a', encoding='utf-8') as f:
+                        f.write(f"\nadd_subdirectory({child})\n")
+                    logging.info(f"Added add_subdirectory({child}) to {cmake_file}")
+
+            if parent_abs == project_root:
+                break
+
+            current = parent
 
     def _replace_content_in_file(self, file_path, replacements):
         """Helper to replace content in a single file."""
