@@ -9,6 +9,13 @@
 # ----------------------------------------------------------------------------
 
 file(GLOB SUBDIRECTORIES LIST_DIRECTORIES true RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
+
+set(_selected_example_ops "${ASCEND_OP_NAME}")
+list(LENGTH _selected_example_ops _selected_example_ops_len)
+if(_selected_example_ops_len EQUAL 1 AND "add_example_aicpu" IN_LIST _selected_example_ops)
+  add_need_compile_ops("add_example")
+endif()
+
 # 遍历子目录
 foreach(SUBDIR ${SUBDIRECTORIES})
   # 检查是否跳过目录
