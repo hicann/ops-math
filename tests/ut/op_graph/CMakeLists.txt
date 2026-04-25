@@ -47,6 +47,7 @@ if(UT_TEST_ALL OR OP_GRAPH_UT)
         -Wl,--no-whole-archive
         -Wl,--no-as-needed
         metadef
+        ge_common
         -Wl,--as-needed
         error_manager
         exe_graph
