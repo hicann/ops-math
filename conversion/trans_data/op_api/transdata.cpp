@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -43,9 +43,9 @@ static int8_t kSupportMap[14][14] = {
     {1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* 5HD_C04 */
     {1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}  /* FZ_C04 */
 };
-/*  0   , 1   , 2   , 3  , 4 , 5 , 6 , 7    , 8    , 9    , 10 , 11  ,  12,      13    , 14  ,15       ,16 */
-/*  NCHW, NHWC, HWCN, 5HD, FZ, ND, NZ, NCDHW, NDHWC, DHWCN, 6HD, FZ_3D, 5HD_C04, FZ_C04, NCL, NZ_C0_16, NZ_C0_32 */
-static int64_t kFormatRank[] = {4, 4, 4, 5, 4, -1, -1, 5, 5, 5, 6, 4, 5, 4, 3, -1, -1};
+/*  0   , 1   , 2   , 3  , 4 , 5 , 6 , 7    , 8    , 9    , 10 , 11  ,  12,      13    , 14  ,15       ,16,       17,      18*/
+/*  NCHW, NHWC, HWCN, 5HD, FZ, ND, NZ, NCDHW, NDHWC, DHWCN, 6HD, FZ_3D, 5HD_C04, FZ_C04, NCL, NZ_C0_16, NZ_C0_32, NZ_C0_2, NZ_C0_4 */
+static int64_t kFormatRank[] = {4, 4, 4, 5, 4, -1, -1, 5, 5, 5, 6, 4, 5, 4, 3, -1, -1, -1, -1};
 
 static int8_t kFormatIndex[] = {
     0,  //         FORMAT_NCHW = 0,   // NCHW
@@ -100,6 +100,8 @@ static int8_t kFormatIndex[] = {
     -1, //        C1HWC0,
     15, //        FRACTAL_NZ_C0_16,
     16, //        FRACTAL_NZ_C0_32,
+    17, //        FRACTAL_NZ_C0_2,
+    18, //        FRACTAL_NZ_C0_4,
     // Add new formats definition here
     -1, //        FORMAT_END,
     // FORMAT_MAX defines the max value of Format.
@@ -236,10 +238,18 @@ static inline bool CheckTransDataSupport(op::Format srcPrimaryFormat, op::Format
 {
     int8_t isSupport = 0;
     if (op::IsRegBase()) {
-        if ((srcPrimaryFormat == op::Format::FORMAT_ND || srcPrimaryFormat == op::Format::FORMAT_NCL) &&
+        bool isNd2Nz = (srcPrimaryFormat == op::Format::FORMAT_ND || srcPrimaryFormat == op::Format::FORMAT_NCL) &&
             (dstPrimaryFormat == op::Format::FORMAT_FRACTAL_NZ ||
              dstPrimaryFormat == op::Format::FORMAT_FRACTAL_NZ_C0_16 ||
-             dstPrimaryFormat == op::Format::FORMAT_FRACTAL_NZ_C0_32)) {
+             dstPrimaryFormat == op::Format::FORMAT_FRACTAL_NZ_C0_32);
+
+        bool isNz2Nd = dstPrimaryFormat == op::Format::FORMAT_ND && 
+            (srcPrimaryFormat == op::Format::FORMAT_FRACTAL_NZ ||
+             srcPrimaryFormat == op::Format::FORMAT_FRACTAL_NZ_C0_2 ||
+             srcPrimaryFormat == op::Format::FORMAT_FRACTAL_NZ_C0_4 ||
+             srcPrimaryFormat == op::Format::FORMAT_FRACTAL_NZ_C0_16 ||
+             srcPrimaryFormat == op::Format::FORMAT_FRACTAL_NZ_C0_32);
+        if (isNd2Nz || isNz2Nd) {
             isSupport = 1;
         }
     } else if (

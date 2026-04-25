@@ -54,6 +54,7 @@ namespace ge
 | ND <====> FRACTAL_NZ        | float32, int32,uint32              | 16    | 1      |\n
 | ND <====> FRACTAL_NZ        | bfloat16, float16                  | 16    | 1      |\n
 | ND <====> FRACTAL_NZ        | int8, uint8                        | 32    | 1      |\n
+| ND <====> FRACTAL_NZ        | float4_e2m1                        | 64    | 1      |\n
 | NCHW <====> FRACTAL_Z       | float32, int32,uint32              | 8,16  | 1      |\n
 | NCHW <====> FRACTAL_Z       | bfloat16, float16                  | 16    | 1      |\n
 | NCHW <====> FRACTAL_Z       | int8,  uint8                       | 32    | 1      |\n
@@ -81,9 +82,10 @@ namespace ge
 | FRACTAL_Z_3D ====> DHWCN    | float16, bfloat16, uint16, int16   | 16    | >1     |\n
 | NCHW ====> FRACTAL_Z_C04    | float16, bfloat16                  | 16    | 1      |\n
 | FRACTAL_Z_C04 ====> NCHW    | float32                            | 16    | 1      |\n
-| ND ====> FRACTAL_NZ_C0_16   | float32, uint32, int32             | 16    | 1      |\n
-| ND ====> FRACTAL_NZ_C0_32   | float4_e2m1                        | 32    | 1      |\n
-| ND ====> FRACTAL_NZ_C0_64   | float4_e2m1                        | 64    | 1      |\n
+| ND <====> FRACTAL_NZ_C0_16  | float32, uint32, int32             | 16    | 1      |\n
+| ND <====> FRACTAL_NZ_C0_32  | float4_e2m1                        | 32    | 1      |\n
+| FRACTAL_NZ_C0_2 ====> ND    | float32, int32                     | 2     | 1      |\n
+| FRACTAL_NZ_C0_4 ====> ND    | float32, int32                     | 4     | 1      |\n
 *\n
 *
 */

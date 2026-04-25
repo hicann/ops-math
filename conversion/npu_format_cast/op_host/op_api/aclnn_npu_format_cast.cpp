@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -372,6 +372,131 @@ static aclnnStatus Check95NdToNzGetWorkSpaceSizeInputs(const aclTensor* srcTenso
     return ACLNN_SUCCESS;
 }
 
+static bool IsNzFormat(op::Format srcFormat)
+{
+    return  srcFormat == op::Format::FORMAT_FRACTAL_NZ ||
+ 	        srcFormat == op::Format::FORMAT_FRACTAL_NZ_C0_2 ||
+ 	        srcFormat == op::Format::FORMAT_FRACTAL_NZ_C0_4 ||
+ 	        srcFormat == op::Format::FORMAT_FRACTAL_NZ_C0_16 ||
+ 	        srcFormat == op::Format::FORMAT_FRACTAL_NZ_C0_32;
+}
+
+static bool IsNz2Nd(op::Format srcFormat, op::Format dstFormat)
+{
+    // dstFormat是基础格式就认为是转ND.
+ 	bool isDstNd =  dstFormat == op::Format::FORMAT_ND ||
+                    dstFormat == op::Format::FORMAT_NCL ||
+                    dstFormat == op::Format::FORMAT_NCHW ||
+                    dstFormat == op::Format::FORMAT_NCDHW;
+
+ 	return IsNzFormat(srcFormat) && isDstNd;    
+}
+
+static bool ValidNzShape(const aclTensor* srcTensor)
+{
+    auto srcStorageShape = srcTensor->GetStorageShape();
+    auto srcStorageShapeDim = srcStorageShape.GetDimNum();
+    // 仅支持输入Nz格式tensor的storageShape维度在4到8之间
+    OP_CHECK(srcStorageShapeDim >= DIMS_FOUR && srcStorageShapeDim <= DIMS_EIGHT,
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+            "Only support srcStorageShapeDim between 4 and 8 for input tensor in Nz format, "
+            "but the actual srcStorageShapeDim is [%zu].", srcStorageShapeDim),
+        return false);
+    // 校验输入Nz格式tensor不含有值为0的轴
+    for (uint64_t i = 0; i < srcStorageShapeDim; ++i) {
+        OP_CHECK(srcStorageShape[i] != 0,
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+            "Do not support empty input, but srcStorageShape[%ld] is 0", i),
+        return false);
+    } 
+    // c0需要和shape匹配
+    int64_t c0 = static_cast<int64_t>(srcStorageShape.GetDim(srcStorageShapeDim - 1)); // 倒数第1维为Nz shape的C0轴
+    int64_t expectedC0 = -1;
+    op::Format srcFormat = srcTensor->GetStorageFormat();
+    if (srcFormat == op::Format::FORMAT_FRACTAL_NZ) {
+        auto srcDataType = srcTensor->GetDataType();
+        expectedC0 = srcDataType == ge::DT_FLOAT4_E2M1 ? FRACTAL_NZ_C0_4B : 
+                                    BLOCK_SIZE / ge::GetSizeByDataType(srcDataType);        
+    } else if (srcFormat == op::Format::FORMAT_FRACTAL_NZ_C0_2) {
+        expectedC0 = 2; // c0 should be 2 
+    } else if (srcFormat == op::Format::FORMAT_FRACTAL_NZ_C0_4) {
+        expectedC0 = 4; // c0 should be 4
+    } else if (srcFormat == op::Format::FORMAT_FRACTAL_NZ_C0_16) {
+        expectedC0 = 16; // c0 should be 16
+    } else if (srcFormat == op::Format::FORMAT_FRACTAL_NZ_C0_32) {
+        expectedC0 = 32; // c0 should be 32
+    } else {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Unsupport Nz format: [%s]", op::ToString(srcFormat).GetString());
+        return false;
+    }
+    OP_CHECK(c0 == expectedC0, 
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expected c0 is [%ld], but the actual c0 is [%ld]", expectedC0, c0),
+        return false);    
+
+    return true;
+}
+
+static bool ValidNz2NdShape(const aclTensor* srcTensor, const aclTensor* dstTensor)
+{
+    auto srcStorageShape = srcTensor->GetStorageShape();
+    auto dstViewShape = dstTensor->GetViewShape();
+    auto srcStorageShapeDim = srcStorageShape.GetDimNum();
+    auto dstViewShapeDim = dstViewShape.GetDimNum();
+    // Nz维度比ND维度多2
+    OP_CHECK(dstViewShapeDim + DIMS_TWO == srcStorageShapeDim,
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+            "Nz-dimensions must equal ND-dimensions+2, but srcStorageShapeDim is [%zu] and "
+            "dstViewShapeDim is [%zu]", srcStorageShapeDim, dstViewShapeDim),
+        return false);
+    OP_CHECK(dstViewShapeDim >= 2,
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+            "ND shape dims must be larger than or equal to 2, but dstViewShapeDim is [%zu].", dstViewShapeDim),
+        return false);
+    // 需要Nz shape[0:-4] == ND shape[0:-2]
+    for (uint64_t i = 0; i < dstViewShapeDim - DIMS_TWO; ++i){
+        if (srcStorageShape.GetDim(i) != dstViewShape.GetDim(i)){
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "ND dimensions except last 2 must match Nz dimensions except last 4, "
+                "but srcStorageShape is [%s] and dstViewShape is [%s]",
+                op::ToString(srcStorageShape).GetString(), op::ToString(dstViewShape).GetString());
+            return false;
+        }
+    }
+    // 需要满足 n1 = ceil(n/n0), c1 = ceil(c/c0)
+    int64_t n = static_cast<int64_t>(dstViewShape.GetDim(dstViewShapeDim - 2)); // 倒数第2维为ND的n轴
+    int64_t c = static_cast<int64_t>(dstViewShape.GetDim(dstViewShapeDim - 1)); // 倒数第1维为ND的c轴
+    int64_t c1 = static_cast<int64_t>(srcStorageShape.GetDim(srcStorageShapeDim - 4)); // 倒数第4维为Nz的c1轴
+    int64_t n1 = static_cast<int64_t>(srcStorageShape.GetDim(srcStorageShapeDim - 3)); // 倒数第3维为Nz的n1轴
+    int64_t n0 = static_cast<int64_t>(srcStorageShape.GetDim(srcStorageShapeDim - 2)); // 倒数第2维为Nz的n0轴
+    int64_t c0 = static_cast<int64_t>(srcStorageShape.GetDim(srcStorageShapeDim - 1)); // 倒数第1维为Nz的c0轴
+    OP_CHECK(n1 == CeilDiv(n, n0) && c1 == CeilDiv(c, c0),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+            "It must hold that n1 = ceil(n/n0) and c1 = ceil(c/c0) when converting Nz to ND, but "
+            "(n, c) = [(%ld, %ld)] and (c1, n1, n0, C0) = [(%ld, %ld, %ld, %ld)].",
+            n, c, c1, n1, n0, c0),
+        return false);
+    
+    return true;
+}
+
+static aclnnStatus Check95NzToNdGetWorkSpaceSizeInputs(const aclTensor* srcTensor, const aclTensor* dstTensor)
+{
+    // check dtype
+    OP_CHECK_DTYPE_NOT_SUPPORT(srcTensor, ASCEND950_WEIGHT_DTYPE_SUPPORT_LIST, return ACLNN_ERR_PARAM_INVALID);
+    OP_CHECK_DTYPE_NOT_SUPPORT(dstTensor, ASCEND950_WEIGHT_DTYPE_SUPPORT_LIST, return ACLNN_ERR_PARAM_INVALID);    
+    // check the shape of input tensor matches Nz format
+    OP_CHECK(ValidNzShape(srcTensor),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The shape of input Nz tensor is invalid."),
+        return ACLNN_ERR_PARAM_INVALID);
+    // check the shape of output ND tensor matches the input Nz tensor
+    OP_CHECK(ValidNz2NdShape(srcTensor, dstTensor),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, 
+            "The shape of ND output does not match the shape of Nz input."),
+        return ACLNN_ERR_PARAM_INVALID);
+
+    return ACLNN_SUCCESS;
+}
+
 bool IsSupportedTransdataForwardPair(op::Format src, op::Format dst)
 {
     return kTransdataForwardFormatPairs.count({src, dst});
@@ -560,7 +685,17 @@ aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
             OP_CHECK(retNdToNz == ACLNN_SUCCESS, OP_LOGW("Failed to check inputs"), return ACLNN_ERR_PARAM_INVALID);
         }
         return CalcNdToNz(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
-    } else if (srcFormat == op::Format::FORMAT_FRACTAL_NZ && dstFormat == op::Format::FORMAT_ND) {
+    } else if (IsNzFormat(srcFormat) && dstFormat == op::Format::FORMAT_ND) {
+        if (!IsRegBase()) {
+            OP_CHECK(srcFormat == op::Format::FORMAT_FRACTAL_NZ,
+                OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Unsupport srcFormat: [%s]", op::ToString(srcFormat).GetString()),
+                return ACLNN_ERR_PARAM_INVALID);
+        } else {
+            // ASCEND950校验特殊场景
+            OP_CHECK(ValidNzShape(srcTensor),
+                OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The shape of input Nz tensor is invalid."),
+                return ACLNN_ERR_PARAM_INVALID);
+        }
         return CalcToNd(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
     } else if (srcFormat == op::Format::FORMAT_NCDHW && dstFormat == op::Format::FORMAT_NDC1HWC0) {
         return CalcNCDHWToNDC1HWC0(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
@@ -586,12 +721,15 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
     op::Format srcFormat = srcTensor->GetStorageFormat();
     op::Format dstFormat = dstTensor->GetStorageFormat();
     // ASCEND950校验特殊场景
-    if (IsRegBase() &&
-        dstFormat == op::Format::FORMAT_FRACTAL_NZ &&
-        ((srcFormat == op::Format::FORMAT_ND || srcFormat == op::Format::FORMAT_NCL) ||
-         (srcTensor->GetDataType() == dstTensor->GetDataType() && CheckInputFormatSupportedToNz(srcFormat)))) {
-        ret = Check95NdToNzGetWorkSpaceSizeInputs(srcTensor, dstTensor);
-    }
+    if (IsRegBase()) {
+        if (dstFormat == op::Format::FORMAT_FRACTAL_NZ &&
+         ((srcFormat == op::Format::FORMAT_ND || srcFormat == op::Format::FORMAT_NCL) ||
+         (srcTensor->GetDataType() == dstTensor->GetDataType() && CheckInputFormatSupportedToNz(srcFormat)))) {   
+            ret = Check95NdToNzGetWorkSpaceSizeInputs(srcTensor, dstTensor);
+        } else if (IsNz2Nd(srcFormat, dstFormat)) {
+            ret = Check95NzToNdGetWorkSpaceSizeInputs(srcTensor, dstTensor);
+        }
+    } 
     OP_CHECK(
         ret == ACLNN_SUCCESS,
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to check aclnnNpuFormatCastGetWorkSpaceSizeInputs."),
@@ -627,6 +765,9 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
         dstTensor->SetOriginalShape(srcTensor->GetOriginalShape());
     } else {
         // 私有转公有Format
+        if (IsRegBase() && IsNz2Nd(srcFormat, dstFormat)) {
+            dstTensor->SetStorageFormat(op::Format::FORMAT_ND);
+        }
         dstTensor->SetOriginalShape(dstTensor->GetViewShape());
         dstTensor->SetStorageShape(dstTensor->GetViewShape());
 
