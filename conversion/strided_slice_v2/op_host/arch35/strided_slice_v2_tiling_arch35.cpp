@@ -317,20 +317,24 @@ static bool ShouldAdjustLastStride(const SliceParametersRuntime2 &param, size_t 
 
 static void AdjustLastStrideDimension(SliceParametersRuntime2 &param) {
    size_t th = param.inputShape.GetDimNum() - 1;
+   const auto inputLastDim = param.inputShape[th];
+   const auto beginLastDim = param.beginList[th];
+   const auto strideLastDim = param.strideList[th];
+   const auto outputLastDim = param.outputShape[th];
 
    // Split the last dimension
-   param.inputShape[th] = param.inputShape[th] / param.strideList[th];
-   param.inputShape.AppendDim(param.strideList[th]);
+   param.inputShape[th] = inputLastDim / strideLastDim;
+   param.inputShape.AppendDim(strideLastDim);
 
-   param.beginList[th] = param.beginList[th] / param.strideList[th];
-   param.beginList.AppendDim(param.beginList[th] % param.strideList[th]);
+   param.beginList[th] = beginLastDim / strideLastDim;
+   param.beginList.AppendDim(beginLastDim % strideLastDim);
 
    param.strideList[th] = 1;
    param.strideList.AppendDim(1);
 
    param.outputShape.AppendDim(1);
 
-   param.endList[th] = param.beginList[th] + param.outputShape[th];
+   param.endList[th] = param.beginList[th] + outputLastDim;
    param.endList.AppendDim(param.beginList[th + 1] + 1);
 }
 
