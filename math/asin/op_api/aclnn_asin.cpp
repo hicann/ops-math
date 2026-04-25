@@ -54,6 +54,18 @@ static bool isSupportBf16Version()
     }
 }
 
+static bool isSupportedKernel(DataType castDtype)
+{
+    auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
+    if (socVersion == SocVersion::ASCEND950 && (castDtype == DataType::DT_BF16 || castDtype == DataType::DT_FLOAT16 ||
+        castDtype == DataType::DT_FLOAT)) {
+        return true;
+    } else {
+        OP_LOGD("The soc version [%s] does not support Kernel with input", op::ToString(socVersion).GetString());
+        return false;
+    }
+}
+
 static const std::initializer_list<DataType>& GetSelfRefDtypeList()
 {
     if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
@@ -126,11 +138,27 @@ static aclnnStatus ExecAsinGetWorkspaceSize(
 
     // 调用cast算子将不支持的类型转化为float / 将bfloat16类型转化为float
     auto castDtype = selfContiguous->GetDataType();
-    if (!CheckType(castDtype, DTYPE_OUT_LIST) || castDtype == DataType::DT_BF16) {
-        castDtype = DataType::DT_FLOAT;
-    }
+    const aclTensor* selfCast = nullptr;
 
-    auto selfCast = l0op::Cast(selfContiguous, castDtype, uniqueExecutor.get());
+    // 判断条件：昇腾950版本且数据类型为Kernel原生支持的类型，则跳过Cast
+    if (isSupportedKernel(castDtype)) {
+        // 950新增逻辑：kernel支持的数据类型零拷贝复用输入Tensor，避免冗余Cast开销
+        selfCast = selfContiguous;
+    } else {
+        // 原有逻辑优化，目标类型与原类型相同时，跳过Cast算子调用
+        DataType targetDtype = castDtype;
+
+        if (!CheckType(castDtype, DTYPE_OUT_LIST) || castDtype == DataType::DT_BF16) {
+            targetDtype = DataType::DT_FLOAT;
+        }
+
+        if (targetDtype != castDtype) {
+            selfCast = l0op::Cast(selfContiguous, targetDtype, uniqueExecutor.get());
+        } else {
+            selfCast = selfContiguous;
+        }
+    }
+    
     CHECK_RET(selfCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 执行L0算子

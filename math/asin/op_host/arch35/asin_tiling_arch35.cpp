@@ -24,12 +24,29 @@ using namespace ge;
 using namespace AsinDag;
 
 constexpr uint64_t WORKSPACE_RESERVE_BYTE = 0;  // Asin 无需 workspace
+const int64_t DCACHE_SIZE = 32768;
+const int64_t ASCEND_API_BUFFER = 122880; //120K
 
 ge::graphStatus AsinTiling::SetTilingData()
 {
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     currentWorkspace[0] = WORKSPACE_RESERVE_BYTE;
     tilingContext->SetBlockDim(tiling->baseTiling.blockNum);
+
+    uint64_t ubSize = 0;
+    auto platformInfo = tilingContext->GetPlatformInfo();
+    if (platformInfo == nullptr) {
+        auto compileInfoPtr = tilingContext->GetCompileInfo<ElewiseCompileInfo>();
+        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(tilingContext, "compile info is null"),
+                        return ge::GRAPH_FAILED);
+        ubSize = compileInfoPtr->ubSize;
+    } else {
+        auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+        uint64_t ubSizePlatForm = 0;
+        ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
+        ubSize = ubSizePlatForm;
+    }
+    tilingContext->SetLocalMemorySize(static_cast<uint32_t>(ubSize - DCACHE_SIZE));
     return ge::GRAPH_SUCCESS;
 }
 
@@ -79,11 +96,11 @@ ge::graphStatus AsinTiling::RunTiling()
 
     ge::graphStatus res = ge::GRAPH_FAILED;
     if (this->outputDtype == ge::DT_FLOAT16) {
-        res = elewiseBaseTiling.DoTiling<AsinOpWithCast<half>::OpDag>(tiling->baseTiling);
+        res = elewiseBaseTiling.DoTiling<AsinOpWithCast<half>::OpDag>(tiling->baseTiling, ASCEND_API_BUFFER + DCACHE_SIZE);
     } else if (this->outputDtype == ge::DT_FLOAT) {
-        res = elewiseBaseTiling.DoTiling<AsinOpDirect<float>::OpDag>(tiling->baseTiling);
+        res = elewiseBaseTiling.DoTiling<AsinOpDirect<float>::OpDag>(tiling->baseTiling, ASCEND_API_BUFFER + DCACHE_SIZE);
     } else if (this->outputDtype == ge::DT_BF16) {
-        res = elewiseBaseTiling.DoTiling<AsinOpWithCast<bfloat16_t>::OpDag>(tiling->baseTiling);
+        res = elewiseBaseTiling.DoTiling<AsinOpWithCast<bfloat16_t>::OpDag>(tiling->baseTiling, ASCEND_API_BUFFER + DCACHE_SIZE);
     } else {
         OP_LOGE(tilingContext, "data type check failed. dtype: %d", this->outputDtype);
         return ge::GRAPH_FAILED;
