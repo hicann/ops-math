@@ -378,7 +378,7 @@
     {"name":"LinSpace", "compute_units": ["ascend910_93", "ascend910b", "ascend910", "ascend310p", "ascend950", "kirinx90", "kirin9030"], "auto_sync" : true, "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"ApplyCamePart3", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
     {"name":"BackgroundReplace", "compute_units": ["ascend310p"], "auto_sync" : true},
-    {"name":"CoalesceSparse", "compute_units": ["ascend910b", "ascend910_93", "ascend950"], "auto_sync" : true},
+    {"name":"CoalesceSparse", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
     {"name":"AmpUpdateScale", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : true},
     {"name":"MrgbaCustom", "compute_units": ["ascend310p"], "auto_sync" : true},
     {"name":"GeGluV2", "compute_units": ["ascend950", "ascend910_93", "ascend910b", "ascend310p"], "auto_sync": true, "compile_options": {"ascend950":["--cce-simd-vf-fusion=true"]}},

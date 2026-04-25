@@ -37,8 +37,7 @@ inline static bool IsAiCoreSupport(const aclTensor *self)
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static inline bool IsV2AiCoreSupport(const aclTensor *self) {
     // 获取芯片类型
-    if (op::GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201 ||
-        op::GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510) {
+    if (op::GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201) {
         return CheckType(self->GetDataType(), V2_AICORE_DTYPE_SUPPORT_LIST);
     }
     return false;

@@ -52,8 +52,7 @@ static const std::initializer_list<op::DataType> INPUT_DTYPE_SUPPORT_LIST_910B =
     op::DataType::DT_INT64, op::DataType::DT_UINT64, op::DataType::DT_BOOL, op::DataType::DT_BF16};
 
 static const std::initializer_list<DataType>& GetDtypeSupportList() {
-    if (op::GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201 ||
-        op::GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510) {
+    if (op::GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201) {
     return ASCEND910B_DTYPE_SUPPORT_LIST;
   } else {
     return ASCEND910_DTYPE_SUPPORT_LIST;
@@ -61,8 +60,7 @@ static const std::initializer_list<DataType>& GetDtypeSupportList() {
 }
 
 static const std::initializer_list<DataType>& GetInputDtypeSupportList() {
-  if (op::GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201 ||
-      op::GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510) {
+  if (op::GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201) {
     return INPUT_DTYPE_SUPPORT_LIST_910B;
   } else {
     return INPUT_DTYPE_SUPPORT_LIST_910;
