@@ -193,7 +193,7 @@ REGISTER_CPU_KERNEL(kAddExample, AddExampleCpuKernel);
 
 ## aclnn适配
 
-通常算子开发和编译完成后，会自动生成aclnn接口（一套基于C 的API），无需做其他配置，可直接在应用程序中调用aclnn接口实现调用算子。
+aicpu的算子不支持自动生成aclnn接口，算子开发时，可以参考[math/cross/op_api/](../../../math/cross/op_api/)路径下的aclnn代码进行开发算子的补齐，编译完成后在应用程序中调用aclnn接口调用该算子。
 
 ## 编译部署
 
