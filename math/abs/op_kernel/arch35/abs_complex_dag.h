@@ -115,9 +115,9 @@ struct AbscomplexCustom : public Vec::ElemwiseUnaryOP<T, U> {
                     Reg::LoadAlign<T, Reg::LoadDist::DIST_DINTLV_B32>(vSrcReg0, vSrcReg1, srcAddr + i * vflen * 2);
                     Reg::Abs(vAbsSrcReg0, vSrcReg0, preg);
                     Reg::Abs(vAbsSrcReg1, vSrcReg1, preg);
-                    Reg::Compare<float, CMPMODE::GE>(preg2, vAbsSrcReg0, vAbsSrcReg1, preg);
-                    Reg::Select<float>(vA, vAbsSrcReg0, vAbsSrcReg1, preg2);
-                    Reg::Select<float>(vB, vAbsSrcReg1, vAbsSrcReg0, preg2);
+                    Reg::Compare<float, CMPMODE::GT>(preg2, vAbsSrcReg1, vAbsSrcReg0, preg);
+                    Reg::Select<float>(vA, vAbsSrcReg1, vAbsSrcReg0, preg2);
+                    Reg::Select<float>(vB, vAbsSrcReg0, vAbsSrcReg1, preg2);
 
                     // 0的处理
                     Reg::Compare<uint32_t, CMPMODE::EQ>(
