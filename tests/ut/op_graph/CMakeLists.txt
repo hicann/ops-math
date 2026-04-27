@@ -52,6 +52,7 @@ if(UT_TEST_ALL OR OP_GRAPH_UT)
         error_manager
         exe_graph
         graph_base
+        ge_common
         gtest
         graph
         register
