@@ -152,7 +152,7 @@
       <td>填充后的输出结果</td>
       <td>与self一致</td>
       <td>ND</td>
-      <td>shape和self保持一致</td>
+      <td>维度和self保持一致</td>
       <td>√</td>
     </tr>
     <tr>
