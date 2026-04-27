@@ -542,7 +542,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI CPU</td>
+    <td>AI CORE/AI CPU</td>
     <td>该算子对输入的每个元素进行反余弦操作后输出。</td>
   </tr>
   <tr>
@@ -562,7 +562,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI CPU</td>
+    <td>AI CORE/AI CPU</td>
     <td>该算子用于完成加法计算。</td>
   </tr>
   <tr>
