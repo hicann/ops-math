@@ -42,10 +42,12 @@ static const std::initializer_list<DataType> DTYPE_SUPPORT_REGBASE_LIST = {
     DataType::DT_DOUBLE,      DataType::DT_INT16,         DataType::DT_INT64,      DataType::DT_UINT64,
     DataType::DT_UINT32,      DataType::DT_UINT16,        DataType::DT_UINT8,      DataType::DT_BOOL,
     DataType::DT_COMPLEX64,   DataType::DT_COMPLEX128,    DataType::DT_BF16,       DataType::DT_HIFLOAT8,
-    DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0};
+    DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0, DataType::DT_FLOAT4_E2M1,
+    DataType::DT_FLOAT4_E1M2};
 
-static const std::initializer_list<DataType> DTYPE_SUPPORT_FP8_LIST = {
-    DataType::DT_HIFLOAT8, DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0};
+static const std::initializer_list<DataType> DTYPE_SUPPORT_FP8_FP4_LIST = {
+    DataType::DT_HIFLOAT8, DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0,
+    DataType::DT_FLOAT4_E2M1, DataType::DT_FLOAT4_E1M2};
 
 static const size_t DIM_BOUND = 8;
 static const size_t SIZE_T_TWICE = 2;
@@ -173,7 +175,7 @@ static bool Checkformat(const aclTensor* self, const aclTensor* out)
 static bool CheckPadForFp8(const aclTensor* self, int& signSymbol)
 {
     // self的数据类型为fp8时，pad数组中不能有负数，StridedSlice不支持FLOAT8_E8M0类型
-    if (CheckType(self->GetDataType(), DTYPE_SUPPORT_FP8_LIST) && (signSymbol & NEGETIVE) == NEGETIVE) {
+    if (CheckType(self->GetDataType(), DTYPE_SUPPORT_FP8_FP4_LIST) && (signSymbol & NEGETIVE) == NEGETIVE) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "For fp8 data type, pad array cannot contain negative values.");
         return false;
     }
@@ -302,21 +304,22 @@ static aclnnStatus DoPadV3(
         CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
     }
 
-    if (CheckType(self->GetDataType(), DTYPE_SUPPORT_FP8_LIST)) {
+    if (CheckType(self->GetDataType(), DTYPE_SUPPORT_FP8_FP4_LIST)) {
         const uint8_t* valueData = reinterpret_cast<const uint8_t*>(value->GetData());
         size_t valueDataSize = op::TypeSize(value->GetDataType());
+        auto valueTensor = executor->ConvertToTensor(value, self->GetDataType());
         for (size_t i = 0; i < valueDataSize; i++) {
             uint8_t valueDataIdx = valueData[i];
-            CHECK_COND(valueDataIdx == 0, ACLNN_ERR_PARAM_INVALID, "Fp8 only support pad constant value 0.");
+            CHECK_COND(valueDataIdx == 0 || valueTensor != nullptr, ACLNN_ERR_PARAM_INVALID,
+                "Fp8/Fp4 only support pad constant value 0.");
         }
+        CHECK_RET(valueTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
         // 调用l0算子PadV3进行计算
-        (*padV3Result) = l0op::PadV3(selfCasted, padTensor, nullptr, MODE, true, executor);
-        CHECK_RET(padV3Result != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        (*padV3Result) = l0op::PadV3(selfCasted, padTensor, valueTensor, MODE, true, executor);
         CHECK_RET((*padV3Result) != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        // 将value转换为tensor，并且数据类型转换为self的数据类型
         return ACLNN_SUCCESS;
     }
-
-    // 将value转换为tensor，并且数据类型转换为self的数据类型
     auto valueTensor = executor->ConvertToTensor(value, self->GetDataType());
     CHECK_RET(valueTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
@@ -423,7 +426,7 @@ aclnnStatus aclnnConstantPadNdGetWorkspaceSize(
     }
 
     // 空Tensor处理
-    if (self->IsEmpty() && !CheckType(self->GetDataType(), DTYPE_SUPPORT_FP8_LIST)) {
+    if (self->IsEmpty() && !CheckType(self->GetDataType(), DTYPE_SUPPORT_FP8_FP4_LIST)) {
         ret = HandleSelfEmpty(value, out, uniqueExecutor.get());
         CHECK_RET(ret == ACLNN_SUCCESS, ret);
 

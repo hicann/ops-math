@@ -456,6 +456,7 @@
     {"name":"MirrorPad", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"PadV3", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"PadV3Grad", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
+    {"name":"PadV2", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"Pad", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode" : "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"EmbeddingHashTableExport", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : ""},
     {"name":"EmbeddingHashTableLookupOrInsert", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : ""},

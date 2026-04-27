@@ -23,7 +23,7 @@
 namespace PadV3 {
 using namespace AscendC;
 
-template <typename T>
+template <typename T, typename U = int8_t>
 class PadSimtHuge
 {
 public:
@@ -42,8 +42,8 @@ private:
     const PadACTilingData* mTD; // huge tilingData
 };
 
-template <typename T>
-__aicore__ inline void PadSimtHuge<T>::Init(
+template <typename T, typename U>
+__aicore__ inline void PadSimtHuge<T, U>::Init(
     GM_ADDR x, GM_ADDR paddings, GM_ADDR y, const PadACTilingData* tilingData, GM_ADDR constValue)
 {
     mBlockIdx = GetBlockIdx();
@@ -54,6 +54,11 @@ __aicore__ inline void PadSimtHuge<T>::Init(
     if (constValue != nullptr) {
         constValueGM_Huge.SetGlobalBuffer((__gm__ T*)constValue);
         constValue_ = constValueGM_Huge(0);
+        if constexpr (IsSameType<U, fp4x2_e2m1_t>::value || IsSameType<U, fp4x2_e1m2_t>::value) {
+            T padValue = constValueGM_Huge(0);
+            T low4bit = padValue & 0x0F;
+            constValue_ = low4bit << 4 | low4bit;
+        }
     }
 }
 
@@ -351,8 +356,8 @@ __simt_vf__ LAUNCH_BOUND(AN_EIGHTH_THREAD_DIM) __aicore__ void SimtComputeHugeDi
     }
 }
 
-template <typename T>
-__aicore__ inline void PadSimtHuge<T>::Process(GM_ADDR tiling)
+template <typename T, typename U>
+__aicore__ inline void PadSimtHuge<T, U>::Process(GM_ADDR tiling)
 {
     uint32_t blockNum = GetBlockNum(); // 获取到核数
 

@@ -266,6 +266,7 @@ VC2@ops-math:
         - ops/ops-math/conversion/transpose/
         - ops/ops-math/conversion/mirror_pad/
         - ops/ops-math/conversion/pad/
+        - ops/ops-math/conversion/pad_v2/
         - ops/ops-math/conversion/pad_v3/
         - ops/ops-math/conversion/pad_v3_grad/
         - ops/ops-math/conversion/fill/

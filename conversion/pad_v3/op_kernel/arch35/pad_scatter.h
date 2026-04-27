@@ -35,7 +35,7 @@ struct PadScatterParam {
     uint32_t strideInVl = 1;
 };
 
-template <typename T>
+template <typename T, typename U = int8_t>
 class PadScatter
 {
 private:
@@ -87,6 +87,11 @@ public:
         if (constValue != nullptr) {
             constValueGM_.SetGlobalBuffer((__gm__ T*)constValue);
             constValue_ = constValueGM_(0);
+            if constexpr (IsSameType<U, fp4x2_e2m1_t>::value || IsSameType<U, fp4x2_e1m2_t>::value) {
+                T padValue = constValueGM_(0);
+                T low4bit = padValue & 0x0F;
+                constValue_ = low4bit << 4 | low4bit;
+            }
         }
         inputGm_.SetGlobalBuffer((__gm__ T*)x);
         outputGm_.SetGlobalBuffer((__gm__ T*)y);

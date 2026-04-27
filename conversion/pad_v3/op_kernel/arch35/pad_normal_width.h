@@ -33,7 +33,7 @@ struct PadNormalParam {
     uint32_t padWROffset;
 };
 
-template <typename T, int32_t KEY>
+template <typename T, int32_t KEY, typename U = int8_t>
 class KernelPadWithNormalWidth
 {
 private:
@@ -76,6 +76,11 @@ public:
         if (constValue != nullptr) {
             constPad_.SetGlobalBuffer((__gm__ T*)constValue);
             constValue_ = constPad_(0);
+            if constexpr (IsSameType<U, fp4x2_e2m1_t>::value || IsSameType<U, fp4x2_e1m2_t>::value) {
+                T padValue = constPad_(0);
+                T low4bit = padValue & 0x0F;
+                constValue_ = low4bit << 4 | low4bit;
+            }
         }
 
         pipe_->InitBuffer(inQueue_, BUFFER_NUM * (tilingData_->outTileSize + tilingData_->additionTileSize));

@@ -1037,6 +1037,9 @@ ge::graphStatus PadACTiling::GetShapesAndDtypes()
                 Ops::Base::ToString(paramsDtype_).c_str());
             return ge::GRAPH_FAILED;
         }
+        if(paramsDtype_ == ge::DT_FLOAT4_E1M2 || paramsDtype_ == ge::DT_FLOAT4_E2M1) {
+            dtypeBytes_ = GetSizeByDataType(ge::DT_INT8);
+        }
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -1133,6 +1136,70 @@ ge::graphStatus PadACTiling::Init()
     return ge::GRAPH_SUCCESS;
 }
 
+ge::graphStatus PadACTiling::Fp8Fp4ValidatePaddings()
+{
+    OP_LOGD(context_, "Start PadACTiling Fp8Fp4ValidatePaddings.");
+    // fp8/fp4 输入数据类型时，pad数组中不能有负数
+    size_t frontDimNum = paddings_.padFront.GetDimNum();
+    for (size_t i = 0; i < frontDimNum; ++i) {
+        int64_t frontValue = paddings_.padFront.GetDim(i);
+        if (frontValue < 0) {
+            OP_LOGD(context_, "Fp8Fp4ValidatePaddings padFront contains negative value at index %zu: %ld", i, frontValue);
+            return ge::GRAPH_FAILED;
+        }
+    }
+
+    size_t backDimNum = paddings_.padBack.GetDimNum();
+    for (size_t i = 0; i < backDimNum; ++i) {
+        int64_t backValue = paddings_.padBack.GetDim(i);
+        if (backValue < 0) {
+            OP_LOGD(context_, "Fp8Fp4ValidatePaddings padBack contains negative value at index %zu: %ld", i, backValue);
+            return ge::GRAPH_FAILED;
+        }
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus PadACTiling::Fp4ValidateInShape()
+{
+    OP_LOGD(context_, "Start PadACTiling Fp4ValidateInShape.");
+    // fp4 输入数据类型时，输入数据的最后一维度shape为偶数
+    if (tilingData_->inShape[dimNum_ - 1] % 2 != 0){
+        OP_LOGD(context_, "Fp4 input dimension is not even number, please check");
+        return ge::GRAPH_FAILED;
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus PadACTiling::Fp4ValidatePaddings()
+{
+    OP_LOGD(context_, "Start PadACTiling Fp4ValidatePaddings.");
+    // fp4 输入数据类型，左右pad的最后一维均为偶数
+    size_t frontDimNum = paddings_.padFront.GetDimNum();
+    int64_t frontValue = paddings_.padFront.GetDim(frontDimNum - 1);
+    if (frontValue % 2 != 0) {
+        OP_LOGD(context_, "Fp4ValidatePaddings padFront last dimension is not even: %ld", frontValue);
+        return ge::GRAPH_FAILED;
+    }
+
+    size_t backDimNum = paddings_.padBack.GetDimNum();
+    int64_t backValue = paddings_.padBack.GetDim(backDimNum - 1);
+    if (backValue % 2 != 0) {
+        OP_LOGD(context_, "Fp4ValidatePaddings padBack last dimension is not even: %ld", backValue);
+        return ge::GRAPH_FAILED;
+    }
+
+    return ge::GRAPH_SUCCESS;
+}
+
+void PadACTiling::Fp4TilingData()
+{
+    OP_LOGD(context_, "Start PadACTiling Fp4TilingData.");
+    tilingData_->inShape[dimNum_ - 1] /= 2;
+    tilingData_->leftPad[dimNum_ - 1] /= 2;
+    rightPad_[dimNum_ - 1] /= 2;
+}
+
 ge::graphStatus PadACTiling::DoTilingModeEdge()
 {
     OP_CHECK_IF(
@@ -1213,9 +1280,32 @@ ge::graphStatus PadACTiling::DoTilingModeCircular()
 
 ge::graphStatus PadACTiling::DoTilingModeConstant()
 {
+    if (paramsDtype_ == ge::DT_HIFLOAT8 ||
+        paramsDtype_ == ge::DT_FLOAT8_E5M2 ||
+        paramsDtype_ == ge::DT_FLOAT8_E4M3FN ||
+        paramsDtype_ == ge::DT_FLOAT8_E8M0 ||
+        paramsDtype_ == ge::DT_FLOAT4_E2M1 ||
+        paramsDtype_ == ge::DT_FLOAT4_E1M2) {
+            // fp8/fp4 输入数据类型时，pad数组中不能有负数
+            OP_CHECK_IF(Fp8Fp4ValidatePaddings() == ge::GRAPH_FAILED,
+                OP_LOGE(context_, "PadACTiling Fp8Fp4ValidatePaddings error."), 
+                return ge::GRAPH_FAILED);
+    }
     OP_CHECK_IF(
         DimensionCollapse() == ge::GRAPH_FAILED, OP_LOGE(context_, "PadACTiling Constant Collapse error."),
         return ge::GRAPH_FAILED);
+    if (paramsDtype_ == ge::DT_FLOAT4_E2M1 || paramsDtype_ == ge::DT_FLOAT4_E1M2) {
+        // fp4 输入数据类型时，输入数据的最后一维shape为偶数
+        OP_CHECK_IF(Fp4ValidateInShape() == ge::GRAPH_FAILED,
+            OP_LOGE(context_, "PadACTiling Fp4ValidateInShape error."), 
+            return ge::GRAPH_FAILED);
+        // fp4 时，左右pad的padding num为偶数，最后一维
+        OP_CHECK_IF(Fp4ValidatePaddings() == ge::GRAPH_FAILED,
+            OP_LOGE(context_, "PadACTiling Fp4ValidatePaddings error."), 
+            return ge::GRAPH_FAILED);
+        // 尾轴//2
+        Fp4TilingData();
+    }
     OP_CHECK_IF(
         ComputeAfterPaddingsAndStrides() == ge::GRAPH_FAILED,
         OP_LOGE(context_, "PadACTiling Constant ComputeAfterPaddingsAndStrides error."), return ge::GRAPH_FAILED);

@@ -26,9 +26,12 @@ namespace ge {
 * @li x: A Tensor. Must be one of the following types: float16, bfloat16,
 * float32, double, int32, uint8, int16, int8, complex64, int64,
 * qint8, quint8, qint32, qint16, quint16, uint16, complex128, uint32, uint64, bool,
-* hifloat8, float8_e5m2, float8_e4m3fn, float8_e8m0.
+* hifloat8, float8_e5m2, float8_e4m3fn, float8_e8m0, float4_e2m1, float4_e1m2.
 * @li paddings: A Tensor of type int32 or int64, specify the padding sizes.
 * The size of paddings should be twice of the x shape size.
+* If the type of x is float4_e2m1 or float4_e1m2, paddings values should be even number.
+* If the type of x is hifloat8, float8_e5m2, float8_e4m3fn or float8_e8m0,
+* paddings values should be non-negative integers.
 * @li constant_values: A optional Tensor, dtype same as "x".
 * Is used only in "constant" mode.
 
@@ -60,10 +63,10 @@ namespace ge {
 * Compatible with ONNX operator Pad.
 */
 REG_OP(PadV3)
-    .INPUT(x, TensorType({TensorType::BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0}))
+    .INPUT(x, TensorType({TensorType::BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0, DT_FLOAT4_E2M1, DT_FLOAT4_E1M2}))
     .INPUT(paddings, TensorType::IndexNumberType())
-    .OPTIONAL_INPUT(constant_values, TensorType({TensorType::BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0}))
-    .OUTPUT(y, TensorType({TensorType::BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0}))
+    .OPTIONAL_INPUT(constant_values, TensorType({TensorType::BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0, DT_FLOAT4_E2M1, DT_FLOAT4_E1M2}))
+    .OUTPUT(y, TensorType({TensorType::BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0, DT_FLOAT4_E2M1, DT_FLOAT4_E1M2}))
     .ATTR(mode, String, "constant")
     .ATTR(paddings_contiguous, Bool, true)
     .OP_END_FACTORY_REG(PadV3)

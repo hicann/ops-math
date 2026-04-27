@@ -528,6 +528,138 @@
           "value": null
         }
       ]
+    },
+    {
+      "bin_filename": "PadV3_0_5_Byte1",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "float4_e2m1",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
+        },
+        {
+          "name": "paddings",
+          "index": 1,
+          "dtype": "int32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
+        },
+        {
+          "name": "constant_values",
+          "index": 2,
+          "dtype": "float4_e2m1",
+          "format": "ND",
+          "paramType": "optional",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "float4_e2m1",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
+        }
+      ],
+      "attrs": [
+        {
+          "name": "mode",
+          "dtype": "string",
+          "value": null
+        },
+        {
+          "name": "paddings_contiguous",
+          "dtype": "bool",
+          "value": null
+        }
+      ]
+    },
+    {
+      "bin_filename": "PadV3_0_5_Byte2",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "float4_e2m1",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
+        },
+        {
+          "name": "paddings",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
+        },
+        {
+          "name": "constant_values",
+          "index": 2,
+          "dtype": "float4_e2m1",
+          "format": "ND",
+          "paramType": "optional",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "float4_e2m1",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
+        }
+      ],
+      "attrs": [
+        {
+          "name": "mode",
+          "dtype": "string",
+          "value": null
+        },
+        {
+          "name": "paddings_contiguous",
+          "dtype": "bool",
+          "value": null
+        }
+      ]
     }
   ]
 }

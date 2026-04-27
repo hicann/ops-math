@@ -1,8 +1,8 @@
 {
-  "op_type": "Pad",
+  "op_type": "PadV2",
   "op_list": [
     {
-      "bin_filename": "Pad_int8_int32",
+      "bin_filename": "PadV2_int8_int32",
       "inputs": [
         {
           "name": "x",
@@ -13,8 +13,8 @@
           "shape": [
             -2
           ],
-          "dtype_match_mode": "DtypeByte",
-          "format_match_mode": "FormatAgnostic"
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         },
         {
           "name": "paddings",
@@ -26,48 +26,18 @@
             -2
           ],
           "format_match_mode": "FormatAgnostic"
-        }
-      ],
-      "outputs": [
-        {
-          "name": "y",
-          "index": 0,
-          "dtype": "int8",
-          "format": "ND",
-          "paramType": "required",
-          "shape": [
-            -2
-          ],
-          "dtype_match_mode": "DtypeByte",
-          "format_match_mode": "FormatAgnostic"
-        }
-      ]
-    },
-    {
-      "bin_filename": "Pad_int8_int64",
-      "inputs": [
-        {
-          "name": "x",
-          "index": 0,
-          "dtype": "int8",
-          "format": "ND",
-          "paramType": "required",
-          "shape": [
-            -2
-          ],
-          "dtype_match_mode": "DtypeByte",
-          "format_match_mode": "FormatAgnostic"
         },
         {
-          "name": "paddings",
-          "index": 1,
-          "dtype": "int64",
+          "name": "constant_values",
+          "index": 2,
+          "dtype": "int8",
           "format": "ND",
           "paramType": "required",
           "shape": [
             -2
           ],
-          "format_match_mode": "FormatAgnostic"
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         }
       ],
       "outputs": [
@@ -80,13 +50,67 @@
           "shape": [
             -2
           ],
-          "dtype_match_mode": "DtypeByte",
-          "format_match_mode": "FormatAgnostic"
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         }
       ]
     },
     {
-      "bin_filename": "Pad_float16_int32",
+      "bin_filename": "PadV2_int8_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "int8",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
+        },
+        {
+          "name": "paddings",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
+        },
+        {
+          "name": "constant_values",
+          "index": 2,
+          "dtype": "int8",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "int8",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
+        }
+      ]
+    },
+    {
+      "bin_filename": "PadV2_float16_int32",
       "inputs": [
         {
           "name": "x",
@@ -97,8 +121,8 @@
           "shape": [
             -2
           ],
-          "dtype_match_mode": "DtypeByte",
-          "format_match_mode": "FormatAgnostic"
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         },
         {
           "name": "paddings",
@@ -110,6 +134,18 @@
             -2
           ],
           "format_match_mode": "FormatAgnostic"
+        },
+        {
+          "name": "constant_values",
+          "index": 2,
+          "dtype": "float16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         }
       ],
       "outputs": [
@@ -122,13 +158,13 @@
           "shape": [
             -2
           ],
-          "dtype_match_mode": "DtypeByte",
-          "format_match_mode": "FormatAgnostic"
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         }
       ]
     },
     {
-      "bin_filename": "Pad_float16_int64",
+      "bin_filename": "PadV2_float16_int64",
       "inputs": [
         {
           "name": "x",
@@ -139,8 +175,8 @@
           "shape": [
             -2
           ],
-          "dtype_match_mode": "DtypeByte",
-          "format_match_mode": "FormatAgnostic"
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         },
         {
           "name": "paddings",
@@ -152,6 +188,18 @@
             -2
           ],
           "format_match_mode": "FormatAgnostic"
+        },
+        {
+          "name": "constant_values",
+          "index": 2,
+          "dtype": "float16",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         }
       ],
       "outputs": [
@@ -164,13 +212,13 @@
           "shape": [
             -2
           ],
-          "dtype_match_mode": "DtypeByte",
-          "format_match_mode": "FormatAgnostic"
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         }
       ]
     },
     {
-      "bin_filename": "Pad_float32_int32",
+      "bin_filename": "PadV2_float32_int32",
       "inputs": [
         {
           "name": "x",
@@ -181,8 +229,8 @@
           "shape": [
             -2
           ],
-          "dtype_match_mode": "DtypeByte",
-          "format_match_mode": "FormatAgnostic"
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         },
         {
           "name": "paddings",
@@ -194,6 +242,18 @@
             -2
           ],
           "format_match_mode": "FormatAgnostic"
+        },
+        {
+          "name": "constant_values",
+          "index": 2,
+          "dtype": "float32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         }
       ],
       "outputs": [
@@ -206,13 +266,13 @@
           "shape": [
             -2
           ],
-          "dtype_match_mode": "DtypeByte",
-          "format_match_mode": "FormatAgnostic"
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         }
       ]
     },
     {
-      "bin_filename": "Pad_float32_int64",
+      "bin_filename": "PadV2_float32_int64",
       "inputs": [
         {
           "name": "x",
@@ -223,8 +283,8 @@
           "shape": [
             -2
           ],
-          "dtype_match_mode": "DtypeByte",
-          "format_match_mode": "FormatAgnostic"
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         },
         {
           "name": "paddings",
@@ -236,6 +296,18 @@
             -2
           ],
           "format_match_mode": "FormatAgnostic"
+        },
+        {
+          "name": "constant_values",
+          "index": 2,
+          "dtype": "float32",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         }
       ],
       "outputs": [
@@ -248,13 +320,13 @@
           "shape": [
             -2
           ],
-          "dtype_match_mode": "DtypeByte",
-          "format_match_mode": "FormatAgnostic"
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         }
       ]
     },
     {
-      "bin_filename": "Pad_int64_int32",
+      "bin_filename": "PadV2_int64_int32",
       "inputs": [
         {
           "name": "x",
@@ -265,8 +337,8 @@
           "shape": [
             -2
           ],
-          "dtype_match_mode": "DtypeByte",
-          "format_match_mode": "FormatAgnostic"
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         },
         {
           "name": "paddings",
@@ -278,6 +350,18 @@
             -2
           ],
           "format_match_mode": "FormatAgnostic"
+        },
+        {
+          "name": "constant_values",
+          "index": 2,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         }
       ],
       "outputs": [
@@ -290,13 +374,13 @@
           "shape": [
             -2
           ],
-          "dtype_match_mode": "DtypeByte",
-          "format_match_mode": "FormatAgnostic"
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         }
       ]
     },
     {
-      "bin_filename": "Pad_int64_int64",
+      "bin_filename": "PadV2_int64_int64",
       "inputs": [
         {
           "name": "x",
@@ -307,8 +391,8 @@
           "shape": [
             -2
           ],
-          "dtype_match_mode": "DtypeByte",
-          "format_match_mode": "FormatAgnostic"
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         },
         {
           "name": "paddings",
@@ -320,6 +404,18 @@
             -2
           ],
           "format_match_mode": "FormatAgnostic"
+        },
+        {
+          "name": "constant_values",
+          "index": 2,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         }
       ],
       "outputs": [
@@ -332,13 +428,13 @@
           "shape": [
             -2
           ],
-          "dtype_match_mode": "DtypeByte",
-          "format_match_mode": "FormatAgnostic"
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         }
       ]
     },
     {
-      "bin_filename": "PadV1_0_5_Byte1",
+      "bin_filename": "PadV2_0_5_Byte1",
       "inputs": [
         {
           "name": "x",
@@ -362,6 +458,18 @@
             -2
           ],
           "format_match_mode": "FormatAgnostic"
+        },
+        {
+          "name": "constant_values",
+          "index": 2,
+          "dtype": "float4_e2m1",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         }
       ],
       "outputs": [
@@ -380,7 +488,7 @@
       ]
     },
     {
-      "bin_filename": "PadV1_0_5_Byte2",
+      "bin_filename": "PadV2_0_5_Byte2",
       "inputs": [
         {
           "name": "x",
@@ -404,6 +512,18 @@
             -2
           ],
           "format_match_mode": "FormatAgnostic"
+        },
+        {
+          "name": "constant_values",
+          "index": 2,
+          "dtype": "float4_e2m1",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic",
+          "dtype_match_mode": "DtypeByte"
         }
       ],
       "outputs": [

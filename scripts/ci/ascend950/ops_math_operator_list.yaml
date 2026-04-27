@@ -168,6 +168,7 @@ operator_group_5:
   - mem_set_v2
   - mirror_pad
   - pack
+  - pad_v2
   - pad_v3
   - pad_v3_grad
   - reflection_pad3d_grad

@@ -30,7 +30,7 @@ __aicore__ inline void LaunchKernelPadWithHugeWidth(
     TPipe pipe;
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int8_t)) {
-        KernelPadWithHugeWidth<uint8_t> op(&pipe, &tilingData);
+        KernelPadWithHugeWidth<uint8_t, T> op(&pipe, &tilingData);
         op.Init(x, paddings, y, constValue);
         op.Process();
     } else if constexpr (sizeof(T) == sizeof(int16_t)) {
@@ -55,7 +55,7 @@ __aicore__ inline void LaunchKernelPadWithNormalWidth(
     TPipe pipe;
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int8_t)) {
-        KernelPadWithNormalWidth<uint8_t, KEY> op(&pipe, &tilingData);
+        KernelPadWithNormalWidth<uint8_t, KEY, T> op(&pipe, &tilingData);
         op.Init(x, paddings, y, constValue);
         op.Process();
     } else if constexpr (sizeof(T) == sizeof(int16_t)) {
@@ -80,7 +80,7 @@ __aicore__ inline void LaunchKernelPadGather(
     TPipe pipe;
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int8_t)) {
-        PadGather<uint8_t> op(&pipe);
+        PadGather<uint8_t, T> op(&pipe);
         op.Init(x, paddings, y, &tilingData, constValue);
         op.Process();
     } else if constexpr (sizeof(T) == sizeof(int16_t)) {
@@ -105,7 +105,7 @@ __aicore__ inline void LaunchKernelPadScatter(
     TPipe pipe;
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
     if constexpr (sizeof(T) == sizeof(int8_t)) {
-        PadScatter<uint8_t> op(&pipe);
+        PadScatter<uint8_t, T> op(&pipe);
         op.Init(x, paddings, y, &tilingData, constValue);
         op.Process();
     } else if constexpr (sizeof(T) == sizeof(int16_t)) {
@@ -138,7 +138,7 @@ __aicore__ inline void LaunchKernelPadSimt(
         op.Init(x, paddings, y, &tilingData, constValue);
         op.Process(tiling);
     } else if constexpr (sizeof(T) == sizeof(int8_t)) {
-        PadV3::PadSimt<int8_t> op;
+        PadV3::PadSimt<int8_t, T> op;
         op.Init(x, paddings, y, &tilingData, constValue);
         op.Process(tiling);
     } else {
@@ -163,7 +163,7 @@ __aicore__ inline void LaunchKernelPadSimtHuge(
         op.Init(x, paddings, y, &tilingData, constValue);
         op.Process(tiling);
     } else if constexpr (sizeof(T) == sizeof(int8_t)) {
-        PadV3::PadSimtHuge<int8_t> op;
+        PadV3::PadSimtHuge<int8_t, T> op;
         op.Init(x, paddings, y, &tilingData, constValue);
         op.Process(tiling);
     } else {

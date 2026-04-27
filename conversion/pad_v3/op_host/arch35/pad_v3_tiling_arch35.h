@@ -112,6 +112,11 @@ private:
     bool IsCutLastDim();
     void TilingInfoTuneForNormal(uint64_t lastShapeSizeAlign, uint64_t tilingBranch);
 
+    ge::graphStatus Fp8Fp4ValidatePaddings();
+    ge::graphStatus Fp4ValidateInShape();
+    ge::graphStatus Fp4ValidatePaddings();
+    void Fp4TilingData();
+
 public:
     bool isPadV3_{false};
     bool isMirrorPad_{false};

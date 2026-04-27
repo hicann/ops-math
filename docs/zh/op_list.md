@@ -1947,6 +1947,16 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/pad_v2/README.md">pad_v2</a></td>
+    <td>×</td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>对输入 tensor 进行指定值的常量填充。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/pad_v3/README.md">pad_v3</a></td>
     <td>√</td>
     <td>√</td>

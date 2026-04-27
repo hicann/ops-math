@@ -35,7 +35,7 @@ struct PadGatherParam {
     uint32_t strideInVlGather = 1;
 };
 
-template <typename T>
+template <typename T, typename U = int8_t>
 class PadGather {
 private:
     constexpr static uint32_t VL_CNT = VL_SIZE / sizeof(T);
@@ -79,6 +79,11 @@ public:
         if (constValue != nullptr) {
             constValueGMGather_.SetGlobalBuffer((__gm__ T *)constValue);
             constValue_ = constValueGMGather_(0);
+            if constexpr (IsSameType<U, fp4x2_e2m1_t>::value || IsSameType<U, fp4x2_e1m2_t>::value) {
+                T padValue = constValueGMGather_(0);
+                T low4bit = padValue & 0x0F;
+                constValue_ = low4bit << 4 | low4bit;
+            }
         }
         inputGm_.SetGlobalBuffer((__gm__ T *)x);
         outputGm_.SetGlobalBuffer((__gm__ T *)y);
