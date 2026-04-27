@@ -193,3 +193,55 @@ function(gen_aclnn_with_opdef)
     target_include_directories(opbuild_gen_aclnn_all PRIVATE ${OPAPI_INCLUDE})
   endif()
 endfunction()
+
+function(gen_aicpu_ini_from_opdef)
+  message(STATUS "Opbuild generating AICPU ini/json from OpDef")
+  cmake_parse_arguments(OPBUILD "" "OUT_DIR;PROJECT_NAME;ACCESS_PREFIX;ENABLE_SOURCE" "OPS_SRC" ${ARGN})
+  if(NOT OPBUILD_OPS_SRC)
+    message(STATUS "No AICPU OpDef sources, skip.")
+    return()
+  endif()
+
+  file(MAKE_DIRECTORY ${OPBUILD_OUT_DIR})
+
+  execute_process(
+    COMMAND
+      ${CMAKE_CXX_COMPILER} -g -fPIC -shared -std=c++14 ${OPBUILD_OPS_SRC} -D_GLIBCXX_USE_CXX11_ABI=0
+      -I ${ASCEND_CANN_PACKAGE_PATH}/include -L ${ASCEND_CANN_PACKAGE_PATH}/lib64 -lexe_graph -lregister -ltiling_api
+      -o ${OPBUILD_OUT_DIR}/libaicpu_ops.so
+    RESULT_VARIABLE EXEC_RESULT
+    OUTPUT_VARIABLE EXEC_INFO
+    ERROR_VARIABLE EXEC_ERROR
+  )
+  if(${EXEC_RESULT})
+    message("build aicpu opdef so info: ${EXEC_INFO}")
+    message("build aicpu opdef so error: ${EXEC_ERROR}")
+    message(FATAL_ERROR "build libaicpu_ops.so failed")
+  endif()
+
+  set(opbuild_env "")
+  if(NOT "${OPBUILD_PROJECT_NAME}x" STREQUAL "x")
+    list(APPEND opbuild_env "OPS_PROJECT_NAME=${OPBUILD_PROJECT_NAME}")
+  endif()
+  if(NOT "${OPBUILD_ACCESS_PREFIX}x" STREQUAL "x")
+    list(APPEND opbuild_env "OPS_DIRECT_ACCESS_PREFIX=${OPBUILD_ACCESS_PREFIX}")
+  endif()
+
+  set(ENV{ENABLE_SOURCE_PACKAGE} ${OPBUILD_ENABLE_SOURCE})
+  execute_process(
+    COMMAND
+      ${CMAKE_COMMAND} -E env ${opbuild_env} ${ASCEND_CANN_PACKAGE_PATH}/toolkit/tools/opbuild/op_build
+      ${OPBUILD_OUT_DIR}/libaicpu_ops.so ${OPBUILD_OUT_DIR} --aicpu
+    RESULT_VARIABLE EXEC_RESULT
+    OUTPUT_VARIABLE EXEC_INFO
+    ERROR_VARIABLE EXEC_ERROR
+  )
+  unset(ENV{ENABLE_SOURCE_PACKAGE})
+  if(${EXEC_RESULT})
+    message("opbuild aicpu info: ${EXEC_INFO}")
+    message("opbuild aicpu error: ${EXEC_ERROR}")
+    message(FATAL_ERROR "op_build --aicpu failed")
+  endif()
+
+  message(STATUS "Opbuild generating AICPU ini/json from OpDef - done")
+endfunction()
