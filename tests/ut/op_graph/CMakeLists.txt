@@ -59,6 +59,7 @@ if(UT_TEST_ALL OR OP_GRAPH_UT)
         unified_dlog
         opp_registry
         c_sec
+        ge_common
         dl
     )
 
