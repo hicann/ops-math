@@ -286,7 +286,7 @@ __aicore__ inline void KernelTransDataTo5HD<T>::SetRSplitCopyInParams(uint32_t p
             if (process < loopCount - 1) {
                 Params.blockLen = tiling_->rUbSplitPara.TailCoreUbFactor * tiling_->cUbSplitPara.TailCoreUbFactor * sizeof(T);
             } else {
-                Params.blockLen = tiling_->rUbSplitPara.TailCoreTailUbFactor * tiling_->cUbSplitPara.TailCoreTailUbFactor * sizeof(T);
+                Params.blockLen = (tiling_->RLen - (blockIdx_ * tiling_->rSplitPara.BlockFactor + process * tiling_->rUbSplitPara.TailCoreUbFactor)) * tiling_->cUbSplitPara.TailCoreTailUbFactor * sizeof(T);
             }
         }
     } else {
@@ -300,7 +300,7 @@ __aicore__ inline void KernelTransDataTo5HD<T>::SetRSplitCopyInParams(uint32_t p
             if (process < loopCount - 1) {
                 Params.blockCount = tiling_->rUbSplitPara.TailCoreUbFactor;
             } else {
-                Params.blockCount = tiling_->rUbSplitPara.TailCoreTailUbFactor;
+                Params.blockCount = tiling_->RLen - (blockIdx_ * tiling_->rSplitPara.BlockFactor + process * tiling_->rUbSplitPara.TailCoreUbFactor);
             }
         }
         Params.blockLen = tiling_->CLen * sizeof(T);
