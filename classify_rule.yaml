@@ -57,6 +57,7 @@ HPTG2@ops-math:
         - ops/ops-math/common/
         - ops/ops-math/scripts/
         - ops/ops-math/cmake/
+        - ops/ops-math/classify_rule.yaml
       opensource_style: null
       kernel_style: null
     unrelease:
@@ -276,6 +277,11 @@ VC2@ops-math:
         - ops/ops-math/math/zero_op/
         - ops/ops-math/conversion/zeros_like/
         - ops/ops-math/conversion/as_strided/
+        - ops/ops-math/conversion/identity/
+        - ops/ops-math/conversion/identity_n/
+        - ops/ops-math/conversion/rank/
+        - ops/ops-math/conversion/shape/
+        - ops/ops-math/conversion/shape_n/
       opensource_style: null
       kernel_style: null
     unrelease:
