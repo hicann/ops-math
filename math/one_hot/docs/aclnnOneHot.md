@@ -85,7 +85,7 @@ aclnnStatus aclnnOneHot(
       <td>-</td>
       <td>UINT8、INT32、INT64</td>
       <td>ND</td>
-      <td>1-8</td>
+      <td>1-7</td>
       <td>√</td>
     </tr>
     <tr>
