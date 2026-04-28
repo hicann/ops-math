@@ -156,6 +156,7 @@ function(add_op_graph_ut_modules OP_GRAPH_MODULE_NAME)
     gtest
     register
     ge_compiler
+    ge_common
     )
 
   target_compile_options(
