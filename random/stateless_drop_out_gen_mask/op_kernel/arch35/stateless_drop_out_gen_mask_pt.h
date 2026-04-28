@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ template <typename T>
 class StatelessDropOutGenMaskPt : public RandomKernelBaseOp{
 public:
     __aicore__ inline StatelessDropOutGenMaskPt(TPipe* pipe, const RandomUnifiedTilingDataStruct* __restrict tilingData) : RandomKernelBaseOp(tilingData),pipe_(pipe){};
-    __aicore__ inline void Init(GM_ADDR shape, GM_ADDR prob, GM_ADDR y);
+    __aicore__ inline void Init(GM_ADDR shape, GM_ADDR prob, GM_ADDR seed, GM_ADDR offset, GM_ADDR y);
     __aicore__ inline void Process();
 
 protected:
@@ -56,6 +56,7 @@ private:
     TPipe* pipe_;
     GlobalTensor<T> probInputGm_;
     GlobalTensor<uint8_t> outputGm_;
+    GlobalTensor<uint64_t> counterGm_;  // offset tensor 的 GM 访问句柄
 
     TQue<QuePosition::VECOUT, BUFFER_NUM> outQueY_;
     TBuf<QuePosition::VECCALC> philoxQueBuf_;
@@ -74,10 +75,47 @@ private:
 
 template <typename T>
 __aicore__ inline void StatelessDropOutGenMaskPt<T>::Init(
-    GM_ADDR shape, GM_ADDR prob, GM_ADDR y)
+    GM_ADDR shape, GM_ADDR prob, GM_ADDR seed, GM_ADDR offset, GM_ADDR y)
 {
-    //Parsetiling data
+    // VarsInit 从 tiling_ 拷贝 key/counter（此时 tiling 中 key 存元数据，counter 已置零）
     VarsInit();
+
+    // 读取 tiling 编码的元数据：key_[0]=offsetElemCount, key_[1]=seedByteSize
+    uint32_t offsetElemCount = key_[0];
+    uint32_t seedByteSize = key_[1];
+
+    // 从 GM 直接读取 seed → key_[]
+    constexpr uint32_t SHIFT_BITS = 32;
+    int64_t keyVal = 0;
+    if (seedByteSize == sizeof(int32_t)) {
+        GlobalTensor<int32_t> seedGm;
+        seedGm.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(seed), 1);
+        keyVal = static_cast<int64_t>(seedGm(0));
+    } else {
+        GlobalTensor<int64_t> seedGm;
+        seedGm.SetGlobalBuffer(reinterpret_cast<__gm__ int64_t*>(seed), 1);
+        keyVal = seedGm(0);
+    }
+    key_[0] = static_cast<uint32_t>(keyVal);  // 截断取低32位，符号位不影响
+    // 先转 uint64_t 再右移：keyVal 是有符号 int64_t，负数直接右移是算术右移（高位补1），
+    // 转成无符号后右移才是逻辑右移（高位补0），保证拿到原始数据的高32位
+    key_[1] = static_cast<uint32_t>(static_cast<uint64_t>(keyVal) >> SHIFT_BITS);
+
+    // 从 GM 直接读取 offset → counter_[]
+    uint64_t counterVal0 = 0;
+    uint64_t counterVal1 = 0;
+    counterGm_.SetGlobalBuffer(reinterpret_cast<__gm__ uint64_t*>(offset), offsetElemCount);
+    if (offsetElemCount == 1) {
+        counterVal1 = counterGm_(0);
+    } else {
+        counterVal0 = counterGm_(0);
+        counterVal1 = counterGm_(1);
+    }
+    counter_[0] = static_cast<uint32_t>(counterVal0);
+    counter_[1] = static_cast<uint32_t>(counterVal0 >> SHIFT_BITS);
+    counter_[2] = static_cast<uint32_t>(counterVal1);
+    counter_[3] = static_cast<uint32_t>(counterVal1 >> SHIFT_BITS);
+
     singleBufferProNum = tiling_->singleBufferSize;
     blockOffset_ = blockIdx_ * tiling_->normalCoreProNum;
     if (curCoreProNum_ < singleBufferProNum) {

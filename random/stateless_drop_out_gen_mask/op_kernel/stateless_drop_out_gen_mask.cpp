@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ extern "C" __global__ __aicore__ void stateless_drop_out_gen_mask(
     AscendC::TPipe pipe;
     if (TILING_KEY_IS(STATELESS_DROP_OUT_GEN_MASK_DEFAULT_TILING_KEY)) {
         StatelessDropOutGenMask::StatelessDropOutGenMaskPt<DTYPE_PROB> op(&pipe, &tilingData);
-        op.Init(shape, prob, y);
+        op.Init(shape, prob, seed, offset, y);
         op.Process();
     } 
 }

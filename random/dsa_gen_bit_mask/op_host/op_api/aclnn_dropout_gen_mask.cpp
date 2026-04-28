@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 #include "math/zero_op/op_api/zero_op.h"
 #include "math/add/op_api/add.h"
 #include "../../../../conversion/concat_d/op_api/concat_d.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"
@@ -74,8 +75,8 @@ static inline bool CheckProbability(double prob)
 
 static inline bool CheckSocVersionIsSupportDSA(void)
 {
-    return GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-           GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E;
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    return curArch == NpuArch::DAV_2201 || IsRegBase(curArch);
 }
 
 static inline int64_t InferDSAOutShape(const aclIntArray* shape)
@@ -164,11 +165,32 @@ static aclScalar* CreateDropout(float prob, op::DataType dtype, aclOpExecutor* e
     }
 }
 
+static const aclTensor* ComputeStatelessMask(
+    const aclIntArray* shape, double prob, int64_t seed, int64_t offset, aclOpExecutor* executor)
+{
+    FVector<int64_t> seedVector = {seed};
+    aclIntArray* seedList = executor->AllocIntArray(seedVector.data(), seedVector.size());
+    auto seedTensor = executor->ConvertToTensor(seedList, op::DataType::DT_INT64);
+
+    FVector<int64_t> seed1Vector = {0};
+    aclIntArray* seed1List = executor->AllocIntArray(seed1Vector.data(), seed1Vector.size());
+    auto seed1Tensor = executor->ConvertToTensor(seed1List, op::DataType::DT_INT64);
+
+    FVector<int64_t> offsetVector = {0, offset};
+    aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), offsetVector.size());
+    auto offsetTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_INT64);
+
+    auto probTensor =
+        executor->ConvertToTensor(executor->AllocScalar(static_cast<float>(1 - prob)), op::DataType::DT_FLOAT);
+
+    return l0op::StatelessDropoutGenMask(shape, probTensor, seedTensor, seed1Tensor, offsetTensor, executor);
+}
+
 static const aclTensor* ComputeMask(
     const aclIntArray* shape, double prob, int64_t seed, int64_t offset, aclTensor* out, aclOpExecutor* executor)
 {
-    auto socversion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socversion >= SocVersion::ASCEND910B && socversion <= SocVersion::ASCEND910_93) {
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch == NpuArch::DAV_2201) {
         op::DataType dtype = out->GetDataType();
         if (dtype == op::DataType::DT_UINT8) {
             dtype = op::DataType::DT_FLOAT;
@@ -184,37 +206,21 @@ static const aclTensor* ComputeMask(
         l0op::DSAGenBitMask(shapeSize * FLOAT_BIT_NUMBER, seed, offset, dropout, outTensorTemp, executor);
         return out;
     } else {
-        FVector<int64_t> seedVector = {seed};
-        auto seedTensor = executor->ConvertToTensor(seedVector.data(), seedVector.size(), op::DataType::DT_INT64);
-        FVector<int64_t> seed1Vector = {0};
-        auto seed1Tensor = executor->ConvertToTensor(seed1Vector.data(), seed1Vector.size(), op::DataType::DT_INT64);
-        FVector<int64_t> offsetVector = {0, offset};
-        auto offsetTensor = executor->ConvertToTensor(offsetVector.data(), offsetVector.size(), op::DataType::DT_INT64);
-        FVector<float> probVector = {static_cast<float>(1 - prob)};
-        auto probTensor = executor->ConvertToTensor(probVector.data(), probVector.size(), DataType::DT_FLOAT);
-        return l0op::StatelessDropoutGenMask(shape, probTensor, seedTensor, seed1Tensor, offsetTensor, executor);
+        return ComputeStatelessMask(shape, prob, seed, offset, executor);
     }
 }
 
 static const aclTensor* ComputeMaskV2(
     const aclIntArray* shape, double prob, int64_t seed, int64_t offset, op::DataType dtype, aclOpExecutor* executor)
 {
-    auto socversion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socversion >= SocVersion::ASCEND910B && socversion <= SocVersion::ASCEND910_93) {
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch == NpuArch::DAV_2201) {
         int64_t shapeSize = InferDSAOutShapeV2(shape);
         auto dropout = CreateDropout(static_cast<float>(prob), dtype, executor);
         CHECK_RET(dropout != nullptr, nullptr);
         return l0op::DSAGenBitMask(shapeSize * UINT8_BIT_NUMBER, seed, offset, dropout, executor);
     } else {
-        FVector<int64_t> seedVector = {seed};
-        auto seedTensor = executor->ConvertToTensor(seedVector.data(), seedVector.size(), op::DataType::DT_INT64);
-        FVector<int64_t> seed1Vector = {0};
-        auto seed1Tensor = executor->ConvertToTensor(seed1Vector.data(), seed1Vector.size(), op::DataType::DT_INT64);
-        FVector<int64_t> offsetVector = {0, offset};
-        auto offsetTensor = executor->ConvertToTensor(offsetVector.data(), offsetVector.size(), op::DataType::DT_INT64);
-        FVector<float> probVector = {static_cast<float>(1 - prob)};
-        auto probTensor = executor->ConvertToTensor(probVector.data(), probVector.size(), DataType::DT_FLOAT);
-        return l0op::StatelessDropoutGenMask(shape, probTensor, seedTensor, seed1Tensor, offsetTensor, executor);
+        return ComputeStatelessMask(shape, prob, seed, offset, executor);
     }
 }
 
@@ -242,13 +248,28 @@ static const aclTensor* ComputeMaskV2Tensor(
     const aclIntArray* shape, double prob, const aclTensor* seedTensor, const aclTensor* offsetTensor, int64_t offset,
     op::DataType dtype, aclOpExecutor* executor)
 {
-    int64_t shapeSize = InferDSAOutShapeV2(shape);
-    auto dropout = CreateDropout(static_cast<float>(prob), dtype, executor);
-    CHECK_RET(dropout != nullptr, nullptr);
-    auto concatTensor = ProcessOffsetTensor(offsetTensor, offset, executor);
-    CHECK_RET(concatTensor != nullptr, nullptr);
+    if (IsRegBase()) {
+        FVector<int64_t> seed1Vector = {0};
+        aclIntArray* seed1List = executor->AllocIntArray(seed1Vector.data(), seed1Vector.size());
+        auto seed1Tensor = executor->ConvertToTensor(seed1List, op::DataType::DT_INT64);
 
-    return l0op::DSAGenBitMaskTensor(shapeSize * UINT8_BIT_NUMBER, seedTensor, concatTensor, dropout, executor);
+        FVector<int64_t> offsetVector{0, static_cast<int64_t>(offset)};
+        aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), 2);
+        auto tmpTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_INT64);
+        auto offset1Tensor = l0op::Add(offsetTensor, tmpTensor, executor);
+        CHECK_RET(offset1Tensor != nullptr, nullptr);
+
+        auto probTensor = executor->ConvertToTensor(executor->AllocScalar(static_cast<float>(1 - prob)), op::DataType::DT_FLOAT);
+
+        return l0op::StatelessDropoutGenMask(shape, probTensor, seedTensor, seed1Tensor, offset1Tensor, executor);
+    } else {
+        int64_t shapeSize = InferDSAOutShapeV2(shape);
+        auto dropout = CreateDropout(static_cast<float>(prob), dtype, executor);
+        CHECK_RET(dropout != nullptr, nullptr);
+        auto concatTensor = ProcessOffsetTensor(offsetTensor, offset, executor);
+        CHECK_RET(concatTensor != nullptr, nullptr);
+        return l0op::DSAGenBitMaskTensor(shapeSize * UINT8_BIT_NUMBER, seedTensor, concatTensor, dropout, executor);
+    }
 }
 
 static bool IsDoubleEqual(double f1, double f2)
@@ -377,7 +398,6 @@ aclnnStatus aclnnDropoutGenMaskV2TensorGetWorkspaceSize(
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
-    CHECK_RET(CheckSocVersionIsSupportDSA(), ACLNN_ERR_PARAM_INVALID);
     // 固定写法，参数检查
     auto ret = CheckParams(shape, prob, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);

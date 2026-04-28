@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -77,37 +77,29 @@ OpTilingConfig StatelessDropOutGenMaskTiling::BuildOpConfig()
         return ge::GRAPH_SUCCESS;
     };
 
-    // 获取key[2]：从attr1(seed) counter[4] attr(seed2)
-    config.getKeyAndCounter = [](gert::TilingContext* ctx, uint32_t key[2], uint32_t counter[4]) -> ge::graphStatus {
-        //check offset
+    // key/counter 由 kernel 从 GM 直接读取，tiling 侧不再做 D2H memcpy
+    // 通过 key[] 传递元数据给 kernel：key[0]=offsetElemCount, key[1]=seedByteSize
+    config.getKeyAndCounter = []([[maybe_unused]] gert::TilingContext* ctx, uint32_t key[2],
+                                 uint32_t counter[4]) -> ge::graphStatus {
+        counter[0] = 0; counter[1] = 0; counter[2] = 0; counter[3] = 0;
+
+        // offset element count (shape info, no D2H needed)
         auto offsetTensor = ctx->GetRequiredInputTensor(IN_OFFSET_IDX);
-        OP_CHECK_NULL_WITH_CONTEXT(ctx, offsetTensor);
-        auto offsetTensorSize = static_cast<int64_t>(offsetTensor->GetShapeSize());
-        OP_CHECK_IF((offsetTensorSize != 1) && (offsetTensorSize != 2),
-            OP_LOGE(ctx->GetNodeName(), "input offset shape_size should be 1 or 2, but got %ld.", offsetTensorSize),
-            return ge::GRAPH_FAILED);
-         // get input value of seed & offset.
-        gert::Shape inputSeed_;
-        gert::Shape inputOffset_;
-        OP_CHECK_IF(ExtractTensorValue(ctx, IN_SEED_IDX, inputSeed_) != ge::GRAPH_SUCCESS,
-            OP_LOGE(ctx->GetNodeName(), "get const shape of seed failed"), return ge::GRAPH_FAILED);
-        OP_CHECK_IF(ExtractTensorValue(ctx, IN_OFFSET_IDX, inputOffset_) != ge::GRAPH_SUCCESS,
-            OP_LOGE(ctx->GetNodeName(), "get const shape of offset failed"), return ge::GRAPH_FAILED);
-        OP_LOGD(ctx->GetNodeName(), "const seed = %s, const offset = %s.", Ops::Base::ToString(inputSeed_).c_str(),
-            Ops::Base::ToString(inputOffset_).c_str());
-        int64_t keyTemp = static_cast<int64_t>(inputSeed_[0]);
-        std::vector<int64_t> counterTemp;
-        if (offsetTensorSize == 1) {
-            counterTemp = { 0, inputOffset_[0] };
-        } else {
-            counterTemp = { inputOffset_[0], inputOffset_[1] };
+        uint32_t offsetElemCount = 2;
+        if (offsetTensor != nullptr) {
+            offsetElemCount = static_cast<uint32_t>(offsetTensor->GetShapeSize());
         }
-        key[0] = static_cast<int32_t>(keyTemp);
-        key[1] = static_cast<int32_t>(keyTemp >> RIGHT_SHIFT_NUM); // 32 for lower 32 bits
-        counter[0] = static_cast<int32_t>(counterTemp[0]);
-        counter[1] = static_cast<int32_t>(counterTemp[0] >> RIGHT_SHIFT_NUM); // 32 for lower 32 bits
-        counter[2] = static_cast<int32_t>(counterTemp[1]);
-        counter[3] = static_cast<int32_t>(counterTemp[1] >> RIGHT_SHIFT_NUM); // 32 for lower 32 bits
+        key[0] = offsetElemCount;
+
+        // seed byte size: 4 for INT32, 8 for INT64 (dtype info, no D2H needed)
+        auto seedDesc = ctx->GetInputDesc(IN_SEED_IDX);
+        uint32_t seedByteSize = 8;
+        if (seedDesc != nullptr) {
+            auto seedDtype = seedDesc->GetDataType();
+            seedByteSize = (seedDtype == ge::DT_INT32) ? 4 : 8;
+        }
+        key[1] = seedByteSize;
+
         return ge::GRAPH_SUCCESS;
     };
 
@@ -142,5 +134,5 @@ static ge::graphStatus TilingStatelessDropOutGenMask(gert::TilingContext* tiling
 IMPL_OP_OPTILING(StatelessDropOutGenMask)
     .Tiling(TilingStatelessDropOutGenMask)
     .TilingParse<RandomOperatorCompileInfo>(TilingPrepare4StatelessDropOutGenMaskTiling)
-    .TilingInputsDataDependency({ IN_SHAPE_IDX, IN_PROB_IDX, IN_SEED_IDX, IN_SEED1_IDX, IN_OFFSET_IDX });
+    .TilingInputsDataDependency({ IN_SHAPE_IDX, IN_PROB_IDX });
 } // namespace optiling
