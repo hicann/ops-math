@@ -48,7 +48,7 @@ OpTilingConfig StatelessRandomNormalV3Tiling::BuildOpConfig()
             {4, {{ge::DT_FLOAT}, -1, {}, nullptr}},  // stdev (scalar or tensor)
         };
     config.outputCheckRules = {
-        {0, {{ge::DT_FLOAT, ge::DT_BF16, ge::DT_FLOAT16}, -1, {1,2,3,4,5,6,7,8}, nullptr}}
+        {0, {{ge::DT_FLOAT, ge::DT_BF16, ge::DT_FLOAT16}, -1, {0,1,2,3,4,5,6,7,8}, nullptr}}
     };  // y
     config.getOutputSize = [](gert::TilingContext* ctx, int64_t& shapeSize) -> ge::graphStatus {
         auto outputShape = ctx->GetOutputShape(OUTPUT_IDX_Y);

@@ -74,7 +74,7 @@ aclnnStatus aclnnInplaceRandomTensor(
       <td>支持空tensor场景。</td>
       <td>BFLOAT16、FLOAT16、FLOAT32、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
-      <td>1-8</td>
+      <td>0-8</td>
       <td>×</td>
     </tr>
     <tr>
