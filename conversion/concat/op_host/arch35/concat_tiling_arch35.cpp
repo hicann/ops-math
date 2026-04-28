@@ -52,9 +52,11 @@ constexpr int64_t B64_BYTES = 8;
 constexpr int64_t B32_BYTES = 4;
 constexpr int64_t B16_BYTES = 2;
 constexpr int64_t B8_BYTES = 1;
+constexpr int64_t B4_BYTES = 1004; // ge::GetSizeByDataType 对 FP4 类型的返回值（枚举值，非实际字节数）
 constexpr int64_t DIGIT_TWO = 2;
 constexpr int64_t DIGIT_ONE = 1;
 constexpr int64_t DIGIT_THREE = 3;
+constexpr int64_t FP4_TO_B8_RATIO = 2; //用于FP4到B8模板的转换 2个FP4= 1字节
 constexpr int64_t GATHER_MODE = 3;
 constexpr int64_t EVERY_CORE_THRESHOLD = 2048; // 2k
 constexpr int64_t LEAST_BLOCK_BYTES = 512;
@@ -230,6 +232,46 @@ inline static bool CheckInputShapeSame(vector<vector<int64_t>>& tensorList)
     return true;
 }
 
+inline static ge::graphStatus CheckFP4Dim1Even(const ConcatTilingParam& param)
+{
+    for (const auto& tensorSize : param.tensorListDim1) {
+        if (tensorSize % FP4_TO_B8_RATIO != 0) {
+            OP_LOGE("[Concat]", "FP4 Dim1 must be even, but got %ld", tensorSize);
+            return ge::GRAPH_FAILED;
+        }
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+static ge::graphStatus ConvertFP4DimsToB8(ConcatTilingParam& param)
+{
+    if (!param.isFP4Type) {
+        return ge::GRAPH_SUCCESS;
+    }
+    ge::graphStatus ret = CheckFP4Dim1Even(param);
+    if (ret != ge::GRAPH_SUCCESS) {
+        return ret;
+    }
+    param.catDim1 /= FP4_TO_B8_RATIO;
+    if (param.inputShapeSame == 1) {
+        param.sameShapeTensorDim1 /= FP4_TO_B8_RATIO;
+    }
+    for (auto& tensorSize : param.tensorListDim1) {
+        tensorSize /= FP4_TO_B8_RATIO;
+    }
+    for (auto& tensorSize : param.mergeTensorList) {
+        tensorSize[1] /= FP4_TO_B8_RATIO;
+    }
+    if (param.isNonContiguous) {
+        for (int16_t i = 0; i < param.tensorNum; ++i) {
+            param.strideList[i] /= FP4_TO_B8_RATIO;
+        }
+    }
+    param.dtypeSize = B8_BYTES;
+    param.orgDtypeSize = B8_BYTES;
+    return ge::GRAPH_SUCCESS;
+}
+
 inline static ge::graphStatus CalcBaseTilingParam(const gert::TilingContext* context, ConcatTilingParam& param)
 {
     auto compileInfo = reinterpret_cast<const ConcatDCompileInfo*>(context->GetCompileInfo());
@@ -244,10 +286,15 @@ inline static ge::graphStatus CalcBaseTilingParam(const gert::TilingContext* con
     GetTensorListDim(param);
     GenerateOutputShape(param);
     param.orgDtypeSize = param.dtypeSize;
-    param.isAllTensorAlign = CheckCatDimAlign(param.mergeTensorList, param.dtypeSize) ? 1 : 0;
-    param.isDim1AllAlign = CheckDim1Align(param.mergeTensorList, param.dtypeSize) ? 1 : 0;
     param.inputShapeSame = CheckInputShapeSame(param.mergeTensorList) ? 1 : 0;
     GetTensorSameDim1(param);
+    // FP4 预处理：在对齐判断之前，将 FP4(4bit) 转换为 B8(1byte) 视角
+    param.isFP4Type = (param.orgDtypeSize == B4_BYTES) ? 1 : 0;
+    OP_CHECK_IF(
+        ConvertFP4DimsToB8(param) != ge::GRAPH_SUCCESS,
+        OP_LOGE(context->GetNodeName(), "ConvertFP4DimsToB8 failed."), return ge::GRAPH_FAILED);
+    param.isAllTensorAlign = CheckCatDimAlign(param.mergeTensorList, param.dtypeSize) ? 1 : 0;
+    param.isDim1AllAlign = CheckDim1Align(param.mergeTensorList, param.dtypeSize) ? 1 : 0;
     OP_CHECK_IF(
         param.dtypeSize <= 0,
         OP_LOGE(
@@ -276,7 +323,7 @@ inline static bool IsInvalidType(const DataType dtype)
     std::set<ge::DataType> supportedDtype = {
         ge::DT_FLOAT,  ge::DT_FLOAT16, ge::DT_BF16,   ge::DT_UINT8, ge::DT_INT8, ge::DT_UINT16, ge::DT_INT16,
         ge::DT_UINT32, ge::DT_INT32,   ge::DT_UINT64, ge::DT_INT64, ge::DT_BOOL, ge::DT_DOUBLE, ge::DT_COMPLEX64,
-        ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT8_E5M2, ge::DT_HIFLOAT8, ge::DT_FLOAT8_E8M0};
+        ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT8_E5M2, ge::DT_HIFLOAT8, ge::DT_FLOAT8_E8M0, ge::DT_FLOAT4_E1M2, ge::DT_FLOAT4_E2M1};
     bool isInvalidType = (supportedDtype.count(dtype) == 0);
 
     return isInvalidType;
@@ -687,6 +734,7 @@ inline static void SetTilingData(T& tilingData, ConcatTilingParam& param)
     tilingData.set_tensorNum(param.tensorNum);
     tilingData.set_catDim1(param.catDim1);
     tilingData.set_sameShapeTensorDim1(param.sameShapeTensorDim1);
+    tilingData.set_isFP4Type(param.isFP4Type);
     tilingData.set_bufferSize(static_cast<int32_t>(param.bufferSize));
     tilingData.set_dtypeSize(static_cast<int16_t>(param.dtypeSize));
 
@@ -821,6 +869,7 @@ static ge::graphStatus PreProcessForNoAlign(ConcatTilingParam& param)
     }
     return ge::GRAPH_SUCCESS;
 }
+
 
 inline static std::vector<int64_t> FindUniqueCut(int64_t coreNum)
 {
@@ -1342,7 +1391,7 @@ ge::graphStatus TilingCommon(gert::TilingContext* context, int64_t inputIdx, int
             context->GetNodeName(),
             "input dtype only support uint8, int8, bool, float32, int32, uint32, int16, float16, bfloat16, uint16, "
             "int64,"
-            "uint64, double, complex64, HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0 currently, please check."),
+            "uint64, double, complex64, HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0 FLOAT4_E1M2、FLOAT4_E2M1 currently, please check."),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         GetDtypeSize(context, param, inputIdx) != ge::GRAPH_SUCCESS,

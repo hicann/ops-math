@@ -69,7 +69,7 @@ aclnnStatus aclnnCat(
       <td>输入</td>
       <td>需要级联的tensor列表，列表长度不超过32，且数据类型需要列表内部构成满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
       <td>-</td>
-      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0</td>
+      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E1M2、FLOAT4_E2M1</td>
       <td>ND</td>
       <td>1-8</td>
       <td>√</td>
@@ -89,7 +89,7 @@ aclnnStatus aclnnCat(
       <td>输出</td>
       <td>输出tensor，且数据类型需要是tensors内部推导之后可转换的类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td>-</td>
-      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0</td>
+      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E1M2、FLOAT4_E2M1</td>
       <td>ND</td>
       <td>-</td>
       <td>-</td>
@@ -209,7 +209,7 @@ aclnnStatus aclnnCat(
 
 - 确定性计算：
   - aclnnCat默认确定性实现。
-- 仅dim = 0 时，支持输入tensorList大于32且小于512。
+
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。

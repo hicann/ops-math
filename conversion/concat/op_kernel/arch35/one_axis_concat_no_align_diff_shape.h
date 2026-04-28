@@ -105,7 +105,11 @@ __aicore__ inline void OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::Init(GM_
 
     inputList_ = ListTensorDesc(reinterpret_cast<__gm__ void*>(x));
     desc_.SetShapeAddr(&buf_[0]);
-    if (startTensorOffset_ == GetNonConDimSize<TILINGDATA, T>(tilingData_, startTensorIdx_, inputList_, desc_) * tilingData_.sameShapeTensorDim1) {
+    int64_t startTensorDim1_ = GetNonConDimSize<TILINGDATA, T>(tilingData_, startTensorIdx_, inputList_, desc_) * tilingData_.sameShapeTensorDim1;
+    if (tilingData_.isFP4Type) {
+        startTensorDim1_ /= 2;
+    }
+    if (startTensorOffset_ == startTensorDim1_) {
         startTensorOffset_ = 0;
         startTensorIdx_ += 1;
     }
@@ -154,6 +158,9 @@ __aicore__ inline void OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::ProcessB
     uint32_t curLoopHandleCols = static_cast<uint32_t>(tilingData_.ubFactorDim1);
     while (tensorIdx <= endTensorIdx_) {
         int64_t dim1Size = GetNonConDimSize<TILINGDATA, T>(tilingData_, tensorIdx, inputList_, desc_) * tilingData_.sameShapeTensorDim1;
+        if (tilingData_.isFP4Type) {
+            dim1Size /= 2;
+        }
         int64_t dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, tensorIdx, dim1Size);
         int64_t copyCols = dim1Size - colsOffset;
         if (tensorIdx == endTensorIdx_) {
@@ -221,6 +228,9 @@ __aicore__ inline void OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::ProcessB
         LocalTensor<T> dstLocal = outQueue_.AllocTensor<T>();
         while (tensorIdx < tilingData_.tensorNum) {
             int64_t dim1Size = GetNonConDimSize<TILINGDATA, T>(tilingData_, tensorIdx, inputList_, desc_) * tilingData_.sameShapeTensorDim1;
+            if (tilingData_.isFP4Type) {
+                dim1Size /= 2;
+            }
             int64_t dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, tensorIdx, dim1Size);
             int64_t copyCols = dim1Size - colsOffset;
             int64_t extraCols = totalCopyCols + copyCols - tilingData_.ubFactorDim1;
@@ -373,6 +383,9 @@ __aicore__ inline void OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::CopyInNo
     uint32_t curLoopHandleCols = static_cast<uint32_t>(tilingData_.catDim1);
     for (int64_t i = 0; i < tilingData_.tensorNum; i++) {
         int64_t dim1 = GetNonConDimSize<TILINGDATA, T>(tilingData_, i, inputList_, desc_) * tilingData_.sameShapeTensorDim1;
+        if (tilingData_.isFP4Type) {
+            dim1 /= 2;
+        }
         int64_t dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, i, dim1);
         srcGlobal.SetGlobalBuffer(GetTensorAddr(i, blockOffset_ * dim0stride));
         DataCopyExtParams copyInParam = {static_cast<uint16_t>(rows), static_cast<uint32_t>(dim1 * sizeof(T)), static_cast<int64_t>((dim0stride - dim1) * sizeof(T)), 0, 0};

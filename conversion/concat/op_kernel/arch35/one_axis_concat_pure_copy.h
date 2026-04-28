@@ -258,7 +258,11 @@ __aicore__ inline int64_t OneAxisConcatPureCopy<TILINGDATA>::GetTensorDim1(int64
     if (idx < PRELOAD_DIM1_SIZE) {
         return tilingData_.preLoadDim1[idx];
     }
-    return GetNonConDimSize<TILINGDATA, int8_t>(tilingData_, idx, inputList_, desc_) * tilingData_.sameShapeTensorDim1;
+    int64_t dim1 = GetNonConDimSize<TILINGDATA, int8_t>(tilingData_, idx, inputList_, desc_) * tilingData_.sameShapeTensorDim1;
+    if (tilingData_.isFP4Type) {
+        dim1 /= 2;
+    }
+    return dim1;
 }
 } // namespace Concat
 

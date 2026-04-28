@@ -59,7 +59,7 @@ static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT,  DataType::DT_INT32,     DataType::DT_INT64,  DataType::DT_FLOAT16, DataType::DT_INT16,
     DataType::DT_INT8,   DataType::DT_UINT8,     DataType::DT_UINT16, DataType::DT_UINT32,  DataType::DT_UINT64,
     DataType::DT_DOUBLE, DataType::DT_COMPLEX64, DataType::DT_BF16,   DataType::DT_BOOL,    DataType::DT_FLOAT8_E4M3FN,
-    DataType::DT_FLOAT8_E5M2,                    DataType::DT_HIFLOAT8,                     DataType::DT_FLOAT8_E8M0};
+    DataType::DT_FLOAT8_E5M2, DataType::DT_HIFLOAT8, DataType::DT_FLOAT8_E8M0, op::DataType::DT_FLOAT4_E1M2, op::DataType::DT_FLOAT4_E2M1};
 
 static const inline std::initializer_list<DataType>& GetSupportDtypeList(NpuArch npuArch)
 {
@@ -339,7 +339,24 @@ static aclnnStatus SplitToConcat(const aclTensorList* tensors, int64_t dim, aclT
     }
 
     if (tensorListA.size() == 1) {
-        return ProcessOneTensor(tensorListA[0], out, executor);
+        // FP4 类型: TensorMove 的 AICORE 不支持 FP4，大数据量回退 AICPU 也不支持，导致报错。
+        // 改为走 ConcatD 路径（ConcatD 支持单 tensor 和空 tensor）
+        bool isFP4 = (promoteType == DataType::DT_FLOAT4_E1M2 || promoteType == DataType::DT_FLOAT4_E2M1);
+        if (isFP4) {
+            auto ct = l0op::Contiguous(tensorListA[0], executor);
+            CHECK_RET(ct != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            op::FVector<const aclTensor*> fp4List;
+            fp4List.emplace_back(ct);
+            auto fp4TensorList = executor->AllocTensorList(fp4List.data(), fp4List.size());
+            auto concatResult = l0op::ConcatD(fp4TensorList, dim, executor);
+            CHECK_RET(concatResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            auto castOut = l0op::Cast(concatResult, out->GetDataType(), executor);
+            auto viewCopyResult = l0op::ViewCopy(castOut, out, executor);
+            CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            return ACLNN_SUCCESS;
+        } else {
+            return ProcessOneTensor(tensorListA[0], out, executor);
+        }
     }
 
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();

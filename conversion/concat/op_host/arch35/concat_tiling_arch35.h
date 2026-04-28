@@ -54,6 +54,7 @@ TILING_DATA_FIELD_DEF(int64_t, uoDim0);
 TILING_DATA_FIELD_DEF(int64_t, uoDim1);
 TILING_DATA_FIELD_DEF(int64_t, catDim1); // 输出1轴大小
 TILING_DATA_FIELD_DEF(int64_t, sameShapeTensorDim1);
+TILING_DATA_FIELD_DEF(int16_t, isFP4Type);
 TILING_DATA_FIELD_DEF_ARR(int16_t, TILING_ARRAY_LENGTH, endTensorIdx);
 TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LENGTH, endTensorOffset);
 TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_PRELOAD_DIM1_LENGTH, preLoadDim1);
@@ -81,6 +82,7 @@ TILING_DATA_FIELD_DEF(int64_t, uoDim0);
 TILING_DATA_FIELD_DEF(int64_t, uoDim1);
 TILING_DATA_FIELD_DEF(int64_t, catDim1); // 输出1轴大小
 TILING_DATA_FIELD_DEF(int64_t, sameShapeTensorDim1);
+TILING_DATA_FIELD_DEF(int16_t, isFP4Type);
 TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_PRELOAD_DIM1_LENGTH, preLoadDim1);
 TILING_DATA_FIELD_DEF_ARR(uint64_t, NON_CON_TENSOR_SIZE, strideList);
 TILING_DATA_FIELD_DEF_ARR(uint64_t, NON_CON_TENSOR_SIZE, concatDimList);
@@ -141,12 +143,14 @@ struct ConcatTilingParam {
     int64_t tilingKey{0};
     int64_t dtypeSize{0};
     int64_t orgDtypeSize{0};
+
     int64_t ubSize{0};
     int64_t leastCopyNumber{0};
     int64_t everyBlockNumber{0};
     int64_t inputShapeSame{0};
     int64_t noAlignTensorNum{0};
     int64_t sameShapeTensorDim1{0};
+    int16_t isFP4Type{0};
     int64_t bufferSize{0};
     int64_t gatherThreshold{128};
     int32_t tensorNumPerCore{0};
