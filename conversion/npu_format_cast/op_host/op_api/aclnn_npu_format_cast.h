@@ -20,7 +20,7 @@ extern "C" {
 
 /**
  * 算子功能：实现ND到指定C0大小的FRACTAL_NZ格式的相互转换，C0为FRACTAL_NZ格式最后一维的大小
- * @brief aclnnNpuFormatCast的第一段接口，用于获取计算所需worksapce大小以及包含了算子计算流程的执行器。
+ * @brief aclnnNpuFormatCast的第一段接口，用于获取计算所需workspace大小以及包含了算子计算流程的执行器。
  * @domain aclnn_ops_infer
  * @param [in] srcTensor:
  * 输入的数据，数据格式支持ND、ACL_FORMAT_FRACTAL_NZ(29)、ACL_FORMAT_FRACTAL_NZ_C0_2(52)、ACL_FORMAT_FRACTAL_NZ_C0_4(53)、ACL_FORMAT_FRACTAL_NZ_C0_16(50)、ACL_FORMAT_FRACTAL_NZ_C0_32(51)。不支持非连续的Tensor, 支持的数据类型：FLOAT4_E2M1、INT8、UINT8、INT32、FLOAT16、BFLOAT16、FLOAT。
