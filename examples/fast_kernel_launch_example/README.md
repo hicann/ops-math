@@ -35,6 +35,14 @@
     python3 -m build --wheel -n
     ```
 
+    默认使用`dav-2201`作为NPU编译架构。可通过`NPU_ARCH`环境变量指定支持的架构：
+
+    ```sh
+    NPU_ARCH=dav-2201 python3 -m build --wheel -n
+    ```
+
+    当前支持的`NPU_ARCH`取值为`dav-2201`和`dav-3510`。
+
     构建完成后，产物在当前目录的`dist`文件夹下，产物名`ascend_ops-1.0.0-${python_version}-abi3-${arch}.whl`，
     `${python_version}`表示当前环境中的python版本(python3.8.3为cp38)，`${arch}`表示CPU架构。
 
@@ -77,19 +85,19 @@ print("Verification successful!")
 
 ## 开发指南：新增一个算子 | Developer Guide: Adding a New Operator
 
-为了实现一个新算子(如`add`)，您只需要提供一个C++实现即可。
+为了实现一个新算子(如`add`)，您只需要提供一个`.asc`源文件实现即可。
 
-1. 首先您需要在csrc目录下使用算子名`add`建立一个文件夹，在此文件夹内使用你当前想要开发的soc名建立一个子文件夹`ascend910b`。
+1. 首先您需要在`csrc`目录下使用算子名`add`建立一个文件夹，在此文件夹内使用目标`NPU_ARCH`建立一个子文件夹，例如`dav-2201`。
 
-2. 在soc目录下新建一个`CMakeLists.txt`
+2. 在`NPU_ARCH`目录下新建一个`CMakeLists.txt`
 
-    ```
-    add_sources("--npu-arch=dav-2201")
+    ```cmake
+    ascend_ops_add_current_op(OP_TARGET)
     ```
     
-    这里`dav-2201`为ascend910b芯片对应的编译参数，获取方法参考[NpuArch说明和使用指导](https://gitcode.com/cann/ops-math/wiki/NpuArch%E8%AF%B4%E6%98%8E%E5%92%8C%E4%BD%BF%E7%94%A8%E6%8C%87%E5%AF%BC.md)。
+    这里`NPU_ARCH`会传递给编译器的`--npu-arch`参数，当前支持`dav-2201`和`dav-3510`。获取方法参考[NpuArch说明和使用指导](https://gitcode.com/cann/ops-math/wiki/NpuArch%E8%AF%B4%E6%98%8E%E5%92%8C%E4%BD%BF%E7%94%A8%E6%8C%87%E5%AF%BC.md)。如果算子需要额外依赖，可在同一个`CMakeLists.txt`中为`${OP_TARGET}`显式添加。
 
-3. 在soc目录下新建一个`add.cpp`(建议使用算子名为文件名)。这个文件包含了开发一个AI Core算子所需要的全部模块。
+3. 在`NPU_ARCH`目录下新建一个`add.asc`(建议使用算子名为文件名)。这个文件包含了开发一个AI Core算子所需要的全部模块。
     - 算子Schema注册
     - 算子Meta Function实现 & 注册
     - 算子Kernel实现 (Ascend C)
