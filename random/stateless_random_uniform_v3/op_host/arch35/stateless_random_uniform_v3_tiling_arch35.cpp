@@ -48,7 +48,7 @@ OpTilingConfig StatelessRandomUniformV3Tiling::BuildOpConfig()
     };
 
     config.outputCheckRules = {
-        {0, {{ge::DT_FLOAT, ge::DT_BF16, ge::DT_FLOAT16}, -1, {1,2,3,4,5,6,7,8}, nullptr}}  // y
+        {0, {{ge::DT_FLOAT, ge::DT_BF16, ge::DT_FLOAT16}, -1, {0,1,2,3,4,5,6,7,8}, nullptr}}  // y
     };
 
     // 获取 outputSize：输出 y 的 shapeSize

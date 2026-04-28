@@ -73,7 +73,7 @@ aclnnStatus aclnnInplaceUniform(
       <td class="tg-0pky">支持空tensor场景。</td>
       <td class="tg-0pky">FLOAT32、INT32、INT64、BFLOAT16、FLOAT16、INT16、INT8、UINT8、DOUBLE</td>
       <td class="tg-0pky">ND</td>
-      <td class="tg-0pky">1-8</td>
+      <td class="tg-0pky">0-8</td>
       <td class="tg-0pky">×</td>
     </tr>
     <tr>

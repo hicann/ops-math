@@ -74,7 +74,7 @@ aclnnStatus aclnnInplaceUniformTensor(
       <td>支持空tensor场景。</td>
       <td>BFLOAT16、FLOAT16、FLOAT32、INT32、INT64、INT16、INT8、UINT8、DOUBLE</td>
       <td>ND</td>
-      <td>1-8</td>
+      <td>0-8</td>
       <td>×</td>
     </tr>
     <tr>
