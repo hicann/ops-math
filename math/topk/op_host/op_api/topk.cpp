@@ -38,6 +38,8 @@ const int64_t MIN_AICORE_CALC_REG_BASE_INT64_INPUTSIZE = 65000;
 const int64_t MAX_K = 16;
 
 constexpr int64_t TWO_THOUSAND = 2000;
+// 排序轴大于该阈值时，走SortAndTopK模板，SortWithIndex场景不涉及
+constexpr int64_t SORT_AND_TOP_K_THRESHOLD = 10000000;
 
 static const std::initializer_list<op::DataType> ANCIENT_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT};
@@ -150,6 +152,14 @@ std::tuple<aclTensor*, aclTensor*> TopkV3(
     return std::tuple<aclTensor*, aclTensor*>(values, indices);
 }
 
+// SortWithIndex排序时，将输出索引类型int64转为int32，计算结束后再将结果转为int64，能获取更好的性能
+static bool IsSortWithIndex(const aclTensor* self, int64_t k, bool sorted) {
+    auto inputShape = self->GetViewShape();
+    int64_t dimNum = static_cast<int64_t>(inputShape.GetDimNum());
+
+    return (k > TWO_THOUSAND) && (inputShape.GetDim(dimNum - 1) <= SORT_AND_TOP_K_THRESHOLD) && sorted;
+}
+
 // AICPU算子kernel
 std::tuple<aclTensor*, aclTensor*> TopkAiCpu(
     const aclTensor* self, const aclTensor* k, int64_t dim, bool largest, bool sorted, aclTensor* values,
@@ -181,7 +191,7 @@ std::tuple<aclTensor*, aclTensor*> Topk(
     const aclTensor* kTensor = executor->ConvertToTensor(kScalar, op::ToOpDataType(ACL_INT32));
     auto valuesOut = executor->AllocTensor(outShape, self->GetDataType(), self->GetStorageFormat());
     aclTensor* indicesOut = nullptr;
-    if (IsRegBase()) {
+    if (IsRegBase() && !IsSortWithIndex(self, k, sorted)) {
         indicesOut = executor->AllocTensor(outShape, indicesDType, self->GetStorageFormat());
     } else {
         indicesOut = executor->AllocTensor(outShape, op::DataType::DT_INT32, self->GetStorageFormat());
