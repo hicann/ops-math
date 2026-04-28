@@ -19,6 +19,7 @@
 #include "kernel_operator.h"
 #include "op_kernel/platform_util.h"
 #include "matrix_set_diag_tilingdata.h"
+#include "simt_api/asc_simt.h"
 
 constexpr int32_t THREAD_DIM = 2048;
 
@@ -66,8 +67,8 @@ __simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__ void SimtCompute(
     uint32_t blockNum, uint32_t width, uint32_t height, uint32_t lastDimSize, uint32_t diagLen, uint32_t magic0,
     uint32_t shift0, uint32_t magic1, uint32_t shift1, uint32_t magic2, uint32_t shift2)
 {
-    for (uint32_t idx = blockIdx * Simt::GetThreadNum() + Simt::GetThreadIdx(); idx < outputSize;
-         idx += blockNum * Simt::GetThreadNum()) {
+    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
+         idx += blockNum * blockDim.x) {
         uint32_t divW = Simt::UintDiv(idx, magic0, shift0);
         uint32_t h = idx - divW * width;                                  // idx % width;
         uint32_t w = divW - Simt::UintDiv(divW, magic1, shift1) * height; //(idx / width) % height;
@@ -99,8 +100,8 @@ __aicore__ inline void MatrixSetDiagSimt<T>::Process()
     GetUintDivMagicAndShift(magic1, shift1, static_cast<uint32_t>(mHeight_));
     GetUintDivMagicAndShift(magic2, shift2, static_cast<uint32_t>(mLastDimsSize_));
 
-    Simt::VF_CALL<SimtCompute<T>>(
-        Simt::Dim3(THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()), (__gm__ T*)(mDiagonalGM_.GetPhyAddr()),
+    asc_vf_call<SimtCompute<T>>(
+        dim3(THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()), (__gm__ T*)(mDiagonalGM_.GetPhyAddr()),
         (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize, mBlockIdx_, blockNum, mWidth_, mHeight_,
         mLastDimsSize_, mDiagLen_, magic0, shift0, magic1, shift1, magic2, shift2);
 }

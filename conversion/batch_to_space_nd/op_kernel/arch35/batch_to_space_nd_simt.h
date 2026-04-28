@@ -15,6 +15,7 @@
 #include "op_kernel/platform_util.h"
 #include "batch_to_space_nd_tiling_data.h"
 
+#include "simt_api/asc_simt.h"
 namespace B2SND {
 using namespace AscendC;
 #ifdef __DAV_FPGA__
@@ -61,7 +62,7 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(HALF_THREAD_NUM_LAUNCH_BOUND) void SimtCompu
     U batchSize, U channel, uint64_t curCoreElement, U startIdx, U yShape1, U xShape1, U bShape0, U crops0, U m0, U s0,
     U m1, U s1, U m2, U s2, __gm__ T* x, __ubuf__ T* y)
 {
-    for (uint64_t idx = Simt::GetThreadIdx(); idx < curCoreElement; idx += Simt::GetThreadNum()) {
+    for (uint64_t idx = threadIdx.x; idx < curCoreElement; idx += blockDim.x) {
         U yIdx = U(startIdx + idx);
         U xIdx = 0;
         U xStride = 1;
@@ -96,7 +97,7 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(HALF_THREAD_NUM_LAUNCH_BOUND) void SimtCompu
     U xShape2, U bShape1, U crops1, U m0, U s0, U m1, U s1, U m2, U s2, U m3, U s3, U m4, U s4, __gm__ T* x,
     __ubuf__ T* y)
 {
-    for (uint64_t idx = Simt::GetThreadIdx(); idx < curCoreElement; idx += Simt::GetThreadNum()) {
+    for (uint64_t idx = threadIdx.x; idx < curCoreElement; idx += blockDim.x) {
         U yIdx = U(startIdx + idx);
         U xIdx = 0;
         U xStride = 1;
@@ -140,7 +141,7 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(HALF_THREAD_NUM_LAUNCH_BOUND) void SimtCompu
     U xShape2, U bShape1, U crops1, U yShape3, U xShape3, U bShape2, U crops2, U m0, U s0, U m1, U s1, U m2, U s2, U m3,
     U s3, U m4, U s4, U m5, U s5, U m6, U s6, __gm__ T* x, __ubuf__ T* y)
 {
-    for (uint64_t idx = Simt::GetThreadIdx(); idx < curCoreElement; idx += Simt::GetThreadNum()) {
+    for (uint64_t idx = threadIdx.x; idx < curCoreElement; idx += blockDim.x) {
         U yIdx = U(startIdx + idx);
         U xIdx = 0;
         U xStride = 1;
@@ -197,7 +198,7 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(HALF_THREAD_NUM_LAUNCH_BOUND) void SimtCompu
     U crops3, U m0, U s0, U m1, U s1, U m2, U s2, U m3, U s3, U m4, U s4, U m5, U s5, U m6, U s6, U m7, U s7, U m8,
     U s8, __gm__ T* x, __ubuf__ T* y)
 {
-    for (uint64_t idx = Simt::GetThreadIdx(); idx < curCoreElement; idx += Simt::GetThreadNum()) {
+    for (uint64_t idx = threadIdx.x; idx < curCoreElement; idx += blockDim.x) {
         U yIdx = U(startIdx + idx);
         U xIdx = 0;
         U xStride = 1;
@@ -265,7 +266,7 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(HALF_THREAD_NUM_LAUNCH_BOUND) void SimtCompu
     U crops3, U yShape5, U xShape5, U bShape4, U crops4, U m0, U s0, U m1, U s1, U m2, U s2, U m3, U s3, U m4, U s4,
     U m5, U s5, U m6, U s6, U m7, U s7, U m8, U s8, U m9, U s9, U m10, U s10, __gm__ T* x, __ubuf__ T* y)
 {
-    for (uint64_t idx = Simt::GetThreadIdx(); idx < curCoreElement; idx += Simt::GetThreadNum()) {
+    for (uint64_t idx = threadIdx.x; idx < curCoreElement; idx += blockDim.x) {
         U yIdx = U(startIdx + idx);
         U xIdx = 0;
         U xStride = 1;
@@ -345,7 +346,7 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(HALF_THREAD_NUM_LAUNCH_BOUND) void SimtCompu
     U s1, U m2, U s2, U m3, U s3, U m4, U s4, U m5, U s5, U m6, U s6, U m7, U s7, U m8, U s8, U m9, U s9, U m10, U s10,
     U m11, U s11, U m12, U s12, __gm__ T* x, __ubuf__ T* y)
 {
-    for (uint64_t idx = Simt::GetThreadIdx(); idx < curCoreElement; idx += Simt::GetThreadNum()) {
+    for (uint64_t idx = threadIdx.x; idx < curCoreElement; idx += blockDim.x) {
         U yIdx = U(startIdx + idx);
         U xIdx = 0;
         U xStride = 1;
@@ -437,7 +438,7 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(HALF_THREAD_NUM_LAUNCH_BOUND) void SimtCompu
     U m7, U s7, U m8, U s8, U m9, U s9, U m10, U s10, U m11, U s11, U m12, U s12, U m13, U s13, U m14, U s14,
     __gm__ T* x, __ubuf__ T* y)
 {
-    for (uint64_t idx = Simt::GetThreadIdx(); idx < curCoreElement; idx += Simt::GetThreadNum()) {
+    for (uint64_t idx = threadIdx.x; idx < curCoreElement; idx += blockDim.x) {
         U yIdx = U(startIdx + idx);
         U xIdx = 0;
         U xStride = 1;
@@ -607,20 +608,20 @@ __aicore__ inline void BatchToSpaceNDSIMT<T, U>::Process(GM_ADDR tiling)
         copyOutParams.dstStride = 0;
 
         if (blockDim_ == 1) {
-            Simt::VF_CALL<SimtComputeDimOne<T, U>>(
-                Simt::Dim3(threadNum_), batchSize_, channel_, ubProcessNum, startIdx, U(mTD->input.outShape[1]),
+            asc_vf_call<SimtComputeDimOne<T, U>>(
+                dim3(threadNum_), batchSize_, channel_, ubProcessNum, startIdx, U(mTD->input.outShape[1]),
                 U(mTD->input.inShape[1]), U(mTD->input.blockShape[0]), U(mTD->input.crops[0][0]), m[0], s[0], m[1],
                 s[1], m[2], s[2], (__gm__ T*)(xGm_.GetPhyAddr()), (__ubuf__ T*)inTensorY_.GetPhyAddr());
         } else if (blockDim_ == 2) {
-            Simt::VF_CALL<SimtComputeDimTwo<T, U>>(
-                Simt::Dim3(threadNum_), batchSize_, channel_, ubProcessNum, startIdx, U(mTD->input.outShape[1]),
+            asc_vf_call<SimtComputeDimTwo<T, U>>(
+                dim3(threadNum_), batchSize_, channel_, ubProcessNum, startIdx, U(mTD->input.outShape[1]),
                 U(mTD->input.inShape[1]), U(mTD->input.blockShape[0]), U(mTD->input.crops[0][0]),
                 U(mTD->input.outShape[2]), U(mTD->input.inShape[2]), U(mTD->input.blockShape[1]),
                 U(mTD->input.crops[1][0]), m[0], s[0], m[1], s[1], m[2], s[2], m[3], s[3], m[4], s[4],
                 (__gm__ T*)(xGm_.GetPhyAddr()), (__ubuf__ T*)inTensorY_.GetPhyAddr());
         } else if (blockDim_ == 3) {
-            Simt::VF_CALL<SimtComputeDimThree<T, U>>(
-                Simt::Dim3(threadNum_), batchSize_, channel_, ubProcessNum, startIdx, U(mTD->input.outShape[1]),
+            asc_vf_call<SimtComputeDimThree<T, U>>(
+                dim3(threadNum_), batchSize_, channel_, ubProcessNum, startIdx, U(mTD->input.outShape[1]),
                 U(mTD->input.inShape[1]), U(mTD->input.blockShape[0]), U(mTD->input.crops[0][0]),
                 U(mTD->input.outShape[2]), U(mTD->input.inShape[2]), U(mTD->input.blockShape[1]),
                 U(mTD->input.crops[1][0]), U(mTD->input.outShape[3]), U(mTD->input.inShape[3]),
@@ -628,8 +629,8 @@ __aicore__ inline void BatchToSpaceNDSIMT<T, U>::Process(GM_ADDR tiling)
                 m[4], s[4], m[5], s[5], m[6], s[6], (__gm__ T*)(xGm_.GetPhyAddr()),
                 (__ubuf__ T*)inTensorY_.GetPhyAddr());
         } else if (blockDim_ == 4) {
-            Simt::VF_CALL<SimtComputeDimFour<T, U>>(
-                Simt::Dim3(threadNum_), batchSize_, channel_, ubProcessNum, startIdx, U(mTD->input.outShape[1]),
+            asc_vf_call<SimtComputeDimFour<T, U>>(
+                dim3(threadNum_), batchSize_, channel_, ubProcessNum, startIdx, U(mTD->input.outShape[1]),
                 U(mTD->input.inShape[1]), U(mTD->input.blockShape[0]), U(mTD->input.crops[0][0]),
                 U(mTD->input.outShape[2]), U(mTD->input.inShape[2]), U(mTD->input.blockShape[1]),
                 U(mTD->input.crops[1][0]), U(mTD->input.outShape[3]), U(mTD->input.inShape[3]),
@@ -638,8 +639,8 @@ __aicore__ inline void BatchToSpaceNDSIMT<T, U>::Process(GM_ADDR tiling)
                 s[1], m[2], s[2], m[3], s[3], m[4], s[4], m[5], s[5], m[6], s[6], m[7], s[7], m[8], s[8],
                 (__gm__ T*)(xGm_.GetPhyAddr()), (__ubuf__ T*)inTensorY_.GetPhyAddr());
         } else if (blockDim_ == 5) {
-            Simt::VF_CALL<SimtComputeDimFive<T, U>>(
-                Simt::Dim3(threadNum_), batchSize_, channel_, ubProcessNum, startIdx, U(mTD->input.outShape[1]),
+            asc_vf_call<SimtComputeDimFive<T, U>>(
+                dim3(threadNum_), batchSize_, channel_, ubProcessNum, startIdx, U(mTD->input.outShape[1]),
                 U(mTD->input.inShape[1]), U(mTD->input.blockShape[0]), U(mTD->input.crops[0][0]),
                 U(mTD->input.outShape[2]), U(mTD->input.inShape[2]), U(mTD->input.blockShape[1]),
                 U(mTD->input.crops[1][0]), U(mTD->input.outShape[3]), U(mTD->input.inShape[3]),
@@ -650,8 +651,8 @@ __aicore__ inline void BatchToSpaceNDSIMT<T, U>::Process(GM_ADDR tiling)
                 s[6], m[7], s[7], m[8], s[8], m[9], s[9], m[10], s[10], (__gm__ T*)(xGm_.GetPhyAddr()),
                 (__ubuf__ T*)inTensorY_.GetPhyAddr());
         } else if (blockDim_ == 6) {
-            Simt::VF_CALL<SimtComputeDimSix<T, U>>(
-                Simt::Dim3(threadNum_), batchSize_, channel_, ubProcessNum, startIdx, U(mTD->input.outShape[1]),
+            asc_vf_call<SimtComputeDimSix<T, U>>(
+                dim3(threadNum_), batchSize_, channel_, ubProcessNum, startIdx, U(mTD->input.outShape[1]),
                 U(mTD->input.inShape[1]), U(mTD->input.blockShape[0]), U(mTD->input.crops[0][0]),
                 U(mTD->input.outShape[2]), U(mTD->input.inShape[2]), U(mTD->input.blockShape[1]),
                 U(mTD->input.crops[1][0]), U(mTD->input.outShape[3]), U(mTD->input.inShape[3]),
@@ -663,8 +664,8 @@ __aicore__ inline void BatchToSpaceNDSIMT<T, U>::Process(GM_ADDR tiling)
                 m[4], s[4], m[5], s[5], m[6], s[6], m[7], s[7], m[8], s[8], m[9], s[9], m[10], s[10], m[11], s[11],
                 m[12], s[12], (__gm__ T*)(xGm_.GetPhyAddr()), (__ubuf__ T*)inTensorY_.GetPhyAddr());
         } else if (blockDim_ == 7) {
-            Simt::VF_CALL<SimtComputeDimSeven<T, U>>(
-                Simt::Dim3(threadNum_), batchSize_, channel_, ubProcessNum, startIdx, U(mTD->input.outShape[1]),
+            asc_vf_call<SimtComputeDimSeven<T, U>>(
+                dim3(threadNum_), batchSize_, channel_, ubProcessNum, startIdx, U(mTD->input.outShape[1]),
                 U(mTD->input.inShape[1]), U(mTD->input.blockShape[0]), U(mTD->input.crops[0][0]),
                 U(mTD->input.outShape[2]), U(mTD->input.inShape[2]), U(mTD->input.blockShape[1]),
                 U(mTD->input.crops[1][0]), U(mTD->input.outShape[3]), U(mTD->input.inShape[3]),
