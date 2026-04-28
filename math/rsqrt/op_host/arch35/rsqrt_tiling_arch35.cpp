@@ -40,6 +40,7 @@ ge::graphStatus RsqrtTiling::SetTilingData()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tilingContext->GetRawTilingData());
 
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = static_cast<size_t>(ASCEND_WORKSPACE);
     uint64_t tilingKey = RSQRT_KEY_FP16;
     if (this->outputDtype == ge::DT_FLOAT16) {

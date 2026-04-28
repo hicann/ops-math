@@ -51,6 +51,7 @@ ge::graphStatus LogicalNotTiling::RunTiling()
 
     // set workspace/tilingkey/blockdim
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = LOGICAL_NOT_SYS_WORKSPACE;
 
     tilingContext->SetTilingKey(101UL);

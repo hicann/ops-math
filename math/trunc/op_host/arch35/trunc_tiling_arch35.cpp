@@ -29,6 +29,7 @@ ge::graphStatus TruncTiling::SetTilingData()
     OP_LOGD(tilingContext->GetNodeName(), "TruncTiling SetTilingData enter.");
 
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = ASCEND_WORKSPACE;
     const uint64_t tilingKey = GET_TPL_TILING_KEY(tiling->baseTiling.scheMode, dType);
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);

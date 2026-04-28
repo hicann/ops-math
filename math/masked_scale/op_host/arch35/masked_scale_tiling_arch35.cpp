@@ -141,6 +141,7 @@ static ge::graphStatus Tiling4MaskedScale(gert::TilingContext *tilingContext)
 
   size_t sysWorkspaceSize = static_cast<size_t>(16) * 1024 * 1024;
   size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+  OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
   currentWorkspace[0] = sysWorkspaceSize;
 
   return ge::GRAPH_SUCCESS;

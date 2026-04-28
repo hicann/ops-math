@@ -80,6 +80,7 @@ ge::graphStatus IsInfRegbaseTiling::SetTilingData()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, rawTilingData);
 
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = static_cast<uint64_t>(ASCEND_WORKSPACE);
 
     if (this->inputDtype == ge::DT_FLOAT16) {

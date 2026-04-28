@@ -35,6 +35,7 @@ constexpr uint64_t ABS_WORKSPACE_RESERVE_BYTE = 16777216;
 ge::graphStatus AbsTiling::SetTilingData()
 {
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = ABS_WORKSPACE_RESERVE_BYTE;
     if (this->outputDtype == ge::DT_BF16) {
         tilingContext->SetTilingKey(ABS_TILING_KEY_ELEMENTWISE_BF16);

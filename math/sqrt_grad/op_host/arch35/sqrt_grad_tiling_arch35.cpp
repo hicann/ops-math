@@ -55,8 +55,6 @@ void SqrtGradTiling::SetTilingData()
 {
     OP_LOGD(tilingContext->GetNodeName(), "SqrtGradTiling SetTilingData enter.");
 
-    size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
-    currentWorkspace[0] = ASCEND_WORKSPACE;
     const uint64_t tilingKey = GET_TPL_TILING_KEY(static_cast<uint64_t>(tiling->basetiling.scheMode), dType);
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);
     tilingContext->SetTilingKey(tilingKey);
@@ -152,6 +150,10 @@ ge::graphStatus SqrtGradTiling::RunTiling()
         baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
         return ge::GRAPH_FAILED);
     SetTilingData();
+
+    size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
+    currentWorkspace[0] = ASCEND_WORKSPACE;
     return ge::GRAPH_SUCCESS;
 }
 

@@ -65,6 +65,7 @@ ge::graphStatus AddNTiling::SetTilingData()
     tilingContext->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
 
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = ASCEND_WORKSPACE;
 
     return ge::GRAPH_SUCCESS;

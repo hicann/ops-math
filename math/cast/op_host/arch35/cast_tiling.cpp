@@ -456,6 +456,7 @@ ge::graphStatus CastTiling::PostTiling()
         return ge::GRAPH_FAILED);
 
     size_t* currentWorkspace = context_->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, currentWorkspace);
     currentWorkspace[0] = workspaceSize_;
 
     tilingData_.SaveToBuffer(context_->GetRawTilingData()->GetData(),

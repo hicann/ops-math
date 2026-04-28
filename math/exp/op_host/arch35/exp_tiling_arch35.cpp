@@ -157,6 +157,7 @@ ge::graphStatus ExpTiling::RunTiling()
     elewiseBaseTiling.SetScalar<float>(attrlnBase);
 
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = ASCEND_WORKSPACE;
     const uint64_t tilingKey = GET_TPL_TILING_KEY(schMode, attrWork);
 

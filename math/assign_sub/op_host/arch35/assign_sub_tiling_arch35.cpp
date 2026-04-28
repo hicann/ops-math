@@ -120,6 +120,7 @@ ge::graphStatus AssignSubTiling::RunTiling()
     size_t usrWorkspaceSize = 0;
     size_t sysWorkspaceSize = SYS_WORKSPACE_SIZE;
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = usrWorkspaceSize + sysWorkspaceSize;
 
     return ge::GRAPH_SUCCESS;

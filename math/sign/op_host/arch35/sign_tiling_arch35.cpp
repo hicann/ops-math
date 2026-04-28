@@ -47,6 +47,7 @@ ge::graphStatus SignTiling::SetTilingData()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tilingContext->GetRawTilingData());
 
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = ASCEND_WORKSPACE;
     uint64_t tilingKey = SIGN_KEY_UNDEFINED;
     if (this->outputDtype == ge::DT_FLOAT16) {

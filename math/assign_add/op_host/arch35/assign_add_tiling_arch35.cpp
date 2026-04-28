@@ -147,6 +147,7 @@ ge::graphStatus AssignAddTiling::RunTiling()
     OP_CHECK_IF(ret == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"), return ge::GRAPH_FAILED);
 
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = SYS_WORKSPACE_SIZE;
 
     uint64_t dType = TPL_DTYPE_BASE;

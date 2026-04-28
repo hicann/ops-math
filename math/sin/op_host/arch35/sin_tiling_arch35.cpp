@@ -36,6 +36,7 @@ ge::graphStatus SinTiling::SetTilingData()
     OP_LOGD(tilingContext->GetNodeName(), "SinTiling SetTilingData enter.");
 
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = static_cast<size_t>(ASCEND_WORKSPACE);
 
     const uint64_t tilingKey = GET_TPL_TILING_KEY(tiling->baseTiling.scheMode, dType);
