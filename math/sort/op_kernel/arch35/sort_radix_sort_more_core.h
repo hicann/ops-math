@@ -22,6 +22,7 @@
 #include "kernel_tiling/kernel_tiling.h"
 #include "util_type_simd.h"
 #include "sort_tiling_data.h" // 不引入的话无法识别 SortRegBaseTilingData 结构体
+#include "simt_api/asc_simt.h"
 
 namespace Sort {
 using namespace AscendC;
@@ -948,10 +949,10 @@ template <typename T3>
 __simt_vf__ LAUNCH_BOUND(RADIX_SORT_NUM)__aicore__
     void SimtGlobalOffset(uint32_t excusiveBinOffset, __gm__ T3 *excusiveBinsGm, __ubuf__ T3 *blockExcusiveBuffer, __gm__ T3* outGM_)
 {
-    for (int32_t i = Simt::GetThreadIdx(); i < RADIX_SORT_NUM; i += RADIX_SORT_NUM) {
+    for (int32_t i = threadIdx.x; i < RADIX_SORT_NUM; i += RADIX_SORT_NUM) {
         int32_t offset = i;
         T3 srcData = blockExcusiveBuffer[offset];
-        Simt::AtomicAdd<T3>(excusiveBinsGm + excusiveBinOffset + offset, srcData);
+        asc_atomic_add(excusiveBinsGm + excusiveBinOffset + offset, srcData);
     }
 }
 
@@ -1036,7 +1037,7 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::GetGlobalEx
             SetAtomicNone();
         } else {
             // 超过int32表示范围，计算globaloffset时int32已经不够了，所以用simt的int64的atomicadd
-            Simt::VF_CALL<SimtGlobalOffset<T3>>(Simt::Dim3(RADIX_SORT_NUM), excusiveBinOffset,
+            asc_vf_call<SimtGlobalOffset<T3>>(dim3(RADIX_SORT_NUM), excusiveBinOffset,
                 (__gm__ T3 *)(excusiveBinsGmWk_.GetPhyAddr()), (__ubuf__ T3 *)(blockExcusiveUb.GetPhyAddr()), (__gm__ T3 *)(outIdxGm_.GetPhyAddr()));
         }
         blockUbFlagQue_.FreeTensor(blockExcusiveUb);
@@ -1427,7 +1428,7 @@ __simt_vf__ LAUNCH_BOUND(THREAD_DIM_NUM)__aicore__ void CopyOutGm(T3 tileDataSta
     __gm__ volatile T2 *indexDoubleBufferGmAddr, // 输出workspcae的idx
     __gm__ volatile T1 *inputXDoubleBufferAddr)  // 输出workspace的value
 {
-    for (int i = Simt::GetThreadIdx(); i < RADIX_SORT_NUM; i += THREAD_DIM_NUM) {
+    for (int i = threadIdx.x; i < RADIX_SORT_NUM; i += THREAD_DIM_NUM) {
         // how many data key = i and block id le to now block id
         T3 blockHistCumsumVal = blockHistFlagAddr[i]; // lookahead_output
         // 高2比特为状态位
@@ -1448,8 +1449,8 @@ __simt_vf__ LAUNCH_BOUND(THREAD_DIM_NUM)__aicore__ void CopyOutGm(T3 tileDataSta
         T3 finalpos = globalKeyOffsetVal + blockHistCumsumVal - blockHistVal - blockExcusiveSumVal;
         blockDataInGlobalPosAddr[i] = finalpos;
     }
-    Simt::ThreadBarrier();
-    for (int i = Simt::GetThreadIdx(); i < cureTileSize; i += THREAD_DIM_NUM) {
+    asc_syncthreads();
+    for (int i = threadIdx.x; i < cureTileSize; i += THREAD_DIM_NUM) {
         // i stand for pos
         // sorted lcoal index content  stand for data index
         // 本地排序后的数据索引
@@ -1481,7 +1482,7 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::ScatterOutI
     uint32_t outputXUnsortedAxisOffset = unSortId * totalDataNum_;
     uint32_t unSortIdOffset = unSortId * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
     if (round == 0) {
-        Simt::VF_CALL<CopyOutGm<T1, uint32_t, T3, 0>>(Simt::Dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
+        asc_vf_call<CopyOutGm<T1, uint32_t, T3, 0>>(dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
             outputXUnsortedAxisOffset, unSortIdOffset, (__ubuf__ uint16_t *)(blockExcusiveSum.GetPhyAddr()),
             (__gm__ T3 *)(excusiveBinsGmWk_.GetPhyAddr()), (__ubuf__ T3 *)(blockDataInGlobalPos.GetPhyAddr()),
             (__ubuf__ uint32_t *)(sortedIndexLocal.GetPhyAddr()), (__ubuf__ T3 *)(xInputIndexLocal.GetPhyAddr()),
@@ -1490,7 +1491,7 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::ScatterOutI
             (__gm__ uint32_t *)(idxDbGm_.Alternate().GetPhyAddr()),
             (__gm__ T1 *)(inputXDbGm_.Alternate().GetPhyAddr()));
     } else {
-        Simt::VF_CALL<CopyOutGm<T1, uint32_t, T3, 1>>(Simt::Dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
+        asc_vf_call<CopyOutGm<T1, uint32_t, T3, 1>>(dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
             outputXUnsortedAxisOffset, unSortIdOffset, (__ubuf__ uint16_t *)(blockExcusiveSum.GetPhyAddr()),
             (__gm__ T3 *)(excusiveBinsGmWk_.GetPhyAddr()), (__ubuf__ T3 *)(blockDataInGlobalPos.GetPhyAddr()),
             (__ubuf__ uint32_t *)(sortedIndexLocal.GetPhyAddr()), (__ubuf__ T3 *)(xInputIndexLocal.GetPhyAddr()),
@@ -1511,7 +1512,7 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::ScatterOutI
     uint32_t outputXUnsortedAxisOffset = unSortId * totalDataNum_;
     uint32_t unSortIdOffset = unSortId * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
     if (round == 0) {
-        Simt::VF_CALL<CopyOutGm<T1, uint32_t, T3, 0>>(Simt::Dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
+        asc_vf_call<CopyOutGm<T1, uint32_t, T3, 0>>(dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
             outputXUnsortedAxisOffset, unSortIdOffset, (__ubuf__ uint16_t *)(blockExcusiveSum.GetPhyAddr()),
             (__gm__ T3 *)(excusiveBinsGmWk_.GetPhyAddr()), (__ubuf__ T3 *)(blockDataInGlobalPos.GetPhyAddr()),
             (__ubuf__ uint32_t *)(sortedIndexLocal.GetPhyAddr()), (__ubuf__ uint32_t *)(xInputIndexLocal.GetPhyAddr()),
@@ -1520,7 +1521,7 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::ScatterOutI
             (__gm__ uint32_t *)(idxDbGm_.Alternate().GetPhyAddr()),
             (__gm__ T1 *)(inputXDbGm_.Alternate().GetPhyAddr()));
     } else if (round < static_cast<uint32_t>(sizeof(T1) - 1)) {
-        Simt::VF_CALL<CopyOutGm<T1, uint32_t, T3, 1>>(Simt::Dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
+        asc_vf_call<CopyOutGm<T1, uint32_t, T3, 1>>(dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
             outputXUnsortedAxisOffset, unSortIdOffset, (__ubuf__ uint16_t *)(blockExcusiveSum.GetPhyAddr()),
             (__gm__ T3 *)(excusiveBinsGmWk_.GetPhyAddr()), (__ubuf__ T3 *)(blockDataInGlobalPos.GetPhyAddr()),
             (__ubuf__ uint32_t *)(sortedIndexLocal.GetPhyAddr()), (__ubuf__ uint32_t *)(xInputIndexLocal.GetPhyAddr()),
@@ -1530,7 +1531,7 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::ScatterOutI
             (__gm__ T1 *)(inputXDbGm_.Alternate().GetPhyAddr()));
     } else {
         GlobalTensor<T2> outIdxT2 = (idxDbGm_.Alternate()).template ReinterpretCast<T2>();
-        Simt::VF_CALL<CopyOutGm<T1, T2, T3, 1>>(Simt::Dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
+        asc_vf_call<CopyOutGm<T1, T2, T3, 1>>(dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
             outputXUnsortedAxisOffset, unSortIdOffset, (__ubuf__ uint16_t *)(blockExcusiveSum.GetPhyAddr()),
             (__gm__ T3 *)(excusiveBinsGmWk_.GetPhyAddr()), (__ubuf__ T3 *)(blockDataInGlobalPos.GetPhyAddr()),
             (__ubuf__ uint32_t *)(sortedIndexLocal.GetPhyAddr()), (__ubuf__ uint32_t *)(xInputIndexLocal.GetPhyAddr()),
@@ -1551,7 +1552,7 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::ScatterOutI
     uint32_t unSortIdOffset = unSortId * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
 
     if (round == 0) {
-        Simt::VF_CALL<CopyOutGm<T1, T2, T3, 0>>(Simt::Dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
+        asc_vf_call<CopyOutGm<T1, T2, T3, 0>>(dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
             outputXUnsortedAxisOffset, unSortIdOffset, (__ubuf__ uint16_t *)(blockExcusiveSum.GetPhyAddr()),
             (__gm__ T3 *)(excusiveBinsGmWk_.GetPhyAddr()), (__ubuf__ T3 *)(blockDataInGlobalPos.GetPhyAddr()),
             (__ubuf__ uint32_t *)(sortedIndexLocal.GetPhyAddr()), (__ubuf__ T3 *)(xInputIndexLocal.GetPhyAddr()),
@@ -1560,7 +1561,7 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::ScatterOutI
             (__gm__ T2 *)(idxDbGm_.Alternate().GetPhyAddr()),
             (__gm__ T1 *)(inputXDbGm_.Alternate().GetPhyAddr()));
     } else {
-        Simt::VF_CALL<CopyOutGm<T1, T2, T3, 1>>(Simt::Dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
+        asc_vf_call<CopyOutGm<T1, T2, T3, 1>>(dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
             outputXUnsortedAxisOffset, unSortIdOffset, (__ubuf__ uint16_t *)(blockExcusiveSum.GetPhyAddr()),
             (__gm__ T3 *)(excusiveBinsGmWk_.GetPhyAddr()), (__ubuf__ T3 *)(blockDataInGlobalPos.GetPhyAddr()),
             (__ubuf__ uint32_t *)(sortedIndexLocal.GetPhyAddr()), (__ubuf__ T3 *)(xInputIndexLocal.GetPhyAddr()),
@@ -1583,7 +1584,7 @@ __aicore__ inline void SortRadixMoreCore<T1, T2, UT, T3, isDescend>::ScatterKeys
         uint32_t outputXUnsortedAxisOffset = unSortId * totalDataNum_;
         uint32_t unSortIdOffset = unSortId * RADIX_SORT_NUM * sizeof(T1) + round * RADIX_SORT_NUM;
         GlobalTensor<T2> outIdxT2 = (idxDbGm_.Alternate()).template ReinterpretCast<T2>();
-        Simt::VF_CALL<CopyOutGm<T1, T2, T3, 0>>(Simt::Dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
+        asc_vf_call<CopyOutGm<T1, T2, T3, 0>>(dim3(THREAD_DIM_NUM), tileDataStart, cureTileSize,
             outputXUnsortedAxisOffset, unSortIdOffset, (__ubuf__ uint16_t *)(blockExcusiveSum.GetPhyAddr()),
             (__gm__ T3 *)(excusiveBinsGmWk_.GetPhyAddr()), (__ubuf__ T3 *)(blockDataInGlobalPos.GetPhyAddr()),
             (__ubuf__ uint32_t *)(sortedIndexLocal.GetPhyAddr()), (__ubuf__ T3 *)(xInputIndexLocal.GetPhyAddr()),
