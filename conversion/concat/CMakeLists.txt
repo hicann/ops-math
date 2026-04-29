@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2026 Huawei Technologies Co., Ltd.
+# Copyright (c) 2025 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -14,5 +14,4 @@ add_all_modules_sources(
         COMPUTE_UNIT ascend950 mc62cm12a
         TILING_DIR arch35 arch35
         DISABLE_IN_OPP TRUE
-        DEPENDENCIES concat_d
 )
