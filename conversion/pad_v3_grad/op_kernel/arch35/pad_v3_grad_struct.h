@@ -15,16 +15,23 @@
 #ifndef PAD_V3_GRAD_STRUCT_H_
 #define PAD_V3_GRAD_STRUCT_H_
 
-constexpr uint64_t PAD_MAX_DIMS_NUM = 8;
+constexpr uint64_t PAD_GRAD_MAX_DIMS_NUM = 8;
 
 struct PadV3GradACTilingData {
     uint8_t dimNum;
-    uint64_t inShape[PAD_MAX_DIMS_NUM];
-    uint64_t outShape[PAD_MAX_DIMS_NUM];
-    uint64_t inStride[PAD_MAX_DIMS_NUM];
-    uint64_t outStride[PAD_MAX_DIMS_NUM];
-    int64_t leftPad[PAD_MAX_DIMS_NUM];
-    int64_t rightPad[PAD_MAX_DIMS_NUM];
+    uint8_t ubAxis;
+    uint32_t ubFactor;
+    uint32_t ubPerCount;
+    uint32_t ubTotalCount;
+    uint32_t outTileSize; // 元素个数
+    uint32_t additionTileSize;
+
+    uint64_t inShape[PAD_GRAD_MAX_DIMS_NUM];
+    uint64_t outShape[PAD_GRAD_MAX_DIMS_NUM];
+    uint64_t inStride[PAD_GRAD_MAX_DIMS_NUM];
+    uint64_t outStride[PAD_GRAD_MAX_DIMS_NUM];
+    int64_t leftPad[PAD_GRAD_MAX_DIMS_NUM];
+    int64_t rightPad[PAD_GRAD_MAX_DIMS_NUM];
 };
 
 #endif // PAD_V3_GRAD_STRUCT_H_

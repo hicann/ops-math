@@ -47,6 +47,13 @@ struct PadV3GradCompileInfo {
     bool is_support_data_move_pad;
     std::string soc_version;
 };
+struct PadV3GradUbTileInfo {
+    uint8_t ubSplitAxis = 0;
+    uint32_t ubSplitFactor = 0;
+    int64_t ubTotalCnt = 0;
+    int64_t ubPerCoreCnt = 0;
+    uint32_t usedCoreNum = 0;
+};
 
 class PadV3GradACTiling {
 public:
@@ -57,6 +64,8 @@ public:
 private:
     template <typename T>
     std::string ToString(const T* value, size_t size);
+    uint64_t GetSizeOfBlockAlign(uint64_t inputSize, uint64_t alignBlockSize);
+
     ge::graphStatus Init();              // 获取coreNum,ubSize,vecSize,cacheLineSize,blockSize
     ge::graphStatus GetShapeAttrsInfo(); // 获取校验入参和shape信息
 
@@ -78,6 +87,14 @@ private:
     void DoTilingWithSIMTConstant();
     void FillsAndPrintTilingData();
 
+    void DoFindSplitAxisByInput(bool isBigLastDim);
+    bool CheckTilingInfoSatisfied(PadV3GradUbTileInfo& tilingInfo);
+    void GetOptimizeTiling(const PadV3GradUbTileInfo& oldTilingInfo, PadV3GradUbTileInfo& newTilingInfo);
+    void TilingInfoTune();
+    void TilingInfoTuneForNormal(uint64_t lastShapeSizeAlign);
+    void CalculateTilingKeyMirror();
+    void DoTilingWithSIMDMirror();
+
     ge::graphStatus GetShapesAndDtypes();
     ge::graphStatus GetPaddings();
     template <typename T>
@@ -91,11 +108,21 @@ private:
     uint64_t vectorSize_{256};
     uint32_t cacheLineSize_{256};
     PadV3GradACTilingData* tilingData_;
+
+    // tiling key
     uint64_t tilingKey_;
     uint8_t padMode_{TPL_MODE_REFLECT};
     bool isBigShape_{false};
+    bool isSimt_{true};
+    uint8_t cutMode_{TPL_SIMD_BIG};
 
     uint8_t dimNum_{1};
+    uint8_t ubAxis_{0};            // 切分维度
+    uint32_t ubFactor_{0};         // 每次处理的切分轴的个数
+    uint32_t ubPerCount_{0};       // 每个核处理的ubFactor_个数
+    uint32_t ubTotalCount_{0};     // 一共所需处理的ubFactor_个数
+    uint32_t outTileSize_{0};      // 对齐后处理的数据量
+    uint32_t additionTileSize_{0}; // 额外的计算空间
 
     bool paddingContiguous_{true};
     bool isEmptyTensor_{false};
@@ -103,8 +130,15 @@ private:
     padV3GradPaddingInfo paddings_;
     ge::DataType paramsDtype_;
     uint32_t dtypeBytes_{0};
+    uint64_t bufferSize_{4};
+
     uint64_t inShapeSize_{1};
     uint64_t outShapeSize_{1};
+    uint64_t outShapeSizeLastTwoDim_{1};
+
+    bool isPadAllPositive_{true};
+    bool isPadAllNegative_{true};
+    bool isUseSlice_{false};
 };
 } // namespace optiling
 #endif // OPS_BUILT_IN_OP_TILING_RUNTIME_PAD_TILING_H_

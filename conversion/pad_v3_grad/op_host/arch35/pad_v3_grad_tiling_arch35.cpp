@@ -30,6 +30,20 @@ static constexpr size_t PAIR = 2;
 static constexpr uint8_t MAX_DIM_NUM = 8;
 static constexpr uint8_t NON_CONSTANT_MAX_DIM_NUM = 5;
 static constexpr uint64_t EXPANSION_FACTOR = 2;
+static constexpr uint64_t HALF_FACTOR = 2;
+
+static constexpr uint64_t SIMT_BRANCH_SIZE = 48 * 1024;
+static constexpr uint64_t OUTSHAPE_LASTTWODIM_SIZE_BOUND = 256;
+static constexpr uint64_t UB_MAX_DATA_SIZE_PER_BUFFER = 64 * 1024;
+static constexpr int64_t MIN_PER_UB_SIZE = 4096;    // Bytes
+static constexpr double MIN_USED_CORES_RATIO = 0.8; // 80%;
+
+static constexpr uint8_t CONST2 = 2;
+static constexpr uint8_t CONST3 = 3;
+static constexpr uint8_t CONST4 = 4;
+static constexpr uint8_t CONST5 = 5;
+static constexpr uint8_t FP32_SIZE = 4;
+static constexpr uint8_t PAD_DIM_INDEX_FOURTH = 4;
 
 template <typename T>
 std::string PadV3GradACTiling::ToString(const T* value, size_t size)
@@ -42,16 +56,300 @@ std::string PadV3GradACTiling::ToString(const T* value, size_t size)
     return r;
 }
 
+uint64_t PadV3GradACTiling::GetSizeOfBlockAlign(uint64_t inputSize, uint64_t alignBlockSize)
+{
+    if (alignBlockSize == 0) {
+        return 0;
+    }
+    return (inputSize + alignBlockSize - 1) / alignBlockSize * alignBlockSize;
+}
+
+void PadV3GradACTiling::DoFindSplitAxisByInput(bool isBigLastDim)
+{
+    OP_LOGD(context_, "Start PadV3GradACTiling CalculateTilingKey DoFindSplitAxis.");
+    uint64_t dimSizeInUb = dtypeBytes_;
+    uint64_t dimSizeInLast4Axis = dimSizeInUb;
+    // 找到切分轴
+    for (int64_t i = dimNum_ - 1; i >= 0; i--) {
+        if (isBigLastDim && i == static_cast<int64_t>(dimNum_ - 1)) {
+            dimSizeInUb = GetSizeOfBlockAlign(dimSizeInUb * tilingData_->inShape[i], blockSize_);
+        } else {
+            dimSizeInUb *= tilingData_->inShape[i];
+        }
+        // 切分超过4根轴时只切最后4根轴，记录下最后4根轴的大小
+        if (i == dimNum_ - PAD_DIM_INDEX_FOURTH) {
+            dimSizeInLast4Axis = dimSizeInUb;
+        }
+        if (dimSizeInUb >= bufferSize_ * dtypeBytes_) {
+            ubAxis_ = i;
+            break;
+        }
+    }
+    // 维度超过4，满载后4个轴
+    if (dimNum_ - ubAxis_ > PAD_DIM_INDEX_FOURTH) {
+        ubAxis_ = dimNum_ - PAD_DIM_INDEX_FOURTH;
+        ubFactor_ = tilingData_->outShape[dimNum_ - PAD_DIM_INDEX_FOURTH];
+        dimSizeInUb = dimSizeInLast4Axis / tilingData_->inShape[dimNum_ - PAD_DIM_INDEX_FOURTH] *
+                      tilingData_->outShape[dimNum_ - PAD_DIM_INDEX_FOURTH];
+        outTileSize_ = GetSizeOfBlockAlign(dimSizeInUb, blockSize_);
+    } else if (dimSizeInUb > bufferSize_ * dtypeBytes_) {
+        dimSizeInUb /= tilingData_->inShape[ubAxis_];
+        ubFactor_ = dimSizeInUb == 0 ? bufferSize_ : bufferSize_ * dtypeBytes_ / dimSizeInUb;
+        if (ubFactor_ > tilingData_->outShape[ubAxis_]) {
+            ubFactor_ = tilingData_->outShape[ubAxis_];
+        }
+        dimSizeInUb *= ubFactor_;
+        outTileSize_ = GetSizeOfBlockAlign(dimSizeInUb, blockSize_);
+    } else {
+        ubFactor_ = tilingData_->outShape[ubAxis_];
+        dimSizeInUb = dimSizeInUb / tilingData_->inShape[ubAxis_] * tilingData_->outShape[ubAxis_];
+        outTileSize_ = GetSizeOfBlockAlign(dimSizeInUb, blockSize_);
+    }
+    outTileSize_ = outTileSize_ / dtypeBytes_;
+}
+
+bool PadV3GradACTiling::CheckTilingInfoSatisfied(PadV3GradUbTileInfo& tilingInfo)
+{
+    tilingInfo.ubTotalCnt = Ops::Base::CeilDiv(
+        tilingData_->outShape[tilingInfo.ubSplitAxis], static_cast<uint64_t>(tilingInfo.ubSplitFactor));
+    for (uint64_t i = 0; i < tilingInfo.ubSplitAxis; i++) {
+        tilingInfo.ubTotalCnt *= tilingData_->outShape[i];
+    }
+
+    tilingInfo.ubPerCoreCnt = 1;
+    tilingInfo.usedCoreNum = tilingInfo.ubTotalCnt;
+    if (tilingInfo.ubTotalCnt > coreNum_) {
+        tilingInfo.ubPerCoreCnt = Ops::Base::CeilDiv(tilingInfo.ubTotalCnt, static_cast<int64_t>(coreNum_));
+        tilingInfo.usedCoreNum = Ops::Base::CeilDiv(tilingInfo.ubTotalCnt, tilingInfo.ubPerCoreCnt);
+    }
+
+    if (static_cast<double>(tilingInfo.usedCoreNum) / static_cast<double>(coreNum_) >= MIN_USED_CORES_RATIO ||
+        tilingInfo.ubSplitFactor * tilingData_->inStride[tilingInfo.ubSplitAxis] * dtypeBytes_ <= MIN_PER_UB_SIZE) {
+        OP_LOGD(
+            context_, "ubSplitAxis:%d ubSplitFactor:%d is ok, usedCoreNum:%ld dtypeBytes_:%u", tilingInfo.ubSplitAxis,
+            tilingInfo.ubSplitFactor, tilingInfo.usedCoreNum, dtypeBytes_);
+        return true;
+    }
+
+    return false;
+}
+
+void PadV3GradACTiling::GetOptimizeTiling(const PadV3GradUbTileInfo& oldTilingInfo, PadV3GradUbTileInfo& newTilingInfo)
+{
+    int64_t outCount = 1;
+    for (uint8_t i = 0; i < oldTilingInfo.ubSplitAxis; i++) {
+        outCount *= tilingData_->outShape[i];
+    }
+
+    // ubPerCoreCnt 不发生变化为前提时，最多循环coreNum+dimNum_次就可以找到最优解, 这里仅做防死循环保护
+    uint32_t maxLoop = coreNum_ + dimNum_;
+    uint32_t loops = 0;
+    bool finded = false;
+    for (uint8_t iDim = oldTilingInfo.ubSplitAxis; iDim < dimNum_; iDim++) {
+        if (iDim != oldTilingInfo.ubSplitAxis) {
+            outCount *= tilingData_->outShape[iDim - 1];
+        }
+
+        int64_t iDimFactor =
+            (iDim == oldTilingInfo.ubSplitAxis) ? oldTilingInfo.ubSplitFactor : tilingData_->outShape[iDim];
+        for (int64_t factor = iDimFactor; factor > 0;) {
+            loops++;
+            if (loops > maxLoop) {
+                finded = true;
+                OP_LOGD(context_, "loops:%u is bigger than maxLoop:%u", loops, maxLoop);
+                break;
+            }
+
+            // iDimOuter 每次循环会增加1,最多增加 coreNum_ 后，tmpPerCount会增加1
+            int64_t iDimOuter = Ops::Base::CeilDiv(tilingData_->outShape[iDim], static_cast<uint64_t>(factor));
+            int64_t tmpTotalCount = iDimOuter * outCount;
+            int64_t tmpPerCount =
+                tmpTotalCount > coreNum_ ? Ops::Base::CeilDiv(tmpTotalCount, static_cast<int64_t>(coreNum_)) : 1;
+            int64_t tmpCoreNum =
+                tmpTotalCount > coreNum_ ? Ops::Base::CeilDiv(tmpTotalCount, tmpPerCount) : tmpTotalCount;
+            int64_t tmpFactor =
+                Ops::Base::CeilDiv(tilingData_->outShape[iDim], static_cast<uint64_t>(iDimOuter)); // 切分更均匀
+
+            if (oldTilingInfo.ubPerCoreCnt != tmpPerCount) {
+                OP_LOGD(
+                    context_, "iDim:%u factor:%ld tmpPerCount:%ld not equal ubPerCoreCnt:%ld", iDim, factor,
+                    tmpPerCount, oldTilingInfo.ubPerCoreCnt);
+                finded = true;
+                break;
+            }
+
+            if (factor * tilingData_->inStride[iDim] * dtypeBytes_ < MIN_PER_UB_SIZE ||
+                tmpFactor * tilingData_->inStride[iDim] * dtypeBytes_ < MIN_PER_UB_SIZE) {
+                OP_LOGD(context_, "iDim:%u factor:%ld tmpFactor:%ld in ubSize is too small", iDim, factor, tmpFactor);
+                finded = true;
+                break;
+            }
+
+            newTilingInfo.ubSplitAxis = iDim;
+            newTilingInfo.ubSplitFactor = tmpFactor;
+            newTilingInfo.ubTotalCnt = tmpTotalCount;
+            newTilingInfo.ubPerCoreCnt = tmpPerCount;
+            newTilingInfo.usedCoreNum = tmpCoreNum;
+
+            double usedRate = static_cast<double>(tmpCoreNum) / static_cast<double>(coreNum_);
+            OP_LOGD(
+                context_, "current iDim:%u factor:%ld iDimOuter:%ld tmpFactor:%ld tmpCoreNum:%ld usedRate:%f", iDim,
+                factor, iDimOuter, tmpFactor, tmpCoreNum, usedRate);
+            if (usedRate >= MIN_USED_CORES_RATIO) {
+                finded = true;
+                break;
+            }
+            factor = tmpFactor - 1;
+        }
+
+        OP_LOGD(
+            context_, "iDim:%u ubSplitAxis:%u ubSplitFactor:%u loops:%u finded:%d", iDim, newTilingInfo.ubSplitAxis,
+            newTilingInfo.ubSplitFactor, loops, finded);
+
+        if (finded) {
+            break;
+        }
+    }
+    // 如果切分轴变化，不是尾轴，且该轴满载，那还是切前一个轴且factor=1
+    if (newTilingInfo.ubSplitAxis != dimNum_ - 1 && newTilingInfo.ubSplitAxis > oldTilingInfo.ubSplitAxis &&
+        newTilingInfo.ubSplitFactor >= tilingData_->outShape[newTilingInfo.ubSplitAxis]) {
+        newTilingInfo.ubSplitAxis = newTilingInfo.ubSplitAxis - 1;
+        newTilingInfo.ubSplitFactor = 1;
+        OP_LOGD(
+            context_, "Back to last axis, ubSplitAxis:%u ubSplitFactor:%u", newTilingInfo.ubSplitAxis,
+            newTilingInfo.ubSplitFactor);
+    }
+}
+
+void PadV3GradACTiling::TilingInfoTuneForNormal(uint64_t lastShapeSizeAlign)
+{
+    TilingInfoTune();
+    if (ubAxis_ == dimNum_ - 1) {
+        cutMode_ = TPL_SIMD_BIG;
+        additionTileSize_ = (padMode_ == TPL_MODE_SYMMETRIC || padMode_ == TPL_MODE_REFLECT) ?
+                                EXPANSION_FACTOR * vectorSize_ :
+                                vectorSize_;
+        bufferSize_ = lastShapeSizeAlign;
+        outTileSize_ = bufferSize_;
+    }
+}
+
+void PadV3GradACTiling::TilingInfoTune()
+{
+    PadV3GradUbTileInfo oldTilingInfo;
+    oldTilingInfo.ubSplitAxis = ubAxis_;
+    oldTilingInfo.ubSplitFactor = ubFactor_;
+    if (CheckTilingInfoSatisfied(oldTilingInfo)) {
+        ubTotalCount_ = oldTilingInfo.ubTotalCnt;
+        ubPerCount_ = oldTilingInfo.ubPerCoreCnt;
+        coreNum_ = oldTilingInfo.usedCoreNum;
+        return;
+    }
+
+    OP_LOGI(
+        context_, "before optimize ubSplitAxis:%u ubSplitFactor:%u ubTotalCnt:%ld ubPerCoreCnt:%ld usedCoreNum:%u",
+        oldTilingInfo.ubSplitAxis, oldTilingInfo.ubSplitFactor, oldTilingInfo.ubTotalCnt, oldTilingInfo.ubPerCoreCnt,
+        oldTilingInfo.usedCoreNum);
+
+    PadV3GradUbTileInfo newTilingInfo = oldTilingInfo;
+    GetOptimizeTiling(oldTilingInfo, newTilingInfo);
+
+    OP_LOGI(
+        context_, "after optimize ubSplitAxis:%u ubSplitFactor:%u ubTotalCnt:%ld ubPerCoreCnt:%ld usedCoreNum:%u",
+        newTilingInfo.ubSplitAxis, newTilingInfo.ubSplitFactor, newTilingInfo.ubTotalCnt, newTilingInfo.ubPerCoreCnt,
+        newTilingInfo.usedCoreNum);
+
+    ubAxis_ = newTilingInfo.ubSplitAxis;
+    ubFactor_ = newTilingInfo.ubSplitFactor;
+    ubTotalCount_ = newTilingInfo.ubTotalCnt;
+    ubPerCount_ = newTilingInfo.ubPerCoreCnt;
+    coreNum_ = newTilingInfo.usedCoreNum;
+}
+
+void PadV3GradACTiling::CalculateTilingKeyMirror()
+{
+    OP_LOGD(context_, "Start PadV3GradACTiling CalculateTilingKeyMirror.");
+    if (inShapeSize_ <= SIMT_BRANCH_SIZE || dimNum_ > CONST5) {
+        DoTilingWithSIMTMirror();
+        return;
+    }
+    uint64_t alignNum = vectorSize_ / dtypeBytes_;
+    uint64_t lastShapeSizeAlign = GetSizeOfBlockAlign(tilingData_->inShape[dimNum_ - 1], alignNum);
+
+    bufferSize_ = GetSizeOfBlockAlign(ubSize_ / (CONST2 * dtypeBytes_ + CONST4 * FP32_SIZE) - alignNum, alignNum);
+    if (bufferSize_ > UB_MAX_DATA_SIZE_PER_BUFFER / dtypeBytes_) {
+        bufferSize_ = UB_MAX_DATA_SIZE_PER_BUFFER / dtypeBytes_;
+    }
+    if (lastShapeSizeAlign > bufferSize_) {
+        cutMode_ = TPL_SIMD_BIG;
+        ubAxis_ = dimNum_ - 1;
+        ubFactor_ = bufferSize_;
+        outTileSize_ = bufferSize_;
+        return TilingInfoTune();
+    }
+    // 不切w，但是倒数第二根轴只能切1，此时也走切W分支
+    // 不切w, 但是只有一根轴 & w > 128B，也走切w分支
+    if (lastShapeSizeAlign * EXPANSION_FACTOR > bufferSize_ ||
+        (tilingData_->inShape[dimNum_ - 1] * dtypeBytes_ > vectorSize_ / HALF_FACTOR && dimNum_ == 1)) {
+        cutMode_ = TPL_SIMD_BIG;
+        ubAxis_ = dimNum_ - 1;
+        ubFactor_ = tilingData_->inShape[dimNum_ - 1];
+        outTileSize_ = bufferSize_;
+        return TilingInfoTune();
+    }
+    if (tilingData_->inShape[dimNum_ - 1] * dtypeBytes_ > vectorSize_ / HALF_FACTOR) {
+        additionTileSize_ = GetSizeOfBlockAlign(tilingData_->inShape[dimNum_ - 1] * dtypeBytes_, blockSize_);
+        if (dtypeBytes_ == 1) {
+            additionTileSize_ =
+                GetSizeOfBlockAlign(tilingData_->inShape[dimNum_ - 1] * dtypeBytes_ * EXPANSION_FACTOR, blockSize_);
+        }
+        bufferSize_ = GetSizeOfBlockAlign(
+            (ubSize_ - additionTileSize_) / (CONST4 * dtypeBytes_ + FP32_SIZE) - alignNum, alignNum);
+        DoFindSplitAxisByInput(true);
+        cutMode_ = TPL_SIMD_NORMAL;
+
+        if (lastShapeSizeAlign * EXPANSION_FACTOR > outTileSize_) {
+            cutMode_ = TPL_SIMD_BIG;
+            bufferSize_ =
+                GetSizeOfBlockAlign(ubSize_ / (CONST2 * dtypeBytes_ + CONST4 * FP32_SIZE) - alignNum, alignNum);
+            ubAxis_ = dimNum_ - 1;
+            ubFactor_ = tilingData_->inShape[dimNum_ - 1];
+            outTileSize_ = bufferSize_;
+            return TilingInfoTune();
+        } else {
+            return TilingInfoTuneForNormal(lastShapeSizeAlign);
+        }
+    } else {
+        bufferSize_ = GetSizeOfBlockAlign(
+            (ubSize_ - vectorSize_ * CONST3 * CONST2 - blockSize_ * CONST2) /
+                    (CONST2 * dtypeBytes_ + CONST4 * FP32_SIZE) -
+                alignNum,
+            alignNum);
+        DoFindSplitAxisByInput(false);
+        cutMode_ = TPL_SIMD_SMALL;
+
+        additionTileSize_ = vectorSize_;
+        TilingInfoTuneForNormal(lastShapeSizeAlign);
+    }
+}
+
 void PadV3GradACTiling::DoTilingWithSIMTMirror()
 {
     isBigShape_ = false;
+    isSimt_ = true;
     if (inShapeSize_ * EXPANSION_FACTOR + 1 > INT32_MAX || outShapeSize_ * EXPANSION_FACTOR + 1 > INT32_MAX) {
         isBigShape_ = true;
     }
 }
+void PadV3GradACTiling::DoTilingWithSIMDMirror()
+{
+    isSimt_ = false;
+    CalculateTilingKeyMirror();
+}
 void PadV3GradACTiling::DoTilingWithSIMTEdge()
 {
     isBigShape_ = false;
+    isSimt_ = true;
     if (inShapeSize_ > INT32_MAX || outShapeSize_ > INT32_MAX) {
         isBigShape_ = true;
     }
@@ -59,6 +357,7 @@ void PadV3GradACTiling::DoTilingWithSIMTEdge()
 void PadV3GradACTiling::DoTilingWithSIMTCircular()
 {
     isBigShape_ = false;
+    isSimt_ = true;
     if (inShapeSize_ > INT32_MAX || outShapeSize_ > INT32_MAX) {
         isBigShape_ = true;
     }
@@ -66,6 +365,7 @@ void PadV3GradACTiling::DoTilingWithSIMTCircular()
 void PadV3GradACTiling::DoTilingWithSIMTConstant()
 {
     isBigShape_ = false;
+    isSimt_ = true;
     if (inShapeSize_ > INT32_MAX || outShapeSize_ > INT32_MAX) {
         isBigShape_ = true;
     }
@@ -74,15 +374,22 @@ void PadV3GradACTiling::DoTilingWithSIMTConstant()
 void PadV3GradACTiling::FillsAndPrintTilingData()
 {
     tilingData_->dimNum = dimNum_;
+    tilingData_->ubAxis = ubAxis_;
+    tilingData_->ubFactor = ubFactor_;
+    tilingData_->ubPerCount = ubPerCount_;
+    tilingData_->ubTotalCount = ubTotalCount_;
+    tilingData_->outTileSize = outTileSize_;
+    tilingData_->additionTileSize = additionTileSize_;
     OP_LOGI(
         context_,
         "tilingData is dimNum = %u, inShape: %s, outShape: %s, inStride: %s, outStride: %s, leftPad: %s, rightPad: %s, "
+        "ubAxis_: %u, ubFactor_: %u, ubPerCount_: %u, ubTotalCount_: %u, outTileSize_: %u, additionTileSize_: %u, "
         "tilingKey: %lu, coreNum is %u dtype:%s",
         tilingData_->dimNum, ToString(tilingData_->inShape, dimNum_).c_str(),
         ToString(tilingData_->outShape, dimNum_).c_str(), ToString(tilingData_->inStride, dimNum_).c_str(),
         ToString(tilingData_->outStride, dimNum_).c_str(), ToString(tilingData_->leftPad, dimNum_).c_str(),
-        ToString(tilingData_->rightPad, dimNum_).c_str(), tilingKey_, coreNum_,
-        Ops::Base::ToString(paramsDtype_).c_str());
+        ToString(tilingData_->rightPad, dimNum_).c_str(), ubAxis_, ubFactor_, ubPerCount_, ubTotalCount_, outTileSize_,
+        additionTileSize_, tilingKey_, coreNum_, Ops::Base::ToString(paramsDtype_).c_str());
 }
 
 void PadV3GradACTiling::EmptyTensorCollapse()
@@ -101,6 +408,7 @@ ge::graphStatus PadV3GradACTiling::ComputeAfterPaddingsAndStrides()
 {
     inShapeSize_ = 1UL;
     outShapeSize_ = 1UL;
+
     for (int64_t i = dimNum_ - 1; i >= 0; --i) {
         // 校验是否会出现pad为负且比inshape大的情况
 
@@ -119,6 +427,13 @@ ge::graphStatus PadV3GradACTiling::ComputeAfterPaddingsAndStrides()
         // compute dst stride
         tilingData_->outStride[i] = outShapeSize_;
         outShapeSize_ *= tilingData_->outShape[i];
+    }
+
+    outShapeSizeLastTwoDim_ = 1UL;
+    if (dimNum_ >= 2){
+        outShapeSizeLastTwoDim_ = tilingData_->outShape[dimNum_ - 2] * tilingData_->outShape[dimNum_ - 1] * FP32_SIZE;
+    }else{
+        outShapeSizeLastTwoDim_ = tilingData_->outShape[dimNum_ - 1] * FP32_SIZE;
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -181,6 +496,13 @@ ge::graphStatus PadV3GradACTiling::DimensionCollapseMode()
             fastDim++;
             dimNum_--;
             continue;
+        }
+        if (padFront > 0 || padBack > 0) {
+            isPadAllNegative_ = false;
+        }
+
+        if (padFront < 0 || padBack < 0) {
+            isPadAllPositive_ = false;
         }
 
         uint64_t collapsedShape = tilingData_->inShape[fastDim];
@@ -274,8 +596,15 @@ ge::graphStatus PadV3GradACTiling::DoTilingModeMirror()
         OP_LOGE(context_, "PadV3GradACTiling Mirror ComputeAfterPaddingsAndStrides error."), return ge::GRAPH_FAILED);
     if (isEmptyTensor_) {
         EmptyTensorCollapse();
+        DoTilingWithSIMTMirror();
+    } else if (isPadAllPositive_ && outShapeSizeLastTwoDim_ >= OUTSHAPE_LASTTWODIM_SIZE_BOUND) {
+        // simd
+        DoTilingWithSIMDMirror();
+    } else if (isPadAllNegative_) {
+        DoTilingWithSIMTMirror();
+    } else {
+        DoTilingWithSIMTMirror();
     }
-    DoTilingWithSIMTMirror();
     return ge::GRAPH_SUCCESS;
 }
 ge::graphStatus PadV3GradACTiling::DoTilingModeCircular()
@@ -385,6 +714,7 @@ ge::graphStatus PadV3GradACTiling::GetShapesAndDtypes()
     OP_CHECK_NULL_WITH_CONTEXT(context_, inputTensor);
     paramsDtype_ = inputTensor->GetDataType();
     dtypeBytes_ = GetSizeByDataType(paramsDtype_);
+    // dtypeBytes_ = FP32_SIZE; // fp16/bfp16都需要转化为fp32计算
     return ge::GRAPH_SUCCESS;
 }
 
@@ -475,8 +805,10 @@ ge::graphStatus PadV3GradACTiling::DoTiling()
             return ge::GRAPH_FAILED);
     }
 
-    tilingKey_ = GET_TPL_TILING_KEY(padMode_, isBigShape_);
-    OP_LOGI(context_->GetNodeName(), "tilingKey is %lu, modeName %d, isBigShape %d", tilingKey_, padMode_, isBigShape_);
+    tilingKey_ = GET_TPL_TILING_KEY(padMode_, isBigShape_, isSimt_, cutMode_);
+    OP_LOGI(
+        context_->GetNodeName(), "tilingKey is %lu, modeName %d, isBigShape %d, isSimt_ %d, cutMode_ %d", tilingKey_,
+        padMode_, isBigShape_, isSimt_, cutMode_);
 
     FillsAndPrintTilingData();
     context_->SetBlockDim(coreNum_);

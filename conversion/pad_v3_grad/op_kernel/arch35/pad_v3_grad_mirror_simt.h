@@ -397,17 +397,17 @@ __aicore__ inline void PadV3GradMirrorSimt<T, KEY>::Process()
         return;
     }
     // 快速除参数
-    __ubuf__ GmOffsetType magics[PAD_MAX_DIMS_NUM];
-    __ubuf__ GmOffsetType shifts[PAD_MAX_DIMS_NUM];
+    __ubuf__ GmOffsetType magics[PAD_GRAD_MAX_DIMS_NUM];
+    __ubuf__ GmOffsetType shifts[PAD_GRAD_MAX_DIMS_NUM];
     // tiling data
-    __ubuf__ U inShapes[PAD_MAX_DIMS_NUM];
-    __ubuf__ U outShapes[PAD_MAX_DIMS_NUM];
-    __ubuf__ U inStrides[PAD_MAX_DIMS_NUM];
-    __ubuf__ U outStrides[PAD_MAX_DIMS_NUM];
-    __ubuf__ U leftPads[PAD_MAX_DIMS_NUM];
-    __ubuf__ U rightPads[PAD_MAX_DIMS_NUM];
+    __ubuf__ U inShapes[PAD_GRAD_MAX_DIMS_NUM];
+    __ubuf__ U outShapes[PAD_GRAD_MAX_DIMS_NUM];
+    __ubuf__ U inStrides[PAD_GRAD_MAX_DIMS_NUM];
+    __ubuf__ U outStrides[PAD_GRAD_MAX_DIMS_NUM];
+    __ubuf__ U leftPads[PAD_GRAD_MAX_DIMS_NUM];
+    __ubuf__ U rightPads[PAD_GRAD_MAX_DIMS_NUM];
     // 裁剪边界
-    __ubuf__ U cutBounds[PAD_MAX_DIMS_NUM];
+    __ubuf__ U cutBounds[PAD_GRAD_MAX_DIMS_NUM];
 
     GmOffsetType m = 0, s = 0;
     for (int i = 0; i < mTD_->dimNum; i++) {

@@ -373,10 +373,10 @@ __aicore__ inline void PadV3GradConstantSimt<T>::Process()
         return;
     }
 
-    __ubuf__ U inShapes[PAD_MAX_DIMS_NUM];
-    __ubuf__ U inStrides[PAD_MAX_DIMS_NUM];
-    __ubuf__ U outStrides[PAD_MAX_DIMS_NUM];
-    __ubuf__ S leftPads[PAD_MAX_DIMS_NUM];
+    __ubuf__ U inShapes[PAD_GRAD_MAX_DIMS_NUM];
+    __ubuf__ U inStrides[PAD_GRAD_MAX_DIMS_NUM];
+    __ubuf__ U outStrides[PAD_GRAD_MAX_DIMS_NUM];
+    __ubuf__ S leftPads[PAD_GRAD_MAX_DIMS_NUM];
     for (uint32_t i = 0; i < mDimNum; ++i) {
         inShapes[i] = static_cast<U>(mTD_->inShape[i]);
         inStrides[i] = static_cast<U>(mTD_->inStride[i]);
