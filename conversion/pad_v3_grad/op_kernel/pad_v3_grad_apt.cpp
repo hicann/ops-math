@@ -37,13 +37,14 @@ __aicore__ inline void PadV3GradSimt(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM
     }
 }
 
-template <uint8_t modeName, uint8_t cutMode>
+template <uint8_t modeName, uint8_t cutMode, bool isBigShape>
 __aicore__ inline void PadV3GradMirror(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     if constexpr (cutMode == TPL_SIMD_BIG) {
         PadV3Grad::LaunchKernelPadV3GradMirrorHugeWidth<DTYPE_X, modeName>(x, y, tiling);
     } else if constexpr (cutMode == TPL_SIMD_NORMAL) {
-        PadV3Grad::LaunchMirrorKernelNormal<DTYPE_X, modeName>(x, y, tiling);
+        // PadV3Grad::LaunchMirrorKernelNormal<DTYPE_X, modeName>(x, y, tiling);
+        PadV3Grad::LaunchMirrorKernelSIMT<DTYPE_X, isBigShape, modeName>(x, y, tiling);
     } else if constexpr (cutMode == TPL_SIMD_SMALL) {
         PadV3Grad::LaunchMirrorKernelGather<DTYPE_X, true, modeName>(x, y, tiling);
     }
@@ -57,6 +58,6 @@ __global__ __aicore__ void pad_v3_grad(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, G
     if constexpr (isSimt) {
         PadV3GradSimt<modeName, isBigShape>(x, y, workspace, tiling);
     } else if constexpr (modeName == TPL_MODE_REFLECT || modeName == TPL_MODE_SYMMETRIC) {
-        PadV3GradMirror<modeName, cutMode>(x, y, workspace, tiling);
+        PadV3GradMirror<modeName, cutMode, isBigShape>(x, y, workspace, tiling);
     }
 }

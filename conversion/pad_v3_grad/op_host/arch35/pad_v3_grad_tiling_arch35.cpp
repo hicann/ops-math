@@ -599,6 +599,10 @@ ge::graphStatus PadV3GradACTiling::DoTilingModeMirror()
         DoTilingWithSIMTMirror();
     } else if (isPadAllPositive_ && outShapeSizeLastTwoDim_ >= OUTSHAPE_LASTTWODIM_SIZE_BOUND) {
         // simd
+        if (inShapeSize_ * EXPANSION_FACTOR + 1 > INT32_MAX || outShapeSize_ * EXPANSION_FACTOR + 1 > INT32_MAX) {
+            // simd normal 目前走simt实现，需要isBigShape_
+            isBigShape_ = true;
+        }
         DoTilingWithSIMDMirror();
     } else if (isPadAllNegative_) {
         DoTilingWithSIMTMirror();
