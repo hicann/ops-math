@@ -131,6 +131,13 @@ std::unique_ptr<Graph> RandomUniformFusionPass::Replacement(const std::unique_pt
     TensorDesc offsetDesc(Shape({1}), FORMAT_ND, DT_INT64);
 
     auto rOffset = replaceGraphBuilder.CreateVariable(1, varName.c_str());
+    auto varNode = rOffset.GetProducer();
+    if (varNode != nullptr) {
+        varNode->UpdateOutputDesc(0, offsetDesc);
+        int64_t initValue = 0;
+        Tensor initTensor(offsetDesc, reinterpret_cast<uint8_t*>(&initValue), sizeof(int64_t));
+        varNode->SetAttr("init_value", initTensor);
+    }
 
     auto v2Output = es::RandomUniformV2(rShape, rOffset, dtypeInt, seed, seed2);
     GNode v2NodePtr = *v2Output.y.GetProducer();
@@ -144,7 +151,6 @@ std::unique_ptr<Graph> RandomUniformFusionPass::Replacement(const std::unique_pt
     v2NodePtr.UpdateOutputDesc(0, outputYDesc);
     v2NodePtr.UpdateOutputDesc(1, offsetDesc);
 
-    es::EsGraphBuilder::SetOutput(v2Output.y, 0);
     GraphUniqPtr replaceGraph = replaceGraphBuilder.BuildAndReset({v2Output.y});
 
     return replaceGraph;

@@ -157,6 +157,13 @@ std::unique_ptr<Graph> TruncatedNormalFusionPass::Replacement(const std::unique_
     TensorDesc offsetDesc(Shape({1}), FORMAT_ND, DT_INT64);
 
     auto rOffset = replaceGraphBuilder.CreateVariable(1, varName.c_str());
+    auto varNodePtr = rOffset.GetProducer();
+    if (varNodePtr != nullptr) {
+        varNodePtr->UpdateOutputDesc(0, offsetDesc);
+        int64_t initValue = 0;
+        Tensor initTensor(offsetDesc, reinterpret_cast<uint8_t*>(&initValue), sizeof(int64_t));
+        varNodePtr->SetAttr("init_value", initTensor);
+    }
 
     auto v2Output = es::TruncatedNormalV2(rShape, rOffset, seed, seed2, dtypeInt);
     GNode v2NodePtr = *v2Output.y.GetProducer();
@@ -170,7 +177,6 @@ std::unique_ptr<Graph> TruncatedNormalFusionPass::Replacement(const std::unique_
     v2NodePtr.UpdateOutputDesc(0, outputYDesc);
     v2NodePtr.UpdateOutputDesc(1, offsetDesc);
 
-    es::EsGraphBuilder::SetOutput(v2Output.y, 0);
     GraphUniqPtr replaceGraph = replaceGraphBuilder.BuildAndReset({v2Output.y});
     return replaceGraph;
 }
