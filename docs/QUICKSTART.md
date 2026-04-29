@@ -140,8 +140,10 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
     先回到项目根目录，编译命令如下：
 
     ```bash
-    bash build.sh --pkg --soc=ascend910b --ops=add_example -j16
+    bash build.sh --pkg --soc=${soc_version} --ops=add_example -j16
     ```
+
+    > **说明**：`${soc_version}` 请根据实际芯片型号填写，取值方式同[编译AddExample算子](#2-编译addexample算子)中的说明。
 
 2. **重新安装**：
 
