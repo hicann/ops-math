@@ -67,21 +67,21 @@ $$
     <tr>
       <td>num_rows</td>
       <td>输入</td>
-      <td>输出矩阵的行数，即公式中的`num_rows`。标量输入，取值为`-1`时表示由`k`和`x`自动推导。</td>
+      <td>输出矩阵的行数，即公式中的`num_rows`。取值为`-1`时表示由`k`和`x`自动推导。</td>
       <td>INT32</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>num_cols</td>
       <td>输入</td>
-      <td>输出矩阵的列数，即公式中的`num_cols`。标量输入，取值为`-1`时表示由`k`和`x`自动推导。</td>
+      <td>输出矩阵的列数，即公式中的`num_cols`。取值为`-1`时表示由`k`和`x`自动推导。</td>
       <td>INT32</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>padding_value</td>
       <td>输入</td>
-      <td>公式中的`padding_value`。用于填充不在指定对角线带内的位置，必须为标量，数据类型与`x`一致。</td>
+      <td>公式中的`padding_value`。用于填充不在指定对角线带内的位置，数据类型与`x`一致。</td>
       <td>DOUBLE、FLOAT、FLOAT16、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128、BOOL</td>
       <td>ND</td>
     </tr>
@@ -95,7 +95,7 @@ $$
     <tr>
       <td>y</td>
       <td>输出</td>
-      <td>公式中的`y`，表示生成后的矩阵张量，数据类型与`x`一致。</td>
+      <td>公式中的`y`，表示生成后的矩阵张量，数据类型与`x`一致。当`k`为单个元素或`k[0] == k[1]`时，`y`的秩为`x`的秩加1；否则`y`的秩与`x`一致。</td>
       <td>DOUBLE、FLOAT、FLOAT16、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128、BOOL</td>
       <td>ND</td>
     </tr>
@@ -105,7 +105,6 @@ $$
 
 - `x`的秩至少为1。
 - `k`的元素个数只能为1或2；当`k`为2个元素时，必须满足`k[0] <= k[1]`。
-- `num_rows`和`num_cols`必须为标量Tensor。
 - 当`k`表示对角线带时，`x`的倒数第二维长度必须等于$k_u - k_l + 1$，最后一维长度必须等于$\mathrm{max\_diag\_len}$。
 
 ## 调用说明

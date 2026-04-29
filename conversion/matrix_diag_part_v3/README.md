@@ -77,7 +77,7 @@
     <tr>
       <td>padding_value</td>
       <td>输入</td>
-      <td>公式中的`padding_value`。用于补齐较短对角线的无效位置，必须为标量Tensor，数据类型与`x`一致。</td>
+      <td>公式中的`padding_value`。用于补齐较短对角线的无效位置，数据类型与`x`一致。</td>
       <td>DOUBLE、FLOAT、FLOAT16、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
