@@ -18,7 +18,7 @@
 - 接口功能：replication_pad1d的反向传播，前向计算参考[[aclnnReplicationPad1d](../../pad_v3/docs/aclnnReplicationPad1d.md)]。
 - 示例：
 
-  ```
+  ```text
   输入gradOutput([[1, 1, 1, 1, 1]])
   self([[0, 1, 2]])
   padding([1, 1])

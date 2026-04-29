@@ -7,7 +7,8 @@
 **AsinhV2** 是一个 Ascend C 自定义算子，对输入 tensor 的每个元素执行反双曲正弦（asinh）函数运算。
 
 **数学公式**：
-```
+
+```bash
 y = asinh(x) = ln(x + sqrt(x^2 + 1))
 ```
 
@@ -203,6 +204,7 @@ int main() {
 | [1048576] | float16 | 双缓冲 (TK_1) | ~120 ms | ~8.7G elem/s |
 
 **说明**：
+
 - 上述性能数据为参考值，实际性能受数据分布、内存带宽、核频率等因素影响
 - float16 吞吐量高于 float32，因为数据宽度更窄
 - 双缓冲模式支持 > 1024 元素的数据处理，自动启用流水线优化
@@ -250,6 +252,7 @@ int main() {
 ### Q1: int8/int16/int32 等整型为什么转为 float32 而不是直接计算？
 
 **A**：asinh 函数本质上是浮点计算，整型无法直接使用 AscendC::Asinh API。我们在 op_api 层进行 Cast 转换，好处是：
+
 - 避免 Kernel TilingKey 数量爆炸（18 vs 4）
 - 复用现有优化的 Cast 实现
 - 符合 PyTorch/CANN 生态惯例
@@ -261,6 +264,7 @@ int main() {
 ### Q3: TK_0、TK_1、TK_2、TK_3 是什么含义？
 
 **A**：TilingKey 是 Tiling 阶段选择 Kernel 模板的标识：
+
 - **TK_0**：float16 + 单缓冲（BUFFER_MODE=0），适合 ≤1024 元素
 - **TK_1**：float16 + 双缓冲（BUFFER_MODE=1），适合 >1024 元素
 - **TK_2**：float32 + 单缓冲（BUFFER_MODE=0），适合 ≤1024 元素
@@ -275,6 +279,7 @@ Tiling 阶段自动根据输入形状和数据类型选择合适的 TK。
 ### Q5: 如何查看算子运行的 kernel 日志？
 
 **A**：
+
 ```bash
 # 使能 Ascend 日志打屏
 export ASCEND_SLOG_PRINT_TO_STDOUT=1
@@ -290,6 +295,7 @@ export ASCEND_SLOG_PRINT_TO_STDOUT=1
 ### Q7: 如何处理 NaN 或 Inf 输入？
 
 **A**：
+
 - **NaN 输入**→ NaN 输出（与 PyTorch torch.asinh 行为一致）
 - **+Inf 输入**→ +Inf 输出
 - **-Inf 输入**→ -Inf 输出

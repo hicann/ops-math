@@ -35,7 +35,6 @@
      $$
      selfTemp_{i} = self_{1} + self_{2} + self_{3} + ...... + self_{i}
      $$
-
   6. 生成（N4,N4）类型为bool的三角矩阵B，上三角为True，下三角为False，对角线为False。
   7. 用-inf填充selfTemp里面与矩阵B中值为True的位置相对应的元素。
 

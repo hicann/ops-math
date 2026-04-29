@@ -15,7 +15,7 @@
 
 ## 目录结构
 
-```
+```text
 ops/complex_v3/
 ├── CMakeLists.txt                  # 根构建配置
 ├── build.sh                        # 一键编译脚本
@@ -96,6 +96,7 @@ bash run.sh --mode=real
 ```
 
 支持两种模式：
+
 - `--mode=mock`：CPU 模拟执行（无需 NPU）
 - `--mode=real`：NPU 真实执行（需安装算子包）
 

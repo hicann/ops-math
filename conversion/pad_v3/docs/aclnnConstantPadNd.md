@@ -235,8 +235,8 @@
  	      <td>当self的数据类型为fp8/fp4时，pad中元素不能为负数。</td>
  	    </tr>
       <tr>
- 	      <td>当self的数据类型为HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0时，value不为0。</td>
- 	    </tr>
+      <td>当self的数据类型为HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0时，value不为0。</td>
+      </tr>
     </tbody>
     </table>
 

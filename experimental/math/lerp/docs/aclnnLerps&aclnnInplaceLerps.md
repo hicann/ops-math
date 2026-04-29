@@ -464,7 +464,6 @@ int main() {
     // 创建weight aclScalar
     weight = aclCreateScalar(&weightValue, aclDataType::ACL_FLOAT);
     CHECK_RET(weight != nullptr, return ret);
-	
     // 3. 调用CANN算子库API
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;

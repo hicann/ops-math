@@ -18,7 +18,7 @@
 - 接口功能：circular_pad2d的反向传播，前向计算参考[[aclnnCircularPad2d](../../circular_pad/docs/aclnnCircularPad2d.md)]。
 - 示例：
 
-  ```
+  ```text
   输入gradOutput([[[1, 1, 1, 1, 1, 1, 1]]])
   self([[[1, 1, 1, 1, 1]]])
   padding([1, 1, 0, 0])

@@ -28,7 +28,7 @@
 
   - tensors（aclTensorList*, 计算输入）：需要计算的输入tensors列表，Device侧的aclTensorList。数据类型支持FLOAT16、FLOAT、INT8、INT32、UINT8，需要与out数据类型相同。tensors中各tensor的shape需要与out满足[broadcast关系](../../../../docs/zh/context/broadcast关系.md)，维度不大于8。支持[非连续的Tensor](../../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../../docs/zh/context/数据格式.md)支持ND。
 
-  - out（aclTensor*, 计算输出）：输出tensor，Device侧的aclTensor。数据类型支持FLOAT、FLOAT16、INT8、INT32、UINT8。需要与tensors数据类型相同。shape需要与tensors中各tensor的shape满足[broadcast关系](../../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../../docs/zh/context/数据格式.md)支持ND。
+  - out（aclTensor*, 计算输出）：输出tensor，Device侧的aclTensor。数据类型支持FLOAT、FLOAT16、INT8、INT32、UINT8。需要与tensors数据类型相同。shape需要与tensors中各tensor的shape满足[broadcast关系](../../../../docs/zh/context/broadcast关系.md)。支持[非连续的Tensor](../../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../../docs/zh/context/数据格式.md)支持ND。
 
   - workspaceSize（uint64_t*, 出参）：返回需要在Device侧申请的workspace大小。
 
@@ -38,7 +38,7 @@
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
-  ```
+  ```text
   第一段接口完成入参校验，出现如下场景时报错：
   返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的tensors或out是空指针时。
   返回161002（ACLNN_ERR_PARAM_INVALID）：1. tensors列表中tensor或out的数据类型不在支持的范围之内。

@@ -25,7 +25,7 @@ aclnn 对外接口名称为 `aclnnSumV2`（两段式：`aclnnSumV2GetWorkspaceSi
 
 ## 目录结构
 
-```
+```text
 accumulate_nv2_v2/
 ├── CMakeLists.txt
 ├── README.md

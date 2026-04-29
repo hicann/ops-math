@@ -77,6 +77,7 @@ $$
 4. 同步 stream，读取结果
 
 详细调用示例参见 [examples/](examples/) 目录:
+
 - [test_aclnn_reduce_mean_with_count.cpp](examples/test_aclnn_reduce_mean_with_count.cpp) - ACLNN 两段式调用示例（含精度比对）
 - [test_geir_reduce_mean_with_count.cpp](examples/test_geir_reduce_mean_with_count.cpp) - GE IR 图模式调用示例（占位）
 
@@ -109,6 +110,7 @@ g++ -std=c++17 -o test_aclnn test_aclnn_reduce_mean_with_count.cpp \
 本算子采用 MERE/MARE 精度标准（单标杆比对），标杆为 PyTorch CPU 实现。
 
 **误差指标定义**:
+
 - MERE (Mean Relative Error): `avg(|actual - golden| / (|golden| + 1e-7))`
 - MARE (Max Relative Error): `max(|actual - golden| / (|golden| + 1e-7))`
 
@@ -125,7 +127,7 @@ g++ -std=c++17 -o test_aclnn test_aclnn_reduce_mean_with_count.cpp \
 
 ## 目录结构
 
-```
+```text
 reduce_mean_with_count/
 ├── CMakeLists.txt                 # 顶层构建文件
 ├── build.sh                       # 一键编译脚本

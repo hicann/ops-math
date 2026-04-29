@@ -28,4 +28,4 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | :-------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| aclnn接口 | [test_pack_v2](ops-math/experimental/conversion/pack_v2/examples/test_aclnn_pack_v2.cpp) | 通过[aclnnPackV2]接口方式调用pack_v2算子。 |
+| aclnn接口 | [test_pack_v2](./examples/test_aclnn_pack_v2.cpp) | 通过[aclnnPackV2]接口方式调用pack_v2算子。 |

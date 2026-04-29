@@ -4,7 +4,7 @@
 
 LogAddExp 算子计算两个输入张量的 log-sum-exp 运算：
 
-```
+```bash
 logaddexp(x, y) = max(x, y) + ln(1 + e^(-|x - y|))
 ```
 
@@ -154,6 +154,7 @@ bash run.sh
 默认运行 59 条测试用例。
 
 ST 测试支持两种模式：
+
 - **Mock 模式**（CPU Golden）：无需 NPU，用于开发验证
 - **真实 NPU 模式**：需要 NPU 设备，验证实际精度
 
@@ -166,7 +167,7 @@ bash run_performance.sh
 
 ## 目录结构
 
-```
+```text
 ops/log_add_exp/
 ├── README.md                          # 本文档
 ├── CMakeLists.txt                     # 顶层构建脚本
@@ -202,7 +203,7 @@ ops/log_add_exp/
 
 Kernel 内部将公式分解为以下 8 步向量运算：
 
-```
+```text
 tmp = x - y          (Sub)
 tmp = |tmp|          (Abs)
 tmp = -tmp           (Muls, factor=-1)

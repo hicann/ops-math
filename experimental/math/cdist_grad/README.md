@@ -82,7 +82,6 @@
       <td>公式中的输入p。</td>
       <td>float</td>
       <td>ND</td>
-    </tr>
     <tr>
       <td>out</td>
       <td>输出</td>

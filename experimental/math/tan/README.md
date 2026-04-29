@@ -4,7 +4,7 @@
 
 Tan 算子计算输入张量的逐元素正切值：
 
-```
+```bash
 tan(x) = sin(x) / cos(x)
 ```
 
@@ -146,6 +146,7 @@ bash run.sh
 全量 56 条测试用例（36 条 float32 + 20 条 float16）。
 
 ST 测试支持两种模式：
+
 - **Mock 模式**（CPU Golden）：无需 NPU，用于开发验证
 - **真实 NPU 模式**：需要 NPU 设备，验证实际精度
 
@@ -159,7 +160,7 @@ bash build.sh --soc=ascend910b --pkg -s    # 编译 + 仅 ST
 
 ## 目录结构
 
-```
+```text
 ops/tan/
 ├── README.md                              # 本文档
 ├── CMakeLists.txt                         # 顶层构建脚本
@@ -215,7 +216,7 @@ ops/tan/
 
 #### float32 路径
 
-```
+```text
 sinVal = Sin(x)          // 计算 sin(x)
 cosVal = Cos(x)          // 计算 cos(x)
 y      = Div(sinVal, cosVal)  // tan(x) = sin(x) / cos(x)
@@ -223,7 +224,7 @@ y      = Div(sinVal, cosVal)  // tan(x) = sin(x) / cos(x)
 
 #### float16 路径（升精度计算）
 
-```
+```text
 x_fp32 = Cast(x, CAST_NONE)        // half -> float32
 cosVal = Cos(x_fp32)               // 先算 cos（避免输入被覆盖）
 sinVal = Sin(x_fp32)               // 再算 sin

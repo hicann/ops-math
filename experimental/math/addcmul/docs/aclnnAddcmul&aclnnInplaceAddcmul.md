@@ -1,12 +1,10 @@
 # aclnnAddcmul&aclnnInplaceAddcmul
 
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-
 
 ## 功能说明
 
@@ -382,7 +380,6 @@
 
     - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
-
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
@@ -479,7 +476,6 @@
 
 - 确定性计算：
   - aclnnAddcmul&aclnnInplaceAddcmul默认确定性实现。
-
 
 ## 调用示例
 
@@ -647,6 +643,7 @@ int main() {
 ```
 
 aclnnInplaceAddcmul
+
 ```Cpp
 #include <iostream>
 #include <vector>

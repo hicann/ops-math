@@ -101,4 +101,5 @@
 | aclnn调用 | [test_aclnn_normal_float_float](../stateless_random_normal_v2/examples/test_aclnn_normal_float_float.cpp) | 通过[aclnnNormalFloatFloat](../stateless_random_normal_v2/docs/aclnnNormalFloatFloat.md)接口方式调用stateless_random_normal_v3算子。 |
 | aclnn调用 | [test_aclnn_normal_float_tensor](../stateless_random_normal_v2/examples/test_aclnn_normal_float_tensor.cpp) | 通过[aclnnNormalFloatTensor](../stateless_random_normal_v2/docs/aclnnNormalFloatTensor.md)接口方式调用stateless_random_normal_v3算子。 |
 | aclnn调用 | [test_aclnn_normal_tensor_float](../stateless_random_normal_v2/examples/test_aclnn_normal_tensor_float.cpp) | 通过[aclnnNormalFloatTensor](../stateless_random_normal_v2/docs/aclnnNormalTensorFloat.md)接口方式调用stateless_random_normal_v3算子。 |
-| aclnn调用 | [test_aclnn_normal_tensor_tensor](../stateless_random_normal_v2/examples/test_aclnn_normal_tensor_tensor.cpp) | 通过[aclnnNormalTensorTensor](../stateless_random_normal_v2/docs/aclnnNormalTensorTensor.md)接口方式调用stateless_random_normal_v3算子。 |
+| aclnn调用 | [test_aclnn_normal_tensor_tensor](../../random/
+stateless_random_normal_v2/examples/test_aclnn_normal_tensor_tensor.cpp) | 通过[aclnnNormalTensorTensor](../stateless_random_normal_v2/docs/aclnnNormalTensorTensor.md)接口方式调用stateless_random_normal_v3算子。 |

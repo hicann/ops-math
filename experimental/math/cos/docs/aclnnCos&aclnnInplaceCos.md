@@ -1,12 +1,10 @@
 # aclnnCos&aclnnInplaceCos
 
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-
 
 ## 功能说明
 
@@ -24,6 +22,7 @@ $$
   - aclnnCos：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceCos：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 - 每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnCosGetWorkspaceSize”或者“aclnnInplaceCosGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnCos”或者“aclnnInplaceCos”接口执行计算。
+
 ```Cpp
 aclnnStatus aclnnCosGetWorkspaceSize(
   const aclTensor *input, 
@@ -124,9 +123,7 @@ aclnnStatus aclnnInplaceCos(
   </tbody>
   </table>
   
-
-  
-- **返回值**：
+- **返回值**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)
 
@@ -265,8 +262,6 @@ aclnnStatus aclnnInplaceCos(
   </tbody>
   </table>
 
-
-  
 - **返回值**：
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)

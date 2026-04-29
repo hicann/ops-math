@@ -18,7 +18,7 @@
 - 接口功能：reflection_pad2d的反向传播，前向计算参考[[aclnnReflectionPad2d](../../mirror_pad/docs/aclnnReflectionPad2d.md)]。
 - 示例：
 
-  ```
+  ```text
   输入gradOutput([[[1, 1, 1, 1, 1, 1, 1]]])
   self([[[1, 1, 1, 1, 1]]])
   padding([1, 1, 0, 0])

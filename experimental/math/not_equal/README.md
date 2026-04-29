@@ -31,7 +31,7 @@
 |---------|-----------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
 | aclnn调用 | [test_aclnn_logical_xor](./examples/test_aclnn_logical_xor.cpp) | 通过[aclnnLogicalXor](./docs/aclnnLogicalXor.md)接口方式调用NotEqual算子。                                         |
 | aclnn调用 | [test_aclnn_ne_scalar](./examples/test_aclnn_ne_scalar.cpp)     | 通过[aclnnNeScalar/aclnnInplaceNeScalar](./docs/aclnnNeScalar&aclnnInplaceNeScalar.md)接口方式调用NotEqual算子。   |
-| aclnn调用 | [test_aclnn_ne_tensor](./examples/test_aclnn_ne_tensor.cpp)     | 通过[aclnnNeTensor/aclnnInplaceNeTensor](./docs/aclnnNeTensor%26aclnnInplaceNeTensor.md)接口方式调用NotEqual算子。 |
+| aclnn调用 | [test_aclnn_ne_tensor](./examples/test_aclnn_ne_tensor.cpp)     | 通过[aclnnNeTensor/aclnnInplaceNeTensor](./docs/aclnnNeTensor&aclnnInplaceNeTensor.md)接口方式调用NotEqual算子。 |
 
 ## 贡献说明
 

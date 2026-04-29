@@ -63,4 +63,4 @@ $$y=\frac{2}{\sqrt{\pi } } \int_{0}^{x} e^{-t^{2} } \mathrm{d}t$$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_erf](./examples/test_aclnn_erf.cpp) | 通过[aclnnErf](./docs/aclnnErf%26aclnnInplaceErf.md)接口方式调用Erf算子。 |
+| aclnn调用 | [test_aclnn_erf](./examples/test_aclnn_erf.cpp) | 通过[aclnnErf](./docs/aclnnErf&aclnnInplaceErf.md)接口方式调用Erf算子。 |

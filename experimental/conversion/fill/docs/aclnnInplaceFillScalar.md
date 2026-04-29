@@ -1,6 +1,5 @@
 # aclnnInplaceFillScalar
 
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
@@ -183,7 +182,6 @@ aclnnStatus aclnnInplaceFillScalar(
 
 - 确定性计算：
   - aclnnInplaceFillScalar默认确定性实现。
-
 
 ## 调用示例
 

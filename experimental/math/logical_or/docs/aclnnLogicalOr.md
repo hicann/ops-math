@@ -20,7 +20,6 @@
   y = x1 \lor x2
   $$
 
- 
 ## 实现原理
 
 调用`Ascend C`的`API`接口LogicalOr对输入数据进行计算，该实现通过计算两个输入张量的逻辑或计算结果。
@@ -51,7 +50,7 @@
 
   返回aclnnStatus状态码，具体参见[aclnn返回码](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/800alpha003/apiref/aolapi/context/common/aclnn%E8%BF%94%E5%9B%9E%E7%A0%81_fuse.md)。
 
-  ```
+  ```text
   第一段接口完成入参校验，若出现以下错误码，则对应原因为：
   - 返回161001（ACLNN_ERR_PARAM_NULLPTR）：如果传入参数是必选输入，输出或者必选属性，且是空指针，则返回161001。
   - 返回161002（ACLNN_ERR_PARAM_INVALID）：x1、x2、out的数据类型和数据格式不在支持的范围内。
@@ -79,9 +78,9 @@ x1，x2，out的数据类型只支持BOOL，数据格式只支持ND
 <table>
 <tr><th align="center">算子类型(OpType)</th><th colspan="4" align="center">LogicalOr</th></tr> 
 <tr><td align="center"> </td><td align="center">name</td><td align="center">Type</td><td align="center">data type</td><td align="center">format</td></tr>  
-<tr><td rowspan="2" align="center">算子输入</td>
+<tr><td rowspan="2" align="center">算子输入</td></tr>  
 <tr><td align="center">x1</td><td align="center">tensor</td><td align="center">bool</td><td align="center">ND</td></tr>  
-<tr><td rowspan="2" align="center">算子输入</td>
+<tr><td rowspan="2" align="center">算子输入</td></tr>  
 <tr><td align="center">x2</td><td align="center">tensor</td><td align="center">bool</td><td align="center">ND</td></tr>  
 <tr><td rowspan="1" align="center">算子输出</td>
 <td align="center">y</td><td align="center">tensor</td><td align="center">bool</td><td align="center">ND</td></tr>  

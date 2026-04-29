@@ -44,7 +44,7 @@
 
 ## 实现架构
 
-```
+```text
 aclnnDivV3 (op_api 层)
   ├── 参数检查 (dtype / shape / format)
   ├── Contiguous 转换

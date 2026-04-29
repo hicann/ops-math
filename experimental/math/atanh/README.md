@@ -4,7 +4,7 @@
 
 逐元素计算输入 tensor 的反双曲正切值（inverse hyperbolic tangent），数学公式为：
 
-```
+```bash
 y = atanh(x) = 0.5 * ln((1 + x) / (1 - x))
 ```
 
@@ -28,7 +28,7 @@ y = atanh(x) = 0.5 * ln((1 + x) / (1 - x))
 
 ## 工程目录结构
 
-```
+```text
 atanh/
 ├── CMakeLists.txt                          # 顶层构建配置
 ├── build.sh                                # 编译脚本

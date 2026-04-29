@@ -82,4 +82,5 @@ $$y=\begin{cases} nan & \text{if } x \text{ is NaN} \\ posinf & \text{if } x \te
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_nan_to_num](./examples/test_aclnn_nan_to_num.cpp) | 通过[aclnnNanToNum](./docs/aclnnNanToNum%26aclnnInplaceNanToNum.md)接口方式调用NanToNum算子。 |
+| aclnn调用 | [test_aclnn_nan_to_num](./examples/test_aclnn_nan_to_num.cpp) | 通过[aclnnNanToNum](./docs/
+aclnnNanToNum&aclnnInplaceNanToNum.md)接口方式调用NanToNum算子。 |

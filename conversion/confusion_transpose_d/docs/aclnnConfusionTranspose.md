@@ -24,7 +24,6 @@
      $$
      y=transpose(reshape(x,shape),perm)
      $$
-     
   2. transposeFirst为True时：
   
      $$

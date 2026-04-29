@@ -19,7 +19,7 @@
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/context/%E4%B8%A4%E6%AE%B5%E5%BC%8F%E6%8E%A5%E5%8F%A3.md)，必须先调用“aclnnFloorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnFloor”接口执行计算。
+每个算子分为[两段式接口](../../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnFloorGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnFloor”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnFloorGetWorkspaceSize(
@@ -52,7 +52,7 @@ aclnnStatus aclnnFloor(
 
 ### 返回值
 
-`aclnnStatus`：返回状态码，具体参见 [aclnn返回码](../../../docs/context/aclnn%E8%BF%94%E5%9B%9E%E7%A0%81.md)。
+`aclnnStatus`：返回状态码，具体参见 [aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
 **第一段接口** 会完成入参检查，如以下场景时报错：
 
@@ -76,7 +76,7 @@ aclnnStatus aclnnFloor(
 
 ### 返回值
 
-`aclnnStatus`：返回状态码，具体参见[aclnn返回码](../../../docs/context/aclnn%E8%BF%94%E5%9B%9E%E7%A0%81.md)。
+`aclnnStatus`：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
 
@@ -84,7 +84,7 @@ aclnnStatus aclnnFloor(
 
 ## 调用示例
 
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/context/%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E6%A0%B7%E4%BE%8B.md)。
+示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/编译与运行样例.md)。
 
 ```Cpp
 #include <iostream>

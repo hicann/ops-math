@@ -21,7 +21,6 @@
      $$
      out\_mul = gradOutput * gradSelf
      $$
-
   2. 生成（N4,N4）类型为bool的三角矩阵A，上三角为True，下三角为False，对角线为True。
   3. 用0填充输入$out\_mul$里面与矩阵A中值为True的位置相对应的元素。
     
@@ -31,14 +30,12 @@
      \\0, \quad A_i==True
      \end{cases}
      $$
-
   4. 对out_mul的倒数第二维进行倒序生成out_flip。
   5. 以$out\_flip$的倒数第二维进行cumsum累加。从维度视角来看的某个元素（其它维度下标不变，当前维度下标依次递增），$out\_cumsum\_{i}$是输出张量中对应位置的元素。
      
      $$
      out\_cumsum_{i} = out\_flip_{1} + out\_flip_{2} + out\_flip_{3} + ...... + out\_flip_{i}
      $$
-
   6. 对$out\_cumsum$的-2维进行倒序生成out_flip2。
   7. 生成（N4,N4）类型为bool的三角矩阵B，上三角为True，下三角为False，对角线为True。
   8. 用0填充$out\_flip2$里面与矩阵B中值为True的位置相对应的元素。
@@ -49,7 +46,6 @@
      \\0, \quad B_i==True
      \end{cases}
      $$
-
   9. 返回gradInput为out\_flip2最后一维每行的和。
 
 ## 参数说明

@@ -56,7 +56,7 @@ $out_i=⌊ input_i ⌋$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_floor](./examples/test_aclnn_floor.cpp) | 通过[aclnnFloor](./docs/aclnnFloor.md)接口方式调用Floor算子。 |
+| aclnn调用 | [test_aclnn_floor](./examples/test_aclnn_floor.cpp) | 通过[aclnnFloor](./docs/aclnnFloor&aclnnInplaceFloor.md)接口方式调用Floor算子。 |
 
 ## 贡献说明
 

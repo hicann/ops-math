@@ -63,4 +63,4 @@ $$y=e^{x}-1$$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_expm1](./examples/test_aclnn_expm1.cpp) | 通过[aclnnExpm1](./docs/aclnnExpm1%26aclnnInplaceExpm1.md)接口方式调用Expm1算子。 |
+| aclnn调用 | [test_aclnn_expm1](./examples/test_aclnn_expm1.cpp) | 通过[aclnnExpm1](./docs/aclnnExpm1&aclnnInplaceExpm1.md)接口方式调用Expm1算子。 |

@@ -17,6 +17,7 @@
   $$
 
 ## 函数原型
+
 - aclnnAddcdiv和aclnnInplaceAddcdiv实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnAddcdiv：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceAddcdiv：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
@@ -630,6 +631,7 @@ int main() {
 ```
 
 aclnnInplaceAddcdiv
+
 ```Cpp
 #include <iostream>
 #include <vector>

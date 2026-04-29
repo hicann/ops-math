@@ -6,13 +6,13 @@ Ascend C 自定义算子，逐元素计算输入 tensor 的双曲余弦值。对
 
 ### 数学公式
 
-```
+```bash
 out = cosh(self) = (exp(self) + exp(-self)) / 2
 ```
 
 实际实现使用数值稳定公式，避免中间结果溢出：
 
-```
+```bash
 cosh(x) = exp(|x| - ln2) + exp(-|x|) / 2
 ```
 
@@ -64,7 +64,7 @@ aclnnStatus aclnnCoshV2(
 
 ## 目录结构
 
-```
+```text
 cosh/
 ├── CMakeLists.txt              # 顶层构建配置
 ├── build.sh                    # 一键构建脚本
@@ -114,6 +114,7 @@ bash build.sh --make_clean
 ```
 
 编译成功后产物：
+
 - Kernel 二进制：`build/op_kernel/ascendc_kernels/binary/ascend910b/`
 - 安装包：`build/custom_opp_ubuntu_aarch64.run`
 
@@ -144,6 +145,7 @@ cd tests/ut && ./run.sh
 ```
 
 UT 测试内容：
+
 - InferShape 测试（6 条）：1D/多维/4D/动态/大 shape/标量
 - Tiling 测试（73 条）：fp16/fp32/bf16 各路径、单/双缓冲、边界值、阈值、多核分配
 
@@ -161,6 +163,7 @@ bash build.sh --soc=ascend910b -a
 ```
 
 ST 测试内容：
+
 - 端到端 ACLNN 接口调用，在真实 NPU 上执行
 - 71 条用例覆盖 3 种 dtype、1D~8D 维度、特殊值、边界值
 - 精度对比 CPU golden (std::cosh)

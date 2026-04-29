@@ -282,8 +282,8 @@ int PrepareInputAndOutput(
     // 创建self aclTensor
     auto ret = CreateAclTensor(selfHostData, shape, selfDeviceAddr, aclDataType::ACL_DOUBLE, self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-	// 创建min
-	  *min = aclCreateScalar(&min_v, aclDataType::ACL_DOUBLE);
+    // 创建min
+    *min = aclCreateScalar(&min_v, aclDataType::ACL_DOUBLE);
     CHECK_RET(*min != nullptr, return ret);
     // 创建out aclTensor
     ret = CreateAclTensor(outHostData, shape, outDeviceAddr, aclDataType::ACL_DOUBLE, out);
@@ -329,8 +329,8 @@ int main() {
     aclTensor* self = nullptr;
     aclScalar* min = nullptr;
     aclTensor* out = nullptr;
-	
-	  ret = PrepareInputAndOutput(shape, &selfDeviceAddr, &self, &min, &outDeviceAddr, &out);
+
+    ret = PrepareInputAndOutput(shape, &selfDeviceAddr, &self, &min, &outDeviceAddr, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     // 3. 调用CANN算子库API，需要修改为具体的API

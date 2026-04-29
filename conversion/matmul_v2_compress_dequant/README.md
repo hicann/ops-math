@@ -12,7 +12,7 @@
 - **算子功能**：进行矩阵乘计算时，可先通过msModelSlim工具对右矩阵进行无损压缩，减少内存占用，然后通过本接口完成无损解压缩、矩阵乘和反量化计算。
 - **计算公式**：
   
-  ```
+  ```text
   x2_unzip = unzip(x2, compressIndex, compressInfo)
   result = (x1 @ x2_unzip + bias) * deqScale
   ```
@@ -111,4 +111,5 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| aclnn接口 | [test_aclnn_matmul_compress_dequant](./examples/test_aclnn_matmul_compress_dequant.cpp) | 通过[aclnnMatmulCompressDequant](docs/aclnnMatmulCompressDequant.md)接口方式调用MatmulCompressDequant算子。 |
+| aclnn接口 | [test_aclnn_matmul_compress_dequant](./tests/ut/op_host/
+op_api/test_aclnn_matmul_compress_dequant.cpp) | 通过[aclnnMatmulCompressDequant](docs/aclnnMatmulCompressDequant.md)接口方式调用MatmulCompressDequant算子。 |

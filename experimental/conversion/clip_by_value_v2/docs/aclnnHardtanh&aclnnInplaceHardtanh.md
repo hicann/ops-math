@@ -1,12 +1,10 @@
 # aclnnHardtanh&aclnnInplaceHardtanh
 
-
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-
 
 ## 功能说明
 
@@ -21,6 +19,7 @@
   $$
   
 ## 函数原型
+
 - aclnnHardtanh和aclnnInplaceHardtanh实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnHardtanh：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceHardtanh：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
@@ -62,8 +61,9 @@ aclnnStatus aclnnInplaceHardtanh(
 ```
 
 ## aclnnHardtanhGetWorkspaceSize
-- **参数说明**：
-  </style>
+
+- **参数说明**
+
   <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
@@ -152,9 +152,8 @@ aclnnStatus aclnnInplaceHardtanh(
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
-
   第一段接口完成入参校验，出现以下场景时报错：
-  </style>
+
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
@@ -232,8 +231,9 @@ aclnnStatus aclnnInplaceHardtanh(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
 ## aclnnInplaceHardtanhGetWorkspaceSize
-- **参数说明**：
-  </style>
+
+- **参数说明**
+
   <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
@@ -260,8 +260,8 @@ aclnnStatus aclnnInplaceHardtanh(
       <td class="tg-0pky">selfRef（aclTensor*）</td>
       <td class="tg-0pky">输入/输出</td>
       <td class="tg-0pky">输入tensor，需要进行限制的张量，即公式中的x。</td>
-      <td class="tg-0pky">数据类型与clipValueMin和
-      <td class="tg-0lax">clipValueMax的数据类型需满足数据类型推导规则（参见<a href="../../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">数据类型与clipValueMin和clipValueMax的数据类型需满足数据类型推导规则（参见<a href="../../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td> - </td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -313,9 +313,8 @@ aclnnStatus aclnnInplaceHardtanh(
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
-
   第一段接口完成入参校验，出现以下场景时报错：
-  </style>
+
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
@@ -345,7 +344,8 @@ aclnnStatus aclnnInplaceHardtanh(
   </table>
 
 ## aclnnInplaceHardtanh
-- **参数说明**：
+
+- **参数说明**
   <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 184px">
   <col style="width: 134px">
@@ -386,6 +386,7 @@ aclnnStatus aclnnInplaceHardtanh(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn返回码.md)。
 
 ## 约束说明
+
 无
 
 ## 调用示例

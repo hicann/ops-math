@@ -69,7 +69,7 @@
 | aclnn调用 | [test_aclnn_lt_tensor](./examples/test_aclnn_lt_tensor.cpp) | 通过[aclnnLtTensor&aclnnInplaceLtTensor](./docs/aclnnLtTensor&aclnnInplaceLtTensor.md)接口方式调用Less算子。    |
 
 ## 贡献说明
- 	 
+
 | 贡献者 | 贡献方 | 贡献算子 | 贡献时间 | 贡献内容 |
 | ---- | ---- | ---- | ---- | ---- |
 | fulltower | 个人开发者 | Less | 2026/2/27 | Less算子适配开源仓 |

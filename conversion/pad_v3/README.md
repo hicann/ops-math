@@ -16,8 +16,8 @@
 - 算子功能：对输入tensor做填充。
 - 示例：
 
-  ```
-  1.输入tensor([[0,1,2]])
+  ```text
+  输入tensor([[0,1,2]])
   paddings([2,2])
 
   2.mode("REFLECT")

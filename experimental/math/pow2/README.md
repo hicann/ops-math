@@ -1,6 +1,6 @@
 # Pow2
 
-##  产品支持情况
+## 产品支持情况
 
 | 产品 | 是否支持 |
 | ---- | :----:|
@@ -16,8 +16,8 @@ $$
 out_i = \text{pow}(x1_i, x2_i)
 $$
 
-
 ## 参数说明
+
 <table style="undefined;table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
@@ -41,7 +41,6 @@ $$
       <td>FLOAT16、FLOAT32、BFLOAT16、INT8、UINT8、INT16、INT32</td>
       <td>ND</td>
     </tr>  
-    <tr>  
     <tr>
       <td>x2</td>
       <td>输入</td>

@@ -1497,7 +1497,7 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/reduce_sum_op/README.md">reduce_sum_op</a></td>
+    <td><a href="../../math/reduce_sum/README.md">reduce_sum_op</a></td>
     <td>×</td>
     <td>×</td>
     <td>×</td>

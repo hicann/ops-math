@@ -70,7 +70,7 @@
 | aclnn调用 | [test_aclnn_gt_tensor](./examples/test_aclnn_gt_tensor.cpp) | 通过[aclnnGtTensor&aclnnInplaceGtTensor](./docs/aclnnGtTensor&aclnnInplaceGtTensor.md)接口方式调用Greater算子。    |
 
 ## 贡献说明
- 	 
+
 | 贡献者 | 贡献方 | 贡献算子 | 贡献时间 | 贡献内容 |
 | ------   | ---- | ---- | ---- | ---- |
 | fulltower | 个人开发者 | Greater | 2026/2/27 | Greater算子适配开源仓 |

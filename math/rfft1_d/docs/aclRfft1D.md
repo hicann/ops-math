@@ -11,20 +11,21 @@
 | <term>Atlas 推理系列产品</term>                             |    ×    |
 | <term>Atlas 训练系列产品</term>                              |    ×    |
 
-## 功能说明 
+## 功能说明
 
 对输入张量self进行RFFT（傅里叶变换）计算，输出是一个包含非负频率的复数张量。
 
-### 计算公式：
+### 计算公式
 
 $$
 {\displaystyle X_{k}=\sum _{n=0}^{N-1}x_{n}\cdot e^{-i2\pi {\tfrac {k}{N}}n}}
 $$
 
-### 示例：
-假设self为 {1, 2, 3, 4} 则out = {10, 0, -2, 2, -2, 0} = {10 + 0j, -2 + 2j, -2 + 0j} （自定义）
+### 示例
 
-## 函数原型 
+假设self为 {1, 2, 3, 4} 则out = {10, 0, -2, 2, -2, 0} = {10 + 0j, -2 + 2j, -2 + 0j}（自定义）
+
+## 函数原型
 
 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclRfft1DGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclRfft1D”接口执行计算。
 
@@ -188,7 +189,7 @@ aclnnStatus aclRfft1D(
     </tbody>
     </table>
 
-## aclRfft1D 
+## aclRfft1D
 
 - **参数说明：**
 

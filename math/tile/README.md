@@ -16,7 +16,7 @@
 接口功能：对输入tensor沿着repeats中对每个维度指定的复制次数进行复制。示例：
 假设输入Tensor为[[a,b],[c,d],[e,f]]，即shape为[3,2]，repeats为(2,4)，则生成的Tensor的shape为[6,8]，值如下所示：
 
-```
+```text
 >>> x = torch.tensor([[a,b],[c,d],[e,f]])
 >>> x.repeat(2,4)
 tensor([[a,b,a,b,a,b,a,b],
@@ -30,7 +30,7 @@ tensor([[a,b,a,b,a,b,a,b],
 
 当repeats为(2,4,2)时，即repeats的元素个数大于Tensor中的维度，则输出Tensor等效为如下操作：先将输入Tensor的shape扩张到和repeats个数相同的维度：[1,3,2]，而后按照对应维度和repeats的值进行扩张，即输出Tensor的shape为[2,12,4]，结果如下：
 
-```
+```text
 >>> x.repeat(2,4,2)
 tensor([[[a,b,a,b],
          [c,d,c,d],

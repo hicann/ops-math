@@ -75,7 +75,7 @@ end、weight的dtype需要与self一致。
 | aclnn调用 | [test_aclnn_inplace_lerp](./examples/test_aclnn_inplace_lerp.cpp) | 通过[aclnnLerp](docs/aclnnLerp&aclnnInplaceLerp.md)接口方式调用Lerp算子。 |
 
 ## 贡献说明
- 	  	 
+
 | 贡献者 | 贡献方 | 贡献算子 | 贡献时间 | 贡献内容 |
 | ---- | ---- | ---- | ---- | ---- |
 | fulltower | 个人开发者 | Lerp | 2026/2/28 | Lerp算子适配开源仓 |

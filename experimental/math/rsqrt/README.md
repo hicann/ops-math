@@ -1,17 +1,19 @@
 # Rsqrt
 
 ## 贡献说明
+
 | 贡献者       | 贡献方              | 贡献算子  | 贡献时间      | 贡献内容                         |
 |-----------|------------------|-------|-----------|------------------------------|
 | skywang2 | 个人开发者 | Rsqrt | 2026/03/30 | 新增Rsqrt算子 |
 
 ## 支持的产品型号
-- Atlas A2训练系列产品
 
+- Atlas A2训练系列产品
 
 产品形态详细说明请参见[昇腾产品形态说明](http://www.hiascend.com/document/redirect/CannCommunityProductForm)
 
 ## 算子描述
+
 - 功能描述
 
   `Rsqrt`算子将数据进行开方并取倒数运算。
@@ -21,7 +23,7 @@
   <table>
     <tr><th align="center">算子类型(OpType)</th><th colspan="4" align="center">Rsqrt</th></tr> 
     <tr><td align="center"> </td><td align="center">name</td><td align="center">Type</td><td align="center">data type</td><td align="center">format</td></tr>  
-    <tr><td rowspan="2" align="center">算子输入</td>
+    <tr><td rowspan="2" align="center">算子输入</td></tr> 
      
     <tr><td align="center">x</td><td align="center">tensor</td><td align="center">float32,float16,bfloat16</td><td align="center">ND</td></tr>  
     
@@ -34,12 +36,12 @@
 
 - x，y，out的数据类型只支持	float32,float16,bfloat16，数据格式只支持ND
 
-
 ### 运行验证
+
 测试命令调用方式：[build.sh](../../../docs/zh/invocation/quick_op_invocation.md)
 <table>
     <th>目录</th><th>描述</th>
     <tr>
-        <td><a href="./examples/test_aclnn_rsqrt.cpp"> test_aclnn_rsqrt.cpp</td><td>通过aclnn调用的方式调用Rsqrt算子。</td>
+        <td><a href="./examples/test_aclnn_rsqrt.cpp"> test_aclnn_rsqrt.cpp</a></td><td>通过aclnn调用的方式调用Rsqrt算子。</td>
     </tr>
 </table>

@@ -296,7 +296,7 @@ aclnnStatus aclnnInplaceSub(
       <td class="tg-0pky">公式中的selfRef。</td>
       <td class="tg-0pky">
         <ul>
-          <li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>，且需要是推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系。</li>
+          <li>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>，且需要是推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>。</li>
           <li>selfRef的shape需要与other<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>后的shape一致。</li>
         </ul>
       </td>

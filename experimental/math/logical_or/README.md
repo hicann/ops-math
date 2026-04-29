@@ -6,7 +6,6 @@
 |----|----|----|------|------|
 | hky | 浙江工业大学-智能计算实验室 | LogicalOr | 2025/06/24 | 新增LogicalOr算子，实现了对输入数据计算逻辑或，获取输出数据的功能。|
 
-
 ## 支持的产品型号
 
 -Atlas A2训练系列产品
@@ -24,9 +23,9 @@
   <table>
   <tr><th align="center">算子类型(OpType)</th><th colspan="4" align="center">LogicalOr</th></tr> 
   <tr><td align="center"> </td><td align="center">name</td><td align="center">Type</td><td align="center">data type</td><td align="center">format</td></tr>  
-  <tr><td rowspan="2" align="center">算子输入</td>
+  <tr><td rowspan="2" align="center">算子输入</td></tr>  
   <tr><td align="center">x1</td><td align="center">tensor</td><td align="center">bool</td><td align="center">ND</td></tr>  
-  <tr><td rowspan="2" align="center">算子输入</td>
+  <tr><td rowspan="2" align="center">算子输入</td></tr>  
   <tr><td align="center">x2</td><td align="center">tensor</td><td align="center">bool</td><td align="center">ND</td></tr>  
   <tr><td rowspan="1" align="center">算子输出</td>
   <td align="center">y</td><td align="center">tensor</td><td align="center">bool</td><td align="center">ND</td></tr>  
@@ -42,6 +41,7 @@
 使用该算子前，请参考[《CANN软件安装指南》](https://hiascend.com/document/redirect/CannCommunityInstSoftware)完成开发运行环境的部署。
 
 ### 编译部署
+
   - 进入到仓库目录
 
     ```bash
@@ -73,4 +73,3 @@
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
 | aclnn调用 | [test_aclnn_logical_or](./examples/test_aclnn_logical_or.cpp) | 通过[aclnnLogical](./docs/aclnnLogicalOr.md)接口方式调用LogicalOr算子。 |    
-

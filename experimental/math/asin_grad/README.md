@@ -20,6 +20,7 @@ AsinGrad 是 Asin（反正弦）算子的梯度算子，用于深度学习框架
 $$dx_i = \frac{dy_i}{\sqrt{1 - x_i^2}}$$
 
 其中：
+
 - x：正向 Asin 算子的输入 tensor，值域 [-1, 1]
 - dy：上游传播的梯度（grad_output）
 - dx：计算得到的输入梯度（grad_input）
@@ -94,7 +95,7 @@ aclnnStatus aclnnAsinGrad(
 
 ## 目录结构
 
-```
+```text
 asin_grad/
 ├── CMakeLists.txt                     # 构建配置（根）
 ├── README.md                          # 本文件

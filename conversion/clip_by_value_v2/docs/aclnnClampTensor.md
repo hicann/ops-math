@@ -387,10 +387,10 @@ int main() {
     }
 
     // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
-	ReleaseTensorAndScalar(self, clipValueMax, clipValueMin, out);
+    ReleaseTensorAndScalar(self, clipValueMax, clipValueMin, out);
 
     // 7. 释放device 资源
-	ReleaseDevice(selfDeviceAddr, minDeviceAddr, maxDeviceAddr, outDeviceAddr, workspaceSize, workspaceAddr, stream, deviceId);
+    ReleaseDevice(selfDeviceAddr, minDeviceAddr, maxDeviceAddr, outDeviceAddr, workspaceSize, workspaceAddr, stream, deviceId);
 
     return 0;
 }

@@ -6,7 +6,6 @@
 | ---- | :----:|
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 
-
 ## 功能说明
 
 - 算子功能：提取复数张量的实部（real part）。对于实数类型输入，输出等于输入（恒等操作）。
@@ -75,6 +74,7 @@ $$
 | FLOAT | FLOAT | 5 | 0 | 恒等操作 |
 
 **注：**
+
 - COMPLEX128 类型仅支持 AICPU 实现，ascend910b 的 AICore 不支持该类型。
 - Tout值为数据类型枚举值（DT_FLOAT=0, DT_FLOAT16=1, DT_DOUBLE=11），可通过Tout属性可选指定输出类型。
 
@@ -87,7 +87,8 @@ $$
 ## 实现说明
 
 ### 目录结构
-```
+
+```text
 real/
 ├── op_host/                    # Host侧实现
 │   ├── real_def.cpp           # 算子定义
@@ -119,6 +120,7 @@ real/
 ```
 
 ### Tiling参数说明
+
 - `totalUsedCoreNum`: 实际使用的总核数
 - `tailBlockNum`: 大核数量（余数block数）
 - `ubPartDataNum`: 每次UB循环处理的元素数
@@ -132,6 +134,7 @@ real/
 - `useNonInplace`: 是否使用非inplace GatherMask路径（0=inplace, 1=非inplace）
 
 ### 多核处理策略（大小核分核）
+
 1. **对齐粒度**：
    - Complex类型：128B对齐（满足GatherMask inplace的256B源数据约束）
    - Real类型：32B对齐
@@ -154,6 +157,7 @@ real/
    - Complex类型输入：`inputOffset = globalOffset * 2`（每个元素占2个output元素空间）
 
 ### Complex双路径策略
+
 GatherMask inplace要求 `count * 2 * sizeof(T) % 256 == 0`，tiling据此选择路径：
 
 1. **Inplace路径**（`useNonInplace=0`）：
@@ -169,6 +173,7 @@ GatherMask inplace要求 `count * 2 * sizeof(T) % 256 == 0`，tiling据此选择
 ## 调用说明
 
 ### ACLNN API调用
+
 参见 `examples/test_aclnn_real.cpp` 示例代码：
 
 ```cpp
