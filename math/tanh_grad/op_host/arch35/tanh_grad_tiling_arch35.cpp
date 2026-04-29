@@ -174,7 +174,15 @@ ge::graphStatus TanhGradTiling::GetShapeAttrsInfo()
 
     opKey = GetOpKey(yDtype, dyDtype, zDtype);
     OP_CHECK_IF(
-        (opKey == OP_KEY_INVALID), OP_LOGE(context_->GetNodeName(), "can not get opKey"), return ge::GRAPH_FAILED);
+        (opKey == OP_KEY_INVALID),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            context_->GetNodeName(), "y, dy and z",
+            (Ops::Base::ToString(yDtype) + ", " + Ops::Base::ToString(dyDtype) + " and " + Ops::Base::ToString(zDtype))
+                .c_str(),
+            "The dtypes of y, dy and z are not within the supported (all fp16, all float, all bf16, "
+            "(fp16, bf16, float), (fp16, float, float), (bf16, float, float), (bf16, fp16, float), (float, fp16, "
+            "float) or (float, bf16, float)) combination range"),
+        return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 

@@ -144,7 +144,11 @@ ge::graphStatus LerpTiling::GetShapeAttrsInfo()
 
     opKey = GetOpKey(startDtype, endDtype, weightDtype, yDtype);
     OP_CHECK_IF((opKey == OP_KEY_INVALID),
-                    OP_LOGE(context_->GetNodeName(), "can not get opKey"),
+                    OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "start, end, weight and y",
+                        (Ops::Base::ToString(startDtype) + ", " + Ops::Base::ToString(endDtype) + ", " +
+                         Ops::Base::ToString(weightDtype) + " and " + Ops::Base::ToString(yDtype)).c_str(),
+                        "The dtypes of start, end, weight and y must be one of: all float16, all float, all bf16, "
+                        "(bf16, bf16, float, bf16), or (float16, float16, float, float16)"),
                     return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }

@@ -95,8 +95,8 @@ ge::graphStatus NonFiniteCheckTiling::Init()
                 return ge::GRAPH_FAILED);
             elementsPerBlock = BYTE_BLOCK / dataTypeSize;
         } else if (tempDtype != dataType) {
-            std::string paramNames = "tensor_list" + std::to_string(i + 1) + "th tensor";
-            std::string reasonMsg = "dtype of all input tensor_list should be the same, but tensor_list " +
+            std::string paramNames = "tensor_list " + std::to_string(i) + "th tensor";
+            std::string reasonMsg = "The dtype of all input tensor_list should be the same, but tensor_list " +
                                     std::to_string(i) + "th tensor`s dtype is not same as 0th tensor`s dtype " +
                                     Ops::Base::ToString(dataType);
             OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
@@ -110,7 +110,7 @@ ge::graphStatus NonFiniteCheckTiling::Init()
         OP_CHECK_IF(
             tensorDataCountList[i] == 0,
             OP_LOGE_FOR_INVALID_SHAPESIZE(tilingContext->GetNodeName(),
-                (std::to_string(i) + "th tensor").c_str(), "0", "greater than 0"),
+                ("tensor_list " + std::to_string(i) + "th tensor").c_str(), "0", "greater than 0"),
             return ge::GRAPH_FAILED);
         // Make a 32-byte alignment for each Tensor
         tensorDataCountAlignedList[i] = Ops::Base::CeilAlign(tensorDataCountList[i], int64_t(elementsPerBlock));

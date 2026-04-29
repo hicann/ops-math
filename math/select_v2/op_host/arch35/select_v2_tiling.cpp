@@ -59,7 +59,7 @@
                                  ge::TypeUtils::DataTypeToSerialString(input2DType) + " and " +
                                  ge::TypeUtils::DataTypeToSerialString(outputDtype);
          OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "condition, x1, x2 and y",
-             dtypesStr.c_str(), "condition must be bool. x1, x2 and y must have the same dtype");
+             dtypesStr.c_str(), "The dtype of condition must be bool, and the dtypes of x1, x2 and y must be the same");
          return ge::GRAPH_FAILED;
      }
  

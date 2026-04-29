@@ -167,13 +167,33 @@ static bool InputTypeIsInvalid(const gert::TilingContext* context)
     auto numDsc = context->GetInputDesc(INPUT_IDX_NUM);
     OP_CHECK_NULL_WITH_CONTEXT(context, numDsc);
     auto dNum = numDsc->GetDataType();
+
+    bool dStartIsInvalid = (dStart != ge::DT_INT32) && (dStart != ge::DT_FLOAT) && (dStart != ge::DT_FLOAT16) &&
+                           (dStart != ge::DT_BF16) && (dStart != ge::DT_INT8) && (dStart != ge::DT_UINT8) &&
+                           (dStart != ge::DT_INT16);
+    OP_CHECK_IF(
+        dStartIsInvalid,
+        OP_LOGE_FOR_INVALID_DTYPE(
+            context->GetNodeName(), "start", Ops::Base::ToString(dStart).c_str(),
+            "float32, float16, bfloat16, int32, int16, int8 or uint8"),
+        return true);
+
+    bool dStopIsInvalid = (dStop != ge::DT_INT32) && (dStop != ge::DT_FLOAT) && (dStop != ge::DT_FLOAT16) &&
+                          (dStop != ge::DT_BF16) && (dStop != ge::DT_INT8) && (dStop != ge::DT_UINT8) &&
+                          (dStop != ge::DT_INT16);
+    OP_CHECK_IF(
+        dStopIsInvalid,
+        OP_LOGE_FOR_INVALID_DTYPE(
+            context->GetNodeName(), "stop", Ops::Base::ToString(dStop).c_str(),
+            "float32, float16, bfloat16, int32, int16, int8 or uint8"),
+        return true);
+    bool dNumIsInvalid = (dNum != ge::DT_INT32) && (dNum != ge::DT_INT64);
+    OP_CHECK_IF(
+        dNumIsInvalid,
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "num", Ops::Base::ToString(dNum).c_str(), "int32 or int64"),
+        return true);
     // any input dtype is neither int32 nor float, invalid
-    return ((dStart != ge::DT_INT32) && (dStart != ge::DT_FLOAT) && (dStart != ge::DT_FLOAT16) &&
-            (dStart != ge::DT_BF16) && (dStart != ge::DT_INT8) && (dStart != ge::DT_UINT8) &&
-            (dStart != ge::DT_INT16)) ||
-           ((dStop != ge::DT_INT32) && (dStop != ge::DT_FLOAT) && (dStop != ge::DT_FLOAT16) && (dStop != ge::DT_BF16) &&
-            (dStop != ge::DT_INT8) && (dStop != ge::DT_UINT8) && (dStop != ge::DT_INT16)) ||
-           ((dNum != ge::DT_INT32) && (dNum != ge::DT_INT64));
+    return dStartIsInvalid || dStopIsInvalid || dNumIsInvalid;
 }
 
 template <typename T>
@@ -250,7 +270,8 @@ static ge::graphStatus GetConstNum(
                 OP_LOGE(context->GetNodeName(), "get const value fail."), return ge::GRAPH_FAILED);
             break;
         default:
-            OP_LOGE(context->GetNodeName(), "get const num fail!");
+            OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "num",
+                Ops::Base::ToString(dataType).c_str(), "int32 or int64");
             return ge::GRAPH_FAILED;
     }
 
@@ -300,7 +321,10 @@ static ge::graphStatus GetConstStartOrStop(
             break;
         }
         default:
-            OP_LOGE(context->GetNodeName(), "start or stop dataType is not support!");
+            OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(),
+                (input_index == static_cast<int64_t>(INPUT_IDX_START)) ? "start" : "stop",
+                Ops::Base::ToString(dataType).c_str(),
+                "float32, float16, bfloat16, int32, int16, int8 or uint8");
             return ge::GRAPH_FAILED;
     }
 
@@ -370,7 +394,9 @@ static ge::graphStatus SetTilingTilingKeyOneCore(
             tilingData.set_tilingKey(static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_703));
             break;
         default:
-            OP_LOGE(context->GetNodeName(), "set tilingKet fail!");
+            OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "output",
+                Ops::Base::ToString(outDataType).c_str(),
+                "float32, float16, bfloat16, int32, int16, int8 or uint8");
             return ge::GRAPH_FAILED;
     }
 
@@ -423,7 +449,9 @@ static ge::graphStatus SetTilingTilingKeyForLinSpace(
                                                                static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_702));
                 break;
             default:
-                OP_LOGE(context->GetNodeName(), "set tilingKet fail!");
+                OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "output",
+                    Ops::Base::ToString(outDataType).c_str(),
+                    "float32, float16, bfloat16, int32, int16, int8 or uint8");
                 return ge::GRAPH_FAILED;
         }
     }

@@ -45,7 +45,7 @@ ge::graphStatus GreaterTiling::DoOpTiling()
         std::string dtypesStr = ge::TypeUtils::DataTypeToSerialString(greaterInput0DType) + " and " +
                                 ge::TypeUtils::DataTypeToSerialString(greaterInput1DType);
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1 and x2",
-            dtypesStr.c_str(), "dtypes of x1 and x2 must be the same");
+            dtypesStr.c_str(), "The dtypes of x1 and x2 must be the same");
         return ge::GRAPH_FAILED;
     }
 

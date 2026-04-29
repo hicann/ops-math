@@ -68,7 +68,7 @@ static ge::graphStatus CheckDtypeIsInvalid(
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         outputDtype.count(output) == 0,
-        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "output", Ops::Base::ToString(output).c_str(),
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "y", Ops::Base::ToString(output).c_str(),
             "int32, int64, float32, float16 or bfloat16"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;

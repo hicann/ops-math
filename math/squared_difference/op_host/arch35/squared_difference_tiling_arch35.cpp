@@ -56,7 +56,7 @@ ge::graphStatus SquaredDifferenceTiling::DoOpTiling()
                                 ge::TypeUtils::DataTypeToSerialString(input1DType) + " and " +
                                 ge::TypeUtils::DataTypeToSerialString(outputDtype);
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1, x2 and y",
-            dtypesStr.c_str(), "dtypes of x1, x2 and y must be the same");
+            dtypesStr.c_str(), "The dtypes of x1, x2 and y must be the same");
         return ge::GRAPH_FAILED;
     }
 

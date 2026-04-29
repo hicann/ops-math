@@ -129,7 +129,7 @@ ge::graphStatus HistogramV2SimtTiling::GetShapeAttrsInfo()
     if (outputDataLength != bins_) {
         std::string sizeStr = std::to_string(outputDataLength) + " and " + std::to_string(bins_);
         OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(context_->GetNodeName(), "y and bins",
-            sizeStr.c_str(), "y size should be same as bins");
+            sizeStr.c_str(), "The shape size of y should be the same as bins");
         return ge::GRAPH_FAILED;
     }
 
@@ -144,7 +144,7 @@ ge::graphStatus HistogramV2SimtTiling::GetShapeAttrsInfo()
         if (minMaxDtype != dType) {
             std::string dtypesStr = Ops::Base::ToString(dType) + " and " + Ops::Base::ToString(minMaxDtype);
             std::string paramNames = std::string("x and ") + (i == 1 ? "min" : "max");
-            std::string reason = std::string("dtypes of ") + paramNames + " must be the same";
+            std::string reason = std::string("The dtypes of ") + paramNames + " must be the same";
             OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), paramNames.c_str(),
                 dtypesStr.c_str(), reason.c_str());
             return ge::GRAPH_FAILED;

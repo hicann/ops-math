@@ -79,7 +79,7 @@ ge::graphStatus SelectCheckInputDtype(gert::TilingContext* context)
                                 ge::TypeUtils::DataTypeToSerialString(input2DType) + " and " +
                                 ge::TypeUtils::DataTypeToSerialString(outputDtype);
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context->GetNodeName(), "condition, x1, x2 and y",
-            dtypesStr.c_str(), "condition must be bool, x1, x2 and y must have the same dtype");
+            dtypesStr.c_str(), "The dtype of Condition must be bool, and the dtypes of x1, x2 and y must be the same");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -106,7 +106,7 @@ ge::graphStatus InferSelectShape(gert::TilingContext* context, vector<gert::Shap
         std::string x2ShapeStr = Ops::Base::ToString(x2Shape);
         std::string shapesStr = x1ShapeStr + " and " + x2ShapeStr;
         OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x1 and x2",
-            shapesStr.c_str(), "shapes of x1 and x2 must be the same");
+            shapesStr.c_str(), "The shapes of x1 and x2 must be the same");
         return ge::GRAPH_FAILED;
     }
         
@@ -114,7 +114,7 @@ ge::graphStatus InferSelectShape(gert::TilingContext* context, vector<gert::Shap
     OP_CHECK_IF(conditionResize < 0,
         OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "condition and x1",
             (std::to_string(conditionDimNum) + " and " + std::to_string(x1DimNum)).c_str(),
-            "dim of condition should not be greater than dim of x1"),
+            "The shape dim of condition should not be greater than the shape dim of x1"),
         return ge::GRAPH_FAILED);
 
     gert::Shape conditionNewShape;

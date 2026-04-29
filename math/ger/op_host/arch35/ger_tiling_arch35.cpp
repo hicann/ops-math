@@ -136,7 +136,7 @@ bool GerTiling::CheckShapes()
                                std::to_string(x2Shape_.GetShapeSize()) + " and " +
                                std::to_string(yShape_.GetShapeSize());
         OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(context_->GetNodeName(), "x1, x2 and y",
-            sizesStr.c_str(), "shape sizes of x1, x2 and y should be greater than 0.");
+            sizesStr.c_str(), "The shape sizes of x1, x2 and y should be greater than 0");
         return false;
     }
     // 校验x1，x2为1维
@@ -186,7 +186,7 @@ ge::graphStatus GerTiling::DoOpTiling() {
                             ge::TypeUtils::DataTypeToSerialString(input1DType) + " and " +
                             ge::TypeUtils::DataTypeToSerialString(outputDType);
     OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1, x2 and y", dtypesStr.c_str(),
-        "dtypes of x1, x2 and y must be the same, and must be float16, bfloat16 or float");
+        "The dtypes of x1, x2 and y must be the same, and must be float16, bfloat16 or float");
     return ge::GRAPH_FAILED;
 }
 

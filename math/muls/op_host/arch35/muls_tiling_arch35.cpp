@@ -47,9 +47,8 @@ ge::graphStatus MulsTiling::CalcOutputDtype()
 
     OP_CHECK_IF(inputDtype != this->outputDtype,
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x and y",
-            (ge::TypeUtils::DataTypeToSerialString(inputDtype) + " and " +
-             ge::TypeUtils::DataTypeToSerialString(this->outputDtype)).c_str(),
-            "dtypes of x and y must be the same"),
+            (Ops::Base::ToString(inputDtype) + " and " + Ops::Base::ToString(this->outputDtype)).c_str(),
+            "The dtypes of x and y must be the same"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -70,7 +69,7 @@ ge::graphStatus MulsTiling::CheckShape()
         std::string outputShapeStr = Ops::Base::ToString(outputShape);
         std::string shapesStr = inputShapeStr + " and " + outputShapeStr;
         OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x and y",
-            shapesStr.c_str(), "shapes of x and y must be the same");
+            shapesStr.c_str(), "The shapes of x and y must be the same");
         return ge::GRAPH_FAILED;
     }
 
@@ -107,7 +106,9 @@ ge::graphStatus MulsTiling::RunTiling()
     } else if (this->outputDtype == ge::DT_COMPLEX64) {
         res = elewiseBaseTiling.DoTiling<MulsComplex64Op<int64_t>::OpDag>(tiling->baseTiling);
     } else {
-        OP_LOGE(tilingContext, "data type check failed. dtype: %d", this->outputDtype);
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y",
+            Ops::Base::ToString(this->outputDtype).c_str(),
+            "float16, float32, bfloat16, int32, int16, int64, complex32 or complex64");
         return ge::GRAPH_FAILED;
     }
 

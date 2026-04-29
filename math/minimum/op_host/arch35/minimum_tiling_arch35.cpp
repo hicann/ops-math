@@ -60,7 +60,7 @@ ge::graphStatus MinimumTiling::DoOpTiling()
         std::string dtypesStr = TypeUtils::DataTypeToSerialString(x1DType) + " and " +
                                 TypeUtils::DataTypeToSerialString(x2DType);
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1 and x2",
-            dtypesStr.c_str(), "dtypes of x1 and x2 must be the same");
+            dtypesStr.c_str(), "The dtypes of x1 and x2 must be the same");
         return ge::GRAPH_FAILED;
     }
 
@@ -71,7 +71,7 @@ ge::graphStatus MinimumTiling::DoOpTiling()
         std::string dtypesStr =
             TypeUtils::DataTypeToSerialString(x1DType) + " and " + TypeUtils::DataTypeToSerialString(yDType);
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            context_->GetNodeName(), "x1 and y", dtypesStr.c_str(), "dtypes of x1 and y must be the same");
+            context_->GetNodeName(), "x1 and y", dtypesStr.c_str(), "The dtypes of x1 and y must be the same");
         return ge::GRAPH_FAILED;
     }
 

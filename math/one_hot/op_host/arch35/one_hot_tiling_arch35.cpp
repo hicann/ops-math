@@ -114,7 +114,8 @@ ge::graphStatus OneHotTilingBase::MergeDims()
     int32_t dimNum = inputOriginShape.GetDimNum();
     int32_t tmpAbsAxis = axis_ == -1 ? dimNum : axis_;
     if (tmpAbsAxis < 0 || tmpAbsAxis > dimNum) {
-        OP_LOGE(context_->GetNodeName(), "axis should be less than data dims.");
+        OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "axis",
+            std::to_string(axis_).c_str(), "within the range [-1, the shape dim of x]");
         return ge::GRAPH_FAILED;
     }
     // Merge to 2D Shape(prefixdim, suffixdim)
@@ -212,35 +213,29 @@ bool OneHotTilingBase::AnalyzeDtypeAndFormat()
     outputType = outputPtr->GetDataType();
     OP_CHECK_IF(
         indicesType != ge::DT_INT32 && indicesType != ge::DT_INT64 && indicesType != ge::DT_UINT8,
-        OP_LOGE(
-            context_->GetNodeName(), "The dtype of x only support DT_UINT8, DT_INT32 and DT_INT64, actual %s",
-            ge::TypeUtils::DataTypeToSerialString(indicesType).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x",
+            Ops::Base::ToString(indicesType).c_str(), "uint8, int32 or int64"),
         return false);
     OP_CHECK_IF(
         depthType != ge::DT_INT32 && depthType != ge::DT_INT64,
-        OP_LOGE(
-            context_->GetNodeName(), "The dtype of depth only support DT_INT32 and DT_INT64, actual %s",
-            ge::TypeUtils::DataTypeToSerialString(depthType).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "depth",
+            Ops::Base::ToString(depthType).c_str(), "int32 or int64"),
         return false);
     OP_CHECK_IF(
         ((onValueType != offValueType) ||
          (onValueType != ge::DT_FLOAT16 && onValueType != ge::DT_FLOAT && onValueType != ge::DT_INT32 &&
           onValueType != ge::DT_INT64 && onValueType != ge::DT_INT8 && onValueType != ge::DT_UINT8)),
-        OP_LOGE(
-            context_->GetNodeName(),
-            "The dtype of on_value and off_value must be the same, and only support FLOAT, "
-            "FLOAT16, INT32, INT64, INT8 and UINT8, actual on_value is %s, off_value is %s",
-            ge::TypeUtils::DataTypeToSerialString(onValueType).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(offValueType).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            context_->GetNodeName(), "on_value and off_value",
+            (Ops::Base::ToString(onValueType) + " and " + Ops::Base::ToString(offValueType)).c_str(),
+            "The dtypes of on_value and off_value must be the same, and must be float16, float, int32, int64, int8 or uint8"),
         return false);
     OP_CHECK_IF(
         (outputType != onValueType),
-        OP_LOGE(
-            context_->GetNodeName(),
-            "The dtype of output must be the same as input on_value/off_value, but input dtype is %s, "
-            "output dtype is %s",
-            ge::TypeUtils::DataTypeToSerialString(onValueType).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(outputType).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            context_->GetNodeName(), "y and on_value",
+            (Ops::Base::ToString(outputType) + " and " + Ops::Base::ToString(onValueType)).c_str(),
+            "The dtypes of y and on_value must be the same"),
         return false);
     return true;
 }
@@ -253,14 +248,13 @@ bool OneHotTilingBase::AnalyzeAttrs()
     axis_ = *axis;
 
     if (axis_ > static_cast<int32_t>(inputOriginShape.GetDimNum()) || (axis_ < 0 && axis_ != -1)) {
-        OP_LOGE(
-            context_->GetNodeName(),
-            "Attr axis should not be larger than input x's dim size, actual axis is %d, x's dim size is %d.", axis_,
-            static_cast<int32_t>(inputOriginShape.GetDimNum()));
+        OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "axis",
+            std::to_string(axis_).c_str(), "within the range [-1, input x's dim size]");
         return false;
     }
     if (axis_ < 0 && axis_ != -1) {
-        OP_LOGE(context_->GetNodeName(), "Attr axis should not be lesser than -1, actual axis is %d.", axis_);
+        OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "axis",
+            std::to_string(axis_).c_str(), "greater than or equal to -1");
         return false;
     }
     return true;
@@ -286,7 +280,8 @@ bool OneHotTilingBase::AnalyzeInputs()
         }
         depth_ = static_cast<int64_t>(*(depthTensor->GetData<int64_t>()));
     } else {
-        OP_LOGE(context_->GetNodeName(), "depth data type is not support.");
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "depth",
+            Ops::Base::ToString(depthDType).c_str(), "int32 or int64");
         return false;
     }
     auto depthShapePtr = context_->GetInputShape(INPUT_DEPTH_IDX);
@@ -308,9 +303,9 @@ bool OneHotTilingBase::AnalyzeInputs()
     inputOriginShape = Ops::Base::EnsureNotScalar(indicesShapePtr->GetOriginShape());
     OP_CHECK_IF(
         (inputOriginShape.GetDimNum() > X_MAX_DIM_CNT),
-        OP_LOGE(
-            context_->GetNodeName(), "Input x's dim should not be bigger than %u, actual %zu.", X_MAX_DIM_CNT,
-            inputOriginShape.GetDimNum()),
+        OP_LOGE_FOR_INVALID_SHAPEDIM(
+            context_->GetNodeName(), "x", std::to_string(inputOriginShape.GetDimNum()).c_str(),
+            "less than or equal to 7"),
         return false);
     auto outShape = Ops::Base::EnsureNotScalar(outShapePtr->GetOriginShape());
 

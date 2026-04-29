@@ -180,7 +180,10 @@ static ge::graphStatus GetConstStartOrStop(
             break;
         }
         default:
-            OP_LOGE(context->GetNodeName(), "start or stop dataType is not support!");
+            OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(),
+                (input_index == static_cast<int64_t>(INDEX_INPUT_START)) ? "start" : "stop",
+                Ops::Base::ToString(dataType).c_str(),
+                "float32, float16, bfloat16, int32, int16, int8 or uint8");
             return ge::GRAPH_FAILED;
     }
 
