@@ -98,7 +98,7 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
      <tr>
       <td>qkv（aclTensor*）</td>
       <td>输入</td>
-      <td>输入的张量，公式中的q<sub>o</sub>、k<sub>o</sub>、v<sub>o</sub>。</td>
+      <td>输入的张量，公式中的q<sub>i</sub>、k<sub>i</sub>、v<sub>i</sub>。</td>
       <td>shape为{B,T,3 * num_heads * dim_per_head}三维张量。B为批量大小，T为序列长度，num_heads为注意力头数，dim_per_head为每个注意力头的维度。</td>
       <td>BFLOAT16、FLOAT16、FLOAT</td>
       <td>ND</td>
