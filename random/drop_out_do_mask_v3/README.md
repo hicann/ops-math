@@ -53,7 +53,7 @@ $$
       <td>mask</td>
       <td>输入</td>
       <td>bit类型并使用UINT8类型存储的mask数据，shape需要为(align(self的元素个数,128)/8)。</td>
-      <td>UINT8</td>
+      <td>UINT8、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>

@@ -28,6 +28,7 @@ using namespace ge;
 namespace optiling {
 
 constexpr int64_t ALIGN256 = 256;
+constexpr int64_t MASK_ALIGN_RESERVE = 192;
 constexpr int64_t KEEP_PROB_IDX = 0;
 constexpr int64_t INDEX_INPUT_X = 0;
 
@@ -63,6 +64,7 @@ OpTilingConfig DropOutDoMaskV3DTiling::BuildOpConfig()
                                  [[maybe_unused]] uint32_t counter[4]) -> ge::graphStatus { return ge::GRAPH_SUCCESS; };
 
     config.coreAlignSize = ALIGN256;
+    config.sharedTmpBufSize = MASK_ALIGN_RESERVE; // double mask buffer 128B 对齐预留
 
     config.getBufferNum = [](gert::TilingContext* ctx, int64_t& bufNum) -> ge::graphStatus {
         auto InputDesc = ctx->GetInputDesc(0);
@@ -135,5 +137,4 @@ static ge::graphStatus TilingDropOutDoMaskV3D(gert::TilingContext* tilingContext
 IMPL_OP_OPTILING(DropOutDoMaskV3D)
     .Tiling(TilingDropOutDoMaskV3D)
     .TilingParse<RandomOperatorCompileInfo>(TilingPrepare4DropOutDoMaskV3DTiling);
-
 } // namespace optiling

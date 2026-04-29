@@ -20,7 +20,6 @@ class DropOutDoMaskV3D : public OpDef {
 public:
     const std::vector<ge::DataType> xDataType = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
     const std::vector<ge::DataType> maskDataType = {ge::DT_UINT8, ge::DT_BOOL};
-    const std::vector<ge::DataType> yDataType = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
     const std::vector<ge::Format> baseFormat = {ge::FORMAT_ND};
 
     explicit DropOutDoMaskV3D(const char* name) : OpDef(name)
@@ -28,7 +27,6 @@ public:
         randomdef::RandomDtypeFmtGen gen(
             {{"xDataType", xDataType},
              {"maskDataType", maskDataType},
-             {"yDataType", yDataType},
              {"baseFormat", baseFormat}});
         const auto baseFormatSeq = gen.GetSequence<ge::Format>("baseFormat");
 
@@ -46,7 +44,7 @@ public:
             .ValueDepend(OPTIONAL);
         this->Output("y")
             .ParamType(REQUIRED)
-            .DataType(gen.GetSequence("yDataType"))
+            .DataType(gen.GetSequence("xDataType"))
             .Format(baseFormatSeq)
             .UnknownShapeFormat(baseFormatSeq);
         this->Attr("keep_prob").AttrType(REQUIRED).Float();

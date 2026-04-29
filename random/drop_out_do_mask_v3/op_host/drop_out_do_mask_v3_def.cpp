@@ -21,7 +21,6 @@ public:
     const std::vector<ge::DataType> xDataType = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
     const std::vector<ge::DataType> maskDataType = {ge::DT_UINT8, ge::DT_BOOL};
     const std::vector<ge::DataType> keepProbDataType = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
-    const std::vector<ge::DataType> yDataType = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
     const std::vector<ge::Format> baseFormat = {ge::FORMAT_ND};
 
     explicit DropOutDoMaskV3(const char* name) : OpDef(name)
@@ -30,7 +29,6 @@ public:
             {{"xDataType", xDataType},
              {"maskDataType", maskDataType},
              {"keepProbDataType", keepProbDataType},
-             {"yDataType", yDataType},
              {"baseFormat", baseFormat}});
         const auto baseFormatSeq = gen.GetSequence<ge::Format>("baseFormat");
 
@@ -54,7 +52,7 @@ public:
             .ValueDepend(OPTIONAL);
         this->Output("y")
             .ParamType(REQUIRED)
-            .DataType(gen.GetSequence("yDataType"))
+            .DataType(gen.GetSequence("xDataType"))
             .Format(baseFormatSeq)
             .UnknownShapeFormat(baseFormatSeq);
 

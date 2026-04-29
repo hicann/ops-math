@@ -53,15 +53,15 @@ $$
       <td>mask</td>
       <td>输入</td>
       <td>bit类型并使用UINT8类型存储的mask数据，shape需要为(align(self的元素个数,128)/8)。</td>
-      <td>UINT8</td>
+      <td>UINT8、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>keep_prob</td>
-      <td>输入</td>
+      <td>属性</td>
       <td>用于计算输出数据缩放比例的概率值。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16</td>
-      <td>ND</td>
+      <td>FLOAT</td>
+      <td>-</td>
     </tr>
     <tr>
       <td>y</td>

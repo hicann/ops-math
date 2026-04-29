@@ -160,7 +160,7 @@
           {
             "name": "x",
             "index": 0,
-            "dtype": "bfloat16",
+            "dtype": "float32",
             "format": "ND",
             "paramType": "required",
             "shape": [
@@ -171,7 +171,7 @@
           {
             "name": "mask",
             "index": 1,
-            "dtype": "bool",
+            "dtype": "uint8",
             "format": "ND",
             "paramType": "required",
             "shape": [
@@ -182,7 +182,7 @@
           {
             "name": "keep_prob",
             "index": 2,
-            "dtype": "bfloat16",
+            "dtype": "float32",
             "format": "ND",
             "paramType": "required",
             "shape": [
@@ -195,7 +195,7 @@
           {
             "name": "y",
             "index": 0,
-            "dtype": "bfloat16",
+            "dtype": "float32",
             "format": "ND",
             "paramType": "required",
             "shape": [
@@ -222,7 +222,7 @@
           {
             "name": "mask",
             "index": 1,
-            "dtype": "uint8",
+            "dtype": "bool",
             "format": "ND",
             "paramType": "required",
             "shape": [
@@ -262,7 +262,7 @@
           {
             "name": "x",
             "index": 0,
-            "dtype": "float32",
+            "dtype": "bfloat16",
             "format": "ND",
             "paramType": "required",
             "shape": [
@@ -273,7 +273,7 @@
           {
             "name": "mask",
             "index": 1,
-            "dtype": "bool",
+            "dtype": "uint8",
             "format": "ND",
             "paramType": "required",
             "shape": [
@@ -284,7 +284,7 @@
           {
             "name": "keep_prob",
             "index": 2,
-            "dtype": "float32",
+            "dtype": "bfloat16",
             "format": "ND",
             "paramType": "required",
             "shape": [
@@ -297,12 +297,528 @@
           {
             "name": "y",
             "index": 0,
-            "dtype": "float32",
+            "dtype": "bfloat16",
             "format": "ND",
             "paramType": "required",
             "shape": [
               -2
             ],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ]
+      },
+      {
+        "bin_filename": "DropOutDoMaskV3_8e010ac7c09e569d6d6bdf1db76bc0f4",
+        "inputs": [
+          {
+            "name": "x",
+            "index": 0,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "mask",
+            "index": 1,
+            "dtype": "uint8",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "keep_prob",
+            "index": 2,
+            "dtype": "float16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "index": 0,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ]
+      },
+      {
+        "bin_filename": "DropOutDoMaskV3_8775e74adbb95a17e11116a6ce014a0e",
+        "inputs": [
+          {
+            "name": "x",
+            "index": 0,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "mask",
+            "index": 1,
+            "dtype": "uint8",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "keep_prob",
+            "index": 2,
+            "dtype": "bfloat16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "index": 0,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ]
+      },
+      {
+        "bin_filename": "DropOutDoMaskV3_48def6fce1dcb93cb02e0d90c3eba093",
+        "inputs": [
+          {
+            "name": "x",
+            "index": 0,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "mask",
+            "index": 1,
+            "dtype": "bool",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "keep_prob",
+            "index": 2,
+            "dtype": "float16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "index": 0,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ]
+      },
+      {
+        "bin_filename": "DropOutDoMaskV3_13803ad6d69e4d2c78b1f721eab22083",
+        "inputs": [
+          {
+            "name": "x",
+            "index": 0,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "mask",
+            "index": 1,
+            "dtype": "bool",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "keep_prob",
+            "index": 2,
+            "dtype": "bfloat16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "index": 0,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ]
+      },
+      {
+        "bin_filename": "DropOutDoMaskV3_624b632022a60a2bb6ea9e912211f5b5",
+        "inputs": [
+          {
+            "name": "x",
+            "index": 0,
+            "dtype": "float16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "mask",
+            "index": 1,
+            "dtype": "uint8",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "keep_prob",
+            "index": 2,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "index": 0,
+            "dtype": "float16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ]
+      },
+      {
+        "bin_filename": "DropOutDoMaskV3_ee03948cbbdad3b6deccfafd67e297c6",
+        "inputs": [
+          {
+            "name": "x",
+            "index": 0,
+            "dtype": "float16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "mask",
+            "index": 1,
+            "dtype": "uint8",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "keep_prob",
+            "index": 2,
+            "dtype": "bfloat16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "index": 0,
+            "dtype": "float16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ]
+      },
+      {
+        "bin_filename": "DropOutDoMaskV3_e099c187d8dd8d40fd92eb51f835bb71",
+        "inputs": [
+          {
+            "name": "x",
+            "index": 0,
+            "dtype": "float16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "mask",
+            "index": 1,
+            "dtype": "bool",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "keep_prob",
+            "index": 2,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "index": 0,
+            "dtype": "float16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ]
+      },
+      {
+        "bin_filename": "DropOutDoMaskV3_081dbf8f28ab0b27df47064aaee034c7",
+        "inputs": [
+          {
+            "name": "x",
+            "index": 0,
+            "dtype": "float16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "mask",
+            "index": 1,
+            "dtype": "bool",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "keep_prob",
+            "index": 2,
+            "dtype": "bfloat16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "index": 0,
+            "dtype": "float16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ]
+      },
+      {
+        "bin_filename": "DropOutDoMaskV3_341770faff066dc84c3f123233bd9ca4",
+        "inputs": [
+          {
+            "name": "x",
+            "index": 0,
+            "dtype": "bfloat16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "mask",
+            "index": 1,
+            "dtype": "uint8",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "keep_prob",
+            "index": 2,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "index": 0,
+            "dtype": "bfloat16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ]
+      },
+      {
+        "bin_filename": "DropOutDoMaskV3_1a2c8bab6173d04c762edf97ff55598d",
+        "inputs": [
+          {
+            "name": "x",
+            "index": 0,
+            "dtype": "bfloat16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "mask",
+            "index": 1,
+            "dtype": "uint8",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "keep_prob",
+            "index": 2,
+            "dtype": "float16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "index": 0,
+            "dtype": "bfloat16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ]
+      },
+      {
+        "bin_filename": "DropOutDoMaskV3_0f0c07d49dca7121ab52979baa8e6626",
+        "inputs": [
+          {
+            "name": "x",
+            "index": 0,
+            "dtype": "bfloat16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "mask",
+            "index": 1,
+            "dtype": "bool",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "keep_prob",
+            "index": 2,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "index": 0,
+            "dtype": "bfloat16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ]
+      },
+      {
+        "bin_filename": "DropOutDoMaskV3_8b9774cca58eb2850a1c893471676d83",
+        "inputs": [
+          {
+            "name": "x",
+            "index": 0,
+            "dtype": "bfloat16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "mask",
+            "index": 1,
+            "dtype": "bool",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          },
+          {
+            "name": "keep_prob",
+            "index": 2,
+            "dtype": "float16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
+            "format_match_mode": "FormatAgnostic"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "index": 0,
+            "dtype": "bfloat16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [-2],
             "format_match_mode": "FormatAgnostic"
           }
         ]

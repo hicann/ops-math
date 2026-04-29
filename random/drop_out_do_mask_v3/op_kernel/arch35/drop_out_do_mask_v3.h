@@ -142,11 +142,11 @@ __aicore__ inline void DropOutDoMaskV3Op<T>::Init(GM_ADDR x, GM_ADDR mask, GM_AD
     }
 
     pipePtr_->InitBuffer(xInputQueue_, DOUBLE_BUFFER, tiling_->singleBufferSize * sizeof(T));
-    pipePtr_->InitBuffer(maskInputQueue_, DOUBLE_BUFFER, tiling_->singleBufferSize * sizeof(uint8_t));
+    pipePtr_->InitBuffer(maskInputQueue_, DOUBLE_BUFFER,
+        Ops::Base::CeilAlign(static_cast<uint32_t>(tiling_->singleBufferSize), ALIGN_128) * sizeof(uint8_t));
     pipePtr_->InitBuffer(yOutputQueue_, DOUBLE_BUFFER, tiling_->singleBufferSize * sizeof(T));
 
     prob_ = tiling_->keepProb;
-
 }
 
 template <typename T>
@@ -285,7 +285,5 @@ __aicore__ inline void DropOutDoMaskV3Op<T>::Process()
         CopyOutY(idx, dataCount);
     }
 }
-
 } // namespace DropOutDoMaskV3
-
 #endif // DROP_OUT_DO_MASK_V3_H
