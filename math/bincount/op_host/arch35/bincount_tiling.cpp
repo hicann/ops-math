@@ -108,7 +108,7 @@ ge::graphStatus BincountTiling::CheckDtype()
         !(weightsDataType == ge::DT_FLOAT || weightsDataType == ge::DT_INT32 || weightsDataType == ge::DT_INT64),
         OP_LOGE_WITH_INVALID_INPUT_DTYPE(
             context_->GetNodeName(), "weights", ge::TypeUtils::DataTypeToSerialString(weightsDataType).c_str(),
-            "FLOAT, INT32, INT64"),
+            "FLOAT, INT32 or INT64"),
         return ge::GRAPH_FAILED);
 
     auto outputBinsDesc = context_->GetOutputDesc(OUTPUT_IDX_BINS);
@@ -119,7 +119,7 @@ ge::graphStatus BincountTiling::CheckDtype()
           outputBinsDataType == ge::DT_INT64),
         OP_LOGE_FOR_INVALID_DTYPE(
             context_->GetNodeName(), "bins", ge::TypeUtils::DataTypeToSerialString(outputBinsDataType).c_str(),
-            "FLOAT, INT32, INT64"),
+            "FLOAT, INT32 or INT64"),
         return ge::GRAPH_FAILED);
 
     if (outputBinsDataType != weightsDataType) {
@@ -127,7 +127,7 @@ ge::graphStatus BincountTiling::CheckDtype()
                                ge::TypeUtils::DataTypeToSerialString(outputBinsDataType);
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
             context_->GetNodeName(), "weights and bins", dtypeMsg.c_str(),
-            "Output bins dtype should be same to input weights dtype");
+            "The dtypes of output parameter bins and input parameter weights must be the same");
         return ge::GRAPH_FAILED;
     }
     binsDataType_ = outputBinsDataType;
@@ -157,7 +157,7 @@ ge::graphStatus BincountTiling::CheckInputParams()
     OP_CHECK_IF(
         sizeContent < 0,
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "size", std::to_string(sizeContent).c_str(), "size value should not be negtive"),
+            context_->GetNodeName(), "size", std::to_string(sizeContent).c_str(), "The value of size cannot be negtive"),
         return ge::GRAPH_FAILED);
     inputSize_ = sizeContent;
 
@@ -174,9 +174,9 @@ ge::graphStatus BincountTiling::CheckInputParams()
     int64_t outputBinsLength = outputShape->GetStorageShape().GetShapeSize();
     OP_LOGI(context_->GetNodeName(), "outputBinsLength is %ld", sizeContent);
     if (outputBinsLength != inputSize_) {
-        OP_LOGE_FOR_INVALID_SHAPESIZE(
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
             context_->GetNodeName(), "bins", std::to_string(outputBinsLength).c_str(),
-            ("same as size shape size " + std::to_string(inputSize_)).c_str());
+            ("The shape size of parameter bins must be equal to the shape size of parameter size " + std::to_string(inputSize_)).c_str());
         return ge::GRAPH_FAILED;
     }
     binsShapeSize_ = outputBinsLength;

@@ -47,11 +47,11 @@ bool AddTiling::CheckDtype(
     bool isMixedDtype) const
 {
     if (!isMixedDtype && (input0Dtype != input1Dtype || input0Dtype != outputDtype)) {
-        std::string reasonMsg = "Dtype of x1 should be equal to dtype of x2[" +
-                                ge::TypeUtils::DataTypeToSerialString(input1Dtype) + "] and y[" +
-                                ge::TypeUtils::DataTypeToSerialString(outputDtype) +
-                                "], except x1 is fp16 and x2 is fp32, or x1 is fp32 and x2 is fp16, or x1 is bf16 and x2 "
-                                "is fp32, or x1 is fp32 and x2 is bf16.";
+        std::string reasonMsg = "The dtype of x1 must be the same as the dtypes " +
+                                ge::TypeUtils::DataTypeToSerialString(input1Dtype) + " and " +
+                                ge::TypeUtils::DataTypeToSerialString(outputDtype) + " of x2 and y"
+                                ", when the dtypes of x1 and x2 are not within the supported floating-point type combinations: "
+                                "x1 is float and x2 is float16 or bfloat16, or x2 is float and x2 is float16 or bfloat16";
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
             context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
             reasonMsg.c_str());
@@ -61,7 +61,8 @@ bool AddTiling::CheckDtype(
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
             context_->GetNodeName(), "y",
             ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str(),
-            "Dtype of output y should be fp32 when input dtypes is mixed.");
+            "The dtype of output y must be float, when the dtype of x1 or x2 is float "
+            "and the dtype of another input x2 or x1 is float16 or bfloat16");
         return false;
     }
     return true;

@@ -509,7 +509,7 @@ ge::graphStatus ConfusionTransposeDTiling::ParametersVerifyingInputAndOutput()
         std::string dtypeMsg =
             Ops::Base::ToString(paramInfo_.xDtype) + " and " + Ops::Base::ToString(paramInfo_.yDtype);
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            tilingContext_->GetNodeName(), "x and y", dtypeMsg.c_str(), "x and output must have the same data type");
+            tilingContext_->GetNodeName(), "x and y", dtypeMsg.c_str(), "The dtypes of x and y must be the same");
         return ge::GRAPH_FAILED;
     }
 
@@ -546,7 +546,7 @@ ge::graphStatus ConfusionTransposeDTiling::ParametersVerifyingDimNd()
         if (paramInfo_.perm.GetDimNum() != paramInfo_.xShape.GetDimNum()) {
             std::string dimMsg =
                 std::to_string(paramInfo_.xShape.GetDimNum()) + " and " + std::to_string(paramInfo_.perm.GetDimNum());
-            std::string reasonMsg = "perm and x's shape dim should be equal";
+            std::string reasonMsg = "The shape dimensions of perm and x must be the same, when input x need to be transposed first";
             OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
                 tilingContext_->GetNodeName(), "x and perm", dimMsg.c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
@@ -555,7 +555,9 @@ ge::graphStatus ConfusionTransposeDTiling::ParametersVerifyingDimNd()
         if (paramInfo_.perm.GetDimNum() != paramInfo_.shape.GetDimNum()) {
             std::string dimMsg =
                 std::to_string(paramInfo_.perm.GetDimNum()) + " and " + std::to_string(paramInfo_.shape.GetDimNum());
-            std::string reasonMsg = "perm's dim num and shape's dim num should be equal";
+            std::string reasonMsg =
+                "The shape dimensions of parameter perm and parameter shape must be the same, when input x does not need "
+                "to be transposed first";
             OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
                 tilingContext_->GetNodeName(), "perm and shape", dimMsg.c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
@@ -595,7 +597,7 @@ ge::graphStatus ConfusionTransposeDTiling::ParametersVerifyingDimNz()
         if (paramInfo_.perm.GetDimNum() != paramInfo_.xShape.GetDimNum() - 2) {
             std::string dimMsg =
                 std::to_string(paramInfo_.xShape.GetDimNum()) + " and " + std::to_string(paramInfo_.perm.GetDimNum());
-            std::string reasonMsg = "When format is NZ, the rank of perm should equal the rank of x's shape minus 2";
+            std::string reasonMsg = "The shape dimension of perm must be twice that of x, when format is NZ";
             OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
                 tilingContext_->GetNodeName(), "x and perm", dimMsg.c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
@@ -604,7 +606,7 @@ ge::graphStatus ConfusionTransposeDTiling::ParametersVerifyingDimNz()
         if (paramInfo_.perm.GetDimNum() != paramInfo_.shape.GetDimNum()) {
             std::string dimMsg =
                 std::to_string(paramInfo_.perm.GetDimNum()) + " and " + std::to_string(paramInfo_.shape.GetDimNum());
-            std::string reasonMsg = "perm and shape's shape dim should be equal";
+            std::string reasonMsg = "The shape dimensions of parameter perm and parameter shape must be the same";
             OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
                 tilingContext_->GetNodeName(), "perm and shape", dimMsg.c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
@@ -623,9 +625,9 @@ ge::graphStatus ConfusionTransposeDTiling::ParametersVerifyingPerm()
         }
     }
     if (checkPerm != (1l << paramInfo_.perm.GetDimNum()) - 1) {
-        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+        OP_LOGE_FOR_INVALID_VALUE(
             tilingContext_->GetNodeName(), "perm", Ops::Base::ToString(paramInfo_.perm).c_str(),
-            "perm should be a permutation of 0,1, ..., dim - 1");
+            "a permutation of 0,1, ..., dim - 1");
         return ge::GRAPH_FAILED;
     }
 
@@ -657,27 +659,27 @@ ge::graphStatus ConfusionTransposeDTiling::ParametersVerifyingProdAndPositive()
         xPositive == false,
         OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
             tilingContext_->GetNodeName(), "x", Ops::Base::ToString(paramInfo_.xShape).c_str(),
-            "x's dims should be all positive"),
+            "All axes of x must be positive numbers"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         yPositive == false,
         OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
             tilingContext_->GetNodeName(), "y", Ops::Base::ToString(paramInfo_.yShape).c_str(),
-            "output y's dims should be all positive"),
+            "All axes of output y must be positive numbers"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         shapePositive == false,
         OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
             tilingContext_->GetNodeName(), "shape", Ops::Base::ToString(paramInfo_.shape).c_str(),
-            "shape's dims should be all positive"),
+            "All axes of parameter shape must be positive numbers"),
         return ge::GRAPH_FAILED);
 
     if (prodX > prodY || prodX != prodShape) {
-        std::string shapeMsg = Ops::Base::ToString(paramInfo_.xShape) + ", " + Ops::Base::ToString(paramInfo_.yShape) +
-                               " and " + Ops::Base::ToString(paramInfo_.shape);
-        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+        std::string shapeMsg = std::to_string(prodX) + ", " + std::to_string(prodY) + " and " + std::to_string(prodShape);
+        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(
             tilingContext_->GetNodeName(), "x, y and shape", shapeMsg.c_str(),
-            "prodX must be equal with prodShape and prodX must less or equal than prodY.");
+            "The shape sizes of parameter x and parameter shape must be the same, and the shape size of x must less "
+            "than or equal to that of y");
         return ge::GRAPH_FAILED;
     }
 

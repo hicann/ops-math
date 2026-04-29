@@ -51,9 +51,9 @@ ge::graphStatus BitwiseAndTiling::DoOpTiling()
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputYDesc);
     ge::DataType outputDtype = outputYDesc->GetDataType();
     if ((input0DType != input1DType) || (input0DType != outputDtype)) {
-        std::string reasonMsg = "dtype of x1 should be same with x2[" +
-                                ge::TypeUtils::DataTypeToSerialString(input1DType) + "] and y[" +
-                                ge::TypeUtils::DataTypeToSerialString(outputDtype) + "]";
+        std::string reasonMsg = "The dtype of x1 must be the same as the dtypes " +
+                                ge::TypeUtils::DataTypeToSerialString(input1DType) + " and " +
+                                ge::TypeUtils::DataTypeToSerialString(outputDtype) + " of x2 and y";
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
             context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
             reasonMsg.c_str());

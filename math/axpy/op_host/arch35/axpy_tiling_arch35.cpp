@@ -49,9 +49,9 @@ bool AxpyTiling::CheckDtype(const ge::DataType& input0Dtype, const ge::DataType&
     bool isDtypeSupported = (input0Dtype == ge::DT_FLOAT || input0Dtype == ge::DT_FLOAT16 ||
                              input0Dtype == ge::DT_BF16 || input0Dtype == ge::DT_INT32);
     if (!isDtypeSame) {
-        std::string reasonMsg = "Dtype of x1 should be equal to dtype of x2[" +
-                                ge::TypeUtils::DataTypeToSerialString(input1Dtype) + "] and y dtype[" +
-                                ge::TypeUtils::DataTypeToSerialString(outputDtype) + "]";
+        std::string reasonMsg = "The dtype of x1 must be the same as the dtypes " +
+                                ge::TypeUtils::DataTypeToSerialString(input1Dtype) + " and " +
+                                ge::TypeUtils::DataTypeToSerialString(outputDtype) + " of x2 and y";
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
             context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
             reasonMsg.c_str());
@@ -60,7 +60,7 @@ bool AxpyTiling::CheckDtype(const ge::DataType& input0Dtype, const ge::DataType&
     if (!isDtypeSupported) {
         OP_LOGE_WITH_INVALID_INPUT_DTYPE(
             context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
-            "float32, float16, bfloat16, int32");
+            "float32, float16, bfloat16 or int32");
         return false;
     }
     return true;

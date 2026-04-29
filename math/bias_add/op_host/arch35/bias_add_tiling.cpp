@@ -99,9 +99,9 @@ ge::graphStatus InferBiasShape(gert::TilingContext* context, vector<gert::Shape>
                     xShape[C_INDEX_NCXX] != biasShape[0],
                     OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
                         context->GetNodeName(), "x", ToString(xShape).c_str(),
-                        "C-dimension(x_shape[1]) must equal to bias length "
-                        "when the format of x is ND "
-                        "and [attr]data_format is included in [NCHW, NCDHW]"),
+                        "The C-dimension must be equal to bias length " + std::to_string(biasShape[0]) +
+                        " when the format of x is ND and attribute data_format is NCHW or NCDHW,"
+                        " where C-dimension is the 1st axis of x in the current format"),
                     return false);
 
                 broadcastBiasShape[C_INDEX_NCXX] = xShape.GetDim(C_INDEX_NCXX);
@@ -110,9 +110,9 @@ ge::graphStatus InferBiasShape(gert::TilingContext* context, vector<gert::Shape>
                     xShape[xDimNum - 1] != biasShape[0],
                     OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
                         context->GetNodeName(), "x", ToString(xShape).c_str(),
-                        "C-dimension(x_shape[-1]) must equal to bias length "
-                        "when the format of x is ND "
-                        "and [attr]data_format is included in [NHWC, NDHWC]"),
+                        "The C-dimension must be equal to bias length " + std::to_string(biasShape[0]) +
+                        " when the format of x is ND and attribute data_format is NHWC or NDHWC,"
+                        " where C-dimension is the last axis of x in the current format"),
                     return false);
 
                 broadcastBiasShape[xDimNum - 1] = xShape.GetDim(xDimNum - 1);
@@ -122,8 +122,9 @@ ge::graphStatus InferBiasShape(gert::TilingContext* context, vector<gert::Shape>
         case ge::FORMAT_NCDHW:
             OP_CHECK_IF(
                 xShape[C_INDEX_NCXX] != biasShape[0],
-                OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
-                    context->GetNodeName(), "x", ToString(xShape).c_str(), "C-dimension(x_shape[1]) must equal to bias length"),
+                OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context->GetNodeName(), "x", ToString(xShape).c_str(),
+                    "The C-dimension must be equal to bias length " + std::to_string(biasShape[0]) +
+                    " when the format of x is NCHW or NCDHW, where C-dimension is the 1st axis of x in the current format"),
                 return false);
 
             broadcastBiasShape[C_INDEX_NCXX] = xShape.GetDim(C_INDEX_NCXX);
@@ -132,15 +133,16 @@ ge::graphStatus InferBiasShape(gert::TilingContext* context, vector<gert::Shape>
         case ge::FORMAT_NDHWC:
             OP_CHECK_IF(
                 xShape[xDimNum - 1] != biasShape[0],
-                OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
-                    context->GetNodeName(), "x", ToString(xShape).c_str(), "C-dimension(x_shape[-1]) must equal to bias length"),
+                OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context->GetNodeName(), "x", ToString(xShape).c_str(),
+                    "The C-dimension must be equal to bias length " + std::to_string(biasShape[0]) +
+                    " when the format of x is NHWC or NDHWC, where C-dimension is the last axis of x in the current format"),
                 return false);
 
             broadcastBiasShape[xDimNum - 1] = xShape.GetDim(xDimNum - 1);
             break;
         default:
             OP_LOGE_FOR_INVALID_FORMAT(
-                context->GetNodeName(), "x", ge::GetFormatName(xFormat), "ND, NCHW, NCDHW, NHWC and NDHWC");
+                context->GetNodeName(), "x", ge::GetFormatName(xFormat), "ND, NCHW, NCDHW, NHWC or NDHWC");
             return false;
     }
 
@@ -176,14 +178,14 @@ ge::graphStatus BiasAddTiling::DoOpTiling()
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
             context_->GetNodeName(), "x and bias",
             (ge::TypeUtils::DataTypeToSerialString(xDType) + ge::TypeUtils::DataTypeToSerialString(biasDType)).c_str(),
-            "dtype of x and bias must be same."),
+            "The dtypes of x and bias must be the same."),
         return ge::GRAPH_FAILED);
 
     if (xDType != outputDType) {
         std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(xDType) + " and " +
                                ge::TypeUtils::DataTypeToSerialString(outputDType);
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            context_->GetNodeName(), "x and y", dtypeMsg.c_str(), "Dtype of x and y must be same.");
+            context_->GetNodeName(), "x and y", dtypeMsg.c_str(), "The dtypes of x and y must be the same.");
         return ge::GRAPH_FAILED;
     }
 

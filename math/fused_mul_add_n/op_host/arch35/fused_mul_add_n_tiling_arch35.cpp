@@ -138,8 +138,8 @@ ge::graphStatus FusedMulAddNTiling::GetShapeAttrsInfo()
         std::string dtypeMsg = Ops::Base::ToString(inputX1Dtype) + ", " + Ops::Base::ToString(inputX2Dtype) + ", " +
                                Ops::Base::ToString(inputX3Dtype) + " and " + Ops::Base::ToString(outputYDtype);
         std::string reasonMsg =
-            "All input and output tensors (x1, x2, x3, and y) must have the same dtype, "
-            "restricted to: FLOAT, FLOAT16, INT32, INT16 and BF16";
+            "The dtypes of all input and output parameters x1, x2, x3 and y must be the same, "
+            "and be in the range of FLOAT, FLOAT16, INT32, INT16 and BF16";
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
             context_->GetNodeName(), "x1, x2, x3 and y", dtypeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
@@ -166,7 +166,7 @@ ge::graphStatus FusedMulAddNTiling::DoOpTiling()
     if (shapeX1 != shapeX2) {
         std::string shapeMsg = Ops::Base::ToString(shapeX1) + " and " + Ops::Base::ToString(shapeX2);
         OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            context_->GetNodeName(), "x1 and x2", shapeMsg.c_str(), "Shapes of x1 and x2 should be same");
+            context_->GetNodeName(), "x1 and x2", shapeMsg.c_str(), "The shapes of x1 and x2 must be the same");
         return ge::GRAPH_FAILED;
     }
 

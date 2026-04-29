@@ -155,8 +155,8 @@ ge::graphStatus ClipByValueTiling::GetShapeAttrsInfo()
                                ge::TypeUtils::DataTypeToSerialString(clipValueMaxDtype) + " and " +
                                ge::TypeUtils::DataTypeToSerialString(yDtype);
         std::string reasonMsg =
-            "The dtype of input x is not supported (must be FLOAT, FLOAT16, BFLOAT16, INT32, or INT64), "
-            "or does not match the dtypes of clip_value_min, clip_value_max, and y";
+            "The dtype of input x must be within the range of FLOAT, FLOAT16, BFLOAT16, INT32, or INT64, "
+            "and it's dtype must be the same as the dtypes of clip_value_min, clip_value_max, and y";
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
             context_->GetNodeName(), "x, clip_value_min, clip_value_max and y", dtypeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;

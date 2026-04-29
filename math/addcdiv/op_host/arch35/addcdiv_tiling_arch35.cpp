@@ -50,10 +50,13 @@ bool AddcdivTiling::CheckDtype(
     auto nodeName = context_->GetNodeName();
     if (!isMixedDtype && (inputDataDtype != inputX1Dtype || inputDataDtype != inputX2Dtype ||
                           inputDataDtype != inputValDtype || inputDataDtype != outputDtype)) {
-        std::string reasonMsg = "Dtype of input_data should be equal to dtype of x1[" +
-                                ge::TypeUtils::DataTypeToSerialString(inputX1Dtype) + "], x2[" +
-                                ge::TypeUtils::DataTypeToSerialString(inputX2Dtype) + "] and y[" +
-                                ge::TypeUtils::DataTypeToSerialString(outputDtype) + "]";
+        std::string reasonMsg = "The dtype of input_data must be the same as the dtypes " +
+                                ge::TypeUtils::DataTypeToSerialString(inputX1Dtype) + ", " +
+                                ge::TypeUtils::DataTypeToSerialString(inputX2Dtype) + ", " +
+                                ge::TypeUtils::DataTypeToSerialString(inputValDtype) + " and " +
+                                ge::TypeUtils::DataTypeToSerialString(outputDtype) + " of x1, x2, value and y, "
+                                "when the dtypes of input_data and value are not within the supported floating-point "
+                                "type combinations: value is float,  and input_data is float16 or bfloat16";
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
             nodeName, "input_data", ge::TypeUtils::DataTypeToSerialString(inputDataDtype).c_str(),
             reasonMsg.c_str());
@@ -63,7 +66,7 @@ bool AddcdivTiling::CheckDtype(
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
             nodeName, "value",
             ge::TypeUtils::DataTypeToSerialString(inputValDtype).c_str(),
-            "Dtype of input value should be fp32 when input dtypes is mixed.");
+            "The dtype of parameter value must be fp32 when the dtype of input_data is float16 or bfloat16");
         return false;
     }
     return true;

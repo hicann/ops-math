@@ -52,7 +52,7 @@ static ge::graphStatus Tiling4AdjacentDifference(gert::TilingContext* context) {
     if (static_cast<int64_t>(outputType) != yDtype) {
         std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(static_cast<ge::DataType>(outputType)) + " and " +
                                ge::TypeUtils::DataTypeToSerialString(static_cast<ge::DataType>(yDtype));
-        std::string reasonMsg = "Dtype of y and y_dtype(Attr) should be same";
+        std::string reasonMsg = "The dtype of y and attr parameter y_dtype must be the same";
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
             "AdjacentDifference", "y and y_dtype", dtypeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
@@ -75,11 +75,9 @@ static ge::graphStatus Tiling4AdjacentDifference(gert::TilingContext* context) {
     int64_t ubSize = static_cast<int64_t>(ubSizePlatform);
     int64_t aivCoreNum = ascendcPlatform.GetCoreNumAiv();
     auto sizeOfInputType = GetSizeByDataType(dataType);
-    OP_CHECK_IF(
-        sizeOfInputType == 0,
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            "AdjacentDifference", "x", ge::TypeUtils::DataTypeToSerialString(dataType).c_str(),
-            "Input x dtype size is zero"),
+    OP_CHECK_IF(sizeOfInputType == 0,
+        OP_LOGE_FOR_INVALID_DTYPE("AdjacentDifference", "x",
+            ge::TypeUtils::DataTypeToSerialString(dataType).c_str(), "non zero"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(aivCoreNum == 0, OP_LOGE("AdjacentDifference", "aivCoreNum is zero."), return ge::GRAPH_FAILED);
     int64_t blockNum = Ops::Base::GetUbBlockSize(context) / sizeOfInputType;

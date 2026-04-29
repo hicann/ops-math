@@ -47,7 +47,7 @@ bool FloorModTiling::CheckDtype(
                                ge::TypeUtils::DataTypeToSerialString(inputX2Dtype) + " and " +
                                ge::TypeUtils::DataTypeToSerialString(outputDtype);
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            context_->GetNodeName(), "x1, x2 and y", dtypeMsg.c_str(), "dtype of x1, x2 and y should be same");
+            context_->GetNodeName(), "x1, x2 and y", dtypeMsg.c_str(), "The dtypes of x1, x2 and y must be the same");
         return false;
     }
     return true;

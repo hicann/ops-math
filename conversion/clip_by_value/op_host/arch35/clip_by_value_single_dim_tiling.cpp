@@ -135,7 +135,7 @@ ge::graphStatus ClipByValueTilingSingleDim::GetShapeAttrsInfo()
                                ge::TypeUtils::DataTypeToSerialString(minDtype) + ", " +
                                ge::TypeUtils::DataTypeToSerialString(maxDtype) + " and " +
                                ge::TypeUtils::DataTypeToSerialString(yDtype);
-        std::string reasonMsg = "dtypes of x, clip_value_min, clip_value_max and y should be same";
+        std::string reasonMsg = "Dtypes of x, clip_value_min, clip_value_max and y must be the same";
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
             context_->GetNodeName(), "x, clip_value_min, clip_value_max and y", dtypeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
@@ -176,14 +176,12 @@ ge::graphStatus ClipByValueTilingSingleDim::GetShapeAttrsInfo()
     OP_CHECK_IF((res != ge::GRAPH_SUCCESS), OP_LOGE(context_->GetNodeName(), "DimensionCollapse failed."), return res);
 
     if (dims.size() != ClipByValueSigDim::INOUT_PARAM_NUM) {
-        std::string shapeMsg =
-            Ops::Base::ToString(xStorageShape) + ", " + Ops::Base::ToString(minStorageShape) + ", " +
-            Ops::Base::ToString(maxStorageShape) + " and " + Ops::Base::ToString(yStorageShape);
-        std::string reasonMsg = "DimensionCollapse failed. check dims is illegal, out dims num " +
-                                std::to_string(dims.size()) + " not equal " +
-                                std::to_string(ClipByValueSigDim::INOUT_PARAM_NUM);
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            context_->GetNodeName(), "x, clip_value_min, clip_value_max and y", shapeMsg.c_str(), reasonMsg.c_str());
+        OP_LOGE(context_->GetNodeName(),
+            "DimensionCollapse failed. Check dims is illegal, out dims num %lu not equal to %ld, please check the "
+            "shapes of x, clip_value_min, clip_value_max and y %s %s %s and %s",
+            dims.size(), ClipByValueSigDim::INOUT_PARAM_NUM, Ops::Base::ToString(xStorageShape).c_str(),
+            Ops::Base::ToString(minStorageShape).c_str(), Ops::Base::ToString(maxStorageShape).c_str(),
+            Ops::Base::ToString(yStorageShape).c_str());
         return ge::GRAPH_FAILED;
     }
 
