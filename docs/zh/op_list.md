@@ -2355,5 +2355,25 @@
     <td>AI Core</td>
     <td>返回一个给定批量对角值的批量对角Tensor。</td>
   </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/matrix_diag_v3/README.md">matrix_diag_v3</a></td>
+    <td>√</td>
+    <td>×</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>根据输入的单条或多条对角线值生成矩阵，对角线带之外的位置使用padding_value填充。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/matrix_diag_part_v3/README.md">matrix_diag_part_v3</a></td>
+    <td>√</td>
+    <td>×</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>从输入矩阵或批量矩阵的最后两维中提取一条或多条对角线。</td>
+  </tr>
 </tbody>
 </table>
