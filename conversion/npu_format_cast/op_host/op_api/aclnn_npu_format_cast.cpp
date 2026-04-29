@@ -60,11 +60,11 @@ const std::set<std::pair<op::Format, op::Format>> kTransdataForwardFormatPairs =
 
 static const std::initializer_list<DataType> ASCEND950_WEIGHT_DTYPE_SUPPORT_LIST = {
     DataType::DT_INT8, DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16,
-    DataType::DT_INT32, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT4_E2M1, DataType::DT_HIFLOAT8, DataType::DT_UINT8};
+    DataType::DT_INT32, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT4_E2M1, DataType::DT_HIFLOAT8, DataType::DT_UINT8, DataType::DT_FLOAT4_E1M2};
 
 static const std::initializer_list<DataType> WEIGHT_DTYPE_SUPPORT_LIST = {
     DataType::DT_INT8, DataType::DT_UINT8, DataType::DT_FLOAT, DataType::DT_FLOAT16,
-    DataType::DT_BF16, DataType::DT_INT32, DataType::DT_UINT32, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT4_E2M1, DataType::DT_HIFLOAT8};
+    DataType::DT_BF16, DataType::DT_INT32, DataType::DT_UINT32, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT4_E2M1, DataType::DT_HIFLOAT8, DataType::DT_FLOAT4_E1M2};
 
 static const std::initializer_list<op::Format> INPUT_FORMAT_TO_NZ_SUPPORT_LIST = {
     op::Format::FORMAT_ND, op::Format::FORMAT_NCL, op::Format::FORMAT_NCHW, op::Format::FORMAT_NCDHW};
@@ -81,7 +81,8 @@ static bool IsQuantMatmulDtype(const DataType srcDtype, const DataType dstDtype)
 {
     return srcDtype == dstDtype &&
            (srcDtype == ge::DT_INT8 || srcDtype == ge::DT_UINT8 || srcDtype == ge::DT_FLOAT8_E4M3FN ||
-            srcDtype == ge::DT_HIFLOAT8 || srcDtype == ge::DT_UINT8 || srcDtype == ge::DT_FLOAT4_E2M1);
+            srcDtype == ge::DT_HIFLOAT8 || srcDtype == ge::DT_UINT8 || srcDtype == ge::DT_FLOAT4_E2M1 ||
+            srcDtype == ge::DT_FLOAT4_E1M2);
 }
 
 static bool CheckInputFormatSupportedToNz(const op::Format inputFormat)
@@ -138,7 +139,7 @@ static aclnnStatus ValidateQuantMatmulParams(
 {
     OP_CHECK(
         additionalDtype == ge::DT_INT8 || additionalDtype == ge::DT_UINT8 || additionalDtype == ge::DT_FLOAT8_E4M3FN ||
-            additionalDtype == ge::DT_HIFLOAT8 || additionalDtype == ge::DT_FLOAT4_E2M1,
+            additionalDtype == ge::DT_HIFLOAT8 || additionalDtype == ge::DT_FLOAT4_E2M1 || additionalDtype == ge::DT_FLOAT4_E1M2,
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID,
             "Only support additionalDtype is int8/uint8/float8_e4m3fn/hifloat8 when additionalDtype equals "
@@ -514,7 +515,7 @@ aclnnStatus CalcNdToNz(
         static_cast<op::DataType>(additionalDtype) == srcDtype) {
         // 当前要求C0 * ge::GetSizeByDataType(dtype) = 32B
         c0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
-        if (additionalDtype == ge::DT_FLOAT4_E2M1) {
+        if (additionalDtype == ge::DT_FLOAT4_E2M1 || additionalDtype == ge::DT_FLOAT4_E1M2) {
             c0 = FRACTAL_NZ_C0_4B;
         }
         *actualFormat = op::Format::FORMAT_FRACTAL_NZ;

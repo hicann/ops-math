@@ -176,7 +176,7 @@ bool TransDataTilingAscendC::CalcNzToNdShapeSize()
         (c1_ != CeilDiv(c_, c0_)),
         OP_LOGE(context_->GetNodeName(), "The dim C1 should be equal CeilDiv(C, C0)"), return false);
 
-    if (srcDtype_ == ge::DT_FLOAT4_E2M1) {
+    if (srcDtype_ == ge::DT_FLOAT4_E2M1 || srcDtype_ == ge::DT_FLOAT4_E1M2) {
         // 当作u8处理，c缩小一半
         c0_ = c0_ >> 1;
         c_ = c_ >> 1;
@@ -226,7 +226,7 @@ bool TransDataTilingAscendC::CalcC0Size()
         return false);
 
     c0_ = tmpC0;
-    if (srcDtype_ == ge::DT_FLOAT4_E2M1) {
+    if (srcDtype_ == ge::DT_FLOAT4_E2M1 || srcDtype_ == ge::DT_FLOAT4_E1M2) {
         // 当作u8处理，c0缩小一半
         c0_ = c0_ >> 1;
     }
@@ -253,7 +253,7 @@ void TransDataTilingAscendC::CalcNCSize()
     auto dimCnt = inShape_.GetDimNum();
     n_ = inShape_.GetDim(dimCnt - nTwo);
     c_ = inShape_.GetDim(dimCnt - 1);
-    if (srcDtype_ == ge::DT_FLOAT4_E2M1) {
+    if (srcDtype_ == ge::DT_FLOAT4_E2M1 || srcDtype_ == ge::DT_FLOAT4_E1M2) {
         // 当作u8处理，c缩小一半
         c_ = c_ >> 1;
     }

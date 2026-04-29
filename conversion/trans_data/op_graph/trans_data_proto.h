@@ -55,6 +55,7 @@ namespace ge
 | ND <====> FRACTAL_NZ        | bfloat16, float16                  | 16    | 1      |\n
 | ND <====> FRACTAL_NZ        | int8, uint8                        | 32    | 1      |\n
 | ND <====> FRACTAL_NZ        | float4_e2m1                        | 64    | 1      |\n
+| ND ====> FRACTAL_NZ         | float4_e1m2                        | 64    | 1      |\n
 | NCHW <====> FRACTAL_Z       | float32, int32,uint32              | 8,16  | 1      |\n
 | NCHW <====> FRACTAL_Z       | bfloat16, float16                  | 16    | 1      |\n
 | NCHW <====> FRACTAL_Z       | int8,  uint8                       | 32    | 1      |\n
@@ -90,8 +91,8 @@ namespace ge
 *
 */
 REG_OP(TransData)
-    .INPUT(src, TensorType::BasicType())
-    .OUTPUT(dst, TensorType::BasicType())
+    .INPUT(src, TensorType({TensorType::BasicType(), DT_FLOAT4_E1M2, DT_FLOAT4_E2M1}))
+    .OUTPUT(dst, TensorType({TensorType::BasicType(), DT_FLOAT4_E1M2, DT_FLOAT4_E2M1}))
     .REQUIRED_ATTR(src_format, String)
     .REQUIRED_ATTR(dst_format, String)
     .ATTR(src_subformat, Int, 0)
