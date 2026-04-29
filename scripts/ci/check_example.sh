@@ -45,6 +45,9 @@ do
     if [[ "$file_path" == *.md ]]; then
         continue
     fi
+    if [[ "$file_path" == "experimental/"* ]]; then
+        continue
+    fi
     for dir in "${valid_dirs[@]}"
     do
         if [[ "$file_path" == *"/$dir/"* ]]; then
