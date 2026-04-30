@@ -68,3 +68,4 @@
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
 | aclnn调用 | [test_aclnn_sqrt](./examples/test_aclnn_sqrt.cpp) | 通过[aclnnSqrt](docs/aclnnSqrt&aclnnInplaceSqrt.md)接口方式调用Sqrt算子。 |
+| 图模式调用 | [test_geir_sqrt](./examples/test_geir_sqrt.cpp) | 通过[算子IR](./op_graph/sqrt_proto.h)构图方式调用Sqrt算子。 |
