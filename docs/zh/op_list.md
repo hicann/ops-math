@@ -2022,7 +2022,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>将输入tensor指定维度按照指定长度进行切分，最后一块长度可能不足。</td>
   </tr>
   <tr>
@@ -2374,6 +2374,16 @@
     <td>√</td>
     <td>AI CPU</td>
     <td>从输入矩阵或批量矩阵的最后两维中提取一条或多条对角线。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/split_d/README.md">split_d</a></td>
+    <td>√</td>
+    <td>×</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>将张量沿指定维度split_dim平均拆分为num_split份更小的张量。与Split算子不同，split_dim作为属性而非输入提供。</td>
   </tr>
 </tbody>
 </table>
