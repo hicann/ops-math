@@ -158,8 +158,8 @@ aclnnStatus aclnnReflectionPad2d(
       <td>Tensor为空指针。</td>
     </tr>
     <tr>
-      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="6">161002</td>
+      <td rowspan="7">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="7">161002</td>
       <td>self、padding和out的数据类型或数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
@@ -167,6 +167,9 @@ aclnnStatus aclnnReflectionPad2d(
     </tr>
     <tr>
       <td>self为空tensor且存在非第一维度的值为0。</td>
+    </tr>
+    <tr>
+      <td>三维self不支持为空tensor。</td>
     </tr>
     <tr>
       <td>padding的数值大于等于self对应维度的值。</td>
