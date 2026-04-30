@@ -16,6 +16,7 @@
 |  WebIDE  | 一站式开发平台，提供在线直接运行的昇腾环境，无需手动安装。<br>当前可提供单机算力，**默认安装最新商发版CANN包**。 | 适用于没有昇腾设备的开发者。|
 |  Docker  | Docker镜像是一种高效部署方式，已预集成CANN包和必备依赖。<br>当前仅适用于Atlas A2系列产品，OS仅支持Ubuntu操作系统。**默认安装最新商发版CANN包**。 |适用有昇腾设备，需要快速搭建环境的开发者。|
 |  手动安装  | 手动安装CANN包和基础依赖，灵活性高。 |适用有昇腾设备，想体验手动安装CANN包或体验最新master分支能力的开发者。|
+|  Spack  | 包管理工具，自动安装依赖并管理编译选项，支持一键式脚本或自定义配置。<br>**自动安装CANN包及编译依赖**（运行态需宿主机提前安装驱动与固件）。 | 适用有昇腾设备，需要自动化管理CANN包版本、编译选项及依赖，支持多配置与定制化构建的开发者（尤其适合HPC环境）。|
 
 ### 方式1：WebIDE环境
 
@@ -164,6 +165,37 @@ docker run --name cann_container --device /dev/davinci0 --device /dev/davinci_ma
     pip3 install -r requirements.txt
     ```
 
+### 方式4：Spack安装
+
+适用于希望快速安装依赖并灵活配置编译选项的开发者。Spack会自动安装CANN软件包（toolkit和ops）及编译依赖，运行态仍需宿主机提前安装驱动与固件（若仅编译算子可不安装）。
+
+#### 前置依赖
+
+尽管Spack会自动安装相关依赖，但是Spack依旧需要一些前置依赖来支持自身的运行：
+- python >= 3.7.0（建议版本 <= 3.10）
+- gcc >= 7.3.0
+- patch
+可自行手动安装，也可参考[安装基础依赖](./quick_install.md#安装基础依赖)
+
+#### 快速构建
+
+进入项目根目录，运行一键式脚本：
+```bash
+cd ${local_repo_path}/ops-math # ${local_repo_path}为本地代码仓的路径
+source spack/prepare_cann_env.sh
+spack install --add cann-ops@${cann_version} soc=${soc_name} # ops包是运行态依赖，若仅编译算子，可不安装此包。
+```
+prepare_cann_env.sh会自动安装Spack、搭建构建环境、拉取相关依赖并完成构建，构建场景默认为编译ops-math包，如需其他构建场景请参考[compile.md](./compile.md#使用Spack的场景)
+
+#### 产物位置
+
+**查看产物位置：**```spack location -i cann-ops-math```
+此处产物指run包，实际上run包已自动安装到 `$ASCEND_HOME_PATH` 中，在代码根目录下的build_out目录下亦可找到run包
+
+#### 更多Spack操作
+
+如需更精细地使用Spack控制安装过程，请参考[spack_quick_install.md](./spack_quick_install.md)
+
 ## 环境验证
 
 安装完CANN包后，需验证环境和驱动是否正常。
@@ -178,15 +210,19 @@ docker run --name cann_container --device /dev/davinci0 --device /dev/davinci_ma
 - **检查CANN版本**
 
     ```bash
-    # 查看CANN toolkit包版本信息（默认路径安装），WebIDE场景下将/usr/local替换为/home/developer
-    cat /usr/local/Ascend/cann/${arch}-linux/ascend_toolkit_install.info
-    # 查看CANN ops包版本信息（默认路径安装），WebIDE场景下将/usr/local替换为/home/developer
-    cat /usr/local/Ascend/cann/${arch}-linux/ascend_ops_install.info
+    # 查看CANN toolkit包版本信息（默认路径安装）
+    cat /usr/local/Ascend/cann/${arch}-linux/ascend_toolkit_install.info # docker部署和手动安装场景
+    cat /home/developer/Ascend/cann/${arch}-linux/ascend_toolkit_install.info # WebIDE场景
+    spack location -i cann-toolkit # Spack安装场景
+    # 查看CANN ops包版本信息（默认路径安装）
+    cat /usr/local/Ascend/cann/${arch}-linux/ascend_ops_install.info # docker部署和手动安装场景
+    cat /home/developer/Ascend/cann/${arch}-linux/ascend_ops_install.info # WebIDE场景
+    spack location -i cann-ops # Spack安装场景
     ```
 
 ## 环境变量配置
 
-按需选择合适的命令使环境变量生效。
+按需选择合适的命令使环境变量生效，Spack场景下已自动设置环境变量，跳过此步骤
 
 ```bash
 # 默认路径安装，以root用户为例（非root用户，将/usr/local替换为${HOME}）

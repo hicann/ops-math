@@ -4,7 +4,7 @@
 
 ## 安装第三方依赖
 
-> **说明**：对于WebIDE或Docker环境，默认联网，编译过程中会自动下载第三方依赖，无需手动安装，可跳过本章操作。
+> **说明**：对于WebIDE、Docker和Spack环境，默认联网，编译过程中会自动下载第三方依赖，无需手动安装，可跳过本章操作。
 
 本项目编译过程依赖的第三方开源软件列表如下：
 
@@ -40,7 +40,9 @@
 
 若在有互联网的环境下编译，编译过程中会自动安装第三方依赖，无需手动安装。不同场景下源码编译和部署命令如下：
 
-### 自定义算子包
+### 不使用Spack的场景
+
+#### 自定义算子包
 
 1. **编译自定义算子包**
 
@@ -86,7 +88,7 @@
     bash ${ASCEND_HOME_PATH}/opp/vendors/${vendor_name}_math/scripts/uninstall.sh
     ```
 
-### ops-math包
+#### ops-math包
 
 1. **编译ops-math包**
 
@@ -127,7 +129,7 @@
     ./${install_path}/cann/share/info/ops_math/script/uninstall.sh
     ```
 
-### ops-math静态库
+#### ops-math静态库
 
 > 说明：静态库仅支持Atlas A2、Atlas A3系列产品。experimental算子暂不支持使用静态库。
 
@@ -160,7 +162,134 @@
 
     \$\{static\_lib\_path\}表示静态库解压路径。解压后目录结构如下：
 
-    ```text
+    ```
+    ├── cann-${soc_name}-ops-math-static_${cann_version}_linux-${arch}
+    │   ├── lib64
+    │   │   ├── libcann_math_static.a               # 静态库文件
+    │   └── include
+    |       ├── ...                                 # aclnn接口头文件
+    ```
+
+### 使用Spack的场景
+
+#### 自定义算子包
+
+1. **编译自定义算子包**
+
+    进入项目根目录，执行一键式脚本：
+
+    ```bash
+    source prepare_cann_env.sh "cann-ops-math@{cann_version} +pkg soc=${soc_version} [vendor_name=${vendor_name}] [ops=${op_list}] [j=${n}]"
+    # 以Abs算子编译为例
+    # source prepare_cann_env.sh "cann-ops-math@master +pkg soc=ascend910b ops=abs j=16"
+    # 编译experimental贡献目录下的用户算子（以Abs算子为例，编译时请以实际贡献算子为准）
+    # source prepare_cann_env.sh "cann-ops-math@master +pkg +experimental soc=ascend910b ops=abs j=16"
+    ```
+
+    - soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas A2 推理系列产品使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"，Ascend 950PR/Ascend 950DT产品使用"ascend950"。
+    - vendor_name（可选）：\$\{vendor\_name\}表示构建的自定义算子包名，默认名为custom。
+    - ops（可选）：\$\{op\_list\}表示待编译算子，不指定时默认编译所有算子。格式形如"abs,add_lora,..."，多算子之间用英文逗号","分隔。
+    - experimental（可选）：表示编译用户保存在experimental贡献目录下的算子。
+    - j（可选）：指定编译线程数，加快编译速度。
+
+    若\$\{vendor\_name\}和\$\{op\_list\}都不传入编译的是ops-math包；若编译所有算子的自定义算子包，需传入\$\{vendor\_name\}。当提示如下信息，说明编译成功。
+
+    ```bash
+    ==> cann-ops-math: Successfully installed cann-ops-math-master-xxxxxxxxxxxxxxxxx
+    ```
+
+2. **查看产物位置**
+
+    执行命令
+    ```bash
+    spack location -i cann-ops-math
+    ```
+    此处产物指run包，实际上run包已自动安装到 `$ASCEND_HOME_PATH` 中，在代码根目录下的build_out目录下亦可找到run包
+
+3. **（可选）卸载自定义算子包。**
+
+    自定义算子包安装后在```${ASCEND_HOME_PATH}/opp/vendors/${vendor_name}_math/scripts```目录会生成`uninstall.sh`，通过该脚本可卸载自定义算子包，命令如下：
+
+    ```bash
+    bash ${ASCEND_HOME_PATH}/opp/vendors/${vendor_name}_math/scripts/uninstall.sh
+    ```
+
+#### ops-math包
+
+1. **编译ops-math包**
+
+    进入项目根目录，执行如下编译命令：
+
+    ```bash
+    # 编译除experimental目录外的所有算子
+    source prepare_cann_env.sh "cann-ops-math@{cann_version} +pkg soc=${soc_version} [j=${n}]"
+    # 编译experimental目录下的所有算子
+    # source prepare_cann_env.sh "cann-ops-math@master +pkg +experimental soc=ascend910b j=16"
+    ```
+
+    - soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas A2 推理系列产品使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"，Ascend 950PR/Ascend 950DT产品使用"ascend950"。
+    - experimental（可选）：表示编译用户保存在experimental目录下的算子。
+    - j（可选）：指定编译线程数，加快编译速度。
+
+    若提示如下信息，说明编译成功。
+
+    ```bash
+    ==> cann-ops-math: Successfully installed cann-ops-math-master-xxxxxxxxxxxxxxxxx
+    ```
+
+2. **查看产物位置**
+
+    执行命令
+    ```bash
+    spack location -i cann-ops-math
+    ```
+    此处产物指run包，实际上run包已自动安装到 `$ASCEND_HOME_PATH` 中，在代码根目录下的build_out目录下亦可找到run包
+
+3. **（可选）卸载ops-math包**
+
+    ```bash
+    # 卸载命令
+    ./${install_path}/cann/share/info/ops_math/script/uninstall.sh
+    ```
+
+#### ops-math静态库
+
+> 说明：静态库仅支持Atlas A2、Atlas A3系列产品。experimental算子暂不支持使用静态库。
+
+1. **编译ops-math静态库**
+
+    进入项目根目录，执行如下编译命令：
+
+    ```bash
+    source prepare_cann_env.sh "cann-ops-math@{cann_version} +pkg +static soc=${soc_version} [j=${n}]"
+    ```
+
+    - soc：\$\{soc\_version\}表示NPU型号。Atlas A2系列产品使用"ascend910b"（默认），Atlas A3系列产品使用"ascend910_93"。
+    - j（可选）：指定编译线程数，加快编译速度。
+    若提示如下信息，说明编译并压缩成功。
+
+    ```bash
+    ==> cann-ops-math: Successfully installed cann-ops-math-master-xxxxxxxxxxxxxxxxx
+    ```
+2. **查看产物位置**
+
+    执行命令
+    ```bash
+    spack location -i cann-ops-math
+    ```
+    此处产物指tar包，在代码根目录下的build_out目录下亦可找到tar包
+
+3. **解压ops-math静态库**
+
+    进入build_out目录执行解压命令：
+
+    ```bash
+    tar -zxvf ./cann-${soc_name}-ops-math-static_${cann_version}_linux-${arch}.tar.gz -C ${static_lib_path}
+    ```
+
+    \$\{static\_lib\_path\}表示静态库解压路径。解压后目录结构如下：
+
+    ```
     ├── cann-${soc_name}-ops-math-static_${cann_version}_linux-${arch}
     │   ├── lib64
     │   │   ├── libcann_math_static.a               # 静态库文件
