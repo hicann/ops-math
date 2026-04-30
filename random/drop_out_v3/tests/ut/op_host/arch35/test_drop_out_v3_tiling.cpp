@@ -34,7 +34,7 @@ protected:
 
 TEST_F(DropOutV3TilingTest, drop_out_v3_tiling_ascendc_float_01)
 {
-    optiling::DropOutV3CompileInfo compileInfo = {40, 196608};
+    optiling::RandomOperatorCompileInfo compileInfo = {64, 262144};
     int64_t noise_value = 10;
     float p_value = 0.5;
     int64_t seed_value = 8;
@@ -48,8 +48,8 @@ TEST_F(DropOutV3TilingTest, drop_out_v3_tiling_ascendc_float_01)
         {{{{10, 13, 22, 43}, {10, 13, 22, 43}}, ge::DT_FLOAT, ge::FORMAT_ND},
          {{{15376}, {15376}}, ge::DT_INT8, ge::FORMAT_ND}},
         &compileInfo);
-    uint64_t expectTilingKey = 1001;
-    string expectTilingData = "37 163840 1001 8 1056964608 4 122980 ";
+    uint64_t expectTilingKey = 100;
+    string expectTilingData = "61 122980 8 4 229376 0 1056964608 ";
     std::vector<size_t> expectWorkspaces = {16900224};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

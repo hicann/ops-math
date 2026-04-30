@@ -80,10 +80,10 @@ ge::graphStatus StatelessBernoulliTiling::DoSimtBlockTiling()
     auto probTensor = context_->GetRequiredInputTensor(INPUT_IDX_PROB);
     OP_CHECK_NULL_WITH_CONTEXT(context_, probTensor);
     int64_t probTensorSize = static_cast<int64_t>(probTensor->GetShapeSize());
-    simtTilingData_.extraParam1 = (probTensorSize == 1);
+    simtTilingData_.extraInt64Param1 = (probTensorSize == 1);
     // special branch
     int64_t effectiveSize = simtTilingData_.outputSize;
-    if (simtTilingData_.extraParam1 == 0 && effectiveSize > probTensorSize) {
+    if (simtTilingData_.extraInt64Param1 == 0 && effectiveSize > probTensorSize) {
         effectiveSize = probTensorSize;
     }
     int64_t avgPerCore = Ops::Base::CeilDiv(effectiveSize, totalCoreNum_);

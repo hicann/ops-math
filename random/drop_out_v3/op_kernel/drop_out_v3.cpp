@@ -12,32 +12,34 @@
  * \file drop_out_v3.cpp
  * \brief
  */
-#define FP32_TILING_KEY 1001
-#define FP16_TILING_KEY 1002
-#define BF16_TILING_KEY 1003
 
 #include "arch35/drop_out_v3_impl.h"
 
 using namespace DropOutV3;
 
-extern "C" __global__ __aicore__  void drop_out_v3(
-    GM_ADDR x, GM_ADDR noiseShape, GM_ADDR p, GM_ADDR seed, GM_ADDR offset, GM_ADDR y, GM_ADDR mask, GM_ADDR workspace, GM_ADDR tiling)
-{
-    GET_TILING_DATA(tilingData, tiling);
+#define DROP_OUT_V3_DEFAULT_TILING_KEY 100
 
+__global__ __aicore__ void drop_out_v3(
+    GM_ADDR x, GM_ADDR noiseShape, GM_ADDR p, GM_ADDR seed, GM_ADDR offset,
+    GM_ADDR y, GM_ADDR mask, GM_ADDR workspace, GM_ADDR tiling)
+{
+    REGISTER_TILING_DEFAULT(RandomUnifiedSimtTilingDataStruct);
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
+    GET_TILING_DATA(tilingData, tiling);
     TPipe pipe;
-    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    if (TILING_KEY_IS(FP32_TILING_KEY)) {
-        DropOutV3::DropOutV3Impl<float, DTYPE_P> op; 
-        op.Init(p, mask, workspace, &tilingData, &pipe);
-        op.Process(x, y, mask, &tilingData);
-    } else if (TILING_KEY_IS(FP16_TILING_KEY)) {
-        DropOutV3::DropOutV3Impl<half, DTYPE_P> op;
-        op.Init(p, mask, workspace, &tilingData, &pipe);
-        op.Process(x, y, mask, &tilingData);
-    } else if (TILING_KEY_IS(BF16_TILING_KEY)) {
-        DropOutV3::DropOutV3Impl<bfloat16_t, DTYPE_P> op;
-        op.Init(p, mask, workspace, &tilingData, &pipe);
-        op.Process(x, y, mask, &tilingData);
+    if (TILING_KEY_IS(DROP_OUT_V3_DEFAULT_TILING_KEY)) {
+        if constexpr (AscendC::IsSameType<DTYPE_X, float>::value) {
+            DropOutV3::DropOutV3Impl<float, DTYPE_P> op;
+            op.Init(p, mask, workspace, &tilingData, &pipe);
+            op.Process(x, y, mask, &tilingData);
+        } else if constexpr (AscendC::IsSameType<DTYPE_X, half>::value) {
+            DropOutV3::DropOutV3Impl<half, DTYPE_P> op;
+            op.Init(p, mask, workspace, &tilingData, &pipe);
+            op.Process(x, y, mask, &tilingData);
+        } else if constexpr (AscendC::IsSameType<DTYPE_X, bfloat16_t>::value) {
+            DropOutV3::DropOutV3Impl<bfloat16_t, DTYPE_P> op;
+            op.Init(p, mask, workspace, &tilingData, &pipe);
+            op.Process(x, y, mask, &tilingData);
+        }
     }
 }

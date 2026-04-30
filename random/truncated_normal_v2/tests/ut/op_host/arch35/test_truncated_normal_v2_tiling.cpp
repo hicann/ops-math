@@ -50,7 +50,7 @@ TEST_F(TruncatedNormalV2Tiling, truncated_normal_v2_tiling_910D_float_001)
         &compileInfo);
     uint64_t expectTilingKey = 100;
     string expectTilingData =
-        "64 16384 10 5 0 0 ";
+        "64 16384 10 5 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

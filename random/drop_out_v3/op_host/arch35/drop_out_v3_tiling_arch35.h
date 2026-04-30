@@ -15,38 +15,22 @@
 #ifndef AIR_CXX_RUNTIME_V2_OP_IMPL_DROP_OUT_V3_H_
 #define AIR_CXX_RUNTIME_V2_OP_IMPL_DROP_OUT_V3_H_
 
-#include <cstdint>
-#include <vector>
+#include "register/op_def_registry.h"
 #include "register/op_impl_registry.h"
-#include "tiling/tiling_api.h"
-#include "util/math_util.h"
-#include "log/log.h"
-#include "op_host/tiling_util.h"
-#include "op_api/op_util.h"
+#include "../../../random_common/op_host/arch35/random_tiling_arch35.h"
 
 namespace optiling {
 
-constexpr int64_t TILING_ARRAY_LEN_EIGHT = 8;
-constexpr uint16_t ALG_KEY_SIZE = 2;
-constexpr uint16_t ALG_COUNTER_SIZE = 4;
-constexpr int64_t DCACHE_SIZE = 32768;
-constexpr int64_t ALIGNMENT_32 = 32;
+class DropOutV3Tiling : public RandomTilingArch35 {
+public:
+    explicit DropOutV3Tiling(gert::TilingContext* context)
+        : RandomTilingArch35(context, BuildOpConfig()) {}
 
-BEGIN_TILING_DATA_DEF(DropOutV3TilingData)
-  TILING_DATA_FIELD_DEF(int64_t, usedCoreNum);
-  TILING_DATA_FIELD_DEF(int64_t, ubSize);
-  TILING_DATA_FIELD_DEF(int64_t, tilingKey);
-  TILING_DATA_FIELD_DEF(int64_t, seed);
-  TILING_DATA_FIELD_DEF(float, prob);
-  TILING_DATA_FIELD_DEF(int64_t, offset);
-  TILING_DATA_FIELD_DEF(int64_t, elementNum);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(DropOutV3, DropOutV3TilingData)
+protected:
+    ge::graphStatus UniqueProcess() override;
 
-struct DropOutV3CompileInfo {
-  int32_t totalCoreNum = 0;
-  uint64_t ubSizePlatForm = 0;
+private:
+    static OpTilingConfig BuildOpConfig();
 };
-
-}  // namespace optiling
-#endif  // AIR_CXX_RUNTIME_V2_OP_IMPL_DROP_OUT_V3_H_
+} // namespace optiling
+#endif // AIR_CXX_RUNTIME_V2_OP_IMPL_DROP_OUT_V3_H_

@@ -13,434 +13,129 @@
  * \brief
  */
 
-#include <vector>
-#include <cmath>
 #include "drop_out_v3_tiling_arch35.h"
+#include "log/log.h"
+#include "platform/platform_ascendc.h"
+#include "op_host/tiling_templates_registry.h"
+#include "util/math_util.h"
 #include "util/fp16.h"
 #include "util/bfloat16.h"
-
-using namespace std;
-using namespace ge;
+#include "../../../random_common/op_host/arch35/random_tiling_base.h"
 
 namespace optiling {
 
-static const int64_t WORKSPACE_SIZE = 16 * 1024 * 1024;
-static const int64_t CORE_MINEST_NUM = 256;
-static const int64_t RESERVED_UB_SIZE = 2048;
-static const int64_t DOUBLE_UB_SIZE = 2;
-static const int64_t OFFSET_LIMIT = 4;
+static constexpr uint16_t INPUT_IDX_X = 0;
+static constexpr uint16_t INPUT_IDX_P = 2;
+static constexpr uint16_t INPUT_IDX_SEED = 3;
+static constexpr uint16_t INPUT_IDX_OFFSET = 4;
+static constexpr uint16_t OUTPUT_IDX_Y = 0;
+static constexpr int64_t DCACHE_SIZE = 32768;
+static constexpr int64_t CORE_ALIGN_SIZE = 256;
+static constexpr int64_t ALIGNMENT_32 = 32;
+static constexpr int64_t OFFSET_LIMIT = 4;
 
-static const int32_t UB_CALCU_RADIO = 5;
-static const int32_t UINT32_TO_UINT8_RADIO = 8;
-static const int32_t MAX_DIM_NUM = 8;
-
-static const int32_t INDEX_INPUT_X = 0;
-static const int32_t INDEX_INPUT_NOISE = 1;
-static const int32_t INDEX_INPUT_P = 2;
-static const int32_t INDEX_INPUT_SEED = 3;
-static const int32_t INDEX_INPUT_OFFSET = 4;
-static const int32_t INDEX_OUTPUT_Y = 0;
-static const int32_t INDEX_OUTPUT_MASK = 1;
-
-static constexpr uint32_t RIGHT_SHIFT_NUM = 32;
-static constexpr uint64_t COUNTER_IDX_0 = 0;
-static constexpr uint64_t COUNTER_IDX_1 = 1;
-static constexpr uint64_t COUNTER_IDX_2 = 2;
-static constexpr uint64_t COUNTER_IDX_3 = 3;
-
-static const int32_t TILING_KEY_FP32 = 1001;
-static const int32_t TILING_KEY_FP16 = 1002;
-static const int32_t TILING_KEY_BF16 = 1003;
-
-int64_t seed = 0;
-int64_t offset = 0;
-int64_t totalCoreNum = 0;
-float prob = 0.0f;
-static inline int64_t Align256CeilSize(int64_t value)
+OpTilingConfig DropOutV3Tiling::BuildOpConfig()
 {
-    return static_cast<int64_t>((value + CORE_MINEST_NUM - 1) / CORE_MINEST_NUM * CORE_MINEST_NUM);
-}
+    OpTilingConfig config;
 
-static inline int64_t Align256FloorSize(int64_t value)
-{
-    return static_cast<int64_t>((value / CORE_MINEST_NUM) * CORE_MINEST_NUM);
+    config.inputCheckRules = {
+        {INPUT_IDX_X, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {}, nullptr}},
+        {INPUT_IDX_P, {{ge::DT_DOUBLE, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {}, nullptr}},
+        {INPUT_IDX_SEED, {{ge::DT_INT32, ge::DT_INT64}, 1, {}, nullptr}},
+        {INPUT_IDX_OFFSET, {{ge::DT_INT64}, 2, {}, nullptr}}};
+    config.outputCheckRules = {
+        {OUTPUT_IDX_Y, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {}, nullptr}}};
+
+    config.getOutputSize = [](gert::TilingContext* ctx, int64_t& size) {
+        auto inputShape = ctx->GetInputShape(INPUT_IDX_X);
+        OP_CHECK_NULL_WITH_CONTEXT(ctx, inputShape);
+        auto storageShape = inputShape->GetStorageShape();
+        size = storageShape.GetShapeSize();
+        size = (size <= 0) ? 1 : size; // scalar case
+        return ge::GRAPH_SUCCESS;
+    };
+
+    config.getSeedAndOffset = [](gert::TilingContext* ctx, int64_t& seed, int64_t& offset) {
+        gert::Shape seedShape;
+        auto ret = ExtractTensorValue(ctx, INPUT_IDX_SEED, seedShape);
+        OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
+            OP_LOGE(ctx->GetNodeName(), "get seed value failed"), return ge::GRAPH_FAILED);
+        seed = static_cast<int64_t>(seedShape.GetDim(0));
+        gert::Shape offsetShape;
+        ret = ExtractTensorValue(ctx, INPUT_IDX_OFFSET, offsetShape);
+        OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
+            OP_LOGE(ctx->GetNodeName(), "get offset value failed"), return ge::GRAPH_FAILED);
+        offset = static_cast<int64_t>(offsetShape.GetDim(1));
+        OP_CHECK_IF(offset % OFFSET_LIMIT != 0,
+            OP_LOGE(ctx->GetNodeName(), "The offset must be a multiple of 4, but got %ld", offset),
+            return ge::GRAPH_FAILED);
+        return ge::GRAPH_SUCCESS;
+    };
+
+    config.kernelMode = RandomKernelMode::SIMT;
+    config.DcacheSize = DCACHE_SIZE;
+    config.isNeedSyncAll = true;
+    config.coreAlignSize = CORE_ALIGN_SIZE;
+    return config;
 }
 
 template <typename T>
-ge::graphStatus GetIntValue(
-    const gert::TilingContext* context, const gert::Tensor* constTensor, gert::Shape& constShape)
+static ge::graphStatus GetFirstValueAsFloat(const gert::TilingContext* context, const gert::Tensor* tensor, float& value)
 {
-    const T* constValue = constTensor->GetData<T>();
-    OP_CHECK_NULL_WITH_CONTEXT(context, constValue);
-    const size_t constNum = constTensor->GetShapeSize();
-    constShape.SetDimNum(0);
-    for (size_t i = 0; i < constNum; ++i) {
-        constShape.AppendDim(constValue[i]);
-    }
+    auto data = tensor->GetData<T>();
+    OP_CHECK_NULL_WITH_CONTEXT(context, data);
+    value = static_cast<float>(data[0]);
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus GetIntToShape(const gert::TilingContext* context, const int64_t constIdx, gert::Shape& constShape)
+ge::graphStatus DropOutV3Tiling::UniqueProcess()
 {
-    auto constTensor = context->GetRequiredInputTensor(constIdx);
-    OP_CHECK_NULL_WITH_CONTEXT(context, constTensor);
+    simtTilingData_.ubSize = ubSize_;
 
-    auto inputDescPtr = context->GetRequiredInputDesc(constIdx);
-    OP_CHECK_NULL_WITH_CONTEXT(context, inputDescPtr);
-    auto constDtype = inputDescPtr->GetDataType();
-
-    auto ret = ge::GRAPH_FAILED;
-    switch (constDtype) {
-        case ge::DT_INT32:
-            ret = GetIntValue<int32_t>(context, constTensor, constShape);
-            break;
-        case ge::DT_INT64:
-            ret = GetIntValue<int64_t>(context, constTensor, constShape);
-            break;
-        default:
-            OP_LOGD(
-                context->GetNodeName(), "GetConstIntToShape only support [int32, int64, uint64, uint32]. but is %s",
-                Ops::Base::ToString(constDtype).c_str());
-            return ge::GRAPH_FAILED;
-    }
-    OP_CHECK_IF(
-        ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "get const value failed, please check."), return ge::GRAPH_FAILED);
-    OP_LOGI(context->GetNodeName(), "current const value is %s", Ops::Base::ToString(constShape).c_str());
-    return ge::GRAPH_SUCCESS;
-}
-
-static inline ge::graphStatus DropOutV3SetTilingData(gert::TilingContext* context, DropOutV3TilingData& tilingData)
-{
-    if (tilingData.GetDataSize() > context->GetRawTilingData()->GetCapacity()) {
-        return ge::GRAPH_FAILED;
-    }
-    tilingData.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
-    context->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
-    return ge::GRAPH_SUCCESS;
-}
-
-static inline bool IsSameShape(const gert::Shape& shape1, const gert::Shape& shape2)
-{
-    size_t inputShapeSize = shape1.GetDimNum();
-    if (shape2.GetDimNum() != inputShapeSize) {
-        return false;
-    }
-    for (size_t i = 0; i < inputShapeSize; ++i) {
-        if (shape1.GetDim(i) != shape2.GetDim(i)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-static int64_t GetPartShapeSize(const gert::Shape& shape, size_t begin, size_t end)
-{
-    int64_t size = 1;
-    for (size_t i = begin; i < end; i++) {
-        size *= shape[i];
-    }
-    return size;
-}
-
-static inline bool IsMatchShape(const gert::Shape& shape1, const gert::Shape& shape2)
-{
-    int64_t inputDataNum = GetPartShapeSize(shape1, 0, shape1.GetDimNum());
-    int64_t maskDataNum = GetPartShapeSize(shape2, 0, shape2.GetDimNum());
-    if ((inputDataNum / UINT32_TO_UINT8_RADIO) != maskDataNum) {
-        return false;
-    } else {
-        return true;
-    }
-}
-
-static ge::graphStatus CheckParamsShape(const gert::TilingContext* context)
-{
-    // 校验shape信息
-    auto xInputShapePtr = context->GetRequiredInputShape(INDEX_INPUT_X);
-    OP_CHECK_NULL_WITH_CONTEXT(context, xInputShapePtr);
-    auto xInputShape = xInputShapePtr->GetStorageShape();
-    auto xDimNum = xInputShape.GetDimNum();
-
-    auto pInputShapePtr = context->GetRequiredInputShape(INDEX_INPUT_P);
-    OP_CHECK_NULL_WITH_CONTEXT(context, pInputShapePtr);
-    auto pShapeSize = pInputShapePtr->GetStorageShape().GetShapeSize();
-
-    auto seedInputShapePtr = context->GetRequiredInputShape(INDEX_INPUT_SEED);
-    OP_CHECK_NULL_WITH_CONTEXT(context, seedInputShapePtr);
-    auto seedShapeSize = seedInputShapePtr->GetStorageShape().GetShapeSize();
-
-    auto offsetInputShapePtr = context->GetRequiredInputShape(INDEX_INPUT_OFFSET);
-    OP_CHECK_NULL_WITH_CONTEXT(context, offsetInputShapePtr);
-    auto offsetShapeSize = offsetInputShapePtr->GetStorageShape().GetShapeSize();
-
-    auto yOutputShapePtr = context->GetOutputShape(INDEX_OUTPUT_Y);
-    OP_CHECK_NULL_WITH_CONTEXT(context, yOutputShapePtr);
-    auto yOutputShape = yOutputShapePtr->GetStorageShape();
-
-    OP_CHECK_IF(
-        (xDimNum > MAX_DIM_NUM),
-        OP_LOGE(
-            context->GetNodeName(), "%s",
-            ops::ConcatString("The dim of input x should be 0~8, but got", xDimNum, "please check.").c_str()),
-        return ge::GRAPH_FAILED);
-
-    OP_CHECK_IF(
-        (seedShapeSize != 1) || (offsetShapeSize != 2),
-        OP_LOGE(
-            context->GetNodeName(), "%s",
-            ops::ConcatString(
-                "The seed=", seedShapeSize, "should be 1 and offset=", offsetShapeSize, "should be 2, please check.")
-                .c_str()),
-        return ge::GRAPH_FAILED);
-
-    OP_CHECK_IF(
-        !IsSameShape(xInputShape, yOutputShape),
-        OP_LOGE(context->GetNodeName(), "The shape of input x_size and y_size should have same shape, please check."),
-        return ge::GRAPH_FAILED);
-    OP_LOGD(context->GetNodeName(), "%s", ops::ConcatString("The dim of p=", pShapeSize).c_str());
-
-    return ge::GRAPH_SUCCESS;
-}
-
-static ge::graphStatus GetParamsData(const gert::TilingContext* context)
-{
-    gert::Shape inputSeed_;
-    gert::Shape inputOffset_;
-    OP_CHECK_IF(
-        GetIntToShape(context, INDEX_INPUT_SEED, inputSeed_) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "get const shape of seed failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        GetIntToShape(context, INDEX_INPUT_OFFSET, inputOffset_) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "get const shape of offset failed"), return ge::GRAPH_FAILED);
-    seed = static_cast<int64_t>(inputSeed_[0]);
-    offset = inputOffset_[1];
-    OP_CHECK_IF(
-        offset % OFFSET_LIMIT != 0, OP_LOGE(context->GetNodeName(), "The offset must be a multiple of 4, but got %ld", offset), return ge::GRAPH_FAILED);
-        
-    auto pTensor = context->GetRequiredInputTensor(INDEX_INPUT_P);
-    OP_CHECK_NULL_WITH_CONTEXT(context, pTensor);
+    auto pTensor = context_->GetRequiredInputTensor(INPUT_IDX_P);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, pTensor);
     OP_CHECK_IF(
         pTensor->GetShapeSize() <= 0,
-        OP_LOGE(context->GetNodeName(), "get const shape of prob failed"), return ge::GRAPH_FAILED);
-    auto pDescPtr = context->GetRequiredInputDesc(INDEX_INPUT_P);
-    OP_CHECK_NULL_WITH_CONTEXT(context, pDescPtr);
+        OP_LOGE(context_->GetNodeName(), "get const shape of prob failed"), return ge::GRAPH_FAILED);
+    auto pDescPtr = context_->GetRequiredInputDesc(INPUT_IDX_P);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, pDescPtr);
+    float pVal = 0.0f;
+    ge::graphStatus ret = ge::GRAPH_SUCCESS;
     switch (pDescPtr->GetDataType()) {
-        case ge::DT_DOUBLE:
-            prob = static_cast<float>(double(1) - pTensor->GetData<double>()[0]);
-            break;
-        case ge::DT_FLOAT16: {
-            auto srcP = pTensor->GetData<Ops::Base::fp16_t>()[0];
-            prob = 1.0f - srcP.toFloat();
-            break;
-        }
-        case ge::DT_BF16:{
-            float srcP = pTensor->GetData<Ops::Base::bfloat16>()[0];
-            prob = 1.0f - srcP;
-            break;
-        }
-        case ge::DT_FLOAT:
-            prob = 1.0f - pTensor->GetData<float>()[0];
-            break;
-        default:
-            OP_LOGD(
-                context->GetNodeName(), "GetProbShape only support [double, float, bf16, fp16]");
-            return ge::GRAPH_FAILED;
+        case ge::DT_DOUBLE:  ret = GetFirstValueAsFloat<double>(context_, pTensor, pVal); break;
+        case ge::DT_FLOAT:   ret = GetFirstValueAsFloat<float>(context_, pTensor, pVal); break;
+        case ge::DT_FLOAT16: ret = GetFirstValueAsFloat<Ops::Base::fp16_t>(context_, pTensor, pVal); break;
+        case ge::DT_BF16:    ret = GetFirstValueAsFloat<Ops::Base::bfloat16>(context_, pTensor, pVal); break;
+        default:OP_LOGE(context_->GetNodeName(), "Unsupported p dtype"); return ge::GRAPH_FAILED;
     }
-    return ge::GRAPH_SUCCESS;
-}
-
-static ge::graphStatus CheckParamsIsValid(const gert::TilingContext* context)
-{
-    auto xInputPtr = context->GetRequiredInputDesc(INDEX_INPUT_X);
-    OP_CHECK_NULL_WITH_CONTEXT(context, xInputPtr);
-    auto xInputType = xInputPtr->GetDataType();
-    int32_t dtypeSize = ge::GetSizeByDataType(xInputType);
-
-    auto pInputPtr = context->GetRequiredInputDesc(INDEX_INPUT_P);
-    OP_CHECK_NULL_WITH_CONTEXT(context, pInputPtr);
-    auto pInputType = pInputPtr->GetDataType();
-
-    auto seedInputPtr = context->GetRequiredInputDesc(INDEX_INPUT_SEED);
-    OP_CHECK_NULL_WITH_CONTEXT(context, seedInputPtr);
-    auto seedInputType = seedInputPtr->GetDataType();
-
-    auto offsetInputPtr = context->GetRequiredInputDesc(INDEX_INPUT_OFFSET);
-    OP_CHECK_NULL_WITH_CONTEXT(context, offsetInputPtr);
-    auto offsetInputType = offsetInputPtr->GetDataType();
-
-    OP_CHECK_IF(
-        (pInputType != ge::DT_DOUBLE) &&(pInputType != ge::DT_FLOAT) && (pInputType != ge::DT_FLOAT16) && (pInputType != ge::DT_BF16),
-        OP_LOGE(
-            context->GetNodeName(), "The type of p should be FP32/FP16/BF16, but got %s, please check.",
-            Ops::Base::ToString(pInputType).c_str()),
+    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
+        OP_LOGE(context_->GetNodeName(), "get prob value failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(pVal < 0.0f || pVal > 1.0f,
+        OP_LOGE(context_->GetNodeName(), "The value of p has to be between 0 and 1, but current is %f.", pVal),
         return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        (seedInputType != ge::DT_INT64) && (seedInputType != ge::DT_INT32),
-        OP_LOGE(
-            context->GetNodeName(), "The type of seed should be INT32/INT64, but got %s, please check.",
-            Ops::Base::ToString(seedInputType).c_str()),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        offsetInputType != ge::DT_INT64,
-        OP_LOGE(
-            context->GetNodeName(), "The type of offset should be INT64, but got %s, please check.",
-            Ops::Base::ToString(offsetInputType).c_str()),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        (xInputType != ge::DT_FLOAT) && (xInputType != ge::DT_FLOAT16) && (xInputType != ge::DT_BF16),
-        OP_LOGE(
-            context->GetNodeName(), "The type of input should be FP32/FP16/BF16, but got %s, please check.",
-            Ops::Base::ToString(xInputType).c_str()),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        (dtypeSize != 2) && (dtypeSize != 4),
-        OP_LOGE(context->GetNodeName(), "The dtypeSize of input should be 2 or 4, please check."),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckParamsShape(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "The param of shape is invalid, please check."), return ge::GRAPH_FAILED);
+    simtTilingData_.prob = 1.0f - pVal;
 
-    OP_CHECK_IF(
-        GetParamsData(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "Get param data failed, please check."), return ge::GRAPH_FAILED);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(context_->GetPlatformInfo());
+    workspaceSize_ = Ops::Base::CeilAlign(simtTilingData_.outputSize, ALIGNMENT_32) * sizeof(uint8_t) +
+                     ascendcPlatform.GetLibApiWorkSpaceSize();
 
     return ge::GRAPH_SUCCESS;
 }
 
-static inline ge::graphStatus CalcTilingKey(const DataType dataType, DropOutV3TilingData& tilingData)
+static ge::graphStatus Tiling4DropOutV3(gert::TilingContext* context)
 {
-    if (dataType == DT_FLOAT) {
-        tilingData.set_tilingKey(TILING_KEY_FP32);
-    } else if (dataType == DT_FLOAT16) {
-        tilingData.set_tilingKey(TILING_KEY_FP16);
-    } else if (dataType == DT_BF16) {
-        tilingData.set_tilingKey(TILING_KEY_BF16);
-    }
-    return ge::GRAPH_SUCCESS;
+    OP_LOGD(context->GetNodeName(), "Tiling4DropOutV3 running DropOutV3 tiling.");
+    DropOutV3Tiling tiling(context);
+    return tiling.DoTiling();
 }
 
-static inline void TilingDataToLogging(DropOutV3TilingData& tilingData)
+static ge::graphStatus TilingPrepare4DropOutV3(gert::TilingParseContext* context)
 {
-    OP_LOGI(
-        "[DropOutV3]",
-        "[usedCoreNum]: %ld, [elementNum]: %ld, [tilingKey]: %ld, [seed]: %ld, [offset]: %ld, [prob]: %f",
-        tilingData.get_usedCoreNum(), 
-        tilingData.get_elementNum(),
-        tilingData.get_tilingKey(),
-        tilingData.get_seed(),
-        tilingData.get_offset(),
-        tilingData.get_prob());
-}
-
-static ge::graphStatus CalcDropOutV3Tiling(
-    const gert::TilingContext* context, DropOutV3TilingData& tilingData)
-{
-    OP_LOGD(context->GetNodeName(), "TilingDropOutV3 Enter CalcDropOutV3Tiling.");
-
-    auto xInputShapePtr = context->GetRequiredInputShape(INDEX_INPUT_X);
-    OP_CHECK_NULL_WITH_CONTEXT(context, xInputShapePtr);
-    auto xInputShape = xInputShapePtr->GetStorageShape();
-
-    auto& elementShape = Ops::Math::OpTiling::EnsureNotScalar(xInputShape);
-    int64_t dimNum = elementShape.GetDimNum();
-    int64_t elementNum = (dimNum == 0) ? 1 : GetPartShapeSize(elementShape, 0, dimNum);
-    OP_LOGD(context->GetNodeName(), "Input element num is %ld.", elementNum);
-
-    int64_t numOfPerCore = elementNum;
-    int64_t usedCoreNum = 1;
-    if (elementNum > CORE_MINEST_NUM) {
-        numOfPerCore =
-            Align256CeilSize((elementNum + totalCoreNum - 1) / totalCoreNum);
-        usedCoreNum = min((elementNum + numOfPerCore - 1) / numOfPerCore, totalCoreNum);
-    }
-
-    tilingData.set_elementNum(elementNum);
-    tilingData.set_usedCoreNum(usedCoreNum);
-
-    return ge::GRAPH_SUCCESS;
-}
-
-ge::graphStatus Tiling4DropOutV3(gert::TilingContext* context)
-{
-    OP_LOGD(context, "[DropOutV3] Tiling4DropOutV3 running begin.");
-    OP_CHECK_IF(context == nullptr, OP_LOGE(context, "Context should not be nullptr."), return ge::GRAPH_FAILED);
-
-    OP_CHECK_IF(
-        CheckParamsIsValid(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "Tiling4DropOutV3 check input params islegal."), return ge::GRAPH_FAILED);
-
-    auto compileInfo = reinterpret_cast<const DropOutV3CompileInfo*>(context->GetCompileInfo());
-    OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
-
-    totalCoreNum = static_cast<int64_t>(compileInfo->totalCoreNum);
-    // set ubSize
-    int64_t ubSize = compileInfo->ubSizePlatForm;
-    // 实例化对象op
-    DropOutV3TilingData tilingData;
-    // 设置key && counter
-    tilingData.set_prob(prob);
-    tilingData.set_seed(seed);
-    tilingData.set_offset(offset);	 
-    tilingData.set_ubSize(ubSize - DCACHE_SIZE);
-
-    // InputDesc判空 && 设置tilingKey
-    auto inputDesc = context->GetInputDesc(INDEX_INPUT_X);
-    OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
-    auto dataType = inputDesc->GetDataType();
-    OP_CHECK_IF(
-        CalcTilingKey(dataType, tilingData) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "[CalcTilingKey] TilingDropOutV3 fail to set tiling key."),
-        return ge::GRAPH_FAILED);
-
-    // 设置DropOutV3计算中的参数
-    OP_CHECK_IF(
-        CalcDropOutV3Tiling(context, tilingData) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "[CalcDropOutV3Tiling] TilingDropOutV3 fail to calulate tiling param."),
-        return ge::GRAPH_FAILED);
-
-    // 设置workspace
-    size_t* workspace = context->GetWorkspaceSizes(1);
-    auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
-    workspace[0] = Ops::Base::CeilAlign(tilingData.get_elementNum(), ALIGNMENT_32) * sizeof(uint8_t)+ 
-                   ascendcPlatform.GetLibApiWorkSpaceSize();
-    OP_CHECK_IF(
-        DropOutV3SetTilingData(context, tilingData) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "[DropOutV3SetTilingData] TilingDropOutV3 fail to set tiling data."),
-        return ge::GRAPH_FAILED);
-
-    context->SetBlockDim(tilingData.get_usedCoreNum());
-    context->SetTilingKey(tilingData.get_tilingKey());
-    TilingDataToLogging(tilingData);
-    context->SetScheduleMode(1);
-
-    return ge::GRAPH_SUCCESS;
-}
-
-ge::graphStatus TilingPrepareForDropOutV3(gert::TilingParseContext* context)
-{
-    auto compileInfo = context->GetCompiledInfo<DropOutV3CompileInfo>();
-    OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
-    auto platformInfo = context->GetPlatformInfo();
-    OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
-    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
-    compileInfo->totalCoreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->totalCoreNum <= 0),
-        OP_LOGE(context->GetNodeName(), "TilingPrepareForDropOutV3 fail to get core num."), return ge::GRAPH_FAILED);
-
-    uint64_t ubSizePlatForm;
-    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
-    compileInfo->ubSizePlatForm = static_cast<int64_t>(ubSizePlatForm);
-    OP_CHECK_IF(
-        (compileInfo->ubSizePlatForm <= 0),
-        OP_LOGE(context->GetNodeName(), "TilingPrepareForDropOutV3 fail to get ub size."), return ge::GRAPH_FAILED);
-
-    return ge::GRAPH_SUCCESS;
+    return RandomTilingParseArch35(context, "DropOutV3");
 }
 
 IMPL_OP_OPTILING(DropOutV3)
-    .TilingInputsDataDependency({INDEX_INPUT_P, INDEX_INPUT_SEED, INDEX_INPUT_OFFSET})
     .Tiling(Tiling4DropOutV3)
-    .TilingParse<DropOutV3CompileInfo>(TilingPrepareForDropOutV3);
-
+    .TilingParse<RandomOperatorCompileInfo>(TilingPrepare4DropOutV3)
+    .TilingInputsDataDependency({INPUT_IDX_P, INPUT_IDX_SEED, INPUT_IDX_OFFSET});
 } // namespace optiling

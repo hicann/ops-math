@@ -12,9 +12,6 @@
 #define DROP_OUT_V3_IMPL_H
 
 #include "../../random_common/arch35/random_kernel_base.h"
-#include "kernel_operator.h"
-#include "op_kernel/math_util.h"
-#include "op_kernel/platform_util.h"
 
 namespace DropOutV3 {
 using namespace AscendC;
@@ -37,18 +34,17 @@ template <typename T, typename U>
 class DropOutV3Impl {
 public:
     __aicore__ inline DropOutV3Impl(){};
-    __aicore__ inline void Init(GM_ADDR p, GM_ADDR mask, GM_ADDR workspace, const DropOutV3TilingData *tilingData, TPipe* pipe);
-    __aicore__ inline void Process(GM_ADDR x, GM_ADDR y, GM_ADDR mask, const DropOutV3TilingData *tilingData);
+    __aicore__ inline void Init(GM_ADDR p, GM_ADDR mask, GM_ADDR workspace, const RandomUnifiedSimtTilingDataStruct *tilingData, TPipe *pipe);
+    __aicore__ inline void Process(GM_ADDR x, GM_ADDR y, GM_ADDR mask, const RandomUnifiedSimtTilingDataStruct *tilingData);
     __aicore__ inline void CopyInMask(const int64_t offset, const uint32_t count);
     __aicore__ inline void CompareMask(uint32_t count);
     __aicore__ inline void CopyOutMask(const int64_t offset, const uint32_t count);
-    __aicore__ inline void UpdateMask(const DropOutV3TilingData *tilingData);
+    __aicore__ inline void UpdateMask(const RandomUnifiedSimtTilingDataStruct *tilingData);
     __aicore__ inline uint64_t GetVectorSize(uint64_t eleCount);
     __aicore__ inline bool IsProbEqual(float a, float b);
 
 private:
     TPipe *pipe_;
-    GlobalTensor<U> probInputGm_;
     GlobalTensor<uint8_t> maskGM_;
     GlobalTensor<uint8_t> maskWorkspace_;
     TQue<QuePosition::VECIN, NUM_2> maskInQueue_;
@@ -60,11 +56,9 @@ private:
 };
 
 template <typename T, typename U>
-__aicore__ inline void DropOutV3Impl<T, U>::Init(GM_ADDR p, GM_ADDR mask, GM_ADDR workspace, const DropOutV3TilingData *tilingData, TPipe* pipe)
+__aicore__ inline void DropOutV3Impl<T, U>::Init(GM_ADDR p, GM_ADDR mask, GM_ADDR workspace, const RandomUnifiedSimtTilingDataStruct *tilingData, TPipe *pipe)
 {
     pipe_ = pipe;
-    // SetBuffer
-    probInputGm_.SetGlobalBuffer((__gm__ U *)p);
     prob_ = tilingData->prob;
     maskGM_.SetGlobalBuffer((__gm__ uint8_t*)mask);
     maskWorkspace_.SetGlobalBuffer((__gm__ uint8_t*)workspace);
@@ -202,12 +196,12 @@ __aicore__ inline void DropOutV3Impl<T, U>::CopyOutMask(const int64_t offset, co
 }
 
 template <typename T, typename U>
-__aicore__ inline void DropOutV3Impl<T, U>::UpdateMask(const DropOutV3TilingData *tilingData)
+__aicore__ inline void DropOutV3Impl<T, U>::UpdateMask(const RandomUnifiedSimtTilingDataStruct *tilingData)
 {
     int64_t valueSize = sizeof(uint8_t);
     int64_t perCoreHandleMaskAlign =
-        Ops::Base::CeilAlign(Ops::Base::CeilDiv(tilingData->elementNum, tilingData->usedCoreNum), CORE_ALIGN_SIZE);
-    int64_t simdBlockNum = Ops::Base::CeilDiv(tilingData->elementNum, perCoreHandleMaskAlign);
+        Ops::Base::CeilAlign(Ops::Base::CeilDiv(tilingData->outputSize, tilingData->usedCoreNum), CORE_ALIGN_SIZE);
+    int64_t simdBlockNum = Ops::Base::CeilDiv(tilingData->outputSize, perCoreHandleMaskAlign);
     if (blockIdx_ >= simdBlockNum) {
         return;
     }
@@ -216,7 +210,7 @@ __aicore__ inline void DropOutV3Impl<T, U>::UpdateMask(const DropOutV3TilingData
     int64_t ubFactor = Ops::Base::FloorAlign(queSize_ / valueSize, alignFactor);
     int64_t blockFactor = Ops::Base::CeilDiv(perCoreHandleMaskAlign, ubFactor);
     int64_t tailUbFactor = perCoreHandleMaskAlign - (blockFactor - 1) * ubFactor;
-    int64_t tailCoreHandleRandom = tilingData->elementNum - (simdBlockNum - 1) * perCoreHandleMaskAlign;
+    int64_t tailCoreHandleRandom = tilingData->outputSize - (simdBlockNum - 1) * perCoreHandleMaskAlign;
     if (blockIdx_ == simdBlockNum - 1) {
         blockFactor = Ops::Base::CeilDiv(tailCoreHandleRandom, ubFactor);
         tailUbFactor = tailCoreHandleRandom - (blockFactor - 1) * ubFactor;
@@ -263,7 +257,7 @@ __aicore__ inline bool DropOutV3Impl<T, U>::IsProbEqual(float a, float b)
 
 template <typename T, typename U>
 __aicore__ inline void DropOutV3Impl<T, U>::Process(
-    GM_ADDR x, GM_ADDR y, GM_ADDR mask, const DropOutV3TilingData *tilingData)
+    GM_ADDR x, GM_ADDR y, GM_ADDR mask, const RandomUnifiedSimtTilingDataStruct *tilingData)
 {
     blockIdx_ = GetBlockIdx();
     if (blockIdx_ >= tilingData->usedCoreNum) {
@@ -272,7 +266,7 @@ __aicore__ inline void DropOutV3Impl<T, U>::Process(
 
     if (IsProbEqual(prob_, 0.0f)) {
         AscendC::Simt::VF_CALL<ProcessZero<T>>(AscendC::Simt::Dim3(CORE_THREAD_NUM),
-            (__gm__ volatile T*)y, (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()), tilingData->elementNum);
+            (__gm__ volatile T*)y, (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()), tilingData->outputSize);
         SyncAll();
         UpdateMask(tilingData);
         return;
@@ -282,10 +276,10 @@ __aicore__ inline void DropOutV3Impl<T, U>::Process(
     int64_t maxThreadsPerMultiProcessor = NUM_2048;
     int64_t blocksPerSM = maxThreadsPerMultiProcessor / blockSize;
     int64_t multiProcessorCount = NUM_78;
-    int64_t grid = (tilingData->elementNum + blockSize - 1) / blockSize;
+    int64_t grid = (tilingData->outputSize + blockSize - 1) / blockSize;
     grid = (multiProcessorCount * blocksPerSM < grid) ? multiProcessorCount * blocksPerSM : grid;
 
-    uint64_t vecSize = GetVectorSize(tilingData->elementNum);
+    uint64_t vecSize = GetVectorSize(tilingData->outputSize);
     uint64_t totalThreads = grid * CUTHREADS;
     uint64_t magic, shift;
     GetUintDivMagicAndShift(magic, shift, totalThreads);
@@ -294,33 +288,31 @@ __aicore__ inline void DropOutV3Impl<T, U>::Process(
         case VEC_16:
             AscendC::Simt::VF_CALL<SimtDropOutVec<T,VEC_16>>(AscendC::Simt::Dim3(CORE_THREAD_NUM),
                 (__gm__ volatile T*)x, (__gm__ volatile T*)y, (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()),
-                totalThreads, magic, shift, tilingData->elementNum, tilingData->seed, tilingData->offset, prob_);
+                totalThreads, magic, shift, tilingData->outputSize, tilingData->seed, tilingData->offset, prob_);
             break;
         case VEC_8:
             AscendC::Simt::VF_CALL<SimtDropOutVec<T,VEC_8>>(AscendC::Simt::Dim3(CORE_THREAD_NUM),
                 (__gm__ volatile T*)x, (__gm__ volatile T*)y, (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()),
-                totalThreads, magic, shift, tilingData->elementNum, tilingData->seed, tilingData->offset, prob_);
+                totalThreads, magic, shift, tilingData->outputSize, tilingData->seed, tilingData->offset, prob_);
             break;
         case VEC_4:
             AscendC::Simt::VF_CALL<SimtDropOutVec<T,VEC_4>>(AscendC::Simt::Dim3(CORE_THREAD_NUM),
                 (__gm__ volatile T*)x, (__gm__ volatile T*)y, (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()),
-                totalThreads, magic, shift, tilingData->elementNum, tilingData->seed, tilingData->offset, prob_);
+                totalThreads, magic, shift, tilingData->outputSize, tilingData->seed, tilingData->offset, prob_);
             break;
         case VEC_2:
             AscendC::Simt::VF_CALL<SimtDropOutVec<T,VEC_2>>(AscendC::Simt::Dim3(CORE_THREAD_NUM),
                 (__gm__ volatile T*)x, (__gm__ volatile T*)y, (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()),
-                totalThreads, magic, shift, tilingData->elementNum, tilingData->seed, tilingData->offset, prob_);
+                totalThreads, magic, shift, tilingData->outputSize, tilingData->seed, tilingData->offset, prob_);
             break;
         default:
             AscendC::Simt::VF_CALL<SimtDropOut<T>>(AscendC::Simt::Dim3(CORE_THREAD_NUM),
                 (__gm__ volatile T*)x, (__gm__ volatile T*)y, (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()),
-                totalThreads, magic, shift, tilingData->elementNum, tilingData->seed, tilingData->offset, prob_);
+                totalThreads, magic, shift, tilingData->outputSize, tilingData->seed, tilingData->offset, prob_);
             break;
     }
     SyncAll();
     UpdateMask(tilingData);
 }
-
 }  // namespace DropOutV3
-
 #endif  // DROP_OUT_V3_IMPL_H

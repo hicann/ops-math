@@ -54,7 +54,7 @@ TEST_F(StatelessBernoulliKernelTest, smoke_float)
     tilingData->outputSize = kElementCount;
     tilingData->seed = 42;
     tilingData->offset = 0;
-    tilingData->extraParam1 = 1;
+    tilingData->extraInt64Param1 = 1;
 
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_SET_TILING_KEY(kTilingKey);

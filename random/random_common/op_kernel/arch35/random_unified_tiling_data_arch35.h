@@ -58,7 +58,9 @@ public:
     int64_t seed = 0;
     int64_t offset = 0;
     int64_t ubSize = 0;
-    int64_t extraParam1 = 0; // 扩展字段：供需要额外参数的算子使用
+    int64_t extraInt64Param1 = 0; // 扩展字段：供需要额外参数的算子使用
+    float prob = 0;
+    float extraFloat32Param1 = 0; // 扩展字段：供需要额外参数的算子使用
 
     std::string DumpTilingInfo() const {
         std::ostringstream info;
@@ -68,7 +70,9 @@ public:
             << ", seed: " << seed
             << ", offset: " << offset
             << ", ubSize: " << ubSize
-            << ", extraParam1: " << extraParam1;
+            << ", extraInt64Param1: " << extraInt64Param1
+            << ", prob: " << prob
+            << ", extraFloat32Param1: " << extraFloat32Param1;
         return info.str();
     }
 };

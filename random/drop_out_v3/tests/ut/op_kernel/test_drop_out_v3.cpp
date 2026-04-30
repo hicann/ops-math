@@ -15,12 +15,12 @@
 #include <cstdint>
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
-#include "../../../op_host/arch35/drop_out_v3_tiling_arch35.h"
+#include "random/random_common/op_kernel/arch35/random_unified_tiling_data_arch35.h"
 
 using namespace std;
 
 
-extern "C" __global__ __aicore__ void drop_out_v3(
+__global__ __aicore__ void drop_out_v3(
     GM_ADDR x, GM_ADDR noise_shape, GM_ADDR p, GM_ADDR seed, GM_ADDR offset,
     GM_ADDR y, GM_ADDR mask, GM_ADDR workspace, GM_ADDR tiling);
 
@@ -44,14 +44,9 @@ int64_t GetShapeSize(const std::vector<int64_t>& shape) {
     return shapeSize;
 }
 
-static bool CompareData(int ret)
-{
-    return ret == 0;
-}
-
 TEST_F(drop_out_v3_test, test_case_b32_1)
 {
-    uint64_t tilingKey = 1001;
+    uint64_t tilingKey = 100;
     uint32_t numBlocks = 1;
     int64_t typeSize = 4;
     std::vector<int64_t> x_shape = {10, 15, 20};
@@ -73,8 +68,6 @@ TEST_F(drop_out_v3_test, test_case_b32_1)
     size_t workspaceFileSize = 16 * 1024 * 1024 + 48 * sizeof(int32_t);
     uint8_t *workspace = (uint8_t *)AscendC::GmAlloc(workspaceFileSize);
 
-    size_t tilingSize = sizeof(DropOutV3TilingData) * typeSize;
-
     uint8_t *param1 = (uint8_t *)AscendC::GmAlloc((param1FileSize + 31) / 32 * 32);
     uint8_t *param2 = (uint8_t *)AscendC::GmAlloc((param2FileSize + 31) / 32 * 32);
     uint8_t *param3 = (uint8_t *)AscendC::GmAlloc((param3FileSize + 31) / 32 * 32);
@@ -83,7 +76,14 @@ TEST_F(drop_out_v3_test, test_case_b32_1)
     uint8_t *param6 = (uint8_t *)AscendC::GmAlloc((param6FileSize + 31) / 32 * 32);
     uint8_t *param7 = (uint8_t *)AscendC::GmAlloc((param7FileSize + 31) / 32 * 32);
 
-    uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(tilingSize);
+    uint8_t *tiling = (uint8_t *)AscendC::GmAlloc(sizeof(RandomUnifiedSimtTilingDataStruct));
+    RandomUnifiedSimtTilingDataStruct *tilingData = reinterpret_cast<RandomUnifiedSimtTilingDataStruct *>(tiling);
+    tilingData->usedCoreNum = numBlocks;
+    tilingData->outputSize = GetShapeSize(x_shape);
+    tilingData->seed = 12345;
+    tilingData->offset = 0;
+    tilingData->ubSize = 196608;
+    tilingData->prob = 0.5f;
 
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_SET_TILING_KEY(tilingKey);

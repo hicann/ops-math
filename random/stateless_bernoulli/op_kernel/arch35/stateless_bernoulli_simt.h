@@ -91,7 +91,7 @@ __aicore__ inline void StatelessBernoulliKernel<Tp, To>::Process(
     uint64_t shift = 0;
     RandomKernelBase::GetUintDivMagicAndShift(magic, shift, totalThreads);
 
-    uint64_t probMode = static_cast<uint64_t>(tilingData->extraParam1);
+    uint64_t probMode = static_cast<uint64_t>(tilingData->extraInt64Param1);
     if (tilingData->outputSize <= GPU_GRID_SIZE) {
         if (PROB_SCALAR == probMode) {
             AscendC::Simt::VF_CALL<PhiloxBernoulliSample<Tp, To, PROB_SCALAR, uint32_t>>(

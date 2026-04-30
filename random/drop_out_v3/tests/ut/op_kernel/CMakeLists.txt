@@ -16,8 +16,9 @@ if (UT_TEST_ALL OR OP_KERNEL_UT)
         ${KERNEL_STAGING_DIR}/random_common)
 
     set(drop_out_v3_tiling_files
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/arch35/drop_out_v3_tiling_arch35.cpp)
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/arch35/drop_out_v3_tiling_arch35.cpp
+        ${PROJECT_SOURCE_DIR}/random/random_common/op_host/arch35/random_tiling_arch35.cpp)
     AddOpTestCase(drop_out_v3 "ascend950"
-        "-DDTYPE_P=float -I${KERNEL_STAGING_DIR}/drop_out_v3/arch35"
+        "-DDTYPE_X=float -DDTYPE_P=float -DTestUtDefaultTilingStruct=RandomUnifiedSimtTilingDataStruct -I${KERNEL_STAGING_DIR}/drop_out_v3/arch35"
         "${drop_out_v3_tiling_files}")
 endif()
