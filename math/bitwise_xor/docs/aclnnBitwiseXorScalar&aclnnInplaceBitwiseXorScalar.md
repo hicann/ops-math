@@ -15,35 +15,35 @@
 
 ## 功能说明
 
-- 接口功能：计算输入张量self中每个元素与输入张量other中对应位置元素的按位异或，输入self和other必须是整数或布尔类型，对于布尔类型，计算逻辑异或。
+- 接口功能：计算输入张量self中每个元素和输入标量other的按位异或，输入self和other必须是整数或布尔类型，对于布尔类型，计算逻辑异或。
 
 - 计算公式：
 
   $$
   \text{out}_i =
-  \text{self}_i \, \bigoplus\, \text{other}_i
+  \text{self}_i \, \bigoplus\, \text{other}
   $$
 
 ## 函数原型
 
-aclnnBitwiseXorTensor和aclnnInplaceBitwiseXorTensor实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
+aclnnBitwiseXorScalar和aclnnInplaceBitwiseXorScalar实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
 
-- aclnnBitwiseXorTensor：需新建一个输出张量对象存储计算结果。
-- aclnnInplaceBitwiseXorTensor：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
+- aclnnBitwiseXorScalar：需新建一个输出张量对象存储计算结果。
+- aclnnInplaceBitwiseXorScalar：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnBitwiseXorTensorGetWorkspaceSize"或者"aclnnInplaceBitwiseXorTensorGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnBitwiseXorTensor"或者"aclnnInplaceBitwiseXorTensor"接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用"aclnnBitwiseXorScalarGetWorkspaceSize"或者"aclnnInplaceBitwiseXorScalarGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnBitwiseXorScalar"或者"aclnnInplaceBitwiseXorScalar"接口执行计算。
 
 ```Cpp
-aclnnStatus aclnnBitwiseXorTensorGetWorkspaceSize(
+aclnnStatus aclnnBitwiseXorScalarGetWorkspaceSize(
   const aclTensor*   self,
-  const aclTensor*   other,
+  const aclScalar*   other,
   aclTensor*         out,
   uint64_t*          workspaceSize,
   aclOpExecutor**    executor)
 ```
 
 ```Cpp
-aclnnStatus aclnnBitwiseXorTensor(
+aclnnStatus aclnnBitwiseXorScalar(
   void*           workspace,
   uint64_t        workspaceSize,
   aclOpExecutor*  executor,
@@ -51,22 +51,22 @@ aclnnStatus aclnnBitwiseXorTensor(
 ```
 
 ```Cpp
-aclnnStatus aclnnInplaceBitwiseXorTensorGetWorkspaceSize(
+aclnnStatus aclnnInplaceBitwiseXorScalarGetWorkspaceSize(
   aclTensor*       selfRef,
-  const aclTensor* other,
+  const aclScalar* other,
   uint64_t*        workspaceSize,
   aclOpExecutor**  executor)
 ```
 
 ```Cpp
-aclnnStatus aclnnInplaceBitwiseXorTensor(
+aclnnStatus aclnnInplaceBitwiseXorScalar(
   void*           workspace,
   uint64_t        workspaceSize,
   aclOpExecutor*  executor,
   aclrtStream     stream)
 ```
 
-## aclnnBitwiseXorTensorGetWorkspaceSize
+## aclnnBitwiseXorScalarGetWorkspaceSize
 
 - **参数说明：**
 
@@ -96,30 +96,30 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>输入tensor，与other进行按位异或运算。</td>
-      <td>维度不大于8，shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>shape需要与out一致。</td>
       <td>BOOL、INT8、INT16、INT32、INT64、UINT8</td>
       <td>ND</td>
-      <td>不大于8</td>
+      <td>不超过8维</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>other（aclTensor*）</td>
+      <td>other（aclScalar*）</td>
       <td>输入</td>
-      <td>输入tensor，与self进行按位异或运算。</td>
-      <td>维度不大于8，shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>输入scalar，与self进行按位异或运算。</td>
+      <td>数据类型需要与self满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
       <td>BOOL、INT8、INT16、INT32、INT64、UINT8</td>
-      <td>ND</td>
-      <td>不大于8</td>
-      <td>√</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
     </tr>
     <tr>
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>输出tensor，存储计算结果。</td>
-      <td>维度不大于8，shape是self与other broadcast之后的shape。</td>
+      <td>shape需要与self一致。</td>
       <td>BOOL、INT8、INT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
       <td>ND</td>
-      <td>-</td>
+      <td>不超过8维</td>
       <td>√</td>
     </tr>
     <tr>
@@ -145,7 +145,8 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
   </tbody></table>
 
   - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16数据类型。
-
+  - <term>Ascend 950PR/Ascend 950DT</term>：self和other数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/TensorScalar互推导关系.md)。
+  
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
@@ -170,29 +171,26 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
       <td>传入的self、other或out是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="6">161002</td>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
       <td>self或other的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>self和other无法做数据类型推导。</td>
+      <td>self和other不满足数据类型推导规则。</td>
     </tr>
     <tr>
       <td>self和other推导出的数据类型不能转换为out的数据类型。</td>
     </tr>
     <tr>
-      <td>self和other的shape无法做broadcast。</td>
+      <td>self和out的shape不一致。</td>
     </tr>
     <tr>
-      <td>out的shape不是self和other经过broadcast之后的shape。</td>
-    </tr>
-    <tr>
-      <td>self、other或out的维数大于8。</td>
+      <td>self或out的维数大于8。</td>
     </tr>
   </tbody>
   </table>
 
-## aclnnBitwiseXorTensor
+## aclnnBitwiseXorScalar
 
 - **参数说明：**
 
@@ -216,7 +214,7 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
     <tr>
       <td>workspaceSize</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnBitwiseXorTensorGetWorkspaceSize获取。</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnBitwiseXorScalarGetWorkspaceSize获取。</td>
     </tr>
     <tr>
       <td>executor</td>
@@ -235,7 +233,7 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
-## aclnnInplaceBitwiseXorTensorGetWorkspaceSize
+## aclnnInplaceBitwiseXorScalarGetWorkspaceSize
 
 - **参数说明：**
 
@@ -265,21 +263,21 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
       <td>selfRef（aclTensor*）</td>
       <td>输入/输出</td>
       <td>输入输出tensor，与other进行按位异或运算，计算结果存储在selfRef中。</td>
-      <td>维度不大于8，shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>-</td>
       <td>BOOL、INT8、INT16、INT32、INT64、UINT8</td>
       <td>ND</td>
-      <td>不大于8</td>
+      <td>不超过8维</td>
       <td>√</td>
     </tr>
     <tr>
-      <td>other（aclTensor*）</td>
+      <td>other（aclScalar*）</td>
       <td>输入</td>
-      <td>输入tensor，与selfRef进行按位异或运算。</td>
-      <td>维度不大于8，shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
+      <td>输入scalar，与selfRef进行按位异或运算。</td>
+       <td>数据类型需要与selfRef满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
       <td>BOOL、INT8、INT16、INT32、INT64、UINT8</td>
-      <td>ND</td>
-      <td>不大于8</td>
-      <td>√</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
     </tr>
     <tr>
       <td>workspaceSize（uint64_t*）</td>
@@ -302,6 +300,8 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
       <td>-</td>
     </tr>
   </tbody></table>
+
+  - <term>Ascend 950PR/Ascend 950DT</term>：selfRef和other数据类型需满足<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>，且需要是推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。
 
 - **返回值：**
 
@@ -327,29 +327,23 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
       <td>传入的selfRef或other是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="6">161002</td>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
       <td>selfRef或other的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>selfRef和other无法做数据类型推导。</td>
+      <td>selfRef和other不满足数据类型推导规则。</td>
     </tr>
     <tr>
       <td>selfRef和other推导出的数据类型不能转换为selfRef的数据类型。</td>
     </tr>
     <tr>
-      <td>selfRef和other的shape无法做broadcast。</td>
-    </tr>
-    <tr>
-      <td>selfRef的shape不是selfRef和other经过broadcast之后的shape。</td>
-    </tr>
-    <tr>
-      <td>selfRef或other的维数大于8。</td>
+      <td>selfRef的维数大于8。</td>
     </tr>
   </tbody>
   </table>
 
-## aclnnInplaceBitwiseXorTensor
+## aclnnInplaceBitwiseXorScalar
 
 - **参数说明：**
 
@@ -373,7 +367,7 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
     <tr>
       <td>workspaceSize</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceBitwiseXorTensorGetWorkspaceSize获取。</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceBitwiseXorScalarGetWorkspaceSize获取。</td>
     </tr>
     <tr>
       <td>executor</td>
@@ -395,19 +389,19 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
 ## 约束说明
 
 - 确定性计算：
-  - aclnnBitwiseXorTensor&aclnnInplaceBitwiseXorTensor默认确定性实现。
+  - aclnnBitwiseXorScalar&aclnnInplaceBitwiseXorScalar默认确定性实现。
 
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
 
-**aclnnBitwiseXorTensor示例代码：**
+**aclnnBitwiseXorScalar示例代码：**
 
 ```Cpp
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
-#include "aclnnop/aclnn_bitwise_xor_tensor.h"
+#include "aclnnop/aclnn_bitwise_xor_scalar.h"
 
 #define CHECK_RET(cond, return_expr) \
   do {                               \
@@ -422,11 +416,11 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
   } while (0)
 
 int64_t GetShapeSize(const std::vector<int64_t>& shape) {
-  int64_t shape_size = 1;
+  int64_t shapeSize = 1;
   for (auto i : shape) {
-    shape_size *= i;
+    shapeSize *= i;
   }
-  return shape_size;
+  return shapeSize;
 }
 
 int Init(int32_t deviceId, aclrtStream* stream) {
@@ -447,7 +441,6 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
   // 调用aclrtMalloc申请device侧内存
   auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMalloc failed. ERROR: %d\n", ret); return ret);
-
   // 调用aclrtMemcpy将host侧数据拷贝到device侧内存上
   ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
@@ -465,51 +458,49 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化, 参考acl API手册
+  // 1. （固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
-  // check根据自己的需要处理
-  CHECK_RET(ret == 0, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
+
   // 2. 构造输入与输出，需要根据API的接口自定义构造
-  std::vector<int64_t> selfShape = {4, 2};
-  std::vector<int64_t> otherShape = {4, 2};
-  std::vector<int64_t> outShape = {4, 2};
+  std::vector<int64_t> selfShape = {2, 2};
+  std::vector<int64_t> outShape = {2, 2};
   void* selfDeviceAddr = nullptr;
-  void* otherDeviceAddr = nullptr;
   void* outDeviceAddr = nullptr;
   aclTensor* self = nullptr;
-  aclTensor* other = nullptr;
+  aclScalar* other = nullptr;
   aclTensor* out = nullptr;
-  std::vector<int64_t> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-  std::vector<int64_t> otherHostData = {0, 1, 1, 9, 3, 4, 5, 6};
-  std::vector<int64_t> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
+  std::vector<int64_t> selfHostData = {0, 1, 2, 3};
+  std::vector<int64_t> outHostData = {0, 0, 0, 0};
+  int64_t otherValue = 1;
   // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_INT64, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  // 创建other aclTensor
-  ret = CreateAclTensor(otherHostData, otherShape, &otherDeviceAddr, aclDataType::ACL_INT64, &other);
-  CHECK_RET(ret == ACL_SUCCESS, return ret);
+  // 创建other aclScalar
+  other = aclCreateScalar(&otherValue, aclDataType::ACL_INT64);
+  CHECK_RET(other != nullptr, return ret);
   // 创建out aclTensor
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_INT64, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的API
+  // 3. 调用CANN算子库API，需要修改为具体的Api名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
-  // 调用aclnnBitwiseXorTensor第一段接口
-  ret = aclnnBitwiseXorTensorGetWorkspaceSize(self, other, out, &workspaceSize, &executor);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnBitwiseXorTensorGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+  // 调用aclnnBitwiseXorScalar第一段接口
+  ret = aclnnBitwiseXorScalarGetWorkspaceSize(self, other, out, &workspaceSize, &executor);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnBitwiseXorScalarGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
   // 根据第一段接口计算出的workspaceSize申请device内存
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret;);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
-  // 调用aclnnBitwiseXorTensor第二段接口
-  ret = aclnnBitwiseXorTensor(workspaceAddr, workspaceSize, executor, stream);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnBitwiseXorTensor failed. ERROR: %d\n", ret); return ret);
+  // 调用aclnnBitwiseXorScalar第二段接口
+  ret = aclnnBitwiseXorScalar(workspaceAddr, workspaceSize, executor, stream);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnBitwiseXorScalar failed. ERROR: %d\n", ret); return ret);
 
   // 4. （固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
@@ -525,14 +516,13 @@ int main() {
     LOG_PRINT("result[%ld] is: %ld\n", i, resultData[i]);
   }
 
-  // 6. 释放aclTensor，需要根据具体API的接口定义修改
+  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
-  aclDestroyTensor(other);
+  aclDestroyScalar(other);
   aclDestroyTensor(out);
 
   // 7. 释放device资源，需要根据具体API的接口定义修改
   aclrtFree(selfDeviceAddr);
-  aclrtFree(otherDeviceAddr);
   aclrtFree(outDeviceAddr);
   if (workspaceSize > 0) {
     aclrtFree(workspaceAddr);
@@ -544,13 +534,13 @@ int main() {
 }
 ```
 
-**aclnnInplaceBitwiseXorTensor示例代码：**
+**aclnnInplaceBitwiseXorScalar示例代码：**
 
 ```Cpp
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
-#include "aclnnop/aclnn_bitwise_xor_tensor.h"
+#include "aclnnop/aclnn_bitwise_xor_scalar.h"
 
 #define CHECK_RET(cond, return_expr) \
   do {                               \
@@ -565,11 +555,11 @@ int main() {
   } while (0)
 
 int64_t GetShapeSize(const std::vector<int64_t>& shape) {
-  int64_t shape_size = 1;
+  int64_t shapeSize = 1;
   for (auto i : shape) {
-    shape_size *= i;
+    shapeSize *= i;
   }
-  return shape_size;
+  return shapeSize;
 }
 
 int Init(int32_t deviceId, aclrtStream* stream) {
@@ -590,7 +580,6 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
   // 调用aclrtMalloc申请device侧内存
   auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMalloc failed. ERROR: %d\n", ret); return ret);
-
   // 调用aclrtMemcpy将host侧数据拷贝到device侧内存上
   ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
@@ -608,44 +597,42 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化, 参考acl API手册
+  // 1. （固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
-  // check根据自己的需要处理
-  CHECK_RET(ret == 0, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
+
   // 2. 构造输入与输出，需要根据API的接口自定义构造
-  std::vector<int64_t> selfRefShape = {4, 2};
-  std::vector<int64_t> otherShape = {4, 2};
+  std::vector<int64_t> selfRefShape = {2, 2};
   void* selfRefDeviceAddr = nullptr;
-  void* otherDeviceAddr = nullptr;
   aclTensor* selfRef = nullptr;
-  aclTensor* other = nullptr;
-  std::vector<int64_t> selfRefHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-  std::vector<int64_t> otherHostData = {0, 1, 1, 9, 3, 4, 5, 6};
+  aclScalar* other = nullptr;
+  std::vector<int64_t> selfRefHostData = {0, 1, 2, 3};
+  int64_t otherValue = 1;
   // 创建selfRef aclTensor
   ret = CreateAclTensor(selfRefHostData, selfRefShape, &selfRefDeviceAddr, aclDataType::ACL_INT64, &selfRef);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  // 创建other aclTensor
-  ret = CreateAclTensor(otherHostData, otherShape, &otherDeviceAddr, aclDataType::ACL_INT64, &other);
-  CHECK_RET(ret == ACL_SUCCESS, return ret);
+  // 创建other aclScalar
+  other = aclCreateScalar(&otherValue, aclDataType::ACL_INT64);
+  CHECK_RET(other != nullptr, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的API
+  // 3. 调用CANN算子库API，需要修改为具体的Api名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
-  // 调用aclnnInplaceBitwiseXorTensor第一段接口
-  ret = aclnnInplaceBitwiseXorTensorGetWorkspaceSize(selfRef, other, &workspaceSize, &executor);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceBitwiseXorTensorGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+  // 调用aclnnInplaceBitwiseXorScalar第一段接口
+  ret = aclnnInplaceBitwiseXorScalarGetWorkspaceSize(selfRef, other, &workspaceSize, &executor);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceBitwiseXorScalarGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
   // 根据第一段接口计算出的workspaceSize申请device内存
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret;);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
-  // 调用aclnnInplaceBitwiseXorTensor第二段接口
-  ret = aclnnInplaceBitwiseXorTensor(workspaceAddr, workspaceSize, executor, stream);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceBitwiseXorTensor failed. ERROR: %d\n", ret); return ret);
+  // 调用aclnnInplaceBitwiseXorScalar第二段接口
+  ret = aclnnInplaceBitwiseXorScalar(workspaceAddr, workspaceSize, executor, stream);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceBitwiseXorScalar failed. ERROR: %d\n", ret); return ret);
 
   // 4. （固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
@@ -661,13 +648,12 @@ int main() {
     LOG_PRINT("result[%ld] is: %ld\n", i, resultData[i]);
   }
 
-  // 6. 释放aclTensor，需要根据具体API的接口定义修改
+  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensor(selfRef);
-  aclDestroyTensor(other);
+  aclDestroyScalar(other);
 
   // 7. 释放device资源，需要根据具体API的接口定义修改
   aclrtFree(selfRefDeviceAddr);
-  aclrtFree(otherDeviceAddr);
   if (workspaceSize > 0) {
     aclrtFree(workspaceAddr);
   }
