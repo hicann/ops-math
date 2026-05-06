@@ -104,6 +104,7 @@ extern "C" __global__ __aicore__ void pad_v2(
             GET_TILING_DATA_WITH_STRUCT(SliceMoveAlignLast2DimTilingData, tilingData, tiling);
             PadSliceMoveAlignTwoDimProcess(x, offsets, size, y, &tilingData, &pipe);
         } else if (TILING_KEY_IS(PAD_SLICE_KEY_SIMT)) {
+            GET_TILING_DATA_WITH_STRUCT(SliceTilingData, tilingData, tiling);
             // 空 tensor 处理
         } else if (TILING_KEY_IS(PAD_SLICE_KEY_MOVE_ALIGN_GATHER)) {
             GET_TILING_DATA_WITH_STRUCT(SliceMoveAlignGatherTilingData, tilingData, tiling);
