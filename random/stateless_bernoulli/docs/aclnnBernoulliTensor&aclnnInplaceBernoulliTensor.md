@@ -127,7 +127,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
       <td>offset</td>
       <td>输入</td>
       <td>Host侧的整型，设置随机数偏移量。</td>
-      <td>-</td>
+      <td>取值约束：offset % 4 == 0，例如可以取 0、4、8 ...，不满足约束会调用失败</td>
       <td>INT64</td>
       <td>ND</td>
       <td>-</td>
@@ -312,7 +312,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
       <td>offset</td>
       <td>输入</td>
       <td>Host侧的整型，设置随机数偏移量。</td>
-      <td>-</td>
+      <td>取值约束：offset % 4 == 0，例如可以取 0、4、8 ...，不满足约束会调用失败</td>
       <td>INT64</td>
       <td>ND</td>
       <td>-</td>
