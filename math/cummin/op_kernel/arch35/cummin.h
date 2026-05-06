@@ -17,6 +17,7 @@
 #define Cummin_REGBASE_COMMON_H
 
 #include "kernel_operator.h"
+#include "simt_api/asc_simt.h"
 #include "cummin_struct.h"
 #include "cummin_tiling_key.h"
 #include "op_kernel/math_util.h"
@@ -35,10 +36,10 @@ template <typename X, typename ARGMIN>
 __simt_vf__ LAUNCH_BOUND(THREAD_DIM) void SimtCompute(
     __gm__ X* xGm, __gm__ X* yGm, __gm__ ARGMIN* argminGm, int64_t M, int64_t R, int64_t N, int64_t count)
 {
-    const int64_t threadNum = Simt::GetThreadNum();
+    const int64_t threadNum = blockDim.x;
 
     const int64_t RN = R * N;
-    int64_t blockId = Simt::GetThreadIdx();;
+    int64_t blockId = threadIdx.x;
     int64_t idx = (blockId / N) * RN + (blockId % N); 
 
     while (idx < count) { 
@@ -196,7 +197,7 @@ template <typename X, typename ARGMIN>
 
  template <typename X, typename ARGMIN>
  __aicore__ inline void Cummin<X, ARGMIN>::ComputeSimT() {
-    Simt::VF_CALL<SimtCompute<X, ARGMIN>>(Simt::Dim3(THREAD_DIM), (__gm__ X*)(xGm.GetPhyAddr()), (__gm__ X*)(yGm.GetPhyAddr()), (__gm__ ARGMIN*)(argminGm.GetPhyAddr()), M, R, N, computeCountForSimt);
+    asc_vf_call<SimtCompute<X, ARGMIN>>(dim3(THREAD_DIM), (__gm__ X*)(xGm.GetPhyAddr()), (__gm__ X*)(yGm.GetPhyAddr()), (__gm__ ARGMIN*)(argminGm.GetPhyAddr()), M, R, N, computeCountForSimt);
  }
 
 template <typename X, typename ARGMIN>
