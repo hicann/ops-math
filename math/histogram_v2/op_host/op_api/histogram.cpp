@@ -57,7 +57,8 @@ inline const aclTensor* HistogramAiCore(
     aclOpExecutor* executor)
 {
     L0_DFX(HistogramAiCore, self, min, max, out, bins);
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(HistogramV2, OP_INPUT(self, min, max), OP_OUTPUT(out), OP_ATTR(bins));
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(
+        HistogramV2, OP_INPUT(self, min, max), OP_OUTPUT(out), OP_ATTR(bins));
     OP_CHECK(
         ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "HistogramAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
         return nullptr);
@@ -87,7 +88,10 @@ const aclTensor* Histogram(
     float minValue, float maxValue, aclOpExecutor* executor)
 {
     if (IsAiCoreSupport(self, out)) {
-        auto outAiCore = executor->AllocTensor(out->GetViewShape(), op::DataType::DT_INT32);
+        // 当前只支持输出int32和f32
+        auto desDtype = (out->GetDataType() == op::DataType::DT_FLOAT16 || out->GetDataType() == op::DataType::DT_FLOAT) 
+            ? op::DataType::DT_FLOAT : op::DataType::DT_INT32;
+        auto outAiCore = executor->AllocTensor(out->GetViewShape(), desDtype);
         return HistogramAiCore(self, min, max, outAiCore, bins, executor);
     } else {
         return HistogramAiCPU(self, out, bins, minValue, maxValue, executor);

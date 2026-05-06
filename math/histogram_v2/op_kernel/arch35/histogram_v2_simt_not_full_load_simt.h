@@ -18,18 +18,7 @@
 namespace HistogramV2SIMT {
 using namespace AscendC;
 
-#ifndef HISTOGRAM_V2_SIM_PARAMS
-#define HISTOGRAM_V2_SIM_PARAMS
-
-#ifdef __DAV_FPGA__
-constexpr uint32_t THREAD_NUM = 128;
-#else
-constexpr uint32_t THREAD_NUM = 512;
-#endif
-
-#endif
-
-template <typename X_TYPE, typename COMPUTE_TYPE>
+template <typename X_TYPE, typename COMPUTE_TYPE, typename OUT_TYPE = int32_t>
 class HistogramV2SimtNotFullLoadGmAtomicAdd {
 public:
     __aicore__ inline HistogramV2SimtNotFullLoadGmAtomicAdd(){};
@@ -43,7 +32,7 @@ private:
     GlobalTensor<X_TYPE> xGm_;
     GlobalTensor<X_TYPE> minGm_;
     GlobalTensor<X_TYPE> maxGm_;
-    GlobalTensor<int32_t> yGm_;
+    GlobalTensor<OUT_TYPE> yGm_;
 
     COMPUTE_TYPE minValue_;
     COMPUTE_TYPE maxValue_;
@@ -59,8 +48,8 @@ private:
     int64_t clearYTail_ = 0;
 };
 
-template <typename X_TYPE, typename COMPUTE_TYPE>
-__aicore__ inline void HistogramV2SimtNotFullLoadGmAtomicAdd<X_TYPE, COMPUTE_TYPE>::Init(
+template <typename X_TYPE, typename COMPUTE_TYPE, typename OUT_TYPE>
+__aicore__ inline void HistogramV2SimtNotFullLoadGmAtomicAdd<X_TYPE, COMPUTE_TYPE, OUT_TYPE>::Init(
     GM_ADDR x, GM_ADDR min, GM_ADDR max, GM_ADDR y, const HistogramV2SimtTilingData* __restrict tilingData)
 {
     this->blockIdx_ = static_cast<int32_t>(GetBlockIdx());
@@ -75,12 +64,12 @@ __aicore__ inline void HistogramV2SimtNotFullLoadGmAtomicAdd<X_TYPE, COMPUTE_TYP
     this->xGm_.SetGlobalBuffer(reinterpret_cast<__gm__ X_TYPE*>(x));
     this->minGm_.SetGlobalBuffer(reinterpret_cast<__gm__ X_TYPE*>(min));
     this->maxGm_.SetGlobalBuffer(reinterpret_cast<__gm__ X_TYPE*>(max));
-    this->yGm_.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(y));
+    this->yGm_.SetGlobalBuffer(reinterpret_cast<__gm__ OUT_TYPE*>(y));
 }
 
-template <typename X_TYPE, typename COMPUTE_TYPE>
+template <typename X_TYPE, typename COMPUTE_TYPE, typename OUT_TYPE>
 __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void SimtCleanAtomic(
-    __gm__ int32_t* yGmAddr, const int32_t blockIdx, const int32_t clearYCoreNum, const int64_t clearYIndexBase,
+    __gm__ OUT_TYPE* yGmAddr, const int32_t blockIdx, const int32_t clearYCoreNum, const int64_t clearYIndexBase,
     const int64_t clearYDataLength)
 {
     if (blockIdx >= clearYCoreNum) {
@@ -90,13 +79,13 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void SimtCleanAtomic(
     for (int32_t index = static_cast<int32_t>(Simt::GetThreadIdx()); index < clearYDataLength;
          index += static_cast<int32_t>(Simt::GetThreadNum())) {
         int64_t yIndex = clearYIndexBase + index;
-        yGmAddr[yIndex] = static_cast<int32_t>(0);
+        yGmAddr[yIndex] = static_cast<OUT_TYPE>(0);
     }
 }
 
-template <typename X_TYPE, typename COMPUTE_TYPE>
+template <typename X_TYPE, typename COMPUTE_TYPE, typename OUT_TYPE>
 __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void SimtComputeAtomic(
-    __gm__ X_TYPE* xGmAddr, __gm__ int32_t* yGmAddr, const int32_t blockIdx, const int32_t needXCoreNum,
+    __gm__ X_TYPE* xGmAddr, __gm__ OUT_TYPE* yGmAddr, const int32_t blockIdx, const int32_t needXCoreNum,
     const int64_t xIndexBase, const int64_t coreDataLength, const COMPUTE_TYPE minValue, const COMPUTE_TYPE maxValue,
     const int64_t bins)
 {
@@ -113,13 +102,13 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void SimtComputeAtomic(
             if (indexBin == bins) {
                 indexBin -= 1;
             }
-            Simt::AtomicAdd(yGmAddr + indexBin, static_cast<int32_t>(1));
+            Simt::AtomicAdd(yGmAddr + indexBin, static_cast<OUT_TYPE>(1));
         }
     }
 }
 
-template <typename X_TYPE, typename COMPUTE_TYPE>
-__aicore__ inline void HistogramV2SimtNotFullLoadGmAtomicAdd<X_TYPE, COMPUTE_TYPE>::Process()
+template <typename X_TYPE, typename COMPUTE_TYPE, typename OUT_TYPE>
+__aicore__ inline void HistogramV2SimtNotFullLoadGmAtomicAdd<X_TYPE, COMPUTE_TYPE, OUT_TYPE>::Process()
 {
     if (blockIdx_ < GetBlockNum()) {
         ProcessMinMaxValue();
@@ -128,22 +117,22 @@ __aicore__ inline void HistogramV2SimtNotFullLoadGmAtomicAdd<X_TYPE, COMPUTE_TYP
         int64_t coreDataLength = (blockIdx_ == needXCoreNum_ - 1) ? tailLength_ : formerLength_;
         int64_t clearYIndexBase = blockIdx_ * clearYFactor_;
         int64_t clearYDataLength = (blockIdx_ == clearYCoreNum_ - 1) ? clearYTail_ : clearYFactor_;
-        __gm__ int32_t* yGmAddr = (__gm__ int32_t*)yGm_.GetPhyAddr();
+        __gm__ OUT_TYPE* yGmAddr = (__gm__ OUT_TYPE*)yGm_.GetPhyAddr();
         __gm__ X_TYPE* xGmAddr = (__gm__ X_TYPE*)xGm_.GetPhyAddr();
 
-        Simt::VF_CALL<SimtCleanAtomic<X_TYPE, COMPUTE_TYPE>>(
+        Simt::VF_CALL<SimtCleanAtomic<X_TYPE, COMPUTE_TYPE, OUT_TYPE>>(
             Simt::Dim3{THREAD_NUM, 1, 1}, yGmAddr, blockIdx_, this->clearYCoreNum_, clearYIndexBase, clearYDataLength);
 #ifndef __CCE_UT_TEST__
         SyncAll();
 #endif
-        Simt::VF_CALL<SimtComputeAtomic<X_TYPE, COMPUTE_TYPE>>(
+        Simt::VF_CALL<SimtComputeAtomic<X_TYPE, COMPUTE_TYPE, OUT_TYPE>>(
             Simt::Dim3{THREAD_NUM, 1, 1}, xGmAddr, yGmAddr, blockIdx_, needXCoreNum_, xIndexBase, coreDataLength,
             minValue_, maxValue_, bins_);
     }
 }
 
-template <typename X_TYPE, typename COMPUTE_TYPE>
-__aicore__ inline void HistogramV2SimtNotFullLoadGmAtomicAdd<X_TYPE, COMPUTE_TYPE>::ProcessMinMaxValue()
+template <typename X_TYPE, typename COMPUTE_TYPE, typename OUT_TYPE>
+__aicore__ inline void HistogramV2SimtNotFullLoadGmAtomicAdd<X_TYPE, COMPUTE_TYPE, OUT_TYPE>::ProcessMinMaxValue()
 {
     minValue_ = static_cast<COMPUTE_TYPE>(minGm_.GetValue(0));
     maxValue_ = static_cast<COMPUTE_TYPE>(maxGm_.GetValue(0));

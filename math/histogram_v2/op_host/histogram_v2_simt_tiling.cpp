@@ -27,11 +27,16 @@ constexpr int64_t INPUT_IDX_X = 0;
 constexpr int64_t OUTPUT_IDX = 0;
 constexpr int64_t BINS_IDX = 0;
 constexpr int64_t SIZE_OF_INT32 = 4;
+constexpr int64_t SIZE_OF_FLOAT32 = 4;
 constexpr int64_t GM_ATOMIC_ADD_FACTOR = 100;
 constexpr int64_t DEFAULT_BINS = 100;
 constexpr int64_t TILING_KEY_UB_FULL = 100;
 constexpr int64_t TILING_KEY_UB_NOT_FULL = 200;
 constexpr int64_t TILING_KEY_UB_NOT_FULL_SIMT = 300;
+// fp32 output key offset: set tens digit to 1 (e.g. 101->111, 201->211, 301->311)
+constexpr int64_t OUTPUT_FP32_KEY_OFFSET = 10;
+// deterministic key offset: set thousands digit to 1 (e.g. 111->1111, 117->1117)
+constexpr int64_t DETERM_OFFSET = 1000;
 constexpr uint64_t SIMT_DCACHE_SIZE = 32 * 1024;
 
 class HistogramV2SimtTiling : public HistogramV2BaseClass
@@ -73,6 +78,8 @@ private:
     int64_t needCoreNum_ = 0;
     int64_t totalLength_ = 0; // the length of input
     int64_t tailNum_ = 0;
+    bool isFp32Output_ = false;
+    int64_t isDeterministic_ = 0;
 
 private:
     // kernel needed.
@@ -171,10 +178,26 @@ ge::graphStatus HistogramV2SimtTiling::GetShapeAttrsInfo()
     auto outputDesc = context_->GetOutputDesc(OUTPUT_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
     auto outputDType = outputDesc->GetDataType();
-    OP_CHECK_IF(
-        outputDType != ge::DataType::DT_INT32,
-        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "y", Ops::Base::ToString(outputDType).c_str(), "int32"),
-        return ge::GRAPH_FAILED);
+
+    // Determine fp32 output flag directly from output dtype
+    isFp32Output_ = (outputDType == ge::DT_FLOAT);
+
+    // Validate fp32 output: only allowed for fp16 or fp32 input on ascend950
+    if (isFp32Output_) {
+        if (inputDtypeVal_ != 1 && inputDtypeVal_ != 7) { // 1=fp32, 7=fp16
+            OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "y", Ops::Base::ToString(outputDType).c_str(), "int32");
+            return ge::GRAPH_FAILED;
+        }
+    } else {
+        if (outputDType != ge::DT_INT32) {
+            OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "y", Ops::Base::ToString(outputDType).c_str(), "int32, float");
+            return ge::GRAPH_FAILED;
+        }
+    }
+
+    // Parse deterministic flag from context
+    isDeterministic_ = (context_->GetDeterministic() == 1) ? 1 : 0;
+
     return ge::GRAPH_SUCCESS;
 }
 
@@ -190,7 +213,9 @@ ge::graphStatus HistogramV2SimtTiling::Init()
     size_t* currentWorkSpace = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, currentWorkSpace);
     currentWorkSpace[0] = sysWorkspaceSize;
-    ubNumCanUse_ = aicoreParams_.ubSize / SIZE_OF_INT32;
+    // For deterministic fp32 output path
+    int64_t ubElemSize = (isFp32Output_ && isDeterministic_ == 1) ? SIZE_OF_FLOAT32 : SIZE_OF_INT32;
+    ubNumCanUse_ = aicoreParams_.ubSize / ubElemSize;
     ubLoopNum_ = Ops::Base::CeilDiv(bins_, ubNumCanUse_);
     SetTilingKeyMode(inputDtypeVal_);
     TilingDataForCore();
@@ -200,14 +225,16 @@ ge::graphStatus HistogramV2SimtTiling::Init()
 
 inline void HistogramV2SimtTiling::SetTilingKeyMode(int64_t inputDtypeVal) const
 {
+    int64_t outputOffset = isFp32Output_ ? OUTPUT_FP32_KEY_OFFSET : 0;
+    int64_t determOffset = isDeterministic_ * DETERM_OFFSET;
     if (bins_ < ubNumCanUse_) {
         context_->SetLocalMemorySize(aicoreParams_.ubSize);
-        context_->SetTilingKey(TILING_KEY_UB_FULL + inputDtypeVal);
+        context_->SetTilingKey(TILING_KEY_UB_FULL + outputOffset + determOffset + inputDtypeVal);
     } else if (totalLength_ > bins_ / GM_ATOMIC_ADD_FACTOR) {
         context_->SetLocalMemorySize(aicoreParams_.ubSize);
-        context_->SetTilingKey(TILING_KEY_UB_NOT_FULL + inputDtypeVal);
+        context_->SetTilingKey(TILING_KEY_UB_NOT_FULL + outputOffset + determOffset + inputDtypeVal);
     } else {
-        context_->SetTilingKey(TILING_KEY_UB_NOT_FULL_SIMT + inputDtypeVal);
+        context_->SetTilingKey(TILING_KEY_UB_NOT_FULL_SIMT + outputOffset + determOffset + inputDtypeVal);
     }
 }
 
@@ -262,6 +289,8 @@ void HistogramV2SimtTiling::TilingDataPrint() const
     OP_LOGD(context_, "clearYCoreNum_: %ld.", clearYCoreNum_);
     OP_LOGD(context_, "clearYFactor_: %ld.", clearYFactor_);
     OP_LOGD(context_, "clearYTail_: %ld.", clearYTail_);
+    OP_LOGD(context_, "isFp32Output_: %d.", isFp32Output_);
+    OP_LOGD(context_, "isDeterministic_: %ld.", isDeterministic_);
 }
 
 REGISTER_OPS_TILING_TEMPLATE(HistogramV2, HistogramV2SimtTiling, 30000);

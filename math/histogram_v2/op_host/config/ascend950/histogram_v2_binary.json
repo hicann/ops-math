@@ -52,6 +52,11 @@
                 "name": "bins",
                 "dtype": "int",
                 "value": 100
+            },
+            {
+                "name": "y_dtype",
+                "dtype": "int",
+                "value": 3
             }
         ]
       },
@@ -106,6 +111,11 @@
                 "name": "bins",
                 "dtype": "int",
                 "value": 100
+            },
+            {
+                "name": "y_dtype",
+                "dtype": "int",
+                "value": 3
             }
         ]
       },
@@ -160,6 +170,11 @@
                 "name": "bins",
                 "dtype": "int",
                 "value": 100
+            },
+            {
+                "name": "y_dtype",
+                "dtype": "int",
+                "value": 3
             }
         ]
       },
@@ -214,6 +229,11 @@
                 "name": "bins",
                 "dtype": "int",
                 "value": 100
+            },
+            {
+                "name": "y_dtype",
+                "dtype": "int",
+                "value": 3
             }
         ]
       },
@@ -268,6 +288,11 @@
                 "name": "bins",
                 "dtype": "int",
                 "value": 100
+            },
+            {
+                "name": "y_dtype",
+                "dtype": "int",
+                "value": 3
             }
         ]
       },
@@ -322,6 +347,11 @@
                 "name": "bins",
                 "dtype": "int",
                 "value": 100
+            },
+            {
+                "name": "y_dtype",
+                "dtype": "int",
+                "value": 3
             }
         ]
       },
@@ -376,6 +406,129 @@
                 "name": "bins",
                 "dtype": "int",
                 "value": 100
+            },
+            {
+                "name": "y_dtype",
+                "dtype": "int",
+                "value": 3
+            }
+        ]
+      },
+      {
+        "bin_filename": "HistogramV2_ba64f6ac73b9d4f14595676cbb9f0633",
+        "inputs": [
+          {
+            "name": "x",
+            "index": 0,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+          },
+          {
+            "name": "min",
+            "index": 1,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+          },
+          {
+            "name": "max",
+            "index": 2,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "index": 0,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+          }
+        ],
+        "attrs": [
+            {
+                "name": "bins",
+                "dtype": "int",
+                "value": 100
+            },
+            {
+                "name": "y_dtype",
+                "dtype": "int",
+                "value": 9
+            }
+        ]
+      },
+      {
+        "bin_filename": "HistogramV2_ba64f6ac73b9d4f14595676cbb9f0634",
+        "inputs": [
+          {
+            "name": "x",
+            "index": 0,
+            "dtype": "float16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+          },
+          {
+            "name": "min",
+            "index": 1,
+            "dtype": "float16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+          },
+          {
+            "name": "max",
+            "index": 2,
+            "dtype": "float16",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "index": 0,
+            "dtype": "float32",
+            "format": "ND",
+            "paramType": "required",
+            "shape": [
+              -2
+            ]
+          }
+        ],
+        "attrs": [
+            {
+                "name": "bins",
+                "dtype": "int",
+                "value": 100
+            },
+            {
+                "name": "y_dtype",
+                "dtype": "int",
+                "value": 9
             }
         ]
       }

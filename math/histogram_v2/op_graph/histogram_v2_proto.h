@@ -27,10 +27,11 @@ namespace ge {
 * @li max: A tensor of type float16, float32, int64, int32, int16, int8, uint8, with only one element.
 *@par Attributes:
 
-* bins: Optional. Type Must be int64. Value must be greater than 0, Defaults to 100.
+ * bins: Optional. Type Must be int64. Value must be greater than 0, Defaults to 100.
+ *@li y_dtype: A Type, The output type, either "int32" or "float". Defaults to "int32". \n
 
-*@par Outputs:
-* y: A tensor of type int32 .
+ *@par Outputs:
+ * y: A tensor of type int32 or float32 .
 
 *@par Third-party framework compatibility
 * Compatible with the Pytorch operator Histc.
@@ -40,8 +41,9 @@ REG_OP(HistogramV2)
     .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT64, DT_INT32, DT_INT16, DT_INT8, DT_UINT8}))
     .INPUT(min, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT64, DT_INT32, DT_INT16, DT_INT8, DT_UINT8}))
     .INPUT(max, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT64, DT_INT32, DT_INT16, DT_INT8, DT_UINT8}))
-    .OUTPUT(y, TensorType({DT_INT32}))
+    .OUTPUT(y, TensorType({DT_INT32, DT_FLOAT}))
     .ATTR(bins, Int, 100)
+    .ATTR(y_dtype, Type, DT_INT32)
     .OP_END_FACTORY_REG(HistogramV2);
 
 }  // namespace ge

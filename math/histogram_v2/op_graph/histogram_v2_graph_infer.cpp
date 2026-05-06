@@ -21,11 +21,21 @@ namespace ops {
 static ge::graphStatus HistogramV2InferDataTypeFunc(gert::InferDataTypeContext* context)
 {
     OP_LOGD(context, "Begin to do HistogramV2InferDataTypeFunc");
-
     auto inputDtype = context->GetInputDataType(0);
     OP_LOGD(context, "x dtype: %s", Ops::Base::ToString(inputDtype).c_str());
+
+    // y_dtype属性指定输出类型，默认为DT_INT32(3)，可设置为DT_FLOAT(9)
+    auto attrs = context->GetAttrs();
+    ge::DataType outDtype = ge::DT_INT32;
+    if (attrs != nullptr) {
+        auto yDtypePtr = attrs->GetAttrPointer<int64_t>(1);
+        if (yDtypePtr != nullptr && *yDtypePtr == ge::DT_FLOAT) {
+            outDtype = ge::DT_FLOAT;
+        }
+    }
+
     OP_LOGD(context, "befer set y dtype: %s", Ops::Base::ToString(context->GetOutputDataType(0)).c_str());
-    context->SetOutputDataType(0, ge::DT_INT32);
+    context->SetOutputDataType(0, outDtype);
     OP_LOGD(context, "after set y dtype: %s", Ops::Base::ToString(context->GetOutputDataType(0)).c_str());
     OP_LOGD(context, "End to do HistogramV2InferDataTypeFunc end");
     return ge::GRAPH_SUCCESS;

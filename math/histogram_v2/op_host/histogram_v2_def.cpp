@@ -64,7 +64,8 @@ public:
                 {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
                  ge::FORMAT_ND})
             .InitValue(0);
-        this->Attr("bins").AttrType(OPTIONAL).Int(DEFAULT_BINS); // default value
+        this->Attr("bins").AttrType(OPTIONAL).Int(DEFAULT_BINS);
+        this->Attr("y_dtype").AttrType(OPTIONAL).Int(3);
         OpAICoreConfig aicore_config;
         aicore_config.DynamicCompileStaticFlag(true)
             .DynamicFormatFlag(true)
@@ -80,16 +81,50 @@ public:
             .DynamicRankSupportFlag(true)
             .DynamicShapeSupportFlag(true)
             .ExtendCfgInfo("opFile.value", "histogram_v2_apt");
+        config_91095.Input("x")
+            .ParamType(REQUIRED)
+            .DataType(
+                {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT64, ge::DT_INT32, ge::DT_INT16, ge::DT_INT8, ge::DT_UINT8,
+                 ge::DT_FLOAT, ge::DT_FLOAT16})
+            .Format(
+                {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat(
+                {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
+        config_91095.Input("min")
+            .ParamType(REQUIRED)
+            .DataType(
+                {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT64, ge::DT_INT32, ge::DT_INT16, ge::DT_INT8, ge::DT_UINT8,
+                 ge::DT_FLOAT, ge::DT_FLOAT16})
+            .Format(
+                {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat(
+                {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
+        config_91095.Input("max")
+            .ParamType(REQUIRED)
+            .DataType(
+                {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT64, ge::DT_INT32, ge::DT_INT16, ge::DT_INT8, ge::DT_UINT8,
+                 ge::DT_FLOAT, ge::DT_FLOAT16})
+            .Format(
+                {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat(
+                {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
         config_91095.Output("y")
             .ParamType(REQUIRED)
             .DataType(
-                {ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32})
+                {ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+                 ge::DT_FLOAT, ge::DT_FLOAT})
             .Format(
                 {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                 ge::FORMAT_ND})
+                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .UnknownShapeFormat(
                 {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                 ge::FORMAT_ND});
+                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
         this->AICore().AddConfig("ascend950", config_91095);
     }
 };

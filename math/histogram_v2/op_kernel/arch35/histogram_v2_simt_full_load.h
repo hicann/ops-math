@@ -18,16 +18,7 @@
 namespace HistogramV2SIMT {
 using namespace AscendC;
 
-#ifndef HISTOGRAM_V2_SIM_PARAMS
-#define HISTOGRAM_V2_SIM_PARAMS
-#ifdef __DAV_FPGA__
-constexpr uint32_t THREAD_NUM = 128;
-#else
-constexpr uint32_t THREAD_NUM = 512;
-#endif
-#endif
-
-template <typename X_TYPE, typename COMPUTE_TYPE>
+template <typename X_TYPE, typename COMPUTE_TYPE, typename OUT_TYPE = int32_t>
 class HistogramV2SimtFullLoad {
 public:
     __aicore__ inline HistogramV2SimtFullLoad(){};
@@ -40,9 +31,9 @@ private:
     GlobalTensor<X_TYPE> xGm_;
     GlobalTensor<X_TYPE> minGm_;
     GlobalTensor<X_TYPE> maxGm_;
-    GlobalTensor<int32_t> yGm_;
+    GlobalTensor<OUT_TYPE> yGm_;
 
-    LocalTensor<int32_t> yLocal_;
+    LocalTensor<OUT_TYPE> yLocal_;
 
     TPipe* pipe_;
     TQue<TPosition::VECOUT, 1> yQue_;
@@ -57,8 +48,8 @@ private:
     int64_t clearYTail_ = 0;
 };
 
-template <typename X_TYPE, typename COMPUTE_TYPE>
-__aicore__ inline void HistogramV2SimtFullLoad<X_TYPE, COMPUTE_TYPE>::Init(
+template <typename X_TYPE, typename COMPUTE_TYPE, typename OUT_TYPE>
+__aicore__ inline void HistogramV2SimtFullLoad<X_TYPE, COMPUTE_TYPE, OUT_TYPE>::Init(
     GM_ADDR x, GM_ADDR min, GM_ADDR max, GM_ADDR y, const HistogramV2SimtTilingData* __restrict tilingData,
     TPipe* tPipe)
 {
@@ -75,14 +66,14 @@ __aicore__ inline void HistogramV2SimtFullLoad<X_TYPE, COMPUTE_TYPE>::Init(
     this->xGm_.SetGlobalBuffer(reinterpret_cast<__gm__ X_TYPE*>(x));
     this->minGm_.SetGlobalBuffer(reinterpret_cast<__gm__ X_TYPE*>(min));
     this->maxGm_.SetGlobalBuffer(reinterpret_cast<__gm__ X_TYPE*>(max));
-    this->yGm_.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(y));
+    this->yGm_.SetGlobalBuffer(reinterpret_cast<__gm__ OUT_TYPE*>(y));
 
-    this->pipe_->InitBuffer(this->yQue_, 1, this->bins_ * sizeof(int32_t));
+    this->pipe_->InitBuffer(this->yQue_, 1, this->bins_ * sizeof(OUT_TYPE));
 }
 
-template <typename X_TYPE, typename COMPUTE_TYPE>
+template <typename X_TYPE, typename COMPUTE_TYPE, typename OUT_TYPE>
 __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void UbSimtCompute(
-    __gm__ X_TYPE* xGmAddr, __ubuf__ int32_t* yLocalAddr, const int64_t xIndexBase, const int64_t coreDataLength,
+    __gm__ X_TYPE* xGmAddr, __ubuf__ OUT_TYPE* yLocalAddr, const int64_t xIndexBase, const int64_t coreDataLength,
     const COMPUTE_TYPE minValue, const COMPUTE_TYPE maxValue, const COMPUTE_TYPE minMaxLength, const int64_t bins)
 {
     for (int32_t index = static_cast<int32_t>(Simt::GetThreadIdx()); index < coreDataLength;
@@ -94,27 +85,27 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void UbSimtCompute(
             if (index == bins) {
                 index -= 1;
             }
-            Simt::AtomicAdd(yLocalAddr + index, static_cast<int32_t>(1));
+            Simt::AtomicAdd(yLocalAddr + index, static_cast<OUT_TYPE>(1));
         }
     }
 }
 
-template <typename X_TYPE, typename COMPUTE_TYPE>
-__aicore__ inline void HistogramV2SimtFullLoad<X_TYPE, COMPUTE_TYPE>::Process()
+template <typename X_TYPE, typename COMPUTE_TYPE, typename OUT_TYPE>
+__aicore__ inline void HistogramV2SimtFullLoad<X_TYPE, COMPUTE_TYPE, OUT_TYPE>::Process()
 {
     if (blockIdx_ < GetBlockNum()) {
-        this->yLocal_ = this->yQue_.template AllocTensor<int32_t>();
-        Duplicate(this->yLocal_, 0, this->bins_);
+        this->yLocal_ = this->yQue_.template AllocTensor<OUT_TYPE>();
+        Duplicate(this->yLocal_, static_cast<OUT_TYPE>(0), this->bins_);
 
         if (blockIdx_ < clearYCoreNum_) {
             this->yQue_.EnQue(this->yLocal_);
-            this->yLocal_ = this->yQue_.template DeQue<int32_t>();
+            this->yLocal_ = this->yQue_.template DeQue<OUT_TYPE>();
 
             int64_t clearYIndexBase = blockIdx_ * this->clearYFactor_;
             int64_t clearYDataLength = blockIdx_ == this->clearYCoreNum_ - 1 ? this->clearYTail_ : this->clearYFactor_;
 
             DataCopyExtParams dataCopyExtParams{
-                static_cast<uint16_t>(1), static_cast<uint32_t>(clearYDataLength * sizeof(int32_t)), 0, 0, 0};
+                static_cast<uint16_t>(1), static_cast<uint32_t>(clearYDataLength * sizeof(OUT_TYPE)), 0, 0, 0};
             DataCopyPad(yGm_[clearYIndexBase], this->yLocal_, dataCopyExtParams);
         }
 
@@ -136,11 +127,11 @@ __aicore__ inline void HistogramV2SimtFullLoad<X_TYPE, COMPUTE_TYPE>::Process()
             int64_t xIndexBase = blockIdx_ * this->formerLength_;
             int64_t coreDataLength = blockIdx_ == needXCoreNum_ - 1 ? this->tailLength_ : this->formerLength_;
 
-            __gm__ int32_t* yGmAddr = (__gm__ int32_t*)yGm_.GetPhyAddr();
+            __gm__ OUT_TYPE* yGmAddr = (__gm__ OUT_TYPE*)yGm_.GetPhyAddr();
             __gm__ X_TYPE* xGmAddr = (__gm__ X_TYPE*)xGm_.GetPhyAddr();
-            __ubuf__ int32_t* yLocalAddr = (__ubuf__ int32_t*)this->yLocal_.GetPhyAddr();
+            __ubuf__ OUT_TYPE* yLocalAddr = (__ubuf__ OUT_TYPE*)this->yLocal_.GetPhyAddr();
 
-            Simt::VF_CALL<UbSimtCompute<X_TYPE, COMPUTE_TYPE>>(
+            Simt::VF_CALL<UbSimtCompute<X_TYPE, COMPUTE_TYPE, OUT_TYPE>>(
                 Simt::Dim3{THREAD_NUM, 1, 1}, xGmAddr, yLocalAddr, xIndexBase, coreDataLength, minValue, maxValue,
                 minMaxLength, this->bins_);
 
@@ -149,13 +140,13 @@ __aicore__ inline void HistogramV2SimtFullLoad<X_TYPE, COMPUTE_TYPE>::Process()
             WaitFlag<HardEvent::V_MTE3>(eventId);
 
             DataCopyExtParams dataCopyExtParamsAdd{
-                static_cast<uint16_t>(1), static_cast<uint32_t>(this->bins_ * sizeof(int32_t)), 0, 0, 0};
+                static_cast<uint16_t>(1), static_cast<uint32_t>(this->bins_ * sizeof(OUT_TYPE)), 0, 0, 0};
 
-            SetAtomicAdd<int32_t>();
+            SetAtomicAdd<OUT_TYPE>();
             DataCopyPad(yGm_, this->yLocal_, dataCopyExtParamsAdd);
         }
 
-        this->yQue_.template FreeTensor<int32_t>(yLocal_);
+        this->yQue_.template FreeTensor<OUT_TYPE>(yLocal_);
     }
 }
 

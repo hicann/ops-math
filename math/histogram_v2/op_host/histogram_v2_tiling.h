@@ -80,6 +80,28 @@ REGISTER_TILING_DATA_CLASS(HistogramV2_305, HistogramV2SimtTilingData)
 REGISTER_TILING_DATA_CLASS(HistogramV2_306, HistogramV2SimtTilingData)
 REGISTER_TILING_DATA_CLASS(HistogramV2_307, HistogramV2SimtTilingData)
 
+// fp32 output (non-deterministic): tens digit = 1 (base + 10 + inputDtypeVal); only fp32(1) and fp16(7) used
+// UB_FULL fp32-out: 100 + 10 + 1/7 = 111/117
+// UB_NOT_FULL fp32-out: 200 + 10 + 1/7 = 211/217
+// UB_NOT_FULL_SIMT fp32-out: 300 + 10 + 1/7 = 311/317
+REGISTER_TILING_DATA_CLASS(HistogramV2_111, HistogramV2SimtTilingData)
+REGISTER_TILING_DATA_CLASS(HistogramV2_117, HistogramV2SimtTilingData)
+REGISTER_TILING_DATA_CLASS(HistogramV2_211, HistogramV2SimtTilingData)
+REGISTER_TILING_DATA_CLASS(HistogramV2_217, HistogramV2SimtTilingData)
+REGISTER_TILING_DATA_CLASS(HistogramV2_311, HistogramV2SimtTilingData)
+REGISTER_TILING_DATA_CLASS(HistogramV2_317, HistogramV2SimtTilingData)
+
+// fp32 output + deterministic: thousands digit = 1 (fp32-out-key + 1000); only fp32(1) and fp16(7) used
+// UB_FULL det fp32-out: 111 + 1000 = 1111 / 117 + 1000 = 1117
+// UB_NOT_FULL det fp32-out: 211 + 1000 = 1211 / 217 + 1000 = 1217
+// UB_NOT_FULL_SIMT det fp32-out: 311 + 1000 = 1311 / 317 + 1000 = 1317
+REGISTER_TILING_DATA_CLASS(HistogramV2_1111, HistogramV2SimtTilingData)
+REGISTER_TILING_DATA_CLASS(HistogramV2_1117, HistogramV2SimtTilingData)
+REGISTER_TILING_DATA_CLASS(HistogramV2_1211, HistogramV2SimtTilingData)
+REGISTER_TILING_DATA_CLASS(HistogramV2_1217, HistogramV2SimtTilingData)
+REGISTER_TILING_DATA_CLASS(HistogramV2_1311, HistogramV2SimtTilingData)
+REGISTER_TILING_DATA_CLASS(HistogramV2_1317, HistogramV2SimtTilingData)
+
 struct HistogramV2CompileInfo {
     int32_t totalCoreNum = 0;
     uint64_t ubSizePlatForm = 0;
