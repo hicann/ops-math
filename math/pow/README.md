@@ -81,3 +81,4 @@ $$
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
 | aclnn调用 | [test_aclnn_exp2](./examples/test_aclnn_exp2.cpp) | 通过[aclnnExp2](./docs/aclnnExp2&aclnnInplaceExp2.md)接口方式调用Pow算子。 |
 | aclnn调用 | [test_aclnn_pow_tensor_tensor](./examples/test_aclnn_pow_tensor_tensor.cpp) | 通过[aclnnPowTensorTensor](./docs/aclnnPowTensorTensor&aclnnInplacePowTensorTensor.md)接口方式调用Pow算子。 |
+| 图模式调用 | [test\_geir\_pow](./examples/test_geir_pow.cpp) | 通过[算子IR](./op_graph/pow_proto.h)构图方式调用Pow算子。 |

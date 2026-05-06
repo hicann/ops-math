@@ -1332,7 +1332,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>根据输入指数和幂张量进行指数计算。</td>
   </tr>
   <tr>
