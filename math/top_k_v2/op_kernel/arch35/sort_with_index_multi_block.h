@@ -146,7 +146,6 @@ __aicore__ inline void SortWithIndexMultiBlock<XType, UnsignedType, IsDescend, X
     if (this->blockIdx_ < this->realCoreNum_) {
         this->ClearWorkSapce();
     }
-    PipeBarrier<PIPE_ALL>();
     SyncAll();
     
     if (this->blockIdx_ < this->realCoreNum_) {
@@ -165,12 +164,10 @@ __aicore__ inline void SortWithIndexMultiBlock<XType, UnsignedType, IsDescend, X
             // 确定  histTileGmWk_(直方图), histCumsumTileGmWk_, excusiveBinsGmWk_
             this->GetGlobalExcusiveSum(sortRound, loopRound, xGm);
         }
-        PipeBarrier<PIPE_ALL>();
         SyncAll();
         if (this->blockIdx_ < this->realCoreNum_) {
             this->ComputeOnePass(sortRound, loopRound, xGm, indexGm);
         }
-        PipeBarrier<PIPE_ALL>();
         SyncAll();
     }
 }
