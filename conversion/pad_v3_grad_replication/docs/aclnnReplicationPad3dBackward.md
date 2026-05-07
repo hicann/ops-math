@@ -152,18 +152,21 @@ aclnnStatus aclnnReplicationPad3dBackward(
       <td>Tensor为空指针。</td>
     </tr>
     <tr>
-      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="5">161002</td>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
       <td>gradOutput、self、padding和gradInput的数据类型或数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>gradOutput、self、padding和gradInput的输入shape在支持范围之外。</td>
     </tr>
     <tr>
-      <td>self为空tensor且存在非第一维度的值为0。</td>
+      <td>self为空tensor且后4维存在维度大小为0。</td>
     </tr>
     <tr>
       <td>padding内的数值大于等于self的维度。</td>
+    </tr>
+    <tr>
+      <td>padding的size不等于6。</td>
     </tr>
     <tr>
       <td>gradOutput shape需要与replication_pad3d正向传播的output一致。</td>

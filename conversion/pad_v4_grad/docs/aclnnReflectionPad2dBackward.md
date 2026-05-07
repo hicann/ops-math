@@ -158,8 +158,8 @@ aclnnStatus aclnnReflectionPad2dBackward(
       <td>gradOutput、self、 padding、 gradInput任何一个为空指针。</td>
     </tr>
     <tr>
-      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="5">161002</td>
+      <td rowspan="7">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="7">161002</td>
       <td>gradOutput、self、padding和gradInput的数据类型或数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
@@ -169,10 +169,16 @@ aclnnStatus aclnnReflectionPad2dBackward(
       <td>self为空tensor且self后三个维度的值存在0。</td>
     </tr>
     <tr>
-      <td>gradOutput shape需要与reflection_pad2d正向传播的output一致。</td>
+      <td>padding的size不等于4。</td>
     </tr>
     <tr>
-      <td>self的数据类型为bf16时，仅支持padding的后两个数为0或者padding中的所有数都小于7。</td>
+      <td>padding里的数值大于等于对应self的维度大小。</td>
+    </tr>
+    <tr>
+      <td>self的数据类型为bf16时，padding的数值大于7。</td>
+    </tr>
+    <tr>
+      <td>gradOutput shape需要与reflection_pad2d正向传播的output一致。</td>
     </tr>
   </tbody>
   </table>
