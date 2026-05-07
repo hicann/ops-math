@@ -228,6 +228,41 @@ function(add_aicpu_cust_kernel_modules op_name aicpu_sources)
   endif()
 endfunction()
 
+# Compiles aicpu source as OBJECT for host side (x86).
+# Collects into AICPU_HOST_OBJ_TARGETS; linking into libmath_constant_folding_ops.so
+# is done in symbol.cmake gen_aicpu_const_symbol().
+function(add_aicpu_host_kernel_modules host_target_name)
+  message(STATUS "add_aicpu_host_kernel_modules for ${host_target_name}")
+  if(NOT TARGET ${host_target_name})
+    add_library(${host_target_name} OBJECT)
+    target_include_directories(${host_target_name} PRIVATE
+        ${AICPU_INCLUDE}
+        ${CANN_3RD_LIB_PATH}/eigen
+    )
+    target_compile_definitions(
+      ${host_target_name} PRIVATE
+                    _FORTIFY_SOURCE=2
+                    google=ascend_private
+      )
+    target_compile_options(
+      ${host_target_name} PRIVATE
+                    -Dgoogle=ascend_private
+                    -fvisibility=hidden ${AICPU_DEFINITIONS}
+      )
+    target_link_libraries(
+      ${host_target_name}
+      PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx17,intf_pub_cxx17>>
+              $<BUILD_INTERFACE:dlog_headers>
+              Eigen3::EigenMath
+      )
+    if (NOT ${host_target_name} IN_LIST AICPU_HOST_OBJ_TARGETS)
+      set(AICPU_HOST_OBJ_TARGETS
+          ${AICPU_HOST_OBJ_TARGETS} ${host_target_name}
+          CACHE INTERNAL "All aicpu host builtin obj targets")
+    endif()
+  endif()
+endfunction()
+
 function(add_op_graph_modules)
   if(NOT TARGET ${GRAPH_PLUGIN_NAME}_obj)
     add_library(${GRAPH_PLUGIN_NAME}_obj OBJECT)
@@ -605,6 +640,19 @@ macro(add_all_modules_sources)
       target_sources(${OPHOST_NAME}_aicpu_obj PRIVATE ${AICPU_SRCS})
     else()
       add_aicpu_cust_kernel_modules(${OP_NAME} "${AICPU_SRCS}")
+    endif()
+  endif()
+
+  # Host-side constant folding: compile aicpu source as x86 OBJECT for libmath_constant_folding_ops.so
+  if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG AND NOT ENABLE_CUSTOM)
+    set(HOST_AICPU_CMAKE_FILE ${SOURCE_DIR}/op_kernel_hostcpu/CMakeLists.txt)
+    if(EXISTS ${HOST_AICPU_CMAKE_FILE})
+      file(GLOB_RECURSE AICPU_HOST_SRCS ${SOURCE_DIR}/op_kernel_aicpu/*_aicpu.cpp)
+      if(AICPU_HOST_SRCS)
+        set(HOST_OBJ_NAME ${OP_NAME}_host_const_obj)
+        add_aicpu_host_kernel_modules(${HOST_OBJ_NAME})
+        target_sources(${HOST_OBJ_NAME} PRIVATE ${AICPU_HOST_SRCS})
+      endif()
     endif()
   endif()
 

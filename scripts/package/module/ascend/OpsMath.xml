@@ -17,4 +17,7 @@
     <file_info value="ops_es_packages_lib" copy_type="delivery" src_path="" dst_path="$(TARGET_ENV)/lib64/" install_path="$(TARGET_ENV)/lib64/">
         <file value="libes_math.so" install_mod="550"/>
     </file_info>
+    <file_info value="ophost_const_folding_lib" copy_type="delivery" src_path="" dst_path="opp/built-in/op_impl/host_cpu/" install_path="opp/built-in/op_impl/host_cpu/" optional="true">
+        <file value="libmath_constant_folding_ops.so" install_mod="550"/>
+    </file_info>
 </block>
