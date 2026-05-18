@@ -296,7 +296,7 @@ void PadV3GradACTiling::CalculateTilingKeyMirror()
         outTileSize_ = bufferSize_;
         return TilingInfoTune();
     }
-    if (tilingData_->inShape[dimNum_ - 1] * dtypeBytes_ > vectorSize_ / HALF_FACTOR) {
+    if (tilingData_->inShape[dimNum_ - 1] > vectorSize_ / sizeof(ge::float32_t)) {
         additionTileSize_ = GetSizeOfBlockAlign(tilingData_->inShape[dimNum_ - 1] * dtypeBytes_, blockSize_);
         if (dtypeBytes_ == 1) {
             additionTileSize_ =

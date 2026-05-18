@@ -90,7 +90,7 @@ private:
     uint8_t dimNum_{0};
     uint8_t ubAxis_{0};
     uint16_t modeOffset_{0};  // reflect=0, symmetric=1
-
+    PadGradNormalParam padParam_;
     const PadV3GradACTilingData* tilingData_ = nullptr;
     bool has2DPadding{false};  // H 维度是否有 padding (dimNum_ >= 2)
     bool has3DPadding{false};  // C 维度是否有 padding (dimNum_ >= 3)
@@ -140,6 +140,11 @@ public:
         // grad_x W (original) - aligned
         padWOutLength_ = CeilAlign(static_cast<uint32_t>(tilingData_->outShape[dimNum_ - 1]), BLK_ELEMS);
 
+        padParam_.padWI = padWInLength_;   // grad_y W
+        padParam_.padWO = padWOutLength_;  // grad_x W
+        padParam_.padLeft = static_cast<uint32_t>(tilingData_->leftPad[dimNum_ - 1]);
+        padParam_.padRight = static_cast<uint32_t>(tilingData_->rightPad[dimNum_ - 1]);
+
         // UB 内完整维度使用 inShape (grad_y) 初始化拷贝长度
         // 因为 CopyIn 从 H=0 开始读取完整的 grad_y 行（含 padding 行）
         for (int8_t i = dimNum_ - 1; i > ubAxis_; i--) {
@@ -175,13 +180,6 @@ public:
         uint32_t endIdx = (blockIdx_ + 1L) * ubPerCount;
         endIdx = (endIdx < ubTotalCount ? endIdx : ubTotalCount);
 
-        
-        PadGradNormalParam padParam = {
-            .padWI = padWInLength_,   // grad_y W
-            .padWO = padWOutLength_,  // grad_x W
-            .padLeft = static_cast<uint32_t>(tilingData_->leftPad[dimNum_ - 1]),
-            .padRight = static_cast<uint32_t>(tilingData_->rightPad[dimNum_ - 1])};
-
         // 按 outShape (grad_x) 计算索引，因为分核是按 outShape 计算的
         for (uint32_t idx = startIdx; idx < endIdx; idx++) {
             uint32_t curIdx = idx;
@@ -198,35 +196,33 @@ public:
             inCopyLen_[ubAxis_] = outIndex_[ubAxis_] + ubFactor < tilingData_->outShape[ubAxis_] ?
                                      ubFactor :
                                      tilingData_->outShape[ubAxis_] - outIndex_[ubAxis_];
-            ProcessOneStep(padParam);
+            ProcessOneStep();
         }
     }
 
 private:
-    __aicore__ inline void ProcessOneStep(PadGradNormalParam& padParam)
+    __aicore__ inline void ProcessOneStep()
     {
-        LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
-        CopyIn(srcLocal, padParam);
-
-        srcLocal = inQueue_.DeQue<T>();
+        CopyIn();
         LocalTensor<T> dstLocal = outQueue_.AllocTensor<T>();
-        GradGatherProcess(dstLocal, srcLocal, padParam);
-        inQueue_.FreeTensor(srcLocal);
+        GradGatherProcess(dstLocal);
         outQueue_.EnQue(dstLocal);
-
         dstLocal = outQueue_.DeQue<T>();
-        CopyOut(dstLocal, padParam);
+        CopyOut(dstLocal);
         outQueue_.FreeTensor(dstLocal);
+
     }
-    __aicore__ inline void CopyIn(const LocalTensor<T>& src, PadGradNormalParam& padParam)
+    __aicore__ inline void CopyIn()
     {
         // Calculate input address in grad_y (padded tensor)
+        LocalTensor<T> inUbLocal = inQueue_.AllocTensor<T>();
+
         uint64_t inAddr = 0;
         for (uint8_t i = 0; i < dimNum_; i++) {
             inAddr += inIndex_[i] * tilingData_->inStride[i];
         }
 
-        DataCopyPadExtParams<T> padParams{true, 0, 0, 0};
+        DataCopyPadExtParams<T> padExtParams{true, 0, 0, 0};
         DataCopyExtParams copyInParams;
         // 使用 inCopyLen_ (按 inShape 计算的长度) 来确定拷贝的行数
         copyInParams.blockCount = inCopyLen_[dimNum_ - CONST2];
@@ -239,44 +235,58 @@ private:
             loopParams.loop2Size = 1;
             loopParams.loop1Size = inCopyLen_[dimNum_ - CONST3];
             loopParams.loop1SrcStride = tilingData_->inStride[dimNum_ - CONST3] * sizeof(T);
-            loopParams.loop1DstStride = tilingData_->inShape[dimNum_ - CONST2] * padParam.padWI * sizeof(T);
+            loopParams.loop1DstStride = tilingData_->inShape[dimNum_ - CONST2] * padParam_.padWI * sizeof(T);
             SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
-            DataCopyPad(src, input_[inAddr], copyInParams, padParams);
+            DataCopyPad(inUbLocal, input_[inAddr], copyInParams, padExtParams);
             ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
         } else if (axisNumInUb_ == CONST4) {
             LoopModeParams loopParams;
             loopParams.loop1Size = inCopyLen_[dimNum_ - CONST3];
             loopParams.loop1SrcStride = tilingData_->inStride[dimNum_ - CONST3] * sizeof(T);
-            loopParams.loop1DstStride = tilingData_->inShape[dimNum_ - CONST2] * padParam.padWI * sizeof(T);
+            loopParams.loop1DstStride = tilingData_->inShape[dimNum_ - CONST2] * padParam_.padWI * sizeof(T);
             loopParams.loop2Size = inCopyLen_[dimNum_ - CONST4];
             loopParams.loop2SrcStride = tilingData_->inStride[dimNum_ - CONST4] * sizeof(T);
             loopParams.loop2DstStride = tilingData_->inShape[dimNum_ - CONST3] * tilingData_->inShape[dimNum_ - CONST2] *
-                                        padParam.padWI * sizeof(T);
+                                        padParam_.padWI * sizeof(T);
             SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
-            DataCopyPad(src, input_[inAddr], copyInParams, padParams);
+            DataCopyPad(inUbLocal, input_[inAddr], copyInParams, padExtParams);
             ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
         } else {
-            DataCopyPad(src, input_[inAddr], copyInParams, padParams);
+            DataCopyPad(inUbLocal, input_[inAddr], copyInParams, padExtParams);
         }
-        inQueue_.EnQue(src);
+        inQueue_.EnQue(inUbLocal);
+    }
+    // 将 src (inQueue_) 中的数据拷贝/转换到 tmpBuf_
+    // 对于 bfloat16_t/half 类型，使用 Cast 转换为 float32 存储
+    // 对于 float32 类型，直接使用 Copy
+    __aicore__ inline void CopyToTmpBuf(const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimHNum, uint32_t padWI)
+    {
+        LocalTensor<T> inUbLocal = inQueue_.DeQue<T>();
+        uint32_t totalLen = dimHNum * padWI;
+
+        if constexpr (IsSameType<T, PromoteDataT>::value) {
+            // float32 → float32，直接使用 Copy
+            Copy(tmpLocal, inUbLocal, totalLen);
+        } else {
+            // bfloat16_t/half → float32，使用 Cast
+            Cast(tmpLocal, inUbLocal, RoundMode::CAST_NONE, totalLen);
+        }
+        inQueue_.FreeTensor(inUbLocal);
     }
     // W dimension gradient accumulation
     // For each position w in grad_x, accumulate from:
     // 1. Self position: grad_y[w + leftPad]
     // 2. Left pad mirror: grad_y[leftPad - 1 - w + modeOffset_] if applicable
     // 3. Right pad mirror: grad_y[2*outW + leftPad - 2 - w + modeOffset_] if applicable
-    __aicore__ inline void GradGatherProcess(
-        const LocalTensor<T>& dst, const LocalTensor<T>& src, PadGradNormalParam& padParam)
+    __aicore__ inline void GradGatherProcess(const LocalTensor<T>& dst)
     {
         __local_mem__ T* dstAddr = reinterpret_cast<__local_mem__ T*>(dst.GetPhyAddr());
-        __local_mem__ T* srcAddr = reinterpret_cast<__local_mem__ T*>(src.GetPhyAddr());
-        
         const uint32_t outW = tilingData_->outShape[dimNum_ - 1];  // grad_x W
         const uint32_t inW = tilingData_->inShape[dimNum_ - 1];    // grad_y W
-        const uint32_t leftPad = padParam.padLeft;
-        const uint32_t rightPad = padParam.padRight;
-        const uint32_t padWI = padParam.padWI;
-        const uint32_t padWO = padParam.padWO;
+        const uint32_t leftPad = padParam_.padLeft;
+        const uint32_t rightPad = padParam_.padRight;
+        const uint32_t padWI = padParam_.padWI;
+        const uint32_t padWO = padParam_.padWO;
         const uint32_t padHW = tilingData_->outShape[dimNum_ - CONST2] * padWO;
         const uint32_t padCHW = (axisNumInUb_ > CONST3) ? tilingData_->outShape[dimNum_ - CONST3] * padHW : 0;
 
@@ -293,17 +303,16 @@ private:
             // 2a. 主pad: 批量从 GM 读取纯高维镜像 (不含 H)，Cast+Add 到 tmpBuf_
             // 2b. 副pad: 逐行从 GM 读取 H 相关镜像，Cast+Add 到 tmpBuf_
             // 3. W 维度梯度累加：从 tmpBuf_ 读取，写入 dst
-
             LocalTensor<PromoteDataT> tmpLocal = tmpBuf_.Get<PromoteDataT>();
 
             // Step 1: 将 src (原始 grad_y) Cast/Copy 到 tmpLocal
-            CopyToTmpBuf(src, tmpLocal, dimHIn, padWI);
+            CopyToTmpBuf(tmpLocal, dimHIn, padWI);
 
             // Step 2a: 主pad — 批量从 GM 读取纯高维镜像 (C, N, D5 及其组合)
-            GradAccumulateHighDimBulk_UB2(tmpLocal, src, dimHIn, padWI);
+            GradAccumulateHighDimBulk_UB2(tmpLocal, dimHIn, padWI);
 
             // Step 2b: 副pad — 逐行处理 H 相关镜像 (H, C×H, N×H, N×C×H, D5×H 等)
-            GradAccumulateHRelatedToTmpBuf(tmpLocal, src, dimHIn, padWI);
+            GradAccumulateHRelatedToTmpBuf(tmpLocal, dimHIn, padWI);
 
             // Step 3: W 维度梯度累加
             __local_mem__ PromoteDataT* tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
@@ -320,14 +329,14 @@ private:
             const uint32_t sliceSize = dimHIn * padWI;  // 一个 C slice 在 tmpLocal 中的元素数
 
             // Step 1: 一次性 Cast 所有 C slice 数据到 tmpLocal
-            CopyToTmpBuf(src, tmpLocal, dimCNum * dimHIn, padWI);
+            CopyToTmpBuf(tmpLocal, dimCNum * dimHIn, padWI);
 
             // Step 2: 批量从 GM 累加高维镜像 (主pad + 副pad)
-            GradAccumulateHighDimBulk(tmpLocal, src, dimCNum, dimHIn, padWI);
+            GradAccumulateHighDimBulk(tmpLocal, dimCNum, dimHIn, padWI);
 
             // Step 3: H 镜像内部累加 (padding 行 → self 行)
             for (uint32_t c = 0; c < dimCNum; c++) {
-                AccumulateHMirrorsInPlace(tmpLocal[c * sliceSize], padWI);
+                AccumulateHMirrorsInPlace(tmpLocal, c * sliceSize, padWI);
             }
 
             // Step 4: W 维度梯度累加，从 self 行读取，写入 dst
@@ -349,10 +358,10 @@ private:
             const uint32_t cSliceSize = dimCNum * hSliceSize;  // 一个 N slice (所有 C planes)
 
             // Step 1: 一次性 Cast 所有 N×C×H 数据到 tmpLocal
-            CopyToTmpBuf(src, tmpLocal, dimNNum * dimCNum * dimHIn, padWI);
+            CopyToTmpBuf(tmpLocal, dimNNum * dimCNum * dimHIn, padWI);
 
             // Step 2: 批量从 GM 累加高维镜像 (主pad D5 + 副pad N)
-            GradAccumulateHighDimBulk_UB4(tmpLocal, src, dimNNum, dimCNum, dimHIn, padWI);
+            GradAccumulateHighDimBulk_UB4(tmpLocal, dimNNum, dimCNum, dimHIn, padWI);
 
             // Step 3: C 镜像内部累加 (对每个 N slice)
             for (uint32_t n = 0; n < dimNNum; n++) {
@@ -364,7 +373,7 @@ private:
             for (uint32_t n = 0; n < dimNNum; n++) {
                 for (uint32_t c = 0; c < dimCOut; c++) {
                     AccumulateHMirrorsInPlace(
-                        tmpLocal[n * cSliceSize + (c + leftPadC) * hSliceSize], padWI);
+                        tmpLocal, n * cSliceSize + (c + leftPadC) * hSliceSize, padWI);
                 }
             }
 
@@ -382,74 +391,14 @@ private:
         }
     }
 
-    // 将 src (inQueue_) 中的数据拷贝/转换到 tmpBuf_
-    // 对于 bfloat16_t/half 类型，使用 Cast 转换为 float32 存储
-    // 对于 float32 类型，直接使用 Copy
-    __aicore__ inline void CopyToTmpBuf(const LocalTensor<T>& src, const LocalTensor<PromoteDataT>& tmp,
-                                        uint32_t dimHNum, uint32_t padWI)
-    {
-        uint32_t totalLen = dimHNum * padWI;
-
-        if constexpr (IsSameType<T, PromoteDataT>::value) {
-            // float32 → float32，直接使用 Copy
-            Copy(tmp, src, totalLen);
-        } else {
-            // bfloat16_t/half → float32，使用 Cast
-            Cast(tmp, src, RoundMode::CAST_NONE, totalLen);
-        }
-    }
-
-    // 处理 UB 外所有有 padding 维度的镜像累加到 tmpBuf_
-    // 包括：H 维度（仅 axisNumInUb_=2）、C 维度、N 维度、第5维等
-    // 以及各维度之间的组合镜像（如 C×H）
-    // tmpLocal: tmpBuf_ (PromoteDataT 类型，即 float)
-    // srcLocal: inQueue_ 用于从 GM 读取镜像行数据
-    // hOffset: tmpLocal 中 self 行的起始偏移 (axisNumInUb_=2 时为 0, axisNumInUb_>=3 时为 leftPadH)
-    __aicore__ inline void GradAccumulateHighDimToTmpBuf(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        PadGradNormalParam& padParam, uint32_t dimHNum, uint32_t padWI, uint32_t hOffset = 0)
-    {
-        const uint32_t inW = tilingData_->inShape[dimNum_ - 1];
-        const uint32_t globalHStart = outIndex_[dimNum_ - CONST2];
-        auto tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
-
-        // 遍历输出 H 行
-        for (uint32_t h = 0; h < dimHNum; h++) {
-            uint32_t globalH = globalHStart + h;
-            // hOffset>0 时 self 行在 tmpLocal 中偏移 leftPadH 行
-            __local_mem__ PromoteDataT* lineAddr = tmpAddr + (h + hOffset) * padWI;
-
-            // 1. H 维度镜像 (仅 axisNumInUb_=2 时从 GM 读取; axisNumInUb_>=3 时已由 AccumulateHMirrorsInPlace 处理)
-            if (has2DPadding && hOffset == 0) {
-                ProcessHDimMirrorAtCurrentHighDim(lineAddr, srcLocal, globalH, inW);
-            }
-
-            // 2. C 维度镜像 (如果 dimNum_ >= 3 且 C 有 padding)
-            if (dimNum_ >= 3 && has3DPadding) {
-                ProcessCDimMirror(lineAddr, srcLocal, globalH, inW);
-            }
-
-            // 3. N 维度镜像 (如果 dimNum_ >= 4 且 N 有 padding)
-            if (dimNum_ >= 4 && has4DPadding) {
-                ProcessNDimMirror(lineAddr, srcLocal, globalH, inW);
-            }
-
-            // 4. 第5维镜像 (如果 dimNum_ >= 5 且有 padding)
-            if (dimNum_ >= 5 && has5DPadding) {
-                ProcessDim5Mirror(lineAddr, srcLocal, globalH, inW);
-            }
-        }
-    }
-
     // axisNumInUb_=2 副pad: 只处理涉及 H 镜像的组合 (逐行从 GM 读取)
     // 主pad (纯高维镜像) 已由 GradAccumulateHighDimBulk_UB2 批量处理
     __aicore__ inline void GradAccumulateHRelatedToTmpBuf(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t dimHNum, uint32_t padWI)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimHNum, uint32_t padWI)
     {
         const uint32_t inW = tilingData_->inShape[dimNum_ - 1];
         const uint32_t globalHStart = outIndex_[dimNum_ - CONST2];
-        auto tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
+        __local_mem__ PromoteDataT* tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
 
         for (uint32_t h = 0; h < dimHNum; h++) {
             uint32_t globalH = globalHStart + h;
@@ -457,30 +406,29 @@ private:
 
             // 1. 纯 H 镜像
             if (has2DPadding) {
-                ProcessHDimMirrorAtCurrentHighDim(lineAddr, srcLocal, globalH, inW);
+                ProcessHDimMirrorAtCurrentHighDim(lineAddr, globalH, inW);
             }
 
             // 2. C×H 组合 (需要 C 有 padding 且 H 有 padding)
             if (dimNum_ >= 3 && has3DPadding && has2DPadding) {
-                ProcessCxHSubPad(lineAddr, srcLocal, globalH, inW);
+                ProcessCxHSubPad(lineAddr, globalH, inW);
             }
 
             // 3. N×H 相关组合 (N×H, N×C×H)
             if (dimNum_ >= 4 && has4DPadding) {
-                ProcessNxHSubPad(lineAddr, srcLocal, globalH, inW);
+                ProcessNxHSubPad(lineAddr, globalH, inW);
             }
 
             // 4. D5×H 相关组合 (D5×H, D5×C×H, D5×N×H, D5×N×C×H)
             if (dimNum_ >= 5 && has5DPadding) {
-                ProcessD5xHSubPad(lineAddr, srcLocal, globalH, inW);
+                ProcessD5xHSubPad(lineAddr, globalH, inW);
             }
         }
     }
 
     // 副pad: C×H 组合 — 对每个 mirrorC 位置，处理 H 镜像
     __aicore__ inline void ProcessCxHSubPad(
-        __local_mem__ PromoteDataT* lineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t globalH, uint32_t inW)
+        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
     {
         const uint32_t globalC = outIndex_[dimNum_ - CONST3];
         MirrorList cList = CollectMirrorPositions(
@@ -488,14 +436,13 @@ private:
             tilingData_->leftPad[dimNum_ - CONST3], tilingData_->rightPad[dimNum_ - CONST3]);
 
         for (uint8_t ci = 0; ci < cList.count; ci++) {
-            ProcessCxHCombinedMirror(lineAddr, srcLocal, globalH, cList.mirrors[ci], inW);
+            ProcessCxHCombinedMirror(lineAddr, globalH, cList.mirrors[ci], inW);
         }
     }
 
     // 副pad: N×H 相关组合 — 对每个 mirrorN 位置，处理 N×H 和 N×C×H
     __aicore__ inline void ProcessNxHSubPad(
-        __local_mem__ PromoteDataT* lineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t globalH, uint32_t inW)
+        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
     {
         const uint32_t globalN = outIndex_[dimNum_ - CONST4];
         MirrorList nList = CollectMirrorPositions(
@@ -504,18 +451,17 @@ private:
 
         for (uint8_t ni = 0; ni < nList.count; ni++) {
             // N×H
-            ProcessNxHCombinedMirror(lineAddr, srcLocal, globalH, nList.mirrors[ni], inW);
+            ProcessNxHCombinedMirror(lineAddr, globalH, nList.mirrors[ni], inW);
             // N×C×H
             if (has3DPadding) {
-                ProcessNxCxHSubPad(lineAddr, srcLocal, globalH, nList.mirrors[ni], inW);
+                ProcessNxCxHSubPad(lineAddr, globalH, nList.mirrors[ni], inW);
             }
         }
     }
 
     // 副pad: N×C×H 组合 — 对给定 mirrorN，检查 C 镜像条件，处理 N×C×H
     __aicore__ inline void ProcessNxCxHSubPad(
-        __local_mem__ PromoteDataT* lineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t globalH, uint32_t mirrorN, uint32_t inW)
+        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorN, uint32_t inW)
     {
         const uint32_t globalC = outIndex_[dimNum_ - CONST3];
         MirrorList cList = CollectMirrorPositions(
@@ -523,14 +469,13 @@ private:
             tilingData_->leftPad[dimNum_ - CONST3], tilingData_->rightPad[dimNum_ - CONST3]);
 
         for (uint8_t ci = 0; ci < cList.count; ci++) {
-            ProcessNxCxHCombinedMirror(lineAddr, srcLocal, globalH, mirrorN, cList.mirrors[ci], inW);
+            ProcessNxCxHCombinedMirror(lineAddr, globalH, mirrorN, cList.mirrors[ci], inW);
         }
     }
 
     // 副pad: D5×H 相关组合 — 对每个 mirrorD5，处理 D5×H, D5×C×H, D5×N×H, D5×N×C×H
     __aicore__ inline void ProcessD5xHSubPad(
-        __local_mem__ PromoteDataT* lineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t globalH, uint32_t inW)
+        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         MirrorList d5List = CollectMirrorPositions(
@@ -539,22 +484,21 @@ private:
 
         for (uint8_t di = 0; di < d5List.count; di++) {
             // D5×H
-            ProcessD5xHCombinedMirror(lineAddr, srcLocal, globalH, d5List.mirrors[di], inW);
+            ProcessD5xHCombinedMirror(lineAddr, globalH, d5List.mirrors[di], inW);
             // D5×C×H
             if (has3DPadding) {
-                ProcessD5xCxHSubPad(lineAddr, srcLocal, globalH, d5List.mirrors[di], inW);
+                ProcessD5xCxHSubPad(lineAddr, globalH, d5List.mirrors[di], inW);
             }
             // D5×N×H (含 D5×N×C×H)
             if (has4DPadding) {
-                ProcessD5xNxHSubPad(lineAddr, srcLocal, globalH, d5List.mirrors[di], inW);
+                ProcessD5xNxHSubPad(lineAddr, globalH, d5List.mirrors[di], inW);
             }
         }
     }
 
     // D5×H 组合镜像: 给定 mirrorD5，检查 H 镜像条件
     __aicore__ inline void ProcessD5xHCombinedMirror(
-        __local_mem__ PromoteDataT* lineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t globalH, uint32_t mirrorD5, uint32_t inW)
+        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorD5, uint32_t inW)
     {
         if (!has2DPadding) return;
 
@@ -565,20 +509,19 @@ private:
             leftPadH, tilingData_->rightPad[dimNum_ - CONST2]);
 
         if (condH.hasTop && condH.mirrorTop < leftPadH) {
-            CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, srcLocal, mirrorD5,
+            CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5,
                 inIndex_[dimNum_ - CONST4], inIndex_[dimNum_ - CONST3], condH.mirrorTop, inW);
         }
 
         if (condH.hasBottom && condH.mirrorBottom >= leftPadH + tilingData_->outShape[dimNum_ - CONST2] && condH.mirrorBottom < inH) {
-            CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, srcLocal, mirrorD5,
+            CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5,
                 inIndex_[dimNum_ - CONST4], inIndex_[dimNum_ - CONST3], condH.mirrorBottom, inW);
         }
     }
 
     // D5×C×H 副pad: 给定 mirrorD5，检查 C 镜像条件，对每个 mirrorC 处理 H 镜像
     __aicore__ inline void ProcessD5xCxHSubPad(
-        __local_mem__ PromoteDataT* lineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t globalH, uint32_t mirrorD5, uint32_t inW)
+        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorD5, uint32_t inW)
     {
         const uint32_t globalC = outIndex_[dimNum_ - CONST3];
         const uint32_t outH = tilingData_->outShape[dimNum_ - CONST2];
@@ -593,11 +536,11 @@ private:
 
         for (uint8_t ci = 0; ci < cList.count; ci++) {
             if (condH.hasTop && condH.mirrorTop < leftPadH) {
-                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, srcLocal, mirrorD5,
+                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5,
                     inIndex_[dimNum_ - CONST4], cList.mirrors[ci], condH.mirrorTop, inW);
             }
             if (condH.hasBottom && condH.mirrorBottom >= leftPadH + outH && condH.mirrorBottom < inH) {
-                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, srcLocal, mirrorD5,
+                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5,
                     inIndex_[dimNum_ - CONST4], cList.mirrors[ci], condH.mirrorBottom, inW);
             }
         }
@@ -605,8 +548,7 @@ private:
 
     // D5×N×H 副pad (含 D5×N×C×H): 给定 mirrorD5，检查 N 镜像条件
     __aicore__ inline void ProcessD5xNxHSubPad(
-        __local_mem__ PromoteDataT* lineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t globalH, uint32_t mirrorD5, uint32_t inW)
+        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorD5, uint32_t inW)
     {
         const uint32_t globalN = outIndex_[dimNum_ - CONST4];
         const uint32_t outH = tilingData_->outShape[dimNum_ - CONST2];
@@ -622,24 +564,23 @@ private:
         for (uint8_t ni = 0; ni < nList.count; ni++) {
             // D5×N×H
             if (condH.hasTop && condH.mirrorTop < leftPadH) {
-                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, srcLocal, mirrorD5,
+                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5,
                     nList.mirrors[ni], inIndex_[dimNum_ - CONST3], condH.mirrorTop, inW);
             }
             if (condH.hasBottom && condH.mirrorBottom >= leftPadH + outH && condH.mirrorBottom < inH) {
-                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, srcLocal, mirrorD5,
+                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5,
                     nList.mirrors[ni], inIndex_[dimNum_ - CONST3], condH.mirrorBottom, inW);
             }
             // D5×N×C×H
             if (has3DPadding) {
-                ProcessD5xNxCxHSubPad(lineAddr, srcLocal, globalH, mirrorD5, nList.mirrors[ni], inW);
+                ProcessD5xNxCxHSubPad(lineAddr, globalH, mirrorD5, nList.mirrors[ni], inW);
             }
         }
     }
 
     // D5×N×C×H 副pad: 给定 mirrorD5 和 mirrorN，检查 C 和 H 镜像条件
     __aicore__ inline void ProcessD5xNxCxHSubPad(
-        __local_mem__ PromoteDataT* lineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t globalH, uint32_t mirrorD5, uint32_t mirrorN, uint32_t inW)
+        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorD5, uint32_t mirrorN, uint32_t inW)
     {
         const uint32_t globalC = outIndex_[dimNum_ - CONST3];
         const uint32_t outH = tilingData_->outShape[dimNum_ - CONST2];
@@ -654,11 +595,11 @@ private:
 
         for (uint8_t ci = 0; ci < cList.count; ci++) {
             if (condH.hasTop && condH.mirrorTop < leftPadH) {
-                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, srcLocal, mirrorD5,
+                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5,
                     mirrorN, cList.mirrors[ci], condH.mirrorTop, inW);
             }
             if (condH.hasBottom && condH.mirrorBottom >= leftPadH + outH && condH.mirrorBottom < inH) {
-                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, srcLocal, mirrorD5,
+                CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5,
                     mirrorN, cList.mirrors[ci], condH.mirrorBottom, inW);
             }
         }
@@ -666,8 +607,7 @@ private:
 
     // H 维度镜像处理 (高维索引不变，只改变 H 索引)
     __aicore__ inline void ProcessHDimMirrorAtCurrentHighDim(
-        __local_mem__ PromoteDataT* lineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t globalH, uint32_t inW)
+        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
     {
         const uint32_t outH = tilingData_->outShape[dimNum_ - CONST2];
         const uint32_t leftPadH = tilingData_->leftPad[dimNum_ - CONST2];
@@ -679,10 +619,8 @@ private:
             (globalH < leftPadH);
         if (hasTopMirror) {
             uint32_t mirrorH = leftPadH - modeOffset_ - globalH;
-            if (mirrorH < leftPadH) {
-                // 使用当前高维索引，只改变 H
-                CopyAndAddMirrorLineFromGM(lineAddr, srcLocal, mirrorH, inW);
-            }
+            // 使用当前高维索引，只改变 H
+            CopyAndAddMirrorLineFromGM(lineAddr, mirrorH, inW);
         }
 
         // 下镜像
@@ -692,16 +630,13 @@ private:
         if (hasBottomMirror) {
             uint32_t mirrorH = leftPadH + 2 * outH - 2 + modeOffset_ - globalH;
             uint32_t inH = tilingData_->inShape[dimNum_ - CONST2];
-            if (mirrorH >= leftPadH + outH && mirrorH < inH) {
-                CopyAndAddMirrorLineFromGM(lineAddr, srcLocal, mirrorH, inW);
-            }
+            CopyAndAddMirrorLineFromGM(lineAddr, mirrorH, inW);
         }
     }
 
     // C 维度镜像处理
     __aicore__ inline void ProcessCDimMirror(
-        __local_mem__ PromoteDataT* lineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t globalH, uint32_t inW)
+        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
     {
         const uint32_t globalC = outIndex_[dimNum_ - CONST3];
         const uint32_t outC = tilingData_->outShape[dimNum_ - CONST3];
@@ -718,11 +653,11 @@ private:
             uint32_t mirrorC = leftPadC - modeOffset_ - globalC;
             // 从 GM 拷贝 grad_y[..., mirrorC, globalH+leftPadH, :] 并累加
             uint32_t hIdxInGradY = globalH + leftPadH;
-            CopyAndAddMirrorLineFromGMWithC(lineAddr, srcLocal, mirrorC, hIdxInGradY, inW);
+            CopyAndAddMirrorLineFromGMWithC(lineAddr, mirrorC, hIdxInGradY, inW);
 
             // C×H 组合镜像
             if (has2DPadding) {
-                ProcessCxHCombinedMirror(lineAddr, srcLocal, globalH, mirrorC, inW);
+                ProcessCxHCombinedMirror(lineAddr, globalH, mirrorC, inW);
             }
         }
 
@@ -733,19 +668,18 @@ private:
         if (hasBottomMirrorC) {
             uint32_t mirrorC = leftPadC + 2 * outC - 2 + modeOffset_ - globalC;
             uint32_t hIdxInGradY = globalH + leftPadH;
-            CopyAndAddMirrorLineFromGMWithC(lineAddr, srcLocal, mirrorC, hIdxInGradY, inW);
+            CopyAndAddMirrorLineFromGMWithC(lineAddr, mirrorC, hIdxInGradY, inW);
 
             // C×H 组合镜像
             if (has2DPadding) {
-                ProcessCxHCombinedMirror(lineAddr, srcLocal, globalH, mirrorC, inW);
+                ProcessCxHCombinedMirror(lineAddr, globalH, mirrorC, inW);
             }
         }
     }
 
     // C×H 组合镜像处理
     __aicore__ inline void ProcessCxHCombinedMirror(
-        __local_mem__ PromoteDataT* lineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t globalH, uint32_t mirrorC, uint32_t inW)
+        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorC, uint32_t inW)
     {
         const uint32_t outH = tilingData_->outShape[dimNum_ - CONST2];
         const uint32_t leftPadH = tilingData_->leftPad[dimNum_ - CONST2];
@@ -759,7 +693,7 @@ private:
         if (hasTopMirrorH) {
             uint32_t mirrorH = leftPadH - modeOffset_ - globalH;
             if (mirrorH < leftPadH) {
-                CopyAndAddMirrorLineFromGMWithC(lineAddr, srcLocal, mirrorC, mirrorH, inW);
+                CopyAndAddMirrorLineFromGMWithC(lineAddr, mirrorC, mirrorH, inW);
             }
         }
 
@@ -770,59 +704,14 @@ private:
         if (hasBottomMirrorH) {
             uint32_t mirrorH = leftPadH + 2 * outH - 2 + modeOffset_ - globalH;
             if (mirrorH >= leftPadH + outH && mirrorH < inH) {
-                CopyAndAddMirrorLineFromGMWithC(lineAddr, srcLocal, mirrorC, mirrorH, inW);
-            }
-        }
-    }
-
-    // N 维度镜像处理
-    __aicore__ inline void ProcessNDimMirror(
-        __local_mem__ PromoteDataT* lineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t globalH, uint32_t inW)
-    {
-        const uint32_t globalN = outIndex_[dimNum_ - CONST4];
-        const uint32_t outN = tilingData_->outShape[dimNum_ - CONST4];
-        const uint32_t leftPadN = tilingData_->leftPad[dimNum_ - CONST4];
-        const uint32_t rightPadN = tilingData_->rightPad[dimNum_ - CONST4];
-        const uint32_t leftPadH = tilingData_->leftPad[dimNum_ - CONST2];
-
-        // N 轴上镜像
-        bool hasTopMirrorN = (modeOffset_ == 0) ?
-            (globalN > 0 && globalN <= leftPadN) :
-            (globalN < leftPadN);
-        if (hasTopMirrorN) {
-            uint32_t mirrorN = leftPadN - modeOffset_ - globalN;
-            uint32_t hIdxInGradY = globalH + leftPadH;
-            CopyAndAddMirrorLineFromGMWithNC(lineAddr, srcLocal, mirrorN, inIndex_[dimNum_ - CONST3], hIdxInGradY, inW);
-
-            // N×H, N×C, N×C×H 组合镜像
-            ProcessNxHCombinedMirror(lineAddr, srcLocal, globalH, mirrorN, inW);
-            if (has3DPadding) {
-                ProcessNxCCombinedMirror(lineAddr, srcLocal, globalH, mirrorN, inW);
-            }
-        }
-
-        // N 轴下镜像
-        bool hasBottomMirrorN = (modeOffset_ == 0) ?
-            (rightPadN > 0 && globalN >= outN - rightPadN - 1 && globalN <= outN - 2) :
-            (rightPadN > 0 && globalN >= outN - rightPadN);
-        if (hasBottomMirrorN) {
-            uint32_t mirrorN = leftPadN + 2 * outN - 2 + modeOffset_ - globalN;
-            uint32_t hIdxInGradY = globalH + leftPadH;
-            CopyAndAddMirrorLineFromGMWithNC(lineAddr, srcLocal, mirrorN, inIndex_[dimNum_ - CONST3], hIdxInGradY, inW);
-
-            // N×H, N×C, N×C×H 组合镜像
-            ProcessNxHCombinedMirror(lineAddr, srcLocal, globalH, mirrorN, inW);
-            if (has3DPadding) {
-                ProcessNxCCombinedMirror(lineAddr, srcLocal, globalH, mirrorN, inW);
+                CopyAndAddMirrorLineFromGMWithC(lineAddr, mirrorC, mirrorH, inW);
             }
         }
     }
 
     // N×H 组合镜像
     __aicore__ inline void ProcessNxHCombinedMirror(
-        __local_mem__ PromoteDataT* lineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t globalH, uint32_t mirrorN, uint32_t inW)
+        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorN, uint32_t inW)
     {
         if (!has2DPadding) return;
 
@@ -836,7 +725,7 @@ private:
         if (hasTopMirrorH) {
             uint32_t mirrorH = leftPadH - modeOffset_ - globalH;
             if (mirrorH < leftPadH) {
-                CopyAndAddMirrorLineFromGMWithNC(lineAddr, srcLocal, mirrorN, inIndex_[dimNum_ - CONST3], mirrorH, inW);
+                CopyAndAddMirrorLineFromGMWithNC(lineAddr, mirrorN, inIndex_[dimNum_ - CONST3], mirrorH, inW);
             }
         }
 
@@ -846,15 +735,14 @@ private:
         if (hasBottomMirrorH) {
             uint32_t mirrorH = leftPadH + 2 * outH - 2 + modeOffset_ - globalH;
             if (mirrorH >= leftPadH + outH && mirrorH < inH) {
-                CopyAndAddMirrorLineFromGMWithNC(lineAddr, srcLocal, mirrorN, inIndex_[dimNum_ - CONST3], mirrorH, inW);
+                CopyAndAddMirrorLineFromGMWithNC(lineAddr, mirrorN, inIndex_[dimNum_ - CONST3], mirrorH, inW);
             }
         }
     }
 
     // N×C 组合镜像 (包含 N×C×H)
     __aicore__ inline void ProcessNxCCombinedMirror(
-        __local_mem__ PromoteDataT* lineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t globalH, uint32_t mirrorN, uint32_t inW)
+        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorN, uint32_t inW)
     {
         const uint32_t globalC = outIndex_[dimNum_ - CONST3];
         const uint32_t outC = tilingData_->outShape[dimNum_ - CONST3];
@@ -868,11 +756,11 @@ private:
         if (hasTopMirrorC) {
             uint32_t mirrorC = leftPadC - modeOffset_ - globalC;
             uint32_t hIdxInGradY = globalH + leftPadH;
-            CopyAndAddMirrorLineFromGMWithNC(lineAddr, srcLocal, mirrorN, mirrorC, hIdxInGradY, inW);
+            CopyAndAddMirrorLineFromGMWithNC(lineAddr, mirrorN, mirrorC, hIdxInGradY, inW);
 
             // N×C×H 组合镜像
             if (has2DPadding) {
-                ProcessNxCxHCombinedMirror(lineAddr, srcLocal, globalH, mirrorN, mirrorC, inW);
+                ProcessNxCxHCombinedMirror(lineAddr, globalH, mirrorN, mirrorC, inW);
             }
         }
 
@@ -883,19 +771,18 @@ private:
         if (hasBottomMirrorC) {
             uint32_t mirrorC = leftPadC + 2 * outC - 2 + modeOffset_ - globalC;
             uint32_t hIdxInGradY = globalH + leftPadH;
-            CopyAndAddMirrorLineFromGMWithNC(lineAddr, srcLocal, mirrorN, mirrorC, hIdxInGradY, inW);
+            CopyAndAddMirrorLineFromGMWithNC(lineAddr, mirrorN, mirrorC, hIdxInGradY, inW);
 
             // N×C×H 组合镜像
             if (has2DPadding) {
-                ProcessNxCxHCombinedMirror(lineAddr, srcLocal, globalH, mirrorN, mirrorC, inW);
+                ProcessNxCxHCombinedMirror(lineAddr, globalH, mirrorN, mirrorC, inW);
             }
         }
     }
 
     // N×C×H 组合镜像
     __aicore__ inline void ProcessNxCxHCombinedMirror(
-        __local_mem__ PromoteDataT* lineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t globalH, uint32_t mirrorN, uint32_t mirrorC, uint32_t inW)
+        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorN, uint32_t mirrorC, uint32_t inW)
     {
         const uint32_t outH = tilingData_->outShape[dimNum_ - CONST2];
         const uint32_t leftPadH = tilingData_->leftPad[dimNum_ - CONST2];
@@ -907,7 +794,7 @@ private:
         if (hasTopMirrorH) {
             uint32_t mirrorH = leftPadH - modeOffset_ - globalH;
             if (mirrorH < leftPadH) {
-                CopyAndAddMirrorLineFromGMWithNC(lineAddr, srcLocal, mirrorN, mirrorC, mirrorH, inW);
+                CopyAndAddMirrorLineFromGMWithNC(lineAddr, mirrorN, mirrorC, mirrorH, inW);
             }
         }
 
@@ -917,15 +804,14 @@ private:
         if (hasBottomMirrorH) {
             uint32_t mirrorH = leftPadH + 2 * outH - 2 + modeOffset_ - globalH;
             if (mirrorH >= leftPadH + outH && mirrorH < inH) {
-                CopyAndAddMirrorLineFromGMWithNC(lineAddr, srcLocal, mirrorN, mirrorC, mirrorH, inW);
+                CopyAndAddMirrorLineFromGMWithNC(lineAddr, mirrorN, mirrorC, mirrorH, inW);
             }
         }
     }
 
     // 第5维镜像处理 (简化版，只处理单维度镜像)
     __aicore__ inline void ProcessDim5Mirror(
-        __local_mem__ PromoteDataT* lineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t globalH, uint32_t inW)
+        __local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         const uint32_t outD5 = tilingData_->outShape[dimNum_ - CONST5];
@@ -939,7 +825,7 @@ private:
         if (hasTopMirrorD5) {
             uint32_t mirrorD5 = leftPadD5 - modeOffset_ - globalD5;
             uint32_t hIdxInGradY = globalH + leftPadH;
-            CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, srcLocal, mirrorD5, inIndex_[dimNum_ - CONST4],
+            CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5, inIndex_[dimNum_ - CONST4],
                                                 inIndex_[dimNum_ - CONST3], hIdxInGradY, inW);
         }
 
@@ -950,7 +836,7 @@ private:
         if (hasBottomMirrorD5) {
             uint32_t mirrorD5 = leftPadD5 + 2 * outD5 - 2 + modeOffset_ - globalD5;
             uint32_t hIdxInGradY = globalH + leftPadH;
-            CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, srcLocal, mirrorD5, inIndex_[dimNum_ - CONST4],
+            CopyAndAddMirrorLineFromGMWithD5NC(lineAddr, mirrorD5, inIndex_[dimNum_ - CONST4],
                                                 inIndex_[dimNum_ - CONST3], hIdxInGradY, inW);
         }
     }
@@ -958,8 +844,7 @@ private:
     // 从 GM 拷贝镜像行到 srcLocal (inQueue_)，然后整行累加到目标行
     // 使用当前高维索引 (inIndex_)，只改变 H 索引
     __aicore__ inline void CopyAndAddMirrorLineFromGM(
-        __local_mem__ PromoteDataT* dstLineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t hIdx, uint32_t inW)
+        __local_mem__ PromoteDataT* dstLineAddr, uint32_t hIdx, uint32_t inW)
     {
         // 计算 GM 地址：使用当前高维索引，只改变 H
         uint64_t mirrorAddr = 0;
@@ -968,13 +853,12 @@ private:
         }
         mirrorAddr += hIdx * tilingData_->inStride[dimNum_ - CONST2];
 
-        CopyAndAddLineFromGMAddr(dstLineAddr, srcLocal, mirrorAddr, inW);
+        CopyAndAddLineFromGMAddr(dstLineAddr, mirrorAddr, inW);
     }
 
     // 从 GM 拷贝镜像行，指定 C 索引
     __aicore__ inline void CopyAndAddMirrorLineFromGMWithC(
-        __local_mem__ PromoteDataT* dstLineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t cIdx, uint32_t hIdx, uint32_t inW)
+        __local_mem__ PromoteDataT* dstLineAddr, uint32_t cIdx, uint32_t hIdx, uint32_t inW)
     {
         uint64_t mirrorAddr = 0;
         // 高于 C 的维度使用 inIndex_
@@ -986,13 +870,12 @@ private:
         // H 维度
         mirrorAddr += hIdx * tilingData_->inStride[dimNum_ - CONST2];
 
-        CopyAndAddLineFromGMAddr(dstLineAddr, srcLocal, mirrorAddr, inW);
+        CopyAndAddLineFromGMAddr(dstLineAddr, mirrorAddr, inW);
     }
 
     // 从 GM 拷贝镜像行，指定 N 和 C 索引
     __aicore__ inline void CopyAndAddMirrorLineFromGMWithNC(
-        __local_mem__ PromoteDataT* dstLineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t nIdx, uint32_t cIdx, uint32_t hIdx, uint32_t inW)
+        __local_mem__ PromoteDataT* dstLineAddr, uint32_t nIdx, uint32_t cIdx, uint32_t hIdx, uint32_t inW)
     {
         uint64_t mirrorAddr = 0;
         // 高于 N 的维度使用 inIndex_
@@ -1006,13 +889,13 @@ private:
         // H 维度
         mirrorAddr += hIdx * tilingData_->inStride[dimNum_ - CONST2];
 
-        CopyAndAddLineFromGMAddr(dstLineAddr, srcLocal, mirrorAddr, inW);
+        CopyAndAddLineFromGMAddr(dstLineAddr, mirrorAddr, inW);
     }
 
     // 从 GM 拷贝镜像行，指定第5维、N 和 C 索引
     __aicore__ inline void CopyAndAddMirrorLineFromGMWithD5NC(
-        __local_mem__ PromoteDataT* dstLineAddr, const LocalTensor<T>& srcLocal,
-        uint32_t d5Idx, uint32_t nIdx, uint32_t cIdx, uint32_t hIdx, uint32_t inW)
+        __local_mem__ PromoteDataT* dstLineAddr, uint32_t d5Idx, 
+        uint32_t nIdx, uint32_t cIdx, uint32_t hIdx, uint32_t inW)
     {
         uint64_t mirrorAddr = 0;
         // 第5维
@@ -1024,7 +907,7 @@ private:
         // H 维度
         mirrorAddr += hIdx * tilingData_->inStride[dimNum_ - CONST2];
 
-        CopyAndAddLineFromGMAddr(dstLineAddr, srcLocal, mirrorAddr, inW);
+        CopyAndAddLineFromGMAddr(dstLineAddr, mirrorAddr, inW);
     }
 
     // tmpLocal 内两行 PromoteDataT (float32) 相加: dstLine[i] += srcLine[i]
@@ -1065,7 +948,6 @@ private:
 
         __VEC_SCOPE__
         {
-            // uint32_t remainLen = inW;
             AscendC::MicroAPI::MaskReg mask;
             AscendC::MicroAPI::RegTensor<PromoteDataT> dstReg;
             AscendC::MicroAPI::RegTensor<PromoteDataT> srcUpReg;
@@ -1084,8 +966,10 @@ private:
     }
     // axisNumInUb_>=3 时，H 数据完整在 tmpLocal 中，在 tmpLocal 内部做 H 镜像累加
     // 将 padding 行累加到对应的 self 行: tmpLocal[(h+leftPadH)*padWI] += tmpLocal[mirrorH*padWI]
+    // __aicore__ inline void AccumulateHMirrorsInPlace(
+    //     const LocalTensor<PromoteDataT>& tmpLocal, uint32_t padWI)
     __aicore__ inline void AccumulateHMirrorsInPlace(
-        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t padWI)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t cOffset, uint32_t padWI)
     {
         const uint32_t outH = tilingData_->outShape[dimNum_ - CONST2];
         const uint32_t inH = tilingData_->inShape[dimNum_ - CONST2];
@@ -1097,7 +981,8 @@ private:
             return;
         }
 
-        auto tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
+        __local_mem__ PromoteDataT* tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr()) + 
+                                              cOffset;
 
         for (uint32_t h = 0; h < outH; h++) {
             __local_mem__ PromoteDataT* selfAddr = tmpAddr + (h + leftPadH) * padWI;
@@ -1122,8 +1007,9 @@ private:
                 uint32_t mirrorUpH = leftPadH - modeOffset_ - h;
                 uint32_t mirrorDownH = leftPadH + 2 * outH - 2 + modeOffset_ - h;
                 AddLocalUpAndDownLineInTmpBuf(selfAddr, tmpAddr + mirrorUpH * padWI, 
-                                              tmpAddr + mirrorDownH * padWI, inW);
+                                            tmpAddr + mirrorDownH * padWI, inW);
             }
+
         }
     }
 
@@ -1143,7 +1029,7 @@ private:
             return;
         }
 
-        auto tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
+        __local_mem__ PromoteDataT* tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
 
         for (uint32_t c = 0; c < outC; c++) {
             __local_mem__ PromoteDataT* selfAddr = tmpAddr + (c + leftPadC) * cSliceSize;
@@ -1179,8 +1065,7 @@ private:
 
     // 主pad N 镜像: 读取 mirrorN 位置的整块 dimCNum × dimHIn × padWI
     __aicore__ inline void ProcessMainPadN(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
     {
         const uint32_t globalN = outIndex_[dimNum_ - CONST4];
         MirrorCondition condN = CalcMirrorCondition(
@@ -1196,19 +1081,18 @@ private:
 
         if (condN.hasTop) {
             uint64_t gmAddr = baseGmAddr + condN.mirrorTop * tilingData_->inStride[dimNum_ - CONST4];
-            CopyAndAddBlockFromGM(tmpLocal, srcLocal, gmAddr, dimCNum, dimHIn, padWI);
+            CopyAndAddBlockFromGM(tmpLocal, gmAddr, dimCNum, dimHIn, padWI);
         }
 
         if (condN.hasBottom) {
             uint64_t gmAddr = baseGmAddr + condN.mirrorBottom * tilingData_->inStride[dimNum_ - CONST4];
-            CopyAndAddBlockFromGM(tmpLocal, srcLocal, gmAddr, dimCNum, dimHIn, padWI);
+            CopyAndAddBlockFromGM(tmpLocal, gmAddr, dimCNum, dimHIn, padWI);
         }
     }
 
     // 主pad D5 镜像: 读取 mirrorD5 位置的整块
     __aicore__ inline void ProcessMainPadD5(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         MirrorCondition condD5 = CalcMirrorCondition(
@@ -1220,19 +1104,18 @@ private:
 
         if (condD5.hasTop) {
             uint64_t gmAddr = condD5.mirrorTop * tilingData_->inStride[dimNum_ - CONST5] + baseGmAddr;
-            CopyAndAddBlockFromGM(tmpLocal, srcLocal, gmAddr, dimCNum, dimHIn, padWI);
+            CopyAndAddBlockFromGM(tmpLocal, gmAddr, dimCNum, dimHIn, padWI);
         }
 
         if (condD5.hasBottom) {
             uint64_t gmAddr = condD5.mirrorBottom * tilingData_->inStride[dimNum_ - CONST5] + baseGmAddr;
-            CopyAndAddBlockFromGM(tmpLocal, srcLocal, gmAddr, dimCNum, dimHIn, padWI);
+            CopyAndAddBlockFromGM(tmpLocal, gmAddr, dimCNum, dimHIn, padWI);
         }
     }
 
     // 主pad N×D5 组合镜像: mirrorN × mirrorD5 位置的整块
     __aicore__ inline void ProcessMainPadNxD5(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
     {
         const uint32_t globalN = outIndex_[dimNum_ - CONST4];
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
@@ -1250,7 +1133,7 @@ private:
                 uint64_t gmAddr = d5List.mirrors[di] * tilingData_->inStride[dimNum_ - CONST5]
                                 + nList.mirrors[ni] * tilingData_->inStride[dimNum_ - CONST4]
                                 + inIndex_[dimNum_ - CONST3] * tilingData_->inStride[dimNum_ - CONST3];
-                CopyAndAddBlockFromGM(tmpLocal, srcLocal, gmAddr, dimCNum, dimHIn, padWI);
+                CopyAndAddBlockFromGM(tmpLocal, gmAddr, dimCNum, dimHIn, padWI);
             }
         }
     }
@@ -1258,8 +1141,7 @@ private:
     // ========== axisNumInUb_=4 主pad: D5 镜像不改变 N 范围，读取整块 dimNNum × dimCNum × dimHIn ==========
 
     __aicore__ inline void ProcessMainPadD5_UB4(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t dimNNum, uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimNNum, uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         MirrorCondition condD5 = CalcMirrorCondition(
@@ -1270,21 +1152,20 @@ private:
 
         if (condD5.hasTop) {
             uint64_t gmAddr = condD5.mirrorTop * tilingData_->inStride[dimNum_ - CONST5] + baseGmAddr;
-            CopyAndAddFullBlockFromGM(tmpLocal, srcLocal, gmAddr, dimNNum, dimCNum, dimHIn, padWI);
+            CopyAndAddFullBlockFromGM(tmpLocal, gmAddr, dimNNum, dimCNum, dimHIn, padWI);
         }
 
         if (condD5.hasBottom) {
             uint64_t gmAddr = condD5.mirrorBottom * tilingData_->inStride[dimNum_ - CONST5] + baseGmAddr;
-            CopyAndAddFullBlockFromGM(tmpLocal, srcLocal, gmAddr, dimNNum, dimCNum, dimHIn, padWI);
+            CopyAndAddFullBlockFromGM(tmpLocal, gmAddr, dimNNum, dimCNum, dimHIn, padWI);
         }
     }
 
     // ========== axisNumInUb_=4 副pad: N 维度镜像，逐 N slice 读取 dimCNum × dimHIn ==========
 
     __aicore__ inline void ProcessSubPadN_UB4(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t globalN, uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI,
-        uint32_t dstOffset)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t globalN, 
+        uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
     {
         MirrorCondition condN = CalcMirrorCondition(
             globalN, tilingData_->outShape[dimNum_ - CONST4],
@@ -1299,27 +1180,26 @@ private:
         // N 上镜像
         if (condN.hasTop) {
             uint64_t gmAddr = baseGmAddr + condN.mirrorTop * tilingData_->inStride[dimNum_ - CONST4];
-            CopyAndAddBlockFromGM(tmpLocal[dstOffset], srcLocal, gmAddr, dimCNum, dimHIn, padWI);
+            CopyAndAddBlockFromGM(tmpLocal[dstOffset], gmAddr, dimCNum, dimHIn, padWI);
             if (dimNum_ >= 5 && has5DPadding) {
-                ProcessSubPadD5xN_UB4(tmpLocal, srcLocal, condN.mirrorTop, dimCNum, dimHIn, padWI, dstOffset);
+                ProcessSubPadD5xN_UB4(tmpLocal, condN.mirrorTop, dimCNum, dimHIn, padWI, dstOffset);
             }
         }
 
         // N 下镜像
         if (condN.hasBottom) {
             uint64_t gmAddr = baseGmAddr + condN.mirrorBottom * tilingData_->inStride[dimNum_ - CONST4];
-            CopyAndAddBlockFromGM(tmpLocal[dstOffset], srcLocal, gmAddr, dimCNum, dimHIn, padWI);
+            CopyAndAddBlockFromGM(tmpLocal[dstOffset], gmAddr, dimCNum, dimHIn, padWI);
             if (dimNum_ >= 5 && has5DPadding) {
-                ProcessSubPadD5xN_UB4(tmpLocal, srcLocal, condN.mirrorBottom, dimCNum, dimHIn, padWI, dstOffset);
+                ProcessSubPadD5xN_UB4(tmpLocal, condN.mirrorBottom, dimCNum, dimHIn, padWI, dstOffset);
             }
         }
     }
 
     // 副pad D5×N 组合: mirrorD5 位置的 mirrorN slice
     __aicore__ inline void ProcessSubPadD5xN_UB4(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t mirrorN, uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI,
-        uint32_t dstOffset)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t mirrorN, 
+        uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         MirrorCondition condD5 = CalcMirrorCondition(
@@ -1329,13 +1209,13 @@ private:
         if (condD5.hasTop) {
             uint64_t gmAddr = condD5.mirrorTop * tilingData_->inStride[dimNum_ - CONST5]
                             + mirrorN * tilingData_->inStride[dimNum_ - CONST4];
-            CopyAndAddBlockFromGM(tmpLocal[dstOffset], srcLocal, gmAddr, dimCNum, dimHIn, padWI);
+            CopyAndAddBlockFromGM(tmpLocal[dstOffset], gmAddr, dimCNum, dimHIn, padWI);
         }
 
         if (condD5.hasBottom) {
             uint64_t gmAddr = condD5.mirrorBottom * tilingData_->inStride[dimNum_ - CONST5]
                             + mirrorN * tilingData_->inStride[dimNum_ - CONST4];
-            CopyAndAddBlockFromGM(tmpLocal[dstOffset], srcLocal, gmAddr, dimCNum, dimHIn, padWI);
+            CopyAndAddBlockFromGM(tmpLocal[dstOffset], gmAddr, dimCNum, dimHIn, padWI);
         }
     }
 
@@ -1344,8 +1224,8 @@ private:
     // 副pad C 镜像: 对单个 C slice，读取 mirrorC 位置的 plane
     // 同时处理 C 镜像位置的高维镜像 (N×C, D5×C, N×D5×C)
     __aicore__ inline void ProcessSubPadC(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t globalC, uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t globalC, 
+        uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
     {
         MirrorList cList = CollectMirrorPositions(
             globalC, tilingData_->outShape[dimNum_ - CONST3],
@@ -1354,24 +1234,25 @@ private:
         for (uint8_t ci = 0; ci < cList.count; ci++) {
             uint32_t mirrorC = cList.mirrors[ci];
             uint64_t gmAddr = CalcGMAddrWithC(mirrorC);
-            CopyAndAddPlaneFromGM(tmpLocal, srcLocal, gmAddr, dimHIn, padWI, dstOffset);
+
+            CopyAndAddPlaneFromGM(tmpLocal, gmAddr, dimHIn, padWI, dstOffset);
 
             if (dimNum_ >= 4 && has4DPadding) {
-                ProcessSubPadNxC(tmpLocal, srcLocal, mirrorC, dimHIn, padWI, dstOffset);
+                ProcessSubPadNxC(tmpLocal, mirrorC, dimHIn, padWI, dstOffset);
             }
             if (dimNum_ >= 5 && has5DPadding) {
-                ProcessSubPadD5xC(tmpLocal, srcLocal, mirrorC, dimHIn, padWI, dstOffset);
+                ProcessSubPadD5xC(tmpLocal, mirrorC, dimHIn, padWI, dstOffset);
             }
             if (dimNum_ >= 5 && has4DPadding && has5DPadding) {
-                ProcessSubPadNxD5xC(tmpLocal, srcLocal, mirrorC, dimHIn, padWI, dstOffset);
+                ProcessSubPadNxD5xC(tmpLocal, mirrorC, dimHIn, padWI, dstOffset);
             }
         }
     }
 
     // 副pad N×C: mirrorN 位置的 mirrorC plane
     __aicore__ inline void ProcessSubPadNxC(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t mirrorC, uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t mirrorC, 
+        uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
     {
         const uint32_t globalN = outIndex_[dimNum_ - CONST4];
         MirrorList nList = CollectMirrorPositions(
@@ -1380,14 +1261,14 @@ private:
 
         for (uint8_t ni = 0; ni < nList.count; ni++) {
             uint64_t gmAddr = CalcGMAddrWithNC(nList.mirrors[ni], mirrorC);
-            CopyAndAddPlaneFromGM(tmpLocal, srcLocal, gmAddr, dimHIn, padWI, dstOffset);
+            CopyAndAddPlaneFromGM(tmpLocal, gmAddr, dimHIn, padWI, dstOffset);
         }
     }
 
     // 副pad D5×C: mirrorD5 位置的 mirrorC plane
     __aicore__ inline void ProcessSubPadD5xC(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t mirrorC, uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t mirrorC, 
+        uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         MirrorList d5List = CollectMirrorPositions(
@@ -1396,14 +1277,14 @@ private:
 
         for (uint8_t di = 0; di < d5List.count; di++) {
             uint64_t gmAddr = CalcGMAddrWithD5NC(d5List.mirrors[di], inIndex_[dimNum_ - CONST4], mirrorC);
-            CopyAndAddPlaneFromGM(tmpLocal, srcLocal, gmAddr, dimHIn, padWI, dstOffset);
+            CopyAndAddPlaneFromGM(tmpLocal, gmAddr, dimHIn, padWI, dstOffset);
         }
     }
 
     // 副pad N×D5×C: mirrorN × mirrorD5 位置的 mirrorC plane
     __aicore__ inline void ProcessSubPadNxD5xC(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t mirrorC, uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t mirrorC, 
+        uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
     {
         const uint32_t globalN = outIndex_[dimNum_ - CONST4];
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
@@ -1419,7 +1300,7 @@ private:
         for (uint8_t ni = 0; ni < nList.count; ni++) {
             for (uint8_t di = 0; di < d5List.count; di++) {
                 uint64_t gmAddr = CalcGMAddrWithD5NC(d5List.mirrors[di], nList.mirrors[ni], mirrorC);
-                CopyAndAddPlaneFromGM(tmpLocal, srcLocal, gmAddr, dimHIn, padWI, dstOffset);
+                CopyAndAddPlaneFromGM(tmpLocal, gmAddr, dimHIn, padWI, dstOffset);
             }
         }
     }
@@ -1428,20 +1309,19 @@ private:
     // 主pad: 高维镜像不改变 C 范围，读取整块 dimCNum × dimHIn × padWI
     // 副pad: C 维度镜像，逐 C slice 读取 1 × dimHIn × padWI plane
     __aicore__ inline void GradAccumulateHighDimBulk(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
     {
         const uint32_t sliceSize = dimHIn * padWI;
 
         // ========== 主pad: 高维镜像不改变 C 范围 ==========
         if (dimNum_ >= 4 && has4DPadding) {
-            ProcessMainPadN(tmpLocal, srcLocal, dimCNum, dimHIn, padWI);
+            ProcessMainPadN(tmpLocal, dimCNum, dimHIn, padWI);
         }
         if (dimNum_ >= 5 && has5DPadding) {
-            ProcessMainPadD5(tmpLocal, srcLocal, dimCNum, dimHIn, padWI);
+            ProcessMainPadD5(tmpLocal, dimCNum, dimHIn, padWI);
         }
         if (dimNum_ >= 5 && has4DPadding && has5DPadding) {
-            ProcessMainPadNxD5(tmpLocal, srcLocal, dimCNum, dimHIn, padWI);
+            ProcessMainPadNxD5(tmpLocal, dimCNum, dimHIn, padWI);
         }
 
         // ========== 副pad: C 维度镜像 ==========
@@ -1455,7 +1335,7 @@ private:
                 inIndex_[dimNum_ - CONST3] = savedInC + c;
                 uint32_t dstOffset = c * sliceSize;
 
-                ProcessSubPadC(tmpLocal, srcLocal, globalC, dimHIn, padWI, dstOffset);
+                ProcessSubPadC(tmpLocal, globalC, dimHIn, padWI, dstOffset);
             }
 
             outIndex_[dimNum_ - CONST3] = savedOutC;
@@ -1469,52 +1349,50 @@ private:
     // 副pad: N 维度镜像，逐 N slice 读取 dimCNum × dimHIn × padWI
     // ========== axisNumInUb_=2 主pad: 批量从 GM 读取纯高维镜像 (不含 H) ==========
     __aicore__ inline void GradAccumulateHighDimBulk_UB2(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t dimHNum, uint32_t padWI)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimHNum, uint32_t padWI)
     {
         const uint32_t leftPadH = tilingData_->leftPad[dimNum_ - CONST2];
         const uint32_t hStartInGradY = outIndex_[dimNum_ - CONST2] + leftPadH;
 
         // C 镜像 (dimNum_ >= 3)
         if (dimNum_ >= 3 && has3DPadding) {
-            ProcessMainPadC_UB2(tmpLocal, srcLocal, dimHNum, padWI, hStartInGradY);
+            ProcessMainPadC_UB2(tmpLocal, dimHNum, padWI, hStartInGradY);
         }
 
         // N 镜像 (dimNum_ >= 4)
         if (dimNum_ >= 4 && has4DPadding) {
-            ProcessMainPadN_UB2(tmpLocal, srcLocal, dimHNum, padWI, hStartInGradY);
+            ProcessMainPadN_UB2(tmpLocal, dimHNum, padWI, hStartInGradY);
         }
 
         // D5 镜像 (dimNum_ >= 5)
         if (dimNum_ >= 5 && has5DPadding) {
-            ProcessMainPadD5_UB2(tmpLocal, srcLocal, dimHNum, padWI, hStartInGradY);
+            ProcessMainPadD5_UB2(tmpLocal, dimHNum, padWI, hStartInGradY);
         }
 
         // C×N 组合 (dimNum_ >= 4)
         if (dimNum_ >= 4 && has3DPadding && has4DPadding) {
-            ProcessMainPadCxN_UB2(tmpLocal, srcLocal, dimHNum, padWI, hStartInGradY);
+            ProcessMainPadCxN_UB2(tmpLocal, dimHNum, padWI, hStartInGradY);
         }
 
         // C×D5 组合 (dimNum_ >= 5)
         if (dimNum_ >= 5 && has3DPadding && has5DPadding) {
-            ProcessMainPadCxD5_UB2(tmpLocal, srcLocal, dimHNum, padWI, hStartInGradY);
+            ProcessMainPadCxD5_UB2(tmpLocal, dimHNum, padWI, hStartInGradY);
         }
 
         // N×D5 组合 (dimNum_ >= 5)
         if (dimNum_ >= 5 && has4DPadding && has5DPadding) {
-            ProcessMainPadNxD5_UB2(tmpLocal, srcLocal, dimHNum, padWI, hStartInGradY);
+            ProcessMainPadNxD5_UB2(tmpLocal, dimHNum, padWI, hStartInGradY);
         }
 
         // C×N×D5 组合 (dimNum_ >= 5)
         if (dimNum_ >= 5 && has3DPadding && has4DPadding && has5DPadding) {
-            ProcessMainPadCxNxD5_UB2(tmpLocal, srcLocal, dimHNum, padWI, hStartInGradY);
+            ProcessMainPadCxNxD5_UB2(tmpLocal, dimHNum, padWI, hStartInGradY);
         }
     }
 
     // UB2 主pad: C 镜像 — 批量读 dimHNum 行
     __aicore__ inline void ProcessMainPadC_UB2(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t dimHNum, uint32_t padWI, uint32_t hStartInGradY)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimHNum, uint32_t padWI, uint32_t hStartInGradY)
     {
         const uint32_t globalC = outIndex_[dimNum_ - CONST3];
         const uint32_t outC = tilingData_->outShape[dimNum_ - CONST3];
@@ -1525,19 +1403,18 @@ private:
         if (condC.hasTop) {
             uint64_t gmAddr = CalcGMAddrWithC(condC.mirrorTop)
                             + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
-            CopyAndAddRowsFromGM(tmpLocal, srcLocal, gmAddr, dimHNum, padWI);
+            CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
         }
         if (condC.hasBottom) {
             uint64_t gmAddr = CalcGMAddrWithC(condC.mirrorBottom)
                             + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
-            CopyAndAddRowsFromGM(tmpLocal, srcLocal, gmAddr, dimHNum, padWI);
+            CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
         }
     }
 
     // UB2 主pad: N 镜像 — 批量读 dimHNum 行
     __aicore__ inline void ProcessMainPadN_UB2(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t dimHNum, uint32_t padWI, uint32_t hStartInGradY)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimHNum, uint32_t padWI, uint32_t hStartInGradY)
     {
         const uint32_t globalN = outIndex_[dimNum_ - CONST4];
         const uint32_t outN = tilingData_->outShape[dimNum_ - CONST4];
@@ -1548,19 +1425,18 @@ private:
         if (condN.hasTop) {
             uint64_t gmAddr = CalcGMAddrWithNC(condN.mirrorTop, inIndex_[dimNum_ - CONST3])
                             + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
-            CopyAndAddRowsFromGM(tmpLocal, srcLocal, gmAddr, dimHNum, padWI);
+            CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
         }
         if (condN.hasBottom) {
             uint64_t gmAddr = CalcGMAddrWithNC(condN.mirrorBottom, inIndex_[dimNum_ - CONST3])
                             + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
-            CopyAndAddRowsFromGM(tmpLocal, srcLocal, gmAddr, dimHNum, padWI);
+            CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
         }
     }
 
     // UB2 主pad: D5 镜像 — 批量读 dimHNum 行
     __aicore__ inline void ProcessMainPadD5_UB2(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t dimHNum, uint32_t padWI, uint32_t hStartInGradY)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimHNum, uint32_t padWI, uint32_t hStartInGradY)
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         const uint32_t outD5 = tilingData_->outShape[dimNum_ - CONST5];
@@ -1571,19 +1447,18 @@ private:
         if (condD5.hasTop) {
             uint64_t gmAddr = CalcGMAddrWithD5NC(condD5.mirrorTop, inIndex_[dimNum_ - CONST4], inIndex_[dimNum_ - CONST3])
                             + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
-            CopyAndAddRowsFromGM(tmpLocal, srcLocal, gmAddr, dimHNum, padWI);
+            CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
         }
         if (condD5.hasBottom) {
             uint64_t gmAddr = CalcGMAddrWithD5NC(condD5.mirrorBottom, inIndex_[dimNum_ - CONST4], inIndex_[dimNum_ - CONST3])
                             + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
-            CopyAndAddRowsFromGM(tmpLocal, srcLocal, gmAddr, dimHNum, padWI);
+            CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
         }
     }
 
     // UB2 主pad: C×N 组合 — 对每个 mirrorN，检查 C 镜像条件
     __aicore__ inline void ProcessMainPadCxN_UB2(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t dimHNum, uint32_t padWI, uint32_t hStartInGradY)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimHNum, uint32_t padWI, uint32_t hStartInGradY)
     {
         const uint32_t globalN = outIndex_[dimNum_ - CONST4];
         const uint32_t outN = tilingData_->outShape[dimNum_ - CONST4];
@@ -1601,15 +1476,14 @@ private:
             for (uint8_t ci = 0; ci < cList.count; ci++) {
                 uint64_t gmAddr = CalcGMAddrWithNC(nList.mirrors[ni], cList.mirrors[ci])
                                 + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
-                CopyAndAddRowsFromGM(tmpLocal, srcLocal, gmAddr, dimHNum, padWI);
+                CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
             }
         }
     }
 
     // UB2 主pad: C×D5 组合 — 对每个 mirrorD5，检查 C 镜像条件
     __aicore__ inline void ProcessMainPadCxD5_UB2(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t dimHNum, uint32_t padWI, uint32_t hStartInGradY)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimHNum, uint32_t padWI, uint32_t hStartInGradY)
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         const uint32_t outD5 = tilingData_->outShape[dimNum_ - CONST5];
@@ -1627,15 +1501,14 @@ private:
             for (uint8_t ci = 0; ci < cList.count; ci++) {
                 uint64_t gmAddr = CalcGMAddrWithD5NC(d5List.mirrors[di], inIndex_[dimNum_ - CONST4], cList.mirrors[ci])
                                 + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
-                CopyAndAddRowsFromGM(tmpLocal, srcLocal, gmAddr, dimHNum, padWI);
+                CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
             }
         }
     }
 
     // UB2 主pad: N×D5 组合 — 对每个 mirrorD5，检查 N 镜像条件
     __aicore__ inline void ProcessMainPadNxD5_UB2(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t dimHNum, uint32_t padWI, uint32_t hStartInGradY)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimHNum, uint32_t padWI, uint32_t hStartInGradY)
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         const uint32_t outD5 = tilingData_->outShape[dimNum_ - CONST5];
@@ -1653,15 +1526,14 @@ private:
             for (uint8_t ni = 0; ni < nList.count; ni++) {
                 uint64_t gmAddr = CalcGMAddrWithD5NC(d5List.mirrors[di], nList.mirrors[ni], inIndex_[dimNum_ - CONST3])
                                 + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
-                CopyAndAddRowsFromGM(tmpLocal, srcLocal, gmAddr, dimHNum, padWI);
+                CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
             }
         }
     }
 
     // UB2 主pad: C×N×D5 组合 — 对每个 mirrorD5×mirrorN，检查 C 镜像条件
     __aicore__ inline void ProcessMainPadCxNxD5_UB2(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t dimHNum, uint32_t padWI, uint32_t hStartInGradY)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimHNum, uint32_t padWI, uint32_t hStartInGradY)
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         const uint32_t globalN = outIndex_[dimNum_ - CONST4];
@@ -1684,22 +1556,21 @@ private:
                 for (uint8_t ci = 0; ci < cList.count; ci++) {
                     uint64_t gmAddr = CalcGMAddrWithD5NC(d5List.mirrors[di], nList.mirrors[ni], cList.mirrors[ci])
                                     + hStartInGradY * tilingData_->inStride[dimNum_ - CONST2];
-                    CopyAndAddRowsFromGM(tmpLocal, srcLocal, gmAddr, dimHNum, padWI);
+                    CopyAndAddRowsFromGM(tmpLocal, gmAddr, dimHNum, padWI);
                 }
             }
         }
     }
 
-
     __aicore__ inline void GradAccumulateHighDimBulk_UB4(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint32_t dimNNum, uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t dimNNum, 
+        uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
     {
         const uint32_t nSliceSize = dimCNum * dimHIn * padWI;
 
         // ========== 主pad: D5 镜像不改变 N 范围 ==========
         if (dimNum_ >= 5 && has5DPadding) {
-            ProcessMainPadD5_UB4(tmpLocal, srcLocal, dimNNum, dimCNum, dimHIn, padWI);
+            ProcessMainPadD5_UB4(tmpLocal, dimNNum, dimCNum, dimHIn, padWI);
         }
 
         // ========== 副pad: N 维度镜像 ==========
@@ -1713,7 +1584,7 @@ private:
                 inIndex_[dimNum_ - CONST4] = savedInN + n;
                 uint32_t dstOffset = n * nSliceSize;
 
-                ProcessSubPadN_UB4(tmpLocal, srcLocal, globalN, dimCNum, dimHIn, padWI, dstOffset);
+                ProcessSubPadN_UB4(tmpLocal, globalN, dimCNum, dimHIn, padWI, dstOffset);
             }
 
             outIndex_[dimNum_ - CONST4] = savedOutN;
@@ -1723,27 +1594,24 @@ private:
 
     // 通用的从 GM 地址拷贝并累加一行数据
     __aicore__ inline void CopyAndAddLineFromGMAddr(
-        __local_mem__ PromoteDataT* dstLineAddr, const LocalTensor<T>& srcLocal,
-        uint64_t gmAddr, uint32_t inW)
+        __local_mem__ PromoteDataT* dstLineAddr, uint64_t gmAddr, uint32_t inW)
     {
         // Step 1: 从 GM 拷贝镜像行到 srcLocal
+        LocalTensor<T> inUbLocal = inQueue_.AllocTensor<T>();
         uint32_t inWAlign = CeilAlign(inW, BLK_ELEMS);
         DataCopyExtParams copyParams;
         copyParams.blockCount = 1;
         copyParams.blockLen = inW * sizeof(T);
         copyParams.srcStride = 0;
         copyParams.dstStride = 0;
-        DataCopyPadExtParams<T> padParams{true, 0, 0, 0};
-        DataCopyPad(srcLocal, input_[gmAddr], copyParams, padParams);
-
-        // 等待数据拷贝完成
-        event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
-        SetFlag<HardEvent::MTE2_V>(eventId);
-        WaitFlag<HardEvent::MTE2_V>(eventId);
+        DataCopyPadExtParams<T> padExtParams{true, 0, 0, 0};
+        DataCopyPad(inUbLocal, input_[gmAddr], copyParams, padExtParams);
+        inQueue_.EnQue(inUbLocal);
 
         // Step 2: 使用 VF 指令进行 Cast 和累加
+        LocalTensor<T> inUbLocal2 = inQueue_.DeQue<T>();
         constexpr uint32_t VL_ELEMS_FLOAT = VL_SIZE / sizeof(PromoteDataT);
-        __local_mem__ T* srcAddr = reinterpret_cast<__local_mem__ T*>(srcLocal.GetPhyAddr());
+        __local_mem__ T* srcAddr = reinterpret_cast<__local_mem__ T*>(inUbLocal2.GetPhyAddr());
         uint16_t loopCount = CeilDiv(inWAlign, VL_ELEMS_FLOAT);
 
         if constexpr (IsSameType<T, PromoteDataT>::value) {
@@ -1787,18 +1655,20 @@ private:
                 }
             }
         }
+        inQueue_.FreeTensor(inUbLocal2);
+
     }
 
     // 将 srcLocal (T 类型) Cast+Add 到 tmpLocal (PromoteDataT 类型)
     // 用于批量 GM 读取后的累加操作
     __aicore__ inline void AddSrcLocalToTmpLocal(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal, uint32_t totalLen)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint32_t totalLen)
     {
+        LocalTensor<T> inUbLocal = inQueue_.DeQue<T>();
         constexpr uint32_t VL_ELEMS_FLOAT = VL_SIZE / sizeof(PromoteDataT);
-        uint32_t alignLen = CeilAlign(totalLen, VL_ELEMS_FLOAT);
-        uint16_t loopCount = CeilDiv(alignLen, VL_ELEMS_FLOAT);
-        auto tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
-        auto srcAddr = reinterpret_cast<__local_mem__ T*>(srcLocal.GetPhyAddr());
+        uint16_t loopCount = CeilDiv(totalLen, VL_ELEMS_FLOAT);
+        __local_mem__ PromoteDataT* tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
+        __local_mem__ T* srcAddr = reinterpret_cast<__local_mem__ T*>(inUbLocal.GetPhyAddr());
 
         if constexpr (IsSameType<T, PromoteDataT>::value) {
             __VEC_SCOPE__
@@ -1834,6 +1704,7 @@ private:
                 }
             }
         }
+        inQueue_.FreeTensor(inUbLocal);
     }
 
     // GM 地址计算: 高维用 inIndex_, C 用指定值, H=0
@@ -1871,16 +1742,18 @@ private:
     // 从 GM 批量读取整块 (dimNNum × dimCNum × dimHIn × padWI) 到 srcLocal，Cast+Add 到 tmpLocal
     // 用于 axisNumInUb_=4 主pad: D5 镜像不改变 N 范围，使用 2-level LoopMode
     __aicore__ inline void CopyAndAddFullBlockFromGM(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint64_t gmBaseAddr, uint32_t dimNNum, uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint64_t gmBaseAddr, uint32_t dimNNum, 
+        uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
     {
+        LocalTensor<T> inUbLocal = inQueue_.AllocTensor<T>();
+
         uint32_t inW = tilingData_->inShape[dimNum_ - 1];
         DataCopyExtParams copyParams;
         copyParams.blockCount = dimHIn;
         copyParams.blockLen = inW * sizeof(T);
         copyParams.srcStride = 0;
         copyParams.dstStride = 0;
-        DataCopyPadExtParams<T> padParams{true, 0, 0, 0};
+        DataCopyPadExtParams<T> padExtParams{true, 0, 0, 0};
 
         LoopModeParams loopParams;
         loopParams.loop1Size = dimCNum;
@@ -1890,30 +1763,29 @@ private:
         loopParams.loop2SrcStride = tilingData_->inStride[dimNum_ - CONST4] * sizeof(T);
         loopParams.loop2DstStride = dimCNum * dimHIn * padWI * sizeof(T);
         SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
-        DataCopyPad(srcLocal, input_[gmBaseAddr], copyParams, padParams);
+        DataCopyPad(inUbLocal, input_[gmBaseAddr], copyParams, padExtParams);
         ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
-
-        event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
-        SetFlag<HardEvent::MTE2_V>(eventId);
-        WaitFlag<HardEvent::MTE2_V>(eventId);
+        inQueue_.EnQue(inUbLocal);
 
         uint32_t totalLen = dimNNum * dimCNum * dimHIn * padWI;
-        AddSrcLocalToTmpLocal(tmpLocal, srcLocal, totalLen);
+        AddSrcLocalToTmpLocal(tmpLocal, totalLen);
     }
 
     // 从 GM 批量读取整块 (dimCNum × dimHIn × padWI) 到 srcLocal，Cast+Add 到 tmpLocal
     // 用于主pad: 高维镜像不改变 C 范围
     __aicore__ inline void CopyAndAddBlockFromGM(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint64_t gmBaseAddr, uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint64_t gmBaseAddr, uint32_t dimCNum, 
+        uint32_t dimHIn, uint32_t padWI)
     {
+        LocalTensor<T> inUbLocal = inQueue_.AllocTensor<T>();
+
         uint32_t inW = tilingData_->inShape[dimNum_ - 1];
         DataCopyExtParams copyParams;
         copyParams.blockCount = dimHIn;
         copyParams.blockLen = inW * sizeof(T);
         copyParams.srcStride = 0;
         copyParams.dstStride = 0;
-        DataCopyPadExtParams<T> padParams{true, 0, 0, 0};
+        DataCopyPadExtParams<T> padExtParams{true, 0, 0, 0};
 
         if (dimCNum > 1) {
             LoopModeParams loopParams;
@@ -1922,104 +1794,58 @@ private:
             loopParams.loop1SrcStride = tilingData_->inStride[dimNum_ - CONST3] * sizeof(T);
             loopParams.loop1DstStride = dimHIn * padWI * sizeof(T);
             SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
-            DataCopyPad(srcLocal, input_[gmBaseAddr], copyParams, padParams);
+            DataCopyPad(inUbLocal, input_[gmBaseAddr], copyParams, padExtParams);
             ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
         } else {
-            DataCopyPad(srcLocal, input_[gmBaseAddr], copyParams, padParams);
+            DataCopyPad(inUbLocal, input_[gmBaseAddr], copyParams, padExtParams);
         }
-
-        event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
-        SetFlag<HardEvent::MTE2_V>(eventId);
-        WaitFlag<HardEvent::MTE2_V>(eventId);
+        inQueue_.EnQue(inUbLocal);
 
         uint32_t totalLen = dimCNum * dimHIn * padWI;
-        AddSrcLocalToTmpLocal(tmpLocal, srcLocal, totalLen);
+        AddSrcLocalToTmpLocal(tmpLocal, totalLen);
     }
 
     // 从 GM 读取单个 C plane (1 × dimHIn × padWI) 到 srcLocal，Cast+Add 到 tmpLocal 的指定偏移
     // 用于副pad: C 维度镜像
     __aicore__ inline void CopyAndAddPlaneFromGM(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
+        const LocalTensor<PromoteDataT>& tmpLocal, /*const LocalTensor<T>& srcLocal,*/
         uint64_t gmBaseAddr, uint32_t dimHIn, uint32_t padWI, uint32_t dstOffset)
     {
+        LocalTensor<T> inUbLocal = inQueue_.AllocTensor<T>();
+        
         uint32_t inW = tilingData_->inShape[dimNum_ - 1];
         DataCopyExtParams copyParams;
         copyParams.blockCount = dimHIn;
         copyParams.blockLen = inW * sizeof(T);
         copyParams.srcStride = 0;
         copyParams.dstStride = 0;
-        DataCopyPadExtParams<T> padParams{true, 0, 0, 0};
-        DataCopyPad(srcLocal, input_[gmBaseAddr], copyParams, padParams);
-
-        event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
-        SetFlag<HardEvent::MTE2_V>(eventId);
-        WaitFlag<HardEvent::MTE2_V>(eventId);
+        DataCopyPadExtParams<T> padExtParams{true, 0, 0, 0};
+        DataCopyPad(inUbLocal, input_[gmBaseAddr], copyParams, padExtParams);
+        inQueue_.EnQue(inUbLocal);
 
         uint32_t totalLen = dimHIn * padWI;
-        AddSrcLocalToTmpLocal(tmpLocal[dstOffset], srcLocal, totalLen);
+        AddSrcLocalToTmpLocal(tmpLocal[dstOffset], totalLen);
     }
 
     // 从 GM 读取 dimHNum 连续 H 行到 srcLocal，Cast+Add 到 tmpLocal
     // 用于 axisNumInUb_=2 主pad: 高维镜像不改变 H 范围，批量读取 dimHNum 行
     __aicore__ inline void CopyAndAddRowsFromGM(
-        const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
-        uint64_t gmBaseAddr, uint32_t dimHNum, uint32_t padWI)
+        const LocalTensor<PromoteDataT>& tmpLocal, uint64_t gmBaseAddr, uint32_t dimHNum, uint32_t padWI)
     {
+        LocalTensor<T> inUbLocal = inQueue_.AllocTensor<T>();
+
         uint32_t inW = tilingData_->inShape[dimNum_ - 1];
         DataCopyExtParams copyParams;
         copyParams.blockCount = dimHNum;
         copyParams.blockLen = inW * sizeof(T);
         copyParams.srcStride = 0;
         copyParams.dstStride = 0;
-        DataCopyPadExtParams<T> padParams{true, 0, 0, 0};
-        DataCopyPad(srcLocal, input_[gmBaseAddr], copyParams, padParams);
-
-        event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
-        SetFlag<HardEvent::MTE2_V>(eventId);
-        WaitFlag<HardEvent::MTE2_V>(eventId);
+        DataCopyPadExtParams<T> padExtParams{true, 0, 0, 0};
+        DataCopyPad(inUbLocal, input_[gmBaseAddr], copyParams, padExtParams);
+        inQueue_.EnQue(inUbLocal);
 
         uint32_t totalLen = dimHNum * padWI;
-        AddSrcLocalToTmpLocal(tmpLocal, srcLocal, totalLen);
-    }
-
-    // Process one line of W dimension gradient accumulation (axisNumInUb_ >= 3)
-    // 直接在 T 类型上操作，不使用 PromoteDataT
-    __aicore__ inline void GradProcessLine(
-        __local_mem__ T* dstAddr, __local_mem__ T* srcAddr,
-        uint32_t outW, uint32_t inW, uint32_t leftPad, uint32_t rightPad)
-    {
-        // modeOffset_: reflect=0, symmetric=1
-        for (uint32_t w = 0; w < outW; w++) {
-            T total = 0;
-
-            // 1. Self position (middle region): grad_y[w + leftPad]
-            uint32_t selfIdx = w + leftPad;
-            if (selfIdx < inW) {
-                total = srcAddr[selfIdx];
-            }
-
-            // 2. Left pad mirror position
-            bool hasLeft = (modeOffset_ == 0) ? (w > 0 && w < leftPad) : (w < leftPad);
-            if (hasLeft) {
-                uint32_t leftIdx = leftPad - modeOffset_ - w;
-                if (leftIdx < inW) {
-                    total = total + srcAddr[leftIdx];
-                }
-            }
-
-            // 3. Right pad mirror position
-            bool hasRight = (modeOffset_ == 0) ?
-                (rightPad > 0 && w > outW - rightPad - 1 && w < outW - 1) :
-                (rightPad > 0 && w >= outW - rightPad);
-            if (hasRight) {
-                uint32_t rightIdx = 2 * outW + leftPad - 2 + modeOffset_ - w;
-                if (rightIdx < inW) {
-                    total = total + srcAddr[rightIdx];
-                }
-            }
-
-            dstAddr[w] = total;
-        }
+        AddSrcLocalToTmpLocal(tmpLocal, totalLen);
     }
 
     // W 维度梯度累加，从 tmpBuf_ 读取累加后的数据 (仅 axisNumInUb_=2 时使用)
@@ -2156,6 +1982,7 @@ private:
         }
 
         // ========== 阶段2: 从 tmpAddr+leftPad 非对齐读 outW 个元素，对齐搬出到 dstAddr ==========
+
         uint16_t outLoopCount = CeilDiv(outW, VL_ELEMS_FLOAT);
         __local_mem__ PromoteDataT* srcAddr2 = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpAddr + leftPad);
         __local_mem__ T* dstAddr2 = reinterpret_cast<__local_mem__ T*>(dstAddr);
@@ -2238,7 +2065,7 @@ private:
         return list;
     }
 
-    __aicore__ inline void CopyOut(const LocalTensor<T>& src, PadGradNormalParam& padParam)
+    __aicore__ inline void CopyOut(const LocalTensor<T>& outUbLocal)
     {
         // Calculate output address in grad_x
         uint64_t outAddr = 0;
@@ -2257,7 +2084,7 @@ private:
         copyOutParams.srcStride = 0;
         copyOutParams.dstStride = 0;
 
-        DataCopyPad(output_[outAddr], src, copyOutParams);
+        DataCopyPad(output_[outAddr], outUbLocal, copyOutParams);
     }
 };
 } // namespace PadV3Grad
