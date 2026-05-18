@@ -1013,7 +1013,7 @@
     <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>完成除法计算，对余数向下取整。</td>
+    <td>完成除法计算，对结果向下取整。</td>
   </tr>
   <tr>
     <td>math</td>

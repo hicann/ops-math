@@ -80,8 +80,13 @@ aclnnStatus aclnnIsClose(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>输入张量，公式中的self。</td>
-      <td>数据类型需要与other的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
+      <td>
+        <ul>
+          <li>数据类型需要与other的数据类型一致。</li>
+          <li>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+        </ul>
+      </td>
+      <td>FLOAT、INT32、INT64、FLOAT16、INT16、INT8、UINT8、DOUBLE、BOOL、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -90,8 +95,13 @@ aclnnStatus aclnnIsClose(
       <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>输入张量，公式中的other。</td>
-      <td>数据类型需要与self的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
+      <td>
+        <ul>
+          <li>数据类型需要与self的数据类型一致。</li>
+          <li>shape需要与self满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</li>
+        </ul>
+      </td>
+      <td>FLOAT、INT32、INT64、FLOAT16、INT16、INT8、UINT8、DOUBLE、BOOL、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
