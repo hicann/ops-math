@@ -147,7 +147,7 @@ aclnnStatus aclnnCircularPad3dBackward(
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>Tensor为空指针。</td>
+      <td>gradOutput、self、padding、gradInput任何一个为空指针。</td>
     </tr>
     <tr>
       <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
@@ -168,6 +168,17 @@ aclnnStatus aclnnCircularPad3dBackward(
     </tr>
     <tr>
       <td>gradOutput的shape需要与circular_pad3d正向传播的output一致。</td>
+    </tr>
+    <tr>
+      <td rowspan="6">ACLNN_ERR_INNER_NULLPTR</td>
+      <td rowspan="6">561103</td>
+      <td>核数、ub空间大小等参数获取失败。</td>
+    </tr>
+    <tr>
+      <td>padding内的类型、数值不在支持范围内。</td>
+    </tr>
+    <tr>
+      <td>输入维度、大小不在指定的取值范围内</td>
     </tr>
   </tbody>
   </table>
