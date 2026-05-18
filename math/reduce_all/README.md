@@ -89,4 +89,5 @@
 
 | 调用方式   | 样例代码                                                                         | 说明                                               |
 | ---------------- |------------------------------------------------------------------------------|--------------------------------------------------|
-| aclnn接口  | [test_aclnn_all.cpp](examples/test_aclnn_all.cpp) | 通过[aclnnAll](docs/aclnnAll.md)接口方式调用ReduceAll算子。 |
+| 图模式调用  | [test_geir_reduce_all.cpp](examples/test_geir_reduce_all.cpp) | 通过GE IR图模式调用ReduceAll算子。 |
+| aclnn调用  | [test_aclnn_all.cpp](examples/test_aclnn_all.cpp) | 通过[aclnnAll](docs/aclnnAll.md)接口方式调用ReduceAll算子。 |

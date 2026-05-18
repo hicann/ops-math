@@ -73,3 +73,4 @@
 | 调用方式   | 样例代码           | 说明                                         |
 | ---------------- | --------------------------- | --------------------------------------------------- |
 | aclnn接口 | [test_aclnn_div](examples/test_aclnn_div.cpp) | 通过[AclnnDiv](docs/aclnnDiv&aclnnInplaceDiv.md)接口方式调用Div算子。 |
+| 图模式调用 | [test_geir_div](examples/test_geir_div.cpp) | 通过[算子IR](op_graph/div_proto.h)构图方式调用Div算子。 |

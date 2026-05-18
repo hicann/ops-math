@@ -592,7 +592,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>张量运算函数，用于执行乘除加组合操作，将张量除法（带缩放）+ 张量加法合并为单个操作。</td>
   </tr>
   <tr>
@@ -1392,7 +1392,7 @@
     <td>×</td>
     <td>×</td>
     <td>×</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
   <tr>
