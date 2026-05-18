@@ -16,7 +16,7 @@
 using namespace AscendC;
 
 namespace Cholesky {
-constexpr uint32_t BUFFER_NUM = 1;
+constexpr uint32_t BUFFER_NUM = 2;
 constexpr uint32_t BASIC_BLOCK = 32;
 
 template <typename T>
@@ -49,7 +49,6 @@ private:
     uint32_t blockDim_ = 0;
     uint32_t matSizeN_ = 0;
     uint64_t matrixNumCount_ = 0;
-    uint64_t maxDataCount_ = 0;
     uint32_t blockSize_ = 0;
     uint32_t blockNum_ = 0;
     T inv_sqrt_A11_ = 0.0f;  // 存储缩放因子，避免重复计算和直接访问GM内存
@@ -128,8 +127,6 @@ __aicore__ inline void Cholesky<T>::InitTril(GM_ADDR self, GM_ADDR out, GM_ADDR 
     pipe->InitBuffer(matLeftQueue, BUFFER_NUM, rowBufferSize);
     pipe->InitBuffer(matRightQueue, BUFFER_NUM, rowBufferSize);
     pipe->InitBuffer(matResultQueue, BUFFER_NUM, rowBufferSize);
-
-    maxDataCount_ = CeilDiv(blockSize_, BASIC_BLOCK) * BASIC_BLOCK;
 }
 
 template <typename T>
@@ -308,6 +305,7 @@ __aicore__ inline void Cholesky<T>::SecondToNColumn(uint32_t index, uint64_t off
         
         // 3. 调用辅助函数处理点积计算
         ProcessColumnDotProduct(matLLocal, matLeftLocal, matRightLocal, matResultLocal, index, offset, blockStart, count);
+        PipeBarrier<PIPE_ALL>();
 
         // 4. 执行计算操作
         Sub(matLLocal, matALocal, matLLocal, count * BASIC_BLOCK / sizeof(T));
@@ -354,8 +352,6 @@ __aicore__ inline void Cholesky<T>::InitTriu(GM_ADDR self, GM_ADDR out, GM_ADDR 
     pipe->InitBuffer(matLeftQueue, BUFFER_NUM, columnBufferSize);
     pipe->InitBuffer(matRightQueue, BUFFER_NUM, columnBufferSize);
     pipe->InitBuffer(matResultQueue, BUFFER_NUM, columnBufferSize);
-
-    maxDataCount_ = CeilDiv(blockSize_, BASIC_BLOCK) * BASIC_BLOCK;
 }
 
 template <typename T>
@@ -442,6 +438,7 @@ __aicore__ inline void Cholesky<T>::SecondToNRow(uint32_t index, uint64_t offset
         
         // 3. 调用辅助函数处理点积计算
         ProcessRowDotProduct(matLLocal, matLeftLocal, matRightLocal, matResultLocal, index, offset, blockStart, count);
+        PipeBarrier<PIPE_ALL>();
 
         // 4. 执行计算操作
         Sub(matLLocal, matALocal, matLLocal, count);

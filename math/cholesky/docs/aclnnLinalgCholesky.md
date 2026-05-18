@@ -144,8 +144,8 @@ aclnnStatus aclnnLinalgCholesky(
       <td>传入的self是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="7">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="7">161002</td>
+      <td rowspan="8">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="8">161002</td>
       <td>self和out的数据类型不一致。</td>
     </tr>
     <tr>
@@ -165,6 +165,9 @@ aclnnStatus aclnnLinalgCholesky(
     </tr>
     <tr>
       <td>self的最后两维维度不相等。</td>
+    </tr>
+    <tr>
+      <td>self最后一维的大小超过8192。</td>
     </tr>
   </tbody>
   </table>

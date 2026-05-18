@@ -42,21 +42,21 @@
       <td>self</td>
       <td>输入</td>
       <td>表示传入的tensor，公式中的self。</td>
-      <td>FLOAT、BFLOAT16</td>
+      <td>FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>upper</td>
-      <td>输入</td>
+      <td>属性</td>
       <td>表示选择上三角矩阵分解还是下三角矩阵分解。</td>
-      <td>FLOAT、BFLOAT16</td>
-      <td>ND</td>
+      <td>BOOL</td>
+      <td>-</td>
     </tr>
     <tr>
       <td>out</td>
       <td>输出</td>
       <td>表示传出的tensor，公式中的out。</td>
-      <td>FLOAT、BFLOAT16</td>
+      <td>FLOAT</td>
       <td>ND</td>
     </tr>
   </tbody></table>

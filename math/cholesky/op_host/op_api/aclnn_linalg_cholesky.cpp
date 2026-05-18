@@ -28,10 +28,10 @@ extern "C" {
 
 const int64_t SECOND_LAST_DIM_OFFSET = 2;
 const int64_t LAST_DIM_OFFSET = 1;
-const int64_t THRESHOLD_VALUE = 10;
+const int64_t MAX_LAST_DIM_SIZE = 8192;
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_BF16};
+    op::DataType::DT_FLOAT, op::DataType::DT_BF16, op::DataType::DT_FLOAT16};
 
 static const std::initializer_list<op::DataType> NULL_SUPPORT_LIST = {};
 
@@ -107,20 +107,6 @@ static aclnnStatus CheckParams(const aclTensor *self, aclTensor *out) {
   return ACLNN_SUCCESS;
 }
 
-static const aclTensor* SwapDim(const aclTensor *self, aclOpExecutor* executor) {
-  // 交换self的最后两轴
-  auto selfDimNum = static_cast<int64_t>(self->GetViewShape().GetDimNum());
-  std::vector<int64_t> perm(selfDimNum);
-  for (size_t i = 0; i < static_cast<size_t>(selfDimNum); ++i) {
-      perm[i] = i;
-  }
-  std::swap(perm[selfDimNum - SECOND_LAST_DIM_OFFSET], perm[selfDimNum - LAST_DIM_OFFSET]);
-  auto valuePerm = executor->AllocIntArray(perm.data(), selfDimNum);
-  OP_CHECK_NULL(valuePerm, return nullptr);
-  auto selfTrans = l0op::Transpose(self, valuePerm, executor);
-  return selfTrans;
-}
-
 aclnnStatus aclnnLinalgCholeskyGetWorkspaceSize(const aclTensor *self, bool upper, aclTensor *out,
                                      uint64_t *workspaceSize, aclOpExecutor **executor) {
   L2_DFX_PHASE_1(aclnnLinalgCholesky, DFX_IN(self, upper), DFX_OUT(out));
@@ -148,41 +134,29 @@ aclnnStatus aclnnLinalgCholeskyGetWorkspaceSize(const aclTensor *self, bool uppe
     OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self must be batches of square matrices, but they are [%ld] by [%ld] matrices", second_last_dim_size, last_dim_size);
     return ACLNN_ERR_PARAM_INVALID;
   }
+  // 尾轴超过8192可能会超时报错，提前拦截
+  if (last_dim_size > MAX_LAST_DIM_SIZE) {
+    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The last dim must be less than or equal to 8192.");
+    return ACLNN_ERR_PARAM_INVALID;
+  }
 
   // self如果非连续，需要转换
   auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
   CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
   // 输入类型是bf16时，需要转换成fp32
-  if (self->GetDataType() == op::DataType::DT_BF16) {
+  if (self->GetDataType() == op::DataType::DT_BF16 || self->GetDataType() == op::DataType::DT_FLOAT16) {
     selfContiguous = l0op::Cast(selfContiguous, op::DataType::DT_FLOAT, uniqueExecutor.get());
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
   }
 
-  const aclTensor* choleskyResult = nullptr;
+  // 调用l0算子Cholesky进行计算
+  auto choleskyResult = l0op::Cholesky(selfContiguous, upper, uniqueExecutor.get());
+  CHECK_RET(choleskyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-  // upper是true并且最后一维大于10时，需要进行转置
-  if (upper && last_dim_size > THRESHOLD_VALUE) {
-    selfContiguous = SwapDim(selfContiguous, uniqueExecutor.get());
-    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 调用l0算子Cholesky进行计算
-    choleskyResult = l0op::Cholesky(selfContiguous, false, uniqueExecutor.get());
-    CHECK_RET(choleskyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    choleskyResult = SwapDim(choleskyResult, uniqueExecutor.get());
-    CHECK_RET(choleskyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-  } else {
-    // 调用l0算子Cholesky进行计算
-    choleskyResult = l0op::Cholesky(selfContiguous, upper, uniqueExecutor.get());
-    CHECK_RET(choleskyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-  }
-
-  // 输入类型是bf16时，需要将结果重新转换回去
-  if (self->GetDataType() == op::DataType::DT_BF16) {
-    choleskyResult = l0op::Cast(choleskyResult, op::DataType::DT_BF16, uniqueExecutor.get());
-    CHECK_RET(choleskyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-  }
+  // 固定写法，将计算结果转换成输出out的数据类型
+  choleskyResult = l0op::Cast(choleskyResult, out->GetDataType(), uniqueExecutor.get());
+  CHECK_RET(choleskyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
   // 将结果拷贝到out
   auto viewCopyResult = l0op::ViewCopy(choleskyResult, out, uniqueExecutor.get());

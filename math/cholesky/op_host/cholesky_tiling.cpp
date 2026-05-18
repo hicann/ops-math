@@ -20,7 +20,7 @@ constexpr uint32_t TILING_KEY_TRUE = 2;
 constexpr uint32_t MINIMUM_DIMENSION = 2;
 constexpr uint32_t UPPER_INDEX = 0;
 constexpr uint32_t WS_SYS_SIZE = 16U * 1024U * 1024U;
-constexpr uint32_t MAX_BLOCK_SIZE = 128;
+constexpr uint32_t MAX_BLOCK_SIZE = 256;
 
 class CholeskyTiling {
 public:
@@ -113,10 +113,10 @@ uint32_t CholeskyTiling::GetTilingKeyVal() const {
 }
 
 void CholeskyTiling::PrintTilingData() {
-    OP_LOGD(tilingContext, "matSizeN: %ld", matSizeN);
-    OP_LOGD(tilingContext, "matrixNumCount: %ld", matrixNumCount);
-    OP_LOGD(tilingContext, "blockSize: %ld", blockSize);
-    OP_LOGD(tilingContext, "blockNum: %ld", blockNum);
+    OP_LOGD(tilingContext, "matSizeN: %u", matSizeN);
+    OP_LOGD(tilingContext, "matrixNumCount: %lu", matrixNumCount);
+    OP_LOGD(tilingContext, "blockSize: %u", blockSize);
+    OP_LOGD(tilingContext, "blockNum: %u", blockNum);
 }
 
 static ge::graphStatus CholeskyTilingFunc(gert::TilingContext* context)
