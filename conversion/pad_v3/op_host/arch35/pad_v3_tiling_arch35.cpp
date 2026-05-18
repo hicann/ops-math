@@ -1165,7 +1165,7 @@ ge::graphStatus PadACTiling::Fp4ValidateInShape()
     OP_LOGD(context_, "Start PadACTiling Fp4ValidateInShape.");
     // fp4 输入数据类型时，输入数据的最后一维度shape为偶数
     if (tilingData_->inShape[dimNum_ - 1] % 2 != 0){
-        OP_LOGD(context_, "Fp4 input dimension is not even number, please check");
+        OP_LOGE(context_, "Fp4 input dimension is not even number, please check");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -1178,14 +1178,14 @@ ge::graphStatus PadACTiling::Fp4ValidatePaddings()
     size_t frontDimNum = paddings_.padFront.GetDimNum();
     int64_t frontValue = paddings_.padFront.GetDim(frontDimNum - 1);
     if (frontValue % 2 != 0) {
-        OP_LOGD(context_, "Fp4ValidatePaddings padFront last dimension is not even: %ld", frontValue);
+        OP_LOGE(context_, "Fp4ValidatePaddings padFront last dimension is not even: %ld", frontValue);
         return ge::GRAPH_FAILED;
     }
 
     size_t backDimNum = paddings_.padBack.GetDimNum();
     int64_t backValue = paddings_.padBack.GetDim(backDimNum - 1);
     if (backValue % 2 != 0) {
-        OP_LOGD(context_, "Fp4ValidatePaddings padBack last dimension is not even: %ld", backValue);
+        OP_LOGE(context_, "Fp4ValidatePaddings padBack last dimension is not even: %ld", backValue);
         return ge::GRAPH_FAILED;
     }
 

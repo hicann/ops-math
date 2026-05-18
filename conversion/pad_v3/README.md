@@ -128,6 +128,8 @@ paddings的形状需要为[rank, 2]，其中rank为输入x的维度数。
 
 在paddings_contiguous = false即列主序的情况下，REFLECT模式和SYMMETRIC模式的paddings约束对应同理。
 
+CONSTANT模式下，如果x的数据类型为HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2，则paddings所有维度均要为非负数；如果x的数据类型为FLOAT4_E2M1、FLOAT4_E1M2，还需满足输入x的最后一维的paddings都要为偶数。
+
 ## 调用说明
 
 | 调用方式 | 调用样例 | 说明 |

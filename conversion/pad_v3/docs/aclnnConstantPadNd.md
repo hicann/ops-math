@@ -206,6 +206,11 @@
         <td>传入的self、pad、value或out是空指针。</td>
       </tr>
       <tr>
+        <td>ACLNN_ERR_INNER_NULLPTR</td>
+        <td>561103</td>
+        <td>算子执行失败或变量初始化失败。</td>
+      </tr>
+      <tr>
         <td rowspan="10">ACLNN_ERR_PARAM_INVALID</td>
         <td rowspan="10">161002</td>
         <td>self、value或out的数据类型不在支持的范围之内。</td>
