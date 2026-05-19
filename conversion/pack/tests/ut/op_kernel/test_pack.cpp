@@ -16,6 +16,11 @@
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
 
+// Stubs for SIMT built-ins used in one_axis_concat_simt.h (not executed in CPU sim)
+static inline unsigned int __umulhi(unsigned int x, unsigned int y) {
+    return static_cast<unsigned int>((static_cast<unsigned long long>(x) * y) >> 32);
+}
+
 struct ConcatTilingDataNoArray {
     int16_t ubSplitDim1;
     int16_t dim;
@@ -36,6 +41,7 @@ struct ConcatTilingDataNoArray {
     int64_t uoDim1;
     int64_t catDim1;
     int64_t sameShapeTensorDim1;
+    int16_t isFP4Type;
     int64_t preLoadDim1[2];
     uint32_t strideList[32];
     uint32_t concatDimList[32];
