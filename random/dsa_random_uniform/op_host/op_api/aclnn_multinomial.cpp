@@ -94,6 +94,24 @@ static bool CheckDtypeValid(const aclTensor *self, const aclTensor *out) {
   return true;
 }
 
+static bool CheckDtypeValidTensor(const aclTensor *self, const aclTensor *seedTensor, const aclTensor *offsetTensor, const aclTensor *out) {
+  auto supportList = GetDtypeSupportList();
+  OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
+  if(!(self->IsEmpty())) {
+    const int64_t dimNum = static_cast<int64_t>(self->GetViewShape().GetDimNum());
+    int64_t selfSize = 1;
+    for (int64_t i = 0; i < dimNum; i++) {
+      selfSize *= self->GetViewShape().GetDim(i);
+    }
+    if (!CheckSocVersionGe910B() || selfSize <= CPU_NPU_BOUNDARY) {
+      OP_CHECK_DTYPE_NOT_SUPPORT(seedTensor, {op::DataType::DT_INT64}, return false);
+      OP_CHECK_DTYPE_NOT_SUPPORT(offsetTensor, {op::DataType::DT_INT64}, return false);
+    }
+  }
+  OP_CHECK_DTYPE_NOT_SUPPORT(out, {op::DataType::DT_INT64}, return false);
+  return true;
+}
+
 static bool CheckShape(const aclTensor *self, int64_t numsamples, const aclTensor *out) {
   if (self->GetViewShape().GetDimNum() != DIM_NUM_ONE && self->GetViewShape().GetDimNum() != DIM_NUM_TWO) {
     OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim of self only can be 1 or 2.");
@@ -138,6 +156,14 @@ static bool CheckValueRange(const aclTensor *self, int64_t numsamples, bool repl
 static aclnnStatus CheckParams(const aclTensor *self, int64_t numsamples, bool replacement, const aclTensor *out) {
   CHECK_RET(CheckNotNull(self, out), ACLNN_ERR_PARAM_NULLPTR);
   CHECK_RET(CheckDtypeValid(self, out), ACLNN_ERR_PARAM_INVALID);
+  CHECK_RET(CheckShape(self, numsamples, out), ACLNN_ERR_PARAM_INVALID);
+  CHECK_RET(CheckValueRange(self, numsamples, replacement), ACLNN_ERR_PARAM_INVALID);
+  return ACLNN_SUCCESS;
+}
+
+static aclnnStatus CheckParamsTensor(const aclTensor *self, int64_t numsamples, bool replacement, const aclTensor *seedTensor, const aclTensor *offsetTensor, const aclTensor *out) {
+  CHECK_RET(CheckNotNull(self, out), ACLNN_ERR_PARAM_NULLPTR);
+  CHECK_RET(CheckDtypeValidTensor(self, seedTensor, offsetTensor, out), ACLNN_ERR_PARAM_INVALID);
   CHECK_RET(CheckShape(self, numsamples, out), ACLNN_ERR_PARAM_INVALID);
   CHECK_RET(CheckValueRange(self, numsamples, replacement), ACLNN_ERR_PARAM_INVALID);
   return ACLNN_SUCCESS;
@@ -605,7 +631,7 @@ aclnnStatus aclnnMultinomialTensorGetWorkspaceSize(const aclTensor *self, int64_
   
   L2_DFX_PHASE_1(aclnnMultinomialTensor, DFX_IN(self, numsamples, replacement, seedTensor, offsetTensor, offset), DFX_OUT(out));
 
-  auto ret = CheckParams(self, numsamples, replacement, out);
+  auto ret = CheckParamsTensor(self, numsamples, replacement, seedTensor, offsetTensor, out);
   CHECK_RET(ret == ACLNN_SUCCESS, ret);
   auto uniqueExecutor = CREATE_EXECUTOR();
   CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);

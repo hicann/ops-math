@@ -184,12 +184,15 @@ aclnnStatus aclnnMultinomialTensor(
       <td>传入的self、out是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="9">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="9">161002</td>
+      <td rowspan="10">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="10">161002</td>
       <td>self的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>out的数据类型不是INT64。</td>
+    </tr>
+    <tr>
+      <td>seedTensor、offsetTensor的数据类型不是INT64。</td>
     </tr>
     <tr>
       <td>self的维度不是1维或2维。</td>
