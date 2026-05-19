@@ -90,15 +90,10 @@
   <tr>
     <td>aclnn 调用</td>
     <td><a href="examples/arch35/test_aclnn_atan_grad.cpp">test_aclnn_atan_grad</a></td>
-    <td rowspan="2">参见<a href="./docs/aclnnAtanGrad.md">aclnnAtanGrad 接口文档</a>了解接口定义与参数规格。调用前需完成自定义算子包的编译与安装（bash build.sh --soc=ascend910b）。</td>
-  </tr>
-  <tr>
-    <td>图模式调用</td>
-    <td><a href="examples/test_geir_atan_grad.cpp">test_geir_atan_grad</a></td>
+    <td>调用前需完成自定义算子包的编译与安装（bash build.sh --soc=ascend910b）。</td>
   </tr>
 </tbody></table>
 
 ## 参考资源
 
-- [aclnnAtanGrad 接口文档](docs/aclnnAtanGrad.md)
-- [详细设计文档](docs/DESIGN.md)
+接口文档和设计文档待补充。

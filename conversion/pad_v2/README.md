@@ -109,4 +109,4 @@ y.shape[d] = x.shape[d] + paddings[d][0] + paddings[d][1]
 
 | 调用方式　 | 调用样例　　　　　　　　　　　　　　　　　　　　　　　　| 说明　　　　　　　　　　　　　　　　　　　　　　　　　　　　　 |
 | ------------| ---------------------------------------------------------| ----------------------------------------------------------------|
-| aclnn 调用 | [test_geir_pad_v2.cpp](./examples/test_geir_pad_v2.cpp) | 通过 [算子IR](op_graph/pad_v2_proto.h) 接口方式调用 PadV2 算子 |
+| aclnn 调用 | [test_geir_pad_v2.cpp](./examples/arch35/test_geir_pad_v2.cpp) | 通过 [算子IR](op_graph/pad_v2_proto.h) 接口方式调用 PadV2 算子 |

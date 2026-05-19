@@ -79,7 +79,6 @@ $$
 详细调用示例参见 [examples/](examples/) 目录:
 
 - [test_aclnn_reduce_mean_with_count.cpp](examples/test_aclnn_reduce_mean_with_count.cpp) - ACLNN 两段式调用示例（含精度比对）
-- [test_geir_reduce_mean_with_count.cpp](examples/test_geir_reduce_mean_with_count.cpp) - GE IR 图模式调用示例（占位）
 
 ### 编译运行
 

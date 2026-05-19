@@ -111,5 +111,4 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| aclnn接口 | [test_aclnn_matmul_compress_dequant](./tests/ut/op_host/
-op_api/test_aclnn_matmul_compress_dequant.cpp) | 通过[aclnnMatmulCompressDequant](docs/aclnnMatmulCompressDequant.md)接口方式调用MatmulCompressDequant算子。 |
+| aclnn接口 | [test_aclnn_matmul_compress_dequant](./tests/ut/op_host/op_api/test_aclnn_matmul_compress_dequant.cpp) | 通过[aclnnMatmulCompressDequant](docs/aclnnMatmulCompressDequant.md)接口方式调用MatmulCompressDequant算子。 |

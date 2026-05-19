@@ -64,4 +64,3 @@
 | 调用方式 | 调用样例                                             | 说明                                                                                         |
 |---------|----------------------------------------------------|----------------------------------------------------------------------------------------------|
 | aclnn调用 | [test_aclnn_acosh](./examples/test_aclnn_acosh.cpp) | 通过[aclnnAcosh](./docs/aclnnAcosh.md)接口方式调用Acosh算子。  |
-| aclnn调用 | [test_aclnn_inplace_acosh](./examples/test_aclnn_inplace_acosh.cpp) | 通过[aclnnInplaceAcosh](./docs/aclnnAcosh&aclnnInplaceAcosh.md)接口方式调用Acosh算子。  |
