@@ -172,13 +172,7 @@ aclnnStatus aclnnCircularPad3dBackward(
     <tr>
       <td rowspan="6">ACLNN_ERR_INNER_NULLPTR</td>
       <td rowspan="6">561103</td>
-      <td>核数、ub空间大小等参数获取失败。</td>
-    </tr>
-    <tr>
-      <td>padding内的类型、数值不在支持范围内。</td>
-    </tr>
-    <tr>
-      <td>输入维度、大小不在指定的取值范围内</td>
+      <td>算子执行失败或变量初始化失败。</td>
     </tr>
   </tbody>
   </table>
