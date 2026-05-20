@@ -26,7 +26,18 @@ using namespace Ops::Base;
 static ge::graphStatus DoTiling(gert::TilingContext* context, ReduceOpInputParam& opInput, ReduceTilingKey& key)
 {
     ge::graphStatus status = ge::GRAPH_FAILED;
-    status = Tiling4ReduceOp<ReduceAll::ReduceAllDag<int8_t, half>::OpDag>(context, opInput, key);
+    auto xDesc = context->GetInputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, xDesc);
+    auto dType = xDesc->GetDataType();
+    if (dType == ge::DT_FLOAT) {
+        status = Tiling4ReduceOp<ReduceAll::ReduceAllDagFloat<float, float>::OpDag>(context, opInput, key);
+    } else if (dType == ge::DT_FLOAT16) {
+        status = Tiling4ReduceOp<ReduceAll::ReduceAllDagFloat<half, float>::OpDag>(context, opInput, key);
+    } else if (dType == ge::DT_BF16) {
+        status = Tiling4ReduceOp<ReduceAll::ReduceAllDagFloat<bfloat16_t, float>::OpDag>(context, opInput, key);
+    } else {
+        status = Tiling4ReduceOp<ReduceAll::ReduceAllDag<int8_t, half>::OpDag>(context, opInput, key);
+    }
     OP_CHECK_IF(
         (status == ge::GRAPH_FAILED),
         OP_LOGE(context->GetNodeName(), "ReduceOp Tiling failed, dtype shoude be in (bool,)"), return ge::GRAPH_FAILED);

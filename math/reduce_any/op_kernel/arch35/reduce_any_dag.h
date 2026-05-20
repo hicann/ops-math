@@ -28,6 +28,7 @@
 namespace ReduceAny {
 using namespace Ops::Base;
 using OutDtype = uint8_t;
+using OutDtype2 = int32_t;
 
 template <typename T, typename R>
 struct CastFloat : public Vec::ElemwiseUnaryOP<T, R> {
@@ -44,8 +45,6 @@ struct CastFloat : public Vec::ElemwiseUnaryOP<T, R> {
         __VEC_SCOPE__
         {
             MicroAPI::RegTensor<R> srcReg;
-            MicroAPI::RegTensor<uint32_t> tmpReg1;
-            MicroAPI::RegTensor<uint16_t> tmpReg2;
             MicroAPI::RegTensor<T> dstReg;
             MicroAPI::MaskReg cmpMask;
             MicroAPI::MaskReg InMask;
@@ -58,10 +57,8 @@ struct CastFloat : public Vec::ElemwiseUnaryOP<T, R> {
                 OutMask = MicroAPI::UpdateMask<T>(tmp);
                 MicroAPI::DataCopy<R, MicroAPI::PostLiteral::POST_MODE_UPDATE>(srcReg, srcAddr, VL_B32);
                 MicroAPI::Compares<R, CMPMODE::NE>(cmpMask, srcReg, 0.0f, InMask);
-                MicroAPI::Duplicate(tmpReg1, static_cast<T>(0));
-                MicroAPI::Duplicate(tmpReg1, static_cast<T>(1), cmpMask);
-                MicroAPI::Pack<uint16_t, uint32_t, MicroAPI::HighLowPart::LOWEST>(tmpReg2, tmpReg1);
-                MicroAPI::Pack<T, uint16_t, MicroAPI::HighLowPart::LOWEST>(dstReg, tmpReg2);
+                MicroAPI::Duplicate(dstReg, static_cast<T>(0.0f));
+                MicroAPI::Duplicate(dstReg, static_cast<T>(1.0f), cmpMask);
                 MicroAPI::DataCopy<T, MicroAPI::PostLiteral::POST_MODE_UPDATE>(dstAddr, dstReg, VL_B32, OutMask);
                 // 这里使用VL_B32原因是每次只搬float类型下的数量，剩下的未执行compare
             }
@@ -73,10 +70,11 @@ struct CastFloat : public Vec::ElemwiseUnaryOP<T, R> {
 template <typename T, typename PromteT>
 struct ReduceAnyDagFloat {
     using OpCopyIn0 = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;
-    using Cast0 = Bind<Vec::Cast<PromteT, T, 0>, OpCopyIn0>;
+    using Cast0 = Bind<CastFloat<PromteT, T>, OpCopyIn0>;
     using ReduceOp0 = Bind<Vec::ReduceAnyOp<PromteT>, Cast0>;
-    using Cast1 = Bind<CastFloat<OutDtype, PromteT>, ReduceOp0>;
-    using OpCopyOut = Bind<Vec::CopyOut<OutDtype>, Placeholder::Out0<OutDtype>, Cast1>;
+    using Cast1 = Bind<Vec::Cast<OutDtype2, PromteT, 1>, ReduceOp0>;
+    using Cast2 = Bind<Vec::Cast<OutDtype, OutDtype2, 0>, Cast1>;
+    using OpCopyOut = Bind<Vec::CopyOut<OutDtype>, Placeholder::Out0<OutDtype>, Cast2>;
     using Outputs = Elems<OpCopyOut>;
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
     using OpDag = DAGSch<Outputs, void, MemCfg>;

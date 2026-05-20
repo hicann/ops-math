@@ -23,9 +23,12 @@ namespace ge {
 /**
 *@brief Calculates the "logical sum" of elements of a tensor in a dimension .
 
+*@attention Constraints:
+* Support bool, fp32, fp16, bf16
+
 *@par Inputs:
 *Two inputs, including:
-*@li x: The boolean tensor to reduce.
+*@li x: The tensor to reduce.
 *@li axis: A mutable Tensor with int dtype, The dimensions to reduce.
 *If None, reduces all dimensions.
 *Must be in the range [- rank (input_sensor), rank (input_sensor)) .
@@ -41,7 +44,7 @@ namespace ge {
 * Compatible with the TensorFlow operator ReduceAll.
 */
 REG_OP(ReduceAll)
-    .INPUT(x, TensorType({DT_BOOL}))
+    .INPUT(x, TensorType({DT_BOOL, DT_BF16, DT_FLOAT, DT_FLOAT16}))
     .INPUT(axes, TensorType::IndexNumberType())
     .OUTPUT(y, TensorType({DT_BOOL}))
     .ATTR(keep_dims, Bool, false)

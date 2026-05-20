@@ -15,17 +15,19 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-static const std::vector<ge::DataType> dataType = {ge::DT_BOOL, ge::DT_BOOL};
+static const std::vector<ge::DataType> inDataType = {ge::DT_BOOL, ge::DT_BOOL, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_BF16, ge::DT_BF16};
 
-static const std::vector<ge::Format> format = {ge::FORMAT_ND, ge::FORMAT_ND};
+static const std::vector<ge::DataType> outDataType = {ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL};
 
-static const std::vector<ge::DataType> axesDataType = {ge::DT_INT32, ge::DT_INT64};
+static const std::vector<ge::Format> format = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+
+static const std::vector<ge::DataType> axesDataType = {ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64};
 
 class ReduceAll : public OpDef {
 public:
     explicit ReduceAll(const char* name) : OpDef(name)
     {
-        this->Input("x").ParamType(REQUIRED).DataType(dataType).Format(format).UnknownShapeFormat(format);
+        this->Input("x").ParamType(REQUIRED).DataType(inDataType).Format(format).UnknownShapeFormat(format);
 
         this->Input("axes")
             .ParamType(REQUIRED)
@@ -34,7 +36,7 @@ public:
             .Format(format)
             .UnknownShapeFormat(format);
 
-        this->Output("y").ParamType(REQUIRED).DataType(dataType).Format(format).UnknownShapeFormat(format);
+        this->Output("y").ParamType(REQUIRED).DataType(outDataType).Format(format).UnknownShapeFormat(format);
 
         this->Attr("keep_dims").AttrType(OPTIONAL).Bool(false);
 

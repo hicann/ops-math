@@ -30,10 +30,10 @@ namespace ge {
 * tensor with a single element is returned.
 *
 *@attention Constraints:
-* Only support bool
+* Only support bool,fp32
 *
 *@par Inputs:
-*@li x : The boolean tensor to reduce.
+*@li x : The tensor to reduce.
 *@li axes: The int tensor, The dimensions to reduce.
 *          If "None" (default), reduces all dimensions.
 *          Must be in the range "[-rank(x), rank(x))".
@@ -49,7 +49,7 @@ namespace ge {
 *
 */
 REG_OP(ReduceAny)
-    .INPUT(x, TensorType({DT_BOOL}))
+    .INPUT(x, TensorType({DT_BOOL, DT_FLOAT}))
     .INPUT(axes, TensorType::IndexNumberType())
     .OUTPUT(y, TensorType({DT_BOOL}))
     .ATTR(keep_dims, Bool, false)

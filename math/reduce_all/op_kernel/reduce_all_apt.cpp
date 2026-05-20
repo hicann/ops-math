@@ -37,9 +37,17 @@ __global__ __aicore__ void reduce_all(GM_ADDR x, GM_ADDR axes, GM_ADDR y, GM_ADD
     REGISTER_TILING_DEFAULT(ReduceOpTilingData);
     GET_TILING_DATA_WITH_STRUCT(ReduceOpTilingData, tilingData, tiling);
     TPipe pipe;
-    using PromoteType = __reduceType::GetPromoteType<uint8_t>::T;
-    using Op = ReduceSch<REDUCE_TPL_VALUE, ReduceAll::ReduceAllDag<uint8_t, PromoteType>::OpDag>;
-    Op op(&tilingData);
-    op.Init(&pipe, x, y, userWS);
-    op.Process(static_cast<uint8_t>(1));
+    if constexpr (IsSameType<DTYPE_X, float>::value||IsSameType<DTYPE_X, half>::value||IsSameType<DTYPE_X, bfloat16_t>::value) {
+        using PromoteType = __reduceType::GetPromoteType<DTYPE_X>::T;
+        using Op = ReduceSch<REDUCE_TPL_VALUE, ReduceAll::ReduceAllDagFloat<DTYPE_X, PromoteType>::OpDag>;
+        Op op(&tilingData);
+        op.Init(&pipe, x, y, userWS);
+        op.Process(static_cast<uint8_t>(1));
+    } else {
+        using PromoteType = __reduceType::GetPromoteType<uint8_t>::T;
+        using Op = ReduceSch<REDUCE_TPL_VALUE, ReduceAll::ReduceAllDag<uint8_t, PromoteType>::OpDag>;
+        Op op(&tilingData);
+        op.Init(&pipe, x, y, userWS);
+        op.Process(static_cast<uint8_t>(1));
+    }
 }
