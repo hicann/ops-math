@@ -172,7 +172,7 @@
     <td>√</td>
     <td>×</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>生成一个等间隔数值序列。创建一个大小为steps的1维向量，其值从start起始到stop结束（包含）线性均匀分布。</td>
   </tr>
   <tr>
@@ -307,6 +307,16 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/coordinates_1d_to_2d/README.md">coordinates_1d_to_2d</a></td>
+    <td>×</td>
+    <td>×</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>将1D坐标转换为2D坐标，根据shape信息计算行列索引。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/depth_to_space/README.md">depth_to_space</a></td>
     <td>√</td>
     <td>√</td>
@@ -424,6 +434,16 @@
     <td>√</td>
     <td>AI Core</td>
     <td>Stack Ball Query 是KNN的替代方案，用于查找点p1指定半径范围内的所有点（在实现中设置了K的上限）。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/slice_write/README.md">slice_write</a></td>
+    <td>×</td>
+    <td>×</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>将 value tensor 写入 x tensor 的指定位置（由 begin 指定偏移）。这是一个原地操作，输出与输入 x 共用同一块内存。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -782,7 +802,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>将输入tensor转换为指定的dtype类型。<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
   <tr>
@@ -1322,7 +1342,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>返回形状和类型相同的张量，所有元素都设置为1。</td>
   </tr>
   <tr>

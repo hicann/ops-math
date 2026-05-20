@@ -23,7 +23,7 @@ public:
         this->Output("y").DataType({ge::DT_BOOL, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_DOUBLE,
                                      ge::DT_INT8, ge::DT_INT16, ge::DT_INT32, ge::DT_INT64,
                                      ge::DT_UINT8, ge::DT_UINT16, ge::DT_UINT32, ge::DT_UINT64,
-                                     ge::DT_COMPLEX64, ge::DT_COMPLEX128, ge::DT_BF16});
+                                     ge::DT_COMPLEX64, ge::DT_COMPLEX128, ge::DT_BF16, ge::DT_HIFLOAT8});
 
         ApplyMathAicpuDefaultCfg(*this);
     }
