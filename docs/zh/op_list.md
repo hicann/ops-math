@@ -562,7 +562,7 @@
     <td>×</td>
     <td>×</td>
     <td>×</td>
-    <td>AI Core</td>
+    <td>AI CORE/AI CPU</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
   <tr>
@@ -702,7 +702,7 @@
     <td>×</td>
     <td>×</td>
     <td>×</td>
-    <td>AI Core</td>
+    <td>AI CORE/AI CPU</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
   <tr>
@@ -942,7 +942,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>AI CORE/AI CPU</td>
     <td>返回一个新的张量，该张量的每个元素都是输入张量对应元素的指数。</td>
   </tr>
   <tr>
