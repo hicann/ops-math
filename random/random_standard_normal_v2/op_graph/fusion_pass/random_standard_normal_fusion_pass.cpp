@@ -79,33 +79,11 @@ std::vector<PatternUniqPtr> RandomStandardNormalFusionPass::Patterns()
 
     auto graphBuilder = es::EsGraphBuilder(kPassName.c_str());
     auto shape = graphBuilder.CreateInput(0);
-
-    auto graphPtr = graphBuilder.GetCGraphBuilder()->GetGraph();
-    auto srcBuilder = es::CompliantNodeBuilder(graphPtr);
-    srcBuilder.OpType("RandomStandardNormal")
-        .Name("pattern_random_standard_normal")
-        .IrDefInputs({{"shape", es::CompliantNodeBuilder::kEsIrInputRequired, ""}})
-        .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
-        .IrDefAttrs({
-            {"seed", es::CompliantNodeBuilder::kEsAttrOptional, "Int", es::CreateFrom(static_cast<int64_t>(0))},
-            {"seed2", es::CompliantNodeBuilder::kEsAttrOptional, "Int", es::CreateFrom(static_cast<int64_t>(0))},
-            {"dtype", es::CompliantNodeBuilder::kEsAttrOptional, "Type", es::CreateFrom(DT_FLOAT)}
-        });
-    GNode srcNode = srcBuilder.Build();
-
-    auto dataNode = shape.GetProducer();
-    if (dataNode != nullptr) {
-        es::AddEdgeAndUpdatePeerDesc(*graphPtr, *dataNode, 0, srcNode, 0);
-    }
-
-    es::EsGraphBuilder::SetOutput(shape, 0);
-    auto graph = graphBuilder.BuildAndReset();
-
-    std::vector<std::pair<GNode, int32_t>> outputs = {{srcNode, 0}};
-    graph->SetOutputs(outputs);
+    auto output = es::RandomStandardNormal(shape, DT_FLOAT, 0, 0);
+    auto graph = graphBuilder.BuildAndReset({output});
 
     auto pattern = std::make_unique<Pattern>(std::move(*graph));
-    pattern->CaptureTensor({srcNode, 0});
+    pattern->CaptureTensor({*output.GetProducer(), 0});
 
     patternGraphs.emplace_back(std::move(pattern));
     return patternGraphs;
@@ -141,6 +119,7 @@ bool RandomStandardNormalFusionPass::MeetRequirements(const std::unique_ptr<Matc
     if (nodeIo.node.GetAttr("dtype", dtype) != GRAPH_SUCCESS) {
         OP_LOGD(kPassName.c_str(), "Failed to get dtype attribute, using default DT_FLOAT.");
     }
+    OP_LOGI(kPassName.c_str(), "[MeetReq] V1 dtype from attr: %d (0=float32, 1=float16, 27=bf16, 11=double)", static_cast<int32_t>(dtype));
     if (kSupportedDtypes.count(dtype) == 0) {
         OP_LOGD(kPassName.c_str(),
                 "RandomStandardNormalV2 dtype only supports float32/float16/bfloat16, got %d, skip.",
@@ -177,6 +156,8 @@ std::unique_ptr<Graph> RandomStandardNormalFusionPass::Replacement(const std::un
     DataType dtype = DT_FLOAT;
     nodeIo.node.GetAttr("dtype", dtype);
     int64_t dtypeInt = static_cast<int64_t>(dtype);
+    OP_LOGI(kPassName.c_str(), "[Replacement] V1 dtype enum: %d, converted to V2 dtypeInt: %ld",
+            static_cast<int32_t>(dtype), dtypeInt);
 
     int64_t seed = 0;
     nodeIo.node.GetAttr("seed", seed);
@@ -200,7 +181,7 @@ std::unique_ptr<Graph> RandomStandardNormalFusionPass::Replacement(const std::un
     auto rOffset = replaceGraphBuilder.CreateVariable(1, varName.c_str());
     InitOffsetVariable(rOffset, offsetDesc);
 
-    auto v2Output = es::RandomStandardNormalV2(rShape, rOffset, seed, seed2, dtypeInt);
+    auto v2Output = es::RandomStandardNormalV2(rShape, rOffset, dtypeInt, seed, seed2);
     GNode v2NodePtr = *v2Output.y.GetProducer();
 
     TensorDesc shapeInputDesc(inputShapes[0], inputFormats[0], inputDtypes[0]);
