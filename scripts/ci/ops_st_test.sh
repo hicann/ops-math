@@ -639,8 +639,6 @@ print_msg "Ops to test: ${ops_list}"
 
 IFS=',' read -r -a op_name_array <<< "${ops_list}"
 
-source /usr/local/Ascend/cann/set_env.sh 2>/dev/null || true
-
 all_result_csvs=()
 result_flag=0
 for op_name in "${op_name_array[@]}"; do
