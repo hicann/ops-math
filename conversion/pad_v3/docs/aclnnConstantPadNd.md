@@ -179,7 +179,7 @@
 
     - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型不支持BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2。
     - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型不支持 HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2。
-    - value与self的数据类型满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/互推导关系.md)）。
+    - value与self的数据类型满足数据类型推导规则（参见[ConvertToTensor](https://gitcode.com/cann/opbase/blob/9.1.0-beta.2/docs/zh/api/nnopbase/opdev/ConvertToTensor.md)中的接口7相关说明）。
     - 对于CANN 9.0.0版本，self的数据类型为HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0时，仅支持value的bit值全为0。
 
 - **返回值**
