@@ -695,7 +695,7 @@ TEST_F(${OpName}TilingTest, test_case_xxx)
         },
         &compileInfo,
         64,     // tiling阶段获取的核数
-        262144, // tiling阶段湖区的ub大小，但实际获取的值比指定值少256字节
+        262144, // tiling阶段获取的ub大小，但实际获取的值比指定值少256字节
         4096    // 指定tiling阶段中tiling data的最大值
     );
     // 2. 设定预期结果
