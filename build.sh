@@ -312,6 +312,7 @@ usage() {
         echo "Run examples Options:"
         echo $dotted_line
         echo "    --run_example op_type  mode[eager:graph] [pkg_mode --vendor_name=name --example_name=name]     Compile and execute the test_aclnn_xxx.cpp/test_geir_xxx.cpp"
+        echo "    --noexec               Only compile example, do not execute (useful for cross-platform build + cannsim)"
         echo "    --simulator   Enable simulator mode when running aclnn examples"
         echo $dotted_line
         echo "Examples:"
@@ -321,6 +322,7 @@ usage() {
         echo "    bash build.sh --run_example abs eager cust --vendor_name=custom"
         echo "    bash build.sh --run_example abs eager --simulator --soc=ascend950"
         echo "    bash build.sh --run_example abs eager --example_name=abs --soc=ascend950"
+        echo "    bash build.sh --run_example abs eager cust --noexec --vendor_name=custom"
         return
         ;;
       genop)
@@ -1354,15 +1356,19 @@ build_example() {
       compile_graph_example "$f" "$executable_name"
     fi
 
-    # Run the executable
-    ./${executable_name}
-    local exit_code=$?
+    # Run the executable (unless --noexec is specified)
+    if [[ "$ENABLE_UT_EXEC" == "TRUE" ]]; then
+      ./${executable_name}
+      local exit_code=$?
 
-    if [ $exit_code -eq 0 ]; then
-      echo "run ${executable_name}, execute samples success"
+      if [ $exit_code -eq 0 ]; then
+        echo "run ${executable_name}, execute samples success"
+      else
+        echo "run ${executable_name}, execute samples failed"
+        exit 1
+      fi
     else
-      echo "run ${executable_name}, execute samples failed"
-      exit 1
+      echo "Skip running ${executable_name} (--noexec specified, binary is ready for cannsim)"
     fi
   done
 }
