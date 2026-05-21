@@ -125,4 +125,3 @@ REG_OP(AddExample)
 
 完整代码请参考`examples/add_example/op_graph`目录下[add_example_proto.h](../../../examples/add_example/op_graph/add_example_proto.h)。
 
-> 💡 **进阶内容**：关于GE图模式原型定义的详细说明，包括REG_OP接口、TensorType类等，请参考[《AI Core算子开发进阶指南 - 图模式适配》](./aicore_develop_advanced_guide.md#图模式适配)。

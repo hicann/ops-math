@@ -71,3 +71,5 @@ third_party/
 oat_reports/
 
 log/
+# OpenCode 配置
+.opencode/
