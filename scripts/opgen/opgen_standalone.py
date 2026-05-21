@@ -81,6 +81,80 @@ class OpGenerator:
                 except OSError as e:
                     raise OSError(f"重命名 '{old_path}' 到 '{new_path}' 失败: {e}") from e
 
+    @staticmethod
+    def _create_category_cmake(dir_path):
+        """为新的分类目录创建CMakeLists.txt，使用与math/conversion/random相同的glob模式"""
+        cmake_lines = [
+            "file(GLOB SUBDIRECTORIES LIST_DIRECTORIES true",
+            "    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)",
+            "foreach(SUBDIR ${SUBDIRECTORIES})",
+            "  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}/CMakeLists.txt)",
+            "    add_subdirectory(${SUBDIR})",
+            "  endif()",
+            "endforeach()",
+        ]
+        cmake_file = os.path.join(dir_path, "CMakeLists.txt")
+        if not os.path.exists(cmake_file):
+            with open(cmake_file, 'w', encoding='utf-8') as f:
+                f.write("\n".join(cmake_lines) + "\n")
+            logging.info(f"Created CMakeLists.txt in {dir_path}")
+
+    @staticmethod
+    def _add_to_ops_category_list(category_list_file, child):
+        """将新的分类添加到OPS_CATEGORY_LIST中"""
+        with open(category_list_file, 'r', encoding='utf-8') as f:
+            cat_content = f.read()
+        updated = re.sub(
+            r'(set\s*\(\s*OPS_CATEGORY_LIST\s+[^)]*)',
+            rf'\1\n  "{child}"',
+            cat_content
+        )
+        with open(category_list_file, 'w', encoding='utf-8') as f:
+            f.write(updated)
+        logging.info(f"Added '{child}' to OPS_CATEGORY_LIST in {category_list_file}")
+
+    @staticmethod
+    def _check_included_in_cmake(content, cmake_file, child):
+        """检查child是否已被CMakeLists.txt包含，返回(already_included, ops_category_file_path)"""
+        already_included = bool(re.search(
+            rf'add_subdirectory\s*\(\s*{re.escape(child)}\s*[\s\)]', content
+        ))
+        ops_category_file_path = None
+        if already_included:
+            return True, None
+
+        cmake_dir = os.path.dirname(cmake_file)
+        files_to_check = [(content, None)]
+        for inc_match in re.finditer(r'include\s*\(\s*([^)\s]+)\s*\)', content):
+            inc_path = inc_match.group(1)
+            if not os.path.isabs(inc_path):
+                inc_path = os.path.join(cmake_dir, inc_path)
+            if os.path.exists(inc_path):
+                try:
+                    with open(inc_path, 'r', encoding='utf-8') as inc_f:
+                        files_to_check.append((inc_f.read(), inc_path))
+                except (IOError, OSError):
+                    pass
+
+        for check_content, file_path in files_to_check:
+            match = re.search(r'set\s*\(\s*OPS_CATEGORY_LIST\s+([^)]+)\)', check_content)
+            if not match:
+                continue
+            categories = [c.strip('"') for c in match.group(1).split()]
+            if child in categories:
+                return True, None
+            if file_path is not None:
+                ops_category_file_path = file_path
+
+        return False, ops_category_file_path
+
+    @staticmethod
+    def _append_subdirectory(cmake_file, child):
+        """在CMakeLists.txt末尾追加add_subdirectory(child)"""
+        with open(cmake_file, 'a', encoding='utf-8') as f:
+            f.write(f"\nadd_subdirectory({child})\n")
+        logging.info(f"Added add_subdirectory({child}) to {cmake_file}")
+
     def _update_cmake_chain(self):
         """在父目录的CMakeLists.txt中添加add_subdirectory，确保构建系统能找到新目录"""
         current = self.dest_dir
@@ -96,15 +170,19 @@ class OpGenerator:
                 with open(cmake_file, 'r', encoding='utf-8') as f:
                     content = f.read()
 
-                already_included = bool(re.search(
-                    rf'add_subdirectory\s*\(\s*{re.escape(child)}\s*[\s\)]', content
-                ))
+                already_included, ops_category_file = self._check_included_in_cmake(
+                    content, cmake_file, child
+                )
                 uses_glob = bool(re.search(r'file\s*\(\s*GLOB', content))
 
                 if not already_included and not uses_glob:
-                    with open(cmake_file, 'a', encoding='utf-8') as f:
-                        f.write(f"\nadd_subdirectory({child})\n")
-                    logging.info(f"Added add_subdirectory({child}) to {cmake_file}")
+                    if ops_category_file:
+                        self._add_to_ops_category_list(ops_category_file, child)
+                    else:
+                        self._append_subdirectory(cmake_file, child)
+            else:
+                if parent_abs != project_root and os.path.isdir(parent):
+                    self._create_category_cmake(parent)
 
             if parent_abs == project_root:
                 break
