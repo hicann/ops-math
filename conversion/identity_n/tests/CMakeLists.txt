@@ -8,9 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-message(STATUS "=== Debug: start control.identity_n.tests.CMakeLists.txt ")
 file(GLOB CURRENT_SOURCE_DIRS LIST_DIRECTORIES true ${CMAKE_CURRENT_SOURCE_DIR}/*)
-message(STATUS "=== Debug: CURRENT_SOURCE_DIRS =${CURRENT_SOURCE_DIRS} ")
 foreach(SUB_DIR ${CURRENT_SOURCE_DIRS})
     if(EXISTS "${SUB_DIR}/CMakeLists.txt")
         add_subdirectory(${SUB_DIR})

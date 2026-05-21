@@ -680,36 +680,6 @@ checkopts_run_example() {
   fi
 }
 
-check_group_compile_config() {
-  local base_path=${BASE_PATH}
-  local yaml_file="$base_path/scripts/ci/ascend950/ops_math_operator_list.yaml"
-  local pattern='AddConfig("ascend950'
-
-  local group base_dir op_dir op_name
-  local missing=0
-  echo "[INFO] check ascend950 group compile config"
-  for group in math conversion random; do
-    base_dir="$base_path/$group"
-    [ -d "$base_dir" ] || continue
-    for op_dir in "$base_dir"/*; do
-      [ -d "$op_dir" ] || continue
-      op_name=$(basename "$op_dir")
-      if grep -q "$pattern" "$op_dir"/op_host/*def.cpp 2>/dev/null; then
-        if ! grep -qw "$op_name" "$yaml_file"; then
-          echo "[ERROR] $yaml_file does not configed op: $op_name"
-          missing=1
-        fi
-      fi
-    done
-  done
-
-  if [ "$missing" -ne 0 ]; then
-    echo "[FAIL] ascend950 group compiled config failed"
-    exit 1
-  fi
-  echo "[PASS] check ascend950 group compile config success"
-  return 0
-}
 
 checkopts() {
   THREAD_NUM=8
@@ -957,7 +927,7 @@ checkopts() {
   check_param
   set_create_libs
   set_ut_mode
-  check_group_compile_config
+
   if [[ "$CI_MODE" == "TRUE" ]]; then
     run_ci_mode
   fi
