@@ -4,14 +4,14 @@
 
 ## 产品支持情况
 
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+|产品             |  是否支持  |
+|:-------------------------|:----------:|
+|  <term>Ascend 950PR/Ascend 950DT</term>   |     √    |
+|  <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>   |     √    |
+|  <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |     √    |
+|  <term>Atlas 200I/500 A2 推理产品</term>    |     ×    |
+|  <term>Atlas 推理系列产品</term>    |     √    |
+|  <term>Atlas 训练系列产品</term>    |     √    |
 
 ## 功能说明
 
@@ -32,33 +32,33 @@
 
 ```cpp
 aclnnStatus aclnnAcoshGetWorkspaceSize(
-  const aclTensor*    self, 
-  aclTensor*          out, 
-  uint64_t*           workspaceSize, 
-  aclOpExecutor**     executor)
+  const aclTensor  *self,
+  aclTensor        *out,
+  uint64_t         *workspaceSize,
+  aclOpExecutor    **executor)
 ```
 
 ```cpp
 aclnnStatus aclnnAcosh(
-  void*             workspace,
-  uint64_t          workspaceSize,
-  aclOpExecutor*    executor,
-  aclrtStream       stream)
+  void           *workspace,
+  uint64_t        workspaceSize,
+  aclOpExecutor  *executor,
+  aclrtStream     stream)
 ```
 
 ```cpp
 aclnnStatus aclnnInplaceAcoshGetWorkspaceSize(
-  aclTensor*          selfRef, 
-  uint64_t*           workspaceSize, 
-  aclOpExecutor**     executor)
+  aclTensor      *selfRef,
+  uint64_t       *workspaceSize,
+  aclOpExecutor  **executor)
 ```
 
 ```cpp
 aclnnStatus aclnnInplaceAcosh(
-  void*             workspace, 
-  uint64_t          workspaceSize, 
-  aclOpExecutor*    executor, 
-  aclrtStream       stream)
+  void           *workspace,
+  uint64_t        workspaceSize,
+  aclOpExecutor  *executor,
+  aclrtStream     stream)
 ```
 
 ## aclnnAcoshGetWorkspaceSize
@@ -347,6 +347,7 @@ aclnnStatus aclnnInplaceAcosh(
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
 
+
 ## 约束说明
 
 - 确定性计算：
@@ -513,3 +514,4 @@ int main() {
  return 0;
 }
 ```
+
