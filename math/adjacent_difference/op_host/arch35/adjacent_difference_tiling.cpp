@@ -63,9 +63,9 @@ static ge::graphStatus Tiling4AdjacentDifference(gert::TilingContext* context) {
     } else if (yDtype == static_cast<int64_t>(ge::DataType::DT_INT32)) {
         OP_LOGI("AdjacentDifference", "yDtype is DT_INT32");
     } else {
-        OP_LOGE_WITH_INVALID_ATTR(
+        OP_LOGE_FOR_INVALID_VALUE(
             "AdjacentDifference", "y_dtype",
-            ge::TypeUtils::DataTypeToSerialString(static_cast<ge::DataType>(yDtype)).c_str(), "int32, int64");
+            ge::TypeUtils::DataTypeToSerialString(static_cast<ge::DataType>(yDtype)).c_str(), "int32 or int64");
         return ge::GRAPH_FAILED;
     }
     uint64_t ubSizePlatform;

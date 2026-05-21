@@ -117,9 +117,9 @@ static ge::graphStatus InferShapeForPad(gert::InferShapeContext* context) {
         return PadInfershapeWithTensor<int64_t>(context, x_shape, paddings_tensor, y_shape);
       }
       default:
-        OP_LOGE_WITH_INVALID_INPUT_DTYPE(
+        OP_LOGE_FOR_INVALID_DTYPE(
             context->GetNodeName(),
-            "paddings", Ops::Base::ToString(paddings_dtype).c_str(), "[int32, int64]");
+            "paddings", Ops::Base::ToString(paddings_dtype).c_str(), "int32 or int64");
         return ge::GRAPH_FAILED;
     }
   } else {

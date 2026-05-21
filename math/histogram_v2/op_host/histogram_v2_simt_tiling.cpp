@@ -127,7 +127,7 @@ ge::graphStatus HistogramV2SimtTiling::GetShapeAttrsInfo()
     bins_ = (binsPtr == nullptr) ? DEFAULT_BINS : *binsPtr;
     OP_CHECK_IF(
         bins_ <= 0, 
-        OP_LOGE_WITH_INVALID_ATTR(context_->GetNodeName(), "bins", std::to_string(bins_).c_str(), "a positive integer"),
+        OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "bins", std::to_string(bins_).c_str(), "a positive integer"),
         return ge::GRAPH_FAILED);
 
     auto outputShape = context_->GetOutputShape(OUTPUT_IDX);

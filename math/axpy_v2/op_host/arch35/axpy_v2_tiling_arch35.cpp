@@ -60,7 +60,7 @@ bool AxpyV2Tiling::CheckDtype(const ge::DataType& input0Dtype, const ge::DataTyp
         return false;
     }
     if (!isDtypeSupported) {
-        OP_LOGE_WITH_INVALID_INPUT_DTYPE(
+        OP_LOGE_FOR_INVALID_DTYPE(
             context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
             "float32, float16, bfloat16, int32, int64, int8, uint8 or bool");
         return false;

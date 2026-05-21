@@ -122,8 +122,8 @@ static ge::graphStatus InferShape4PadV2(gert::InferShapeContext* context)
             return PadV2Infershape<int64_t>(context, x_shape, paddings_tensor, y_shape);
         }
         default:
-            OP_LOGE_WITH_INVALID_INPUT_DTYPE(
-                context->GetNodeName(), "paddings", "[int32, int64]", Ops::Base::ToString(paddings_dtype).c_str());
+            OP_LOGE_FOR_INVALID_DTYPE(
+                context->GetNodeName(), "paddings", Ops::Base::ToString(paddings_dtype).c_str(), "int32 or int64");
             return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_FAILED;

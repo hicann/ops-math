@@ -67,7 +67,7 @@ static ge::graphStatus TransposeInferShape(gert::InferShapeContext* context)
     size_t inputDimSize = xShape->GetDimNum();
     OP_CHECK_IF(
         permSize != static_cast<int64_t>(inputDimSize),
-        OP_LOGE_WITH_INVALID_ATTR_SIZE(
+        OP_LOGE_FOR_INVALID_SHAPESIZE(
             context->GetNodeName(), "perm", ConcatString(permSize).c_str(), ConcatString(inputDimSize).c_str()),
         return ge::GRAPH_FAILED);
 
@@ -90,8 +90,8 @@ static ge::graphStatus TransposeInferShape(gert::InferShapeContext* context)
             break;
         }
         default:
-            OP_LOGE_WITH_INVALID_INPUT_DTYPE(
-                context->GetNodeName(), "perm", Ops::Base::ToString(permDtype).c_str(), "[int32, int64]");
+            OP_LOGE_FOR_INVALID_DTYPE(
+                context->GetNodeName(), "perm", Ops::Base::ToString(permDtype).c_str(), "int32 or int64");
             return ge::GRAPH_FAILED;
     }
 

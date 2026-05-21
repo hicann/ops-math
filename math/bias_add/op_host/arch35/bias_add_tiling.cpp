@@ -85,7 +85,7 @@ ge::graphStatus InferBiasShape(gert::TilingContext* context, vector<gert::Shape>
 
     OP_CHECK_IF(
         !CheckDataFormat(attrDataFormat),
-        OP_LOGE_WITH_INVALID_ATTR(context->GetNodeName(), "data_format", attrDataFormat.c_str(), "NCHW, NHWC, NCDHW and NDHWC"),
+        OP_LOGE_FOR_INVALID_VALUE(context->GetNodeName(), "data_format", attrDataFormat.c_str(), "NCHW, NHWC, NCDHW or NDHWC"),
         return false);
 
     for (size_t i = 0; i < xDimNum; i++) {

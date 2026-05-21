@@ -42,8 +42,8 @@ static ge::graphStatus InferShapeForAsStrided(gert::InferShapeContext* context)
             break;
         }
         default:
-            OP_LOGE_WITH_INVALID_INPUT_DTYPE(
-                context->GetNodeName(), "size", Ops::Base::ToString(size_dtype).c_str(), "[int32, int64]");
+            OP_LOGE_FOR_INVALID_DTYPE(
+                context->GetNodeName(), "size", Ops::Base::ToString(size_dtype).c_str(), "int32 or int64");
             return ge::GRAPH_FAILED;
     }
 

@@ -93,9 +93,9 @@ ge::graphStatus BitwiseOrTiling::DoOpTiling()
         brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
-        OP_LOGE_WITH_INVALID_INPUT_DTYPE(
+        OP_LOGE_FOR_INVALID_DTYPE(
             context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
-            "int8, uint8, int16, uint16, int32, uint32, int64, uint64");
+            "int8, uint8, int16, uint16, int32, uint32, int64 or uint64");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;

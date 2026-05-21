@@ -88,7 +88,7 @@ ge::graphStatus BincountTiling::CheckDtype()
     auto arrayDataType = inputDesc->GetDataType();
     OP_CHECK_IF(
         arrayDataType != ge::DT_INT32,
-        OP_LOGE_WITH_INVALID_INPUT_DTYPE(
+        OP_LOGE_FOR_INVALID_DTYPE(
             context_->GetNodeName(), "array", ge::TypeUtils::DataTypeToSerialString(arrayDataType).c_str(), "INT32"),
         return ge::GRAPH_FAILED);
 
@@ -97,7 +97,7 @@ ge::graphStatus BincountTiling::CheckDtype()
     auto sizeDataType = sizeDesc->GetDataType();
     OP_CHECK_IF(
         sizeDataType != ge::DT_INT32,
-        OP_LOGE_WITH_INVALID_INPUT_DTYPE(
+        OP_LOGE_FOR_INVALID_DTYPE(
             context_->GetNodeName(), "size", ge::TypeUtils::DataTypeToSerialString(sizeDataType).c_str(), "INT32"),
         return ge::GRAPH_FAILED);
 
@@ -106,7 +106,7 @@ ge::graphStatus BincountTiling::CheckDtype()
     auto weightsDataType = weightsDesc->GetDataType();
     OP_CHECK_IF(
         !(weightsDataType == ge::DT_FLOAT || weightsDataType == ge::DT_INT32 || weightsDataType == ge::DT_INT64),
-        OP_LOGE_WITH_INVALID_INPUT_DTYPE(
+        OP_LOGE_FOR_INVALID_DTYPE(
             context_->GetNodeName(), "weights", ge::TypeUtils::DataTypeToSerialString(weightsDataType).c_str(),
             "FLOAT, INT32 or INT64"),
         return ge::GRAPH_FAILED);
