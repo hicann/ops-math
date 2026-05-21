@@ -988,12 +988,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/expand/README.md">expand</a></td>
+    <td>√</td>
+    <td>√</td>
     <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>√</td>
+    <td>AI CORE/AI CPU</td>
+    <td>将输入tensor广播到指定的shape。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1082,7 +1082,7 @@
     <td>√</td>
     <td>√</td>
     <td>√</td>
-    <td>AI Core</td>
+    <td>AI Core/AI CPU</td>
     <td>返回一个BOOL类型的张量，里面每一个值代表输入张量对应位置值是否大于等于另一个张量值或者scalar值。</td>
   </tr>
   <tr>
@@ -1527,13 +1527,13 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/reduce_sum/README.md">reduce_sum_op</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td><a href="../../math/reduce_sum/README.md">reduce_sum</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core/AI CPU</td>
+    <td>返回给定维度中输入张量每行的和。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -2008,12 +2008,12 @@
   <tr>
     <td>conversion</td>
     <td><a href="../../conversion/reshape/README.md">reshape</a></td>
+    <td>√</td>
+    <td>√</td>
     <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>√</td>
+    <td>AI CPU</td>
+    <td>将输入张量重解释为目标形状。</td>
   </tr>
   <tr>
     <td>conversion</td>

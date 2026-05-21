@@ -44,7 +44,12 @@ static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static inline bool IsAiCoreSupport(const aclTensor *self) {
-  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+  const auto &platformInfo = op::GetCurrentPlatformInfo();
+  auto socVersion = platformInfo.GetSocVersion();
+  if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) {
+    return false;
+  }
+  auto npuArch = platformInfo.GetCurNpuArch();
   if (IsRegBase(npuArch)) {
     return CheckType(self->GetDataType(), REGBASE_DTYPE_SUPPORT_LIST);
   }

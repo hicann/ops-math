@@ -31,4 +31,5 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | :-------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
+| 图模式调用 | [test_geir_expand](./examples/test_geir_expand.cpp) | 通过GE IR图模式调用Expand算子 |
 | aclnn接口 | [test_aclnn_expand](./examples/test_aclnn_expand.cpp)   | 通过[aclnnExpand](./docs/aclnnExpand.md)接口方式调用Expand算子。 |
