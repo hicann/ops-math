@@ -140,7 +140,7 @@
       <td>输入</td>
       <td>填充部分的填充值</td>
       <td>-</td>
-      <td>可转换为self的数据类型</td>
+      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128 、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT6_E3M2、FLOAT6_E2M3、FLOAT4_E2M1、FLOAT4_E1M2。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -179,7 +179,6 @@
 
     - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：数据类型不支持BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2。
     - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型不支持 HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2。
-    - value与self的数据类型满足数据类型推导规则（参见[ConvertToTensor](https://gitcode.com/cann/opbase/blob/9.1.0-beta.2/docs/zh/api/nnopbase/opdev/ConvertToTensor.md)中的接口7相关说明）。
     - 对于CANN 9.0.0版本，self的数据类型为HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0时，仅支持value的bit值全为0。
 
 - **返回值**
