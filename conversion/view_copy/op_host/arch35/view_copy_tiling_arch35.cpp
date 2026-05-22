@@ -306,6 +306,17 @@ inline static bool checkOffsetAndStride(int64_t offset, std::vector<int64_t> str
   return false;
 }
 
+inline static bool checkWrittenToSameDstPosition(const std::vector<int64_t> &dstSize, const std::vector<int64_t> &dstStride)
+{
+  // 此时dstSize、dstStride大小必然是相同的。
+  for (size_t i = 0; i < dstStride.size(); i++) {
+    if (dstSize[i] > 1 && dstStride[i] == 0) {
+        return true;
+    }
+  }
+  return false;
+}
+
 inline static ge::graphStatus CheckSizeAndStrideValue(const gert::TilingContext* context, const ViewCopyTilingParam& tilingParam)
 {
   auto dstTensorPtr = context->GetInputTensor(INDEX_INPUT_DST);
@@ -332,6 +343,8 @@ inline static ge::graphStatus CheckSizeAndStrideValue(const gert::TilingContext*
     "Ensure that dst_size and dst_stride have the same number of dimensions."), return ge::GRAPH_FAILED);
   OP_CHECK_IF(CheckSameDimensions(tilingParam.srcSize, tilingParam.srcStride), OP_LOGE(context->GetNodeName(),
     "Ensure that src_size and src_stride have the same number of dimensions."), return ge::GRAPH_FAILED);
+  OP_CHECK_IF(checkWrittenToSameDstPosition(tilingParam.dstSize, tilingParam.dstStride), OP_LOGE(context->GetNodeName(),
+    "More than one element of the written-to tensor refers to a single memory location."), return ge::GRAPH_FAILED);
   OP_CHECK_IF(checkOffsetAndStride(tilingParam.dstStorageOffset, tilingParam.dstStride, tilingParam.dstSize, dstTensorSize), OP_LOGE(context->GetNodeName(),
     "Tensor index out of range: Accessing element at position dst_offset + (dst_size[i] - 1) * dst_stride[i] would exceed the dst_tensor's boundary of %ld total elements. \
     Please check the dst_offset, dst_size, and dst_stride parameters for each axis i of dst_stride.", dstTensorSize), return ge::GRAPH_FAILED);
