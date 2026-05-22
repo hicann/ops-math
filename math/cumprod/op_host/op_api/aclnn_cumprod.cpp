@@ -106,6 +106,13 @@ static aclnnStatus doGetWorkspaceSize(aclTensor *input, const aclScalar *inputDi
   }
   OP_CHECK_DTYPE_NOT_MATCH(out, tensorType, return false);
 
+  // 空tensor处理
+  if (input->IsEmpty() || out->IsEmpty()) {
+      *workspaceSize = 0;
+      uniqueExecutor.ReleaseTo(executor);
+      return ACLNN_SUCCESS;
+  }
+
   auto inputContinuous = l0op::Contiguous(input, uniqueExecutor.get());
   CHECK_RET(inputContinuous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
