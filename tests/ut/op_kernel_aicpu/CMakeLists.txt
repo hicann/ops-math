@@ -39,7 +39,7 @@ target_link_libraries(
           -Wl,--as-needed
           gtest
           c_sec
-          Eigen3::EigenMath)
+          Eigen3::Eigen)
 
 if(ENABLE_UT_EXEC)
   if(ENABLE_ASAN)

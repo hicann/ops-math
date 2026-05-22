@@ -216,7 +216,7 @@ function(add_aicpu_cust_kernel_modules op_name aicpu_sources)
       PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx17,intf_pub_cxx17>>
               $<BUILD_INTERFACE:dlog_headers>
               -Wl,--no-whole-archive
-              Eigen3::EigenMath
+              Eigen3::Eigen
       )
     if (NOT (UT_TEST_ALL OR OP_KERNEL_AICPU_UT))
       set_property(TARGET ${target_name} PROPERTY 
@@ -255,7 +255,7 @@ function(add_aicpu_host_kernel_modules host_target_name)
       ${host_target_name}
       PRIVATE $<BUILD_INTERFACE:$<IF:$<BOOL:${ENABLE_TEST}>,intf_llt_pub_asan_cxx17,intf_pub_cxx17>>
               $<BUILD_INTERFACE:dlog_headers>
-              Eigen3::EigenMath
+              Eigen3::Eigen
       )
     if (NOT ${host_target_name} IN_LIST AICPU_HOST_OBJ_TARGETS)
       set(AICPU_HOST_OBJ_TARGETS
@@ -296,7 +296,7 @@ function(add_onnx_plugin_modules)
   if (NOT TARGET ${ONNX_PLUGIN_NAME}_obj)
     set(ge_onnx_proto_srcs
       ${ASCEND_DIR}/include/proto/ge_onnx.proto)
-    
+
     protobuf_generate_external(onnx ge_onnx_proto_cc ge_onnx_proto_h ${ge_onnx_proto_srcs})
 
     add_library(${ONNX_PLUGIN_NAME}_obj OBJECT ${ge_onnx_proto_h})
@@ -309,12 +309,13 @@ function(add_onnx_plugin_modules)
     target_include_directories(${ONNX_PLUGIN_NAME}_obj
       PRIVATE
       ${OP_PROTO_INCLUDE}
-      ${Protobuf_INCLUDE}
-      ${Protobuf_PATH}
+      ${HOST_PROTOC_SRC}
+      ${HOST_PROTOC_PATH}
+      ${PROTOBUF_INCLUDE_DIRS}
       ${CMAKE_BINARY_DIR}/proto
       ${ONNX_PLUGIN_COMMON_INCLUDE}
       ${JSON_INCLUDE_DIR}
-      ${ABSL_SOURCE_DIR}
+      ${ABS_INSTALL_DIR}
     )
     target_compile_definitions(${ONNX_PLUGIN_NAME}_obj PRIVATE OPS_UTILS_LOG_SUB_MOD_NAME="ONNX_PLUGIN")
 
@@ -903,7 +904,7 @@ function(protobuf_generate_external comp c_var h_var)
       COMMAND ${CMAKE_COMMAND} -E make_directory "${proto_output_path}"
       COMMAND ${CMAKE_COMMAND} -E echo "generate proto cpp_out ${comp} by ${abs_file}"
       COMMAND ${Protobuf_PROTOC_EXECUTABLE} -I${file_dir} ${extra_option} --cpp_out=${proto_output_path} ${abs_file}
-      DEPENDS ${abs_file} ascend_protobuf_build_math
+      DEPENDS ${abs_file} host_protoc
       COMMENT "Running C++ protocol buffer compiler on ${file}" VERBATIM)
   endforeach()
 

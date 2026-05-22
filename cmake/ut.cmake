@@ -8,7 +8,11 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 include_guard(GLOBAL)
-include(${PROJECT_SOURCE_DIR}/cmake/third_party/gtest.cmake)
+add_cann_third_party(gtest)
+if(TARGET GTest::gtest)
+  add_library(gtest ALIAS GTest::gtest)
+  add_library(gtest_main ALIAS GTest::gtest_main)
+endif()
 
 set(OP_TILING_MODULE_NAME
     ${PKG_NAME}_op_tiling_ut
@@ -190,7 +194,7 @@ function(add_aicpu_opkernel_ut_modules AICPU_OP_KERNEL_MODULE_NAME)
   target_link_libraries(
     ${AICPU_OP_KERNEL_MODULE_NAME}_common_obj
     PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> gtest c_sec
-            Eigen3::EigenMath)
+            Eigen3::Eigen)
 
   # add opkernel ut cases object: math_aicpu_op_kernel_ut_cases_obj
   if(NOT TARGET ${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj)
@@ -198,7 +202,7 @@ function(add_aicpu_opkernel_ut_modules AICPU_OP_KERNEL_MODULE_NAME)
                 ${UT_PATH}/empty.cpp)
   endif()
   target_link_libraries(${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj
-                        PRIVATE Eigen3::EigenMath gcov -ldl)
+                        PRIVATE Eigen3::Eigen gcov -ldl)
   target_sources(${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj
                  PRIVATE ${OP_KERNEL_AICPU_UT_UTILS_SRC})
 
@@ -574,7 +578,7 @@ function(add_aicpu_op_test_case opName)
             ${dlog_MATH_INCLUDE_DIR})
   target_link_libraries(
     ${opName}_cases_obj PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> -ldl
-                                gtest c_sec Eigen3::EigenMath)
+                                gtest c_sec Eigen3::Eigen)
 
   # add object: math_op_kernel_ut_cases_obj
   if(NOT TARGET ${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj)
@@ -588,5 +592,5 @@ function(add_aicpu_op_test_case opName)
   target_link_libraries(
     ${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj
     PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> -ldl
-            $<TARGET_OBJECTS:${opName}_cases_obj> gtest c_sec Eigen3::EigenMath)
+            $<TARGET_OBJECTS:${opName}_cases_obj> gtest c_sec Eigen3::Eigen)
 endfunction()
