@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -8,13 +8,14 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-file(GLOB SUBDIRECTORIES LIST_DIRECTORIES true RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
-# 与 not_equal_v2 并存：legacy not_equal 与 v2 导出相同 aclnn 符号，全量编 cust 会重复定义；仅保留 v2 参与 experimental 遍历。
-list(FILTER SUBDIRECTORIES EXCLUDE REGEX "^not_equal$")
-# 遍历子目录
-foreach(SUBDIR ${SUBDIRECTORIES})
-  # 检查子目录中是否存在 CMakeLists.txt
-  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}/CMakeLists.txt)
-    add_subdirectory(${SUBDIR})
-  endif()
+if(UT_TEST_ALL OR OP_HOST_UT)
+    add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    add_modules_ut_sources(UT_NAME ${OP_INFERSHAPE_MODULE_NAME} MODE PRIVATE DIR ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+
+file(GLOB CURRENT_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
+foreach(SUB_DIR ${CURRENT_DIRS})
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${SUB_DIR}/CMakeLists.txt")
+        add_subdirectory(${SUB_DIR})
+    endif()
 endforeach()

@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -8,13 +8,12 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-file(GLOB SUBDIRECTORIES LIST_DIRECTORIES true RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
-# 与 not_equal_v2 并存：legacy not_equal 与 v2 导出相同 aclnn 符号，全量编 cust 会重复定义；仅保留 v2 参与 experimental 遍历。
-list(FILTER SUBDIRECTORIES EXCLUDE REGEX "^not_equal$")
-# 遍历子目录
-foreach(SUBDIR ${SUBDIRECTORIES})
-  # 检查子目录中是否存在 CMakeLists.txt
-  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}/CMakeLists.txt)
-    add_subdirectory(${SUBDIR})
-  endif()
-endforeach()
+set(SUPPORT_COMPUTE_UNIT "ascend950" "mc62cm12a")
+set(SUPPORT_TILING_DIR "arch35" "arch35")
+add_all_modules_sources(OPTYPE greater_equal ACLNNTYPE aclnn_exclude COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT}
+                        TILING_DIR ${SUPPORT_TILING_DIR} DISABLE_IN_OPP TRUE)
+
+# Scoped --ops= builds may not create ophost_math_tiling_obj (tiling lives under op_host/arch35).
+if(TARGET ophost_math_tiling_obj)
+    target_compile_options(ophost_math_tiling_obj PRIVATE -Wno-error)
+endif()
