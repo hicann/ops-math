@@ -146,7 +146,7 @@ uint32_t UnpackCpuKernel::UnpackCompute(T *input_data_ptr,
       auto copy_size = subfix * sizeof(T);
       for (int64_t j = 0; j < prefix; j++) {
         auto mem_ret = memcpy_s(output_data_ptr, copy_size, input_copy_ptr, copy_size);
-        KERNEL_CHECK_FALSE((mem_ret == EOK), KERNEL_STATUS_PARAM_INVALID,
+        KERNEL_CHECK_FALSE_VOID((mem_ret == EOK),
             "Memcpy size[%zu] from input value to output[%ld] failed.", copy_size, i);
         input_copy_ptr += (subfix * midfix);
         output_data_ptr += subfix;

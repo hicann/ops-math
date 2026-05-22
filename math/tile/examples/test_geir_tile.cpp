@@ -36,6 +36,30 @@ using std::map;
 using std::string;
 using std::vector;
 
+#define ADD_INPUT_DOUBLE(inputIndex, inputName, inputDtype, inputShape, inputValues)                                       \
+    vector<int64_t> placeholder##inputIndex##_shape = inputShape;                                                         \
+    string placeholder##inputIndex##_name = "placeholder" + std::to_string(inputIndex);                                   \
+    auto placeholder##inputIndex = op::Data(placeholder##inputIndex##_name.c_str()).set_attr_index(inputIndex - 1);      \
+    TensorDesc placeholder##inputIndex##_desc =                                                                           \
+        TensorDesc(ge::Shape(placeholder##inputIndex##_shape), FORMAT_ND, inputDtype);                                    \
+    placeholder##inputIndex##_desc.SetPlacement(ge::kPlacementHost);                                                      \
+    placeholder##inputIndex##_desc.SetFormat(FORMAT_ND);                                                                  \
+    Tensor tensor_placeholder##inputIndex;                                                                                 \
+    ret = GenDataDouble(placeholder##inputIndex##_shape,                                                                  \
+        tensor_placeholder##inputIndex,                                                                                    \
+        placeholder##inputIndex##_desc,                                                                                    \
+        inputValues);                                                                                                     \
+    if (ret != SUCCESS) {                                                                                                 \
+        printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                                    \
+        return FAILED;                                                                                                    \
+    }                                                                                                                      \
+    placeholder##inputIndex.update_input_desc_x(placeholder##inputIndex##_desc);                                          \
+    placeholder##inputIndex.update_output_desc_y(placeholder##inputIndex##_desc);                                         \
+    input.push_back(tensor_placeholder##inputIndex);                                                                       \
+    graph.AddOp(placeholder##inputIndex);                                                                                  \
+    tile1.set_input_##inputName(placeholder##inputIndex);                                                                  \
+    inputs.push_back(placeholder##inputIndex);
+
 #define ADD_INPUT(inputIndex, inputName, inputDtype, inputShape, inputValues)                                           \
     vector<int64_t> placeholder##inputIndex##_shape = inputShape;                                                       \
     string placeholder##inputIndex##_name = "placeholder" + std::to_string(inputIndex);                                 \
@@ -125,6 +149,8 @@ uint32_t GetDataTypeSize(DataType dt)
         dilation = eightByte;
     } else if (dt == ge::DT_INT8) {
         dilation = oneByte;
+    } else if (dt == ge::DT_DOUBLE) {
+        dilation = eightByte;
     }
     return dilation;
 }
@@ -143,6 +169,30 @@ int32_t GenDataInt32(
 
     uint32_t dataLen = size * sizeof(int32_t);
     int32_t *data = new (std::nothrow) int32_t[size];
+    if (data == nullptr) {
+        return FAILED;
+    }
+    for (size_t i = 0; i < size; ++i) {
+        data[i] = values[i];
+    }
+    inputTensor = Tensor(inputTensorDesc, reinterpret_cast<uint8_t *>(data), dataLen);
+    return SUCCESS;
+}
+
+int32_t GenDataDouble(
+    const vector<int64_t> &shapes, Tensor &inputTensor, TensorDesc &inputTensorDesc, const vector<double> &values)
+{
+    inputTensorDesc.SetRealDimCnt(shapes.size());
+    size_t size = 1;
+    for (uint32_t i = 0; i < shapes.size(); i++) {
+        size *= shapes[i];
+    }
+    if (size != values.size()) {
+        return FAILED;
+    }
+
+    uint32_t dataLen = size * sizeof(double);
+    double *data = new (std::nothrow) double[size];
     if (data == nullptr) {
         return FAILED;
     }
@@ -181,6 +231,11 @@ void PrintOutputData(uint8_t *data, int64_t size, DataType dtype)
         for (int64_t i = 0; i < size; i++) {
             LOG_PRINT("result[%ld] is: %u\n", i, uintData[i]);
         }
+    } else if (dtype == DT_DOUBLE) {
+        double *doubleData = reinterpret_cast<double *>(data);
+        for (int64_t i = 0; i < size; i++) {
+            LOG_PRINT("result[%ld] is: %f\n", i, doubleData[i]);
+        }
     } else {
         LOG_PRINT("Unsupported data type for printing\n");
     }
@@ -193,11 +248,18 @@ int CreateOppInGraph(DataType inDtype, vector<Tensor> &input, vector<Operator> &
     auto tile1 = op::Tile("tile1");
     vector<int64_t> xShape = {2, 3};
     vector<int64_t> multiplesShape = {2};
-    vector<int32_t> xValues = {1, 2, 3, 4, 5, 6};
-    vector<int32_t> multiplesValues = {2, 2};
 
-    ADD_INPUT(1, x, inDtype, xShape, xValues);
-    ADD_CONST_INPUT(2, multiples, DT_INT32, multiplesShape, multiplesValues);
+    if (inDtype == DT_DOUBLE) {
+        vector<double> xValues = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
+        vector<int32_t> multiplesValues = {2, 2};
+        ADD_INPUT_DOUBLE(1, x, inDtype, xShape, xValues);
+        ADD_CONST_INPUT(2, multiples, DT_INT32, multiplesShape, multiplesValues);
+    } else {
+        vector<int32_t> xValues = {1, 2, 3, 4, 5, 6};
+        vector<int32_t> multiplesValues = {2, 2};
+        ADD_INPUT(1, x, inDtype, xShape, xValues);
+        ADD_CONST_INPUT(2, multiples, DT_INT32, multiplesShape, multiplesValues);
+    }
 
     outputs.push_back(tile1);
     return SUCCESS;

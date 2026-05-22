@@ -26,7 +26,6 @@
 #include "array_ops.h"
 #include "ge_ir_build.h"
 
-#include "experiment_ops.h"
 #include "nn_other.h"
 #include "../op_graph/unpack_proto.h"
 
@@ -128,6 +127,8 @@ uint32_t GetDataTypeSize(DataType dt)
         dilation = eightByte;
     } else if (dt == ge::DT_INT8) {
         dilation = oneByte;
+    } else if (dt == ge::DT_DOUBLE) {
+        dilation = eightByte;
     }
     return dilation;
 }
@@ -159,11 +160,20 @@ int32_t GenOnesData(
         size *= shapes[i];
     }
     uint32_t data_len = size * GetDataTypeSize(data_type);
-    int32_t* pData = new (std::nothrow) int32_t[data_len];
-    for (uint32_t i = 0; i < size; ++i) {
-        *(pData + i) = value;
+
+    if (data_type == DT_DOUBLE) {
+        double* pData = new (std::nothrow) double[size];
+        for (size_t i = 0; i < size; ++i) {
+            *(pData + i) = static_cast<double>(value);
+        }
+        input_tensor = Tensor(input_tensor_desc, reinterpret_cast<uint8_t*>(pData), data_len);
+    } else {
+        int32_t* pData = new (std::nothrow) int32_t[size];
+        for (size_t i = 0; i < size; ++i) {
+            *(pData + i) = value;
+        }
+        input_tensor = Tensor(input_tensor_desc, reinterpret_cast<uint8_t*>(pData), data_len);
     }
-    input_tensor = Tensor(input_tensor_desc, reinterpret_cast<uint8_t*>(pData), data_len);
     return SUCCESS;
 }
 
@@ -180,19 +190,34 @@ int CreateOppInGraph(
     Graph& graph)
 {
     Status ret = SUCCESS;
-    // 自定义代码：添加单算子定义到图中
-    auto add1 = op::Unpack("unpack");
-    vector<vector<int64_t>> shapes = {
-        {2, 3000, 1, 64},
-    };
+    const int64_t num = 2;
+    const int64_t axis = 0;
+    auto add1 = op::Unpack("unpack").create_dynamic_output_y(num);
 
-    ADD_INPUT(1, x, inDtype, shapes[0]);
+    vector<int64_t> input_shape = {2, 4};
+    auto data_op = op::Data("data").set_attr_index(0);
+    TensorDesc data_desc = TensorDesc(ge::Shape(input_shape), ge::FORMAT_ND, inDtype);
+    data_desc.SetPlacement(ge::kPlacementHost);
+    data_desc.SetFormat(ge::FORMAT_ND);
 
-    ADD_INPUT_ATTR(num, 2);
-    ADD_INPUT_ATTR(axis, 0);
+    Tensor input_tensor;
+    ret = GenOnesData(input_shape, input_tensor, data_desc, inDtype, 2);
+    if (ret != SUCCESS) {
+        printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());
+        return FAILED;
+    }
+
+    data_op.update_input_desc_x(data_desc);
+    data_op.update_output_desc_y(data_desc);
+    input.push_back(input_tensor);
+    graph.AddOp(data_op);
+    inputs.push_back(data_op);
+
+    add1.set_input_x(data_op);
+    add1.set_attr_num(num);
+    add1.set_attr_axis(axis);
 
     outputs.push_back(add1);
-    // 添加完毕
     return SUCCESS;
 }
 
@@ -215,7 +240,7 @@ bool CreateAndConfigGraph(Graph& graph, std::vector<ge::Tensor>& input)
     std::vector<Operator> inputs{};
     std::vector<Operator> outputs{};
 
-    DataType inDtype = DT_FLOAT16;
+    DataType inDtype = DT_DOUBLE;
     std::cout << inDtype << std::endl;
 
     Status ret = CreateOppInGraph(inDtype, input, inputs, outputs, graph);

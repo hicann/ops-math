@@ -103,6 +103,8 @@ uint32_t GetDataTypeSize(DataType dt)
         dilation = eightByte;
     } else if (dt == ge::DT_INT8) {
         dilation = oneByte;
+    } else if (dt == ge::DT_DOUBLE) {
+        dilation = eightByte;
     }
     return dilation;
 }
@@ -121,6 +123,11 @@ int32_t GenOnesData(
         float *data_ptr = reinterpret_cast<float *>(data.data());
         for (size_t i = 0; i < size; ++i) {
             data_ptr[i] = static_cast<float>(value);
+        }
+    } else if (data_type == DT_DOUBLE) {
+        double *data_ptr = reinterpret_cast<double *>(data.data());
+        for (size_t i = 0; i < size; ++i) {
+            data_ptr[i] = static_cast<double>(value);
         }
     }
     input_tensor = Tensor(input_tensor_desc, data);
@@ -244,6 +251,11 @@ int main(int argc, char *argv[])
         (void)WriteDataToFile((const char *)output_file.c_str(), data_size, output_data_i);
         if (output[i].GetTensorDesc().GetDataType() == DT_FLOAT) {
             float *result = reinterpret_cast<float *>(output_data_i);
+            for (int64_t j = 0; j < output_shape; j++) {
+                LOG_PRINT("result[%ld] is: %f\n", j, result[j]);
+            }
+        } else if (output[i].GetTensorDesc().GetDataType() == DT_DOUBLE) {
+            double *result = reinterpret_cast<double *>(output_data_i);
             for (int64_t j = 0; j < output_shape; j++) {
                 LOG_PRINT("result[%ld] is: %f\n", j, result[j]);
             }
