@@ -68,6 +68,30 @@ usage() {
     echo "    bash ops_st_test.sh --soc_version=ascend950 --test_type=kernel,e2e"
 }
 
+merge_ops_lists() {
+    local list1="$1"
+    local list2="$2"
+    local merged=""
+    
+    for op in ${list1//,/ }; do
+        if [[ -z "${merged}" ]]; then
+            merged="${op}"
+        elif [[ ",${merged}," != *",${op},"* ]]; then
+            merged="${merged},${op}"
+        fi
+    done
+    
+    for op in ${list2//,/ }; do
+        if [[ -z "${merged}" ]]; then
+            merged="${op}"
+        elif [[ ",${merged}," != *",${op},"* ]]; then
+            merged="${merged},${op}"
+        fi
+    done
+    
+    echo "${merged}"
+}
+
 get_changed_ops() {
     local pr_filelist="$1"
     local base_branch="master"
@@ -79,7 +103,7 @@ get_changed_ops() {
             return 1
         fi
         print_msg "Reading changed files from: ${pr_filelist}"
-        changed_files=$(cat "${pr_filelist}" | grep -v '^$' | grep -v '^#' || echo "")
+        changed_files=$(cat "${pr_filelist}" | grep -v '^$' | grep -v '^#' || sed -E 's/^[MADRC][0-9]*[[:space]]+//' || echo "")
     else
         changed_files=$(git diff --name-only "${base_branch}...HEAD" 2>/dev/null || git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
     fi
@@ -116,8 +140,7 @@ download_ops_test_kit() {
 
     if [[ ! -d "${ttk_path}" ]]; then
         print_msg "Downloading ops-test-kit via cmake..."
-        cd "${build_path}"
-        cmake -DDOWNLOAD_OPS_TEST_KIT=ON "${framework_path}" || {
+        (cd "${build_path}" && cmake -DDOWNLOAD_OPS_TEST_KIT=ON "${framework_path}") || {
             print_error "Failed to download ops-test-kit via cmake"
             exit 1
         }
@@ -240,6 +263,26 @@ check_precision_status() {
     return $?
 }
 
+check_plugin_assets() {
+    local plugin_path="$1"
+    local op_name="$2"
+    
+    local assets_path="${plugin_path}/assets"
+    
+    if [[ ! -d "${assets_path}" ]]; then
+        print_warning "assets directory not found for ${op_name}: ${assets_path}"
+        return 1
+    fi
+    
+    local py_files=$(find "${assets_path}" -maxdepth 1 -name "*.py" -type f 2>/dev/null | head -1)
+    if [[ -z "${py_files}" ]]; then
+        print_warning "No .py files found in assets directory for ${op_name}: ${assets_path}"
+        return 1
+    fi
+    
+    return 0
+}
+
 run_kernel_test() {
     local op_name="$1"
     local test_csv="$2"
@@ -255,6 +298,10 @@ run_kernel_test() {
         return 0
     fi
 
+    if ! check_plugin_assets "${ops_test_path}" "${op_name}"; then
+        return 0
+    fi
+
     local testcase_name=$(basename "${test_csv}" .csv)
     if [[ "${test_csv}" == */arch3[0-9]/* || "${test_csv}" == */arch2[0-9]/* ]]; then
         testcase_name="$(basename "$(dirname "${test_csv}")")_${testcase_name}"
@@ -266,7 +313,7 @@ run_kernel_test() {
 
     cd "${ttk_path}"
 
-    local cmd="python3 -m ttk kernel -i ${test_csv} -o ${log_op_dir}/${testcase_name}_result.csv --plugin ${ops_test_path} -c -b=release --pc=8 --warmup=false"
+    local cmd="python3 -m ttk kernel -i ${test_csv} -o ${log_op_dir}/${testcase_name}_result.csv --plugin ${ops_test_path} -c --pc=8 --warmup=false"
     print_msg "Executing: ${cmd}"
 
     local start_time=$(date +%s)
@@ -624,10 +671,19 @@ mkdir -p "${log_path}"
 
 download_ops_test_kit
 
-if [[ -z "${ops_list}" ]]; then
-    print_msg "Extracting ops from git diff or pr_filelist..."
+if [[ -n "${ops_list}" && -z "${pr_filelist}" ]]; then
+    print_msg "Using ops from --ops parameter: ${ops_list}"
+elif [[ -z "${ops_list}" && -n "${pr_filelist}" ]]; then
+    print_msg "Extracting ops from pr_filelist..."
     ops_list=$(get_changed_ops "${pr_filelist}")
-    ops_list=$(echo "${ops_list}" | tr ';' ',')
+elif [[ -n "${ops_list}" && -n "${pr_filelist}" ]]; then
+    print_msg "Merging ops from pr_filelist and --ops parameter..."
+    print_msg "--ops input: ${ops_list}"
+    ops_from_filelist=$(get_changed_ops "${pr_filelist}")
+    ops_list=$(merge_ops_lists "${ops_from_filelist}" "${ops_list}")
+else
+    print_msg "Extracting ops from git diff..."
+    ops_list=$(get_changed_ops)
 fi
 
 if [[ -z "${ops_list}" ]]; then
