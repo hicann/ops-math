@@ -12,7 +12,7 @@
 #include <array>
 #include "gtest/gtest.h"
 
-#include "math/sin/op_api/aclnn_sinc.h"
+#include "math/sinc/op_api/aclnn_sinc.h"
 
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/scalar_desc.h"

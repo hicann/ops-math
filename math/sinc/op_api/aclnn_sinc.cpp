@@ -9,10 +9,10 @@
  */
 
 #include "aclnn_sinc.h"
-#include "sin.h"
+#include "sinc.h"
 #include "math/ones_like/op_api/ones_like.h"
 #include "math/equal/op_api/equal.h"
-#include "math/sinc/op_api/sinc.h"
+#include "math/sin/op_api/sin.h"
 #include "math/select/op_api/select.h"
 #include "math/mul/op_api/mul.h"
 #include "math/real_div/op_api/realdiv.h"

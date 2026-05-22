@@ -1,4 +1,4 @@
-# Sinh
+# Sinc
 
 ## 产品支持情况
 
@@ -66,5 +66,5 @@
 
 | 调用方式 | 调用样例                                              | 说明                                                               |
 |---------|---------------------------------------------------|------------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_sinc](../sin/examples/test_aclnn_sinc.cpp) | 通过[aclnnSinc&aclnnInplaceSinc]( ../sin/docs/aclnnSinc&aclnnInplaceSinc.md)接口方式调用Sinc算子。 |
+| aclnn调用 | [test_aclnn_sinc](./examples/test_aclnn_sinc.cpp) | 通过[aclnnSinc&aclnnInplaceSinc]( ./docs/aclnnSinc&aclnnInplaceSinc.md)接口方式调用Sinc算子。 |
 | 图模式调用 | [test_geir_sinc](./examples/test_geir_sinc.cpp)   | 通过[算子IR](./op_graph/sinc_proto.h)构图方式调用Sinc算子。                   |

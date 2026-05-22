@@ -1667,6 +1667,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/sinc/README.md">sinc</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>对输入Tensor完成sinc运算</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/sinh/README.md">sinh</a></td>
     <td>√</td>
     <td>√</td>
