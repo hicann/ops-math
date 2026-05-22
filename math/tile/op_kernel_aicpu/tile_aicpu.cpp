@@ -15,6 +15,7 @@
 
 #include "Eigen/Core"
 #include "cpu_kernel_utils.h"
+#include "aicpu/math_aicpu_register.h"
 #include "securec.h"
 #include "utils/eigen_tensor.h"
 #include "utils/kernel_util.h"
@@ -484,7 +485,7 @@ uint32_t TileCpuKernel::Compute(CpuKernelContext &ctx) {
   return KERNEL_STATUS_OK;
 }
 
-REGISTER_CPU_KERNEL(kTile, TileCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kTile, TileCpuKernel);
 
 template <typename T>
 void TileCpuKernel::TileCompute3DSharderFirst(const CpuKernelContext &ctx, T *input_x_data, T *output_data,

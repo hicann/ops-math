@@ -244,6 +244,7 @@ function(add_aicpu_host_kernel_modules host_target_name)
       ${host_target_name} PRIVATE
                     _FORTIFY_SOURCE=2
                     google=ascend_private
+                    OPS_MATH_AICPU_HOST_KERNEL
       )
     target_compile_options(
       ${host_target_name} PRIVATE
