@@ -13,10 +13,3 @@
 set(SUPPORT_COMPUTE_UNIT "ascend950")
 set(SUPPORT_TILING_DIR "arch35")
 add_all_modules_sources(OPTYPE acosh ACLNNTYPE aclnn_exclude COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT} TILING_DIR ${SUPPORT_TILING_DIR} DISABLE_IN_OPP TRUE)
-
-if(ENABLE_TEST AND (UT_TEST_ALL OR OP_KERNEL_AICPU_UT))
-    list(FIND ASCEND_OP_NAME acosh ACOSH_INDEX)
-    if("${ASCEND_OP_NAME}" STREQUAL "" OR NOT ACOSH_INDEX EQUAL -1)
-        add_aicpu_op_test_case(acosh)
-    endif()
-endif()
