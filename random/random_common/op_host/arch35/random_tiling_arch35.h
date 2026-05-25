@@ -20,7 +20,16 @@
 #include <string>
 #include <set>
 #include "random/random_common/op_kernel/arch35/random_unified_tiling_data_arch35.h"
+
 namespace optiling {
+
+// Tensor slice state constants for large tensor partitioning
+constexpr uint32_t MAX_TENSOR_DIMS = 8;
+constexpr uint64_t INDEX_32BIT_LIMIT = 2147483647;
+constexpr uint32_t SIMT_THREAD_GROUP_SIZE = 256;
+constexpr uint32_t MAX_THREADS_PER_AIC = 2048;
+constexpr uint32_t AIC_CLUSTER_COUNT = 78;
+constexpr uint32_t MAX_PRNG_COUNTER_INCR = 4;
 
 struct RandomOperatorCompileInfo {
     int64_t totalCoreNum = 0;
@@ -30,6 +39,35 @@ struct RandomOperatorCompileInfo {
 ge::graphStatus ExtractTensorValue(const gert::TilingContext* context, const int64_t constIdx, gert::Shape& constShape);
 
 ge::graphStatus RandomTilingParseArch35(gert::TilingParseContext* context, const std::string& operatorName);
+
+struct TensorSliceState {
+    int64_t shape[MAX_TENSOR_DIMS] = {0};
+    int64_t strides[MAX_TENSOR_DIMS] = {0};
+    int64_t ndim = 0;
+    int64_t numel = 0;
+    int64_t elementSize = 0;
+    int64_t gmOffset = 0;
+
+    int64_t GetMaxOffsetBytes() const;
+    bool Is32bitIndexable() const;
+    int64_t GetDimToSplit() const;
+    void ReduceDimExtent(int64_t dim, int64_t start, int64_t size);
+    void PartitionDim(int64_t dim, TensorSliceState& other);
+};
+
+ge::graphStatus InitTensorSliceState(
+    TensorSliceState& state,
+    const gert::Shape& outputTensor,
+    int64_t outputSize,
+    ge::DataType outputDtype);
+
+ge::graphStatus CalcSplitBlocks(
+    TensorSliceState& state,
+    RandomUnifiedSimtTilingDataStruct& simtTilingData);
+
+ge::graphStatus CalcExecutionPoliciesForBlocks(
+    RandomUnifiedSimtTilingDataStruct& simtTilingData,
+    uint32_t unrollFactor);
 
 // 输入输出Tensor校验规则配置
 struct TensorCheckRule {
@@ -59,7 +97,7 @@ struct OpTilingConfig {
     std::function<ge::graphStatus(gert::TilingContext*, int64_t&, int64_t&)> getSeedAndOffset;
 
     // 启动相关
-    bool isNeedSyncAll;
+    bool isNeedSyncAll = false;
 
     // Dcache相关  默认为0 表示kernel代码没有simtvf
     int64_t DcacheSize = 0;
@@ -67,6 +105,9 @@ struct OpTilingConfig {
     int64_t coreAlignSize = 4;
     int64_t ubAlignSize = 0;
     int64_t keepProbNum = 0;
+    uint32_t unrollFactor = 4;
+    bool enableSplitBlocks = false;
+    uint32_t splitOutputIndex = 0;
 
     RandomKernelMode kernelMode = RandomKernelMode::SIMD;
 };
@@ -77,15 +118,11 @@ public:
     explicit RandomTilingArch35(gert::TilingContext* context, const OpTilingConfig& config);
     virtual ~RandomTilingArch35() = default;
 
-    // 主流程
     ge::graphStatus DoTiling();
 
 protected:
-
-    // 算子需要特殊的tilingData等处理  需要复写该函数
     virtual ge::graphStatus UniqueProcess()
     {
-        // 根据算子特性实现该函数
         return ge::GRAPH_SUCCESS;
     }
 
@@ -101,7 +138,6 @@ protected:
 
     ge::graphStatus CheckTensor(const gert::CompileTimeTensorDesc* tensorDesc, const gert::Shape& tensorShape, const TensorCheckRule& rule, const std::string& tensorName);
 
-    // 成员变量
     gert::TilingContext* context_ = nullptr;
     OpTilingConfig config_;
     RandomUnifiedTilingDataStruct tilingData_;
@@ -114,5 +150,6 @@ protected:
     uint64_t workspaceSize_ = 0;
     int64_t bufNum_= 0;
 };
+
 } // namespace optiling
 #endif // RANDOM_TILING_ARCH35_H

@@ -20,9 +20,169 @@
 #include "util/math_util.h"
 #include "op_common/op_host/util/platform_util.h"
 #include "random_tiling_base.h"
+#include "random_tiling_arch35.h"
+#include <cstdlib>
 
 namespace optiling {
 static constexpr int64_t MIN_CORE_PRO = 256;
+
+int64_t TensorSliceState::GetMaxOffsetBytes() const
+{
+    int64_t maxOffsetBytes = elementSize;
+    for (int64_t dim = 0; dim < ndim; dim++) {
+        maxOffsetBytes += (shape[dim] - 1) * strides[dim] * elementSize;
+    }
+    return maxOffsetBytes;
+}
+
+bool TensorSliceState::Is32bitIndexable() const
+{
+    int64_t maxValue = static_cast<int64_t>(INDEX_32BIT_LIMIT);
+    if (numel > maxValue)
+        return false;
+    if (GetMaxOffsetBytes() > maxValue)
+        return false;
+    return true;
+}
+
+int64_t TensorSliceState::GetDimToSplit() const
+{
+    int64_t maxExtent = -1, dimToSplit = -1;
+    for (int64_t dim = ndim - 1; dim >= 0; dim--) {
+        if (shape[dim] == 0)
+            continue;
+        int64_t extent = (shape[dim] - 1) * std::abs(strides[dim]) * elementSize;
+        if (extent > maxExtent) {
+            maxExtent = extent;
+            dimToSplit = dim;
+        }
+    }
+    return dimToSplit;
+}
+
+void TensorSliceState::ReduceDimExtent(int64_t dim, int64_t start, int64_t size)
+{
+    gmOffset += start * strides[dim];
+    shape[dim] = size;
+    numel = 1;
+    for (int64_t d = 0; d < ndim; d++)
+        numel *= shape[d];
+}
+
+void TensorSliceState::PartitionDim(int64_t dim, TensorSliceState& other)
+{
+    int64_t copySize = shape[dim] / 2;
+    int64_t thisSize = shape[dim] - copySize;
+    for (int64_t d = 0; d < ndim; d++) {
+        other.shape[d] = shape[d];
+        other.strides[d] = strides[d];
+    }
+    other.ndim = ndim;
+    other.elementSize = elementSize;
+    other.gmOffset = gmOffset;
+    other.ReduceDimExtent(dim, 0, copySize);
+    ReduceDimExtent(dim, copySize, thisSize);
+}
+
+ge::graphStatus InitTensorSliceState(
+    TensorSliceState& state, const gert::Shape& outputTensor, int64_t outputSize, ge::DataType outputDtype)
+{
+    state.ndim = static_cast<int64_t>(outputTensor.GetDimNum());
+    state.numel = outputSize;
+    state.gmOffset = 0;
+    state.elementSize = ge::GetSizeByDataType(outputDtype);
+
+    for (int64_t dim = 0; dim < state.ndim && dim < MAX_TENSOR_DIMS; dim++) {
+        state.shape[dim] = outputTensor.GetDim(static_cast<size_t>(dim));
+    }
+
+    if (state.ndim > 0) {
+        state.strides[state.ndim - 1] = 1;
+        for (int64_t dim = state.ndim - 2; dim >= 0; dim--) {
+            state.strides[dim] = state.shape[dim + 1] * state.strides[dim + 1];
+        }
+    }
+
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus CalcSplitBlocks(TensorSliceState& state, RandomUnifiedSimtTilingDataStruct& simtTilingData)
+{
+    state.gmOffset = 0;
+    simtTilingData.splitBlockCount = 0;
+
+    if (state.Is32bitIndexable()) {
+        simtTilingData.splitBlocks[0].numel = state.numel;
+        simtTilingData.splitBlocks[0].gmOffset = state.gmOffset;
+        simtTilingData.splitBlockCount = 1;
+    } else {
+        TensorSliceState stack[MAX_SPLIT_BLOCKS];
+        int32_t top = 0;
+        stack[top++] = state;
+
+        while (top > 0 && simtTilingData.splitBlockCount < MAX_SPLIT_BLOCKS) {
+            TensorSliceState cur = stack[--top];
+
+            if (cur.Is32bitIndexable()) {
+                int64_t blockIdx = simtTilingData.splitBlockCount;
+                simtTilingData.splitBlocks[blockIdx].numel = cur.numel;
+                simtTilingData.splitBlocks[blockIdx].gmOffset = cur.gmOffset;
+                simtTilingData.splitBlockCount++;
+            } else {
+                int64_t dim = cur.GetDimToSplit();
+                TensorSliceState other;
+                cur.PartitionDim(dim, other);
+                if (static_cast<int32_t>(MAX_SPLIT_BLOCKS) - top < 2) {
+                    return ge::GRAPH_FAILED;
+                }
+                stack[top++] = cur;
+                stack[top++] = other;
+            }
+        }
+    }
+
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus CalcExecutionPoliciesForBlocks(RandomUnifiedSimtTilingDataStruct& simtTilingData, uint32_t unrollFactor)
+{
+    int64_t accumulatedOffset = simtTilingData.offset;
+
+    if (simtTilingData.splitBlockCount > 1) {
+        int64_t totalNumel = simtTilingData.outputSize;
+        int64_t grid = (totalNumel + SIMT_THREAD_GROUP_SIZE - 1) / SIMT_THREAD_GROUP_SIZE;
+        int64_t blocksPerAic = MAX_THREADS_PER_AIC / SIMT_THREAD_GROUP_SIZE;
+        grid = (AIC_CLUSTER_COUNT * blocksPerAic < grid) ? AIC_CLUSTER_COUNT * blocksPerAic : grid;
+
+        int64_t totalThreads = grid * SIMT_THREAD_GROUP_SIZE;
+        int64_t threadsPerRound = totalThreads * unrollFactor;
+        int64_t roundsNeeded = (totalNumel + threadsPerRound - 1) / threadsPerRound;
+        int64_t counterOffset = roundsNeeded * MAX_PRNG_COUNTER_INCR;
+
+        accumulatedOffset += counterOffset;
+    }
+
+    for (int64_t i = 0; i < simtTilingData.splitBlockCount; i++) {
+        int64_t numel = simtTilingData.splitBlocks[i].numel;
+
+        int64_t grid = (numel + SIMT_THREAD_GROUP_SIZE - 1) / SIMT_THREAD_GROUP_SIZE;
+        int64_t blocksPerAic = MAX_THREADS_PER_AIC / SIMT_THREAD_GROUP_SIZE;
+        grid = (AIC_CLUSTER_COUNT * blocksPerAic < grid) ? AIC_CLUSTER_COUNT * blocksPerAic : grid;
+
+        int64_t totalThreads = grid * SIMT_THREAD_GROUP_SIZE;
+        int64_t threadsPerRound = totalThreads * unrollFactor;
+        int64_t roundsNeeded = (numel + threadsPerRound - 1) / threadsPerRound;
+        int64_t counterOffset = roundsNeeded * MAX_PRNG_COUNTER_INCR;
+
+        simtTilingData.splitBlocks[i].kernelOffset = accumulatedOffset;
+        simtTilingData.splitBlocks[i].grid = grid;
+        simtTilingData.splitBlocks[i].totalThreads = totalThreads;
+
+        accumulatedOffset += counterOffset;
+    }
+
+    return ge::GRAPH_SUCCESS;
+}
 
 ge::graphStatus RandomTilingParseArch35(gert::TilingParseContext* context, const std::string& operatorName)
 {
@@ -111,8 +271,7 @@ ge::graphStatus RandomTilingArch35::DoTiling()
     }
 
     // 步骤3： 填充TilingData
-    ret = config_.kernelMode == RandomKernelMode::SIMD ?
-        FillUnifiedTilingData() : FillUnifiedSimtTilingData();
+    ret = config_.kernelMode == RandomKernelMode::SIMD ? FillUnifiedTilingData() : FillUnifiedSimtTilingData();
     if (ret != ge::GRAPH_SUCCESS) {
         OP_LOGE(opName_, "Fill tiling data failed");
         return ret;
@@ -140,8 +299,10 @@ ge::graphStatus RandomTilingArch35::DoTiling()
     }
 
     // 步骤7：调用dump函数
-    OP_LOGI("RandomTiling", "%s", (config_.kernelMode == RandomKernelMode::SIMD ?
-        tilingData_.DumpTilingInfo() : simtTilingData_.DumpTilingInfo()).c_str());
+    OP_LOGI(
+        "RandomTiling", "%s",
+        (config_.kernelMode == RandomKernelMode::SIMD ? tilingData_.DumpTilingInfo() : simtTilingData_.DumpTilingInfo())
+            .c_str());
     OP_LOGD(opName_, "Tiling success for op: %s", opName_);
     return ge::GRAPH_SUCCESS;
 }
@@ -218,31 +379,6 @@ ge::graphStatus RandomTilingArch35::GetPlatformInfo()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus RandomTilingArch35::FillUnifiedSimtTilingData()
-{
-    // 1. 调用算子回调函数
-    auto ret = config_.getOutputSize(context_, simtTilingData_.outputSize);
-    if (ret != ge::GRAPH_SUCCESS) {
-        return ret;
-    }
-
-    OP_CHECK_IF(
-        (simtTilingData_.outputSize < 0), OP_LOGE(opName_, "outputSize is less than 0. please check."),
-        return ge::GRAPH_FAILED);
-    ret = config_.getSeedAndOffset(context_, simtTilingData_.seed, simtTilingData_.offset);
-    if (ret != ge::GRAPH_SUCCESS) {
-        return ret;
-    }
-
-    // 2. 通用分核计算
-    ret = DoSimtBlockTiling();
-    if (ret != ge::GRAPH_SUCCESS) {
-        return ret;
-    }
-
-    return ge::GRAPH_SUCCESS;
-}
-
 ge::graphStatus RandomTilingArch35::DoSimtBlockTiling()
 {
     OP_CHECK_IF(
@@ -256,6 +392,51 @@ ge::graphStatus RandomTilingArch35::DoSimtBlockTiling()
     int64_t numOfPerCore = Ops::Base::CeilAlign(avgPerCore, config_.coreAlignSize);
     int64_t usedCoreNum = Ops::Base::CeilDiv(simtTilingData_.outputSize, numOfPerCore);
     simtTilingData_.usedCoreNum = std::min(totalCoreNum_, usedCoreNum);
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus RandomTilingArch35::FillUnifiedSimtTilingData()
+{
+    auto ret = config_.getOutputSize(context_, simtTilingData_.outputSize);
+    if (ret != ge::GRAPH_SUCCESS) {
+        return ret;
+    }
+
+    OP_CHECK_IF(
+        (simtTilingData_.outputSize < 0), OP_LOGE(opName_, "outputSize is less than 0. please check."),
+        return ge::GRAPH_FAILED);
+    ret = config_.getSeedAndOffset(context_, simtTilingData_.seed, simtTilingData_.offset);
+    if (ret != ge::GRAPH_SUCCESS) {
+        return ret;
+    }
+
+    ret = DoSimtBlockTiling();
+    if (ret != ge::GRAPH_SUCCESS) {
+        return ret;
+    }
+
+    if (config_.enableSplitBlocks) {
+        auto outputShape = context_->GetOutputShape(config_.splitOutputIndex);
+        OP_CHECK_NULL_WITH_CONTEXT(context_, outputShape);
+        auto outputTensor = outputShape->GetStorageShape();
+        auto outputDesc = context_->GetOutputDesc(config_.splitOutputIndex);
+        OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
+        auto outputDtype = outputDesc->GetDataType();
+
+        TensorSliceState state;
+        InitTensorSliceState(state, outputTensor, simtTilingData_.outputSize, outputDtype);
+
+        ret = CalcSplitBlocks(state, simtTilingData_);
+        if (ret != ge::GRAPH_SUCCESS) {
+            return ret;
+        }
+
+        ret = CalcExecutionPoliciesForBlocks(simtTilingData_, config_.unrollFactor);
+        if (ret != ge::GRAPH_SUCCESS) {
+            return ret;
+        }
+    }
+
     return ge::GRAPH_SUCCESS;
 }
 
@@ -323,7 +504,8 @@ ge::graphStatus RandomTilingArch35::DoUbTiling()
     tilingData_.singleBufferSize = ubSize_ / bufNum_;
     if (config_.ubAlignSize == 0) {
         auto ubBlockSize = Ops::Base::GetUbBlockSize(context_);
-        OP_CHECK_IF((ubBlockSize == 0), OP_LOGE(opName_, "ubBlockSize is equal to 0. please check."), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(
+            (ubBlockSize == 0), OP_LOGE(opName_, "ubBlockSize is equal to 0. please check."), return ge::GRAPH_FAILED);
         tilingData_.singleBufferSize = tilingData_.singleBufferSize / ubBlockSize * ubBlockSize;
     } else {
         tilingData_.singleBufferSize = tilingData_.singleBufferSize / config_.ubAlignSize * config_.ubAlignSize;
@@ -347,8 +529,8 @@ ge::graphStatus RandomTilingArch35::WriteBackToContext()
     workspaces[0] = workspaceSize_;
 
     // 写入启动核数
-    context_->SetBlockDim(config_.kernelMode == RandomKernelMode::SIMD ?
-        tilingData_.usedCoreNum : simtTilingData_.usedCoreNum);
+    context_->SetBlockDim(
+        config_.kernelMode == RandomKernelMode::SIMD ? tilingData_.usedCoreNum : simtTilingData_.usedCoreNum);
 
     // 设置多核启动关系
     context_->SetScheduleMode(config_.isNeedSyncAll);

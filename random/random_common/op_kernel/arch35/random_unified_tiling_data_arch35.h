@@ -31,24 +31,30 @@ public:
     float keepProb = 0;
     uint32_t reserved = 0;
     uint32_t v3KernelMode = 0;
-    
-    std::string DumpTilingInfo() const {
+
+    std::string DumpTilingInfo() const
+    {
         std::ostringstream info;
         info << "[RandomUnifiedTilingData] "
-            << "usedCoreNum: " << usedCoreNum
-            << ", normalCoreProNum: " << normalCoreProNum
-            << ", tailCoreProNum: " << tailCoreProNum
-            << ", singleBufferSize: " << singleBufferSize
-            << ", key: [" << key[0] << ", " << key[1] << "]"
-            << ", counter: [" << counter[0] << ", " << counter[1]
-            << ", " << counter[2] << ", " << counter[3] << "]"
-            << ", outputSize: " << outputSize
-            << ", probTensorSize: " << probTensorSize
-            << ", sharedTmpBufSize: " << sharedTmpBufSize
-            << ", keepProb: " << keepProb
-            << ", v3KernelMode: " << v3KernelMode;
+             << "usedCoreNum: " << usedCoreNum << ", normalCoreProNum: " << normalCoreProNum
+             << ", tailCoreProNum: " << tailCoreProNum << ", singleBufferSize: " << singleBufferSize << ", key: ["
+             << key[0] << ", " << key[1] << "]"
+             << ", counter: [" << counter[0] << ", " << counter[1] << ", " << counter[2] << ", " << counter[3] << "]"
+             << ", outputSize: " << outputSize << ", probTensorSize: " << probTensorSize
+             << ", sharedTmpBufSize: " << sharedTmpBufSize << ", keepProb: " << keepProb
+             << ", v3KernelMode: " << v3KernelMode;
         return info.str();
     }
+};
+
+constexpr uint32_t MAX_SPLIT_BLOCKS = 8;
+
+struct SplitBlockInfo {
+    int64_t numel = 0;
+    int64_t gmOffset = 0;
+    int64_t grid = 0;
+    int64_t totalThreads = 0;
+    int64_t kernelOffset = 0;
 };
 
 class RandomUnifiedSimtTilingDataStruct {
@@ -58,21 +64,29 @@ public:
     int64_t seed = 0;
     int64_t offset = 0;
     int64_t ubSize = 0;
-    int64_t extraInt64Param1 = 0; // 扩展字段：供需要额外参数的算子使用
+    int64_t extraInt64Param1 = 0;
     float prob = 0;
-    float extraFloat32Param1 = 0; // 扩展字段：供需要额外参数的算子使用
+    float extraFloat32Param1 = 0;
 
-    std::string DumpTilingInfo() const {
+    int64_t splitBlockCount = 0;
+    SplitBlockInfo splitBlocks[MAX_SPLIT_BLOCKS];
+
+    std::string DumpTilingInfo() const
+    {
         std::ostringstream info;
         info << "[RandomUnifiedSimtTilingData] "
-            << "usedCoreNum: " << usedCoreNum
-            << ", outputSize: " << outputSize
-            << ", seed: " << seed
-            << ", offset: " << offset
-            << ", ubSize: " << ubSize
-            << ", extraInt64Param1: " << extraInt64Param1
-            << ", prob: " << prob
-            << ", extraFloat32Param1: " << extraFloat32Param1;
+             << "usedCoreNum: " << usedCoreNum << ", outputSize: " << outputSize << ", seed: " << seed
+             << ", offset: " << offset << ", ubSize: " << ubSize << ", extraInt64Param1: " << extraInt64Param1
+             << ", prob: " << prob << ", extraFloat32Param1: " << extraFloat32Param1
+             << ", splitBlockCount: " << splitBlockCount << ", splitBlocks: [";
+        for (int64_t i = 0; i < splitBlockCount && i < MAX_SPLIT_BLOCKS; i++) {
+            info << "{numel:" << splitBlocks[i].numel << ", gmOffset:" << splitBlocks[i].gmOffset
+                 << ", grid:" << splitBlocks[i].grid << ", totalThreads:" << splitBlocks[i].totalThreads
+                 << ", kernelOffset:" << splitBlocks[i].kernelOffset << "}";
+            if (i < splitBlockCount - 1)
+                info << ", ";
+        }
+        info << "]";
         return info.str();
     }
 };

@@ -312,8 +312,9 @@ __aicore__ inline void BoxMullerMulSIMD(
 }
 
 // Box-Muller transform
-__simt_callee__ __aicore__ inline void BoxMullerFloat(float u1, const float u2, float* z0, float* z1) {
-    const float eps = 1.0e-7f; 
+__simt_callee__ __aicore__ inline void BoxMullerFloat(float u1, const float u2, float* z0, float* z1)
+{
+    const float eps = 1.0e-7f;
     if (u1 < eps) {
         u1 = eps;
     }
@@ -327,21 +328,24 @@ __simt_callee__ __aicore__ inline void BoxMullerFloat(float u1, const float u2, 
 template <uint16_t COPY_SIZE>
 __simt_callee__ __aicore__ inline void CopyArray(uint32_t* dst, const uint32_t* src)
 {
-    #pragma unroll
-    for (uint16_t i =0; i < COPY_SIZE; i++) {
+#pragma unroll
+    for (uint16_t i = 0; i < COPY_SIZE; i++) {
         dst[i] = src[i];
     }
 }
 
- __simt_callee__ __aicore__ inline void SkipOne(uint32_t* counter)
+__simt_callee__ __aicore__ inline void SkipOne(uint32_t* counter)
 {
-    if(++counter[0]) return;
-    if(++counter[1]) return;
-    if(++counter[IDX_2]) return;
+    if (++counter[0])
+        return;
+    if (++counter[1])
+        return;
+    if (++counter[IDX_2])
+        return;
     ++counter[IDX_3];
 }
 
- __simt_callee__ __aicore__ inline void SkipLo(uint32_t* counter, uint64_t n)
+__simt_callee__ __aicore__ inline void SkipLo(uint32_t* counter, uint64_t n)
 {
     const uint32_t nlo = static_cast<uint32_t>(n);
     uint32_t nhi = static_cast<uint32_t>(n >> RIGHT_SHIFT);
@@ -351,16 +355,17 @@ __simt_callee__ __aicore__ inline void CopyArray(uint32_t* dst, const uint32_t* 
         nhi++;
     }
     counter[1] += nhi;
-    if (nhi <= counter[1]) 
+    if (nhi <= counter[1])
         return;
-    if (++counter[IDX_2]) return;
+    if (++counter[IDX_2])
+        return;
     ++counter[IDX_3];
 }
 
- __simt_callee__ __aicore__ inline void SkipHi(uint32_t* counter, uint64_t n)
+__simt_callee__ __aicore__ inline void SkipHi(uint32_t* counter, uint64_t n)
 {
     const uint32_t countLo = static_cast<uint32_t>(n);
-        uint32_t countHi = static_cast<uint32_t>(n >> RIGHT_SHIFT);
+    uint32_t countHi = static_cast<uint32_t>(n >> RIGHT_SHIFT);
 
     counter[IDX_2] += countLo;
     if (counter[IDX_2] < countLo) {
@@ -369,29 +374,30 @@ __simt_callee__ __aicore__ inline void CopyArray(uint32_t* dst, const uint32_t* 
     counter[IDX_3] += countHi;
 }
 
- __simt_callee__ __aicore__ inline void FlashCounter(uint64_t globalThreadIdx, uint64_t offset, uint32_t* counter)
- {
+__simt_callee__ __aicore__ inline void FlashCounter(uint64_t globalThreadIdx, uint64_t offset, uint32_t* counter)
+{
     SkipHi(counter, globalThreadIdx);
     SkipLo(counter, offset);
- }
+}
 
- __simt_callee__ __aicore__ inline void PhiloxAlgParsInit(uint32_t* key, uint32_t* counter, int64_t seed, int64_t offset)
- {
+__simt_callee__ __aicore__ inline void PhiloxAlgParsInit(uint32_t* key, uint32_t* counter, int64_t seed, int64_t offset)
+{
     key[0] = static_cast<uint32_t>(seed);
     key[1] = static_cast<uint32_t>(seed >> RIGHT_SHIFT);
 
     offset = (offset + VEC_4 - 1) / VEC_4;
     SkipLo(counter, offset);
- }
+}
 
- __simt_callee__ __aicore__ inline void MultiplyHighLow(uint32_t a, uint32_t b, uint32_t* resultLow, uint32_t* resultHigh)
+__simt_callee__ __aicore__ inline void MultiplyHighLow(
+    uint32_t a, uint32_t b, uint32_t* resultLow, uint32_t* resultHigh)
 {
     const uint64_t product = static_cast<uint64_t>(a) * b;
     *resultLow = static_cast<uint32_t>(product);
     *resultHigh = static_cast<uint32_t>(product >> RIGHT_SHIFT);
 }
 
- __simt_callee__ __aicore__ inline void Philox4x32Round(uint32_t* counter, const uint32_t* key)
+__simt_callee__ __aicore__ inline void Philox4x32Round(uint32_t* counter, const uint32_t* key)
 {
     uint32_t lo0;
     uint32_t hi0;
@@ -410,7 +416,7 @@ __simt_callee__ __aicore__ inline void CopyArray(uint32_t* dst, const uint32_t* 
     CopyArray<ALG_COUNTER_SIZE>(counter, result);
 }
 
- __simt_callee__ __aicore__ inline void KeyInc(uint32_t* key)
+__simt_callee__ __aicore__ inline void KeyInc(uint32_t* key)
 {
     key[0] += PHILOX_W32_A;
     key[1] += PHILOX_W32_B;
@@ -424,49 +430,52 @@ __simt_callee__ __aicore__ inline void PhiloxRandomSimt(const uint32_t* key, con
     CopyArray<ALG_KEY_SIZE>(keyTmp, key);
     CopyArray<ALG_COUNTER_SIZE>(counterTmp, counter);
 
-    Philox4x32Round(counterTmp, keyTmp);  // 1
+    Philox4x32Round(counterTmp, keyTmp); // 1
     KeyInc(keyTmp);
-    Philox4x32Round(counterTmp, keyTmp);  // 2
+    Philox4x32Round(counterTmp, keyTmp); // 2
     KeyInc(keyTmp);
-    Philox4x32Round(counterTmp, keyTmp);  // 3
+    Philox4x32Round(counterTmp, keyTmp); // 3
     KeyInc(keyTmp);
-    Philox4x32Round(counterTmp, keyTmp);  // 4
+    Philox4x32Round(counterTmp, keyTmp); // 4
     KeyInc(keyTmp);
-    Philox4x32Round(counterTmp, keyTmp);  // 5
+    Philox4x32Round(counterTmp, keyTmp); // 5
     KeyInc(keyTmp);
-    Philox4x32Round(counterTmp, keyTmp);  // 6
+    Philox4x32Round(counterTmp, keyTmp); // 6
     KeyInc(keyTmp);
-    Philox4x32Round(counterTmp, keyTmp);  // 7
+    Philox4x32Round(counterTmp, keyTmp); // 7
     KeyInc(keyTmp);
-    Philox4x32Round(counterTmp, keyTmp);  // 8
+    Philox4x32Round(counterTmp, keyTmp); // 8
     KeyInc(keyTmp);
-    Philox4x32Round(counterTmp, keyTmp);  // 9
+    Philox4x32Round(counterTmp, keyTmp); // 9
     KeyInc(keyTmp);
-    Philox4x32Round(counterTmp, keyTmp);  // 10
+    Philox4x32Round(counterTmp, keyTmp); // 10
     CopyArray<ALG_COUNTER_SIZE>(results, counterTmp);
 }
 
 // 算法内部在迭代时使用临时变量，不会修改传入的key 和 counter
- __simt_callee__ __aicore__ inline void PhiloxRandomSimt(const uint32_t* key, const uint32_t* counter, float* results)
+__simt_callee__ __aicore__ inline void PhiloxRandomSimt(const uint32_t* key, const uint32_t* counter, float* results)
 {
     uint32_t resultU32[ALG_COUNTER_SIZE];
     PhiloxRandomSimt(key, counter, resultU32);
-    #pragma unroll
-    for (uint16_t i =0; i < ALG_COUNTER_SIZE; i++) {
+#pragma unroll
+    for (uint16_t i = 0; i < ALG_COUNTER_SIZE; i++) {
         results[i] = resultU32[i] * RAND_2POW32_INV + RAND_2POW32_INV_HALF;
     }
 }
 
 // 除数 (gridDimx * blockDim) 使用uint64快除接口， 提升性能
 template <int32_t STEP, int32_t ARANGE_MODE>
- __simt_callee__ __aicore__ inline void ThreadMappingAndSkip(uint64_t idx, uint32_t* counter, uint64_t magic, uint64_t shift , uint64_t totalThreads)
-{   
-    static_assert(!(ARANGE_MODE == DIS_CONTINUOUS_USE && STEP != VEC_4),"When ARANGE_MODE is DIS_CONTINUOUS_USE, STEP must be 4");
-    uint64_t idxTmp = idx / STEP; 
+__simt_callee__ __aicore__ inline void ThreadMappingAndSkip(
+    uint64_t idx, uint32_t* counter, uint64_t magic, uint64_t shift, uint64_t totalThreads)
+{
+    static_assert(
+        !(ARANGE_MODE == DIS_CONTINUOUS_USE && STEP != VEC_4),
+        "When ARANGE_MODE is DIS_CONTINUOUS_USE, STEP must be 4");
+    uint64_t idxTmp = idx / STEP;
     uint64_t globalThreadIdx = 0;
     uint64_t repeat = Simt::UintDiv(idxTmp, magic, shift);
     // 排列方式 0000 1111 ...0000 1111
-    if constexpr(ARANGE_MODE == CONTINUOUS_USE) {
+    if constexpr (ARANGE_MODE == CONTINUOUS_USE) {
         globalThreadIdx = idxTmp - repeat * totalThreads;
     } else {
         // 排列方式 0123 4567 ... 0123 4567 ...
@@ -474,7 +483,7 @@ template <int32_t STEP, int32_t ARANGE_MODE>
         globalThreadIdx = idx - repeatTmp * totalThreads;
     }
     // DIS_CONTINUOUS_USE模式下 STEP一定要求是4
-    if constexpr(STEP == VEC_8 || STEP == VEC_16) {
+    if constexpr (STEP == VEC_8 || STEP == VEC_16) {
         repeat = repeat * (STEP / VEC_4) + (idx / VEC_4 % (STEP / VEC_4));
     }
 
@@ -514,8 +523,7 @@ template <int32_t STEP, int32_t ARANGE_MODE>
             PhiloxRandomSimt(key, counterTmp, results);
             // 使用results 对非连续的4个索引做操作，stride为totalThreads
          }
-*/ 
-
+*/
 
 class RandomKernelBaseOp {
 public:
@@ -584,8 +592,153 @@ __aicore__ inline void RandomKernelBaseOp::Skip(const uint64_t count)
 __aicore__ inline void RandomKernelBaseOp::GenRandomSIMD(LocalTensor<uint32_t> randomLocal, const uint64_t count)
 {
     constexpr uint16_t kPhiloxRounds = 10;
-    PhiloxRandom<kPhiloxRounds>(randomLocal, {key_[0], key_[1]}, {counter_[0], counter_[1], counter_[2], counter_[3]}, count);
+    PhiloxRandom<kPhiloxRounds>(
+        randomLocal, {key_[0], key_[1]}, {counter_[0], counter_[1], counter_[2], counter_[3]}, count);
+}
+
+constexpr uint32_t SIMT_STEP = 4;
+constexpr uint32_t DEFAULT_SIMT_THREAD_NUM = 512;
+
+struct ExecutionPolicyKernel {
+    uint64_t magic;
+    uint64_t shift;
+};
+
+template <typename T, typename TransformFunc, uint32_t ThreadNum = DEFAULT_SIMT_THREAD_NUM, uint32_t Vec = SIMT_STEP>
+__simt_vf__ __aicore__ LAUNCH_BOUND(ThreadNum) inline void PhiloxSimtKernelContinuous(
+    __gm__ volatile T* outputGm, int64_t offset, int64_t seed, uint64_t outputSize, uint64_t magic, uint64_t shift,
+    uint64_t totalThreads, TransformFunc transform)
+{
+    uint32_t key[ALG_KEY_SIZE] = {0, 0};
+    uint32_t counter[ALG_COUNTER_SIZE] = {0, 0, 0, 0};
+    PhiloxAlgParsInit(key, counter, seed, offset);
+
+    uint64_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+    uint32_t randRounds = (Vec + SIMT_STEP - 1) / SIMT_STEP;
+    uint32_t resultsAll[16] = {0U};
+
+    for (uint64_t i = idx * Vec; i < outputSize; i += blockDim.x * gridDim.x * Vec) {
+        for (uint32_t randIdx = 0; randIdx < randRounds; randIdx++) {
+            uint32_t counterTmp[ALG_COUNTER_SIZE] = {0, 0, 0, 0};
+            CopyArray<ALG_COUNTER_SIZE>(counterTmp, counter);
+
+            ThreadMappingAndSkip<Vec, CONTINUOUS_USE>(i + randIdx * SIMT_STEP, counterTmp, magic, shift, totalThreads);
+
+            uint32_t results[SIMT_STEP];
+            PhiloxRandomSimt(key, counterTmp, results);
+            for (uint32_t j = 0; j < SIMT_STEP && randIdx * SIMT_STEP + j < Vec; j++) {
+                resultsAll[randIdx * SIMT_STEP + j] = results[j];
+            }
+        }
+
+        for (uint32_t j = 0; j < Vec; j++) {
+            uint64_t li = i + j;
+            if (li < outputSize) {
+                transform(outputGm, li, resultsAll, j);
+            }
+        }
+    }
+}
+
+template <typename T, typename TransformFunc, uint32_t ThreadNum = DEFAULT_SIMT_THREAD_NUM, uint32_t UNROLL = 4>
+__simt_vf__ __aicore__ LAUNCH_BOUND(ThreadNum) inline void PhiloxSimtKernelDiscontinuous(
+    __gm__ volatile T* outputGm, int64_t offset, int64_t seed, uint64_t outputSize, uint64_t magic, uint64_t shift,
+    uint64_t totalThreads, TransformFunc transform)
+{
+    uint32_t key[ALG_KEY_SIZE] = {0, 0};
+    uint32_t counter[ALG_COUNTER_SIZE] = {0, 0, 0, 0};
+    PhiloxAlgParsInit(key, counter, seed, offset);
+
+    uint64_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+    uint64_t repeatTime = (outputSize + totalThreads * UNROLL - 1) / (totalThreads * UNROLL);
+
+    for (uint64_t loopIdx = 0; loopIdx < repeatTime; loopIdx++) {
+        for (uint64_t linearIndex = idx; linearIndex < totalThreads; linearIndex += blockDim.x * gridDim.x) {
+            uint32_t counterTmp[ALG_COUNTER_SIZE] = {0, 0, 0, 0};
+            CopyArray<ALG_COUNTER_SIZE>(counterTmp, counter);
+
+            FlashCounter(linearIndex, loopIdx, counterTmp);
+
+            uint32_t results[SIMT_STEP];
+            PhiloxRandomSimt(key, counterTmp, results);
+            for (uint32_t iStep = 0; iStep < UNROLL; iStep++) {
+                uint64_t li = linearIndex + loopIdx * totalThreads * UNROLL + totalThreads * iStep;
+                if (li < outputSize) {
+                    transform(outputGm, li, results, iStep, SIMT_STEP / UNROLL);
+                }
+            }
+        }
+    }
+}
+
+template <typename Launcher>
+__aicore__ inline void ProcessWithSplitBlocks(
+    const RandomUnifiedSimtTilingDataStruct* __restrict tilingData, Launcher& launcher)
+{
+    for (int64_t blockIdx = 0; blockIdx < tilingData->splitBlockCount; blockIdx++) {
+        const SplitBlockInfo& block = tilingData->splitBlocks[blockIdx];
+
+        ExecutionPolicyKernel policy;
+        GetUintDivMagicAndShift(policy.magic, policy.shift, static_cast<uint64_t>(block.totalThreads));
+
+        launcher(policy, block.gmOffset, block.kernelOffset, block.numel, block.grid, block.totalThreads);
+    }
 }
 
 } // namespace RandomKernelBase
-#endif 
+
+/*
+ * 其他算子接入SIMT Kernel模板说明：
+ *
+ * 1. Tiling侧配置：
+ *    OpTilingConfig config;
+ *    config.kernelMode = RandomKernelMode::SIMT;
+ *    config.enableSplitBlocks = true;
+ *
+ * 2. Kernel侧定义TransformFunc：
+ *    template <typename T>
+ *    struct MyTransform {
+ *        float param_;
+ *        __aicore__ MyTransform(float param) : param_(param) {}
+ *        __simt_callee__ __aicore__ inline void operator()(
+ *            __gm__ volatile T* outputGm, uint64_t li, const uint32_t* results, uint32_t iStep,
+ *            [[maybe_unused]] uint32_t randPerOutput = 1)
+ *        {
+ *            // results[iStep] 是 uint32 随机数，需自行转换为 float
+ *            float u = results[iStep] * RAND_2POW32_INV + RAND_2POW32_INV_HALF;
+ *            float val = logf(u);
+ *            outputGm[li] = static_cast<T>(val * param_);
+ *        }
+ *    };
+ *
+ * 3. TransformFunc 参数说明：
+ *    - outputGm: 输出 Global Memory 地址
+ *    - li: 当前写入的线性索引
+ *    - results: Philox 生成的 uint32 随机数数组（大小为 SIMT_STEP=4）
+ *    - iStep: 当前处理的元素索引（0 ~ UNROLL-1）
+ *    - randPerOutput: 每个输出消耗的 Philox 输出数量（SIMT_STEP/UNROLL，默认=1）
+ *
+ * 4. 调用模板：
+ *    AscendC::Simt::VF_CALL<PhiloxSimtKernelDiscontinuous<T, MyTransform<T>>>(
+ *        AscendC::Simt::Dim3(DEFAULT_SIMT_THREAD_NUM),
+ *        outputGm, kernelOffset, seed, numel,
+ *        policy.magic, policy.shift, totalThreads, transform);
+ *
+ * 5. 切分执行（如果 enableSplitBlocks=true）：
+ *    struct MyLauncher {
+ *        __aicore__ inline void operator()(
+ *            const ExecutionPolicyKernel& policy, int64_t gmOffset, int64_t kernelOffset,
+ *            int64_t numel, int64_t grid, int64_t totalThreads)
+ *        {
+ *            __gm__ volatile T* gmPtr = (__gm__ volatile T*)baseAddr + gmOffset;
+ *            MyTransform<T> transform(param);
+ *            AscendC::Simt::VF_CALL<PhiloxSimtKernelDiscontinuous<T, MyTransform<T>>>(
+ *                AscendC::Simt::Dim3(DEFAULT_SIMT_THREAD_NUM),
+ *                gmPtr, kernelOffset, seed, numel,
+ *                policy.magic, policy.shift, totalThreads, transform);
+ *        }
+ *    };
+ *    ProcessWithSplitBlocks(tilingData, launcher);
+ */
+
+#endif
