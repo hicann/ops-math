@@ -72,7 +72,7 @@ __aicore__ inline void KernelTransDataTo5HD<T>::Init(GM_ADDR x, GM_ADDR y, const
     blockIdx_ = GetBlockIdx();
     srcGlobal.SetGlobalBuffer((__gm__ T*)x);
     dstGlobal.SetGlobalBuffer((__gm__ T*)y);
-    fullCoreNum = (tiling_->UsedCoreNum - 1 <= 0) ? 1 : tiling_->UsedCoreNum - 1;
+    fullCoreNum = tiling_->UsedCoreNum - 1;
     loopCount = (blockIdx_ <= fullCoreNum - 1) ? tiling_->MainCoreLoopCount : tiling_->TailCoreLoopCount;
     isRsplit = tiling_->IsRSplit;
     isRCSplit = tiling_->IsRCSplit;
