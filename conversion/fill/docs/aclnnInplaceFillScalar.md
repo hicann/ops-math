@@ -68,7 +68,7 @@ aclnnStatus aclnnInplaceFillScalar(
       <td>输入/输出</td>
       <td>输入输出tensor。</td>
       <td>-</td>
-      <td>FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16</td>
+      <td>FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>不支持8维以上</td>
       <td>√</td>
@@ -79,7 +79,7 @@ aclnnStatus aclnnInplaceFillScalar(
       <td>指定填充selfRef的标量值。</td>
       <td>数据类型需要可以推导到selfRef的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。
       </td>
-      <td>FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16</td>
+      <td>FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16、UINT16、UINT32、UINT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -106,7 +106,7 @@ aclnnStatus aclnnInplaceFillScalar(
     </tr>
   </tbody></table>
 
-  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16、UINT16、UINT32、UINT64。
 
 - **返回值**
 

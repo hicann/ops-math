@@ -85,7 +85,7 @@ aclnnStatus aclnnRoll(
       <td>输入</td>
       <td>输入的原始数据。</td>
       <td>-</td>
-      <td>BFLOAT16、FLOAT16、FLOAT32、INT8、UINT8、INT32、INT64、UINT32、BOOL</td>
+      <td>BFLOAT16、FLOAT16、FLOAT32、INT8、UINT8、INT32、INT64、UINT32、BOOL、INT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -115,7 +115,7 @@ aclnnStatus aclnnRoll(
       <td>输出</td>
       <td>滚动处理后的输出数据。</td>
       <td>-</td>
-      <td>BFLOAT16、FLOAT16、FLOAT32、INT8、UINT8、INT32、INT64、UINT32、BOOL</td>
+      <td>BFLOAT16、FLOAT16、FLOAT32、INT8、UINT8、INT32、INT64、UINT32、BOOL、INT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>-</td>

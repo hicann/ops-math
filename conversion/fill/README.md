@@ -41,14 +41,14 @@
     <td>selfRef</td>
     <td>输入/输出张量</td>
     <td>输入输出张量，支持非连续的Tensor，数据维度不支持8维以上。</td>
-    <td>FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16</td>
+    <td>FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16、UINT16、UINT32、UINT64</td>
     <td>ND</td>
   </tr>
   <tr>
     <td>value</td>
     <td>输入标量</td>
     <td>指定的标量值，数据类型需要与selfRef的数据类型满足数据类型推导规则。</td>
-    <td>FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16</td>
+    <td>FLOAT、FLOAT16、UINT8、INT8、INT16、INT32、INT64、DOUBLE、COMPLEX64、COMPLEX128、BOOL、BFLOAT16、UINT16、UINT32、UINT64</td>
     <td>-</td>
   </tr>
 </tbody>

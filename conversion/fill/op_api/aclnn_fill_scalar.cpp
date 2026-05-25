@@ -60,7 +60,8 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_910_LIST = {
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_GE910B_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_INT32,     op::DataType::DT_INT64,      op::DataType::DT_FLOAT16,
     op::DataType::DT_INT16, op::DataType::DT_INT8,      op::DataType::DT_UINT8,      op::DataType::DT_DOUBLE,
-    op::DataType::DT_BOOL,  op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16};
+    op::DataType::DT_BOOL,  op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16,
+    op::DataType::DT_UINT16, op::DataType::DT_UINT32, op::DataType::DT_UINT64};
 
 // 判断芯片类型是否大于等于910B
 static inline bool CheckSocVersionGe910B(void)
