@@ -718,12 +718,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/atanh/README.md">atanh</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>AI CORE/AI CPU</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core/AI CPU</td>
+    <td>计算逆双曲正切（inverse hyperbolic tangent），支持FLOAT、FLOAT16、BF16数据类型。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1738,12 +1738,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/tan/README.md">tan</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core/AI CPU</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>正切三角函数。</td>
   </tr>
   <tr>
     <td>math</td>
