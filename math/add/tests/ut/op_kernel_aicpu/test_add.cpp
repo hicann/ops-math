@@ -402,3 +402,159 @@ TEST_F(TEST_ADD_UT, DIFFERENT_INPUT_SMALL_OUTPUT_BIG_FLOAT)
     CREATE_NODEDEF(shapes, data_types, datas);
     RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
 }
+
+// ------------------------------------------------------------------
+// Additional UTs for the optimized implementation.
+// - Cover same-shape fast path at parallel scale (>= 192KB output).
+// - Cover scalar-bcast fast path at parallel scale.
+// - Cover multi-dim broadcast fallback (generic Eigen path) for
+//   numerical equivalence with the original implementation.
+// ------------------------------------------------------------------
+
+TEST_F(TEST_ADD_UT, FLOAT_SAME_SHAPE_LARGE_PARALLEL)
+{
+    // 96K elements * 4B = 384KB > 192KB threshold -> parallel path
+    const int64_t n = 96 * 1024;
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{n}, {n}, {n}};
+
+    vector<float> in0(n);
+    vector<float> in1(n);
+    vector<float> out(n, 0.0f);
+    vector<float> exp(n);
+    for (int64_t i = 0; i < n; ++i) {
+        in0[i] = static_cast<float>(i) * 0.5f;
+        in1[i] = static_cast<float>(i) * 0.25f + 1.0f;
+        exp[i] = in0[i] + in1[i];
+    }
+    vector<void*> datas = {(void*)in0.data(), (void*)in1.data(), (void*)out.data()};
+
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    bool compare = CompareResult(out.data(), exp.data(), n);
+    EXPECT_EQ(compare, true);
+}
+
+TEST_F(TEST_ADD_UT, INT32_SAME_SHAPE_SMALL_SERIAL)
+{
+    // 16 elements -> well below threshold, serial path
+    const int64_t n = 16;
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{n}, {n}, {n}};
+
+    vector<int32_t> in0(n), in1(n), out(n, 0), exp(n);
+    for (int64_t i = 0; i < n; ++i) {
+        in0[i] = static_cast<int32_t>(i);
+        in1[i] = static_cast<int32_t>(i * 2);
+        exp[i] = in0[i] + in1[i];
+    }
+    vector<void*> datas = {(void*)in0.data(), (void*)in1.data(), (void*)out.data()};
+
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    EXPECT_EQ(CompareResult(out.data(), exp.data(), n), true);
+}
+
+TEST_F(TEST_ADD_UT, DOUBLE_SCALAR_BCAST_LARGE_PARALLEL)
+{
+    // input0 scalar, input1 large vector. Output bytes = 32K * 8 = 256KB > thresh.
+    const int64_t n = 32 * 1024;
+    vector<DataType> data_types = {DT_DOUBLE, DT_DOUBLE, DT_DOUBLE};
+    vector<vector<int64_t>> shapes = {{1}, {n}, {n}};
+
+    double in0[1] = {3.5};
+    vector<double> in1(n), out(n, 0.0), exp(n);
+    for (int64_t i = 0; i < n; ++i) {
+        in1[i] = static_cast<double>(i) * 0.125;
+        exp[i] = in0[0] + in1[i];
+    }
+    vector<void*> datas = {(void*)in0, (void*)in1.data(), (void*)out.data()};
+
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    EXPECT_EQ(CompareResult(out.data(), exp.data(), n), true);
+}
+
+TEST_F(TEST_ADD_UT, INT64_SCALAR_BCAST_RHS_LARGE)
+{
+    // input1 scalar, input0 large vector.
+    const int64_t n = 30 * 1024;
+    vector<DataType> data_types = {DT_INT64, DT_INT64, DT_INT64};
+    vector<vector<int64_t>> shapes = {{n}, {1}, {n}};
+
+    vector<int64_t> in0(n), out(n, 0), exp(n);
+    int64_t in1[1] = {7};
+    for (int64_t i = 0; i < n; ++i) {
+        in0[i] = i;
+        exp[i] = in0[i] + in1[0];
+    }
+    vector<void*> datas = {(void*)in0.data(), (void*)in1, (void*)out.data()};
+
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    EXPECT_EQ(CompareResult(out.data(), exp.data(), n), true);
+}
+
+TEST_F(TEST_ADD_UT, FLOAT_GENERIC_BCAST_2D)
+{
+    // shape {3,1} + {1,4} -> {3,4}, goes through generic Eigen path.
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{3, 1}, {1, 4}, {3, 4}};
+
+    float in0[3] = {1.0f, 2.0f, 3.0f};
+    float in1[4] = {10.0f, 20.0f, 30.0f, 40.0f};
+    float out[12] = {0};
+    float exp[12] = {11, 21, 31, 41, 12, 22, 32, 42, 13, 23, 33, 43};
+    vector<void*> datas = {(void*)in0, (void*)in1, (void*)out};
+
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    EXPECT_EQ(CompareResult(out, exp, 12), true);
+}
+
+TEST_F(TEST_ADD_UT, COMPLEX64_SAME_SHAPE_PARALLEL)
+{
+    // complex64 = 8B, 24K elems -> 192KB exactly at threshold boundary.
+    const int64_t n = 32 * 1024;
+    vector<DataType> data_types = {DT_COMPLEX64, DT_COMPLEX64, DT_COMPLEX64};
+    vector<vector<int64_t>> shapes = {{n}, {n}, {n}};
+
+    vector<std::complex<float>> in0(n), in1(n), out(n), exp(n);
+    for (int64_t i = 0; i < n; ++i) {
+        in0[i] = {static_cast<float>(i), static_cast<float>(-i)};
+        in1[i] = {1.0f, 2.0f};
+        exp[i] = in0[i] + in1[i];
+    }
+    vector<void*> datas = {(void*)in0.data(), (void*)in1.data(), (void*)out.data()};
+
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    EXPECT_EQ(CompareResult(out.data(), exp.data(), n), true);
+}
+
+TEST_F(TEST_ADD_UT, FLOAT16_SCALAR_BCAST_SMALL_SERIAL)
+{
+    // Eigen::half + small -> serial scalar-bcast.
+    const int64_t n = 64;
+    vector<DataType> data_types = {DT_FLOAT16, DT_FLOAT16, DT_FLOAT16};
+    vector<vector<int64_t>> shapes = {{1}, {n}, {n}};
+
+    Eigen::half in0[1] = {Eigen::half(1.5f)};
+    vector<Eigen::half> in1(n), out(n), exp(n);
+    for (int64_t i = 0; i < n; ++i) {
+        in1[i] = Eigen::half(static_cast<float>(i) * 0.25f);
+        exp[i] = in0[0] + in1[i];
+    }
+    vector<void*> datas = {(void*)in0, (void*)in1.data(), (void*)out.data()};
+
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+
+    EXPECT_EQ(CompareResult(out.data(), exp.data(), n), true);
+}

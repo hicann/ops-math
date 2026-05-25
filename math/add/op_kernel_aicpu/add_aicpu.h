@@ -25,29 +25,71 @@ class AddCpuKernel : public CpuKernel {
 
  private:
   /**
-   * @brief compute for all types
-   * @param ctx cpu kernel context
-   * @return status if success
+   * @brief top-level dispatch for one dtype; chooses a fast-path
+   *        (same-shape / scalar-bcast) or falls back to generic Eigen bcast.
    */
   template <typename T>
   uint32_t AddCompute(const CpuKernelContext &ctx) const;
 
   /**
-   * @brief Check if input&output addr is aligned
-   * @param calc_info data used to calculate
-   * @return true: aligned, false: not aligned
+   * @brief Run a per-shard body either serially (small workloads) or via
+   *        ParallelFor (large workloads). Centralizes the threshold check,
+   *        per-unit sizing, dispatch and error logging shared by every
+   *        fast-path variant. `elem_bytes` is sizeof(T) for the worker.
    */
-  bool AlignedCheck(const BCalcInfo &calc_info) const;
-  
-  template <typename T>
-  uint32_t AddCalculateWithRankCheck(const CpuKernelContext &ctx, BCalcInfo &calc_info) const;
-
-  template <int32_t RANK, typename T>
-  uint32_t AddCalculateWithAlignedCheck(const CpuKernelContext &ctx, BCalcInfo &calc_info) const;
+  template <typename Body>
+  uint32_t RunMaybeParallel(const CpuKernelContext &ctx, const char *tag,
+                            int64_t total, int64_t elem_bytes,
+                            const Body &body) const;
 
   /**
-   * @brief Eigen calculate for all types
-   * @param calc_info data used to calculate
+   * @brief Validate raw shapes / declared output shape and populate
+   *        broadcast info. On success `calc_info` contains a fully derived
+   *        broadcast plan. Centralizes the rank/shape checks so AddCompute
+   *        stays under the per-method line limit.
+   */
+  uint32_t ValidateAndBroadcast(const CpuKernelContext &ctx,
+                                BCalcInfo &calc_info) const;
+
+  /**
+   * @brief fast path: element-wise add with identical shapes.
+   *        Parallelized when output-bytes exceed threshold.
+   */
+  template <typename T>
+  uint32_t AddSameShape(const CpuKernelContext &ctx, const T *x0, const T *x1,
+                        T *y, int64_t total) const;
+
+  /**
+   * @brief fast path: one operand is a scalar (single element) broadcast
+   *        over the other. Parallelized when output-bytes exceed threshold.
+   * @param scalar_side 0 -> x0 is scalar, 1 -> x1 is scalar
+   */
+  template <typename T>
+  uint32_t AddScalarBcast(const CpuKernelContext &ctx, const T *vec,
+                          T scalar_val, T *y, int64_t total) const;
+
+  /**
+   * @brief generic broadcast path (keeps original Eigen tensor semantics).
+   */
+  template <typename T>
+  uint32_t AddGenericBcast(const CpuKernelContext &ctx,
+                           BCalcInfo &calc_info) const;
+
+  /**
+   * @brief check if input&output addr is aligned
+   */
+  bool AlignedCheck(const BCalcInfo &calc_info) const;
+
+  template <typename T>
+  uint32_t AddCalculateWithRankCheck(const CpuKernelContext &ctx,
+                                     BCalcInfo &calc_info) const;
+
+  template <int32_t RANK, typename T>
+  uint32_t AddCalculateWithAlignedCheck(const CpuKernelContext &ctx,
+                                        BCalcInfo &calc_info) const;
+
+  /**
+   * @brief Eigen calculate for all types (fallback generic broadcast).
    */
   template <int32_t RANK, typename T, int32_t OPTION>
   uint32_t AddCalculate(BCalcInfo &calc_info) const;
