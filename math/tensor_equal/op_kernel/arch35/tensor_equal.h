@@ -68,7 +68,8 @@ __aicore__ inline void TensorEqualKernel<T>::Init(GM_ADDR input_x, GM_ADDR input
         return;
     }
 
-    blockOffset_ = blockIdx_ * ((tilingData_.perCoreLoopTimes - 1) * tilingData_.ubFactor + tilingData_.perCoreTailFactor);
+    blockOffset_ = blockIdx_ * (sizeof(T) / sizeof(InputType)) *
+                   ((tilingData_.perCoreLoopTimes - 1) * tilingData_.ubFactor + tilingData_.perCoreTailFactor);
     bufferSize_ = tilingData_.ubFactor * sizeof(T);
 
     inputXGm_.SetGlobalBuffer((__gm__ InputType *)(input_x) + blockOffset_);
