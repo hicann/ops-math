@@ -226,7 +226,7 @@ function(add_aicpu_opkernel_ut_modules AICPU_OP_KERNEL_MODULE_NAME)
             -Wl,--no-whole-archive
             -Wl,-Bsymbolic
             -Wl,--exclude-libs=libhost_ascend_protobuf.a
-            Eigen3::EigenMath
+            Eigen3::Eigen
             ${AICPU_OP_KERNEL_MODULE_NAME}_common_obj
             ${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj)
 endfunction()
