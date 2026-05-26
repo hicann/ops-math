@@ -104,7 +104,7 @@ aclnnStatus aclnnLogSpaceGetWorkspaceSize(const aclScalar *start, const aclScala
     const aclTensor* base_tensor = ScalarToTensor(base_scalar, result_dtype, uniqueExecutor.get());
     CHECK_RET(base_tensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    const aclTensor* pow_result = l0op::Pow(base_tensor,linspace_result,uniqueExecutor.get());
+    const aclTensor* pow_result = l0op::InplacePow(base_tensor, linspace_result, uniqueExecutor.get());
     CHECK_RET(pow_result != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     auto view_copy_result = l0op::ViewCopy(pow_result, result, uniqueExecutor.get());

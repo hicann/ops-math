@@ -13,7 +13,11 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *Pow(const aclTensor *self, const aclTensor *exponent, aclOpExecutor *executor);
-}
+const aclTensor* Pow(const aclTensor* self, const aclTensor* exponent, aclOpExecutor* executor);
+/**
+ * @brief logspace算子特定场景使用
+ */
+const aclTensor* InplacePow(const aclTensor* self, const aclTensor* exponent, aclOpExecutor* executor);
+} // namespace l0op
 
 #endif // OP_API_INC_LEVEL0_POW_H_

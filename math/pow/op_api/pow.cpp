@@ -94,4 +94,15 @@ const aclTensor *Pow(const aclTensor *self, const aclTensor *exponent, aclOpExec
   }
 }
 
+// logspace算子特定场景使用
+const aclTensor* InplacePow(const aclTensor* self, const aclTensor* exponent, aclOpExecutor* executor)
+{
+    auto powOut = const_cast<aclTensor*>(exponent);
+    CHECK_RET(powOut != nullptr, nullptr);
+    if (IsAiCoreSupport(self)) {
+        return PowAiCore(self, exponent, powOut, executor);
+    } else {
+        return PowAiCpu(self, exponent, powOut, executor);
+    }
+}
 }
