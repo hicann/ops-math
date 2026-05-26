@@ -47,8 +47,7 @@ static inline int64_t AlignCeil(int64_t value, int64_t align)
 constexpr int64_t GATHER_MASK_ALIGN_BYTES = 128;
 constexpr int64_t COMPLEX_COEFF = 2;
 
-static ge::graphStatus CheckDtypeIsValid(
-    gert::TilingContext* context, ge::DataType input, ge::DataType output)
+static ge::graphStatus CheckDtypeIsValid(gert::TilingContext* context, ge::DataType input, ge::DataType output)
 {
     std::set<ge::DataType> inputDtype = {ge::DT_COMPLEX32, ge::DT_COMPLEX64, ge::DT_FLOAT16, ge::DT_FLOAT};
     std::set<ge::DataType> outputDtype = {ge::DT_FLOAT16, ge::DT_FLOAT};
@@ -56,21 +55,20 @@ static ge::graphStatus CheckDtypeIsValid(
     OP_CHECK_IF(
         inputDtype.count(input) == 0,
         OP_LOGE(
-            context->GetNodeName(),
-            "Input dtype(%s) is invalid, it should be complex32, complex64, float16 or float.",
+            context->GetNodeName(), "Input dtype(%s) is invalid, it should be complex32, complex64, float16 or float.",
             Ops::Base::ToString(input).c_str()),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         outputDtype.count(output) == 0,
         OP_LOGE(
-            context->GetNodeName(),
-            "Output dtype(%s) is invalid, it should be float16 or float.",
+            context->GetNodeName(), "Output dtype(%s) is invalid, it should be float16 or float.",
             Ops::Base::ToString(output).c_str()),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-static void SetSingleCore(RealTilingParam& tilingParam, const int64_t &ubAvailable, const int64_t &alignSize, int64_t &ubPartDataNum)
+static void SetSingleCore(
+    RealTilingParam& tilingParam, const int64_t& ubAvailable, const int64_t& alignSize, int64_t& ubPartDataNum)
 {
     // 检查是否满足 inplace GatherMask 的 256B 对齐约束
     int64_t totalSourceBytes = tilingParam.totalLength * COMPLEX_COEFF * tilingParam.dataTypeLength;
@@ -98,7 +96,7 @@ static void SetSingleCore(RealTilingParam& tilingParam, const int64_t &ubAvailab
 }
 
 static void SetBigCore(
-    const int64_t &bigCoreDataNum, const int64_t &ubPartDataNum, int64_t &bigCoreLoopNum, int64_t &bigCoreTailDataNum)
+    const int64_t& bigCoreDataNum, const int64_t& ubPartDataNum, int64_t& bigCoreLoopNum, int64_t& bigCoreTailDataNum)
 {
     bigCoreLoopNum = Ops::Base::CeilDiv(bigCoreDataNum, ubPartDataNum);
     bigCoreTailDataNum = bigCoreDataNum - ubPartDataNum * (bigCoreLoopNum - 1);
@@ -107,7 +105,8 @@ static void SetBigCore(
     }
 }
 
-static ge::graphStatus CalcRealTilingParam(RealTilingParam& tilingParam, ge::DataType inputDtype, ge::DataType outputDtype)
+static ge::graphStatus CalcRealTilingParam(
+    RealTilingParam& tilingParam, ge::DataType inputDtype, ge::DataType outputDtype)
 {
     int32_t outputSize = ge::GetSizeByDataType(outputDtype);
     tilingParam.dataTypeLength = static_cast<int64_t>(outputSize);
@@ -162,8 +161,7 @@ static ge::graphStatus CalcRealTilingParam(RealTilingParam& tilingParam, ge::Dat
     return ge::GRAPH_SUCCESS;
 }
 
-class RealMemBaseTilingClass : public TilingBaseClass
-{
+class RealMemBaseTilingClass : public TilingBaseClass {
 public:
     explicit RealMemBaseTilingClass(gert::TilingContext* context) : TilingBaseClass(context)
     {}
@@ -246,7 +244,8 @@ static ge::graphStatus SetTilingTilingKeyForReal(
             tilingKey = static_cast<int64_t>(RealTilingKey::TILINGKEY_FLOAT);
             break;
         default:
-            OP_LOGE(context->GetNodeName(), "set tilingKey fail: unsupported input dtype %d", static_cast<int>(inputDtype));
+            OP_LOGE(
+                context->GetNodeName(), "set tilingKey fail: unsupported input dtype %d", static_cast<int>(inputDtype));
             return ge::GRAPH_FAILED;
     }
 
@@ -261,8 +260,8 @@ ge::graphStatus RealMemBaseTilingClass::DoOpTiling()
     OP_CHECK_NULL_WITH_CONTEXT(context_, xShape);
 
     int64_t totalLength = xShape->GetStorageShape().GetShapeSize();
-    OP_CHECK_IF((totalLength == 0), OP_LOGE(context_->GetNodeName(), "Real input shape size is 0"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        (totalLength == 0), OP_LOGE(context_->GetNodeName(), "Real input shape size is 0"), return ge::GRAPH_FAILED);
 
     auto inputDesc = context_->GetInputDesc(INDEX_INPUT_X);
     OP_CHECK_NULL_WITH_CONTEXT(context_, inputDesc);
@@ -323,10 +322,9 @@ ge::graphStatus RealMemBaseTilingClass::PostTiling()
         "smallCoreDataNum=%ld, smallCoreLoopNum=%ld, smallCoreTailDataNum=%ld, "
         "bigCoreDataNum=%ld, bigCoreLoopNum=%ld, bigCoreTailDataNum=%ld, tilingKey=%ld, "
         "useNonInplace=%ld",
-        tiling->totalUsedCoreNum, tiling->tailBlockNum, tiling->ubPartDataNum,
-        tiling->smallCoreDataNum, tiling->smallCoreLoopNum, tiling->smallCoreTailDataNum,
-        tiling->bigCoreDataNum, tiling->bigCoreLoopNum, tiling->bigCoreTailDataNum,
-        tiling->tilingKey, tiling->useNonInplace);
+        tiling->totalUsedCoreNum, tiling->tailBlockNum, tiling->ubPartDataNum, tiling->smallCoreDataNum,
+        tiling->smallCoreLoopNum, tiling->smallCoreTailDataNum, tiling->bigCoreDataNum, tiling->bigCoreLoopNum,
+        tiling->bigCoreTailDataNum, tiling->tilingKey, tiling->useNonInplace);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -347,22 +345,20 @@ static ge::graphStatus TilingPrepare4Real(gert::TilingParseContext* context)
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->totalCoreNum = ascendcPlatform.GetCoreNumAiv();
     OP_CHECK_IF(
-        (compileInfo->totalCoreNum <= 0),
-        OP_LOGE(context->GetNodeName(), "TilingPrepare4Real fail to get core num."), return ge::GRAPH_FAILED);
+        (compileInfo->totalCoreNum <= 0), OP_LOGE(context->GetNodeName(), "TilingPrepare4Real fail to get core num."),
+        return ge::GRAPH_FAILED);
 
     uint64_t ubSizePlatForm;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSizePlatForm = static_cast<int64_t>(ubSizePlatForm);
     OP_CHECK_IF(
-        (compileInfo->ubSizePlatForm <= 0),
-        OP_LOGE(context->GetNodeName(), "TilingPrepare4Real fail to get ub size."), return ge::GRAPH_FAILED);
+        (compileInfo->ubSizePlatForm <= 0), OP_LOGE(context->GetNodeName(), "TilingPrepare4Real fail to get ub size."),
+        return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }
 
 REGISTER_OPS_TILING_TEMPLATE(Real, RealMemBaseTilingClass, 1000);
 
-IMPL_OP_OPTILING(Real)
-    .Tiling(Tiling4Real)
-    .TilingParse<RealCompileInfo>(TilingPrepare4Real);
+IMPL_OP_OPTILING(Real).Tiling(Tiling4Real).TilingParse<RealCompileInfo>(TilingPrepare4Real);
 } // namespace optiling
