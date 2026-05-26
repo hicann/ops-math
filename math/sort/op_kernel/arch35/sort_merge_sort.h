@@ -29,7 +29,7 @@ const int16_t XOR_OP_VALUE_HALF = 0x8000;
 const uint32_t UB_AGLIN_VALUE = 32;
 const uint32_t CONCAT_AGLIN_VALUE = 16;
 // T1输入x dtype T2输出Idx dtype UT无符号的数据类型
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend>
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis = 0>
 class MergeSort {
 public:
     __aicore__ inline MergeSort(){};
@@ -81,9 +81,9 @@ private:
     uint32_t alignSize_ = 0;
 };
 
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::Init(GM_ADDR x, GM_ADDR value, GM_ADDR sortIndex,
-    GM_ADDR workspace, const SortRegBaseTilingData *__restrict tilingData, TPipe *pipe)
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::Init(GM_ADDR x, GM_ADDR value,
+    GM_ADDR sortIndex, GM_ADDR workspace, const SortRegBaseTilingData *__restrict tilingData, TPipe *pipe)
 {
     blockIdx_ = GetBlockIdx();
     pipe_ = pipe;
@@ -127,8 +127,8 @@ __aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::Init(GM_ADDR 
     }
 }
 
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::ParserTilingData()
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::ParserTilingData()
 {
     oneCoreRowNum_ = tilingData_->keyParams0;
     tmpUbSize_ = tilingData_->tmpUbSize;
@@ -139,9 +139,9 @@ __aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::ParserTilingD
     outputLastDimValue_ = tilingData_->lastAxisNum;
     alignSize_ = tilingData_->keyParams3;
 }
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::CopyDataIn(GlobalTensor<T1> inputX,
-    uint64_t tileOffset, uint32_t currTileSize, uint32_t oneCoreRowNum)
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::CopyDataIn(
+    GlobalTensor<T1> inputX, uint64_t tileOffset, uint32_t currTileSize, uint32_t oneCoreRowNum)
 {
     LocalTensor<T1> xLocal = inQueueX_.AllocTensor<T1>();
     uint32_t localTensorLen = alignSize_ * oneCoreRowNum;
@@ -167,9 +167,9 @@ __aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::CopyDataIn(Gl
     DataCopyPad(xLocal, inputX[tileOffset], dataCopyParam, padParams);
     inQueueX_.EnQue(xLocal);
 }
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::flipSignBit(LocalTensor<CONVERT_TYPE> xLocal,
-    uint32_t offsetOneRow, uint32_t aglinTileSize)
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::flipSignBit(
+    LocalTensor<CONVERT_TYPE> xLocal, uint32_t offsetOneRow, uint32_t aglinTileSize)
 {
     if constexpr (IsSameType<float, CONVERT_TYPE>::value) {
         AscendC::LocalTensor<int32_t> castTensor = xLocal[offsetOneRow].template ReinterpretCast<int32_t>();
@@ -179,10 +179,10 @@ __aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::flipSignBit(L
         AscendC::Adds(castTensor, castTensor, XOR_OP_VALUE_HALF, aglinTileSize);
     }
 }
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::VbsMergeSortBf16(LocalTensor<bfloat16_t> xLocal,
-    LocalTensor<T1> sortedValueLocal, LocalTensor<uint32_t> sortedValueIndexLocal, uint32_t currTileSize,
-    uint32_t nowCoreRealRowNum)
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::VbsMergeSortBf16(
+    LocalTensor<bfloat16_t> xLocal, LocalTensor<T1> sortedValueLocal, LocalTensor<uint32_t> sortedValueIndexLocal,
+    uint32_t currTileSize, uint32_t nowCoreRealRowNum)
 {
     uint32_t aglinTileSize = alignSize_;
     uint32_t sortRepeatTimes = alignSize_ / UB_AGLIN_VALUE;
@@ -200,11 +200,16 @@ __aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::VbsMergeSortB
         if constexpr (isDescend == 0) {
             flipSignBit(xLocalCast, offsetOneRow, aglinTileSize);
         }
-        AscendC::LocalTensor<CONVERT_TYPE> concatLocal;
-        AscendC::Concat(concatLocal, xLocalCast[offsetOneRow], concatTmpLocal, concatRepeatTimes);
-        AscendC::Sort<CONVERT_TYPE, true>(sortedLocal, concatLocal, indexLocal_, sortTmpLocal, sortRepeatTimes);
+        if constexpr (isSort32SmallAxis == 1) {
+            AscendC::Sort32<CONVERT_TYPE>(sortedLocal, xLocalCast[offsetOneRow], indexLocal_, 1);
+        } else {
+            AscendC::LocalTensor<CONVERT_TYPE> concatLocal;
+            AscendC::Concat(concatLocal, xLocalCast[offsetOneRow], concatTmpLocal, concatRepeatTimes);
+            AscendC::Sort<CONVERT_TYPE, true>(sortedLocal, concatLocal, indexLocal_, sortTmpLocal, sortRepeatTimes);
+        }
+        // isSort32SmallAxis enables compile-time repeatTimes=1 for hardware Extract fast path
         AscendC::Extract(sortedValueLocalCast[offsetOneRow], sortedValueIndexLocal[offsetOneRow], sortedLocal,
-            extractRepeatTimes);
+            isSort32SmallAxis == 1 ? 1 : extractRepeatTimes);
         if constexpr (isDescend == 0) {
             flipSignBit(sortedValueLocalCast, offsetOneRow, aglinTileSize);
         }
@@ -212,10 +217,10 @@ __aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::VbsMergeSortB
     AscendC::Cast(sortedValueLocal, sortedValueLocalCast, AscendC::RoundMode::CAST_RINT,
         aglinTileSize * nowCoreRealRowNum);
 }
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::VbsMergeSort(LocalTensor<T1> xLocal,
-    LocalTensor<T1> sortedValueLocal, LocalTensor<uint32_t> sortedValueIndexLocal, uint32_t currTileSize,
-    uint32_t nowCoreRealRowNum)
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::VbsMergeSort(
+    LocalTensor<T1> xLocal, LocalTensor<T1> sortedValueLocal, LocalTensor<uint32_t> sortedValueIndexLocal,
+    uint32_t currTileSize, uint32_t nowCoreRealRowNum)
 {
     uint32_t sortRepeatTimes = alignSize_ / UB_AGLIN_VALUE;
     uint32_t concatRepeatTimes = alignSize_ / CONCAT_AGLIN_VALUE;
@@ -229,22 +234,27 @@ __aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::VbsMergeSort(
         if constexpr (isDescend == 0) {
             flipSignBit(xLocal, offsetOneRow, alignSize_);
         }
-        AscendC::LocalTensor<CONVERT_TYPE> concatLocal;
-        AscendC::Concat(concatLocal, xLocal[offsetOneRow], concatTmpLocal, concatRepeatTimes);
-        // sort API中，index必须是int32_t
-        AscendC::Sort<CONVERT_TYPE, true>(sortedLocal, concatLocal, indexLocal_, sortTmpLocal, sortRepeatTimes);
+        if constexpr (isSort32SmallAxis == 1) {
+            AscendC::Sort32<T1>(sortedLocal, xLocal[offsetOneRow], indexLocal_, 1);
+        } else {
+            AscendC::LocalTensor<CONVERT_TYPE> concatLocal;
+            AscendC::Concat(concatLocal, xLocal[offsetOneRow], concatTmpLocal, concatRepeatTimes);
+            // sort API中，index必须是int32_t
+            AscendC::Sort<CONVERT_TYPE, true>(sortedLocal, concatLocal, indexLocal_, sortTmpLocal, sortRepeatTimes);
+        }
         // 处理sort后的结果数据，输出排序后的value和index
+        // isSort32SmallAxis enables compile-time repeatTimes=1 for hardware Extract fast path
         AscendC::Extract(sortedValueLocal[offsetOneRow], sortedValueIndexLocal[offsetOneRow], sortedLocal,
-            extractRepeatTimes);
+            isSort32SmallAxis == 1 ? 1 : extractRepeatTimes);
         if constexpr (isDescend == 0) {
             flipSignBit(sortedValueLocal, offsetOneRow, alignSize_);
         }
     }
 }
 
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::CopyValue2Gm(uint64_t gmOffset, uint64_t tileOffset,
-    uint32_t outputLastDimValue, uint32_t oneCoreRowNum)
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::CopyValue2Gm(uint64_t gmOffset,
+    uint64_t tileOffset, uint32_t outputLastDimValue, uint32_t oneCoreRowNum)
 {
     // value stride
     uint32_t currTileSizeAlign = ROUND_UP_AGLIN(outputLastDimValue * sizeof(T1)) / sizeof(T1);
@@ -271,9 +281,9 @@ __aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::CopyValue2Gm(
     outIdxQueue_.FreeTensor(outIndexLocal);
     outValueQueue_.FreeTensor(outValueLocal);
 }
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::ProcessSingleBlockSort(GlobalTensor<T1> inputX,
-    int32_t sortLoopRound)
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::ProcessSingleBlockSort(
+    GlobalTensor<T1> inputX, int32_t sortLoopRound)
 {
     int64_t unsortedDimIndex = (blockIdx_ + sortLoopRound * unsortedDimParallel_) * oneCoreRowNum_;
     if (unsortedDimIndex >= unsortedDimNum_) {
@@ -323,8 +333,8 @@ __aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::ProcessSingle
 
     CopyValue2Gm(gmOffset, answerTileOffset, outputLastDimValue_, nowCoreRealRowNum);
 }
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend>::Process()
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::Process()
 {
     if (blockIdx_ > GetBlockNum()) {
         return;

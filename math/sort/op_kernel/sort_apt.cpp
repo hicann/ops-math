@@ -13,14 +13,17 @@
  * \brief
  */
 #include "kernel_tiling/kernel_tiling.h"
-#include "kernel_operator.h"
+#include "basic_api/kernel_vec_intf.h"
 #include "arch35/sort_tiling_key.h"
 #include "arch35/sort_tiling_data.h"
 #include "arch35/sort_radix_sort_more_core.h"
 #include "arch35/sort_radix_sort_one_core.h"
 #include "arch35/sort_merge_sort.h"
 #include "arch35/merge_sort_big_size.h"
-#include "arch35/sort_merge_big_batch.h"
+#include "arch35/sort_merge_intra_core.h"
+#include "arch35/sort_small_axis_insertion.h"
+#include "arch35/sort_small_axis_two_stage.h"
+#include "arch35/sort_axis_one_copy.h"
 
 using namespace AscendC;
 using namespace Sort;
@@ -35,6 +38,13 @@ __global__ __aicore__ void sort(
     GM_ADDR usrWorkspace = AscendC::GetUserWorkspace(workspace);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
     TPipe pipe;
+    constexpr bool isDescending = (isDescend != 0);
+    if constexpr (schId == 7) {
+        Sort::SortAxisOneCopy<DTYPE_X, DTYPE_Y2> op;
+        op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
+        op.Process();
+        return;
+    }
     if constexpr (schId == 2) {
         if constexpr(sizeof(DTYPE_X) == 1) {
             if constexpr(isInt32 == 1) {
@@ -83,30 +93,19 @@ __global__ __aicore__ void sort(
         return;
     }
     if constexpr (schId == 1) {
-        if constexpr (isDescend == 1) {
-            SortRadixOneCore<DTYPE_X, DTYPE_Y2, true> op;
-            op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
-            op.Process();
-        } else {
-            SortRadixOneCore<DTYPE_X, DTYPE_Y2, false> op;
-            op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
-            op.Process();
-        }
+        SortRadixOneCore<DTYPE_X, DTYPE_Y2, isDescending> op;
+        op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
+        op.Process();
         return;
     }
-    if constexpr (schId == 0) {
+    if constexpr (schId == 0 || schId == 8) {
+        constexpr uint64_t isSort32SmallAxis = (schId == 8);
         if constexpr (IsSameType<bfloat16_t, DTYPE_X>::value) {
-            MergeSort<DTYPE_X, DTYPE_Y2, float, isDescend> op;
+            MergeSort<DTYPE_X, DTYPE_Y2, float, isDescend, isSort32SmallAxis> op;
             op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
             op.Process();
-        }
-        if constexpr (IsSameType<float, DTYPE_X>::value) {
-            MergeSort<DTYPE_X, DTYPE_Y2, DTYPE_X, isDescend> op;
-            op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
-            op.Process();
-        }
-        if constexpr (IsSameType<half, DTYPE_X>::value) {
-            MergeSort<DTYPE_X, DTYPE_Y2, DTYPE_X, isDescend> op;
+        } else if constexpr (IsSameType<float, DTYPE_X>::value || IsSameType<half, DTYPE_X>::value) {
+            MergeSort<DTYPE_X, DTYPE_Y2, DTYPE_X, isDescend, isSort32SmallAxis> op;
             op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
             op.Process();
         }
@@ -114,41 +113,41 @@ __global__ __aicore__ void sort(
     }
     if constexpr (schId == 3) {
         if constexpr (IsSameType<DTYPE_X, bfloat16_t>::value) {
-            if constexpr (isDescend == 1) {
-                MergeSortBigSize<DTYPE_X, float, true, DTYPE_Y2> op;
-                op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
-                op.Process();
-            } else {
-                MergeSortBigSize<DTYPE_X, float, false, DTYPE_Y2> op;
-                op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
-                op.Process();
-            }
+            MergeSortBigSize<DTYPE_X, float, isDescending, DTYPE_Y2> op;
+            op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
+            op.Process();
         }
 		if constexpr (IsSameType<float, DTYPE_X>::value || IsSameType<half, DTYPE_X>::value) {
-            if constexpr (isDescend == 1) {
-                MergeSortBigSize<DTYPE_X, DTYPE_X, true, DTYPE_Y2> op;
-                op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
-                op.Process();
-            } else {
-                MergeSortBigSize<DTYPE_X, DTYPE_X, false, DTYPE_Y2> op;
-                op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
-                op.Process();
-            }
+            MergeSortBigSize<DTYPE_X, DTYPE_X, isDescending, DTYPE_Y2> op;
+            op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
+            op.Process();
         }
         return;
     }
     if constexpr (schId == 4) {
         if constexpr (IsSameType<float, DTYPE_X>::value) {
-            if constexpr (isDescend == 1) {
-                Sort::SortMergeBigBatch<DTYPE_X, DTYPE_Y2, true> op;
-                op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
-                op.Process();
-            } else {
-                Sort::SortMergeBigBatch<DTYPE_X, DTYPE_Y2, false> op;
-                op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
-                op.Process();
-            }
+            Sort::SortMergeIntraCore<DTYPE_X, DTYPE_Y2, isDescending> op;
+            op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
+            op.Process();
         }
+        return;
+    }
+    if constexpr (schId == 5) {
+        if constexpr (IsSameType<bfloat16_t, DTYPE_X>::value) {
+            Sort::SortSmallAxisInsertion<DTYPE_X, float, DTYPE_Y2, isDescending> op;
+            op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
+            op.Process();
+        } else {
+            Sort::SortSmallAxisInsertion<DTYPE_X, DTYPE_X, DTYPE_Y2, isDescending> op;
+            op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
+            op.Process();
+        }
+        return;
+    }
+    if constexpr (schId == 6) {
+        Sort::SortSmallAxisTwoStage<DTYPE_X, DTYPE_Y2, isDescending> op;
+        op.Init(x, y1, y2, usrWorkspace, &tilingData, &pipe);
+        op.Process();
         return;
     }
 }
