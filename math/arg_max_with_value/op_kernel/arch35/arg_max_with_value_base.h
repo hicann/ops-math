@@ -365,15 +365,14 @@ __aicore__ inline void ArgMaxWithValueBase<T1, T2, T3, isMin>::ArgMaxRaInt64(__l
         AscendC::MicroAPI::Duplicate(vregIndicesAdd1, VALUE_ONE, fullMask);
         AscendC::MicroAPI::Duplicate(vregIndicesAddStartR, startR, fullMask);
 
-        AscendC::MicroAPI::UnalignReg uSrc;
+        AscendC::MicroAPI::UnalignReg uSrc,tSrc;
 
         AscendC::MicroAPI::MaskReg mask, cmpMask;
 
-        AscendC::MicroAPI::DataCopyUnAlignPre(uSrc, (__local_mem__ T4*&)src);
         for (uint16_t i = 0; i < loopA; i++) {
             auto tmpPtr = (__local_mem__ T4*&)src + alignA;
             mask = AscendC::MicroAPI::UpdateMask<uint32_t>(processA);
-
+            AscendC::MicroAPI::DataCopyUnAlignPre(uSrc, (__local_mem__ T4*&)src);AscendC::MicroAPI::DataCopyUnAlignPre(uSrc, (__local_mem__ T4*&)src);
             AscendC::MicroAPI::DataCopyUnAlign<T4, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vregValue0, uSrc,
                 (__local_mem__ T4*&)src, offsetA);
             AscendC::MicroAPI::Duplicate(vregIndices0, VALUE_ZERO, fullMask);
@@ -382,8 +381,9 @@ __aicore__ inline void ArgMaxWithValueBase<T1, T2, T3, isMin>::ArgMaxRaInt64(__l
             // 从第二行的R开始计算比较
             for (uint16_t j = 0; j < loopR; j++) {
                 Add(vregIndices1, vregIndices1, vregIndicesAdd1, mask);
+                AscendC::MicroAPI::DataCopyUnAlignPre(tSrc, (__local_mem__ T4*&)tmpPtr);
                 AscendC::MicroAPI::DataCopyUnAlign<T4, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(
-                    vregValue1, uSrc, (__local_mem__ T4*&)tmpPtr, VL);
+                    vregValue1, tSrc, (__local_mem__ T4*&)tmpPtr, VL);
                 tmpPtr += (alignA - VL);
                 if constexpr (isMin) {
                     AscendC::MicroAPI::Compare<T4, CMPMODE::LE>(cmpMask, vregValue0, vregValue1, mask);
@@ -936,20 +936,21 @@ __aicore__ inline void ArgMaxWithValueBase<T1, T2, T3, isMin>::ArgMaxRa(__local_
         // 指定传入uint类型作为索引
         AscendC::MicroAPI::RegTensor<T5> vregIndices0, vregIndices1;
         AscendC::MicroAPI::RegTensor<uint32_t> indicesLower, indicesHigher;
-        AscendC::MicroAPI::UnalignReg uSrc;
+        AscendC::MicroAPI::UnalignReg uSrc,tSrc;
         AscendC::MicroAPI::MaskReg mask, maskLower, maskHigher, cmpMask, nanMask;
-        AscendC::MicroAPI::DataCopyUnAlignPre(uSrc, (__local_mem__ T4 *&)src);
         for (uint16_t i = 0; i < loopA; i++) {
             auto tmpPtr = (__local_mem__ T4 *&)src + alignA;
             mask = AscendC::MicroAPI::UpdateMask<T5>(processA);
+            AscendC::MicroAPI::DataCopyUnAlignPre(uSrc, (__local_mem__ T4 *&)src);
             AscendC::MicroAPI::DataCopyUnAlign<T4, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vregValue0, uSrc,
                 (__local_mem__ T4 *&)src, offsetA);
             // 初始化索引
             Duplicate(vregIndices0, 0);
             for (uint16_t j = 0; j < loopR; j++) { // 从第二行的R开始计算比较
                 Duplicate(vregIndices1, j + 1, mask);
+                AscendC::MicroAPI::DataCopyUnAlignPre(tSrc, (__local_mem__ T4 *&)tmpPtr);
                 AscendC::MicroAPI::DataCopyUnAlign<T4, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vregValue1,
-                    uSrc, (__local_mem__ T4 *&)tmpPtr, VL);
+                    tSrc, (__local_mem__ T4 *&)tmpPtr, VL);
             tmpPtr += (alignA - VL);
                 if constexpr (isMin) {
                     Compare<T4, CMPMODE::LE>(cmpMask, vregValue0, vregValue1, mask);
