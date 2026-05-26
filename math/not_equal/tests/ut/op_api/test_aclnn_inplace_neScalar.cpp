@@ -151,6 +151,7 @@ TEST_F(l2_inplace_ne_scalar_test, ascend910B2_support_bf16_910B)
 
     auto scalar_ohter = ScalarDesc(3.0f);
 
+    SetPlatformSocVersion(SocVersion::ASCEND910B);
     auto ut = OP_API_UT(aclnnInplaceNeScalar, INPUT(tensor_self_ref, scalar_ohter), OUTPUT());
 
     // SAMPLE: only test GetWorkspaceSize

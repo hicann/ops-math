@@ -18,8 +18,10 @@
 #include "op_api_ut_common/tensor_desc.h"
 #include <cstdlib>
 #include <ctime>
+#include "opdev/platform.h"
 
 using namespace std;
+using namespace op;
 
 class l2_masked_select_test : public testing::Test {
 protected:
@@ -881,6 +883,7 @@ TEST_F(l2_masked_select_test, aclnnMaskedSelect_error_input_dtype_with_uint64)
     auto maskTensorDesc = TensorDesc(maskShape, maskDtype, maskFormat).Value(boolMask);
     auto outTensorDesc = TensorDesc(outShape, outDtype, outFormat).ValidCount(shapeSize);
 
+    SetPlatformSocVersion(SocVersion::ASCEND910B);
     auto ut = OP_API_UT(aclnnMaskedSelect, INPUT(selfTensorDesc, maskTensorDesc), OUTPUT(outTensorDesc));
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspaceSize = 0;

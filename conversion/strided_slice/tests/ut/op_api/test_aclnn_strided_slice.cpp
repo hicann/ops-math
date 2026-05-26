@@ -47,6 +47,7 @@ TEST_F(l2_strided_slice_test, case_error_soc)
     auto end_desc = IntArrayDesc(end);
     auto strides_desc = IntArrayDesc(strides);
 
+    SetPlatformSocVersion(SocVersion::ASCEND910B);
     auto ut = OP_API_UT(
         aclnnStridedSlice,
         INPUT(
