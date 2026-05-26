@@ -6,7 +6,7 @@
 
 - 调用范围：支持调用的算子清单参见[算子列表](../op_list.md)，此外还支持调用experimental贡献目录的算子。
 
-- 调用场景：  请根据实际场景诉求选择合适的算子调用方案。
+- 调用场景：请根据实际场景诉求选择合适的算子调用方案。
 
    |调用场景|场景说明|特点|
    |--------|----|-----|
@@ -238,7 +238,7 @@
        aclrtDestroyStream(stream);
        aclrtResetDevice(deviceId);
    
-       // 9. acl去初始化
+       // 10. acl去初始化
        aclFinalize();
        return 0;
    }

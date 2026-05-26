@@ -150,7 +150,7 @@ endif()
 
 ## 算子定义
 
-算子定义需要完成两个交付件：`README.md` ```${op_name}_def.cpp```
+算子定义需要完成两个交付件：`README.md` 和 ```${op_name}_def.cpp```
 
 **交付件1：README.md**
 
@@ -213,7 +213,7 @@ static ge::graphStatus TilingParse(gert::TilingParseContext* context)
     // auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     // // 1.2获取可用核数
     // compileInfo->totalCoreNum = ascendcPlatform.GetCoreNumAiv();
-    // // 1,3获取UB大小
+    // // 1.3获取UB大小
     // uint64_t ubSizePlatForm;
     // ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     // compileInfo->ubSize = static_cast<int64_t>(ubSizePlatForm);
@@ -402,7 +402,7 @@ private:
     GlobalTensor<T> inputGMX_;
     // 输入Y的GM地址
     GlobalTensor<T> inputGMY_;
-    // 输入Z的GM地址
+    // 输出Z的GM地址
     GlobalTensor<T> outputGMZ_;
     
     // 总数据长度
