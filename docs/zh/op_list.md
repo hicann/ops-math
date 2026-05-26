@@ -1307,6 +1307,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/ndtri/README.md">ndtri</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>逆标准正态累积分布函数（probit），对输入概率张量逐元素计算标准正态分位点。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/neg/README.md">neg</a></td>
     <td>√</td>
     <td>√</td>
