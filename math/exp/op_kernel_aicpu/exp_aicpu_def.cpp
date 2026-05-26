@@ -20,6 +20,7 @@ class Exp : public OpDef {
     this->Output("y").DataType({ge::DT_COMPLEX64});
 
     ApplyMathAicpuDefaultCfg(*this);
+    this->AICPU().ExtendCfgInfo(OP_INFO_FORMAT_AGNOSTIC.c_str(), TRUE_FORMAT_AGNOSTIC.c_str());
   }
 };
 

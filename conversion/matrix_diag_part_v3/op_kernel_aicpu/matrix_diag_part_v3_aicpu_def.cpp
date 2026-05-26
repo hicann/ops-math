@@ -34,8 +34,6 @@ public:
                        ge::DT_COMPLEX64, ge::DT_COMPLEX128});
 
         ApplyMathAicpuDefaultCfg(*this);
-        this->AICPU().ExtendCfgInfo(OP_INFO_OPS_FLAG.c_str(), OPEN_OPS_FLAG.c_str());
-        this->AICPU().ExtendCfgInfo(OP_INFO_SUB_TYPE_OF_INFERSHAPE.c_str(), DEFAULT_SUB_TYPE_OF_INFERSHAPE_2.c_str());
     }
 };
 

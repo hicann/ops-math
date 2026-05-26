@@ -21,6 +21,7 @@ public:
         this->Output("y").DataType({ge::DT_BOOL});
 
         ApplyMathAicpuDefaultCfg(*this);
+        this->AICPU().ExtendCfgInfo(OP_INFO_SUB_TYPE_OF_INFERSHAPE.c_str(), DEFAULT_SUB_TYPE_OF_INFERSHAPE_2.c_str());
         this->AICPU().ExtendCfgInfo(OP_INFO_OPS_FLAG.c_str(), OPEN_OPS_FLAG.c_str());
     }
 };

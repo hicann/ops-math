@@ -20,6 +20,7 @@ class Asin : public OpDef {
     this->Output("y").DataType({ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_DOUBLE});
 
     ApplyMathAicpuDefaultCfg(*this);
+    this->AICPU().ExtendCfgInfo(OP_INFO_FORMAT_AGNOSTIC.c_str(), TRUE_FORMAT_AGNOSTIC.c_str());
     this->AICPU().ExtendCfgInfo(OP_INFO_OPS_FLAG.c_str(), OPEN_OPS_FLAG.c_str());
   }
 };
