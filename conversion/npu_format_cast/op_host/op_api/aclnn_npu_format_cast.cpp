@@ -69,6 +69,29 @@ static const std::initializer_list<DataType> WEIGHT_DTYPE_SUPPORT_LIST = {
 static const std::initializer_list<op::Format> INPUT_FORMAT_TO_NZ_SUPPORT_LIST = {
     op::Format::FORMAT_ND, op::Format::FORMAT_NCL, op::Format::FORMAT_NCHW, op::Format::FORMAT_NCDHW};
 
+static const std::initializer_list<std::pair<DataType, op::Format>> INPUT_DTYPE_FORMAT_NZ_TO_ND_SUPPORT_LIST = {
+    {DataType::DT_FLOAT4_E2M1, op::Format::FORMAT_FRACTAL_NZ},
+    {DataType::DT_FLOAT4_E2M1, op::Format::FORMAT_FRACTAL_NZ_C0_32},
+    {DataType::DT_INT8, op::Format::FORMAT_FRACTAL_NZ},
+    {DataType::DT_INT8, op::Format::FORMAT_FRACTAL_NZ_C0_16},
+    {DataType::DT_INT8, op::Format::FORMAT_FRACTAL_NZ_C0_32},
+    {DataType::DT_UINT8, op::Format::FORMAT_FRACTAL_NZ},
+    {DataType::DT_UINT8, op::Format::FORMAT_FRACTAL_NZ_C0_16},
+    {DataType::DT_UINT8, op::Format::FORMAT_FRACTAL_NZ_C0_32},
+    {DataType::DT_FLOAT8_E4M3FN, op::Format::FORMAT_FRACTAL_NZ},
+    {DataType::DT_FLOAT16, op::Format::FORMAT_FRACTAL_NZ},
+    {DataType::DT_BF16, op::Format::FORMAT_FRACTAL_NZ},
+    {DataType::DT_INT32, op::Format::FORMAT_FRACTAL_NZ},
+    {DataType::DT_INT32, op::Format::FORMAT_FRACTAL_NZ_C0_2},
+    {DataType::DT_INT32, op::Format::FORMAT_FRACTAL_NZ_C0_4},
+    {DataType::DT_INT32, op::Format::FORMAT_FRACTAL_NZ_C0_16},
+    {DataType::DT_INT32, op::Format::FORMAT_FRACTAL_NZ_C0_32},
+    {DataType::DT_FLOAT, op::Format::FORMAT_FRACTAL_NZ},
+    {DataType::DT_FLOAT, op::Format::FORMAT_FRACTAL_NZ_C0_2},
+    {DataType::DT_FLOAT, op::Format::FORMAT_FRACTAL_NZ_C0_4},
+    {DataType::DT_FLOAT, op::Format::FORMAT_FRACTAL_NZ_C0_16},
+    {DataType::DT_FLOAT, op::Format::FORMAT_FRACTAL_NZ_C0_32}};
+
 static bool IsNonQuantMatmulDtype(int dtype, op::Format dstFormat = op::Format::FORMAT_ND)
 {
     // weight类型为FLOAT且dstFormat为FORMAT_FRACTAL_NZ_C0_16或FORMAT_FRACTAL_NZ_C0_32时，伪量化fp4场景
@@ -480,6 +503,20 @@ static bool ValidNz2NdShape(const aclTensor* srcTensor, const aclTensor* dstTens
     return true;
 }
 
+static bool ValidDtypeFormatForNz2Nd(const aclTensor* srcTensor) 
+{
+    DataType srcDtype = srcTensor->GetDataType();
+    op::Format srcFormat = srcTensor->GetStorageFormat();
+    std::pair<DataType, op::Format> targetPair = {srcDtype, srcFormat};
+    auto it = std::find(INPUT_DTYPE_FORMAT_NZ_TO_ND_SUPPORT_LIST.begin(), 
+                        INPUT_DTYPE_FORMAT_NZ_TO_ND_SUPPORT_LIST.end(), 
+                        targetPair);
+    OP_CHECK(it != INPUT_DTYPE_FORMAT_NZ_TO_ND_SUPPORT_LIST.end(),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Do not support converting [%s] to ND when srcDtype is [%s].",
+                op::ToString(srcFormat).GetString(), op::ToString(srcDtype).GetString()), return false); 
+    return true;
+}
+
 static aclnnStatus Check95NzToNdGetWorkSpaceSizeInputs(const aclTensor* srcTensor, const aclTensor* dstTensor)
 {
     // check dtype
@@ -494,7 +531,10 @@ static aclnnStatus Check95NzToNdGetWorkSpaceSizeInputs(const aclTensor* srcTenso
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, 
             "The shape of ND output does not match the shape of Nz input."),
         return ACLNN_ERR_PARAM_INVALID);
-
+    // check the dtype and format of input    
+    OP_CHECK(ValidDtypeFormatForNz2Nd(srcTensor),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Invalid format and data type for NZ-to-ND conversion"),
+        return ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
 
