@@ -26,13 +26,12 @@
 #include "log/log.h"
 #include "util/math_util.h"
 #include "op_host/tiling_util.h"
-#include "op_host/tiling_templates_registry.h"
+#include "tiling/platform/platform_ascendc.h"
 #include "../op_kernel/col2_im_tiling_data.h"
 #include "../op_kernel/col2_im_tiling_key.h"
 
 namespace optiling {
 
-using namespace Ops::Math::OpTiling;
 
 // 常量定义
 const uint32_t BLOCK_SIZE = 32;
@@ -106,7 +105,7 @@ static ge::graphStatus GetInputShapeInfo(gert::TilingContext* context,
         return ge::GRAPH_FAILED;
     }
     
-    auto shape = EnsureNotScalar(inputShape->GetStorageShape());
+    auto shape = Ops::Math::OpTiling::EnsureNotScalar(inputShape->GetStorageShape());
     auto dimNum = shape.GetDimNum();
     
     if (dimNum != EXPECTED_DIM_NUM) {

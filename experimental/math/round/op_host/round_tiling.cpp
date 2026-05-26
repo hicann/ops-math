@@ -13,7 +13,7 @@
 #include "op_host/tiling_util.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_templates_registry.h"
+#include <graph/utils/type_utils.h>
 #include <cmath>
 #include "../op_kernel/round_tiling_data.h"
 #include "../op_kernel/round_tiling_key.h"
@@ -21,7 +21,6 @@
 
 
 namespace optiling {
-    using namespace Ops::Math::OpTiling;
     #define UB_DATA_NUM_INT32               4U   // 对应DT_INT32类型的ub分块数量：x(x2), y(x2) --> 共4个
     #define UB_DATA_NUM_F16_BF16_NO_DECIMAL 8U   // 对应DT_FLOAT16/DT_BF16（无decimals）的ub分块数量：x(x2), y(x2), round_temp(x2), x_as_float32(x2) --> 共8个
     #define UB_DATA_NUM_F16_BF16_WITH_DECIMAL 10U // 对应DT_FLOAT16/DT_BF16（有decimals）的ub分块数量：x(x2), y(x2), round_temp(x2), x_as_float32(x2), x_scaled(x2) --> 共10个

@@ -9,8 +9,6 @@
 # ----------------------------------------------------------------------------
 
 file(GLOB SUBDIRECTORIES LIST_DIRECTORIES true RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
-# 与 not_equal_v2 并存：legacy not_equal 与 v2 导出相同 aclnn 符号，全量编 cust 会重复定义；仅保留 v2 参与 experimental 遍历。
-list(FILTER SUBDIRECTORIES EXCLUDE REGEX "^not_equal$")
 # 遍历子目录
 foreach(SUBDIR ${SUBDIRECTORIES})
   # 检查子目录中是否存在 CMakeLists.txt

@@ -25,13 +25,13 @@
 #include "log/log.h"
 #include "util/math_util.h"
 #include "op_host/tiling_util.h"
-#include "op_host/tiling_templates_registry.h"
+#include <graph/utils/type_utils.h>
+#include "tiling/platform/platform_ascendc.h"
 #include "../op_kernel/sinh_tiling_data.h"
 #include "../op_kernel/sinh_tiling_key.h"
 
 namespace optiling {
 
-using namespace Ops::Math::OpTiling;
 constexpr uint32_t BLOCK_SIZE = 32;
 constexpr uint32_t BUFFER_NUM = 2;
 constexpr uint32_t WS_SYS_SIZE = 16U * 1024U * 1024U;
@@ -70,11 +70,11 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
     auto inputX = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
     // 如果输入shape 是标量 转换为{1}，否则保持原 shape 不变
-    auto inputShapeX = EnsureNotScalar(inputX->GetStorageShape());
+    auto inputShapeX = Ops::Math::OpTiling::EnsureNotScalar(inputX->GetStorageShape());
     
     auto outZ = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, outZ);
-    auto outShapeZ = EnsureNotScalar(outZ->GetStorageShape());
+    auto outShapeZ = Ops::Math::OpTiling::EnsureNotScalar(outZ->GetStorageShape());
 
     // shape校验
     // 校验维度数一致

@@ -15,14 +15,14 @@
 
 #include "log/log.h"
 #include "util/math_util.h"
-#include "op_host/tiling_util.h"
-#include "op_host/tiling_templates_registry.h"
+#include "register/op_impl_registry.h"
+#include <graph/utils/type_utils.h>
+#include "tiling/platform/platform_ascendc.h"
 #include "../op_kernel/accumulate_nv2_tiling_data.h"
 #include "../op_kernel/accumulate_nv2_tiling_key.h"
 
 namespace optiling {
 
-    using namespace Ops::Math::OpTiling;
 
     #define BLOCK_SIZE 32U
     #define BLOCK_SIZE_LARGE 512U

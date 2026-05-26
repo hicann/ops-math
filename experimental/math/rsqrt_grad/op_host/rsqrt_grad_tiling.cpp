@@ -17,7 +17,7 @@
 #include "util/math_util.h"
 #include "util/platform_util.h"
 #include "op_host/tiling_util.h"
-#include "op_host/tiling_templates_registry.h"
+#include <graph/utils/type_utils.h>
 #include "tiling/platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
 #include "../op_kernel/rsqrt_grad_tiling_data.h"
@@ -25,7 +25,6 @@
 
 namespace optiling {
 
-using namespace Ops::Math::OpTiling;
 //SINGLE_BUFFER
 #define UB_NUM_INT32_ONE 1U
 #define UB_NUM_FLOAT_ONE 3U

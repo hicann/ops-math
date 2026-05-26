@@ -25,13 +25,13 @@
 
 #include "log/log.h"
 #include "util/math_util.h"
-#include "op_host/tiling_util.h"
-#include "op_host/tiling_templates_registry.h"
+#include "register/op_impl_registry.h"
+#include <graph/utils/type_utils.h>
+#include "tiling/platform/platform_ascendc.h"
 #include "../op_kernel/onehot_tiling_data.h"
 #include "../op_kernel/onehot_tiling_key.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 const uint32_t BLOCK_SIZE = 32;
 const uint32_t BUFFER_NUM = 2;
 const uint32_t WS_SYS_SIZE = 16U * 1024U * 1024U;

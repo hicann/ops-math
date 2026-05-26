@@ -18,13 +18,12 @@
 #include "op_host/tiling_util.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_templates_registry.h"
+#include <graph/utils/type_utils.h>
 #include "../op_kernel/tanh_grad_tiling_data.h"
 #include "../op_kernel/tanh_grad_tiling_key.h"
 
 namespace optiling {
 
-using namespace Ops::Math::OpTiling;
 
 #define UB_DATA_NUM_FLOAT 10U // 对应DT_FLOAT类型的ub分块数量
 #define UB_DATA_NUM_OTHER 16U // 对应DT_FLOAT16, DT_BF16类型的ub分块数量

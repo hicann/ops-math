@@ -10,7 +10,7 @@
 
 #include "log/log.h"
 #include "tiling/platform/platform_ascendc.h"
-#include "op_host/tiling_util.h"
+#include "register/op_impl_registry.h"
 #include "../op_kernel/not_equal_tiling_data.h"
 #include "../op_kernel/not_equal_tiling_key.h"
 

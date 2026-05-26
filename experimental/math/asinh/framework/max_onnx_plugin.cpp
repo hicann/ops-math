@@ -11,6 +11,7 @@
 #include "onnx_common.h"
 #include "stub_ops.h"
 #include "op_math_proto_extend.h"
+#include "conversion/identity/op_graph/identity_proto.h"
 #include "math/maximum/op_graph/maximum_proto.h"
 
 using namespace std;
@@ -76,18 +77,13 @@ static Status ParseOpToGraphMax(const ge::Operator& op, Graph& graph)
 
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::8::Max"),
-                   ge::AscendString("ai.onnx::9::Max"),
-                   ge::AscendString("ai.onnx::10::Max"),
-                   ge::AscendString("ai.onnx::11::Max"),
-                   ge::AscendString("ai.onnx::12::Max"),
-                   ge::AscendString("ai.onnx::13::Max"),
-                   ge::AscendString("ai.onnx::14::Max"),
-                   ge::AscendString("ai.onnx::15::Max"),
-                   ge::AscendString("ai.onnx::16::Max"),
-                   ge::AscendString("ai.onnx::17::Max"),
-                   ge::AscendString("ai.onnx::18::Max")})
+    .OriginOpType(
+        {ge::AscendString("ai.onnx::8::Max"), ge::AscendString("ai.onnx::9::Max"), ge::AscendString("ai.onnx::10::Max"),
+         ge::AscendString("ai.onnx::11::Max"), ge::AscendString("ai.onnx::12::Max"),
+         ge::AscendString("ai.onnx::13::Max"), ge::AscendString("ai.onnx::14::Max"),
+         ge::AscendString("ai.onnx::15::Max"), ge::AscendString("ai.onnx::16::Max"),
+         ge::AscendString("ai.onnx::17::Max"), ge::AscendString("ai.onnx::18::Max")})
     .ParseParamsFn(ParseParamsMaxCall)
     .ParseOpToGraphFn(ParseOpToGraphMax)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

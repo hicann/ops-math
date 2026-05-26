@@ -24,14 +24,13 @@
  */
 #include "log/log.h"
 #include "util/math_util.h"
-#include "op_host/tiling_util.h"
-#include "op_host/tiling_templates_registry.h"
+#include "register/op_impl_registry.h"
+#include "tiling/platform/platform_ascendc.h"
 #include "../op_kernel/lin_space_d_tiling_data.h"
 #include "../op_kernel/lin_space_d_tiling_key.h"
 
 namespace optiling {
 
-using namespace Ops::Math::OpTiling;
 
 static const size_t INPUT_IDX_START = 0;
 static const size_t INPUT_IDX_STOP = 1;

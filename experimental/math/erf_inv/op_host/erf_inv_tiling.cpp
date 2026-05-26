@@ -14,8 +14,8 @@
  */
 
 #include "log/log.h"
-#include "op_host/tiling_util.h"
-#include "op_host/tiling_templates_registry.h"
+#include "register/op_impl_registry.h"
+#include "tiling/platform/platform_ascendc.h"
 #include "../op_kernel/erf_inv_tiling_data.h"
 #include "../op_kernel/erf_inv_tiling_key.h"
 

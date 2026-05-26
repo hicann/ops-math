@@ -416,6 +416,8 @@ def build_example_commands(filepath, experimental=False):
     # 如果没有检测到算子或过滤后为空，使用默认算子
     if not ops:
         ops = {default_op}
+    if experimental:
+        ops = {default_op}
 
     # 生成 run_example 命令
     commands = []

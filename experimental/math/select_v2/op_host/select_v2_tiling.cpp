@@ -17,13 +17,12 @@
 #include "op_host/tiling_util.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_templates_registry.h"
+#include <graph/utils/type_utils.h>
 #include "../op_kernel/select_v2_tiling_data.h"
 #include "../op_kernel/select_v2_tiling_key.h"
 
 namespace optiling {
 
-using namespace Ops::Math::OpTiling;
 
 #define BLOCK_SIZE 32U
 #define UB_DATA_NUM_UINT8 16U // 对应DT_FLOAT, DT_INT32, DT_UINT32类型的ub分块数量

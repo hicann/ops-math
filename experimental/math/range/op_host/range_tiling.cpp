@@ -25,8 +25,8 @@
 
 #include "log/log.h"
 #include "util/math_util.h"
-#include "op_host/tiling_util.h"
-#include "op_host/tiling_templates_registry.h"
+#include "register/op_impl_registry.h"
+#include "tiling/platform/platform_ascendc.h"
 #include "../op_kernel/range_tiling_data.h"
 #include "../op_kernel/range_tiling_key.h"
 
@@ -34,7 +34,6 @@ namespace optiling {
 const size_t startIdx=0;
 const size_t endIdx=1;
 const size_t stepIdx=2;
-using namespace Ops::Math::OpTiling;
 struct RangeCompileInfo {};
 const uint32_t BLOCK_SIZE = 32;
 const uint32_t BUFFER_NUM = 2;                                                       

@@ -18,7 +18,6 @@
 #include "tiling/platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
 #include "op_host/tiling_util.h"
-#include "op_host/tiling_templates_registry.h"
 #include "experimental/math/ones_like/op_kernel/ones_like_tiling_data.h"
 #include "experimental/math/ones_like/op_kernel/ones_like_tiling_key.h"
 
@@ -30,7 +29,6 @@
 #define UB_USAGE_DIV (2)
 namespace optiling {
 
-using namespace Ops::Math::OpTiling;
 
 struct OnesLikeCompileInfo {};
 
@@ -54,7 +52,7 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
     // 获取输入shape信息
     auto outY = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, outY);
-    auto outShapeY = EnsureNotScalar(outY->GetStorageShape());
+    auto outShapeY = Ops::Math::OpTiling::EnsureNotScalar(outY->GetStorageShape());
 
     int dimNum = outShapeY.GetDimNum();
     totalIdx = 1;

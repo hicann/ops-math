@@ -12,13 +12,12 @@
 #include "util/math_util.h"
 #include "util/platform_util.h"
 #include "op_host/tiling_util.h"
-#include "op_host/tiling_templates_registry.h"
+#include "tiling/platform/platform_ascendc.h"
 #include "../../op_kernel/arch35/trilu_tiling_data.h"
 #include "../../op_kernel/arch35/trilu_tiling_key.h"
 
 namespace optiling {
 
-using namespace Ops::Math::OpTiling;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
 constexpr uint32_t DCACHE_SIZE = 128 * 1024;
@@ -45,7 +44,7 @@ static ge::graphStatus GetShapeAndAttrsInfo(gert::TilingContext* context,
 {
     auto inputShape = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputShape);
-    auto inShape = EnsureNotScalar(inputShape->GetStorageShape());
+    auto inShape = Ops::Math::OpTiling::EnsureNotScalar(inputShape->GetStorageShape());
     totalElements = inShape.GetShapeSize();
 
     size_t dimNum = inShape.GetDimNum();

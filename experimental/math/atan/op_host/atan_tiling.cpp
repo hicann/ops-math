@@ -16,13 +16,12 @@
 #include "log/log.h"
 #include "util/math_util.h"
 #include "op_host/tiling_util.h"
-#include "op_host/tiling_templates_registry.h"
+#include "tiling/platform/platform_ascendc.h"
 #include "../op_kernel/atan_tiling_data.h"
 #include "../op_kernel/atan_tiling_key.h"
 
 namespace optiling {
 
-using namespace Ops::Math::OpTiling;
 
 constexpr uint32_t ALIGN_SIZE = 256;      //256数据对齐
 constexpr uint32_t UB_DATA_NUMBER_BF16 =   19;
@@ -63,7 +62,7 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, ge::DataT
     auto inputX = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
     // 如果输入shape 是标量 转换为{1}，否则保持原 shape 不变
-    auto inputShapeX = EnsureNotScalar(inputX->GetStorageShape());
+    auto inputShapeX = Ops::Math::OpTiling::EnsureNotScalar(inputX->GetStorageShape());
     auto outY = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, outY);
     auto inputNum = inputShapeX.GetShapeSize(); //输入数量

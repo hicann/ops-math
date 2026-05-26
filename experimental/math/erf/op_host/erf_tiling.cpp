@@ -19,13 +19,12 @@
 #include "op_host/tiling_util.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_templates_registry.h"
+#include <graph/utils/type_utils.h>
 #include "../op_kernel/erf_tiling_data.h"
 #include "../op_kernel/erf_tiling_key.h"
 
 namespace optiling {
 
-using namespace Ops::Math::OpTiling;
 
 constexpr uint32_t BLOCK_SIZE = 32U;
 constexpr uint32_t BUFFER_NUM = 2;
