@@ -24,7 +24,7 @@
    日志相关介绍参见[《日志参考》](https://hiascend.com/document/redirect/CannCommunitylogref)，环境变量介绍参见[《环境变量参考》](https://hiascend.com/document/redirect/CannCommunityEnvRef)。
 
 * **aclnn异常错误信息获取**
-   
+  
    通过aclGetRecentErrMsg接口（参见[《acl API（C）》](https://hiascend.com/document/redirect/CannCommunityCppApi)）获取aclnn接口调用过程中的异常信息，使用方法如下：
 
    ```bash
@@ -120,7 +120,7 @@
 - **上板性能采集**：适用于在真实NPU硬件上运行算子，快速获取算子整体性能指标（如Kernel耗时、Block数、流水占比等），帮助判断算子是否存在性能问题。
 - **流水图仿真**：适用于无NPU硬件开发者，或需要深入分析算子内部指令级流水瓶颈，优化指令排布的场景，提供比上板更详细的指令级流水分析。
 
-### 方式一 上板性能采集
+### 方式1：上板性能采集
 
    * **前提条件**
 
@@ -152,8 +152,8 @@
 
       算子各项流水详细指标可关注`OPPROF_*`下`ArithmeticUtilization`文件，包含了当前各项流水的占比，具体介绍参见[msProf](https://www.hiascend.com/document/redirect/CannCommunityToolMsprof)中“性能数据文件 > msprof op > ArithmeticUtilization（cube及vector类型指令耗时和占比）”章节。
 
-### 方式二 仿真流水图采集
-  
+### 方式2：仿真流水图采集
+
    * **前提条件**
 
       完成算子开发和编译后，假设采用aclnn接口方式调用，生成的算子可执行文件（test_aclnn_add_example）所在目录为本项目`examples/add_example/examples/build/bin/`。
@@ -170,7 +170,7 @@
 
       ```
       trace_core0.json
-       ```
+      ```
 
       在Chrome浏览器中输入“chrome://tracing”地址，并将生成的指令流水图文件（trace_core0.json）拖到空白处打开，具体参数介绍参考CANN Simulator中[“仿真结果解析”](./cann_sim.md#仿真结果解析)章节。
 

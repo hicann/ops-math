@@ -138,7 +138,7 @@ cannsim record [options] user_app --user-options
 
 5. 查看算子指令流水图，参考仿真结果解析。
 
-# 仿真结果解析说明
+# 仿真结果解析
 
 ## 命令功能
 
@@ -216,13 +216,13 @@ cannsim --help
 ```bash
 cannsim record --help
 ```
-  
+
 查询工具 report 子命令的帮助信息： 
 
  ```bash
  cannsim report --help 
- ``` 
- 
+ ```
+
 ## 参数说明
 
 无

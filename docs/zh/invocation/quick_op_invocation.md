@@ -4,7 +4,7 @@
 
 - 前提说明：算子调用前，请参考本项目README完成环境准备和源码下载，此处不再赘述。
 
-- 调用范围：支持调用的算子清单参见[算子列表](../op_list.md)，此外还支持调用experimental贡献目录的算子。
+- 调用范围：支持调用的内置算子清单参见[算子列表](../op_list.md)，还支持调用自定义算子（如experimental目录下贡献算子）。
 
 - 调用场景：请根据实际场景诉求选择合适的算子调用方案。
 
@@ -27,9 +27,9 @@
 
 该方法特点是无需搭建调用工程（即创建编译/运行脚本等），简单易操作。
 
-> **说明**：对于Ascend 950PR产品，可通过Simulator仿真工具执行算子样例，详见[仿真指导](../debug/op_debug_prof.md#方式二针对ascend-950pr)。
+> **说明**：对于Ascend 950PR产品，可通过Simulator仿真工具执行算子样例，详见[仿真指导](../debug/op_debug_prof.md#方式2仿真流水图采集)。
 
-**步骤1**：参考[源码构建指南](../install/compile.md)完成源码包编译和部署。
+**步骤1**：环境准备。在调用算子前，请先确保您的环境已安装CANN-toolkit包和编译好的算子包。
 
 **步骤2**：执行项目中已有算子的样例。
 
@@ -146,15 +146,15 @@
 
 ### PyTorch API
 
-该方式将算子Kernel注册到PyTorch原生框架，以类似于Torch原生API方式实现算子调用。
+该方式将算子Kernel注册到PyTorch原生框架，使其可以像原生Torch API一样被直接调用。
 
-具体调用原理和过程请参考[examples/fast_kernel_launch_example](../../../examples/fast_kernel_launch_example/README.md)，内容仍在建设和优化中，欢迎您提问和建议。
+具体调用原理和过程请参考[examples/fast_kernel_launch_example](../../../examples/fast_kernel_launch_example/README.md)。
 
 ### aclnn API
 
 #### 调用流程
 
-为方便调用算子，Host侧提供算子对应的C语言API（以aclnn为前缀API）实现算子调用，无需提供算子IR（Intermediate Representation）定义。aclnn API调用流程如下：
+为方便调用算子，Host侧提供算子对应的C语言API（即以aclnn为前缀的API）实现算子调用，无需提供算子IR（Intermediate Representation）定义。aclnn API调用流程如下：
 
 ![原理图](../figures/aclnn调用.png)
 
@@ -162,9 +162,13 @@
 
 > 注意：操作过程中，如遇到日志提示设置环境变量，请按提示操作。
 
-1. 创建调用脚本。
+1. 环境准备。在编译运行前，请先确保您的环境已安装CANN-toolkit包和编译好的算子包。
 
-   在目标算子`examples`目录下，新建调用脚本test\_aclnn\_\$\{op\_name\}.cpp，\$\{op\_name\}表示目标算子名。以`AddExample`算子为例，调用脚本如下，仅供参考，全量代码参见[test_aclnn_add_example.cpp](../../../examples/add_example/examples/test_aclnn_add_example.cpp)。
+2. 创建调用脚本。
+
+    在环境任意目录下，新建调用cpp脚本，命名自定义（例如`${test_aclnn_op_name}.cpp`）。
+
+   为方便理解，以`AddExample`算子为例，调用脚本如下，仅供参考，全量代码参见[test_aclnn_add_example.cpp](../../../examples/add_example/examples/test_aclnn_add_example.cpp)。
 
    ```Cpp
    int main()
@@ -244,81 +248,127 @@
    }
    ```
 
-2. 创建CMakeLists.txt文件。
+3. 创建CMakeLists.txt文件。
 
-   在test\_aclnn\_\$\{op\_name\}.cpp同级目录下创建CMakeLists.txt文件，以`AddExample`算子为例，示例如下，请根据实际情况自行修改。
+    在`${test_aclnn_op_name}.cpp`同级目录下创建CMakeLists.txt文件，需注意的是，调用自定义算子（如experimental目录）和标准项目算子（内置算子）时编译脚本有差异。示例如下，仅供参考，请根据实际情况自行修改。
 
-    ```bash
-    cmake_minimum_required(VERSION 3.14)
-    # 设置工程名
-    project(ACLNN_EXAMPLE)
-   
-    # 设置C++编译标准
-    add_compile_options(-std=c++11)
-   
-    # 设置编译输出目录为当前目录下的bin文件夹
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  "./bin")    
-   
-    # 设置调试和发布模式的编译选项
-    set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -O0 -g -Wall")
-    set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -O2 -Wall")
-   
-    # 添加可执行文件（请替换为实际算子可执行文件），指定算子调用的*.cpp文件
-    add_executable(test_aclnn_add_example              
-    test_aclnn_add_example.cpp)         
-   
-    # ASCEND_PATH（CANN软件包目录，请根据实际路径修改）
-    if(NOT "$ENV{ASCEND_HOME_PATH}" STREQUAL "")      
-        set(ASCEND_PATH $ENV{ASCEND_HOME_PATH})
-    else()
-        set(ASCEND_PATH "/usr/local/Ascend/cann")
-    endif()
-   
-    # 获取自定义算子包名称，存在多个自定义算子包时，只会使用其中一个
-    set(VENDORS_DIR "${ASCEND_PATH}/opp/vendors")
-    file(GLOB CUSTOM_DIRS "${VENDORS_DIR}/*")
-    foreach(CUSTOM_DIR ${CUSTOM_DIRS})
-        if(IS_DIRECTORY ${CUSTOM_DIR})
-            set(TARGET_SUBDIR ${CUSTOM_DIR})
+    - **调用自定义算子**：依赖自定义算子包
+
+        ```bash
+        cmake_minimum_required(VERSION 3.14)
+        # 设置工程名
+        project(ACLNN_EXAMPLE)
+
+        # 设置C++编译标准
+        add_compile_options(-std=c++11)
+
+        # 设置编译输出目录为当前目录下的bin文件夹
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  "./bin")    
+
+        # 设置调试和发布模式的编译选项
+        set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -O0 -g -Wall")
+        set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -O2 -Wall")
+
+        # 添加可执行文件（自定义：替换为实际调用算子的*.cpp文件）
+        add_executable(${test_aclnn_op_name}              
+        ${test_aclnn_op_name}.cpp)         
+
+        # ASCEND_PATH（如遇CANN包路径有误，请根据实际路径修改）
+        if(NOT "$ENV{ASCEND_HOME_PATH}" STREQUAL "")      
+            set(ASCEND_PATH $ENV{ASCEND_HOME_PATH})
+        else()
+            set(ASCEND_PATH "/usr/local/Ascend/cann")
         endif()
-    endforeach()
-   
-    if(NOT DEFINED TARGET_SUBDIR)
-        message(FATAL_ERROR "在路径${ASCEND_PATH}中未找到自定义算子包") 
-    endif()
-   
-    # 设置头文件路径
-    set(INCLUDE_BASE_DIR "${ASCEND_PATH}/include")
-    include_directories(
-        ${INCLUDE_BASE_DIR}
-        ${TARGET_SUBDIR}/op_api/include    # 仅自定义算子需要
-        # ${INCLUDE_BASE_DIR}/aclnn                                   # 仅内置算子需要
-    )
-    include_directories(
-        ${INCLUDE_BASE_DIR}
-    )
-   
-    # 链接所需的动态库
-    target_link_libraries(test_aclnn_add_example PRIVATE             # 替换实际算子可执行文件
-        ${ASCEND_PATH}/lib64/libascendcl.so
-        ${ASCEND_PATH}/lib64/libnnopbase.so
-        ${TARGET_SUBDIR}/op_api/lib/libcust_opapi.so   # 仅自定义算子需要
-        # ${ASCEND_PATH}/lib64/libopapi_math.so    # 仅内置算子需要
-    )
-    target_link_options(test_aclnn_add_example PRIVATE
-        "-Wl,-rpath,${TARGET_SUBDIR}/op_api/lib" # 仅自定义算子需要
-    )
-   
-    # 安装目标文件到bin目录  
-    install(TARGETS test_aclnn_add_example DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-    ```
 
-3. 创建run.sh文件。
+        # 获取自定义算子包名称，存在多个自定义算子包时，只会使用其中一个
+        set(VENDORS_DIR "${ASCEND_PATH}/opp/vendors")
+        file(GLOB CUSTOM_DIRS "${VENDORS_DIR}/*")
+        foreach(CUSTOM_DIR ${CUSTOM_DIRS})
+            if(IS_DIRECTORY ${CUSTOM_DIR})
+                set(TARGET_SUBDIR ${CUSTOM_DIR})
+            endif()
+        endforeach()
 
-    在test\_aclnn\_\$\{op\_name\}.cpp同级目录下创建run.sh文件，以`AddExample`算子为例，示例如下，请根据实际情况自行修改。
+        if(NOT DEFINED TARGET_SUBDIR)
+            message(FATAL_ERROR "在路径${ASCEND_PATH}中未找到自定义算子包") 
+        endif()
+
+        # 设置头文件路径
+        set(INCLUDE_BASE_DIR "${ASCEND_PATH}/include")
+        include_directories(
+            ${INCLUDE_BASE_DIR}
+            ${TARGET_SUBDIR}/op_api/include
+        )
+        include_directories(
+            ${INCLUDE_BASE_DIR}
+        )
+
+        # 链接所需的动态库（自定义：替换为实际算子可执行文件）
+        target_link_libraries(${test_aclnn_op_name} PRIVATE    
+            ${ASCEND_PATH}/lib64/libascendcl.so
+            ${ASCEND_PATH}/lib64/libnnopbase.so
+            ${TARGET_SUBDIR}/op_api/lib/libcust_opapi.so      # 链接自定义算子库文件
+        )
+        target_link_options(${op_name}_invocation PRIVATE
+            "-Wl,-rpath,${TARGET_SUBDIR}/op_api/lib"
+        )
+
+        # 安装目标文件到bin目录（自定义：替换为实际算子可执行文件）  
+        install(TARGETS ${test_aclnn_op_name} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+        ```
+
+    - **调用标准算子（内置算子）**：依赖op-math整包
+
+        ```bash
+        cmake_minimum_required(VERSION 3.14)
+        # 设置工程名
+        project(ACLNN_EXAMPLE)
+        
+        # 设置C++编译标准
+        add_compile_options(-std=c++11)
+        
+		# 设置编译输出目录为当前目录下的bin文件夹
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  "./bin")
+        
+		# 设置调试和发布模式的编译选项
+        set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -O0 -g -Wall")
+        set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -O2 -Wall")
+        
+		# 添加可执行文件（自定义：替换为实际调用算子的*.cpp文件）
+        add_executable(${test_aclnn_op_name}
+        ${test_aclnn_op_name}.cpp)
+        
+		# ASCEND_PATH（如遇CANN包路径有误，请根据实际路径修改）
+        if(NOT "$ENV{ASCEND_HOME_PATH}" STREQUAL "")
+            set(ASCEND_PATH $ENV{ASCEND_HOME_PATH})
+        else()
+            set(ASCEND_PATH "/usr/local/Ascend/cann")
+        endif()
+        
+		# 设置头文件路径
+        set(INCLUDE_BASE_DIR "${ASCEND_PATH}/include")
+        include_directories(
+            ${INCLUDE_BASE_DIR}
+            ${ASCEND_PATH}/include/aclnnop
+        )
+        
+		# 链接所需的动态库（自定义：替换为实际算子可执行文件）
+        target_link_libraries(${op_name}_invocation PRIVATE
+            ${ASCEND_PATH}/lib64/libascendcl.so
+            ${ASCEND_PATH}/lib64/libnnopbase.so
+            ${ASCEND_PATH}/lib64/libopapi_math.so            # 链接内置算子库文件
+        )
+        
+		# 安装目标文件到bin目录（自定义：替换为实际算子可执行文件）  
+        install(TARGETS ${op_name}_invocation DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+        ```
+    
+4. 创建run.sh文件。
+
+    在`${test_aclnn_op_name}.cpp`同级目录下创建run.sh文件，以`AddExample`算子为例，示例如下，请根据实际情况自行修改。
 
     ```bash
-    if [ -n "$ASCEND_INSTALL_PATH" ]; then                      # 实际CANN包安装路径
+    if [ -n "$ASCEND_INSTALL_PATH" ]; then                     # 实际CANN包安装路径
         _ASCEND_INSTALL_PATH=$ASCEND_INSTALL_PATH
     elif [ -n "$ASCEND_HOME_PATH" ]; then
         _ASCEND_INSTALL_PATH=$ASCEND_HOME_PATH
@@ -334,17 +384,17 @@
     cmake ../ -DCMAKE_CXX_COMPILER=g++ -DCMAKE_SKIP_RPATH=TRUE  # 执行构建命令
     make
     cd bin
-    ./test_aclnn_add_example            # 替换为实际算子可执行文件名
+    ./${test_aclnn_op_name}                                     # 替换为实际算子可执行文件名
     ```
 
-4. 运行run.sh文件。
+5. 运行run.sh文件。
    在run.sh文件所在路径执行如下命令：
 
    ```bash
    bash run.sh
    ```
 
-    默认在当前执行路径 `/build/bin`下生成可执行文件test\_aclnn\_add\_example，运行结果如下：
+    默认在当前执行路径 `/build/bin`下生成可执行文件${test_aclnn_op_name}。运行结果以test\_aclnn\_add\_ example为例：
 
    ```
    mean result[2046] is 2.000000
@@ -363,7 +413,9 @@
 
 > 注意：操作过程中，如遇到日志提示设置环境变量，请按提示操作。
 
-1. 创建调用脚本。
+1. 环境准备。在编译运行前，请先确保您的环境已安装CANN-toolkit包和编译好的算子包。
+
+2. 创建调用脚本。
 
    在目标算子`examples`目录下，新建调用脚本test\_geir\_\$\{op\_name\}.cpp，\$\{op\_name\}表示目标算子名。以`AddExample`算子为例，调用脚本如下，仅供参考，全量代码参见[test_geir_add_example.cpp](../../../examples/add_example/examples/test_geir_add_example.cpp)。
 
@@ -410,7 +462,7 @@
    }
    ```
 
-2. 创建CMakeLists.txt文件。
+3. 创建CMakeLists.txt文件。
 
    在test\_geir\_\$\{op\_name\}.cpp同级目录下创建CMakeLists.txt文件，以`AddExample`算子为例，示例如下，请根据实际情况自行修改。
 
@@ -460,7 +512,7 @@
    )
     ```
 
-3. 创建run.sh脚本。
+4. 创建run.sh脚本。
 
    在test\_geir\_\$\{op\_name\}.cpp同级目录下创建run.sh文件，以`AddExample`算子为例，示例如下，请根据实际情况自行修改。
 
@@ -472,18 +524,18 @@
     else
         _ASCEND_INSTALL_PATH="/usr/local/Ascend/cann"
     fi
-
+   
     source ${_ASCEND_INSTALL_PATH}/bin/setenv.bash               
-
+   
     rm -rf build                 
     mkdir -p build 
     cd build
     cmake ../ -DCMAKE_CXX_COMPILER=g++ -DCMAKE_SKIP_RPATH=TRUE  # 执行构建命令
     make
-    ./test_geir_add_example                  # 替换为实际算子可执行文件名
+    ./test_geir_add_example                                     # 替换为实际算子可执行文件名
     ```
 
-4. 运行run.sh脚本。
+5. 运行run.sh脚本。
     在run.sh文件所在路径执行如下命令：
 
     ```bash

@@ -39,7 +39,7 @@ Docs目录结构说明如下：
 | [源码构建指南](zh/install/compile.md)                        | 介绍联网/未联网场景下不同的源码构建方式和验证方法。          |
 | [算子调用指南](zh/invocation/quick_op_invocation.md)         | 介绍调用算子样例方法和不同算子调用方式（如PyTorch/aclnn/图等）。 |
 | [标准算子开发指南](zh/develop/aicore_develop_guide.md)       | 介绍如何基于标准工程定义算子原型、实现Tiling和Kernel，此类算子称为“标准算子”。<br>标准算子支持aclnn和图模式调用。 |
-| [简易算子开发指南](../examples/fast_kernel_launch_example/README.md) | 介绍如何基于简易工程实现fast_kernel_launch，即`<<<>>>`方式，此类算子称为“简易算子”。<br>简易算子仅支持PyTorch调用。 |
+| [简易算子开发指南](../examples/fast_kernel_launch_example/README.md) | 介绍如何基于简易工程实现fast_kernel_launch，即`<<<>>>`方式，此类算子称为“简易算子”（也称为生态最简算子）。<br>简易算子仅支持PyTorch调用。 |
 | [算子调试调优](zh/debug/op_debug_prof.md)                    | 介绍常见的算子功能调试和性能调优方法（如数据采集和仿真流水等）。 |
 
 ### API类文档
@@ -57,9 +57,7 @@ Docs目录结构说明如下：
 
 ### 更多文档
 
-- 样例类文档：可参考[cann-samples](https://gitcode.com/cann/cann-samples)仓算子样例。
-- 实践类文档：**建设中**，请您访问项目wiki进行搜索。
-- FAQ类文档：**建设中**，请您访问项目wiki进行搜索。
+欢迎前往[wiki中心](https://gitcode.com/cann/ops-math/wiki/Home.md)了解更多项目信息，包括项目定位、算子开发补充知识介绍、性能优化方法论、常见问题（FAQ）及问题定位方法等。
 
 ## 附录
 
