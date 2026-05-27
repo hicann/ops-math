@@ -967,7 +967,9 @@ function(init_tf_plugin_modules)
   target_include_directories(${TF_PLUGIN_NAME}_obj
     PRIVATE
     ${OP_PROTO_INCLUDE}
-    ${Protobuf_INCLUDE}
+    ${HOST_PROTOC_SRC}
+    ${HOST_PROTOC_PATH}
+    ${PROTOBUF_INCLUDE_DIRS}
     ${CMAKE_BINARY_DIR}/proto
     ${TF_PLUGIN_COMMON_INCLUDE}
   )
