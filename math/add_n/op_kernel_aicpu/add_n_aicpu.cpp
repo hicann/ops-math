@@ -19,7 +19,7 @@
 #include "utils/kernel_util.h"
 
 namespace {
-const std::uint32_t kAddNInputNum{aicpu::kDynamicInput};
+const std::uint32_t kAddNInputNum{static_cast<uint32_t>(aicpu::kDynamicInput)};
 const std::uint32_t kAddNOutputNum{1u};
 const char *kAddN{"AddN"};
 const std::int64_t kAddNParallelNum{16 * 1024};
