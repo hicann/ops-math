@@ -133,7 +133,7 @@ docker run --name cann_container --device /dev/davinci0 --device /dev/davinci_ma
 本项目基础依赖如下，注意满足版本号要求。
 
 - python >= 3.7.0（建议版本 <= 3.10）
-- gcc >= 7.3.0
+- gcc/g++ >= 7.3.0
 - cmake >= 3.16.0
 - pigz（可选，安装后可提升打包速度，建议版本 >= 2.4）
 - dos2unix
@@ -173,7 +173,7 @@ docker run --name cann_container --device /dev/davinci0 --device /dev/davinci_ma
 
 尽管Spack会自动安装相关依赖，但是Spack依旧需要一些前置依赖来支持自身的运行：
 - python >= 3.7.0（建议版本 <= 3.10）
-- gcc >= 7.3.0
+- gcc/g++ >= 7.3.0
 - patch
 可自行手动安装，也可参考[安装基础依赖](./quick_install.md#安装基础依赖)
 
