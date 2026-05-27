@@ -15,7 +15,7 @@
 #include "matrix_diag_tiling_arch35.h"
 #include "log/log.h"
 #include "util/math_util.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "platform/platform_ascendc.h"
 #include "util/platform_util.h"
 #include <cstring>
@@ -406,7 +406,7 @@ static ge::graphStatus TilingPrepare4MatrixDiag(gert::TilingParseContext* contex
         context == nullptr, OP_LOGE("TilingPrepare4MatrixDiag", "The context is nullptr!"), return ge::GRAPH_FAILED);
     auto compileInfo = context->GetCompiledInfo<MatrixDiagAsc::MatrixDiagCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
-    compileInfo->isAscendC = Ops::Math::OpTiling::IsRegbaseSocVersion(context);
+    compileInfo->isAscendC = Ops::Base::IsRegbaseSocVersion(context);
     if (compileInfo->isAscendC) {
         return TilingPrepare4MatrixDiagAscendC(context);
     }

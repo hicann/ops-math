@@ -16,7 +16,7 @@
 #include "util/const_util.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "util/math_util.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "log/log.h"
 
 using namespace gert;
@@ -182,7 +182,7 @@ ge::graphStatus SplitVTiling::GetInputParams()
 {
     auto xInput = context_->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, xInput);
-    const gert::Shape& xInputShape = Ops::Math::OpTiling::EnsureNotScalar(xInput->GetStorageShape());
+    const gert::Shape& xInputShape = Ops::Base::EnsureNotScalar(xInput->GetStorageShape());
     inputShape_ = xInputShape;
 
     // 不能使用 GetConstIntToShape, gert::Shape最多只能支持25个数，超过25就获取不到了
@@ -871,7 +871,7 @@ int64_t SplitVTiling::FloorAlign(int64_t value, int64_t factor) const {
 ge::graphStatus SplitVTiling::GetInputParamsSameLen() {
     auto xInput = context_->GetInputShape(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, xInput);
-    const gert::Shape& xInputShape = Ops::Math::OpTiling::EnsureNotScalar(xInput->GetStorageShape());
+    const gert::Shape& xInputShape = Ops::Base::EnsureNotScalar(xInput->GetStorageShape());
     auto attrs = context_->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context_, attrs);
     auto attr0 = attrs->GetInt(0);

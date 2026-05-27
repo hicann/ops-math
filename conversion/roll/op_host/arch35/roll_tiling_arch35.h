@@ -15,12 +15,11 @@
 #ifndef __ROLL_TILING_H__
 #define __ROLL_TILING_H__
 
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "conversion/roll/op_kernel/arch35/roll_struct.h"
 #include "platform/platform_ascendc.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 
 struct RollCompileInfoArch35 {
     int32_t core_num;
@@ -30,14 +29,14 @@ struct RollCompileInfoArch35 {
     platform_ascendc::SocVersion socVersion;
 };
 
-class RollTilingClass : public TilingBaseClass {
+class RollTilingClass : public Ops::Base::TilingBaseClass {
 public:
-    explicit RollTilingClass(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit RollTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
     void Reset(gert::TilingContext* context) override
     {
-        TilingBaseClass::Reset(context);
+        Ops::Base::TilingBaseClass::Reset(context);
     }
 
 protected:

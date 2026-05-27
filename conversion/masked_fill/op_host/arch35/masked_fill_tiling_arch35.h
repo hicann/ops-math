@@ -18,7 +18,7 @@
 
 #include "register/op_def_registry.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
 namespace optiling {
 struct MaskedFillCompileInfo {
@@ -26,9 +26,9 @@ struct MaskedFillCompileInfo {
     uint64_t ubSize = 0;
 };
 
-class MaskedFillTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class MaskedFillTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit MaskedFillTiling(gert::TilingContext* context) : Ops::Math::OpTiling::TilingBaseClass(context) {}
+    explicit MaskedFillTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;

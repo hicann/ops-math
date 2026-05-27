@@ -16,7 +16,7 @@
 #define CLIP_BY_VALUE_UB_BROADCAST_TILING_H
 
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "register/op_impl_registry.h"
 
@@ -54,9 +54,9 @@ REGISTER_TILING_DATA_CLASS(ClipByValueV2_3000003, ClipByValueUbBrcTilingData);
 REGISTER_TILING_DATA_CLASS(ClipByValueV2_3000004, ClipByValueUbBrcTilingData);
 REGISTER_TILING_DATA_CLASS(ClipByValueV2_3000009, ClipByValueUbBrcTilingData);
 
-class ClipByValueTilingUbBroadcast : public Ops::Math::OpTiling::TilingBaseClass {
+class ClipByValueTilingUbBroadcast : public Ops::Base::TilingBaseClass {
 public:
-    explicit ClipByValueTilingUbBroadcast(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit ClipByValueTilingUbBroadcast(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

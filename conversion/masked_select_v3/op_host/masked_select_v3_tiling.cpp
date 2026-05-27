@@ -14,7 +14,7 @@
  */
 #include <cmath>
 #include "util/math_util.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "log/log.h"
 #include "masked_select_v3_tiling.h"
 
@@ -250,7 +250,7 @@ ge::graphStatus TilingPrepareForMaskedSelectV3(gert::TilingParseContext* context
         return ge::GRAPH_FAILED;
     }
 
-    compileInfo->isRegbase = Ops::Math::OpTiling::IsRegbaseSocVersion(context);
+    compileInfo->isRegbase = Ops::Base::IsRegbaseSocVersion(context);
     OP_LOGD(context, "compileInfo->isRegbase is %d.", compileInfo->isRegbase);
 
     OP_LOGD(context, "TilingPrepareForMaskedSelectV3 end.");

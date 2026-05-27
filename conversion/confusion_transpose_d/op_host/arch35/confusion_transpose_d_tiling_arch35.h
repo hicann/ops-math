@@ -18,7 +18,7 @@
 #include <cmath>
 #include <vector>
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "op_api/op_util.h"
 #include "log/log.h"
 #include "../../../transpose/op_host/arch35/transpose_tiling_arch35.h"

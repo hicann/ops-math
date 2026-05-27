@@ -19,11 +19,10 @@
 #include "util/math_util.h"
 #include "util/platform_util.h"
 #include "mem_set_tiling_arch35.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 
 using namespace MemSetTpl;
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 std::set<ge::DataType> SUPPORT_TYPE_LIST = {ge::DT_INT8,   ge::DT_INT32, ge::DT_UINT8,  ge::DT_INT16, ge::DT_UINT16,
                                             ge::DT_UINT32, ge::DT_INT64, ge::DT_UINT64, ge::DT_FLOAT, ge::DT_FLOAT16};
 std::set<ge::DataType> SUPPORT_TYPE_INT_LIST = {ge::DT_INT8,   ge::DT_INT32,  ge::DT_UINT8, ge::DT_INT16,

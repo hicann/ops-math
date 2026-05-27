@@ -16,7 +16,7 @@
 #define CLIP_BY_VALUE_SINGLE_DIM_TILING_H
 
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/op_impl_registry.h"
 
 namespace optiling {
@@ -39,9 +39,9 @@ REGISTER_TILING_DATA_CLASS(ClipByValue_2001100, ClipByValueSigDimTilingData);
 REGISTER_TILING_DATA_CLASS(ClipByValueV2_2000100, ClipByValueSigDimTilingData);
 REGISTER_TILING_DATA_CLASS(ClipByValueV2_2001100, ClipByValueSigDimTilingData);
 
-class ClipByValueTilingSingleDim : public Ops::Math::OpTiling::TilingBaseClass {
+class ClipByValueTilingSingleDim : public Ops::Base::TilingBaseClass {
 public:
-    explicit ClipByValueTilingSingleDim(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit ClipByValueTilingSingleDim(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

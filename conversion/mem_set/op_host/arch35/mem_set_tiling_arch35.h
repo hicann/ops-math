@@ -17,28 +17,27 @@
 #define AIR_CXX_RUNTIME_OP_IMPL_MEM_SET_H
 
 #include <vector>
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "conversion/mem_set/op_kernel/arch35/mem_set_struct.h"
 #include "platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
 
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 
 struct MemSetCompileInfoArch35 {
     uint32_t coreNum = 0;
     uint32_t ubSize = 0;
 };
 
-class MemSetTilingClass : public TilingBaseClass {
+class MemSetTilingClass : public Ops::Base::TilingBaseClass {
 public:
-    explicit MemSetTilingClass(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit MemSetTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
     void Reset(gert::TilingContext* context) override
     {
-        TilingBaseClass::Reset(context);
+        Ops::Base::TilingBaseClass::Reset(context);
     }
 
 protected:

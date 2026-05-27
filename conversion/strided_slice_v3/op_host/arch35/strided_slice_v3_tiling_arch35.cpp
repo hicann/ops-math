@@ -655,10 +655,10 @@ static ge::graphStatus TilingForStridedSliceV3(gert::TilingContext* context) {
     OP_CHECK_NULL_WITH_CONTEXT(context, yStorage);
 
     struct SliceParameters sliceParam;
-    const gert::Shape& xShape = Ops::Math::OpTiling::EnsureNotScalar(xStorage->GetOriginShape());
+    const gert::Shape& xShape = Ops::Base::EnsureNotScalar(xStorage->GetOriginShape());
     int32_t inputDimNum = static_cast<int32_t>(xShape.GetDimNum());
     ConstructSliceShape(xShape, inputDimNum, sliceParam.input);
-    const gert::Shape& yShape = Ops::Math::OpTiling::EnsureNotScalar(yStorage->GetOriginShape());
+    const gert::Shape& yShape = Ops::Base::EnsureNotScalar(yStorage->GetOriginShape());
     ConstructSliceShape(yShape, inputDimNum, sliceParam.output_shape);
 
     std::vector<int64_t> newAxes = ConstructValidAxis(context->GetOptionalInputTensor(INDEX_AXES), inputDimNum);

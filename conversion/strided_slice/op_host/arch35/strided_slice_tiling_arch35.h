@@ -25,7 +25,7 @@
 #include "util/math_util.h"
 #include "log/log.h"
 #include "util/platform_util.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "op_api/op_util.h"
 #include "../strided_slice_util.h"
 

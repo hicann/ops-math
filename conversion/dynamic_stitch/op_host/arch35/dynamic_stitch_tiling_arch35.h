@@ -24,13 +24,12 @@
 #include <vector>
 #include "register/op_def_registry.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "../../op_kernel/arch35/dynamic_stitch_tiling_def.h"
 #include "platform/platform_info.h"
 #include "op_common/op_host/util/math_util.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 
-using namespace Ops::Math::OpTiling;
 
 namespace optiling {
 struct DynamicStitchCompileInfo {
@@ -46,15 +45,15 @@ enum class SliceDivisorType : int64_t
     SLICE_EIGHT = 8
 };
 
-class DynamicStitchTilingClass : public TilingBaseClass
+class DynamicStitchTilingClass : public Ops::Base::TilingBaseClass
 {
 public:
-    explicit DynamicStitchTilingClass(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit DynamicStitchTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
     void Reset(gert::TilingContext* context) override
     {
-        TilingBaseClass::Reset(context);
+        Ops::Base::TilingBaseClass::Reset(context);
     }
 
 protected:
@@ -62,7 +61,7 @@ protected:
     ge::graphStatus GetPlatformInfo() override;
     bool IsCapable() override
     {
-        return IsRegbaseSocVersion(context_);
+        return Ops::Base::IsRegbaseSocVersion(context_);
     }
     ge::graphStatus DoOpTiling() override;
     ge::graphStatus DoLibApiTiling() override

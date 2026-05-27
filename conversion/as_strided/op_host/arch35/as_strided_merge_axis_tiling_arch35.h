@@ -17,7 +17,7 @@
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 #include "op_host/util/const_util.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 
 namespace optiling {
 constexpr size_t IN_X = 0;

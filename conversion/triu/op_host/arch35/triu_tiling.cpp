@@ -22,7 +22,6 @@
 #include "assert.h"
 #include "platform/platform_ascendc.h"
 
-using namespace Ops::Math::OpTiling;
 using namespace Ops::Base;
 
 namespace optiling {

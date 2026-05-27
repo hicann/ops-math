@@ -13,14 +13,13 @@
  * \brief
  */
 #include "roll_tiling_arch35.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 #include "util/math_util.h"
 #include "util/platform_util.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 constexpr int64_t INPUT_X_IDX = 0;
 constexpr int64_t ATTR_SHIFTS_IDX = 0;
 constexpr int64_t ATTR_DIMS_IDX = 1;
@@ -101,9 +100,9 @@ ge::graphStatus RollTilingClass::GetShapeAttrsInfo()
 
 ge::graphStatus RollTilingClass::CheckAndGetInputParam()
 {
-    const gert::Shape xShape = EnsureNotScalar(xShapePtr_->GetStorageShape());
+    const gert::Shape xShape = Ops::Base::EnsureNotScalar(xShapePtr_->GetStorageShape());
     OP_LOGD(context_, "Input x shape is: %s", Ops::Base::ToString(xShape).c_str());
-    const gert::Shape yShape = EnsureNotScalar(yShapePtr_->GetStorageShape());
+    const gert::Shape yShape = Ops::Base::EnsureNotScalar(yShapePtr_->GetStorageShape());
     OP_LOGD(context_, "Output y shape is: %s", Ops::Base::ToString(yShape).c_str());
     if (xShape != yShape) {
         OP_LOGE(context_, "Input x shape should be equal to output y shape");

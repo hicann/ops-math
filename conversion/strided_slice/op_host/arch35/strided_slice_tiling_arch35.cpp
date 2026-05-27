@@ -1592,7 +1592,7 @@ static bool ConstructSliceList(
 
 static void ConstructSliceShape(const gert::StorageShape* storage, gert::Shape& param)
 {
-    const gert::Shape& shape = Ops::Math::OpTiling::EnsureNotScalar(storage->GetStorageShape());
+    const gert::Shape& shape = Ops::Base::EnsureNotScalar(storage->GetStorageShape());
     int32_t dimNum = static_cast<int32_t>(shape.GetDimNum());
     param.SetDimNum(dimNum);
     for (int32_t i = 0; i < dimNum; i++) {
@@ -1930,7 +1930,7 @@ ge::graphStatus Tiling4StridedSlice(gert::TilingContext* context)
     // infer shape
     const gert::StorageShape* xStorage = context->GetInputShape(INDEX_X);
     OP_CHECK_NULL_WITH_CONTEXT(context, xStorage);
-    const gert::Shape& shapeInput = Ops::Math::OpTiling::EnsureNotScalar(xStorage->GetStorageShape());
+    const gert::Shape& shapeInput = Ops::Base::EnsureNotScalar(xStorage->GetStorageShape());
     ops::StridedSliceParams inputParams = {
         shapeInput,
         sliceParam.beginList,

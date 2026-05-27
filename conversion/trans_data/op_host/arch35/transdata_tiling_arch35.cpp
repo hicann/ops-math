@@ -18,11 +18,10 @@
 #include <algorithm>
 
 #include "log/log.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "util/math_util.h"
 #include "util/platform_util.h"
 
-using namespace Ops::Math::OpTiling;
 using namespace Ops::Base;
 
 namespace optiling {
@@ -59,10 +58,10 @@ bool TransDataTilingAscendC::GetShapeInfo()
 {
     auto xStorage = context_->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, xStorage);
-    inShape_ = EnsureNotScalar(xStorage->GetStorageShape());
+    inShape_ = Ops::Base::EnsureNotScalar(xStorage->GetStorageShape());
     auto yStorage = context_->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, yStorage);
-    outShape_ = EnsureNotScalar(yStorage->GetStorageShape());
+    outShape_ = Ops::Base::EnsureNotScalar(yStorage->GetStorageShape());
 
     OP_CHECK_IF(
         inShape_.GetShapeSize() == 0 || outShape_.GetShapeSize() == 0,
@@ -136,10 +135,10 @@ bool TransDataTilingAscendC::CalcNzToNdShapeSize()
 {
     auto xStorage = context_->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, xStorage);
-    inShape_ = EnsureNotScalar(xStorage->GetStorageShape());
+    inShape_ = Ops::Base::EnsureNotScalar(xStorage->GetStorageShape());
     auto yStorage = context_->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, yStorage);
-    outShape_ = EnsureNotScalar(yStorage->GetStorageShape());
+    outShape_ = Ops::Base::EnsureNotScalar(yStorage->GetStorageShape());
 
     OP_CHECK_IF(
         inShape_.GetDimNum() < (int64_t)nFour,

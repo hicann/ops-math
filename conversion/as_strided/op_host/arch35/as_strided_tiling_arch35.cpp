@@ -24,7 +24,7 @@
 #include "as_strided_tiling_arch35.h"
 #include "as_strided_merge_axis_tiling_arch35.h"
 #include "util/math_util.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "log/log.h"
 #include "util/platform_util.h"
 
@@ -1295,7 +1295,7 @@ static ge::graphStatus TilingForAsStridedArch35(gert::TilingContext* context)
 
     auto runtime_x_shape_ptr = context->GetInputShape(IN_X);
     OP_CHECK_NULL_WITH_CONTEXT(context, runtime_x_shape_ptr);
-    auto x_shape = Ops::Math::OpTiling::EnsureNotScalar(runtime_x_shape_ptr->GetStorageShape());
+    auto x_shape = Ops::Base::EnsureNotScalar(runtime_x_shape_ptr->GetStorageShape());
 
     // get const value of storage_offset
     int64_t storage_offset = 0;

@@ -16,7 +16,7 @@
 #define AIR_CXX_RUNTIME_V2_OP_IMPL_STRIDED_SLICE_V3_RUNTIME2_H
 
 #include <string>
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/tilingdata_base.h"
 #include "platform/platform_ascendc.h"
 #include "../../../strided_slice/op_host/arch35/strided_slice_tiling_arch35.h"

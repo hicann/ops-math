@@ -17,7 +17,7 @@
 #include "broadcast_to_tiling_base.h"
 #include "register/op_def_registry.h"
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "util/const_util.h"
 #include "util/math_util.h"
 
@@ -162,14 +162,14 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
 {
     auto xStorage = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xStorage);
-    inShape = Ops::Math::OpTiling::EnsureNotScalar(xStorage->GetStorageShape());
+    inShape = Ops::Base::EnsureNotScalar(xStorage->GetStorageShape());
     auto yStorage = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, yStorage);
-    outShape = Ops::Math::OpTiling::EnsureNotScalar(yStorage->GetStorageShape());
+    outShape = Ops::Base::EnsureNotScalar(yStorage->GetStorageShape());
 
     gert::Shape constShape_{};
     constexpr int64_t constIdx = 1;
-    if (Ops::Base::GetConstIntToShape(context, constIdx, constShape_) && outShape != Ops::Math::OpTiling::EnsureNotScalar(constShape_)) {
+    if (Ops::Base::GetConstIntToShape(context, constIdx, constShape_) && outShape != Ops::Base::EnsureNotScalar(constShape_)) {
         OP_LOGW(context->GetNodeName(), "Output shape %s is different from input const shape %s!",
                 Shape2String(outShape).c_str(), Shape2String(constShape_).c_str());
     }

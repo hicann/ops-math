@@ -16,7 +16,7 @@
 #define CANN_OPS_BUILT_IN_OP_TILING_RUNTIME_STRIDED_SLICE_V2_TILING_H_
 
 #include <string>
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/tilingdata_base.h"
 #include "platform/platform_ascendc.h"
 #include "../../../strided_slice/op_host/arch35/strided_slice_tiling_arch35.h"

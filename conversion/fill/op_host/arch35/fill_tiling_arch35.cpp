@@ -15,7 +15,7 @@
 #include <iostream>
 #include "fill_tiling_arch35.h"
 #include "tiling/platform/platform_ascendc.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 #include "register/tilingdata_base.h"
@@ -96,7 +96,7 @@ ge::graphStatus FillTiling::CheckInputDims()
     // Check if the dims shape is [1]
     auto dimsStorageShape = context_->GetInputShape(FILL_INPUT_DIMS_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, dimsStorageShape);
-    auto dimsShape = Ops::Math::OpTiling::EnsureNotScalar(dimsStorageShape->GetStorageShape());
+    auto dimsShape = Ops::Base::EnsureNotScalar(dimsStorageShape->GetStorageShape());
     if (dimsShape.GetDimNum() != 1) {
         OP_LOGE(context_->GetNodeName(), "Dims shape must be [1].");
         return ge::GRAPH_FAILED;
@@ -122,7 +122,7 @@ ge::graphStatus FillTiling::CheckInputValue()
     // Check if the value shape size is 1
     auto valueStorageShape = context_->GetInputShape(FILL_INPUT_VALUE_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, valueStorageShape);
-    auto valueShape = Ops::Math::OpTiling::EnsureNotScalar(valueStorageShape->GetStorageShape());
+    auto valueShape = Ops::Base::EnsureNotScalar(valueStorageShape->GetStorageShape());
     if (valueShape.GetShapeSize() != 1) {
         OP_LOGE(context_->GetNodeName(), "Value shape size must be 1, but got %ld.",
                                         valueShape.GetShapeSize());

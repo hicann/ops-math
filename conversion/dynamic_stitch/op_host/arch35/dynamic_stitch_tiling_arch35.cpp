@@ -24,9 +24,10 @@
 #include "op_common/op_host/util/platform_util.h"
 #include "op_api/op_util.h"
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_templates_registry.h"
-#include "op_host/tiling_base.h"
+#include "op_host/math_tiling_templates_registry.h"
+#include "op_host/tiling_base_class.h"
 
+using namespace Ops::Math::OpTiling;
 using namespace Ops::Base;
 
 namespace optiling {
