@@ -38,8 +38,7 @@ __global__ __aicore__ void reduce_any(GM_ADDR x, GM_ADDR axes, GM_ADDR y, GM_ADD
     GET_TILING_DATA_WITH_STRUCT(ReduceOpTilingData, tilingData, tiling);
     TPipe pipe;
     if constexpr (IsSameType<DTYPE_X, float>::value) {
-        using PromoteType = __reduceType::GetPromoteType<DTYPE_X>::T;
-        using Op = ReduceSch<REDUCE_TPL_VALUE, ReduceAny::ReduceAnyDagFloat<DTYPE_X, PromoteType>::OpDag>;
+        using Op = ReduceSch<REDUCE_TPL_VALUE, ReduceAny::ReduceAnyDagB32<DTYPE_X, int32_t>::OpDag>;
         Op op(&tilingData);
         op.Init(&pipe, x, y, userWS);
         op.Process(static_cast<uint8_t>(0));

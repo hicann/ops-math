@@ -28,53 +28,49 @@
 namespace ReduceAny {
 using namespace Ops::Base;
 using OutDtype = uint8_t;
-using OutDtype2 = int32_t;
 
-template <typename T, typename R>
-struct CastFloat : public Vec::ElemwiseUnaryOP<T, R> {
-    __aicore__ inline CastFloat(const LocalTensor<T>& dst, const LocalTensor<R>& src, const uint32_t& count)
-    {
-#ifdef __CCE_AICORE__
-        constexpr uint32_t VECTOR_LENGTH = GetVRegSize();
-        constexpr uint32_t VL_B32 = VECTOR_LENGTH / sizeof(R);
-        __local_mem__ R* srcAddr = (__local_mem__ R*)src.GetPhyAddr();
-        __local_mem__ T* dstAddr = (__local_mem__ T*)dst.GetPhyAddr();
-        uint16_t loopTimes = CeilDiv(count, VL_B32);
-        uint32_t InSize = count;
-        uint32_t OutSize = count;
-        __VEC_SCOPE__
-        {
-            MicroAPI::RegTensor<R> srcReg;
-            MicroAPI::RegTensor<T> dstReg;
-            MicroAPI::MaskReg cmpMask;
-            MicroAPI::MaskReg InMask;
-            MicroAPI::MaskReg OutMask;
-            // preg0 = AscendC::MicroAPI::CreateMask<float>();
-            for (uint16_t j = 0; j < loopTimes; j++) {
-                InMask = MicroAPI::UpdateMask<R>(InSize);
-                uint32_t tmp = OutSize - InSize;
-                OutSize = OutSize - tmp;
-                OutMask = MicroAPI::UpdateMask<T>(tmp);
-                MicroAPI::DataCopy<R, MicroAPI::PostLiteral::POST_MODE_UPDATE>(srcReg, srcAddr, VL_B32);
-                MicroAPI::Compares<R, CMPMODE::NE>(cmpMask, srcReg, 0.0f, InMask);
-                MicroAPI::Duplicate(dstReg, static_cast<T>(0.0f));
-                MicroAPI::Duplicate(dstReg, static_cast<T>(1.0f), cmpMask);
-                MicroAPI::DataCopy<T, MicroAPI::PostLiteral::POST_MODE_UPDATE>(dstAddr, dstReg, VL_B32, OutMask);
-                // 这里使用VL_B32原因是每次只搬float类型下的数量，剩下的未执行compare
-            }
-        }
-#endif
-    }
-};
+ template <typename T, typename R>
+ struct CastB32Any : public Vec::ElemwiseUnaryOP<T, R> {
+     __aicore__ inline CastB32Any(const LocalTensor<T>& dst, const LocalTensor<R>& src, const uint32_t& count)
+     {
+ #ifdef __CCE_AICORE__
+         constexpr uint32_t VECTOR_LENGTH = GetVRegSize();
+         constexpr uint32_t VL_B32 = VECTOR_LENGTH / sizeof(T);
+         __local_mem__ R* srcAddr = (__local_mem__ R*)src.GetPhyAddr();
+         __local_mem__ T* dstAddr = (__local_mem__ T*)dst.GetPhyAddr();
+         uint16_t loopTimes = CeilDiv(count, VL_B32);
+         uint32_t InSize = count;
+         uint32_t OutSize = count;
+         __VEC_SCOPE__
+         {
+             MicroAPI::RegTensor<R> srcReg;
+             MicroAPI::RegTensor<T> dstReg;
+             MicroAPI::MaskReg cmpMask;
+             MicroAPI::MaskReg InMask;
+             MicroAPI::MaskReg OutMask;
+             for (uint16_t j = 0; j < loopTimes; j++) {
+                 InMask = MicroAPI::UpdateMask<R>(InSize);
+                 uint32_t tmp = OutSize - InSize;
+                 OutSize = OutSize - tmp;
+                 OutMask = MicroAPI::UpdateMask<T>(tmp);
+                 MicroAPI::DataCopy<R, MicroAPI::PostLiteral::POST_MODE_UPDATE>(srcReg, srcAddr, VL_B32);
+                 MicroAPI::Compares<R, CMPMODE::NE>(cmpMask, srcReg, 0.0f, InMask);
+                 MicroAPI::Duplicate(dstReg, 0);
+                 MicroAPI::Duplicate(dstReg, 1, cmpMask);
+                 MicroAPI::DataCopy<T, MicroAPI::PostLiteral::POST_MODE_UPDATE>(dstAddr, dstReg, VL_B32, OutMask);
+             }
+         }
+ #endif
+     }
+ };
 
 template <typename T, typename PromteT>
-struct ReduceAnyDagFloat {
+struct ReduceAnyDagB32 {
     using OpCopyIn0 = Bind<Vec::CopyIn<T>, Placeholder::In0<T>>;
-    using Cast0 = Bind<CastFloat<PromteT, T>, OpCopyIn0>;
+    using Cast0 = Bind<CastB32Any<PromteT, T>, OpCopyIn0>;
     using ReduceOp0 = Bind<Vec::ReduceAnyOp<PromteT>, Cast0>;
-    using Cast1 = Bind<Vec::Cast<OutDtype2, PromteT, 1>, ReduceOp0>;
-    using Cast2 = Bind<Vec::Cast<OutDtype, OutDtype2, 0>, Cast1>;
-    using OpCopyOut = Bind<Vec::CopyOut<OutDtype>, Placeholder::Out0<OutDtype>, Cast2>;
+    using Cast1 = Bind<Vec::Cast<OutDtype, PromteT, 0>, ReduceOp0>;
+    using OpCopyOut = Bind<Vec::CopyOut<OutDtype>, Placeholder::Out0<OutDtype>, Cast1>;
     using Outputs = Elems<OpCopyOut>;
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
     using OpDag = DAGSch<Outputs, void, MemCfg>;

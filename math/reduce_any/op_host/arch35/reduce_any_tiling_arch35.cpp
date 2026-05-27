@@ -30,13 +30,13 @@ static ge::graphStatus DoTiling(gert::TilingContext* context, ReduceOpInputParam
     OP_CHECK_NULL_WITH_CONTEXT(context, xDesc);
     auto dType = xDesc->GetDataType();
     if (dType == ge::DT_FLOAT) {
-        status = Tiling4ReduceOp<ReduceAny::ReduceAnyDagFloat<float, float>::OpDag>(context, opInput, key);
+        status = Tiling4ReduceOp<ReduceAny::ReduceAnyDagB32<float, int32_t>::OpDag>(context, opInput, key);
     } else {
         status = Tiling4ReduceOp<ReduceAny::ReduceAnyDag<int8_t, half>::OpDag>(context, opInput, key);
     }
     OP_CHECK_IF(
         (status == ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(), "ReduceOp Tiling failed, dtype shoude be in (bool,)"), return ge::GRAPH_FAILED);
+        OP_LOGE(context->GetNodeName(), "ReduceOp Tiling failed, dtype should be in (bool,)"), return ge::GRAPH_FAILED);
     return status;
 }
 
