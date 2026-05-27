@@ -18,7 +18,7 @@
 #include "log/log.h"
 #include "graph/utils/type_utils.h"
 #include "../../op_kernel/arch35/is_finite_dag.h"
-#include "../../op_kernel/arch35/is_finite_struct.h"
+#include "../../op_kernel/arch35/is_finite_struct_arch35.h"
 
 using namespace IsFiniteOp;
 

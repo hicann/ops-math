@@ -13,7 +13,7 @@
  * \brief y = abs(x) < infinity
  */
 #include "arch35/is_finite_dag.h"
-#include "arch35/is_finite_struct.h"
+#include "arch35/is_finite_struct_arch35.h"
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "atvoss/elewise/elewise_sch.h"

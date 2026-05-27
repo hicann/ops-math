@@ -9,7 +9,7 @@
  */
 
 /* !
- * \file is_finite_struct.h
+ * \file is_finite_struct_arch35.h
  * \brief
  */
 #ifndef CANN_CUSTOM_OPS_IS_FINITE_STRUCT_H_

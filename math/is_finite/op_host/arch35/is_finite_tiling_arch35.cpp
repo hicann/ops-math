@@ -18,7 +18,7 @@
 #include "log/log.h"
 #include "graph/utils/type_utils.h"
 #include "../../op_kernel/arch35/is_finite_dag.h"
-#include "../../op_kernel/arch35/is_finite_struct.h"
+#include "../../op_kernel/arch35/is_finite_struct_arch35.h"
 #include "platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
 #include "util/math_util.h"
