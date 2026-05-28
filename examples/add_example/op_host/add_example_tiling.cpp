@@ -128,7 +128,7 @@ static ge::graphStatus AddExampleTilingFunc(gert::TilingContext* context)
     tiling->blockFactor = Ops::Base::CeilDiv(totalIdx, coreNum);
     int64_t usedCoreNum = Ops::Base::CeilDiv(totalIdx, tiling->blockFactor);
     // 计算ub切分，考虑最大同时使用的ub tensor数量，计算单个ub tensor可用大小
-    // 当前场景，2输入和1输出，考虑使能db，共需要6块ub tensor
+    // 当前场景，2输入和1输出，考虑启用db，共需要6块ub tensor
     int64_t ubCanUse = static_cast<int64_t>(ubSize);
     int64_t ubBlockSize = Ops::Base::GetUbBlockSize(context);
     tiling->ubFactor = Ops::Base::FloorAlign(Ops::Base::FloorDiv((ubCanUse / TYPE_SIZE), BUFFER_NUM), ubBlockSize);

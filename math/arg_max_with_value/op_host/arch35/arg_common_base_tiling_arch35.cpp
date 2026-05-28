@@ -660,7 +660,7 @@ ge::graphStatus ArgCommonBaseTiling::CalcSplitInfoForGatherArA()
         ubElement_ = ubSize_ / VALUE_TWO / aSize;
         uint64_t cutNextASize = static_cast<uint16_t>(std::min(blkFactor_, ubElement_));
 
-        // 计算cutNextASize使其充分使能多核
+        // 计算cutNextASize使其充分启用多核
         cutNextASize = CalcCutNextA(cutNextASize);
         uint64_t AlignCutNextASize = Ops::Base::CeilDiv(cutNextASize, elementPerBlock_) * elementPerBlock_;
         uint64_t realMaxUbSize = (ubSize_ / VALUE_TWO - AlignCutNextASize * (eleLenInBytes_ + eleLenIndiceBytes_));

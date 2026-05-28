@@ -32,7 +32,7 @@ BEGIN_TILING_DATA_DEF(ViewCopyTilingData)
     TILING_DATA_FIELD_DEF(int8_t, nddmaSizeLen);                                         // 切分轴之前所有轴的输入size的长度
     TILING_DATA_FIELD_DEF(int8_t, ubDstSizeLen);                                         // 切分轴之前所有轴的输出size的长度
     TILING_DATA_FIELD_DEF(int16_t, enableMovAlign);                                       // 合轴之后所有轴的输入stride的长度
-    TILING_DATA_FIELD_DEF(int16_t, enableDstInt64);                                       // 是否使能Dst的int64类型
+    TILING_DATA_FIELD_DEF(int16_t, enableDstInt64);                                       // 是否启用Dst的int64类型
     TILING_DATA_FIELD_DEF(int64_t, bufferSize);                                           // ub中可用buffer大小
     TILING_DATA_FIELD_DEF(int64_t, dstStorageOffset);                                     // 输入dst_storage_offset的值
     TILING_DATA_FIELD_DEF(int64_t, srcStorageOffset);                                     // 输入src_storage_offset的值

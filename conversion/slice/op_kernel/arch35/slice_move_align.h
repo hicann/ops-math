@@ -198,7 +198,7 @@ __aicore__ inline void SliceMoveAlign<T, U, V>::ProcessPerBlock(const DataCopyEx
         outputGmAddr = this->GetOutputGmAddr(rowsOffsetOutput + idx * this->rowsOffsetSteps_[this->ubIndex_]);
 
         for (int64_t loops = 0; loops < ubSplitLoopsNum; loops++) {
-            // 1、使能loop  mode：调用SetLoopModePara接口，打开loop模式，调用datacopy
+            // 1、启用loop  mode：调用SetLoopModePara接口，打开loop模式，调用datacopy
             // 2、关闭：调用ResetLoopModePara接口，关闭相应模式
             // 3、注意：loop模式如果打开了，需要手动关闭，否则默认就全部都是开的
             LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();

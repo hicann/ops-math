@@ -285,7 +285,7 @@ Tiling 阶段自动根据输入形状和数据类型选择合适的 TK。
 **A**：
 
 ```bash
-# 使能 Ascend 日志打屏
+# 启用 Ascend 日志打屏
 export ASCEND_SLOG_PRINT_TO_STDOUT=1
 
 # 运行程序，Kernel 日志会输出到控制台
