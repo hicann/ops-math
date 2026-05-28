@@ -225,11 +225,21 @@ ge::graphStatus AddLoraTiling::CheckInputAttrLimit()
                 return ge::GRAPH_FAILED);
     scale_ = *scalePtr;
 
+    return CheckYSliceAttrs();
+}
+
+ge::graphStatus AddLoraTiling::CheckYSliceAttrs()
+{
     const int64_t *yOffsetPtr = attrs_->GetAttrPointer<int64_t>(Y_OFFSET_ATTR_INDEX);
     OP_CHECK_IF(yOffsetPtr == nullptr, OP_LOGE(context_->GetNodeName(), "AddLora attr yOffset is nullptr."),
                 return ge::GRAPH_FAILED);
-    yOffset_ = static_cast<uint32_t>(*yOffsetPtr);
-    OP_CHECK_IF(yOffset_ > H3_,
+    int64_t yOffsetValue = *yOffsetPtr;
+    OP_CHECK_IF(yOffsetValue < 0,
+                OP_LOGE(context_->GetNodeName(),
+                "AddLora attr yOffset must be non-negative, current is %ld.", yOffsetValue),
+                return ge::GRAPH_FAILED);
+    yOffset_ = static_cast<uint32_t>(yOffsetValue);
+    OP_CHECK_IF(yOffset_ >= H3_,
                 OP_LOGE(context_->GetNodeName(),
                 "AddLora attr yOffset must less than y dim 1, current is %u.", yOffset_),
                 return ge::GRAPH_FAILED);
@@ -237,10 +247,26 @@ ge::graphStatus AddLoraTiling::CheckInputAttrLimit()
     const int64_t *ySliceSizePtr = attrs_->GetAttrPointer<int64_t>(Y_SLICE_SIZE_ATTR_INDEX);
     OP_CHECK_IF(ySliceSizePtr == nullptr, OP_LOGE(context_->GetNodeName(), "AddLora attr ySliceSize is nullptr."),
                 return ge::GRAPH_FAILED);
-    ySliceSize_ = static_cast<uint32_t>(*ySliceSizePtr);
-    OP_CHECK_IF(ySliceSize_ > H3_,
+    int64_t ySliceSizeValue = *ySliceSizePtr;
+    if (ySliceSizeValue == Y_SLICE_SIZE_DEFAULT) {
+        ySliceSize_ = H2_;
+    } else {
+        OP_CHECK_IF(ySliceSizeValue < 0,
+                    OP_LOGE(context_->GetNodeName(),
+                    "AddLora attr ySliceSize must be non-negative or %ld, current is %ld.",
+                    Y_SLICE_SIZE_DEFAULT, ySliceSizeValue),
+                    return ge::GRAPH_FAILED);
+        ySliceSize_ = static_cast<uint32_t>(ySliceSizeValue);
+    }
+    OP_CHECK_IF(ySliceSize_ > H2_,
                 OP_LOGE(context_->GetNodeName(),
-                "AddLora attr ySliceSize must less than y dim 1, current is %u.", ySliceSize_),
+                "AddLora attr ySliceSize must not exceed weightB dim 2 (H2), current ySliceSize is %u, H2 is %u.",
+                ySliceSize_, H2_),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(yOffset_ + H2_ > H3_,
+                OP_LOGE(context_->GetNodeName(),
+                "AddLora yOffset + H2 must not exceed y dim 1, yOffset is %u, H2 is %u, y dim 1 is %u.",
+                yOffset_, H2_, H3_),
                 return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }

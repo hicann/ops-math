@@ -45,6 +45,7 @@ constexpr uint32_t MAX_WEIGHT_NUM = 32;
 constexpr uint32_t MAX_LAYER_NUM = 32;
 constexpr uint32_t MAX_HIDDEN_SIZE = 131072;
 constexpr uint32_t BATCH_MODE = 1;
+constexpr int64_t Y_SLICE_SIZE_DEFAULT = -1;
 
 namespace optiling {
 enum class TilingKeyInfo : int {
@@ -117,6 +118,7 @@ protected:
     ge::graphStatus CheckInputTensorShape();
     ge::graphStatus CheckOptionalInputTensorShape();
     ge::graphStatus CheckInputAttrLimit();
+    ge::graphStatus CheckYSliceAttrs();
     ge::graphStatus CheckInputLimits();
     // 3、计算数据切分TilingData
     ge::graphStatus DoOpTiling() override;
