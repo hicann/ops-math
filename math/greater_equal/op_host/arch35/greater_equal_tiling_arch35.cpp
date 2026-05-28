@@ -14,7 +14,7 @@
 #include "math/greater_equal/op_kernel/arch35/greater_equal_dag.h"
 #include "math/greater_equal/op_kernel/arch35/greater_equal_struct.h"
 #include "atvoss/util/vec.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "log/log.h"
 #include "platform/platform_ascendc.h"
 
@@ -124,7 +124,7 @@ ge::graphStatus TilingForGreaterEqual(gert::TilingContext* context)
     }
 
     OP_LOGD(context, "Enter ascendc GreaterEqualTiling");
-    return TilingRegistry::GetInstance().DoTilingImpl(context); 
+    return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context); 
 }
 
 ge::graphStatus TilingPrepareForGreaterEqual([[maybe_unused]] gert::TilingParseContext* context)

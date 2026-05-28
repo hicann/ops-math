@@ -17,7 +17,7 @@
 #include "log/log.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "atvoss/elewise/elewise_tiling.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "math/is_pos_inf/op_kernel/arch35/is_pos_inf_dag.h"
 #include "math/is_pos_inf/op_kernel/arch35/is_pos_inf_struct.h"
 #include "is_pos_inf_tiling_arch35.h"
@@ -62,11 +62,11 @@ ge::graphStatus IsPosInfRegbaseTiling::CheckShape()
 {
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
-    const gert::Shape& inputXShape = Ops::Math::OpTiling::EnsureNotScalar(inputStorageShape->GetStorageShape());
+    const gert::Shape& inputXShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
 
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& outputYShape = Ops::Math::OpTiling::EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         inputXShape.GetDimNum() > MAX_DIM_NUM,

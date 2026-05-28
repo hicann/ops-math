@@ -18,7 +18,7 @@
 #include <map>
 #include <tuple>
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/tilingdata_base.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "log/log.h"
@@ -26,7 +26,6 @@
 namespace optiling
 {
 const int INPUT_MAX_DIMS = 8;
-using namespace Ops::Math::OpTiling;
 using namespace Ops::Base;
 BEGIN_TILING_DATA_DEF(PowBaseTilingData)
 TILING_DATA_FIELD_DEF(int64_t, blockNum);
@@ -135,10 +134,10 @@ struct InputParams {
     int64_t computeDtypeSize;
 };
 
-class PowTilingBase : public TilingBaseClass
+class PowTilingBase : public Ops::Base::TilingBaseClass
 {
 public:
-    explicit PowTilingBase(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit PowTilingBase(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {
     }
 

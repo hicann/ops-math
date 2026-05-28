@@ -18,7 +18,7 @@
 #include "log/log.h"
 #include "math/trunc/op_kernel/arch35/trunc_dag.h"
 #include "math/trunc/op_kernel/arch35/trunc_struct.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 
 namespace optiling {
 using namespace Ops::Base;
@@ -56,11 +56,11 @@ ge::graphStatus TruncTiling::CheckShape()
     OP_LOGD(tilingContext->GetNodeName(), "TruncTiling CheckShape enter.");
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
-    const gert::Shape& inputYShape = Ops::Math::OpTiling::EnsureNotScalar(inputStorageShape->GetStorageShape());
+    const gert::Shape& inputYShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
 
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& outputZShape = Ops::Math::OpTiling::EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         inputYShape != outputZShape, OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),

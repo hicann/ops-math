@@ -14,7 +14,7 @@
  */
 #include <graph/utils/type_utils.h>
 #include "zeros_like_tiling_arch35.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "platform/platform_ascendc.h"
 #include "platform/platform_info.h"
 #include "op_host/util/fp16.h"
@@ -23,7 +23,6 @@
 #include "conversion/zeros_like/op_kernel/arch35/zeros_like_tiling_key.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 static const size_t ASCEND_WORKSPACE = 0;
 
 static constexpr size_t ZL_DTYPE_SIZE_0_5 = 0; // 字宽为0.5，如fp4
@@ -62,11 +61,11 @@ ge::graphStatus ZerosLikeTiling::CheckShape()
     OP_LOGD(tilingContext->GetNodeName(), "ZerosLikeTiling CheckShape enter.");
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
-    const gert::Shape& inputXShape = EnsureNotScalar(inputStorageShape->GetStorageShape());
+    const gert::Shape& inputXShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
 
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& outputYShape = EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         inputXShape.GetShapeSize() != outputYShape.GetShapeSize(),

@@ -16,7 +16,7 @@ See LICENSE in the root of the software repository for the full text of the Lice
 #ifndef GROUPED_BIAS_ADD_GRAD_TILING_RA_ARCH35_H
 #define GROUPED_BIAS_ADD_GRAD_TILING_RA_ARCH35_H
 
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "math/grouped_bias_add_grad/op_kernel/arch35/grouped_bias_add_grad_struct.h"
 #include "platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
@@ -24,13 +24,12 @@ See LICENSE in the root of the software repository for the full text of the Lice
 #include "grouped_bias_add_grad_tiling_arch35.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 
-class GroupedBiasAddGradTilingArch35 : public TilingBaseClass {
+class GroupedBiasAddGradTilingArch35 : public Ops::Base::TilingBaseClass {
 public:
     explicit GroupedBiasAddGradTilingArch35(
         gert::TilingContext* context, const GroupedBiasAddGradCompileInfoArch35* compileInfo)
-        : TilingBaseClass(context)
+        : Ops::Base::TilingBaseClass(context)
     {
         coreNum_ = compileInfo->coreNum;
         ubSize_ = compileInfo->ubSize;

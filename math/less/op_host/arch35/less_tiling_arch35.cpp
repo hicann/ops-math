@@ -14,7 +14,7 @@
  */
 
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "math/less/op_kernel/arch35/less_dag.h"
 #include "math/less/op_kernel/arch35/less_struct.h"
@@ -131,7 +131,7 @@ ge::graphStatus TilingForLess(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     OP_LOGD(context, "Enter ascendc TilingForLess");
-    return TilingRegistry::GetInstance().DoTilingImpl(context);
+    return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
 ge::graphStatus TilingPrepareForLess(gert::TilingParseContext* context)

@@ -14,7 +14,7 @@
  */
 #include "square_tiling_arch35.h"
 #include <graph/utils/type_utils.h>
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
@@ -61,11 +61,11 @@ ge::graphStatus SquareTiling::CheckShape()
 {
     auto selfStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, selfStorageShape);
-    const gert::Shape& inputShape = Ops::Math::OpTiling::EnsureNotScalar(selfStorageShape->GetStorageShape());
+    const gert::Shape& inputShape = Ops::Base::EnsureNotScalar(selfStorageShape->GetStorageShape());
 
     auto outStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outStorageShape);
-    const gert::Shape& outputShape = Ops::Math::OpTiling::EnsureNotScalar(outStorageShape->GetStorageShape());
+    const gert::Shape& outputShape = Ops::Base::EnsureNotScalar(outStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         inputShape != outputShape, OP_LOGE(tilingContext->GetNodeName(), "input y and output z shape not same"),

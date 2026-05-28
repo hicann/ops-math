@@ -231,7 +231,7 @@ ge::graphStatus TilingForGer(gert::TilingContext* context) {
     }
 
     OP_LOGD(context, "Enter ascendc GerTiling");
-    return TilingRegistry::GetInstance().DoTilingImpl(context);
+    return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
 ge::graphStatus TilingPrepareForGer([[maybe_unused]] gert::TilingParseContext *context) {

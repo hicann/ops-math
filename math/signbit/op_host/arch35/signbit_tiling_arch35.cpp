@@ -14,8 +14,8 @@
  */
 
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_templates_registry.h"
-#include "op_host/tiling_util.h"
+#include "op_host/math_tiling_templates_registry.h"
+#include "op_host/tiling_base_util.h"
 #include "atvoss/elewise/elewise_tiling.h"
 #include "math/signbit/op_kernel/arch35/signbit_float_dag.h"
 #include "math/signbit/op_kernel/arch35/signbit_integral_dag.h"

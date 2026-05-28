@@ -18,7 +18,7 @@
 
 #include "register/op_def_registry.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
 namespace optiling {
 struct SubCompileInfo {
@@ -26,9 +26,9 @@ struct SubCompileInfo {
     uint64_t ubSize = 0;
 };
 
-class SubTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class SubTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit SubTiling(gert::TilingContext* context) : Ops::Math::OpTiling::TilingBaseClass(context) {}
+    explicit SubTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;

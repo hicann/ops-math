@@ -16,9 +16,9 @@
 #include <vector>
 #include <algorithm>
 #include "register/op_def_registry.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/tilingdata_base.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 
@@ -149,7 +149,7 @@ ge::graphStatus TilingForMinimum(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     OP_LOGD(context, "Enter ascendc MinimumTiling");
-    return TilingRegistry::GetInstance().DoTilingImpl(context);
+    return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
 ge::graphStatus TilingPrepareForMinimum(gert::TilingParseContext* context)

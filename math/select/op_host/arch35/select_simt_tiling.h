@@ -21,13 +21,13 @@
 #include "register/tilingdata_base.h"
 #include "register/op_impl_registry.h"
 #include "log/log.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
 namespace optiling {
 
-class SelectSimtTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class SelectSimtTiling : public Ops::Base::TilingBaseClass {
     public:
-        explicit SelectSimtTiling(gert::TilingContext* context) : Ops::Math::OpTiling::TilingBaseClass(context) {}
+        explicit SelectSimtTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
     protected:
         bool IsCapable() override;

@@ -18,11 +18,10 @@
 #include "log/log.h"
 #include "math/not_equal/op_kernel/arch35/not_equal_dag.h"
 #include "math/not_equal/op_kernel/arch35/not_equal_struct.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 
 namespace optiling {
 using namespace ge;
-using namespace Ops::Math::OpTiling;
 static constexpr uint64_t NOT_EQUAL_COMMON_TILING_PRIORITY = 0;
 
 ge::graphStatus NotEqualTiling::GetShapeAttrsInfo()
@@ -127,7 +126,7 @@ ge::graphStatus TilingForNotEqual(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     OP_LOGD(context, "Enter ascendc NotEqualTiling");
-    return TilingRegistry::GetInstance().DoTilingImpl(context);
+    return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
 ge::graphStatus TilingPrepareForNotEqual(gert::TilingParseContext* context)

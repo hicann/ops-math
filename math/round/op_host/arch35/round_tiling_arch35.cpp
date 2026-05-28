@@ -13,7 +13,7 @@
  * \brief
  */
 #include "round_tiling_arch35.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "log/log.h"
 #include "graph/utils/type_utils.h"
 #include "register/op_impl_registry.h"
@@ -27,7 +27,6 @@
 using namespace RoundOp;
 namespace optiling
 {
-using namespace Ops::Math::OpTiling;
 
 const uint64_t ASCEND_WORKSPACE = 0;
 const int32_t ATTR_ROUND_DECIMALS_POS = 0;
@@ -101,11 +100,11 @@ ge::graphStatus RoundTiling::CheckShape()
 {
     auto xStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, xStorageShape);
-    const gert::Shape& inputResultShape = EnsureNotScalar(xStorageShape->GetStorageShape());
+    const gert::Shape& inputResultShape = Ops::Base::EnsureNotScalar(xStorageShape->GetStorageShape());
 
     auto yStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, yStorageShape);
-    const gert::Shape& outputYShape = EnsureNotScalar(yStorageShape->GetStorageShape());
+    const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(yStorageShape->GetStorageShape());
 
     OP_CHECK_IF(inputResultShape != outputYShape,
                OP_LOGE(tilingContext, "input x and output y shape not same"),

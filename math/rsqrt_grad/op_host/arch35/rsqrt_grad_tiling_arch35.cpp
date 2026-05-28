@@ -13,7 +13,7 @@
  * \brief
  */
 #include "rsqrt_grad_tiling_arch35.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "log/log.h"
 #include "graph/utils/type_utils.h"
 #include "register/op_def_registry.h"
@@ -31,7 +31,6 @@ using namespace RsqrtGradOp;
 
 namespace optiling
 {
-using namespace Ops::Math::OpTiling;
 using namespace Ops::Base;
 
 const int64_t ASCEND_WORKSPACE = static_cast<int64_t>(16) * 1024 * 1024;
@@ -76,14 +75,14 @@ ge::graphStatus RsqrtGradTiling::CheckShape()
 {
     auto yStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, yStorageShape);
-    const gert::Shape& inputYShape = EnsureNotScalar(yStorageShape->GetStorageShape());
+    const gert::Shape& inputYShape = Ops::Base::EnsureNotScalar(yStorageShape->GetStorageShape());
     auto dyStorageShape = tilingContext->GetInputShape(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, dyStorageShape);
-    const gert::Shape& inputDYShape = EnsureNotScalar(dyStorageShape->GetStorageShape());
+    const gert::Shape& inputDYShape = Ops::Base::EnsureNotScalar(dyStorageShape->GetStorageShape());
 
     auto zStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, zStorageShape);
-    const gert::Shape& outputZShape = EnsureNotScalar(zStorageShape->GetStorageShape());
+    const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(zStorageShape->GetStorageShape());
 
     OP_CHECK_IF(inputYShape != inputDYShape,
                OP_LOGE(tilingContext->GetNodeName(), "input y and dy shape not same"),

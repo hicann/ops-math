@@ -16,12 +16,11 @@ See LICENSE in the root of the software repository for the full text of the Lice
 #include "log/log.h"
 #include "util/math_util.h"
 #include "util/platform_util.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "grouped_bias_add_grad_RA_tiling_arch35.h"
 #include "math/grouped_bias_add_grad/op_kernel/arch35/grouped_bias_add_grad_tilingkey.h"
 #include "op_common/atvoss/reduce/reduce_tiling.h"
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 
 // Helper: Align up to alignment boundary
 int64_t GroupedBiasAddGradTilingArch35::AlignUp(int64_t value, int64_t alignment) const

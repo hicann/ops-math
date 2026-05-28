@@ -14,7 +14,7 @@
  */
 
 #include "rsqrt_tiling_arch35.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "log/log.h"
 #include "graph/utils/type_utils.h"
 #include "register/op_impl_registry.h"
@@ -27,7 +27,6 @@
 
 namespace optiling
 {
-using namespace Ops::Math::OpTiling;
 
 const int64_t ASCEND_WORKSPACE = static_cast<int64_t>(16) * 1024 * 1024;
 const uint64_t RSQRT_KEY_FP16 = 101UL;
@@ -76,11 +75,11 @@ ge::graphStatus RsqrtTiling::CheckShape()
 {
     auto xStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, xStorageShape);
-    const gert::Shape& inputXShape = EnsureNotScalar(xStorageShape->GetStorageShape());
+    const gert::Shape& inputXShape = Ops::Base::EnsureNotScalar(xStorageShape->GetStorageShape());
 
     auto yStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, yStorageShape);
-    const gert::Shape& outputYShape = EnsureNotScalar(yStorageShape->GetStorageShape());
+    const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(yStorageShape->GetStorageShape());
 
     OP_CHECK_IF(inputXShape != outputYShape,
                OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not the same"),

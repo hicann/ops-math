@@ -16,8 +16,8 @@
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_base.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_class.h"
+#include "op_host/tiling_base_util.h"
 #include "util/platform_util.h"
 
 namespace optiling {
@@ -74,10 +74,10 @@ static ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Sh
 {
     auto xStorage = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xStorage);
-    inShape = Ops::Math::OpTiling::EnsureNotScalar(xStorage->GetStorageShape());
+    inShape = Ops::Base::EnsureNotScalar(xStorage->GetStorageShape());
     auto yStorage = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, yStorage);
-    outShape = Ops::Math::OpTiling::EnsureNotScalar(yStorage->GetStorageShape());
+    outShape = Ops::Base::EnsureNotScalar(yStorage->GetStorageShape());
 
     auto outDimNum = outShape.GetDimNum();
     OP_CHECK_IF(inShape.GetDimNum() > outDimNum,

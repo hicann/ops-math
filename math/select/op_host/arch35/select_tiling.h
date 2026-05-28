@@ -21,7 +21,7 @@
 #include "register/tilingdata_base.h"
 #include "register/op_impl_registry.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
 namespace optiling {
 struct SelectCompileInfo {
@@ -30,9 +30,9 @@ struct SelectCompileInfo {
   bool isUnknownRank;
 };
 
-class SelectTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class SelectTiling : public Ops::Base::TilingBaseClass {
     public:
-        explicit SelectTiling(gert::TilingContext* context) : Ops::Math::OpTiling::TilingBaseClass(context) {}
+        explicit SelectTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
     protected:
         bool IsCapable() override;

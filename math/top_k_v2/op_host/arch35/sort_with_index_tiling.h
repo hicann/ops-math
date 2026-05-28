@@ -16,7 +16,7 @@
 #include "top_k_v2_tiling_arch35.h"
 #include "log/log.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "util/platform_util.h"
 
 namespace optiling {

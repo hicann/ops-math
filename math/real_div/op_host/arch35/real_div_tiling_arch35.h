@@ -17,7 +17,7 @@
 #define OPS_OP_TILING_RUNTIME_REAL_DIV_TILING_H
 
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
 namespace optiling
 {
@@ -27,10 +27,10 @@ struct RealDivCompileInfo {
     uint64_t ubSize;
 };
 
-class RealDivTiling : public Ops::Math::OpTiling::TilingBaseClass
+class RealDivTiling : public Ops::Base::TilingBaseClass
 {
 public:
-    explicit RealDivTiling(gert::TilingContext* context) : Ops::Math::OpTiling::TilingBaseClass(context) {}
+    explicit RealDivTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;

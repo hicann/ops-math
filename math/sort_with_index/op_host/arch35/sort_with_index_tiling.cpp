@@ -15,7 +15,7 @@
 #include "sort_with_index_tiling.h"
 #include "log/log.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "util/platform_util.h"
 
 namespace optiling {
@@ -475,7 +475,7 @@ ge::graphStatus RadixSortTilingOfIdx(gert::TilingContext* context, int32_t maxCo
     OP_LOGI(context->GetNodeName(), "SortWithIndexTIling start");
     SortWithIndexTilingDataSimt sortTilingData;
     const gert::Shape inputShape = 
-        Ops::Math::OpTiling::EnsureNotScalar(context->GetInputShape(0)->GetStorageShape());
+        Ops::Base::EnsureNotScalar(context->GetInputShape(0)->GetStorageShape());
     auto dataType = context->GetInputDesc(0)->GetDataType();
     // out index type
     auto y2DType = context->GetOutputDesc(1)->GetDataType();

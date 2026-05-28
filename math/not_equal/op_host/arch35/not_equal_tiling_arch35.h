@@ -18,15 +18,14 @@
 
 #include "register/tilingdata_base.h"
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 using namespace Ops::Base;
-class NotEqualTiling : public TilingBaseClass {
+class NotEqualTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit NotEqualTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit NotEqualTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

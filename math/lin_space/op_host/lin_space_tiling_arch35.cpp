@@ -14,9 +14,9 @@
  */
 #include "lin_space_tiling_arch35.h"
 #include "log/log.h"
-#include "op_host/tiling_base.h"
-#include "op_host/tiling_templates_registry.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_class.h"
+#include "op_host/math_tiling_templates_registry.h"
+#include "op_host/tiling_base_util.h"
 
 namespace optiling {
 constexpr static int64_t CORE_MINEST_NUM = 128;
@@ -33,15 +33,15 @@ constexpr static int32_t INDEX_OUTPUT_OUT = 0;
 constexpr static size_t WORKSPACE_COUNT = 1;
 constexpr static const int32_t INT16_BITS_NUM = 16;
 
-class LinSpaceRegbaseTilingClass : public Ops::Math::OpTiling::TilingBaseClass
+class LinSpaceRegbaseTilingClass : public Ops::Base::TilingBaseClass
 {
 public:
-    explicit LinSpaceRegbaseTilingClass(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit LinSpaceRegbaseTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
     void Reset(gert::TilingContext* context) override
     {
-        TilingBaseClass::Reset(context);
+        Ops::Base::TilingBaseClass::Reset(context);
     }
 
 protected:
@@ -302,7 +302,7 @@ static ge::graphStatus CalcLinSpaceTilingParam(LinSpaceRegbaseTilingParam& tilin
 
 bool LinSpaceRegbaseTilingClass::IsCapable()
 {
-    return Ops::Math::OpTiling::IsRegbaseSocVersion(context_);
+    return Ops::Base::IsRegbaseSocVersion(context_);
 }
 
 ge::graphStatus LinSpaceRegbaseTilingClass::GetPlatformInfo()

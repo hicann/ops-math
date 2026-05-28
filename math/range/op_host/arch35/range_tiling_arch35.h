@@ -24,9 +24,9 @@
 #include "platform/platform_info.h"
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
-#include "op_host/tiling_templates_registry.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_class.h"
+#include "op_host/math_tiling_templates_registry.h"
+#include "op_host/tiling_base_util.h"
 #include "util/math_util.h"
 
 namespace optiling {
@@ -106,9 +106,9 @@ constexpr int32_t FP16_TILING_KEY = 1004;
 constexpr int32_t BF16_TILING_KEY = 1005;
 constexpr size_t RESERVED_WORKSPACE = static_cast<size_t>(16 * 1024 * 1024);
 
-class RangeRegBaseTilingClass : public Ops::Math::OpTiling::TilingBaseClass {
+class RangeRegBaseTilingClass : public Ops::Base::TilingBaseClass {
 public:
-    explicit RangeRegBaseTilingClass(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit RangeRegBaseTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
     void Reset(gert::TilingContext* context) override

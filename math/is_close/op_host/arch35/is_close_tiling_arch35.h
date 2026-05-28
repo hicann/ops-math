@@ -18,13 +18,13 @@
 
 #include "register/tilingdata_base.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
 namespace optiling {
 
-class IsCloseTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class IsCloseTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit IsCloseTiling(gert::TilingContext* context) : TilingBaseClass(context) {}
+    explicit IsCloseTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;

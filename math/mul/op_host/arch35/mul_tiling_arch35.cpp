@@ -242,7 +242,7 @@ ge::graphStatus TilingForMul(gert::TilingContext* context) {
     }
 
     OP_LOGD(context, "Enter ascendc MulTiling");
-    return TilingRegistry::GetInstance().DoTilingImpl(context);
+    return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
 ge::graphStatus TilingPrepareForMul([[maybe_unused]] gert::TilingParseContext *context) {

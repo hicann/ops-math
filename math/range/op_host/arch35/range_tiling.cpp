@@ -19,7 +19,7 @@
 #include "platform/platform_info.h"
 #include "range_tiling_arch35.h"
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "util/math_util.h"
 #include "util/fp16.h"
 
@@ -29,7 +29,7 @@ constexpr size_t INPUT_IDX_LIMIT = 1;
 constexpr size_t INPUT_IDX_DELTA = 2;
 constexpr int32_t INT16_BITS_NUM = 16;
 
-class RangeMemBaseTilingClass : public Ops::Math::OpTiling::TilingBaseClass {
+class RangeMemBaseTilingClass : public Ops::Base::TilingBaseClass {
 public:
     explicit RangeMemBaseTilingClass(gert::TilingContext* context) : TilingBaseClass(context)
     {}
@@ -66,7 +66,7 @@ protected:
 
     bool IsCapable() override
     {
-        return !Ops::Math::OpTiling::IsRegbaseSocVersion(context_);
+        return !Ops::Base::IsRegbaseSocVersion(context_);
     }
 
     // 3、计算数据切分TilingData

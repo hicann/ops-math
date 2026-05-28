@@ -20,16 +20,15 @@
 #include <vector>
 #include <numeric>
 #include "register/op_def_registry.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/tilingdata_base.h"
 #include "util/math_util.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 
 namespace optiling {
 using namespace std;
-using namespace Ops::Math::OpTiling;
 const static int32_t ONEHOT_INPUT_DEPENDENCY_IDX = 1;
 ge::graphStatus OneHotTilingForAscendC(gert::TilingContext* context);
 
@@ -50,9 +49,9 @@ END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(OneHot, OneHotTilingData)
 
-class OneHotTilingBase : public TilingBaseClass {
+class OneHotTilingBase : public Ops::Base::TilingBaseClass {
 public:
-    explicit OneHotTilingBase(gert::TilingContext* context) : TilingBaseClass(context) {};
+    explicit OneHotTilingBase(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {};
     ~OneHotTilingBase() override = default;
 
 protected:

@@ -13,16 +13,15 @@
 
 #include "register/op_def_registry.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/tilingdata_base.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 
-class GreaterEqualTiling : public TilingBaseClass {
+class GreaterEqualTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit GreaterEqualTiling(gert::TilingContext* context) : TilingBaseClass(context) {}
+    explicit GreaterEqualTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;

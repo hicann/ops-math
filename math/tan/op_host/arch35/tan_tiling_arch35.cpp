@@ -18,14 +18,13 @@
 #include "log/log.h"
 #include "util/math_util.h"
 #include "util/platform_util.h"
-#include "op_host/tiling_util.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/tiling_base_util.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "../../op_kernel/arch35/tan_tiling_data.h"
 #include "../../op_kernel/arch35/tan_tiling_key.h"
 
 namespace optiling {
 
-using namespace Ops::Math::OpTiling;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
 constexpr int32_t THREAD_NUM = 512;

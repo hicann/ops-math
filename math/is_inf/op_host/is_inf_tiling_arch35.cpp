@@ -13,14 +13,13 @@
  * \brief
  */
 #include "is_inf_tiling_arch35.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "log/log.h"
 #include "platform/platform_ascendc.h"
 #include "graph/utils/type_utils.h"
 #include "../op_kernel/arch35/is_inf_dag.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 const int64_t ASCEND_WORKSPACE = 16777216; // 16M
 const uint64_t TILING_KEY_FP16 = 101UL;
 const uint64_t TILING_KEY_BF16 = 102UL;
@@ -58,11 +57,11 @@ ge::graphStatus IsInfRegbaseTiling::CheckShape()
 {
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
-    const gert::Shape& inputXShape = EnsureNotScalar(inputStorageShape->GetStorageShape());
+    const gert::Shape& inputXShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
 
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& outputYShape = EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         inputXShape.GetDimNum() > 8, OP_LOGE(tilingContext, "input x dim num should be no more than 8"),

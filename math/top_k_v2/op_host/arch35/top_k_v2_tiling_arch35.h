@@ -16,7 +16,7 @@
 #define OPS_BUILT_IN_OP_TILING_RUNTIME_TOP_K_V2_H
 
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/tilingdata_base.h"
 #include "tiling/tiling_api.h"
 namespace optiling {

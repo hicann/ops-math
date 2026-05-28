@@ -14,7 +14,7 @@
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "math/greater/op_kernel/arch35/greater_dag.h"
 #include "math/greater/op_kernel/arch35/greater_struct.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 
 namespace optiling {
 using namespace AscendC;
@@ -122,7 +122,7 @@ ge::graphStatus TilingForGreater(gert::TilingContext* context)
     }
 
     OP_LOGD(context, "Enter ascendc GreaterTiling");
-    return TilingRegistry::GetInstance().DoTilingImpl(context);
+    return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
 ge::graphStatus TilingPrepareForGreater([[maybe_unused]] gert::TilingParseContext* context)

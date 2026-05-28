@@ -14,7 +14,7 @@
  */
 #ifndef AIR_CXX_RUNTIME_V2_OP_IMPL_TENSOR_EQUAL_H
 #define AIR_CXX_RUNTIME_V2_OP_IMPL_TENSOR_EQUAL_H
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
 
@@ -34,9 +34,9 @@ END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(TensorEqual, TensorEqualTilingData)
 
-class TensorEqualTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class TensorEqualTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit TensorEqualTiling(gert::TilingContext *context) : TilingBaseClass(context), opName_(context->GetNodeName()) {}
+    explicit TensorEqualTiling(gert::TilingContext *context) : Ops::Base::TilingBaseClass(context), opName_(context->GetNodeName()) {}
 
 protected:
     bool IsCapable() override;

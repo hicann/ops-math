@@ -11,7 +11,7 @@
 #include "tanh_tiling_arch35.h"
 #include <graph/utils/type_utils.h>
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "register/op_def_registry.h"
 #include "log/log.h"
@@ -56,11 +56,11 @@ ge::graphStatus TanhTiling::CheckShape()
     OP_LOGD(tilingContext->GetNodeName(), "TanhTiling CheckShape enter.");
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
-    const gert::Shape& inputYShape = Ops::Math::OpTiling::EnsureNotScalar(inputStorageShape->GetStorageShape());
+    const gert::Shape& inputYShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
 
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& outputZShape = Ops::Math::OpTiling::EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(inputYShape != outputZShape,
                OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),

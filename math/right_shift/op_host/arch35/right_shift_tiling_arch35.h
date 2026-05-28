@@ -17,15 +17,14 @@
 
 #include "register/tilingdata_base.h"
 #include "atvoss/elewise/elewise_tiling.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "platform/platform_ascendc.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 
-class RightShiftTiling : public TilingBaseClass {
+class RightShiftTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit RightShiftTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit RightShiftTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

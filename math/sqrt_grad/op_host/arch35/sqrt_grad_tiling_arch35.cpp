@@ -17,10 +17,10 @@
 #include "sqrt_grad_tiling_arch35.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "register/op_def_registry.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "math/sqrt_grad/op_kernel/arch35/sqrt_grad_dag.h"
 #include "math/sqrt_grad/op_kernel/arch35/sqrt_grad_struct.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "math/sqrt_grad/op_kernel/arch35/sqrt_grad_tiling_struct.h"
 #include <iostream>
 
@@ -85,14 +85,14 @@ ge::graphStatus SqrtGradTiling::CheckShape()
 {
     auto yStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, yStorageShape);
-    const gert::Shape& inputYShape = Ops::Math::OpTiling::EnsureNotScalar(yStorageShape->GetStorageShape());
+    const gert::Shape& inputYShape = Ops::Base::EnsureNotScalar(yStorageShape->GetStorageShape());
     auto dyStorageShape = tilingContext->GetInputShape(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, dyStorageShape);
-    const gert::Shape& inputDYShape = Ops::Math::OpTiling::EnsureNotScalar(dyStorageShape->GetStorageShape());
+    const gert::Shape& inputDYShape = Ops::Base::EnsureNotScalar(dyStorageShape->GetStorageShape());
 
     auto zStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, zStorageShape);
-    const gert::Shape& outputZShape = Ops::Math::OpTiling::EnsureNotScalar(zStorageShape->GetStorageShape());
+    const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(zStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         inputYShape != inputDYShape, OP_LOGE(tilingContext->GetNodeName(), "input y and dy shape not same"),

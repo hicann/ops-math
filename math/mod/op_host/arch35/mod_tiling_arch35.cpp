@@ -24,8 +24,8 @@
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_base.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/tiling_base_class.h"
+#include "op_host/math_tiling_templates_registry.h"
 using namespace ge;
 
 namespace optiling {

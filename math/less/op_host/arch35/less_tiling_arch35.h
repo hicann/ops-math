@@ -16,9 +16,8 @@
 #ifndef OPS_BUILD_IN_OP_TILING_RUNTIME_LESS_TILING_H
 #define OPS_BUILD_IN_OP_TILING_RUNTIME_LESS_TILING_H
 
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
-using namespace Ops::Math::OpTiling;
 
 namespace optiling {
 
@@ -27,9 +26,9 @@ struct LessCompileInfo {
     uint64_t ubSize;
 };
 
-class LessTiling : public TilingBaseClass {
+class LessTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit LessTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit LessTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

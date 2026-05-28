@@ -16,7 +16,7 @@
 #ifndef OPS_BUILD_IN_OP_TILING_RUNTIME_SQUARED_DIFFERENCE_TILING_H
 #define OPS_BUILD_IN_OP_TILING_RUNTIME_SQUARED_DIFFERENCE_TILING_H
 
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
 namespace optiling {
 
@@ -25,9 +25,9 @@ struct SquaredDifferenceCompileInfo {
     uint64_t ubSize;
 };
 
-class SquaredDifferenceTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class SquaredDifferenceTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit SquaredDifferenceTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit SquaredDifferenceTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

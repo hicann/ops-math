@@ -18,7 +18,7 @@
 
 #include "register/op_def_registry.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/tilingdata_base.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 
@@ -52,9 +52,9 @@ struct LerpCompileInfo {
     uint64_t ubSize;
 };
 
-class LerpTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class LerpTiling : public Ops::Base::TilingBaseClass {
    public:
-    explicit LerpTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit LerpTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {
     }
 

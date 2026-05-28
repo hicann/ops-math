@@ -17,18 +17,17 @@
 #define OPS_BUILD_IN_OP_TILING_RUNTIME_MINIMUM_TILING_H
 
 #include "register/op_def_registry.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/tilingdata_base.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 
-class MinimumTiling : public TilingBaseClass {
+class MinimumTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit MinimumTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit MinimumTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

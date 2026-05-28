@@ -20,14 +20,14 @@
 #include "log/log.h"
 #include "platform/platform_info.h"
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
 namespace optiling {
 
 using namespace Ops::Base;
-class ModTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class ModTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit ModTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit ModTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

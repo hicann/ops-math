@@ -15,16 +15,14 @@
 
 #include <graph/utils/type_utils.h>
 #include "sign_tiling_arch35.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "platform/platform_ascendc.h"
 #include "platform/platform_info.h"
 #include "op_host/util/fp16.h"
 #include "log/log.h"
 #include "math/sign/op_kernel/arch35/sign.h"
-#include "common/inc/op_host/tiling_util.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 const uint64_t SIGN_KEY_UNDEFINED = 100UL;
 const uint64_t SIGN_KEY_FP16 = 101UL;
 const uint64_t SIGN_KEY_BF16 = 102UL;
@@ -85,8 +83,8 @@ ge::graphStatus SignTiling::CheckOutputShape()
     auto yStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, yStorageShape);
     // get storage shape
-    const gert::Shape& inputShape = EnsureNotScalar(xStorageShape->GetStorageShape());
-    const gert::Shape& outputShape = EnsureNotScalar(yStorageShape->GetStorageShape());
+    const gert::Shape& inputShape = Ops::Base::EnsureNotScalar(xStorageShape->GetStorageShape());
+    const gert::Shape& outputShape = Ops::Base::EnsureNotScalar(yStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         (inputShape != outputShape),

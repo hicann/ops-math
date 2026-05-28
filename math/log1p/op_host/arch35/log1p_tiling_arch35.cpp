@@ -15,7 +15,7 @@
 #include "log1p_tiling_arch35.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "atvoss/elewise/elewise_tiling.h"
 #include "math/log1p/op_kernel/arch35/log1p_dag.h"
 #include "math/log1p/op_kernel/arch35/log1p_struct.h"
@@ -58,11 +58,11 @@ ge::graphStatus Log1pTiling::CheckShape()
     OP_LOGD(tilingContext->GetNodeName(), "Log1pTiling CheckShape enter.");
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
-    const gert::Shape& inputYShape = Ops::Math::OpTiling::EnsureNotScalar(inputStorageShape->GetStorageShape());
+    const gert::Shape& inputYShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
 
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& outputZShape = Ops::Math::OpTiling::EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(inputYShape != outputZShape,
                OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),

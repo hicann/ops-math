@@ -18,7 +18,7 @@
 
 #include "register/op_def_registry.h"
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "util/shape_util.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 
@@ -51,9 +51,9 @@ struct TanhGradCompileInfo {
     uint64_t ubSize;
 };
 
-class TanhGradTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class TanhGradTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit TanhGradTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit TanhGradTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

@@ -17,18 +17,17 @@
 #define OPS_BUILD_IN_OP_TILING_RUNTIME_MAXIMUM_TILING_H
 
 #include "register/op_def_registry.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/tilingdata_base.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 
-class MaximumTiling : public TilingBaseClass {
+class MaximumTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit MaximumTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit MaximumTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

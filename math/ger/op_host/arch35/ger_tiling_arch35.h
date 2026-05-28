@@ -18,15 +18,14 @@
 
 #include "register/op_def_registry.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_base.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/tiling_base_class.h"
+#include "op_host/math_tiling_templates_registry.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 
-class GerTiling : public TilingBaseClass {
+class GerTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit GerTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit GerTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
     gert::TilingContext* GetContext() const
     {

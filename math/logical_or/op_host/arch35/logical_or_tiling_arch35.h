@@ -16,13 +16,13 @@
 #ifndef OPS_BUILD_IN_OP_TILING_RUNTIME_LOGICAL_OR_TILING_H
 #define OPS_BUILD_IN_OP_TILING_RUNTIME_LOGICAL_OR_TILING_H
 
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
 namespace optiling {
 
-class LogicalOrTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class LogicalOrTiling : public Ops::Base::TilingBaseClass {
     public:
-        explicit LogicalOrTiling(gert::TilingContext* context) : TilingBaseClass(context) {}
+        explicit LogicalOrTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
     protected:
         bool IsCapable() override;

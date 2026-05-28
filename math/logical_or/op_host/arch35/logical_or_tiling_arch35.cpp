@@ -19,11 +19,10 @@
 #include "register/op_impl_registry.h"
 #include "math/logical_or/op_kernel/arch35/logical_or_dag.h"
 #include "math/logical_or/op_kernel/arch35/logical_or_struct.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 
 using namespace ge;
-using namespace Ops::Math::OpTiling;
 
 namespace optiling {
 
@@ -105,7 +104,7 @@ static ge::graphStatus Tiling4LogicalOr(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     OP_LOGD(context, "Enter ascendc Tiling4LogicalOr");
-    return TilingRegistry::GetInstance().DoTilingImpl(context);
+    return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
 static ge::graphStatus TilingPrepareForBroadcastLogicalOr(gert::TilingParseContext *context)

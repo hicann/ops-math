@@ -14,7 +14,7 @@
  */
 #include <graph/utils/type_utils.h>
 #include "ones_like_tiling_arch35.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "platform/platform_ascendc.h"
 #include "platform/platform_info.h"
 #include "op_host/util/fp16.h"
@@ -23,7 +23,6 @@
 #include "math/ones_like/op_kernel/arch35/ones_like_tiling_key.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 const int64_t ASCEND_WORKSPACE = 16777216; // 16 * 1024 * 1024
 
 ge::graphStatus OnesLikeTiling::SetTilingData()
@@ -81,11 +80,11 @@ ge::graphStatus OnesLikeTiling::CheckShape()
     OP_LOGD(tilingContext->GetNodeName(), "OnesLikeTiling CheckShape enter.");
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
-    const gert::Shape& inputYShape = EnsureNotScalar(inputStorageShape->GetStorageShape());
+    const gert::Shape& inputYShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
 
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& outputZShape = EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         inputYShape.GetShapeSize() != outputZShape.GetShapeSize(),

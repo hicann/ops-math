@@ -17,10 +17,9 @@
 #include "is_inf_tiling_arch35.h"
 #include "is_inf_tiling_def.h"
 #include "log/log.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 
 constexpr uint32_t DATA_BLOCK = 32;
 constexpr uint64_t TILING_KEY_HALF = 1;
@@ -199,7 +198,7 @@ static ge::graphStatus TilingPrepare4IsInfTiling([[maybe_unused]] gert::TilingPa
 
 static ge::graphStatus TilingIsInfTiling(gert::TilingContext* context)
 {
-    if (IsRegbaseSocVersion(context)) {
+    if (Ops::Base::IsRegbaseSocVersion(context)) {
         OP_LOGD("IsInfTiling", "Enter new IsInfTiling");
 
         fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();

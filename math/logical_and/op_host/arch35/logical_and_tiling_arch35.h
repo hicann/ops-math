@@ -18,14 +18,14 @@
 
 #include "register/op_def_registry.h"
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/op_impl_registry.h"
 
 namespace optiling {
 
-class LogicalAndTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class LogicalAndTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit LogicalAndTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit LogicalAndTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

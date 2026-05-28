@@ -24,7 +24,7 @@
 #include "register/op_impl_registry.h"
 #include "atvoss/reduce/reduce_tiling.h"
 #include "atvoss/reduce/reduce_tiling_data.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "util/platform_util.h"
 #include "math/reduce_mean_with_count/op_kernel/reduce_mean_with_count_tiling_data.h"
 #include "math/reduce_mean_with_count/op_kernel/arch35/reduce_mean_with_count_dag.h"

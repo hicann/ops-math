@@ -18,7 +18,7 @@
 #include "register/op_impl_registry.h"
 #include "atvoss/reduce/reduce_tiling.h"
 #include "atvoss/reduce/reduce_tiling_data.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "math/reduce_prod/op_kernel/arch35/reduce_prod_dag.h"
 #include "math/reduce_prod/op_kernel/arch35/reduce_prod_tiling_key.h"
 

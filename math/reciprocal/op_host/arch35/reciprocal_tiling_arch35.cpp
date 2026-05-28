@@ -18,7 +18,7 @@
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 #include "atvoss/elewise/elewise_tiling.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "util/platform_util.h"
 
 namespace optiling {
@@ -55,11 +55,11 @@ ge::graphStatus ReciprocalTiling::CheckShape()
     OP_LOGD(tilingContext->GetNodeName(), "ReciprocalTiling CheckShape enter.");
     auto xStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, xStorageShape);
-    const gert::Shape& inputXShape = Ops::Math::OpTiling::EnsureNotScalar(xStorageShape->GetStorageShape());
+    const gert::Shape& inputXShape = Ops::Base::EnsureNotScalar(xStorageShape->GetStorageShape());
 
     auto yStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, yStorageShape);
-    const gert::Shape& outputYShape = Ops::Math::OpTiling::EnsureNotScalar(yStorageShape->GetStorageShape());
+    const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(yStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         inputXShape != outputYShape, OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),

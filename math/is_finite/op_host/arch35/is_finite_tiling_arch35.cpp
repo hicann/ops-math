@@ -14,7 +14,7 @@
  */
 
 #include "is_finite_tiling_arch35.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "log/log.h"
 #include "graph/utils/type_utils.h"
 #include "../../op_kernel/arch35/is_finite_dag.h"
@@ -26,7 +26,6 @@
 using namespace IsFiniteOp;
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 ge::graphStatus IsFiniteRegbaseTiling::CalcInputDtype()
 {
     auto inputDesc = tilingContext->GetInputDesc(0);
@@ -59,11 +58,11 @@ ge::graphStatus IsFiniteRegbaseTiling::CheckShape()
 {
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
-    const gert::Shape& inputXShape = EnsureNotScalar(inputStorageShape->GetStorageShape());
+    const gert::Shape& inputXShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
 
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& outputYShape = EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         inputXShape != outputYShape, OP_LOGE(tilingContext, "Input x and output y shape not the same"),
