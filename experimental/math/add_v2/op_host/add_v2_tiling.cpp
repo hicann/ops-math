@@ -25,7 +25,7 @@
 
 #include "log/log.h"
 #include "util/math_util.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include <graph/utils/type_utils.h>
 #include "tiling/platform/platform_ascendc.h"
 #include "../op_kernel/add_v2_tiling_data.h"
@@ -67,13 +67,13 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
     auto inputX = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
     // 如果输入shape 是标量 转换为{1}，否则保持原 shape 不变
-    auto inputShapeX = Ops::Math::OpTiling::EnsureNotScalar(inputX->GetStorageShape());
+    auto inputShapeX = Ops::Base::EnsureNotScalar(inputX->GetStorageShape());
     auto inputY = context->GetInputShape(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputY);
-    auto inputShapeY = Ops::Math::OpTiling::EnsureNotScalar(inputY->GetStorageShape());
+    auto inputShapeY = Ops::Base::EnsureNotScalar(inputY->GetStorageShape());
     auto outZ = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, outZ);
-    auto outShapeZ = Ops::Math::OpTiling::EnsureNotScalar(outZ->GetStorageShape());
+    auto outShapeZ = Ops::Base::EnsureNotScalar(outZ->GetStorageShape());
 
     // shape校验
     bool shapeMatch = true;

@@ -23,11 +23,11 @@
 #include "platform/platform_ascendc.h"
 #include "platform/platform_info.h"
 #include "tiling/platform/platform_ascendc.h"
-#include "op_host/tiling_templates_registry.h"
-#include "op_host/tiling_util.h"
+#include "op_host/math_tiling_templates_registry.h"
+#include "op_host/tiling_base_util.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
+using namespace Ops::Base;
 
 constexpr static int32_t INDEX_INPUT_X = 0;
 constexpr static int32_t INDEX_OUTPUT_Y = 0;
@@ -205,7 +205,7 @@ protected:
 
     bool IsCapable() override
     {
-        return (!Ops::Math::OpTiling::IsRegbaseSocVersion(context_));
+        return (!Ops::Base::IsRegbaseSocVersion(context_));
     }
 
     ge::graphStatus DoOpTiling() override;
@@ -331,7 +331,7 @@ ge::graphStatus RealMemBaseTilingClass::PostTiling()
 
 static ge::graphStatus Tiling4Real(gert::TilingContext* context)
 {
-    return TilingRegistry::GetInstance().DoTilingImpl(context);
+    return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
 static ge::graphStatus TilingPrepare4Real(gert::TilingParseContext* context)

@@ -25,7 +25,7 @@
 
 #include "log/log.h"
 #include "util/math_util.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "../op_kernel/col2_im_tiling_data.h"
 #include "../op_kernel/col2_im_tiling_key.h"
@@ -105,7 +105,7 @@ static ge::graphStatus GetInputShapeInfo(gert::TilingContext* context,
         return ge::GRAPH_FAILED;
     }
     
-    auto shape = Ops::Math::OpTiling::EnsureNotScalar(inputShape->GetStorageShape());
+    auto shape = Ops::Base::EnsureNotScalar(inputShape->GetStorageShape());
     auto dimNum = shape.GetDimNum();
     
     if (dimNum != EXPECTED_DIM_NUM) {

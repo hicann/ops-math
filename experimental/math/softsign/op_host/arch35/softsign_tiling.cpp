@@ -16,7 +16,7 @@
 #include "log/log.h"
 #include "util/math_util.h"
 #include "util/platform_util.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "../../op_kernel/arch35/softsign_tiling_data.h"
 #include "../../op_kernel/arch35/softsign_tiling_key.h"
@@ -45,7 +45,7 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
 {
     auto inputX = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
-    auto inputShapeX = Ops::Math::OpTiling::EnsureNotScalar(inputX->GetStorageShape());
+    auto inputShapeX = Ops::Base::EnsureNotScalar(inputX->GetStorageShape());
     totalElements = inputShapeX.GetShapeSize();
 
     const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT, ge::DT_FLOAT16};
