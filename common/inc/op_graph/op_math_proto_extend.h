@@ -219,8 +219,8 @@ REG_OP(MatrixDiagV2)
 * precision loss occurs when the parameter value exceeds 2^24. it is recommended to use Add.
 */
  REG_OP(Adds)
-     .INPUT(x, TensorType({DT_FLOAT, DT_INT16, DT_INT32, DT_FLOAT16, DT_BF16}))
-     .OUTPUT(y, TensorType({DT_FLOAT, DT_INT16, DT_INT32, DT_FLOAT16, DT_BF16}))
+     .INPUT(x, TensorType({DT_FLOAT, DT_INT16, DT_INT32, DT_FLOAT16, DT_BF16, DT_INT64}))
+     .OUTPUT(y, TensorType({DT_FLOAT, DT_INT16, DT_INT32, DT_FLOAT16, DT_BF16, DT_INT64}))
      .REQUIRED_ATTR(value,Float)
      .OP_END_FACTORY_REG(Adds)
 
