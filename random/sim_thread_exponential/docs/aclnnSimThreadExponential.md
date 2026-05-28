@@ -82,7 +82,7 @@ aclnnStatus aclnnSimThreadExponential(
       </tr>
       <tr>
         <td>count</td>
-        <td>属性</td>
+        <td>输入</td>
         <td>生成的随机数数量。</td>
         <td>-</td>
         <td>INT64</td>
@@ -92,9 +92,9 @@ aclnnStatus aclnnSimThreadExponential(
       </tr>
       <tr>
         <td>lambda</td>
-        <td>属性</td>
+        <td>输入</td>
         <td>公式中的lambda。</td>
-        <td>-</td>
+        <td>必须大于 0。</td>
         <td>DOUBLE</td>
         <td>-</td>
         <td>-</td>
@@ -102,7 +102,7 @@ aclnnStatus aclnnSimThreadExponential(
       </tr>
       <tr>
         <td>seed</td>
-        <td>属性</td>
+        <td>输入</td>
         <td>随机数种子。</td>
         <td>-</td>
         <td>INT64</td>
@@ -112,7 +112,7 @@ aclnnStatus aclnnSimThreadExponential(
       </tr>
       <tr>
         <td>offset</td>
-        <td>属性</td>
+        <td>输入</td>
         <td>随机数偏移量。</td>
         <td>-</td>
         <td>INT64</td>
@@ -226,10 +226,11 @@ aclnnStatus aclnnSimThreadExponential(
 ## 约束说明
 
 - lambda 必须大于 0。
-- offset 必须为 4 的倍数（Ascend 950PR/Ascend 950DT）。
-- count 必须等于 selfRef 张量的元素总数（Ascend 950PR/Ascend 950DT）。
 - 确定性计算：
   - aclnnSimThreadExponential 默认确定性实现。
+- Ascend 950PR/Ascend 950DT：
+  - offset 必须为 4 的倍数。
+  - count 必须等于 selfRef 张量的元素总数。
 
 ## 调用示例
 
