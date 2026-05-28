@@ -9,12 +9,12 @@
  */
 
 /*!
- * \file sim_thread_exponential_tiling.h
+ * \file sim_thread_exponential_tiling_arch32.h
  * \brief
  */
 
-#ifndef OPS_BUILD_IN_OP_TILING_RUNTIME_SIM_THREAD_EXPONENTIAL_H_
-#define OPS_BUILD_IN_OP_TILING_RUNTIME_SIM_THREAD_EXPONENTIAL_H_
+#ifndef OPS_BUILD_IN_OP_TILING_RUNTIME_SIM_THREAD_EXPONENTIAL_ARCH32_H_
+#define OPS_BUILD_IN_OP_TILING_RUNTIME_SIM_THREAD_EXPONENTIAL_ARCH32_H_
 
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
@@ -22,24 +22,24 @@
 
 namespace optiling {
 BEGIN_TILING_DATA_DEF(SimThreadExponentialTilingData)
-  TILING_DATA_FIELD_DEF(uint32_t, key0);
-  TILING_DATA_FIELD_DEF(uint32_t, key1);
-  TILING_DATA_FIELD_DEF(uint32_t, offset_t_low);
-  TILING_DATA_FIELD_DEF(uint32_t, offset_t_high);
-  TILING_DATA_FIELD_DEF(uint32_t, useCoreNum);
-  TILING_DATA_FIELD_DEF(uint32_t, batchNumPerCore);
-  TILING_DATA_FIELD_DEF(uint32_t, batchNumTailCore);
-  TILING_DATA_FIELD_DEF(uint32_t, batchNumTotal);
-  TILING_DATA_FIELD_DEF(int64_t, numel);
-  TILING_DATA_FIELD_DEF(uint32_t, stepBlock);
-  TILING_DATA_FIELD_DEF(uint32_t, roundedSizeBlock);
-  TILING_DATA_FIELD_DEF(float, range);
-  TILING_DATA_FIELD_DEF(uint32_t, handleNumLoop);
-  TILING_DATA_FIELD_DEF(uint32_t, handleNumTail);
-  TILING_DATA_FIELD_DEF(uint64_t, state);
-  TILING_DATA_FIELD_DEF(float, start);
-  TILING_DATA_FIELD_DEF(float, end);
-  TILING_DATA_FIELD_DEF(float, lambda);
+TILING_DATA_FIELD_DEF(uint32_t, key0);
+TILING_DATA_FIELD_DEF(uint32_t, key1);
+TILING_DATA_FIELD_DEF(uint32_t, offset_t_low);
+TILING_DATA_FIELD_DEF(uint32_t, offset_t_high);
+TILING_DATA_FIELD_DEF(uint32_t, useCoreNum);
+TILING_DATA_FIELD_DEF(uint32_t, batchNumPerCore);
+TILING_DATA_FIELD_DEF(uint32_t, batchNumTailCore);
+TILING_DATA_FIELD_DEF(uint32_t, batchNumTotal);
+TILING_DATA_FIELD_DEF(int64_t, numel);
+TILING_DATA_FIELD_DEF(uint32_t, stepBlock);
+TILING_DATA_FIELD_DEF(uint32_t, roundedSizeBlock);
+TILING_DATA_FIELD_DEF(float, range);
+TILING_DATA_FIELD_DEF(uint32_t, handleNumLoop);
+TILING_DATA_FIELD_DEF(uint32_t, handleNumTail);
+TILING_DATA_FIELD_DEF(uint64_t, state);
+TILING_DATA_FIELD_DEF(float, start);
+TILING_DATA_FIELD_DEF(float, end);
+TILING_DATA_FIELD_DEF(float, lambda);
 END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(SimThreadExponential, SimThreadExponentialTilingData)
@@ -48,7 +48,7 @@ struct Tiling4SimThreadExponentialCompileInfo {};
 
 class SimThreadExponentialTiling {
 public:
-    explicit SimThreadExponentialTiling(gert::TilingContext *context_) : context(context_){};
+    explicit SimThreadExponentialTiling(gert::TilingContext* context_) : context(context_) {};
     virtual ~SimThreadExponentialTiling() = default;
     ge::graphStatus DoTiling();
     ge::graphStatus GetPlatformInfo();
@@ -64,7 +64,7 @@ public:
 
 private:
     SimThreadExponentialTilingData tiling;
-    gert::TilingContext *context = nullptr;
+    gert::TilingContext* context = nullptr;
 
     template <typename T>
     inline auto Min(T x, T y) const -> T
@@ -74,7 +74,7 @@ private:
 
     int64_t usrWorkspaceSize = 1;
     int64_t dataTypeTilingKey = 0;
-    uint64_t tilingKey_{ 0 };
+    uint64_t tilingKey_{0};
 
     uint32_t key0 = 5;
     uint32_t key1 = 0;
@@ -111,6 +111,6 @@ private:
 
     ge::DataType selfDType;
 };
-}
+} // namespace optiling
 
-#endif // OPS_BUILD_IN_OP_TILING_RUNTIME_SIM_THREAD_EXPONENTIAL_H_
+#endif // OPS_BUILD_IN_OP_TILING_RUNTIME_SIM_THREAD_EXPONENTIAL_ARCH32_H_
