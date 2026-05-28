@@ -37,7 +37,7 @@ target_link_libraries(
           -Wl,--no-as-needed
           ${AICPU_OP_KERNEL_MODULE_NAME}_cases
           -Wl,--as-needed
-          gtest
+          GTest::gtest
           c_sec
           Eigen3::Eigen)
 

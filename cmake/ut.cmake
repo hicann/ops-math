@@ -9,10 +9,6 @@
 # ----------------------------------------------------------------------------
 include_guard(GLOBAL)
 add_cann_third_party(gtest)
-if(TARGET GTest::gtest)
-  add_library(gtest ALIAS GTest::gtest)
-  add_library(gtest_main ALIAS GTest::gtest_main)
-endif()
 
 set(OP_TILING_MODULE_NAME
     ${PKG_NAME}_op_tiling_ut
@@ -57,7 +53,7 @@ function(add_optiling_ut_modules OP_TILING_MODULE_NAME)
             ${ASCEND_DIR}/include/base/context_builder)
   target_link_libraries(
     ${OP_TILING_MODULE_NAME}_common_obj
-    PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> json gtest c_sec)
+    PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> json GTest::gtest c_sec)
 
   # add optiling ut cases object: math_op_tiling_ut_cases_obj
   if(NOT TARGET ${OP_TILING_MODULE_NAME}_cases_obj)
@@ -69,7 +65,7 @@ function(add_optiling_ut_modules OP_TILING_MODULE_NAME)
             ${dlog_MATH_INCLUDE_DIR} ${ASCEND_DIR}/include/base/context_builder)
   target_link_libraries(
     ${OP_TILING_MODULE_NAME}_cases_obj
-    PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> gtest)
+    PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> GTest::gtest)
 
   # add op tiling ut cases static lib: libmath_op_tiling_ut_cases.a
   add_library(${OP_TILING_MODULE_NAME}_cases STATIC)
@@ -91,7 +87,7 @@ function(add_infershape_ut_modules OP_INFERSHAPE_MODULE_NAME)
     PRIVATE ${ASCEND_DIR}/include/base/context_builder ${ASCEND_DIR}/pkg_inc)
   target_link_libraries(
     ${OP_INFERSHAPE_MODULE_NAME}_common_obj
-    PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> gtest c_sec)
+    PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> GTest::gtest c_sec)
 
   # add opinfershape ut cases object: math_op_infershape_ut_cases_obj
   if(NOT TARGET ${OP_INFERSHAPE_MODULE_NAME}_cases_obj)
@@ -105,7 +101,7 @@ function(add_infershape_ut_modules OP_INFERSHAPE_MODULE_NAME)
             ${ASCEND_DIR}/include/base/context_builder)
   target_link_libraries(
     ${OP_INFERSHAPE_MODULE_NAME}_cases_obj
-    PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> gtest)
+    PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> GTest::gtest)
 
   # add op infershape ut cases static lib: libmath_op_infershape_ut_cases.a
   add_library(${OP_INFERSHAPE_MODULE_NAME}_cases STATIC)
@@ -133,7 +129,7 @@ function(add_opapi_ut_modules OP_API_MODULE_NAME)
             ${OPAPI_INCLUDE})
   target_link_libraries(
     ${OP_API_MODULE_NAME}_cases_obj
-    PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> json gtest)
+    PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> json GTest::gtest)
 endfunction()
 
 function(add_op_graph_ut_modules OP_GRAPH_MODULE_NAME)
@@ -157,7 +153,7 @@ function(add_op_graph_ut_modules OP_GRAPH_MODULE_NAME)
     -Wl,--no-as-needed
     metadef
     graph
-    gtest
+    GTest::gtest
     register
     ge_compiler
     ge_common
@@ -193,7 +189,7 @@ function(add_aicpu_opkernel_ut_modules AICPU_OP_KERNEL_MODULE_NAME)
                              PRIVATE _GLIBCXX_USE_CXX11_ABI=1)
   target_link_libraries(
     ${AICPU_OP_KERNEL_MODULE_NAME}_common_obj
-    PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> gtest c_sec
+    PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> GTest::gtest c_sec
             Eigen3::Eigen)
 
   # add opkernel ut cases object: math_aicpu_op_kernel_ut_cases_obj
@@ -216,7 +212,7 @@ function(add_aicpu_opkernel_ut_modules AICPU_OP_KERNEL_MODULE_NAME)
   target_link_libraries(
     ${AICPU_OP_KERNEL_MODULE_NAME}_cases
     PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
-            gtest
+            GTest::gtest
             c_sec
             -ldl
             -Wl,--whole-archive
@@ -245,7 +241,7 @@ function(add_opkernel_ut_modules OP_KERNEL_MODULE_NAME)
             ${ASCEND_DIR}/pkg_inc)
   target_link_libraries(
     ${OP_KERNEL_MODULE_NAME}_common_obj
-    PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> json gtest c_sec)
+    PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> json GTest::gtest c_sec)
 
   foreach(socVersion ${fastOpTestSocVersions})
     # add op kernel ut cases obj: math_op_tiling_ut_${socVersion}_cases
@@ -514,7 +510,7 @@ function(AddOpsTestCase)
     target_link_libraries(
       ${MODULE_OP_NAME}_${socVersion}_cases_obj
       PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
-              tikicpulib::${socVersion} gtest)
+              tikicpulib::${socVersion} GTest::gtest)
 
     # add object: math_op_kernel_ut_${oriSocVersion}_cases_obj
     if(NOT TARGET ${OP_KERNEL_MODULE_NAME}_${socVersion}_cases_obj)
@@ -578,7 +574,7 @@ function(add_aicpu_op_test_case opName)
             ${dlog_MATH_INCLUDE_DIR})
   target_link_libraries(
     ${opName}_cases_obj PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> -ldl
-                                gtest c_sec Eigen3::Eigen)
+                                GTest::gtest c_sec Eigen3::Eigen)
 
   # add object: math_op_kernel_ut_cases_obj
   if(NOT TARGET ${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj)
@@ -592,5 +588,5 @@ function(add_aicpu_op_test_case opName)
   target_link_libraries(
     ${AICPU_OP_KERNEL_MODULE_NAME}_cases_obj
     PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17> -ldl
-            $<TARGET_OBJECTS:${opName}_cases_obj> gtest c_sec Eigen3::Eigen)
+            $<TARGET_OBJECTS:${opName}_cases_obj> GTest::gtest c_sec Eigen3::Eigen)
 endfunction()

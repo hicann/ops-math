@@ -52,7 +52,7 @@ target_link_libraries(${OP_API_UT_EXE} PRIVATE
         -Wl,--no-as-needed
         -Wl,--whole-archive
         graph
-        gtest
+        GTest::gtest
         -Wl,--no-whole-archive
         )
 

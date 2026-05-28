@@ -61,7 +61,7 @@ target_link_libraries(${OP_HOST_UT_EXE} PRIVATE
     opp_registry
     graph
     platform
-    gtest
+    GTest::gtest
 )
 
 ## exec ophost ut exe

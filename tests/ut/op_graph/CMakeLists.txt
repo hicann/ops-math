@@ -51,7 +51,7 @@ if(UT_TEST_ALL OR OP_GRAPH_UT)
         error_manager
         exe_graph
         graph_base
-        gtest
+        GTest::gtest
         graph
         register
         platform

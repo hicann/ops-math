@@ -47,7 +47,7 @@ foreach(socVersion ${fastOpTestSocVersions})
             -Wl,--no-as-needed
             ${OP_KERNEL_MODULE_NAME}_${socVersion}_cases
             -Wl,--as-needed
-            gtest
+            GTest::gtest
             tikicpulib::${socVersion}
             opp_registry
             metadef
