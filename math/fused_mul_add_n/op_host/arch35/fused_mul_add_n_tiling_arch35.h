@@ -17,11 +17,10 @@
 #define AIR_CXX_RUNTIME_V2_OP_IMPL_FUSED_MUL_ADD_N_H_
 
 #include "atvoss/elewise/elewise_tiling.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/tilingdata_base.h"
 #include "platform/platform_ascendc.h"
 
-using namespace Ops::Math::OpTiling;
 using namespace Ops::Base;
 
 namespace optiling {
@@ -44,9 +43,9 @@ struct FusedMulAddNCompileInfo {
     uint64_t ubSize{0};
 };
 
-class FusedMulAddNTiling : public TilingBaseClass {
+class FusedMulAddNTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit FusedMulAddNTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit FusedMulAddNTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

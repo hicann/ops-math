@@ -21,13 +21,13 @@
 #include "register/op_def_registry.h"
 #include "register/op_impl_registry.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
 namespace optiling {
 
-class DivTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class DivTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit DivTiling(gert::TilingContext* context) : Ops::Math::OpTiling::TilingBaseClass(context)
+    explicit DivTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

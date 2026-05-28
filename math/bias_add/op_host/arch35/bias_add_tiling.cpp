@@ -23,7 +23,6 @@
 
 using namespace AscendC;
 using namespace ge;
-using namespace Ops::Math::OpTiling;
 using namespace Ops::Base;
 
 namespace optiling {

@@ -17,7 +17,7 @@
 
 #include "atvoss/elewise/elewise_tiling.h"
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/tilingdata_base.h"
 
 namespace optiling {

@@ -16,14 +16,14 @@
 #define OPS_BUILT_IN_OP_TILING_RUNTIME_CUMMIN_H_
 #include <cstdint>
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/op_impl_registry.h"
 #include "tiling/tiling_api.h"
 #include "platform/platform_ascendc.h"
 #include "log/log.h"
 #include "util/math_util.h"
 #include "register/op_def_registry.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "util/platform_util.h"
 #include "../../op_kernel/arch35/cummin_struct.h"
 #include "../../op_kernel/arch35/cummin_tiling_key.h"
@@ -37,9 +37,9 @@ struct CumminCompileInfo {
     uint32_t vRegSize = 0;
 };
 
-class CumminTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class CumminTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit CumminTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit CumminTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

@@ -16,12 +16,11 @@
 #ifndef AIR_CXX_RUNTIME_V2_OP_IMPL_FLOOR_H_
 #define AIR_CXX_RUNTIME_V2_OP_IMPL_FLOOR_H_
 
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "atvoss/elewise/elewise_tiling.h"
 #include "register/tilingdata_base.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 using namespace Ops::Base;
 
 BEGIN_TILING_DATA_DEF(FloorTilingData)
@@ -42,9 +41,9 @@ struct FloorCompileInfo {
     uint64_t ubSize = 0;
 };
 
-class FloorTiling : public TilingBaseClass {
+class FloorTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit FloorTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit FloorTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

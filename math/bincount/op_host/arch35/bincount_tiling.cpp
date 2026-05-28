@@ -17,7 +17,7 @@
 #include <cstring>
 #include "register/op_impl_registry.h"
 #include "platform/platform_info.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "log/log.h"
 #include "bincount_tiling.h"
 #include "util/math_util.h"
@@ -143,7 +143,7 @@ ge::graphStatus BincountTiling::CheckInputParams()
 
     auto inputSizeShape = context_->GetInputShape(INPUT_IDX_SIZE);
     OP_CHECK_NULL_WITH_CONTEXT(context_, inputSizeShape);
-    gert::Shape sizeShape = Ops::Math::OpTiling::EnsureNotScalar(inputSizeShape->GetStorageShape());
+    gert::Shape sizeShape = Ops::Base::EnsureNotScalar(inputSizeShape->GetStorageShape());
     int32_t sizeDims = sizeShape.GetDimNum();
     OP_CHECK_IF(
         sizeDims != DIM_1,

@@ -14,7 +14,7 @@
  */
 #include <graph/utils/type_utils.h>
 #include "exp_tiling_arch35.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "platform/platform_ascendc.h"
 #include "platform/platform_info.h"
 #include "op_host/util/fp16.h"
@@ -24,7 +24,6 @@
 
 namespace optiling {
 using namespace ExpOp;
-using namespace Ops::Math::OpTiling;
 const size_t ASCEND_WORKSPACE = 16777216; // 16 * 1024 * 1024
 
 ge::graphStatus ExpTiling::CalcInputDtype()
@@ -45,11 +44,11 @@ ge::graphStatus ExpTiling::CheckShape()
     OP_LOGD(tilingContext->GetNodeName(), "ExpTiling CheckShape enter.");
     auto expInputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, expInputStorageShape);
-    const gert::Shape& expInputYShape = EnsureNotScalar(expInputStorageShape->GetStorageShape());
+    const gert::Shape& expInputYShape = Ops::Base::EnsureNotScalar(expInputStorageShape->GetStorageShape());
 
     auto expOutputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, expOutputStorageShape);
-    const gert::Shape& expOutputZShape = EnsureNotScalar(expOutputStorageShape->GetStorageShape());
+    const gert::Shape& expOutputZShape = Ops::Base::EnsureNotScalar(expOutputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         expInputYShape != expOutputZShape, OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),

@@ -24,7 +24,6 @@
 #include "assert.h"
 #include "op_host/tiling_base_util.h"
 
-
 namespace optiling {
 
 constexpr size_t INDEX_K = 1;        // k,optional input

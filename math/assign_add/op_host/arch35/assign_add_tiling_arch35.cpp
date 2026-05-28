@@ -19,7 +19,7 @@
 #include "tiling/platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "atvoss/elewise/elewise_tiling.h"
 #include "register/op_impl_registry.h"
 #include "log/log.h"
@@ -32,7 +32,6 @@ using namespace AssignAddOp;
 using namespace AssignAddDag;
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 const size_t SYS_WORKSPACE_SIZE = 16777216;
 
 class AssignAddTiling {
@@ -92,9 +91,9 @@ ge::graphStatus AssignAddTiling::CheckShape() const
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, valueStorageShape);
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& refShape = EnsureNotScalar(refStorageShape->GetStorageShape());
-    const gert::Shape& valueShape = EnsureNotScalar(valueStorageShape->GetStorageShape());
-    const gert::Shape& outputShape = EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& refShape = Ops::Base::EnsureNotScalar(refStorageShape->GetStorageShape());
+    const gert::Shape& valueShape = Ops::Base::EnsureNotScalar(valueStorageShape->GetStorageShape());
+    const gert::Shape& outputShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         refShape != valueShape || refShape != outputShape,

@@ -13,7 +13,7 @@
  * \brief floor_div_tiling source file
  */
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "log/log.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "math/floor_div/op_kernel/arch35/floor_div_dag.h"
@@ -140,7 +140,7 @@ ge::graphStatus TilingForFloorDiv(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     OP_LOGD(context, "Enter ascendc FloorDivTiling");
-    return TilingRegistry::GetInstance().DoTilingImpl(context);
+    return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
 ge::graphStatus TilingPrepareForFloorDiv(gert::TilingParseContext* context)

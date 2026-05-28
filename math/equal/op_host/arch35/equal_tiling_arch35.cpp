@@ -18,10 +18,9 @@
 #include "log/log.h"
 #include "math/equal/op_kernel/arch35/equal_dag.h"
 #include "math/equal/op_kernel/arch35/equal_struct.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 using namespace ge;
 static constexpr uint64_t EQUAL_COMMON_TILING_PRIORITY = 0;
 
@@ -140,7 +139,7 @@ static ge::graphStatus TilingForEqual(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     OP_LOGD(context, "Enter ascendc EqualTiling");
-    return TilingRegistry::GetInstance().DoTilingImpl(context);
+    return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
 static ge::graphStatus TilingPrepareForEqual(gert::TilingParseContext* context)

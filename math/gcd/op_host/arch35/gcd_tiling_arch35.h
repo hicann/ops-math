@@ -16,14 +16,13 @@
 #ifndef OPS_BUILD_IN_OP_TILING_RUNTIME_GCD_TILING_H
 #define OPS_BUILD_IN_OP_TILING_RUNTIME_GCD_TILING_H
 
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 using namespace Ops::Base;
-class GcdTiling : public TilingBaseClass {
+class GcdTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit GcdTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit GcdTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

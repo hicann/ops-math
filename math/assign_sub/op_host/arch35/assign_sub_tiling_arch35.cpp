@@ -13,7 +13,7 @@
 #include "log/log.h"
 #include "assign_sub_tiling_arch35.h"
 #include "math/assign_sub/op_kernel/arch35/assign_sub_dag.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 
 using namespace ge;
 
@@ -74,9 +74,9 @@ ge::graphStatus AssignSubTiling::CheckShape() const
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, valueStorageShape);
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& varShape = Ops::Math::OpTiling::EnsureNotScalar(varStorageShape->GetStorageShape());
-    const gert::Shape& valueShape = Ops::Math::OpTiling::EnsureNotScalar(valueStorageShape->GetStorageShape());
-    const gert::Shape& outputShape = Ops::Math::OpTiling::EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& varShape = Ops::Base::EnsureNotScalar(varStorageShape->GetStorageShape());
+    const gert::Shape& valueShape = Ops::Base::EnsureNotScalar(valueStorageShape->GetStorageShape());
+    const gert::Shape& outputShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         varShape != valueShape || varShape != outputShape,

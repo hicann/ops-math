@@ -17,7 +17,7 @@
 #include "log/log.h"
 #include "atvoss/elewise/elewise_tiling.h"
 #include "math/asin/op_kernel/arch35/asin_dag.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 
 namespace optiling {
 using namespace ge;
@@ -71,11 +71,11 @@ ge::graphStatus AsinTiling::CheckShape()
     OP_LOGD(tilingContext->GetNodeName(), "AsinTiling CheckShape enter.");
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
-    const gert::Shape& inputShape = Ops::Math::OpTiling::EnsureNotScalar(inputStorageShape->GetStorageShape());
+    const gert::Shape& inputShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
 
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& outputShape = Ops::Math::OpTiling::EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& outputShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(inputShape != outputShape,
                 OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),

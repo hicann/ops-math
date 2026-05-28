@@ -18,14 +18,12 @@
 #include "log/log.h"
 #include "util/math_util.h"
 #include "util/platform_util.h"
-#include "op_host/tiling_util.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/tiling_base_util.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "../../op_kernel/arch35/atanh_tiling_data.h"
 #include "../../op_kernel/arch35/atanh_tiling_key.h"
 
 namespace optiling {
-
-using namespace Ops::Math::OpTiling;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
 
@@ -45,7 +43,7 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
 {
     auto inputX = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
-    auto inputShapeX = EnsureNotScalar(inputX->GetStorageShape());
+    auto inputShapeX = Ops::Base::EnsureNotScalar(inputX->GetStorageShape());
 
     totalNum = inputShapeX.GetShapeSize();
 

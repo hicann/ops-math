@@ -17,7 +17,7 @@
 #include "cast_tiling.h"
 #include "math/cast/op_kernel/arch35/cast_struct.h"
 #include "atvoss/elewise/elewise_tiling.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "util/platform_util.h"
 
 namespace optiling {

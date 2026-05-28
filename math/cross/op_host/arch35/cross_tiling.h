@@ -17,7 +17,7 @@
 
 #include <cstdint>
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/op_impl_registry.h"
 #include "platform/platform_ascendc.h"
 #include "log/log.h"
@@ -29,9 +29,9 @@ struct CrossCompileInfo {
     int64_t coreNum = 0;
 };
 
-class CrossTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class CrossTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit CrossTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit CrossTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

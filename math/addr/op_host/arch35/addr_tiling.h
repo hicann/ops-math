@@ -21,19 +21,18 @@
 #include "../../op_kernel/arch35/addr_dag.h"
 #include "platform/platform_ascendc.h"
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 
 struct AddrCompileInfo {
     uint64_t coreNum = 0;
     uint64_t ubSize = 0;
 };
 
-class AddrTiling : public TilingBaseClass {
+class AddrTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit AddrTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit AddrTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

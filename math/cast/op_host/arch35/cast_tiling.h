@@ -18,7 +18,7 @@
 #include "platform/platform_info.h"
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "log/log.h"
 
 namespace optiling {
@@ -71,9 +71,9 @@ struct CastMapSt {
         regCopyInMode_(regCopyInMode), regCopyOutMode_(regCopyOutMode) {}
 };
 
-class CastTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class CastTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit CastTiling(gert::TilingContext *context) : Ops::Math::OpTiling::TilingBaseClass(context)
+    explicit CastTiling(gert::TilingContext *context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

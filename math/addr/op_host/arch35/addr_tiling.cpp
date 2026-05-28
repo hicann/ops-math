@@ -24,9 +24,8 @@
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "op_host/util/fp16.h"
 #include "util/bfloat16.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 
-using namespace Ops::Math::OpTiling;
 using namespace Ops::Base;
 using namespace AscendC;
 using namespace ge;
@@ -350,7 +349,7 @@ ge::graphStatus TilingForAddr(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     OP_LOGD("AddrTiling", "Enter ascendc AddrTiling");
-    return TilingRegistry::GetInstance().DoTilingImpl(context);
+    return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
 IMPL_OP_OPTILING(Addr)

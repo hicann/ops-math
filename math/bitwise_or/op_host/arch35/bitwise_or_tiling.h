@@ -18,7 +18,7 @@
 
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/op_impl_registry.h"
 
 namespace optiling {
@@ -27,9 +27,9 @@ struct BitWiseOrCompileInfo {
     uint64_t ubSize;
 };
 
-class BitwiseOrTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class BitwiseOrTiling : public Ops::Base::TilingBaseClass {
     public:
-        explicit BitwiseOrTiling(gert::TilingContext* context) : TilingBaseClass(context) {}
+        explicit BitwiseOrTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
     protected:
         bool IsCapable() override;

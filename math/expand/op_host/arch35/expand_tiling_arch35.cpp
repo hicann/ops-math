@@ -16,9 +16,9 @@
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "op_host/util/const_util.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "util/platform_util.h"
 #include <sstream>
 
@@ -199,11 +199,11 @@ ge::graphStatus IsEmptyTensor(const gert::TilingContext* context)
 {
     auto xStorage = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xStorage);
-    gert::Shape xShape = Ops::Math::OpTiling::EnsureNotScalar(xStorage->GetStorageShape());
+    gert::Shape xShape = Ops::Base::EnsureNotScalar(xStorage->GetStorageShape());
 
     auto yStorage = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, yStorage);
-    gert::Shape yShape = Ops::Math::OpTiling::EnsureNotScalar(yStorage->GetStorageShape());
+    gert::Shape yShape = Ops::Base::EnsureNotScalar(yStorage->GetStorageShape());
 
     auto xDimNum = xShape.GetDimNum();
     auto yDimNum = yShape.GetDimNum();
@@ -227,7 +227,7 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
 {
     auto xStorage = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xStorage);
-    inShape = Ops::Math::OpTiling::EnsureNotScalar(xStorage->GetStorageShape());
+    inShape = Ops::Base::EnsureNotScalar(xStorage->GetStorageShape());
 
     OP_CHECK_IF(IsEmptyTensor(context) != ge::GRAPH_SUCCESS,
         OP_LOGE(context->GetNodeName(), "Do not support x or y is empty tensor!"), return ge::GRAPH_FAILED);

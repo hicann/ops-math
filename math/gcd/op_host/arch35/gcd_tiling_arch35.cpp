@@ -14,7 +14,7 @@
  */
 
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "log/log.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "math/gcd/op_kernel/arch35/gcd_dag.h"
@@ -141,7 +141,7 @@ ge::graphStatus TilingForGcd(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     OP_LOGD(context, "Enter ascendc GcdTiling");
-    return TilingRegistry::GetInstance().DoTilingImpl(context);
+    return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
 ge::graphStatus TilingPrepareForGcd(gert::TilingParseContext* context)

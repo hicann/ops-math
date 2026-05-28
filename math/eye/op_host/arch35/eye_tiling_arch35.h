@@ -16,11 +16,10 @@
 #ifndef OPS_BUILT_IN_OP_TILING_RUNTIME_EYE_H_
 #define OPS_BUILT_IN_OP_TILING_RUNTIME_EYE_H_
 #include "register/op_def_registry.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/tilingdata_base.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 // ///////////////////////////////////
 // tilingdata define
 // ///////////////////////////////////
@@ -41,9 +40,9 @@ struct EyeCompileInfo {
     int64_t ubSize = 0;
 };
 
-class EyeTiling : public TilingBaseClass {
+class EyeTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit EyeTiling(gert::TilingContext *context) : TilingBaseClass(context) {}
+    explicit EyeTiling(gert::TilingContext *context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;

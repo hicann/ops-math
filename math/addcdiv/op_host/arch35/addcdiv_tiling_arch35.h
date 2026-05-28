@@ -17,14 +17,14 @@
 #define OPS_BUILD_IN_OP_TILING_RUNTIME_ADDCDIV_TILING_H
 
 #include "register/op_def_registry.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/op_impl_registry.h"
 
 namespace optiling {
 
-class AddcdivTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class AddcdivTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit AddcdivTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit AddcdivTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

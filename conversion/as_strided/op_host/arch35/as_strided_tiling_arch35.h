@@ -20,8 +20,8 @@
 #include "register/tilingdata_base.h"
 #include "tiling/tiling_api.h"
 #include "util/platform_util.h"
-#include "conversion/as_strided/op_kernel/arch35/as_strided_struct.h"
 #include "op_host/tiling_base_class.h"
+#include "conversion/as_strided/op_kernel/arch35/as_strided_struct.h"
 
 namespace optiling {
 

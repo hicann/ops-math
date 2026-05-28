@@ -22,7 +22,7 @@
 #include "register/op_def_registry.h"
 #include "register/op_impl_registry.h"
 #include "tiling/tiling_api.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
 namespace optiling {
 
@@ -31,9 +31,9 @@ struct DivNoNanCompileInfo {
     uint64_t ubSize = 0;
 };
 
-class DivNoNanTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class DivNoNanTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit DivNoNanTiling(gert::TilingContext* context) : Ops::Math::OpTiling::TilingBaseClass(context)
+    explicit DivNoNanTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

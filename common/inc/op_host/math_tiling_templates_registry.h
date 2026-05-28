@@ -9,7 +9,7 @@
  */
 
 /*!
- * \file tiling_templates_registry.h
+ * \file math_tiling_templates_registry.h
  * \brief
  */
 
@@ -60,7 +60,7 @@ private:
     const std::string op_type_;
 };
 
-// --------------------------------Interfacce with soc version --------------------------------
+// --------------------------------Interface with soc version --------------------------------
 class TilingRegistryNew {
 public:
     TilingRegistryNew() = default;
@@ -216,7 +216,7 @@ private:
     const std::string op_type_;
 };
 
-// --------------------------------Interfacce without soc version --------------------------------
+// --------------------------------Interface without soc version --------------------------------
 class TilingRegistry {
 public:
     TilingRegistry() = default;

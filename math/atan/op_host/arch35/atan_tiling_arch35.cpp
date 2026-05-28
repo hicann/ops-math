@@ -19,7 +19,7 @@
 #include "tiling/platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "atvoss/elewise/elewise_tiling.h"
 #include "log/log.h"
 #include "util/math_util.h"
@@ -30,7 +30,6 @@
 
 using namespace ge;
 using namespace AtanOp;
-using namespace Ops::Math::OpTiling;
 
 namespace optiling {
 constexpr int64_t ASCEND_API_BUFFER = 122880;
@@ -77,11 +76,11 @@ ge::graphStatus AtanTiling::CheckShape()
 {
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
-    const gert::Shape& inputXShape = EnsureNotScalar(inputStorageShape->GetStorageShape());
+    const gert::Shape& inputXShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
 
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& outputYShape = EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         inputXShape != outputYShape, OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),

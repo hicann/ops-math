@@ -15,11 +15,10 @@
 
 #include "register/op_impl_registry.h"
 #include "fused_mul_add_n_tiling_arch35.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "log/log.h"
 
 using namespace ge;
-using namespace Ops::Base;
 
 namespace optiling {
 

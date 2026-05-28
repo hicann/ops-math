@@ -16,9 +16,8 @@
 #ifndef OPS_MATH_ADD_OP_HOST_ADD_TILING_ARCH35_H
 #define OPS_MATH_ADD_OP_HOST_ADD_TILING_ARCH35_H
 
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
-using namespace Ops::Math::OpTiling;
 
 namespace optiling {
 
@@ -27,9 +26,9 @@ struct AddCompileInfo {
     uint64_t ubSize;
 };
 
-class AddTiling : public TilingBaseClass {
+class AddTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit AddTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit AddTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

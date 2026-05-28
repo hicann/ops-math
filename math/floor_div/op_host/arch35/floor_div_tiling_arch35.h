@@ -16,9 +16,8 @@
 #ifndef OPS_BUILD_IN_OP_TILING_RUNTIME_FLOOR_DIV_TILING_H
 #define OPS_BUILD_IN_OP_TILING_RUNTIME_FLOOR_DIV_TILING_H
 
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
-using namespace Ops::Math::OpTiling;
 
 namespace optiling {
 
@@ -27,9 +26,9 @@ struct FloorDivCompileInfo {
     uint64_t ubSize;
 };
 
-class FloorDivTiling : public TilingBaseClass {
+class FloorDivTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit FloorDivTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit FloorDivTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:
