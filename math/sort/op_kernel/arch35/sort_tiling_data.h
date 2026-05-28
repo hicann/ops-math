@@ -23,13 +23,28 @@ struct SortRegBaseTilingData {
     uint32_t sortLoopTimes; // b轴循环次数
     uint32_t lastDimNeedCore; // h轴需要的核数
     // keyParamsxxx 预留参数
-    // keyParams0 radix分支表示globalHistGmWk_使用核数，radix_one_core代表inqueX的ub大小,merge sort 表示一次处理几个h
+    // radix: globalHistGmWk_ 使用核数
+    // radix_one_core: inqueX 的 ub 大小
+    // merge sort: 一次处理几个 h
     uint32_t keyParams0;
-    uint32_t keyParams1; // radix分支清零excusiveBinsGmWk_的核， radix_one_core y2OutQue需要的ub大小, merge xQue ub大小
-    uint32_t keyParams2; // radix分支清零的一次ub数据量, radix_one_core 输出int64时，一半的ub偏移, merge y2OutQue的ub大小
-    uint32_t keyParams3; // radix分支清零globalHistGmWk_ ub循环次数, merge表示32个数对齐的alginH
-    uint32_t keyParams4; // radix：清零chunk大小；merge_sort(sch0)：队列buffer数；merge_big_batch(sch4)：extract chunk大小
-    uint32_t keyParams5; // radix：清零chunk大小；merge_big_batch(sch4)：最大归并迭代次数
+    // radix: 清零 excusiveBinsGmWk_ 的核
+    // radix_one_core: y2OutQue 需要的 ub 大小
+    // merge: xQue ub 大小
+    uint32_t keyParams1;
+    // radix: 清零的一次 ub 数据量
+    // radix_one_core: 输出 int64 时，一半的 ub 偏移
+    // merge: y2OutQue 的 ub 大小
+    // small-axis two-stage: rank-inverse 标志
+    uint32_t keyParams2;
+    // radix: 清零 globalHistGmWk_ ub 循环次数
+    // radix_one_core: 队列 buffer 数
+    // merge: 32 个数对齐的 alginH
+    uint32_t keyParams3;
+    // radix: 清零 chunk 大小
+    // merge_sort(sch0): 队列 buffer 数
+    // intra_core(sch4): extract chunk 大小
+    uint32_t keyParams4;
+    uint32_t keyParams5; // radix：清零chunk大小；intra_core(sch4)：最大归并迭代次数
     uint32_t tmpUbSize; // sort高级api需要的临时ub大小
     int64_t lastAxisNum; // h轴大小
     int64_t unsortedDimNum; // b轴大小

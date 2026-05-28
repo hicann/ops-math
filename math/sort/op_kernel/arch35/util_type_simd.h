@@ -15,15 +15,16 @@
 #ifndef UTIL_TYPE_SIMD_H
 #define UTIL_TYPE_SIMD_H
 #include "kernel_operator.h"
-#include "op_kernel/platform_util.h" // 不引入导致 GetUbBlockSize 方法无法使用
+#include "op_kernel/platform_util.h"
+
+constexpr uint32_t UB_BLOCK_SIZE = Ops::Base::GetUbBlockSize();  // UB block size in bytes
 
 __aicore__ inline uint32_t ROUND_UP_AGLIN(uint32_t x)
 {
-    const int32_t oneBlock = Ops::Base::GetUbBlockSize();
-    if (oneBlock == 0) {
+    if (UB_BLOCK_SIZE == 0) {
         return x;
     }
-    return (x + oneBlock - 1) / oneBlock * oneBlock;
+    return (x + UB_BLOCK_SIZE - 1U) / UB_BLOCK_SIZE * UB_BLOCK_SIZE;
 }
 
 template <typename T> struct DoubleBufferSimd {

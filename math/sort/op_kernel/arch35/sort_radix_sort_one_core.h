@@ -59,6 +59,7 @@ private:
     uint32_t halfIndex_ = 0;
     uint32_t xUbSize_ = 0;
     uint32_t yUbSize_ = 0;
+    uint32_t bufferNum_ = 1;
 };
 
 template <typename T1, typename T2, bool isDescend>
@@ -74,9 +75,9 @@ __aicore__ inline void SortRadixOneCore<T1, T2, isDescend>::Init(GM_ADDR x, GM_A
     outIdxGm_.SetGlobalBuffer((__gm__ uint32_t *)sortIndex);
     realCoreNum_ = GetBlockNum();
 
-    pipe_->InitBuffer(inQueueX_, 1, xUbSize_);
-    pipe_->InitBuffer(outValueQueue_, 1, xUbSize_);
-    pipe_->InitBuffer(outIdxQueue_, 1, yUbSize_);
+    pipe_->InitBuffer(inQueueX_, bufferNum_, xUbSize_);
+    pipe_->InitBuffer(outValueQueue_, bufferNum_, xUbSize_);
+    pipe_->InitBuffer(outIdxQueue_, bufferNum_, yUbSize_);
     pipe_->InitBuffer(tmpUb_, tmpUbSize_);
 }
 
@@ -92,6 +93,7 @@ __aicore__ inline void SortRadixOneCore<T1, T2, isDescend>::ParserTilingData()
     xUbSize_ = tilingData_->keyParams0;                      // xInQue需要的ub大小
     yUbSize_ = tilingData_->keyParams1;                      // y2OutQue需要的ub大小
     halfIndex_ = tilingData_->keyParams2; // 输出idx如果是int64，cast时需要从ub的一半开始
+    bufferNum_ = tilingData_->keyParams3 == 2 ? 2 : 1;       // one-core队列buffer数
 }
 
 template <typename T1, typename T2, bool isDescend>

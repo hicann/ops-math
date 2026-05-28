@@ -46,21 +46,21 @@ struct MergeSortBigSize {
     __aicore__ inline void SortInMultiCore();
     __aicore__ inline void FinalSortAndCopy();
     __aicore__ inline void MultiCoreInit();
-	__aicore__ inline void FinalSortInit();
+    __aicore__ inline void FinalSortInit();
     __aicore__ inline void FlipSignBit(LocalTensor<CONVERT_TYPE> xLocal, uint32_t aglinTileNum);
     __aicore__ inline void CopyInMultiCore();
     __aicore__ inline void UpdateMrgParam();
     __aicore__ inline void DealingMergeSort();
     __aicore__ inline void UpdateSortInfo();
     __aicore__ inline void ExtractAndCopyOut();
-	__aicore__ inline void ClearCache();
+    __aicore__ inline void ClearCache();
 public:
     TQue<QuePosition::VECIN, DOUBLE_BUFFER> inputQueue_;
     TQue<QuePosition::VECOUT, DOUBLE_BUFFER> outValueQueue_;
     TQue<QuePosition::VECOUT, DOUBLE_BUFFER> outIndexQueue_;
     TQue<QuePosition::VECOUT, DOUBLE_BUFFER> sortedQueue_;
     TQue<QuePosition::VECIN, DOUBLE_BUFFER> copyInQueue_;
-	TQue<QuePosition::VECOUT, DOUBLE_BUFFER> castValueQueue_;
+    TQue<QuePosition::VECOUT, DOUBLE_BUFFER> castValueQueue_;
     TQue<QuePosition::VECOUT, DOUBLE_BUFFER> castIndexQueue_;
     // input value
     GlobalTensor<T> inputValueGm_;
@@ -69,9 +69,9 @@ public:
     // output index
     GlobalTensor<INDEX_TYPE> outIndexGm_;
 
-	GlobalTensor<CONVERT_TYPE> workspaceGm_[2];
-	GlobalTensor<CONVERT_TYPE> workspaceInput_;
-	GlobalTensor<CONVERT_TYPE> workspaceOutput_;
+    GlobalTensor<CONVERT_TYPE> workspaceGm_[2];
+    GlobalTensor<CONVERT_TYPE> workspaceInput_;
+    GlobalTensor<CONVERT_TYPE> workspaceOutput_;
 
     TBuf<QuePosition::VECCALC> sortedValueUb_;
     TBuf<QuePosition::VECCALC> sortedValueIndexUb_;
@@ -87,7 +87,11 @@ public:
     uint32_t platformCoreNum_ = 0;
     uint32_t outputLastDimValue_ = 0;
     uint32_t frontCoreNum_ = 0;
+    uint32_t rowIdx_ = 0;
+    uint32_t rowCoreIdx_ = 0;
     uint32_t vfLenFp32_ = Ops::Base::GetVRegSize() / FP32_DTYPE;
+    int64_t rowDataOffset_ = 0;
+    int64_t rowWorkspaceOffset_ = 0;
 
     // SortMultiCore
     int64_t listNum_{0};
@@ -112,10 +116,10 @@ public:
 
 __aicore__ inline int64_t Align(int64_t elementNum, int64_t bytes)
 {
-	if (bytes == 0) {
-		return 0;
-	}
-	return (elementNum * bytes + BLOCK_UB - 1) / BLOCK_UB * BLOCK_UB / bytes;
+    if (bytes == 0) {
+        return 0;
+    }
+    return (elementNum * bytes + BLOCK_UB - 1) / BLOCK_UB * BLOCK_UB / bytes;
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
@@ -126,16 +130,28 @@ __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>
     outputLastDimValue_ = tilingData->lastDimTileNum;
     numTileData_ = tilingData->numTileDataSize;
     frontCoreNum_ = tilingData->lastDimNeedCore;
+    uint32_t sortBufferSize = 8;
+    rowIdx_ = frontCoreNum_ == 0 ? 0 : blockIdx_ / frontCoreNum_;
+    rowCoreIdx_ = frontCoreNum_ == 0 ? 0 : blockIdx_ % frontCoreNum_;
+    rowDataOffset_ = static_cast<int64_t>(rowIdx_) * static_cast<int64_t>(outputLastDimValue_);
+    // Per-row workspace stores Sort API sort-struct data. This capacity uses sortBufferSize bytes per
+    // original element and UB-block byte alignment; it must cover later GetSortLen-based accesses.
+    rowWorkspaceOffset_ =
+        static_cast<int64_t>(rowIdx_) * Align(outputLastDimValue_, sortBufferSize) * sortBufferSize /
+        sizeof(CONVERT_TYPE) * 2;
     onceMaxElements_ = tilingData->keyParams0 / DEALING_SORT_NUM_ONCE * DEALING_SORT_NUM_ONCE;
 
-	uint32_t sortBufferSize = 8;
     inputValueGm_.SetGlobalBuffer((__gm__ T*)(inputValue));
     outValueGm_.SetGlobalBuffer((__gm__ T*)(value));
     outIndexGm_.SetGlobalBuffer((__gm__ INDEX_TYPE*)(indices));
-	workspaceGm_[0].SetGlobalBuffer((__gm__ CONVERT_TYPE*)(workSpace), Align(outputLastDimValue_, sortBufferSize) * sortBufferSize / sizeof(CONVERT_TYPE));
-	workspaceGm_[1].SetGlobalBuffer((__gm__ CONVERT_TYPE*)(workSpace) + Align(outputLastDimValue_, sortBufferSize) * sortBufferSize / sizeof(CONVERT_TYPE));
+    workspaceGm_[0].SetGlobalBuffer(
+        (__gm__ CONVERT_TYPE*)(workSpace) + rowWorkspaceOffset_,
+        Align(outputLastDimValue_, sortBufferSize) * sortBufferSize / sizeof(CONVERT_TYPE));
+    workspaceGm_[1].SetGlobalBuffer(
+        (__gm__ CONVERT_TYPE*)(workSpace) + rowWorkspaceOffset_ +
+            Align(outputLastDimValue_, sortBufferSize) * sortBufferSize / sizeof(CONVERT_TYPE));
 
-	uint32_t tailNum = outputLastDimValue_ - (frontCoreNum_ - 1) * numTileData_;
+    uint32_t tailNum = outputLastDimValue_ - (frontCoreNum_ - 1) * numTileData_;
     uint32_t alignTile = (tailNum + BLOCK_UB - 1) / BLOCK_UB * BLOCK_UB;
     pipe_->InitBuffer(inputQueue_, DOUBLE_BUFFER, alignTile * sizeof(T));
 
@@ -151,17 +167,17 @@ template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYP
 __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::Process()
 {
     int64_t offsetPerCore = 0;
-    if (blockIdx_ < frontCoreNum_ - 1) {
-        offsetPerCore = numTileData_ * blockIdx_;
+    if (rowCoreIdx_ < frontCoreNum_ - 1) {
+        offsetPerCore = numTileData_ * rowCoreIdx_;
         SortInSingleCore(numTileData_, offsetPerCore);
-    } else if (blockIdx_ == frontCoreNum_ - 1) {
-		uint32_t tailNum = outputLastDimValue_ - numTileData_ * (frontCoreNum_ - 1);
-        offsetPerCore = numTileData_ * blockIdx_;
+    } else if (rowCoreIdx_ == frontCoreNum_ - 1) {
+        uint32_t tailNum = outputLastDimValue_ - numTileData_ * (frontCoreNum_ - 1);
+        offsetPerCore = numTileData_ * rowCoreIdx_;
         SortInSingleCore(tailNum, offsetPerCore);
     }
     SyncAll();
-	pipe_->Reset();
-	uint32_t sortBufferSize = 8;
+    pipe_->Reset();
+    uint32_t sortBufferSize = 8;
     pipe_->InitBuffer(sortedQueue_, DOUBLE_BUFFER, MERGE_SORT_LIST_MAX_NUM * onceMaxElements_ * sortBufferSize);
     pipe_->InitBuffer(copyInQueue_, DOUBLE_BUFFER, MERGE_SORT_LIST_MAX_NUM * onceMaxElements_ * sortBufferSize);
     pipe_->InitBuffer(castValueQueue_, DOUBLE_BUFFER, MERGE_SORT_LIST_MAX_NUM * onceMaxElements_ * sizeof(CONVERT_TYPE));
@@ -174,24 +190,24 @@ __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>
     }
 
     listNum_ = frontCoreNum_;
-	currentElements_ = numTileData_;
-	currentTailElements_ = outputLastDimValue_ - numTileData_ * (frontCoreNum_ - 1);
-	uint32_t currentCoreNum;
-	uint32_t remainListNum;
-	while(listNum_ > MERGE_SORT_LIST_MAX_NUM) {
-		workspaceInput_ = workspaceGm_[workSpaceFlag_];
-		workspaceOutput_ = workspaceGm_[1 - workSpaceFlag_];
-		SortInMultiCore();
-		currentCoreNum = (listNum_ + MERGE_SORT_LIST_MAX_NUM - 1) / MERGE_SORT_LIST_MAX_NUM;
-		remainListNum = listNum_ - (currentCoreNum - 1) * MERGE_SORT_LIST_MAX_NUM;
-		currentTailElements_ = currentElements_ * (remainListNum - 1) + currentTailElements_;
-		listNum_ = currentCoreNum;
-		currentElements_ = currentElements_ * MERGE_SORT_LIST_MAX_NUM;
-		workSpaceFlag_ = (workSpaceFlag_ + 1) % 2;
-	}
+    currentElements_ = numTileData_;
+    currentTailElements_ = outputLastDimValue_ - numTileData_ * (frontCoreNum_ - 1);
+    uint32_t currentCoreNum;
+    uint32_t remainListNum;
+    while (listNum_ > MERGE_SORT_LIST_MAX_NUM) {
+        workspaceInput_ = workspaceGm_[workSpaceFlag_];
+        workspaceOutput_ = workspaceGm_[1 - workSpaceFlag_];
+        SortInMultiCore();
+        currentCoreNum = (listNum_ + MERGE_SORT_LIST_MAX_NUM - 1) / MERGE_SORT_LIST_MAX_NUM;
+        remainListNum = listNum_ - (currentCoreNum - 1) * MERGE_SORT_LIST_MAX_NUM;
+        currentTailElements_ = currentElements_ * (remainListNum - 1) + currentTailElements_;
+        listNum_ = currentCoreNum;
+        currentElements_ = currentElements_ * MERGE_SORT_LIST_MAX_NUM;
+        workSpaceFlag_ = (workSpaceFlag_ + 1) % 2;
+    }
     workspaceInput_ = workspaceGm_[workSpaceFlag_];
-	workspaceOutput_ = workspaceGm_[1 - workSpaceFlag_];
-	FinalSortAndCopy();
+    workspaceOutput_ = workspaceGm_[1 - workSpaceFlag_];
+    FinalSortAndCopy();
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
@@ -202,39 +218,39 @@ __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>
     LocalTensor<CONVERT_TYPE> sortedValueLocal = sortedValueUb_.Get<CONVERT_TYPE>();
     LocalTensor<uint32_t> sortedValueIndexLocal = sortedValueIndexUb_.Get<uint32_t>();
     InitIndexLocal(tileNum, sortedValueIndexLocal, offsetPerCore);
-	if constexpr (std::is_same<bfloat16_t, T>::value) {
-		DoSortBf16(tileNum, inputLocal, sortedValueLocal, sortedValueIndexLocal);
-	} else {
-		DoSort(tileNum, inputLocal, sortedValueLocal, sortedValueIndexLocal);
-	}
+    if constexpr (std::is_same<bfloat16_t, T>::value) {
+        DoSortBf16(tileNum, inputLocal, sortedValueLocal, sortedValueIndexLocal);
+    } else {
+        DoSort(tileNum, inputLocal, sortedValueLocal, sortedValueIndexLocal);
+    }
     CopyOutWorkSpace(tileNum, offsetPerCore, sortedValueLocal);
-	inputQueue_.FreeTensor(inputLocal);
+    inputQueue_.FreeTensor(inputLocal);
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
 __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::CopyInData(uint32_t tileNum, int64_t offsetPerCore)
 {
-	LocalTensor<T> inputLocal = inputQueue_.AllocTensor<T>();
-	T defaultValue = IS_DESCEND ? static_cast<T>(-INFINITY) : static_cast<T>(NAN);
-	uint32_t alignTile = (tileNum + BLOCK_UB - 1) / BLOCK_UB * BLOCK_UB;
-	Duplicate(inputLocal, defaultValue, alignTile);
+    LocalTensor<T> inputLocal = inputQueue_.AllocTensor<T>();
+    T defaultValue = IS_DESCEND ? static_cast<T>(-INFINITY) : static_cast<T>(NAN);
+    uint32_t alignTile = (tileNum + BLOCK_UB - 1) / BLOCK_UB * BLOCK_UB;
+    Duplicate(inputLocal, defaultValue, alignTile);
 
-	event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE2));
-	SetFlag<HardEvent::V_MTE2>(eventId);
-	WaitFlag<HardEvent::V_MTE2>(eventId);
+    event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE2));
+    SetFlag<HardEvent::V_MTE2>(eventId);
+    WaitFlag<HardEvent::V_MTE2>(eventId);
 
-	uint32_t currTileSizeAlign = Align(tileNum, sizeof(T));
-	DataCopyExtParams copyParams;
+    uint32_t currTileSizeAlign = Align(tileNum, sizeof(T));
+    DataCopyExtParams copyParams;
     copyParams.blockCount = 1;
     copyParams.blockLen = tileNum * sizeof(T);
     copyParams.srcStride = 0;
     copyParams.dstStride = 0;
     DataCopyPadExtParams<T> padParams;
-	padParams.isPad = true;
-	padParams.rightPadding = currTileSizeAlign - tileNum;
-	padParams.paddingValue = static_cast<T>(defaultValue);
+    padParams.isPad = true;
+    padParams.rightPadding = currTileSizeAlign - tileNum;
+    padParams.paddingValue = static_cast<T>(defaultValue);
 
-    AscendC::DataCopyPad(inputLocal, inputValueGm_[offsetPerCore], copyParams, padParams);
+    AscendC::DataCopyPad(inputLocal, inputValueGm_[rowDataOffset_ + offsetPerCore], copyParams, padParams);
     inputQueue_.EnQue(inputLocal);
 }
 
@@ -242,9 +258,9 @@ template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYP
 __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::InitIndexLocal(uint32_t tileNum, LocalTensor<uint32_t> sortedValueIndexLocal, int64_t offsetPerCore)
 {
     PipeBarrier<PIPE_ALL>();
-	LocalTensor<int32_t> tempIndexLocal = sortedValueIndexLocal.ReinterpretCast<int32_t>();
-	ArithProgression<int32_t>(tempIndexLocal, offsetPerCore, 1, tileNum);
-	PipeBarrier<PIPE_ALL>();
+    LocalTensor<int32_t> tempIndexLocal = sortedValueIndexLocal.ReinterpretCast<int32_t>();
+    ArithProgression<int32_t>(tempIndexLocal, offsetPerCore, 1, tileNum);
+    PipeBarrier<PIPE_ALL>();
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
@@ -302,11 +318,11 @@ __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
 __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::CopyOutWorkSpace(uint32_t tileNum, int64_t offsetPerCore, LocalTensor<CONVERT_TYPE> sortedValueLocal)
 {
-	event_t eventIdVToMTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
+    event_t eventIdVToMTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
     SetFlag<HardEvent::V_MTE3>(eventIdVToMTE3);
     WaitFlag<HardEvent::V_MTE3>(eventIdVToMTE3);
 
-	DataCopyExtParams copyParams;
+    DataCopyExtParams copyParams;
     copyParams.blockCount = 1;
     copyParams.blockLen = GetSortLen<CONVERT_TYPE>(tileNum) * sizeof(CONVERT_TYPE);
     copyParams.srcStride = 0;
@@ -319,14 +335,14 @@ __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>
 {
     LocalTensor<CONVERT_TYPE> sortTempBuffer = sortedQueue_.DeQue<CONVERT_TYPE>();
 
-	uint32_t len = curLoopSortedNum_;
-	DataCopyExtParams copyParams;
+    uint32_t len = curLoopSortedNum_;
+    DataCopyExtParams copyParams;
     copyParams.blockCount = 1;
     copyParams.blockLen = GetSortLen<CONVERT_TYPE>(len) * sizeof(CONVERT_TYPE);
     copyParams.srcStride = 0;
     copyParams.dstStride = 0;
     DataCopyPad(workspaceOutput_[outOffset_], sortTempBuffer, copyParams);
-	outOffset_ += GetSortLen<CONVERT_TYPE>(len);
+    outOffset_ += GetSortLen<CONVERT_TYPE>(len);
     sortedQueue_.FreeTensor<CONVERT_TYPE>(sortTempBuffer);
 }
 
@@ -334,8 +350,8 @@ __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
 __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::SortInMultiCore()
 {
-	uint32_t needCoreNum = (listNum_ + MERGE_SORT_LIST_MAX_NUM - 1) / MERGE_SORT_LIST_MAX_NUM;
-    if (blockIdx_ < needCoreNum) {
+    uint32_t needCoreNum = (listNum_ + MERGE_SORT_LIST_MAX_NUM - 1) / MERGE_SORT_LIST_MAX_NUM;
+    if (rowCoreIdx_ < needCoreNum) {
         MultiCoreInit();
         for (; allRemainElements_ > 0;) {
             CopyInMultiCore();
@@ -346,7 +362,7 @@ __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>
         }
         ClearCache();
     }
-	SyncAll();
+    SyncAll();
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
@@ -357,12 +373,12 @@ __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>
     for (int64_t i = 0, j = 0; i < MERGE_SORT_LIST_MAX_NUM; i++) {
         dealLengths_[i] = (onceMaxElements_ > listRemainElements_[i] ? listRemainElements_[i] : onceMaxElements_);
         if (dealLengths_[i] > 0) {
-			DataCopyExtParams copyParams;
-        	copyParams.blockCount = 1;
-        	copyParams.blockLen = GetSortLen<CONVERT_TYPE>(dealLengths_[i]) * sizeof(CONVERT_TYPE);
-        	copyParams.srcStride = 0;
-        	copyParams.dstStride = 0;
-        	DataCopyPadExtParams<CONVERT_TYPE> padParams{false, 0, 0, 0};
+            DataCopyExtParams copyParams;
+            copyParams.blockCount = 1;
+            copyParams.blockLen = GetSortLen<CONVERT_TYPE>(dealLengths_[i]) * sizeof(CONVERT_TYPE);
+            copyParams.srcStride = 0;
+            copyParams.dstStride = 0;
+            DataCopyPadExtParams<CONVERT_TYPE> padParams{false, 0, 0, 0};
             DataCopyPad(ubMainInput[GetSortLen<CONVERT_TYPE>(onceMaxElements_) * i], workspaceInput_[offsets_[i]], copyParams, padParams);
             elementCountList_[j] = dealLengths_[i];
             remainListNum_ += 1;
@@ -422,20 +438,20 @@ __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
 __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::MultiCoreInit()
 {
-	outOffset_ = GetSortLen<CONVERT_TYPE>(blockIdx_ * MERGE_SORT_LIST_MAX_NUM * currentElements_);
+    outOffset_ = GetSortLen<CONVERT_TYPE>(rowCoreIdx_ * MERGE_SORT_LIST_MAX_NUM * currentElements_);
     for (int64_t i = 0; i < MERGE_SORT_LIST_MAX_NUM; i++) {
-        uint32_t blockNum = blockIdx_ * MERGE_SORT_LIST_MAX_NUM + i;
+        uint32_t blockNum = rowCoreIdx_ * MERGE_SORT_LIST_MAX_NUM + i;
         if (blockNum < listNum_ - 1) {
             listRemainElements_[i]  = currentElements_;
-			offsets_[i] = GetSortOffset<CONVERT_TYPE>(blockNum * currentElements_);
-			allRemainElements_ += listRemainElements_[i];
+            offsets_[i] = GetSortOffset<CONVERT_TYPE>(blockNum * currentElements_);
+            allRemainElements_ += listRemainElements_[i];
         } else if (blockNum == listNum_ - 1) {
             listRemainElements_[i]  = currentTailElements_;
-			offsets_[i] = GetSortOffset<CONVERT_TYPE>(blockNum * currentElements_);
-			allRemainElements_ += currentTailElements_;
+            offsets_[i] = GetSortOffset<CONVERT_TYPE>(blockNum * currentElements_);
+            allRemainElements_ += currentTailElements_;
         } else {
-			listRemainElements_[i] = 0;
-		}
+            listRemainElements_[i] = 0;
+        }
     }
 }
 
@@ -452,8 +468,8 @@ __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>
     } else if (remainListNum_ == 4) {
         validBitTail_ = 0b1111;
     } else {
-		elementCountList_[1] = 0;
-		elementCountList_[2] = 0;
+        elementCountList_[1] = 0;
+        elementCountList_[2] = 0;
         elementCountList_[3] = 0;
         validBitTail_ = 0b0001;
     }
@@ -462,7 +478,7 @@ __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
 __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::FinalSortAndCopy()
 {
-    if (blockIdx_ == 0) {
+    if (rowCoreIdx_ == 0) {
         FinalSortInit();
         for (; allRemainElements_ > 0;) {
             CopyInMultiCore();
@@ -473,7 +489,7 @@ __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>
         }
         ClearCache();
     }
-	SyncAll();
+    SyncAll();
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
@@ -488,10 +504,10 @@ __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>
         ubOutput2 = outIndexQueue_.AllocTensor<INDEX_TYPE>();
     }
     LocalTensor<CONVERT_TYPE> sortTempBuffer = sortedQueue_.DeQue<CONVERT_TYPE>();
-	LocalTensor<CONVERT_TYPE> castValue = castValueQueue_.AllocTensor<CONVERT_TYPE>();
-	LocalTensor<uint32_t> castIndex = castIndexQueue_.AllocTensor<uint32_t>();
+    LocalTensor<CONVERT_TYPE> castValue = castValueQueue_.AllocTensor<CONVERT_TYPE>();
+    LocalTensor<uint32_t> castIndex = castIndexQueue_.AllocTensor<uint32_t>();
     AscendC::Extract(castValue, castIndex, sortTempBuffer, ((curLoopSortedNum_ + DEALING_EXTRACT_NUM_ONCE - 1) / DEALING_EXTRACT_NUM_ONCE));
-	if constexpr (!IS_DESCEND) {
+    if constexpr (!IS_DESCEND) {
         FlipSignBit(castValue, ((curLoopSortedNum_ + BLOCK_UB - 1) / BLOCK_UB * BLOCK_UB));
     }
     DataCopyExtParams copyParamsValue;
@@ -506,35 +522,35 @@ __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>
     copyParamsIndex.srcStride = 0;
     copyParamsIndex.dstStride = 0;
 
-	uint32_t sortedValueAlign = Align(curLoopSortedNum_, sizeof(CONVERT_TYPE));
-	if constexpr (std::is_same<bfloat16_t, T>::value) {
-		AscendC::Cast(ubOutput1, castValue, AscendC::RoundMode::CAST_RINT, sortedValueAlign);
-		outValueQueue_.EnQue(ubOutput1);
+    uint32_t sortedValueAlign = Align(curLoopSortedNum_, sizeof(CONVERT_TYPE));
+    if constexpr (std::is_same<bfloat16_t, T>::value) {
+        AscendC::Cast(ubOutput1, castValue, AscendC::RoundMode::CAST_RINT, sortedValueAlign);
+        outValueQueue_.EnQue(ubOutput1);
         ubOutput1 = outValueQueue_.DeQue<T>();
-        DataCopyPad(outValueGm_[outOffset_], ubOutput1, copyParamsValue);
+        DataCopyPad(outValueGm_[rowDataOffset_ + outOffset_], ubOutput1, copyParamsValue);
         outValueQueue_.FreeTensor(ubOutput1);
-	} else {
-		castValueQueue_.EnQue(castValue);
-		castValue = castValueQueue_.DeQue<T>();
-		DataCopyPad(outValueGm_[outOffset_], castValue, copyParamsValue);
-	}
-	castValueQueue_.FreeTensor(castValue);
+    } else {
+        castValueQueue_.EnQue(castValue);
+        castValue = castValueQueue_.DeQue<T>();
+        DataCopyPad(outValueGm_[rowDataOffset_ + outOffset_], castValue, copyParamsValue);
+    }
+    castValueQueue_.FreeTensor(castValue);
 
-	uint32_t sortedIndexAlign = Align(curLoopSortedNum_, sizeof(uint32_t));
-	LocalTensor<int32_t> castIndexTemp = castIndex.template ReinterpretCast<int32_t>();
-	if constexpr (std::is_same<int64_t, INDEX_TYPE>::value) {
-		AscendC::Cast(ubOutput2, castIndexTemp, AscendC::RoundMode::CAST_NONE, sortedIndexAlign);
-		outIndexQueue_.EnQue(ubOutput2);
+    uint32_t sortedIndexAlign = Align(curLoopSortedNum_, sizeof(uint32_t));
+    LocalTensor<int32_t> castIndexTemp = castIndex.template ReinterpretCast<int32_t>();
+    if constexpr (std::is_same<int64_t, INDEX_TYPE>::value) {
+        AscendC::Cast(ubOutput2, castIndexTemp, AscendC::RoundMode::CAST_NONE, sortedIndexAlign);
+        outIndexQueue_.EnQue(ubOutput2);
         ubOutput2 = outIndexQueue_.DeQue<INDEX_TYPE>();
-        DataCopyPad(outIndexGm_[outOffset_], ubOutput2, copyParamsIndex);
+        DataCopyPad(outIndexGm_[rowDataOffset_ + outOffset_], ubOutput2, copyParamsIndex);
         outIndexQueue_.FreeTensor(ubOutput2);
-	} else {
-		castIndexQueue_.EnQue(castIndex);
-		castIndex = castIndexQueue_.DeQue<uint32_t>();
-		castIndexTemp = castIndex.template ReinterpretCast<int32_t>();
-		DataCopyPad(outIndexGm_[outOffset_], castIndexTemp, copyParamsIndex);
-	}
-	castIndexQueue_.FreeTensor(castIndex);
+    } else {
+        castIndexQueue_.EnQue(castIndex);
+        castIndex = castIndexQueue_.DeQue<uint32_t>();
+        castIndexTemp = castIndex.template ReinterpretCast<int32_t>();
+        DataCopyPad(outIndexGm_[rowDataOffset_ + outOffset_], castIndexTemp, copyParamsIndex);
+    }
+    castIndexQueue_.FreeTensor(castIndex);
     sortedQueue_.FreeTensor(sortTempBuffer);
     outOffset_ += curLoopSortedNum_;
 }
@@ -542,32 +558,32 @@ __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
 __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::FinalSortInit()
 {
-	outOffset_ = 0;
+    outOffset_ = 0;
     for (int64_t i = 0; i < MERGE_SORT_LIST_MAX_NUM; i++) {
         if (i < listNum_ - 1) {
             listRemainElements_[i]  = currentElements_;
-			offsets_[i] = GetSortOffset<CONVERT_TYPE>(i * currentElements_);
-			allRemainElements_ += listRemainElements_[i];
+            offsets_[i] = GetSortOffset<CONVERT_TYPE>(i * currentElements_);
+            allRemainElements_ += listRemainElements_[i];
         } else if (i == listNum_ - 1) {
             listRemainElements_[i]  = currentTailElements_;
-			offsets_[i] = GetSortOffset<CONVERT_TYPE>(i * currentElements_);
-			allRemainElements_ += currentTailElements_;
+            offsets_[i] = GetSortOffset<CONVERT_TYPE>(i * currentElements_);
+            allRemainElements_ += currentTailElements_;
         } else {
-			listRemainElements_[i] = 0;
-		}
+            listRemainElements_[i] = 0;
+        }
     }
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
 __aicore__ inline void MergeSortBigSize<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::ClearCache()
 {
-	allRemainElements_ = 0;
-	outOffset_ = 0;
-	remainListNum_ = 0;
-	for (int64_t i = 0; i < MERGE_SORT_LIST_MAX_NUM; i++) {
-		offsets_[i] = 0;
-		listRemainElements_[i] = 0;
-		elementCountList_[i] = 0;
-	}
+    allRemainElements_ = 0;
+    outOffset_ = 0;
+    remainListNum_ = 0;
+    for (int64_t i = 0; i < MERGE_SORT_LIST_MAX_NUM; i++) {
+        offsets_[i] = 0;
+        listRemainElements_[i] = 0;
+        elementCountList_[i] = 0;
+    }
 }
 #endif //MERGE_SORT_BIG_SIZE_H

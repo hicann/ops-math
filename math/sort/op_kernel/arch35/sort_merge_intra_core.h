@@ -9,17 +9,15 @@
  */
 
 /*!
- * \file sort_merge_big_batch.h
- * \brief Sort Merge for big batch scenario
- * \details This template handles the case where:
- *          1. Data type is fp32
- *          2. Batch dimension (B) >= maxCoreNum
- *          3. Sort axis (N) > 4096
- *          Uses AscendC::Sort for UB sorting and MrgSort for merging.
+ * \file sort_merge_intra_core.h
+ * \brief Intra-core block merge sort for fp32
+ * \details Each core independently sorts blocks and merges them via 4-way MrgSort.
+ *          No cross-core synchronization needed in merge phase.
+ *          Handles fp32, N > 4096, blocksPerRow <= 256.
  */
 
-#ifndef SORT_MERGE_BIG_BATCH_H
-#define SORT_MERGE_BIG_BATCH_H
+#ifndef SORT_MERGE_INTRA_CORE_H
+#define SORT_MERGE_INTRA_CORE_H
 
 #include <cmath>
 #include "kernel_operator.h"
@@ -39,15 +37,15 @@ constexpr uint32_t DOUBLE_BUFFER = 2;
 
 
 /**
- * @brief SortMergeBigBatch class for handling large batch sort with merge
+ * @brief Intra-core block merge sort: independent per-core sort+merge without inter-core coordination
  * @tparam ValueType Input data type (float)
  * @tparam IndexType Index data type (int32_t or int64_t)
  * @tparam IsDescend Sort order: true for descending, false for ascending
  */
 template <typename ValueType, typename IndexType, bool IsDescend>
-class SortMergeBigBatch {
+class SortMergeIntraCore {
 public:
-    __aicore__ inline SortMergeBigBatch() {}
+    __aicore__ inline SortMergeIntraCore() {}
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR value, GM_ADDR indices, GM_ADDR workspace,
         const SortRegBaseTilingData* tilingData, TPipe* pipe);
     __aicore__ inline void Process();
@@ -67,7 +65,7 @@ private:
     __aicore__ inline void ExtractAndCopyOut(int64_t batchIdx, uint32_t resultRegion);
     
     // Helper functions
-    __aicore__ inline void CopyInBlock(GlobalTensor<ValueType> inputX, LocalTensor<ValueType> xLocal, 
+    __aicore__ inline void CopyInBlock(GlobalTensor<ValueType> inputX, LocalTensor<ValueType> xLocal,
         uint32_t elemOffset, uint32_t actualElem);
     __aicore__ inline void SortBlockToStruct(LocalTensor<ValueType> xLocal, LocalTensor<ValueType> sortedLocal,
         uint32_t actualElem, uint32_t baseOffset);
@@ -140,8 +138,8 @@ private:
 };
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::Init(GM_ADDR x, GM_ADDR value, GM_ADDR indices,
-    GM_ADDR workspace, const SortRegBaseTilingData* tilingData, TPipe* pipe)
+__aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::Init(
+    GM_ADDR x, GM_ADDR value, GM_ADDR indices, GM_ADDR workspace, const SortRegBaseTilingData* tilingData, TPipe* pipe)
 {
     if (tilingData == nullptr || pipe == nullptr) {
         return;
@@ -191,7 +189,7 @@ __aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::Init(
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::Process()
+__aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::Process()
 {
     // Calculate batch range for this core
     int64_t startBatch = static_cast<int64_t>(blockIdx_) * batchPerCore_;
@@ -252,7 +250,7 @@ __aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::Proce
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::SortSingleBatchInUb(
+__aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::SortSingleBatchInUb(
     GlobalTensor<ValueType> inputX, int64_t batchOffset)
 {
     for (uint32_t blockId = 0; blockId < blocksPerRow_; blockId++) {
@@ -276,7 +274,7 @@ __aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::SortS
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::CopyInBlock(
+__aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::CopyInBlock(
     GlobalTensor<ValueType> inputX, LocalTensor<ValueType> xLocal, uint32_t elemOffset, uint32_t actualElem)
 {
     ValueType defaultValue = IsDescend ? static_cast<ValueType>(-INFINITY) : static_cast<ValueType>(NAN);
@@ -295,18 +293,21 @@ __aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::CopyI
 
     DataCopyExtParams dataCopyParam{1, static_cast<uint32_t>(actualElem * sizeof(ValueType)), 0, 0, 0};
     uint32_t currTileSizeAlign = Ops::Base::CeilAlign(actualElem, static_cast<uint32_t>(BLOCK_UB / sizeof(ValueType)));
-    DataCopyPadExtParams<ValueType> padParams{true, 0, static_cast<uint8_t>(currTileSizeAlign - actualElem), defaultValue};
+    DataCopyPadExtParams<ValueType> padParams{
+        true, 0, static_cast<uint8_t>(currTileSizeAlign - actualElem), defaultValue};
     DataCopyPad(xLocal, inputX[elemOffset], dataCopyParam, padParams);
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::SortBlockToStruct(
+__aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::SortBlockToStruct(
     LocalTensor<ValueType> xLocal, LocalTensor<ValueType> sortedLocal,
     uint32_t actualElem, uint32_t baseOffset)
 {
     uint32_t alignSize = (actualElem == blockSortSize_) ? blockSortSize_ : Ops::Base::CeilAlign(actualElem, BLOCK_UB);
-    uint32_t sortRepeatTimes = (actualElem == blockSortSize_) ? sortRepeatTimes_ : Ops::Base::CeilDiv(alignSize, DEALING_SORT_NUM_ONCE);
-    uint32_t concatRepeatTimes = (actualElem == blockSortSize_) ? concatRepeatTimes_ : Ops::Base::CeilDiv(alignSize, DEALING_CONCAT_NUM_ONCE);
+    uint32_t sortRepeatTimes = (actualElem == blockSortSize_) ?
+        sortRepeatTimes_ : Ops::Base::CeilDiv(alignSize, DEALING_SORT_NUM_ONCE);
+    uint32_t concatRepeatTimes = (actualElem == blockSortSize_) ?
+        concatRepeatTimes_ : Ops::Base::CeilDiv(alignSize, DEALING_CONCAT_NUM_ONCE);
 
     LocalTensor<ValueType> concatTmpLocal = concatTmpBuf_.Get<ValueType>();
     LocalTensor<ValueType> sortTmpLocal = sortTmpBuf_.Get<ValueType>();
@@ -326,7 +327,7 @@ __aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::SortB
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::CopyOutToCache(
+__aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::CopyOutToCache(
     LocalTensor<ValueType> sortedLocal, uint32_t blockId, uint32_t actualElem)
 {
     // Cache is reused per batch (only 1 batch's cache allocated per core)
@@ -347,7 +348,7 @@ __aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::CopyO
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline uint32_t SortMergeBigBatch<ValueType, IndexType, IsDescend>::MergeSingleBatch()
+__aicore__ inline uint32_t SortMergeIntraCore<ValueType, IndexType, IsDescend>::MergeSingleBatch()
 {
     uint32_t numBlocks = blocksPerRow_;
     // At any merge level, blocks 0..numBlocks-2 all have fullBlockElemCount elements,
@@ -390,11 +391,7 @@ __aicore__ inline uint32_t SortMergeBigBatch<ValueType, IndexType, IsDescend>::M
         
         numBlocks = newNumBlocks;
         // If only one group was produced, full and last are the same
-        if (numBlocks == 1) {
-            fullBlockElemCount = newLastBlockElemCount;
-        } else {
-            fullBlockElemCount = newFullBlockElemCount;
-        }
+        fullBlockElemCount = (numBlocks == 1) ? newLastBlockElemCount : newFullBlockElemCount;
         fullBlockSortLen = AscendC::GetSortLen<ValueType>(fullBlockElemCount);
         lastBlockElemCount = newLastBlockElemCount;
         pingPongFlag = 1 - pingPongFlag;
@@ -405,7 +402,7 @@ __aicore__ inline uint32_t SortMergeBigBatch<ValueType, IndexType, IsDescend>::M
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::MergeOneGroup(
+__aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::MergeOneGroup(
     uint32_t groupStart, uint32_t groupBlockCount,
     uint32_t fullBlockElemCount, uint32_t fullBlockSortLen, uint32_t lastBlockElemCount,
     uint32_t numBlocks, uint32_t pingPongFlag, uint32_t& cumulativeOffset,
@@ -426,12 +423,11 @@ __aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::Merge
     if (groupBlockCount > 1) {
         DoIncrementalMerge(dstRegionOffset + cumulativeOffset, ctx);
 
-        uint32_t totalElem = 0;
+        mergedGroupElemCount = 0;
         for (uint32_t j = 0; j < groupBlockCount; j++) {
-            totalElem += ctx.elemCounts[j];
+            mergedGroupElemCount += ctx.elemCounts[j];
         }
-        mergedGroupElemCount = totalElem;
-        cumulativeOffset += AscendC::GetSortLen<ValueType>(totalElem);
+        cumulativeOffset += AscendC::GetSortLen<ValueType>(mergedGroupElemCount);
     } else if (groupBlockCount == 1) {
         mergedGroupElemCount = ctx.elemCounts[0];
         if (ctx.elemCounts[0] > 0) {
@@ -452,7 +448,7 @@ __aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::Merge
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::CopyBlockChunk(
+__aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::CopyBlockChunk(
     int64_t srcAddr, int64_t dstAddr, uint32_t elemCount)
 {
     uint32_t sortLen = AscendC::GetSortLen<ValueType>(elemCount);
@@ -474,7 +470,7 @@ __aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::CopyB
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::DoIncrementalMerge(
+__aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::DoIncrementalMerge(
     int64_t dstOffsetBase, MergeListContext& ctx)
 {
     if (ctx.listCount > MERGE_LIST_MAX_NUM) return;
@@ -514,7 +510,8 @@ __aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::DoInc
         mergeInQueue_.FreeTensor(ubMainInputCalc);
 
         LocalTensor<ValueType> dstLocalOut = mergeOutQueue_.DeQue<ValueType>();
-        DataCopyExtParams outCopyParams{1, static_cast<uint32_t>(AscendC::GetSortLen<ValueType>(mergedCount) * sizeof(ValueType)), 0, 0, 0};
+        DataCopyExtParams outCopyParams{
+            1, static_cast<uint32_t>(AscendC::GetSortLen<ValueType>(mergedCount) * sizeof(ValueType)), 0, 0, 0};
         DataCopyPad(cacheGm_[dstOffsetBase + dstCumulativeOffset], dstLocalOut, outCopyParams);
         mergeOutQueue_.FreeTensor(dstLocalOut);
 
@@ -534,7 +531,7 @@ __aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::DoInc
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline uint32_t SortMergeBigBatch<ValueType, IndexType, IsDescend>::LoadListsToUb(
+__aicore__ inline uint32_t SortMergeIntraCore<ValueType, IndexType, IsDescend>::LoadListsToUb(
     LocalTensor<ValueType> ubMainInput,
     uint16_t elementCountList[MERGE_LIST_MAX_NUM], const MergeListContext& ctx)
 {
@@ -546,7 +543,8 @@ __aicore__ inline uint32_t SortMergeBigBatch<ValueType, IndexType, IsDescend>::L
             
             int64_t srcAddr = ctx.srcOffsets[i] + ctx.gmOffsets[i];
 
-            DataCopyExtParams copyParams{1, static_cast<uint32_t>(AscendC::GetSortLen<ValueType>(loadCount) * sizeof(ValueType)), 0, 0, 0};
+            DataCopyExtParams copyParams{
+                1, static_cast<uint32_t>(AscendC::GetSortLen<ValueType>(loadCount) * sizeof(ValueType)), 0, 0, 0};
             DataCopyPadExtParams<ValueType> padParams{false, 0, 0, 0};
             DataCopyPad(ubMainInput[blockSortLen_ * remainListNum], cacheGm_[srcAddr],
                        copyParams, padParams);
@@ -558,7 +556,7 @@ __aicore__ inline uint32_t SortMergeBigBatch<ValueType, IndexType, IsDescend>::L
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline uint32_t SortMergeBigBatch<ValueType, IndexType, IsDescend>::ExecuteMrgSort(
+__aicore__ inline uint32_t SortMergeIntraCore<ValueType, IndexType, IsDescend>::ExecuteMrgSort(
     LocalTensor<ValueType> dstLocal, LocalTensor<ValueType> ubMainInput,
     uint16_t elementCountList[MERGE_LIST_MAX_NUM],
     uint32_t listSortedNums[MERGE_LIST_MAX_NUM], uint32_t listCount)
@@ -586,7 +584,7 @@ __aicore__ inline uint32_t SortMergeBigBatch<ValueType, IndexType, IsDescend>::E
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::CopyRemainingList(
+__aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::CopyRemainingList(
     MergeListContext& ctx, int64_t dstOffsetBase, uint32_t& dstCumulativeOffset)
 {
     for (uint32_t listIdx = 0; listIdx < ctx.listCount; listIdx++) {
@@ -605,20 +603,20 @@ __aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::CopyR
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::ExtractAndCopyOut(int64_t batchIdx, uint32_t resultRegion)
+__aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::ExtractAndCopyOut(
+    int64_t batchIdx, uint32_t resultRegion)
 {
     int64_t outputOffset = batchIdx * sortAxisNum_;
 
     // resultRegion: 0 = Ping (offset 0), 1 = Pong (offset batchSortLen_)
     int64_t cacheBatchOffset = (resultRegion == 1) ? batchSortLen_ : 0;
 
-    uint32_t totalElem = sortAxisNum_;
     uint32_t elemProcessed = 0;
     uint32_t cacheOffset = 0;
 
-    while (elemProcessed < totalElem) {
-        uint32_t elemCount = (elemProcessed + extractChunkSize_ <= totalElem) ?
-                             extractChunkSize_ : (totalElem - elemProcessed);
+    while (elemProcessed < sortAxisNum_) {
+        uint32_t elemCount = (elemProcessed + extractChunkSize_ <= sortAxisNum_) ?
+                             extractChunkSize_ : (sortAxisNum_ - elemProcessed);
         if (elemCount == 0) break;
 
         ExtractAndCopyChunk(cacheBatchOffset, cacheOffset, outputOffset, elemProcessed, elemCount);
@@ -629,14 +627,14 @@ __aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::Extra
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::ExtractAndCopyChunk(
+__aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::ExtractAndCopyChunk(
     int64_t cacheBatchOffset, uint32_t cacheOffset,
     int64_t outputOffset, uint32_t elemProcessed, uint32_t elemCount)
 {
     LocalTensor<ValueType> cacheLocal = extractInQueue_.AllocTensor<ValueType>();
-    int64_t currentCacheOffset = cacheBatchOffset + cacheOffset;
-    DataCopyExtParams loadParams{1, static_cast<uint32_t>(AscendC::GetSortLen<ValueType>(elemCount) * sizeof(ValueType)), 0, 0, 0};
-    DataCopyPad(cacheLocal, cacheGm_[currentCacheOffset], loadParams, {false, 0, 0, 0});
+    DataCopyExtParams loadParams{
+        1, static_cast<uint32_t>(AscendC::GetSortLen<ValueType>(elemCount) * sizeof(ValueType)), 0, 0, 0};
+    DataCopyPad(cacheLocal, cacheGm_[cacheBatchOffset + cacheOffset], loadParams, {false, 0, 0, 0});
     extractInQueue_.EnQue(cacheLocal);
 
     cacheLocal = extractInQueue_.DeQue<ValueType>();
@@ -646,7 +644,8 @@ __aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::Extra
 
     // Flip back sign bit for ascending order (was flipped in SortBlockToStruct)
     if constexpr (!IsDescend) {
-        Adds(valueLocal.template ReinterpretCast<int32_t>(), valueLocal.template ReinterpretCast<int32_t>(), 0x80000000, elemCount);
+        Adds(valueLocal.template ReinterpretCast<int32_t>(),
+            valueLocal.template ReinterpretCast<int32_t>(), 0x80000000, elemCount);
     }
 
     outValueQueue_.EnQue(valueLocal);
@@ -677,4 +676,4 @@ __aicore__ inline void SortMergeBigBatch<ValueType, IndexType, IsDescend>::Extra
 
 } // namespace Sort
 
-#endif // SORT_MERGE_BIG_BATCH_H
+#endif // SORT_MERGE_INTRA_CORE_H
