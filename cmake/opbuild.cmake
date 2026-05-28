@@ -242,7 +242,7 @@ function(gen_aicpu_ini_from_opdef)
   set(ENV{ENABLE_SOURCE_PACKAGE} ${OPBUILD_ENABLE_SOURCE})
   execute_process(
     COMMAND
-      ${CMAKE_COMMAND} -E env ${opbuild_env} ${ASCEND_CANN_PACKAGE_PATH}/toolkit/tools/opbuild/op_build
+      ${CMAKE_COMMAND} -E env ${opbuild_env} ${OP_BUILD_TOOL}
       ${OPBUILD_OUT_DIR}/libaicpu_ops.so ${OPBUILD_OUT_DIR} --aicpu
     RESULT_VARIABLE EXEC_RESULT
     OUTPUT_VARIABLE EXEC_INFO
