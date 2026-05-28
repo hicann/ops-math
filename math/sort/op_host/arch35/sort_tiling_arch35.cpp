@@ -163,6 +163,16 @@ ge::graphStatus SortCheckParams(gert::TilingContext *context, SortTileInfo &sort
     return ge::GRAPH_SUCCESS;
 }
 
+static bool TryCastInt64ToUint32(int64_t value, uint32_t &out)
+{
+    if (value < static_cast<int64_t>(0) ||
+        value > static_cast<int64_t>(std::numeric_limits<uint32_t>::max())) {
+        return false;
+    }
+    out = static_cast<uint32_t>(value);
+    return true;
+}
+
 void SetSortTmpSize(ge::DataType dataType, uint32_t tileData, bool isDescend, SortTileInfo &sortTileInfo)
 {
     int64_t realLen = std::min(sortTileInfo.sortAxisNum, static_cast<int64_t>(tileData));
@@ -195,13 +205,15 @@ bool IsMergeSort(SortTileInfo &sortTileInfo)
 
 bool IsSortMergeMultiCore(SortTileInfo &sortTileInfo)
 {
+    if (sortTileInfo.sortAxisNum > MULTI_CORE_MERGE_SORT_MAX_SIZE ||
+        sortTileInfo.sortAxisNum <= SMALL_SORT_MAX_DATA_SIZE_FP32 || sortTileInfo.dataType != ge::DT_FLOAT) {
+        return false;
+    }
     uint32_t hCoreNum =
         static_cast<uint32_t>((sortTileInfo.sortAxisNum + ONE_CORE_DATA_SIZE - 1) / ONE_CORE_DATA_SIZE);
     bool isMuiltiCoreMergeSort =
         ((sortTileInfo.unSortDimNum > 0) && (hCoreNum > 0) &&
-         (static_cast<uint64_t>(sortTileInfo.unSortDimNum) * hCoreNum <= sortTileInfo.maxCoreNum) &&
-         (sortTileInfo.sortAxisNum <= MULTI_CORE_MERGE_SORT_MAX_SIZE) &&
-         (sortTileInfo.sortAxisNum > SMALL_SORT_MAX_DATA_SIZE_FP32) && (sortTileInfo.dataType == ge::DT_FLOAT));
+         (static_cast<uint64_t>(sortTileInfo.unSortDimNum) * hCoreNum <= sortTileInfo.maxCoreNum));
     return isMuiltiCoreMergeSort;
 }
 
@@ -260,6 +272,11 @@ bool IsSortMergeIntraCore(SortTileInfo &sortTileInfo)
     }
 
     if (ComputeMergeIntraCoreExtractChunkSize(sortTileInfo) == 0) {
+        return false;
+    }
+    uint64_t maxBatch = static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) *
+        static_cast<uint64_t>(sortTileInfo.maxCoreNum);
+    if (sortTileInfo.unSortDimNum <= 0 || static_cast<uint64_t>(sortTileInfo.unSortDimNum) > maxBatch) {
         return false;
     }
 
@@ -444,7 +461,12 @@ bool EstimateInsertionBatching(const SortTileInfo &sortTileInfo, uint32_t fullCo
 
     // INSERTION kernel supports in-core loop for multiple batches; batchSize limited by UB and DataCopy blockCount.
     batchSize = std::min({fullCoreSegs, sUbMax, SMALL_AXIS_MAX_DATACOPY_BLOCK_COUNT});
-    batchNum = Ops::Base::CeilDiv(sortTileInfo.unSortDimNum, static_cast<int64_t>(batchSize));
+    uint32_t batchNumCandidate = 0;
+    if (!TryCastInt64ToUint32(Ops::Base::CeilDiv(sortTileInfo.unSortDimNum, static_cast<int64_t>(batchSize)),
+        batchNumCandidate)) {
+        return false;
+    }
+    batchNum = batchNumCandidate;
     blockDim = std::min(sortTileInfo.maxCoreNum, batchNum);
     if (batchNum == 0) {
         return false;
@@ -635,7 +657,10 @@ static bool TryTwoStageBatchCandidate(const SortTileInfo &sortTileInfo, uint32_t
         return false;
     }
 
-    tempBatchNum = Ops::Base::CeilDiv(sortTileInfo.unSortDimNum, static_cast<int64_t>(candidate));
+    if (!TryCastInt64ToUint32(Ops::Base::CeilDiv(sortTileInfo.unSortDimNum, static_cast<int64_t>(candidate)),
+        tempBatchNum)) {
+        return false;
+    }
     tempBlockDim = std::min(sortTileInfo.maxCoreNum, tempBatchNum);
     return true;
 }
@@ -663,8 +688,8 @@ static uint32_t EstimateTwoStageMaxBatchByUb(const SortTileInfo &sortTileInfo)
 static bool EstimateTwoStageBatching(const SortTileInfo &sortTileInfo, uint32_t &batchSize,
     uint32_t &batchNum, uint32_t &blockDim, uint32_t &tmpUbSize)
 {
-    uint32_t fullCoreSegs =
-        Ops::Base::CeilDiv(sortTileInfo.unSortDimNum, static_cast<int64_t>(sortTileInfo.maxCoreNum));
+    int64_t fullCoreSegs64 = Ops::Base::CeilDiv(sortTileInfo.unSortDimNum, static_cast<int64_t>(sortTileInfo.maxCoreNum));
+    uint32_t fullCoreSegs = static_cast<uint32_t>(std::min<int64_t>(fullCoreSegs64, static_cast<int64_t>(std::numeric_limits<uint32_t>::max())));
     // UB caps the flattened batch size; fullCoreSegs caps it so all active cores have work.
     uint32_t maxBatchCandidate = std::min(EstimateTwoStageMaxBatchByUb(sortTileInfo), fullCoreSegs);
     if (maxBatchCandidate == 0) {
@@ -748,8 +773,10 @@ bool SelectSmallAxisRoute(const SortTileInfo &sortTileInfo, SmallAxisRoutePlan &
     }
 
     uint32_t sortAxisSize = static_cast<uint32_t>(sortTileInfo.sortAxisNum);
-    uint32_t fullCoreSegs =
+    int64_t fullCoreSegs64 =
         Ops::Base::CeilDiv(sortTileInfo.unSortDimNum, static_cast<int64_t>(sortTileInfo.maxCoreNum));
+    uint32_t fullCoreSegs = static_cast<uint32_t>(std::min<int64_t>(
+        fullCoreSegs64, static_cast<int64_t>(std::numeric_limits<uint32_t>::max())));
     const SmallAxisRule *rule = nullptr;
     for (size_t i = 0; i < kNumSmallAxisRules; ++i) {
         if (kSmallAxisRules[i].dtype == sortTileInfo.dataType) {
@@ -1310,6 +1337,9 @@ void GetSortMergeIntraCore(gert::TilingContext *context, SortTileInfo &sortTileI
 
 bool TrySmallAxis(gert::TilingContext *context, SortTileInfo &sortTileInfo, uint64_t &schId)
 {
+    if (sortTileInfo.sortAxisNum > static_cast<int64_t>(SMALL_AXIS_THRESHOLD)) {
+        return false;
+    }
     if (IsAxisOneCopy(sortTileInfo)) {
         if (GetAxisOneCopy(context, sortTileInfo) != ge::GRAPH_SUCCESS) {
             return false;

@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <limits>
 #include <vector>
 #include <gtest/gtest.h>
 #include "tiling_context_faker.h"
@@ -315,6 +316,29 @@ TEST_F(SortTilingTest, test_sort_small_axis_fallback_radix_one_core_int8_outidx_
 TEST_F(SortTilingTest, test_sort_small_axis_fallback_radix_one_core_int64_outidx_int64_2x16)
 {
     auto tilingContextPara = MakeSortTilingContext({{2, 16}, {2, 16}}, ge::DT_INT64, ge::DT_INT64);
+
+    uint64_t expectTilingKey = 257;
+    std::vector<size_t> expectWorkspaces = {WORK_SPACE_SIZE};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+}
+
+TEST_F(SortTilingTest, test_sort_large_axis_does_not_wrap_to_small_axis)
+{
+    int64_t largeAxis = static_cast<int64_t>(std::numeric_limits<uint32_t>::max()) + 16;
+    auto tilingContextPara = MakeSortTilingContext({{512, largeAxis}, {512, largeAxis}},
+        ge::DT_INT64, ge::DT_INT64);
+
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    EXPECT_EQ(tilingInfo.tilingKey, 2);
+}
+
+TEST_F(SortTilingTest, test_sort_large_batch_falls_back_when_small_axis_batching_overflows)
+{
+    int64_t largeBatch =
+        (static_cast<int64_t>(std::numeric_limits<uint32_t>::max()) + 1) * static_cast<int64_t>(32);
+    auto tilingContextPara = MakeSortTilingContext({{largeBatch, 512}, {largeBatch, 512}},
+        ge::DT_INT64, ge::DT_INT64);
 
     uint64_t expectTilingKey = 257;
     std::vector<size_t> expectWorkspaces = {WORK_SPACE_SIZE};
