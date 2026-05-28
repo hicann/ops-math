@@ -112,7 +112,7 @@ __aicore__ inline void KernelSqrt<TYPE_X, TYPE_Y>::Compute(int32_t progress)
         AscendC::PipeBarrier<PIPE_V>();
         AscendC::Sqrt(p1, p1, this->processDataNum);
         AscendC::PipeBarrier<PIPE_V>();
-        AscendC::Cast(yLocal, p1, AscendC::RoundMode::CAST_CEIL, this->processDataNum);
+        AscendC::Cast(yLocal, p1, AscendC::RoundMode::CAST_RINT, this->processDataNum);
     } else {
         AscendC::Sqrt(yLocal, xLocal, this->processDataNum);
     }
