@@ -1,4 +1,4 @@
-# adds
+# Adds
 
 ## 产品支持情况
 
@@ -76,15 +76,6 @@
 
 ## 调用说明
 
-<table><thead>
-  <tr>
-    <th>调用方式</th>
-    <th>调用样例</th>
-    <th>说明</th>
-  </tr></thead>
-<tbody>
-  <tr>
-    <td>图模式调用</td>
-    <td><a href="./examples/test_geir_adds.cpp">test_geir_adds</a></td>
-  </tr>
-</tbody></table>
+| 调用方式 | 样例代码  | 说明     |
+|--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
+| 图模式调用 | [test\_geir\_adds](./examples/test_geir_adds.cpp) | 通过[算子IR](../../common/inc/op_graph/op_math_proto_extend.h)构图方式调用Adds算子。 |

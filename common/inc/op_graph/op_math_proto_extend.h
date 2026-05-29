@@ -204,7 +204,7 @@ REG_OP(MatrixDiagV2)
 
 *@par Inputs:
 *One input, including: \n
-* x: A ND Tensor. Must be one of the following types:int32,int16, float16, float32, bfloat16. \n
+* x: A ND Tensor. Must be one of the following types:int32,int16, float16, float32, bfloat16, int64. \n
 
 *@par Attributes:
 *value: A scale. Must be float. \n
