@@ -13,12 +13,17 @@
 
 ## 功能说明
 
-- 算子功能：计算 x 的倒数梯度
+- 算子功能：计算 Inv（取倒数）算子的反向梯度，对应前向 `y = 1 / original_x` 的梯度计算。
 - 算子公式：
 
   $$
-  y_i = -1 * x_i * x_i * grad_i
+  y_i = -1 \cdot x_i \cdot x_i \cdot grad_i
   $$
+
+  其中：
+  - $x_i$ 为前向 Inv 算子的输出（即 $1 / \mathrm{original\_x}_i$）；
+  - $grad_i$ 为上游传入的梯度；
+  - $y_i$ 为对原始输入 $\mathrm{original\_x}_i$ 的梯度。
 
 ## 参数说明
 
@@ -44,27 +49,25 @@
       <td>输入张量。</td>
       <td>FLOAT16, FLOAT32, BFLOAT16, INT32, INT8</td>
       <td>ND</td>
-    </tr> 
+    </tr>
     <tr>
       <td>grad</td>
       <td>输入</td>
       <td>对应的输入梯度。</td>
       <td>FLOAT16, FLOAT32, BFLOAT16, INT32, INT8</td>
       <td>ND</td>
-    </tr>       
+    </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
       <td>输入张量x的导数梯度</td>
-      <td>IFLOAT16, FLOAT32, BFLOAT16, INT32, INT8</td>
+      <td>FLOAT16, FLOAT32, BFLOAT16, INT32, INT8</td>
       <td>ND</td>
     </tr>
-
   </tbody></table>
 
 ## 约束说明
-
-- 无。
+无
 
 ## 调用说明
 

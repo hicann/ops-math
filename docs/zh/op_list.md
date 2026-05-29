@@ -68,6 +68,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/acos_grad/README.md">acos_grad</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CORE</td>
+    <td>计算Acos算子的反向梯度，公式 z = -dy / sqrt(1 - y²)。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/add/README.md">add</a></td>
     <td>√</td>
     <td>√</td>
@@ -718,6 +728,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/approximate_equal/README.md">approximate_equal</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>逐元素近似相等校验算子，用于判断两个张量的对应元素是否在允许的误差范围内近似相等，输出布尔类型结果。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/grouped_bias_add_grad/README.md">grouped_bias_add_grad</a></td>
     <td>√</td>
     <td>√</td>
@@ -763,8 +783,8 @@
     <td>√</td>
     <td>×</td>
     <td>√</td>
-    <td>AI CPU</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>AI Core</td>
+    <td>Inv（取倒数）算子的反向梯度，计算 y = -grad * x * x。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1209,12 +1229,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/real/README.md">real</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI CORE</td>
+    <td>返回复数张量的实部，若输入为实数张量则按原值返回。</td>
   </tr>
   <tr>
     <td>math</td>

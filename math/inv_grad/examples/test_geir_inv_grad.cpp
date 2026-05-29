@@ -25,20 +25,12 @@
 #include "ge_api.h"
 #include "ge_ir_build.h"
 
-#include "experiment_ops.h"
+#include "array_ops.h"
 #include "nn_other.h"
 #include "../op_graph/inv_grad_proto.h"
 
 #define FAILED -1
 #define SUCCESS 0
-
-namespace ge {
-    REG_OP(Data)
-        .INPUT(x, TensorType::ALL())
-        .OUTPUT(y, TensorType::ALL())
-        .ATTR(index, Int, 0)
-        .OP_END_FACTORY_REG(Data)
-}
 
 using namespace ge;
 using std::map;
@@ -166,7 +158,9 @@ int32_t GenOnesData(
         size *= shapes[i];
     }
     uint32_t data_len = size * GetDataTypeSize(data_type);
-    int32_t *pData = new (std::nothrow) int32_t[data_len];
+    // 申请按元素数 size 计的 int32 数组（pData 只用前 size 个元素填值，
+    // 余下字节由 Tensor 自身拷贝边界保证），不再按 data_len 字节误申请 4 倍内存
+    int32_t *pData = new (std::nothrow) int32_t[size];
     for (uint32_t i = 0; i < size; ++i) {
         *(pData + i) = value;
     }
