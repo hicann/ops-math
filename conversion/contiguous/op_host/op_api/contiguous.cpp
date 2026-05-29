@@ -470,7 +470,21 @@ const aclTensor* AsStridedToContiguous(const aclTensor* x, aclOpExecutor* execut
     auto storageOffset = executor->ConvertToTensor(offset, 1, TYPE_INT64);
 
     auto out = executor->AllocTensor(x->GetViewShape(), x->GetDataType());
-    return AsStrided(x, out, size, stride, storageOffset, executor);
+
+    op::Shape newStorageShape{1};
+    int64_t actualShapeSize = 1;
+    auto tempStorageShape = x->GetStorageShape();
+    for (uint64_t i= 0; i < tempStorageShape.GetDimNum(); i++) {
+        actualShapeSize *= tempStorageShape.GetDim(i);
+    }
+    actualShapeSize -= x->GetViewOffset();
+    newStorageShape.SetDim(0, actualShapeSize);
+
+    auto xView = executor->CreateView(x, newStorageShape, x->GetViewOffset());
+    xView->SetViewShape(x->GetViewShape());
+    xView->SetViewStrides(x->GetViewStrides());
+
+    return AsStrided(xView, out, size, stride, storageOffset, executor);
 }
 
 const aclTensor* ViewCopyToView(const aclTensor* x, const aclTensor* y, aclOpExecutor* executor)
