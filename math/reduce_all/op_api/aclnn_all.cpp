@@ -294,7 +294,7 @@ aclnnStatus aclnnAllGetWorkspaceSize(
 
     auto selfCasted = selfContiguous;
     if (!((selfContiguous->GetDataType() == op::DataType::DT_FLOAT16 || selfContiguous->GetDataType() == op::DataType::DT_BF16 || selfContiguous->GetDataType() == op::DataType::DT_FLOAT) &&
-            (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B || GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950))) {
+            (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B || GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510))) {
         // 将输入self的数据类型转换成隐式数据类型，根据具体算子语义按需调用
         selfCasted = l0op::Cast(selfContiguous, DataType::DT_BOOL, uniqueExecutor.get());
         CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
