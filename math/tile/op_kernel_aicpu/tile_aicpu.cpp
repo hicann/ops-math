@@ -267,25 +267,25 @@ uint32_t TileCpuKernel::TileComputeWith3DNotUsingEigen(const CpuKernelContext &c
                      KERNEL_STATUS_INNER_ERROR,
                      "memcpy size=[%ld] should less or equal to output data size=[%lu]",
                      x_third_dim * sizeof(T), output_data_size);
-  TileCompute3DSharderFirst<T>(ctx, input_x_data, output_data,
-                               x_first_dim, x_second_dim, x_third_dim,
-                               last_axes_dims, second_axes_dims);
+  KERNEL_HANDLE_ERROR(TileCompute3DSharderFirst<T>(ctx, input_x_data, output_data,
+                                                   x_first_dim, x_second_dim, x_third_dim,
+                                                   last_axes_dims, second_axes_dims));
 
-  TileCompute3DSharderSecond<T>(ctx, output_data, x_first_dim, x_second_dim, x_third_dim,
-                                mul_third_dim, last_axes_dims, last_two_axes_dims);
+  KERNEL_HANDLE_ERROR(TileCompute3DSharderSecond<T>(ctx, output_data, x_first_dim, x_second_dim, x_third_dim,
+                                                    mul_third_dim, last_axes_dims, last_two_axes_dims));
 
   KERNEL_CHECK_FALSE((output_data_size >= static_cast<uint64_t>(last_axes_dims * x_second_dim * sizeof(T))),
                      KERNEL_STATUS_INNER_ERROR,
                      "memcpy size=[%ld] should less or equal to output data size=[%lu]",
                      last_axes_dims * x_second_dim * sizeof(T), output_data_size);
-  TileCompute3DSharderThird<T>(ctx, output_data, x_first_dim, mul_second_dim,
-                               last_axes_dims, last_two_axes_dims);
+  KERNEL_HANDLE_ERROR(TileCompute3DSharderThird<T>(ctx, output_data, x_first_dim, x_second_dim, mul_second_dim,
+                                                   last_axes_dims, last_two_axes_dims));
 
   KERNEL_CHECK_FALSE((output_data_size >= static_cast<uint64_t>(last_two_axes_dims * x_first_dim * sizeof(T))),
                      KERNEL_STATUS_INNER_ERROR,
                      "memcpy size=[%ld] should less or equal to output data size=[%lu]",
                      last_two_axes_dims * x_first_dim * sizeof(T), output_data_size);
-  TileCompute3DSharderFourth<T>(ctx, output_data, mul_first_dim, last_two_axes_dims, x_first_dim);
+  KERNEL_HANDLE_ERROR(TileCompute3DSharderFourth<T>(ctx, output_data, mul_first_dim, last_two_axes_dims, x_first_dim));
 
   return KERNEL_STATUS_OK;
 }
@@ -487,9 +487,9 @@ uint32_t TileCpuKernel::Compute(CpuKernelContext &ctx) {
 REGISTER_CPU_KERNEL(kTile, TileCpuKernel);
 
 template <typename T>
-void TileCpuKernel::TileCompute3DSharderFirst(const CpuKernelContext &ctx, T *input_x_data, T *output_data,
-                                               int64_t x_first_dim, int64_t x_second_dim, int64_t x_third_dim,
-                                               int64_t last_axes_dims, int64_t second_axes_dims) {
+uint32_t TileCpuKernel::TileCompute3DSharderFirst(const CpuKernelContext &ctx, T *input_x_data, T *output_data,
+                                                   int64_t x_first_dim, int64_t x_second_dim, int64_t x_third_dim,
+                                                   int64_t last_axes_dims, int64_t second_axes_dims) {
   uint32_t result = KERNEL_STATUS_OK;
   auto sharder = [&](int64_t start, int64_t end) {
     for (int64_t i = start; i < end; i++) {
@@ -502,12 +502,14 @@ void TileCpuKernel::TileCompute3DSharderFirst(const CpuKernelContext &ctx, T *in
     return result;
   };
   (void)CpuKernelUtils::ParallelFor(ctx, x_first_dim, 1, sharder);
+  return result;
 }
 
 template <typename T>
-void TileCpuKernel::TileCompute3DSharderSecond(const CpuKernelContext &ctx, T *output_data,
-                                                int64_t x_first_dim, int64_t x_second_dim, int64_t x_third_dim,
-                                                int64_t mul_third_dim, int64_t last_axes_dims, int64_t last_two_axes_dims) {
+uint32_t TileCpuKernel::TileCompute3DSharderSecond(const CpuKernelContext &ctx, T *output_data,
+                                                    int64_t x_first_dim, int64_t x_second_dim, int64_t x_third_dim,
+                                                    int64_t mul_third_dim, int64_t last_axes_dims,
+                                                    int64_t last_two_axes_dims) {
   uint32_t result = KERNEL_STATUS_OK;
   auto sharder = [&](int64_t start, int64_t end) {
     for (int64_t i = start; i < end; i++) {
@@ -522,28 +524,32 @@ void TileCpuKernel::TileCompute3DSharderSecond(const CpuKernelContext &ctx, T *o
     return result;
   };
   (void)CpuKernelUtils::ParallelFor(ctx, x_first_dim, 1, sharder);
+  return result;
 }
 
 template <typename T>
-void TileCpuKernel::TileCompute3DSharderThird(const CpuKernelContext &ctx, T *output_data,
-                                               int64_t x_first_dim, int64_t mul_second_dim,
-                                               int64_t last_axes_dims, int64_t last_two_axes_dims) {
+uint32_t TileCpuKernel::TileCompute3DSharderThird(const CpuKernelContext &ctx, T *output_data,
+                                                   int64_t x_first_dim, int64_t x_second_dim,
+                                                   int64_t mul_second_dim, int64_t last_axes_dims,
+                                                   int64_t last_two_axes_dims) {
   uint32_t result = KERNEL_STATUS_OK;
   auto sharder = [&](int64_t start, int64_t end) {
     for (int64_t i = start; i < end; i++) {
       for (int64_t j = 1; j < mul_second_dim; j++) {
-        result = CallCopyHook(output_data + i * last_two_axes_dims + j * last_axes_dims * x_first_dim,
-                              output_data + i * last_two_axes_dims, last_axes_dims * x_first_dim * sizeof(T));
+        result = CallCopyHook(output_data + i * last_two_axes_dims + j * last_axes_dims * x_second_dim,
+                              output_data + i * last_two_axes_dims, last_axes_dims * x_second_dim * sizeof(T));
       }
     }
     return result;
   };
   (void)CpuKernelUtils::ParallelFor(ctx, x_first_dim, 1, sharder);
+  return result;
 }
 
 template <typename T>
-void TileCpuKernel::TileCompute3DSharderFourth(const CpuKernelContext &ctx, T *output_data,
-                                                int64_t mul_first_dim, int64_t last_two_axes_dims, int64_t x_first_dim) {
+uint32_t TileCpuKernel::TileCompute3DSharderFourth(const CpuKernelContext &ctx, T *output_data,
+                                                    int64_t mul_first_dim, int64_t last_two_axes_dims,
+                                                    int64_t x_first_dim) {
   uint32_t result = KERNEL_STATUS_OK;
   auto sharder = [&](int64_t start, int64_t end) {
     for (int64_t i = start; i < end; i++) {
@@ -555,6 +561,7 @@ void TileCpuKernel::TileCompute3DSharderFourth(const CpuKernelContext &ctx, T *o
     return result;
   };
   (void)CpuKernelUtils::ParallelFor(ctx, mul_first_dim, 1, sharder);
+  return result;
 }
 
 template <typename T>

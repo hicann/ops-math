@@ -46,20 +46,20 @@ class TileCpuKernel : public CpuKernel {
   template <typename T>
   uint32_t TileComputeWith3DNotUsingEigen(const CpuKernelContext &ctx);
   template <typename T>
-  void TileCompute3DSharderFirst(const CpuKernelContext &ctx, T *input_x_data, T *output_data,
-                                  int64_t x_first_dim, int64_t x_second_dim, int64_t x_third_dim,
-                                  int64_t last_axes_dims, int64_t second_axes_dims);
+  uint32_t TileCompute3DSharderFirst(const CpuKernelContext &ctx, T *input_x_data, T *output_data,
+                                      int64_t x_first_dim, int64_t x_second_dim, int64_t x_third_dim,
+                                      int64_t last_axes_dims, int64_t second_axes_dims);
   template <typename T>
-  void TileCompute3DSharderSecond(const CpuKernelContext &ctx, T *output_data,
-                                   int64_t x_first_dim, int64_t x_second_dim, int64_t x_third_dim,
-                                   int64_t mul_third_dim, int64_t last_axes_dims, int64_t last_two_axes_dims);
+  uint32_t TileCompute3DSharderSecond(const CpuKernelContext &ctx, T *output_data,
+                                       int64_t x_first_dim, int64_t x_second_dim, int64_t x_third_dim,
+                                       int64_t mul_third_dim, int64_t last_axes_dims, int64_t last_two_axes_dims);
   template <typename T>
-  void TileCompute3DSharderThird(const CpuKernelContext &ctx, T *output_data,
-                                  int64_t x_first_dim, int64_t mul_second_dim,
-                                  int64_t last_axes_dims, int64_t last_two_axes_dims);
+  uint32_t TileCompute3DSharderThird(const CpuKernelContext &ctx, T *output_data,
+                                      int64_t x_first_dim, int64_t x_second_dim, int64_t mul_second_dim,
+                                      int64_t last_axes_dims, int64_t last_two_axes_dims);
   template <typename T>
-  void TileCompute3DSharderFourth(const CpuKernelContext &ctx, T *output_data,
-                                   int64_t mul_first_dim, int64_t last_two_axes_dims, int64_t x_first_dim);
+  uint32_t TileCompute3DSharderFourth(const CpuKernelContext &ctx, T *output_data,
+                                       int64_t mul_first_dim, int64_t last_two_axes_dims, int64_t x_first_dim);
   template <typename T>
   uint32_t TileComputeWith1D(T *input_x_data, T *output_data, int64_t x_dim, int64_t mul_dim);
   template <typename T>
