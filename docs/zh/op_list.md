@@ -98,6 +98,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/add_mat_mat_elements/README.md">add_mat_mat_elements</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>对输入张量a、b进行逐元素相乘后，与输入张量c按标量alpha、beta进行加权求和，并输出结果张量cOut。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/add_n/README.md">add_n</a></td>
     <td>√</td>
     <td>√</td>
@@ -228,6 +238,26 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/asin_grad/README.md">asin_grad</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>Asin（反正弦）算子的反向计算，根据正向输入x和上游梯度dy，计算输入梯度dx。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/asinh_grad/README.md">asinh_grad</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>Asinh（反双曲正弦）算子的反向计算，根据正向输入y和上游梯度dy，计算输入梯度dx。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/assign_add/README.md">assign_add</a></td>
     <td>√</td>
     <td>√</td>
@@ -275,6 +305,16 @@
     <td>√</td>
     <td>AI Core/AI CPU</td>
     <td>计算逆双曲正切（inverse hyperbolic tangent），支持FLOAT、FLOAT16、BF16数据类型。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/atan_grad/README.md">atan_grad</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>Atan（反正切）算子的反向计算，根据正向输入x和上游梯度dy，计算输入梯度dx，用于神经网络反向传播。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -565,6 +605,16 @@
     <td>√</td>
     <td>AI Core</td>
     <td>计算两个输入一维张量的点积结果。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/eltwise/README.md">eltwise</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>对1~32个同shape、同dtype的输入张量执行逐元素操作，支持PRODUCT（逐元素乘积）、SUM（逐元素加权求和）、MAX（逐元素取最大值）三种计算模式。</td>
   </tr>
   <tr>
     <td>math</td>
