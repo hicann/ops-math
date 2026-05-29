@@ -16,6 +16,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -23,12 +24,20 @@ namespace l0op {
 
 OP_TYPE_REGISTER(LogicalOr);
  
-static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {op::DataType::DT_BOOL};
+static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_BOOL, op::DataType::DT_INT8, op::DataType::DT_UINT8,
+    op::DataType::DT_INT16, op::DataType::DT_INT32, op::DataType::DT_INT64,
+    op::DataType::DT_FLOAT16, op::DataType::DT_BF16, op::DataType::DT_FLOAT};
 
 // 根据芯片类型、dtype判断算子是否支持走AiCore
 static bool IsAiCoreSupport(const aclTensor *self) {
-  // LogicalOr只需要判断dtype
-  return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
+  // regbase版本支持AICORE_DTYPE_SUPPORT_LIST中的所有dtype
+  // non-regbase版本仅支持bool类型走AiCore
+  if (IsRegBase()) {
+    return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
+  } else {
+    return self->GetDataType() == op::DataType::DT_BOOL;
+  }
 }
  
 // AICORE算子kernel
@@ -63,7 +72,7 @@ const aclTensor *LogicalOr(const aclTensor *self, const aclTensor *other, aclOpE
     return nullptr;
   }
 
-  auto logical_orOut = executor->AllocTensor(broadcastShape, self->GetDataType());
+  auto logical_orOut = executor->AllocTensor(broadcastShape, op::DataType::DT_BOOL);
   if (IsAiCoreSupport(self)) {
     return LogicalOrAiCore(self, other, logical_orOut, executor);
   } else {

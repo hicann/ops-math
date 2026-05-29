@@ -37,26 +37,29 @@
       <td>self</td>
       <td>输入</td>
       <td>待进行logical_or计算的入参。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128</td>
+      <td>BOOL、INT8、UINT8、INT16、INT32、INT64、FLOAT16、BFLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>other</td>
       <td>输入</td>
       <td>待进行logical_or计算的入参。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128</td>
+      <td>BOOL、INT8、UINT8、INT16、INT32、INT64、FLOAT16、BFLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>out</td>
       <td>输出</td>
       <td>待进行logical_or计算的出参。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128</td>
+      <td>BOOL</td>
       <td>ND</td>
     </tr>
   </tbody></table>
 
-- Atlas 训练系列产品、Atlas 推理系列产品: 不支持BFLOAT16。
+- <term>Ascend 950PR/Ascend 950DT</term>：支持所有数据类型（BOOL、INT8、UINT8、INT16、INT32、INT64、FLOAT16、BFLOAT16、FLOAT）。
+
+- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：
+  - self和other数据类型仅支持BOOL。
 
 ## 约束说明
 

@@ -117,8 +117,13 @@ aclnnStatus aclnnInplaceLogicalOr(
       <td class="tg-0pky">out（aclTensor*）</td>
       <td class="tg-0pky">输出</td>
       <td class="tg-0pky">输出张量。</td>
-      <td class="tg-0pky">shape需要是self与other broadcast之后的shape。</td>
-      <td class="tg-0pky">FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td class="tg-0pky">
+        <ul>
+          <li>shape与self、other广播之后的shape一致。</li>
+          <li>数据类型要求为BOOL可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</li>
+        </ul>
+      </td>
+      <td class="tg-0pky">FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、COMPLEX64、COMPLEX128、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">0-8</td>
       <td class="tg-0pky">√</td>
@@ -146,6 +151,11 @@ aclnnStatus aclnnInplaceLogicalOr(
   </tbody></table>
   
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
+
+  - <term>Ascend 950PR/Ascend 950DT</term>：支持所有数据类型，包括UINT16、UINT32、UINT64。
+
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：
+    - out数据类型不支持UINT16、UINT32、UINT64。
 
 - **返回值：**
 

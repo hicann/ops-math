@@ -13,6 +13,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn/aclnn_base.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/common_types.h"
 #include "opdev/shape_utils.h"
 #include "opdev/data_type_utils.h"
@@ -22,6 +23,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/op_dfx.h"
 #include "opdev/platform.h"
+#include <set>
 
 using namespace op;
 #ifdef __cplusplus
@@ -53,6 +55,12 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_BF16,      op::DataType::DT_INT8,     op::DataType::DT_UINT8,      op::DataType::DT_INT16,
     op::DataType::DT_INT64,     op::DataType::DT_BOOL,     op::DataType::DT_COMPLEX64,  op::DataType::DT_COMPLEX128};
 
+static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_INT64,  op::DataType::DT_UINT64,     op::DataType::DT_INT32,    op::DataType::DT_UINT32,
+    op::DataType::DT_INT16,  op::DataType::DT_UINT16,     op::DataType::DT_INT8,     op::DataType::DT_UINT8,
+    op::DataType::DT_DOUBLE, op::DataType::DT_FLOAT,      op::DataType::DT_FLOAT16,  op::DataType::DT_BF16,
+    op::DataType::DT_BOOL,   op::DataType::DT_COMPLEX128, op::DataType::DT_COMPLEX64};
+
 inline static bool CheckNotNull(const aclTensor *self, const aclTensor *other, const aclTensor *out) {
   OP_CHECK_NULL(self, return false);
   OP_CHECK_NULL(other, return false);
@@ -74,6 +82,7 @@ inline static bool CheckDtypeValid(const aclTensor *self, const aclTensor *other
     return false;
   }
 
+  auto outSuportList = IsRegBase() ? OUT_DTYPE_SUPPORT_LIST : DTYPE_SUPPORT_LIST;
   // 检查self的数据类型是否在logical_or算子的支持列表内
   OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
 
@@ -81,7 +90,7 @@ inline static bool CheckDtypeValid(const aclTensor *self, const aclTensor *other
   OP_CHECK_DTYPE_NOT_SUPPORT(other, DTYPE_SUPPORT_LIST, return false);
 
   // 检查out的数据类型是否在logical_or算子的支持列表内
-  OP_CHECK_DTYPE_NOT_SUPPORT(out, DTYPE_SUPPORT_LIST, return false);
+  OP_CHECK_DTYPE_NOT_SUPPORT(out, outSuportList, return false);
   return true;
 }
 
@@ -138,32 +147,53 @@ static aclnnStatus GetWorkspaceSizeCommon(const aclTensor *self, const aclTensor
   auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
   CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-  // 将输入self的数据类型转换成DT_BOOL类型
-  auto selfCasted = (selfContiguous->GetDataType() == op::DataType::DT_BOOL) ?
-    selfContiguous : l0op::Cast(selfContiguous, op::DataType::DT_BOOL, uniqueExecutor.get());
-  CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
   // 将输入other转换成连续的tensor
   auto otherContiguous = l0op::Contiguous(other, uniqueExecutor.get());
   CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-  // 将输入other的数据类型转换成DT_BOOL类型
-  auto otherCasted = (otherContiguous->GetDataType() == op::DataType::DT_BOOL) ?
-    otherContiguous : l0op::Cast(otherContiguous, op::DataType::DT_BOOL, uniqueExecutor.get());
-  CHECK_RET(otherCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  // kernel支持的数据类型：BOOL/INT8/UINT8/INT16/INT32/INT64/FLOAT16/BF16/FLOAT
+  // 策略：
+  //   1. 两个输入类型相同且kernel支持 → 直接调用kernel，无需Cast
+  //   2. 两个输入类型不同或kernel不支持 → 都Cast到BOOL，调用BOOL kernel
+  static const std::set<op::DataType> KERNEL_SUPPORTED_DTYPE_SET = {
+      op::DataType::DT_BOOL,    op::DataType::DT_INT8,   op::DataType::DT_UINT8,
+      op::DataType::DT_INT16,   op::DataType::DT_INT32,  op::DataType::DT_INT64,
+      op::DataType::DT_FLOAT16, op::DataType::DT_BF16,   op::DataType::DT_FLOAT};
 
-  // 进行LogicalOr计算
-  auto logical_orOpOut = l0op::LogicalOr(selfCasted, otherCasted, uniqueExecutor.get());
-  CHECK_RET(logical_orOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  op::DataType selfDtype = selfContiguous->GetDataType();
+  op::DataType otherDtype = otherContiguous->GetDataType();
 
-  // 将计算结果转换成输出out的数据类型
-  auto castOut = (out->GetDataType() == op::DataType::DT_BOOL) ?
-    logical_orOpOut : l0op::Cast(logical_orOpOut, out->GetDataType(), uniqueExecutor.get());
-  CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  if (IsRegBase() && selfDtype == otherDtype && KERNEL_SUPPORTED_DTYPE_SET.count(selfDtype)) {
+    // 两个输入类型相同且kernel支持 → 直接调用kernel
+    auto logical_orOpOut = l0op::LogicalOr(selfContiguous, otherContiguous, uniqueExecutor.get());
+    CHECK_RET(logical_orOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-  // 将计算结果拷贝到输出out上，out可能是非连续的tensor
-  auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
-  CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto castOut = (out->GetDataType() == op::DataType::DT_BOOL) ?
+      logical_orOpOut : l0op::Cast(logical_orOpOut, out->GetDataType(), uniqueExecutor.get());
+    CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
+    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  } else {
+    // 两个输入类型不同或kernel不支持 → 都Cast到BOOL，调用BOOL kernel
+    auto selfBool = (selfDtype == op::DataType::DT_BOOL) ?
+      selfContiguous : l0op::Cast(selfContiguous, op::DataType::DT_BOOL, uniqueExecutor.get());
+    CHECK_RET(selfBool != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    auto otherBool = (otherDtype == op::DataType::DT_BOOL) ?
+      otherContiguous : l0op::Cast(otherContiguous, op::DataType::DT_BOOL, uniqueExecutor.get());
+    CHECK_RET(otherBool != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    auto logical_orOpOut = l0op::LogicalOr(selfBool, otherBool, uniqueExecutor.get());
+    CHECK_RET(logical_orOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    auto castOut = (out->GetDataType() == op::DataType::DT_BOOL) ?
+      logical_orOpOut : l0op::Cast(logical_orOpOut, out->GetDataType(), uniqueExecutor.get());
+    CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
+    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  }
 
   // 获取计算过程中需要使用的workspace大小
   *workspaceSize = uniqueExecutor->GetWorkspaceSize();

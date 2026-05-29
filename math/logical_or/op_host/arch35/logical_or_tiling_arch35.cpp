@@ -48,22 +48,57 @@ ge::graphStatus LogicalOrTiling::DoOpTiling()
     OP_CHECK_NULL_WITH_CONTEXT(context_, input1Desc);
     ge::DataType input1DType = input1Desc->GetDataType();
 
-    auto outputYDesc = context_->GetOutputDesc(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context_, outputYDesc);
-    ge::DataType outputDtype = outputYDesc->GetDataType();
-    if ((input0DType != ge::DT_BOOL) || (input1DType != ge::DT_BOOL) ||
-        (outputDtype != ge::DT_BOOL)) {
-        std::string dtypesStr = ge::TypeUtils::DataTypeToSerialString(input0DType) + ", " +
-                                ge::TypeUtils::DataTypeToSerialString(input1DType) + " and " +
-                                ge::TypeUtils::DataTypeToSerialString(outputDtype);
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1, x2 and y",
-            dtypesStr.c_str(), "The dtypes of x1, x2 and y must be bool");
+    if (input0DType != input1DType) {
+        std::string dtypesStr = ge::TypeUtils::DataTypeToSerialString(input0DType) + " and " +
+                                ge::TypeUtils::DataTypeToSerialString(input1DType);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1 and x2",
+            dtypesStr.c_str(), "The dtypes of x1 and x2 must be the same");
         return ge::GRAPH_FAILED;
     }
-    
-    BroadcastBaseTiling<LogicalOrOp::LogicalOrCompute<uint8_t>::OpDag> brcBaseTiling(context_);
-    ge::graphStatus ret = brcBaseTiling.DoTiling();
-    tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+
+    ge::graphStatus ret = ge::GRAPH_SUCCESS;
+    if (input0DType == ge::DT_BOOL) {
+        BroadcastBaseTiling<LogicalOrOp::LogicalOrCompute<uint8_t>::OpDag> brcBaseTiling(context_);
+        ret = brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0DType == ge::DT_INT8) {
+        BroadcastBaseTiling<LogicalOrOp::LogicalOrIntegralCompute<int8_t>::OpDag> brcBaseTiling(context_);
+        ret = brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0DType == ge::DT_UINT8) {
+        BroadcastBaseTiling<LogicalOrOp::LogicalOrIntegralCompute<uint8_t>::OpDag> brcBaseTiling(context_);
+        ret = brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0DType == ge::DT_INT16) {
+        BroadcastBaseTiling<LogicalOrOp::LogicalOrIntegralCompute<int16_t>::OpDag> brcBaseTiling(context_);
+        ret = brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0DType == ge::DT_INT32) {
+        BroadcastBaseTiling<LogicalOrOp::LogicalOrIntegralCompute<int32_t>::OpDag> brcBaseTiling(context_);
+        ret = brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0DType == ge::DT_INT64) {
+        BroadcastBaseTiling<LogicalOrOp::LogicalOrIntegralCompute<int64_t>::OpDag> brcBaseTiling(context_);
+        ret = brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0DType == ge::DT_FLOAT16) {
+        BroadcastBaseTiling<LogicalOrOp::LogicalOrFloatCompute<half, uint16_t>::OpDag> brcBaseTiling(context_);
+        ret = brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0DType == ge::DT_BF16) {
+        BroadcastBaseTiling<LogicalOrOp::LogicalOrFloatCompute<bfloat16_t, uint16_t>::OpDag> brcBaseTiling(context_);
+        ret = brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0DType == ge::DT_FLOAT) {
+        BroadcastBaseTiling<LogicalOrOp::LogicalOrFloatCompute<float, uint32_t>::OpDag> brcBaseTiling(context_);
+        ret = brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else {
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1",
+            ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
+            "bool, int8, uint8, int16, int32, int64, float16, bfloat16 and float32");
+        return ge::GRAPH_FAILED;
+    }
     return ret;
 }
 
