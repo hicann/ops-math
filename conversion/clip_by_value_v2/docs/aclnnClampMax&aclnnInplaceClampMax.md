@@ -95,7 +95,7 @@ aclnnStatus aclnnInplaceClampMax(
       <td class="tg-0pky">self（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">需要进行限制的Tensor，即公式中的x<sub>i</sub>。</td>
-      <td class="tg-0pky">数据类型与clipValueMax的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">数据类型与clipValueMax的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -105,7 +105,7 @@ aclnnStatus aclnnInplaceClampMax(
       <td class="tg-0pky">clipValueMax（aclScalar*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入scalar，对self的上界进行限制，即公式中的max。</td>
-      <td class="tg-0pky">且数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">且数据类型与self的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -115,7 +115,7 @@ aclnnStatus aclnnInplaceClampMax(
       <td class="tg-0pky">out（aclTensor*）</td>
       <td class="tg-0pky">输出</td>
       <td class="tg-0pky">输出限制后的Tensor，即公式中的y<sub>i</sub>。</td>
-      <td class="tg-0pky">shape和self保持一致，且数据类型需要是self、clipValueMax推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape和self保持一致，且数据类型需要是self、clipValueMax可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">与self保持一致</td>
@@ -264,7 +264,7 @@ aclnnStatus aclnnInplaceClampMax(
       <td class="tg-0pky">selfRef（aclTensor*）</td>
       <td class="tg-0pky">输入/输出</td>
       <td class="tg-0pky">需要进行限制的Tensor，即公式中的x<sub>i</sub>。</td>
-      <td class="tg-0pky">数据类型与clipValueMax的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">数据类型与clipValueMax的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -274,7 +274,7 @@ aclnnStatus aclnnInplaceClampMax(
       <td class="tg-0pky">clipValueMax（aclScalar*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入scalar，对self的上界进行限制，即公式中的max。</td>
-      <td class="tg-0pky">且数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">且数据类型与self的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>

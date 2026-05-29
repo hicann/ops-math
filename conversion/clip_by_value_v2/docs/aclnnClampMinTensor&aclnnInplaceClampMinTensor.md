@@ -94,7 +94,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
       <td class="tg-0pky">self（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入Tensor，需要进行限制的张量，即公式中的x<sub>i</sub>。</td>
-      <td class="tg-0pky">shape可以与clipValueMin进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与clipValueMin的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape可以与clipValueMin进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与clipValueMin的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -104,7 +104,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
       <td class="tg-0pky">clipValueMin（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入Tensor，对self的下界进行限制，公式中的min_value<sub>i</sub>。</td>
-      <td class="tg-0pky">shape可以与self进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape可以与self进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与self的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -114,7 +114,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
       <td class="tg-0lax">out（aclTensor*）</td>
       <td class="tg-0lax">输出</td>
       <td class="tg-0lax">公式中的y<sub>i</sub>。</td>
-      <td class="tg-0lax">shape是self和clipValueMin<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>的结果，数据类型需要是self、clipValueMin推导之后可转换的数据类型。</td>
+      <td class="tg-0lax">shape是self和clipValueMin<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>的结果，数据类型需要是self、clipValueMin可转换的数据类型。</td>
       <td class="tg-0lax">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0lax">ND</td>
       <td class="tg-0lax">1-8</td>
@@ -254,7 +254,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
       <td class="tg-0pky">selfRef（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入Tensor，需要进行限制的张量，即公式中的x<sub>i</sub>。</td>
-      <td class="tg-0pky">shape可以与clipValueMin进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与clipValueMin的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape可以与clipValueMin进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与clipValueMin的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
@@ -264,7 +264,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
       <td class="tg-0pky">clipValueMin（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">输入Tensor，对selfRef的下界进行限制，即公式中的min_value<sub>i</sub>。</td>
-      <td class="tg-0pky">shape可以与selfRef进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td class="tg-0pky">shape可以与selfRef进行<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast</a>，数据类型与self的数据类型需满足数据类型转换规则（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
       <td class="tg-0pky">FLOAT16、FLOAT、DOUBLE、INT8、UINT8、INT16、INT32、INT64、BFLOAT16、BOOL</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-8</td>
