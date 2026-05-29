@@ -61,7 +61,7 @@ enum class NORM_VALUES : int
     ORTHO = 3
 };
 
-using Ops::Math::OpTiling::TilingBaseClass;
+using Ops::Base::TilingBaseClass;
 
 class Rfft1DBaseTiling : public TilingBaseClass {
 public:

@@ -17,7 +17,7 @@
 #include "op_common/op_host/util/platform_util.h"
 #include  "../../../random_common/op_host/arch35/random_tiling_base.h"
 #include "exe_graph/runtime/shape.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "stateless_drop_out_gen_mask_tiling_arch35.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"

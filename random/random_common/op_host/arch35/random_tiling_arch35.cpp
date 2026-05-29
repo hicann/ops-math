@@ -15,7 +15,7 @@
 
 #include <algorithm>
 #include "platform/platform_infos_def.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "log/log.h"
 #include "util/math_util.h"
 #include "op_common/op_host/util/platform_util.h"

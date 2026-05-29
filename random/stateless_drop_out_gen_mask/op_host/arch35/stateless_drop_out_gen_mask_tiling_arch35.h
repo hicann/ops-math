@@ -16,7 +16,7 @@
 #define STATELESS_DROP_OUT_GEN_MASK_TILING_ARCH35_H
 
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/op_impl_registry.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "log/log.h"

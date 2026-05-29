@@ -18,7 +18,7 @@
 #include "../../../../op_host/arch35/stateless_randperm_tiling_arch35.h"
 
 #include "../../../../op_kernel/stateless_randperm_struct.h"
-#include "../../../../../math/sort/op_kernel/arch35/sort_tiling_data.h"
+#include "../../../../../../math/sort/op_kernel/arch35/sort_tiling_data.h"
 
 using namespace std;
 using namespace ge;

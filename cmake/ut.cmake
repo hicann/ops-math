@@ -420,7 +420,7 @@ function(AddOpsTestCase)
 
     # add tiling tmp so: ${MODULE_OP_NAME}_${socVersion}_tiling_tmp.so
     add_library(${MODULE_OP_NAME}_${socVersion}_tiling_tmp SHARED
-                ${tilingSrc} $<TARGET_OBJECTS:${COMMON_NAME}_obj>
+                ${tilingSrc} $<$<TARGET_EXISTS:${COMMON_NAME}_obj>:$<TARGET_OBJECTS:${COMMON_NAME}_obj>>
                 $<$<TARGET_EXISTS:opbase_util_objs>:$<TARGET_OBJECTS:opbase_util_objs>>
                 $<$<TARGET_EXISTS:opbase_tiling_objs>:$<TARGET_OBJECTS:opbase_tiling_objs>>)
     target_include_directories(

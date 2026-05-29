@@ -21,8 +21,8 @@
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/tiling_base_class.h"
+#include "op_host/math_tiling_templates_registry.h"
 
 namespace optiling {
 // ///////////////////////////////////
@@ -44,9 +44,9 @@ REGISTER_TILING_DATA_CLASS(DropOutDoMask, DropOutDoMaskForAscendCTilingData)
 
 ge::graphStatus DropOutDoMaskTilingForAscendC(gert::TilingContext* context);
 
-class DropOutDoMaskTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class DropOutDoMaskTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit DropOutDoMaskTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit DropOutDoMaskTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

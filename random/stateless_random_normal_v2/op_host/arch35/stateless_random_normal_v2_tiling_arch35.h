@@ -17,7 +17,7 @@
 
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
 namespace optiling {
 constexpr uint16_t ALG_KEY_SIZE = 2;
@@ -40,9 +40,9 @@ struct StatelessRandomNormalV2CompileInfo {
     uint64_t ubSize;
 };
 
-class StatelessRandomNormalV2Tiling : public Ops::Math::OpTiling::TilingBaseClass {
+class StatelessRandomNormalV2Tiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit StatelessRandomNormalV2Tiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit StatelessRandomNormalV2Tiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
     enum class Algorithm : int32_t

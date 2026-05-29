@@ -15,8 +15,8 @@
 
 #include "rfft1_d_tiling.h"
 #include "exe_graph/runtime/shape.h"
-#include "op_host/tiling_base.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/tiling_base_class.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "register/op_def_registry.h"
 #include "tiling/tiling_api.h"
 

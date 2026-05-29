@@ -16,7 +16,7 @@
 #include "log/log.h"
 #include "platform/platform_ascendc.h"
 #include "register/op_def_registry.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "util/math_util.h"
 #include "../../../random_common/op_host/arch35/random_tiling_base.h"
 

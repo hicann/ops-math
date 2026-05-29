@@ -20,13 +20,12 @@
 #include "platform/platform_ascendc.h"
 #include "op_common/op_host/util/platform_util.h"
 #include "op_host/util/math_util.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "stateless_randperm_tiling_for_sort.h"
 #include "stateless_randperm_tiling_arch35.h"
 
 namespace optiling{
 using namespace ge;
-using namespace Ops::Math::OpTiling;
 using namespace Ops::Base;
 
 static constexpr int64_t SIMT_THREAD_NUM_512 = 512;         // SIMT启用的线程数
@@ -114,7 +113,7 @@ ge::graphStatus StatelessRandpermTiling::GetInputN()
 
     auto nShape = context_->GetInputShape(INPUT_IDX_N);
     OP_CHECK_NULL_WITH_CONTEXT(context_, nShape);
-    auto nStorageShape = EnsureNotScalar(nShape->GetStorageShape());
+    auto nStorageShape = Ops::Base::EnsureNotScalar(nShape->GetStorageShape());
     int64_t nShapeSize = nStorageShape.GetShapeSize();
     OP_CHECK_IF(nShapeSize != 1,
                 OP_LOGE(opName_, "input n.shapeSize should equal 1, but got %ld.", nShapeSize),
@@ -157,7 +156,7 @@ ge::graphStatus StatelessRandpermTiling::GetInputSeed()
 
     auto seedShape = context_->GetInputShape(INPUT_IDX_SEED);
     OP_CHECK_NULL_WITH_CONTEXT(context_, seedShape);
-    auto seedStorageShape = EnsureNotScalar(seedShape->GetStorageShape());
+    auto seedStorageShape = Ops::Base::EnsureNotScalar(seedShape->GetStorageShape());
     int64_t seedShapeSize = seedStorageShape.GetShapeSize();
     OP_CHECK_IF(seedShapeSize != 1,
                 OP_LOGE(opName_, "input seed.shapeSize should equal 1, but got %ld.", seedShapeSize),
@@ -185,7 +184,7 @@ ge::graphStatus StatelessRandpermTiling::GetInputOffset()
 
     auto offsetShape = context_->GetInputShape(INPUT_IDX_OFFSET);
     OP_CHECK_NULL_WITH_CONTEXT(context_, offsetShape);
-    auto offsetStorageShape = EnsureNotScalar(offsetShape->GetStorageShape());
+    auto offsetStorageShape = Ops::Base::EnsureNotScalar(offsetShape->GetStorageShape());
     int64_t offsetShapeSize = offsetStorageShape.GetShapeSize();
     OP_CHECK_IF(offsetShapeSize != 1,
                 OP_LOGE(opName_, "input offset.shapeSize should equal 1, but got %ld.", offsetShapeSize),
@@ -212,7 +211,7 @@ ge::graphStatus StatelessRandpermTiling::GetOutputY()
     // shape校验
     auto yShape = context_->GetOutputShape(OUTPUT_IDX_Y);
     OP_CHECK_NULL_WITH_CONTEXT(context_, yShape);
-    auto yStorageShape = EnsureNotScalar(yShape->GetStorageShape());
+    auto yStorageShape = Ops::Base::EnsureNotScalar(yShape->GetStorageShape());
     size_t yDimNum = yStorageShape.GetDimNum();
     OP_CHECK_IF(yDimNum != 1,
                 OP_LOGE(opName_, "output y.dim must be 1, but got %zu", yDimNum),

@@ -18,9 +18,9 @@
 #include <array>
 #include <cstdint>
 #include "platform/platform_info.h"
-#include "op_host/tiling_util.h"
-#include "op_host/tiling_templates_registry.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_util.h"
+#include "op_host/math_tiling_templates_registry.h"
+#include "op_host/tiling_base_class.h"
 #include "register/op_impl_registry.h"
 #include "util/math_util.h"
 #include "log/log.h"
@@ -59,10 +59,10 @@ struct IndexTilingData {
     int64_t outputSize;
 };
 
-class StatelessRandomChoiceWithMaskSimtTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class StatelessRandomChoiceWithMaskSimtTiling : public Ops::Base::TilingBaseClass {
 public:
     explicit StatelessRandomChoiceWithMaskSimtTiling(gert::TilingContext* context)
-        : TilingBaseClass(context), opName_(context->GetNodeName())
+        : Ops::Base::TilingBaseClass(context), opName_(context->GetNodeName())
     {}
 
 protected:

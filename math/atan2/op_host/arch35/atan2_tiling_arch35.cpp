@@ -21,7 +21,7 @@
 
 #include <graph/utils/type_utils.h>
 #include "register/op_impl_registry.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "math/atan2/op_kernel/arch35/atan2_dag.h"
 #include "math/atan2/op_kernel/arch35/atan2_struct.h"

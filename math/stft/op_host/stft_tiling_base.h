@@ -16,11 +16,10 @@
 #define AIR_CXX_RUNTIME_V2_OP_IMPL_STFT_BASE_H_
 
 #include "register/op_def_registry.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "tiling/tiling_api.h"
 #include "stft_tiling.h"
 
-using namespace Ops::Math::OpTiling;
 
 namespace optiling {
 BEGIN_TILING_DATA_DEF(STFTPlanTilingData)
@@ -121,9 +120,9 @@ REGISTER_TILING_DATA_CLASS(STFT_1, STFTGeneralizedTilingData);
 REGISTER_TILING_DATA_CLASS(STFT_2, STFTGeneralizedTilingData);
 REGISTER_TILING_DATA_CLASS(STFT_3, STFTGeneralizedTilingData);
 
-class STFTBaseTiling : public TilingBaseClass {
+class STFTBaseTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit STFTBaseTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit STFTBaseTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
 protected:

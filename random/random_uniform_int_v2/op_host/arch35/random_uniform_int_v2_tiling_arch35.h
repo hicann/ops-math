@@ -16,7 +16,7 @@
 #define RANDOM_UNIFORM_INT_V2_TILING_ARCH35_H
 
 #include <string>
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "util/math_util.h"
 #include "../../op_kernel/arch35/random_uniform_int_v2_struct.h"
 
@@ -35,11 +35,11 @@ static constexpr uint64_t DEFAULT_WORKSPACE_SIZE = 0;
 static constexpr int64_t DOUBLE_BUFFER = 2;
 static constexpr int64_t DCACHE_SIZE = 32 * 1024;
 
-class RandomUniformIntV2Tiling : public Ops::Math::OpTiling::TilingBaseClass
+class RandomUniformIntV2Tiling : public Ops::Base::TilingBaseClass
 {
 public:
     explicit RandomUniformIntV2Tiling(gert::TilingContext* context)
-        : TilingBaseClass(context), opName_(context->GetNodeName())
+        : Ops::Base::TilingBaseClass(context), opName_(context->GetNodeName())
     {}
 
 protected:

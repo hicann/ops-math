@@ -13,10 +13,10 @@
  * \brief
  */
 #include "histogram_v2_tiling.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "log/log.h"
 #include "util/math_util.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 
 namespace optiling {
 static const std::unordered_map<ge::DataType, uint32_t> INPUT_DATA_TYPE_TO_INT{
@@ -52,7 +52,7 @@ public:
 protected:
     bool IsCapable() override
     {
-        if (!Ops::Math::OpTiling::IsRegbaseSocVersion(context_)) {
+        if (!Ops::Base::IsRegbaseSocVersion(context_)) {
             return false;
         }
         return true;

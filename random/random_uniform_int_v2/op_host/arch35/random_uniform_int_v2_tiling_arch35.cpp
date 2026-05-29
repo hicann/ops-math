@@ -20,7 +20,7 @@
 #include "op_common/op_host/util/platform_util.h"
 #include "random_uniform_int_v2_tiling_arch35.h"
 #include  "random/random_common/op_host/arch35/random_tiling_base.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "register/op_def_registry.h"
 
 namespace optiling {

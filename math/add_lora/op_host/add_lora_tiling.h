@@ -14,7 +14,7 @@
  */
 #ifndef ADD_LORA_TILING_H
 #define ADD_LORA_TILING_H
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/tilingdata_base.h"
 #include "platform/platform_ascendc.h"
 
@@ -93,10 +93,10 @@ struct OptionalParaInfo {
 struct Tiling4AddLoraCompileInfo {
 };
 
-class AddLoraTiling : public Ops::Math::OpTiling::TilingBaseClass
+class AddLoraTiling : public Ops::Base::TilingBaseClass
 {
 public:
-    explicit AddLoraTiling(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit AddLoraTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {
         Reset();
     }

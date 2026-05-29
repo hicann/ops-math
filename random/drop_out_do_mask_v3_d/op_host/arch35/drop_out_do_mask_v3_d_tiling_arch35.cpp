@@ -18,7 +18,7 @@
 #include "op_common/op_host/util/platform_util.h"
 #include "random/random_common/op_host/arch35/random_tiling_base.h"
 #include "exe_graph/runtime/shape.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "drop_out_do_mask_v3_d_tiling_arch35.h"
 
 using namespace ge;
@@ -48,7 +48,7 @@ OpTilingConfig DropOutDoMaskV3DTiling::BuildOpConfig()
     config.getOutputSize = [](gert::TilingContext* ctx, int64_t& shapeSize) -> ge::graphStatus {
         auto inputShapePtr = ctx->GetRequiredInputShape(INDEX_INPUT_X);
         OP_CHECK_NULL_WITH_CONTEXT(ctx, inputShapePtr);
-        const auto& shape = Ops::Math::OpTiling::EnsureNotScalar(inputShapePtr->GetStorageShape());
+        const auto& shape = Ops::Base::EnsureNotScalar(inputShapePtr->GetStorageShape());
         shapeSize = 1;
         for (size_t i = 0; i < shape.GetDimNum(); ++i) {
             shapeSize *= shape[i];

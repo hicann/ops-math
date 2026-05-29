@@ -16,12 +16,11 @@
 #include "lin_space_tiling.h"
 #include "register/op_impl_registry.h"
 #include "log/log.h"
-#include "op_host/tiling_base.h"
-#include "op_host/tiling_templates_registry.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_class.h"
+#include "op_host/math_tiling_templates_registry.h"
+#include "op_host/tiling_base_util.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 static const size_t INPUT_IDX_START = 0;
 static const size_t INPUT_IDX_STOP = 1;
 static const size_t INPUT_IDX_NUM = 2;
@@ -32,15 +31,15 @@ static const int64_t MATRIX_SIZE = 256;
 static const int32_t OUT_SIZE = 16 * 1024;
 static const int32_t WORK_SPACE_SIZE = 32;
 
-class LinSpaceMemBaseTilingClass : public TilingBaseClass
+class LinSpaceMemBaseTilingClass : public Ops::Base::TilingBaseClass
 {
 public:
-    explicit LinSpaceMemBaseTilingClass(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit LinSpaceMemBaseTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
     void Reset(gert::TilingContext* context) override
     {
-        TilingBaseClass::Reset(context);
+        Ops::Base::TilingBaseClass::Reset(context);
     }
 
 protected:
@@ -71,7 +70,7 @@ protected:
 
     bool IsCapable() override
     {
-        return (!Ops::Math::OpTiling::IsRegbaseSocVersion(context_));
+        return (!Ops::Base::IsRegbaseSocVersion(context_));
     }
 
     ge::graphStatus DoOpTiling() override;
@@ -585,7 +584,7 @@ ge::graphStatus LinSpaceMemBaseTilingClass::DoOpTiling()
 
 static ge::graphStatus Tiling4LinSpace(gert::TilingContext* context)
 {
-    return TilingRegistry::GetInstance().DoTilingImpl(context);
+    return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
 REGISTER_OPS_TILING_TEMPLATE(LinSpace, LinSpaceMemBaseTilingClass, 1000);

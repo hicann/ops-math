@@ -18,7 +18,7 @@
 #include "op_common/op_host/util/platform_util.h"
 #include  "../../../random_common/op_host/arch35/random_tiling_base.h"
 #include "exe_graph/runtime/shape.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "stateless_random_normal_v3_tiling_arch35.h"
 
 using namespace ge;

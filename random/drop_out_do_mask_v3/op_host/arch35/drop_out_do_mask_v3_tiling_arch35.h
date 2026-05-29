@@ -16,12 +16,12 @@
 #define DROP_OUT_DO_MASK_V3_TILING_ARCH35_H
 
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/op_impl_registry.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "log/log.h"
 #include "util/math_util.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include  "../../../random_common/op_host/arch35/random_tiling_arch35.h"
 
 namespace optiling {

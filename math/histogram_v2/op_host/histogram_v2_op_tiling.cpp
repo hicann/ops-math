@@ -15,8 +15,8 @@
 #include "histogram_v2_tiling.h"
 #include "log/log.h"
 #include "platform/platform_info.h"
-#include "op_host/tiling_templates_registry.h"
-#include "op_host/tiling_util.h"
+#include "op_host/math_tiling_templates_registry.h"
+#include "op_host/tiling_base_util.h"
 
 namespace optiling {
 constexpr int64_t SIZE_OF_FP32 = 4L;
@@ -255,7 +255,7 @@ public:
 protected:
     bool IsCapable() override
     {
-        if (Ops::Math::OpTiling::IsRegbaseSocVersion(context_)) {
+        if (Ops::Base::IsRegbaseSocVersion(context_)) {
             return false;
         }
         return true;

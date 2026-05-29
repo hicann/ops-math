@@ -18,7 +18,7 @@
 #include "util/math_util.h"
 #include "is_finite_tiling_regbase.h"
 #include "is_finite_tiling_arch32.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 
 using namespace ge;
 using namespace IsFiniteNs;
@@ -34,7 +34,7 @@ static ge::graphStatus TilingPrepare4IsFiniteArch32(gert::TilingParseContext* co
     auto platformInfo = context->GetPlatformInfo();
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->totalCoreNum = ascendcPlatform.GetCoreNumAiv();
-    compileInfo->isRegbase = (Ops::Math::OpTiling::IsRegbaseSocVersion(context)) ? true : false;
+    compileInfo->isRegbase = (Ops::Base::IsRegbaseSocVersion(context)) ? true : false;
     uint64_t ubSizePlatForm;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSize = static_cast<int64_t>(ubSizePlatForm);

@@ -16,7 +16,7 @@
 #define MATH_HISTOGRAM_V2_H
 #include "register/tilingdata_base.h"
 #include "platform/platform_ascendc.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 
 namespace optiling {
 
@@ -109,10 +109,10 @@ struct HistogramV2CompileInfo {
     NpuArch npuArch = NpuArch::DAV_2201;
 };
 
-class HistogramV2BaseClass : public Ops::Math::OpTiling::TilingBaseClass
+class HistogramV2BaseClass : public Ops::Base::TilingBaseClass
 {
 public:
-    explicit HistogramV2BaseClass(gert::TilingContext* context) : TilingBaseClass(context)
+    explicit HistogramV2BaseClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
     {}
 
     void Reset(gert::TilingContext* context) override

@@ -16,14 +16,12 @@
 #include "log/log.h"
 #include "util/math_util.h"
 #include "util/platform_util.h"
-#include "op_host/tiling_util.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/tiling_base_util.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "../op_kernel/add_example_tiling_data.h"
 #include "../op_kernel/add_example_tiling_key.h"
 
 namespace optiling {
-
-using namespace Ops::Math::OpTiling;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
 constexpr int32_t DIMS_LIMIT = 4;
@@ -58,13 +56,13 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
     auto inputX = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
     // 如果输入shape 是标量 转换为{1}，否则保持原 shape 不变
-    auto inputShapeX = EnsureNotScalar(inputX->GetStorageShape());
+    auto inputShapeX = Ops::Base::EnsureNotScalar(inputX->GetStorageShape());
     auto inputY = context->GetInputShape(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputY);
-    auto inputShapeY = EnsureNotScalar(inputY->GetStorageShape());
+    auto inputShapeY = Ops::Base::EnsureNotScalar(inputY->GetStorageShape());
     auto outZ = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, outZ);
-    auto outShapeZ = EnsureNotScalar(outZ->GetStorageShape());
+    auto outShapeZ = Ops::Base::EnsureNotScalar(outZ->GetStorageShape());
 
     // shape校验
     OP_CHECK_IF(

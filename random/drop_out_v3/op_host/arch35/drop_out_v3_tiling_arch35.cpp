@@ -16,7 +16,7 @@
 #include "drop_out_v3_tiling_arch35.h"
 #include "log/log.h"
 #include "platform/platform_ascendc.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "util/math_util.h"
 #include "util/fp16.h"
 #include "util/bfloat16.h"

@@ -9,32 +9,6 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
-  npu_op_library(${COMMON_NAME}_obj TILING)
-else()
-  add_library(${COMMON_NAME}_obj OBJECT)
-endif()
-
-file(GLOB CPP_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/op_host/*.cpp")
-
-target_sources(${COMMON_NAME}_obj PRIVATE ${CPP_SOURCES})
-
-target_include_directories(${COMMON_NAME}_obj
-  PRIVATE
-  ${C_SEC_INCLUDE}
-  ${TILINGAPI_INC_DIRS}
-  ${PLATFORM_INC_DIRS}
-  ${METADEF_INCLUDE_DIRS}
-  ${OPS_MATH_DIR}/common/inc
-  ${ASCEND_DIR}/pkg_inc
-)
-
-target_link_libraries(${COMMON_NAME}_obj
-  PRIVATE
-  $<BUILD_INTERFACE:intf_pub_cxx17>
-  tiling_api
-)
-
 if(NOT ENABLE_EXPERIMENTAL)
   file(GLOB CURRENT_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
   foreach(SUB_DIR ${CURRENT_DIRS})

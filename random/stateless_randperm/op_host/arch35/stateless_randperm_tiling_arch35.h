@@ -17,7 +17,7 @@
 #include <string>
 #include "tiling/tiling_api.h"
 #include "register/tilingdata_base.h"
-#include "op_host/tiling_base.h"
+#include "op_host/tiling_base_class.h"
 #include "register/op_impl_registry.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "log/log.h"
@@ -39,10 +39,10 @@ struct StatelessRandpermCompileInfo {
     int64_t ubSize = 0;
 };
 
-class StatelessRandpermTiling : public Ops::Math::OpTiling::TilingBaseClass {
+class StatelessRandpermTiling : public Ops::Base::TilingBaseClass {
 public:
     explicit StatelessRandpermTiling(gert::TilingContext* context)
-    : TilingBaseClass(context), opName_(context->GetNodeName())
+    : Ops::Base::TilingBaseClass(context), opName_(context->GetNodeName())
     {}
 protected:
     bool IsCapable() override;

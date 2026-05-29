@@ -16,20 +16,19 @@
 #include "platform/platform_info.h"
 #include "register/op_def_registry.h"
 #include "exe_graph/runtime/shape.h"
-#include "op_host/tiling_templates_registry.h"
+#include "op_host/math_tiling_templates_registry.h"
 #include "tiling/tiling_api.h"
 #include "stft_tiling.h"
 
 using namespace AscendC;
 using namespace matmul_tiling;
 
-using namespace Ops::Math::OpTiling;
 namespace optiling {
 
 static ge::graphStatus Tiling4STFT(gert::TilingContext* context)
 {
     // 初始化算子Tiling类
-    return TilingRegistry::GetInstance().DoTilingImpl(context);
+    return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
 static ge::graphStatus TilingPrepare4STFT(gert::TilingParseContext* context)
