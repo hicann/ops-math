@@ -24,14 +24,13 @@
 #include "register/op_impl_registry.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "log/log.h"
-#include "op_host/tiling_util.h"
+#include "op_host/tiling_base_util.h"
 #include "platform/platform_info.h"
 #include "math/power/op_kernel/arch35/power_dag.h"
 #include "math/power/op_kernel/arch35/power_struct.h"
 #include "math/power/op_kernel/arch35/power_tiling_struct.h"
 
 namespace optiling {
-using namespace Ops::Math::OpTiling;
 using namespace PowerOp;
 
 // 算子默认 workspace 大小：16 MB，与同仓 elementwise 类算子保持一致。
@@ -89,11 +88,11 @@ ge::graphStatus PowerTiling::CheckShape()
 {
     auto inputStorageShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputStorageShape);
-    const gert::Shape& xShape = EnsureNotScalar(inputStorageShape->GetStorageShape());
+    const gert::Shape& xShape = Ops::Base::EnsureNotScalar(inputStorageShape->GetStorageShape());
 
     auto outputStorageShape = tilingContext->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
-    const gert::Shape& yShape = EnsureNotScalar(outputStorageShape->GetStorageShape());
+    const gert::Shape& yShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
         xShape != yShape, OP_LOGE(tilingContext->GetNodeName(), "x and y shape must match"),
