@@ -49,7 +49,10 @@ OpTilingConfig StatelessDropOutGenMaskTiling::BuildOpConfig()
         {1, {{ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16}, 1, {}, nullptr}},  // prob
         {2, {{ge::DT_INT32, ge::DT_INT64}, 1, {}, nullptr}},                // seed
         {3, {{ge::DT_INT32, ge::DT_INT64}, 1, {}, nullptr}},                // seed1
-        {4, {{ge::DT_INT64}, -1, {}, nullptr}},                // offset
+    };
+
+    config.optionalInputCheckRules = {
+        {4, {{ge::DT_INT64}, -1, {}, nullptr}},  // offset (可选输入)
     };
 
     config.outputCheckRules = {
@@ -84,7 +87,7 @@ OpTilingConfig StatelessDropOutGenMaskTiling::BuildOpConfig()
         counter[0] = 0; counter[1] = 0; counter[2] = 0; counter[3] = 0;
 
         // offset element count (shape info, no D2H needed)
-        auto offsetTensor = ctx->GetRequiredInputTensor(IN_OFFSET_IDX);
+        auto offsetTensor = ctx->GetOptionalInputTensor(IN_OFFSET_IDX);
         uint32_t offsetElemCount = 2;
         if (offsetTensor != nullptr) {
             offsetElemCount = static_cast<uint32_t>(offsetTensor->GetShapeSize());
@@ -92,7 +95,7 @@ OpTilingConfig StatelessDropOutGenMaskTiling::BuildOpConfig()
         key[0] = offsetElemCount;
 
         // seed byte size: 4 for INT32, 8 for INT64 (dtype info, no D2H needed)
-        auto seedDesc = ctx->GetInputDesc(IN_SEED_IDX);
+        auto seedDesc = ctx->GetRequiredInputDesc(IN_SEED_IDX);
         uint32_t seedByteSize = 8;
         if (seedDesc != nullptr) {
             auto seedDtype = seedDesc->GetDataType();

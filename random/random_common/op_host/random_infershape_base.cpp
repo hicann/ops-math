@@ -88,14 +88,23 @@ bool DependencyMode(const gert::Tensor* inTensor, gert::Shape& outShape, size_t 
 }
 
 bool InputAndOutputCheck(
-    gert::InferShapeContext* context, const std::unordered_map<std::string, size_t>& inputMap,
-    const std::unordered_map<std::string, size_t>& outputMap, int64_t& maskIndex, int64_t& offsetIndex)
+    gert::InferShapeContext* context, const std::unordered_map<std::string, size_t>& requiredInputMap,
+    const std::unordered_map<std::string, size_t>& outputMap, int64_t& maskIndex, int64_t& offsetIndex,
+    const std::unordered_map<std::string, size_t>& optionalInputMap)
 {
     OP_LOGD(context->GetNodeName(), "InputAndOutputCheck start");
-    for (const auto& item : inputMap) {
+    for (const auto& item : requiredInputMap) {
         size_t inputIndex = item.second;
-        auto input = context->GetInputTensor(inputIndex);
-        OP_CHECK_NULL_WITH_CONTEXT(context, input);
+        auto inputShape = context->GetRequiredInputShape(inputIndex);
+        OP_CHECK_NULL_WITH_CONTEXT(context, inputShape);
+    }
+
+    for (const auto& item : optionalInputMap) {
+        size_t inputIndex = item.second;
+        auto inputShape = context->GetOptionalInputShape(inputIndex);
+        if (inputShape != nullptr) {
+            OP_LOGD(context->GetNodeName(), "Optional input %zu is provided", inputIndex);
+        }
     }
 
     for (const auto& item : outputMap) {
@@ -116,15 +125,16 @@ bool InputAndOutputCheck(
 }
 
 ge::graphStatus CommonInferShape(
-    gert::InferShapeContext* context, const std::unordered_map<std::string, size_t>& inputMap,
-    const std::unordered_map<std::string, size_t>& outputMap, int32_t mode)
+    gert::InferShapeContext* context, const std::unordered_map<std::string, size_t>& requiredInputMap,
+    const std::unordered_map<std::string, size_t>& outputMap, int32_t mode,
+    const std::unordered_map<std::string, size_t>& optionalInputMap)
 {
     if (context == nullptr) {
         return ge::GRAPH_FAILED;
     }
     int64_t maskIndex = -1;
     int64_t offsetIndex = -1;
-    if (!InputAndOutputCheck(context, inputMap, outputMap, maskIndex, offsetIndex)) {
+    if (!InputAndOutputCheck(context, requiredInputMap, outputMap, maskIndex, offsetIndex, optionalInputMap)) {
         return ge::GRAPH_FAILED;
     }
     const gert::Shape* inShape = context->GetInputShape(0);

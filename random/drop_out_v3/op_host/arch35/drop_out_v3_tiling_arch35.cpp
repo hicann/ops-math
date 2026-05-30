@@ -47,7 +47,7 @@ OpTilingConfig DropOutV3Tiling::BuildOpConfig()
         {OUTPUT_IDX_Y, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {}, nullptr}}};
 
     config.getOutputSize = [](gert::TilingContext* ctx, int64_t& size) {
-        auto inputShape = ctx->GetInputShape(INPUT_IDX_X);
+        auto inputShape = ctx->GetRequiredInputShape(INPUT_IDX_X);
         OP_CHECK_NULL_WITH_CONTEXT(ctx, inputShape);
         auto storageShape = inputShape->GetStorageShape();
         size = storageShape.IsScalar() ? 1 : storageShape.GetShapeSize();

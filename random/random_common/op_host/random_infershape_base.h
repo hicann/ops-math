@@ -33,8 +33,9 @@ static constexpr int32_t MODE_NO_DEPENDENCY = 1;
 // 使用时默认输入输出的位置为0。mode = 0:只支持int32和int64，输入输出的dim相等,使用时必须有值依赖。
 // mode = 1:只支持float,float16和bf16，输出shape直接使用输入shape，可以无需值依赖。
 ge::graphStatus CommonInferShape(
-    gert::InferShapeContext* context, const std::unordered_map<std::string, size_t>& inputMap,
-    const std::unordered_map<std::string, size_t>& outputMap, int32_t mode);
+    gert::InferShapeContext* context, const std::unordered_map<std::string, size_t>& requiredInputMap,
+    const std::unordered_map<std::string, size_t>& outputMap, int32_t mode,
+    const std::unordered_map<std::string, size_t>& optionalInputMap = {});
 
 template <typename T>
 ge::graphStatus HandleShapeTensor(gert::Shape& outputShape, size_t shapeSize, const T* shapeData);
@@ -46,8 +47,9 @@ bool InferShapeForUnknow(
 bool DependencyMode(const gert::Tensor* inTensor, gert::Shape& outShape, size_t xShapeSize);
 
 bool InputAndOutputCheck(
-    gert::InferShapeContext* context, const std::unordered_map<std::string, size_t>& inputMap,
-    const std::unordered_map<std::string, size_t>& outputMap, int64_t& maskIndex, int64_t& offsetIndex);
+    gert::InferShapeContext* context, const std::unordered_map<std::string, size_t>& requiredInputMap,
+    const std::unordered_map<std::string, size_t>& outputMap, int64_t& maskIndex, int64_t& offsetIndex,
+    const std::unordered_map<std::string, size_t>& optionalInputMap = {});
 
 } // namespace randomCommon
 } // namespace ops

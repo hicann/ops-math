@@ -30,17 +30,13 @@ static constexpr size_t MAX_DIM_NUM = 8;
 
 static graphStatus InferShapeDropOutV3(gert::InferShapeContext* context)
 {
-    const std::unordered_map<std::string, size_t>& inputMap = {
+    const std::unordered_map<std::string, size_t>& requiredInputMap = {
         {"x", DropOutV3_X}, {"p", DropOutV3_P}, {"seed", DropOutV3_SEED}, {"offset", DropOutV3_OFFSET}};
+    const std::unordered_map<std::string, size_t>& optionalInputMap = {
+        {"noise_shape", DropOutV3_NOISE}};
     const std::unordered_map<std::string, size_t>& outputMap = {{"y", DropOutV3_Y}, {"mask", DropOutV3_MASK}};
     int32_t mode = ops::randomCommon::MODE_NO_DEPENDENCY;
-    const gert::Shape* noiseInputShape = context->GetOptionalInputShape(DropOutV3_NOISE);
-    if (noiseInputShape != nullptr) {
-        if (noiseInputShape->GetDimNum() > MAX_DIM_NUM) {
-            return ge::GRAPH_FAILED;
-        }
-    }
-    return ops::randomCommon::CommonInferShape(context, inputMap, outputMap, mode);
+    return ops::randomCommon::CommonInferShape(context, requiredInputMap, outputMap, mode, optionalInputMap);
 }
 IMPL_OP_INFERSHAPE(DropOutV3).InferShape(InferShapeDropOutV3);
 

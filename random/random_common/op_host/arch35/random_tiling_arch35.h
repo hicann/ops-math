@@ -83,9 +83,8 @@ struct TensorCheckRule {
 enum class RandomKernelMode {SIMD, SIMT};
 
 struct OpTilingConfig {
-    // 输入tensor校验规则（key: 输入索引，value: 校验规则）
     std::unordered_map<int32_t, TensorCheckRule> inputCheckRules;
-    // 输出tensor校验规则（key: 输出索引，value: 校验规则）
+    std::unordered_map<int32_t, TensorCheckRule> optionalInputCheckRules;
     std::unordered_map<int32_t, TensorCheckRule> outputCheckRules;
     // // 属性校验规则（key: 属性名，value: 自定义校验函数）
     std::unordered_map<int32_t, std::function<bool(gert::TilingContext*)>> attrCheckRules;
