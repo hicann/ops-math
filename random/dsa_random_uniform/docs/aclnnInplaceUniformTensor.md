@@ -173,8 +173,8 @@ aclnnStatus aclnnInplaceUniformTensor(
       <td>传入的selfRef是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="3">161002</td>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
       <td>selfRef的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
@@ -182,6 +182,12 @@ aclnnStatus aclnnInplaceUniformTensor(
     </tr>
     <tr>
       <td>from大于to。</td>
+    </tr>
+    <tr>
+      <td>from/to超出selfRef数据类型的有效范围。</td>
+    </tr>
+    <tr>
+      <td>to-from的值超出selfRef数据类型的最大值。</td>
     </tr>
   </tbody>
   </table>
@@ -231,7 +237,8 @@ aclnnStatus aclnnInplaceUniformTensor(
 
 ## 约束说明
 
-无
+- 确定性计算：aclnnInplaceUniformTensor默认确定性实现。
+- <term>Ascend 950PR/Ascend 950DT</term>：offset必须为4的倍数。
 
 ## 调用示例
 

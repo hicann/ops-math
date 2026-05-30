@@ -69,6 +69,8 @@ public:
     float extraFloat32Param1 = 0;
     int64_t from = 0;
     uint64_t range = 0;
+    float fromFp32 = 0.0f;
+    float toFp32 = 0.0f;
 
     int64_t splitBlockCount = 0;
     SplitBlockInfo splitBlocks[MAX_SPLIT_BLOCKS];
@@ -81,6 +83,7 @@ public:
              << ", offset: " << offset << ", ubSize: " << ubSize << ", extraInt64Param1: " << extraInt64Param1
              << ", prob: " << prob << ", extraFloat32Param1: " << extraFloat32Param1
              << ", from: " << from << ", range: " << range
+             << ", fromFp32: " << fromFp32 << ", toFp32: " << toFp32
              << ", splitBlockCount: " << splitBlockCount << ", splitBlocks: [";
         for (int64_t i = 0; i < splitBlockCount && i < MAX_SPLIT_BLOCKS; i++) {
             info << "{numel:" << splitBlocks[i].numel << ", gmOffset:" << splitBlocks[i].gmOffset

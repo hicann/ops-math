@@ -66,7 +66,7 @@ bool DependencyMode(const gert::Tensor* inTensor, gert::Shape& outShape, size_t 
         auto xShapeData = inTensor->GetData<int32_t>();
         if (xShapeData == nullptr) {
             std::cerr << "[WARN] Empty DT_INT32 shape tensor, set 0-dim output" << std::endl;
-            outShape.SetDimNum(0);
+            Ops::Base::SetUnknownShape(xShapeSize, outShape);
             return true;
         }
         if (HandleShapeTensor<int32_t>(outShape, xShapeSize, xShapeData) == ge::GRAPH_SUCCESS) {
@@ -76,7 +76,7 @@ bool DependencyMode(const gert::Tensor* inTensor, gert::Shape& outShape, size_t 
         auto xShapeData = inTensor->GetData<int64_t>();
         if (xShapeData == nullptr) {
             std::cerr << "[WARN] Empty DT_INT64 shape tensor, set 0-dim output" << std::endl;
-            outShape.SetDimNum(0);
+            Ops::Base::SetUnknownShape(xShapeSize, outShape);
             return true;
         }
         if (HandleShapeTensor<int64_t>(outShape, xShapeSize, xShapeData) == ge::GRAPH_SUCCESS) {

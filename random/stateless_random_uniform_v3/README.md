@@ -93,6 +93,4 @@
 
 ## 调用说明
 
-| 调用方式 | 样例代码                                                                   | 说明                                                           |
-|--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_stateless_random_uniform_v3](../stateless_random_uniform_v3/examples/arch35/test_aclnn_stateless_random_uniform_v3.cpp) | 通过[StatelessRandomUniformV3](../dsa_random_uniform/docs/aclnnInplaceUniform.md)接口方式调用stateless_random_uniform_v3算子。 |
+无

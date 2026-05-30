@@ -2808,6 +2808,16 @@
   </tr>
   <tr>
     <td>random</td>
+    <td><a href="../../random/stateless_uniform/README.md">stateless_uniform</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>生成均匀分布随机数。</td>
+  </tr>
+  <tr>
+    <td>random</td>
     <td><a href="../../random/stateless_random_uniform_v3/README.md">stateless_random_uniform_v3</a></td>
     <td>√</td>
     <td>√</td>
