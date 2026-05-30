@@ -139,7 +139,6 @@
     {"name":"ForeachAtan", "compute_units": ["ascend910b", "ascend910_93"], "auto_sync" : false},
     {"name":"AdvanceStep", "compute_units": ["ascend910_93", "ascend910b"], "auto_sync" : false},
     {"name":"ApplyRotaryPosEmb", "compute_units": ["ascend910", "ascend910b", "ascend910_93", "ascend310p", "ascend950"], "auto_sync" : true},
-    {"name":"Add", "compute_units": ["ascend950"], "auto_sync": false, "compile_options": {"ascend950": ["--cce-simd-vf-fusion=true", "-mllvm -cce-aicore-dcci-before-kernel-end=false"]}, "impl_mode": ""},
     {"name":"Sub", "compute_units": ["ascend950"], "auto_sync": false, "compile_options": {"ascend950": ["--cce-simd-vf-fusion=true", "-mllvm -cce-aicore-dcci-before-kernel-end=false"]}, "impl_mode": ""},
     {"name":"Mul", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend950": ["--cce-simd-vf-fusion=true", "-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"Muls", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode" : "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},

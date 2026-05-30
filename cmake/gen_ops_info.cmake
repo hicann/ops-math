@@ -87,7 +87,7 @@ function(get_op_type_and_validate OP_DIR compute_unit op_name_var op_type_var is
       return()
     endif()
   else()
-    get_op_type_from_op_name("${op_name}" "${OP_DIR}" op_type)
+    get_op_type_from_op_name("${op_name}" op_type)
     if(NOT op_type)
       message(STATUS "[INFO] On [${compute_unit}], [${op_name}] not need to compile.")
       set(${cache_key} "" CACHE INTERNAL "")
@@ -255,28 +255,6 @@ function(generate_bin_scripts)
     add_custom_target(${GENBIN_TARGET})
   endif()
   add_dependencies(${GENBIN_TARGET} generate_bin_scripts_${GENBIN_COMPUTE_UNIT}_${GENBIN_OP_NAME})
-endfunction()
-
-
-# ######################################################################################################################
-# get op_type from *_def.cpp
-# ######################################################################################################################
-function(get_op_type_from_op_name OP_NAME OP_DIR OP_TYPE)
-  execute_process(
-    COMMAND
-      find ${OP_DIR} -name ${OP_NAME}_def.cpp -exec grep OP_ADD {} \;
-    OUTPUT_VARIABLE op_type
-    )
-  if(NOT op_type)
-    set(op_type "")
-  else()
-    string(REGEX REPLACE "[\t ]*OP_ADD\\([\t ]*" "" op_type ${op_type})
-    string(REGEX REPLACE "[\t ]*\\).*$" "" op_type ${op_type})
-  endif()
-  set(${OP_TYPE}
-      ${op_type}
-      PARENT_SCOPE
-    )
 endfunction()
 
 # ######################################################################################################################
@@ -517,7 +495,17 @@ function(gen_ops_info_and_python)
     ${ASCEND_KERNEL_SRC_DST}
     )
 
-  set(ascendc_impl_gen_depends ascendc_kernel_src_copy opbuild_custom_gen_aclnn_all)
+  string(JOIN "/" simplified_key_str ${simplified_key_list})
+  string(JOIN "/" impl_mode_str ${impl_mode_list})
+  string(JOIN "/" auto_sync_str ${auto_sync_list})
+  string(JOIN "/" options_str ${option_list})
+
+  add_custom_target(gen_kernel_options
+    COMMAND ${ASCEND_PYTHON_EXECUTABLE} ${OPS_KERNEL_BINARY_SCRIPT}/gen_ops_compile_ini.py ${CMAKE_BINARY_DIR}/tbe/config
+            ${simplified_key_str} ${impl_mode_str} ${auto_sync_str} ${options_str}
+  )
+
+  set(ascendc_impl_gen_depends ascendc_kernel_src_copy opbuild_custom_gen_aclnn_all gen_kernel_options)
   foreach(compute_unit ${ASCEND_ALL_COMPUTE_UNIT})
     # generate aic-${compute_unit}-ops-info.json, operator infos
     if(ENABLE_CUSTOM)
@@ -558,7 +546,7 @@ function(gen_ops_info_and_python)
         get_filename_component(op_name ${OP_DIR} NAME)
 
         set(op_type)
-        get_op_type_from_op_name("${op_name}" "${OP_DIR}" op_type)
+        get_op_type_from_op_name("${op_name}" op_type)
         if(NOT op_type)
           message(STATUS "[INFO] op type undefined, skip binary compile. op name=${op_name}")
           continue()

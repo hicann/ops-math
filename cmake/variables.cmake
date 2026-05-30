@@ -31,6 +31,12 @@ set(NEED_COMPILE_OPS "${ASCEND_OP_NAME}" CACHE STRING "Need to be compiled Ops" 
 set(COMPILED_OPS CACHE STRING "Compiled Ops" FORCE)
 set(COMPILED_OP_DIRS CACHE STRING "Compiled Ops Dirs" FORCE)
 
+# kernel compile options
+set(simplified_key_list CACHE STRING "kernel compile simplified key list" FORCE)
+set(impl_mode_list CACHE STRING "kernel compile impl mode list" FORCE)
+set(auto_sync_list CACHE STRING "kernel compile auto sync list" FORCE)
+set(option_list CACHE STRING "kernel compile options list" FORCE)
+
 # src path
 get_filename_component(OPS_MATH_CMAKE_DIR           "${OPS_MATH_DIR}/cmake"                              REALPATH)
 get_filename_component(OPS_MATH_COMMON_INC          "${OPS_MATH_DIR}/common/inc"                         REALPATH)
