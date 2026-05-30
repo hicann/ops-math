@@ -2748,6 +2748,16 @@
   </tr>
   <tr>
     <td>random</td>
+    <td><a href="../../random/stateless_random/README.md">stateless_random</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>返回从[from, to - 1]范围中抽取离散均匀分布的随机数。</td>
+  </tr>
+  <tr>
+    <td>random</td>
     <td><a href="../../random/stateless_random_choice_with_mask/README.md">stateless_random_choice_with_mask</a></td>
     <td>√</td>
     <td>√</td>

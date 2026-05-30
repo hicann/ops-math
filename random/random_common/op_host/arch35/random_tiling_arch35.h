@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -94,6 +94,7 @@ struct OpTilingConfig {
     std::function<ge::graphStatus(gert::TilingContext*, uint32_t[2], uint32_t[4])> getKeyAndCounter;
     std::function<ge::graphStatus(gert::TilingContext*, int64_t&)> getBufferNum;
     std::function<ge::graphStatus(gert::TilingContext*, int64_t&, int64_t&)> getSeedAndOffset;
+    std::function<ge::graphStatus(gert::TilingContext*, uint32_t&)> getUnroll;
 
     // 启动相关
     bool isNeedSyncAll = false;

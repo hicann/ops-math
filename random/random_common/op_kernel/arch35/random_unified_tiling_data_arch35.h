@@ -67,6 +67,8 @@ public:
     int64_t extraInt64Param1 = 0;
     float prob = 0;
     float extraFloat32Param1 = 0;
+    int64_t from = 0;
+    uint64_t range = 0;
 
     int64_t splitBlockCount = 0;
     SplitBlockInfo splitBlocks[MAX_SPLIT_BLOCKS];
@@ -78,6 +80,7 @@ public:
              << "usedCoreNum: " << usedCoreNum << ", outputSize: " << outputSize << ", seed: " << seed
              << ", offset: " << offset << ", ubSize: " << ubSize << ", extraInt64Param1: " << extraInt64Param1
              << ", prob: " << prob << ", extraFloat32Param1: " << extraFloat32Param1
+             << ", from: " << from << ", range: " << range
              << ", splitBlockCount: " << splitBlockCount << ", splitBlocks: [";
         for (int64_t i = 0; i < splitBlockCount && i < MAX_SPLIT_BLOCKS; i++) {
             info << "{numel:" << splitBlocks[i].numel << ", gmOffset:" << splitBlocks[i].gmOffset

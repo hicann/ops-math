@@ -225,6 +225,10 @@ aclnnStatus aclnnInplaceRandom(
 
 - 确定性计算：
   - aclnnInplaceRandom默认确定性实现。
+- 参数范围：
+  - offset是4的倍数。
+  - from < to。
+  - from/to指定范围不可超出self数据类型的范围。
 
 ## 调用示例
 

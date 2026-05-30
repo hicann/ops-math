@@ -10,7 +10,7 @@
 #include "acl/acl_rt.h"
 #include "aclnn_random.h"
 #include "random/stateless_random_uniform_v2/op_api/stateless_random_uniform_v2.h"
-#include "random/stateless_random_uniform_v3/op_api/stateless_random_uniform_v3.h"
+#include "random/stateless_random/op_api/stateless_random.h"
 #include "dsa_random_uniform.h"
 #include "opdev/platform.h"
 #include "math/round/op_api/round.h"
@@ -157,15 +157,80 @@ static bool CheckShape(const aclTensor* selfRef)
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor* selfRef, int64_t from, int64_t to)
+static bool CheckFromToRange(int64_t from, int64_t to, op::DataType dtype)
+{
+    int64_t dtypeMin = 0;
+    int64_t dtypeMax = 0;
+
+    switch (dtype) {
+        case op::DataType::DT_INT8:
+            dtypeMin = static_cast<int64_t>(std::numeric_limits<int8_t>::min());
+            dtypeMax = static_cast<int64_t>(std::numeric_limits<int8_t>::max());
+            break;
+        case op::DataType::DT_UINT8:
+            dtypeMin = static_cast<int64_t>(std::numeric_limits<uint8_t>::min());
+            dtypeMax = static_cast<int64_t>(std::numeric_limits<uint8_t>::max());
+            break;
+        case op::DataType::DT_INT16:
+            dtypeMin = static_cast<int64_t>(std::numeric_limits<int16_t>::min());
+            dtypeMax = static_cast<int64_t>(std::numeric_limits<int16_t>::max());
+            break;
+        case op::DataType::DT_INT32:
+            dtypeMin = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
+            dtypeMax = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
+            break;
+        case op::DataType::DT_INT64:
+            dtypeMin = static_cast<int64_t>(std::numeric_limits<int64_t>::min());
+            dtypeMax = static_cast<int64_t>(std::numeric_limits<int64_t>::max());
+            break;
+        case op::DataType::DT_FLOAT:
+            dtypeMin = -(1L << std::numeric_limits<float>::digits);
+            dtypeMax = (1L << std::numeric_limits<float>::digits);
+            break;
+        case op::DataType::DT_FLOAT16:
+            dtypeMin = -(1L << FLOAT16_DIGITS);
+            dtypeMax = (1L << FLOAT16_DIGITS);
+            break;
+        case op::DataType::DT_BF16:
+            dtypeMin = -(1L << BF16_DIGITS);
+            dtypeMax = (1L << BF16_DIGITS);
+            break;
+        case op::DataType::DT_BOOL:
+            dtypeMin = 0;
+            dtypeMax = 1;
+            break;
+        default:
+            dtypeMin = static_cast<int64_t>(std::numeric_limits<int64_t>::min());
+            dtypeMax = static_cast<int64_t>(std::numeric_limits<int64_t>::max());
+            break;
+    }
+
+    if (from < dtypeMin || from > dtypeMax) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "from value %ld is out of valid range [%ld, %ld] for dtype %d", from,
+            dtypeMin, dtypeMax, static_cast<int>(dtype));
+        return false;
+    }
+
+    if (to <= dtypeMin || to - 1 > dtypeMax) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "to value %ld is out of valid range (%ld, %lu] for dtype %d", to,
+            dtypeMin, static_cast<uint64_t>(dtypeMax) + 1, static_cast<int>(dtype));
+        return false;
+    }
+
+    if (from >= to) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "from %ld must be less than to %ld.", from, to);
+        return false;
+    }
+
+    return true;
+}
+
+static aclnnStatus CheckParams(const aclTensor* selfRef)
 {
     CHECK_RET(CheckNotNull(selfRef), ACLNN_ERR_INNER_NULLPTR);
     CHECK_RET(CheckDtypeValid(selfRef), ACLNN_ERR_PARAM_INVALID);
     CHECK_RET(CheckShape(selfRef), ACLNN_ERR_PARAM_INVALID);
-    if (from >= to) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "from must be less than to.");
-        return ACLNN_ERR_PARAM_INVALID;
-    }
+
     return ACLNN_SUCCESS;
 }
 
@@ -232,18 +297,17 @@ static const aclTensor* randomDoublePath(
 // 非DSA路径的 random 离散均匀计算
 // uniformV3ScaleMode: 1 = random (离散)
 static const aclTensor* randomDavidPath(
-    const aclTensor* selfRef, uint64_t seed, uint64_t offset,
+    const aclTensor* selfRef, int64_t seed, int64_t offset,
     int64_t from, int64_t to, aclOpExecutor* executor)
 {
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfRef->GetDataType() != DataType::DT_DOUBLE) {
-        int32_t uniformV3ScaleMode = 1;
-        auto fromOut = static_cast<float>(from);
-        auto toOut = static_cast<float>(to);
-        return l0op::StatelessRandomUniformV3(
-            selfRef, seed, offset, fromOut, toOut, uniformV3ScaleMode, executor);
+        return l0op::StatelessRandom(
+            selfRef, seed, offset, from, to, executor);
     } else {
         int32_t alg = 1;
-        auto uniformOpOut = l0op::StatelessRandomUniformV2(selfRef, seed, offset, alg, executor);
+        auto seedVal = static_cast<uint64_t>(seed);
+        auto offsetVal = static_cast<uint64_t>(offset);
+        auto uniformOpOut = l0op::StatelessRandomUniformV2(selfRef, seedVal, offsetVal, alg, executor);
         return randomDoublePath(uniformOpOut, from, to, executor);
     }
 }
@@ -265,26 +329,26 @@ static const aclTensor* randomTensorDavidPath(
                 op::ToString(offsetTensor->GetDataType()).GetString());
         return nullptr;
     }
-
-    // seedTensor/offsetTensor 从 int64 Cast 为 uint64（V3 OpDef 要求 uint64）
-    auto randomSeedU64 = l0op::Cast(seedTensor, op::DataType::DT_UINT64, executor);
-    CHECK_RET(randomSeedU64 != nullptr, nullptr);
-    auto randomOffsetU64 = l0op::Cast(offsetTensor, op::DataType::DT_UINT64, executor);
-    CHECK_RET(randomOffsetU64 != nullptr, nullptr);
-
-    FVector<int64_t> offsetVector{0, static_cast<int64_t>(offset)};
-    aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), 2);
-    auto tmpTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_UINT64);
-    auto resultAddOut = l0op::Add(randomOffsetU64, tmpTensor, executor);
-    CHECK_RET(resultAddOut != nullptr, nullptr);
-
-    int32_t uniformV3ScaleMode = 1;
+    
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfRef->GetDataType() != DataType::DT_DOUBLE) {
-        auto fromOut = static_cast<float>(from);
-        auto toOut = static_cast<float>(to);
-        return l0op::StatelessRandomUniformV3(
-            selfRef, randomSeedU64, resultAddOut, fromOut, toOut, uniformV3ScaleMode, executor);
+        FVector<int64_t> offsetVector{static_cast<int64_t>(offset)};
+        aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), 1);
+        auto tmpTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_INT64);
+        auto resultAddOut = l0op::Add(offsetTensor, tmpTensor, executor);
+        CHECK_RET(resultAddOut != nullptr, nullptr);
+        return l0op::StatelessRandom(
+            selfRef, seedTensor, resultAddOut, from, to, executor);
     } else {
+        auto randomSeedU64 = l0op::Cast(seedTensor, op::DataType::DT_UINT64, executor);
+        CHECK_RET(randomSeedU64 != nullptr, nullptr);
+        auto randomOffsetU64 = l0op::Cast(offsetTensor, op::DataType::DT_UINT64, executor);
+        CHECK_RET(randomOffsetU64 != nullptr, nullptr);
+
+        FVector<int64_t> offsetVector{0, static_cast<int64_t>(offset)};
+        aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), 2);
+        auto tmpTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_UINT64);
+        auto resultAddOut = l0op::Add(randomOffsetU64, tmpTensor, executor);
+        CHECK_RET(resultAddOut != nullptr, nullptr);
         int32_t alg = 1;
         auto uniformOpOut = l0op::StatelessRandomUniformV2(selfRef, randomSeedU64, resultAddOut, alg, executor);
         return randomDoublePath(uniformOpOut, from, to, executor);
@@ -297,8 +361,9 @@ aclnnStatus aclnnInplaceRandomGetWorkspaceSize(
     aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceRandom, DFX_IN(selfRef, from, to, seed, offset), DFX_OUT(selfRef));
-    auto ret = CheckParams(selfRef, from, to);
+    auto ret = CheckParams(selfRef);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    CHECK_RET(CheckFromToRange(from, to, selfRef->GetDataType()), ACLNN_ERR_PARAM_INVALID);
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
@@ -325,15 +390,15 @@ aclnnStatus aclnnInplaceRandomGetWorkspaceSize(
         CHECK_RET(high != nullptr, ACLNN_ERR_INNER_NULLPTR);
         computeOut = l0op::DSARandomUniform(inputShapeArray, seed, offset, low, high, uniqueExecutor.get());
     } else {
-        auto seedVal = static_cast<uint64_t>(seed);
-        auto offsetVal = static_cast<uint64_t>(offset);
-        computeOut = randomDavidPath(selfRef, seedVal, offsetVal, from, to, uniqueExecutor.get());
+        computeOut = randomDavidPath(selfRef, seed, offset, from, to, uniqueExecutor.get());
     }
     CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     if (selfRef->GetDataType() == op::DataType::DT_BOOL) {
         int64_t decimals = 0;
-        computeOut = l0op::RoundDecimals(computeOut, decimals, uniqueExecutor.get());
+        auto castOut = l0op::Cast(computeOut, op::DataType::DT_INT32, uniqueExecutor.get());
+        CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        computeOut = l0op::RoundDecimals(castOut, decimals, uniqueExecutor.get());
         CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
     }
 
@@ -362,8 +427,9 @@ aclnnStatus aclnnInplaceRandomTensorGetWorkspaceSize(
     L2_DFX_PHASE_1(
         aclnnInplaceRandomTensor, DFX_IN(selfRef, from, to, seedTensor, offsetTensor, offset), DFX_OUT(selfRef));
 
-    auto ret = CheckParams(selfRef, from, to);
+    auto ret = CheckParams(selfRef);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    CHECK_RET(CheckFromToRange(from, to, selfRef->GetDataType()), ACLNN_ERR_PARAM_INVALID);
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
@@ -401,7 +467,9 @@ aclnnStatus aclnnInplaceRandomTensorGetWorkspaceSize(
 
     if (selfRef->GetDataType() == op::DataType::DT_BOOL) {
         int64_t decimals = 0;
-        computeOut = l0op::RoundDecimals(computeOut, decimals, uniqueExecutor.get());
+        auto castOut = l0op::Cast(computeOut, op::DataType::DT_INT32, uniqueExecutor.get());
+        CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        computeOut = l0op::RoundDecimals(castOut, decimals, uniqueExecutor.get());
         CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
     }
 
@@ -421,6 +489,126 @@ aclnnStatus aclnnInplaceRandomTensor(
     void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnInplaceRandomTensor);
+    return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
+}
+
+
+aclnnStatus aclnnInplaceRandomWithoutFromToGetWorkspaceSize(
+    const aclTensor* selfRef, int64_t seed, int64_t offset, uint64_t* workspaceSize,
+    aclOpExecutor** executor)
+{
+    L2_DFX_PHASE_1(aclnnInplaceRandomWithoutFromTo, DFX_IN(selfRef, seed, offset), DFX_OUT(selfRef));
+    auto ret = CheckParams(selfRef);
+    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    auto uniqueExecutor = CREATE_EXECUTOR();
+    CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
+
+    if (selfRef->IsEmpty()) {
+        *workspaceSize = 0;
+        uniqueExecutor.ReleaseTo(executor);
+        return ACLNN_SUCCESS;
+    }
+
+    auto selfContiguous = l0op::Contiguous(selfRef, uniqueExecutor.get());
+    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_PARAM_NULLPTR);
+
+    const aclTensor* computeOut = l0op::StatelessRandomWithoutFromTo(
+        selfContiguous, seed, offset, uniqueExecutor.get());
+    CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    if (selfContiguous->GetDataType() == op::DataType::DT_BOOL) {
+        int64_t decimals = 0;
+        auto castOut = l0op::Cast(computeOut, op::DataType::DT_INT32, uniqueExecutor.get());
+        CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        computeOut = l0op::RoundDecimals(castOut, decimals, uniqueExecutor.get());
+        CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    }
+
+    auto castResult = CastProcess(selfContiguous, computeOut, uniqueExecutor.get());
+    CHECK_RET(castResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    auto viewCopyResult = l0op::ViewCopy(castResult, selfContiguous, uniqueExecutor.get());
+    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    *workspaceSize = uniqueExecutor->GetWorkspaceSize();
+    uniqueExecutor.ReleaseTo(executor);
+
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus aclnnInplaceRandomWithoutFromTo(
+    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+{
+    L2_DFX_PHASE_2(aclnnInplaceRandomWithoutFromTo);
+    return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
+}
+
+aclnnStatus aclnnInplaceRandomWithoutFromToTensorGetWorkspaceSize(
+    const aclTensor* selfRef, const aclTensor* seedTensor, const aclTensor* offsetTensor,
+    int64_t offset, uint64_t* workspaceSize, aclOpExecutor** executor)
+{
+    L2_DFX_PHASE_1(
+        aclnnInplaceRandomWithoutFromToTensor, DFX_IN(selfRef, seedTensor, offsetTensor, offset), DFX_OUT(selfRef));
+
+    auto ret = CheckParams(selfRef);
+    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    auto uniqueExecutor = CREATE_EXECUTOR();
+    CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
+
+    if (selfRef->IsEmpty()) {
+        *workspaceSize = 0;
+        uniqueExecutor.ReleaseTo(executor);
+        return ACLNN_SUCCESS;
+    }
+
+    auto selfContiguous = l0op::Contiguous(selfRef, uniqueExecutor.get());
+    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_PARAM_NULLPTR);
+
+    // seedTensor/offsetTensor 必须是 int64
+    if (seedTensor->GetDataType() != op::DataType::DT_INT64) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Random seedTensor dtype must be DT_INT64, got %s.",
+                op::ToString(seedTensor->GetDataType()).GetString());
+        return ACLNN_ERR_PARAM_INVALID;
+    }
+    if (offsetTensor->GetDataType() != op::DataType::DT_INT64) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Random offsetTensor dtype must be DT_INT64, got %s.",
+                op::ToString(offsetTensor->GetDataType()).GetString());
+        return ACLNN_ERR_PARAM_INVALID;
+    }
+
+    FVector<int64_t> offsetVector{static_cast<int64_t>(offset)};
+    aclIntArray* offsetList = uniqueExecutor.get()->AllocIntArray(offsetVector.data(), 1);
+    auto tmpTensor = uniqueExecutor.get()->ConvertToTensor(offsetList, op::DataType::DT_INT64);
+    auto resultAddOut = l0op::Add(offsetTensor, tmpTensor, uniqueExecutor.get());
+    CHECK_RET(resultAddOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    const aclTensor* computeOut = l0op::StatelessRandomWithoutFromTo(
+        selfContiguous, seedTensor, resultAddOut, uniqueExecutor.get());
+    CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    if (selfContiguous->GetDataType() == op::DataType::DT_BOOL) {
+        int64_t decimals = 0;
+        auto castOut = l0op::Cast(computeOut, op::DataType::DT_INT32, uniqueExecutor.get());
+        CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        computeOut = l0op::RoundDecimals(castOut, decimals, uniqueExecutor.get());
+        CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    }
+
+    auto castResult = CastProcess(selfContiguous, computeOut, uniqueExecutor.get());
+    CHECK_RET(castResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    auto viewCopyResult = l0op::ViewCopy(castResult, selfContiguous, uniqueExecutor.get());
+    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    *workspaceSize = uniqueExecutor->GetWorkspaceSize();
+    uniqueExecutor.ReleaseTo(executor);
+
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus aclnnInplaceRandomWithoutFromToTensor(
+    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+{
+    L2_DFX_PHASE_2(aclnnInplaceRandomWithoutFromToTensor);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
