@@ -46,16 +46,31 @@ static constexpr size_t DIMS_SIX = 6;
 static constexpr size_t DIMS_EIGHT = 8;
 static constexpr int64_t BLOCK_SIZE = 32;
 static constexpr size_t FRACTAL_NZ_C0_4B = 64;
+static constexpr int64_t C0_SIZE = 16;
+static constexpr int64_t N0_SIZE = 16;
 
-const std::set<std::pair<op::Format, op::Format>> kTransdataForwardFormatPairs = {
+const std::set<std::pair<op::Format, op::Format>> kTransdataForwardFormatPairsRegBase = {
     {op::Format::FORMAT_ND, op::Format::FORMAT_FRACTAL_NZ},
     {op::Format::FORMAT_ND, op::Format::FORMAT_FRACTAL_NZ_C0_16},
     {op::Format::FORMAT_NCL, op::Format::FORMAT_FRACTAL_NZ_C0_16},
     {op::Format::FORMAT_NCL, op::Format::FORMAT_FRACTAL_NZ_C0_32},
     {op::Format::FORMAT_ND, op::Format::FORMAT_FRACTAL_NZ_C0_32},
     {op::Format::FORMAT_NCL, op::Format::FORMAT_FRACTAL_NZ},
+};
+
+const std::set<std::pair<op::Format, op::Format>> kTransdataForwardFormatPairs910B = {
+    {op::Format::FORMAT_ND, op::Format::FORMAT_FRACTAL_NZ},
+    {op::Format::FORMAT_NCL, op::Format::FORMAT_FRACTAL_NZ},
+    {op::Format::FORMAT_NCHW, op::Format::FORMAT_FRACTAL_NZ},
+    {op::Format::FORMAT_NCDHW, op::Format::FORMAT_FRACTAL_NZ},
     {op::Format::FORMAT_NCDHW, op::Format::FORMAT_NDC1HWC0},
     {op::Format::FORMAT_NCDHW, op::Format::FORMAT_FRACTAL_Z_3D},
+    {op::Format::FORMAT_DHWCN, op::Format::FORMAT_FRACTAL_Z_3D},
+    {op::Format::FORMAT_NCHW, op::Format::FORMAT_NC1HWC0},
+    {op::Format::FORMAT_NHWC, op::Format::FORMAT_NC1HWC0},
+    {op::Format::FORMAT_NCHW, op::Format::FORMAT_FRACTAL_Z},
+    {op::Format::FORMAT_HWCN, op::Format::FORMAT_FRACTAL_Z},
+    {op::Format::FORMAT_NDHWC, op::Format::FORMAT_NDC1HWC0},
 };
 
 static const std::initializer_list<DataType> ASCEND950_WEIGHT_DTYPE_SUPPORT_LIST = {
@@ -65,6 +80,10 @@ static const std::initializer_list<DataType> ASCEND950_WEIGHT_DTYPE_SUPPORT_LIST
 static const std::initializer_list<DataType> WEIGHT_DTYPE_SUPPORT_LIST = {
     DataType::DT_INT8, DataType::DT_UINT8, DataType::DT_FLOAT, DataType::DT_FLOAT16,
     DataType::DT_BF16, DataType::DT_INT32, DataType::DT_UINT32, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT4_E2M1, DataType::DT_HIFLOAT8, DataType::DT_FLOAT4_E1M2};
+
+static const std::initializer_list<DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
+    DataType::DT_INT8, DataType::DT_UINT8, DataType::DT_FLOAT, DataType::DT_FLOAT16,
+    DataType::DT_BF16, DataType::DT_INT32, DataType::DT_UINT32};
 
 static const std::initializer_list<op::Format> INPUT_FORMAT_TO_NZ_SUPPORT_LIST = {
     op::Format::FORMAT_ND, op::Format::FORMAT_NCL, op::Format::FORMAT_NCHW, op::Format::FORMAT_NCDHW};
@@ -91,6 +110,14 @@ static const std::initializer_list<std::pair<DataType, op::Format>> INPUT_DTYPE_
     {DataType::DT_FLOAT, op::Format::FORMAT_FRACTAL_NZ_C0_4},
     {DataType::DT_FLOAT, op::Format::FORMAT_FRACTAL_NZ_C0_16},
     {DataType::DT_FLOAT, op::Format::FORMAT_FRACTAL_NZ_C0_32}};
+inline static bool CheckDtypeValid(const aclTensor *srcTensor, const aclTensor *dstTensor)
+{
+    // 检查src的数据类型是否在支持列表内
+    OP_CHECK_DTYPE_NOT_SUPPORT(srcTensor, ASCEND910B_DTYPE_SUPPORT_LIST, return false);
+    // 检查dst的数据类型是否在支持列表内
+    OP_CHECK_DTYPE_NOT_SUPPORT(dstTensor, ASCEND910B_DTYPE_SUPPORT_LIST, return false);
+    return true;
+}
 
 static bool IsNonQuantMatmulDtype(int dtype, op::Format dstFormat = op::Format::FORMAT_ND)
 {
@@ -538,38 +565,46 @@ static aclnnStatus Check95NzToNdGetWorkSpaceSizeInputs(const aclTensor* srcTenso
     return ACLNN_SUCCESS;
 }
 
-bool IsSupportedTransdataForwardPair(op::Format src, op::Format dst)
+bool IsSupportedTransdataForwardPairRegBase(op::Format src, op::Format dst)
 {
-    return kTransdataForwardFormatPairs.count({src, dst});
+    return kTransdataForwardFormatPairsRegBase.count({src, dst});
+}
+
+bool IsSupportedTransdataForwardPair910B(op::Format src, op::Format dst)
+{
+    return kTransdataForwardFormatPairs910B.count({src, dst});
 }
 
 aclnnStatus CalcNdToNz(
     const aclTensor* srcTensor, int additionalDtype, int64_t** dstShape, uint64_t* dstShapeSize, int* actualFormat)
 {
-    [[maybe_unused]] op::Format srcFormat = srcTensor->GetStorageFormat();
     DataType srcDtype = srcTensor->GetDataType();
     int64_t c0 = 16; // 默认NZ分型的c0为16
-
-    // 根据A矩阵和B矩阵数据类型计算实际转换成NZ格式后的C0大小
-    if (!IsRegBase() ||
-        static_cast<op::DataType>(additionalDtype) == srcDtype) {
-        // 当前要求C0 * ge::GetSizeByDataType(dtype) = 32B
-        c0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
-        if (additionalDtype == ge::DT_FLOAT4_E2M1 || additionalDtype == ge::DT_FLOAT4_E1M2) {
-            c0 = FRACTAL_NZ_C0_4B;
-        }
+    if (!IsRegBase()) {
+        c0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
         *actualFormat = op::Format::FORMAT_FRACTAL_NZ;
-    } else {
-        // 当A矩阵数据类型大小为2B，C0 = 16
-        if (ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype)) == 2) {
-            *actualFormat = op::Format::FORMAT_FRACTAL_NZ_C0_16;
-        }
+    }
+    // 根据A矩阵和B矩阵数据类型计算实际转换成NZ格式后的C0大小
+    if (IsRegBase()) {
+        if (static_cast<op::DataType>(additionalDtype) == srcDtype) {
+            // 当前要求C0 * ge::GetSizeByDataType(dtype) = 32B
+            c0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
+            if (additionalDtype == ge::DT_FLOAT4_E2M1 || additionalDtype == ge::DT_FLOAT4_E1M2) {
+                c0 = FRACTAL_NZ_C0_4B;
+            }
+            *actualFormat = op::Format::FORMAT_FRACTAL_NZ;
+        } else {
+            // 当A矩阵数据类型大小为2B，C0 = 16
+            if (ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype)) == 2) {
+                *actualFormat = op::Format::FORMAT_FRACTAL_NZ_C0_16;
+            }
 
-        if (static_cast<op::DataType>(additionalDtype) == DataType::DT_FLOAT8_E4M3FN ||
-            static_cast<op::DataType>(additionalDtype) == DataType::DT_INT8) {
-            // A8场景，B32/1B=BLOCK_SIZE
-            c0 = BLOCK_SIZE;
-            *actualFormat = op::Format::FORMAT_FRACTAL_NZ_C0_32;
+            if (static_cast<op::DataType>(additionalDtype) == DataType::DT_FLOAT8_E4M3FN ||
+                static_cast<op::DataType>(additionalDtype) == DataType::DT_INT8) {
+                // A8场景，B32/1B=BLOCK_SIZE
+                c0 = BLOCK_SIZE;
+                *actualFormat = op::Format::FORMAT_FRACTAL_NZ_C0_32;
+            }
         }
     }
 
@@ -577,8 +612,7 @@ aclnnStatus CalcNdToNz(
     auto viewShapeDim = viewShape.GetDimNum();
     int64_t srcTensorDimFirst = viewShape.GetDim(viewShapeDim - 2); // 倒数第2维为ND的shape第一维
     int64_t srcTensorDimLast = viewShape.GetDim(viewShapeDim - 1);  // 倒数第1维为ND的shape第二维
-    *dstShapeSize =
-        static_cast<uint64_t>(srcTensor->GetViewShape().GetDimNum()) + 2; // NZ维度大小固定为srcTensor的维度+2
+    *dstShapeSize = static_cast<uint64_t>(srcTensor->GetViewShape().GetDimNum()) + 2; // NZ维度大小固定为srcTensor的维度+2
 
     // 非报错情况下申请dstShape数组内存，由上层调用者释放
     try {
@@ -634,14 +668,20 @@ aclnnStatus CalcNCDHWToNDC1HWC0(
     const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape, uint64_t* dstShapeSize,
     int* actualFormat)
 {
+    int64_t C0 = C0_SIZE;
+    DataType srcDtype = srcTensor->GetDataType();
+    if (static_cast<op::DataType>(additionalDtype) == srcDtype) {
+        C0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
+    } else {
+        C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
+    }
     auto viewShape = srcTensor->GetViewShape();
     int64_t N = viewShape.GetDim(0);
     int64_t C = viewShape.GetDim(1);
     int64_t D = viewShape.GetDim(2);
     int64_t H = viewShape.GetDim(3);
     int64_t W = viewShape.GetDim(4);
-    int64_t C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(srcTensor->GetDataType()));
-    int64_t C1 = (C + C0 - 1) / C0;
+    int64_t C1 = CeilDiv(C, C0);
 
     *dstShapeSize = 6; // 6HD
     try {
@@ -654,22 +694,209 @@ aclnnStatus CalcNCDHWToNDC1HWC0(
     return ACLNN_SUCCESS;
 }
 
+aclnnStatus CalcNDHWCToNDC1HWC0(
+    const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape, uint64_t* dstShapeSize,
+    int* actualFormat)
+{
+    int64_t C0 = C0_SIZE;
+    DataType srcDtype = srcTensor->GetDataType();
+    if (static_cast<op::DataType>(additionalDtype) == srcDtype) {
+        C0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
+    } else {
+        C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
+    }
+    auto viewShape = srcTensor->GetViewShape();
+    int64_t N = viewShape.GetDim(0);
+    int64_t D = viewShape.GetDim(1);
+    int64_t H = viewShape.GetDim(2);
+    int64_t W = viewShape.GetDim(3);
+    int64_t C = viewShape.GetDim(4);
+    int64_t C1 = CeilDiv(C, C0);
+
+    *dstShapeSize = 6; // 6HD
+    try {
+        *dstShape = new int64_t[6]{N, D, C1, H, W, C0};
+    } catch (...) {
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for NDC1HWC0");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    *actualFormat = op::Format::FORMAT_NDC1HWC0;
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus CalcNCHWToNC1HWC0(
+    const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape, uint64_t* dstShapeSize,
+    int* actualFormat)
+{
+    int64_t C0 = C0_SIZE;
+    DataType srcDtype = srcTensor->GetDataType();
+    if (static_cast<op::DataType>(additionalDtype) == srcDtype) {
+        C0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
+    } else {
+        C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
+    }
+    auto viewShape = srcTensor->GetViewShape();
+    int64_t N = viewShape.GetDim(0);
+    int64_t C = viewShape.GetDim(1);
+    int64_t H = viewShape.GetDim(2);
+    int64_t W = viewShape.GetDim(3);
+    int64_t C1 = CeilDiv(C, C0);
+
+    *dstShapeSize = 5; // 5HD
+    try {
+        *dstShape = new int64_t[5]{N, C1, H, W, C0};
+    } catch (...) {
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for NC1HWC0");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    *actualFormat = op::Format::FORMAT_NC1HWC0;
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus CalcNHWCToNC1HWC0(
+    const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape, uint64_t* dstShapeSize,
+    int* actualFormat)
+{
+    int64_t C0 = C0_SIZE;
+    DataType srcDtype = srcTensor->GetDataType();
+    if (static_cast<op::DataType>(additionalDtype) == srcDtype) {
+        C0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
+    } else {
+        C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
+    }
+    auto viewShape = srcTensor->GetViewShape();
+    int64_t N = viewShape.GetDim(0);
+    int64_t H = viewShape.GetDim(1);
+    int64_t W = viewShape.GetDim(2);
+    int64_t C = viewShape.GetDim(3);
+    int64_t C1 = CeilDiv(C, C0);
+
+    *dstShapeSize = 5; // 5HD
+    try {
+        *dstShape = new int64_t[5]{N, C1, H, W, C0};
+    } catch (...) {
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for NC1HWC0");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    *actualFormat = op::Format::FORMAT_NC1HWC0;
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus CalcNCHWToFRACTALZ(
+    const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape, uint64_t* dstShapeSize,
+    int* actualFormat)
+{
+    int64_t C0 = C0_SIZE;
+    int64_t N0 = N0_SIZE; // 私有格式的分形要求
+    DataType srcDtype = srcTensor->GetDataType();
+    if (static_cast<op::DataType>(additionalDtype) == srcDtype) {
+        C0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
+    } else {
+        C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
+    }
+    auto viewShape = srcTensor->GetViewShape();
+    int64_t N = viewShape.GetDim(0);
+    int64_t C = viewShape.GetDim(1);
+    int64_t H = viewShape.GetDim(2);
+    int64_t W = viewShape.GetDim(3);
+    int64_t C1 = CeilDiv(C, C0);
+    int64_t N1 = CeilDiv(N, N0);
+
+    *dstShapeSize = 4; // FRACTAL_Z
+    try {
+        *dstShape = new int64_t[4]{C1 * H * W, N1, N0, C0};
+    } catch (...) {
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for FRACTAL_Z");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    *actualFormat = op::Format::FORMAT_FRACTAL_Z;
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus CalcHWCNToFRACTALZ(
+    const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape, uint64_t* dstShapeSize,
+    int* actualFormat)
+{
+    int64_t C0 = C0_SIZE;
+    int64_t N0 = N0_SIZE; // 私有格式的分形要求
+    DataType srcDtype = srcTensor->GetDataType();
+    if (static_cast<op::DataType>(additionalDtype) == srcDtype) {
+        C0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
+    } else {
+        C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
+    }
+    auto viewShape = srcTensor->GetViewShape();
+    int64_t H = viewShape.GetDim(0);
+    int64_t W = viewShape.GetDim(1);
+    int64_t C = viewShape.GetDim(2);
+    int64_t N = viewShape.GetDim(3);
+    int64_t C1 = CeilDiv(C, C0);
+    int64_t N1 = CeilDiv(N, N0);
+    *dstShapeSize = 4; // FRACTAL_Z
+    try {
+        *dstShape = new int64_t[4]{C1 * H * W, N1, N0, C0};
+    } catch (...) {
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for FRACTAL_Z");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    *actualFormat = op::Format::FORMAT_FRACTAL_Z;
+    return ACLNN_SUCCESS;
+}
+
 aclnnStatus CalcNCDHWToFZ3D(
     const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape, uint64_t* dstShapeSize,
     int* actualFormat)
 {
+    int64_t C0 = C0_SIZE;
+    DataType srcDtype = srcTensor->GetDataType();
+    if (static_cast<op::DataType>(additionalDtype) == srcDtype) {
+        C0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
+    } else {
+        C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
+    }
     auto viewShape = srcTensor->GetViewShape();
     int64_t N = viewShape.GetDim(0);
     int64_t C = viewShape.GetDim(1);
     int64_t D = viewShape.GetDim(2);
     int64_t H = viewShape.GetDim(3);
     int64_t W = viewShape.GetDim(4);
-    int64_t C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(srcTensor->GetDataType()));
     int64_t N0 = 16; // 私有格式的分形要求
-    int64_t C1 = (C + C0 - 1) / C0;
-    int64_t N1 = (N + N0 - 1) / N0;
+    int64_t C1 = CeilDiv(C, C0);
+    int64_t N1 = CeilDiv(N, N0);
 
-    *dstShapeSize = 4; // 4HD
+    *dstShapeSize = 4; // FZ3D
+    try {
+        *dstShape = new int64_t[4]{D * C1 * H * W, N1, N0, C0};
+    } catch (...) {
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for FZ3D");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    *actualFormat = op::Format::FORMAT_FRACTAL_Z_3D;
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus CalcDHWCNToFZ3D(
+    const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape, uint64_t* dstShapeSize,
+    int* actualFormat)
+{
+    int64_t C0 = C0_SIZE;
+    int64_t N0 = N0_SIZE; // 私有格式的分形要求
+    DataType srcDtype = srcTensor->GetDataType();
+    if (static_cast<op::DataType>(additionalDtype) == srcDtype) {
+        C0 = BLOCK_SIZE / ge::GetSizeByDataType(srcDtype);
+    } else {
+        C0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
+    }
+    auto viewShape = srcTensor->GetViewShape();
+    int64_t D = viewShape.GetDim(0);
+    int64_t H = viewShape.GetDim(1);
+    int64_t W = viewShape.GetDim(2);
+    int64_t C = viewShape.GetDim(3);
+    int64_t N = viewShape.GetDim(4);
+    int64_t C1 = CeilDiv(C, C0);
+    int64_t N1 = CeilDiv(N, N0);
+
+    *dstShapeSize = 4; // FZ3D
     try {
         *dstShape = new int64_t[4]{D * C1 * H * W, N1, N0, C0};
     } catch (...) {
@@ -702,6 +929,113 @@ aclnnStatus CalcToNCDHW(
     return ACLNN_SUCCESS;
 }
 
+aclnnStatus CalcToNCHW(
+    const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape, uint64_t* dstShapeSize,
+    int* actualFormat)
+{
+    auto viewShape = srcTensor->GetViewShape();
+    int64_t N = viewShape.GetDim(0);
+    int64_t C = viewShape.GetDim(1);
+    int64_t H = viewShape.GetDim(2);
+    int64_t W = viewShape.GetDim(3);
+
+    *dstShapeSize = 4; // NCHW
+    try {
+        *dstShape = new int64_t[4]{N, C, H, W};
+    } catch (...) {
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for NCHW");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    *actualFormat = op::Format::FORMAT_NCHW;
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus CalcToNHWC(
+    const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape, uint64_t* dstShapeSize,
+    int* actualFormat)
+{
+    auto viewShape = srcTensor->GetViewShape();
+    int64_t N = viewShape.GetDim(0);
+    int64_t H = viewShape.GetDim(1);
+    int64_t W = viewShape.GetDim(2);
+    int64_t C = viewShape.GetDim(3);
+
+    *dstShapeSize = 4; // NHWC
+    try {
+        *dstShape = new int64_t[4]{N, C, H, W};
+    } catch (...) {
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for NHWC");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    *actualFormat = op::Format::FORMAT_NHWC;
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus CalcToHWCN(
+    const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape, uint64_t* dstShapeSize,
+    int* actualFormat)
+{
+    auto viewShape = srcTensor->GetViewShape();
+    int64_t H = viewShape.GetDim(0);
+    int64_t W = viewShape.GetDim(1);
+    int64_t C = viewShape.GetDim(2);
+    int64_t N = viewShape.GetDim(3);
+
+    *dstShapeSize = 4; // HWCN
+    try {
+        *dstShape = new int64_t[4]{H, W, C, N};
+    } catch (...) {
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for HWCN");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    *actualFormat = op::Format::FORMAT_HWCN;
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus CalcToDHWCN(
+    const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape, uint64_t* dstShapeSize,
+    int* actualFormat)
+{
+    auto viewShape = srcTensor->GetViewShape();
+    int64_t D = viewShape.GetDim(0);
+    int64_t H = viewShape.GetDim(1);
+    int64_t W = viewShape.GetDim(2);
+    int64_t C = viewShape.GetDim(3);
+    int64_t N = viewShape.GetDim(4);
+
+    *dstShapeSize = 5; // DHWCN
+    try {
+        *dstShape = new int64_t[5]{D, H, W, C, N};
+    } catch (...) {
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for DHWCN");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    *actualFormat = op::Format::FORMAT_DHWCN;
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus CalcToNDHWC(
+    const aclTensor* srcTensor, [[maybe_unused]] int additionalDtype, int64_t** dstShape, uint64_t* dstShapeSize,
+    int* actualFormat)
+{
+    auto viewShape = srcTensor->GetViewShape();
+    int64_t N = viewShape.GetDim(0);
+    int64_t D = viewShape.GetDim(1);
+    int64_t H = viewShape.GetDim(2);
+    int64_t W = viewShape.GetDim(3);
+    int64_t C = viewShape.GetDim(4);
+
+    *dstShapeSize = 5; // NDHWC
+    try {
+        *dstShape = new int64_t[5]{N, D, H, W, C};
+    } catch (...) {
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for NDHWC");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    *actualFormat = op::Format::FORMAT_NDHWC;
+    return ACLNN_SUCCESS;
+}
+
 aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
     const aclTensor* srcTensor, const int dstFormat, int additionalDtype, int64_t** dstShape, uint64_t* dstShapeSize,
     int* actualFormat)
@@ -709,11 +1043,6 @@ aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
     auto ret = CheckCalculateSizeAndFormatInputs(srcTensor, dstFormat, additionalDtype);
     OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("Failed to check inputs"), return ACLNN_ERR_PARAM_INVALID);
     op::Format srcFormat = srcTensor->GetStorageFormat();
-    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    OP_CHECK(
-        (additionalDtype == -1 && (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93)) ||
-        (additionalDtype != -1 && IsRegBase()),
-        OP_LOGW("The current socVersion does not support additionalDtype."), return ACLNN_ERR_PARAM_INVALID);
     if (additionalDtype == -1) {
         additionalDtype = static_cast<int>(srcTensor->GetDataType());
     }
@@ -746,6 +1075,30 @@ aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
         return CalcNCDHWToFZ3D(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
     } else if (srcFormat == op::Format::FORMAT_FRACTAL_Z_3D && dstFormat == op::Format::FORMAT_NCDHW) {
         return CalcToNCDHW(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
+    } else if (srcFormat == op::Format::FORMAT_NCHW && dstFormat == op::Format::FORMAT_NC1HWC0) {
+        return CalcNCHWToNC1HWC0(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
+    } else if (srcFormat == op::Format::FORMAT_NC1HWC0 && dstFormat == op::Format::FORMAT_NCHW) {
+        return CalcToNCHW(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
+    } else if (srcFormat == op::Format::FORMAT_NHWC && dstFormat == op::Format::FORMAT_NC1HWC0) {
+        return CalcNHWCToNC1HWC0(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
+    } else if (srcFormat == op::Format::FORMAT_NC1HWC0 && dstFormat == op::Format::FORMAT_NHWC) {
+        return CalcToNHWC(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
+    } else if (srcFormat == op::Format::FORMAT_NCHW && dstFormat == op::Format::FORMAT_FRACTAL_Z) {
+        return CalcNCHWToFRACTALZ(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
+    } else if (srcFormat == op::Format::FORMAT_FRACTAL_Z && dstFormat == op::Format::FORMAT_NCHW) {
+        return CalcToNCHW(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
+    } else if (srcFormat == op::Format::FORMAT_HWCN && dstFormat == op::Format::FORMAT_FRACTAL_Z) {
+        return CalcHWCNToFRACTALZ(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
+    } else if (srcFormat == op::Format::FORMAT_FRACTAL_Z && dstFormat == op::Format::FORMAT_HWCN) {
+        return CalcToHWCN(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
+    } else if (srcFormat == op::Format::FORMAT_DHWCN && dstFormat == op::Format::FORMAT_FRACTAL_Z_3D) {
+        return CalcDHWCNToFZ3D(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
+    } else if (srcFormat == op::Format::FORMAT_FRACTAL_Z_3D && dstFormat == op::Format::FORMAT_DHWCN) {
+        return CalcToDHWCN(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
+    } else if (srcFormat == op::Format::FORMAT_NDHWC && dstFormat == op::Format::FORMAT_NDC1HWC0) {
+        return CalcNDHWCToNDC1HWC0(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
+    } else if (srcFormat == op::Format::FORMAT_NDC1HWC0 && dstFormat == op::Format::FORMAT_NDHWC) {
+        return CalcToNDHWC(srcTensor, additionalDtype, dstShape, dstShapeSize, actualFormat);
     }
     OP_LOGW("aclnnNpuFormatCastCalculateSizeAndFormat unsupported format transformation");
     return ACLNN_ERR_RUNTIME_ERROR;
@@ -770,57 +1123,103 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
         } else if (IsNz2Nd(srcFormat, dstFormat)) {
             ret = Check95NzToNdGetWorkSpaceSizeInputs(srcTensor, dstTensor);
         }
-    } 
+    } else {
+        // check输入参数合法性 910B场景
+        CHECK_RET(CheckDtypeValid(srcTensor, dstTensor) != false, ACLNN_ERR_PARAM_INVALID);
+    }
     OP_CHECK(
         ret == ACLNN_SUCCESS,
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to check aclnnNpuFormatCastGetWorkSpaceSizeInputs."),
         return ACLNN_ERR_PARAM_INVALID);
 
-    auto formatTensor = const_cast<aclTensor*>(srcTensor);
-    // 适配srcFormat为NCL的场景
-    if ((IsQuantMatmulDtype(srcTensor->GetDataType(), dstTensor->GetDataType()) &&
-         dstFormat == op::Format::FORMAT_FRACTAL_NZ) ||
-        srcFormat == op::Format::FORMAT_NCL) {
-        formatTensor->SetViewFormat(op::Format::FORMAT_ND);
-        formatTensor->SetOriginalFormat(op::Format::FORMAT_ND);
-        formatTensor->SetStorageFormat(op::Format::FORMAT_ND);
-    }
-    if (IsQuantMatmulDtype(srcTensor->GetDataType(), dstTensor->GetDataType()) &&
-        dstFormat == op::Format::FORMAT_FRACTAL_NZ) {
-        formatTensor->SetOriginalShape(srcTensor->GetViewShape());
-        formatTensor->SetStorageShape(srcTensor->GetViewShape());
-
-        dstTensor->SetViewFormat(op::Format::FORMAT_ND);
-        dstTensor->SetViewShape(srcTensor->GetViewShape());
-        dstTensor->SetOriginalFormat(op::Format::FORMAT_ND);
-        dstTensor->SetOriginalShape(srcTensor->GetOriginalShape());
-    } else if (IsSupportedTransdataForwardPair(srcFormat, dstFormat)) {
+    aclTensor* formatTensor;
+    if (IsRegBase()) {
+        formatTensor = const_cast<aclTensor*>(srcTensor);
         // 适配srcFormat为NCL的场景
-        // 公有转私有Format
-        formatTensor->SetOriginalShape(srcTensor->GetViewShape());
-        formatTensor->SetStorageShape(srcTensor->GetViewShape());
-
-        dstTensor->SetViewFormat(srcTensor->GetViewFormat());
-        dstTensor->SetViewShape(srcTensor->GetViewShape());
-        dstTensor->SetOriginalFormat(srcTensor->GetOriginalFormat());
-        dstTensor->SetOriginalShape(srcTensor->GetOriginalShape());
-    } else {
-        // 私有转公有Format
-        if (IsRegBase() && IsNz2Nd(srcFormat, dstFormat)) {
-            dstTensor->SetStorageFormat(op::Format::FORMAT_ND);
+        if ((IsQuantMatmulDtype(srcTensor->GetDataType(), dstTensor->GetDataType()) &&
+            dstFormat == op::Format::FORMAT_FRACTAL_NZ) ||
+            srcFormat == op::Format::FORMAT_NCL) {
+            formatTensor->SetViewFormat(op::Format::FORMAT_ND);
+            formatTensor->SetOriginalFormat(op::Format::FORMAT_ND);
+            formatTensor->SetStorageFormat(op::Format::FORMAT_ND);
         }
-        dstTensor->SetOriginalShape(dstTensor->GetViewShape());
-        dstTensor->SetStorageShape(dstTensor->GetViewShape());
+        if (IsQuantMatmulDtype(srcTensor->GetDataType(), dstTensor->GetDataType()) &&
+            dstFormat == op::Format::FORMAT_FRACTAL_NZ) {
+            formatTensor->SetOriginalShape(srcTensor->GetViewShape());
+            formatTensor->SetStorageShape(srcTensor->GetViewShape());
 
-        formatTensor->SetViewFormat(dstTensor->GetViewFormat());
-        formatTensor->SetViewShape(dstTensor->GetViewShape());
-        formatTensor->SetOriginalFormat(dstTensor->GetOriginalFormat());
-        formatTensor->SetOriginalShape(dstTensor->GetOriginalShape());
+            dstTensor->SetViewFormat(op::Format::FORMAT_ND);
+            dstTensor->SetViewShape(srcTensor->GetViewShape());
+            dstTensor->SetOriginalFormat(op::Format::FORMAT_ND);
+            dstTensor->SetOriginalShape(srcTensor->GetOriginalShape());
+        } else if (IsSupportedTransdataForwardPairRegBase(srcFormat, dstFormat)) {
+            // 适配srcFormat为NCL的场景
+            // 公有转私有Format
+            formatTensor->SetOriginalShape(srcTensor->GetViewShape());
+            formatTensor->SetStorageShape(srcTensor->GetViewShape());
+
+            dstTensor->SetViewFormat(srcTensor->GetViewFormat());
+            dstTensor->SetViewShape(srcTensor->GetViewShape());
+            dstTensor->SetOriginalFormat(srcTensor->GetOriginalFormat());
+            dstTensor->SetOriginalShape(srcTensor->GetOriginalShape());
+        } else {
+            // 私有转公有Format
+            if (IsRegBase() && IsNz2Nd(srcFormat, dstFormat)) {
+                dstTensor->SetStorageFormat(op::Format::FORMAT_ND);
+            }
+            dstTensor->SetOriginalShape(dstTensor->GetViewShape());
+            dstTensor->SetStorageShape(dstTensor->GetViewShape());
+
+            formatTensor->SetViewFormat(dstTensor->GetViewFormat());
+            formatTensor->SetViewShape(dstTensor->GetViewShape());
+            formatTensor->SetOriginalFormat(dstTensor->GetOriginalFormat());
+            formatTensor->SetOriginalShape(dstTensor->GetOriginalShape());
+        }
+    } else {
+        formatTensor = uniqueExecutor.get()->CreateView(srcTensor, srcTensor->GetViewShape(), srcTensor->GetViewOffset());
+        if (IsSupportedTransdataForwardPair910B(srcFormat, dstFormat)) {
+            // 适配srcFormat为NCL的场景
+            formatTensor->SetOriginalShape(srcTensor->GetViewShape());
+            formatTensor->SetStorageShape(srcTensor->GetViewShape());
+            // 公有转私有Format
+            if (dstFormat == op::Format::FORMAT_FRACTAL_NZ) {
+                dstTensor->SetViewShape(srcTensor->GetViewShape());
+                dstTensor->SetOriginalShape(srcTensor->GetOriginalShape());
+                formatTensor->SetViewFormat(op::Format::FORMAT_ND);
+                formatTensor->SetOriginalFormat(op::Format::FORMAT_ND);
+                formatTensor->SetStorageFormat(op::Format::FORMAT_ND);
+            }
+        } else if (IsSupportedTransdataForwardPair910B(dstFormat, srcFormat)) {
+            // 适配srcFormat为NCL的场景
+            // 私有转公有Format
+            formatTensor->SetStorageFormat(srcTensor->GetStorageFormat());
+            formatTensor->SetStorageShape(srcTensor->GetStorageShape());
+            formatTensor->SetViewFormat(dstTensor->GetViewFormat());
+            formatTensor->SetViewShape(dstTensor->GetViewShape());
+            formatTensor->SetOriginalFormat(dstTensor->GetViewFormat());
+            formatTensor->SetOriginalShape(dstTensor->GetViewShape());
+            if (srcFormat == op::Format::FORMAT_FRACTAL_NZ) {
+                dstTensor->SetStorageFormat(op::Format::FORMAT_ND);
+            }
+        } else {
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Unsupported format transformation from [%s] to [%s]", op::ToString(srcFormat).GetString(),
+                op::ToString(dstFormat).GetString());
+            return false;
+        }
     }
-
-    auto outTensor =
-        const_cast<aclTensor*>(l0op::TransData(formatTensor, dstTensor->GetStorageFormat(), 1, uniqueExecutor.get()));
+    aclTensor *outTensor;
+    int64_t dstDimNum = dstTensor->GetStorageShape().GetDimNum();
+    if (dstTensor->GetStorageShape().GetDim(dstDimNum - 1) == 16 && ge::GetSizeByDataType(srcTensor->GetDataType()) >= 4
+        && !IsRegBase()) {
+        outTensor =
+            const_cast<aclTensor*>(l0op::TransDataSpecial(formatTensor, dstTensor->GetStorageFormat(), 1, uniqueExecutor.get()));
+    } else {
+        outTensor =
+            const_cast<aclTensor*>(l0op::TransData(formatTensor, dstTensor->GetStorageFormat(), 1, uniqueExecutor.get()));
+    }
     CHECK_RET(outTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    outTensor->SetViewFormat(dstTensor->GetViewFormat());
+    outTensor->SetOriginalFormat(dstTensor->GetOriginalFormat());
     outTensor->SetStorageFormat(dstTensor->GetStorageFormat());
     auto viewCopyResult = l0op::ViewCopy(outTensor, dstTensor, uniqueExecutor.get());
     CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
