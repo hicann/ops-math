@@ -200,6 +200,8 @@ aclnnStatus aclnnDiag(
 
 - 确定性计算：
   - aclnnDiag默认确定性实现。
+- 输入约束
+  - 在输入为2维时，diagonal的取值应符合-(m-1) <= diagonal <= (n-1)，其中(m,n)为输入的shape。
 
 ## 调用示例
 
