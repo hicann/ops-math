@@ -44,7 +44,7 @@ SOC_TO_SHORT_SOC_MAP = {
     "bs9sx1aa": "bs9sx1a",
     "kirinx90": "kirinx90",
     "kirin9030": "kirin9030",
-    "mc62cm12aa": "mc62cm12a",
+    "mc62cm12aa": "mc62",
     "ascend950pr_957b": "ascend950",
     "ascend950pr_957d": "ascend950",
     "ascend950pr_950z": "ascend950",

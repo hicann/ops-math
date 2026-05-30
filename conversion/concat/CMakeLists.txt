@@ -11,7 +11,7 @@
 add_all_modules_sources(
         OPTYPE concat
         ACLNNTYPE aclnn_exclude
-        COMPUTE_UNIT ascend950 mc62cm12a
+        COMPUTE_UNIT ascend950 mc62
         TILING_DIR arch35 arch35
         DISABLE_IN_OPP TRUE
 )
