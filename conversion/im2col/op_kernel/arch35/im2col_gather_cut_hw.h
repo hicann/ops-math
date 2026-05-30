@@ -247,7 +247,7 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::IsDataCopyPad(
                    srcHOffsetPadWStride - inHOffset_ - inputInfo_->hPaddingBefore;
         gmOffset = xGmOffset_ + loop * inputInfo_->W;
     }
-    if (inIdx & 1 == 0) {
+    if ((inIdx & 1) == 0) {
         SetFlag<HardEvent::MTE2_V>(EVENT_ID0);
         WaitFlag<HardEvent::MTE2_V>(EVENT_ID0);
     } else {
@@ -904,7 +904,7 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::PadInWInH()
         if (inHOffsetPad_ < inputInfo_->hPaddingBefore ||
             inHOffsetPad_ >= (inputInfo_->H + inputInfo_->hPaddingBefore) ||
             inWOffsetPad_ >= (inputInfo_->W + inputInfo_->wPaddingBefore) ||
-            inWOffsetPad_ + blockLen < inputInfo_->wPaddingBefore) {
+            inWOffsetPad_ + blockLen <= inputInfo_->wPaddingBefore) {
             DataCopyOutZero(ubFactorH, ubFactorW, yGmOffset_, 0, outW_ - ubFactorW, procUbCount);
             if (wUbCountOffset == wUbCount - 1) {
                 wUbCountOffset = 0;
@@ -989,10 +989,11 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::PadOutWInH()
         ubFactorH = nowMatrixHUbOffset == (perMatrixHUbCnt - 1) * ubFactorH ?
                         inputInfo_->wKernelSize - nowMatrixHUbOffset :
                         ubFactorH;
-        bool isHInPad = inHOffsetPad_ + inputInfo_->hStride * perWUbMatrixCntReal < inputInfo_->hPaddingBefore;
+        bool isHInPad =
+            inHOffsetPad_ + inputInfo_->hStride * (perWUbMatrixCntReal - 1) < inputInfo_->hPaddingBefore;
         if (isHInPad || inHOffsetPad_ >= (inputInfo_->H + inputInfo_->hPaddingBefore) ||
             inWOffsetPad_ >= (inputInfo_->W + inputInfo_->wPaddingBefore) ||
-            inWOffsetPad_ + blockLen < inputInfo_->wPaddingBefore) {
+            inWOffsetPad_ + blockLen <= inputInfo_->wPaddingBefore) {
             DataCopyOutZero(ubFactorH, ubFactorW, yGmOffset_, 0, outW_ - ubFactorW, procUbCount);
             if (wUbCountOffset == wUbCount - 1) {
                 wUbCountOffset = 0;
@@ -1080,10 +1081,11 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::PadInWOutH()
         ubFactorW =
             nowMatrixWUbOffset == (perMatrixWUbCnt - 1) * ubFactorW ? kernelNumW_ - nowMatrixWUbOffset : ubFactorW;
         ubFactorH = hUbCountOffset == hUbCount - 1 ? outH_ - outHOffset_ : ubFactorH;
-        bool isHInPad = inHOffsetPad_ + inputInfo_->hDilation * perHUbMatrixCntReal < inputInfo_->hPaddingBefore;
+        bool isHInPad =
+            inHOffsetPad_ + inputInfo_->hDilation * (perHUbMatrixCntReal - 1) < inputInfo_->hPaddingBefore;
         if (isHInPad || inHOffsetPad_ >= (inputInfo_->H + inputInfo_->hPaddingBefore) ||
             inWOffsetPad_ >= (inputInfo_->W + inputInfo_->wPaddingBefore) ||
-            inWOffsetPad_ + blockLen < inputInfo_->wPaddingBefore) {
+            inWOffsetPad_ + blockLen <= inputInfo_->wPaddingBefore) {
             DataCopyOutZero(ubFactorH, ubFactorW, yGmOffset_, 0, outW_ - ubFactorW, procUbCount);
             if (wUbCountOffset == wUbCount - 1) {
                 wUbCountOffset = 0;
@@ -1166,11 +1168,12 @@ __aicore__ inline void Im2colGatherCutHw<T, U, Y, isPadding>::PadOutWOutH()
         ubFactorW = wUbCountOffset == wUbCount - 1 ? outW_ - outWOffset_ : ubFactorW;
         ubFactorH = hUbCountOffset == hUbCount - 1 ? outH_ - outHOffset_ : ubFactorH;
 
-        bool isHInPad = inHOffsetPad_ + inputInfo_->hDilation * perHUbMatrixCntReal < inputInfo_->hPaddingBefore &&
-                        inHOffsetPad_ + inputInfo_->hStride * perWUbMatrixCntReal < inputInfo_->hPaddingBefore;
+        int64_t hMaxOffsetPad = inHOffsetPad_ + inputInfo_->hDilation * (perHUbMatrixCntReal - 1) +
+                                inputInfo_->hStride * (perWUbMatrixCntReal - 1);
+        bool isHInPad = hMaxOffsetPad < inputInfo_->hPaddingBefore;
         if (isHInPad || inHOffsetPad_ >= (inputInfo_->H + inputInfo_->hPaddingBefore) ||
             inWOffsetPad_ >= (inputInfo_->W + inputInfo_->wPaddingBefore) ||
-            inWOffsetPad_ + blockLen < inputInfo_->wPaddingBefore) {
+            inWOffsetPad_ + blockLen <= inputInfo_->wPaddingBefore) {
             DataCopyOutZero(ubFactorH, ubFactorW, yGmOffset_, 0, outW_ - ubFactorW, procUbCount);
             if (wUbCountOffset == wUbCount - 1) {
                 wUbCountOffset = 0;
