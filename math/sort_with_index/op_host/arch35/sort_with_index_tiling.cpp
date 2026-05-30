@@ -481,7 +481,9 @@ ge::graphStatus RadixSortTilingOfIdx(gert::TilingContext* context, int32_t maxCo
     auto y2DType = context->GetOutputDesc(1)->GetDataType();
 
     OP_CHECK_IF(tilingDataTypeKeyMap.count(dataType) == 0, 
-        OP_LOGE(context->GetNodeName(), "Not support data type"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "x",
+            Ops::Base::ToString(dataType).c_str(),
+            "INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64, FLOAT, FLOAT16, BF16"), return ge::GRAPH_FAILED);
     auto tilingKey = tilingDataTypeKeyMap.find(dataType)->second;
     std::string opType(context->GetNodeType());
 
@@ -490,8 +492,8 @@ ge::graphStatus RadixSortTilingOfIdx(gert::TilingContext* context, int32_t maxCo
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     OP_CHECK_IF(ubSize <= static_cast<uint64_t>(SIMT_UB),
-        OP_LOGE(context->GetNodeName(), "block total ub size must greater than simtUb, "
-        "but is %lu", ubSize), return ge::GRAPH_FAILED);
+        OP_LOGE(context->GetNodeName(), "ubSize must be greater than %u, but is %lu", SIMT_UB, ubSize),
+        return ge::GRAPH_FAILED);
 
     OP_LOGW(context->GetNodeName(), "Get op_type[%s]", opType.c_str());
 

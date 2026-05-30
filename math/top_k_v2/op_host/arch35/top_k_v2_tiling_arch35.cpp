@@ -759,20 +759,28 @@ ge::graphStatus IsValidParam(gert::TilingContext* context)
     auto outputIndexDataType = context->GetOutputDesc(1)->GetDataType();
     OP_CHECK_IF(
         topkV2DataInfo::tilingDataTypeKeyMap.count(inputDataType) == 0,
-        OP_LOGE(context->GetNodeName(), "Not support data type"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "x",
+            Ops::Base::ToString(inputDataType).c_str(),
+            "INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64, FLOAT, FLOAT16, BF16"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         inputDataType != outputValueDataType,
-        OP_LOGE(context->GetNodeName(), "Input data type should equal to output value type"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context->GetNodeName(), "x, values",
+            (Ops::Base::ToString(inputDataType) + ", " + Ops::Base::ToString(outputValueDataType)).c_str(),
+            "The dtype of input x should be the same as output values"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         kDataType != ge::DT_INT32 && kDataType != ge::DT_INT64,
-        OP_LOGE(context->GetNodeName(), "Input k data type should equal to int32 or int64"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "k",
+            Ops::Base::ToString(kDataType).c_str(), "INT32 or INT64"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         outputIndexDataType != ge::DT_INT32 && outputIndexDataType != ge::DT_INT64,
-        OP_LOGE(context->GetNodeName(), "Output index data type should equal to int32 or int64"),
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "indices",
+            Ops::Base::ToString(outputIndexDataType).c_str(), "INT32 or INT64"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         outValueShape != outIndexShape,
-        OP_LOGE(context->GetNodeName(), "Output value shape should equal to output index shape"),
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "values, indices",
+            (Ops::Base::ToString(outValueShape) + ", " + Ops::Base::ToString(outIndexShape)).c_str(),
+            "The shape of output values should be the same as output indices"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -1040,7 +1048,7 @@ ge::graphStatus CheckInputAndOutput(gert::TilingContext *context, topkV2DataInfo
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     OP_CHECK_IF(ubSize <= static_cast<uint64_t>(topkV2DataInfo::SIMT_UB),
-        OP_LOGE(context->GetNodeName(), "allUb must greater than simtUb, but is %lu", ubSize),
+        OP_LOGE(context->GetNodeName(), "ubSize must be greater than %u, but is %lu", topkV2DataInfo::SIMT_UB, ubSize),
         return ge::GRAPH_FAILED);
     sortTileInfo.blockUbSize = Ops::Base::GetUbBlockSize(context);
     OP_LOGI(context->GetNodeName(), "ubSize is %ld, blockUbSize %u", ubSize, sortTileInfo.blockUbSize);
@@ -1052,7 +1060,8 @@ ge::graphStatus CheckInputAndOutput(gert::TilingContext *context, topkV2DataInfo
     OP_CHECK_NULL_WITH_CONTEXT(context, yStorage);
     const gert::Shape &outShape = Ops::Base::EnsureNotScalar(yStorage->GetStorageShape());
     OP_CHECK_IF(inputShape.GetShapeSize() == 0 || outShape.GetShapeSize() == 0,
-        OP_LOGE(context->GetNodeName(), "not support empty input or output"),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "x, values",
+            "0", "The shape size of input x and output values should be positive"),
         return ge::GRAPH_FAILED);
     int32_t xDimNum = inputShape.GetDimNum();
     sortTileInfo.xDimNum = xDimNum;
@@ -1075,7 +1084,9 @@ ge::graphStatus SortCheckParams(gert::TilingContext *context, topkV2DataInfo::So
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDescPtr);
     ge::DataType dataType = inputDescPtr->GetDataType();
     OP_CHECK_IF(topkV2DataInfo::tilingDataTypeBitMap.count(dataType) == 0,
-        OP_LOGE(context->GetNodeName(), "Not support data type"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "x",
+            Ops::Base::ToString(dataType).c_str(),
+            "INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64, FLOAT, FLOAT16, BF16"), return ge::GRAPH_FAILED);
     sortTileInfo.dataType = dataType;
     sortTileInfo.dtypeSize = topkV2DataInfo::tilingDataTypeBitMap.find(dataType)->second;
     auto outDescPtr = context->GetOutputDesc(1);
@@ -1085,9 +1096,12 @@ ge::graphStatus SortCheckParams(gert::TilingContext *context, topkV2DataInfo::So
     OP_CHECK_NULL_WITH_CONTEXT(context, outDescPtr0);
     auto y1DType = outDescPtr0->GetDataType();
     OP_CHECK_IF((y2DType != ge::DT_INT64) && (y2DType != ge::DT_INT32),
-        OP_LOGE(context->GetNodeName(), "Not support y2 type"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "indices",
+            Ops::Base::ToString(y2DType).c_str(), "INT32 or INT64"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(y1DType != dataType,
-        OP_LOGE(context->GetNodeName(), "input0 dtype must be same as output0 dtype"),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context->GetNodeName(), "x, values",
+            (Ops::Base::ToString(dataType) + ", " + Ops::Base::ToString(y1DType)).c_str(),
+            "The dtype of input x should be the same as output values"),
         return ge::GRAPH_FAILED);
     sortTileInfo.y2DtypeSize = topkV2DataInfo::tilingDataTypeBitMap.find(y2DType)->second;
     return ge::GRAPH_SUCCESS;
@@ -1192,7 +1206,10 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
     size_t inputDimNum = inputShape.GetDimNum();
     OP_CHECK_IF(
         *dimValuePtr < static_cast<int32_t>(-inputDimNum) || *dimValuePtr >= static_cast<int32_t>(inputDimNum),
-        OP_LOGE(context->GetNodeName(), "Attr dim is out of range"), return ge::GRAPH_FAILED);
+        OP_LOGE_WITH_INVALID_ATTR(context->GetNodeName(), "dim",
+            std::to_string(*dimValuePtr).c_str(),
+            (std::string("range [") + std::to_string(-static_cast<int64_t>(inputDimNum)) + ", " + std::to_string(static_cast<int64_t>(inputDimNum) - 1) + "]").c_str()),
+        return ge::GRAPH_FAILED);
     int64_t lastAxisNum = inputShape.GetDim(inputDimNum - 1);
     uint32_t unsortedDimNum = 1;
     for (uint32_t i = 0; i < (inputDimNum - 1); i++) {

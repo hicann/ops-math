@@ -93,7 +93,7 @@ ge::graphStatus CheckInputAndOutput(gert::TilingContext *context, SortTileInfo &
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     OP_CHECK_IF(ubSize <= static_cast<uint64_t>(SIMT_UB),
-        OP_LOGE(context->GetNodeName(), "allUb must greater than simtUb, but is %lu", ubSize),
+        OP_LOGE(context->GetNodeName(), "ubSize must be greater than %u, but is %lu", SIMT_UB, ubSize),
         return ge::GRAPH_FAILED);
     sortTileInfo.blockUbSize = Ops::Base::GetUbBlockSize(context);
     OP_LOGI(context->GetNodeName(), "ubSize is %ld, blockUbSize %u", ubSize, sortTileInfo.blockUbSize);
@@ -108,10 +108,13 @@ ge::graphStatus CheckInputAndOutput(gert::TilingContext *context, SortTileInfo &
     OP_CHECK_NULL_WITH_CONTEXT(context, yStorage1);
     const gert::Shape &outShape1 = Ops::Base::EnsureNotScalar(yStorage1->GetStorageShape());
     OP_CHECK_IF(inputShape.GetShapeSize() == 0 || outShape.GetShapeSize() == 0,
-        OP_LOGE(context->GetNodeName(), "not support empty input or output"),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "x, y1",
+            "0", "The shape size of input x and output y1 should be positive"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(outShape != outShape1 || outShape != inputShape,
-        OP_LOGE(context->GetNodeName(), "input and outputs shape must be same"),
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x, y1, y2",
+            (Ops::Base::ToString(inputShape) + ", " + Ops::Base::ToString(outShape) + ", " + Ops::Base::ToString(outShape1)).c_str(),
+            "The shape of input x, output y1 and y2 should be the same"),
         return ge::GRAPH_FAILED);
     int32_t xDimNum = inputShape.GetDimNum();
     sortTileInfo.xDimNum = xDimNum;
@@ -134,7 +137,9 @@ ge::graphStatus SortCheckParams(gert::TilingContext *context, SortTileInfo &sort
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDescPtr);
     ge::DataType dataType = inputDescPtr->GetDataType();
     OP_CHECK_IF(tilingDataTypeBitMap.count(dataType) == 0,
-        OP_LOGE(context->GetNodeName(), "Not support data type"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "x",
+            Ops::Base::ToString(dataType).c_str(),
+            "INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64, FLOAT, FLOAT16, BF16"), return ge::GRAPH_FAILED);
     sortTileInfo.dataType = dataType;
     sortTileInfo.dtypeSize = tilingDataTypeBitMap.find(dataType)->second;
     auto outDescPtr = context->GetOutputDesc(1);
@@ -144,9 +149,12 @@ ge::graphStatus SortCheckParams(gert::TilingContext *context, SortTileInfo &sort
     OP_CHECK_NULL_WITH_CONTEXT(context, outDescPtr0);
     auto y1DType = outDescPtr0->GetDataType();
     OP_CHECK_IF((y2DType != ge::DT_INT64) && (y2DType != ge::DT_INT32),
-        OP_LOGE(context->GetNodeName(), "Not support y2 type"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "y2",
+            Ops::Base::ToString(y2DType).c_str(), "INT32 or INT64"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(y1DType != dataType,
-        OP_LOGE(context->GetNodeName(), "input0 dtype must be same as output0 dtype"),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context->GetNodeName(), "x, y1",
+            (Ops::Base::ToString(dataType) + ", " + Ops::Base::ToString(y1DType)).c_str(),
+            "The dtype of input x should be the same as output y1"),
         return ge::GRAPH_FAILED);
     sortTileInfo.y2DtypeSize = tilingDataTypeBitMap.find(y2DType)->second;
     auto const attrs = context->GetAttrs();
@@ -158,7 +166,8 @@ ge::graphStatus SortCheckParams(gert::TilingContext *context, SortTileInfo &sort
     int32_t sortAxis = static_cast<int32_t>(*sortAxisPtr);
     sortAxis = sortAxis < 0 ? (sortAxis + sortTileInfo.xDimNum) : sortAxis;
     OP_CHECK_IF(sortAxis != (sortTileInfo.xDimNum - 1),
-        OP_LOGE(context->GetNodeName(), "only support last dim sort, but axis is %d", sortAxis),
+        OP_LOGE_WITH_INVALID_ATTR(context->GetNodeName(), "axis",
+            std::to_string(sortAxis).c_str(), "last dim (dimNum - 1)"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
