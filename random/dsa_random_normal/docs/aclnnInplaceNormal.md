@@ -70,7 +70,7 @@ aclnnStatus aclnnInplaceNormal(
       <td class="tg-0pky">selfRef（aclTensor*）</td>
       <td class="tg-0pky">输入/输出</td>
       <td class="tg-0pky">输入输出tensor。</td>
-      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">当selfRef为空tensor时，直接返回成功，不执行计算。</td>
       <td class="tg-0pky">FLOAT32、INT32、INT64、BFLOAT16、FLOAT16、INT16、INT8、UINT8、BOOL、DOUBLE</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">支持0-8维</td>
@@ -89,7 +89,7 @@ aclnnStatus aclnnInplaceNormal(
     <tr>
       <td class="tg-0lax">std（float）</td>
       <td class="tg-0lax">输入</td>
-      <td class="tg-0lax">表示随机数的标准差。</td>
+      <td class="tg-0lax">表示随机数的标准差，需要大于等于0。</td>
       <td class="tg-0lax">-</td>
       <td class="tg-0lax">FLOAT32</td>
       <td class="tg-0lax">-</td>
@@ -160,20 +160,25 @@ aclnnStatus aclnnInplaceNormal(
   <tbody>
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
-      <td>161001</td>
+      <td rowspan="2">161001</td>
       <td>传入的selfRef为空指针。</td>
     </tr>
     <tr>
-      <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="2">161002</td>
+      <td>传入的std小于0。</td>
+    </tr>
+    <tr>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
       <td>selfRef的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>std、mean的数据类型不符合接口入参要求。</td>
     </tr>
+    <tr>
+      <td>selfRef的shape超过8维。</td>
+    </tr>
   </tbody>
   </table>
-
 ## aclnnInplaceNormal
 
 - **参数描述：**
@@ -221,6 +226,7 @@ aclnnStatus aclnnInplaceNormal(
 
 - 确定性计算：
   - aclnnInplaceNormal默认确定性实现。
+- <term>Ascend 950PR/Ascend 950DT</term>：offset必须为4的倍数。
 
 ## 调用示例
 

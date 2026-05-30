@@ -80,29 +80,29 @@ aclnnStatus aclnnNormalFloatTensor(
       <td>std</td>
       <td>输入</td>
       <td>生成随机数分布标准差的张量，Device侧的aclTensor。</td>
-      <td>-</td>
+      <td>不支持空tensor。</td>
       <td>BF16、FLOAT16、FLOAT、DOUBLE</td>
       <td>ND</td>
       <td>0-8</td>
-      <td>-</td>
+      <td>支持</td>
     </tr>
       <tr>
       <td>seed</td>
       <td>输入</td>
-      <td>采样伪随机数生成器的种子值。</td>
+      <td>采样伪随机数生成器的种子值，Host侧标量。</td>
       <td>-</td>
       <td>INT64</td>
-      <td>ND</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
       <td>offset</td>
       <td>输入</td>
-      <td>采样伪随机数生成器的偏移量。</td>
+      <td>采样伪随机数生成器的偏移量，Host侧标量。</td>
       <td>-</td>
       <td>INT64</td>
-      <td>ND</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
@@ -110,11 +110,11 @@ aclnnStatus aclnnNormalFloatTensor(
       <td>out</td>
       <td>输出</td>
       <td>输出张量，Device侧的aclTensor。</td>
-      <td>-</td>
+      <td>数据类型需要是std可转换的数据类型。shape需要和std的shape相等。当std的元素个数为1且out为空tensor且维度与std相同时，直接返回成功，不执行计算。</td>
       <td>BF16、FLOAT16、FLOAT、DOUBLE</td>
       <td>ND</td>
       <td>0-8</td>
-      <td>-</td>
+      <td>支持</td>
     </tr>
     <tr>
       <td>workspaceSize</td>
@@ -223,6 +223,7 @@ aclnnStatus aclnnNormalFloatTensor(
 
 - 确定性计算：
   - aclnnNormalFloatTensor默认确定性实现。
+- <term>Ascend 950PR/Ascend 950DT</term>：offset必须为4的倍数。
 
 ## 调用示例
 

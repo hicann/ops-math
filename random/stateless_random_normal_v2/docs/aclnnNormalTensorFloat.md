@@ -74,7 +74,7 @@ aclnnStatus aclnnNormalTensorFloat(
       <td>BF16、FLOAT16、FLOAT、DOUBLE</td>
       <td>ND</td>
       <td>0-8</td>
-      <td>-</td>
+      <td>支持</td>
     </tr>
     <tr>
       <td>std</td>
@@ -89,20 +89,20 @@ aclnnStatus aclnnNormalTensorFloat(
       <tr>
       <td>seed</td>
       <td>输入</td>
-      <td>采样伪随机数生成器的种子值。</td>
+      <td>采样伪随机数生成器的种子值，Host侧标量。</td>
       <td>-</td>
       <td>INT64</td>
-      <td>ND</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
       <td>offset</td>
       <td>输入</td>
-      <td>采样伪随机数生成器的偏移量。</td>
+      <td>采样伪随机数生成器的偏移量，Host侧标量。</td>
       <td>-</td>
       <td>INT64</td>
-      <td>ND</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
@@ -110,11 +110,11 @@ aclnnStatus aclnnNormalTensorFloat(
       <td>out</td>
       <td>输出</td>
       <td>输出张量，Device侧的aclTensor。</td>
-      <td>-</td>
+      <td>数据类型需要是mean可转换的数据类型。shape需要和mean做broadcast之后的shape相等。当mean为空tensor或元素个数为1，且out为空tensor且维度与mean相同时，直接返回成功，不执行计算。</td>
       <td>BF16、FLOAT16、FLOAT、DOUBLE</td>
       <td>ND</td>
       <td>0-8</td>
-      <td>-</td>
+      <td>支持</td>
     </tr>
     <tr>
       <td>workspaceSize</td>
@@ -163,8 +163,8 @@ aclnnStatus aclnnNormalTensorFloat(
       <td>传入的mean或者out为空指针。</td>
     </tr>
     <tr>
-      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="3">161002</td>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
       <td>传入的mean和out的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
@@ -172,6 +172,9 @@ aclnnStatus aclnnNormalTensorFloat(
     </tr>
     <tr>
       <td>传入的mean或者out的shape维度超过8维。</td>
+    </tr>
+    <tr>
+      <td>mean和out做broadcast之后的shape不等于out的shape。</td>
     </tr>
   </tbody>
   </table>
@@ -223,6 +226,7 @@ aclnnStatus aclnnNormalTensorFloat(
 
 - 确定性计算：
   - aclnnNormalTensorFloat默认确定性实现。
+- <term>Ascend 950PR/Ascend 950DT</term>：offset必须为4的倍数。
 
 ## 调用示例
 

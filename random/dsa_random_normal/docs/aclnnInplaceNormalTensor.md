@@ -71,7 +71,7 @@ aclnnStatus aclnnInplaceNormalTensor(
       <td>selfRef</td>
       <td>输入/输出</td>
       <td>输入输出tensor。</td>
-      <td>-</td>
+      <td>当selfRef为空tensor时，直接返回成功，不执行计算。</td>
       <td>FLOAT32、FLOAT16、BFLOAT16、INT32、INT16、INT8、UINT8、INT64、BOOL、DOUBLE</td>
       <td>ND</td>
       <td>0-8维</td>
@@ -80,9 +80,9 @@ aclnnStatus aclnnInplaceNormalTensor(
     <tr>
       <td>mean</td>
       <td>输入</td>
-      <td>表示随机均值。</td>
+      <td>表示随机均值，Host侧标量。</td>
       <td>-</td>
-      <td>-</td>
+      <td>FLOAT</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -90,9 +90,9 @@ aclnnStatus aclnnInplaceNormalTensor(
     <tr>
       <td>std</td>
       <td>输入</td>
-      <td>表示随机数的标准差。</td>
+      <td>表示随机数的标准差，Host侧标量，需要大于等于0。</td>
       <td>-</td>
-      <td>-</td>
+      <td>FLOAT</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -120,9 +120,9 @@ aclnnStatus aclnnInplaceNormalTensor(
     <tr>
       <td>offset</td>
       <td>输入</td>
-      <td>作为offsetTensor的累加量。</td>
+      <td>作为offsetTensor的累加量，Host侧标量。</td>
       <td>-</td>
-      <td>-</td>
+      <td>INT64</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -169,16 +169,22 @@ aclnnStatus aclnnInplaceNormalTensor(
   <tbody>
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
-      <td>161001</td>
+      <td rowspan="2">161001</td>
       <td>传入的selfRef为空指针。</td>
     </tr>
     <tr>
-      <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="2">161002</td>
+      <td>传入的std小于0。</td>
+    </tr>
+    <tr>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
       <td>selfRef的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>std、mean的数据类型不符合接口入参要求。</td>
+    </tr>
+    <tr>
+      <td>selfRef的shape超过8维。</td>
     </tr>
   </tbody>
   </table>
@@ -228,7 +234,9 @@ aclnnStatus aclnnInplaceNormalTensor(
 
 ## 约束说明
 
-无
+- 确定性计算：
+  - aclnnInplaceNormal默认确定性实现。
+- <term>Ascend 950PR/Ascend 950DT</term>：offset必须为4的倍数。
 
 ## 调用示例
 

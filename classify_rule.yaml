@@ -34,6 +34,7 @@ ops_math:
       - "common/inc/op_api/level2_base.h"
       - "random/stateless_random_uniform_v3"
       - "random/stateless_random_normal_v3"
+      - "random/stateless_normal"
   llt:
     ut_check: true
     st_check: false
@@ -388,6 +389,10 @@ VC6@ops-math:
         # stateless_drop_out_gen_mask
         - ops/ops-math/random/stateless_drop_out_gen_mask/op_host/
         - ops/ops-math/random/stateless_drop_out_gen_mask/op_kernel/
+        # stateless_normal
+        - ops/ops-math/random/stateless_normal/
+        - ops/ops-math/random/stateless_normal/op_host/
+        - ops/ops-math/random/stateless_normal/op_kernel/
         # stateless_random_normal_v2
         - ops/ops-math/random/stateless_random_normal_v2/op_host/
         - ops/ops-math/random/stateless_random_normal_v2/op_kernel/
@@ -455,6 +460,8 @@ VC6@ops-math:
         # stateless_random_normal_v3
         - ops/ops-math/random/stateless_random_normal_v3/examples/
         - ops/ops-math/random/stateless_random_normal_v3/tests/
+        # stateless_normal
+        - ops/ops-math/random/stateless_normal/tests/
         # stateless_random_uniform_v2
         - ops/ops-math/random/stateless_random_uniform_v2/tests/
         # tril
@@ -744,6 +751,9 @@ conversion@ops-math:
         - ops/ops-math/random/stateless_random_normal_v3/op_api/
         - ops/ops-math/random/stateless_random_normal_v3/README.md
         - ops/ops-math/random/stateless_random_normal_v3/op_graph/
+        - ops/ops-math/random/stateless_normal/op_api/
+        - ops/ops-math/random/stateless_normal/README.md
+        - ops/ops-math/random/stateless_normal/op_graph/
         - ops/ops-math/random/drop_out_v3/docs/
         - ops/ops-math/random/drop_out_v3/op_api/
         - ops/ops-math/random/drop_out_v3/op_graph/
@@ -869,6 +879,7 @@ conversion@ops-math:
         - ops/ops-math/random/sim_thread_exponential/tests/
         - ops/ops-math/random/stateless_random_uniform_v2/examples/
         - ops/ops-math/random/stateless_random_uniform_v3/examples/
+        - ops/ops-math/random/stateless_normal/examples/
         - ops/ops-math/random/stateless_randperm/examples/
         - ops/ops-math/random/stateless_randperm/tests/
         - ops/ops-math/random/dsa_random_normal/examples/

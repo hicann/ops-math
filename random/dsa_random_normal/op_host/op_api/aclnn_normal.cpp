@@ -14,6 +14,8 @@
 #include "math/mul/op_api/mul.h"
 #include "random/stateless_random_normal_v2/op_api/stateless_random_normal_v2.h"
 #include "random/stateless_random_normal_v3/op_api/stateless_random_normal_v3.h"
+#include "random/stateless_normal/op_api/stateless_normal.h"
+#include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "dsa_random_normal.h"
 #include "../../../../conversion/concat_d/op_api/concat_d.h"
 #include "opdev/platform.h"
@@ -167,24 +169,47 @@ static const aclTensor* normalDavidPath(
     const aclTensor* selfContiguous, int64_t seed, int64_t offset,
     float mean, float std, aclOpExecutor* executor)
 {
-    // seed转化为key
-    FVector<int64_t, op::MAX_DIM_NUM> key_vec = {seed};
-    auto keyArr = executor->AllocIntArray(key_vec.data(), key_vec.size());
-
-    // offset转化为counter
-    FVector<int64_t, op::MAX_DIM_NUM> counter_vec = {0, offset};
-    auto counterArr = executor->AllocIntArray(counter_vec.data(), counter_vec.size());
-
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
-        FVector<float> meanVector = {mean};
-        auto meanTensorV3 = executor->ConvertToTensor(meanVector.data(), meanVector.size(), op::DataType::DT_FLOAT);
+        // V4 标量路径：对标 PyTorch normal_(scalar_mean, scalar_std) 单步 FMA
+        // PyTorch 在 float 精度下计算 z * std + mean，最后一次 cast 到目标 dtype
+        auto selfFloat = (selfContiguous->GetDataType() != DataType::DT_FLOAT)
+            ? l0op::Cast(selfContiguous, op::DataType::DT_FLOAT, executor)
+            : selfContiguous;
+        CHECK_RET(selfFloat != nullptr, nullptr);
 
-        FVector<float> stdVector = {std};
-        auto stdTensorV3 = executor->ConvertToTensor(stdVector.data(), stdVector.size(), op::DataType::DT_FLOAT);
-        // 调用normal_算子kernel function(AI Core算子)
-        return l0op::StatelessRandomNormalV3(
-           selfContiguous, keyArr, counterArr, meanTensorV3, stdTensorV3, executor);
+        FVector<float> zeroMeanVector = {0.0f};
+        auto zeroMeanTensor = executor->ConvertToTensor(
+            zeroMeanVector.data(), zeroMeanVector.size(), op::DataType::DT_FLOAT);
+        FVector<float> oneStdVector = {1.0f};
+        auto oneStdTensor = executor->ConvertToTensor(
+            oneStdVector.data(), oneStdVector.size(), op::DataType::DT_FLOAT);
+
+        auto outDims = op::ToShapeVector(selfContiguous->GetViewShape());
+        auto outShapeArray = executor->AllocIntArray(outDims.data(), outDims.size());
+        zeroMeanTensor = l0op::BroadcastTo(zeroMeanTensor, outShapeArray, executor);
+        oneStdTensor = l0op::BroadcastTo(oneStdTensor, outShapeArray, executor);
+
+        auto normalOut = l0op::StatelessNormal(
+            selfFloat, seed, offset, zeroMeanTensor, oneStdTensor, executor);
+        CHECK_RET(normalOut != nullptr, nullptr);
+
+        // fp32 下做 z * std + mean（全程 fp32，无中间舍入）
+        auto stdScalar = executor->AllocScalar(std);
+        auto stdTensor = executor->ConvertToTensor(stdScalar, op::DataType::DT_FLOAT);
+        auto mulOut = l0op::Mul(normalOut, stdTensor, executor);
+        CHECK_RET(mulOut != nullptr, nullptr);
+
+        auto meanScalar = executor->AllocScalar(mean);
+        auto meanTensor = executor->ConvertToTensor(meanScalar, op::DataType::DT_FLOAT);
+        return l0op::Add(mulOut, meanTensor, executor);
     } else {
+        // V2 路径：seed 转化为 key，offset 转化为 counter
+        FVector<int64_t, op::MAX_DIM_NUM> key_vec = {seed};
+        auto keyArr = executor->AllocIntArray(key_vec.data(), key_vec.size());
+
+        FVector<int64_t, op::MAX_DIM_NUM> counter_vec = {0, offset};
+        auto counterArr = executor->AllocIntArray(counter_vec.data(), counter_vec.size());
+
         // 调用normal_算子kernel function(AI Cpu算子)
         int64_t alg = 1;
         auto algScalar = executor->AllocScalar((void*)&alg, DataType::DT_INT32);
@@ -210,26 +235,58 @@ static const aclTensor* normalTensorDavidPath(
                 op::ToString(offsetTensor->GetDataType()).GetString());
         return nullptr;
     }
-    // seedTensor/offsetTensor 从 int64 Cast 为 uint64（V3 OpDef 要求 uint64）
-    auto normalSeedU64 = l0op::Cast(seedTensor, op::DataType::DT_UINT64, executor);
-    CHECK_RET(normalSeedU64 != nullptr, nullptr);
-    auto normalOffsetU64 = l0op::Cast(offsetTensor, op::DataType::DT_UINT64, executor);
-    CHECK_RET(normalOffsetU64 != nullptr, nullptr);
-
-    FVector<int64_t> offsetVector{0, static_cast<int64_t>(offset)};
-    aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), 2);
-    auto tmpTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_UINT64);
-    auto resultAddOut = l0op::Add(normalOffsetU64, tmpTensor, executor);
-    CHECK_RET(resultAddOut != nullptr, nullptr);
 
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
-        FVector<float> meanVector = {mean};
-        auto meanTensorV3 = executor->ConvertToTensor(meanVector.data(), meanVector.size(), op::DataType::DT_FLOAT);
-        FVector<float> stdVector = {std};
-        auto stdTensorV3 = executor->ConvertToTensor(stdVector.data(), stdVector.size(), op::DataType::DT_FLOAT);
-        return l0op::StatelessRandomNormalV3(
-            selfContiguous, normalSeedU64, resultAddOut, meanTensorV3, stdTensorV3, executor);
+        // V4 标量路径：对标 PyTorch normal_(scalar_mean, scalar_std) 单步 FMA
+        FVector<int64_t> offsetVector{static_cast<int64_t>(offset)};
+        auto tmpTensor = executor->ConvertToTensor(offsetVector.data(), offsetVector.size(), op::DataType::DT_INT64);
+        auto resultAddOut = l0op::Add(offsetTensor, tmpTensor, executor);
+        CHECK_RET(resultAddOut != nullptr, nullptr);
+
+        // Step 1: Kernel 以 fp32 生成 N(0,1)
+        auto selfFloat = (selfContiguous->GetDataType() != DataType::DT_FLOAT)
+            ? l0op::Cast(selfContiguous, op::DataType::DT_FLOAT, executor)
+            : selfContiguous;
+        CHECK_RET(selfFloat != nullptr, nullptr);
+
+        FVector<float> zeroMeanVector = {0.0f};
+        auto zeroMeanTensor = executor->ConvertToTensor(
+            zeroMeanVector.data(), zeroMeanVector.size(), op::DataType::DT_FLOAT);
+        FVector<float> oneStdVector = {1.0f};
+        auto oneStdTensor = executor->ConvertToTensor(
+            oneStdVector.data(), oneStdVector.size(), op::DataType::DT_FLOAT);
+
+        auto outDims = op::ToShapeVector(selfContiguous->GetViewShape());
+        auto outShapeArray = executor->AllocIntArray(outDims.data(), outDims.size());
+        zeroMeanTensor = l0op::BroadcastTo(zeroMeanTensor, outShapeArray, executor);
+        oneStdTensor = l0op::BroadcastTo(oneStdTensor, outShapeArray, executor);
+
+        auto normalOut = l0op::StatelessNormal(
+            selfFloat, seedTensor, resultAddOut, zeroMeanTensor, oneStdTensor, executor);
+        CHECK_RET(normalOut != nullptr, nullptr);
+
+        // Step 2: fp32 下做 z * std + mean
+        auto stdScalar = executor->AllocScalar(std);
+        auto stdTensor = executor->ConvertToTensor(stdScalar, op::DataType::DT_FLOAT);
+        auto mulOut = l0op::Mul(normalOut, stdTensor, executor);
+        CHECK_RET(mulOut != nullptr, nullptr);
+
+        auto meanScalar = executor->AllocScalar(mean);
+        auto meanTensor = executor->ConvertToTensor(meanScalar, op::DataType::DT_FLOAT);
+        return l0op::Add(mulOut, meanTensor, executor);
     } else {
+        // V2 路径：保持原有 Cast/concat 逻辑
+        auto normalSeedU64 = l0op::Cast(seedTensor, op::DataType::DT_UINT64, executor);
+        CHECK_RET(normalSeedU64 != nullptr, nullptr);
+        auto normalOffsetU64 = l0op::Cast(offsetTensor, op::DataType::DT_UINT64, executor);
+        CHECK_RET(normalOffsetU64 != nullptr, nullptr);
+
+        FVector<int64_t> offsetVector{0, static_cast<int64_t>(offset)};
+        aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), 2);
+        auto tmpTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_UINT64);
+        auto resultAddOut = l0op::Add(normalOffsetU64, tmpTensor, executor);
+        CHECK_RET(resultAddOut != nullptr, nullptr);
+
         int64_t alg = 1;
         auto algScalar = executor->AllocScalar((void*)&alg, DataType::DT_INT32);
         const aclTensor* algTensor = executor->ConvertToTensor(algScalar, op::ToOpDataType(ACL_INT32));

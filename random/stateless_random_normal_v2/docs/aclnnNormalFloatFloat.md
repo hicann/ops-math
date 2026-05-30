@@ -89,20 +89,20 @@ aclnnStatus aclnnNormalFloatFloat(
       <tr>
       <td>seed</td>
       <td>输入</td>
-      <td>采样伪随机数生成器的种子值。</td>
+      <td>采样伪随机数生成器的种子值，Host侧标量。</td>
       <td>-</td>
       <td>INT64</td>
-      <td>ND</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
     <tr>
       <td>offset</td>
       <td>输入</td>
-      <td>采样伪随机数生成器的偏移量。</td>
+      <td>采样伪随机数生成器的偏移量，Host侧标量。</td>
       <td>-</td>
       <td>INT64</td>
-      <td>ND</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
     </tr>
@@ -110,11 +110,11 @@ aclnnStatus aclnnNormalFloatFloat(
       <td>out</td>
       <td>输出</td>
       <td>输出张量，Device侧的aclTensor。</td>
-      <td>-</td>
+      <td>shape可以为任意维度（不超过8维），输出tensor的shape即为生成的随机数的shape。当out为空tensor时，直接返回成功，不执行计算。</td>
       <td>BF16、FLOAT16、FLOAT、DOUBLE</td>
       <td>ND</td>
       <td>0-8</td>
-      <td>-</td>
+      <td>支持</td>
     </tr>
     <tr>
       <td>workspaceSize</td>
@@ -220,6 +220,7 @@ aclnnStatus aclnnNormalFloatFloat(
 
 - 确定性计算：
   - aclnnNormalFloatFloat默认确定性实现。
+- <term>Ascend 950PR/Ascend 950DT</term>：offset必须为4的倍数。
 
 ## 调用示例
 

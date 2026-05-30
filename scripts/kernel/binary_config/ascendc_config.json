@@ -655,5 +655,6 @@
     {"name":"NanToNum", "compute_units": ["ascend950"], "auto_sync": false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"StatelessRandomUniformV3", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"StatelessRandomNormalV3", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
+    {"name":"StatelessNormal", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}},
     {"name":"Adds", "compute_units": ["ascend950"], "auto_sync" : false, "impl_mode": "", "compile_options": {"ascend950": ["-mllvm -cce-aicore-dcci-before-kernel-end=false"]}}
 ]

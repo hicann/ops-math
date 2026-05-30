@@ -2788,6 +2788,16 @@
   </tr>
   <tr>
     <td>random</td>
+    <td><a href="../../random/stateless_normal/README.md">stateless_normal</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>AI Core</td>
+    <td>生成正态分布随机数(与H20 GPU比特对齐)。</td>
+  </tr>
+  <tr>
+    <td>random</td>
     <td><a href="../../random/stateless_random_uniform_v2/README.md">stateless_random_uniform_v2</a></td>
     <td>√</td>
     <td>√</td>
