@@ -65,9 +65,6 @@ OpTilingConfig StatelessNormalTiling::BuildOpConfig()
         return ge::GRAPH_SUCCESS;
     };
 
-    config.getUnroll = [](gert::TilingContext* /*ctx*/, uint32_t& /*unroll*/) -> ge::graphStatus {
-        return ge::GRAPH_SUCCESS;
-    };
     config.kernelMode = RandomKernelMode::SIMT;
     config.DcacheSize = DCACHE_SIZE;
     config.coreAlignSize = CORE_ALIGN_SIZE;

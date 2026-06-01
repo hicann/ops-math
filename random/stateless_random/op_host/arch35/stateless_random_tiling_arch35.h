@@ -27,6 +27,7 @@ public:
     {}
 
 protected:
+    ge::graphStatus BeforeProcess() override;
     ge::graphStatus UniqueProcess() override;
     
 private:

@@ -94,7 +94,6 @@ struct OpTilingConfig {
     std::function<ge::graphStatus(gert::TilingContext*, uint32_t[2], uint32_t[4])> getKeyAndCounter;
     std::function<ge::graphStatus(gert::TilingContext*, int64_t&)> getBufferNum;
     std::function<ge::graphStatus(gert::TilingContext*, int64_t&, int64_t&)> getSeedAndOffset;
-    std::function<ge::graphStatus(gert::TilingContext*, uint32_t&)> getUnroll;
 
     // 启动相关
     bool isNeedSyncAll = false;
@@ -122,6 +121,10 @@ public:
 
 protected:
     virtual ge::graphStatus UniqueProcess()
+    {
+        return ge::GRAPH_SUCCESS;
+    }
+    virtual ge::graphStatus BeforeProcess()
     {
         return ge::GRAPH_SUCCESS;
     }

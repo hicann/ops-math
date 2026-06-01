@@ -270,35 +270,42 @@ ge::graphStatus RandomTilingArch35::DoTiling()
         return ret;
     }
 
-    // 步骤3： 填充TilingData
+    // 步骤3：前置处理（可选）
+    ret = BeforeProcess();
+    if (ret != ge::GRAPH_SUCCESS) {
+        OP_LOGE(opName_, "Before process  failed");
+        return ret;
+    }
+
+    // 步骤4： 填充TilingData
     ret = config_.kernelMode == RandomKernelMode::SIMD ? FillUnifiedTilingData() : FillUnifiedSimtTilingData();
     if (ret != ge::GRAPH_SUCCESS) {
         OP_LOGE(opName_, "Fill tiling data failed");
         return ret;
     }
 
-    // 步骤4：计算tilingKey和workspace
+    // 步骤5：计算tilingKey和workspace
     ret = CalcTilingKeyAndWorkspace();
     if (ret != ge::GRAPH_SUCCESS) {
         OP_LOGE(opName_, "Calc tiling key/workspace failed");
         return ret;
     }
 
-    // 步骤5：后置处理（可选）
+    // 步骤6：后置处理（可选）
     ret = UniqueProcess();
     if (ret != ge::GRAPH_SUCCESS) {
         OP_LOGE(opName_, "Unique process  failed");
         return ret;
     }
 
-    // 步骤6：写入context
+    // 步骤7：写入context
     ret = WriteBackToContext();
     if (ret != ge::GRAPH_SUCCESS) {
         OP_LOGE(opName_, "Write tiling data to context failed");
         return ret;
     }
 
-    // 步骤7：调用dump函数
+    // 步骤8：调用dump函数
     OP_LOGI(
         "RandomTiling", "%s",
         (config_.kernelMode == RandomKernelMode::SIMD ? tilingData_.DumpTilingInfo() : simtTilingData_.DumpTilingInfo())
@@ -416,11 +423,6 @@ ge::graphStatus RandomTilingArch35::FillUnifiedSimtTilingData()
         (simtTilingData_.outputSize < 0), OP_LOGE(opName_, "outputSize is less than 0. please check."),
         return ge::GRAPH_FAILED);
     ret = config_.getSeedAndOffset(context_, simtTilingData_.seed, simtTilingData_.offset);
-    if (ret != ge::GRAPH_SUCCESS) {
-        return ret;
-    }
-
-    ret = config_.getUnroll(context_, config_.unrollFactor);
     if (ret != ge::GRAPH_SUCCESS) {
         return ret;
     }

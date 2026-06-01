@@ -144,43 +144,44 @@ OpTilingConfig StatelessRandomTiling::BuildOpConfig()
         return ge::GRAPH_SUCCESS;
     };
 
-    config.getUnroll = [](gert::TilingContext* ctx, uint32_t& unroll) -> ge::graphStatus {
-        auto fromTensor = ctx->GetOptionalInputTensor(INPUT_IDX_FROM);
-        auto toTensor = ctx->GetOptionalInputTensor(INPUT_IDX_TO);
-        auto outputDesc = ctx->GetOutputDesc(OUTPUT_IDX_Y);
-        OP_CHECK_NULL_WITH_CONTEXT(ctx, outputDesc);
-        auto outputDtype = outputDesc->GetDataType();
-
-        if ((fromTensor == nullptr) && (toTensor == nullptr)) {
-            unroll = (outputDtype == ge::DT_INT64) ? UNROLL_2 : UNROLL_4;
-        } else if (fromTensor == nullptr) {
-            auto toData = toTensor->GetData<int64_t>();
-            OP_CHECK_NULL_WITH_CONTEXT(ctx, toData);
-            unroll = (toData[0] >= RAND_INT64_THRESHOLD) ? UNROLL_2 : UNROLL_4;
-        } else if (toTensor == nullptr) {
-            int64_t dtypeMin = 0;
-            int64_t dtypeMax = 0;
-            GetMinAndMaxByDtype(outputDtype, dtypeMin, dtypeMax);
-            auto fromData = fromTensor->GetData<int64_t>();
-            OP_CHECK_NULL_WITH_CONTEXT(ctx, fromData);
-            unroll =
-                ((static_cast<uint64_t>(dtypeMax) + 1 - fromData[0]) >= RAND_INT64_THRESHOLD) ? UNROLL_2 : UNROLL_4;
-        } else {
-            auto fromData = fromTensor->GetData<int64_t>();
-            OP_CHECK_NULL_WITH_CONTEXT(ctx, fromData);
-            auto toData = toTensor->GetData<int64_t>();
-            OP_CHECK_NULL_WITH_CONTEXT(ctx, toData);
-            unroll = ((toData[0] - fromData[0]) >= RAND_INT64_THRESHOLD) ? UNROLL_2 : UNROLL_4;
-        }
-        return ge::GRAPH_SUCCESS;
-    };
-
     config.kernelMode = RandomKernelMode::SIMT;
     config.DcacheSize = DCACHE_SIZE;
     config.isNeedSyncAll = false;
     config.coreAlignSize = CORE_ALIGN_SIZE;
     config.enableSplitBlocks = true;
     return config;
+}
+
+ge::graphStatus StatelessRandomTiling::BeforeProcess()
+{
+    auto fromTensor = context_->GetOptionalInputTensor(INPUT_IDX_FROM);
+    auto toTensor = context_->GetOptionalInputTensor(INPUT_IDX_TO);
+    auto outputDesc = context_->GetOutputDesc(OUTPUT_IDX_Y);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
+    auto outputDtype = outputDesc->GetDataType();
+
+    if ((fromTensor == nullptr) && (toTensor == nullptr)) {
+        config_.unrollFactor = (outputDtype == ge::DT_INT64) ? UNROLL_2 : UNROLL_4;
+    } else if (fromTensor == nullptr) {
+        auto toData = toTensor->GetData<int64_t>();
+        OP_CHECK_NULL_WITH_CONTEXT(context_, toData);
+        config_.unrollFactor = (toData[0] >= RAND_INT64_THRESHOLD) ? UNROLL_2 : UNROLL_4;
+    } else if (toTensor == nullptr) {
+        int64_t dtypeMin = 0;
+        int64_t dtypeMax = 0;
+        GetMinAndMaxByDtype(outputDtype, dtypeMin, dtypeMax);
+        auto fromData = fromTensor->GetData<int64_t>();
+        OP_CHECK_NULL_WITH_CONTEXT(context_, fromData);
+        config_.unrollFactor =
+            ((static_cast<uint64_t>(dtypeMax) + 1 - fromData[0]) >= RAND_INT64_THRESHOLD) ? UNROLL_2 : UNROLL_4;
+    } else {
+        auto fromData = fromTensor->GetData<int64_t>();
+        OP_CHECK_NULL_WITH_CONTEXT(context_, fromData);
+        auto toData = toTensor->GetData<int64_t>();
+        OP_CHECK_NULL_WITH_CONTEXT(context_, toData);
+        config_.unrollFactor = ((toData[0] - fromData[0]) >= RAND_INT64_THRESHOLD) ? UNROLL_2 : UNROLL_4;
+    }
+    return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus StatelessRandomTiling::UniqueProcess()
