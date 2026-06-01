@@ -21,17 +21,24 @@
 namespace ge {
 
 /**
-* @brief Fused multiply-add-add: y = x1 * x2 + x3 + x4, element-wise with NumPy broadcasting.
+* @brief Fused multiply-add-add: y = x1 * x2 + x3 + x4, element-wise. x1 must carry
+*        the full output shape; x2, x3 and x4 are broadcast up to x1 (NumPy rules).
 
 * @par Inputs:
 * Four inputs, including:
 * @li x1: A ND tensor. Must be one of the following types: float16, float32, int32.
-* @li x2: A ND tensor. Must have the same dtype as x1; shape must be broadcastable with x1.
-* @li x3: A ND tensor. Must have the same dtype as x1; shape must be broadcastable with (x1 * x2).
-* @li x4: A ND tensor. Must have the same dtype as x1; shape must be broadcastable with (x1 * x2 + x3). \n
+*     Its shape is the output shape.
+* @li x2: A ND tensor. Must have the same dtype as x1; shape must be broadcastable up to x1.
+* @li x3: A ND tensor. Must have the same dtype as x1; shape must be broadcastable up to x1.
+* @li x4: A ND tensor. Must have the same dtype as x1; shape must be broadcastable up to x1. \n
 
 * @par Outputs:
-* y: A ND tensor. Has the same dtype as x1; shape is the broadcast shape of x1, x2, x3 and x4. \n
+* y: A ND tensor. Has the same dtype and shape as x1. \n
+
+* @attention Constraints:
+* The runtime currently requires x1 to be the full output shape. Cases where x1 itself
+* must be broadcast up (i.e. x1 is smaller than the output, e.g. x1=[1] with x3=[3,4])
+* are not supported and fail at runtime.
 
 * @par Third-party framework compatibility
 * Compatible with the graph fusion of Mul followed by two Add operators

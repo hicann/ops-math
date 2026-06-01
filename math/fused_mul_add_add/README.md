@@ -13,32 +13,74 @@
 
 ## 功能说明
 
-- **算子功能**：四元 element-wise 融合算子，把 `Mul → Add → Add` 子图融合为
-  单次 kernel 启动，相对未融合实现减少两次 GM 中间数据搬运，常用于
-  `BatchMatmul + bias + residual` 等模式。
-- **计算公式**：
+- 算子功能：将 `Mul`、`Add`、`Add` 子图融合为单个算子，对四个输入按 NumPy 广播规则对齐后逐元素计算乘加加，常用于 `BatchMatmul + bias + residual` 等模式。
 
-$$y = x_1 \cdot x_2 + x_3 + x_4$$
+- 计算公式：
 
-  四个输入按 NumPy 广播规则两两对齐后逐元素计算，计算顺序固定不可交换。
+  $$
+  y = x_1 \times x_2 + x_3 + x_4
+  $$
 
 ## 参数说明
 
-| 参数名 | 输入/输出 | 描述                                                         | 数据类型                  | 数据格式 |
-| :----: | :-------: | :----------------------------------------------------------- | :-----------------------: | :------: |
-| x1     | 输入      | 乘法第一个输入张量。                                         | FLOAT16, FLOAT, INT32     | ND       |
-| x2     | 输入      | 乘法第二个输入张量；与 `x1` 须可广播。                       | FLOAT16, FLOAT, INT32     | ND       |
-| x3     | 输入      | 第一次加法的输入张量；与 `x1 * x2` 结果须可广播。            | FLOAT16, FLOAT, INT32     | ND       |
-| x4     | 输入      | 第二次加法的输入张量；与 `x1 * x2 + x3` 结果须可广播。       | FLOAT16, FLOAT, INT32     | ND       |
-| y      | 输出      | `x1 * x2 + x3 + x4` 的结果；shape 为四者广播后的统一形状。   | FLOAT16, FLOAT, INT32     | ND       |
+<table style="undefined;table-layout: fixed; width: 820px"><colgroup>
+  <col style="width: 100px">
+  <col style="width: 150px">
+  <col style="width: 190px">
+  <col style="width: 260px">
+  <col style="width: 120px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出/属性</th>
+      <th>描述</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>x1</td>
+      <td>输入</td>
+      <td>公式中的乘法输入张量x1。</td>
+      <td>FLOAT16, FLOAT, INT32</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>x2</td>
+      <td>输入</td>
+      <td>公式中的乘法输入张量x2，shape需可广播到x1。</td>
+      <td>同x1</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>x3</td>
+      <td>输入</td>
+      <td>公式中第一次加法的输入张量x3，shape需可广播到x1。</td>
+      <td>同x1</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>x4</td>
+      <td>输入</td>
+      <td>公式中第二次加法的输入张量x4，shape需可广播到x1。</td>
+      <td>同x1</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>y</td>
+      <td>输出</td>
+      <td>公式中的输出张量y，shape与x1相同。</td>
+      <td>同x1</td>
+      <td>ND</td>
+    </tr>
+  </tbody></table>
 
 ## 约束说明
 
-- `x1`、`x2`、`x3`、`x4`、`y` 必须为**同一种 dtype**；不支持 mix-dtype；不支持 bf16。
-- 支持任意 NumPy 广播形态（含标量 `[1]`、单维 broadcast、跨 rank broadcast）。
-- 支持动态 shape 与动态 rank。
-- 计算顺序为 `((x1 * x2) + x3) + x4`，不可交换；对浮点输入会先 Cast 到 fp32 计算
-  再 Cast 回输入 dtype，避免半精度累加误差。
+- x1、x2、x3、x4、y 必须为同一种数据类型，不支持混合数据类型。
+- 计算顺序为 `((x1 * x2) + x3) + x4`，不可交换。
+- **x1 必须为完整的输出 shape**：x2、x3、x4 的 shape 可按 NumPy 广播规则向上广播到 x1（支持标量、单维 broadcast、跨 rank broadcast），输出 y 的 shape 与 x1 一致。当前 runtime **不支持 x1 自身向上广播**（即 x1 比输出 shape 小的场景，例如 x1=`[1]`、x2=`[3,4]`），该类用例会在 RunGraph 阶段失败。
 
 ## 实现方案
 
@@ -66,8 +108,9 @@ In0/In1/In2/In3 -- CopyInBrc -- Cast(->fp32) -- Vec::Mul(x1,x2) -- Vec::Add(+x3)
 ```
 In0/In1/In2/In3 -- CopyInBrc -- Vec::Mul(x1,x2) -- Vec::Add(+x3) -- Vec::Add(+x4) -- CopyOut -- Out0
 ```
+
 ## 调用说明
 
 | 调用方式   | 样例代码                                                     | 说明                                                         |
 | ---------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| 图模式 | [test_geir_fused_mul_add_add](examples/arch35/test_geir_fused_mul_add_add.cpp) | 通过[算子IR](op_graph/fused_mul_add_add_proto.h)构图方式调用 FusedMulAddAdd 算子。 |
+| 图模式 | [test_geir_fused_mul_add_add](examples/arch35/test_geir_fused_mul_add_add.cpp) | 通过[算子IR](op_graph/fused_mul_add_add_proto.h)构图方式调用FusedMulAddAdd算子。 |

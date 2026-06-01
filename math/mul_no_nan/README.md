@@ -13,35 +13,63 @@
 
 ## 功能说明
 
-- **算子功能**：二元 element-wise 安全乘法，把 `Mul` 中
-  `0 · inf = NaN` 与 `0 · NaN = NaN` 两类异常屏蔽为 0，避免在反向传播
-  / loss 计算等场景把 NaN 污染传递下去。
-- **计算公式**：
+- 算子功能：完成安全乘法计算，当 x2 为 0 时返回 0，从而屏蔽 `0 * inf = NaN`、`0 * NaN = NaN` 两类异常。等价于 TensorFlow 的 `tf.math.multiply_no_nans`。
 
-$$
-y_i = \begin{cases}
-0,                       & x_{2,i} = 0 \\
-x_{1,i} \cdot x_{2,i},   & x_{2,i} \ne 0
-\end{cases}
-$$
+- 计算公式：
 
-  仅判 `x2` 一侧。`x2 = -0` 同样进入零臂（IEEE-754 `-0 == 0`）。
-  `x2 \ne 0` 时所有 IEEE 行为按普通乘法保留（NaN / Inf 正常传播）。
-- **第三方对标**：等价于 TensorFlow `tf.math.multiply_no_nans`。
+  $$
+  y = \begin{cases}
+  0, & \text{if } x2 = 0 \\
+  x1 \times x2, & \text{if } x2 \neq 0
+  \end{cases}
+  $$
 
 ## 参数说明
 
-| 参数名 | 输入/输出 | 描述                                                 | 数据类型                              | 数据格式 |
-| :----: | :-------: | :--------------------------------------------------- | :-----------------------------------: | :------: |
-| x1     | 输入      | 乘法第一个输入张量。                                 | FLOAT16, FLOAT, INT32, BFLOAT16       | ND       |
-| x2     | 输入      | 乘法第二个输入张量；判 0 主体；与 `x1` 须可广播。    | FLOAT16, FLOAT, INT32, BFLOAT16       | ND       |
-| y      | 输出      | `x1 * x2` 的结果，`x2 == 0` 处强制为 0。shape 为 `x1`、`x2` 广播后的统一形状。 | FLOAT16, FLOAT, INT32, BFLOAT16 | ND       |
+<table style="undefined;table-layout: fixed; width: 820px"><colgroup>
+  <col style="width: 100px">
+  <col style="width: 150px">
+  <col style="width: 190px">
+  <col style="width: 260px">
+  <col style="width: 120px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出/属性</th>
+      <th>描述</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>x1</td>
+      <td>输入</td>
+      <td>公式中的乘法输入张量x1。</td>
+      <td>FLOAT16, FLOAT, INT32, BFLOAT16</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>x2</td>
+      <td>输入</td>
+      <td>公式中的乘法输入张量x2，作为判 0 主体，shape需与x1可广播。</td>
+      <td>同x1</td>
+      <td>ND</td>
+    </tr>
+    <tr>
+      <td>y</td>
+      <td>输出</td>
+      <td>公式中的输出张量y，shape为x1、x2广播后的统一形状。</td>
+      <td>同x1</td>
+      <td>ND</td>
+    </tr>
+  </tbody></table>
 
 ## 约束说明
 
-- `x1`、`x2`、`y` 必须为**同一种 dtype**；不支持 mix-dtype。
-- 支持任意 NumPy 广播形态（含标量 `[1]`、单维 broadcast、跨 rank broadcast）。
-- 支持动态 shape 与动态 rank。
+- x1、x2、y 必须为同一种数据类型，不支持混合数据类型。
+- 仅判 x2 一侧，`x2 = -0` 同样进入零臂（IEEE-754 `-0 == 0`）；`x2 != 0` 时所有 IEEE 行为按普通乘法保留（NaN / Inf 正常传播）。
+- 支持任意 NumPy 广播形态（含标量、单维 broadcast、跨 rank broadcast），支持动态 shape 与动态 rank。
 
 ## 实现方案
 
@@ -91,4 +119,4 @@ In0/In1 -- CopyInBrc -- Cast(->fp32) --+
 
 | 调用方式   | 样例代码                                                     | 说明                                                         |
 | ---------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| 图模式 | [test_geir_mul_no_nan](examples/arch35/test_geir_mul_no_nan.cpp) | 通过[算子IR](op_graph/mul_no_nan_proto.h)构图方式调用 MulNoNan 算子；覆盖 fp32/fp16/bf16/int32 基础用例 + `0·inf`、`0·NaN`、`-0`、广播等关键特殊值用例。 |
+| 图模式 | [test_geir_mul_no_nan](examples/arch35/test_geir_mul_no_nan.cpp) | 通过[算子IR](op_graph/mul_no_nan_proto.h)构图方式调用MulNoNan算子。 |

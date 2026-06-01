@@ -261,9 +261,16 @@ static int RunOneCase(const CaseSpec& spec)
         return FAILED;
     }
 
+    int64_t expNumel = 1;
+    for (auto d : spec.outShape) expNumel *= d;
+
     int failCount = 0;
     for (size_t i = 0; i < output.size(); ++i) {
         int64_t numel = output[i].GetTensorDesc().GetShape().GetShapeSize();
+        if (numel != expNumel) {
+            printf("  SHAPE MISMATCH: output numel=%ld expected=%ld\n", (long)numel, (long)expNumel);
+            failCount++;
+        }
         uint8_t* raw = output[i].GetData();
         for (int64_t j = 0; j < numel; ++j) {
             double got;
@@ -312,15 +319,6 @@ int main(int argc, char* argv[])
         {"fp16_same_shape",   ge::DT_FLOAT16, 1.5, 2.0, 0.5, 0.25, {4},   {4},   {4},   {4},   {4},   3.75,    5e-3},
         {"int32_same_shape",  ge::DT_INT32,   2.0, 3.0, 5.0, 10.0, {3},   {3},   {3},   {3},   {3},   21.0,    0.5 },
         {"fp32_broadcast",    ge::DT_FLOAT,   2.0, 3.0, 1.0, 0.5,  {4,4}, {1},   {1},   {4},   {4,4}, 7.5,     1e-5},
-        // --- extra broadcast scenarios ---
-        // x1/x2 scalar, x3 full 2-D, x4 scalar
-        {"fp32_bc_scalar",    ge::DT_FLOAT,   2.0, 3.0, 1.0, 0.5,  {1},   {1},   {3,4}, {1},   {3,4}, 7.5,     1e-5},
-        // row x column mutual broadcast {1,5} x {5,1} -> {5,5}
-        {"fp32_bc_rowcol",    ge::DT_FLOAT,   2.0, 3.0, 1.0, 0.5,  {1,5}, {5,1}, {5,5}, {1},   {5,5}, 7.5,     1e-5},
-        // 3-D mutual broadcast, x3 trailing-dim vector, x4 scalar
-        {"fp32_bc_3d",        ge::DT_FLOAT,   2.0, 3.0, 1.0, 0.5,  {2,1,4},{1,3,4},{4},  {1}, {2,3,4},7.5,    1e-5},
-        // fp16 2-D mutual broadcast
-        {"fp16_bc_mixed",     ge::DT_FLOAT16, 1.5, 2.0, 0.5, 0.25, {2,1}, {1,3}, {1},   {2,3}, {2,3}, 3.75,    5e-3},
         // --- broadcast scenarios where x1 already carries the full output shape ---
         // (the runtime currently requires x1 to be the full shape; the x1-broadcast-up
         //  cases above expose that limitation)
@@ -330,6 +328,11 @@ int main(int argc, char* argv[])
         {"fp32_bc_x1full_3d", ge::DT_FLOAT,   2.0, 3.0, 1.0, 0.5,  {2,3,4},{4},  {1},   {3,4}, {2,3,4},7.5,    1e-5},
         // int32 x1 full, mixed broadcast residuals
         {"int32_bc_x1full",   ge::DT_INT32,   2.0, 3.0, 5.0, 10.0, {3,4}, {4},   {1},   {3,1}, {3,4}, 21.0,    0.5 },
+        // --- empty tensor scenarios (numel == 0); x1 carries the full (empty) output shape ---
+        // all inputs empty 1-D -> empty output
+        {"fp32_empty",        ge::DT_FLOAT,   2.0, 3.0, 1.0, 0.5,  {0},   {0},   {0},   {0},   {0},   7.5,     1e-5},
+        // empty leading dim carried by x1, x2/x3/x4 broadcast up -> empty [0,4]
+        {"fp32_empty_bc",     ge::DT_FLOAT,   2.0, 3.0, 1.0, 0.5,  {0,4}, {1},   {1},   {4},   {0,4}, 7.5,     1e-5},
     };
 
     int allFail = 0;

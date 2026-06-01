@@ -247,9 +247,16 @@ static int RunOneCase(const CaseSpec& spec)
         return FAILED;
     }
 
+    int64_t expNumel = 1;
+    for (auto d : spec.outShape) expNumel *= d;
+
     int failCount = 0;
     for (size_t i = 0; i < output.size(); ++i) {
         int64_t numel = output[i].GetTensorDesc().GetShape().GetShapeSize();
+        if (numel != expNumel) {
+            printf("  SHAPE MISMATCH: output numel=%ld expected=%ld\n", (long)numel, (long)expNumel);
+            failCount++;
+        }
         uint8_t* raw = output[i].GetData();
         for (int64_t j = 0; j < numel; ++j) {
             double got;
@@ -315,6 +322,11 @@ int main(int argc, char* argv[])
         {"int32_bc_mixed",    ge::DT_INT32,   2.0, 3.0, 5.0, {3,1},    {1,4},    {1},     {3,4},    11.0,    0.5 },
         // fp16 trailing column-vector broadcast {4,1} x {4,6} -> {4,6}
         {"fp16_bc_col",       ge::DT_FLOAT16, 1.5, 2.0, 0.5, {4,1},    {4,6},    {1},     {4,6},    3.5,     5e-3},
+        // --- empty tensor scenarios (numel == 0) ---
+        // all inputs empty 1-D -> empty output
+        {"fp32_empty",        ge::DT_FLOAT,   2.0, 3.0, 1.0, {0},      {0},      {0},     {0},      7.0,     1e-5},
+        // empty leading dim carried by x1, x2/x3 broadcast up -> empty [0,4]
+        {"fp32_empty_bc",     ge::DT_FLOAT,   2.0, 3.0, 1.0, {0,4},    {1,4},    {1},     {0,4},    7.0,     1e-5},
     };
 
     int allFail = 0;
