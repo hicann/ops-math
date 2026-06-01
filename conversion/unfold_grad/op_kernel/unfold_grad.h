@@ -93,6 +93,14 @@ public:
         params.paramsOut = {blockCount, blockLenOut, 0, 0, 0};
     }
 
+    template <AscendC::HardEvent hardEvent>
+    __aicore__ inline void PipeSync()
+    {
+        int32_t eventID = static_cast<int32_t>(GetTPipePtr()->FetchEventID(hardEvent));
+        AscendC::SetFlag<hardEvent>(eventID);
+        AscendC::WaitFlag<hardEvent>(eventID);
+    }
+
     __aicore__ inline void CopyToOutBigShapeOnePage(int64_t inPageIdx, int64_t outPageIdx, sDataCopyExtParams& params)
     {
         int64_t inOffset = inPageIdx * workspaceLen_;
@@ -111,15 +119,16 @@ public:
         AscendC::Duplicate<T1>(zeroLocal, 0, zeroNum);
         uint32_t blockLen = static_cast<uint32_t>(T2DstDataSize);
         AscendC::DataCopyExtParams copyParams = {1, blockLen, 0, 0, 0};
-        AscendC::PipeBarrier<PIPE_ALL>();
+        PipeSync<AscendC::HardEvent::V_MTE3>();
         for (int i = 0; i < loop; i++) {
             AscendC::DataCopyPad(dstGlobal[dstGlobalStart + i * zeroNum], zeroLocal, copyParams);
+            AscendC::PipeBarrier<PIPE_MTE3>();
         }
         if (tail > 0) {
             copyParams.blockLen = static_cast<uint32_t>(tail * typeSizeT1);
             AscendC::DataCopyPad(dstGlobal[dstGlobalStart + loop * zeroNum], zeroLocal, copyParams);
         }
-        AscendC::PipeBarrier<PIPE_ALL>();
+        PipeSync<AscendC::HardEvent::MTE3_S>();
         computeOutQueueDst.FreeTensor(zeroLocal);
     }
 
@@ -132,15 +141,16 @@ public:
         AscendC::Duplicate<T2>(zeroLocal, 0, zeroNum);
         uint32_t blockLen = static_cast<uint32_t>(T2DstDataSize);
         AscendC::DataCopyExtParams copyParams = {1, blockLen, 0, 0, 0};
-        AscendC::PipeBarrier<PIPE_ALL>();
+        PipeSync<AscendC::HardEvent::V_MTE3>();
         for (int i = 0; i < loop; i++) {
             AscendC::DataCopyPad(workspaceT2SumRes[dstGlobalStart + i * zeroNum], zeroLocal, copyParams);
+            AscendC::PipeBarrier<PIPE_MTE3>();
         }
         if (tail > 0) {
             copyParams.blockLen = static_cast<uint32_t>(tail * typeSizeT2);
             AscendC::DataCopyPad(workspaceT2SumRes[dstGlobalStart + loop * zeroNum], zeroLocal, copyParams);
         }
-        AscendC::PipeBarrier<PIPE_ALL>();
+        PipeSync<AscendC::HardEvent::MTE3_S>();
         computeOutQueueDst.FreeTensor(zeroLocal);
     }
 
@@ -171,22 +181,25 @@ public:
     {
         AscendC::DataCopyPadExtParams<T2> padParmsT2{false, 0, 0, 0};
         auto inLocalT2 = computeOutQueueDst.AllocTensor<T2>();
-        AscendC::PipeBarrier<PIPE_ALL>();
+        PipeSync<AscendC::HardEvent::S_MTE2>();
+        PipeSync<AscendC::HardEvent::V_MTE2>();
+        PipeSync<AscendC::HardEvent::MTE3_MTE2>();
         AscendC::DataCopyPad(inLocalT2, srcGM[inCopyParams.offset], inCopyParams.dcParams, padParmsT2);
-        AscendC::PipeBarrier<PIPE_ALL>();
+        PipeSync<AscendC::HardEvent::MTE2_S>();
         computeOutQueueDst.EnQue(inLocalT2);
 
         inLocalT2 = computeOutQueueDst.DeQue<T2>();
         auto inLocal = inQueueSrc.AllocTensor<T1>();
+        PipeSync<AscendC::HardEvent::MTE2_V>();
         AscendC::Cast(inLocal, inLocalT2, AscendC::RoundMode::CAST_RINT, inCopyParams.dcParams.blockLen / typeSizeT2);
         inQueueSrc.EnQue(inLocal);
         computeOutQueueDst.FreeTensor(inLocalT2);
 
         inLocal = inQueueSrc.DeQue<T1>();
-        AscendC::PipeBarrier<PIPE_ALL>();
+        PipeSync<AscendC::HardEvent::V_MTE3>();
+        PipeSync<AscendC::HardEvent::S_MTE3>();
         AscendC::DataCopyPad(dstGM[outCopyParams.offset], inLocal, outCopyParams.dcParams);
         inQueueSrc.FreeTensor(inLocal);
-        AscendC::PipeBarrier<PIPE_ALL>();
     }
 
     __aicore__ inline void ParseTilingData(const UnfoldGradTilingData* tilingData)

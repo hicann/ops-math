@@ -43,6 +43,14 @@ public:
         this->workspaceT2SumRes.SetGlobalBuffer(reinterpret_cast<__gm__ T2*>(workspace) + gradInBlockOffset);
     }
 
+    template <AscendC::HardEvent hardEvent>
+    __aicore__ inline void PipeSync()
+    {
+        int32_t eventID = static_cast<int32_t>(GetTPipePtr()->FetchEventID(hardEvent));
+        AscendC::SetFlag<hardEvent>(eventID);
+        AscendC::WaitFlag<hardEvent>(eventID);
+    }
+
     __aicore__ inline void ProcessFinalAxes(int curSrcStart, int curDstStart)
     {
         this->tasksOnce = this->tasksOnceMaxPerCore;
@@ -78,7 +86,6 @@ public:
                 this->SetGMtoZero(this->outputNumPerCore, dstStart);
             }
 
-            AscendC::PipeBarrier<PIPE_ALL>(); // 尾轴情况
             ProcessFinalAxes(srcStart, dstStart);
 
             if constexpr (ISCAST) {
@@ -86,7 +93,8 @@ public:
                 this->CalculateOutParms(params);
                 this->CopyToOutBigShapeOnePage(batchIdx, batchIdx, params);
             }
-            AscendC::PipeBarrier<PIPE_ALL>();
+            PipeSync<AscendC::HardEvent::MTE3_V>();
+            PipeSync<AscendC::HardEvent::S_V>();
         }
     }
 
@@ -97,6 +105,8 @@ private:
             ISCAST ? this->inQueueSrc.template AllocTensor<T1>() : this->computeInQueueSrc.template AllocTensor<T1>();
         AscendC::DataCopyPadExtParams<T1> padParams{false, 0, 0, 0};
         AscendC::PipeBarrier<PIPE_V>();
+        PipeSync<AscendC::HardEvent::MTE3_V>();
+        PipeSync<AscendC::HardEvent::S_V>();
         T1 zeroVal(0.0);
         int srcDataSize = ISCAST ? this->ubSizeT1 : this->T2SrcDataSize;
         AscendC::Duplicate<T1>(srcLocal, zeroVal, srcDataSize / this->typeSizeT1);
@@ -109,7 +119,7 @@ private:
         uint32_t srcStride = 0;
         uint32_t dstStride =
             (colNumSpace - (colHandleNum * this->typeSizeT1 + BLOCK_SIZE - 1) / BLOCK_SIZE * BLOCK_SIZE) / BLOCK_SIZE;
-        AscendC::PipeBarrier<PIPE_ALL>();
+        PipeSync<AscendC::HardEvent::V_MTE2>();
         AscendC::DataCopyExtParams copyParamsIn{
             static_cast<uint16_t>(blockCount - 1), blockLen, srcStride, dstStride, 0};
         if (blockCount > 1) {
@@ -120,6 +130,7 @@ private:
             padParams.paddingValue = 0;
             AscendC::DataCopyPad(
                 srcLocal, this->srcGlobal[curSrcStart + index * this->tasksOnceMaxPerCore], copyParamsIn, padParams);
+            AscendC::PipeBarrier<PIPE_MTE2>();
         }
         copyParamsIn.blockCount = 1;
         copyParamsIn.blockLen = (curHandleNum - (blockCount - 1) * colHandleNum) * this->typeSizeT1;
@@ -137,6 +148,7 @@ private:
             // fp16转fp32
             srcLocal = this->inQueueSrc.template DeQue<T1>();
             AscendC::LocalTensor<T2> computeSrcLocal = this->computeInQueueSrc.template AllocTensor<T2>();
+            AscendC::PipeBarrier<PIPE_V>();
             AscendC::Cast(
                 computeSrcLocal, srcLocal, AscendC::RoundMode::CAST_NONE, colNumSpace * blockCount / this->typeSizeT1);
             this->computeInQueueSrc.template EnQue(computeSrcLocal);
@@ -174,6 +186,7 @@ private:
                         .GetPhyAddr());
         }
         AscendC::TransDataTo5HD<T2>(dstLocalList, srcLocalList, transDataTo5HDParams.transDataParams);
+        AscendC::PipeBarrier<PIPE_V>();
     }
 
     __aicore__ inline void TransDataForUnfold1(
@@ -239,6 +252,7 @@ private:
                         .GetPhyAddr());
         }
         AscendC::TransDataTo5HD<T2>(dstLocalList, srcLocalList, transDataTo5HDParams.transDataParams);
+        AscendC::PipeBarrier<PIPE_V>();
     }
 
     __aicore__ inline void TransDataForUnfold2(
@@ -302,6 +316,7 @@ private:
             srcOffset = srcStart * TRANS_BLOCK;
             dstOffset = dstStart * TRANS_BLOCK;
             AscendC::Add<T2>(srcLocal[dstOffset], srcLocal[dstOffset], dstLocal[srcOffset], TRANS_BLOCK * this->size);
+            AscendC::PipeBarrier<PIPE_V>();
             srcStart += this->size;
             dstStart += this->step;
         }
@@ -319,6 +334,7 @@ private:
         AscendC::PipeBarrier<PIPE_V>();
         T2 zeroVal(0.0);
         AscendC::Duplicate<T2>(computeSrcLocal, zeroVal, this->T2SrcDataSize / this->typeSizeT2);
+        AscendC::PipeBarrier<PIPE_V>();
 
         // 累加计算
         AccumulateFinalAxes(computeSrcLocal, computeDstLocal, curHandleNum);

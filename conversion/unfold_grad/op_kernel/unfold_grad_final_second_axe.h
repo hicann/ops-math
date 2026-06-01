@@ -43,6 +43,14 @@ public:
         this->workspaceT2SumRes.SetGlobalBuffer(reinterpret_cast<__gm__ T2*>(workspace) + gradInBlockOffset);
     }
 
+    template <AscendC::HardEvent hardEvent>
+    __aicore__ inline void PipeSync()
+    {
+        int32_t eventID = static_cast<int32_t>(GetTPipePtr()->FetchEventID(hardEvent));
+        AscendC::SetFlag<hardEvent>(eventID);
+        AscendC::WaitFlag<hardEvent>(eventID);
+    }
+
     __aicore__ inline void ProcessFinalSecondAxes(int curSrcStart, int curDstStart)
     {
         for (int k = 0; k < this->iterationNumPerCore; k++) {
@@ -86,7 +94,6 @@ public:
                 this->SetGMtoZero(this->outputNumPerCore, dstStart);
             }
 
-            AscendC::PipeBarrier<PIPE_ALL>();
             ProcessFinalSecondAxes(srcStart, dstStart);
 
             if constexpr (ISCAST) {
@@ -94,7 +101,8 @@ public:
                 this->CalculateOutParms(params);
                 this->CopyToOutBigShapeOnePage(batchIdx, batchIdx, params);
             }
-            AscendC::PipeBarrier<PIPE_ALL>();
+            PipeSync<AscendC::HardEvent::MTE3_V>();
+            PipeSync<AscendC::HardEvent::S_V>();
         }
     }
 
@@ -107,6 +115,9 @@ private:
         uint32_t blockLen = curHandleNum * this->size * this->typeSizeT1;
         AscendC::DataCopyExtParams copyParamsIn{
             1, blockLen, 0, 0, 0}; // 处理tasksOnce个数需要从srcGM中取((tasksOnce-1) * size + 1)个数
+        PipeSync<AscendC::HardEvent::MTE3_MTE2>();
+        PipeSync<AscendC::HardEvent::S_MTE2>();
+        PipeSync<AscendC::HardEvent::V_MTE2>();
         AscendC::DataCopyPad(
             srcLocal, this->srcGlobal[curSrcStart + index * this->tasksOnceMaxPerCore * this->size], copyParamsIn,
             padParams); // k * size * inputSizeLastDim + j + index * tasksOnceMaxPerCore * size

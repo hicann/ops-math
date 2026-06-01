@@ -42,6 +42,14 @@ public:
         this->workspaceT2SumRes.SetGlobalBuffer(reinterpret_cast<__gm__ T2*>(workspace) + gradInBlockOffset);
     }
 
+    template <AscendC::HardEvent hardEvent>
+    __aicore__ inline void PipeSync()
+    {
+        int32_t eventID = static_cast<int32_t>(GetTPipePtr()->FetchEventID(hardEvent));
+        AscendC::SetFlag<hardEvent>(eventID);
+        AscendC::WaitFlag<hardEvent>(eventID);
+    }
+
     __aicore__ inline void ProcessFinalAxeBigSize(int curSrcStart, int curDstStart)
     {
         this->tasksOnce = this->tasksOnceMaxPerCore;
@@ -65,7 +73,7 @@ public:
             }
         }
     }
-    
+
     __aicore__ inline void Process()
     {
         for (int batchIdx = 0; batchIdx < curCoreBatchNum; batchIdx++) {
@@ -77,7 +85,6 @@ public:
                 this->SetGMtoZero(this->outputNumPerCore, dstStart);
             }
 
-            AscendC::PipeBarrier<PIPE_ALL>();
             ProcessFinalAxeBigSize(srcStart, dstStart);
 
             if constexpr (ISCAST) {
@@ -85,24 +92,20 @@ public:
                 this->CalculateOutParms(params);
                 this->CopyToOutBigShapeOnePage(batchIdx, batchIdx, params);
             }
-            AscendC::PipeBarrier<PIPE_ALL>();
+            PipeSync<AscendC::HardEvent::MTE3_V>();
+            PipeSync<AscendC::HardEvent::S_V>();
         }
     }
 
 private:
-    template <AscendC::HardEvent hardEvent>
-    __aicore__ inline void PipeSync()
-    {
-        int32_t eventID = static_cast<int32_t>(GetTPipePtr()->FetchEventID(hardEvent));
-        AscendC::SetFlag<hardEvent>(eventID);
-        AscendC::WaitFlag<hardEvent>(eventID);
-    }
     __aicore__ inline void CopyInFinalAxeBigSize(int64_t curSrcStart, int64_t index, int64_t curHandleNum)
     {
         AscendC::LocalTensor<T1> srcLocal =
             ISCAST ? this->inQueueSrc.template AllocTensor<T1>() : this->computeOutQueueDst.template AllocTensor<T1>();
         AscendC::DataCopyPadExtParams<T1> padParams{false, 0, 0, 0};
         AscendC::PipeBarrier<PIPE_V>();
+        PipeSync<AscendC::HardEvent::MTE3_V>();
+        PipeSync<AscendC::HardEvent::S_V>();
         T1 zeroVal(0.0);
         int srcDataSize = ISCAST ? this->ubSizeT1 : this->T2SrcDataSize;
         AscendC::Duplicate<T1>(srcLocal, zeroVal, srcDataSize / this->typeSizeT1);
@@ -130,6 +133,7 @@ private:
             // fp16转fp32
             srcLocal = this->inQueueSrc.template DeQue<T1>();
             AscendC::LocalTensor<T2> computeDstLocal = this->computeOutQueueDst.template AllocTensor<T2>();
+            AscendC::PipeBarrier<PIPE_V>();
             AscendC::Cast(
                 computeDstLocal, srcLocal, AscendC::RoundMode::CAST_NONE, srcDataSize / this->typeSizeT1);
             this->computeOutQueueDst.template EnQue(computeDstLocal);
