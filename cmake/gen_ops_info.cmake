@@ -495,10 +495,10 @@ function(gen_ops_info_and_python)
     ${ASCEND_KERNEL_SRC_DST}
     )
 
-  string(JOIN "/" simplified_key_str ${simplified_key_list})
-  string(JOIN "/" impl_mode_str ${impl_mode_list})
-  string(JOIN "/" auto_sync_str ${auto_sync_list})
-  string(JOIN "/" options_str ${option_list})
+  string(JOIN "/" simplified_key_str ${SIMPLIFIED_KEY_LIST})
+  string(JOIN "/" impl_mode_str ${IMPL_MODE_LIST})
+  string(JOIN "/" auto_sync_str ${AUTO_SYNC_LIST})
+  string(JOIN "/" options_str ${OPTION_LIST})
 
   add_custom_target(gen_kernel_options
     COMMAND ${ASCEND_PYTHON_EXECUTABLE} ${OPS_KERNEL_BINARY_SCRIPT}/gen_ops_compile_ini.py ${CMAKE_BINARY_DIR}/tbe/config

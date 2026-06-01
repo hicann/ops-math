@@ -32,10 +32,10 @@ set(COMPILED_OPS CACHE STRING "Compiled Ops" FORCE)
 set(COMPILED_OP_DIRS CACHE STRING "Compiled Ops Dirs" FORCE)
 
 # kernel compile options
-set(simplified_key_list CACHE STRING "kernel compile simplified key list" FORCE)
-set(impl_mode_list CACHE STRING "kernel compile impl mode list" FORCE)
-set(auto_sync_list CACHE STRING "kernel compile auto sync list" FORCE)
-set(option_list CACHE STRING "kernel compile options list" FORCE)
+set(SIMPLIFIED_KEY_LIST CACHE STRING "kernel compile simplified key list" FORCE)
+set(IMPL_MODE_LIST CACHE STRING "kernel compile impl mode list" FORCE)
+set(AUTO_SYNC_LIST CACHE STRING "kernel compile auto sync list" FORCE)
+set(OPTION_LIST CACHE STRING "kernel compile options list" FORCE)
 
 # src path
 get_filename_component(OPS_MATH_CMAKE_DIR           "${OPS_MATH_DIR}/cmake"                              REALPATH)
