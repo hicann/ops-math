@@ -151,6 +151,19 @@ Status GetProperty(const Operator& op, ReduceSum13Prop& prop)
 
 } // namespace
 
+static Status GetInputTensorDimNum(const Operator& data_op, int64_t& dim_num) {
+  ge::TensorDesc input_desc = data_op.GetInputDesc(0);
+  auto shape = input_desc.GetShape();
+  if (shape.GetDimNum() <= 0) {
+    OP_LOGE("GetInputTensorDimNum", "Get input shape is invalid.");
+    return FAILED;
+  }
+
+  dim_num = shape.GetDimNum();
+  OP_LOGI(GetOpName(data_op).c_str(), "GetInputTensorDimNum is: %ld", dim_num);
+  return SUCCESS;
+}
+
 static Status ParseOpToGraphReduceSum13(const Operator& op, Graph& graph)
 {
     ReduceSum13Prop prop;
@@ -160,20 +173,30 @@ static Status ParseOpToGraphReduceSum13(const Operator& op, Graph& graph)
     auto data0 = op::Data((prop.ori_name + "_data0").c_str()).set_attr_index(0);
     int num_input = 2;
     if (prop.input_num == 1 && prop.empty_axes == 0) {
-        std::vector<int64_t> v_axes = {};
+        int64_t input_dim_num = 0;
+        if (GetInputTensorDimNum(op, input_dim_num) != SUCCESS) {
+          OP_LOGE(GetOpName(op).c_str(), "Failed to get input tensor dimensions");
+          return FAILED;
+        }
+
+        std::vector<int64_t> v_axes;
+        for (int64_t i = 0; i < input_dim_num; ++i) {
+          v_axes.push_back(i);
+        }
         ge::TensorDesc tensorDesc;
-        std::vector<int64_t> dims = {};
+        std::vector<int64_t> dims = {input_dim_num};
         ge::Shape shape(dims);
         tensorDesc.SetShape(shape);
         tensorDesc.SetDataType(DT_INT64);
-        ge::Tensor tensor(tensorDesc, reinterpret_cast<uint8_t*>(v_axes.data()), v_axes.size() * sizeof(int));
+        ge::Tensor tensor(tensorDesc, reinterpret_cast<uint8_t*>(v_axes.data()), v_axes.size() * sizeof(int64_t));
         auto axes = op::Const((prop.ori_name + "_axes").c_str()).set_attr_value(tensor);
-        std::vector<Operator> inputs{data0};
+        std::vector<Operator> inputs{data0, axes};
         std::vector<std::pair<Operator, std::vector<size_t> > > output_indexs;
         auto reducesum = op::ReduceSum((prop.ori_name + "_ReduceSum").c_str())
                              .set_input_x(data0)
                              .set_input_axes(axes)
-                             .set_attr_keep_dims(prop.keep_dims);
+                             .set_attr_keep_dims(prop.keep_dims)
+                             .set_attr_noop_with_empty_axes(prop.empty_axes);
         output_indexs.emplace_back(reducesum, vector<std::size_t>{0});
         graph.SetInputs(inputs).SetOutputs(output_indexs);
     } else if (prop.input_num == num_input) {
@@ -181,7 +204,8 @@ static Status ParseOpToGraphReduceSum13(const Operator& op, Graph& graph)
         auto reducesum13 = op::ReduceSum((prop.ori_name + "_ReduceSum").c_str())
                                .set_input_x(data0)
                                .set_input_axes(data1)
-                               .set_attr_keep_dims(prop.keep_dims);
+                               .set_attr_keep_dims(prop.keep_dims)
+                               .set_attr_noop_with_empty_axes(prop.empty_axes);
         std::vector<Operator> inputs{data0, data1};
         std::vector<std::pair<Operator, std::vector<size_t> > > output_indexs;
         output_indexs.emplace_back(reducesum13, vector<std::size_t>{0});
