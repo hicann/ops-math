@@ -1144,7 +1144,7 @@
     <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>返回输入张量相对于一个scalar值的余数。</td>
+    <td>张量取余计算。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1935,6 +1935,16 @@
     <td>×</td>
     <td>AI Core</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/truncate_mod/README.md">truncate_mod</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>张量取余计算。</td>
   </tr>
   <tr>
     <td>math</td>
