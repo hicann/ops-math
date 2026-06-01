@@ -588,6 +588,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/truncate_div/README.md">truncate_div</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>完成截断除法计算，结果向零取整。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/div_no_nan/README.md">div_no_nan</a></td>
     <td>√</td>
     <td>√</td>

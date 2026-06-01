@@ -15,6 +15,7 @@
 #include "math/real_div/op_api/realdiv.h"
 #include "math/trunc/op_api/trunc.h"
 #include "math/muls/op_api/muls.h"
+#include "math/truncate_div/op_api/truncate_div.h"
 #include "op_api/op_api_def.h"
 #include "op_api/aclnn_check.h"
 #include "aclnn_kernels/common/op_error_check.h"
@@ -33,11 +34,12 @@ using namespace op;
 extern "C" {
 #endif
 
-op::DataType PromoteIntegerInputsToFloat(const op::DataType input) {
-  if (IsIntegralType(input)) {
-    return op::DataType::DT_FLOAT;
-  }
-  return input;
+op::DataType PromoteIntegerInputsToFloat(const op::DataType input)
+{
+    if (IsIntegralType(input)) {
+        return op::DataType::DT_FLOAT;
+    }
+    return input;
 }
 
 static op::DataType InnerTypeToComplexType(const op::DataType input)
@@ -114,13 +116,31 @@ static const int MODE_REAL_DIV = 0;
 static const int MODE_TRUNC_DIV = 1;
 static const int MODE_FLOOR_DIV = 2;
 
+// TruncateDiv 支持的类型组合映射表（不需要类型提升）
+static const std::initializer_list<std::pair<op::DataType, op::DataType>> TRUNC_DTYPE_MAPPING = {
+    {op::DataType::DT_BF16, op::DataType::DT_BF16},     {op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT16},
+    {op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT}, {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16},
+    {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT},   {op::DataType::DT_FLOAT, op::DataType::DT_INT32},
+    {op::DataType::DT_INT32, op::DataType::DT_INT32},   {op::DataType::DT_INT32, op::DataType::DT_FLOAT},
+    {op::DataType::DT_UINT8, op::DataType::DT_UINT8},   {op::DataType::DT_INT8, op::DataType::DT_INT8},
+    {op::DataType::DT_INT64, op::DataType::DT_INT64},   {op::DataType::DT_INT16, op::DataType::DT_INT16}};
+
+static bool isInTruncDtypeMapping(const op::DataType selfDtype, const op::DataType otherDtype)
+{
+    for (const auto& pair : TRUNC_DTYPE_MAPPING) {
+        if (pair.first == selfDtype && pair.second == otherDtype) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static const std::initializer_list<std::pair<op::DataType, op::DataType>> AllowedMixDtypePairs = {
-    {op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT16}, {op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT}, 
-    {op::DataType::DT_FLOAT16, op::DataType::DT_BF16}, {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16}, 
-    {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT}, {op::DataType::DT_FLOAT, op::DataType::DT_BF16}, 
-    {op::DataType::DT_BF16, op::DataType::DT_FLOAT16}, {op::DataType::DT_BF16, op::DataType::DT_FLOAT}, 
-    {op::DataType::DT_BF16, op::DataType::DT_BF16}
-};
+    {op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT16}, {op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT},
+    {op::DataType::DT_FLOAT16, op::DataType::DT_BF16},    {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16},
+    {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT},     {op::DataType::DT_FLOAT, op::DataType::DT_BF16},
+    {op::DataType::DT_BF16, op::DataType::DT_FLOAT16},    {op::DataType::DT_BF16, op::DataType::DT_FLOAT},
+    {op::DataType::DT_BF16, op::DataType::DT_BF16}};
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
@@ -164,13 +184,14 @@ static inline aclnnStatus CheckDivModComplexDtype(const op::DataType promoteType
 static inline op::DataType InferDivModeDtype(
     const op::DataType selfDtype, const op::DataType otherDtype, const int mode)
 {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     auto promoteType = op::PromoteType(selfDtype, otherDtype);
     // 下沉PTA入口操作将入参类型转化成FLOAT进行后续处理
     if (mode == MODE_REAL_DIV && promoteType != op::DataType::DT_INT32 && promoteType != op::DataType::DT_BOOL) {
         // IterateBase 配置特殊处理
         promoteType = PromoteIntegerInputsToFloat(promoteType);
     }
-    if (mode == MODE_TRUNC_DIV && promoteType == DataType::DT_DOUBLE) {
+    if (mode == MODE_TRUNC_DIV && promoteType == DataType::DT_DOUBLE && !IsRegBase(npuArch)) {
         promoteType = DataType::DT_FLOAT;
     }
     return promoteType;
@@ -276,9 +297,8 @@ static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, cons
 {
     // 检查self和other能否做数据类型推导
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
-    auto promoteType = (IsRegBase(npuArch)) ?
-                           InferDivModeDtype(self->GetDataType(), other->GetDataType(), mode) :
-                           op::PromoteType(self->GetDataType(), other->GetDataType());
+    auto promoteType = (IsRegBase(npuArch)) ? InferDivModeDtype(self->GetDataType(), other->GetDataType(), mode) :
+                                              op::PromoteType(self->GetDataType(), other->GetDataType());
     if (promoteType == DataType::DT_UNDEFINED) {
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
@@ -287,9 +307,8 @@ static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, cons
     }
 
     // 检查推导后的数据类型能否转换为输出的数据类型
-    bool outDtypeToFloat = IsRegBase()
-                           && mode == MODE_REAL_DIV
-                           && (promoteType == op::DataType::DT_INT32 || promoteType == op::DataType::DT_BOOL);
+    bool outDtypeToFloat = IsRegBase() && mode == MODE_REAL_DIV &&
+                           (promoteType == op::DataType::DT_INT32 || promoteType == op::DataType::DT_BOOL);
     auto computeDtype = outDtypeToFloat ? op::DataType::DT_FLOAT : promoteType;
     OP_CHECK_RESULT_DTYPE_CAST_FAILED(computeDtype, y->GetDataType(), return false);
     return true;
@@ -390,11 +409,11 @@ inline static bool isDivsMixDtypeSupport(const aclTensor* self, const aclScalar*
            (self->GetDataType() == DataType::DT_BF16 && other->GetDataType() == DataType::DT_FLOAT16);
 }
 
-inline static bool checkMixDtypeConditions(DataType selfDtype, DataType otherDtype){
+inline static bool checkMixDtypeConditions(DataType selfDtype, DataType otherDtype)
+{
     return std::find(
                AllowedMixDtypePairs.begin(), AllowedMixDtypePairs.end(),
-               std::pair<op::DataType, op::DataType>(selfDtype, otherDtype)) !=
-           AllowedMixDtypePairs.end();
+               std::pair<op::DataType, op::DataType>(selfDtype, otherDtype)) != AllowedMixDtypePairs.end();
 }
 
 inline static bool isMixDtypeScalarSupport(const aclTensor* self, const aclScalar* other)
@@ -416,8 +435,8 @@ inline static bool isMixDtypeTensorSupport(const aclTensor* self, const aclTenso
 }
 
 static aclnnStatus HandleMixDataTypeDiv(
-    const aclTensor* self, const aclTensor* other, aclOpExecutor* executor, const aclTensor** divOpOut
-) {
+    const aclTensor* self, const aclTensor* other, aclOpExecutor* executor, const aclTensor** divOpOut)
+{
     // 固定写法，将输入self转换成连续的tensor
     auto selfContiguous = l0op::Contiguous(self, executor);
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -433,13 +452,13 @@ static aclnnStatus HandleMixDataTypeDiv(
 }
 
 static aclnnStatus HandleNotMixDataTypeDiv(
-    const aclTensor* self, const aclTensor* other, aclOpExecutor* executor, const aclTensor** divOpOut
-) {
+    const aclTensor* self, const aclTensor* other, aclOpExecutor* executor, const aclTensor** divOpOut)
+{
     // RealDiv算子需要对self和other两个输入做隐式数据类型转换，根据具体算子语义按需调用
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     auto promoteType = (!IsRegBase(npuArch)) ?
-                        CompatibleInferDivDtype(self->GetDataType(), other->GetDataType()) :
-                        InferDivModeDtype(self->GetDataType(), other->GetDataType(), MODE_REAL_DIV);
+                           CompatibleInferDivDtype(self->GetDataType(), other->GetDataType()) :
+                           InferDivModeDtype(self->GetDataType(), other->GetDataType(), MODE_REAL_DIV);
 
     // 处理self输入
     const aclTensor* selfProcessed = nullptr;
@@ -653,13 +672,17 @@ aclnnStatus aclnnDivsGetWorkspaceSize(
                                CompatibleInferDivsDtype(self->GetDataType(), other->GetDataType()) :
                                InferDivsModeDtype(self->GetDataType(), other->GetDataType(), MODE_REAL_DIV);
         promoteType = (IsFloatingType(self->GetDataType()) || IsComplexType(self->GetDataType())) ?
-                          self->GetDataType() : op::DataType::DT_FLOAT;
+                          self->GetDataType() :
+                          op::DataType::DT_FLOAT;
         promoteType = (self->GetDataType() == op::DataType::DT_BOOL && other->GetDataType() == op::DataType::DT_BOOL) ?
-                          self->GetDataType() : promoteType;
-        promoteType = (IsComplexType(other->GetDataType())) ? op::PromoteType(promoteType, other->GetDataType()) : promoteType;
+                          self->GetDataType() :
+                          promoteType;
+        promoteType =
+            (IsComplexType(other->GetDataType())) ? op::PromoteType(promoteType, other->GetDataType()) : promoteType;
         if (IsRegBase(npuArch)) {
-            promoteType = op::PromoteType(self->GetDataType(), other->GetDataType()) == op::DataType::DT_INT32
-                          ? op::DataType::DT_INT32 : promoteType;
+            promoteType = op::PromoteType(self->GetDataType(), other->GetDataType()) == op::DataType::DT_INT32 ?
+                              op::DataType::DT_INT32 :
+                              promoteType;
         }
 
         bool canUseMuls = CanUseMuls(self, other);
@@ -736,7 +759,36 @@ aclnnStatus aclnnDivModGetWorkspaceSize(
 
     bool isMixDataType = isMixDtypeTensorSupport(self, other);
     const aclTensor* divOpOut = nullptr;
-    if (isMixDataType) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+
+    // TruncateDiv 特殊处理：IsRegBase && mode=MODE_TRUNC_DIV && 类型组合在映射表中，不做类型提升
+    if (IsRegBase(npuArch) && mode == MODE_TRUNC_DIV) {
+        OP_LOGI(
+            "aclnnDivMod", "Enter TruncateDiv branch, selfDtype=%s, otherDtype=%s",
+            op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
+        if (isInTruncDtypeMapping(self->GetDataType(), other->GetDataType())) {
+            OP_LOGI(
+                "aclnnDivMod", "TruncateDiv direct path: no type promotion, selfDtype=%s, otherDtype=%s",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
+            divOpOut = l0op::TruncateDiv(selfContiguous, otherContiguous, uniqueExecutor.get());
+        } else {
+            op::DataType promoteType;
+            promoteType = InferDivModeDtype(self->GetDataType(), other->GetDataType(), mode);
+            bool needToFloat = (promoteType == op::DataType::DT_BOOL);
+            promoteType = needToFloat ? op::DataType::DT_FLOAT : promoteType;
+            OP_LOGI(
+                "aclnnDivMod", "TruncateDiv cast path: selfDtype=%s -> %s, otherDtype=%s -> %s, promoteType=%s",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(promoteType).GetString(),
+                op::ToString(other->GetDataType()).GetString(), op::ToString(promoteType).GetString(),
+                op::ToString(promoteType).GetString());
+            selfCasted = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
+            CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            otherCasted = l0op::Cast(otherContiguous, promoteType, uniqueExecutor.get());
+            CHECK_RET(otherCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            divOpOut = l0op::TruncateDiv(selfCasted, otherCasted, uniqueExecutor.get());
+        }
+        CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    } else if (isMixDataType) {
         if (mode == MODE_FLOOR_DIV) {
             divOpOut = l0op::FloorDiv(selfCasted, otherCasted, false, uniqueExecutor.get());
         } else {
@@ -752,7 +804,6 @@ aclnnStatus aclnnDivModGetWorkspaceSize(
         op::DataType promoteType;
         bool needToInt32 = false;
         op::DataType oriType = out->GetDataType();
-        auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
         if (!IsRegBase(npuArch)) {
             auto promoteRet = CompatibleInferDivModeDtype(self->GetDataType(), other->GetDataType(), mode, promoteType);
             CHECK_RET(promoteRet == ACLNN_SUCCESS, promoteRet);
@@ -765,9 +816,9 @@ aclnnStatus aclnnDivModGetWorkspaceSize(
             promoteType = needToFloat ? op::DataType::DT_FLOAT : promoteType;
             // aicore is not supported, aicpu has problems when div 0
             needToInt32 = (promoteType == op::DataType::DT_INT16 && mode == MODE_FLOOR_DIV) ||
-                        ((promoteType == op::DataType::DT_INT8 || promoteType == op::DataType::DT_UINT8 ||
+                          ((promoteType == op::DataType::DT_INT8 || promoteType == op::DataType::DT_UINT8 ||
                             promoteType == op::DataType::DT_INT16) &&
-                        mode == MODE_TRUNC_DIV);
+                           mode == MODE_TRUNC_DIV);
             oriType = promoteType;
             promoteType = needToInt32 ? op::DataType::DT_INT32 : promoteType;
         }
@@ -792,7 +843,7 @@ aclnnStatus aclnnDivModGetWorkspaceSize(
             CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
         }
     }
-    
+
     auto castOut = l0op::Cast(divOpOut, out->GetDataType(), uniqueExecutor.get());
     CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
@@ -836,7 +887,38 @@ aclnnStatus aclnnDivModsGetWorkspaceSize(
     auto selfCasted = selfContiguous;
     bool isMixDataType = isMixDtypeScalarSupport(self, other);
     const aclTensor* divOpOut = nullptr;
-    if (isMixDataType) {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+
+    // TruncateDiv 特殊处理：IsRegBase && mode=MODE_TRUNC_DIV && 类型组合在映射表中，不做类型提升
+    if (IsRegBase(npuArch) && mode == MODE_TRUNC_DIV) {
+        OP_LOGI(
+            "aclnnDivMods", "Enter TruncateDiv branch, selfDtype=%s, otherDtype=%s",
+            op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
+        if (isInTruncDtypeMapping(self->GetDataType(), other->GetDataType())) {
+            OP_LOGI(
+                "aclnnDivMods", "TruncateDiv direct path: no type promotion, selfDtype=%s, otherDtype=%s",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
+            auto otherConvert = uniqueExecutor.get()->ConvertToTensor(other, other->GetDataType());
+            CHECK_RET(otherConvert != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            divOpOut = l0op::TruncateDiv(selfContiguous, otherConvert, uniqueExecutor.get());
+        } else {
+            op::DataType promoteType;
+            promoteType = InferDivModeDtype(self->GetDataType(), other->GetDataType(), mode);
+            bool needToFloat = (promoteType == op::DataType::DT_BOOL);
+            promoteType = needToFloat ? op::DataType::DT_FLOAT : promoteType;
+            OP_LOGI(
+                "aclnnDivMods", "TruncateDiv cast path: selfDtype=%s -> %s, otherDtype=%s -> %s, promoteType=%s",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(promoteType).GetString(),
+                op::ToString(other->GetDataType()).GetString(), op::ToString(promoteType).GetString(),
+                op::ToString(promoteType).GetString());
+            selfCasted = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
+            CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            auto otherCasted = uniqueExecutor.get()->ConvertToTensor(other, promoteType);
+            CHECK_RET(otherCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
+            divOpOut = l0op::TruncateDiv(selfCasted, otherCasted, uniqueExecutor.get());
+        }
+        CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    } else if (isMixDataType) {
         auto otherConvert = uniqueExecutor.get()->ConvertToTensor(other, other->GetDataType());
         CHECK_RET(otherConvert != nullptr, ACLNN_ERR_INNER_NULLPTR);
         if (mode == MODE_FLOOR_DIV) {
@@ -853,9 +935,9 @@ aclnnStatus aclnnDivModsGetWorkspaceSize(
         op::DataType promoteType;
         bool needToInt32 = false;
         op::DataType oriType = out->GetDataType();
-        auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
         if (!IsRegBase(npuArch)) {
-            auto promoteRet = CompatibleInferDivsModeDtype(self->GetDataType(), other->GetDataType(), mode, promoteType);
+            auto promoteRet =
+                CompatibleInferDivsModeDtype(self->GetDataType(), other->GetDataType(), mode, promoteType);
             CHECK_RET(promoteRet == ACLNN_SUCCESS, promoteRet);
         } else {
             promoteType = InferDivsModeDtype(self->GetDataType(), other->GetDataType(), mode);
@@ -866,9 +948,9 @@ aclnnStatus aclnnDivModsGetWorkspaceSize(
             promoteType = needToFloat ? op::DataType::DT_FLOAT : promoteType;
             // aicore is not supported, aicpu has problems when div 0
             needToInt32 = (promoteType == op::DataType::DT_INT16 && mode == MODE_FLOOR_DIV) ||
-                        ((promoteType == op::DataType::DT_INT8 || promoteType == op::DataType::DT_UINT8 ||
+                          ((promoteType == op::DataType::DT_INT8 || promoteType == op::DataType::DT_UINT8 ||
                             promoteType == op::DataType::DT_INT16) &&
-                        mode == MODE_TRUNC_DIV);
+                           mode == MODE_TRUNC_DIV);
             oriType = promoteType;
             promoteType = needToInt32 ? op::DataType::DT_INT32 : promoteType;
         }
@@ -893,7 +975,7 @@ aclnnStatus aclnnDivModsGetWorkspaceSize(
             CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
         }
     }
-    
+
     auto castOut = l0op::Cast(divOpOut, out->GetDataType(), uniqueExecutor.get());
     CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
@@ -1045,7 +1127,7 @@ aclnnStatus aclnnInplaceDivModGetWorkspaceSize(
             divOpOut = l0op::InplaceTrunc(divOpOut, uniqueExecutor.get());
         }
         CHECK_RET(divOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        
+
         auto castOut = l0op::Cast(divOpOut, out->GetDataType(), uniqueExecutor.get());
         CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
