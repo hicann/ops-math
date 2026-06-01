@@ -8,12 +8,12 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "../../../reflection_pad3d_grad/op_api/aclnn_reflection_pad3d_backward.h"
+#include "../../reflection_pad3d_grad/op_api/aclnn_reflection_pad3d_backward.h"
 #include "aclnn_replication_pad3d_backward.h"
-#include "../../../pad_v3_grad/op_api/padv3grad.h"
+#include "../../pad_v3_grad/op_api/padv3grad.h"
 #include "aclnn_kernels/contiguous.h"
-#include "../../../squeeze/op_host/op_api/squeeze.h"
-#include "../../../unsqueeze/op_host/op_api/unsqueeze.h"
+#include "../../squeeze/op_host/op_api/squeeze.h"
+#include "../../unsqueeze/op_host/op_api/unsqueeze.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "aclnn_kernels/cast.h"
 #include "opdev/op_dfx.h"

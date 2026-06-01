@@ -882,7 +882,8 @@ private:
     __aicore__ inline void CopyOutMoveLeft(uint64_t startPos, uint16_t dataLength)
     {
         DataCopyExtParams copyParams{
-            dataLength, dtypeByteSize, 0, (tilingData.outputShape[DIM_3] - 1) * dtypeByteSize, 0};
+            dataLength, dtypeByteSize, 0,
+            (uint32_t)((tilingData.outputShape[DIM_3] - 1) * dtypeByteSize), 0};
         if constexpr (isB16) {
             SetFlag<HardEvent::MTE2_V>(evtIDMTE2ToV); // 计算等搬入
             WaitFlag<HardEvent::MTE2_V>(evtIDMTE2ToV);
@@ -997,7 +998,7 @@ private:
     {
         DataCopyExtParams copyParams{
             repeatTimes, dataLength * dtypeByteSize, 0,
-            (tilingData.cubeOutputSize - tilingData.layerOutputSize) * dtypeByteSize, 0};
+            (uint32_t)((tilingData.cubeOutputSize - tilingData.layerOutputSize) * dtypeByteSize), 0};
         if constexpr (isB16) {
             DataCopyPad(zGm[startPos], mLocalB16Little, copyParams);
         } else {

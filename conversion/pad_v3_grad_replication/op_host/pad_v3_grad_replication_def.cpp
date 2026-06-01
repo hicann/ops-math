@@ -30,6 +30,7 @@ public:
                 {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
         this->Input("paddings")
             .ParamType(REQUIRED)
+            .ValueDepend(OPTIONAL)
             .DataType({ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .UnknownShapeFormat(
@@ -47,6 +48,15 @@ public:
             .DynamicShapeSupportFlag(true);
         this->AICore().AddConfig("ascend910b");
         this->AICore().AddConfig("ascend910_93");
+        OpAICoreConfig aicore_config950;
+        aicore_config950.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .PrecisionReduceFlag(true)
+            .ExtendCfgInfo("opFile.value", "pad_v3_grad_replication_apt");
+        this->AICore().AddConfig("ascend950", aicore_config950);
     }
 };
 OP_ADD(PadV3GradReplication);

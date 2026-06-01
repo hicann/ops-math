@@ -15,7 +15,7 @@
 
 #include <iostream>
 #include <gtest/gtest.h>
-#include "../../../op_host/pad_v3_grad_replication_tiling.h"
+#include "conversion/pad_v3_grad_replication/op_host/arch32/pad_v3_grad_replication_tiling.h"
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
 
