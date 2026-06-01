@@ -155,3 +155,67 @@ TEST_F(MulNoNanInfershape, vector_1d_int32)
     std::vector<std::vector<int64_t>> expectOutputShape = {{8}};
     ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
 }
+
+// Case 9: row x column mutual broadcast x1=[1,5], x2=[5,1] -> [5,5], fp32.
+TEST_F(MulNoNanInfershape, row_col_broadcast_fp32)
+{
+    gert::InfershapeContextPara para(
+        "MulNoNan",
+        {
+            {{{1, 5}, {1, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{5, 1}, {5, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{5, 5}};
+    ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Case 10: trailing column-vector broadcast x1=[4,1], x2=[4,6] -> [4,6], fp32.
+TEST_F(MulNoNanInfershape, col_vector_broadcast_fp32)
+{
+    gert::InfershapeContextPara para(
+        "MulNoNan",
+        {
+            {{{4, 1}, {4, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{4, 6}, {4, 6}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{4, 6}};
+    ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Case 11: 3-D mutual broadcast x1=[2,1,4], x2=[1,3,4] -> [2,3,4], fp16.
+TEST_F(MulNoNanInfershape, mutual_3d_broadcast_fp16)
+{
+    gert::InfershapeContextPara para(
+        "MulNoNan",
+        {
+            {{{2, 1, 4}, {2, 1, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+            {{{1, 3, 4}, {1, 3, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{2, 3, 4}};
+    ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Case 12: cross-rank where x2 is the higher-rank input x1=[5], x2=[3,4,5] -> [3,4,5], int32.
+TEST_F(MulNoNanInfershape, cross_rank_x2_bigger_int32)
+{
+    gert::InfershapeContextPara para(
+        "MulNoNan",
+        {
+            {{{5}, {5}}, ge::DT_INT32, ge::FORMAT_ND},
+            {{{3, 4, 5}, {3, 4, 5}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{3, 4, 5}};
+    ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
+}

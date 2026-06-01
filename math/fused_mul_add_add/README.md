@@ -11,8 +11,6 @@
 | <term>Atlas 推理系列产品</term>                              |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
 
-> 本算子目前仅在 Ascend 950 (dav-3510 / Atlas 350 加速卡) 架构上实现。
-
 ## 功能说明
 
 - **算子功能**：四元 element-wise 融合算子，把 `Mul → Add → Add` 子图融合为
@@ -68,3 +66,8 @@ In0/In1/In2/In3 -- CopyInBrc -- Cast(->fp32) -- Vec::Mul(x1,x2) -- Vec::Add(+x3)
 ```
 In0/In1/In2/In3 -- CopyInBrc -- Vec::Mul(x1,x2) -- Vec::Add(+x3) -- Vec::Add(+x4) -- CopyOut -- Out0
 ```
+## 调用说明
+
+| 调用方式   | 样例代码                                                     | 说明                                                         |
+| ---------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| 图模式 | [test_geir_fused_mul_add_add](examples/arch35/test_geir_fused_mul_add_add.cpp) | 通过[算子IR](op_graph/fused_mul_add_add_proto.h)构图方式调用 FusedMulAddAdd 算子。 |

@@ -14,11 +14,13 @@
  */
 #include "register/op_impl_registry.h"
 #include "op_common/op_host/infershape_broadcast_util.h"
+#include "log/log.h"
 
 using namespace ge;
 namespace ops {
 static ge::graphStatus InferShape4FusedMulAdd(gert::InferShapeContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin to do InferShape4FusedMulAdd in ops-math");
     const size_t INPUT_NUM_THREE = 3;
     return Ops::Base::InferShape4Broadcast(context, INPUT_NUM_THREE);
 }

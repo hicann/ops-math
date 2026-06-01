@@ -14,10 +14,17 @@
  */
 #include "op_host/infershape_broadcast_util.h"
 #include "register/op_impl_registry.h"
+#include "log/log.h"
 
 using namespace ge;
 namespace ops {
 
-IMPL_OP_INFERSHAPE(MulNoNan).InferShape(Ops::Base::InferShape4Broadcast);
+static ge::graphStatus InferShape4MulNoNan(gert::InferShapeContext* context)
+{
+    OP_LOGD(context->GetNodeName(), "Begin to do InferShape4MulNoNan in ops-math");
+    return Ops::Base::InferShape4Broadcast(context);
+}
+
+IMPL_OP_INFERSHAPE(MulNoNan).InferShape(InferShape4MulNoNan);
 
 } // namespace ops

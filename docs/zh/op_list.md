@@ -738,6 +738,26 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/fused_mul_add/README.md">fused_mul_add</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>三元逐元素融合算子，将Mul、Add融合为单次计算，公式 y = x1 * x2 + x3。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/fused_mul_add_add/README.md">fused_mul_add_add</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>四元逐元素融合算子，将Mul、Add、Add融合为单次计算，公式 y = x1 * x2 + x3 + x4。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/fused_mul_add_n/README.md">fused_mul_add_n</a></td>
     <td>√</td>
     <td>√</td>
@@ -1145,6 +1165,16 @@
     <td>√</td>
     <td>AI Core</td>
     <td>实现N>=2个mul和addn融合计算，减少搬运时间和内存的占用。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/mul_no_nan/README.md">mul_no_nan</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>二元逐元素安全乘法，当乘数x2为0时结果返回0，避免0*inf、0*nan产生NaN污染。</td>
   </tr>
   <tr>
     <td>math</td>

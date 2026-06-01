@@ -171,3 +171,97 @@ TEST_F(FusedMulAddAddInfershape, vector_1d_int32)
     std::vector<std::vector<int64_t>> expectOutputShape = {{8}};
     ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
 }
+
+// Case 9: x1/x2 are scalars and x3 carries the full shape -> output must take x3's
+// shape, i.e. the output is NOT x1's shape. Mirrors the graph-example bc_scalar case.
+TEST_F(FusedMulAddAddInfershape, scalar_mul_full_add_fp32)
+{
+    gert::InfershapeContextPara para(
+        "FusedMulAddAdd",
+        {
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{3, 4}, {3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{3, 4}};
+    ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Case 10: row x column mutual broadcast where x1 itself must be broadcast up:
+// x1=[1,5], x2=[5,1] -> [5,5]. Mirrors the graph-example bc_rowcol case.
+TEST_F(FusedMulAddAddInfershape, row_col_broadcast_fp32)
+{
+    gert::InfershapeContextPara para(
+        "FusedMulAddAdd",
+        {
+            {{{1, 5}, {1, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{5, 1}, {5, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{5, 5}, {5, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{5, 5}};
+    ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Case 11: 3-D mutual broadcast x1=[2,1,4], x2=[1,3,4] -> [2,3,4], fp16.
+// Mirrors the graph-example bc_3d case.
+TEST_F(FusedMulAddAddInfershape, mutual_3d_broadcast_fp16)
+{
+    gert::InfershapeContextPara para(
+        "FusedMulAddAdd",
+        {
+            {{{2, 1, 4}, {2, 1, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+            {{{1, 3, 4}, {1, 3, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+            {{{4}, {4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{2, 3, 4}};
+    ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Case 12: every input broadcasts on a different axis
+// x1=[4,1,1], x2=[1,3,1], x3=[1,1,5], x4=[1] -> [4,3,5], int32.
+TEST_F(FusedMulAddAddInfershape, all_four_broadcast_int32)
+{
+    gert::InfershapeContextPara para(
+        "FusedMulAddAdd",
+        {
+            {{{4, 1, 1}, {4, 1, 1}}, ge::DT_INT32, ge::FORMAT_ND},
+            {{{1, 3, 1}, {1, 3, 1}}, ge::DT_INT32, ge::FORMAT_ND},
+            {{{1, 1, 5}, {1, 1, 5}}, ge::DT_INT32, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{4, 3, 5}};
+    ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Case 13: trailing column-vector broadcast x1=[4,1], x2=[4,6], x3=[1], x4=[6] -> [4,6], fp32.
+TEST_F(FusedMulAddAddInfershape, col_vector_broadcast_fp32)
+{
+    gert::InfershapeContextPara para(
+        "FusedMulAddAdd",
+        {
+            {{{4, 1}, {4, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{4, 6}, {4, 6}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{6}, {6}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{4, 6}};
+    ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
+}

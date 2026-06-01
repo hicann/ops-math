@@ -11,8 +11,6 @@
 | <term>Atlas 推理系列产品</term>                              |    ×     |
 | <term>Atlas 训练系列产品</term>                              |    ×     |
 
-> 本算子目前仅在 Ascend 950 (dav-3510 / Atlas 350 加速卡) 架构上实现。
-
 ## 功能说明
 
 - **算子功能**：二元 element-wise 安全乘法，把 `Mul` 中
@@ -93,4 +91,4 @@ In0/In1 -- CopyInBrc -- Cast(->fp32) --+
 
 | 调用方式   | 样例代码                                                     | 说明                                                         |
 | ---------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| 图模式 | [test_geir_mul_no_nan](examples/test_geir_mul_no_nan.cpp) | 通过[算子IR](op_graph/mul_no_nan_proto.h)构图方式调用 MulNoNan 算子；覆盖 fp32/fp16/bf16/int32 基础用例 + `0·inf`、`0·NaN`、`-0`、广播等关键特殊值用例。 |
+| 图模式 | [test_geir_mul_no_nan](examples/arch35/test_geir_mul_no_nan.cpp) | 通过[算子IR](op_graph/mul_no_nan_proto.h)构图方式调用 MulNoNan 算子；覆盖 fp32/fp16/bf16/int32 基础用例 + `0·inf`、`0·NaN`、`-0`、广播等关键特殊值用例。 |

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -8,17 +8,17 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-// End-to-end GE-IR example for FusedMulAdd on Ascend 950.
+// End-to-end GE-IR example for FusedMulAddAdd on Ascend 950.
 //
 // Each test case builds a one-op graph, runs it on device, and checks the
 // output against a pre-computed expected value. The example exits with
 // status 0 only if every case passes.
 //
 // Cases:
-//   1. fp32 same shape [2,2]     :  x1=2,  x2=3, x3=4  -> y=10
-//   2. fp16 same shape [4]       :  x1=1.5,x2=2, x3=0.5 -> y=3.5
-//   3. int32 same shape [3]      :  x1=2,  x2=3, x3=5  -> y=11
-//   4. fp32 broadcast            :  x1=[4,1]=2, x2=[1,4]=3, x3=[]/scalar=1 -> y[4,4]=7
+//   1. fp32 same shape [2,2]   :  x1=2,  x2=3, x3=4,  x4=1   -> y=11
+//   2. fp16 same shape [4]     :  x1=1.5,x2=2, x3=0.5,x4=0.25 -> y=3.75
+//   3. int32 same shape [3]    :  x1=2,  x2=3, x3=5,  x4=10  -> y=21
+//   4. fp32 broadcast          :  x1=[4,4]=2, x2=[1]=3, x3=[1]=1, x4=[4]=0.5 -> y[4,4]=7.5
 
 #include <iostream>
 #include <fstream>
@@ -40,7 +40,7 @@
 #include "ge_ir_build.h"
 
 #include "nn_other.h"
-#include "../op_graph/fused_mul_add_proto.h"
+#include "../../op_graph/fused_mul_add_add_proto.h"
 
 #define FAILED -1
 #define SUCCESS 0
@@ -143,14 +143,14 @@ static int32_t GenConstTensor(
     return SUCCESS;
 }
 
-// Build a graph that computes y = x1 * x2 + x3 with three constant inputs.
-static int BuildFusedMulAddGraph(
+// Build a graph that computes y = x1 * x2 + x3 + x4 with four constant inputs.
+static int BuildFusedMulAddAddGraph(
     Graph& graph, std::vector<ge::Tensor>& inputData, std::vector<Operator>& inputs,
-    std::vector<Operator>& outputs, DataType dtype, double v1, double v2, double v3,
-    const vector<int64_t>& s1, const vector<int64_t>& s2, const vector<int64_t>& s3,
+    std::vector<Operator>& outputs, DataType dtype, double v1, double v2, double v3, double v4,
+    const vector<int64_t>& s1, const vector<int64_t>& s2, const vector<int64_t>& s3, const vector<int64_t>& s4,
     const vector<int64_t>& outShape, const string& caseTag)
 {
-    auto op = ge::op::FusedMulAdd("fma_" + caseTag);
+    auto op = ge::op::FusedMulAddAdd("fmaa_" + caseTag);
 
     // Input x1
     {
@@ -194,6 +194,20 @@ static int BuildFusedMulAddGraph(
         op.set_input_x3(ph);
         inputs.push_back(ph);
     }
+    // Input x4
+    {
+        auto ph = ge::op::Data("ph4_" + caseTag).set_attr_index(0);
+        TensorDesc d(ge::Shape(s4), FORMAT_ND, dtype);
+        d.SetPlacement(ge::kPlacementHost);
+        d.SetFormat(FORMAT_ND);
+        Tensor t;
+        if (GenConstTensor(s4, dtype, v4, t, d) != SUCCESS) return FAILED;
+        ph.update_input_desc_x(d);
+        inputData.push_back(t);
+        graph.AddOp(ph);
+        op.set_input_x4(ph);
+        inputs.push_back(ph);
+    }
     // Output y
     {
         TensorDesc d(ge::Shape(outShape), FORMAT_ND, dtype);
@@ -206,8 +220,8 @@ static int BuildFusedMulAddGraph(
 struct CaseSpec {
     string                 tag;
     DataType               dtype;
-    double                 v1, v2, v3;
-    vector<int64_t>        s1, s2, s3, outShape;
+    double                 v1, v2, v3, v4;
+    vector<int64_t>        s1, s2, s3, s4, outShape;
     double                 expected;
     double                 absTol;
 };
@@ -219,10 +233,10 @@ static int RunOneCase(const CaseSpec& spec)
     std::vector<ge::Tensor> inputData;
     std::vector<Operator> inputs;
     std::vector<Operator> outputs;
-    if (BuildFusedMulAddGraph(graph, inputData, inputs, outputs, spec.dtype,
-                              spec.v1, spec.v2, spec.v3,
-                              spec.s1, spec.s2, spec.s3, spec.outShape, spec.tag) != SUCCESS) {
-        printf("BuildFusedMulAddGraph failed\n");
+    if (BuildFusedMulAddAddGraph(graph, inputData, inputs, outputs, spec.dtype,
+                                 spec.v1, spec.v2, spec.v3, spec.v4,
+                                 spec.s1, spec.s2, spec.s3, spec.s4, spec.outShape, spec.tag) != SUCCESS) {
+        printf("BuildFusedMulAddAddGraph failed\n");
         return FAILED;
     }
     graph.SetInputs(inputs).SetOutputs(outputs);
@@ -293,11 +307,29 @@ int main(int argc, char* argv[])
     }
 
     std::vector<CaseSpec> cases = {
-        // tag                  dtype           v1   v2   v3   s1        s2        s3       out       expected absTol
-        {"fp32_same_shape",   ge::DT_FLOAT,   2.0, 3.0, 4.0, {2,2},    {2,2},    {2,2},   {2,2},    10.0,    1e-5},
-        {"fp16_same_shape",   ge::DT_FLOAT16, 1.5, 2.0, 0.5, {4},      {4},      {4},     {4},      3.5,     5e-3},
-        {"int32_same_shape",  ge::DT_INT32,   2.0, 3.0, 5.0, {3},      {3},      {3},     {3},      11.0,    0.5 },
-        {"fp32_broadcast",    ge::DT_FLOAT,   2.0, 3.0, 1.0, {4,1},    {1,4},    {1},     {4,4},    7.0,     1e-5},
+        // tag                  dtype           v1   v2   v3   v4    s1     s2     s3   s4     out     expected absTol
+        {"fp32_same_shape",   ge::DT_FLOAT,   2.0, 3.0, 4.0, 1.0,  {2,2}, {2,2}, {2,2}, {2,2}, {2,2}, 11.0,    1e-5},
+        {"fp16_same_shape",   ge::DT_FLOAT16, 1.5, 2.0, 0.5, 0.25, {4},   {4},   {4},   {4},   {4},   3.75,    5e-3},
+        {"int32_same_shape",  ge::DT_INT32,   2.0, 3.0, 5.0, 10.0, {3},   {3},   {3},   {3},   {3},   21.0,    0.5 },
+        {"fp32_broadcast",    ge::DT_FLOAT,   2.0, 3.0, 1.0, 0.5,  {4,4}, {1},   {1},   {4},   {4,4}, 7.5,     1e-5},
+        // --- extra broadcast scenarios ---
+        // x1/x2 scalar, x3 full 2-D, x4 scalar
+        {"fp32_bc_scalar",    ge::DT_FLOAT,   2.0, 3.0, 1.0, 0.5,  {1},   {1},   {3,4}, {1},   {3,4}, 7.5,     1e-5},
+        // row x column mutual broadcast {1,5} x {5,1} -> {5,5}
+        {"fp32_bc_rowcol",    ge::DT_FLOAT,   2.0, 3.0, 1.0, 0.5,  {1,5}, {5,1}, {5,5}, {1},   {5,5}, 7.5,     1e-5},
+        // 3-D mutual broadcast, x3 trailing-dim vector, x4 scalar
+        {"fp32_bc_3d",        ge::DT_FLOAT,   2.0, 3.0, 1.0, 0.5,  {2,1,4},{1,3,4},{4},  {1}, {2,3,4},7.5,    1e-5},
+        // fp16 2-D mutual broadcast
+        {"fp16_bc_mixed",     ge::DT_FLOAT16, 1.5, 2.0, 0.5, 0.25, {2,1}, {1,3}, {1},   {2,3}, {2,3}, 3.75,    5e-3},
+        // --- broadcast scenarios where x1 already carries the full output shape ---
+        // (the runtime currently requires x1 to be the full shape; the x1-broadcast-up
+        //  cases above expose that limitation)
+        // x1 full 2-D, x2 scalar, x3 row-vector, x4 column-vector
+        {"fp32_bc_x1full",    ge::DT_FLOAT,   2.0, 3.0, 1.0, 0.5,  {5,6}, {1},   {6},   {5,1}, {5,6}, 7.5,     1e-5},
+        // x1 full 3-D, lower-rank x2/x3/x4 broadcast in
+        {"fp32_bc_x1full_3d", ge::DT_FLOAT,   2.0, 3.0, 1.0, 0.5,  {2,3,4},{4},  {1},   {3,4}, {2,3,4},7.5,    1e-5},
+        // int32 x1 full, mixed broadcast residuals
+        {"int32_bc_x1full",   ge::DT_INT32,   2.0, 3.0, 5.0, 10.0, {3,4}, {4},   {1},   {3,1}, {3,4}, 21.0,    0.5 },
     };
 
     int allFail = 0;
@@ -318,7 +350,7 @@ int main(int argc, char* argv[])
                GetTime().c_str(), allFail, cases.size());
         return FAILED;
     }
-    printf("\n%s - PASS - [XIR]: all %zu fused_mul_add cases passed\n",
+    printf("\n%s - PASS - [XIR]: all %zu fused_mul_add_add cases passed\n",
            GetTime().c_str(), cases.size());
     return SUCCESS;
 }

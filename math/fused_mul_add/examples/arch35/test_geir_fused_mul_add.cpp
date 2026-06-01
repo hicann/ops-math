@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -8,20 +8,17 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-// End-to-end GE-IR example for MulNoNan on Ascend 950.
+// End-to-end GE-IR example for FusedMulAdd on Ascend 950.
 //
 // Each test case builds a one-op graph, runs it on device, and checks the
 // output against a pre-computed expected value. The example exits with
 // status 0 only if every case passes.
 //
-// Semantics: y = (x2 == 0) ? 0 : x1 * x2 (element-wise, broadcast).
-// Cases below specifically exercise the special-value contract that
-// distinguishes MulNoNan from plain Mul:
-//   * x1 = +/- inf, x2 = 0   ->  y = 0    (masks 0 * inf = NaN)
-//   * x1 = NaN,     x2 = 0   ->  y = 0    (masks 0 * NaN = NaN)
-//   * x1 = NaN,     x2 = 2   ->  y = NaN  (NaN propagates when x2 != 0)
-//   * x1 = inf,     x2 = 2   ->  y = inf  (Inf propagates when x2 != 0)
-//   * x1 = any,     x2 = -0  ->  y = 0    (-0 == 0 in IEEE-754)
+// Cases:
+//   1. fp32 same shape [2,2]     :  x1=2,  x2=3, x3=4  -> y=10
+//   2. fp16 same shape [4]       :  x1=1.5,x2=2, x3=0.5 -> y=3.5
+//   3. int32 same shape [3]      :  x1=2,  x2=3, x3=5  -> y=11
+//   4. fp32 broadcast            :  x1=[4,1]=2, x2=[1,4]=3, x3=[]/scalar=1 -> y[4,4]=7
 
 #include <iostream>
 #include <fstream>
@@ -31,7 +28,6 @@
 #include <string>
 #include <map>
 #include <cmath>
-#include <limits>
 #include "assert.h"
 
 #include "graph.h"
@@ -44,7 +40,7 @@
 #include "ge_ir_build.h"
 
 #include "nn_other.h"
-#include "../op_graph/mul_no_nan_proto.h"
+#include "../../op_graph/fused_mul_add_proto.h"
 
 #define FAILED -1
 #define SUCCESS 0
@@ -67,7 +63,6 @@ static uint32_t GetDataTypeSize(DataType dt)
 {
     if (dt == ge::DT_FLOAT)   return 4;
     if (dt == ge::DT_FLOAT16) return 2;
-    if (dt == ge::DT_BF16)    return 2;
     if (dt == ge::DT_INT32)   return 4;
     return 1;
 }
@@ -120,29 +115,7 @@ static float HalfBitsToFloat(uint16_t h)
     return f;
 }
 
-// IEEE-754 fp32 -> bfloat16 (round-to-nearest-even truncating low 16 bits).
-static uint16_t FloatToBf16Bits(float v)
-{
-    uint32_t x;
-    memcpy(&x, &v, sizeof(x));
-    // Preserve NaN signaling bit pattern: ensure result stays NaN.
-    if (((x >> 23) & 0xff) == 0xff && (x & 0x7fffff) != 0) {
-        return (uint16_t)((x >> 16) | 0x40);
-    }
-    uint32_t rounded = x + 0x7fff + ((x >> 16) & 1);
-    return (uint16_t)(rounded >> 16);
-}
-
-static float Bf16BitsToFloat(uint16_t b)
-{
-    uint32_t x = ((uint32_t)b) << 16;
-    float f;
-    memcpy(&f, &x, sizeof(f));
-    return f;
-}
-
 // Allocate a tensor and fill with a single value of the given dtype.
-// `value` is a double so that callers can pass inf / nan / -0.0 directly.
 static int32_t GenConstTensor(
     const vector<int64_t>& shape, DataType dtype, double value, Tensor& tensor, TensorDesc& desc)
 {
@@ -153,17 +126,11 @@ static int32_t GenConstTensor(
 
     if (dtype == ge::DT_FLOAT) {
         float* p = new (std::nothrow) float[numel];
-        float v = (float)value;
-        for (size_t i = 0; i < numel; ++i) p[i] = v;
+        for (size_t i = 0; i < numel; ++i) p[i] = (float)value;
         tensor = Tensor(desc, (uint8_t*)p, bytes);
     } else if (dtype == ge::DT_FLOAT16) {
         uint16_t* p = new (std::nothrow) uint16_t[numel];
         uint16_t v = FloatToHalfBits((float)value);
-        for (size_t i = 0; i < numel; ++i) p[i] = v;
-        tensor = Tensor(desc, (uint8_t*)p, bytes);
-    } else if (dtype == ge::DT_BF16) {
-        uint16_t* p = new (std::nothrow) uint16_t[numel];
-        uint16_t v = FloatToBf16Bits((float)value);
         for (size_t i = 0; i < numel; ++i) p[i] = v;
         tensor = Tensor(desc, (uint8_t*)p, bytes);
     } else if (dtype == ge::DT_INT32) {
@@ -176,14 +143,14 @@ static int32_t GenConstTensor(
     return SUCCESS;
 }
 
-// Build a graph that computes y = MulNoNan(x1, x2) with two constant inputs.
-static int BuildMulNoNanGraph(
+// Build a graph that computes y = x1 * x2 + x3 with three constant inputs.
+static int BuildFusedMulAddGraph(
     Graph& graph, std::vector<ge::Tensor>& inputData, std::vector<Operator>& inputs,
-    std::vector<Operator>& outputs, DataType dtype, double v1, double v2,
-    const vector<int64_t>& s1, const vector<int64_t>& s2,
+    std::vector<Operator>& outputs, DataType dtype, double v1, double v2, double v3,
+    const vector<int64_t>& s1, const vector<int64_t>& s2, const vector<int64_t>& s3,
     const vector<int64_t>& outShape, const string& caseTag)
 {
-    auto op = ge::op::MulNoNan("mnn_" + caseTag);
+    auto op = ge::op::FusedMulAdd("fma_" + caseTag);
 
     // Input x1
     {
@@ -213,6 +180,20 @@ static int BuildMulNoNanGraph(
         op.set_input_x2(ph);
         inputs.push_back(ph);
     }
+    // Input x3
+    {
+        auto ph = ge::op::Data("ph3_" + caseTag).set_attr_index(0);
+        TensorDesc d(ge::Shape(s3), FORMAT_ND, dtype);
+        d.SetPlacement(ge::kPlacementHost);
+        d.SetFormat(FORMAT_ND);
+        Tensor t;
+        if (GenConstTensor(s3, dtype, v3, t, d) != SUCCESS) return FAILED;
+        ph.update_input_desc_x(d);
+        inputData.push_back(t);
+        graph.AddOp(ph);
+        op.set_input_x3(ph);
+        inputs.push_back(ph);
+    }
     // Output y
     {
         TensorDesc d(ge::Shape(outShape), FORMAT_ND, dtype);
@@ -222,31 +203,14 @@ static int BuildMulNoNanGraph(
     return SUCCESS;
 }
 
-// Expected comparison policy for a single element.
-//   kExact: |got - expected| <= absTol (numeric)
-//   kIsNaN: got must be NaN regardless of expected
-struct ExpectPolicy {
-    enum class Mode { kExact, kIsNaN };
-    Mode   mode;
-    double expected;
-    double absTol;
-};
-
 struct CaseSpec {
     string                 tag;
     DataType               dtype;
-    double                 v1, v2;
-    vector<int64_t>        s1, s2, outShape;
-    ExpectPolicy           expect;
+    double                 v1, v2, v3;
+    vector<int64_t>        s1, s2, s3, outShape;
+    double                 expected;
+    double                 absTol;
 };
-
-static bool MatchOne(double got, const ExpectPolicy& expect)
-{
-    if (expect.mode == ExpectPolicy::Mode::kIsNaN) {
-        return std::isnan(got);
-    }
-    return std::abs(got - expect.expected) <= expect.absTol;
-}
 
 static int RunOneCase(const CaseSpec& spec)
 {
@@ -255,10 +219,10 @@ static int RunOneCase(const CaseSpec& spec)
     std::vector<ge::Tensor> inputData;
     std::vector<Operator> inputs;
     std::vector<Operator> outputs;
-    if (BuildMulNoNanGraph(graph, inputData, inputs, outputs, spec.dtype,
-                           spec.v1, spec.v2,
-                           spec.s1, spec.s2, spec.outShape, spec.tag) != SUCCESS) {
-        printf("BuildMulNoNanGraph failed\n");
+    if (BuildFusedMulAddGraph(graph, inputData, inputs, outputs, spec.dtype,
+                              spec.v1, spec.v2, spec.v3,
+                              spec.s1, spec.s2, spec.s3, spec.outShape, spec.tag) != SUCCESS) {
+        printf("BuildFusedMulAddGraph failed\n");
         return FAILED;
     }
     graph.SetInputs(inputs).SetOutputs(outputs);
@@ -293,18 +257,13 @@ static int RunOneCase(const CaseSpec& spec)
                 got = (double)reinterpret_cast<const float*>(raw)[j];
             } else if (spec.dtype == ge::DT_FLOAT16) {
                 got = (double)HalfBitsToFloat(reinterpret_cast<const uint16_t*>(raw)[j]);
-            } else if (spec.dtype == ge::DT_BF16) {
-                got = (double)Bf16BitsToFloat(reinterpret_cast<const uint16_t*>(raw)[j]);
             } else { // INT32
                 got = (double)reinterpret_cast<const int32_t*>(raw)[j];
             }
-            if (!MatchOne(got, spec.expect)) {
-                if (spec.expect.mode == ExpectPolicy::Mode::kIsNaN) {
-                    printf("  MISMATCH @%ld: got=%.6f expected=NaN\n", (long)j, got);
-                } else {
-                    printf("  MISMATCH @%ld: got=%.6f expected=%.6f absTol=%.6f\n",
-                           (long)j, got, spec.expect.expected, spec.expect.absTol);
-                }
+            double diff = std::abs(got - spec.expected);
+            if (diff > spec.absTol) {
+                printf("  MISMATCH @%ld: got=%.6f expected=%.6f diff=%.6f\n",
+                       (long)j, got, spec.expected, diff);
                 failCount++;
             }
         }
@@ -317,12 +276,8 @@ static int RunOneCase(const CaseSpec& spec)
                (long)output[0].GetTensorDesc().GetShape().GetShapeSize());
         return FAILED;
     }
-    if (spec.expect.mode == ExpectPolicy::Mode::kIsNaN) {
-        printf("%s - PASS - case %s (expected=NaN)\n", GetTime().c_str(), spec.tag.c_str());
-    } else {
-        printf("%s - PASS - case %s (expected=%.4f)\n",
-               GetTime().c_str(), spec.tag.c_str(), spec.expect.expected);
-    }
+    printf("%s - PASS - case %s (expected=%.4f)\n",
+           GetTime().c_str(), spec.tag.c_str(), spec.expected);
     return SUCCESS;
 }
 
@@ -337,40 +292,29 @@ int main(int argc, char* argv[])
         return FAILED;
     }
 
-    const double kInf  = std::numeric_limits<double>::infinity();
-    const double kNeg0 = -0.0;
-    const double kNaN  = std::numeric_limits<double>::quiet_NaN();
-
-    auto exact = [](double v, double tol) {
-        return ExpectPolicy{ExpectPolicy::Mode::kExact, v, tol};
-    };
-    auto nan = []() {
-        return ExpectPolicy{ExpectPolicy::Mode::kIsNaN, 0.0, 0.0};
-    };
-
     std::vector<CaseSpec> cases = {
-        // tag                       dtype           v1     v2    s1       s2       out      expect
-        // --- fp32 basics + special values ---
-        {"fp32_basic",             ge::DT_FLOAT,   2.0,   3.0,  {2,2},  {2,2},  {2,2},  exact(6.0,    1e-5)},
-        {"fp32_zero_y",            ge::DT_FLOAT,   5.0,   0.0,  {2,2},  {2,2},  {2,2},  exact(0.0,    1e-5)},
-        {"fp32_inf_times_zero",    ge::DT_FLOAT,   kInf,  0.0,  {2,2},  {2,2},  {2,2},  exact(0.0,    1e-5)},
-        {"fp32_nan_times_zero",    ge::DT_FLOAT,   kNaN,  0.0,  {2,2},  {2,2},  {2,2},  exact(0.0,    1e-5)},
-        {"fp32_normal_nan",        ge::DT_FLOAT,   kNaN,  2.0,  {2,2},  {2,2},  {2,2},  nan()              },
-        {"fp32_inf_normal",        ge::DT_FLOAT,   kInf,  2.0,  {2,2},  {2,2},  {2,2},  exact(kInf,   0.0 )},
-        // --- fp16 ---
-        {"fp16_basic",             ge::DT_FLOAT16, 1.5,   2.0,  {4},    {4},    {4},    exact(3.0,    5e-3)},
-        {"fp16_zero_y",            ge::DT_FLOAT16, 6.5e4, 0.0,  {4},    {4},    {4},    exact(0.0,    5e-3)},
-        // --- bf16 ---
-        {"bf16_basic",             ge::DT_BF16,    1.0,   2.0,  {4},    {4},    {4},    exact(2.0,    2e-2)},
-        {"bf16_inf_times_zero",    ge::DT_BF16,    kInf,  0.0,  {4},    {4},    {4},    exact(0.0,    2e-2)},
-        // --- int32 ---
-        {"int32_basic",            ge::DT_INT32,   3.0,   4.0,  {3},    {3},    {3},    exact(12.0,   0.5 )},
-        {"int32_zero_y",           ge::DT_INT32,   7.0,   0.0,  {3},    {3},    {3},    exact(0.0,    0.5 )},
-        // --- broadcast ---
-        {"fp32_broadcast_zero",    ge::DT_FLOAT,   2.0,   0.0,  {4,1},  {1,4},  {4,4},  exact(0.0,    1e-5)},
-        {"fp32_broadcast_mixed",   ge::DT_FLOAT,   2.0,   3.0,  {4,1},  {1,4},  {4,4},  exact(6.0,    1e-5)},
-        // --- negative zero: -0 == 0 should still trigger the zero arm ---
-        {"fp32_neg_zero",          ge::DT_FLOAT,   kNaN,  kNeg0,{2,2},  {2,2},  {2,2},  exact(0.0,    1e-5)},
+        // tag                  dtype           v1   v2   v3   s1        s2        s3       out       expected absTol
+        {"fp32_same_shape",   ge::DT_FLOAT,   2.0, 3.0, 4.0, {2,2},    {2,2},    {2,2},   {2,2},    10.0,    1e-5},
+        {"fp16_same_shape",   ge::DT_FLOAT16, 1.5, 2.0, 0.5, {4},      {4},      {4},     {4},      3.5,     5e-3},
+        {"int32_same_shape",  ge::DT_INT32,   2.0, 3.0, 5.0, {3},      {3},      {3},     {3},      11.0,    0.5 },
+        {"fp32_broadcast",    ge::DT_FLOAT,   2.0, 3.0, 1.0, {4,1},    {1,4},    {1},     {4,4},    7.0,     1e-5},
+        // --- extra broadcast scenarios ---
+        // x1 scalar, x2 full 2-D, x3 scalar
+        {"fp32_bc_scalar",    ge::DT_FLOAT,   2.0, 3.0, 1.0, {1},      {3,4},    {1},     {3,4},    7.0,     1e-5},
+        // row x column mutual broadcast {1,5} x {5,1} -> {5,5}, x3 full
+        {"fp32_bc_rowcol",    ge::DT_FLOAT,   2.0, 3.0, 1.0, {1,5},    {5,1},    {5,5},   {5,5},    7.0,     1e-5},
+        // 3-D mutual broadcast, x3 trailing-dim vector
+        {"fp32_bc_3d",        ge::DT_FLOAT,   2.0, 3.0, 1.0, {2,1,4},  {1,3,4},  {4},     {2,3,4},  7.0,     1e-5},
+        // fp16 2-D mutual broadcast
+        {"fp16_bc_mixed",     ge::DT_FLOAT16, 1.5, 2.0, 0.5, {2,1},    {1,3},    {1},     {2,3},    3.5,     5e-3},
+        // every input broadcasts on a different axis -> [4,3,5]
+        {"fp32_bc_allaxis",   ge::DT_FLOAT,   2.0, 3.0, 1.0, {4,1,1},  {1,3,1},  {1,1,5}, {4,3,5},  7.0,     1e-5},
+        // cross-rank: x2/x3 lower rank than the [3,4,5] output
+        {"fp32_bc_crossrank", ge::DT_FLOAT,   2.0, 3.0, 1.0, {3,4,5},  {4,5},    {5},     {3,4,5},  7.0,     1e-5},
+        // int32 2-D mutual broadcast
+        {"int32_bc_mixed",    ge::DT_INT32,   2.0, 3.0, 5.0, {3,1},    {1,4},    {1},     {3,4},    11.0,    0.5 },
+        // fp16 trailing column-vector broadcast {4,1} x {4,6} -> {4,6}
+        {"fp16_bc_col",       ge::DT_FLOAT16, 1.5, 2.0, 0.5, {4,1},    {4,6},    {1},     {4,6},    3.5,     5e-3},
     };
 
     int allFail = 0;
@@ -391,7 +335,7 @@ int main(int argc, char* argv[])
                GetTime().c_str(), allFail, cases.size());
         return FAILED;
     }
-    printf("\n%s - PASS - [XIR]: all %zu mul_no_nan cases passed\n",
+    printf("\n%s - PASS - [XIR]: all %zu fused_mul_add cases passed\n",
            GetTime().c_str(), cases.size());
     return SUCCESS;
 }
