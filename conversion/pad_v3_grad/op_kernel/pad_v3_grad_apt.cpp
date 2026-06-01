@@ -43,8 +43,7 @@ __aicore__ inline void PadV3GradMirror(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, 
     if constexpr (cutMode == TPL_SIMD_BIG) {
         PadV3Grad::LaunchKernelPadV3GradMirrorHugeWidth<DTYPE_X, modeName>(x, y, tiling);
     } else if constexpr (cutMode == TPL_SIMD_NORMAL) {
-        // PadV3Grad::LaunchMirrorKernelNormal<DTYPE_X, modeName>(x, y, tiling);
-        PadV3Grad::LaunchMirrorKernelSIMT<DTYPE_X, isBigShape, modeName>(x, y, tiling);
+        PadV3Grad::LaunchMirrorKernelNormal<DTYPE_X, modeName>(x, y, tiling);
     } else if constexpr (cutMode == TPL_SIMD_SMALL) {
         PadV3Grad::LaunchMirrorKernelGather<DTYPE_X, true, modeName>(x, y, tiling);
     }
