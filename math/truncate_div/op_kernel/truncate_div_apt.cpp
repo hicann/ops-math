@@ -62,9 +62,15 @@ __global__ __aicore__ void truncate_div(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_AD
             BroadcastSch<schMode, OpDag> sch(tiling);
             sch.Process(x1, x2, y);
         } else if constexpr (std::is_same<DTYPE_X2, half>::value) {
-            using OpDag = TruncateDivOp::TruncateDivFloatToLowBit<float, half, float>::OpDag;
-            BroadcastSch<schMode, OpDag> sch(tiling);
-            sch.Process(x1, x2, y);
+            if constexpr (canUseMul) {
+                using OpDag = TruncateDivOp::TruncateDivFloatScalar<float>::OpDag;
+                BroadcastSch<schMode, OpDag> sch(tiling);
+                sch.Process(x1, y);
+            } else {
+                using OpDag = TruncateDivOp::TruncateDivFloatToLowBit<float, half, float>::OpDag;
+                BroadcastSch<schMode, OpDag> sch(tiling);
+                sch.Process(x1, x2, y);
+            }
         }
     } else if constexpr (std::is_same<DTYPE_X1, int8_t>::value || std::is_same<DTYPE_X1, uint8_t>::value) {
         if constexpr (std::is_same<DTYPE_X1, int8_t>::value) {

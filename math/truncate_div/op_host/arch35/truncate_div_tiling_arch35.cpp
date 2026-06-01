@@ -99,7 +99,6 @@ ge::graphStatus TruncateDivTiling::DoOpTiling()
 
     auto x2Shape = x2StorageShape->GetStorageShape();
 
-//    bool isScalar = x2Shape.IsScalar() || (x2Shape.GetDimNum() == 1 && x2Shape.GetDim(0) == 1);
     bool isScalar = x2Shape.IsScalar();
     bool canUseMul = isScalar && (x2DType == ge::DT_FLOAT || x2DType == ge::DT_FLOAT16 || x2DType == ge::DT_BF16);
 
@@ -192,8 +191,7 @@ ge::graphStatus TruncateDivTiling::DoOpTiling()
                 false);
         } else if (x2DType == ge::DT_FLOAT16) {
             if (canUseMul) {
-                execTiling.template
-                operator()<TruncateDivOp::TruncateDivFloatWithCastScalar<float, half, float>::OpDag>(true);
+                execTiling.template operator()<TruncateDivOp::TruncateDivFloatScalar<float>::OpDag>(true);
             } else {
                 execTiling.template operator()<TruncateDivOp::TruncateDivFloatToLowBit<float, half, float>::OpDag>(false);
             }
