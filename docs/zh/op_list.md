@@ -489,10 +489,10 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/cosh/README.md">cosh</a></td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
     <td>AI Core/AI CPU</td>
     <td>返回输入张量元素进行的双曲余弦值结果。</td>
   </tr>
@@ -825,6 +825,16 @@
     <td>√</td>
     <td>AI Core</td>
     <td>计算张量直方图。</td>
+  </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/inv/README.md">inv</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>x</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>对输入张量的每一个元素计算其倒数。</td>
   </tr>
   <tr>
     <td>math</td>
