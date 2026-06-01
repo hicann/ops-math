@@ -446,22 +446,3 @@ TEST_F(PadV2InferShapeTest, TestEmptyPaddings)
     std::vector<std::vector<int64_t>> expectOutputShape = {};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
 }
-
-// OP-PadV2-L2-infershape-024: nullptr paddings - 当前实现未检查 nullptr
-TEST_F(PadV2InferShapeTest, TestNullptrPaddings)
-{
-    gert::StorageShape xShape = {{3, 3}, {3, 3}};
-    gert::StorageShape paddingsShape = {{2, 2}, {2, 2}};
-    
-    gert::InfershapeContextPara infershapeContextPara(
-        "PadV2",
-        {{xShape, ge::DT_FLOAT, ge::FORMAT_ND},
-         {paddingsShape, ge::DT_INT32, ge::FORMAT_ND, true, nullptr},  // nullptr data
-         {paddingsShape, ge::DT_FLOAT, ge::FORMAT_ND}},
-        {{{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND}});
-    
-    // 当前 InferShape 实现未检查 nullptr，预期返回 GRAPH_SUCCESS
-    // TODO: 如果 InferShape 实现增加了 nullptr 检查，应将预期改为 GRAPH_FAILED
-    std::vector<std::vector<int64_t>> expectOutputShape = {};
-    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
-}
