@@ -159,6 +159,7 @@ set(OPAPI_INCLUDE
   ${AICPU_INC_DIRS}
   ${OPS_MATH_DIR}/
   ${TOP_DIR}/output/${PRODUCT}/aclnnop_resource
+  ${TOP_DIR}/runtime/include/dfx
 )
 
 set(OP_TILING_INCLUDE
