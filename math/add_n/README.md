@@ -67,3 +67,4 @@
 | 调用方式 | 调用样例                                             | 说明                                                                                         |
 |---------|----------------------------------------------------|----------------------------------------------------------------------------------------------|
 | 图模式调用 | [test_geir_add_n](./examples/test_geir_add_n.cpp)   | 通过[算子IR](./op_graph/add_n_proto.h)构图方式调用AddN算子                                      |
+| aclnn调用 | [test_aclnn_add_n](./examples/test_aclnn_add_n.cpp) | 通过[aclnn API](./op_api/aclnn_add_n.h)方式调用AddN算子                    |

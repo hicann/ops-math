@@ -38,6 +38,7 @@
 | [aclnnAddcdiv&aclnnInplaceAddcdiv](../../math/addcdiv/docs/aclnnAddcdiv&aclnnInplaceAddcdiv.md) | 完成加法计算。                                               | 默认确定性实现| 默认确定性实现 |
 | [aclnnAddcmul&aclnnInplaceAddcmul](../../math/addcmul/docs/aclnnAddcmul&aclnnInplaceAddcmul.md) | 执行 tensor1 与 tensor2 的逐元素乘法，将结果乘以标量值value并与输入self/selfRef做逐元素加法。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnAddLora](../../math/add_lora/docs/aclnnAddLora.md)        | 为神经网络添加LoRA（Low-Rank Adaptation）层功能，通过低秩分解减少参数数量。 | 默认确定性实现| - |
+| [aclnnAddN](../../math/add_n/docs/aclnnAddN.md)    |  对输入进行主元素相加求和操作。  | 默认确定性实现 | - |
 | [aclnnAddr&aclnnInplaceAddr](../../math/addr/docs/aclnnAddr&aclnnInplaceAddr.md) | 求一维向量vec1和vec2的外积得到一个二维矩阵，并将外积结果矩阵乘一个系数后和自身乘系数相加后输出。 | 默认确定性实现| 默认确定性实现|
 | [aclnnAdds](../../math/add/docs/aclnnAdds.md) | 完成加法计算。 | 默认确定性实现|  默认确定性实现 |
 | [aclnnAddV3&aclnnInplaceAddV3](../../math/add/docs/aclnnAddV3&aclnnInplaceAddV3.md) | 完成加法计算。                                               | 默认确定性实现|  默认确定性实现 |
