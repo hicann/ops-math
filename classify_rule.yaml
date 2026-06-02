@@ -239,6 +239,26 @@ VC1@ops-math:
       non_delivery: null
       open_source: null
 
+sort@ops-math:
+  src:
+    release:
+      style:
+        - ops/ops-math/math/sort/
+        - ops/ops-math/math/sort_with_index/
+        - ops/ops-math/math/top_k_v2/
+      opensource_style: null
+      kernel_style: null
+    unrelease:
+      test_code:
+        - ops/ops-math/math/sort/examples/
+        - ops/ops-math/math/sort/tests/
+        - ops/ops-math/math/sort_with_index/examples/
+        - ops/ops-math/math/sort_with_index/tests/
+        - ops/ops-math/math/top_k_v2/examples/
+        - ops/ops-math/math/top_k_v2/tests/
+      non_delivery: null
+      open_source: null
+
 VC2@ops-math:
   src:
     release:
