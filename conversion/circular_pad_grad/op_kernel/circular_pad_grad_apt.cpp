@@ -9,14 +9,14 @@
  */
 
 /*!
- * \file pad_v3_grad.cpp
- * \brief pad_v3_grad kernel
+ * \file circular_pad_grad.cpp
+ * \brief circular_pad_grad kernel
  */
 
-#include "arch35/pad_v3_grad_struct.h"
-#include "arch35/pad_v3_grad_tilingkey.h"
-#include "arch35/pad_v3_grad_simt.h"
-#include "arch35/pad_v3_grad_simd.h"
+#include "../pad_v3_grad/arch35/pad_v3_grad_struct.h"
+#include "../pad_v3_grad/arch35/pad_v3_grad_tilingkey.h"
+#include "../pad_v3_grad/arch35/pad_v3_grad_simt.h"
+#include "../pad_v3_grad/arch35/pad_v3_grad_simd.h"
 
 #include "op_kernel/platform_util.h"
 #include "kernel_operator.h"
@@ -43,7 +43,8 @@ __aicore__ inline void PadV3GradMirror(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, 
     if constexpr (cutMode == TPL_SIMD_BIG) {
         PadV3Grad::LaunchKernelPadV3GradMirrorHugeWidth<DTYPE_X, modeName>(x, y, tiling);
     } else if constexpr (cutMode == TPL_SIMD_NORMAL) {
-        PadV3Grad::LaunchMirrorKernelNormal<DTYPE_X, modeName>(x, y, tiling);
+        // PadV3Grad::LaunchMirrorKernelNormal<DTYPE_X, modeName>(x, y, tiling);
+        PadV3Grad::LaunchMirrorKernelSIMT<DTYPE_X, isBigShape, modeName>(x, y, tiling);
     } else if constexpr (cutMode == TPL_SIMD_SMALL) {
         PadV3Grad::LaunchMirrorKernelGather<DTYPE_X, true, modeName>(x, y, tiling);
     }
@@ -58,7 +59,7 @@ __aicore__ inline void PadV3GradCircular(GM_ADDR x, GM_ADDR y, GM_ADDR workspace
 }
 
 template <uint8_t modeName, bool isBigShape, bool isSimt, uint8_t cutMode>
-__global__ __aicore__ void pad_v3_grad(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void circular_pad_grad(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     REGISTER_TILING_DEFAULT(PadV3GradACTilingData);

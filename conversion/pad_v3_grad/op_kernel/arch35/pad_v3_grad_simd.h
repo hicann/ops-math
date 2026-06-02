@@ -18,6 +18,7 @@
 #include "pad_v3_grad_mirror_normal.h"
 #include "pad_v3_grad_mirror_gather.h"
 #include "pad_v3_grad_mirror_huge_width.h"
+#include "pad_v3_grad_circular_huge_width.h"
 
 namespace PadV3Grad {
 
@@ -46,6 +47,16 @@ __aicore__ inline void LaunchKernelPadV3GradMirrorHugeWidth(GM_ADDR x, GM_ADDR y
     TPipe pipe;
     GET_TILING_DATA_WITH_STRUCT(PadV3GradACTilingData, tilingData, tiling);
     KernelPadV3GradMirrorHugeWidth<T, modeName> op(&pipe, &tilingData);
+    op.Init(x, y);
+    op.Process();
+}
+
+template <typename T>
+__aicore__ inline void LaunchKernelPadV3GradCircularHugeWidth(GM_ADDR x, GM_ADDR y, GM_ADDR tiling)
+{
+    TPipe pipe;
+    GET_TILING_DATA_WITH_STRUCT(PadV3GradACTilingData, tilingData, tiling);
+    KernelPadV3GradCircularHugeWidth<T> op(&pipe, &tilingData);
     op.Init(x, y);
     op.Process();
 }

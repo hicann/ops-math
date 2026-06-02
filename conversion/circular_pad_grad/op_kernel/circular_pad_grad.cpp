@@ -12,8 +12,8 @@
  * \file circular_pad_grad.cpp
  * \brief
  */
-#include "circular_pad_grad_2d.h"
-#include "circular_pad_grad_3d.h"
+#include "arch32/circular_pad_grad_2d.h"
+#include "arch32/circular_pad_grad_3d.h"
 using namespace AscendC;
 
 extern "C" __global__ __aicore__ void circular_pad_grad(

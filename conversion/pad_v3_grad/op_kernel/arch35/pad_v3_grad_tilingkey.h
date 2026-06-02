@@ -52,7 +52,7 @@ ASCENDC_TPL_SEL(
 
     ASCENDC_TPL_ARGS_SEL(
         // 模式选择 当前只支持TPL_MODE_REFLECT和TPL_MODE_SYMMETRIC
-        ASCENDC_TPL_UINT_SEL(ModeName, ASCENDC_TPL_UI_RANGE, 1, 2, 3),
+        ASCENDC_TPL_UINT_SEL(ModeName, ASCENDC_TPL_UI_RANGE, 1, 2, 4),
         // 大小选择 忽略
         ASCENDC_TPL_BOOL_SEL(IsBigShape, 0, 1),
         // simt

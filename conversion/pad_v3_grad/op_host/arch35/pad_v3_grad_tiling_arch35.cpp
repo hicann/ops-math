@@ -331,6 +331,30 @@ void PadV3GradACTiling::CalculateTilingKeyMirror()
         TilingInfoTuneForNormal(lastShapeSizeAlign);
     }
 }
+void PadV3GradACTiling::CalculateTilingKeyCircular()
+{
+    OP_LOGD(context_, "Start PadV3GradACTiling CalculateTilingKeyCircular.");
+    if (inShapeSize_ <= SIMT_BRANCH_SIZE || dimNum_ > CONST5) {
+        DoTilingWithSIMTCircular();
+        return;
+    }
+
+    uint64_t alignNum = blockSize_ / dtypeBytes_;
+    uint64_t lastShapeSizeAlign = GetSizeOfBlockAlign(tilingData_->outShape[dimNum_ - 1], alignNum);
+
+    bufferSize_ = GetSizeOfBlockAlign(ubSize_ / (CONST2 * dtypeBytes_ + CONST2 * FP32_SIZE) - alignNum, alignNum);
+    if (bufferSize_ > UB_MAX_DATA_SIZE_PER_BUFFER / dtypeBytes_) {
+        bufferSize_ = UB_MAX_DATA_SIZE_PER_BUFFER / dtypeBytes_;
+    }
+    if (lastShapeSizeAlign > bufferSize_) {
+        cutMode_ = TPL_SIMD_BIG;
+        ubAxis_ = dimNum_ - 1;
+        ubFactor_ = bufferSize_;
+        outTileSize_ = bufferSize_;
+        return TilingInfoTune();
+    }
+    DoTilingWithSIMTCircular();
+}
 
 void PadV3GradACTiling::DoTilingWithSIMTMirror()
 {
@@ -360,6 +384,11 @@ void PadV3GradACTiling::DoTilingWithSIMTCircular()
     if (inShapeSize_ > INT32_MAX || outShapeSize_ > INT32_MAX) {
         isBigShape_ = true;
     }
+}
+void PadV3GradACTiling::DoTilingWithSIMDCircular()
+{
+    isSimt_ = false;
+    CalculateTilingKeyCircular();
 }
 void PadV3GradACTiling::DoTilingWithSIMTConstant()
 {
@@ -613,8 +642,15 @@ ge::graphStatus PadV3GradACTiling::DoTilingModeCircular()
         OP_LOGE(context_, "PadV3GradACTiling Circular ComputeAfterPaddingsAndStrides error."), return ge::GRAPH_FAILED);
     if (isEmptyTensor_) {
         EmptyTensorCollapse();
+        DoTilingWithSIMTCircular();
+    } else if (isPadAllPositive_) {
+        // simd
+        DoTilingWithSIMDCircular();
+    } else if (isPadAllNegative_) {
+        DoTilingWithSIMTCircular();
+    } else {
+        DoTilingWithSIMTCircular();
     }
-    DoTilingWithSIMTCircular();
     return ge::GRAPH_SUCCESS;
 }
 ge::graphStatus PadV3GradACTiling::DoTilingModeConstant()
@@ -719,28 +755,32 @@ ge::graphStatus PadV3GradACTiling::GetShapeAttrsInfo()
     OP_LOGD(context_, "Start PadV3GradACTiling GetShapeAttrsInfo");
     auto const attrs = context_->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context_, attrs);
-    auto* mode = attrs->GetAttrPointer<char>(0);
-    // padv3grad mode可选，默认reflect;
-    if (mode) {
-        if (!strcmp(mode, "constant")) {
-            padMode_ = TPL_MODE_CONSTANT;
-        } else if (!strcmp(mode, "edge")) {
-            padMode_ = TPL_MODE_EDGE;
-        } else if (!strcmp(mode, "symmetric")) {
-            padMode_ = TPL_MODE_SYMMETRIC;
-        } else if (!strcmp(mode, "circular")) {
-            padMode_ = TPL_MODE_CIRCULAR;
+    if (isCircularPadGrad_) {
+        padMode_ = TPL_MODE_CIRCULAR;
+        paddingContiguous_ = true;
+    } else {
+        auto* mode = attrs->GetAttrPointer<char>(0);
+        // padv3grad mode可选，默认reflect;
+        if (mode) {
+            if (!strcmp(mode, "constant")) {
+                padMode_ = TPL_MODE_CONSTANT;
+            } else if (!strcmp(mode, "edge")) {
+                padMode_ = TPL_MODE_EDGE;
+            } else if (!strcmp(mode, "symmetric")) {
+                padMode_ = TPL_MODE_SYMMETRIC;
+            } else if (!strcmp(mode, "circular")) {
+                padMode_ = TPL_MODE_CIRCULAR;
+            }
+            OP_CHECK_IF(
+                strcmp(mode, "constant") != 0 && strcmp(mode, "edge") != 0 && strcmp(mode, "reflect") != 0 &&
+                    strcmp(mode, "symmetric") != 0 && strcmp(mode, "circular") != 0,
+                OP_LOGE(context_, "PadV3Grad only support constant/edge/reflect/symmetric/circular mode."),
+                return ge::GRAPH_FAILED);
         }
-        OP_CHECK_IF(
-            strcmp(mode, "constant") != 0 && strcmp(mode, "edge") != 0 && strcmp(mode, "reflect") != 0 &&
-                strcmp(mode, "symmetric") != 0 && strcmp(mode, "circular") != 0,
-            OP_LOGE(context_, "PadV3Grad only support constant/edge/reflect/symmetric/circular mode."),
-            return ge::GRAPH_FAILED);
-    }
-
-    auto* paddingContiguous = attrs->GetAttrPointer<bool>(1);
-    if (paddingContiguous) {
-        paddingContiguous_ = *paddingContiguous;
+        auto* paddingContiguous = attrs->GetAttrPointer<bool>(1);
+        if (paddingContiguous) {
+            paddingContiguous_ = *paddingContiguous;
+        }
     }
 
     OP_CHECK_IF(

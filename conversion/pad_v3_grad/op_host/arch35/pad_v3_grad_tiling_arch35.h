@@ -93,7 +93,9 @@ private:
     void TilingInfoTune();
     void TilingInfoTuneForNormal(uint64_t lastShapeSizeAlign);
     void CalculateTilingKeyMirror();
+    void CalculateTilingKeyCircular();
     void DoTilingWithSIMDMirror();
+    void DoTilingWithSIMDCircular();
 
     ge::graphStatus GetShapesAndDtypes();
     ge::graphStatus GetPaddings();
@@ -139,6 +141,9 @@ private:
     bool isPadAllPositive_{true};
     bool isPadAllNegative_{true};
     bool isUseSlice_{false};
+
+public:
+    bool isCircularPadGrad_{false};
 };
 } // namespace optiling
 #endif // OPS_BUILT_IN_OP_TILING_RUNTIME_PAD_TILING_H_
