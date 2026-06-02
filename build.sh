@@ -21,7 +21,7 @@ SUPPORTED_LONG_OPTS=(
   "pkg" "asan" "valgrind" "make_clean" "static" "build-type=" "no_force" "simulator"
   "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "opkernel_aicpu_test"
   "run_example" "genop=" "genop_aicpu=" "experimental" "cann_3rd_lib_path" "mssanitizer" "oom" "onnxplugin" "tfplugin"
-  "dump_cce" "bisheng_flags=" "kernel_template_input=" "module_extension=" "example_name=" "rule_launch"
+  "dump_cce" "bisheng_flags=" "kernel_template_input=" "module_extension=" "example_name=" "rule_launch="
 )
 
 in_array() {
@@ -717,7 +717,7 @@ checkopts() {
   ENABLE_EXPERIMENTAL=FALSE
   ENABLE_STATIC=FALSE
   ENABLE_SIMULATOR=FALSE
-  ENABLE_RULE_LAUNCH=FALSE
+  ENABLE_RULE_LAUNCH=""
   AICPU_ONLY=FALSE
   OP_API_UT=FALSE
   OP_HOST_UT=FALSE
@@ -865,7 +865,9 @@ checkopts() {
           ENABLE_UT_EXEC=FALSE
           ;;
         simulator) ENABLE_SIMULATOR=TRUE ;;
-        rule_launch) ENABLE_RULE_LAUNCH=TRUE ;;
+        rule_launch=*)
+          ENABLE_RULE_LAUNCH=${OPTARG#*=}
+          ;;
         example_name=*) SINGLE_EXAMPLE=${OPTARG#*=} ;;
         run_example)
           checkopts_run_example "$@"
@@ -1054,8 +1056,8 @@ assemble_cmake_args() {
   if [[ "$NO_FORCE" == "TRUE" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DNO_FORCE=TRUE"
   fi
-  if [[ "$ENABLE_RULE_LAUNCH" == "TRUE" ]]; then
-    CMAKE_ARGS="$CMAKE_ARGS -DRULE_LAUNCH=hitestwrapper"
+  if [[ "x$ENABLE_RULE_LAUNCH" != "x" ]]; then
+    CMAKE_ARGS="$CMAKE_ARGS -DRULE_LAUNCH=${ENABLE_RULE_LAUNCH}"
   fi
   if [[ -n $COMPUTE_UNIT ]]; then
     COMPUTE_UNIT=$(echo "$COMPUTE_UNIT" | tr '[:upper:]' '[:lower:]')
