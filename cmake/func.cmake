@@ -231,7 +231,7 @@ function(add_aicpu_cust_kernel_modules op_name aicpu_sources)
 endfunction()
 
 # Compiles aicpu source as OBJECT for host side (x86).
-# Collects into AICPU_HOST_OBJ_TARGETS; linking into libmath_constant_folding_ops.so
+# Collects into AICPU_HOST_OBJ_TARGETS; linking into libopconstant_folding_math.so
 # is done in symbol.cmake gen_aicpu_const_symbol().
 function(add_aicpu_host_kernel_modules host_target_name)
   message(STATUS "add_aicpu_host_kernel_modules for ${host_target_name}")
@@ -647,7 +647,7 @@ macro(add_all_modules_sources)
     endif()
   endif()
 
-  # Host-side constant folding: compile aicpu source as x86 OBJECT for libmath_constant_folding_ops.so
+  # Host-side constant folding: compile aicpu source as x86 OBJECT for libopconstant_folding_math.so
   # Only enabled when HOSTCPU TRUE is passed to add_all_modules_sources
   if(MODULE_HOSTCPU AND BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG AND NOT ENABLE_CUSTOM)
     file(GLOB AICPU_HOST_SRCS ${SOURCE_DIR}/op_kernel_aicpu/*_aicpu.cpp)
