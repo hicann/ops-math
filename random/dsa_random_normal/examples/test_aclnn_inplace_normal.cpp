@@ -78,7 +78,7 @@ int main() {
   float mean = 2.;
   float std = 1.;
   int64_t seed = 1;
-  int64_t offset = 2;
+  int64_t offset = 0;
   void* selfDeviceAddr = nullptr;
   aclTensor* selfRef = nullptr;
   std::vector<float> selfHostData = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};

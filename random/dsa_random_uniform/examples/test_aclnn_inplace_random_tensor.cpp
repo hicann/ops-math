@@ -85,7 +85,7 @@ int main() {
   aclTensor* seed = nullptr;
   void* offsetDeviceAddr = nullptr;
   aclTensor* offset = nullptr;
-  int64_t offset2 = 102;
+  int64_t offset2 = 100;
   std::vector<float> selfHostData = {1, 2, 3, 4, 5, 6, 7, 8};
   std::vector<int64_t> seedHostData = {0};
   std::vector<int64_t> offsetHostData = {392};

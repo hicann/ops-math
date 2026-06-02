@@ -233,10 +233,9 @@ aclnnStatus aclnnInplaceRandomTensor(
 
 - 确定性计算：
   - aclnnInplaceRandomTensor默认确定性实现。
-- 参数范围：
-  - offset是4的倍数。
-  - from < to。
-  - from/to指定范围不可超出self数据类型的范围。
+- <term>Ascend 950PR/Ascend 950DT</term>：
+  - offset必须为4的倍数。
+  - from必须小于to，且from/to指定范围不可超出self数据类型的范围。
 
 ## 调用示例
 
@@ -320,7 +319,7 @@ int main() {
   aclTensor* seed = nullptr;
   void* offsetDeviceAddr = nullptr;
   aclTensor* offset = nullptr;
-  int64_t offset2 = 102;
+  int64_t offset2 = 100;
   std::vector<float> selfHostData = {1, 2, 3, 4, 5, 6, 7, 8};
   std::vector<int64_t> seedHostData = {0};
   std::vector<int64_t> offsetHostData = {392};

@@ -138,6 +138,8 @@ static const std::initializer_list<op::DataType> INT_DTYPE_LIST = {op::DataType:
                                                                    op::DataType::DT_INT16, op::DataType::DT_INT8,
                                                                    op::DataType::DT_UINT8, op::DataType::DT_BOOL};
 
+static const std::initializer_list<op::DataType> FLOAT_DTYPE_LIST = {op::DataType::DT_FLOAT,
+                                                                     op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 static bool CheckNotNull(const aclTensor* selfRef)
 {
     OP_CHECK_NULL(selfRef, return false);
@@ -157,66 +159,8 @@ static bool CheckShape(const aclTensor* selfRef)
     return true;
 }
 
-static bool CheckFromToRange(int64_t from, int64_t to, op::DataType dtype)
+static bool CheckFromToRange(int64_t from, int64_t to)
 {
-    int64_t dtypeMin = 0;
-    int64_t dtypeMax = 0;
-
-    switch (dtype) {
-        case op::DataType::DT_INT8:
-            dtypeMin = static_cast<int64_t>(std::numeric_limits<int8_t>::min());
-            dtypeMax = static_cast<int64_t>(std::numeric_limits<int8_t>::max());
-            break;
-        case op::DataType::DT_UINT8:
-            dtypeMin = static_cast<int64_t>(std::numeric_limits<uint8_t>::min());
-            dtypeMax = static_cast<int64_t>(std::numeric_limits<uint8_t>::max());
-            break;
-        case op::DataType::DT_INT16:
-            dtypeMin = static_cast<int64_t>(std::numeric_limits<int16_t>::min());
-            dtypeMax = static_cast<int64_t>(std::numeric_limits<int16_t>::max());
-            break;
-        case op::DataType::DT_INT32:
-            dtypeMin = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
-            dtypeMax = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
-            break;
-        case op::DataType::DT_INT64:
-            dtypeMin = static_cast<int64_t>(std::numeric_limits<int64_t>::min());
-            dtypeMax = static_cast<int64_t>(std::numeric_limits<int64_t>::max());
-            break;
-        case op::DataType::DT_FLOAT:
-            dtypeMin = -(1L << std::numeric_limits<float>::digits);
-            dtypeMax = (1L << std::numeric_limits<float>::digits);
-            break;
-        case op::DataType::DT_FLOAT16:
-            dtypeMin = -(1L << FLOAT16_DIGITS);
-            dtypeMax = (1L << FLOAT16_DIGITS);
-            break;
-        case op::DataType::DT_BF16:
-            dtypeMin = -(1L << BF16_DIGITS);
-            dtypeMax = (1L << BF16_DIGITS);
-            break;
-        case op::DataType::DT_BOOL:
-            dtypeMin = 0;
-            dtypeMax = 1;
-            break;
-        default:
-            dtypeMin = static_cast<int64_t>(std::numeric_limits<int64_t>::min());
-            dtypeMax = static_cast<int64_t>(std::numeric_limits<int64_t>::max());
-            break;
-    }
-
-    if (from < dtypeMin || from > dtypeMax) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "from value %ld is out of valid range [%ld, %ld] for dtype %d", from,
-            dtypeMin, dtypeMax, static_cast<int>(dtype));
-        return false;
-    }
-
-    if (to <= dtypeMin || to - 1 > dtypeMax) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "to value %ld is out of valid range (%ld, %lu] for dtype %d", to,
-            dtypeMin, static_cast<uint64_t>(dtypeMax) + 1, static_cast<int>(dtype));
-        return false;
-    }
-
     if (from >= to) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "from %ld must be less than to %ld.", from, to);
         return false;
@@ -242,6 +186,11 @@ static inline bool CheckSocVersionIsSupportDSA(void)
 
 static const aclTensor* CastProcess(const aclTensor* selfRef, const aclTensor* computeOut, aclOpExecutor* executor)
 {
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(curArch) && CheckType(selfRef->GetDataType(), FLOAT_DTYPE_LIST)) {
+        return computeOut;
+    }
+
     if (!CheckType(selfRef->GetDataType(), INT_DTYPE_LIST)) {
         auto castResultInt64 = l0op::Cast(computeOut, op::DataType::DT_INT64, executor);
         CHECK_RET(castResultInt64 != nullptr, nullptr);
@@ -363,7 +312,8 @@ aclnnStatus aclnnInplaceRandomGetWorkspaceSize(
     L2_DFX_PHASE_1(aclnnInplaceRandom, DFX_IN(selfRef, from, to, seed, offset), DFX_OUT(selfRef));
     auto ret = CheckParams(selfRef);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
-    CHECK_RET(CheckFromToRange(from, to, selfRef->GetDataType()), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckFromToRange(from, to), ACLNN_ERR_PARAM_INVALID);
+    
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
@@ -429,7 +379,7 @@ aclnnStatus aclnnInplaceRandomTensorGetWorkspaceSize(
 
     auto ret = CheckParams(selfRef);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
-    CHECK_RET(CheckFromToRange(from, to, selfRef->GetDataType()), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckFromToRange(from, to), ACLNN_ERR_PARAM_INVALID);
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 

@@ -196,8 +196,8 @@ aclnnStatus aclnnInplaceRandomWithoutFromTo(
 
 - 确定性计算：
   - aclnnInplaceRandomWithoutFromTo默认确定性实现。
-- 参数范围：
-  - offset是4的倍数。
+- <term>Ascend 950PR/Ascend 950DT</term>：
+  - offset必须为4的倍数。
 
 ## 调用示例
 

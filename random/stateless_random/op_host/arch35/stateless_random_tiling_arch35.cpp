@@ -85,35 +85,6 @@ static void GetMinAndMaxByDtype(ge::DataType dtype, int64_t& dtypeMin, int64_t& 
     }
 }
 
-static ge::graphStatus CheckFromToRange(gert::TilingContext* context, int64_t from, int64_t to, ge::DataType dtype)
-{
-    int64_t dtypeMin = 0;
-    int64_t dtypeMax = 0;
-
-    GetMinAndMaxByDtype(dtype, dtypeMin, dtypeMax);
-
-    if (from < dtypeMin || from > dtypeMax) {
-        OP_LOGE(
-            context->GetNodeName(), "from value %ld is out of valid range [%ld, %ld] for dtype %d", from, dtypeMin,
-            dtypeMax, static_cast<int>(dtype));
-        return ge::GRAPH_FAILED;
-    }
-
-    if (to <= dtypeMin || to - 1 > dtypeMax) {
-        OP_LOGE(
-            context->GetNodeName(), "to value %ld is out of valid range (%ld, %lu] for dtype %d", to, dtypeMin,
-            static_cast<uint64_t>(dtypeMax) + 1, static_cast<int>(dtype));
-        return ge::GRAPH_FAILED;
-    }
-
-    if (to <= from) {
-        OP_LOGE(context->GetNodeName(), "from(%ld) must be less than to(%ld).", from, to);
-        return ge::GRAPH_FAILED;
-    }
-
-    return ge::GRAPH_SUCCESS;
-}
-
 OpTilingConfig StatelessRandomTiling::BuildOpConfig()
 {
     OpTilingConfig config;
@@ -195,27 +166,23 @@ ge::graphStatus StatelessRandomTiling::UniqueProcess()
     int64_t dtypeMin = 0;
     int64_t dtypeMax = 0;
     int64_t from = 0;
-    int64_t to = 0;
     uint64_t range = 0;
     auto fromTensor = context_->GetOptionalInputTensor(INPUT_IDX_FROM);
     auto toTensor = context_->GetOptionalInputTensor(INPUT_IDX_TO);
     if ((fromTensor == nullptr) && (toTensor == nullptr)) {
         GetMinAndMaxByDtype(outputDtype, dtypeMin, dtypeMax);
         from = 0;
-        to = dtypeMax;
         range = static_cast<uint64_t>(dtypeMax) + 1;
     } else if (fromTensor == nullptr) {
         auto toData = toTensor->GetData<int64_t>();
         OP_CHECK_NULL_WITH_CONTEXT(context_, toData);
         from = 0;
-        to = toData[0];
         range = toData[0];
     } else if (toTensor == nullptr) {
         GetMinAndMaxByDtype(outputDtype, dtypeMin, dtypeMax);
         auto fromData = fromTensor->GetData<int64_t>();
         OP_CHECK_NULL_WITH_CONTEXT(context_, fromData);
         from = fromData[0];
-        to = dtypeMax;
         range = static_cast<uint64_t>(dtypeMax) + 1 - fromData[0];
     } else {
         auto fromData = fromTensor->GetData<int64_t>();
@@ -223,15 +190,9 @@ ge::graphStatus StatelessRandomTiling::UniqueProcess()
         auto toData = toTensor->GetData<int64_t>();
         OP_CHECK_NULL_WITH_CONTEXT(context_, toData);
         from = fromData[0];
-        to = toData[0];
         range = toData[0] - fromData[0];
     }
 
-    auto ret = CheckFromToRange(context_, from, to, outputDtype);
-    if (ret != ge::GRAPH_SUCCESS) {
-        OP_LOGE(context_->GetNodeName(), "from %ld or to %ld is bounds for dtype(%d)", from, to, outputDtype);
-        return ge::GRAPH_FAILED;
-    }
     simtTilingData_.from = from;
     simtTilingData_.range = range;
     simtTilingData_.extraInt64Param1 = config_.unrollFactor;
