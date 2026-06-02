@@ -93,6 +93,17 @@ static bool CheckDtypeValid(const aclTensor *gradOut, const aclTensor *gradIn) {
   return true;
 }
 
+static bool CheckFormat(const aclTensor* gradOut)
+{
+    // 检查format，若是NZ格式，则拦截
+    if (gradOut->GetStorageFormat() == Format::FORMAT_FRACTAL_NZ) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format of gradOut gets [%s], this format not support.",
+        op::ToString(gradOut->GetStorageFormat()).GetString());
+        return false;
+    }
+    return true;
+}
+
 static aclnnStatus CheckParams(
     const aclTensor* gradOut, const aclIntArray* inputSizes, int64_t dim, int64_t size, int64_t step, 
     const aclTensor* gradIn) {
@@ -108,6 +119,9 @@ static aclnnStatus CheckParams(
   CHECK_RET(size > 0, ACLNN_ERR_PARAM_INVALID);
 
   CHECK_RET(step > 0, ACLNN_ERR_PARAM_INVALID);
+
+  // 检查format，若是NZ格式，则拦截
+  CHECK_RET(CheckFormat(gradOut), ACLNN_ERR_PARAM_INVALID);
 
   return ACLNN_SUCCESS;
 }
