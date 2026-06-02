@@ -149,29 +149,39 @@ ge::graphStatus RandomTilingArch35::DoTiling()
 ge::graphStatus RandomTilingArch35::CheckInputsOutputsAndAttrs()
 {
     OP_LOGI(opName_, "TilingContext: %s", RandomUtils::GetTilingContext(context_).c_str());
-    // 校验输入tensor
     for (const auto& [idx, rule] : config_.inputCheckRules) {
-        auto tensorDesc = context_->GetInputDesc(idx);
+        auto tensorDesc = context_->GetRequiredInputDesc(idx);
         OP_CHECK_NULL_WITH_CONTEXT(context_, tensorDesc);
-        auto inputShape = context_->GetInputShape(idx);
+        auto inputShape = context_->GetRequiredInputShape(idx);
         OP_CHECK_NULL_WITH_CONTEXT(context_, inputShape);
-        auto inputTensor = inputShape->GetStorageShape();
+        auto storageShape = inputShape->GetStorageShape();
 
-        auto ret = CheckTensor(tensorDesc, inputTensor, rule, "input_" + std::to_string(idx));
+        auto ret = CheckTensor(tensorDesc, storageShape, rule, "input_" + std::to_string(idx));
         if (ret != ge::GRAPH_SUCCESS) {
             return ret;
         }
     }
 
-    // 校验输出tensor
+    for (const auto& [idx, rule] : config_.optionalInputCheckRules) {
+        auto tensorDesc = context_->GetOptionalInputDesc(idx);
+        auto inputShape = context_->GetOptionalInputShape(idx);
+        if (tensorDesc != nullptr && inputShape != nullptr) {
+            auto storageShape = inputShape->GetStorageShape();
+            auto ret = CheckTensor(tensorDesc, storageShape, rule, "optional_input_" + std::to_string(idx));
+            if (ret != ge::GRAPH_SUCCESS) {
+                return ret;
+            }
+        }
+    }
+
     for (const auto& [idx, rule] : config_.outputCheckRules) {
         auto tensorDesc = context_->GetOutputDesc(idx);
         OP_CHECK_NULL_WITH_CONTEXT(context_, tensorDesc);
         auto outputShape = context_->GetOutputShape(idx);
         OP_CHECK_NULL_WITH_CONTEXT(context_, outputShape);
-        auto outputTensor = outputShape->GetStorageShape();
+        auto storageShape = outputShape->GetStorageShape();
 
-        auto ret = CheckTensor(tensorDesc, outputTensor, rule, "output_" + std::to_string(idx));
+        auto ret = CheckTensor(tensorDesc, storageShape, rule, "output_" + std::to_string(idx));
         if (ret != ge::GRAPH_SUCCESS) {
             return ret;
         }
