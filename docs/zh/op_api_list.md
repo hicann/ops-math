@@ -232,7 +232,7 @@
 | [aclnnPdist](../../math/pdist/docs/aclnnPdist.md)               | 计算输入self中每对行向量的p范数距离。                        | 默认确定性实现| - |
 | [aclnnPdistForward](../../math/pdist/docs/aclnnPdistForward.md) | 计算输入self中每对行向量的p范数距离。                        | 默认确定性实现| - |
 | [aclnnPermute](../../conversion/transpose/docs/aclnnPermute.md) | 对tensor的任意维度进行调换。如输入self是shape为[2, 3, 5]的tensor，dims为(2, 0, 1)，则输出是shape为[5, 2, 3]的tensor。 | 默认确定性实现| 默认确定性实现|
-| [aclnnPolar](../../math/complex/docs/aclnnPolar.md) | 对输入input做绝对值和angle对应的极坐标求对应的笛卡尔坐标，得到一个复数张量out。              | 默认确定性实现| - |
+| [aclnnPolar](../../math/polar/docs/aclnnPolar.md) | 对输入input做绝对值和angle对应的极坐标求对应的笛卡尔坐标，得到一个复数张量out。              | 默认确定性实现| 默认确定性实现 |
 | [aclnnPowScalarTensor](../../math/pow/docs/aclnnPowScalarTensor.md) | exponent每个元素作为input对应元素的幂完成计算。              | 默认确定性实现| 默认确定性实现 |
 | [aclnnPowTensorScalar&aclnnInplacePowTensorScalar](../../math/pow/docs/aclnnPowTensorScalar&aclnnInplacePowTensorScalar.md) | exponent每个元素作为input对应元素的幂完成计算。              | 默认确定性实现| 默认确定性实现 |
 | [aclnnPowTensorTensor&aclnnInplacePowTensorTensor](../../math/pow/docs/aclnnPowTensorTensor&aclnnInplacePowTensorTensor.md) | exponent每个元素作为input对应元素的幂完成计算。              | 默认确定性实现| 默认确定性实现 |

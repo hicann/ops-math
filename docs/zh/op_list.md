@@ -1268,6 +1268,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/polar/README.md">polar</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>构建一个复数张量，其元素为对应于极坐标的笛卡尔坐标，其中绝对值为abs，角度为angle。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/pow/README.md">pow</a></td>
     <td>√</td>
     <td>√</td>

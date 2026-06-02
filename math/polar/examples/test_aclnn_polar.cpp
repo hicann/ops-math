@@ -1,85 +1,17 @@
-# aclnnPolar
+/**
+ * This program is free software, you can redistribute it and/or modify.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This file is a part of the CANN Open Software.
+ * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
-## 产品支持情况
-
-| 产品                                                         | 是否支持 |
-| :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>          |      ×   |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √    |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √    |
-| <term>Atlas 200I/500 A2 推理产品</term>             |    ×    |
-| <term>Atlas 推理系列产品</term>                       |     √    |
-| <term>Atlas 训练系列产品</term>                       |     ×    |
-
-## 功能说明
-
-- 算子功能：对输入input做绝对值和angle对应的极坐标求对应的笛卡尔坐标，得到一个复数张量out
-
-- 计算公式：
-
-  $$
-  out = abs*cos(angle) + abs*sin(angle)*j
-  $$
-
-## 函数原型
-
-每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnPolarGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnPolar”接口执行计算。
-
-- `aclnnStatus aclnnPolarGetWorkspaceSize(const aclTensor* input, const aclTensor* angle, aclTensor* out,uint64_t* workspaceSize, aclOpExecutor** executor)`
-- `aclnnStatus aclnnPolar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)`
-
-## aclnnPolarGetWorkspaceSize
-
-- **参数说明：**
-
-  - input(aclTensor*，计算输入)：输入的tensor，公式中的`abs`，数据类型支持FLOAT，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，维度最大不超过8维。
-
-  - angle(aclTensor*，计算输入)：输入的tensor，公式中的`angle`，数据类型必须与input相同，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，维度与input保持一致。
-
-  - out(aclTensor*，计算输出)：输出的tensor，公式中的`out`，数据类型支持COMPLEX64，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND，维度与input保持一致。
-  - workspaceSize(uint64_t*，出参)：返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor**，出参)：返回op执行器，包含了算子计算流程。
-
-- **返回值：**
-
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-
-```text
-第一段接口完成入参校验，出现以下场景时报错：
-返回161001 (ACLNN_ERR_PARAM_NULLPTR): 1. 传入的input、angle、out是空指针。
-返回161002 (ACLNN_ERR_PARAM_INVALID): 1. input和angle的数据类型不在支持的范围之内。
-                                      2. input和angle的数据类型不一致。
-                                      3. out数据类型不为COMPLEX64。
-                                      4. input、angle、out维度超过8维或不一致。                               
-```
-
-## aclnnPolar
-
-- **参数说明：**
-
-  - workspace(void*，入参)：在Device侧申请的workspace内存地址。
-
-  - workspaceSize(uint64_t，入参)：在Device侧申请的workspace大小，由第一段接口aclnnPolarGetWorkspaceSize获取。
-
-  - executor(aclOpExecutor*，入参)：op执行器，包含了算子计算流程。
-
-  - stream(aclrtStream，入参)：指定执行任务的Stream。
-
-- **返回值：**
-
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn返回码.md)。
-
-## 约束说明
-
-- 确定性计算：
-  - aclnnPolar默认确定性实现。
-
-## 调用示例
-
-示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/编译与运行样例.md)。
-
-```Cpp
+/*!
+ * \file test_aclnn_polar.cpp
+ * \brief
+ */
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
@@ -220,4 +152,3 @@ int main() {
 
   return 0;
 }
-```

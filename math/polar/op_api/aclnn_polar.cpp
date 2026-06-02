@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -10,11 +10,11 @@
  
 #include "aclnn_polar.h"
 #include "aclnn_kernels/contiguous.h"
-#include "complex.h"
-#include "../../../mul/op_api/mul.h"
-#include "../../../sin/op_api/sin.h"
-#include "../../../cos/op_api/cos.h"
-#include "../../../abs/op_api/abs.h"
+#include "polar.h"
+#include "../../complex/op_host/op_api/complex.h"
+#include "../../mul/op_api/mul.h"
+#include "../../sin/op_api/sin.h"
+#include "../../cos/op_api/cos.h"
 #include "op_api/op_api_def.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -23,6 +23,7 @@
 #include "opdev/op_dfx.h"
 #include "opdev/op_log.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/platform.h"
 using namespace op;
 #ifdef __cplusplus
@@ -115,19 +116,25 @@ aclnnStatus aclnnPolarGetWorkspaceSize(const aclTensor* input, const aclTensor* 
   //angle如果非连续，要转成连续
   auto angleContiguous = l0op::Contiguous(angle, uniqueExecutor.get());
   CHECK_RET(angleContiguous != nullptr,ACLNN_ERR_INNER_NULLPTR);
-  //调用l0算子sin和cos，得到角度的sin，cos值
-  auto angleSin = l0op::Sin(angleContiguous, uniqueExecutor.get());
-  CHECK_RET(angleSin != nullptr, ACLNN_ERR_INNER_NULLPTR);
-  auto angleCos = l0op::Cos(angleContiguous, uniqueExecutor.get()); 
-  CHECK_RET(angleCos != nullptr, ACLNN_ERR_INNER_NULLPTR);
-  //调用l0算子mul,得到复数的实部和虚部
-  auto absSin = l0op::Mul(angleSin, inputContiguous, uniqueExecutor.get());
-  auto absCos = l0op::Mul(angleCos, inputContiguous, uniqueExecutor.get());
-  CHECK_RET(absSin != nullptr, ACLNN_ERR_INNER_NULLPTR);
-  CHECK_RET(absCos != nullptr, ACLNN_ERR_INNER_NULLPTR);
-  //调用l0算子complex，完成计算
-  auto output = l0op::Complex(absCos, absSin, out->GetDataType(), uniqueExecutor.get());
-  CHECK_RET(output != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  const aclTensor* output = nullptr;
+  if (IsRegBase()) {
+    output = l0op::Polar(inputContiguous, angleContiguous, uniqueExecutor.get());
+    CHECK_RET(output != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  } else {
+    //调用l0算子sin和cos，得到角度的sin，cos值
+    auto angleSin = l0op::Sin(angleContiguous, uniqueExecutor.get());
+    CHECK_RET(angleSin != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto angleCos = l0op::Cos(angleContiguous, uniqueExecutor.get()); 
+    CHECK_RET(angleCos != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    //调用l0算子mul,得到复数的实部和虚部
+    auto absSin = l0op::Mul(angleSin, inputContiguous, uniqueExecutor.get());
+    auto absCos = l0op::Mul(angleCos, inputContiguous, uniqueExecutor.get());
+    CHECK_RET(absSin != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    CHECK_RET(absCos != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    //调用l0算子complex，完成计算
+    output = l0op::Complex(absCos, absSin, out->GetDataType(), uniqueExecutor.get());
+    CHECK_RET(output != nullptr, ACLNN_ERR_INNER_NULLPTR);
+  }
 
   // 将计算结果拷贝到输出out上，out可能是非连续的tensor
   auto copyResult = l0op::ViewCopy(output, out, uniqueExecutor.get());
