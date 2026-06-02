@@ -80,7 +80,7 @@ aclnnStatus aclnnInplaceUniform(
       <td class="tg-0pky">from（double）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">进行离散均匀分布取值的左边界。</td>
-      <td class="tg-0pky">from的值需要在selfRef的数据类型取值范围内，from的取值需要小于to。</td>
+      <td class="tg-0pky">from的值需要在selfRef的数据类型取值范围内，from的取值需要小于等于to。</td>
       <td class="tg-0pky">DOUBLE</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
@@ -164,8 +164,8 @@ aclnnStatus aclnnInplaceUniform(
       <td>传入的selfRef是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="5">161002</td>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
       <td>selfRef的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
@@ -173,12 +173,6 @@ aclnnStatus aclnnInplaceUniform(
     </tr>
     <tr>
       <td>from大于to。</td>
-    </tr>
-    <tr>
-      <td>from/to超出selfRef数据类型的有效范围。</td>
-    </tr>
-    <tr>
-      <td>to-from的值超出selfRef数据类型的最大值。</td>
     </tr>
   </tbody>
   </table>
@@ -229,7 +223,10 @@ aclnnStatus aclnnInplaceUniform(
 ## 约束说明
 
 - 确定性计算：aclnnInplaceUniform默认确定性实现。
-- <term>Ascend 950PR/Ascend 950DT</term>：offset必须为4的倍数。
+- <term>Ascend 950PR/Ascend 950DT</term>：
+  - offset必须为4的倍数。
+  - from和to的值不能超出self数据类型的表示范围。
+  - to - from的值不能超出self数据类型的表示范围。
 
 ## 调用示例
 

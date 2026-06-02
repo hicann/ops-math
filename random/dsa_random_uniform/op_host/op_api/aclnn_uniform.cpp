@@ -82,85 +82,15 @@ static bool CheckShape(const aclTensor* self)
     return true;
 }
 
-static bool CheckFromToRange(double from, double to, op::DataType dtype)
+static aclnnStatus CheckParams(const aclTensor* self, double from, double to)
 {
-    double dtypeMin = 0.0;
-    double dtypeMax = 0.0;
-
-    switch (dtype) {
-        case op::DataType::DT_FLOAT:
-            dtypeMin = static_cast<double>(std::numeric_limits<float>::lowest());
-            dtypeMax = static_cast<double>(std::numeric_limits<float>::max());
-            break;
-        case op::DataType::DT_FLOAT16:
-            dtypeMin = -65504.0;
-            dtypeMax = 65504.0;
-            break;
-        case op::DataType::DT_BF16:
-            dtypeMin = -3.3895313892515355e+38;
-            dtypeMax = 3.3895313892515355e+38;
-            break;
-        case op::DataType::DT_DOUBLE:
-            dtypeMin = std::numeric_limits<double>::lowest();
-            dtypeMax = std::numeric_limits<double>::max();
-            break;
-        case op::DataType::DT_INT8:
-            dtypeMin = static_cast<double>(std::numeric_limits<int8_t>::min());
-            dtypeMax = static_cast<double>(std::numeric_limits<int8_t>::max());
-            break;
-        case op::DataType::DT_UINT8:
-            dtypeMin = static_cast<double>(std::numeric_limits<uint8_t>::min());
-            dtypeMax = static_cast<double>(std::numeric_limits<uint8_t>::max());
-            break;
-        case op::DataType::DT_INT16:
-            dtypeMin = static_cast<double>(std::numeric_limits<int16_t>::min());
-            dtypeMax = static_cast<double>(std::numeric_limits<int16_t>::max());
-            break;
-        case op::DataType::DT_INT32:
-            dtypeMin = static_cast<double>(std::numeric_limits<int32_t>::min());
-            dtypeMax = static_cast<double>(std::numeric_limits<int32_t>::max());
-            break;
-        case op::DataType::DT_INT64:
-            dtypeMin = static_cast<double>(std::numeric_limits<int64_t>::min());
-            dtypeMax = static_cast<double>(std::numeric_limits<int64_t>::max());
-            break;
-        default:
-            dtypeMin = std::numeric_limits<double>::lowest();
-            dtypeMax = std::numeric_limits<double>::max();
-            break;
-    }
-
-    if (from < dtypeMin || from > dtypeMax) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "from value %lf is out of valid range [%lf, %lf] for dtype %d", from,
-            dtypeMin, dtypeMax, static_cast<int>(dtype));
-        return false;
-    }
-
-    if (to < dtypeMin || to > dtypeMax) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "to value %lf is out of valid range [%lf, %lf] for dtype %d", to,
-            dtypeMin, dtypeMax, static_cast<int>(dtype));
-        return false;
-    }
-
+    CHECK_RET(CheckNotNull(self), ACLNN_ERR_PARAM_NULLPTR);
+    CHECK_RET(CheckDtypeValid(self), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckShape(self), ACLNN_ERR_PARAM_INVALID);
     if (from > to) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "from %lf must be less than or equal to %lf.", from, to);
-        return false;
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "from cannot be greater than to, from is %lf and to is %lf.", from, to);
+        return ACLNN_ERR_PARAM_INVALID;
     }
-
-    if ((to - from) > dtypeMax) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-            "to-from exceeds the limit of dtype %d, to=%lf, from=%lf.", static_cast<int>(dtype), to, from);
-        return false;
-    }
-
-    return true;
-}
-
-static aclnnStatus CheckParams(const aclTensor* selfRef)
-{
-    CHECK_RET(CheckNotNull(selfRef), ACLNN_ERR_PARAM_NULLPTR);
-    CHECK_RET(CheckDtypeValid(selfRef), ACLNN_ERR_PARAM_INVALID);
-    CHECK_RET(CheckShape(selfRef), ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
 
@@ -239,8 +169,7 @@ static const aclTensor* uniformTensorDavidPath(
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfRef->GetDataType() != DataType::DT_DOUBLE) {
         // V4: offsetTensor + offset → resultAddOut，直接作为 INT64 传入
         FVector<int64_t> offsetVector{static_cast<int64_t>(offset)};
-        aclIntArray* offsetList = executor->AllocIntArray(offsetVector.data(), offsetVector.size());
-        auto tmpTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_INT64);
+        auto tmpTensor = executor->ConvertToTensor(offsetVector.data(), offsetVector.size(), op::DataType::DT_INT64);
         auto resultAddOut = l0op::Add(offsetTensor, tmpTensor, executor);
         CHECK_RET(resultAddOut != nullptr, nullptr);
 
@@ -269,9 +198,8 @@ aclnnStatus aclnnInplaceUniformGetWorkspaceSize(
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
-    auto ret = CheckParams(selfRef);
+    auto ret = CheckParams(selfRef, from, to);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
-    CHECK_RET(CheckFromToRange(from, to, selfRef->GetDataType()), ACLNN_ERR_PARAM_INVALID);
 
     if (selfRef->IsEmpty()) {
         *workspaceSize = 0;
@@ -324,9 +252,8 @@ aclnnStatus aclnnInplaceUniformTensorGetWorkspaceSize(
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
-    auto ret = CheckParams(selfRef);
+    auto ret = CheckParams(selfRef, from, to);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
-    CHECK_RET(CheckFromToRange(from, to, selfRef->GetDataType()), ACLNN_ERR_PARAM_INVALID);
 
     if (selfRef->IsEmpty()) {
         *workspaceSize = 0;
