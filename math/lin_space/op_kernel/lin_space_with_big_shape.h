@@ -162,7 +162,7 @@ __aicore__ inline void LinSpaceWithBigShape<T>::ComputeAndOut(const int64_t& loo
 
     for (int64_t idx = 1; idx < loopNum; idx++) {
         LocalTensor<T> outLocal = outQueue.AllocTensor<T>();
-        if (idx == loopNum - 1) {
+        if (idx == loopNum - 1 && loopTail > 0) {
             Adds(outLocal, outLocalBase, T(m_tilingData.scalar * maxOutNum * idx), loopTail);
             outQueue.EnQue(outLocal);
             CopyOut(gmOutOffset + idx * maxOutNum, loopTail);
@@ -203,7 +203,7 @@ __aicore__ inline void LinSpaceWithBigShape<T>::ComputeReverseAndOut(const int64
 
     for (int64_t idx = 1; idx < loopNum; idx++) {
         LocalTensor<T> outLocal = outQueue.AllocTensor<T>();
-        if (idx == loopNum - 1) {
+        if (idx == loopNum - 1 && loopTail > 0) {
             Adds(
                 outLocal[maxOutNum - loopTail], outLocalBase[maxOutNum - loopTail],
                 T(m_tilingData.scalar * maxOutNum * idx * reverseScalar), loopTail);
