@@ -81,13 +81,65 @@ int main()
     auto ret = Init(deviceId, &stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
+    // 2. 两组其他用例之一 可参考
+    // std::vector<int64_t> uniqueLenShape = {1};
+    // std::vector<int64_t> uniqueIndicesShape = {6};
+    // std::vector<int64_t> indexShape = {6,1};
+    // std::vector<int64_t> valueShape = {6};
+    // std::vector<int64_t> newIndexShape = {3,1};
+    // std::vector<int64_t> newValueShape = {3};
+    // void* uniqueLenDeviceAddr = nullptr;
+    // void* uniqueIndicesDeviceAddr = nullptr;
+    // void* indexDeviceAddr = nullptr;
+    // void* valueDeviceAddr = nullptr;
+    // void* newIndexDeviceAddr = nullptr;
+    // void* newValueDeviceAddr = nullptr;
+    // aclTensor* uniqueLen = nullptr;
+    // aclTensor* uniqueIndices = nullptr;
+    // aclTensor* index = nullptr;
+    // aclTensor* value = nullptr;
+    // aclTensor* newIndex = nullptr;
+    // aclTensor* newValue = nullptr;
+    // std::vector<int32_t> uniqueLenData = {6};
+    // std::vector<int32_t> uniqueIndicesData = {0, 0, 1, 2, 1, 2};
+    // std::vector<int32_t> indexData = {0, 0, 1, 2, 1, 2};
+    // std::vector<float> valueData = {1, 2, 4, 8, 16, 32};
+    // std::vector<int32_t> newIndexData = {0, 0, 0};
+    // std::vector<float> newValueData = {0, 0, 0};
+    
+    // 2. 两组其他用例之一 可参考
+    // std::vector<int64_t> uniqueLenShape = {1};
+    // std::vector<int64_t> uniqueIndicesShape = {4};
+    // std::vector<int64_t> indexShape = {4,2};
+    // std::vector<int64_t> valueShape = {4};
+    // std::vector<int64_t> newIndexShape = {3,2};
+    // std::vector<int64_t> newValueShape = {3};
+    // void* uniqueLenDeviceAddr = nullptr;
+    // void* uniqueIndicesDeviceAddr = nullptr;
+    // void* indexDeviceAddr = nullptr;
+    // void* valueDeviceAddr = nullptr;
+    // void* newIndexDeviceAddr = nullptr;
+    // void* newValueDeviceAddr = nullptr;
+    // aclTensor* uniqueLen = nullptr;
+    // aclTensor* uniqueIndices = nullptr;
+    // aclTensor* index = nullptr;
+    // aclTensor* value = nullptr;
+    // aclTensor* newIndex = nullptr;
+    // aclTensor* newValue = nullptr;
+    // std::vector<int32_t> uniqueLenData = {3};
+    // std::vector<int32_t> uniqueIndicesData = {0, 1, 0, 2};
+    // std::vector<int32_t> indexData = {0, 0, 1, 1, 0, 0, 2, 2};
+    // std::vector<float> valueData = {1, 2, 3, 4};
+    // std::vector<int32_t> newIndexData = {0, 0, 0, 0, 0, 0};
+    // std::vector<float> newValueData = {0, 0, 0};
+
     // 2. 构造输入与输出，需要根据API的接口自定义构造
     std::vector<int64_t> uniqueLenShape = {1};
-    std::vector<int64_t> uniqueIndicesShape = {2,2};
-    std::vector<int64_t> indexShape = {2,4};
-    std::vector<int64_t> valueShape = {4};
-    std::vector<int64_t> newIndexShape = {4};
-    std::vector<int64_t> newValueShape = {2};
+    std::vector<int64_t> uniqueIndicesShape = {8};
+    std::vector<int64_t> indexShape = {8,4};
+    std::vector<int64_t> valueShape = {8};
+    std::vector<int64_t> newIndexShape = {8,4};
+    std::vector<int64_t> newValueShape = {8};
     void* uniqueLenDeviceAddr = nullptr;
     void* uniqueIndicesDeviceAddr = nullptr;
     void* indexDeviceAddr = nullptr;
@@ -100,12 +152,29 @@ int main()
     aclTensor* value = nullptr;
     aclTensor* newIndex = nullptr;
     aclTensor* newValue = nullptr;
-    std::vector<int32_t> uniqueLenData = {2};
-    std::vector<int32_t> uniqueIndicesData = {0, 1, 0, 2};
-    std::vector<int32_t> indexData = {0, 0, 1, 1, 0, 0, 2, 2};
-    std::vector<float> valueData = {1, 2, 3, 4};
-    std::vector<int32_t> newIndexData = {0, 0, 0, 0};
-    std::vector<float> newValueData = {0, 0};
+    std::vector<int32_t> uniqueLenData = {8};
+    std::vector<int32_t> uniqueIndicesData = {5, 1, 6, 4, 7, 0, 3, 2};
+    std::vector<int32_t> indexData = {17, 17,  1,  0,
+         3, 17,  1,  8,
+        19, 10, 13,  6,
+        13, 16,  0, 15,
+        19, 14,  5, 15,
+         2,  8, 18,  5,
+         5,  2,  0, 13,
+         4,  5,  9,  1
+    };
+    std::vector<float> valueData = {148.2500, -706.5000,  178.6250,  399.5000, -795.5000, -171.8750,
+         388.7500, -171.6250};
+    std::vector<int32_t> newIndexData = {17, 17,  1,  0,
+         3, 17,  1,  8,
+        19, 10, 13,  6,
+        13, 16,  0, 15,
+        19, 14,  5, 15,
+         2,  8, 18,  5,
+         5,  2,  0, 13,
+         4,  5,  9,  1
+    };
+    std::vector<float> newValueData = {0, 0, 0,0,0,0,0,0};
 
     // 创建in aclTensor
     ret = CreateAclTensor(uniqueLenData, uniqueLenShape, &uniqueLenDeviceAddr, aclDataType::ACL_INT32, &uniqueLen);
@@ -147,14 +216,24 @@ int main()
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
     // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
-    auto size = GetShapeSize(newValueShape);
-    std::vector<float> resultData(size, 0);
+    auto indexSize = GetShapeSize(newIndexShape);
+    std::vector<int32_t> resultIndexData(indexSize, 0);
     ret = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), newValueDeviceAddr, size * sizeof(resultData[0]),
+        resultIndexData.data(), resultIndexData.size() * sizeof(int32_t), newIndexDeviceAddr, indexSize * sizeof(int32_t),
         ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
-    for (int64_t i = 0; i < size; i++) {
-        LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
+    for (int64_t i = 0; i < indexSize; i++) {
+        LOG_PRINT("result[%ld] is: %d\n", i, resultIndexData[i]);
+    }
+
+    auto valueSize = GetShapeSize(newValueShape);
+    std::vector<float> resultValueData(valueSize, 0);
+    ret = aclrtMemcpy(
+        resultValueData.data(), resultValueData.size() * sizeof(resultValueData[0]), newValueDeviceAddr, valueSize * sizeof(resultValueData[0]),
+        ACL_MEMCPY_DEVICE_TO_HOST);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
+    for (int64_t i = 0; i < valueSize; i++) {
+        LOG_PRINT("result[%ld] is: %f\n", i, resultValueData[i]);
     }
 
     // 6. 释放aclTensor，需要根据具体API的接口定义修改

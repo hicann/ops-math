@@ -26,6 +26,7 @@ constexpr uint64_t FP32_ID = 0;
 constexpr uint64_t FP16_ID = 2;
 constexpr uint64_t KEY_MODE1 = 6;
 constexpr uint64_t KEY_MODE2 = 3;
+constexpr uint64_t ASCEND950_SIMT_TILING_OFFSET = 100; 
 constexpr uint64_t AILGN256 = 256;
 constexpr uint64_t AILGN32 = 32;
 constexpr uint64_t MAXRPTIME = 4096;
@@ -69,6 +70,9 @@ void CoalesceSparseTiling::TilingKeyCalcu(ge::DataType uniqueIndicesDtype, ge::D
                                           ge::DataType valuesDtype) {
     OP_LOGD(TilingContext, "GetTensorType.");
     OP_LOGD(TilingContext, "SetTilingKey.");
+    auto platformInfo = TilingContext->GetPlatformInfo();
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    bool isAscend950 = ascendcPlatform.GetSocVersion() == platform_ascendc::SocVersion::ASCEND950;
     if (uniqueIndicesDtype == ge::DT_INT64) {
         tiling_key = INT64_ID * KEY_MODE1;
     } else {
@@ -85,6 +89,9 @@ void CoalesceSparseTiling::TilingKeyCalcu(ge::DataType uniqueIndicesDtype, ge::D
         tiling_key += INT32_ID;
     } else {
         tiling_key += FP16_ID;
+    }
+    if (isAscend950) {
+        tiling_key += ASCEND950_SIMT_TILING_OFFSET;
     }
 }
 

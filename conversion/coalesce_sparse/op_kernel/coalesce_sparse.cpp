@@ -12,7 +12,11 @@
  * \file coalesce_sparse.cpp
  * \brief
  */
+#if __CCE_AICORE__ == 310
+#include "coalesce_sparse_simt.h"
+#else
 #include "coalesce_sparse.h"
+#endif
 
 extern "C" __global__ __aicore__ void coalesce_sparse(
     GM_ADDR unique_len, GM_ADDR unique_indices, GM_ADDR indices, GM_ADDR values, GM_ADDR new_indices, GM_ADDR new_value,
@@ -20,6 +24,57 @@ extern "C" __global__ __aicore__ void coalesce_sparse(
 {
     GET_TILING_DATA(tilingData, tiling);
     const CoalesceSparseTilingData* __restrict tilingDevice = &tilingData;
+#if __CCE_AICORE__ == 310
+    if (TILING_KEY_IS(100)) {
+        KernelCoalesceSparseSimt<int64_t, int64_t, float> op;
+        op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
+        op.Process();
+    } else if (TILING_KEY_IS(101)) {
+        KernelCoalesceSparseSimt<int64_t, int64_t, int32_t> op;
+        op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
+        op.Process();
+    } else if (TILING_KEY_IS(102)) {
+        KernelCoalesceSparseSimt<int64_t, int64_t, half> op;
+        op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
+        op.Process();
+    } else if (TILING_KEY_IS(103)) {
+        KernelCoalesceSparseSimt<int64_t, int32_t, float> op;
+        op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
+        op.Process();
+    } else if (TILING_KEY_IS(104)) {
+        KernelCoalesceSparseSimt<int64_t, int32_t, int32_t> op;
+        op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
+        op.Process();
+    } else if (TILING_KEY_IS(105)) {
+        KernelCoalesceSparseSimt<int64_t, int32_t, half> op;
+        op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
+        op.Process();
+    } else if (TILING_KEY_IS(106)) {
+        KernelCoalesceSparseSimt<int32_t, int64_t, float> op;
+        op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
+        op.Process();
+    } else if (TILING_KEY_IS(107)) {
+        KernelCoalesceSparseSimt<int32_t, int64_t, int32_t> op;
+        op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
+        op.Process();
+    } else if (TILING_KEY_IS(108)) {
+        KernelCoalesceSparseSimt<int32_t, int64_t, half> op;
+        op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
+        op.Process();
+    } else if (TILING_KEY_IS(109)) {
+        KernelCoalesceSparseSimt<int32_t, int32_t, float> op;
+        op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
+        op.Process();
+    } else if (TILING_KEY_IS(110)) {
+        KernelCoalesceSparseSimt<int32_t, int32_t, int32_t> op;
+        op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
+        op.Process();
+    } else if (TILING_KEY_IS(111)) {
+        KernelCoalesceSparseSimt<int32_t, int32_t, half> op;
+        op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
+        op.Process();
+    }
+#else
     if (TILING_KEY_IS(0)) {
         KernelCoalesceSparse<int64_t, int64_t, float> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
@@ -69,4 +124,5 @@ extern "C" __global__ __aicore__ void coalesce_sparse(
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
         op.Process();
     }
+#endif
 }
