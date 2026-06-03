@@ -49,6 +49,7 @@ struct NormalTransform {
         float u1 = results[pairBase] * RAND_2POW32_INV + RAND_2POW32_INV_HALF;
         float u2 = results[pairBase + 1] * RAND_2POW32_INV + RAND_2POW32_INV_HALF;
         float z0, z1;
+        // 使用对齐torch版本的BoxMullerFloat，无需eps保护
         BoxMullerFloat(u1, u2, &z0, &z1);
         float z = (iStep % 2 == 0) ? z0 : z1;
         if constexpr (IsSameType<T, float>::value) {

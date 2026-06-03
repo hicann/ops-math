@@ -320,7 +320,7 @@ int main() {
   std::vector<float> stdHostData = {0.5, 0.6, 0.4, 0.5};
   std::vector<float> outHostData = {0.0, 0.0, 0.0, 0.0};
   int64_t seed = 1;
-  int64_t offset = 1;
+  int64_t offset = 4;
 
   // 创建mean aclTensor
   ret = CreateAclTensor(meanHostData, meanShape, &meanDeviceAddr, aclDataType::ACL_FLOAT, &mean);

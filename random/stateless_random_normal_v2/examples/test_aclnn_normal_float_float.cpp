@@ -94,7 +94,7 @@ int main()
     float meanValue = 1.2f;
     float stdValue = 2.5f;
     int64_t seed = 1;
-    int64_t offset = 2;
+    int64_t offset = 4;
 
     // 创建out aclTensor
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);

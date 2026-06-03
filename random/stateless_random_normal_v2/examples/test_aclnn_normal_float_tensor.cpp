@@ -97,7 +97,7 @@ int main()
     std::vector<float> outHostData = {0.0, 0.0, 0.0, 0.0};
     float meanValue = 1.2f;
     int64_t seed = 1;
-    int64_t offset = 1;
+    int64_t offset = 4;
     // 创建self aclTensor
     ret = CreateAclTensor(stdHostData, stdShape, &stdDeviceAddr, aclDataType::ACL_FLOAT, &std);
     CHECK_RET(ret == ACL_SUCCESS, return ret);

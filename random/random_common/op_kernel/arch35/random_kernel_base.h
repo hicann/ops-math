@@ -311,13 +311,23 @@ __aicore__ inline void BoxMullerMulSIMD(
     }
 }
 
-// Box-Muller transform
-__simt_callee__ __aicore__ inline void BoxMullerFloat(float u1, const float u2, float* z0, float* z1)
+// Box-Muller transform（Use BoxMullerFloatSafe for eps-protected version)
+__simt_callee__ __aicore__ inline void BoxMullerFloatSafe(float u1, const float u2, float* z0, float* z1)
 {
     const float eps = 1.0e-7f;
     if (u1 < eps) {
         u1 = eps;
     }
+    float v = static_cast<float>(DOUBLE_MULTIPLE * PI * u2);
+    float r = sqrtf(-DOUBLE_MULTIPLE * logf(u1));
+    sincosf(v, z0, z1);
+    *z0 *= r;
+    *z1 *= r;
+}
+
+// Box-Muller transform (Use BoxMullerFloat for torch-aligned, no eps clamping. ）
+__simt_callee__ __aicore__ inline void BoxMullerFloat(float u1, const float u2, float* z0, float* z1)
+{
     float v = static_cast<float>(DOUBLE_MULTIPLE * PI * u2);
     float r = sqrtf(-DOUBLE_MULTIPLE * logf(u1));
     sincosf(v, z0, z1);
