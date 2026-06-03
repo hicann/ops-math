@@ -8,7 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ============================================================================
 
-#set -e  # 如果启用，脚本会在任何命令返回非零状态时立即退出
+set -e  # 如果启用，脚本会在任何命令返回非零状态时立即退出
 original_umask=$(umask)
 umask 0022 # cann-toolkit安装时会检验父目录权限，需要权限为755才可成功安装
 restore_umask() {
