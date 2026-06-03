@@ -16,7 +16,7 @@ CANN Simulator是一款面向算子开发场景的SoC级芯片仿真工具，用
 * 工具推荐环境配置：CPU 16核，内存32GB以上。
 * 本文中举例路径均需要确保运行用户具有读或读写权限。
 * 出于安全性和权限最小化考虑，建议使用普通用户权限执行本工具，避免使用root等高权限账户。
-* 本工具依赖CANN软件包，在使用前请先安装CANN软件包，无需安装赖驱动和固件，并通过source命令执行CANN的set_env.sh环境变量文件。为确保安全，执行source命令后请勿修改set_env.sh中涉及的环境变量。
+* 本工具依赖CANN软件包，在使用前请先安装CANN软件包，无需安装驱动和固件，并通过source命令执行CANN的set_env.sh环境变量文件。为确保安全，执行source命令后请勿修改set_env.sh中涉及的环境变量。
 * 用户应遵循最小权限原则，例如，给工具输入的文件要求other用户不可写，在一些对安全要求更严格的功能场景下还需确保输入的文件group用户不可写。
 * 本工具为开发工具，不建议在生产环境使用。
 * 工具的仿真功能仅支持单卡场景，无法仿真多卡环境，代码中只能设置为0卡。若修改可见卡号，将导致仿真失败。
@@ -51,31 +51,24 @@ bash build.sh --pkg --soc=Ascend950 --vendor_name=custom --ops=add_example
 cannsim record ./test_aclnn_add_example -s Ascend950 --gen-report
 ```
 
-仿真工具执行日志文件在examples/add_example/examples/build/bin/cannsim_*目录，执行日志文件为
+仿真工具执行日志文件在examples/add_example/examples/build/bin/cannsim_*目录，执行日志文件为 cannsim.log。
 
-```bash
-cannsim.log
-```
 
 从仿真工具日志文件可以看到示例中的打印信息：
 
 ```bash
-Print the first 10 groups of data: 
-add_example first input[0] is: 1.000000, second input[0] is: -257.000000, result[0] is: -256.000000
-add_example first input[1] is: 2.000000, second input[1] is: 608.000000, result[1] is: 610.000000
-add_example first input[2] is: 3.000000, second input[2] is: 924.000000, result[2] is: 927.000000
-add_example first input[3] is: 4.000000, second input[3] is: -649.000000, result[3] is: -645.000000
-add_example first input[4] is: 5.000000, second input[4] is: 475.000000, result[4] is: 480.000000
-add_example first input[5] is: 6.000000, second input[5] is: 573.000000, result[5] is: 579.000000
-add_example first input[6] is: 7.000000, second input[6] is: 202.000000, result[6] is: 209.000000
-add_example first input[7] is: 8.000000, second input[7] is: 198.000000, result[7] is: 206.000000
-add_example first input[8] is: 9.000000, second input[8] is: -705.000000, result[8] is: -696.000000
-add_example first input[9] is: 10.000000, second input[9] is: -111.000000, result[9] is: -101.000000
+add_example first input[0] is: 1.000000, second input[0] is: 1.000000, result[0] is: 2.000000
+add_example first input[1] is: 1.000000, second input[1] is: 1.000000, result[1] is: 2.000000
+add_example first input[2] is: 1.000000, second input[2] is: 1.000000, result[2] is: 2.000000
+add_example first input[3] is: 1.000000, second input[3] is: 1.000000, result[3] is: 2.000000
+add_example first input[4] is: 1.000000, second input[4] is: 1.000000, result[4] is: 2.000000
+add_example first input[5] is: 1.000000, second input[5] is: 1.000000, result[5] is: 2.000000
+add_example first input[6] is: 1.000000, second input[6] is: 1.000000, result[6] is: 2.000000
 ```
 
 ## 查看性能流水
 
-仿真性能流水文件在本项目`examples/add_example/examples/build/bin/cannsim_*/report目录，流水相关文件为：
+仿真性能流水文件在本项目`examples/add_example/examples/build/bin/cannsim_*/report`目录，流水相关文件为：
 
 ```bash
 trace_core0.json
@@ -91,7 +84,7 @@ trace_core0.json
 
 ## 命令格式
 
-cannsim record [options] user_app --user-options
+cannsim record [options] user_app
 
 ## 参数说明
 
@@ -99,11 +92,12 @@ cannsim record [options] user_app --user-options
 
 |参数|可选/必选|说明|
 | --- | --- | --- |
-|-s  或 --soc-version  [options]参数 | 必选 | 指定模拟目标芯片版本（如：Ascend950）。|
-|-o  或 --output  [options]参数 | 可选| 生成文件所在路径，可配置为绝对路径或者相对路径，并且执行工具的用户需要具有读写权限。如果未指定路径，则默认在当前目录下保存数据。|
-|-g 或 --gen-report [options]参数 | 可选 | 启用仿真完成后是否进行自动解析，并生成分析报告。默认不自动解析。|
-|user_app|必选|算子可执行文件。|
---user-options|可选|算子可执行文件的运行参数。|
+|-s 或 --soc-version | 必选 | 指定模拟目标芯片版本（如：Ascend950）。|
+|-o 或 --output | 可选 | 生成文件所在路径，可配置为绝对路径或者相对路径，并且执行工具的用户需要具有读写权限。如果未指定路径，则默认在当前目录下保存数据。|
+|-g 或 --gen-report | 可选 | 启用仿真完成后是否进行自动解析，并生成分析报告。默认不自动解析。|
+|-u 或 --user-option | 可选 | 用户自定义算子参数，以命令行选项形式传递给算子程序。|
+|-n 或 --core-id | 可选 | 仿真期间启用日志的AI Core，格式同 report -n：'all'、'0-2,12-14'、'5'。默认全开；配合 -g 且未指定时回退到 core 0。|
+|user_app|必选|待运行的算子程序或命令（如 ./app, python train.py, bash run.sh）。|
 
 ## 使用示例
 
@@ -129,7 +123,7 @@ cannsim record [options] user_app --user-options
 
     以下输出仅为Ascend C单算子直调精度比较结果举例，因版本不同略有差异，请以实际输出为准。
 
-    ```bash
+    ```text
     INFO:root:[INFO] compare data case[ case001]
     INFO:root:---------------RESULT---------------
     INFO:root:['case_name', 'wrong_num', 'total_num', 'result', 'task_duration']
@@ -138,7 +132,7 @@ cannsim record [options] user_app --user-options
 
 5. 查看算子指令流水图，参考仿真结果解析。
 
-# 仿真结果解析
+# 仿真结果解析说明
 
 ## 命令功能
 
@@ -154,13 +148,14 @@ cannsim report [options]
 
 |参数 | 可选/必选 | 说明|
 | --- | --- | --- |
-|-e 或 --export  [options]参数 | 必选 | 原始结果文件目录，需指定为仿真执行后生成的结果目录，指定到cannsim_{timestamp}_${user_app}层，可配置为绝对路径或者相对路径，并且工具执行用户具有可读写权限。|
-|-o 或 --output  [options]参数 | 可选 | 解析结果输出目录，可配置为绝对路径或者相对路径，且执行用户需具有读写权限。若未指定路径，默认在当前目录下保存数据。如果生成的结果文件与现有文件同名，则会覆盖原有文件。|
-|-n 或 --core-id  [options]参数 | 可选 | 指定生成指令流水的核ID，不指定默认生成0核的指令流水。配置的格式如下：生成所有核的流水，配置为‘all’。指定核ID的范围，如：‘0-1’。指定单核ID，如‘5’。|
+|-e 或 --export | 必选 | 仿真执行结果目录，指定到cannsim_{timestamp}_${user_app}层，可配置为绝对路径或者相对路径，且执行用户需具有读写权限。|
+|-o 或 --output | 可选 | 指令流水图输出目录，可配置为绝对路径或者相对路径，且执行用户需具有读写权限。若未指定路径，默认与 export 目录相同。|
+|-n 或 --core-id | 可选 | 指定生成指令流水的核ID，支持格式：'all'、'0-2,12-14'、'5'。不指定默认生成0核的指令流水。|
+|-f 或 --object-file | 可选 | 设备对象文件路径，用于辅助生成报告。|
 
 ## 使用示例
 
-1. 参考仿真执行执行算子仿真，对比输出示例，确保对应的结果执行正确。
+1. 参考仿真执行算子仿真，对比输出示例，确保对应的结果执行正确。
 2. 执行仿真结果解析命令，可参考以下执行用例。
 
     ```bash
@@ -168,19 +163,19 @@ cannsim report [options]
     cannsim report -e /path/to/cannsim_{timestamp}_${user_app} 
 
     在指定目录下生成核0、核1、核11、核12的性能分析报告
-    cannsim report -e /path/to/cannsim_{timestamp}_${user_app} -o /path/to/report -n ‘0-1, 11-12’
+    cannsim report -e /path/to/cannsim_{timestamp}_${user_app} -o /path/to/report -n '0-1, 11-12'
     ```
 
 3. 命令执行完后，会在output配置的目录下生成对应的流水文件，文件格式为json格式，输出结果示例如下：
 
-    ```bash
+    ```text
     trace_core0.json
     trace_core1.json
     ...
     ```
 
 4. 仿真结果查看
-    在Chrome浏览器中输入“chrome://tracing”地址，并将通过生成指令流水图文件（trace.json）拖到空白处打开，键盘上输入快捷键（W：放大，S：缩小，A：左移，D：右移）可进行查看。
+    在Chrome浏览器中输入“chrome://tracing”地址，并将生成的指令流水图文件（trace.json）拖到空白处打开，键盘上输入快捷键（W：放大，S：缩小，A：左移，D：右移）可进行查看。
     ![指令流水图](../figures/指令流水图.png)
 
     表2 关键字段说明
@@ -217,7 +212,7 @@ cannsim --help
 cannsim record --help
 ```
 
-查询工具 report 子命令的帮助信息： 
+查询工具 report 子命令的帮助信息：
 
  ```bash
  cannsim report --help 
