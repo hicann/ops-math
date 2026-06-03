@@ -13,6 +13,7 @@
 
 #include "../../../op_api/aclnn_pow.h"
 
+#include "opdev/platform.h"
 #include "op_api_ut_common/op_api_ut.h"
 #include "op_api_ut_common/scalar_desc.h"
 #include "op_api_ut_common/tensor_desc.h"
@@ -243,6 +244,50 @@ TEST_F(l2_pow_tensor_scalar_test, aclnnPowTensorScalar_1_1_16_129_in64_hwcn_1_1_
   aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
   EXPECT_EQ(aclRet, ACL_SUCCESS);
 
+}
+
+TEST_F(l2_pow_tensor_scalar_test, Ascend950_aclnnPowTensorScalar_square_complex64) {
+  op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+
+  const vector<int64_t>& selfShape = {1,1,16,129};
+  aclDataType selfDtype = ACL_COMPLEX64;
+  aclFormat selfFormat = ACL_FORMAT_HWCN;
+
+  const vector<int64_t>& outShape = {1,1,16,129};
+  aclDataType outDtype = ACL_COMPLEX64;
+  aclFormat outFormat = ACL_FORMAT_HWCN;
+
+  auto selfTensorDesc = TensorDesc(selfShape, selfDtype, selfFormat);
+  auto expScalarDesc = ScalarDesc(2);
+  auto outTensorDesc = TensorDesc(outShape, outDtype, outFormat);
+
+  auto ut = OP_API_UT(aclnnPowTensorScalar, INPUT(selfTensorDesc, expScalarDesc), OUTPUT(outTensorDesc));
+  uint64_t workspaceSize = 0;
+  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+  op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+  EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(l2_pow_tensor_scalar_test, Ascend950_aclnnPowTensorScalar_square_complex128) {
+  op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+
+  const vector<int64_t>& selfShape = {1,1,16,129};
+  aclDataType selfDtype = ACL_COMPLEX128;
+  aclFormat selfFormat = ACL_FORMAT_HWCN;
+
+  const vector<int64_t>& outShape = {1,1,16,129};
+  aclDataType outDtype = ACL_COMPLEX128;
+  aclFormat outFormat = ACL_FORMAT_HWCN;
+
+  auto selfTensorDesc = TensorDesc(selfShape, selfDtype, selfFormat);
+  auto expScalarDesc = ScalarDesc(2);
+  auto outTensorDesc = TensorDesc(outShape, outDtype, outFormat);
+
+  auto ut = OP_API_UT(aclnnPowTensorScalar, INPUT(selfTensorDesc, expScalarDesc), OUTPUT(outTensorDesc));
+  uint64_t workspaceSize = 0;
+  aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
+  op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+  EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 /* 
 TEST_F(l2_pow_tensor_scalar_test, aclnnPowTensorScalar_1_1_16_129_complex64_hwcn_1_1_16_129_complex64_hwcn) {

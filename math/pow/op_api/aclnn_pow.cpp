@@ -430,7 +430,9 @@ aclnnStatus aclnnPowTensorScalarGetWorkspaceSize(const aclTensor *self,
        (IsRegBase() && (selfCast->GetDataType() == op::DataType::DT_FLOAT ||
                                                    selfCast->GetDataType() == op::DataType::DT_BF16 ||
                                                    selfCast->GetDataType() == op::DataType::DT_FLOAT16 ||
-                                                   selfCast->GetDataType() == op::DataType::DT_INT64)));
+                                                   selfCast->GetDataType() == op::DataType::DT_INT64 ||
+                                                   selfCast->GetDataType() == op::DataType::DT_COMPLEX64 ||
+                                                   selfCast->GetDataType() == op::DataType::DT_COMPLEX128)));
   if (CheckSupportPows(selfCast, exponent)) {
     auto expTensor = uniqueExecutor.get()->ConvertToTensor(exponent, promoteType);
     CHECK_RET(expTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
