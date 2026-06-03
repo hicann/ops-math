@@ -36,21 +36,21 @@
     <tr>
       <td>self</td>
       <td>输入</td>
-      <td>待进行logical_or计算的入参。</td>
+      <td>待进行logical_or计算的入参。shape需要与other满足<a href="../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>BOOL、INT8、UINT8、INT16、INT32、INT64、FLOAT16、BFLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>other</td>
       <td>输入</td>
-      <td>待进行logical_or计算的入参。</td>
+      <td>待进行logical_or计算的入参。shape需要与self满足<a href="../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>BOOL、INT8、UINT8、INT16、INT32、INT64、FLOAT16、BFLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>out</td>
       <td>输出</td>
-      <td>待进行logical_or计算的出参。</td>
+      <td>待进行logical_or计算的出参。shape与self、other广播之后的shape一致。</td>
       <td>BOOL</td>
       <td>ND</td>
     </tr>
