@@ -35,19 +35,19 @@ private:
 
 ge::graphStatus LogicalNotTiling::RunTiling()
 {
-    OP_CHECK_IF(tilingContext == nullptr,
-                    OP_LOGE("CheckContextValid", "tilingContext is nullptr!"),
-                    return ge::GRAPH_FAILED);
+OP_CHECK_IF(tilingContext == nullptr,
+                      OP_LOGE("CheckContextValid", "tilingContext is nullptr"),
+                      return ge::GRAPH_FAILED);
 
     auto tiling = tilingContext->GetTilingData<EleBaseTilingDataV2>();
-    OP_CHECK_IF((tiling == nullptr),
-                    OP_LOGE(tilingContext->GetNodeName(), "Get LogicalNotTiling from GE context failed"),
-                    return ge::GRAPH_FAILED);
+OP_CHECK_IF((tiling == nullptr),
+                      OP_LOGE(tilingContext->GetNodeName(), "Get LogicalNotTiling from GE context failed"),
+                      return ge::GRAPH_FAILED);
 
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    OP_CHECK_IF(elewiseBaseTiling.DoTiling<LogicalNotOp::LogicalNotDag<int8_t>::OpDag>(*tiling) != ge::GRAPH_SUCCESS,
-                    OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling DoTiling failed."),
-                    return ge::GRAPH_FAILED);
+OP_CHECK_IF(elewiseBaseTiling.DoTiling<LogicalNotOp::LogicalNotDag<int8_t>::OpDag>(*tiling) != ge::GRAPH_SUCCESS,
+                     OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling DoTiling failed"),
+                     return ge::GRAPH_FAILED);
 
     // set workspace/tilingkey/blockdim
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);

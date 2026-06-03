@@ -60,15 +60,22 @@ ge::graphStatus AbsTiling::CalcOutputDtype()
 
     if (this->inputDtype != ge::DT_COMPLEX64 && this->inputDtype != ge::DT_COMPLEX32) {
         OP_CHECK_IF(this->inputDtype != this->outputDtype,
-                    OP_LOGE(tilingContext, "Abs op input and output dtype not match, check fail"),
+                    OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "inputDtype, outputDtype",
+                                                          ge::TypeUtils::DataTypeToSerialString(this->inputDtype) + ", " +
+                                                          ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                                          "input and output dtypes must match for non-complex inputs"),
                     return ge::GRAPH_FAILED);
     } else if (inputDtype == ge::DT_COMPLEX64) {
         OP_CHECK_IF(this->outputDtype != ge::DT_FLOAT, 
-                    OP_LOGE(tilingContext, "Abs op complex64 input must output float, check fail"),
+                    OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "outputDtype",
+                                                         ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                                         "when input is complex64, output dtype must be DT_FLOAT"),
                     return ge::GRAPH_FAILED); 
     } else if (inputDtype == ge::DT_COMPLEX32) {
         OP_CHECK_IF(this->outputDtype != ge::DT_FLOAT16, 
-                    OP_LOGE(tilingContext, "Abs op complex32 input must output float16, check fail"),
+                    OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "outputDtype",
+                                                         ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                                         "when input is complex32, output dtype must be DT_FLOAT16"),
                     return ge::GRAPH_FAILED); 
     }
     return ge::GRAPH_SUCCESS;
@@ -102,7 +109,10 @@ ge::graphStatus AbsTiling::RunTiling()
     } else if (this->inputDtype == ge::DT_INT64) {
         res = elewiseBaseTiling.DoTiling<AbsOp::AbsDag<int64_t, int64_t>::OpDag>(tiling->baseTiling);
     } else {
-        OP_LOGE(tilingContext, "data type check failed. getype：%d", this->outputDtype);
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "inputDtype",
+                                       ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
+                                       "input dtype must be in [DT_FLOAT16, DT_FLOAT, DT_BF16, DT_INT8, DT_INT16, "
+                                       "DT_INT32, DT_INT64, DT_COMPLEX64, DT_COMPLEX32]");
         return ge::GRAPH_FAILED;
     }
 

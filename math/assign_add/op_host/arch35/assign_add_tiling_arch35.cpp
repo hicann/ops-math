@@ -63,21 +63,25 @@ ge::graphStatus AssignAddTiling::CheckDtype()
     this->valueDtype = valueDesc->GetDataType();
 
     OP_CHECK_IF(
-        refDtype != this->outputDtype, OP_LOGE(tilingContext->GetNodeName(), "dtype of ref and output are not same"),
+        refDtype != this->outputDtype, OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "refDtype,outputDtype",
+                                                                              ge::TypeUtils::DataTypeToSerialString(refDtype)+","+ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                                                              "ref and output dtypes must be equal"),
         return ge::GRAPH_FAILED);
 
     OP_CHECK_IF(
         (refDtype != this->valueDtype) && (refDtype != ge::DT_FLOAT),
-        OP_LOGE(tilingContext->GetNodeName(), "if ref dtype not equal to value dtype, ref dtype only support float32"),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "ref,valueDtype",
+                                               ge::TypeUtils::DataTypeToSerialString(refDtype)+","+ge::TypeUtils::DataTypeToSerialString(this->valueDtype),
+                                               "when ref dtype != value dtype, ref dtype must be DT_FLOAT"),
         return ge::GRAPH_FAILED);
 
     std::vector<ge::DataType> valueMixDtype = {ge::DT_FLOAT16, ge::DT_BF16};
     OP_CHECK_IF(
         (refDtype != this->valueDtype) &&
             (std::find(valueMixDtype.begin(), valueMixDtype.end(), this->valueDtype) == valueMixDtype.end()),
-        OP_LOGE(
-            tilingContext->GetNodeName(),
-            "if ref dtype not equal to value dtype, value dtype only support float16, bfloat16"),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "ref,valueDtype",
+                                               ge::TypeUtils::DataTypeToSerialString(refDtype)+","+ge::TypeUtils::DataTypeToSerialString(this->valueDtype),
+                                               "when ref dtype != value dtype, value dtype must be in [DT_FLOAT16, DT_BF16]"),
         return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
@@ -97,7 +101,11 @@ ge::graphStatus AssignAddTiling::CheckShape() const
 
     OP_CHECK_IF(
         refShape != valueShape || refShape != outputShape,
-        OP_LOGE(tilingContext->GetNodeName(), "shape of ref、value and output are not same"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "ref, value, output",
+                                                (Ops::Base::ToString(refShape) + ", " + Ops::Base::ToString(valueShape) +
+                                                 ", " + Ops::Base::ToString(outputShape)).c_str(),
+                                                "ref, value and output shapes must be equal"),
+        return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -135,12 +143,15 @@ ge::graphStatus AssignAddTiling::RunTiling()
         } else if (this->valueDtype == ge::DT_BF16) {
             ret = eleBaseTiling.DoTiling<AssignAddDAG<float, bfloat16_t>::OpDag>(*tiling);
         } else {
-            OP_LOGE(tilingContext->GetNodeName(), "if ref dtype is fp32, value dtype only support fp16, bf16, fp32.");
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "valueDtype",
+                                       ge::TypeUtils::DataTypeToSerialString(this->valueDtype),
+                                       "when ref dtype is DT_FLOAT, value dtype must be in [DT_FLOAT16, DT_BF16, DT_FLOAT]");
             return ge::GRAPH_FAILED;
         }
     } else {
-        OP_LOGE(
-            tilingContext->GetNodeName(), "output dtype is only support fp16, bf16, fp32, int8、int32、int64、uint8.");
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "outputDtype",
+                                       ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                       "output dtype must be in [DT_FLOAT16, DT_BF16, DT_FLOAT, DT_INT8, DT_INT32, DT_INT64, DT_UINT8]");
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(ret == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"), return ge::GRAPH_FAILED);

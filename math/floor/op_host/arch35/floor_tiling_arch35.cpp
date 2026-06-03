@@ -35,7 +35,7 @@ ge::graphStatus FloorTiling::GetPlatformInfo()
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo == nullptr) {
         auto compileInfoPtr = reinterpret_cast<const FloorCompileInfo*>(context_->GetCompileInfo());
-        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_, "compile info is null"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "compile_info", "nullptr", "compile info is null"), return ge::GRAPH_FAILED);
         coreNum = compileInfoPtr->coreNum;
         ubSize = compileInfoPtr->ubSize;
     } else {
@@ -109,7 +109,7 @@ ge::graphStatus FloorTiling::GetShapeAttrsInfo()
 
     opKey = GetOpKey(xDtype, yDtype);
     OP_CHECK_IF(
-        (opKey == OP_KEY_INVALID), OP_LOGE(context_->GetNodeName(), "can not get opKey"), return ge::GRAPH_FAILED);
+        (opKey == OP_KEY_INVALID), OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "opKey", std::to_string(opKey), "can not get opKey"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -184,7 +184,7 @@ ge::graphStatus FloorTiling::PostTiling()
     context_->SetTilingKey(GetTilingKey());
     context_->SetBlockDim(blockNum);
     size_t* workspaces = context_->GetWorkspaceSizes(1);
-    OP_CHECK_IF(workspaces == nullptr, OP_LOGE(context_, "workspace is null"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(workspaces == nullptr, OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "workspace", "nullptr", "workspace is null"), return ge::GRAPH_FAILED);
     workspaces[0] = workspaceSize_;
     tilingData.SaveToBuffer(context_->GetRawTilingData()->GetData(), context_->GetRawTilingData()->GetCapacity());
     context_->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());

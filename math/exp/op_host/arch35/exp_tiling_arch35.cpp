@@ -34,7 +34,7 @@ ge::graphStatus ExpTiling::CalcInputDtype()
     this->inputDtype = inputDesc->GetDataType();
     OP_CHECK_IF(
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT,
-        OP_LOGE(tilingContext->GetNodeName(), "input x dtype not support %d", this->inputDtype),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "x", ge::TypeUtils::DataTypeToSerialString(this->inputDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT]"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -51,7 +51,7 @@ ge::graphStatus ExpTiling::CheckShape()
     const gert::Shape& expOutputZShape = Ops::Base::EnsureNotScalar(expOutputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
-        expInputYShape != expOutputZShape, OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),
+        expInputYShape != expOutputZShape, OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x, y", (Ops::Base::ToString(expInputYShape) + ", " + Ops::Base::ToString(expOutputZShape)).c_str(), "input shape must equal output shape"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -64,10 +64,10 @@ ge::graphStatus ExpTiling::CalcOutputDtype()
     this->outputDtype = outputDesc->GetDataType();
     OP_CHECK_IF(
         this->outputDtype != ge::DT_FLOAT16 && this->outputDtype != ge::DT_BF16 && this->outputDtype != ge::DT_FLOAT,
-        OP_LOGE(tilingContext, "output dtype not support"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "y", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT]"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         this->outputDtype != this->inputDtype,
-        OP_LOGE(tilingContext->GetNodeName(), "output y dtype not same as input x"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x, y", std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(this->inputDtype)), "output dtype must be same as input dtype"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -84,7 +84,7 @@ ge::graphStatus ExpTiling::SetAttr()
                        std::numeric_limits<float>::epsilon() * std::max(std::fabs(baseValue), std::fabs(-1.0f));
     OP_CHECK_IF(
         baseValue <= 1e-6f && !isBaseValue,
-        OP_LOGE(tilingContext->GetNodeName(), "base value must be greater than 0 or -1"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext->GetNodeName(), "base_value", std::to_string(baseValue), "base value must be greater than 0 or equal to -1"), return ge::GRAPH_FAILED);
     float lnBase = isBaseValue ? 1.0f : log(baseValue);
     float scale = scaleValueAttr == nullptr ? 1.0f : *scaleValueAttr;
     float shift = shiftValueAttr == nullptr ? 0.0f : *shiftValueAttr;
@@ -111,14 +111,14 @@ ge::graphStatus ExpTiling::RunTiling()
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
 
     OP_CHECK_IF(
-        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed."),
+        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed."),
+        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(SetAttr() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "set Attr failed."), return ge::GRAPH_FAILED);
+        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(SetAttr() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "set Attr failed"), return ge::GRAPH_FAILED);
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     if (this->outputDtype == ge::DT_FLOAT16) {
@@ -144,11 +144,11 @@ ge::graphStatus ExpTiling::RunTiling()
                 elewiseBaseTiling.DoTiling32B<ExpDag::ExpScaleNotOneShiftNotZeroLnbaseNotOne<float>::OpDag>();
         }
     } else {
-        OP_LOGE(tilingContext->GetNodeName(), "output dtype not support");
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "y", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT]");
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(
-        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
+        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
         return ge::GRAPH_FAILED);
 
     elewiseBaseTiling.SetScalar<float>(attrScale);

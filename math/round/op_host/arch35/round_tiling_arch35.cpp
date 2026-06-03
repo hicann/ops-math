@@ -90,8 +90,8 @@ ge::graphStatus RoundTiling::CalcInputDtype()
     OP_CHECK_IF(
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16
         && this->inputDtype != ge::DT_FLOAT && this->inputDtype != ge::DT_INT32,
-        OP_LOGE(tilingContext, "input x dtype[%s] not support",
-        ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "x",
+        ge::TypeUtils::DataTypeToSerialString(this->inputDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT, DT_INT32]"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -107,7 +107,7 @@ ge::graphStatus RoundTiling::CheckShape()
     const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(yStorageShape->GetStorageShape());
 
     OP_CHECK_IF(inputResultShape != outputYShape,
-               OP_LOGE(tilingContext, "input x and output y shape not same"),
+               OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x, y", (Ops::Base::ToString(inputResultShape) + ", " + Ops::Base::ToString(outputYShape)).c_str(), "input shape must equal output shape"),
                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -120,13 +120,13 @@ ge::graphStatus RoundTiling::CalcOutputDtype()
     OP_CHECK_IF(
         this->outputDtype != ge::DT_FLOAT16 && this->outputDtype != ge::DT_BF16
         && this->outputDtype != ge::DT_FLOAT && this->outputDtype != ge::DT_INT32,
-        OP_LOGE(tilingContext, "output y dtype[%s] not support",
-        ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "y",
+        ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT, DT_INT32]"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(this->outputDtype != this->inputDtype,
-               OP_LOGE(tilingContext, "output y dtype[%s] not same as input x [%s]",
-               ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str(),
-               ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str()),
+               OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x, y",
+               std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(this->inputDtype)),
+               "output dtype must be same as input dtype"),
                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -179,7 +179,7 @@ ge::graphStatus RoundTiling::DoTilingF(bool decimalsNeg, bool decimalsNan)
         }
     } 
     OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext, "elewiseBaseTilingF failed"), return ge::GRAPH_FAILED);
+               OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTilingF failed"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -216,8 +216,8 @@ ge::graphStatus RoundTiling::DoTilingI(int64_t decimals)
         baseTilingResult = elewiseBaseTiling.DoTiling<RoundDag::RoundIntConst<int>::OpDag>(tiling_->baseTiling);
     }
 
-    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
-                OP_LOGE(tilingContext, "elewiseBaseTilingInt failed"), return ge::GRAPH_FAILED);
+OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED,
+                 OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTilingInt failed"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -229,16 +229,16 @@ ge::graphStatus RoundTiling::RunTiling()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tiling_);
 
     OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext, "get input x dtype failed"), return ge::GRAPH_FAILED);
+               OP_LOGE(tilingContext->GetNodeName(), "get input x dtype failed"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext, "get output y dtype failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"),
+               OP_LOGE(tilingContext->GetNodeName(), "get output y dtype failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"),
                return ge::GRAPH_FAILED);
 
     auto runtimeAttrs = tilingContext->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, runtimeAttrs);
     const int64_t *decimalsPtr = runtimeAttrs->GetAttrPointer<int64_t>(ATTR_ROUND_DECIMALS_POS);
-    OP_CHECK_IF(decimalsPtr == nullptr, OP_LOGE(tilingContext, "check decimalsPtr failed"),
+    OP_CHECK_IF(decimalsPtr == nullptr, OP_LOGE(tilingContext->GetNodeName(), "check decimalsPtr failed"),
                return ge::GRAPH_FAILED);
     
     if (this->outputDtype == ge::DT_INT32) {
@@ -282,7 +282,7 @@ static ge::graphStatus TilingPrepareForRound(gert::TilingParseContext *context)
 static ge::graphStatus Tiling4Round(gert::TilingContext *context)
 {
     OP_CHECK_IF(context == nullptr,
-        OP_LOGE(context, "Tiling context is null."),
+        OP_LOGE("Tiling4Round", "Tiling context is null"),
         return ge::GRAPH_FAILED);
         
     OP_LOGD(context->GetNodeName(), "Tiling4Round rt2.0 is running.");

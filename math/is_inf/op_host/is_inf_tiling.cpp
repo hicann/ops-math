@@ -207,12 +207,12 @@ static ge::graphStatus TilingIsInfTiling(gert::TilingContext* context)
 
         uint32_t coreNum = ascendcPlatform.GetCoreNumAiv();
         OP_CHECK_IF(
-            (static_cast<int32_t>(coreNum) <= 0), OP_LOGE(context, "Failed to get core num."), return ge::GRAPH_FAILED);
+            (static_cast<int32_t>(coreNum) <= 0), OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "core_num", std::to_string(coreNum), "Failed to get core num"), return ge::GRAPH_FAILED);
 
         uint64_t ubSize = 0;
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
         OP_CHECK_IF(
-            (static_cast<int64_t>(ubSize) <= 0), OP_LOGE(context, "Failed to get ub size."), return ge::GRAPH_FAILED);
+            (static_cast<int64_t>(ubSize) <= 0), OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ub_size", std::to_string(ubSize), "Failed to get ub size"), return ge::GRAPH_FAILED);
 
         IsInfRegbaseTiling IsInfRegbaseTiling(context);
         return IsInfRegbaseTiling.RunTiling();

@@ -42,10 +42,9 @@ ge::graphStatus AtanTiling::CalcInputDtype()
     this->inputDtype = inputDesc->GetDataType();
     OP_CHECK_IF(
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT,
-        OP_LOGE(
-            tilingContext->GetNodeName(),
-            "input x dtype [%s] not supported, only support [DT_FLOAT16, DT_BF16, DT_FLOAT]",
-            ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "input",
+                                               ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
+                                               "input dtype must be in [DT_FLOAT16, DT_BF16, DT_FLOAT]"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -57,17 +56,16 @@ ge::graphStatus AtanTiling::CalcOutputDtype()
     this->outputDtype = outputDesc->GetDataType();
     OP_CHECK_IF(
         this->outputDtype != ge::DT_FLOAT16 && this->outputDtype != ge::DT_BF16 && this->outputDtype != ge::DT_FLOAT,
-        OP_LOGE(
-            tilingContext->GetNodeName(),
-            "output y dtype [%s] not supported, only support [DT_FLOAT16, DT_BF16, DT_FLOAT]",
-            ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "output",
+                                               ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                               "output dtype must be in [DT_FLOAT16, DT_BF16, DT_FLOAT]"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         this->outputDtype != this->inputDtype,
-        OP_LOGE(
-            tilingContext->GetNodeName(), "input x dtype [%s] should be the same as output y dtype [%s]",
-            ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "input, output",
+                                                ge::TypeUtils::DataTypeToSerialString(this->inputDtype) + ", " +
+                                                ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                                "input and output dtypes must be equal"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -83,7 +81,10 @@ ge::graphStatus AtanTiling::CheckShape()
     const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
-        inputXShape != outputYShape, OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),
+        inputXShape != outputYShape, OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "inputX, outputY",
+                                                                            (Ops::Base::ToString(inputXShape) + ", " +
+                                                                             Ops::Base::ToString(outputYShape)).c_str(),
+                                                                            "input and output shapes must be equal"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -118,11 +119,9 @@ ge::graphStatus AtanTiling::RunTiling()
         dType = TPL_BF16;
         ret = elewiseBaseTiling.DoTiling<AtanOp::AtanDag<bfloat16_t>::OpDag>(*tiling, ASCEND_API_BUFFER);
     } else {
-        OP_LOGE(
-            tilingContext->GetNodeName(),
-            "Input dtype is only support fp16, bf16, fp32, "
-            "while got %s!",
-            ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str());
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "inputDtype",
+                                       ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
+                                       "input dtype must be in [DT_FLOAT16, DT_BF16, DT_FLOAT]");
         return ge::GRAPH_FAILED;
     }
 

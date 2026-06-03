@@ -33,9 +33,10 @@ ge::graphStatus IsFiniteRegbaseTiling::CalcInputDtype()
     this->inputDtype = inputDesc->GetDataType();
     OP_CHECK_IF(
         this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_FLOAT,
-        OP_LOGE(
-            tilingContext, "Input x dtype not supported, only support [DT_FLOAT, DT_FLOAT16, DT_BF16], got %s",
-            ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            tilingContext->GetNodeName(), "x",
+            ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
+            "dtype not in [DT_FLOAT, DT_FLOAT16, DT_BF16]"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -47,9 +48,10 @@ ge::graphStatus IsFiniteRegbaseTiling::CalcOutputDtype()
     this->outputDtype = outputDesc->GetDataType();
     OP_CHECK_IF(
         this->outputDtype != ge::DT_BOOL,
-        OP_LOGE(
-            tilingContext, "Output y dtype not supported, only support [DT_BOOL], got %s",
-            ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            tilingContext->GetNodeName(), "y",
+            ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+            "dtype not in [DT_BOOL]"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -65,7 +67,7 @@ ge::graphStatus IsFiniteRegbaseTiling::CheckShape()
     const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
-        inputXShape != outputYShape, OP_LOGE(tilingContext, "Input x and output y shape not the same"),
+        inputXShape != outputYShape, OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x, y", (Ops::Base::ToString(inputXShape) + ", " + Ops::Base::ToString(outputYShape)).c_str(), "input shape must equal output shape"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -90,17 +92,17 @@ ge::graphStatus IsFiniteRegbaseTiling::RunTiling()
 {
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     OP_CHECK_IF(
-        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "Get input dtype failed"),
+        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "Get input dtype failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "Get output dtype failed"),
+        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "Get output dtype failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "Check shape failed"), return ge::GRAPH_FAILED);
+        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "Check shape failed"), return ge::GRAPH_FAILED);
 
     tiling_ = tilingContext->GetTilingData<EleBaseTilingDataV2>();
     OP_CHECK_IF(
-        (tiling_ == nullptr), OP_LOGE(tilingContext, "Get EleBaseTilingDataV2 from context failed"),
+        (tiling_ == nullptr), OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext->GetNodeName(), "tiling_data", "nullptr", "Get EleBaseTilingDataV2 from context failed"),
         return ge::GRAPH_FAILED);
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
@@ -114,13 +116,14 @@ ge::graphStatus IsFiniteRegbaseTiling::RunTiling()
         dType = TPL_FP32;
         baseTilingResult = elewiseBaseTiling.DoTiling<IsFiniteDag<float>::OpDag>(*tiling_, ASCEND_API_BUFFER);
     } else {
-        OP_LOGE(
-            tilingContext, "Input x dtype not supported, only support [DT_FLOAT, DT_FLOAT16, DT_BF16], got %s",
-            ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str());
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            tilingContext->GetNodeName(), "x",
+            ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
+            "dtype not in [DT_FLOAT, DT_FLOAT16, DT_BF16]");
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(
-        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "ElewiseBaseTiling failed"),
+        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "ElewiseBaseTiling failed"),
         return ge::GRAPH_FAILED);
 
     return SetTilingData();
@@ -138,9 +141,10 @@ static ge::graphStatus TilingPrepare4IsFiniteArch35(gert::TilingParseContext* co
     compileInfo->ubSize = static_cast<int64_t>(ubSizePlatForm);
     OP_CHECK_IF(
         (compileInfo->totalCoreNum <= 0 || compileInfo->ubSize <= 0),
-        OP_LOGE(
-            context, "IsFinite GetHardwareInfo Failed, vectorCoreNum:%d, ubSize:%ld.", compileInfo->totalCoreNum,
-            compileInfo->ubSize),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "totalCoreNum,ubSize",
+            std::to_string(compileInfo->totalCoreNum) + ", " + std::to_string(compileInfo->ubSize),
+            "IsFinite GetHardwareInfo Failed, vectorCoreNum and ubSize must be greater than 0"),
         return ge::GRAPH_FAILED);
     OP_LOGD(context, "Get totalCoreNum:%d, ubSize:%ld", compileInfo->totalCoreNum, compileInfo->ubSize);
     return ge::GRAPH_SUCCESS;
@@ -148,7 +152,7 @@ static ge::graphStatus TilingPrepare4IsFiniteArch35(gert::TilingParseContext* co
 
 static ge::graphStatus IsFiniteTilingArch35(gert::TilingContext* tilingContext)
 {
-    OP_CHECK_IF(tilingContext == nullptr, OP_LOGE("IsFiniteTiling", "tiling context is nullptr"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(tilingContext == nullptr, OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("IsFiniteTiling", "tiling_context", "nullptr", "tiling context is nullptr"), return ge::GRAPH_FAILED);
     OP_LOGD(tilingContext, "Entering IsFiniteTilingArch35");
     auto compileInfo = reinterpret_cast<const IsFiniteCompileInfoArch35*>(tilingContext->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, compileInfo);

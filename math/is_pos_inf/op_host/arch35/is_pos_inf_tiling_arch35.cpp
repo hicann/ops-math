@@ -36,10 +36,10 @@ ge::graphStatus IsPosInfRegbaseTiling::CalcInputDtype()
     this->inputDtype = inputDesc->GetDataType();
     OP_CHECK_IF(
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT,
-        OP_LOGE(
-            tilingContext->GetNodeName(),
-            "input x dtype [%s] not supported, only support [DT_FLOAT16, DT_BF16, DT_FLOAT]",
-            ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            tilingContext->GetNodeName(), "x",
+            ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
+            "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT]"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -51,9 +51,10 @@ ge::graphStatus IsPosInfRegbaseTiling::CalcOutputDtype()
     this->outputDtype = outputDesc->GetDataType();
     OP_CHECK_IF(
         this->outputDtype != ge::DT_BOOL,
-        OP_LOGE(
-            tilingContext->GetNodeName(), "output y dtype [%s] not supported, only support [DT_BOOL]",
-            ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            tilingContext->GetNodeName(), "y",
+            ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+            "dtype not in [DT_BOOL]"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -70,11 +71,11 @@ ge::graphStatus IsPosInfRegbaseTiling::CheckShape()
 
     OP_CHECK_IF(
         inputXShape.GetDimNum() > MAX_DIM_NUM,
-        OP_LOGE(tilingContext->GetNodeName(), "input x dim num should be no more than 8"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(tilingContext->GetNodeName(), "x", std::to_string(inputXShape.GetDimNum()), "dim num should be no more than 8"), return ge::GRAPH_FAILED);
 
     OP_CHECK_IF(
         inputXShape != outputYShape,
-        OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape are not the same"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x, y", (Ops::Base::ToString(inputXShape) + ", " + Ops::Base::ToString(outputYShape)).c_str(), "input shape must equal output shape"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -82,17 +83,17 @@ ge::graphStatus IsPosInfRegbaseTiling::RunTiling()
 {
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     OP_CHECK_IF(
-        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
+        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
+        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
+        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"), return ge::GRAPH_FAILED);
 
     auto tiling = tilingContext->GetTilingData<EleBaseTilingDataV2>();
     OP_CHECK_IF(
-        (tiling == nullptr), OP_LOGE(tilingContext->GetNodeName(), "Get IsPosInfRegbaseTiling from GE context failed"),
+        (tiling == nullptr), OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext->GetNodeName(), "tiling_data", "nullptr", "Get IsPosInfRegbaseTiling from GE context failed"),
         return ge::GRAPH_FAILED);
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
@@ -108,14 +109,14 @@ ge::graphStatus IsPosInfRegbaseTiling::RunTiling()
         baseTilingResult =
             elewiseBaseTiling.DoTiling<IsPosInfOp::IsPosInfDAG<float>::OpDag>(*tiling, ASCEND_API_BUFFER);
     } else {
-        OP_LOGE(
-            tilingContext->GetNodeName(),
-            "input x dtype [%s] not supported, only support [DT_FLOAT16, DT_BF16, DT_FLOAT]",
-            ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str());
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            tilingContext->GetNodeName(), "x",
+            ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
+            "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT]");
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(
-        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
+        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
         return ge::GRAPH_FAILED);
 
     // set workspace/tilingkey/blockdim

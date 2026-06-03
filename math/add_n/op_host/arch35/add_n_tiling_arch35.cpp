@@ -117,7 +117,10 @@ ge::graphStatus AddNTiling::CheckDtype()
         auto x2Dtype = x2Desc->GetDataType();
 
         OP_CHECK_IF(
-            x1Dtype != x2Dtype, OP_LOGE(tilingContext->GetNodeName(), "all input x tensor dtype should be equal"),
+            x1Dtype != x2Dtype, OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x[0], x[i]",
+                                                                        ge::TypeUtils::DataTypeToSerialString(x1Dtype) + ", " +
+                                                                        ge::TypeUtils::DataTypeToSerialString(x2Dtype),
+                                                                        "all input tensor dtypes must be equal"),
             return ge::GRAPH_FAILED);
     }
 
@@ -125,7 +128,10 @@ ge::graphStatus AddNTiling::CheckDtype()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, yDesc);
     auto yDtype = yDesc->GetDataType();
     OP_CHECK_IF(
-        x1Dtype != yDtype, OP_LOGE(tilingContext->GetNodeName(), "input x dtype and output y dtype should be equal"),
+        x1Dtype != yDtype, OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "x,y",
+                                                                  ge::TypeUtils::DataTypeToSerialString(x1Dtype) + ", " +                                                          
+                                                                  ge::TypeUtils::DataTypeToSerialString(yDtype),
+                                                                  "input and output tensor dtypes must be equal"),
         return ge::GRAPH_FAILED);
 
     dtypeSize_ = ge::GetSizeByDataType(yDtype);
@@ -147,7 +153,9 @@ ge::graphStatus AddNTiling::CheckShape()
         auto xTensorShape2 = xTensorShape2Ptr->GetStorageShape();
         OP_CHECK_IF(
             xTensorShape2 != xTensorShape1,
-            OP_LOGE(tilingContext->GetNodeName(), "all input x tensor shapes should be equal"),
+            OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x[0], x[i]",
+                                                    (Ops::Base::ToString(xTensorShape1) + ", " + Ops::Base::ToString(xTensorShape2)).c_str(),
+                                                    "all input tensor shapes must be equal"),
             return ge::GRAPH_FAILED);
     }
 
@@ -157,7 +165,8 @@ ge::graphStatus AddNTiling::CheckShape()
     auto yShape = yShapePtr->GetStorageShape();
     OP_CHECK_IF(
         xTensorShape1 != yShape,
-        OP_LOGE(tilingContext->GetNodeName(), "input x shape and output y shape should be equal"),
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(tilingContext->GetNodeName(), "x,y", (Ops::Base::ToString(xTensorShape1) + ", " + Ops::Base::ToString(yShape)).c_str(),
+                                               "input and output tensor shapes must be equal"),
         return ge::GRAPH_FAILED);
     shape_ = yShape;
 
@@ -241,7 +250,7 @@ ge::graphStatus AddNTiling::CheckOpParam()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, anchorInstanceInfo);
     uint32_t inputNum = anchorInstanceInfo->GetInstanceNum();
     OP_CHECK_IF(
-        inputNum == 0, OP_LOGE(tilingContext->GetNodeName(), "x can not be a empty tensor list"),
+        inputNum == 0, OP_LOGE_FOR_INVALID_TENSORNUM(tilingContext->GetNodeName(), "x", 0, "should be >=1"),
         return ge::GRAPH_FAILED);
 
     // get attr N
@@ -252,9 +261,7 @@ ge::graphStatus AddNTiling::CheckOpParam()
     sizeN_ = static_cast<int64_t>(*attrN);
     OP_CHECK_IF(
         sizeN_ != static_cast<int64_t>(inputNum),
-        OP_LOGE(
-            tilingContext->GetNodeName(), "attr N:%ld should be same as input x tensor num:%ld", sizeN_,
-            static_cast<int64_t>(inputNum)),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext->GetNodeName(), "N", std::to_string(sizeN_)+","+std::to_string(static_cast<int64_t>(inputNum)), "attr N should be same as input x tensor num"),
         return ge::GRAPH_FAILED);
 
     // check shape

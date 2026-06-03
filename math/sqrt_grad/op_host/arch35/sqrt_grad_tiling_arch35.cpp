@@ -68,16 +68,16 @@ ge::graphStatus SqrtGradTiling::CalcInputDtype()
     this->inputDtype = inputDesc->GetDataType();
     OP_CHECK_IF(
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT,
-        OP_LOGE(tilingContext->GetNodeName(), "input y dtype not support"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "y", ge::TypeUtils::DataTypeToSerialString(this->inputDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT]"), return ge::GRAPH_FAILED);
     auto inputDesc1 = tilingContext->GetInputDesc(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc1);
     this->inputDtype1 = inputDesc1->GetDataType();
     OP_CHECK_IF(
         this->inputDtype1 != ge::DT_FLOAT16 && this->inputDtype1 != ge::DT_BF16 && this->inputDtype1 != ge::DT_FLOAT,
-        OP_LOGE(tilingContext->GetNodeName(), "input dy dtype not support"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "dy", ge::TypeUtils::DataTypeToSerialString(this->inputDtype1), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT]"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         this->inputDtype1 != this->inputDtype,
-        OP_LOGE(tilingContext->GetNodeName(), "input dy dtype not same as input y"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "y, dy", ge::TypeUtils::DataTypeToSerialString(this->inputDtype) + ", " + ge::TypeUtils::DataTypeToSerialString(this->inputDtype1), "input dy dtype must be same as input y dtype"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -95,10 +95,10 @@ ge::graphStatus SqrtGradTiling::CheckShape()
     const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(zStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
-        inputYShape != inputDYShape, OP_LOGE(tilingContext->GetNodeName(), "input y and dy shape not same"),
+        inputYShape != inputDYShape, OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "y, dy", (Ops::Base::ToString(inputYShape) + ", " + Ops::Base::ToString(inputDYShape)).c_str(), "input y and dy shape must be same"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        inputYShape != outputZShape, OP_LOGE(tilingContext->GetNodeName(), "input y and output z shape not same"),
+        inputYShape != outputZShape, OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "y, z", (Ops::Base::ToString(inputYShape) + ", " + Ops::Base::ToString(outputZShape)).c_str(), "input y and output z shape must be same"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -110,10 +110,10 @@ ge::graphStatus SqrtGradTiling::CalcOutputDtype()
     this->outputDtype = outputDesc->GetDataType();
     OP_CHECK_IF(
         this->outputDtype != ge::DT_FLOAT16 && this->outputDtype != ge::DT_BF16 && this->outputDtype != ge::DT_FLOAT,
-        OP_LOGE(tilingContext, "output dtype not support"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "z", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT]"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         this->outputDtype != this->inputDtype,
-        OP_LOGE(tilingContext->GetNodeName(), "output z dtype not same as input y"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "y, z", ge::TypeUtils::DataTypeToSerialString(this->inputDtype) + ", " + ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "output z dtype must be same as input y dtype"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -123,13 +123,13 @@ ge::graphStatus SqrtGradTiling::RunTiling()
     Ops::Base::ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     tiling = tilingContext->GetTilingData<SqrtGradTilingData>();
     OP_CHECK_IF(
-        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
+        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
+        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
+        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"), return ge::GRAPH_FAILED);
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     if (this->outputDtype == ge::DT_FLOAT16) {
         dType = TPL_FP16;
@@ -143,11 +143,11 @@ ge::graphStatus SqrtGradTiling::RunTiling()
         dType = TPL_FP32;
         baseTilingResult = elewiseBaseTiling.DoTiling<SqrtGradDag::SqrtGradCustom<float>::OpDag>(tiling->basetiling);
     } else {
-        OP_LOGE(tilingContext->GetNodeName(), "output dtype not support");
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "z", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT]");
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(
-        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
+        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
         return ge::GRAPH_FAILED);
     SetTilingData();
 

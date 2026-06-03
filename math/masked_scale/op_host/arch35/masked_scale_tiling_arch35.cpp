@@ -12,6 +12,7 @@
  * \file masked_scale_tiling_arch35.cpp
  * \brief
  */
+#include <graph/utils/type_utils.h>
 #include "masked_scale_tiling_arch35.h"
 #include "register/op_impl_registry.h"
 #include "tiling/platform/platform_ascendc.h"
@@ -111,7 +112,7 @@ static ge::graphStatus Tiling4MaskedScale(gert::TilingContext *tilingContext)
   } else if (xDtype == ge::DT_FLOAT) {
     tilingKey += TILING_KEY_X_FP32;
   } else {
-    OP_LOGE(tilingContext->GetNodeName(), "x dtype is only support fp16、bf16、fp32!");
+    OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "x", ge::TypeUtils::DataTypeToSerialString(xDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT]");
     return ge::GRAPH_FAILED;
   }
   if (maskDtype == ge::DT_UINT8) {
@@ -123,13 +124,13 @@ static ge::graphStatus Tiling4MaskedScale(gert::TilingContext *tilingContext)
   } else if (maskDtype == ge::DT_FLOAT) {
     tilingKey += TILING_KEY_MASK_FP32;
   } else {
-    OP_LOGE(tilingContext->GetNodeName(), "mask dtype is only support uint8、int8、fp16、fp32!");
+    OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "mask", ge::TypeUtils::DataTypeToSerialString(maskDtype), "dtype not in [DT_UINT8, DT_INT8, DT_FLOAT16, DT_FLOAT]");
     return ge::GRAPH_FAILED;
   }
 
-  OP_CHECK_IF(Tiling4DoTilingDag(tilingContext, tilingKey) != ge::GRAPH_SUCCESS,
-                  OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling DoTiling failed."),
-                  return ge::GRAPH_FAILED);
+OP_CHECK_IF(Tiling4DoTilingDag(tilingContext, tilingKey) != ge::GRAPH_SUCCESS,
+                   OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling DoTiling failed"),
+                   return ge::GRAPH_FAILED);
 
   float scale = *tilingContext->GetAttrs()->GetAttrPointer<float>(VALUE_ATTR_IDX);
   maskedScaleTilingData->scale = scale;

@@ -59,7 +59,7 @@ ge::graphStatus SignTiling::SetTilingData()
     } else if (this->outputDtype == ge::DT_INT64) {
         tilingKey = SIGN_KEY_INT64;
     } else {
-        OP_LOGE(tilingContext->GetNodeName(), "Output datatype %d is not currently supported.", this->outputDtype);
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "y", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT, DT_INT32, DT_INT64]");
         return ge::GRAPH_FAILED;
     }
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);
@@ -117,13 +117,13 @@ ge::graphStatus SignTiling::RunTiling()
     // 获取tiling计算所需参数
     ge::graphStatus baseTilingResult = CalcOutputDtype();
     OP_CHECK_IF(
-        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
+        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        CheckOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
+        CheckOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        CheckOutputShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
+        CheckOutputShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"), return ge::GRAPH_FAILED);
     if (this->outputDtype == ge::DT_FLOAT16) {
         baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForNumber<half>::OpDag>(tiling->baseTiling);
     } else if (this->outputDtype == ge::DT_FLOAT) {
@@ -135,11 +135,11 @@ ge::graphStatus SignTiling::RunTiling()
     } else if (this->outputDtype == ge::DT_INT64) {
         baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForInt64<int64_t>::OpDag>(tiling->baseTiling);
     } else {
-        OP_LOGE(tilingContext, "data type check failed. getype: %d", this->outputDtype);
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "y", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT, DT_INT32, DT_INT64]");
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(
-        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
+        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
         return ge::GRAPH_FAILED);
     baseTilingResult = SetTilingData();
     return baseTilingResult;
@@ -148,7 +148,7 @@ ge::graphStatus SignTiling::RunTiling()
 static ge::graphStatus TilingForSign(gert::TilingContext* tilingContextGen)
 {
     OP_CHECK_IF(
-        tilingContextGen == nullptr, OP_LOGE(tilingContextGen, "Tiling context is null"), return ge::GRAPH_FAILED);
+        tilingContextGen == nullptr, OP_LOGE("TilingForSign", "Tiling context is null"), return ge::GRAPH_FAILED);
     OP_LOGD(tilingContextGen->GetNodeName(), "TilingForSign is running.");
     auto compileInfo = reinterpret_cast<const ElewiseCompileInfo*>(tilingContextGen->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(tilingContextGen, compileInfo);
