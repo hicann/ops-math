@@ -250,8 +250,12 @@ static const aclTensor* randomDavidPath(
     int64_t from, int64_t to, aclOpExecutor* executor)
 {
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 && selfRef->GetDataType() != DataType::DT_DOUBLE) {
-        return l0op::StatelessRandom(
-            selfRef, seed, offset, from, to, executor);
+        auto randomOpOut =l0op::StatelessRandom(selfRef, seed, offset, from, to, executor);
+        if (selfRef->GetDataType() == op::DataType::DT_BOOL && randomOpOut != nullptr) {
+            auto castOut = l0op::Cast(randomOpOut, op::DataType::DT_INT32, executor);
+            return castOut;
+        }
+        return randomOpOut;
     } else {
         int32_t alg = 1;
         auto seedVal = static_cast<uint64_t>(seed);
@@ -285,8 +289,12 @@ static const aclTensor* randomTensorDavidPath(
         auto tmpTensor = executor->ConvertToTensor(offsetList, op::DataType::DT_INT64);
         auto resultAddOut = l0op::Add(offsetTensor, tmpTensor, executor);
         CHECK_RET(resultAddOut != nullptr, nullptr);
-        return l0op::StatelessRandom(
-            selfRef, seedTensor, resultAddOut, from, to, executor);
+        auto randomOpOut =l0op::StatelessRandom(selfRef, seedTensor, resultAddOut, from, to, executor);
+        if (selfRef->GetDataType() == op::DataType::DT_BOOL && randomOpOut != nullptr) {
+            auto castOut = l0op::Cast(randomOpOut, op::DataType::DT_INT32, executor);
+            return castOut;
+        }
+        return randomOpOut;
     } else {
         auto randomSeedU64 = l0op::Cast(seedTensor, op::DataType::DT_UINT64, executor);
         CHECK_RET(randomSeedU64 != nullptr, nullptr);
@@ -346,9 +354,7 @@ aclnnStatus aclnnInplaceRandomGetWorkspaceSize(
 
     if (selfRef->GetDataType() == op::DataType::DT_BOOL) {
         int64_t decimals = 0;
-        auto castOut = l0op::Cast(computeOut, op::DataType::DT_INT32, uniqueExecutor.get());
-        CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        computeOut = l0op::RoundDecimals(castOut, decimals, uniqueExecutor.get());
+        computeOut = l0op::RoundDecimals(computeOut, decimals, uniqueExecutor.get());
         CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
     }
 
@@ -417,9 +423,7 @@ aclnnStatus aclnnInplaceRandomTensorGetWorkspaceSize(
 
     if (selfRef->GetDataType() == op::DataType::DT_BOOL) {
         int64_t decimals = 0;
-        auto castOut = l0op::Cast(computeOut, op::DataType::DT_INT32, uniqueExecutor.get());
-        CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        computeOut = l0op::RoundDecimals(castOut, decimals, uniqueExecutor.get());
+        computeOut = l0op::RoundDecimals(computeOut, decimals, uniqueExecutor.get());
         CHECK_RET(computeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
     }
 
