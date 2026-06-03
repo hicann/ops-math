@@ -14,6 +14,7 @@
 #include <iostream>
 
 #include "Eigen/Core"
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "securec.h"
 #include "utils/eigen_tensor.h"
@@ -344,7 +345,7 @@ uint32_t TileCpuKernel::TileKernelCompute(const CpuKernelContext &ctx) {
 
 template <typename T>
 uint32_t TileCpuKernel::TileCheckCopySupported(const CpuKernelContext &ctx) {
-#ifdef RUN_ON_HOST
+#if defined(RUN_ON_HOST) || defined(OPS_MATH_AICPU_HOST_KERNEL)
   SetCopyHook(false);
 #else
   if (&halSdmaCopy != nullptr) {
@@ -484,7 +485,7 @@ uint32_t TileCpuKernel::Compute(CpuKernelContext &ctx) {
   return KERNEL_STATUS_OK;
 }
 
-REGISTER_CPU_KERNEL(kTile, TileCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kTile, TileCpuKernel);
 
 template <typename T>
 uint32_t TileCpuKernel::TileCompute3DSharderFirst(const CpuKernelContext &ctx, T *input_x_data, T *output_data,
