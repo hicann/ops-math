@@ -14,7 +14,7 @@ set(OPSTATIC_NAME cann_${PKG_NAME}_static)
 set(OPAPI_NAME opapi_${PKG_NAME})
 set(OPGRAPH_NAME opgraph_${PKG_NAME})
 set(GRAPH_PLUGIN_NAME graph_plugin_${PKG_NAME})
-set(ONNX_PLUGIN_NAME op_${PKG_NAME}_onnx_plugin)
+set(ONNX_PLUGIN_NAME oponnx_plugin_${PKG_NAME})
 
 # interface, 用于收集aclnn/aclnn_inner/aclnn_exclude的def文件
 add_library(${OPHOST_NAME}_opdef_aclnn_obj INTERFACE)

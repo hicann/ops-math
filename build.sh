@@ -377,7 +377,7 @@ usage() {
   echo "    --vendor_name Specify the custom operator package vendor name, like: --vendor_name=customize, default to custom"
   echo "    --aicpu build aicpu task"
   echo "    --opgraph build opgraph_math.so"
-  echo "    --onnxplugin build op_math_onnx_plugin.so"
+  echo "    --onnxplugin build oponnx_plugin_math.so"
   echo "    --tfplugin build liboptf_plugin_math.so"
   echo "    --opapi build opapi_math.so"
   echo "    --ophost build ophost_math.so"
@@ -548,7 +548,7 @@ set_create_libs() {
     return
   fi
   if [[ "$ENABLE_PACKAGE" == "TRUE" && "$ENABLE_CUSTOM" != "TRUE" ]]; then
-    BUILD_LIBS=("ophost_${REPOSITORY_NAME}" "opapi_${REPOSITORY_NAME}" "opgraph_${REPOSITORY_NAME}" "op_${REPOSITORY_NAME}_onnx_plugin" "optf_plugin_${REPOSITORY_NAME}")
+    BUILD_LIBS=("ophost_${REPOSITORY_NAME}" "opapi_${REPOSITORY_NAME}" "opgraph_${REPOSITORY_NAME}" "oponnx_plugin_${REPOSITORY_NAME}" "optf_plugin_${REPOSITORY_NAME}")
     ENABLE_CREATE_LIB=TRUE
   else
     if [[ "$OP_HOST" == "TRUE" ]]; then
@@ -564,7 +564,7 @@ set_create_libs() {
       ENABLE_CREATE_LIB=TRUE
     fi
     if [[ "$ONNX_PLUGIN" == "TRUE" ]]; then
-      BUILD_LIBS+=("op_${REPOSITORY_NAME}_onnx_plugin")
+      BUILD_LIBS+=("oponnx_plugin_${REPOSITORY_NAME}")
       ENABLE_CREATE_LIB=TRUE
     fi
     if [[ "$TF_PLUGIN" == "TRUE" ]]; then

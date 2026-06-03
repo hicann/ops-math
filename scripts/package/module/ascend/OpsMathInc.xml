@@ -17,8 +17,8 @@
     <file_info value="opgraph_math_lib" copy_type="delivery" src_path="" dst_path="opp/built-in/op_graph/lib/linux/$(ARCH)/" install_path="opp/built-in/op_graph/lib/linux/$(ARCH)">
         <file value="libopgraph_math.so" install_mod="550"/>
     </file_info>
-    <file_info value="onnxplugin_math_lib" copy_type="delivery" src_path="" dst_path="opp/built-in/framework/onnx/" install_path="opp/built-in/framework/onnx">
-        <file value="libop_math_onnx_plugin.so" install_mod="550"/>
+    <file_info value="oponnx_plugin_math_lib" copy_type="delivery" src_path="" dst_path="opp/built-in/framework/onnx/" install_path="opp/built-in/framework/onnx">
+        <file value="liboponnx_plugin_math.so" install_mod="550"/>
     </file_info>
     <file_info value="tfplugin_math_lib" copy_type="delivery" src_path="" dst_path="opp/built-in/framework/tensorflow/" install_path="opp/built-in/framework/tensorflow">
         <file value="liboptf_plugin_math.so" install_mod="550"/>
