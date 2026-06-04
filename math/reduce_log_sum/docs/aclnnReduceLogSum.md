@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |   √      |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
@@ -69,7 +69,7 @@ aclnnStatus aclnnReduceLogSum(
       <td>输入</td>
       <td>表示参与计算的目标张量。</td>
       <td>支持空Tensor。</td>
-      <td>FLOAT16、FLOAT32</td>
+      <td>FLOAT16、FLOAT32、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -135,6 +135,8 @@ aclnnStatus aclnnReduceLogSum(
       <td>-</td>
     </tr>
   </tbody></table>
+
+  - <term>Atlas 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：`data`、`reduce` 不支持BFLOAT16。
 
 - **返回值：**
 
