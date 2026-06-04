@@ -251,10 +251,10 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
     </tr></thead>
   <tbody>
     <tr>
-      <td>selfRef（aclTensor*）</td>
+      <td>self（const aclTensor*）</td>
       <td>输入/输出</td>
-      <td>输入和输出tensor，公式中的selfRef。</td>
-      <td>数据类型需要与other的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。<br>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>，并且broadcast后的shape需与原shape保持一致。</td>
+      <td>输入和输出tensor，公式中的self。</td>
+      <td>数据类型需要与other的数据类型满足<a href="../../../docs/zh/context/互推导关系.md" target="_blank">数据类型推导规则</a>。<br>shape需要与other满足<a href="../../../docs/zh/context/broadcast关系.md" target="_blank">broadcast关系</a>。</td>
       <td>INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL</td>
       <td>ND</td>
       <td>0-8</td>

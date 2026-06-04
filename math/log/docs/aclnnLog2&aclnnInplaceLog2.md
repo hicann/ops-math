@@ -100,7 +100,7 @@ aclnnStatus aclnnInplaceLog2(
       <td>√</td>
     </tr>
     <tr>
-      <td>out（aclTensor*）</td>
+      <td>out（const aclTensor*）</td>
       <td>输出</td>
       <td>-</td>
       <td>当self是复数时，out必须是复数。</td>

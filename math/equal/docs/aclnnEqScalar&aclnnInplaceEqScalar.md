@@ -91,7 +91,7 @@ aclnnStatus aclnnInplaceEqScalar(
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>self（const aclTensor*）</td>
       <td>输入</td>
       <td>公式中的self。</td>
       <td>-</td>
@@ -101,7 +101,7 @@ aclnnStatus aclnnInplaceEqScalar(
       <td>√</td>
     </tr>
     <tr>
-      <td>other</td>
+      <td>other（const aclScalar*）</td>
       <td>输入</td>
       <td>公式中的other。</td>
       <td>-</td>
@@ -111,7 +111,7 @@ aclnnStatus aclnnInplaceEqScalar(
       <td>-</td>
     </tr>
     <tr>
-      <td>out</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>公式中的out。</td>
       <td>数据类型BOOL可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
@@ -121,7 +121,7 @@ aclnnStatus aclnnInplaceEqScalar(
       <td>√</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -131,7 +131,7 @@ aclnnStatus aclnnInplaceEqScalar(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -217,12 +217,12 @@ aclnnStatus aclnnInplaceEqScalar(
       <td>在Device侧申请的workspace内存地址。</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输入</td>
       <td>在Device侧申请的workspace大小，由第一段接口aclnnEqScalarGetWorkspaceSize获取。</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输入</td>
       <td>op执行器，包含了算子计算流程。</td>
     </tr>
@@ -275,7 +275,7 @@ aclnnStatus aclnnInplaceEqScalar(
       <td>√</td>
     </tr>
     <tr>
-      <td>other</td>
+      <td>other（const aclScalar*）</td>
       <td>输入</td>
       <td>公式中的other。</td>
       <td>-</td>
@@ -285,7 +285,7 @@ aclnnStatus aclnnInplaceEqScalar(
       <td>-</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
       <td>返回需要在Device侧申请的workspace大小。</td>
       <td>-</td>
@@ -295,7 +295,7 @@ aclnnStatus aclnnInplaceEqScalar(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>
@@ -376,12 +376,12 @@ aclnnStatus aclnnInplaceEqScalar(
       <td>在Device侧申请的workspace内存地址。</td>
     </tr>
     <tr>
-      <td>workspaceSize</td>
+      <td>workspaceSize（uint64_t*）</td>
       <td>输入</td>
       <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceEqScalarGetWorkspaceSize获取。</td>
     </tr>
     <tr>
-      <td>executor</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输入</td>
       <td>op执行器，包含了算子计算流程。</td>
     </tr>

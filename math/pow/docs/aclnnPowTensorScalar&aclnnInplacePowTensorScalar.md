@@ -113,7 +113,7 @@ aclnnStatus aclnnInplacePowTensorScalar(
       <td>-</td>
     </tr>
     <tr>
-      <td>out（aclTensor*）</td>
+      <td>out（const aclTensor*）</td>
       <td>输出</td>
       <td>公式中的输出out</td>
       <td>shape需要与self一致, 数据类型需要是self的数据类型与exponent的数据类型推导之后可转换的数据类型</td>
@@ -263,7 +263,7 @@ aclnnStatus aclnnInplacePowTensorScalar(
       </tr></thead>
     <tbody>
       <tr>
-        <td>selfRet（aclTensor*）</td>
+        <td>self（const aclTensor*）</td>
         <td>输入</td>
         <td>公式中的输入self/out</td>
         <td>无</td>

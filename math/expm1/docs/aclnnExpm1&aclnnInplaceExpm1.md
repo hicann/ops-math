@@ -42,7 +42,7 @@ aclnnStatus aclnnExpm1GetWorkspaceSize(
 ```Cpp
 aclnnStatus aclnnExpm1(
   void*              workspace,
-  uint64_t           workspaceSize,
+  uint64_t           workspace_size,
   aclOpExecutor*     executor,
   const aclrtStream  stream)
 ```
