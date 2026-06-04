@@ -8,11 +8,11 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 /*!
- * \file util_type_simd.h
- * \brief util simd impl
+ * \file sort_with_index_common.h
+ * \brief sort with index common utilities
  */
-#ifndef SORT_WITH_INDEX_UTIL_TYPE_SIMD_H
-#define SORT_WITH_INDEX_UTIL_TYPE_SIMD_H
+#ifndef SORT_WITH_INDEX_COMMON_H
+#define SORT_WITH_INDEX_COMMON_H
 #include "kernel_operator.h"
 #include "constant_var_simd.h"
 

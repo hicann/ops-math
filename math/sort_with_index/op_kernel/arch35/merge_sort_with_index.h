@@ -21,7 +21,7 @@
 #include "op_kernel/platform_util.h"
 #include "../../sort/arch35/util_type_simd.h" // 引入使用 ROUND_UP_AGLIN
 #include <algorithm>
-#include "util_type_simd.h"
+#include "sort_with_index_common.h"
 
 namespace SortWithIndex {
 
