@@ -40,7 +40,7 @@ $$
     </tr></thead>
   <tbody>
     <tr>
-      <td>self</td>
+      <td>input</td>
       <td>输入</td>
       <td>待进行cos计算的入参，公式中的input_i。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
@@ -65,4 +65,4 @@ $$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_cos](./examples/test_aclnn_cos.cpp) | 通过[aclnnAbs](./docs/aclnnCos&aclnnInplaceCos.md)接口方式调用Cos算子。 |
+| aclnn调用 | [test_aclnn_cos](./examples/test_aclnn_cos.cpp) | 通过[aclnnCos](./docs/aclnnCos&aclnnInplaceCos.md)接口方式调用Cos算子。 |
