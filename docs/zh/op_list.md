@@ -1968,6 +1968,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/xlogy/README.md">xlogy</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>计算 x1 * log(x2)，x1 == 0 时结果为 0，支持 broadcast。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/x_log_y/README.md">x_log_y</a></td>
     <td>×</td>
     <td>×</td>
