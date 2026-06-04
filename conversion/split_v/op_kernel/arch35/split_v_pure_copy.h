@@ -15,12 +15,11 @@ namespace SplitV {
 using namespace AscendC;
 const int32_t SPLIT_LIST_MAX_LEN = 72;
 
-template <typename T>
-class SplitVPureCopyMode
-{
+template <typename T, typename S>
+class SplitVPureCopyMode {
 public:
     __aicore__ inline SplitVPureCopyMode(TPipe& pipe) : pipe_(pipe){};
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const SplitVTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR sizeSplits, const SplitVTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -44,8 +43,11 @@ private:
     constexpr static int32_t BUFFER_NUM = 2;
     constexpr static int64_t BLOCK_ELENUM = Ops::Base::GetUbBlockSize() / sizeof(T);
     TBuf<> inXBuf_;
+    TBuf<> splitBuf_;
+    LocalTensor<S> splitOffsetLocal_;
     GlobalTensor<T> xGm_;
     GlobalTensor<T> yGm_;
+    GlobalTensor<S> sizeSplitsGm_;
     ListTensorDesc inputList_;
     LocalTensor<T> inTensorX_;
 
@@ -57,10 +59,7 @@ private:
     int64_t nBlockOffset_ = 0;
     int64_t mBlockOffset_ = 0;
     int64_t blockOffset_ = 0;
-
-    // n轴每个切分factor 在第几个split块上,start，且按照索引为开始位置
-    int64_t nBlockSplitOffset_[SPLIT_LIST_MAX_LEN] = {0};
-    int64_t nBlockSplitOffsetEnd_[SPLIT_LIST_MAX_LEN] = {0}; // end -start = 处理的split块数
+    int32_t numSplit_ = 0;
 
     int64_t nUbFactor_ = 0;     // Ub切分n轴主块大小
     int64_t nUbFactorTail_ = 0; // Ub切分n轴尾块大小
@@ -92,19 +91,24 @@ private:
     int64_t prefixBlockBefore_ = 0;
 };
 
-template <typename T>
-__aicore__ inline void SplitVPureCopyMode<T>::Init(GM_ADDR x, GM_ADDR y, const SplitVTilingData* tilingData)
+template <typename T, typename S>
+__aicore__ inline void SplitVPureCopyMode<T, S>::Init(
+    GM_ADDR x, GM_ADDR y, GM_ADDR sizeSplits, const SplitVTilingData* tilingData)
 {
     blockIdx_ = GetBlockIdx();
     tilingData_ = tilingData;
     ubSize_ = tilingData_->ubSize;
-    CopyArray(tilingData->nBlockSplitOffset, nBlockSplitOffset_, SPLIT_LIST_MAX_LEN);
-    CopyArray(tilingData->nBlockSplitOffsetEnd, nBlockSplitOffsetEnd_, SPLIT_LIST_MAX_LEN);
     realCoreNum_ = tilingData_->realCoreNum; // 真实使用的核数
-    ubSizeNum_ = ubSize_ / dtypeSize_;
-    pipe_.InitBuffer(inXBuf_, ubSize_);
+    numSplit_ = tilingData->gSize;
+    int32_t splitBufSize = Ops::Base::CeilAlign(static_cast<int32_t>(numSplit_ * sizeof(S)), ONE_BLOCK_UB);
+    pipe_.InitBuffer(splitBuf_, splitBufSize);
+    int32_t ubSize = ubSize_ - splitBufSize;
+    ubSizeNum_ = ubSize / dtypeSize_;
+    pipe_.InitBuffer(inXBuf_, ubSize);
     inTensorX_ = inXBuf_.template Get<T>();
     xGm_.SetGlobalBuffer((__gm__ T*)x);
+    sizeSplitsGm_.SetGlobalBuffer((__gm__ S*)sizeSplits);
+    splitOffsetLocal_ = splitBuf_.template Get<S>();
     inputList_ = ListTensorDesc(reinterpret_cast<__gm__ void*>(y));
 
     nIdx_ = blockIdx_ % tilingData_->nBlockCount;
@@ -117,24 +121,42 @@ __aicore__ inline void SplitVPureCopyMode<T>::Init(GM_ADDR x, GM_ADDR y, const S
     mBlockOffset_ = isMBlockMain_ == 1 ? mIdx_ * tilingData_->mBlockFactor :
                                          tilingData_->mBlockFactorNum * tilingData_->mBlockFactor +
                                              (mIdx_ - tilingData_->mBlockFactorNum) * tilingData_->mBlockFactorTail;
-    splitNumPerCore_ = nBlockSplitOffsetEnd_[blockIdx_] - nBlockSplitOffset_[blockIdx_];
+    splitNumPerCore_ = tilingData_->nBlockSplitOffsetEnd[blockIdx_] - tilingData_->nBlockSplitOffset[blockIdx_];
     blockOffset_ = mBlockOffset_ * tilingData_->nSize + nBlockOffset_;
     mFactor_ = isMBlockMain_ == 1 ? tilingData_->mBlockFactor : tilingData_->mBlockFactorTail;
     nFactor_ = isNBlockMain_ == 1 ? tilingData_->nBlockFactor : tilingData_->nBlockFactorTail;
-    prefixBlock_ = SplitPrefix(nBlockSplitOffset_[blockIdx_]);
-    prefixBlockBefore_ = nBlockSplitOffset_[blockIdx_] > 0 ? SplitPrefix(nBlockSplitOffset_[blockIdx_] - 1) : 0;
+    DataCopyExtParams copyParams;
+    DataCopyPadExtParams<S> padParamsIdx = {false, 0, 0, 0};
+    copyParams.blockCount = 1;
+    copyParams.blockLen = numSplit_ * sizeof(S);
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
+    DataCopyPad(splitOffsetLocal_, sizeSplitsGm_, copyParams, padParamsIdx);
+    event_t eventID = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
+    SetFlag<HardEvent::MTE2_V>(eventID);
+    WaitFlag<HardEvent::MTE2_V>(eventID);
+    AscendC::Muls(splitOffsetLocal_, splitOffsetLocal_, tilingData_->sizeAfterSplitDim, numSplit_);
+    event_t eventID1 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
+    SetFlag<HardEvent::V_S>(eventID1);
+    WaitFlag<HardEvent::V_S>(eventID1);
+    prefixBlock_ = tilingData_->nBlockSplitPrefixStart[blockIdx_];
+    prefixBlockBefore_ =
+        tilingData_->nBlockSplitOffset[blockIdx_] > 0 ?
+            tilingData_->nBlockSplitPrefixStart[blockIdx_] - CurSplitSize(tilingData_->nBlockSplitOffset[blockIdx_]) :
+            0;
 }
 
-template <typename T>
-__aicore__ inline void SplitVPureCopyMode<T>::Process()
+template <typename T, typename S>
+__aicore__ inline void SplitVPureCopyMode<T, S>::Process()
 {
     if (blockIdx_ >= realCoreNum_) {
         return;
     }
     for (int32_t i = 0; i < splitNumPerCore_; i++) {
-        yGm_.SetGlobalBuffer(GetTensorAddr(nBlockSplitOffset_[blockIdx_] + i));
-        prefixSplitI_ =
-            (nBlockSplitOffset_[blockIdx_] + i) > 0 ? SplitPrefix(nBlockSplitOffset_[blockIdx_] + i - 1) : 0;
+        yGm_.SetGlobalBuffer(GetTensorAddr(tilingData_->nBlockSplitOffset[blockIdx_] + i));
+        prefixSplitI_ = (tilingData_->nBlockSplitOffset[blockIdx_] + i) > 0 ?
+                            SplitPrefix(tilingData_->nBlockSplitOffset[blockIdx_] + i - 1) :
+                            0;
         CalcNSplitSize(i);
         // 计算n轴ub切分参数
         nSplitUbTimes_ = (nSplitSize_ + ubSizeNum_ - 1) / ubSizeNum_;
@@ -151,23 +173,23 @@ __aicore__ inline void SplitVPureCopyMode<T>::Process()
     }
 }
 
-template <typename T>
-__aicore__ inline void SplitVPureCopyMode<T>::CalcNSplitSize(int32_t i)
+template <typename T, typename S>
+__aicore__ inline void SplitVPureCopyMode<T, S>::CalcNSplitSize(int32_t i)
 {
     if (i == 0) {
         startOffset_ = blockOffset_;
         nSplitSize_ = min(prefixBlock_ - nBlockOffset_, nFactor_);
     } else if (i < splitNumPerCore_ - 1) {
         startOffset_ = mBlockOffset_ * tilingData_->nSize + prefixSplitI_;
-        nSplitSize_ = CurSplitSize(nBlockSplitOffset_[blockIdx_] + i);
+        nSplitSize_ = CurSplitSize(tilingData_->nBlockSplitOffset[blockIdx_] + i);
     } else {
         startOffset_ = mBlockOffset_ * tilingData_->nSize + prefixSplitI_;
         nSplitSize_ = nBlockOffset_ + nFactor_ - prefixSplitI_;
     }
 }
 
-template <typename T>
-__aicore__ inline void SplitVPureCopyMode<T>::CalcUbAndProcessCopy(int32_t i)
+template <typename T, typename S>
+__aicore__ inline void SplitVPureCopyMode<T, S>::CalcUbAndProcessCopy(int32_t i)
 {
     srcOffset_ = startOffset_; // 更新Split切分块初始srcOffset_
     CalcCurDstOffset(i);
@@ -181,7 +203,7 @@ __aicore__ inline void SplitVPureCopyMode<T>::CalcUbAndProcessCopy(int32_t i)
     for (int32_t mIdx = 0; mIdx < mSplitUbTimes_ - 1; mIdx++) {
         // ub主块搬运
         srcOffset_ = startOffset_ + mUbFactor_ * tilingData_->nSize * mIdx;
-        dstOffset_ = curDstOffset_ + mUbFactor_ * CurSplitSize(nBlockSplitOffset_[blockIdx_] + i) * mIdx;
+        dstOffset_ = curDstOffset_ + mUbFactor_ * CurSplitSize(tilingData_->nBlockSplitOffset[blockIdx_] + i) * mIdx;
         CopyOfM(mUbFactor_, i);
         event_t eventID0 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_MTE2));
         SetFlag<HardEvent::MTE3_MTE2>(eventID0);
@@ -189,12 +211,13 @@ __aicore__ inline void SplitVPureCopyMode<T>::CalcUbAndProcessCopy(int32_t i)
     }
     // ub尾块搬运
     srcOffset_ = startOffset_ + mUbFactor_ * tilingData_->nSize * (mSplitUbTimes_ - 1);
-    dstOffset_ = curDstOffset_ + mUbFactor_ * CurSplitSize(nBlockSplitOffset_[blockIdx_] + i) * (mSplitUbTimes_ - 1);
+    dstOffset_ =
+        curDstOffset_ + mUbFactor_ * CurSplitSize(tilingData_->nBlockSplitOffset[blockIdx_] + i) * (mSplitUbTimes_ - 1);
     CopyOfM(mUbFactorTail_, i);
 }
 
-template <typename T>
-__aicore__ inline void SplitVPureCopyMode<T>::CopyOfM(int64_t factor, int32_t i)
+template <typename T, typename S>
+__aicore__ inline void SplitVPureCopyMode<T, S>::CopyOfM(int64_t factor, int32_t i)
 {
     int64_t blockCount = 0;
     int64_t blockLen = 0;
@@ -207,7 +230,7 @@ __aicore__ inline void SplitVPureCopyMode<T>::CopyOfM(int64_t factor, int32_t i)
         blockLen = nUbFactor_;
         CopyInToUb(blockCount, blockLen, srcOffset_, srcStride, dstStride);
         srcStride = 0;
-        dstStride = CurSplitSize(nBlockSplitOffset_[blockIdx_] + i) - nUbFactor_;
+        dstStride = CurSplitSize(tilingData_->nBlockSplitOffset[blockIdx_] + i) - nUbFactor_;
         event_t eventID1 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
         SetFlag<HardEvent::MTE2_MTE3>(eventID1);
         WaitFlag<HardEvent::MTE2_MTE3>(eventID1);
@@ -224,15 +247,15 @@ __aicore__ inline void SplitVPureCopyMode<T>::CopyOfM(int64_t factor, int32_t i)
     blockLen = nUbFactorTail_;
     CopyInToUb(blockCount, blockLen, srcOffset_, srcStride, dstStride);
     srcStride = 0;
-    dstStride = CurSplitSize(nBlockSplitOffset_[blockIdx_] + i) - nUbFactorTail_;
+    dstStride = CurSplitSize(tilingData_->nBlockSplitOffset[blockIdx_] + i) - nUbFactorTail_;
     event_t eventID4 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
     SetFlag<HardEvent::MTE2_MTE3>(eventID4);
     WaitFlag<HardEvent::MTE2_MTE3>(eventID4);
     CopyOutToGm(blockCount, blockLen, dstOffset_, srcStride, dstStride);
 }
 
-template <typename T>
-__aicore__ inline void SplitVPureCopyMode<T>::CalcCurDstOffset(int32_t i)
+template <typename T, typename S>
+__aicore__ inline void SplitVPureCopyMode<T, S>::CalcCurDstOffset(int32_t i)
 {
     int64_t curCoreNDstOffset = 0;
     int64_t curCoreMDstOffset = mBlockOffset_;
@@ -241,11 +264,11 @@ __aicore__ inline void SplitVPureCopyMode<T>::CalcCurDstOffset(int32_t i)
     } else {
         curCoreNDstOffset = 0;
     }
-    curDstOffset_ = curCoreMDstOffset * CurSplitSize(nBlockSplitOffset_[blockIdx_] + i) + curCoreNDstOffset;
+    curDstOffset_ = curCoreMDstOffset * CurSplitSize(tilingData_->nBlockSplitOffset[blockIdx_] + i) + curCoreNDstOffset;
 }
 
-template <typename T>
-__aicore__ inline void SplitVPureCopyMode<T>::CopyInToUb(
+template <typename T, typename S>
+__aicore__ inline void SplitVPureCopyMode<T, S>::CopyInToUb(
     int64_t blockCount, int64_t blockLen, int64_t srcOffset_, int64_t srcStride, int64_t dstStride)
 {
     copyInParam_.blockCount = blockCount;
@@ -255,8 +278,8 @@ __aicore__ inline void SplitVPureCopyMode<T>::CopyInToUb(
     DataCopyPad(inTensorX_, xGm_[srcOffset_], copyInParam_, padParam_);
 }
 
-template <typename T>
-__aicore__ inline void SplitVPureCopyMode<T>::CopyOutToGm(
+template <typename T, typename S>
+__aicore__ inline void SplitVPureCopyMode<T, S>::CopyOutToGm(
     int64_t blockCount, int64_t blockLen, int64_t dstOffset, int64_t srcStride, int64_t dstStride)
 {
     copyOutParam_.blockCount = blockCount;
@@ -266,47 +289,45 @@ __aicore__ inline void SplitVPureCopyMode<T>::CopyOutToGm(
     DataCopyPad(yGm_[dstOffset], inTensorX_, copyOutParam_);
 }
 
-template <typename T>
-__aicore__ inline __gm__ T* SplitVPureCopyMode<T>::GetTensorAddr(int64_t index)
+template <typename T, typename S>
+__aicore__ inline __gm__ T* SplitVPureCopyMode<T, S>::GetTensorAddr(int64_t index)
 {
     return inputList_.GetDataPtr<T>(index);
 }
 
-template <typename T>
-__aicore__ inline int64_t SplitVPureCopyMode<T>::SplitPrefix(int64_t index)
+template <typename T, typename S>
+__aicore__ inline int64_t SplitVPureCopyMode<T, S>::SplitPrefix(int64_t index)
 {
-    uint64_t buf[10] = {0};
-    TensorDesc<T> desc;
-    desc.SetShapeAddr(&buf[0]);
     int64_t tensorSize = 0;
-    for (int64_t j = 0; j < index + 1; j++) {
-        inputList_.GetDesc(desc, j);
-        tensorSize = tensorSize + tilingData_->sizeAfterSplitDim * desc.GetShape(tilingData_->splitDim);
+    for (int64_t jj = 0; jj < index + 1; jj++) {
+        if (jj >= 0 && jj < numSplit_) {
+            tensorSize = tensorSize + splitOffsetLocal_.GetValue(jj);
+        }
     }
     return tensorSize;
 }
 
-template <typename T>
-__aicore__ inline int64_t SplitVPureCopyMode<T>::CurSplitSize(int64_t index)
+template <typename T, typename S>
+__aicore__ inline int64_t SplitVPureCopyMode<T, S>::CurSplitSize(int64_t index)
 {
-    uint64_t buf[10] = {0};
-    TensorDesc<T> desc;
-    desc.SetShapeAddr(&buf[0]);
-    inputList_.GetDesc(desc, index);
-    int64_t tensorSize = tilingData_->sizeAfterSplitDim * desc.GetShape(tilingData_->splitDim);
+    int64_t tensorSize = 0;
+    if (index >= 0 && index < numSplit_) {
+        tensorSize = splitOffsetLocal_.GetValue(index);
+    }
+
     return tensorSize;
 }
 
-template <typename T>
-__aicore__ inline void SplitVPureCopyMode<T>::CopyArray(const int64_t* src, int64_t* dst, int32_t size)
+template <typename T, typename S>
+__aicore__ inline void SplitVPureCopyMode<T, S>::CopyArray(const int64_t* src, int64_t* dst, int32_t size)
 {
     for (int32_t i = 0; i < size; i++) {
         dst[i] = src[i];
     }
 }
 
-template <typename T>
-__aicore__ inline int32_t SplitVPureCopyMode<T>::min(int32_t a, int32_t b)
+template <typename T, typename S>
+__aicore__ inline int32_t SplitVPureCopyMode<T, S>::min(int32_t a, int32_t b)
 {
     return a > b ? b : a;
 }

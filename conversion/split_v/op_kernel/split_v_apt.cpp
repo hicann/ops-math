@@ -32,8 +32,8 @@
 using namespace AscendC;
 using namespace Ops::Base;
 
-extern "C" __global__ __aicore__ void split_v(GM_ADDR x, GM_ADDR sizeSplits, GM_ADDR splitDim, GM_ADDR y,
-    GM_ADDR workSpace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void split_v(
+    GM_ADDR x, GM_ADDR sizeSplits, GM_ADDR splitDim, GM_ADDR y, GM_ADDR workSpace, GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     if (TILING_KEY_IS(TILING_KEY_UB_SPLIT)) {
@@ -63,23 +63,23 @@ extern "C" __global__ __aicore__ void split_v(GM_ADDR x, GM_ADDR sizeSplits, GM_
         TPipe pipe;
         GET_TILING_DATA_WITH_STRUCT(SplitVTilingData, tilingData, tiling);
         if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
-            SplitV::SplitVPureCopyMode<uint8_t> op(pipe);
-            op.Init(x, y, &tilingData);
+            SplitV::SplitVPureCopyMode<uint8_t, DTYPE_SIZE_SPLITS> op(pipe);
+            op.Init(x, y, sizeSplits, &tilingData);
             op.Process();
         }
         if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
-            SplitV::SplitVPureCopyMode<uint16_t> op(pipe);
-            op.Init(x, y, &tilingData);
+            SplitV::SplitVPureCopyMode<uint16_t, DTYPE_SIZE_SPLITS> op(pipe);
+            op.Init(x, y, sizeSplits, &tilingData);
             op.Process();
         }
         if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
-            SplitV::SplitVPureCopyMode<uint32_t> op(pipe);
-            op.Init(x, y, &tilingData);
+            SplitV::SplitVPureCopyMode<uint32_t, DTYPE_SIZE_SPLITS> op(pipe);
+            op.Init(x, y, sizeSplits, &tilingData);
             op.Process();
         }
         if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
-            SplitV::SplitVPureCopyMode<uint64_t> op(pipe);
-            op.Init(x, y, &tilingData);
+            SplitV::SplitVPureCopyMode<uint64_t, DTYPE_SIZE_SPLITS> op(pipe);
+            op.Init(x, y, sizeSplits, &tilingData);
             op.Process();
         }
     } else if (TILING_KEY_IS(TILING_KEY_PURE_COPY_SPECIAL)) {
@@ -128,8 +128,7 @@ extern "C" __global__ __aicore__ void split_v(GM_ADDR x, GM_ADDR sizeSplits, GM_
             op.Init(x, y, &tilingData);
             op.Process();
         }
-    } 
-    else if (TILING_KEY_IS(TILING_KEY_UB_SPLIT_SAME_LEN)) {
+    } else if (TILING_KEY_IS(TILING_KEY_UB_SPLIT_SAME_LEN)) {
         TPipe pipe;
         GET_TILING_DATA_WITH_STRUCT(SplitVTilingData, tilingData, tiling);
         if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
