@@ -195,8 +195,15 @@ function(gen_aclnn_with_opdef)
     message(STATUS "no operator info to generate")
     return()
   endif()
+  string(JOIN "," _kernel_src_str ${KERNEL_SRC_LIST})
   add_custom_target(opbuild_custom_gen_aclnn_all
-                    COMMAND python3 ${PROJECT_SOURCE_DIR}/scripts/util/modify_gen_aclnn_static.py ${CMAKE_BINARY_DIR})
+                    COMMAND python3 ${PROJECT_SOURCE_DIR}/scripts/util/modify_gen_aclnn_static.py ${CMAKE_BINARY_DIR}
+                    COMMAND ${ASCEND_PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/util/insert_kernel_src.py
+                            ${_kernel_src_str} ${ASCEND_AUTOGEN_PATH} ${ASCEND_COMPUTE_UNIT}
+                    COMMAND ${ASCEND_PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/util/insert_kernel_src.py
+                            ${_kernel_src_str} ${ASCEND_AUTOGEN_PATH}/inner ${ASCEND_COMPUTE_UNIT}
+                    COMMAND ${ASCEND_PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/util/insert_kernel_src.py
+                            ${_kernel_src_str} ${ASCEND_AUTOGEN_PATH}/exc ${ASCEND_COMPUTE_UNIT})
   add_dependencies(opbuild_custom_gen_aclnn_all ${dependency_list})
   if(opbuild_out_srcs)
     set_source_files_properties(${opbuild_out_srcs} PROPERTIES GENERATED TRUE)
