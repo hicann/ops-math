@@ -1278,6 +1278,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/population_count/README.md">population_count</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>逐位取出二进制每一位，累加所有为1的比特。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/pow/README.md">pow</a></td>
     <td>√</td>
     <td>√</td>

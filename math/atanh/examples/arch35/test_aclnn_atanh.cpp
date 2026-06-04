@@ -13,8 +13,7 @@
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
-#include "aclnn/aclnn_base.h"
-#include "aclnn_atanh.h"
+#include "aclnnop/aclnn_atanh.h"
 
 #define CHECK_RET(cond, return_expr) \
     do {                             \
