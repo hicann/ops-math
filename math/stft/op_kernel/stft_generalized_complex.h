@@ -53,11 +53,11 @@ public:
         tiling = tilingData;
 
         inputGm.SetGlobalBuffer(
-            (__gm__ T*)x, tiling->batch *
-                              ((tiling->inputSize + tiling->nfft) * COMPLEX_COEFFICIENT * sizeof(T) + BLOCK_SIZE - 1) /
-                              BLOCK_SIZE * BLOCK_SIZE / sizeof(T));
-        size_t splitWindowWorkspaceSize = tiling->batch * tiling->matmulN * tiling->nfftAlign;
-        size_t splitWindowWorkspaceSizeAlign =
+            (__gm__ T*)x, (uint64_t)tiling->batch *
+                              (((uint64_t)(tiling->inputSize + tiling->nfft) * COMPLEX_COEFFICIENT * sizeof(T) + BLOCK_SIZE - 1) /
+                              BLOCK_SIZE * BLOCK_SIZE / sizeof(T)));
+        uint64_t splitWindowWorkspaceSize = (uint64_t)tiling->batch * tiling->matmulN * tiling->nfftAlign;
+        uint64_t splitWindowWorkspaceSizeAlign =
             (((splitWindowWorkspaceSize * sizeof(T) * COMPLEX_COEFFICIENT + WORKSPACE_ALIGN_SIZE - 1) /
               WORKSPACE_ALIGN_SIZE) *
              WORKSPACE_ALIGN_SIZE) /
@@ -66,7 +66,7 @@ public:
         splitRealWindowGm.SetGlobalBuffer((__gm__ T*)workspace, splitWindowWorkspaceSize);
         splitImagWindowGm.SetGlobalBuffer((__gm__ T*)workspace + splitWindowWorkspaceSize, splitWindowWorkspaceSize);
 
-        size_t matmulWorkspaceSize = tiling->batch * tiling->matmulM * tiling->matmulN;
+        uint64_t matmulWorkspaceSize = (uint64_t)tiling->batch * tiling->matmulM * tiling->matmulN;
 
         aRealGm.SetGlobalBuffer((__gm__ T*)workspace + splitWindowWorkspaceSizeAlign, matmulWorkspaceSize);
         aImagGm.SetGlobalBuffer(
@@ -76,11 +76,11 @@ public:
             matmulWorkspaceSize);
         bImagGm.SetGlobalBuffer(
             (__gm__ T*)workspace + splitWindowWorkspaceSizeAlign + matmulWorkspaceSize * 3, matmulWorkspaceSize);
-        outputGm.SetGlobalBuffer((__gm__ T*)y, tiling->batch * tiling->matmulM * tiling->matmulN * DOUBLE_BUFFER);
-        a1Global.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(window), tiling->matmulM * tiling->nfftAlign);
+        outputGm.SetGlobalBuffer((__gm__ T*)y, (uint64_t)tiling->batch * tiling->matmulM * tiling->matmulN * DOUBLE_BUFFER);
+        a1Global.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(window), (uint64_t)tiling->matmulM * tiling->nfftAlign);
         a2Global.SetGlobalBuffer(
-            reinterpret_cast<__gm__ T*>(window) + tiling->matmulM * tiling->nfftAlign,
-            tiling->matmulM * tiling->nfftAlign);
+            reinterpret_cast<__gm__ T*>(window) + (uint64_t)tiling->matmulM * tiling->nfftAlign,
+            (uint64_t)tiling->matmulM * tiling->nfftAlign);
 
         size_t ubAlignBufferSize = (tiling->nFactorUbFormer * COMPLEX_COEFFICIENT + REPEAT_NUM_FOR_FP32 - 1) /
                                    REPEAT_NUM_FOR_FP32 * REPEAT_NUM_FOR_FP32 * sizeof(T);
@@ -153,16 +153,17 @@ public:
         }
 
         for (uint32_t i = 0; i < bFactor; i++) {
-            int64_t inputOffset = (bOffset + i) * (tiling->inputSize + tiling->nfft) * COMPLEX_COEFFICIENT +
-                                  nOffset * tiling->hopLength * COMPLEX_COEFFICIENT;
-            int64_t realSplitWindowOffset = ((bOffset + i) * tiling->matmulN + nOffset) * tiling->nfftAlign;
+            int64_t inputOffset = (int64_t)(bOffset + i) * (tiling->inputSize + tiling->nfft) * COMPLEX_COEFFICIENT +
+                                  (int64_t)nOffset * tiling->hopLength * COMPLEX_COEFFICIENT;
+            int64_t realSplitWindowOffset = ((int64_t)(bOffset + i) * tiling->matmulN + nOffset) * tiling->nfftAlign;
             int64_t imagSplitWindowOffset = realSplitWindowOffset;
             int64_t outputOffset =
-                (((bOffset + i) * tiling->matmulM + mOffset) * tiling->matmulN + nOffset) * DOUBLE_BUFFER;
-            int64_t realOffset = (bOffset + i) * tiling->matmulM * tiling->matmulN + mOffset * tiling->matmulN +
-                                 nIdx * mFactor * tiling->matmulNCoreFactor;
+                (((int64_t)(bOffset + i) * tiling->matmulM + mOffset) * tiling->matmulN + nOffset) * DOUBLE_BUFFER;
+            int64_t realOffset = (int64_t)(bOffset + i) * tiling->matmulM * tiling->matmulN +
+                                 (int64_t)mOffset * tiling->matmulN +
+                                 (int64_t)nIdx * mFactor * tiling->matmulNCoreFactor;
             int64_t imagOffset = realOffset;
-            int64_t a1Offset = mOffset * tiling->nfftAlign;
+            int64_t a1Offset = (int64_t)mOffset * tiling->nfftAlign;
             int64_t a2Offset = a1Offset;
 
             SplitWindows(inputOffset, realSplitWindowOffset, imagSplitWindowOffset, nFactor);
@@ -228,9 +229,9 @@ private:
     __aicore__ inline void GatherForSmallNFactorAlign(
         int64_t realOffset, int64_t imagOffset, int64_t outputOffset, uint32_t mFactor, uint32_t nFactor)
     {
-        int32_t complexCount = mFactor * nFactor * DOUBLE_BUFFER;
+        int64_t complexCount = (int64_t)mFactor * nFactor * DOUBLE_BUFFER;
         int32_t ubCount = tiling->maskUBSize / sizeof(int32_t) / DOUBLE_BUFFER;
-        int32_t gatherCountPerLoop = complexCount > maskCount ? maskCount : complexCount;
+        int32_t gatherCountPerLoop = (int32_t)(complexCount > maskCount ? maskCount : complexCount);
 
         gatherCountPerLoop = gatherCountPerLoop - gatherCountPerLoop % (nFactor * DOUBLE_BUFFER);
         int32_t realCountPerLoop = gatherCountPerLoop / DOUBLE_BUFFER;
@@ -239,7 +240,7 @@ private:
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID1);
         int ping = 1;
-        int repeats = (complexCount + gatherCountPerLoop - 1) / gatherCountPerLoop;
+        int repeats = (int)((complexCount + gatherCountPerLoop - 1) / gatherCountPerLoop);
 
         for (int i = 0; i < repeats; i++) {
             event_t event_id = ping ? EVENT_ID0 : EVENT_ID1;
@@ -252,7 +253,7 @@ private:
             int32_t copyLen = realCountPerLoop * sizeof(T);
 
             if (i == repeats - 1) {
-                copyLen = (mFactor * nFactor - realCountPerLoop * i) * sizeof(T);
+                copyLen = ((int64_t)mFactor * nFactor - (int64_t)realCountPerLoop * i) * sizeof(T);
             }
 
             int32_t nBlocks = (copyLen + BLOCK_SIZE - 1) / BLOCK_SIZE;
@@ -304,8 +305,8 @@ private:
         int64_t realOffset, int64_t imagOffset, int64_t outputOffset, uint32_t mFactor, uint32_t nFactor)
     {
         int32_t nFactorAlign = (nFactor * sizeof(T) + BLOCK_SIZE - 1) / BLOCK_SIZE * BLOCK_SIZE / sizeof(T);
-        int32_t complexCount = mFactor * nFactorAlign * DOUBLE_BUFFER;
-        int32_t gatherCountPerLoop = complexCount > maskCount ? maskCount : complexCount;
+        int64_t complexCount = (int64_t)mFactor * nFactorAlign * DOUBLE_BUFFER;
+        int32_t gatherCountPerLoop = (int32_t)(complexCount > maskCount ? maskCount : complexCount);
         gatherCountPerLoop = gatherCountPerLoop - gatherCountPerLoop % (nFactorAlign * DOUBLE_BUFFER);
         int32_t realCountPerLoop = gatherCountPerLoop / DOUBLE_BUFFER;
         int32_t imagCountPerLoop = gatherCountPerLoop / DOUBLE_BUFFER;
@@ -314,7 +315,7 @@ private:
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID1);
 
         int ping = 1;
-        int repeats = (complexCount + gatherCountPerLoop - 1) / gatherCountPerLoop;
+        int repeats = (int)((complexCount + gatherCountPerLoop - 1) / gatherCountPerLoop);
 
         for (int i = 0; i < repeats; i++) {
             event_t event_id = ping ? EVENT_ID0 : EVENT_ID1;
@@ -326,7 +327,7 @@ private:
 
             int32_t copyLen = realCountPerLoop * sizeof(T);
             if (i == repeats - 1) {
-                copyLen = (mFactor * nFactorAlign - realCountPerLoop * i) * sizeof(T);
+                copyLen = ((int64_t)mFactor * nFactorAlign - (int64_t)realCountPerLoop * i) * sizeof(T);
             }
 
             AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(event_id);
@@ -402,7 +403,7 @@ private:
 
                 int32_t copyLen = realCountPerLoop * sizeof(T);
                 if (i == repeats - 1) {
-                    copyLen = (mFactor * nFactor - realCountPerLoop * i) * sizeof(T);
+                    copyLen = ((int64_t)mFactor * nFactor - (int64_t)realCountPerLoop * i) * sizeof(T);
                 }
 
                 int32_t nBlocks = (copyLen + BLOCK_SIZE - 1) / BLOCK_SIZE;
@@ -476,7 +477,7 @@ private:
 
                 int32_t copyLen = realCountPerLoop * sizeof(T);
                 if (i == repeats - 1) {
-                    copyLen = (mFactor * nFactor - realCountPerLoop * i) * sizeof(T);
+                    copyLen = ((int64_t)mFactor * nFactor - (int64_t)realCountPerLoop * i) * sizeof(T);
                 }
 
                 int32_t nBlocks = (copyLen + BLOCK_SIZE - 1) / BLOCK_SIZE;

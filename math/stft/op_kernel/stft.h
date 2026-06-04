@@ -60,21 +60,21 @@ public:
     {
         inTilingData = tilingData;
         size_t windowSplitWorkspaceSize =
-            (((inTilingData->blockNum * inTilingData->frameCount * inTilingData->nfft * sizeof(T) + 511) / 512) * 512) *
+            ((((uint64_t)inTilingData->blockNum * inTilingData->frameCount * inTilingData->nfft * sizeof(T) + 511) / 512) * 512) *
             inTilingData->aivBatchLoop / sizeof(T);
         if (g_coreType == AIV) {
-            inputGm.SetGlobalBuffer((__gm__ T*)x, inTilingData->batch * inTilingData->inputSize);
+            inputGm.SetGlobalBuffer((__gm__ T*)x, (uint64_t)inTilingData->batch * inTilingData->inputSize);
             windowSplitWorkspaceGm.SetGlobalBuffer(
                 (__gm__ T*)workspace,
-                inTilingData->blockNum * inTilingData->aivBatchLoop * inTilingData->frameCount * inTilingData->nfft);
+                (uint64_t)inTilingData->blockNum * inTilingData->aivBatchLoop * inTilingData->frameCount * inTilingData->nfft);
             outputGm.SetGlobalBuffer(
-                (__gm__ T*)y, inTilingData->matmulM * inTilingData->frameCount * inTilingData->batch * DOUBLE_BUFFER);
+                (__gm__ T*)y, (uint64_t)inTilingData->matmulM * inTilingData->frameCount * inTilingData->batch * DOUBLE_BUFFER);
             gmReal.SetGlobalBuffer(
                 reinterpret_cast<__gm__ T*>(workspace) + windowSplitWorkspaceSize,
-                inTilingData->batch * inTilingData->matmulM * inTilingData->frameCount * DOUBLE_BUFFER);
+                (uint64_t)inTilingData->batch * inTilingData->matmulM * inTilingData->frameCount * DOUBLE_BUFFER);
             gmImag.SetGlobalBuffer(
                 reinterpret_cast<__gm__ T*>(workspace) + windowSplitWorkspaceSize,
-                inTilingData->batch * inTilingData->matmulM * inTilingData->frameCount * DOUBLE_BUFFER);
+                (uint64_t)inTilingData->batch * inTilingData->matmulM * inTilingData->frameCount * DOUBLE_BUFFER);
             pipe.InitBuffer(
                 inQueueInput, bufferNum,
                 (inTilingData->blkFrame * inTilingData->hop + (inTilingData->nfft - inTilingData->hop)) * sizeof(T));
@@ -84,13 +84,13 @@ public:
         if (g_coreType == AIC) {
             auto blockIdx = GetBlockIdx();
             a1Global.SetGlobalBuffer(
-                reinterpret_cast<__gm__ T*>(window), inTilingData->matmulM * inTilingData->nfft * DOUBLE_BUFFER);
+                reinterpret_cast<__gm__ T*>(window), (uint64_t)inTilingData->matmulM * inTilingData->nfft * DOUBLE_BUFFER);
             bGlobal.SetGlobalBuffer(
                 reinterpret_cast<__gm__ T*>(workspace),
-                inTilingData->blockNum * inTilingData->nfft * inTilingData->frameCount * inTilingData->aivBatchLoop);
+                (uint64_t)inTilingData->blockNum * inTilingData->nfft * inTilingData->frameCount * inTilingData->aivBatchLoop);
             matMulWorkspaceGm.SetGlobalBuffer(
                 reinterpret_cast<__gm__ T*>(workspace) + windowSplitWorkspaceSize,
-                inTilingData->matmulM * inTilingData->frameCount * inTilingData->batch * DOUBLE_BUFFER);
+                (uint64_t)inTilingData->matmulM * inTilingData->frameCount * inTilingData->batch * DOUBLE_BUFFER);
 
             curCoreM_ = inTilingData->aicTotalLen;
             curCoreN_ = inTilingData->mmTilingData.N;
@@ -180,15 +180,15 @@ public:
             CreateGatherMask(maskTemp, maskCol, REAL_IMAG_COLS, 0, REAL_IMAG * gatherSizePerRepeat);
 
             // 生成mask等差数列
-            int32_t offsetBase = 0;
+            int64_t offsetBase = 0;
             if (unlikely(blockIdx % windowLoop < aivMTailIdx)) {
-                offsetBase = ((blockIdx % windowLoop) / C_V_DOUBLE) * totalMLen * frameCount +
-                             (blockIdx % C_V_DOUBLE) * (aivTotalEvenMLen * REAL_IMAG) * frameCount;
+                offsetBase = (int64_t)((blockIdx % windowLoop) / C_V_DOUBLE) * totalMLen * frameCount +
+                             (int64_t)(blockIdx % C_V_DOUBLE) * (aivTotalEvenMLen * REAL_IMAG) * frameCount;
             } else {
-                offsetBase = (aivMTailIdx / C_V_DOUBLE) * totalMLen * frameCount +
-                             (((blockIdx % windowLoop) - aivMTailIdx) % C_V_DOUBLE) * (aivTailEvenMLen * REAL_IMAG) *
+                offsetBase = (int64_t)(aivMTailIdx / C_V_DOUBLE) * totalMLen * frameCount +
+                             (int64_t)(((blockIdx % windowLoop) - aivMTailIdx) % C_V_DOUBLE) * (aivTailEvenMLen * REAL_IMAG) *
                                  frameCount +
-                             ((blockIdx % windowLoop) - aivMTailIdx) / C_V_DOUBLE * aicTailLen * frameCount;
+                             (int64_t)(((blockIdx % windowLoop) - aivMTailIdx) / C_V_DOUBLE) * aicTailLen * frameCount;
             }
 
             int repeats = (N * sizeof(T) + gatherSizePerRepeat - 1) / gatherSizePerRepeat;
@@ -203,9 +203,9 @@ public:
                 AscendC::WaitEvent(flag_id_fix);
 
                 int32_t curBatch = (blockIdx / windowLoop) * aicBatchLoop + i;
-                int32_t gmRealOffset = curBatch * matmulM * frameCount * DOUBLE_BUFFER;
-                int32_t gmImagOffset = gmRealOffset + frameCount;
-                int32_t outputOffset = curBatch * matmulM * frameCount * DOUBLE_BUFFER;
+                int64_t gmRealOffset = (int64_t)curBatch * matmulM * frameCount * DOUBLE_BUFFER;
+                int64_t gmImagOffset = gmRealOffset + frameCount;
+                int64_t outputOffset = (int64_t)curBatch * matmulM * frameCount * DOUBLE_BUFFER;
 
                 gmRealOffset = gmRealOffset + offsetBase;
                 gmImagOffset = gmImagOffset + offsetBase;
@@ -266,15 +266,15 @@ public:
             globalN_ = inTilingData->mmTilingData.N;
             globalK_ = inTilingData->mmTilingData.Ka;
 
-            int32_t a1GlobalOffset = 0;
-            int32_t outputOffsetBase = 0;
+            int64_t a1GlobalOffset = 0;
+            int64_t outputOffsetBase = 0;
             if (unlikely(blockIdx % aicMatmulMCore < aicMTailIdx)) {
-                a1GlobalOffset = innerReminder * totalMLen * nfft;
-                outputOffsetBase = innerReminder * totalMLen * frameCount;
+                a1GlobalOffset = (int64_t)innerReminder * totalMLen * nfft;
+                outputOffsetBase = (int64_t)innerReminder * totalMLen * frameCount;
             } else {
-                a1GlobalOffset = aicMTailIdx * totalMLen * nfft + (innerReminder - aicMTailIdx) * aicTailLen * nfft;
+                a1GlobalOffset = (int64_t)aicMTailIdx * totalMLen * nfft + (int64_t)(innerReminder - aicMTailIdx) * aicTailLen * nfft;
                 outputOffsetBase =
-                    aicMTailIdx * totalMLen * frameCount + (innerReminder - aicMTailIdx) * aicTailLen * frameCount;
+                    (int64_t)aicMTailIdx * totalMLen * frameCount + (int64_t)(innerReminder - aicMTailIdx) * aicTailLen * frameCount;
             }
 
             uint64_t flag_id_mte3 = 3;
@@ -286,9 +286,9 @@ public:
                 }
 
                 int32_t curBatch = curBatchBase + i;
-                int32_t bGlobalOffset =
-                    blockIdx * aicBatchLoop * frameCount * inTilingData->nfft + i * frameCount * inTilingData->nfft;
-                int32_t outputOffset = curBatch * matmulM * frameCount * REAL_IMAG + outputOffsetBase;
+                int64_t bGlobalOffset =
+                    (int64_t)blockIdx * aicBatchLoop * frameCount * inTilingData->nfft + (int64_t)i * frameCount * inTilingData->nfft;
+                int64_t outputOffset = (int64_t)curBatch * matmulM * frameCount * REAL_IMAG + outputOffsetBase;
                 bGM = bGlobal[bGlobalOffset];
                 aGM = a1Global[a1GlobalOffset];
                 cGM = matMulWorkspaceGm[outputOffset];

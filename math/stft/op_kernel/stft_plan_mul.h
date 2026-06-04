@@ -40,10 +40,10 @@ public:
             col = inTilingData->oneRowLen;
             ubMaxLine = inTilingData->ubMaxLine;
             row = totalRow;
-            int32_t planGlobalOffset = blockIdx * totalRow * col;
+            int64_t planGlobalOffset = (int64_t)blockIdx * totalRow * col;
             if (blockIdx >= inTilingData->tailBlockIdx) {
-                planGlobalOffset = inTilingData->tailBlockIdx * totalRow * col +
-                                   (blockIdx - inTilingData->tailBlockIdx) * tailRow * col;
+                planGlobalOffset = (int64_t)inTilingData->tailBlockIdx * totalRow * col +
+                                   (int64_t)(blockIdx - inTilingData->tailBlockIdx) * tailRow * col;
                 row = tailRow;
             }
             uint64_t splitWindowWorkspaceSize =
@@ -56,9 +56,9 @@ public:
                                             WORKSPACE_ALIGN_SIZE) *
                                            WORKSPACE_ALIGN_SIZE / sizeof(T);
             uint64_t planOffset = splitWindowWorkspaceSize + matmulWorkspaceSize;
-            planGm.SetGlobalBuffer((__gm__ T*)plan + planGlobalOffset, row * col);
+            planGm.SetGlobalBuffer((__gm__ T*)plan + planGlobalOffset, (int64_t)row * col);
             windowGm.SetGlobalBuffer((__gm__ T*)window, col);
-            outputGm.SetGlobalBuffer((__gm__ T*)workspace + planOffset + planGlobalOffset, row * col);
+            outputGm.SetGlobalBuffer((__gm__ T*)workspace + planOffset + planGlobalOffset, (int64_t)row * col);
             pipe->InitBuffer(planInQue, bufferNum, ubMaxLine * col * sizeof(T));
             pipe->InitBuffer(planOutQue, bufferNum, ubMaxLine * col * sizeof(T));
             pipe->InitBuffer(windowInQue, 1, col * sizeof(T));

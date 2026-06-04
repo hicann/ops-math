@@ -48,8 +48,8 @@ public:
             return;
         }
 
-        uint64_t inputGmSize = tiling->batch * ((tiling->inputSize + tiling->nfft) * sizeof(T) + BLOCK_SIZE - 1) /
-                               BLOCK_SIZE * BLOCK_SIZE / sizeof(T);
+        uint64_t inputGmSize = (uint64_t)tiling->batch * (((uint64_t)(tiling->inputSize + tiling->nfft) * sizeof(T) + BLOCK_SIZE - 1) /
+                               BLOCK_SIZE * BLOCK_SIZE / sizeof(T));
         inputGm.SetGlobalBuffer((__gm__ T*)x, inputGmSize);
 
         uint64_t splitWindowGmSize = (uint64_t)tiling->batch * tiling->matmulN * tiling->nfftAlign;
@@ -159,14 +159,16 @@ public:
         }
 
         for (int i = 0; i < bFactor; i++) {
-            int64_t inputOffset = (bOffset + i) * (tiling->inputSize + tiling->nfft) + nOffset * tiling->hopLength;
-            int64_t splitWindowOffset = ((bOffset + i) * tiling->matmulN + nOffset) * tiling->nfftAlign;
+            int64_t inputOffset = (int64_t)(bOffset + i) * (tiling->inputSize + tiling->nfft) +
+                                  (int64_t)nOffset * tiling->hopLength;
+            int64_t splitWindowOffset = ((int64_t)(bOffset + i) * tiling->matmulN + nOffset) * tiling->nfftAlign;
             int64_t outputOffset =
-                (((bOffset + i) * tiling->matmulM + mOffset) * tiling->matmulN + nOffset) * IMAG_AND_REAL;
-            int64_t realOffset = (bOffset + i) * tiling->matmulM * tiling->matmulN + mOffset * tiling->matmulN +
-                                 nIdx * mFactor * tiling->matmulNCoreFactor;
+                (((int64_t)(bOffset + i) * tiling->matmulM + mOffset) * tiling->matmulN + nOffset) * IMAG_AND_REAL;
+            int64_t realOffset = (int64_t)(bOffset + i) * tiling->matmulM * tiling->matmulN +
+                                 (int64_t)mOffset * tiling->matmulN +
+                                 (int64_t)nIdx * mFactor * tiling->matmulNCoreFactor;
             int64_t imagOffset = realOffset;
-            int64_t a1Offset = mOffset * tiling->nfftAlign;
+            int64_t a1Offset = (int64_t)mOffset * tiling->nfftAlign;
             int64_t a2Offset = a1Offset;
 
             int64_t planOffset = IMAG_AND_REAL * mOffset * tiling->nfftAlign;
@@ -715,8 +717,8 @@ private:
             int32_t total = 0;
             while (total < nFactor) {
                 LocalTensor<T> inputLocal = inCopy.template AllocTensor<T>();
-                int32_t inputLeft =
-                    (tiling->batch * (tiling->inputSize + tiling->nfft) - total * tiling->hopLength - inputOffset) *
+                int64_t inputLeft =
+                    ((int64_t)tiling->batch * (tiling->inputSize + tiling->nfft) - (int64_t)total * tiling->hopLength - inputOffset) *
                     sizeof(T);
                 int32_t copyLength = inputLeft > bufferSize ? bufferSize / sizeof(T) : inputLeft / sizeof(T);
                 DataCopyPadExtParams<T> dataCopyPadExtParams;

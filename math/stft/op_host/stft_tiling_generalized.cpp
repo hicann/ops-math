@@ -134,22 +134,22 @@ private:
 
 void STFTGeneralizedTiling::GetPlanSplitStrategy()
 {
-    int32_t numBlocks = aivCoreNum;
-    int32_t oneRowSize = nfftAlign * 4;
-    int32_t halfUbSize = (ubSize - oneRowSize) / 2;
-    int32_t mFactor = CeilDiv(2 * matmulM, numBlocks);
-    int32_t prevCnt = numBlocks * (mFactor - 1);
-    int32_t remainCnt = 2 * matmulM - prevCnt;
-    int32_t totalLine = mFactor;
-    int32_t tailBlockIdx = remainCnt;
-    int32_t tailLine = mFactor;
+    uint32_t numBlocks = aivCoreNum;
+    uint32_t oneRowSize = nfftAlign * 4;
+    uint32_t halfUbSize = (ubSize - oneRowSize) / 2;
+    uint32_t mFactor = CeilDiv(2 * matmulM, numBlocks);
+    uint32_t prevCnt = numBlocks * (mFactor - 1);
+    uint32_t remainCnt = 2 * matmulM - prevCnt;
+    uint32_t totalLine = mFactor;
+    uint32_t tailBlockIdx = remainCnt;
+    uint32_t tailLine = mFactor;
     if (remainCnt < numBlocks) {
         tailLine = mFactor - 1;
     }
-    int32_t ubMaxLine = halfUbSize / oneRowSize;
-    int32_t numsInOneRepeat = 64;
-    int32_t totalInCol = nfftAlign / numsInOneRepeat;
-    int32_t tailInCol = nfftAlign % numsInOneRepeat;
+    uint32_t ubMaxLine = halfUbSize / oneRowSize;
+    uint32_t numsInOneRepeat = 64;
+    uint32_t totalInCol = nfftAlign / numsInOneRepeat;
+    uint32_t tailInCol = nfftAlign % numsInOneRepeat;
 
     tilingData.planTilingData.set_totalInCol(totalInCol);
     tilingData.planTilingData.set_tailInCol(tailInCol);

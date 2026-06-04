@@ -284,13 +284,13 @@ ge::graphStatus STFTTiling::GetWorkspaceSize()
     // 每块workspace地址需要512B对齐
     // 第0块workspace用于存储按照窗口拆分之后的input data
     size_t windowSplitWorkspaceSize =
-        batchLoop *
-        ((aicCoreNum * frameCount * nfft * sizeof(float) + WORKSPACE_ALIGN_SIZE - 1) / WORKSPACE_ALIGN_SIZE) *
+        (uint64_t)batchLoop *
+        (((uint64_t)aicCoreNum * frameCount * nfft * sizeof(float) + WORKSPACE_ALIGN_SIZE - 1) / WORKSPACE_ALIGN_SIZE) *
         WORKSPACE_ALIGN_SIZE;
 
     // 第一块workspace用于存储input data和plan mm运算之后的结果
     size_t matmulWorkspaceSize =
-        ((batch * frameCount * matmulM * 2 * sizeof(float) + WORKSPACE_ALIGN_SIZE - 1) / WORKSPACE_ALIGN_SIZE) *
+        (((uint64_t)batch * frameCount * matmulM * 2 * sizeof(float) + WORKSPACE_ALIGN_SIZE - 1) / WORKSPACE_ALIGN_SIZE) *
         WORKSPACE_ALIGN_SIZE;
     workspaceSize_ = windowSplitWorkspaceSize + matmulWorkspaceSize + EXTRA_WORKSPACE_SIZE;
     return ge::GRAPH_SUCCESS;
