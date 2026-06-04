@@ -396,6 +396,10 @@ __aicore__ inline uint32_t SortMergeIntraCore<ValueType, IndexType, IsDescend>::
         lastBlockElemCount = newLastBlockElemCount;
         pingPongFlag = 1 - pingPongFlag;
         mergeRounds++;
+
+        event_t eventId = static_cast<event_t>(pipe_->FetchEventID(HardEvent::MTE3_MTE2));
+        SetFlag<HardEvent::MTE3_MTE2>(eventId);
+        WaitFlag<HardEvent::MTE3_MTE2>(eventId);
     }
 
     return (mergeRounds == 0) ? 0 : pingPongFlag;
@@ -590,7 +594,6 @@ __aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::Copy
     for (uint32_t listIdx = 0; listIdx < ctx.listCount; listIdx++) {
         while (ctx.remains[listIdx] > 0) {
             uint32_t loadCount = (ctx.remains[listIdx] > blockSortSize_) ? blockSortSize_ : ctx.remains[listIdx];
-            if (loadCount == 0) break;
             
             CopyBlockChunk(ctx.srcOffsets[listIdx] + ctx.gmOffsets[listIdx],
                 dstOffsetBase + dstCumulativeOffset, loadCount);
