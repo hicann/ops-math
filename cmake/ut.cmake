@@ -408,29 +408,6 @@ function(AddOpsTestCase)
     set(opType "${opType}${firstLetter}${restOfWord}")
   endforeach()
 
-  # check KERNEL_SRC_LIST for custom kernel entry file
-  set(kernel_src_from_cmake "")
-  if(DEFINED KERNEL_SRC_LIST)
-    foreach(item IN LISTS KERNEL_SRC_LIST)
-      string(REGEX MATCH "^${opType} ${ASCEND_COMPUTE_UNIT} (.+)" matched "${item}")
-      if(matched AND CMAKE_MATCH_1)
-        set(kernel_src_from_cmake "${CMAKE_MATCH_1}")
-        break()
-      endif()
-      string(REGEX MATCH "^${opType} ALL (.+)" matched "${item}")
-      if(matched AND CMAKE_MATCH_1)
-        set(kernel_src_from_cmake "${CMAKE_MATCH_1}")
-        break()
-      endif()
-    endforeach()
-  endif()
-
-  if(kernel_src_from_cmake)
-    file(
-      GLOB KernelFile
-      "${PROJECT_SOURCE_DIR}/*/${MODULE_OP_NAME}/op_kernel/**/${kernel_src_from_cmake}.cpp")
-  endif()
-
   # standardize tiling files
   string(REPLACE "," ";" tilingSrc "${MODULE_TILING_SRC_FILES}")
 

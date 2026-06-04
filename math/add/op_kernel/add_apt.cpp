@@ -9,13 +9,13 @@
  */
 
 /*!
- * \file add.cpp
+ * \file add_apt.cpp
  * \brief add kernel
  */
 
 #include "kernel_operator.h"
-#include "add_dag.h"
-#include "add_struct.h"
+#include "arch35/add_dag.h"
+#include "arch35/add_struct.h"
 #include "atvoss/broadcast/broadcast_sch.h"
 
 using namespace Ops::Base;
