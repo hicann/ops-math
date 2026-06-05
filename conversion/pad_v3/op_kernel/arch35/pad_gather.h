@@ -353,6 +353,7 @@ private:
 
             MicroAPI::Arange(indexReg, 0); // 0-128
             MicroAPI::DataCopy(idxAddr, indexReg, maskMain);
+            MicroAPI::LocalMemBar<MicroAPI::MemType::VEC_STORE, MicroAPI::MemType::VEC_STORE>();
 
             for (uint16_t i = 0; i < lastTwoDimLoops; i++) {
                 for (uint16_t j = 0; j < lastSecInDimSize; j++) {
@@ -396,6 +397,8 @@ private:
             MicroAPI::RegTensor<RangeType> tmpScatIdxReg;
             MicroAPI::Arange(indexReg, 0); // b16:0-128; b64:0-32
             MicroAPI::DataCopy(idxAddr, indexReg, maskMain);
+            MicroAPI::LocalMemBar<MicroAPI::MemType::VEC_STORE, MicroAPI::MemType::VEC_STORE>();
+
             MicroAPI::Arange(validReg, beginIdx); // 128 129 ..
             MicroAPI::Arange(scatIdxReg, scatBeginIdx);
             for (uint16_t i = 0; i < lastDimsLeft; i++) {

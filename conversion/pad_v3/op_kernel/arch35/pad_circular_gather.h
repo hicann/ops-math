@@ -421,6 +421,7 @@ private:
             MicroAPI::Arange(lineRange, 0);
             // 先拷出去，防止索引尾部脏数据
             MicroAPI::DataCopy(idxAddr, lineRange, maskIdx);
+            MicroAPI::LocalMemBar<MicroAPI::MemType::VEC_STORE, MicroAPI::MemType::VEC_STORE>();
 
             MicroAPI::Adds(lineRange, lineRange, ((RangeType)-1) * lastLeftPadNum, maskIdx);
             MicroAPI::CompareScalar<RangeType, CMPMODE::LT>(leftMask, lineRange, 0, maskIdx);
@@ -469,6 +470,7 @@ private:
             MicroAPI::Arange(lineRange, 0);
             // 先拷出去，防止索引尾部脏数据
             MicroAPI::DataCopy(idxAddr, lineRange, maskIdx);
+            MicroAPI::LocalMemBar<MicroAPI::MemType::VEC_STORE, MicroAPI::MemType::VEC_STORE>();
 
             MicroAPI::Adds(lineRange, lineRange, ((RangeType)-1) * lastLeftPadNum, maskIdx);
             MicroAPI::CompareScalar<RangeType, CMPMODE::LT>(leftMask, lineRange, 0, maskIdx);
