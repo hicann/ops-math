@@ -78,6 +78,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/adam_apply_one_assign/README.md">adam_apply_one_assign</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>执行 Adam 优化器的一次参数更新，10 输入 3 输出，支持 broadcast。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/add/README.md">add</a></td>
     <td>√</td>
     <td>√</td>
