@@ -31,7 +31,8 @@ set(NEED_COMPILE_OPS "${ASCEND_OP_NAME}" CACHE STRING "Need to be compiled Ops" 
 set(COMPILED_OPS CACHE STRING "Compiled Ops" FORCE)
 set(COMPILED_OP_DIRS CACHE STRING "Compiled Ops Dirs" FORCE)
 
-# kernel compile options
+# kernel source and compile options
+set(KERNEL_SRC_LIST CACHE STRING "kernel source list" FORCE)
 set(SIMPLIFIED_KEY_LIST CACHE STRING "kernel compile simplified key list" FORCE)
 set(IMPL_MODE_LIST CACHE STRING "kernel compile impl mode list" FORCE)
 set(AUTO_SYNC_LIST CACHE STRING "kernel compile auto sync list" FORCE)

@@ -9,7 +9,13 @@
 # ----------------------------------------------------------------------------
 
 add_kernel_sources(
+    KERNEL_SRC arch35/add.cpp
     COMPUTE_UNITS ascend950
     AUTO_SYNC false
     OPTIONS "--cce-simd-vf-fusion=true" "-mllvm -cce-aicore-dcci-before-kernel-end=false"
+)
+
+add_kernel_sources(
+    KERNEL_SRC arch35/add.cpp
+    COMPUTE_UNITS mc62
 )

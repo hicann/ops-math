@@ -784,13 +784,14 @@ endfunction()
 # 1.调用asc_opc 工具 编译二进制kernel时， --simplified_key_mode/--impl_mode 选项中填写的值。
 # 2.调用asc_opc工具 算子名.py 中auto_sync与compile_option中的配置项。
 # 格式如下所示：
+# [KERNEL_SRC op_name.cpp]          算子入口文件，缺省为算子名.cpp
 # [COMPUTE_UNITS ascendxx]          soc版本，支持配置多个unit，缺省为配置所有的soc（支持单独配置soc，单独配置优先级更高）
 # [SIMPLIFIED_KEY 0/None]           缺省为0，最终的编译参数则是--simplified_key_mode=0，若设置为None，则不会携带该参数
 # [AUTO_SYNC false]                 同步选项，缺省为true
 # [IMPL_MODE high_performance]      高性能模式，缺省为high_performance[,optional] [optional]是可选的 
 # [OPTIONS "option1" "option2"]     其他编译选项
 function(add_kernel_sources)
-  set(oneValueArgs SIMPLIFIED_KEY AUTO_SYNC IMPL_MODE)
+  set(oneValueArgs KERNEL_SRC SIMPLIFIED_KEY AUTO_SYNC IMPL_MODE)
   set(multiValueArgs COMPUTE_UNITS OPTIONS)
   cmake_parse_arguments(MODULE "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   
@@ -800,6 +801,14 @@ function(add_kernel_sources)
   set(OP_DIR ${PARENT_DIR})
   set(op_type "")
   get_op_type_from_op_name("${OP_NAME}" op_type)
+
+  set(_kernel_src_provided FALSE)
+  if(NOT MODULE_KERNEL_SRC)
+    set(MODULE_KERNEL_SRC "${OP_NAME}")
+  else()
+    string(REGEX REPLACE "\\.cpp$" "" MODULE_KERNEL_SRC "${MODULE_KERNEL_SRC}")
+    set(_kernel_src_provided TRUE)
+  endif()
 
   set(simplified_key ${MODULE_SIMPLIFIED_KEY})
   set(auto_sync ${MODULE_AUTO_SYNC})
@@ -834,6 +843,10 @@ function(add_kernel_sources)
   endif()
 
   if(NOT MODULE_COMPUTE_UNITS OR "${target_compute_units}" IN_LIST MODULE_COMPUTE_UNITS)
+    if(_kernel_src_provided)
+      list(APPEND KERNEL_SRC_LIST "${op_type} ${target_compute_units} ${MODULE_KERNEL_SRC}")
+      set(KERNEL_SRC_LIST ${KERNEL_SRC_LIST} CACHE INTERNAL "kernel_src")
+    endif()
     list(APPEND SIMPLIFIED_KEY_LIST "${op_type} ${target_compute_units} ${simplified_key}")
     list(APPEND IMPL_MODE_LIST "${op_type} ${target_compute_units} ${impl_mode}")
     set(SIMPLIFIED_KEY_LIST ${SIMPLIFIED_KEY_LIST} CACHE INTERNAL "simplified_key")
