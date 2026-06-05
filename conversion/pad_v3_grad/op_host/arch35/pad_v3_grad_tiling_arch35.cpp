@@ -674,7 +674,7 @@ void PadV3GradACTiling::GetPaddingsToShape(const gert::Tensor* paddingsTensor)
 {
     OP_LOGD(context_, "Start PadV3GradACTiling GetShapeAttrsInfo GetPaddings GetPaddingsToShape.");
     const T* paddingsValue = paddingsTensor->GetData<T>();
-    const size_t paddingsNum = paddingsTensor->GetShapeSize();
+    const size_t paddingsNum = static_cast<size_t>(paddingsTensor->GetShapeSize());
 
     size_t inputDimNum = paddingsNum / PAIR;
     paddings_.padFront.SetDimNum(inputDimNum);
