@@ -59,7 +59,7 @@ constexpr int64_t DIM_FOUR = 4;
 constexpr int64_t DIM_FIVE = 5;
 constexpr int64_t DIM_SIX = 6;
 constexpr int64_t DIM_EIGHT = 8;
-constexpr int64_t TOTAL_UBSIZE = 248 * 1024;
+constexpr int64_t SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102 = 1000000;
 BEGIN_TILING_DATA_DEF(TransposeOpTilingData)
 TILING_DATA_FIELD_DEF(int64_t, permSize);
 TILING_DATA_FIELD_DEF(int64_t, inCutIndex);
