@@ -309,7 +309,7 @@
             ${ASCEND_PATH}/lib64/libnnopbase.so
             ${TARGET_SUBDIR}/op_api/lib/libcust_opapi.so      # 链接自定义算子库文件
         )
-        target_link_options(${op_name}_invocation PRIVATE
+        target_link_options(${test_aclnn_op_name} PRIVATE
             "-Wl,-rpath,${TARGET_SUBDIR}/op_api/lib"
         )
 
@@ -353,14 +353,14 @@
         )
         
 		# 链接所需的动态库（自定义：替换为实际算子可执行文件）
-        target_link_libraries(${op_name}_invocation PRIVATE
+        target_link_libraries(${test_aclnn_op_name} PRIVATE
             ${ASCEND_PATH}/lib64/libascendcl.so
             ${ASCEND_PATH}/lib64/libnnopbase.so
             ${ASCEND_PATH}/lib64/libopapi_math.so            # 链接内置算子库文件
         )
         
 		# 安装目标文件到bin目录（自定义：替换为实际算子可执行文件）  
-        install(TARGETS ${op_name}_invocation DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+        install(TARGETS ${test_aclnn_op_name} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
         ```
     
 4. 创建run.sh文件。

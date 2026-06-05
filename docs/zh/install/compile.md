@@ -99,6 +99,7 @@
     ```bash
     # 编译除experimental目录外的所有算子
     bash build.sh --pkg --soc=${soc_version} [-j${n}]
+    # 如：bash build.sh --pkg --soc=ascend910b -j16
     # 编译experimental目录下的所有算子
     # bash build.sh --pkg --experimental --soc=${soc_version} [-j${n}]
     ```
