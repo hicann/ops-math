@@ -1968,6 +1968,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/xdivy/README.md">xdivy</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>计算 x / y，x == 0 时结果为 0，支持 broadcast。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/xlogy/README.md">xlogy</a></td>
     <td>√</td>
     <td>√</td>
