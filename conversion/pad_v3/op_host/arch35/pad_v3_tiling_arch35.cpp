@@ -264,8 +264,9 @@ void PadACTiling::CalculateTilingKeyReflect()
             outTileSize_ = bufferSize_;
             return TilingInfoTune();
         } else {
-            TilingInfoTuneForNormal(lastShapeSizeAlign, padMode_ == ModeNum::SYMMETRIC ?
-             SYMMETRIC_CUT_LAST_DIM_BRANCH : REFLECT_CUT_LAST_DIM_BRANCH);
+            TilingInfoTuneForNormal(
+                lastShapeSizeAlign,
+                padMode_ == ModeNum::SYMMETRIC ? SYMMETRIC_CUT_LAST_DIM_BRANCH : REFLECT_CUT_LAST_DIM_BRANCH);
         }
     } else {
         bufferSize_ = GetSizeOfBlockAlign(
@@ -275,8 +276,9 @@ void PadACTiling::CalculateTilingKeyReflect()
         tilingKey_ = padMode_ == ModeNum::SYMMETRIC ? SYMMETRIC_SMALL_LAST_DIM_GATHER_BRANCH :
                                                       REFLECT_SMALL_LAST_DIM_GATHER_BRANCH;
         additionTileSize_ = vectorSize_;
-        TilingInfoTuneForNormal(lastShapeSizeAlign, padMode_ == ModeNum::SYMMETRIC ?
-             SYMMETRIC_CUT_LAST_DIM_BRANCH : REFLECT_CUT_LAST_DIM_BRANCH);
+        TilingInfoTuneForNormal(
+            lastShapeSizeAlign,
+            padMode_ == ModeNum::SYMMETRIC ? SYMMETRIC_CUT_LAST_DIM_BRANCH : REFLECT_CUT_LAST_DIM_BRANCH);
     }
 }
 
@@ -296,7 +298,7 @@ bool PadACTiling::CheckTilingInfoSatisfied(PadV3UbTileInfo& tilingInfo)
     bool cutOutput = (padMode_ == ModeNum::CONSTANT || padMode_ == ModeNum::EDGE);
     tilingInfo.ubTotalCnt = Ops::Base::CeilDiv(
         cutOutput ? tilingData_->outShape[tilingInfo.ubSplitAxis] : tilingData_->inShape[tilingInfo.ubSplitAxis],
-         static_cast<uint64_t>(tilingInfo.ubSplitFactor));
+        static_cast<uint64_t>(tilingInfo.ubSplitFactor));
     for (uint64_t i = 0; i < tilingInfo.ubSplitAxis; i++) {
         tilingInfo.ubTotalCnt *= cutOutput ? tilingData_->outShape[i] : tilingData_->inShape[i];
     }
@@ -336,8 +338,9 @@ void PadACTiling::GetOptimizeTiling(const PadV3UbTileInfo& oldTilingInfo, PadV3U
             outCount *= cutOutput ? tilingData_->outShape[iDim - 1] : tilingData_->inShape[iDim - 1];
         }
 
-        int64_t iDimFactor =
-            (iDim == oldTilingInfo.ubSplitAxis) ? oldTilingInfo.ubSplitFactor : (cutOutput ? tilingData_->outShape[iDim] : tilingData_->inShape[iDim]);
+        int64_t iDimFactor = (iDim == oldTilingInfo.ubSplitAxis) ?
+                                 oldTilingInfo.ubSplitFactor :
+                                 (cutOutput ? tilingData_->outShape[iDim] : tilingData_->inShape[iDim]);
         for (int64_t factor = iDimFactor; factor > 0;) {
             loops++;
             if (loops > maxLoop) {
@@ -347,14 +350,16 @@ void PadACTiling::GetOptimizeTiling(const PadV3UbTileInfo& oldTilingInfo, PadV3U
             }
 
             // iDimOuter 每次循环会增加1,最多增加 coreNum_ 后，tmpPerCount会增加1
-            int64_t iDimOuter = Ops::Base::CeilDiv(cutOutput ? tilingData_->outShape[iDim] : tilingData_->inShape[iDim], static_cast<uint64_t>(factor));
+            int64_t iDimOuter = Ops::Base::CeilDiv(
+                cutOutput ? tilingData_->outShape[iDim] : tilingData_->inShape[iDim], static_cast<uint64_t>(factor));
             int64_t tmpTotalCount = iDimOuter * outCount;
             int64_t tmpPerCount =
                 tmpTotalCount > coreNum_ ? Ops::Base::CeilDiv(tmpTotalCount, static_cast<int64_t>(coreNum_)) : 1;
             int64_t tmpCoreNum =
                 tmpTotalCount > coreNum_ ? Ops::Base::CeilDiv(tmpTotalCount, tmpPerCount) : tmpTotalCount;
-            int64_t tmpFactor =
-                Ops::Base::CeilDiv(cutOutput ? tilingData_->outShape[iDim] : tilingData_->inShape[iDim], static_cast<uint64_t>(iDimOuter)); // 切分更均匀
+            int64_t tmpFactor = Ops::Base::CeilDiv(
+                cutOutput ? tilingData_->outShape[iDim] : tilingData_->inShape[iDim],
+                static_cast<uint64_t>(iDimOuter)); // 切分更均匀
 
             if (oldTilingInfo.ubPerCoreCnt != tmpPerCount) {
                 OP_LOGD(
@@ -387,7 +392,7 @@ void PadACTiling::GetOptimizeTiling(const PadV3UbTileInfo& oldTilingInfo, PadV3U
             }
             factor = tmpFactor - 1;
         }
-        
+
         OP_LOGD(
             context_, "iDim:%u ubSplitAxis:%u ubSplitFactor:%u loops:%u finded:%d", iDim, newTilingInfo.ubSplitAxis,
             newTilingInfo.ubSplitFactor, loops, finded);
@@ -396,9 +401,10 @@ void PadACTiling::GetOptimizeTiling(const PadV3UbTileInfo& oldTilingInfo, PadV3U
             break;
         }
     }
-    //如果切分轴变化，不是尾轴，且该轴满载，那还是切前一个轴且factor=1
+    // 如果切分轴变化，不是尾轴，且该轴满载，那还是切前一个轴且factor=1
     if (newTilingInfo.ubSplitAxis != dimNum_ - 1 && newTilingInfo.ubSplitAxis > oldTilingInfo.ubSplitAxis &&
-    newTilingInfo.ubSplitFactor >= (cutOutput ? tilingData_->outShape[newTilingInfo.ubSplitAxis] : tilingData_->inShape[newTilingInfo.ubSplitAxis])){
+        newTilingInfo.ubSplitFactor >= (cutOutput ? tilingData_->outShape[newTilingInfo.ubSplitAxis] :
+                                                    tilingData_->inShape[newTilingInfo.ubSplitAxis])) {
         newTilingInfo.ubSplitAxis = newTilingInfo.ubSplitAxis - 1;
         newTilingInfo.ubSplitFactor = 1;
         OP_LOGD(
@@ -475,7 +481,9 @@ void PadACTiling::TilingInfoTuneForNormal(uint64_t lastShapeSizeAlign, uint64_t 
     TilingInfoTune();
     if (ubAxis_ == dimNum_ - 1) {
         tilingKey_ = tilingBranch;
-        additionTileSize_ = (padMode_ == ModeNum::SYMMETRIC || padMode_ == ModeNum::REFLECT) ? EXPANSION_FACTOR * vectorSize_ : vectorSize_ ;
+        additionTileSize_ = (padMode_ == ModeNum::SYMMETRIC || padMode_ == ModeNum::REFLECT) ?
+                                EXPANSION_FACTOR * vectorSize_ :
+                                vectorSize_;
         bufferSize_ = lastShapeSizeAlign;
         outTileSize_ = bufferSize_;
     }
@@ -612,8 +620,7 @@ void PadACTiling::CalculateTilingKey()
     }
     // 不切w，但是倒数第二根轴只能切1，此时也走切W分支
     // 不切w,但是只有一根轴 & w > 128B，也走切w分支
-    if (lastShapeSizeAlign * EXPANSION_FACTOR >
-            bufferSize_ ||
+    if (lastShapeSizeAlign * EXPANSION_FACTOR > bufferSize_ ||
         (tilingData_->outShape[dimNum_ - 1] * dtypeBytes_ > vectorSize_ / HALF_FACTOR && dimNum_ == 1)) {
         ubAxis_ = dimNum_ - 1;
         ubFactor_ = tilingData_->outShape[dimNum_ - 1];
@@ -801,7 +808,10 @@ ge::graphStatus PadACTiling::ComputeAfterPaddingsAndStrides()
         if (static_cast<int64_t>(tilingData_->inShape[i]) + tilingData_->leftPad[i] < 0 ||
             static_cast<int64_t>(tilingData_->inShape[i]) + rightPad_[i] < 0 ||
             static_cast<int64_t>(tilingData_->inShape[i]) + tilingData_->leftPad[i] + rightPad_[i] < 0) {
-            OP_LOGE(context_, "outShape length must be non-negative.");
+            std::string shapeMsg =
+                std::to_string(static_cast<int64_t>(tilingData_->inShape[i]) + tilingData_->leftPad[i] + rightPad_[i]);
+            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+                context_->GetNodeName(), "outShape", shapeMsg.c_str(), "All axes of outShape must be non-negative.");
             return ge::GRAPH_FAILED;
         }
         // compute shape after padding
@@ -821,27 +831,38 @@ ge::graphStatus PadACTiling::CheckModeInputParam(int64_t inShapeV, int64_t padFr
     int64_t leftsubin = padFront - inShapeV;
     int64_t rightsubin = padBack - inShapeV;
     if (padMode_ == ModeNum::REFLECT && (0 < (leftsubin + 1) || 0 < (rightsubin + 1))) {
-        OP_LOGE(
-            context_, "reflect mode padFront:%ld and padBack:%ld cannot be bigger than inShape - 1, inShape:%ld.",
-            padFront, padBack, inShapeV);
+        std::string shapeMsg =
+            std::to_string(padFront) + ", " + std::to_string(padBack) + " and " + std::to_string(inShapeV);
+        std::string reasonMsg = "When the mode is reflect, padFront and padBack must be less than inShape";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context_->GetNodeName(), "padFront, padBack and inShape", shapeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     if (padMode_ == ModeNum::SYMMETRIC && (0 < leftsubin || 0 < rightsubin)) {
-        OP_LOGE(
-            context_, "symmetric mode padFront:%ld and padBack:%ld cannot be bigger than inShape:%ld.", padFront,
-            padBack, inShapeV);
+        std::string shapeMsg =
+            std::to_string(padFront) + ", " + std::to_string(padBack) + " and " + std::to_string(inShapeV);
+        std::string reasonMsg =
+            "When the mode is symmetric, padFront and padBack must be less than or equal to inShape";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context_->GetNodeName(), "padFront, padBack and inShape", shapeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
     if (padMode_ == ModeNum::CIRCULAR && (0 < leftsubin || 0 < rightsubin)) {
-        OP_LOGE(
-            context_, "circular mode padFront:%ld and padBack:%ld cannot be bigger than inShape:%ld.", padFront,
-            padBack, inShapeV);
+        std::string shapeMsg =
+            std::to_string(padFront) + ", " + std::to_string(padBack) + " and " + std::to_string(inShapeV);
+        std::string reasonMsg = "When the mode is circular, padFront and padBack must be less than or equal to inShape";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context_->GetNodeName(), "padFront, padBack and inShape", shapeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
     if (padMode_ == ModeNum::EDGE && inShapeV == 0 && (padFront != 0 || padBack != 0)) {
-        OP_LOGE(context_, "When inShape == 0, edge mode padFront:%ld and padBack:%ld must be 0.", padFront, padBack);
+        std::string shapeMsg =
+            std::to_string(padFront) + ", " + std::to_string(padBack) + " and " + std::to_string(inShapeV);
+        std::string reasonMsg = "When the mode is edge and inShape == 0, padFront and padBack must be 0";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context_->GetNodeName(), "padFront, padBack and inShape", shapeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -994,9 +1015,9 @@ ge::graphStatus PadACTiling::GetPaddings()
             return ge::GRAPH_SUCCESS;
         }
         default:
-            OP_LOGE(
-                context_, "Paddings only support [int32, int64]. but is %s",
-                Ops::Base::ToString(paddingsDtype).c_str());
+            std::string reasonMsg = "The dtype of paddings must be within the range [int32, int64].";
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+                context_->GetNodeName(), "paddings", Ops::Base::ToString(paddingsDtype).c_str(), reasonMsg.c_str());
     }
     return ge::GRAPH_FAILED;
 }
@@ -1010,12 +1031,17 @@ ge::graphStatus PadACTiling::GetShapesAndDtypes()
     auto const inShapeVal = inShape->GetStorageShape();
     dimNum_ = inShapeVal.GetDimNum();
     if (dimNum_ > MAX_DIM_NUM) {
-        OP_LOGE(context_, "input shape dim should <= 8, please check.");
+        std::string reasonMsg = "The shape dim of input must be within the range [0, 8].";
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+            context_->GetNodeName(), "input", std::to_string(dimNum_).c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     for (uint16_t i = 0; i < dimNum_; ++i) {
         if (inShapeVal.GetDim(i) < 0) {
-            OP_LOGE(context_, "Input shape should >= 0, please check");
+            std::string reasonMsg = "All dimensions of input must be greater than or equal to 0.";
+            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+                context_->GetNodeName(), "input", std::to_string(inShapeVal.GetDim(i)).c_str(), reasonMsg.c_str());
+
             return ge::GRAPH_FAILED;
         }
         if (inShapeVal.GetDim(i) == 0) {
@@ -1031,13 +1057,14 @@ ge::graphStatus PadACTiling::GetShapesAndDtypes()
     if (isPadV3_ && padMode_ == ModeNum::CONSTANT) {
         auto inConstantValues = context_->GetInputDesc(PAIR);
         if (inConstantValues && paramsDtype_ != inConstantValues->GetDataType()) {
-            OP_LOGE(
-                context_, "DataType of constant_values:%s must equal inputData's DataType:%s.",
-                Ops::Base::ToString(inConstantValues->GetDataType()).c_str(),
-                Ops::Base::ToString(paramsDtype_).c_str());
+            std::string paramMsg =
+                Ops::Base::ToString(inConstantValues->GetDataType()) + " and " + Ops::Base::ToString(paramsDtype_);
+            std::string reasonMsg = "The dtype of constant_values must be the same as the dtype of input.";
+            OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+                context_->GetNodeName(), "constant_values and input", paramMsg.c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
-        if(paramsDtype_ == ge::DT_FLOAT4_E1M2 || paramsDtype_ == ge::DT_FLOAT4_E2M1) {
+        if (paramsDtype_ == ge::DT_FLOAT4_E1M2 || paramsDtype_ == ge::DT_FLOAT4_E2M1) {
             dtypeBytes_ = GetSizeByDataType(ge::DT_INT8);
         }
     }
@@ -1062,19 +1089,27 @@ ge::graphStatus PadACTiling::GetShapeAttrsInfo()
             } else if (!strcmp(mode, "circular")) {
                 padMode_ = ModeNum::CIRCULAR;
             }
-            OP_CHECK_IF(
-                !isMirrorPad_ && strcmp(mode, "constant") != 0 && strcmp(mode, "edge") != 0 &&
-                    strcmp(mode, "reflect") != 0 && strcmp(mode, "symmetric") != 0 && strcmp(mode, "circular") != 0,
-                OP_LOGE(context_, "PadV3 only support constant/edge/reflect/symmetric/circular mode."),
-                return ge::GRAPH_FAILED);
-            OP_CHECK_IF(
-                isMirrorPad_ && strcmp(mode, "REFLECT") != 0 && strcmp(mode, "SYMMETRIC") != 0,
-                OP_LOGE(context_, "MirrorPad only support REFLECT and SYMMETRIC mode."), return ge::GRAPH_FAILED);
+            if (!isMirrorPad_ && strcmp(mode, "constant") != 0 && strcmp(mode, "edge") != 0 &&
+                strcmp(mode, "reflect") != 0 && strcmp(mode, "symmetric") != 0 && strcmp(mode, "circular") != 0) {
+                std::string reasonMsg = "The value of mode must be in [constant, edge, reflect, symmetric, circular].";
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                    context_->GetNodeName(), "mode", std::string(mode).c_str(), reasonMsg.c_str());
+                return ge::GRAPH_FAILED;
+            }
+            if (isMirrorPad_ && strcmp(mode, "REFLECT") != 0 && strcmp(mode, "SYMMETRIC") != 0) {
+                std::string reasonMsg = "The value of mode must be in [REFLECT and SYMMETRIC].";
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                    context_->GetNodeName(), "mode", std::string(mode).c_str(), reasonMsg.c_str());
+                return ge::GRAPH_FAILED;
+            }
         } else {
-            OP_CHECK_IF(
-                isMirrorPad_, OP_LOGE(context_, "MirrorPad mode attr cannot be empty"), return ge::GRAPH_FAILED);
+            if (isMirrorPad_) {
+                std::string reasonMsg = "The value of mode cannot be empty.";
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                    context_->GetNodeName(), "mode", std::string(mode).c_str(), reasonMsg.c_str());
+                return ge::GRAPH_FAILED;
+            }
         }
-
         if (!isMirrorPad_) {
             auto* paddingContiguous = attrs->GetAttrPointer<bool>(1);
             if (paddingContiguous) {
@@ -1082,7 +1117,6 @@ ge::graphStatus PadACTiling::GetShapeAttrsInfo()
             }
         }
     }
-
     OP_CHECK_IF(
         GetShapesAndDtypes() == ge::GRAPH_FAILED,
         OP_LOGE(context_, "PadACTiling GetShapeAttrsInfo GetShapesAndDtypes error."), return ge::GRAPH_FAILED);
@@ -1144,16 +1178,25 @@ ge::graphStatus PadACTiling::Fp8Fp4ValidatePaddings()
     for (size_t i = 0; i < frontDimNum; ++i) {
         int64_t frontValue = paddings_.padFront.GetDim(i);
         if (frontValue < 0) {
-            OP_LOGE(context_, "Fp8Fp4ValidatePaddings padFront contains negative value at index %zu: %ld", i, frontValue);
+            std::string paramMsg = "padFront at index " + std::to_string(i);
+            std::string reasonMsg =
+                "When the dtype is fp4 or fp8, each value of paddings must be greater than or equal to 0.";
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                context_->GetNodeName(), paramMsg.c_str(), std::to_string(frontValue).c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
     }
-
     size_t backDimNum = paddings_.padBack.GetDimNum();
     for (size_t i = 0; i < backDimNum; ++i) {
         int64_t backValue = paddings_.padBack.GetDim(i);
         if (backValue < 0) {
-            OP_LOGE(context_, "Fp8Fp4ValidatePaddings padBack contains negative value at index %zu: %ld", i, backValue);
+            std::string paramMsg = "backValue at index " + std::to_string(i);
+            std::string reasonMsg =
+                "When the dtype is fp4 or fp8, each value of paddings must be greater than or equal to 0.";
+
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                context_->GetNodeName(), paramMsg.c_str(), std::to_string(backValue).c_str(), reasonMsg.c_str());
+
             return ge::GRAPH_FAILED;
         }
     }
@@ -1164,8 +1207,11 @@ ge::graphStatus PadACTiling::Fp4ValidateInShape()
 {
     OP_LOGD(context_, "Start PadACTiling Fp4ValidateInShape.");
     // fp4 输入数据类型时，输入数据的最后一维度shape为偶数
-    if (tilingData_->inShape[dimNum_ - 1] % 2 != 0){
-        OP_LOGE(context_, "Fp4 input dimension is not even number, please check");
+    if (tilingData_->inShape[dimNum_ - 1] % 2 != 0) {
+        std::string reasonMsg = "When the dtype is fp4, the last axis of input must be an even number.";
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            context_->GetNodeName(), "input", std::to_string(tilingData_->inShape[dimNum_ - 1]).c_str(),
+            reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -1178,17 +1224,22 @@ ge::graphStatus PadACTiling::Fp4ValidatePaddings()
     size_t frontDimNum = paddings_.padFront.GetDimNum();
     int64_t frontValue = paddings_.padFront.GetDim(frontDimNum - 1);
     if (frontValue % 2 != 0) {
-        OP_LOGE(context_, "Fp4ValidatePaddings padFront last dimension is not even: %ld", frontValue);
+        std::string paramMsg = "the last axis of padFront";
+        std::string reasonMsg = "When the dtype is fp4, the last axis of padFront must be an even number.";
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            context_->GetNodeName(), paramMsg.c_str(), std::to_string(frontValue).c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
     size_t backDimNum = paddings_.padBack.GetDimNum();
     int64_t backValue = paddings_.padBack.GetDim(backDimNum - 1);
     if (backValue % 2 != 0) {
-        OP_LOGE(context_, "Fp4ValidatePaddings padBack last dimension is not even: %ld", backValue);
+        std::string paramMsg = "the last axis of padBack";
+        std::string reasonMsg = "When the dtype is fp4, the last axis of padBack must be an even number.";
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            context_->GetNodeName(), paramMsg.c_str(), std::to_string(backValue).c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
-
     return ge::GRAPH_SUCCESS;
 }
 
@@ -1280,28 +1331,25 @@ ge::graphStatus PadACTiling::DoTilingModeCircular()
 
 ge::graphStatus PadACTiling::DoTilingModeConstant()
 {
-    if (paramsDtype_ == ge::DT_HIFLOAT8 ||
-        paramsDtype_ == ge::DT_FLOAT8_E5M2 ||
-        paramsDtype_ == ge::DT_FLOAT8_E4M3FN ||
-        paramsDtype_ == ge::DT_FLOAT8_E8M0 ||
-        paramsDtype_ == ge::DT_FLOAT4_E2M1 ||
+    if (paramsDtype_ == ge::DT_HIFLOAT8 || paramsDtype_ == ge::DT_FLOAT8_E5M2 || paramsDtype_ == ge::DT_FLOAT8_E4M3FN ||
+        paramsDtype_ == ge::DT_FLOAT8_E8M0 || paramsDtype_ == ge::DT_FLOAT4_E2M1 ||
         paramsDtype_ == ge::DT_FLOAT4_E1M2) {
-            // fp8/fp4 输入数据类型时，pad数组中不能有负数
-            OP_CHECK_IF(Fp8Fp4ValidatePaddings() == ge::GRAPH_FAILED,
-                OP_LOGE(context_, "PadACTiling Fp8Fp4ValidatePaddings error."), 
-                return ge::GRAPH_FAILED);
+        // fp8/fp4 输入数据类型时，pad数组中不能有负数
+        OP_CHECK_IF(
+            Fp8Fp4ValidatePaddings() == ge::GRAPH_FAILED,
+            OP_LOGE(context_, "PadACTiling Fp8Fp4ValidatePaddings error."), return ge::GRAPH_FAILED);
     }
     OP_CHECK_IF(
         DimensionCollapse() == ge::GRAPH_FAILED, OP_LOGE(context_, "PadACTiling Constant Collapse error."),
         return ge::GRAPH_FAILED);
     if (paramsDtype_ == ge::DT_FLOAT4_E2M1 || paramsDtype_ == ge::DT_FLOAT4_E1M2) {
         // fp4 输入数据类型时，输入数据的最后一维shape为偶数
-        OP_CHECK_IF(Fp4ValidateInShape() == ge::GRAPH_FAILED,
-            OP_LOGE(context_, "PadACTiling Fp4ValidateInShape error."), 
+        OP_CHECK_IF(
+            Fp4ValidateInShape() == ge::GRAPH_FAILED, OP_LOGE(context_, "PadACTiling Fp4ValidateInShape error."),
             return ge::GRAPH_FAILED);
         // fp4 时，左右pad的padding num为偶数，最后一维
-        OP_CHECK_IF(Fp4ValidatePaddings() == ge::GRAPH_FAILED,
-            OP_LOGE(context_, "PadACTiling Fp4ValidatePaddings error."), 
+        OP_CHECK_IF(
+            Fp4ValidatePaddings() == ge::GRAPH_FAILED, OP_LOGE(context_, "PadACTiling Fp4ValidatePaddings error."),
             return ge::GRAPH_FAILED);
         // 尾轴//2
         Fp4TilingData();
@@ -1352,19 +1400,15 @@ ge::graphStatus PadACTiling::DoTiling()
             DoTilingModeConstant() == ge::GRAPH_FAILED, OP_LOGE(context_, "DoTilingModeConstant failed."),
             return ge::GRAPH_FAILED);
     }
-
     if (isUseSlice_) {
         return ge::GRAPH_SUCCESS;
     }
-
     FillsAndPrintTilingData();
     context_->SetBlockDim(coreNum_);
     context_->SetTilingKey(tilingKey_);
-
     size_t* workspaces = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, workspaces);
     workspaces[0] = SYS_WORK_SPACE_SIZE;
-
     OP_LOGD(context_, "Exit PadACTiling DoTiling.");
     return ge::GRAPH_SUCCESS;
 }
