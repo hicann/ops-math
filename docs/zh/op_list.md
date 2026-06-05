@@ -2008,6 +2008,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/xlog1py/README.md">xlog1py</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>计算 x * log(1 + y)，当 x == 0 时结果为 0。支持 broadcast。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/zero_op/README.md">zeros_like</a></td>
     <td>√</td>
     <td>√</td>

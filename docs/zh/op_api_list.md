@@ -320,6 +320,7 @@
 | [aclnnVar](../../math/reduce_var/docs/aclnnVar.md)  | 返回输入Tensor指定维度的值求得的方差。                       | 默认确定性实现| 默认确定性实现|
 | [aclnnVarCorrection](../../math/reduce_var/docs/aclnnVarCorrection.md)              | 返回输入Tensor指定维度的值求得的方差。                      | 默认确定性实现| 默认确定性实现  |
 | [aclnnVarMean](../../math/reduce_var/docs/aclnnVarMean.md)      | 返回输入Tensor指定维度的值求得的均值及方差。                 | 默认确定性实现| 默认确定性实现|
+| [aclnnXlog1py](../../math/xlog1py/docs/aclnnXlog1py.md) | 计算 x * log(1 + y)，当 x == 0 时结果为 0。支持 broadcast。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnXLogYScalarOther&aclnnInplaceXLogYScalarOther](../../math/x_log_y/docs/aclnnXLogYScalarOther&aclnnInplaceXLogYScalarOther.md) | 计算self * log(other)的结果。                                | 默认确定性实现| - |
 | [aclnnXLogYScalarSelf](../../math/x_log_y/docs/aclnnXLogYScalarSelf.md) | 计算self * log(other)的结果。                                | 默认确定性实现| - |
 | [aclnnXLogYTensor&aclnnInplaceXLogYTensor](../../math/x_log_y/docs/aclnnXLogYTensor&aclnnInplaceXLogYTensor.md) | 计算self * log(other)的结果。                                | 默认确定性实现| - |
