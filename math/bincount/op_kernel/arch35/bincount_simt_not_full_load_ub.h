@@ -66,7 +66,7 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void UbSimtComputeWithWei
         if (arrayValue >= currentLoopMinAddr && arrayValue < currentLoopMaxAddr) {
             // Calculate the weight of array value by accumulation in ub.
             int64_t arrayOffset = arrayValue - currentLoopMinAddr;
-            asc_atomic_add(yLocalAddr + arrayValue, weightGmAddr[arrayAicoreOffset + index]);
+            asc_atomic_add(yLocalAddr + arrayOffset, weightGmAddr[arrayAicoreOffset + index]);
         }
     }
 }
