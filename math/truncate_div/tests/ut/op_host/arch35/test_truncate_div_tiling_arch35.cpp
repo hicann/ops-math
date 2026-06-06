@@ -180,3 +180,50 @@ TEST_F(TruncateDivTilingTest, truncate_div_bf16_scalar_5)
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
+
+TEST_F(TruncateDivTilingTest, test_ez0020_scalar_dtype_int32)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    
+    std::vector<int32_t> x2 = {4};
+    gert::TilingContextPara tilingContextPara(
+        "TruncateDiv",
+        {
+            {{{8, 128}, {8, 128}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND, true, x2.data()},
+        },
+        {
+            {{{8, 128}, {8, 128}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        &compileInfo);
+
+    uint64_t expectTilingKey = 0;
+    std::vector<size_t> expectWorkspaces = {0};
+
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+}
+
+TEST_F(TruncateDivTilingTest, test_ez0021_dtype_combination_double)
+{
+    BroadcastCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+
+    gert::TilingContextPara tilingContextPara(
+        "TruncateDiv",
+        {
+            {{{8, 128}, {8, 128}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+            {{{8, 128}, {8, 128}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+        },
+        {
+            {{{8, 128}, {8, 128}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+        },
+        &compileInfo);
+
+    uint64_t expectTilingKey = 0;
+    std::vector<size_t> expectWorkspaces = {0};
+    
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
+}

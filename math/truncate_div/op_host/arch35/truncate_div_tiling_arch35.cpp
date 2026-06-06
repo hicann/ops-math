@@ -71,10 +71,7 @@ ge::graphStatus TruncateDivTiling::GetConstData(uint32_t inputIdx, T& data)
     auto tensor = context_->GetInputTensor(inputIdx);
     OP_CHECK_NULL_WITH_CONTEXT(context_, tensor);
     const T* value = tensor->GetData<T>();
-    if (value == nullptr) {
-        OP_LOGE(context_->GetNodeName(), "const tensor is null.");
-        return ge::GRAPH_FAILED;
-    }
+    OP_CHECK_NULL_WITH_CONTEXT(context_, value);
     data = value[0];
     OP_LOGI(context_->GetNodeName(), "scalarData %f", data);
     return ge::GRAPH_SUCCESS;
@@ -133,9 +130,10 @@ ge::graphStatus TruncateDivTiling::DoOpTiling()
                 break;
             }
             default:
-                OP_LOGE(
-                    context_->GetNodeName(), "Unsupported scalar type for reciprocal: %s",
-                    ge::TypeUtils::DataTypeToSerialString(x2DType).c_str());
+                OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+                    context_->GetNodeName(),
+                    "x2", ToString(x2DType).c_str(),
+                    "The dtype of x2 must be within the range DT_FLOAT, DT_FLOAT16 and DT_BF16");
                 return ge::GRAPH_FAILED;
         }
         if (!success) {
@@ -215,10 +213,12 @@ ge::graphStatus TruncateDivTiling::DoOpTiling()
     } else if (x1DType == ge::DT_INT32 && x2DType == ge::DT_FLOAT) {
         execTiling.template operator()<TruncateDivOp::TruncateDivIntToFloat<int32_t, float, float>::OpDag>(false);
     } else {
-        OP_LOGE(
-            context_->GetNodeName(), "Unsupported dtype combination: self=%s, other=%s",
-            ge::TypeUtils::DataTypeToSerialString(x1DType).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(x2DType).c_str());
+        std::string errorDtype = ToString(x1DType) + ", " + ToString(x2DType);
+        std::string errorMsg = std::string("The dtypes of these parameters support only the following combinations: ") +
+            "((DT_FLOAT16, DT_FLOAT), (DT_FLOAT16, DT_BF16), all DT_FLOAT, (DT_FLOAT, DT_INT32), (DT_FLOAT, DT_FLOAT16), " +
+            "all DT_INT8, all DT_UINT8, all DT_INT16, all DT_INT32, all DT_INT64 and (DT_INT32, DT_FLOAT))";    
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            context_->GetNodeName(), "x1, x2", errorDtype.c_str(), errorMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -256,7 +256,7 @@ ge::graphStatus TruncateDivTiling::GetPlatformInfo()
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo == nullptr) {
         auto compileInfoPtr = reinterpret_cast<const BroadcastCompileInfo*>(context_->GetCompileInfo());
-        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_, "compile info is null"), return ge::GRAPH_FAILED);
+        OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfoPtr);
         ubSize_ = compileInfoPtr->ubSize;
         OP_LOGD(context_->GetNodeName(), "Get ubSize form compileInfo is: %ld", ubSize_);
     } else {
@@ -272,10 +272,7 @@ ge::graphStatus TruncateDivTiling::GetPlatformInfo()
 ge::graphStatus TilingForTruncateDiv(gert::TilingContext* context)
 {
     OP_LOGD("TruncateDivTiling", "Enter TilingForTruncateDiv");
-    if (context == nullptr) {
-        OP_LOGE("TruncateDivTiling", "Tiling context is nullptr");
-        return ge::GRAPH_FAILED;
-    }
+    OP_CHECK_NULL_WITH_CONTEXT(context, context);
 
     auto compileInfo = reinterpret_cast<const BroadcastCompileInfo*>(context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);

@@ -46,7 +46,7 @@ ge::graphStatus SincTiling::SetTilingData()
     auto platformInfo = tilingContext->GetPlatformInfo();
     if (platformInfo == nullptr) {
         auto compileInfoPtr = tilingContext->GetCompileInfo<SincCompileInfo>();
-        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(tilingContext, "compile info is null"), return ge::GRAPH_FAILED);
+        OP_CHECK_NULL_WITH_CONTEXT(tilingContext, compileInfoPtr);
         ubSize = compileInfoPtr->ubSize;
     } else {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
@@ -66,10 +66,10 @@ ge::graphStatus SincTiling::CalcInputDtype()
     this->inputDtype = inputDesc->GetDataType();
     OP_CHECK_IF(
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT,
-        OP_LOGE(
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
             tilingContext->GetNodeName(),
-            "input x dtype [%s] not supported, only support [DT_FLOAT16, DT_BF16, DT_FLOAT]",
-            ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str()),
+            "x", ToString(this->inputDtype).c_str(),
+            "The dtype of x must be within the range DT_FLOAT16, DT_BF16 and DT_FLOAT"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -86,7 +86,9 @@ ge::graphStatus SincTiling::CheckShape()
     const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
-        inputYShape != outputZShape, OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),
+        inputYShape != outputZShape,
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(tilingContext->GetNodeName(),
+            "y", ToString(outputZShape).c_str(), "The shape of y must be equal to the shape of x"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -97,9 +99,14 @@ ge::graphStatus SincTiling::CalcOutputDtype()
     auto outputDesc = tilingContext->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
-    OP_CHECK_IF(
-        this->outputDtype != this->inputDtype,
-        OP_LOGE(tilingContext->GetNodeName(), "output y dtype not same as input x"), return ge::GRAPH_FAILED);
+    if (this->outputDtype != this->inputDtype) {
+        std::string errorMsg = "The dtype of y must be the same as " + ToString(this->inputDtype) + " of x";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            tilingContext->GetNodeName(), "y",
+            ToString(this->outputDtype).c_str(),
+            errorMsg.c_str());
+        return ge::GRAPH_FAILED;    
+    }
     return ge::GRAPH_SUCCESS;
 }
 
@@ -109,15 +116,10 @@ ge::graphStatus SincTiling::RunTiling()
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     tiling = tilingContext->GetTilingData<SincNs::SincTilingData>();
 
-    OP_CHECK_IF(tiling == nullptr, OP_LOGE(tilingContext, "get tiling failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tiling);
+    if (CalcInputDtype() == ge::GRAPH_FAILED || CalcOutputDtype() == ge::GRAPH_FAILED || CheckShape() == ge::GRAPH_FAILED) {
+        return ge::GRAPH_FAILED;
+    }
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     if (this->outputDtype == ge::DT_FLOAT16) {
@@ -133,12 +135,17 @@ ge::graphStatus SincTiling::RunTiling()
         baseTilingResult = elewiseBaseTiling.DoTiling<SincOp::SincDAG<float>::OpDag>(
             tiling->baseTiling, ASCEND_API_BUFFER + DCACHE_SIZE);
     } else {
-        OP_LOGE(tilingContext->GetNodeName(), "output dtype not support");
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            tilingContext->GetNodeName(),
+            "y",
+            ToString(this->outputDtype).c_str(),
+            "The dtype of y must be within the range DT_FLOAT16, DT_BF16 and DT_FLOAT");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(
-        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
-        return ge::GRAPH_FAILED);
+
+    if (baseTilingResult == ge::GRAPH_FAILED) {
+        return ge::GRAPH_FAILED;
+    }
 
     return SetTilingData();
 }

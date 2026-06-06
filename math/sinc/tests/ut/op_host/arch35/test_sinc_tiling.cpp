@@ -226,3 +226,14 @@ TEST_F(SincTilingTest, test_tiling_large_shape_fp16_016)
     std::vector<size_t> expectedWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
+
+TEST_F(SincTilingTest, test_ez0020_output_dtype_int32)
+{
+    optiling::SincCompileInfo compileInfo = {64, 262144};
+    gert::StorageShape shape = {{1, 64, 2, 32}, {1, 64, 2, 32}};
+    gert::TilingContextPara tilingContextPara(
+        "Sinc", {{shape, ge::DT_INT32, ge::FORMAT_ND}}, {{shape, ge::DT_INT32, ge::FORMAT_ND}}, &compileInfo);
+    uint64_t expectedTilingKey = 0;
+    std::vector<size_t> expectedWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
+}
