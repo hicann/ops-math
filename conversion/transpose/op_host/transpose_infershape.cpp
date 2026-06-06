@@ -38,7 +38,10 @@ static bool TransposeInferCommon(
         for (size_t i = 0; i < inputDimSize; ++i) {
             OP_CHECK_IF(
                 !IsDimValid(inputDimSize, permValue[i]),
-                OP_LOGE(context->GetNodeName(), "%s", GenInvalidDimMsg("perm", i, inputDimSize, permValue[i]).c_str()),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                    context->GetNodeName(), "perm", std::to_string(permValue[i]).c_str(),
+                    "Each value of perm must be in the range of [-xShapeDimNum, xShapeDimNum - 1]."
+                    " The value of perm depends on the number of shape axes of x"),
                 return false);
             T permV = permValue[i] < 0 ? permValue[i] + inputDimSize : permValue[i];
             yShape->SetDim(i, xShape->GetDim(permV));
@@ -76,7 +79,6 @@ static ge::graphStatus TransposeInferShape(gert::InferShapeContext* context)
         case ge::DT_INT32: {
             const int32_t* permValue = permTensor->GetData<int32_t>();
             if (!TransposeInferCommon(context, xShape, permValue, yShape)) {
-                OP_LOGE(context->GetNodeName(), "do transpose infershape failed");
                 return ge::GRAPH_FAILED;
             }
             break;
@@ -84,7 +86,6 @@ static ge::graphStatus TransposeInferShape(gert::InferShapeContext* context)
         case ge::DT_INT64: {
             const int64_t* permValue = permTensor->GetData<int64_t>();
             if (!TransposeInferCommon(context, xShape, permValue, yShape)) {
-                OP_LOGE(context->GetNodeName(), "do transpose infershape failed");
                 return ge::GRAPH_FAILED;
             }
             break;

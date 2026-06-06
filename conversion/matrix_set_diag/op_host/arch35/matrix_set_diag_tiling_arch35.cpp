@@ -16,7 +16,6 @@
 #include "platform/platform_ascendc.h"
 #include "util/platform_util.h"
 #include "util/math_util.h"
-#include "op_host/input_util.h"
 #include "exe_graph/runtime/runtime_attrs.h"
 
 namespace optiling {

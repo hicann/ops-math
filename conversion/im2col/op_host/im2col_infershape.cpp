@@ -48,7 +48,7 @@ static ge::graphStatus InferShape4Im2colCalcOut(
     const std::array<int64_t, 2>& ksizes, const std::array<int64_t, 2>& strides,
     const std::array<int64_t, 2>& dilations, const std::string_view paddingMode)
 {
-    auto [ret, shapeNCHW] = Ops::Math::GetImgDataDimsByNCHWOrder(context, *shapeIn, dataFormat);
+    auto [ret, shapeNCHW] = Ops::Math::GetImgDataDimsByNCHWOrder(context, "x", *shapeIn, dataFormat);
     OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(context, "Get input shape failed"), return ret);
 
     auto [inN, inC, inH, inW] = shapeNCHW;
@@ -65,8 +65,8 @@ static ge::graphStatus InferShape4Im2colCalcOut(
     if (paddingMode == "CALCULATED") {
         // Get attr pads
         auto attrPads = context->GetAttrs()->GetListInt(ATTR_IDX_PADS);
-        auto [ret4, pads] =
-            Ops::Math::UnpackAdaptDimListIntAttr<4>(context, "pads", attrPads, [](int64_t val) { return val >= 0; });
+        auto [ret4, pads] = Ops::Math::UnpackAdaptDimListIntAttr<4>(
+            context, "pads", attrPads, [](int64_t val) { return val >= 0; }, "The value of pads cannot be negative");
         OP_CHECK_IF(ret4 != ge::GRAPH_SUCCESS, OP_LOGE(context, "pads check failed"), return ret4);
         outH = (inH == -1) ? -1 : (inH + pads[0] + pads[1] - effectiveH) / strideH + 1;
         outW = (inW == -1) ? -1 : (inW + pads[2] + pads[3] - effectiveW) / strideW + 1;
@@ -112,20 +112,21 @@ static graphStatus InferShape4Im2col(gert::InferShapeContext* context)
 
     // Get attr ksizes
     auto attrKsizes = attrs->GetListInt(ATTR_IDX_KSIZE);
-    auto [ret1, ksizes] =
-        Ops::Math::UnpackFixedDimListIntAttr<2>(context, "ksizes", attrKsizes, [](int64_t val) { return val > 0; });
+    auto [ret1, ksizes] = Ops::Math::UnpackFixedDimListIntAttr<2>(
+        context, "ksizes", attrKsizes, [](int64_t val) { return val > 0; }, "The value of ksizes must be positive");
     OP_CHECK_IF(ret1 != ge::GRAPH_SUCCESS, OP_LOGE(context, "ksizes check failed"), return ret1);
 
     // Get attr strides
     auto attrStrides = attrs->GetListInt(ATTR_IDX_STRIDES);
-    auto [ret2, strides] =
-        Ops::Math::UnpackAdaptDimListIntAttr<2>(context, "strides", attrStrides, [](int64_t val) { return val > 0; });
+    auto [ret2, strides] = Ops::Math::UnpackAdaptDimListIntAttr<2>(
+        context, "strides", attrStrides, [](int64_t val) { return val > 0; }, "The value of strides must be positive");
     OP_CHECK_IF(ret2 != ge::GRAPH_SUCCESS, OP_LOGE(context, "strides check failed"), return ret2);
 
     // Get attr dilations
     auto attrDilations = attrs->GetListInt(ATTR_IDX_DILATIONS);
     auto [ret3, dilations] = Ops::Math::UnpackAdaptDimListIntAttr<2>(
-        context, "dilations", attrDilations, [](int64_t val) { return val > 0; });
+        context, "dilations", attrDilations, [](int64_t val) { return val > 0; },
+        "The value of dilations must be positive");
     OP_CHECK_IF(ret3 != ge::GRAPH_SUCCESS, OP_LOGE(context, "dilations check failed"), return ret3);
 
     // Get attr padding_mode

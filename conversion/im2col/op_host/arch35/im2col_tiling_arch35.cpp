@@ -107,7 +107,7 @@ private:
     gert::TilingContext* context_;
 
 public:
-    explicit Im2ColTiling(gert::TilingContext* context) : context_(context) {};
+    explicit Im2ColTiling(gert::TilingContext* context) : context_(context){};
     ~Im2ColTiling();
 
     ge::graphStatus DoTiling();
@@ -257,21 +257,24 @@ ge::graphStatus Im2ColTiling::CheckKSizes(const gert::RuntimeAttrs* attrs)
 {
     auto ksizes = attrs->GetListInt(ATTR_IDX_KSIZES);
     return Ops::Math::UnpackFixedDimListIntAttr<ATTR_CNT_KSIZES>(
-        context_, "ksizes", ksizes, [](int64_t v) { return v > 0; }, input_.hKernelSize, input_.wKernelSize);
+        context_, "ksizes", ksizes, [](int64_t v) { return v > 0; }, "The value of ksizes must be positive",
+        input_.hKernelSize, input_.wKernelSize);
 }
 
 ge::graphStatus Im2ColTiling::CheckStrides(const gert::RuntimeAttrs* attrs)
 {
     auto strides = attrs->GetListInt(ATTR_IDX_STRIDES);
     return Ops::Math::UnpackAdaptDimListIntAttr<ATTR_CNT_STRIDES>(
-        context_, "strides", strides, [](int64_t v) { return v > 0; }, input_.hStride, input_.wStride);
+        context_, "strides", strides, [](int64_t v) { return v > 0; }, "The value of strides must be positive",
+        input_.hStride, input_.wStride);
 }
 
 ge::graphStatus Im2ColTiling::CheckDilations(const gert::RuntimeAttrs* attrs)
 {
     auto dilations = attrs->GetListInt(ATTR_IDX_DILATIONS);
     auto ret = Ops::Math::UnpackAdaptDimListIntAttr<ATTR_CNT_DILATIONS>(
-        context_, "dilations", dilations, [](int64_t v) { return v > 0; }, input_.hDilation, input_.wDilation);
+        context_, "dilations", dilations, [](int64_t v) { return v > 0; }, "The value of dilations must be positive",
+        input_.hDilation, input_.wDilation);
     if (unlikely(ret != ge::GRAPH_SUCCESS)) {
         return ret;
     }
@@ -301,8 +304,8 @@ ge::graphStatus Im2ColTiling::CheckPadding(const gert::RuntimeAttrs* attrs)
     if (mode == "CALCULATED") {
         auto pads = attrs->GetListInt(ATTR_IDX_PADS);
         auto ret = Ops::Math::UnpackAdaptDimListIntAttr<4>(
-            context_, "pads", pads, [](int64_t v) { return v >= 0; }, input_.hPaddingBefore, input_.hPaddingAfter,
-            input_.wPaddingBefore, input_.wPaddingAfter);
+            context_, "pads", pads, [](int64_t v) { return v >= 0; }, "The value of pads cannot be negative",
+            input_.hPaddingBefore, input_.hPaddingAfter, input_.wPaddingBefore, input_.wPaddingAfter);
         if (unlikely(ret != ge::GRAPH_SUCCESS)) {
             return ret;
         }
@@ -342,7 +345,7 @@ ge::graphStatus Im2ColTiling::ParamCheck()
     auto storageShape = inputShape->GetStorageShape();
     inputFormat_ = inputValueDesc->GetStorageFormat();
     auto ret = Ops::Math::GetImgDataDimsByNCHWOrder(
-        context_, storageShape, inputFormat_, input_.N, input_.C, input_.H, input_.W);
+        context_, "x", storageShape, inputFormat_, input_.N, input_.C, input_.H, input_.W);
     OP_CHECK_IF(ret == ge::GRAPH_FAILED, OP_LOGE(context_, "Param check failed"), return ge::GRAPH_FAILED);
 
     // 校验属性值是否合法
@@ -611,7 +614,7 @@ ge::graphStatus Im2ColTiling::Tiling4NHWC()
 {
     auto tilingData = context_->GetTilingData<Im2ColNHWCTilingData>();
     uint64_t UB_SIZE_LIMIT = std::min(ubSize_ / NHWC_BUFFER_NUM, NHWC_MIN_BUFFER_SIZE); // 64KB
-    auto remainingElem = static_cast<int64_t>(UB_SIZE_LIMIT / dSize_);                  // 剩余UB元素数，初始为最大值
+    auto remainingElem = static_cast<int64_t>(UB_SIZE_LIMIT / dSize_); // 剩余UB元素数，初始为最大值
 
     int64_t ubfactorAlign[4] = {1, convKernelNumInWidth_, input_.wKernelSize, ubBlockElements_}; // 0:N 1:W 2:Kw 3:C 32b
     int64_t ubfactor[4] = {1, 1, 1, 1}; // 对应索引：0=N 1=HW 2=Kw 3=C，初始全为1

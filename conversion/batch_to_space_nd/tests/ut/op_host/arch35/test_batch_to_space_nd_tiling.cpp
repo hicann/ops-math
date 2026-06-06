@@ -238,6 +238,24 @@ TEST_F(BatchToSpaceNDTilingTest, BatchToSpaceNDTilingTest_ParamCheck_crops_gt_pa
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
+TEST_F(BatchToSpaceNDTilingTest, BatchToSpaceNDTilingTest_ParamCheck_invalid_dtype)
+{
+    std::vector<int32_t> blockShapeValues = {2};
+    std::vector<int32_t> cropsValues = {0, 0};
+    gert::TilingContextPara tilingContextPara(
+        "BatchToSpaceND",
+        {
+            {{{4, 2, 2}, {4, 2, 2}}, ge::DT_UNDEFINED, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, blockShapeValues.data()},
+            {{{1, 2}, {1, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, cropsValues.data()},
+        },
+        {
+            {{{}, {}}, ge::DT_UNDEFINED, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
 TEST_F(BatchToSpaceNDTilingTest, BatchToSpaceNDTilingTest_MergeInput_merge_all_blockshape_3d)
 {
     std::vector<int32_t> blockShapeValues = {1};

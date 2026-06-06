@@ -33,9 +33,34 @@ static constexpr size_t NHWC_DIM_NUM = 4U;
 static constexpr size_t UNPACK_TWO_ATTRS = 2U;
 static constexpr size_t UNPACK_FOUR_ATTRS = 4U;
 
-
 namespace {
 // 内部方法
+
+/**
+ * @brief 检查 ListInt 类型属性的每个元素值
+ * @tparam  T               context类型
+ * @param   [in] context    infershape 或 tiling 上下文
+ * @param   [in] attrName   属性名称
+ * @param   [in] vec        属性vector
+ * @param   [in] elementValidator 元素校验方法，对元素挨个进行校验
+ * @param   [in] invalidValueReason 是无效元素的原因
+ * @return  执行结果，false: 失败，true: 成功
+ */
+template <typename T>
+static inline bool CheckListIntAttrValue(
+    T* context, const char* attrName, const gert::TypedContinuousVector<int64_t>*& vec,
+    const std::function<bool(int64_t)>& elementValidator, const char* invalidValueReason)
+{
+    for (size_t i = 0; i < vec->GetSize(); ++i) {
+        int64_t value = vec->GetData()[i];
+        if (!elementValidator(value)) {
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                context->GetNodeName(), attrName, std::to_string(value).c_str(), invalidValueReason);
+            return false;
+        }
+    }
+    return true;
+}
 
 /**
  * @brief   检查固定长度的 ListInt 类型属性值
@@ -45,27 +70,23 @@ namespace {
  * @param   [in] attrName   属性名称
  * @param   [in] vec        属性vector
  * @param   [in] elementValidator 元素校验方法，对元素挨个进行校验
+ * @param   [in] invalidValueReason 是无效元素的原因
  * @return  执行结果，false: 失败，true: 成功
  */
 template <size_t unpackLen, typename T>
 static inline bool CheckUnpackFixedDimListIntAttr(
     T* context, const char* attrName, const gert::TypedContinuousVector<int64_t>*& vec,
-    std::function<bool(int64_t)> elementValidator)
+    const std::function<bool(int64_t)>& elementValidator, const char* invalidValueReason)
 {
     static_assert(unpackLen > 0, "unpackLen should be positive");
     OP_CHECK_IF(vec == nullptr, OP_LOGE(context, "attr %s is nullptr!", attrName), return false);
     size_t packSize = vec->GetSize();
     OP_CHECK_IF(
         (packSize != unpackLen),
-        OP_LOGE(context, "The size of attr %s must be %lu, but got %lu", attrName, unpackLen, packSize), return false);
-    for (size_t i = 0; i < packSize; ++i) {
-        int64_t value = vec->GetData()[i];
-        if (!elementValidator(value)) {
-            OP_LOGE(context, "The %lu-th element of attr %s is invalid, value: %ld", i, attrName, value);
-            return false;
-        }
-    }
-    return true;
+        OP_LOGE_FOR_INVALID_LISTSIZE(
+            context->GetNodeName(), attrName, std::to_string(packSize).c_str(), std::to_string(unpackLen).c_str()),
+        return false);
+    return CheckListIntAttrValue(context, attrName, vec, elementValidator, invalidValueReason);
 }
 
 /**
@@ -76,34 +97,32 @@ static inline bool CheckUnpackFixedDimListIntAttr(
  * @param   [in] attrName   属性名称
  * @param   [in] vec        属性vector
  * @param   [in] elementValidator 元素校验方法，对元素挨个进行校验
+ * @param   [in] invalidValueReason 是无效元素的原因
  * @return  执行结果，false: 失败，true: 成功
  */
 template <size_t unpackLen, typename T>
 static inline bool CheckUnpackAdaptDimListIntAttr(
     T* context, const char* attrName, const gert::TypedContinuousVector<int64_t>*& vec,
-    std::function<bool(int64_t)> elementValidator)
+    const std::function<bool(int64_t)>& elementValidator, const char* invalidValueReason)
 {
     static_assert(unpackLen > 0, "unpackLen should be positive");
     OP_CHECK_IF(vec == nullptr, OP_LOGE(context, "attr %s is nullptr!", attrName), return false);
     size_t packSize = vec->GetSize();
     if (unlikely(packSize == 0 || packSize > unpackLen || unpackLen % packSize != 0)) {
         if constexpr (unpackLen == UNPACK_TWO_ATTRS) {
-            OP_LOGE(context, "The size of attr %s must be 1 or 2, but got %lu", attrName, packSize);
+            OP_LOGE_FOR_INVALID_LISTSIZE(
+                context->GetNodeName(), attrName, std::to_string(packSize).c_str(), "in [1, 2]");
         } else if constexpr (unpackLen == UNPACK_FOUR_ATTRS) {
-            OP_LOGE(context, "The size of attr %s must be 1, 2 or 4, but got %lu", attrName, packSize);
+            OP_LOGE_FOR_INVALID_LISTSIZE(
+                context->GetNodeName(), attrName, std::to_string(packSize).c_str(), "in [1, 2, 4]");
         } else {
-            OP_LOGE(context, "The size of attr %s must be divisor of %lu, but got %lu", attrName, unpackLen, packSize);
+            OP_LOGE_FOR_INVALID_LISTSIZE(
+                context->GetNodeName(), attrName, std::to_string(packSize).c_str(),
+                ("divisor of " + std::to_string(unpackLen)).c_str());
         }
         return false;
     }
-    for (size_t i = 0; i < packSize; ++i) {
-        int64_t value = vec->GetData()[i];
-        if (!elementValidator(value)) {
-            OP_LOGE(context, "The %lu-th element of attr %s is invalid, value: %ld", i, attrName, value);
-            return false;
-        }
-    }
-    return true;
+    return CheckListIntAttrValue(context, attrName, vec, elementValidator, invalidValueReason);
 }
 
 /**
@@ -137,6 +156,7 @@ static inline void UnsafeUnpackListIntAttr(
  * @param   [in] attrName   属性名称
  * @param   [in] vec        属性vector
  * @param   [in] elementValidator 元素校验方法，对元素挨个进行校验
+ * @param   [in] invalidValueReason 是无效元素的原因
  * @return
  *      - status:   执行结果，GRAPH_FAILED: 失败，GRAPH_SUCCESS: 成功
  *      - result:   解包结果，元素个数为 unpackLen
@@ -144,9 +164,9 @@ static inline void UnsafeUnpackListIntAttr(
 template <size_t unpackLen, typename T>
 static inline std::tuple<ge::graphStatus, std::array<int64_t, unpackLen>> UnpackFixedDimListIntAttr(
     T* context, const char* attrName, const gert::TypedContinuousVector<int64_t>*& vec,
-    std::function<bool(int64_t)> elementValidator)
+    const std::function<bool(int64_t)>& elementValidator, const char* invalidValueReason)
 {
-    if (!CheckUnpackFixedDimListIntAttr<unpackLen>(context, attrName, vec, elementValidator)) {
+    if (!CheckUnpackFixedDimListIntAttr<unpackLen>(context, attrName, vec, elementValidator, invalidValueReason)) {
         return {ge::GRAPH_FAILED, {}};
     }
     std::array<int64_t, unpackLen> value{};
@@ -164,6 +184,7 @@ static inline std::tuple<ge::graphStatus, std::array<int64_t, unpackLen>> Unpack
  * @param   [in] attrName   属性名称
  * @param   [in] vec        属性vector
  * @param   [in] elementValidator 元素校验方法，对元素挨个进行校验
+ * @param   [in] invalidValueReason 是无效元素的原因
  * @return
         - status:   执行结果，GRAPH_FAILED: 失败，GRAPH_SUCCESS: 成功
         - result:   解包结果，元素个数为 unpackLen
@@ -171,9 +192,9 @@ static inline std::tuple<ge::graphStatus, std::array<int64_t, unpackLen>> Unpack
 template <size_t unpackLen, typename T>
 static inline std::tuple<ge::graphStatus, std::array<int64_t, unpackLen>> UnpackAdaptDimListIntAttr(
     T* context, const char* attrName, const gert::TypedContinuousVector<int64_t>*& vec,
-    std::function<bool(int64_t)> elementValidator)
+    const std::function<bool(int64_t)>& elementValidator, const char* invalidValueReason)
 {
-    if (!CheckUnpackAdaptDimListIntAttr<unpackLen>(context, attrName, vec, elementValidator)) {
+    if (!CheckUnpackAdaptDimListIntAttr<unpackLen>(context, attrName, vec, elementValidator, invalidValueReason)) {
         return {ge::GRAPH_FAILED, {}};
     }
     std::array<int64_t, unpackLen> value{};
@@ -194,18 +215,19 @@ static inline std::tuple<ge::graphStatus, std::array<int64_t, unpackLen>> Unpack
  * @param   [in] attrName   属性名称
  * @param   [in] vec        属性vector
  * @param   [in] elementValidator 元素校验方法，对元素挨个进行校验
+ * @param   [in] invalidValueReason 是无效元素的原因
  * @param   [out] args      解包结果，参数个数为 unpackLen
  * @return  执行结果，GRAPH_FAILED: 失败，GRAPH_SUCCESS: 成功
  */
 template <size_t unpackLen, typename T, typename... Args>
 static inline ge::graphStatus UnpackFixedDimListIntAttr(
     T* context, const char* attrName, const gert::TypedContinuousVector<int64_t>*& vec,
-    std::function<bool(int64_t)> elementValidator, Args&... args)
+    const std::function<bool(int64_t)>& elementValidator, const char* invalidValueReason, Args&... args)
 {
     static_assert(unpackLen > 0, "unpackLen should be positive");
     static_assert(sizeof...(Args) == unpackLen, "Number of arguments must match template paremeter unpackLen");
     static_assert((std::is_same_v<Args, int64_t> && ...), "All arguments must be of type int64_t");
-    if (!CheckUnpackFixedDimListIntAttr<unpackLen>(context, attrName, vec, elementValidator)) {
+    if (!CheckUnpackFixedDimListIntAttr<unpackLen>(context, attrName, vec, elementValidator, invalidValueReason)) {
         return ge::GRAPH_FAILED;
     }
     UnsafeUnpackListIntAttr(vec, std::make_index_sequence<unpackLen>{}, args...);
@@ -220,18 +242,19 @@ static inline ge::graphStatus UnpackFixedDimListIntAttr(
  * @param   [in] attrName   属性名称
  * @param   [in] vec        属性vector
  * @param   [in] elementValidator 元素校验方法，对元素挨个进行校验
+ * @param   [in] invalidValueReason 是无效元素的原因
  * @param   [out] args      解包结果，参数个数为 unpackLen
  * @return  执行结果，GRAPH_FAILED: 失败，GRAPH_SUCCESS: 成功
  */
 template <size_t unpackLen, typename T, typename... Args>
 static inline ge::graphStatus UnpackAdaptDimListIntAttr(
     T* context, const char* attrName, const gert::TypedContinuousVector<int64_t>*& vec,
-    std::function<bool(int64_t)> elementValidator, Args&... args)
+    const std::function<bool(int64_t)>& elementValidator, const char* invalidValueReason, Args&... args)
 {
     static_assert(unpackLen > 0, "unpackLen should be positive");
     static_assert(sizeof...(Args) == unpackLen, "Number of arguments must match template paremeter unpackLen");
     static_assert((std::is_same_v<Args, int64_t> && ...), "All arguments must be of type int64_t");
-    if (!CheckUnpackAdaptDimListIntAttr<unpackLen>(context, attrName, vec, elementValidator)) {
+    if (!CheckUnpackAdaptDimListIntAttr<unpackLen>(context, attrName, vec, elementValidator, invalidValueReason)) {
         return ge::GRAPH_FAILED;
     }
     UnsafeUnpackListIntAttr(vec, std::make_index_sequence<unpackLen>{}, args...);
@@ -250,12 +273,12 @@ static inline ge::graphStatus UnpackAdaptDimListIntAttr(
  */
 template <typename T>
 static inline std::tuple<ge::graphStatus, std::array<int64_t, NHWC_DIM_NUM>> GetImgDataDimsByNCHWOrder(
-    T* context, const gert::Shape& shape, const ge::Format& format)
+    T* context, const char* paramName, const gert::Shape& shape, const ge::Format& format)
 {
     std::array<int64_t, NHWC_DIM_NUM> dims{0};
     int64_t dimNum = shape.GetDimNum();
     if (unlikely(dimNum != NHWC_DIM_NUM)) {
-        OP_LOGE(context, "input shape dim num should be 4, but got %ld", dimNum);
+        OP_LOGE_FOR_INVALID_SHAPEDIM(context->GetNodeName(), paramName, std::to_string(dimNum).c_str(), "4");
         return {ge::GRAPH_FAILED, dims};
     }
 
@@ -279,7 +302,7 @@ static inline std::tuple<ge::graphStatus, std::array<int64_t, NHWC_DIM_NUM>> Get
                 shape.GetDim(NHWC_W_DIM),
             }};
     }
-    OP_LOGE(context, "The input data format must be NCHW or NHWC, but got %s", ge::GetFormatName(format));
+    OP_LOGE_FOR_INVALID_FORMAT(context->GetNodeName(), paramName, ge::GetFormatName(format), "NCHW or NHWC");
     return {ge::GRAPH_FAILED, dims};
 }
 
@@ -297,11 +320,12 @@ static inline std::tuple<ge::graphStatus, std::array<int64_t, NHWC_DIM_NUM>> Get
  */
 template <typename T>
 static inline ge::graphStatus GetImgDataDimsByNCHWOrder(
-    T* context, const gert::Shape& shape, const ge::Format& format, int64_t& n, int64_t& c, int64_t& h, int64_t& w)
+    T* context, const char* paramName, const gert::Shape& shape, const ge::Format& format, int64_t& n, int64_t& c,
+    int64_t& h, int64_t& w)
 {
     int64_t dimNum = shape.GetDimNum();
     if (unlikely(dimNum != NHWC_DIM_NUM)) {
-        OP_LOGE(context, "input shape dim num should be 4, but got %ld", dimNum);
+        OP_LOGE_FOR_INVALID_SHAPEDIM(context->GetNodeName(), paramName, std::to_string(dimNum).c_str(), "4");
         return ge::GRAPH_FAILED;
     }
 
@@ -319,7 +343,7 @@ static inline ge::graphStatus GetImgDataDimsByNCHWOrder(
         w = shape.GetDim(NHWC_W_DIM);
         return ge::GRAPH_SUCCESS;
     }
-    OP_LOGE(context, "The input data format must be NCHW or NHWC, but got %s", ge::GetFormatName(format));
+    OP_LOGE_FOR_INVALID_FORMAT(context->GetNodeName(), paramName, ge::GetFormatName(format), "NCHW or NHWC");
     return ge::GRAPH_FAILED;
 }
 } // namespace Ops::Math

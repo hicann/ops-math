@@ -13,11 +13,13 @@
  * \brief
  */
 
+#include <sstream>
 #include "util/platform_util.h"
 #include "transpose_tiling_base.h"
 #include "transpose_tiling_arch35.h"
 #include "transpose_tiling_with_gather_arch35.h"
 #include "transpose_tiling_with_nchwconv_arch35.h"
+#include "common/inc/op_host/math_log.h"
 
 namespace optiling {
 static int IncreaseCompare(const void* a, const void* b)
@@ -56,21 +58,20 @@ ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
             return ge::GRAPH_FAILED);
     }
 
-    OP_CHECK_IF(
-        CheckShapeInfo() != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext_->GetNodeName(), "Failed to check shape info!"),
-        return ge::GRAPH_FAILED);
+    auto ret = CheckShapeInfo();
+    CHECK_RET_SUCC(ret);
     // if axis value is 1, remove it.
     RemoveAxisV2(shapeInfo_);
     // reduce axis
     MergeAxisV2(shapeInfo_);
     // check reduced shape
-    OP_CHECK_IF(
-        CheckReducedShapeInfo() != ge::GRAPH_SUCCESS,
-        OP_LOGE(tilingContext_->GetNodeName(), "Failed to check reduced shape info!"), return ge::GRAPH_FAILED);
+    ret = CheckReducedShapeInfo();
+    CHECK_RET_SUCC(ret);
 
     CalcTotalVolumeActual();
-    OP_CHECK_IF(TryVCONVTiling() == ge::GRAPH_SUCCESS,
-                OP_LOGD(tilingContext_->GetNodeName(), "Do convTiling success"), return ge::GRAPH_SUCCESS);
+    OP_CHECK_IF(
+        TryVCONVTiling() == ge::GRAPH_SUCCESS, OP_LOGD(tilingContext_->GetNodeName(), "Do convTiling success"),
+        return ge::GRAPH_SUCCESS);
 
     SetIsLastAxisTranspose();
     if (!isReleatedTranspsoe_ && shapeInfo_.isLastAxisTranspose) {
@@ -107,7 +108,8 @@ ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus TransposeNddmaTiling::TryVCONVTiling() {
+ge::graphStatus TransposeNddmaTiling::TryVCONVTiling()
+{
     OP_LOGD(tilingContext_->GetNodeName(), "Start Try VCONVTiling.");
     auto platformInfo = tilingContext_->GetPlatformInfo();
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
@@ -119,8 +121,9 @@ ge::graphStatus TransposeNddmaTiling::TryVCONVTiling() {
                 shapeInfo_.eleLenInBytes == 2 && shapeInfo_.reducedInShape[0] > DIM_EIGHT) {
                 TransposeWithVCONV::PlatInfo platInfo{coreNum_, ubSize_};
                 TransposeWithVCONV::TransposeVCONVTiling vconvTiling(tilingContext_, platInfo, shapeInfo_);
-                OP_CHECK_IF(vconvTiling.DoTiling() == ge::GRAPH_SUCCESS,
-                            OP_LOGD(tilingContext_->GetNodeName(), "Do convTiling done"), return ge::GRAPH_SUCCESS);
+                OP_CHECK_IF(
+                    vconvTiling.DoTiling() == ge::GRAPH_SUCCESS,
+                    OP_LOGD(tilingContext_->GetNodeName(), "Do convTiling done"), return ge::GRAPH_SUCCESS);
             }
         }
     }
@@ -176,7 +179,9 @@ ge::graphStatus TransposeNddmaTiling::GetShapeInfo()
             return ge::GRAPH_FAILED;
         }
     } else {
-        OP_LOGE(tilingContext_->GetNodeName(), "Invalid dtype, it should be int32 or int64");
+        OP_LOGE_FOR_INVALID_DTYPE(
+            tilingContext_->GetNodeName(), "perm", ge::TypeUtils::DataTypeToSerialString(permDtype).c_str(),
+            "int32 or int64");
         return ge::GRAPH_FAILED;
     }
 
@@ -203,35 +208,68 @@ ge::graphStatus TransposeNddmaTiling::GetShapeInfo()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus TransposeNddmaTiling::CheckShapeInfo()
+ge::graphStatus TransposeNddmaTiling::CheckShapeDims()
 {
-    OP_LOGD(tilingContext_->GetNodeName(), "Entering CheckShapeInfo.");
     int64_t inDims = shapeInfo_.inShapeSize;
     int64_t outDims = shapeInfo_.outShapeSize;
     int64_t permDims = shapeInfo_.permSize;
-    if (inDims < 1 || inDims != outDims || inDims != permDims) {
-        OP_LOGE(
-            tilingContext_->GetNodeName(), "The dim of inputs is invalid, inDims = %ld, outDims = %ld, permDims = %ld",
-            inDims, outDims, permDims);
-        return ge::GRAPH_FAILED;
-    }
+    OP_CHECK_IF(
+        inDims < 1,
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+            tilingContext_->GetNodeName(), "x", std::to_string(inDims).c_str(), "positive"),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        inDims != outDims,
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+            tilingContext_->GetNodeName(), "x and y", Ops::Math::Join(inDims, outDims).c_str(),
+            "The shape dims of x and y must be the same"),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        inDims != permDims,
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            tilingContext_->GetNodeName(), "perm", std::to_string(permDims).c_str(),
+            "The total number of elements of perm must be equal to the shape dim of x"),
+        return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
 
-    for (int64_t i = 0; i < inDims; i++) {
-        if (shapeInfo_.perm[i] >= inDims) {
-            OP_LOGE(tilingContext_->GetNodeName(), "Invalid perm value %ld.", shapeInfo_.perm[i]);
+ge::graphStatus TransposeNddmaTiling::CheckShapeInfo()
+{
+    OP_LOGD(tilingContext_->GetNodeName(), "Entering CheckShapeInfo.");
+    CHECK_RET_SUCC(CheckShapeDims());
+
+    for (int64_t i = 0; i < shapeInfo_.inShapeSize; i++) {
+        if (shapeInfo_.perm[i] >= shapeInfo_.inShapeSize) {
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                tilingContext_->GetNodeName(), "perm", std::to_string(shapeInfo_.perm[i]).c_str(),
+                "The value of perm must be less than shape dim of x");
             return ge::GRAPH_FAILED;
         }
         if (shapeInfo_.inShape[shapeInfo_.perm[i]] != shapeInfo_.outShape[i]) {
-            OP_LOGE(tilingContext_->GetNodeName(), "The dim of inputs or outputs conflict with perm.");
+            std::ostringstream oss;
+            oss << "The shape of y must be the same as the shape consisting of the axes of x. "
+                << "The " << i << "-th axis is determined by value " << shapeInfo_.perm[i] << " of perm. "
+                << "When the value of perm is a negative number, the " << i << "-th axis is equal to the "
+                << std::abs(shapeInfo_.perm[i]) << "-th axis couted from the end of shape of x";
+            OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                tilingContext_->GetNodeName(), "x and y",
+                Ops::Math::Join(shapeInfo_.inShape[shapeInfo_.perm[i]], shapeInfo_.outShape[i]).c_str(),
+                oss.str().c_str());
             return ge::GRAPH_FAILED;
         }
     }
 
-    for (int64_t i = 0; i < inDims; i++) {
-        if (shapeInfo_.inShape[i] <= 0 || shapeInfo_.outShape[i] <= 0) {
-            OP_LOGE(
-                tilingContext_->GetNodeName(), "Invalid shape, %ld, %ld, %ld", i, shapeInfo_.inShape[i],
-                shapeInfo_.outShape[i]);
+    for (int64_t i = 0; i < shapeInfo_.inShapeSize; i++) {
+        if (shapeInfo_.inShape[i] <= 0) {
+            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+                tilingContext_->GetNodeName(), "x", std::to_string(shapeInfo_.inShape[i]).c_str(),
+                "All axes of x must be positive numbers");
+            return ge::GRAPH_FAILED;
+        }
+        if (shapeInfo_.outShape[i] <= 0) {
+            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+                tilingContext_->GetNodeName(), "y", std::to_string(shapeInfo_.outShape[i]).c_str(),
+                "All axes of y must be positive numbers");
             return ge::GRAPH_FAILED;
         }
     }

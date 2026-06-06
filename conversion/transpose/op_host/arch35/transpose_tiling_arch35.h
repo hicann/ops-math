@@ -168,6 +168,7 @@ private:
     void SetIsLastAxisTranspose();
     void CalcTotalVolumeActual();
     ge::graphStatus GetShapeInfo();
+    ge::graphStatus CheckShapeDims();
     ge::graphStatus CheckShapeInfo();
     ge::graphStatus CheckReducedShapeInfo();
     ge::graphStatus TryVCONVTiling();
