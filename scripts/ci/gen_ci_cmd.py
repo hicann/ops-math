@@ -419,8 +419,6 @@ def build_example_commands(filepath, experimental=False):
 
     # 生成 run_example 命令
     commands = []
-    if experimental:
-        return commands
     for op in sorted(ops):
         # 检查算子的 examples 目录
         example_check = check_op_examples(op, experimental)
@@ -428,9 +426,6 @@ def build_example_commands(filepath, experimental=False):
         # 根据存在的测试文件类型生成对应命令
         if example_check['has_eager']:
             commands.append(make_run_example_command(op, 'eager', experimental))
-        # TODO: 后续放开 graph 命令生成
-        # if example_check['has_graph']:
-        #     commands.append(make_run_example_command(op, 'graph', experimental))
 
     return commands
 
