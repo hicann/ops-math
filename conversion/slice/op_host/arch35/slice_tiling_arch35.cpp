@@ -756,20 +756,22 @@ static ge::graphStatus AssignInputValueOpt(
         }
         return ge::GRAPH_SUCCESS;
     }
-    OP_CHECK_IF(
-        value == nullptr, OP_LOGE(context->GetNodeName(), "get const value fail, check input is const or not."),
-        return ge::GRAPH_FAILED);
+    if (value == nullptr) {
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                context->GetNodeName(), "value", "nullptr",
+                "When check input is const or not, const value cannot be nullptr");
+        return ge::GRAPH_FAILED;
+    }
     for (size_t i = 0; i < size; i++) {
         list_vector[i] = value[i];
     }
     if (dtype == ge::DT_FLOAT4_E2M1 || dtype == ge::DT_FLOAT4_E1M2) {
-        OP_CHECK_IF(
-            list_vector[size - 1] & 1,
-            OP_LOGE(
-                context->GetNodeName(),
-                "Expected last dimension of offsets to be even for fp4 input, but got offsets = %s",
-                Ops::Base::ToString(list_vector).c_str()),
-            return ge::GRAPH_FAILED);
+        if (list_vector[size - 1] & 1) {
+            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                    context->GetNodeName(), "offsets", Ops::Base::ToString(list_vector).c_str(),
+                    "Expected last dimension of offsets to be even for fp4 input.");
+            return ge::GRAPH_FAILED;
+        }
         list_vector[size - 1] /= SLICE_CONST2;
     }
     isConst = true;
@@ -784,19 +786,22 @@ static ge::graphStatus AssignInputValue(
     int32_t dim_num = tensor->GetShapeSize();
     list_vector.SetDimNum(dim_num);
     const T* value = tensor->GetData<T>();
-    OP_CHECK_IF(
-        value == nullptr, OP_LOGE(context->GetNodeName(), "get const value fail, check input is const or not."),
-        return ge::GRAPH_FAILED);
+    if (value == nullptr) {
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                context->GetNodeName(), "value", "nullptr",
+                "When check input is const or not, const value cannot be nullptr");
+        return ge::GRAPH_FAILED;
+    }
     for (size_t i = 0; i < size; i++) {
         list_vector[i] = value[i];
     }
     if (dtype == ge::DT_FLOAT4_E2M1 || dtype == ge::DT_FLOAT4_E1M2) {
-        OP_CHECK_IF(
-            list_vector[size - 1] & 1,
-            OP_LOGE(
-                context->GetNodeName(), "Expected last dimension of size to be even for fp4 input, but got size = %s",
-                Ops::Base::ToString(list_vector).c_str()),
-            return ge::GRAPH_FAILED);
+        if (list_vector[size - 1] & 1) {
+            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                    context->GetNodeName(), "last dimension of size", Ops::Base::ToString(list_vector).c_str(),
+                    "Expected last dimension of size to be even for fp4 input");
+            return ge::GRAPH_FAILED;
+        }
         list_vector[size - 1] /= SLICE_CONST2;
     }
     return ge::GRAPH_SUCCESS;
@@ -809,9 +814,12 @@ static bool CalcEndAndBeginList(
     if (flag) {
         for (size_t index = 0; index < size; index++) {
             if (list_end_vector[index] == -1) {
-                OP_CHECK_IF(
-                    is_begin_const == false, OP_LOGE("Slice", "end cannot be -1 while begin is not const"),
-                    return false);
+                if (is_begin_const == false) {
+                    OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                            "Slice", "end", "-1",
+                            "End cannot be -1 while begin is not const.");
+                    return false;
+                }
                 list_end_vector[index] = shape_input.GetDim(index) - list_begin_vector[index];
             }
         }
@@ -819,7 +827,12 @@ static bool CalcEndAndBeginList(
         for (size_t i = 0; i < size; i++) {
             if (list_begin_vector[i] < 0 || list_begin_vector[i] + list_end_vector[i] < list_begin_vector[i] ||
                 list_begin_vector[i] + list_end_vector[i] > shape_input.GetDim(i)) {
-                OP_LOGE("Slice", "Requirements: 0<=offsets[i]<= offsets[i]+size[i]<=input_shape[i]");
+                OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                            "Slice", "list_begin_vector, list_end_vector, shape_input", 
+                            "index: " + std::to_string(i) + ", begin: " + std::to_string(list_begin_vector[i]) +
+                            ", end: " + std::to_string(list_end_vector[i])  +
+                            ", input shape: " + std::to_string(shape_input.GetDim(i)),
+                            "Requirements: 0<=offsets[i]<= offsets[i]+size[i]<=input_shape[i].");
                 return false;
             }
         }
@@ -888,9 +901,12 @@ static ge::graphStatus Tiling4Slice(gert::TilingContext* context)
     auto compile_info = reinterpret_cast<const SliceCompileParam*>(context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
     const gert::Shape& in_shape = Ops::Base::EnsureNotScalar(context->GetInputShape(0)->GetStorageShape());
-    OP_CHECK_IF(
-        compile_info->block_dim == 0, OP_LOGE(context->GetNodeName(), "core num = 0 is not support"),
-        return ge::GRAPH_FAILED);
+    if (compile_info->block_dim == 0) {
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                context->GetNodeName(), "core number", "0",
+                "The vale of core number cannot be 0.");
+        return ge::GRAPH_FAILED;
+    }
     // instantiate param
     SliceParasRuntime2 sliceparam;
     sliceparam.input = in_shape;
@@ -906,22 +922,28 @@ static ge::graphStatus Tiling4Slice(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, shape_tensor_size);
     auto shape_size_size = static_cast<size_t>(shape_tensor_size->GetShapeSize());
     // size must be equal
-    OP_CHECK_IF(
-        shape_size_offsets != shape_size_size,
-        OP_LOGE(context->GetNodeName(), "length of input_shape, offsets and size must be equal."),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        shape_size_offsets != in_shape.GetDimNum(),
-        OP_LOGE(context->GetNodeName(), "length of input_shape, offsets and size must be equal."),
-        return ge::GRAPH_FAILED);
+    if (shape_size_offsets != shape_size_size) {
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+            context->GetNodeName(), "size of offsets, size of shape",
+            std::to_string(shape_size_offsets) + ", " + std::to_string(shape_size_size),
+            "Length of input_shape, offsets and size must be equal.");
+        return ge::GRAPH_FAILED;
+    }
+    if (shape_size_offsets != in_shape.GetDimNum()) {
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+            context->GetNodeName(), "size of offsets, inout shape size",
+            std::to_string(shape_size_offsets) + ", " + std::to_string(in_shape.GetDimNum()),
+            "Length of input_shape, offsets and size must be equal.");
+        return ge::GRAPH_FAILED;
+    }
     ge::DataType inputDtype = shape_tensor_x->GetDataType();
     if (inputDtype == ge::DT_FLOAT4_E2M1 || inputDtype == ge::DT_FLOAT4_E1M2) {
-        OP_CHECK_IF(
-            sliceparam.input[shape_size_offsets - 1] & 1,
-            OP_LOGE(
-                context->GetNodeName(), "Expected last dimension of input to be even for fp4 input, but got input = %s",
-                Ops::Base::ToString(sliceparam.input).c_str()),
-            return ge::GRAPH_FAILED);
+        if (sliceparam.input[shape_size_offsets - 1] & 1) {
+            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                context->GetNodeName(), "last dimension of input", Ops::Base::ToString(sliceparam.input).c_str(),
+                "Expected last dimension of input to be even for fp4 input.");
+            return ge::GRAPH_FAILED;
+        }
         sliceparam.input[shape_size_offsets - 1] /= SLICE_CONST2;
     }
     ge::DataType offset_dtype = shape_tensor_offsets->GetDataType();

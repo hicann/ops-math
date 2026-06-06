@@ -492,21 +492,30 @@ ge::graphStatus TilingPrepare4StridedSliceV2(gert::TilingParseContext* context) 
 
    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
    ci->coreNum = ascendcPlatform.GetCoreNumAiv();
-   OP_CHECK_IF((ci->coreNum <= 0),
-               OP_LOGE(context->GetNodeName(), "Failed to get core num."),
-               return ge::GRAPH_FAILED);
+   if (ci->coreNum <= 0) {
+       OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+               context->GetNodeName(), "core number", std::to_string(ci->coreNum),
+               "The value of core number cannot <= 0.");
+       return ge::GRAPH_FAILED;
+   }
 
    uint64_t ubSize;
    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
    ci->ubSize = static_cast<int64_t>(ubSize);
-   OP_CHECK_IF((ci->ubSize <= 0),
-               OP_LOGE(context->GetNodeName(), "Failed to get ub size."),
-               return ge::GRAPH_FAILED);
+   if (ci->ubSize <= 0) {
+       OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+               context->GetNodeName(), "ubSize", std::to_string(ci->ubSize),
+               "The value of ubSize cannot <= 0.");
+       return ge::GRAPH_FAILED;
+   } 
 
    ci->cacheLineSize = Ops::Base::GetCacheLineSize(context);
-   OP_CHECK_IF((ci->cacheLineSize == 0),
-               OP_LOGE(context->GetNodeName(), "Failed to get cacheLineSize."),
-               return ge::GRAPH_FAILED);
+   if (ci->cacheLineSize <= 0) {
+       OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+               context->GetNodeName(), "cacheLineSize", std::to_string(ci->cacheLineSize),
+               "The value of cacheLineSize cannot <= 0.");
+       return ge::GRAPH_FAILED;
+   }  
 
    return ge::GRAPH_SUCCESS;
 }

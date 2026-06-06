@@ -40,24 +40,22 @@ ge::graphStatus StrideSliceTiling::Init(
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Start init StrideSliceTiling.");
     coreNum_ = coreNum;
-    OP_CHECK_IF(
-        (coreNum_ <= 0), OP_LOGE(tilingContext_->GetNodeName(), "Failed to core num."), return ge::GRAPH_FAILED);
-    ubSize_ = ubSize;
-    OP_CHECK_IF(
-        (ubSize_ <= 0), OP_LOGE(tilingContext_->GetNodeName(), "Failed to get ub size."), return ge::GRAPH_FAILED);
+    ubSize_ = ubSize;   
     cacheLineSize_ = cacheLineSize;
-    OP_CHECK_IF(
-        (cacheLineSize_ <= 0), OP_LOGE(tilingContext_->GetNodeName(), "Failed to get cacheLineSize."),
-        return ge::GRAPH_FAILED);
+    if (CheckPlatformParam() != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
     sliceParam_ = sliceParam;
     dtype_ = dtype;
     xDtypeSize_ = GetSizeByDataType(dtype);
     ubElementNum_ = (ubSize_ - UB_RESERVE_SIZE) / xDtypeSize_ / DOUBLE_BUFFER; // 负Stride会在ub切分时重新赋值
     dimNum_ = sliceParam.inputShape.GetDimNum();
-    OP_CHECK_IF(
-        (dimNum_ > MAX_AXIS_NUM_FOR_STRIDESLICE),
-        OP_LOGE(tilingContext_->GetNodeName(), "dimNum should not be greater than 8 but got %d.", dimNum_),
-        return ge::GRAPH_FAILED);
+    if (dimNum_ > MAX_AXIS_NUM_FOR_STRIDESLICE) {
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+                tilingContext_->GetNodeName(), "input", std::to_string(dimNum_),
+                "The shape dim of input must be <= 8.");
+        return ge::GRAPH_FAILED;
+    } 
 
     const auto outputShape = sliceParam.outputShape;
     const auto inputShape = sliceParam.inputShape;
@@ -86,6 +84,29 @@ ge::graphStatus StrideSliceTiling::Init(
         }
     }
     CalInputOutputSize();
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus StrideSliceTiling::CheckPlatformParam()
+{
+    if (coreNum_ <= 0) {
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                tilingContext_->GetNodeName(), "core number", std::to_string(coreNum_),
+                "The value of core number cannot <= 0.");
+        return ge::GRAPH_FAILED;
+    }
+    if (ubSize_ <= 0) {
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                tilingContext_->GetNodeName(), "ubSize", std::to_string(ubSize_),
+                "The value of ubSize cannot <= 0.");
+        return ge::GRAPH_FAILED;
+    }    
+    if (cacheLineSize_ <= 0) {
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                tilingContext_->GetNodeName(), "cacheLineSize", std::to_string(cacheLineSize_),
+                "The value of cacheLineSize cannot <= 0.");
+        return ge::GRAPH_FAILED;
+    }
     return ge::GRAPH_SUCCESS;
 }
 

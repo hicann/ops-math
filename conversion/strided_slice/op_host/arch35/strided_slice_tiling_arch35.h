@@ -317,6 +317,7 @@ protected:
     void SetMoveAlignParams(StridedSliceMoveAlignParams& params, const MoveAlignV2Info& actInfo);
     void SetShortMoveAlignParams(StridedSliceShortMoveAlignParams& params, const MoveAlignV2Info& actInfo);
     void SetTwoDimTilingInfo();
+    ge::graphStatus CheckPlatformParam();
 
 private:
     void CalMaxSplitDimNeg();
