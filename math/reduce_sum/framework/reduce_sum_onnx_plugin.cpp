@@ -15,6 +15,19 @@ using namespace ge;
 using ge::Operator;
 
 namespace domi {
+static Status GetInputTensorDimNum(const Operator& data_op, int64_t& dim_num) {
+  ge::TensorDesc input_desc = data_op.GetInputDesc(0);
+  auto shape = input_desc.GetShape();
+  if (shape.GetDimNum() <= 0) {
+    OP_LOGE("GetInputTensorDimNum", "Get input shape is invalid.");
+    return FAILED;
+  }
+
+  dim_num = shape.GetDimNum();
+  OP_LOGI(GetOpName(data_op).c_str(), "GetInputTensorDimNum is: %ld", dim_num);
+  return SUCCESS;
+}
+
 static Status parse_params_reduce_sum(const Message* op_src, ge::Operator& op_dest)
 {
     const ge::onnx::NodeProto* node = dynamic_cast<const ge::onnx::NodeProto*>(op_src);
@@ -69,6 +82,25 @@ static Status ParseOpToGraphReduceSum(const Operator& op, Graph& graph)
     if (op.GetAttr("axes", value) != SUCCESS) {
         OP_LOGE(GetOpName(op).c_str(), "get value from op failed");
         return FAILED;
+    }
+
+    if (value.GetSize() == 0) {
+        int64_t input_dim_num = 0;
+        if (GetInputTensorDimNum(op, input_dim_num) != SUCCESS) {
+            OP_LOGE(GetOpName(op).c_str(), "Failed to get input tensor dimensions");
+            return FAILED;
+        }
+        std::vector<int64_t> v_axes;
+        for (int64_t i = 0; i < input_dim_num; ++i) {
+            v_axes.push_back(i);
+        }
+        int num = v_axes.size();
+        std::vector<int64_t> dims = {};
+        if (num != 0) {
+            dims.push_back(num);
+        }
+        OP_LOGI(GetOpName(op).c_str(), "num is: %d, dims is: %d", num, dims.size());
+        value = Vec2Tensor(v_axes, dims, ge::DT_INT64);
     }
 
     auto data1 = op::Const((ori_name + "_data1").c_str()).set_attr_value(value);
@@ -150,19 +182,6 @@ Status GetProperty(const Operator& op, ReduceSum13Prop& prop)
 }
 
 } // namespace
-
-static Status GetInputTensorDimNum(const Operator& data_op, int64_t& dim_num) {
-  ge::TensorDesc input_desc = data_op.GetInputDesc(0);
-  auto shape = input_desc.GetShape();
-  if (shape.GetDimNum() <= 0) {
-    OP_LOGE("GetInputTensorDimNum", "Get input shape is invalid.");
-    return FAILED;
-  }
-
-  dim_num = shape.GetDimNum();
-  OP_LOGI(GetOpName(data_op).c_str(), "GetInputTensorDimNum is: %ld", dim_num);
-  return SUCCESS;
-}
 
 static Status ParseOpToGraphReduceSum13(const Operator& op, Graph& graph)
 {
