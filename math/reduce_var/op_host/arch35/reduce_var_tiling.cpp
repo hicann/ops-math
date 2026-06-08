@@ -16,6 +16,7 @@
 #include "reduce_var_tiling.h"
 #include "op_api/op_util.h"
 #include "log/log.h"
+#include <graph/utils/type_utils.h>
 #include "math/reduce_var/op_kernel/arch35/reduce_var_tiling_key.h"
 
 namespace optiling {
@@ -121,8 +122,11 @@ ge::graphStatus ReduceVarTiling::ReduceVarGetInputParams(Ops::Base::ReduceOpInpu
         auto dimData = reinterpret_cast<const int64_t*>(dim->GetData());
         inputParam.axes.resize(dimSize);
         for (size_t i = 0; i < dimSize; i++) {
-            OP_CHECK_IF(!ops::IsDimValid(inputDimNum, dimData[i]), OP_LOGE(context_->GetNodeName(), "%s",
-                    ops::GenInvalidDimMsg("dimData", i, inputDimNum, dimData[i]).c_str()),
+            OP_CHECK_IF(!ops::IsDimValid(inputDimNum, dimData[i]),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "dim",
+                    std::to_string(dimData[i]).c_str(),
+                    ("each dim value must be in range [-" + std::to_string(inputDimNum) + ", " +
+                     std::to_string(inputDimNum) + ")").c_str()),
                 return ge::GRAPH_FAILED);
             inputParam.axes[i] = dimData[i];
             if (dimData[i] < 0) {
@@ -216,7 +220,11 @@ void ReduceVarTiling::SetUseNddma()
     }
 
     uint64_t dSize = ge::GetSizeByDataType(opInput_.inputDtype);
-    OP_CHECK_IF(dSize == 0, OP_LOGE(context_->GetNodeName(), "input dtype size is zero."), return);
+    OP_CHECK_IF(dSize == 0,
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
+            ge::TypeUtils::DataTypeToSerialString(opInput_.inputDtype).c_str(),
+            "dtypeSize of x must be bigger than 0"),
+        return);
     uint64_t dataBlockSize = compileInfo_.ubBlockSize / dSize;
 
     // 暂时只放开ARA且后两维都较小的场景。 尾轴reduce场景kernel实现较复杂，暂时先不做
@@ -360,33 +368,39 @@ ge::graphStatus ReduceVarTiling::PrepareCompileInfo()
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo_.vectorCoreNum = ascendcPlatform.GetCoreNumAiv();
     OP_CHECK_IF((compileInfo_.vectorCoreNum == 0UL),
-        OP_LOGE(context_->GetNodeName(), "ReduceOp GetHardwareInfo Failed, vectorCoreNum:%lu",
-            compileInfo_.vectorCoreNum),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "vectorCoreNum",
+            std::to_string(compileInfo_.vectorCoreNum).c_str(),
+            "vectorCoreNum must be greater than 0"),
         return ge::GRAPH_FAILED);
 
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     OP_CHECK_IF(ubSize <= Ops::Base::CACHE_BUF_SIZE,
-        OP_LOGE(context_->GetNodeName(), "ReduceOp GetHardwareInfo Failed, ubSize:%lu, at least:%lu.",
-            compileInfo_.ubSize, Ops::Base::CACHE_BUF_SIZE),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize",
+            std::to_string(compileInfo_.ubSize).c_str(),
+            ("ubSize must be greater than " + std::to_string(Ops::Base::CACHE_BUF_SIZE)).c_str()),
         return ge::GRAPH_FAILED);
     compileInfo_.ubSize = ubSize;
 
     compileInfo_.cacheLineSize = Ops::Base::GetCacheLineSize(context_);
     OP_CHECK_IF(compileInfo_.cacheLineSize == 0UL,
-        OP_LOGE(context_->GetNodeName(), "ReduceOp GetHardwareInfo Failed, cacheLineSize:%lu.",
-            compileInfo_.cacheLineSize),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "cacheLineSize",
+            std::to_string(compileInfo_.cacheLineSize).c_str(),
+            "cacheLineSize must be greater than 0"),
         return ge::GRAPH_FAILED);
 
     compileInfo_.ubBlockSize = Ops::Base::GetUbBlockSize(context_);
     OP_CHECK_IF(compileInfo_.ubBlockSize == 0UL,
-        OP_LOGE(context_->GetNodeName(), "ReduceOp GetHardwareInfo Failed, ubBlockSize:%lu.",
-            compileInfo_.ubBlockSize),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubBlockSize",
+            std::to_string(compileInfo_.ubBlockSize).c_str(),
+            "ubBlockSize must be greater than 0"),
         return ge::GRAPH_FAILED);
 
     compileInfo_.vRegSize = Ops::Base::GetVRegSize(context_);
     OP_CHECK_IF(compileInfo_.vRegSize == 0UL,
-        OP_LOGE(context_->GetNodeName(), "ReduceOp GetHardwareInfo Failed, vRegSize:%lu.", compileInfo_.vRegSize),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "vRegSize",
+            std::to_string(compileInfo_.vRegSize).c_str(),
+            "vRegSize must be greater than 0"),
         return ge::GRAPH_FAILED);
 
     OP_LOGD(
@@ -552,14 +566,15 @@ bool ReduceVarTiling::IsAxisA(int32_t idx)
 template <class Pattern>
 void ReduceVarTiling::ComputeCacheLineBlock(const uint64_t* shape) {
     uint64_t dSize = ge::GetSizeByDataType(opInput_.inputDtype);
-    OP_CHECK_IF(dSize == 0, OP_LOGE(context_->GetNodeName(), "input dtype size is zero."), return);
+    OP_CHECK_IF(dSize == 0,
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
+            ge::TypeUtils::DataTypeToSerialString(opInput_.inputDtype).c_str(),
+            "dtypeSize of x must be bigger than 0"),
+        return);
     uint64_t cacheSize = compileInfo_.cacheLineSize / dSize;
     uint64_t ubBlockSize = compileInfo_.ubBlockSize / dSize;
-    uint64_t cacheLineShape = 1;
-    uint64_t cacheLineStep = 1;
-    uint64_t cacheLineOuter = 1;
-    uint64_t aInCacheLine = 1;
-    uint64_t rInCacheLine = 1;
+    uint64_t cacheLineShape = 1, cacheLineStep = 1, cacheLineOuter = 1;
+    uint64_t aInCacheLine = 1, rInCacheLine = 1;
     for (int32_t i = Pattern::Dim - 1; i > -1; --i) {
         cacheLineShape *= shape[i];
         if (cacheLineShape > cacheSize) {
@@ -569,12 +584,10 @@ void ReduceVarTiling::ComputeCacheLineBlock(const uint64_t* shape) {
             cacheLineOuter = Ops::Base::CeilDiv(shape[i], cacheLineStep);
             cBlock_.axis = i;
             break;
-        } else {
-            cacheLineStep = shape[i];
-            cBlock_.axis = i;
         }
+        cacheLineStep = shape[i];
+        cBlock_.axis = i;
     }
-
     for (int32_t i = Pattern::Dim - 1; i > cBlock_.axis; --i) {
         if (i == Pattern::Dim - 1) {
             if (IsAxisA<Pattern>(i)) {
@@ -595,7 +608,6 @@ void ReduceVarTiling::ComputeCacheLineBlock(const uint64_t* shape) {
     } else {
         rInCacheLine *= cacheLineStep;
     }
-
     cBlock_.cacheLineStep = cacheLineStep;
     cBlock_.cacheLineOuter = cacheLineOuter;
     cBlock_.aSize = aInCacheLine;
@@ -827,7 +839,11 @@ int32_t ReduceVarTiling::IsUseNddma(const uint64_t* shape)
 {
     int32_t axis = cBlock_.axis;
     uint64_t dSize = ge::GetSizeByDataType(opInput_.inputDtype);
-    OP_CHECK_IF(dSize == 0, OP_LOGE(context_->GetNodeName(), "input dtype size is zero."), return 0);
+    OP_CHECK_IF(dSize == 0,
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
+            ge::TypeUtils::DataTypeToSerialString(opInput_.inputDtype).c_str(),
+            "dtypeSize of x must be bigger than 0"),
+        return 0);
     uint64_t ubBlockSize = compileInfo_.ubBlockSize / dSize;
     if (shape[static_cast<uint64_t>(Pattern::Dim - 1)] >= ubBlockSize) {
         // last dim 大于ubblock, 不做NDDMA
@@ -957,7 +973,11 @@ template <class Pattern>
 uint64_t ReduceVarTiling::CaculateReduceSize(const uint64_t* shape)
 {
     uint64_t dSize = ge::GetSizeByDataType(opInput_.inputDtype);
-    OP_CHECK_IF(dSize == 0, OP_LOGE(context_->GetNodeName(), "input dtype size is zero."), return 1);
+    OP_CHECK_IF(dSize == 0,
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
+            ge::TypeUtils::DataTypeToSerialString(opInput_.inputDtype).c_str(),
+            "dtypeSize of x must be bigger than 0"),
+        return 1);
     uint64_t ubBlockSize = compileInfo_.ubBlockSize / dSize;
     int32_t dim = Pattern::TailA ? Pattern::Dim - AXES_STEP : Pattern::Dim - Ops::Base::ReduceOpTmpl::CONST1;
     uint64_t r = 1;
@@ -980,9 +1000,10 @@ template <class Pattern>
 ge::graphStatus ReduceVarTiling::CalcBasicBlock()
 {
     OP_CHECK_IF(compileInfo_.ubSize <= Ops::Base::CACHE_BUF_SIZE + opInput_.reservedSize,
-        OP_LOGE(
-            context_->GetNodeName(), "ubSize:%lu is smaller than size:%lu, not support.", compileInfo_.ubSize,
-            Ops::Base::CACHE_BUF_SIZE + opInput_.reservedSize),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize",
+            std::to_string(compileInfo_.ubSize).c_str(),
+            ("ubSize must be greater than " +
+             std::to_string(Ops::Base::CACHE_BUF_SIZE + opInput_.reservedSize)).c_str()),
         return ge::GRAPH_FAILED);
 
     CalcUserBasicBlock(Pattern::ID == Ops::Base::ReduceOpTmpl::PATTERN_A);
@@ -995,13 +1016,16 @@ ge::graphStatus ReduceVarTiling::AxesCheck(const std::vector<int64_t>& shape, co
     int64_t shapeSize = static_cast<int64_t>(shape.size());
     int64_t axesSize = static_cast<int64_t>(axes.size());
     OP_CHECK_IF((axesSize > shapeSize),
-        OP_LOGE(context_->GetNodeName(), "illegal axes size:%ld over shape size:%ld", axesSize, shapeSize),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "dim",
+            std::to_string(axesSize).c_str(),
+            ("axes size must be less than or equal to shape size " + std::to_string(shapeSize)).c_str()),
         return ge::GRAPH_FAILED);
 
     for (int64_t i = 0; i < axesSize; i++) {
         OP_CHECK_IF((axes[i] >= shapeSize || axes[i] < 0),
-            OP_LOGE(context_->GetNodeName(),
-                "illegal axis:%ld dim:%ld out of shape range:[0, %ld)", i, axes[i], shapeSize),
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "dim",
+                std::to_string(axes[i]).c_str(),
+                ("each dim value must be in range [0, " + std::to_string(shapeSize) + ")").c_str()),
             return ge::GRAPH_FAILED);
     }
     return ge::GRAPH_SUCCESS;
@@ -1010,7 +1034,10 @@ ge::graphStatus ReduceVarTiling::AxesCheck(const std::vector<int64_t>& shape, co
 ge::graphStatus ReduceVarTiling::ParamCheck(Ops::Base::ReduceOpInputParam& opInput)
 {
     int32_t dtypeSize = ge::GetSizeByDataType(opInput.inputDtype);
-    OP_CHECK_IF(dtypeSize <= 0, OP_LOGE(context_->GetNodeName(), "illegal dtype"),
+    OP_CHECK_IF(dtypeSize <= 0,
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
+            ge::TypeUtils::DataTypeToSerialString(opInput.inputDtype).c_str(),
+            "dtypeSize of x must be bigger than 0"),
         return ge::GRAPH_FAILED);
     OP_LOGD(context_->GetNodeName(), "origin shape is:%s, axes:%s",
         Ops::Base::ReduceOpTmpl::VectorToString(opInput.shape).c_str(),
