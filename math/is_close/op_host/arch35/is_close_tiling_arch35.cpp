@@ -78,15 +78,14 @@ ge::graphStatus IsCloseTiling::DoOpTiling()
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
             context_->GetNodeName(), "x1, x2",
             std::string(ge::TypeUtils::DataTypeToSerialString(x1DType)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(x2DType)),
-            "x1 and x2 must have the same dtype"),
+            "The dtypes of x1 and x2 must be the same"),
         return ge::GRAPH_FAILED);
 
     OP_CHECK_IF(
         x1DType != ge::DT_FLOAT16 && x1DType != ge::DT_FLOAT && x1DType != ge::DT_INT32 && x1DType != ge::DT_BF16,
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            context_->GetNodeName(), "x1",
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1",
             ge::TypeUtils::DataTypeToSerialString(x1DType),
-            "dtype not in [DT_FLOAT16, DT_FLOAT, DT_INT32, DT_BF16]"),
+            "FLOAT16, FLOAT, INT32, BF16"),
         return ge::GRAPH_FAILED);
 
     OP_CHECK_IF(
@@ -94,7 +93,7 @@ ge::graphStatus IsCloseTiling::DoOpTiling()
         OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
             context_->GetNodeName(), "rtol, atol",
             std::to_string(rtol_) + ", " + std::to_string(atol_),
-            "rtol and atol must be greater than or equal to zero"),
+            "The values of rtol and atol must be greater than or equal to 0"),
         return ge::GRAPH_FAILED);
 
     if (x1DType == ge::DT_FLOAT16 && equalNan_ == false) {
@@ -178,7 +177,7 @@ ge::graphStatus IsCloseTiling::DoOpTiling()
         brcBaseTiling.SetScalar<float>(rtol_);
         brcBaseTiling.SetScalar<float>(atol_);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(x1DType), "dtype not in [DT_FLOAT16, DT_FLOAT, DT_INT32, DT_BF16]");
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(x1DType), "FLOAT16, FLOAT, INT32, BF16");
         return ge::GRAPH_FAILED;
     }
     OP_LOGD(context_->GetNodeName(), "[IsCloseTilingData] : tilingKey=%lu", tilingKey);
@@ -209,7 +208,7 @@ ge::graphStatus Tiling4IsClose(gert::TilingContext* context)
 {
     OP_LOGD("IsCloseTiling", "Enter Tiling4IsClose");
     if (context == nullptr) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("Tiling4IsClose", "context", "nullptr", "Tiling context is nullptr");
+        OP_LOGE_FOR_INVALID_VALUE("Tiling4IsClose", "context", "nullptr", "not nullptr");
         return ge::GRAPH_FAILED;
     }
 

@@ -67,7 +67,7 @@ ge::graphStatus AssignSubTiling::CheckDtype()
                                                 ge::TypeUtils::DataTypeToSerialString(varDtype) + ", " +
                                                 ge::TypeUtils::DataTypeToSerialString(valueDtype) + ", " +
                                                 ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
-                                                "var, value and output dtypes must be equal"),
+                                                "The dtypes of var, value and output must be the same"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -89,7 +89,7 @@ ge::graphStatus AssignSubTiling::CheckShape() const
         OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "var, value, output",
                                                 (Ops::Base::ToString(varShape) + ", " + Ops::Base::ToString(valueShape) +
                                                  ", " + Ops::Base::ToString(outputShape)).c_str(),
-                                                "var, value and output shapes must be equal"),
+                                                "The shapes of var, value and output must be the same"),
         return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
@@ -121,9 +121,9 @@ ge::graphStatus AssignSubTiling::RunTiling()
     } else if (this->outputDtype == ge::DT_UINT8) {
         ret = eleBaseTiling.DoTiling<AssignSubOp<uint8_t>::OpDag>(tiling->baseTiling);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "output",
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "output",
                                        ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
-                                       "output dtype must be in [DT_FLOAT16, DT_BF16, DT_FLOAT, DT_INT8, DT_INT32, DT_INT64, DT_UINT8]");
+                                       "FLOAT16, BF16, FLOAT, INT8, INT32, INT64, UINT8");
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(ret == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "AssignSubTiling failed"), return ge::GRAPH_FAILED);

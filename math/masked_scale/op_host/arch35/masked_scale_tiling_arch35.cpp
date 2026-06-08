@@ -112,7 +112,7 @@ static ge::graphStatus Tiling4MaskedScale(gert::TilingContext *tilingContext)
   } else if (xDtype == ge::DT_FLOAT) {
     tilingKey += TILING_KEY_X_FP32;
   } else {
-    OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "x", ge::TypeUtils::DataTypeToSerialString(xDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT]");
+    OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "x", ge::TypeUtils::DataTypeToSerialString(xDtype), "FLOAT16, BF16, FLOAT");
     return ge::GRAPH_FAILED;
   }
   if (maskDtype == ge::DT_UINT8) {
@@ -124,7 +124,7 @@ static ge::graphStatus Tiling4MaskedScale(gert::TilingContext *tilingContext)
   } else if (maskDtype == ge::DT_FLOAT) {
     tilingKey += TILING_KEY_MASK_FP32;
   } else {
-    OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "mask", ge::TypeUtils::DataTypeToSerialString(maskDtype), "dtype not in [DT_UINT8, DT_INT8, DT_FLOAT16, DT_FLOAT]");
+    OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "mask", ge::TypeUtils::DataTypeToSerialString(maskDtype), "UINT8, INT8, FLOAT16, FLOAT");
     return ge::GRAPH_FAILED;
   }
 

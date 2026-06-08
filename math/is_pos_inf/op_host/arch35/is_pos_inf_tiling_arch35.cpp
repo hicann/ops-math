@@ -36,10 +36,9 @@ ge::graphStatus IsPosInfRegbaseTiling::CalcInputDtype()
     this->inputDtype = inputDesc->GetDataType();
     OP_CHECK_IF(
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT,
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            tilingContext->GetNodeName(), "x",
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "x",
             ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
-            "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT]"),
+            "FLOAT16, BF16, FLOAT"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -51,10 +50,9 @@ ge::graphStatus IsPosInfRegbaseTiling::CalcOutputDtype()
     this->outputDtype = outputDesc->GetDataType();
     OP_CHECK_IF(
         this->outputDtype != ge::DT_BOOL,
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            tilingContext->GetNodeName(), "y",
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y",
             ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
-            "dtype not in [DT_BOOL]"),
+            "BOOL"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -75,7 +73,7 @@ ge::graphStatus IsPosInfRegbaseTiling::CheckShape()
 
     OP_CHECK_IF(
         inputXShape != outputYShape,
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x, y", (Ops::Base::ToString(inputXShape) + ", " + Ops::Base::ToString(outputYShape)).c_str(), "input shape must equal output shape"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x, y", (Ops::Base::ToString(inputXShape) + ", " + Ops::Base::ToString(outputYShape)).c_str(), "The shapes of x and y must be the same"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -93,7 +91,7 @@ ge::graphStatus IsPosInfRegbaseTiling::RunTiling()
 
     auto tiling = tilingContext->GetTilingData<EleBaseTilingDataV2>();
     OP_CHECK_IF(
-        (tiling == nullptr), OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext->GetNodeName(), "tiling_data", "nullptr", "Get IsPosInfRegbaseTiling from GE context failed"),
+        (tiling == nullptr), OP_LOGE_FOR_INVALID_VALUE(tilingContext->GetNodeName(), "tiling_data", "nullptr", "not nullptr"),
         return ge::GRAPH_FAILED);
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
@@ -109,10 +107,10 @@ ge::graphStatus IsPosInfRegbaseTiling::RunTiling()
         baseTilingResult =
             elewiseBaseTiling.DoTiling<IsPosInfOp::IsPosInfDAG<float>::OpDag>(*tiling, ASCEND_API_BUFFER);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+        OP_LOGE_FOR_INVALID_DTYPE(
             tilingContext->GetNodeName(), "x",
             ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
-            "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT]");
+            "FLOAT16, BF16, FLOAT");
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(

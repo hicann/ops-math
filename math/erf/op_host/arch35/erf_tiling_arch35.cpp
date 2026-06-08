@@ -40,10 +40,10 @@ ge::graphStatus ErfTiling::CalcInputDtype()
     this->inputDtype = inputDesc->GetDataType();
     OP_CHECK_IF(
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT,
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+        OP_LOGE_FOR_INVALID_DTYPE(
             tilingContext->GetNodeName(), "x",
             ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
-            "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT]"),
+            "FLOAT16, BF16, FLOAT"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -56,7 +56,7 @@ ge::graphStatus ErfTiling::CalcOutputDtype()
     this->outputDtype = outputDesc->GetDataType();
     OP_CHECK_IF(
         this->outputDtype != this->inputDtype,
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "outputDtype, inputDtype", std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(this->inputDtype)), "output dtype must be same as input dtype"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x, y", std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(this->inputDtype)), "The dtypes of x and y must be the same"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -72,7 +72,7 @@ ge::graphStatus ErfTiling::CheckShape()
     const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
-        inputXShape != outputYShape, OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x, y", (Ops::Base::ToString(inputXShape) + ", " + Ops::Base::ToString(outputYShape)).c_str(), "input shape must equal output shape"),
+        inputXShape != outputYShape, OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x, y", (Ops::Base::ToString(inputXShape) + ", " + Ops::Base::ToString(outputYShape)).c_str(), "The shapes of x and y must be the same"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -92,7 +92,7 @@ ge::graphStatus ErfTiling::RunTiling()
 
     auto tiling = tilingContext->GetTilingData<EleBaseTilingDataV2>();
     OP_CHECK_IF(
-        (tiling == nullptr), OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext->GetNodeName(), "tiling_data", "nullptr", "Get tiling data from GE context failed"),
+        (tiling == nullptr), OP_LOGE_FOR_INVALID_VALUE(tilingContext->GetNodeName(), "tiling_data", "nullptr", "not nullptr"),
         return ge::GRAPH_FAILED);
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
@@ -106,10 +106,10 @@ ge::graphStatus ErfTiling::RunTiling()
         dType = TPL_FP32;
         baseTilingResult = elewiseBaseTiling.DoTiling<ErfOp::ErfDAG<float>::OpDag>(*tiling, ASCEND_API_BUFFER);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+        OP_LOGE_FOR_INVALID_DTYPE(
             tilingContext->GetNodeName(), "y",
             ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
-            "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT]");
+            "FLOAT16, BF16, FLOAT");
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(

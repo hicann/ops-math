@@ -38,7 +38,7 @@ ge::graphStatus SquareTiling::CalcInputDtype()
     OP_CHECK_IF(
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT &&
             this->inputDtype != ge::DT_INT32 && this->inputDtype != ge::DT_INT64,
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "x", ge::TypeUtils::DataTypeToSerialString(this->inputDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT, DT_INT32, DT_INT64]"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "x", ge::TypeUtils::DataTypeToSerialString(this->inputDtype), "FLOAT16, BF16, FLOAT, INT32, INT64"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -50,10 +50,10 @@ ge::graphStatus SquareTiling::CalcOutputDtype()
     OP_CHECK_IF(
         this->outputDtype != ge::DT_FLOAT16 && this->outputDtype != ge::DT_BF16 && this->outputDtype != ge::DT_FLOAT &&
             this->outputDtype != ge::DT_INT32 && this->outputDtype != ge::DT_INT64,
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "z", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT, DT_INT32, DT_INT64]"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "z", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT, INT32, INT64"), return ge::GRAPH_FAILED);
 
     OP_CHECK_IF( 
-        this->outputDtype != this->inputDtype, OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(),"x and z",ge::TypeUtils::DataTypeToSerialString(this->inputDtype)+","+ ge::TypeUtils::DataTypeToSerialString(this->outputDtype),"out dtype not same as self"), 
+        this->outputDtype != this->inputDtype, OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(),"x, z",std::string(ge::TypeUtils::DataTypeToSerialString(this->inputDtype))+","+ std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)),"The dtypes of x and z must be the same"), 
         return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
@@ -70,7 +70,7 @@ ge::graphStatus SquareTiling::CheckShape()
     const gert::Shape& outputShape = Ops::Base::EnsureNotScalar(outStorageShape->GetStorageShape());
 
 OP_CHECK_IF(
-        inputShape != outputShape, OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x, z", (Ops::Base::ToString(inputShape) + ", " + Ops::Base::ToString(outputShape)).c_str(), "input shape must equal output shape"),
+        inputShape != outputShape, OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x, z", (Ops::Base::ToString(inputShape) + ", " + Ops::Base::ToString(outputShape)).c_str(), "The shapes of x and z must be the same"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -88,7 +88,7 @@ ge::graphStatus SquareTiling::SetTilingData()
     } else if (this->outputDtype == ge::DT_INT64) {
         tilingKey = TILING_KEY_INT64;
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "z", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT, DT_INT32, DT_INT64]");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "z", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT, INT32, INT64");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -119,7 +119,7 @@ ge::graphStatus SquareTiling::RunTiling()
     } else if (tilingKey == TILING_KEY_INT64) {
         status = elewiseBaseTiling.DoTiling<SquareOp<int64_t>::OpDag>(tiling->baseTiling);
 } else {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "z", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT, DT_INT32, DT_INT64]");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "z", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT, INT32, INT64");
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(

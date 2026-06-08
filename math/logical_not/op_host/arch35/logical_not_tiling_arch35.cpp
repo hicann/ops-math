@@ -41,7 +41,7 @@ OP_CHECK_IF(tilingContext == nullptr,
 
     auto tiling = tilingContext->GetTilingData<EleBaseTilingDataV2>();
 OP_CHECK_IF((tiling == nullptr),
-                      OP_LOGE(tilingContext->GetNodeName(), "Get LogicalNotTiling from GE context failed"),
+                      OP_LOGE_FOR_INVALID_VALUE(tilingContext->GetNodeName(), "tiling_data", "nullptr", "not nullptr"),
                       return ge::GRAPH_FAILED);
 
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);

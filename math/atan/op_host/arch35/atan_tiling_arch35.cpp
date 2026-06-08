@@ -44,7 +44,7 @@ ge::graphStatus AtanTiling::CalcInputDtype()
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT,
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "input",
                                                ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
-                                               "input dtype must be in [DT_FLOAT16, DT_BF16, DT_FLOAT]"),
+                                               "The dtype of input must be FLOAT16, BF16 or FLOAT"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -58,14 +58,14 @@ ge::graphStatus AtanTiling::CalcOutputDtype()
         this->outputDtype != ge::DT_FLOAT16 && this->outputDtype != ge::DT_BF16 && this->outputDtype != ge::DT_FLOAT,
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "output",
                                                ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
-                                               "output dtype must be in [DT_FLOAT16, DT_BF16, DT_FLOAT]"),
+                                               "The dtype of output must be FLOAT16, BF16 or FLOAT"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         this->outputDtype != this->inputDtype,
         OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "input, output",
                                                 ge::TypeUtils::DataTypeToSerialString(this->inputDtype) + ", " +
                                                 ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
-                                                "input and output dtypes must be equal"),
+                                                "The dtypes of input and output must be the same"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -84,7 +84,7 @@ ge::graphStatus AtanTiling::CheckShape()
         inputXShape != outputYShape, OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "inputX, outputY",
                                                                             (Ops::Base::ToString(inputXShape) + ", " +
                                                                              Ops::Base::ToString(outputYShape)).c_str(),
-                                                                            "input and output shapes must be equal"),
+                                                                            "The shapes of input and output must be the same"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -119,9 +119,9 @@ ge::graphStatus AtanTiling::RunTiling()
         dType = TPL_BF16;
         ret = elewiseBaseTiling.DoTiling<AtanOp::AtanDag<bfloat16_t>::OpDag>(*tiling, ASCEND_API_BUFFER);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "inputDtype",
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "inputDtype",
                                        ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
-                                       "input dtype must be in [DT_FLOAT16, DT_BF16, DT_FLOAT]");
+                                       "FLOAT16, BF16, FLOAT");
         return ge::GRAPH_FAILED;
     }
 

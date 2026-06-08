@@ -42,10 +42,7 @@ ge::graphStatus NanToNumTiling::CalcInputDtype()
     this->inputDtype = inputDesc->GetDataType();
     OP_CHECK_IF(
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT,
-        OP_LOGE(
-            tilingContext->GetNodeName(),
-            "input x dtype [%s] not supported, only support [DT_FLOAT16, DT_BF16, DT_FLOAT]",
-            ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str()),
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "x", ge::TypeUtils::DataTypeToSerialString(this->inputDtype), "FLOAT16, BF16, FLOAT"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -58,7 +55,7 @@ ge::graphStatus NanToNumTiling::CalcOutputDtype()
     this->outputDtype = outputDesc->GetDataType();
     OP_CHECK_IF(
         this->outputDtype != this->inputDtype,
-        OP_LOGE(tilingContext->GetNodeName(), "output y dtype not same as input x"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x, y", std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(this->inputDtype)), "The dtypes of x and y must be the same"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -74,7 +71,7 @@ ge::graphStatus NanToNumTiling::CheckShape()
     const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
-        inputXShape != outputYShape, OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),
+        inputXShape != outputYShape, OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x, y", (Ops::Base::ToString(inputXShape) + ", " + Ops::Base::ToString(outputYShape)).c_str(), "The shapes of x and y must be the same"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -89,13 +86,13 @@ ge::graphStatus NanToNumTiling::SetAttr()
     const float* neginfValueAttr = attrs->GetAttrPointer<float>(NanToNumOp::PLACEHOLDER_INDEX_2);
 
     OP_CHECK_IF(
-        nanValueAttr == nullptr, OP_LOGE(tilingContext->GetNodeName(), "nan value must exist"),
+        nanValueAttr == nullptr, OP_LOGE_FOR_INVALID_VALUE(tilingContext->GetNodeName(), "nan", "nullptr", "not nullptr"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        posinfValueAttr == nullptr, OP_LOGE(tilingContext->GetNodeName(), "posinf value must exist"),
+        posinfValueAttr == nullptr, OP_LOGE_FOR_INVALID_VALUE(tilingContext->GetNodeName(), "posinf", "nullptr", "not nullptr"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        neginfValueAttr == nullptr, OP_LOGE(tilingContext->GetNodeName(), "neginf value must exist"),
+        neginfValueAttr == nullptr, OP_LOGE_FOR_INVALID_VALUE(tilingContext->GetNodeName(), "neginf", "nullptr", "not nullptr"),
         return ge::GRAPH_FAILED);
 
     tiling->nan = *nanValueAttr;
@@ -125,14 +122,14 @@ ge::graphStatus NanToNumTiling::RunTiling()
     tiling = tilingContext->GetTilingData<NanToNumTilingData>();
 
     OP_CHECK_IF(
-        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
+        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
+        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(SetAttr() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "set Attr failed"), return ge::GRAPH_FAILED);
+        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(SetAttr() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "set Attr failed"), return ge::GRAPH_FAILED);
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     if (this->outputDtype == ge::DT_FLOAT16) {
@@ -145,14 +142,13 @@ ge::graphStatus NanToNumTiling::RunTiling()
         dType = TPL_FP32;
         baseTilingResult = elewiseBaseTiling.DoTiling<NanToNumOp::NanToNumDAG<float>::OpDag>(tiling->baseTiling);
     } else {
-        OP_LOGE(
-            tilingContext->GetNodeName(),
-            "output y dtype [%s] not supported, only support [DT_FLOAT16, DT_BF16, DT_FLOAT]",
-            ge::TypeUtils::DataTypeToSerialString(this->outputDtype).c_str());
+        OP_LOGE_FOR_INVALID_DTYPE(
+            tilingContext->GetNodeName(), "y",
+            ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT");
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(
-        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
+        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
         return ge::GRAPH_FAILED);
 
     return SetTilingData();

@@ -55,7 +55,7 @@ ge::graphStatus CastTiling::GetPlatformInfo()
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo == nullptr) {
         auto compileInfoPtr = context_->GetCompileInfo<CastCompileInfo>();
-        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "compile_info", "nullptr", "compile info is null"),
+        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "compile_info", "nullptr", "not nullptr"),
                         return ge::GRAPH_FAILED);
         coreNum_ = compileInfoPtr->coreNum;
         ubSize_ = compileInfoPtr->ubSize;
@@ -124,7 +124,7 @@ ge::DataType CastTiling::TransAclToGeDataType(int32_t aclType)
 ge::graphStatus CastTiling::GetShapeAttrsInfo()
 {
     OP_CHECK_IF((context_ == nullptr),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("Cast", "context", "nullptr", "context cannot be null"),
+        OP_LOGE_FOR_INVALID_VALUE("Cast", "context", "nullptr", "not nullptr"),
         return ge::GRAPH_FAILED);
 
     auto xDesc = context_->GetInputDesc(0);
@@ -140,14 +140,14 @@ ge::graphStatus CastTiling::GetShapeAttrsInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, runtimeAttrs);
     const int32_t *dstTypePtr = runtimeAttrs->GetAttrPointer<int32_t>(0);
     OP_CHECK_IF((dstTypePtr == nullptr),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "dst_type_attr", "nullptr", "required dst_type attribute not found"),
+        OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "dst_type_attr", "nullptr", "not nullptr"),
         return ge::GRAPH_FAILED);
     ge::DataType dstDtype = TransAclToGeDataType(*dstTypePtr);
     OP_CHECK_IF((dstDtype == ge::DT_MAX),
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "dst_type", ge::TypeUtils::DataTypeToSerialString(dstDtype), "dst_type is not supported dtype list"),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "dst_type", ge::TypeUtils::DataTypeToSerialString(dstDtype), "The dtype of dst_type must be in the supported dtype list"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF((dstDtype != yDtype),
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "dst_type, yDtype", std::string(ge::TypeUtils::DataTypeToSerialString(dstDtype)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(yDtype)), "dst_type must be same with output dtype"),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "dst_type, y", std::string(ge::TypeUtils::DataTypeToSerialString(dstDtype)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(yDtype)), "The dtypes of dst_type and y must be the same"),
         return ge::GRAPH_FAILED);
 
     // 表驱动，也校验了是否是支持的转换
@@ -159,7 +159,7 @@ ge::graphStatus CastTiling::GetShapeAttrsInfo()
     if (it != castMap + arraySize) {
         policy_ = *it;
     } else {
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x, y", std::string(ge::TypeUtils::DataTypeToSerialString(xDtype)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(yDtype)), "this dtype conversion is not supported");
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x, y", std::string(ge::TypeUtils::DataTypeToSerialString(xDtype)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(yDtype)), "Dtype conversion from x to y is not supported");
         return ge::GRAPH_FAILED;
     }
 
@@ -175,13 +175,13 @@ ge::graphStatus CastTiling::GetShapeAttrsInfo()
         return ge::GRAPH_FAILED;
     }
     if (!Ops::Base::IsSameElewiseShape(outShape, inShape)) {
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context_->GetNodeName(), "x, y", "input_shape, output_shape", "input shape must equal output shape");
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context_->GetNodeName(), "x, y", (Ops::Base::ToString(inShape) + ", " + Ops::Base::ToString(outShape)).c_str(), "The shapes of x and y must be the same");
         return ge::GRAPH_FAILED;
     }
 
     shapeSize_ = inShape.GetShapeSize();
     OP_CHECK_IF(shapeSize_ <= 0,
-        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), "x", std::to_string(shapeSize_), "input shape_size must be greater than 0"),
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), "x", std::to_string(shapeSize_), "x does not support empty tensor"),
         return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
@@ -202,7 +202,7 @@ int64_t CastTiling::GetUbFormer(int64_t inputTypeBitSize, int64_t outputTypeBitS
 {
     int64_t alignInputNum = vlBitSize_ / inputTypeBitSize;
     OP_CHECK_IF(alignInputNum == 0,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "vlBitSize", std::to_string(vlBitSize_), "vl_bitsize is too small for the template"),
+        OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "vlBitSize", std::to_string(vlBitSize_), "greater than 0"),
         return 0);
     if (IsSimt()) {
         OP_LOGI(context_->GetNodeName(), "is SIMT, ub reserve 32k");
@@ -217,20 +217,20 @@ int64_t CastTiling::GetUbFormer(int64_t inputTypeBitSize, int64_t outputTypeBitS
             policy_.id_ == CAST_TEMPLATE_MIRCRO_CAST_CAST_DEINTER_CAST || policy_.id_ == CAST_TEMPLATE_MIRCRO_CAST_INTER_CAST_CAST ||
             policy_.id_ == CAST_TEMPLATE_MIRCRO_DEINTER_SHIFT) {
         OP_CHECK_IF(ubSize_ <= UB_ALIGN_RESERVE_TYPE4,
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize", std::to_string(ubSize_), "ub_size is too small for the template (TYPE4)"),
+            OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "ubSize", std::to_string(ubSize_), "greater than UB_ALIGN_RESERVE_TYPE4"),
             return 0);
         int64_t ubCap = ((ubSize_ - UB_ALIGN_RESERVE_TYPE4) * B4_BITS) /
             (inputTypeBitSize + outputTypeBitSize);
         return ubCap / alignInputNum * alignInputNum;
     } else if (policy_.id_ == CAST_TEMPLATE_DST_BOOL) {
         OP_CHECK_IF(ubSize_ <= UB_ALIGN_RESERVE_TYPE1,
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize", std::to_string(ubSize_), "ub_size is too small for the template (DST_BOOL)"),
+            OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "ubSize", std::to_string(ubSize_), "greater than UB_ALIGN_RESERVE_TYPE1"),
             return 0);
         int64_t ubCap = ((ubSize_ - UB_ALIGN_RESERVE_TYPE1) * B4_BITS) / (inputTypeBitSize + B13_BITS);
         return ubCap / alignInputNum * alignInputNum;
     } else if (policy_.id_ == CAST_TEMPLATE_SRC_UINT1) {
         OP_CHECK_IF(ubSize_ <= UB_ALIGN_RESERVE_TYPE2,
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize", std::to_string(ubSize_), "ub_size is too small for the template (SRC_UINT1)"),
+            OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "ubSize", std::to_string(ubSize_), "greater than UB_ALIGN_RESERVE_TYPE2"),
             return 0);
         int64_t ubCap = ((ubSize_ - UB_ALIGN_RESERVE_TYPE2) * B4_BITS) /
             (outputTypeBitSize * B12_BITS / B8_BITS + 1);
@@ -238,10 +238,10 @@ int64_t CastTiling::GetUbFormer(int64_t inputTypeBitSize, int64_t outputTypeBitS
     } else if (policy_.id_ == CAST_TEMPLATE_TWO_CAST) {
         int64_t midTypeBitSize = GetDtypeBitSize(policy_.midType_);
         OP_CHECK_IF(midTypeBitSize == 0,
-            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "midType", ge::TypeUtils::DataTypeToSerialString(static_cast<ge::DataType>(policy_.midType_)), "dtype size is zero, type may be unsupported"),
+            OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "midType", "0", "not 0"),
             return 0);
         OP_CHECK_IF(ubSize_ <= UB_ALIGN_RESERVE_TYPE3,
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize", std::to_string(ubSize_), "ub_size is too small for the template (TWO_CAST)"),
+            OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "ubSize", std::to_string(ubSize_), "greater than UB_ALIGN_RESERVE_TYPE3"),
             return 0);
         int64_t ubCap = ((ubSize_ - UB_ALIGN_RESERVE_TYPE3) * B4_BITS) /
             (inputTypeBitSize + outputTypeBitSize + midTypeBitSize);
@@ -294,7 +294,7 @@ int64_t CastTiling::GetUbCopyStep(uint8_t inType, uint8_t outType,
     if (copyType == CAST_MODE_REG_COPYIN_NORM) {
         int64_t inSize = GetDtypeBitSize(inType);
         OP_CHECK_IF(inSize == 0,
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "input_type", "0", "dtype size is zero, type may be unsupported"), return -1);
+            OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "inSize", std::to_string(inSize), "not 0"), return -1);
         oneLoopCopyInBitSize = vlBitSize_;
         return oneLoopCopyInBitSize / inSize;
     } else if (copyType == CAST_MODE_REG_COPYIN_DS_B8) {
@@ -318,7 +318,7 @@ int64_t CastTiling::GetUbCopyStep(uint8_t inType, uint8_t outType,
     } else if (copyType == CAST_MODE_REG_COPYOUT_NORM) {
         int64_t outSize = GetDtypeBitSize(outType);
         OP_CHECK_IF(outSize == 0,
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "output_type", "0", "dtype size is zero, type may be unsupported"), return -1);
+            OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "outSize", std::to_string(outSize), "not 0"), return -1);
         return vlBitSize_ / outSize;
     } else if (copyType == CAST_MODE_REG_COPYOUT_PACK_B16) {
         return vlBitSize_ / B16_BITS / CAST_PACK2;
@@ -336,17 +336,17 @@ ge::graphStatus CastTiling::DoOpTiling()
 {
     int64_t inputTypeBitSize = GetGeDtypeBitSize(policy_.srcType_);
     OP_CHECK_IF(inputTypeBitSize == 0,
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "srcType", ge::TypeUtils::DataTypeToSerialString(policy_.srcType_), "dtype size is zero, type may be unsupported"),
+        OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "inputTypeBitSize", std::to_string(inputTypeBitSize), "not 0"),
         return ge::GRAPH_FAILED);
 
     int64_t outputTypeBitSize = GetGeDtypeBitSize(policy_.dstType_);
     OP_CHECK_IF(outputTypeBitSize == 0,
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "dstType", ge::TypeUtils::DataTypeToSerialString(policy_.dstType_), "dtype size is zero, type may be unsupported"),
+        OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "outputTypeBitSize", std::to_string(outputTypeBitSize), "not 0"),
         return ge::GRAPH_FAILED);
 
     uint64_t ubFormer = GetUbFormer(inputTypeBitSize, outputTypeBitSize);
     OP_CHECK_IF(ubFormer == 0,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize", std::to_string(ubSize_), "ub_size is too small for tiling calculation"),
+        OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "ubSize", std::to_string(ubSize_), "greater than 0"),
         return ge::GRAPH_FAILED);
 
     int64_t coreNum = (shapeSize_ * inputTypeBitSize + PER_CORE_MIN_UB_BIT - 1) /
@@ -355,7 +355,7 @@ ge::graphStatus CastTiling::DoOpTiling()
         coreNum = coreNum_;
     }
     OP_CHECK_IF(coreNum <= 0,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "coreNum,sys_core_num", std::to_string(coreNum)+","+std::to_string(coreNum_), "core number must be in range [1, sys_core_num]"),
+        OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "coreNum", std::to_string(coreNum)+","+std::to_string(coreNum_), "in the range [1, sys_core_num]"),
         return ge::GRAPH_FAILED);
 
     int64_t blockFormer = ((shapeSize_ + coreNum - 1) / coreNum + B7_BITS) / B8_BITS * B8_BITS;
@@ -379,13 +379,13 @@ ge::graphStatus CastTiling::DoOpTiling()
     int64_t inStep = GetUbCopyStep(policy_.srcMapType_, policy_.dstMapType_,
         policy_.regCopyInMode_, oneLoopCopyInBitSize);
     OP_CHECK_IF(inStep == -1,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "inStep", "-1", "failed to calculate copyin step for the given dtype and mode"),
+        OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "inStep", std::to_string(inStep), "not -1"),
         return ge::GRAPH_FAILED);
     tilingData_.set_regCopyInStep(inStep);
     int64_t noUse = 0;
     int64_t outStep = GetUbCopyStep(policy_.srcMapType_, policy_.dstMapType_, policy_.regCopyOutMode_, noUse);
     OP_CHECK_IF(outStep == -1,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "regCopyOutStep", "failed", "failed to calculate copyout step for the given dtype and mode"),
+        OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "outStep", std::to_string(outStep), "not -1"),
         return ge::GRAPH_FAILED);
     tilingData_.set_regCopyOutStep(outStep);
 
@@ -441,7 +441,7 @@ ge::graphStatus CastTiling::GetWorkspaceSize()
 ge::graphStatus CastTiling::PostTiling()
 {
     OP_CHECK_IF(tilingData_.GetDataSize() > context_->GetRawTilingData()->GetCapacity(),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "tiling_data_size,capacity", std::to_string(tilingData_.GetDataSize())+","+std::to_string(context_->GetRawTilingData()->GetCapacity()), "tiling data size exceeds capacity"),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "tiling_data_size", std::to_string(tilingData_.GetDataSize()), "The value of tiling_data_size must be less than or equal to capacity"),
         return ge::GRAPH_FAILED);
 
     size_t* currentWorkspace = context_->GetWorkspaceSizes(1);
@@ -462,7 +462,7 @@ static ge::graphStatus TilingForCast(gert::TilingContext *context)
 {
     OP_LOGD("CastTiling", "Enter TilingForCast");
     OP_CHECK_IF(context == nullptr,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("Cast", "context", "nullptr", "tiling context cannot be null"),
+        OP_LOGE_FOR_INVALID_VALUE("Cast", "context", "nullptr", "not nullptr"),
         return ge::GRAPH_FAILED);
 
     auto compileInfo = context->GetCompileInfo<CastCompileInfo>();

@@ -59,7 +59,7 @@ ge::graphStatus SignTiling::SetTilingData()
     } else if (this->outputDtype == ge::DT_INT64) {
         tilingKey = SIGN_KEY_INT64;
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "y", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT, DT_INT32, DT_INT64]");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT, INT32, INT64");
         return ge::GRAPH_FAILED;
     }
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);
@@ -88,10 +88,10 @@ ge::graphStatus SignTiling::CheckOutputShape()
 
     OP_CHECK_IF(
         (inputShape != outputShape),
-        OP_LOGD(
-            tilingContext->GetNodeName(),
-            "The shape of inputShape(%s) is not equal to the shape of outputShape(%s), please check.",
-            ToString(inputShape).c_str(), ToString(outputShape).c_str()),
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            tilingContext->GetNodeName(), "x, y",
+            (Ops::Base::ToString(inputShape) + ", " + Ops::Base::ToString(outputShape)).c_str(),
+            "The shapes of x and y must be the same"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -102,9 +102,10 @@ ge::graphStatus SignTiling::CheckOutputDtype()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
     OP_CHECK_IF(
         this->outputDtype != inputDesc->GetDataType(),
-        OP_LOGD(
-            tilingContext->GetNodeName(), "Input data type [%d] is not same as output's [%d]", inputDesc->GetDataType(),
-            this->outputDtype),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            tilingContext->GetNodeName(), "x, y",
+            std::string(ge::TypeUtils::DataTypeToSerialString(inputDesc->GetDataType())) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(this->outputDtype)),
+            "The dtypes of x and y must be the same"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -135,7 +136,7 @@ ge::graphStatus SignTiling::RunTiling()
     } else if (this->outputDtype == ge::DT_INT64) {
         baseTilingResult = elewiseBaseTiling.DoTiling<SignDag::SignForInt64<int64_t>::OpDag>(tiling->baseTiling);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "y", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "dtype not in [DT_FLOAT16, DT_BF16, DT_FLOAT, DT_INT32, DT_INT64]");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y", ge::TypeUtils::DataTypeToSerialString(this->outputDtype), "FLOAT16, BF16, FLOAT, INT32, INT64");
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(

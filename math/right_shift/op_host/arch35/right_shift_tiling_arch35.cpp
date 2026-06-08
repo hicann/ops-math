@@ -36,11 +36,10 @@ bool RightShiftTiling::CheckDtype(
     const ge::DataType& xDtype, const ge::DataType& yDtype, const ge::DataType& zDtype) const
 {
     if (xDtype != yDtype || xDtype != zDtype) {
-        OP_LOGE(
-            context_->GetNodeName(), "Dtype of x[%s] should be equal to dtype of y[%s] and z[%s].",
-            ge::TypeUtils::DataTypeToSerialString(xDtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(yDtype).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(zDtype).c_str());
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            context_->GetNodeName(), "x, y, z",
+            std::string(ge::TypeUtils::DataTypeToSerialString(xDtype)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(yDtype)) + ", " + std::string(ge::TypeUtils::DataTypeToSerialString(zDtype)),
+            "The dtypes of x, y and z must be the same");
         return false;
     }
     return true;
@@ -115,11 +114,9 @@ ge::graphStatus RightShiftTiling::DoOpTiling()
         baseTilingResult = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode(), TPL_UINT64);
     } else {
-        OP_LOGE(
-            context_->GetNodeName(),
-            "Input dtype is only support int8, int16, int32, int64, uint8, uint16, uint32, uint64, "
-            "while got %s!",
-            ge::TypeUtils::DataTypeToSerialString(xDType).c_str());
+        OP_LOGE_FOR_INVALID_DTYPE(
+            context_->GetNodeName(), "x",
+            ge::TypeUtils::DataTypeToSerialString(xDType), "INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64");
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(
