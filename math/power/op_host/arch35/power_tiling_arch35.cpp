@@ -64,7 +64,11 @@ ge::graphStatus PowerTiling::CalcInputDtype()
     this->inputDtype = inputDesc->GetDataType();
     OP_CHECK_IF(
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT,
-        OP_LOGE(tilingContext->GetNodeName(), "input x dtype not supported, only fp16/bf16/fp32"),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            tilingContext->GetNodeName(),
+            "x",
+            Ops::Base::ToString(this->inputDtype).c_str(),
+            "The dtype of x must be within the range [DT_FLOAT16, DT_BF16, DT_FLOAT]."),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -77,7 +81,11 @@ ge::graphStatus PowerTiling::CalcOutputDtype()
     this->outputDtype = outputDesc->GetDataType();
     OP_CHECK_IF(
         this->outputDtype != this->inputDtype,
-        OP_LOGE(tilingContext->GetNodeName(), "output y dtype must equal input x dtype"),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            tilingContext->GetNodeName(),
+            "x, y",
+            (Ops::Base::ToString(this->inputDtype) + ", " + Ops::Base::ToString(this->outputDtype)).c_str(),
+            "The dtypes of x and y must be the same."),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -95,7 +103,12 @@ ge::graphStatus PowerTiling::CheckShape()
     const gert::Shape& yShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(
-        xShape != yShape, OP_LOGE(tilingContext->GetNodeName(), "x and y shape must match"),
+        xShape != yShape,
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            tilingContext->GetNodeName(),
+            "x, y",
+            (Ops::Base::ToString(xShape) + ", " + Ops::Base::ToString(yShape)).c_str(),
+            "The shapes of x and y must be the same."),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -236,39 +249,27 @@ bool PowerTiling::DecideCulType()
 //      → 编码 dType → 调 elementwise 通用 tiling 完成多核 / UB 切分
 //      → 写 scalarData / workspace / tilingKey / blockDim。
 // -----------------------------------------------------------------------------
-ge::graphStatus PowerTiling::RunTiling()
+ge::graphStatus PowerTiling::PerformValidationChecks()
 {
-    OP_LOGD(tilingContext->GetNodeName(), "PowerTiling::RunTiling enter.");
-    ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-
-    // 从框架申请 PowerTilingData：baseTiling 字段由 DoTiling 填，scale/shift/power/negScalar 由本函数填。
-    auto* powerTilingData = tilingContext->GetTilingData<PowerOp::PowerTilingData>();
-    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, powerTilingData);
-
     OP_CHECK_IF(
-        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
+        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
+        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"),
+        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        SetAttr() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "set attrs failed"),
+        SetAttr() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "set attrs failed"),
         return ge::GRAPH_FAILED);
-
     OP_CHECK_IF(
-        !DecideCulType(), OP_LOGE(tilingContext, "DecideCulType failed"), return ge::GRAPH_FAILED);
+        !DecideCulType(), OP_LOGE(tilingContext->GetNodeName(), "DecideCulType failed"), return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
 
-    // culType 枚举强转为 uint64_t，参与 tilingKey 编码。
-    culTypeKey = static_cast<uint64_t>(culType);
-    OP_LOGD(
-        tilingContext->GetNodeName(),
-        "Power culType=%lu (scalar0=%f, scalar1=%f, scalar2=%f, scalar3=%f)",
-        culTypeKey, scalar0, scalar1, scalar2, scalar3);
-
-    // 输出 dtype → 模板键值映射。
+ge::graphStatus PowerTiling::MapOutputDtypeToTplKey()
+{
     if (this->outputDtype == ge::DT_FLOAT16) {
         dType = POWER_TPL_DTYPE_FP16;
     } else if (this->outputDtype == ge::DT_BF16) {
@@ -276,34 +277,62 @@ ge::graphStatus PowerTiling::RunTiling()
     } else if (this->outputDtype == ge::DT_FLOAT) {
         dType = POWER_TPL_DTYPE_FP32;
     } else {
-        OP_LOGE(tilingContext->GetNodeName(), "output dtype not supported");
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            tilingContext->GetNodeName(),
+            "y",
+            Ops::Base::ToString(this->outputDtype).c_str(),
+            "The dtype of y must be within the range [DT_FLOAT16, DT_BF16, DT_FLOAT].");
         return ge::GRAPH_FAILED;
     }
+    return ge::GRAPH_SUCCESS;
+}
 
-    ge::graphStatus baseTilingResult = DispatchTilingByCulType(elewiseBaseTiling, powerTilingData);
-    OP_CHECK_IF(
-        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
-        return ge::GRAPH_FAILED);
-
-    // 把 4 个 float 标量直接写到 PowerTilingData 上，kernel 端 ElementwiseSch::SetVar 取用。
-    // 各 culType 下的语义见 power_tiling_arch35.h 注释。
+ge::graphStatus PowerTiling::SetTilingResults(PowerOp::PowerTilingData* powerTilingData)
+{
     powerTilingData->scale     = scalar0;
     powerTilingData->shift     = scalar1;
     powerTilingData->power     = scalar2;
     powerTilingData->negScalar = scalar3;
 
-    // workspace 预留 16 MB，留给 kernel 端临时空间使用。
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     currentWorkspace[0] = POWER_ASCEND_WORKSPACE;
 
-    // tilingKey = (schMode, culTypeKey, dType) 三段编码，
-    // 与 kernel 模板参数列表的顺序保持一致。
     const uint64_t tilingKey = GET_TPL_TILING_KEY(schMode, culTypeKey, dType);
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);
     tilingContext->SetTilingKey(tilingKey);
     tilingContext->SetBlockDim(powerTilingData->baseTiling.blockNum);
 
     return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus PowerTiling::RunTiling()
+{
+    OP_LOGD(tilingContext->GetNodeName(), "PowerTiling::RunTiling enter.");
+    ElewiseBaseTiling elewiseBaseTiling(tilingContext);
+
+    auto* powerTilingData = tilingContext->GetTilingData<PowerOp::PowerTilingData>();
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, powerTilingData);
+
+    if (PerformValidationChecks() != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+
+    culTypeKey = static_cast<uint64_t>(culType);
+    OP_LOGD(
+        tilingContext->GetNodeName(),
+        "Power culType=%lu (scalar0=%f, scalar1=%f, scalar2=%f, scalar3=%f)",
+        culTypeKey, scalar0, scalar1, scalar2, scalar3);
+
+    if (MapOutputDtypeToTplKey() != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+
+    ge::graphStatus baseTilingResult = DispatchTilingByCulType(elewiseBaseTiling, powerTilingData);
+    OP_CHECK_IF(
+        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
+        return ge::GRAPH_FAILED);
+
+    return SetTilingResults(powerTilingData);
 }
 
 // runtime 2.0 注册的 Tiling 回调入口。

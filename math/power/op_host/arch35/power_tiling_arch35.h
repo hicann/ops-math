@@ -72,6 +72,10 @@ protected:
     ge::graphStatus DispatchTilingByCulType(ElewiseBaseTiling& tiling, PowerOp::PowerTilingData* data);
 
 private:
+    ge::graphStatus PerformValidationChecks();
+    ge::graphStatus MapOutputDtypeToTplKey();
+    ge::graphStatus SetTilingResults(PowerOp::PowerTilingData* powerTilingData);
+    
     gert::TilingContext* tilingContext;
     ge::DataType outputDtype = ge::DT_UNDEFINED;
     ge::DataType inputDtype = ge::DT_UNDEFINED;

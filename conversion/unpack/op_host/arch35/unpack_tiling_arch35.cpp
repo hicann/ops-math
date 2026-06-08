@@ -55,20 +55,27 @@ ge::graphStatus UnpackTiling::GetInputParamsSameLen() {
   int64_t inputXDimNum = static_cast<int64_t>(inputShape_.GetDimNum());
 
   OP_CHECK_IF((splitDim_ < -inputXDimNum || splitDim_ >= inputXDimNum),
-      OP_LOGE(context_->GetNodeName(),
-      "axis:%ld value out range, inputXDimNum:%ld", splitDim_, inputXDimNum), return ge::GRAPH_FAILED);
+      OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "axis",
+          std::to_string(splitDim_).c_str(),
+          ("The value of axis must be within the range [-" + std::to_string(inputXDimNum) + 
+           ", " + std::to_string(inputXDimNum - 1) + "].").c_str()), 
+      return ge::GRAPH_FAILED);
   if (splitDim_ < 0) {
       splitDim_ = splitDim_ + inputXDimNum;
   }
 
   OP_CHECK_IF(numSplit_ <= 0,
-      OP_LOGE(context_->GetNodeName(), "num:%ld must be greater than 0", numSplit_),
+      OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "num",
+          std::to_string(numSplit_).c_str(),
+          "The value of num must be greater than 0."),
       return ge::GRAPH_FAILED);
 
   const int64_t dim = inputShape_.GetDim(splitDim_);
-  OP_CHECK_IF(numSplit_ != dim, OP_LOGE(context_->GetNodeName(),
-                    "get num:%ld != dim:%ld error", numSplit_, dim),
-                    return GRAPH_FAILED);
+  OP_CHECK_IF(numSplit_ != dim, 
+      OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "num",
+          std::to_string(numSplit_).c_str(),
+          std::to_string(dim).c_str()),
+      return GRAPH_FAILED);
 
   if (numSplit_ == 1) {
     // 如果不切分, 则把splitDim设置成0, 提高搬运效率
@@ -86,10 +93,11 @@ ge::graphStatus UnpackTiling::InitParamsSameLen(int32_t maxCoreNum, uint32_t ubS
   OP_CHECK_NULL_WITH_CONTEXT(context_, xInputDesc);
   ge::DataType xDtype = xInputDesc->GetDataType();
   xDtypeSize_ = ge::GetSizeByDataType(xDtype);
-  OP_CHECK_IF(xDtypeSize_ <= 0,
-                  OP_LOGE(context_->GetNodeName(),
-                  "xDtypeSize_:%ld must be greater than 0", xDtypeSize_),
-                  return ge::GRAPH_FAILED);
+OP_CHECK_IF(xDtypeSize_ <= 0,
+                OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
+                    Ops::Base::ToString(xDtype).c_str(),
+                    "The dtype size of x must be greater than 0."),
+                return ge::GRAPH_FAILED);
 
   if (GetInputParamsSameLen() != ge::GRAPH_SUCCESS) {
       return ge::GRAPH_FAILED;
@@ -105,7 +113,7 @@ ge::graphStatus TilingForUnpack(gert::TilingContext* context) {
     OP_LOGD(context->GetNodeName(), "DSL/TIK Tiling4Unpack is Null! Running AscendC tiling!");
     uint32_t maxCoreNum = compile_info->maxCoreNum;
     uint32_t ubSizePlatform = compile_info->ubSizePlatform;
-    OP_CHECK_IF(ubSizePlatform <= 0U, OP_LOGE(context->GetNodeName(),
+OP_CHECK_IF(ubSizePlatform <= 0U, OP_LOGE(context->GetNodeName(),
                     "get ubSize <= 0 error"),
                     return GRAPH_FAILED);
 

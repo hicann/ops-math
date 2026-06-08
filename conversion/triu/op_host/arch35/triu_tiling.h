@@ -159,30 +159,49 @@ ge::graphStatus DoTiling(
     }
 }
 
+template <bool diagonal_as_input>
+void GetDiagonalValue(gert::TilingContext* context, int64_t& diag)
+{
+    const int64_t* diagPtr = nullptr;
+    if (!diagonal_as_input) {
+        auto attrs = context->GetAttrs();
+        if (attrs != nullptr) {
+            diagPtr = attrs->GetInt(INDEX_DIAGONAL);
+        }
+    } else {
+        auto diagTensorPtr = context->GetOptionalInputTensor(INDEX_K);
+        if (diagTensorPtr) {
+            diagPtr = diagTensorPtr->GetData<int64_t>();
+        }
+    }
+    diag = diagPtr ? *diagPtr : 0;
+}
+
 template <bool upper, bool diagonal_as_input>
 ge::graphStatus Tiling4Trilu(gert::TilingContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Tiling4Tril in");
-
     auto compileInfo = reinterpret_cast<const TriluCompileInfo*>(context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     auto params = context->GetTilingData<TriluTilingParams>();
     OP_CHECK_NULL_WITH_CONTEXT(context, params);
-
     auto xDesc = context->GetInputDesc(INDEX_X);
     OP_CHECK_NULL_WITH_CONTEXT(context, xDesc);
     auto xDtype = xDesc->GetDataType();
     auto xDtypeBytes = GetSizeByDataType(xDtype);
     OP_CHECK_IF(
-        xDtypeBytes == 0, OP_LOGE(context->GetNodeName(), "x data type error"),
-        return ge::GRAPH_FAILED); // type not supported
-
+        xDtypeBytes == 0, OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "x",
+            Ops::Base::ToString(xDtype).c_str(),
+            "The dtype size of x must be greater than 0."),
+        return ge::GRAPH_FAILED);
     auto xShape = context->GetInputShape(INDEX_X);
     OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
     const auto& xOriginShape = EnsureNotScalar(xShape->GetOriginShape());
     auto dimNum = xOriginShape.GetDimNum();
     OP_CHECK_IF(
-        dimNum < 2, OP_LOGE(context->GetNodeName(), "tensor's dimension size is less than 2 or overflow"),
+        dimNum < 2, OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "x",
+            std::to_string(dimNum).c_str(),
+            "The shape dim of x must be greater than or equal to 2."),
         return ge::GRAPH_FAILED);
     auto row = xOriginShape.GetDim(dimNum - 2);
     auto col = xOriginShape.GetDim(dimNum - 1);
@@ -190,20 +209,8 @@ ge::graphStatus Tiling4Trilu(gert::TilingContext* context)
     for (size_t i = 0; i + MIN_DIM_NUM < dimNum; ++i) {
         matrixNum *= xOriginShape.GetDim(i);
     }
-
-    const int64_t* diagPtr = nullptr;
-    if (!diagonal_as_input) {
-        auto attrs = context->GetAttrs();
-        OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
-        diagPtr = attrs->GetInt(INDEX_DIAGONAL);
-    } else {
-        auto diagTensorPtr = context->GetOptionalInputTensor(INDEX_K);
-        if (diagTensorPtr) {
-            diagPtr = diagTensorPtr->GetData<int64_t>();
-        }
-    }
-    int64_t diag = diagPtr ? *diagPtr : 0;
-
+    int64_t diag = 0;
+    GetDiagonalValue<diagonal_as_input>(context, diag);
     params->row = row;
     params->col = col;
     params->matrixNum = matrixNum;

@@ -237,7 +237,9 @@ inline static ge::graphStatus CheckFP4Dim1Even(const ConcatTilingParam& param)
 {
     for (const auto& tensorSize : param.tensorListDim1) {
         if (tensorSize % FP4_TO_B8_RATIO != 0) {
-            OP_LOGE("[Concat]", "FP4 Dim1 must be even, but got %ld", tensorSize);
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("Concat", "tensor_dim1",
+                std::to_string(tensorSize).c_str(),
+                "The value of tensor_dim1 must be an even number for FP4 dtype.");
             return ge::GRAPH_FAILED;
         }
     }
@@ -298,8 +300,10 @@ inline static ge::graphStatus CalcBaseTilingParam(const gert::TilingContext* con
     param.isDim1AllAlign = CheckDim1Align(param.mergeTensorList, param.dtypeSize) ? 1 : 0;
     OP_CHECK_IF(
         param.dtypeSize <= 0,
-        OP_LOGE(
-            context->GetNodeName(), "param.dtypeSize must be greater than 0, param.dtypeSize: %ld", param.dtypeSize),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context->GetNodeName(), "input",
+            std::to_string(param.dtypeSize).c_str(),
+            "The dtype size of input must be greater than 0."),
         return ge::GRAPH_FAILED);
     param.leastCopyNumber = MIN_RESERVED_SIZE / param.dtypeSize;
     param.everyBlockNumber = BLOCK_SIZE / param.dtypeSize;
@@ -497,7 +501,10 @@ inline static ge::graphStatus IsShapeValid(
     for (const auto& tensorSize : tensorList) {
         int64_t curDimSize = tensorSize.size();
         OP_CHECK_IF(
-            curDimSize != dimSize, OP_LOGE(context->GetNodeName(), "dimSize of input tensor should be equal."),
+            curDimSize != dimSize, 
+            OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context->GetNodeName(), "input_tensors",
+                (std::to_string(dimSize) + ", " + std::to_string(curDimSize)).c_str(),
+                "The shape dims of input tensors must be the same."),
             return ge::GRAPH_FAILED);
         for (int64_t j = 0; j < dimSize; j++) {
             if (realDim == j) {
@@ -505,7 +512,9 @@ inline static ge::graphStatus IsShapeValid(
             }
             OP_CHECK_IF(
                 shape0[j] != tensorSize[j],
-                OP_LOGE(context->GetNodeName(), "dim %ld of input tensor should be equal.", j),
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "input_tensors",
+                    (std::to_string(shape0[j]) + ", " + std::to_string(tensorSize[j])).c_str(),
+                    ("Shape [" + std::to_string(j) + "] of input tensors must be the same.").c_str()),
                 return ge::GRAPH_FAILED);
         }
     }
@@ -517,7 +526,9 @@ static ge::graphStatus TilingUbForNosplitDim1(
 {
     OP_CHECK_IF(
         param.catDim1 <= 0,
-        OP_LOGE(context->GetNodeName(), "param.catDim1 must be greater than 0, param.catDim1: %ld", param.catDim1),
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context->GetNodeName(), "output_tensor",
+            std::to_string(param.catDim1).c_str(),
+            "Shape concat_axis of output_tensor must be greater than 0."),
         return ge::GRAPH_FAILED);
     param.ubFactorDim0 = min(maxAvaliableUb / param.catDim1, param.catDim0);
     OP_CHECK_IF(
@@ -1210,20 +1221,18 @@ ge::graphStatus Tiling4PackToConcatForAscendC(gert::TilingContext* context)
         OP_LOGE(context->GetNodeName(), "check pack_axis failed, please check pack_axis."), return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         CheckInputShapeSameForPack(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(
-            context->GetNodeName(),
-            "check pack input tensor shape failed, please make sure all input tensor shape same."),
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "input_tensors",
+            "different_shapes",
+            "The shapes of input tensors must be the same."),
         return ge::GRAPH_FAILED);
     auto inputDesc = context->GetDynamicInputDesc(PACK_INPUT_IDX, 0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     auto inputDataType = inputDesc->GetDataType();
     OP_CHECK_IF(
         IsInvalidTypeForPack(inputDataType),
-        OP_LOGE(
-            context->GetNodeName(),
-            "input dtype only support uint8, int8, bool, float32, int32, uint32, int16, float16, bfloat16, uint16, "
-            "int64,"
-            "uint64, doulbe, complex32, complex64 currently, please check."),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "input",
+            Ops::Base::ToString(inputDataType).c_str(),
+            "The dtype of input must be within the range [DT_UINT8, DT_INT8, DT_BOOL, DT_FLOAT, DT_INT32, DT_UINT32, DT_INT16, DT_FLOAT16, DT_BF16, DT_UINT16, DT_INT64, DT_UINT64, DT_DOUBLE, DT_COMPLEX32, DT_COMPLEX64]."),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         GetDtypeSize(context, param, PACK_INPUT_IDX) != ge::GRAPH_SUCCESS,
@@ -1315,11 +1324,81 @@ bool IsAllContiguous(gert::TilingContext* context, ConcatTilingParam &param, int
 ge::graphStatus CheckNonConBasic(gert::TilingContext* context, ConcatTilingParam &param)
 {
     OP_CHECK_IF(param.tensorNum <= 1 || param.tensorNum > NON_CON_TENSOR_SIZE,
-        OP_LOGE(context->GetNodeName(),
-        "input tensor number should be at least 1 and less than 32."), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_TENSORNUM(context->GetNodeName(), "input_tensors",
+            static_cast<int64_t>(param.tensorNum),
+            ("within the range [2, " + std::to_string(NON_CON_TENSOR_SIZE) + "]").c_str()),
+        return ge::GRAPH_FAILED);
     OP_CHECK_IF(param.strideDim < 0,
-        OP_LOGE(context->GetNodeName(),
-        "non contiguous scenarious only support concat dim with greater than 0 or greater than -8."), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "stride_dim",
+            std::to_string(param.strideDim).c_str(),
+            "The value of stride_dim must be greater than or equal to 0."),
+        return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
+
+static ge::graphStatus ValidateDtypeConsistency(
+    gert::TilingContext* context, int64_t inputIdx,
+    int64_t tensorIdx, ge::DataType input0DataType)
+{
+    auto inputIDesc = context->GetDynamicInputDesc(inputIdx, tensorIdx);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputIDesc);
+    OP_CHECK_IF(inputIDesc->GetDataType() != input0DataType,
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context->GetNodeName(), "input_tensors",
+            (Ops::Base::ToString(input0DataType) + ", " + Ops::Base::ToString(inputIDesc->GetDataType())).c_str(),
+            "The dtypes of input_tensors must be the same."),
+        return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
+
+static ge::graphStatus ValidateAndSetStride(
+    gert::TilingContext* context, ConcatTilingParam& param, int64_t inputIdx, int64_t i)
+{
+    bool isViewI = context->DynamicInputIsView(inputIdx, i);
+    auto nonStrideI = context->GetDynamicInputStride(inputIdx, i);
+    if (isViewI && nonStrideI != nullptr && nonStrideI->GetDimNum() > 0) {
+        OP_CHECK_IF(nonStrideI->GetStride(param.tensorList[i].size() - 1) != 1,
+            OP_LOGE_FOR_INVALID_STRIDE(context->GetNodeName(), "input_stride",
+                std::to_string(nonStrideI->GetStride(param.tensorList[i].size() - 1)).c_str(),
+                "1"),
+            return ge::GRAPH_FAILED);
+        for (int32_t j = param.tensorList[i].size() - 2; j >= 0; j--) {
+            if (param.strideDim != j) {
+                OP_CHECK_IF(nonStrideI->GetStride(j) != nonStrideI->GetStride(j + 1) * param.tensorList[i][j + 1],
+                    OP_LOGE_FOR_INVALID_STRIDE(context->GetNodeName(), "input_stride",
+                        std::to_string(nonStrideI->GetStride(j)).c_str(),
+                        std::to_string(nonStrideI->GetStride(j + 1) * param.tensorList[i][j + 1]).c_str()),
+                    return ge::GRAPH_FAILED);
+            } 
+        }
+        param.strideList[i] = static_cast<uint64_t>(nonStrideI->GetStride(param.strideDim));
+    } else {
+        param.strideList[i] = MergeDim(param.tensorList[i], param.strideDim + 1, param.tensorList[i].size());
+    }
+    param.concatDimList[i] = static_cast<uint32_t>(param.tensorList[i][param.dim]);
+    return ge::GRAPH_SUCCESS;
+}
+
+static ge::graphStatus ValidateSmallBagScenario(
+    gert::TilingContext* context, const ConcatTilingParam& param, int64_t i)
+{
+    int64_t allData = MergeDim(param.tensorList[i], 0, param.tensorList[i].size());
+    if (!(param.tensorListDim1[i] * param.dtypeSize >= SMALL_BAG) 
+        && !(param.strideList[i] * param.dtypeSize > SMALL_BAG) 
+        && !(allData * param.dtypeSize < param.totalCoreNum * ALL_DATA_SMALL)) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "tensorListDim1",
+            std::to_string(param.tensorListDim1[i] * param.dtypeSize).c_str(),
+            ("The combined size of the concat dim and subsequent dim must be at least " + 
+             std::to_string(SMALL_BAG) + " bytes.").c_str());
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "strideList",
+            std::to_string(param.strideList[i] * param.dtypeSize).c_str(),
+            ("The stride of the non contiguous axis must be greater than " + 
+             std::to_string(SMALL_BAG) + " bytes.").c_str());
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "allData",
+            std::to_string(allData * param.dtypeSize).c_str(),
+            ("The total data size must be less than " + 
+             std::to_string(param.totalCoreNum * ALL_DATA_SMALL) + " bytes.").c_str());
+        return ge::GRAPH_FAILED;
+    }
     return ge::GRAPH_SUCCESS;
 }
 
@@ -1331,43 +1410,21 @@ ge::graphStatus CheckNonContiguous(gert::TilingContext* context, ConcatTilingPar
     auto input0Desc = context->GetDynamicInputDesc(inputIdx, 0);
     OP_CHECK_NULL_WITH_CONTEXT(context, input0Desc);
     auto input0DataType = input0Desc->GetDataType();
+    
     for (int64_t i = 0; i < param.tensorNum; i++) {
-        int64_t allData = 1;
-        auto inputIDesc = context->GetDynamicInputDesc(inputIdx, i);
-        OP_CHECK_NULL_WITH_CONTEXT(context, inputIDesc);
-        OP_CHECK_IF(inputIDesc->GetDataType() != input0DataType,
-            OP_LOGE(context->GetNodeName(), "non contiguous scenarious only support identical data type."), return ge::GRAPH_FAILED);
-        bool isViewI = context->DynamicInputIsView(inputIdx, i);
-        auto nonStrideI = context->GetDynamicInputStride(inputIdx, i);
-        if (isViewI && nonStrideI != nullptr && nonStrideI->GetDimNum() > 0) {
-            // 非连续校验除stridedim外，其他必须连续
-            OP_CHECK_IF(nonStrideI->GetStride(param.tensorList[i].size() - 1) != 1,
-                OP_LOGE(context->GetNodeName(),
-                "non contiguous scenarious, only the axis immediately preceding the concat dim is allowed to be non contiguous, while all other axis must be contiguous."),
-                return ge::GRAPH_FAILED);
-            for (int32_t j = param.tensorList[i].size() - 2; j >= 0; j--) {
-                if (param.strideDim != j) {
-                    OP_CHECK_IF(nonStrideI->GetStride(j) != nonStrideI->GetStride(j + 1) * param.tensorList[i][j + 1],
-                        OP_LOGE(context->GetNodeName(),
-                        "non contiguous scenarious, only the axis immediately preceding the concat dim is allowed to be non contiguous, while all other axis must be contiguous."),
-                        return ge::GRAPH_FAILED);
-                } 
-            }
-            param.strideList[i] = static_cast<uint64_t>(nonStrideI->GetStride(param.strideDim));
-        } else {
-            param.strideList[i] = MergeDim(param.tensorList[i], param.strideDim + 1, param.tensorList[i].size());
+        if (ValidateDtypeConsistency(context, inputIdx, i, input0DataType) != ge::GRAPH_SUCCESS) {
+            return ge::GRAPH_FAILED;
         }
-        param.concatDimList[i] = static_cast<uint32_t>(param.tensorList[i][param.dim]);
-        // 非连续tensor要校验，不满足尾轴大包；尾轴小包但stride大包；尾轴小包总体数据小包的场景，不支持非连续
-        allData = MergeDim(param.tensorList[i], 0, param.tensorList[i].size());
-        OP_CHECK_IF(!(param.tensorListDim1[i] * param.dtypeSize >= SMALL_BAG) 
-            && !(param.strideList[i] * param.dtypeSize > SMALL_BAG) 
-            && !(allData * param.dtypeSize < param.totalCoreNum * ALL_DATA_SMALL),
-            OP_LOGE(context->GetNodeName(),
-            "In non contiguous scenarios, either the combined size of the concat dim and subsequent dim is at least 128 bytes, "
-            "or the stride of the non contiguous axis is greater than 128 bytes, or the total data size of the tensor is less than 8192 bytes multiplied by the core number."),
-            return ge::GRAPH_FAILED);
+        
+        if (ValidateAndSetStride(context, param, inputIdx, i) != ge::GRAPH_SUCCESS) {
+            return ge::GRAPH_FAILED;
+        }
+        
+        if (ValidateSmallBagScenario(context, param, i) != ge::GRAPH_SUCCESS) {
+            return ge::GRAPH_FAILED;
+        }
     }
+    
     param.isNonContiguous = true;
     return ge::GRAPH_SUCCESS;
 }
@@ -1388,11 +1445,10 @@ ge::graphStatus TilingCommon(gert::TilingContext* context, int64_t inputIdx, int
     auto inputDataType = inputDesc->GetDataType();
     OP_CHECK_IF(
         IsInvalidType(inputDataType),
-        OP_LOGE(
-            context->GetNodeName(),
-            "input dtype only support uint8, int8, bool, float32, int32, uint32, int16, float16, bfloat16, uint16, "
-            "int64,"
-            "uint64, double, complex64, HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0 FLOAT4_E1M2、FLOAT4_E2M1 currently, please check."),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context->GetNodeName(), "input",
+            Ops::Base::ToString(inputDataType).c_str(),
+            "The dtype of input must be within the range [DT_UINT8, DT_INT8, DT_BOOL, DT_FLOAT, DT_INT32, DT_UINT32, DT_INT16, DT_FLOAT16, DT_BF16, DT_UINT16, DT_INT64, DT_UINT64, DT_DOUBLE, DT_COMPLEX64, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0, DT_FLOAT4_E1M2, DT_FLOAT4_E2M1]."),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         GetDtypeSize(context, param, inputIdx) != ge::GRAPH_SUCCESS,

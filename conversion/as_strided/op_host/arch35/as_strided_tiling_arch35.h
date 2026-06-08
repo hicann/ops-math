@@ -59,6 +59,12 @@ public:
     void SetWithGatherTilingData(AsStridedUbGatherParam& ubGatherParam);
 
 private:
+    ge::graphStatus HandleEmptyTensor();
+    ge::graphStatus GetAndValidateDataType(AsStridedTilingParam& tilingParam, uint32_t ubSizePlatform);
+    ge::graphStatus ExecuteTilingAndSetWorkspace(
+        AsStridedTilingParam& tilingParam, AsStridedTilingData& tilingData,
+        AsStridedRunInfo& runInfo);
+    
     gert::TilingContext* context_ = nullptr;
     
     // 各模板tilingData

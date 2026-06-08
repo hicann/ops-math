@@ -61,7 +61,9 @@ ge::graphStatus AsinTiling::CalcOutputDtype()
     this->outputDtype = outputDesc->GetDataType();
 
     OP_CHECK_IF(inputDtype != this->outputDtype,
-                OP_LOGE(tilingContext, "input and output dtype is diff, check failed"),
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "input, output",
+                    (Ops::Base::ToString(inputDtype) + ", " + Ops::Base::ToString(this->outputDtype)).c_str(),
+                    "The dtypes of input and output must be the same."),
                 return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -78,7 +80,9 @@ ge::graphStatus AsinTiling::CheckShape()
     const gert::Shape& outputShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF(inputShape != outputShape,
-                OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x, y",
+                    "input_shape, output_shape",
+                    "The shapes of x and y must be the same."),
                 return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -102,7 +106,9 @@ ge::graphStatus AsinTiling::RunTiling()
     } else if (this->outputDtype == ge::DT_BF16) {
         res = elewiseBaseTiling.DoTiling<AsinOpWithCast<bfloat16_t>::OpDag>(tiling->baseTiling, ASCEND_API_BUFFER + DCACHE_SIZE);
     } else {
-        OP_LOGE(tilingContext, "data type check failed. dtype: %d", this->outputDtype);
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "output",
+            Ops::Base::ToString(this->outputDtype).c_str(),
+            "The dtype of output must be within the range [DT_FLOAT16, DT_FLOAT, DT_BF16].");
         return ge::GRAPH_FAILED;
     }
 

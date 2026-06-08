@@ -201,8 +201,9 @@ static aclnnStatus ProcessOneTensor(const aclTensor* in, aclTensor* out, aclOpEx
     CHECK_RET(contiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
     auto viewIn = l0op::Cast(contiguous, out->GetDataType(), executor);
     if (viewIn == nullptr) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Result type %s can't be cast to the desired output type %s.",
-                op::ToString(contiguous->GetDataType()).GetString(), op::ToString(out->GetDataType()).GetString());
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Result type %s can't be cast to the desired output type %s.",
+            op::ToString(contiguous->GetDataType()).GetString(), op::ToString(out->GetDataType()).GetString());
         return ACLNN_ERR_INNER_NULLPTR;
     }
     auto viewCopyResult = l0op::ViewCopy(viewIn, out, executor);
@@ -311,8 +312,9 @@ static aclnnStatus ProcessNonContiguous(op::FVector<const aclTensor*> tensorList
     CHECK_RET(CheckShapeAndScalarSame(concatTensor, out), ACLNN_ERR_PARAM_INVALID);
     auto castOut = l0op::Cast(concatTensor, out->GetDataType(), executor);
     if (castOut == nullptr) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Result type %s can't be cast to the desired output type %s.",
-                op::ToString(concatTensor->GetDataType()).GetString(), op::ToString(out->GetDataType()).GetString());
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Result type %s can't be cast to the desired output type %s.",
+            op::ToString(concatTensor->GetDataType()).GetString(), op::ToString(out->GetDataType()).GetString());
         return ACLNN_ERR_INNER_NULLPTR;
     }
     auto viewCopyResult = l0op::ViewCopy(castOut, out, executor);
@@ -375,8 +377,9 @@ static aclnnStatus SplitToConcat(const aclTensorList* tensors, int64_t dim, aclT
                 CHECK_RET(contiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
                 auto castOut = l0op::Cast(contiguous, promoteType, executor);
                 if (castOut == nullptr) {
-                    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Result type %s can't be cast to the desired output type %s.",
-                            op::ToString(contiguous->GetDataType()).GetString(), op::ToString(promoteType).GetString());
+                    OP_LOGE(
+                        ACLNN_ERR_PARAM_INVALID, "Result type %s can't be cast to the desired output type %s.",
+                        op::ToString(contiguous->GetDataType()).GetString(), op::ToString(promoteType).GetString());
                     return ACLNN_ERR_INNER_NULLPTR;
                 }
                 tensorListOnce.emplace_back(castOut);
@@ -412,8 +415,9 @@ static aclnnStatus SplitToConcat(const aclTensorList* tensors, int64_t dim, aclT
     CHECK_RET(CheckShapeAndScalarSame(tensorListA.front(), out), ACLNN_ERR_PARAM_INVALID);
     auto castOut = l0op::Cast(tensorListA.front(), out->GetDataType(), executor);
     if (castOut == nullptr) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Result type %s can't be cast to the desired output type %s.",
-                op::ToString(tensorListA.front()->GetDataType()).GetString(), op::ToString(out->GetDataType()).GetString());
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID, "Result type %s can't be cast to the desired output type %s.",
+            op::ToString(tensorListA.front()->GetDataType()).GetString(), op::ToString(out->GetDataType()).GetString());
         return ACLNN_ERR_INNER_NULLPTR;
     }
 

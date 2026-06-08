@@ -174,7 +174,9 @@ bool SplitVTiling::GetSizeSplitsList()
     } else if (sizeSplitsT->GetDataType() == ge::DT_UINT64) {
         return GetData<uint64_t>(sizeSplitsT, oriSizeSplits_);
     }
-    OP_LOGE(context_->GetNodeType(), "Get const input error, unsupported data type.");
+    OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeType(), "size_splits",
+        Ops::Base::ToString(sizeSplitsT->GetDataType()).c_str(),
+        "The dtype of size_splits must be within the range [DT_INT32, DT_INT64, DT_UINT32, DT_UINT64].");
     return false;
 }
 
@@ -196,8 +198,11 @@ ge::graphStatus SplitVTiling::GetInputParams()
 
     int64_t inputXDimNum = static_cast<int64_t>(inputShape_.GetDimNum());
     OP_CHECK_IF((splitDim_ < -inputXDimNum || splitDim_ >= inputXDimNum),
-        OP_LOGE(context_->GetNodeName(),
-        "SplitDim:%ld value out range, inputXDimNum:%ld", splitDim_, inputXDimNum), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "split_dim",
+        std::to_string(splitDim_).c_str(),
+        ("The value of split_dim must be within the range [-" + std::to_string(inputXDimNum) + 
+         ", " + std::to_string(inputXDimNum - 1) + "].").c_str()),
+        return ge::GRAPH_FAILED);
     if (splitDim_ < 0) {
         splitDim_ = splitDim_ + inputXDimNum;
     }
@@ -208,13 +213,17 @@ ge::graphStatus SplitVTiling::GetInputParams()
     OP_CHECK_NULL_WITH_CONTEXT(context_, attr0);
     numSplit_ = *attr0;
     OP_CHECK_IF(numSplit_ < 0,
-        OP_LOGE(context_->GetNodeName(), "numSplit_:%ld must be greater than 0", numSplit_),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "num_split",
+        std::to_string(numSplit_).c_str(),
+        "The value of num_split must be greater than or equal to 0."),
         return ge::GRAPH_FAILED);
 
     int64_t sizeSplitsNum = static_cast<int64_t>(oriSizeSplits_.size());
     OP_CHECK_IF(numSplit_ != sizeSplitsNum,
-        OP_LOGE(context_->GetNodeName(), "attr numSplit_:%ld not equal sizeSplitsNum:%ld",
-        numSplit_, sizeSplitsNum), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "num_split",
+        std::to_string(numSplit_).c_str(),
+        "The value of num_split must be equal to the size of size_splits."),
+        return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -890,22 +899,27 @@ ge::graphStatus SplitVTiling::GetInputParamsSameLen() {
     }
 
     OP_CHECK_IF((splitDim_ < -inputXDimNum || splitDim_ >= inputXDimNum),
-        OP_LOGE(context_->GetNodeName(),
-        "SplitDim:%ld value out range, inputXDimNum:%ld", splitDim_, inputXDimNum), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "split_dim",
+        std::to_string(splitDim_).c_str(),
+        ("The value of split_dim must be within the range [-" + std::to_string(inputXDimNum) + 
+         ", " + std::to_string(inputXDimNum - 1) + "].").c_str()),
+        return ge::GRAPH_FAILED);
     if (splitDim_ < 0) {
         splitDim_ = splitDim_ + inputXDimNum;
     }
 
     OP_CHECK_IF(numSplit_ <= 0,
-        OP_LOGE(context_->GetNodeName(), "numSplit_:%ld must be greater than 0", numSplit_),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "num_split",
+        std::to_string(numSplit_).c_str(),
+        "The value of num_split must be greater than 0."),
         return ge::GRAPH_FAILED);
 
     const int64_t dim = inputShape_.GetDim(splitDim_);
     OP_CHECK_IF(dim % numSplit_ != 0,
-            OP_LOGE(context_->GetNodeName(),
-                                            "the split_dim dimension of x_shape must be divided by num_split!"
-                                            "split_dim is %ld, x_shape on split_dim is %ld",
-                                            splitDim_, dim),
+            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "x",
+            Ops::Base::ToString(inputShape_).c_str(),
+            ("Shape [" + std::to_string(splitDim_) + "] of x must be exactly divided by num_split (" + 
+             std::to_string(numSplit_) + ").").c_str()),
             return GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
@@ -920,8 +934,9 @@ ge::graphStatus SplitVTiling::InitParamsSameLen(int32_t maxCoreNum, uint32_t ubS
     ge::DataType xDtype = xInputDesc->GetDataType();
     xDtypeSize_ = ge::GetSizeByDataType(xDtype);
     OP_CHECK_IF(xDtypeSize_ <= 0,
-                    OP_LOGE(context_->GetNodeName(),
-                    "xDtypeSize_:%ld must be greater than 0", xDtypeSize_),
+                    OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(),
+                    "dtype_size", std::to_string(xDtypeSize_).c_str(),
+                    "The value of dtype_size must be greater than 0."),
                     return ge::GRAPH_FAILED);
 
     if (GetInputParamsSameLen() != ge::GRAPH_SUCCESS) {
@@ -1075,8 +1090,9 @@ graphStatus Tiling4SplitV(TilingContext* context) {
     OP_LOGD(context->GetNodeName(), "AscendC splitV tiling start");
     int32_t maxCoreNum = static_cast<int32_t>(compile_info->core_num);
     uint32_t ubSizePlatform = compile_info->ubSizePlatform;
-    OP_CHECK_IF(ubSizePlatform <= 0, OP_LOGE(context->GetNodeName(),
-                    "get ubSize <= 0 error"),
+    OP_CHECK_IF(ubSizePlatform <= 0, OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                    context->GetNodeName(), "ub_size", std::to_string(ubSizePlatform).c_str(),
+                    "The value of ub_size must be greater than 0."),
                     return GRAPH_FAILED);
     int32_t isSameLen = 0;
     OP_CHECK_IF(SplitVTilingAscendC(context, maxCoreNum, ubSizePlatform, isSameLen) != ge::GRAPH_SUCCESS,
@@ -1096,14 +1112,17 @@ graphStatus TilingPrepare4SplitV(TilingParseContext* context) {
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compile_info->core_num = ascendcPlatform.GetCoreNumAiv();
     OP_CHECK_IF((compile_info->core_num <= 0),
-                    OP_LOGE(context->GetNodeName(),
-                    "The core num is invaild"),
+                    OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(),
+                    "core_num", std::to_string(compile_info->core_num).c_str(),
+                    "The value of core_num must be greater than 0."),
                     return ge::GRAPH_FAILED);
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compile_info->ubSizePlatform = static_cast<uint32_t>(ubSize);
     OP_CHECK_IF((compile_info->ubSizePlatform <= 0),
-                    OP_LOGE(context->GetNodeName(), "The ubSize is invalid."),
+                    OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(),
+                    "ub_size", std::to_string(compile_info->ubSizePlatform).c_str(),
+                    "The value of ub_size must be greater than 0."),
                     return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }

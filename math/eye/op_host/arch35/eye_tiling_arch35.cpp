@@ -69,8 +69,9 @@ ge::graphStatus EyeTiling::GetShapeAttrsInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, numRows);
     numRows_ = static_cast<int64_t>(*numRows);
     OP_CHECK_IF((numRows_ <= 0),
-        OP_LOGE(context_->GetNodeName(), "num_rows must be greater to 0, but got [%ld].",
-        numRows_),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "num_rows",
+            std::to_string(numRows_).c_str(),
+            "The value of num_rows must be greater than 0."),
         return ge::GRAPH_FAILED);
 
     auto numColumns = attrs->GetAttrPointer<int64_t>(ATTR_NUM_COLUMNS_IDX);
@@ -85,9 +86,9 @@ ge::graphStatus EyeTiling::GetShapeAttrsInfo()
     dType_ = outputYPtr->GetDataType();
     bool dtypeInValid = EYE_SUPPORTED_DTYPE.find(dType_) == EYE_SUPPORTED_DTYPE.end();
     OP_CHECK_IF(dtypeInValid,
-        OP_LOGE(context_->GetNodeName(),
-        "The dtype of output y only support float32, float16, uint8, int8, int32, int16, bool, int64, bfloat16 \
-        currently, please check."),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "y",
+            Ops::Base::ToString(dType_).c_str(),
+            "The dtype of y must be within the range [DT_FLOAT, DT_FLOAT16, DT_UINT8, DT_INT8, DT_INT32, DT_INT16, DT_BOOL, DT_INT64, DT_BF16]."),
         return ge::GRAPH_FAILED);
 
     return CheckOutputShape();
@@ -102,8 +103,9 @@ ge::graphStatus EyeTiling::CheckOutputShape()
     auto batchShapeArray = reinterpret_cast<const int64_t *>(batchShapePtr->GetData());
     size_t batchDim = batchShapePtr->GetSize();
     OP_CHECK_IF((batchDim > BATCH_MAX_DIM),
-        OP_LOGE(context_->GetNodeName(),
-        "the dim of batch_shape must be less than or equal to [%zu], but got [%zu].", BATCH_MAX_DIM, batchDim),
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "batch_shape",
+            std::to_string(batchDim).c_str(),
+            ("The shape dim of batch_shape must be within the range [0, " + std::to_string(BATCH_MAX_DIM) + "].").c_str()),
         return ge::GRAPH_FAILED);
 
     auto yShapePtr = context_->GetOutputShape(OUTPUT_Y_IDX);
@@ -112,25 +114,33 @@ ge::graphStatus EyeTiling::CheckOutputShape()
     size_t yDimNum = yShape.GetDimNum();
     size_t yDimExp = batchDim + Y_RIGHT_ROW_IDX;
     OP_CHECK_IF((yDimNum != yDimExp),
-        OP_LOGE(context_->GetNodeName(),
-        "the dim of y must be equal to batch_shape dim [%zu] plus 2, but got [%zu].", batchDim, yDimNum),
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "y",
+            std::to_string(yDimNum).c_str(),
+            ("The shape dim of y must be equal to " + std::to_string(yDimExp) + " .").c_str()),
         return ge::GRAPH_FAILED);
 
-    auto yRow = yShape.GetDim(yDimNum - Y_RIGHT_ROW_IDX);
+auto yRow = yShape.GetDim(yDimNum - Y_RIGHT_ROW_IDX);
     auto yCol = yShape.GetDim(yDimNum - 1);
-    OP_CHECK_IF(((yRow != numRows_) || (yCol != numColumns_)),
-        OP_LOGE(context_->GetNodeName(),
-        "the last two dims of y must be [%ld, %ld], but got [%ld, %ld].",
-        numRows_, numColumns_, yRow, yCol),
+    OP_CHECK_IF((yRow != numRows_),
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "y",
+            std::to_string(yRow).c_str(),
+            ("The second-to-last dimension of y must be equal to " + std::to_string(numRows_) + ".").c_str()),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((yCol != numColumns_),
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "y",
+            std::to_string(yCol).c_str(),
+            ("The last dimension of y must be equal to " + std::to_string(numColumns_) + ".").c_str()),
         return ge::GRAPH_FAILED);
     for (size_t i = 0; i < batchDim; ++i) {
         OP_CHECK_IF((batchShapeArray[i] <= 0),
-            OP_LOGE(context_->GetNodeName(),
-            "the value of batch_shape must be greater than 0, but got [%ld].", batchShapeArray[i]),
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "batch_shape",
+                std::to_string(batchShapeArray[i]).c_str(),
+                "The value of batch_shape must be greater than 0."),
             return ge::GRAPH_FAILED);
         OP_CHECK_IF((batchShapeArray[i] != yShape.GetDim(i)),
-            OP_LOGE(context_->GetNodeName(),
-            "y dim[%zu] must be equal to [%ld], but got [%ld].", i, batchShapeArray[i], yShape.GetDim(i)),
+            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "y",
+                std::to_string(yShape.GetDim(i)).c_str(),
+                ("Shape [" + std::to_string(i) + "] of y must be equal to " + std::to_string(batchShapeArray[i]) + ".").c_str()),
             return ge::GRAPH_FAILED);
         batch_ *= batchShapeArray[i];
     }
@@ -145,7 +155,10 @@ ge::graphStatus EyeTiling::DoOpTiling()
 
     int64_t numPerBatch = numRows_ * numColumns_;
     typeSize_ = ge::GetSizeByDataType(dType_);
-    OP_CHECK_IF(typeSize_ <= 0, OP_LOGE(context_->GetNodeName(), "get dataType size fail."),
+    OP_CHECK_IF(typeSize_ <= 0,
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "y",
+            Ops::Base::ToString(dType_).c_str(),
+            "The dtype size of y must be greater than 0."),
         return ge::GRAPH_FAILED);
     if (numPerBatch * typeSize_ > TMP_SIMD_CONDITION) {
         allAxis_ = batch_ * numRows_ * numColumns_;

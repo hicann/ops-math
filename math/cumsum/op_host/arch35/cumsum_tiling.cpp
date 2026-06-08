@@ -35,7 +35,10 @@ static ge::graphStatus TilingCumsumForAscendc(gert::TilingContext* context)
          input->GetDataType() != ge::DT_BF16 && input->GetDataType() != ge::DT_INT32 &&
          input->GetDataType() != ge::DT_INT64 && input->GetDataType() != ge::DT_INT8 &&
          input->GetDataType() != ge::DT_UINT8 && input->GetDataType() != ge::DT_UINT64),
-        OP_LOGE(context->GetNodeName(), "Unsupported type for cumsum"), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "input",
+            Ops::Base::ToString(input->GetDataType()).c_str(),
+            "The dtype of input must be within the range [DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT32, DT_INT64, DT_INT8, DT_UINT8, DT_UINT64]."),
+        return ge::GRAPH_FAILED);
     if (input->GetDataType() == ge::DT_FLOAT || input->GetDataType() == ge::DT_FLOAT16 ||
         input->GetDataType() == ge::DT_BF16) {
         OP_LOGD(context->GetNodeName(), "TilingCumsumForAscendc simd, float type.");

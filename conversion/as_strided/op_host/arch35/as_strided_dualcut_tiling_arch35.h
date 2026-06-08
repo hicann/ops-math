@@ -166,7 +166,9 @@ public:
         context_ = context;
         this->dtSize = dtSize_;
         if(dtSize_ <= 0) {
-            OP_LOGE(context_, "the dtSize_ is less than or equal zero");
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input",
+                std::to_string(dtSize_).c_str(),
+                "The dtype size of input must be greater than 0.");
             dtSize_ = 1;
         }
         this->alignedFactor = BLOCK_BYTES / dtSize_;

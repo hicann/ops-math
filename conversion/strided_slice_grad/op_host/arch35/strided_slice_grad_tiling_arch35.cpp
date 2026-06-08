@@ -339,6 +339,55 @@ static inline ge::graphStatus GetInputParamAndAttrValue(
     return ge::GRAPH_SUCCESS;
 }
 
+static ge::graphStatus ValidateBeginEndStrides(
+    const gert::TilingContext* context, int64_t beginI, int64_t endI, int64_t strideI)
+{
+    if (strideI != 0) {
+        OP_CHECK_IF(
+            (beginI < endI && strideI < 0),
+            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                context->GetNodeName(),
+                "begin, end, strides",
+                (std::to_string(beginI) + ", " + std::to_string(endI) + ", " + std::to_string(strideI)).c_str(),
+                "If the value of strides is less than 0, the value of begin must be greater than or equal to that of end"),
+            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(
+            (beginI > endI && strideI > 0),
+            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                context->GetNodeName(),
+                "begin, end, strides",
+                (std::to_string(beginI) + ", " + std::to_string(endI) + ", " + std::to_string(strideI)).c_str(),
+                "If the value of strides is greater than 0, the value of begin must be less than or equal to that of end."),
+            return ge::GRAPH_FAILED);
+    } else {
+        OP_CHECK_IF(
+            (strideI == 0),
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                context->GetNodeName(),
+                "strides",
+                std::to_string(strideI).c_str(),
+                "The value of strides must be non-zero."),
+            return ge::GRAPH_FAILED);
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+static ge::graphStatus ValidateMasks(const gert::TilingContext* context, const StridedSliceGradParamList& inputParams)
+{
+    OP_CHECK_IF(
+        (inputParams.beginMask < 0 || inputParams.endMask < 0 || inputParams.ellipsisMask < 0 ||
+         inputParams.newAxisMask < 0 || inputParams.shrinkAxisMask < 0),
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+            context->GetNodeName(),
+            "begin_mask, end_mask, ellipsis_mask, new_axis_mask, shrink_axis_mask",
+            (std::to_string(inputParams.beginMask) + ", " + std::to_string(inputParams.endMask) + ", " +
+             std::to_string(inputParams.ellipsisMask) + ", " + std::to_string(inputParams.newAxisMask) + ", " +
+             std::to_string(inputParams.shrinkAxisMask)).c_str(),
+            "The values of begin_mask, end_mask, ellipsis_mask, new_axis_mask, shrink_axis_mask must be greater than or equal to 0."),
+        return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
+
 static ge::graphStatus CheckInputParamIsValid(
     const gert::TilingContext* context, StridedSliceGradParamList& inputParams)
 {
@@ -347,44 +396,24 @@ static ge::graphStatus CheckInputParamIsValid(
         int64_t beginI = inputParams.begin[i];
         int64_t endI = inputParams.end[i];
         int64_t strideI = inputParams.strides[i];
-        if (strideI != 0) {
-            OP_CHECK_IF(
-                (beginI < endI && strideI < 0),
-                OP_LOGE(
-                    context->GetNodeName(), "StridedSliceGrad param of beginI (%ld) should bigger than endI (%ld).",
-                    beginI, endI),
-                return ge::GRAPH_FAILED);
-            OP_CHECK_IF(
-                (beginI > endI && strideI > 0),
-                OP_LOGE(
-                    context->GetNodeName(), "StridedSliceGrad param of beginI (%ld) should smaller than endI (%ld).",
-                    beginI, endI),
-                return ge::GRAPH_FAILED);
-        } else {
-            OP_CHECK_IF(
-                (strideI == 0),
-                OP_LOGE(
-                    context->GetNodeName(), "StridedSliceGrad param of strideI (%ld) should be equal with 0.", strideI),
-                return ge::GRAPH_FAILED);
+        
+        if (ValidateBeginEndStrides(context, beginI, endI, strideI) != ge::GRAPH_SUCCESS) {
+            return ge::GRAPH_FAILED;
         }
-
-        OP_CHECK_IF(
-            (inputParams.beginMask < 0 || inputParams.endMask < 0 || inputParams.ellipsisMask < 0 ||
-             inputParams.newAxisMask < 0 || inputParams.shrinkAxisMask < 0),
-            OP_LOGE(
-                context->GetNodeName(),
-                "StridedSliceGrad param of attr (%ld) (%ld) (%ld) (%ld) (%ld) should not smaller than 0.",
-                inputParams.beginMask, inputParams.endMask, inputParams.ellipsisMask, inputParams.newAxisMask,
-                inputParams.shrinkAxisMask),
-            return ge::GRAPH_FAILED);
+        
+        if (ValidateMasks(context, inputParams) != ge::GRAPH_SUCCESS) {
+            return ge::GRAPH_FAILED;
+        }
     }
 
     auto dimNum = inputParams.inShape.GetDimNum();
     OP_CHECK_IF(
         inputParams.begin.GetDimNum() != dimNum,
-        OP_LOGE(
-            context->GetNodeName(), "begin[%zu] and inputShape[%zu] should have same dims length, please check.",
-            inputParams.begin.GetDimNum(), dimNum),
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+            context->GetNodeName(),
+            "begin",
+            std::to_string(inputParams.begin.GetDimNum()).c_str(),
+            "The shape dim of begin must be equal to the shape dim of input_shape."),
         return ge::GRAPH_FAILED);
     OP_LOGD(context->GetNodeName(), "dimNum = %ld", dimNum);
 
@@ -463,16 +492,21 @@ static ge::graphStatus CheckAndSetOfInputParams(
     inputParams.dtype = dataTypeInDy;
 
     // 检查输入参数类型
-    OP_CHECK_IF(
-        CheckTypeIsInvalid(dataTypeInShape, dataTypeInBegin, dataTypeInEnd, dataTypeInStrides, dataTypeInDy),
-        OP_LOGE(
+    if (CheckTypeIsInvalid(dataTypeInShape, dataTypeInBegin, dataTypeInEnd, dataTypeInStrides, dataTypeInDy)) {
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
             context->GetNodeName(),
-            "Check input dtype failed, current support float、float16、bfloat16、int64、uint64、int32、uint32、int16、uint16、int8、uint8. \
-                  current dataTypeInShape: %s, dataTypeInBegin: %s, dataTypeInEnd: %s, dataTypeInStrides: %s, dataTypeInDy: %s",
-            Ops::Base::ToString(dataTypeInShape).c_str(), Ops::Base::ToString(dataTypeInBegin).c_str(),
-            Ops::Base::ToString(dataTypeInEnd).c_str(), Ops::Base::ToString(dataTypeInStrides).c_str(),
-            Ops::Base::ToString(dataTypeInDy).c_str()),
-        return ge::GRAPH_FAILED);
+            "input_shape, begin, end, strides",
+            (Ops::Base::ToString(dataTypeInShape) + ", " + Ops::Base::ToString(dataTypeInBegin) + ", " +
+             Ops::Base::ToString(dataTypeInEnd) + ", " + Ops::Base::ToString(dataTypeInStrides)).c_str(),
+            "The dtypes of input_shape, begin, end, strides must be within the range [DT_INT32, DT_INT64].");
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context->GetNodeName(),
+            "dy",
+            Ops::Base::ToString(dataTypeInDy).c_str(),
+            "The dtype of dy must be within the range [DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT64, DT_UINT64, "
+            "DT_INT32, DT_UINT32, DT_INT16, DT_UINT16, DT_INT8, DT_UINT8, DT_DOUBLE, DT_COMPLEX64].");
+        return ge::GRAPH_FAILED;
+    }
 
     // 设置StridedSliceGrad算子中的输入值 && 属性值
     OP_CHECK_IF(

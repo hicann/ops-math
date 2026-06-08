@@ -129,59 +129,83 @@ inline static bool checkNegative(const std::vector<int64_t> &vec)
   return false;
 }
 
+static ge::graphStatus CheckDstRelatedDtypes(const gert::TilingContext* context)
+{
+    auto inputDstPtr = context->GetInputDesc(INDEX_INPUT_DST);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputDstPtr);
+    auto dtype = inputDstPtr->GetDataType();
+    OP_CHECK_IF(IsInvalidType(dtype), OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "dst",
+        Ops::Base::ToString(dtype).c_str(),
+        "The dtype of dst must be within the range [DT_BF16, DT_FLOAT16, DT_FLOAT, DT_UINT8, DT_INT8, DT_UINT16, DT_INT16, DT_UINT32, DT_INT32, DT_UINT64, DT_INT64, DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN]."), return ge::GRAPH_FAILED);
+
+    auto inputDstSizePtr = context->GetInputDesc(INDEX_INPUT_DST_SIZE);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputDstSizePtr);
+    dtype = inputDstSizePtr->GetDataType();
+    OP_CHECK_IF(IsInvalidIndexType(dtype), OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "dst_size",
+        Ops::Base::ToString(dtype).c_str(),
+        "The dtype of dst_size must be within the range [DT_INT32, DT_INT64]."), return ge::GRAPH_FAILED);
+
+    auto inputDstStridePtr = context->GetInputDesc(INDEX_INPUT_DST_STRIDE);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputDstStridePtr);
+    dtype = inputDstStridePtr->GetDataType();
+    OP_CHECK_IF(IsInvalidIndexType(dtype), OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "dst_stride",
+        Ops::Base::ToString(dtype).c_str(),
+        "The dtype of dst_stride must be within the range [DT_INT32, DT_INT64]."), return ge::GRAPH_FAILED);
+
+    auto inputDstOffsetPtr = context->GetInputDesc(INDEX_INPUT_DST_OFFSET);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputDstOffsetPtr);
+    dtype = inputDstOffsetPtr->GetDataType();
+    OP_CHECK_IF(IsInvalidIndexType(dtype), OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "dst_storage_offset",
+        Ops::Base::ToString(dtype).c_str(),
+        "The dtype of dst_storage_offset must be within the range [DT_INT32, DT_INT64]."), return ge::GRAPH_FAILED);
+
+    return ge::GRAPH_SUCCESS;
+}
+
+static ge::graphStatus CheckSrcRelatedDtypes(const gert::TilingContext* context)
+{
+    auto inputSrcPtr = context->GetInputDesc(INDEX_INPUT_SRC);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputSrcPtr);
+    auto dtype = inputSrcPtr->GetDataType();
+    OP_CHECK_IF(IsInvalidType(dtype), OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "src",
+        Ops::Base::ToString(dtype).c_str(),
+        "The dtype of src must be within the range [DT_BF16, DT_FLOAT16, DT_FLOAT, DT_UINT8, DT_INT8, DT_UINT16, DT_INT16, DT_UINT32, DT_INT32, DT_UINT64, DT_INT64, DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN]."), return ge::GRAPH_FAILED);
+
+    auto inputSrcSizePtr = context->GetInputDesc(INDEX_INPUT_SRC_SIZE);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputSrcSizePtr);
+    dtype = inputSrcSizePtr->GetDataType();
+    OP_CHECK_IF(IsInvalidIndexType(dtype), OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "src_size",
+        Ops::Base::ToString(dtype).c_str(),
+        "The dtype of src_size must be within the range [DT_INT32, DT_INT64]."), return ge::GRAPH_FAILED);
+
+    auto inputSrcStridePtr = context->GetInputDesc(INDEX_INPUT_SRC_STRIDE);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputSrcStridePtr);
+    dtype = inputSrcStridePtr->GetDataType();
+    OP_CHECK_IF(IsInvalidIndexType(dtype), OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "src_stride",
+        Ops::Base::ToString(dtype).c_str(),
+        "The dtype of src_stride must be within the range [DT_INT32, DT_INT64]."), return ge::GRAPH_FAILED);
+
+    auto inputSrcOffsetPtr = context->GetInputDesc(INDEX_INPUT_SRC_OFFSET);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputSrcOffsetPtr);
+    dtype = inputSrcOffsetPtr->GetDataType();
+    OP_CHECK_IF(IsInvalidIndexType(dtype), OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "src_storage_offset",
+        Ops::Base::ToString(dtype).c_str(),
+        "The dtype of src_storage_offset must be within the range [DT_INT32, DT_INT64]."), return ge::GRAPH_FAILED);
+
+    return ge::GRAPH_SUCCESS;
+}
+
 static ge::graphStatus CheckInputDtype(const gert::TilingContext* context)
 {
-  auto inputDstPtr = context->GetInputDesc(INDEX_INPUT_DST);
-  OP_CHECK_NULL_WITH_CONTEXT(context, inputDstPtr);
-  auto dtype = inputDstPtr->GetDataType();
-  OP_CHECK_IF(IsInvalidType(dtype), OP_LOGE(context->GetNodeName(),
-    "input dst dtype only support bfloat16, uint8, int8, hifloat8, float8_e5m2, float8_e4m3fn, bool, float32, int32, uint32, int16, float16, uint16, int64, "
-    "uint64 currently, please check."), return ge::GRAPH_FAILED);
-
-  auto inputDstSizePtr = context->GetInputDesc(INDEX_INPUT_DST_SIZE);
-  OP_CHECK_NULL_WITH_CONTEXT(context, inputDstSizePtr);
-  dtype = inputDstSizePtr->GetDataType();
-  OP_CHECK_IF(IsInvalidIndexType(dtype), OP_LOGE(context->GetNodeName(),
-    "input dst_size dtype only support int32 and int64 currently, please check."), return ge::GRAPH_FAILED);
-
-  auto inputDstStridePtr = context->GetInputDesc(INDEX_INPUT_DST_STRIDE);
-  OP_CHECK_NULL_WITH_CONTEXT(context, inputDstStridePtr);
-  dtype = inputDstStridePtr->GetDataType();
-  OP_CHECK_IF(IsInvalidIndexType(dtype), OP_LOGE(context->GetNodeName(),
-    "input dst_stride dtype only support int32 and int64 currently, please check."), return ge::GRAPH_FAILED);
-
-  auto inputDstOffsetPtr = context->GetInputDesc(INDEX_INPUT_DST_OFFSET);
-  OP_CHECK_NULL_WITH_CONTEXT(context, inputDstOffsetPtr);
-  dtype = inputDstOffsetPtr->GetDataType();
-  OP_CHECK_IF(IsInvalidIndexType(dtype), OP_LOGE(context->GetNodeName(),
-    "input dst_storage_offset dtype only support int32 and int64 currently, please check."), return ge::GRAPH_FAILED);
-
-  auto inputSrcPtr = context->GetInputDesc(INDEX_INPUT_SRC);
-  OP_CHECK_NULL_WITH_CONTEXT(context, inputSrcPtr);
-  dtype = inputSrcPtr->GetDataType();
-  OP_CHECK_IF(IsInvalidType(dtype), OP_LOGE(context->GetNodeName(),
-    "input src dtype only support bfloat16, uint8, int8, hifloat8, float8_e5m2, float8_e4m3fn, bool, float32, int32, uint32, int16, float16, uint16, int64, "
-    "uint64 currently, please check."), return ge::GRAPH_FAILED);
-
-  auto inputSrcSizePtr = context->GetInputDesc(INDEX_INPUT_SRC_SIZE);
-  OP_CHECK_NULL_WITH_CONTEXT(context, inputSrcSizePtr);
-  dtype = inputSrcSizePtr->GetDataType();
-  OP_CHECK_IF(IsInvalidIndexType(dtype), OP_LOGE(context->GetNodeName(),
-    "input src_size dtype only support int32 and int64 currently, please check."), return ge::GRAPH_FAILED);
-
-  auto inputSrcStridePtr = context->GetInputDesc(INDEX_INPUT_SRC_STRIDE);
-  OP_CHECK_NULL_WITH_CONTEXT(context, inputSrcStridePtr);
-  dtype = inputSrcStridePtr->GetDataType();
-  OP_CHECK_IF(IsInvalidIndexType(dtype), OP_LOGE(context->GetNodeName(),
-    "input src_stride dtype only support int32 and int64 currently, please check."), return ge::GRAPH_FAILED);
-
-  auto inputSrcOffsetPtr = context->GetInputDesc(INDEX_INPUT_SRC_OFFSET);
-  OP_CHECK_NULL_WITH_CONTEXT(context, inputSrcOffsetPtr);
-  dtype = inputSrcOffsetPtr->GetDataType();
-  OP_CHECK_IF(IsInvalidIndexType(dtype), OP_LOGE(context->GetNodeName(),
-    "input src_storage_offset dtype only support int32 and int64 currently, please check."), return ge::GRAPH_FAILED);
-
-  return ge::GRAPH_SUCCESS;
+    if (CheckDstRelatedDtypes(context) != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+    
+    if (CheckSrcRelatedDtypes(context) != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+    
+    return ge::GRAPH_SUCCESS;
 }
 
 inline static bool IsSameShape(const gert::Shape shape1, const gert::Shape shape2)
@@ -208,8 +232,10 @@ inline static ge::graphStatus CheckInputShape(const gert::TilingContext* context
   OP_CHECK_NULL_WITH_CONTEXT(context, dstSizeShapePtr);
   auto dstSizeShape = dstSizeShapePtr->GetStorageShape();
 
-  OP_CHECK_IF(!IsSameShape(srcSizeShape, dstSizeShape), OP_LOGE(context->GetNodeName(),
-    "dst_size and src_size should have same shape, please check."), return ge::GRAPH_FAILED);
+  OP_CHECK_IF(!IsSameShape(srcSizeShape, dstSizeShape), OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(),
+    "dst_size, src_size",
+    (Ops::Base::ToString(dstSizeShape) + ", " + Ops::Base::ToString(srcSizeShape)).c_str(),
+    "The shapes of dst_size and src_size must be the same."), return ge::GRAPH_FAILED);
 
   return ge::GRAPH_SUCCESS;
 }
@@ -323,35 +349,42 @@ inline static ge::graphStatus CheckSizeAndStrideValue(const gert::TilingContext*
   auto srcTensorPtr = context->GetInputTensor(INDEX_INPUT_SRC);
   int64_t dstTensorSize = GetTensorSize(dstTensorPtr);
   int64_t srcTensorSize = GetTensorSize(srcTensorPtr);
-  OP_CHECK_IF(tilingParam.srcSize != tilingParam.dstSize, OP_LOGE(context->GetNodeName(),
-    "dst_size and src_size be same, but get dst_size %s, src_size %s, please check.",
-     VectorToString(tilingParam.dstSize).c_str(),
-     VectorToString(tilingParam.srcSize).c_str()), return ge::GRAPH_FAILED);
-  OP_CHECK_IF(checkNegative(tilingParam.srcSize), OP_LOGE(context->GetNodeName(),
-    "src_size must src_size be not negative, but get src_size %s, please check.",
-     VectorToString(tilingParam.srcSize).c_str()), return ge::GRAPH_FAILED);
-  OP_CHECK_IF(checkNegative(tilingParam.dstSize), OP_LOGE(context->GetNodeName(),
-    "src_size must dst_size be not negative, but get dst_size %s, please check.",
-     VectorToString(tilingParam.dstSize).c_str()), return ge::GRAPH_FAILED);
-  OP_CHECK_IF(checkNegative(tilingParam.srcStride), OP_LOGE(context->GetNodeName(),
-    "src_stride must src_stride be not negative, but get src_stride %s, please check.",
-     VectorToString(tilingParam.srcStride).c_str()), return ge::GRAPH_FAILED);
-  OP_CHECK_IF(checkNegative(tilingParam.dstStride), OP_LOGE(context->GetNodeName(),
-    "dst_stride must dst_stride be not negative, but get dst_stride %s, please check.",
-     VectorToString(tilingParam.dstStride).c_str()), return ge::GRAPH_FAILED);
-  OP_CHECK_IF(CheckSameDimensions(tilingParam.dstSize, tilingParam.dstStride), OP_LOGE(context->GetNodeName(),
-    "Ensure that dst_size and dst_stride have the same number of dimensions."), return ge::GRAPH_FAILED);
-  OP_CHECK_IF(CheckSameDimensions(tilingParam.srcSize, tilingParam.srcStride), OP_LOGE(context->GetNodeName(),
-    "Ensure that src_size and src_stride have the same number of dimensions."), return ge::GRAPH_FAILED);
-  OP_CHECK_IF(checkWrittenToSameDstPosition(tilingParam.dstSize, tilingParam.dstStride), OP_LOGE(context->GetNodeName(),
-    "More than one element of the written-to tensor refers to a single memory location."), return ge::GRAPH_FAILED);
-  OP_CHECK_IF(checkOffsetAndStride(tilingParam.dstStorageOffset, tilingParam.dstStride, tilingParam.dstSize, dstTensorSize), OP_LOGE(context->GetNodeName(),
-    "Tensor index out of range: Accessing element at position dst_offset + (dst_size[i] - 1) * dst_stride[i] would exceed the dst_tensor's boundary of %ld total elements. \
-    Please check the dst_offset, dst_size, and dst_stride parameters for each axis i of dst_stride.", dstTensorSize), return ge::GRAPH_FAILED);
-  OP_CHECK_IF(checkOffsetAndStride(tilingParam.srcStorageOffset, tilingParam.srcStride, tilingParam.srcSize, srcTensorSize), OP_LOGE(context->GetNodeName(),
-    "Tensor index out of range: Accessing element at position src_offset + (src_size[i] - 1) * src_stride[i] would exceed the src_tensor's boundary of %ld total elements. \
-    Please check the src_offset, src_size, and src_stride parameters for each axis i of src_stride.", srcTensorSize), return ge::GRAPH_FAILED);
-
+  OP_CHECK_IF(tilingParam.srcSize != tilingParam.dstSize, OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context->GetNodeName(),
+    "dst_size, src_size",
+    (VectorToString(tilingParam.dstSize) + ", " + VectorToString(tilingParam.srcSize)).c_str(),
+    "The values of dst_size and src_size must be the same."), return ge::GRAPH_FAILED);
+  OP_CHECK_IF(checkNegative(tilingParam.srcSize), OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "src_size",
+    VectorToString(tilingParam.srcSize).c_str(),
+    "The value of src_size cannot be a negative number."), return ge::GRAPH_FAILED);
+  OP_CHECK_IF(checkNegative(tilingParam.dstSize), OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "dst_size",
+    VectorToString(tilingParam.dstSize).c_str(),
+    "The value of dst_size cannot be a negative number."), return ge::GRAPH_FAILED);
+  OP_CHECK_IF(checkNegative(tilingParam.srcStride), OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "src_stride",
+    VectorToString(tilingParam.srcStride).c_str(),
+    "The value of src_stride cannot be a negative number."), return ge::GRAPH_FAILED);
+  OP_CHECK_IF(checkNegative(tilingParam.dstStride), OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "dst_stride",
+    VectorToString(tilingParam.dstStride).c_str(),
+    "The value of dst_stride cannot be a negative number."), return ge::GRAPH_FAILED);
+  OP_CHECK_IF(CheckSameDimensions(tilingParam.dstSize, tilingParam.dstStride), OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context->GetNodeName(),
+    "dst_size, dst_stride",
+    (std::to_string(tilingParam.dstSize.size()) + ", " + std::to_string(tilingParam.dstStride.size())).c_str(),
+    "The shape dims of dst_size and dst_stride must be the same."), return ge::GRAPH_FAILED);
+  OP_CHECK_IF(CheckSameDimensions(tilingParam.srcSize, tilingParam.srcStride), OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context->GetNodeName(),
+    "src_size, src_stride",
+    (std::to_string(tilingParam.srcSize.size()) + ", " + std::to_string(tilingParam.srcStride.size())).c_str(),
+    "The shape dims of src_size and src_stride must be the same."), return ge::GRAPH_FAILED);
+  OP_CHECK_IF(checkWrittenToSameDstPosition(tilingParam.dstSize, tilingParam.dstStride), OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context->GetNodeName(),
+    "dst_size, dst_stride",
+    (VectorToString(tilingParam.dstSize) + ", " + VectorToString(tilingParam.dstStride)).c_str(),
+    "If the value of an axis of dst_size is greater than 1, the value of this axis of dst_stride must not be 0."), return ge::GRAPH_FAILED);
+  OP_CHECK_IF(checkOffsetAndStride(tilingParam.dstStorageOffset, tilingParam.dstStride, tilingParam.dstSize, dstTensorSize), OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context->GetNodeName(),
+    "dst_storage_offset, dst_stride, dst_size",
+    (std::to_string(tilingParam.dstStorageOffset) + ", " + VectorToString(tilingParam.dstStride) + ", " + VectorToString(tilingParam.dstSize)).c_str(),
+    (std::string("If the value of an axis of dst_size is greater than 0, the following formula must be met: Value of dst_storage_offset + (Value of this axis of dst_size - 1) x Value of this axis of dst_stride ≤ ") + std::to_string(dstTensorSize)).c_str()), return ge::GRAPH_FAILED);
+  OP_CHECK_IF(checkOffsetAndStride(tilingParam.srcStorageOffset, tilingParam.srcStride, tilingParam.srcSize, srcTensorSize), OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context->GetNodeName(),
+    "src_storage_offset, src_stride, src_size",
+    (std::to_string(tilingParam.srcStorageOffset) + ", " + VectorToString(tilingParam.srcStride) + ", " + VectorToString(tilingParam.srcSize)).c_str(),
+    (std::string("If the value of an axis of src_size is greater than 0, the following formula must be met: Value of src_storage_offset + (Value of this axis of src_size - 1) x Value of this axis of src_stride ≤ ") + std::to_string(srcTensorSize)).c_str()), return ge::GRAPH_FAILED);
   return ge::GRAPH_SUCCESS;
 }
 

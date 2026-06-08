@@ -66,7 +66,11 @@ ge::graphStatus Cumsum4IntTiling::GetInputDims()
     size_t xDimNum = xShape_.GetDimNum();
     OP_CHECK_IF(
         axisAttr >= static_cast<int64_t>(xDimNum) || axisAttr < static_cast<int64_t>(-xDimNum),
-        OP_LOGE(context_->GetNodeName(), "axis data range is invalid. axis: %ld", axisAttr), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "axis",
+            std::to_string(axisAttr).c_str(),
+            ("The value of axis must be within the range [-" + std::to_string(xDimNum) + 
+             ", " + std::to_string(xDimNum - 1) + "].").c_str()),
+        return ge::GRAPH_FAILED);
 
     if (axisAttr < 0) {
         axisAttr += static_cast<int64_t>(xDimNum);

@@ -11,6 +11,7 @@
 #include "conversion/split_v/op_host/arch35/split_v_tiling_arch35.h"
 #include "op_host/tiling_base_util.h"
 #include "register/op_impl_registry.h"
+#include "log/log.h"
 
 using namespace gert;
 using namespace ge;

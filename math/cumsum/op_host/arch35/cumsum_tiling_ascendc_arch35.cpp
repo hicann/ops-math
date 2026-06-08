@@ -315,7 +315,11 @@ ge::graphStatus CumsumAscendcTilingImpl::Init(const CumsumCompileInfo* compileIn
     }
     OP_CHECK_IF(
         axis >= static_cast<int64_t>(xDimNum) || axis < static_cast<int64_t>(-xDimNum),
-        OP_LOGE(context_->GetNodeName(), "axis data range is invalid. axis: %ld", axis), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "axis",
+            std::to_string(axis).c_str(),
+            ("The value of axis must be within the range [-" + std::to_string(xDimNum) + 
+             ", " + std::to_string(xDimNum - 1) + "].").c_str()),
+        return ge::GRAPH_FAILED);
 
     // 合轴
     td_.innerTd.lenR = xShape.GetDim(axis);

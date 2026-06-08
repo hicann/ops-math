@@ -86,20 +86,22 @@ static bool IsInvalidType(const DataType dtype)
 
 static ge::graphStatus CheckTensorMoveDtype(const gert::TilingContext* context)
 {
-    auto inputXPtr = context->GetInputDesc(INDEX_INPUT_X);
+auto inputXPtr = context->GetInputDesc(INDEX_INPUT_X);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputXPtr);
     auto xDtype = inputXPtr->GetDataType();
     OP_CHECK_IF(IsInvalidType(xDtype),
-        OP_LOGE(context->GetNodeName(),
-            "Input x dtype only support bfloat16, uint8, int8, bool, float32, int32, uint32, int16, float16, uint16, \
-int64, uint64, double, hifloat8, float8_e5m2, float8_e4m3fn, complex32, complex64 currently, please check."),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "x",
+            Ops::Base::ToString(xDtype).c_str(),
+            "The dtype of x must be within the range [DT_BF16, DT_FLOAT16, DT_FLOAT, DT_UINT8, DT_INT8, DT_UINT16, DT_INT16, DT_UINT32, DT_INT32, DT_UINT64, DT_INT64, DT_BOOL, DT_DOUBLE, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_COMPLEX32, DT_COMPLEX64]."),
         return ge::GRAPH_FAILED);
 
-    auto outputYPtr = context->GetOutputDesc(INDEX_OUTPUT_Y);
+auto outputYPtr = context->GetOutputDesc(INDEX_OUTPUT_Y);
     OP_CHECK_NULL_WITH_CONTEXT(context, outputYPtr);
     auto yDtype = outputYPtr->GetDataType();
     OP_CHECK_IF(yDtype != xDtype,
-        OP_LOGE(context->GetNodeName(), "The dtype of output must be same with dtype of input, please check."),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context->GetNodeName(), "x, y",
+            (Ops::Base::ToString(xDtype) + ", " + Ops::Base::ToString(yDtype)).c_str(),
+            "The dtypes of x and y must be the same."),
         return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
@@ -115,8 +117,10 @@ static ge::graphStatus CheckTensorMoveShape(const gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, yShapePtr);
     auto yShape = yShapePtr->GetStorageShape();
 
-    OP_CHECK_IF(xShape != yShape,
-        OP_LOGE(context->GetNodeName(), "The shape of output must be same with shape of input, please check."),
+OP_CHECK_IF(xShape != yShape,
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x, y",
+            "x_shape, y_shape",
+            "The shapes of x and y must be the same."),
         return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;

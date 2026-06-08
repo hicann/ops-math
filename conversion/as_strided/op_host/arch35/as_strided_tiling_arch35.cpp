@@ -351,7 +351,10 @@ inline bool HasDuplicate(gert::TilingContext* context, gert::Shape outStride)
     // MoveAlign Condition 3
     OP_CHECK_IF(
         (outStride.GetDimNum() > VALID_DIM),
-        OP_LOGE(context, "the dimension of outStride is more than range."), return false);
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "outStride",
+            std::to_string(outStride.GetDimNum()).c_str(),
+            ("The shape dim of outStride must be within the range [0, " + std::to_string(VALID_DIM) + "].").c_str()),
+        return false);
     int32_t numStride[VALID_DIM] = {0};
     for (uint32_t i = 0; i < outStride.GetDimNum(); i++) {
         numStride[i] = outStride[i];
@@ -512,7 +515,10 @@ inline static void CalcTilingCore(const gert::TilingContext* context, gert::Shap
 {
     OP_CHECK_IF(
         (outSize.GetDimNum() <= 0),
-        OP_LOGE(context, "the dimension of outSize should be greater than 0."), return);
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "size",
+            std::to_string(outSize.GetDimNum()).c_str(),
+            "The shape dim of size must be greater than 0."),
+        return);
     uint32_t preSize = 1;
     if (ubGatherParam.blockNum == 1) {
         ubGatherParam.blockAxisIdx = 0;
@@ -572,7 +578,10 @@ inline static void SetubParamWhenOutAxesLimit(gert::Shape outSize, uint32_t core
         OP_LOGE("as_trided", "the axis idx is more than range"), return);
     OP_CHECK_IF(
         (outSize.GetDimNum() == 0),
-        OP_LOGE("as_trided", "the outSize is empty"), return);
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON("as_strided", "size",
+            std::to_string(outSize.GetDimNum()).c_str(),
+            "The shape dim of size must be greater than 0."),
+        return);
     ubParam.innerAxisFactor = outSize[ubGatherParam.tilingAxisIdx];
     ubParam.outerAxisFactor = 1;
     ubParam.innerAxisFactorTail = ubParam.innerAxisFactor;
@@ -899,7 +908,10 @@ static bool IsStrideAffect(gert::TilingContext* context, const AsStridedTilingPa
 
     OP_CHECK_IF(
         (outStride.GetDimNum() == 0),
-        OP_LOGE(context, "the outStride is empty"), return false);
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "stride",
+            std::to_string(outStride.GetDimNum()).c_str(),
+            "The shape dim of stride must be greater than 0."),
+        return false);
 
     if((outStride[outStride.GetDimNum() - 1] * tilingParam.sizeofDtype) > DUAL_CUT_CONDITION1) {
         singleConditionTailMore64 = true;
@@ -1202,19 +1214,25 @@ bool CheckInputInfo(gert::TilingContext *context, gert::Shape outSize, gert::Sha
     uint32_t originalTensorStorageSize = 1;
     for (size_t i = 0; i < outSize.GetDimNum(); i++) {
         OP_CHECK_IF(outSize[i] < 0,
-                    OP_LOGE(context,
-                    "The output size must > 0"), return false);
+                    OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "output_size",
+                        std::to_string(outSize.GetDim(i)).c_str(),
+                        "The value of output_size must be greater than or equal to 0."),
+                    return false);
         
         OP_CHECK_IF(outStride[i] < 0,
-                    OP_LOGE(context,
-                    "The outStride must > 0"), return false);
+                    OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "output_stride",
+                        std::to_string(outStride.GetDim(i)).c_str(),
+                        "The value of output_stride must be greater than or equal to 0."),
+                    return false);
         
         requiredStorageSize += (outSize[i] - 1) * outStride[i];
     }
     for (uint32_t i = 0; i < xShape.GetDimNum(); i++) {
         OP_CHECK_IF(xShape[i] < 0,
-                    OP_LOGE(context,
-                    "The input size must > 0"), return false);
+                    OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "input_size",
+                        std::to_string(xShape.GetDim(i)).c_str(),
+                        "The value of input_size must be greater than or equal to 0."),
+                    return false);
         originalTensorStorageSize *= xShape.GetDim(i);
     }
 
@@ -1226,49 +1244,39 @@ bool CheckInputInfo(gert::TilingContext *context, gert::Shape outSize, gert::Sha
     return true;
 }
 
-ge::graphStatus AsStridedTilingClass::TilingForAsStridedOfAsc(uint32_t maxCoreNum, uint32_t ubSizePlatform,
-                                        AsStridedRunInfo& runInfo, int64_t storageOffset)
+ge::graphStatus AsStridedTilingClass::HandleEmptyTensor()
 {
-    OP_LOGD(context_, "Enter TilingForAsStridedOfAsc");
-    AsStridedTilingParam tilingParam;
-    AsStridedTilingData tilingData;
+    context_->SetBlockDim(1);
+    context_->SetTilingKey(EMPTY_TENSOR_KEY);
+    emptyTilingData_ = context_->GetTilingData<AsStridedEmptyTilingData>();
+    size_t* currentWorkspace = context_->GetWorkspaceSizes(1);
+    currentWorkspace[0] = 8 * 1024 * 1024;
+    OP_LOGD(context_, "Output is an empty tensor.");
+    return ge::GRAPH_SUCCESS;
+}
 
-    tilingParam.numCore = maxCoreNum;
-    tilingParam.ubSizePlatForm = ubSizePlatform;
-    tilingParam.storageOffset = storageOffset;
-    auto xTensorShape = context_->GetInputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context_, xTensorShape);
-    const gert::Shape& xShape = xTensorShape->GetStorageShape();
-    OP_CHECK_IF(runInfo.outputSize.GetDimNum() > VALID_DIM, OP_LOGE(context_, 
-                                    "The output size dim is larger than 8, the max dim is 8!"), return ge::GRAPH_FAILED);
-
-    if (runInfo.outputSize.GetShapeSize() == 0) {
-        context_->SetBlockDim(1);
-        context_->SetTilingKey(EMPTY_TENSOR_KEY);
-        emptyTilingData_ = context_->GetTilingData<AsStridedEmptyTilingData>();
-        size_t* currentWorkspace = context_->GetWorkspaceSizes(1);
-        currentWorkspace[0] = 8 * 1024 * 1024;
-        OP_LOGD(context_, "Output is an empty tensor.");
-        return ge::GRAPH_SUCCESS;
-    }
-
-    // To check input data can cover output
-    OP_CHECK_IF(!CheckInputInfo(context_, runInfo.outputSize, runInfo.outputStride, xShape, tilingParam),
-                    OP_LOGE(context_,
-                    "The input info check failed!"), return ge::GRAPH_FAILED);
-
+ge::graphStatus AsStridedTilingClass::GetAndValidateDataType(AsStridedTilingParam& tilingParam, uint32_t ubSizePlatform)
+{
     auto xTensorType = context_->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, xTensorType);
     auto dataType = xTensorType->GetDataType();
     OP_CHECK_IF(
-        tilingTypeKeyMap.count(dataType) == 0, OP_LOGE(context_, "Not support data type"),
+        tilingTypeKeyMap.count(dataType) == 0, 
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input",
+            Ops::Base::ToString(dataType).c_str(),
+            "The dtype of input must be within the range [DT_FLOAT16, DT_FLOAT, DT_INT8, DT_UINT8, DT_INT32, DT_UINT32]."),
         return ge::GRAPH_FAILED);
     tilingParam.ubSize = (ubSizePlatform / BUFFER_NUM) / tilingTypeKeyMap[dataType];
     tilingParam.sizeofDtype = tilingTypeKeyMap[dataType];
     tilingParam.tilingKey = tilingTypeKeyMap[dataType];
+    return ge::GRAPH_SUCCESS;
+}
 
-    ge::graphStatus resOfTiling = ge::GRAPH_FAILED;
-    resOfTiling = NDDMAForAsStrided(tilingParam, runInfo.outputSize, runInfo.outputStride, tilingData);
+ge::graphStatus AsStridedTilingClass::ExecuteTilingAndSetWorkspace(
+    AsStridedTilingParam& tilingParam, AsStridedTilingData& tilingData,
+    AsStridedRunInfo& runInfo)
+{
+    ge::graphStatus resOfTiling = NDDMAForAsStrided(tilingParam, runInfo.outputSize, runInfo.outputStride, tilingData);
     OP_CHECK_IF(
         resOfTiling != ge::GRAPH_SUCCESS, OP_LOGE(context_, "Tiling fail."), return ge::GRAPH_FAILED);
 
@@ -1287,6 +1295,39 @@ ge::graphStatus AsStridedTilingClass::TilingForAsStridedOfAsc(uint32_t maxCoreNu
     return ge::GRAPH_SUCCESS;
 }
 
+ge::graphStatus AsStridedTilingClass::TilingForAsStridedOfAsc(uint32_t maxCoreNum, uint32_t ubSizePlatform,
+                                        AsStridedRunInfo& runInfo, int64_t storageOffset)
+{
+    OP_LOGD(context_, "Enter TilingForAsStridedOfAsc");
+    AsStridedTilingParam tilingParam;
+    AsStridedTilingData tilingData;
+
+    tilingParam.numCore = maxCoreNum;
+    tilingParam.ubSizePlatForm = ubSizePlatform;
+    tilingParam.storageOffset = storageOffset;
+    auto xTensorShape = context_->GetInputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, xTensorShape);
+    const gert::Shape& xShape = xTensorShape->GetStorageShape();
+    OP_CHECK_IF(runInfo.outputSize.GetDimNum() > VALID_DIM, 
+                    OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "output_size",
+                        std::to_string(runInfo.outputSize.GetDimNum()).c_str(),
+                        ("The shape dim of output_size must be within the range [0, " + std::to_string(VALID_DIM) + "].").c_str()),
+                    return ge::GRAPH_FAILED);
+
+    if (runInfo.outputSize.GetShapeSize() == 0) {
+        return HandleEmptyTensor();
+    }
+
+    OP_CHECK_IF(!CheckInputInfo(context_, runInfo.outputSize, runInfo.outputStride, xShape, tilingParam),
+                    OP_LOGE(context_, "The input info check failed!"), return ge::GRAPH_FAILED);
+
+    if (GetAndValidateDataType(tilingParam, ubSizePlatform) != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+
+    return ExecuteTilingAndSetWorkspace(tilingParam, tilingData, runInfo);
+}
+
 static ge::graphStatus TilingForAsStridedArch35(gert::TilingContext* context)
 {
     OP_LOGI(context, "[math] AsStrided tiling running begin");
@@ -1303,8 +1344,9 @@ static ge::graphStatus TilingForAsStridedArch35(gert::TilingContext* context)
       OP_LOGI(context, "the storage_offset is const, get value is %ld", storage_offset);
       OP_CHECK_IF(
           storage_offset < 0,
-          OP_LOGE(context,
-                                          "the storage_offset cannot be negative value! but is %ld", storage_offset),
+          OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "storage_offset",
+              std::to_string(storage_offset).c_str(),
+              "The value of storage_offset must be greater than or equal to 0."),
           return ge::GRAPH_FAILED);
     } else {
       OP_LOGI(context, "the storage_offset is not const, will use default value 0");

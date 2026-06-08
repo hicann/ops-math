@@ -60,9 +60,9 @@ static ge::graphStatus CheckDtypeForAssign(const gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, refPtr);
     auto refDtype = refPtr->GetDataType();
     OP_CHECK_IF(IsInvalidTypeForAssign(refDtype),
-        OP_LOGE(context->GetNodeName(),
-            "Input ref dtype only support bfloat16, uint8, int8, bool, float32, int32, uint32, int16, float16, uint16, \
-int64, uint64, double, complex32, complex64 currently, please check."),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "ref",
+            Ops::Base::ToString(refDtype).c_str(),
+            "The dtype of ref must be within the range [DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT64, DT_UINT64, DT_INT32, DT_UINT32, DT_INT16, DT_UINT16, DT_INT8, DT_UINT8, DT_DOUBLE, DT_BOOL, DT_COMPLEX32, DT_COMPLEX64]."),
         return ge::GRAPH_FAILED);
 
     auto valuePtr = context->GetInputDesc(INDEX_INPUT_VALUE);
@@ -70,7 +70,9 @@ int64, uint64, double, complex32, complex64 currently, please check."),
     auto valueDtype = valuePtr->GetDataType();
     OP_CHECK_IF(
         valueDtype != refDtype,
-        OP_LOGE(context->GetNodeName(), "The dtype of input value must be same with dtype of input ref, please check."),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context->GetNodeName(), "ref, value",
+            (Ops::Base::ToString(refDtype) + ", " + Ops::Base::ToString(valueDtype)).c_str(),
+            "The dtypes of ref and value must be the same."),
         return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
@@ -92,7 +94,9 @@ static ge::graphStatus CheckShapeForAssign(const gert::TilingContext* context, A
 
     tilingParam.tilingKey = 0;
     OP_CHECK_IF(refShape != valueShape,
-        OP_LOGE(context->GetNodeName(), "The shape of input value must be same with shape of input ref, please check."),
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "ref, value",
+            "ref_shape, value_shape",
+            "The shapes of ref and value must be the same."),
         return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;

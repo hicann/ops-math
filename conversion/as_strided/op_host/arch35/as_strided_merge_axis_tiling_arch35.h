@@ -32,15 +32,19 @@ static bool GetSizeAndStride(gert::TilingContext* context, AsStridedRunInfo& run
                     OP_LOGE(context, "get const of stride failed"), return false);
 
     OP_CHECK_IF(runInfo.outputSize.GetDimNum() != runInfo.outputStride.GetDimNum(),
-                    OP_LOGE(
-                        context, "the dimension count of size and stride should be same! but %zu Vs %zu",
-                        runInfo.outputSize.GetDimNum(), runInfo.outputStride.GetDimNum()),
+                    OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+                        context->GetNodeName(), "output_size, output_stride",
+                        (std::to_string(runInfo.outputSize.GetDimNum()) + ", " + 
+                         std::to_string(runInfo.outputStride.GetDimNum())).c_str(),
+                        "The shape dimensions of output_size and output_stride must be the same."),
                     return false);
 
     const int64_t oriSizeLen = runInfo.outputSize.GetDimNum();
     OP_CHECK_IF(
         oriSizeLen == 0,
-        OP_LOGE(context, "the dimension count should be bigger than 0, but is 0!"),
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "output_size",
+            std::to_string(oriSizeLen).c_str(),
+            "The shape dim of output_size must be greater than 0."),
         return false);
 
     return true;

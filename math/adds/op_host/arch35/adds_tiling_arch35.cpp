@@ -98,8 +98,8 @@ ge::graphStatus AddsTiling::RunTiling()
     // 创建 ElewiseBaseTiling 对象
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext, "get output dtype failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"),
+               OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"),
                return ge::GRAPH_FAILED);
     
     // 根据输入 dtype 选择对应的 OpDag 模板实例化
@@ -133,13 +133,17 @@ ge::graphStatus AddsTiling::RunTiling()
             ret = elewiseBaseTiling.DoTiling<NsAdds::AddsOp<int64_t, NsAdds::CAST_MODE_RINT, NsAdds::CAST_MODE_TRUNC>::OpDag>(tiling->baseTiling);
             break;
         default:
-            OP_LOGE(tilingContext, "Adds: Unsupported dtype=%s", Ops::Base::ToString(this->outputDtype).c_str());
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+                tilingContext->GetNodeName(),
+                "y",
+                Ops::Base::ToString(this->outputDtype).c_str(),
+                "The dtype of y must be within the range [DT_FLOAT16, DT_FLOAT, DT_BF16, DT_INT16, DT_INT32, DT_INT64].");
             return ge::GRAPH_FAILED;
     }
     
     OP_CHECK_IF(
         ret != ge::GRAPH_SUCCESS,
-        OP_LOGE(tilingContext, "Adds: ElewiseBaseTiling DoTiling failed"),
+        OP_LOGE(tilingContext->GetNodeName(), "Adds: ElewiseBaseTiling DoTiling failed"),
         return ret);
     // 获取标量值（从算子属性）
     // Adds 算子的 value 属性类型为 float
