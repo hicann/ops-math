@@ -19,6 +19,8 @@
 #include "arch35/radix_sort_top_k.h"
 #include "arch35/radix_topk_constant.h"
 #include "arch35/top_k_merge_sort.h"
+#include "arch35/top_k_merge_sort_more_core.h"
+#include "arch35/top_k_merge_sort_intra_core.h"
 #include "arch35/radix_sort_top_k_single_block.h"
 #include "arch35/radix_sort_top_k_single_core.h"
 #include "arch35/radix_sort_top_k_inter_core_template_optimization.h"
@@ -41,6 +43,8 @@ using namespace SortAndTopK;
 #define TOPK_MERGE_SORT_TILING_KEY_FLOAT 13003
 #define TOPK_MERGE_SORT_TILING_KEY_FLOAT16 13002
 #define TOPK_MERGE_SORT_TILING_KEY_BF16 14002
+#define TOPK_MERGE_SORT_MORE_CORE_TILING_KEY_FLOAT 23003
+#define TOPK_MERGE_SORT_INTRA_CORE_TILING_KEY_FLOAT 33003
 
 const uint32_t SINGLE_CORE_MODE = 1;
 const uint32_t MULT_CORE_OPTIM_MODE = 4;
@@ -280,6 +284,42 @@ __aicore__ inline void generateMergeTopKObject(
     }
 }
 
+template <typename T, typename CONVERT_TYPE, typename INDEX_DTYPE>
+__aicore__ inline void generateMergeTopKMoreCoreObject(
+    GM_ADDR x, GM_ADDR values, GM_ADDR indices, GM_ADDR globalWorkGm, GM_ADDR tiling)
+{
+    GET_TILING_DATA(tilingData, tiling);
+    bool isLargest = (tilingData.isLargest > 0) ? true : false;
+    TPipe pipe;
+    if (isLargest) {
+        topkV2::TopKMergeSortMoreCore<T, CONVERT_TYPE, true, INDEX_DTYPE> mergeSort;
+        mergeSort.Init(x, values, indices, globalWorkGm, &tilingData, &pipe);
+        mergeSort.Process();
+    } else {
+        topkV2::TopKMergeSortMoreCore<T, CONVERT_TYPE, false, INDEX_DTYPE> mergeSort;
+        mergeSort.Init(x, values, indices, globalWorkGm, &tilingData, &pipe);
+        mergeSort.Process();
+    }
+}
+
+template <typename T, typename CONVERT_TYPE, typename INDEX_DTYPE>
+__aicore__ inline void generateMergeTopKIntraCoreObject(
+    GM_ADDR x, GM_ADDR values, GM_ADDR indices, GM_ADDR globalWorkGm, GM_ADDR tiling)
+{
+    GET_TILING_DATA(tilingData, tiling);
+    bool isLargest = (tilingData.isLargest > 0) ? true : false;
+    TPipe pipe;
+    if (isLargest) {
+        topkV2::TopKMergeSortIntraCore<T, INDEX_DTYPE, true> mergeSort;
+        mergeSort.Init(x, values, indices, globalWorkGm, &tilingData, &pipe);
+        mergeSort.Process();
+    } else {
+        topkV2::TopKMergeSortIntraCore<T, INDEX_DTYPE, false> mergeSort;
+        mergeSort.Init(x, values, indices, globalWorkGm, &tilingData, &pipe);
+        mergeSort.Process();
+    }
+}
+
 extern "C" __global__ __aicore__ void top_k_v2(GM_ADDR x, GM_ADDR k, GM_ADDR values, GM_ADDR indices, GM_ADDR workspace, GM_ADDR tiling)
 {
     if (workspace == nullptr) {
@@ -350,11 +390,17 @@ extern "C" __global__ __aicore__ void top_k_v2(GM_ADDR x, GM_ADDR k, GM_ADDR val
     #if ORIG_DTYPE_X == DT_FLOAT
         TILING_KEY_IS(TOPK_COMMON_TILING_KEY_FLOAT);
         TILING_KEY_IS(TOPK_MERGE_SORT_TILING_KEY_FLOAT);
+        TILING_KEY_IS(TOPK_MERGE_SORT_MORE_CORE_TILING_KEY_FLOAT);
+        TILING_KEY_IS(TOPK_MERGE_SORT_INTRA_CORE_TILING_KEY_FLOAT);
 
         #if TILING_KEY_VAR == TOPK_COMMON_TILING_KEY_FLOAT
             generateOpObject<float, uint32_t, topkV2::B32_BITE_SIZE, DTYPE_INDICES>(x, k, values, indices, globalWorkGm, tiling);
         #elif TILING_KEY_VAR == TOPK_MERGE_SORT_TILING_KEY_FLOAT
             generateMergeTopKObject<float, float, DTYPE_INDICES>(x, values, indices, globalWorkGm, tiling);
+        #elif TILING_KEY_VAR == TOPK_MERGE_SORT_MORE_CORE_TILING_KEY_FLOAT
+            generateMergeTopKMoreCoreObject<float, float, DTYPE_INDICES>(x, values, indices, globalWorkGm, tiling);
+        #elif TILING_KEY_VAR == TOPK_MERGE_SORT_INTRA_CORE_TILING_KEY_FLOAT
+            generateMergeTopKIntraCoreObject<float, float, DTYPE_INDICES>(x, values, indices, globalWorkGm, tiling);
         #endif
     #endif
 

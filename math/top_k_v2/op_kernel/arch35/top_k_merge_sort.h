@@ -71,6 +71,7 @@ public:
     uint32_t sortLoopTimes_ = 0;
     uint32_t platformCoreNum_ = 0;
     uint32_t outputLastDimValue_ = 0;
+    uint32_t bufferNum_ = DOUBLE_BUFFER;
     // merge sort kernel
     topkV2::KernelVbsMergeSort<T, CONVERT_TYPE, IS_LARGEST> vbsSort;
 };
@@ -100,6 +101,7 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     sortLoopTimes_ = tilingData->sortLoopTimes;
     unsortedDimParallel_ = tilingData->unsortedDimParallel;
     oneCoreRowNum_ = tilingData->oneCoreRowNum;
+    bufferNum_ = tilingData->keyParams4;
     // 高阶API需要的临时空间大小
     mergSortAcApiNeedBufferSize_ = tilingData->mergSortAcApiNeedBufferSize;
 }
@@ -113,10 +115,10 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     outIndexGm_.SetGlobalBuffer((__gm__ INDEX_TYPE*)(indices));
     // init queue
     uint64_t realNum = ROUND_UP_AGLIN(numTileData_) * oneCoreRowNum_;
-    pipe->InitBuffer(inQueueX_, DOUBLE_BUFFER, ROUND_UP_AGLIN(realNum) * sizeof(T));
-    pipe->InitBuffer(outValueQueue_, DOUBLE_BUFFER, ROUND_UP_AGLIN(realNum * sizeof(T)));
+    pipe->InitBuffer(inQueueX_, bufferNum_, ROUND_UP_AGLIN(realNum) * sizeof(T));
+    pipe->InitBuffer(outValueQueue_, bufferNum_, ROUND_UP_AGLIN(realNum * sizeof(T)));
     // 改为实际来支持int64_t
-    pipe->InitBuffer(outIndexQueue_, DOUBLE_BUFFER, ROUND_UP_AGLIN(realNum * sizeof(INDEX_TYPE)));
+    pipe->InitBuffer(outIndexQueue_, bufferNum_, ROUND_UP_AGLIN(realNum * sizeof(INDEX_TYPE)));
 }
 
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>

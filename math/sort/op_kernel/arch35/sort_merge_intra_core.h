@@ -50,7 +50,7 @@ public:
         const SortRegBaseTilingData* tilingData, TPipe* pipe);
     __aicore__ inline void Process();
 
-private:
+protected:
     struct MergeListContext {
         uint32_t remains[MERGE_LIST_MAX_NUM] = {0};
         uint32_t gmOffsets[MERGE_LIST_MAX_NUM] = {0};
