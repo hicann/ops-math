@@ -39,6 +39,9 @@ static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
+static const std::initializer_list<op::DataType> ASCEND950_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16};
+
 static const std::initializer_list<op::DataType> INPUT_DTYPE_SUPPORT_LIST_910 = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE,
     op::DataType::DT_INT8, op::DataType::DT_UINT8, op::DataType::DT_INT16, 
@@ -48,6 +51,12 @@ static const std::initializer_list<op::DataType> INPUT_DTYPE_SUPPORT_LIST_910 = 
 static const std::initializer_list<op::DataType> INPUT_DTYPE_SUPPORT_LIST_910B = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE,
     op::DataType::DT_INT8, op::DataType::DT_UINT8, op::DataType::DT_INT16, 
+    op::DataType::DT_UINT16, op::DataType::DT_INT32, op::DataType::DT_UINT32,
+    op::DataType::DT_INT64, op::DataType::DT_UINT64, op::DataType::DT_BOOL, op::DataType::DT_BF16};
+
+static const std::initializer_list<op::DataType> INPUT_DTYPE_SUPPORT_LIST_950 = {
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE,
+    op::DataType::DT_INT8, op::DataType::DT_UINT8, op::DataType::DT_INT16,
     op::DataType::DT_UINT16, op::DataType::DT_INT32, op::DataType::DT_UINT32,
     op::DataType::DT_INT64, op::DataType::DT_UINT64, op::DataType::DT_BOOL, op::DataType::DT_BF16};
 
@@ -76,15 +85,24 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const ac
 }
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const aclTensor *out) {
-    auto outDtypeSupportList = GetDtypeSupportList();
-    auto inputDtypeSupportList = GetInputDtypeSupportList();
+    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
+    if (socVersion == SocVersion::ASCEND950) {
+        // 检查self和other的数据类型是否为支持的数据类型
+        OP_CHECK_DTYPE_NOT_SUPPORT(self, INPUT_DTYPE_SUPPORT_LIST_950, return false);
+        OP_CHECK_DTYPE_NOT_SUPPORT(other, INPUT_DTYPE_SUPPORT_LIST_950, return false);
+        // 检查out的数据类型是否为支持的数据类型
+        OP_CHECK_DTYPE_NOT_SUPPORT(out, ASCEND950_DTYPE_SUPPORT_LIST, return false);
+    } else {
+        auto outDtypeSupportList = GetDtypeSupportList();
+        auto inputDtypeSupportList = GetInputDtypeSupportList();
 
-    // 检查self和other的数据类型是否为支持的数据类型
-    OP_CHECK_DTYPE_NOT_SUPPORT(self, inputDtypeSupportList, return false);
-    OP_CHECK_DTYPE_NOT_SUPPORT(other, inputDtypeSupportList, return false);
+        // 检查self和other的数据类型是否为支持的数据类型
+        OP_CHECK_DTYPE_NOT_SUPPORT(self, inputDtypeSupportList, return false);
+        OP_CHECK_DTYPE_NOT_SUPPORT(other, inputDtypeSupportList, return false);
 
-    // 检查out的数据类型是否为支持的数据类型
-    OP_CHECK_DTYPE_NOT_SUPPORT(out, outDtypeSupportList, return false);
+        // 检查out的数据类型是否为支持的数据类型
+        OP_CHECK_DTYPE_NOT_SUPPORT(out, outDtypeSupportList, return false);
+    }
 
     if (self->GetDataType() != out->GetDataType()) {
         // 检查self的数据类型能否转换为输出的数据类型
