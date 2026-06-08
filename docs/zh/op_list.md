@@ -2538,6 +2538,16 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/space_to_batch/README.md">space_to_batch</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>将空间维度的数据按块重新排列到批次维度，并对空间维度补零。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/split/README.md">split</a></td>
     <td>√</td>
     <td>√</td>
