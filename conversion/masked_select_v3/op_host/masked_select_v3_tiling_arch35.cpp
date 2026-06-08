@@ -91,17 +91,21 @@ ge::graphStatus MaskedSelectV3IsRegbaseSocVersionTiling::Init()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tilingContext->GetInputDesc(0));
     dataType = tilingContext->GetInputDesc(0)->GetDataType();
     sizeOfDataType = ge::GetSizeByDataType(dataType);
-    OP_CHECK_IF(
-        sizeOfDataType == 0u, OP_LOGE(tilingContext->GetNodeName(), "sizeOfDataType should not be 0"),
-        return ge::GRAPH_FAILED);
+    if (sizeOfDataType == 0u) {
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(tilingContext->GetNodeName(), "x",
+            Ops::Base::ToString(dataType).c_str(), "The dtype size of x must be greater than 0");
+        return ge::GRAPH_FAILED;
+    }
     // 一个block存放的元素
     uint64_t alignNum = BLOCK_SIZE / sizeOfDataType; // 256/<8>=32
     // ub对齐后长度
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tilingContext->GetInputShape(0));
     totalLength = EnsureNotScalar(tilingContext->GetInputShape(0)->GetStorageShape()).GetShapeSize();
-    OP_CHECK_IF(
-        totalLength == 0UL, OP_LOGE(tilingContext->GetNodeName(), "The input shape is empty!"),
-        return ge::GRAPH_FAILED);
+    if (totalLength == 0UL) {
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(tilingContext->GetNodeName(), "x",
+            std::to_string(totalLength).c_str(), "input shape_size must be greater than 0");
+        return ge::GRAPH_FAILED;
+    }
     totalLengthAlignedWithBlock = ((totalLength + alignNum - 1UL) / alignNum) * alignNum;
     float totalFact = static_cast<float>(sizeof(uint8_t) + sizeOfDataType * 2UL);
 
@@ -155,12 +159,12 @@ ge::graphStatus MaskedSelectV3IsRegbaseSocVersionTiling::RunKernelTiling()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, tilingContext->GetInputShape(1));
     auto storageShape0 = tilingContext->GetInputShape(0)->GetStorageShape();
     auto storageShape1 = tilingContext->GetInputShape(1)->GetStorageShape();
-    OP_CHECK_IF(
-        storageShape0 != storageShape1,
-        OP_LOGE(
-            "RunKernelTiling", "Input shape must be equal. x.shape:[%s], mask.shape:[%s]",
-            Shape2String(storageShape0).c_str(), Shape2String(storageShape1).c_str()),
-        return ge::GRAPH_FAILED);
+    if (!(storageShape0 == storageShape1)) {
+        std::string shapesStr = Shape2String(storageShape0) + " and " + Shape2String(storageShape1);
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x, mask", shapesStr.c_str(),
+            "The shapes of x, mask must be the same");
+        return ge::GRAPH_FAILED;
+    }
     tiling.set_formerNum(formerNum);
     tiling.set_formerLength(formerLength);
     tiling.set_formertileNum(formerTileNum);
