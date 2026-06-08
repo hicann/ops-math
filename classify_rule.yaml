@@ -165,6 +165,7 @@ VC1@ops-math:
         - ops/ops-math/math/log1p/
         - ops/ops-math/math/logical_not/
         - ops/ops-math/math/masked_scale/
+        - ops/ops-math/math/neg/
         - ops/ops-math/math/reciprocal/
         - ops/ops-math/math/round/
         - ops/ops-math/math/rsqrt/
@@ -214,6 +215,8 @@ VC1@ops-math:
         - ops/ops-math/math/logical_not/tests/
         - ops/ops-math/math/masked_scale/examples/
         - ops/ops-math/math/masked_scale/tests/
+        - ops/ops-math/math/neg/examples
+        - ops/ops-math/math/neg/tests
         - ops/ops-math/math/reciprocal/examples/
         - ops/ops-math/math/reciprocal/tests/
         - ops/ops-math/math/round/examples/
@@ -541,13 +544,24 @@ VC5@ops-math:
   src:
     release:
       style:
-        - ops/ops-math/math/neg/
+        # sinc
+        - ops/ops-math/math/sinc/op_graph/
+        - ops/ops-math/math/sinc/op_host/
+        - ops/ops-math/math/sinc/op_kernel/
+        # truncate_div
+        - ops/ops-math/math/truncate_div/op_graph/
+        - ops/ops-math/math/truncate_div/op_host/
+        - ops/ops-math/math/truncate_div/op_kernel/
       opensource_style: null
       kernel_style: null
     unrelease:
       test_code:
-        - ops/ops-math/math/neg/examples
-        - ops/ops-math/math/neg/tests
+        # sinc
+        - ops/ops-math/math/sinc/examples/
+        - ops/ops-math/math/sinc/tests/
+        # truncate_div
+        - ops/ops-math/math/truncate_div/examples/
+        - ops/ops-math/math/truncate_div/tests/
       non_delivery: null
       open_source: null
 
