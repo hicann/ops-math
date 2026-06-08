@@ -41,7 +41,7 @@ static const std::initializer_list<op::DataType> AICORE910B_DTYPE_SUPPORT_LIST =
 
 static const std::initializer_list<op::DataType> ARCH3510_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT32, op::DataType::DT_BF16,
-    op::DataType::DT_INT64};
+    op::DataType::DT_INT64, op::DataType::DT_BOOL};
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static bool IsAiCoreSupport(const aclTensor* self)
@@ -100,7 +100,13 @@ static const aclTensor* ReduceSumOpAiCpu(
 const aclTensor* ReduceSumOp(const aclTensor* x, const aclIntArray* axes, bool keepDim, aclOpExecutor* executor)
 {
     auto axesTensor = executor->ConvertToTensor(axes, op::ToOpDataType(ACL_INT64));
-    auto out = executor->AllocTensor(x->GetDataType(), op::Format::FORMAT_ND, op::Format::FORMAT_ND);
+    aclTensor* out = nullptr;
+
+    if (x->GetDataType() == op::DataType::DT_BOOL) {
+        out = executor->AllocTensor(op::DataType::DT_INT64, op::Format::FORMAT_ND, op::Format::FORMAT_ND);
+    } else {
+        out = executor->AllocTensor(x->GetDataType(), op::Format::FORMAT_ND, op::Format::FORMAT_ND);
+    }
 
     // dim为空时，默认保留所有轴
     bool noopWithEmptyAxes = true;

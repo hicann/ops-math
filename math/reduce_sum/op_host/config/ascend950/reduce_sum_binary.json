@@ -520,6 +520,58 @@
           "value": null
         }
       ]
+    },
+    {
+      "bin_filename": "ReduceSum_bool_int64",
+      "inputs": [
+        {
+          "name": "x",
+          "index": 0,
+          "dtype": "bool",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
+        },
+        {
+          "name": "axes",
+          "index": 1,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "y",
+          "index": 0,
+          "dtype": "int64",
+          "format": "ND",
+          "paramType": "required",
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
+        }
+      ],
+      "attrs": [
+        {
+          "name": "keep_dims",
+          "dtype": "bool",
+          "value": null
+        },
+        {
+          "name": "noop_with_empty_axes",
+          "dtype": "bool",
+          "value": null
+        }
+      ]
     }
   ]
 }
