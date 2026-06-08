@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -30,15 +30,11 @@ namespace TruncateDivOp {
 using namespace Ops::Base;
 constexpr int TRUNCATE_DIV_CAST_MODE_NONE = 0;
 constexpr int TRUNCATE_DIV_CAST_MODE_RINT = 1;
-constexpr int CAST_ROUND_MODE_TRUNC = 5;
-constexpr int TRUNCATE_DIV_CMP_NE_MODE = 5;
-constexpr int SEL_MODE_TENSOR_SCALAR = 1;
 constexpr int8_t SAT_POS = 60;
 constexpr int64_t INT64_MAX_VALUE = 9223372036854775807;
 constexpr int64_t INT32_MAX_VALUE = 2147483647;
 const uint32_t UINT32_SIGN = 0x80000000;
 const uint16_t UINT16_SIGN = 0x8000;
-const int16_t TRUNCATE_DIV_B16_SIGN = -32768;
 
 namespace TruncDag1 {
 template <class T>
@@ -181,7 +177,7 @@ struct TruncIntPostCompute : public Vec::ElemwiseTernaryOP<T, T, T, T> {
 #ifdef __CCE_AICORE__
 template <typename T>
 __simt_vf__ __aicore__
-    LAUNCH_BOUND(1024) inline void TruncDivInt_1(__ubuf__ T* dst, __ubuf__ T* src1, __ubuf__ T* src2, int count)
+    LAUNCH_BOUND(1024) inline void TruncDivInt_SIMT(__ubuf__ T* dst, __ubuf__ T* src1, __ubuf__ T* src2, int count)
 {
     for (uint32_t index = static_cast<uint32_t>(threadIdx.x); index < count;
         index += static_cast<uint32_t>(blockDim.x)) {
@@ -206,7 +202,7 @@ struct TruncDivInt64 : public Vec::ElemwiseBinaryOP<T, T, T> {
         __ubuf__ T* dst_1 = (__ubuf__ T*)dst.GetPhyAddr();
         __ubuf__ T* src1_1 = (__ubuf__ T*)src1.GetPhyAddr();
         __ubuf__ T* src2_1 = (__ubuf__ T*)src2.GetPhyAddr();
-        asc_vf_call<TruncDivInt_1<T>>(dim3(1024), dst_1, src1_1, src2_1, count);
+        asc_vf_call<TruncDivInt_SIMT<T>>(dim3(1024), dst_1, src1_1, src2_1, count);
 #endif
     }
 };

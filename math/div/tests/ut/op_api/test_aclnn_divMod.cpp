@@ -213,7 +213,7 @@ TEST_F(l2_div_mod_test, case_inplace_other_support)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
-TEST_F(l2_div_mod_test, case_complex_mod_1_invalid)
+TEST_F(l2_div_mod_test, case_complex_mods_1_invalid)
 {
     auto self_tensor_desc = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND).ValueRange(1, 2);
     auto other_tensor_desc = ScalarDesc(2.0f);
@@ -223,20 +223,46 @@ TEST_F(l2_div_mod_test, case_complex_mod_1_invalid)
     auto ut = OP_API_UT(aclnnDivMods, INPUT(self_tensor_desc, other_tensor_desc, mode), OUTPUT(out_tensor_desc));
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    // EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(l2_div_mod_test, case_complex_mod_2_invalid)
+TEST_F(l2_div_mod_test, case_complex_mods_2_invalid)
 {
-    auto self_tensor_desc = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND).ValueRange(1, 2);
+    auto self_tensor_desc = TensorDesc({2, 3}, ACL_COMPLEX128, ACL_FORMAT_ND).ValueRange(1, 2);
     auto other_tensor_desc = ScalarDesc(2.0f);
-    auto out_tensor_desc = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND).Precision(0.001, 0.001);
+    auto out_tensor_desc = TensorDesc({2, 3}, ACL_COMPLEX128, ACL_FORMAT_ND).Precision(0.001, 0.001);
     int mode = 2;
 
     auto ut = OP_API_UT(aclnnDivMods, INPUT(self_tensor_desc, other_tensor_desc, mode), OUTPUT(out_tensor_desc));
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    // EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+TEST_F(l2_div_mod_test, case_complex_mod_1_invalid)
+{
+    auto self_tensor_desc = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND).ValueRange(1, 2);
+    auto other_tensor_desc = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND).ValueRange(1, 2);
+    auto out_tensor_desc = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND).Precision(0.001, 0.001);
+    int mode = 2;
+
+    auto ut = OP_API_UT(aclnnDivMod, INPUT(self_tensor_desc, other_tensor_desc, mode), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+TEST_F(l2_div_mod_test, case_complex_mod_2_invalid)
+{
+    auto self_tensor_desc = TensorDesc({2, 3}, ACL_COMPLEX128, ACL_FORMAT_ND).ValueRange(1, 2);
+    auto other_tensor_desc = TensorDesc({2, 3}, ACL_COMPLEX128, ACL_FORMAT_ND).ValueRange(1, 2);
+    auto out_tensor_desc = TensorDesc({2, 3}, ACL_COMPLEX128, ACL_FORMAT_ND).Precision(0.001, 0.001);
+    int mode = 2;
+
+    auto ut = OP_API_UT(aclnnDivMod, INPUT(self_tensor_desc, other_tensor_desc, mode), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
 // 测试mode异常值拦截

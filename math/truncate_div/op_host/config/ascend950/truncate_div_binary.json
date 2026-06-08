@@ -10,7 +10,10 @@
           "dtype": "bfloat16",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "x2",
@@ -18,7 +21,10 @@
           "dtype": "bfloat16",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -28,7 +34,10 @@
           "dtype": "bfloat16",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ]
     },
@@ -41,7 +50,10 @@
           "dtype": "float16",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "x2",
@@ -49,7 +61,10 @@
           "dtype": "float16",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -59,7 +74,10 @@
           "dtype": "float16",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ]
     },
@@ -72,7 +90,10 @@
           "dtype": "float16",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "x2",
@@ -80,7 +101,10 @@
           "dtype": "float32",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -90,7 +114,10 @@
           "dtype": "float32",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ]
     },
@@ -103,7 +130,10 @@
           "dtype": "float32",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "x2",
@@ -111,7 +141,10 @@
           "dtype": "float16",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -121,7 +154,10 @@
           "dtype": "float32",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ]
     },
@@ -134,7 +170,10 @@
           "dtype": "float32",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "x2",
@@ -142,7 +181,10 @@
           "dtype": "float32",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -152,7 +194,10 @@
           "dtype": "float32",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ]
     },
@@ -165,7 +210,10 @@
           "dtype": "float32",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "x2",
@@ -173,7 +221,10 @@
           "dtype": "int32",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -183,7 +234,10 @@
           "dtype": "float32",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ]
     },
@@ -196,7 +250,10 @@
           "dtype": "int32",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "x2",
@@ -204,7 +261,10 @@
           "dtype": "int32",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -214,7 +274,10 @@
           "dtype": "int32",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ]
     },
@@ -227,7 +290,10 @@
           "dtype": "int32",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "x2",
@@ -235,7 +301,10 @@
           "dtype": "float32",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -245,7 +314,10 @@
           "dtype": "float32",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ]
     },
@@ -258,7 +330,10 @@
           "dtype": "uint8",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "x2",
@@ -266,7 +341,10 @@
           "dtype": "uint8",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -276,7 +354,10 @@
           "dtype": "uint8",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ]
     },
@@ -289,7 +370,10 @@
           "dtype": "int8",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "x2",
@@ -297,7 +381,10 @@
           "dtype": "int8",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -307,7 +394,10 @@
           "dtype": "int8",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ]
     },
@@ -320,7 +410,10 @@
           "dtype": "int64",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "x2",
@@ -328,7 +421,10 @@
           "dtype": "int64",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -338,7 +434,10 @@
           "dtype": "int64",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ]
     },
@@ -351,7 +450,10 @@
           "dtype": "int16",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         },
         {
           "name": "x2",
@@ -359,7 +461,10 @@
           "dtype": "int16",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ],
       "outputs": [
@@ -369,7 +474,10 @@
           "dtype": "int16",
           "format": "ND",
           "paramType": "required",
-          "shape": [-2]
+          "shape": [
+            -2
+          ],
+          "format_match_mode": "FormatAgnostic"
         }
       ]
     }

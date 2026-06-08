@@ -763,24 +763,15 @@ aclnnStatus aclnnDivModGetWorkspaceSize(
 
     // TruncateDiv 特殊处理：IsRegBase && mode=MODE_TRUNC_DIV && 类型组合在映射表中，不做类型提升
     if (IsRegBase(npuArch) && mode == MODE_TRUNC_DIV) {
-        OP_LOGI(
-            "aclnnDivMod", "Enter TruncateDiv branch, selfDtype=%s, otherDtype=%s",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
         if (isInTruncDtypeMapping(self->GetDataType(), other->GetDataType())) {
-            OP_LOGI(
-                "aclnnDivMod", "TruncateDiv direct path: no type promotion, selfDtype=%s, otherDtype=%s",
-                op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
             divOpOut = l0op::TruncateDiv(selfContiguous, otherContiguous, uniqueExecutor.get());
         } else {
             op::DataType promoteType;
             promoteType = InferDivModeDtype(self->GetDataType(), other->GetDataType(), mode);
             bool needToFloat = (promoteType == op::DataType::DT_BOOL);
             promoteType = needToFloat ? op::DataType::DT_FLOAT : promoteType;
-            OP_LOGI(
-                "aclnnDivMod", "TruncateDiv cast path: selfDtype=%s -> %s, otherDtype=%s -> %s, promoteType=%s",
-                op::ToString(self->GetDataType()).GetString(), op::ToString(promoteType).GetString(),
-                op::ToString(other->GetDataType()).GetString(), op::ToString(promoteType).GetString(),
-                op::ToString(promoteType).GetString());
+            auto complexRet = CheckDivModComplexDtype(promoteType, mode);
+            CHECK_RET(complexRet == ACLNN_SUCCESS, complexRet);
             selfCasted = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
             CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
             otherCasted = l0op::Cast(otherContiguous, promoteType, uniqueExecutor.get());
@@ -891,13 +882,7 @@ aclnnStatus aclnnDivModsGetWorkspaceSize(
 
     // TruncateDiv 特殊处理：IsRegBase && mode=MODE_TRUNC_DIV && 类型组合在映射表中，不做类型提升
     if (IsRegBase(npuArch) && mode == MODE_TRUNC_DIV) {
-        OP_LOGI(
-            "aclnnDivMods", "Enter TruncateDiv branch, selfDtype=%s, otherDtype=%s",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
         if (isInTruncDtypeMapping(self->GetDataType(), other->GetDataType())) {
-            OP_LOGI(
-                "aclnnDivMods", "TruncateDiv direct path: no type promotion, selfDtype=%s, otherDtype=%s",
-                op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
             auto otherConvert = uniqueExecutor.get()->ConvertToTensor(other, other->GetDataType());
             CHECK_RET(otherConvert != nullptr, ACLNN_ERR_INNER_NULLPTR);
             divOpOut = l0op::TruncateDiv(selfContiguous, otherConvert, uniqueExecutor.get());
@@ -906,11 +891,8 @@ aclnnStatus aclnnDivModsGetWorkspaceSize(
             promoteType = InferDivModeDtype(self->GetDataType(), other->GetDataType(), mode);
             bool needToFloat = (promoteType == op::DataType::DT_BOOL);
             promoteType = needToFloat ? op::DataType::DT_FLOAT : promoteType;
-            OP_LOGI(
-                "aclnnDivMods", "TruncateDiv cast path: selfDtype=%s -> %s, otherDtype=%s -> %s, promoteType=%s",
-                op::ToString(self->GetDataType()).GetString(), op::ToString(promoteType).GetString(),
-                op::ToString(other->GetDataType()).GetString(), op::ToString(promoteType).GetString(),
-                op::ToString(promoteType).GetString());
+            auto complexRet = CheckDivModComplexDtype(promoteType, mode);
+            CHECK_RET(complexRet == ACLNN_SUCCESS, complexRet);
             selfCasted = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
             CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
             auto otherCasted = uniqueExecutor.get()->ConvertToTensor(other, promoteType);

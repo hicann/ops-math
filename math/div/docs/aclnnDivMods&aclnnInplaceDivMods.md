@@ -96,7 +96,7 @@ aclnnStatus aclnnInplaceDivMods(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>表示被除数，公式中的input。</td>
-      <td>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
+      <td>数据类型与other的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>）。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
       <td>不超过8维</td>
@@ -106,7 +106,7 @@ aclnnStatus aclnnInplaceDivMods(
       <td>other（aclScalar*）</td>
       <td>输入</td>
       <td>表示除数，公式中的输入other。</td>
-      <td>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
+      <td>数据类型与self的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>）。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>-</td>
       <td>-</td>
@@ -157,9 +157,9 @@ aclnnStatus aclnnInplaceDivMods(
   - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
 
   - <term>Ascend 950PR/Ascend 950DT</term>：
-    - 数据类型需满足<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>，推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
-    - out在mode为0时，支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX128、COMPLEX64。
-    - mode为1或2时，支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、COMPLEX128、COMPLEX64。
+    - 数据类型需满足<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>
+    - mode为0时，out数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX128、COMPLEX64，self与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT；
+    - mode为1或2时，out数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、COMPLEX128、COMPLEX64。
 
 - **返回值：**
 
@@ -280,7 +280,7 @@ aclnnStatus aclnnInplaceDivMods(
       <td>selfRef（aclTensor*）</td>
       <td>输入/输出</td>
       <td>表示被除数和商，公式中的输入input和out。</td>
-      <td>数据类型需要是selfRef与other推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/互转换关系.md" target="_blank">互转换关系</a>）。</td>
+      <td>数据类型需要是selfRef与other推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>）。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
       <td>不超过8维</td>
@@ -290,7 +290,7 @@ aclnnStatus aclnnInplaceDivMods(
       <td>other（aclScalar*）</td>
       <td>输入</td>
       <td>表示除数，公式中的输入other。</td>
-      <td>数据类型与selfRef的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/互推导关系.md" target="_blank">互推导关系</a>）。</td>
+      <td>数据类型与selfRef的数据类型需满足数据类型推导规则（参见<a href="../../../docs/zh/context/TensorScalar互推导关系.md" target="_blank">TensorScalar互推导关系</a>）。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>-</td>
       <td>-</td>

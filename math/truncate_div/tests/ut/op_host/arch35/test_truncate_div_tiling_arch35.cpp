@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You can not use this file except in compliance with the License.
@@ -98,26 +98,6 @@ TEST_F(TruncateDivTilingTest, truncate_div_bf16_1)
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
-TEST_F(TruncateDivTilingTest, truncate_div_int8_scalar)
-{
-    BroadcastCompileInfo compileInfo;
-    compileInfo.coreNum = 64;
-    compileInfo.ubSize = 245760;
-    gert::TilingContextPara tilingContextPara(
-        "TruncateDiv",
-        {
-            {{{17772, 1, 2, 1, 2, 1, 2, 1}, {17772, 1, 2, 1, 2, 1, 2, 1}}, ge::DT_INT8, ge::FORMAT_ND},
-            {{{}, {}}, ge::DT_INT16, ge::FORMAT_ND},
-        },
-        {
-            {{{17772, 2, 2, 2, 2, 2, 2, 2}, {17772, 2, 2, 2, 2, 2, 2, 2}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 0b0'00000000'00000001;
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
-}
-
 TEST_F(TruncateDivTilingTest, truncate_div_f32_scalar_3)
 {
     BroadcastCompileInfo compileInfo;
@@ -202,7 +182,7 @@ TEST_F(TruncateDivTilingTest, test_ez0020_scalar_dtype_int32)
     uint64_t expectTilingKey = 0;
     std::vector<size_t> expectWorkspaces = {0};
 
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }
 
 TEST_F(TruncateDivTilingTest, test_ez0021_dtype_combination_double)

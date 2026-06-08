@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -44,11 +44,26 @@ private:
     uint64_t tilingKey_ = 0;
     float reciprocal_ = 0.0f;
     int64_t ubSize_ = 0;
+    uint32_t schMode_ = 0;
+    bool canUseMul_ = false;
 
     template <typename T>
     ge::graphStatus GetConstData(uint32_t inputIdx, T& data);
 
     float GetReciprocal(float data);
+
+    template <typename OpDag>
+    ge::graphStatus ExecTiling(bool isScalarBranch = false);
+
+    ge::graphStatus GetScalarReciprocal(ge::DataType x2DType);
+
+    ge::graphStatus SelectAndExecTiling(ge::DataType x1DType, ge::DataType x2DType);
+
+    ge::graphStatus HandleFloat16WithFloat();
+    ge::graphStatus HandleFloat16OrBf16();
+    ge::graphStatus HandleFloat(ge::DataType x2DType);
+    ge::graphStatus HandleIntTypes(ge::DataType x1DType, ge::DataType x2DType);
+    ge::graphStatus HandleInt64();
 };
 
 } // namespace optiling
