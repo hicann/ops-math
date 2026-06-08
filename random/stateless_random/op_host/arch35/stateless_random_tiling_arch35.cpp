@@ -14,6 +14,7 @@
  */
 
 #include "stateless_random_tiling_arch35.h"
+#include <string>
 #include "log/log.h"
 #include "platform/platform_ascendc.h"
 #include "op_host/math_tiling_templates_registry.h"

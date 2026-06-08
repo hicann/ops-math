@@ -14,6 +14,7 @@
  */
 
 #include <vector>
+#include <string>
 #include <stack>
 #include "base/context_builder/op_tiling_context_builder.h"
 #include "platform/platform_infos_def.h"
@@ -92,10 +93,12 @@ ge::graphStatus StatelessRandpermTiling::GetAttrs()
     } else {
         attrOutDtype_ = *dtypePtr;
     }
-    OP_CHECK_IF(OUTPUT_DTYPE.find(attrOutDtype_) == OUTPUT_DTYPE.end(),
-                OP_LOGE(opName_, "[attr]dtype only support [int64, int32, int16, int8, float32, float16, "
-                                 "bfloat16], but got %s.", Ops::Base::ToString(attrOutDtype_).c_str()),
-                return ge::GRAPH_FAILED);
+    if (OUTPUT_DTYPE.find(attrOutDtype_) == OUTPUT_DTYPE.end()) {
+        std::string valueStr = ToString(attrOutDtype_);
+        std::string reasonMsg = "[attr]dtype only support int64, int32, int16, int8, float32, float16, bfloat16";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "attr dtype", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     return ge::GRAPH_SUCCESS;
 }
@@ -107,17 +110,23 @@ ge::graphStatus StatelessRandpermTiling::GetInputN()
     auto nDesc = context_->GetInputDesc(INPUT_IDX_N);
     OP_CHECK_NULL_WITH_CONTEXT(context_, nDesc);
     ge::DataType nDtype = nDesc->GetDataType();
-    OP_CHECK_IF(nDtype != ge::DT_INT64,
-                OP_LOGE(opName_, "input n.dtype should be int64, but got %s.", Ops::Base::ToString(nDtype).c_str()),
-                return ge::GRAPH_FAILED);
+    if (nDtype != ge::DT_INT64) {
+        std::string valueStr = ToString(nDtype);
+        std::string reasonMsg = "input n dtype should be int64";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "input tensor n", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     auto nShape = context_->GetInputShape(INPUT_IDX_N);
     OP_CHECK_NULL_WITH_CONTEXT(context_, nShape);
     auto nStorageShape = Ops::Base::EnsureNotScalar(nShape->GetStorageShape());
     int64_t nShapeSize = nStorageShape.GetShapeSize();
-    OP_CHECK_IF(nShapeSize != 1,
-                OP_LOGE(opName_, "input n.shapeSize should equal 1, but got %ld.", nShapeSize),
-                return ge::GRAPH_FAILED);
+    if (nShapeSize != 1) {
+        std::string valueStr = std::to_string(nShapeSize);
+        std::string reasonMsg = "input n shapeSize should equal 1";
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName_, "input tensor n", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     auto nTensor = context_->GetRequiredInputTensor(INPUT_IDX_N);
     OP_CHECK_NULL_WITH_CONTEXT(context_, nTensor);
@@ -130,17 +139,26 @@ ge::graphStatus StatelessRandpermTiling::GetInputN()
     OP_CHECK_IF(maxIter == maxValueMap.end(),
                 OP_LOGE(opName_, "max value of [attr]dtype not found in."),
                 return ge::GRAPH_FAILED);
-    OP_CHECK_IF(n_ > maxIter->second,
-                OP_LOGE(opName_, "input n must not be greater than max value of [attr]dtype, but got %ld.", n_),
-                return ge::GRAPH_FAILED);
-    OP_CHECK_IF(n_ < 0,
-                OP_LOGE(opName_, "input n must be non-negative, but got %ld.", n_),
-                return ge::GRAPH_FAILED);
+    if (n_ > maxIter->second) {
+        std::string valueStr = std::to_string(n_);
+        std::string reasonMsg = "input n must not be greater than max value of [attr]dtype";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName_, "input tensor n", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
+    if (n_ < 0) {
+        std::string valueStr = std::to_string(n_);
+        std::string reasonMsg = "input n must be non-negative";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName_, "input tensor n", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     nIsInt32_ = (n_ <= static_cast<int64_t>(std::numeric_limits<int32_t>::max()));
-    OP_CHECK_IF(nIsInt32_ != true,
-            OP_LOGE(opName_, "n currently only supports values <= int32 max, but got %ld", n_),
-            return ge::GRAPH_FAILED);
+    if (nIsInt32_ != true) {
+        std::string valueStr = std::to_string(n_);
+        std::string reasonMsg = "n currently only supports values <= int32 max";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName_, "input tensor n", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     return ge::GRAPH_SUCCESS;
 }
 
@@ -150,17 +168,23 @@ ge::graphStatus StatelessRandpermTiling::GetInputSeed()
     auto seedDesc = context_->GetInputDesc(INPUT_IDX_SEED);
     OP_CHECK_NULL_WITH_CONTEXT(context_, seedDesc);
     ge::DataType seedDtype = seedDesc->GetDataType();
-    OP_CHECK_IF(seedDtype != ge::DT_INT64,
-        OP_LOGE(opName_, "input seed.dtype should be int64, but got %s.", Ops::Base::ToString(seedDtype).c_str()),
-        return ge::GRAPH_FAILED);
+    if (seedDtype != ge::DT_INT64) {
+        std::string valueStr = ToString(seedDtype);
+        std::string reasonMsg = "input seed dtype should be int64";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "input tensor seed", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     auto seedShape = context_->GetInputShape(INPUT_IDX_SEED);
     OP_CHECK_NULL_WITH_CONTEXT(context_, seedShape);
     auto seedStorageShape = Ops::Base::EnsureNotScalar(seedShape->GetStorageShape());
     int64_t seedShapeSize = seedStorageShape.GetShapeSize();
-    OP_CHECK_IF(seedShapeSize != 1,
-                OP_LOGE(opName_, "input seed.shapeSize should equal 1, but got %ld.", seedShapeSize),
-                return ge::GRAPH_FAILED);
+    if (seedShapeSize != 1) {
+        std::string valueStr = std::to_string(seedShapeSize);
+        std::string reasonMsg = "input seed shapeSize should equal 1";
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName_, "input tensor seed", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     auto seedTensor = context_->GetInputTensor(INPUT_IDX_SEED);
     OP_CHECK_NULL_WITH_CONTEXT(context_, seedTensor);
@@ -178,17 +202,23 @@ ge::graphStatus StatelessRandpermTiling::GetInputOffset()
     auto offsetDesc = context_->GetInputDesc(INPUT_IDX_OFFSET);
     OP_CHECK_NULL_WITH_CONTEXT(context_, offsetDesc);
     ge::DataType offsetDtype_ = offsetDesc->GetDataType();
-    OP_CHECK_IF(offsetDtype_ != ge::DT_INT64,
-        OP_LOGE(opName_, "input offset.dtype should be int64, but got %s.", Ops::Base::ToString(offsetDtype_).c_str()),
-        return ge::GRAPH_FAILED);
+    if (offsetDtype_ != ge::DT_INT64) {
+        std::string valueStr = ToString(offsetDtype_);
+        std::string reasonMsg = "input offset dtype should be int64";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "input tensor offset", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     auto offsetShape = context_->GetInputShape(INPUT_IDX_OFFSET);
     OP_CHECK_NULL_WITH_CONTEXT(context_, offsetShape);
     auto offsetStorageShape = Ops::Base::EnsureNotScalar(offsetShape->GetStorageShape());
     int64_t offsetShapeSize = offsetStorageShape.GetShapeSize();
-    OP_CHECK_IF(offsetShapeSize != 1,
-                OP_LOGE(opName_, "input offset.shapeSize should equal 1, but got %ld.", offsetShapeSize),
-                return ge::GRAPH_FAILED);
+    if (offsetShapeSize != 1) {
+        std::string valueStr = std::to_string(offsetShapeSize);
+        std::string reasonMsg = "input offset shapeSize should equal 1";
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName_, "input tensor offset", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     auto offsetTensor = context_->GetInputTensor(INPUT_IDX_OFFSET);
     OP_CHECK_NULL_WITH_CONTEXT(context_, offsetTensor);
@@ -203,34 +233,44 @@ ge::graphStatus StatelessRandpermTiling::GetOutputY()
     auto outDesc = context_->GetOutputDesc(OUTPUT_IDX_Y);
     OP_CHECK_NULL_WITH_CONTEXT(context_, outDesc);
     auto outDtype = outDesc->GetDataType();
-    OP_CHECK_IF(OUTPUT_DTYPE.count(outDtype) == 0,
-                OP_LOGE(opName_, "output y.dtype should be in [int64, int32, int16, int8, float32, float16, "
-                                 "bfloat16], but got %s.", Ops::Base::ToString(outDtype).c_str()),
-                return ge::GRAPH_FAILED);
+    if (OUTPUT_DTYPE.count(outDtype) == 0) {
+        std::string valueStr = ToString(outDtype);
+        std::string reasonMsg = "output y dtype should be in int64, int32, int16, int8, float32, float16, bfloat16";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "output tensor y", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     // shape校验
     auto yShape = context_->GetOutputShape(OUTPUT_IDX_Y);
     OP_CHECK_NULL_WITH_CONTEXT(context_, yShape);
     auto yStorageShape = Ops::Base::EnsureNotScalar(yShape->GetStorageShape());
     size_t yDimNum = yStorageShape.GetDimNum();
-    OP_CHECK_IF(yDimNum != 1,
-                OP_LOGE(opName_, "output y.dim must be 1, but got %zu", yDimNum),
-                return ge::GRAPH_FAILED);
+    if (yDimNum != 1) {
+        std::string valueStr = std::to_string(yDimNum);
+        std::string reasonMsg = "output y dim must be 1";
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(opName_, "output tensor y", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     // 值校验
     int64_t yLen = yStorageShape.GetDim(0);
-    OP_CHECK_IF(yLen != n_,
-                OP_LOGE(opName_, "output y.shape[0]=%ld is not equal to n=%ld, please check.", yLen, n_),
-                return ge::GRAPH_FAILED);
+    if (yLen != n_) {
+        std::string valueStr = std::to_string(yLen) + " and " + std::to_string(n_);
+        std::string reasonMsg = "output y shape[0] must be equal to n";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(opName_, "output tensor y", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     auto iter = maxValueMap.find(outDtype);
     OP_CHECK_IF(iter == maxValueMap.end(),
                 OP_LOGE(opName_, "max value of y.dtype does not exist in the map, please check."),
                 return ge::GRAPH_FAILED);
     const double nMax = iter->second;
-    OP_CHECK_IF(static_cast<double>(yLen) > nMax,
-                OP_LOGE(opName_, "output y.shape[0](or n)=%ld is over the max value %f of y.dtype %s, please check.",
-                                 yLen, nMax, Ops::Base::ToString(outDtype).c_str()),
-                return ge::GRAPH_FAILED);
+    if (static_cast<double>(yLen) > nMax) {
+        std::string valueStr = std::to_string(yLen);
+        std::string reasonMsg = "output y shape[0] is over the max value of y dtype";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName_, "output tensor y", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     return ge::GRAPH_SUCCESS;
 }
@@ -410,10 +450,12 @@ ge::graphStatus StatelessRandpermTiling::DoOpTiling()
 
     // 3、n值切分
     Int32IndexingSplit(n_, subNs_, subNSize_);
-    OP_CHECK_IF(subNSize_ > SUB_N_TILE_COUNT,
-                OP_LOGE(opName_, "After n splits, the number of blocks %u should not exceed %u.",
-                                 subNSize_, SUB_N_TILE_COUNT),
-                return GRAPH_FAILED);
+    if (subNSize_ > SUB_N_TILE_COUNT) {
+        std::string valueStr = std::to_string(subNSize_);
+        std::string reasonMsg = "After n splits, the number of blocks should not exceed " + std::to_string(SUB_N_TILE_COUNT);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName_, "input tensor n", valueStr.c_str(), reasonMsg.c_str());
+        return GRAPH_FAILED;
+    }
 
     // 4.1、Fisher-Yates部分，线程块参数计算
     ThreadBlockNumCalc(SIMT_THREAD_NUM_512, islandFactor_, islandFactorTail_);

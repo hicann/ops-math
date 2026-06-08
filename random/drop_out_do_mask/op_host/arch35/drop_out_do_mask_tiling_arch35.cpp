@@ -15,6 +15,7 @@
 
 #include "drop_out_do_mask_tiling_arch35.h"
 #include <limits>
+#include <string>
 #include "tiling/tiling_api.h"
 #include "drop_out_do_mask_tiling.h"
 #include "log/log.h"
@@ -65,10 +66,12 @@ ge::graphStatus DropOutDoMaskTiling::CheckInputShape()
     OP_CHECK_NULL_WITH_CONTEXT(context_, keepProbShapePtr);
     auto& keepProbShape = Ops::Base::EnsureNotScalar(keepProbShapePtr->GetStorageShape());
     int64_t keepProbAxis = keepProbShape.GetShapeSize();
-    OP_CHECK_IF(
-        (keepProbAxis != 1),
-        OP_LOGE(context_->GetNodeName(), "size of keep_prob has to be 1, but current is %ld.", keepProbAxis),
-        return ge::GRAPH_FAILED);
+    if (keepProbAxis != 1) {
+        std::string valueStr = std::to_string(keepProbAxis);
+        std::string reasonMsg = "size of keep_prob has to be 1";
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), "input keep_prob", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     return ge::GRAPH_SUCCESS;
 }
 
@@ -77,33 +80,36 @@ ge::graphStatus DropOutDoMaskTiling::GetShapeAttrsInfo()
     auto xPtr = context_->GetInputDesc(X_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, xPtr);
     dType_ = xPtr->GetDataType();
-    OP_CHECK_IF(
-        (DROP_SUPPORTED_DTYPE.find(dType_) == DROP_SUPPORTED_DTYPE.end()),
-        OP_LOGE(
-            context_->GetNodeName(), "x dtype only support float32, float16, bfloat16, but got [%s].",
-            Ops::Base::ToString(dType_).c_str()),
-        return ge::GRAPH_FAILED);
+    if (DROP_SUPPORTED_DTYPE.find(dType_) == DROP_SUPPORTED_DTYPE.end()) {
+        std::string valueStr = ToString(dType_);
+        std::string reasonMsg = "x dtype only support float32, float16, bfloat16";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context_->GetNodeName(), "input tensor x", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     auto maskPtr = context_->GetInputDesc(MASK_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, maskPtr);
     auto maskDtype = maskPtr->GetDataType();
     bool dtypeInValid = (maskDtype != ge::DT_UINT8 && maskDtype != ge::DT_UINT1);
-    OP_CHECK_IF(
-        dtypeInValid,
-        OP_LOGE(
-            context_->GetNodeName(), "mask dtype only support uint8, uint1 currently, but got [%s].",
-            Ops::Base::ToString(maskDtype).c_str()),
-        return ge::GRAPH_FAILED);
+    if (dtypeInValid) {
+        std::string valueStr = ToString(maskDtype);
+        std::string reasonMsg = "mask dtype only support uint8, uint1 currently";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context_->GetNodeName(), "input tensor mask", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     auto probPtr = context_->GetInputDesc(KEEP_PROB_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, probPtr);
     auto probPtrDtype = probPtr->GetDataType();
-    OP_CHECK_IF(
-        (probPtrDtype != dType_),
-        OP_LOGE(
-            context_->GetNodeName(), "expected keep_prob dtype [%s] to be equal to x dtype [%s].",
-            Ops::Base::ToString(probPtrDtype).c_str(), Ops::Base::ToString(dType_).c_str()),
-        return ge::GRAPH_FAILED);
+    if (probPtrDtype != dType_) {
+        std::string valueStr = ToString(dType_) + " and " + ToString(probPtrDtype);
+        std::string reasonMsg = "keep_prob dtype must be equal to x dtype";
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            context_->GetNodeName(), "input keep_prob and input tensor x", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     OP_CHECK_IF(
         CheckInputShape() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "input shape check failed."),

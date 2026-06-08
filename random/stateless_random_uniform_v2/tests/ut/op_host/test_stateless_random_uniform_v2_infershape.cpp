@@ -67,6 +67,6 @@ TEST_F(stateless_random_uniform_v2, stateless_random_uniform_v2_infershape_test2
                                                       {
                                                       {"dtype", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
                                                       });
-    std::vector<std::vector<int64_t>> expectOutputShape = {{}};
+    std::vector<std::vector<int64_t>> expectOutputShape = {{-1}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }

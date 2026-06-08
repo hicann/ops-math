@@ -14,6 +14,7 @@
  */
 
 #include "stateless_random_choice_with_mask_simt_tiling.h"
+#include <string>
 #include "random/stateless_random_choice_with_mask/op_kernel/arch35/stateless_random_choice_with_mask_struct.h"
 
 namespace optiling {
@@ -58,34 +59,47 @@ ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::GetShapeAttrsInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, x);
     xShape_ = x->GetStorageShape();
     inputDim_ = xShape_.GetDimNum();
-    OP_CHECK_IF(
-        inputDim_ > INPUT_X_MAX_DIM_NUM || inputDim_ < INPUT_X_MIN_DIM_NUM,
-        OP_LOGE(
-            context_, "xDimNum should be greater than 1 and samller than 5, but xDimNum is [%zu]", xShape_.GetDimNum()),
-        return ge::GRAPH_FAILED);
+    if (inputDim_ > INPUT_X_MAX_DIM_NUM || inputDim_ < INPUT_X_MIN_DIM_NUM) {
+        std::string valueStr = std::to_string(xShape_.GetDimNum());
+        std::string reasonMsg = "xDimNum should be greater than 1 and smaller than 5";
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+            context_->GetNodeName(), "input tensor x", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     inputSize_ = xShape_.GetShapeSize();
     auto seed = context_->GetInputTensor(INPUT_SEED_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, seed);
     const int64_t* seedValue = seed->GetData<int64_t>();
     OP_CHECK_NULL_WITH_CONTEXT(context_, seedValue);
-    OP_CHECK_IF(
-        seed->GetShapeSize() <= 0,
-        OP_LOGE(context_, "inputSeed shapeSize need greater than 0, but get %ld", seed->GetShapeSize()),
-        return ge::GRAPH_FAILED);
+    if (seed->GetShapeSize() <= 0) {
+        std::string valueStr = std::to_string(seed->GetShapeSize());
+        std::string reasonMsg = "inputSeed shapeSize need be greater than 0";
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
+            context_->GetNodeName(), "input seed", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     seed_ = seed->GetData<int64_t>()[0];
     auto offset = context_->GetInputTensor(INPUT_OFFSET_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, offset);
     const int64_t* offsetValue = offset->GetData<int64_t>();
     OP_CHECK_NULL_WITH_CONTEXT(context_, offsetValue);
-    OP_CHECK_IF(
-        offset->GetShapeSize() <= 0,
-        OP_LOGE(context_, "inputOffset shapeSize need greater than 0, but get %ld", offset->GetShapeSize()),
-        return ge::GRAPH_FAILED);
+    if (offset->GetShapeSize() <= 0) {
+        std::string valueStr = std::to_string(offset->GetShapeSize());
+        std::string reasonMsg = "inputOffset shapeSize need be greater than 0";
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
+            context_->GetNodeName(), "input offset", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     OP_CHECK_NULL_WITH_CONTEXT(context_, offset);
     offset_ = offset->GetData<int64_t>()[0];
     auto xDesc = context_->GetInputDesc(INPUT_X_IDX);
     ge::DataType xDtype = xDesc->GetDataType();
-    OP_CHECK_IF(SUPPORT_DTYPE.count(xDtype) == 0, OP_LOGE(context_, "invalid dtype"), return ge::GRAPH_FAILED);
+    if (SUPPORT_DTYPE.count(xDtype) == 0) {
+        std::string valueStr = Ops::Base::ToString(xDtype);
+        std::string reasonMsg = "input x dtype only support BOOL currently";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input tensor x", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     auto y = context_->GetOutputShape(OUTPUT_Y_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, y);
     return ge::GRAPH_SUCCESS;

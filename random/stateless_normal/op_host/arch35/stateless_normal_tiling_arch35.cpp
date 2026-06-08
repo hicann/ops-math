@@ -17,6 +17,7 @@
 
 #include "platform/platform_infos_def.h"
 #include "platform/platform_ascendc.h"
+#include <string>
 #include "op_common/op_host/util/platform_util.h"
 #include "../../../random_common/op_host/arch35/random_tiling_base.h"
 #include "exe_graph/runtime/shape.h"
@@ -91,8 +92,9 @@ ge::graphStatus StatelessNormalTiling::UniqueProcess()
     OP_CHECK_NULL_WITH_CONTEXT(context_, meanTensor);
     int64_t meanSize = meanTensor->GetShapeSize();
     if (meanSize != outputSize) {
-        OP_LOGE(context_, "StatelessNormal requires mean shapeSize == output shapeSize, "
-                "mean shapeSize: %ld != output shapeSize: %ld.", meanSize, outputSize);
+        std::string valueStr = std::to_string(meanSize) + " and " + std::to_string(outputSize);
+        std::string reasonMsg = "StatelessNormal requires mean shapeSize == output shapeSize";
+        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(context_->GetNodeName(), "input mean", valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -100,8 +102,9 @@ ge::graphStatus StatelessNormalTiling::UniqueProcess()
     OP_CHECK_NULL_WITH_CONTEXT(context_, stdevTensor);
     int64_t stdevSize = stdevTensor->GetShapeSize();
     if (stdevSize != outputSize) {
-        OP_LOGE(context_, "StatelessNormal requires stdev shapeSize == output shapeSize, "
-                "stdev shapeSize: %ld != output shapeSize: %ld.", stdevSize, outputSize);
+        std::string valueStr = std::to_string(stdevSize) + " and " + std::to_string(outputSize);
+        std::string reasonMsg = "StatelessNormal requires stdev shapeSize == output shapeSize";
+        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(context_->GetNodeName(), "input stdev", valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 

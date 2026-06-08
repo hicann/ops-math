@@ -15,6 +15,7 @@
 
 #include "platform/platform_infos_def.h"
 #include "platform/platform_ascendc.h"
+#include <string>
 #include "op_common/op_host/util/platform_util.h"
 #include "random/random_common/op_host/arch35/random_tiling_base.h"
 #include "exe_graph/runtime/shape.h"
@@ -113,12 +114,16 @@ ge::graphStatus DropOutDoMaskV3Tiling::UniqueProcess()
             break;
         }
         default: {
-            OP_LOGE(context_, "Unsupported data type: %d", static_cast<int>(keepDtype));
+            std::string valueStr = Ops::Base::ToString(keepDtype);
+            std::string reasonMsg = "Unsupported keep_prob data type";
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input keep_prob", valueStr.c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
     }
     if (keepProbNum < 0 || keepProbNum > 1) {
-        OP_LOGE(context_, "keepProbNum out of range: %d", static_cast<int>(keepProbNum));
+        std::string valueStr = std::to_string(keepProbNum);
+        std::string reasonMsg = "keepProbNum must be in range [0, 1]";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "input keep_prob", valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;

@@ -20,6 +20,7 @@
 #include "op_host/tiling_base_class.h"
 #include "stateless_drop_out_gen_mask_tiling_arch35.h"
 #include "log/log.h"
+#include <string>
 #include "register/op_impl_registry.h"
 
 using namespace ge;
@@ -74,8 +75,12 @@ OpTilingConfig StatelessDropOutGenMaskTiling::BuildOpConfig()
         for (uint32_t idx = 0; idx < shapeRank; idx++) {
             shapeSize *= static_cast<int64_t>(constShape.GetDim(idx));
         }
-        OP_CHECK_IF(shapeSize == 0,
-            OP_LOGE(ctx->GetNodeName(), "input shape should not be empty tensor."), return ge::GRAPH_FAILED);
+        if (shapeSize == 0) {
+            std::string valueStr = std::to_string(shapeSize);
+            std::string reasonMsg = "input shape should not be empty tensor";
+            OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(ctx->GetNodeName(), "input shape", valueStr.c_str(), reasonMsg.c_str());
+            return ge::GRAPH_FAILED;
+        }
 
         return ge::GRAPH_SUCCESS;
     };

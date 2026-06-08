@@ -13,6 +13,7 @@
  * \brief
  */
 #include "stateless_bernoulli_tiling_arch35.h"
+#include <string>
 #include "log/log.h"
 #include "platform/platform_ascendc.h"
 #include "register/op_def_registry.h"
@@ -61,8 +62,12 @@ OpTilingConfig StatelessBernoulliTiling::BuildOpConfig()
         const int64_t* offsetVal = offsetTensor->GetData<int64_t>();
         OP_CHECK_NULL_WITH_CONTEXT(ctx, offsetVal);
         offset = *offsetVal;
-        OP_CHECK_IF(offset % OFFSET_MULTIPLE != 0,
-            OP_LOGE(ctx->GetNodeName(), "offset value %ld must be a multiple of 4.", offset), return ge::GRAPH_FAILED);
+        if (offset % OFFSET_MULTIPLE != 0) {
+            std::string valueStr = std::to_string(offset);
+            std::string reasonMsg = "offset value must be a multiple of 4";
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(ctx->GetNodeName(), "input offset", valueStr.c_str(), reasonMsg.c_str());
+            return ge::GRAPH_FAILED;
+        }
         return ge::GRAPH_SUCCESS;
     };
 

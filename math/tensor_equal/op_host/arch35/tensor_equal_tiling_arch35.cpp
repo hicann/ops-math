@@ -13,6 +13,7 @@
  */
 
 #include "tensor_equal_tiling_arch35.h"
+#include <string>
 #include "log/log.h"
 #include "op_common/op_host/util/platform_util.h"
 #include "register/op_impl_registry.h"
@@ -61,32 +62,50 @@ ge::graphStatus TensorEqualTiling::CheckDType()
     OP_CHECK_NULL_WITH_CONTEXT(context_, inputXDesc);
     inputXDType_ = inputXDesc->GetDataType();
     int64_t inputXDTypeSize = ge::GetSizeByDataType(inputXDType_);
-    OP_CHECK_IF(inputXDTypeSize <= 0, OP_LOGE(opName_, "get input x dtype size fail."),
-                    return ge::GRAPH_FAILED);
+    if (inputXDTypeSize <= 0) {
+        std::string valueStr = Ops::Base::ToString(inputXDType_);
+        std::string reasonMsg = "input x dtype size is invalid, got size " + std::to_string(inputXDTypeSize);
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "input tensor x", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     auto inputYDesc = context_->GetInputDesc(INPUT_Y);
     OP_CHECK_NULL_WITH_CONTEXT(context_, inputYDesc);
     inputYDType_ = inputYDesc->GetDataType();
     int64_t inputYDTypeSize = ge::GetSizeByDataType(inputYDType_);
-    OP_CHECK_IF(inputYDTypeSize <= 0, OP_LOGE(opName_, "get input y dtype size fail."),
-                    return ge::GRAPH_FAILED);
+    if (inputYDTypeSize <= 0) {
+        std::string valueStr = Ops::Base::ToString(inputYDType_);
+        std::string reasonMsg = "input y dtype size is invalid, got size " + std::to_string(inputYDTypeSize);
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "input tensor y", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
-    OP_CHECK_IF(inputXDType_ != inputYDType_,
-                    OP_LOGE(opName_,
-                    "The dtype of input x and input y could not be different, please check."),
-                    return ge::GRAPH_FAILED);
+    if (inputXDType_ != inputYDType_) {
+        std::string valueStr = Ops::Base::ToString(inputXDType_) + " and " + Ops::Base::ToString(inputYDType_);
+        std::string reasonMsg = "The dtype of input x and input y must be the same";
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            opName_, "input tensor x and input tensor y", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
-    OP_CHECK_IF(INPUT_SUPPORT_DTYPE_SET.count(inputXDType_) == 0,
-    OP_LOGE(opName_,
-        "Input dtype only support float16, float32, bfloat16, int8, uint8,int32, uint32, int16, uint16, int64, uint64, bool currently, please check."),
-        return ge::GRAPH_FAILED);    
+    if (INPUT_SUPPORT_DTYPE_SET.count(inputXDType_) == 0) {
+        std::string valueStr = Ops::Base::ToString(inputXDType_);
+        std::string reasonMsg =
+            "Input dtype only support float16, float32, bfloat16, int8, uint8, int32, uint32, int16, uint16, int64, uint64, bool currently";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            opName_, "input tensor x", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }    
     
     auto outputDesc = context_->GetOutputDesc(OUTPUT_Z);
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
     outputDType_ = outputDesc->GetDataType();
-    OP_CHECK_IF(outputDType_ != ge::DataType::DT_BOOL, 
-                    OP_LOGE(opName_, "output z dtype should be BOOL, please check."),
-                    return ge::GRAPH_FAILED);
+    if (outputDType_ != ge::DataType::DT_BOOL) {
+        std::string valueStr = Ops::Base::ToString(outputDType_);
+        std::string reasonMsg = "output z dtype should be BOOL";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "output tensor z", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     
     return ge::GRAPH_SUCCESS;
 }

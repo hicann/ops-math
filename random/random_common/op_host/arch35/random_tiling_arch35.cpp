@@ -582,31 +582,34 @@ ge::graphStatus RandomTilingArch35::CheckTensor(
 {
     // 校验dtype
     if (!rule.dtypeSet.empty() && rule.dtypeSet.count(tensorDesc->GetDataType()) == 0) {
-        OP_LOGE(
-            context_->GetNodeName(), "Tensor %s dtype %d not in allowed set", tensorName.c_str(),
-            tensorDesc->GetDataType());
+        std::string valueStr = Ops::Base::ToString(tensorDesc->GetDataType());
+        std::string reasonMsg = "dtype not in allowed set";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), tensorName.c_str(), valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
     // 校验shapeSize
     auto shapeSize = tensorShape.GetShapeSize();
     if (rule.shapeSize != -1 && shapeSize != rule.shapeSize) {
-        OP_LOGE(
-            context_->GetNodeName(), "Tensor %s shape size %ld not match required %ld", tensorName.c_str(), shapeSize,
-            rule.shapeSize);
+        std::string valueStr = std::to_string(shapeSize);
+        std::string reasonMsg = "shape size must be " + std::to_string(rule.shapeSize);
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), tensorName.c_str(), valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
     // 校验维度数
     auto dimNum = tensorShape.GetDimNum();
     if (!rule.dimNumSet.empty() && rule.dimNumSet.count(dimNum) == 0) {
-        OP_LOGE(context_->GetNodeName(), "Tensor %s dim num %lu not in allowed set", tensorName.c_str(), dimNum);
+        std::string valueStr = std::to_string(dimNum);
+        std::string reasonMsg = "dim num not in allowed set";
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), tensorName.c_str(), valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
     // 自定义校验
     if (rule.customCheck && !rule.customCheck(context_)) {
-        OP_LOGE(context_->GetNodeName(), "Tensor %s custom check failed", tensorName.c_str());
+        std::string reasonMsg = "custom check failed";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), tensorName.c_str(), "failed", reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 

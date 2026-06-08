@@ -46,7 +46,7 @@ TEST_F(SimThreadExponentialTiling, sim_thread_exponential_tiling_fp32)
 
     uint64_t expectTilingKey = 3;
     string expectTilingData =
-        "64 300000 5 4 0 0 1065353216 1 300000 0 624 159744 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ";
+        "64 300000 5 4 0 0 1065353216 0 0 0 1 300000 0 624 159744 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -65,7 +65,7 @@ TEST_F(SimThreadExponentialTiling, sim_thread_exponential_tiling_fp16)
 
     uint64_t expectTilingKey = 1;
     string expectTilingData =
-        "64 300000 5 4 0 0 1065353216 1 300000 0 624 159744 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ";
+        "64 300000 5 4 0 0 1065353216 0 0 0 1 300000 0 624 159744 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -84,7 +84,7 @@ TEST_F(SimThreadExponentialTiling, sim_thread_exponential_tiling_bf16)
 
     uint64_t expectTilingKey = 2;
     string expectTilingData =
-        "64 300000 5 4 0 0 1065353216 1 300000 0 624 159744 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ";
+        "64 300000 5 4 0 0 1065353216 0 0 0 1 300000 0 624 159744 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

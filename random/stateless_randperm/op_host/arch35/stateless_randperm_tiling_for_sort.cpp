@@ -13,6 +13,7 @@
  * \brief sort tiling for randperm impl，可搜索"侵入修改"
  */
 #include <iostream>
+#include <string>
 
 #include "log/log.h"
 #include "platform/platform_info.h"
@@ -103,9 +104,12 @@ ge::graphStatus CheckInputAndOutput(gert::TilingContext *context, SortTileInfo &
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
-    OP_CHECK_IF(ubSize <= static_cast<uint64_t>(SIMT_UB),
-        OP_LOGE(context->GetNodeName(), "allUb must greater than simtUb, but is %lu", ubSize),
-        return ge::GRAPH_FAILED);
+    if (ubSize <= static_cast<uint64_t>(SIMT_UB)) {
+        std::string valueStr = std::to_string(ubSize);
+        std::string reasonMsg = "allUb must be greater than simtUb";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ub size", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     sortTileInfo.blockUbSize = Ops::Base::GetUbBlockSize(context);
     sortTileInfo.ubSize = ubSize - SIMT_UB;       // 侵入修改：MODIFY
     OP_LOGI(context->GetNodeName(), "ubSize is %ld, simtDcache is %u, blockUbSize %u", sortTileInfo.ubSize, SIMT_UB, sortTileInfo.blockUbSize);  // 侵入修改：MODIFY
@@ -118,12 +122,20 @@ ge::graphStatus CheckInputAndOutput(gert::TilingContext *context, SortTileInfo &
     auto yStorage1 = context->GetOutputShape(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, yStorage1);
     const gert::Shape &outShape1 = Ops::Base::EnsureNotScalar(yStorage1->GetStorageShape());
-    OP_CHECK_IF(inputShape.GetShapeSize() == 0 || outShape.GetShapeSize() == 0,
-        OP_LOGE(context->GetNodeName(), "not support empty input or output"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(outShape != outShape1 || outShape != inputShape,
-        OP_LOGE(context->GetNodeName(), "input and outputs shape must be same"),
-        return ge::GRAPH_FAILED);
+    if (inputShape.GetShapeSize() == 0 || outShape.GetShapeSize() == 0) {
+        std::string valueStr = std::to_string(inputShape.GetShapeSize()) + " and " + std::to_string(outShape.GetShapeSize());
+        std::string reasonMsg = "not support empty input or output";
+        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(
+            context->GetNodeName(), "input and output", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
+    if (outShape != outShape1 || outShape != inputShape) {
+        std::string valueStr = Ops::Base::ToString(inputShape) + " and " + Ops::Base::ToString(outShape);
+        std::string reasonMsg = "input and outputs shape must be the same";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context->GetNodeName(), "input and output", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     int32_t xDimNum = inputShape.GetDimNum();
     sortTileInfo.xDimNum = xDimNum;
     int64_t sortAxisNum = inputShape.GetDim(xDimNum - 1);
@@ -144,8 +156,12 @@ ge::graphStatus SortCheckParams(gert::TilingContext *context, SortTileInfo &sort
     auto inputDescPtr = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDescPtr);
     ge::DataType dataType = inputDescPtr->GetDataType();
-    OP_CHECK_IF(tilingDataTypeBitMap.count(dataType) == 0,
-        OP_LOGE(context->GetNodeName(), "Not support data type"), return ge::GRAPH_FAILED);
+    if (tilingDataTypeBitMap.count(dataType) == 0) {
+        std::string valueStr = Ops::Base::ToString(dataType);
+        std::string reasonMsg = "Not supported data type";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "input tensor x", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     sortTileInfo.dataType = dataType;
     sortTileInfo.dtypeSize = tilingDataTypeBitMap.find(dataType)->second;
     auto outDescPtr = context->GetOutputDesc(1);
@@ -154,11 +170,19 @@ ge::graphStatus SortCheckParams(gert::TilingContext *context, SortTileInfo &sort
     auto outDescPtr0 = context->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, outDescPtr0);
     auto y1DType = outDescPtr0->GetDataType();
-    OP_CHECK_IF((y2DType != ge::DT_INT64) && (y2DType != ge::DT_INT32),
-        OP_LOGE(context->GetNodeName(), "Not support y2 type"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(y1DType != dataType,
-        OP_LOGE(context->GetNodeName(), "input0 dtype must be same as output0 dtype"),
-        return ge::GRAPH_FAILED);
+    if ((y2DType != ge::DT_INT64) && (y2DType != ge::DT_INT32)) {
+        std::string valueStr = Ops::Base::ToString(y2DType);
+        std::string reasonMsg = "y2 dtype only support int64 or int32";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "output tensor y2", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
+    if (y1DType != dataType) {
+        std::string valueStr = Ops::Base::ToString(dataType) + " and " + Ops::Base::ToString(y1DType);
+        std::string reasonMsg = "input0 dtype must be same as output0 dtype";
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            context->GetNodeName(), "input and output", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     sortTileInfo.y2DtypeSize = tilingDataTypeBitMap.find(y2DType)->second;
     auto const attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
@@ -168,9 +192,12 @@ ge::graphStatus SortCheckParams(gert::TilingContext *context, SortTileInfo &sort
     OP_CHECK_NULL_WITH_CONTEXT(context, sortAxisPtr);
     int32_t sortAxis = static_cast<int32_t>(*sortAxisPtr);
     sortAxis = sortAxis < 0 ? (sortAxis + sortTileInfo.xDimNum) : sortAxis;
-    OP_CHECK_IF(sortAxis != (sortTileInfo.xDimNum - 1),
-        OP_LOGE(context->GetNodeName(), "only support last dim sort, but axis is %d", sortAxis),
-        return ge::GRAPH_FAILED);
+    if (sortAxis != (sortTileInfo.xDimNum - 1)) {
+        std::string valueStr = std::to_string(sortAxis);
+        std::string reasonMsg = "only support last dim sort";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "attr sort_axis", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     return ge::GRAPH_SUCCESS;
 }
 

@@ -13,6 +13,7 @@
  * \brief
  */
 #include "stateless_random_normal_v2_tiling_arch35.h"
+#include <string>
 #include "platform/platform_info.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
@@ -82,7 +83,9 @@ ge::graphStatus StatelessRandomNormalV2Tiling::GetInputInfo()
     auto algTensor = context_->GetInputTensor(INPUT_IDX_ALG);
     OP_CHECK_NULL_WITH_CONTEXT(context_, algTensor);
     if (algTensor->GetShapeSize() != 1) {
-        OP_LOGE(opName, "alg data must be 1 tensor scalar, but got [%ld]", algTensor->GetShapeSize());
+        std::string valueStr = std::to_string(algTensor->GetShapeSize());
+        std::string reasonMsg = "alg data must be 1 tensor scalar";
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName, "input alg", valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     const int32_t* algVal = algTensor->GetData<int32_t>();
@@ -91,12 +94,13 @@ ge::graphStatus StatelessRandomNormalV2Tiling::GetInputInfo()
     if (alg_ == Algorithm::RNG_ALG_AUTO_SELECT) {
         alg_ = Algorithm::RNG_ALG_PHILOX;
     }
-    OP_CHECK_IF(
-        alg_ != Algorithm::RNG_ALG_PHILOX,
-        OP_LOGE(
-            opName, "alg only support %d, but got %d.", static_cast<int32_t>(Algorithm::RNG_ALG_PHILOX),
-            static_cast<int32_t>(alg_)),
-        return ge::GRAPH_FAILED);
+    if (alg_ != Algorithm::RNG_ALG_PHILOX) {
+        std::string valueStr = std::to_string(static_cast<int32_t>(alg_));
+        std::string reasonMsg = "alg only support RNG_ALG_PHILOX";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            opName, "input alg", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     return ge::GRAPH_SUCCESS;
 }
@@ -110,7 +114,9 @@ ge::graphStatus StatelessRandomNormalV2Tiling::GetOutputInfo()
     if (iter != OUTPUT_DATA_TYPE_TO_INT.end()) {
         outputDtypeVal_ = iter->second;
     } else {
-        OP_LOGE(opName, "output dtype = %d not supported, please check.", outputDtype_);
+        std::string valueStr = Ops::Base::ToString(outputDtype_);
+        std::string reasonMsg = "output dtype not supported";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName, "output tensor y", valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;

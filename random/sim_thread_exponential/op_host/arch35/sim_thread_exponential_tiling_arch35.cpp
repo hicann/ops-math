@@ -14,6 +14,7 @@
  */
 #include "sim_thread_exponential_tiling_arch35.h"
 #include "log/log.h"
+#include <string>
 #include "platform/platform_ascendc.h"
 #include "register/op_def_registry.h"
 #include "op_host/math_tiling_templates_registry.h"
@@ -47,10 +48,12 @@ OpTilingConfig SimThreadExponentialTilingSimt::BuildOpConfig()
         OP_CHECK_NULL_WITH_CONTEXT(ctx, outputShape);
         auto outTensor = outputShape->GetStorageShape();
         int64_t outputShapeSize = outTensor.GetShapeSize();
-        OP_CHECK_IF(
-            size != outputShapeSize,
-            OP_LOGE(ctx->GetNodeName(), "count %ld != output shape size %ld.", size, outputShapeSize),
-            return ge::GRAPH_FAILED);
+        if (size != outputShapeSize) {
+            std::string valueStr = std::to_string(size) + " and " + std::to_string(outputShapeSize);
+            std::string reasonMsg = "count must be equal to output shape size";
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(ctx->GetNodeName(), "attr count", valueStr.c_str(), reasonMsg.c_str());
+            return ge::GRAPH_FAILED;
+        }
 
         return ge::GRAPH_SUCCESS;
     };
@@ -64,9 +67,12 @@ OpTilingConfig SimThreadExponentialTilingSimt::BuildOpConfig()
         const auto* offsetAttr = attrs->GetAttrPointer<int64_t>(3);
         OP_CHECK_NULL_WITH_CONTEXT(ctx, offsetAttr);
         offset = *offsetAttr;
-        OP_CHECK_IF(
-            offset % OFFSET_MULTIPLE != 0, OP_LOGE(ctx->GetNodeName(), "offset %ld must be multiple of 4.", offset),
-            return ge::GRAPH_FAILED);
+        if (offset % OFFSET_MULTIPLE != 0) {
+            std::string valueStr = std::to_string(offset);
+            std::string reasonMsg = "offset must be a multiple of 4";
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(ctx->GetNodeName(), "input offset", valueStr.c_str(), reasonMsg.c_str());
+            return ge::GRAPH_FAILED;
+        }
         return ge::GRAPH_SUCCESS;
     };
 
@@ -80,7 +86,9 @@ OpTilingConfig SimThreadExponentialTilingSimt::BuildOpConfig()
              if (lambdAttr == nullptr)
                  return false;
              if (*lambdAttr <= 0.0f) {
-                 OP_LOGE(ctx->GetNodeName(), "lambd must be > 0, got %f.", *lambdAttr);
+                 std::string valueStr = std::to_string(*lambdAttr);
+                 std::string reasonMsg = "lambd must be greater than 0";
+                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(ctx->GetNodeName(), "attr lambd", valueStr.c_str(), reasonMsg.c_str());
                  return false;
              }
              return true;

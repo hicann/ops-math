@@ -14,6 +14,7 @@
  */
 
 #include "drop_out_v3_tiling_arch35.h"
+#include <string>
 #include "log/log.h"
 #include "platform/platform_ascendc.h"
 #include "op_host/math_tiling_templates_registry.h"
@@ -65,9 +66,12 @@ OpTilingConfig DropOutV3Tiling::BuildOpConfig()
         OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
             OP_LOGE(ctx->GetNodeName(), "get offset value failed"), return ge::GRAPH_FAILED);
         offset = static_cast<int64_t>(offsetShape.GetDim(1));
-        OP_CHECK_IF(offset % OFFSET_LIMIT != 0,
-            OP_LOGE(ctx->GetNodeName(), "The offset must be a multiple of 4, but got %ld", offset),
-            return ge::GRAPH_FAILED);
+        if (offset % OFFSET_LIMIT != 0) {
+            std::string valueStr = std::to_string(offset);
+            std::string reasonMsg = "The offset must be a multiple of 4";
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(ctx->GetNodeName(), "input offset", valueStr.c_str(), reasonMsg.c_str());
+            return ge::GRAPH_FAILED;
+        }
         return ge::GRAPH_SUCCESS;
     };
 
@@ -110,7 +114,9 @@ ge::graphStatus DropOutV3Tiling::UniqueProcess()
             break;
         }
         default: {
-            OP_LOGE(context_->GetNodeName(), "Unsupported p dtype");
+            std::string valueStr = Ops::Base::ToString(pDescPtr->GetDataType());
+            std::string reasonMsg = "Unsupported p dtype";
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input p", valueStr.c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
     }
