@@ -60,6 +60,7 @@ private:
     ge::graphStatus CalcSplitInfo();
     ge::graphStatus CalcSplitInfoForAr();
     ge::graphStatus CalcSplitInfoForArA();
+    ge::graphStatus CalcSplitInfoForArAAndTryMode4();
     ge::graphStatus CalcSplitInfoForArACutAAndNextA();
     ge::graphStatus CalcSplitInfoForGatherRa();
     ge::graphStatus CalcSplitInfoForGatherArA();

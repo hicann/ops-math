@@ -99,15 +99,19 @@ ge::graphStatus TilingPrepareForArgOpsAscendC(gert::TilingParseContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     ci->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF((ci->coreNum <= 0),
-                OP_LOGE(context->GetNodeName(), "Failed to core num."),
-                return ge::GRAPH_FAILED);
+    if (ci->coreNum <= 0) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "coreNum",
+            std::to_string(ci->coreNum).c_str(), "The value of coreNum must be greater than 0.");
+        return ge::GRAPH_FAILED;
+    }
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     ci->ubSize = ubSize;
-    OP_CHECK_IF((ci->ubSize <= 0),
-                OP_LOGE(context->GetNodeName(), "Failed to get ub size."),
-                return ge::GRAPH_FAILED);
+    if (ci->ubSize <= 0) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ubSize",
+            std::to_string(ci->ubSize).c_str(), "The value of ubSize must be greater than 0.");
+        return ge::GRAPH_FAILED;
+    }
     return ge::GRAPH_SUCCESS;
 }
 
