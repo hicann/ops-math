@@ -91,14 +91,15 @@ bool AddrTiling::CheckDtype()
     yDtype_ = yDesc->GetDataType();
     if (x1Dtype_ != x2Dtype_ || x2Dtype_ != x3Dtype_ || x3Dtype_ != betaDtype_ || betaDtype_ != alphaDtype_ ||
         alphaDtype_ != yDtype_) {
-        OP_LOGE(
-            context_->GetNodeName(), "check datetype failed, x1: %s, x2: %s, x3: %s, beta: %s, alpha: %s, y: %s.",
-            ge::TypeUtils::DataTypeToSerialString(x1Dtype_).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(x2Dtype_).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(x3Dtype_).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(betaDtype_).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(alphaDtype_).c_str(),
-            ge::TypeUtils::DataTypeToSerialString(yDtype_).c_str());
+        std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(x1Dtype_) + ", " +
+            ge::TypeUtils::DataTypeToSerialString(x2Dtype_) + ", " +
+            ge::TypeUtils::DataTypeToSerialString(x3Dtype_) + ", " +
+            ge::TypeUtils::DataTypeToSerialString(betaDtype_) + ", " +
+            ge::TypeUtils::DataTypeToSerialString(alphaDtype_) + " and " +
+            ge::TypeUtils::DataTypeToSerialString(yDtype_);
+        std::string reasonMsg = "Dtypes of x1, x2, x3, beta, alpha and y must be the same";
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(),
+            "x1, x2, x3, beta, alpha and y", dtypeMsg.c_str(), reasonMsg.c_str());
         return false;
     }
     return true;
@@ -115,16 +116,27 @@ bool AddrTiling::CheckBroadcast()
         if (inM == 1 || inM == m) {
             return true;
         }
-        OP_LOGE(context_->GetNodeName(), "size mismatch, x1:[%ld], x2: [%ld], x3: [%ld].", inM, n, m);
+        std::string shapeMsg = "[" + std::to_string(inM) + "] vs x2: [" +
+            std::to_string(n) + "], x3: [" + std::to_string(m) + "]";
+        std::string reasonMsg = "x1 shape is not broadcastable to outer product of x2 and x3";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context_->GetNodeName(),
+            "x1, x2 and x3", shapeMsg.c_str(), reasonMsg.c_str());
     } else if (x1DimNum == static_cast<size_t>(nTwo)) {
         int64_t inN = x1Shape_.GetDim(0);
         int64_t inM = x1Shape_.GetDim(1);
         if ((inN == 1 || inN == n) && (inM == 1 || inM == m)) {
             return true;
         }
-        OP_LOGE(context_->GetNodeName(), "size mismatch, x1:[%ld, %ld], x2: [%ld], x3: [%ld].", inN, inM, n, m);
+        std::string shapeMsg = "[" + std::to_string(inN) + ", " + std::to_string(inM) +
+            "] vs x2: [" + std::to_string(n) + "], x3: [" + std::to_string(m) + "]";
+        std::string reasonMsg = "x1 shape is not broadcastable to outer product of x2 and x3";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context_->GetNodeName(),
+            "x1, x2 and x3", shapeMsg.c_str(), reasonMsg.c_str());
     } else {
-        OP_LOGE(context_->GetNodeName(), "x1 Dim should be 1 or 2, but got %d.", static_cast<int32_t>(x1DimNum));
+        std::string dimMsg = std::to_string(x1DimNum);
+        std::string reasonMsg = "x1 dim should be 1 or 2";
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "x1",
+            dimMsg.c_str(), reasonMsg.c_str());
     }
     return false;
 }
@@ -152,22 +164,35 @@ bool AddrTiling::CheckShapes()
     // 校验空tensor
     if (x1Shape_.GetShapeSize() <= 0L || x2Shape_.GetShapeSize() <= 0L || x3Shape_.GetShapeSize() <= 0L ||
         yShape_.GetShapeSize() <= 0L) {
-        OP_LOGE(context_->GetNodeName(), "The x1, x2, x3, y shape should not be empty.");
+        std::string reasonMsg = "x1, x2, x3 and y do not support empty tensors";
+        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(context_->GetNodeName(), "x1, x2, x3 and y", "0", reasonMsg.c_str());
         return false;
     }
     // 校验x2，x3为1维
-    OP_CHECK_IF(
-        x2Shape_.GetDimNum() != 1, OP_LOGE(context_->GetNodeName(), "the x2 shape rank must be 1."), return false);
-    OP_CHECK_IF(
-        x3Shape_.GetDimNum() != 1, OP_LOGE(context_->GetNodeName(), "the x3 shape rank must be 1."), return false);
+    if (x2Shape_.GetDimNum() != 1) {
+        std::string dimMsg = std::to_string(x2Shape_.GetDimNum());
+        std::string correctMsg = "1";
+        OP_LOGE_FOR_INVALID_SHAPEDIM(context_->GetNodeName(), "x2", dimMsg.c_str(), correctMsg.c_str());
+        return false;
+    }
+    if (x3Shape_.GetDimNum() != 1) {
+        std::string dimMsg = std::to_string(x3Shape_.GetDimNum());
+        std::string correctMsg = "1";
+        OP_LOGE_FOR_INVALID_SHAPEDIM(context_->GetNodeName(), "x3", dimMsg.c_str(), correctMsg.c_str());
+        return false;
+    }
     // 校验x1满足broadcast
-    OP_CHECK_IF(!CheckBroadcast(), OP_LOGE(context_->GetNodeName(), "CheckBroadcast failed."), return false);
+    if (!CheckBroadcast()) {
+        return false;
+    }
     // 校验y
-    OP_CHECK_IF(
-        yShape_.GetDimNum() != nTwo ||
-            (yShape_.GetDim(0) != x2Shape_.GetDim(0) || yShape_.GetDim(1) != x3Shape_.GetDim(0)),
-        OP_LOGE(context_->GetNodeName(), "y Shape must be [%ld, %ld].", x2Shape_.GetDim(0), x3Shape_.GetDim(0)),
-        return false);
+    if (yShape_.GetDimNum() != nTwo ||
+            (yShape_.GetDim(0) != x2Shape_.GetDim(0) || yShape_.GetDim(1) != x3Shape_.GetDim(0))) {
+        std::string shapeMsg = "[" + std::to_string(yShape_.GetDim(0)) + ", " + std::to_string(yShape_.GetDim(1)) + "]";
+        std::string correctMsg = "[" + std::to_string(x2Shape_.GetDim(0)) + ", " + std::to_string(x3Shape_.GetDim(0)) + "]";
+        OP_LOGE_FOR_INVALID_SHAPE(context_->GetNodeName(), "y", shapeMsg.c_str(), correctMsg.c_str());
+        return false;
+    }
     return true;
 }
 
@@ -180,10 +205,7 @@ ge::graphStatus AddrTiling::GetConstData(uint32_t inputIdx, bool isEmpty, T empt
         auto tensor = context_->GetInputTensor(inputIdx);
         OP_CHECK_NULL_WITH_CONTEXT(context_, tensor);
         const T* value = tensor->GetData<T>();
-        if (value == nullptr) {
-            OP_LOGE(context_->GetNodeName(), "const tensor is null.");
-            return ge::GRAPH_FAILED;
-        }
+        OP_CHECK_NULL_WITH_CONTEXT(context_, value);
         data = value[0];
     }
     return ge::GRAPH_SUCCESS;
@@ -223,10 +245,10 @@ ge::graphStatus AddrTiling::DoOpTiling4Float(bool betaEmpty, bool alphaEmpty)
 {
     float beta = 0;
     float alpha = 0;
-    OP_CHECK_IF(
-        GetConstData<float>(INPUT_IDX_BETA, betaEmpty, float(1), beta) != ge::GRAPH_SUCCESS ||
-            GetConstData<float>(INPUT_IDX_ALPHA, alphaEmpty, float(1), alpha) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "get float beta or alpha failed!"), return ge::GRAPH_FAILED);
+    if (GetConstData<float>(INPUT_IDX_BETA, betaEmpty, float(1), beta) != ge::GRAPH_SUCCESS ||
+            GetConstData<float>(INPUT_IDX_ALPHA, alphaEmpty, float(1), alpha) != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
     OP_LOGI(context_->GetNodeName(), "beta = %f, alpha = %f", beta, alpha);
     return BroadcastTiling<
         AddrOp::AddrWithoutAlphaCommon<float>::OpDag, AddrOp::AddrWithoutBetaCommon<float>::OpDag,
@@ -241,17 +263,17 @@ ge::graphStatus AddrTiling::DoOpTiling4Half(bool betaEmpty, bool alphaEmpty)
     uint16_t alphaTmp = 0;
     ge::graphStatus ret = ge::GRAPH_SUCCESS;
     if (x1Dtype_ == ge::DT_FLOAT16) {
-        OP_CHECK_IF(
-            GetConstData<uint16_t>(INPUT_IDX_BETA, betaEmpty, FP16_ONE, betaTmp) != ge::GRAPH_SUCCESS ||
-                GetConstData<uint16_t>(INPUT_IDX_ALPHA, alphaEmpty, FP16_ONE, alphaTmp) != ge::GRAPH_SUCCESS,
-            OP_LOGE(context_->GetNodeName(), "get fp16 beta or alpha failed!"), return ge::GRAPH_FAILED);
+        if (GetConstData<uint16_t>(INPUT_IDX_BETA, betaEmpty, FP16_ONE, betaTmp) != ge::GRAPH_SUCCESS ||
+                GetConstData<uint16_t>(INPUT_IDX_ALPHA, alphaEmpty, FP16_ONE, alphaTmp) != ge::GRAPH_SUCCESS) {
+            return ge::GRAPH_FAILED;
+        }
         beta = float(*(reinterpret_cast<fp16_t*>(&betaTmp)));
         alpha = float(*(reinterpret_cast<fp16_t*>(&alphaTmp)));
     } else {
-        OP_CHECK_IF(
-            GetConstData<uint16_t>(INPUT_IDX_BETA, betaEmpty, BF16_ONE, betaTmp) != ge::GRAPH_SUCCESS ||
-                GetConstData<uint16_t>(INPUT_IDX_ALPHA, alphaEmpty, BF16_ONE, alphaTmp) != ge::GRAPH_SUCCESS,
-            OP_LOGE(context_->GetNodeName(), "get bf16 beta or alpha failed!"), return ge::GRAPH_FAILED);
+        if (GetConstData<uint16_t>(INPUT_IDX_BETA, betaEmpty, BF16_ONE, betaTmp) != ge::GRAPH_SUCCESS ||
+                GetConstData<uint16_t>(INPUT_IDX_ALPHA, alphaEmpty, BF16_ONE, alphaTmp) != ge::GRAPH_SUCCESS) {
+            return ge::GRAPH_FAILED;
+        }
         beta = float(*(reinterpret_cast<bfloat16*>(&betaTmp)));
         alpha = float(*(reinterpret_cast<bfloat16*>(&alphaTmp)));
     }
@@ -264,8 +286,12 @@ ge::graphStatus AddrTiling::DoOpTiling4Half(bool betaEmpty, bool alphaEmpty)
 
 ge::graphStatus AddrTiling::DoOpTiling()
 {
-    OP_CHECK_IF(!CheckDtype(), OP_LOGE(context_->GetNodeName(), "CheckDtype error!"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(!CheckShapes(), OP_LOGE(context_->GetNodeName(), "CheckShapes error!"), return ge::GRAPH_FAILED);
+    if (!CheckDtype()) {
+        return ge::GRAPH_FAILED;
+    }
+    if (!CheckShapes()) {
+        return ge::GRAPH_FAILED;
+    }
     x2ReShape_.AppendDim(x2Shape_.GetDim(0));
     x2ReShape_.AppendDim(1);
 
@@ -280,10 +306,10 @@ ge::graphStatus AddrTiling::DoOpTiling()
     } else if (x1Dtype_ == ge::DT_BOOL || x1Dtype_ == ge::DT_INT8) {
         int8_t tmpBeta = 0;
         int8_t tmpAlpha = 0;
-        OP_CHECK_IF(
-            GetConstData<int8_t>(INPUT_IDX_BETA, betaEmpty, int8_t(1), tmpBeta) != ge::GRAPH_SUCCESS ||
-                GetConstData<int8_t>(INPUT_IDX_ALPHA, alphaEmpty, int8_t(1), tmpAlpha) != ge::GRAPH_SUCCESS,
-            OP_LOGE(context_->GetNodeName(), "get int8 beta or alpha failed!"), return ge::GRAPH_FAILED);
+        if (GetConstData<int8_t>(INPUT_IDX_BETA, betaEmpty, int8_t(1), tmpBeta) != ge::GRAPH_SUCCESS ||
+                GetConstData<int8_t>(INPUT_IDX_ALPHA, alphaEmpty, int8_t(1), tmpAlpha) != ge::GRAPH_SUCCESS) {
+            return ge::GRAPH_FAILED;
+        }
         int32_t beta = static_cast<int32_t>(tmpBeta);
         int32_t alpha = static_cast<int32_t>(tmpAlpha);
         OP_LOGI(context_->GetNodeName(), "beta = %d, alpha = %d", beta, alpha);
@@ -293,10 +319,10 @@ ge::graphStatus AddrTiling::DoOpTiling()
     } else if (x1Dtype_ == ge::DT_UINT8) {
         uint8_t tmpBeta = 0;
         uint8_t tmpAlpha = 0;
-        OP_CHECK_IF(
-            GetConstData<uint8_t>(INPUT_IDX_BETA, betaEmpty, uint8_t(1), tmpBeta) != ge::GRAPH_SUCCESS ||
-                GetConstData<uint8_t>(INPUT_IDX_ALPHA, alphaEmpty, uint8_t(1), tmpAlpha) != ge::GRAPH_SUCCESS,
-            OP_LOGE(context_->GetNodeName(), "get int8 beta or alpha failed!"), return ge::GRAPH_FAILED);
+        if (GetConstData<uint8_t>(INPUT_IDX_BETA, betaEmpty, uint8_t(1), tmpBeta) != ge::GRAPH_SUCCESS ||
+                GetConstData<uint8_t>(INPUT_IDX_ALPHA, alphaEmpty, uint8_t(1), tmpAlpha) != ge::GRAPH_SUCCESS) {
+            return ge::GRAPH_FAILED;
+        }
         int32_t beta = static_cast<int32_t>(tmpBeta);
         int32_t alpha = static_cast<int32_t>(tmpAlpha);
         OP_LOGI(context_->GetNodeName(), "beta = %d, alpha = %d", beta, alpha);
@@ -304,9 +330,9 @@ ge::graphStatus AddrTiling::DoOpTiling()
             AddrOp::AddrWithoutAlphaUint8::OpDag, AddrOp::AddrWithoutBetaUint8::OpDag,
             AddrOp::AddrWithBetaWithAlphaUint8::OpDag, int32_t>(beta, alpha);
     } else {
-        OP_LOGE(
-            context_->GetNodeName(), "Input dtype is only support fp16, bf16, fp32, uint8, int8, bool, while got %s!",
-            ge::TypeUtils::DataTypeToSerialString(x1Dtype_).c_str());
+        std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(x1Dtype_);
+        std::string reasonMsg = "Input dtype is only support fp16, bf16, fp32, uint8, int8, bool";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x1", dtypeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     return ret;
