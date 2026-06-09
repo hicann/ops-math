@@ -18,6 +18,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -29,6 +30,9 @@ OP_TYPE_REGISTER(CdistGrad);
 static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
 
+static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST_950 = {
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
+
 static inline bool IsAiCoreSupport(
     const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist)
 {
@@ -36,10 +40,12 @@ static inline bool IsAiCoreSupport(
         grad->GetDataType() != cdist->GetDataType()) {
         return false;
     }
-    return op::CheckType(grad->GetDataType(), AICORE_DTYPE_SUPPORT_LIST) &&
-           op::CheckType(x1->GetDataType(), AICORE_DTYPE_SUPPORT_LIST) &&
-           op::CheckType(x2->GetDataType(), AICORE_DTYPE_SUPPORT_LIST) &&
-           op::CheckType(cdist->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    auto dtypeList = IsRegBase(npuArch) ? AICORE_DTYPE_SUPPORT_LIST_950 : AICORE_DTYPE_SUPPORT_LIST;
+    return op::CheckType(grad->GetDataType(), dtypeList) &&
+           op::CheckType(x1->GetDataType(), dtypeList) &&
+           op::CheckType(x2->GetDataType(), dtypeList) &&
+           op::CheckType(cdist->GetDataType(), dtypeList);
 }
 
 // AICORE算子kernel
@@ -61,20 +67,36 @@ const aclTensor* CdistGrad(
     const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist, float p,
     aclOpExecutor* executor)
 {
-    op::Shape outputShape;
-    auto dimnum = grad->GetViewShape().GetDimNum();
-    for (size_t i = 0; i < dimnum - NUMBER_TWO; i++) {
-        outputShape.AppendDim(grad->GetViewShape().GetDim(i));
+    L0_DFX(CdistGrad, grad, x1, x2, cdist);
+    aclTensor* yOut = nullptr;
+    if (IsRegBase(op::GetCurrentPlatformInfo().GetCurNpuArch())) {
+        // ascend950 path: reduce axis is removed from output
+        // e.g. input [P,R,M] → output [P,M], not [P,1,M]
+        op::Shape outputShape;
+        auto dimnum = grad->GetViewShape().GetDimNum();
+        for (size_t i = 0; i < dimnum; i++) {
+            if (static_cast<int64_t>(i) != static_cast<int64_t>(dimnum - NUMBER_TWO)) {
+                outputShape.AppendDim(grad->GetViewShape().GetDim(i));
+            }
+        }
+        yOut = executor->AllocTensor(outputShape, grad->GetDataType(), grad->GetStorageFormat());
+        CHECK_RET(yOut != nullptr, nullptr);
+    } else {
+        op::Shape outputShape;
+        auto dimnum = grad->GetViewShape().GetDimNum();
+        for (size_t i = 0; i < dimnum - NUMBER_TWO; i++) {
+            outputShape.AppendDim(grad->GetViewShape().GetDim(i));
+        }
+        outputShape.AppendDim(grad->GetViewShape().GetDim(dimnum - 1));
+        yOut = executor->AllocTensor(outputShape, grad->GetDataType());
+        if (yOut == nullptr) {
+            OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "alloc out tensor failed.");
+            return nullptr;
+        }
     }
-    outputShape.AppendDim(grad->GetViewShape().GetDim(dimnum - 1));
-    // 根据输出shape申请输出tensor
-    auto out = executor->AllocTensor(outputShape, grad->GetDataType());
-    if (out == nullptr) {
-        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "alloc out tensor failed.");
-        return nullptr;
-    }
+
     if (IsAiCoreSupport(grad, x1, x2, cdist)) {
-        return CdistGradAiCore(grad, x1, x2, cdist, p, out, executor);
+        return CdistGradAiCore(grad, x1, x2, cdist, p, yOut, executor);
     } else {
         OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "Datatype not supported.");
         return nullptr;
