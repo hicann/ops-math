@@ -24,8 +24,7 @@
 
 using namespace Ops::Base;
 
-namespace optiling
-{
+namespace optiling {
 static constexpr int32_t SIZE8 = 8;
 static constexpr int32_t SIZE4 = 4;
 static constexpr int32_t SIZE2 = 2;
@@ -43,11 +42,12 @@ static ge::graphStatus DoTiling(gert::TilingContext* context, ReduceOpInputParam
     } else if (ge::GetSizeByDataType(opInput.inputDtype) == 1) {
         status = Tiling4ReduceOp<ReduceMax::ReduceMaxDag<int8_t>::OpDag>(context, opInput, key);
     }
-    OP_CHECK_IF((status == ge::GRAPH_FAILED),
-                    OP_LOGE(
-                        context->GetNodeName(),
-                        "ReduceOp Tiling failed, dtype shoude be in (int8/uint8/bfloat16/float16/float/int32/int64)"),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        (status == ge::GRAPH_FAILED),
+        OP_LOGE_FOR_INVALID_DTYPE(
+            context->GetNodeName(), "x", Ops::Base::ToString(opInput.inputDtype).c_str(),
+            "int8, uint8, bfloat16, float16, float, int32 or int64"),
+        return ge::GRAPH_FAILED);
     return status;
 }
 
@@ -56,9 +56,9 @@ static ge::graphStatus Tiling4ReduceMax(gert::TilingContext* context)
     auto compileInfo = reinterpret_cast<const ReduceOpCompileInfo*>(context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     ReduceOpInputParam opInput;
-    OP_CHECK_IF((ReduceOpTmpl::GetInputParam(context, opInput, 0, 1, 0) == ge::GRAPH_FAILED),
-                    OP_LOGE(context->GetNodeName(), "ReduceOp get x input param failed"),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        (ReduceOpTmpl::GetInputParam(context, opInput, 0, 1, 0) == ge::GRAPH_FAILED),
+        OP_LOGE(context->GetNodeName(), "ReduceOp get x input param failed"), return ge::GRAPH_FAILED);
 
     if (opInput.axes.empty()) {
         auto attrs = context->GetAttrs();
@@ -73,13 +73,14 @@ static ge::graphStatus Tiling4ReduceMax(gert::TilingContext* context)
     }
 
     ReduceTilingKey key;
-    OP_CHECK_IF((DoTiling(context, opInput, key) == ge::GRAPH_FAILED),
-                    OP_LOGE(context->GetNodeName(), "DoTiling Failed for ReduceMax"),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        (DoTiling(context, opInput, key) == ge::GRAPH_FAILED),
+        OP_LOGE(context->GetNodeName(), "DoTiling Failed for ReduceMax"), return ge::GRAPH_FAILED);
     uint64_t tilingKey;
     GEN_REDUCE_TILING_KEY(tilingKey, key);
-    OP_LOGI(context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, Tiling Key is:%lu",
-            key.patternID, key.loopARCount, key.loopInnerARCount, tilingKey);
+    OP_LOGI(
+        context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, Tiling Key is:%lu", key.patternID,
+        key.loopARCount, key.loopInnerARCount, tilingKey);
     context->SetTilingKey(tilingKey);
     return ge::GRAPH_SUCCESS;
 }
@@ -87,54 +88,60 @@ static ge::graphStatus Tiling4ReduceMax(gert::TilingContext* context)
 static ge::graphStatus TilingPrepare4ReduceMax(gert::TilingParseContext* context)
 {
     auto compileInfo = context->GetCompiledInfo<ReduceOpCompileInfo>();
- 	OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
- 	 
- 	auto platformInfo = context->GetPlatformInfo();
- 	OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
- 	auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
- 	compileInfo->vectorCoreNum = ascendcPlatform.GetCoreNumAiv();
- 	OP_CHECK_IF(
- 	    (compileInfo->vectorCoreNum == 0UL),
- 	    OP_LOGE(context->GetNodeName(), "ReduceOp GetHardwareInfo Failed, vectorCoreNum:%lu",
- 	            compileInfo->vectorCoreNum),
- 	    return ge::GRAPH_FAILED);
- 	 
- 	uint64_t ubSize = 0;
- 	ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
- 	OP_CHECK_IF(ubSize <= CACHE_BUF_SIZE,
- 	            OP_LOGE(context->GetNodeName(),
- 	                    "ReduceOp GetHardwareInfo Failed, ubSize:%lu, at least:%lu.",
- 	                    compileInfo->ubSize, CACHE_BUF_SIZE),
- 	            return ge::GRAPH_FAILED);
- 	compileInfo->ubSize = ubSize;
- 	 
- 	compileInfo->cacheLineSize = Ops::Base::GetCacheLineSize(context);
- 	OP_CHECK_IF(
- 	compileInfo->cacheLineSize == 0UL,
- 	OP_LOGE(context->GetNodeName(), "ReduceOp GetHardwareInfo Failed, cacheLineSize:%lu.",
- 	        compileInfo->cacheLineSize),
- 	        return ge::GRAPH_FAILED);
- 	 
- 	compileInfo->ubBlockSize = Ops::Base::GetUbBlockSize(context);
- 	OP_CHECK_IF(
- 	    compileInfo->ubBlockSize == 0UL,
- 	    OP_LOGE(context->GetNodeName(), "ReduceOp GetHardwareInfo Failed, ubBlockSize:%lu.",
- 	            compileInfo->ubBlockSize),
- 	    return ge::GRAPH_FAILED);
- 	 
- 	compileInfo->vRegSize = Ops::Base::GetVRegSize(context);
- 	OP_CHECK_IF(
- 	    compileInfo->vRegSize == 0UL,
- 	    OP_LOGE(context->GetNodeName(), "ReduceOp GetHardwareInfo Failed, vRegSize:%lu.",
- 	            compileInfo->vRegSize),
- 	    return ge::GRAPH_FAILED);
- 	 
- 	OP_LOGD(context->GetNodeName(), "GetCoreNum:%lu, ubSize:%lu, cacheLineSize:%lu, ubBlockSize:%lu, vRegSize:%lu",
- 	        compileInfo->vectorCoreNum, compileInfo->ubSize, compileInfo->cacheLineSize, compileInfo->ubBlockSize,
- 	        compileInfo->vRegSize);
- 	 
- 	return ge::GRAPH_SUCCESS;
+    OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
+
+    auto platformInfo = context->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    compileInfo->vectorCoreNum = ascendcPlatform.GetCoreNumAiv();
+    if (compileInfo->vectorCoreNum == 0UL) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "vectorCoreNum", std::to_string(compileInfo->vectorCoreNum).c_str(),
+            "The value of vectorCoreNum must be greater than 0");
+        return ge::GRAPH_FAILED;
+    }
+
+    uint64_t ubSize = 0;
+    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
+    if (ubSize <= CACHE_BUF_SIZE) {
+        std::string reasonMsg = "The value of ubSize must be greater than " + std::to_string(CACHE_BUF_SIZE);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "ubSize", std::to_string(ubSize).c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
+    compileInfo->ubSize = ubSize;
+
+    compileInfo->cacheLineSize = Ops::Base::GetCacheLineSize(context);
+    if (compileInfo->cacheLineSize == 0UL) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "cacheLineSize", std::to_string(compileInfo->cacheLineSize).c_str(),
+            "The value of cacheLineSize must be greater than 0");
+        return ge::GRAPH_FAILED;
+    }
+
+    compileInfo->ubBlockSize = Ops::Base::GetUbBlockSize(context);
+    if (compileInfo->ubBlockSize == 0UL) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "ubBlockSize", std::to_string(compileInfo->ubBlockSize).c_str(),
+            "The value of ubBlockSize must be greater than 0");
+        return ge::GRAPH_FAILED;
+    }
+
+    compileInfo->vRegSize = Ops::Base::GetVRegSize(context);
+    if (compileInfo->vRegSize == 0UL) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "vRegSize", std::to_string(compileInfo->vRegSize).c_str(),
+            "The value of vRegSize must be greater than 0");
+        return ge::GRAPH_FAILED;
+    }
+
+    OP_LOGD(
+        context->GetNodeName(), "GetCoreNum:%lu, ubSize:%lu, cacheLineSize:%lu, ubBlockSize:%lu, vRegSize:%lu",
+        compileInfo->vectorCoreNum, compileInfo->ubSize, compileInfo->cacheLineSize, compileInfo->ubBlockSize,
+        compileInfo->vRegSize);
+
+    return ge::GRAPH_SUCCESS;
 }
 
 IMPL_OP_OPTILING(ReduceMax).Tiling(Tiling4ReduceMax).TilingParse<ReduceOpCompileInfo>(TilingPrepare4ReduceMax);
-}  // namespace optiling
+} // namespace optiling

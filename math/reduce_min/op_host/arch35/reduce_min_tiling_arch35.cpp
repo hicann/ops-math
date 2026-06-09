@@ -44,9 +44,9 @@ static ge::graphStatus DoTiling(gert::TilingContext* context, ReduceOpInputParam
     }
     OP_CHECK_IF(
         (status == ge::GRAPH_FAILED),
-        OP_LOGE(
-            context->GetNodeName(),
-            "ReduceOp Tiling failed, dtype shoude be in (int8/uint8/bfloat16/float16/float/int32/int64)"),
+        OP_LOGE_FOR_INVALID_DTYPE(
+            context->GetNodeName(), "x", Ops::Base::ToString(opInput.inputDtype).c_str(),
+            "int8, uint8, bfloat16, float16, float, int32 or int64"),
         return ge::GRAPH_FAILED);
     return status;
 }

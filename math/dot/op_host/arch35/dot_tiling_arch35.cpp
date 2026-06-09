@@ -19,6 +19,7 @@
 #include "../../op_kernel/arch35/dot_tiling_key.h"
 #include "log/log.h"
 #include "atvoss/reduce/reduce_tiling.h"
+#include "op_api/op_util.h"
 #include "register/op_def_registry.h"
 
 namespace optiling
@@ -40,8 +41,9 @@ static ge::graphStatus DoTiling(gert::TilingContext* context, ReduceOpInputParam
 
     OP_CHECK_IF(
         (status == ge::GRAPH_FAILED),
-        OP_LOGE(
-            context->GetNodeName(), "ReduceOp Tiling failed, dtype shoude be in (int8/uint8/half/bf16/float/int32)"),
+        OP_LOGE_FOR_INVALID_DTYPE(
+            context->GetNodeName(), "x", Ops::Base::ToString(opInput.inputDtype).c_str(),
+            "int8, uint8, float16, bfloat16, float or int32"),
         return ge::GRAPH_FAILED);
     return status;
 }
@@ -57,12 +59,19 @@ static ge::graphStatus GenInput(gert::TilingContext* context, ReduceOpInputParam
                     OP_LOGE(context->GetNodeName(), "ReduceOp get input_y shape failed"),
                     return ge::GRAPH_FAILED);
     if (shape0.size() != shape1.size()) {
-        OP_LOGE(context, "shape0 size:%zu not equeal to shape1 size:%zu", shape0.size(), shape1.size());
+        std::string shapeMsg = std::to_string(shape0.size()) + " and " + std::to_string(shape1.size());
+        std::string reasonMsg = "The shape sizes of parameter input_x and parameter input_y must be the same";
+        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(
+            context->GetNodeName(), "input_x and input_y", shapeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     for (size_t i = 0; i < shape0.size(); i++) {
         if (shape0[i] != shape1[i]) {
-            OP_LOGE(context, "shape0[%zu]:%ld not equeal to shape1[%zu]:%ld", i, shape0[i], i, shape1[i]);
+            std::string shapeMsg = ops::ToStringWithSize(shape0.data(), shape0.size()) + " and " +
+                                   ops::ToStringWithSize(shape1.data(), shape1.size());
+            std::string reasonMsg = "The shape of input_x should match the shape of input_y";
+            OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                context->GetNodeName(), "input_x and input_y", shapeMsg.c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
     }
@@ -77,7 +86,10 @@ static ge::graphStatus GenInput(gert::TilingContext* context, ReduceOpInputParam
                     OP_LOGE(context->GetNodeName(), "ReduceOp get input_y dtype failed"),
                     return ge::GRAPH_FAILED);
     if (dtype0 != dtype1) {
-        OP_LOGE(context, "dtype0:%d not equeal to dtype1:%d", dtype0, dtype1);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            context->GetNodeName(), "input_x and input_y",
+            (Ops::Base::ToString(dtype0) + " and " + Ops::Base::ToString(dtype1)).c_str(),
+            "The dtypes of input_x and input_y must be the same");
         return ge::GRAPH_FAILED;
     }
     opInput.inputDtype = dtype0;

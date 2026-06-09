@@ -41,8 +41,9 @@ static ge::graphStatus DoTiling(
     }
     OP_CHECK_IF(
         (status == ge::GRAPH_FAILED),
-        OP_LOGE(
-            context->GetNodeName(), "ReduceOp Tiling failed, dtype shoude be in (bfloat16/float16/float/int32/int64)"),
+        OP_LOGE_FOR_INVALID_DTYPE(
+            context->GetNodeName(), "x", Ops::Base::ToString(opInput.inputDtype).c_str(),
+            "float16, bfloat16, float, int64 or int32"),
         return ge::GRAPH_FAILED);
     return status;
 }
@@ -60,7 +61,8 @@ ge::graphStatus Tiling4BiasAddGradForAscendC(gert::TilingContext* context)
 
     auto inPutDimNum = opInput.shape.size();
     if (inPutDimNum < 2) { // 输入维度必须大于等于2
-        OP_LOGE(context->GetNodeName(), "BiasAddGrad dimension must be greater than or equal to 2");
+        OP_LOGE_FOR_INVALID_SHAPEDIM(
+            context->GetNodeName(), "x", std::to_string(inPutDimNum).c_str(), "greater than or equal to 2");
         return ge::GRAPH_FAILED;
     }
     auto attrs = context->GetAttrs();
@@ -83,7 +85,7 @@ ge::graphStatus Tiling4BiasAddGradForAscendC(gert::TilingContext* context)
             opInput.axes[j++] = i;
         }
     } else {
-        OP_LOGE(context->GetNodeName(), "BiasAddGrad data_format must in (NCHW, NHWC)");
+        OP_LOGE_FOR_INVALID_FORMAT(context->GetNodeName(), "x", data_format, "NCHW or NHWC");
         return ge::GRAPH_FAILED;
     }
 

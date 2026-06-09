@@ -43,7 +43,8 @@ static ge::graphStatus DoTilingAscendC(
 
     OP_CHECK_IF(
         (status == ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(), "ReduceOp Tiling failed, dtype shoude be in (bfloat16/float16/float)"),
+        OP_LOGE_FOR_INVALID_DTYPE(
+            context->GetNodeName(), "x", Ops::Base::ToString(opInput.inputDtype).c_str(), "bfloat16, float16 or float"),
         return ge::GRAPH_FAILED);
     return status;
 }
@@ -76,10 +77,8 @@ static ge::graphStatus Tiling4ReduceMean(gert::TilingContext* context)
     uint64_t tilingKey;
     GEN_REDUCE_TILING_KEY(tilingKey, key);
     OP_LOGI(
- 	    context->GetNodeName(),
- 	    "patternID:%u, loopARCount:%u, loopInnerARCount:%u, isContiguous:%d, Tiling Key is:%lu",
- 	    key.patternID, key.loopARCount, key.loopInnerARCount, key.isContiguous ? 1 : 0, tilingKey
- 	);
+        context->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u, isContiguous:%d, Tiling Key is:%lu",
+        key.patternID, key.loopARCount, key.loopInnerARCount, key.isContiguous ? 1 : 0, tilingKey);
     context->SetTilingKey(tilingKey);
     return ge::GRAPH_SUCCESS;
 }

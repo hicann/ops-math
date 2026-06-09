@@ -33,10 +33,11 @@ static ge::graphStatus DoTiling(gert::TilingContext* context, ReduceOpInputParam
     } else if (ge::GetSizeByDataType(opInput.inputDtype) == SIZE2) {
         status = Tiling4ReduceOp<ReduceLogSumExp::ReduceLogSumExpDag<half>::OpDag>(context, opInput, key);
     }
-    OP_CHECK_IF((status == ge::GRAPH_FAILED),
-                    OP_LOGE(
-                        context->GetNodeName(), "ReduceOp Tiling failed, dtype shoude be in (bfloat16/float16/float)"),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        (status == ge::GRAPH_FAILED),
+        OP_LOGE_FOR_INVALID_DTYPE(
+            context->GetNodeName(), "x", Ops::Base::ToString(opInput.inputDtype).c_str(), "bfloat16, float16 or float"),
+        return ge::GRAPH_FAILED);
     return status;
 }
 
