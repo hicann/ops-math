@@ -27,6 +27,7 @@ namespace l0op {
 
 OP_TYPE_REGISTER(TopKV2);
 OP_TYPE_REGISTER(TopKV3);
+OP_TYPE_REGISTER(RadixTopK);
 OP_TYPE_REGISTER(TopK);
 
 const int64_t MAX_AICORE_CALC_INPUTSIZE = 32768;
@@ -40,6 +41,13 @@ const int64_t MAX_K = 16;
 constexpr int64_t TWO_THOUSAND = 2000;
 // 排序轴大于该阈值时，走SortAndTopK模板，SortWithIndex场景不涉及
 constexpr int64_t SORT_AND_TOP_K_THRESHOLD = 10000000;
+// RadixTopK 算子阈值
+constexpr int64_t RADIX_TOP_K_S_THRESHOLD_1 = 12000000;
+constexpr int64_t RADIX_TOP_K_S_K_RATIO_1 = 100;
+constexpr int64_t RADIX_TOP_K_S_THRESHOLD_2 = 100000000;
+constexpr int64_t RADIX_TOP_K_S_K_RATIO_2 = 50;
+constexpr int64_t RADIX_TOP_K_MIN_K = 1000;
+constexpr int64_t MAX_INT32_INPUTSIZE = 2147483647;
 
 static const std::initializer_list<op::DataType> ANCIENT_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT};
@@ -111,6 +119,25 @@ static bool IsAiCoreSupport(const aclTensor* self, int64_t k)
     return self->GetDataType() == op::DataType::DT_FLOAT16;
 }
 
+static bool IsRadixTopKSupport(const aclTensor* self, int64_t k)
+{
+    SocVersion version = GetCurrentPlatformInfo().GetSocVersion();
+    auto inputShape = self->GetViewShape();
+    int64_t dimNum = static_cast<int64_t>(inputShape.GetDimNum());
+    int64_t sortLen = inputShape.GetDim(dimNum - 1);
+    bool socCheck = version == SocVersion::ASCEND910B || version == SocVersion::ASCEND910_93;
+    bool dtypeCheck = CheckType(self->GetDataType(), {op::DataType::DT_FLOAT16, op::DataType::DT_BF16});
+    bool shapeCheck = false;
+    if (sortLen > MAX_INT32_INPUTSIZE) {
+        shapeCheck = false;
+    } else if (sortLen >= RADIX_TOP_K_S_THRESHOLD_2) {
+        shapeCheck = sortLen > RADIX_TOP_K_S_K_RATIO_2 * k;
+    } else if (sortLen >= RADIX_TOP_K_S_THRESHOLD_1) {
+        shapeCheck = sortLen > RADIX_TOP_K_S_K_RATIO_1 * k;
+    }
+    return socCheck && dtypeCheck && shapeCheck && k > RADIX_TOP_K_MIN_K;
+}
+
 // 根据芯片类型、dtype判断算子是否支持走TopKV3
 static bool IsAscendCSupport(const aclTensor* self, int64_t k)
 {
@@ -139,6 +166,16 @@ std::tuple<aclTensor*, aclTensor*> TopkV2AiCoreForDavid(
     L0_DFX(TopkV2AiCoreForDavid, self, k, dim, largest, sorted, values, indices, indicesDType);
     ADD_TO_LAUNCHER_LIST_AICORE(
         TopKV2, OP_INPUT(self, k), OP_OUTPUT(values, indices), OP_ATTR(sorted, dim, largest, indicesDType));
+    return std::tuple<aclTensor*, aclTensor*>(values, indices);
+}
+
+std::tuple<aclTensor*, aclTensor*> RadixTopK(
+    const aclTensor* self, const aclTensor* k, int64_t dim, bool largest, bool sorted, aclTensor* values,
+    aclTensor* indices, op::DataType indicesDType, aclOpExecutor* executor)
+{
+    L0_DFX(RadixTopK, self, k, dim, largest, sorted, values, indices, indicesDType);
+    ADD_TO_LAUNCHER_LIST_AICORE(
+        RadixTopK, OP_INPUT(self, k), OP_OUTPUT(values, indices), OP_ATTR(sorted, dim, largest, indicesDType));
     return std::tuple<aclTensor*, aclTensor*>(values, indices);
 }
 
@@ -203,6 +240,9 @@ std::tuple<aclTensor*, aclTensor*> Topk(
         } else {
             if (IsRegBase()) {
                 return TopkV2AiCoreForDavid(
+                    self, kTensor, dim, largest, sorted, valuesOut, indicesOut, indicesDType, executor);
+            } else if (IsRadixTopKSupport(self, k)) {
+                return RadixTopK(
                     self, kTensor, dim, largest, sorted, valuesOut, indicesOut, indicesDType, executor);
             } else {
                 return TopkV2AiCore(self, kTensor, dim, largest, sorted, valuesOut, indicesOut, executor);
