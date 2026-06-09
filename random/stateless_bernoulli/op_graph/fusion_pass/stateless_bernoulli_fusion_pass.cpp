@@ -167,7 +167,7 @@ std::unique_ptr<Graph> BernoulliFusionPass::Replacement(const std::unique_ptr<Ma
 
     std::vector<int64_t> shapeValue = GetShapeDims(probDesc.GetShape());
     std::vector<int64_t> shapeDims = {static_cast<int64_t>(shapeValue.size())};
-    auto rShape = replaceGraphBuilder.CreateConst(shapeValue, shapeDims, DT_INT64, FORMAT_ND);
+    auto rShape = replaceGraphBuilder.CreateConst(shapeValue, shapeDims);
     
     auto output = es::StatelessBernoulli(rShape, rProb, rSeed, rOffset, dtype);
 
