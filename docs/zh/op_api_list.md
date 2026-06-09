@@ -81,7 +81,7 @@
 | [aclnnCdistBackward](../../math/cdist_grad/docs/aclnnCdistBackward.md)            | 完成aclnnCdist的反向    | 默认确定性实现| - |
 | [aclnnCeil&aclnnInplaceCeil](../../math/ceil/docs/aclnnCeil&aclnnInplaceCeil.md) | 返回输入tensor中每个元素向上取整的结果。                     | 默认确定性实现| 默认确定性实现|
 | [aclnnChannelShuffle](../../conversion/transpose/docs/aclnnChannelShuffle.md) | 将(\*, C, H, W)张量的channels分成g个组，然后将每个通道组中的通道进行随机重排，最后将所有通道合并输出，同时保持最终输出张量的shape和输入张量保持一致。 | 默认确定性实现| 默认确定性实现|
-| [aclnnChunkCat](../../conversion/chunk_cat/docs/aclnnChunkCat.md) | 将tensors中所有tensor先按照维度dim切分为numChunks块，再按照dim后一维进行级联，最后转换为out的数据类型。 | 默认确定性实现| - |
+| [aclnnChunkCat](../../conversion/chunk_cat/docs/aclnnChunkCat.md) | 将tensors中所有tensor先按照维度dim切分为numChunks块，再按照dim后一维进行级联，最后转换为out的数据类型。 | 默认确定性实现| 默认确定性实现|
 | [aclnnCircularPad2d](../../conversion/circular_pad/docs/aclnnCircularPad2d.md) | 使用输入循环填充输入tensor的最后两维。                       | 默认确定性实现| 默认确定性实现|
 | [aclnnCircularPad2dBackward](../../conversion/circular_pad_grad/docs/aclnnCircularPad2dBackward.md) | circular_pad2d的反向传播, 前向计算参考aclnnCircularPad2d。   | 默认确定性实现| 默认确定性实现|
 | [aclnnCircularPad3d](../../conversion/circular_pad/docs/aclnnCircularPad3d.md) | 使用输入循环填充输入tensor的最后三维。                       | 默认确定性实现| 默认确定性实现|

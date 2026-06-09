@@ -15,6 +15,7 @@
 
 #include "chunk_cat_tiling.h"
 #include "tiling/platform/platform_ascendc.h"
+#include "op_host/tiling_base_util.h"
 
 namespace optiling {
 
@@ -52,6 +53,7 @@ ge::graphStatus ChunkCatTiling::GetPlatformInfo()
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize_);
     OP_CHECK_IF(ubSize_ == 0, OP_LOGE(context_, "ubSize is 0"), return ge::GRAPH_FAILED);
     sysWorkspaceSize_ = ascendcPlatform.GetLibApiWorkSpaceSize();
+    isRegBase = Ops::Base::IsRegbaseSocVersion(context_);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -90,12 +92,13 @@ ge::graphStatus ChunkCatTiling::GetInputInfo()
     srcDtypeSize_ = ge::GetSizeByDataType(inputDataType);
     OP_CHECK_IF(srcDtypeSize_ == 0, OP_LOGE(context_, "input dtype size can not be 0"), return ge::GRAPH_FAILED);
     srcEleUbBlock_ = UB_BLOCK_SIZE / srcDtypeSize_;
+    uint32_t reserveUb = isRegBase ? 0 : RESERVE_UB;
     if (inputDataType != outputDataType) {
-        inUbSize_ = (ubSize_ + RESERVE_UB) / ONETHIRD;
+        inUbSize_ = (ubSize_ + reserveUb) / ONETHIRD;
     } else {
-        inUbSize_ = (ubSize_ + RESERVE_UB) / HALF;
+        inUbSize_ = (ubSize_ + reserveUb) / HALF;
     }
-    outUbSize_ = (ubSize_ + RESERVE_UB) - inUbSize_ ;
+    outUbSize_ = (ubSize_ + reserveUb) - inUbSize_;
     return ge::GRAPH_SUCCESS;
 }
 
@@ -138,7 +141,19 @@ ge::graphStatus ChunkCatTiling::CalculateOutputInfo()
 
 void ChunkCatTiling::DoUbSplit()
 {
-    if (isAllAlign_ || isOneConcat_) {
+    if (isRegBase) {
+        // 列切
+        uint32_t colLimit = inUbSize_ / srcDtypeSize_;
+        colLimit = colLimit - 32 * srcEleUbBlock_;
+        int64_t ubColLoop = (outputCol_ + colLimit - 1) / colLimit ;
+        ubColFactor_ = (outputCol_ + ubColLoop - 1) / ubColLoop;
+        ubColFactor_ = (ubColFactor_ + srcEleUbBlock_ - 1) / srcEleUbBlock_ * srcEleUbBlock_;
+        ubColFactor_ = ubColFactor_ > colLimit ? colLimit : ubColFactor_;
+        // 行切
+        uint32_t rowLimit = ubColLoop == 1 ? colLimit / ubColFactor_ : 1;
+        int64_t ubRowLoop = (outputRow_ + rowLimit - 1) / rowLimit ;
+        ubRowFactor_ = (outputRow_ + ubRowLoop - 1) / ubRowLoop;
+    } else if (isAllAlign_ || isOneConcat_) {
         // 列切
         uint32_t colLimit = inUbSize_ / srcDtypeSize_;
         colLimit = (isOneConcat_) ? colLimit - 32 * (srcEleUbBlock_ - 1) : colLimit;

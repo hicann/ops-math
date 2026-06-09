@@ -44,8 +44,7 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST =
 static const inline std::initializer_list<DataType>& GetSupportDtypeList(NpuArch npuArch)
 {
     static const std::initializer_list<DataType> emptyDtypes = {};
-    if (
-        npuArch == NpuArch::DAV_2201) {
+    if (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch)) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
     } else {
         return emptyDtypes;
@@ -54,11 +53,13 @@ static const inline std::initializer_list<DataType>& GetSupportDtypeList(NpuArch
 
 static bool CheckDtypeValid(const aclTensorList* tensors, const aclTensor* out)
 {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    const auto& dTypeSupportList = GetSupportDtypeList(npuArch);
     op::DataType inputType = (*tensors)[0]->GetDataType();
-    if (!CheckType(inputType, ASCEND910B_DTYPE_SUPPORT_LIST)) {
+    if (!CheckType(inputType, dTypeSupportList)) {
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID, "tensor %lu not implemented for %s, should be in dtype support list %s.", 0,
-            op::ToString(inputType).GetString(), op::ToString(ASCEND910B_DTYPE_SUPPORT_LIST).GetString());
+            op::ToString(inputType).GetString(), op::ToString(dTypeSupportList).GetString());
         return false;
     }
     for (uint64_t i = 1; i < tensors->Size(); i++) {
@@ -67,7 +68,7 @@ static bool CheckDtypeValid(const aclTensorList* tensors, const aclTensor* out)
             return false;
         }
     }
-    OP_CHECK_DTYPE_NOT_SUPPORT(out, ASCEND910B_DTYPE_SUPPORT_LIST, return false);
+    OP_CHECK_DTYPE_NOT_SUPPORT(out, dTypeSupportList, return false);
     if (inputType == DataType::DT_FLOAT && out->GetDataType() != DataType::DT_FLOAT) {    
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "output dtype must be float when input dtype is float.");
         return false;
