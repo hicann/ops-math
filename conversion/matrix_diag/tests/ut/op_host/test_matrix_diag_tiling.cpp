@@ -142,3 +142,12 @@ TEST_F(MatrixDiagTiling, ascend910D1_test_tiling_failed_scalar) {
                                               &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
+
+TEST_F(MatrixDiagTiling, ascend910D1_test_tiling_failed_zero_last_dim) {
+    optiling::MatrixDiagAsc::MatrixDiagCompileInfo compileInfo = {64, 253952, 128, 32, true};
+    gert::TilingContextPara tilingContextPara("MatrixDiag",
+                                              {{{{64, 0}, {64, 0}}, ge::DT_FLOAT, ge::FORMAT_ND},},
+                                              {{{{64, 0, 0}, {64, 0, 0}}, ge::DT_FLOAT, ge::FORMAT_ND},},
+                                              &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}

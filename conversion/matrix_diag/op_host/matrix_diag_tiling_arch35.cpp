@@ -330,13 +330,17 @@ ge::graphStatus MatrixDiagTiling::GetInputShapeAndType()
     xDtypeSize_ = ge::GetSizeByDataType(xDtype);
     const gert::Shape& xInputShape = xInput->GetStorageShape();
     OP_CHECK_IF(
-        xInputShape.GetDimNum() == 0, OP_LOGE(context_->GetNodeName(), "The input is scalar."),
+        xInputShape.GetDimNum() == 0,
+        OP_LOGE_FOR_INVALID_SHAPEDIM(
+            context_->GetNodeName(), "x", std::to_string(xInputShape.GetDimNum()).c_str(), "greater than 0"),
         return ge::GRAPH_FAILED);
     inputShape_ = xInputShape;
     FuseInputShape();
     OP_CHECK_IF(
         fusedShape_[0] == 0 || fusedShape_[1] == 0,
-        OP_LOGE(context_->GetNodeName(), "The shape is invalid, %ld, %ld.", fusedShape_[0], fusedShape_[1]),
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            context_->GetNodeName(), "x", Ops::Base::ToString(inputShape_).c_str(),
+            "fused batch size and n size must both be non-zero"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -356,7 +360,10 @@ ge::graphStatus MatrixDiagTiling::DoTiling()
 
 static ge::graphStatus Tiling4MatrixDiag(gert::TilingContext* context)
 {
-    OP_CHECK_IF(context == nullptr, OP_LOGE("Tiling4MatrixDiag", "The context is nullptr!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        context == nullptr,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("Tiling4MatrixDiag", "context", "nullptr", "must not be null"),
+        return ge::GRAPH_FAILED);
 
     MatrixDiagAsc::MatrixDiagTiling op(context);
     return op.DoTiling();
@@ -375,25 +382,35 @@ static ge::graphStatus TilingPrepare4MatrixDiagAscendC(gert::TilingParseContext*
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
     OP_CHECK_IF(
         (compileInfo->coreNum < 1),
-        OP_LOGE(context->GetNodeName(), "The core num is invalid, %u.", compileInfo->coreNum), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "core num", std::to_string(compileInfo->coreNum).c_str(),
+            "must be greater than or equal to 1"),
+        return ge::GRAPH_FAILED);
 
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ubSize = static_cast<uint32_t>(ubSize);
     OP_CHECK_IF(
-        (compileInfo->ubSize < 1), OP_LOGE(context->GetNodeName(), "The ub size is invalid, %u.", compileInfo->ubSize),
+        (compileInfo->ubSize < 1),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "ub size", std::to_string(compileInfo->ubSize).c_str(),
+            "must be greater than or equal to 1"),
         return ge::GRAPH_FAILED);
 
     compileInfo->clSize = Ops::Base::GetCacheLineSize(context);
     OP_CHECK_IF(
         (compileInfo->clSize < 1),
-        OP_LOGE(context->GetNodeName(), "The cache line size is invalid, %u.", compileInfo->clSize),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "cache line size", std::to_string(compileInfo->clSize).c_str(),
+            "must be greater than or equal to 1"),
         return ge::GRAPH_FAILED);
 
     compileInfo->blockSize = Ops::Base::GetUbBlockSize(context);
     OP_CHECK_IF(
         (compileInfo->blockSize < 1),
-        OP_LOGE(context->GetNodeName(), "The block size is invalid, %u.", compileInfo->blockSize),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "block size", std::to_string(compileInfo->blockSize).c_str(),
+            "must be greater than or equal to 1"),
         return ge::GRAPH_FAILED);
 
     OP_LOGD(context->GetNodeName(), "Exit TilingPrepare4MatrixDiagAscendC.");
@@ -403,7 +420,9 @@ static ge::graphStatus TilingPrepare4MatrixDiagAscendC(gert::TilingParseContext*
 static ge::graphStatus TilingPrepare4MatrixDiag(gert::TilingParseContext* context)
 {
     OP_CHECK_IF(
-        context == nullptr, OP_LOGE("TilingPrepare4MatrixDiag", "The context is nullptr!"), return ge::GRAPH_FAILED);
+        context == nullptr,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("TilingPrepare4MatrixDiag", "context", "nullptr", "must not be null"),
+        return ge::GRAPH_FAILED);
     auto compileInfo = context->GetCompiledInfo<MatrixDiagAsc::MatrixDiagCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     compileInfo->isAscendC = Ops::Base::IsRegbaseSocVersion(context);

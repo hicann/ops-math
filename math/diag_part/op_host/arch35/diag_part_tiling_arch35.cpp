@@ -14,6 +14,7 @@
  */
 
 #include "diag_part_tiling_arch35.h"
+#include "log/log.h"
 
 namespace optiling {
 ge::graphStatus DiagPartTiling::Init()
@@ -23,10 +24,16 @@ ge::graphStatus DiagPartTiling::Init()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, compileInfo);
     coreNum_ = compileInfo->core_num;
     OP_CHECK_IF(
-        (coreNum_ <= 0), OP_LOGE(tilingContext_->GetNodeName(), "Failed to get core num."), return ge::GRAPH_FAILED);
+        (coreNum_ <= 0),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            tilingContext_->GetNodeName(), "core num", std::to_string(coreNum_).c_str(), "must be greater than 0"),
+        return ge::GRAPH_FAILED);
     ubSize_ = compileInfo->ub_size;
     OP_CHECK_IF(
-        (ubSize_ <= 0), OP_LOGE(tilingContext_->GetNodeName(), "Failed to get ub size."), return ge::GRAPH_FAILED);
+        (ubSize_ <= 0),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            tilingContext_->GetNodeName(), "ub size", std::to_string(ubSize_).c_str(), "must be greater than 0"),
+        return ge::GRAPH_FAILED);
     auto res = tilingContext_->SetLocalMemorySize(static_cast<uint32_t>(ubSize_ - DCACHE_SIZE));
     OP_CHECK_IF(
         (res != ge::GRAPH_SUCCESS),
@@ -58,19 +65,18 @@ ge::graphStatus DiagPartTiling::DiagPartVerifying()
     // limit input dim > 0 and dim % 2 == 0
     OP_CHECK_IF(
         (xDimNum <= 0 || (xDimNum % TWO) != 0),
-        OP_LOGE(
-            tilingContext_->GetNodeName(),
-            "Invalid x shape dim num, it should be an even number and greater than 0, but dim num is %lu.", xDimNum),
+        OP_LOGE_FOR_INVALID_SHAPEDIM(
+            tilingContext_->GetNodeName(), "x", std::to_string(xDimNum).c_str(),
+            "an even number and greater than 0"),
         return ge::GRAPH_FAILED);
 
     // limit the dimensions corresponding to the half and half of the input shape are the same
     for (uint64_t i = 0; i < xDimNum / TWO; i++) {
         OP_CHECK_IF(
             (xShape.GetDim(i) != xShape.GetDim(i + xDimNum / TWO)),
-            OP_LOGE(
-                tilingContext_->GetNodeName(),
-                "Invalid x shape, dimension:%lu and dimension:%lu should be equal, but got %ld and %ld.", i,
-                i + xDimNum / TWO, xShape.GetDim(i), xShape.GetDim(xDimNum / TWO)),
+            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+                tilingContext_->GetNodeName(), "x", Ops::Base::ToString(xShape).c_str(),
+                "the front half and back half dims of x must be equal"),
             return ge::GRAPH_FAILED);
         sideLength_ *= xShape.GetDim(i);
     }
@@ -82,17 +88,17 @@ ge::graphStatus DiagPartTiling::DiagPartVerifying()
     auto yDimNum = yShape.GetDimNum();
     OP_CHECK_IF(
         (yDimNum != xDimNum / TWO),
-        OP_LOGE(
-            tilingContext_->GetNodeName(),
-            "Invalid y shape dim num, it should be equal to half of the dim num of the x shape, but got %lu.", yDimNum),
+        OP_LOGE_FOR_INVALID_SHAPEDIM(
+            tilingContext_->GetNodeName(), "y", std::to_string(yDimNum).c_str(),
+            "equal to half of the dim num of x"),
         return ge::GRAPH_FAILED);
     for (uint64_t i = 0; i < yDimNum; i++) {
         OP_CHECK_IF(
             (xShape.GetDim(i) != yShape.GetDim(i)),
-            OP_LOGE(
-                tilingContext_->GetNodeName(),
-                "Invalid y shape, x and y dimension:%lu should be equal, but got %ld and %ld.", i, xShape.GetDim(i),
-                yShape.GetDim(i)),
+            OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                tilingContext_->GetNodeName(), "x and y",
+                (Ops::Base::ToString(xShape) + " and " + Ops::Base::ToString(yShape)).c_str(),
+                "the front dims of x and y must be equal"),
             return ge::GRAPH_FAILED);
     }
     OP_LOGD(tilingContext_->GetNodeName(), "DiagPartVerifying sucess.");

@@ -149,3 +149,35 @@ TEST_F(MatrixSetDiagTilingTest, test_tiling_failed_input_dim_from_2)
         &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
+
+TEST_F(MatrixSetDiagTilingTest, test_tiling_failed_diag_len_invalid)
+{
+    MatrixSetDiagCompileInfo compileInfo = {};
+    gert::TilingContextPara tilingContextPara(
+        "MatrixSetDiag",
+        {
+            {{{2, 3, 3}, {2, 3, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2, 2}, {2, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{2, 3, 3}, {2, 3, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(MatrixSetDiagTilingTest, test_tiling_failed_batch_dim_invalid)
+{
+    MatrixSetDiagCompileInfo compileInfo = {};
+    gert::TilingContextPara tilingContextPara(
+        "MatrixSetDiag",
+        {
+            {{{2, 3, 3}, {2, 3, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{3, 3}, {3, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{2, 3, 3}, {2, 3, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}

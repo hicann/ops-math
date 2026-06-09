@@ -16,6 +16,8 @@
 #include "platform/platform_ascendc.h"
 #include "util/platform_util.h"
 #include "util/math_util.h"
+#include "log/log.h"
+#include "op_host/input_util.h"
 #include "exe_graph/runtime/runtime_attrs.h"
 
 namespace optiling {
@@ -148,7 +150,11 @@ ge::graphStatus MatrixSetDiagTiling::ParamCheck()
 
     auto inputDataType = inputValueDesc->GetDataType();
     dSize_ = ge::GetSizeByDataType(inputDataType);
-    OP_CHECK_IF(dSize_ <= 0, OP_LOGE(context_, "data size should be positive"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        dSize_ <= 0,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "x dtype size", std::to_string(dSize_).c_str(), "must be positive"),
+        return ge::GRAPH_FAILED);
 
     // 校验输入shape
     auto inputShape = context_->GetInputShape(0);
@@ -157,7 +163,9 @@ ge::graphStatus MatrixSetDiagTiling::ParamCheck()
     auto inputShapeVal = inputShape->GetStorageShape();
     dimNum_ = inputShapeVal.GetDimNum();
     OP_CHECK_IF(
-        dimNum_ < MIN_INPUT_DIMNUM || dimNum_ > MAX_INPUT_DIMNUM, OP_LOGE(context_, "input dim must be between [2,8]"),
+        dimNum_ < MIN_INPUT_DIMNUM || dimNum_ > MAX_INPUT_DIMNUM,
+        OP_LOGE_FOR_INVALID_SHAPEDIM(
+            context_->GetNodeName(), "input", std::to_string(dimNum_).c_str(), "between [2, 8]"),
         return ge::GRAPH_FAILED);
 
     auto diagValueDesc = context_->GetInputDesc(1);
@@ -165,7 +173,11 @@ ge::graphStatus MatrixSetDiagTiling::ParamCheck()
 
     auto diagDataType = diagValueDesc->GetDataType();
     OP_CHECK_IF(
-        inputDataType != diagDataType, OP_LOGE(context_, "input and diag should have same type"),
+        inputDataType != diagDataType,
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            context_->GetNodeName(), "input and diagonal",
+            (Ops::Base::ToString(inputDataType) + " and " + Ops::Base::ToString(diagDataType)).c_str(),
+            "dtypes of input and diagonal must be the same"),
         return ge::GRAPH_FAILED);
 
     // 校验输入shape
@@ -174,20 +186,38 @@ ge::graphStatus MatrixSetDiagTiling::ParamCheck()
 
     auto diagShapeVal = diagShape->GetStorageShape();
     diagDimNum_ = diagShapeVal.GetDimNum();
-    OP_CHECK_IF(diagDimNum_ < 1, OP_LOGE(context_, "diag dim must >=1"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(
-        dimNum_ != diagDimNum_ + 1, OP_LOGE(context_, "diag dim must equal input dim - 1"), return ge::GRAPH_FAILED);
+        diagDimNum_ < 1,
+        OP_LOGE_FOR_INVALID_SHAPEDIM(
+            context_->GetNodeName(), "diagonal", std::to_string(diagDimNum_).c_str(),
+            "greater than or equal to 1"),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        dimNum_ != diagDimNum_ + 1,
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+            context_->GetNodeName(), "input and diagonal",
+            (std::to_string(dimNum_) + " and " + std::to_string(diagDimNum_)).c_str(),
+            "diagonal dim num must equal input dim num minus 1"),
+        return ge::GRAPH_FAILED);
 
     xColNum_ = inputShapeVal.GetDim(dimNum_ - 1);
     xRowNum_ = inputShapeVal.GetDim(dimNum_ - 2);
     tailAxisDataSize_ = xColNum_ * xRowNum_;
     diagLen_ = diagShapeVal.GetDim(diagDimNum_ - 1);
     OP_CHECK_IF(
-        diagLen_ != std::min(xColNum_, xRowNum_), OP_LOGE(context_, "diagLen is invalid"), return ge::GRAPH_FAILED);
+        diagLen_ != std::min(xColNum_, xRowNum_),
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            context_->GetNodeName(), "diagonal", Ops::Base::ToString(diagShapeVal).c_str(),
+            "diagonal length must equal min(row, col) of input"),
+        return ge::GRAPH_FAILED);
     if (diagDimNum_ > 1) {
         for (int32_t i = diagDimNum_ - 2; i >= 0; i--) {
             OP_CHECK_IF(
-                diagShapeVal.GetDim(i) != inputShapeVal.GetDim(i), OP_LOGE(context_, "diagDim is invalid"),
+                diagShapeVal.GetDim(i) != inputShapeVal.GetDim(i),
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                    context_->GetNodeName(), "input and diagonal",
+                    (Ops::Base::ToString(inputShapeVal) + " and " + Ops::Base::ToString(diagShapeVal)).c_str(),
+                    ("dim " + std::to_string(i) + " of diagonal must match input").c_str()),
                 return ge::GRAPH_FAILED);
             mergeDimSize_ = mergeDimSize_ * static_cast<uint64_t>(diagShapeVal.GetDim(i));
         }
@@ -367,13 +397,31 @@ ge::graphStatus MatrixSetDiagTiling::GetSocInfo()
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
     coreNum_ = ascendcPlatform.GetCoreNumAiv();
     realCoreNum_ = coreNum_;
-    OP_CHECK_IF((coreNum_ == 0U), OP_LOGE(context_, "coreNum is 0"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        (coreNum_ == 0U),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "core num", std::to_string(coreNum_).c_str(), "must be greater than 0"),
+        return ge::GRAPH_FAILED);
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize_);
-    OP_CHECK_IF((ubSize_ == 0U), OP_LOGE(context_, "ubSize is 0"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        (ubSize_ == 0U),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "ub size", std::to_string(ubSize_).c_str(), "must be greater than 0"),
+        return ge::GRAPH_FAILED);
     ubBlockSize_ = Ops::Base::GetUbBlockSize(context_);
-    OP_CHECK_IF((ubBlockSize_ == 0U), OP_LOGE(context_, "Failed to get ub block size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        (ubBlockSize_ == 0U),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "ub block size", std::to_string(ubBlockSize_).c_str(),
+            "must be greater than 0"),
+        return ge::GRAPH_FAILED);
     vectorSize_ = static_cast<uint64_t>(Ops::Base::GetVRegSize(context_));
-    OP_CHECK_IF(vectorSize_ == 0U, OP_LOGE(context_, "Failed to vector size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        vectorSize_ == 0U,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "vector size", std::to_string(vectorSize_).c_str(),
+            "must be greater than 0"),
+        return ge::GRAPH_FAILED);
     OP_LOGI(context_, "soc info: ubSize %lu, coreNum %u, ubBlockSize %lu ", ubSize_, coreNum_, ubBlockSize_);
     return ge::GRAPH_SUCCESS;
 }
