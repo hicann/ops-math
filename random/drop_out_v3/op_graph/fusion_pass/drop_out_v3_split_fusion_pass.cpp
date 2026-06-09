@@ -230,10 +230,10 @@ GraphUniqPtr DropOutV3SplitFusionPass::CreateReplacement(const GNode &node)
     auto rOffset = builder.CreateInput(4, "offset", info.offsetDtype, FORMAT_ND, info.offsetDims);
 
     std::vector<int64_t> shapeValue(info.xDims.size(), 0);
-    auto rShapeConst = builder.CreateConst(shapeValue, info.noiseShapeDims, DT_INT64, FORMAT_ND);
+    auto rShapeConst = builder.CreateConst(shapeValue, info.noiseShapeDims);
     std::vector<int64_t> seed1Value = {0};
     std::vector<int64_t> seed1Dims = {1};
-    auto rSeed1 = builder.CreateConst(seed1Value, seed1Dims, DT_INT64, FORMAT_ND);
+    auto rSeed1 = builder.CreateConst(seed1Value, seed1Dims);
 
     auto genMask = es::StatelessDropOutGenMask(rShapeConst, rProb, rSeed, rSeed1, rOffset);
     auto doMask = es::DropOutDoMask(rX, genMask, rProb);
