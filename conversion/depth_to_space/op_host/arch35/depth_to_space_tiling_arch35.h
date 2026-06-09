@@ -41,6 +41,9 @@ public:
     void ProcessShapeInfo(ShapeInfo& shapeInfo);
 
 private:
+    ge::graphStatus CheckFormatAndShape(int64_t xDimNum, int64_t yDimNum, ge::Format xFormat, ge::Format yFormat);
+    ge::graphStatus CheckAttrValues(ge::Format xFormat);
+    void SetPermAndOutShape(ShapeInfo& shapeInfo, const int64_t* perm);
     ParamInfo paramInfo_;
     gert::TilingContext* tilingContext_ = nullptr;
     int64_t nhwcDcrPerm_[DIM_SIX] = {0, 1, 3, 2, 4, 5};

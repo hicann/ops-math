@@ -443,7 +443,12 @@ ge::graphStatus PadV3GradACTiling::ComputeAfterPaddingsAndStrides()
         if (static_cast<int64_t>(tilingData_->inShape[i]) - tilingData_->leftPad[i] < 0 ||
             static_cast<int64_t>(tilingData_->inShape[i]) - tilingData_->rightPad[i] < 0 ||
             static_cast<int64_t>(tilingData_->inShape[i]) - tilingData_->leftPad[i] - tilingData_->rightPad[i] < 0) {
-            OP_LOGE(context_, "outShape length must be non-negative.");
+            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+                context_->GetNodeName(), "y",
+                std::to_string(
+                    static_cast<int64_t>(tilingData_->inShape[i]) - tilingData_->leftPad[i] - tilingData_->rightPad[i])
+                    .c_str(),
+                "The shape dim of y must be >= 0");
             return ge::GRAPH_FAILED;
         }
 
@@ -465,31 +470,42 @@ ge::graphStatus PadV3GradACTiling::CheckModeInputParam(int64_t inShapeV, int64_t
     int64_t leftsubin = padFront - outShapeV;
     int64_t rightsubin = padBack - outShapeV;
     if (padMode_ == TPL_MODE_REFLECT && (0 < (leftsubin + 1) || 0 < (rightsubin + 1))) {
-        OP_LOGE(
-            context_,
-            "reflect mode padFront:%ld and padBack:%ld cannot be bigger than InferredOutShape - 1, "
-            "InferredOutShape:%ld.",
-            padFront, padBack, outShapeV);
+        std::string incorrectValues = std::to_string(padFront) + " and " + std::to_string(padBack);
+        std::string reasonStr =
+            "The value of padFront and padBack must be less than InferredOutShape - 1 for reflect mode, "
+            "InferredOutShape: " +
+            std::to_string(outShapeV);
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+            context_->GetNodeName(), "padFront and padBack", incorrectValues.c_str(), reasonStr.c_str());
         return ge::GRAPH_FAILED;
     }
     if (padMode_ == TPL_MODE_SYMMETRIC && (0 < leftsubin || 0 < rightsubin)) {
-        OP_LOGE(
-            context_, "symmetric mode padFront:%ld and padBack:%ld cannot be bigger than InferredOutShape:%ld.",
-            padFront, padBack, outShapeV);
+        std::string incorrectValues = std::to_string(padFront) + " and " + std::to_string(padBack);
+        std::string reasonStr =
+            "The value of padFront and padBack must be no greater than InferredOutShape for symmetric mode, "
+            "InferredOutShape: " +
+            std::to_string(outShapeV);
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+            context_->GetNodeName(), "padFront and padBack", incorrectValues.c_str(), reasonStr.c_str());
         return ge::GRAPH_FAILED;
     }
 
     if (padMode_ == TPL_MODE_CIRCULAR && (0 < leftsubin || 0 < rightsubin)) {
-        OP_LOGE(
-            context_, "circular mode padFront:%ld and padBack:%ld cannot be bigger than InferredOutShape:%ld.",
-            padFront, padBack, outShapeV);
+        std::string incorrectValues = std::to_string(padFront) + " and " + std::to_string(padBack);
+        std::string reasonStr =
+            "The value of padFront and padBack must be no greater than InferredOutShape for circular mode, "
+            "InferredOutShape: " +
+            std::to_string(outShapeV);
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+            context_->GetNodeName(), "padFront and padBack", incorrectValues.c_str(), reasonStr.c_str());
         return ge::GRAPH_FAILED;
     }
 
     if (padMode_ == TPL_MODE_EDGE && outShapeV == 0 && (padFront != 0 || padBack != 0)) {
-        OP_LOGE(
-            context_, "When InferredOutShape == 0, edge mode padFront:%ld and padBack:%ld must be 0.", padFront,
-            padBack);
+        std::string incorrectValues = std::to_string(padFront) + " and " + std::to_string(padBack);
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+            context_->GetNodeName(), "padFront and padBack", incorrectValues.c_str(),
+            "The value of padFront and padBack must be 0 when InferredOutShape is 0");
         return ge::GRAPH_FAILED;
     }
 
@@ -708,9 +724,8 @@ ge::graphStatus PadV3GradACTiling::GetPaddings()
             return ge::GRAPH_SUCCESS;
         }
         default:
-            OP_LOGE(
-                context_, "Paddings only support [int32, int64]. but is %s",
-                Ops::Base::ToString(paddingsDtype).c_str());
+            OP_LOGE_FOR_INVALID_DTYPE(
+                context_->GetNodeName(), "paddings", Ops::Base::ToString(paddingsDtype).c_str(), "int32 or int64");
     }
     return ge::GRAPH_FAILED;
 }
@@ -724,16 +739,21 @@ ge::graphStatus PadV3GradACTiling::GetShapesAndDtypes()
     auto const inShapeVal = inShape->GetStorageShape();
     dimNum_ = inShapeVal.GetDimNum(); // 获取维度
     if (dimNum_ > MAX_DIM_NUM) {
-        OP_LOGE(context_, "input shape dim should <= 8, please check.");
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+            context_->GetNodeName(), "x", std::to_string(dimNum_).c_str(), "The shape dim of x must be <= 8");
         return ge::GRAPH_FAILED;
     }
     if (padMode_ != TPL_MODE_CONSTANT && dimNum_ > NON_CONSTANT_MAX_DIM_NUM) {
-        OP_LOGE(context_, "non-constant mode, the input shape dim should <= 5, please check.");
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+            context_->GetNodeName(), "x", std::to_string(dimNum_).c_str(),
+            "The shape dim of x must be <= 5 for non-constant mode");
         return ge::GRAPH_FAILED;
     }
     for (uint16_t i = 0; i < dimNum_; ++i) {
         if (inShapeVal.GetDim(i) < 0) {
-            OP_LOGE(context_, "Input shape should >= 0, please check");
+            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+                context_->GetNodeName(), "x", std::to_string(inShapeVal.GetDim(i)).c_str(),
+                "The shape dim of x must be >= 0");
             return ge::GRAPH_FAILED;
         }
         if (inShapeVal.GetDim(i) == 0) {
@@ -774,7 +794,9 @@ ge::graphStatus PadV3GradACTiling::GetShapeAttrsInfo()
             OP_CHECK_IF(
                 strcmp(mode, "constant") != 0 && strcmp(mode, "edge") != 0 && strcmp(mode, "reflect") != 0 &&
                     strcmp(mode, "symmetric") != 0 && strcmp(mode, "circular") != 0,
-                OP_LOGE(context_, "PadV3Grad only support constant/edge/reflect/symmetric/circular mode."),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                    context_->GetNodeName(), "mode", mode,
+                    "The value of mode can only be constant, edge, reflect, symmetric, or circular"),
                 return ge::GRAPH_FAILED);
         }
         auto* paddingContiguous = attrs->GetAttrPointer<bool>(1);
@@ -797,15 +819,35 @@ ge::graphStatus PadV3GradACTiling::Init()
     OP_CHECK_NULL_WITH_CONTEXT(context_, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     coreNum_ = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(coreNum_ == 0U, OP_LOGE(context_, "Failed to core num."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        coreNum_ == 0U,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "core_num", "0", "The value of core_num must be > 0"),
+        return ge::GRAPH_FAILED);
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize_);
-    OP_CHECK_IF(ubSize_ == 0U, OP_LOGE(context_, "Failed to ub size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        ubSize_ == 0U,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "ub_size", "0", "The value of ub_size must be > 0"),
+        return ge::GRAPH_FAILED);
     blockSize_ = static_cast<uint64_t>(Ops::Base::GetUbBlockSize(context_));
-    OP_CHECK_IF(blockSize_ == 0U, OP_LOGE(context_, "Failed to ub block size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        blockSize_ == 0U,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "ub_block_size", "0", "The value of ub_block_size must be > 0"),
+        return ge::GRAPH_FAILED);
     vectorSize_ = static_cast<uint64_t>(Ops::Base::GetVRegSize(context_));
-    OP_CHECK_IF(vectorSize_ == 0U, OP_LOGE(context_, "Failed to vector size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        vectorSize_ == 0U,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "vector_size", "0", "The value of vector_size must be > 0"),
+        return ge::GRAPH_FAILED);
     cacheLineSize_ = Ops::Base::GetCacheLineSize(context_);
-    OP_CHECK_IF(cacheLineSize_ == 0U, OP_LOGE(context_, "Failed to cache line size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        cacheLineSize_ == 0U,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "cache_line_size", "0", "The value of cache_line_size must be > 0"),
+        return ge::GRAPH_FAILED);
     OP_LOGD(
         context_,
         "platform info is coreNum_ = %u, ubSize_ = %lu, blockSize_ = %lu, vectorSize_ = %lu, cacheLineSize_ = %u",
@@ -877,11 +919,20 @@ ge::graphStatus TilingPreparePadV3GradForAscendC(gert::TilingParseContext* conte
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     ci->core_num = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF((ci->core_num <= 0), OP_LOGE(context->GetNodeName(), "Failed to core num."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        (ci->core_num <= 0),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "core_num", std::to_string(ci->core_num).c_str(),
+            "The value of core_num must be > 0"),
+        return ge::GRAPH_FAILED);
     uint64_t ubSize;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     ci->ub_size = static_cast<int64_t>(ubSize);
-    OP_CHECK_IF((ci->ub_size <= 0), OP_LOGE(context->GetNodeName(), "Failed to get ub size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        (ci->ub_size <= 0),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "ub_size", std::to_string(ci->ub_size).c_str(), "The value of ub_size must be > 0"),
+        return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 

@@ -45,13 +45,15 @@ static ge::graphStatus PadV3GradInfershape(
     // input shape check
     size_t input_dim_size = x_shape->GetDimNum();
     OP_CHECK_IF(
-        input_dim_size == 0, OP_LOGE(context->GetNodeName(), "input shape cannot empty"), return ge::GRAPH_FAILED);
+        input_dim_size == 0,
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            context->GetNodeName(), "x", Ops::Base::ToString(*x_shape).c_str(), "x cannot be an empty tensor"),
+        return ge::GRAPH_FAILED);
     // pad size check
     if (input_dim_size * PAIR != paddings_num) {
-        OP_LOGE(
-            context->GetNodeName(),
-            "the paddings num must be twice of the input x rank. but paddings num is %zu, input x rank is %zu",
-            paddings_num, input_dim_size);
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
+            context->GetNodeName(), "paddings", std::to_string(paddings_num).c_str(),
+            "The shape size of paddings should be equal to twice of the input x rank");
         return ge::GRAPH_FAILED;
     }
     // infer by paddings_contiguous
@@ -69,11 +71,9 @@ static ge::graphStatus PadV3GradInfershape(
         int64_t dim_value =
             x_shape->GetDim(i) == UNKNOWN_DIM_VALUE_ ? UNKNOWN_DIM_VALUE_ : (x_shape->GetDim(i) - pad_front - pad_end);
         if (x_shape->GetDim(i) != UNKNOWN_DIM_VALUE_ && dim_value < 0) {
-            OP_LOGE(
-                context->GetNodeName(),
-                "The output shape at index %zu is %ld, but output shape CANNOT contain negative values. x_shape at "
-                "index %zu: %ld, corresponding pad_front: %ld, corresponding pad_end: %ld.",
-                i, dim_value, i, x_shape->GetDim(i), static_cast<int64_t>(pad_front), static_cast<int64_t>(pad_end));
+            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+                context->GetNodeName(), "y", std::to_string(dim_value).c_str(),
+                "The shape dim of y must be greater than or equal to 0");
             return ge::GRAPH_FAILED;
         }
         y_shape->SetDim(i, dim_value);
