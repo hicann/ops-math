@@ -258,6 +258,16 @@ aclnnStatus aclnnReduceSumGetWorkspaceSize(
         dims = uniqueExecutor.get()->AllocIntArray(appendDim, dimDum);
     }
 
+    // self为bool，dtype为int64处理 
+     if (selfType == op::DataType::DT_BOOL && dataType == op::DataType::DT_INT64) { 
+         static const size_t maxDim = 16777216; // 2^24 
+         size_t reduceDims = 1; 
+         for (int i = 0; i < static_cast<int>(dims->Size()); i++) { 
+             reduceDims *= shape[(*dims)[i]]; 
+         } 
+         promoteType = (reduceDims < maxDim) ? op::DataType::DT_FLOAT : op::DataType::DT_INT64; 
+     }
+
     if (IsNonContiguousSupport(self, promoteType, dims)) {
         OP_LOGD("Enter NonContigous");
         auto selfContiguous = uniqueExecutor.get()->CreateView(
@@ -280,14 +290,14 @@ aclnnStatus aclnnReduceSumGetWorkspaceSize(
         // 将输入self的数据类型进行转换
 
         const aclTensor* selfContiguousCasted = selfContiguous;
-        if (!(selfType == op::DataType::DT_BOOL && dataType == op::DataType::DT_INT64)) {
+        if (!(selfType == op::DataType::DT_BOOL && dataType == op::DataType::DT_INT64 && IsRegBase())) {
             selfContiguousCasted = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
             CHECK_RET(selfContiguousCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
         }
 
         // 调用ReduceSum算子kernel,将输入self的数据类型转换成指定的数据类型
         const aclTensor* reduceSumOut = nullptr;
-        if (dataType == op::DataType::DT_BOOL && dataType != op::DataType::DT_INT64) {
+        if (dataType == op::DataType::DT_BOOL) {
             reduceSumOut = l0op::ReduceAny(selfContiguousCasted, dims, keepDims, uniqueExecutor.get());
         } else {
             reduceSumOut = l0op::ReduceSumOp(selfContiguousCasted, dims, keepDims, uniqueExecutor.get());
