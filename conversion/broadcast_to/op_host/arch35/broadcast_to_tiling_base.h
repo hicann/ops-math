@@ -109,13 +109,16 @@ public:
         blockSize_ = static_cast<int64_t>(compileInfo->blockSize);
         cacheLine_ = static_cast<int64_t>(compileInfo->clSize);
         vlSize_ = static_cast<int64_t>(compileInfo->vRegSize);
-        OP_CHECK_IF(
-            (coreNum_ <= 0 || ubSize_ <= 0 || blockSize_ <= 0 || cacheLine_ <= 0 || vlSize_ <= 0),
-            OP_LOGE(context_->GetNodeName(),
-                                            "BroadcastTo GetHardwareInfo Failed, Core count:%ld, UB size:%ld, "
-                                            "Block size:%ld, Cache line:%ld, VL size:%ld.",
-                                            coreNum_, ubSize_, blockSize_, cacheLine_, vlSize_),
-            return ge::GRAPH_FAILED);
+        if (coreNum_ <= 0 || ubSize_ <= 0 || blockSize_ <= 0 || cacheLine_ <= 0 || vlSize_ <= 0) {
+            std::string valueMsg = "coreNum=" + std::to_string(coreNum_) + ", ubSize=" + std::to_string(ubSize_) +
+                                   ", blockSize=" + std::to_string(blockSize_) +
+                                   ", cacheLine=" + std::to_string(cacheLine_) +
+                                   ", vlSize=" + std::to_string(vlSize_);
+            std::string reasonMsg = "BroadcastTo GetHardwareInfo failed, all values must be positive.";
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                context_->GetNodeName(), "hardwareInfo", valueMsg.c_str(), reasonMsg.c_str());
+            return ge::GRAPH_FAILED;
+        }
 
         auto dtype = context_->GetInputDesc(0)->GetDataType();
         dtypeSize_ = GetSizeByDataType(dtype);

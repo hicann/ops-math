@@ -27,9 +27,13 @@ static ge::graphStatus Tiling4BroadcastTo(gert::TilingContext* context) {
   OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
   gert::Shape inShape;
   gert::Shape outShape;
-  OP_CHECK_IF(brcto::GetShapeInfo(context, inShape, outShape) != ge::GRAPH_SUCCESS,
-                  OP_LOGE(context->GetNodeName(), "Get input or output shape was failed!"),
-                  return ge::GRAPH_FAILED);
+  if (brcto::GetShapeInfo(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
+    std::string shapeMsg = "unknown";
+    std::string reasonMsg = "Failed to get input or output shape.";
+    OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+        context->GetNodeName(), "x or y", shapeMsg.c_str(), reasonMsg.c_str());
+    return ge::GRAPH_FAILED;
+  }
   return Tiling4BroadcastToAscendC(context, &inShape, &outShape);
 }
 
@@ -44,31 +48,51 @@ static ge::graphStatus TilingPrepare4BrcToAscendC(gert::TilingParseContext* cont
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
 
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF((compileInfo->coreNum <= 0),
-                    OP_LOGE(context->GetNodeName(), "The core num is negative."),
-                    return ge::GRAPH_FAILED);
+    if (compileInfo->coreNum <= 0) {
+        std::string valueMsg = std::to_string(compileInfo->coreNum);
+        std::string reasonMsg = "The core num must be positive.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "coreNum", valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ubSize = static_cast<int64_t>(ubSize);
-    OP_CHECK_IF((compileInfo->ubSize <= 0),
-                    OP_LOGE(context->GetNodeName(), "Failed to get ub size."),
-                    return ge::GRAPH_FAILED);
+    if (compileInfo->ubSize <= 0) {
+        std::string valueMsg = std::to_string(compileInfo->ubSize);
+        std::string reasonMsg = "Failed to get ub size, ub size must be positive.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "ubSize", valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     compileInfo->clSize = Ops::Base::GetCacheLineSize(context);
-    OP_CHECK_IF((compileInfo->clSize <= 0),
-                    OP_LOGE(context->GetNodeName(), "Failed to get cache line size."),
-                    return ge::GRAPH_FAILED);
+    if (compileInfo->clSize <= 0) {
+        std::string valueMsg = std::to_string(compileInfo->clSize);
+        std::string reasonMsg = "Failed to get cache line size, cache line size must be positive.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "clSize", valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     compileInfo->blockSize = Ops::Base::GetUbBlockSize(context);
-    OP_CHECK_IF((compileInfo->blockSize <= 0),
-                    OP_LOGE(context->GetNodeName(), "Failed to get block size."),
-                    return ge::GRAPH_FAILED);
+    if (compileInfo->blockSize <= 0) {
+        std::string valueMsg = std::to_string(compileInfo->blockSize);
+        std::string reasonMsg = "Failed to get block size, block size must be positive.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "blockSize", valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     compileInfo->vRegSize = Ops::Base::GetVRegSize(context);
-    OP_CHECK_IF((compileInfo->vRegSize <= 0),
-                    OP_LOGE(context->GetNodeName(), "Failed to get vReg size."),
-                    return ge::GRAPH_FAILED);
+    if (compileInfo->vRegSize <= 0) {
+        std::string valueMsg = std::to_string(compileInfo->vRegSize);
+        std::string reasonMsg = "Failed to get vReg size, vReg size must be positive.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "vRegSize", valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     OP_LOGD(context->GetNodeName(), "Exit TilingPrepare4BrcToAscendC.");
     return ge::GRAPH_SUCCESS;

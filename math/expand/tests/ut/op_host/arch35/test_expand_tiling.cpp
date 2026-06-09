@@ -34,22 +34,48 @@ class ExpandTilingTest : public testing::Test {
   }
 };
 
-// TEST_F(ExpandTilingTest, Expand_tiling_test_failed) {
-//     optiling::ExpandCompileInfo compileInfo;
-//     compileInfo.coreNum = 72;
-//     compileInfo.ubSize = 262144;
-//     compileInfo.clSize = 256;
-//     compileInfo.vRegSize = 256;
-//     compileInfo.blockSize = 32;
+TEST_F(ExpandTilingTest, Expand_tiling_test_success_1) {
+    optiling::ExpandCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    compileInfo.clSize = 128;
+    compileInfo.vRegSize = 256;
+    compileInfo.blockSize = 32;
 
-//     gert::StorageShape shape = {{1, 1, 1}, {1, 1, 1}};
-//     gert::StorageShape shape1 = {{1, 1, 313, 199}, {1, 1, 313, 199}};
-//     gert::TilingContextPara tilingContextPara(
-//         "Expand",
-//         {{ shape, ge::DT_UINT8, ge::FORMAT_ND }, { shape1, ge::DT_INT32, ge::FORMAT_ND }},
-//         {{ shape1, ge::DT_UINT8, ge::FORMAT_ND }},
-//         &compileInfo);
-//     uint64_t expectedTilingKey = 232000000;
-//     std::vector<size_t> expectedWorkspaces = { 16777216 };
-//     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
-// }
+    gert::StorageShape inshape = {{1, 1, 1}, {1, 1, 1}};
+    gert::StorageShape outshape = {{1, 1, 313, 199}, {1, 1, 313, 199}};
+    gert::StorageShape shape1 = {{4}, {4}};
+    int32_t shapes[4] = {1, 1, 313, 199};
+
+    gert::TilingContextPara tilingContextPara(
+        "Expand",
+        {{ inshape, ge::DT_UINT8, ge::FORMAT_ND }, { shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
+        {{ outshape, ge::DT_UINT8, ge::FORMAT_ND }},
+        &compileInfo);
+    uint64_t expectedTilingKey = 11003;
+    std::vector<size_t> expectedWorkspaces = { 16777216 };
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
+}
+
+TEST_F(ExpandTilingTest, Expand_tiling_test_fail_2) {
+    optiling::ExpandCompileInfo compileInfo;
+    compileInfo.coreNum = 64;
+    compileInfo.ubSize = 245760;
+    compileInfo.clSize = 128;
+    compileInfo.vRegSize = 256;
+    compileInfo.blockSize = 32;
+
+    gert::StorageShape inshape = {{1, 1, 313, 198}, {1, 1, 313, 198}};
+    gert::StorageShape outshape = {{1, 1, 313, 199}, {1, 1, 313, 199}};
+    gert::StorageShape shape1 = {{4}, {4}};
+    int32_t shapes[4] = {1, 1, 313, 199};
+
+    gert::TilingContextPara tilingContextPara(
+        "Expand",
+        {{ inshape, ge::DT_UINT8, ge::FORMAT_ND }, { shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
+        {{ outshape, ge::DT_UINT8, ge::FORMAT_ND }},
+        &compileInfo);
+    uint64_t expectedTilingKey = 11002;
+    std::vector<size_t> expectedWorkspaces = { 16777216 };
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
+}

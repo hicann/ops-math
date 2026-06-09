@@ -29,10 +29,13 @@ ge::graphStatus GetABFlag(const gert::TilingContext* context, const gert::Shape&
                           std::array<bool, MAX_DIM_NUM>& abInfo)
 {
     auto inDimNum = inShape.GetDimNum();
-    OP_CHECK_IF(
-        inDimNum != outShape.GetDimNum(),
-        OP_LOGE(context->GetNodeName(), "The input shape dims are different with output's!"),
-        return ge::GRAPH_FAILED);
+    if (inDimNum != outShape.GetDimNum()) {
+        std::string dimMsg = std::to_string(inDimNum) + " and " + std::to_string(outShape.GetDimNum());
+        std::string reasonMsg = "The input and output shape dim num should be equal.";
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     for (size_t idx = 0; idx < inDimNum; idx++) {
         abInfo[idx] = (inShape[idx] != outShape[idx]);
@@ -44,19 +47,26 @@ ge::graphStatus GetABFlag(const gert::TilingContext* context, const gert::Shape&
 ge::graphStatus MergeAxis(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape)
 {
     auto dimNum = inShape.GetDimNum();
-    OP_CHECK_IF(
-        dimNum != outShape.GetDimNum(),
-        OP_LOGE(context->GetNodeName(), "The input shape dims are different with output's!"),
-        return ge::GRAPH_FAILED);
+    if (dimNum != outShape.GetDimNum()) {
+        std::string dimMsg = std::to_string(dimNum) + " and " + std::to_string(outShape.GetDimNum());
+        std::string reasonMsg = "The input and output shape dim num should be equal.";
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     if (dimNum == 1) {
         return ge::GRAPH_SUCCESS;
     }
 
     std::array<bool, MAX_DIM_NUM> abInfo{};
-    OP_CHECK_IF(GetABFlag(context, inShape, outShape, abInfo) != ge::GRAPH_SUCCESS,
-                    OP_LOGE(context->GetNodeName(), "Failed to get axes info."),
-                    return ge::GRAPH_FAILED);
+    if (GetABFlag(context, inShape, outShape, abInfo) != ge::GRAPH_SUCCESS) {
+        std::string shapeMsg = "unknown";
+        std::string reasonMsg = "Failed to get axes info.";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     size_t mIdx = 0;
     for (size_t oIdx = 1; oIdx < dimNum; oIdx++) {
@@ -79,10 +89,13 @@ ge::graphStatus MergeAxis(const gert::TilingContext* context, gert::Shape& inSha
 ge::graphStatus DeleteOneSizeAxis(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape)
 {
     auto dimNum = inShape.GetDimNum();
-    OP_CHECK_IF(
-        dimNum != outShape.GetDimNum(),
-        OP_LOGE(context->GetNodeName(), "The input shape dims are different with output's!"),
-        return ge::GRAPH_FAILED);
+    if (dimNum != outShape.GetDimNum()) {
+        std::string dimMsg = std::to_string(dimNum) + " and " + std::to_string(outShape.GetDimNum());
+        std::string reasonMsg = "The input and output shape dim num should be equal.";
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     if (dimNum == 1) {
         return ge::GRAPH_SUCCESS;
@@ -130,10 +143,13 @@ static ge::graphStatus CheckBroadcastRule(const gert::TilingContext* context, co
                                           const gert::Shape& outShape)
 {
     auto outDimNum = outShape.GetDimNum();
-    OP_CHECK_IF(
-        inShape.GetDimNum() != outDimNum,
-        OP_LOGE(context->GetNodeName(), "The input shape dims are different with output's!"),
-        return ge::GRAPH_FAILED);
+    if (inShape.GetDimNum() != outDimNum) {
+        std::string dimMsg = std::to_string(inShape.GetDimNum()) + " and " + std::to_string(outDimNum);
+        std::string reasonMsg = "The input and output shape dim num should be equal.";
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     for (size_t i = 0; i < outDimNum; i++) {
         if (inShape[i] != 1 && outShape[i] != inShape[i]) {
@@ -175,34 +191,55 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
     }
 
     auto outDimNum = outShape.GetDimNum();
-    OP_CHECK_IF(inShape.GetDimNum() > outDimNum,
-                    OP_LOGE(context->GetNodeName(),
-                                                    "The input shape has more dimensions than output shape!"),
-                    return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        outDimNum > BRCTO_MAX_DIM_NUM,
-        OP_LOGE(context->GetNodeName(), "Not support the dim num: %lu yet!", outDimNum),
-        return ge::GRAPH_FAILED);
+    if (inShape.GetDimNum() > outDimNum) {
+        std::string dimMsg = std::to_string(inShape.GetDimNum()) + " and " + std::to_string(outDimNum);
+        std::string reasonMsg = "The input shape should not have more dimensions than output shape.";
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
+    if (outDimNum > BRCTO_MAX_DIM_NUM) {
+        std::string dimMsg = std::to_string(outDimNum);
+        std::string reasonMsg = "The output dim num should not be greater than " + std::to_string(BRCTO_MAX_DIM_NUM) + ".";
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+            context->GetNodeName(), "y", dimMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     AdjustShapesToSameDimNum(inShape, outDimNum);
-    OP_CHECK_IF(inShape.GetShapeSize() == 0 || outShape.GetShapeSize() == 0,
-                    OP_LOGE(context->GetNodeName(), "The input or output shape is empty!"),
-                    return ge::GRAPH_FAILED);
-    OP_CHECK_IF(CheckBroadcastRule(context, inShape, outShape) != ge::GRAPH_SUCCESS,
-                    OP_LOGE(context->GetNodeName(),
-                                                    "The input and output shapes mismatch the broadcast rule!"),
-                    return ge::GRAPH_FAILED);
+    if (inShape.GetShapeSize() == 0 || outShape.GetShapeSize() == 0) {
+        std::string shapeMsg = Shape2String(inShape) + " and " + Shape2String(outShape);
+        std::string reasonMsg = "The input or output shape must not be empty.";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
+    if (CheckBroadcastRule(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
+        std::string shapeMsg = Shape2String(inShape) + " and " + Shape2String(outShape);
+        std::string reasonMsg = "The input and output shapes mismatch the broadcast rule.";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     OP_LOGI(context->GetNodeName(), "The input and output is: %s and %s", Shape2String(inShape).c_str(),
             Shape2String(outShape).c_str());
 
-    OP_CHECK_IF(DeleteOneSizeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS,
-                    OP_LOGE(context->GetNodeName(), "Failed to delete one size axes!"),
-                    return ge::GRAPH_FAILED);
+    if (DeleteOneSizeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
+        std::string shapeMsg = Shape2String(inShape) + " and " + Shape2String(outShape);
+        std::string reasonMsg = "Failed to delete one size axes.";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     OP_LOGI(context->GetNodeName(), "The reshaped input and output is: %s and %s", Shape2String(inShape).c_str(),
             Shape2String(outShape).c_str());
 
-    OP_CHECK_IF(MergeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS,
-                    OP_LOGE(context->GetNodeName(), "Failed to merge axes!"),
-                    return ge::GRAPH_FAILED);
+    if (MergeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
+        std::string shapeMsg = Shape2String(inShape) + " and " + Shape2String(outShape);
+        std::string reasonMsg = "Failed to merge axes.";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     OP_LOGI(context->GetNodeName(), "The merged input and output is: %s and %s", Shape2String(inShape).c_str(),
             Shape2String(outShape).c_str());
 
@@ -610,12 +647,20 @@ ge::graphStatus BroadcastToTilingAscendC::SetBlockCnt()
 
 ge::graphStatus BroadcastToTilingAscendC::WriteTilingData()
 {
-    OP_CHECK_IF(SetBlockCnt() != ge::GRAPH_SUCCESS,
-                    OP_LOGE(context_->GetNodeName(), "Failed to set block dim!"),
-                    return ge::GRAPH_FAILED);
-    OP_CHECK_IF(context_->SetTilingKey(tilingKey_) != ge::GRAPH_SUCCESS,
-                    OP_LOGE(context_->GetNodeName(), "Failed to set tiling key!"),
-                    return ge::GRAPH_FAILED);
+    if (SetBlockCnt() != ge::GRAPH_SUCCESS) {
+        std::string valueMsg = std::to_string(usedCoreCnt_ * dFactor_);
+        std::string reasonMsg = "Failed to set block dim.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "blockDim", valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
+    if (context_->SetTilingKey(tilingKey_) != ge::GRAPH_SUCCESS) {
+        std::string valueMsg = std::to_string(tilingKey_);
+        std::string reasonMsg = "Failed to set tiling key.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "tilingKey", valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     tilingData_.set_tilingKey(tilingKey_);
     tilingData_.set_doubleMode(static_cast<uint8_t>(doubleMode_));
@@ -718,10 +763,13 @@ ge::graphStatus Tiling4BroadcastToAscendC(gert::TilingContext* context, const ge
     OP_CHECK_NULL_WITH_CONTEXT(context, outShapePtr);
     brcto::BroadcastToTilingAscendC brcToTiling(context, inShapePtr, outShapePtr);
 
-    OP_CHECK_IF((brcToTiling.GetHardwareInfo<BroadcastToCompileInfo>() != ge::GRAPH_SUCCESS),
-                    OP_LOGE(context->GetNodeName(),
-                                                    "BroadcastToTilingAscendC failed to get hardware info."),
-                    return ge::GRAPH_FAILED);
+    if (brcToTiling.GetHardwareInfo<BroadcastToCompileInfo>() != ge::GRAPH_SUCCESS) {
+        std::string valueMsg = "unknown";
+        std::string reasonMsg = "BroadcastToTilingAscendC failed to get hardware info.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "hardwareInfo", valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     return brcToTiling.DoTiling();
 }

@@ -64,9 +64,13 @@ void AdjustShapesToSameDimNum(gert::Shape& inShape, size_t outDimNum)
 ge::graphStatus DeleteOneSizeAxis(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape)
 {
     auto dimNum = inShape.GetDimNum();
-    OP_CHECK_IF(
-        dimNum != outShape.GetDimNum(),
-        OP_LOGE(context->GetNodeName(), "The input shape dims are different with output's!"), return ge::GRAPH_FAILED);
+    if (dimNum != outShape.GetDimNum()) {
+        std::string dimMsg = std::to_string(dimNum) + " and " + std::to_string(outShape.GetDimNum());
+        std::string reasonMsg = "The input and output shape dim num should be equal.";
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     if (dimNum == 1) {
         return ge::GRAPH_SUCCESS;
@@ -96,10 +100,13 @@ ge::graphStatus GetABFlag(const gert::TilingContext* context, const gert::Shape&
                           std::array<bool, MAX_DIM_NUM>& abInfo)
 {
     auto inDimNum = inShape.GetDimNum();
-    OP_CHECK_IF(
-        inDimNum != outShape.GetDimNum(),
-        OP_LOGE(context->GetNodeName(), "The input shape dims are different with output's!"),
-        return ge::GRAPH_FAILED);
+    if (inDimNum != outShape.GetDimNum()) {
+        std::string dimMsg = std::to_string(inDimNum) + " and " + std::to_string(outShape.GetDimNum());
+        std::string reasonMsg = "The input and output shape dim num should be equal.";
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     for (size_t idx = 0; idx < inDimNum; idx++) {
         abInfo[idx] = (inShape[idx] != outShape[idx]);
@@ -111,18 +118,26 @@ ge::graphStatus GetABFlag(const gert::TilingContext* context, const gert::Shape&
 ge::graphStatus MergeAxis(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape)
 {
     auto dimNum = inShape.GetDimNum();
-    OP_CHECK_IF(
-        dimNum != outShape.GetDimNum(),
-        OP_LOGE(context->GetNodeName(), "The input shape dims are different with output's!"), return ge::GRAPH_FAILED);
+    if (dimNum != outShape.GetDimNum()) {
+        std::string dimMsg = std::to_string(dimNum) + " and " + std::to_string(outShape.GetDimNum());
+        std::string reasonMsg = "The input and output shape dim num should be equal.";
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     if (dimNum == 1) {
         return ge::GRAPH_SUCCESS;
     }
 
     std::array<bool, MAX_DIM_NUM> abInfo{};
-    OP_CHECK_IF(
-        GetABFlag(context, inShape, outShape, abInfo) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "Failed to get axes info."), return ge::GRAPH_FAILED);
+    if (GetABFlag(context, inShape, outShape, abInfo) != ge::GRAPH_SUCCESS) {
+        std::string shapeMsg = "unknown";
+        std::string reasonMsg = "Failed to get axes info.";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     size_t mIdx = 0;
     for (size_t oIdx = 1; oIdx < dimNum; oIdx++) {
@@ -151,10 +166,13 @@ static ge::graphStatus ReadOutShapeFromTensor(const gert::TilingContext* context
     outShape.SetDimNum(shapeSize);
 
     ge::DataType dataType = shapeTensor->GetDataType();
-    OP_CHECK_IF(
-        (dataType != ge::DT_INT32) && (dataType != ge::DT_INT64),
-        OP_LOGE(context->GetNodeName(), "shape's dtype must be in (int32,int64)!"),
-        return ge::GRAPH_FAILED);
+    if ((dataType != ge::DT_INT32) && (dataType != ge::DT_INT64)) {
+        std::string dtypeMsg = Ops::Base::ToString(dataType);
+        std::string reasonMsg = "shape's dtype must be in (int32, int64).";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context->GetNodeName(), "shape", dtypeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     if (dataType == ge::DT_INT32) {
         const int32_t* values = shapeTensor->GetData<int32_t>();
@@ -187,8 +205,11 @@ static ge::graphStatus ApplyBroadcastRules(const gert::TilingContext* context, g
             continue;
         }
         if (xDim != 1 && xDim != outDim) {
-            OP_LOGE(context->GetNodeName(), "x dimension %ld at axis %zu cannot be broadcast to %ld!",
-                xDim, i, outDim);
+            std::string shapeMsg = "unknown";
+            std::string reasonMsg = "x dimension " + std::to_string(xDim) + " at axis " + std::to_string(i) +
+                                    " cannot be broadcast to " + std::to_string(outDim) + ".";
+            OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
     }
@@ -229,30 +250,65 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
     OP_CHECK_NULL_WITH_CONTEXT(context, xStorage);
     inShape = Ops::Base::EnsureNotScalar(xStorage->GetStorageShape());
 
-    OP_CHECK_IF(IsEmptyTensor(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "Do not support x or y is empty tensor!"), return ge::GRAPH_FAILED);
+    if (IsEmptyTensor(context) != ge::GRAPH_SUCCESS) {
+        std::string shapeMsg = "empty";
+        std::string reasonMsg = "Do not support x or y is empty tensor.";
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            context->GetNodeName(), "x or y", shapeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
-    OP_CHECK_IF(ReadOutShapeFromTensor(context, outShape) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "Failed to read outShape from tensor!"), return ge::GRAPH_FAILED);
+    if (ReadOutShapeFromTensor(context, outShape) != ge::GRAPH_SUCCESS) {
+        std::string shapeMsg = "unknown";
+        std::string reasonMsg = "Failed to read outShape from tensor.";
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            context->GetNodeName(), "shape", shapeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     OP_LOGD(context->GetNodeName(), "%s",
         ConcatString("input0 shape is ", Ops::Base::ToString(inShape).c_str(),
             ", input1 shape is ", Ops::Base::ToString(outShape).c_str()).c_str());
     auto outDimNum = outShape.GetDimNum();
-    OP_CHECK_IF(inShape.GetDimNum() > outDimNum, OP_LOGE(context->GetNodeName(),
-        "The input0 shape has more dimensions than input1 shape!"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(outDimNum > BRCTO_MAX_DIM_NUM, OP_LOGE(context->GetNodeName(),
-        "Not support the dim num: %lu yet!", outDimNum), return ge::GRAPH_FAILED);
+    if (inShape.GetDimNum() > outDimNum) {
+        std::string dimMsg = std::to_string(inShape.GetDimNum()) + " and " + std::to_string(outDimNum);
+        std::string reasonMsg = "The input0 shape should not have more dimensions than input1 shape.";
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+            context->GetNodeName(), "x and y", dimMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
+    if (outDimNum > BRCTO_MAX_DIM_NUM) {
+        std::string dimMsg = std::to_string(outDimNum);
+        std::string reasonMsg = "The output dim num should not be greater than " + std::to_string(BRCTO_MAX_DIM_NUM);
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+            context->GetNodeName(), "y", dimMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     AdjustShapesToSameDimNum(inShape, outDimNum);
-    OP_CHECK_IF(ApplyBroadcastRules(context, inShape, outShape) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "Failed to apply broadcast rules!"), return ge::GRAPH_FAILED);
+    if (ApplyBroadcastRules(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
+        std::string shapeMsg = "unknown";
+        std::string reasonMsg = "Failed to apply broadcast rules.";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     OP_LOGD(context->GetNodeName(), "%s",
         ConcatString("input0 and input1 infer output, output shape is ",
             Ops::Base::ToString(outShape).c_str()).c_str());
-    OP_CHECK_IF(DeleteOneSizeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "Failed to delete one size axes!"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(MergeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "Failed to merge axes!"), return ge::GRAPH_FAILED);
+    if (DeleteOneSizeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
+        std::string shapeMsg = "unknown";
+        std::string reasonMsg = "Failed to delete one size axes.";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
+    if (MergeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
+        std::string shapeMsg = "unknown";
+        std::string reasonMsg = "Failed to merge axes.";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     OP_LOGD(context->GetNodeName(), "%s",
         ConcatString("input0 shape MergeAxis result is ", Ops::Base::ToString(inShape).c_str(),
             ", output shape MergeAxis result is ", Ops::Base::ToString(outShape).c_str()).c_str());
@@ -265,11 +321,14 @@ ge::graphStatus Tiling4ExpandAscendC(
     OP_CHECK_NULL_WITH_CONTEXT(context, inShapePtr);
     OP_CHECK_NULL_WITH_CONTEXT(context, outShapePtr);
     brcto::BroadcastToTilingAscendC brcToTiling(context, inShapePtr, outShapePtr);
-    
-    OP_CHECK_IF(
-        (brcToTiling.GetHardwareInfo<ExpandCompileInfo>() != ge::GRAPH_SUCCESS),
-        OP_LOGE(context->GetNodeName(), "BroadcastToTilingAscendC failed to get hardware info."),
-        return ge::GRAPH_FAILED);
+
+    if (brcToTiling.GetHardwareInfo<ExpandCompileInfo>() != ge::GRAPH_SUCCESS) {
+        std::string valueMsg = "unknown";
+        std::string reasonMsg = "BroadcastToTilingAscendC failed to get hardware info.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "hardwareInfo", valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     return brcToTiling.DoTiling();
 }
@@ -282,9 +341,13 @@ static ge::graphStatus Tiling4Expand(gert::TilingContext* context)
     gert::Shape inShape;
     gert::Shape outShape;
 
-    OP_CHECK_IF(
-        GetShapeInfo(context, inShape, outShape) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "Get input or output shape was failed!"), return ge::GRAPH_FAILED);
+    if (GetShapeInfo(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
+        std::string shapeMsg = "unknown";
+        std::string reasonMsg = "Failed to get input or output shape.";
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+            context->GetNodeName(), "x or y", shapeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     return Tiling4ExpandAscendC(context, &inShape, &outShape);
 }
 
@@ -299,30 +362,51 @@ static ge::graphStatus TilingPrepare4Expand(gert::TilingParseContext* context)
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
 
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->coreNum <= 0), OP_LOGE(context->GetNodeName(), "The core num is negative."),
-        return ge::GRAPH_FAILED);
+    if (compileInfo->coreNum <= 0) {
+        std::string valueMsg = std::to_string(compileInfo->coreNum);
+        std::string reasonMsg = "The core num must be positive.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "coreNum", valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ubSize = static_cast<int64_t>(ubSize);
-    OP_CHECK_IF(
-        (compileInfo->ubSize <= 0), OP_LOGE(context->GetNodeName(), "Failed to get ub size."), return ge::GRAPH_FAILED);
+    if (compileInfo->ubSize <= 0) {
+        std::string valueMsg = std::to_string(compileInfo->ubSize);
+        std::string reasonMsg = "Failed to get ub size, ub size must be positive.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "ubSize", valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     compileInfo->clSize = Ops::Base::GetCacheLineSize(context);
-    OP_CHECK_IF(
-        (compileInfo->clSize <= 0), OP_LOGE(context->GetNodeName(), "Failed to get cache line size."),
-        return ge::GRAPH_FAILED);
+    if (compileInfo->clSize <= 0) {
+        std::string valueMsg = std::to_string(compileInfo->clSize);
+        std::string reasonMsg = "Failed to get cache line size, cache line size must be positive.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "clSize", valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     compileInfo->blockSize = Ops::Base::GetUbBlockSize(context);
-    OP_CHECK_IF(
-        (compileInfo->blockSize <= 0), OP_LOGE(context->GetNodeName(), "Failed to get block size."),
-        return ge::GRAPH_FAILED);
+    if (compileInfo->blockSize <= 0) {
+        std::string valueMsg = std::to_string(compileInfo->blockSize);
+        std::string reasonMsg = "Failed to get block size, block size must be positive.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "blockSize", valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     compileInfo->vRegSize = Ops::Base::GetVRegSize(context);
-    OP_CHECK_IF(
-        (compileInfo->vRegSize <= 0), OP_LOGE(context->GetNodeName(), "Failed to get vReg size."),
-        return ge::GRAPH_FAILED);
+    if (compileInfo->vRegSize <= 0) {
+        std::string valueMsg = std::to_string(compileInfo->vRegSize);
+        std::string reasonMsg = "Failed to get vReg size, vReg size must be positive.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "vRegSize", valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     OP_LOGD(context->GetNodeName(), "Exit TilingPrepare4Expand.");
     return ge::GRAPH_SUCCESS;
