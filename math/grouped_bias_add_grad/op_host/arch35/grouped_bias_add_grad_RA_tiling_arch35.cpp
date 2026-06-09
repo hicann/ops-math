@@ -50,10 +50,13 @@ ge::graphStatus GroupedBiasAddGradTilingArch35::GetInputOutputInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, gradYInputDesc);
     gradYDtype_ = gradYInputDesc->GetDataType();
 
-    OP_CHECK_IF(
-        (gradYDtype_ != ge::DT_FLOAT && gradYDtype_ != ge::DT_FLOAT16 && gradYDtype_ != ge::DT_BF16),
-        OP_LOGE(context_->GetNodeName(), "the dtype of input grad_y should be one of FP32/FP16/BF16."),
-        return ge::GRAPH_FAILED);
+    if (gradYDtype_ != ge::DT_FLOAT && gradYDtype_ != ge::DT_FLOAT16 && gradYDtype_ != ge::DT_BF16) {
+        std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(gradYDtype_);
+        std::string reasonMsg = "the dtype of input grad_y should be one of FP32/FP16/BF16";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "grad_y",
+            dtypeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     auto gradYInputShapePtr = context_->GetInputShape(GRAD_Y_INPUT_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, gradYInputShapePtr);
@@ -62,30 +65,36 @@ ge::graphStatus GroupedBiasAddGradTilingArch35::GetInputOutputInfo()
 
     // Get group_idx optional input info
     auto groupIdxInputShapePtr = context_->GetOptionalInputShape(GROUP_IDX_INPUT_IDX);
-    OP_CHECK_IF(
-        (gradYDimNum_ != RA_DIM_NUM || groupIdxInputShapePtr->GetStorageShape().GetDimNum() != 1),
-        OP_LOGE(
-            context_->GetNodeName(),
-            "the input grad_y should be 2D tensor when group_idx is not null. and group_idx must be 1D tensor."),
-        return ge::GRAPH_FAILED);
+    if (gradYDimNum_ != RA_DIM_NUM || groupIdxInputShapePtr->GetStorageShape().GetDimNum() != 1) {
+        std::string dimMsg = std::to_string(gradYDimNum_);
+        std::string reasonMsg = "the input grad_y should be 2D tensor when group_idx is not null, "
+            "and group_idx must be 1D tensor";
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "grad_y",
+            dimMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     dimGB_ = gradYInputShape.GetDim(0);
     dimG_ = groupIdxInputShapePtr->GetStorageShape().GetShapeSize();
     dimH_ = gradYInputShape.GetDim(1);
 
-    OP_CHECK_IF(
-        (dimG_ > INPUT_MAX_GROUP),
-        OP_LOGE(
-            context_->GetNodeName(), "the shpe size of group_idx can not be larger tah %ld, bug got %ld",
-            INPUT_MAX_GROUP, dimG_),
-        return ge::GRAPH_FAILED);
+    if (dimG_ > INPUT_MAX_GROUP) {
+        std::string valueMsg = std::to_string(dimG_);
+        std::string reasonMsg = "group size should be less than or equal to " + std::to_string(INPUT_MAX_GROUP);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "group size",
+            valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     auto groupIdxInputDesc = context_->GetInputDesc(GROUP_IDX_INPUT_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, groupIdxInputDesc);
     groupIdxDtype_ = groupIdxInputDesc->GetDataType();
-    OP_CHECK_IF(
-        (groupIdxDtype_ != ge::DT_INT32 && groupIdxDtype_ != ge::DT_INT64),
-        OP_LOGE(context_->GetNodeName(), "the dtype of input group_idx should be INT32 or INT64."),
-        return ge::GRAPH_FAILED);
+    if (groupIdxDtype_ != ge::DT_INT32 && groupIdxDtype_ != ge::DT_INT64) {
+        std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(groupIdxDtype_);
+        std::string reasonMsg = "the dtype of input group_idx should be INT32 or INT64";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "group_idx",
+            dtypeMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     OP_LOGD(context_, "Input info: dimG=%ld, dimGB=%ld, dimH=%ld", dimG_, dimGB_, dimH_);
     return ge::GRAPH_SUCCESS;
@@ -100,10 +109,13 @@ ge::graphStatus GroupedBiasAddGradTilingArch35::GetAttrInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, attrGroupIdxType);
 
     groupIdxType_ = static_cast<int32_t>(*attrGroupIdxType);
-    OP_CHECK_IF(
-        (groupIdxType_ != 0 && groupIdxType_ != 1),
-        OP_LOGE(context_->GetNodeName(), "the value of group_idx_type should be 0 or 1, but got %d", groupIdxType_),
-        return ge::GRAPH_FAILED);
+    if (groupIdxType_ != 0 && groupIdxType_ != 1) {
+        std::string valueMsg = std::to_string(groupIdxType_);
+        std::string correctMsg = "0 or 1";
+        OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "group_idx_type",
+            valueMsg.c_str(), correctMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     OP_LOGD(context_, "Attr info: groupIdxType=%d", groupIdxType_);
     return ge::GRAPH_SUCCESS;
@@ -116,20 +128,23 @@ ge::graphStatus GroupedBiasAddGradTilingArch35::CheckInputOutput()
     OP_CHECK_NULL_WITH_CONTEXT(context_, gradBiasOutputShapePtr);
     auto gradBiasOutputShape = gradBiasOutputShapePtr->GetStorageShape();
 
-    OP_CHECK_IF(
-        (gradBiasOutputShape.GetDimNum() != RA_DIM_NUM),
-        OP_LOGE(
-            context_->GetNodeName(), "the dim of grad_bias should be 2, but got %zu.", gradBiasOutputShape.GetDimNum()),
-        return ge::GRAPH_FAILED);
+    if (gradBiasOutputShape.GetDimNum() != RA_DIM_NUM) {
+        std::string dimMsg = std::to_string(gradBiasOutputShape.GetDimNum());
+        std::string correctMsg = "2";
+        OP_LOGE_FOR_INVALID_SHAPEDIM(context_->GetNodeName(), "grad_bias",
+            dimMsg.c_str(), correctMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     auto gradBiasDim0 = gradBiasOutputShape.GetDim(0);
     auto gradBiasDim1 = gradBiasOutputShape.GetDim(1);
-    OP_CHECK_IF(
-        ((gradBiasDim0 != dimG_) || (gradBiasDim1 != dimH_)),
-        OP_LOGE(
-            context_->GetNodeName(), "the shape of grad_bias should be [%ld, %ld], but got [%ld, %ld].", dimG_, dimH_,
-            gradBiasDim0, gradBiasDim1),
-        return ge::GRAPH_FAILED);
+    if ((gradBiasDim0 != dimG_) || (gradBiasDim1 != dimH_)) {
+        std::string shapeMsg = "[" + std::to_string(gradBiasDim0) + ", " + std::to_string(gradBiasDim1) + "]";
+        std::string correctMsg = "[" + std::to_string(dimG_) + ", " + std::to_string(dimH_) + "]";
+        OP_LOGE_FOR_INVALID_SHAPE(context_->GetNodeName(), "grad_bias",
+            shapeMsg.c_str(), correctMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     return ge::GRAPH_SUCCESS;
 }

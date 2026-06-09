@@ -65,18 +65,28 @@ ge::graphStatus RollTilingClass::GetPlatformInfo()
         aicoreParams_.ubSize = ubSizePlatForm;
     } else {
         auto compileInfoPtr = reinterpret_cast<const RollCompileInfoArch35*>(context_->GetCompileInfo());
-        OP_CHECK_IF(
-            compileInfoPtr == nullptr, OP_LOGE(context_->GetNodeName(), "compile info is null"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfoPtr);
         aicoreParams_.numBlocks = compileInfoPtr->core_num;
         aicoreParams_.ubSize = compileInfoPtr->ub_size;
     }
     cacheLineSize_ = Ops::Base::GetCacheLineSize(context_);
     OP_LOGD(context_, "cacheLineSize_ is: %ld", cacheLineSize_);
-    OP_CHECK_IF(cacheLineSize_ == 0LL, OP_LOGE(context_, "Failed to cache line size."), return ge::GRAPH_FAILED);
+    if (cacheLineSize_ == 0LL) {
+        std::string valueMsg = "0";
+        std::string reasonMsg = "Failed to get cacheLine size";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "cacheLineSize",
+            valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     vectorSize_ = static_cast<int64_t>(Ops::Base::GetVRegSize(context_));
     OP_LOGD(context_, "vectorSize_ is: %ld", vectorSize_);
-    OP_CHECK_IF(vectorSize_ == 0LL, OP_LOGE(context_, "Failed to vector size."), return ge::GRAPH_FAILED);
+    if (vectorSize_ == 0LL) {
+        std::string valueMsg = "0";
+        std::string reasonMsg = "Failed to get vector size";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "vectorSize",
+            valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     return ge::GRAPH_SUCCESS;
 }
 
@@ -105,7 +115,10 @@ ge::graphStatus RollTilingClass::CheckAndGetInputParam()
     const gert::Shape yShape = Ops::Base::EnsureNotScalar(yShapePtr_->GetStorageShape());
     OP_LOGD(context_, "Output y shape is: %s", Ops::Base::ToString(yShape).c_str());
     if (xShape != yShape) {
-        OP_LOGE(context_, "Input x shape should be equal to output y shape");
+        std::string shapeMsg = Ops::Base::ToString(xShape) + " and " + Ops::Base::ToString(yShape);
+        std::string reasonMsg = "Input x shape should be equal to output y shape";
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context_->GetNodeName(), "x and y",
+            shapeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     dimNum_ = xShape.GetDimNum();
@@ -114,9 +127,12 @@ ge::graphStatus RollTilingClass::CheckAndGetInputParam()
         shapes_[i] = xShape.GetDim(i);
     }
 
-    // 不支持8维
+    // 最大支持8维
     if (dimNum_ > MAX_DIM_NUM) {
-        OP_LOGE(context_, "Input x shape should less than or equal 8 dims");
+        std::string dimMsg = std::to_string(dimNum_);
+        std::string reasonMsg = "should be less than or equal to 8 dims";
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "x",
+            dimMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -141,7 +157,10 @@ ge::graphStatus RollTilingClass::CheckAttr()
     }
     if (dimsListPtr_ == nullptr || dimsListPtr_->GetSize() == 0) {
         if (shiftsSize > 1) {
-            OP_LOGE(context_, "shiftsSize should be 1");
+            std::string valueMsg = std::to_string(shiftsSize);
+            std::string reasonMsg = "shifts size should be 1 when dims is empty";
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "shifts",
+                valueMsg.c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
         dimNum_ = 1;
@@ -150,7 +169,10 @@ ge::graphStatus RollTilingClass::CheckAttr()
         int64_t dimsSize = dimsListPtr_->GetSize();
         OP_LOGD(context_, "dimsSize is: %ld", dimsSize);
         if (shiftsSize != dimsSize) {
-            OP_LOGE(context_, "shiftsSize should be equal to dimsSize");
+            std::string valuesMsg = std::to_string(shiftsSize) + " and " + std::to_string(dimsSize);
+            std::string reasonMsg = "the size of shifts should be equal to the size of dims";
+            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context_->GetNodeName(), "shifts and dims",
+                valuesMsg.c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
         const int64_t* dimsData = reinterpret_cast<const int64_t*>(dimsListPtr_->GetData());
@@ -158,9 +180,11 @@ ge::graphStatus RollTilingClass::CheckAttr()
             int64_t dimData = dimsData[i];
             int64_t shiftData = shiftsData[i];
             if (dimData >= dimNum_ || dimData < -dimNum_) {
-                OP_LOGE(
-                    context_, "Dimension out of range (expected to be in range of [%ld, %ld], but got %ld)", -dimNum_,
-                    dimNum_ - 1, dimData);
+                std::string valueMsg = std::to_string(dimData);
+                std::string correctMsg = "in range of [" + std::to_string(-dimNum_) + ", " +
+                    std::to_string(dimNum_ - 1) + "]";
+                OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "dims",
+                    valueMsg.c_str(), correctMsg.c_str());
                 return ge::GRAPH_FAILED;
             }
             if (dimData < 0) {
@@ -638,7 +662,7 @@ ge::graphStatus TilingPrepare4RollArch35(gert::TilingParseContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
     OP_LOGD(context->GetNodeName(), "Roll on regbase soc version no need to parse compile info.");
     fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
-    OP_CHECK_IF(platformInfoPtr == nullptr, OP_LOGE(context, "platformInfoPtr is null."), return ge::GRAPH_FAILED);
+    OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
     compile_info->core_num = ascendcPlatform.GetCoreNumAiv();
     OP_LOGD(context->GetNodeName(), "core_num is: %d.", compile_info->core_num);

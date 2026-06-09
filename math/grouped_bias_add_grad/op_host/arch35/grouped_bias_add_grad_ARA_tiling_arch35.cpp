@@ -37,10 +37,13 @@ static ge::graphStatus convertCompileInfo(
     reduceCompileInfo->vectorCoreNum = static_cast<uint64_t>(compileInfo->coreNum);
 
     uint64_t ubSize = static_cast<uint64_t>(compileInfo->ubSize);
-    OP_CHECK_IF(
-        ubSize <= static_cast<uint64_t>(CACHE_BUF_SIZE),
-        OP_LOGE(context, "ReduceOp GetHardwareInfo Failed, ubSize:%lu, at least:%lu.", ubSize, CACHE_BUF_SIZE),
-        return ge::GRAPH_FAILED);
+    if (ubSize <= static_cast<uint64_t>(CACHE_BUF_SIZE)) {
+        std::string valueMsg = std::to_string(ubSize);
+        std::string reasonMsg = "ubSize should be larger than " + std::to_string(CACHE_BUF_SIZE);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ubSize",
+            valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     reduceCompileInfo->ubSize = ubSize;
 
     return ge::GRAPH_SUCCESS;
@@ -80,7 +83,13 @@ static ge::graphStatus GetRIGinputParam(gert::TilingContext* context, ReduceOpIn
     OP_CHECK_NULL_WITH_CONTEXT(context, gradYInputShapePtr);
     auto gradYInputShape = gradYInputShapePtr->GetStorageShape();
     int32_t gradYDimNum_ = gradYInputShape.GetDimNum();
-    OP_CHECK_IF(gradYDimNum_ != ARA_DIM_NUM, OP_LOGE(context, "ARA gradYDimNum_ no equal 3"), return ge::GRAPH_FAILED);
+    if (gradYDimNum_ != ARA_DIM_NUM) {
+        std::string dimMsg = std::to_string(gradYDimNum_);
+        std::string correctMsg = std::to_string(ARA_DIM_NUM);
+        OP_LOGE_FOR_INVALID_SHAPEDIM(context->GetNodeName(), "grad_y",
+            dimMsg.c_str(), correctMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     OP_CHECK_IF(
         (ReduceOpTmpl::GetInputDtype(context, GRAD_Y_INPUT_IDX, opInput.inputDtype) == ge::GRAPH_FAILED),

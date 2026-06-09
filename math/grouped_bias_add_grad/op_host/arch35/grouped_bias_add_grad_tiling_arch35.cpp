@@ -30,21 +30,51 @@ static ge::graphStatus TilingGetCompileInfo(
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
 
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF((compileInfo->coreNum <= 0), OP_LOGE(context, "core num is negative."), return ge::GRAPH_FAILED);
+    if (compileInfo->coreNum <= 0) {
+        std::string valueMsg = std::to_string(compileInfo->coreNum);
+        std::string reasonMsg = "Failed to get core number";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "coreNum",
+            valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ubSize = static_cast<int64_t>(ubSize);
-    OP_CHECK_IF((compileInfo->ubSize <= 0L), OP_LOGE(context, "fail to get ub size."), return ge::GRAPH_FAILED);
+    if (compileInfo->ubSize <= 0L) {
+        std::string valueMsg = std::to_string(compileInfo->ubSize);
+        std::string reasonMsg = "Failed to get UB size";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ubSize",
+            valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     compileInfo->clSize = CACHELINE_DEFINE;
-    OP_CHECK_IF((compileInfo->clSize <= 0U), OP_LOGE(context, "fail to get cache line size."), return ge::GRAPH_FAILED);
+    if (compileInfo->clSize <= 0U) {
+        std::string valueMsg = std::to_string(compileInfo->clSize);
+        std::string reasonMsg = "Failed to get cache line size";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "clSize",
+            valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     compileInfo->blockSize = GetUbBlockSize(context);
-    OP_CHECK_IF((compileInfo->blockSize <= 0), OP_LOGE(context, "fail to get block size."), return ge::GRAPH_FAILED);
+    if (compileInfo->blockSize <= 0) {
+        std::string valueMsg = std::to_string(compileInfo->blockSize);
+        std::string reasonMsg = "Failed to get block size";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "blockSize",
+            valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     compileInfo->vRegSize = GetVRegSize(context);
-    OP_CHECK_IF((compileInfo->vRegSize <= 0U), OP_LOGE(context, "fail to get vReg size."), return ge::GRAPH_FAILED);
+    if (compileInfo->vRegSize <= 0U) {
+        std::string valueMsg = std::to_string(compileInfo->vRegSize);
+        std::string reasonMsg = "Failed to get vReg size";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "vRegSize",
+            valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     OP_LOGD(context, "Exit TilingGetCompileInfo.");
     return ge::GRAPH_SUCCESS;
@@ -74,13 +104,23 @@ ge::graphStatus TilingPrepare4GroupedBiasAddGradArch35(gert::TilingParseContext*
 
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->coreNum == 0), OP_LOGE(context->GetNodeName(), "Failed to get core number."),
-        return ge::GRAPH_FAILED);
+    if (compileInfo->coreNum == 0) {
+        std::string valueMsg = "0";
+        std::string reasonMsg = "Failed to get core number";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "coreNum",
+            valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
-    OP_CHECK_IF((ubSize == 0), OP_LOGE(context->GetNodeName(), "Failed to get UB size."), return ge::GRAPH_FAILED);
+    if (ubSize == 0) {
+        std::string valueMsg = "0";
+        std::string reasonMsg = "Failed to get UB size";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ubSize",
+            valueMsg.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     compileInfo->ubSize = ubSize;
 
     OP_LOGD(context->GetNodeName(), "Compile info: coreNum=%u, ubSize=%lu", compileInfo->coreNum, compileInfo->ubSize);

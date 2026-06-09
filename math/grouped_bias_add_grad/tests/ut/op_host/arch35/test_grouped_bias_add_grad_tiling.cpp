@@ -418,3 +418,97 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_CutG_ExceedMaxGroupIdx2049)
     std::vector<size_t> expectWorkspaces = {4096};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
 }
+
+// ============================================
+// 错误路径测试用例（覆盖OP_LOGE_FOR_*日志修改）
+// ============================================
+
+// 17. grad_y dtype不支持（INT32），期望报错 (EZ0020)
+TEST_F(TilingGroupedBiasAddGrad, ascend950_Failed_InvalidGradYDtype)
+{
+    optiling::GroupedBiasAddGradCompileInfoArch35 compileInfo = {253952, 64, 32, 128, 256};
+    gert::TilingContextPara tilingContextPara(
+        "GroupedBiasAddGrad",
+        {
+            {{{10, 32}, {10, 32}}, ge::DT_INT32, ge::FORMAT_ND},
+            {{{3}, {3}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{3, 32}, {3, 32}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
+        64, 253952);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// 18. grad_y不是2D tensor（3D输入带group_idx），期望报错 (EZ0012)
+TEST_F(TilingGroupedBiasAddGrad, ascend950_Failed_GradYNot2D)
+{
+    optiling::GroupedBiasAddGradCompileInfoArch35 compileInfo = {253952, 64, 32, 128, 256};
+    gert::TilingContextPara tilingContextPara(
+        "GroupedBiasAddGrad",
+        {
+            {{{2, 5, 32}, {2, 5, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{3}, {3}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{3, 32}, {3, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
+        64, 253952);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// 19. group_idx dtype不支持（FP32），期望报错 (EZ0020)
+TEST_F(TilingGroupedBiasAddGrad, ascend950_Failed_InvalidGroupIdxDtype)
+{
+    optiling::GroupedBiasAddGradCompileInfoArch35 compileInfo = {253952, 64, 32, 128, 256};
+    gert::TilingContextPara tilingContextPara(
+        "GroupedBiasAddGrad",
+        {
+            {{{10, 32}, {10, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {{{3, 32}, {3, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
+        64, 253952);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// 20. group_idx_type属性非法（值为2），期望报错 (EZ0024)
+TEST_F(TilingGroupedBiasAddGrad, ascend950_Failed_InvalidGroupIdxType)
+{
+    optiling::GroupedBiasAddGradCompileInfoArch35 compileInfo = {253952, 64, 32, 128, 256};
+    gert::TilingContextPara tilingContextPara(
+        "GroupedBiasAddGrad",
+        {
+            {{{10, 32}, {10, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{3}, {3}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{3, 32}, {3, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(2))}, &compileInfo,
+        64, 253952);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// 21. 输出grad_bias shape不匹配（dim0不等于dimG），期望报错 (EZ0008)
+TEST_F(TilingGroupedBiasAddGrad, ascend950_Failed_OutputShapeMismatch)
+{
+    optiling::GroupedBiasAddGradCompileInfoArch35 compileInfo = {253952, 64, 32, 128, 256};
+    gert::TilingContextPara tilingContextPara(
+        "GroupedBiasAddGrad",
+        {
+            {{{10, 32}, {10, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{3}, {3}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        {
+            {{{4, 32}, {4, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
+        64, 253952);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
