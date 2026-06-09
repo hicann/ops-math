@@ -118,7 +118,7 @@ aclnnStatus aclnnSlice(
       <td>INT64</td>
       <td>ND</td>
       <td>-</td>
-      <td>√</td>
+      <td>-</td>
     </tr>
     <tr>
       <td>end（int64_t）</td>
@@ -128,7 +128,7 @@ aclnnStatus aclnnSlice(
       <td>INT64</td>
       <td>ND</td>
       <td>-</td>
-      <td>√</td>
+      <td>-</td>
     </tr>
     <tr>
       <td>step（int64_t）</td>
@@ -138,7 +138,7 @@ aclnnStatus aclnnSlice(
       <td>INT64</td>
       <td>ND</td>
       <td>-</td>
-      <td>√</td>
+      <td>-</td>
     </tr>
     <tr>
       <td>out（aclTensor*）</td>
@@ -196,7 +196,7 @@ aclnnStatus aclnnSlice(
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的self、out是空指针时。。</td>
+      <td>传入的self、out是空指针时。</td>
     </tr>
     <tr>
       <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
