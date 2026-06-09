@@ -11,7 +11,7 @@
 #include "aclnn_polar.h"
 #include "aclnn_kernels/contiguous.h"
 #include "polar.h"
-#include "../../complex/op_host/op_api/complex.h"
+#include "../../complex/op_api/complex.h"
 #include "../../mul/op_api/mul.h"
 #include "../../sin/op_api/sin.h"
 #include "../../cos/op_api/cos.h"
