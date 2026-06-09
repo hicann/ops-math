@@ -43,20 +43,18 @@ bool DynamicPartitionTiling::CheckInputs()
     auto xDimNum = xShape_.GetDimNum();
     auto partDimNum = partShape_.GetDimNum();
 
-    OP_CHECK_IF(
-        xDimNum < partDimNum,
-        OP_LOGE(
-            context_->GetNodeName(), "The x dimension num is less than partition dimension num, which are %zu and %zu.",
-            xDimNum, partDimNum),
+    OP_CHECK_IF(xDimNum < partDimNum,
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context_->GetNodeName(), "x and partitions",
+            std::to_string(xDimNum) + " and " + std::to_string(partDimNum),
+            "The dimNum of input x should be greater than or equal to the dimNum of input partitions"),
         return false);
 
     for (size_t i = 0; i < partDimNum; ++i) {
         OP_CHECK_IF(xShape_.GetDim(i) != partShape_.GetDim(i),
-                        OP_LOGE(
-                            context_->GetNodeName(),
-                            "The %zu x dimension is not equal to partition dimension, which are %ld and %ld.", i,
-                            xShape_.GetDim(i), partShape_.GetDim(i)),
-                        return false);
+            OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context_->GetNodeName(), "x and partitions",
+                Ops::Base::ToString(xShape_) + " and " + Ops::Base::ToString(partShape_),
+                std::to_string(i) + " of x and " + std::to_string(i) + " of partitions must be equal"),
+            return false);
     }
     return true;
 }
@@ -257,9 +255,10 @@ ge::graphStatus DynamicPartitionTiling::GetAttrNumPartitions()
         OP_CHECK_NULL_WITH_CONTEXT(context_, ptrNumParts);
         int32_t numParts = *ptrNumParts;
         OP_CHECK_IF(numParts < 1,
-                        OP_LOGE(context_->GetNodeName(),
-                                                        "Get partition num is failed, which is %d!", numParts),
-                        return ge::GRAPH_FAILED);
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "num_partitions",
+                std::to_string(numParts),
+                "The value of num_partitions cannot be less than 1"),
+            return ge::GRAPH_FAILED);
         tilingData_.numPartitions = numParts;
         coreWS_ = std::min(tilingData_.numPartitions, ::DynPart::NUM_PARTITION_UNIT) * UINT64_BYTES;
     }

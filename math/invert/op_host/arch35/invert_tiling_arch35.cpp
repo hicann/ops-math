@@ -44,8 +44,10 @@ ge::graphStatus InvertTiling::CheckAndGetOutputDtype(ge::DataType& outputDtype)
     auto outputDesc = context_->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
     outputDtype = outputDesc->GetDataType();
-    OP_CHECK_IF(
-        inputDtype != outputDtype, OP_LOGE(context_->GetNodeName(), "input dtype is not same with output dtype."),
+    OP_CHECK_IF((inputDtype != outputDtype), 
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "y",
+            Ops::Base::ToString(outputDtype),
+            "the dtype of y must be the same as " + Ops::Base::ToString(inputDtype) + " of x"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -93,7 +95,11 @@ ge::graphStatus InvertTiling::RunTiling()
             break;
         }
         default: {
-            OP_LOGE(context_->GetNodeName(), "output dtype is not support. dtype: %d.", outputDtype);
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "y",
+                Ops::Base::ToString(outputDtype),
+                "the dtype of y must be within the range "
+                "{DT_INT8, DT_INT16, DT_INT32, DT_INT64, DT_UINT8, DT_UINT16, DT_UINT32, DT_UINT64}");
+            
             return ge::GRAPH_FAILED;
         }
     }
