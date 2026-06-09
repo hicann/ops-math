@@ -122,6 +122,11 @@ static inline aclnnStatus CheckParams(const aclTensor* self, const DataType dtyp
     // 3. 检查输入tensor的shape是否为异常，输出和输入的shape是否相同
     CHECK_RET(CheckShape(self, out), ACLNN_ERR_PARAM_INVALID);
 
+    // 4. 如果为非支持数据格式，输出warning日志，为向前兼容暂不做校验拦截
+    if (IsPrivateFormat(self->GetStorageFormat())) {
+        OP_LOGW("Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
+    }
+
     return ACLNN_SUCCESS;
 }
 
