@@ -183,7 +183,7 @@ __aicore__ inline int64_t GetTensorDim0Stride(const TILINGDATA& tilingData_, int
 {
     int64_t dim0stride = dim1;
     if (tilingData_.isNonContiguous) {
-        dim0stride = static_cast<int64_t>(tilingData_.strideList[idx]);
+        dim0stride = static_cast<int64_t>(tilingData_.arrays.strideList[idx]);
     }
     return dim0stride;
 }
@@ -193,7 +193,7 @@ __aicore__ inline int64_t GetNonConDimSize(const TILINGDATA& tilingData_, int64_
 {
     int64_t concatDimSize_ = 0;
     if (tilingData_.isNonContiguous) {
-        concatDimSize_ = static_cast<int64_t>(tilingData_.concatDimList[idx]);
+        concatDimSize_ = static_cast<int64_t>(tilingData_.arrays.concatDimList[idx]);
     } else {
         inputList_.GetDesc(desc_, idx);
         concatDimSize_ = desc_.GetShape(tilingData_.dim);

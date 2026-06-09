@@ -92,7 +92,7 @@ inline static ge::graphStatus ConcatSetTilingData(gert::TilingContext* context, 
 template <typename T>
 static inline void PrintTilingDataList(T &tilingData)
 {
-    auto strideList = tilingData.get_strideList();
+    auto strideList = tilingData.arrays.get_strideList();
     for (int32_t i = 0; i < tilingData.get_tensorNum(); i++) {
         OP_LOGI("[Concat list]","tensor: %d, stride: %ld", i, strideList[i]);
     }
@@ -723,10 +723,10 @@ inline static ge::graphStatus TilingBlock(gert::TilingContext* context, ConcatTi
 inline static void SetTensorListTilingData(ConcatTilingData& tilingData, ConcatTilingParam& param)
 {
     std::copy(param.endTensorIdx.begin(), param.endTensorIdx.end(), param.endIdxArr);
-    tilingData.set_endTensorIdx(param.endIdxArr);
+    tilingData.arrays.set_endTensorIdx(param.endIdxArr);
 
     std::copy(param.endTensorOffset.begin(), param.endTensorOffset.end(), param.endOffsetArr);
-    tilingData.set_endTensorOffset(param.endOffsetArr);
+    tilingData.arrays.set_endTensorOffset(param.endOffsetArr);
 }
 
 template <typename T>
@@ -752,14 +752,14 @@ inline static void SetTilingData(T& tilingData, ConcatTilingParam& param)
 
     int64_t preLoadSize = std::min(TILING_PRELOAD_DIM1_LENGTH, static_cast<int64_t>(param.tensorListDim1.size()));
     std::copy(param.tensorListDim1.begin(), param.tensorListDim1.begin() + preLoadSize, param.preLoadDim1Arr);
-    tilingData.set_preLoadDim1(param.preLoadDim1Arr);
+    tilingData.arrays.set_preLoadDim1(param.preLoadDim1Arr);
     tilingData.set_isNonContiguous(static_cast<int16_t>(param.isNonContiguous ? 1 : 0));
     if (param.isNonContiguous) {
         uint64_t strideList[NON_CON_TENSOR_SIZE];
         std::copy(param.strideList.begin(), param.strideList.end(), strideList);
-        tilingData.set_strideList(strideList);
+        tilingData.arrays.set_strideList(strideList);
         std::copy(param.concatDimList.begin(), param.concatDimList.end(), strideList);
-        tilingData.set_concatDimList(strideList);
+        tilingData.arrays.set_concatDimList(strideList);
     }
 }
 
@@ -991,7 +991,7 @@ inline static void SetTensorColsOffset(ConcatTilingDataForSimt& tilingData, Conc
     int32_t tilingList[TILING_COLS_OFFSET_LENGTH];
 
     std::copy(param.tensorColsOffset.begin(), param.tensorColsOffset.end(), tilingList);
-    tilingData.set_tensorColsOffset(tilingList);
+    tilingData.arrays.set_tensorColsOffset(tilingList);
 }
 
 static inline void PrintSimtTilingData(ConcatTilingDataForSimt& tilingData)

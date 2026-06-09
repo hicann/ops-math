@@ -36,6 +36,15 @@ const int32_t TILING_COLS_OFFSET_LENGTH = 128;
 constexpr size_t MAX_CONCAT_NUM = 64;
 constexpr int64_t NON_CON_TENSOR_SIZE = 32;
 
+BEGIN_TILING_DATA_DEF(ConcatTilingDataArrays)
+TILING_DATA_FIELD_DEF_ARR(int16_t, TILING_ARRAY_LENGTH, endTensorIdx);
+TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LENGTH, endTensorOffset);
+TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_PRELOAD_DIM1_LENGTH, preLoadDim1);
+TILING_DATA_FIELD_DEF_ARR(uint64_t, NON_CON_TENSOR_SIZE, strideList);
+TILING_DATA_FIELD_DEF_ARR(uint64_t, NON_CON_TENSOR_SIZE, concatDimList);
+END_TILING_DATA_DEF;
+REGISTER_TILING_DATA_CLASS(ConcatTilingDataArraysOp, ConcatTilingDataArrays)
+
 BEGIN_TILING_DATA_DEF(ConcatTilingData)
 TILING_DATA_FIELD_DEF(int16_t, ubSplitDim1); // ub是否切分concat部分
 TILING_DATA_FIELD_DEF(int16_t, dim);         // 要连接的dim
@@ -55,14 +64,16 @@ TILING_DATA_FIELD_DEF(int64_t, uoDim1);
 TILING_DATA_FIELD_DEF(int64_t, catDim1); // 输出1轴大小
 TILING_DATA_FIELD_DEF(int64_t, sameShapeTensorDim1);
 TILING_DATA_FIELD_DEF(int16_t, isFP4Type);
-TILING_DATA_FIELD_DEF_ARR(int16_t, TILING_ARRAY_LENGTH, endTensorIdx);
-TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LENGTH, endTensorOffset);
+TILING_DATA_FIELD_DEF_STRUCT(ConcatTilingDataArrays, arrays);
+END_TILING_DATA_DEF;
+REGISTER_TILING_DATA_CLASS(Concat, ConcatTilingData)
+
+BEGIN_TILING_DATA_DEF(ConcatTilingDataNoArrArrays)
 TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_PRELOAD_DIM1_LENGTH, preLoadDim1);
 TILING_DATA_FIELD_DEF_ARR(uint64_t, NON_CON_TENSOR_SIZE, strideList);
 TILING_DATA_FIELD_DEF_ARR(uint64_t, NON_CON_TENSOR_SIZE, concatDimList);
 END_TILING_DATA_DEF;
-
-REGISTER_TILING_DATA_CLASS(Concat, ConcatTilingData)
+REGISTER_TILING_DATA_CLASS(ConcatTilingDataNoArrArraysOp, ConcatTilingDataNoArrArrays)
 
 BEGIN_TILING_DATA_DEF(ConcatTilingDataNoArray)
 TILING_DATA_FIELD_DEF(int16_t, ubSplitDim1); // ub是否切分concat部分
@@ -83,9 +94,7 @@ TILING_DATA_FIELD_DEF(int64_t, uoDim1);
 TILING_DATA_FIELD_DEF(int64_t, catDim1); // 输出1轴大小
 TILING_DATA_FIELD_DEF(int64_t, sameShapeTensorDim1);
 TILING_DATA_FIELD_DEF(int16_t, isFP4Type);
-TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_PRELOAD_DIM1_LENGTH, preLoadDim1);
-TILING_DATA_FIELD_DEF_ARR(uint64_t, NON_CON_TENSOR_SIZE, strideList);
-TILING_DATA_FIELD_DEF_ARR(uint64_t, NON_CON_TENSOR_SIZE, concatDimList);
+TILING_DATA_FIELD_DEF_STRUCT(ConcatTilingDataNoArrArrays, arrays);
 END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(Concat_12111, ConcatTilingDataNoArray)
@@ -108,12 +117,17 @@ REGISTER_TILING_DATA_CLASS(Concat_12224, ConcatTilingDataNoArray)
 REGISTER_TILING_DATA_CLASS(Concat_12228, ConcatTilingDataNoArray)
 REGISTER_TILING_DATA_CLASS(Concat_20001, ConcatTilingDataNoArray)
 
+BEGIN_TILING_DATA_DEF(ConcatTilingDataForSimtArrays)
+TILING_DATA_FIELD_DEF_ARR(int32_t, TILING_COLS_OFFSET_LENGTH, tensorColsOffset); // 每个tensor计算的数据偏移
+END_TILING_DATA_DEF;
+REGISTER_TILING_DATA_CLASS(ConcatTilingDataForSimtArraysOp, ConcatTilingDataForSimtArrays)
+
 BEGIN_TILING_DATA_DEF(ConcatTilingDataForSimt)
 TILING_DATA_FIELD_DEF(int32_t, tensorNumPerCore);                                // 每个核处理的tensor数目
 TILING_DATA_FIELD_DEF(int32_t, tensorNum);                                       // 输入数据的tensor总数量
 TILING_DATA_FIELD_DEF(int32_t, catDim0);                                         // 合轴后输出的0轴大小
 TILING_DATA_FIELD_DEF(int32_t, catDim1);                                         // 合轴后输出的1轴大小
-TILING_DATA_FIELD_DEF_ARR(int32_t, TILING_COLS_OFFSET_LENGTH, tensorColsOffset); // 每个tensor计算的数据偏移
+TILING_DATA_FIELD_DEF_STRUCT(ConcatTilingDataForSimtArrays, arrays);             // 每个tensor计算的数据偏移
 END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(Concat_30001, ConcatTilingDataForSimt)

@@ -73,8 +73,8 @@ __aicore__ inline void OneAxisConcatSimt<T>::ProcessForSimt(GM_ADDR x, GM_ADDR y
         if (tensorIdx >= tilingData_.tensorNum) {
             return;
         }
-        uint32_t colsOffset = tensorIdx == 0 ? 0 : tilingData_.tensorColsOffset[tensorIdx - 1];
-        uint32_t colsSize = tilingData_.tensorColsOffset[tensorIdx] - colsOffset;
+        uint32_t colsOffset = tensorIdx == 0 ? 0 : tilingData_.arrays.tensorColsOffset[tensorIdx - 1];
+        uint32_t colsSize = tilingData_.arrays.tensorColsOffset[tensorIdx] - colsOffset;
         uint32_t magic = 0;
         uint32_t shift = 0;
 

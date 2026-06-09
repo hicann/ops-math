@@ -71,9 +71,7 @@ private:
     int64_t colsUsedCoreNum_ = 1;
     int64_t rowsUsedCoreNum_ = 1;
 
-    DataCopyPadExtParams<T> padParam_ = {false, 0, 0, 0};
     DataCopyExtParams copyInParam_ = {0, 0, 0, 0, 0};
-    DataCopyExtParams copyOutParam_ = {0, 0, 0, 0, 0};
 
     int64_t startTensorIdx_ = 0;
     int64_t startTensorOffset_ = 0;
@@ -90,10 +88,10 @@ __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::Init(GM_ADD
     if constexpr (IsSame<TILINGDATA, ConcatTilingData>::value) {
         int64_t colsUsedCoreNum = GetBlockNum() / tilingData_.uoDim0;
         if (blockIdx_ % colsUsedCoreNum != 0) {
-            startTensorIdx_ = tilingData_.endTensorIdx[blockIdx_ - 1];
-            startTensorOffset_ = tilingData_.endTensorOffset[blockIdx_ - 1];
+            startTensorIdx_ = tilingData_.arrays.endTensorIdx[blockIdx_ - 1];
+            startTensorOffset_ = tilingData_.arrays.endTensorOffset[blockIdx_ - 1];
         }
-        endTensorIdx_ = tilingData_.endTensorIdx[blockIdx_];
+        endTensorIdx_ = tilingData_.arrays.endTensorIdx[blockIdx_];
     }
     if (startTensorOffset_ == tilingData_.sameShapeTensorDim1) {
         startTensorIdx_ += 1;
@@ -612,6 +610,7 @@ __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::CopyInNoSpl
     int64_t curDim1Offset = 0;
     int64_t tensorStride = (rows * tilingData_.sameShapeTensorDim1 + numPerBlock_ - 1) / numPerBlock_ * numPerBlock_;
     LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
+    DataCopyPadExtParams<T> padParam = {false, 0, 0, 0};
     for (int64_t tensorIdx = startIdx; tensorIdx < endIdx; tensorIdx++) {
         int64_t dim0stride = GetTensorDim0Stride<TILINGDATA>(tilingData_, tensorIdx, tilingData_.sameShapeTensorDim1);
         if (tilingData_.isNonContiguous) {
@@ -622,7 +621,7 @@ __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::CopyInNoSpl
         srcGlobal_.SetGlobalBuffer(GetTensorAddr(tensorIdx, blockOffset_ * dim0stride));
         DataCopyPad<T, PaddingMode::Compact>(
             srcLocal[curDim1Offset], srcGlobal_[srcRowsOffset * dim0stride], copyInParam_,
-            padParam_);
+            padParam);
         curDim1Offset += tensorStride;
     }
     inQueue_.EnQue(srcLocal);
@@ -643,11 +642,12 @@ __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::CopyOut(
     int64_t dstOffset, int64_t rows, int64_t cols)
 {
     LocalTensor<T> dstLocal = outQueue_.DeQue<T>();
-    copyOutParam_.blockCount = rows;
-    copyOutParam_.blockLen = cols * sizeof(T);
-    copyOutParam_.srcStride = 0;
-    copyOutParam_.dstStride = (tilingData_.catDim1 - cols) * sizeof(T);
-    DataCopyPad(dstGlobal_[dstOffset], dstLocal, copyOutParam_);
+    DataCopyExtParams copyOutParam = {0, 0, 0, 0, 0};
+    copyOutParam.blockCount = rows;
+    copyOutParam.blockLen = cols * sizeof(T);
+    copyOutParam.srcStride = 0;
+    copyOutParam.dstStride = (tilingData_.catDim1 - cols) * sizeof(T);
+    DataCopyPad(dstGlobal_[dstOffset], dstLocal, copyOutParam);
     outQueue_.FreeTensor(dstLocal);
 }
 
@@ -655,11 +655,12 @@ template <typename T, typename U, typename TILINGDATA>
 __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::CopyOut(int64_t dstOffset, int64_t dataLen)
 {
     LocalTensor<T> dstLocal = outQueue_.DeQue<T>();
-    copyOutParam_.blockCount = 1;
-    copyOutParam_.blockLen = dataLen * sizeof(T);
-    copyOutParam_.srcStride = 0;
-    copyOutParam_.dstStride = 0;
-    DataCopyPad(dstGlobal_[dstOffset], dstLocal, copyOutParam_);
+    DataCopyExtParams copyOutParam = {0, 0, 0, 0, 0};
+    copyOutParam.blockCount = 1;
+    copyOutParam.blockLen = dataLen * sizeof(T);
+    copyOutParam.srcStride = 0;
+    copyOutParam.dstStride = 0;
+    DataCopyPad(dstGlobal_[dstOffset], dstLocal, copyOutParam);
     outQueue_.FreeTensor(dstLocal);
 }
 

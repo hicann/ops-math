@@ -12,7 +12,7 @@
  * \file concat_d.cpp
  * \brief
  */
-
+#define K_MAX_SHAPE_DIM 0
 #include "../concat/arch35/one_axis_concat_all_align.h"
 #include "../concat/arch35/one_axis_concat_no_align_diff_shape.h"
 #include "../concat/arch35/one_axis_concat_no_align_same_shape_copy.h"

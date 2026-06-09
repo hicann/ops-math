@@ -88,11 +88,11 @@ __aicore__ inline void OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::Init(GM_
         int64_t blockIdxInCols = blockIdx / colsUsedCoreNum_;
         int64_t blockIdxInRow = blockIdx - blockIdxInCols * colsUsedCoreNum_;
         if (blockIdxInRow != 0) {
-            startTensorOffset_ = tilingData_.endTensorOffset[blockIdxInRow - 1];
-            startTensorIdx_ = tilingData_.endTensorIdx[blockIdxInRow - 1];
+            startTensorOffset_ = tilingData_.arrays.endTensorOffset[blockIdxInRow - 1];
+            startTensorIdx_ = tilingData_.arrays.endTensorIdx[blockIdxInRow - 1];
         }
-        endTensorIdx_ = tilingData_.endTensorIdx[blockIdx];
-        endTensorOffset_ = tilingData_.endTensorOffset[blockIdx];
+        endTensorIdx_ = tilingData_.arrays.endTensorIdx[blockIdx];
+        endTensorOffset_ = tilingData_.arrays.endTensorOffset[blockIdx];
         blockOffset_ = blockIdxInCols * tilingData_.ubFactorDim0;
         int64_t colOffset = blockIdxInRow * tilingData_.blockFactor * tilingData_.ubFactorDim1;
         dstGlobal_.SetGlobalBuffer((__gm__ T*)dst + blockOffset_ * tilingData_.catDim1 + colOffset);
@@ -451,8 +451,8 @@ __aicore__ inline void OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::CopyOut(
 template <typename T, typename U, typename TILINGDATA>
 __aicore__ inline void OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::CopyOut(int64_t dstOffset, int64_t dataLen)
 {
-    LocalTensor<T> dstLocal = outQueue_.DeQue<T>();
     DataCopyExtParams copyOutParam = {0, 0, 0, 0, 0};
+    LocalTensor<T> dstLocal = outQueue_.DeQue<T>();
     copyOutParam.blockCount = 1;
     copyOutParam.blockLen = dataLen * sizeof(T);
     copyOutParam.dstStride = 0;

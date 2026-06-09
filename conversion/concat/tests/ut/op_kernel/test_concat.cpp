@@ -16,29 +16,36 @@
 #include "gtest/gtest.h"
 #include "tikicpulib.h"
 
+struct ConcatTilingDataNoArrArrays {
+    int64_t preLoadDim1[2];
+    uint64_t strideList[32];
+    uint64_t concatDimList[32];
+};
+
 struct ConcatTilingDataNoArray {
     int16_t ubSplitDim1;
     int16_t dim;
     int16_t tensorNum;
     int16_t dtypeSize;
     int16_t isNonContiguous;
-    uint8_t ubFactorDim0PH[2];
     int32_t ubFactorDim0;
     int32_t ubFactorDim1;
     int32_t tailUbFactorDim0;
     int32_t tailUbFactorDim1;
     int32_t bufferSize;
     int32_t dataPtrOffset;
-    uint8_t blockFactorPH[4];
     int64_t blockFactor;
     int64_t tailBlockFactor;
     int64_t uoDim0;
     int64_t uoDim1;
     int64_t catDim1;
     int64_t sameShapeTensorDim1;
-    int64_t preLoadDim1[2];
-    uint32_t strideList[32];
-    uint32_t concatDimList[32];
+    int16_t isFP4Type;
+    ConcatTilingDataNoArrArrays arrays;
+};
+
+struct ConcatTilingDataForSimtArrays {
+    int32_t tensorColsOffset[128];
 };
 
 struct ConcatTilingDataForSimt {
@@ -46,7 +53,7 @@ struct ConcatTilingDataForSimt {
     int32_t tensorNum;
     int32_t catDim0;
     int32_t catDim1;
-    int32_t tensorColsOffset[128];
+    ConcatTilingDataForSimtArrays arrays;
 };
 
 #include <algorithm>
@@ -107,12 +114,13 @@ TEST_F(ConcatTest, test_pure_copy_split_dim1_float32)
     tilingData->uoDim1 = OUT_DIM1;
     tilingData->catDim1 = OUT_DIM1;
     tilingData->sameShapeTensorDim1 = DIM1_PER_TENSOR;
+    tilingData->isFP4Type = 0;
     for (int i = 0; i < 2; i++) {
-        tilingData->preLoadDim1[i] = DIM1_PER_TENSOR;
+        tilingData->arrays.preLoadDim1[i] = DIM1_PER_TENSOR;
     }
     for (int i = 0; i < 32; i++) {
-        tilingData->strideList[i] = 0;
-        tilingData->concatDimList[i] = (i < TENSOR_NUM) ? DIM1_PER_TENSOR : 0;
+        tilingData->arrays.strideList[i] = 0;
+        tilingData->arrays.concatDimList[i] = (i < TENSOR_NUM) ? DIM1_PER_TENSOR : 0;
     }
 
     uint32_t numBlocks = 1;

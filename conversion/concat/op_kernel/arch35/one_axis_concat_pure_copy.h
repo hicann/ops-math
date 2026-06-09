@@ -60,8 +60,6 @@ private:
     uint32_t blockIdxInRow_{0};
 
     DataCopyExtParams copyInParam_{0, 0, 0, 0, 0};
-    DataCopyPadExtParams<int8_t> padParam_{false, 0, 0, 0};
-    DataCopyExtParams copyOutParam_{0, 0, 0, 0, 0};
 
     int64_t endTensorIdx_{0};
     int64_t endTensorOffset_{0};
@@ -82,11 +80,11 @@ __aicore__ inline void OneAxisConcatPureCopy<TILINGDATA>::Init(GM_ADDR x, GM_ADD
         blockIdxInCol_ = blockIdx_ % colsUsedCoreNum_;
         blockIdxInRow_ = blockIdx_ / colsUsedCoreNum_;
         if (blockIdxInCol_ != 0) {
-            startTensorIdx_ = tilingData_.endTensorIdx[blockIdx_ - 1];
-            startTensorOffset_ = tilingData_.endTensorOffset[blockIdx_ - 1];
+            startTensorIdx_ = tilingData_.arrays.endTensorIdx[blockIdx_ - 1];
+            startTensorOffset_ = tilingData_.arrays.endTensorOffset[blockIdx_ - 1];
         }
-        endTensorOffset_ = tilingData_.endTensorOffset[blockIdx_];
-        endTensorIdx_ = tilingData_.endTensorIdx[blockIdx_];
+        endTensorOffset_ = tilingData_.arrays.endTensorOffset[blockIdx_];
+        endTensorIdx_ = tilingData_.arrays.endTensorIdx[blockIdx_];
     }
     if constexpr (IsSame<TILINGDATA, ConcatTilingDataNoArray>::value) {
         blockOffset_ = static_cast<int64_t>(blockIdx_) * tilingData_.ubFactorDim0;
@@ -223,9 +221,10 @@ __aicore__ inline void OneAxisConcatPureCopy<TILINGDATA>::CopyInSingleTensor(
     const GlobalTensor<int8_t> srcGm, int64_t copyRows, int64_t copyCols, int64_t srcOffset, int64_t tensorDim1)
 {
     LocalTensor<int8_t> srcLocal = inQueue_.AllocTensor<int8_t>();
+    DataCopyPadExtParams<int8_t> padParam{false, 0, 0, 0};
     SetCopyInparam(copyRows, copyCols, tensorDim1 - copyCols, 0);
     DataCopyPad<int8_t, PaddingMode::Compact>(
-        srcLocal, srcGm[srcOffset * tilingData_.dtypeSize], copyInParam_, padParam_);
+        srcLocal, srcGm[srcOffset * tilingData_.dtypeSize], copyInParam_, padParam);
     inQueue_.EnQue(srcLocal);
 }
 
@@ -234,11 +233,12 @@ __aicore__ inline void OneAxisConcatPureCopy<TILINGDATA>::CopyOutSingleTensor(
     int64_t copyRows, int64_t copyCols, int64_t dstOffset)
 {
     LocalTensor<int8_t> dstLocal = inQueue_.DeQue<int8_t>();
-    copyOutParam_.blockCount = copyRows;
-    copyOutParam_.blockLen = copyCols * tilingData_.dtypeSize;
-    copyOutParam_.dstStride = (tilingData_.catDim1 - copyCols) * tilingData_.dtypeSize;
-    copyOutParam_.srcStride = 0;
-    DataCopyPad<int8_t, PaddingMode::Compact>(dstGlobal_[dstOffset * tilingData_.dtypeSize], dstLocal, copyOutParam_);
+    DataCopyExtParams copyOutParam{0, 0, 0, 0, 0};
+    copyOutParam.blockCount = copyRows;
+    copyOutParam.blockLen = copyCols * tilingData_.dtypeSize;
+    copyOutParam.dstStride = (tilingData_.catDim1 - copyCols) * tilingData_.dtypeSize;
+    copyOutParam.srcStride = 0;
+    DataCopyPad<int8_t, PaddingMode::Compact>(dstGlobal_[dstOffset * tilingData_.dtypeSize], dstLocal, copyOutParam);
     inQueue_.FreeTensor(dstLocal);
 }
 
@@ -256,7 +256,7 @@ template <typename TILINGDATA>
 __aicore__ inline int64_t OneAxisConcatPureCopy<TILINGDATA>::GetTensorDim1(int64_t idx)
 {
     if (idx < PRELOAD_DIM1_SIZE) {
-        return tilingData_.preLoadDim1[idx];
+        return tilingData_.arrays.preLoadDim1[idx];
     }
     int64_t dim1 = GetNonConDimSize<TILINGDATA, int8_t>(tilingData_, idx, inputList_, desc_) * tilingData_.sameShapeTensorDim1;
     if (tilingData_.isFP4Type) {
