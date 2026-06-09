@@ -15,6 +15,7 @@
  */
 
 #include "diag_tiling_arch35.h"
+#include <graph/utils/type_utils.h>
 #include "log/log.h"
 #include "util/math_util.h"
 #include "platform/platform_ascendc.h"
@@ -53,18 +54,22 @@ static ge::graphStatus TilingGetCompileInfo(gert::TilingContext* context, DiagCo
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
 
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        compileInfo->coreNum <= 0,
-        OP_LOGE(context->GetNodeName(), "Tiling4Diag fail to get core num."),
-        return ge::GRAPH_FAILED);
+    if (compileInfo->coreNum == 0) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "coreNum",
+            std::to_string(compileInfo->coreNum).c_str(),
+            "The value of coreNum must be greater than 0.");
+        return ge::GRAPH_FAILED;
+    }
 
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ubSize = static_cast<uint32_t>(ubSize);
-    OP_CHECK_IF(
-        compileInfo->ubSize <= 0,
-        OP_LOGE(context->GetNodeName(), "Tiling4Diag fail to get ub size."),
-        return ge::GRAPH_FAILED);
+    if (compileInfo->ubSize == 0) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ubSize",
+            std::to_string(compileInfo->ubSize).c_str(),
+            "The value of ubSize must be greater than 0.");
+        return ge::GRAPH_FAILED;
+    }
 
     OP_LOGD(context->GetNodeName(), "Exit TilingGetCompileInfo.");
     return ge::GRAPH_SUCCESS;
@@ -79,18 +84,21 @@ static ge::graphStatus TilingCheckInputParams(
     OP_CHECK_NULL_WITH_CONTEXT(context, input);
 
     auto inputShape = input->GetStorageShape();
-    OP_CHECK_IF(
-        inputShape.GetDimNum() < MIN_INPUT_DIM || inputShape.GetDimNum() > MAX_INPUT_DIM,
-        OP_LOGE(context->GetNodeName(), "Diag input dim(=%zu) should be in [1, 4].", inputShape.GetDimNum()),
-        return ge::GRAPH_FAILED);
+    if (inputShape.GetDimNum() < MIN_INPUT_DIM || inputShape.GetDimNum() > MAX_INPUT_DIM) {
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "input",
+            std::to_string(inputShape.GetDimNum()).c_str(),
+            "The dimNum of input must be within the range [1, 4].");
+        return ge::GRAPH_FAILED;
+    }
 
     auto dataType = input->GetDataType();
     *dtypeSize = ge::GetSizeByDataType(dataType);
-    OP_CHECK_IF(
-        *dtypeSize <= 0,
-        OP_LOGE(context->GetNodeName(), "Tiling4Diag fail to get dtype size, dataType=%d.",
-                static_cast<int>(dataType)),
-        return ge::GRAPH_FAILED);
+    if (*dtypeSize <= 0) {
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "input",
+            ge::TypeUtils::DataTypeToSerialString(dataType).c_str(),
+            "The dtype size of input must be greater than 0.");
+        return ge::GRAPH_FAILED;
+    }
 
     *nSize = inputShape.GetShapeSize();
 
@@ -123,16 +131,16 @@ static ge::graphStatus Tiling4Diag(gert::TilingContext* context)
 
     DiagCompileInfo compileInfo;
     auto ret = TilingGetCompileInfo(context, &compileInfo);
-    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "Tiling4Diag TilingGetCompileInfo failed."),
-        return ret);
+    if (ret != ge::GRAPH_SUCCESS) {
+        return ret;
+    }
 
     int64_t nSize = 0;
     int32_t dtypeSize = 0;
     ret = TilingCheckInputParams(context, &nSize, &dtypeSize);
-    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "Tiling4Diag TilingCheckInputParams failed."),
-        return ret);
+    if (ret != ge::GRAPH_SUCCESS) {
+        return ret;
+    }
 
     int64_t coreNum = static_cast<int64_t>(compileInfo.coreNum);
     int64_t ubSize = static_cast<int64_t>(compileInfo.ubSize);
@@ -172,16 +180,22 @@ static ge::graphStatus TilingPrepare4Diag(gert::TilingParseContext* context)
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
 
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        compileInfo->coreNum < 1, OP_LOGE(context->GetNodeName(), "TilingPrepare4Diag fail to get core num."),
-        return ge::GRAPH_FAILED);
+    if (compileInfo->coreNum == 0) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "coreNum",
+            std::to_string(compileInfo->coreNum).c_str(),
+            "The value of coreNum must be greater than 0.");
+        return ge::GRAPH_FAILED;
+    }
 
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ubSize = static_cast<uint32_t>(ubSize);
-    OP_CHECK_IF(
-        compileInfo->ubSize < 1, OP_LOGE(context->GetNodeName(), "TilingPrepare4Diag fail to get ub size."),
-        return ge::GRAPH_FAILED);
+    if (compileInfo->ubSize == 0) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ubSize",
+            std::to_string(compileInfo->ubSize).c_str(),
+            "The value of ubSize must be greater than 0.");
+        return ge::GRAPH_FAILED;
+    }
 
     return ge::GRAPH_SUCCESS;
 }

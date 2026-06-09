@@ -15,6 +15,7 @@
 
 #include <set>
 #include <string>
+#include <graph/utils/type_utils.h>
 #include "log/log.h"
 #include "util/math_util.h"
 #include "util/platform_util.h"
@@ -73,7 +74,9 @@ ge::graphStatus MemSetTilingClass::PostTiling()
     // Different sizes of tiling data templates
     const std::vector<int> validNums = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 32, 64, 128, 192, 256};
     if (inputCount_ > validNums.back()) {
-        OP_LOGE(context_, "TensorNum is %d unsupported", inputCount_);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "TensorNum",
+            std::to_string(inputCount_).c_str(),
+            "The value of TensorNum must be within the range [1, 256].");
         return ge::GRAPH_FAILED;
     }
     auto it = std::lower_bound(validNums.begin(), validNums.end(), inputCount_);
@@ -114,7 +117,12 @@ ge::graphStatus MemSetTilingClass::DoOpTiling()
 {
     for (uint16_t i = 0; i < inputCount_; i++) {
         uint32_t dataSize = ge::GetSizeByDataType(static_cast<ge::DataType>(listType_[i]));
-        OP_CHECK_IF(dataSize == 0, OP_LOGE(context_, "Failed to numBlocks."), return ge::GRAPH_FAILED);
+        if (dataSize == 0) {
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "listType",
+                ge::TypeUtils::DataTypeToSerialString(static_cast<ge::DataType>(listType_[i])).c_str(),
+                "The dtype of input must be within the range [INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64, FLOAT, FLOAT16].");
+            return ge::GRAPH_FAILED;
+        }
         uint64_t sizeByte = sizes_[i];
         if (sizeByte == 0ULL) {
             OP_LOGW(context_, "Input[%d] has zero size, skip tiling logic", i);
@@ -141,9 +149,7 @@ ge::graphStatus MemSetTilingClass::GetPlatformInfo()
     auto platformInfo = context_->GetPlatformInfo();
     if (isDynamic_ || platformInfo == nullptr) {
         auto compileInfoPtr = reinterpret_cast<const MemSetCompileInfoArch35*>(context_->GetCompileInfo());
-        OP_CHECK_IF(
-            compileInfoPtr == nullptr, OP_LOGE(context_->GetNodeName(), "compile info is null"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfoPtr);
         aicoreParams_.numBlocks = compileInfoPtr->coreNum;
         aicoreParams_.ubSize = compileInfoPtr->ubSize;
     } else {
@@ -153,11 +159,23 @@ ge::graphStatus MemSetTilingClass::GetPlatformInfo()
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
         aicoreParams_.ubSize = ubSizePlatForm;
     }
-    OP_CHECK_IF(aicoreParams_.numBlocks == 0LL, OP_LOGE(context_, "numBlocks is zero"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(aicoreParams_.ubSize == 0LL, OP_LOGE(context_, "ubSize is zero"), return ge::GRAPH_FAILED);
+    if (aicoreParams_.numBlocks == 0LL) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "numBlocks", "0",
+            "The value of numBlocks must be greater than 0.");
+        return ge::GRAPH_FAILED;
+    }
+    if (aicoreParams_.ubSize == 0LL) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize", "0",
+            "The value of ubSize must be greater than 0.");
+        return ge::GRAPH_FAILED;
+    }
     cacheLineSize_ = Ops::Base::GetCacheLineSize(context_);
     halfUbSize_ = aicoreParams_.ubSize / 2;
-    OP_CHECK_IF(cacheLineSize_ == 0LL, OP_LOGE(context_, "cache line size is zero"), return ge::GRAPH_FAILED);
+    if (cacheLineSize_ == 0LL) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "cacheLineSize", "0",
+            "The value of cacheLineSize must be greater than 0.");
+        return ge::GRAPH_FAILED;
+    }
     return ge::GRAPH_SUCCESS;
 }
 
@@ -185,7 +203,9 @@ ge::graphStatus MemSetTilingClass::SetShapeAttrsInfo(bool isGE)
     for (uint16_t i = 0; i < inputCount_; i++) {
         ge::DataType dtype = static_cast<ge::DataType>(dataTypesPtr->GetData()[i]);
         if (SUPPORT_TYPE_LIST.find(dtype) == SUPPORT_TYPE_LIST.end()) {
-            OP_LOGE(context_->GetNodeName(), "Not Support Type");
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "dataTypes",
+                ge::TypeUtils::DataTypeToSerialString(dtype).c_str(),
+                "The dtype of dataTypes must be within the range [INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64, FLOAT, FLOAT16].");
             return ge::GRAPH_FAILED;
         }
         listType_[i] = static_cast<uint16_t>(dtype);
@@ -209,11 +229,13 @@ ge::graphStatus MemSetTilingClass::SetShapeAttrsInfo(bool isGE)
         } else {
             sizes_[i] = sizesPtr->GetData()[i];
         }
-        OP_CHECK_IF(
-            sizes_[i] % ge::GetSizeByDataType(static_cast<ge::DataType>(listType_[i])) != 0,
-            OP_LOGE(
-                context_->GetNodeName(), "memory size must be a multiple of the type size, check the initvalue type"),
-            return ge::GRAPH_FAILED);
+        if (sizes_[i] % ge::GetSizeByDataType(static_cast<ge::DataType>(listType_[i])) != 0) {
+            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context_->GetNodeName(), "sizes and dataType",
+                (std::to_string(sizes_[i]) + " and " +
+                    ge::TypeUtils::DataTypeToSerialString(static_cast<ge::DataType>(listType_[i]))).c_str(),
+                "The value of sizes must be exactly divisible by dataType size.");
+            return ge::GRAPH_FAILED;
+        }
         OP_LOGI(context_, "dynamic is [%d] sizes[%u] is %ld", static_cast<int>(isDynamic_), i, sizes_[i]);
     }
     return ge::GRAPH_SUCCESS;
@@ -225,9 +247,22 @@ ge::graphStatus MemSetTilingClass::GetShapeAttrsInfo()
     const auto* dataTypesPtr = attrs->GetListInt(1);
     const auto* valueIntPtr = attrs->GetListInt(2);
     const auto* valueFloatPtr = attrs->GetListFloat(3);
-    OP_CHECK_IF(
-        sizesPtr == nullptr || dataTypesPtr == nullptr || valueIntPtr == nullptr || valueFloatPtr == nullptr,
-        OP_LOGE(context_->GetNodeName(), "attrPtr is nullptr"), return ge::GRAPH_FAILED);
+    if (sizesPtr == nullptr) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "sizes", "nullptr", "sizes cannot be nullptr.");
+        return ge::GRAPH_FAILED;
+    }
+    if (dataTypesPtr == nullptr) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "dataTypes", "nullptr", "dataTypes cannot be nullptr.");
+        return ge::GRAPH_FAILED;
+    }
+    if (valueIntPtr == nullptr) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "valueInt", "nullptr", "valueInt cannot be nullptr.");
+        return ge::GRAPH_FAILED;
+    }
+    if (valueFloatPtr == nullptr) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "valueFloat", "nullptr", "valueFloat cannot be nullptr.");
+        return ge::GRAPH_FAILED;
+    }
     uint16_t sizesDim = sizesPtr->GetCapacity();
     uint16_t dataTypesDim = dataTypesPtr->GetCapacity();
     uint16_t valueIntDim = valueIntPtr->GetCapacity();
@@ -276,15 +311,18 @@ ge::graphStatus TilingPrepare4MemSetArch35(gert::TilingParseContext* context)
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
-    OP_CHECK_IF(
-        ubSize == 0, OP_LOGE(context->GetNodeName(), "MemSetOp GetHardwareInfo Failed, ubSize:%lu.", ubSize),
-        return ge::GRAPH_FAILED);
+    if (ubSize == 0) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ubSize", "0",
+            "The value of ubSize must be greater than 0.");
+        return ge::GRAPH_FAILED;
+    }
     compileInfo->ubSize = ubSize;
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->coreNum == 0),
-        OP_LOGE(context->GetNodeName(), "MemSetOp GetHardwareInfo Failed, coreNum:%u", compileInfo->coreNum),
-        return ge::GRAPH_FAILED);
+    if (compileInfo->coreNum == 0) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "coreNum", "0",
+            "The value of coreNum must be greater than 0.");
+        return ge::GRAPH_FAILED;
+    }
 
     OP_LOGD(context->GetNodeName(), "GetCoreNum:%lu, ubSize:%lu.", compileInfo->coreNum, compileInfo->ubSize);
     return ge::GRAPH_SUCCESS;
