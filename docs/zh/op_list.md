@@ -2947,6 +2947,16 @@
     <td>生成均匀分布随机数。</td>
   </tr>
   <tr>
+      <td>math</td>
+      <td><a href="../../math/amp_update_scale/README.md">amp_update_scale</a></td>
+      <td>√</td>
+      <td>√</td>
+      <td>√</td>
+      <td>×</td>
+      <td>AI Core</td>
+      <td>实现AMP训练中的动态Scale更新，根据当前scale值、growth_tracker计数器以及是否发现Inf/NaN，动态调整loss scale大小。</td>
+  </tr>
+  <tr>
     <td>random</td>
     <td><a href="../../random/stateless_uniform/README.md">stateless_uniform</a></td>
     <td>√</td>
