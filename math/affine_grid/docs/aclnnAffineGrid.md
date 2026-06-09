@@ -68,7 +68,7 @@ aclnnStatus aclnnAffineGrid(
       <td>输入</td>
       <td>仿射变换参数，控制仿射变换过程中的旋转、缩放以及平移。</td>
       <td>-</td>
-      <td>-</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>(N, 2, 3)或(N, 3, 4)</td>
       <td>√</td>
@@ -80,7 +80,7 @@ aclnnStatus aclnnAffineGrid(
       <td>-</td>
       <td>-</td>
       <td>-</td>
-      <td>(N, C, H, W)或5(N, C, D, H, W)</td>
+      <td>(N, C, H, W)或(N, C, D, H, W)</td>
       <td>-</td>
     </tr>
     <tr>
@@ -124,6 +124,9 @@ aclnnStatus aclnnAffineGrid(
       <td>-</td>
     </tr>
   </tbody></table>
+- - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持数据类型FLOAT、FLOAT16、BFLOAT16
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持数据类型FLOAT、FLOAT16、BFLOAT16
+  - <term>Atlas 训练系列产品</term>：支持数据类型FLOAT、FLOAT16
   
 - **返回值：**
 

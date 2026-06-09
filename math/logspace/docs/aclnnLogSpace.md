@@ -77,7 +77,7 @@ aclnnStatus aclnnLogSpace(
       <td>输入</td>
       <td>表示LogSpace的第一个输入，对数序列的起始指数。</td>
       <td>-</td>
-      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、DOUBLE、UINT64、UINT32、UINT16、UINT8、INT64、INT32、INT16、INT8、BOOL</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>
@@ -87,7 +87,7 @@ aclnnStatus aclnnLogSpace(
       <td>输入</td>
       <td>表示LogSpace的第二个输入，对数序列的结束指数。</td>
       <td>-</td>
-      <td>FLOAT、FLOAT16、BFLOAT16</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、DOUBLE、UINT64、UINT32、UINT16、UINT8、INT64、INT32、INT16、INT8、BOOL</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>
