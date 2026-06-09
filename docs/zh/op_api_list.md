@@ -199,7 +199,7 @@
 | [aclnnLogicalNot&aclnnInplaceLogicalNot](../../math/logical_not/docs/aclnnLogicalNot&aclnnInplaceLogicalNot.md) | 计算给定输入Tensor的逐元素逻辑非。如果未指定输出类型，输出Tensor是bool类型。 | 默认确定性实现| 默认确定性实现|
 | [aclnnLogicalOr&aclnnInplaceLogicalOr](../../math/logical_or/docs/aclnnLogicalOr&aclnnInplaceLogicalOr.md) | 完成给定输入张量元素的逻辑或运算。当两个输入张量为非bool类型时，0被视为False，非0被视为True。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnLogicalXor](../../math/not_equal/docs/aclnnLogicalXor.md) | 完成给定输入张量元素的逻辑异或运算。当self和other为非bool类型时，0被视为False，非0被视为True。 | 默认确定性实现| 默认确定性实现 |
-| [aclnnLogSpace](../../math/logspace/docs/aclnnLogSpace.md) | 创建一个大小为$\text{steps}$的一维张量，其值在$\text{base}^\text{start}$到$\text{base}^\text{end}$上对数尺度上均匀间隔，包含端点，以$\text{base}$为底。                                      | 默认确定性实现| - |
+| [aclnnLogSpace](../../math/logspace/docs/aclnnLogSpace.md) | 创建一个大小为$\text{steps}$的一维张量，其值在$\text{base}^\text{start}$到$\text{base}^\text{end}$上对数尺度上均匀间隔，包含端点，以$\text{base}$为底。                                      | 默认确定性实现| 默认确定性实现 |
 | [aclnnLogSumExp](../../math/reduce_log_sum_exp/docs/aclnnLogSumExp.md) | 返回输入tensor指定维度上的指数之和的对数。                   | 默认确定性实现| 默认确定性实现|
 | [aclnnLtScalar&aclnnInplaceLtScalar](../../math/less/docs/aclnnLtScalar&aclnnInplaceLtScalar.md) | 判断输入self中的每个元素是否小于输入other的值，返回一个Bool类型的Tensor。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnLtTensor&aclnnInplaceLtTensor](../../math/less/docs/aclnnLtTensor&aclnnInplaceLtTensor.md) | 判断输入self中的每个元素是否小于输入other中的元素，返回一个Bool类型的Tensor。 | 默认确定性实现| 默认确定性实现 |
@@ -284,7 +284,7 @@
 | [aclnnSilentCheckV2](../../math/silent_check_v2/docs/aclnnSilentCheckV2.md) | 根据stepRef参数与马尔可夫不等式阈值来识别是否触发静默检测故障。 | 默认确定性实现| - |
 | [aclnnSimThreadExponential](../../random/sim_thread_exponential/docs/aclnnSimThreadExponential.md) | 生成服从参数为lambda的指数分布随机数，并将其填充到selfRef张量中。                                    | 默认确定性实现| 默认确定性实现 |
 | [aclnnSin&aclnnInplaceSin](../../math/sin/docs/aclnnSin&aclnnInplaceSin.md) | 对输入Tensor完成sin运算。                                    | 默认确定性实现| 默认确定性实现|
-| [aclnnSinc&aclnnInplaceSinc](../../math/sinc/docs/aclnnSinc&aclnnInplaceSinc.md) | 对输入Tensor完成sinc运算。                                   | 默认确定性实现| - |
+| [aclnnSinc&aclnnInplaceSinc](../../math/sinc/docs/aclnnSinc&aclnnInplaceSinc.md) | 对输入Tensor完成sinc运算。                                   | 默认确定性实现| 默认确定性实现 |
 | [aclnnSinh&aclnnInplaceSinh](../../math/sinh/docs/aclnnSinh&aclnnInplaceSinh.md) | 对输入Tensor完成sinh运算。                                   | 默认确定性实现| - |
 | [aclnnSinkhorn](../../math/sinkhorn/docs/aclnnSinkhorn.md)      | 计算Sinkhorn距离，可以用于MoE模型中的专家路由。              | 默认确定性实现| - |
 | [aclnnSlice](../../conversion/slice/docs/aclnnSlice.md) | 在指定维度dim上，根据给定的范围[start,end]和步长step，从输入张量self中提取子张量out。 | 默认确定性实现| 默认确定性实现|
