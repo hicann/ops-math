@@ -26,7 +26,6 @@
 #include "array_ops.h"
 #include "ge_ir_build.h"
 
-#include "experiment_ops.h"
 #include "nn_other.h"
 #include "../op_graph/random_uniform_int_v2_proto.h"
 
@@ -169,6 +168,7 @@ int32_t GenOnesDataFloat32(vector<int64_t> shapes, Tensor &input_tensor, TensorD
         *(pData + i) = value;
     }
     input_tensor = Tensor(input_tensor_desc, (uint8_t *)pData, data_len);
+    delete[] pData;
     return SUCCESS;
 }
 
@@ -181,11 +181,12 @@ int32_t GenOnesData(
         size *= shapes[i];
     }
     uint32_t data_len = size * GetDataTypeSize(data_type);
-    int32_t *pData = new (std::nothrow) int32_t[data_len];
+    int64_t *pData = new (std::nothrow) int64_t[size];
     for (uint32_t i = 0; i < size; ++i) {
-        *(pData + i) = value;
+        pData[i] = static_cast<int64_t>(value);
     }
     input_tensor = Tensor(input_tensor_desc, reinterpret_cast<uint8_t *>(pData), data_len);
+    delete[] pData;
     return SUCCESS;
 }
 

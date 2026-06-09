@@ -31,7 +31,6 @@
 #include "array_ops.h"
 #include "ge_ir_build.h"
 
-#include "experiment_ops.h"
 #include "nn_other.h"
 #include "../op_graph/drop_out_do_mask_v3_proto.h"
 
@@ -127,6 +126,7 @@ int32_t GenOnesDataFloat32(vector<int64_t> shapes, Tensor& input_tensor, TensorD
         *(pData + i) = value;
     }
     input_tensor = Tensor(input_tensor_desc, (uint8_t*)pData, data_len);
+    delete[] pData;
     return SUCCESS;
 }
 
@@ -139,11 +139,12 @@ int32_t GenOnesData(
         size *= shapes[i];
     }
     uint32_t data_len = size * GetDataTypeSize(data_type);
-    int32_t* pData = new (std::nothrow) int32_t[data_len];
+    int64_t *pData = new (std::nothrow) int64_t[size];
     for (uint32_t i = 0; i < size; ++i) {
-        *(pData + i) = value;
+        pData[i] = static_cast<int64_t>(value);
     }
-    input_tensor = Tensor(input_tensor_desc, reinterpret_cast<uint8_t*>(pData), data_len);
+    input_tensor = Tensor(input_tensor_desc, reinterpret_cast<uint8_t *>(pData), data_len);
+    delete[] pData;
     return SUCCESS;
 }
 
@@ -165,9 +166,26 @@ int CreateOppInGraph(
     std::vector<int64_t> xShape = {32};
     std::vector<int64_t> maskShape = {128};
     std::vector<int64_t> keep_prob_shape = {1};
-    ADD_INPUT(1, x, inDtype, xShape);
-    ADD_INPUT(2, mask, inDtype, maskShape);
-    ADD_INPUT(3, keep_prob, inDtype, keep_prob_shape);
+    ADD_INPUT(1, x, ge::DT_FLOAT, xShape);
+    {
+        auto placeholder2 = op::Data("placeholder2").set_attr_index(0);
+        TensorDesc desc2(ge::Shape(maskShape), FORMAT_ND, ge::DT_UINT8);
+        desc2.SetPlacement(ge::kPlacementHost);
+        desc2.SetFormat(FORMAT_ND);
+        uint8_t *mask_data = new (std::nothrow) uint8_t[128];
+        memset(mask_data, 1, 128);
+        Tensor tensor2(desc2, mask_data, 128);
+        delete[] mask_data;
+        placeholder2.update_input_desc_x(desc2);
+        placeholder2.update_output_desc_y(desc2);
+        input.push_back(tensor2);
+        graph.AddOp(placeholder2);
+        dropoutdomaskv3.set_input_mask(placeholder2);
+        inputs.push_back(placeholder2);
+    }
+    ADD_INPUT(3, keep_prob, ge::DT_FLOAT, keep_prob_shape);
+    float keep_prob_val = 0.5f;
+    memcpy(input.back().GetData(), &keep_prob_val, sizeof(float));
     outputs.push_back(dropoutdomaskv3);
     // 添加完毕
     return SUCCESS;
