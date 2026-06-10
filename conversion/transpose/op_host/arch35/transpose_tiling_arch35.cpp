@@ -116,7 +116,7 @@ ge::graphStatus TransposeNddmaTiling::TryVCONVTiling()
     auto arch = ascendcPlatform.GetCurNpuArch();
     if (arch == NpuArch::DAV_5102) {
         SMALL_SHAPE_BYTES_THRES_HOLD = SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102;
-        if (shapeInfo_.reducedPerm[0] == 1 && shapeInfo_.reducedPerm[1] == 0 && shapeInfo_.dim == 2 &&
+        if (!isReleatedTranspsoe_ && shapeInfo_.reducedPerm[0] == 1 && shapeInfo_.reducedPerm[1] == 0 && shapeInfo_.dim == 2 &&
             shapeInfo_.eleLenInBytes == 2 && shapeInfo_.reducedInShape[0] > DIM_FIVE) {
             TransposeWithVCONV::PlatInfo platInfo{coreNum_, ubSize_};
             TransposeWithVCONV::TransposeVCONVTiling vconvTiling(tilingContext_, platInfo, shapeInfo_);
