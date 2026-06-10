@@ -162,7 +162,7 @@ template <typename T, bool largest>
 __aicore__ inline void RadixTopKWs<T, largest>::SubProcess(uint64_t batchId)
 {
     this->involvedMask16_ = 0;
-    this->andMask16_ = ((1 << BITS_PER_ROUND) - 1) << (16 - BITS_PER_ROUND);
+    this->andMask16_ = 0xC000; // ((1 << BITS_PER_ROUND) - 1) << (16 - BITS_PER_ROUND);
     this->totalDefinitelyInTopK_ = 0;
     this->boundaryBin = 0;
     this->boundaryBinPrev = 1;
@@ -182,8 +182,8 @@ __aicore__ inline void RadixTopKWs<T, largest>::SubProcess(uint64_t batchId)
 
         for (int32_t repeatId = 0; repeatId <= tileNumBy3RepeatTimes_; repeatId++) {
             int32_t startTileId = repeatId * MAX_TILE_NUM_IN_UB_BY3;
-            int32_t endTileId = AscendC::Std::min(startTileId + MAX_TILE_NUM_IN_UB_BY3,
-                                                    this->tileNum_);
+            int32_t endTileId = AscendC::Std::min(static_cast<int32_t>(startTileId + MAX_TILE_NUM_IN_UB_BY3),
+                                                    static_cast<int32_t>(this->tileNum_));
             for (int32_t tileId = startTileId; tileId < endTileId; tileId++) {
                 PINGPONG_TILE_BEGIN(tileId, blockOffset);
 
@@ -300,7 +300,8 @@ __aicore__ inline void RadixTopKWs<T, largest>::HandleLastRoundBoundary(
         int32_t safeSumTileNum = FLOAT32_SAFE_INT / this->tileLen_ / int32Align * int32Align;
         int32_t segSize = dataNum < safeSumTileNum ? dataNum : safeSumTileNum;
         for (int32_t segOff = 0; segOff < dataNum; segOff += segSize) {
-            int32_t curSegLen = AscendC::Std::min(segSize, dataNum - segOff);
+            int32_t curSegLen = AscendC::Std::min(segSize, static_cast<int32_t>(dataNum - segOff));
+            SToVSync();
             ReduceSum(tileHistFp32, tileHistFp32[segOff], tileHistFp32[segOff], curSegLen);
             VToSSync();
             reduceSumValue += static_cast<int32_t>(tileHistFp32.GetValue(0));
@@ -376,7 +377,7 @@ __aicore__ inline void RadixTopKWs<T, largest>::WriteCoreTopKFromWs(
         MTE2ToVSync();
         int32_t segSize = dataNum < safeSumTileNum ? dataNum : safeSumTileNum;
         for (int32_t segOff = 0; segOff < dataNum; segOff += segSize) {
-            int32_t curSegLen = AscendC::Std::min(segSize, dataNum - segOff);
+            int32_t curSegLen = AscendC::Std::min(segSize, static_cast<int32_t>(dataNum - segOff));
             SToVSync();
             Cast(tileHistFp32, tileTopK[segOff], RoundMode::CAST_NONE, curSegLen);
             ReduceSum(tileHistFp32, tileHistFp32, tileHistFp32, curSegLen);
@@ -464,7 +465,8 @@ __aicore__ inline void RadixTopKWs<T, largest>::TileTopK(
     uint64_t startRepeatId = firstId / MAX_TILE_NUM_IN_UB;
     for (uint64_t repeatId = startRepeatId; repeatId <= tileNumRepeatTimes_; repeatId++) {
         uint64_t startTileId = repeatId * MAX_TILE_NUM_IN_UB;
-        uint64_t endTileId = AscendC::Std::min(startTileId + MAX_TILE_NUM_IN_UB, this->tileNum_);
+        uint64_t endTileId = AscendC::Std::min(static_cast<uint64_t>(startTileId + MAX_TILE_NUM_IN_UB),
+                                                static_cast<uint64_t>(this->tileNum_));
         if (repeatId > startRepeatId) {
             CopyTileTopKWs2Ub(tileTopK, repeatId * MAX_TILE_NUM_IN_UB, MAX_TILE_NUM_IN_UB);
             MTE2ToSSync();
@@ -477,7 +479,7 @@ __aicore__ inline void RadixTopKWs<T, largest>::TileTopK(
             uint64_t tileBaseOffset = blockOffset - batchId * this->sortLen_;
             uint64_t tileOffset = tileBaseOffset + tileId * this->tileLen_;
 
-            int32_t curTileK = tileTopK.GetValue(tileId - startTileId);
+            int32_t curTileK = tileTopK.GetValue(tileId - repeatId * MAX_TILE_NUM_IN_UB);
             PROCESS_ONE_TILE_TOPK_OR_SKIP(curTileK,
                 tileHistAndTopKBuf_.GetWithOffset<int32_t>(maxIndexLen,
                     this->tileNumAlign_ * sizeof(int32_t)));

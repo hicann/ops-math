@@ -163,7 +163,7 @@ template <typename T, bool largest>
 __aicore__ inline void RadixTopKUb<T, largest>::SubProcess(uint64_t batchId)
 {
     this->involvedMask16_ = 0;
-    this->andMask16_ = ((1 << BITS_PER_ROUND) - 1) << (16 - BITS_PER_ROUND);
+    this->andMask16_ = 0xC000; // ((1 << BITS_PER_ROUND) - 1) << (16 - BITS_PER_ROUND);
     this->totalDefinitelyInTopK_ = 0;
     this->boundaryBin = 0;
     this->boundaryBinPrev = 1;
@@ -238,7 +238,7 @@ __aicore__ inline bool RadixTopKUb<T, largest>::Update(const int32_t &roundId)
         int32_t safeSumTileNum = FLOAT32_SAFE_INT / this->tileLen_ / int32Align * int32Align;
         int32_t segSize = this->tileNum_ < safeSumTileNum ? this->tileNum_ : safeSumTileNum;
         for (int32_t segOff = 0; segOff < this->tileNum_; segOff += segSize) {
-            int32_t curSegLen = AscendC::Std::min(segSize, this->tileNum_ - segOff);
+            int32_t curSegLen = AscendC::Std::min(segSize, static_cast<int32_t>(this->tileNum_ - segOff));
             SToVSync();
             Cast(tileHistFp32, tileTopK[segOff], RoundMode::CAST_NONE, curSegLen);
             ReduceSum(tileHistFp32, tileHistFp32, tileHistFp32, curSegLen);
@@ -302,7 +302,7 @@ __aicore__ inline void RadixTopKUb<T, largest>::HandleLastRoundBoundary(
     int32_t segSize = this->tileNum_ < safeSumTileNum ? this->tileNum_ : safeSumTileNum;
     int32_t reduceSumValue = 0;
     for (int32_t segOff = 0; segOff < this->tileNum_; segOff += segSize) {
-        int32_t curSegLen = AscendC::Std::min(segSize, this->tileNum_ - segOff);
+        int32_t curSegLen = AscendC::Std::min(segSize, static_cast<int32_t>(this->tileNum_ - segOff));
         SToVSync();
         ReduceSum(tileHistFp32, tileHistFp32[segOff], tileHistFp32[segOff], curSegLen);
         VToSSync();

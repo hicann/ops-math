@@ -48,8 +48,8 @@ protected:
     // 7、保存Tiling数据
     ge::graphStatus PostTiling() override;
 
-    void CalcLargeTilingParams(const uint64_t &dataNum);
-    void CalcTilingParams(const uint64_t &dataNum);
+    bool CalcLargeTilingParams(const uint64_t &dataNum);
+    bool CalcTilingParams(const uint64_t &dataNum);
     void PrintTilingData();
 
     template<typename CheckUbFn>

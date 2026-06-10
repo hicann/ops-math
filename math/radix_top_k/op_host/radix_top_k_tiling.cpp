@@ -28,7 +28,7 @@ namespace RadixTopK {
 static constexpr uint64_t BLOCK_SIZE = 32;
 static constexpr uint64_t CACHE_LINE = 512;
 static constexpr uint64_t MAX_TILE_LEN = 12032;
-static constexpr uint64_t LARGE_SORT_LEN = 1448600000;
+static constexpr uint64_t LARGE_SORT_LEN = 1440000000;
 static constexpr uint64_t LARGE_TILE_LEN = 10496;
 static constexpr uint64_t MAX_TILE_NUM_IN_UB = 6144;
 static constexpr uint64_t INPUT_X = 0;
@@ -87,11 +87,18 @@ ge::graphStatus RadixTopKTiling::GetShapeAttrsInfo()
 ge::graphStatus RadixTopKTiling::DoOpTiling()
 {
     OP_LOGD(opName_, "RadixTopKTiling DoOpTiling.");
+    bool isCalcSuccess = false;
     if (!isLargeShape_) {
-        CalcTilingParams(tilingData_.sortLen);
+        isCalcSuccess = CalcTilingParams(tilingData_.sortLen);
+        if (!isCalcSuccess) {
+            isLargeShape_ = true;
+            isCalcSuccess = CalcLargeTilingParams(tilingData_.sortLen);
+        }
     } else {
-        CalcLargeTilingParams(tilingData_.sortLen);
+        isCalcSuccess = CalcLargeTilingParams(tilingData_.sortLen);
     }
+    OP_CHECK_IF((!isCalcSuccess), OP_LOGE(opName_, "RadixTopK Tiling failed."), return ge::GRAPH_FAILED);
+
     blockDim_ = tilingData_.formerCoreNum + tilingData_.tailCoreNum;
     tilingData_.coreNum = blockDim_;
     // 仅 UB 变体可复用 indices 内存（WS 变体的 tileTopK/tileHist 与 CopyOutResult 跨 core 冲突）
@@ -221,11 +228,11 @@ bool RadixTopKTiling::TryCalcTileDistribution(
             return true;
         }
     }
-    OP_LOGE(opName_, "Cannot find suitable tileLen to do RadixTopK.");
+    OP_LOGD(opName_, "Cannot find suitable tileLen to do RadixTopK.");
     return false;
 }
 
-void RadixTopKTiling::CalcLargeTilingParams(const uint64_t &dataNum)
+bool RadixTopKTiling::CalcLargeTilingParams(const uint64_t &dataNum)
 {
     uint64_t dataAlign = CACHE_LINE / xDtypeSize_;
     uint64_t minTileLen = dataAlign;
@@ -236,10 +243,10 @@ void RadixTopKTiling::CalcLargeTilingParams(const uint64_t &dataNum)
         return ubUsed <= ubSize_;
     };
 
-    TryCalcTileDistribution(dataNum, LARGE_TILE_LEN, minTileLen, dataAlign, checkUb);
+    return TryCalcTileDistribution(dataNum, LARGE_TILE_LEN, minTileLen, dataAlign, checkUb);
 }
 
-void RadixTopKTiling::CalcTilingParams(const uint64_t &dataNum)
+bool RadixTopKTiling::CalcTilingParams(const uint64_t &dataNum)
 {
     uint64_t coreNum = totalCoreNum_;
     uint64_t dataAlign = CACHE_LINE / xDtypeSize_;
@@ -264,7 +271,7 @@ void RadixTopKTiling::CalcTilingParams(const uint64_t &dataNum)
         startTileLen = utilCap;
     }
 
-    TryCalcTileDistribution(dataNum, startTileLen, minTileLen, dataAlign, checkUb);
+    return TryCalcTileDistribution(dataNum, startTileLen, minTileLen, dataAlign, checkUb);
 }
 
 void RadixTopKTiling::SetTilingData()

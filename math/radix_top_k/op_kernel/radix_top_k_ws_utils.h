@@ -233,7 +233,8 @@ __aicore__ inline void RadixTopKWs<T, largest>::ClearHistInWs(const int32_t &rou
     if (roundId == this->round_ - 1) {
         for (int i = 0; i < tileNumRepeatTimes_; i++) {
             Duplicate<int32_t>(tileHist, this->tileLen_, MAX_TILE_NUM_IN_UB);
-            if (tileNumRemain_ == 0 && this->tailTileLen_ != this->tileLen_) {
+            if (tileNumRemain_ == 0 && i == tileNumRepeatTimes_ - 1
+                && this->tailTileLen_ != this->tileLen_) {
                 tileHist.SetValue(MAX_TILE_NUM_IN_UB - 1, this->tailTileLen_);
             }
             DataCopyExtParams tileHistOutParams{
