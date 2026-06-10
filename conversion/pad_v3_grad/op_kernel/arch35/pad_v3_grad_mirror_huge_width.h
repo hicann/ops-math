@@ -20,7 +20,10 @@
 #include "pad_v3_grad_struct.h"
 
 namespace PadV3Grad {
-// constexpr uint32_t BUFFER_NUM = 2;
+constexpr uint8_t UB_AXIS_DATA_IDX = 4;
+constexpr uint8_t LEFT_PAD_IDX = 1;
+constexpr uint8_t RIGHT_PAD_IDX = 2;
+constexpr uint8_t MIRROR_SHAPE_MULTIPLIER = 2;
 using namespace AscendC;
 
 template <typename T1, typename T2>
@@ -90,7 +93,7 @@ public:
         pipe_ = pipe;
         tilingData_ = tilingData;
 
-        mode_ = (Mode == 2); // reflect=1, symmetric=0
+        mode_ = (Mode == TPL_MODE_REFLECT); // reflect=1, symmetric=0
 
         inResStart_ = 0;
         inSrcStart_ = 0;
@@ -226,8 +229,7 @@ private:
             leftUbStartIdx_ = (mode_ && outIndex_[mUbAxis_] == 0);
             leftUbAddLen_ =
                 min(mDataLen_, tilingData_->leftPad[mUbAxis_] + mode_ - outIndex_[mUbAxis_]) - leftUbStartIdx_;
-            // 当前块的左pad在输入中的索引
-            inIdxCnt[4].inGmIdx[1] =
+            inIdxCnt[UB_AXIS_DATA_IDX].inGmIdx[LEFT_PAD_IDX] =
                 tilingData_->leftPad[mUbAxis_] + mode_ - (outIndex_[mUbAxis_] + leftUbStartIdx_ + leftUbAddLen_);
         }
 
@@ -236,13 +238,11 @@ private:
             rightUbStartIdx_ = 0;
         } else {
             rightUbStartIdx_ = (originRightPadStartIndex_ <= outIndex_[mUbAxis_]) ?
-                                   0 :
-                                   originRightPadStartIndex_ - outIndex_[mUbAxis_];
+                0 : originRightPadStartIndex_ - outIndex_[mUbAxis_];
             rightUbAddLen_ = mDataLen_ - rightUbStartIdx_ -
-                             (mode_ && outIndex_[mUbAxis_] + mDataLen_ == tilingData_->outShape[mUbAxis_]);
-            inIdxCnt[4].inGmIdx[2] = 2 * tilingData_->outShape[mUbAxis_] + tilingData_->leftPad[mUbAxis_] -
-                                     (outIndex_[mUbAxis_] + rightUbStartIdx_ + rightUbAddLen_ + mode_);
-            // 当前块的右pad在输入中的索引
+                (mode_ && outIndex_[mUbAxis_] + mDataLen_ == tilingData_->outShape[mUbAxis_]);
+            inIdxCnt[UB_AXIS_DATA_IDX].inGmIdx[RIGHT_PAD_IDX] = MIRROR_SHAPE_MULTIPLIER * tilingData_->outShape[mUbAxis_] +
+                tilingData_->leftPad[mUbAxis_] - (outIndex_[mUbAxis_] + rightUbStartIdx_ + rightUbAddLen_ + mode_);
         }
 
         for (uint8_t i = 0; i < mDim_ - 1; ++i) {
@@ -259,7 +259,7 @@ private:
                 tilingData_->outShape[i] - outIndex_[i] - mode_ <= tilingData_->rightPad[i] &&
                 tilingData_->outShape[i] - outIndex_[i] - mode_ > 0) {
                 inIdxCnt[i].inGmIdx[inIdxCnt[i].cnt++] =
-                    (2 * tilingData_->outShape[i] - outIndex_[i] + tilingData_->leftPad[i] - 1 - mode_) *
+                    (MIRROR_SHAPE_MULTIPLIER * tilingData_->outShape[i] - outIndex_[i] + tilingData_->leftPad[i] - 1 - mode_) *
                     tilingData_->inStride[i];
             }
         }
@@ -586,7 +586,6 @@ private:
             WaitFlag<EVENT>(EVENT_ID0);
         }
     }
-
 }; // 类
 
 } // namespace PadV3Grad

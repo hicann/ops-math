@@ -44,6 +44,15 @@
 namespace PadV3Grad {
 using namespace AscendC;
 
+constexpr static int64_t MIN_DIM_FOR_H_PAD = 2;
+constexpr static int64_t MIN_DIM_FOR_C_PAD = 3;
+constexpr static int64_t MIN_DIM_FOR_N_PAD = 4;
+constexpr static int32_t MIN_DIM_FOR_D5_PAD = 5;
+
+constexpr static int32_t CAST_SPACE_MULTIPLIER = 2;
+constexpr static int32_t MIRROR_BOUNDARY_OFFSET_1 = 1;
+constexpr static int32_t MIRROR_BOUNDARY_OFFSET_2 = 2;
+
 struct PadGradNormalParam {
     uint32_t padWI;   // grad_y W (padded)
     uint32_t padWO;   // grad_x W (original)
@@ -122,7 +131,7 @@ public:
         if constexpr (IsSameType<T, PromoteDataT>::value) {
             tmpBufTileSize_ = tilingData_->outTileSize * sizeof(T);
         } else {
-            tmpBufTileSize_ = 2 * tilingData_->outTileSize * sizeof(T);
+            tmpBufTileSize_ = CAST_SPACE_MULTIPLIER * tilingData_->outTileSize * sizeof(T);
         }
         input_.SetGlobalBuffer((__gm__ T*)grad_y);
         output_.SetGlobalBuffer((__gm__ T*)grad_x);
@@ -146,20 +155,24 @@ public:
             inCopyLen_[i] = tilingData_->inShape[i];
         }
         // 检查 H 维度是否有 padding
-        if (dimNum_ >= 2) {
-            has2DPadding = (tilingData_->leftPad[dimNum_ - 2] > 0 || tilingData_->rightPad[dimNum_ - 2] > 0);
+        if (dimNum_ >= MIN_DIM_FOR_H_PAD) {
+            has2DPadding = (tilingData_->leftPad[dimNum_ - MIN_DIM_FOR_H_PAD] > 0 ||
+                tilingData_->rightPad[dimNum_ - MIN_DIM_FOR_H_PAD] > 0);
         }
         // 检查 C 维度是否有 padding
-        if (dimNum_ >= 3) {
-            has3DPadding = (tilingData_->leftPad[dimNum_ - 3] > 0 || tilingData_->rightPad[dimNum_ - 3] > 0);
+        if (dimNum_ >= MIN_DIM_FOR_C_PAD) {
+            has3DPadding = (tilingData_->leftPad[dimNum_ - MIN_DIM_FOR_C_PAD] > 0 ||
+                tilingData_->rightPad[dimNum_ - MIN_DIM_FOR_C_PAD] > 0);
         }
         // 检查 N 维度是否有 padding
-        if (dimNum_ >= 4) {
-            has4DPadding = (tilingData_->leftPad[dimNum_ - 4] > 0 || tilingData_->rightPad[dimNum_ - 4] > 0);
+        if (dimNum_ >= MIN_DIM_FOR_N_PAD) {
+            has4DPadding = (tilingData_->leftPad[dimNum_ - MIN_DIM_FOR_N_PAD] > 0 ||
+                tilingData_->rightPad[dimNum_ - MIN_DIM_FOR_N_PAD] > 0);
         }
         // 检查第5维是否有 padding
-        if (dimNum_ >= 5) {
-            has5DPadding = (tilingData_->leftPad[dimNum_ - 5] > 0 || tilingData_->rightPad[dimNum_ - 5] > 0);
+        if (dimNum_ >= MIN_DIM_FOR_D5_PAD) {
+            has5DPadding = (tilingData_->leftPad[dimNum_ - MIN_DIM_FOR_D5_PAD] > 0 ||
+                tilingData_->rightPad[dimNum_ - MIN_DIM_FOR_D5_PAD] > 0);
         }
     }
     __aicore__ inline void Process()
@@ -175,7 +188,6 @@ public:
         uint32_t endIdx = (blockIdx_ + 1L) * ubPerCount;
         endIdx = (endIdx < ubTotalCount ? endIdx : ubTotalCount);
 
-        
         PadGradNormalParam padParam = {
             .padWI = padWInLength_,   // grad_y W
             .padWO = padWOutLength_,  // grad_x W
@@ -425,17 +437,17 @@ private:
             }
 
             // 2. C 维度镜像 (如果 dimNum_ >= 3 且 C 有 padding)
-            if (dimNum_ >= 3 && has3DPadding) {
+            if (dimNum_ >= MIN_DIM_FOR_C_PAD && has3DPadding) {
                 ProcessCDimMirror(lineAddr, srcLocal, globalH, inW);
             }
 
             // 3. N 维度镜像 (如果 dimNum_ >= 4 且 N 有 padding)
-            if (dimNum_ >= 4 && has4DPadding) {
+            if (dimNum_ >= MIN_DIM_FOR_N_PAD && has4DPadding) {
                 ProcessNDimMirror(lineAddr, srcLocal, globalH, inW);
             }
 
             // 4. 第5维镜像 (如果 dimNum_ >= 5 且有 padding)
-            if (dimNum_ >= 5 && has5DPadding) {
+            if (dimNum_ >= MIN_DIM_FOR_D5_PAD && has5DPadding) {
                 ProcessDim5Mirror(lineAddr, srcLocal, globalH, inW);
             }
         }
@@ -461,17 +473,17 @@ private:
             }
 
             // 2. C×H 组合 (需要 C 有 padding 且 H 有 padding)
-            if (dimNum_ >= 3 && has3DPadding && has2DPadding) {
+            if (dimNum_ >= MIN_DIM_FOR_C_PAD && has3DPadding && has2DPadding) {
                 ProcessCxHSubPad(lineAddr, srcLocal, globalH, inW);
             }
 
             // 3. N×H 相关组合 (N×H, N×C×H)
-            if (dimNum_ >= 4 && has4DPadding) {
+            if (dimNum_ >= MIN_DIM_FOR_N_PAD && has4DPadding) {
                 ProcessNxHSubPad(lineAddr, srcLocal, globalH, inW);
             }
 
             // 4. D5×H 相关组合 (D5×H, D5×C×H, D5×N×H, D5×N×C×H)
-            if (dimNum_ >= 5 && has5DPadding) {
+            if (dimNum_ >= MIN_DIM_FOR_D5_PAD && has5DPadding) {
                 ProcessD5xHSubPad(lineAddr, srcLocal, globalH, inW);
             }
         }
@@ -1065,7 +1077,6 @@ private:
 
         __VEC_SCOPE__
         {
-            // uint32_t remainLen = inW;
             AscendC::MicroAPI::MaskReg mask;
             AscendC::MicroAPI::RegTensor<PromoteDataT> dstReg;
             AscendC::MicroAPI::RegTensor<PromoteDataT> srcUpReg;
@@ -1300,7 +1311,7 @@ private:
         if (condN.hasTop) {
             uint64_t gmAddr = baseGmAddr + condN.mirrorTop * tilingData_->inStride[dimNum_ - CONST4];
             CopyAndAddBlockFromGM(tmpLocal[dstOffset], srcLocal, gmAddr, dimCNum, dimHIn, padWI);
-            if (dimNum_ >= 5 && has5DPadding) {
+            if (dimNum_ >= MIN_DIM_FOR_D5_PAD && has5DPadding) {
                 ProcessSubPadD5xN_UB4(tmpLocal, srcLocal, condN.mirrorTop, dimCNum, dimHIn, padWI, dstOffset);
             }
         }
@@ -1309,7 +1320,7 @@ private:
         if (condN.hasBottom) {
             uint64_t gmAddr = baseGmAddr + condN.mirrorBottom * tilingData_->inStride[dimNum_ - CONST4];
             CopyAndAddBlockFromGM(tmpLocal[dstOffset], srcLocal, gmAddr, dimCNum, dimHIn, padWI);
-            if (dimNum_ >= 5 && has5DPadding) {
+            if (dimNum_ >= MIN_DIM_FOR_D5_PAD && has5DPadding) {
                 ProcessSubPadD5xN_UB4(tmpLocal, srcLocal, condN.mirrorBottom, dimCNum, dimHIn, padWI, dstOffset);
             }
         }
@@ -1325,13 +1336,11 @@ private:
         MirrorCondition condD5 = CalcMirrorCondition(
             globalD5, tilingData_->outShape[dimNum_ - CONST5],
             tilingData_->leftPad[dimNum_ - CONST5], tilingData_->rightPad[dimNum_ - CONST5]);
-
         if (condD5.hasTop) {
             uint64_t gmAddr = condD5.mirrorTop * tilingData_->inStride[dimNum_ - CONST5]
                             + mirrorN * tilingData_->inStride[dimNum_ - CONST4];
             CopyAndAddBlockFromGM(tmpLocal[dstOffset], srcLocal, gmAddr, dimCNum, dimHIn, padWI);
         }
-
         if (condD5.hasBottom) {
             uint64_t gmAddr = condD5.mirrorBottom * tilingData_->inStride[dimNum_ - CONST5]
                             + mirrorN * tilingData_->inStride[dimNum_ - CONST4];
@@ -1356,13 +1365,13 @@ private:
             uint64_t gmAddr = CalcGMAddrWithC(mirrorC);
             CopyAndAddPlaneFromGM(tmpLocal, srcLocal, gmAddr, dimHIn, padWI, dstOffset);
 
-            if (dimNum_ >= 4 && has4DPadding) {
+            if (dimNum_ >= MIN_DIM_FOR_N_PAD && has4DPadding) {
                 ProcessSubPadNxC(tmpLocal, srcLocal, mirrorC, dimHIn, padWI, dstOffset);
             }
-            if (dimNum_ >= 5 && has5DPadding) {
+            if (dimNum_ >= MIN_DIM_FOR_D5_PAD && has5DPadding) {
                 ProcessSubPadD5xC(tmpLocal, srcLocal, mirrorC, dimHIn, padWI, dstOffset);
             }
-            if (dimNum_ >= 5 && has4DPadding && has5DPadding) {
+            if (dimNum_ >= MIN_DIM_FOR_D5_PAD && has4DPadding && has5DPadding) {
                 ProcessSubPadNxD5xC(tmpLocal, srcLocal, mirrorC, dimHIn, padWI, dstOffset);
             }
         }
@@ -1434,13 +1443,13 @@ private:
         const uint32_t sliceSize = dimHIn * padWI;
 
         // ========== 主pad: 高维镜像不改变 C 范围 ==========
-        if (dimNum_ >= 4 && has4DPadding) {
+        if (dimNum_ >= MIN_DIM_FOR_N_PAD && has4DPadding) {
             ProcessMainPadN(tmpLocal, srcLocal, dimCNum, dimHIn, padWI);
         }
-        if (dimNum_ >= 5 && has5DPadding) {
+        if (dimNum_ >= MIN_DIM_FOR_D5_PAD && has5DPadding) {
             ProcessMainPadD5(tmpLocal, srcLocal, dimCNum, dimHIn, padWI);
         }
-        if (dimNum_ >= 5 && has4DPadding && has5DPadding) {
+        if (dimNum_ >= MIN_DIM_FOR_D5_PAD && has4DPadding && has5DPadding) {
             ProcessMainPadNxD5(tmpLocal, srcLocal, dimCNum, dimHIn, padWI);
         }
 
@@ -1476,37 +1485,37 @@ private:
         const uint32_t hStartInGradY = outIndex_[dimNum_ - CONST2] + leftPadH;
 
         // C 镜像 (dimNum_ >= 3)
-        if (dimNum_ >= 3 && has3DPadding) {
+        if (dimNum_ >= MIN_DIM_FOR_C_PAD && has3DPadding) {
             ProcessMainPadC_UB2(tmpLocal, srcLocal, dimHNum, padWI, hStartInGradY);
         }
 
         // N 镜像 (dimNum_ >= 4)
-        if (dimNum_ >= 4 && has4DPadding) {
+        if (dimNum_ >= MIN_DIM_FOR_N_PAD && has4DPadding) {
             ProcessMainPadN_UB2(tmpLocal, srcLocal, dimHNum, padWI, hStartInGradY);
         }
 
         // D5 镜像 (dimNum_ >= 5)
-        if (dimNum_ >= 5 && has5DPadding) {
+        if (dimNum_ >= MIN_DIM_FOR_D5_PAD && has5DPadding) {
             ProcessMainPadD5_UB2(tmpLocal, srcLocal, dimHNum, padWI, hStartInGradY);
         }
 
         // C×N 组合 (dimNum_ >= 4)
-        if (dimNum_ >= 4 && has3DPadding && has4DPadding) {
+        if (dimNum_ >= MIN_DIM_FOR_N_PAD && has3DPadding && has4DPadding) {
             ProcessMainPadCxN_UB2(tmpLocal, srcLocal, dimHNum, padWI, hStartInGradY);
         }
 
         // C×D5 组合 (dimNum_ >= 5)
-        if (dimNum_ >= 5 && has3DPadding && has5DPadding) {
+        if (dimNum_ >= MIN_DIM_FOR_D5_PAD && has3DPadding && has5DPadding) {
             ProcessMainPadCxD5_UB2(tmpLocal, srcLocal, dimHNum, padWI, hStartInGradY);
         }
 
         // N×D5 组合 (dimNum_ >= 5)
-        if (dimNum_ >= 5 && has4DPadding && has5DPadding) {
+        if (dimNum_ >= MIN_DIM_FOR_D5_PAD && has4DPadding && has5DPadding) {
             ProcessMainPadNxD5_UB2(tmpLocal, srcLocal, dimHNum, padWI, hStartInGradY);
         }
 
         // C×N×D5 组合 (dimNum_ >= 5)
-        if (dimNum_ >= 5 && has3DPadding && has4DPadding && has5DPadding) {
+        if (dimNum_ >= MIN_DIM_FOR_D5_PAD && has3DPadding && has4DPadding && has5DPadding) {
             ProcessMainPadCxNxD5_UB2(tmpLocal, srcLocal, dimHNum, padWI, hStartInGradY);
         }
     }
@@ -1690,7 +1699,6 @@ private:
         }
     }
 
-
     __aicore__ inline void GradAccumulateHighDimBulk_UB4(
         const LocalTensor<PromoteDataT>& tmpLocal, const LocalTensor<T>& srcLocal,
         uint32_t dimNNum, uint32_t dimCNum, uint32_t dimHIn, uint32_t padWI)
@@ -1698,7 +1706,7 @@ private:
         const uint32_t nSliceSize = dimCNum * dimHIn * padWI;
 
         // ========== 主pad: D5 镜像不改变 N 范围 ==========
-        if (dimNum_ >= 5 && has5DPadding) {
+        if (dimNum_ >= MIN_DIM_FOR_D5_PAD && has5DPadding) {
             ProcessMainPadD5_UB4(tmpLocal, srcLocal, dimNNum, dimCNum, dimHIn, padWI);
         }
 
@@ -2213,11 +2221,11 @@ private:
             (globalPos < leftPad);
         // 下/右镜像条件
         cond.hasBottom = (modeOffset_ == 0) ?
-            (rightPad > 0 && globalPos >= outDimSize - rightPad - 1 && globalPos <= outDimSize - 2) :
-            (rightPad > 0 && globalPos >= outDimSize - rightPad);
+            (rightPad > 0 && globalPos >= outDimSize - rightPad - MIRROR_BOUNDARY_OFFSET_1 &&
+                globalPos <= outDimSize - MIRROR_BOUNDARY_OFFSET_2) : (rightPad > 0 && globalPos >= outDimSize - rightPad);
         // 镜像位置计算
         cond.mirrorTop = leftPad - modeOffset_ - globalPos;
-        cond.mirrorBottom = leftPad + 2 * outDimSize - 2 + modeOffset_ - globalPos;
+        cond.mirrorBottom = leftPad + MIRROR_BOUNDARY_OFFSET_2 * outDimSize - MIRROR_BOUNDARY_OFFSET_2 + modeOffset_ - globalPos;
         return cond;
     }
 

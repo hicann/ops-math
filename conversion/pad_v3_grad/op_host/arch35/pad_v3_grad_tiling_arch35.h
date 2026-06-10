@@ -107,10 +107,10 @@ private:
     uint64_t blockSize_{32};
     uint64_t vectorSize_{256};
     uint32_t cacheLineSize_{256};
-    PadV3GradACTilingData* tilingData_;
+    PadV3GradACTilingData* tilingData_ = nullptr;
 
     // tiling key
-    uint64_t tilingKey_;
+    uint64_t tilingKey_{0};
     uint8_t padMode_{TPL_MODE_REFLECT};
     bool isBigShape_{false};
     bool isSimt_{true};
@@ -128,7 +128,7 @@ private:
     bool isEmptyTensor_{false};
     uint16_t inputRank_{0};
     padV3GradPaddingInfo paddings_;
-    ge::DataType paramsDtype_;
+    ge::DataType paramsDtype_{ge::DT_UNDEFINED};;
     uint32_t dtypeBytes_{0};
     uint64_t bufferSize_{4};
 
