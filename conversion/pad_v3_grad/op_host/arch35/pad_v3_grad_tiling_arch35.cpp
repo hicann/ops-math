@@ -690,8 +690,14 @@ void PadV3GradACTiling::GetPaddingsToShape(const gert::Tensor* paddingsTensor)
 {
     OP_LOGD(context_, "Start PadV3GradACTiling GetShapeAttrsInfo GetPaddings GetPaddingsToShape.");
     const T* paddingsValue = paddingsTensor->GetData<T>();
-    const size_t paddingsNum = static_cast<size_t>(paddingsTensor->GetShapeSize());
-
+    const int64_t paddingsNumInt64 = paddingsTensor->GetShapeSize();
+    if (paddingsNumInt64 < 0) {
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
+            context_->GetNodeName(), "paddingsTensor", std::to_string(paddingsNumInt64).c_str(),
+            "The shape size of paddingsTensor must be within the range representable by the uint32_t type");
+        return;
+    }
+    const size_t paddingsNum = static_cast<size_t>(paddingsNumInt64);
     size_t inputDimNum = paddingsNum / PAIR;
     paddings_.padFront.SetDimNum(inputDimNum);
     paddings_.padBack.SetDimNum(inputDimNum);
@@ -903,9 +909,6 @@ ge::graphStatus PadV3GradACTiling::DoTiling()
 static ge::graphStatus PadV3GradTiling(gert::TilingContext* context)
 {
     OP_LOGD(context->GetNodeName(), "PadV3GradTiling running begin");
-    const PadV3GradCompileInfo* compile_info = reinterpret_cast<const PadV3GradCompileInfo*>(context->GetCompileInfo());
-    OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
-    OP_LOGD(context->GetNodeName(), "Tiling4Pad dsl compile_info is Null, running AscendC tiling.");
     PadV3GradACTiling tilingObject(context);
     return tilingObject.DoTiling();
 }
