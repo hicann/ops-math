@@ -107,7 +107,7 @@ private:
     gert::TilingContext* context_;
 
 public:
-    explicit Im2ColTiling(gert::TilingContext* context) : context_(context){};
+    explicit Im2ColTiling(gert::TilingContext* context) : context_(context) {};
     ~Im2ColTiling();
 
     ge::graphStatus DoTiling();
@@ -318,7 +318,9 @@ ge::graphStatus Im2ColTiling::CheckPadding(const gert::RuntimeAttrs* attrs)
         CalcNeedPadding(input_.H, effectH_, input_.hStride, input_.hPaddingBefore, input_.hPaddingAfter);
         CalcNeedPadding(input_.W, effectW_, input_.wStride, input_.wPaddingBefore, input_.wPaddingAfter);
     } else {
-        OP_LOGE(context_, "padding_mode should be \"CALCULATED\", \"SAME\", or \"VALID\", but got %s", paddingMode);
+        std::string reasonMsg = "The value of mode must be in [CALCULATED , SYMMETRIC and VALID].";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "mode", std::string(mode).c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -335,7 +337,12 @@ ge::graphStatus Im2ColTiling::ParamCheck()
 
     auto inputDataType = inputValueDesc->GetDataType();
     dSize_ = ge::GetSizeByDataType(inputDataType);
-    OP_CHECK_IF(dSize_ <= 0, OP_LOGE(context_, "data size should be positive"), return ge::GRAPH_FAILED);
+    if (dSize_ <= 0) {
+        std::string reasonMsg = "The size of inputDataType must be greater than 0.";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context_->GetNodeName(), "inputDataType", std::to_string(dSize_).c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     // 校验输入shape
     auto inputShape = context_->GetInputShape(0);
@@ -614,7 +621,7 @@ ge::graphStatus Im2ColTiling::Tiling4NHWC()
 {
     auto tilingData = context_->GetTilingData<Im2ColNHWCTilingData>();
     uint64_t UB_SIZE_LIMIT = std::min(ubSize_ / NHWC_BUFFER_NUM, NHWC_MIN_BUFFER_SIZE); // 64KB
-    auto remainingElem = static_cast<int64_t>(UB_SIZE_LIMIT / dSize_); // 剩余UB元素数，初始为最大值
+    auto remainingElem = static_cast<int64_t>(UB_SIZE_LIMIT / dSize_);                  // 剩余UB元素数，初始为最大值
 
     int64_t ubfactorAlign[4] = {1, convKernelNumInWidth_, input_.wKernelSize, ubBlockElements_}; // 0:N 1:W 2:Kw 3:C 32b
     int64_t ubfactor[4] = {1, 1, 1, 1}; // 对应索引：0=N 1=HW 2=Kw 3=C，初始全为1
@@ -681,7 +688,12 @@ ge::graphStatus Im2ColTiling::Tiling4SIMT()
     uint32_t sideLengthFactor = Ops::Base::GetVRegSize(context_) / SIMT_BUFFER_NUM / dSize_;
     uint64_t alignEleBlockCount = Ops::Base::CeilDiv(outputTotalElement, static_cast<uint64_t>(sideLengthFactor));
     uint64_t cores = std::min(static_cast<uint64_t>(coreNum_), alignEleBlockCount);
-    OP_CHECK_IF((cores == 0), OP_LOGE(context_, "cores is 0."), return ge::GRAPH_FAILED);
+    if (cores == 0) {
+        std::string reasonMsg = "The value of realCoreNum cannot be 0.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "realCoreNum", std::to_string(cores).c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     tilingData->realCoreNum = static_cast<uint64_t>(cores);
     tilingData->blockFactor = Ops::Base::CeilDiv(alignEleBlockCount, cores) * sideLengthFactor;
     tilingData->mainCoreNum = (alignEleBlockCount % cores == 0) ? cores : (alignEleBlockCount % cores);
@@ -712,7 +724,11 @@ ge::graphStatus Im2ColTiling::Tiling4Format()
     if (inputFormat_ == ge::FORMAT_NHWC) {
         return Tiling4NHWC();
     }
-    OP_LOGE(context_, "unsupport format %d", inputFormat_);
+    std::string reasonMsg =
+        "When the shapeSize greater than MAX_SHAPE_SIZE_FOR_SIMT, the value of inputFormat must be in [NCHW and "
+        "NHWC].";
+    OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(
+        context_->GetNodeName(), "inputFormat", Ops::Base::ToString(inputFormat_).c_str(), reasonMsg.c_str());
     return ge::GRAPH_FAILED;
 }
 
@@ -740,12 +756,16 @@ ge::graphStatus Im2ColTiling::InferOut()
 {
     convKernelNumInWidth_ = (paddedW_ - effectW_) / input_.wStride + 1;
     convKernelNumInHeight_ = (paddedH_ - effectH_) / input_.hStride + 1;
-    OP_CHECK_IF(
-        (convKernelNumInWidth_ <= 0 || convKernelNumInHeight_ <= 0),
-        OP_LOGE(
-            context_, "The calculated shape of the array of sliding blocks is (%ld, %ld), which must be positive",
-            convKernelNumInHeight_, convKernelNumInWidth_),
-        return ge::GRAPH_FAILED);
+    if (convKernelNumInWidth_ <= 0 || convKernelNumInHeight_ <= 0) {
+        std::string shapeMsg =
+            std::to_string(convKernelNumInWidth_) + "," + std::to_string(convKernelNumInHeight_);
+        std::string reasonMsg =
+            "The value of the calculated shape of the array of sliding blocks must be greater than 0.";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "convKernelNumInWidth_ and convKernelNumInHeight_", shapeMsg.c_str(),
+            reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     convKernelNum_ = convKernelNumInWidth_ * convKernelNumInHeight_; // 输出W
     convKernelSize_ = input_.wKernelSize * input_.hKernelSize;       // 输出H
     return ge::GRAPH_SUCCESS;
