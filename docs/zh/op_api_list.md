@@ -49,7 +49,7 @@
 | [aclnnAminmax](../../math/reduce_min/docs/aclnnAminmax.md)      | 返回输入张量在指定维度上每行的最小值和最大值。               | 默认确定性实现| 默认确定性实现|
 | [aclnnAminmaxAll](../../math/reduce_min/docs/aclnnAminmaxAll.md) | 返回输入张量在所有维度上的最小值和最大值。                   | 默认确定性实现| 默认确定性实现|
 | [aclnnAminmaxDim](../../math/reduce_min/docs/aclnnAminmaxDim.md) | 返回输入张量在指定维度上的最小值和最大值。                   | 默认确定性实现| 默认确定性实现|
-| [aclnnAngleV2](../../math/angle_v2/docs/aclnnAngleV2.md) | 为输入张量的每一个元素取角度（单位：弧度）。 | 默认确定性实现 | - |
+| [aclnnAngleV2](../../math/angle_v2/docs/aclnnAngleV2.md) | 为输入张量的每一个元素取角度（单位：弧度）。 | 默认确定性实现 | 默认确定性实现 |
 | [aclnnAny](../../math/reduce_any/docs/aclnnAny.md)              | 对于给定维度dim中的每一维，如果输入Tensor中该维度对应的任意元素计算为True，则返回True，否则返回False。 | 默认确定性实现| 默认确定性实现|
 | [aclnnArange](../../math/range/docs/aclnnArange.md)             | 从start起始到end结束按照step的间隔获取值，并保存到输出的1维张量，其中数据范围为[start,end)。 | 默认确定性实现|  默认确定性实现  |
 | [aclnnArgMax](../../math/arg_max_v2/docs/aclnnArgMax.md)        | 返回张量在指定维度（dim）上的最大值的索引，并保存到out张量中。 | 默认确定性实现| 默认确定性实现|
