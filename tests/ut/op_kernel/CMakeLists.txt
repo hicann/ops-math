@@ -54,6 +54,11 @@ foreach(socVersion ${fastOpTestSocVersions})
             register)
 
   if(ENABLE_UT_EXEC)
+    if(NOT "${GTEST_FILTER}" STREQUAL "")
+      set(GTEST_FILTER_ARG "--gtest_filter=${GTEST_FILTER}")
+    else()
+      set(GTEST_FILTER_ARG "")
+    endif()
     if(ENABLE_ASAN)
       execute_process(
         COMMAND ${CMAKE_C_COMPILER} -print-file-name=libasan.so
@@ -79,14 +84,14 @@ foreach(socVersion ${fastOpTestSocVersions})
         POST_BUILD
         COMMAND
         COMMAND export LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH} && ${PRELOAD}
-                ASAN_OPTIONS=detect_leaks=0 ./${OP_KERNEL_UT_EXE}_${socVersion}
+                ASAN_OPTIONS=detect_leaks=0 ./${OP_KERNEL_UT_EXE}_${socVersion} ${GTEST_FILTER_ARG}
         COMMENT "Run fast op utest with asan")
     else()
       add_custom_command(
         TARGET ${OP_KERNEL_UT_EXE}_${socVersion}
         POST_BUILD
         COMMAND export LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH} &&
-                ./${OP_KERNEL_UT_EXE}_${socVersion}
+                ./${OP_KERNEL_UT_EXE}_${socVersion} ${GTEST_FILTER_ARG}
         COMMENT "Run fast op utest")
     endif()
   endif()
@@ -97,7 +102,7 @@ foreach(socVersion ${fastOpTestSocVersions})
       COMMAND
         export LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH} && valgrind
         --undef-value-errors=no --leak-check=full
-        ./${OP_KERNEL_UT_EXE}_${socVersion}
+        ./${OP_KERNEL_UT_EXE}_${socVersion} ${GTEST_FILTER_ARG}
       COMMENT "Run fast op utest with valgrind")
   endif()
 endforeach()

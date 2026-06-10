@@ -58,6 +58,11 @@ target_link_libraries(${OP_API_UT_EXE} PRIVATE
 
 ## exec opapi ut exe
 if(ENABLE_UT_EXEC)
+  if(NOT "${GTEST_FILTER}" STREQUAL "")
+    set(GTEST_FILTER_ARG "--gtest_filter=${GTEST_FILTER}")
+  else()
+    set(GTEST_FILTER_ARG "")
+  endif()
   if(ENABLE_ASAN)
     execute_process(
       COMMAND ${CMAKE_C_COMPILER} -print-file-name=libasan.so
@@ -85,7 +90,7 @@ if(ENABLE_UT_EXEC)
         COMMAND
             ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH}
             LD_PRELOAD=${LIBASAN_PATH}:${LIBSTDC_PATH} ASAN_OPTIONS=detect_leaks=0
-            $<TARGET_FILE:${OP_API_UT_EXE}>
+            $<TARGET_FILE:${OP_API_UT_EXE}> ${GTEST_FILTER_ARG}
             COMMENT "Run ops op_api utest with asan"
     )
   else()
@@ -93,7 +98,7 @@ if(ENABLE_UT_EXEC)
             TARGET ${OP_API_UT_EXE}
             POST_BUILD
             COMMAND
-            ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH} $<TARGET_FILE:${OP_API_UT_EXE}>
+            ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH} $<TARGET_FILE:${OP_API_UT_EXE}> ${GTEST_FILTER_ARG}
             COMMENT "Run ops op_api utest"
     )
   endif()

@@ -21,7 +21,7 @@ SUPPORTED_LONG_OPTS=(
   "pkg" "asan" "valgrind" "make_clean" "static" "build-type=" "no_force" "simulator"
   "ophost" "opapi" "opgraph" "ophost_test" "opapi_test" "opgraph_test" "opkernel_test" "opkernel_aicpu_test"
   "run_example" "genop=" "genop_aicpu=" "experimental" "cann_3rd_lib_path" "mssanitizer" "oom" "onnxplugin" "tfplugin"
-  "dump_cce" "bisheng_flags=" "kernel_template_input=" "module_extension=" "example_name=" "rule_launch="
+  "dump_cce" "bisheng_flags=" "kernel_template_input=" "module_extension=" "example_name=" "rule_launch=" "gtest_filter="
 )
 
 in_array() {
@@ -217,6 +217,7 @@ usage() {
         echo "    -u                     Build and run all unit tests"
         echo "    --noexec               Only compile ut, do not execute"
         echo "    --cov                  Enable code coverage for unit tests"
+        echo "    --gtest_filter=pattern Run only tests matching the gtest filter pattern"
         echo "    --soc=soc_version      Run unit tests for specified Ascend SoC"
         echo "    --ophost -u            Build and run ophost unit tests"
         echo "    --opapi -u             Build and run opapi unit tests"
@@ -227,6 +228,7 @@ usage() {
         echo "    bash build.sh -u --noexec --cov"
         echo "    bash build.sh -u --ophost --soc=ascend910b --ops=is_finite"
         echo "    bash build.sh --ophost --opapi --opgraph --opkernel -u --cov"
+        echo "    bash build.sh -u --ophost --gtest_filter=AddTest*"
         return
         ;;
       clean)
@@ -397,6 +399,7 @@ usage() {
   echo "    --dump_cce Dump kernel precompiled files"
   echo "    --bisheng_flags Specify bisheng compiler config, like: --bisheng_flags=ccec_g,oom, use ',' to separate different compiler flags"
   echo "    --kernel_template_input Specify kernel template input arguments, like: --kernel_template_input='args0=args0;args1=args1', use ';' to separate different kernel template args"
+  echo "    --gtest_filter=pattern Specify gtest filter pattern for ut execution, like: --gtest_filter=AddTest*"
   echo "to be continued ..."
 }
 
@@ -702,6 +705,7 @@ checkopts() {
   BISHENG_FLAGS=""
   KERNEL_TEMPLATE_INPUT=""
   MODULE_EXT=""
+  GTEST_FILTER=""
 
   ENABLE_MSSANITIZER=FALSE
   ENABLE_OOM=FALSE
@@ -867,6 +871,9 @@ checkopts() {
         simulator) ENABLE_SIMULATOR=TRUE ;;
         rule_launch=*)
           ENABLE_RULE_LAUNCH=${OPTARG#*=}
+          ;;
+        gtest_filter=*)
+          GTEST_FILTER=${OPTARG#*=}
           ;;
         example_name=*) SINGLE_EXAMPLE=${OPTARG#*=} ;;
         run_example)
@@ -1058,6 +1065,9 @@ assemble_cmake_args() {
   fi
   if [[ "x$ENABLE_RULE_LAUNCH" != "x" ]]; then
     CMAKE_ARGS="$CMAKE_ARGS -DRULE_LAUNCH=${ENABLE_RULE_LAUNCH}"
+  fi
+  if [[ -n $GTEST_FILTER ]]; then
+    CMAKE_ARGS="$CMAKE_ARGS -DGTEST_FILTER=${GTEST_FILTER}"
   fi
   if [[ -n $COMPUTE_UNIT ]]; then
     COMPUTE_UNIT=$(echo "$COMPUTE_UNIT" | tr '[:upper:]' '[:lower:]')

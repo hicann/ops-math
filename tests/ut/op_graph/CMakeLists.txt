@@ -63,6 +63,11 @@ if(UT_TEST_ALL OR OP_GRAPH_UT)
     )
 
     if(ENABLE_UT_EXEC)
+        if(NOT "${GTEST_FILTER}" STREQUAL "")
+            set(GTEST_FILTER_ARG "--gtest_filter=${GTEST_FILTER}")
+        else()
+            set(GTEST_FILTER_ARG "")
+        endif()
         if(${ENABLE_ASAN} STREQUAL "TRUE")
             execute_process(
                 COMMAND ${CMAKE_C_COMPILER} -print-file-name=libasan.so
@@ -87,13 +92,13 @@ if(UT_TEST_ALL OR OP_GRAPH_UT)
             add_custom_command(
                 TARGET ${OP_GRAPH_UT_EXE} POST_BUILD
                 COMMAND export LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/es_packages_math/lib64:${CMAKE_BINARY_DIR}/es_packages/lib64:${LIB_OP_TILING_SO_PATH}:$ENV{LD_LIBRARY_PATH} && BUILD_PATH=${BUILD_PATH}
-                LD_PRELOAD=${LIBASAN_PATH}:${LIBSTDC_PATH} ASAN_OPTIONS=detect_leaks=0 && ./${OP_GRAPH_UT_EXE}
+                LD_PRELOAD=${LIBASAN_PATH}:${LIBSTDC_PATH} ASAN_OPTIONS=detect_leaks=0 && ./${OP_GRAPH_UT_EXE} ${GTEST_FILTER_ARG}
                 COMMENT "Run ops op_graph utest with asan"
             )
         else()
             add_custom_command(
                 TARGET ${OP_GRAPH_UT_EXE} POST_BUILD
-                COMMAND export LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/es_packages_math/lib64:${CMAKE_BINARY_DIR}/es_packages/lib64:${LIB_OP_TILING_SO_PATH}:$ENV{LD_LIBRARY_PATH}:${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64 && ./${OP_GRAPH_UT_EXE}
+                COMMAND export LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/es_packages_math/lib64:${CMAKE_BINARY_DIR}/es_packages/lib64:${LIB_OP_TILING_SO_PATH}:$ENV{LD_LIBRARY_PATH}:${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64 && ./${OP_GRAPH_UT_EXE} ${GTEST_FILTER_ARG}
                 COMMENT "Run ops op_graph utest"
             )
         endif()
@@ -107,7 +112,7 @@ if(UT_TEST_ALL OR OP_GRAPH_UT)
         add_custom_command(
             TARGET ${OP_GRAPH_UT_EXE} POST_BUILD
             COMMAND export LD_LIBRARY_PATH=${LIB_OP_TILING_SO_PATH}:$ENV{LD_LIBRARY_PATH} &&
-            valgrind --undef-value-errors=no --leak-check=full ./${OP_GRAPH_UT_EXE}
+            valgrind --undef-value-errors=no --leak-check=full ./${OP_GRAPH_UT_EXE} ${GTEST_FILTER_ARG}
             COMMENT "Run ops op_graph utest by valgrind"
         )
     endif()

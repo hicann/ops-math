@@ -66,6 +66,11 @@ target_link_libraries(${OP_HOST_UT_EXE} PRIVATE
 
 ## exec ophost ut exe
 if(ENABLE_UT_EXEC)
+  if(NOT "${GTEST_FILTER}" STREQUAL "")
+    set(GTEST_FILTER_ARG "--gtest_filter=${GTEST_FILTER}")
+  else()
+    set(GTEST_FILTER_ARG "")
+  endif()
   if(ENABLE_ASAN)
     execute_process(
       COMMAND ${CMAKE_C_COMPILER} -print-file-name=libasan.so
@@ -93,7 +98,7 @@ if(ENABLE_UT_EXEC)
       COMMAND
         ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH}
         LD_PRELOAD=${LIBASAN_PATH}:${LIBSTDC_PATH}
-        ASAN_OPTIONS=detect_leaks=0 $<TARGET_FILE:${OP_HOST_UT_EXE}>
+        ASAN_OPTIONS=detect_leaks=0 $<TARGET_FILE:${OP_HOST_UT_EXE}> ${GTEST_FILTER_ARG}
       COMMENT "Run ops op_host utest with asan"
       )
   else()
@@ -101,7 +106,7 @@ if(ENABLE_UT_EXEC)
       TARGET ${OP_HOST_UT_EXE}
       POST_BUILD
       COMMAND
-        ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH} $<TARGET_FILE:${OP_HOST_UT_EXE}>
+        ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH} $<TARGET_FILE:${OP_HOST_UT_EXE}> ${GTEST_FILTER_ARG}
       COMMENT "Run ops op_host utest"
       )
   endif()
@@ -113,7 +118,7 @@ if(ENABLE_VALGRIND)
     POST_BUILD
     COMMAND
       ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH} && valgrind --undef-value-errors=no
-      --leak-check=full $<TARGET_FILE:${OP_HOST_UT_EXE}>
+      --leak-check=full $<TARGET_FILE:${OP_HOST_UT_EXE}> ${GTEST_FILTER_ARG}
     COMMENT "Run ops op_host utest by valgrind"
     )
 endif()
