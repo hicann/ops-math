@@ -29,16 +29,17 @@ static ge::graphStatus InferShape4MaskedScale(gert::InferShapeContext* context) 
   OP_CHECK_NULL_WITH_CONTEXT(context, in_shape2);
 
   OP_CHECK_IF(in_shape1->GetShapeSize() != in_shape2->GetShapeSize(),
-           OP_LOGE(
-               context->GetNodeName(),
-               "shapesize of x %s not match mask %s", ToString(*in_shape1).c_str(), ToString(*in_shape2).c_str()),
+           OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(context->GetNodeName(), "x, mask",
+               (std::to_string(in_shape1->GetShapeSize()) + ", " + std::to_string(in_shape2->GetShapeSize())),
+               "The shape sizes of x and mask must be the same"),
            return ge::GRAPH_FAILED);
   auto out_shape = context->GetOutputShape(0);
   OP_CHECK_NULL_WITH_CONTEXT(context, out_shape);
 
   OP_CHECK_IF(!BroadcastShape(in_shape1, in_shape2, out_shape),
-           OP_LOGE(context->GetNodeName(), "shape %s and %s cannot broadcast!",
-                   ToString(*in_shape2).c_str(), ToString(*in_shape1).c_str()),
+           OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x, mask",
+               (Ops::Base::ToString(*in_shape1) + ", " + Ops::Base::ToString(*in_shape2)),
+               "The shapes of x and mask must be broadcastable"),
            return ge::GRAPH_FAILED);
 
   return ge::GRAPH_SUCCESS;

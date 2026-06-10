@@ -32,9 +32,10 @@ static ge::graphStatus InferShapeForRightShift(gert::InferShapeContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, z_shape);
     OP_CHECK_IF(
         !BroadcastShape(x_shape, y_shape, z_shape),
-        OP_LOGE(
-            context->GetNodeName(), "shape %s and %s cannot broadcast!", ToString(*x_shape).c_str(),
-            ToString(*y_shape).c_str()),
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            context->GetNodeName(), "x, y",
+            (Ops::Base::ToString(*x_shape) + ", " + Ops::Base::ToString(*y_shape)),
+            "The shapes of x and y must be broadcastable"),
         return ge::GRAPH_FAILED);
     return GRAPH_SUCCESS;
 }
