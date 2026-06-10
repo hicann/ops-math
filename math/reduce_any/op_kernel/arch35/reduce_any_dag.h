@@ -50,9 +50,7 @@ using OutDtype = uint8_t;
              MicroAPI::MaskReg OutMask;
              for (uint16_t j = 0; j < loopTimes; j++) {
                  InMask = MicroAPI::UpdateMask<R>(InSize);
-                 uint32_t tmp = OutSize - InSize;
-                 OutSize = OutSize - tmp;
-                 OutMask = MicroAPI::UpdateMask<T>(tmp);
+                 OutMask = MicroAPI::UpdateMask<T>(OutSize);
                  MicroAPI::DataCopy<R, MicroAPI::PostLiteral::POST_MODE_UPDATE>(srcReg, srcAddr, VL_B32);
                  MicroAPI::Compares<R, CMPMODE::NE>(cmpMask, srcReg, 0.0f, InMask);
                  MicroAPI::Duplicate(dstReg, 0);
