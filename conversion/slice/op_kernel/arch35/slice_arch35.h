@@ -9,12 +9,12 @@
  */
 
 /*!
- * \file slice.h
+ * \file slice_arch35.h
  * \brief
  */
 
-#ifndef SLICE_H
-#define SLICE_H
+#ifndef SLICE_ARCH35_H
+#define SLICE_ARCH35_H
 
 #include "slice_nddma.h"
 #include "slice_nddma_last_dim.h"
@@ -224,4 +224,4 @@ extern "C" __aicore__ inline void SliceTwoDimSmallShapeProcess(
 }
 
 
-#endif // SLICE_H
+#endif // SLICE_ARCH35_H

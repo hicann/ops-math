@@ -13,7 +13,7 @@
  * \brief
  */
 
-#include "arch35/slice.h"
+#include "arch35/slice_arch35.h"
 
 using namespace Slice;
 
