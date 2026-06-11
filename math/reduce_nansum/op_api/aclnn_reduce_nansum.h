@@ -34,4 +34,4 @@ aclnnReduceNansum(void* workspace, uint64_t workspaceSize, aclOpExecutor* execut
 }
 #endif
 
-#endif // OP_API_INC_REDUCE_SUM_H_
+#endif // OP_API_INC_REDUCE_NANSUM_H_

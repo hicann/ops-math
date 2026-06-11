@@ -44,6 +44,20 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST =
     op::DataType::DT_INT16,   op::DataType::DT_INT32, op::DataType::DT_INT64,
     op::DataType::DT_UINT8,   op::DataType::DT_BOOL,  op::DataType::DT_BF16};
 
+// 950 (DAV_3510/IsRegBase) 上 nansum 仅支持浮点类型（fp32/fp16/bf16），整型与 bool 在 950 走 ReduceSum/ReduceAny 路径
+static const std::initializer_list<op::DataType> ASCEND950_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
+
+static const std::initializer_list<op::DataType> GetDtypeSupportList()
+{
+    // 950 上 nansum 仅支持浮点（fp32/fp16/bf16），910B 系列（910B/910_93/RegBase）支持完整类型
+    auto socVer = GetCurrentPlatformInfo().GetSocVersion();
+    if (socVer == SocVersion::ASCEND950) {
+        return ASCEND950_DTYPE_SUPPORT_LIST;
+    }
+    return ASCEND910B_DTYPE_SUPPORT_LIST;
+}
+
 static bool CheckNotNull(const aclTensor* self, const aclIntArray* dim, const aclTensor* out)
 {
     OP_CHECK_NULL(self, return false);
@@ -54,21 +68,23 @@ static bool CheckNotNull(const aclTensor* self, const aclIntArray* dim, const ac
 
 static bool CheckDtypeValid(const aclTensor* self, aclDataType dtype, const aclTensor* out)
 {
-    // nansum只在ascend910B上支持
+    // nansum只在ascend910B和ascend950上支持
     if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910B &&
-        GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_93) {
+        GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_93 &&
+        GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND950) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "ReduceNansum is not supported on this device.");
         return false;
     }
-    OP_CHECK_DTYPE_NOT_SUPPORT(self, ASCEND910B_DTYPE_SUPPORT_LIST, return false);
+    const auto& supportList = GetDtypeSupportList();
+    OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
     // 检查dtype指定的数据类型是否支持
-    if (!CheckType(op::ToOpDataType(dtype), ASCEND910B_DTYPE_SUPPORT_LIST)) {
+    if (!CheckType(op::ToOpDataType(dtype), supportList)) {
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID, "type %s should be in dtype support list [%s].",
-            op::ToString(op::ToOpDataType(dtype)).GetString(), op::ToString(ASCEND910B_DTYPE_SUPPORT_LIST).GetString());
+            op::ToString(op::ToOpDataType(dtype)).GetString(), op::ToString(supportList).GetString());
         return false;
     }
-    OP_CHECK_DTYPE_NOT_SUPPORT(out, ASCEND910B_DTYPE_SUPPORT_LIST, return false);
+    OP_CHECK_DTYPE_NOT_SUPPORT(out, supportList, return false);
     OP_CHECK_DTYPE_NOT_MATCH(out, op::ToOpDataType(dtype), return false);
 
     return true;

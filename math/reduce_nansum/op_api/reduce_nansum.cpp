@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "reduce_nansum.h"
+#include <cstdio>
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"
@@ -27,10 +28,21 @@ OP_TYPE_REGISTER(ReduceNansum);
 static const std::initializer_list<op::DataType> AICORE910B_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
+static const std::initializer_list<op::DataType> AICORE950_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
+
 // 根据芯片类型、dtype判断算子是否支持走aicore
 static bool IsAiCoreSupport(const aclTensor* self)
 {
-    // 获取芯片类型，判断是910还是910B
+    // 获取芯片类型，判断是910B还是950
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    auto socVer = GetCurrentPlatformInfo().GetSocVersion();
+    if (socVer == SocVersion::ASCEND950) {
+        return CheckType(self->GetDataType(), AICORE950_DTYPE_SUPPORT_LIST);
+    }
+    if (curArch == NpuArch::DAV_3510) {
+        return CheckType(self->GetDataType(), AICORE950_DTYPE_SUPPORT_LIST);
+    }
     return CheckType(self->GetDataType(), AICORE910B_DTYPE_SUPPORT_LIST);
 }
 
@@ -57,6 +69,15 @@ static const aclTensor* GenerateDimTensor(const aclTensor* self, const aclIntArr
 
 const aclTensor* ReduceNansum(const aclTensor* self, const aclIntArray* dim, bool keepDim, aclOpExecutor* executor)
 {
+    // DEBUG: log direct call path
+    auto selfShape = self->GetViewShape();
+    printf("[DIRECT DEBUG] self: dtype=%d, viewDim=%zu, dims=[",
+           static_cast<int>(self->GetDataType()), selfShape.GetDimNum());
+    for (size_t i = 0; i < selfShape.GetDimNum(); i++) {
+        printf("%ld%s", selfShape.GetDim(i), i + 1 < selfShape.GetDimNum() ? "," : "");
+    }
+    printf("]\n");
+
     // self如果为标量，不调用算子，直接返回
     if (self->GetViewShape().GetDimNum() == 0) {
         return self;
