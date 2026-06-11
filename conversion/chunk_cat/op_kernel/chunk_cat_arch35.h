@@ -115,6 +115,7 @@ private:
                 CopyOut(ubLoopInfo);
                 localOffset = 0;
                 ubLoopInfo.preCatCol += ubLoopInfo.totalUbCol;
+                ubLoopInfo.totalUbCol = 0;
             }
         }
     }
