@@ -31,6 +31,7 @@ constexpr uint64_t INT8_MODE = 6UL;
 constexpr uint64_t INT16_MODE = 7UL;
 constexpr uint64_t INT32_MODE = 8UL;
 constexpr uint64_t INT64_MODE = 9UL;
+constexpr uint64_t BF16_MODE = 10UL;
 constexpr int64_t SIZE_OF_B8 = 1;
 constexpr int64_t SIZE_OF_B16 = 2;
 constexpr int64_t SIZE_OF_B32 = 4;
@@ -116,7 +117,7 @@ void AngleV2Tiling::GetUsedBytesPerDataInKernel(ge::DataType dType)
             bytesPerData += bytesI8 + bytesI32 * coefficentTwo;
             break;
         default:
-            // double buffer for input(float16) and output(float16)
+            // double buffer for input(float16/bfloat16) and output(float16/bfloat16)
             bytesPerData = bytesI16 * coefficentTwo + bytesI16 * coefficentTwo;
             // one masks(uint8) and three localTensor(float16) are used for calculate the ouput
             bytesPerData += bytesI8 + bytesI16 * coefficentThree;
@@ -132,6 +133,9 @@ void AngleV2Tiling::SetTilingKeyMode(ge::DataType dType)
             break;
         case ge::DT_FLOAT16:
             tilingContext->SetTilingKey(FP16_MODE);
+            break;
+        case ge::DT_BF16:
+            tilingContext->SetTilingKey(BF16_MODE);
             break;
         case ge::DT_BOOL:
             tilingContext->SetTilingKey(BOOL_MODE);
@@ -159,7 +163,7 @@ void AngleV2Tiling::SetTilingKeyMode(ge::DataType dType)
 
 int64_t AngleV2Tiling::GetNeedCoreNum(const int64_t coreNumPlatform, ge::DataType dType)
 {
-    if (dType == ge::DT_FLOAT16) {
+    if (dType == ge::DT_FLOAT16 || dType == ge::DT_BF16) {
         dataPerRepeat = BYTE_REPEAT / SIZE_OF_B16;
     } else {
         dataPerRepeat = BYTE_REPEAT / SIZE_OF_B32;
@@ -179,6 +183,9 @@ void AngleV2Tiling::GetAlignNum(ge::DataType dType)
 {
     switch (dType) {
         case ge::DT_FLOAT16:
+            alignNum = BYTE_BLOCK / SIZE_OF_B16;
+            break;
+        case ge::DT_BF16:
             alignNum = BYTE_BLOCK / SIZE_OF_B16;
             break;
         case ge::DT_INT8:
