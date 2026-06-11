@@ -8,6 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#ifndef OP_HOST_BATCH_TO_SPACE_ND_TILING_DUAL_SIDE_TILING_H
+#define OP_HOST_BATCH_TO_SPACE_ND_TILING_DUAL_SIDE_TILING_H
+
 #include <cstdint>
 #include <cstddef>
 #include <algorithm>
@@ -56,7 +59,7 @@ private:
     const size_t* outAxisPerm_;      // 输出轴的排列
     const int16_t needAlignAxis_;    // 需要对齐的轴的序号
     const size_t rank_;              // 轴的数量
-    uint32_t maxBufElements_;        // 单侧最大缓存元素个数
+    uint32_t maxBufElements_{0};     // 单侧最大缓存元素个数
 
     // 中间变量
     int startIdx_{0};                  // 起始轴
@@ -164,7 +167,7 @@ void DualSideTiling::Init()
 bool DualSideTiling::TryFullLoad()
 {
     uint64_t needSize = 1;
-    for (int16_t i = rank_ - 1; i >= 0; --i) {
+    for (int16_t i = static_cast<int16_t>(rank_) - 1; i >= 0; --i) {
         needSize *= axisSizeList_[i];
         if (i == needAlignAxis_) {
             needSize = CeilAlignBlockElement(needSize);
@@ -381,3 +384,5 @@ void DualSideTiling::DoTiling(uint32_t maxBufElements)
     DoNonFullLoad();
 }
 } // namespace optiling
+
+#endif

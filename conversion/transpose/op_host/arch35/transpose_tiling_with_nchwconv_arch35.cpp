@@ -18,10 +18,11 @@ namespace optiling {
 namespace TransposeWithVCONV {
 static constexpr size_t SYS_WORKSPACE_SIZE = static_cast<size_t>(16) * 1024 * 1024;
 static constexpr int64_t TRANSELEM = 16;
+static constexpr int8_t BUFFER_TENSOR_NUM = 2; // 输入输出各1块
 
 void TransposeVCONVTiling::CalcBasicInfo()
 {
-    AvailableUbSize = platInfo_.ubSize / 2 / BUFFER_NUM;
+    AvailableUbSize = platInfo_.ubSize / BUFFER_TENSOR_NUM / BUFFER_NUM;
     basicInfo_.RLen = shapeInfo_.reducedInShape[0];
     basicInfo_.CLen = shapeInfo_.reducedInShape[1];
     basicInfo_.RAlignBlock = Ops::Base::CeilDiv(basicInfo_.RLen, TRANSELEM);

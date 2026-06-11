@@ -41,11 +41,11 @@ private:
     gert::InferShapeContext* context_;
     const gert::Shape* xShape_{nullptr};
     gert::Shape* yShape_{nullptr};
-    size_t blockNum_;
+    size_t blockNum_{0};
     gert::Shape blockVec_;
     gert::Shape cropsVec_;
-    bool isConstBlock_;
-    bool isConstCrops_;
+    bool isConstBlock_{false};
+    bool isConstCrops_{false};
 };
 
 ge::graphStatus BatchToSpaceNDInferShapeHelper::Init()
@@ -55,7 +55,12 @@ ge::graphStatus BatchToSpaceNDInferShapeHelper::Init()
 
     const gert::Tensor* blockTensor = context_->GetInputTensor(INPUT_IDX_BLOCK_SHAPE);
     OP_CHECK_NULL_WITH_CONTEXT(context_, blockTensor);
-    blockNum_ = blockTensor->GetShapeSize();
+    int64_t blockNum = blockTensor->GetShapeSize();
+    OP_CHECK_IF(
+        blockNum < 0,
+        OP_LOGE_FOR_INVALID_SHAPESIZE(context_->GetNodeName(), "block_shape", "overflow", "less than INT64_MAX"),
+        return ge::GRAPH_FAILED);
+    blockNum_ = static_cast<size_t>(blockNum);
 
     const gert::Tensor* cropsTensor = context_->GetInputTensor(INPUT_IDX_CROPS);
     OP_CHECK_NULL_WITH_CONTEXT(context_, cropsTensor);
@@ -63,8 +68,6 @@ ge::graphStatus BatchToSpaceNDInferShapeHelper::Init()
     yShape_ = context_->GetOutputShape(OUTPUT_IDX_Y);
     OP_CHECK_NULL_WITH_CONTEXT(context_, yShape_);
 
-    isConstBlock_ = false;
-    isConstCrops_ = false;
     if (IsConstTensor(blockTensor)) {
         isConstBlock_ = true;
         OP_CHECK_IF(

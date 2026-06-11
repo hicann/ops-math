@@ -83,7 +83,7 @@ private:
     uint32_t simtMaxThreads_{0};
 
     // tiling key param
-    uint8_t mode_;
+    uint8_t mode_{0};
     uint8_t blockShapeDimNum_{0};
     bool isBigShape_{false};
 
@@ -105,8 +105,8 @@ private:
     uint64_t lastDimSize_{0};
 
 public:
-    explicit BatchToSpaceNDTiling(gert::TilingContext* context) : context_(context){};
-    ~BatchToSpaceNDTiling(){};
+    explicit BatchToSpaceNDTiling(gert::TilingContext* context) : context_(context) {};
+    ~BatchToSpaceNDTiling() {};
 
     ge::graphStatus DoTiling();
 
@@ -192,6 +192,9 @@ static std::string ArrayToString(const T* v, size_t size)
 
 void BatchToSpaceNDTiling::ShowBaseTilingData()
 {
+    if (unlikely(mergedInput_.rank <= 2)) {
+        return;
+    }
     // 输入信息
     OP_LOGI(
         context_, "input: x_shape %s, block_shape %s, crops %s, y_shape %s, data type size %d",
@@ -564,7 +567,7 @@ ge::graphStatus BatchToSpaceNDTiling::MoveAlignTilingBlock(
         break;
     }
     // 非切分轴不需要对齐
-    for (int32_t i = ubAxis - 1; i >= 0; --i) {
+    for (int32_t i = static_cast<int32_t>(ubAxis) - 1; i >= 0; --i) {
         totalCount *= dimValue[i];
     }
 
@@ -690,7 +693,10 @@ int16_t BatchToSpaceNDTiling::SmallCComputeInputNeedAlign(uint64_t oriInShape[],
     // 从倒数第N个满足条件（有预裁剪）的轴开始需要对齐
     int16_t restCompactCnt = SMALL_C_AXIS_COMPACT_CNT;
     for (int16_t i = rank - 1; i >= 0; --i) {
-        if (oriInShape[i] != croppedInShape[i] && (restCompactCnt--) == 0) {
+        if (oriInShape[i] == croppedInShape[i]) {
+            continue;
+        }
+        if ((restCompactCnt--) == 0) {
             return i;
         }
     }
@@ -782,7 +788,7 @@ ge::graphStatus BatchToSpaceNDTiling::Tiling4SIMT()
     tilingData->blockSize = usedBufSize / dSize_;
     // 向下对齐线程数
     uint32_t threadNum = simtMaxThreads_ / SIMT_THREAD_FACTOR;
-    tilingData->blockSize = Ops::Base::FloorAlign(tilingData->blockSize, threadNum);
+    tilingData->blockSize = std::max(1U, Ops::Base::FloorAlign(tilingData->blockSize, threadNum));
     // 防止输出为空，至少要1
     tilingData->totalBlock = std::max(
         1UL, Ops::Base::CeilDiv(static_cast<uint64_t>(yShapeSize_), static_cast<uint64_t>(tilingData->blockSize)));
@@ -793,6 +799,7 @@ ge::graphStatus BatchToSpaceNDTiling::Tiling4SIMT()
 
     // 均分分核
     realCoreNum_ = tilingData->totalBlock > coreNum_ ? coreNum_ : static_cast<uint32_t>(tilingData->totalBlock);
+    realCoreNum_ = realCoreNum_ > 0 ? realCoreNum_ : 1U;
     tilingData->needCoreNum = realCoreNum_;
     tilingData->mainCoreBlock = Ops::Base::CeilDiv(tilingData->totalBlock, static_cast<uint64_t>(realCoreNum_));
     tilingData->mainCoreNum = static_cast<uint32_t>(tilingData->totalBlock % realCoreNum_);

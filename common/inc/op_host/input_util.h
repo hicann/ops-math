@@ -276,7 +276,7 @@ static inline std::tuple<ge::graphStatus, std::array<int64_t, NHWC_DIM_NUM>> Get
     T* context, const char* paramName, const gert::Shape& shape, const ge::Format& format)
 {
     std::array<int64_t, NHWC_DIM_NUM> dims{0};
-    int64_t dimNum = shape.GetDimNum();
+    size_t dimNum = shape.GetDimNum();
     if (unlikely(dimNum != NHWC_DIM_NUM)) {
         OP_LOGE_FOR_INVALID_SHAPEDIM(context->GetNodeName(), paramName, std::to_string(dimNum).c_str(), "4");
         return {ge::GRAPH_FAILED, dims};
@@ -323,7 +323,7 @@ static inline ge::graphStatus GetImgDataDimsByNCHWOrder(
     T* context, const char* paramName, const gert::Shape& shape, const ge::Format& format, int64_t& n, int64_t& c,
     int64_t& h, int64_t& w)
 {
-    int64_t dimNum = shape.GetDimNum();
+    size_t dimNum = shape.GetDimNum();
     if (unlikely(dimNum != NHWC_DIM_NUM)) {
         OP_LOGE_FOR_INVALID_SHAPEDIM(context->GetNodeName(), paramName, std::to_string(dimNum).c_str(), "4");
         return ge::GRAPH_FAILED;

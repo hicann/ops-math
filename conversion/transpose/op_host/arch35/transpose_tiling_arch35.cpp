@@ -22,6 +22,9 @@
 #include "common/inc/op_host/math_log.h"
 
 namespace optiling {
+static constexpr int32_t VCONV_DIM_NUM = 2;
+static constexpr int32_t VCONV_DSIZE = 2;
+
 static int IncreaseCompare(const void* a, const void* b)
 {
     return (*(int64_t*)a - *(int64_t*)b);
@@ -116,8 +119,9 @@ ge::graphStatus TransposeNddmaTiling::TryVCONVTiling()
     auto arch = ascendcPlatform.GetCurNpuArch();
     if (arch == NpuArch::DAV_5102) {
         SMALL_SHAPE_BYTES_THRES_HOLD = SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102;
-        if (!isReleatedTranspsoe_ && shapeInfo_.reducedPerm[0] == 1 && shapeInfo_.reducedPerm[1] == 0 && shapeInfo_.dim == 2 &&
-            shapeInfo_.eleLenInBytes == 2 && shapeInfo_.reducedInShape[0] > DIM_FIVE) {
+        if (!isReleatedTranspsoe_ && shapeInfo_.reducedPerm[0] == 1 && shapeInfo_.reducedPerm[1] == 0 &&
+            shapeInfo_.dim == VCONV_DIM_NUM && shapeInfo_.eleLenInBytes == VCONV_DSIZE &&
+            shapeInfo_.reducedInShape[0] > DIM_FIVE) {
             TransposeWithVCONV::PlatInfo platInfo{coreNum_, ubSize_};
             TransposeWithVCONV::TransposeVCONVTiling vconvTiling(tilingContext_, platInfo, shapeInfo_);
             OP_CHECK_IF(

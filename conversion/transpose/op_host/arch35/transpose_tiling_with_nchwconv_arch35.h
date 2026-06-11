@@ -152,15 +152,15 @@ private:
     ge::graphStatus SetTilingKeyAndCore();
 private:
     gert::TilingContext* context_ = nullptr;
-    int64_t tilingKey_;
-    int64_t AvailableUbSize;
+    int64_t tilingKey_{0};
+    int64_t AvailableUbSize{0};
     PlatInfo platInfo_;
     ShapeInfo shapeInfo_;
-    BasicInfo basicInfo_;
-    UbParamInfo rUbParamInfo_;
-    UbParamInfo cUbParamInfo_;
-    CoreSplitInfo rCoreSplitInfo_;
-    CoreSplitInfo cCoreSplitInfo_;
+    BasicInfo basicInfo_{};
+    UbParamInfo rUbParamInfo_{};
+    UbParamInfo cUbParamInfo_{};
+    CoreSplitInfo rCoreSplitInfo_{};
+    CoreSplitInfo cCoreSplitInfo_{};
     TransposeVCONVTilingData tiling_;
 };
 
