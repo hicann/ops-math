@@ -195,12 +195,11 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
   该接口支持打印Scalar类型数据，如整数、字符型、布尔型等，详细介绍请参见[《Ascend C API》](https://hiascend.com/document/redirect/CannCommunityAscendCApi)中“算子调测API > printf”。
 
   ```c++
-  blockLength_ = (tilingData->totalLength + AscendC::GetBlockNum() - 1) / AscendC::GetBlockNum();
-  tileNum_ = tilingData->tileNum;
-  tileLength_ = ((blockLength_ + tileNum_ - 1) / tileNum_ / BUFFER_NUM) ?
-        ((blockLength_ + tileNum_ - 1) / tileNum_ / BUFFER_NUM) : 1;
+  int64_t remainderLength = tilingData->totalNum - tilingData->blockFactor * AscendC::GetBlockIdx();
+  blockLength_ = (remainderLength > tilingData->blockFactor) ? tilingData->blockFactor : remainderLength;
+  ubLength_ = tilingData->ubFactor;
   // 打印当前核计算Block长度
-  AscendC::PRINTF("Tiling blockLength is %llu\n", blockLength_);
+  AscendC::PRINTF("Tiling blockLength is %lld\n", blockLength_);
   ```
 
 * **DumpTensor**
