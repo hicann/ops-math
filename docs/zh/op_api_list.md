@@ -192,8 +192,8 @@
 | [aclnnLog2&aclnnInplaceLog2](../../math/log/docs/aclnnLog2&aclnnInplaceLog2.md) | 完成以2为底的对数计算                                        | 默认确定性实现| 默认确定性实现|
 | [aclnnLog10&aclnnInplaceLog10](../../math/log/docs/aclnnLog10&aclnnInplaceLog10.md) | 完成输入以10为底的对数计算                                   | 默认确定性实现| 默认确定性实现|
 | [aclnnLog1p&aclnnInplaceLog1p](../../math/log1p/docs/aclnnLog1p&aclnnInplaceLog1p.md) | 对输入Tensor完成log1p运算。                                  | 默认确定性实现| 默认确定性实现|
-| [aclnnLogAddExp](../../math/log_add_exp/docs/aclnnLogAddExp.md) | 对输入的tensor计算幂和的对数（以e为底）。                                           | 默认确定性实现| - |
-| [aclnnLogAddExp2](../../math/log_add_exp/docs/aclnnLogAddExp2.md) | 对输入的tensor计算幂和的对数（以2为底）。                                           | 默认确定性实现| - |
+| [aclnnLogAddExp](../../math/log_add_exp/docs/aclnnLogAddExp.md) | 对输入的tensor计算幂和的对数（以e为底）。                                           | 默认确定性实现| 默认确定性实现 |
+| [aclnnLogAddExp2](../../math/log_add_exp/docs/aclnnLogAddExp2.md) | 对输入的tensor计算幂和的对数（以2为底）。                                           | 默认确定性实现| 默认确定性实现 |
 | [aclnnLogdet](../../math/logdet/docs/aclnnLogdet.md) | 计算输入self的行列式的自然对数。                                         | 默认确定性实现|  默认确定性实现 |
 | [aclnnLogicalAnd&aclnnInplaceLogicalAnd](../../math/logical_and/docs/aclnnLogicalAnd&aclnnInplaceLogicalAnd.md) | 完成给定输入张量元素的逻辑与运算。0被视为False，非0被视为True。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnLogicalNot&aclnnInplaceLogicalNot](../../math/logical_not/docs/aclnnLogicalNot&aclnnInplaceLogicalNot.md) | 计算给定输入Tensor的逐元素逻辑非。如果未指定输出类型，输出Tensor是bool类型。 | 默认确定性实现| 默认确定性实现|
