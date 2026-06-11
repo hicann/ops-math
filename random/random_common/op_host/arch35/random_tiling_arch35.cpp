@@ -25,6 +25,7 @@
 
 namespace optiling {
 static constexpr int64_t MIN_CORE_PRO = 256;
+static constexpr int32_t SPLIT_PUSH_COUNT = 2;
 
 int64_t TensorSliceState::GetMaxOffsetBytes() const
 {
@@ -132,7 +133,7 @@ ge::graphStatus CalcSplitBlocks(TensorSliceState& state, RandomUnifiedSimtTiling
                 int64_t dim = cur.GetDimToSplit();
                 TensorSliceState other;
                 cur.PartitionDim(dim, other);
-                if (static_cast<int32_t>(MAX_SPLIT_BLOCKS) - top < 2) {
+                if (static_cast<int32_t>(MAX_SPLIT_BLOCKS) - top < SPLIT_PUSH_COUNT) {
                     return ge::GRAPH_FAILED;
                 }
                 stack[top++] = cur;
@@ -374,7 +375,7 @@ ge::graphStatus RandomTilingArch35::GetPlatformInfo()
 {
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo == nullptr) {
-        auto compileInfo = reinterpret_cast<const RandomOperatorCompileInfo*>(context_->GetCompileInfo());
+        auto compileInfo = static_cast<const RandomOperatorCompileInfo *>(context_->GetCompileInfo());
         OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfo);
         totalCoreNum_ = static_cast<int64_t>(compileInfo->totalCoreNum);
         ubSize_ = compileInfo->ubSize;

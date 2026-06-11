@@ -202,10 +202,8 @@ void StatelessRandomUniformV2Tiling::SetTilingData()
     tilingData.set_ubTilingSize(ubTilingSize_);
     tilingData.set_alg(static_cast<uint32_t>(alg_));
     // key/counter 由 kernel 从 GM 直接读取，tiling 写零占位
-    uint32_t zeroKey[ALG_KEY_SIZE] = {0};
-    uint32_t zeroCounter[ALG_COUNTER_SIZE] = {0};
-    tilingData.set_key(zeroKey);
-    tilingData.set_counter(zeroCounter);
+    tilingData.set_key(key_);
+    tilingData.set_counter(counter_);
     return;
 }
 

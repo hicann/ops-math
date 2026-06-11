@@ -39,6 +39,8 @@ static constexpr uint64_t CORE_ALIGN_SIZE =256;
 static constexpr uint64_t UB_ALIGN_SIZE = 256;
 static constexpr uint64_t REGBASE_CCEC_CACHE_SIZE = 8 * 1024;
 static constexpr uint32_t RIGHT_SHIFT_NUM = 32;
+static constexpr uint32_t INT32_SIZE = 4;
+static constexpr uint32_t INT64_SIZE = 8;
 
 // ========== 仅需配置校验规则+特定字段回调函数 ==========
 OpTilingConfig StatelessDropOutGenMaskTiling::BuildOpConfig()
@@ -104,7 +106,7 @@ OpTilingConfig StatelessDropOutGenMaskTiling::BuildOpConfig()
         uint32_t seedByteSize = 8;
         if (seedDesc != nullptr) {
             auto seedDtype = seedDesc->GetDataType();
-            seedByteSize = (seedDtype == ge::DT_INT32) ? 4 : 8;
+            seedByteSize = (seedDtype == ge::DT_INT32) ? INT32_SIZE : INT64_SIZE;
         }
         key[1] = seedByteSize;
 

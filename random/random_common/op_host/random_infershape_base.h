@@ -38,7 +38,7 @@ ge::graphStatus CommonInferShape(
     const std::unordered_map<std::string, size_t>& optionalInputMap = {});
 
 template <typename T>
-ge::graphStatus HandleShapeTensor(gert::Shape& outputShape, size_t shapeSize, const T* shapeData);
+ge::graphStatus HandleShapeTensor(gert::Shape& outputShape, size_t xShapeSize, const T* xShapeData);
 
 bool InferShapeForUnknow(
     gert::InferShapeContext* context, const gert::Shape& inShape, gert::Shape& outShape, int64_t& maskIndex,

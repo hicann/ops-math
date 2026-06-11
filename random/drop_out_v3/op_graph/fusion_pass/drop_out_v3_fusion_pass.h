@@ -20,13 +20,13 @@ class __attribute__((visibility("default"))) DropOutV3FusionPass : public Patter
 protected:
     std::vector<PatternUniqPtr> Patterns() override;
 
-    bool MeetRequirements(const std::unique_ptr<MatchResult>& match_result) override;
+    bool MeetRequirements(const std::unique_ptr<MatchResult>& matchResult) override;
 
-    std::unique_ptr<Graph> Replacement(const std::unique_ptr<MatchResult>& match_result) override;
+    std::unique_ptr<Graph> Replacement(const std::unique_ptr<MatchResult>& matchResult) override;
 
 private:
-    bool CheckGenMaskNode(const std::unique_ptr<MatchResult>& match_result) const;
-    bool CheckDoMaskNode(const std::unique_ptr<MatchResult>& match_result) const;
+    bool CheckGenMaskNode(const std::unique_ptr<MatchResult>& matchResult) const;
+    bool CheckDoMaskNode(const std::unique_ptr<MatchResult>& matchResult) const;
 };
 
 } // namespace ge::fusion

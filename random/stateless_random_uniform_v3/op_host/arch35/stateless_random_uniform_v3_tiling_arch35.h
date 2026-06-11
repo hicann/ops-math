@@ -29,7 +29,7 @@ namespace optiling {
 class StatelessRandomUniformV3Tiling : public RandomTilingArch35
 {
 public:
-    explicit StatelessRandomUniformV3Tiling(gert::TilingContext* context);
+    explicit StatelessRandomUniformV3Tiling(gert::TilingContext* ctx);
     ~StatelessRandomUniformV3Tiling() override = default;
 
 protected:

@@ -14,6 +14,7 @@
  */
 
 #include "arch35/stateless_bernoulli_simt.h"
+#define STATELESS_BERNOULLI_DEFAULT_TILING_KEY 100
 
 using namespace StatelessBernoulli;
 
@@ -24,7 +25,7 @@ __global__ __aicore__ void stateless_bernoulli(
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
     GET_TILING_DATA(tilingData, tiling);
 
-    if (TILING_KEY_IS(100)) {
+    if (TILING_KEY_IS(STATELESS_BERNOULLI_DEFAULT_TILING_KEY)) {
         using To = typename AscendC::Conditional<AscendC::IsSameType<DTYPE_Y, bool>::value, int8_t, DTYPE_Y>::type;
         if constexpr (AscendC::IsSameType<DTYPE_PROB, float>::value) {
             StatelessBernoulliKernel<float, To> op;

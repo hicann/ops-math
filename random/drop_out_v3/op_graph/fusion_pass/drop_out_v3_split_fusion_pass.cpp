@@ -37,8 +37,19 @@ constexpr size_t kIdxX = 0;
 constexpr size_t kIdxP = 2;
 constexpr size_t kIdxSeed = 3;
 constexpr size_t kIdxOffset = 4;
+constexpr size_t kDropOutV3InputCount = 5;
 
 constexpr int32_t kMaxDimBound = 8;
+
+constexpr size_t kGenMaskIdxShape = 0;
+constexpr size_t kGenMaskIdxProb = 1;
+constexpr size_t kGenMaskIdxSeed = 2;
+constexpr size_t kGenMaskIdxSeed1 = 3;
+constexpr size_t kGenMaskIdxOffset = 4;
+
+constexpr size_t kDoMaskIdxX = 0;
+constexpr size_t kDoMaskIdxMask = 1;
+constexpr size_t kDoMaskIdxProb = 2;
 
 bool CheckDtype(DataType dtype, const std::vector<DataType>& validTypes)
 {
@@ -124,7 +135,7 @@ bool DropOutV3SplitFusionPass::CheckNode(const GNode &node) const
     }
 
     size_t inputSize = node.GetInputsSize();
-    if (inputSize != 5) {
+    if (inputSize != kDropOutV3InputCount) {
         OP_LOGE(kPassName.c_str(), "DropOutV3 input size != 5, actual: %zu", inputSize);
         return false;
     }
@@ -206,16 +217,16 @@ void DropOutV3SplitFusionPass::UpdateTensorDescs(const InputInfo &info,
     doMask.GetProducer()->UpdateOutputDesc(0, doMaskDesc);
 
     TensorDesc shapeInputDesc(Shape(info.noiseShapeDims), FORMAT_ND, DT_INT64);
-    genMask.GetProducer()->UpdateInputDesc(0, shapeInputDesc);
-    genMask.GetProducer()->UpdateInputDesc(1, probDesc);
-    genMask.GetProducer()->UpdateInputDesc(2, seedDescOut);
+    genMask.GetProducer()->UpdateInputDesc(kGenMaskIdxShape, shapeInputDesc);
+    genMask.GetProducer()->UpdateInputDesc(kGenMaskIdxProb, probDesc);
+    genMask.GetProducer()->UpdateInputDesc(kGenMaskIdxSeed, seedDescOut);
     TensorDesc seed1Desc(Shape({1}), FORMAT_ND, DT_INT64);
-    genMask.GetProducer()->UpdateInputDesc(3, seed1Desc);
-    genMask.GetProducer()->UpdateInputDesc(4, offsetDescOut);
+    genMask.GetProducer()->UpdateInputDesc(kGenMaskIdxSeed1, seed1Desc);
+    genMask.GetProducer()->UpdateInputDesc(kGenMaskIdxOffset, offsetDescOut);
 
-    doMask.GetProducer()->UpdateInputDesc(0, inputDesc);
-    doMask.GetProducer()->UpdateInputDesc(1, genMaskDesc);
-    doMask.GetProducer()->UpdateInputDesc(2, probDesc);
+    doMask.GetProducer()->UpdateInputDesc(kDoMaskIdxX, inputDesc);
+    doMask.GetProducer()->UpdateInputDesc(kDoMaskIdxMask, genMaskDesc);
+    doMask.GetProducer()->UpdateInputDesc(kDoMaskIdxProb, probDesc);
 }
 
 GraphUniqPtr DropOutV3SplitFusionPass::CreateReplacement(const GNode &node)

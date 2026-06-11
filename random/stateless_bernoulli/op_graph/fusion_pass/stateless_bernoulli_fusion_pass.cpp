@@ -31,6 +31,9 @@ namespace {
 const std::string kPassName = "BernoulliFusionPass";
 constexpr int64_t kCaptureIdxV2Node = 0l;
 
+constexpr size_t kIdxProb = 0;
+constexpr size_t kIdxSeed = 1;
+constexpr size_t kIdxOffset = 2;
 std::vector<int64_t> GetShapeDims(const Shape& shape)
 {
     std::vector<int64_t> dims;
@@ -148,20 +151,20 @@ std::unique_ptr<Graph> BernoulliFusionPass::Replacement(const std::unique_ptr<Ma
     }
 
     TensorDesc probDesc;
-    v2NodeIo.node.GetInputDesc(0, probDesc);
+    v2NodeIo.node.GetInputDesc(kIdxProb, probDesc);
     TensorDesc seedDesc;
-    v2NodeIo.node.GetInputDesc(1, seedDesc);
+    v2NodeIo.node.GetInputDesc(kIdxSeed, seedDesc);
     TensorDesc offsetDesc;
-    v2NodeIo.node.GetInputDesc(2, offsetDesc);
+    v2NodeIo.node.GetInputDesc(kIdxOffset, offsetDesc);
 
     auto replaceGraphBuilder = es::EsGraphBuilder("replacement");
-    auto rProb = replaceGraphBuilder.CreateInput(0, "prob", probDesc.GetDataType(), probDesc.GetFormat(),
+    auto rProb = replaceGraphBuilder.CreateInput(kIdxProb, "prob", probDesc.GetDataType(), probDesc.GetFormat(),
                                                   GetShapeDims(probDesc.GetShape()));
     rProb.SetFormat(probDesc.GetFormat());
-    auto rSeed = replaceGraphBuilder.CreateInput(1, "seed", seedDesc.GetDataType(), seedDesc.GetFormat(),
+    auto rSeed = replaceGraphBuilder.CreateInput(kIdxSeed, "seed", seedDesc.GetDataType(), seedDesc.GetFormat(),
                                                   GetShapeDims(seedDesc.GetShape()));
     rSeed.SetFormat(seedDesc.GetFormat());
-    auto rOffset = replaceGraphBuilder.CreateInput(2, "offset", offsetDesc.GetDataType(), offsetDesc.GetFormat(),
+    auto rOffset = replaceGraphBuilder.CreateInput(kIdxOffset, "offset", offsetDesc.GetDataType(), offsetDesc.GetFormat(),
                                                     GetShapeDims(offsetDesc.GetShape()));
     rOffset.SetFormat(offsetDesc.GetFormat());
 

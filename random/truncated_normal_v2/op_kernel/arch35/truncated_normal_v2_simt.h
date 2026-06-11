@@ -30,6 +30,8 @@ constexpr float RANDOM_THREAD_R = 2.0f;
 constexpr uint16_t ALG_KEY_SIZE = 2;
 constexpr uint16_t ALG_COUNTER_SIZE = 4;
 constexpr uint32_t SHIFT_BITS = 32;
+constexpr int IDX_0 = 0;
+constexpr int IDX_1 = 1;
 constexpr int IDX_2 = 2;
 constexpr int IDX_3 = 3;
 
@@ -73,7 +75,7 @@ __simt_callee__ __aicore__ inline void GenSamples(float* results, const uint32_t
         // the desired number of elements that fall within the pre-defined cutoff
         // threshold.
         float f[2];
-        RandomKernelBase::BoxMullerFloatSafe(Uint32ToFloat(counterRst[0]), Uint32ToFloat(counterRst[1]), &f[0], &f[1]);
+        RandomKernelBase::BoxMullerFloatSafe(Uint32ToFloat(counterRst[IDX_0]), Uint32ToFloat(counterRst[IDX_1]), &f[0], &f[1]);
         FilterSample(results, index, f[0]);
         if (index >= static_cast<int>(GROUP_SIZE)) {
             return;
@@ -83,7 +85,7 @@ __simt_callee__ __aicore__ inline void GenSamples(float* results, const uint32_t
             return;
         }
 
-        RandomKernelBase::BoxMullerFloatSafe(Uint32ToFloat(counterRst[2]), Uint32ToFloat(counterRst[3]), &f[0], &f[1]);
+        RandomKernelBase::BoxMullerFloatSafe(Uint32ToFloat(counterRst[IDX_2]), Uint32ToFloat(counterRst[IDX_3]), &f[0], &f[1]);
         FilterSample(results, index, f[0]);
         if (index >= static_cast<int>(GROUP_SIZE)) {
             return;

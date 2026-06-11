@@ -43,6 +43,8 @@ constexpr size_t kIdxOffset = 4;
 constexpr size_t kGenMaskIdxProb = 1;
 constexpr size_t kGenMaskIdxSeed = 2;
 constexpr size_t kGenMaskIdxOffset = 4;
+constexpr size_t kGenMaskInputCount = 5;
+constexpr size_t kDoMaskInputCount = 3;
 
 struct InputParams {
     std::vector<int64_t> xDims;
@@ -237,7 +239,7 @@ bool DropOutV3FusionPass::CheckGenMaskNode(const std::unique_ptr<MatchResult>& m
         return false;
     }
 
-    if (genMaskIo.node.GetInputsSize() != 5) {
+    if (genMaskIo.node.GetInputsSize() != kGenMaskInputCount) {
         OP_LOGE(kPassName.c_str(), "GenMask input size != 5");
         return false;
     }
@@ -287,7 +289,7 @@ bool DropOutV3FusionPass::CheckDoMaskNode(const std::unique_ptr<MatchResult>& ma
         return false;
     }
 
-    if (doMaskIo.node.GetInputsSize() != 3) {
+    if (doMaskIo.node.GetInputsSize() != kDoMaskInputCount) {
         OP_LOGE(kPassName.c_str(), "DoMask input size != 3");
         return false;
     }

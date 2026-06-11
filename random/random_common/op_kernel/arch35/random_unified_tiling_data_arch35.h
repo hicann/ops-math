@@ -17,6 +17,12 @@
 #define RANDOM_UNIFIED_TILING_DATA_STRUCT_H
 
 #include <sstream>
+
+static constexpr uint16_t COUNTER_IDX_0 = 0;
+static constexpr uint16_t COUNTER_IDX_1 = 1;
+static constexpr uint16_t COUNTER_IDX_2 = 2;
+static constexpr uint16_t COUNTER_IDX_3 = 3;
+
 class RandomUnifiedTilingDataStruct {
 public:
     int64_t usedCoreNum = 0;
@@ -39,7 +45,7 @@ public:
              << "usedCoreNum: " << usedCoreNum << ", normalCoreProNum: " << normalCoreProNum
              << ", tailCoreProNum: " << tailCoreProNum << ", singleBufferSize: " << singleBufferSize << ", key: ["
              << key[0] << ", " << key[1] << "]"
-             << ", counter: [" << counter[0] << ", " << counter[1] << ", " << counter[2] << ", " << counter[3] << "]"
+             << ", counter: [" << counter[COUNTER_IDX_0] << ", " << counter[COUNTER_IDX_1] << ", " << counter[COUNTER_IDX_2] << ", " << counter[COUNTER_IDX_3] << "]"
              << ", outputSize: " << outputSize << ", probTensorSize: " << probTensorSize
              << ", sharedTmpBufSize: " << sharedTmpBufSize << ", keepProb: " << keepProb
              << ", v3KernelMode: " << v3KernelMode;
@@ -81,9 +87,8 @@ public:
         info << "[RandomUnifiedSimtTilingData] "
              << "usedCoreNum: " << usedCoreNum << ", outputSize: " << outputSize << ", seed: " << seed
              << ", offset: " << offset << ", ubSize: " << ubSize << ", extraInt64Param1: " << extraInt64Param1
-             << ", prob: " << prob << ", extraFloat32Param1: " << extraFloat32Param1
-             << ", from: " << from << ", range: " << range
-             << ", fromFp32: " << fromFp32 << ", toFp32: " << toFp32
+             << ", prob: " << prob << ", extraFloat32Param1: " << extraFloat32Param1 << ", from: " << from
+             << ", range: " << range << ", fromFp32: " << fromFp32 << ", toFp32: " << toFp32
              << ", splitBlockCount: " << splitBlockCount << ", splitBlocks: [";
         for (int64_t i = 0; i < splitBlockCount && i < MAX_SPLIT_BLOCKS; i++) {
             info << "{numel:" << splitBlocks[i].numel << ", gmOffset:" << splitBlocks[i].gmOffset

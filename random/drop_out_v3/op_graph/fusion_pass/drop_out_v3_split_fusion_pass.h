@@ -37,7 +37,7 @@ struct InputInfo {
 
 class __attribute__((visibility("default"))) DropOutV3SplitFusionPass : public FusionBasePass {
 public:
-    Status Run(GraphPtr &graph, CustomPassContext &pass_context) override;
+    Status Run(GraphPtr &graph, CustomPassContext &passContext) override;
 
 private:
     bool CheckPlatform() const;

@@ -1361,7 +1361,7 @@ static ge::graphStatus ValidateAndSetStride(
                 std::to_string(nonStrideI->GetStride(param.tensorList[i].size() - 1)).c_str(),
                 "1"),
             return ge::GRAPH_FAILED);
-        for (int32_t j = param.tensorList[i].size() - 2; j >= 0; j--) {
+        for (int64_t j = param.tensorList[i].size() - 2; j >= 0; j--) {
             if (param.strideDim != j) {
                 OP_CHECK_IF(nonStrideI->GetStride(j) != nonStrideI->GetStride(j + 1) * param.tensorList[i][j + 1],
                     OP_LOGE_FOR_INVALID_STRIDE(context->GetNodeName(), "input_stride",

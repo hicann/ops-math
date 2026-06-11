@@ -27,7 +27,7 @@
 namespace optiling {
 class StatelessNormalTiling : public RandomTilingArch35 {
 public:
-    explicit StatelessNormalTiling(gert::TilingContext* context);
+    explicit StatelessNormalTiling(gert::TilingContext* ctx);
     ~StatelessNormalTiling() override = default;
 
 protected:

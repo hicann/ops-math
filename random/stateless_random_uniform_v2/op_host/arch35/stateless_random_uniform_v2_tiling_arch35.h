@@ -102,6 +102,8 @@ private:
     Algorithm alg_ = Algorithm::RNG_ALG_PHILOX;
     const char* opName = "StatelessRandomUniformV2";
     StatelessRandomUniformV2TilingData tilingData;
+    uint32_t key_[ALG_KEY_SIZE] = {0};
+    uint32_t counter_[ALG_COUNTER_SIZE] = {0};
 };
 
 } // namespace optiling
