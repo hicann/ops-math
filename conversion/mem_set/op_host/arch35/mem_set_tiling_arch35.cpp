@@ -148,7 +148,7 @@ ge::graphStatus MemSetTilingClass::GetPlatformInfo()
 {
     auto platformInfo = context_->GetPlatformInfo();
     if (isDynamic_ || platformInfo == nullptr) {
-        auto compileInfoPtr = reinterpret_cast<const MemSetCompileInfoArch35*>(context_->GetCompileInfo());
+        auto compileInfoPtr = context_->GetCompileInfo<MemSetCompileInfoArch35>();
         OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfoPtr);
         aicoreParams_.numBlocks = compileInfoPtr->coreNum;
         aicoreParams_.ubSize = compileInfoPtr->ubSize;
@@ -224,7 +224,7 @@ ge::graphStatus MemSetTilingClass::SetShapeAttrsInfo(bool isGE)
             intValue_[i] = valueIntPtr->GetData()[i];
         }
         if (isDynamic_) {
-            auto memSetContext = reinterpret_cast<ops::AtomicCleanTilingContext*>(context_);
+            auto memSetContext = static_cast<ops::AtomicCleanTilingContext*>(context_);
             sizes_[i] = memSetContext->GetCleanOutputSize(i);
         } else {
             sizes_[i] = sizesPtr->GetData()[i];
@@ -294,7 +294,7 @@ ge::graphStatus Tiling4MemSetArch35(gert::TilingContext* context)
 {
     OP_LOGI("MemSet tilingData", "Start tiling for MemSet.");
     const MemSetCompileInfoArch35* compileInfo =
-        reinterpret_cast<const MemSetCompileInfoArch35*>(context->GetCompileInfo());
+        context->GetCompileInfo<MemSetCompileInfoArch35>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     OP_LOGD(context->GetNodeName(), "runing regbase soc version tiling func");
     class MemSetTilingClass tiling(context);

@@ -343,7 +343,7 @@ ge::graphStatus DynamicPartitionTiling::WriteTilingData()
 
 ge::graphStatus DynamicPartitionTiling::DoTiling()
 {
-    compileInfo_ = reinterpret_cast<const DynamicPartitionCompileInfo*>(context_->GetCompileInfo());
+    compileInfo_ = context_->GetCompileInfo<DynamicPartitionCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfo_);
 
     OP_CHECK_IF(GetInputShapeAndType() != ge::GRAPH_SUCCESS,

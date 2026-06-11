@@ -65,7 +65,7 @@ private:
     void CheckTilingData(MemSetTilingData<Count>* tilingDataPostAtr);
 
 private:
-    void* tilingDataPostAtr_;
+    void* tilingDataPostAtr_ = nullptr;
     std::vector<int64_t> perCoreSizes_;
     std::vector<int64_t> lastCoreSizes_;
     std::vector<int64_t> intValue_;
@@ -73,11 +73,11 @@ private:
     std::vector<int16_t> listType_;
     std::vector<int16_t> useCore_;
     std::vector<int64_t> sizes_;
-    uint16_t cacheLineSize_;
-    uint16_t needCore_;
-    int halfUbSize_;
-    uint16_t inputCount_;
-    uint16_t TilingKey_;
+    uint16_t cacheLineSize_ = 0;
+    uint16_t needCore_ = 0;
+    int halfUbSize_ = 0;
+    uint16_t inputCount_ = 0;
+    uint16_t TilingKey_ = 0;
     bool isDynamic_ = false;
 };
 

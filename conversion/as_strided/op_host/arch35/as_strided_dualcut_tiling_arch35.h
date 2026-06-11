@@ -26,13 +26,8 @@ constexpr int64_t BLOCK_BYTES = 32;
 
 struct AxisInf {
     AxisInf(int64_t dim_, int64_t stride_, int64_t idx_, gert::TilingContext* context)
+        : context_(context), dim(dim_), stride(stride_), idx(idx_), code(1 << idx_), conter(0)
     {
-        context_ = context;
-        this->dim = dim_;
-        this->stride = stride_;
-        this->idx = idx_;
-        this->code = 1 << idx_;
-        this->conter = 0;
     }
 
     void PrintDebug()
@@ -310,10 +305,10 @@ void DualCutAxisSeeker::GenTilingData()
     }
     // update cut outer axis
     for (int i = 0; i < this->cutAxisNums; i++) {
-        uint32_t idx = this->gmAxis[this->outerAxisNums - 1 - i].idx;
+        uint32_t idx = this->gmAxis[static_cast<size_t>(this->outerAxisNums - 1 - i)].idx;
         for (auto tmpAxis : this->ubAxis) {
             if (tmpAxis.idx == idx) {
-                this->gmOutStride[this->outerAxisNums - 1 - i] *= tmpAxis.dim;
+                this->gmOutStride[static_cast<size_t>(this->outerAxisNums - 1 - i)] *= tmpAxis.dim;
                 break;
             }
         }
@@ -358,7 +353,7 @@ bool DualCutAxisSeeker::FindDualCutAxis(int ubSize, int bufferNum)
     }
     for (int findLoops = SHAPE_ARRAY_LEN; findLoops >= 0; findLoops--) {
         int64_t remainUB = this->ComputeRemainUB(ubNum, ubAxisSet);
-        ubBound = std::floor(std::sqrt(remainUB));
+        ubBound = static_cast<int>(std::floor(std::sqrt(remainUB)));
         if (ubBound <= 0) {
             OP_LOGI(context_, "ubBound is invalid.");
             break;

@@ -65,6 +65,7 @@ constexpr int64_t LAST_STRIDE_THRESHOLD = 64;
 constexpr uint16_t MAX_UINT16 = 65535;
 constexpr uint16_t GATHER_AXES_LIMIT = 3;
 constexpr uint16_t GATHER_UB_SIZE_LOWER_LIMIT = 2048;
+constexpr size_t WORKSPACE_SIZE_8MB = 8 * 1024 * 1024;
 
 std::map<ge::DataType, uint32_t> tilingTypeKeyMap = {
     {ge::DT_INT64, INPUT_DTYPE_B64},      {ge::DT_UINT64, INPUT_DTYPE_B64},       {ge::DT_COMPLEX64, INPUT_DTYPE_B64},
@@ -481,13 +482,21 @@ inline static uint32_t CalcblockNum(const gert::TilingContext* context, uint64_t
 inline static void SetAllStridesZeroTilingParam(const gert::TilingContext* context, gert::Shape outSize,
                                                 AsStridedTilingParam& tilingParam)
 {
-    uint64_t totalOutElement = outSize.GetShapeSize();
+    int64_t shapeSize = outSize.GetShapeSize();
+    OP_CHECK_IF(
+        (shapeSize <= 0),
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context->GetNodeName(), "size",
+            std::to_string(shapeSize).c_str(),
+            "The shape size of this parameter must be greater than 0."),
+        return);
+    uint64_t totalOutElement = static_cast<uint64_t>(shapeSize);
     tilingParam.blockNum = CalcblockNum(context, totalOutElement, tilingParam);
     tilingParam.mainBlockFactor = static_cast<int64_t>(Ops::Base::CeilDiv(totalOutElement,
                                                                     static_cast<uint64_t>(tilingParam.blockNum)));
     tilingParam.blockNum = static_cast<uint32_t>(Ops::Base::CeilDiv(totalOutElement,
                                                                     static_cast<uint64_t>(tilingParam.mainBlockFactor)));
-    tilingParam.tailBlockFactor = totalOutElement - (tilingParam.blockNum - 1) * tilingParam.mainBlockFactor;
+    tilingParam.tailBlockFactor = static_cast<int64_t>(totalOutElement) -
+        static_cast<int64_t>(tilingParam.blockNum - 1) * tilingParam.mainBlockFactor;
 }
 
 inline static void SetSimtTilingParam(const gert::TilingContext* context, gert::Shape outSize, gert::Shape outStride,
@@ -501,7 +510,8 @@ inline static void SetSimtTilingParam(const gert::TilingContext* context, gert::
                                                                     static_cast<uint64_t>(tilingParam.blockNum)));
     tilingParam.blockNum = static_cast<uint32_t>(Ops::Base::CeilDiv(totalOutElement,
                                 static_cast<uint64_t>(tilingParam.mainBlockFactor)));
-    tilingParam.tailBlockFactor = totalOutElement - (tilingParam.blockNum - 1) * tilingParam.mainBlockFactor;
+    tilingParam.tailBlockFactor = static_cast<int64_t>(totalOutElement) -
+        static_cast<int64_t>(tilingParam.blockNum - 1) * tilingParam.mainBlockFactor;
     for (uint32_t i = 0; i < tilingParam.outDimNum; i++) {
         tilingParam.sizeArr[i] = outSize[i];
         tilingParam.strideArr[i] = outStride[i];
@@ -733,7 +743,14 @@ inline static void CalcTilingUb(const gert::TilingContext* context, gert::Shape 
 inline static void ComputeUbGatherParam(const gert::TilingContext* context, gert::Shape outSize, gert::Shape outStride,
                                         AsStridedTilingParam& tilingParam, AsStridedUbGatherParam& ubGatherParam)
 {
-    uint64_t totalOutElement = outSize.GetShapeSize();
+    int64_t shapeSize = outSize.GetShapeSize();
+    OP_CHECK_IF(
+        (shapeSize <= 0),
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context->GetNodeName(), "size",
+            std::to_string(shapeSize).c_str(),
+            "The shape size of this parameter must be greater than 0."),
+        return);
+    uint64_t totalOutElement = static_cast<uint64_t>(shapeSize);
     ubGatherParam.blockNum = CalcblockNum(context, totalOutElement, tilingParam);
     ubGatherParam.blockNumMin = ubGatherParam.blockNum;
     ubGatherParam.outDimNum = outSize.GetDimNum();
@@ -1250,7 +1267,7 @@ ge::graphStatus AsStridedTilingClass::HandleEmptyTensor()
     context_->SetTilingKey(EMPTY_TENSOR_KEY);
     emptyTilingData_ = context_->GetTilingData<AsStridedEmptyTilingData>();
     size_t* currentWorkspace = context_->GetWorkspaceSizes(1);
-    currentWorkspace[0] = 8 * 1024 * 1024;
+    currentWorkspace[0] = WORKSPACE_SIZE_8MB;
     OP_LOGD(context_, "Output is an empty tensor.");
     return ge::GRAPH_SUCCESS;
 }

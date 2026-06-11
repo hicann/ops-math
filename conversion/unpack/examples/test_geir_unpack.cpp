@@ -36,6 +36,7 @@
 
 #define FAILED -1
 #define SUCCESS 0
+constexpr double DEFAULT_TEST_VALUE = 2.0;
 
 using namespace ge;
 using std::map;
@@ -177,7 +178,7 @@ int CreateOppInGraph(
     data_desc.SetFormat(ge::FORMAT_ND);
 
     Tensor input_tensor;
-    ret = GenOnesData(input_shape, input_tensor, data_desc, inDtype, 2.0);
+    ret = GenOnesData(input_shape, input_tensor, data_desc, inDtype, DEFAULT_TEST_VALUE);
     if (ret != SUCCESS) {
         printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());
         return FAILED;
@@ -209,8 +210,6 @@ bool InitEnv()
     printf("%s - INFO - [XIR]: Initialize ge using ge global options success\n", GetTime().c_str());
     return true;
 }
-
-
 
 void ProcessInputData(std::vector<ge::Tensor>& input)
 {
