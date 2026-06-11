@@ -60,8 +60,7 @@ __global__ __aicore__ void cdist_grad(
         using OpLp = ReduceSch<REDUCE_TPL_VALUE,
             CdistGrad::CdistGradLargePDag<DTYPE_GRAD, PromoteType>::OpDag>;
         OpLp opLp(&tilingData.reduceTiling);
-        opLp.template SetVar<PromoteType, 0>(static_cast<PromoteType>(tilingData.powDiff));
-        opLp.template SetVar<PromoteType, 1>(static_cast<PromoteType>(tilingData.powCdist));
+        opLp.template SetVar<PromoteType, 0>(static_cast<PromoteType>(tilingData.powCdist));
         opLp.Init(&pipe, grad, x1, x2, cdist, y, userWS);
         opLp.Process(static_cast<DTYPE_GRAD>(0));
     } else if constexpr (normMode == CdistGrad::NORM_MODE_P0) {
