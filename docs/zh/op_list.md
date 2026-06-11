@@ -66,6 +66,16 @@
     <td>AI CORE/AI CPU</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
+    <tr>
+    <td>math</td>
+    <td><a href="../../math/acosh_grad/README.md">acosh_grad</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI CORE</td>
+    <td>计算Acosh算子的反向梯度，公式 z = dy / sqrt(y² - 1)。</td>
+  </tr>
   <tr>
     <td>math</td>
     <td><a href="../../math/acos_grad/README.md">acos_grad</a></td>
