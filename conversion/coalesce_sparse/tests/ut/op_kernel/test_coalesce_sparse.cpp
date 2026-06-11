@@ -79,6 +79,7 @@ TEST_F(coalesce_sparse_test, test_case_int32_fp32)
     tilingDatafromBin->moveValueTimes = 1;
     tilingDatafromBin->moveValueLen = 4;
     tilingDatafromBin->taskTailRepeatTail = 0;
+    tilingDatafromBin->deterministicFlag = 0;
 
     ICPU_SET_TILING_KEY(9);
     ICPU_RUN_KF(

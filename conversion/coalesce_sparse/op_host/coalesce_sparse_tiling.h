@@ -36,6 +36,7 @@ TILING_DATA_FIELD_DEF(uint64_t, taskTailRepeatTail);
 TILING_DATA_FIELD_DEF(uint64_t, moveValueTimes);
 TILING_DATA_FIELD_DEF(uint64_t, moveValueLen);
 TILING_DATA_FIELD_DEF(uint64_t, moveValueTail);
+TILING_DATA_FIELD_DEF(uint64_t, deterministicFlag);
 END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(CoalesceSparse, CoalesceSparseTilingData)

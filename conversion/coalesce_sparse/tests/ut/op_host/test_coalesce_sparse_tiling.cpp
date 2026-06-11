@@ -45,7 +45,7 @@ TEST_F(CoalesceSparseTiling, test_coalesce_sparse_success) {
                                                {{{7, 3}, {7, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},},
                                                 &compileInfo);
     uint64_t expectTilingKey = 9;
-    string expectTilingData = "1 2 3 256 10 4064 0 256 0 10 1 3 0 ";
+    string expectTilingData = "1 2 3 256 10 4064 0 256 0 10 1 3 0 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

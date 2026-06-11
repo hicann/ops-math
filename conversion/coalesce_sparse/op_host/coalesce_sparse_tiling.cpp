@@ -64,6 +64,7 @@ private:
     uint64_t moveValueTimes = 0;
     uint64_t moveValueLen = 0;
     uint64_t moveValueTail = 0;
+    uint64_t deterministicFlag = 0;
 };
 
 void CoalesceSparseTiling::TilingKeyCalcu(ge::DataType uniqueIndicesDtype, ge::DataType indicesDtype, 
@@ -102,6 +103,7 @@ ge::graphStatus CoalesceSparseTiling::TilingDataCalcu(ge::DataType uniqueIndices
     uint64_t uniqueIndiceTypeSize = GetSizeByDataType(uniqueIndicesDtype);
     uint64_t indiceTypeSize = GetSizeByDataType(indicesDtype);
     uint64_t valueTypeSize = GetSizeByDataType(valuesDtype);
+    auto ret = TilingContext->GetDeterministic();
     n = indicesShape.GetDim(0);
     m = indicesShape.GetDim(1);
     OP_LOGD(TilingContext, "Calculate valueSize.");
@@ -119,6 +121,11 @@ ge::graphStatus CoalesceSparseTiling::TilingDataCalcu(ge::DataType uniqueIndices
     taskTail = n % taskNum;
     if (taskTail == 0) {
         taskTail = taskNum;
+    }
+    if (ret != 0) {
+        usedCoreNum = 1;
+        taskTail = n;
+        deterministicFlag = 1;
     }
     moveValueLen = valueSize;
     if (moveValueLen > MAXRPTIME) {
@@ -183,6 +190,7 @@ ge::graphStatus CoalesceSparseTiling::RunKernelTiling()
     TilingData.set_moveValueTimes(moveValueTimes);
     TilingData.set_moveValueLen(moveValueLen);
     TilingData.set_moveValueTail(moveValueTail);
+    TilingData.set_deterministicFlag(deterministicFlag);
 
     size_t sysWorkspaceSize = 16*1024*1024;
     size_t* currentWorkspace = TilingContext->GetWorkspaceSizes(1);
@@ -211,6 +219,7 @@ void CoalesceSparseTiling::TilingDataPrint()
     OP_LOGD(TilingContext, "moveValueTimes:%ld.", moveValueTimes);
     OP_LOGD(TilingContext, "moveValueLen:%ld.", moveValueLen);
     OP_LOGD(TilingContext, "moveValueTail:%ld.", moveValueTail);
+    OP_LOGD(TilingContext, "deterministicFlag:%ld.", deterministicFlag);
 }
 
 static ge::graphStatus TilingCoalesceSparse(gert::TilingContext* context)

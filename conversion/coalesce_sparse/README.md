@@ -79,7 +79,13 @@
 
 ## 约束说明
 
+只能从PTA侧调用，如想使用aclnn接口需要手动构造unique_indices入参，并确保调用Kernel前new_values Tensor已置为全零。
+
 重索引后的indices值不能超过int32上限。
+
+确定性计算：
+- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas 推理系列产品</term>、 <term>Atlas 训练系列产品</term>：aclnnCoalesceSparse默认非确定性实现，不支持通过aclrtCtxSetSysParamOpt开启确定性。
+- <term>Ascend 950PR/Ascend 950DT</term>：aclnnCoalesceSparse默认非确定性实现，支持通过aclrtCtxSetSysParamOpt开启确定性。
 
 ## 调用说明
 

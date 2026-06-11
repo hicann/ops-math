@@ -24,7 +24,7 @@ extern "C" __global__ __aicore__ void coalesce_sparse(
 {
     GET_TILING_DATA(tilingData, tiling);
     const CoalesceSparseTilingData* __restrict tilingDevice = &tilingData;
-#if __CCE_AICORE__ == 310
+#if __CCE_AICORE__ == 310 && ORIG_DTYPE_UNIQUE_INDICES == DT_INT64 && ORIG_DTYPE_INDICES == DT_INT64
     if (TILING_KEY_IS(100)) {
         KernelCoalesceSparseSimt<int64_t, int64_t, float> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
@@ -37,7 +37,9 @@ extern "C" __global__ __aicore__ void coalesce_sparse(
         KernelCoalesceSparseSimt<int64_t, int64_t, half> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
         op.Process();
-    } else if (TILING_KEY_IS(103)) {
+    }
+#elif __CCE_AICORE__ == 310 && ORIG_DTYPE_UNIQUE_INDICES == DT_INT64 && ORIG_DTYPE_INDICES == DT_INT32
+    if (TILING_KEY_IS(103)) {
         KernelCoalesceSparseSimt<int64_t, int32_t, float> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
         op.Process();
@@ -49,7 +51,9 @@ extern "C" __global__ __aicore__ void coalesce_sparse(
         KernelCoalesceSparseSimt<int64_t, int32_t, half> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
         op.Process();
-    } else if (TILING_KEY_IS(106)) {
+    } 
+#elif __CCE_AICORE__ == 310 && ORIG_DTYPE_UNIQUE_INDICES == DT_INT32 && ORIG_DTYPE_INDICES == DT_INT64
+    if (TILING_KEY_IS(106)) {
         KernelCoalesceSparseSimt<int32_t, int64_t, float> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
         op.Process();
@@ -61,7 +65,9 @@ extern "C" __global__ __aicore__ void coalesce_sparse(
         KernelCoalesceSparseSimt<int32_t, int64_t, half> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
         op.Process();
-    } else if (TILING_KEY_IS(109)) {
+    }
+#elif __CCE_AICORE__ == 310 && ORIG_DTYPE_UNIQUE_INDICES == DT_INT32 && ORIG_DTYPE_INDICES == DT_INT32
+    if (TILING_KEY_IS(109)) {
         KernelCoalesceSparseSimt<int32_t, int32_t, float> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
         op.Process();
@@ -74,7 +80,9 @@ extern "C" __global__ __aicore__ void coalesce_sparse(
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
         op.Process();
     }
-#else
+#endif
+
+#if __CCE_AICORE__ == 220 && ORIG_DTYPE_UNIQUE_INDICES == DT_INT64 && ORIG_DTYPE_INDICES == DT_INT64
     if (TILING_KEY_IS(0)) {
         KernelCoalesceSparse<int64_t, int64_t, float> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
@@ -87,7 +95,9 @@ extern "C" __global__ __aicore__ void coalesce_sparse(
         KernelCoalesceSparse<int64_t, int64_t, half> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
         op.Process();
-    } else if (TILING_KEY_IS(3)) {
+    }
+#elif __CCE_AICORE__ == 220 && ORIG_DTYPE_UNIQUE_INDICES == DT_INT64 && ORIG_DTYPE_INDICES == DT_INT32
+    if (TILING_KEY_IS(3)) {
         KernelCoalesceSparse<int64_t, int32_t, float> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
         op.Process();
@@ -99,7 +109,9 @@ extern "C" __global__ __aicore__ void coalesce_sparse(
         KernelCoalesceSparse<int64_t, int32_t, half> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
         op.Process();
-    } else if (TILING_KEY_IS(6)) {
+    }
+#elif __CCE_AICORE__ == 220 && ORIG_DTYPE_UNIQUE_INDICES == DT_INT32 && ORIG_DTYPE_INDICES == DT_INT64
+    if (TILING_KEY_IS(6)) {
         KernelCoalesceSparse<int32_t, int64_t, float> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
         op.Process();
@@ -111,7 +123,9 @@ extern "C" __global__ __aicore__ void coalesce_sparse(
         KernelCoalesceSparse<int32_t, int64_t, half> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
         op.Process();
-    } else if (TILING_KEY_IS(9)) {
+    } 
+#elif __CCE_AICORE__ == 220 && ORIG_DTYPE_UNIQUE_INDICES == DT_INT32 && ORIG_DTYPE_INDICES == DT_INT32
+    if (TILING_KEY_IS(9)) {
         KernelCoalesceSparse<int32_t, int32_t, float> op;
         op.Init(unique_indices, indices, values, new_indices, new_value, tilingDevice);
         op.Process();
