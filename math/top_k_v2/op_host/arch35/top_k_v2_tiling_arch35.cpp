@@ -411,13 +411,13 @@ void SetMergeSortTmpSize(
         OP_LOGE("TopKV2TilingForAscendC", "platform_info is nullptr.");
     }
 
-    uint32_t aglinDataSize = (static_cast<uint32_t>(lastAxisNum) + topkV2DataInfo::AGLIN_FACTOR - 1) /
+    uint32_t alignDataSize = (static_cast<uint32_t>(lastAxisNum) + topkV2DataInfo::AGLIN_FACTOR - 1) /
                              topkV2DataInfo::AGLIN_FACTOR * topkV2DataInfo::AGLIN_FACTOR;
-    uint32_t dataTypeSize = (dataType == ge::DT_BF16) ? GetDefaultTileDataSize(ge::DT_FLOAT) :
-                                                        GetDefaultTileDataSize(dataType);
+    uint32_t dataTypeSize = (dataType == ge::DT_BF16) ? GetDataTypeSize(ge::DT_FLOAT) :
+                                                        GetDataTypeSize(dataType);
 
     auto plat = platform_ascendc::PlatformAscendC(platform_info);
-    uint32_t dataSizeNeed = AscendC::GetConcatTmpSize(plat, aglinDataSize, dataTypeSize);
+    uint32_t dataSizeNeed = AscendC::GetConcatTmpSize(plat, alignDataSize, dataTypeSize);
     OP_LOGI("TopKV2TilingForAscendC", "Allocal buffer mergesort element len = %ld ac merge api", lastAxisNum);
     OP_LOGI("TopKV2TilingForAscendC", "Merge sort need tmp buffer %u byte for ac merge api", dataSizeNeed);
     topkTilingData.set_mergSortAcApiNeedBufferSize(dataSizeNeed);
@@ -468,15 +468,18 @@ uint64_t GetSingleBlockTopkRunTimeNeedSpace(
 {
     OP_CHECK_IF(lastAxisNum == 0, OP_LOGE("TopkV2", "lastAxisNum is 0"), return ge::GRAPH_FAILED);
     uint32_t batchNumInUb = tileData / lastAxisNum;
-    uint64_t aglinkValue = Ops::Base::CeilAlign(static_cast<uint64_t>(kValue), topkV2DataInfo::AGLIN_FACTOR);
-    uint64_t aglinkValueMultDtypeSize =
+    uint64_t alignTileData = Ops::Base::CeilAlign(static_cast<uint64_t>(tileData), topkV2DataInfo::AGLIN_FACTOR);
+    uint64_t alignkValueMultDtypeSize =
         Ops::Base::CeilAlign(static_cast<uint64_t>(kValue * xDtypeSize), topkV2DataInfo::AGLIN_FACTOR);
-    uint64_t aglinkValueMultIndexDtypeSize =
+    uint64_t alignkValueMultIndexDtypeSize =
         Ops::Base::CeilAlign(static_cast<uint64_t>(kValue * indexToDtypeSize), topkV2DataInfo::AGLIN_FACTOR);
-    uint64_t aglinIndicesOutTbuf =
+    uint64_t alignIndicesOutTbuf =
         Ops::Base::CeilAlign(static_cast<uint64_t>(kValue * sizeof(int32_t)), topkV2DataInfo::AGLIN_FACTOR);
-    uint64_t initUb = batchNumInUb * (aglinkValue * xDtypeSize + aglinkValueMultDtypeSize +
-                                      aglinkValueMultIndexDtypeSize + aglinIndicesOutTbuf);
+    uint64_t initUb = batchNumInUb * (alignTileData * xDtypeSize + alignkValueMultDtypeSize +
+                                      alignkValueMultIndexDtypeSize + alignIndicesOutTbuf);
+    OP_LOGD("TopKV2TilingForAscendC", "compute single block alignTileData=%u, alignkValueMultDtypeSize=%u, "
+        "alignkValueMultIndexDtypeSize=%u, alignIndicesOutTbuf=%u.", alignTileData, alignkValueMultDtypeSize, 
+        alignkValueMultIndexDtypeSize, alignIndicesOutTbuf);
     return initUb;
 }
 
