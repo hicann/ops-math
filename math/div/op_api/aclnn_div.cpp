@@ -253,6 +253,7 @@ static aclnnStatus CompatibleInferDivsModeDtype(
 static inline op::DataType InferDivsModeDtype(
     const op::DataType selfDtype, const op::DataType otherDtype, const int mode)
 {
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     auto scalarDefaultDtype = GetScalarDefaultDtype(otherDtype);
     auto promoteType = CombineCategoriesWithComplex(selfDtype, scalarDefaultDtype);
     if (mode == MODE_REAL_DIV && promoteType != op::DataType::DT_INT32 && promoteType != op::DataType::DT_BOOL) {
@@ -260,7 +261,7 @@ static inline op::DataType InferDivsModeDtype(
         promoteType = PromoteIntegerInputsToFloat(promoteType);
     }
 
-    if (mode == MODE_TRUNC_DIV && promoteType == DataType::DT_DOUBLE) {
+    if (mode == MODE_TRUNC_DIV && promoteType == DataType::DT_DOUBLE && !IsRegBase(npuArch)) {
         promoteType = DataType::DT_FLOAT;
     }
 
@@ -310,7 +311,9 @@ static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, cons
     bool outDtypeToFloat = IsRegBase() && mode == MODE_REAL_DIV &&
                            (promoteType == op::DataType::DT_INT32 || promoteType == op::DataType::DT_BOOL);
     auto computeDtype = outDtypeToFloat ? op::DataType::DT_FLOAT : promoteType;
-    OP_CHECK_RESULT_DTYPE_CAST_FAILED(computeDtype, y->GetDataType(), return false);
+    if (GetCurrentPlatformInfo().GetCurNpuArch() < NpuArch::DAV_3510) {
+        OP_CHECK_RESULT_DTYPE_CAST_FAILED(computeDtype, y->GetDataType(), return false);
+    }
     return true;
 }
 
@@ -571,13 +574,13 @@ static bool CheckPromoteTypeScalar(const aclTensor* self, const aclScalar* other
         // 检查推导后的数据类型能否转换为输出的数据类型
         if (mode == MODE_REAL_DIV && (promoteType == op::DataType::DT_INT32 || promoteType == op::DataType::DT_BOOL)) {
             OP_CHECK_RESULT_DTYPE_CAST_FAILED(op::DataType::DT_FLOAT, y->GetDataType(), return false);
-        } else {
-            OP_CHECK_RESULT_DTYPE_CAST_FAILED(promoteType, y->GetDataType(), return false);
         }
         return true;
     }
     // 检查self的数据类型能否转换为输出的数据类型
-    OP_CHECK_RESULT_DTYPE_CAST_FAILED(self->GetDataType(), y->GetDataType(), return false);
+    if (GetCurrentPlatformInfo().GetCurNpuArch() < NpuArch::DAV_3510) {
+        OP_CHECK_RESULT_DTYPE_CAST_FAILED(self->GetDataType(), y->GetDataType(), return false);
+    }
     return true;
 }
 
@@ -888,7 +891,7 @@ aclnnStatus aclnnDivModsGetWorkspaceSize(
             divOpOut = l0op::TruncateDiv(selfContiguous, otherConvert, uniqueExecutor.get());
         } else {
             op::DataType promoteType;
-            promoteType = InferDivModeDtype(self->GetDataType(), other->GetDataType(), mode);
+            promoteType = InferDivsModeDtype(self->GetDataType(), other->GetDataType(), mode);
             bool needToFloat = (promoteType == op::DataType::DT_BOOL);
             promoteType = needToFloat ? op::DataType::DT_FLOAT : promoteType;
             auto complexRet = CheckDivModComplexDtype(promoteType, mode);
