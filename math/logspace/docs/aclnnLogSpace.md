@@ -286,7 +286,7 @@ int CreateOutputAclTensor(
     return 0;
 }
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API文档
+  // 1.（固定写法）device/stream初始化，参考acl API文档
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;

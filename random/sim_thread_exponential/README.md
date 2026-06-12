@@ -76,10 +76,10 @@
 
 ## 约束说明
 
-- lambd 必须大于 0
-- offset 必须为 4 的倍数（Ascend 950）
-- count 必须等于 self 张量的元素总数（Ascend 950）
-- 仅支持 ND 格式
+- lambd必须大于0
+- offset必须为4的倍数（Ascend 950）
+- count必须等于self张量的元素总数（Ascend 950）
+- 仅支持ND格式
 
 ## 调用说明
 

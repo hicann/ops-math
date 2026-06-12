@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-- 接口功能：实现 AMP（Automatic Mixed Precision）训练中的动态 Scale 更新逻辑。根据当前 scale 值、growth tracker 计数器以及是否发现 Inf/NaN，动态调整 loss scale 大小。
+- 接口功能：实现AMP（Automatic Mixed Precision）训练中的动态Scale更新逻辑。根据当前scale值、growth tracker计数器以及是否发现Inf/NaN，动态调整loss scale大小。
 
 - 计算公式：
 
@@ -33,12 +33,12 @@
   $$
 
   说明：
-  - 当 found_inf 不为 0 时，scale 乘以 backoff_factor 回退，growth_tracker 重置为 0
-  - 当 found_inf 为 0 且 growth_tracker + 1 等于 growth_interval 时，scale 乘以 growth_factor 增长
-  - 如果增长后的 new_scale 溢出（inf/nan），则保持当前 scale 不变，growth_tracker 重置为 0
-  - 其他情况下，scale 保持不变，growth_tracker 递增 1
+  - 当found_inf不为0时，scale乘以backoff_factor回退，growth_tracker重置为0
+  - 当found_inf为0且growth_tracker + 1等于growth_interval时，scale乘以growth_factor增长
+  - 如果增长后的new_scale溢出（inf/nan），则保持当前scale不变，growth_tracker重置为0
+  - 其他情况下，scale保持不变，growth_tracker递增1
 
-- 使用场景：AMP 训练中的动态损失缩放（Dynamic Loss Scaling），用于在 FP16/BF16 混合精度训练中防止梯度下溢。
+- 使用场景：AMP训练中的动态损失缩放（Dynamic Loss Scaling），用于在FP16/BF16混合精度训练中防止梯度下溢。
 
 ## 函数原型
 
@@ -95,8 +95,8 @@ aclnnStatus aclnnAmpUpdateScale(
     <tr>
       <td>currentScale（aclTensor*）</td>
       <td>输入</td>
-      <td>当前的 loss scale 值。</td>
-      <td>shape 为标量 [1]。</td>
+      <td>当前的loss scale值。</td>
+      <td>shape为标量 [1]。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>1</td>
@@ -105,8 +105,8 @@ aclnnStatus aclnnAmpUpdateScale(
     <tr>
       <td>growthTracker（aclTensor*）</td>
       <td>输入</td>
-      <td>连续未出现 Inf/NaN 的步数计数器。</td>
-      <td>shape 为标量 [1]。</td>
+      <td>连续未出现Inf/NaN的步数计数器。</td>
+      <td>shape为标量 [1]。</td>
       <td>INT32</td>
       <td>ND</td>
       <td>1</td>
@@ -115,8 +115,8 @@ aclnnStatus aclnnAmpUpdateScale(
     <tr>
       <td>foundInf（aclTensor*）</td>
       <td>输入</td>
-      <td>是否检测到 Inf/NaN 的标志。</td>
-      <td>shape 为标量 [1]。0 表示正常，非 0 表示发现 Inf/NaN。数据类型需要与 currentScale 一致。</td>
+      <td>是否检测到Inf/NaN的标志。</td>
+      <td>shape为标量 [1]。0表示正常，非0表示发现Inf/NaN。数据类型需要与currentScale一致。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>1</td>
@@ -125,8 +125,8 @@ aclnnStatus aclnnAmpUpdateScale(
     <tr>
       <td>growthFactor（float）</td>
       <td>输入</td>
-      <td>scale 增长因子。</td>
-      <td>当连续 growth_interval 步未检测到 Inf/NaN 时，scale 将乘以该因子。通常设置为 2.0。</td>
+      <td>scale增长因子。</td>
+      <td>当连续growth_interval步未检测到Inf/NaN时，scale将乘以该因子。通常设置为2.0。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -135,8 +135,8 @@ aclnnStatus aclnnAmpUpdateScale(
     <tr>
       <td>backoffFactor（float）</td>
       <td>输入</td>
-      <td>scale 回退因子。</td>
-      <td>当检测到 Inf/NaN 时，scale 将乘以该因子。通常设置为 0.5。</td>
+      <td>scale回退因子。</td>
+      <td>当检测到Inf/NaN时，scale将乘以该因子。通常设置为0.5。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -145,8 +145,8 @@ aclnnStatus aclnnAmpUpdateScale(
     <tr>
       <td>growthInterval（int64_t）</td>
       <td>输入</td>
-      <td>触发 scale 增长的间隔步数。</td>
-      <td>即连续多少步未检测到 Inf/NaN 后将增大 scale。取值范围 >= 1。</td>
+      <td>触发scale增长的间隔步数。</td>
+      <td>即连续多少步未检测到Inf/NaN后将增大scale。取值范围 >= 1。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -155,8 +155,8 @@ aclnnStatus aclnnAmpUpdateScale(
     <tr>
       <td>updatedScale（aclTensor*）</td>
       <td>输出</td>
-      <td>更新后的 loss scale 值。</td>
-      <td>shape 为 [1]。数据类型需要与 currentScale 的数据类型一致。</td>
+      <td>更新后的loss scale值。</td>
+      <td>shape为 [1]。数据类型需要与currentScale的数据类型一致。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>1</td>
@@ -165,8 +165,8 @@ aclnnStatus aclnnAmpUpdateScale(
     <tr>
       <td>updatedGrowthTracker（aclTensor*）</td>
       <td>输出</td>
-      <td>更新后的 growth tracker 计数器。</td>
-      <td>shape 为 [1]。</td>
+      <td>更新后的growth tracker计数器。</td>
+      <td>shape为 [1]。</td>
       <td>INT32</td>
       <td>ND</td>
       <td>1</td>
@@ -215,27 +215,27 @@ aclnnStatus aclnnAmpUpdateScale(
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的 currentScale、growthTracker、foundInf、updatedScale、updatedGrowthTracker 是空指针。</td>
+      <td>传入的currentScale、growthTracker、foundInf、updatedScale、updatedGrowthTracker是空指针。</td>
     </tr>
     <tr>
       <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="6">161002</td>
-      <td>currentScale 的数据类型不在支持的范围之内。</td>
+      <td>currentScale的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>foundInf 的数据类型与 currentScale 不一致。</td>
+      <td>foundInf的数据类型与currentScale不一致。</td>
     </tr>
     <tr>
-      <td>updatedScale 的数据类型与 currentScale 不一致。</td>
+      <td>updatedScale的数据类型与currentScale不一致。</td>
     </tr>
     <tr>
-      <td>growthTracker 的数据类型不是 INT32。</td>
+      <td>growthTracker的数据类型不是INT32。</td>
     </tr>
     <tr>
-      <td>currentScale、growthTracker、foundInf、updatedScale、updatedGrowthTracker 的 shape 不为 [1]。</td>
+      <td>currentScale、growthTracker、foundInf、updatedScale、updatedGrowthTracker的shape不为 [1]。</td>
     </tr>
     <tr>
-      <td>growthInterval 取值小于 1。</td>
+      <td>growthInterval取值小于1。</td>
     </tr>
   </tbody>
   </table>
@@ -286,12 +286,12 @@ aclnnStatus aclnnAmpUpdateScale(
 ## 约束说明
 
 - 确定性计算：
-  - aclnnAmpUpdateScale 默认确定性实现。
+  - aclnnAmpUpdateScale默认确定性实现。
 
-- **数据类型约束**：current_scale 与 found_inf 的数据类型必须一致；updated_scale 的数据类型必须与 current_scale 一致。
-- **shape约束**：所有输入输出张量均为标量，shape 为 [1]。
-- **Inf/NaN 优先级**：found_inf 不为 0 时，直接执行回退逻辑，忽略 growth_tracker 状态。
-- **溢出保护**：当 scale 增长后的新值溢出（inf/nan）时，保持当前 scale 不变，growth_tracker 重置为 0。
+- **数据类型约束**：current_scale与found_inf的数据类型必须一致；updated_scale的数据类型必须与current_scale一致。
+- **shape约束**：所有输入输出张量均为标量，shape为 [1]。
+- **Inf/NaN优先级**：found_inf不为0时，直接执行回退逻辑，忽略growth_tracker状态。
+- **溢出保护**：当scale增长后的新值溢出（inf/nan）时，保持当前scale不变，growth_tracker重置为0。
 
 ## 调用示例
 
@@ -358,7 +358,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -378,27 +378,27 @@ int main() {
   aclTensor* updatedScale = nullptr;
   aclTensor* updatedGrowthTracker = nullptr;
 
-  // 创建 currentScale
+  // 创建currentScale
   std::vector<float> currentScaleHost = {65536.0f};
   ret = CreateAclTensor(currentScaleHost, scalarShape, &currentScaleDeviceAddr, ACL_FLOAT, &currentScale);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 创建 growthTracker
+  // 创建growthTracker
   std::vector<int32_t> growthTrackerHost = {900};
   ret = CreateAclTensor(growthTrackerHost, scalarShape, &growthTrackerDeviceAddr, ACL_INT32, &growthTracker);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 创建 foundInf
+  // 创建foundInf
   std::vector<float> foundInfHost = {0.0f};
   ret = CreateAclTensor(foundInfHost, scalarShape, &foundInfDeviceAddr, ACL_FLOAT, &foundInf);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 创建输出 updatedScale
+  // 创建输出updatedScale
   std::vector<float> updatedScaleHost = {0.0f};
   ret = CreateAclTensor(updatedScaleHost, scalarShape, &updatedScaleDeviceAddr, ACL_FLOAT, &updatedScale);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 创建输出 updatedGrowthTracker
+  // 创建输出updatedGrowthTracker
   std::vector<int32_t> updatedGrowthTrackerHost = {0};
   ret = CreateAclTensor(updatedGrowthTrackerHost, scalarShape, &updatedGrowthTrackerDeviceAddr, ACL_INT32,
                         &updatedGrowthTracker);
@@ -442,7 +442,7 @@ int main() {
   LOG_PRINT("aclnnAmpUpdateScale result: updatedScale = %f, updatedGrowthTracker = %d\n", updatedScaleVal,
             updatedGrowthTrackerVal);
 
-  // 8. （固定写法）释放资源
+  // 8.（固定写法）释放资源
   aclDestroyTensor(currentScale);
   aclDestroyTensor(growthTracker);
   aclDestroyTensor(foundInf);

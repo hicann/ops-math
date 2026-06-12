@@ -492,7 +492,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -527,7 +527,7 @@ int main() {
   // aclnnDivMods接口调用示例
   LOG_PRINT("test aclnnDivMods\n");
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   // 调用aclnnDivMods第一段接口
   ret = aclnnDivModsGetWorkspaceSize(self, other, mode, out, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnDivModsGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
@@ -541,7 +541,7 @@ int main() {
   ret = aclnnDivMods(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnDivMods failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
@@ -556,7 +556,7 @@ int main() {
   // aclnnInplaceDivMods接口调用示例
   LOG_PRINT("\ntest aclnnInplaceDivMods\n");
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   // 调用aclnnInplaceDivMods第一段接口
   ret = aclnnInplaceDivModsGetWorkspaceSize(self, other, mode, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceDivModsGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
@@ -569,7 +569,7 @@ int main() {
   ret = aclnnInplaceDivMods(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceDivMods failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 

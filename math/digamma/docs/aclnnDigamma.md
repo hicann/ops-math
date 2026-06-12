@@ -31,10 +31,10 @@ $$
 ## aclnnDigammaGetWorkspaceSize
 
 - **参数说明：**
-  - self(aclTensor*, 计算输入): Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE，支持[非连续的Tensor](./../../../docs/zh/context/非连续的Tensor.md)，[数据格式](./../../../docs/zh/context/数据格式.md)支持ND。
-  - out(aclTensor\*, 计算输出): Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE，支持[非连续的Tensor](./../../../docs/zh/context/非连续的Tensor.md)，[数据格式](./../../../docs/zh/context/数据格式.md)支持ND。
-  - workspaceSize(uint64_t\*, 出参): 返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor\*\*, 出参): 返回op执行器，包含了算子计算流程。
+  - self(aclTensor*，计算输入): Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE，支持[非连续的Tensor](./../../../docs/zh/context/非连续的Tensor.md)，[数据格式](./../../../docs/zh/context/数据格式.md)支持ND。
+  - out(aclTensor\*，计算输出): Device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE，支持[非连续的Tensor](./../../../docs/zh/context/非连续的Tensor.md)，[数据格式](./../../../docs/zh/context/数据格式.md)支持ND。
+  - workspaceSize(uint64_t\*，出参): 返回需要在Device侧申请的workspace大小。
+  - executor(aclOpExecutor\*\*，出参): 返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
@@ -42,20 +42,19 @@ $$
 
 ```text
 第一段接口完成入参校验，出现以下场景时报错：
-返回161001 (ACLNN_ERR_PARAM_NULLPTR)：1. 传入的tensor或out是空指针。
-返回161002 (ACLNN_ERR_PARAM_INVALID)：
-1. self和out的数据类型和数据格式不在支持的范围之内。
-2. self和out的shape、数据格式或数据类型不一致。
-3. self和out的维数大于8
+返回161001 (ACLNN_ERR_PARAM_NULLPTR)：1.传入的tensor或out是空指针。
+返回161002 (ACLNN_ERR_PARAM_INVALID)：1.self和out的数据类型和数据格式不在支持的范围之内。
+                                      2.self和out的shape、数据格式或数据类型不一致。
+                                      3.self和out的维数大于8
 ```
 
 ## aclnnDigamma
 
 - **参数说明：**
-  - workspace(void \*, 入参): 在Device侧申请的workspace内存地址。
-  - workspaceSize(uint64_t, 入参): 在Device侧申请的workspace大小，由第一段接口aclnnDigammaGetWorkspaceSize获取。
-  - executor(aclOpExecutor \*, 入参): op执行器，包含了算子计算流程。
-  - stream(aclrtStream, 入参): 指定执行任务的Stream。
+  - workspace(void \*，入参): 在Device侧申请的workspace内存地址。
+  - workspaceSize(uint64_t，入参): 在Device侧申请的workspace大小，由第一段接口aclnnDigammaGetWorkspaceSize获取。
+  - executor(aclOpExecutor \*，入参): op执行器，包含了算子计算流程。
+  - stream(aclrtStream，入参): 指定执行任务的Stream。
 
 - **返回值：**
 
@@ -142,7 +141,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -167,7 +166,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
 
@@ -186,7 +185,7 @@ int main() {
   ret = aclnnDigamma(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnDigamma failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 

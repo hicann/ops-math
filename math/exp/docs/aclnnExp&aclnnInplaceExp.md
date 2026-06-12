@@ -27,7 +27,7 @@ $$
 - aclnnExp和aclnnInplaceExp实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnExp：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceExp：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用 “aclnnExpGetWorkspaceSize” 或者 “aclnnInplaceExpGetWorkspaceSize” 接口获取入参并根据计算流程计算所需workspace大小，再调用 “aclnnExp” 或者 “aclnnInplaceExp” 接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnExpGetWorkspaceSize”或者“aclnnInplaceExpGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnExp”或者“aclnnInplaceExp”接口执行计算。
 
 ```Cpp
 aclnnStatus aclnnExpGetWorkspaceSize(
@@ -418,7 +418,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -441,7 +441,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnExp第一段接口
@@ -472,7 +472,7 @@ int main() {
   ret = aclnnInplaceExp(inplaceWorkspaceAddr, inplaceWorkspaceSize, inplaceExecutor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceExp failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 

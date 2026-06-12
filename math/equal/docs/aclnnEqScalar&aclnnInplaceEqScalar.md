@@ -489,32 +489,32 @@ aclError CreateInputs(
   std::vector<char> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
   double otherValue = 1.2;
 
-  // 创建 self tensor
+  // 创建self tensor
   auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_DOUBLE, self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 创建 other scalar
+  // 创建other scalar
   *other = aclCreateScalar(&otherValue, aclDataType::ACL_DOUBLE);
   CHECK_RET(*other != nullptr, return ret);
 
-  // 创建 out tensor
+  // 创建out tensor
   ret = CreateAclTensor(outHostData, outShape, &(*outDeviceAddr), aclDataType::ACL_BOOL, out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   return ACL_SUCCESS;
 }
 
-aclError ExecOpApi(
+aclError ExecOpAPI(
     aclTensor* self, aclScalar* other, aclTensor* out, void** workspaceAddrOut, uint64_t& workspaceSize,
     void* outDeviceAddr, std::vector<int64_t>& outShape, aclrtStream stream)
 {
   aclOpExecutor* executor;
 
-  // 获取 workspace 大小
+  // 获取workspace大小
   auto ret = aclnnEqScalarGetWorkspaceSize(self, other, out, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnEqScalarGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
-  // 申请 workspace（释放放在 main 里）
+  // 申请workspace（释放放在main里）
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -568,15 +568,15 @@ int main()
   uint64_t workspaceSize = 0;
   void* workspaceAddr = nullptr;
 
-  ret = ExecOpApi(self, other, out, &workspaceAddr, workspaceSize, outDeviceAddr, outShape, stream);
+  ret = ExecOpAPI(self, other, out, &workspaceAddr, workspaceSize, outDeviceAddr, outShape, stream);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 释放 Tensor / Scalar
+  // 释放Tensor / Scalar
   aclDestroyTensor(self);
   aclDestroyScalar(other);
   aclDestroyTensor(out);
 
-  // 释放 device 内存
+  // 释放device内存
   aclrtFree(selfDeviceAddr);
   aclrtFree(outDeviceAddr);
   if (workspaceSize > 0) {
@@ -681,7 +681,7 @@ aclError CreateInputs(std::vector<int64_t>& selfShape, void** selfDeviceAddr, ac
   return ACL_SUCCESS;
 }
 
-aclError ExecOpApi(
+aclError ExecOpAPI(
     aclTensor* self, aclScalar* other, void* selfDeviceAddr, std::vector<int64_t>& selfShape, aclrtStream stream,
     void** workspaceAddrOut)
 {
@@ -691,7 +691,7 @@ aclError ExecOpApi(
   auto ret = aclnnInplaceEqScalarGetWorkspaceSize(self, other, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceEqScalarGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
-  // workspace 分配
+  // workspace分配
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -742,7 +742,7 @@ int main()
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   void* workspaceAddr = nullptr;
-  ret = ExecOpApi(self, other, selfDeviceAddr, selfShape, stream, &workspaceAddr);
+  ret = ExecOpAPI(self, other, selfDeviceAddr, selfShape, stream, &workspaceAddr);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   // 销毁

@@ -26,15 +26,15 @@
 
 - **参数说明：**
 
-  - inputTensor(aclTensor*, 计算输入): 表示输入的待压缩张量，Device侧的aclTensor，数据类型支持FLOAT16、BFLOAT16、FLOAT32，数据元素大小仅支持64的倍数且大于等于32768，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - pdfRef(aclTensor*, 计算输入/计算输出)：表示inputTensor的指数位所在字节的概率密度分布，Device侧的aclTensor，数据类型支持INT32，shape要求为(1, 256)，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - statistic(bool, 计算输入): 表示是否进行pdf统计。
-  - reshuff(bool, 计算输入): 表示是否对各核编码后的结果进行内存重整。
-  - mantissaOut(aclTensor*, 计算输出)：表示输出的尾数部分，Device侧的aclTensor。数据类型支持FLOAT16、BFLOAT16、FLOAT32，需与inputTensor保持一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - fixedOut(aclTensor*, 计算输出)：表示压缩的第一段输出，Device侧的aclTensor。数据类型支持FLOAT16、BFLOAT16、FLOAT32，需与inputTensor保持一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - varOut(aclTensor*, 计算输出)：表示压缩超过fixedOut后的输出，Device侧的aclTensor。数据类型支持FLOAT16、BFLOAT16、FLOAT32，需与inputTensor保持一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
-  - workspaceSize(uint64_t*, 出参): 返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor**, 出参): 返回op执行器，包含了算子计算流程。
+  - inputTensor(aclTensor*，计算输入): 表示输入的待压缩张量，Device侧的aclTensor，数据类型支持FLOAT16、BFLOAT16、FLOAT32，数据元素大小仅支持64的倍数且大于等于32768，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  - pdfRef(aclTensor*，计算输入/计算输出)：表示inputTensor的指数位所在字节的概率密度分布，Device侧的aclTensor，数据类型支持INT32，shape要求为(1, 256)，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)，[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  - statistic(bool，计算输入): 表示是否进行pdf统计。
+  - reshuff(bool，计算输入): 表示是否对各核编码后的结果进行内存重整。
+  - mantissaOut(aclTensor*，计算输出)：表示输出的尾数部分，Device侧的aclTensor。数据类型支持FLOAT16、BFLOAT16、FLOAT32，需与inputTensor保持一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  - fixedOut(aclTensor*，计算输出)：表示压缩的第一段输出，Device侧的aclTensor。数据类型支持FLOAT16、BFLOAT16、FLOAT32，需与inputTensor保持一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  - varOut(aclTensor*，计算输出)：表示压缩超过fixedOut后的输出，Device侧的aclTensor。数据类型支持FLOAT16、BFLOAT16、FLOAT32，需与inputTensor保持一致，支持[非连续的Tensor](../../../docs/zh/context/非连续的Tensor.md)。[数据格式](../../../docs/zh/context/数据格式.md)支持ND。
+  - workspaceSize(uint64_t*，出参): 返回需要在Device侧申请的workspace大小。
+  - executor(aclOpExecutor**，出参): 返回op执行器，包含了算子计算流程。
 
 - **返回值：**
 
@@ -68,7 +68,7 @@
       <td>累积编码空间设置过小，压缩存在溢出风险，需满足如下公式：(size(fixedOut) + size(mantissaOut)) &gt;= (len(inputTensor) + len(inputTensor) / 64 + 8448 * processCoreDim)。</td>
     </tr>
     <tr>
-      <td>size(fixedOut) 小于512Byte, 无法存储压缩元信息。</td>
+      <td>size(fixedOut)小于512Byte，无法存储压缩元信息。</td>
     </tr>
     <tr>
       <td>输入的元素个数不为64的倍数或小于32768。</td>
@@ -158,7 +158,7 @@ int64_t GetShapeSize(const std::vector<int64_t>& shape) {
 }
 
 int Init(int32_t deviceId, aclrtStream* stream) {
-  // 固定写法，AscendCL初始化
+  // 固定写法，资源初始化
   auto ret = aclInit(nullptr);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclInit failed. ERROR: %d\n", ret); return ret);
   ret = aclrtSetDevice(deviceId);
@@ -192,7 +192,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考AscendCL对外接口列表
+  // 1.（固定写法）device/stream初始化，参考acl API
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -235,7 +235,7 @@ int main() {
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   ret = CreateAclTensor(recoverHost, {1, 65536}, &recoverAddr, aclDataType::ACL_FLOAT, &recover);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnHansEncode第一段接口
@@ -251,7 +251,7 @@ int main() {
   // 调用aclnnHansEncode第二段接口
   ret = aclnnHansEncode(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnHansEncode failed. ERROR: %d\n", ret); return ret);
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
   // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改

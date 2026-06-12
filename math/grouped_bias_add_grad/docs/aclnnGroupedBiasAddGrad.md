@@ -17,14 +17,14 @@
 
 - 接口功能：分组偏置加法（GroupedBiasAdd）的反向计算。本接口的扩展接口是[aclnnGroupedBiasAddGradV2](./aclnnGroupedBiasAddGradV2.md)。
 - 计算公式：<br>
-  (1) 有可选输入groupIdxOptional时：
+  (1)有可选输入groupIdxOptional时：
 
   $$
   out(G,H) = \begin{cases} \sum_{i=groupIdxOptional(j-1)}^{groupIdxOptional(j)}  gradY(i, H), & 1 \leq j \leq G-1 \\  \sum_{i=0}^{groupIdxOptional(j)}  gradY(i, H), & j = 0 \end{cases}
   $$
 
   其中，gradY共2维，H表示gradY最后一维的大小，G表示groupIdxOptional第0维的大小，即groupIdxOptional有G个数，groupIdxOptional(j)表示第j个数的大小，计算后out为2维，shape为(G, H)。<br>
-  (2) 无可选输入groupIdxOptional时：
+  (2)无可选输入groupIdxOptional时：
 
   $$
   out(G, H) = \sum_{i=0}^{C} gradY(G, i, H)
@@ -33,9 +33,9 @@
   其中，gradY共3维，G, C, H依次表示gradY第0-2维的大小，计算后out为2维，shape为(G, H)。
   
 - 示例：<br>
-(1) 有可选输入groupIdxOptional时：<br>
+(1)有可选输入groupIdxOptional时：<br>
   gradY的shape为(1000, 30)，groupIdxOptional为(400, 600, 1000)，将gradY分为3组，每组累加的行数依次为400、200、400，计算后out的shape为(3, 30)。<br>
-(2) 无可选输入groupIdxOptional时：<br>
+(2)无可选输入groupIdxOptional时：<br>
   gradY的shape为(10, 100, 30)，将gradY分为10组，每组累加的行数均为100，计算后out的shape为(10, 30)。
 
 ## 函数原型
@@ -109,7 +109,7 @@ aclnnStatus aclnnGroupedBiasAddGrad(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>bias的梯度，公式中的out。</td>
-      <td>数据类型必须与gradY的数据类型一致，shape仅支持2维。<br> 如果输入为三维(G, C, H), 则输出shape为(G, H)；<br>如果输入为二维(GB, H), group_idx为(G), 则输出shape为(G, H)。</td>
+      <td>数据类型必须与gradY的数据类型一致，shape仅支持2维。<br> 如果输入为三维(G, C, H)，则输出shape为(G, H)；<br>如果输入为二维(GB, H), group_idx为(G)，则输出shape为(G, H)。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>2</td>
@@ -289,7 +289,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化, 参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -337,7 +337,7 @@ int main() {
   // 调用aclnnGroupedBiasAddGrad第二段接口
   ret = aclnnGroupedBiasAddGrad(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnGroupedBiasAddGrad failed. ERROR: %d\n", ret); return ret);
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
   // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改

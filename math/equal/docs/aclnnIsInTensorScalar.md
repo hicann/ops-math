@@ -305,22 +305,22 @@ aclError CreateInputs(
   std::vector<char> outHostData = {5, 0};
   double testElementValue = 2;
 
-  // 创建 testElement scalar
+  // 创建testElement scalar
   *testElement = aclCreateScalar(&testElementValue, aclDataType::ACL_DOUBLE);
   CHECK_RET(*testElement != nullptr, return ACL_ERROR_INVALID_PARAM);
 
-  // 创建 element tensor
+  // 创建element tensor
   auto ret = CreateAclTensor(elementHostData, elementShape, elementDeviceAddr, aclDataType::ACL_DOUBLE, element);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 创建 out tensor
+  // 创建out tensor
   ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_BOOL, out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   return ACL_SUCCESS;
 }
 
-aclError ExecOpApi(
+aclError ExecOpAPI(
     aclTensor* element, aclScalar* testElement, bool assumeUnique, bool invert, aclTensor* out, void** workspaceAddrOut,
     uint64_t& workspaceSize, void* outDeviceAddr, std::vector<int64_t>& outShape, aclrtStream stream)
 {
@@ -332,7 +332,7 @@ aclError ExecOpApi(
   CHECK_RET(
       ret == ACL_SUCCESS, LOG_PRINT("aclnnIsInTensorScalarGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
-  // 分配 workspace
+  // 分配workspace
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -390,7 +390,7 @@ int main()
   uint64_t workspaceSize = 0;
   void* workspaceAddr = nullptr;
 
-  ret = ExecOpApi(
+  ret = ExecOpAPI(
       element, testElement, assumeUnique, invert, out, &workspaceAddr, workspaceSize, outDeviceAddr, outShape, stream);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 

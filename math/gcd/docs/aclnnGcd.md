@@ -329,7 +329,7 @@ int main() {
   aclDestroyTensor(other);
   aclDestroyTensor(out);
 
-  // 7. 释放device 资源
+  // 7. 释放device资源
   aclrtFree(selfDeviceAddr);
   aclrtFree(otherDeviceAddr);
   aclrtFree(outDeviceAddr);

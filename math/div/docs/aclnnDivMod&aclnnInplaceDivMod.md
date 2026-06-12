@@ -500,7 +500,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -537,7 +537,7 @@ int main() {
   // aclnnDivMod接口调用示例
   LOG_PRINT("test aclnnDivMod\n");
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   // 调用aclnnDivMod第一段接口
   ret = aclnnDivModGetWorkspaceSize(self, other, mode, out, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnDivModGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
@@ -551,7 +551,7 @@ int main() {
   ret = aclnnDivMod(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnDivMod failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
@@ -568,7 +568,7 @@ int main() {
   // aclnnInplaceDivMod调用示例
   LOG_PRINT("\ntest aclnnInplaceDivMod\n");
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   // 调用aclnnInplaceDivMod第一段接口
   ret = aclnnInplaceDivModGetWorkspaceSize(self, other, mode, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceDivModGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
@@ -581,7 +581,7 @@ int main() {
   ret = aclnnInplaceDivMod(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceDivMod failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
@@ -598,7 +598,7 @@ int main() {
   aclDestroyTensor(other);
   aclDestroyTensor(out);
 
-  // 7. 释放device 资源
+  // 7. 释放device资源
   aclrtFree(selfDeviceAddr);
   aclrtFree(otherDeviceAddr);
   aclrtFree(outDeviceAddr);

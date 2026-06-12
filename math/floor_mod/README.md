@@ -14,7 +14,7 @@
 ## 功能说明
 
 - 算子功能: 将scalar self进行broadcast成和tensor other一样shape的tensor以后，其中的每个元素都转换为除以other的对应元素以后得到的余数。该结果与除数other同符号，并且该结果的绝对值是小于other的绝对值。
-  实际计算remainder(self, other) 等效于以下公式：
+  实际计算remainder(self, other)等效于以下公式：
 
   $$
   out_i = self - floor(self / other_i) * other_i
@@ -32,7 +32,7 @@ result = remainder(self, other)
 # tensor([[ 0., -1.],
 #         [-1., -3.]])  float
 
-# 对于元素other中的-4来说，计算结果为 5 - floor(5 / -4) * -4 = -3
+# 对于元素other中的-4来说，计算结果为5 - floor(5 / -4) * -4 = -3
 # 可以看到，最终结果-3的绝对值小于原来的-4的绝对值。
 ```
 

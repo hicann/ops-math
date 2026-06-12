@@ -44,21 +44,21 @@
     <tr>
       <td>A</td>
       <td>输入</td>
-      <td>计算公式中的输入 A。</td>
+      <td>计算公式中的输入A。</td>
       <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>Q</td>
       <td>输出</td>
-      <td>计算公式中的输出 Q。</td>
+      <td>计算公式中的输出Q。</td>
       <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>R</td>
       <td>输出</td>
-      <td>计算公式中的输出 R。</td>
+      <td>计算公式中的输出R。</td>
       <td>FLOAT、FLOAT16、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>

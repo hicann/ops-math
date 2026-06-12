@@ -20,7 +20,7 @@
   y_i = |x1_i - x2_i| < tolerance
   $$
 
-  其中 tolerance 为非负浮点数，默认值为 1e-5。输出为 BOOL 类型张量，元素值为 true（近似相等）或 false（不近似相等）。
+  其中tolerance为非负浮点数，默认值为1e-5。输出为BOOL类型张量，元素值为true（近似相等）或false（不近似相等）。
 
 ## 参数说明
 
@@ -43,28 +43,28 @@
   <tr>
     <td>x1</td>
     <td>输入</td>
-    <td>公式中的输入 x1。</td>
+    <td>公式中的输入x1。</td>
     <td>FLOAT、FLOAT16、BFLOAT16</td>
     <td>ND</td>
   </tr>
   <tr>
     <td>x2</td>
     <td>输入</td>
-    <td>公式中的输入 x2，数据类型和 shape 需与 x1 一致。</td>
+    <td>公式中的输入x2，数据类型和shape需与x1一致。</td>
     <td>FLOAT、FLOAT16、BFLOAT16</td>
     <td>ND</td>
   </tr>
   <tr>
     <td>tolerance</td>
     <td>可选属性</td>
-    <td><ul><li>近似相等的判定阈值。</li><li>默认值为 1e-5。</li><li>必须为非负有限浮点数。</li></ul></td>
+    <td><ul><li>近似相等的判定阈值。</li><li>默认值为1e-5。</li><li>必须为非负有限浮点数。</li></ul></td>
     <td>FLOAT</td>
     <td>-</td>
   </tr>
   <tr>
     <td>y</td>
     <td>输出</td>
-    <td>逐元素比较结果，shape 与 x1 相同。</td>
+    <td>逐元素比较结果，shape与x1相同。</td>
     <td>BOOL</td>
     <td>ND</td>
   </tr>
@@ -72,9 +72,9 @@
 
 ## 约束说明
 
-- x1 和 x2 的数据类型必须一致，不支持隐式类型转换。
-- x1 和 x2 的 shape 必须严格相等，不支持广播。
-- tolerance 必须为非负有限浮点数（不允许 NaN 或 Inf）。
+- x1和x2的数据类型必须一致，不支持隐式类型转换。
+- x1和x2的shape必须严格相等，不支持广播。
+- tolerance必须为非负有限浮点数（不允许NaN或Inf）。
 
 ## 调用说明
 

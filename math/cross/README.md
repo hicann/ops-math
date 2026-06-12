@@ -42,21 +42,21 @@ $$
     <tr>
       <td>self</td>
       <td>输入</td>
-      <td>计算公式中的输入 self。</td>
+      <td>计算公式中的输入self。</td>
       <td>FLOAT16、FLOAT、INT32、INT8、UINT8、INT16、DOUBLE、INT64、UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>other</td>
       <td>输入</td>
-      <td>计算公式中的输入 other。</td>
+      <td>计算公式中的输入other。</td>
       <td>FLOAT16、FLOAT、INT32、INT8、UINT8、INT16、DOUBLE、INT64、UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>out</td>
       <td>输出</td>
-      <td>计算公式中的输出 out。</td>
+      <td>计算公式中的输出out。</td>
       <td>FLOAT16、FLOAT、INT32、INT8、UINT8、INT16、DOUBLE、INT64、UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>

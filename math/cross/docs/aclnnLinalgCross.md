@@ -320,32 +320,32 @@ aclError CreateInputs(
   std::vector<double> otherHostData = {1, 1, 1, 2, 2, 2, 3, 3, 3};
   std::vector<double> outHostData = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-  // 创建 self aclTensor
+  // 创建self aclTensor
   auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_DOUBLE, self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 创建 other aclTensor
+  // 创建other aclTensor
   ret = CreateAclTensor(otherHostData, otherShape, otherDeviceAddr, aclDataType::ACL_DOUBLE, other);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 创建 out aclTensor
+  // 创建out aclTensor
   ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_DOUBLE, out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   return ACL_SUCCESS;
 }
 
-aclError ExecOpApi(
+aclError ExecOpAPI(
     aclTensor* self, aclTensor* other, aclTensor* out, int64_t dim, void** workspaceAddrOut, uint64_t& workspaceSize,
     void* outDeviceAddr, std::vector<int64_t>& outShape, aclrtStream stream)
 {
   aclOpExecutor* executor;
 
-  // 调用 aclnnLinalgCross 第一段接口
+  // 调用aclnnLinalgCross第一段接口
   auto ret = aclnnLinalgCrossGetWorkspaceSize(self, other, dim, out, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnLinalgCrossGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
-  // 根据 workspaceSize 申请 device 内存
+  // 根据workspaceSize申请device内存
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -353,7 +353,7 @@ aclError ExecOpApi(
   }
   *workspaceAddrOut = workspaceAddr;
 
-  // 调用 aclnnLinalgCross 第二段接口
+  // 调用aclnnLinalgCross第二段接口
   ret = aclnnLinalgCross(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnLinalgCross failed. ERROR: %d\n", ret); return ret);
 
@@ -361,7 +361,7 @@ aclError ExecOpApi(
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
-  // 从 device 拷贝结果到 host
+  // 从device拷贝结果到host
   auto size = GetShapeSize(outShape);
   std::vector<double> resultData(size, 0);
 
@@ -379,7 +379,7 @@ aclError ExecOpApi(
 
 int main()
 {
-  // 1. device/stream 初始化
+  // 1. device/stream初始化
   int32_t deviceId = 0;
   aclrtStream stream;
 
@@ -402,20 +402,20 @@ int main()
       selfShape, otherShape, outShape, &selfDeviceAddr, &otherDeviceAddr, &outDeviceAddr, &self, &other, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用 CANN 算子 API
+  // 3. 调用CANN算子API
   int64_t dim = 1;
   uint64_t workspaceSize = 0;
   void* workspaceAddr = nullptr;
 
-  ret = ExecOpApi(self, other, out, dim, &workspaceAddr, workspaceSize, outDeviceAddr, outShape, stream);
+  ret = ExecOpAPI(self, other, out, dim, &workspaceAddr, workspaceSize, outDeviceAddr, outShape, stream);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 6. 释放 aclTensor
+  // 6. 释放aclTensor
   aclDestroyTensor(self);
   aclDestroyTensor(other);
   aclDestroyTensor(out);
 
-  // 7. 释放 device 资源
+  // 7. 释放device资源
   aclrtFree(selfDeviceAddr);
   aclrtFree(otherDeviceAddr);
   aclrtFree(outDeviceAddr);

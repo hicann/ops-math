@@ -290,7 +290,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -316,7 +316,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnNormalFloatTensor第一段接口
@@ -332,7 +332,7 @@ int main() {
   ret = aclnnNormalFloatTensor(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnNormalFloatTensor failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
@@ -350,7 +350,7 @@ int main() {
   aclDestroyTensor(std);
   aclDestroyTensor(out);
 
-  // 7. 释放device 资源
+  // 7. 释放device资源
   aclrtFree(stdDeviceAddr);
   aclrtFree(outDeviceAddr);
   if (workspaceSize > 0) {

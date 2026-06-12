@@ -323,7 +323,7 @@ int main()
     ret = aclnnAddN(workspaceAddr, workspaceSize, executor, stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAddN failed. ERROR: %d\n", ret); return ret);
 
-    // 4. (固定写法) 同步等待任务执行结束
+    // 4. (固定写法)同步等待任务执行结束
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 

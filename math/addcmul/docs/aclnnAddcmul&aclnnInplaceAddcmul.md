@@ -15,7 +15,7 @@
 
 ## 功能说明
 
-- 接口功能：执行 tensor1 与 tensor2 的逐元素乘法，将结果乘以标量值value并与输入self/selfRef做逐元素加法。
+- 接口功能：执行tensor1与tensor2的逐元素乘法，将结果乘以标量值value并与输入self/selfRef做逐元素加法。
 - 计算公式：
 
   $$
@@ -29,7 +29,7 @@
 - aclnnAddcmul和aclnnInplaceAddcmul实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
   - aclnnAddcmul：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceAddcmul：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用 “aclnnAddcmulGetWorkspaceSize” 或者 “aclnnInplaceAddcmulGetWorkspaceSize” 接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用 “aclnnAddcmul” 或者 “aclnnInplaceAddcmul” 接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/两段式接口.md)，必须先调用“aclnnAddcmulGetWorkspaceSize”或者“aclnnInplaceAddcmulGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnAddcmul”或者“aclnnInplaceAddcmul”接口执行计算。
 
   ```Cpp
   aclnnStatus aclnnAddcmulGetWorkspaceSize(
@@ -551,7 +551,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -595,7 +595,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnAddcmul第一段接口
@@ -611,7 +611,7 @@ int main() {
   ret = aclnnAddcmul(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAddcmul failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
@@ -712,7 +712,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -749,7 +749,7 @@ int main() {
   value = aclCreateScalar(&scalarValue, aclDataType::ACL_FLOAT);
   CHECK_RET(value != nullptr, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnInplaceAddcmul第一段接口
@@ -765,7 +765,7 @@ int main() {
   ret = aclnnInplaceAddcmul(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceAddcmul failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 

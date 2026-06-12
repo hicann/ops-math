@@ -208,7 +208,7 @@ aclnnStatus aclnnInplaceNormalTensor(
     <tr>
       <td>workspace</td>
       <td>输入</td>
-      <td>在 Device 侧申请的 workspace 内存地址。</td>
+      <td>在Device侧申请的workspace内存地址。</td>
     </tr>
     <tr>
       <td>workspaceSize</td>
@@ -218,12 +218,12 @@ aclnnStatus aclnnInplaceNormalTensor(
     <tr>
       <td>executor</td>
       <td>输入</td>
-      <td>op 执行器，包含了算子计算流程。</td>
+      <td>op执行器，包含了算子计算流程。</td>
     </tr>
     <tr>
       <td>stream</td>
       <td>输入</td>
-      <td>指定执行任务的 Stream。</td>
+      <td>指定执行任务的Stream。</td>
     </tr>
   </tbody>
   </table>
@@ -301,7 +301,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -335,7 +335,7 @@ int main() {
   ret = CreateAclTensor(offsetHostData, offsetShape, &offsetDeviceAddr, aclDataType::ACL_INT64, &offset);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnInplaceNormalTensor第一段接口
@@ -351,7 +351,7 @@ int main() {
   ret = aclnnInplaceNormalTensor(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceNormalTensor failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 

@@ -288,13 +288,13 @@ int CreateAclTensor(
   ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
 
-  // 计算连续tensor的 strides
+  // 计算连续tensor的strides
   std::vector<int64_t> strides(shape.size(), 1);
   for (int64_t i = shape.size() - 2; i >= 0; i--) {
     strides[i] = shape[i + 1] * strides[i + 1];
   }
 
-  // 调用aclCreateTensor接口创建 aclTensor
+  // 调用aclCreateTensor接口创建aclTensor
   *tensor = aclCreateTensor(
       shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
       *deviceAddr);
@@ -329,7 +329,7 @@ aclError CreateInputs(
   return ACL_SUCCESS;
 }
 
-aclError ExecOpApi(
+aclError ExecOpAPI(
     aclTensor* self, aclTensor* qOut, aclTensor* rOut, int64_t mode, void** workspaceAddrOut, uint64_t& workspaceSize,
     void* qOutDeviceAddr, void* rOutDeviceAddr, std::vector<int64_t>& qOutShape, std::vector<int64_t>& rOutShape,
     aclrtStream stream)
@@ -352,7 +352,7 @@ aclError ExecOpApi(
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
-  // 拷贝 qOut
+  // 拷贝qOut
   auto size1 = GetShapeSize(qOutShape);
   std::vector<double> resultData1(size1, 0);
   ret = aclrtMemcpy(
@@ -364,7 +364,7 @@ aclError ExecOpApi(
     LOG_PRINT("result[%ld] is: %f\n", i, resultData1[i]);
   }
 
-  // 拷贝 rOut
+  // 拷贝rOut
   auto size2 = GetShapeSize(rOutShape);
   std::vector<float> resultData2(size2, 0);
   ret = aclrtMemcpy(
@@ -405,7 +405,7 @@ int main()
   uint64_t workspaceSize = 0;
   void* workspaceAddr = nullptr;
 
-  ret = ExecOpApi(
+  ret = ExecOpAPI(
       self, qOut, rOut, mode, &workspaceAddr, workspaceSize, qOutDeviceAddr, rOutDeviceAddr, qOutShape, rOutShape,
       stream);
   CHECK_RET(ret == ACL_SUCCESS, return ret);

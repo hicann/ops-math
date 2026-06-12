@@ -17,7 +17,7 @@
 
 - 计算公式：
 
-&emsp;&emsp;(1) 有可选输入groupIdxOptional，且groupIdxType为0时：
+&emsp;&emsp;(1)有可选输入groupIdxOptional，且groupIdxType为0时：
 
 $$
 out(G,H) = 
@@ -29,7 +29,7 @@ out(G,H) =
 \end{cases}
 $$
 
-&emsp;&emsp;(2) 有可选输入groupIdxOptional，且groupIdxType为1时：
+&emsp;&emsp;(2)有可选输入groupIdxOptional，且groupIdxType为1时：
 
 $$
 groupIdx(i) = \sum_{i=0}^{j} groupIdxOptional(j), j=0...G
@@ -46,7 +46,7 @@ out(G,H) =
 $$
 
 &emsp;&emsp;其中，gradY共2维，H表示gradY最后一维的大小，G表示groupIdxOptional第0维的大小，即groupIdxOptional有G个数，groupIdxOptional(j)表示第j个数的大小，计算后out为2维，shape为(G, H)。<br>
-&emsp;&emsp;(3) 无可选输入groupIdxOptional时：
+&emsp;&emsp;(3)无可选输入groupIdxOptional时：
 
 $$
 out(G, H) = \sum_{i=0}^{C} gradY(G, i, H)
@@ -108,8 +108,8 @@ $$
 
 - 当存在输入group_idx时，需要满足下列约束：
   - 需要确保张量的值不超过INT32的最大值并且是非负的。
-  - grad_y仅支持 2 维形状。
-- 当不存在输入group_idx时，grad_y仅支持 3 维形状。
+  - grad_y仅支持2维形状。
+- 当不存在输入group_idx时，grad_y仅支持3维形状。
 - 当存在输入group_idx并且group_idx_type为0时，需要确保张量数据按升序排列，最后一个数值等于grad_y的第0维度的大小。
 - 当存在输入group_idx并且group_idx_type为1时，必须确保张量数据的总和必须等于grad_y的第0维度的大小。
 

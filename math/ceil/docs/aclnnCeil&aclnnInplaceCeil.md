@@ -441,18 +441,18 @@ aclError CreateInputs(
   std::vector<double> selfHostData = {0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7};
   std::vector<double> outHostData(8, 0);
 
-  // 创建 self aclTensor
+  // 创建self aclTensor
   auto ret = CreateAclTensor(selfHostData, inputShape, selfDeviceAddr, aclDataType::ACL_DOUBLE, self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 创建 out aclTensor
+  // 创建out aclTensor
   ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_DOUBLE, out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   return ACL_SUCCESS;
 }
 
-aclError ExecOpApi(
+aclError ExecOpAPI(
     aclTensor* self, aclTensor* out, void** workspaceAddrOut, uint64_t& workspaceSize, void* selfDeviceAddr,
     void* outDeviceAddr, std::vector<int64_t>& outShape, aclrtStream stream)
 {
@@ -460,14 +460,14 @@ aclError ExecOpApi(
   auto size = GetShapeSize(outShape);
   std::vector<double> resultData(size, 0);
 
-  // aclnnCeil 接口调用示例
+  // aclnnCeil接口调用示例
   LOG_PRINT("test aclnnCeil\n");
 
-  // 调用 aclnnCeil 第一段接口
+  // 调用aclnnCeil第一段接口
   auto ret = aclnnCeilGetWorkspaceSize(self, out, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnCeilGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
-  // 根据 workspaceSize 申请 device 内存
+  // 根据workspaceSize申请device内存
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -475,7 +475,7 @@ aclError ExecOpApi(
   }
   *workspaceAddrOut = workspaceAddr;
 
-  // 调用 aclnnCeil 第二段接口
+  // 调用aclnnCeil第二段接口
   ret = aclnnCeil(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnCeil failed. ERROR: %d\n", ret); return ret);
 
@@ -483,7 +483,7 @@ aclError ExecOpApi(
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
-  // 拷贝 out 结果
+  // 拷贝out结果
   ret = aclrtMemcpy(
       resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, size * sizeof(resultData[0]),
       ACL_MEMCPY_DEVICE_TO_HOST);
@@ -493,21 +493,21 @@ aclError ExecOpApi(
     LOG_PRINT("result[%ld] is: %lf\n", i, resultData[i]);
   }
 
-  // aclnnInplaceCeil 调用示例
+  // aclnnInplaceCeil调用示例
   LOG_PRINT("\ntest aclnnInplaceCeil\n");
 
-  // 调用 aclnnInplaceCeil 第一段接口
+  // 调用aclnnInplaceCeil第一段接口
   ret = aclnnInplaceCeilGetWorkspaceSize(self, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceCeilGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
-  // 根据 workspaceSize 再次申请 device 内存（与原逻辑一致）
+  // 根据workspaceSize再次申请device内存（与原逻辑一致）
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
   *workspaceAddrOut = workspaceAddr;
 
-  // 调用 aclnnInplaceCeil 第二段接口
+  // 调用aclnnInplaceCeil第二段接口
   ret = aclnnInplaceCeil(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceCeil failed. ERROR: %d\n", ret); return ret);
 
@@ -515,7 +515,7 @@ aclError ExecOpApi(
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
-  // 拷贝 self 结果
+  // 拷贝self结果
   ret = aclrtMemcpy(
       resultData.data(), resultData.size() * sizeof(resultData[0]), selfDeviceAddr, size * sizeof(resultData[0]),
       ACL_MEMCPY_DEVICE_TO_HOST);
@@ -530,7 +530,7 @@ aclError ExecOpApi(
 
 int main()
 {
-  // 1. device/stream 初始化
+  // 1. device/stream初始化
   int32_t deviceId = 0;
   aclrtStream stream;
   auto ret = InitAcl(deviceId, &stream);
@@ -548,18 +548,18 @@ int main()
   ret = CreateInputs(inputShape, outShape, &selfDeviceAddr, &outDeviceAddr, &self, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用 CANN 算子 API（ceil + inplace ceil）
+  // 3. 调用CANN算子API（ceil + inplace ceil）
   uint64_t workspaceSize = 0;
   void* workspaceAddr = nullptr;
 
-  ret = ExecOpApi(self, out, &workspaceAddr, workspaceSize, selfDeviceAddr, outDeviceAddr, outShape, stream);
+  ret = ExecOpAPI(self, out, &workspaceAddr, workspaceSize, selfDeviceAddr, outDeviceAddr, outShape, stream);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 6. 释放 aclTensor
+  // 6. 释放aclTensor
   aclDestroyTensor(self);
   aclDestroyTensor(out);
 
-  // 7. 释放 device 资源
+  // 7. 释放device资源
   aclrtFree(selfDeviceAddr);
   aclrtFree(outDeviceAddr);
   if (workspaceSize > 0) {

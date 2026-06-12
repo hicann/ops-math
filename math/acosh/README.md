@@ -1,7 +1,7 @@
 # Acosh
 
-> 反双曲余弦（Inverse Hyperbolic Cosine）算子，对应 PyTorch `torch.acosh` / `torch.acosh_`。
-> 在线 aclnn API 文档：[docs/aclnnAcosh&aclnnInplaceAcosh.md](docs/aclnnAcosh&aclnnInplaceAcosh.md)
+> 反双曲余弦（Inverse Hyperbolic Cosine）算子，对应PyTorch `torch.acosh` / `torch.acosh_`。
+> 在线aclnn API文档：[docs/aclnnAcosh&aclnnInplaceAcosh.md](docs/aclnnAcosh&aclnnInplaceAcosh.md)
 
 ## 产品支持情况
 
@@ -45,14 +45,14 @@
   <tr>
     <td>self</td>
     <td>输入</td>
-    <td>公式中的输入 self，dtype 与 out 一致，shape 任意（0~8 维），支持空 Tensor，支持非连续 Tensor。</td>
+    <td>公式中的输入self，dtype与out一致，shape任意（0~8维），支持空Tensor，支持非连续Tensor。</td>
     <td>FLOAT、FLOAT16、BFLOAT16</td>
     <td>ND</td>
   </tr>
   <tr>
     <td>out</td>
     <td>输出</td>
-    <td>公式中的输出 out，shape 与 self 完全一致；非原地接口专有。</td>
+    <td>公式中的输出out，shape与self完全一致；非原地接口专有。</td>
     <td>FLOAT、FLOAT16、BFLOAT16</td>
     <td>ND</td>
   </tr>
@@ -65,8 +65,8 @@
   </tr>
 </tbody></table>
 
-- 参数 `self` 与 `out` 的 dtype 必须完全一致；shape 维度数 ∈ [0, 8]。
-- 仅支持 ND 数据格式；不支持 NCHW / NHWC / 5HD 等私有格式。
+- 参数`self`与`out`的dtype必须完全一致；shape维度数 ∈ [0, 8]。
+- 仅支持ND数据格式；不支持NCHW / NHWC / 5HD等私有格式。
 
 ## 约束说明
 
@@ -81,12 +81,12 @@
   </tr></thead>
 <tbody>
   <tr>
-    <td>aclnn 调用（非原地）</td>
+    <td>aclnn调用（非原地）</td>
     <td><a href="./examples/test_aclnn_acosh.cpp">examples/test_aclnn_acosh.cpp</a></td>
-    <td rowspan="2">参考 ops-math 仓库根 build.sh 完成算子编译与算子包安装，再用 examples 验证（NPU 真机）。</td>
+    <td rowspan="2">参考ops-math仓库根build.sh完成算子编译与算子包安装，再用examples验证（NPU真机）。</td>
   </tr>
   <tr>
-    <td>aclnn 调用（原地）</td>
+    <td>aclnn调用（原地）</td>
     <td><a href="./examples/test_aclnn_inplace_acosh.cpp">examples/test_aclnn_inplace_acosh.cpp</a></td>
   </tr>
 </tbody></table>

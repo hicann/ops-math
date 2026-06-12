@@ -159,7 +159,7 @@ aclnnStatus aclnnExpand(
       <td>self与out的数据类型不一致。</td>
     </tr>
     <tr>
-      <td>self或out的shape和size不匹配。<ul><li>size个数小于self的dimNum</li><li>self任意维度不等于 size偏移后对应维度，且self任意维度不等于1（偏移量为size与self的dimNum差值）</li><li>output的shape不等于预期shape（size）</li></ul></td>
+      <td>self或out的shape和size不匹配。<ul><li>size个数小于self的dimNum</li><li>self任意维度不等于size偏移后对应维度，且self任意维度不等于1（偏移量为size与self的dimNum差值）</li><li>output的shape不等于预期shape（size）</li></ul></td>
     </tr>
     <tr>
       <td>self最大维度超过8。</td>
@@ -284,7 +284,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -310,7 +310,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnExpand第一段接口
@@ -326,7 +326,7 @@ int main() {
   ret = aclnnExpand(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnExpand failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 

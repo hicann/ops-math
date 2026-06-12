@@ -21,9 +21,9 @@ $$
 out_{i}=\frac{1}{self_{i}}
 $$
 
-- 浮点（FLOAT、FLOAT16、BFLOAT16）按 IEEE-754 真值倒数计算（除零得 $\pm\text{Inf}$、$\pm\text{Inf}$ 得 $\pm0$、NaN 得 NaN）。
+- 浮点（FLOAT、FLOAT16、BFLOAT16）按IEEE-754真值倒数计算（除零得 $\pm\text{Inf}$、$\pm\text{Inf}$ 得 $\pm0$、NaN得NaN）。
 
-- INT32 按截断向零的整数倒数计算，整型下 $1/self$ 仅当 $|self|=1$ 时非零，等价为三值映射：
+- INT32按截断向零的整数倒数计算，整型下 $1/self$ 仅当 $|self|=1$ 时非零，等价为三值映射：
 
 $$
 out_{i}=
@@ -72,9 +72,9 @@ $$
 
 ## 约束说明
 
-- self 与 out 必须 shape、dtype 相同，逐元素计算，无广播。
+- self与out必须shape、dtype相同，逐元素计算，无广播。
 - 浮点路径精度按社区标准：FLOAT rtol/atol = 1e-4，FLOAT16 = 1e-3，BFLOAT16 = 4e-3。
-- INT32 路径为精确匹配（bitwise，rtol = atol = 0），采用纯整型比较 + 选择实现三值映射，不经float32中转、不对INT_MIN取负，故INT_MIN/INT_MAX不溢出、self = 0不抛异常。
+- INT32路径为精确匹配（bitwise，rtol = atol = 0），采用纯整型比较 + 选择实现三值映射，不经float32中转、不对INT_MIN取负，故INT_MIN/INT_MAX不溢出、self = 0不抛异常。
 
 ## 调用说明
 

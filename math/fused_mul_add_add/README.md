@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-- 算子功能：将 `Mul`、`Add`、`Add` 子图融合为单个算子，对四个输入按 NumPy 广播规则对齐后逐元素计算乘加加，常用于 `BatchMatmul + bias + residual` 等模式。
+- 算子功能：将`Mul`、`Add`、`Add`子图融合为单个算子，对四个输入按NumPy广播规则对齐后逐元素计算乘加加，常用于`BatchMatmul + bias + residual`等模式。
 
 - 计算公式：
 
@@ -78,9 +78,9 @@
 
 ## 约束说明
 
-- x1、x2、x3、x4、y 必须为同一种数据类型，不支持混合数据类型。
-- 计算顺序为 `((x1 * x2) + x3) + x4`，不可交换。
-- **x1 必须为完整的输出 shape**：x2、x3、x4 的 shape 可按 NumPy 广播规则向上广播到 x1（支持标量、单维 broadcast、跨 rank broadcast），输出 y 的 shape 与 x1 一致。当前 runtime **不支持 x1 自身向上广播**（即 x1 比输出 shape 小的场景，例如 x1=`[1]`、x2=`[3,4]`），该类用例会在 RunGraph 阶段失败。
+- x1、x2、x3、x4、y必须为同一种数据类型，不支持混合数据类型。
+- 计算顺序为`((x1 * x2) + x3) + x4`，不可交换。
+- **x1必须为完整的输出shape**：x2、x3、x4的shape可按NumPy广播规则向上广播到x1（支持标量、单维broadcast、跨rank broadcast），输出y的shape与x1一致。当前runtime **不支持x1自身向上广播**（即x1比输出shape小的场景，例如x1=`[1]`、x2=`[3,4]`），该类用例会在RunGraph阶段失败。
 
 ## 实现方案
 
@@ -88,22 +88,22 @@
 | --- | --- | --- |
 | 计算图原型 | `op_graph/fused_mul_add_add_proto.h` | `REG_OP(FusedMulAddAdd)`，四输入一输出 |
 | 算子定义 | `op_host/fused_mul_add_add_def.cpp` | `OpDef::AddConfig("ascend950", ...)` |
-| InferShape | `op_host/fused_mul_add_add_infershape.cpp` | 复用 `Ops::Base::InferShape4Broadcast(ctx, 4)` |
-| Tiling | `op_host/arch35/fused_mul_add_add_tiling_arch35.{h,cpp}` | 按 dtype 分支调用 `Ops::Base::BroadcastBaseTiling<OpDag>` |
-| DAG | `op_kernel/arch35/fused_mul_add_add_dag.h` | fp32/fp16 通路在 fp32 中间精度下用 `Vec::Mul + Vec::Add + Vec::Add`；int32 通路用 `Vec::Mul + Vec::Add + Vec::Add` |
+| InferShape | `op_host/fused_mul_add_add_infershape.cpp` | 复用`Ops::Base::InferShape4Broadcast(ctx, 4)` |
+| Tiling | `op_host/arch35/fused_mul_add_add_tiling_arch35.{h,cpp}` | 按dtype分支调用`Ops::Base::BroadcastBaseTiling<OpDag>` |
+| DAG | `op_kernel/arch35/fused_mul_add_add_dag.h` | fp32/fp16通路在fp32中间精度下用`Vec::Mul + Vec::Add + Vec::Add`；int32通路用`Vec::Mul + Vec::Add + Vec::Add` |
 | Struct | `op_kernel/arch35/fused_mul_add_add_struct.h` | `BRC_TEMP_SCH_MODE_KEY_DECL/SEL` |
-| Kernel 入口 | `op_kernel/fused_mul_add_add_apt.cpp` | `KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY)` + `BroadcastSch<schMode, OpDag>` |
+| Kernel入口 | `op_kernel/fused_mul_add_add_apt.cpp` | `KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY)` + `BroadcastSch<schMode, OpDag>` |
 
-### fp16 / fp32 通路
+### fp16 / fp32通路
 
 ```
 In0/In1/In2/In3 -- CopyInBrc -- Cast(->fp32) -- Vec::Mul(x1,x2) -- Vec::Add(+x3) -- Vec::Add(+x4) -- Cast(->T,RINT) -- CopyOut -- Out0
 ```
 
-全部输入先 Cast 到 fp32，再用 `Vec::Mul + Vec::Add + Vec::Add` 三段式按公式
-`y = x1 * x2 + x3 + x4` 顺序计算，最后 Cast 回 T 写出。
+全部输入先Cast到fp32，再用`Vec::Mul + Vec::Add + Vec::Add`三段式按公式
+`y = x1 * x2 + x3 + x4`顺序计算，最后Cast回T写出。
 
-### int32 通路
+### int32通路
 
 ```
 In0/In1/In2/In3 -- CopyInBrc -- Vec::Mul(x1,x2) -- Vec::Add(+x3) -- Vec::Add(+x4) -- CopyOut -- Out0

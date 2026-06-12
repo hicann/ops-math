@@ -21,7 +21,7 @@
   y_i = u_i \times (to - from) + from, \quad u_i \sim \text{Uniform}(0, 1]
   $$
 
-  其中 $u_i$ 由Philox4x32-10算法生成，归一化方式与竞品 curand_uniform一致：$u = x \times 2^{-32} + 2^{-33}$。
+  其中 $u_i$ 由Philox4x32-10算法生成，归一化方式与竞品curand_uniform一致：$u = x \times 2^{-32} + 2^{-33}$。
 
 ## 参数说明
 

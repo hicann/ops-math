@@ -28,9 +28,9 @@
       ...
       $y_n=x_1\times x_2\times x_3\times x_n$
 
-      用数学公式表示$y_i=\prod_{j=1}^ix_j, 其中i=1,2...,n$。
+      用数学公式表示$y_i=\prod_{j=1}^ix_j，其中i=1,2...,n$。
 
-  - **高维张量情况（以二维张量为例， dim=0 沿行方向）**
+  - **高维张量情况（以二维张量为例， dim=0沿行方向）**
     对于二维张量：  
 
     $$
@@ -49,14 +49,14 @@
     y_{i1}=x_{11}\times x_{21}\times ...\times x_{i1}(对于i=1,2,....n)
     $$
 
-    所以对于任意列j，也有类似规律， 即:
+    所以对于任意列j，也有类似规律即:
 
     $$
     y_{ij}=\prod_{k=1}^{i} x_{kj}
     $$
 
-  - **高维张量情况（以二维张量为例， dim=1 沿列方向情况）**
-    所以对于任意列j，也有类似规律， 即:
+  - **高维张量情况（以二维张量为例， dim=1沿列方向情况）**
+    所以对于任意列j，也有类似规律即:
 
     $$
     y_{ij}=\prod_{k=1}^{j} x_{ik}
@@ -537,7 +537,7 @@ int CreateAclScalar(aclDataType dataType, T &hostData, aclScalar **scalar)
 
 int main()
 {
-    // 1.(固定写法)device/stream初始化, 参考acl对外接口列表, 根据自己的实际device填写deviceId
+    // 1.(固定写法)device/stream初始化，参考acl对外接口列表,根据自己的实际device填写deviceId
     int32_t deviceId = 0;
     aclrtStream stream;
     auto ret = Init(deviceId, &stream);

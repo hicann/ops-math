@@ -416,7 +416,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-    // 1. 固定写法，device/stream初始化, 参考acl API手册
+    // 1. 固定写法，device/stream初始化，参考acl API手册
     // 根据自己的实际device填写deviceId
     int32_t deviceId = 0;
     aclrtStream stream;
@@ -500,7 +500,7 @@ int main() {
     aclDestroyTensor(self);
     aclDestroyTensor(out);
     
-    // 7. 释放device 资源
+    // 7. 释放device资源
     aclrtFree(selfDeviceAddr);
     aclrtFree(outDeviceAddr);
     if (workspaceSize > 0) {

@@ -17,7 +17,7 @@
 
 - 接口功能：将tensor self中的每个元素都转换为除以scalar other以后得到的余数。该结果与除数other同符号，并且该结果的绝对值是小于other的绝对值。
 
-- 计算公式：实际计算remainder(self, other) 等效于以下公式：
+- 计算公式：实际计算remainder(self, other)等效于以下公式：
 
   $$
   out_i = self_i - floor(self_i / other) * other
@@ -35,7 +35,7 @@
   # tensor([[2.5000, 1.5000],
   #         [0.5000, 3.0000]])   float
 
-  # 对于元素self中的-1来说，计算结果为 remainder(-1, 3.5) = -1 - floor(-1 / 3.5) * 3.5 = -1 - (-1) * 3.5 = -1 + 3.5 = 2.5
+  # 对于元素self中的-1来说，计算结果为remainder(-1, 3.5) = -1 - floor(-1 / 3.5) * 3.5 = -1 - (-1) * 3.5 = -1 + 3.5 = 2.5
   # 可以看到，最终结果2.5的绝对值小于other 3.5。
   ```
 
@@ -478,7 +478,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -507,7 +507,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_INT64, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnRemainderTensorScalar第一段接口
@@ -523,7 +523,7 @@ int main() {
   ret = aclnnRemainderTensorScalar(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnRemainderTensorScalar failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
@@ -618,7 +618,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -640,7 +640,7 @@ int main() {
   other = aclCreateScalar(&Other, aclDataType::ACL_INT64);
   CHECK_RET(other != nullptr, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnInplaceRemainderTensorScalar第一段接口
@@ -656,7 +656,7 @@ int main() {
   ret = aclnnInplaceRemainderTensorScalar(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceRemainderTensorScalar failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 

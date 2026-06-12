@@ -508,7 +508,7 @@ aclError CreateInputs(
   return ACL_SUCCESS;
 }
 
-aclError ExecOpApi(
+aclError ExecOpAPI(
     aclTensor* self, aclTensor* other, aclTensor* out, void** workspaceAddrOut, uint64_t& workspaceSize,
     void* outDeviceAddr, std::vector<int64_t>& outShape, aclrtStream stream)
 {
@@ -572,7 +572,7 @@ int main()
   uint64_t workspaceSize = 0;
   void* workspaceAddr = nullptr;
 
-  ret = ExecOpApi(self, other, out, &workspaceAddr, workspaceSize, outDeviceAddr, outShape, stream);
+  ret = ExecOpAPI(self, other, out, &workspaceAddr, workspaceSize, outDeviceAddr, outShape, stream);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   // 释放资源
@@ -676,28 +676,28 @@ aclError CreateInputs(
   std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
   std::vector<double> otherHostData = {1, 1, 3, 3, 5, 5, 7, 7};
 
-  // 创建 self
+  // 创建self
   auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_DOUBLE, self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 创建 other
+  // 创建other
   ret = CreateAclTensor(otherHostData, otherShape, otherDeviceAddr, aclDataType::ACL_DOUBLE, other);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   return ACL_SUCCESS;
 }
 
-aclError ExecOpApi(
+aclError ExecOpAPI(
     aclTensor* self, aclTensor* other, void** workspaceAddrOut, uint64_t& workspaceSize, void* selfDeviceAddr,
     std::vector<int64_t>& selfShape, aclrtStream stream)
 {
   aclOpExecutor* executor;
 
-  // 获取 workspace 大小
+  // 获取workspace大小
   auto ret = aclnnInplaceEqTensorGetWorkspaceSize(self, other, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceEqTensorGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
-  // 分配 workspace
+  // 分配workspace
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -750,7 +750,7 @@ int main()
   uint64_t workspaceSize = 0;
   void* workspaceAddr = nullptr;
 
-  ret = ExecOpApi(self, other, &workspaceAddr, workspaceSize, selfDeviceAddr, selfShape, stream);
+  ret = ExecOpAPI(self, other, &workspaceAddr, workspaceSize, selfDeviceAddr, selfShape, stream);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   // 销毁

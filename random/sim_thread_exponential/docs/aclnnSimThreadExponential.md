@@ -94,7 +94,7 @@ aclnnStatus aclnnSimThreadExponential(
         <td>lambda</td>
         <td>输入</td>
         <td>公式中的lambda。</td>
-        <td>必须大于 0。</td>
+        <td>必须大于0。</td>
         <td>DOUBLE</td>
         <td>-</td>
         <td>-</td>
@@ -225,12 +225,12 @@ aclnnStatus aclnnSimThreadExponential(
 
 ## 约束说明
 
-- lambda 必须大于 0。
+- lambda必须大于0。
 - 确定性计算：
-  - aclnnSimThreadExponential 默认确定性实现。
+  - aclnnSimThreadExponential默认确定性实现。
 - Ascend 950PR/Ascend 950DT：
-  - offset 必须为 4 的倍数。
-  - count 必须等于 selfRef 张量的元素总数。
+  - offset必须为4的倍数。
+  - count必须等于selfRef张量的元素总数。
 
 ## 调用示例
 
@@ -298,7 +298,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-    // 1. 固定写法，device/stream初始化, 参考acl API手册
+    // 1. 固定写法，device/stream初始化，参考acl API手册
     // 根据自己的实际device填写deviceId
     int32_t deviceId = 0;
     aclrtStream stream;

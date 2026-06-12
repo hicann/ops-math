@@ -20,7 +20,7 @@
 - 计算公式：
 
   $$
-  out = \log_2(2^x+2^y)=\log_2[2^m(1+2^{-|x-y|})]=m+\log_2(1+2^{-|x-y|}) \quad 其中m=\max(x,y)
+  out = \log_2(2^x+2^y)=\log_2[2^m(1+2^{-|x-y|})]=m+\log_2(1+2^{-|x-y|}) \quad其中m=\max(x,y)
   $$
 
   其中，$x$代表self，$y$代表other。
@@ -292,7 +292,7 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
@@ -322,7 +322,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnLogAddExp2第一段接口
@@ -338,7 +338,7 @@ int main() {
   ret = aclnnLogAddExp2(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnLogAddExp2 failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 

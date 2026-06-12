@@ -45,14 +45,14 @@
     <tr>
       <td>self</td>
       <td>输入</td>
-      <td>计算公式中的输入 self。</td>
+      <td>计算公式中的输入self。</td>
       <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>out</td>
       <td>输出</td>
-      <td>计算公式中的输出 out。</td>
+      <td>计算公式中的输出out。</td>
       <td>FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>

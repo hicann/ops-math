@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-- 算子功能：计算 asinh_grad(y, dy)，即反双曲正弦函数的梯度。
+- 算子功能：计算asinh_grad(y, dy)，即反双曲正弦函数的梯度。
 - 计算公式：
 
   $$
@@ -41,21 +41,21 @@
   <tr>
     <td>y</td>
     <td>输入</td>
-    <td>前向计算输入张量，对应公式中 y，为 asinh 函数自变量。</td>
+    <td>前向计算输入张量，对应公式中y，为asinh函数自变量。</td>
     <td>FLOAT16、FLOAT、BFLOAT16</td>
     <td>ND</td>
   </tr>
   <tr>
     <td>dy</td>
     <td>输入</td>
-    <td>上游传入的梯度张量，对应公式中 dy。数据类型须与 y 完全一致。</td>
+    <td>上游传入的梯度张量，对应公式中dy。数据类型须与y完全一致。</td>
     <td>FLOAT16、FLOAT、BFLOAT16</td>
     <td>ND</td>
   </tr>
   <tr>
     <td>dx</td>
     <td>输出</td>
-    <td>输出的输入梯度张量，对应公式中 dx。数据类型须与 y 完全一致。</td>
+    <td>输出的输入梯度张量，对应公式中dx。数据类型须与y完全一致。</td>
     <td>FLOAT16、FLOAT、BFLOAT16</td>
     <td>ND</td>
   </tr>

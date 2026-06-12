@@ -1,7 +1,7 @@
 # Asinh
 
-> 反双曲正弦（Inverse Hyperbolic Sine）算子，对应 PyTorch `torch.asinh` / `torch.asinh_`。
-> 在线 aclnn API 文档：[docs/aclnnAsinh&aclnnInplaceAsinh.md](docs/aclnnAsinh&aclnnInplaceAsinh.md)
+> 反双曲正弦（Inverse Hyperbolic Sine）算子，对应PyTorch `torch.asinh` / `torch.asinh_`。
+> 在线aclnn API文档：[docs/aclnnAsinh&aclnnInplaceAsinh.md](docs/aclnnAsinh&aclnnInplaceAsinh.md)
 
 ## 产品支持情况
 
@@ -14,7 +14,7 @@
 | <term>Atlas 推理系列产品</term>                       |     √    |
 | <term>Atlas 训练系列产品</term>                       |     √    |
 
-> 说明：Asinh 仅在 Ascend950 平台（arch35 / DAV_3510）落地，不向下兼容 Atlas A2 / A3 / Ascend910 等其他平台。
+> 说明：Asinh仅在Ascend950平台（arch35 / DAV_3510）落地，不向下兼容Atlas A2 / A3 / Ascend910等其他平台。
 
 ## 功能说明
 
@@ -47,14 +47,14 @@ $$
   <tr>
     <td>x</td>
     <td>输入</td>
-    <td>公式中的输入 x，dtype 与 y 一致，shape 任意（0~8 维），支持空 Tensor，支持非连续 Tensor。</td>
+    <td>公式中的输入x，dtype与y一致，shape任意（0~8维），支持空Tensor，支持非连续Tensor。</td>
     <td>FLOAT、FLOAT16、BFLOAT16</td>
     <td>ND</td>
   </tr>
   <tr>
     <td>y</td>
     <td>输出</td>
-    <td>公式中的输出 y，shape 与 x 完全一致；非原地接口专有。</td>
+    <td>公式中的输出y，shape与x完全一致；非原地接口专有。</td>
     <td>FLOAT、FLOAT16、BFLOAT16</td>
     <td>ND</td>
   </tr>
@@ -80,12 +80,12 @@ $$
   </tr></thead>
 <tbody>
   <tr>
-    <td>aclnn 调用（非原地）</td>
+    <td>aclnn调用（非原地）</td>
     <td><a href="./examples/test_aclnn_asinh.cpp">examples/test_aclnn_asinh.cpp</a></td>
-    <td rowspan="2">参考 ops-math 仓库根 build.sh 完成算子编译与算子包安装，再用 examples 验证（NPU 真机）。</td>
+    <td rowspan="2">参考ops-math仓库根build.sh完成算子编译与算子包安装，再用examples验证（NPU真机）。</td>
   </tr>
   <tr>
-    <td>图模式 (GE IR) 调用</td>
+    <td>图模式(GE IR)调用</td>
     <td><a href="./examples/test_geir_asinh.cpp">examples/test_geir_asinh.cpp</a></td>
   </tr>
 </tbody></table>
