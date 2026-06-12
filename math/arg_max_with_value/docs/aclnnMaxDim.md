@@ -111,7 +111,7 @@ aclnnStatus aclnnMaxDim(
       <td>输出</td>
       <td>最大值索引输出张量。</td>
       <td>-</td>
-      <td>BOOL、FLOAT32、FLOAT16、INT8、INT16、UINT16、UINT8、INT32、INT64、UINT32、UINT64、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16</td>
+      <td>INT32、INT64</td>
       <td>ND</td>
       <td>-</td>
       <td>√</td>

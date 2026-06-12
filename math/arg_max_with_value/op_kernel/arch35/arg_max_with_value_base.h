@@ -372,7 +372,7 @@ __aicore__ inline void ArgMaxWithValueBase<T1, T2, T3, isMin>::ArgMaxRaInt64(__l
         for (uint16_t i = 0; i < loopA; i++) {
             auto tmpPtr = (__local_mem__ T4*&)src + alignA;
             mask = AscendC::MicroAPI::UpdateMask<uint32_t>(processA);
-            AscendC::MicroAPI::DataCopyUnAlignPre(uSrc, (__local_mem__ T4*&)src);AscendC::MicroAPI::DataCopyUnAlignPre(uSrc, (__local_mem__ T4*&)src);
+            AscendC::MicroAPI::DataCopyUnAlignPre(uSrc, (__local_mem__ T4*&)src);
             AscendC::MicroAPI::DataCopyUnAlign<T4, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vregValue0, uSrc,
                 (__local_mem__ T4*&)src, offsetA);
             AscendC::MicroAPI::Duplicate(vregIndices0, VALUE_ZERO, fullMask);
