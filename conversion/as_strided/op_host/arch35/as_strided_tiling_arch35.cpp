@@ -1279,9 +1279,9 @@ ge::graphStatus AsStridedTilingClass::GetAndValidateDataType(AsStridedTilingPara
     auto dataType = xTensorType->GetDataType();
     OP_CHECK_IF(
         tilingTypeKeyMap.count(dataType) == 0, 
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input",
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
             Ops::Base::ToString(dataType).c_str(),
-            "The dtype of input must be within the range [DT_FLOAT16, DT_FLOAT, DT_INT8, DT_UINT8, DT_INT32, DT_UINT32]."),
+            "The dtype of x must be within the range [DT_INT64, DT_UINT64, DT_INT32, DT_UINT32, DT_FLOAT, DT_FLOAT16, DT_INT8, DT_UINT8, DT_BF16, DT_INT16, DT_UINT16, DT_BOOL, DT_COMPLEX32, DT_COMPLEX64, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN]."),
         return ge::GRAPH_FAILED);
     tilingParam.ubSize = (ubSizePlatform / BUFFER_NUM) / tilingTypeKeyMap[dataType];
     tilingParam.sizeofDtype = tilingTypeKeyMap[dataType];

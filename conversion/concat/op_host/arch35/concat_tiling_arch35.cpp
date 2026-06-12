@@ -601,8 +601,10 @@ static ge::graphStatus TilingUb(gert::TilingContext* context, ConcatTilingParam&
 {
     OP_CHECK_IF(
         param.dtypeSize <= 0,
-        OP_LOGE(
-            context->GetNodeName(), "param.dtypeSize must be greater than 0, param.dtypeSize: %ld", param.dtypeSize),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context->GetNodeName(), "x",
+            Ops::Base::ToString(context->GetDynamicInputDesc(0, 0)->GetDataType()).c_str(),
+            "The dtype size of x must be greater than 0."),
         return ge::GRAPH_FAILED);
     int64_t maxAvaliableUb = (param.ubSize - INDEX_USE_UB) / param.dtypeSize;
     if (param.isAllTensorAlign == 0) {

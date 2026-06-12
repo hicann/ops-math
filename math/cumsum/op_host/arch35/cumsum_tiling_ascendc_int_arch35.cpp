@@ -108,7 +108,14 @@ void Cumsum4IntTiling::AdjustTensor4TDRA()
     int64_t tmpRLpUnit = std::min(tensorSize_ / tmpRALpUnit, midAxisLen);
     if (rightAxisLen * dtypeSize > cacheLine_) {
         OP_CHECK_IF(
-            (dtypeSize == 0 || cacheLine_ == 0), OP_LOGE("AdjustTensor4TDRA", "dtypeSize or cacheLine_ is zero"),
+            dtypeSize == 0,
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+                context_->GetNodeName(), "input",
+                Ops::Base::ToString(context_->GetInputDesc(0)->GetDataType()).c_str(),
+                "The dtype size of input must be greater than 0."),
+            return);
+        OP_CHECK_IF(
+            cacheLine_ == 0, OP_LOGE("AdjustTensor4TDRA", "cacheLine_ is zero"),
             return);
         tmpRALpUnit =
             std::min(tensorSize_ / tmpRLpUnit * dtypeSize / cacheLine_ * cacheLine_ / dtypeSize, rightAxisLen);

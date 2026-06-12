@@ -29,7 +29,7 @@ namespace optiling {
 static ge::graphStatus TilingCumsumForAscendc(gert::TilingContext* context)
 {
     auto input = context->GetInputDesc(0);
-    OP_CHECK_IF((input == nullptr), OP_LOGE(context->GetNodeName(), "input is null"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((input == nullptr), OP_LOGE_WITH_INVALID_INPUT(context->GetNodeName(), "input"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         (input->GetDataType() != ge::DT_FLOAT && input->GetDataType() != ge::DT_FLOAT16 &&
          input->GetDataType() != ge::DT_BF16 && input->GetDataType() != ge::DT_INT32 &&
