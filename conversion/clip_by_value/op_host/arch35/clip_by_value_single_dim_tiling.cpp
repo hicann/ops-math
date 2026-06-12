@@ -28,13 +28,10 @@ constexpr int64_t X_INDEX = 0;
 constexpr int64_t MIN_INDEX = 1;
 constexpr int64_t MAX_INDEX = 2;
 constexpr int64_t Y_INDEX = 3;
+constexpr int64_t OUTPUT_INDEX = 0;
 
 constexpr uint64_t OPEN_DB_SIZE = 2;
 constexpr uint64_t HALF_CORE_NUM_DIVIDE = 2;
-
-constexpr int64_t FLOAT32_BYTES = 4;
-constexpr int64_t FLOAT16_BYTES = 2;
-constexpr int64_t INT64_BYTES = 8;
 
 constexpr int32_t ASS_ALIVE_NODE_NUM = 2;
 constexpr int32_t SIG_DIM_ALIVE_NODE_NUM = 4;
@@ -42,6 +39,8 @@ constexpr int32_t SIG_DIM_ALIVE_NODE_NUM = 4;
 constexpr int64_t PER_CORE_MIN_UB_BYTE = 8 * 1024;
 
 constexpr uint32_t MINIMAL_WORKSPACE = 16 * 1024 * 1024;
+constexpr uint64_t CACHELINE_SIZE = 128;
+constexpr int64_t LOW_UTILIZATION_DIM_MULTIPLIER = 2;
 } // namespace ClipByValueSigDim
 
 namespace optiling {
@@ -92,14 +91,14 @@ bool ClipByValueTilingSingleDim::IsCapable()
 
 ge::graphStatus ClipByValueTilingSingleDim::GetPlatformInfo()
 {
-    auto compileInfo = reinterpret_cast<const ClipByValueCompileInfo*>(context_->GetCompileInfo());
+    auto compileInfo = context_->GetCompileInfo<ClipByValueCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfo);
 
     opName = context_->GetNodeName();
     auto platformInfoPtr = context_->GetPlatformInfo();
     if (platformInfoPtr == nullptr) {
         OP_LOGD(context_->GetNodeName(), "Entering into get core num from compile info.");
-        coreNum = static_cast<int32_t>(compileInfo->coreNum);
+        coreNum = static_cast<int64_t>(compileInfo->coreNum);
         ubSize = static_cast<int64_t>(compileInfo->ubSize);
     } else {
         OP_LOGD(context_->GetNodeName(), "Entering into get core num from platform.");
@@ -112,24 +111,24 @@ ge::graphStatus ClipByValueTilingSingleDim::GetPlatformInfo()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus ClipByValueTilingSingleDim::GetShapeAttrsInfo()
+ge::graphStatus ClipByValueTilingSingleDim::CheckDtypesAndGetSize()
 {
-    OP_LOGD(context_->GetNodeName(), "TilingContext: %s", optiling::ClipByValueDebugTilingContext(context_).c_str());
-    auto xDesc = context_->GetInputDesc(0);
+    auto xDesc = context_->GetInputDesc(ClipByValueSigDim::X_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, xDesc);
     xDtype = xDesc->GetDataType();
 
-    auto minDesc = context_->GetInputDesc(1);
+    auto minDesc = context_->GetInputDesc(ClipByValueSigDim::MIN_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, minDesc);
     auto minDtype = minDesc->GetDataType();
 
-    auto maxDesc = context_->GetInputDesc(2); // 2 is max param
+    auto maxDesc = context_->GetInputDesc(ClipByValueSigDim::MAX_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, maxDesc);
     auto maxDtype = maxDesc->GetDataType();
 
-    auto yDesc = context_->GetOutputDesc(0);
+    auto yDesc = context_->GetOutputDesc(ClipByValueSigDim::OUTPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, yDesc);
     auto yDtype = yDesc->GetDataType();
+
     if (xDtype != minDtype || xDtype != maxDtype || xDtype != yDtype) {
         std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(xDtype) + ", " +
                                ge::TypeUtils::DataTypeToSerialString(minDtype) + ", " +
@@ -141,15 +140,21 @@ ge::graphStatus ClipByValueTilingSingleDim::GetShapeAttrsInfo()
         return ge::GRAPH_FAILED;
     }
 
-    if (xDtype != ge::DataType::DT_FLOAT && xDtype != ge::DataType::DT_INT32 && xDtype != ge::DataType::DT_FLOAT16 &&
-        xDtype != ge::DataType::DT_BF16 && xDtype != ge::DataType::DT_INT64) {
+    if (xDtype != ge::DataType::DT_FLOAT && xDtype != ge::DataType::DT_INT32 &&
+        xDtype != ge::DataType::DT_FLOAT16 && xDtype != ge::DataType::DT_BF16 &&
+        xDtype != ge::DataType::DT_INT64) {
         OP_LOGE_FOR_INVALID_DTYPE(
             context_->GetNodeName(), "x", ge::TypeUtils::DataTypeToSerialString(xDtype).c_str(),
             "float, float16, bfloat16, int32 and int64");
         return ge::GRAPH_FAILED;
     }
     dTypeSize = ge::GetSizeByDataType(xDtype);
+    return ge::GRAPH_SUCCESS;
+}
 
+ge::graphStatus ClipByValueTilingSingleDim::DoDimensionCollapse(
+    std::vector<std::vector<int64_t>>& dims, std::vector<std::vector<int64_t>>& strides)
+{
     auto xShape = context_->GetInputShape(ClipByValueSigDim::X_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, xShape);
     auto xStorageShape = Ops::Base::EnsureNotScalar(xShape->GetStorageShape());
@@ -162,7 +167,7 @@ ge::graphStatus ClipByValueTilingSingleDim::GetShapeAttrsInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, maxShape);
     auto maxStorageShape = Ops::Base::EnsureNotScalar(maxShape->GetStorageShape());
 
-    auto yShape = context_->GetOutputShape(0);
+    auto yShape = context_->GetOutputShape(ClipByValueSigDim::OUTPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, yShape);
     auto yStorageShape = Ops::Base::EnsureNotScalar(yShape->GetStorageShape());
 
@@ -170,10 +175,10 @@ ge::graphStatus ClipByValueTilingSingleDim::GetShapeAttrsInfo()
     inShapes.push_back(xStorageShape);
     inShapes.push_back(minStorageShape);
     inShapes.push_back(maxStorageShape);
-    std::vector<std::vector<int64_t>> dims;
-    std::vector<std::vector<int64_t>> strides;
+
     ge::graphStatus res = Ops::Base::DimensionCollapse(inShapes, yStorageShape, dims, strides);
-    OP_CHECK_IF((res != ge::GRAPH_SUCCESS), OP_LOGE(context_->GetNodeName(), "DimensionCollapse failed."), return res);
+    OP_CHECK_IF((res != ge::GRAPH_SUCCESS),
+                OP_LOGE(context_->GetNodeName(), "DimensionCollapse failed."), return res);
 
     if (dims.size() != ClipByValueSigDim::INOUT_PARAM_NUM) {
         OP_LOGE(context_->GetNodeName(),
@@ -184,81 +189,115 @@ ge::graphStatus ClipByValueTilingSingleDim::GetShapeAttrsInfo()
             Ops::Base::ToString(yStorageShape).c_str());
         return ge::GRAPH_FAILED;
     }
+    return ge::GRAPH_SUCCESS;
+}
 
+void ClipByValueTilingSingleDim::DetermineSigDimMode(const std::vector<std::vector<int64_t>>& dims)
+{
     isSigDim = false;
-    if (dims[ClipByValueSigDim::X_INDEX].size() == 1 && dims[ClipByValueSigDim::MIN_INDEX].size() == 1 &&
-        dims[ClipByValueSigDim::MAX_INDEX].size() == 1 && dims[ClipByValueSigDim::Y_INDEX].size() == 1) {
+    if (dims[ClipByValueSigDim::X_INDEX].size() == 1 &&
+        dims[ClipByValueSigDim::MIN_INDEX].size() == 1 &&
+        dims[ClipByValueSigDim::MAX_INDEX].size() == 1 &&
+        dims[ClipByValueSigDim::Y_INDEX].size() == 1) {
         isSigDim = true;
         xDim = dims[ClipByValueSigDim::X_INDEX].front();
         minDim = dims[ClipByValueSigDim::MIN_INDEX].front();
         maxDim = dims[ClipByValueSigDim::MAX_INDEX].front();
         yDim = dims[ClipByValueSigDim::Y_INDEX].front();
 
-        isAss = false;
-        if (minDim == 1 && maxDim == 1) {
-            isAss = true;
-        }
+        isAss = (minDim == 1 && maxDim == 1);
+    }
+}
+
+ge::graphStatus ClipByValueTilingSingleDim::GetShapeAttrsInfo()
+{
+    OP_LOGD(context_->GetNodeName(), "TilingContext: %s",
+            optiling::ClipByValueDebugTilingContext(context_).c_str());
+
+    ge::graphStatus res = CheckDtypesAndGetSize();
+    if (res != ge::GRAPH_SUCCESS) {
+        return res;
     }
 
-    OP_LOGD(
-        context_->GetNodeName(), "isSigDim: %d isAss: %d xDim: %ld minDim: %ld maxDim: %ld yDim: %ld", isSigDim, isAss,
-        xDim, minDim, maxDim, yDim);
+    std::vector<std::vector<int64_t>> dims;
+    std::vector<std::vector<int64_t>> strides;
+    res = DoDimensionCollapse(dims, strides);
+    if (res != ge::GRAPH_SUCCESS) {
+        return res;
+    }
+
+    DetermineSigDimMode(dims);
+
+    OP_LOGD(context_->GetNodeName(),
+            "isSigDim: %d isAss: %d xDim: %ld minDim: %ld maxDim: %ld yDim: %ld",
+            isSigDim, isAss, xDim, minDim, maxDim, yDim);
     return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus ClipByValueTilingSingleDim::CalcInitialUbParams(int64_t& ubFormer)
+{
+    int64_t dbUbSize = ubSize / ClipByValueSigDim::OPEN_DB_SIZE;
+    int32_t aliveNum = isAss ? ClipByValueSigDim::ASS_ALIVE_NODE_NUM : ClipByValueSigDim::SIG_DIM_ALIVE_NODE_NUM;
+    int64_t ubFormerByte = dbUbSize / aliveNum;
+    int64_t ubFormerByteFloorAlign = (ubFormerByte / ClipByValueSigDim::CACHELINE_SIZE) * ClipByValueSigDim::CACHELINE_SIZE;
+    ubFormer = ubFormerByteFloorAlign / dTypeSize;
+
+    OP_CHECK_IF((ubFormer == 0),
+                OP_LOGE(context_->GetNodeName(),
+                        "ub size or cacheline check failed. ubSize: %lu cacheline: %lu dTypeSize: %u",
+                        ubSize, ClipByValueSigDim::CACHELINE_SIZE, dTypeSize),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF((coreNum == 0),
+                OP_LOGE(context_->GetNodeName(), "core num check is 0, check failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF((yDim == 0),
+                OP_LOGE(context_->GetNodeName(), "tensor check is empty, check failed"),
+                return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
+
+void ClipByValueTilingSingleDim::CalcBlockParams(int64_t ubFormer, int64_t& ubOuter, int64_t& ubTail,
+                                                  int64_t& blockFormer, int64_t& blockTail, int64_t& blockNum)
+{
+    ubOuter = (yDim + ubFormer - 1) / ubFormer;
+    ubTail = yDim % ubFormer;
+    ubTail = (ubTail == 0) ? ubFormer : ubTail;
+    blockFormer = (ubOuter + coreNum - 1) / coreNum;
+    blockTail = ubOuter % blockFormer;
+    blockTail = (blockTail == 0) ? blockFormer : blockTail;
+    blockNum = (ubOuter + blockFormer - 1) / blockFormer;
+}
+
+void ClipByValueTilingSingleDim::AdjustForLowUtilization(int64_t& ubFormer, int64_t& ubOuter, int64_t& ubTail,
+                                                         int64_t& blockFormer, int64_t& blockTail, int64_t& blockNum)
+{
+    int64_t aliveNum = isAss ? ClipByValueSigDim::ASS_ALIVE_NODE_NUM : ClipByValueSigDim::SIG_DIM_ALIVE_NODE_NUM;
+    if (static_cast<uint64_t>(blockNum) < (coreNum / ClipByValueSigDim::HALF_CORE_NUM_DIVIDE) &&
+        (ubFormer * dTypeSize * aliveNum) > ClipByValueSigDim::PER_CORE_MIN_UB_BYTE) {
+        int64_t dimPerCore = yDim * ClipByValueSigDim::LOW_UTILIZATION_DIM_MULTIPLIER / coreNum;
+        int64_t alignDimPerCore = ((((dimPerCore * dTypeSize) + ClipByValueSigDim::CACHELINE_SIZE - 1) / ClipByValueSigDim::CACHELINE_SIZE) * ClipByValueSigDim::CACHELINE_SIZE) / dTypeSize;
+        ubFormer = (ubFormer > alignDimPerCore) ? alignDimPerCore : ubFormer;
+
+        int64_t lowestUbFormer =
+            (((ClipByValueSigDim::PER_CORE_MIN_UB_BYTE / aliveNum) / ClipByValueSigDim::CACHELINE_SIZE) * ClipByValueSigDim::CACHELINE_SIZE) / dTypeSize;
+        if (ubFormer < lowestUbFormer) {
+            ubFormer = lowestUbFormer;
+        }
+        CalcBlockParams(ubFormer, ubOuter, ubTail, blockFormer, blockTail, blockNum);
+    }
 }
 
 ge::graphStatus ClipByValueTilingSingleDim::DoOpTiling()
 {
-    // 先分ub，再分核
-    // 开DB，cacheline 对齐
-    int64_t dbUbSize = ubSize / ClipByValueSigDim::OPEN_DB_SIZE;
-    int32_t aliveNum = isAss ? ClipByValueSigDim::ASS_ALIVE_NODE_NUM : ClipByValueSigDim::SIG_DIM_ALIVE_NODE_NUM;
-    int64_t ubFormerByte = dbUbSize / aliveNum;
-    int64_t ubFormerByteFloorAlign = (ubFormerByte / cacheline) * cacheline;
-    int64_t ubFormer = ubFormerByteFloorAlign / dTypeSize;
-    OP_CHECK_IF(
-        (ubFormer == 0),
-        OP_LOGE(
-            context_->GetNodeName(), "ub size or cacheline check failed. ubSize: %lu cacheline: %lu dTypeSize: %u",
-            ubSize, cacheline, dTypeSize),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        (coreNum == 0), OP_LOGE(context_->GetNodeName(), "core num check is 0, check failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        (yDim == 0), OP_LOGE(context_->GetNodeName(), "tensor check is empty, check failed"), return ge::GRAPH_FAILED);
-
-    // 为方便kernel计算，减少kernel scalar，对于整除无尾场景，也认为有个整数的尾块
-    int64_t ubOuter = (yDim + ubFormer - 1) / ubFormer;
-    int64_t ubTail = yDim % ubFormer;
-    ubTail = (ubTail == 0) ? ubFormer : ubTail;
-    int64_t blockFormer = (ubOuter + coreNum - 1) / coreNum;
-    int64_t blockTail = ubOuter % blockFormer;
-    blockTail = (blockTail == 0) ? blockFormer : blockTail;
-    int64_t blockNum = (ubOuter + blockFormer - 1) / blockFormer;
-
-    // 如果blockNum小于核数一半，则尝试分配到核数的一半
-    if (static_cast<uint64_t>(blockNum) < (coreNum / ClipByValueSigDim::HALF_CORE_NUM_DIVIDE) &&
-        (ubFormer * dTypeSize * aliveNum) > ClipByValueSigDim::PER_CORE_MIN_UB_BYTE) {
-        int64_t dimPerCore = yDim * 2 / coreNum; // 1/2 的coreNum进行分配
-        // 向上对齐到128Byte，理论上不会超过原来计算的ubFormer
-        int64_t alignDimPerCore = ((((dimPerCore * dTypeSize) + cacheline - 1) / cacheline) * cacheline) / dTypeSize;
-        ubFormer = (ubFormer > alignDimPerCore) ? alignDimPerCore : ubFormer;
-
-        // 如果分配到核数一半后，小于8k(开DB后)，则直接按照 8k 计算。进入该分支，说明前面已经判断过开db后ub大小大于8KB
-        int64_t lowestUbFormer =
-            (((ClipByValueSigDim::PER_CORE_MIN_UB_BYTE / aliveNum) / cacheline) * cacheline) / dTypeSize;
-        if (ubFormer < lowestUbFormer) {
-            ubFormer = lowestUbFormer;
-        }
-
-        // 重新计算分核参数
-        ubOuter = (yDim + ubFormer - 1) / ubFormer;
-        ubTail = yDim % ubFormer;
-        ubTail = (ubTail == 0) ? ubFormer : ubTail;
-        blockFormer = (ubOuter + coreNum - 1) / coreNum;
-        blockTail = ubOuter % blockFormer;
-        blockTail = (blockTail == 0) ? blockFormer : blockTail;
-        blockNum = (ubOuter + blockFormer - 1) / blockFormer;
+    int64_t ubFormer = 0;
+    ge::graphStatus res = CalcInitialUbParams(ubFormer);
+    if (res != ge::GRAPH_SUCCESS) {
+        return res;
     }
+
+    int64_t ubOuter = 0, ubTail = 0, blockFormer = 0, blockTail = 0, blockNum = 0;
+    CalcBlockParams(ubFormer, ubOuter, ubTail, blockFormer, blockTail, blockNum);
+    AdjustForLowUtilization(ubFormer, ubOuter, ubTail, blockFormer, blockTail, blockNum);
 
     tilingData.set_blockNum(blockNum);
     tilingData.set_ubFormer(ubFormer);
@@ -270,12 +309,12 @@ ge::graphStatus ClipByValueTilingSingleDim::DoOpTiling()
     tilingData.set_maxDim(maxDim);
     tilingData.set_yDim(yDim);
 
-    OP_LOGI(
-        context_->GetNodeName(),
-        "ClipByValue do tiling finish. coreNum: %u ubSize: %lu cacheline: %lu "
-        "blockNum: %ld ubFormer: %ld ubTail: %ld blockFormer: %ld blockTail: %ld "
-        "xDim: %ld minDim: %ld maxDim: %ld yDim: %ld",
-        coreNum, ubSize, cacheline, blockNum, ubFormer, ubTail, blockFormer, blockTail, xDim, minDim, maxDim, yDim);
+    OP_LOGI(context_->GetNodeName(),
+            "ClipByValue do tiling finish. coreNum: %ld ubSize: %lu cacheline: %lu "
+            "blockNum: %ld ubFormer: %ld ubTail: %ld blockFormer: %ld blockTail: %ld "
+            "xDim: %ld minDim: %ld maxDim: %ld yDim: %ld",
+            coreNum, ubSize, ClipByValueSigDim::CACHELINE_SIZE, blockNum, ubFormer, ubTail, blockFormer, blockTail,
+            xDim, minDim, maxDim, yDim);
     return ge::GRAPH_SUCCESS;
 }
 

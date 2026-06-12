@@ -26,22 +26,16 @@ constexpr int64_t X_INDEX = 0;
 constexpr int64_t MIN_INDEX = 1;
 constexpr int64_t MAX_INDEX = 2;
 constexpr int64_t Y_INDEX = 3;
-
-constexpr uint64_t OPEN_DB_SIZE = 2;
-constexpr uint64_t HALF_CORE_NUM_DIVIDE = 2;
-
-constexpr int64_t FLOAT32_BYTES = 4;
-constexpr int64_t FLOAT16_BYTES = 2;
-constexpr int64_t INT64_BYTES = 8;
+constexpr int64_t OUTPUT_INDEX = 0;
 
 constexpr int64_t MAX_RANK_PATTERN = 4;
 constexpr int64_t PATTERN_RANK_UNKNOWN = 9;
-constexpr int64_t RUNNING_RANK_UNKNOWN = -1;
 constexpr uint64_t UB_BROADCAST_OP_KEY_OFFSET = 3000000;
 
 constexpr int32_t UB_BROADCAST_NODE_NUM = 11;
-constexpr int64_t PER_CORE_MIN_UB_BYTE = 8 * 1024;
 constexpr uint32_t MINIMAL_WORKSPACE = 16 * 1024 * 1024;
+constexpr int64_t UB_BROADCAST_TILE_COUNT = 87;
+constexpr int64_t UB_BROADCAST_TILE_SIZE = 128;
 
 constexpr uint64_t OP_KEY_INVALID = 0;
 constexpr uint64_t OP_KEY_1 = 1;
@@ -102,14 +96,14 @@ bool ClipByValueTilingUbBroadcast::IsCapable()
 
 ge::graphStatus ClipByValueTilingUbBroadcast::GetPlatformInfo()
 {
-    auto compileInfo = reinterpret_cast<const ClipByValueCompileInfo*>(context_->GetCompileInfo());
+    auto compileInfo = context_->GetCompileInfo<ClipByValueCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfo);
 
     opName = context_->GetNodeName();
     auto platformInfoPtr = context_->GetPlatformInfo();
     if (platformInfoPtr == nullptr) {
         OP_LOGD(context_->GetNodeName(), "Entering into get core num from compile info.");
-        coreNum = static_cast<int32_t>(compileInfo->coreNum);
+        coreNum = static_cast<int64_t>(compileInfo->coreNum);
         ubSize = static_cast<int64_t>(compileInfo->ubSize);
     } else {
         OP_LOGD(context_->GetNodeName(), "Entering into get core num from platform.");
@@ -123,30 +117,30 @@ ge::graphStatus ClipByValueTilingUbBroadcast::GetPlatformInfo()
 }
 
 uint64_t ClipByValueTilingUbBroadcast::GetOpKey(
-    ge::DataType dtypeX, ge::DataType clipValueMinDtype, ge::DataType clipValueMaxDtype, ge::DataType dtypeY)
+    ge::DataType xDataType, ge::DataType clipValueMinDtype, ge::DataType clipValueMaxDtype, ge::DataType yDataType)
 {
-    bool opKey1Flag = dtypeX == DT_FLOAT16 && clipValueMinDtype == DT_FLOAT16 && clipValueMaxDtype == DT_FLOAT16 &&
-                      dtypeY == DT_FLOAT16;
+    bool opKey1Flag = xDataType == DT_FLOAT16 && clipValueMinDtype == DT_FLOAT16 && clipValueMaxDtype == DT_FLOAT16 &&
+                      yDataType == DT_FLOAT16;
     if (opKey1Flag) {
         return ClipByValueUbBroadcast::OP_KEY_1;
     }
     bool opKey2Flag =
-        dtypeX == DT_FLOAT && clipValueMinDtype == DT_FLOAT && clipValueMaxDtype == DT_FLOAT && dtypeY == DT_FLOAT;
+        xDataType == DT_FLOAT && clipValueMinDtype == DT_FLOAT && clipValueMaxDtype == DT_FLOAT && yDataType == DT_FLOAT;
     if (opKey2Flag) {
         return ClipByValueUbBroadcast::OP_KEY_2;
     }
     bool opKey3Flag =
-        dtypeX == DT_BF16 && clipValueMinDtype == DT_BF16 && clipValueMaxDtype == DT_BF16 && dtypeY == DT_BF16;
+        xDataType == DT_BF16 && clipValueMinDtype == DT_BF16 && clipValueMaxDtype == DT_BF16 && yDataType == DT_BF16;
     if (opKey3Flag) {
         return ClipByValueUbBroadcast::OP_KEY_3;
     }
     bool opKey4Flag =
-        dtypeX == DT_INT32 && clipValueMinDtype == DT_INT32 && clipValueMaxDtype == DT_INT32 && dtypeY == DT_INT32;
+        xDataType == DT_INT32 && clipValueMinDtype == DT_INT32 && clipValueMaxDtype == DT_INT32 && yDataType == DT_INT32;
     if (opKey4Flag) {
         return ClipByValueUbBroadcast::OP_KEY_4;
     }
     bool opKey5Flag =
-        dtypeX == DT_INT64 && clipValueMinDtype == DT_INT64 && clipValueMaxDtype == DT_INT64 && dtypeY == DT_INT64;
+        xDataType == DT_INT64 && clipValueMinDtype == DT_INT64 && clipValueMaxDtype == DT_INT64 && yDataType == DT_INT64;
     if (opKey5Flag) {
         return ClipByValueUbBroadcast::OP_KEY_5;
     }
@@ -168,7 +162,7 @@ ge::graphStatus ClipByValueTilingUbBroadcast::DoDimensionCollapse()
     OP_CHECK_NULL_WITH_CONTEXT(context_, maxShape);
     auto maxStorageShape = Ops::Base::EnsureNotScalar(maxShape->GetStorageShape());
 
-    auto yShape = context_->GetOutputShape(0);
+    auto yShape = context_->GetOutputShape(ClipByValueUbBroadcast::OUTPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, yShape);
     auto yStorageShape = Ops::Base::EnsureNotScalar(yShape->GetStorageShape());
 
@@ -205,19 +199,19 @@ ge::graphStatus ClipByValueTilingUbBroadcast::DoDimensionCollapse()
 
 ge::graphStatus ClipByValueTilingUbBroadcast::GetDtypes()
 {
-    auto xDesc = context_->GetInputDesc(0);
+    auto xDesc = context_->GetInputDesc(ClipByValueUbBroadcast::X_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, xDesc);
     xDtype = xDesc->GetDataType();
 
-    auto minDesc = context_->GetInputDesc(1);
+    auto minDesc = context_->GetInputDesc(ClipByValueUbBroadcast::MIN_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, minDesc);
     minDtype = minDesc->GetDataType();
 
-    auto maxDesc = context_->GetInputDesc(2); // 2 is max param
+    auto maxDesc = context_->GetInputDesc(ClipByValueUbBroadcast::MAX_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, maxDesc);
     maxDtype = maxDesc->GetDataType();
 
-    auto yDesc = context_->GetOutputDesc(0);
+    auto yDesc = context_->GetOutputDesc(ClipByValueUbBroadcast::OUTPUT_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, yDesc);
     yDtype = yDesc->GetDataType();
     if (xDtype != minDtype || xDtype != maxDtype || xDtype != yDtype) {
@@ -278,7 +272,7 @@ ge::graphStatus ClipByValueTilingUbBroadcast::GetShapeAttrsInfo()
     // ub broadcast 高阶接口暂时只支持-1轴和-2轴
     int64_t yElementNum = dims[ClipByValueUbBroadcast::Y_INDEX].size();
     int64_t yPenultimateDim = yElementNum > 1 ? dims[ClipByValueUbBroadcast::Y_INDEX][yElementNum - 2] : 1;
-    constexpr int64_t UB_BROADCAST_SUPPORT_LEN = 87 * 128;
+    constexpr int64_t UB_BROADCAST_SUPPORT_LEN = ClipByValueUbBroadcast::UB_BROADCAST_TILE_COUNT * ClipByValueUbBroadcast::UB_BROADCAST_TILE_SIZE;
 
     if ((yLastDim * dTypeSize % UB_ALIGN_SIZE == 0) && (xDtype == DT_FLOAT16 || xDtype == DT_BF16) &&
         (yLastDim > UB_BROADCAST_SUPPORT_LEN || yLastDim * yPenultimateDim > UB_BROADCAST_SUPPORT_LEN)) {
@@ -333,6 +327,35 @@ std::map<uint64_t, Ops::Base::BroadcastComputeParams> ClipByValueTilingUbBroadca
     }
 }
 
+void ClipByValueTilingUbBroadcast::CopyAndSetDimsStrides(const Ops::Base::BroadcastTilingData& data)
+{
+    std::copy(data.dims[ClipByValueUbBroadcast::INDEX_0].begin(),
+              data.dims[ClipByValueUbBroadcast::INDEX_0].end(), input0Dims);
+    tilingData.set_input0Dims(input0Dims);
+    std::copy(data.dims[ClipByValueUbBroadcast::INDEX_1].begin(),
+              data.dims[ClipByValueUbBroadcast::INDEX_1].end(), input1Dims);
+    tilingData.set_input1Dims(input1Dims);
+    std::copy(data.dims[ClipByValueUbBroadcast::INDEX_2].begin(),
+              data.dims[ClipByValueUbBroadcast::INDEX_2].end(), input2Dims);
+    tilingData.set_input2Dims(input2Dims);
+    std::copy(data.dims[ClipByValueUbBroadcast::INDEX_3].begin(),
+              data.dims[ClipByValueUbBroadcast::INDEX_3].end(), outputDims);
+    tilingData.set_outputDims(outputDims);
+
+    std::copy(data.strides[ClipByValueUbBroadcast::INDEX_3].begin(),
+              data.strides[ClipByValueUbBroadcast::INDEX_3].end(), outputStrides);
+    tilingData.set_outputStrides(outputStrides);
+    std::copy(data.strides[ClipByValueUbBroadcast::INDEX_0].begin(),
+              data.strides[ClipByValueUbBroadcast::INDEX_0].end(), input0Strides);
+    tilingData.set_input0Strides(input0Strides);
+    std::copy(data.strides[ClipByValueUbBroadcast::INDEX_1].begin(),
+              data.strides[ClipByValueUbBroadcast::INDEX_1].end(), input1Strides);
+    tilingData.set_input1Strides(input1Strides);
+    std::copy(data.strides[ClipByValueUbBroadcast::INDEX_2].begin(),
+              data.strides[ClipByValueUbBroadcast::INDEX_2].end(), input2Strides);
+    tilingData.set_input2Strides(input2Strides);
+}
+
 ge::graphStatus ClipByValueTilingUbBroadcast::SetTilingData(Ops::Base::BroadcastTilingData& broadcastTilingData)
 {
     blockNum = broadcastTilingData.blockNum;
@@ -347,49 +370,12 @@ ge::graphStatus ClipByValueTilingUbBroadcast::SetTilingData(Ops::Base::Broadcast
     tilingData.set_buffSize(buffSize);
 
     int64_t runningRank = tilingData.get_shapeLen() - tilingData.get_ubSplitAxis();
-
-    // rank取值范围为 1，2 3，4，9
     int64_t rank = runningRank > ClipByValueUbBroadcast::MAX_RANK_PATTERN ?
-                       ClipByValueUbBroadcast::PATTERN_RANK_UNKNOWN :
-                       runningRank;
-
+                       ClipByValueUbBroadcast::PATTERN_RANK_UNKNOWN : runningRank;
     tilingKey_ = ClipByValueUbBroadcast::UB_BROADCAST_OP_KEY_OFFSET + rank;
-
     tilingData.set_runningRank(runningRank);
 
-    std::copy(
-        broadcastTilingData.dims[ClipByValueUbBroadcast::INDEX_0].begin(),
-        broadcastTilingData.dims[ClipByValueUbBroadcast::INDEX_0].end(), input0Dims);
-    tilingData.set_input0Dims(input0Dims);
-    std::copy(
-        broadcastTilingData.dims[ClipByValueUbBroadcast::INDEX_1].begin(),
-        broadcastTilingData.dims[ClipByValueUbBroadcast::INDEX_1].end(), input1Dims);
-    tilingData.set_input1Dims(input1Dims);
-    std::copy(
-        broadcastTilingData.dims[ClipByValueUbBroadcast::INDEX_2].begin(),
-        broadcastTilingData.dims[ClipByValueUbBroadcast::INDEX_2].end(), input2Dims);
-    tilingData.set_input2Dims(input2Dims);
-    std::copy(
-        broadcastTilingData.dims[ClipByValueUbBroadcast::INDEX_3].begin(),
-        broadcastTilingData.dims[ClipByValueUbBroadcast::INDEX_3].end(), outputDims);
-    tilingData.set_outputDims(outputDims);
-    std::copy(
-        broadcastTilingData.strides[ClipByValueUbBroadcast::INDEX_3].begin(),
-        broadcastTilingData.strides[ClipByValueUbBroadcast::INDEX_3].end(), outputStrides);
-    tilingData.set_outputStrides(outputStrides);
-    std::copy(
-        broadcastTilingData.strides[ClipByValueUbBroadcast::INDEX_0].begin(),
-        broadcastTilingData.strides[ClipByValueUbBroadcast::INDEX_0].end(), input0Strides);
-    tilingData.set_input0Strides(input0Strides);
-    std::copy(
-        broadcastTilingData.strides[ClipByValueUbBroadcast::INDEX_1].begin(),
-        broadcastTilingData.strides[ClipByValueUbBroadcast::INDEX_1].end(), input1Strides);
-    tilingData.set_input1Strides(input1Strides);
-    std::copy(
-        broadcastTilingData.strides[ClipByValueUbBroadcast::INDEX_2].begin(),
-        broadcastTilingData.strides[ClipByValueUbBroadcast::INDEX_2].end(), input2Strides);
-    tilingData.set_input2Strides(input2Strides);
-
+    CopyAndSetDimsStrides(broadcastTilingData);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -397,17 +383,30 @@ ge::graphStatus ClipByValueTilingUbBroadcast::DoOpTiling()
 {
     Ops::Base::BroadcastTilingParams broadcastTilingParams;
     for (uint64_t i = 0; i < context_->GetComputeNodeInputNum(); i++) {
+        auto inputShape = context_->GetInputShape(i);
+        OP_CHECK_NULL_WITH_CONTEXT(context_, inputShape);
         broadcastTilingParams.inShape.push_back(
-            Ops::Base::EnsureNotScalar(context_->GetInputShape(i)->GetStorageShape()));
+            Ops::Base::EnsureNotScalar(inputShape->GetStorageShape()));
     }
 
-    broadcastTilingParams.outShape = Ops::Base::EnsureNotScalar(context_->GetOutputShape(0)->GetStorageShape());
+    auto outputShape = context_->GetOutputShape(ClipByValueUbBroadcast::OUTPUT_INDEX);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, outputShape);
+    broadcastTilingParams.outShape = Ops::Base::EnsureNotScalar(outputShape->GetStorageShape());
+    
+    OP_CHECK_IF(dTypeSize == 0,
+                OP_LOGE("DoOpTiling", "dTypeSize can not be 0"),
+                return ge::GRAPH_FAILED);
+    
     broadcastTilingParams.computeMap = GetComputeMap(opKey);
     broadcastTilingParams.coreNum = coreNum;
     broadcastTilingParams.ubSize = ubSize;
 
     Ops::Base::BroadcastTilingData broadcastTilingData;
-    DoBroadcastTiling(broadcastTilingParams, broadcastTilingData);
+
+    ge::graphStatus res = DoBroadcastTiling(broadcastTilingParams, broadcastTilingData);
+    OP_CHECK_IF(res != ge::GRAPH_SUCCESS,
+            OP_LOGE("BroadcastTiling", "DoBroadcastTiling failed."),
+            return ge::GRAPH_FAILED);
 
     SetTilingData(broadcastTilingData);
 
@@ -447,30 +446,32 @@ ge::graphStatus ClipByValueTilingUbBroadcast::PostTiling()
 // 覆盖BroadcastTiling函数
 static constexpr uint64_t BROADCAST_COMPUTE_KEY = 1;
 
-ge::graphStatus ClipByValueTilingUbBroadcast::DoBroadcastTiling(
-    const Ops::Base::BroadcastTilingParams& broadcastTilingParams, Ops::Base::BroadcastTilingData& broadcastTilingData)
+ge::graphStatus ClipByValueTilingUbBroadcast::FindComputeParams(
+    const Ops::Base::BroadcastTilingParams& params, Ops::Base::BroadcastComputeParams& computeParams)
 {
-    broadcastTilingData.shapeLen = dims.back().size();
-    broadcastTilingData.dims = dims;
-    broadcastTilingData.strides = strides;
-
-    auto iter = broadcastTilingParams.computeMap.find(BROADCAST_COMPUTE_KEY);
-    Ops::Base::BroadcastComputeParams computeParams;
-    if (iter != broadcastTilingParams.computeMap.end()) {
+    auto iter = params.computeMap.find(BROADCAST_COMPUTE_KEY);
+    if (iter != params.computeMap.end()) {
         computeParams = iter->second;
     } else {
         OP_LOGE("BroadcastTiling", "can not find computeKey");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(
-        broadcastTilingParams.ubSize < computeParams.extraSize[0],
-        OP_LOGE("BroadcastTiling", "ubSize is smaller than extra size."), return ge::GRAPH_FAILED);
-    // 计算逻辑和nddma有差别，ubbroadcast和nddma合并时再修改
-    uint64_t maxElemNum = computeParams.bufferDivisor[0];
-    OP_CHECK_IF(maxElemNum == 0, OP_LOGE("BroadcastTiling", "maxElemNum can not be 0"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(params.ubSize < computeParams.extraSize[0],
+                OP_LOGE("BroadcastTiling", "ubSize is smaller than extra size."),
+                return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
 
-    uint64_t curProduct = 1;
-    uint64_t ubSplitAxes = 0;
+ge::graphStatus ClipByValueTilingUbBroadcast::CalcUbSplitParams(
+    const Ops::Base::BroadcastComputeParams& computeParams, uint64_t& ubSplitAxes, uint64_t& curProduct)
+{
+    uint64_t maxElemNum = computeParams.bufferDivisor[0];
+    OP_CHECK_IF(maxElemNum == 0,
+                OP_LOGE("BroadcastTiling", "maxElemNum can not be 0"),
+                return ge::GRAPH_FAILED);
+
+    curProduct = 1;
+    ubSplitAxes = 0;
     bool flag = true;
     for (int64_t i = dims.back().size() - 1; i >= 0; i--) {
         curProduct *= dims.back()[i];
@@ -481,43 +482,98 @@ ge::graphStatus ClipByValueTilingUbBroadcast::DoBroadcastTiling(
             break;
         }
     }
-
     if (flag) {
         curProduct = curProduct / dims.back()[0];
     }
+    return ge::GRAPH_SUCCESS;
+}
 
-    uint32_t ubFormer = 0;
+ge::graphStatus ClipByValueTilingUbBroadcast::CalcUbTailParams(uint64_t ubSplitAxes, uint64_t curProduct,
+                                                               uint64_t maxElemNum, uint32_t& ubFormer,
+                                                               uint64_t& ubOuter, uint64_t& ubTail)
+{
     if (dims.back().size() == 1) {
         ubFormer = maxElemNum;
     } else {
+        OP_CHECK_IF(curProduct == 0,
+                    OP_LOGE("BroadcastTiling", "curProduct can not be 0"),
+                    return ge::GRAPH_FAILED);
         ubFormer = maxElemNum / curProduct;
     }
-    uint64_t ubOuter = (dims.back()[ubSplitAxes] + ubFormer - 1) / ubFormer;
-    uint64_t ubTail = dims.back()[ubSplitAxes] - (ubOuter - 1) * ubFormer;
-    broadcastTilingData.ubSplitAxis = ubSplitAxes;
-    broadcastTilingData.ubFormer = ubFormer;
-    broadcastTilingData.ubOuter = ubOuter;
-    broadcastTilingData.ubTail = ubTail;
+    OP_CHECK_IF(ubFormer == 0,
+                OP_LOGE("BroadcastTiling", "ubFormer can not be 0"),
+                return ge::GRAPH_FAILED);
+    ubOuter = (dims.back()[ubSplitAxes] + ubFormer - 1) / ubFormer;
+    ubTail = dims.back()[ubSplitAxes] - (ubOuter - 1) * ubFormer;
+    return ge::GRAPH_SUCCESS;
+}
 
+ge::graphStatus ClipByValueTilingUbBroadcast::CalcBlockSplitParams(uint64_t ubSplitAxes, uint64_t ubOuter,
+                                                                 const Ops::Base::BroadcastTilingParams& params,
+                                                                 Ops::Base::BroadcastTilingData& data)
+{
     uint64_t fusedProduct = ubOuter;
     for (uint64_t i = 0; i < ubSplitAxes; i++) {
         fusedProduct *= dims.back()[i];
     }
 
-    OP_CHECK_IF(
-        broadcastTilingParams.coreNum == 0, OP_LOGE("BroadcastTiling", "coreNum can not be 0"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(params.coreNum == 0,
+                OP_LOGE("BroadcastTiling", "coreNum can not be 0"),
+                return ge::GRAPH_FAILED);
 
-    uint64_t blockFormer = (fusedProduct + broadcastTilingParams.coreNum - 1) / broadcastTilingParams.coreNum;
+    uint64_t blockFormer = (fusedProduct + params.coreNum - 1) / params.coreNum;
+    OP_CHECK_IF(blockFormer == 0,
+                OP_LOGE("BroadcastTiling", "blockFormer can not be 0, fusedProduct may be 0"),
+                return ge::GRAPH_FAILED);
+
     uint64_t localBlockNum = (fusedProduct + blockFormer - 1) / blockFormer;
     uint64_t blockTail = fusedProduct - (localBlockNum - 1) * blockFormer;
-    uint64_t dimProductBeforeUbInner = fusedProduct;
-    broadcastTilingData.blockFormer = blockFormer;
-    broadcastTilingData.blockNum = localBlockNum;
-    broadcastTilingData.blockTail = blockTail;
-    broadcastTilingData.dimProductBeforeUbInner = dimProductBeforeUbInner;
+
+    data.blockFormer = blockFormer;
+    data.blockNum = localBlockNum;
+    data.blockTail = blockTail;
+    data.dimProductBeforeUbInner = fusedProduct;
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus ClipByValueTilingUbBroadcast::DoBroadcastTiling(
+    const Ops::Base::BroadcastTilingParams& broadcastTilingParams,
+    Ops::Base::BroadcastTilingData& broadcastTilingData)
+{
+    broadcastTilingData.shapeLen = dims.back().size();
+    broadcastTilingData.dims = dims;
+    broadcastTilingData.strides = strides;
+
+    Ops::Base::BroadcastComputeParams computeParams;
+    ge::graphStatus res = FindComputeParams(broadcastTilingParams, computeParams);
+    if (res != ge::GRAPH_SUCCESS) {
+        return res;
+    }
+
+    uint64_t ubSplitAxes = 0, curProduct = 0;
+    res = CalcUbSplitParams(computeParams, ubSplitAxes, curProduct);
+    if (res != ge::GRAPH_SUCCESS) {
+        return res;
+    }
+
+    uint64_t maxElemNum = computeParams.bufferDivisor[0];
+    uint32_t ubFormer = 0;
+    uint64_t ubOuter = 0, ubTail = 0;
+    res = CalcUbTailParams(ubSplitAxes, curProduct, maxElemNum, ubFormer, ubOuter, ubTail);
+    if (res != ge::GRAPH_SUCCESS) {
+        return res;
+    }
+
+    broadcastTilingData.ubSplitAxis = ubSplitAxes;
+    broadcastTilingData.ubFormer = ubFormer;
+    broadcastTilingData.ubOuter = ubOuter;
+    broadcastTilingData.ubTail = ubTail;
     broadcastTilingData.elemNum = maxElemNum;
 
+    ge::graphStatus blockRes = CalcBlockSplitParams(ubSplitAxes, ubOuter, broadcastTilingParams, broadcastTilingData);
+    if (blockRes != ge::GRAPH_SUCCESS) {
+        return blockRes;
+    }
     return ge::GRAPH_SUCCESS;
 }
 

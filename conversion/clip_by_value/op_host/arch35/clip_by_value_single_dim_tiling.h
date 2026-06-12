@@ -62,10 +62,20 @@ protected:
     ge::graphStatus PostTiling() override;
 
 private:
+    ge::graphStatus CheckDtypesAndGetSize();
+    ge::graphStatus DoDimensionCollapse(std::vector<std::vector<int64_t>>& dims,
+                                         std::vector<std::vector<int64_t>>& strides);
+    void DetermineSigDimMode(const std::vector<std::vector<int64_t>>& dims);
+
+    ge::graphStatus CalcInitialUbParams(int64_t& ubFormer);
+    void CalcBlockParams(int64_t ubFormer, int64_t& ubOuter, int64_t& ubTail,
+                         int64_t& blockFormer, int64_t& blockTail, int64_t& blockNum);
+    void AdjustForLowUtilization(int64_t& ubFormer, int64_t& ubOuter, int64_t& ubTail,
+                                 int64_t& blockFormer, int64_t& blockTail, int64_t& blockNum);
+
     const char* opName = "ClipByValue";
-    uint32_t coreNum{0};     // syscfg
+    int64_t coreNum{0};      // syscfg
     uint64_t ubSize{0};      // syscfg
-    uint64_t cacheline{128}; // syscfg Byte
 
     ge::DataType xDtype{ge::DataType::DT_FLOAT};
     uint32_t dTypeSize{1};

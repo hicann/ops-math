@@ -35,50 +35,53 @@ static constexpr uint64_t INDEX_1 = 1;
 static constexpr uint64_t INDEX_2 = 2;
 static constexpr uint64_t INDEX_3 = 3;
 static constexpr uint64_t WORKSPACE_SIZE = 32;
+static constexpr int64_t BUFFER_DIVISOR_BITS16 = 128;
+static constexpr int64_t BUFFER_DIVISOR_BITS32 = 256;
+static constexpr int64_t BUFFER_DIVISOR_BITS64 = 512;
 
 ge::graphStatus ClipByValueTiling::GetPlatformInfo()
 {
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo == nullptr) {
-        auto compileInfoPtr = reinterpret_cast<const ClipByValueCompileInfo*>(context_->GetCompileInfo());
+        auto compileInfoPtr = context_->GetCompileInfo<ClipByValueCompileInfo>();
         OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_, "compile info is null"), return ge::GRAPH_FAILED);
-        coreNum = compileInfoPtr->coreNum;
-        ubSize = compileInfoPtr->ubSize;
+        coreNum = static_cast<int64_t>(compileInfoPtr->coreNum);
+        ubSize = static_cast<int64_t>(compileInfoPtr->ubSize);
     } else {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
-        coreNum = ascendcPlatform.GetCoreNumAiv();
-        uint64_t ubSizePlatForm;
+        coreNum = static_cast<int64_t>(ascendcPlatform.GetCoreNumAiv());
+        uint64_t ubSizePlatForm = 0;
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
-        ubSize = ubSizePlatForm;
+        ubSize = static_cast<int64_t>(ubSizePlatForm);
     }
     return ge::GRAPH_SUCCESS;
 }
 
 uint64_t ClipByValueTiling::GetOpKey(
-    ge::DataType dtypeX, ge::DataType clipValueMinDtype, ge::DataType clipValueMaxDtype, ge::DataType dtypeY)
+    ge::DataType xDtype, ge::DataType clipValueMinDtype, ge::DataType clipValueMaxDtype, ge::DataType yDtype)
 {
-    bool opKey1Flag = dtypeX == DT_FLOAT16 && clipValueMinDtype == DT_FLOAT16 && clipValueMaxDtype == DT_FLOAT16 &&
-                      dtypeY == DT_FLOAT16;
+    bool opKey1Flag = xDtype == DT_FLOAT16 && clipValueMinDtype == DT_FLOAT16 && clipValueMaxDtype == DT_FLOAT16 &&
+                      yDtype == DT_FLOAT16;
     if (opKey1Flag) {
         return OP_KEY_1;
     }
     bool opKey2Flag =
-        dtypeX == DT_FLOAT && clipValueMinDtype == DT_FLOAT && clipValueMaxDtype == DT_FLOAT && dtypeY == DT_FLOAT;
+        xDtype == DT_FLOAT && clipValueMinDtype == DT_FLOAT && clipValueMaxDtype == DT_FLOAT && yDtype == DT_FLOAT;
     if (opKey2Flag) {
         return OP_KEY_2;
     }
     bool opKey3Flag =
-        dtypeX == DT_BF16 && clipValueMinDtype == DT_BF16 && clipValueMaxDtype == DT_BF16 && dtypeY == DT_BF16;
+        xDtype == DT_BF16 && clipValueMinDtype == DT_BF16 && clipValueMaxDtype == DT_BF16 && yDtype == DT_BF16;
     if (opKey3Flag) {
         return OP_KEY_3;
     }
     bool opKey4Flag =
-        dtypeX == DT_INT32 && clipValueMinDtype == DT_INT32 && clipValueMaxDtype == DT_INT32 && dtypeY == DT_INT32;
+        xDtype == DT_INT32 && clipValueMinDtype == DT_INT32 && clipValueMaxDtype == DT_INT32 && yDtype == DT_INT32;
     if (opKey4Flag) {
         return OP_KEY_4;
     }
     bool opKey5Flag =
-        dtypeX == DT_INT64 && clipValueMinDtype == DT_INT64 && clipValueMaxDtype == DT_INT64 && dtypeY == DT_INT64;
+        xDtype == DT_INT64 && clipValueMinDtype == DT_INT64 && clipValueMaxDtype == DT_INT64 && yDtype == DT_INT64;
     if (opKey5Flag) {
         return OP_KEY_5;
     }
@@ -99,31 +102,31 @@ std::map<uint64_t, Ops::Base::BroadcastComputeParams> ClipByValueTiling::GetComp
             computeParams0.maxDtypeBits = static_cast<int64_t>(Ops::Base::BROADCAST_BITS_SIZE::BITS16_SIZE);
             computeParams0.minDtypeBits = static_cast<int64_t>(Ops::Base::BROADCAST_BITS_SIZE::BITS16_SIZE);
             computeParams0.extraSize = {0, 0};
-            computeParams0.bufferDivisor = {128, 128};
+            computeParams0.bufferDivisor = {BUFFER_DIVISOR_BITS16, BUFFER_DIVISOR_BITS16};
             return {{1, computeParams0}};
         case OP_KEY_2:
             computeParams0.maxDtypeBits = static_cast<int64_t>(Ops::Base::BROADCAST_BITS_SIZE::BITS32_SIZE);
             computeParams0.minDtypeBits = static_cast<int64_t>(Ops::Base::BROADCAST_BITS_SIZE::BITS32_SIZE);
             computeParams0.extraSize = {0, 0};
-            computeParams0.bufferDivisor = {256, 256};
+            computeParams0.bufferDivisor = {BUFFER_DIVISOR_BITS32, BUFFER_DIVISOR_BITS32};
             return {{1, computeParams0}};
         case OP_KEY_3:
             computeParams0.maxDtypeBits = static_cast<int64_t>(Ops::Base::BROADCAST_BITS_SIZE::BITS16_SIZE);
             computeParams0.minDtypeBits = static_cast<int64_t>(Ops::Base::BROADCAST_BITS_SIZE::BITS16_SIZE);
             computeParams0.extraSize = {0, 0};
-            computeParams0.bufferDivisor = {128, 128};
+            computeParams0.bufferDivisor = {BUFFER_DIVISOR_BITS16, BUFFER_DIVISOR_BITS16};
             return {{1, computeParams0}};
         case OP_KEY_4:
             computeParams0.maxDtypeBits = static_cast<int64_t>(Ops::Base::BROADCAST_BITS_SIZE::BITS32_SIZE);
             computeParams0.minDtypeBits = static_cast<int64_t>(Ops::Base::BROADCAST_BITS_SIZE::BITS32_SIZE);
             computeParams0.extraSize = {0, 0};
-            computeParams0.bufferDivisor = {256, 256};
+            computeParams0.bufferDivisor = {BUFFER_DIVISOR_BITS32, BUFFER_DIVISOR_BITS32};
             return {{1, computeParams0}};
         case OP_KEY_5:
             computeParams0.maxDtypeBits = static_cast<int64_t>(Ops::Base::BROADCAST_BITS_SIZE::BITS64_SIZE);
             computeParams0.minDtypeBits = static_cast<int64_t>(Ops::Base::BROADCAST_BITS_SIZE::BITS64_SIZE);
             computeParams0.extraSize = {0, 0};
-            computeParams0.bufferDivisor = {512, 512};
+            computeParams0.bufferDivisor = {BUFFER_DIVISOR_BITS64, BUFFER_DIVISOR_BITS64};
             return {{1, computeParams0}};
         default:
             return {};
@@ -178,7 +181,9 @@ ge::graphStatus ClipByValueTiling::DoOpTiling()
         broadcastTilingParams.inShape.push_back(Ops::Base::EnsureNotScalar(shape->GetStorageShape()));
     }
 
-    broadcastTilingParams.outShape = Ops::Base::EnsureNotScalar(context_->GetOutputShape(0)->GetStorageShape());
+    auto outputShape = context_->GetOutputShape(INDEX_0);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, outputShape);
+    broadcastTilingParams.outShape = Ops::Base::EnsureNotScalar(outputShape->GetStorageShape());
     broadcastTilingParams.computeMap = GetComputeMap(opKey);
     broadcastTilingParams.coreNum = coreNum;
     broadcastTilingParams.ubSize = ubSize;
@@ -271,7 +276,7 @@ static ge::graphStatus TilingForClipByValue(gert::TilingContext* context)
         OP_LOGE("TilingForClipByValue", "TilingContext is nullptr.");
         return ge::GRAPH_FAILED;
     }
-    auto compileInfo = reinterpret_cast<const ClipByValueCompileInfo*>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<ClipByValueCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }

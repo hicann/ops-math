@@ -66,7 +66,6 @@ protected:
     uint64_t GetTilingKey() const override;
     ge::graphStatus GetWorkspaceSize() override;
     ge::graphStatus PostTiling() override;
-    std::string ToString(ClipByValueTilingData& tilingData);
 
 private:
     static uint64_t GetOpKey(
@@ -75,10 +74,10 @@ private:
     static std::map<uint64_t, Ops::Base::BroadcastComputeParams> GetComputeMap(uint64_t opKey);
 
     ClipByValueTilingData tilingData;
-    uint64_t opKey;
-    int64_t coreNum;
-    int64_t ubSize;
-    uint64_t blockNum;
+    uint64_t opKey{0};
+    int64_t coreNum{0};
+    int64_t ubSize{0};
+    uint64_t blockNum{0};
     int64_t input0Dims[MAX_DIM_SIZE] = {0};
     int64_t input1Dims[MAX_DIM_SIZE] = {0};
     int64_t input2Dims[MAX_DIM_SIZE] = {0};

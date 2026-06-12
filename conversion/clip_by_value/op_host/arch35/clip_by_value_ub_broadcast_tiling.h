@@ -78,7 +78,7 @@ protected:
 
 private:
     uint64_t GetOpKey(
-        ge::DataType xDtype, ge::DataType clipValueMinDtype, ge::DataType clipValueMaxDtype, ge::DataType yDtype);
+        ge::DataType xDataType, ge::DataType clipValueMinDtype, ge::DataType clipValueMaxDtype, ge::DataType yDataType);
     std::map<uint64_t, Ops::Base::BroadcastComputeParams> GetComputeMap(uint64_t opKey);
 
     ge::graphStatus DoBroadcastTiling(
@@ -91,12 +91,24 @@ private:
 
     ge::graphStatus SetTilingData(Ops::Base::BroadcastTilingData& broadcastTilingData);
 
+    ge::graphStatus FindComputeParams(const Ops::Base::BroadcastTilingParams& params,
+                                       Ops::Base::BroadcastComputeParams& computeParams);
+    ge::graphStatus CalcUbSplitParams(const Ops::Base::BroadcastComputeParams& computeParams,
+                                       uint64_t& ubSplitAxes, uint64_t& curProduct);
+    ge::graphStatus CalcUbTailParams(uint64_t ubSplitAxes, uint64_t curProduct, uint64_t maxElemNum,
+                                     uint32_t& ubFormer, uint64_t& ubOuter, uint64_t& ubTail);
+    ge::graphStatus CalcBlockSplitParams(uint64_t ubSplitAxes, uint64_t ubOuter,
+                               const Ops::Base::BroadcastTilingParams& params,
+                               Ops::Base::BroadcastTilingData& data);
+
+    void CopyAndSetDimsStrides(const Ops::Base::BroadcastTilingData& data);
+
     const char* opName = "ClipByValue";
-    uint32_t coreNum{0}; // syscfg
-    uint64_t ubSize{0};  // syscfg
-    int64_t opKey;
+    int64_t coreNum{0};    // syscfg
+    uint64_t ubSize{0};    // syscfg
+    int64_t opKey{0};
     int64_t buffSize{32};
-    int64_t blockNum;
+    int64_t blockNum{0};
     int64_t input0Dims[MAX_DIM_SIZE] = {0};
     int64_t input1Dims[MAX_DIM_SIZE] = {0};
     int64_t input2Dims[MAX_DIM_SIZE] = {0};

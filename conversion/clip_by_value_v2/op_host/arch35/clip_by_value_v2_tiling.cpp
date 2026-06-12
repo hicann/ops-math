@@ -30,7 +30,7 @@ static ge::graphStatus TilingForClipByValueV2(gert::TilingContext* context)
         OP_LOGE("TilingForClipByValueV2", "TilingContext is nullptr.");
         return ge::GRAPH_FAILED;
     }
-    auto compileInfo = reinterpret_cast<const ClipByValueCompileInfo*>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<ClipByValueCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
