@@ -37,9 +37,14 @@ template <typename T>
 __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM)
 inline void OpAtanhSimtKernel(int64_t totalElements, __gm__ T* x, __gm__ T* y)
 {
-    for (uint64_t index = static_cast<uint64_t>(Simt::GetBlockIdx() * Simt::GetThreadNum() + Simt::GetThreadIdx());
-         index < totalElements;
-         index += static_cast<uint32_t>(Simt::GetThreadNum() * Simt::GetBlockNum())) {
+    // 全程使用 uint64 计算 index/stride，避免 blockIdx*threadNum 在 32-bit 下溢出（大元素数下越界）。
+    uint64_t threadNum = static_cast<uint64_t>(Simt::GetThreadNum());
+    uint64_t blockNum = static_cast<uint64_t>(Simt::GetBlockNum());
+    uint64_t total = static_cast<uint64_t>(totalElements);
+    uint64_t stride = threadNum * blockNum;
+    for (uint64_t index = static_cast<uint64_t>(Simt::GetBlockIdx()) * threadNum + static_cast<uint64_t>(Simt::GetThreadIdx());
+         index < total;
+         index += stride) {
         if constexpr (std::is_same_v<T, float>) {
             y[index] = atanhf(x[index]);
         } else if constexpr (std::is_same_v<T, half>) {

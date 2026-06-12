@@ -75,7 +75,13 @@ static ge::graphStatus AtanhTilingFunc(gert::TilingContext* context)
         OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     tiling->totalNum = totalNum;
+    // blockDim 必须封顶在物理 AIV 核数；SIMT 核内用 grid-stride 覆盖全部元素。
+    // 原实现 SetBlockDim(CeilDiv(totalNum, coreNum)) 会让 blockDim 随元素数线性膨胀，
+    // 大 shape 下远超可用核数，触发 507035 vector core exception。
     int64_t usedCoreNum = Ops::Base::CeilDiv(totalNum, coreNum);
+    if (usedCoreNum > coreNum) {
+        usedCoreNum = coreNum;
+    }
     if (usedCoreNum == 0) {
         usedCoreNum = 1;
     }
