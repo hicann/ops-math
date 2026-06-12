@@ -834,6 +834,10 @@ conversion@ops-math:
         - ops/ops-math/conversion/diag_flat/op_host/diag_flat_def.cpp
         - ops/ops-math/conversion/diag_flat/op_host/diag_flat_tiling.cpp
         - ops/ops-math/conversion/diag_flat/op_graph/
+        - ops/ops-math/conversion/weight_quant_preprocess/docs/
+        - ops/ops-math/conversion/weight_quant_preprocess/op_host/
+        - ops/ops-math/conversion/weight_quant_preprocess/README.md
+        - ops/ops-math/conversion/weight_quant_preprocess/CMakeLists.txt
         - ops/ops-math/math/tile/op_api/
         - ops/ops-math/math/tile/docs/
         - ops/ops-math/math/tile/op_graph/
@@ -977,6 +981,7 @@ conversion@ops-math:
         - ops/ops-math/conversion/trans_data/tests/
         - ops/ops-math/conversion/diag_flat/examples/
         - ops/ops-math/conversion/diag_flat/tests/
+        - ops/ops-math/conversion/weight_quant_preprocess/tests/
         - ops/ops-math/math/tile/examples/
         - ops/ops-math/math/tile/tests/
         - ops/ops-math/random/dsa_random_uniform/examples/
