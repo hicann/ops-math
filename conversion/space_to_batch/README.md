@@ -16,18 +16,18 @@
 - 算子功能：将空间维度的数据按块重新排列到批次维度，并对空间维度补零。
 
 - 功能描述：
-  该算子首先根据 paddings 参数对输入的空间维度进行 zero-padding，然后将 padded 空间划分为 `block_size × block_size` 的块，每个块搬移到批次维度。输出批次维度变为输入的 `block_size × block_size` 倍，空间维度相应缩小。
+  该算子首先根据paddings参数对输入的空间维度进行zero-padding，然后将padded空间划分为`block_size × block_size`的块，每个块搬移到批次维度。输出批次维度变为输入的`block_size × block_size`倍，空间维度相应缩小。
 
 - 计算公式：
-  设输入 x 为 4D NHWC 张量 `[N, H_in, W_in, C]`，block_size = bs，paddings = `[[pad_top, pad_bottom], [pad_left, pad_right]]`。
+  设输入x为4D NHWC张量`[N, H_in, W_in, C]`，block_size = bs，paddings = `[[pad_top, pad_bottom], [pad_left, pad_right]]`。
 
   H_padded = H_in + pad_top + pad_bottom，W_padded = W_in + pad_left + pad_right，
 
   H_out = H_padded / bs，W_out = W_padded / bs。
 
-  要求 H_padded 和 W_padded 均能被 bs 整除。
+  要求H_padded和W_padded均能被bs整除。
 
-  输出 y 形状为 `[N * bs * bs, H_out, W_out, C]`。
+  输出y形状为`[N * bs * bs, H_out, W_out, C]`。
 
   坐标映射（输出 → 输入）：
   ```
@@ -37,7 +37,7 @@
   h_in  = h_out * bs + bh - pad_top
   w_in  = w_out * bs + bw - pad_left
 
-  若 0 ≤ h_in < H_in 且 0 ≤ w_in < W_in：
+  若0 ≤ h_in < H_in且0 ≤ w_in < W_in：
     y[n_out, h_out, w_out, c] = x[n, h_in, w_in, c]
   否则：
     y[n_out, h_out, w_out, c] = 0
@@ -66,21 +66,21 @@
     <tr>
       <td>x</td>
       <td>输入</td>
-      <td>表示输入张量，4D NHWC 张量 [N, H_in, W_in, C]，支持多种数据类型</td>
+      <td>表示输入张量，4D NHWC张量 [N, H_in, W_in, C]，支持多种数据类型</td>
       <td>INT8、UINT8、INT16、UINT16、INT32、INT64、FLOAT16、FLOAT、DOUBLE</td>
       <td>NHWC</td>
     </tr>
     <tr>
       <td>paddings</td>
       <td>输入</td>
-      <td>表示空间维度 zero-padding 量，2D 张量，形状为 [2, 2]，值为 [[pad_top, pad_bottom], [pad_left, pad_right]]</td>
+      <td>表示空间维度zero-padding量，2D张量，形状为 [2, 2]，值为 [[pad_top, pad_bottom], [pad_left, pad_right]]</td>
       <td>INT32、INT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>block_size</td>
       <td>属性（必需）</td>
-      <td>表示空间块的尺寸大小，必须是大于0的整数。H_padded 和 W_padded 必须能被 block_size 整除</td>
+      <td>表示空间块的尺寸大小，必须是大于0的整数。H_padded和W_padded必须能被block_size整除</td>
       <td>INT</td>
       <td>-</td>
     </tr>
@@ -96,12 +96,12 @@
 
 ## 约束说明
 
-1. 输入张量 x 必须为 4D NHWC 格式。
-2. block_size 必须大于 0。
-3. paddings 形状为 [2, 2]，每个元素 >= 0。
-4. H_padded = H_in + pad_top + pad_bottom 必须能被 block_size 整除。
-5. W_padded = W_in + pad_left + pad_right 必须能被 block_size 整除。
-6. block_size 为编译期常量（算子属性），非运行时 tensor 输入。
+1.输入张量x必须为4D NHWC格式。
+2. block_size必须大于0。
+3. paddings形状为 [2, 2]，每个元素 >= 0。
+4. H_padded = H_in + pad_top + pad_bottom必须能被block_size整除。
+5. W_padded = W_in + pad_left + pad_right必须能被block_size整除。
+6. block_size为编译期常量（算子属性），非运行时tensor输入。
 
 ## 调用说明
 

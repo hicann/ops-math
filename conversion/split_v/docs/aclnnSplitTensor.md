@@ -78,7 +78,7 @@ aclnnStatus aclnnSplitTensor(
     <tr>
       <td>splitSections（uint64_t）</td>
       <td>输入</td>
-      <td>表示沿dim轴均匀切分后的块大小, 最后一块可以小于splitSections。</td>
+      <td>表示沿dim轴均匀切分后的块大小最后一块可以小于splitSections。</td>
       <td>-</td>
       <td>UINT64</td>
       <td>-</td>
@@ -309,7 +309,7 @@ int main() {
   auto ret = Init(deviceId, &stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-  // 2. 构造输入与输出，需要根据API的接口自定义构造
+  // 2.构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> selfShape = {4, 2};
   std::vector<int64_t> shape1 = {2, 2};
   std::vector<int64_t> shape2 = {2, 2};
@@ -361,13 +361,13 @@ int main() {
   ret = aclrtSynchronizeStream(stream);
   CheckResult({shape1, shape2}, {shape1DeviceAddr, shape2DeviceAddr});
 
-  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
+  // 6.释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyTensorList(out);
   aclDestroyTensor(shape1Addr);
   aclDestroyTensor(shape2Addr);
 
-  // 7. 释放device 资源
+  // 7.释放device资源
   aclrtFree(selfDeviceAddr);
   aclrtFree(shape1DeviceAddr);
   aclrtFree(shape2DeviceAddr);

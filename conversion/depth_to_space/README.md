@@ -7,7 +7,7 @@
 | <term>Ascend 950PR/Ascend 950DT</term>                     |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |    √     |
-| <term>Atlas 200I/500 A2推理产品</term>                       |    ×     |
+| <term>Atlas 200I/500 A2 推理产品</term>                       |    ×     |
 | <term>Atlas 推理系列产品</term>                              |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
 
@@ -86,10 +86,10 @@
 
 ## 约束说明
 
-1. 输入和输出张量的维度必须是4D
-2. 输入和输出的数据格式必须相同，且仅支持NCHW和NHWC格式
+1.输入和输出张量的维度必须是4D
+2.输入和输出的数据格式必须相同，且仅支持NCHW和NHWC格式
 3. block_size必须是大于等于2的整数
-4. 通道维度必须能被block_size的平方整除
+4.通道维度必须能被block_size的平方整除
 5. mode属性必须是"DCR"或"CRD"
 6. data_format属性必须与输入张量的实际格式一致
 

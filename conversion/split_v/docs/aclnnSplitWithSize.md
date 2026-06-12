@@ -307,7 +307,7 @@ int main() {
   auto ret = Init(deviceId, &stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-  // 2. 构造输入与输出，需要根据API的接口自定义构造
+  // 2.构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> selfShape = {5, 2};
   std::vector<int64_t> shape1 = {1, 2};
   std::vector<int64_t> shape2 = {4, 2};
@@ -363,14 +363,14 @@ int main() {
   ret = aclrtSynchronizeStream(stream);
   CheckResult({shape1, shape2}, {shape1DeviceAddr, shape2DeviceAddr});
 
-  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
+  // 6.释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyIntArray(splitSize);
   aclDestroyTensorList(out);
   aclDestroyTensor(shape1Addr);
   aclDestroyTensor(shape2Addr);
 
-  // 7. 释放device 资源
+  // 7.释放device资源
   aclrtFree(selfDeviceAddr);
   aclrtFree(shape1DeviceAddr);
   aclrtFree(shape2DeviceAddr);

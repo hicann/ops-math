@@ -74,7 +74,7 @@
     <td>×</td>
     <td>√</td>
     <td>AI CORE</td>
-    <td>计算Acosh算子的反向梯度，公式 z = dy / sqrt(y² - 1)。</td>
+    <td>计算Acosh算子的反向梯度，公式z = dy / sqrt(y² - 1)。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -84,7 +84,7 @@
     <td>×</td>
     <td>√</td>
     <td>AI CORE</td>
-    <td>计算Acos算子的反向梯度，公式 z = -dy / sqrt(1 - y²)。</td>
+    <td>计算Acos算子的反向梯度，公式z = -dy / sqrt(1 - y²)。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -614,7 +614,7 @@
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>张量除法计算, 在分母可能为0的情况下，可以帮助避免由于分母为0导致的NaN值问题。</td>
+    <td>张量除法计算，在分母可能为0的情况下，可以帮助避免由于分母为0导致的NaN值问题。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -754,7 +754,7 @@
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>三元逐元素融合算子，将Mul、Add融合为单次计算，公式 y = x1 * x2 + x3。</td>
+    <td>三元逐元素融合算子，将Mul、Add融合为单次计算，公式y = x1 * x2 + x3。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -764,7 +764,7 @@
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>四元逐元素融合算子，将Mul、Add、Add融合为单次计算，公式 y = x1 * x2 + x3 + x4。</td>
+    <td>四元逐元素融合算子，将Mul、Add、Add融合为单次计算，公式y = x1 * x2 + x3 + x4。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -884,7 +884,7 @@
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>Inv（取倒数）算子的反向梯度，计算 y = -grad * x * x。</td>
+    <td>Inv（取倒数）算子的反向梯度，计算y = -grad * x * x。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1544,7 +1544,7 @@
     <td>√</td>
     <td>√</td>
     <td>AI Core/AI CPU</td>
-    <td>该算子按元素计算输入张量 x 与 y 的按位右移操作。</td>
+    <td>该算子按元素计算输入张量x与y的按位右移操作。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1594,7 +1594,7 @@
     <td>√</td>
     <td>√</td>
     <td>AI CPU</td>
-    <td>该算子用于在一个已排序的张量 sorted_sequence 中查找给定张量 values 应该插入的位置。</td>
+    <td>该算子用于在一个已排序的张量sorted_sequence中查找给定张量values应该插入的位置。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1764,7 +1764,7 @@
     <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>将输入tensor中的元素根据指定维度进行升序/降序， 并且返回对应的index值。</td>
+    <td>将输入tensor中的元素根据指定维度进行升序/降序，并且返回对应的index值。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1984,7 +1984,7 @@
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>计算 x / y，x == 0 时结果为 0，支持 broadcast。</td>
+    <td>计算x / y，x == 0时结果为0，支持broadcast。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1994,7 +1994,7 @@
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>计算 x1 * log(x2)，x1 == 0 时结果为 0，支持 broadcast。</td>
+    <td>计算x1 * log(x2)，x1 == 0时结果为0，支持broadcast。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -2014,7 +2014,7 @@
     <td>√</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>计算 x * log(1 + y)，当 x == 0 时结果为 0。支持 broadcast。</td>
+    <td>计算x * log(1 + y)，当x == 0时结果为0。支持broadcast。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -2204,7 +2204,7 @@
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>Stack Ball Query 是KNN的替代方案，用于查找点p1指定半径范围内的所有点（在实现中设置了K的上限）。</td>
+    <td>Stack Ball Query是KNN的替代方案，用于查找点p1指定半径范围内的所有点（在实现中设置了K的上限）。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -2214,7 +2214,7 @@
     <td>×</td>
     <td>√</td>
     <td>AI CPU</td>
-    <td>将 value tensor 写入 x tensor 的指定位置（由 begin 指定偏移）。这是一个原地操作，输出与输入 x 共用同一块内存。</td>
+    <td>将value tensor写入x tensor的指定位置（由begin指定偏移）。这是一个原地操作，输出与输入x共用同一块内存。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -2374,7 +2374,7 @@
     <td>×</td>
     <td>√</td>
     <td>AI Core</td>
-    <td>用于沿指定维度将多个输入 Tensor 进行拼接，输出包含所有输入数据按顺序拼接后的 Tensor。</td>
+    <td>用于沿指定维度将多个输入Tensor进行拼接，输出包含所有输入数据按顺序拼接后的Tensor。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -2494,7 +2494,7 @@
     <td>√</td>
     <td>×</td>
     <td>AI Core</td>
-    <td>对输入 tensor 进行指定值的常量填充。</td>
+    <td>对输入tensor进行指定值的常量填充。</td>
   </tr>
   <tr>
     <td>conversion</td>

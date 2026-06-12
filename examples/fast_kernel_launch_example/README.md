@@ -20,15 +20,15 @@
 
 ## 安装步骤 | Installation Steps
 
-1. 进入`examples/fast_kernel_launch_example`目录。
+1.进入`examples/fast_kernel_launch_example`目录。
 
-2. 安装依赖 | Install Dependencies:
+2.安装依赖 | Install Dependencies:
 
     ```sh
     python3 -m pip install -r requirements.txt
     ```
 
-3. 构建Wheel包 | Build the Wheel:
+3.构建Wheel包 | Build the Wheel:
 
     ```sh
     # -n: non-isolated build (uses existing environment)
@@ -46,13 +46,13 @@
     构建完成后，产物在当前目录的`dist`文件夹下，产物名`ascend_ops-1.0.0-${python_version}-abi3-${arch}.whl`，
     `${python_version}`表示当前环境中的python版本(python3.8.3为cp38)，`${arch}`表示CPU架构。
 
-4. 安装Wheel包 | Install Package:
+4.安装Wheel包 | Install Package:
 
     ```sh
     python3 -m pip install dist/*.whl --force-reinstall --no-deps
     ```
 
-5. （可选）再次构建前建议先执行以下命令清理编译缓存
+5.（可选）再次构建前建议先执行以下命令清理编译缓存
 
    ```sh
     python setup.py clean
@@ -87,9 +87,9 @@ print("Verification successful!")
 
 为了实现一个新算子(如`add`)，您只需要提供一个`.asc`源文件实现即可。
 
-1. 首先您需要在`csrc`目录下使用算子名`add`建立一个文件夹，在此文件夹内使用目标`NPU_ARCH`建立一个子文件夹，例如`dav-2201`。
+1.首先您需要在`csrc`目录下使用算子名`add`建立一个文件夹，在此文件夹内使用目标`NPU_ARCH`建立一个子文件夹，例如`dav-2201`。
 
-2. 在`NPU_ARCH`目录下新建一个`CMakeLists.txt`
+2.在`NPU_ARCH`目录下新建一个`CMakeLists.txt`
 
     ```cmake
     ascend_ops_add_current_op(OP_TARGET)
@@ -97,10 +97,10 @@ print("Verification successful!")
     
     这里`NPU_ARCH`会传递给编译器的`--npu-arch`参数，当前支持`dav-2201`和`dav-3510`。获取方法参考[NpuArch说明和使用指导](https://gitcode.com/cann/ops-math/wiki/NpuArch%E8%AF%B4%E6%98%8E%E5%92%8C%E4%BD%BF%E7%94%A8%E6%8C%87%E5%AF%BC.md)。如果算子需要额外依赖，可在同一个`CMakeLists.txt`中为`${OP_TARGET}`显式添加。
 
-3. 在`NPU_ARCH`目录下新建一个`add.asc`(建议使用算子名为文件名)。这个文件包含了开发一个AI Core算子所需要的全部模块。
+3.在`NPU_ARCH`目录下新建一个`add.asc`(建议使用算子名为文件名)。这个文件包含了开发一个AI Core算子所需要的全部模块。
     - 算子Schema注册
     - 算子Meta Function实现 & 注册
-    - 算子Kernel实现 (Ascend C)
+    - 算子Kernel实现(Ascend C)
     - 算子NPU调用实现 & 注册
 
     ```cpp
@@ -160,15 +160,15 @@ print("Verification successful!")
 
     /**
      * 实现算子调用接口
-     * 在这个接口中, 需要完成NPU Kernel的调用
-     * 1. 计算出输出的Tensor的个数/Shape/Dtype(可以调用Meta函数实现，也可以直接实现)
-     * 2. 计算Tiling：根据Shape得到如何分块计算
-     * 3. 调用NPU Kernel
+     * 在这个接口中，需要完成NPU Kernel的调用
+     * 1.计算出输出的Tensor的个数/Shape/Dtype(可以调用Meta函数实现，也可以直接实现)
+     * 2.计算Tiling：根据Shape得到如何分块计算
+     * 3.调用NPU Kernel
      *
      */
     torch::Tensor add_npu(const torch::Tensor &x, const torch::Tensor &y)
     {
-        // OptionalDeviceGuard 确保后续操作在正确的设备上下文执行
+        // OptionalDeviceGuard确保后续操作在正确的设备上下文执行
         // 它会记录当前设备状态，执行完作用域代码后自动恢复
         const c10::OptionalDeviceGuard guard(x.device());
         auto z = add_meta(x, y);
@@ -218,5 +218,5 @@ print("Verification successful!")
 
     ```
 
-4. 参考[安装步骤](#安装步骤--installation-steps)章节重新构建Wheel包并安装。
-5. 基于pytest测试算子API，请参考[test_add.py](tests/add/test_add.py)的实现。
+4.参考[安装步骤](#安装步骤--installation-steps)章节重新构建Wheel包并安装。
+5.基于pytest测试算子API，请参考[test_add.py](tests/add/test_add.py)的实现。

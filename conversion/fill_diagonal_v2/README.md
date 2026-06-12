@@ -17,8 +17,8 @@
 
 - 算子功能：以fillValue填充tensor对角线。
 - 计算公式：
-  - 以二维为例，`wrap`为False时，填充位置为 `[r, r]`，其中`0 <= r < m`，`m = min(col, row)`，`col`为列的长度，`row`为行的长度。
-  - `wrap`为True时，填充位置为 `[r + (m + 1) * i , r]`，其中`0 <= r < m`，`m = min(col, row)`，`col`为列的长度，`row`为行的长度，`0 <= i < col // m`。
+  - 以二维为例，`wrap`为False时，填充位置为`[r, r]`，其中`0 <= r < m`，`m = min(col, row)`，`col`为列的长度，`row`为行的长度。
+  - `wrap`为True时，填充位置为`[r + (m + 1) * i , r]`，其中`0 <= r < m`，`m = min(col, row)`，`col`为列的长度，`row`为行的长度，`0 <= i < col // m`。
 
 ## 参数说明
 

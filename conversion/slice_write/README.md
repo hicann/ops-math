@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-- 算子功能：将 value tensor 写入 x tensor 的指定位置（由 begin 指定偏移）。这是一个原地操作（in-place operation），输出与输入 x 共用同一块内存。
+- 算子功能：将value tensor写入x tensor的指定位置（由begin指定偏移）。这是一个原地操作（in-place operation），输出与输入x共用同一块内存。
 
 ## 参数说明
 
@@ -36,28 +36,28 @@
     <tr>
     <td>x</td>
     <td>输入</td>
-    <td>目标 tensor，将被原地修改。</td>
+    <td>目标tensor，将被原地修改。</td>
     <td>FLOAT16、FLOAT、DOUBLE、INT32、INT64</td>
     <td>ND</td>
     </tr>
     <tr>
     <td>begin</td>
     <td>输入</td>
-    <td>写入起始位置偏移量。1D tensor，最多 2 个元素（row_offset, col_offset）。</td>
+    <td>写入起始位置偏移量。1D tensor，最多2个元素（row_offset, col_offset）。</td>
     <td>INT32、INT64</td>
     <td>ND</td>
     </tr>
     <tr>
     <td>value</td>
     <td>输入</td>
-    <td>要写入的 tensor。维度必须与 x 相同。</td>
+    <td>要写入的tensor。维度必须与x相同。</td>
     <td>FLOAT16、FLOAT、DOUBLE、INT32、INT64</td>
     <td>ND</td>
     </tr>
     <tr>
     <td>x</td>
     <td>输出</td>
-    <td>输出结果，与输入 x 同一块内存（原地操作）。</td>
+    <td>输出结果，与输入x同一块内存（原地操作）。</td>
     <td>FLOAT16、FLOAT、DOUBLE、INT32、INT64</td>
     <td>ND</td>
     </tr>
@@ -65,11 +65,11 @@
 
 ## 约束说明
 
-- x 维度必须 <= 2
-- value 维度必须与 x 维度相同
-- begin 必须是 1D tensor，元素个数 <= 2
-- value shape + begin offset 必须在 x shape 范围内
-- 输入 x 和输出 x 必须是同一块内存
+- x维度必须 <= 2
+- value维度必须与x维度相同
+- begin必须是1D tensor，元素个数 <= 2
+- value shape + begin offset必须在x shape范围内
+- 输入x和输出x必须是同一块内存
 
 ## 调用说明
 

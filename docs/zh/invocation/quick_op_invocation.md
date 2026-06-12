@@ -110,7 +110,7 @@
         ./test_aclnn_abs
         ```
 
-        \$\{static\_lib\_path\}表示静态库统一放置路径； \$\{ASCEND\_INSTALL\_PATH\}已通过环境变量配置，表示CANN toolkit包安装路径； 最终可执行文件名请替换为**实际算子可执行文件名**。  
+        \$\{static\_lib\_path\}表示静态库统一放置路径；\$\{ASCEND\_INSTALL\_PATH\}已通过环境变量配置，表示CANN toolkit包安装路径；最终可执行文件名请替换为**实际算子可执行文件名**。  
 
         其中lcann\_math\_static、lcann\_legacy\_static表示算子依赖的静态库文件，从静态库统一放置路径\$\{static\_lib\_path\}中获取；
         lgraph、lmetadef等表示算子依赖的底层库文件，可在CANN toolkit包获取。
@@ -162,9 +162,9 @@
 
 > 注意：操作过程中，如遇到日志提示设置环境变量，请按提示操作。
 
-1. 环境准备。在编译运行前，请先确保您的环境已安装CANN-toolkit包和编译好的算子包。
+1.环境准备。在编译运行前，请先确保您的环境已安装CANN-toolkit包和编译好的算子包。
 
-2. 创建调用脚本。
+2.创建调用脚本。
 
     在环境任意目录下，新建调用cpp脚本，命名自定义（例如`${test_aclnn_op_name}.cpp`）。
 
@@ -173,13 +173,13 @@
    ```Cpp
    int main()
    {
-       // 1. 调用acl进行device/stream初始化
+       // 1.调用acl进行device/stream初始化
        int32_t deviceId = 0;
        aclrtStream stream;
        auto ret = Init(deviceId, &stream);
        CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
    
-       // 2. 构造输入与输出，需要根据API的接口自定义构造
+       // 2.构造输入与输出，需要根据API的接口自定义构造
        aclTensor* selfX = nullptr;
        void* selfXDeviceAddr = nullptr;
        std::vector<int64_t> selfXShape = {32, 4, 4, 4};
@@ -201,11 +201,11 @@
        ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
        CHECK_RET(ret == ACL_SUCCESS, return ret);
    
-       // 3. 调用CANN算子库API，需要修改为具体的Api名称
+       // 3.调用CANN算子库API，需要修改为具体的Api名称
        uint64_t workspaceSize = 0;
        aclOpExecutor* executor;
    
-       // 4. 调用aclnnAddExample第一段接口
+       // 4.调用aclnnAddExample第一段接口
        ret = aclnnAddExampleGetWorkspaceSize(selfX, selfY, out, &workspaceSize, &executor);
        CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAddExampleGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
    
@@ -216,23 +216,23 @@
            CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
        }
    
-       // 5. 调用aclnnAddExample第二段接口
+       // 5.调用aclnnAddExample第二段接口
        ret = aclnnAddExample(workspaceAddr, workspaceSize, executor, stream);
        CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAddExample failed. ERROR: %d\n", ret); return ret);
    
-       // 6. （固定写法）同步等待任务执行结束
+       // 6.（固定写法）同步等待任务执行结束
        ret = aclrtSynchronizeStream(stream);
        CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
    
-       // 7. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
+       // 7.获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
        PrintOutResult(outShape, &outDeviceAddr);
    
-       // 8. 释放aclTensor，需要根据具体API的接口定义修改
+       // 8.释放aclTensor，需要根据具体API的接口定义修改
        aclDestroyTensor(selfX);
        aclDestroyTensor(selfY);
        aclDestroyTensor(out);
    
-       // 9. 释放device资源
+       // 9.释放device资源
        aclrtFree(selfXDeviceAddr);
        aclrtFree(selfYDeviceAddr);
        aclrtFree(outDeviceAddr);
@@ -248,7 +248,7 @@
    }
    ```
 
-3. 创建CMakeLists.txt文件。
+3.创建CMakeLists.txt文件。
 
     在`${test_aclnn_op_name}.cpp`同级目录下创建CMakeLists.txt文件，需注意的是，调用自定义算子（如experimental目录）和标准项目算子（内置算子）时编译脚本有差异。示例如下，仅供参考，请根据实际情况自行修改。
 
@@ -363,7 +363,7 @@
         install(TARGETS ${test_aclnn_op_name} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
         ```
     
-4. 创建run.sh文件。
+4.创建run.sh文件。
 
     在`${test_aclnn_op_name}.cpp`同级目录下创建run.sh文件，以`AddExample`算子为例，示例如下，请根据实际情况自行修改。
 
@@ -387,14 +387,14 @@
     ./${test_aclnn_op_name}                                     # 替换为实际算子可执行文件名
     ```
 
-5. 运行run.sh文件。
+5.运行run.sh文件。
    在run.sh文件所在路径执行如下命令：
 
    ```bash
    bash run.sh
    ```
 
-    默认在当前执行路径 `/build/bin`下生成可执行文件${test_aclnn_op_name}。运行结果以test\_aclnn\_add\_ example为例：
+    默认在当前执行路径`/build/bin`下生成可执行文件${test_aclnn_op_name}。运行结果以test\_aclnn\_add\_ example为例：
 
    ```
    mean result[2046] is 2.000000
@@ -413,28 +413,28 @@
 
 > 注意：操作过程中，如遇到日志提示设置环境变量，请按提示操作。
 
-1. 环境准备。在编译运行前，请先确保您的环境已安装CANN-toolkit包和编译好的算子包。
+1.环境准备。在编译运行前，请先确保您的环境已安装CANN-toolkit包和编译好的算子包。
 
-2. 创建调用脚本。
+2.创建调用脚本。
 
    在目标算子`examples`目录下，新建调用脚本test\_geir\_\$\{op\_name\}.cpp，\$\{op\_name\}表示目标算子名。以`AddExample`算子为例，调用脚本如下，仅供参考，全量代码参见[test_geir_add_example.cpp](../../../examples/add_example/examples/test_geir_add_example.cpp)。
 
    ```CPP
    int main() {
-       // 1. 创建图对象
+       // 1.创建图对象
        Graph graph(graphName);
    
-       // 2. 图全局编译选项初始化
+       // 2.图全局编译选项初始化
        Status ret = ge::GEInitialize(globalOptions);
    
-       // 3. 创建AddExample算子实例
+       // 3.创建AddExample算子实例
        auto add1 = op::AddExample("add1");
    
-       // 4. 定义图输入输出向量
+       // 4.定义图输入输出向量
        std::vector<Operator> inputs{};
        std::vector<Operator> outputs{};
    
-       // 5. 准备输入数据
+       // 5.准备输入数据
        std::vector<int64_t> xShape = {32,4,4,4};
        // 宏展开方式处理变量赋值
        ADD_INPUT(1, x1, inDtype, xShape);
@@ -443,26 +443,26 @@
    
        outputs.push_back(add1);
    
-       // 6. 设置图对象的输入算子和输出算子
+       // 6.设置图对象的输入算子和输出算子
        graph.SetInputs(inputs).SetOutputs(outputs);
    
-       // 7. 创建session对象
+       // 7.创建session对象
        ge::Session* session = new Session(buildOptions);
    
        // 8. session添加图
        ret = session->AddGraph(graphId, graph, graphOptions);
    
-       // 9. 运行图
+       // 9.运行图
        ret = session->RunGraph(graphId, input, output);
    
-       // 10. 释放资源
+       // 10.释放资源
        GEFinalize();
    
        return 0;
    }
    ```
 
-3. 创建CMakeLists.txt文件。
+3.创建CMakeLists.txt文件。
 
    在test\_geir\_\$\{op\_name\}.cpp同级目录下创建CMakeLists.txt文件，以`AddExample`算子为例，示例如下，请根据实际情况自行修改。
 
@@ -512,7 +512,7 @@
    )
     ```
 
-4. 创建run.sh脚本。
+4.创建run.sh脚本。
 
    在test\_geir\_\$\{op\_name\}.cpp同级目录下创建run.sh文件，以`AddExample`算子为例，示例如下，请根据实际情况自行修改。
 
@@ -535,14 +535,14 @@
     ./test_geir_add_example                                     # 替换为实际算子可执行文件名
     ```
 
-5. 运行run.sh脚本。
+5.运行run.sh脚本。
     在run.sh文件所在路径执行如下命令：
 
     ```bash
     bash run.sh
     ```
 
-    默认在当前执行路径 `/build/bin`下生成可执行文件test\_geir\_add\_example，运行结果如下：
+    默认在当前执行路径`/build/bin`下生成可执行文件test\_geir\_add\_example，运行结果如下：
 
     ```
     INFO - [XIR]: Finalize ir graph session success

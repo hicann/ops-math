@@ -207,9 +207,9 @@ aclnnStatus aclnnCat(
 ## 约束说明
 
 - 确定性计算：
-  - aclnnCat 默认确定性实现。
+  - aclnnCat默认确定性实现。
 
-- 输入数据类型为 FLOAT4_E1M2、FLOAT4_E2M1 时，暂不支持与其他数据类型混合输入，且各 tensor 在 concat 轴及之后各维度大小的乘积须为偶数。
+- 输入数据类型为FLOAT4_E1M2、FLOAT4_E2M1 时，暂不支持与其他数据类型混合输入，且各tensor在concat轴及之后各维度大小的乘积须为偶数。
 
 ## 调用示例
 
@@ -276,14 +276,14 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-  // 2. 构造输入与输出，需要根据API的接口自定义构造
+  // 2.构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> selfShape1 = {2, 3};
   std::vector<int64_t> selfShape2 = {1, 3};
   std::vector<int64_t> outShape = {3, 3};
@@ -311,7 +311,7 @@ int main() {
 
   std::vector<aclTensor*> tmp{input1, input2};
   aclTensorList* tensorList = aclCreateTensorList(tmp.data(), tmp.size());
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3.调用CANN算子库API，需要修改为具体的Api名称
   int64_t dim = 0;
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
@@ -328,11 +328,11 @@ int main() {
   ret = aclnnCat(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnCat failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
-  // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
+  // 5.获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
   auto size = GetShapeSize(outShape);
   std::vector<float> outData(size, 0);
   ret = aclrtMemcpy(outData.data(), outData.size() * sizeof(outData[0]), outDeviceAddr,
@@ -342,11 +342,11 @@ int main() {
     LOG_PRINT("result[%ld] is: %f\n", i, outData[i]);
   }
 
-  // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
+  // 6.释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensorList(tensorList);
   aclDestroyTensor(out);
 
-  // 7. 释放Device资源，需要根据具体API的接口定义修改
+  // 7.释放Device资源，需要根据具体API的接口定义修改
   aclrtFree(input1DeviceAddr);
   aclrtFree(input2DeviceAddr);
   aclrtFree(outDeviceAddr);

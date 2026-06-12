@@ -20,7 +20,7 @@
 
 本阶段目的是**快速体验项目标准流程**，验证环境能否成功进行算子源码编译、打包、安装和运行。
 
-### 1. 进入项目源码
+### 1.进入项目源码
 
 - CANNLab云开发环境：
    
@@ -40,14 +40,14 @@
 
 > 说明：如需切换源码分支版本，请参考如下指导。
 >
-> 1. 在源码目录执行`git branch`，查询当前源码版本。
-> 2. 在源码目录执行`git checkout ${tag_version}`，切换到目标分支源码，注意满足源码与CANN版本配套关系。若源码已存在，执行`git pull`拉取最新源码。
+> 1.在源码目录执行`git branch`，查询当前源码版本。
+> 2.在源码目录执行`git checkout ${tag_version}`，切换到目标分支源码，注意满足源码与CANN版本配套关系。若源码已存在，执行`git pull`拉取最新源码。
 
-### 2. 编译AddExample算子
+### 2.编译AddExample算子
 
 本指南默认采用**单算子编译**：仅构建目标算子，编译时间短，适合快速入门与日常开发。通用命令格式：`bash build.sh --pkg --soc=<芯片版本> --ops=<算子名>`。
 
-> 若需编译整个算子库（省略 `--ops`），请参阅 [源码构建指南 · 全量编译（ops-math包）](zh/install/compile.md#ops-math包)。
+> 若需编译整个算子库（省略`--ops`），请参阅 [源码构建指南 · 全量编译（ops-math包）](zh/install/compile.md#ops-math包)。
 
 以AddExample算子为例，编译命令如下：
 
@@ -77,7 +77,7 @@ Self-extractable archive "cann-ops-math-custom_linux-${arch}.run" successfully c
 
 编译成功后，run包存放于项目根目录的build_out目录下。
 
-### 3. 安装AddExample算子包
+### 3.安装AddExample算子包
 
 ```bash
 ./build_out/cann-ops-math-*linux*.run
@@ -85,7 +85,7 @@ Self-extractable archive "cann-ops-math-custom_linux-${arch}.run" successfully c
 
 `AddExample`安装在```${ASCEND_HOME_PATH}/opp/vendors```路径中，```${ASCEND_HOME_PATH}```表示CANN软件安装目录。
 
-### 4. 配置环境变量
+### 4.配置环境变量
 
 将自定义算子包的路径加入环境变量，确保运行时能够找到。
 
@@ -93,7 +93,7 @@ Self-extractable archive "cann-ops-math-custom_linux-${arch}.run" successfully c
 export LD_LIBRARY_PATH=${ASCEND_HOME_PATH}/opp/vendors/custom_math/op_api/lib:${LD_LIBRARY_PATH}
 ```
 
-### 5. 快速验证：运行算子样例
+### 5.快速验证：运行算子样例
 
 通用的运行命令格式：`bash build.sh --run_example <算子名> <运行模式> <包模式>`。
 
@@ -121,7 +121,7 @@ add_example first input[7] is: 1.000000, second input[7] is: 1.000000, result[7]
 
 本阶段目的是对已成功运行的AddExample算子尝试**修改核函数代码**。
 
-### 1. 修改Kernel实现
+### 1.修改Kernel实现
 
 找到AddExample算子的核心kernel实现文件`ops-math/examples/add_example/op_kernel/add_example.h`，尝试将算子中的Add操作改为Mul操作：
 
@@ -140,7 +140,7 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
 }
 ```
 
-### 2. 编译与验证
+### 2.编译与验证
 
 重复[编译运行](#一编译运行)章节中的步骤：
 
@@ -152,7 +152,7 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
     bash build.sh --pkg --soc=${soc_version} --ops=add_example -j16
     ```
 
-    > **说明**：`${soc_version}` 请根据实际芯片型号填写，取值方式同[编译AddExample算子](#2-编译addexample算子)中的说明。
+    > **说明**：`${soc_version}`请根据实际芯片型号填写，取值方式同[编译AddExample算子](#2编译addexample算子)中的说明。
 
 2. **重新安装**：
 
@@ -184,7 +184,7 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
 
 本阶段以AddExample为例，在算子中添加打印并采集算子性能数据，以便后续问题分析定位。
 
-### 1. 打印
+### 1.打印
 
 算子如果出现执行失败、精度异常等问题，添加打印进行问题分析和定位。
 
@@ -212,7 +212,7 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
   DumpTensor(zLocal, 0, 128);
   ```
 
-### 2. 性能采集
+### 2.性能采集
 
 当算子功能验证正确后，可通过`msprof`工具采集算子性能数据。
 
@@ -238,7 +238,7 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
 
 本阶段通过修改AddExample算子example样例中的输入数据，验证该算子在多种场景下的功能正确性。
 
-### 1. 修改测试输入
+### 1.修改测试输入
 
 找到并编辑`AddExample`的`ops-math/examples/add_example/examples/test_aclnn_add_example.cpp`，修改输入张量的形状和数值。
 
@@ -246,10 +246,10 @@ __aicore__ inline void AddExample<T>::Compute(int32_t progress)
 
 ```c++
 int main() {
-    // ... 初始化代码 ...
+    // ...初始化代码 ...
 
     // === ① 修改selfX的输入 ===
-    // 修改前：shape = {32, 4, 4, 4}, 数值全为1
+    // 修改前：shape = {32, 4, 4, 4}，数值全为1
     // 修改后：将输入shape改为 {8, 8, 8, 8}，并填充不同的测试数据
     std::vector<int64_t> selfXShape = {8, 8, 8, 8};
     std::vector<float> selfXHostData(4096); // 4096 = 8 * 8 * 8 *8
@@ -259,21 +259,21 @@ int main() {
     }
     // === ② 参考selfX，同理修改selfY、selfZ的输入 ===
 
-    // ... 后续执行代码 ...
+    // ...后续执行代码 ...
 }
 ```
 
-### 2. 重新编译并验证
+### 2.重新编译并验证
 
-1. 由于只修改了example测试代码，无需重新编译算子包。
+1.由于只修改了example测试代码，无需重新编译算子包。
 
-2. 重新执行验证命令：
+2.重新执行验证命令：
 
     ```bash
     bash build.sh --run_example add_example eager cust --vendor_name=custom
     ```
 
-3. 观察算子输出结果是否符合预期。
+3.观察算子输出结果是否符合预期。
 
 ## 结语
 

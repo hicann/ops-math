@@ -20,11 +20,11 @@
 | 参数名 | 输入/输出/属性 | 描述                                                         | 数据类型 | 数据格式 |
 | :----- | :------------- | :----------------------------------------------------------- | :------- | :------- |
 | x   | 输入张量       | 需要进行维度置换的输入张量。                                 | 见下方   | ND       |
-| perm   | 输入张量       | 表示 x 的维度的排列。取值需在[0，self的维度数量-1]范围内。 | INT64、INT32    | -        |
-| y    | 输出           | 维度最大不超过8维，shape由dims和原self的shape共同决定，dtype需要与self一致。 | 同 x   | ND       |
+| perm   | 输入张量       | 表示x的维度的排列。取值需在[0，self的维度数量-1]范围内。 | INT64、INT32    | -        |
+| y    | 输出           | 维度最大不超过8维，shape由dims和原self的shape共同决定，dtype需要与self一致。 | 同x   | ND       |
 
-- <term>GPU 支持的数据类型</term>：数据类型支持 DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_INT64, DT_INT32, DT_UINT8, DT_UINT16, DT_UINT32, DT_UINT64, DT_INT8, DT_INT16, DT_COMPLEX32, DT_COMPLEX64, DT_COMPLEX128, DT_QINT8, DT_QUINT8, DT_QINT16, DT_QUINT16, DT_QINT32, DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN。
-- <term>CPU 支持的数据类型</term>：数据类型支持同 GPU。
+- <term>GPU支持的数据类型</term>：数据类型支持DT_BF16, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_INT64, DT_INT32, DT_UINT8, DT_UINT16, DT_UINT32, DT_UINT64, DT_INT8, DT_INT16, DT_COMPLEX32, DT_COMPLEX64, DT_COMPLEX128, DT_QINT8, DT_QUINT8, DT_QINT16, DT_QUINT16, DT_QINT32, DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN。
+- <term>CPU支持的数据类型</term>：数据类型支持同GPU。
 
 ## 约束说明
 

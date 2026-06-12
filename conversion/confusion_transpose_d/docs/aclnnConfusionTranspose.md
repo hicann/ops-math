@@ -103,7 +103,7 @@ aclnnStatus aclnnConfusionTranspose(
       <td class="tg-0lax">shape（aclIntArray*）</td>
       <td class="tg-0lax">输入</td>
       <td class="tg-0lax">reshape后的shape大小，对应公式中的shape。</td>
-      <td class="tg-0lax">shape中的所有维度乘积必须等于输入张量 x 的元素总数。</td>
+      <td class="tg-0lax">shape中的所有维度乘积必须等于输入张量x的元素总数。</td>
       <td class="tg-0lax">INT64</td>
       <td class="tg-0lax">-</td>
       <td class="tg-0lax">-</td>
@@ -113,7 +113,7 @@ aclnnStatus aclnnConfusionTranspose(
       <td class="tg-0lax">transposeFirst（bool）</td>
       <td class="tg-0lax">输入</td>
       <td class="tg-0lax">判断是否先执行transpose操作。</td>
-      <td class="tg-0lax">如果值为True ，首先执行transpose，否则先执行 reshape 。</td>
+      <td class="tg-0lax">如果值为True ，首先执行transpose，否则先执行reshape 。</td>
       <td class="tg-0lax">BOOL</td>
       <td class="tg-0lax">-</td>
       <td class="tg-0lax">-</td>
@@ -172,17 +172,17 @@ aclnnStatus aclnnConfusionTranspose(
     <tr>
       <td class="tg-0pky">ACLNN_ERR_PARAM_NULLPTR</td>
       <td class="tg-0pky">161001</td>
-      <td class="tg-0pky">传入的 x 或 out 是空指针。</td>
+      <td class="tg-0pky">传入的x或out是空指针。</td>
     </tr>
     <tr>
       <td class="tg-0pky">ACLNN_ERR_PARAM_INVALID</td>
       <td class="tg-0pky">161002</td>
-      <td class="tg-0pky">传入的 x 、out 的数据类型不在支持的范围之内。</td>
+      <td class="tg-0pky">传入的x 、out的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
       <td class="tg-0lax">ACLNN_ERR_INNER_NULLPTR</td>
       <td class="tg-0lax">561103</td>
-      <td class="tg-0lax">API内部校验错误，通常由于输入数据或属性的规格不在支持的范围之内/输入和输出的 shape 不满足参数说明中的要求。</td>
+      <td class="tg-0lax">API内部校验错误，通常由于输入数据或属性的规格不在支持的范围之内/输入和输出的shape不满足参数说明中的要求。</td>
     </tr>
   </tbody>
   </table>
@@ -236,12 +236,12 @@ aclnnStatus aclnnConfusionTranspose(
 
   例如：
       
-      设 shape_before 为 reshape 操作前的数据形状，shape_after 为 reshape 操作后的数据形状，
+      设shape_before为reshape操作前的数据形状，shape_after为reshape操作后的数据形状，
 
           shape_before = [(ab),(cd),f,(gh)]
           shape_after = [a,(bc),d,e,(fg),h]
       
-      而如下的 shape_after 是不被允许的：
+      而如下的shape_after是不被允许的：
 
           shape_after_illegal = [a,b,d,e,(fg),(ch)]
 
@@ -321,14 +321,14 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
 }
 
 int main() {
-  // 1. （固定写法）device/stream初始化，参考acl API手册
+  // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
   int32_t deviceId = 0;
   aclrtStream stream;
   auto ret = Init(deviceId, &stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-  // 2. 构造输入与输出，需要根据API的接口自定义构造
+  // 2.构造输入与输出，需要根据API的接口自定义构造
 
   // 创建input aclTensor
   aclTensor* x = nullptr;
@@ -362,7 +362,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3.调用CANN算子库API，需要修改为具体的Api名称
   uint64_t workspaceSize = 16 * 1024 * 1024;
   aclOpExecutor* executor;
 
@@ -381,14 +381,14 @@ int main() {
   ret = aclnnConfusionTranspose(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnConfusionTranspose failed. ERROR: %d\n", ret); return ret);
 
-  // 4. （固定写法）同步等待任务执行结束
+  // 4.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
-  // 5. 获取输出的值，将device侧内存上的结果复制至host侧，需要根据具体API的接口定义修改
+  // 5.获取输出的值，将device侧内存上的结果复制至host侧，需要根据具体API的接口定义修改
   PrintOutResult(outShape, &outDeviceAddr);
 
-  // 6. 释放aclTensor和aclTensor，需要根据具体API的接口定义修改
+  // 6.释放aclTensor和aclTensor，需要根据具体API的接口定义修改
   aclDestroyTensor(x);
   aclDestroyTensor(out);
 

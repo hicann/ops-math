@@ -66,7 +66,7 @@
 
 ## 约束说明
 
-- gradOutput、self 和 gradInput 的维度需一致（支持四维或五维），且它们的形状需与 reflection_pad3d 正向传播的输出形状相互一致。
+- gradOutput、self和gradInput的维度需一致（支持四维或五维），且它们的形状需与reflection_pad3d正向传播的输出形状相互一致。
 - 输入值域限制：padding前两个数值需小于self最后一维度的数值，中间两个数值需小于self倒数第二维度的数值，后两个数值需小于self倒数第三维度的数值。
 
 ## 调用说明

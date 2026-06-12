@@ -17,47 +17,47 @@ source spack/prepare_cann_env.sh
 
 如果您希望更精细地控制环境配置，可以按照以下步骤手动配置：
 
-##### 步骤 1：下载并安装 Spack（Spack已安装可跳过）
+##### 步骤1：下载并安装Spack（Spack已安装可跳过）
 
 ```bash
 # 选择安装目录（默认为 $HOME）
 export SPACK_INSTALL_DIR="$HOME"
-# 下载 Spack v1.1.0 并激活 Spack 工具
+# 下载Spack v1.1.0并激活Spack工具
 cd $SPACK_INSTALL_DIR
 git clone https://gitcode.com/GitHub_Trending/sp/spack.git -b v1.1.0 --depth=2
 source $SPACK_INSTALL_DIR/spack/share/spack/setup-env.sh
-# 验证 Spack 安装后的版本
+# 验证Spack安装后的版本
 spack --version
 ```
 
-##### 步骤 2：设置Spack 软件包默认安装路径
+##### 步骤2：设置Spack软件包默认安装路径
 
 Spack软件包默认安装路径在$SPACK_INSTALL_DIR/spack/opt，可以通过如下命令进行修改：
 
 ```bash
 #普通用户
 spack config --scope user add "config:install_tree:root:$HOME/.spack"  
-#root 管理员
+#root管理员
 spack config --scope user add "config:install_tree:root:/opt/spack"
 ```
 
 普通用户建议使用个人home下目录，避免被其他用户修改导致环境不稳定
 管理员建议使用全局路径，便于使用[Spack串联能力](https://spack.readthedocs.io/en/latest/chain.html)统一安装软件提供给其他用户使用:
 
-##### 步骤 3：添加外部已安装工具到Spack环境中
+##### 步骤3：添加外部已安装工具到Spack环境中
 
 ```bash
 spack compiler find  # 配置本地已安装的编译器，如gcc
 ```
 
-##### 步骤 4：配置 Spack 官方仓库gitcode镜像源
+##### 步骤4：配置Spack官方仓库gitcode镜像源
 
 Spack默认官方仓库地址为[github地址](https://github.com/spack/spack-packages.git),可以通过如下方式修改默认官方仓库，使用GitCode镜像源起到加速作用：
 修改~/.spack目录下的repos.yaml，如不存在则新建该文件，写入以下内容
 
 ```yaml
 repos:
-  # Spack 内置仓库
+  # Spack内置仓库
   builtin:
     git: https://gitcode.com/spack/spack-packages.git
     branch: releases/v2025.11
@@ -65,24 +65,24 @@ repos:
 
 验证仓库配置：`spack repo list`
 
-##### 步骤 5：下载并添加 CANN社区Spack 包仓库
+##### 步骤5：下载并添加CANN社区Spack包仓库
 
 ```bash
-# 克隆 CANN Spack 包仓库
+# 克隆CANN Spack包仓库
 cd $SPACK_INSTALL_DIR
 git clone --depth=1 https://gitcode.com/cann/cann-spack-package.git
 
-# 添加到 Spack 仓库列表
+# 添加到Spack仓库列表
 spack repo add $SPACK_INSTALL_DIR/cann-spack-package
 
 # 验证添加成功
 spack repo list | grep cann
 ```
 
-##### 步骤 6：创建并激活 Spack 环境
+##### 步骤6：创建并激活Spack环境
 
 ```bash
-# 创建名为 cann-dev-env 的环境
+# 创建名为cann-dev-env的环境
 spack env create cann-dev-env ${local_repo_path}/ops-math/spack/spack.yaml
 
 # 激活环境
@@ -92,20 +92,20 @@ spack env activate cann-dev-env
 spack env status
 ```
 
-##### 步骤 7：设置终端自动加载（可选）
+##### 步骤7：设置终端自动加载（可选）
 
 ```bash
-# 将 Spack 环境配置添加到 .bashrc
+# 将Spack环境配置添加到.bashrc
 echo "source $SPACK_INSTALL_DIR/spack/share/spack/setup-env.sh" >> ~/.bashrc
 
 # 立即生效
 source ~/.bashrc
 ```
 
-##### 步骤 8：配置开发模式并安装
+##### 步骤8：配置开发模式并安装
 
 ```bash
-# 设置 ops-math 为开发模式（指向本地代码）
+# 设置ops-math为开发模式（指向本地代码）
 spack develop -p ${local_repo_path}/ops-math cann-ops-math@master
 
 # 添加包到环境（根据需要调整变体）
@@ -118,7 +118,7 @@ spack concretize -f
 spack install
 ```
 
-### 2. 查看产物位置
+### 2.查看产物位置
 
 执行命令
 
@@ -130,22 +130,22 @@ spack location -i cann-ops-math
 
 ## 二、修改代码后重新构建
 
-### 1. 卸载已构建的产物
+### 1.卸载已构建的产物
 ```bash
 spack uninstall -y cann-ops-math
 ```
-### 2. 移除已有变体并添加新变体
+### 2.移除已有变体并添加新变体
 
 如果想指定不同的构建参数，可通过更换Spack包变体来实现
 （不更改构建参数，可跳过此步骤）
 ```bash
 spack change cann-ops-math@master +pkg +jit soc=ascend910b # 举例
 ```
-### 3. 重新进行依赖解析
+### 3.重新进行依赖解析
 ```bash
 spack concretize -f
 ```
-### 4. 重新构建
+### 4.重新构建
 ```bash
 spack install
 ```
@@ -205,8 +205,8 @@ spack env deactivate
 
 #搜索Spack支持的软件包
 spack list <package-name>
-spack list 'py-*'        #列出所有 Python 包
-spack list -d 'mpi'      #在描述中搜索 mpi
+spack list 'py-*'        #列出所有Python包
+spack list -d 'mpi'      #在描述中搜索mpi
 
 #查看可用版本号
 spack versions <package-name>

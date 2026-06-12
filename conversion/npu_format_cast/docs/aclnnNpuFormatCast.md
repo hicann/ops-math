@@ -24,14 +24,14 @@
     
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
     - 完成ND←→[NZ](../../../docs/zh/context/数据格式.md)、NCL←→[NZ](../../../docs/zh/context/数据格式.md)、NCHW←→[NZ](../../../docs/zh/context/数据格式.md)、NCDHW←→[NZ](../../../docs/zh/context/数据格式.md)的转换功能。C0是[NZ](../../../docs/zh/context/数据格式.md)数据格式最后一维的大小。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast additionalDtype)。
-    - 完成NCDHW←→[NDC1HWC0](../../../docs/zh/context/数据格式.md)、NCDHW←→[FRACTAL_Z_3D](../../../docs/zh/context/数据格式.md)、NCHW←→[NC1HWC0](../../../docs/zh/context/数据格式.md)、NHWC←→[NC1HWC0](../../../docs/zh/context/数据格式.md)、NCHW←→[FRACTAL_Z](../../../docs/zh/context/数据格式.md)、HWCN←→[FRACTAL_Z](../../../docs/zh/context/数据格式.md)、NDHWC←→[NDC1HWC0](../../../docs/zh/context/数据格式.md)、DHWCN←→[FRACTAL_Z_3D](../../../docs/zh/context/数据格式.md)的转换功能。其中，C0与微架构强相关，该值等于cube单元的size，例如16。C1是将C维度按照C0切分：C1=C/C0， 若结果不整除，最后一份数据需要padding到C0。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast additionalDtype)（例如FP16的additionalDtype枚举值为1，对应的数据FP16为2byte）。
+    - 完成NCDHW←→[NDC1HWC0](../../../docs/zh/context/数据格式.md)、NCDHW←→[FRACTAL_Z_3D](../../../docs/zh/context/数据格式.md)、NCHW←→[NC1HWC0](../../../docs/zh/context/数据格式.md)、NHWC←→[NC1HWC0](../../../docs/zh/context/数据格式.md)、NCHW←→[FRACTAL_Z](../../../docs/zh/context/数据格式.md)、HWCN←→[FRACTAL_Z](../../../docs/zh/context/数据格式.md)、NDHWC←→[NDC1HWC0](../../../docs/zh/context/数据格式.md)、DHWCN←→[FRACTAL_Z_3D](../../../docs/zh/context/数据格式.md)的转换功能。其中，C0与微架构强相关，该值等于cube单元的size，例如16。C1是将C维度按照C0切分：C1=C/C0，若结果不整除，最后一份数据需要padding到C0。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast additionalDtype)（例如FP16的additionalDtype枚举值为1，对应的数据FP16为2byte）。
 - **计算流程**：
 
   `aclnnNpuFormatCastCalculateSizeAndFormat`根据输入张量srcTensor、数据类型`additionalDtype`和目标张量的数据格式dstFormat计算出转换后目标张量dstTensor的shape和实际数据格式，用于构造dstTensor，然后调用`aclnnNpuFormatCast`把srcTensor转换为实际数据格式的目标张量dstTensor。
 
 ## 函数原型
 
-必须先调用`aclnnNpuFormatCastCalculateSizeAndFormat`计算出dstTensor的shape和实际数据格式，再调用[两段式接口](../../../docs/zh/context/两段式接口.md)。 两段式接口先调用`aclnnNpuFormatCastGetWorkSpaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnNpuFormatCast`接口执行计算。
+必须先调用`aclnnNpuFormatCastCalculateSizeAndFormat`计算出dstTensor的shape和实际数据格式，再调用[两段式接口](../../../docs/zh/context/两段式接口.md)。两段式接口先调用`aclnnNpuFormatCastGetWorkSpaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnNpuFormatCast`接口执行计算。
 
 ```c++
 aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
@@ -468,9 +468,9 @@ aclnnStatus aclnnNpuFormatCast(
       | ACL_HIFLOAT8(34)    | 32 |
 
     - 当前不支持的特殊场景:
-      - srcTensor的数据类型和additionalDtype相同，srcTensor格式为ND且类型为FLOAT16或BFLOAT16时，若维度表示为[k, n], 则k为1场景暂不支持。
-      - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
-      - 当srcTensor的shape后两维任意一维度shape等于1场景，也不允许转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作, 包括transpose。
+      - srcTensor的数据类型和additionalDtype相同，srcTensor格式为ND且类型为FLOAT16或BFLOAT16时，若维度表示为[k, n]，则k为1场景暂不支持。
+      - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后，进行任何能修改张量的操作，如contiguous、pad、slice等;
+      - 当srcTensor的shape后两维任意一维度shape等于1场景，也不允许转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作，包括transpose。
 
   </details>
 
@@ -532,8 +532,8 @@ aclnnStatus aclnnNpuFormatCast(
       | ACL_INT8(2)、ACL_UINT8(4)、ACL_HIFLOAT8(34)    | 32 |
 
     - 当前不支持的特殊场景:
-      - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后, 进行任何能修改张量的操作, 如contiguous、pad、slice等;
-      - 不允许转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作, 包括transpose。
+      - 不支持调用当前接口转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后,进行任何能修改张量的操作，如contiguous、pad、slice等;
+      - 不允许转昇腾亲和[数据格式](../../../docs/zh/context/数据格式.md)FRACTAL_NZ后再进行任何修改张量的操作，包括transpose。
 
   </details>
 
@@ -632,14 +632,14 @@ aclnnStatus aclnnNpuFormatCast(
   }
 
   int main() {
-      // 1. （固定写法）device/stream初始化，参考acl API手册
+      // 1.（固定写法）device/stream初始化，参考acl API手册
       // 根据自己的实际device填写deviceId
       int32_t deviceId = 0;
       aclrtStream stream;
       auto ret = Init(deviceId, &stream);
       CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-      // 2. 构造输入与输出，需要根据API的接口自定义构造
+      // 2.构造输入与输出，需要根据API的接口自定义构造
       int64_t k = 64;
       int64_t n = 128;
       int64_t srcDim0 = k;
@@ -670,7 +670,7 @@ aclnnStatus aclnnNpuFormatCast(
       ret = CreateAclTensor(srcHostData, srcShape, &srcDeviceAddr, srcDtype, &srcTensor);
       CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-      // 3. 调用CANN算子库API
+      // 3.调用CANN算子库API
       uint64_t workspaceSize = 0;
       aclOpExecutor* executor;
       void* workspaceAddr = nullptr;
@@ -696,11 +696,11 @@ aclnnStatus aclnnNpuFormatCast(
       ret = aclnnNpuFormatCast(workspaceAddr, workspaceSize, executor, stream);
       CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnNpuFormatCast failed. ERROR: %d\n", ret); return ret);
 
-      // 4. （固定写法）同步等待任务执行结束
+      // 4.（固定写法）同步等待任务执行结束
       ret = aclrtSynchronizeStream(stream);
       CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
-      // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧
+      // 5.获取输出的值，将device侧内存上的结果拷贝至host侧
       auto size = 1;
       for (size_t i = 0; i < dstShapeSize; i++) {
           size *= dstShape[i];
@@ -714,12 +714,12 @@ aclnnStatus aclnnNpuFormatCast(
           LOG_PRINT("result[%ld] is: %d\n", i, resultData[i]);
       }
 
-      // 6. 释放dstShape、aclTensor和aclScalar
+      // 6.释放dstShape、aclTensor和aclScalar
       delete[] dstShape;
       aclDestroyTensor(srcTensor);
       aclDestroyTensor(dstTensor);
 
-      // 7. 释放device资源
+      // 7.释放device资源
       aclrtFree(srcDeviceAddr);
       aclrtFree(dstDeviceAddr);
 
@@ -827,14 +827,14 @@ aclnnStatus aclnnNpuFormatCast(
   }
 
   int main() {
-      // 1. （固定写法）device/stream初始化，参考acl API手册
+      // 1.（固定写法）device/stream初始化，参考acl API手册
       // 根据自己的实际device填写deviceId
       int32_t deviceId = 0;
       aclrtStream stream;
       auto ret = Init(deviceId, &stream);
       CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-      // 2. 构造输入与输出，需要根据API的接口自定义构造
+      // 2.构造输入与输出，需要根据API的接口自定义构造
 
       int dstFormat = 32;
       //此处修改目标format
@@ -881,7 +881,7 @@ aclnnStatus aclnnNpuFormatCast(
       ret = CreateAclTensor(srcHostData, srcShape, &srcDeviceAddr, srcDtype, &srcTensor);
       CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-      // 3. 调用CANN算子库API
+      // 3.调用CANN算子库API
       uint64_t workspaceSize = 0;
       aclOpExecutor* executor;
       void* workspaceAddr = nullptr;
@@ -919,7 +919,7 @@ aclnnStatus aclnnNpuFormatCast(
       ret = aclrtSynchronizeStream(stream);
       CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
-      // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧
+      // 5.获取输出的值，将device侧内存上的结果拷贝至host侧
       auto size = 1;
       for (size_t i = 0; i < dstShapeSize; i++) {
           size *= dstShape[i];
@@ -933,12 +933,12 @@ aclnnStatus aclnnNpuFormatCast(
           LOG_PRINT("result[%ld] is: %d\n", i, resultData[i]);
       }
 
-      // 6. 释放dstShape、aclTensor和aclScalar
+      // 6.释放dstShape、aclTensor和aclScalar
       delete[] dstShape;
       aclDestroyTensor(srcTensor);
       aclDestroyTensor(dstTensor);
 
-      // 7. 释放device资源
+      // 7.释放device资源
       aclrtFree(srcDeviceAddr);
       aclrtFree(dstDeviceAddr);
 

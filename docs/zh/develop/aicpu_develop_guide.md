@@ -159,7 +159,7 @@ uint32_t AddExampleCpuKernel::Compute(CpuKernelContext& ctx) {
   // 从CpuKernelContext中获取output tensor
   Tensor* output = ctx.Output(0);
 
-  // 对tensor进行基本校验, 判断是否为空指针
+  // 对tensor进行基本校验，判断是否为空指针
   if (input0 == nullptr || input1 == nullptr || output == nullptr) {
     return kParamInvalid;
   }

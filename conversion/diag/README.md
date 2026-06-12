@@ -22,7 +22,7 @@
     \mathbf{x} \in \mathbb{R}^n ：输入向量
     $$
     $$ 
-    \mathbf{y} \in \mathbb{R}^{n \times n} ：输出对角矩阵
+    \mathbf{y} \in \mathbb{R}^{n \times n}：输出对角矩阵
     $$
 
     其中：
@@ -30,7 +30,7 @@
     \mathbf{y}_{i,i} = x_i 
     $$
     $$
-    \mathbf{y}_{i,j} = 0 当 i \ne j
+    \mathbf{y}_{i,j} = 0 当i \ne j
     $$
 
 ## 参数说明
