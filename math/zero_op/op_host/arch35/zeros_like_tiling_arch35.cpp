@@ -67,9 +67,11 @@ ge::graphStatus ZerosLikeTiling::CheckShape()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
     const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
-    OP_CHECK_IF(
-        inputXShape.GetShapeSize() != outputYShape.GetShapeSize(),
-        OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((inputXShape.GetShapeSize() != outputYShape.GetShapeSize()),
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x(input) and y(output)",
+            Ops::Base::ToString(inputXShape) + ", " + Ops::Base::ToString(outputYShape),
+            "The shapes of x(input) and y(output) must be the same"),
+        return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -85,9 +87,11 @@ ge::graphStatus ZerosLikeTiling::CalcOutputDtype()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
 
-    OP_CHECK_IF(
-        this->outputDtype != this->inputDtype,
-        OP_LOGE(tilingContext->GetNodeName(), "output y dtype not same as input x"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((this->outputDtype != this->inputDtype),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x(input) and y(output)",
+            Ops::Base::ToString(this->inputDtype) + " and " + Ops::Base::ToString(this->outputDtype),
+            "The dtypes of x(input) and y(output) must be the same"),
+        return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 

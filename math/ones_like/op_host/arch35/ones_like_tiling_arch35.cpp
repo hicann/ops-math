@@ -68,9 +68,10 @@ ge::graphStatus OnesLikeTiling::CalcInputDtype()
                                                           ge::DT_BOOL,    ge::DT_INT32, ge::DT_UINT8};
     auto inputTypeCheck = std::find(inputDtypes.begin(), inputDtypes.end(), this->inputDtype);
 
-    OP_CHECK_IF(
-        inputTypeCheck == inputDtypes.end(),
-        OP_LOGE(tilingContext->GetNodeName(), "input x dtype not support %d", this->inputDtype),
+    OP_CHECK_IF((inputTypeCheck == inputDtypes.end()),
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "x(input)",
+            Ops::Base::ToString(this->inputDtype),
+            "Float16, BFloat16, Int8, Float, Bool, Int32 and Uint8"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -86,9 +87,11 @@ ge::graphStatus OnesLikeTiling::CheckShape()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
     const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
-    OP_CHECK_IF(
-        inputYShape.GetShapeSize() != outputZShape.GetShapeSize(),
-        OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((inputYShape.GetShapeSize() != outputZShape.GetShapeSize()),
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x(input) and y(output)",
+            Ops::Base::ToString(inputYShape) + ", " + Ops::Base::ToString(outputZShape),
+            "The shapes of x(input) and y(output) must be the same"),
+        return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -104,9 +107,11 @@ ge::graphStatus OnesLikeTiling::CalcOutputDtype()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
 
-    OP_CHECK_IF(
-        this->outputDtype != this->inputDtype,
-        OP_LOGE(tilingContext->GetNodeName(), "output y dtype not same as input y"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((this->outputDtype != this->inputDtype),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x(input) and y(output)",
+            Ops::Base::ToString(this->inputDtype) + " and " + Ops::Base::ToString(this->outputDtype),
+            "The dtypes of x(input) and y(output) must be the same"),
+        return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 

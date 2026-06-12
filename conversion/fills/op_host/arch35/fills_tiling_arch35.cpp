@@ -97,8 +97,10 @@ ge::graphStatus FillsTiling::CalcOutputDtype()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
 
-    OP_CHECK_IF(
-        this->inputDtype != this->outputDtype, OP_LOGE(tilingContext, "input and output dtype is diff, check failed"),
+    OP_CHECK_IF((this->inputDtype != this->outputDtype),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x(input) and y(output)",
+            Ops::Base::ToString(this->inputDtype) + " and " + Ops::Base::ToString(this->outputDtype),
+            "The dtypes of x(input) and y(output) must be the same"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -109,11 +111,12 @@ ge::graphStatus FillsTiling::CalcInputDtype()
     auto inputDesc = tilingContext->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
     this->inputDtype = inputDesc->GetDataType();
-    OP_CHECK_IF(
-        this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_FLOAT && this->inputDtype != ge::DT_INT8 &&
+    OP_CHECK_IF((this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_FLOAT && this->inputDtype != ge::DT_INT8 &&
             this->inputDtype != ge::DT_UINT8 && this->inputDtype != ge::DT_INT32 && this->inputDtype != ge::DT_INT64 &&
-            this->inputDtype != ge::DT_BF16,
-        OP_LOGE(tilingContext->GetNodeName(), "input x dtype not support %d", this->inputDtype),
+            this->inputDtype != ge::DT_BF16),
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "x(input)",
+            Ops::Base::ToString(this->inputDtype),
+            "Float16, Float, Int8, Uint8, Int32, Int64 and BFloat16"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -129,8 +132,10 @@ ge::graphStatus FillsTiling::CheckShape()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
     const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
-    OP_CHECK_IF(
-        inputYShape != outputZShape, OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),
+    OP_CHECK_IF((inputYShape != outputZShape),
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x(input) and y(output)",
+            Ops::Base::ToString(inputYShape) + ", " + Ops::Base::ToString(outputZShape),
+            "The shapes of x(input) and y(output) must be the same"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }

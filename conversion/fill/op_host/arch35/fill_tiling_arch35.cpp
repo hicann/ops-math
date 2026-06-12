@@ -57,8 +57,10 @@ ge::graphStatus FillTiling::CalcOutputDtype()
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
     this->outputDtype_ = outputDesc->GetDataType();
 
-    OP_CHECK_IF(inputValueDtype != this->outputDtype_,
-        OP_LOGE(context_, "input and output dtype is diff, check failed"),
+    OP_CHECK_IF((inputValueDtype != this->outputDtype_),
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "value(input) and y(output)",
+            Ops::Base::ToString(inputValueDtype) + " and " + Ops::Base::ToString(this->outputDtype_),
+            "The dtypes of value(input) and y(output) must be the same"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
