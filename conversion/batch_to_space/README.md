@@ -80,11 +80,11 @@
 
 ## 约束说明
 
-1.输入张量x必须为4D NHWC格式。
-2.block_size必须大于0。
-3.输入batch维度N_in必须能被block_size × block_size整除。
-4.crops形状为 [2, 2]，每个元素 >= 0。
-5.裁剪后空间维度必须大于0：H_in × block_size - crop_top - crop_bottom > 0，W_in × block_size - crop_left - crop_right > 0。
+- 输入张量x必须为4D NHWC格式。
+- block_size必须大于0。
+- 输入batch维度N_in必须能被block_size × block_size整除。
+- crops形状为 [2, 2]，每个元素 >= 0。
+- 裁剪后空间维度必须大于0：H_in × block_size - crop_top - crop_bottom > 0，W_in × block_size - crop_left - crop_right > 0。
 
 ## 调用说明
 

@@ -162,9 +162,9 @@
 
 > 注意：操作过程中，如遇到日志提示设置环境变量，请按提示操作。
 
-1.环境准备。在编译运行前，请先确保您的环境已安装CANN-toolkit包和编译好的算子包。
+1. 环境准备。在编译运行前，请先确保您的环境已安装CANN-toolkit包和编译好的算子包。
 
-2.创建调用脚本。
+2. 创建调用脚本。
 
     在环境任意目录下，新建调用cpp脚本，命名自定义（例如`${test_aclnn_op_name}.cpp`）。
 
@@ -248,7 +248,7 @@
    }
    ```
 
-3.创建CMakeLists.txt文件。
+3. 创建CMakeLists.txt文件。
 
     在`${test_aclnn_op_name}.cpp`同级目录下创建CMakeLists.txt文件，需注意的是，调用自定义算子（如experimental目录）和标准项目算子（内置算子）时编译脚本有差异。示例如下，仅供参考，请根据实际情况自行修改。
 
@@ -363,7 +363,7 @@
         install(TARGETS ${test_aclnn_op_name} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
         ```
     
-4.创建run.sh文件。
+4. 创建run.sh文件。
 
     在`${test_aclnn_op_name}.cpp`同级目录下创建run.sh文件，以`AddExample`算子为例，示例如下，请根据实际情况自行修改。
 
@@ -387,7 +387,7 @@
     ./${test_aclnn_op_name}                                     # 替换为实际算子可执行文件名
     ```
 
-5.运行run.sh文件。
+5. 运行run.sh文件。
    在run.sh文件所在路径执行如下命令：
 
    ```bash
@@ -413,9 +413,9 @@
 
 > 注意：操作过程中，如遇到日志提示设置环境变量，请按提示操作。
 
-1.环境准备。在编译运行前，请先确保您的环境已安装CANN-toolkit包和编译好的算子包。
+1. 环境准备。在编译运行前，请先确保您的环境已安装CANN-toolkit包和编译好的算子包。
 
-2.创建调用脚本。
+2. 创建调用脚本。
 
    在目标算子`examples`目录下，新建调用脚本test\_geir\_\$\{op\_name\}.cpp，\$\{op\_name\}表示目标算子名。以`AddExample`算子为例，调用脚本如下，仅供参考，全量代码参见[test_geir_add_example.cpp](../../../examples/add_example/examples/test_geir_add_example.cpp)。
 
@@ -462,7 +462,7 @@
    }
    ```
 
-3.创建CMakeLists.txt文件。
+3. 创建CMakeLists.txt文件。
 
    在test\_geir\_\$\{op\_name\}.cpp同级目录下创建CMakeLists.txt文件，以`AddExample`算子为例，示例如下，请根据实际情况自行修改。
 
@@ -512,7 +512,7 @@
    )
     ```
 
-4.创建run.sh脚本。
+4. 创建run.sh脚本。
 
    在test\_geir\_\$\{op\_name\}.cpp同级目录下创建run.sh文件，以`AddExample`算子为例，示例如下，请根据实际情况自行修改。
 
@@ -535,7 +535,7 @@
     ./test_geir_add_example                                     # 替换为实际算子可执行文件名
     ```
 
-5.运行run.sh脚本。
+5. 运行run.sh脚本。
     在run.sh文件所在路径执行如下命令：
 
     ```bash

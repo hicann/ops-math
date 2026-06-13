@@ -20,16 +20,16 @@
   输入tensor([[0,1,2]])
   paddings([2,2])
 
-  2.mode("REFLECT")
+  1.mode("REFLECT")
   输出为([[2,1,0,1,2,1,0]])
 
-  3.mode("SYMMETRIC")
+  2.mode("SYMMETRIC")
   输出为([[1,0,0,1,2,2,1]])
 
-  4.mode("constant")
+  3.mode("constant")
   输出为([[0,0,0,1,2,0,0]])
 
-  5.mode("edge")
+  4.mode("edge")
   输出为([[0,0,0,1,2,2,2]])
   ```
 

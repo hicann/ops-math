@@ -96,12 +96,12 @@
 
 ## 约束说明
 
-1.输入张量x必须为4D NHWC格式。
-2. block_size必须大于0。
-3. paddings形状为 [2, 2]，每个元素 >= 0。
-4. H_padded = H_in + pad_top + pad_bottom必须能被block_size整除。
-5. W_padded = W_in + pad_left + pad_right必须能被block_size整除。
-6. block_size为编译期常量（算子属性），非运行时tensor输入。
+- 输入张量x必须为4D NHWC格式。
+- block_size必须大于0。
+- paddings形状为 [2, 2]，每个元素 >= 0。
+- H_padded = H_in + pad_top + pad_bottom必须能被block_size整除。
+- W_padded = W_in + pad_left + pad_right必须能被block_size整除。
+- block_size为编译期常量（算子属性），非运行时tensor输入。
 
 ## 调用说明
 

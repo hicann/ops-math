@@ -88,14 +88,14 @@
 
 ## 约束说明
 
-1.输入张量x的维度N必须满足2 ≤ N ≤ 8。
-2.block_shape的维度M必须满足1 ≤ M < N。
-3.block_shape的长度必须等于crops的第一维度长度。
-4.crops的形状必须为 [M, 2]。
-5.输入张量的第0 维（batch维度）必须能够被block_shape中所有元素的乘积整除。
-6.block_shape中的每个元素必须大于0。
-7.crops中的每个元素必须是非负整数。
-8.对于每个空间维度i（i = 1, 2, ..., M），裁剪后的维度大小必须大于等于0，即：x.shape[i] × block_shape[i-1] - crops[i-1][0] - crops[i-1][1] ≥ 0。
+- 输入张量x的维度N必须满足2 ≤ N ≤ 8。
+- block_shape的维度M必须满足1 ≤ M < N。
+- block_shape的长度必须等于crops的第一维度长度。
+- crops的形状必须为 [M, 2]。
+- 输入张量的第0 维（batch维度）必须能够被block_shape中所有元素的乘积整除。
+- block_shape中的每个元素必须大于0。
+- crops中的每个元素必须是非负整数。
+- 对于每个空间维度i（i = 1, 2, ..., M），裁剪后的维度大小必须大于等于0，即：x.shape[i] × block_shape[i-1] - crops[i-1][0] - crops[i-1][1] ≥ 0。
 
 ## 调用说明
 

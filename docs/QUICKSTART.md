@@ -257,15 +257,15 @@ int main() {
 
 ### 2.重新编译并验证
 
-1.由于只修改了example测试代码，无需重新编译算子包。
+1. 由于只修改了example测试代码，无需重新编译算子包。
 
-2.重新执行验证命令：
+2. 重新执行验证命令：
 
     ```bash
     bash build.sh --run_example add_example eager cust --vendor_name=custom
     ```
 
-3.观察算子输出结果是否符合预期。
+3. 观察算子输出结果是否符合预期。
 
 ## 结语
 

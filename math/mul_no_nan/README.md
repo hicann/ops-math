@@ -111,8 +111,8 @@ In0/In1 -- CopyInBrc -- Cast(->fp32) --+
 
 把fp16 / bf16整体提升到fp32做cmp/sel/mul，末端用`CAST_MODE_RINT`
 （round-to-nearest-even）回退。原因：
-1.与DSL `mul_no_nan.py`在fp16 `vcmpsel`不可用时fallback到fp32的行为一致；
-2.避免fp16中间溢出（如`3e4 · 3e4`在fp16中先inf再被select处理会
+1. 与DSL `mul_no_nan.py`在fp16 `vcmpsel`不可用时fallback到fp32的行为一致；
+2. 避免fp16中间溢出（如`3e4 · 3e4`在fp16中先inf再被select处理会
    引入额外的saturation不确定性），fp32中间有充足动态范围。
 
 ## 调用说明

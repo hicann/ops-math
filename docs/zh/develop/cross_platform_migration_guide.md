@@ -120,10 +120,10 @@
 
 ## 三、推荐迁移步骤
 
-1.确认算子涉及的计算单元（Cube/Vector）和对应单元支持的数据类型是否在平台间存在差异。
-2.确认涉及的数据搬运单元（ND-&gt;NZ、GM&lt;-&gt;Lx、集合通信等）是否在平台间存在差异。
-3.按硬件能力变更点逐项对照修改（Vector架构、Cube支持数据类型、L1/L0/UB大小、CCU通信等）。
-4.参考算子迁移样例调整/补齐Atlas A2/Ascend 950分支逻辑。
+1. 确认算子涉及的计算单元（Cube/Vector）和对应单元支持的数据类型是否在平台间存在差异。
+2. 确认涉及的数据搬运单元（ND-&gt;NZ、GM&lt;-&gt;Lx、集合通信等）是否在平台间存在差异。
+3. 按硬件能力变更点逐项对照修改（Vector架构、Cube支持数据类型、L1/L0/UB大小、CCU通信等）。
+4. 参考算子迁移样例调整/补齐Atlas A2/Ascend 950分支逻辑。
 
 ## 四、算子迁移样例
 
@@ -317,9 +317,9 @@ __VEC_SCOPE__
 
 **迁移建议**
 
-1.适合Regbase的场景：需要精细控制寄存器分配、复杂掩码逻辑、Gather/Scatter访存模式
-2.保留Membase的场景：简单的连续数据搬运和计算、双缓冲流水线
-3.混合使用：可在同一算子中结合两种范式，用Regbase处理核心计算逻辑，用Membase管理数据搬运
+1. 适合Regbase的场景：需要精细控制寄存器分配、复杂掩码逻辑、Gather/Scatter访存模式
+2. 保留Membase的场景：简单的连续数据搬运和计算、双缓冲流水线
+3. 混合使用：可在同一算子中结合两种范式，用Regbase处理核心计算逻辑，用Membase管理数据搬运
 
 ### Cube-Vector融合类算子
 
@@ -404,8 +404,8 @@ aclnnStatus aclnnMatmulAllReduce(
 
 **Graph模式**
 
-1.用于资源计算与申请，涉及附属流相关信息的CalcParamFunc回调接口中，为GE的上下文context区分附属流的集合通信类型。
-2.用于设置主流/附属流上自定义任务、参数定制的GenerateTask回调接口中，区分两套GE的KernelLaunch接口，分别调用AICPU通信或CCU通信的创建及定制流程。
+1. 用于资源计算与申请，涉及附属流相关信息的CalcParamFunc回调接口中，为GE的上下文context区分附属流的集合通信类型。
+2. 用于设置主流/附属流上自定义任务、参数定制的GenerateTask回调接口中，区分两套GE的KernelLaunch接口，分别调用AICPU通信或CCU通信的创建及定制流程。
 
 静态图GE侧创建通信task的任务类型，A2为aicpu kfc server + kfc_stream；950为ccu server + ccu_stream。涉及代码文件：[matmul_all_reduce_gen_task.cpp](https://gitcode.com/cann/ops-transformer/blob/master/mc2/matmul_all_reduce/op_graph/matmul_all_reduce_gen_task.cpp)
 
@@ -461,6 +461,6 @@ ge::Status MatmulAllReduceGenTaskFunc(const gert::ExeResGenerationContext *conte
 
 若算子在Ascend 950上性能不升反降时，可优先排查：
 
-1.是否仍然使用Atlas A2的错位分核模板
-2.是否未开启CCU通信仍走AICPU
+1. 是否仍然使用Atlas A2的错位分核模板
+2. 是否未开启CCU通信仍走AICPU
 3. tiling是否沿用了Atlas A2的L1/L0/UB切分策略，导致Ascend 950更大的片上缓存未被充分利用

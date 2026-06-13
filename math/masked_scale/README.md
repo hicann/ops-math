@@ -51,7 +51,7 @@
   161001 (ACLNN_ERR_PARAM_NULLPTR): 1.传入的self、mask或y是空指针。
   161002 (ACLNN_ERR_PARAM_INVALID): 1.输入和输出的数据类型不在支持的范围之内。
                                     2.输出y和输入self数据类型不一致。
-                                    3. self、mask和y的shape不一致。
+                                    3.self、mask和y的shape不一致。
   ```
 
 ## aclnnMaskedScale

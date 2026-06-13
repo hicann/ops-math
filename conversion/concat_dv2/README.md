@@ -20,9 +20,9 @@
     - 拼接维度concat_dim
 
   - 流程：
-    1.校验所有输入Tensor数据类型一致；
-    2.校验除concat_dim外所有维度完全相同；
-    3.沿concat_dim维度依次拼接：
+    1. 校验所有输入Tensor数据类型一致；
+    2. 校验除concat_dim外所有维度完全相同；
+    3. 沿concat_dim维度依次拼接：
        y = ConcatDV2(x[0], x[1], ..., x[N-1], axis = concat_dim)
   - 输出：拼接后的Tensor y
 

@@ -101,8 +101,8 @@ cannsim record [options] user_app
 
 ## 使用示例
 
-1.完成算子开发和编译。
-2.执行仿真命令，可参考以下使用示例
+1. 完成算子开发和编译。
+2. 执行仿真命令，可参考以下使用示例
 
     ```bash
     方式一：启用仿真，并将输出保存至./output目录，/path/to/app为算子程序
@@ -112,14 +112,14 @@ cannsim record [options] user_app
     $ cannsim record /path/to/app -o ./output -s Ascend950 --gen-report
     ```
 
-3.命令完成后，会在默认路径或指定的“output”目录下生成以“cannsim_{timestamp}_${user_app}”命名的文件夹，结构示例如下：
+3. 命令完成后，会在默认路径或指定的“output”目录下生成以“cannsim_{timestamp}_${user_app}”命名的文件夹，结构示例如下：
 
     ```text
     ├─cannsim_{timestamp}_${user_app}
     ├── cannsim.log
     ```
 
-4.用户可以获取算子执行结果，并进行精度的对比，结果展示在cannsim.log，示例如下
+4. 用户可以获取算子执行结果，并进行精度的对比，结果展示在cannsim.log，示例如下
 
     以下输出仅为Ascend C单算子直调精度比较结果举例，因版本不同略有差异，请以实际输出为准。
 
@@ -130,7 +130,7 @@ cannsim record [options] user_app
     INFO:root:[' case001', 0, 65536, 'Success']
     ```
 
-5.查看算子指令流水图，参考仿真结果解析。
+5. 查看算子指令流水图，参考仿真结果解析。
 
 # 仿真结果解析说明
 
@@ -155,8 +155,8 @@ cannsim report [options]
 
 ## 使用示例
 
-1.参考仿真执行算子仿真，对比输出示例，确保对应的结果执行正确。
-2.执行仿真结果解析命令，可参考以下执行用例。
+1. 参考仿真执行算子仿真，对比输出示例，确保对应的结果执行正确。
+2. 执行仿真结果解析命令，可参考以下执行用例。
 
     ```bash
     在当前目录下生成性能分析报告（默认仅分析核0）
@@ -166,7 +166,7 @@ cannsim report [options]
     cannsim report -e /path/to/cannsim_{timestamp}_${user_app} -o /path/to/report -n '0-1, 11-12'
     ```
 
-3.命令执行完后，会在output配置的目录下生成对应的流水文件，文件格式为json格式，输出结果示例如下：
+3. 命令执行完后，会在output配置的目录下生成对应的流水文件，文件格式为json格式，输出结果示例如下：
 
     ```text
     trace_core0.json
@@ -174,7 +174,7 @@ cannsim report [options]
     ...
     ```
 
-4.仿真结果查看
+4. 仿真结果查看
     在Chrome浏览器中输入“chrome://tracing”地址，并将生成的指令流水图文件（trace.json）拖到空白处打开，键盘上输入快捷键（W：放大，S：缩小，A：左移，D：右移）可进行查看。
     ![指令流水图](../figures/指令流水图.png)
 
@@ -224,8 +224,8 @@ cannsim record --help
 
 ## 使用示例
 
-1.登录Host侧服务器。
-2.执行以下命令。
+1. 登录Host侧服务器。
+2. 执行以下命令。
 
     ```bash
     cannsim --help
